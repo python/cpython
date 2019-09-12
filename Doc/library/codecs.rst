@@ -292,7 +292,7 @@ Error Handlers
 
 To simplify and standardize error handling,
 codecs may implement different error handling schemes by
-accepting the *errors* string argument.  The following string values are
+accepting the *errors* string argument. The following string values are
 defined and implemented by all standard Python codecs:
 
 .. tabularcolumns:: |l|L|
@@ -301,11 +301,11 @@ defined and implemented by all standard Python codecs:
 | Value                   | Meaning                                       |
 +=========================+===============================================+
 | ``'strict'``            | Raise :exc:`UnicodeError` (or a subclass);    |
-|                         | this is the default.  Implemented in          |
+|                         | this is the default. Implemented in           |
 |                         | :func:`strict_errors`.                        |
 +-------------------------+-----------------------------------------------+
 | ``'ignore'``            | Ignore the malformed data and continue        |
-|                         | without further notice.  Implemented in       |
+|                         | without further notice. Implemented in        |
 |                         | :func:`ignore_errors`.                        |
 +-------------------------+-----------------------------------------------+
 
@@ -327,11 +327,11 @@ The following error handlers are only applicable to
 |                         | marker; Python will use the official          |
 |                         | ``U+FFFD`` REPLACEMENT CHARACTER for the      |
 |                         | built-in codecs on decoding, and '?' on       |
-|                         | encoding.  Implemented in                     |
+|                         | encoding. Implemented in                      |
 |                         | :func:`replace_errors`.                       |
 +-------------------------+-----------------------------------------------+
 | ``'xmlcharrefreplace'`` | Replace with the appropriate XML character    |
-|                         | reference (only for encoding).  Implemented   |
+|                         | reference (only for encoding). Implemented    |
 |                         | in :func:`xmlcharrefreplace_errors`.          |
 +-------------------------+-----------------------------------------------+
 | ``'backslashreplace'``  | Replace with backslashed escape sequences.    |
@@ -339,12 +339,12 @@ The following error handlers are only applicable to
 |                         | :func:`backslashreplace_errors`.              |
 +-------------------------+-----------------------------------------------+
 | ``'namereplace'``       | Replace with ``\N{...}`` escape sequences     |
-|                         | (only for encoding).  Implemented in          |
+|                         | (only for encoding). Implemented in           |
 |                         | :func:`namereplace_errors`.                   |
 +-------------------------+-----------------------------------------------+
 | ``'surrogateescape'``   | On decoding, replace byte with individual     |
 |                         | surrogate code ranging from ``U+DC80`` to     |
-|                         | ``U+DCFF``.  This code will then be turned    |
+|                         | ``U+DCFF``. This code will then be turned     |
 |                         | back into the same byte when the              |
 |                         | ``'surrogateescape'`` error handler is used   |
 |                         | when encoding the data.  (See :pep:`383` for  |
@@ -357,7 +357,7 @@ In addition, the following error handler is specific to the given codecs:
 | Value             | Codecs                 | Meaning                                   |
 +===================+========================+===========================================+
 |``'surrogatepass'``| utf-8, utf-16, utf-32, | Allow encoding and decoding of surrogate  |
-|                   | utf-16-be, utf-16-le,  | codes.  These codecs normally treat the   |
+|                   | utf-16-be, utf-16-le,  | codes. These codecs normally treat the    |
 |                   | utf-32-be, utf-32-le   | presence of surrogates as an error.       |
 +-------------------+------------------------+-------------------------------------------+
 
@@ -388,9 +388,9 @@ handler:
    error handler must either raise this or a different exception, or return a
    tuple with a replacement for the unencodable part of the input and a position
    where encoding should continue. The replacement may be either :class:`str` or
-   :class:`bytes`.  If the replacement is bytes, the encoder will simply copy
+   :class:`bytes`. If the replacement is bytes, the encoder will simply copy
    them into the output buffer. If the replacement is a string, the encoder will
-   encode the replacement.  Encoding continues on original input at the
+   encode the replacement. Encoding continues on original input at the
    specified position. Negative position values will be treated as being
    relative to the end of the input string. If the resulting position is out of
    bound an :exc:`IndexError` will be raised.
@@ -484,7 +484,7 @@ function interfaces of the stateless encoder and decoder:
 .. method:: Codec.decode(input[, errors])
 
    Decodes the object *input* and returns a tuple (output object, length
-   consumed).  For instance, for a :term:`text encoding`, decoding converts
+   consumed). For instance, for a :term:`text encoding`, decoding converts
    a bytes object encoded using a particular
    character set encoding to a string object.
 
@@ -751,7 +751,7 @@ compatible with the Python codec registry.
       number of encoded bytes or code points to read
       for decoding. The decoder can modify this setting as
       appropriate. The default value -1 indicates to read and decode as much as
-      possible.  This parameter is intended to
+      possible. This parameter is intended to
       prevent having to decode huge files in one step.
 
       The *firstline* flag indicates that
@@ -791,7 +791,7 @@ compatible with the Python codec registry.
 
       Resets the codec buffers used for keeping state.
 
-      Note that no stream repositioning should take place.  This method is
+      Note that no stream repositioning should take place. This method is
       primarily intended to be able to recover from decoding errors.
 
 
@@ -869,7 +869,7 @@ Strings are stored internally as sequences of code points in
 range ``0x0``--``0x10FFFF``.  (See :pep:`393` for
 more details about the implementation.)
 Once a string object is used outside of CPU and memory, endianness
-and how these arrays are stored as bytes become an issue.  As with other
+and how these arrays are stored as bytes become an issue. As with other
 codecs, serialising a string into a sequence of bytes is known as *encoding*,
 and recreating the string from the sequence of bytes is known as *decoding*.
 There are a variety of different text serialisation codecs, which are
@@ -964,7 +964,7 @@ to determine the byte order used for generating the byte sequence, but as a
 signature that helps in guessing the encoding. On encoding the utf-8-sig codec
 will write ``0xef``, ``0xbb``, ``0xbf`` as the first three bytes to the file. On
 decoding ``utf-8-sig`` will skip those three bytes if they appear as the first
-three bytes in the file.  In UTF-8, the use of the BOM is discouraged and
+three bytes in the file. In UTF-8, the use of the BOM is discouraged and
 should generally be avoided.
 
 
@@ -984,7 +984,7 @@ e.g. ``'utf-8'`` is a valid alias for the ``'utf_8'`` codec.
 .. impl-detail::
 
    Some common encodings can bypass the codecs lookup machinery to
-   improve performance.  These optimization opportunities are only
+   improve performance. These optimization opportunities are only
    recognized by CPython for a limited set of (case insensitive)
    aliases: utf-8, utf8, latin-1, latin1, iso-8859-1, iso8859-1, mbcs
    (Windows only), ascii, us-ascii, utf-16, utf16, utf-32, utf32, and
@@ -1250,10 +1250,10 @@ Python Specific Encodings
 -------------------------
 
 A number of predefined codecs are specific to Python, so their codec names have
-no meaning outside Python.  These are listed in the tables below based on the
+no meaning outside Python. These are listed in the tables below based on the
 expected input and output types (note that while text encodings are the most
 common use case for codecs, the underlying codec infrastructure supports
-arbitrary data transforms rather than just text encodings).  For asymmetric
+arbitrary data transforms rather than just text encodings). For asymmetric
 codecs, the stated purpose describes the encoding direction.
 
 Text Encodings
@@ -1293,7 +1293,7 @@ encodings.
 | raw_unicode_escape |         | Latin-1 encoding with     |
 |                    |         | ``\uXXXX`` and            |
 |                    |         | ``\UXXXXXXXX`` for other  |
-|                    |         | code points.  Existing    |
+|                    |         | code points. Existing     |
 |                    |         | backslashes are not       |
 |                    |         | escaped in any way.       |
 |                    |         | It is used in the Python  |
@@ -1301,7 +1301,7 @@ encodings.
 +--------------------+---------+---------------------------+
 | undefined          |         | Raises an exception for   |
 |                    |         | all conversions, even     |
-|                    |         | empty strings.  The error |
+|                    |         | empty strings. The error  |
 |                    |         | handler is ignored.       |
 +--------------------+---------+---------------------------+
 | unicode_escape     |         | Encoding suitable as the  |
@@ -1309,7 +1309,7 @@ encodings.
 |                    |         | literal in ASCII-encoded  |
 |                    |         | Python source code,       |
 |                    |         | except that quotes are    |
-|                    |         | not escaped.  Decodes     |
+|                    |         | not escaped. Decodes      |
 |                    |         | from Latin-1 source code. |
 |                    |         | Beware that Python source |
 |                    |         | code actually uses UTF-8  |
@@ -1326,7 +1326,7 @@ Binary Transforms
 ^^^^^^^^^^^^^^^^^
 
 The following codecs provide binary transforms: :term:`bytes-like object`
-to :class:`bytes` mappings.  They are not supported by :meth:`bytes.decode`
+to :class:`bytes` mappings. They are not supported by :meth:`bytes.decode`
 (which only produces :class:`str` output).
 
 
@@ -1382,7 +1382,7 @@ Text Transforms
 ^^^^^^^^^^^^^^^
 
 The following codec provides a text transform: a :class:`str` to :class:`str`
-mapping.  It is not supported by :meth:`str.encode` (which only produces
+mapping. It is not supported by :meth:`str.encode` (which only produces
 :class:`bytes` output).
 
 .. tabularcolumns:: |l|l|L|
@@ -1429,7 +1429,7 @@ conversion between Unicode and ACE, separating an input string into labels
 based on the separator characters defined in :rfc:`section 3.1 of RFC 3490 <3490#section-3.1>`
 and converting each label to ACE as required, and conversely separating an input
 byte string into labels based on the ``.`` separator and converting any ACE
-labels found into unicode.  Furthermore, the :mod:`socket` module
+labels found into unicode. Furthermore, the :mod:`socket` module
 transparently converts Unicode host names to ACE, so that applications need not
 be concerned about converting host names themselves when they pass them to the
 socket module. On top of that, modules that have host names as function
@@ -1489,7 +1489,7 @@ This module implements the ANSI codepage (CP_ACP).
    :synopsis: UTF-8 codec with BOM signature
 .. moduleauthor:: Walter Dörwald
 
-This module implements a variant of the UTF-8 codec.  On encoding, a UTF-8 encoded
-BOM will be prepended to the UTF-8 encoded bytes.  For the stateful encoder this
-is only done once (on the first write to the byte stream).  On decoding, an
+This module implements a variant of the UTF-8 codec. On encoding, a UTF-8 encoded
+BOM will be prepended to the UTF-8 encoded bytes. For the stateful encoder this
+is only done once (on the first write to the byte stream). On decoding, an
 optional UTF-8 encoded BOM at the start of the data will be skipped.
