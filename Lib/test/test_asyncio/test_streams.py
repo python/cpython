@@ -855,9 +855,10 @@ os.close(fd)
         watcher.attach_loop(self.loop)
         try:
             asyncio.set_child_watcher(watcher)
-            create = asyncio.create_subprocess_exec(*args,
-                                                    pass_fds={wfd},
-                                                    loop=self.loop)
+            create = asyncio.create_subprocess_exec(
+                *args,
+                pass_fds={wfd},
+            )
             proc = self.loop.run_until_complete(create)
             self.loop.run_until_complete(proc.wait())
         finally:

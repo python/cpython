@@ -1810,7 +1810,7 @@ class BaseTaskTests:
 
         async def outer():
             nonlocal proof
-            await asyncio.shield(inner(), loop=self.loop)
+            await asyncio.shield(inner())
             proof += 100
 
         f = asyncio.ensure_future(outer(), loop=self.loop)
@@ -1825,8 +1825,8 @@ class BaseTaskTests:
     def test_shield_gather(self):
         child1 = self.new_future(self.loop)
         child2 = self.new_future(self.loop)
-        parent = asyncio.gather(child1, child2, loop=self.loop)
-        outer = asyncio.shield(parent, loop=self.loop)
+        parent = asyncio.gather(child1, child2)
+        outer = asyncio.shield(parent)
         test_utils.run_briefly(self.loop)
         outer.cancel()
         test_utils.run_briefly(self.loop)
@@ -1839,9 +1839,9 @@ class BaseTaskTests:
     def test_gather_shield(self):
         child1 = self.new_future(self.loop)
         child2 = self.new_future(self.loop)
-        inner1 = asyncio.shield(child1, loop=self.loop)
-        inner2 = asyncio.shield(child2, loop=self.loop)
-        parent = asyncio.gather(inner1, inner2, loop=self.loop)
+        inner1 = asyncio.shield(child1)
+        inner2 = asyncio.shield(child2)
+        parent = asyncio.gather(inner1, inner2)
         test_utils.run_briefly(self.loop)
         parent.cancel()
         # This should cancel inner1 and inner2 but bot child1 and child2.
@@ -2981,7 +2981,8 @@ class FutureGatherTests(GatherTestsBase, test_utils.TestCase):
         self._run_loop(self.one_loop)
         self.assertTrue(fut.done())
         self.assertEqual(fut.result(), [])
-        fut = asyncio.gather(*seq_or_iter, loop=self.other_loop)
+        with self.assertWarns(DeprecationWarning):
+            fut = asyncio.gather(*seq_or_iter, loop=self.other_loop)
         self.assertIs(fut._loop, self.other_loop)
 
     def test_constructor_empty_sequence(self):
