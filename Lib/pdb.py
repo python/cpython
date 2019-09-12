@@ -1657,7 +1657,7 @@ To let the script run up to a given line X in the debugged file, use
 def main():
     import getopt
 
-    opts, args = getopt.getopt(sys.argv[1:], 'mhc:', ['--help', '--command='])
+    opts, args = getopt.getopt(sys.argv[1:], 'mhc:', ['help', 'command='])
 
     if not args:
         print(_usage)
