@@ -347,7 +347,7 @@ The following error handlers are only applicable to
 |                         | ``U+DCFF``. This code will then be turned     |
 |                         | back into the same byte when the              |
 |                         | ``'surrogateescape'`` error handler is used   |
-|                         | when encoding the data.  (See :pep:`383` for  |
+|                         | when encoding the data. (See :pep:`383` for   |
 |                         | more.)                                        |
 +-------------------------+-----------------------------------------------+
 
@@ -866,7 +866,7 @@ Encodings and Unicode
 ---------------------
 
 Strings are stored internally as sequences of code points in
-range ``0x0``--``0x10FFFF``.  (See :pep:`393` for
+range ``0x0``--``0x10FFFF``. (See :pep:`393` for
 more details about the implementation.)
 Once a string object is used outside of CPU and memory, endianness
 and how these arrays are stored as bytes become an issue. As with other
@@ -1266,27 +1266,27 @@ encodings.
 .. tabularcolumns:: |l|p{0.3\linewidth}|p{0.3\linewidth}|
 
 +--------------------+---------+---------------------------+
-| Codec              | Aliases | Purpose                   |
+| Codec              | Aliases | Meaning                   |
 +====================+=========+===========================+
-| idna               |         | Implements :rfc:`3490`,   |
+| idna               |         | Implement :rfc:`3490`,    |
 |                    |         | see also                  |
 |                    |         | :mod:`encodings.idna`.    |
 |                    |         | Only ``errors='strict'``  |
 |                    |         | is supported.             |
 +--------------------+---------+---------------------------+
-| mbcs               | ansi,   | Windows only: Encodes the |
+| mbcs               | ansi,   | Windows only: Encode the  |
 |                    | dbcs    | operand according to the  |
-|                    |         | ANSI codepage (CP_ACP)    |
+|                    |         | ANSI codepage (CP_ACP).   |
 +--------------------+---------+---------------------------+
-| oem                |         | Windows only: Encodes the |
+| oem                |         | Windows only: Encode the  |
 |                    |         | operand according to the  |
-|                    |         | OEM codepage (CP_OEMCP)   |
+|                    |         | OEM codepage (CP_OEMCP).  |
 |                    |         |                           |
 |                    |         | .. versionadded:: 3.6     |
 +--------------------+---------+---------------------------+
-| palmos             |         | Encoding of PalmOS 3.5    |
+| palmos             |         | Encoding of PalmOS 3.5.   |
 +--------------------+---------+---------------------------+
-| punycode           |         | Implements :rfc:`3492`.   |
+| punycode           |         | Implement :rfc:`3492`.    |
 |                    |         | Stateful codecs are not   |
 |                    |         | supported.                |
 +--------------------+---------+---------------------------+
@@ -1299,7 +1299,7 @@ encodings.
 |                    |         | It is used in the Python  |
 |                    |         | pickle protocol.          |
 +--------------------+---------+---------------------------+
-| undefined          |         | Raises an exception for   |
+| undefined          |         | Raise an exception for    |
 |                    |         | all conversions, even     |
 |                    |         | empty strings. The error  |
 |                    |         | handler is ignored.       |
@@ -1309,7 +1309,7 @@ encodings.
 |                    |         | literal in ASCII-encoded  |
 |                    |         | Python source code,       |
 |                    |         | except that quotes are    |
-|                    |         | not escaped. Decodes      |
+|                    |         | not escaped. Decode       |
 |                    |         | from Latin-1 source code. |
 |                    |         | Beware that Python source |
 |                    |         | code actually uses UTF-8  |
@@ -1333,12 +1333,12 @@ to :class:`bytes` mappings. They are not supported by :meth:`bytes.decode`
 .. tabularcolumns:: |l|L|L|L|
 
 +----------------------+------------------+------------------------------+------------------------------+
-| Codec                | Aliases          | Purpose                      | Encoder / decoder            |
+| Codec                | Aliases          | Meaning                      | Encoder / decoder            |
 +======================+==================+==============================+==============================+
-| base64_codec [#b64]_ | base64, base_64  | Converts the operand to      | :meth:`base64.encodebytes` / |
+| base64_codec [#b64]_ | base64, base_64  | Convert the operand to       | :meth:`base64.encodebytes` / |
 |                      |                  | multiline MIME base64 (the   | :meth:`base64.decodebytes`   |
 |                      |                  | result always includes a     |                              |
-|                      |                  | trailing ``'\n'``)           |                              |
+|                      |                  | trailing ``'\n'``).          |                              |
 |                      |                  |                              |                              |
 |                      |                  | .. versionchanged:: 3.4      |                              |
 |                      |                  |    accepts any               |                              |
@@ -1346,23 +1346,23 @@ to :class:`bytes` mappings. They are not supported by :meth:`bytes.decode`
 |                      |                  |    as input for encoding and |                              |
 |                      |                  |    decoding                  |                              |
 +----------------------+------------------+------------------------------+------------------------------+
-| bz2_codec            | bz2              | Compresses the operand       | :meth:`bz2.compress` /       |
-|                      |                  | using bz2                    | :meth:`bz2.decompress`       |
+| bz2_codec            | bz2              | Compress the operand using   | :meth:`bz2.compress` /       |
+|                      |                  | bz2.                         | :meth:`bz2.decompress`       |
 +----------------------+------------------+------------------------------+------------------------------+
-| hex_codec            | hex              | Converts the operand to      | :meth:`binascii.b2a_hex` /   |
+| hex_codec            | hex              | Convert the operand to       | :meth:`binascii.b2a_hex` /   |
 |                      |                  | hexadecimal                  | :meth:`binascii.a2b_hex`     |
 |                      |                  | representation, with two     |                              |
-|                      |                  | digits per byte              |                              |
+|                      |                  | digits per byte.             |                              |
 +----------------------+------------------+------------------------------+------------------------------+
-| quopri_codec         | quopri,          | Converts the operand to MIME | :meth:`quopri.encode` with   |
-|                      | quotedprintable, | quoted printable             | ``quotetabs=True`` /         |
+| quopri_codec         | quopri,          | Convert the operand to MIME  | :meth:`quopri.encode` with   |
+|                      | quotedprintable, | quoted printable.            | ``quotetabs=True`` /         |
 |                      | quoted_printable |                              | :meth:`quopri.decode`        |
 +----------------------+------------------+------------------------------+------------------------------+
-| uu_codec             | uu               | Converts the operand using   | :meth:`uu.encode` /          |
-|                      |                  | uuencode                     | :meth:`uu.decode`            |
+| uu_codec             | uu               | Convert the operand using    | :meth:`uu.encode` /          |
+|                      |                  | uuencode.                    | :meth:`uu.decode`            |
 +----------------------+------------------+------------------------------+------------------------------+
-| zlib_codec           | zip, zlib        | Compresses the operand       | :meth:`zlib.compress` /      |
-|                      |                  | using gzip                   | :meth:`zlib.decompress`      |
+| zlib_codec           | zip, zlib        | Compress the operand using   | :meth:`zlib.compress` /      |
+|                      |                  | gzip.                        | :meth:`zlib.decompress`      |
 +----------------------+------------------+------------------------------+------------------------------+
 
 .. [#b64] In addition to :term:`bytes-like objects <bytes-like object>`,
@@ -1388,10 +1388,11 @@ mapping. It is not supported by :meth:`str.encode` (which only produces
 .. tabularcolumns:: |l|l|L|
 
 +--------------------+---------+---------------------------+
-| Codec              | Aliases | Purpose                   |
+| Codec              | Aliases | Meaning                   |
 +====================+=========+===========================+
-| rot_13             | rot13   | Returns the Caesar-cypher |
-|                    |         | encryption of the operand |
+| rot_13             | rot13   | Return the Caesar-cypher  |
+|                    |         | encryption of the         |
+|                    |         | operand.                  |
 +--------------------+---------+---------------------------+
 
 .. versionadded:: 3.2
