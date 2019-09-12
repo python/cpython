@@ -395,6 +395,7 @@ scanstring_unicode(PyObject *pystr, Py_ssize_t end, int strict, Py_ssize_t *next
 
     _PyUnicodeWriter writer;
     _PyUnicodeWriter_Init(&writer);
+    writer.overallocate = 1;
 
     len = PyUnicode_GET_LENGTH(pystr);
     buf = PyUnicode_DATA(pystr);
@@ -422,10 +423,23 @@ scanstring_unicode(PyObject *pystr, Py_ssize_t end, int strict, Py_ssize_t *next
             }
             c = d;
         }
-        if (!(c == '"' || c == '\\')) {
+
+        if (c == '"') {
+            // Fast path for simple case.
+            if (writer.buffer == NULL) {
+                PyObject *ret = PyUnicode_Substring(pystr, end, next);
+                if (ret == NULL) {
+                    goto bail;
+                }
+                *next_end_ptr = next + 1;;
+                return ret;
+            }
+        }
+        else if (c != '\\') {
             raise_errmsg("Unterminated string starting at", pystr, begin);
             goto bail;
         }
+
         /* Pick up this chunk if it's not zero length */
         if (next != end) {
             if (_PyUnicodeWriter_WriteSubstring(&writer, pystr, end, next) < 0) {
@@ -441,8 +455,6 @@ scanstring_unicode(PyObject *pystr, Py_ssize_t end, int strict, Py_ssize_t *next
             raise_errmsg("Unterminated string starting at", pystr, begin);
             goto bail;
         }
-        // Enable overallocating after simple case (e.g. "spam") is failed.
-        writer.overallocate = 1;
         c = PyUnicode_READ(kind, buf, next);
         if (c != 'u') {
             /* Non-unicode backslash escapes */
