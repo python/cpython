@@ -484,21 +484,11 @@ Waiting Primitives
    set concurrently and block until the condition specified
    by *return_when*.
 
-   .. deprecated:: 3.8
-
-      If any awaitable in *aws* is a coroutine, it is automatically
-      scheduled as a Task.  Passing coroutines objects to
-      ``wait()`` directly is deprecated as it leads to
-      :ref:`confusing behavior <asyncio_example_wait_coroutine>`.
-
    Returns two sets of Tasks/Futures: ``(done, pending)``.
 
    Usage::
 
         done, pending = await asyncio.wait(aws)
-
-   .. deprecated-removed:: 3.8 3.10
-      The *loop* parameter.
 
    *timeout* (a float or int), if specified, can be used to control
    the maximum number of seconds to wait before returning.
@@ -530,6 +520,17 @@ Waiting Primitives
 
    Unlike :func:`~asyncio.wait_for`, ``wait()`` does not cancel the
    futures when a timeout occurs.
+
+   .. deprecated:: 3.8
+
+      If any awaitable in *aws* is a coroutine, it is automatically
+      scheduled as a Task.  Passing coroutines objects to
+      ``wait()`` directly is deprecated as it leads to
+      :ref:`confusing behavior <asyncio_example_wait_coroutine>`.
+
+   .. deprecated-removed:: 3.8 3.10
+
+      The *loop* parameter.
 
    .. _asyncio_example_wait_coroutine:
    .. note::
