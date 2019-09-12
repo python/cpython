@@ -54,6 +54,10 @@ IGNORED = {
         '_PyOS_optind': 'runtime startup',
         '_Py_HashSecret': 'runtime startup',
 
+        # REPL
+        '_PyOS_ReadlineLock': 'repl',
+        '_PyOS_ReadlineTState': 'repl',
+
         # effectively const
         'tracemalloc_empty_traceback': 'const',
         '_empty_bitmap_node': 'const',
@@ -76,6 +80,9 @@ IGNORED = {
         'faulthandler_handlers': 'signals are main-thread only',
         'user_signals': 'signals are main-thread only',
         'wakeup': 'signals are main-thread only',
+
+        # hacks
+        '_PySet_Dummy': 'only used as a placeholder',
         }
 
 BENIGN = 'races here are benign and unlikely'
