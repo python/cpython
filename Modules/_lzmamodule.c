@@ -881,9 +881,6 @@ decompress_buf(Decompressor *d, Py_ssize_t max_length)
     PyObject *result;
     lzma_stream *lzs = &d->lzs;
 
-    if (lzs->avail_in == 0)
-        return PyBytes_FromStringAndSize(NULL, 0);
-
     if (max_length < 0 || max_length >= INITIAL_BUFFER_SIZE)
         result = PyBytes_FromStringAndSize(NULL, INITIAL_BUFFER_SIZE);
     else
@@ -900,7 +897,10 @@ decompress_buf(Decompressor *d, Py_ssize_t max_length)
         Py_BEGIN_ALLOW_THREADS
         lzret = lzma_code(lzs, LZMA_RUN);
         data_size = (char *)lzs->next_out - PyBytes_AS_STRING(result);
+        if (lzret == LZMA_BUF_ERROR && lzs->avail_in == 0 && lzs->avail_out > 0)
+            lzret = LZMA_OK; /* That wasn't a real error */
         Py_END_ALLOW_THREADS
+
         if (catch_lzma_error(lzret))
             goto error;
         if (lzret == LZMA_GET_CHECK || lzret == LZMA_NO_CHECK)
@@ -908,15 +908,19 @@ decompress_buf(Decompressor *d, Py_ssize_t max_length)
         if (lzret == LZMA_STREAM_END) {
             d->eof = 1;
             break;
-        } else if (lzs->avail_in == 0) {
-            break;
         } else if (lzs->avail_out == 0) {
+            /* Need to check lzs->avail_out before lzs->avail_in.
+               Maybe lzs's internal state still have a few bytes
+               can be output, grow the output buffer and continue
+               if max_lengh < 0. */
             if (data_size == max_length)
                 break;
             if (grow_buffer(&result, max_length) == -1)
                 goto error;
             lzs->next_out = (uint8_t *)PyBytes_AS_STRING(result) + data_size;
             lzs->avail_out = PyBytes_GET_SIZE(result) - data_size;
+        } else if (lzs->avail_in == 0) {
+            break;
         }
     }
     if (data_size != PyBytes_GET_SIZE(result))
@@ -999,7 +1003,19 @@ decompress(Decompressor *d, uint8_t *data, size_t len, Py_ssize_t max_length)
     }
     else if (lzs->avail_in == 0) {
         lzs->next_in = NULL;
-        d->needs_input = 1;
+
+        if (lzs->avail_out == 0) {
+            /* (avail_in==0 && avail_out==0)
+               Maybe lzs's internal state still have a few bytes can
+               be output, try to output them next time. */
+            d->needs_input = 0;
+
+            /* if max_length < 0, lzs->avail_out always > 0 */
+            assert(max_length >= 0);
+        } else {
+            /* Input buffer exhausted, output buffer has space. */
+            d->needs_input = 1;
+        }
     }
     else {
         d->needs_input = 0;
