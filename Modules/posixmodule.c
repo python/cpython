@@ -2104,7 +2104,14 @@ statresult_new(PyTypeObject *type, PyObject *args)
 
     /* Remove the cls object from the argument list */
     sequence = PyTuple_GetSlice(args, 1, PyTuple_Size(args));
+    if (!sequence) {
+        return NULL;
+    }
     kwds = PyDict_New();
+    if (!kwds) {
+        Py_DECREF(sequence);
+        return NULL;
+    }
     result = (PyStructSequence*)_posixstate_global->structseq_new(type, sequence, kwds);
     Py_DECREF(sequence);
     Py_DECREF(kwds);
@@ -4595,7 +4602,7 @@ or via the attributes sysname, nodename, release, version, and machine.\n\
 See os.uname for more information.");
 
 static PyStructSequence_Desc uname_result_desc = {
-    "uname_result", /* name */
+    MODNAME ".uname_result", /* name */
     uname_result__doc__, /* doc */
     uname_result_fields,
     5
@@ -6260,7 +6267,6 @@ PyDoc_STRVAR(os_sched_param__doc__,
 "sched_param(sched_priority)\n"
 "--\n"
 "\n"
-"Current has only one field: sched_priority\");\n"
 "\n"
 "  sched_priority\n"
 "    A scheduling parameter.");
@@ -6274,6 +6280,9 @@ os_sched_param(PyTypeObject *type, PyObject *args, PyObject *kwargs)
 
     /* Remove the cls object from the argument list */
     sequence = PyTuple_GetSlice(args, 1, PyTuple_Size(args));
+    if (!sequence) {
+        return NULL;
+    }
     int result = PyArg_ParseTupleAndKeywords(sequence, kwargs, _format, _keywords,
         &sched_priority);
     Py_DECREF(sequence);
@@ -6281,8 +6290,9 @@ os_sched_param(PyTypeObject *type, PyObject *args, PyObject *kwargs)
         return NULL;
     }
     res = PyStructSequence_New((PyTypeObject *)type);
-    if (!res)
+    if (!res) {
         return NULL;
+    }
     Py_INCREF(sched_priority);
     PyStructSequence_SET_ITEM(res, 0, sched_priority);
     return res;
@@ -12818,6 +12828,7 @@ static PyType_Spec DirEntryType_spec = {
     Py_TPFLAGS_DEFAULT,
     DirEntryType_slots
 };
+
 
 #ifdef MS_WINDOWS
 
