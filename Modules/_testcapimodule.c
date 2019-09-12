@@ -6304,7 +6304,7 @@ static void
 heapctypesubclasswithfinalizer_finalize(PyObject *self)
 {
     PyObject *error_type, *error_value, *error_traceback, *m;
-    PyObject *oldtype=NULL, *newtype=NULL;
+    PyObject *oldtype = NULL, *newtype = NULL;
 
     /* Save the current exception, if any. */
     PyErr_Fetch(&error_type, &error_value, &error_traceback);
