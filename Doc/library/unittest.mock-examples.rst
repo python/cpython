@@ -280,11 +280,12 @@ function returns is what the call returns:
 Mocking asynchronous iterators
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Since Python 3.8, ``AsyncMock`` has support to mock :ref:`async-iterators`
-through ``__aiter__``. The :attr:`~Mock.return_value` attribute of ``__aiter__``
-can be used to set the return values to be used for iteration.
+Since Python 3.8, ``AsyncMock`` and ``MagicMock`` have support to mock
+:ref:`async-iterators` through ``__aiter__``. The :attr:`~Mock.return_value`
+attribute of ``__aiter__`` can be used to set the return values to be used for
+iteration.
 
-    >>> mock = AsyncMock()
+    >>> mock = MagicMock()  # AsyncMock also works here
     >>> mock.__aiter__.return_value = [1, 2, 3]
     >>> async def main():
     ...     return [i async for i in mock]
@@ -296,9 +297,9 @@ can be used to set the return values to be used for iteration.
 Mocking asynchronous context manager
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Since Python 3.8, ``AsyncMock`` has support to mock
-:ref:`async-context-managers` through ``__aenter__`` and ``__aexit__``. The
-return value of ``__aenter__`` is an async function.
+Since Python 3.8, ``AsyncMock`` and ``MagicMock`` have support to mock
+:ref:`async-context-managers` through ``__aenter__`` and ``__aexit__``.
+By default, ``__aenter__`` is an ``AsyncMock`` that returns an async function.
 
     >>> class AsyncContextManager:
     ...     async def __aenter__(self):
@@ -306,7 +307,7 @@ return value of ``__aenter__`` is an async function.
     ...     async def __aexit__(self, exc_type, exc, tb):
     ...         pass
     ...
-    >>> mock_instance = AsyncMock(AsyncContextManager())
+    >>> mock_instance = MagicMock(AsyncContextManager())  # AsyncMock also works here
     >>> async def main():
     ...     async with mock_instance as result:
     ...         pass

@@ -989,7 +989,8 @@ class NonCallableMock(Base):
         if issubclass(_type, MagicMock) and _new_name in _async_method_magics:
             klass = AsyncMock
         elif _new_name  in _sync_async_magics:
-            # Special case these ones b/c users will assume they are async, but they are actually sync
+            # Special case these ones b/c users will assume they are async,
+            # but they are actually sync
             klass = MagicMock
         elif issubclass(_type, AsyncMockMixin):
             klass = AsyncMock

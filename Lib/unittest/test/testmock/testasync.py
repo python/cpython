@@ -410,7 +410,14 @@ class AsyncContextManagerTest(unittest.TestCase):
         cm = MagicMock(name='magic_cm')
         self.assertTrue(hasattr(cm, "__aenter__"))
         self.assertTrue(hasattr(cm, "__aexit__"))
+
+    def test_magic_methods_are_async_functions(self):
+        cm = MagicMock(name='magic_cm')
+        self.assertTrue(asyncio.iscoroutinefunction(cm.__aenter__))
         self.assertTrue(asyncio.iscoroutinefunction(cm.__aexit__))
+        # These should pass but cause warnings to be raised
+        # self.assertTrue(inspect.isawaitable(cm.__aenter__()))
+        # self.assertTrue(inspect.isawaitable(cm.__aexit__()))
 
     def test_set_return_value_of_aenter_magicmock(self):
         pc = self.ProductionCode()
