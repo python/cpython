@@ -1,3 +1,1 @@
-Forward references in the typing module now have different hash and eq methods. References will now compare equal properly if only one of them has been evaluated and the other hasn't. Hash values are now consistent across the lifetime of a forward reference. 
-
-There is a slight chance this will break existing code, but this has been judged to be unlikely. If two references have the same hash, this now does not mean they are equal, although if two references are equal they will have the same hash.
+Forward references in the typing module now have improved __hash__ and __eq__ methods.
