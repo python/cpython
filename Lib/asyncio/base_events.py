@@ -503,10 +503,13 @@ class BaseEventLoop(events.AbstractEventLoop):
         if self._closed:
             raise RuntimeError('Event loop is closed')
 
+    async def _close_agen(self, agen):
+        await agen.aclose()
+
     def _asyncgen_finalizer_hook(self, agen):
         self._asyncgens.discard(agen)
         if not self.is_closed():
-            self.call_soon_threadsafe(self.create_task, agen.aclose())
+            self.call_soon_threadsafe(self.create_task, self._close_agen(agen))
 
     def _asyncgen_firstiter_hook(self, agen):
         if self._asyncgens_shutdown_called:
