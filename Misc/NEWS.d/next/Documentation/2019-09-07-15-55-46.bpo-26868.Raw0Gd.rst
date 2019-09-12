@@ -1,0 +1,1 @@
+Fix example usage of :c:func:`PyModule_AddObject` to properly handle errors.

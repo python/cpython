@@ -179,7 +179,12 @@ This initializes the :class:`Custom` type, filling in a number of members
 to the appropriate default values, including :attr:`ob_type` that we initially
 set to *NULL*. ::
 
-   PyModule_AddObject(m, "Custom", (PyObject *) &CustomType);
+   Py_INCREF(&CustomType);
+   if (PyModule_AddObject(m, "Custom", (PyObject *) &CustomType) < 0) {
+       Py_DECREF(&CustomType);
+       PY_DECREF(m);
+       return NULL;
+   }
 
 This adds the type to the module dictionary.  This allows us to create
 :class:`Custom` instances by calling the :class:`Custom` class:
@@ -864,7 +869,12 @@ function::
            return NULL;
 
        Py_INCREF(&SubListType);
-       PyModule_AddObject(m, "SubList", (PyObject *) &SubListType);
+       if (PyModule_AddObject(m, "SubList", (PyObject *) &SubListType) < 0) {
+           Py_DECREF(&SubListType);
+           Py_DECREF(m);
+           return NULL;
+       }
+
        return m;
    }
 
