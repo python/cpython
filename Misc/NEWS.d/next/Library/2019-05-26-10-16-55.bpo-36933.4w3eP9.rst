@@ -1,2 +1,0 @@
-The functions ``sys.set_coroutine_wrapper`` and ``sys.get_coroutine_wrapper``
-that were deprecated and marked for removal in 3.8 have been removed.

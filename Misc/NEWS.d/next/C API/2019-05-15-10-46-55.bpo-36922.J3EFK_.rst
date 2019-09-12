@@ -1,3 +1,0 @@
-Add new type flag ``Py_TPFLAGS_METHOD_DESCRIPTOR`` for objects behaving like
-unbound methods. These are objects supporting the optimization given by the
-``LOAD_METHOD``/``CALL_METHOD`` opcodes. See PEP 590.

@@ -1,1 +1,0 @@
-Deprecate ``@coroutine`` for sake of ``async def``.

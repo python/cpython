@@ -36,6 +36,24 @@ Number-theoretic and representation functions
    :class:`~numbers.Integral` value.
 
 
+.. function:: comb(n, k)
+
+   Return the number of ways to choose *k* items from *n* items without repetition
+   and without order.
+
+   Evaluates to ``n! / (k! * (n - k)!)`` when ``k <= n`` and evaluates
+   to zero when ``k > n``.
+
+   Also called the binomial coefficient because it is equivalent
+   to the coefficient of k-th term in polynomial expansion of the
+   expression ``(1 + x) ** n``.
+
+   Raises :exc:`TypeError` if either of the arguments are not integers.
+   Raises :exc:`ValueError` if either of the arguments are negative.
+
+   .. versionadded:: 3.8
+
+
 .. function:: copysign(x, y)
 
    Return a float with the magnitude (absolute value) of *x* but the sign of
@@ -50,8 +68,11 @@ Number-theoretic and representation functions
 
 .. function:: factorial(x)
 
-   Return *x* factorial.  Raises :exc:`ValueError` if *x* is not integral or
+   Return *x* factorial as an integer.  Raises :exc:`ValueError` if *x* is not integral or
    is negative.
+
+   .. deprecated:: 3.9
+      Accepting floats with integral values (like ``5.0``) is deprecated.
 
 
 .. function:: floor(x)
@@ -192,6 +213,23 @@ Number-theoretic and representation functions
    of *x* and are floats.
 
 
+.. function:: perm(n, k=None)
+
+   Return the number of ways to choose *k* items from *n* items
+   without repetition and with order.
+
+   Evaluates to ``n! / (n - k)!`` when ``k <= n`` and evaluates
+   to zero when ``k > n``.
+
+   If *k* is not specified or is None, then *k* defaults to *n*
+   and the function returns ``n!``.
+
+   Raises :exc:`TypeError` if either of the arguments are not integers.
+   Raises :exc:`ValueError` if either of the arguments are negative.
+
+   .. versionadded:: 3.8
+
+
 .. function:: prod(iterable, *, start=1)
 
    Calculate the product of all the elements in the input *iterable*.
@@ -328,17 +366,20 @@ Trigonometric functions
 
 .. function:: acos(x)
 
-   Return the arc cosine of *x*, in radians.
+   Return the arc cosine of *x*, in radians. The result is between ``0`` and
+   ``pi``.
 
 
 .. function:: asin(x)
 
-   Return the arc sine of *x*, in radians.
+   Return the arc sine of *x*, in radians. The result is between ``-pi/2`` and
+   ``pi/2``.
 
 
 .. function:: atan(x)
 
-   Return the arc tangent of *x*, in radians.
+   Return the arc tangent of *x*, in radians. The result is between ``-pi/2`` and
+   ``pi/2``.
 
 
 .. function:: atan2(y, x)
@@ -359,7 +400,8 @@ Trigonometric functions
 .. function:: dist(p, q)
 
    Return the Euclidean distance between two points *p* and *q*, each
-   given as a tuple of coordinates.  The two tuples must be the same size.
+   given as a sequence (or iterable) of coordinates.  The two points
+   must have the same dimension.
 
    Roughly equivalent to::
 

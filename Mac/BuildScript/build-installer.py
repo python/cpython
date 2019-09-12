@@ -215,9 +215,9 @@ def library_recipes():
 
     result.extend([
           dict(
-              name="OpenSSL 1.1.0j",
-              url="https://www.openssl.org/source/openssl-1.1.0j.tar.gz",
-              checksum='b4ca5b78ae6ae79da80790b30dbedbdc',
+              name="OpenSSL 1.1.1c",
+              url="https://www.openssl.org/source/openssl-1.1.1c.tar.gz",
+              checksum='15e21da6efe8aa0e0768ffd8cd37a5f6',
               buildrecipe=build_universal_openssl,
               configure=None,
               install=None,
@@ -313,9 +313,9 @@ def library_recipes():
                   ),
           ),
           dict(
-              name="SQLite 3.22.0",
-              url="https://www.sqlite.org/2018/sqlite-autoconf-3220000.tar.gz",
-              checksum='96b5648d542e8afa6ab7ffb8db8ddc3d',
+              name="SQLite 3.28.0",
+              url="https://www.sqlite.org/2019/sqlite-autoconf-3280000.tar.gz",
+              checksum='3c68eb400f8354605736cd55400e1572',
               extra_cflags=('-Os '
                             '-DSQLITE_ENABLE_FTS5 '
                             '-DSQLITE_ENABLE_FTS4 '
@@ -810,6 +810,16 @@ def build_universal_openssl(basedir, archList):
             "ppc": ["darwin-ppc-cc"],
             "ppc64": ["darwin64-ppc-cc"],
         }
+
+        # Somewhere between OpenSSL 1.1.0j and 1.1.1c, changes cause the
+        # "enable-ec_nistp_64_gcc_128" option to get compile errors when
+        # building on our 10.6 gcc-4.2 environment.  There have been other
+        # reports of projects running into this when using older compilers.
+        # So, for now, do not try to use "enable-ec_nistp_64_gcc_128" when
+        # building for 10.6.
+        if getDeptargetTuple() == (10, 6):
+            arch_opts['x86_64'].remove('enable-ec_nistp_64_gcc_128')
+
         configure_opts = [
             "no-idea",
             "no-mdc2",
@@ -1058,6 +1068,7 @@ def buildPythonDocs():
     runCommand('make clean')
     # Create virtual environment for docs builds with blurb and sphinx
     runCommand('make venv')
+    runCommand('venv/bin/python3 -m pip install -U Sphinx==2.0.1')
     runCommand('make html PYTHON=venv/bin/python')
     os.chdir(curDir)
     if not os.path.exists(docdir):
@@ -1540,7 +1551,7 @@ def buildDMG():
         print(" -- retrying hdiutil create")
         time.sleep(5)
     else:
-        raise RuntimeError("command failed: %s"%(commandline,))
+        raise RuntimeError("command failed: %s"%(cmd,))
 
     if not os.path.exists(os.path.join(WORKDIR, "mnt")):
         os.mkdir(os.path.join(WORKDIR, "mnt"))

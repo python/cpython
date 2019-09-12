@@ -1,0 +1,2 @@
+Fix the implementation of curses ``addch(str, color_pair)``: pass the color
+pair to ``setcchar()``, instead of always passing 0 as the color pair.

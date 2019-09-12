@@ -369,10 +369,10 @@ static PyTypeObject _PyExc_BaseException = {
     sizeof(PyBaseExceptionObject), /*tp_basicsize*/
     0,                          /*tp_itemsize*/
     (destructor)BaseException_dealloc, /*tp_dealloc*/
-    0,                          /*tp_print*/
+    0,                          /*tp_vectorcall_offset*/
     0,                          /*tp_getattr*/
     0,                          /*tp_setattr*/
-    0,                          /* tp_reserved; */
+    0,                          /*tp_as_async*/
     (reprfunc)BaseException_repr, /*tp_repr*/
     0,                          /*tp_as_number*/
     0,                          /*tp_as_sequence*/
@@ -405,7 +405,7 @@ static PyTypeObject _PyExc_BaseException = {
     BaseException_new,          /* tp_new */
 };
 /* the CPython API expects exceptions to be (PyObject *) - both a hold-over
-from the previous implmentation and also allowing Python objects to be used
+from the previous implementation and also allowing Python objects to be used
 in the API */
 PyObject *PyExc_BaseException = (PyObject *)&_PyExc_BaseException;
 
@@ -1522,13 +1522,6 @@ MiddlingExtendsException(PyExc_SyntaxError, IndentationError, SyntaxError,
 
 
 /*
- *    TargetScopeError extends SyntaxError
- */
-MiddlingExtendsException(PyExc_SyntaxError, TargetScopeError, SyntaxError,
-                         "Improper scope target.");
-
-
-/*
  *    TabError extends IndentationError
  */
 MiddlingExtendsException(PyExc_IndentationError, TabError, SyntaxError,
@@ -2539,7 +2532,6 @@ _PyExc_Init(void)
     PRE_INIT(AttributeError);
     PRE_INIT(SyntaxError);
     PRE_INIT(IndentationError);
-    PRE_INIT(TargetScopeError);
     PRE_INIT(TabError);
     PRE_INIT(LookupError);
     PRE_INIT(IndexError);
@@ -2680,7 +2672,6 @@ _PyBuiltins_AddExceptions(PyObject *bltinmod)
     POST_INIT(AttributeError);
     POST_INIT(SyntaxError);
     POST_INIT(IndentationError);
-    POST_INIT(TargetScopeError);
     POST_INIT(TabError);
     POST_INIT(LookupError);
     POST_INIT(IndexError);

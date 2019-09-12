@@ -66,12 +66,11 @@ This module provides an interface to the mechanisms used to implement the
    contained in the list returned by :func:`get_suffixes` describing the kind of
    module found.
 
-   If the module does not live in a file, the returned *file* is ``None``,
-   *pathname* is the empty string, and the *description* tuple contains empty
-   strings for its suffix and mode; the module type is indicated as given in
-   parentheses above.  If the search is unsuccessful, :exc:`ImportError` is
-   raised.  Other exceptions indicate problems with the arguments or
-   environment.
+   If the module is built-in or frozen then *file* and *pathname* are both ``None``
+   and the *description* tuple contains empty strings for its suffix and mode;
+   the module type is indicated as given in parentheses above.  If the search
+   is unsuccessful, :exc:`ImportError` is raised.  Other exceptions indicate
+   problems with the arguments or environment.
 
    If the module is a package, *file* is ``None``, *pathname* is the package
    path and the last item in the *description* tuple is :const:`PKG_DIRECTORY`.

@@ -117,7 +117,7 @@ the same library that the Python runtime is using.
    closed before PyRun_SimpleFileExFlags returns.
 
    .. note::
-      On Windows, *fp* should be opened as binary mode (e.g. ``fopen(filename, "rb")``.
+      On Windows, *fp* should be opened as binary mode (e.g. ``fopen(filename, "rb")``).
       Otherwise, Python may not handle script file with LF line ending correctly.
 
 
@@ -335,12 +335,12 @@ the same library that the Python runtime is using.
 
 .. c:function:: PyObject* PyEval_EvalFrameEx(PyFrameObject *f, int throwflag)
 
-   This is the main, unvarnished function of Python interpretation.  It is
-   literally 2000 lines long.  The code object associated with the execution
-   frame *f* is executed, interpreting bytecode and executing calls as needed.
-   The additional *throwflag* parameter can mostly be ignored - if true, then
-   it causes an exception to immediately be thrown; this is used for the
-   :meth:`~generator.throw` methods of generator objects.
+   This is the main, unvarnished function of Python interpretation.  The code
+   object associated with the execution frame *f* is executed, interpreting
+   bytecode and executing calls as needed.  The additional *throwflag*
+   parameter can mostly be ignored - if true, then it causes an exception
+   to immediately be thrown; this is used for the :meth:`~generator.throw`
+   methods of generator objects.
 
    .. versionchanged:: 3.4
       This function now includes a debug assertion to help ensure that it
@@ -388,11 +388,22 @@ the same library that the Python runtime is using.
 
    Whenever ``PyCompilerFlags *flags`` is *NULL*, :attr:`cf_flags` is treated as
    equal to ``0``, and any modification due to ``from __future__ import`` is
-   discarded.  ::
+   discarded.
 
-      struct PyCompilerFlags {
-          int cf_flags;
-      }
+   .. c:member:: int cf_flags
+
+      Compiler flags.
+
+   .. c:member:: int cf_feature_version
+
+      *cf_feature_version* is the minor Python version. It should be
+      initialized to ``PY_MINOR_VERSION``.
+
+      The field is ignored by default, it is used if and only if
+      ``PyCF_ONLY_AST`` flag is set in *cf_flags*.
+
+   .. versionchanged:: 3.8
+      Added *cf_feature_version* field.
 
 
 .. c:var:: int CO_FUTURE_DIVISION

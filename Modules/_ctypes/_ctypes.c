@@ -165,10 +165,10 @@ static PyTypeObject DictRemover_Type = {
     sizeof(DictRemoverObject),                  /* tp_basicsize */
     0,                                          /* tp_itemsize */
     _DictRemover_dealloc,                       /* tp_dealloc */
-    0,                                          /* tp_print */
+    0,                                          /* tp_vectorcall_offset */
     0,                                          /* tp_getattr */
     0,                                          /* tp_setattr */
-    0,                                          /* tp_reserved */
+    0,                                          /* tp_as_async */
     0,                                          /* tp_repr */
     0,                                          /* tp_as_number */
     0,                                          /* tp_as_sequence */
@@ -392,6 +392,35 @@ _ctypes_alloc_format_string_with_shape(int ndim, const Py_ssize_t *shape,
     return result;
 }
 
+/* StructParamObject and StructParam_Type are used in _ctypes_callproc()
+   for argument.keep to call PyMem_Free(ptr) on Py_DECREF(argument).
+
+   StructUnionType_paramfunc() creates such object when a ctypes Structure is
+   passed by copy to a C function. */
+typedef struct {
+    PyObject_HEAD
+    void *ptr;
+} StructParamObject;
+
+
+static void
+StructParam_dealloc(PyObject *myself)
+{
+    StructParamObject *self = (StructParamObject *)myself;
+    PyMem_Free(self->ptr);
+    Py_TYPE(self)->tp_free(myself);
+}
+
+
+static PyTypeObject StructParam_Type = {
+    PyVarObject_HEAD_INIT(NULL, 0)
+    .tp_name = "_ctypes.StructParam_Type",
+    .tp_basicsize = sizeof(StructParamObject),
+    .tp_dealloc = StructParam_dealloc,
+    .tp_flags = Py_TPFLAGS_DEFAULT,
+};
+
+
 /*
   PyCStructType_Type - a meta type/class.  Creating a new class using this one as
   __metaclass__ will call the constructor StructUnionType_new.  It replaces the
@@ -403,35 +432,47 @@ static PyCArgObject *
 StructUnionType_paramfunc(CDataObject *self)
 {
     PyCArgObject *parg;
-    CDataObject *copied_self;
+    PyObject *obj;
     StgDictObject *stgdict;
+    void *ptr;
 
     if ((size_t)self->b_size > sizeof(void*)) {
-        void *new_ptr = PyMem_Malloc(self->b_size);
-        if (new_ptr == NULL)
+        ptr = PyMem_Malloc(self->b_size);
+        if (ptr == NULL) {
             return NULL;
-        memcpy(new_ptr, self->b_ptr, self->b_size);
-        copied_self = (CDataObject *)PyCData_AtAddress(
-            (PyObject *)Py_TYPE(self), new_ptr);
-        copied_self->b_needsfree = 1;
+        }
+        memcpy(ptr, self->b_ptr, self->b_size);
+
+        /* Create a Python object which calls PyMem_Free(ptr) in
+           its deallocator. The object will be destroyed
+           at _ctypes_callproc() cleanup. */
+        obj = (&StructParam_Type)->tp_alloc(&StructParam_Type, 0);
+        if (obj == NULL) {
+            PyMem_Free(ptr);
+            return NULL;
+        }
+
+        StructParamObject *struct_param = (StructParamObject *)obj;
+        struct_param->ptr = ptr;
     } else {
-        copied_self = self;
-        Py_INCREF(copied_self);
+        ptr = self->b_ptr;
+        obj = (PyObject *)self;
+        Py_INCREF(obj);
     }
 
     parg = PyCArgObject_new();
     if (parg == NULL) {
-        Py_DECREF(copied_self);
+        Py_DECREF(obj);
         return NULL;
     }
 
     parg->tag = 'V';
-    stgdict = PyObject_stgdict((PyObject *)copied_self);
+    stgdict = PyObject_stgdict((PyObject *)self);
     assert(stgdict); /* Cannot be NULL for structure/union instances */
     parg->pffi_type = &stgdict->ffi_type_pointer;
-    parg->value.p = copied_self->b_ptr;
-    parg->size = copied_self->b_size;
-    parg->obj = (PyObject *)copied_self;
+    parg->value.p = ptr;
+    parg->size = self->b_size;
+    parg->obj = obj;
     return parg;
 }
 
@@ -855,10 +896,10 @@ PyTypeObject PyCStructType_Type = {
     0,                                          /* tp_basicsize */
     0,                                          /* tp_itemsize */
     0,                                          /* tp_dealloc */
-    0,                                          /* tp_print */
+    0,                                          /* tp_vectorcall_offset */
     0,                                          /* tp_getattr */
     0,                                          /* tp_setattr */
-    0,                                          /* tp_reserved */
+    0,                                          /* tp_as_async */
     0,                                          /* tp_repr */
     0,                                          /* tp_as_number */
     &CDataType_as_sequence,                     /* tp_as_sequence */
@@ -897,10 +938,10 @@ static PyTypeObject UnionType_Type = {
     0,                                          /* tp_basicsize */
     0,                                          /* tp_itemsize */
     0,                                          /* tp_dealloc */
-    0,                                          /* tp_print */
+    0,                                          /* tp_vectorcall_offset */
     0,                                          /* tp_getattr */
     0,                                          /* tp_setattr */
-    0,                                          /* tp_reserved */
+    0,                                          /* tp_as_async */
     0,                                          /* tp_repr */
     0,                                          /* tp_as_number */
     &CDataType_as_sequence,             /* tp_as_sequence */
@@ -1001,8 +1042,8 @@ PyCPointerType_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
   stgdict items size, align, length contain info about pointers itself,
   stgdict->proto has info about the pointed to type!
 */
-    stgdict = (StgDictObject *)PyObject_CallObject(
-        (PyObject *)&PyCStgDict_Type, NULL);
+    stgdict = (StgDictObject *)_PyObject_CallNoArg(
+        (PyObject *)&PyCStgDict_Type);
     if (!stgdict)
         return NULL;
     stgdict->size = sizeof(void *);
@@ -1127,7 +1168,11 @@ PyCPointerType_from_param(PyObject *type, PyObject *value)
         */
         StgDictObject *v = PyObject_stgdict(value);
         assert(v); /* Cannot be NULL for pointer or array objects */
-        if (PyObject_IsSubclass(v->proto, typedict->proto)) {
+        int ret = PyObject_IsSubclass(v->proto, typedict->proto);
+        if (ret < 0) {
+            return NULL;
+        }
+        if (ret) {
             Py_INCREF(value);
             return value;
         }
@@ -1151,10 +1196,10 @@ PyTypeObject PyCPointerType_Type = {
     0,                                          /* tp_basicsize */
     0,                                          /* tp_itemsize */
     0,                                          /* tp_dealloc */
-    0,                                          /* tp_print */
+    0,                                          /* tp_vectorcall_offset */
     0,                                          /* tp_getattr */
     0,                                          /* tp_setattr */
-    0,                                          /* tp_reserved */
+    0,                                          /* tp_as_async */
     0,                                          /* tp_repr */
     0,                                          /* tp_as_number */
     &CDataType_as_sequence,             /* tp_as_sequence */
@@ -1489,8 +1534,8 @@ PyCArrayType_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
         goto error;
     }
 
-    stgdict = (StgDictObject *)PyObject_CallObject(
-        (PyObject *)&PyCStgDict_Type, NULL);
+    stgdict = (StgDictObject *)_PyObject_CallNoArg(
+        (PyObject *)&PyCStgDict_Type);
     if (!stgdict)
         goto error;
 
@@ -1518,7 +1563,7 @@ PyCArrayType_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
     }
 
     itemsize = itemdict->size;
-    if (length > PY_SSIZE_T_MAX / itemsize) {
+    if (itemsize != 0 && length > PY_SSIZE_T_MAX / itemsize) {
         PyErr_SetString(PyExc_OverflowError,
                         "array too large");
         goto error;
@@ -1573,10 +1618,10 @@ PyTypeObject PyCArrayType_Type = {
     0,                                          /* tp_basicsize */
     0,                                          /* tp_itemsize */
     0,                                          /* tp_dealloc */
-    0,                                          /* tp_print */
+    0,                                          /* tp_vectorcall_offset */
     0,                                          /* tp_getattr */
     0,                                          /* tp_setattr */
-    0,                                          /* tp_reserved */
+    0,                                          /* tp_as_async */
     0,                                          /* tp_repr */
     0,                                          /* tp_as_number */
     &CDataType_as_sequence,                     /* tp_as_sequence */
@@ -1946,8 +1991,8 @@ static PyObject *CreateSwappedType(PyTypeObject *type, PyObject *args, PyObject 
     if (result == NULL)
         return NULL;
 
-    stgdict = (StgDictObject *)PyObject_CallObject(
-        (PyObject *)&PyCStgDict_Type, NULL);
+    stgdict = (StgDictObject *)_PyObject_CallNoArg(
+        (PyObject *)&PyCStgDict_Type);
     if (!stgdict) {
         Py_DECREF(result);
         return NULL;
@@ -2060,8 +2105,8 @@ PyCSimpleType_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
         goto error;
     }
 
-    stgdict = (StgDictObject *)PyObject_CallObject(
-        (PyObject *)&PyCStgDict_Type, NULL);
+    stgdict = (StgDictObject *)_PyObject_CallNoArg(
+        (PyObject *)&PyCStgDict_Type);
     if (!stgdict)
         goto error;
 
@@ -2267,10 +2312,10 @@ PyTypeObject PyCSimpleType_Type = {
     0,                                          /* tp_basicsize */
     0,                                          /* tp_itemsize */
     0,                                          /* tp_dealloc */
-    0,                                          /* tp_print */
+    0,                                          /* tp_vectorcall_offset */
     0,                                          /* tp_getattr */
     0,                                          /* tp_setattr */
-    0,                                          /* tp_reserved */
+    0,                                          /* tp_as_async */
     0,                                          /* tp_repr */
     0,                                          /* tp_as_number */
     &CDataType_as_sequence,             /* tp_as_sequence */
@@ -2454,8 +2499,8 @@ PyCFuncPtrType_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
     PyTypeObject *result;
     StgDictObject *stgdict;
 
-    stgdict = (StgDictObject *)PyObject_CallObject(
-        (PyObject *)&PyCStgDict_Type, NULL);
+    stgdict = (StgDictObject *)_PyObject_CallNoArg(
+        (PyObject *)&PyCStgDict_Type);
     if (!stgdict)
         return NULL;
 
@@ -2503,10 +2548,10 @@ PyTypeObject PyCFuncPtrType_Type = {
     0,                                          /* tp_basicsize */
     0,                                          /* tp_itemsize */
     0,                                          /* tp_dealloc */
-    0,                                          /* tp_print */
+    0,                                          /* tp_vectorcall_offset */
     0,                                          /* tp_getattr */
     0,                                          /* tp_setattr */
-    0,                                          /* tp_reserved */
+    0,                                          /* tp_as_async */
     0,                                          /* tp_repr */
     0,                                          /* tp_as_number */
     &CDataType_as_sequence,                     /* tp_as_sequence */
@@ -2808,10 +2853,10 @@ PyTypeObject PyCData_Type = {
     sizeof(CDataObject),                        /* tp_basicsize */
     0,                                          /* tp_itemsize */
     PyCData_dealloc,                                    /* tp_dealloc */
-    0,                                          /* tp_print */
+    0,                                          /* tp_vectorcall_offset */
     0,                                          /* tp_getattr */
     0,                                          /* tp_setattr */
-    0,                                          /* tp_reserved */
+    0,                                          /* tp_as_async */
     0,                                          /* tp_repr */
     0,                                          /* tp_as_number */
     0,                                          /* tp_as_sequence */
@@ -3974,7 +4019,7 @@ _build_result(PyObject *result, PyObject *callargs,
             _Py_IDENTIFIER(__ctypes_from_outparam__);
 
             v = PyTuple_GET_ITEM(callargs, i);
-            v = _PyObject_CallMethodId(v, &PyId___ctypes_from_outparam__, NULL);
+            v = _PyObject_CallMethodIdNoArgs(v, &PyId___ctypes_from_outparam__);
             if (v == NULL || numretvals == 1) {
                 Py_DECREF(callargs);
                 return v;
@@ -4201,10 +4246,10 @@ PyTypeObject PyCFuncPtr_Type = {
     sizeof(PyCFuncPtrObject),                           /* tp_basicsize */
     0,                                          /* tp_itemsize */
     (destructor)PyCFuncPtr_dealloc,             /* tp_dealloc */
-    0,                                          /* tp_print */
+    0,                                          /* tp_vectorcall_offset */
     0,                                          /* tp_getattr */
     0,                                          /* tp_setattr */
-    0,                                          /* tp_reserved */
+    0,                                          /* tp_as_async */
     (reprfunc)PyCFuncPtr_repr,                  /* tp_repr */
     &PyCFuncPtr_as_number,                      /* tp_as_number */
     0,                                          /* tp_as_sequence */
@@ -4355,10 +4400,10 @@ static PyTypeObject Struct_Type = {
     sizeof(CDataObject),                        /* tp_basicsize */
     0,                                          /* tp_itemsize */
     0,                                          /* tp_dealloc */
-    0,                                          /* tp_print */
+    0,                                          /* tp_vectorcall_offset */
     0,                                          /* tp_getattr */
     0,                                          /* tp_setattr */
-    0,                                          /* tp_reserved */
+    0,                                          /* tp_as_async */
     0,                                          /* tp_repr */
     0,                                          /* tp_as_number */
     0,                                          /* tp_as_sequence */
@@ -4397,10 +4442,10 @@ static PyTypeObject Union_Type = {
     sizeof(CDataObject),                        /* tp_basicsize */
     0,                                          /* tp_itemsize */
     0,                                          /* tp_dealloc */
-    0,                                          /* tp_print */
+    0,                                          /* tp_vectorcall_offset */
     0,                                          /* tp_getattr */
     0,                                          /* tp_setattr */
-    0,                                          /* tp_reserved */
+    0,                                          /* tp_as_async */
     0,                                          /* tp_repr */
     0,                                          /* tp_as_number */
     0,                                          /* tp_as_sequence */
@@ -4713,10 +4758,10 @@ PyTypeObject PyCArray_Type = {
     sizeof(CDataObject),                        /* tp_basicsize */
     0,                                          /* tp_itemsize */
     0,                                          /* tp_dealloc */
-    0,                                          /* tp_print */
+    0,                                          /* tp_vectorcall_offset */
     0,                                          /* tp_getattr */
     0,                                          /* tp_setattr */
-    0,                                          /* tp_reserved */
+    0,                                          /* tp_as_async */
     0,                                          /* tp_repr */
     0,                                          /* tp_as_number */
     &Array_as_sequence,                         /* tp_as_sequence */
@@ -4932,10 +4977,10 @@ static PyTypeObject Simple_Type = {
     sizeof(CDataObject),                        /* tp_basicsize */
     0,                                          /* tp_itemsize */
     0,                                          /* tp_dealloc */
-    0,                                          /* tp_print */
+    0,                                          /* tp_vectorcall_offset */
     0,                                          /* tp_getattr */
     0,                                          /* tp_setattr */
-    0,                                          /* tp_reserved */
+    0,                                          /* tp_as_async */
     (reprfunc)&Simple_repr,                     /* tp_repr */
     &Simple_as_number,                          /* tp_as_number */
     0,                                          /* tp_as_sequence */
@@ -5154,7 +5199,8 @@ Pointer_subscript(PyObject *myself, PyObject *item)
         PyObject *np;
         StgDictObject *stgdict, *itemdict;
         PyObject *proto;
-        Py_ssize_t i, len, cur;
+        Py_ssize_t i, len;
+        size_t cur;
 
         /* Since pointers have no length, and we want to apply
            different semantics to negative indices than normal
@@ -5315,10 +5361,10 @@ PyTypeObject PyCPointer_Type = {
     sizeof(CDataObject),                        /* tp_basicsize */
     0,                                          /* tp_itemsize */
     0,                                          /* tp_dealloc */
-    0,                                          /* tp_print */
+    0,                                          /* tp_vectorcall_offset */
     0,                                          /* tp_getattr */
     0,                                          /* tp_setattr */
-    0,                                          /* tp_reserved */
+    0,                                          /* tp_as_async */
     0,                                          /* tp_repr */
     &Pointer_as_number,                         /* tp_as_number */
     &Pointer_as_sequence,                       /* tp_as_sequence */
@@ -5406,10 +5452,10 @@ static PyTypeObject PyComError_Type = {
     sizeof(PyBaseExceptionObject), /* tp_basicsize */
     0,                          /* tp_itemsize */
     0,                          /* tp_dealloc */
-    0,                          /* tp_print */
+    0,                          /* tp_vectorcall_offset */
     0,                          /* tp_getattr */
     0,                          /* tp_setattr */
-    0,                          /* tp_reserved */
+    0,                          /* tp_as_async */
     0,                          /* tp_repr */
     0,                          /* tp_as_number */
     0,                          /* tp_as_sequence */
@@ -5699,6 +5745,10 @@ PyInit__ctypes(void)
     DictRemover_Type.tp_new = PyType_GenericNew;
     if (PyType_Ready(&DictRemover_Type) < 0)
         return NULL;
+
+    if (PyType_Ready(&StructParam_Type) < 0) {
+        return NULL;
+    }
 
 #ifdef MS_WIN32
     if (create_comerror() < 0)

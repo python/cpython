@@ -128,10 +128,18 @@ look at that next. Be sure to try the following in a newly-started Python
 interpreter, and don't just continue from the session described above::
 
    import logging
-   logging.basicConfig(filename='example.log',level=logging.DEBUG)
+   logging.basicConfig(filename='example.log', encoding='utf-8', level=logging.DEBUG)
    logging.debug('This message should go to the log file')
    logging.info('So should this')
    logging.warning('And this, too')
+   logging.error('And non-ASCII stuff, too, like Øresund and Malmö')
+
+.. versionchanged:: 3.9
+   The *encoding* argument was added. In earlier Python versions, or if not
+   specified, the encoding used is the default value used by :func:`open`. While
+   not shown in the above example, an *errors* argument can also now be passed,
+   which determines how encoding errors are handled. For available values and
+   the default, see the documentation for :func:`open`.
 
 And now if we open the file and look at what we have, we should find the log
 messages:
@@ -141,6 +149,7 @@ messages:
    DEBUG:root:This message should go to the log file
    INFO:root:So should this
    WARNING:root:And this, too
+   ERROR:root:And non-ASCII stuff, too, like Øresund and Malmö
 
 This example also shows how you can set the logging level which acts as the
 threshold for tracking. In this case, because we set the threshold to

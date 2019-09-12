@@ -1,0 +1,2 @@
+Make test_ssl pass with LibreSSL. LibreSSL handles minimum and maximum TLS
+version differently than OpenSSL.

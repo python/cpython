@@ -886,6 +886,15 @@ class PurePath(object):
         return self._from_parsed_parts('', root if n == 1 else '',
                                        abs_parts[n:])
 
+    def is_relative_to(self, *other):
+        """Return True if the path is relative to another path or False.
+        """
+        try:
+            self.relative_to(*other)
+            return True
+        except ValueError:
+            return False
+
     @property
     def parts(self):
         """An object providing sequence-like access to the
@@ -907,10 +916,16 @@ class PurePath(object):
         return self._make_child(args)
 
     def __truediv__(self, key):
-        return self._make_child((key,))
+        try:
+            return self._make_child((key,))
+        except TypeError:
+            return NotImplemented
 
     def __rtruediv__(self, key):
-        return self._from_parts([key] + self._parts)
+        try:
+            return self._from_parts([key] + self._parts)
+        except TypeError:
+            return NotImplemented
 
     @property
     def parent(self):
@@ -1326,20 +1341,24 @@ class Path(PurePath):
 
     def rename(self, target):
         """
-        Rename this path to the given path.
+        Rename this path to the given path,
+        and return a new Path instance pointing to the given path.
         """
         if self._closed:
             self._raise_closed()
         self._accessor.rename(self, target)
+        return self.__class__(target)
 
     def replace(self, target):
         """
         Rename this path to the given path, clobbering the existing
-        destination if it exists.
+        destination if it exists, and return a new Path instance
+        pointing to the given path.
         """
         if self._closed:
             self._raise_closed()
         self._accessor.replace(self, target)
+        return self.__class__(target)
 
     def symlink_to(self, target, target_is_directory=False):
         """

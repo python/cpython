@@ -347,7 +347,8 @@ functions.
    the class uses the Windows ``CreateProcess()`` function.  The arguments to
    :class:`Popen` are as follows.
 
-   *args* should be a sequence of program arguments or else a single string.
+   *args* should be a sequence of program arguments or else a single string
+   or :term:`path-like object`.
    By default, the program to execute is the first item in *args* if *args* is
    a sequence.  If *args* is a string, the interpretation is
    platform-dependent and described below.  See the *shell* and *executable*
@@ -380,6 +381,15 @@ functions.
    On Windows, if *args* is a sequence, it will be converted to a string in a
    manner described in :ref:`converting-argument-sequence`.  This is because
    the underlying ``CreateProcess()`` operates on strings.
+
+   .. versionchanged:: 3.6
+      *args* parameter accepts a :term:`path-like object` if *shell* is
+      ``False`` and a sequence containing path-like objects on POSIX.
+
+   .. versionchanged:: 3.8
+      *args* parameter accepts a :term:`path-like object` if *shell* is
+      ``False`` and a sequence containing bytes and path-like objects
+      on Windows.
 
    The *shell* argument (which defaults to ``False``) specifies whether to use
    the shell as the program to execute.  If *shell* is ``True``, it is
@@ -436,6 +446,13 @@ functions.
    :program:`ps`.  If ``shell=True``, on POSIX the *executable* argument
    specifies a replacement shell for the default :file:`/bin/sh`.
 
+   .. versionchanged:: 3.6
+      *executable* parameter accepts a :term:`path-like object` on POSIX.
+
+   .. versionchanged:: 3.8
+      *executable* parameter accepts a bytes and :term:`path-like object`
+      on Windows.
+
    *stdin*, *stdout* and *stderr* specify the executed program's standard input,
    standard output and standard error file handles, respectively.  Valid values
    are :data:`PIPE`, :data:`DEVNULL`, an existing file descriptor (a positive
@@ -466,6 +483,13 @@ functions.
       The *start_new_session* parameter can take the place of a previously
       common use of *preexec_fn* to call os.setsid() in the child.
 
+   .. versionchanged:: 3.8
+
+      The *preexec_fn* parameter is no longer supported in subinterpreters.
+      The use of the parameter in a subinterpreter raises
+      :exc:`RuntimeError`. The new restriction may affect applications that
+      are deployed in mod_wsgi, uWSGI, and other embedded environments.
+
    If *close_fds* is true, all file descriptors except :const:`0`, :const:`1` and
    :const:`2` will be closed before the child process is executed.  Otherwise
    when *close_fds* is false, file descriptors obey their inheritable flag
@@ -492,13 +516,19 @@ functions.
       The *pass_fds* parameter was added.
 
    If *cwd* is not ``None``, the function changes the working directory to
-   *cwd* before executing the child.  *cwd* can be a :class:`str` and
+   *cwd* before executing the child.  *cwd* can be a string, bytes or
    :term:`path-like <path-like object>` object.  In particular, the function
    looks for *executable* (or for the first item in *args*) relative to *cwd*
    if the executable path is a relative path.
 
    .. versionchanged:: 3.6
-      *cwd* parameter accepts a :term:`path-like object`.
+      *cwd* parameter accepts a :term:`path-like object` on POSIX.
+
+   .. versionchanged:: 3.7
+      *cwd* parameter accepts a :term:`path-like object` on Windows.
+
+   .. versionchanged:: 3.8
+      *cwd* parameter accepts a bytes object on Windows.
 
    If *restore_signals* is true (the default) all signals that Python has set to
    SIG_IGN are restored to SIG_DFL in the child process before the exec.
@@ -561,6 +591,13 @@ functions.
 
       with Popen(["ifconfig"], stdout=PIPE) as proc:
           log.write(proc.stdout.read())
+
+   .. audit-event:: subprocess.Popen executable,args,cwd,env subprocess.Popen
+
+      Popen and the other functions in this module that use it raise an
+      :ref:`auditing event <auditing>` ``subprocess.Popen`` with arguments
+      ``executable``, ``args``, ``cwd``, ``env``. The value for ``args``
+      may be a single string or a list of strings, depending on platform.
 
    .. versionchanged:: 3.2
       Added context manager support.
@@ -1011,7 +1048,7 @@ calls these functions.
    Run the command described by *args*.  Wait for command to complete, then
    return the :attr:`~Popen.returncode` attribute.
 
-   Code needing to capture stdout or stderr should use :func:`run` instead:
+   Code needing to capture stdout or stderr should use :func:`run` instead::
 
        run(...).returncode
 
@@ -1039,7 +1076,7 @@ calls these functions.
    :exc:`CalledProcessError` object will have the return code in the
    :attr:`~CalledProcessError.returncode` attribute.
 
-   Code needing to capture stdout or stderr should use :func:`run` instead:
+   Code needing to capture stdout or stderr should use :func:`run` instead::
 
        run(..., check=True)
 
@@ -1136,12 +1173,12 @@ In the following examples, we assume that the relevant functions have already
 been imported from the :mod:`subprocess` module.
 
 
-Replacing /bin/sh shell backquote
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Replacing :program:`/bin/sh` shell command substitution
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 .. code-block:: bash
 
-   output=`mycmd myarg`
+   output=$(mycmd myarg)
 
 becomes::
 
@@ -1152,7 +1189,7 @@ Replacing shell pipeline
 
 .. code-block:: bash
 
-   output=`dmesg | grep hda`
+   output=$(dmesg | grep hda)
 
 becomes::
 
@@ -1161,15 +1198,15 @@ becomes::
    p1.stdout.close()  # Allow p1 to receive a SIGPIPE if p2 exits.
    output = p2.communicate()[0]
 
-The p1.stdout.close() call after starting the p2 is important in order for p1
-to receive a SIGPIPE if p2 exits before p1.
+The ``p1.stdout.close()`` call after starting the p2 is important in order for
+p1 to receive a SIGPIPE if p2 exits before p1.
 
 Alternatively, for trusted input, the shell's own pipeline support may still
 be used directly:
 
 .. code-block:: bash
 
-   output=`dmesg | grep hda`
+   output=$(dmesg | grep hda)
 
 becomes::
 

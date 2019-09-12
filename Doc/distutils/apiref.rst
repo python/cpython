@@ -6,12 +6,12 @@ API Reference
 
 .. seealso::
 
-   `New and changed setup.py arguments in setuptools <setuptools-setup-py>`_
+   `New and changed setup.py arguments in setuptools`_
       The ``setuptools`` project adds new capabilities to the ``setup`` function
       and other APIs, makes the API consistent across different Python versions,
       and is hence recommended over using ``distutils`` directly.
 
-.. _setuptools-setup-py: https://setuptools.readthedocs.io/en/latest/setuptools.html#new-and-changed-setup-keywords
+.. _New and changed setup.py arguments in setuptools: https://setuptools.readthedocs.io/en/latest/setuptools.html#new-and-changed-setup-keywords
 
 .. include:: ./_setuptools_disclaimer.rst
 
@@ -1862,6 +1862,9 @@ Subclasses of :class:`Command` must define the following methods.
 
 .. module:: distutils.command.bdist_wininst
    :synopsis: Build a Windows installer
+
+.. deprecated:: 3.8
+   Use bdist_wheel (wheel packages) instead.
 
 
 .. % todo

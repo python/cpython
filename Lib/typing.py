@@ -35,6 +35,7 @@ __all__ = [
     'Callable',
     'ClassVar',
     'Final',
+    'ForwardRef',
     'Generic',
     'Literal',
     'Optional',
@@ -81,11 +82,13 @@ __all__ = [
     'SupportsRound',
 
     # Concrete collection types.
+    'ChainMap',
     'Counter',
     'Deque',
     'Dict',
     'DefaultDict',
     'List',
+    'OrderedDict',
     'Set',
     'FrozenSet',
     'NamedTuple',  # Not really a type.
@@ -96,6 +99,8 @@ __all__ = [
     'AnyStr',
     'cast',
     'final',
+    'get_args',
+    'get_origin',
     'get_type_hints',
     'NewType',
     'no_type_check',
@@ -278,7 +283,7 @@ class _Final:
 
     __slots__ = ('__weakref__',)
 
-    def __init_subclass__(self, *args, **kwds):
+    def __init_subclass__(self, /, *args, **kwds):
         if '_root' not in kwds:
             raise TypeError("Cannot subclass special typing classes")
 
@@ -984,10 +989,13 @@ def _allow_reckless_class_cheks():
         return True
 
 
-_PROTO_WHITELIST = ['Callable', 'Awaitable',
-                    'Iterable', 'Iterator', 'AsyncIterable', 'AsyncIterator',
-                    'Hashable', 'Sized', 'Container', 'Collection', 'Reversible',
-                    'ContextManager', 'AsyncContextManager']
+_PROTO_WHITELIST = {
+    'collections.abc': [
+        'Callable', 'Awaitable', 'Iterable', 'Iterator', 'AsyncIterable',
+        'Hashable', 'Sized', 'Container', 'Collection', 'Reversible',
+    ],
+    'contextlib': ['AbstractContextManager', 'AbstractAsyncContextManager'],
+}
 
 
 class _ProtocolMeta(ABCMeta):
@@ -1100,7 +1108,8 @@ class Protocol(Generic, metaclass=_ProtocolMeta):
         # ... otherwise check consistency of bases, and prohibit instantiation.
         for base in cls.__bases__:
             if not (base in (object, Generic) or
-                    base.__module__ == 'collections.abc' and base.__name__ in _PROTO_WHITELIST or
+                    base.__module__ in _PROTO_WHITELIST and
+                    base.__name__ in _PROTO_WHITELIST[base.__module__] or
                     issubclass(base, Generic) and base._is_protocol):
                 raise TypeError('Protocols can only inherit from other'
                                 ' protocols, got %r' % base)
@@ -1248,6 +1257,46 @@ def get_type_hints(obj, globalns=None, localns=None):
             value = Optional[value]
         hints[name] = value
     return hints
+
+
+def get_origin(tp):
+    """Get the unsubscripted version of a type.
+
+    This supports generic types, Callable, Tuple, Union, Literal, Final and ClassVar.
+    Return None for unsupported types. Examples::
+
+        get_origin(Literal[42]) is Literal
+        get_origin(int) is None
+        get_origin(ClassVar[int]) is ClassVar
+        get_origin(Generic) is Generic
+        get_origin(Generic[T]) is Generic
+        get_origin(Union[T, int]) is Union
+        get_origin(List[Tuple[T, T]][int]) == list
+    """
+    if isinstance(tp, _GenericAlias):
+        return tp.__origin__
+    if tp is Generic:
+        return Generic
+    return None
+
+
+def get_args(tp):
+    """Get type arguments with all substitutions performed.
+
+    For unions, basic simplifications used by Union constructor are performed.
+    Examples::
+        get_args(Dict[str, int]) == (str, int)
+        get_args(int) == ()
+        get_args(Union[int, Union[T, int], str][int]) == (int, str)
+        get_args(Union[int, Tuple[T, int]][str]) == (int, Tuple[str, int])
+        get_args(Callable[[], T][int]) == ([], int)
+    """
+    if isinstance(tp, _GenericAlias):
+        res = tp.__args__
+        if get_origin(tp) is collections.abc.Callable and res[0] is not Ellipsis:
+            res = (list(res[:-1]), res[-1])
+        return res
+    return ()
 
 
 def no_type_check(arg):

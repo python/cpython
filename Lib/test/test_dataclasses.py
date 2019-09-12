@@ -1097,6 +1097,12 @@ class TestCase(unittest.TestCase):
         c = C(init_param=10)
         self.assertEqual(c.x, 20)
 
+    def test_init_var_preserve_type(self):
+        self.assertEqual(InitVar[int].type, int)
+
+        # Make sure the repr is correct.
+        self.assertEqual(repr(InitVar[int]), 'dataclasses.InitVar[int]')
+
     def test_init_var_inheritance(self):
         # Note that this deliberately tests that a dataclass need not
         #  have a __post_init__ function if it has an InitVar field.
@@ -1293,6 +1299,32 @@ class TestCase(unittest.TestCase):
         self.assertFalse(is_dataclass(c.x))
         self.assertTrue(is_dataclass(d.d))
         self.assertFalse(is_dataclass(d.e))
+
+    def test_is_dataclass_when_getattr_always_returns(self):
+        # See bpo-37868.
+        class A:
+            def __getattr__(self, key):
+                return 0
+        self.assertFalse(is_dataclass(A))
+        a = A()
+
+        # Also test for an instance attribute.
+        class B:
+            pass
+        b = B()
+        b.__dataclass_fields__ = []
+
+        for obj in a, b:
+            with self.subTest(obj=obj):
+                self.assertFalse(is_dataclass(obj))
+
+                # Indirect tests for _is_dataclass_instance().
+                with self.assertRaisesRegex(TypeError, 'should be called on dataclass instances'):
+                    asdict(obj)
+                with self.assertRaisesRegex(TypeError, 'should be called on dataclass instances'):
+                    astuple(obj)
+                with self.assertRaisesRegex(TypeError, 'should be called on dataclass instances'):
+                    replace(obj, x=0)
 
     def test_helper_fields_with_class_instance(self):
         # Check that we can call fields() on either a class or instance,
@@ -3037,11 +3069,11 @@ class TestMakeDataclass(unittest.TestCase):
     def test_non_identifier_field_names(self):
         for field in ['()', 'x,y', '*', '2@3', '', 'little johnny tables']:
             with self.subTest(field=field):
-                with self.assertRaisesRegex(TypeError, 'must be valid identifers'):
+                with self.assertRaisesRegex(TypeError, 'must be valid identifiers'):
                     make_dataclass('C', ['a', field])
-                with self.assertRaisesRegex(TypeError, 'must be valid identifers'):
+                with self.assertRaisesRegex(TypeError, 'must be valid identifiers'):
                     make_dataclass('C', [field])
-                with self.assertRaisesRegex(TypeError, 'must be valid identifers'):
+                with self.assertRaisesRegex(TypeError, 'must be valid identifiers'):
                     make_dataclass('C', [field, 'a'])
 
     def test_underscore_field_names(self):

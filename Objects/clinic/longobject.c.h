@@ -74,7 +74,7 @@ int___format__(PyObject *self, PyObject *arg)
     PyObject *format_spec;
 
     if (!PyUnicode_Check(arg)) {
-        _PyArg_BadArgument("__format__", 0, "str", arg);
+        _PyArg_BadArgument("__format__", "argument", "str", arg);
         goto exit;
     }
     if (PyUnicode_READY(arg) == -1) {
@@ -227,7 +227,7 @@ int_to_bytes(PyObject *self, PyObject *const *args, Py_ssize_t nargs, PyObject *
         length = ival;
     }
     if (!PyUnicode_Check(args[1])) {
-        _PyArg_BadArgument("to_bytes", 2, "str", args[1]);
+        _PyArg_BadArgument("to_bytes", "argument 'byteorder'", "str", args[1]);
         goto exit;
     }
     if (PyUnicode_READY(args[1]) == -1) {
@@ -293,7 +293,7 @@ int_from_bytes(PyTypeObject *type, PyObject *const *args, Py_ssize_t nargs, PyOb
     }
     bytes_obj = args[0];
     if (!PyUnicode_Check(args[1])) {
-        _PyArg_BadArgument("from_bytes", 2, "str", args[1]);
+        _PyArg_BadArgument("from_bytes", "argument 'byteorder'", "str", args[1]);
         goto exit;
     }
     if (PyUnicode_READY(args[1]) == -1) {
@@ -313,4 +313,4 @@ skip_optional_kwonly:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=709503897c55bca1 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=77bc3b2615822cb8 input=a9049054013a1b77]*/

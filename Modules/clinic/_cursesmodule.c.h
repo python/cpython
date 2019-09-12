@@ -2521,7 +2521,7 @@ _curses_ungetmouse(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
         goto exit;
     }
     if (!PyLong_Check(args[4])) {
-        _PyArg_BadArgument("ungetmouse", 5, "int", args[4]);
+        _PyArg_BadArgument("ungetmouse", "argument 5", "int", args[4]);
         goto exit;
     }
     bstate = PyLong_AsUnsignedLongMask(args[4]);
@@ -3017,7 +3017,7 @@ _curses_setupterm(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyO
             }
         }
         else {
-            _PyArg_BadArgument("setupterm", 1, "str or None", args[0]);
+            _PyArg_BadArgument("setupterm", "argument 'term'", "str or None", args[0]);
             goto exit;
         }
         if (!--noptargs) {
@@ -3326,7 +3326,7 @@ _curses_mousemask(PyObject *module, PyObject *arg)
     unsigned long newmask;
 
     if (!PyLong_Check(arg)) {
-        _PyArg_BadArgument("mousemask", 0, "int", arg);
+        _PyArg_BadArgument("mousemask", "argument", "int", arg);
         goto exit;
     }
     newmask = PyLong_AsUnsignedLongMask(arg);
@@ -4201,7 +4201,7 @@ _curses_tigetflag(PyObject *module, PyObject *arg)
     const char *capname;
 
     if (!PyUnicode_Check(arg)) {
-        _PyArg_BadArgument("tigetflag", 0, "str", arg);
+        _PyArg_BadArgument("tigetflag", "argument", "str", arg);
         goto exit;
     }
     Py_ssize_t capname_length;
@@ -4244,7 +4244,7 @@ _curses_tigetnum(PyObject *module, PyObject *arg)
     const char *capname;
 
     if (!PyUnicode_Check(arg)) {
-        _PyArg_BadArgument("tigetnum", 0, "str", arg);
+        _PyArg_BadArgument("tigetnum", "argument", "str", arg);
         goto exit;
     }
     Py_ssize_t capname_length;
@@ -4287,7 +4287,7 @@ _curses_tigetstr(PyObject *module, PyObject *arg)
     const char *capname;
 
     if (!PyUnicode_Check(arg)) {
-        _PyArg_BadArgument("tigetstr", 0, "str", arg);
+        _PyArg_BadArgument("tigetstr", "argument", "str", arg);
         goto exit;
     }
     Py_ssize_t capname_length;
@@ -4569,4 +4569,4 @@ _curses_use_default_colors(PyObject *module, PyObject *Py_UNUSED(ignored))
 #ifndef _CURSES_USE_DEFAULT_COLORS_METHODDEF
     #define _CURSES_USE_DEFAULT_COLORS_METHODDEF
 #endif /* !defined(_CURSES_USE_DEFAULT_COLORS_METHODDEF) */
-/*[clinic end generated code: output=1350eeb0c1e06af6 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=e5b3502f1d38dff0 input=a9049054013a1b77]*/

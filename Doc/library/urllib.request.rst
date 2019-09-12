@@ -95,10 +95,10 @@ The :mod:`urllib.request` module defines the following functions:
    parameter to ``urllib.urlopen``, can be obtained by using
    :class:`ProxyHandler` objects.
 
-   .. audit-event:: urllib.request "fullurl data headers method"
+   .. audit-event:: urllib.Request fullurl,data,headers,method urllib.request.urlopen
 
-      The default opener raises an :func:`auditing event <sys.audit>`
-      ``urllib.request`` with arguments ``fullurl``, ``data``, ``headers``,
+      The default opener raises an :ref:`auditing event <auditing>`
+      ``urllib.Request`` with arguments ``fullurl``, ``data``, ``headers``,
       ``method`` taken from the request object.
 
    .. versionchanged:: 3.2
@@ -227,7 +227,7 @@ The following classes are provided:
    is not None, ``Content-Type: application/x-www-form-urlencoded`` will
    be added as a default.
 
-   The final two arguments are only of interest for correct handling
+   The next two arguments are only of interest for correct handling
    of third-party HTTP cookies:
 
    *origin_req_host* should be the request-host of the origin
