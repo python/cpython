@@ -1081,8 +1081,6 @@ _PyBytes_FormatEx(const char *format, Py_ssize_t format_len,
 PyObject *_PyBytes_DecodeEscape(const char *s,
                                 Py_ssize_t len,
                                 const char *errors,
-                                Py_ssize_t Py_UNUSED(unicode),
-                                const char *Py_UNUSED(recode_encoding),
                                 const char **first_invalid_escape)
 {
     int c;
@@ -1195,8 +1193,7 @@ PyObject *PyBytes_DecodeEscape(const char *s,
                                 const char *Py_UNUSED(recode_encoding))
 {
     const char* first_invalid_escape;
-    PyObject *result = _PyBytes_DecodeEscape(s, len, errors, 0,
-                                             NULL,
+    PyObject *result = _PyBytes_DecodeEscape(s, len, errors,
                                              &first_invalid_escape);
     if (result == NULL)
         return NULL;
