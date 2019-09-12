@@ -430,11 +430,14 @@ PyThread_free_lock(PyThread_type_lock lock)
     (void) error; /* silence unused-but-set-variable warning */
     dprintf(("PyThread_free_lock(%p) called\n", lock));
 
-    status = pthread_mutex_destroy( &thelock->mut );
-    CHECK_STATUS("pthread_mutex_destroy");
-
+    /* some pthread-like implementations tie the mutex to the cond
+     * and must have the cond destroyed first.
+     */
     status = pthread_cond_destroy( &thelock->lock_released );
     CHECK_STATUS("pthread_cond_destroy");
+
+    status = pthread_mutex_destroy( &thelock->mut );
+    CHECK_STATUS("pthread_mutex_destroy");
 
     free((void *)thelock);
 }
@@ -497,12 +500,12 @@ PyThread_release_lock(PyThread_type_lock lock)
 
     thelock->locked = 0;
 
-    status = pthread_mutex_unlock( &thelock->mut );
-    CHECK_STATUS("pthread_mutex_unlock[3]");
-
     /* wake up someone (anyone, if any) waiting on the lock */
     status = pthread_cond_signal( &thelock->lock_released );
     CHECK_STATUS("pthread_cond_signal");
+
+    status = pthread_mutex_unlock( &thelock->mut );
+    CHECK_STATUS("pthread_mutex_unlock[3]");
 }
 
 #endif /* USE_SEMAPHORES */
