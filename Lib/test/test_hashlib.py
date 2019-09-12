@@ -254,6 +254,9 @@ class HashLibTestCase(unittest.TestCase):
             h = cons()
             if h.name not in self.shakes:
                 continue
+            if HASH is not None and isinstance(h, HASH):
+                # _hashopenssl's take a size_t
+                continue
             for digest in h.digest, h.hexdigest:
                 self.assertRaises(ValueError, digest, -10)
                 for length in large_sizes:
