@@ -1572,14 +1572,35 @@ patch.dict
     :func:`patch.dict` can also be called with arbitrary keyword arguments to set
     values in the dictionary.
 
-    :func:`patch.dict` can be used as a context manager, decorator or class
-    decorator. When used as a class decorator :func:`patch.dict` honours
-    ``patch.TEST_PREFIX`` for choosing which methods to wrap.
-
     .. versionchanged:: 3.8
 
         :func:`patch.dict` now returns the patched dictionary when used as a context
         manager.
+
+:func:`patch.dict` can be used as a context manager, decorator or class
+decorator:
+
+    >>> foo = {}
+    >>> @patch.dict(foo, {'newkey': 'newvalue'})
+    ... def test():
+    ...     assert foo == {'newkey': 'newvalue'}
+    >>> test()
+    >>> assert foo == {}
+
+When used as a class decorator :func:`patch.dict` honours
+``patch.TEST_PREFIX`` (default to ``'test'``) for choosing which methods to wrap:
+
+    >>> import os
+    >>> import unittest
+    >>> from unittest.mock import patch
+    >>> @patch.dict('os.environ', {'newkey': 'newvalue'})
+    ... class TestSample(unittest.TestCase):
+    ...     def test_sample(self):
+    ...         self.assertEqual(os.environ['newkey'], 'newvalue')
+
+If you want to use a different prefix for your test, you can inform the
+patchers of the different prefix by setting ``patch.TEST_PREFIX``. For
+more details about how to change the value of see :ref:`test-prefix`.
 
 :func:`patch.dict` can be used to add members to a dictionary, or simply let a test
 change a dictionary, and ensure the dictionary is restored when the test
@@ -1792,6 +1813,8 @@ builtin :func:`ord`::
     >>> test()
     101
 
+
+.. _test-prefix:
 
 TEST_PREFIX
 ~~~~~~~~~~~
