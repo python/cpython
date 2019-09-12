@@ -1077,52 +1077,10 @@ _PyBytes_FormatEx(const char *format, Py_ssize_t format_len,
     return NULL;
 }
 
-/* Unescape a backslash-escaped string. If unicode is non-zero,
-   the string is a u-literal. If recode_encoding is non-zero,
-   the string is UTF-8 encoded and should be re-encoded in the
-   specified encoding.  */
-
-static char *
-_PyBytes_DecodeEscapeRecode(const char **s, const char *end,
-                            const char *errors, const char *recode_encoding,
-                            _PyBytesWriter *writer, char *p)
-{
-    PyObject *u, *w;
-    const char* t;
-
-    t = *s;
-    /* Decode non-ASCII bytes as UTF-8. */
-    while (t < end && (*t & 0x80))
-        t++;
-    u = PyUnicode_DecodeUTF8(*s, t - *s, errors);
-    if (u == NULL)
-        return NULL;
-
-    /* Recode them in target encoding. */
-    w = PyUnicode_AsEncodedString(u, recode_encoding, errors);
-    Py_DECREF(u);
-    if  (w == NULL)
-        return NULL;
-    assert(PyBytes_Check(w));
-
-    /* Append bytes to output buffer. */
-    writer->min_size--;   /* subtract 1 preallocated byte */
-    p = _PyBytesWriter_WriteBytes(writer, p,
-                                  PyBytes_AS_STRING(w),
-                                  PyBytes_GET_SIZE(w));
-    Py_DECREF(w);
-    if (p == NULL)
-        return NULL;
-
-    *s = t;
-    return p;
-}
-
+/* Unescape a backslash-escaped string. */
 PyObject *_PyBytes_DecodeEscape(const char *s,
                                 Py_ssize_t len,
                                 const char *errors,
-                                Py_ssize_t unicode,
-                                const char *recode_encoding,
                                 const char **first_invalid_escape)
 {
     int c;
@@ -1142,17 +1100,7 @@ PyObject *_PyBytes_DecodeEscape(const char *s,
     end = s + len;
     while (s < end) {
         if (*s != '\\') {
-            if (!(recode_encoding && (*s & 0x80))) {
-                *p++ = *s++;
-            }
-            else {
-                /* non-ASCII character and need to recode */
-                p = _PyBytes_DecodeEscapeRecode(&s, end,
-                                                errors, recode_encoding,
-                                                &writer, p);
-                if (p == NULL)
-                    goto failed;
-            }
+            *p++ = *s++;
             continue;
         }
 
@@ -1241,12 +1189,11 @@ PyObject *_PyBytes_DecodeEscape(const char *s,
 PyObject *PyBytes_DecodeEscape(const char *s,
                                 Py_ssize_t len,
                                 const char *errors,
-                                Py_ssize_t unicode,
-                                const char *recode_encoding)
+                                Py_ssize_t Py_UNUSED(unicode),
+                                const char *Py_UNUSED(recode_encoding))
 {
     const char* first_invalid_escape;
-    PyObject *result = _PyBytes_DecodeEscape(s, len, errors, unicode,
-                                             recode_encoding,
+    PyObject *result = _PyBytes_DecodeEscape(s, len, errors,
                                              &first_invalid_escape);
     if (result == NULL)
         return NULL;
