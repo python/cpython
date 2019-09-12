@@ -34,12 +34,7 @@
 
 #define MUNCH_SIZE INT_MAX
 
-<<<<<<< HEAD
 #ifdef NID_sha3_224
-=======
-<<<<<<< HEAD
-#if defined(NID_sha3_224) && defined(EVP_MD_FLAG_XOF)
->>>>>>> bpo-38142: Updated _hashopenssl.c to be PEP 384 compliant
 #define PY_OPENSSL_HAS_SHA3 1
 #endif
 
@@ -50,7 +45,7 @@
 #ifdef NID_blake2b512
 #define PY_OPENSSL_HAS_BLAKE2 1
 #endif
-=======
+
 static PyModuleDef _hashlibmodule;
 
 typedef struct {
@@ -60,7 +55,6 @@ typedef struct {
 #define _hashlibstate(o) ((_hashlibstate *)PyModule_GetState(o))
 #define _hashlibstate_global ((_hashlibstate *)PyModule_GetState(PyState_FindModule(&_hashlibmodule)))
 
->>>>>>> bpo-38142: Updated _hashopenssl.c to be PEP 384 compliant
 
 typedef struct {
     PyObject_HEAD
