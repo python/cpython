@@ -129,7 +129,7 @@ def _iterdir(dirname, dir_fd, dironly):
         fsencode = None
         if dir_fd is not None:
             if dirname:
-                fd = arg = os.open(dirname, os.O_RDONLY | os.O_DIRECTORY, dir_fd=dir_fd)
+                fd = arg = os.open(dirname, _dir_open_flags, dir_fd=dir_fd)
             else:
                 arg = dir_fd
             if isinstance(dirname, bytes):
@@ -227,6 +227,8 @@ def escape(pathname):
         pathname = magic_check.sub(r'[\1]', pathname)
     return drive + pathname
 
+
+_dir_open_flags = os.O_RDONLY | getattr(os, 'O_DIRECTORY', 0)
 
 if {os.open, os.stat} <= os.supports_dir_fd and os.scandir in os.supports_fd:
     os.supports_dir_fd.update((glob, iglob))
