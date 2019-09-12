@@ -2007,9 +2007,7 @@ Exiting methods
 
     import sys
 
-
     class ErrorCatchingArgumentParser(argparse.ArgumentParser):
-
         def exit(self, status=0, message=None)
             if status:
                 print(f'Exiting because of an error: {message}')
