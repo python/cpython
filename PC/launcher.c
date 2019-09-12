@@ -278,6 +278,14 @@ _locate_pythons_for_key(HKEY root, LPCWSTR subkey, REGSAM flags, int bits,
             else {
                 wcsncpy_s(ip->version, MAX_VERSION_SIZE, ip_version,
                           MAX_VERSION_SIZE-1);
+                /* Still treating version as "x.y" rather than sys.winver
+                 * When PEP 514 tags are properly used, we shouldn't need
+                 * to strip this off here.
+                 */
+                check = wcsrchr(ip->version, L'-');
+                if (check && !wcscmp(check, L"-32")) {
+                    *check = L'\0';
+                }
                 _snwprintf_s(ip_path, IP_SIZE, _TRUNCATE,
                              L"%ls\\%ls\\InstallPath", subkey, ip_version);
                 status = RegOpenKeyExW(root, ip_path, 0, flags, &ip_key);
@@ -293,6 +301,7 @@ _locate_pythons_for_key(HKEY root, LPCWSTR subkey, REGSAM flags, int bits,
                                           (LPBYTE)ip->executable, &data_size);
                 if (status != ERROR_SUCCESS || type != REG_SZ || !data_size) {
                     append_name = TRUE;
+                    data_size = sizeof(ip->executable) - 1;
                     status = RegQueryValueExW(ip_key, NULL, NULL, &type,
                                               (LPBYTE)ip->executable, &data_size);
                     if (status != ERROR_SUCCESS) {
