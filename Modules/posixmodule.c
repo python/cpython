@@ -14537,6 +14537,9 @@ INITFUNC(void)
     /* Add a custom __new__ to the structsequence */
     _posixstate(m)->structseq_new = (newfunc)PyType_GetSlot((PyTypeObject *)StatResultType, Py_tp_new);
     dunder_new = PyDescr_NewClassMethod((PyTypeObject *)StatResultType, &StatResultType_dunder_new);
+    if (dunder_new == NULL) {
+        return NULL;
+    }
     PyObject_SetAttrString(StatResultType, "__new__", dunder_new);
     Py_DECREF(dunder_new);
 
@@ -14569,6 +14572,9 @@ INITFUNC(void)
     _posixstate(m)->SchedParamType = SchedParamType;
     /* Add a custom __new__ to the structsequence */
     dunder_new = PyDescr_NewClassMethod((PyTypeObject *)SchedParamType, &SchedParamType_dunder_new);
+    if (dunder_new == NULL) {
+        return NULL;
+    }
     PyObject_SetAttrString((PyObject *)SchedParamType, "__new__", dunder_new);
     Py_DECREF(dunder_new);
 #endif
