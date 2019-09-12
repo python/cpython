@@ -1779,17 +1779,13 @@ expression support in the :mod:`re` module).
    Return true if all cased characters [4]_ in the string are uppercase and
    there is at least one cased character, false otherwise.
 
-      >>> s = 'BANANA'
-      >>> s.isupper()
+      >>> 'BANANA'.isupper()
       True
-      >>> s = 'banana'
-      >>> s.isupper()
+      >>> 'banana'.isupper()
       False
-      >>> s = 'baNana'
-      >>> s.isupper()
+      >>> 'baNana'.isupper()
       False
-      >>> s = ' '
-      >>> s.isupper()
+      >>> ' '.isupper()
       False
 
 
