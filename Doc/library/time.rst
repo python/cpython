@@ -131,8 +131,8 @@ Functions
    and is space padded if the day is a single digit,
    e.g.: ``'Wed Jun  9 04:26:40 1993'``.
 
-   If *t* is not provided, the current time as returned by
-   :func:`localtime` is used. Locale information is not used by :func:`asctime`.
+   If *t* is not provided, the current time as returned by :func:`localtime`
+   is used. Locale information is not used by :func:`asctime`.
 
    .. note::
 
@@ -211,10 +211,10 @@ Functions
    is two characters long and is space padded if the day is a single digit,
    e.g.: ``'Wed Jun  9 04:26:40 1993'``.
 
-   If *secs* is not provided or
-   :const:`None`, the current time as returned by :func:`.time` is used.
-   ``ctime(secs)`` is equivalent to ``asctime(localtime(secs))``.
-   Locale information is not used by :func:`ctime`.
+   If *secs* is not provided or :const:`None`, the current time as
+   returned by :func:`.time` is used. ``ctime(secs)`` is equivalent to
+   ``asctime(localtime(secs))``. Locale information is not used by
+   :func:`ctime`.
 
 
 .. function:: get_clock_info(name)
