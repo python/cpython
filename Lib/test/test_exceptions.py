@@ -1172,14 +1172,14 @@ class ExceptionTests(unittest.TestCase):
         self.assertEqual(wr(), None)
 
     def test_errno_ENOTEMPTY(self):
-        with self.assertRaises(OSError) as cm:
-            dirname = tempfile.mkdtemp()
+        dirname = tempfile.mkdtemp()
 
-            pkgdir = os.path.join(dirname, "pkgname")
-            os.mkdir(pkgdir)
-            with open(os.path.join(pkgdir, '__init__.py'), 'w') as fl:
-                fl.write('from pkgutil import extend_path\n__path__ = extend_path(__path__, __name__)\n')
+        pkgdir = os.path.join(dirname, "pkgname")
+        os.mkdir(pkgdir)
+        with open(os.path.join(pkgdir, '__init__.py'), 'w') as fl:
+            fl.write('from pkgutil import extend_path\n__path__ = extend_path(__path__, __name__)\n')
 
+        with self.assertRaises(DirectoryNotEmptyError) as cm:
             os.rmdir(dirname)
         self.assertEqual(cm.exception.errno, errno.ENOTEMPTY, cm.exception)
 
