@@ -5373,7 +5373,7 @@ compiler_visit_slice(struct compiler *c, slice_ty s, expr_context_ty ctx)
 /* End of the compiler section, beginning of the assembler section */
 
 /* do depth-first search of basic block graph, starting with block.
-   post records the block indices in post-order.
+   a_order records the block indices in order.
 
    XXX must handle implicit jumps from one block to next
 */
@@ -5382,7 +5382,7 @@ struct assembler {
     PyObject *a_bytecode;  /* string containing bytecode */
     int a_offset;              /* offset into bytecode */
     int a_nblocks;             /* number of reachable blocks */
-    basicblock **a_postorder; /* list of blocks in dfs postorder */
+    basicblock **a_order; /* list of blocks in dfs order */
     PyObject *a_lnotab;    /* string containing lnotab */
     int a_lnotab_off;      /* offset into lnotab */
     int a_lineno;              /* last lineno of emitted instruction */
@@ -5390,28 +5390,21 @@ struct assembler {
 };
 
 static void
-dfs(struct compiler *c, basicblock *b, struct assembler *a, int end)
+dfs(struct compiler *c, basicblock *entry, struct assembler *a)
 {
-    int i, j;
-
-    /* Get rid of recursion for normal control flow.
-       Since the number of blocks is limited, unused space in a_postorder
-       (from a_nblocks to end) can be used as a stack for still not ordered
-       blocks. */
-    for (j = end; b && !b->b_seen; b = b->b_next) {
+    /* Avoid excessive recursion by following 'next' links to the 
+     * end of the chain before handling any branches */
+    for (basicblock *b = entry; b; b = b->b_next) {
         b->b_seen = 1;
-        assert(a->a_nblocks < j);
-        a->a_postorder[--j] = b;
+        a->a_order[a->a_nblocks++] = b;
     }
-    while (j < end) {
-        b = a->a_postorder[j++];
-        for (i = 0; i < b->b_iused; i++) {
-            struct instr *instr = &b->b_instr[i];
-            if (instr->i_jrel || instr->i_jabs)
-                dfs(c, instr->i_target, a, j);
+    for (basicblock *b = entry; b; b = b->b_next) {
+        for (int i = 0; i < b->b_iused; i++) {
+            basicblock *target = b->b_instr[i].i_target;
+            if (target && !target->b_seen) {
+                dfs(c, target, a);
+            }
         }
-        assert(a->a_nblocks < j);
-        a->a_postorder[a->a_nblocks++] = b;
     }
 }
 
@@ -5517,9 +5510,9 @@ assemble_init(struct assembler *a, int nblocks, int firstlineno)
         PyErr_NoMemory();
         return 0;
     }
-    a->a_postorder = (basicblock **)PyObject_Malloc(
+    a->a_order = (basicblock **)PyObject_Malloc(
                                         sizeof(basicblock *) * nblocks);
-    if (!a->a_postorder) {
+    if (!a->a_order) {
         PyErr_NoMemory();
         return 0;
     }
@@ -5531,8 +5524,8 @@ assemble_free(struct assembler *a)
 {
     Py_XDECREF(a->a_bytecode);
     Py_XDECREF(a->a_lnotab);
-    if (a->a_postorder)
-        PyObject_Free(a->a_postorder);
+    if (a->a_order)
+        PyObject_Free(a->a_order);
 }
 
 static int
@@ -5693,8 +5686,8 @@ assemble_jump_offsets(struct assembler *a, struct compiler *c)
        Replace block pointer with position in bytecode. */
     do {
         totsize = 0;
-        for (i = a->a_nblocks - 1; i >= 0; i--) {
-            b = a->a_postorder[i];
+        for (i = 0; i < a->a_nblocks; i++) {
+            b = a->a_order[i];
             bsize = blocksize(b);
             b->b_offset = totsize;
             totsize += bsize;
@@ -5998,14 +5991,15 @@ assemble(struct compiler *c, int addNone)
     }
     if (!assemble_init(&a, nblocks, c->u->u_firstlineno))
         goto error;
-    dfs(c, entryblock, &a, nblocks);
+    dfs(c, entryblock, &a);
+    assert(a.a_nblocks <= nblocks);
 
     /* Can't modify the bytecode after computing jump offsets. */
     assemble_jump_offsets(&a, c);
 
-    /* Emit code in reverse postorder from dfs. */
-    for (i = a.a_nblocks - 1; i >= 0; i--) {
-        b = a.a_postorder[i];
+    /* Emit code in order from dfs. */
+    for (i = 0; i < a.a_nblocks; i++) {
+        b = a.a_order[i];
         for (j = 0; j < b->b_iused; j++)
             if (!assemble_emit(&a, &b->b_instr[j]))
                 goto error;
