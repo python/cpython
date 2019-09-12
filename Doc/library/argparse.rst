@@ -2006,10 +2006,11 @@ Exiting methods
    this method to handle these steps differently::
 
     import sys
+
     class ErrorCatchingArgumentParser(argparse.ArgumentParser):
         def exit(self, status=0, message=None)
             if status:
-                print('Exiting because of an error:', message)
+                print(f'Exiting because of an error: {message}')
             sys.exit(status)
 
 .. method:: ArgumentParser.error(message)
