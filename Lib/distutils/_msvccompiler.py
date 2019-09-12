@@ -89,13 +89,25 @@ def _find_vc2017():
 
     return None, None
 
+PLAT_SPEC_TO_RUNTIME = {
+    'x86' : 'x86',
+    'x86_amd64' : 'x64',
+    'x86_arm' : 'arm',
+    'x86_arm64' : 'arm64'
+}
+
 def _find_vcvarsall(plat_spec):
     _, best_dir = _find_vc2017()
     vcruntime = None
-    vcruntime_plat = 'x64' if 'amd64' in plat_spec else 'x86'
+
+    if plat_spec in PLAT_SPEC_TO_RUNTIME:
+        vcruntime_plat = PLAT_SPEC_TO_RUNTIME[plat_spec]
+    else:
+        vcruntime_plat = 'x64' if 'amd64' in plat_spec else 'x86'
+
     if best_dir:
         vcredist = os.path.join(best_dir, "..", "..", "redist", "MSVC", "**",
-            "Microsoft.VC141.CRT", "vcruntime140.dll")
+            vcruntime_plat, "Microsoft.VC14*.CRT", "vcruntime140.dll")
         try:
             import glob
             vcruntime = glob.glob(vcredist, recursive=True)[-1]
@@ -178,6 +190,8 @@ def _find_exe(exe, paths=None):
 PLAT_TO_VCVARS = {
     'win32' : 'x86',
     'win-amd64' : 'x86_amd64',
+    'win-arm32' : 'x86_arm',
+    'win-arm64' : 'x86_arm64'
 }
 
 # A set containing the DLLs that are guaranteed to be available for

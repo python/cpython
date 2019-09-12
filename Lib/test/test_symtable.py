@@ -215,6 +215,15 @@ class SymtableTest(unittest.TestCase):
     def test_exec(self):
         symbols = symtable.symtable("def f(x): return x", "?", "exec")
 
+    def test_bytes(self):
+        top = symtable.symtable(TEST_CODE.encode('utf8'), "?", "exec")
+        self.assertIsNotNone(find_block(top, "Mine"))
+
+        code = b'# -*- coding: iso8859-15 -*-\nclass \xb4: pass\n'
+
+        top = symtable.symtable(code, "?", "exec")
+        self.assertIsNotNone(find_block(top, "\u017d"))
+
 
 if __name__ == '__main__':
     unittest.main()

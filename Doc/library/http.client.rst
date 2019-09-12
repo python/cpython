@@ -94,6 +94,11 @@ The module provides the following classes:
       :func:`ssl._create_unverified_context` can be passed to the *context*
       parameter.
 
+   .. versionchanged:: 3.8
+      This class now enables TLS 1.3
+      :attr:`ssl.SSLContext.post_handshake_auth` for the default *context* or
+      when *cert_file* is passed with a custom *context*.
+
    .. deprecated:: 3.6
 
        *key_file* and *cert_file* are deprecated in favor of *context*.
@@ -511,8 +516,8 @@ Here is an example session that uses the ``GET`` method::
    >>> # The following example demonstrates reading data in chunks.
    >>> conn.request("GET", "/")
    >>> r1 = conn.getresponse()
-   >>> while not r1.closed:
-   ...     print(r1.read(200))  # 200 bytes
+   >>> while chunk := r1.read(200):
+   ...     print(repr(chunk))
    b'<!doctype html>\n<!--[if"...
    ...
    >>> # Example of an invalid request

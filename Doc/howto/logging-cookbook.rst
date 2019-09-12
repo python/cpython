@@ -579,7 +579,7 @@ information. When you call one of the logging methods on an instance of
 information in the delegated call. Here's a snippet from the code of
 :class:`LoggerAdapter`::
 
-    def debug(self, msg, *args, **kwargs):
+    def debug(self, msg, /, *args, **kwargs):
         """
         Delegate a debug call to the underlying logger, after adding
         contextual information from this adapter instance.
@@ -948,6 +948,41 @@ This variant shows how you can e.g. apply configuration for particular loggers
 machinery in the main process (even though the logging events are generated in
 the worker processes) to direct the messages to the appropriate destinations.
 
+Using concurrent.futures.ProcessPoolExecutor
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+If you want to use :class:`concurrent.futures.ProcessPoolExecutor` to start
+your worker processes, you need to create the queue slightly differently.
+Instead of
+
+.. code-block:: python
+
+   queue = multiprocessing.Queue(-1)
+
+you should use
+
+.. code-block:: python
+
+   queue = multiprocessing.Manager().Queue(-1)  # also works with the examples above
+
+and you can then replace the worker creation from this::
+
+    workers = []
+    for i in range(10):
+        worker = multiprocessing.Process(target=worker_process,
+                                         args=(queue, worker_configurer))
+        workers.append(worker)
+        worker.start()
+    for w in workers:
+        w.join()
+
+to this (remembering to first import :mod:`concurrent.futures`)::
+
+    with concurrent.futures.ProcessPoolExecutor(max_workers=10) as executor:
+        for i in range(10):
+            executor.submit(worker_process, queue, worker_configurer)
+
+
 Using file rotation
 -------------------
 
@@ -1079,7 +1114,7 @@ call ``str()`` on that object to get the actual format string. Consider the
 following two classes::
 
     class BraceMessage:
-        def __init__(self, fmt, *args, **kwargs):
+        def __init__(self, fmt, /, *args, **kwargs):
             self.fmt = fmt
             self.args = args
             self.kwargs = kwargs
@@ -1088,7 +1123,7 @@ following two classes::
             return self.fmt.format(*self.args, **self.kwargs)
 
     class DollarMessage:
-        def __init__(self, fmt, **kwargs):
+        def __init__(self, fmt, /, **kwargs):
             self.fmt = fmt
             self.kwargs = kwargs
 
@@ -1143,7 +1178,7 @@ to the above, as in the following example::
 
     import logging
 
-    class Message(object):
+    class Message:
         def __init__(self, fmt, args):
             self.fmt = fmt
             self.args = args
@@ -1155,7 +1190,7 @@ to the above, as in the following example::
         def __init__(self, logger, extra=None):
             super(StyleAdapter, self).__init__(logger, extra or {})
 
-        def log(self, level, msg, *args, **kwargs):
+        def log(self, level, msg, /, *args, **kwargs):
             if self.isEnabledFor(level):
                 msg, kwargs = self.process(msg, kwargs)
                 self.logger._log(level, Message(msg, args), (), **kwargs)
@@ -1301,7 +1336,7 @@ You can also subclass :class:`QueueListener` to get messages from other kinds
 of queues, for example a ZeroMQ 'subscribe' socket. Here's an example::
 
     class ZeroMQSocketListener(QueueListener):
-        def __init__(self, uri, *handlers, **kwargs):
+        def __init__(self, uri, /, *handlers, **kwargs):
             self.ctx = kwargs.get('ctx') or zmq.Context()
             socket = zmq.Socket(self.ctx, zmq.SUB)
             socket.setsockopt_string(zmq.SUBSCRIBE, '')  # subscribe to everything
@@ -1706,8 +1741,8 @@ which uses JSON to serialise the event in a machine-parseable manner::
     import json
     import logging
 
-    class StructuredMessage(object):
-        def __init__(self, message, **kwargs):
+    class StructuredMessage:
+        def __init__(self, message, /, **kwargs):
             self.message = message
             self.kwargs = kwargs
 
@@ -1750,8 +1785,8 @@ as in the following complete example::
                 return o.encode('unicode_escape').decode('ascii')
             return super(Encoder, self).default(o)
 
-    class StructuredMessage(object):
-        def __init__(self, message, **kwargs):
+    class StructuredMessage:
+        def __init__(self, message, /, **kwargs):
             self.message = message
             self.kwargs = kwargs
 
@@ -1982,8 +2017,8 @@ object as a message format string, and that the logging package will call
 :func:`str` on that object to get the actual format string. Consider the
 following two classes::
 
-    class BraceMessage(object):
-        def __init__(self, fmt, *args, **kwargs):
+    class BraceMessage:
+        def __init__(self, fmt, /, *args, **kwargs):
             self.fmt = fmt
             self.args = args
             self.kwargs = kwargs
@@ -1991,8 +2026,8 @@ following two classes::
         def __str__(self):
             return self.fmt.format(*self.args, **self.kwargs)
 
-    class DollarMessage(object):
-        def __init__(self, fmt, **kwargs):
+    class DollarMessage:
+        def __init__(self, fmt, /, **kwargs):
             self.fmt = fmt
             self.kwargs = kwargs
 
@@ -2266,9 +2301,9 @@ The script just arranges to decorate ``foo`` with a decorator which will do the
 conditional logging that's required. The decorator takes a logger as a parameter
 and attaches a memory handler for the duration of the call to the decorated
 function. The decorator can be additionally parameterised using a target handler,
-a level at which flushing should occur, and a capacity for the buffer. These
-default to a :class:`~logging.StreamHandler` which writes to ``sys.stderr``,
-``logging.ERROR`` and ``100`` respectively.
+a level at which flushing should occur, and a capacity for the buffer (number of
+records buffered). These default to a :class:`~logging.StreamHandler` which
+writes to ``sys.stderr``, ``logging.ERROR`` and ``100`` respectively.
 
 Here's the script::
 
@@ -2457,7 +2492,7 @@ scope of the context manager::
     import logging
     import sys
 
-    class LoggingContext(object):
+    class LoggingContext:
         def __init__(self, logger, level=None, handler=None, close=True):
             self.logger = logger
             self.level = level
@@ -2709,3 +2744,238 @@ And if we want less:
 
 In this case, the commands don't print anything to the console, since nothing
 at ``WARNING`` level or above is logged by them.
+
+.. _qt-gui:
+
+A Qt GUI for logging
+--------------------
+
+A question that comes up from time to time is about how to log to a GUI
+application. The `Qt <https://www.qt.io/>`_ framework is a popular
+cross-platform UI framework with Python bindings using `PySide2
+<https://pypi.org/project/PySide2/>`_ or `PyQt5
+<https://pypi.org/project/PyQt5/>`_ libraries.
+
+The following example shows how to log to a Qt GUI. This introduces a simple
+``QtHandler`` class which takes a callable, which should be a slot in the main
+thread that does GUI updates. A worker thread is also created to show how you
+can log to the GUI from both the UI itself (via a button for manual logging)
+as well as a worker thread doing work in the background (here, just logging
+messages at random levels with random short delays in between).
+
+The worker thread is implemented using Qt's ``QThread`` class rather than the
+:mod:`threading` module, as there are circumstances where one has to use
+``QThread``, which offers better integration with other ``Qt`` components.
+
+The code should work with recent releases of either ``PySide2`` or ``PyQt5``.
+You should be able to adapt the approach to earlier versions of Qt. Please
+refer to the comments in the code snippet for more detailed information.
+
+.. code-block:: python3
+
+    import datetime
+    import logging
+    import random
+    import sys
+    import time
+
+    # Deal with minor differences between PySide2 and PyQt5
+    try:
+        from PySide2 import QtCore, QtGui, QtWidgets
+        Signal = QtCore.Signal
+        Slot = QtCore.Slot
+    except ImportError:
+        from PyQt5 import QtCore, QtGui, QtWidgets
+        Signal = QtCore.pyqtSignal
+        Slot = QtCore.pyqtSlot
+
+
+    logger = logging.getLogger(__name__)
+
+
+    #
+    # Signals need to be contained in a QObject or subclass in order to be correctly
+    # initialized.
+    #
+    class Signaller(QtCore.QObject):
+        signal = Signal(str, logging.LogRecord)
+
+    #
+    # Output to a Qt GUI is only supposed to happen on the main thread. So, this
+    # handler is designed to take a slot function which is set up to run in the main
+    # thread. In this example, the function takes a string argument which is a
+    # formatted log message, and the log record which generated it. The formatted
+    # string is just a convenience - you could format a string for output any way
+    # you like in the slot function itself.
+    #
+    # You specify the slot function to do whatever GUI updates you want. The handler
+    # doesn't know or care about specific UI elements.
+    #
+    class QtHandler(logging.Handler):
+        def __init__(self, slotfunc, *args, **kwargs):
+            super(QtHandler, self).__init__(*args, **kwargs)
+            self.signaller = Signaller()
+            self.signaller.signal.connect(slotfunc)
+
+        def emit(self, record):
+            s = self.format(record)
+            self.signaller.signal.emit(s, record)
+
+    #
+    # This example uses QThreads, which means that the threads at the Python level
+    # are named something like "Dummy-1". The function below gets the Qt name of the
+    # current thread.
+    #
+    def ctname():
+        return QtCore.QThread.currentThread().objectName()
+
+
+    #
+    # Used to generate random levels for logging.
+    #
+    LEVELS = (logging.DEBUG, logging.INFO, logging.WARNING, logging.ERROR,
+              logging.CRITICAL)
+
+    #
+    # This worker class represents work that is done in a thread separate to the
+    # main thread. The way the thread is kicked off to do work is via a button press
+    # that connects to a slot in the worker.
+    #
+    # Because the default threadName value in the LogRecord isn't much use, we add
+    # a qThreadName which contains the QThread name as computed above, and pass that
+    # value in an "extra" dictionary which is used to update the LogRecord with the
+    # QThread name.
+    #
+    # This example worker just outputs messages sequentially, interspersed with
+    # random delays of the order of a few seconds.
+    #
+    class Worker(QtCore.QObject):
+        @Slot()
+        def start(self):
+            extra = {'qThreadName': ctname() }
+            logger.debug('Started work', extra=extra)
+            i = 1
+            # Let the thread run until interrupted. This allows reasonably clean
+            # thread termination.
+            while not QtCore.QThread.currentThread().isInterruptionRequested():
+                delay = 0.5 + random.random() * 2
+                time.sleep(delay)
+                level = random.choice(LEVELS)
+                logger.log(level, 'Message after delay of %3.1f: %d', delay, i, extra=extra)
+                i += 1
+
+    #
+    # Implement a simple UI for this cookbook example. This contains:
+    #
+    # * A read-only text edit window which holds formatted log messages
+    # * A button to start work and log stuff in a separate thread
+    # * A button to log something from the main thread
+    # * A button to clear the log window
+    #
+    class Window(QtWidgets.QWidget):
+
+        COLORS = {
+            logging.DEBUG: 'black',
+            logging.INFO: 'blue',
+            logging.WARNING: 'orange',
+            logging.ERROR: 'red',
+            logging.CRITICAL: 'purple',
+        }
+
+        def __init__(self, app):
+            super(Window, self).__init__()
+            self.app = app
+            self.textedit = te = QtWidgets.QPlainTextEdit(self)
+            # Set whatever the default monospace font is for the platform
+            f = QtGui.QFont('nosuchfont')
+            f.setStyleHint(f.Monospace)
+            te.setFont(f)
+            te.setReadOnly(True)
+            PB = QtWidgets.QPushButton
+            self.work_button = PB('Start background work', self)
+            self.log_button = PB('Log a message at a random level', self)
+            self.clear_button = PB('Clear log window', self)
+            self.handler = h = QtHandler(self.update_status)
+            # Remember to use qThreadName rather than threadName in the format string.
+            fs = '%(asctime)s %(qThreadName)-12s %(levelname)-8s %(message)s'
+            formatter = logging.Formatter(fs)
+            h.setFormatter(formatter)
+            logger.addHandler(h)
+            # Set up to terminate the QThread when we exit
+            app.aboutToQuit.connect(self.force_quit)
+
+            # Lay out all the widgets
+            layout = QtWidgets.QVBoxLayout(self)
+            layout.addWidget(te)
+            layout.addWidget(self.work_button)
+            layout.addWidget(self.log_button)
+            layout.addWidget(self.clear_button)
+            self.setFixedSize(900, 400)
+
+            # Connect the non-worker slots and signals
+            self.log_button.clicked.connect(self.manual_update)
+            self.clear_button.clicked.connect(self.clear_display)
+
+            # Start a new worker thread and connect the slots for the worker
+            self.start_thread()
+            self.work_button.clicked.connect(self.worker.start)
+            # Once started, the button should be disabled
+            self.work_button.clicked.connect(lambda : self.work_button.setEnabled(False))
+
+        def start_thread(self):
+            self.worker = Worker()
+            self.worker_thread = QtCore.QThread()
+            self.worker.setObjectName('Worker')
+            self.worker_thread.setObjectName('WorkerThread')  # for qThreadName
+            self.worker.moveToThread(self.worker_thread)
+            # This will start an event loop in the worker thread
+            self.worker_thread.start()
+
+        def kill_thread(self):
+            # Just tell the worker to stop, then tell it to quit and wait for that
+            # to happen
+            self.worker_thread.requestInterruption()
+            if self.worker_thread.isRunning():
+                self.worker_thread.quit()
+                self.worker_thread.wait()
+            else:
+                print('worker has already exited.')
+
+        def force_quit(self):
+            # For use when the window is closed
+            if self.worker_thread.isRunning():
+                self.kill_thread()
+
+        # The functions below update the UI and run in the main thread because
+        # that's where the slots are set up
+
+        @Slot(str)
+        def update_status(self, status, record):
+            color = self.COLORS.get(record.levelno, 'black')
+            s = '<pre><font color="%s">%s</font></pre>' % (color, status)
+            self.textedit.appendHtml(s)
+
+        @Slot()
+        def manual_update(self):
+            # This function uses the formatted message passed in, but also uses
+            # information from the record to format the message in an appropriate
+            # color according to its severity (level).
+            level = random.choice(LEVELS)
+            extra = {'qThreadName': ctname() }
+            logger.log(level, 'Manually logged!', extra=extra)
+
+        @Slot()
+        def clear_display(self):
+            self.textedit.clear()
+
+
+    def main():
+        QtCore.QThread.currentThread().setObjectName('MainThread')
+        logging.getLogger().setLevel(logging.DEBUG)
+        app = QtWidgets.QApplication(sys.argv)
+        example = Window(app)
+        example.show()
+        sys.exit(app.exec_())
+
+    if __name__=='__main__':
+        main()

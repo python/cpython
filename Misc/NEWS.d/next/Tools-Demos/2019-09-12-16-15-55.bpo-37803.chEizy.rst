@@ -1,0 +1,1 @@
+pdb's ``--help`` and ``--version`` long options now work.

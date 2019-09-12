@@ -1,1 +1,0 @@
-Refactor class variables to instance variables in colorizer.

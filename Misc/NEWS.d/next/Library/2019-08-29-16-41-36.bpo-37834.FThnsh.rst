@@ -1,0 +1,2 @@
+Prevent shutil.rmtree exception when built on non-Windows system without fd
+system call support, like older versions of macOS.

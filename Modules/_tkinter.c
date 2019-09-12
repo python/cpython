@@ -617,7 +617,6 @@ Tkapp_New(const char *screenName, const char *className,
     v = PyObject_New(TkappObject, (PyTypeObject *) Tkapp_Type);
     if (v == NULL)
         return NULL;
-    Py_INCREF(Tkapp_Type);
 
     v->interp = Tcl_CreateInterp();
     v->wantobjects = wantobjects;
@@ -672,8 +671,8 @@ Tkapp_New(const char *screenName, const char *className,
     }
 
     strcpy(argv0, className);
-    if (Py_ISUPPER(Py_CHARMASK(argv0[0])))
-        argv0[0] = Py_TOLOWER(Py_CHARMASK(argv0[0]));
+    if (Py_ISUPPER(argv0[0]))
+        argv0[0] = Py_TOLOWER(argv0[0]);
     Tcl_SetVar(v->interp, "argv0", argv0, TCL_GLOBAL_ONLY);
     PyMem_Free(argv0);
 
@@ -802,7 +801,6 @@ newPyTclObject(Tcl_Obj *arg)
     self = PyObject_New(PyTclObject, (PyTypeObject *) PyTclObject_Type);
     if (self == NULL)
         return NULL;
-    Py_INCREF(PyTclObject_Type);
     Tcl_IncrRefCount(arg);
     self->value = arg;
     self->string = NULL;
@@ -2722,7 +2720,6 @@ Tktt_New(PyObject *func)
     v = PyObject_New(TkttObject, (PyTypeObject *) Tktt_Type);
     if (v == NULL)
         return NULL;
-    Py_INCREF(Tktt_Type);
 
     Py_INCREF(func);
     v->token = NULL;
@@ -2771,7 +2768,7 @@ TimerHandler(ClientData clientData)
 
     ENTER_PYTHON
 
-    res = _PyObject_CallNoArg(func);
+    res = PyObject_CallNoArgs(func);
     Py_DECREF(func);
     Py_DECREF(v); /* See Tktt_New() */
 

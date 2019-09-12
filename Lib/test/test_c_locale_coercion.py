@@ -2,7 +2,6 @@
 
 import locale
 import os
-import shutil
 import subprocess
 import sys
 import sysconfig
@@ -10,10 +9,8 @@ import unittest
 from collections import namedtuple
 
 from test import support
-from test.support.script_helper import (
-    run_python_until_end,
-    interpreter_requires_environment,
-)
+from test.support.script_helper import run_python_until_end
+
 
 # Set the list of ways we expect to be able to ask for the "C" locale
 EXPECTED_C_LOCALE_EQUIVALENTS = ["C", "invalid.ascii"]
@@ -119,27 +116,14 @@ class EncodingDetails(_EncodingDetails):
         stream_info = 2*[_stream.format("surrogateescape")]
         # stderr should always use backslashreplace
         stream_info.append(_stream.format("backslashreplace"))
-        expected_lang = env_vars.get("LANG", "not set").lower()
+        expected_lang = env_vars.get("LANG", "not set")
         if coercion_expected:
-            expected_lc_ctype = CLI_COERCION_TARGET.lower()
+            expected_lc_ctype = CLI_COERCION_TARGET
         else:
-            expected_lc_ctype = env_vars.get("LC_CTYPE", "not set").lower()
-        expected_lc_all = env_vars.get("LC_ALL", "not set").lower()
+            expected_lc_ctype = env_vars.get("LC_CTYPE", "not set")
+        expected_lc_all = env_vars.get("LC_ALL", "not set")
         env_info = expected_lang, expected_lc_ctype, expected_lc_all
         return dict(cls(fs_encoding, *stream_info, *env_info)._asdict())
-
-    @staticmethod
-    def _handle_output_variations(data):
-        """Adjust the output to handle platform specific idiosyncrasies
-
-        * Some platforms report ASCII as ANSI_X3.4-1968
-        * Some platforms report ASCII as US-ASCII
-        * Some platforms report UTF-8 instead of utf-8
-        """
-        data = data.replace(b"ANSI_X3.4-1968", b"ascii")
-        data = data.replace(b"US-ASCII", b"ascii")
-        data = data.lower()
-        return data
 
     @classmethod
     def get_child_details(cls, env_vars):
@@ -160,8 +144,7 @@ class EncodingDetails(_EncodingDetails):
         if not result.rc == 0:
             result.fail(py_cmd)
         # All subprocess outputs in this test case should be pure ASCII
-        adjusted_output = cls._handle_output_variations(result.out)
-        stdout_lines = adjusted_output.decode("ascii").splitlines()
+        stdout_lines = result.out.decode("ascii").splitlines()
         child_encoding_details = dict(cls(*stdout_lines)._asdict())
         stderr_lines = result.err.decode("ascii").rstrip().splitlines()
         return child_encoding_details, stderr_lines

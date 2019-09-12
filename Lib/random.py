@@ -42,10 +42,17 @@ from math import log as _log, exp as _exp, pi as _pi, e as _e, ceil as _ceil
 from math import sqrt as _sqrt, acos as _acos, cos as _cos, sin as _sin
 from os import urandom as _urandom
 from _collections_abc import Set as _Set, Sequence as _Sequence
-from hashlib import sha512 as _sha512
 from itertools import accumulate as _accumulate, repeat as _repeat
 from bisect import bisect as _bisect
 import os as _os
+
+try:
+    # hashlib is pretty heavy to load, try lean internal module first
+    from _sha512 import sha512 as _sha512
+except ImportError:
+    # fallback to official implementation
+    from hashlib import sha512 as _sha512
+
 
 __all__ = ["Random","seed","random","uniform","randint","choice","sample",
            "randrange","shuffle","normalvariate","lognormvariate",
@@ -93,7 +100,7 @@ class Random(_random.Random):
         self.seed(x)
         self.gauss_next = None
 
-    def __init_subclass__(cls, **kwargs):
+    def __init_subclass__(cls, /, **kwargs):
         """Control how subclasses generate random integers.
 
         The algorithm a subclass can use depends on the random() and/or
@@ -114,7 +121,10 @@ class Random(_random.Random):
                 break
 
     def seed(self, a=None, version=2):
-        """Initialize internal state from hashable object.
+        """Initialize internal state from a seed.
+
+        The only supported seed types are None, int, float,
+        str, bytes, and bytearray.
 
         None or no argument seeds from current time or from an operating
         system specific randomness source if available.
@@ -136,11 +146,19 @@ class Random(_random.Random):
             x ^= len(a)
             a = -2 if x == -1 else x
 
-        if version == 2 and isinstance(a, (str, bytes, bytearray)):
+        elif version == 2 and isinstance(a, (str, bytes, bytearray)):
             if isinstance(a, str):
                 a = a.encode()
             a += _sha512(a).digest()
             a = int.from_bytes(a, 'big')
+
+        elif not isinstance(a, (type(None), int, float, str, bytes, bytearray)):
+            _warn('Seeding based on hashing is deprecated\n'
+                  'since Python 3.9 and will be removed in a subsequent '
+                  'version. The only \n'
+                  'supported seed types are: None, '
+                  'int, float, str, bytes, and bytearray.',
+                  DeprecationWarning, 2)
 
         super().seed(a)
         self.gauss_next = None

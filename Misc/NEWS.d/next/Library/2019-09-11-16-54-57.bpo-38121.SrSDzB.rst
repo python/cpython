@@ -1,0 +1,1 @@
+Update parameter names on functions in importlib.metadata matching the changes in the 0.22 release of importlib_metadata.

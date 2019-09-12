@@ -132,10 +132,10 @@ PyTypeObject PyCStgDict_Type = {
     sizeof(StgDictObject),
     0,
     (destructor)PyCStgDict_dealloc,             /* tp_dealloc */
-    0,                                          /* tp_print */
+    0,                                          /* tp_vectorcall_offset */
     0,                                          /* tp_getattr */
     0,                                          /* tp_setattr */
-    0,                                          /* tp_reserved */
+    0,                                          /* tp_as_async */
     0,                                          /* tp_repr */
     0,                                          /* tp_as_number */
     0,                                          /* tp_as_sequence */
@@ -352,7 +352,7 @@ PyCStructUnionType_update_stgdict(PyObject *type, PyObject *fields, int isStruct
     int big_endian;
 
     /* HACK Alert: I cannot be bothered to fix ctypes.com, so there has to
-       be a way to use the old, broken sematics: _fields_ are not extended
+       be a way to use the old, broken semantics: _fields_ are not extended
        but replaced in subclasses.
 
        XXX Remove this in ctypes 1.0!
