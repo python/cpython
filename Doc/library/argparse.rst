@@ -2005,16 +2005,11 @@ Exiting methods
    and, if given, it prints a *message* before that. The user can override
    this method to handle these steps differently::
 
-    import sys
-
-    class AbnormalError(Exception):
-        pass
-
     class ErrorCatchingArgumentParser(argparse.ArgumentParser):
         def exit(self, status=0, message=None):
             if status:
-                raise AbnormalError(f'Raising an abnormal error: {message}')
-            sys.exit(status)
+                raise Exception(f'Exiting because of an error: {message}')
+            exit(status)
 
 .. method:: ArgumentParser.error(message)
 
