@@ -26,6 +26,12 @@
 #include <openssl/objects.h>
 #include "openssl/err.h"
 
+#if (OPENSSL_VERSION_NUMBER < 0x10100000L) || defined(LIBRESSL_VERSION_NUMBER)
+/* OpenSSL < 1.1.0 */
+#define EVP_MD_CTX_new EVP_MD_CTX_create
+#define EVP_MD_CTX_free EVP_MD_CTX_destroy
+#endif
+
 #define MUNCH_SIZE INT_MAX
 
 typedef struct {
