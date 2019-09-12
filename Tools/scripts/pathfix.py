@@ -69,7 +69,7 @@ def main():
             keep_flags = True
         if o == '-a':
             add_flags = a.encode()
-            if ' ' in a:
+            if b' ' in add_flags:
                 err('Does not support arguments')
                 sys.exit(2)
     if not new_interpreter or not new_interpreter.startswith(b'/') or \
@@ -206,6 +206,11 @@ def populate_flags(shebangline):
         return b''
     # On Linux, the entire string following the interpreter name
     # is passed as a single argument to the interpreter.
+    # e.g. #! /usr/bin/python3 -W Error -s == /usr/bin/python3 -W "Error -s"
+    # so shebang should have single '-' where flags are given and
+    # flag might need argument for that reasons adding new flags is
+    # between '-' and original flags
+    # e.g. #! /usr/bin/python3 -sW Error
     return b' -' + add_flags + old_flags
 
 
