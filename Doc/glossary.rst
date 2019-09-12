@@ -753,7 +753,7 @@ Glossary
       Some named tuples are built-in types (such as the above examples).
       Alternatively, a named tuple can be created from a regular class
       definition that inherits from :class:`tuple` and that defines named
-      fields.  Such as class can be written by hand or it can be created with
+      fields.  Such a class can be written by hand or it can be created with
       the factory function :func:`collections.namedtuple`.  The latter
       technique also adds some extra methods that may not be found in
       hand-written or built-in named tuples.
