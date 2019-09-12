@@ -136,7 +136,7 @@ Sequence Protocol
    *NULL* on failure.
 
    The ``PySequence_Fast*`` functions are thus named because they assume
-   *o* is a :c:type:`PyTupleObject` or a :c:type:`PyListObject`, and access
+   *o* is a :c:type:`PyTupleObject` or a :c:type:`PyListObject` and access
    the data fields of *o* directly.
 
    As a CPython implementation detail, if *o* is already a sequence or list, it
