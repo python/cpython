@@ -787,6 +787,8 @@ Objects/genobject.c	-	_PyAsyncGenAThrow_Type	variable	PyTypeObject _PyAsyncGenAT
 Objects/genobject.c	-	PyAsyncGen_Type	variable	PyTypeObject PyAsyncGen_Type
 Objects/genobject.c	-	_PyAsyncGenWrappedValue_Type	variable	PyTypeObject _PyAsyncGenWrappedValue_Type
 Objects/typeobject.c	-	PyBaseObject_Type	variable	PyTypeObject PyBaseObject_Type
+Modules/_blake2/blake2b_impl.c	-	PyBlake2_BLAKE2bType	variable	PyTypeObject PyBlake2_BLAKE2bType
+Modules/_blake2/blake2s_impl.c	-	PyBlake2_BLAKE2sType	variable	PyTypeObject PyBlake2_BLAKE2sType
 Objects/boolobject.c	-	PyBool_Type	variable	PyTypeObject PyBool_Type
 Modules/_io/bufferedio.c	-	PyBufferedIOBase_Type	variable	PyTypeObject PyBufferedIOBase_Type
 Modules/_io/bufferedio.c	-	PyBufferedRandom_Type	variable	PyTypeObject PyBufferedRandom_Type
@@ -972,6 +974,7 @@ Objects/exceptions.c	-	PyExc_Warning	variable	static PyTypeObject PyExc_Warning
 Objects/exceptions.c	-	_PyExc_ZeroDivisionError	variable	static PyTypeObject _PyExc_ZeroDivisionError
 Objects/exceptions.c	-	PyExc_ZeroDivisionError	variable	static PyTypeObject PyExc_ZeroDivisionError
 Objects/boolobject.c	-	_Py_FalseStruct	variable	static struct _longobject _Py_FalseStruct
+Objects/tupleobject.c	-	_Py_fast_tuple_allocs	variable	Py_ssize_t _Py_fast_tuple_allocs
 Objects/stringlib/unicode_format.h	-	PyFieldNameIter_Type	variable	static PyTypeObject PyFieldNameIter_Type
 Modules/_io/fileio.c	-	PyFileIO_Type	variable	PyTypeObject PyFileIO_Type
 Python/preconfig.c	-	Py_FileSystemDefaultEncodeErrors	variable	const char *Py_FileSystemDefaultEncodeErrors
@@ -1498,6 +1501,7 @@ Python/initconfig.c	-	Py_NoSiteFlag	variable	int Py_NoSiteFlag
 Objects/object.c	-	_Py_NotImplementedStruct	variable	PyObject _Py_NotImplementedStruct
 Objects/object.c	-	_PyNotImplemented_Type	variable	PyTypeObject _PyNotImplemented_Type
 Python/initconfig.c	-	Py_NoUserSiteDirectory	variable	int Py_NoUserSiteDirectory
+Objects/bytesobject.c	-	_Py_null_strings	variable	Py_ssize_t _Py_null_strings
 Objects/obmalloc.c	-	_PyObject	variable	static PyMemAllocatorEx _PyObject
 Objects/obmalloc.c	-	_PyObject_Arena	variable	static PyObjectArenaAllocator _PyObject_Arena
 Objects/odictobject.c	-	PyODictItems_Type	variable	PyTypeObject PyODictItems_Type
@@ -1506,6 +1510,7 @@ Objects/odictobject.c	-	PyODictKeys_Type	variable	PyTypeObject PyODictKeys_Type
 Objects/odictobject.c	-	PyODict_Type	variable	PyTypeObject PyODict_Type
 Objects/odictobject.c	-	PyODictValues_Type	variable	PyTypeObject PyODictValues_Type
 Python/fileutils.c	-	_Py_open_cloexec_works	variable	int _Py_open_cloexec_works
+Objects/bytesobject.c	-	_Py_one_strings	variable	Py_ssize_t _Py_one_strings
 Python/initconfig.c	-	Py_OptimizeFlag	variable	int Py_OptimizeFlag
 Parser/myreadline.c	-	PyOS_InputHook	variable	int (*PyOS_InputHook)(void)
 Python/pylifecycle.c	-	_PyOS_mystrnicmp_hack	variable	int (*_PyOS_mystrnicmp_hack)(const char *, const char *, Py_ssize_t)
@@ -1521,6 +1526,8 @@ Python/pathconfig.c	-	_Py_path_config	variable	_PyPathConfig _Py_path_config
 Objects/picklebufobject.c	-	PyPickleBuffer_Type	variable	PyTypeObject PyPickleBuffer_Type
 Objects/descrobject.c	-	PyProperty_Type	variable	PyTypeObject PyProperty_Type
 Python/initconfig.c	-	Py_QuietFlag	variable	int Py_QuietFlag
+Objects.longobject.c	-	_Py_quick_int_allocs	variable	Py_ssize_t _Py_quick_int_allocs
+Objects.longobject.c	-	_Py_quick_new_int_allocs	variable	Py_ssize_t _Py_quick_new_int_allocs
 Objects/rangeobject.c	-	PyRangeIter_Type	variable	PyTypeObject PyRangeIter_Type
 Objects/rangeobject.c	-	PyRange_Type	variable	PyTypeObject PyRange_Type
 Modules/_io/iobase.c	-	PyRawIOBase_Type	variable	PyTypeObject PyRawIOBase_Type
@@ -1551,6 +1558,7 @@ Objects/obmalloc.c	-	_Py_tracemalloc_config	variable	struct _PyTraceMalloc_Confi
 Objects/boolobject.c	-	_Py_TrueStruct	variable	static struct _longobject _Py_TrueStruct
 Objects/tupleobject.c	-	PyTupleIter_Type	variable	PyTypeObject PyTupleIter_Type
 Objects/tupleobject.c	-	PyTuple_Type	variable	PyTypeObject PyTuple_Type
+Objects/tupleobject.c	-	_Py_tuple_zero_allocs	variable	Py_ssize_t _Py_tuple_zero_allocs
 Objects/typeobject.c	-	PyType_Type	variable	PyTypeObject PyType_Type
 Python/initconfig.c	-	Py_UnbufferedStdioFlag	variable	int Py_UnbufferedStdioFlag
 Python/pylifecycle.c	-	_Py_UnhandledKeyboardInterrupt	variable	int _Py_UnhandledKeyboardInterrupt
