@@ -1575,7 +1575,6 @@ patch.dict
 :func:`patch.dict` can be used as a context manager, decorator or class
 decorator:
 
-    >>> import patch
     >>> foo = {}
     >>> @patch.dict(foo, {'newkey': 'newvalue'})
     ... def test():
