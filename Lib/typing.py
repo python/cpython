@@ -486,7 +486,7 @@ Literal = _SpecialForm('Literal', doc=
     """)
 
 
-class ForwardRef(_Final, _Immutable, _root=True):
+class ForwardRef(_Final, _root=True):
     """Internal wrapper to hold a forward reference."""
 
     __slots__ = ('__forward_arg__', '__forward_code__',
