@@ -1,0 +1,3 @@
+Fix :mod:`lzma`: module decompresses data incompletely. When decompressing a
+FORMAT_ALONE format file, and it doesn't have the end marker, sometimes the
+last one to dozens bytes can't be output. Patch by Ma Lin.
