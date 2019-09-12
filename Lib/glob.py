@@ -170,9 +170,6 @@ def _rlistdir(dirname, dir_fd, dironly):
 
 def _lexists(pathname, dir_fd):
     # Same as os.path.lexists(), but with dir_fd
-    if not pathname:
-        1/0
-        return True
     if dir_fd is None:
         return os.path.lexists(pathname)
     try:
@@ -184,8 +181,6 @@ def _lexists(pathname, dir_fd):
 
 def _isdir(pathname, dir_fd):
     # Same as os.path.isdir(), but with dir_fd
-    #if not pathname:
-        #return True
     if dir_fd is None:
         return os.path.isdir(pathname)
     try:
