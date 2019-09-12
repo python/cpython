@@ -2841,14 +2841,23 @@ class POSIXProcessTestCase(BaseTestCase):
                 ([b"arg"], [b"exe"], 123,  [b"env"]),
                 ([b"arg"], [b"exe"], None, 123),
             ):
-                with self.assertRaises(TypeError):
+                with self.assertRaises(TypeError) as err:
                     _posixsubprocess.fork_exec(
                         args, exe_list,
                         True, (), cwd, env_list,
                         -1, -1, -1, -1,
                         1, 2, 3, 4,
                         True, True,
-                        False, 0, False, [], False, 0, func)
+                        False, [], 0,
+                        func)
+                # Attempt to prevent
+                # "TypeError: fork_exec() takes exactly N arguments (M given)"
+                # from passing the test.  More refactoring to have us start
+                # with a valid *args list, confirm a good call with that works
+                # before mutating it in various ways to ensure that bad calls
+                # with individual arg type errors raise a typeerror would be
+                # ideal.  Saving that for a future PR...
+                self.assertNotIn('takes exactly', str(err.exception))
         finally:
             if not gc_enabled:
                 gc.disable()
