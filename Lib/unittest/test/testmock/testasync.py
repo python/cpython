@@ -419,45 +419,44 @@ class AsyncContextManagerTest(unittest.TestCase):
         # self.assertTrue(inspect.isawaitable(cm.__aenter__()))
         # self.assertTrue(inspect.isawaitable(cm.__aexit__()))
 
-    def test_set_return_value_of_aenter_magicmock(self):
-        pc = self.ProductionCode()
-        pc.session = MagicMock(name='sessionmock')
-        cm = MagicMock(name='magic_cm')
-        response = AsyncMock(name='response')
-        response.json = AsyncMock(return_value={'json':123})
-        cm.__aenter__.return_value = response
-        pc.session.post.return_value = cm
-        result = asyncio.run(pc.main())
-        self.assertEqual(result, {'json':123})
+    def test_set_return_value_of_aenter(self):
+        def inner_test(mock_type):
+            pc = self.ProductionCode()
+            pc.session = MagicMock(name='sessionmock')
+            cm = mock_type(name='magic_cm')
+            response = AsyncMock(name='response')
+            response.json = AsyncMock(return_value={'json': 123})
+            cm.__aenter__.return_value = response
+            pc.session.post.return_value = cm
+            result = asyncio.run(pc.main())
+            self.assertEqual(result, {'json': 123})
 
-    def test_set_return_value_of_aenter_asyncmock(self):
-        pc = self.ProductionCode()
-        pc.session = MagicMock(name='sessionmock')
-        cm = AsyncMock(name='async_cm')
-        response = AsyncMock(name='response')
-        response.json = AsyncMock(return_value={'json':123})
-        cm.__aenter__.return_value = response
-        pc.session.post.return_value = cm
-        result = asyncio.run(pc.main())
-        self.assertEqual(result, {'json':123})
+        for mock_type in [AsyncMock, MagicMock]:
+            with self.subTest(f"test set return value of aenter with {mock_type}"):
+                inner_test(mock_type)
 
     def test_mock_supports_async_context_manager(self):
-        called = False
-        instance = self.WithAsyncContextManager()
-        # TODO: Horrible error message if you use a MagicMock here
-        mock_instance = AsyncMock(instance)
+        def inner_test(mock_type):
+            called = False
+            instance = self.WithAsyncContextManager()
+            mock_instance = mock_type(instance)
 
-        async def use_context_manager():
-            nonlocal called
-            async with mock_instance as result:
-                called = True
-            return result
+            async def use_context_manager():
+                nonlocal called
+                async with mock_instance as result:
+                    called = True
+                return result
 
-        result = asyncio.run(use_context_manager())
-        self.assertTrue(called)
-        self.assertTrue(mock_instance.__aenter__.called)
-        self.assertTrue(mock_instance.__aexit__.called)
-        self.assertIsNot(mock_instance, result)
+            result = asyncio.run(use_context_manager())
+            self.assertTrue(called)
+            self.assertTrue(mock_instance.__aenter__.called)
+            self.assertTrue(mock_instance.__aexit__.called)
+            self.assertIsNot(mock_instance, result)
+
+        for mock_type in [AsyncMock, MagicMock]:
+            with self.subTest(f"test context manager magics with {mock_type}"):
+                inner_test(mock_type)
+
 
     def test_mock_customize_async_context_manager(self):
         instance = self.WithAsyncContextManager()
@@ -535,48 +534,21 @@ class AsyncIteratorTest(unittest.TestCase):
         self.assertEqual(result, [1, 2, 3])
 
     def test_mock_aiter_and_anext_asyncmock(self):
-        instance = self.WithAsyncIterator()
-        mock_instance = AsyncMock(instance)
+        def inner_test(mock_type):
+            instance = self.WithAsyncIterator
+            mock_instance = mock_type(instance)
+            # Check that the mock and the real thing bahave the same
+            # __aiter__ is not actually async, so not a coroutinefunction
+            self.assertFalse(asyncio.iscoroutinefunction(instance.__aiter__))
+            self.assertFalse(asyncio.iscoroutinefunction(mock_instance.__aiter__))
+            # __anext__ is async
+            self.assertTrue(asyncio.iscoroutinefunction(instance.__anext__))
+            self.assertTrue(asyncio.iscoroutinefunction(mock_instance.__anext__))
 
-        self.assertEqual(asyncio.iscoroutine(instance.__aiter__),
-                         asyncio.iscoroutine(mock_instance.__aiter__))
-        self.assertEqual(asyncio.iscoroutine(instance.__anext__),
-                         asyncio.iscoroutine(mock_instance.__anext__))
+        for mock_type in [AsyncMock, MagicMock]:
+            with self.subTest(f"test aiter and anext corourtine with {mock_type}"):
+                inner_test(mock_type)
 
-        iterator = instance.__aiter__()
-        if asyncio.iscoroutine(iterator):
-            iterator = asyncio.run(iterator)
-
-        mock_iterator = mock_instance.__aiter__()
-        if asyncio.iscoroutine(mock_iterator):
-            mock_iterator = asyncio.run(mock_iterator)
-
-        self.assertEqual(asyncio.iscoroutine(iterator.__aiter__),
-                         asyncio.iscoroutine(mock_iterator.__aiter__))
-        self.assertEqual(asyncio.iscoroutine(iterator.__anext__),
-                         asyncio.iscoroutine(mock_iterator.__anext__))
-
-    def test_mock_aiter_and_anext_magicmock(self):
-        instance = self.WithAsyncIterator()
-        mock_instance = MagicMock(instance)
-
-        self.assertEqual(asyncio.iscoroutine(instance.__aiter__),
-                         asyncio.iscoroutine(mock_instance.__aiter__))
-        self.assertEqual(asyncio.iscoroutine(instance.__anext__),
-                         asyncio.iscoroutine(mock_instance.__anext__))
-
-        iterator = instance.__aiter__()
-        if asyncio.iscoroutine(iterator):
-            iterator = asyncio.run(iterator)
-
-        mock_iterator = mock_instance.__aiter__()
-        if asyncio.iscoroutine(mock_iterator):
-            mock_iterator = asyncio.run(mock_iterator)
-
-        self.assertEqual(asyncio.iscoroutine(iterator.__aiter__),
-                         asyncio.iscoroutine(mock_iterator.__aiter__))
-        self.assertEqual(asyncio.iscoroutine(iterator.__anext__),
-                         asyncio.iscoroutine(mock_iterator.__anext__))
 
     def test_mock_async_for(self):
         async def iterate(iterator):
@@ -587,33 +559,30 @@ class AsyncIteratorTest(unittest.TestCase):
             return accumulator
 
         expected = ["FOO", "BAR", "BAZ"]
-        with self.subTest("iterate through default value with magicmock"):
-            mock_instance = MagicMock(self.WithAsyncIterator())
-            self.assertEqual([], asyncio.run(iterate(mock_instance)))
+        def test_default(mock_type):
+            mock_instance = mock_type(self.WithAsyncIterator())
+            self.assertEqual(asyncio.run(iterate(mock_instance)), [])
 
-        with self.subTest("iterate through default value using asyncmock"):
-            mock_instance = AsyncMock(self.WithAsyncIterator())
-            self.assertEqual([], asyncio.run(iterate(mock_instance)))
 
-        with self.subTest("iterate through set return_value with magicmock"):
-            mock_instance = MagicMock(self.WithAsyncIterator())
+        def test_set_return_value(mock_type):
+            mock_instance = mock_type(self.WithAsyncIterator())
             mock_instance.__aiter__.return_value = expected[:]
-            self.assertEqual(expected, asyncio.run(iterate(mock_instance)))
+            self.assertEqual(asyncio.run(iterate(mock_instance)), expected)
 
-        with self.subTest("iterate through set return_value with asyncmock"):
-            mock_instance = AsyncMock(self.WithAsyncIterator())
-            mock_instance.__aiter__.return_value = expected[:]
-            self.assertEqual(expected, asyncio.run(iterate(mock_instance)))
-
-        with self.subTest("iterate through set return_value iterator with magicmock"):
-            mock_instance = MagicMock(self.WithAsyncIterator())
+        def test_set_return_value_iter(mock_type):
+            mock_instance = mock_type(self.WithAsyncIterator())
             mock_instance.__aiter__.return_value = iter(expected[:])
-            self.assertEqual(expected, asyncio.run(iterate(mock_instance)))
+            self.assertEqual(asyncio.run(iterate(mock_instance)), expected)
 
-        with self.subTest("iterate through set return_value iterator with asyncmock"):
-            mock_instance = AsyncMock(self.WithAsyncIterator())
-            mock_instance.__aiter__.return_value = iter(expected[:])
-            self.assertEqual(expected, asyncio.run(iterate(mock_instance)))
+        for mock_type in [AsyncMock, MagicMock]:
+            with self.subTest(f"default value with {mock_type}"):
+                test_default(mock_type)
+
+            with self.subTest(f"set return_value with {mock_type}"):
+                test_set_return_value(mock_type)
+
+            with self.subTest(f"set return_value iterator with {mock_type}"):
+                test_set_return_value_iter(mock_type)
 
 
 class AsyncMockAssert(unittest.TestCase):

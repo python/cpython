@@ -1,3 +1,4 @@
+import asyncio
 import math
 import unittest
 import os
@@ -286,6 +287,8 @@ class TestMockingMagicMethods(unittest.TestCase):
         self.assertEqual(math.trunc(mock), mock.__trunc__())
         self.assertEqual(math.floor(mock), mock.__floor__())
         self.assertEqual(math.ceil(mock), mock.__ceil__())
+        self.assertTrue(asyncio.iscoroutinefunction(mock.__aexit__))
+        self.assertTrue(asyncio.iscoroutinefunction(mock.__aenter__))
 
         # in Python 3 oct and hex use __index__
         # so these tests are for __index__ in py3k
