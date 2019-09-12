@@ -6205,7 +6205,7 @@ static PyType_Slot HeapGcCType_slots[] = {
     {Py_tp_init, heapctype_init},
     {Py_tp_members, heapctype_members},
     {Py_tp_dealloc, heapgcctype_dealloc},
-    {Py_tp_doc, heapgctype__doc__},
+    {Py_tp_doc, (char*)heapgctype__doc__},
     {0, 0},
 };
 
@@ -6233,7 +6233,7 @@ static PyType_Slot HeapCType_slots[] = {
     {Py_tp_init, heapctype_init},
     {Py_tp_members, heapctype_members},
     {Py_tp_dealloc, heapctype_dealloc},
-    {Py_tp_doc, heapctype__doc__},
+    {Py_tp_doc, (char*)heapctype__doc__},
     {0, 0},
 };
 
@@ -6274,7 +6274,7 @@ static struct PyMemberDef heapctypesubclass_members[] = {
 static PyType_Slot HeapCTypeSubclass_slots[] = {
     {Py_tp_init, heapctypesubclass_init},
     {Py_tp_members, heapctypesubclass_members},
-    {Py_tp_doc, heapctypesubclass__doc__},
+    {Py_tp_doc, (char*)heapctypesubclass__doc__},
     {0, 0},
 };
 
@@ -6303,7 +6303,8 @@ heapctypesubclasswithfinalizer_init(PyObject *self, PyObject *args, PyObject *kw
 static void
 heapctypesubclasswithfinalizer_finalize(PyObject *self)
 {
-    PyObject *error_type, *error_value, *error_traceback, *m, *oldtype, *newtype;
+    PyObject *error_type, *error_value, *error_traceback, *m;
+    PyObject *oldtype = NULL, *newtype = NULL;
 
     /* Save the current exception, if any. */
     PyErr_Fetch(&error_type, &error_value, &error_traceback);
@@ -6342,7 +6343,7 @@ static PyType_Slot HeapCTypeSubclassWithFinalizer_slots[] = {
     {Py_tp_init, heapctypesubclasswithfinalizer_init},
     {Py_tp_members, heapctypesubclass_members},
     {Py_tp_finalize, heapctypesubclasswithfinalizer_finalize},
-    {Py_tp_doc, heapctypesubclasswithfinalizer__doc__},
+    {Py_tp_doc, (char*)heapctypesubclasswithfinalizer__doc__},
     {0, 0},
 };
 
@@ -6372,7 +6373,7 @@ static PyTypeObject MethInstance_Type = {
     .tp_new = PyType_GenericNew,
     .tp_flags = Py_TPFLAGS_DEFAULT,
     .tp_methods = meth_instance_methods,
-    .tp_doc = PyDoc_STR(
+    .tp_doc = (char*)PyDoc_STR(
         "Class with normal (instance) methods to test calling conventions"),
 };
 

@@ -1,7 +1,7 @@
 import dis
 import unittest
 
-from test.bytecode_helper import BytecodeTestCase
+from test.support.bytecode_helper import BytecodeTestCase
 
 
 def count_instr_recursively(f, opname):

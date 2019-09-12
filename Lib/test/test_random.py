@@ -41,11 +41,17 @@ class TestBasicOps:
         class MySeed(object):
             def __hash__(self):
                 return -1729
-        for arg in [None, 0, 0, 1, 1, -1, -1, 10**20, -(10**20),
-                    3.14, 1+2j, 'a', tuple('abc'), MySeed()]:
+        for arg in [None, 0, 1, -1, 10**20, -(10**20),
+                    3.14, 'a']:
             self.gen.seed(arg)
+
+        for arg in [1+2j, tuple('abc'), MySeed()]:
+            with self.assertWarns(DeprecationWarning):
+                self.gen.seed(arg)
+
         for arg in [list(range(3)), dict(one=1)]:
-            self.assertRaises(TypeError, self.gen.seed, arg)
+            with self.assertWarns(DeprecationWarning):
+                self.assertRaises(TypeError, self.gen.seed, arg)
         self.assertRaises(TypeError, self.gen.seed, 1, 2, 3, 4)
         self.assertRaises(TypeError, type(self.gen), [])
 

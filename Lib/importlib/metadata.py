@@ -1,10 +1,12 @@
 import io
+import os
 import re
 import abc
 import csv
 import sys
 import email
 import pathlib
+import zipfile
 import operator
 import functools
 import itertools
@@ -363,6 +365,58 @@ class DistributionFinder(MetaPathFinder):
         """
 
 
+class MetadataPathFinder(DistributionFinder):
+    @classmethod
+    def find_distributions(cls, context=DistributionFinder.Context()):
+        """
+        Find distributions.
+
+        Return an iterable of all Distribution instances capable of
+        loading the metadata for packages matching ``context.name``
+        (or all names if ``None`` indicated) along the paths in the list
+        of directories ``context.path``.
+        """
+        found = cls._search_paths(context.pattern, context.path)
+        return map(PathDistribution, found)
+
+    @classmethod
+    def _search_paths(cls, pattern, paths):
+        """Find metadata directories in paths heuristically."""
+        return itertools.chain.from_iterable(
+            cls._search_path(path, pattern)
+            for path in map(cls._switch_path, paths)
+            )
+
+    @staticmethod
+    def _switch_path(path):
+        PYPY_OPEN_BUG = False
+        if not PYPY_OPEN_BUG or os.path.isfile(path):  # pragma: no branch
+            with suppress(Exception):
+                return zipfile.Path(path)
+        return pathlib.Path(path)
+
+    @classmethod
+    def _matches_info(cls, normalized, item):
+        template = r'{pattern}(-.*)?\.(dist|egg)-info'
+        manifest = template.format(pattern=normalized)
+        return re.match(manifest, item.name, flags=re.IGNORECASE)
+
+    @classmethod
+    def _matches_legacy(cls, normalized, item):
+        template = r'{pattern}-.*\.egg[\\/]EGG-INFO'
+        manifest = template.format(pattern=normalized)
+        return re.search(manifest, str(item), flags=re.IGNORECASE)
+
+    @classmethod
+    def _search_path(cls, root, pattern):
+        if not root.is_dir():
+            return ()
+        normalized = pattern.replace('-', '_')
+        return (item for item in root.iterdir()
+                if cls._matches_info(normalized, item)
+                or cls._matches_legacy(normalized, item))
+
+
 class PathDistribution(Distribution):
     def __init__(self, path):
         """Construct a distribution from a path to the metadata directory.
@@ -382,13 +436,13 @@ class PathDistribution(Distribution):
         return self._path.parent / path
 
 
-def distribution(package):
-    """Get the ``Distribution`` instance for the given package.
+def distribution(distribution_name):
+    """Get the ``Distribution`` instance for the named package.
 
-    :param package: The name of the package as a string.
+    :param distribution_name: The name of the distribution package as a string.
     :return: A ``Distribution`` instance (or subclass thereof).
     """
-    return Distribution.from_name(package)
+    return Distribution.from_name(distribution_name)
 
 
 def distributions(**kwargs):
@@ -399,23 +453,23 @@ def distributions(**kwargs):
     return Distribution.discover(**kwargs)
 
 
-def metadata(package):
-    """Get the metadata for the package.
+def metadata(distribution_name):
+    """Get the metadata for the named package.
 
-    :param package: The name of the distribution package to query.
+    :param distribution_name: The name of the distribution package to query.
     :return: An email.Message containing the parsed metadata.
     """
-    return Distribution.from_name(package).metadata
+    return Distribution.from_name(distribution_name).metadata
 
 
-def version(package):
+def version(distribution_name):
     """Get the version string for the named package.
 
-    :param package: The name of the distribution package to query.
+    :param distribution_name: The name of the distribution package to query.
     :return: The version string for the package as defined in the package's
         "Version" metadata key.
     """
-    return distribution(package).version
+    return distribution(distribution_name).version
 
 
 def entry_points():
@@ -434,15 +488,20 @@ def entry_points():
         }
 
 
-def files(package):
-    return distribution(package).files
+def files(distribution_name):
+    """Return a list of files for the named package.
 
-
-def requires(package):
+    :param distribution_name: The name of the distribution package to query.
+    :return: List of files composing the distribution.
     """
-    Return a list of requirements for the indicated distribution.
+    return distribution(distribution_name).files
+
+
+def requires(distribution_name):
+    """
+    Return a list of requirements for the named package.
 
     :return: An iterator of requirements, suitable for
     packaging.requirement.Requirement.
     """
-    return distribution(package).requires
+    return distribution(distribution_name).requires
