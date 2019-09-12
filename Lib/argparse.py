@@ -1630,6 +1630,8 @@ class ArgumentParser(_AttributeHolder, _ActionsContainer):
         - conflict_handler -- String indicating how to handle conflicts
         - add_help -- Add a -h/-help option
         - allow_abbrev -- Allow long options to be abbreviated unambiguously
+        - exit_on_error -- Determines whether or not ArgumentParser exits with
+            error info when an error occurs
     """
 
     def __init__(self,
@@ -1644,7 +1646,8 @@ class ArgumentParser(_AttributeHolder, _ActionsContainer):
                  argument_default=None,
                  conflict_handler='error',
                  add_help=True,
-                 allow_abbrev=True):
+                 allow_abbrev=True,
+                 exit_on_error=True):
 
         superinit = super(ArgumentParser, self).__init__
         superinit(description=description,
@@ -1663,6 +1666,7 @@ class ArgumentParser(_AttributeHolder, _ActionsContainer):
         self.fromfile_prefix_chars = fromfile_prefix_chars
         self.add_help = add_help
         self.allow_abbrev = allow_abbrev
+        self.exit_on_error = exit_on_error
 
         add_group = self.add_argument_group
         self._positionals = add_group(_('positional arguments'))
@@ -1793,15 +1797,19 @@ class ArgumentParser(_AttributeHolder, _ActionsContainer):
                 setattr(namespace, dest, self._defaults[dest])
 
         # parse the arguments and exit if there are any errors
-        try:
+        if self.exit_on_error:
+            try:
+                namespace, args = self._parse_known_args(args, namespace)
+            except ArgumentError:
+                err = _sys.exc_info()[1]
+                self.error(str(err))
+        else:
             namespace, args = self._parse_known_args(args, namespace)
-            if hasattr(namespace, _UNRECOGNIZED_ARGS_ATTR):
-                args.extend(getattr(namespace, _UNRECOGNIZED_ARGS_ATTR))
-                delattr(namespace, _UNRECOGNIZED_ARGS_ATTR)
-            return namespace, args
-        except ArgumentError:
-            err = _sys.exc_info()[1]
-            self.error(str(err))
+
+        if hasattr(namespace, _UNRECOGNIZED_ARGS_ATTR):
+            args.extend(getattr(namespace, _UNRECOGNIZED_ARGS_ATTR))
+            delattr(namespace, _UNRECOGNIZED_ARGS_ATTR)
+        return namespace, args
 
     def _parse_known_args(self, arg_strings, namespace):
         # replace arg strings that are file references
