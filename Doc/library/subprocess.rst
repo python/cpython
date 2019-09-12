@@ -339,8 +339,9 @@ functions.
                  stderr=None, preexec_fn=None, close_fds=True, shell=False, \
                  cwd=None, env=None, universal_newlines=None, \
                  startupinfo=None, creationflags=0, restore_signals=True, \
-                 start_new_session=False, pass_fds=(), *, \
-                 encoding=None, errors=None, text=None)
+                 start_new_session=False, pass_fds=(), *, group=None, \
+                 extra_groups=None, user=None, encoding=None, errors=None, \
+                 text=None)
 
    Execute a child program in a new process.  On POSIX, the class uses
    :meth:`os.execvp`-like behavior to execute the child program.  On Windows,
@@ -543,6 +544,33 @@ functions.
 
    .. versionchanged:: 3.2
       *start_new_session* was added.
+
+   If *group* is not ``None``, the setregid() system call will be made in the
+   child process prior to the execution of the subprocess. If the provided
+   value is a string, it will be looked up via :func:`grp.getgrnam()` and
+   the value in ``gr_gid`` will be used. If the value is an integer, it
+   will be passed verbatim. (POSIX only)
+
+   .. availability:: POSIX
+   .. versionadded:: 3.9
+
+   If *extra_groups* is not ``None``, the setgroups() system call will be
+   made in the child process prior to the execution of the subprocess.
+   Strings provided in *extra_groups* will be looked up via
+   :func:`grp.getgrnam()` and the values in ``gr_gid`` will be used.
+   Integer values will be passed verbatim. (POSIX only)
+
+   .. availability:: POSIX
+   .. versionadded:: 3.9
+
+   If *user* is not ``None``, the setreuid() system call will be made in the
+   child process prior to the execution of the subprocess. If the provided
+   value is a string, it will be looked up via :func:`pwd.getpwnam()` and
+   the value in ``pw_uid`` will be used. If the value is an integer, it will
+   be passed verbatim. (POSIX only)
+
+   .. availability:: POSIX
+   .. versionadded:: 3.9
 
    If *env* is not ``None``, it must be a mapping that defines the environment
    variables for the new process; these are used instead of the default
