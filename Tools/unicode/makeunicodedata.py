@@ -31,7 +31,6 @@ import os
 import sys
 import zipfile
 
-from dataclasses import dataclass
 from functools import partial
 from textwrap import dedent
 from typing import Iterator, List, Optional, Set, Tuple
@@ -947,7 +946,7 @@ class UcdFile:
                 yield char, rest
 
 
-@dataclass
+@dataclasses.dataclass
 class UcdRecord:
     # 15 fields from UnicodeData.txt .  See:
     #   https://www.unicode.org/reports/tr44/#UnicodeData.txt
