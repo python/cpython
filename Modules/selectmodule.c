@@ -77,9 +77,9 @@ module select
 class select.poll "pollObject *" "&poll_Type"
 class select.devpoll "devpollObject *" "&devpoll_Type"
 class select.epoll "pyEpoll_Object *" "&pyEpoll_Type"
-class select.kqueue "kqueue_queue_Object *" "&kqueue_queue_Type"
+class select.kqueue "kqueue_queue_Object *" "_selectstate_global->kqueue_queue_Type"
 [clinic start generated code]*/
-/*[clinic end generated code: output=da39a3ee5e6b4b0d input=ded80abdad2b7552]*/
+/*[clinic end generated code: output=da39a3ee5e6b4b0d input=41071028e0ede093]*/
 
 static int
 fildes_converter(PyObject *o, void *p)
@@ -1921,7 +1921,7 @@ kqueue_event_richcompare(kqueue_event_Object *s, kqueue_event_Object *o,
 }
 
 static PyType_Slot kqueue_event_Type_slots[] = {
-    {Py_tp_doc, kqueue_event_doc},
+    {Py_tp_doc, (void*)kqueue_event_doc},
     {Py_tp_init, kqueue_event_init},
     {Py_tp_members, kqueue_event_members},
     {Py_tp_new, PyType_GenericNew},
@@ -2311,42 +2311,6 @@ static PyMethodDef devpoll_methods[] = {
     {NULL,              NULL}           /* sentinel */
 };
 
-static PyTypeObject devpoll_Type = {
-    /* The ob_type field must be initialized in the module init function
-     * to be portable to Windows without using C++. */
-    PyVarObject_HEAD_INIT(NULL, 0)
-    "select.devpoll",           /*tp_name*/
-    sizeof(devpollObject),      /*tp_basicsize*/
-    0,                          /*tp_itemsize*/
-    /* methods */
-    (destructor)devpoll_dealloc, /*tp_dealloc*/
-    0,                          /*tp_vectorcall_offset*/
-    0,                          /*tp_getattr*/
-    0,                          /*tp_setattr*/
-    0,                          /*tp_as_async*/
-    0,                          /*tp_repr*/
-    0,                          /*tp_as_number*/
-    0,                          /*tp_as_sequence*/
-    0,                          /*tp_as_mapping*/
-    0,                          /*tp_hash*/
-    0,                          /*tp_call*/
-    0,                          /*tp_str*/
-    0,                          /*tp_getattro*/
-    0,                          /*tp_setattro*/
-    0,                          /*tp_as_buffer*/
-    Py_TPFLAGS_DEFAULT,         /*tp_flags*/
-    0,                          /*tp_doc*/
-    0,                          /*tp_traverse*/
-    0,                          /*tp_clear*/
-    0,                          /*tp_richcompare*/
-    0,                          /*tp_weaklistoffset*/
-    0,                          /*tp_iter*/
-    0,                          /*tp_iternext*/
-    devpoll_methods,            /*tp_methods*/
-    0,                          /* tp_members */
-    devpoll_getsetlist,         /* tp_getset */
-};
-
 #endif  /* HAVE_SYS_DEVPOLL_H */
 
 #endif /* HAVE_POLL */
@@ -2388,48 +2352,6 @@ static PyType_Spec pyEpoll_Type_spec = {
 
 #ifdef HAVE_KQUEUE
 
-static PyTypeObject kqueue_event_Type = {
-    PyVarObject_HEAD_INIT(NULL, 0)
-    "select.kevent",                                    /* tp_name */
-    sizeof(kqueue_event_Object),                        /* tp_basicsize */
-    0,                                                  /* tp_itemsize */
-    0,                                                  /* tp_dealloc */
-    0,                                                  /* tp_vectorcall_offset */
-    0,                                                  /* tp_getattr */
-    0,                                                  /* tp_setattr */
-    0,                                                  /* tp_as_async */
-    (reprfunc)kqueue_event_repr,                        /* tp_repr */
-    0,                                                  /* tp_as_number */
-    0,                                                  /* tp_as_sequence */
-    0,                                                  /* tp_as_mapping */
-    0,                                                  /* tp_hash */
-    0,                                                  /* tp_call */
-    0,                                                  /* tp_str */
-    0,                                                  /* tp_getattro */
-    0,                                                  /* tp_setattro */
-    0,                                                  /* tp_as_buffer */
-    Py_TPFLAGS_DEFAULT,                                 /* tp_flags */
-    kqueue_event_doc,                                   /* tp_doc */
-    0,                                                  /* tp_traverse */
-    0,                                                  /* tp_clear */
-    (richcmpfunc)kqueue_event_richcompare,              /* tp_richcompare */
-    0,                                                  /* tp_weaklistoffset */
-    0,                                                  /* tp_iter */
-    0,                                                  /* tp_iternext */
-    0,                                                  /* tp_methods */
-    kqueue_event_members,                               /* tp_members */
-    0,                                                  /* tp_getset */
-    0,                                                  /* tp_base */
-    0,                                                  /* tp_dict */
-    0,                                                  /* tp_descr_get */
-    0,                                                  /* tp_descr_set */
-    0,                                                  /* tp_dictoffset */
-    (initproc)kqueue_event_init,                        /* tp_init */
-    0,                                                  /* tp_alloc */
-    0,                                                  /* tp_new */
-    0,                                                  /* tp_free */
-};
-
 static PyMethodDef kqueue_queue_methods[] = {
     SELECT_KQUEUE_FROMFD_METHODDEF
     SELECT_KQUEUE_CLOSE_METHODDEF
@@ -2440,10 +2362,10 @@ static PyMethodDef kqueue_queue_methods[] = {
 
 static PyType_Slot kqueue_queue_Type_slots[] = {
     {Py_tp_dealloc, kqueue_queue_dealloc},
-    {Py_tp_doc, kqueue_queue_doc},
+    {Py_tp_doc, select_kqueue__doc__},
     {Py_tp_getset, kqueue_queue_getsetlist},
     {Py_tp_methods, kqueue_queue_methods},
-    {Py_tp_new, kqueue_queue_new},
+    {Py_tp_new, select_kqueue},
     {0, 0},
 };
 
