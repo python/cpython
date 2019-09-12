@@ -12873,7 +12873,7 @@ DirEntry_from_find_data(path_t *path, WIN32_FIND_DATAW *dataW)
     ULONG reparse_tag;
     wchar_t *joined_path;
 
-    PyObject *DirEntryType = _posixstate(self)->DirEntryType;
+    PyObject *DirEntryType = _posixstate_global->DirEntryType;
     entry = PyObject_New(DirEntry, (PyTypeObject *)DirEntryType);
     if (!entry)
         return NULL;
