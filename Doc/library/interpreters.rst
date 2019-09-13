@@ -11,7 +11,7 @@
 This module constructs higher-level interpreters interfaces on top of the lower
 level :mod:`_interpreters` module.
 
-.. versionchanged:: 3.9
+.. versionchanged:: added in 3.9
 
 Interpreter Objects
 -------------------
