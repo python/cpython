@@ -132,23 +132,47 @@ High-level APIs to work with network IO.
     :widths: 50 50
     :class: full-width-table
 
+    * - ``await`` :func:`connect`
+      -  Establish a TCP connection to send and receive data.
+
     * - ``await`` :func:`open_connection`
-      -  Establish a TCP connection.
+      -  Establish a TCP connection. (Deprecated in favor of :func:`connect`)
+
+    * - ``await`` :func:`connect_unix`
+      -  Establish a Unix socket connection to send and receive data.
 
     * - ``await`` :func:`open_unix_connection`
-      -  Establish a Unix socket connection.
+      -  Establish a Unix socket connection. (Deprecated in favor of :func:`connect_unix`)
 
-    * - ``await`` :func:`start_server`
+    * - :class:`StreamServer`
       - Start a TCP server.
 
-    * - ``await`` :func:`start_unix_server`
+    * - ``await`` :func:`start_server`
+      - Start a TCP server. (Deprecated in favor of :class:`StreamServer`)
+
+    * - :class:`UnixStreamServer`
       - Start a Unix socket server.
 
+    * - ``await`` :func:`start_unix_server`
+      - Start a Unix socket server. (Deprecated in favor of :class:`UnixStreamServer`)
+
+    * - :func:`connect_read_pipe`
+      - Establish a connection to :term:`file-like object <file object>` *pipe*
+        to receive data.
+
+    * - :func:`connect_write_pipe`
+      - Establish a connection to :term:`file-like object <file object>` *pipe*
+        to send data.
+
+    * - :class:`Stream`
+      - Stream is a single object combining APIs of :class:`StreamReader` and
+        :class:`StreamWriter`.
+
     * - :class:`StreamReader`
-      - High-level async/await object to receive network data.
+      - High-level async/await object to receive network data. (Deprecated in favor of :class:`Stream`)
 
     * - :class:`StreamWriter`
-      - High-level async/await object to send network data.
+      - High-level async/await object to send network data. (Deprecated in favor of :class:`Stream`)
 
 
 .. rubric:: Examples
