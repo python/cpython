@@ -1069,8 +1069,9 @@ class CallableMixin(Base):
         self.called = True
         self.call_count += 1
 
-    def _execute_mock_call(self, /, *args, **kwargs):
         # handle call_args
+        # needs to be set here so assertions on call arguments pass before
+        # execution in the case of awaited calls
         _call = _Call((args, kwargs), two=True)
         self.call_args = _call
         self.call_args_list.append(_call)
@@ -1109,6 +1110,10 @@ class CallableMixin(Base):
 
             # follow the parental chain:
             _new_parent = _new_parent._mock_new_parent
+
+    def _execute_mock_call(self, /, *args, **kwargs):
+        # seperate from _increment_mock_call so that awaited functions are
+        # executed seperately from their call
 
         effect = self.side_effect
         if effect is not None:
