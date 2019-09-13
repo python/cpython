@@ -680,10 +680,6 @@ LLVM_PROF_MERGER
 PGO_PROF_USE_FLAG
 PGO_PROF_GEN_FLAG
 LLVM_AR_FOUND
-target_os
-target_vendor
-target_cpu
-target
 LLVM_AR
 DEF_MAKE_RULE
 DEF_MAKE_ALL_RULE
@@ -1459,7 +1455,6 @@ _ACEOF
 System types:
   --build=BUILD     configure for building on BUILD [guessed]
   --host=HOST       cross-compile to build programs to run on HOST [BUILD]
-  --target=TARGET   configure for building compilers for TARGET [HOST]
 _ACEOF
 fi
 
@@ -6486,47 +6481,9 @@ if test "$Py_LTO" = 'true' ; then
   case $CC in
     *clang*)
 
-      { $as_echo "$as_me:${as_lineno-$LINENO}: checking target system type" >&5
-$as_echo_n "checking target system type... " >&6; }
-if ${ac_cv_target+:} false; then :
-  $as_echo_n "(cached) " >&6
-else
-  if test "x$target_alias" = x; then
-  ac_cv_target=$ac_cv_host
-else
-  ac_cv_target=`$SHELL "$ac_aux_dir/config.sub" $target_alias` ||
-    as_fn_error $? "$SHELL $ac_aux_dir/config.sub $target_alias failed" "$LINENO" 5
-fi
-
-fi
-{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_target" >&5
-$as_echo "$ac_cv_target" >&6; }
-case $ac_cv_target in
-*-*-*) ;;
-*) as_fn_error $? "invalid value of canonical target" "$LINENO" 5;;
-esac
-target=$ac_cv_target
-ac_save_IFS=$IFS; IFS='-'
-set x $ac_cv_target
-shift
-target_cpu=$1
-target_vendor=$2
-shift; shift
-# Remember, the first character of IFS is used to create $*,
-# except with old shells:
-target_os=$*
-IFS=$ac_save_IFS
-case $target_os in *\ *) target_os=`echo "$target_os" | sed 's/ /-/g'`;; esac
-
-
-# The aliases save the names the user supplied, while $host etc.
-# will get canonicalized.
-test -n "$target_alias" &&
-  test "$program_prefix$program_suffix$program_transform_name" = \
-    NONENONEs,x,x, &&
-  program_prefix=${target_alias}-
-# Extract the first word of "$target_alias-llvm-ar", so it can be a program name with args.
-set dummy $target_alias-llvm-ar; ac_word=$2
+      if test -n "$ac_tool_prefix"; then
+  # Extract the first word of "${ac_tool_prefix}llvm-ar", so it can be a program name with args.
+set dummy ${ac_tool_prefix}llvm-ar; ac_word=$2
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
 $as_echo_n "checking for $ac_word... " >&6; }
 if ${ac_cv_path_LLVM_AR+:} false; then :
@@ -6565,10 +6522,10 @@ $as_echo "no" >&6; }
 fi
 
 
+fi
 if test -z "$ac_cv_path_LLVM_AR"; then
-  if test "$build" = "$target"; then
-    ac_pt_LLVM_AR=$LLVM_AR
-    # Extract the first word of "llvm-ar", so it can be a program name with args.
+  ac_pt_LLVM_AR=$LLVM_AR
+  # Extract the first word of "llvm-ar", so it can be a program name with args.
 set dummy llvm-ar; ac_word=$2
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
 $as_echo_n "checking for $ac_word... " >&6; }
@@ -6595,7 +6552,6 @@ done
   done
 IFS=$as_save_IFS
 
-  test -z "$ac_cv_path_ac_pt_LLVM_AR" && ac_cv_path_ac_pt_LLVM_AR="''"
   ;;
 esac
 fi
@@ -6608,9 +6564,16 @@ else
 $as_echo "no" >&6; }
 fi
 
-    LLVM_AR=$ac_pt_LLVM_AR
-  else
+  if test "x$ac_pt_LLVM_AR" = x; then
     LLVM_AR="''"
+  else
+    case $cross_compiling:$ac_tool_warned in
+yes:)
+{ $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: using cross tools not prefixed with host triplet" >&5
+$as_echo "$as_me: WARNING: using cross tools not prefixed with host triplet" >&2;}
+ac_tool_warned=yes ;;
+esac
+    LLVM_AR=$ac_pt_LLVM_AR
   fi
 else
   LLVM_AR="$ac_cv_path_LLVM_AR"
@@ -6682,8 +6645,9 @@ fi
 
 
 
-# Extract the first word of "$target_alias-llvm-profdata", so it can be a program name with args.
-set dummy $target_alias-llvm-profdata; ac_word=$2
+if test -n "$ac_tool_prefix"; then
+  # Extract the first word of "${ac_tool_prefix}llvm-profdata", so it can be a program name with args.
+set dummy ${ac_tool_prefix}llvm-profdata; ac_word=$2
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
 $as_echo_n "checking for $ac_word... " >&6; }
 if ${ac_cv_path_LLVM_PROFDATA+:} false; then :
@@ -6722,10 +6686,10 @@ $as_echo "no" >&6; }
 fi
 
 
+fi
 if test -z "$ac_cv_path_LLVM_PROFDATA"; then
-  if test "$build" = "$target"; then
-    ac_pt_LLVM_PROFDATA=$LLVM_PROFDATA
-    # Extract the first word of "llvm-profdata", so it can be a program name with args.
+  ac_pt_LLVM_PROFDATA=$LLVM_PROFDATA
+  # Extract the first word of "llvm-profdata", so it can be a program name with args.
 set dummy llvm-profdata; ac_word=$2
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
 $as_echo_n "checking for $ac_word... " >&6; }
@@ -6752,7 +6716,6 @@ done
   done
 IFS=$as_save_IFS
 
-  test -z "$ac_cv_path_ac_pt_LLVM_PROFDATA" && ac_cv_path_ac_pt_LLVM_PROFDATA="''"
   ;;
 esac
 fi
@@ -6765,9 +6728,16 @@ else
 $as_echo "no" >&6; }
 fi
 
-    LLVM_PROFDATA=$ac_pt_LLVM_PROFDATA
-  else
+  if test "x$ac_pt_LLVM_PROFDATA" = x; then
     LLVM_PROFDATA="''"
+  else
+    case $cross_compiling:$ac_tool_warned in
+yes:)
+{ $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: using cross tools not prefixed with host triplet" >&5
+$as_echo "$as_me: WARNING: using cross tools not prefixed with host triplet" >&2;}
+ac_tool_warned=yes ;;
+esac
+    LLVM_PROFDATA=$ac_pt_LLVM_PROFDATA
   fi
 else
   LLVM_PROFDATA="$ac_cv_path_LLVM_PROFDATA"
