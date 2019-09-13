@@ -526,30 +526,23 @@ class InterpreterIDTests(TestBase):
         self.assertEqual(int(id), 10)
 
     def test_coerce_id(self):
-        id = interpreters.InterpreterID('10', force=True)
-        self.assertEqual(int(id), 10)
-
-        id = interpreters.InterpreterID(10.0, force=True)
-        self.assertEqual(int(id), 10)
-
         class Int(str):
-            def __init__(self, value):
-                self._value = value
-            def __int__(self):
-                return self._value
+            def __index__(self):
+                return 10
 
-        id = interpreters.InterpreterID(Int(10), force=True)
-        self.assertEqual(int(id), 10)
+        for id in ('10', '1_0', Int()):
+            with self.subTest(id=id):
+                id = interpreters.InterpreterID(id, force=True)
+                self.assertEqual(int(id), 10)
 
     def test_bad_id(self):
-        for id in [-1, 'spam']:
-            with self.subTest(id):
-                with self.assertRaises(ValueError):
-                    interpreters.InterpreterID(id)
-        with self.assertRaises(OverflowError):
-            interpreters.InterpreterID(2**64)
-        with self.assertRaises(TypeError):
-            interpreters.InterpreterID(object())
+        self.assertRaises(TypeError, interpreters.InterpreterID, object())
+        self.assertRaises(TypeError, interpreters.InterpreterID, 10.0)
+        self.assertRaises(TypeError, interpreters.InterpreterID, b'10')
+        self.assertRaises(ValueError, interpreters.InterpreterID, -1)
+        self.assertRaises(ValueError, interpreters.InterpreterID, '-1')
+        self.assertRaises(ValueError, interpreters.InterpreterID, 'spam')
+        self.assertRaises(OverflowError, interpreters.InterpreterID, 2**64)
 
     def test_does_not_exist(self):
         id = interpreters.channel_create()
@@ -572,6 +565,14 @@ class InterpreterIDTests(TestBase):
         self.assertTrue(id1 == id1)
         self.assertTrue(id1 == id2)
         self.assertTrue(id1 == int(id1))
+        self.assertTrue(int(id1) == id1)
+        self.assertTrue(id1 == float(int(id1)))
+        self.assertTrue(float(int(id1)) == id1)
+        self.assertFalse(id1 == float(int(id1)) + 0.1)
+        self.assertFalse(id1 == str(int(id1)))
+        self.assertFalse(id1 == 2**1000)
+        self.assertFalse(id1 == float('inf'))
+        self.assertFalse(id1 == 'spam')
         self.assertFalse(id1 == id3)
 
         self.assertFalse(id1 != id1)
@@ -1105,30 +1106,20 @@ class ChannelIDTests(TestBase):
         self.assertEqual(cid.end, 'both')
 
     def test_coerce_id(self):
-        cid = interpreters._channel_id('10', force=True)
-        self.assertEqual(int(cid), 10)
-
-        cid = interpreters._channel_id(10.0, force=True)
-        self.assertEqual(int(cid), 10)
-
         class Int(str):
-            def __init__(self, value):
-                self._value = value
-            def __int__(self):
-                return self._value
+            def __index__(self):
+                return 10
 
-        cid = interpreters._channel_id(Int(10), force=True)
+        cid = interpreters._channel_id(Int(), force=True)
         self.assertEqual(int(cid), 10)
 
     def test_bad_id(self):
-        for cid in [-1, 'spam']:
-            with self.subTest(cid):
-                with self.assertRaises(ValueError):
-                    interpreters._channel_id(cid)
-        with self.assertRaises(OverflowError):
-            interpreters._channel_id(2**64)
-        with self.assertRaises(TypeError):
-            interpreters._channel_id(object())
+        self.assertRaises(TypeError, interpreters._channel_id, object())
+        self.assertRaises(TypeError, interpreters._channel_id, 10.0)
+        self.assertRaises(TypeError, interpreters._channel_id, '10')
+        self.assertRaises(TypeError, interpreters._channel_id, b'10')
+        self.assertRaises(ValueError, interpreters._channel_id, -1)
+        self.assertRaises(OverflowError, interpreters._channel_id, 2**64)
 
     def test_bad_kwargs(self):
         with self.assertRaises(ValueError):
@@ -1164,6 +1155,14 @@ class ChannelIDTests(TestBase):
         self.assertTrue(cid1 == cid1)
         self.assertTrue(cid1 == cid2)
         self.assertTrue(cid1 == int(cid1))
+        self.assertTrue(int(cid1) == cid1)
+        self.assertTrue(cid1 == float(int(cid1)))
+        self.assertTrue(float(int(cid1)) == cid1)
+        self.assertFalse(cid1 == float(int(cid1)) + 0.1)
+        self.assertFalse(cid1 == str(int(cid1)))
+        self.assertFalse(cid1 == 2**1000)
+        self.assertFalse(cid1 == float('inf'))
+        self.assertFalse(cid1 == 'spam')
         self.assertFalse(cid1 == cid3)
 
         self.assertFalse(cid1 != cid1)
