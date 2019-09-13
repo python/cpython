@@ -1,0 +1,3 @@
+Names of hashing algorithms frome OpenSSL are now normalized to follow
+Python's naming conventions. For example OpenSSL uses sha3-512 instead of
+sha3_512 or blake2b512 instead of blake2b. 
