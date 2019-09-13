@@ -1,0 +1,1 @@
+Add slots to :mod:`asyncio` transport classes, which can reduce memory usage.
