@@ -8,7 +8,8 @@
 
 --------------
 
-This module constructs higher-level interpreters interfaces on top of the lower
+This module provides tools for working with sub-interpreters, such as creating them,
+running code in them, or sending data between them.  It is a wrapper around the low-
 level :mod:`_interpreters` module.
 
 .. versionchanged:: added in 3.9
