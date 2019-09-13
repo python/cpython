@@ -184,6 +184,10 @@ class AsyncAutospecTest(unittest.TestCase):
         spec.assert_awaited_with(1, 2, c=3)
         spec.assert_awaited()
 
+        with self.assertRaises(AssertionError):
+            spec.assert_any_await(e=1)
+
+
     def test_patch_with_autospec(self):
 
         async def test_async():

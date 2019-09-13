@@ -864,7 +864,7 @@ class NonCallableMock(Base):
         def _error_message():
             msg = self._format_mock_failure_message(args, kwargs)
             return msg
-        expected = self._call_matcher(_Call((args, kwargs)))
+        expected = self._call_matcher(_Call((args, kwargs), two=True))
         actual = self._call_matcher(self.call_args)
         if actual != expected:
             cause = expected if isinstance(expected, Exception) else None
@@ -2171,9 +2171,9 @@ class AsyncMockMixin(Base):
         Assert the mock has ever been awaited with the specified arguments.
         """
         expected = self._call_matcher(_Call((args, kwargs), two=True))
+        cause = expected if isinstance(expected, Exception) else None
         actual = [self._call_matcher(c) for c in self.await_args_list]
-        if expected not in _AnyComparer(actual):
-            cause = expected if isinstance(expected, Exception) else None
+        if cause or expected not in _AnyComparer(actual):
             expected_string = self._format_mock_call_signature(args, kwargs)
             raise AssertionError(
                 '%s await not found' % expected_string
