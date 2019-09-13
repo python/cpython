@@ -402,18 +402,12 @@ class NonCallableMock(Base):
         # so we can create magic methods on the
         # class without stomping on other mocks
         bases = (cls,)
-        if not issubclass(cls, AsyncMock):
+        if not issubclass(cls, AsyncMockMixin):
             # Check if spec is an async object or function
-            sig = inspect.signature(NonCallableMock.__init__)
-            bound_args = sig.bind_partial(cls, *args, **kw).arguments
-            spec_arg = [
-                arg for arg in bound_args.keys()
-                if arg.startswith('spec')
-            ]
-            if spec_arg:
-                # what if spec_set is different than spec?
-                if _is_async_obj(bound_args[spec_arg[0]]):
-                    bases = (AsyncMockMixin, cls,)
+            bound_args = _MOCK_SIG.bind_partial(cls, *args, **kw).arguments
+            spec_arg = bound_args.get('spec_set', bound_args.get('spec'))
+            if spec_arg and _is_async_obj(spec_arg):
+                bases = (AsyncMockMixin, cls)
         new = type(cls.__name__, bases, {'__doc__': cls.__doc__})
         instance = object.__new__(new)
         return instance
@@ -1018,6 +1012,9 @@ class NonCallableMock(Base):
         if not self.mock_calls:
             return ""
         return f"\n{prefix}: {safe_repr(self.mock_calls)}."
+
+
+_MOCK_SIG = inspect.signature(NonCallableMock.__init__)
 
 
 class _AnyComparer(list):
