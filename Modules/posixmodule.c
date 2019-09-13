@@ -836,7 +836,6 @@ typedef struct {
 #endif
     PyObject *st_mode;
     PyObject *fspath;
-    PyObject *dunderget;
     newfunc structseq_new;
 } _posixstate;
 
@@ -963,7 +962,7 @@ fspath_lookup_special(PyObject *self) {
     PyTypeObject *path_type = Py_TYPE(self);
     func = _PyType_Lookup(path_type, _posixstate_global->fspath);
     if (func != NULL) {
-        getter = _PyType_Lookup(Py_TYPE(func), _posixstate_global->dunderget);
+        getter = Py_TYPE(func)->tp_descr_get;
         if (getter == NULL) {
             Py_INCREF(func);
         } else {
@@ -2153,7 +2152,6 @@ _posix_clear(PyObject *module)
 #endif
     Py_CLEAR(_posixstate(module)->st_mode);
     Py_CLEAR(_posixstate(module)->fspath);
-    Py_CLEAR(_posixstate(module)->dunderget);
     return 0;
 }
 
@@ -2180,7 +2178,6 @@ _posix_traverse(PyObject *module, visitproc visit, void *arg)
 #endif
     Py_VISIT(_posixstate(module)->st_mode);
     Py_VISIT(_posixstate(module)->fspath);
-    Py_VISIT(_posixstate(module)->dunderget);
     return 0;
 }
 
@@ -14668,9 +14665,6 @@ INITFUNC(void)
         return NULL;
     _posixstate(m)->fspath = PyUnicode_InternFromString("__fspath__");
     if (_posixstate(m)->fspath == NULL)
-        return NULL;
-    _posixstate(m)->dunderget = PyUnicode_InternFromString("__get__");
-    if (_posixstate(m)->dunderget == NULL)
         return NULL;
 
     /* suppress "function not used" warnings */
