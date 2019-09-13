@@ -2426,7 +2426,6 @@ class ForwardRefTests(BaseTestCase):
         def namespace2():
             a = typing.ForwardRef('A')
             A = a
-            # class A: pass
             def fun(x: a): pass
 
             ret = get_type_hints(fun, globals(), locals())
@@ -2437,7 +2436,7 @@ class ForwardRefTests(BaseTestCase):
 
         r1 = namespace1()
         r2 = namespace2()
-        assert r1 is not r2
+        self.assertIsNot(r1, r2)
         self.assertRaises(RecursionError, cmp, r1, r2)
 
     def test_union_forward_recursion(self):
