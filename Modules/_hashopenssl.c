@@ -66,9 +66,9 @@ typedef struct {
 #include "clinic/_hashopenssl.c.h"
 /*[clinic input]
 module _hashlib
-class _hashlib.HASH "EVPobject *" "&EVPtype"
+class _hashlib.HASH "EVPobject *" "((_hashlibstate *)PyModule_GetState(module))->EVPtype"
 [clinic start generated code]*/
-/*[clinic end generated code: output=da39a3ee5e6b4b0d input=a881a5092eecad28]*/
+/*[clinic end generated code: output=da39a3ee5e6b4b0d input=1adf85e8eb2ab979]*/
 
 
 /* LCOV_EXCL_START */
