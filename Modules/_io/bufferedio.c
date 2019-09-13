@@ -1016,7 +1016,7 @@ _buffered_readinto_generic(buffered *self, Py_buffer *buffer, char readinto1)
          written += n, remaining -= n) {
         /* If remaining bytes is larger than internal buffer size, copy
          * directly into caller's buffer. */
-        if (remaining > self->buffer_size) {
+        if (remaining >= self->buffer_size) {
             n = _bufferedreader_raw_read(self, (char *) buffer->buf + written,
                                          remaining);
         }
