@@ -638,9 +638,13 @@ static void
 ast_dealloc(AST_object *self)
 {
     /* bpo-31095: UnTrack is needed before calling any callbacks */
+    PyTypeObject *tp = Py_TYPE(self);
     PyObject_GC_UnTrack(self);
     Py_CLEAR(self->dict);
-    Py_TYPE(self)->tp_free(self);
+    freefunc free_func = PyType_GetSlot(tp, Py_tp_free);
+    assert(free_func != NULL);
+    free_func(self);
+    Py_DECREF(tp);
 }
 
 static int
