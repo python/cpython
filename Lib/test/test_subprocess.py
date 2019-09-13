@@ -1787,19 +1787,23 @@ class POSIXProcessTestCase(BaseTestCase):
         with self.assertRaises(ValueError):
             subprocess.check_call([sys.executable, "-c", "pass"], user=65535)
 
-    @unittest.skipUnless(hasattr(os, 'setregid'), 'no setregid() on platform')
-    def test_group(self):
-        gid = os.getegid()
-        group_list = [65534 if gid != 65534 else 65533]
+    @staticmethod
+    def _get_test_grp_name():
         for name_group in ('staff', 'nogroup', 'grp'):
             if grp:
                 try:
                     grp.getgrnam(name_group)
                 except KeyError:
                     continue
-                break
+                return name_group
         else:
             raise unittest.SkipTest('No identified group name to use for this test on this platform.')
+
+    @unittest.skipUnless(hasattr(os, 'setregid'), 'no setregid() on platform')
+    def test_group(self):
+        gid = os.getegid()
+        group_list = [65534 if gid != 65534 else 65533]
+        name_group = self._get_test_grp_name()
 
         if grp is not None:
             group_list.append(name_group)
@@ -1840,15 +1844,7 @@ class POSIXProcessTestCase(BaseTestCase):
     def test_extra_groups(self):
         gid = os.getegid()
         group_list = [65534 if gid != 65534 else 65533]
-        for name_group in ('staff', 'nogroup', 'grp'):
-            if grp:
-                try:
-                    grp.getgrnam(name_group)
-                except KeyError:
-                    continue
-                break
-        else:
-            raise unittest.SkipTest('No identified group name to use for this test on this platform.')
+        name_group = self._get_test_grp_name()
         perm_error = False
 
         if grp is not None:
