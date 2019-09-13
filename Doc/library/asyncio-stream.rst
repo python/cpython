@@ -388,6 +388,26 @@ Stream
 
       Aborts the connection immediately, without waiting for the send buffer to drain.
 
+   .. method:: at_eof()
+
+      Return ``True`` if the buffer is empty.
+
+   .. method:: can_write_eof()
+
+      Return *True* if the underlying transport supports
+      the :meth:`write_eof` method, *False* otherwise.
+
+   .. method:: close()
+
+      The method closes the stream and the underlying socket.
+
+      It is possible to directly await on the `close()` method::
+
+         await stream.close()
+
+      The ``await`` pauses the current coroutine until the stream and the underlying
+      socket are closed (and SSL shutdown is performed for a secure connection).
+
    .. coroutinemethod:: drain()
 
       Wait until it is appropriate to resume writing to the stream.
@@ -409,18 +429,15 @@ Stream
 
          await stream.write(data)
 
-   .. coroutinemethod:: sendfile(file, offset=0, count=None, *, fallback=True)
+   .. method:: get_extra_info(name, default=None)
 
-      Sends a *file* over the stream using an optimized syscall if available.
+      Access optional transport information; see
+      :meth:`BaseTransport.get_extra_info` for details.
 
-      For other parameters meaning please see :meth:`AbstractEventloop.sendfile`.
+   .. method:: is_closing()
 
-   .. coroutinemethod:: start_tls(sslcontext, *, server_hostname=None, \
-                                  ssl_handshake_timeout=None)
-
-      Upgrades the existing transport-based connection to TLS.
-
-      For other parameters meaning please see :meth:`AbstractEventloop.start_tls`.
+      Return ``True`` if the stream is closed or in the process of
+      being closed.
 
    .. coroutinemethod:: read(n=-1)
 
@@ -429,6 +446,14 @@ Stream
 
       If EOF was received and the internal buffer is empty,
       return an empty ``bytes`` object.
+
+   .. coroutinemethod:: readexactly(n)
+
+      Read exactly *n* bytes.
+
+      Raise an :exc:`IncompleteReadError` if EOF is reached before *n*
+      can be read.  Use the :attr:`IncompleteReadError.partial`
+      attribute to get the partially read data.
 
    .. coroutinemethod:: readline()
 
@@ -440,14 +465,6 @@ Stream
 
       If EOF is received and the internal buffer is empty,
       return an empty ``bytes`` object.
-
-   .. coroutinemethod:: readexactly(n)
-
-      Read exactly *n* bytes.
-
-      Raise an :exc:`IncompleteReadError` if EOF is reached before *n*
-      can be read.  Use the :attr:`IncompleteReadError.partial`
-      attribute to get the partially read data.
 
    .. coroutinemethod:: readuntil(separator=b'\\n')
 
@@ -465,6 +482,26 @@ Stream
       an :exc:`IncompleteReadError` exception is raised, and the internal
       buffer is reset.  The :attr:`IncompleteReadError.partial` attribute
       may contain a portion of the separator.
+
+   .. coroutinemethod:: sendfile(file, offset=0, count=None, *, fallback=True)
+
+      Sends a *file* over the stream using an optimized syscall if available.
+
+      For other parameters meaning please see :meth:`AbstractEventloop.sendfile`.
+
+   .. coroutinemethod:: start_tls(sslcontext, *, server_hostname=None, \
+                                  ssl_handshake_timeout=None)
+
+      Upgrades the existing transport-based connection to TLS.
+
+      For other parameters meaning please see :meth:`AbstractEventloop.start_tls`.
+
+   .. coroutinemethod:: wait_closed()
+
+      Wait until the stream is closed.
+
+      Should be called after :meth:`close` to wait until the underlying
+      connection is closed.
 
    .. coroutinemethod:: write(data)
 
@@ -502,47 +539,10 @@ Stream
       The ``await`` pauses the current coroutine until the data is written to the
       socket.
 
-   .. method:: close()
-
-      The method closes the stream and the underlying socket.
-
-      It is possible to directly await on the `close()` method::
-
-         await stream.close()
-
-      The ``await`` pauses the current coroutine until the stream and the underlying
-      socket are closed (and SSL shutdown is performed for a secure connection).
-
-   .. method:: can_write_eof()
-
-      Return *True* if the underlying transport supports
-      the :meth:`write_eof` method, *False* otherwise.
-
    .. method:: write_eof()
 
       Close the write end of the stream after the buffered write
       data is flushed.
-
-   .. method:: at_eof()
-
-      Return ``True`` if the buffer is empty.
-
-   .. method:: get_extra_info(name, default=None)
-
-      Access optional transport information; see
-      :meth:`BaseTransport.get_extra_info` for details.
-
-   .. method:: is_closing()
-
-      Return ``True`` if the stream is closed or in the process of
-      being closed.
-
-   .. coroutinemethod:: wait_closed()
-
-      Wait until the stream is closed.
-
-      Should be called after :meth:`close` to wait until the underlying
-      connection is closed.
 
 
 StreamMode
