@@ -255,25 +255,16 @@ def _mkstemp_inner(dir, pre, suf, flags, output_type):
     if output_type is bytes:
         names = map(_os.fsencode, names)
 
-    for seq in range(TMP_MAX):
-        name = next(names)
-        file = _os.path.join(dir, pre + name + suf)
-        try:
-            fd = _os.open(file, flags, 0o600)
-        except FileExistsError:
-            continue    # try again
-        except PermissionError:
-            # This exception is thrown when a directory with the chosen name
-            # already exists on windows.
-            if (_os.name == 'nt' and _os.path.isdir(dir) and
-                _os.access(dir, _os.W_OK)):
-                continue
-            else:
-                raise
-        return (fd, _os.path.abspath(file))
+    name = next(names)
+    file = _os.path.join(dir, pre + name + suf)
+    try:
+        fd = _os.open(file, flags, 0o600)
+    except FileExistsError:
+        raise FileExistsError(_errno.EEXIST, "No usable temporary file name found")
+    except PermissionError:
+        raise PermissionError(_errno.EACCES, "No permission to create temp file")
 
-    raise FileExistsError(_errno.EEXIST,
-                          "No usable temporary file name found")
+    return (fd, _os.path.abspath(file))
 
 
 # User visible interfaces.
