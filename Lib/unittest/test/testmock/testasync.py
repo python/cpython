@@ -402,7 +402,7 @@ class AsyncContextManagerTest(unittest.TestCase):
                 return val
 
     def test_async_magic_methods_are_async_mocks_with_magicmock(self):
-        cm_mock = MagicMock(self.WithAsyncContextManager)
+        cm_mock = MagicMock(self.WithAsyncContextManager())
         self.assertIsInstance(cm_mock.__aenter__, AsyncMock)
         self.assertIsInstance(cm_mock.__aexit__, AsyncMock)
 
@@ -413,6 +413,9 @@ class AsyncContextManagerTest(unittest.TestCase):
 
     def test_magic_methods_are_async_functions(self):
         cm = MagicMock(name='magic_cm')
+        self.assertIsInstance(cm.__aenter__, AsyncMock)
+        self.assertIsInstance(cm.__aexit__, AsyncMock)
+        # AsyncMocks are also coroutine functions
         self.assertTrue(asyncio.iscoroutinefunction(cm.__aenter__))
         self.assertTrue(asyncio.iscoroutinefunction(cm.__aexit__))
 
@@ -435,20 +438,23 @@ class AsyncContextManagerTest(unittest.TestCase):
     def test_mock_supports_async_context_manager(self):
         def inner_test(mock_type):
             called = False
-            instance = self.WithAsyncContextManager()
-            mock_instance = mock_type(instance)
+            cm = self.WithAsyncContextManager()
+            cm_mock = mock_type(cm)
 
             async def use_context_manager():
                 nonlocal called
-                async with mock_instance as result:
+                async with cm_mock as result:
                     called = True
                 return result
 
-            result = asyncio.run(use_context_manager())
+            cm_result = asyncio.run(use_context_manager())
             self.assertTrue(called)
-            self.assertTrue(mock_instance.__aenter__.called)
-            self.assertTrue(mock_instance.__aexit__.called)
-            self.assertIsNot(mock_instance, result)
+            self.assertTrue(cm_mock.__aenter__.called)
+            self.assertTrue(cm_mock.__aexit__.called)
+            cm_mock.__aenter__.assert_awaited()
+            cm_mock.__aexit__.assert_awaited()
+            # We mock __aenter__ so it does not return self
+            self.assertIsNot(cm_mock, cm_result)
 
         for mock_type in [AsyncMock, MagicMock]:
             with self.subTest(f"test context manager magics with {mock_type}"):
@@ -525,14 +531,13 @@ class AsyncIteratorTest(unittest.TestCase):
         mock_iter = AsyncMock(name="tester")
         mock_iter.__aiter__.return_value = [1, 2, 3]
         async def main():
-            async for i in mock_iter:
-                return [i async for i in mock_iter]
+            return [i async for i in mock_iter]
         result = asyncio.run(main())
         self.assertEqual(result, [1, 2, 3])
 
     def test_mock_aiter_and_anext_asyncmock(self):
         def inner_test(mock_type):
-            instance = self.WithAsyncIterator
+            instance = self.WithAsyncIterator()
             mock_instance = mock_type(instance)
             # Check that the mock and the real thing bahave the same
             # __aiter__ is not actually async, so not a coroutinefunction

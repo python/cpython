@@ -14,7 +14,7 @@
 
     import asyncio
     import unittest
-    from unittest.mock import AsyncMock, Mock, MagicMock, patch, call, sentinel
+    from unittest.mock import Mock, MagicMock, AsyncMock, patch, call, sentinel
 
     class SomeClass:
         attribute = 'this is a doctest'
@@ -314,8 +314,8 @@ return an async function.
     ...         pass
     ...
     >>> asyncio.run(main())
-    >>> mock_instance.__aenter__.assert_called_once()
-    >>> mock_instance.__aexit__.assert_called_once()
+    >>> mock_instance.__aenter__.assert_awaited_once()
+    >>> mock_instance.__aexit__.assert_awaited_once()
 
 
 Creating a Mock from an Existing Object
