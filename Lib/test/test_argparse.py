@@ -686,6 +686,30 @@ class TestOptionalsActionStoreTrue(ParserTestCase):
         ('--apple', NS(apple=True)),
     ]
 
+class TestBooleanOptionalAction(ParserTestCase):
+    """Tests BooleanOptionalAction"""
+
+    argument_signatures = [Sig('--foo', action=argparse.BooleanOptionalAction)]
+    failures = ['--foo bar', '--foo=bar']
+    successes = [
+        ('', NS(foo=None)),
+        ('--foo', NS(foo=True)),
+        ('--no-foo', NS(foo=False)),
+        ('--foo --no-foo', NS(foo=False)),  # useful for aliases
+        ('--no-foo --foo', NS(foo=True)),
+    ]
+
+class TestBooleanOptionalActionRequired(ParserTestCase):
+    """Tests BooleanOptionalAction required"""
+
+    argument_signatures = [
+        Sig('--foo', required=True, action=argparse.BooleanOptionalAction)
+    ]
+    failures = ['']
+    successes = [
+        ('--foo', NS(foo=True)),
+        ('--no-foo', NS(foo=False)),
+    ]
 
 class TestOptionalsActionAppend(ParserTestCase):
     """Tests the append action for an Optional"""
@@ -3456,6 +3480,10 @@ class TestHelpUsage(HelpTestCase):
         Sig('a', help='a'),
         Sig('b', help='b', nargs=2),
         Sig('c', help='c', nargs='?'),
+        Sig('--foo', help='Whether to foo', action=argparse.BooleanOptionalAction),
+        Sig('--bar', help='Whether to bar', default=True,
+                     action=argparse.BooleanOptionalAction),
+        Sig('-f', '--foobar', '--barfoo', action=argparse.BooleanOptionalAction),
     ]
     argument_group_signatures = [
         (Sig('group'), [
@@ -3466,26 +3494,32 @@ class TestHelpUsage(HelpTestCase):
         ])
     ]
     usage = '''\
-        usage: PROG [-h] [-w W [W ...]] [-x [X [X ...]]] [-y [Y]] [-z Z Z Z]
+        usage: PROG [-h] [-w W [W ...]] [-x [X [X ...]]] [--foo | --no-foo]
+                    [--bar | --no-bar]
+                    [-f | --foobar | --no-foobar | --barfoo | --no-barfoo] [-y [Y]]
+                    [-z Z Z Z]
                     a b b [c] [d [d ...]] e [e ...]
         '''
     help = usage + '''\
 
         positional arguments:
-          a               a
-          b               b
-          c               c
+          a                     a
+          b                     b
+          c                     c
 
         optional arguments:
-          -h, --help      show this help message and exit
-          -w W [W ...]    w
-          -x [X [X ...]]  x
+          -h, --help            show this help message and exit
+          -w W [W ...]          w
+          -x [X [X ...]]        x
+          --foo, --no-foo       Whether to foo
+          --bar, --no-bar       Whether to bar (default: True)
+          -f, --foobar, --no-foobar, --barfoo, --no-barfoo
 
         group:
-          -y [Y]          y
-          -z Z Z Z        z
-          d               d
-          e               e
+          -y [Y]                y
+          -z Z Z Z              z
+          d                     d
+          e                     e
         '''
     version = ''
 

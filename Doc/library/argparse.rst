@@ -839,9 +839,19 @@ how the command-line arguments should be handled. The supplied actions are:
     Namespace(foo=['f1', 'f2', 'f3', 'f4'])
 
 You may also specify an arbitrary action by passing an Action subclass or
-other object that implements the same interface.  The recommended way to do
-this is to extend :class:`Action`, overriding the ``__call__`` method
-and optionally the ``__init__`` method.
+other object that implements the same interface. The ``BooleanOptionalAction``
+is available in ``argparse`` and adds support for boolean actions such as
+``--foo`` and ``--no-foo``::
+
+    >>> import argparse
+    >>> parser = argparse.ArgumentParser()
+    >>> parser.add_argument('--foo', action=argparse.BooleanOptionalAction)
+    >>> parser.parse_args(['--no-foo'])
+    Namespace(foo=False)
+
+The recommended way to create a custom action is to extend :class:`Action`,
+overriding the ``__call__`` method and optionally the ``__init__`` and
+``format_usage`` methods.
 
 An example of a custom action::
 
@@ -1361,6 +1371,9 @@ Action instances should be callable, so subclasses must override the
 The ``__call__`` method may perform arbitrary actions, but will typically set
 attributes on the ``namespace`` based on ``dest`` and ``values``.
 
+Action subclasses can define a ``format_usage`` method that takes no argument
+and return a string which will be used when printing the usage of the program.
+If such method is not provided, a sensible default will be used.
 
 The parse_args() method
 -----------------------
