@@ -95,7 +95,7 @@ class GetMainTests(TestBase):
 class CreateTests(TestBase):
 
     def test_create(self):
-        id = interpreters.create()
+        interp = interpreters.create()
         self.assertIn(interp, interpreters.list_all())
 
 
