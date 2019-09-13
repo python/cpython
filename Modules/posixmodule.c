@@ -2077,11 +2077,15 @@ static PyStructSequence_Desc waitid_result_desc = {
 #endif
 
 static PyObject *
-statresult_new(PyTypeObject *type, PyObject *args)
+statresult_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
 {
     PyObject *sequence, *kwds;
     PyStructSequence *result;
     int i;
+
+    if (!_PyArg_NoKeywords("StatResult", kwargs)) {
+        return NULL;
+    }
 
     /* Remove the cls object from the argument list */
     sequence = PyTuple_GetSlice(args, 1, PyTuple_Size(args));
@@ -6249,24 +6253,20 @@ PyDoc_STRVAR(os_sched_param__doc__,
 "    A scheduling parameter.");
 
 static PyObject *
-os_sched_param(PyTypeObject *type, PyObject *args, PyObject *kwargs)
+os_sched_param(PyObject *module, PyObject *args, PyObject *kwargs)
 {
     static char* _keywords[] = {"sched_priority", NULL};
     static const char * _format = "O:sched_param";
-    PyObject *sequence, *sched_priority, *res;
+    PyObject *sched_priority, *res;
 
-    /* Remove the cls object from the argument list */
-    sequence = PyTuple_GetSlice(args, 1, PyTuple_Size(args));
-    if (!sequence) {
-        return NULL;
-    }
-    int result = PyArg_ParseTupleAndKeywords(sequence, kwargs, _format, _keywords,
+    int result = PyArg_ParseTupleAndKeywords(args, kwargs, _format, _keywords,
         &sched_priority);
-    Py_DECREF(sequence);
     if (!result) {
         return NULL;
     }
-    res = PyStructSequence_New((PyTypeObject *)type);
+    res = PyStructSequence_New(
+        (PyTypeObject*)_posixstate(module)->SchedParamType
+    );
     if (!res) {
         return NULL;
     }
@@ -6275,7 +6275,21 @@ os_sched_param(PyTypeObject *type, PyObject *args, PyObject *kwargs)
     return res;
 }
 
-PyDoc_VAR(os_sched_param__doc__);
+static PyObject *
+sched_param_new(PyTypeObject *type, PyObject *args, PyObject *kwargs) {
+    PyObject *module = PyState_FindModule(&posixmodule);
+    if (!module) {
+        return NULL;
+    }
+    /* Remove the cls object from the argument list */
+    PyObject *sequence = PyTuple_GetSlice(args, 1, PyTuple_Size(args));
+    if (!sequence) {
+        return NULL;
+    }
+    PyObject *result = os_sched_param(module, args, kwargs);
+    Py_DECREF(sequence);
+    return result;
+}
 
 static PyStructSequence_Field sched_param_fields[] = {
     {"sched_priority", "the scheduling priority"},
@@ -13579,16 +13593,6 @@ os__remove_dll_directory_impl(PyObject *module, PyObject *cookie)
 
 #endif
 
-#if defined(HAVE_SCHED_SETPARAM) || defined(HAVE_SCHED_SETSCHEDULER) || defined(POSIX_SPAWN_SETSCHEDULER) || defined(POSIX_SPAWN_SETSCHEDPARAM)
-static PyMethodDef SchedParamType_dunder_new = {
-    "__new__", (PyCFunction)os_sched_param, METH_VARARGS | METH_KEYWORDS
-};
-#endif
-
-static PyMethodDef StatResultType_dunder_new = {
-    "__new__", (PyCFunction)statresult_new, METH_VARARGS
-};
-
 static PyMethodDef posix_methods[] = {
 
     OS_STAT_METHODDEF
@@ -14442,7 +14446,7 @@ static const char * const have_functions[] = {
 PyMODINIT_FUNC
 INITFUNC(void)
 {
-    PyObject *m, *v, *dunder_new;
+    PyObject *m, *v;
     PyObject *list;
     const char * const *trace;
 
@@ -14502,13 +14506,8 @@ INITFUNC(void)
     _posixstate(m)->StatResultType = StatResultType;
 
     /* Add a custom __new__ to the structsequence */
-    _posixstate(m)->structseq_new = (newfunc)PyType_GetSlot((PyTypeObject *)StatResultType, Py_tp_new);
-    dunder_new = PyDescr_NewClassMethod((PyTypeObject *)StatResultType, &StatResultType_dunder_new);
-    if (dunder_new == NULL) {
-        return NULL;
-    }
-    PyObject_SetAttrString(StatResultType, "__new__", dunder_new);
-    Py_DECREF(dunder_new);
+    _posixstate(m)->structseq_new = ((PyTypeObject *)StatResultType)->tp_new;
+    ((PyTypeObject *)StatResultType)->tp_new = statresult_new;
 
     statvfs_result_desc.name = "os.statvfs_result"; /* see issue #19209 */
     PyObject *StatVFSResultType = (PyObject *)PyStructSequence_NewType(&statvfs_result_desc);
@@ -14538,12 +14537,7 @@ INITFUNC(void)
     PyModule_AddObject(m, "sched_param", SchedParamType);
     _posixstate(m)->SchedParamType = SchedParamType;
     /* Add a custom __new__ to the structsequence */
-    dunder_new = PyDescr_NewClassMethod((PyTypeObject *)SchedParamType, &SchedParamType_dunder_new);
-    if (dunder_new == NULL) {
-        return NULL;
-    }
-    PyObject_SetAttrString((PyObject *)SchedParamType, "__new__", dunder_new);
-    Py_DECREF(dunder_new);
+    ((PyTypeObject *)SchedParamType)->tp_new = sched_param_new;
 #endif
 
     /* initialize TerminalSize_info */
