@@ -485,10 +485,17 @@ since multiple such modules can be created from a single definition.
 
    Only effective on modules created using single-phase initialization.
 
+   The function is intended for implementing alternative import mechanisms.
+   Python calls PyState_AddModule automatically when importing a module; it
+   is generally not necessary to call it at module initialization time.
+
+   Return 0 on success or -1 on failure.
+
    .. versionadded:: 3.3
 
 .. c:function:: int PyState_RemoveModule(PyModuleDef *def)
 
    Removes the module object created from *def* from the interpreter state.
+   Return 0 on success or -1 on failure.
 
    .. versionadded:: 3.3
