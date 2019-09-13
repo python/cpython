@@ -259,23 +259,22 @@ reference is no longer needed.  Ownership can also be transferred, meaning that
 the code that receives ownership of the reference then becomes responsible for
 eventually decref'ing it by calling :c:func:`Py_DECREF` or :c:func:`Py_XDECREF`
 when it's no longer needed---or passing on this responsibility (usually to its
-caller). Let's look at different types of reference ownership passings in more
-detail.
+caller).
 
-When a function returns an object and effectively increases the
-reference count of it, the function is said to *give* ownership of a new
-reference to its caller and the caller is said to *own* the reference. When a
-function returns an object without changing the reference count of it, the
-caller is said to *borrow* the reference. Nothing needs to be done for a
-borrowed reference.
+When a function returns an object whose reference count has been increased by
+the function, the caller of the function is said to *receive a new reference*.
+It means the ownership of the reference is transferred to the caller.
+When a function returns an object without having changed its reference count,
+the caller of the function is said to *borrow* the reference. No ownership is
+transferred and nothing needs to be done for the borrowed reference.
 
 Conversely, when a calling function passes in a reference to an object, there
-are two possibilities: the function *steals* a reference to the object, or it
-does not. If a called function decreases the reference count of an object, it
-is said to *steal* the ownership of the reference from its caller. *Stealing a
-reference* means that when you pass a reference to a stealing function, that
-function assumes that it now owns that reference, and you are not responsible
-for it any longer.
+are two possibilities: the called function *steals* the reference,
+or it does not. *Stealing a reference* means that when you pass a reference
+to a stealing function, that function assumes that it now owns that reference,
+and you are not responsible for the reference any longer.
+Note that *stealing a reference* does not result in instant decrement in
+the reference count of the object in most cases.
 
 .. index::
    single: PyList_SetItem()
@@ -283,7 +282,7 @@ for it any longer.
 
 Few functions steal references; the two notable exceptions are
 :c:func:`PyList_SetItem` and :c:func:`PyTuple_SetItem`, which  steal a reference
-to the item (but not to the tuple or list into which the item is put!).  These
+to the item (but not to the tuple or list into which the item is put!). These
 functions were designed to steal a reference because of a common idiom for
 populating a tuple or list with newly created objects; for example, the code to
 create the tuple ``(1, 2, "three")`` could look like this (forgetting about
