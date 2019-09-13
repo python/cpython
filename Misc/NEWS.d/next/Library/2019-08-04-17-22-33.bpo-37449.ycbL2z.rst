@@ -1,0 +1,2 @@
+`ensurepip` now uses `importlib.resources.read_binary()` to read data instead of `pkgutil.get_data()`.
+Patch by Joannah Nanjekye.
