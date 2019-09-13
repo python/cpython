@@ -454,7 +454,7 @@ class TestDialectRegistry(unittest.TestCase):
     def test_pickle(self):
         for name in csv.list_dialects():
             dialect = csv.get_dialect(name)
-            for proto in range(pickle.HIGHEST_PROTOCOL + 1):
+            for proto in range(2, pickle.HIGHEST_PROTOCOL + 1):
                 self.assertRaises(TypeError, pickle.dumps, dialect, proto)
 
 class TestCsvBase(unittest.TestCase):
