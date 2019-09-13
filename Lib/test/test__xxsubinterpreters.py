@@ -536,15 +536,13 @@ class InterpreterIDTests(TestBase):
                 self.assertEqual(int(id), 10)
 
     def test_bad_id(self):
-        for id in (10.0, b'10', []):
-            with self.subTest(id):
-                with self.assertRaises(TypeError):
-                    interpreters.InterpreterID(id)
-        for id in (-1, '-1', 'spam'):
-            with self.assertRaises(ValueError):
-                interpreters.InterpreterID(id)
-        with self.assertRaises(OverflowError):
-            interpreters.InterpreterID(2**64)
+        self.assertRaises(TypeError, interpreters.InterpreterID, object())
+        self.assertRaises(TypeError, interpreters.InterpreterID, 10.0)
+        self.assertRaises(TypeError, interpreters.InterpreterID, b'10')
+        self.assertRaises(ValueError, interpreters.InterpreterID, -1)
+        self.assertRaises(ValueError, interpreters.InterpreterID, '-1')
+        self.assertRaises(ValueError, interpreters.InterpreterID, 'spam')
+        self.assertRaises(OverflowError, interpreters.InterpreterID, 2**64)
 
     def test_does_not_exist(self):
         id = interpreters.channel_create()
@@ -1116,14 +1114,12 @@ class ChannelIDTests(TestBase):
         self.assertEqual(int(cid), 10)
 
     def test_bad_id(self):
-        for cid in (10.0, '10', b'10', []):
-            with self.subTest(cid=cid):
-                with self.assertRaises(TypeError):
-                    interpreters._channel_id(cid)
-        with self.assertRaises(ValueError):
-            interpreters._channel_id(-1)
-        with self.assertRaises(OverflowError):
-            interpreters._channel_id(2**64)
+        self.assertRaises(TypeError, interpreters._channel_id, object())
+        self.assertRaises(TypeError, interpreters._channel_id, 10.0)
+        self.assertRaises(TypeError, interpreters._channel_id, '10')
+        self.assertRaises(TypeError, interpreters._channel_id, b'10')
+        self.assertRaises(ValueError, interpreters._channel_id, -1)
+        self.assertRaises(OverflowError, interpreters._channel_id, 2**64)
 
     def test_bad_kwargs(self):
         with self.assertRaises(ValueError):
