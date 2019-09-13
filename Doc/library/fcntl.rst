@@ -117,8 +117,8 @@ The module defines the following functions:
 
    This is essentially a wrapper around the :func:`~fcntl.fcntl` locking calls.
    *fd* is the file descriptor (file objects providing a :meth:`~io.IOBase.fileno`
-   method are accepted as well) of the file to lock or unlock,
-   and *cmd* is one of the following values:
+   method are accepted as well) of the file to lock or unlock, and *cmd*
+   is one of the following values:
 
    * :const:`LOCK_UN` -- unlock
    * :const:`LOCK_SH` -- acquire a shared lock
@@ -168,4 +168,3 @@ using the :func:`flock` call may be better.
       present in the :mod:`os` module (on BSD only), the :func:`os.open`
       function provides an alternative to the :func:`lockf` and :func:`flock`
       functions.
-
