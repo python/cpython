@@ -487,15 +487,18 @@ statement.
 
 .. method:: HTTPResponse.geturl()
 
-   Deprecated method equivalent to :attr:`HTTPResponse.url`.
+   ..deprecated:: 3.9
+      Deprecated in favor of :attr:`~HTTPResponse.url`.
 
 .. method:: HTTPResponse.info()
 
-   Deprecated method equivalent to :attr:`HTTPResponse.headers`.
+   ..deprecated:: 3.9
+      Deprecated in favor of :attr:`~HTTPResponse.headers`.
 
 .. method:: HTTPResponse.getstatus()
 
-   Deprecated method equivalent to :attr:`~HTTPResponse.status`.
+   ..deprecated:: 3.9
+      Deprecated in favor of :attr:`~HTTPResponse.status`.
 
 Examples
 --------

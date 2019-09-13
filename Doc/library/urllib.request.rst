@@ -1565,22 +1565,26 @@ The typical response object is a :class:`urllib.response.addinfourl` instance:
 
    .. attribute:: status
 
-      .. versionadded:: 3.8
+      .. versionadded:: 3.9
 
       Status code returned by server.
 
    .. method:: geturl()
 
-      Deprecated method equivalent to :attr:`~addinfourl.url`.
+      ..deprecated:: 3.9
+         Deprecated in favor of :attr:`~addinfourl.url`.
 
    .. method:: info()
 
-      Deprecated method equivalent to :attr:`~addinfourl.headers`.
+      ..deprecated:: 3.9
+         Deprecated in favor of :attr:`~addinfourl.headers`.
 
    .. attribute:: code
 
-      Deprecated attribute equivalent to :attr:`~addinfourl.status`.
+      ..deprecated:: 3.9
+         Deprecated in favor of :attr:`~addinfourl.status`.
 
    .. method:: getstatus()
 
-      Deprecated method equivalent to :attr:`~addinfourl.status`.
+      ..deprecated:: 3.9
+         Deprecated in favor of :attr:`~addinfourl.status`.
