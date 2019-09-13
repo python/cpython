@@ -1,1 +1,2 @@
-Forward references in the typing module now have improved __hash__ and __eq__ methods.
+In :mod:`typing`, improved the ``__hash__`` and ``__eq__`` methods for
+:class:`ForwardReferences`.
