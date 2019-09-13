@@ -1013,7 +1013,7 @@ class NonCallableMock(Base):
             return ""
         return f"\n{prefix}: {safe_repr(self.mock_calls)}."
 
-      
+
 _MOCK_SIG = inspect.signature(NonCallableMock.__init__)
 
 
