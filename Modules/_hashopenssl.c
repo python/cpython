@@ -101,10 +101,10 @@ py_digest_name(const EVP_MD *md)
      */
     switch (nid) {
     case NID_md5:
-         name = "md5";
-         break;
+        name = "md5";
+        break;
     case NID_sha1:
-        name ="sha1";
+        name = "sha1";
         break;
     case NID_sha224:
         name ="sha224";
