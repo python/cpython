@@ -217,6 +217,7 @@ corresponding Unix manual entries for more information on calls.");
 #endif  /* _MSC_VER */
 #endif  /* ! __WATCOMC__ || __QNX__ */
 
+_Py_IDENTIFIER(__fspath__);
 
 /*[clinic input]
 # one of the few times we lie about this name!
@@ -835,7 +836,6 @@ typedef struct {
     PyObject *struct_rusage;
 #endif
     PyObject *st_mode;
-    PyObject *fspath;
     newfunc structseq_new;
 } _posixstate;
 
@@ -955,24 +955,6 @@ typedef struct {
     {function_name, argument_name, nullable, allow_fd, NULL, NULL, -1, 0, NULL, NULL}
 #endif
 
-// _PyType_LookupSpecial with PyObject* rather than _Py_Identifier
-static PyObject*
-fspath_lookup_special(PyObject *self) {
-    PyObject *func, *getter;
-    PyTypeObject *path_type = Py_TYPE(self);
-    func = _PyType_Lookup(path_type, _posixstate_global->fspath);
-    if (func != NULL) {
-        getter = Py_TYPE(func)->tp_descr_get;
-        if (getter == NULL) {
-            Py_INCREF(func);
-        } else {
-            func = PyObject_CallFunctionObjArgs(
-                getter, func, self, (PyObject *)path_type, NULL);
-        }
-    }
-    return func;
-}
-
 static void
 path_cleanup(path_t *path)
 {
@@ -1032,7 +1014,7 @@ path_converter(PyObject *o, void *p)
         /* Inline PyOS_FSPath() for better error messages. */
         PyObject *func, *res;
 
-        func = fspath_lookup_special(o);
+        func = _PyObject_LookupSpecial(o, &PyId___fspath__);
         if (NULL == func) {
             goto error_format;
         }
@@ -2151,7 +2133,6 @@ _posix_clear(PyObject *module)
     Py_CLEAR(_posixstate(module)->struct_rusage);
 #endif
     Py_CLEAR(_posixstate(module)->st_mode);
-    Py_CLEAR(_posixstate(module)->fspath);
     return 0;
 }
 
@@ -2177,7 +2158,6 @@ _posix_traverse(PyObject *module, visitproc visit, void *arg)
     Py_VISIT(_posixstate(module)->struct_rusage);
 #endif
     Py_VISIT(_posixstate(module)->st_mode);
-    Py_VISIT(_posixstate(module)->fspath);
     return 0;
 }
 
@@ -13395,7 +13375,7 @@ PyOS_FSPath(PyObject *path)
         return path;
     }
 
-    func = fspath_lookup_special(path);
+    func = _PyObject_LookupSpecial(path, &PyId___fspath__);
     if (NULL == func) {
         return PyErr_Format(PyExc_TypeError,
                             "expected str, bytes or os.PathLike object, "
@@ -14662,9 +14642,6 @@ INITFUNC(void)
 #endif
     _posixstate(m)->st_mode = PyUnicode_InternFromString("st_mode");
     if (_posixstate(m)->st_mode == NULL)
-        return NULL;
-    _posixstate(m)->fspath = PyUnicode_InternFromString("__fspath__");
-    if (_posixstate(m)->fspath == NULL)
         return NULL;
 
     /* suppress "function not used" warnings */
