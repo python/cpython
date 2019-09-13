@@ -340,8 +340,12 @@ class Pdb(bdb.Bdb, cmd.Cmd):
     def interaction(self, frame, traceback):
         # Restore the previous signal handler at the Pdb prompt.
         if Pdb._previous_sigint_handler:
-            signal.signal(signal.SIGINT, Pdb._previous_sigint_handler)
-            Pdb._previous_sigint_handler = None
+            try:
+                signal.signal(signal.SIGINT, Pdb._previous_sigint_handler)
+            except ValueError:  # ValueError: signal only works in main thread
+                pass
+            else:
+                Pdb._previous_sigint_handler = None
         if self.setup(frame, traceback):
             # no interaction desired at this time (happens if .pdbrc contains
             # a command like "continue")
@@ -1656,7 +1660,7 @@ To let the script run up to a given line X in the debugged file, use
 def main():
     import getopt
 
-    opts, args = getopt.getopt(sys.argv[1:], 'mhc:', ['--help', '--command='])
+    opts, args = getopt.getopt(sys.argv[1:], 'mhc:', ['help', 'command='])
 
     if not args:
         print(_usage)

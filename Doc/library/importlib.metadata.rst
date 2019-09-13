@@ -158,6 +158,13 @@ Once you have the file, you can also read its contents::
             return s.encode('utf-8')
         return s
 
+In the case where the metadata file listing files
+(RECORD or SOURCES.txt) is missing, ``files()`` will
+return ``None``. The caller may wish to wrap calls to
+``files()`` in `always_iterable
+<https://more-itertools.readthedocs.io/en/stable/api.html#more_itertools.always_iterable>`_
+or otherwise guard against this condition if the target
+distribution is not known to have the metadata present.
 
 .. _requirements:
 
@@ -165,10 +172,10 @@ Distribution requirements
 -------------------------
 
 To get the full set of requirements for a distribution, use the ``requires()``
-function.  Note that this returns an iterator::
+function::
 
-    >>> list(requires('wheel'))  # doctest: +SKIP
-    ["pytest (>=3.0.0) ; extra == 'test'"]
+    >>> requires('wheel')  # doctest: +SKIP
+    ["pytest (>=3.0.0) ; extra == 'test'", "pytest-cov ; extra == 'test'"]
 
 
 Distributions
@@ -217,23 +224,25 @@ The abstract class :py:class:`importlib.abc.MetaPathFinder` defines the
 interface expected of finders by Python's import system.
 ``importlib.metadata`` extends this protocol by looking for an optional
 ``find_distributions`` callable on the finders from
-``sys.meta_path``.  If the finder has this method, it must return
-an iterator over instances of the ``Distribution`` abstract class. This
-method must have the signature::
+``sys.meta_path`` and presents this extended interface as the
+``DistributionFinder`` abstract base class, which defines this abstract
+method::
 
-    def find_distributions(name=None, path=None):
+    @abc.abstractmethod
+    def find_distributions(context=DistributionFinder.Context()):
         """Return an iterable of all Distribution instances capable of
-        loading the metadata for packages matching the name
-        (or all names if not supplied) along the paths in the list
-        of directories ``path`` (defaults to sys.path).
+        loading the metadata for packages for the indicated ``context``.
         """
+
+The ``DistributionFinder.Context`` object provides ``.path`` and ``.name``
+properties indicating the path to search and names to match and may
+supply other relevant context.
 
 What this means in practice is that to support finding distribution package
 metadata in locations other than the file system, you should derive from
-``Distribution`` and implement the ``load_metadata()`` method.  This takes a
-single argument which is the name of the package whose metadata is being
-found.  This instance of the ``Distribution`` base abstract class is what your
-finder's ``find_distributions()`` method should return.
+``Distribution`` and implement the ``load_metadata()`` method. Then from
+your finder, return instances of this derived ``Distribution`` in the
+``find_distributions()`` method.
 
 
 .. _`entry point API`: https://setuptools.readthedocs.io/en/latest/pkg_resources.html#entry-points

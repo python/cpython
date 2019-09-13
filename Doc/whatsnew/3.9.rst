@@ -109,6 +109,14 @@ New Modules
 Improved Modules
 ================
 
+ast
+---
+
+Added the *indent* option to :func:`~ast.dump` which allows it to produce a
+multiline indented output.
+(Contributed by Serhiy Storchaka in :issue:`37995`.)
+
+
 threading
 ---------
 
@@ -212,6 +220,20 @@ Removed
   deprecated in Python 3.2.  Use functions :func:`list` and :func:`iter`
   instead.  The ``xml.etree.cElementTree`` module has been removed.
   (Contributed by Serhiy Storchaka in :issue:`36543`.)
+
+* The old :mod:`plistlib` API has been removed, it was deprecated since Python
+  3.4. Use the :func:`load`, :func:`loads`, :func:`dump`, and :func:`dumps`
+  functions. Additionally, the ``use_builtin_types`` parameter was removed,
+  standard :class:`bytes` objects are always used.
+  (Contributed by Jon Janzen in :issue:`36409`.)
+
+* ``PyThreadState_DeleteCurrent()`` has been removed. It was not documented.
+  (Contributed by Joannah Nanjekye in :issue:`37878`.)
+
+* The C function ``PyGen_NeedsFinalizing`` has been removed. It was not
+  documented, tested or used anywhere within CPython after the implementation
+  of :pep:`442`. Patch by Joannah Nanjekye.
+  (Contributed by Joannah Nanjekye in :issue:`15088`)
 
 
 Porting to Python 3.9

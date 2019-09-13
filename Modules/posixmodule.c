@@ -1794,13 +1794,13 @@ win32_xstat_impl(const wchar_t *path, struct _Py_stat_struct *result,
             case ERROR_INVALID_PARAMETER:
             case ERROR_INVALID_FUNCTION:
             case ERROR_NOT_SUPPORTED:
-                retval = -1;
+                /* Volumes and physical disks are block devices, e.g.
+                   \\.\C: and \\.\PhysicalDrive0. */
+                memset(result, 0, sizeof(*result));
+                result->st_mode = 0x6000; /* S_IFBLK */
                 goto cleanup;
             }
-            /* Volumes and physical disks are block devices, e.g.
-               \\.\C: and \\.\PhysicalDrive0. */
-            memset(result, 0, sizeof(*result));
-            result->st_mode = 0x6000; /* S_IFBLK */
+            retval = -1;
             goto cleanup;
         }
     }
@@ -1827,7 +1827,14 @@ win32_xstat_impl(const wchar_t *path, struct _Py_stat_struct *result,
 
 cleanup:
     if (hFile != INVALID_HANDLE_VALUE) {
-        CloseHandle(hFile);
+        /* Preserve last error if we are failing */
+        error = retval ? GetLastError() : 0;
+        if (!CloseHandle(hFile)) {
+            retval = -1;
+        } else if (retval) {
+            /* Restore last error */
+            SetLastError(error);
+        }
     }
 
     return retval;
@@ -7482,6 +7489,12 @@ wait_helper(pid_t pid, int status, struct rusage *ru)
     if (pid == -1)
         return posix_error();
 
+    // If wait succeeded but no child was ready to report status, ru will not
+    // have been populated.
+    if (pid == 0) {
+        memset(ru, 0, sizeof(*ru));
+    }
+
     if (struct_rusage == NULL) {
         PyObject *m = PyImport_ImportModuleNoBlock("resource");
         if (m == NULL)
@@ -7818,7 +7831,7 @@ os_readlink_impl(PyObject *module, path_t *path, int dir_fd)
     HANDLE reparse_point_handle;
     char target_buffer[_Py_MAXIMUM_REPARSE_DATA_BUFFER_SIZE];
     _Py_REPARSE_DATA_BUFFER *rdb = (_Py_REPARSE_DATA_BUFFER *)target_buffer;
-    PyObject *result;
+    PyObject *result = NULL;
 
     /* First get a handle to the reparse point */
     Py_BEGIN_ALLOW_THREADS
@@ -7872,7 +7885,7 @@ os_readlink_impl(PyObject *module, path_t *path, int dir_fd)
             name[1] = L'\\';
         }
         result = PyUnicode_FromWideChar(name, nameLen);
-        if (path->narrow) {
+        if (result && path->narrow) {
             Py_SETREF(result, PyUnicode_EncodeFSDefault(result));
         }
     }
@@ -8409,6 +8422,21 @@ os_close_impl(PyObject *module, int fd)
 }
 
 
+#ifdef HAVE_FDWALK
+static int
+_fdwalk_close_func(void *lohi, int fd)
+{
+    int lo = ((int *)lohi)[0];
+    int hi = ((int *)lohi)[1];
+
+    if (fd >= hi)
+        return 1;
+    else if (fd >= lo)
+        close(fd);
+    return 0;
+}
+#endif /* HAVE_FDWALK */
+
 /*[clinic input]
 os.closerange
 
@@ -8423,11 +8451,21 @@ static PyObject *
 os_closerange_impl(PyObject *module, int fd_low, int fd_high)
 /*[clinic end generated code: output=0ce5c20fcda681c2 input=5855a3d053ebd4ec]*/
 {
+#ifdef HAVE_FDWALK
+    int lohi[2];
+#else
     int i;
+#endif
     Py_BEGIN_ALLOW_THREADS
     _Py_BEGIN_SUPPRESS_IPH
+#ifdef HAVE_FDWALK
+    lohi[0] = Py_MAX(fd_low, 0);
+    lohi[1] = fd_high;
+    fdwalk(_fdwalk_close_func, lohi);
+#else
     for (i = Py_MAX(fd_low, 0); i < fd_high; i++)
         close(i);
+#endif
     _Py_END_SUPPRESS_IPH
     Py_END_ALLOW_THREADS
     Py_RETURN_NONE;
@@ -12166,23 +12204,7 @@ os_cpu_count_impl(PyObject *module)
 {
     int ncpu = 0;
 #ifdef MS_WINDOWS
-    /* Vista is supported and the GetMaximumProcessorCount API is Win7+
-       Need to fallback to Vista behavior if this call isn't present */
-    HINSTANCE hKernel32;
-    static DWORD(CALLBACK *_GetMaximumProcessorCount)(WORD) = NULL;
-    Py_BEGIN_ALLOW_THREADS
-    hKernel32 = GetModuleHandleW(L"KERNEL32");
-    *(FARPROC*)&_GetMaximumProcessorCount = GetProcAddress(hKernel32,
-        "GetMaximumProcessorCount");
-    Py_END_ALLOW_THREADS
-    if (_GetMaximumProcessorCount != NULL) {
-        ncpu = _GetMaximumProcessorCount(ALL_PROCESSOR_GROUPS);
-    }
-    else {
-        SYSTEM_INFO sysinfo;
-        GetSystemInfo(&sysinfo);
-        ncpu = sysinfo.dwNumberOfProcessors;
-    }
+    ncpu = GetActiveProcessorCount(ALL_PROCESSOR_GROUPS);
 #elif defined(__hpux)
     ncpu = mpctl(MPC_GETNUMSPUS, NULL, NULL);
 #elif defined(HAVE_SYSCONF) && defined(_SC_NPROCESSORS_ONLN)

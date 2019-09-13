@@ -122,8 +122,6 @@ See :pep:`572` for a full description.
 
 (Contributed by Emily Morehouse in :issue:`35224`.)
 
-.. TODO: Emily will sprint on docs at PyCon US 2019.
-
 
 Positional-only parameters
 --------------------------
@@ -767,7 +765,7 @@ numbers::
 
     >>> prior = 0.8
     >>> likelihoods = [0.625, 0.84, 0.30]
-    >>> (link: http://math.prod) math.prod(likelihoods, start=prior)
+    >>> math.prod(likelihoods, start=prior)
     0.126
 
 (Contributed by Pablo Galindo in :issue:`35606`)
@@ -1090,8 +1088,9 @@ unicodedata
   <http://blog.unicode.org/2019/05/unicode-12-1-en.html>`_ release.
 
 * New function :func:`~unicodedata.is_normalized` can be used to verify a string
-  is in a specific normal form. (Contributed by Max Belanger and David Euresti in
-  :issue:`32285`).
+  is in a specific normal form, often much faster than by actually normalizing
+  the string.  (Contributed by Max Belanger, David Euresti, and Greg Price in
+  :issue:`32285` and :issue:`37966`).
 
 
 unittest
@@ -1109,6 +1108,32 @@ unittest
 
 * Several mock assert functions now also print a list of actual calls upon
   failure. (Contributed by Petter Strandmark in :issue:`35047`.)
+
+* :mod:`unittest` module gained support for coroutines to be used as test cases
+  with :class:`unittest.IsolatedAsyncioTestCase`.
+  (Contributed by Andrew Svetlov in :issue:`32972`.)
+
+  Example::
+
+    import unittest
+
+
+    class TestRequest(unittest.IsolatedAsyncioTestCase):
+
+        async def asyncSetUp(self):
+            self.connection = await AsyncConnection()
+
+        async def test_get(self):
+            response = await self.connection.get("https://example.com")
+            self.assertEqual(response.status_code, 200)
+
+        async def asyncTearDown(self):
+            await self.connection.close()
+
+
+    if __name__ == "__main__":
+        unittest.main()
+
 
 venv
 ----
@@ -1440,7 +1465,8 @@ The following features and APIs have been removed from Python 3.8:
   script is tied to. (Contributed by Brett Cannon in :issue:`25427`.)
 
 * ``parse_qs``, ``parse_qsl``, and ``escape`` are removed from :mod:`cgi`
-  module.  They are deprecated from Python 3.2 or older.
+  module.  They are deprecated from Python 3.2 or older. They should be imported
+  from the ``urllib.parse`` and ``html`` modules instead.
 
 * ``filemode`` function is removed from :mod:`tarfile` module.
   It is not documented and deprecated since Python 3.3.

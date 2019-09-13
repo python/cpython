@@ -195,6 +195,13 @@ class Element:
         original tree.
 
         """
+        warnings.warn(
+            "elem.copy() is deprecated. Use copy.copy(elem) instead.",
+            DeprecationWarning
+            )
+        return self.__copy__()
+
+    def __copy__(self):
         elem = self.makeelement(self.tag, self.attrib)
         elem.text = self.text
         elem.tail = self.tail
@@ -1710,14 +1717,14 @@ class XMLParser:
     def feed(self, data):
         """Feed encoded data to parser."""
         try:
-            self.parser.Parse(data, 0)
+            self.parser.Parse(data, False)
         except self._error as v:
             self._raiseerror(v)
 
     def close(self):
         """Finish feeding data to parser and return element structure."""
         try:
-            self.parser.Parse("", 1) # end of data
+            self.parser.Parse(b"", True) # end of data
         except self._error as v:
             self._raiseerror(v)
         try:

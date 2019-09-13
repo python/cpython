@@ -46,10 +46,9 @@ FILTER_DIR = True
 _safe_super = super
 
 def _is_async_obj(obj):
-    if getattr(obj, '__code__', None):
-        return asyncio.iscoroutinefunction(obj) or inspect.isawaitable(obj)
-    else:
+    if _is_instance_mock(obj) and not isinstance(obj, AsyncMock):
         return False
+    return asyncio.iscoroutinefunction(obj) or inspect.isawaitable(obj)
 
 
 def _is_async_func(func):
@@ -1631,8 +1630,9 @@ def patch(
     is patched with a `new` object. When the function/with statement exits
     the patch is undone.
 
-    If `new` is omitted, then the target is replaced with a
-    `MagicMock`. If `patch` is used as a decorator and `new` is
+    If `new` is omitted, then the target is replaced with an
+    `AsyncMock if the patched object is an async function or a
+    `MagicMock` otherwise. If `patch` is used as a decorator and `new` is
     omitted, the created mock is passed in as an extra argument to the
     decorated function. If `patch` is used as a context manager the created
     mock is returned by the context manager.
@@ -1650,8 +1650,8 @@ def patch(
     patch to pass in the object being mocked as the spec/spec_set object.
 
     `new_callable` allows you to specify a different class, or callable object,
-    that will be called to create the `new` object. By default `MagicMock` is
-    used.
+    that will be called to create the `new` object. By default `AsyncMock` is
+    used for async functions and `MagicMock` for the rest.
 
     A more powerful form of `spec` is `autospec`. If you set `autospec=True`
     then the mock will be created with a spec from the object being replaced.
@@ -2320,7 +2320,7 @@ def _format_call_signature(name, args, kwargs):
     formatted_args = ''
     args_string = ', '.join([repr(arg) for arg in args])
     kwargs_string = ', '.join([
-        '%s=%r' % (key, value) for key, value in sorted(kwargs.items())
+        '%s=%r' % (key, value) for key, value in kwargs.items()
     ])
     if args_string:
         formatted_args = args_string
@@ -2460,6 +2460,12 @@ class _Call(tuple):
             return _Call(name=attr, from_kall=False)
         name = '%s.%s' % (self._mock_name, attr)
         return _Call(name=name, parent=self, from_kall=False)
+
+
+    def __getattribute__(self, attr):
+        if attr in tuple.__dict__:
+            raise AttributeError
+        return tuple.__getattribute__(self, attr)
 
 
     def count(self, /, *args, **kwargs):
