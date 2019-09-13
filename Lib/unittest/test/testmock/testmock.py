@@ -1387,13 +1387,6 @@ class MockTest(unittest.TestCase):
             )
 
 
-    def test_mock_add_spec_autospec_all_members(self):
-        for spec in [Something, Something()]:
-            mock_something = Mock()
-            mock_something.mock_add_spec(spec, autospec=True)
-            self._check_autospeced_something(mock_something)
-
-
     def test_assert_has_calls_nested_without_spec(self):
         m = MagicMock()
         m().foo().bar().baz()
