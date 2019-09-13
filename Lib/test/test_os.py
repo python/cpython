@@ -227,6 +227,41 @@ class FileTests(unittest.TestCase):
         self.fdopen_helper('r')
         self.fdopen_helper('r', 100)
 
+    @unittest.skipUnless(hasattr(os, 'O_DIRECT'), 'test needs os.O_DIRECT')
+    def test_odirect_readinto(self):
+        fname = support.TESTFN
+        create_file(fname, bytearray(mmap.PAGESIZE*2))
+        self.addCleanup(support.unlink, fname)
+
+        # Test one page readinto
+        fd = os.open(fname, os.O_DIRECT|os.O_RDONLY)
+        f = os.fdopen(fd, 'rb')
+        m = mmap.mmap(-1, mmap.PAGESIZE)
+        f.readinto(m)
+        f.close()
+
+        # Test two page readinto
+        fd = os.open(fname, os.O_DIRECT|os.O_RDONLY)
+        f = os.fdopen(fd, 'rb')
+        m = mmap.mmap(-1, mmap.PAGESIZE * 2)
+        f.readinto(m)
+        f.close()
+
+        # Test two page readinto1
+        fd = os.open(fname, os.O_DIRECT|os.O_RDONLY)
+        f = os.fdopen(fd, 'rb')
+        m = mmap.mmap(-1, mmap.PAGESIZE * 2)
+        f.readinto1(m)
+        f.close()
+
+        # Test illegal page size.
+        fd = os.open(fname, os.O_DIRECT|os.O_RDONLY)
+        f = os.fdopen(fd, 'rb')
+        m = mmap.mmap(-1, mmap.PAGESIZE - 1)
+        with self.assertRaises(OSError):
+            f.readinto(m)
+        f.close()
+
     def test_replace(self):
         TESTFN2 = support.TESTFN + ".2"
         self.addCleanup(support.unlink, support.TESTFN)
