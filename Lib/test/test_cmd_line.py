@@ -5,7 +5,6 @@
 import os
 import subprocess
 import sys
-import sysconfig
 import tempfile
 import unittest
 from test import support

@@ -359,7 +359,7 @@ _Pickle_FastCall(PyObject *func, PyObject *obj)
 {
     PyObject *result;
 
-    result = PyObject_CallFunctionObjArgs(func, obj, NULL);
+    result = _PyObject_CallOneArg(func, obj);
     Py_DECREF(obj);
     return result;
 }
@@ -420,7 +420,7 @@ call_method(PyObject *func, PyObject *self, PyObject *obj)
         return PyObject_CallFunctionObjArgs(func, self, obj, NULL);
     }
     else {
-        return PyObject_CallFunctionObjArgs(func, obj, NULL);
+        return _PyObject_CallOneArg(func, obj);
     }
 }
 
@@ -1274,7 +1274,7 @@ _Unpickler_ReadFromFile(UnpicklerObject *self, Py_ssize_t n)
         return -1;
 
     if (n == READ_WHOLE_LINE) {
-        data = _PyObject_CallNoArg(self->readline);
+        data = PyObject_CallNoArgs(self->readline);
     }
     else {
         PyObject *len;
@@ -1653,7 +1653,7 @@ _Unpickler_SetInputEncoding(UnpicklerObject *self,
 static int
 _Unpickler_SetBuffers(UnpicklerObject *self, PyObject *buffers)
 {
-    if (buffers == NULL) {
+    if (buffers == NULL || buffers == Py_None) {
         self->buffers = NULL;
     }
     else {
@@ -2119,7 +2119,7 @@ save_long(PicklerObject *self, PyObject *obj)
         /* How many bytes do we need?  There are nbits >> 3 full
          * bytes of data, and nbits & 7 leftover bits.  If there
          * are any leftover bits, then we clearly need another
-         * byte.  Wnat's not so obvious is that we *probably*
+         * byte.  What's not so obvious is that we *probably*
          * need another byte even if there aren't any leftovers:
          * the most-significant bit of the most-significant byte
          * acts like a sign bit, and it's usually got a sense
@@ -2296,7 +2296,7 @@ _Pickler_write_bytes(PicklerObject *self,
                 return -1;
             }
         }
-        result = PyObject_CallFunctionObjArgs(self->write, payload, NULL);
+        result = _PyObject_CallOneArg(self->write, payload);
         Py_XDECREF(mem);
         if (result == NULL) {
             return -1;
@@ -2504,8 +2504,7 @@ save_picklebuffer(PicklerObject *self, PyObject *obj)
     }
     int in_band = 1;
     if (self->buffer_callback != NULL) {
-        PyObject *ret = PyObject_CallFunctionObjArgs(self->buffer_callback,
-                                                     obj, NULL);
+        PyObject *ret = _PyObject_CallOneArg(self->buffer_callback, obj);
         if (ret == NULL) {
             return -1;
         }
@@ -3306,7 +3305,7 @@ save_dict(PicklerObject *self, PyObject *obj)
         } else {
             _Py_IDENTIFIER(items);
 
-            items = _PyObject_CallMethodId(obj, &PyId_items, NULL);
+            items = _PyObject_CallMethodIdNoArgs(obj, &PyId_items);
             if (items == NULL)
                 goto error;
             iter = PyObject_GetIter(items);
@@ -4322,8 +4321,7 @@ save(PicklerObject *self, PyObject *obj, int pers_save)
      * regular reduction mechanism.
      */
     if (self->reducer_override != NULL) {
-        reduce_value = PyObject_CallFunctionObjArgs(self->reducer_override,
-                                                    obj, NULL);
+        reduce_value = _PyObject_CallOneArg(self->reducer_override, obj);
         if (reduce_value == NULL) {
             goto error;
         }
@@ -4385,7 +4383,6 @@ save(PicklerObject *self, PyObject *obj, int pers_save)
         _Py_IDENTIFIER(__reduce__);
         _Py_IDENTIFIER(__reduce_ex__);
 
-
         /* XXX: If the __reduce__ method is defined, __reduce_ex__ is
            automatically defined as __reduce__. While this is convenient, this
            make it impossible to know which method was actually called. Of
@@ -4406,14 +4403,15 @@ save(PicklerObject *self, PyObject *obj, int pers_save)
             }
         }
         else {
-            PickleState *st = _Pickle_GetGlobalState();
-
             /* Check for a __reduce__ method. */
-            reduce_func = _PyObject_GetAttrId(obj, &PyId___reduce__);
+            if (_PyObject_LookupAttrId(obj, &PyId___reduce__, &reduce_func) < 0) {
+                goto error;
+            }
             if (reduce_func != NULL) {
-                reduce_value = _PyObject_CallNoArg(reduce_func);
+                reduce_value = PyObject_CallNoArgs(reduce_func);
             }
             else {
+                PickleState *st = _Pickle_GetGlobalState();
                 PyErr_Format(st->PicklingError,
                              "can't pickle '%.200s' object: %R",
                              type->tp_name, obj);
@@ -5775,7 +5773,7 @@ instantiate(PyObject *cls, PyObject *args)
             return NULL;
         }
         if (func == NULL) {
-            return _PyObject_CallMethodIdObjArgs(cls, &PyId___new__, cls, NULL);
+            return _PyObject_CallMethodIdOneArg(cls, &PyId___new__, cls);
         }
         Py_DECREF(func);
     }
@@ -6448,7 +6446,9 @@ do_append(UnpicklerObject *self, Py_ssize_t x)
         PyObject *extend_func;
         _Py_IDENTIFIER(extend);
 
-        extend_func = _PyObject_GetAttrId(list, &PyId_extend);
+        if (_PyObject_LookupAttrId(list, &PyId_extend, &extend_func) < 0) {
+            return -1;
+        }
         if (extend_func != NULL) {
             slice = Pdata_poplist(self->stack, x);
             if (!slice) {
@@ -6468,7 +6468,6 @@ do_append(UnpicklerObject *self, Py_ssize_t x)
             /* Even if the PEP 307 requires extend() and append() methods,
                fall back on append() if the object has no extend() method
                for backward compatibility. */
-            PyErr_Clear();
             append_func = _PyObject_GetAttrId(list, &PyId_append);
             if (append_func == NULL)
                 return -1;

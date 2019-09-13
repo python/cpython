@@ -51,6 +51,14 @@ class MimeTypesTestCase(unittest.TestCase):
         eq(self.db.guess_type('foo.xul', strict=False), ('text/xul', None))
         eq(self.db.guess_extension('image/jpg', strict=False), '.jpg')
 
+    def test_url(self):
+        result = self.db.guess_type('http://host.html')
+        msg = 'URL only has a host name, not a file'
+        self.assertSequenceEqual(result, (None, None), msg)
+        result = self.db.guess_type('http://example.com/host.html')
+        msg = 'Should be text/html'
+        self.assertSequenceEqual(result, ('text/html', None), msg)
+
     def test_guess_all_types(self):
         eq = self.assertEqual
         unless = self.assertTrue
@@ -78,6 +86,57 @@ class MimeTypesTestCase(unittest.TestCase):
         exts = mimes.guess_all_extensions('application/vnd.geocube+xml',
                                           strict=True)
         self.assertEqual(exts, ['.g3', '.g\xb3'])
+
+    def test_init_reinitializes(self):
+        # Issue 4936: make sure an init starts clean
+        # First, put some poison into the types table
+        mimetypes.add_type('foo/bar', '.foobar')
+        self.assertEqual(mimetypes.guess_extension('foo/bar'), '.foobar')
+        # Reinitialize
+        mimetypes.init()
+        # Poison should be gone.
+        self.assertEqual(mimetypes.guess_extension('foo/bar'), None)
+
+    def test_preferred_extension(self):
+        def check_extensions():
+            self.assertEqual(mimetypes.guess_extension('application/octet-stream'), '.bin')
+            self.assertEqual(mimetypes.guess_extension('application/postscript'), '.ps')
+            self.assertEqual(mimetypes.guess_extension('application/vnd.apple.mpegurl'), '.m3u')
+            self.assertEqual(mimetypes.guess_extension('application/vnd.ms-excel'), '.xls')
+            self.assertEqual(mimetypes.guess_extension('application/vnd.ms-powerpoint'), '.ppt')
+            self.assertEqual(mimetypes.guess_extension('application/x-texinfo'), '.texi')
+            self.assertEqual(mimetypes.guess_extension('application/x-troff'), '.roff')
+            self.assertEqual(mimetypes.guess_extension('application/xml'), '.xsl')
+            self.assertEqual(mimetypes.guess_extension('audio/mpeg'), '.mp3')
+            self.assertEqual(mimetypes.guess_extension('image/jpeg'), '.jpg')
+            self.assertEqual(mimetypes.guess_extension('image/tiff'), '.tiff')
+            self.assertEqual(mimetypes.guess_extension('message/rfc822'), '.eml')
+            self.assertEqual(mimetypes.guess_extension('text/html'), '.html')
+            self.assertEqual(mimetypes.guess_extension('text/plain'), '.txt')
+            self.assertEqual(mimetypes.guess_extension('video/mpeg'), '.mpeg')
+            self.assertEqual(mimetypes.guess_extension('video/quicktime'), '.mov')
+
+        check_extensions()
+        mimetypes.init()
+        check_extensions()
+
+    def test_init_stability(self):
+        mimetypes.init()
+
+        suffix_map = mimetypes.suffix_map
+        encodings_map = mimetypes.encodings_map
+        types_map = mimetypes.types_map
+        common_types = mimetypes.common_types
+
+        mimetypes.init()
+        self.assertIsNot(suffix_map, mimetypes.suffix_map)
+        self.assertIsNot(encodings_map, mimetypes.encodings_map)
+        self.assertIsNot(types_map, mimetypes.types_map)
+        self.assertIsNot(common_types, mimetypes.common_types)
+        self.assertEqual(suffix_map, mimetypes.suffix_map)
+        self.assertEqual(encodings_map, mimetypes.encodings_map)
+        self.assertEqual(types_map, mimetypes.types_map)
+        self.assertEqual(common_types, mimetypes.common_types)
 
     def test_path_like_ob(self):
         filename = "LICENSE.txt"

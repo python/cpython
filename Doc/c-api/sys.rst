@@ -291,8 +291,6 @@ accessible to C code.  They all work with the current interpreter thread's
 
 .. c:function:: int PySys_Audit(const char *event, const char *format, ...)
 
-   .. index:: single: audit events
-
    Raises an auditing event with any active hooks. Returns zero for success
    and non-zero with an exception set on failure.
 
@@ -310,8 +308,6 @@ accessible to C code.  They all work with the current interpreter thread's
 
 
 .. c:function:: int PySys_AddAuditHook(Py_AuditHookFunction hook, void *userData)
-
-   .. index:: single: audit events
 
    Adds to the collection of active auditing hooks. Returns zero for success
    and non-zero on failure. If the runtime has been initialized, also sets an

@@ -36,9 +36,9 @@ Notes on the availability of these functions:
 
 .. note::
 
-   All functions in this module raise :exc:`OSError` in the case of invalid or
-   inaccessible file names and paths, or other arguments that have the correct
-   type, but are not accepted by the operating system.
+   All functions in this module raise :exc:`OSError` (or subclasses thereof) in
+   the case of invalid or inaccessible file names and paths, or other arguments
+   that have the correct type, but are not accepted by the operating system.
 
 .. exception:: error
 
@@ -851,7 +851,7 @@ as internal buffering of data.
    most *length* bytes in size.  As of Python 3.3, this is equivalent to
    ``os.truncate(fd, length)``.
 
-   .. audit-event:: os.truncate "fd length"
+   .. audit-event:: os.truncate fd,length os.ftruncate
 
    .. availability:: Unix, Windows.
 
@@ -938,7 +938,7 @@ as internal buffering of data.
    This function can support :ref:`paths relative to directory descriptors
    <dir_fd>` with the *dir_fd* parameter.
 
-   .. audit-event:: open "path mode flags"
+   .. audit-event:: open path,mode,flags os.open
 
    .. versionchanged:: 3.4
       The new file descriptor is now non-inheritable.
@@ -1599,6 +1599,9 @@ features:
    This function can support :ref:`specifying a file descriptor <path_fd>`.  The
    descriptor must refer to an opened directory, not an open file.
 
+   This function can raise :exc:`OSError` and subclasses such as
+   :exc:`FileNotFoundError`, :exc:`PermissionError`, and :exc:`NotADirectoryError`.
+
    .. versionadded:: 3.3
       Added support for specifying *path* as a file descriptor
       on some platforms.
@@ -1730,6 +1733,11 @@ features:
 
    Return a bytestring representing the current working directory.
 
+   .. versionchanged:: 3.8
+      The function now uses the UTF-8 encoding on Windows, rather than the ANSI
+      code page: see :pep:`529` for the rationale. The function is no longer
+      deprecated on Windows.
+
 
 .. function:: lchflags(path, flags)
 
@@ -1801,6 +1809,8 @@ features:
    This function can also support :ref:`specifying a file descriptor
    <path_fd>`; the file descriptor must refer to a directory.
 
+   .. audit-event:: os.listdir path os.listdir
+
    .. note::
       To encode ``str`` filenames to ``bytes``, use :func:`~os.fsencode`.
 
@@ -1848,6 +1858,12 @@ features:
    .. versionchanged:: 3.6
       Accepts a :term:`path-like object` for *src* and *dst*.
 
+   .. versionchanged:: 3.8
+      On Windows, now opens reparse points that represent another path
+      (name surrogates), including symbolic links and directory junctions.
+      Other kinds of reparse points are resolved by the operating system as
+      for :func:`~os.stat`.
+
 
 .. function:: mkdir(path, mode=0o777, *, dir_fd=None)
 
@@ -1891,8 +1907,8 @@ features:
    directories you can set the umask before invoking :func:`makedirs`.  The
    file permission bits of existing parent directories are not changed.
 
-   If *exist_ok* is ``False`` (the default), an :exc:`OSError` is raised if the
-   target directory already exists.
+   If *exist_ok* is ``False`` (the default), an :exc:`FileExistsError` is
+   raised if the target directory already exists.
 
    .. note::
 
@@ -2029,6 +2045,10 @@ features:
    This function can also support :ref:`paths relative to directory descriptors
    <dir_fd>`.
 
+   When trying to resolve a path that may contain links, use
+   :func:`~os.path.realpath` to properly handle recursion and platform
+   differences.
+
    .. availability:: Unix, Windows.
 
    .. versionchanged:: 3.2
@@ -2043,10 +2063,15 @@ features:
    .. versionchanged:: 3.8
       Accepts a :term:`path-like object` and a bytes object on Windows.
 
+   .. versionchanged:: 3.8
+      Added support for directory junctions, and changed to return the
+      substitution path (which typically includes ``\\?\`` prefix) rather
+      than the optional "print name" field that was previously returned.
+
 .. function:: remove(path, *, dir_fd=None)
 
-   Remove (delete) the file *path*.  If *path* is a directory, :exc:`OSError` is
-   raised.  Use :func:`rmdir` to remove directories.
+   Remove (delete) the file *path*.  If *path* is a directory, an
+   :exc:`IsADirectoryError` is raised.  Use :func:`rmdir` to remove directories.
 
    This function can support :ref:`paths relative to directory descriptors
    <dir_fd>`.
@@ -2083,13 +2108,19 @@ features:
 
 .. function:: rename(src, dst, *, src_dir_fd=None, dst_dir_fd=None)
 
-   Rename the file or directory *src* to *dst*.  If *dst* is a directory,
-   :exc:`OSError` will be raised.  On Unix, if *dst* exists and is a file, it will
-   be replaced silently if the user has permission.  The operation may fail on some
-   Unix flavors if *src* and *dst* are on different filesystems.  If successful,
-   the renaming will be an atomic operation (this is a POSIX requirement).  On
-   Windows, if *dst* already exists, :exc:`OSError` will be raised even if it is a
-   file.
+   Rename the file or directory *src* to *dst*. If *dst* exists, the operation
+   will fail with an :exc:`OSError` subclass in a number of cases:
+
+   On Windows, if *dst* exists a :exc:`FileExistsError` is always raised.
+
+   On Unix, if *src* is a file and *dst* is a directory or vice-versa, an
+   :exc:`IsADirectoryError` or a :exc:`NotADirectoryError` will be raised
+   respectively.  If both are directories and *dst* is empty, *dst* will be
+   silently replaced.  If *dst* is a non-empty directory, an :exc:`OSError`
+   is raised. If both are files, *dst* it will be replaced silently if the user
+   has permission.  The operation may fail on some Unix flavors if *src* and
+   *dst* are on different filesystems.  If successful, the renaming will be an
+   atomic operation (this is a POSIX requirement).
 
    This function can support specifying *src_dir_fd* and/or *dst_dir_fd* to
    supply :ref:`paths relative to directory descriptors <dir_fd>`.
@@ -2138,9 +2169,10 @@ features:
 
 .. function:: rmdir(path, *, dir_fd=None)
 
-   Remove (delete) the directory *path*.  Only works when the directory is
-   empty, otherwise, :exc:`OSError` is raised.  In order to remove whole
-   directory trees, :func:`shutil.rmtree` can be used.
+   Remove (delete) the directory *path*.  If the directory does not exist or is
+   not empty, an :exc:`FileNotFoundError` or an :exc:`OSError` is raised
+   respectively.  In order to remove whole directory trees,
+   :func:`shutil.rmtree` can be used.
 
    This function can support :ref:`paths relative to directory descriptors
    <dir_fd>`.
@@ -2177,6 +2209,8 @@ features:
 
    This function can also support :ref:`specifying a file descriptor
    <path_fd>`; the file descriptor must refer to a directory.
+
+   .. audit-event:: os.scandir path os.scandir
 
    The :func:`scandir` iterator supports the :term:`context manager` protocol
    and has the following method:
@@ -2347,7 +2381,8 @@ features:
 
       On Unix, this method always requires a system call. On Windows, it
       only requires a system call if *follow_symlinks* is ``True`` and the
-      entry is a symbolic link.
+      entry is a reparse point (for example, a symbolic link or directory
+      junction).
 
       On Windows, the ``st_ino``, ``st_dev`` and ``st_nlink`` attributes of the
       :class:`stat_result` are always set to zero. Call :func:`os.stat` to
@@ -2384,6 +2419,17 @@ features:
    This function can support :ref:`specifying a file descriptor <path_fd>` and
    :ref:`not following symlinks <follow_symlinks>`.
 
+   On Windows, passing ``follow_symlinks=False`` will disable following all
+   name-surrogate reparse points, which includes symlinks and directory
+   junctions. Other types of reparse points that do not resemble links or that
+   the operating system is unable to follow will be opened directly. When
+   following a chain of multiple links, this may result in the original link
+   being returned instead of the non-link that prevented full traversal. To
+   obtain stat results for the final path in this case, use the
+   :func:`os.path.realpath` function to resolve the path name as far as
+   possible and call :func:`lstat` on the result. This does not apply to
+   dangling symlinks or junction points, which will raise the usual exceptions.
+
    .. index:: module: stat
 
    Example::
@@ -2407,6 +2453,14 @@ features:
 
    .. versionchanged:: 3.6
       Accepts a :term:`path-like object`.
+
+   .. versionchanged:: 3.8
+      On Windows, all reparse points that can be resolved by the operating
+      system are now followed, and passing ``follow_symlinks=False``
+      disables following all name surrogate reparse points. If the operating
+      system reaches a reparse point that it is not able to follow, *stat* now
+      returns the information for the original path as if
+      ``follow_symlinks=False`` had been specified instead of raising an error.
 
 
 .. class:: stat_result
@@ -2559,7 +2613,7 @@ features:
 
       File type.
 
-   On Windows systems, the following attribute is also available:
+   On Windows systems, the following attributes are also available:
 
    .. attribute:: st_file_attributes
 
@@ -2567,6 +2621,12 @@ features:
       ``BY_HANDLE_FILE_INFORMATION`` structure returned by
       :c:func:`GetFileInformationByHandle`. See the ``FILE_ATTRIBUTE_*``
       constants in the :mod:`stat` module.
+
+   .. attribute:: st_reparse_tag
+
+      When :attr:`st_file_attributes` has the ``FILE_ATTRIBUTE_REPARSE_POINT``
+      set, this field contains the tag identifying the type of reparse point.
+      See the ``IO_REPARSE_TAG_*`` constants in the :mod:`stat` module.
 
    The standard module :mod:`stat` defines functions and constants that are
    useful for extracting information from a :c:type:`stat` structure. (On
@@ -2594,6 +2654,14 @@ features:
 
    .. versionadded:: 3.7
       Added the :attr:`st_fstype` member to Solaris/derivatives.
+
+   .. versionadded:: 3.8
+      Added the :attr:`st_reparse_tag` member on Windows.
+
+   .. versionchanged:: 3.8
+      On Windows, the :attr:`st_mode` member now identifies special
+      files as :const:`S_IFCHR`, :const:`S_IFIFO` or :const:`S_IFBLK`
+      as appropriate.
 
 .. function:: statvfs(path)
 
@@ -2784,7 +2852,7 @@ features:
 
    This function can support :ref:`specifying a file descriptor <path_fd>`.
 
-   .. audit-event:: os.truncate "path length"
+   .. audit-event:: os.truncate path,length os.truncate
 
    .. availability:: Unix, Windows.
 
@@ -3790,7 +3858,7 @@ written in Python, such as a mail server's external command delivery program.
    to using this function.  See the :ref:`subprocess-replacements` section in
    the :mod:`subprocess` documentation for some helpful recipes.
 
-   .. audit-event:: os.system command
+   .. audit-event:: os.system command os.system
 
    .. availability:: Unix, Windows.
 
@@ -3811,7 +3879,9 @@ written in Python, such as a mail server's external command delivery program.
    :attr:`children_system`, and :attr:`elapsed` in that order.
 
    See the Unix manual page
-   :manpage:`times(2)` or the corresponding Windows Platform API documentation.
+   :manpage:`times(2)` and :manpage:`times(3)` manual page on Unix or `the GetProcessTimes MSDN
+   <https://docs.microsoft.com/windows/win32/api/processthreadsapi/nf-processthreadsapi-getprocesstimes>`
+   _ on Windows.
    On Windows, only :attr:`user` and :attr:`system` are known; the other
    attributes are zero.
 

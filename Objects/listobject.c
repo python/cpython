@@ -138,7 +138,7 @@ PyList_ClearFreeList(void)
 }
 
 void
-PyList_Fini(void)
+_PyList_Fini(void)
 {
     PyList_ClearFreeList();
 }
@@ -449,8 +449,7 @@ list_contains(PyListObject *a, PyObject *el)
     int cmp;
 
     for (i = 0, cmp = 0 ; cmp == 0 && i < Py_SIZE(a); ++i)
-        cmp = PyObject_RichCompareBool(el, PyList_GET_ITEM(a, i),
-                                           Py_EQ);
+        cmp = PyObject_RichCompareBool(PyList_GET_ITEM(a, i), el, Py_EQ);
     return cmp;
 }
 
@@ -2258,8 +2257,7 @@ list_sort_impl(PyListObject *self, PyObject *keyfunc, int reverse)
         }
 
         for (i = 0; i < saved_ob_size ; i++) {
-            keys[i] = PyObject_CallFunctionObjArgs(keyfunc, saved_ob_item[i],
-                                                   NULL);
+            keys[i] = _PyObject_CallOneArg(keyfunc, saved_ob_item[i]);
             if (keys[i] == NULL) {
                 for (i=i-1 ; i>=0 ; i--)
                     Py_DECREF(keys[i]);
@@ -2791,7 +2789,8 @@ list_subscript(PyListObject* self, PyObject* item)
         return list_item(self, i);
     }
     else if (PySlice_Check(item)) {
-        Py_ssize_t start, stop, step, slicelength, cur, i;
+        Py_ssize_t start, stop, step, slicelength, i;
+        size_t cur;
         PyObject* result;
         PyObject* it;
         PyObject **src, **dest;
@@ -2927,7 +2926,8 @@ list_ass_subscript(PyListObject* self, PyObject* item, PyObject* value)
             /* assign slice */
             PyObject *ins, *seq;
             PyObject **garbage, **seqitems, **selfitems;
-            Py_ssize_t cur, i;
+            Py_ssize_t i;
+            size_t cur;
 
             /* protect against a[::-1] = a */
             if (self == (PyListObject*)value) {

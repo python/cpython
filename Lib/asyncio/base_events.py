@@ -861,7 +861,7 @@ class BaseEventLoop(events.AbstractEventLoop):
                 read = await self.run_in_executor(None, file.readinto, view)
                 if not read:
                     break  # EOF
-                await self.sock_sendall(sock, view)
+                await self.sock_sendall(sock, view[:read])
                 total_sent += read
             return total_sent
         finally:
@@ -1141,11 +1141,11 @@ class BaseEventLoop(events.AbstractEventLoop):
                     if blocksize <= 0:
                         return total_sent
                 view = memoryview(buf)[:blocksize]
-                read = file.readinto(view)
+                read = await self.run_in_executor(None, file.readinto, view)
                 if not read:
                     return total_sent  # EOF
                 await proto.drain()
-                transp.write(view)
+                transp.write(view[:read])
                 total_sent += read
         finally:
             if total_sent > 0 and hasattr(file, 'seek'):

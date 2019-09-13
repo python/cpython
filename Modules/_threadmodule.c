@@ -8,6 +8,14 @@
 #include "structmember.h" /* offsetof */
 #include "pythread.h"
 
+#include "clinic/_threadmodule.c.h"
+
+/*[clinic input]
+module _thread
+[clinic start generated code]*/
+/*[clinic end generated code: output=da39a3ee5e6b4b0d input=be8dbe5cc4b16df7]*/
+
+
 static PyObject *ThreadError;
 static PyObject *str_dict;
 
@@ -985,6 +993,7 @@ struct bootstate {
     PyObject *args;
     PyObject *keyw;
     PyThreadState *tstate;
+    _PyRuntimeState *runtime;
 };
 
 static void
@@ -992,11 +1001,13 @@ t_bootstrap(void *boot_raw)
 {
     struct bootstate *boot = (struct bootstate *) boot_raw;
     PyThreadState *tstate;
+    _PyRuntimeState *runtime;
     PyObject *res;
 
+    runtime = boot->runtime;
     tstate = boot->tstate;
     tstate->thread_id = PyThread_get_thread_ident();
-    _PyThreadState_Init(&_PyRuntime, tstate);
+    _PyThreadState_Init(runtime, tstate);
     PyEval_AcquireThread(tstate);
     tstate->interp->num_threads++;
     res = PyObject_Call(boot->func, boot->args, boot->keyw);
@@ -1017,13 +1028,14 @@ t_bootstrap(void *boot_raw)
     PyMem_DEL(boot_raw);
     tstate->interp->num_threads--;
     PyThreadState_Clear(tstate);
-    PyThreadState_DeleteCurrent();
+    _PyThreadState_DeleteCurrent(runtime);
     PyThread_exit_thread();
 }
 
 static PyObject *
 thread_PyThread_start_new_thread(PyObject *self, PyObject *fargs)
 {
+    _PyRuntimeState *runtime = &_PyRuntime;
     PyObject *func, *args, *keyw = NULL;
     struct bootstate *boot;
     unsigned long ident;
@@ -1054,6 +1066,7 @@ thread_PyThread_start_new_thread(PyObject *self, PyObject *fargs)
     boot->args = args;
     boot->keyw = keyw;
     boot->tstate = _PyThreadState_Prealloc(boot->interp);
+    boot->runtime = runtime;
     if (boot->tstate == NULL) {
         PyMem_DEL(boot);
         return PyErr_NoMemory();
@@ -1305,6 +1318,7 @@ static int
 thread_excepthook_file(PyObject *file, PyObject *exc_type, PyObject *exc_value,
                        PyObject *exc_traceback, PyObject *thread)
 {
+    _Py_IDENTIFIER(name);
     /* print(f"Exception in thread {thread.name}:", file=file) */
     if (PyFile_WriteString("Exception in thread ", file) < 0) {
         return -1;
@@ -1312,7 +1326,9 @@ thread_excepthook_file(PyObject *file, PyObject *exc_type, PyObject *exc_value,
 
     PyObject *name = NULL;
     if (thread != Py_None) {
-        name = PyObject_GetAttrString(thread, "name");
+        if (_PyObject_LookupAttrId(thread, &PyId_name, &name) < 0) {
+            return -1;
+        }
     }
     if (name != NULL) {
         if (PyFile_WriteObject(name, file, Py_PRINT_RAW) < 0) {
@@ -1322,8 +1338,6 @@ thread_excepthook_file(PyObject *file, PyObject *exc_type, PyObject *exc_value,
         Py_DECREF(name);
     }
     else {
-        PyErr_Clear();
-
         unsigned long ident = PyThread_get_thread_ident();
         PyObject *str = PyUnicode_FromFormat("%lu", ident);
         if (str != NULL) {
@@ -1350,7 +1364,7 @@ thread_excepthook_file(PyObject *file, PyObject *exc_type, PyObject *exc_value,
     _PyErr_Display(file, exc_type, exc_value, exc_traceback);
 
     /* Call file.flush() */
-    PyObject *res = _PyObject_CallMethodId(file, &PyId_flush, NULL);
+    PyObject *res = _PyObject_CallMethodIdNoArgs(file, &PyId_flush);
     if (!res) {
         return -1;
     }
@@ -1442,6 +1456,21 @@ PyDoc_STRVAR(excepthook_doc,
 \n\
 Handle uncaught Thread.run() exception.");
 
+/*[clinic input]
+_thread._is_main_interpreter
+
+Return True if the current interpreter is the main Python interpreter.
+[clinic start generated code]*/
+
+static PyObject *
+_thread__is_main_interpreter_impl(PyObject *module)
+/*[clinic end generated code: output=7dd82e1728339adc input=cc1eb00fd4598915]*/
+{
+    _PyRuntimeState *runtime = &_PyRuntime;
+    PyInterpreterState *interp = _PyRuntimeState_GetThreadState(runtime)->interp;
+    return PyBool_FromLong(interp == runtime->interpreters.main);
+}
+
 static PyMethodDef thread_methods[] = {
     {"start_new_thread",        (PyCFunction)thread_PyThread_start_new_thread,
      METH_VARARGS, start_new_doc},
@@ -1471,6 +1500,7 @@ static PyMethodDef thread_methods[] = {
      METH_NOARGS, _set_sentinel_doc},
     {"_excepthook",              thread_excepthook,
      METH_O, excepthook_doc},
+    _THREAD__IS_MAIN_INTERPRETER_METHODDEF
     {NULL,                      NULL}           /* sentinel */
 };
 

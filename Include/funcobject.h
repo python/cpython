@@ -60,12 +60,6 @@ PyAPI_FUNC(PyObject *) PyFunction_GetAnnotations(PyObject *);
 PyAPI_FUNC(int) PyFunction_SetAnnotations(PyObject *, PyObject *);
 
 #ifndef Py_LIMITED_API
-PyAPI_FUNC(PyObject *) _PyFunction_FastCallDict(
-    PyObject *func,
-    PyObject *const *args,
-    Py_ssize_t nargs,
-    PyObject *kwargs);
-
 PyAPI_FUNC(PyObject *) _PyFunction_Vectorcall(
     PyObject *func,
     PyObject *const *stack,

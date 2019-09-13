@@ -425,30 +425,6 @@ struct BITS {
 #endif
 };
 
-EXPORT(void) set_bitfields(struct BITS *bits, char name, int value)
-{
-    switch (name) {
-    case 'A': bits->A = value; break;
-    case 'B': bits->B = value; break;
-    case 'C': bits->C = value; break;
-    case 'D': bits->D = value; break;
-    case 'E': bits->E = value; break;
-    case 'F': bits->F = value; break;
-    case 'G': bits->G = value; break;
-    case 'H': bits->H = value; break;
-    case 'I': bits->I = value; break;
-#ifdef SIGNED_SHORT_BITFIELDS
-    case 'M': bits->M = value; break;
-    case 'N': bits->N = value; break;
-    case 'O': bits->O = value; break;
-    case 'P': bits->P = value; break;
-    case 'Q': bits->Q = value; break;
-    case 'R': bits->R = value; break;
-    case 'S': bits->S = value; break;
-#endif
-    }
-}
-
 EXPORT(int) unpack_bitfields(struct BITS *bits, char name)
 {
     switch (name) {

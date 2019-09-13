@@ -1358,6 +1358,9 @@ else:
             self.cert_file = cert_file
             if context is None:
                 context = ssl._create_default_https_context()
+                # enable PHA for TLS 1.3 connections if available
+                if context.post_handshake_auth is not None:
+                    context.post_handshake_auth = True
             will_verify = context.verify_mode != ssl.CERT_NONE
             if check_hostname is None:
                 check_hostname = context.check_hostname
@@ -1366,6 +1369,10 @@ else:
                                  "either CERT_OPTIONAL or CERT_REQUIRED")
             if key_file or cert_file:
                 context.load_cert_chain(cert_file, key_file)
+                # cert and key file means the user wants to authenticate.
+                # enable TLS 1.3 PHA implicitly even for custom contexts.
+                if context.post_handshake_auth is not None:
+                    context.post_handshake_auth = True
             self._context = context
             if check_hostname is not None:
                 self._context.check_hostname = check_hostname

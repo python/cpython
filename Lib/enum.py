@@ -577,7 +577,7 @@ class Enum(metaclass=EnumMeta):
         if isinstance(result, cls):
             return result
         else:
-            ve_exc = ValueError("%r is not a valid %s" % (value, cls.__name__))
+            ve_exc = ValueError("%r is not a valid %s" % (value, cls.__qualname__))
             if result is None and exc is None:
                 raise ve_exc
             elif exc is None:
@@ -599,7 +599,7 @@ class Enum(metaclass=EnumMeta):
 
     @classmethod
     def _missing_(cls, value):
-        raise ValueError("%r is not a valid %s" % (value, cls.__name__))
+        raise ValueError("%r is not a valid %s" % (value, cls.__qualname__))
 
     def __repr__(self):
         return "<%s.%s: %r>" % (
@@ -622,8 +622,9 @@ class Enum(metaclass=EnumMeta):
         # we can get strange results with the Enum name showing up instead of
         # the value
 
-        # pure Enum branch
-        if self._member_type_ is object:
+        # pure Enum branch, or branch with __str__ explicitly overridden
+        str_overridden = type(self).__str__ != Enum.__str__
+        if self._member_type_ is object or str_overridden:
             cls = str
             val = str(self)
         # mix-in branch
@@ -705,7 +706,7 @@ class Flag(Enum):
             # verify all bits are accounted for
             _, extra_flags = _decompose(cls, value)
             if extra_flags:
-                raise ValueError("%r is not a valid %s" % (value, cls.__name__))
+                raise ValueError("%r is not a valid %s" % (value, cls.__qualname__))
             # construct a singleton enum pseudo-member
             pseudo_member = object.__new__(cls)
             pseudo_member._name_ = None
@@ -779,7 +780,7 @@ class IntFlag(int, Flag):
     @classmethod
     def _missing_(cls, value):
         if not isinstance(value, int):
-            raise ValueError("%r is not a valid %s" % (value, cls.__name__))
+            raise ValueError("%r is not a valid %s" % (value, cls.__qualname__))
         new_member = cls._create_pseudo_member_(value)
         return new_member
 

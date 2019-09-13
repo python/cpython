@@ -1,0 +1,1 @@
+Preserve subclassing in inspect.Signature.from_callable.

@@ -70,6 +70,7 @@ source.
    :data:`sys.path` (allowing modules in that directory to be imported as top
    level modules).
 
+   .. audit-event:: cpython.run_command command cmdoption-c
 
 .. cmdoption:: -m <module-name>
 
@@ -106,12 +107,13 @@ source.
        python -mtimeit -s 'setup here' 'benchmarked code here'
        python -mtimeit -h # for details
 
+   .. audit-event:: cpython.run_module module-name cmdoption-m
+
    .. seealso::
       :func:`runpy.run_module`
          Equivalent functionality directly available to Python code
 
       :pep:`338` -- Executing modules as scripts
-
 
    .. versionchanged:: 3.1
       Supply the package name to run a ``__main__`` submodule.
@@ -129,6 +131,7 @@ source.
    ``"-"`` and the current directory will be added to the start of
    :data:`sys.path`.
 
+   .. audit-event:: cpython.run_stdin "" ""
 
 .. describe:: <script>
 
@@ -147,6 +150,8 @@ source.
    If the script name refers to a directory or zipfile, the script name is
    added to the start of :data:`sys.path` and the ``__main__.py`` file in
    that location is executed as the :mod:`__main__` module.
+
+   .. audit-event:: cpython.run_file filename
 
    .. seealso::
       :func:`runpy.run_path`
@@ -297,7 +302,7 @@ Miscellaneous options
    randomization is enabled by default.
 
    On previous versions of Python, this option turns on hash randomization,
-   so that the :meth:`__hash__` values of str, bytes and datetime
+   so that the :meth:`__hash__` values of str and bytes objects
    are "salted" with an unpredictable random value.  Although they remain
    constant within an individual Python process, they are not predictable
    between repeated invocations of Python.
@@ -429,6 +434,9 @@ Miscellaneous options
      not be more verbose than the default if the code is correct: new warnings
      are only emitted when an issue is detected. Effect of the developer mode:
 
+     * Check *encoding* and *errors* arguments on string encoding and decoding
+       operations. Examples: :func:`open`, :meth:`str.encode` and
+       :meth:`bytes.decode`.
      * Add ``default`` warning filter, as :option:`-W` ``default``.
      * Install debug hooks on memory allocators: see the
        :c:func:`PyMem_SetupDebugHooks` C function.
@@ -468,6 +476,10 @@ Miscellaneous options
    .. versionadded:: 3.8
       The ``-X pycache_prefix`` option. The ``-X dev`` option now logs
       ``close()`` exceptions in :class:`io.IOBase` destructor.
+
+   .. versionchanged:: 3.9
+      Using ``-X dev`` option, check *encoding* and *errors* arguments on
+      string encoding and decoding operations.
 
 
 Options you shouldn't use
@@ -532,6 +544,11 @@ conflict.
    that objects defined or imported in it can be used without qualification in
    the interactive session.  You can also change the prompts :data:`sys.ps1` and
    :data:`sys.ps2` and the hook :data:`sys.__interactivehook__` in this file.
+
+   .. audit-event:: cpython.run_startup filename PYTHONSTARTUP
+
+      Raises an :ref:`auditing event <auditing>` ``cpython.run_startup`` with
+      the filename as the argument when called on startup.
 
 
 .. envvar:: PYTHONOPTIMIZE
@@ -608,7 +625,7 @@ conflict.
 .. envvar:: PYTHONHASHSEED
 
    If this variable is not set or set to ``random``, a random value is used
-   to seed the hashes of str, bytes and datetime objects.
+   to seed the hashes of str and bytes objects.
 
    If :envvar:`PYTHONHASHSEED` is set to an integer value, it is used as a fixed
    seed for generating the hash() of the types covered by the hash

@@ -43,7 +43,7 @@ static PyTypeObject FloatInfoType;
 PyDoc_STRVAR(floatinfo__doc__,
 "sys.float_info\n\
 \n\
-A structseq holding information about the float type. It contains low level\n\
+A named tuple holding information about the float type. It contains low level\n\
 information about the precision and internal representation. Please study\n\
 your system's :file:`float.h` for more information.");
 
@@ -1501,7 +1501,7 @@ float_fromhex(PyTypeObject *type, PyObject *string)
         goto parse_error;
     result = PyFloat_FromDouble(negate ? -x : x);
     if (type != &PyFloat_Type && result != NULL) {
-        Py_SETREF(result, PyObject_CallFunctionObjArgs((PyObject *)type, result, NULL));
+        Py_SETREF(result, _PyObject_CallOneArg((PyObject *)type, result));
     }
     return result;
 
@@ -2031,7 +2031,7 @@ PyFloat_ClearFreeList(void)
 }
 
 void
-PyFloat_Fini(void)
+_PyFloat_Fini(void)
 {
     (void)PyFloat_ClearFreeList();
 }

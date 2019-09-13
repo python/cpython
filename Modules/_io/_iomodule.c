@@ -383,8 +383,10 @@ _io_open_impl(PyObject *module, PyObject *file, const char *mode,
             encoding = "utf-8";
         }
 #endif
-        raw = PyObject_CallFunction(RawIO_class,
-                                    "OsiO", path_or_fd, rawmode, closefd, opener);
+        raw = PyObject_CallFunction(RawIO_class, "OsOO",
+                                    path_or_fd, rawmode,
+                                    closefd ? Py_True : Py_False,
+                                    opener);
     }
 
     if (raw == NULL)
@@ -400,7 +402,7 @@ _io_open_impl(PyObject *module, PyObject *file, const char *mode,
 
     /* buffering */
     if (buffering < 0) {
-        PyObject *res = _PyObject_CallMethodId(raw, &PyId_isatty, NULL);
+        PyObject *res = _PyObject_CallMethodIdNoArgs(raw, &PyId_isatty);
         if (res == NULL)
             goto error;
         isatty = PyLong_AsLong(res);
@@ -476,10 +478,10 @@ _io_open_impl(PyObject *module, PyObject *file, const char *mode,
 
     /* wraps into a TextIOWrapper */
     wrapper = PyObject_CallFunction((PyObject *)&PyTextIOWrapper_Type,
-                                    "Osssi",
+                                    "OsssO",
                                     buffer,
                                     encoding, errors, newline,
-                                    line_buffering);
+                                    line_buffering ? Py_True : Py_False);
     if (wrapper == NULL)
         goto error;
     result = wrapper;
@@ -494,7 +496,7 @@ _io_open_impl(PyObject *module, PyObject *file, const char *mode,
     if (result != NULL) {
         PyObject *exc, *val, *tb, *close_result;
         PyErr_Fetch(&exc, &val, &tb);
-        close_result = _PyObject_CallMethodId(result, &PyId_close, NULL);
+        close_result = _PyObject_CallMethodIdNoArgs(result, &PyId_close);
         _PyErr_ChainExceptions(exc, val, tb);
         Py_XDECREF(close_result);
         Py_DECREF(result);

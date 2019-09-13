@@ -1,0 +1,1 @@
+:func:`os.dup` no longer fails for standard streams on Windows 7.

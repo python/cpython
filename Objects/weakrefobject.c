@@ -163,10 +163,10 @@ weakref_repr(PyWeakReference *self)
     if (PyWeakref_GET_OBJECT(self) == Py_None)
         return PyUnicode_FromFormat("<weakref at %p; dead>", self);
 
-    name = _PyObject_GetAttrId(PyWeakref_GET_OBJECT(self), &PyId___name__);
+    if (_PyObject_LookupAttrId(PyWeakref_GET_OBJECT(self), &PyId___name__, &name) < 0) {
+        return NULL;
+    }
     if (name == NULL || !PyUnicode_Check(name)) {
-        if (name == NULL)
-            PyErr_Clear();
         repr = PyUnicode_FromFormat(
             "<weakref at %p; to '%s' at %p>",
             self,
@@ -455,7 +455,7 @@ proxy_checkref(PyWeakReference *proxy)
     method(PyObject *proxy, PyObject *Py_UNUSED(ignored)) { \
             _Py_IDENTIFIER(special); \
             UNWRAP(proxy); \
-                return _PyObject_CallMethodId(proxy, &PyId_##special, NULL); \
+                return _PyObject_CallMethodIdNoArgs(proxy, &PyId_##special); \
         }
 
 
@@ -874,7 +874,7 @@ PyWeakref_GetObject(PyObject *ref)
 static void
 handle_callback(PyWeakReference *ref, PyObject *callback)
 {
-    PyObject *cbresult = PyObject_CallFunctionObjArgs(callback, ref, NULL);
+    PyObject *cbresult = _PyObject_CallOneArg(callback, (PyObject *)ref);
 
     if (cbresult == NULL)
         PyErr_WriteUnraisable(callback);

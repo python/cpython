@@ -524,11 +524,13 @@ class ForwardRef(_Final, _root=True):
     def __eq__(self, other):
         if not isinstance(other, ForwardRef):
             return NotImplemented
-        return (self.__forward_arg__ == other.__forward_arg__ and
-                self.__forward_value__ == other.__forward_value__)
+        if self.__forward_evaluated__ and other.__forward_evaluated__:
+            return (self.__forward_arg__ == other.__forward_arg__ and
+                    self.__forward_value__ == other.__forward_value__)
+        return self.__forward_arg__ == other.__forward_arg__
 
     def __hash__(self):
-        return hash((self.__forward_arg__, self.__forward_value__))
+        return hash(self.__forward_arg__)
 
     def __repr__(self):
         return f'ForwardRef({self.__forward_arg__!r})'
@@ -989,10 +991,13 @@ def _allow_reckless_class_cheks():
         return True
 
 
-_PROTO_WHITELIST = ['Callable', 'Awaitable',
-                    'Iterable', 'Iterator', 'AsyncIterable', 'AsyncIterator',
-                    'Hashable', 'Sized', 'Container', 'Collection', 'Reversible',
-                    'ContextManager', 'AsyncContextManager']
+_PROTO_WHITELIST = {
+    'collections.abc': [
+        'Callable', 'Awaitable', 'Iterable', 'Iterator', 'AsyncIterable',
+        'Hashable', 'Sized', 'Container', 'Collection', 'Reversible',
+    ],
+    'contextlib': ['AbstractContextManager', 'AbstractAsyncContextManager'],
+}
 
 
 class _ProtocolMeta(ABCMeta):
@@ -1105,7 +1110,8 @@ class Protocol(Generic, metaclass=_ProtocolMeta):
         # ... otherwise check consistency of bases, and prohibit instantiation.
         for base in cls.__bases__:
             if not (base in (object, Generic) or
-                    base.__module__ == 'collections.abc' and base.__name__ in _PROTO_WHITELIST or
+                    base.__module__ in _PROTO_WHITELIST and
+                    base.__name__ in _PROTO_WHITELIST[base.__module__] or
                     issubclass(base, Generic) and base._is_protocol):
                 raise TypeError('Protocols can only inherit from other'
                                 ' protocols, got %r' % base)

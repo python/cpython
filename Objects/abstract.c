@@ -172,13 +172,13 @@ PyObject_GetItem(PyObject *o, PyObject *key)
     }
 
     if (PyType_Check(o)) {
-        PyObject *meth, *result, *stack[1] = {key};
+        PyObject *meth, *result;
         _Py_IDENTIFIER(__class_getitem__);
         if (_PyObject_LookupAttrId(o, &PyId___class_getitem__, &meth) < 0) {
             return NULL;
         }
         if (meth) {
-            result = _PyObject_FastCall(meth, stack, 1);
+            result = _PyObject_CallOneArg(meth, key);
             Py_DECREF(meth);
             return result;
         }
@@ -495,6 +495,48 @@ _Py_add_one_to_index_C(int nd, Py_ssize_t *index, const Py_ssize_t *shape)
     }
 }
 
+Py_ssize_t
+PyBuffer_SizeFromFormat(const char *format)
+{
+    PyObject *structmodule = NULL;
+    PyObject *calcsize = NULL;
+    PyObject *res = NULL;
+    PyObject *fmt = NULL;
+    Py_ssize_t itemsize = -1;
+
+    structmodule = PyImport_ImportModule("struct");
+    if (structmodule == NULL) {
+        return itemsize;
+    }
+
+    calcsize = PyObject_GetAttrString(structmodule, "calcsize");
+    if (calcsize == NULL) {
+        goto done;
+    }
+
+    fmt = PyUnicode_FromString(format);
+    if (fmt == NULL) {
+        goto done;
+    }
+
+    res = PyObject_CallFunctionObjArgs(calcsize, fmt, NULL);
+    if (res == NULL) {
+        goto done;
+    }
+
+    itemsize = PyLong_AsSsize_t(res);
+    if (itemsize < 0) {
+        goto done;
+    }
+
+done:
+    Py_DECREF(structmodule);
+    Py_XDECREF(calcsize);
+    Py_XDECREF(fmt);
+    Py_XDECREF(res);
+    return itemsize;
+}
+
 int
 PyBuffer_FromContiguous(Py_buffer *view, void *buf, Py_ssize_t len, char fort)
 {
@@ -737,7 +779,7 @@ PyObject_Format(PyObject *obj, PyObject *format_spec)
     }
 
     /* And call it. */
-    result = PyObject_CallFunctionObjArgs(meth, format_spec, NULL);
+    result = _PyObject_CallOneArg(meth, format_spec);
     Py_DECREF(meth);
 
     if (result && !PyUnicode_Check(result)) {
@@ -2016,7 +2058,7 @@ _PySequence_IterSearch(PyObject *seq, PyObject *obj, int operation)
             break;
         }
 
-        cmp = PyObject_RichCompareBool(obj, item, Py_EQ);
+        cmp = PyObject_RichCompareBool(item, obj, Py_EQ);
         Py_DECREF(item);
         if (cmp < 0)
             goto Fail;
@@ -2221,7 +2263,7 @@ method_output_as_list(PyObject *o, _Py_Identifier *meth_id)
     PyObject *it, *result, *meth_output;
 
     assert(o != NULL);
-    meth_output = _PyObject_CallMethodId(o, meth_id, NULL);
+    meth_output = _PyObject_CallMethodIdNoArgs(o, meth_id);
     if (meth_output == NULL || PyList_CheckExact(meth_output)) {
         return meth_output;
     }
@@ -2459,7 +2501,7 @@ PyObject_IsInstance(PyObject *inst, PyObject *cls)
             Py_DECREF(checker);
             return ok;
         }
-        res = PyObject_CallFunctionObjArgs(checker, inst, NULL);
+        res = _PyObject_CallOneArg(checker, inst);
         Py_LeaveRecursiveCall();
         Py_DECREF(checker);
         if (res != NULL) {
@@ -2533,7 +2575,7 @@ PyObject_IsSubclass(PyObject *derived, PyObject *cls)
             Py_DECREF(checker);
             return ok;
         }
-        res = PyObject_CallFunctionObjArgs(checker, derived, NULL);
+        res = _PyObject_CallOneArg(checker, derived);
         Py_LeaveRecursiveCall();
         Py_DECREF(checker);
         if (res != NULL) {
