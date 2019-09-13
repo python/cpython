@@ -299,7 +299,8 @@ Mocking asynchronous context manager
 
 Since Python 3.8, ``AsyncMock`` and ``MagicMock`` have support to mock
 :ref:`async-context-managers` through ``__aenter__`` and ``__aexit__``.
-By default, ``__aenter__`` is an ``AsyncMock`` that returns an async function.
+By default, ``__aenter__`` and ``__aexit__`` are ``AsyncMock`` instances that
+return an async function.
 
     >>> class AsyncContextManager:
     ...     async def __aenter__(self):
