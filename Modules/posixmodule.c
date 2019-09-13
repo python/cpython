@@ -12473,7 +12473,7 @@ typedef struct {
 } DirEntry;
 
 static PyObject *
-DirEntry_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
+_disabled_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
 {
     PyErr_Format(PyExc_TypeError,
         "cannot create '%.100s' instances", _PyType_Name(type));
@@ -12789,7 +12789,7 @@ static PyMethodDef DirEntry_methods[] = {
 };
 
 static PyType_Slot DirEntryType_slots[] = {
-    {Py_tp_new, DirEntry_new},
+    {Py_tp_new, _disabled_new},
     {Py_tp_dealloc, DirEntry_dealloc},
     {Py_tp_repr, DirEntry_repr},
     {Py_tp_methods, DirEntry_methods},
@@ -13197,14 +13197,6 @@ ScandirIterator_finalize(ScandirIterator *iterator)
     PyErr_Restore(error_type, error_value, error_traceback);
 }
 
-static PyObject *
-ScandirIterator_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
-{
-    PyErr_Format(PyExc_TypeError,
-        "cannot create '%.100s' instances", _PyType_Name(type));
-    return NULL;
-}
-
 static void
 ScandirIterator_dealloc(ScandirIterator *iterator)
 {
@@ -13224,7 +13216,7 @@ static PyMethodDef ScandirIterator_methods[] = {
 };
 
 static PyType_Slot ScandirIteratorType_slots[] = {
-    {Py_tp_new, ScandirIterator_new},
+    {Py_tp_new, _disabled_new},
     {Py_tp_dealloc, ScandirIterator_dealloc},
     {Py_tp_finalize, ScandirIterator_finalize},
     {Py_tp_iter, PyObject_SelfIter},
