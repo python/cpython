@@ -508,7 +508,8 @@ The available presentation types for floating point and decimal values are:
    |         | with presentation type ``'e'`` and precision ``p-1``.    |
    |         | In both cases insignificant trailing zeros are removed   |
    |         | from the significand, and the decimal point is also      |
-   |         | removed if there are no remaining digits following it.   |
+   |         | removed if there are no remaining digits following it,   |
+   |         | unless the ``'#'`` option is used.                       |
    |         |                                                          |
    |         | Positive and negative infinity, positive and negative    |
    |         | zero, and nans, are formatted as ``inf``, ``-inf``,      |
