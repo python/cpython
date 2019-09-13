@@ -181,7 +181,7 @@ access internal read-only data of Unicode objects:
 
 .. c:function:: Py_UCS4 PyUnicode_READ_CHAR(PyObject *unicode, Py_ssize_t index)
 
-   Read a character from a Unicode object *o*, which must be in the "canonical"
+   Read a character from a Unicode object *unicode*, which must be in the "canonical"
    representation.  This is less efficient than :c:func:`PyUnicode_READ` if you
    do multiple consecutive reads.
 
@@ -406,7 +406,7 @@ APIs:
 
 .. c:function:: PyObject* PyUnicode_FromStringAndSize(const char *str, Py_ssize_t size)
 
-   Create a Unicode object from the char buffer *u*.  The bytes will be
+   Create a Unicode object from the char buffer *str*.  The bytes will be
    interpreted as being UTF-8 encoded.  The buffer is copied into the new
    object. If the buffer is not ``NULL``, the return value might be a shared
    object, i.e. modification of the data is not allowed.
@@ -419,7 +419,7 @@ APIs:
 .. c:function:: PyObject *PyUnicode_FromString(const char *str)
 
    Create a Unicode object from a UTF-8 encoded null-terminated char buffer
-   *u*.
+   *str*.
 
 
 .. c:function:: PyObject* PyUnicode_FromFormat(const char *format, ...)
@@ -625,7 +625,7 @@ APIs:
 .. c:function:: PyObject* PyUnicode_Substring(PyObject *unicode, Py_ssize_t start, \
                                               Py_ssize_t end)
 
-   Return a substring of *str*, from character index *start* (included) to
+   Return a substring of *unicode*, from character index *start* (included) to
    character index *end* (excluded).  Negative indices are not supported.
 
    .. versionadded:: 3.3
@@ -637,7 +637,7 @@ APIs:
    Copy the string *u* into a UCS4 buffer, including a null character, if
    *copy_null* is set.  Returns ``NULL`` and sets an exception on error (in
    particular, a :exc:`SystemError` if *buflen* is smaller than the length of
-   *u*).  *buffer* is returned on success.
+   *unicode*).  *buffer* is returned on success.
 
    .. versionadded:: 3.3
 
@@ -924,7 +924,7 @@ wchar_t Support
 
 .. c:function:: PyObject* PyUnicode_FromWideChar(const wchar_t *str, Py_ssize_t size)
 
-   Create a Unicode object from the :c:type:`wchar_t` buffer *w* of the given *size*.
+   Create a Unicode object from the :c:type:`wchar_t` buffer *str* of the given *size*.
    Passing ``-1`` as the *size* indicates that the function must itself compute the length,
    using wcslen.
    Return ``NULL`` on failure.
@@ -932,7 +932,7 @@ wchar_t Support
 
 .. c:function:: Py_ssize_t PyUnicode_AsWideChar(PyObject *unicode, wchar_t *str, Py_ssize_t size)
 
-   Copy the Unicode object contents into the :c:type:`wchar_t` buffer *w*.  At most
+   Copy the Unicode object contents into the :c:type:`wchar_t` buffer *unicode*.  At most
    *size* :c:type:`wchar_t` characters are copied (excluding a possibly trailing
    null termination character).  Return the number of :c:type:`wchar_t` characters
    copied or ``-1`` in case of an error.  Note that the resulting :c:type:`wchar_t*`
@@ -1002,7 +1002,7 @@ These are the generic codec APIs:
 .. c:function:: PyObject* PyUnicode_Decode(const char *str, Py_ssize_t size, \
                               const char *encoding, const char *errors)
 
-   Create a Unicode object by decoding *size* bytes of the encoded string *s*.
+   Create a Unicode object by decoding *size* bytes of the encoded string *str*.
    *encoding* and *errors* have the same meaning as the parameters of the same name
    in the :func:`str` built-in function.  The codec to be used is looked up
    using the Python codec registry.  Return ``NULL`` if an exception was raised by
@@ -1022,7 +1022,7 @@ These are the generic codec APIs:
 .. c:function:: PyObject* PyUnicode_Encode(const Py_UNICODE *str, Py_ssize_t size, \
                               const char *encoding, const char *errors)
 
-   Encode the :c:type:`Py_UNICODE` buffer *s* of the given *size* and return a Python
+   Encode the :c:type:`Py_UNICODE` buffer *str* of the given *size* and return a Python
    bytes object.  *encoding* and *errors* have the same meaning as the
    parameters of the same name in the Unicode :meth:`~str.encode` method.  The codec
    to be used is looked up using the Python codec registry.  Return ``NULL`` if an
@@ -1158,7 +1158,7 @@ These are the UTF-32 codec APIs:
                               const char *errors, int byteorder)
 
    Return a Python bytes object holding the UTF-32 encoded value of the Unicode
-   data in *s*.  Output is written according to the following byte order::
+   data in *str*.  Output is written according to the following byte order::
 
       byteorder == -1: little endian
       byteorder == 0:  native byte order (writes a BOM mark)
@@ -1232,7 +1232,7 @@ These are the UTF-16 codec APIs:
                               const char *errors, int byteorder)
 
    Return a Python bytes object holding the UTF-16 encoded value of the Unicode
-   data in *s*.  Output is written according to the following byte order::
+   data in *str*.  Output is written according to the following byte order::
 
       byteorder == -1: little endian
       byteorder == 0:  native byte order (writes a BOM mark)
@@ -1609,7 +1609,7 @@ They all return ``NULL`` or ``-1`` if an exception occurs.
 .. c:function:: Py_ssize_t PyUnicode_Tailmatch(PyObject *unicode, PyObject *substr, \
                         Py_ssize_t start, Py_ssize_t end, int direction)
 
-   Return ``1`` if *substr* matches ``str[start:end]`` at the given tail end
+   Return ``1`` if *substr* matches ``unicode[start:end]`` at the given tail end
    (*direction* == ``-1`` means to do a prefix match, *direction* == ``1`` a suffix match),
    ``0`` otherwise. Return ``-1`` if an error occurred.
 
@@ -1617,7 +1617,7 @@ They all return ``NULL`` or ``-1`` if an exception occurs.
 .. c:function:: Py_ssize_t PyUnicode_Find(PyObject *unicode, PyObject *substr, \
                                Py_ssize_t start, Py_ssize_t end, int direction)
 
-   Return the first position of *substr* in ``str[start:end]`` using the given
+   Return the first position of *substr* in ``unicode[start:end]`` using the given
    *direction* (*direction* == ``1`` means to do a forward search, *direction* == ``-1`` a
    backward search).  The return value is the index of the first match; a value of
    ``-1`` indicates that no match was found, and ``-2`` indicates that an error
@@ -1627,7 +1627,7 @@ They all return ``NULL`` or ``-1`` if an exception occurs.
 .. c:function:: Py_ssize_t PyUnicode_FindChar(PyObject *unicode, Py_UCS4 ch, \
                                Py_ssize_t start, Py_ssize_t end, int direction)
 
-   Return the first position of the character *ch* in ``str[start:end]`` using
+   Return the first position of the character *ch* in ``unicode[start:end]`` using
    the given *direction* (*direction* == ``1`` means to do a forward search,
    *direction* == ``-1`` a backward search).  The return value is the index of the
    first match; a value of ``-1`` indicates that no match was found, and ``-2``
@@ -1636,20 +1636,20 @@ They all return ``NULL`` or ``-1`` if an exception occurs.
    .. versionadded:: 3.3
 
    .. versionchanged:: 3.7
-      *start* and *end* are now adjusted to behave like ``str[start:end]``.
+      *start* and *end* are now adjusted to behave like ``unicode[start:end]``.
 
 
 .. c:function:: Py_ssize_t PyUnicode_Count(PyObject *unicode, PyObject *substr, \
                                Py_ssize_t start, Py_ssize_t end)
 
    Return the number of non-overlapping occurrences of *substr* in
-   ``str[start:end]``.  Return ``-1`` if an error occurred.
+   ``unicode[start:end]``.  Return ``-1`` if an error occurred.
 
 
 .. c:function:: PyObject* PyUnicode_Replace(PyObject *unicode, PyObject *substr, \
                               PyObject *replstr, Py_ssize_t maxcount)
 
-   Replace at most *maxcount* occurrences of *substr* in *str* with *replstr* and
+   Replace at most *maxcount* occurrences of *substr* in *unicode* with *replstr* and
    return the resulting Unicode object. *maxcount* == ``-1`` means replace all
    occurrences.
 
@@ -1707,7 +1707,7 @@ They all return ``NULL`` or ``-1`` if an exception occurs.
    existing interned string that is the same as *\*string*, it sets *\*string* to
    it (decrementing the reference count of the old string object and incrementing
    the reference count of the interned string object), otherwise it leaves
-   *\*string* alone and interns it (incrementing its reference count).
+   *\*p_unicode* alone and interns it (incrementing its reference count).
    (Clarification: even though there is a lot of talk about reference counts, think
    of this function as reference-count-neutral; you own the object after the call
    if and only if you owned it before the call.)
