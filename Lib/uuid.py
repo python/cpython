@@ -772,8 +772,11 @@ def uuid1(node=None, clock_seq=None):
 def uuid3(namespace, name):
     """Generate a UUID from the MD5 hash of a namespace UUID and a name."""
     from hashlib import md5
-    hash = md5(namespace.bytes + bytes(name, "utf-8")).digest()
-    return UUID(bytes=hash[:16], version=3)
+    digest = md5(
+        namespace.bytes + bytes(name, "utf-8"),
+        usedforsecurity=False
+    ).digest()
+    return UUID(bytes=digest[:16], version=3)
 
 def uuid4():
     """Generate a random UUID."""
