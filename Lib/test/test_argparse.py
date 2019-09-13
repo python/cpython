@@ -3392,8 +3392,6 @@ VV VV VV
 class TestHelpUsage(HelpTestCase):
     """Test basic usage messages"""
 
-    maxDiff = None
-
     parser_signature = Sig(prog='PROG')
     argument_signatures = [
         Sig('-w', nargs='+', help='w'),
