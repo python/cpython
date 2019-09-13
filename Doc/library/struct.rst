@@ -211,9 +211,9 @@ platform-dependent.
 +--------+--------------------------+--------------------+----------------+------------+
 | ``I``  | :c:type:`unsigned int`   | integer            | 4              | \(2)       |
 +--------+--------------------------+--------------------+----------------+------------+
-| ``l``  | :c:type:`long`           | integer            | 4              | \(2)       |
+| ``l``  | :c:type:`long`           | integer            | 4              | \(2), \(7) |
 +--------+--------------------------+--------------------+----------------+------------+
-| ``L``  | :c:type:`unsigned long`  | integer            | 4              | \(2)       |
+| ``L``  | :c:type:`unsigned long`  | integer            | 4              | \(2), \(7) |
 +--------+--------------------------+--------------------+----------------+------------+
 | ``q``  | :c:type:`long long`      | integer            | 8              | \(2)       |
 +--------+--------------------------+--------------------+----------------+------------+
@@ -289,6 +289,11 @@ Notes:
    typical machine, an unsigned short can be used for storage, but not for math
    operations. See the Wikipedia page on the `half-precision floating-point
    format <half precision format_>`_ for more information.
+
+(7)
+   The "long integer" type is defined as a 4 byte type on both Windows OSs and
+   UNIX 32bit OSs, however UNIX 64bit OSs define the "long integer" type as an
+   8 byte type.
 
 
 A format character may be preceded by an integral repeat count.  For example,
