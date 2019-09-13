@@ -403,6 +403,12 @@ Stream
       be resumed.  When there is nothing to wait for, the :meth:`drain`
       returns immediately.
 
+      .. deprecated:: 3.8
+
+      It is recommended to directly await on the `write()` method instead::
+
+         await stream.write(data)
+
    .. coroutinemethod:: sendfile(file, offset=0, count=None, *, fallback=True)
 
       Sends a *file* over the stream using an optimized syscall if available.
@@ -476,9 +482,11 @@ Stream
          stream.write(data)
          await stream.drain()
 
+      .. deprecated:: 3.8
+
       It is recommended to directly await on the `write()` method instead::
 
-         await stream.write(data)
+          await stream.write(data)
 
    .. method:: writelines(data)
 
