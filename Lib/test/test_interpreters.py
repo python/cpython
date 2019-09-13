@@ -96,7 +96,7 @@ class CreateTests(TestBase):
 
     def test_create(self):
         id = interpreters.create()
-        self.assertIn(id, interpreters.list_all())
+        self.assertIn(interp, interpreters.list_all())
 
 
 class DestroyTests(TestBase):
