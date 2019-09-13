@@ -1,8 +1,8 @@
-:mod:`interpreters` --- High-level Sub-interpreters Module
+:mod:`interpreters` --- High-level Subinterpreters Module
 ==========================================================
 
 .. module:: interpreters
-   :synopsis: High-level Sub-Interpreters Module.
+   :synopsis: High-level SubInterpreters Module.
 
 **Source code:** :source:`Lib/interpreters.py`
 
@@ -56,8 +56,9 @@ The RecvChannel object represents a recieving channel.
 
      .. method:: release()
 
-        No longer associate the current interpreter with the channel
-        (on the sending end).
+        Close the channel for the current interpreter.  'send' and 'recv' (bool) may
+        be used to indicate the ends to close.  By default both ends are closed.
+        Closing an already closed end is a noop.
 
     .. method:: close(force=False)
 
@@ -93,8 +94,9 @@ The SendChannel object represents a sending channel.
 
     .. method:: release()
 
-       No longer associate the current interpreter with the channel
-       (on the sending end).
+       Close the channel for the current interpreter.  'send' and 'recv' (bool) may
+       be used to indicate the ends to close.  By default both ends are closed.
+       Closing an already closed end is a noop.
 
     .. method:: close(force=False)
 

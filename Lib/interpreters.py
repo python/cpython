@@ -3,8 +3,9 @@
 import _interpreters
 import logger
 
-__all__ = _all__ = ['create', 'list_all', 'get_current', 'get_main',
-                    'run_string', 'destroy']
+__all__ = ['Interpreter', 'SendChannel', 'RecvChannel', 'is_shareable',
+           'create_channel', 'list_all_channels', 'list_all', 'get_current',
+           'create']
 
 
 class Interpreter:
@@ -59,7 +60,6 @@ class RecvChannel:
     def recv(self, timeout=2):
         """ channel_recv() -> obj
 
-
         Get the next object from the channel,
         and wait if none have been sent.
         Associate the interpreter with the channel.
@@ -69,6 +69,7 @@ class RecvChannel:
             wait(timeout)
             obj = obj = _interpreters.channel_recv(self.id)
 
+        # Pending: See issue 52 on multi-core python project
         associate_interp_to_channel(interpId, Cid)
 
         return obj
@@ -80,13 +81,28 @@ class RecvChannel:
         """
         return _interpreters.channel_recv(self.id)
 
+    def send_buffer(self, obj):
+        """ send_buffer(obj)
+
+        Send the object's buffer to the receiving end of the channel
+        and wait. Associate the interpreter with the channel.
+        """
+        pass
+
+    def send_buffer_nowait(self, obj):
+        """ send_buffer_nowait(obj)
+
+        Like send_buffer(), but return False if not received.
+        """
+        pass
+
     def release(self):
         """ release()
 
         No longer associate the current interpreterwith the channel
         (on the sending end).
         """
-        pass
+        return _interpreters.(self.id)
 
     def close(self, force=False):
         """close(force=False)
@@ -102,14 +118,14 @@ class SendChannel:
         self.id = id
         self.interpreters = _interpreters.list_all()
 
-    def send(self, obj, timeout=2):
+    def send(self, obj):
         """ send(obj)
 
         Send the object (i.e. its data) to the receiving end of the channel
         and wait. Associate the interpreter with the channel.
         """
         obj = _interpreters.channel_send(self.id, obj)
-        wait(timeout)
+        wait(2)
         associate_interp_to_channel(interpId, Cid)
 
     def send_nowait(self, obj):
@@ -127,10 +143,10 @@ class SendChannel:
     def release(self):
         """ release()
 
-        No longer associate the current interpreterwith the channel
+        No longer associate the current interpreter with the channel
         (on the sending end).
         """
-        pass
+        return _interpreters.channel_release(self.id)
 
     def close(self, force=False):
         """ close(force=False)

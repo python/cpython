@@ -23,49 +23,85 @@ def clean_up_interpreters():
         except RuntimeError:
             pass  # already destroyed
 
-
-class LowLevelStub:
-    # set these as appropriate in tests
-    errors = ()
-    return_create = ()
-    ...
-    def __init__(self):
-        self._calls = []
-    def _add_call(self, name, args=(), kwargs=None):
-        self.calls.append(
-            (name, args, kwargs or {}))
-    def _maybe_error(self):
-        if not self.errors:
-            return
-        err = self.errors.pop(0)
-        if err is not None:
-            raise err
-    def check_calls(self, test, expected):
-        test.assertEqual(self._calls, expected)
-        for returns in [self.errors, self.return_create, ...]:
-            test.assertEqual(tuple(returns), ())  # make sure all were used
-        
-    # the stubbed methods
-    def create(self):
-        self._add_call('create')
-        self._maybe_error()
-        return self.return_create.pop(0)
-    def list_all(self):
-        ...
-    def get_current(self):
-        ...
-    def get_main(self):
-        ...
-    def destroy(self, id):
-        ...
-    def run_string(self, id, text, ...):
-        ...
-
+def _run_output(interp, request, shared=None):
+    script, rpipe = _captured_script(request)
+    with rpipe:
+        interpreters.run_string(interp, script, shared)
+        return rpipe.read()
 
 class TestBase(unittest.TestCase):
 
     def tearDown(self):
         clean_up_interpreters()
+
+class TestInterpreter(TestBase):
+
+    def test_is_running(self):
+        interp = interpreters.Interpreter(1)
+        self.assertEqual(True, interp.is_running())
+
+    def test_destroy(self):
+        interp = interpreters.Interpreter(1)
+        interp2 = interpreters.Interpreter(2)
+        interp.destroy()
+        ids = interpreters.list_all()
+        self.assertEqual(ids, [interp2.id])
+
+    def test_run(self):
+        interp = interpreters.Interpreter(1)
+        interp.run(dedent(f"""
+            import _interpreters
+            _interpreters.channel_send({cid}, b'spam')
+            """))
+        out = _run_output(id2, dedent(f"""
+            import _interpreters
+            obj = _interpreters.channel_recv({cid})
+            _interpreters.channel_release({cid})
+            print(repr(obj))
+            """))
+        self.assertEqual(out.strip(), "b'spam'")
+
+class RecvChannelTest(TestBase):
+
+    def test_release(self):
+        import _interpreters as interpreters
+
+        chanl = interpreters.RecvChannel(1)
+        interpreters.channel_send(chanl.id, b'spam')
+        interpreters.channel_recv(cid)
+        chanl.release(cid)
+
+        with self.assertRaises(interpreters.ChannelClosedError):
+            interpreters.channel_send(cid, b'eggs')
+        with self.assertRaises(interpreters.ChannelClosedError):
+            interpreters.channel_recv(cid)
+
+    def test_close(self):
+        chanl = interpreters.RecvChannel(1)
+        chanl.close()
+        with self.assertRaises(interpreters.ChannelClosedError):
+                interpreters.channel_recv(fix.cid)
+
+class SendChannelTest(TestBase):
+
+    def test_release(self):
+        import _interpreters as interpreters
+
+        chanl = interpreters.SendChannel(1)
+        interpreters.channel_send(chanl.id, b'spam')
+        interpreters.channel_recv(cid)
+        chanl.release(cid)
+
+        with self.assertRaises(interpreters.ChannelClosedError):
+            interpreters.channel_send(cid, b'eggs')
+        with self.assertRaises(interpreters.ChannelClosedError):
+            interpreters.channel_recv(cid)
+
+    def test_close(self):
+        chanl = interpreters.RecvChannel(1)
+        chanl.close()
+        with self.assertRaises(interpreters.ChannelClosedError):
+                interpreters.channel_recv(fix.cid)
 
 
 class ListAllTests(TestBase):
@@ -75,7 +111,6 @@ class ListAllTests(TestBase):
         ids = interpreters.list_all()
         self.assertEqual(ids, [main])
 
-
 class GetCurrentTests(TestBase):
 
     def test_get_current(self):
@@ -83,43 +118,44 @@ class GetCurrentTests(TestBase):
         cur = interpreters.get_current()
         self.assertEqual(cur, main)
 
-
-class GetMainTests(TestBase):
-
-    def test_get_main(self):
-        expected, * = interpreters.list_all()
-        main = interpreters.get_main()
-        self.assertEqual(main, expected)
-
-
 class CreateTests(TestBase):
 
     def test_create(self):
         interp = interpreters.create()
         self.assertIn(interp, interpreters.list_all())
 
+class ExceptionTests(TestBase):
 
-class DestroyTests(TestBase):
+    def test_does_not_exist(self):
+        cid = interpreters.create_channel()
+        recvCha = interpreters.RecvChannel(cid)
+        with self.assertRaises(interpreters.ChannelNotFoundError):
+            interpreters._channel_id(int(cid) + 1)
 
-    def test_destroy(self):
-        id1 = interpreters.create()
-        id2 = interpreters.create()
-        id3 = interpreters.create()
-        self.assertIn(id2, interpreters.list_all())
-        interpreters.destroy(id2)
-        self.assertNotIn(id2, interpreters.list_all())
+    def test_recv_empty(self):
+        cid = interpreters.create_channel()
+        recvCha = interpreters.RecvChannel(cid)
+        with self.assertRaises(interpreters.ChannelEmptyError):
+            recvCha.recv()
 
+    def test_channel_not_empty(self):
+        cid = interpreters.create_channel()
+        sendCha = interpreters.SendChannel(cid)
+        sendCha.send(b'spam')
+        sendCha.send(b'ham')
 
-class RunStringTests(TestBase):
+        with self.assertRaises(interpreters.ChannelNotEmptyError):
+            sendCha.close()
 
-    def test_run_string(self):
-        script, file = _captured_script('print("it worked!", end="")')
-        id = interpreters.create()
-        with file:
-            interpreters.run_string(id, script, None)
-            out = file.read()
+    def test_channel_closed(self):
+        cid = interpreters.channel_create()
+        sendCha = interpreters.SendChannel(cid)
+        sendCha.send(b'spam')
+        sendCha.send(b'ham')
+        sendCha.close()
 
-        self.assertEqual(out, 'it worked!')
+        with self.assertRaises(interpreters.ChannelClosedError):
+            sendCha.send(b'spam')
 
 
 if __name__ == '__main__':
