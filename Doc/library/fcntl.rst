@@ -116,8 +116,8 @@ The module defines the following functions:
 .. function:: lockf(fd, cmd, len=0, start=0, whence=0)
 
    This is essentially a wrapper around the :func:`~fcntl.fcntl` locking calls.
-   *fd* is a file-like object with a :func:`fileno` method that returns a file
-   descriptor, or is directly the file descriptor of the file to lock or unlock,
+   *fd* is the file descriptor (file objects providing a :meth:`~io.IOBase.fileno`
+   method are accepted as well) of the file to lock or unlock,
    and *cmd* is one of the following values:
 
    * :const:`LOCK_UN` -- unlock
