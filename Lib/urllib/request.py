@@ -792,6 +792,7 @@ class ProxyHandler(BaseHandler):
         assert hasattr(proxies, 'keys'), "proxies must be a mapping"
         self.proxies = proxies
         for type, url in proxies.items():
+            type = type.lower()
             setattr(self, '%s_open' % type,
                     lambda r, proxy=url, type=type, meth=self.proxy_open:
                         meth(r, proxy, type))
