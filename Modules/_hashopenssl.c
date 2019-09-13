@@ -283,10 +283,12 @@ EVP_hash(EVPobject *self, const void *vp, Py_ssize_t len)
 static void
 EVP_dealloc(EVPobject *self)
 {
+    PyTypeObject *tp = Py_TYPE(self);
     if (self->lock != NULL)
         PyThread_free_lock(self->lock);
     EVP_MD_CTX_free(self->ctx);
     PyObject_Del(self);
+    Py_DECREF(tp);
 }
 
 static int
