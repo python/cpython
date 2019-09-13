@@ -613,7 +613,7 @@ exit:
 }
 
 PyDoc_STRVAR(unicode_lstrip__doc__,
-"lstrip($self, chars=<unspecified>, /)\n"
+"lstrip($self, chars=<unrepresentable>, /)\n"
 "--\n"
 "\n"
 "Return a copy of the string with leading whitespace removed.\n"
@@ -647,7 +647,7 @@ exit:
 }
 
 PyDoc_STRVAR(unicode_rstrip__doc__,
-"rstrip($self, chars=<unspecified>, /)\n"
+"rstrip($self, chars=<unrepresentable>, /)\n"
 "--\n"
 "\n"
 "Return a copy of the string with trailing whitespace removed.\n"
@@ -1045,7 +1045,7 @@ unicode_swapcase(PyObject *self, PyObject *Py_UNUSED(ignored))
 }
 
 PyDoc_STRVAR(unicode_maketrans__doc__,
-"maketrans(x, y=<unspecified>, z=<unspecified>, /)\n"
+"maketrans(x, y=<unrepresentable>, z=<unrepresentable>, /)\n"
 "--\n"
 "\n"
 "Return a translation table usable for str.translate().\n"
@@ -1232,4 +1232,4 @@ unicode_sizeof(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
     return unicode_sizeof_impl(self);
 }
-/*[clinic end generated code: output=5a0afb75b63e137d input=a9049054013a1b77]*/
+/*[clinic end generated code: output=354e4376c27c1e7f input=a9049054013a1b77]*/

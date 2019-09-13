@@ -115,7 +115,7 @@ PyDoc_STRVAR(sys_unraisablehook__doc__,
     {"unraisablehook", (PyCFunction)sys_unraisablehook, METH_O, sys_unraisablehook__doc__},
 
 PyDoc_STRVAR(sys_exit__doc__,
-"exit($module, status=<unspecified>, /)\n"
+"exit($module, status=<unrepresentable>, /)\n"
 "--\n"
 "\n"
 "Exit the interpreter by raising SystemExit(status).\n"
@@ -995,4 +995,4 @@ sys_getandroidapilevel(PyObject *module, PyObject *Py_UNUSED(ignored))
 #ifndef SYS_GETANDROIDAPILEVEL_METHODDEF
     #define SYS_GETANDROIDAPILEVEL_METHODDEF
 #endif /* !defined(SYS_GETANDROIDAPILEVEL_METHODDEF) */
-/*[clinic end generated code: output=75c63461f909bc11 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=4a5a2f4056826230 input=a9049054013a1b77]*/

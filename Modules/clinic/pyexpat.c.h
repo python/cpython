@@ -133,7 +133,8 @@ pyexpat_xmlparser_GetInputContext(xmlparseobject *self, PyObject *Py_UNUSED(igno
 }
 
 PyDoc_STRVAR(pyexpat_xmlparser_ExternalEntityParserCreate__doc__,
-"ExternalEntityParserCreate($self, context, encoding=<unspecified>, /)\n"
+"ExternalEntityParserCreate($self, context, encoding=<unrepresentable>,\n"
+"                           /)\n"
 "--\n"
 "\n"
 "Create a parser for parsing an external entity based on the information passed to the ExternalEntityRefHandler.");
@@ -280,7 +281,7 @@ exit:
 
 PyDoc_STRVAR(pyexpat_ParserCreate__doc__,
 "ParserCreate($module, /, encoding=None, namespace_separator=None,\n"
-"             intern=<unspecified>)\n"
+"             intern=<unrepresentable>)\n"
 "--\n"
 "\n"
 "Return a new XML parser object.");
@@ -401,4 +402,4 @@ exit:
 #ifndef PYEXPAT_XMLPARSER_USEFOREIGNDTD_METHODDEF
     #define PYEXPAT_XMLPARSER_USEFOREIGNDTD_METHODDEF
 #endif /* !defined(PYEXPAT_XMLPARSER_USEFOREIGNDTD_METHODDEF) */
-/*[clinic end generated code: output=8c63f8641de50d1e input=a9049054013a1b77]*/
+/*[clinic end generated code: output=68ce25024280af41 input=a9049054013a1b77]*/

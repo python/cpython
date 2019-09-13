@@ -117,7 +117,7 @@ exit:
 }
 
 PyDoc_STRVAR(dict_pop__doc__,
-"pop($self, key, default=<unspecified>, /)\n"
+"pop($self, key, default=<unrepresentable>, /)\n"
 "--\n"
 "\n"
 "D.pop(k[,d]) -> v, remove specified key and return the corresponding value.\n"
@@ -190,4 +190,4 @@ dict___reversed__(PyDictObject *self, PyObject *Py_UNUSED(ignored))
 {
     return dict___reversed___impl(self);
 }
-/*[clinic end generated code: output=0e104bffb1b1583f input=a9049054013a1b77]*/
+/*[clinic end generated code: output=4d98145508da8fa3 input=a9049054013a1b77]*/

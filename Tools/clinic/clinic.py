@@ -4432,7 +4432,7 @@ class DSLParser:
                 # mild hack: explicitly support NULL as a default value
                 if isinstance(expr, ast.Name) and expr.id == 'NULL':
                     value = NULL
-                    py_default = '<unspecified>'
+                    py_default = '<unrepresentable>'
                     c_default = "NULL"
                 elif (isinstance(expr, ast.BinOp) or
                     (isinstance(expr, ast.UnaryOp) and

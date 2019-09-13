@@ -1971,8 +1971,8 @@ os_uname(PyObject *module, PyObject *Py_UNUSED(ignored))
 #endif /* defined(HAVE_UNAME) */
 
 PyDoc_STRVAR(os_utime__doc__,
-"utime($module, /, path, times=None, *, ns=<unspecified>, dir_fd=None,\n"
-"      follow_symlinks=True)\n"
+"utime($module, /, path, times=None, *, ns=<unrepresentable>,\n"
+"      dir_fd=None, follow_symlinks=True)\n"
 "--\n"
 "\n"
 "Set the access and modified time of path.\n"
@@ -2208,8 +2208,8 @@ exit:
 
 PyDoc_STRVAR(os_posix_spawn__doc__,
 "posix_spawn($module, path, argv, env, /, *, file_actions=(),\n"
-"            setpgroup=<unspecified>, resetids=False, setsid=False,\n"
-"            setsigmask=(), setsigdef=(), scheduler=<unspecified>)\n"
+"            setpgroup=<unrepresentable>, resetids=False, setsid=False,\n"
+"            setsigmask=(), setsigdef=(), scheduler=<unrepresentable>)\n"
 "--\n"
 "\n"
 "Execute the program specified by path in a new process.\n"
@@ -2345,8 +2345,8 @@ exit:
 
 PyDoc_STRVAR(os_posix_spawnp__doc__,
 "posix_spawnp($module, path, argv, env, /, *, file_actions=(),\n"
-"             setpgroup=<unspecified>, resetids=False, setsid=False,\n"
-"             setsigmask=(), setsigdef=(), scheduler=<unspecified>)\n"
+"             setpgroup=<unrepresentable>, resetids=False, setsid=False,\n"
+"             setsigmask=(), setsigdef=(), scheduler=<unrepresentable>)\n"
 "--\n"
 "\n"
 "Execute the program specified by path in a new process.\n"
@@ -2598,9 +2598,9 @@ exit:
 #if defined(HAVE_FORK)
 
 PyDoc_STRVAR(os_register_at_fork__doc__,
-"register_at_fork($module, /, *, before=<unspecified>,\n"
-"                 after_in_child=<unspecified>,\n"
-"                 after_in_parent=<unspecified>)\n"
+"register_at_fork($module, /, *, before=<unrepresentable>,\n"
+"                 after_in_child=<unrepresentable>,\n"
+"                 after_in_parent=<unrepresentable>)\n"
 "--\n"
 "\n"
 "Register callables to be called when forking a new process.\n"
@@ -6855,7 +6855,7 @@ os_abort(PyObject *module, PyObject *Py_UNUSED(ignored))
 #if defined(MS_WINDOWS)
 
 PyDoc_STRVAR(os_startfile__doc__,
-"startfile($module, /, filepath, operation=<unspecified>)\n"
+"startfile($module, /, filepath, operation=<unrepresentable>)\n"
 "--\n"
 "\n"
 "Start a file with its associated application.\n"
@@ -8723,4 +8723,4 @@ exit:
 #ifndef OS__REMOVE_DLL_DIRECTORY_METHODDEF
     #define OS__REMOVE_DLL_DIRECTORY_METHODDEF
 #endif /* !defined(OS__REMOVE_DLL_DIRECTORY_METHODDEF) */
-/*[clinic end generated code: output=022a26b7ebb327d1 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=113d9fbdd18a62f5 input=a9049054013a1b77]*/
