@@ -1762,8 +1762,10 @@ class POSIXProcessTestCase(BaseTestCase):
                             [sys.executable, "-c",
                              "import os; print(os.getuid())"],
                             user=user)
+                except PermissionError:  # errno.EACCES
+                    pass
                 except OSError as e:
-                    if e.errno != errno.EPERM:
+                    if e.errno not in (errno.EACCES, errno.EPERM):
                         raise
                 else:
                     if isinstance(user, str):
@@ -1789,7 +1791,15 @@ class POSIXProcessTestCase(BaseTestCase):
     def test_group(self):
         gid = os.getegid()
         group_list = [65534 if gid != 65534 else 65533]
-        name_group = "nogroup" if sys.platform != 'darwin' else "staff"
+        for name_group in ('staff', 'nogroup', 'grp'):
+            if grp:
+                try:
+                    grp.getgrnam(name_group)
+                except KeyError:
+                    continue
+                break
+        else:
+            raise unittest.SkipTest('No identified group name to use for this test on this platform.')
 
         if grp is not None:
             group_list.append(name_group)
@@ -1830,7 +1840,15 @@ class POSIXProcessTestCase(BaseTestCase):
     def test_extra_groups(self):
         gid = os.getegid()
         group_list = [65534 if gid != 65534 else 65533]
-        name_group = "nogroup" if sys.platform != 'darwin' else "staff"
+        for name_group in ('staff', 'nogroup', 'grp'):
+            if grp:
+                try:
+                    grp.getgrnam(name_group)
+                except KeyError:
+                    continue
+                break
+        else:
+            raise unittest.SkipTest('No identified group name to use for this test on this platform.')
         perm_error = False
 
         if grp is not None:
