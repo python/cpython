@@ -6,6 +6,7 @@ import test.support
 import time
 import unittest
 import urllib.request
+import warnings
 
 from http.cookiejar import (time2isoz, http2time, iso2time, time2netscape,
      parse_ns_headers, join_header_words, split_header_words, Cookie,
@@ -561,13 +562,14 @@ class CookieTests(unittest.TestCase):
         c = CookieJar()
         future = time2netscape(time.time()+3600)
 
-        with test.support.check_no_warnings(self):
+        with warnings.catch_warnings(record=True) as warns:
             headers = [f"Set-Cookie: FOO=BAR; path=/; expires={future}"]
             req = urllib.request.Request("http://www.coyote.com/")
             res = FakeResponse(headers, "http://www.coyote.com/")
             cookies = c.make_cookies(res, req)
             self.assertEqual(len(cookies), 1)
             self.assertEqual(time2netscape(cookies[0].expires), future)
+            self.assertEqual(len(warns), 0)
 
         interact_netscape(c, "http://www.acme.com/", 'spam="bar"; expires=%s' %
                           future)
