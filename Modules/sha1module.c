@@ -480,13 +480,15 @@ static PyTypeObject SHA1type = {
 _sha1.sha1
 
     string: object(c_default="NULL") = b''
+    *
+    usedforsecurity: bool = True
 
 Return a new SHA1 hash object; optionally initialized with a string.
 [clinic start generated code]*/
 
 static PyObject *
-_sha1_sha1_impl(PyObject *module, PyObject *string)
-/*[clinic end generated code: output=e5982830d1dece51 input=27ea54281d995ec2]*/
+_sha1_sha1_impl(PyObject *module, PyObject *string, int usedforsecurity)
+/*[clinic end generated code: output=6f8b3af05126e18e input=bd54b68e2bf36a8a]*/
 {
     SHA1object *new;
     Py_buffer buf;
