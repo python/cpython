@@ -702,7 +702,7 @@ ast_type_init(PyObject *self, PyObject *args, PyObject *kw)
         while (PyDict_Next(kw, &i, &key, &value)) {
             PyObject* pos = _PyObject_FastCallDict(index, &key, 1, NULL);
             PyObject* err = PyErr_Occurred();
-            if (pos == NULL || err != NULL) {
+            if (pos == NULL) {
                 // arbitrary keyword arguments are accepted
                 if (!PyErr_GivenExceptionMatches(err, PyExc_ValueError)) {
                     res = -1;
