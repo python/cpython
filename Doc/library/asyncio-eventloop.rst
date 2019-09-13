@@ -169,7 +169,7 @@ Running and stopping the loop
 
 .. coroutinemethod:: loop.shutdown_default_executor()
 
-   Schedule the closure of the default executor, but wait for the
+   Schedule the closure of the default executor and wait for it to join all threads
    :class:`ThreadPoolExecutor` to finish joining all of the threads. After
    calling this method, a :exc:`RuntimeError` will be raised if
    :meth:`loop.run_in_executor` is called while using the default executor.
