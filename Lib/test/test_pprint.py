@@ -81,6 +81,7 @@ class QueryTestCase(unittest.TestCase):
         pp = pprint.PrettyPrinter(indent=4, width=40, depth=5,
                                   stream=io.StringIO(), compact=True)
         pp = pprint.PrettyPrinter(4, 40, 5, io.StringIO())
+        pp = pprint.PrettyPrinter(sort_dicts=False)
         with self.assertRaises(TypeError):
             pp = pprint.PrettyPrinter(4, 40, 5, io.StringIO(), True)
         self.assertRaises(ValueError, pprint.PrettyPrinter, indent=-1)
@@ -293,6 +294,12 @@ class QueryTestCase(unittest.TestCase):
         self.assertEqual(pprint.pformat({"xy\tab\n": (3,), 5: [[]], (): {}}),
             r"{5: [[]], 'xy\tab\n': (3,), (): {}}")
 
+    def test_sort_dict(self):
+        d = dict.fromkeys('cba')
+        self.assertEqual(pprint.pformat(d, sort_dicts=False), "{'c': None, 'b': None, 'a': None}")
+        self.assertEqual(pprint.pformat([d, d], sort_dicts=False),
+            "[{'c': None, 'b': None, 'a': None}, {'c': None, 'b': None, 'a': None}]")
+
     def test_ordered_dict(self):
         d = collections.OrderedDict()
         self.assertEqual(pprint.pformat(d, width=1), 'OrderedDict()')
@@ -338,6 +345,65 @@ mappingproxy(OrderedDict([('the', 0),
                           ('a', 6),
                           ('lazy', 7),
                           ('dog', 8)]))""")
+
+    def test_empty_simple_namespace(self):
+        ns = types.SimpleNamespace()
+        formatted = pprint.pformat(ns)
+        self.assertEqual(formatted, "namespace()")
+
+    def test_small_simple_namespace(self):
+        ns = types.SimpleNamespace(a=1, b=2)
+        formatted = pprint.pformat(ns)
+        self.assertEqual(formatted, "namespace(a=1, b=2)")
+
+    def test_simple_namespace(self):
+        ns = types.SimpleNamespace(
+            the=0,
+            quick=1,
+            brown=2,
+            fox=3,
+            jumped=4,
+            over=5,
+            a=6,
+            lazy=7,
+            dog=8,
+        )
+        formatted = pprint.pformat(ns, width=60)
+        self.assertEqual(formatted, """\
+namespace(the=0,
+          quick=1,
+          brown=2,
+          fox=3,
+          jumped=4,
+          over=5,
+          a=6,
+          lazy=7,
+          dog=8)""")
+
+    def test_simple_namespace_subclass(self):
+        class AdvancedNamespace(types.SimpleNamespace): pass
+        ns = AdvancedNamespace(
+            the=0,
+            quick=1,
+            brown=2,
+            fox=3,
+            jumped=4,
+            over=5,
+            a=6,
+            lazy=7,
+            dog=8,
+        )
+        formatted = pprint.pformat(ns, width=60)
+        self.assertEqual(formatted, """\
+AdvancedNamespace(the=0,
+                  quick=1,
+                  brown=2,
+                  fox=3,
+                  jumped=4,
+                  over=5,
+                  a=6,
+                  lazy=7,
+                  dog=8)""")
 
     def test_subclassing(self):
         o = {'names with spaces': 'should be presented using repr()',
@@ -415,7 +481,7 @@ frozenset2({0,
         # Consequently, this test is fragile and
         # implementation-dependent.  Small changes to Python's sort
         # algorithm cause the test to fail when it should pass.
-        # XXX Or changes to the dictionary implmentation...
+        # XXX Or changes to the dictionary implementation...
 
         cube_repr_tgt = """\
 {frozenset(): frozenset({frozenset({2}), frozenset({0}), frozenset({1})}),

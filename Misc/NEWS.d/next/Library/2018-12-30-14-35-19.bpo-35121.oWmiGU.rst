@@ -1,3 +1,0 @@
-Don't set cookie for a request when the request path is a prefix match of
-the cookie's path attribute but doesn't end with "/". Patch by Karthikeyan
-Singaravelan.

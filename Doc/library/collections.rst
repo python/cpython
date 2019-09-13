@@ -33,10 +33,10 @@ Python's general purpose built-in containers, :class:`dict`, :class:`list`,
 :class:`UserString`     wrapper around string objects for easier string subclassing
 =====================   ====================================================================
 
-.. versionchanged:: 3.3
+.. deprecated-removed:: 3.3 3.9
     Moved :ref:`collections-abstract-base-classes` to the :mod:`collections.abc` module.
     For backwards compatibility, they continue to be visible in this module through
-    Python 3.7.  Subsequently, they will be removed entirely.
+    Python 3.8.
 
 
 :class:`ChainMap` objects
@@ -853,7 +853,7 @@ they add the ability to access fields by name instead of position index.
        Added the *module* parameter.
 
     .. versionchanged:: 3.7
-       Remove the *verbose* parameter and the :attr:`_source` attribute.
+       Removed the *verbose* parameter and the :attr:`_source` attribute.
 
     .. versionchanged:: 3.7
        Added the *defaults* parameter and the :attr:`_field_defaults`
@@ -953,14 +953,14 @@ field names, the method and attribute names start with an underscore.
         >>> Pixel(11, 22, 128, 255, 0)
         Pixel(x=11, y=22, red=128, green=255, blue=0)
 
-.. attribute:: somenamedtuple._fields_defaults
+.. attribute:: somenamedtuple._field_defaults
 
    Dictionary mapping field names to default values.
 
    .. doctest::
 
         >>> Account = namedtuple('Account', ['type', 'balance'], defaults=[0])
-        >>> Account._fields_defaults
+        >>> Account._field_defaults
         {'balance': 0}
         >>> Account('premium')
         Account(type='premium', balance=0)
@@ -1017,28 +1017,22 @@ fields:
 .. versionchanged:: 3.5
    Property docstrings became writeable.
 
-Default values can be implemented by using :meth:`~somenamedtuple._replace` to
-customize a prototype instance:
-
-    >>> Account = namedtuple('Account', 'owner balance transaction_count')
-    >>> default_account = Account('<owner name>', 0.0, 0)
-    >>> johns_account = default_account._replace(owner='John')
-    >>> janes_account = default_account._replace(owner='Jane')
-
-
 .. seealso::
 
-    * `Recipe for named tuple abstract base class with a metaclass mix-in
-      <https://code.activestate.com/recipes/577629-namedtupleabc-abstract-base-class-mix-in-for-named/>`_
-      by Jan Kaliszewski.  Besides providing an :term:`abstract base class` for
-      named tuples, it also supports an alternate :term:`metaclass`-based
-      constructor that is convenient for use cases where named tuples are being
-      subclassed.
+    * See :class:`typing.NamedTuple` for a way to add type hints for named
+      tuples.  It also provides an elegant notation using the :keyword:`class`
+      keyword::
+
+          class Component(NamedTuple):
+              part_number: int
+              weight: float
+              description: Optional[str] = None
 
     * See :meth:`types.SimpleNamespace` for a mutable namespace based on an
       underlying dictionary instead of a tuple.
 
-    * See :meth:`typing.NamedTuple` for a way to add type hints for named tuples.
+    * The :mod:`dataclasses` module provides a decorator and functions for
+      automatically adding generated special methods to user-defined classes.
 
 
 :class:`OrderedDict` objects
@@ -1138,7 +1132,7 @@ original insertion position is changed and moved to the end::
 
         def __setitem__(self, key, value):
             super().__setitem__(key, value)
-            super().move_to_end(key)
+            self.move_to_end(key)
 
 An :class:`OrderedDict` would also be useful for implementing
 variants of :func:`functools.lru_cache`::
@@ -1146,7 +1140,7 @@ variants of :func:`functools.lru_cache`::
     class LRU(OrderedDict):
         'Limit size, evicting the least recently looked-up key when full'
 
-        def __init__(self, maxsize=128, *args, **kwds):
+        def __init__(self, maxsize=128, /, *args, **kwds):
             self.maxsize = maxsize
             super().__init__(*args, **kwds)
 

@@ -1,0 +1,5 @@
+The :file:`.gitignore` file systematically keeps "rooted", with a
+non-trailing slash, all the rules that are meant to apply to files in a
+specific place in the repo.  Previously, when the intended file to ignore
+happened to be at the root of the repo, we'd most often accidentally also
+ignore files and directories with the same name anywhere in the tree.

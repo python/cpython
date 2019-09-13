@@ -16,8 +16,8 @@ class MyProto(asyncio.Protocol):
         self.state = 'INITIAL'
         self.nbytes = 0
         if loop is not None:
-            self.connected = asyncio.Future(loop=loop)
-            self.done = asyncio.Future(loop=loop)
+            self.connected = loop.create_future()
+            self.done = loop.create_future()
 
     def connection_made(self, transport):
         self.transport = transport

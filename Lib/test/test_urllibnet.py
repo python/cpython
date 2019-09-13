@@ -25,6 +25,9 @@ class URLTimeoutTest(unittest.TestCase):
         socket.setdefaulttimeout(None)
 
     def testURLread(self):
+        # clear _opener global variable
+        self.addCleanup(urllib.request.urlcleanup)
+
         domain = urllib.parse.urlparse(support.TEST_HTTP_URL).netloc
         with support.transient_internet(domain):
             f = urllib.request.urlopen(support.TEST_HTTP_URL)
@@ -47,6 +50,10 @@ class urlopenNetworkTests(unittest.TestCase):
     """
 
     url = 'http://www.pythontest.net/'
+
+    def setUp(self):
+        # clear _opener global variable
+        self.addCleanup(urllib.request.urlcleanup)
 
     @contextlib.contextmanager
     def urlopen(self, *args, **kwargs):
@@ -143,6 +150,10 @@ class urlopenNetworkTests(unittest.TestCase):
 
 class urlretrieveNetworkTests(unittest.TestCase):
     """Tests urllib.request.urlretrieve using the network."""
+
+    def setUp(self):
+        # remove temporary files created by urlretrieve()
+        self.addCleanup(urllib.request.urlcleanup)
 
     @contextlib.contextmanager
     def urlretrieve(self, *args, **kwargs):

@@ -92,7 +92,11 @@ def samestat(s1, s2):
 
 # Are two filenames really pointing to the same file?
 def samefile(f1, f2):
-    """Test whether two pathnames reference the same actual file"""
+    """Test whether two pathnames reference the same actual file or directory
+
+    This is determined by the device number and i-node number and
+    raises an exception if an os.stat() call on either pathname fails.
+    """
     s1 = os.stat(f1)
     s2 = os.stat(f2)
     return samestat(s1, s2)

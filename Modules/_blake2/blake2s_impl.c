@@ -81,6 +81,7 @@ _blake2.blake2s.__new__ as py_blake2s_new
     node_depth: int = 0
     inner_size: int = 0
     last_node: bool = False
+    usedforsecurity: bool = True
 
 Return a new BLAKE2s hash object.
 [clinic start generated code]*/
@@ -90,8 +91,8 @@ py_blake2s_new_impl(PyTypeObject *type, PyObject *data, int digest_size,
                     Py_buffer *key, Py_buffer *salt, Py_buffer *person,
                     int fanout, int depth, unsigned long leaf_size,
                     unsigned long long node_offset, int node_depth,
-                    int inner_size, int last_node)
-/*[clinic end generated code: output=b95806be0514dcf7 input=641c0509debf714d]*/
+                    int inner_size, int last_node, int usedforsecurity)
+/*[clinic end generated code: output=556181f73905c686 input=4dda87723f23abb0]*/
 {
     BLAKE2sObject *self = NULL;
     Py_buffer buf;
@@ -401,10 +402,10 @@ PyTypeObject PyBlake2_BLAKE2sType = {
     sizeof(BLAKE2sObject),    /* tp_basicsize       */
     0,                        /* tp_itemsize        */
     py_blake2s_dealloc,       /* tp_dealloc         */
-    0,                        /* tp_print           */
+    0,                        /*tp_vectorcall_offset*/
     0,                        /* tp_getattr         */
     0,                        /* tp_setattr         */
-    0,                        /* tp_compare         */
+    0,                        /* tp_as_async        */
     0,                        /* tp_repr            */
     0,                        /* tp_as_number       */
     0,                        /* tp_as_sequence     */
