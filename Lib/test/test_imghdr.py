@@ -14,7 +14,6 @@ TEST_FILES = (
     ('python.pgm', 'pgm'),
     ('python.pbm', 'pbm'),
     ('python.jpg', 'jpeg'),
-    ('python2.jpg', 'jpeg'),
     ('python.ras', 'rast'),
     ('python.sgi', 'rgb'),
     ('python.tiff', 'tiff'),
