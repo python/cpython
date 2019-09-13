@@ -209,11 +209,11 @@ class CFunctionCallsErrorMessages(unittest.TestCase):
         self.assertRaisesRegex(TypeError, msg, next, x=2)
 
     def test_varargs8_kw(self):
-        msg = r"^pack\(\) takes no keyword arguments$"
+        msg = r"^_struct[.]pack\(\) takes no keyword arguments$"
         self.assertRaisesRegex(TypeError, msg, struct.pack, x=2)
 
     def test_varargs9_kw(self):
-        msg = r"^pack_into\(\) takes no keyword arguments$"
+        msg = r"^_struct[.]pack_into\(\) takes no keyword arguments$"
         self.assertRaisesRegex(TypeError, msg, struct.pack_into, x=2)
 
     def test_varargs10_kw(self):

@@ -5341,8 +5341,9 @@ static int
 check_args_iterable(PyThreadState *tstate, PyObject *func, PyObject *args)
 {
     if (args->ob_type->tp_iter == NULL && !PySequence_Check(args)) {
-        /* check_args_iterable() may be called with a live exception,
-         * clear it. */
+        /* check_args_iterable() may be called with a live exception:
+         * clear it to prevent calling _PyObject_FunctionStr() with an
+         * exception set. */
         PyErr_Clear();
         PyObject *funcstr = _PyObject_FunctionStr(func);
         if (funcstr != NULL) {

@@ -665,28 +665,56 @@ PyObject_Bytes(PyObject *v)
 
 
 /*
-def _PyObject_FunctionStr(f):
+def _PyObject_FunctionStr(x):
     try:
-        return f.__qualname__ + "()"
-    except Exception:
-        return str(f)
+        qualname = x.__qualname__
+    except AttributeError:
+        return str(x)
+    try:
+        mod = x.__module__
+        if mod is not None and mod != 'builtins':
+            return f"{x.__module__}.{qualname}()"
+    except AttributeError:
+        pass
+    return qualname
 */
 PyObject *
-_PyObject_FunctionStr(PyObject *f)
+_PyObject_FunctionStr(PyObject *x)
 {
+    _Py_IDENTIFIER(__module__);
     _Py_IDENTIFIER(__qualname__);
-    PyObject *name = _PyObject_GetAttrId(f, &PyId___qualname__);
-    if (name != NULL) {
-        PyObject *res = PyUnicode_FromFormat("%S()", name);
-        Py_DECREF(name);
-        return res;
+    _Py_IDENTIFIER(builtins);
+    assert(!PyErr_Occurred());
+    PyObject *qualname;
+    int ret = _PyObject_LookupAttrId(x, &PyId___qualname__, &qualname);
+    if (qualname == NULL) {
+        if (ret < 0) {
+            return NULL;
+        }
+        return PyObject_Str(x);
     }
-    /* __qualname__ lookup failed */
-    if (!PyErr_ExceptionMatches(PyExc_Exception)) {
-        return NULL;
+    PyObject *module;
+    PyObject *result = NULL;
+    ret = _PyObject_LookupAttrId(x, &PyId___module__, &module);
+    if (module != NULL && module != Py_None) {
+        PyObject *builtinsname = _PyUnicode_FromId(&PyId_builtins);
+        if (builtinsname == NULL) {
+            goto done;
+        }
+        ret = PyObject_RichCompareBool(module, builtinsname, Py_NE);
+        if (ret > 0) {
+            result = PyUnicode_FromFormat("%S.%S()", module, qualname);
+            goto done;
+        }
     }
-    PyErr_Clear();
-    return PyObject_Str(f);
+    else if (ret < 0) {
+        goto done;
+    }
+    result = PyUnicode_FromFormat("%S()", qualname);
+done:
+    Py_DECREF(qualname);
+    Py_XDECREF(module);
+    return result;
 }
 
 /* For Python 3.0.1 and later, the old three-way comparison has been

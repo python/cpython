@@ -118,7 +118,7 @@ Verify clearing of SF bug #733667
     >>> g(*Nothing())
     Traceback (most recent call last):
       ...
-    TypeError: g() argument after * must be an iterable, not Nothing
+    TypeError: test.test_extcall.g() argument after * must be an iterable, not Nothing
 
     >>> class Nothing:
     ...     def __len__(self): return 5
@@ -127,7 +127,7 @@ Verify clearing of SF bug #733667
     >>> g(*Nothing())
     Traceback (most recent call last):
       ...
-    TypeError: g() argument after * must be an iterable, not Nothing
+    TypeError: test.test_extcall.g() argument after * must be an iterable, not Nothing
 
     >>> class Nothing():
     ...     def __len__(self): return 5
@@ -247,17 +247,17 @@ What about willful misconduct?
     >>> h(*h)
     Traceback (most recent call last):
       ...
-    TypeError: h() argument after * must be an iterable, not function
+    TypeError: test.test_extcall.h() argument after * must be an iterable, not function
 
     >>> h(1, *h)
     Traceback (most recent call last):
       ...
-    TypeError: h() argument after * must be an iterable, not function
+    TypeError: test.test_extcall.h() argument after * must be an iterable, not function
 
     >>> h(*[1], *h)
     Traceback (most recent call last):
       ...
-    TypeError: h() argument after * must be an iterable, not function
+    TypeError: test.test_extcall.h() argument after * must be an iterable, not function
 
     >>> dir(*h)
     Traceback (most recent call last):

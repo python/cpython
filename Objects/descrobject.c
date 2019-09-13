@@ -239,7 +239,7 @@ method_check_args(PyObject *func, PyObject *const *args, Py_ssize_t nargs, PyObj
         PyObject *funcstr = _PyObject_FunctionStr(func);
         if (funcstr != NULL) {
             PyErr_Format(PyExc_TypeError,
-                         "%U needs an argument", funcstr);
+                         "unbound method %U needs an argument", funcstr);
             Py_DECREF(funcstr);
         }
         return -1;
