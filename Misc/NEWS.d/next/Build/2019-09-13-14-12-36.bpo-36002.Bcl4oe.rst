@@ -1,0 +1,2 @@
+Locate ``llvm-profdata`` and ``llvm-ar`` binaries using ``AC_PATH_TOOL``
+rather than ``AC_PATH_TARGET_TOOL``.
