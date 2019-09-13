@@ -87,7 +87,7 @@ class GetCurrentTests(TestBase):
 class GetMainTests(TestBase):
 
     def test_get_main(self):
-        [expected] = interpreters.list_all()
+        expected, * = interpreters.list_all()
         main = interpreters.get_main()
         self.assertEqual(main, expected)
 
