@@ -2367,7 +2367,7 @@ def _signature_from_callable(obj, *,
                 if (obj.__init__ is object.__init__ and
                     obj.__new__ is object.__new__):
                     # Return a signature of 'object' builtin.
-                    return signature(object)
+                    return sigcls.from_callable(object)
                 else:
                     raise ValueError(
                         'no signature found for builtin type {!r}'.format(obj))
