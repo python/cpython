@@ -65,8 +65,12 @@ class GlobTests(unittest.TestCase):
             res2 = glob.glob(pattern, **kwargs)
             for x in res2:
                 self.assertFalse(os.path.isabs(x), x)
+            if pattern == '**' or pattern == '**' + os.sep:
+                expected = res[1:]
+            else:
+                expected = res
             self.assertCountEqual([os.path.join(self.tempdir, x) for x in res2],
-                                  res[1:] if pattern in ('**', '**/') else res)
+                                  expected)
             self.assertCountEqual(glob.iglob(pattern, **kwargs), res2)
             bres2 = [os.fsencode(x) for x in res2]
             self.assertCountEqual(glob.glob(os.fsencode(pattern), **kwargs), bres2)
