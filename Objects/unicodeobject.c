@@ -15923,7 +15923,8 @@ _PyUnicode_EnableLegacyWindowsFSEncoding(void)
 #endif
 
 void
-_PyUnicode_FiniEncodings(PyThreadState *tstate) {
+_PyUnicode_FiniEncodings(PyThreadState *tstate)
+{
     PyInterpreterState *interp = tstate->interp;
 
     PyMem_RawFree(interp->fs_codec.encoding);
