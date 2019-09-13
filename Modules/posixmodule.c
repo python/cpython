@@ -14659,14 +14659,18 @@ INITFUNC(void)
     if ((_posixstate(m)->billion = PyLong_FromLong(1000000000)) == NULL)
         return NULL;
 #if defined(HAVE_WAIT3) || defined(HAVE_WAIT4)
-    if ((_posixstate(m)->struct_rusage = PyUnicode_FromString("struct_rusage")) == NULL)
+    _posixstate(m)->struct_rusage = PyUnicode_InternFromString("struct_rusage");
+    if (_posixstate(m)->struct_rusage == NULL)
         return NULL;
 #endif
-    if ((_posixstate(m)->st_mode = PyUnicode_FromString("st_mode")) == NULL)
+    _posixstate(m)->st_mode = PyUnicode_InternFromString("st_mode");
+    if (_posixstate(m)->st_mode == NULL)
         return NULL;
-    if ((_posixstate(m)->fspath = PyUnicode_FromString("__fspath__")) == NULL)
+    _posixstate(m)->fspath = PyUnicode_InternFromString("__fspath__");
+    if (_posixstate(m)->fspath == NULL)
         return NULL;
-    if ((_posixstate(m)->dunderget = PyUnicode_FromString("__get__")) == NULL)
+    _posixstate(m)->dunderget = PyUnicode_InternFromString("__get__");
+    if (_posixstate(m)->dunderget == NULL)
         return NULL;
 
     /* suppress "function not used" warnings */
