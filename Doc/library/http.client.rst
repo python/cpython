@@ -487,17 +487,17 @@ statement.
 
 .. method:: HTTPResponse.geturl()
 
-   ..deprecated:: 3.9
+   .. deprecated:: 3.9
       Deprecated in favor of :attr:`~HTTPResponse.url`.
 
 .. method:: HTTPResponse.info()
 
-   ..deprecated:: 3.9
+   .. deprecated:: 3.9
       Deprecated in favor of :attr:`~HTTPResponse.headers`.
 
 .. method:: HTTPResponse.getstatus()
 
-   ..deprecated:: 3.9
+   .. deprecated:: 3.9
       Deprecated in favor of :attr:`~HTTPResponse.status`.
 
 Examples
