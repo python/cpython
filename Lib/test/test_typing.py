@@ -2379,8 +2379,8 @@ class ForwardRefTests(BaseTestCase):
         self.assertEqual(List[c1], List[c1_gth])
         self.assertNotEqual(List[c1], List[C])
         self.assertNotEqual(List[c1_gth], List[C])
-        self.assertEquals(Union[c1, c1_gth], Union[c1])
-        self.assertEquals(Union[c1, c1_gth, int], Union[c1, int])
+        self.assertEqual(Union[c1, c1_gth], Union[c1])
+        self.assertEqual(Union[c1, c1_gth, int], Union[c1, int])
 
     def test_forward_equality_hash(self):
         c1 = typing.ForwardRef('int')
