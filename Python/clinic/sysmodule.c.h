@@ -115,7 +115,7 @@ PyDoc_STRVAR(sys_unraisablehook__doc__,
     {"unraisablehook", (PyCFunction)sys_unraisablehook, METH_O, sys_unraisablehook__doc__},
 
 PyDoc_STRVAR(sys_exit__doc__,
-"exit($module, status=<unrepresentable>, /)\n"
+"exit($module, status=None, /)\n"
 "--\n"
 "\n"
 "Exit the interpreter by raising SystemExit(status).\n"
@@ -135,7 +135,7 @@ static PyObject *
 sys_exit(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
-    PyObject *status = NULL;
+    PyObject *status = Py_None;
 
     if (!_PyArg_CheckPositional("exit", nargs, 0, 1)) {
         goto exit;
@@ -995,4 +995,4 @@ sys_getandroidapilevel(PyObject *module, PyObject *Py_UNUSED(ignored))
 #ifndef SYS_GETANDROIDAPILEVEL_METHODDEF
     #define SYS_GETANDROIDAPILEVEL_METHODDEF
 #endif /* !defined(SYS_GETANDROIDAPILEVEL_METHODDEF) */
-/*[clinic end generated code: output=4a5a2f4056826230 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=decd687b7631de4b input=a9049054013a1b77]*/
