@@ -1016,23 +1016,6 @@ class NonCallableMock(Base):
 _MOCK_SIG = inspect.signature(NonCallableMock.__init__)
 
 
-class _AnyComparer(list):
-    """A list which checks if it contains a call which may have an
-    argument of ANY, flipping the components of item and self from
-    their traditional locations so that ANY is guaranteed to be on
-    the left."""
-    def __contains__(self, item):
-        for _call in self:
-            if len(item) != len(_call):
-                continue
-            if all([
-                expected == actual
-                for expected, actual in zip(item, _call)
-            ]):
-                return True
-        return False
-
-
 def _try_iter(obj):
     if obj is None:
         return obj
