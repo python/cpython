@@ -1285,13 +1285,25 @@ class _OptionalAwait:
     # if not awaited
     # It prevents "coroutine is never awaited" message
 
-    __slots___ = ('_method',)
+    __slots___ = ('_method', '_name', '_awaited', '_warning_type')
 
-    def __init__(self, method):
+    def __init__(self, method, name, warning_type):
         self._method = method
+        self._name = name
+        self._awaited = False
+        self._warning_type = warning_type
 
     def __await__(self):
-        return self._method().__await__()
+        self._awaited = True
+        ret = self._method().__await__()
+        self._method = None
+        return ret
+
+    def __del__(self):
+        if not self._awaited:
+            warnings.warn(f"The method Stream.{self._name}() is not awaited",
+                          self._warning_type,
+                          stacklevel=2)
 
 
 class Stream:
@@ -1312,10 +1324,12 @@ class Stream:
                  loop=None,
                  limit=_DEFAULT_LIMIT,
                  is_server_side=False,
-                 _asyncio_internal=False):
+                 _asyncio_internal=False,
+                 _legacy=False):
         if not _asyncio_internal:
             raise RuntimeError(f"{self.__class__} should be instantiated "
                                "by asyncio internals only")
+        self._legacy = _legacy
         self._mode = mode
         self._transport = transport
         self._protocol = protocol
@@ -1382,14 +1396,14 @@ class Stream:
     def write(self, data):
         _ensure_can_write(self._mode)
         self._transport.write(data)
-        return self._fast_drain()
+        return self._fast_drain("write")
 
     def writelines(self, data):
         _ensure_can_write(self._mode)
         self._transport.writelines(data)
-        return self._fast_drain()
+        return self._fast_drain("writelines")
 
-    def _fast_drain(self):
+    def _fast_drain(self, name):
         # The helper tries to use fast-path to return already existing
         # complete future object if underlying transport is not paused
         # and actual waiting for writing resume is not needed
@@ -1407,7 +1421,10 @@ class Stream:
                 # fast path, the stream is not paused
                 # no need to wait for resume signal
                 return self._complete_fut
-        return _OptionalAwait(self.drain)
+        if self._legacy:
+            return _OptionalAwait(self._drain, name, DeprecationWarning)
+        else:
+            return _OptionalAwait(self._drain, name, RuntimeWarning)
 
     def write_eof(self):
         _ensure_can_write(self._mode)
@@ -1420,16 +1437,32 @@ class Stream:
 
     def close(self):
         self._transport.close()
-        return _OptionalAwait(self.wait_closed)
+        if self._legacy:
+            return _OptionalAwait(self._wait_closed, "close", DeprecationWarning)
+        else:
+            return _OptionalAwait(self._wait_closed, "close", RuntimeWarning)
 
     def is_closing(self):
         return self._transport.is_closing()
 
     async def abort(self):
         self._transport.abort()
-        await self.wait_closed()
+        await self._wait_closed()
 
     async def wait_closed(self):
+        if not self._legacy:
+            # The error is mimic to the standard Python behavior for
+            # a call of not existing method
+            raise AttributeError("'Stream' object has no attribute 'wait_closed'")
+        else:
+            warnings.warn("Stream.wait_closed() method is deprecated since 3.8 "
+                          "and scheduled for removal in 3.12",
+                          DeprecationWarning,
+                          stacklevel=2,
+            )
+        await self._wait_closed()
+
+    async def _wait_closed(self):
         await self._protocol._get_close_waiter(self)
 
     def get_extra_info(self, name, default=None):
@@ -1443,6 +1476,19 @@ class Stream:
           w.write(data)
           await w.drain()
         """
+        if not self._legacy:
+            # The error is mimic to the standard Python behavior for
+            # a call of not existing method
+            raise AttributeError("'Stream' object has no attribute 'drain'")
+        else:
+            warnings.warn("Stream.drain() method is deprecated since 3.8 "
+                          "and scheduled for removal in 3.12",
+                          DeprecationWarning,
+                          stacklevel=2,
+            )
+        await self._drain()
+
+    async def _drain(self):
         _ensure_can_write(self._mode)
         exc = self.exception()
         if exc is not None:
@@ -1455,14 +1501,14 @@ class Stream:
         await self._protocol._drain_helper()
 
     async def sendfile(self, file, offset=0, count=None, *, fallback=True):
-        await self.drain()  # check for stream mode and exceptions
+        await self._drain()  # check for stream mode and exceptions
         return await self._loop.sendfile(self._transport, file,
                                          offset, count, fallback=fallback)
 
     async def start_tls(self, sslcontext, *,
                         server_hostname=None,
                         ssl_handshake_timeout=None):
-        await self.drain()  # check for stream mode and exceptions
+        await self._drain()  # check for stream mode and exceptions
         transport = await self._loop.start_tls(
             self._transport, self._protocol, sslcontext,
             server_side=self._is_server_side,

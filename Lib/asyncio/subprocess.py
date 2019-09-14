@@ -49,7 +49,8 @@ class SubprocessStreamProtocol(streams.FlowControlMixin,
                                          protocol=self,
                                          limit=self._limit,
                                          loop=self._loop,
-                                         _asyncio_internal=True)
+                                         _asyncio_internal=True,
+                                         _legacy=True)
             self.stdout._set_transport(stdout_transport)
             self._pipe_fds.append(1)
 
@@ -60,7 +61,8 @@ class SubprocessStreamProtocol(streams.FlowControlMixin,
                                          protocol=self,
                                          limit=self._limit,
                                          loop=self._loop,
-                                         _asyncio_internal=True)
+                                         _asyncio_internal=True,
+                                         _legacy=True)
             self.stderr._set_transport(stderr_transport)
             self._pipe_fds.append(2)
 
@@ -70,7 +72,8 @@ class SubprocessStreamProtocol(streams.FlowControlMixin,
                                         transport=stdin_transport,
                                         protocol=self,
                                         loop=self._loop,
-                                        _asyncio_internal=True)
+                                        _asyncio_internal=True,
+                                        _legacy=True)
 
     def pipe_data_received(self, fd, data):
         if fd == 1:

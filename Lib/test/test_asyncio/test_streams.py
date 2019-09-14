@@ -958,7 +958,8 @@ os.close(fd)
 
             while True:
                 stream.write(b"foo\n")
-                await stream.drain()
+                # test private method here
+                await stream._drain()
 
         # Start the server thread and wait for it to be listening.
         thread = threading.Thread(target=server)
@@ -1069,7 +1070,7 @@ os.close(fd)
             self.assertTrue(wr.is_closing())
             self.loop.run_until_complete(wr.wait_closed())
 
-    def test_wait_closed_on_close(self):
+    def test_await_close(self):
         with test_utils.run_test_server() as httpd:
             stream = self.loop.run_until_complete(
                 asyncio.connect(*httpd.address))
@@ -1082,9 +1083,8 @@ os.close(fd)
             data = self.loop.run_until_complete(f)
             self.assertTrue(data.endswith(b'\r\n\r\nTest message'))
             self.assertFalse(stream.is_closing())
-            stream.close()
+            self.loop.run_until_complete(stream.close())
             self.assertTrue(stream.is_closing())
-            self.loop.run_until_complete(stream.wait_closed())
 
     def test_wait_closed_on_close_with_unread_data_deprecated(self):
         with test_utils.run_test_server() as httpd:
@@ -1103,13 +1103,17 @@ os.close(fd)
         with test_utils.run_test_server() as httpd:
             stream = self.loop.run_until_complete(
                 asyncio.connect(*httpd.address))
+            # to test legacy mode explicitly
+            stream._legacy = True
 
             stream.write(b'GET / HTTP/1.0\r\n\r\n')
             f = stream.readline()
             data = self.loop.run_until_complete(f)
             self.assertEqual(data, b'HTTP/1.0 200 OK\r\n')
-            stream.close()
-            self.loop.run_until_complete(stream.wait_closed())
+            with self.assertWarns(DeprecationWarning):
+                stream.close()
+            with self.assertWarns(DeprecationWarning):
+                self.loop.run_until_complete(stream.wait_closed())
 
     def test_del_stream_before_sock_closing(self):
         messages = []
@@ -1250,7 +1254,7 @@ os.close(fd)
             with self.assertRaisesRegex(RuntimeError, "The stream is read-only"):
                 stream.write_eof()
             with self.assertRaisesRegex(RuntimeError, "The stream is read-only"):
-                await stream.drain()
+                await stream._drain()
 
         self.loop.run_until_complete(inner())
 
@@ -1285,8 +1289,7 @@ os.close(fd)
         f = stream.read()
         data = self.loop.run_until_complete(f)
         self.assertTrue(data.endswith(b'\r\n\r\nTest message'))
-        stream.close()
-        self.loop.run_until_complete(stream.wait_closed())
+        self.loop.run_until_complete(stream.close())
 
         self.assertEqual([], messages)
 
