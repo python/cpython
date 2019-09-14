@@ -1276,7 +1276,7 @@ The :mod:`curses` module defines the following data members:
 
 .. data:: ERR
 
-   Some curses routines  that  return  an integer, such as  :func:`getch`, return
+   Some curses routines  that  return  an integer, such as :meth:`~window.getch`, return
    :const:`ERR` upon failure.
 
 
