@@ -1434,7 +1434,7 @@ _codecs_charmap_decode(PyObject *module, PyObject *const *args, Py_ssize_t nargs
     PyObject *return_value = NULL;
     Py_buffer data = {NULL, NULL};
     const char *errors = NULL;
-    PyObject *mapping = NULL;
+    PyObject *mapping = Py_None;
 
     if (!_PyArg_CheckPositional("charmap_decode", nargs, 1, 3)) {
         goto exit;
@@ -2542,7 +2542,7 @@ _codecs_charmap_encode(PyObject *module, PyObject *const *args, Py_ssize_t nargs
     PyObject *return_value = NULL;
     PyObject *str;
     const char *errors = NULL;
-    PyObject *mapping = NULL;
+    PyObject *mapping = Py_None;
 
     if (!_PyArg_CheckPositional("charmap_encode", nargs, 1, 3)) {
         goto exit;
@@ -2922,4 +2922,4 @@ exit:
 #ifndef _CODECS_CODE_PAGE_ENCODE_METHODDEF
     #define _CODECS_CODE_PAGE_ENCODE_METHODDEF
 #endif /* !defined(_CODECS_CODE_PAGE_ENCODE_METHODDEF) */
-/*[clinic end generated code: output=59726a305e4ec24a input=a9049054013a1b77]*/
+/*[clinic end generated code: output=51b42d170889524c input=a9049054013a1b77]*/

@@ -2993,14 +2993,14 @@ dict.pop
     default: object = NULL
     /
 
-Remove specified key and return the corresponding value.
+D.pop(k[,d]) -> v, remove specified key and return the corresponding value.
 
 If key is not found, default is returned if given, otherwise KeyError is raised
 [clinic start generated code]*/
 
 static PyObject *
 dict_pop_impl(PyDictObject *self, PyObject *key, PyObject *default_value)
-/*[clinic end generated code: output=3abb47b89f24c21c input=016f6a000e4e633b]*/
+/*[clinic end generated code: output=3abb47b89f24c21c input=eeebec7812190348]*/
 {
     return _PyDict_Pop((PyObject*)self, key, default_value);
 }
