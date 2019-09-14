@@ -56,7 +56,7 @@ static PyObject *
 float___round__(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
-    PyObject *o_ndigits = NULL;
+    PyObject *o_ndigits = Py_None;
 
     if (!_PyArg_CheckPositional("__round__", nargs, 0, 1)) {
         goto exit;
@@ -351,4 +351,4 @@ float___format__(PyObject *self, PyObject *arg)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=cc8098eb73f1a64c input=a9049054013a1b77]*/
+/*[clinic end generated code: output=1676433b9f04fbc9 input=a9049054013a1b77]*/

@@ -107,12 +107,12 @@ class structseq "PyStructSequence *" "NULL"
 @classmethod
 structseq.__new__ as structseq_new
     sequence as arg: object
-    dict: object = NULL
+    dict: object(c_default="NULL") = {}
 [clinic start generated code]*/
 
 static PyObject *
 structseq_new_impl(PyTypeObject *type, PyObject *arg, PyObject *dict)
-/*[clinic end generated code: output=baa082e788b171da input=9b44810243907377]*/
+/*[clinic end generated code: output=baa082e788b171da input=90532511101aa3fb]*/
 {
     PyObject *ob;
     PyStructSequence *res = NULL;
