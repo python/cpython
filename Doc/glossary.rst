@@ -1044,7 +1044,16 @@ Glossary
       as :keyword:`if`, :keyword:`while` or :keyword:`for`.
 
    text encoding
-      A codec which encodes Unicode strings to bytes.
+      Strings are stored internally as sequences of Unicode code points in
+      range ``0x0``--``0x10FFFF``. Once a string object is used outside of CPU
+      and memory, how these arrays are stored as bytes become an issue.
+
+      Serializing a string into a sequence of bytes is known as "encoding", and
+      recreating the string from the sequence of bytes is known as "decoding".
+
+      There are a variety of different text serialization
+      :ref:`codecs <standard-encodings>`, which are collectivity referred to as
+      "text encodings".
 
    text file
       A :term:`file object` able to read and write :class:`str` objects.

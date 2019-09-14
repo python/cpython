@@ -23,10 +23,10 @@
 This module defines base classes for standard Python codecs (encoders and
 decoders) and provides access to the internal Python codec registry, which
 manages the codec and error handling lookup process. Most standard codecs
-are :term:`text encodings <text encoding>`, which encode text to bytes,
-but there are also codecs provided that encode text to text, and bytes to
-bytes. Custom codecs may encode and decode between arbitrary types, but some
-module features are restricted to use specifically with
+are :term:`text encodings <text encoding>`, which encode text to bytes (and
+reverse), but there are also codecs provided that encode text to text, and
+bytes to bytes. Custom codecs may encode and decode between arbitrary types,
+but some module features are restricted to use specifically with
 :term:`text encodings <text encoding>`, or with codecs that encode to
 :class:`bytes`.
 
@@ -293,10 +293,10 @@ Error Handlers
 To simplify and standardize error handling, codecs may implement different
 error handling schemes by accepting the *errors* string argument:
 
-      >>> 'ß ♬'.encode(encoding='ascii', errors='backslashreplace')
-      b'\\xdf \\u266c'
-      >>> 'ß ♬'.encode(encoding='ascii', errors='xmlcharrefreplace')
-      b'&#223; &#9836;'
+      >>> 'German ß, ♬'.encode(encoding='ascii', errors='backslashreplace')
+      b'German \\xdf, \\u266c'
+      >>> 'German ß, ♬'.encode(encoding='ascii', errors='xmlcharrefreplace')
+      b'German &#223;, &#9836;'
 
 .. index::
    pair: strict; error handler's name
@@ -310,7 +310,8 @@ error handling schemes by accepting the *errors* string argument:
    single: \u; escape sequence
    single: \U; escape sequence
 
-The following string values can be used with all Python built-in codecs:
+The following error handlers can be used with all :ref:`standard-encodings`
+codecs:
 
 .. tabularcolumns:: |l|L|
 
@@ -353,8 +354,8 @@ The following string values can be used with all Python built-in codecs:
    pair: namereplace; error handler's name
    single: \N; escape sequence
 
-The following error handlers are only applicable to
-:term:`text encodings <text encoding>`:
+The following error handlers are only applicable to encoding (within
+:term:`text encodings <text encoding>`):
 
 +-------------------------+-----------------------------------------------+
 | Value                   | Meaning                                       |
@@ -473,8 +474,8 @@ functions:
 
 .. function:: xmlcharrefreplace_errors(exception)
 
-   Implements the ``'xmlcharrefreplace'`` error handling (for encoding with
-   :term:`text encodings <text encoding>` only).
+   Implements the ``'xmlcharrefreplace'`` error handling (for encoding within
+   :term:`text encoding` only).
 
    The unencodable character is replaced by an appropriate XML/HTML numeric
    character reference, which is a decimal form of Unicode code point with
@@ -483,8 +484,8 @@ functions:
 
 .. function:: namereplace_errors(exception)
 
-   Implements the ``'namereplace'`` error handling (for encoding with
-   :term:`text encodings <text encoding>` only).
+   Implements the ``'namereplace'`` error handling (for encoding within
+   :term:`text encoding` only).
 
    The unencodable character is replaced by a ``\N{...}`` escape sequence,
    what appears in the brace is the Name property from Unicode Character
