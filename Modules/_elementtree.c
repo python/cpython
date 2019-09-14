@@ -2465,10 +2465,10 @@ treebuilder_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 /*[clinic input]
 _elementtree.TreeBuilder.__init__
 
-    element_factory: object = NULL
+    element_factory: object = None
     *
-    comment_factory: object = NULL
-    pi_factory: object = NULL
+    comment_factory: object = None
+    pi_factory: object = None
     insert_comments: bool = False
     insert_pis: bool = False
 
@@ -2480,16 +2480,16 @@ _elementtree_TreeBuilder___init___impl(TreeBuilderObject *self,
                                        PyObject *comment_factory,
                                        PyObject *pi_factory,
                                        int insert_comments, int insert_pis)
-/*[clinic end generated code: output=8571d4dcadfdf952 input=1f967b5c245e0a71]*/
+/*[clinic end generated code: output=8571d4dcadfdf952 input=ae98a94df20b5cc3]*/
 {
-    if (element_factory && element_factory != Py_None) {
+    if (element_factory != Py_None) {
         Py_INCREF(element_factory);
         Py_XSETREF(self->element_factory, element_factory);
     } else {
         Py_CLEAR(self->element_factory);
     }
 
-    if (!comment_factory || comment_factory == Py_None) {
+    if (comment_factory == Py_None) {
         elementtreestate *st = ET_STATE_GLOBAL;
         comment_factory = st->comment_factory;
     }
@@ -2502,7 +2502,7 @@ _elementtree_TreeBuilder___init___impl(TreeBuilderObject *self,
         self->insert_comments = 0;
     }
 
-    if (!pi_factory || pi_factory == Py_None) {
+    if (pi_factory == Py_None) {
         elementtreestate *st = ET_STATE_GLOBAL;
         pi_factory = st->pi_factory;
     }
@@ -3708,14 +3708,14 @@ _elementtree.XMLParser.__init__
 
     *
     target: object = NULL
-    encoding: str(accept={str, NoneType}) = NULL
+    encoding: str(accept={str, NoneType}) = None
 
 [clinic start generated code]*/
 
 static int
 _elementtree_XMLParser___init___impl(XMLParserObject *self, PyObject *target,
                                      const char *encoding)
-/*[clinic end generated code: output=3ae45ec6cdf344e4 input=96288fcba916cfce]*/
+/*[clinic end generated code: output=3ae45ec6cdf344e4 input=53e35a829ae043e8]*/
 {
     self->entity = PyDict_New();
     if (!self->entity)

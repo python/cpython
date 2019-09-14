@@ -43,9 +43,6 @@ NoneType = type(None)
 
 version = '1'
 
-_empty = inspect._empty
-_void = inspect._void
-
 NoneType = type(None)
 
 class Unspecified:
@@ -2175,7 +2172,7 @@ class Function:
     def __init__(self, parameters=None, *, name,
                  module, cls=None, c_basename=None,
                  full_name=None,
-                 return_converter, return_annotation=_empty,
+                 return_converter, return_annotation=inspect.Signature.empty,
                  docstring=None, kind=CALLABLE, coexist=False,
                  docstring_only=False):
         self.parameters = parameters or collections.OrderedDict()
@@ -2253,8 +2250,8 @@ class Parameter:
     Mutable duck type of inspect.Parameter.
     """
 
-    def __init__(self, name, kind, *, default=_empty,
-                 function, converter, annotation=_empty,
+    def __init__(self, name, kind, *, default=inspect.Parameter.empty,
+                 function, converter, annotation=inspect.Parameter.empty,
                  docstring=None, group=0):
         self.name = name
         self.kind = kind
@@ -3230,6 +3227,8 @@ class str_converter(CConverter):
             self.type = 'char *'
             # sorry, clinic can't support preallocated buffers
             # for es# and et#
+            self.c_default = "NULL"
+        if NoneType in accept and self.c_default == "Py_None":
             self.c_default = "NULL"
 
     def cleanup(self):
@@ -4433,7 +4432,7 @@ class DSLParser:
                 # mild hack: explicitly support NULL as a default value
                 if isinstance(expr, ast.Name) and expr.id == 'NULL':
                     value = NULL
-                    py_default = 'None'
+                    py_default = '<unrepresentable>'
                     c_default = "NULL"
                 elif (isinstance(expr, ast.BinOp) or
                     (isinstance(expr, ast.UnaryOp) and

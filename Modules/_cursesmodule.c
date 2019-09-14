@@ -3202,7 +3202,7 @@ _curses_initscr_impl(PyObject *module)
 /*[clinic input]
 _curses.setupterm
 
-    term: str(accept={str, NoneType}) = NULL
+    term: str(accept={str, NoneType}) = None
         Terminal name.
         If omitted, the value of the TERM environment variable will be used.
     fd: int = -1
@@ -3214,7 +3214,7 @@ Initialize the terminal.
 
 static PyObject *
 _curses_setupterm_impl(PyObject *module, const char *term, int fd)
-/*[clinic end generated code: output=4584e587350f2848 input=8ac5f78ec6268be3]*/
+/*[clinic end generated code: output=4584e587350f2848 input=4511472766af0c12]*/
 {
     int err;
 

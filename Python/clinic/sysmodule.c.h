@@ -135,7 +135,7 @@ static PyObject *
 sys_exit(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
-    PyObject *status = NULL;
+    PyObject *status = Py_None;
 
     if (!_PyArg_CheckPositional("exit", nargs, 0, 1)) {
         goto exit;
@@ -1088,4 +1088,4 @@ sys_getandroidapilevel(PyObject *module, PyObject *Py_UNUSED(ignored))
 #ifndef SYS_GETANDROIDAPILEVEL_METHODDEF
     #define SYS_GETANDROIDAPILEVEL_METHODDEF
 #endif /* !defined(SYS_GETANDROIDAPILEVEL_METHODDEF) */
-/*[clinic end generated code: output=092edc868de055a6 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=273f9cec8bfcab91 input=a9049054013a1b77]*/
