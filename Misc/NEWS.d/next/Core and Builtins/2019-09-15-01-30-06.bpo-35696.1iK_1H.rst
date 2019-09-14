@@ -1,0 +1,1 @@
+Slightly improve perfomance of long_compare. Patch by hongweipeng.
