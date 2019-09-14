@@ -613,7 +613,7 @@ exit:
 }
 
 PyDoc_STRVAR(unicode_lstrip__doc__,
-"lstrip($self, chars=<unrepresentable>, /)\n"
+"lstrip($self, chars=None, /)\n"
 "--\n"
 "\n"
 "Return a copy of the string with leading whitespace removed.\n"
@@ -630,7 +630,7 @@ static PyObject *
 unicode_lstrip(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
-    PyObject *chars = NULL;
+    PyObject *chars = Py_None;
 
     if (!_PyArg_CheckPositional("lstrip", nargs, 0, 1)) {
         goto exit;
@@ -647,7 +647,7 @@ exit:
 }
 
 PyDoc_STRVAR(unicode_rstrip__doc__,
-"rstrip($self, chars=<unrepresentable>, /)\n"
+"rstrip($self, chars=None, /)\n"
 "--\n"
 "\n"
 "Return a copy of the string with trailing whitespace removed.\n"
@@ -664,7 +664,7 @@ static PyObject *
 unicode_rstrip(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
-    PyObject *chars = NULL;
+    PyObject *chars = Py_None;
 
     if (!_PyArg_CheckPositional("rstrip", nargs, 0, 1)) {
         goto exit;
@@ -1232,4 +1232,4 @@ unicode_sizeof(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
     return unicode_sizeof_impl(self);
 }
-/*[clinic end generated code: output=354e4376c27c1e7f input=a9049054013a1b77]*/
+/*[clinic end generated code: output=5e15747f78f18329 input=a9049054013a1b77]*/
