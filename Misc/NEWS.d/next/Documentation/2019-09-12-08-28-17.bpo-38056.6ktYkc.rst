@@ -1,0 +1,1 @@
+Overhaul :ref:`error-handlers` section in :mod:`codecs` module documentation.

@@ -290,57 +290,54 @@ codec will handle encoding and decoding errors.
 Error Handlers
 ^^^^^^^^^^^^^^
 
-To simplify and standardize error handling,
-codecs may implement different error handling schemes by
-accepting the *errors* string argument. The following string values are
-defined and implemented by all standard Python codecs:
+To simplify and standardize error handling, codecs may implement different
+error handling schemes by accepting the *errors* string argument:
+
+      >>> 'ß ♬'.encode(encoding='ascii', errors='backslashreplace')
+      b'\\xdf \\u266c'
+      >>> 'ß ♬'.encode(encoding='ascii', errors='xmlcharrefreplace')
+      b'&#223; &#9836;'
+
+.. index::
+   pair: strict; error handler's name
+   pair: ignore; error handler's name
+   pair: replace; error handler's name
+   pair: backslashreplace; error handler's name
+   pair: surrogateescape; error handler's name
+   single: ? (question mark); replacement character
+   single: \ (backslash); escape sequence
+   single: \x; escape sequence
+   single: \u; escape sequence
+   single: \U; escape sequence
+
+The following string values can be used with all Python built-in codecs:
 
 .. tabularcolumns:: |l|L|
 
 +-------------------------+-----------------------------------------------+
 | Value                   | Meaning                                       |
 +=========================+===============================================+
-| ``'strict'``            | Raise :exc:`UnicodeError` (or a subclass);    |
+| ``'strict'``            | Raise :exc:`UnicodeError` (or a subclass),    |
 |                         | this is the default. Implemented in           |
 |                         | :func:`strict_errors`.                        |
 +-------------------------+-----------------------------------------------+
-| ``'ignore'``            | Ignore the malformed data and continue        |
-|                         | without further notice. Implemented in        |
+| ``'ignore'``            | Ignore the malformed data and continue without|
+|                         | further notice. Implemented in                |
 |                         | :func:`ignore_errors`.                        |
 +-------------------------+-----------------------------------------------+
-
-The following error handlers are only applicable to
-:term:`text encodings <text encoding>`:
-
-.. index::
-   single: ? (question mark); replacement character
-   single: \ (backslash); escape sequence
-   single: \x; escape sequence
-   single: \u; escape sequence
-   single: \U; escape sequence
-   single: \N; escape sequence
-
-+-------------------------+-----------------------------------------------+
-| Value                   | Meaning                                       |
-+=========================+===============================================+
-| ``'replace'``           | Replace with a suitable replacement           |
-|                         | marker; Python will use the official          |
-|                         | ``U+FFFD`` REPLACEMENT CHARACTER for the      |
-|                         | built-in codecs on decoding, and '?' on       |
-|                         | encoding. Implemented in                      |
+| ``'replace'``           | Replace with a replacement marker. On         |
+|                         | encoding, use ``?`` (ASCII character). On     |
+|                         | decoding, use ``U+FFFD`` (the official        |
+|                         | REPLACEMENT CHARACTER). Implemented in        |
 |                         | :func:`replace_errors`.                       |
 +-------------------------+-----------------------------------------------+
-| ``'xmlcharrefreplace'`` | Replace with the appropriate XML character    |
-|                         | reference (only for encoding). Implemented    |
-|                         | in :func:`xmlcharrefreplace_errors`.          |
-+-------------------------+-----------------------------------------------+
 | ``'backslashreplace'``  | Replace with backslashed escape sequences.    |
+|                         | On encoding, use hexadecimal form of Unicode  |
+|                         | code point with formats ``\xhh`` ``\uxxxx``   |
+|                         | ``\Uxxxxxxxx``. On decoding, use hexadecimal  |
+|                         | form of byte value with format ``\xhh``.      |
 |                         | Implemented in                                |
 |                         | :func:`backslashreplace_errors`.              |
-+-------------------------+-----------------------------------------------+
-| ``'namereplace'``       | Replace with ``\N{...}`` escape sequences     |
-|                         | (only for encoding). Implemented in           |
-|                         | :func:`namereplace_errors`.                   |
 +-------------------------+-----------------------------------------------+
 | ``'surrogateescape'``   | On decoding, replace byte with individual     |
 |                         | surrogate code ranging from ``U+DC80`` to     |
@@ -350,6 +347,31 @@ The following error handlers are only applicable to
 |                         | when encoding the data. (See :pep:`383` for   |
 |                         | more.)                                        |
 +-------------------------+-----------------------------------------------+
+
+.. index::
+   pair: xmlcharrefreplace; error handler's name
+   pair: namereplace; error handler's name
+   single: \N; escape sequence
+
+The following error handlers are only applicable to
+:term:`text encodings <text encoding>`:
+
++-------------------------+-----------------------------------------------+
+| Value                   | Meaning                                       |
++=========================+===============================================+
+| ``'xmlcharrefreplace'`` | Replace with XML/HTML numeric character       |
+|                         | reference, which is a decimal form of Unicode |
+|                         | code point with format ``&#num;`` Implemented |
+|                         | in :func:`xmlcharrefreplace_errors`.          |
++-------------------------+-----------------------------------------------+
+| ``'namereplace'``       | Replace with ``\N{...}`` escape sequences,    |
+|                         | what appears in the brace is the Name property|
+|                         | from Unicode Character Database. Implemented  |
+|                         | in :func:`namereplace_errors`.                |
++-------------------------+-----------------------------------------------+
+
+.. index::
+   pair: surrogatepass; error handler's name
 
 In addition, the following error handler is specific to the given codecs:
 
@@ -365,13 +387,14 @@ In addition, the following error handler is specific to the given codecs:
    The ``'surrogateescape'`` and ``'surrogatepass'`` error handlers.
 
 .. versionchanged:: 3.4
-   The ``'surrogatepass'`` error handlers now works with utf-16\* and utf-32\* codecs.
+   The ``'surrogatepass'`` error handler now works with utf-16\* and utf-32\*
+   codecs.
 
 .. versionadded:: 3.5
    The ``'namereplace'`` error handler.
 
 .. versionchanged:: 3.5
-   The ``'backslashreplace'`` error handlers now works with decoding and
+   The ``'backslashreplace'`` error handler now works with decoding and
    translating.
 
 The set of allowed values can be extended by registering a new named error
@@ -414,42 +437,58 @@ functions:
 
 .. function:: strict_errors(exception)
 
-   Implements the ``'strict'`` error handling: each encoding or
-   decoding error raises a :exc:`UnicodeError`.
+   Implements the ``'strict'`` error handling.
 
-
-.. function:: replace_errors(exception)
-
-   Implements the ``'replace'`` error handling (for :term:`text encodings
-   <text encoding>` only): substitutes ``'?'`` for encoding errors
-   (to be encoded by the codec), and ``'\ufffd'`` (the Unicode replacement
-   character) for decoding errors.
+   Each encoding or decoding error raises a :exc:`UnicodeError`.
 
 
 .. function:: ignore_errors(exception)
 
-   Implements the ``'ignore'`` error handling: malformed data is ignored and
-   encoding or decoding is continued without further notice.
+   Implements the ``'ignore'`` error handling.
+
+   Malformed data is ignored and encoding or decoding is continued without
+   further notice.
+
+
+.. function:: replace_errors(exception)
+
+   Implements the ``'replace'`` error handling.
+
+   Substitutes ``?`` (ASCII character) for encoding errors, or ``U+FFFD`` (the
+   official REPLACEMENT CHARACTER) for decoding errors.
+
+
+.. function:: backslashreplace_errors(exception)
+
+   Implements the ``'backslashreplace'`` error handling.
+
+   Malformed data is replaced by a backslashed escape sequence.
+   On encoding, use hexadecimal form of Unicode code point with formats
+   ``\xhh`` ``\uxxxx`` ``\Uxxxxxxxx``. On decoding, use hexadecimal form of
+   byte value with format ``\xhh``.
+
+   .. versionchanged:: 3.5
+      now works with decoding and translating.
 
 
 .. function:: xmlcharrefreplace_errors(exception)
 
    Implements the ``'xmlcharrefreplace'`` error handling (for encoding with
-   :term:`text encodings <text encoding>` only): the
-   unencodable character is replaced by an appropriate XML character reference.
+   :term:`text encodings <text encoding>` only).
 
+   The unencodable character is replaced by an appropriate XML/HTML numeric
+   character reference, which is a decimal form of Unicode code point with
+   format ``&#num;``
 
-.. function:: backslashreplace_errors(exception)
-
-   Implements the ``'backslashreplace'`` error handling (for
-   :term:`text encodings <text encoding>` only): malformed data is
-   replaced by a backslashed escape sequence.
 
 .. function:: namereplace_errors(exception)
 
    Implements the ``'namereplace'`` error handling (for encoding with
-   :term:`text encodings <text encoding>` only): the
-   unencodable character is replaced by a ``\N{...}`` escape sequence.
+   :term:`text encodings <text encoding>` only).
+
+   The unencodable character is replaced by a ``\N{...}`` escape sequence,
+   what appears in the brace is the Name property from Unicode Character
+   Database.
 
    .. versionadded:: 3.5
 
@@ -463,7 +502,7 @@ The base :class:`Codec` class defines these methods which also define the
 function interfaces of the stateless encoder and decoder:
 
 
-.. method:: Codec.encode(input[, errors])
+.. method:: Codec.encode(input[, errors='strict'])
 
    Encodes the object *input* and returns a tuple (output object, length consumed).
    For instance, :term:`text encoding` converts
@@ -481,7 +520,7 @@ function interfaces of the stateless encoder and decoder:
    of the output object type in this situation.
 
 
-.. method:: Codec.decode(input[, errors])
+.. method:: Codec.decode(input[, errors='strict'])
 
    Decodes the object *input* and returns a tuple (output object, length
    consumed). For instance, for a :term:`text encoding`, decoding converts
@@ -548,7 +587,7 @@ define in order to be compatible with the Python codec registry.
    object.
 
 
-   .. method:: encode(object[, final])
+   .. method:: encode(object[, final=False])
 
       Encodes *object* (taking the current state of the encoder into account)
       and returns the resulting encoded object. If this is the last call to
@@ -605,7 +644,7 @@ define in order to be compatible with the Python codec registry.
    object.
 
 
-   .. method:: decode(object[, final])
+   .. method:: decode(object[, final=False])
 
       Decodes *object* (taking the current state of the decoder into account)
       and returns the resulting decoded object. If this is the last call to
@@ -738,7 +777,7 @@ compatible with the Python codec registry.
    :func:`register_error`.
 
 
-   .. method:: read([size[, chars, [firstline]]])
+   .. method:: read([size=-1[, chars=-1, [firstline=False]]])
 
       Decodes data from the stream and returns the resulting object.
 
@@ -764,7 +803,7 @@ compatible with the Python codec registry.
       available on the stream, these should be read too.
 
 
-   .. method:: readline([size[, keepends]])
+   .. method:: readline([size=None[, keepends=True]])
 
       Read one line from the input stream and return the decoded data.
 
@@ -775,7 +814,7 @@ compatible with the Python codec registry.
       returned.
 
 
-   .. method:: readlines([sizehint[, keepends]])
+   .. method:: readlines([sizehint=None[, keepends=True]])
 
       Read all lines available on the input stream and return them as a list of
       lines.
