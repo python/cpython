@@ -154,7 +154,7 @@ declaration should be added as the second line of the file.  For example::
 
    #!/usr/bin/env python3
    # -*- coding: cp1252 -*-
-   
+
 .. _GNU Readline: https://tiswww.case.edu/php/chet/readline/rltop.html
 .. rubric:: Footnotes
 
