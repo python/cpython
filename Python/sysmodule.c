@@ -749,7 +749,7 @@ sys_unraisablehook(PyObject *module, PyObject *unraisable)
 /*[clinic input]
 sys.exit
 
-    status: object = NULL
+    status: object = None
     /
 
 Exit the interpreter by raising SystemExit(status).
@@ -762,7 +762,7 @@ exit status will be one (i.e., failure).
 
 static PyObject *
 sys_exit_impl(PyObject *module, PyObject *status)
-/*[clinic end generated code: output=13870986c1ab2ec0 input=a737351f86685e9c]*/
+/*[clinic end generated code: output=13870986c1ab2ec0 input=b86ca9497baa94f2]*/
 {
     /* Raise SystemExit so callers may catch it or clean up. */
     PyThreadState *tstate = _PyThreadState_GET();

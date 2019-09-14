@@ -584,7 +584,7 @@ EVPnew(const EVP_MD *digest,
 _hashlib.new as EVP_new
 
     name as name_obj: object
-    string as data_obj: object(py_default="b''") = NULL
+    string as data_obj: object(c_default="NULL") = b''
     *
     usedforsecurity: bool = True
 
@@ -599,7 +599,7 @@ The MD5 and SHA1 algorithms are always supported.
 static PyObject *
 EVP_new_impl(PyObject *module, PyObject *name_obj, PyObject *data_obj,
              int usedforsecurity)
-/*[clinic end generated code: output=ddd5053f92dffe90 input=e9ac115d80962ddf]*/
+/*[clinic end generated code: output=ddd5053f92dffe90 input=c24554d0337be1b0]*/
 {
     Py_buffer view = { 0 };
     PyObject *ret_obj;
