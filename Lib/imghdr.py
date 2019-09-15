@@ -35,8 +35,8 @@ def what(file, h=None):
 tests = []
 
 def test_jpeg(h, f):
-    """JPEG data in JFIF or Exif format"""
-    if h[:2] == b'\xff\xd8':
+    """JPEG data"""
+    if h.startswith(b'\xff\xd8'):
         return 'jpeg'
 
 tests.append(test_jpeg)
