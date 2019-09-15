@@ -268,8 +268,6 @@ class Pool(object):
         if self._state == RUN:
             _warn(f"unclosed running multiprocessing pool {self!r}",
                   ResourceWarning, source=self)
-            if getattr(self, '_change_notifier', None) is not None:
-                self._change_notifier.put(None)
 
     def __repr__(self):
         cls = self.__class__
@@ -693,7 +691,8 @@ class Pool(object):
     def _help_stuff_finish(inqueue, task_handler, size):
         # task_handler may be blocked trying to put items on inqueue
         util.debug('removing tasks from inqueue until task handler finished')
-        inqueue._rlock.acquire()
+        if inqueue._reader.poll():
+            inqueue._rlock.acquire()
         while task_handler.is_alive() and inqueue._reader.poll():
             inqueue._reader.recv()
             time.sleep(0)
