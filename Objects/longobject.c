@@ -3041,8 +3041,9 @@ long_compare(PyLongObject *a, PyLongObject *b)
         while (--i > 0 && a->ob_digit[i] == b->ob_digit[i])
             ;
         sign = (sdigit)a->ob_digit[i] - (sdigit)b->ob_digit[i];
-        if (Py_SIZE(a) < 0)
+        if (Py_SIZE(a) < 0) {
             sign = -sign;
+        }
     }
     return sign;
 }
