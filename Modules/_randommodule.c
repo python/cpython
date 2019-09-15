@@ -572,6 +572,7 @@ static int
 _random_clear(PyObject *module)
 {
     Py_CLEAR(_randomstate(module)->Random_Type);
+    Py_CLEAR(_randomstate(module)->Long___abs__);
     return 0;
 }
 
