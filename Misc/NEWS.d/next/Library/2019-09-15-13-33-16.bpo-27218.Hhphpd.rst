@@ -1,0 +1,3 @@
+Set `f_trace` to `Py_None` to improve performance. Setting `f_trace` to `Py_None` in ``trace_trampoline()`` when the trace function
+returns `Py_None` provides a way to avoid the costly calls to ``maybe_call_line_trace()`` that are made for each line in this scope
+even though the trace function is not called.
