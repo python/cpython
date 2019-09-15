@@ -99,8 +99,8 @@ If you do need to iterate over a sequence of numbers, the built-in function
     3
     4
 
-The given end point is never part of the generated sequence; ``range(10)`` generates
-10 values, the legal indices for items of a sequence of length 10.  It
+The given end point is never part of the generated sequence; ``range(10)``
+generates 10 values, the legal indices for items of a sequence of length 10.  It
 is possible to let the range start at another number, or to specify a different
 increment (even negative; sometimes this is called the 'step')::
 
@@ -161,14 +161,13 @@ In chapter :ref:`tut-structures`, we will discuss in more detail about
 .. _tut-break:
 
 :keyword:`!break` and :keyword:`!continue` Statements, and :keyword:`!else` Clauses on Loops
-============================================================================================
-
+=============================================================================================
 The :keyword:`break` statement, like in C, breaks out of the innermost enclosing
 :keyword:`for` or :keyword:`while` loop.
 
-Loop statements may have an :keyword:`!else` clause; it is executed when the loop
-terminates through exhaustion of the iterable (with :keyword:`for`) or when the
-condition becomes false (with :keyword:`while`), but not when the loop is
+Loop statements may have an :keyword:`!else` clause; it is executed when the
+loop terminates through exhaustion of the iterable (with :keyword:`for`) or when
+the condition becomes false (with :keyword:`while`), but not when the loop is
 terminated by a :keyword:`break` statement.  This is exemplified by the
 following loop, which searches for prime numbers::
 
@@ -287,9 +286,9 @@ first look in the local symbol table, then in the local symbol tables of
 enclosing functions, then in the global symbol table, and finally in the table
 of built-in names. Thus, global variables and variables of enclosing functions
 cannot be directly assigned a value within a function (unless, for global
-variables, named in a :keyword:`global` statement, or, for variables of enclosing
-functions, named in a :keyword:`nonlocal` statement), although they may be
-referenced.
+variables, named in a :keyword:`global` statement, or, for variables of
+enclosing functions, named in a :keyword:`nonlocal` statement), although they
+may be referenced.
 
 The actual parameters (arguments) to a function call are introduced in the local
 symbol table of the called function when it is called; thus, arguments are
@@ -339,19 +338,19 @@ Fibonacci series, instead of printing it::
 This example, as usual, demonstrates some new Python features:
 
 * The :keyword:`return` statement returns with a value from a function.
-  :keyword:`!return` without an expression argument returns ``None``. Falling off
-  the end of a function also returns ``None``.
+  :keyword:`!return` without an expression argument returns ``None``. Falling
+  off the end of a function also returns ``None``.
 
 * The statement ``result.append(a)`` calls a *method* of the list object
   ``result``.  A method is a function that 'belongs' to an object and is named
   ``obj.methodname``, where ``obj`` is some object (this may be an expression),
-  and ``methodname`` is the name of a method that is defined by the object's type.
-  Different types define different methods.  Methods of different types may have
-  the same name without causing ambiguity.  (It is possible to define your own
-  object types and methods, using *classes*, see :ref:`tut-classes`)
+  and ``methodname`` is the name of a method that is defined by the object's
+  type. Different types define different methods.  Methods of different types
+  may have the same name without causing ambiguity.  (It is possible to define
+  your own object types and methods, using *classes*, see :ref:`tut-classes`)
   The method :meth:`append` shown in the example is defined for list objects; it
-  adds a new element at the end of the list.  In this example it is equivalent to
-  ``result = result + [a]``, but more efficient.
+  adds a new element at the end of the list.  In this example it is equivalent
+  to ``result = result + [a]``, but more efficient.
 
 
 .. _tut-defining:
@@ -585,8 +584,8 @@ by keyword argument, place an ``*`` in the arguments list just before the first
 Function Examples
 -----------------
 
-Consider the following example function definitions paying close attention to the
-markers ``/`` and ``*``::
+Consider the following example function definitions paying close attention to
+the markers ``/`` and ``*``::
 
    >>> def standard_arg(arg):
    ...     print(arg)
@@ -653,13 +652,15 @@ definition::
    TypeError: combined_example() got an unexpected keyword argument 'pos_only'
 
 
-Finally, consider this function definition which has a potential collision between the positional argument ``name``  and ``**kwds`` which has ``name`` as a key::
+Finally, consider this function definition which has a potential collision
+between the positional argument ``name``  and ``**kwds`` which has ``name`` as
+a key::
 
     def foo(name, **kwds):
         return 'name' in kwds
 
-There is no possible call that will make it return ``True`` as the keyword ``'name'``
-will always to bind to the first parameter. For example::
+There is no possible call that will make it return ``True`` as the keyword
+``'name'`` will always to bind to the first parameter. For example::
 
     >>> foo(1, **{'name': 2})
     Traceback (most recent call last):
@@ -667,7 +668,9 @@ will always to bind to the first parameter. For example::
     TypeError: foo() got multiple values for argument 'name'
     >>>
 
-But using ``/`` (positional only arguments), it is possible since it allows ``name`` as a positional argument and ``'name'`` as a key in the keyword arguments::
+But using ``/`` (positional only arguments), it is possible since it allows
+``name`` as a positional argument and ``'name'`` as a key in the keyword
+arguments::
 
     def foo(name, /, **kwds):
         return 'name' in kwds
@@ -860,14 +863,14 @@ Function Annotations
 information about the types used by user-defined functions (see :pep:`3107` and
 :pep:`484` for more information).
 
-:term:`Annotations <function annotation>` are stored in the :attr:`__annotations__`
-attribute of the function as a dictionary and have no effect on any other part of the
-function.  Parameter annotations are defined by a colon after the parameter name, followed
-by an expression evaluating to the value of the annotation.  Return annotations are
-defined by a literal ``->``, followed by an expression, between the parameter
-list and the colon denoting the end of the :keyword:`def` statement.  The
-following example has a positional argument, a keyword argument, and the return
-value annotated::
+:term:`Annotations <function annotation>` are stored in the
+:attr:`__annotations__` attribute of the function as a dictionary and have no
+effect on any other part of the function.  Parameter annotations are defined by
+a colon after the parameter name, followed by an expression evaluating to the
+value of the annotation.  Return annotations are defined by a literal ``->``,
+followed by an expression, between the parameter list and the colon denoting the
+end of the :keyword:`def` statement.  The following example has a positional
+argument, a keyword argument, and the return value annotated::
 
    >>> def f(ham: str, eggs: str = 'eggs') -> str:
    ...     print("Annotations:", f.__annotations__)
@@ -893,8 +896,8 @@ concise, *formatted*) in different styles; some are more readable than others.
 Making it easy for others to read your code is always a good idea, and adopting
 a nice coding style helps tremendously for that.
 
-For Python, :pep:`8` has emerged as the style guide that most projects adhere to;
-it promotes a very readable and eye-pleasing coding style.  Every Python
+For Python, :pep:`8` has emerged as the style guide that most projects adhere
+to; it promotes a very readable and eye-pleasing coding style.  Every Python
 developer should read it at some point; here are the most important points
 extracted for you:
 
@@ -920,9 +923,9 @@ extracted for you:
   bracketing constructs: ``a = f(1, 2) + g(3, 4)``.
 
 * Name your classes and functions consistently; the convention is to use
-  ``UpperCamelCase`` for classes and ``lowercase_with_underscores`` for functions
-  and methods.  Always use ``self`` as the name for the first method argument
-  (see :ref:`tut-firstclasses` for more on classes and methods).
+  ``UpperCamelCase`` for classes and ``lowercase_with_underscores`` for
+  functions and methods.  Always use ``self`` as the name for the first method
+  argument (see :ref:`tut-firstclasses` for more on classes and methods).
 
 * Don't use fancy encodings if your code is meant to be used in international
   environments.  Python's default, UTF-8, or even plain ASCII work best in any
