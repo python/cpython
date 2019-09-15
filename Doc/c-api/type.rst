@@ -142,10 +142,6 @@ The following functions and structs are used to create
 
       Name of the type, used to set :c:member:`PyTypeObject.tp_name`.
 
-   .. c:member:: const char* PyType_Spec.doc
-
-      Type docstring, used to set :c:member:`PyTypeObject.tp_doc`.
-
    .. c:member:: int PyType_Spec.basicsize
    .. c:member:: int PyType_Spec.itemsize
 
