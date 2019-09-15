@@ -4,7 +4,7 @@
 More Control Flow Tools
 ***********************
 
-Besides the :keyword:`while` statement just introduced, Python use the usual 
+Besides the :keyword:`while` statement just introduced, Python uses the usual 
 flow control statements known from other languages, with some twists.
 
 
