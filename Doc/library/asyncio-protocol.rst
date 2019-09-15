@@ -767,9 +767,8 @@ data, and waits until the connection is closed::
 
 
     class EchoClientProtocol(asyncio.Protocol):
-        def __init__(self, message, on_con_lost, loop):
+        def __init__(self, message, on_con_lost):
             self.message = message
-            self.loop = loop
             self.on_con_lost = on_con_lost
 
         def connection_made(self, transport):
@@ -869,11 +868,10 @@ method, sends data and closes the transport when it receives the answer::
 
 
     class EchoClientProtocol:
-        def __init__(self, message, loop):
+        def __init__(self, message, on_con_lost):
             self.message = message
-            self.loop = loop
             self.transport = None
-            self.on_con_lost = loop.create_future()
+            self.on_con_lost = on_con_lost
 
         def connection_made(self, transport):
             self.transport = transport
@@ -899,13 +897,15 @@ method, sends data and closes the transport when it receives the answer::
         # low-level APIs.
         loop = asyncio.get_running_loop()
 
+        on_con_lost = loop.create_future()
         message = "Hello World!"
+
         transport, protocol = await loop.create_datagram_endpoint(
-            lambda: EchoClientProtocol(message, loop),
+            lambda: EchoClientProtocol(message, on_con_lost),
             remote_addr=('127.0.0.1', 9999))
 
         try:
-            await protocol.on_con_lost
+            await on_con_lost
         finally:
             transport.close()
 
