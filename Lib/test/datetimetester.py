@@ -19,7 +19,7 @@ from array import array
 from operator import lt, le, gt, ge, eq, ne, truediv, floordiv, mod
 
 from test import support
-from test.support import is_resource_enabled, ALWAYS_EQ, LARGEST, SMALLEST
+from test.support import import_fresh_module, is_resource_enabled, ALWAYS_EQ, LARGEST, SMALLEST
 
 import datetime as datetime_module
 from datetime import MINYEAR, MAXYEAR
@@ -61,6 +61,19 @@ class TestModule(unittest.TestCase):
         datetime = datetime_module
         self.assertEqual(datetime.MINYEAR, 1)
         self.assertEqual(datetime.MAXYEAR, 9999)
+
+    def test_all(self):
+        """Test that __all__ only points to valid attributes."""
+        all_attrs = dir(datetime_module)
+        for attr in datetime_module.__all__:
+            self.assertIn(attr, all_attrs)
+
+    def test_c_all(self):
+        """Test that __all__ symbols between the c datetime module and
+        the python datetime library are equivalent."""
+        c_datetime = import_fresh_module('datetime', fresh=['_datetime'])
+        py_datetime = import_fresh_module('datetime', blocked=['_datetime'])
+        self.assertEqual(c_datetime.__all__, py_datetime.__all__)
 
     def test_name_cleanup(self):
         if '_Pure' in self.__class__.__name__:
