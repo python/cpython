@@ -3,7 +3,7 @@ import inspect
 import unittest
 
 from unittest.mock import (ANY, call, AsyncMock, patch, MagicMock,
-                            create_autospec, _AwaitEvent, sentinel)
+                           create_autospec, _AwaitEvent, sentinel)
 
 
 def tearDownModule():
