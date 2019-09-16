@@ -1,0 +1,2 @@
+Test-idle skips user config directory. It no longer tries to create .idlerc
+or any files within. Users must run IDLE to discover settings save problems.

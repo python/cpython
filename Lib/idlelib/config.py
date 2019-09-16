@@ -166,7 +166,7 @@ class IdleConf:
     def CreateConfigHandlers(self):
         "Populate default and user config parser dictionaries."
         idledir = os.path.dirname(__file__)
-        self.userdir = userdir = self.GetUserCfgDir()
+        self.userdir = userdir = '' if idlelib.testing else self.GetUserCfgDir()
         for cfg_type in self.config_types:
             self.defaultCfg[cfg_type] = IdleConfParser(
                 os.path.join(idledir, f'config-{cfg_type}.def'))
@@ -199,8 +199,10 @@ class IdleConf:
             except OSError:
                 warn = ('\n Warning: unable to create user config directory\n' +
                         userDir + '\n Check path and permissions.\n Exiting!\n')
-                if not idlelib.testing:
+                try:
                     print(warn, file=sys.stderr)
+                except OSError:
+                    pass
                 raise SystemExit
         # TODO continue without userDIr instead of exit
         return userDir
