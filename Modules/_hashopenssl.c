@@ -34,8 +34,12 @@
 
 #define MUNCH_SIZE INT_MAX
 
-#if defined(NID_sha3_224) && defined(EVP_MD_FLAG_XOF)
+#ifdef NID_sha3_224
 #define PY_OPENSSL_HAS_SHA3 1
+#endif
+
+#if defined(EVP_MD_FLAG_XOF) && defined(NID_shake128)
+#define PY_OPENSSL_HAS_SHAKE 1
 #endif
 
 #ifdef NID_blake2b512
@@ -139,6 +143,8 @@ py_digest_name(const EVP_MD *md)
     case NID_sha3_512:
         name ="sha3_512";
         break;
+#endif
+#ifdef PY_OPENSSL_HAS_SHAKE
     case NID_shake128:
         name ="shake_128";
         break;
@@ -177,8 +183,9 @@ py_digest_by_name(const char *name)
     /* OpenSSL uses dash instead of underscore in names of some algorithms
      * like SHA3 and SHAKE. Detect different spellings. */
     if (digest == NULL) {
+        if (0) {}
 #ifdef NID_sha512_224
-        if (!strcmp(name, "sha512_224") || !strcmp(name, "SHA512_224")) {
+        else if (!strcmp(name, "sha512_224") || !strcmp(name, "SHA512_224")) {
             digest = EVP_sha512_224();
         }
         else if (!strcmp(name, "sha512_256") || !strcmp(name, "SHA512_256")) {
@@ -199,6 +206,8 @@ py_digest_by_name(const char *name)
         else if (!strcmp(name, "sha3_512")) {
             digest = EVP_sha3_512();
         }
+#endif
+#ifdef PY_OPENSSL_HAS_SHAKE
         else if (!strcmp(name, "shake_128")) {
             digest = EVP_shake128();
         }
