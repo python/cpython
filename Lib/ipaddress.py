@@ -1836,18 +1836,18 @@ class IPv6Address(_BaseV6, _BaseAddress):
             AddressValueError: If address isn't a valid IPv6 address.
 
         """
-        self._scope_id = None
-
         # Efficient constructor from integer.
         if isinstance(address, int):
             self._check_int_address(address)
             self._ip = address
+            self._scope_id = None
             return
 
         # Constructing from a packed address
         if isinstance(address, bytes):
             self._check_packed_address(address, 16)
             self._ip = int.from_bytes(address, 'big')
+            self._scope_id = None
             return
 
         # Assume input argument to be string or any object representation
