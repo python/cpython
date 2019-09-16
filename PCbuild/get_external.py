@@ -1,11 +1,15 @@
 #!/usr/bin/env python3
 
+# We do not need to import built modules from PCbuild (duh), so
+# filter those out here to save Steve from debugging it yet again.
+import sys
+sys.path[:] = [p for p in sys.path if p and 'PCbuild' not in p]
+
 import argparse
 import os
 import pathlib
 import zipfile
 from urllib.request import urlretrieve
-
 
 def fetch_zip(commit_hash, zip_dir, *, org='python', binary=False, verbose):
     repo = f'cpython-{"bin" if binary else "source"}-deps'
