@@ -221,7 +221,6 @@ write code that handles both IP versions correctly.  Address objects are
       Optionally, the string may also have a scope (zone) id, expressed
       with a suffix ``%<scope_id>``. If present, the scope id must be non-empty,
       and may not contain ``%``.
-
       See :RFC:`4007` for details.
    2. An integer that fits into 128 bits.
    3. An integer packed into a :class:`bytes` object of length 16, big-endian.
