@@ -130,7 +130,7 @@ class IdleUserConfParser(IdleConfParser):
         to disk. Otherwise, remove the file from disk if it exists.
         """
         fname = self.file
-        if fname:
+        if fname and fname[0] != '#':
             if not self.IsEmpty():
                 try:
                     cfgFile = open(fname, 'w')
@@ -166,12 +166,12 @@ class IdleConf:
     def CreateConfigHandlers(self):
         "Populate default and user config parser dictionaries."
         idledir = os.path.dirname(__file__)
-        self.userdir = userdir = self.GetUserCfgDir()
+        self.userdir = userdir = '' if idlelib.testing else self.GetUserCfgDir()
         for cfg_type in self.config_types:
             self.defaultCfg[cfg_type] = IdleConfParser(
                 os.path.join(idledir, f'config-{cfg_type}.def'))
             self.userCfg[cfg_type] = IdleUserConfParser(
-                os.path.join(userdir, f'config-{cfg_type}.cfg'))
+                os.path.join(userdir or '#', f'config-{cfg_type}.cfg'))
 
     def GetUserCfgDir(self):
         """Return a filesystem directory for storing user config files.
@@ -182,12 +182,13 @@ class IdleConf:
         userDir = os.path.expanduser('~')
         if userDir != '~': # expanduser() found user home dir
             if not os.path.exists(userDir):
-                warn = ('\n Warning: os.path.expanduser("~") points to\n ' +
-                        userDir + ',\n but the path does not exist.')
-                try:
-                    print(warn, file=sys.stderr)
-                except OSError:
-                    pass
+                if not idlelib.testing:
+                    warn = ('\n Warning: os.path.expanduser("~") points to\n ' +
+                            userDir + ',\n but the path does not exist.')
+                    try:
+                        print(warn, file=sys.stderr)
+                    except OSError:
+                        pass
                 userDir = '~'
         if userDir == "~": # still no path to home!
             # traditionally IDLE has defaulted to os.getcwd(), is this adequate?
@@ -197,10 +198,13 @@ class IdleConf:
             try:
                 os.mkdir(userDir)
             except OSError:
-                warn = ('\n Warning: unable to create user config directory\n' +
-                        userDir + '\n Check path and permissions.\n Exiting!\n')
                 if not idlelib.testing:
-                    print(warn, file=sys.stderr)
+                    warn = ('\n Warning: unable to create user config directory\n' +
+                            userDir + '\n Check path and permissions.\n Exiting!\n')
+                    try:
+                        print(warn, file=sys.stderr)
+                    except OSError:
+                        pass
                 raise SystemExit
         # TODO continue without userDIr instead of exit
         return userDir
