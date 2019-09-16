@@ -880,9 +880,10 @@ handle_callback(PyWeakReference *ref, PyObject *callback)
      * reference may try to invoke a callback object that is being
      * cleaned (tp_clear) by the garbage collector and it may be in an
      * inconsistent state. As the garbage collector explicitly does
-     * not invoke callbacks that are part of the same cycle isolate as
-     * the weak reference (pretending that the weak reference was
-     * destroyed first), we should act in the same way here.
+     * not invoke callbacks that are part of the same cycle isolate (check
+     * PEP 442 for references about this terminology) as the weak reference
+     * (pretending that the weak reference was * destroyed first), we
+     * should act in the same way here.
      *
      * When running the garbage collector pass over a generation, is
      * possible to end in this function if the tp_clear of a function
@@ -894,9 +895,12 @@ handle_callback(PyWeakReference *ref, PyObject *callback)
 
     if (PyObject_IS_GC(callback) && _PyObject_GC_IS_COLLECTING(callback)) {
         PyErr_WarnEx(PyExc_RuntimeWarning, "A weak reference"
-                " was triying to execute a callback to a function that is being cleared by"
-                " the garbage collector.\n Some C extension class in the dependence"
-                " chain is probably not implementing correctly the garbage collector support.", 1);
+                " was trying to execute a callback to a function that is being cleared by"
+                " the garbage collector.\n A C extension class in the dependence"
+                " chain is probably not implementing the garbage collector support"
+                " correctly.", 1);
+        /* Return to avoid a potential crash when calling the callback that is in
+         * an invalid state */
         return;
     }
 
