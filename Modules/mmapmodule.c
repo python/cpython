@@ -1392,7 +1392,8 @@ static void
 setint(PyObject *d, const char *name, long value)
 {
     PyObject *o = PyLong_FromLong(value);
-    if (o && PyDict_SetItemString(d, name, o) == 0) {
+    if (o) {
+        PyDict_SetItemString(d, name, o);
         Py_DECREF(o);
     }
 }
