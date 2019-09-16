@@ -1,0 +1,1 @@
+Updated OpenSSL to 1.1.1d in macOS installer.
