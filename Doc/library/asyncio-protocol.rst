@@ -792,7 +792,7 @@ data, and waits until the connection is closed::
         message = 'Hello World!'
 
         transport, protocol = await loop.create_connection(
-            lambda: EchoClientProtocol(message, on_con_lost, loop),
+            lambda: EchoClientProtocol(message, on_con_lost),
             '127.0.0.1', 8888)
 
         # Wait until the protocol signals that the connection
