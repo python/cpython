@@ -169,19 +169,33 @@ class RowFactoryTests(unittest.TestCase):
         row_1 = self.con.execute("select 1 as a, 2 as b").fetchone()
         row_2 = self.con.execute("select 1 as a, 2 as b").fetchone()
         row_3 = self.con.execute("select 1 as a, 3 as b").fetchone()
+        row_4 = self.con.execute("select 1 as b, 2 as a").fetchone()
+        row_5 = self.con.execute("select 2 as b, 1 as a").fetchone()
 
-        self.assertEqual(row_1, row_1)
-        self.assertEqual(row_1, row_2)
-        self.assertTrue(row_2 != row_3)
+        self.assertTrue(row_1 == row_1)
+        self.assertTrue(row_1 == row_2)
+        self.assertFalse(row_1 == row_3)
+        self.assertFalse(row_1 == row_4)
+        self.assertFalse(row_1 == row_5)
+        self.assertFalse(row_1 == object())
 
         self.assertFalse(row_1 != row_1)
         self.assertFalse(row_1 != row_2)
-        self.assertFalse(row_2 == row_3)
+        self.assertTrue(row_1 != row_3)
+        self.assertTrue(row_1 != row_4)
+        self.assertTrue(row_1 != row_5)
+        self.assertTrue(row_1 != object())
 
-        self.assertEqual(row_1, row_2)
+        with self.assertRaises(TypeError):
+            row_1 > row_2
+        with self.assertRaises(TypeError):
+            row_1 < row_2
+        with self.assertRaises(TypeError):
+            row_1 >= row_2
+        with self.assertRaises(TypeError):
+            row_1 <= row_2
+
         self.assertEqual(hash(row_1), hash(row_2))
-        self.assertNotEqual(row_1, row_3)
-        self.assertNotEqual(hash(row_1), hash(row_3))
 
     def CheckSqliteRowAsSequence(self):
         """ Checks if the row object can act like a sequence """
