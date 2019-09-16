@@ -218,10 +218,11 @@ write code that handles both IP versions correctly.  Address objects are
       ``"0000:0000:0000:0000:0000:0abc:0007:0def"`` can be compressed to
       ``"::abc:7:def"``.
 
-      Optionally, the string may also have a scope (zone) id, expressed
-      with a suffix ``%<scope_id>``. If present, the scope id must be non-empty,
+      Optionally, the string may also have a scope zone ID, expressed
+      with a suffix ``%<scope_id>``. If present, the scope ID must be non-empty,
       and may not contain ``%``.
       See :RFC:`4007` for details.
+      For example, ``fe80::1234%1`` might identify address ``fe80::1234`` on the first link of the node.
    2. An integer that fits into 128 bits.
    3. An integer packed into a :class:`bytes` object of length 16, big-endian.
 
