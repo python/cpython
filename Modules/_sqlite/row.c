@@ -192,14 +192,16 @@ static PyObject* pysqlite_row_richcompare(pysqlite_Row *self, PyObject *_other, 
     if (opid != Py_EQ && opid != Py_NE)
         Py_RETURN_NOTIMPLEMENTED;
 
-    if (PyType_IsSubtype(Py_TYPE(_other), &pysqlite_RowType)) {
+    if (PyObject_TypeCheck(_other, &pysqlite_RowType)) {
         pysqlite_Row *other = (pysqlite_Row *)_other;
-        PyObject *res = PyObject_RichCompare(self->description, other->description, opid);
-        if ((opid == Py_EQ && res == Py_True)
-            || (opid == Py_NE && res == Py_False)) {
-            Py_DECREF(res);
+        int eq = PyObject_RichCompareBool(self->description, other->description, Py_EQ);
+        if (eq < 0) {
+            return NULL;
+        }
+        if (eq) {
             return PyObject_RichCompare(self->data, other->data, opid);
         }
+        return PyBool_FromLong(opid != Py_EQ);
     }
     Py_RETURN_NOTIMPLEMENTED;
 }
