@@ -1073,7 +1073,7 @@ PyInit__hashlib(void)
 {
     PyObject *m, *openssl_md_meth_names;
 
-#ifndef OPENSSL_VERSION_1_1
+#if (OPENSSL_VERSION_NUMBER < 0x10100000L) || defined(LIBRESSL_VERSION_NUMBER)
     /* Load all digest algorithms and initialize cpuid */
     OPENSSL_add_all_algorithms_noconf();
     ERR_load_crypto_strings();
