@@ -187,8 +187,7 @@ static Py_hash_t pysqlite_row_hash(pysqlite_Row *self)
     return PyObject_Hash(self->description) ^ PyObject_Hash(self->data);
 }
 
-static PyObject *
-pysqlite_row_richcompare(pysqlite_Row *self, PyObject *_other, int opid)
+static PyObject* pysqlite_row_richcompare(pysqlite_Row *self, PyObject *_other, int opid)
 {
     if (opid != Py_EQ && opid != Py_NE)
         Py_RETURN_NOTIMPLEMENTED;

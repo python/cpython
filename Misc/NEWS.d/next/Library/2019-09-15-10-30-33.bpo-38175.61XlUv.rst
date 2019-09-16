@@ -1,1 +1,1 @@
-Fix da memory leak in comparison of :class:`sqlite3.Row` objects.
+Fix a memory leak in comparison of :class:`sqlite3.Row` objects.
