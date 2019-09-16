@@ -537,8 +537,8 @@ else:
         # 3: ERROR_DIRECTORY_NOT_FOUND
         # 5: ERROR_ACCESS_DENIED
         # 21: ERROR_NOT_READY (implies drive with no media)
-        # 32: ERROR_SHARING_VIOLATION
-        # 50: ERROR_NOT_SUPPORTED (implies no file system)
+        # 32: ERROR_SHARING_VIOLATION (probably an NTFS paging file)
+        # 50: ERROR_NOT_SUPPORTED (implies no support for reparse points)
         # 67: ERROR_BAD_NET_NAME (implies remote server unavailable)
         # 87: ERROR_INVALID_PARAMETER
         # 4390: ERROR_NOT_A_REPARSE_POINT
@@ -574,8 +574,8 @@ else:
         # 3: ERROR_DIRECTORY_NOT_FOUND
         # 5: ERROR_ACCESS_DENIED
         # 21: ERROR_NOT_READY (implies drive with no media)
-        # 32: ERROR_SHARING_VIOLATION
-        # 50: ERROR_NOT_SUPPORTED (implies no file system)
+        # 32: ERROR_SHARING_VIOLATION (probably an NTFS paging file)
+        # 50: ERROR_NOT_SUPPORTED
         # 67: ERROR_BAD_NET_NAME (implies remote server unavailable)
         # 87: ERROR_INVALID_PARAMETER
         # 123: ERROR_INVALID_NAME
@@ -595,6 +595,9 @@ else:
                 if ex.winerror not in allowed_winerror:
                     raise
                 path, name = split(path)
+                # TODO (bpo-38186): Request the real file name from the directory
+                # entry using FindFirstFileW. For now, we will return the path
+                # as best we have it
                 if path and not name:
                     return abspath(path + tail)
                 tail = join(name, tail) if tail else name
