@@ -206,7 +206,7 @@ def populate_flags(shebangline):
         return b''
     # On Linux, the entire string following the interpreter name
     # is passed as a single argument to the interpreter.
-    # e.g. #! /usr/bin/python3 -W Error -s == /usr/bin/python3 -W "Error -s"
+    # e.g. "#! /usr/bin/python3 -W Error -s" runs "/usr/bin/python3 "-W Error -s"
     # so shebang should have single '-' where flags are given and
     # flag might need argument for that reasons adding new flags is
     # between '-' and original flags
