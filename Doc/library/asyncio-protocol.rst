@@ -870,8 +870,8 @@ method, sends data and closes the transport when it receives the answer::
     class EchoClientProtocol:
         def __init__(self, message, on_con_lost):
             self.message = message
-            self.transport = None
             self.on_con_lost = on_con_lost
+            self.transport = None
 
         def connection_made(self, transport):
             self.transport = transport
@@ -927,9 +927,9 @@ Wait until a socket receives data using the
 
     class MyProtocol(asyncio.Protocol):
 
-        def __init__(self, loop):
+        def __init__(self, on_con_lost):
             self.transport = None
-            self.on_con_lost = loop.create_future()
+            self.on_con_lost = on_con_lost
 
         def connection_made(self, transport):
             self.transport = transport
@@ -954,9 +954,12 @@ Wait until a socket receives data using the
         # Create a pair of connected sockets
         rsock, wsock = socket.socketpair()
 
+        # Prepare a future to inform us when the connection is closed.
+        on_con_lost = loop.create_future()
+
         # Register the socket to wait for data.
         transport, protocol = await loop.create_connection(
-            lambda: MyProtocol(loop), sock=rsock)
+            lambda: MyProtocol(on_con_lost), sock=rsock)
 
         # Simulate the reception of data from the network.
         loop.call_soon(wsock.send, 'abc'.encode())
