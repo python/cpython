@@ -1782,6 +1782,16 @@ expression support in the :mod:`re` module).
    Return true if all cased characters [4]_ in the string are uppercase and
    there is at least one cased character, false otherwise.
 
+      >>> 'BANANA'.isupper()
+      True
+      >>> 'banana'.isupper()
+      False
+      >>> 'baNana'.isupper()
+      False
+      >>> ' '.isupper()
+      False
+
+
 
 .. method:: str.join(iterable)
 

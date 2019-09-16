@@ -6304,7 +6304,7 @@ static void
 heapctypesubclasswithfinalizer_finalize(PyObject *self)
 {
     PyObject *error_type, *error_value, *error_traceback, *m;
-    PyObject *oldtype = NULL, *newtype = NULL;
+    PyObject *oldtype = NULL, *newtype = NULL, *refcnt = NULL;
 
     /* Save the current exception, if any. */
     PyErr_Fetch(&error_type, &error_value, &error_traceback);
@@ -6322,18 +6322,26 @@ heapctypesubclasswithfinalizer_finalize(PyObject *self)
     if (PyObject_SetAttrString(self, "__class__", newtype) < 0) {
         goto cleanup_finalize;
     }
-    if (PyObject_SetAttrString(
-        oldtype, "refcnt_in_del", PyLong_FromSsize_t(Py_REFCNT(oldtype))) < 0) {
+    refcnt = PyLong_FromSsize_t(Py_REFCNT(oldtype));
+    if (refcnt == NULL) {
         goto cleanup_finalize;
     }
-    if (PyObject_SetAttrString(
-        newtype, "refcnt_in_del", PyLong_FromSsize_t(Py_REFCNT(newtype))) < 0) {
+    if (PyObject_SetAttrString(oldtype, "refcnt_in_del", refcnt) < 0) {
+        goto cleanup_finalize;
+    }
+    Py_DECREF(refcnt);
+    refcnt = PyLong_FromSsize_t(Py_REFCNT(newtype));
+    if (refcnt == NULL) {
+        goto cleanup_finalize;
+    }
+    if (PyObject_SetAttrString(newtype, "refcnt_in_del", refcnt) < 0) {
         goto cleanup_finalize;
     }
 
 cleanup_finalize:
     Py_XDECREF(oldtype);
     Py_XDECREF(newtype);
+    Py_XDECREF(refcnt);
 
     /* Restore the saved exception. */
     PyErr_Restore(error_type, error_value, error_traceback);

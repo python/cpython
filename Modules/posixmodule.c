@@ -4736,7 +4736,7 @@ exit:
 os.utime
 
     path: path_t(allow_fd='PATH_UTIME_HAVE_FD')
-    times: object = NULL
+    times: object = None
     *
     ns: object = NULL
     dir_fd: dir_fd(requires='futimensat') = None
@@ -4773,7 +4773,7 @@ dir_fd and follow_symlinks may not be available on your platform.
 static PyObject *
 os_utime_impl(PyObject *module, path_t *path, PyObject *times, PyObject *ns,
               int dir_fd, int follow_symlinks)
-/*[clinic end generated code: output=cfcac69d027b82cf input=081cdc54ca685385]*/
+/*[clinic end generated code: output=cfcac69d027b82cf input=2fbd62a2f228f8f4]*/
 {
 #ifdef MS_WINDOWS
     HANDLE hFile;
@@ -4786,14 +4786,14 @@ os_utime_impl(PyObject *module, path_t *path, PyObject *times, PyObject *ns,
 
     memset(&utime, 0, sizeof(utime_t));
 
-    if (times && (times != Py_None) && ns) {
+    if (times != Py_None && ns) {
         PyErr_SetString(PyExc_ValueError,
                      "utime: you may specify either 'times'"
                      " or 'ns' but not both");
         return NULL;
     }
 
-    if (times && (times != Py_None)) {
+    if (times != Py_None) {
         time_t a_sec, m_sec;
         long a_nsec, m_nsec;
         if (!PyTuple_CheckExact(times) || (PyTuple_Size(times) != 2)) {
@@ -11579,8 +11579,6 @@ os.startfile
     filepath: path_t
     operation: Py_UNICODE = NULL
 
-startfile(filepath [, operation])
-
 Start a file with its associated application.
 
 When "operation" is not specified or "open", this acts like
@@ -11602,7 +11600,7 @@ the underlying Win32 ShellExecute function doesn't work if it is.
 static PyObject *
 os_startfile_impl(PyObject *module, path_t *filepath,
                   const Py_UNICODE *operation)
-/*[clinic end generated code: output=66dc311c94d50797 input=63950bf2986380d0]*/
+/*[clinic end generated code: output=66dc311c94d50797 input=c940888a5390f039]*/
 {
     HINSTANCE rc;
 

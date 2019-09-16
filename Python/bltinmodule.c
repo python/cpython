@@ -2140,7 +2140,7 @@ builtin_repr(PyObject *module, PyObject *obj)
 round as builtin_round
 
     number: object
-    ndigits: object = NULL
+    ndigits: object = None
 
 Round a number to a given precision in decimal digits.
 
@@ -2150,7 +2150,7 @@ the return value has the same type as the number.  ndigits may be negative.
 
 static PyObject *
 builtin_round_impl(PyObject *module, PyObject *number, PyObject *ndigits)
-/*[clinic end generated code: output=ff0d9dd176c02ede input=854bc3a217530c3d]*/
+/*[clinic end generated code: output=ff0d9dd176c02ede input=275678471d7aca15]*/
 {
     PyObject *round, *result;
 
@@ -2168,7 +2168,7 @@ builtin_round_impl(PyObject *module, PyObject *number, PyObject *ndigits)
         return NULL;
     }
 
-    if (ndigits == NULL || ndigits == Py_None)
+    if (ndigits == Py_None)
         result = _PyObject_CallNoArg(round);
     else
         result = _PyObject_CallOneArg(round, ndigits);

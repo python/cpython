@@ -253,25 +253,50 @@ def _is_vartype_okay(vartype, ignoredtypes=None):
     return None
 
 
+PYOBJECT_RE = re.compile(r'''
+        ^
+        (
+            # must start with "static "
+            static \s+
+            (
+                identifier
+            )
+            \b
+        ) |
+        (
+            # may start with "static "
+            ( static \s+ )?
+            (
+                .*
+                (
+                    PyObject |
+                    PyTypeObject |
+                    _? Py \w+ Object |
+                    _PyArg_Parser |
+                    _Py_Identifier |
+                    traceback_t |
+                    PyAsyncGenASend |
+                    _PyAsyncGenWrappedValue |
+                    PyContext |
+                    method_cache_entry
+                )
+                \b
+            ) |
+            (
+                (
+                    _Py_IDENTIFIER |
+                    _Py_static_string
+                )
+                [(]
+            )
+        )
+        ''', re.VERBOSE)
+
+
 def _is_object(vartype):
-    if re.match(r'.*\bPy\w*Object\b', vartype):
-        return True
-    if '_PyArg_Parser ' in vartype:
-        return True
-    if vartype.startswith(('_Py_IDENTIFIER(', 'static _Py_Identifier',
-                           '_Py_static_string(')):
-        return True
-    if 'traceback_t' in vartype:
-        return True
-    if 'PyAsyncGenASend' in vartype:
-        return True
-    if '_PyAsyncGenWrappedValue' in vartype:
-        return True
-    if 'PyContext' in vartype:
-        return True
-    if 'method_cache_entry' in vartype:
-        return True
-    if vartype.startswith('static identifier '):
+    if 'PyDictKeysObject' in vartype:
+        return False
+    if PYOBJECT_RE.match(vartype):
         return True
     if vartype.endswith((' _Py_FalseStruct', ' _Py_TrueStruct')):
         return True

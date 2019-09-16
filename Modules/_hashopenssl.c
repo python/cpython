@@ -34,6 +34,18 @@
 
 #define MUNCH_SIZE INT_MAX
 
+#ifdef NID_sha3_224
+#define PY_OPENSSL_HAS_SHA3 1
+#endif
+
+#if defined(EVP_MD_FLAG_XOF) && defined(NID_shake128)
+#define PY_OPENSSL_HAS_SHAKE 1
+#endif
+
+#ifdef NID_blake2b512
+#define PY_OPENSSL_HAS_BLAKE2 1
+#endif
+
 typedef struct {
     PyObject_HEAD
     EVP_MD_CTX          *ctx;   /* OpenSSL message digest context */
@@ -81,6 +93,140 @@ _setException(PyObject *exc)
     return NULL;
 }
 /* LCOV_EXCL_STOP */
+
+static PyObject*
+py_digest_name(const EVP_MD *md)
+{
+    int nid = EVP_MD_nid(md);
+    const char *name = NULL;
+
+    /* Hard-coded names for well-known hashing algorithms.
+     * OpenSSL uses slightly different names algorithms like SHA3.
+     */
+    switch (nid) {
+    case NID_md5:
+        name = "md5";
+        break;
+    case NID_sha1:
+        name = "sha1";
+        break;
+    case NID_sha224:
+        name ="sha224";
+        break;
+    case NID_sha256:
+        name ="sha256";
+        break;
+    case NID_sha384:
+        name ="sha384";
+        break;
+    case NID_sha512:
+        name ="sha512";
+        break;
+#ifdef NID_sha512_224
+    case NID_sha512_224:
+        name ="sha512_224";
+        break;
+    case NID_sha512_256:
+        name ="sha512_256";
+        break;
+#endif
+#ifdef PY_OPENSSL_HAS_SHA3
+    case NID_sha3_224:
+        name ="sha3_224";
+        break;
+    case NID_sha3_256:
+        name ="sha3_256";
+        break;
+    case NID_sha3_384:
+        name ="sha3_384";
+        break;
+    case NID_sha3_512:
+        name ="sha3_512";
+        break;
+#endif
+#ifdef PY_OPENSSL_HAS_SHAKE
+    case NID_shake128:
+        name ="shake_128";
+        break;
+    case NID_shake256:
+        name ="shake_256";
+        break;
+#endif
+#ifdef PY_OPENSSL_HAS_BLAKE2
+    case NID_blake2s256:
+        name ="blake2s";
+        break;
+    case NID_blake2b512:
+        name ="blake2b";
+        break;
+#endif
+    default:
+        /* Ignore aliased names and only use long, lowercase name. The aliases
+         * pollute the list and OpenSSL appears to have its own definition of
+         * alias as the resulting list still contains duplicate and alternate
+         * names for several algorithms.
+         */
+        name = OBJ_nid2ln(nid);
+        if (name == NULL)
+            name = OBJ_nid2sn(nid);
+        break;
+    }
+
+    return PyUnicode_FromString(name);
+}
+
+static const EVP_MD*
+py_digest_by_name(const char *name)
+{
+    const EVP_MD *digest = EVP_get_digestbyname(name);
+
+    /* OpenSSL uses dash instead of underscore in names of some algorithms
+     * like SHA3 and SHAKE. Detect different spellings. */
+    if (digest == NULL) {
+        if (0) {}
+#ifdef NID_sha512_224
+        else if (!strcmp(name, "sha512_224") || !strcmp(name, "SHA512_224")) {
+            digest = EVP_sha512_224();
+        }
+        else if (!strcmp(name, "sha512_256") || !strcmp(name, "SHA512_256")) {
+            digest = EVP_sha512_256();
+        }
+#endif
+#ifdef PY_OPENSSL_HAS_SHA3
+        /* could be sha3_ or shake_, Python never defined upper case */
+        else if (!strcmp(name, "sha3_224")) {
+            digest = EVP_sha3_224();
+        }
+        else if (!strcmp(name, "sha3_256")) {
+            digest = EVP_sha3_256();
+        }
+        else if (!strcmp(name, "sha3_384")) {
+            digest = EVP_sha3_384();
+        }
+        else if (!strcmp(name, "sha3_512")) {
+            digest = EVP_sha3_512();
+        }
+#endif
+#ifdef PY_OPENSSL_HAS_SHAKE
+        else if (!strcmp(name, "shake_128")) {
+            digest = EVP_shake128();
+        }
+        else if (!strcmp(name, "shake_256")) {
+            digest = EVP_shake256();
+        }
+#endif
+#ifdef PY_OPENSSL_HAS_BLAKE2
+        else if (!strcmp(name, "blake2s256")) {
+            digest = EVP_blake2s256();
+        }
+        else if (!strcmp(name, "blake2b512")) {
+            digest = EVP_blake2b512();
+        }
+#endif
+    }
+
+    return digest;
+}
 
 static EVPobject *
 newEVPobject(void)
@@ -304,16 +450,7 @@ EVP_get_digest_size(EVPobject *self, void *closure)
 static PyObject *
 EVP_get_name(EVPobject *self, void *closure)
 {
-    const char *name = EVP_MD_name(EVP_MD_CTX_md(self->ctx));
-    PyObject *name_obj, *name_lower;
-
-    name_obj = PyUnicode_FromString(name);
-    if (!name_obj) {
-        return NULL;
-    }
-    name_lower = PyObject_CallMethod(name_obj, "lower", NULL);
-    Py_DECREF(name_obj);
-    return name_lower;
+    return py_digest_name(EVP_MD_CTX_md(self->ctx));
 }
 
 static PyGetSetDef EVP_getseters[] = {
@@ -337,7 +474,7 @@ static PyObject *
 EVP_repr(EVPobject *self)
 {
     PyObject *name_obj, *repr;
-    name_obj = EVP_get_name(self, NULL);
+    name_obj = py_digest_name(EVP_MD_CTX_md(self->ctx));
     if (!name_obj) {
         return NULL;
     }
@@ -403,9 +540,10 @@ static PyTypeObject EVPtype = {
     0,                  /* tp_dictoffset */
 };
 
+\
 static PyObject *
 EVPnew(const EVP_MD *digest,
-       const unsigned char *cp, Py_ssize_t len)
+       const unsigned char *cp, Py_ssize_t len, int usedforsecurity)
 {
     int result = 0;
     EVPobject *self;
@@ -417,6 +555,13 @@ EVPnew(const EVP_MD *digest,
 
     if ((self = newEVPobject()) == NULL)
         return NULL;
+
+    if (!usedforsecurity) {
+#ifdef EVP_MD_CTX_FLAG_NON_FIPS_ALLOW
+        EVP_MD_CTX_set_flags(self->ctx, EVP_MD_CTX_FLAG_NON_FIPS_ALLOW);
+#endif
+    }
+
 
     if (!EVP_DigestInit(self->ctx, digest)) {
         _setException(PyExc_ValueError);
@@ -448,7 +593,9 @@ EVPnew(const EVP_MD *digest,
 _hashlib.new as EVP_new
 
     name as name_obj: object
-    string as data_obj: object(py_default="b''") = NULL
+    string as data_obj: object(c_default="NULL") = b''
+    *
+    usedforsecurity: bool = True
 
 Return a new hash object using the named algorithm.
 
@@ -459,8 +606,9 @@ The MD5 and SHA1 algorithms are always supported.
 [clinic start generated code]*/
 
 static PyObject *
-EVP_new_impl(PyObject *module, PyObject *name_obj, PyObject *data_obj)
-/*[clinic end generated code: output=9e7cf664e04b0226 input=1c46e40e0fec91f3]*/
+EVP_new_impl(PyObject *module, PyObject *name_obj, PyObject *data_obj,
+             int usedforsecurity)
+/*[clinic end generated code: output=ddd5053f92dffe90 input=c24554d0337be1b0]*/
 {
     Py_buffer view = { 0 };
     PyObject *ret_obj;
@@ -475,9 +623,11 @@ EVP_new_impl(PyObject *module, PyObject *name_obj, PyObject *data_obj)
     if (data_obj)
         GET_BUFFER_VIEW_OR_ERROUT(data_obj, &view);
 
-    digest = EVP_get_digestbyname(name);
+    digest = py_digest_by_name(name);
 
-    ret_obj = EVPnew(digest, (unsigned char*)view.buf, view.len);
+    ret_obj = EVPnew(digest,
+                     (unsigned char*)view.buf, view.len,
+                     usedforsecurity);
 
     if (data_obj)
         PyBuffer_Release(&view);
@@ -485,7 +635,8 @@ EVP_new_impl(PyObject *module, PyObject *name_obj, PyObject *data_obj)
 }
 
 static PyObject*
-EVP_fast_new(PyObject *module, PyObject *data_obj, const EVP_MD *digest)
+EVP_fast_new(PyObject *module, PyObject *data_obj, const EVP_MD *digest,
+             int usedforsecurity)
 {
     Py_buffer view = { 0 };
     PyObject *ret_obj;
@@ -493,7 +644,9 @@ EVP_fast_new(PyObject *module, PyObject *data_obj, const EVP_MD *digest)
     if (data_obj)
         GET_BUFFER_VIEW_OR_ERROUT(data_obj, &view);
 
-    ret_obj = EVPnew(digest, (unsigned char*)view.buf, view.len);
+    ret_obj = EVPnew(digest,
+                     (unsigned char*)view.buf, view.len,
+                     usedforsecurity);
 
     if (data_obj)
         PyBuffer_Release(&view);
@@ -505,16 +658,19 @@ EVP_fast_new(PyObject *module, PyObject *data_obj, const EVP_MD *digest)
 _hashlib.openssl_md5
 
     string as data_obj: object(py_default="b''") = NULL
+    *
+    usedforsecurity: bool = True
 
 Returns a md5 hash object; optionally initialized with a string
 
 [clinic start generated code]*/
 
 static PyObject *
-_hashlib_openssl_md5_impl(PyObject *module, PyObject *data_obj)
-/*[clinic end generated code: output=6caae75b73e22c3f input=52010d3869e1b1a7]*/
+_hashlib_openssl_md5_impl(PyObject *module, PyObject *data_obj,
+                          int usedforsecurity)
+/*[clinic end generated code: output=87b0186440a44f8c input=990e36d5e689b16e]*/
 {
-    return EVP_fast_new(module, data_obj, EVP_md5());
+    return EVP_fast_new(module, data_obj, EVP_md5(), usedforsecurity);
 }
 
 
@@ -522,16 +678,19 @@ _hashlib_openssl_md5_impl(PyObject *module, PyObject *data_obj)
 _hashlib.openssl_sha1
 
     string as data_obj: object(py_default="b''") = NULL
+    *
+    usedforsecurity: bool = True
 
 Returns a sha1 hash object; optionally initialized with a string
 
 [clinic start generated code]*/
 
 static PyObject *
-_hashlib_openssl_sha1_impl(PyObject *module, PyObject *data_obj)
-/*[clinic end generated code: output=07606d8f75153e61 input=16807d30e4aa8ae9]*/
+_hashlib_openssl_sha1_impl(PyObject *module, PyObject *data_obj,
+                           int usedforsecurity)
+/*[clinic end generated code: output=6813024cf690670d input=948f2f4b6deabc10]*/
 {
-    return EVP_fast_new(module, data_obj, EVP_sha1());
+    return EVP_fast_new(module, data_obj, EVP_sha1(), usedforsecurity);
 }
 
 
@@ -539,16 +698,19 @@ _hashlib_openssl_sha1_impl(PyObject *module, PyObject *data_obj)
 _hashlib.openssl_sha224
 
     string as data_obj: object(py_default="b''") = NULL
+    *
+    usedforsecurity: bool = True
 
 Returns a sha224 hash object; optionally initialized with a string
 
 [clinic start generated code]*/
 
 static PyObject *
-_hashlib_openssl_sha224_impl(PyObject *module, PyObject *data_obj)
-/*[clinic end generated code: output=55e848761bcef0c9 input=5dbc2f1d84eb459b]*/
+_hashlib_openssl_sha224_impl(PyObject *module, PyObject *data_obj,
+                             int usedforsecurity)
+/*[clinic end generated code: output=a2dfe7cc4eb14ebb input=f9272821fadca505]*/
 {
-    return EVP_fast_new(module, data_obj, EVP_sha224());
+    return EVP_fast_new(module, data_obj, EVP_sha224(), usedforsecurity);
 }
 
 
@@ -556,16 +718,19 @@ _hashlib_openssl_sha224_impl(PyObject *module, PyObject *data_obj)
 _hashlib.openssl_sha256
 
     string as data_obj: object(py_default="b''") = NULL
+    *
+    usedforsecurity: bool = True
 
 Returns a sha256 hash object; optionally initialized with a string
 
 [clinic start generated code]*/
 
 static PyObject *
-_hashlib_openssl_sha256_impl(PyObject *module, PyObject *data_obj)
-/*[clinic end generated code: output=05851d7cce34ac65 input=a68a5d21cda5a80f]*/
+_hashlib_openssl_sha256_impl(PyObject *module, PyObject *data_obj,
+                             int usedforsecurity)
+/*[clinic end generated code: output=1f874a34870f0a68 input=549fad9d2930d4c5]*/
 {
-    return EVP_fast_new(module, data_obj, EVP_sha256());
+    return EVP_fast_new(module, data_obj, EVP_sha256(), usedforsecurity);
 }
 
 
@@ -573,16 +738,19 @@ _hashlib_openssl_sha256_impl(PyObject *module, PyObject *data_obj)
 _hashlib.openssl_sha384
 
     string as data_obj: object(py_default="b''") = NULL
+    *
+    usedforsecurity: bool = True
 
 Returns a sha384 hash object; optionally initialized with a string
 
 [clinic start generated code]*/
 
 static PyObject *
-_hashlib_openssl_sha384_impl(PyObject *module, PyObject *data_obj)
-/*[clinic end generated code: output=5101a4704a932c2f input=6bdfa006622b64ea]*/
+_hashlib_openssl_sha384_impl(PyObject *module, PyObject *data_obj,
+                             int usedforsecurity)
+/*[clinic end generated code: output=58529eff9ca457b2 input=48601a6e3bf14ad7]*/
 {
-    return EVP_fast_new(module, data_obj, EVP_sha384());
+    return EVP_fast_new(module, data_obj, EVP_sha384(), usedforsecurity);
 }
 
 
@@ -590,16 +758,19 @@ _hashlib_openssl_sha384_impl(PyObject *module, PyObject *data_obj)
 _hashlib.openssl_sha512
 
     string as data_obj: object(py_default="b''") = NULL
+    *
+    usedforsecurity: bool = True
 
 Returns a sha512 hash object; optionally initialized with a string
 
 [clinic start generated code]*/
 
 static PyObject *
-_hashlib_openssl_sha512_impl(PyObject *module, PyObject *data_obj)
-/*[clinic end generated code: output=20c8e63ee560a5cb input=ece50182ad4b76a6]*/
+_hashlib_openssl_sha512_impl(PyObject *module, PyObject *data_obj,
+                             int usedforsecurity)
+/*[clinic end generated code: output=2c744c9e4a40d5f6 input=c5c46a2a817aa98f]*/
 {
-    return EVP_fast_new(module, data_obj, EVP_sha512());
+    return EVP_fast_new(module, data_obj, EVP_sha512(), usedforsecurity);
 }
 
 
@@ -889,21 +1060,17 @@ typedef struct _internal_name_mapper_state {
 
 /* A callback function to pass to OpenSSL's OBJ_NAME_do_all(...) */
 static void
-_openssl_hash_name_mapper(const OBJ_NAME *openssl_obj_name, void *arg)
+_openssl_hash_name_mapper(const EVP_MD *md, const char *from,
+                          const char *to, void *arg)
 {
     _InternalNameMapperState *state = (_InternalNameMapperState *)arg;
     PyObject *py_name;
 
     assert(state != NULL);
-    if (openssl_obj_name == NULL)
-        return;
-    /* Ignore aliased names, they pollute the list and OpenSSL appears to
-     * have its own definition of alias as the resulting list still
-     * contains duplicate and alternate names for several algorithms.     */
-    if (openssl_obj_name->alias)
+    if (md == NULL)
         return;
 
-    py_name = PyUnicode_FromString(openssl_obj_name->name);
+    py_name = py_digest_name(md);
     if (py_name == NULL) {
         state->error = 1;
     } else {
@@ -925,7 +1092,7 @@ generate_hash_name_list(void)
         return NULL;
     state.error = 0;
 
-    OBJ_NAME_do_all(OBJ_NAME_TYPE_MD_METH, &_openssl_hash_name_mapper, &state);
+    EVP_MD_do_all(&_openssl_hash_name_mapper, &state);
 
     if (state.error) {
         Py_DECREF(state.set);
