@@ -1,0 +1,2 @@
+Fix default mock name in :meth:`unittest.mock.Mock.assert_called` exceptions.
+Patch by Abraham Toriz Cruz.
