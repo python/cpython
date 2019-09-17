@@ -1,1 +1,2 @@
-Properly report the mock name in :meth:`unittest.mock.assert_called` error
+Fix default mock name in :meth:`unittest.mock.Mock.assert_called` exceptions.
+Patch by Abraham Toriz Cruz.
