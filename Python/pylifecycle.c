@@ -1975,13 +1975,14 @@ done:
 
 
 static void
-_Py_FatalError_DumpTracebacks(int fd)
+_Py_FatalError_DumpTracebacks(int fd, PyInterpreterState *interp,
+                              PyThreadState *tstate)
 {
     fputc('\n', stderr);
     fflush(stderr);
 
     /* display the current Python stack */
-    _Py_DumpTracebackThreads(fd, NULL, NULL);
+    _Py_DumpTracebackThreads(fd, interp, tstate);
 }
 
 /* Print the current exception (if an exception is set) with its traceback,
@@ -2079,10 +2080,39 @@ fatal_output_debug(const char *msg)
 }
 #endif
 
+
+static void
+fatal_error_dump_runtime(FILE *stream, _PyRuntimeState *runtime)
+{
+    fprintf(stream, "Python runtime state: ");
+    if (runtime->finalizing) {
+        fprintf(stream, "finalizing (tstate=%p)", runtime->finalizing);
+    }
+    else if (runtime->initialized) {
+        fprintf(stream, "initialized");
+    }
+    else if (runtime->core_initialized) {
+        fprintf(stream, "core initialized");
+    }
+    else if (runtime->preinitialized) {
+        fprintf(stream, "preinitialized");
+    }
+    else if (runtime->preinitializing) {
+        fprintf(stream, "preinitializing");
+    }
+    else {
+        fprintf(stream, "unknown");
+    }
+    fprintf(stream, "\n");
+    fflush(stream);
+}
+
+
 static void _Py_NO_RETURN
 fatal_error(const char *prefix, const char *msg, int status)
 {
-    const int fd = fileno(stderr);
+    FILE *stream = stderr;
+    const int fd = fileno(stream);
     static int reentrant = 0;
 
     if (reentrant) {
@@ -2092,45 +2122,48 @@ fatal_error(const char *prefix, const char *msg, int status)
     }
     reentrant = 1;
 
-    fprintf(stderr, "Fatal Python error: ");
+    fprintf(stream, "Fatal Python error: ");
     if (prefix) {
-        fputs(prefix, stderr);
-        fputs(": ", stderr);
+        fputs(prefix, stream);
+        fputs(": ", stream);
     }
     if (msg) {
-        fputs(msg, stderr);
+        fputs(msg, stream);
     }
     else {
-        fprintf(stderr, "<message not set>");
+        fprintf(stream, "<message not set>");
     }
-    fputs("\n", stderr);
-    fflush(stderr); /* it helps in Windows debug build */
+    fputs("\n", stream);
+    fflush(stream); /* it helps in Windows debug build */
+
+    _PyRuntimeState *runtime = &_PyRuntime;
+    fatal_error_dump_runtime(stream, runtime);
+
+    PyThreadState *tstate = _PyRuntimeState_GetThreadState(runtime);
+    PyInterpreterState *interp = NULL;
+    if (tstate != NULL) {
+        interp = tstate->interp;
+    }
 
     /* Check if the current thread has a Python thread state
-       and holds the GIL */
-    PyThreadState *tss_tstate = PyGILState_GetThisThreadState();
-    if (tss_tstate != NULL) {
-        PyThreadState *tstate = _PyThreadState_GET();
-        if (tss_tstate != tstate) {
-            /* The Python thread does not hold the GIL */
-            tss_tstate = NULL;
-        }
-    }
-    else {
-        /* Py_FatalError() has been called from a C thread
-           which has no Python thread state. */
-    }
-    int has_tstate_and_gil = (tss_tstate != NULL);
+       and holds the GIL.
 
+       tss_tstate is NULL if Py_FatalError() is called from a C thread which
+       has no Python thread state.
+
+       tss_tstate != tstate if the current Python thread does not hold the GIL.
+       */
+    PyThreadState *tss_tstate = PyGILState_GetThisThreadState();
+    int has_tstate_and_gil = (tss_tstate != NULL && tss_tstate == tstate);
     if (has_tstate_and_gil) {
         /* If an exception is set, print the exception with its traceback */
         if (!_Py_FatalError_PrintExc(fd)) {
             /* No exception is set, or an exception is set without traceback */
-            _Py_FatalError_DumpTracebacks(fd);
+            _Py_FatalError_DumpTracebacks(fd, interp, tss_tstate);
         }
     }
     else {
-        _Py_FatalError_DumpTracebacks(fd);
+        _Py_FatalError_DumpTracebacks(fd, interp, tss_tstate);
     }
 
     /* The main purpose of faulthandler is to display the traceback.
