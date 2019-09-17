@@ -753,7 +753,7 @@ class ThreadPoolExecutorTest(ThreadPoolMixin, ExecutorTest, BaseTestCase):
 
         self.executor.map(record_finished, range(10))
         self.executor.shutdown(wait=True)
-        self.assertCountEqual(finished, range(10))
+        self.assertPermutation(finished, range(10))
 
     def test_default_workers(self):
         executor = self.executor_type()

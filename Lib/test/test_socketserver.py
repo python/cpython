@@ -467,7 +467,7 @@ class MiscTestCase(unittest.TestCase):
                 mod_object = getattr(socketserver, name)
                 if getattr(mod_object, '__module__', None) == 'socketserver':
                     expected.append(name)
-        self.assertCountEqual(socketserver.__all__, expected)
+        self.assertPermutation(socketserver.__all__, expected)
 
     def test_shutdown_request_called_if_verify_request_false(self):
         # Issue #26309: BaseServer should call shutdown_request even if

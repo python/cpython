@@ -1222,9 +1222,8 @@ class TestCase(object):
         self.fail(self._formatMessage(msg, standardMsg))
 
 
-    def assertCountEqual(self, first, second, msg=None):
-        """Asserts that two iterables have the same elements, the same number of
-        times, without regard to order.
+    def assertPermutation(self, first, second, msg=None):
+        """Asserts that first is a permutation of second.
 
             self.assertEqual(Counter(list(first)),
                              Counter(list(second)))
@@ -1253,6 +1252,8 @@ class TestCase(object):
             standardMsg = self._truncateMessage(standardMsg, diffMsg)
             msg = self._formatMessage(msg, standardMsg)
             self.fail(msg)
+
+    assertCountEqual = assertPermutation
 
     def assertMultiLineEqual(self, first, second, msg=None):
         """Assert that two multi-line strings are equal."""

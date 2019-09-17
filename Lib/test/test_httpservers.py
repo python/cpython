@@ -1166,7 +1166,7 @@ class MiscTestCase(unittest.TestCase):
             module_object = getattr(server, name)
             if getattr(module_object, '__module__', None) == 'http.server':
                 expected.append(name)
-        self.assertCountEqual(server.__all__, expected)
+        self.assertPermutation(server.__all__, expected)
 
 
 class ScriptTestCase(unittest.TestCase):

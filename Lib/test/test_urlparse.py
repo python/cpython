@@ -994,7 +994,7 @@ class UrlParseTestCase(unittest.TestCase):
             object = getattr(urllib.parse, name)
             if getattr(object, '__module__', None) == 'urllib.parse':
                 expected.append(name)
-        self.assertCountEqual(urllib.parse.__all__, expected)
+        self.assertPermutation(urllib.parse.__all__, expected)
 
     def test_urlsplit_normalization(self):
         # Certain characters should never occur in the netloc,

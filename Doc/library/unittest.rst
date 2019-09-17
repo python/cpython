@@ -1151,9 +1151,10 @@ Test cases
    | :meth:`assertNotRegex(s, r)           | ``not r.search(s)``            | 3.2          |
    | <TestCase.assertNotRegex>`            |                                |              |
    +---------------------------------------+--------------------------------+--------------+
-   | :meth:`assertCountEqual(a, b)         | *a* and *b* have the same      | 3.2          |
-   | <TestCase.assertCountEqual>`          | elements in the same number,   |              |
-   |                                       | regardless of their order.     |              |
+   | :meth:`assertPermutation(a, b)        | *a* is a permutation of *b*:   | 3.9          |
+   | <TestCase.assertPermutation>`         |  they have the same            |              |
+   |                                       |  elements in the same number,  |              |
+   |                                       |  regardless of their order.    |              |
    +---------------------------------------+--------------------------------+--------------+
 
 
@@ -1212,11 +1213,12 @@ Test cases
          for :meth:`.assertNotRegex`.
 
 
-   .. method:: assertCountEqual(first, second, msg=None)
+   .. method:: assertPermutation(first, second, msg=None)
+               assertCountEqual(first, second, msg=None)
 
-      Test that sequence *first* contains the same elements as *second*,
-      regardless of their order. When they don't, an error message listing the
-      differences between the sequences will be generated.
+      Test that sequence *first* is a permutation of sequence *second*:
+      If not, an error message listing the differences between
+      the sequences will be generated.
 
       Duplicate elements are *not* ignored when comparing *first* and
       *second*. It verifies whether each element has the same count in both
@@ -1224,7 +1226,7 @@ Test cases
       ``assertEqual(Counter(list(first)), Counter(list(second)))``
       but works with sequences of unhashable objects as well.
 
-      .. versionadded:: 3.2
+      .. versionadded:: 3.9
 
 
    .. _type-specific-methods:

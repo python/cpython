@@ -2759,7 +2759,7 @@ def check__all__(test_case, module, name_of_module=None, extra=(),
                 (not hasattr(obj, '__module__') and
                  not isinstance(obj, types.ModuleType))):
             expected.add(name)
-    test_case.assertCountEqual(module.__all__, expected)
+    test_case.assertPermutation(module.__all__, expected)
 
 
 class SuppressCrashReport:

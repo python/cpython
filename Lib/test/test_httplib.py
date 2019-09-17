@@ -1348,7 +1348,7 @@ class OfflineTest(TestCase):
             module_object = getattr(client, name)
             if getattr(module_object, "__module__", None) == "http.client":
                 expected.add(name)
-        self.assertCountEqual(client.__all__, expected)
+        self.assertPermutation(client.__all__, expected)
 
     def test_responses(self):
         self.assertEqual(client.responses[client.NOT_FOUND], "Not Found")

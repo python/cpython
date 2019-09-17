@@ -1154,7 +1154,7 @@ class TestShutil(unittest.TestCase):
         self.assertTrue(os.path.isfile(tarball))
         self.assertTrue(tarfile.is_tarfile(tarball))
         with tarfile.open(tarball, 'r:gz') as tf:
-            self.assertCountEqual(tf.getnames(),
+            self.assertPermutation(tf.getnames(),
                                   ['.', './sub', './sub2',
                                    './file1', './file2', './sub/file3'])
 
@@ -1165,7 +1165,7 @@ class TestShutil(unittest.TestCase):
         self.assertTrue(os.path.isfile(tarball))
         self.assertTrue(tarfile.is_tarfile(tarball))
         with tarfile.open(tarball, 'r') as tf:
-            self.assertCountEqual(tf.getnames(),
+            self.assertPermutation(tf.getnames(),
                                   ['.', './sub', './sub2',
                                   './file1', './file2', './sub/file3'])
 
@@ -1242,7 +1242,7 @@ class TestShutil(unittest.TestCase):
         self.assertTrue(os.path.isfile(res))
         self.assertTrue(zipfile.is_zipfile(res))
         with zipfile.ZipFile(res) as zf:
-            self.assertCountEqual(zf.namelist(),
+            self.assertPermutation(zf.namelist(),
                     ['dist/', 'dist/sub/', 'dist/sub2/',
                      'dist/file1', 'dist/file2', 'dist/sub/file3',
                      'outer'])
@@ -1255,7 +1255,7 @@ class TestShutil(unittest.TestCase):
         self.assertTrue(os.path.isfile(res))
         self.assertTrue(zipfile.is_zipfile(res))
         with zipfile.ZipFile(res) as zf:
-            self.assertCountEqual(zf.namelist(),
+            self.assertPermutation(zf.namelist(),
                     ['dist/', 'dist/sub/', 'dist/sub2/',
                      'dist/file1', 'dist/file2', 'dist/sub/file3'])
 

@@ -178,7 +178,7 @@ class TestCase(unittest.TestCase):
         scheduler.enterabs(now, 1, fun, argument=('a', 'b'))
         scheduler.enterabs(now, 1, fun, argument=(1, 2), kwargs={"foo": 3})
         scheduler.run()
-        self.assertCountEqual(seq, [
+        self.assertPermutation(seq, [
             ((), {}),
             ((1, 2), {}),
             (('a', 'b'), {}),

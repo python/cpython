@@ -49,7 +49,7 @@ class AllTest(unittest.TestCase):
                 keys = set(names)
                 all_list = sys.modules[modname].__all__
                 all_set = set(all_list)
-                self.assertCountEqual(all_set, all_list, "in module {}".format(modname))
+                self.assertPermutation(all_set, all_list, "in module {}".format(modname))
                 self.assertEqual(keys, all_set, "in module {}".format(modname))
 
     def walk_modules(self, basedir, modpath):

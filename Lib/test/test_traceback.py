@@ -1180,7 +1180,7 @@ class MiscTest(unittest.TestCase):
             module_object = getattr(traceback, name)
             if getattr(module_object, '__module__', None) == 'traceback':
                 expected.add(name)
-        self.assertCountEqual(traceback.__all__, expected)
+        self.assertPermutation(traceback.__all__, expected)
 
 
 if __name__ == "__main__":

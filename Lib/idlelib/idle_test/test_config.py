@@ -75,8 +75,8 @@ class IdleConfParserTest(unittest.TestCase):
         parser = config.IdleConfParser('')
         parser.read_string(self.config)
         get_list = parser.GetOptionList
-        self.assertCountEqual(get_list('one'), ['one', 'two', 'three'])
-        self.assertCountEqual(get_list('two'), ['one', 'two', 'three'])
+        self.assertPermutation(get_list('one'), ['one', 'two', 'three'])
+        self.assertPermutation(get_list('two'), ['one', 'two', 'three'])
         self.assertEqual(get_list('not exist'), [])
 
     def test_load_nothing(self):
@@ -113,7 +113,7 @@ class IdleUserConfParserTest(unittest.TestCase):
 
         # Setting option in new section should create section and return True.
         self.assertTrue(parser.SetOption('Bar', 'bar', 'true'))
-        self.assertCountEqual(parser.sections(), ['Bar', 'Foo'])
+        self.assertPermutation(parser.sections(), ['Bar', 'Foo'])
         self.assertEqual(parser.Get('Bar', 'bar'), 'true')
 
     def test_remove_option(self):
@@ -134,7 +134,7 @@ class IdleUserConfParserTest(unittest.TestCase):
         parser.AddSection('Foo')
         parser.AddSection('Foo')
         parser.AddSection('Bar')
-        self.assertCountEqual(parser.sections(), ['Bar', 'Foo'])
+        self.assertPermutation(parser.sections(), ['Bar', 'Foo'])
 
     def test_remove_empty_sections(self):
         parser = self.new_parser()
@@ -142,7 +142,7 @@ class IdleUserConfParserTest(unittest.TestCase):
         parser.AddSection('Foo')
         parser.AddSection('Bar')
         parser.SetOption('Idle', 'name', 'val')
-        self.assertCountEqual(parser.sections(), ['Bar', 'Foo', 'Idle'])
+        self.assertPermutation(parser.sections(), ['Bar', 'Foo', 'Idle'])
         parser.RemoveEmptySections()
         self.assertEqual(parser.sections(), ['Idle'])
 
@@ -157,7 +157,7 @@ class IdleUserConfParserTest(unittest.TestCase):
         parser.SetOption('Foo', 'bar', 'false')
         parser.AddSection('Bar')
         self.assertFalse(parser.IsEmpty())
-        self.assertCountEqual(parser.sections(), ['Foo'])
+        self.assertPermutation(parser.sections(), ['Foo'])
 
     def test_save(self):
         with tempfile.TemporaryDirectory() as tdir:
@@ -274,8 +274,8 @@ class IdleConfTest(unittest.TestCase):
                 conf.CreateConfigHandlers()
 
         # Check keys are equal
-        self.assertCountEqual(conf.defaultCfg.keys(), conf.config_types)
-        self.assertCountEqual(conf.userCfg.keys(), conf.config_types)
+        self.assertPermutation(conf.defaultCfg.keys(), conf.config_types)
+        self.assertPermutation(conf.userCfg.keys(), conf.config_types)
 
         # Check conf parser are correct type
         for default_parser in conf.defaultCfg.values():
@@ -340,11 +340,11 @@ class IdleConfTest(unittest.TestCase):
     def test_get_section_list(self):
         conf = self.mock_config()
 
-        self.assertCountEqual(
+        self.assertPermutation(
             conf.GetSectionList('default', 'main'),
             ['General', 'EditorWindow', 'PyShell', 'Indent', 'Theme',
              'Keys', 'History', 'HelpFiles'])
-        self.assertCountEqual(
+        self.assertPermutation(
             conf.GetSectionList('user', 'main'),
             ['General', 'EditorWindow', 'PyShell', 'Indent', 'Theme',
              'Keys', 'History', 'HelpFiles'])
@@ -432,7 +432,7 @@ class IdleConfTest(unittest.TestCase):
     def test_remove_key_bind_names(self):
         conf = self.mock_config()
 
-        self.assertCountEqual(
+        self.assertPermutation(
             conf.RemoveKeyBindNames(conf.GetSectionList('default', 'extensions')),
             ['AutoComplete', 'CodeContext', 'FormatParagraph', 'ParenMatch', 'ZzDummy'])
 
@@ -534,7 +534,7 @@ class IdleConfTest(unittest.TestCase):
         self.assertEqual(conf.GetExtraHelpSourceList('user'), [])
         with self.assertRaises(config.InvalidConfigSet):
             self.assertEqual(conf.GetExtraHelpSourceList('bad'), [])
-        self.assertCountEqual(
+        self.assertPermutation(
             conf.GetAllExtraHelpSourcesList(),
             conf.GetExtraHelpSourceList('default') + conf.GetExtraHelpSourceList('user'))
 
@@ -547,7 +547,7 @@ class IdleConfTest(unittest.TestCase):
                          [('IDLE', 'C:/Programs/Python36/Lib/idlelib/help.html', '1'),
                           ('Pillow', 'https://pillow.readthedocs.io/en/latest/', '2'),
                           ('Python', 'https://python.org', '4')])
-        self.assertCountEqual(
+        self.assertPermutation(
             conf.GetAllExtraHelpSourcesList(),
             conf.GetExtraHelpSourceList('default') + conf.GetExtraHelpSourceList('user'))
 

@@ -211,7 +211,7 @@ class Test(unittest.TestCase):
             d = Descriptor()
             e = Descriptor()
 
-        self.assertCountEqual(notified, ['a', 'b', 'c', 'd', 'e'])
+        self.assertPermutation(notified, ['a', 'b', 'c', 'd', 'e'])
 
     def test_errors(self):
         class MyMeta(type):

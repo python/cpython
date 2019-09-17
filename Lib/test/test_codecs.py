@@ -1679,7 +1679,7 @@ class CodecsModuleTest(unittest.TestCase):
             "BOM32_BE", "BOM32_LE", "BOM64_BE", "BOM64_LE",  # Undocumented
             "StreamReaderWriter", "StreamRecoder",
         )
-        self.assertCountEqual(api, codecs.__all__)
+        self.assertPermutation(api, codecs.__all__)
         for api in codecs.__all__:
             getattr(codecs, api)
 

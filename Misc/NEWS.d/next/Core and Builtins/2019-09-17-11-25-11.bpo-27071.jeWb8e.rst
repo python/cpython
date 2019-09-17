@@ -1,0 +1,1 @@
+rename assertCountEqual to assertPermutation and alias assertCountEqual to assertPermutation
