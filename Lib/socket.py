@@ -12,6 +12,8 @@ Functions:
 socket() -- create a new socket object
 socketpair() -- create a pair of new socket objects [*]
 fromfd() -- create a socket object from an open file descriptor [*]
+send_fds() -- Send file descriptor to the socket.
+recv_fds() -- Recieve file descriptors from the socket.
 fromshare() -- create a socket object from data received from socket.share() [*]
 gethostname() -- return the current hostname
 gethostbyname() -- map a hostname to its IP number
@@ -541,6 +543,40 @@ def fromfd(fd, family, type, proto=0):
     """
     nfd = dup(fd)
     return socket(family, type, proto, nfd)
+
+if hasattr(_socket.socket, "sendmsg"):
+    import array
+
+    def send_fds(sock, buffers, fds, flags=0, address=None):
+        """ send_fds(sock, buffers, fds[, flags[, address]]) -> integer
+
+        Send the list of file descriptors fds over an AF_UNIX socket.
+        """
+        return sock.sendmsg(buffers, [(_socket.SOL_SOCKET,
+            _socket.SCM_RIGHTS, array.array("i", fds))])
+    __all__.append("send_fds")
+
+if hasattr(_socket.socket, "recvmsg"):
+    import array
+
+    def recv_fds(sock, bufsize, maxfds, flags=0):
+        """ recv_fds(sock, bufsize, maxfds[, flags]) -> (data, list of file
+        descriptors, msg_flags, address)
+
+        Receive up to maxfds file descriptors returning the message
+        data and a list containing the descriptors.
+        """
+        # Array of ints
+        fds = array.array("i")
+        msg, ancdata, flags, addr = sock.recvmsg(bufsize,
+            _socket.CMSG_LEN(maxfds * fds.itemsize))
+        for cmsg_level, cmsg_type, cmsg_data in ancdata:
+            if (cmsg_level == _socket.SOL_SOCKET and cmsg_type == _socket.SCM_RIGHTS):
+                fds.frombytes(cmsg_data[:
+                        len(cmsg_data) - (len(cmsg_data) % fds.itemsize)])
+
+        return msg, list(fds), flags, addr
+    __all__.append("recv_fds")
 
 if hasattr(_socket.socket, "share"):
     def fromshare(info):

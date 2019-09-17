@@ -703,6 +703,7 @@ def _get_compressor(compress_type, compresslevel=None):
 
 
 def _get_decompressor(compress_type):
+    _check_compression(compress_type)
     if compress_type == ZIP_STORED:
         return None
     elif compress_type == ZIP_DEFLATED:

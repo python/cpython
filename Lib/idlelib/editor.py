@@ -116,7 +116,7 @@ class EditorWindow(object):
             self.tkinter_vars = {}  # keys: Tkinter event names
                                     # values: Tkinter variable instances
             self.top.instance_dict = {}
-        self.recent_files_path = os.path.join(
+        self.recent_files_path = idleConf.userdir and os.path.join(
                 idleConf.userdir, 'recent-files.lst')
 
         self.prompt_last_line = ''  # Override in PyShell
@@ -924,9 +924,11 @@ class EditorWindow(object):
 
     def update_recent_files_list(self, new_file=None):
         "Load and update the recent files list and menus"
+        # TODO: move to iomenu.
         rf_list = []
-        if os.path.exists(self.recent_files_path):
-            with open(self.recent_files_path, 'r',
+        file_path = self.recent_files_path
+        if file_path and os.path.exists(file_path):
+            with open(file_path, 'r',
                       encoding='utf_8', errors='replace') as rf_list_file:
                 rf_list = rf_list_file.readlines()
         if new_file:
@@ -942,19 +944,19 @@ class EditorWindow(object):
         rf_list = [path for path in rf_list if path not in bad_paths]
         ulchars = "1234567890ABCDEFGHIJK"
         rf_list = rf_list[0:len(ulchars)]
-        try:
-            with open(self.recent_files_path, 'w',
-                        encoding='utf_8', errors='replace') as rf_file:
-                rf_file.writelines(rf_list)
-        except OSError as err:
-            if not getattr(self.root, "recentfilelist_error_displayed", False):
-                self.root.recentfilelist_error_displayed = True
-                tkMessageBox.showwarning(title='IDLE Warning',
-                    message="Cannot update File menu Recent Files list. "
-                            "Your operating system says:\n%s\n"
-                            "Select OK and IDLE will continue without updating."
-                        % self._filename_to_unicode(str(err)),
-                    parent=self.text)
+        if file_path:
+            try:
+                with open(file_path, 'w',
+                          encoding='utf_8', errors='replace') as rf_file:
+                    rf_file.writelines(rf_list)
+            except OSError as err:
+                if not getattr(self.root, "recentfiles_message", False):
+                    self.root.recentfiles_message = True
+                    tkMessageBox.showwarning(title='IDLE Warning',
+                        message="Cannot save Recent Files list to disk.\n"
+                                f"  {err}\n"
+                                "Select OK to continue.",
+                        parent=self.text)
         # for each edit window instance, construct the recent files menu
         for instance in self.top.instance_dict:
             menu = instance.recent_files_menu
@@ -1059,10 +1061,13 @@ class EditorWindow(object):
             return self.io.maybesave()
 
     def close(self):
-        reply = self.maybesave()
-        if str(reply) != "cancel":
-            self._close()
-        return reply
+        try:
+            reply = self.maybesave()
+            if str(reply) != "cancel":
+                self._close()
+            return reply
+        except AttributeError:  # bpo-35379: close called twice
+            pass
 
     def _close(self):
         if self.io.filename:

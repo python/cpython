@@ -387,11 +387,33 @@ import_get_module(PyThreadState *tstate, PyObject *name)
 }
 
 
-PyObject *
-PyImport_GetModule(PyObject *name)
+static int
+import_ensure_initialized(PyThreadState *tstate, PyObject *mod, PyObject *name)
 {
-    PyThreadState *tstate = _PyThreadState_GET();
-    return import_get_module(tstate, name);
+    PyInterpreterState *interp = tstate->interp;
+    PyObject *spec;
+
+    _Py_IDENTIFIER(__spec__);
+    _Py_IDENTIFIER(_lock_unlock_module);
+
+    /* Optimization: only call _bootstrap._lock_unlock_module() if
+       __spec__._initializing is true.
+       NOTE: because of this, initializing must be set *before*
+       stuffing the new module in sys.modules.
+    */
+    spec = _PyObject_GetAttrId(mod, &PyId___spec__);
+    int busy = _PyModuleSpec_IsInitializing(spec);
+    Py_XDECREF(spec);
+    if (busy) {
+        /* Wait until module is done importing. */
+        PyObject *value = _PyObject_CallMethodIdOneArg(
+            interp->importlib, &PyId__lock_unlock_module, name);
+        if (value == NULL) {
+            return -1;
+        }
+        Py_DECREF(value);
+    }
+    return 0;
 }
 
 
@@ -1461,6 +1483,7 @@ PyImport_ImportModule(const char *name)
     return result;
 }
 
+
 /* Import a module without blocking
  *
  * At first it tries to fetch the module from sys.modules. If the module was
@@ -1646,23 +1669,20 @@ resolve_name(PyThreadState *tstate, PyObject *name, PyObject *globals, int level
             if (dot == -2) {
                 goto error;
             }
-
-            if (dot >= 0) {
-                PyObject *substr = PyUnicode_Substring(package, 0, dot);
-                if (substr == NULL) {
-                    goto error;
-                }
-                Py_SETREF(package, substr);
+            else if (dot == -1) {
+                goto no_parent_error;
             }
+            PyObject *substr = PyUnicode_Substring(package, 0, dot);
+            if (substr == NULL) {
+                goto error;
+            }
+            Py_SETREF(package, substr);
         }
     }
 
     last_dot = PyUnicode_GET_LENGTH(package);
     if (last_dot == 0) {
-        _PyErr_SetString(tstate, PyExc_ImportError,
-                         "attempted relative import "
-                         "with no known parent package");
-        goto error;
+        goto no_parent_error;
     }
 
     for (level_up = 1; level_up < level; level_up += 1) {
@@ -1687,6 +1707,11 @@ resolve_name(PyThreadState *tstate, PyObject *name, PyObject *globals, int level
     abs_name = PyUnicode_FromFormat("%U.%U", base, name);
     Py_DECREF(base);
     return abs_name;
+
+  no_parent_error:
+    _PyErr_SetString(tstate, PyExc_ImportError,
+                     "attempted relative import "
+                     "with no known parent package");
 
   error:
     Py_XDECREF(package);
@@ -1761,6 +1786,23 @@ import_find_and_load(PyThreadState *tstate, PyObject *abs_name)
 }
 
 PyObject *
+PyImport_GetModule(PyObject *name)
+{
+    PyThreadState *tstate = _PyThreadState_GET();
+    PyObject *mod;
+
+    mod = import_get_module(tstate, name);
+    if (mod != NULL && mod != Py_None) {
+        if (import_ensure_initialized(tstate, mod, name) < 0) {
+            Py_DECREF(mod);
+            remove_importlib_frames(tstate);
+            return NULL;
+        }
+    }
+    return mod;
+}
+
+PyObject *
 PyImport_ImportModuleLevelObject(PyObject *name, PyObject *globals,
                                  PyObject *locals, PyObject *fromlist,
                                  int level)
@@ -1815,26 +1857,9 @@ PyImport_ImportModuleLevelObject(PyObject *name, PyObject *globals,
     }
 
     if (mod != NULL && mod != Py_None) {
-        _Py_IDENTIFIER(__spec__);
-        _Py_IDENTIFIER(_lock_unlock_module);
-        PyObject *spec;
-
-        /* Optimization: only call _bootstrap._lock_unlock_module() if
-           __spec__._initializing is true.
-           NOTE: because of this, initializing must be set *before*
-           stuffing the new module in sys.modules.
-         */
-        spec = _PyObject_GetAttrId(mod, &PyId___spec__);
-        if (_PyModuleSpec_IsInitializing(spec)) {
-            PyObject *value = _PyObject_CallMethodIdOneArg(
-                interp->importlib, &PyId__lock_unlock_module, abs_name);
-            if (value == NULL) {
-                Py_DECREF(spec);
-                goto error;
-            }
-            Py_DECREF(value);
+        if (import_ensure_initialized(tstate, mod, name) < 0) {
+            goto error;
         }
-        Py_XDECREF(spec);
     }
     else {
         Py_XDECREF(mod);

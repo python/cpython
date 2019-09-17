@@ -2,6 +2,13 @@ What's New in IDLE 3.8.0 (since 3.7.0)
 Released on 2019-10-20?
 ======================================
 
+bpo-35379: When exiting IDLE, catch any AttributeError.  One happens
+when EditorWindow.close is called twice.  Printing a traceback, when
+IDLE is run from a terminal, is useless and annoying.
+
+bpo-38183: To avoid test issues, test_idle ignores the user config
+directory.  It no longer tries to create or access .idlerc or any files
+within.  Users must run IDLE to discover problems with saving settings.
 
 bpo-38077: IDLE no longer adds 'argv' to the user namespace when
 initializing it.  This bug only affected 3.7.4 and 3.8.0b2 to 3.8.0b4.

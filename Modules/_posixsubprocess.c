@@ -20,6 +20,11 @@
 #ifdef HAVE_DIRENT_H
 #include <dirent.h>
 #endif
+#ifdef HAVE_GRP_H
+#include <grp.h>
+#endif /* HAVE_GRP_H */
+
+#include "posixmodule.h"
 
 #ifdef _Py_MEMORY_SANITIZER
 # include <sanitizer/msan_interface.h>
@@ -45,6 +50,12 @@
 # define FD_DIR "/dev/fd"
 #else
 # define FD_DIR "/proc/self/fd"
+#endif
+
+#ifdef NGROUPS_MAX
+#define MAX_GROUPS NGROUPS_MAX
+#else
+#define MAX_GROUPS 64
 #endif
 
 #define POSIX_CALL(call)   do { if ((call) == -1) goto error; } while (0)
@@ -415,6 +426,9 @@ child_exec(char *const exec_array[],
            int errpipe_read, int errpipe_write,
            int close_fds, int restore_signals,
            int call_setsid,
+           int call_setgid, gid_t gid,
+           int call_setgroups, size_t groups_size, const gid_t *groups,
+           int call_setuid, uid_t uid,
            PyObject *py_fds_to_keep,
            PyObject *preexec_fn,
            PyObject *preexec_fn_args_tuple)
@@ -491,6 +505,22 @@ child_exec(char *const exec_array[],
     if (call_setsid)
         POSIX_CALL(setsid());
 #endif
+
+#ifdef HAVE_SETGROUPS
+    if (call_setgroups)
+        POSIX_CALL(setgroups(groups_size, groups));
+#endif /* HAVE_SETGROUPS */
+
+#ifdef HAVE_SETREGID
+    if (call_setgid)
+        POSIX_CALL(setregid(gid, gid));
+#endif /* HAVE_SETREGID */
+
+#ifdef HAVE_SETREUID
+    if (call_setuid)
+        POSIX_CALL(setreuid(uid, uid));
+#endif /* HAVE_SETREUID */
+
 
     reached_preexec = 1;
     if (preexec_fn != Py_None && preexec_fn_args_tuple) {
@@ -571,26 +601,33 @@ subprocess_fork_exec(PyObject* self, PyObject *args)
     PyObject *env_list, *preexec_fn;
     PyObject *process_args, *converted_args = NULL, *fast_args = NULL;
     PyObject *preexec_fn_args_tuple = NULL;
+    PyObject *groups_list;
+    PyObject *uid_object, *gid_object;
     int p2cread, p2cwrite, c2pread, c2pwrite, errread, errwrite;
     int errpipe_read, errpipe_write, close_fds, restore_signals;
     int call_setsid;
+    int call_setgid = 0, call_setgroups = 0, call_setuid = 0;
+    uid_t uid;
+    gid_t gid, *groups = NULL;
     PyObject *cwd_obj, *cwd_obj2;
     const char *cwd;
     pid_t pid;
     int need_to_reenable_gc = 0;
     char *const *exec_array, *const *argv = NULL, *const *envp = NULL;
-    Py_ssize_t arg_num;
+    Py_ssize_t arg_num, num_groups = 0;
     int need_after_fork = 0;
     int saved_errno = 0;
 
     if (!PyArg_ParseTuple(
-            args, "OOpO!OOiiiiiiiiiiO:fork_exec",
+            args, "OOpO!OOiiiiiiiiiiOOOO:fork_exec",
             &process_args, &executable_list,
             &close_fds, &PyTuple_Type, &py_fds_to_keep,
             &cwd_obj, &env_list,
             &p2cread, &p2cwrite, &c2pread, &c2pwrite,
             &errread, &errwrite, &errpipe_read, &errpipe_write,
-            &restore_signals, &call_setsid, &preexec_fn))
+            &restore_signals, &call_setsid,
+            &gid_object, &groups_list, &uid_object,
+            &preexec_fn))
         return NULL;
 
     if ((preexec_fn != Py_None) &&
@@ -689,6 +726,90 @@ subprocess_fork_exec(PyObject* self, PyObject *args)
         cwd_obj2 = NULL;
     }
 
+    if (groups_list != Py_None) {
+#ifdef HAVE_SETGROUPS
+        Py_ssize_t i;
+        unsigned long gid;
+
+        if (!PyList_Check(groups_list)) {
+            PyErr_SetString(PyExc_TypeError,
+                    "setgroups argument must be a list");
+            goto cleanup;
+        }
+        num_groups = PySequence_Size(groups_list);
+
+        if (num_groups < 0)
+            goto cleanup;
+
+        if (num_groups > MAX_GROUPS) {
+            PyErr_SetString(PyExc_ValueError, "too many groups");
+            goto cleanup;
+        }
+
+        if ((groups = PyMem_RawMalloc(num_groups * sizeof(gid_t))) == NULL) {
+            PyErr_SetString(PyExc_MemoryError,
+                    "failed to allocate memory for group list");
+            goto cleanup;
+        }
+
+        for (i = 0; i < num_groups; i++) {
+            PyObject *elem;
+            elem = PySequence_GetItem(groups_list, i);
+            if (!elem)
+                goto cleanup;
+            if (!PyLong_Check(elem)) {
+                PyErr_SetString(PyExc_TypeError,
+                                "groups must be integers");
+                Py_DECREF(elem);
+                goto cleanup;
+            } else {
+                /* In posixmodule.c UnsignedLong is used as a fallback value
+                * if the value provided does not fit in a Long. Since we are
+                * already doing the bounds checking on the Python side, we
+                * can go directly to an UnsignedLong here. */
+                if (!_Py_Gid_Converter(elem, &gid)) {
+                    Py_DECREF(elem);
+                    PyErr_SetString(PyExc_ValueError, "invalid group id");
+                    goto cleanup;
+                }
+                groups[i] = gid;
+            }
+            Py_DECREF(elem);
+        }
+        call_setgroups = 1;
+
+#else /* HAVE_SETGROUPS */
+        PyErr_BadInternalCall();
+        goto cleanup;
+#endif /* HAVE_SETGROUPS */
+    }
+
+    if (gid_object != Py_None) {
+#ifdef HAVE_SETREGID
+        if (!_Py_Gid_Converter(gid_object, &gid))
+            goto cleanup;
+
+        call_setgid = 1;
+
+#else /* HAVE_SETREGID */
+        PyErr_BadInternalCall();
+        goto cleanup;
+#endif /* HAVE_SETREUID */
+    }
+
+    if (uid_object != Py_None) {
+#ifdef HAVE_SETREUID
+        if (!_Py_Uid_Converter(uid_object, &uid))
+            goto cleanup;
+
+        call_setuid = 1;
+
+#else /* HAVE_SETREUID */
+        PyErr_BadInternalCall();
+        goto cleanup;
+#endif /* HAVE_SETREUID */
+    }
+
     /* This must be the last thing done before fork() because we do not
      * want to call PyOS_BeforeFork() if there is any chance of another
      * error leading to the cleanup: code without calling fork(). */
@@ -721,6 +842,8 @@ subprocess_fork_exec(PyObject* self, PyObject *args)
                    p2cread, p2cwrite, c2pread, c2pwrite,
                    errread, errwrite, errpipe_read, errpipe_write,
                    close_fds, restore_signals, call_setsid,
+                   call_setgid, gid, call_setgroups, num_groups, groups,
+                   call_setuid, uid,
                    py_fds_to_keep, preexec_fn, preexec_fn_args_tuple);
         _exit(255);
         return NULL;  /* Dead code to avoid a potential compiler warning. */
@@ -765,6 +888,8 @@ cleanup:
         _Py_FreeCharPArray(argv);
     if (exec_array)
         _Py_FreeCharPArray(exec_array);
+
+    PyMem_RawFree(groups);
     Py_XDECREF(converted_args);
     Py_XDECREF(fast_args);
     Py_XDECREF(preexec_fn_args_tuple);
@@ -778,7 +903,10 @@ PyDoc_STRVAR(subprocess_fork_exec_doc,
 "fork_exec(args, executable_list, close_fds, cwd, env,\n\
           p2cread, p2cwrite, c2pread, c2pwrite,\n\
           errread, errwrite, errpipe_read, errpipe_write,\n\
-          restore_signals, call_setsid, preexec_fn)\n\
+          restore_signals, call_setsid,\n\
+          call_setgid, gid, groups_size, gids,\n\
+          call_setuid, uid,\n\
+          preexec_fn)\n\
 \n\
 Forks a child process, closes parent file descriptors as appropriate in the\n\
 child and dups the few that are needed before calling exec() in the child\n\

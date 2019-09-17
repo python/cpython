@@ -1562,6 +1562,23 @@ class _BasePathTest(object):
                   }
         self.assertEqual(given, {p / x for x in expect})
 
+    def test_glob_many_open_files(self):
+        depth = 30
+        P = self.cls
+        base = P(BASE) / 'deep'
+        p = P(base, *(['d']*depth))
+        p.mkdir(parents=True)
+        pattern = '/'.join(['*'] * depth)
+        iters = [base.glob(pattern) for j in range(100)]
+        for it in iters:
+            self.assertEqual(next(it), p)
+        iters = [base.rglob('d') for j in range(100)]
+        p = base
+        for i in range(depth):
+            p = p / 'd'
+            for it in iters:
+                self.assertEqual(next(it), p)
+
     def test_glob_dotdot(self):
         # ".." is not special in globs.
         P = self.cls
@@ -1767,12 +1784,14 @@ class _BasePathTest(object):
         size = p.stat().st_size
         # Renaming to another path.
         q = P / 'dirA' / 'fileAA'
-        p.rename(q)
+        renamed_p = p.rename(q)
+        self.assertEqual(renamed_p, q)
         self.assertEqual(q.stat().st_size, size)
         self.assertFileNotFound(p.stat)
         # Renaming to a str of a relative path.
         r = rel_join('fileAAA')
-        q.rename(r)
+        renamed_q = q.rename(r)
+        self.assertEqual(renamed_q, self.cls(r))
         self.assertEqual(os.stat(r).st_size, size)
         self.assertFileNotFound(q.stat)
 
@@ -1782,12 +1801,14 @@ class _BasePathTest(object):
         size = p.stat().st_size
         # Replacing a non-existing path.
         q = P / 'dirA' / 'fileAA'
-        p.replace(q)
+        replaced_p = p.replace(q)
+        self.assertEqual(replaced_p, q)
         self.assertEqual(q.stat().st_size, size)
         self.assertFileNotFound(p.stat)
         # Replacing another (existing) path.
         r = rel_join('dirB', 'fileB')
-        q.replace(r)
+        replaced_q = q.replace(r)
+        self.assertEqual(replaced_q, self.cls(r))
         self.assertEqual(os.stat(r).st_size, size)
         self.assertFileNotFound(q.stat)
 

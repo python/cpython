@@ -1503,8 +1503,8 @@ static PyTypeObject Xmlparsetype = {
 /*[clinic input]
 pyexpat.ParserCreate
 
-    encoding: str(accept={str, NoneType}) = NULL
-    namespace_separator: str(accept={str, NoneType}) = NULL
+    encoding: str(accept={str, NoneType}) = None
+    namespace_separator: str(accept={str, NoneType}) = None
     intern: object = NULL
 
 Return a new XML parser object.
@@ -1513,7 +1513,7 @@ Return a new XML parser object.
 static PyObject *
 pyexpat_ParserCreate_impl(PyObject *module, const char *encoding,
                           const char *namespace_separator, PyObject *intern)
-/*[clinic end generated code: output=295c0cf01ab1146c input=23d29704acad385d]*/
+/*[clinic end generated code: output=295c0cf01ab1146c input=e8da8e8d7122cb5d]*/
 {
     PyObject *result;
     int intern_decref = 0;

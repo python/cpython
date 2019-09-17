@@ -187,7 +187,8 @@ Directory and files operations
    However, this functionality is not available on all platforms.
    On platforms where some or all of this functionality is
    unavailable, :func:`copy2` will preserve all the metadata
-   it can; :func:`copy2` never returns failure.
+   it can; :func:`copy2` never raises an exception because it
+   cannot preserve file metadata.
 
    :func:`copy2` uses :func:`copystat` to copy the file metadata.
    Please see :func:`copystat` for more information

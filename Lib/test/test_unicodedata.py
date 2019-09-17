@@ -11,17 +11,18 @@ from http.client import HTTPException
 import sys
 import unicodedata
 import unittest
-from test.support import open_urlresource, script_helper
+from test.support import open_urlresource, requires_resource, script_helper
 
 
 class UnicodeMethodsTest(unittest.TestCase):
 
     # update this, if the database changes
-    expectedchecksum = '9129d6f2bdf008a81c2476e5b5127014a62130c1'
+    expectedchecksum = 'e728278035eb76cf92d86f07852266b0433f16a5'
 
+    @requires_resource('cpu')
     def test_method_checksum(self):
         h = hashlib.sha1()
-        for i in range(0x10000):
+        for i in range(sys.maxunicode + 1):
             char = chr(i)
             data = [
                 # Predicates (single char)
@@ -69,12 +70,14 @@ class UnicodeFunctionsTest(UnicodeDatabaseTest):
 
     # Update this if the database changes. Make sure to do a full rebuild
     # (e.g. 'make distclean && make') to get the correct checksum.
-    expectedchecksum = 'c44a49ca7c5cb6441640fe174ede604b45028652'
+    expectedchecksum = '4bcbf9df344114b1ebc95b904f4352dd250dff7e'
+
+    @requires_resource('cpu')
     def test_function_checksum(self):
         data = []
         h = hashlib.sha1()
 
-        for i in range(0x10000):
+        for i in range(sys.maxunicode + 1):
             char = chr(i)
             data = [
                 # Properties

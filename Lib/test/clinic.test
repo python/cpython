@@ -92,7 +92,7 @@ test_objects_converter
 [clinic start generated code]*/
 
 PyDoc_STRVAR(test_objects_converter__doc__,
-"test_objects_converter($module, a, b=None, /)\n"
+"test_objects_converter($module, a, b=<unrepresentable>, /)\n"
 "--\n"
 "\n");
 
@@ -126,7 +126,7 @@ exit:
 
 static PyObject *
 test_objects_converter_impl(PyObject *module, PyObject *a, PyObject *b)
-/*[clinic end generated code: output=58009c0e42b4834e input=4cbb3d9edd2a36f3]*/
+/*[clinic end generated code: output=0e461f38d3b2bd08 input=4cbb3d9edd2a36f3]*/
 
 
 /*[clinic input]
@@ -1718,8 +1718,8 @@ test_str_converter
 [clinic start generated code]*/
 
 PyDoc_STRVAR(test_str_converter__doc__,
-"test_str_converter($module, a=None, b=\'ab\', c=\'cd\', d=\'cef\', e=\'gh\',\n"
-"                   f=\'ij\', g=\'kl\', h=\'mn\', /)\n"
+"test_str_converter($module, a=<unrepresentable>, b=\'ab\', c=\'cd\',\n"
+"                   d=\'cef\', e=\'gh\', f=\'ij\', g=\'kl\', h=\'mn\', /)\n"
 "--\n"
 "\n");
 
@@ -1765,7 +1765,7 @@ test_str_converter_impl(PyObject *module, const char *a, const char *b,
                         const char *f, Py_ssize_clean_t f_length,
                         const char *g, Py_ssize_clean_t g_length,
                         const char *h, Py_ssize_clean_t h_length)
-/*[clinic end generated code: output=8415d82c56154307 input=8afe9da8185cd38c]*/
+/*[clinic end generated code: output=ad868ad94a488e32 input=8afe9da8185cd38c]*/
 
 
 /*[clinic input]

@@ -1338,7 +1338,7 @@ if test "$Py_LTO" = 'true' ; then
   case $CC in
     *clang*)
       AC_SUBST(LLVM_AR)
-      AC_PATH_TARGET_TOOL(LLVM_AR, llvm-ar, '', ${llvm_path})
+      AC_PATH_TOOL(LLVM_AR, llvm-ar, '', ${llvm_path})
       AC_SUBST(LLVM_AR_FOUND)
       if test -n "${LLVM_AR}" -a -x "${LLVM_AR}"
       then
@@ -1404,7 +1404,7 @@ AC_SUBST(LLVM_PROF_MERGER)
 AC_SUBST(LLVM_PROF_FILE)
 AC_SUBST(LLVM_PROF_ERR)
 AC_SUBST(LLVM_PROFDATA)
-AC_PATH_TARGET_TOOL(LLVM_PROFDATA, llvm-profdata, '', ${llvm_path})
+AC_PATH_TOOL(LLVM_PROFDATA, llvm-profdata, '', ${llvm_path})
 AC_SUBST(LLVM_PROF_FOUND)
 if test -n "${LLVM_PROFDATA}" -a -x "${LLVM_PROFDATA}"
 then
@@ -3538,7 +3538,7 @@ fi
 AC_CHECK_FUNCS(alarm accept4 setitimer getitimer bind_textdomain_codeset chown \
  clock confstr copy_file_range ctermid dup3 execv explicit_bzero explicit_memset \
  faccessat fchmod fchmodat fchown fchownat \
- fexecve fdopendir fork fpathconf fstatat ftime ftruncate futimesat \
+ fdwalk fexecve fdopendir fork fpathconf fstatat ftime ftruncate futimesat \
  futimens futimes gai_strerror getentropy \
  getgrgid_r getgrnam_r \
  getgrouplist getgroups getlogin getloadavg getpeername getpgid getpid \

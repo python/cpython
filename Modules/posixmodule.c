@@ -4819,7 +4819,7 @@ exit:
 os.utime
 
     path: path_t(allow_fd='PATH_UTIME_HAVE_FD')
-    times: object = NULL
+    times: object = None
     *
     ns: object = NULL
     dir_fd: dir_fd(requires='futimensat') = None
@@ -4856,7 +4856,7 @@ dir_fd and follow_symlinks may not be available on your platform.
 static PyObject *
 os_utime_impl(PyObject *module, path_t *path, PyObject *times, PyObject *ns,
               int dir_fd, int follow_symlinks)
-/*[clinic end generated code: output=cfcac69d027b82cf input=081cdc54ca685385]*/
+/*[clinic end generated code: output=cfcac69d027b82cf input=2fbd62a2f228f8f4]*/
 {
 #ifdef MS_WINDOWS
     HANDLE hFile;
@@ -4869,14 +4869,14 @@ os_utime_impl(PyObject *module, path_t *path, PyObject *times, PyObject *ns,
 
     memset(&utime, 0, sizeof(utime_t));
 
-    if (times && (times != Py_None) && ns) {
+    if (times != Py_None && ns) {
         PyErr_SetString(PyExc_ValueError,
                      "utime: you may specify either 'times'"
                      " or 'ns' but not both");
         return NULL;
     }
 
-    if (times && (times != Py_None)) {
+    if (times != Py_None) {
         time_t a_sec, m_sec;
         long a_nsec, m_nsec;
         if (!PyTuple_CheckExact(times) || (PyTuple_Size(times) != 2)) {
@@ -8510,6 +8510,21 @@ os_close_impl(PyObject *module, int fd)
 }
 
 
+#ifdef HAVE_FDWALK
+static int
+_fdwalk_close_func(void *lohi, int fd)
+{
+    int lo = ((int *)lohi)[0];
+    int hi = ((int *)lohi)[1];
+
+    if (fd >= hi)
+        return 1;
+    else if (fd >= lo)
+        close(fd);
+    return 0;
+}
+#endif /* HAVE_FDWALK */
+
 /*[clinic input]
 os.closerange
 
@@ -8524,11 +8539,21 @@ static PyObject *
 os_closerange_impl(PyObject *module, int fd_low, int fd_high)
 /*[clinic end generated code: output=0ce5c20fcda681c2 input=5855a3d053ebd4ec]*/
 {
+#ifdef HAVE_FDWALK
+    int lohi[2];
+#else
     int i;
+#endif
     Py_BEGIN_ALLOW_THREADS
     _Py_BEGIN_SUPPRESS_IPH
+#ifdef HAVE_FDWALK
+    lohi[0] = Py_MAX(fd_low, 0);
+    lohi[1] = fd_high;
+    fdwalk(_fdwalk_close_func, lohi);
+#else
     for (i = Py_MAX(fd_low, 0); i < fd_high; i++)
         close(i);
+#endif
     _Py_END_SUPPRESS_IPH
     Py_END_ALLOW_THREADS
     Py_RETURN_NONE;
@@ -11639,8 +11664,6 @@ os.startfile
     filepath: path_t
     operation: Py_UNICODE = NULL
 
-startfile(filepath [, operation])
-
 Start a file with its associated application.
 
 When "operation" is not specified or "open", this acts like
@@ -11662,7 +11685,7 @@ the underlying Win32 ShellExecute function doesn't work if it is.
 static PyObject *
 os_startfile_impl(PyObject *module, path_t *filepath,
                   const Py_UNICODE *operation)
-/*[clinic end generated code: output=66dc311c94d50797 input=63950bf2986380d0]*/
+/*[clinic end generated code: output=66dc311c94d50797 input=c940888a5390f039]*/
 {
     HINSTANCE rc;
 
@@ -12263,23 +12286,7 @@ os_cpu_count_impl(PyObject *module)
 {
     int ncpu = 0;
 #ifdef MS_WINDOWS
-    /* Vista is supported and the GetMaximumProcessorCount API is Win7+
-       Need to fallback to Vista behavior if this call isn't present */
-    HINSTANCE hKernel32;
-    static DWORD(CALLBACK *_GetMaximumProcessorCount)(WORD) = NULL;
-    Py_BEGIN_ALLOW_THREADS
-    hKernel32 = GetModuleHandleW(L"KERNEL32");
-    *(FARPROC*)&_GetMaximumProcessorCount = GetProcAddress(hKernel32,
-        "GetMaximumProcessorCount");
-    Py_END_ALLOW_THREADS
-    if (_GetMaximumProcessorCount != NULL) {
-        ncpu = _GetMaximumProcessorCount(ALL_PROCESSOR_GROUPS);
-    }
-    else {
-        SYSTEM_INFO sysinfo;
-        GetSystemInfo(&sysinfo);
-        ncpu = sysinfo.dwNumberOfProcessors;
-    }
+    ncpu = GetActiveProcessorCount(ALL_PROCESSOR_GROUPS);
 #elif defined(__hpux)
     ncpu = mpctl(MPC_GETNUMSPUS, NULL, NULL);
 #elif defined(HAVE_SYSCONF) && defined(_SC_NPROCESSORS_ONLN)

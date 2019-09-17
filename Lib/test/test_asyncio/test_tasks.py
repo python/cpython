@@ -1810,7 +1810,7 @@ class BaseTaskTests:
 
         async def outer():
             nonlocal proof
-            await asyncio.shield(inner(), loop=self.loop)
+            await asyncio.shield(inner())
             proof += 100
 
         f = asyncio.ensure_future(outer(), loop=self.loop)
@@ -1825,8 +1825,8 @@ class BaseTaskTests:
     def test_shield_gather(self):
         child1 = self.new_future(self.loop)
         child2 = self.new_future(self.loop)
-        parent = asyncio.gather(child1, child2, loop=self.loop)
-        outer = asyncio.shield(parent, loop=self.loop)
+        parent = asyncio.gather(child1, child2)
+        outer = asyncio.shield(parent)
         test_utils.run_briefly(self.loop)
         outer.cancel()
         test_utils.run_briefly(self.loop)
@@ -1839,9 +1839,9 @@ class BaseTaskTests:
     def test_gather_shield(self):
         child1 = self.new_future(self.loop)
         child2 = self.new_future(self.loop)
-        inner1 = asyncio.shield(child1, loop=self.loop)
-        inner2 = asyncio.shield(child2, loop=self.loop)
-        parent = asyncio.gather(inner1, inner2, loop=self.loop)
+        inner1 = asyncio.shield(child1)
+        inner2 = asyncio.shield(child2)
+        parent = asyncio.gather(inner1, inner2)
         test_utils.run_briefly(self.loop)
         parent.cancel()
         # This should cancel inner1 and inner2 but bot child1 and child2.
@@ -2660,7 +2660,7 @@ class CTask_Future_Tests(test_utils.TestCase):
         try:
             fut = Fut(loop=self.loop)
             self.loop.call_later(0.1, fut.set_result, 1)
-            task = asyncio.Task(coro(), loop=self.loop)
+            task = self.loop.create_task(coro())
             res = self.loop.run_until_complete(task)
         finally:
             self.loop.close()
@@ -2878,7 +2878,7 @@ class GatherTestsBase:
             test_utils.run_briefly(loop)
 
     def _check_success(self, **kwargs):
-        a, b, c = [asyncio.Future(loop=self.one_loop) for i in range(3)]
+        a, b, c = [self.one_loop.create_future() for i in range(3)]
         fut = asyncio.gather(*self.wrap_futures(a, b, c), **kwargs)
         cb = test_utils.MockCallback()
         fut.add_done_callback(cb)
@@ -2900,7 +2900,7 @@ class GatherTestsBase:
         self._check_success(return_exceptions=True)
 
     def test_one_exception(self):
-        a, b, c, d, e = [asyncio.Future(loop=self.one_loop) for i in range(5)]
+        a, b, c, d, e = [self.one_loop.create_future() for i in range(5)]
         fut = asyncio.gather(*self.wrap_futures(a, b, c, d, e))
         cb = test_utils.MockCallback()
         fut.add_done_callback(cb)
@@ -2918,7 +2918,7 @@ class GatherTestsBase:
         e.exception()
 
     def test_return_exceptions(self):
-        a, b, c, d = [asyncio.Future(loop=self.one_loop) for i in range(4)]
+        a, b, c, d = [self.one_loop.create_future() for i in range(4)]
         fut = asyncio.gather(*self.wrap_futures(a, b, c, d),
                              return_exceptions=True)
         cb = test_utils.MockCallback()
@@ -2981,7 +2981,8 @@ class FutureGatherTests(GatherTestsBase, test_utils.TestCase):
         self._run_loop(self.one_loop)
         self.assertTrue(fut.done())
         self.assertEqual(fut.result(), [])
-        fut = asyncio.gather(*seq_or_iter, loop=self.other_loop)
+        with self.assertWarns(DeprecationWarning):
+            fut = asyncio.gather(*seq_or_iter, loop=self.other_loop)
         self.assertIs(fut._loop, self.other_loop)
 
     def test_constructor_empty_sequence(self):
@@ -2991,15 +2992,15 @@ class FutureGatherTests(GatherTestsBase, test_utils.TestCase):
         self._check_empty_sequence(iter(""))
 
     def test_constructor_heterogenous_futures(self):
-        fut1 = asyncio.Future(loop=self.one_loop)
-        fut2 = asyncio.Future(loop=self.other_loop)
+        fut1 = self.one_loop.create_future()
+        fut2 = self.other_loop.create_future()
         with self.assertRaises(ValueError):
             asyncio.gather(fut1, fut2)
         with self.assertRaises(ValueError):
             asyncio.gather(fut1, loop=self.other_loop)
 
     def test_constructor_homogenous_futures(self):
-        children = [asyncio.Future(loop=self.other_loop) for i in range(3)]
+        children = [self.other_loop.create_future() for i in range(3)]
         fut = asyncio.gather(*children)
         self.assertIs(fut._loop, self.other_loop)
         self._run_loop(self.other_loop)
@@ -3010,7 +3011,7 @@ class FutureGatherTests(GatherTestsBase, test_utils.TestCase):
         self.assertFalse(fut.done())
 
     def test_one_cancellation(self):
-        a, b, c, d, e = [asyncio.Future(loop=self.one_loop) for i in range(5)]
+        a, b, c, d, e = [self.one_loop.create_future() for i in range(5)]
         fut = asyncio.gather(a, b, c, d, e)
         cb = test_utils.MockCallback()
         fut.add_done_callback(cb)
@@ -3028,7 +3029,7 @@ class FutureGatherTests(GatherTestsBase, test_utils.TestCase):
         e.exception()
 
     def test_result_exception_one_cancellation(self):
-        a, b, c, d, e, f = [asyncio.Future(loop=self.one_loop)
+        a, b, c, d, e, f = [self.one_loop.create_future()
                             for i in range(6)]
         fut = asyncio.gather(a, b, c, d, e, f, return_exceptions=True)
         cb = test_utils.MockCallback()
@@ -3094,7 +3095,7 @@ class CoroutineGatherTests(GatherTestsBase, test_utils.TestCase):
     def test_cancellation_broadcast(self):
         # Cancelling outer() cancels all children.
         proof = 0
-        waiter = asyncio.Future(loop=self.one_loop)
+        waiter = self.one_loop.create_future()
 
         async def inner():
             nonlocal proof
@@ -3130,8 +3131,8 @@ class CoroutineGatherTests(GatherTestsBase, test_utils.TestCase):
             await f
             raise RuntimeError('should not be ignored')
 
-        a = asyncio.Future(loop=self.one_loop)
-        b = asyncio.Future(loop=self.one_loop)
+        a = self.one_loop.create_future()
+        b = self.one_loop.create_future()
 
         async def outer():
             await asyncio.gather(inner(a), inner(b), loop=self.one_loop)
