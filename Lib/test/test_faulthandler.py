@@ -90,7 +90,8 @@ class FaultHandlerTests(unittest.TestCase):
 
     def check_error(self, code, line_number, fatal_error, *,
                     filename=None, all_threads=True, other_regex=None,
-                    fd=None, know_current_thread=True):
+                    fd=None, know_current_thread=True,
+                    py_fatal_error=False):
         """
         Check that the fault handler for fatal errors is enabled and check the
         traceback from the child process output.
@@ -110,10 +111,12 @@ class FaultHandlerTests(unittest.TestCase):
             {header} \(most recent call first\):
               File "<string>", line {lineno} in <module>
             """
-        regex = dedent(regex.format(
+        if py_fatal_error:
+            fatal_error += "\nPython runtime state: initialized"
+        regex = dedent(regex).format(
             lineno=line_number,
             fatal_error=fatal_error,
-            header=header)).strip()
+            header=header).strip()
         if other_regex:
             regex += '|' + other_regex
         output, exitcode = self.get_output(code, filename=filename, fd=fd)
@@ -170,7 +173,8 @@ class FaultHandlerTests(unittest.TestCase):
             """,
             3,
             'in new thread',
-            know_current_thread=False)
+            know_current_thread=False,
+            py_fatal_error=True)
 
     def test_sigabrt(self):
         self.check_fatal_error("""
@@ -226,7 +230,8 @@ class FaultHandlerTests(unittest.TestCase):
             faulthandler._fatal_error(b'xyz')
             """,
             2,
-            'xyz')
+            'xyz',
+            py_fatal_error=True)
 
     def test_fatal_error_without_gil(self):
         self.check_fatal_error("""
@@ -234,7 +239,8 @@ class FaultHandlerTests(unittest.TestCase):
             faulthandler._fatal_error(b'xyz', True)
             """,
             2,
-            'xyz')
+            'xyz',
+            py_fatal_error=True)
 
     @unittest.skipIf(sys.platform.startswith('openbsd'),
                      "Issue #12868: sigaltstack() doesn't work on "
