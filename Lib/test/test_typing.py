@@ -3563,6 +3563,36 @@ class XMethBad2(NamedTuple):
         with self.assertRaises(TypeError):
             NamedTuple('Name', x=1, y='a')
 
+    def test_namedtuple_special_keyword_names(self):
+        NT = NamedTuple("NT", cls=type, self=object, typename=str, fields=list)
+        self.assertEqual(NT.__name__, 'NT')
+        self.assertEqual(NT._fields, ('cls', 'self', 'typename', 'fields'))
+        a = NT(cls=str, self=42, typename='foo', fields=[('bar', tuple)])
+        self.assertEqual(a.cls, str)
+        self.assertEqual(a.self, 42)
+        self.assertEqual(a.typename, 'foo')
+        self.assertEqual(a.fields, [('bar', tuple)])
+
+    def test_namedtuple_errors(self):
+        with self.assertRaises(TypeError):
+            NamedTuple.__new__()
+        with self.assertRaises(TypeError):
+            NamedTuple()
+        with self.assertRaises(TypeError):
+            NamedTuple('Emp', [('name', str)], None)
+        with self.assertRaises(ValueError):
+            NamedTuple('Emp', [('_name', str)])
+
+        with self.assertWarns(DeprecationWarning):
+            Emp = NamedTuple(typename='Emp', name=str, id=int)
+        self.assertEqual(Emp.__name__, 'Emp')
+        self.assertEqual(Emp._fields, ('name', 'id'))
+
+        with self.assertWarns(DeprecationWarning):
+            Emp = NamedTuple('Emp', fields=[('name', str), ('id', int)])
+        self.assertEqual(Emp.__name__, 'Emp')
+        self.assertEqual(Emp._fields, ('name', 'id'))
+
     def test_pickle(self):
         global Emp  # pickle wants to reference the class by name
         Emp = NamedTuple('Emp', [('name', str), ('id', int)])
@@ -3603,6 +3633,36 @@ class TypedDictTests(BaseTestCase):
         self.assertEqual(Emp.__bases__, (dict,))
         self.assertEqual(Emp.__annotations__, {'name': str, 'id': int})
         self.assertEqual(Emp.__total__, True)
+
+    def test_typeddict_special_keyword_names(self):
+        TD = TypedDict("TD", cls=type, self=object, typename=str, _typename=int, fields=list, _fields=dict)
+        self.assertEqual(TD.__name__, 'TD')
+        self.assertEqual(TD.__annotations__, {'cls': type, 'self': object, 'typename': str, '_typename': int, 'fields': list, '_fields': dict})
+        a = TD(cls=str, self=42, typename='foo', _typename=53, fields=[('bar', tuple)], _fields={'baz', set})
+        self.assertEqual(a['cls'], str)
+        self.assertEqual(a['self'], 42)
+        self.assertEqual(a['typename'], 'foo')
+        self.assertEqual(a['_typename'], 53)
+        self.assertEqual(a['fields'], [('bar', tuple)])
+        self.assertEqual(a['_fields'], {'baz', set})
+
+    def test_typeddict_create_errors(self):
+        with self.assertRaises(TypeError):
+            TypedDict.__new__()
+        with self.assertRaises(TypeError):
+            TypedDict()
+        with self.assertRaises(TypeError):
+            TypedDict('Emp', [('name', str)], None)
+
+        with self.assertWarns(DeprecationWarning):
+            Emp = TypedDict(_typename='Emp', name=str, id=int)
+        self.assertEqual(Emp.__name__, 'Emp')
+        self.assertEqual(Emp.__annotations__, {'name': str, 'id': int})
+
+        with self.assertWarns(DeprecationWarning):
+            Emp = TypedDict('Emp', _fields={'name': str, 'id': int})
+        self.assertEqual(Emp.__name__, 'Emp')
+        self.assertEqual(Emp.__annotations__, {'name': str, 'id': int})
 
     def test_typeddict_errors(self):
         Emp = TypedDict('Emp', {'name': str, 'id': int})
