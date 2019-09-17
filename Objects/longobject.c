@@ -3035,8 +3035,12 @@ long_compare(PyLongObject *a, PyLongObject *b)
     if (!sign) {
         Py_ssize_t i = Py_ABS(Py_SIZE(a));
         sdigit diff = 0;
-        while (--i >= 0 && !(diff = (sdigit) a->ob_digit[i] - (sdigit) b->ob_digit[i]))
-            ;
+        while (--i >= 0) {
+            diff = (sdigit) a->ob_digit[i] - (sdigit) b->ob_digit[i];
+            if (diff) {
+                break;
+            }
+        }
         sign = Py_SIZE(a) < 0 ? -diff : diff;
     }
     return sign;
