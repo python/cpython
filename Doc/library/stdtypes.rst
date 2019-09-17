@@ -4141,6 +4141,10 @@ pairs within braces, for example: ``{'jack': 4098, 'sjoerd': 4127}`` or ``{4098:
    These are the operations that dictionaries support (and therefore, custom
    mapping types should support too):
 
+   .. describe:: list(d)
+
+      Return a list of all the keys used in the dictionary *d*.
+
    .. describe:: len(d)
 
       Return the number of items in the dictionary *d*.
