@@ -98,16 +98,14 @@ class RowFactoryTests(unittest.TestCase):
 
     def CheckSqliteRowIndex(self):
         self.con.row_factory = sqlite.Row
-        row = self.con.execute("select 1 as a, 2 as b").fetchone()
+        row = self.con.execute("select 1 as a_1, 2 as b").fetchone()
         self.assertIsInstance(row, sqlite.Row)
 
-        col1, col2 = row["a"], row["b"]
-        self.assertEqual(col1, 1, "by name: wrong result for column 'a'")
-        self.assertEqual(col2, 2, "by name: wrong result for column 'a'")
+        self.assertEqual(row["a_1"], 1, "by name: wrong result for column 'a_1'")
+        self.assertEqual(row["b"], 2, "by name: wrong result for column 'b'")
 
-        col1, col2 = row["A"], row["B"]
-        self.assertEqual(col1, 1, "by name: wrong result for column 'A'")
-        self.assertEqual(col2, 2, "by name: wrong result for column 'B'")
+        self.assertEqual(row["A_1"], 1, "by name: wrong result for column 'A_1'")
+        self.assertEqual(row["B"], 2, "by name: wrong result for column 'B'")
 
         self.assertEqual(row[0], 1, "by index: wrong result for column 0")
         self.assertEqual(row[1], 2, "by index: wrong result for column 1")
@@ -117,11 +115,24 @@ class RowFactoryTests(unittest.TestCase):
         with self.assertRaises(IndexError):
             row['c']
         with self.assertRaises(IndexError):
+            row['a_\x11']
+        with self.assertRaises(IndexError):
+            row['a\x7f1']
+        with self.assertRaises(IndexError):
             row[2]
         with self.assertRaises(IndexError):
             row[-3]
         with self.assertRaises(IndexError):
             row[2**1000]
+
+    def CheckSqliteRowIndexUnicode(self):
+        self.con.row_factory = sqlite.Row
+        row = self.con.execute("select 1 as \xff").fetchone()
+        self.assertEqual(row["\xff"], 1)
+        with self.assertRaises(IndexError):
+            row['\u0178']
+        with self.assertRaises(IndexError):
+            row['\xdf']
 
     def CheckSqliteRowSlice(self):
         # A sqlite.Row can be sliced like a list.
