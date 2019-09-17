@@ -868,7 +868,7 @@ class NonCallableMock(Base):
         """
         if self.call_count == 0:
             msg = ("Expected '%s' to have been called." %
-                   self._mock_name or 'mock')
+                   (self._mock_name or 'mock'))
             raise AssertionError(msg)
 
     def assert_called_once(self):
