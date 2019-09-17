@@ -4219,6 +4219,10 @@ _PyDictView_Intersect(PyObject* self, PyObject *other)
         return NULL;
 
     it = PyObject_GetIter(other);
+    if (it == NULL) {
+        Py_DECREF(result);
+        return NULL;
+    }
 
     _Py_IDENTIFIER(intersection_update);
     tmp = _PyObject_CallMethodIdOneArg(result, &PyId_intersection_update, other);
