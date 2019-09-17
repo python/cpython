@@ -1905,11 +1905,6 @@ async_gen_athrow_throw(PyAsyncGenAThrow *o, PyObject *args)
 {
     PyObject *retval;
 
-    if (o->agt_state == AWAITABLE_STATE_INIT) {
-        PyErr_SetString(PyExc_RuntimeError, NON_INIT_CORO_MSG);
-        return NULL;
-    }
-
     if (o->agt_state == AWAITABLE_STATE_CLOSED) {
         PyErr_SetNone(PyExc_StopIteration);
         return NULL;
