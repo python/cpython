@@ -397,9 +397,10 @@ class MockTest(unittest.TestCase):
 
 
     def test_assert_called_exception_message(self):
-        with self.assertRaisesRegex(AssertionError, "Expected 'mock' to have been called"):
+        msg = "Expected '{0}' to have been called"
+        with self.assertRaisesRegex(AssertionError, msg.format('mock')):
             Mock().assert_called()
-        with self.assertRaisesRegex(AssertionError, "Expected 'test_name' to have been called"):
+        with self.assertRaisesRegex(AssertionError, msg.format('test_name')):
             Mock(name="test_name").assert_called()
 
 
