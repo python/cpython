@@ -3653,16 +3653,10 @@ class TypedDictTests(BaseTestCase):
             TypedDict()
         with self.assertRaises(TypeError):
             TypedDict('Emp', [('name', str)], None)
-
-        with self.assertWarns(DeprecationWarning):
-            Emp = TypedDict(_typename='Emp', name=str, id=int)
-        self.assertEqual(Emp.__name__, 'Emp')
-        self.assertEqual(Emp.__annotations__, {'name': str, 'id': int})
-
-        with self.assertWarns(DeprecationWarning):
-            Emp = TypedDict('Emp', _fields={'name': str, 'id': int})
-        self.assertEqual(Emp.__name__, 'Emp')
-        self.assertEqual(Emp.__annotations__, {'name': str, 'id': int})
+        with self.assertRaises(TypeError):
+            TypedDict(_typename='Emp', name=str, id=int)
+        with self.assertRaises(TypeError):
+            TypedDict('Emp', _fields={'name': str, 'id': int})
 
     def test_typeddict_errors(self):
         Emp = TypedDict('Emp', {'name': str, 'id': int})
