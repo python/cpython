@@ -725,10 +725,14 @@ _Py_PreInitializeFromPyArgv(const PyPreConfig *src_config, const _PyArgv *args)
     }
     _PyRuntimeState *runtime = &_PyRuntime;
 
-    if (runtime->pre_initialized) {
+    if (runtime->preinitialized) {
         /* If it's already configured: ignored the new configuration */
         return _PyStatus_OK();
     }
+
+    /* Note: preinitialized remains 1 on error, it is only set to 0
+       at exit on success. */
+    runtime->preinitializing = 1;
 
     PyPreConfig config;
     _PyPreConfig_InitFromPreConfig(&config, src_config);
@@ -743,7 +747,8 @@ _Py_PreInitializeFromPyArgv(const PyPreConfig *src_config, const _PyArgv *args)
         return status;
     }
 
-    runtime->pre_initialized = 1;
+    runtime->preinitializing = 0;
+    runtime->preinitialized = 1;
     return _PyStatus_OK();
 }
 
@@ -783,7 +788,7 @@ _Py_PreInitializeFromConfig(const PyConfig *config,
     }
     _PyRuntimeState *runtime = &_PyRuntime;
 
-    if (runtime->pre_initialized) {
+    if (runtime->preinitialized) {
         /* Already initialized: do nothing */
         return _PyStatus_OK();
     }
