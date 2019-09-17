@@ -464,7 +464,7 @@ void
 _PyObject_Dump(PyObject* op)
 {
     if (op == NULL) {
-        fprintf(stderr, "<NULL object>\n");
+        fprintf(stderr, "<object at NULL>\n");
         fflush(stderr);
         return;
     }
@@ -472,7 +472,7 @@ _PyObject_Dump(PyObject* op)
     if (_PyObject_IsFreed(op)) {
         /* It seems like the object memory has been freed:
            don't access it to prevent a segmentation fault. */
-        fprintf(stderr, "<Freed object>\n");
+        fprintf(stderr, "<object at %p is freed>\n", op);
         return;
     }
 
@@ -2160,18 +2160,19 @@ _PyObject_AssertFailed(PyObject *obj, const char *expr, const char *msg,
     fflush(stderr);
 
     if (obj == NULL) {
-        fprintf(stderr, "<NULL object>\n");
+        fprintf(stderr, "<object at NULL>\n");
     }
     else if (_PyObject_IsFreed(obj)) {
         /* It seems like the object memory has been freed:
            don't access it to prevent a segmentation fault. */
-        fprintf(stderr, "<object: freed>\n");
+        fprintf(stderr, "<object at %p is freed>\n", obj);
     }
     else if (Py_TYPE(obj) == NULL) {
-        fprintf(stderr, "<object: ob_type=NULL>\n");
+        fprintf(stderr, "<object at %p: ob_type=NULL>\n", obj);
     }
     else if (_PyObject_IsFreed((PyObject *)Py_TYPE(obj))) {
-        fprintf(stderr, "<object: freed type %p>\n", (void *)Py_TYPE(obj));
+        fprintf(stderr, "<object at %p: type at %p is freed>\n",
+                obj, (void *)Py_TYPE(obj));
     }
     else {
         /* Display the traceback where the object has been allocated.
