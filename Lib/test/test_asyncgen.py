@@ -1068,6 +1068,28 @@ class AsyncGenAsyncioTest(unittest.TestCase):
         res = self.loop.run_until_complete(run())
         self.assertEqual(res, [i * 2 for i in range(1, 10)])
 
+    def test_asyncgen_nonstarted_hooks_are_cancellable(self):
+        # See https://bugs.python.org/issue38013
+        messages = []
+
+        def exception_handler(loop, context):
+            messages.append(context)
+
+        async def async_iterate():
+            yield 1
+            yield 2
+
+        async def main():
+            loop = asyncio.get_running_loop()
+            loop.set_exception_handler(exception_handler)
+
+            async for i in async_iterate():
+                break
+
+        asyncio.run(main())
+
+        self.assertEqual([], messages)
+
 
 if __name__ == "__main__":
     unittest.main()
