@@ -20,6 +20,7 @@ from test.libregrtest.utils import format_duration
 
 # Display the running tests if nothing happened last N seconds
 PROGRESS_UPDATE = 30.0   # seconds
+assert PROGRESS_UPDATE >= PROGRESS_MIN_TIME
 
 # Time to wait until a worker completes: should be immediate
 JOIN_TIMEOUT = 30.0   # seconds
@@ -305,10 +306,8 @@ class MultiprocessRunner:
         self.pending = MultiprocessIterator(self.regrtest.tests)
         if self.ns.timeout is not None:
             self.worker_timeout = self.ns.timeout * 1.5
-            self.main_timeout = self.ns.timeout * 2.0
         else:
             self.worker_timeout = None
-            self.main_timeout = None
         self.workers = None
 
     def start_workers(self):
@@ -345,12 +344,13 @@ class MultiprocessRunner:
             except queue.Empty:
                 return None
 
+        use_faulthandler = (self.ns.timeout is not None)
+        timeout = PROGRESS_UPDATE
         while True:
-            if self.main_timeout is not None:
-                faulthandler.dump_traceback_later(self.main_timeout, exit=True)
+            if use_faulthandler:
+                faulthandler.dump_traceback_later(timeout * 2.0, exit=True)
 
             # wait for a thread
-            timeout = max(PROGRESS_UPDATE, PROGRESS_MIN_TIME)
             try:
                 return self.output.get(timeout=timeout)
             except queue.Empty:
@@ -415,7 +415,7 @@ class MultiprocessRunner:
             print()
             self.regrtest.interrupted = True
         finally:
-            if self.main_timeout is not None:
+            if self.ns.timeout is not None:
                 faulthandler.cancel_dump_traceback_later()
 
         # a test failed (and --failfast is set) or all tests completed
