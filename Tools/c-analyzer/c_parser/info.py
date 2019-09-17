@@ -22,6 +22,9 @@ class Variable(_NTBase,
     __slots__ = ()
     _isglobal = util.Slot()
 
+    def __del__(self):
+        del self._isglobal
+
     @classonly
     def from_parts(cls, filename, funcname, name, vartype, isglobal=False):
         id = info.ID(filename, funcname, name)
