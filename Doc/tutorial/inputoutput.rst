@@ -258,9 +258,9 @@ Old string formatting
 ---------------------
 
 The ``%`` operator can also be used for string formatting. It interprets the
-left argument much like a :c:func:`sprintf`\ -style format string to be applied
-to the right argument, and returns the string resulting from this formatting
-operation. For example::
+left argument much like to C's :c:func:`sprintf`\ -style format string to be
+applied to the right argument, and returns the string resulting from this
+formatting operation. For example::
 
    >>> import math
    >>> print('The value of pi is approximately %5.3f.' % math.pi)
