@@ -1,1 +1,2 @@
-Rename :meth:`Py_SAFE_DOWNCAST` to :meth:`_Py_DOWNCAST`
+Add :meth:`_Py_DOWNCAST` which is an alias of :meth:`Py_SAFE_DOWNCAST`
+due to :meth:`Py_SAFE_DOWNCAST` is not a safe macro.

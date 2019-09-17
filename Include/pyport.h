@@ -42,7 +42,7 @@ Used in:  Py_ARITHMETIC_RIGHT_SHIFT
 
 Py_DEBUG
 Meaning:  Extra checks compiled in for debug mode.
-Used in:  _Py_DOWNCAST
+Used in:  Py_SAFE_DOWNCAST
 
 **************************************************************************/
 
@@ -309,18 +309,24 @@ extern "C" {
  */
 #define Py_FORCE_EXPANSION(X) X
 
-/* _Py_DOWNCAST(VALUE, WIDE, NARROW)
+/* Py_SAFE_DOWNCAST(VALUE, WIDE, NARROW)
  * Cast VALUE to type NARROW from type WIDE.  In Py_DEBUG mode, this
  * assert-fails if any information is lost.
  * Caution:
  *    VALUE may be evaluated more than once.
  */
 #ifdef Py_DEBUG
-#define _Py_DOWNCAST(VALUE, WIDE, NARROW) \
+#define Py_SAFE_DOWNCAST(VALUE, WIDE, NARROW) \
     (assert((WIDE)(NARROW)(VALUE) == (VALUE)), (NARROW)(VALUE))
 #else
-#define _Py_DOWNCAST(VALUE, WIDE, NARROW) (NARROW)(VALUE)
+#define Py_SAFE_DOWNCAST(VALUE, WIDE, NARROW) (NARROW)(VALUE)
 #endif
+
+/* Py_SAFE_DOWNCAST is not a safe macro, so adding an alias to replace it.
+ * Pls use the _Py_DOWNCAST inside.
+ * https://bugs.python.org/issue19692
+ */
+#define _Py_DOWNCAST Py_SAFE_DOWNCAST
 
 /* Py_SET_ERRNO_ON_MATH_ERROR(x)
  * If a libm function did not set errno, but it looks like the result
