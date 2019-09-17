@@ -1673,7 +1673,7 @@ class NamedTuple(metaclass=NamedTupleMeta):
             except ValueError:
                 raise TypeError(f'NamedTuple.__new__() takes from 2 to 3 '
                                 f'positional arguments but {len(args) + 2} '
-                                f'were given')
+                                f'were given') from None
         elif 'fields' in kwargs and len(kwargs) == 1:
             fields = kwargs.pop('fields')
             import warnings
@@ -1719,7 +1719,7 @@ def _typeddict_new(*args, total=True, **kwargs):
         except ValueError:
             raise TypeError(f'TypedDict.__new__() takes from 2 to 3 '
                             f'positional arguments but {len(args) + 2} '
-                            f'were given')
+                            f'were given') from None
     elif '_fields' in kwargs and len(kwargs) == 1:
         fields = kwargs.pop('_fields')
         import warnings
