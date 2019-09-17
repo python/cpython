@@ -1653,81 +1653,20 @@ class NamedTuple(metaclass=NamedTupleMeta):
     """
     _root = True
 
-    def __new__(*args, **kwargs):
-        if not args:
-            raise TypeError('NamedTuple.__new__(): not enough arguments')
-        cls, *args = args  # allow the "cls" keyword be passed
-        if args:
-            typename, *args = args # allow the "typename" keyword be passed
-        elif 'typename' in kwargs:
-            typename = kwargs.pop('typename')
-            import warnings
-            warnings.warn("Passing 'typename' as keyword argument is deprecated",
-                          DeprecationWarning, stacklevel=2)
-        else:
-            raise TypeError("NamedTuple.__new__() missing 1 required positional "
-                            "argument: 'typename'")
-        if args:
-            try:
-                fields, = args # allow the "fields" keyword be passed
-            except ValueError:
-                raise TypeError(f'NamedTuple.__new__() takes from 2 to 3 '
-                                f'positional arguments but {len(args) + 2} '
-                                f'were given') from None
-        elif 'fields' in kwargs and len(kwargs) == 1:
-            fields = kwargs.pop('fields')
-            import warnings
-            warnings.warn("Passing 'fields' as keyword argument is deprecated",
-                          DeprecationWarning, stacklevel=2)
-        else:
-            fields = None
-
+    def __new__(cls, typename, fields=None, /, **kwargs):
         if fields is None:
             fields = kwargs.items()
         elif kwargs:
             raise TypeError("Either list of fields or keywords"
                             " can be provided to NamedTuple, not both")
         return _make_nmtuple(typename, fields)
-    __new__.__text_signature__ = '($cls, typename, fields=None, /, **kwargs)'
 
 
-def _dict_new(*args, **kwargs):
-    if not args:
-        raise TypeError('TypedDict.__new__(): not enough arguments')
-    cls, *args = args  # allow the "cls" keyword be passed
+def _dict_new(cls, /, *args, **kwargs):
     return dict(*args, **kwargs)
-_dict_new.__text_signature__ = '($cls, _typename, _fields=None, /, **kwargs)'
 
 
-def _typeddict_new(*args, total=True, **kwargs):
-    if not args:
-        raise TypeError('TypedDict.__new__(): not enough arguments')
-    cls, *args = args  # allow the "cls" keyword be passed
-    if args:
-        typename, *args = args # allow the "_typename" keyword be passed
-    elif '_typename' in kwargs:
-        typename = kwargs.pop('_typename')
-        import warnings
-        warnings.warn("Passing '_typename' as keyword argument is deprecated",
-                      DeprecationWarning, stacklevel=2)
-    else:
-        raise TypeError("TypedDict.__new__() missing 1 required positional "
-                        "argument: '_typename'")
-    if args:
-        try:
-            fields, = args # allow the "_fields" keyword be passed
-        except ValueError:
-            raise TypeError(f'TypedDict.__new__() takes from 2 to 3 '
-                            f'positional arguments but {len(args) + 2} '
-                            f'were given') from None
-    elif '_fields' in kwargs and len(kwargs) == 1:
-        fields = kwargs.pop('_fields')
-        import warnings
-        warnings.warn("Passing '_fields' as keyword argument is deprecated",
-                      DeprecationWarning, stacklevel=2)
-    else:
-        fields = None
-
+def _typeddict_new(cls, typename, fields=None, /, *, total=True, **kwargs):
     if fields is None:
         fields = kwargs
     elif kwargs:
@@ -1742,7 +1681,6 @@ def _typeddict_new(*args, total=True, **kwargs):
         pass
 
     return _TypedDictMeta(typename, (), ns)
-_typeddict_new.__text_signature__ = '($cls, _typename, _fields=None, /, *, total=True, **kwargs)'
 
 
 def _check_fails(cls, other):
