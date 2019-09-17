@@ -605,9 +605,9 @@ Constants
 .. data:: VERIFY_CRL_CHECK_LEAF
 
    Possible value for :attr:`SSLContext.verify_flags`. In this mode, only the
-   peer cert is check but non of the intermediate CA certificates. The mode
+   peer cert is checked but none of the intermediate CA certificates. The mode
    requires a valid CRL that is signed by the peer cert's issuer (its direct
-   ancestor CA). If no proper has been loaded
+   ancestor CA). If no proper CRL has has been loaded with
    :attr:`SSLContext.load_verify_locations`, validation will fail.
 
    .. versionadded:: 3.4
