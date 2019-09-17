@@ -1061,10 +1061,13 @@ class EditorWindow(object):
             return self.io.maybesave()
 
     def close(self):
-        reply = self.maybesave()
-        if str(reply) != "cancel":
-            self._close()
-        return reply
+        try:
+            reply = self.maybesave()
+            if str(reply) != "cancel":
+                self._close()
+            return reply
+        except AttributeError:  # bpo-35379: close called twice
+            pass
 
     def _close(self):
         if self.io.filename:
