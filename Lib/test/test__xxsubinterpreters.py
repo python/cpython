@@ -514,7 +514,7 @@ class IsRunningTests(TestBase):
             interpreters.is_running(1_000_000)
 
     def test_bad_id(self):
-        with self.assertRaises(RuntimeError):
+        with self.assertRaises(ValueError):
             interpreters.is_running(-1)
 
 
@@ -530,18 +530,15 @@ class InterpreterIDTests(TestBase):
             def __index__(self):
                 return 10
 
-        for id in ('10', '1_0', Int()):
-            with self.subTest(id=id):
-                id = interpreters.InterpreterID(id, force=True)
-                self.assertEqual(int(id), 10)
+        id = interpreters.InterpreterID(Int(), force=True)
+        self.assertEqual(int(id), 10)
 
     def test_bad_id(self):
         self.assertRaises(TypeError, interpreters.InterpreterID, object())
         self.assertRaises(TypeError, interpreters.InterpreterID, 10.0)
+        self.assertRaises(TypeError, interpreters.InterpreterID, '10')
         self.assertRaises(TypeError, interpreters.InterpreterID, b'10')
         self.assertRaises(ValueError, interpreters.InterpreterID, -1)
-        self.assertRaises(ValueError, interpreters.InterpreterID, '-1')
-        self.assertRaises(ValueError, interpreters.InterpreterID, 'spam')
         self.assertRaises(OverflowError, interpreters.InterpreterID, 2**64)
 
     def test_does_not_exist(self):
@@ -720,7 +717,7 @@ class DestroyTests(TestBase):
             interpreters.destroy(1_000_000)
 
     def test_bad_id(self):
-        with self.assertRaises(RuntimeError):
+        with self.assertRaises(ValueError):
             interpreters.destroy(-1)
 
     def test_from_current(self):
@@ -863,7 +860,7 @@ class RunStringTests(TestBase):
             interpreters.run_string(id, 'print("spam")')
 
     def test_error_id(self):
-        with self.assertRaises(RuntimeError):
+        with self.assertRaises(ValueError):
             interpreters.run_string(-1, 'print("spam")')
 
     def test_bad_id(self):
