@@ -1,1 +1,1 @@
-Slightly improve perfomance of long_compare. Patch by hongweipeng.
+Slightly improve perfomance of ``long_compare()``. Patch by hongweipeng and Sergey Fedoseev.
