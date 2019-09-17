@@ -950,12 +950,10 @@ Wait until a socket receives data using the
         # Get a reference to the event loop as we plan to use
         # low-level APIs.
         loop = asyncio.get_running_loop()
+        on_con_lost = loop.create_future()
 
         # Create a pair of connected sockets
         rsock, wsock = socket.socketpair()
-
-        # Prepare a future to inform us when the connection is closed.
-        on_con_lost = loop.create_future()
 
         # Register the socket to wait for data.
         transport, protocol = await loop.create_connection(
