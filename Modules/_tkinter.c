@@ -365,16 +365,16 @@ WaitForMainloop(TkappObject* self)
 
 
 static PyObject *
-unicodeFromTclStringAndSize(const char *s, Py_ssize_t size)
+unicodeFromTclStringAndSize(const char *s, Py_ssize_t size, const char *errors)
 {
     PyObject *r = PyUnicode_DecodeUTF8(s, size, NULL);
     if (!r && PyErr_ExceptionMatches(PyExc_UnicodeDecodeError)) {
+        char *buf = NULL;
+        PyErr_Clear();
         /* Tcl encodes null character as \xc0\x80 */
         if (memchr(s, '\xc0', size)) {
-            char *buf, *q;
             const char *e = s + size;
-            PyErr_Clear();
-            q = buf = (char *)PyMem_Malloc(size);
+            char *q = buf = (char *)PyMem_Malloc(size);
             if (buf == NULL) {
                 PyErr_NoMemory();
                 return NULL;
@@ -389,9 +389,10 @@ unicodeFromTclStringAndSize(const char *s, Py_ssize_t size)
             }
             s = buf;
             size = q - s;
-            r = PyUnicode_DecodeUTF8(s, size, NULL);
-            PyMem_Free(buf);
         }
+        r = PyUnicode_DecodeUTF8(s, size, errors);
+        if (buf != NULL)
+            PyMem_Free(buf);
     }
     return r;
 }
@@ -399,7 +400,7 @@ unicodeFromTclStringAndSize(const char *s, Py_ssize_t size)
 static PyObject *
 unicodeFromTclString(const char *s)
 {
-    return unicodeFromTclStringAndSize(s, strlen(s));
+    return unicodeFromTclStringAndSize(s, strlen(s), NULL);
 }
 
 static PyObject *
@@ -407,7 +408,7 @@ unicodeFromTclObj(Tcl_Obj *value)
 {
     int len;
     char *s = Tcl_GetStringFromObj(value, &len);
-    return unicodeFromTclStringAndSize(s, len);
+    return unicodeFromTclStringAndSize(s, len, NULL);
 }
 
 
@@ -1181,7 +1182,7 @@ FromObj(PyObject* tkapp, Tcl_Obj *value)
     Tcl_Interp *interp = Tkapp_Interp(tkapp);
 
     if (value->typePtr == NULL) {
-        return unicodeFromTclStringAndSize(value->bytes, value->length);
+        return unicodeFromTclStringAndSize(value->bytes, value->length, NULL);
     }
 
     if (value->typePtr == app->BooleanType ||
@@ -2238,7 +2239,9 @@ _tkinter_tkapp_splitlist(TkappObject *self, PyObject *arg)
         goto finally;
 
     for (i = 0; i < argc; i++) {
-        PyObject *s = unicodeFromTclString(argv[i]);
+        PyObject *s = unicodeFromTclStringAndSize(argv[i + 1],
+                                                  strlen(argv[i + 1]),
+                                                  "surrogateescape");
         if (!s) {
             Py_DECREF(v);
             v = NULL;
