@@ -4,7 +4,6 @@ Implements the HMAC algorithm as described by RFC 2104.
 """
 
 import warnings as _warnings
-from _operator import _compare_digest as compare_digest
 try:
     import _hashlib as _hashopenssl
 except ImportError:
