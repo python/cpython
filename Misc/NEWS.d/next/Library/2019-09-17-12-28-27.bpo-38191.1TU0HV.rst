@@ -1,0 +1,2 @@
+Constructor of :class:`~typing.NamedTuple` type now accepts arbitrary keyword
+argument names, including "cls", "self", "typename" and "fields".
