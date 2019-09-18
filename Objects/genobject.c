@@ -819,22 +819,6 @@ PyGen_New(PyFrameObject *f)
     return gen_new_with_qualname(&PyGen_Type, f, NULL, NULL);
 }
 
-int
-PyGen_NeedsFinalizing(PyGenObject *gen)
-{
-    PyFrameObject *f = gen->gi_frame;
-
-    if (f == NULL || f->f_stacktop == NULL)
-        return 0; /* no frame or empty blockstack == no finalization */
-
-    /* Any (exception-handling) block type requires cleanup. */
-    if (f->f_iblock > 0)
-        return 1;
-
-    /* No blocks, it's safe to skip finalization. */
-    return 0;
-}
-
 /* Coroutine Object */
 
 typedef struct {
@@ -1463,7 +1447,7 @@ PyAsyncGen_ClearFreeLists(void)
 }
 
 void
-PyAsyncGen_Fini(void)
+_PyAsyncGen_Fini(void)
 {
     PyAsyncGen_ClearFreeLists();
 }
@@ -1899,11 +1883,6 @@ static PyObject *
 async_gen_athrow_throw(PyAsyncGenAThrow *o, PyObject *args)
 {
     PyObject *retval;
-
-    if (o->agt_state == AWAITABLE_STATE_INIT) {
-        PyErr_SetString(PyExc_RuntimeError, NON_INIT_CORO_MSG);
-        return NULL;
-    }
 
     if (o->agt_state == AWAITABLE_STATE_CLOSED) {
         PyErr_SetNone(PyExc_StopIteration);

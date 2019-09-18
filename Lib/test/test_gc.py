@@ -912,7 +912,7 @@ class GCCallbackTests(unittest.TestCase):
     def test_collect_garbage(self):
         self.preclean()
         # Each of these cause four objects to be garbage: Two
-        # Uncolectables and their instance dicts.
+        # Uncollectables and their instance dicts.
         Uncollectable()
         Uncollectable()
         C1055820(666)

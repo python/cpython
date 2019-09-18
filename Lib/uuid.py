@@ -680,7 +680,7 @@ def _random_getnode():
     return random.getrandbits(48) | (1 << 40)
 
 
-# _OS_GETTERS, when known, are targetted for a specific OS or platform.
+# _OS_GETTERS, when known, are targeted for a specific OS or platform.
 # The order is by 'common practice' on the specified platform.
 # Note: 'posix' and 'windows' _OS_GETTERS are prefixed by a dll/dlload() method
 # which, when successful, means none of these "external" methods are called.
@@ -772,8 +772,11 @@ def uuid1(node=None, clock_seq=None):
 def uuid3(namespace, name):
     """Generate a UUID from the MD5 hash of a namespace UUID and a name."""
     from hashlib import md5
-    hash = md5(namespace.bytes + bytes(name, "utf-8")).digest()
-    return UUID(bytes=hash[:16], version=3)
+    digest = md5(
+        namespace.bytes + bytes(name, "utf-8"),
+        usedforsecurity=False
+    ).digest()
+    return UUID(bytes=digest[:16], version=3)
 
 def uuid4():
     """Generate a random UUID."""

@@ -50,7 +50,7 @@ class SubprocessStreamProtocol(streams.FlowControlMixin,
                                          limit=self._limit,
                                          loop=self._loop,
                                          _asyncio_internal=True)
-            self.stdout.set_transport(stdout_transport)
+            self.stdout._set_transport(stdout_transport)
             self._pipe_fds.append(1)
 
         stderr_transport = transport.get_pipe_transport(2)
@@ -61,7 +61,7 @@ class SubprocessStreamProtocol(streams.FlowControlMixin,
                                          limit=self._limit,
                                          loop=self._loop,
                                          _asyncio_internal=True)
-            self.stderr.set_transport(stderr_transport)
+            self.stderr._set_transport(stderr_transport)
             self._pipe_fds.append(2)
 
         stdin_transport = transport.get_pipe_transport(0)
@@ -80,7 +80,7 @@ class SubprocessStreamProtocol(streams.FlowControlMixin,
         else:
             reader = None
         if reader is not None:
-            reader.feed_data(data)
+            reader._feed_data(data)
 
     def pipe_connection_lost(self, fd, exc):
         if fd == 0:
@@ -101,9 +101,9 @@ class SubprocessStreamProtocol(streams.FlowControlMixin,
             reader = None
         if reader is not None:
             if exc is None:
-                reader.feed_eof()
+                reader._feed_eof()
             else:
-                reader.set_exception(exc)
+                reader._set_exception(exc)
 
         if fd in self._pipe_fds:
             self._pipe_fds.remove(fd)
@@ -224,6 +224,13 @@ async def create_subprocess_shell(cmd, stdin=None, stdout=None, stderr=None,
                                   **kwds):
     if loop is None:
         loop = events.get_event_loop()
+    else:
+        warnings.warn("The loop argument is deprecated since Python 3.8 "
+                      "and scheduled for removal in Python 3.10.",
+                      DeprecationWarning,
+                      stacklevel=2
+        )
+
     protocol_factory = lambda: SubprocessStreamProtocol(limit=limit,
                                                         loop=loop,
                                                         _asyncio_internal=True)
@@ -239,6 +246,12 @@ async def create_subprocess_exec(program, *args, stdin=None, stdout=None,
                                  limit=streams._DEFAULT_LIMIT, **kwds):
     if loop is None:
         loop = events.get_event_loop()
+    else:
+        warnings.warn("The loop argument is deprecated since Python 3.8 "
+                      "and scheduled for removal in Python 3.10.",
+                      DeprecationWarning,
+                      stacklevel=2
+        )
     protocol_factory = lambda: SubprocessStreamProtocol(limit=limit,
                                                         loop=loop,
                                                         _asyncio_internal=True)

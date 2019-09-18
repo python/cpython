@@ -1,0 +1,2 @@
+Improve import error message for partially initialized module on circular
+``from`` imports - by Anthony Sottile.

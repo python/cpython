@@ -142,7 +142,7 @@ ArgumentParser objects
                           formatter_class=argparse.HelpFormatter, \
                           prefix_chars='-', fromfile_prefix_chars=None, \
                           argument_default=None, conflict_handler='error', \
-                          add_help=True, allow_abbrev=True)
+                          add_help=True, allow_abbrev=True, exit_on_error=True)
 
    Create a new :class:`ArgumentParser` object. All parameters should be passed
    as keyword arguments. Each parameter has its own more detailed description
@@ -179,12 +179,18 @@ ArgumentParser objects
    * allow_abbrev_ - Allows long options to be abbreviated if the
      abbreviation is unambiguous. (default: ``True``)
 
+   * exit_on_error_ - Determines whether or not ArgumentParser exits with
+     error info when an error occurs. (default: ``True``)
+
    .. versionchanged:: 3.5
       *allow_abbrev* parameter was added.
 
    .. versionchanged:: 3.8
       In previous versions, *allow_abbrev* also disabled grouping of short
       flags such as ``-vv`` to mean ``-v -v``.
+
+   .. versionchanged:: 3.9
+      *exit_on_error* parameter was added.
 
 The following sections describe how each of these are used.
 
@@ -647,6 +653,28 @@ the help options::
      +h, ++help  show this help message and exit
 
 
+exit_on_error
+^^^^^^^^^^^^^
+
+Normally, when you pass an invalid argument list to the :meth:`~ArgumentParser.parse_args`
+method of an :class:`ArgumentParser`, it will exit with error info.
+
+If the user would like catch errors manually, the feature can be enable by setting
+``exit_on_error`` to ``False``::
+
+   >>> parser = argparse.ArgumentParser(exit_on_error=False)
+   >>> parser.add_argument('--integers', type=int)
+   _StoreAction(option_strings=['--integers'], dest='integers', nargs=None, const=None, default=None, type=<class 'int'>, choices=None, help=None, metavar=None)
+   >>> try:
+   ...     parser.parse_args('--integers a'.split())
+   ... except argparse.ArgumentError:
+   ...     print('Catching an argumentError')
+   ...
+   Catching an argumentError
+
+.. versionadded:: 3.9
+
+
 The add_argument() method
 -------------------------
 
@@ -811,9 +839,19 @@ how the command-line arguments should be handled. The supplied actions are:
     Namespace(foo=['f1', 'f2', 'f3', 'f4'])
 
 You may also specify an arbitrary action by passing an Action subclass or
-other object that implements the same interface.  The recommended way to do
-this is to extend :class:`Action`, overriding the ``__call__`` method
-and optionally the ``__init__`` method.
+other object that implements the same interface. The ``BooleanOptionalAction``
+is available in ``argparse`` and adds support for boolean actions such as
+``--foo`` and ``--no-foo``::
+
+    >>> import argparse
+    >>> parser = argparse.ArgumentParser()
+    >>> parser.add_argument('--foo', action=argparse.BooleanOptionalAction)
+    >>> parser.parse_args(['--no-foo'])
+    Namespace(foo=False)
+
+The recommended way to create a custom action is to extend :class:`Action`,
+overriding the ``__call__`` method and optionally the ``__init__`` and
+``format_usage`` methods.
 
 An example of a custom action::
 
@@ -1102,9 +1140,8 @@ container should match the type_ specified::
    usage: doors.py [-h] {1,2,3}
    doors.py: error: argument door: invalid choice: 4 (choose from 1, 2, 3)
 
-Any object that supports the ``in`` operator can be passed as the *choices*
-value, so :class:`dict` objects, :class:`set` objects, custom containers,
-etc. are all supported.
+Any container can be passed as the *choices* value, so :class:`list` objects,
+:class:`set` objects, and custom containers are all supported.
 
 
 required
@@ -1334,6 +1371,9 @@ Action instances should be callable, so subclasses must override the
 The ``__call__`` method may perform arbitrary actions, but will typically set
 attributes on the ``namespace`` based on ``dest`` and ``values``.
 
+Action subclasses can define a ``format_usage`` method that takes no argument
+and return a string which will be used when printing the usage of the program.
+If such method is not provided, a sensible default will be used.
 
 The parse_args() method
 -----------------------
@@ -2002,7 +2042,14 @@ Exiting methods
 .. method:: ArgumentParser.exit(status=0, message=None)
 
    This method terminates the program, exiting with the specified *status*
-   and, if given, it prints a *message* before that.
+   and, if given, it prints a *message* before that. The user can override
+   this method to handle these steps differently::
+
+    class ErrorCatchingArgumentParser(argparse.ArgumentParser):
+        def exit(self, status=0, message=None):
+            if status:
+                raise Exception(f'Exiting because of an error: {message}')
+            exit(status)
 
 .. method:: ArgumentParser.error(message)
 

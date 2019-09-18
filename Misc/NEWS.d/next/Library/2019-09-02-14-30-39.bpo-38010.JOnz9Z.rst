@@ -1,0 +1,1 @@
+In ``importlib.metadata`` sync with ``importlib_metadata`` 0.20, clarifying behavior of ``files()`` and fixing issue where only one requirement was returned for ``requires()`` on ``dist-info`` packages.

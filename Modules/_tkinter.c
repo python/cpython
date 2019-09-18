@@ -671,8 +671,8 @@ Tkapp_New(const char *screenName, const char *className,
     }
 
     strcpy(argv0, className);
-    if (Py_ISUPPER(Py_CHARMASK(argv0[0])))
-        argv0[0] = Py_TOLOWER(Py_CHARMASK(argv0[0]));
+    if (Py_ISUPPER(argv0[0]))
+        argv0[0] = Py_TOLOWER(argv0[0]);
     Tcl_SetVar(v->interp, "argv0", argv0, TCL_GLOBAL_ONLY);
     PyMem_Free(argv0);
 
@@ -3121,8 +3121,8 @@ _tkinter__flatten(PyObject *module, PyObject *item)
 /*[clinic input]
 _tkinter.create
 
-    screenName: str(accept={str, NoneType}) = NULL
-    baseName: str = NULL
+    screenName: str(accept={str, NoneType}) = None
+    baseName: str = ""
     className: str = "Tk"
     interactive: bool(accept={int}) = False
     wantobjects: bool(accept={int}) = False
@@ -3130,7 +3130,7 @@ _tkinter.create
         if false, then Tk_Init() doesn't get called
     sync: bool(accept={int}) = False
         if true, then pass -sync to wish
-    use: str(accept={str, NoneType}) = NULL
+    use: str(accept={str, NoneType}) = None
         if not None, then pass -use to wish
     /
 
@@ -3141,7 +3141,7 @@ _tkinter_create_impl(PyObject *module, const char *screenName,
                      const char *baseName, const char *className,
                      int interactive, int wantobjects, int wantTk, int sync,
                      const char *use)
-/*[clinic end generated code: output=e3315607648e6bb4 input=431907c134c80085]*/
+/*[clinic end generated code: output=e3315607648e6bb4 input=da9b17ee7358d862]*/
 {
     /* XXX baseName is not used anymore;
      * try getting rid of it. */

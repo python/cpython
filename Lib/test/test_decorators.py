@@ -265,6 +265,45 @@ class TestDecorators(unittest.TestCase):
         self.assertEqual(bar(), 42)
         self.assertEqual(actions, expected_actions)
 
+    def test_wrapped_descriptor_inside_classmethod(self):
+        class BoundWrapper:
+            def __init__(self, wrapped):
+                self.__wrapped__ = wrapped
+
+            def __call__(self, *args, **kwargs):
+                return self.__wrapped__(*args, **kwargs)
+
+        class Wrapper:
+            def __init__(self, wrapped):
+                self.__wrapped__ = wrapped
+
+            def __get__(self, instance, owner):
+                bound_function = self.__wrapped__.__get__(instance, owner)
+                return BoundWrapper(bound_function)
+
+        def decorator(wrapped):
+            return Wrapper(wrapped)
+
+        class Class:
+            @decorator
+            @classmethod
+            def inner(cls):
+                # This should already work.
+                return 'spam'
+
+            @classmethod
+            @decorator
+            def outer(cls):
+                # Raised TypeError with a message saying that the 'Wrapper'
+                # object is not callable.
+                return 'eggs'
+
+        self.assertEqual(Class.inner(), 'spam')
+        self.assertEqual(Class.outer(), 'eggs')
+        self.assertEqual(Class().inner(), 'spam')
+        self.assertEqual(Class().outer(), 'eggs')
+
+
 class TestClassDecorators(unittest.TestCase):
 
     def test_simple(self):

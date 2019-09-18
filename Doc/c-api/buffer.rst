@@ -462,10 +462,12 @@ Buffer-related functions
    :c:func:`PyObject_GetBuffer`.
 
 
-.. c:function:: Py_ssize_t PyBuffer_SizeFromFormat(const char *)
+.. c:function:: Py_ssize_t PyBuffer_SizeFromFormat(const char *format)
 
    Return the implied :c:data:`~Py_buffer.itemsize` from :c:data:`~Py_buffer.format`.
-   This function is not yet implemented.
+   On error, raise an exception and return -1.
+
+   .. versionadded:: 3.9
 
 
 .. c:function:: int PyBuffer_IsContiguous(Py_buffer *view, char order)
@@ -481,11 +483,18 @@ Buffer-related functions
    *indices* must point to an array of ``view->ndim`` indices.
 
 
+.. c:function:: int PyBuffer_FromContiguous(Py_buffer *view, void *buf, Py_ssize_t len, char fort)
+
+   Copy contiguous *len* bytes from *buf* to *view*.
+   *fort* can be ``'C'`` or ``'F'`` (for C-style or Fortran-style ordering).
+   ``0`` is returned on success, ``-1`` on error.
+
+
 .. c:function:: int PyBuffer_ToContiguous(void *buf, Py_buffer *src, Py_ssize_t len, char order)
 
    Copy *len* bytes from *src* to its contiguous representation in *buf*.
-   *order* can be ``'C'`` or ``'F'`` (for C-style or Fortran-style ordering).
-   ``0`` is returned on success, ``-1`` on error.
+   *order* can be ``'C'`` or ``'F'`` or ``'A'`` (for C-style or Fortran-style
+   ordering or either one). ``0`` is returned on success, ``-1`` on error.
 
    This function fails if *len* != *src->len*.
 

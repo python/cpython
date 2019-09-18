@@ -1503,3 +1503,33 @@ script execution tests.
    containing the *source*.  If *compiled* is ``True``, both source files will
    be compiled and added to the zip package.  Return a tuple of the full zip
    path and the archive name for the zip file.
+
+
+:mod:`test.support.bytecode_helper` --- Support tools for testing correct bytecode generation
+=============================================================================================
+
+.. module:: test.support.bytecode_helper
+   :synopsis: Support tools for testing correct bytecode generation.
+
+The :mod:`test.support.bytecode_helper` module provides support for testing
+and inspecting bytecode generation.
+
+The module defines the follwing class:
+
+.. class:: BytecodeTestCase(unittest.TestCase)
+
+   This class has custom assertion methods for inspecting bytecode.
+
+.. method:: BytecodeTestCase.get_disassembly_as_string(co)
+
+   Return the disassembly of *co* as string.
+
+
+.. method:: BytecodeTestCase.assertInBytecode(x, opname, argval=_UNSPECIFIED)
+
+   Return instr if *opname* is found, otherwise throws :exc:`AssertionError`.
+
+
+.. method:: BytecodeTestCase.assertNotInBytecode(x, opname, argval=_UNSPECIFIED)
+
+   Throws :exc:`AssertionError` if *opname* is found.

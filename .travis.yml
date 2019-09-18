@@ -11,7 +11,7 @@ cache:
 
 env:
   global:
-    - OPENSSL=1.1.1c
+    - OPENSSL=1.1.1d
     - OPENSSL_DIR="$HOME/multissl/openssl/${OPENSSL}"
     - PATH="${OPENSSL_DIR}/bin:$PATH"
     - CFLAGS="-I${OPENSSL_DIR}/include"
@@ -23,7 +23,7 @@ env:
 branches:
   only:
     - master
-    - /^\d\.\d$/
+    - /^\d\.\d+$/
     - buildbot-custom
 
 matrix:
@@ -73,16 +73,6 @@ matrix:
         - make -C Doc/ PYTHON=../python venv
       script:
         xvfb-run make -C Doc/ PYTHON=../python SPHINXOPTS="-q -W -j4" doctest
-    - name: "Mac OS X tests"
-      os: osx
-      language: c
-      compiler: clang
-      # Testing under macOS is optional until testing stability has been demonstrated.
-      env: OPTIONAL=true
-      before_install:
-        # Python 3 is needed for Argument Clinic and multissl
-        - HOMEBREW_NO_AUTO_UPDATE=1 brew install xz python3
-        - export PATH=$(brew --prefix)/bin:$(brew --prefix)/sbin:$PATH
     - name: "Test code coverage (Python)"
       os: linux
       language: c

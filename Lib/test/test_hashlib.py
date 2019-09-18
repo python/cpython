@@ -27,6 +27,11 @@ c_hashlib = import_fresh_module('hashlib', fresh=['_hashlib'])
 py_hashlib = import_fresh_module('hashlib', blocked=['_hashlib'])
 
 try:
+    from _hashlib import HASH
+except ImportError:
+    HASH = None
+
+try:
     import _blake2
 except ImportError:
     _blake2 = None
@@ -190,9 +195,21 @@ class HashLibTestCase(unittest.TestCase):
         self.assertTrue(set(hashlib.algorithms_guaranteed).
                             issubset(hashlib.algorithms_available))
 
+    def test_usedforsecurity(self):
+        for cons in self.hash_constructors:
+            cons(usedforsecurity=True)
+            cons(usedforsecurity=False)
+            cons(b'', usedforsecurity=True)
+            cons(b'', usedforsecurity=False)
+        hashlib.new("sha256", usedforsecurity=True)
+        hashlib.new("sha256", usedforsecurity=False)
+
     def test_unknown_hash(self):
         self.assertRaises(ValueError, hashlib.new, 'spam spam spam spam spam')
         self.assertRaises(TypeError, hashlib.new, 1)
+
+    def test_new_upper_to_lower(self):
+        self.assertEqual(hashlib.new("SHA256").name, "sha256")
 
     def test_get_builtin_constructor(self):
         get_builtin_constructor = getattr(hashlib,
@@ -374,6 +391,9 @@ class HashLibTestCase(unittest.TestCase):
         constructors = self.constructors_to_test[name]
         for hash_object_constructor in constructors:
             m = hash_object_constructor()
+            if HASH is not None and isinstance(m, HASH):
+                # _hashopenssl's variant does not have extra SHA3 attributes
+                continue
             self.assertEqual(capacity + rate, 1600)
             self.assertEqual(m._capacity_bits, capacity)
             self.assertEqual(m._rate_bits, rate)
@@ -972,6 +992,10 @@ class KDFTests(unittest.TestCase):
             with self.assertRaises((ValueError, OverflowError, TypeError)):
                 hashlib.scrypt(b'password', salt=b'salt', n=2, r=8, p=1,
                                dklen=dklen)
+
+    def test_normalized_name(self):
+        self.assertNotIn("blake2b512", hashlib.algorithms_available)
+        self.assertNotIn("sha3-512", hashlib.algorithms_available)
 
 
 if __name__ == "__main__":

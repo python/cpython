@@ -9,6 +9,7 @@ import ensurepip
 import os
 import os.path
 import re
+import shutil
 import struct
 import subprocess
 import sys
@@ -360,6 +361,25 @@ class BasicTest(BaseTest):
             'pool.terminate()'])
         self.assertEqual(out.strip(), "python".encode())
 
+    @unittest.skipIf(os.name == 'nt', 'not relevant on Windows')
+    def test_deactivate_with_strict_bash_opts(self):
+        bash = shutil.which("bash")
+        if bash is None:
+            self.skipTest("bash required for this test")
+        rmtree(self.env_dir)
+        builder = venv.EnvBuilder(clear=True)
+        builder.create(self.env_dir)
+        activate = os.path.join(self.env_dir, self.bindir, "activate")
+        test_script = os.path.join(self.env_dir, "test_strict.sh")
+        with open(test_script, "w") as f:
+            f.write("set -euo pipefail\n"
+                    f"source {activate}\n"
+                    "deactivate\n")
+        out, err = check_output([bash, test_script])
+        self.assertEqual(out, "".encode())
+        self.assertEqual(err, "".encode())
+
+
 @requireVenvCreate
 class EnsurePipTest(BaseTest):
     """Test venv module installation of pip."""
@@ -394,11 +414,7 @@ class EnsurePipTest(BaseTest):
         with open(os.devnull, "rb") as f:
             self.assertEqual(f.read(), b"")
 
-        # Issue #20541: os.path.exists('nul') is False on Windows
-        if os.devnull.lower() == 'nul':
-            self.assertFalse(os.path.exists(os.devnull))
-        else:
-            self.assertTrue(os.path.exists(os.devnull))
+        self.assertTrue(os.path.exists(os.devnull))
 
     def do_test_with_pip(self, system_site_packages):
         rmtree(self.env_dir)
