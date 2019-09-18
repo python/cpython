@@ -198,6 +198,7 @@ class CAPITest(unittest.TestCase):
             self.assertRegex(err.replace(b'\r', b''),
                              br'Fatal Python error: a function returned NULL '
                                 br'without setting an error\n'
+                             br'Python runtime state: initialized\n'
                              br'SystemError: <built-in function '
                                  br'return_null_without_error> returned NULL '
                                  br'without setting an error\n'
@@ -225,6 +226,7 @@ class CAPITest(unittest.TestCase):
             self.assertRegex(err.replace(b'\r', b''),
                              br'Fatal Python error: a function returned a '
                                 br'result with an error set\n'
+                             br'Python runtime state: initialized\n'
                              br'ValueError\n'
                              br'\n'
                              br'The above exception was the direct cause '
