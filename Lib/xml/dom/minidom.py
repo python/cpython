@@ -1796,12 +1796,9 @@ class Document(Node, DocumentLS):
         else:
             standalone = ''
 
-        writer.write(
-            '<?xml version="1.0" {encoding}{standalone}?>{newline}'.format(
-                encoding="encoding=\"{}\"".format(encoding) if encoding else '',
-                standalone=standalone,
-                newline=newl)
-        )
+        encoding = "encoding=\"{}\"".format(encoding) if encoding else ''
+
+        writer.write(f'<?xml version="1.0" {encoding}{standalone}?>{newl}')
 
         for node in self.childNodes:
             node.writexml(writer, indent, addindent, newl)
