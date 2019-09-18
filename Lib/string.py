@@ -54,30 +54,7 @@ from collections import ChainMap as _ChainMap
 
 _sentinel_dict = {}
 
-class _TemplateMetaclass(type):
-    pattern = r"""
-    %(delim)s(?:
-      (?P<escaped>%(delim)s) |   # Escape sequence of two delimiters
-      (?P<named>%(id)s)      |   # delimiter and a Python identifier
-      {(?P<braced>%(bid)s)}  |   # delimiter and a braced identifier
-      (?P<invalid>)              # Other ill-formed delimiter exprs
-    )
-    """
-
-    def __init__(cls, name, bases, dct):
-        super(_TemplateMetaclass, cls).__init__(name, bases, dct)
-        if 'pattern' in dct:
-            pattern = cls.pattern
-        else:
-            pattern = _TemplateMetaclass.pattern % {
-                'delim' : _re.escape(cls.delimiter),
-                'id'    : cls.idpattern,
-                'bid'   : cls.braceidpattern or cls.idpattern,
-                }
-        cls.pattern = _re.compile(pattern, cls.flags | _re.VERBOSE)
-
-
-class Template(metaclass=_TemplateMetaclass):
+class Template:
     """A string class for supporting $-substitutions."""
 
     delimiter = '$'
@@ -88,6 +65,25 @@ class Template(metaclass=_TemplateMetaclass):
     idpattern = r'(?a:[_a-z][_a-z0-9]*)'
     braceidpattern = None
     flags = _re.IGNORECASE
+
+    def __init_subclass__(cls):
+        super().__init_subclass__()
+        if 'pattern' in cls.__dict__:
+            pattern = cls.pattern
+        else:
+            pattern = r"""
+            %(delim)s(?:
+              (?P<escaped>%(delim)s) |   # Escape sequence of two delimiters
+              (?P<named>%(id)s)      |   # delimiter and a Python identifier
+              {(?P<braced>%(bid)s)}  |   # delimiter and a braced identifier
+              (?P<invalid>)              # Other ill-formed delimiter exprs
+            )
+            """ % {
+                'delim' : _re.escape(cls.delimiter),
+                'id'    : cls.idpattern,
+                'bid'   : cls.braceidpattern or cls.idpattern,
+            }
+        cls.pattern = _re.compile(pattern, cls.flags | _re.VERBOSE)
 
     def __init__(self, template):
         self.template = template
@@ -146,6 +142,7 @@ class Template(metaclass=_TemplateMetaclass):
                              self.pattern)
         return self.pattern.sub(convert, self.template)
 
+Template.__init_subclass__()  # setup pattern
 
 
 ########################################################################
