@@ -654,8 +654,8 @@ and :c:type:`PyType_Type` effectively act as defaults.)
    the instance is still in existence, but there are no references to it.  The
    destructor function should free all references which the instance owns, free all
    memory buffers owned by the instance (using the freeing function corresponding
-   to the allocation function used to allocate the buffer), and finally (as its
-   last action) call the type's :c:member:`~PyTypeObject.tp_free` function.  If the type is not
+   to the allocation function used to allocate the buffer), and then call the
+   type's :c:member:`~PyTypeObject.tp_free` function.  If the type is not
    subtypable (doesn't have the :const:`Py_TPFLAGS_BASETYPE` flag bit set), it is
    permissible to call the object deallocator directly instead of via
    :c:member:`~PyTypeObject.tp_free`.  The object deallocator should be the one used to allocate the
@@ -663,6 +663,10 @@ and :c:type:`PyType_Type` effectively act as defaults.)
    using :c:func:`PyObject_New` or :c:func:`PyObject_VarNew`, or
    :c:func:`PyObject_GC_Del` if the instance was allocated using
    :c:func:`PyObject_GC_New` or :c:func:`PyObject_GC_NewVar`.
+
+   Finally, if the type is heap allocated (:const:`Py_TPFLAGS_HEAPTYPE` or
+   built with :c:func:`PyType_FromSpec`), the deallocator should decrement the
+   reference count for its type object.
 
    **Inheritance:**
 

@@ -118,7 +118,8 @@ The following functions and structs are used to create
 
 .. c:function:: PyObject* PyType_FromSpecWithBases(PyType_Spec *spec, PyObject *bases)
 
-   Creates and returns a heap type object from the *spec*.
+   Creates and returns a heap type object from the *spec*
+   (:const:`Py_TPFLAGS_HEAPTYPE`).
 
    If *bases* is a tuple, the created heap type contains all types contained
    in it as base types.
