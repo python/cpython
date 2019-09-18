@@ -1,0 +1,2 @@
+Within multiprocessing.connection, use sha256 instead of md5 for
+deliver_challenge() and answer_challenge().
