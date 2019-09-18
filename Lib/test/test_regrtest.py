@@ -54,8 +54,6 @@ class ParseArgsTestCase(unittest.TestCase):
                     libregrtest._parse_args([opt])
                 self.assertIn('Run Python regression tests.', out.getvalue())
 
-    @unittest.skipUnless(hasattr(faulthandler, 'dump_traceback_later'),
-                         "faulthandler.dump_traceback_later() required")
     def test_timeout(self):
         ns = libregrtest._parse_args(['--timeout', '4.2'])
         self.assertEqual(ns.timeout, 4.2)
@@ -572,8 +570,7 @@ class ProgramsTestCase(BaseTestCase):
         self.python_args = ['-Wd', '-E', '-bb']
         self.regrtest_args = ['-uall', '-rwW',
                               '--testdir=%s' % self.tmptestdir]
-        if hasattr(faulthandler, 'dump_traceback_later'):
-            self.regrtest_args.extend(('--timeout', '3600', '-j4'))
+        self.regrtest_args.extend(('--timeout', '3600', '-j4'))
         if sys.platform == 'win32':
             self.regrtest_args.append('-n')
 
