@@ -356,8 +356,8 @@ PyMODINIT_FUNC PyInit__sqlite3(void)
     module = PyModule_Create(&_sqlite3module);
 
     if (!module ||
-        (named_row_setup_types() < 0) ||
         (pysqlite_row_setup_types() < 0) ||
+        (pysqlite_named_row_setup_types() < 0) ||
         (pysqlite_cursor_setup_types() < 0) ||
         (pysqlite_connection_setup_types() < 0) ||
         (pysqlite_cache_setup_types() < 0) ||

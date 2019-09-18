@@ -30,6 +30,9 @@
     <ClInclude Include="..\Modules\_sqlite\row.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="..\Modules\_sqlite\named_row.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
     <ClInclude Include="..\Modules\_sqlite\statement.h">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -57,6 +60,9 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="..\Modules\_sqlite\row.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Modules\_sqlite\named_row.c">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="..\Modules\_sqlite\statement.c">

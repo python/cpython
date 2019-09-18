@@ -2,111 +2,146 @@ import sqlite3
 import unittest
 
 
-class NamedRowSetup(unittest.TestCase):
-
-    expected_list = [("a", 1), ("dash-name", 2), ("space name", 3)]
-
+class NamedRowFactoryTests(unittest.TestCase):
     def setUp(self):
-        """Database ('a', 'dash-name', 'space name')
-        Filled with a 100 of (1, 2)
-        """
-        conn = sqlite3.connect(":memory:")
-        conn.execute('CREATE TABLE t(a, "dash-name", "space name")')
-        for i in range(100):
-            conn.execute("INSERT INTO t VALUES(?,?,?)", (1, 2, 3))
-        conn.row_factory = sqlite3.NamedRow
-        self.conn = conn
+        self.conn = sqlite3.connect(":memory:")
+        self.conn.row_factory = sqlite3.NamedRow
 
-    def row(self):
-        """An instance of NamedRow."""
-        return self.conn.execute("SELECT * FROM t LIMIT 1").fetchone()
-
-
-class Test01_sqlite3_connection(NamedRowSetup):
-    def test_database(self):
-        self.assertIn("NamedRow", repr(self.conn.row_factory))
-        cursor = self.conn.execute("SELECT * FROM t LIMIT 1")
-        self.assertSequenceEqual(
-            ("a", "dash-name", "space name"), tuple(x[0] for x in cursor.description)
-        )
-
-
-class Test02_NamedRow_class(NamedRowSetup):
-    def test1_is_NamedRow(self):
-        row = self.row()
+    def test_instance(self):
+        """row_factory creates NamedRow instances"""
+        row = self.conn.execute("SELECT 1, 2").fetchone()
+        self.assertIsInstance(row, sqlite3.NamedRow)
         self.assertIn("NamedRow", row.__class__.__name__)
         self.assertIn("NamedRow", repr(row))
+        self.assertIn("optimized row_factory with namedtuple", sqlite3.NamedRow.__doc__)
 
-    def test2_len(self):
-        self.assertEqual(3, len(self.row()))
+    def test_by_number_index(self):
+        """Get values by numbered index [0]"""
+        row = self.conn.execute("SELECT 1, 2").fetchone()
+        # len(row)
+        self.assertEqual(2, len(row))
 
+        self.assertEqual(row[0], 1)
+        self.assertEqual(row[1], 2)
+        self.assertEqual(row[-1], 2)
+        self.assertEqual(row[-2], 1)
 
-class Test03_NamedRow_access(NamedRowSetup):
-    def test1_getitem_by_number(self):
-        row = self.row()
-        self.assertEqual(1, row[0])
-        self.assertEqual(2, row[1])
-        self.assertEqual(3, row[2])
+        # Check past boundary
+        with self.assertRaises(IndexError):
+            row[len(row) + 1]
+        with self.assertRaises(IndexError):
+            row[-1 * (len(row) + 1)]
 
-    def test2_getitem_by_string(self):
-        row = self.row()
+    def test_by_string_index(self):
+        """Get values by string index ['field']"""
+        row = self.conn.execute(
+            'SELECT 1 AS a, 2 AS "dash-name", ' '3 AS "space name", 4 AS "四"'
+        ).fetchone()
         self.assertEqual(1, row["a"])
         self.assertEqual(2, row["dash-name"])
         self.assertEqual(3, row["space name"])
+        self.assertEqual(4, row["四"])
 
-    def test3_getitem_by_string_acceptable_replacement(self):
-        row = self.row()
-        # underscore is acceptable for space and dash
-        self.assertEqual(2, row["dash_name"])
+        # Case insensitive
+        self.assertEqual(1, row["A"])
+        self.assertEqual(2, row["DaSh-NaMe"])
+        self.assertEqual(3, row["SPACE name"])
+
+        # Underscore as acceptable replacement for dash and space
+        self.assertEqual(2, row["dash_NAME"])
         self.assertEqual(3, row["space_name"])
 
-    def test4_getitem_by_string_case_insensitive(self):
-        row = self.row()
-        self.assertEqual(1, row["A"])
-        self.assertEqual(2, row["DaSh-nAmE"])
-        self.assertEqual(3, row["Space Name"])
-
-        self.assertEqual(2, row["dAsH_NaMe"])
-        self.assertEqual(3, row["Space_Name"])
-
-    def test5_access_by_attribute(self):
-        row = self.row()
+    def test_by_attribute(self):
+        """Get values by attribute row.field"""
+        row = self.conn.execute(
+            'SELECT 1 AS a, 2 AS "dash-name", ' '3 AS "space name", 4 AS "四"'
+        ).fetchone()
         self.assertEqual(1, row.a)
         self.assertEqual(2, row.dash_name)
-        self.assertEqual(3, row.SPACE_Name)
+        self.assertEqual(3, row.space_name)
+        self.assertEqual(4, row.四)
+        self.assertEqual(2, row.DASH_NAME)
 
+    def test_contains_field(self):
+        row = self.conn.execute("SELECT 1 AS a, 2 AS b").fetchone()
+        self.assertIn("a", row)
+        self.assertIn("A", row)
 
-class Test_NamedRow_iterator:
-    def test1_iterable_keyValue_pairs(self):
-        row = self.row()
-        self.assertSequenceEqual(self.expected_list, [x for x in row])
-        self.assertSequenceEqual(self.expected_list, tuple(row))
-        self.assertSequenceEqual(self.expected_list, list(row))
+    def test_slice(self):
+        """Does NamedRow slice like a list."""
+        row = self.conn.execute("SELECT 1, 2, 3, 4").fetchone()
+        self.assertEqual(row[0:0], ())
+        self.assertEqual(row[0:1], (1,))
+        self.assertEqual(row[1:3], (2, 3))
+        self.assertEqual(row[3:1], ())
+        # Explicit bounds are optional.
+        self.assertEqual(row[1:], (2, 3, 4))
+        self.assertEqual(row[:3], (1, 2, 3))
+        # Slices can use negative indices.
+        self.assertEqual(row[-2:-1], (3,))
+        self.assertEqual(row[-2:], (3, 4))
+        # Slicing supports steps.
+        self.assertEqual(row[0:4:2], (1, 3))
+        self.assertEqual(row[3:0:-2], (4, 2))
 
-    def test2_iterable_into_dict(self):
-        row = self.row()
-        self.assertDictEqual(dict(self.expected_list), dict(row))
+    def test_hash_comparison(self):
+        row1 = self.conn.execute("SELECT 1 AS a, 2 AS b").fetchone()
+        row2 = self.conn.execute("SELECT 1 AS a, 2 AS b").fetchone()
+        row3 = self.conn.execute("SELECT 1 AS a, 3 AS b").fetchone()
 
+        self.assertEqual(row1, row1)
+        self.assertEqual(row1, row2)
+        self.assertTrue(row2 != row3)
 
-class Test_NamedRow_exceptions(NamedRowSetup):
-    def test_IndexError(self):
-        row = self.row()
-        with self.assertRaises(IndexError):
-            row[9]
+        self.assertFalse(row1 != row1)
+        self.assertFalse(row1 != row2)
+        self.assertFalse(row2 == row3)
+
+        self.assertEqual(row1, row2)
+        self.assertEqual(hash(row1), hash(row2))
+        self.assertNotEqual(row1, row3)
+        self.assertNotEqual(hash(row1), hash(row3))
+
+    def test_fake_cursor_class(self):
+        # Issue #24257: Incorrect use of PyObject_IsInstance() caused
+        # segmentation fault.
+        # Issue #27861: Also applies for cursor factory.
+        class FakeCursor(str):
+            __class__ = sqlite3.Cursor
+
+        self.assertRaises(TypeError, self.conn.cursor, FakeCursor)
+        self.assertRaises(TypeError, sqlite3.NamedRow, FakeCursor(), ())
+
+    def test_iterable(self):
+        """Is NamedRow iterable."""
+        row = self.conn.execute("SELECT 1 AS a, 2 AS b").fetchone()
+        for col in row:
+            pass
+
+    def test_iterable_pairs(self):
+        expected = (("a", 1), ("b", 2))
+        row = self.conn.execute("SELECT 1 AS a, 2 AS b").fetchone()
+        self.assertSequenceEqual(expected, [x for x in row])
+        self.assertSequenceEqual(expected, tuple(row))
+        self.assertSequenceEqual(expected, list(row))
+        self.assertSequenceEqual(dict(expected), dict(row))
+
+    def test_expected_exceptions(self):
+        row = self.conn.execute('SELECT 1 AS a, 2 AS "dash-name"').fetchone()
         with self.assertRaises(IndexError):
             row["no_such_field"]
-
-    def test_AttributeError(self):
-        row = self.row()
         with self.assertRaises(AttributeError):
-            row.alphabet
-
-    def test_not_assignable(self):
-        row = self.row()
+            row.no_such_field
+        with self.assertRaises(TypeError):
+            row[0] = 100
         with self.assertRaises(TypeError):
             row["a"] = 100
-        with self.assertRaises(TypeError):
+        with self.assertRaises(TypeError) as err:
             row.a = 100
+        self.assertIn("does not support item assignment", str(err.exception))
+
+        with self.assertRaises(TypeError):
+            setattr(row, "a", 100)
 
 
 if __name__ == "__main__":

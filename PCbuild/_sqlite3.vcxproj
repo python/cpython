@@ -105,6 +105,7 @@
     <ClInclude Include="..\Modules\_sqlite\module.h" />
     <ClInclude Include="..\Modules\_sqlite\prepare_protocol.h" />
     <ClInclude Include="..\Modules\_sqlite\row.h" />
+    <ClInclude Include="..\Modules\_sqlite\named_row.h" />
     <ClInclude Include="..\Modules\_sqlite\statement.h" />
     <ClInclude Include="..\Modules\_sqlite\util.h" />
   </ItemGroup>
@@ -116,6 +117,7 @@
     <ClCompile Include="..\Modules\_sqlite\module.c" />
     <ClCompile Include="..\Modules\_sqlite\prepare_protocol.c" />
     <ClCompile Include="..\Modules\_sqlite\row.c" />
+    <ClCompile Include="..\Modules\_sqlite\named_row.c" />
     <ClCompile Include="..\Modules\_sqlite\statement.c" />
     <ClCompile Include="..\Modules\_sqlite\util.c" />
   </ItemGroup>

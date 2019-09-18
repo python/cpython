@@ -28,11 +28,11 @@ typedef struct _NamedRow
 {
     PyObject_HEAD
     PyObject* data;
-    PyObject* description;
+    PyObject* fields;
 } pysqlite_NamedRow;
 
 extern PyTypeObject pysqlite_NamedRowType;
 
-int named_row_setup_types(void);
+int pysqlite_named_row_setup_types(void);
 
 #endif

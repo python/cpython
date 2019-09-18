@@ -52,6 +52,8 @@ sqlite_version_info = tuple([int(x) for x in sqlite_version.split(".")])
 
 Binary = memoryview
 collections.abc.Sequence.register(Row)
+collections.abc.Sequence.register(NamedRow)
+
 
 def register_adapters_and_converters():
     def adapt_date(val):
