@@ -3,7 +3,7 @@ import inspect
 import unittest
 
 from unittest.mock import (ANY, call, AsyncMock, patch, MagicMock,
-                           create_autospec, _AwaitEvent, sentinel)
+                           create_autospec, _AwaitEvent, sentinel, _CallList)
 
 
 def tearDownModule():
@@ -529,10 +529,7 @@ class AsyncMockAssert(unittest.TestCase):
         self.mock = AsyncMock()
 
     async def _runnable_test(self, *args, **kwargs):
-        if not args and not kwargs:
-            await self.mock()
-        else:
-            await self.mock(*args, **kwargs)
+        await self.mock(*args, **kwargs)
 
     async def _await_coroutine(self, coroutine):
         return await coroutine
@@ -548,6 +545,8 @@ class AsyncMockAssert(unittest.TestCase):
         mock.async_method.assert_called_once_with()
         with self.assertRaises(AssertionError):
             mock.assert_awaited()
+        with self.assertRaises(AssertionError):
+            mock.async_method.assert_awaited()
 
     def test_assert_called_then_awaited(self):
         mock = AsyncMock(AsyncClass)
@@ -561,6 +560,7 @@ class AsyncMockAssert(unittest.TestCase):
         asyncio.run(self._await_coroutine(mock_coroutine))
         # Assert we haven't re-called the function
         mock.async_method.assert_called_once()
+        mock.async_method.assert_awaited()
         mock.async_method.assert_awaited_once()
         mock.async_method.assert_awaited_once_with()
 
@@ -579,10 +579,14 @@ class AsyncMockAssert(unittest.TestCase):
         mock = AsyncMock(AsyncClass)
         coroutine = mock.async_method()
         with self.assertWarns(RuntimeWarning):
-            # Will raise a warning because never awaited
+            # The first call will be awaited so no warning there
+            # But this call will never get awaited, so it will warn here
             mock.async_method()
+        with self.assertRaises(AssertionError):
+            mock.async_method.assert_awaited()
         mock.async_method.assert_called()
         asyncio.run(self._await_coroutine(coroutine))
+        mock.async_method.assert_awaited()
         mock.async_method.assert_awaited_once()
 
     def test_assert_called_once_and_awaited_twice(self):
@@ -610,76 +614,92 @@ class AsyncMockAssert(unittest.TestCase):
             self.mock.assert_called()
 
     def test_assert_has_calls_not_awaits(self):
-        kalls = [call('NormalFoo')]
+        kalls = [call('foo')]
         with self.assertWarns(RuntimeWarning):
-            self.mock('NormalFoo')
+            # Will raise a warning because never awaited
+            self.mock('foo')
         self.mock.assert_has_calls(kalls)
         with self.assertRaises(AssertionError):
             self.mock.assert_has_awaits(kalls)
 
-    def test_assert_has_mock_calls_on_async_mock(self):
-        mock = AsyncMock()
+    def test_assert_has_mock_calls_on_async_mock_no_spec(self):
         with self.assertWarns(RuntimeWarning):
-            mock()
+            # Will raise a warning because never awaited
+            self.mock()
         kalls_empty = [('', (), {})]
-        self.assertEqual(mock.mock_calls, kalls_empty)
+        self.assertEqual(self.mock.mock_calls, kalls_empty)
 
-        kalls_args = ([call('NormalFoo'), call('baz')])
         with self.assertWarns(RuntimeWarning):
-            self.mock('NormalFoo')
+            # Will raise a warning because never awaited
+            self.mock('foo')
             self.mock('baz')
+        kalls_args = ([call(), call('foo'), call('baz')])
         self.assertEqual(self.mock.mock_calls, kalls_args)
 
-        a_mock = AsyncMock(AsyncClass)
+    def test_assert_has_mock_calls_on_async_mock_with_spec(self):
+        a_class_mock = AsyncMock(AsyncClass)
         with self.assertWarns(RuntimeWarning):
-            a_mock.async_method()
-        self.assertEqual(a_mock.async_method.mock_calls, kalls_empty)
-        self.assertEqual(a_mock.mock_calls, [call.async_method()])
+            # Will raise a warning because never awaited
+            a_class_mock.async_method()
+        kalls_empty = [('', (), {})]
+        self.assertEqual(a_class_mock.async_method.mock_calls, kalls_empty)
+        self.assertEqual(a_class_mock.mock_calls, [call.async_method()])
 
-        kalls_args_kwargs = [call(), call(1, 2, 3, a=4, b=5)]
         with self.assertWarns(RuntimeWarning):
-            a_mock.async_method(1, 2, 3, a=4, b=5)
-        self.assertEqual(a_mock.async_method.mock_calls, kalls_args_kwargs)
+            # Will raise a warning because never awaited
+            a_class_mock.async_method(1, 2, 3, a=4, b=5)
+        kalls_args_kwargs = [call(), call(1, 2, 3, a=4, b=5)]
+        self.assertEqual(a_class_mock.async_method.mock_calls, kalls_args_kwargs)
+        self.assertEqual(
+            a_class_mock.mock_calls,
+            [
+                call.async_method(),
+                call.async_method(1, 2, 3, a=4, b=5)
+            ]
+        )
 
     def test_async_method_calls_recorded(self):
         with self.assertWarns(RuntimeWarning):
+            # Will raise a warning because never awaited
             self.mock.something(3, fish=None)
             self.mock.something_else.something(6, cake=sentinel.Cake)
 
-        self.assertEqual(self.mock.something_else.method_calls,
-                        [("something", (6,), {'cake': sentinel.Cake})],
-                        "method calls not recorded correctly")
         self.assertEqual(self.mock.method_calls, [
             ("something", (3,), {'fish': None}),
             ("something_else.something", (6,), {'cake': sentinel.Cake})
         ],
             "method calls not recorded correctly")
+        self.assertEqual(self.mock.something_else.method_calls,
+                         [("something", (6,), {'cake': sentinel.Cake})],
+                         "method calls not recorded correctly")
 
     def test_async_arg_lists(self):
         def assert_attrs(mock):
-            names = 'call_args_list', 'method_calls', 'mock_calls'
+            names = ('call_args_list', 'method_calls', 'mock_calls')
             for name in names:
                 attr = getattr(mock, name)
                 self.assertIsInstance(attr, _CallList)
                 self.assertIsInstance(attr, list)
                 self.assertEqual(attr, [])
 
-            assert_attrs(self.mock)
+        assert_attrs(self.mock)
+        with self.assertWarns(RuntimeWarning):
+            # Will raise a warning because never awaited
+            self.mock()
+            self.mock(1, 2)
+            self.mock(a=3)
 
-            with self.assertWarns(RuntimeWarning):
-                self.mock()
-                self.mock(1, 2)
-                self.mock(a=3)
+        self.mock.reset_mock()
+        assert_attrs(self.mock)
 
-                self.mock.reset_mock()
-                assert_attrs(self.mock)
+        a_mock = AsyncMock(AsyncClass)
+        with self.assertWarns(RuntimeWarning):
+            # Will raise a warning because never awaited
+            a_mock.async_method()
+            a_mock.async_method(1, a=3)
 
-                a_mock = AsyncMock(AsyncClass)
-                a_mock.async_method()
-                a_mock.async_method(1, a=3)
-
-                a_mock.reset_mock()
-                assert_attrs(a_mock)
+        a_mock.reset_mock()
+        assert_attrs(a_mock)
 
     def test_assert_awaited(self):
         with self.assertRaises(AssertionError):
@@ -725,20 +745,20 @@ class AsyncMockAssert(unittest.TestCase):
 
     def test_assert_any_wait(self):
         with self.assertRaises(AssertionError):
-            self.mock.assert_any_await('NormalFoo')
+            self.mock.assert_any_await('foo')
+
+        asyncio.run(self._runnable_test('baz'))
+        with self.assertRaises(AssertionError):
+            self.mock.assert_any_await('foo')
 
         asyncio.run(self._runnable_test('foo'))
-        with self.assertRaises(AssertionError):
-            self.mock.assert_any_await('NormalFoo')
-
-        asyncio.run(self._runnable_test('NormalFoo'))
-        self.mock.assert_any_await('NormalFoo')
+        self.mock.assert_any_await('foo')
 
         asyncio.run(self._runnable_test('SomethingElse'))
-        self.mock.assert_any_await('NormalFoo')
+        self.mock.assert_any_await('foo')
 
     def test_assert_has_awaits_no_order(self):
-        calls = [call('NormalFoo'), call('baz')]
+        calls = [call('foo'), call('baz')]
 
         with self.assertRaises(AssertionError) as cm:
             self.mock.assert_has_awaits(calls)
@@ -748,7 +768,7 @@ class AsyncMockAssert(unittest.TestCase):
         with self.assertRaises(AssertionError):
             self.mock.assert_has_awaits(calls)
 
-        asyncio.run(self._runnable_test('NormalFoo'))
+        asyncio.run(self._runnable_test('foo'))
         with self.assertRaises(AssertionError):
             self.mock.assert_has_awaits(calls)
 
@@ -783,7 +803,7 @@ class AsyncMockAssert(unittest.TestCase):
         mock_with_spec.assert_any_await(ANY, 1)
 
     def test_assert_has_awaits_ordered(self):
-        calls = [call('NormalFoo'), call('baz')]
+        calls = [call('foo'), call('baz')]
         with self.assertRaises(AssertionError):
             self.mock.assert_has_awaits(calls, any_order=True)
 
@@ -791,11 +811,11 @@ class AsyncMockAssert(unittest.TestCase):
         with self.assertRaises(AssertionError):
             self.mock.assert_has_awaits(calls, any_order=True)
 
-        asyncio.run(self._runnable_test('foo'))
+        asyncio.run(self._runnable_test('bamf'))
         with self.assertRaises(AssertionError):
             self.mock.assert_has_awaits(calls, any_order=True)
 
-        asyncio.run(self._runnable_test('NormalFoo'))
+        asyncio.run(self._runnable_test('foo'))
         self.mock.assert_has_awaits(calls, any_order=True)
 
         asyncio.run(self._runnable_test('qux'))
