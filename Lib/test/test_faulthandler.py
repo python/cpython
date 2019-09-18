@@ -535,8 +535,6 @@ class FaultHandlerTests(unittest.TestCase):
         with temporary_filename() as filename:
             self.check_dump_traceback_threads(filename)
 
-    @unittest.skipIf(not hasattr(faulthandler, 'dump_traceback_later'),
-                     'need faulthandler.dump_traceback_later()')
     def check_dump_traceback_later(self, repeat=False, cancel=False, loops=1,
                                    *, filename=None, fd=None):
         """
@@ -744,9 +742,8 @@ class FaultHandlerTests(unittest.TestCase):
             faulthandler.enable()
         with self.check_stderr_none():
             faulthandler.dump_traceback()
-        if hasattr(faulthandler, 'dump_traceback_later'):
-            with self.check_stderr_none():
-                faulthandler.dump_traceback_later(1e-3)
+        with self.check_stderr_none():
+            faulthandler.dump_traceback_later(1e-3)
         if hasattr(faulthandler, "register"):
             with self.check_stderr_none():
                 faulthandler.register(signal.SIGUSR1)
