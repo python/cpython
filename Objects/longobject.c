@@ -3028,11 +3028,15 @@ PyLong_AsDouble(PyObject *v)
 
 /* Methods */
 
+/* if a < b, return a negative number
+   if a == b, return 0
+   if a > b, return a positive number */
+
 static Py_ssize_t
 long_compare(PyLongObject *a, PyLongObject *b)
 {
     Py_ssize_t sign = Py_SIZE(a) - Py_SIZE(b);
-    if (!sign) {
+    if (sign == 0) {
         Py_ssize_t i = Py_ABS(Py_SIZE(a));
         sdigit diff = 0;
         while (--i >= 0) {
