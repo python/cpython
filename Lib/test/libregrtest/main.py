@@ -22,6 +22,12 @@ from test.libregrtest.utils import removepy, count, format_duration, printlist
 from test import support
 
 
+# bpo-38203: Maximum delay in seconds to exit Python (call Py_Finalize()).
+# Used to protect against threading._shutdown() hang.
+# Must be smaller than buildbot "1200 seconds without output" limit.
+EXIT_TIMEOUT = 120.0
+
+
 class Regrtest:
     """Execute a test suite.
 
@@ -616,16 +622,24 @@ class Regrtest:
 
         test_cwd = self.create_temp_dir()
 
-        # Run the tests in a context manager that temporarily changes the CWD
-        # to a temporary and writable directory. If it's not possible to
-        # create or change the CWD, the original CWD will be used.
-        # The original CWD is available from support.SAVEDCWD.
-        with support.temp_cwd(test_cwd, quiet=True):
-            # When using multiprocessing, worker processes will use test_cwd
-            # as their parent temporary directory. So when the main process
-            # exit, it removes also subdirectories of worker processes.
-            self.ns.tempdir = test_cwd
-            self._main(tests, kwargs)
+        try:
+            # Run the tests in a context manager that temporarily changes the CWD
+            # to a temporary and writable directory. If it's not possible to
+            # create or change the CWD, the original CWD will be used.
+            # The original CWD is available from support.SAVEDCWD.
+            with support.temp_cwd(test_cwd, quiet=True):
+                # When using multiprocessing, worker processes will use test_cwd
+                # as their parent temporary directory. So when the main process
+                # exit, it removes also subdirectories of worker processes.
+                self.ns.tempdir = test_cwd
+
+                self._main(tests, kwargs)
+        except SystemExit as exc:
+            # bpo-38203: Python can hang at exit in Py_Finalize(), especially
+            # on threading._shutdown() call: put a timeout
+            faulthandler.dump_traceback_later(EXIT_TIMEOUT, exit=True)
+
+            sys.exit(exc.code)
 
     def getloadavg(self):
         if self.win_load_tracker is not None:
