@@ -3028,33 +3028,32 @@ PyLong_AsDouble(PyObject *v)
 
 /* Methods */
 
-static int
+/* if a < b, return a negative number
+   if a == b, return 0
+   if a > b, return a positive number */
+
+static Py_ssize_t
 long_compare(PyLongObject *a, PyLongObject *b)
 {
-    Py_ssize_t sign;
-
-    if (Py_SIZE(a) != Py_SIZE(b)) {
-        sign = Py_SIZE(a) - Py_SIZE(b);
-    }
-    else {
+    Py_ssize_t sign = Py_SIZE(a) - Py_SIZE(b);
+    if (sign == 0) {
         Py_ssize_t i = Py_ABS(Py_SIZE(a));
-        while (--i >= 0 && a->ob_digit[i] == b->ob_digit[i])
-            ;
-        if (i < 0)
-            sign = 0;
-        else {
-            sign = (sdigit)a->ob_digit[i] - (sdigit)b->ob_digit[i];
-            if (Py_SIZE(a) < 0)
-                sign = -sign;
+        sdigit diff = 0;
+        while (--i >= 0) {
+            diff = (sdigit) a->ob_digit[i] - (sdigit) b->ob_digit[i];
+            if (diff) {
+                break;
+            }
         }
+        sign = Py_SIZE(a) < 0 ? -diff : diff;
     }
-    return sign < 0 ? -1 : sign > 0 ? 1 : 0;
+    return sign;
 }
 
 static PyObject *
 long_richcompare(PyObject *self, PyObject *other, int op)
 {
-    int result;
+    Py_ssize_t result;
     CHECK_BINOP(self, other);
     if (self == other)
         result = 0;
@@ -5210,7 +5209,8 @@ _PyLong_DivmodNear(PyObject *a, PyObject *b)
 {
     PyLongObject *quo = NULL, *rem = NULL;
     PyObject *twice_rem, *result, *temp;
-    int cmp, quo_is_odd, quo_is_neg;
+    int quo_is_odd, quo_is_neg;
+    Py_ssize_t cmp;
 
     /* Equivalent Python code:
 
