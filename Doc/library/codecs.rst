@@ -469,7 +469,7 @@ functions:
    byte value with format ``\xhh``.
 
    .. versionchanged:: 3.5
-      now works with decoding and translating.
+      Now works with decoding and translating.
 
 
 .. function:: xmlcharrefreplace_errors(exception)

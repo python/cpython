@@ -1044,9 +1044,9 @@ Glossary
       as :keyword:`if`, :keyword:`while` or :keyword:`for`.
 
    text encoding
-      Strings are stored internally as sequences of Unicode code points in
-      range ``0x0``--``0x10FFFF``. Once a string object is used outside of CPU
-      and memory, how these arrays are stored as bytes become an issue.
+      A string in Python is a sequence of Unicode code points (in range
+      ``0x0``--``0x10FFFF``). To store or transfer a string, it needs to be
+      serialized as a sequence of bytes.
 
       Serializing a string into a sequence of bytes is known as "encoding", and
       recreating the string from the sequence of bytes is known as "decoding".
