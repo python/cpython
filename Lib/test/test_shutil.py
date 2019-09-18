@@ -1825,10 +1825,15 @@ class TestMove(unittest.TestCase):
         # Move a file inside an existing dir on the same filesystem.
         self._check_move_file(self.src_file, self.dst_dir, self.dst_file)
 
-    def test_move_file_to_dir_pathlike(self):
-        # Move a file to another location on the same filesystem.
+    def test_move_file_to_dir_pathlike_src(self):
+        # Move a pathlike file to another location on the same filesystem.
         src = pathlib.Path(self.src_file)
         self._check_move_file(src, self.dst_dir, self.dst_file)
+        
+    def test_move_file_to_dir_pathlike_dst(self):
+        # Move a file to another pathlike location on the same filesystem.
+        dst = pathlib.Path(self.dst_dir)
+        self._check_move_file(self.src_file, dst, self.dst_file)
 
     @mock_rename
     def test_move_file_other_fs(self):
