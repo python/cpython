@@ -615,7 +615,7 @@ def multimode(data):
 # position is that fewer options make for easier choices and that
 # external packages can be used for anything more advanced.
 
-def quantiles(data, /, *, n=4, method='exclusive'):
+def quantiles(data, *, n=4, method='exclusive'):
     """Divide *data* into *n* continuous intervals with equal probability.
 
     Returns a list of (n - 1) cut points separating the intervals.
