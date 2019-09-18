@@ -4,7 +4,9 @@ See http://www.iana.org/time-zones/repository/tz-link.html for
 time zone and DST data sources.
 """
 
-__all__ = ("date", "datetime", "time", "timedelta", "timezone", "tzinfo", "MINYEAR", "MAXYEAR")
+__all__ = ("date", "datetime", "time", "timedelta", "timezone", "tzinfo",
+           "MINYEAR", "MAXYEAR")
+
 
 import time as _time
 import math as _math

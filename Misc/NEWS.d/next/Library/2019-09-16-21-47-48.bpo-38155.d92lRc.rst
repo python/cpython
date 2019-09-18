@@ -1,1 +1,1 @@
-Add __all__ to the datetime module, including unit tests.
+Add ``__all__`` to  :mod:`datetime`. Patch by Tahia Khan.
