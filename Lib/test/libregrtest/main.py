@@ -164,11 +164,6 @@ class Regrtest:
     def parse_args(self, kwargs):
         ns = _parse_args(sys.argv[1:], **kwargs)
 
-        if ns.timeout and not hasattr(faulthandler, 'dump_traceback_later'):
-            print("Warning: The timeout option requires "
-                  "faulthandler.dump_traceback_later", file=sys.stderr)
-            ns.timeout = None
-
         if ns.xmlpath:
             support.junit_xml_list = self.testsuite_xml = []
 

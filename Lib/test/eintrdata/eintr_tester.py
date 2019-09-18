@@ -57,9 +57,8 @@ class EINTRBaseTest(unittest.TestCase):
 
         # Use faulthandler as watchdog to debug when a test hangs
         # (timeout of 10 minutes)
-        if hasattr(faulthandler, 'dump_traceback_later'):
-            faulthandler.dump_traceback_later(10 * 60, exit=True,
-                                              file=sys.__stderr__)
+        faulthandler.dump_traceback_later(10 * 60, exit=True,
+                                          file=sys.__stderr__)
 
     @staticmethod
     def stop_alarm():
@@ -68,8 +67,7 @@ class EINTRBaseTest(unittest.TestCase):
     def tearDown(self):
         self.stop_alarm()
         signal.signal(signal.SIGALRM, self.orig_handler)
-        if hasattr(faulthandler, 'cancel_dump_traceback_later'):
-            faulthandler.cancel_dump_traceback_later()
+        faulthandler.cancel_dump_traceback_later()
 
     def subprocess(self, *args, **kw):
         cmd_args = (sys.executable, '-c') + args
