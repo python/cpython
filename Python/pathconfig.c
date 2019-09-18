@@ -265,7 +265,7 @@ config_init_module_search_paths(PyConfig *config, _PyPathConfig *pathconfig)
 
     const wchar_t *sys_path = pathconfig->module_search_path;
     const wchar_t delim = DELIM;
-    const wchar_t *p = sys_path;
+    const wchar_t *p;
     while (1) {
         p = wcschr(sys_path, delim);
         if (p == NULL) {
