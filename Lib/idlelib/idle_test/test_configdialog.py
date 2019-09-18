@@ -1387,7 +1387,7 @@ class VarTraceTest(unittest.TestCase):
         # Attach callbacks and test call increment.
         tr.attach()
         self.assertEqual(tr.untraced, [])
-        self.assertPermutation(tr.traced, expected)
+        self.assertCountEqual(tr.traced, expected)
         iv.set(1)
         self.assertEqual(iv.get(), 1)
         self.assertEqual(self.called, 13)
@@ -1404,7 +1404,7 @@ class VarTraceTest(unittest.TestCase):
         self.called = 0
         tr.detach()
         self.assertEqual(tr.traced, [])
-        self.assertPermutation(tr.untraced, expected)
+        self.assertCountEqual(tr.untraced, expected)
         iv.set(1)
         self.assertEqual(self.called, 0)
 
