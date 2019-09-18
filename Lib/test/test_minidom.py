@@ -1159,9 +1159,9 @@ class MinidomTest(unittest.TestCase):
         self.assertEqual(doc.toxml(standalone=None),
                          '<?xml version="1.0" ?><foo>\u20ac</foo>')
         self.assertEqual(doc.toxml(standalone=True),
-             '<?xml version="1.0"  standalone=\'yes\'?><foo>\u20ac</foo>')
+             '<?xml version="1.0"  standalone="yes"?><foo>\u20ac</foo>')
         self.assertEqual(doc.toxml(standalone=False),
-             '<?xml version="1.0"  standalone=\'no\'?><foo>\u20ac</foo>')
+             '<?xml version="1.0"  standalone="no"?><foo>\u20ac</foo>')
 
         doc.unlink()
 

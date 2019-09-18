@@ -1792,7 +1792,7 @@ class Document(Node, DocumentLS):
                  standalone=None):
         # In case standalone declaration is set
         if standalone is not None:
-            standalone = " standalone='{}'".format('yes' if standalone else 'no')
+            standalone = ' standalone="{}"'.format('yes' if standalone else 'no')
         else:
             standalone = ''
 
