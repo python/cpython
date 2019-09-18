@@ -84,7 +84,7 @@ extern void _PyUnicode_Fini(void);
 extern void _PyLong_Fini(void);
 extern void _PyFaulthandler_Fini(void);
 extern void _PyHash_Fini(void);
-extern int _PyTraceMalloc_Fini(void);
+extern void _PyTraceMalloc_Fini(void);
 extern void _PyWarnings_Fini(PyInterpreterState *interp);
 
 extern void _PyGILState_Init(
