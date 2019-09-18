@@ -199,7 +199,11 @@ _POST_INIT_NAME = '__post_init__'
 # https://bugs.python.org/issue33453 for details.
 _MODULE_IDENTIFIER_RE = re.compile(r'^(?:\s*(\w+)\s*\.)?\s*(\w+)')
 
-class InitVar:
+class _InitVarMeta(type):
+    def __getitem__(self, params):
+        return InitVar(params)
+
+class InitVar(metaclass=_InitVarMeta):
     __slots__ = ('type', )
 
     def __init__(self, type):
@@ -207,9 +211,6 @@ class InitVar:
 
     def __repr__(self):
         return f'dataclasses.InitVar[{self.type.__name__}]'
-
-    def __class_getitem__(cls, params):
-        return InitVar(params)
 
 
 # Instances of Field are only ever created from within this module,
