@@ -17,7 +17,7 @@ class TestPathfixFunctional(unittest.TestCase):
         self.temp_file = support.TESTFN
         self.addCleanup(support.unlink, support.TESTFN)
 
-    def pathfix(self, shebang, pathfix_flags, expected_returncode=0):
+    def pathfix(self, shebang, pathfix_flags, expected_returncode=0, stderr=''):
         with open(self.temp_file, 'w', encoding='utf8') as f:
             f.write(f'{shebang}\n' + 'print("Hello world")\n')
 
@@ -25,7 +25,9 @@ class TestPathfixFunctional(unittest.TestCase):
             [sys.executable, self.script,
              *pathfix_flags, '-n', self.temp_file],
             capture_output=True)
+
         self.assertEqual(proc.returncode, expected_returncode, proc)
+        self.assertEqual(proc.stderr.decode(), stderr, proc)
 
         with open(self.temp_file, 'r', encoding='utf8') as f:
             output = f.read()
@@ -85,11 +87,14 @@ class TestPathfixFunctional(unittest.TestCase):
                 '#! /usr/bin/env python -W something',
                 ['-i', '/usr/bin/python3', '-a', 's', '-k']),
             '#! /usr/bin/python3 -sW something')
+
+    def test_pathfix_adding_whitespaces(self):
         self.assertEqual(
             self.pathfix(
                 '#! /usr/bin/env python -W something',
                 ['-i', '/usr/bin/python3', '-a', ' af', '-k'],
-                expected_returncode=2),
+                expected_returncode=2,
+                stderr="-a option doesn't support whitespaces"),
             '#! /usr/bin/env python -W something')
 
 
