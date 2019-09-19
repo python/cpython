@@ -353,7 +353,7 @@ If a :keyword:`finally` clause is present, the :keyword:`finally` clause will ex
 
 For example::
 
-   >>> def bool_return(): -> bool:
+   >>> def bool_return():
    ...     try:
    ...         return True
    ...     finally:
