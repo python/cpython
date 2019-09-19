@@ -42,6 +42,8 @@ PyObject *_PyLong_One = NULL;
 */
 static PyLongObject small_ints[NSMALLNEGINTS + NSMALLPOSINTS];
 
+/* If use inline functions here, may lose performance due to
+   unnecessary type casting. */
 #define IS_SMALL_INT(ival) (-NSMALLNEGINTS <= (ival) && (ival) < NSMALLPOSINTS)
 #define IS_SMALL_UINT(ival) ((ival) < NSMALLPOSINTS)
 
@@ -77,11 +79,22 @@ maybe_small_long(PyLongObject *v)
     }
     return v;
 }
-#else
+#else  /* Preallocated small integers disabled */
 #define IS_SMALL_INT(ival) 0
 #define IS_SMALL_UINT(ival) 0
-#define get_small_int(ival) (Py_UNREACHABLE(), NULL)
-#define maybe_small_long(val) (val)
+
+static PyObject *
+get_small_int(sdigit ival)
+{
+    Py_UNREACHABLE();
+    return NULL;
+}
+
+static inline PyLongObject *
+maybe_small_long(PyLongObject *v)
+{
+    return v;
+}
 #endif
 
 /* If a freshly-allocated int is already shared, it must
