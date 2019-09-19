@@ -152,11 +152,20 @@ class BaseEventLoopTests(test_utils.TestCase):
     def setUp(self):
         super().setUp()
         self.loop = base_events.BaseEventLoop()
-        self.loop._selector = mock.Mock()
-        self.loop._selector.select.return_value = ()
+        self.mock_event_loop(self.loop)
         self.set_event_loop(self.loop)
 
+    def mock_event_loop(self, loop):
+        loop._selector = mock.Mock()
+        loop._selector.select.return_value = ()
+        loop._process_events = mock.Mock()
+        loop._write_to_self = mock.Mock()
+
     def test_not_implemented(self):
+        # setUp() calls mock_event_loop() which mocks _process_events
+        self.loop = base_events.BaseEventLoop()
+        self.set_event_loop(self.loop)
+
         m = mock.Mock()
         self.assertRaises(
             NotImplementedError,
@@ -784,6 +793,7 @@ class BaseEventLoopTests(test_utils.TestCase):
                 return MyTask(coro, loop=loop)
 
         loop = EventLoop()
+        self.mock_event_loop(loop)
         self.set_event_loop(loop)
 
         coro = test()
