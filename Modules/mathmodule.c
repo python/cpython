@@ -1102,7 +1102,7 @@ math.ceil
     x as number: object
     /
 
-Return the ceiling of x as an Integral.
+Return the ceiling of x as an Integer.
 
 This is the smallest integer >= x.
 [clinic start generated code]*/
@@ -1160,7 +1160,7 @@ math.floor
     x as number: object
     /
 
-Return the floor of x as an Integral.
+Return the floor of x as an Integer.
 
 This is the largest integer <= x.
 [clinic start generated code]*/
@@ -2049,7 +2049,7 @@ math.trunc
     x: object
     /
 
-Truncates the Real x to the nearest Integral toward 0.
+Truncates the Real x to the nearest Integer toward 0.
 
 Uses the __trunc__ magic method.
 [clinic start generated code]*/
