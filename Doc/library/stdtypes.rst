@@ -4280,7 +4280,7 @@ pairs within braces, for example: ``{'jack': 4098, 'sjoerd': 4127}`` or ``{4098:
          False
 
    Dictionaries compare equal if and only if they have the same ``(key,
-   value)`` pairs. Order comparisons ('<', '<=', '>=', '>') raise
+   value)`` pairs (regardless of ordering). Order comparisons ('<', '<=', '>=', '>') raise
    :exc:`TypeError`.
 
    Dictionaries preserve insertion order.  Note that updating a key does not
