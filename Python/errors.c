@@ -1612,7 +1612,7 @@ Py_UNREACHABLE(void)
         "The limits were in our heads all along. Follow your dreams.\n"
         "https://xkcd.com/2200");
 #else
-    Py_FatalError("Python internals reached an unreachable code path");
+    Py_FatalError("Unreachable C code path reached");
 #endif
 }
 
