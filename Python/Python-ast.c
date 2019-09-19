@@ -4,6 +4,7 @@
 
 #include "Python.h"
 #include "Python-ast.h"
+#include "structmember.h"
 
 typedef struct {
     int initialized;
@@ -1216,6 +1217,11 @@ ast_type_reduce(PyObject *self, PyObject *unused)
     return Py_BuildValue("O()", Py_TYPE(self));
 }
 
+static PyMemberDef ast_type_members[] = {
+    {"__dictoffset__", T_PYSSIZET, offsetof(AST_object, dict), READONLY},
+    {NULL}  /* Sentinel */
+};
+
 static PyMethodDef ast_type_methods[] = {
     {"__reduce__", ast_type_reduce, METH_NOARGS, NULL},
     {NULL}
@@ -1232,6 +1238,7 @@ static PyType_Slot AST_type_slots[] = {
     {Py_tp_setattro, PyObject_GenericSetAttr},
     {Py_tp_traverse, ast_traverse},
     {Py_tp_clear, ast_clear},
+    {Py_tp_members, ast_type_members},
     {Py_tp_methods, ast_type_methods},
     {Py_tp_getset, ast_type_getsets},
     {Py_tp_init, ast_type_init},
@@ -1421,8 +1428,6 @@ static int init_types(void)
     if (init_identifiers() < 0) return 0;
     state->AST_type = PyType_FromSpec(&AST_type_spec);
     if (!state->AST_type) return 0;
-    ((PyTypeObject*)state->AST_type)->tp_dictoffset = offsetof(AST_object,
-     dict);
     if (add_ast_fields() < 0) return 0;
     state->mod_type = make_type("mod", state->AST_type, NULL, 0);
     if (!state->mod_type) return 0;
