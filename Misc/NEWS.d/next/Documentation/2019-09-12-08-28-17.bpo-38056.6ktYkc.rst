@@ -1,1 +1,1 @@
-Overhaul :ref:`error-handlers` section in :mod:`codecs` module documentation.
+Overhaul the :ref:`error-handlers` documentation in :mod:`codecs`.

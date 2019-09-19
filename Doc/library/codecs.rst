@@ -24,10 +24,10 @@ This module defines base classes for standard Python codecs (encoders and
 decoders) and provides access to the internal Python codec registry, which
 manages the codec and error handling lookup process. Most standard codecs
 are :term:`text encodings <text encoding>`, which encode text to bytes (and
-reverse), but there are also codecs provided that encode text to text, and
+the reverse), but there are also codecs provided that encode text to text, and
 bytes to bytes. Custom codecs may encode and decode between arbitrary types,
-but some module features are restricted to use specifically with
-:term:`text encodings <text encoding>`, or with codecs that encode to
+but some module features are restricted to be used specifically with
+ :term:`text encodings <text encoding>` or with codecs that encode to
 :class:`bytes`.
 
 The module defines the following functions for encoding and decoding with
@@ -310,8 +310,8 @@ error handling schemes by accepting the *errors* string argument:
    single: \u; escape sequence
    single: \U; escape sequence
 
-The following error handlers can be used with all :ref:`standard-encodings`
-codecs:
+The following error handlers can be used with all Python
+:ref:`standard-encodings` codecs:
 
 .. tabularcolumns:: |l|L|
 
@@ -447,7 +447,7 @@ functions:
 
    Implements the ``'ignore'`` error handling.
 
-   Malformed data is ignored and encoding or decoding is continued without
+   Malformed data is ignored; encoding or decoding is continued without
    further notice.
 
 
@@ -455,7 +455,7 @@ functions:
 
    Implements the ``'replace'`` error handling.
 
-   Substitutes ``?`` (ASCII character) for encoding errors, or ``U+FFFD`` (the
+   Substitutes ``?`` (ASCII character) for encoding errors or ``U+FFFD`` (the
    official REPLACEMENT CHARACTER) for decoding errors.
 
 
@@ -464,12 +464,12 @@ functions:
    Implements the ``'backslashreplace'`` error handling.
 
    Malformed data is replaced by a backslashed escape sequence.
-   On encoding, use hexadecimal form of Unicode code point with formats
-   ``\xhh`` ``\uxxxx`` ``\Uxxxxxxxx``. On decoding, use hexadecimal form of
+   On encoding, use the hexadecimal form of Unicode code point with formats
+   ``\xhh`` ``\uxxxx`` ``\Uxxxxxxxx``. On decoding, use the hexadecimal form of
    byte value with format ``\xhh``.
 
    .. versionchanged:: 3.5
-      Now works with decoding and translating.
+      Works with decoding and translating.
 
 
 .. function:: xmlcharrefreplace_errors(exception)

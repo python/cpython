@@ -1052,7 +1052,7 @@ Glossary
       recreating the string from the sequence of bytes is known as "decoding".
 
       There are a variety of different text serialization
-      :ref:`codecs <standard-encodings>`, which are collectivity referred to as
+      :ref:`codecs <standard-encodings>`, which are collectively referred to as
       "text encodings".
 
    text file
