@@ -860,29 +860,23 @@ def _decompose(flag, value):
     """Extract all members from the value."""
     # _decompose is only called if the value is not named
     not_covered = value
-    negative = value < 0
-    # issue29167: wrap accesses to _value2member_map_ in a list to avoid race
-    #             conditions between iterating over it and having more pseudo-
-    #             members added to it
-    if negative:
-        # only check for named flags
-        flags_to_check = [
-                (m, v)
-                for v, m in list(flag._value2member_map_.items())
-                if m.name is not None
-                ]
-    else:
-        # check for named flags and powers-of-two flags
-        flags_to_check = [
-                (m, v)
-                for v, m in list(flag._value2member_map_.items())
-                if m.name is not None or _power_of_two(v)
-                ]
     members = []
-    for member, member_value in flags_to_check:
+    for member in flag:
+        member_value = member.value
         if member_value and member_value & value == member_value:
             members.append(member)
             not_covered &= ~member_value
+    if issubclass(flag, IntFlag) and value > 0:
+        while not_covered:
+            new_value = 2 ** _high_bit(not_covered)
+            if new_value not in flag._value2member_map_:
+                # construct singleton pseudo-members
+                pseudo_member = int.__new__(flag, value)
+                pseudo_member._name_ = None
+                pseudo_member._value_ = value
+                flag._value2member_map_.setdefault(value, pseudo_member)
+            members.append(flag(new_value))
+            not_covered &= ~new_value
     if not members and value in flag._value2member_map_:
         members.append(flag._value2member_map_[value])
     members.sort(key=lambda m: m._value_, reverse=True)
@@ -890,8 +884,3 @@ def _decompose(flag, value):
         # we have the breakdown, don't need the value member itself
         members.pop(0)
     return members, not_covered
-
-def _power_of_two(value):
-    if value < 1:
-        return False
-    return value == 2 ** _high_bit(value)
