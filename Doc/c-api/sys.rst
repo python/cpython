@@ -380,3 +380,17 @@ Process Control
    function registered last is called first. Each cleanup function will be called
    at most once.  Since Python's internal finalization will have completed before
    the cleanup function, no Python APIs should be called by *func*.
+
+.. c:function:: void Py_UNREACHABLE(void)
+
+   Use this when you have a code path that you do not expect to be reached.
+   For example, in the ``default:`` clause in a ``switch`` statement for which
+   all possible values are covered in ``case`` statements.  Use this in places
+   where you might be tempted to put an ``assert(0)`` or ``abort()`` call.
+
+   Call :c:func:`Py_FatalError` which dumps the Python traceback where the
+   bug occurs.
+
+   In Python 3.8 and older, ``Py_UNREACHABLE()`` was a macro.
+
+   .. versionadded:: 3.9

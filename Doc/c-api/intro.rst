@@ -105,15 +105,6 @@ defined closer to where they are useful (e.g. :c:macro:`Py_RETURN_NONE`).
 Others of a more general utility are defined here.  This is not necessarily a
 complete listing.
 
-.. c:macro:: Py_UNREACHABLE()
-
-   Use this when you have a code path that you do not expect to be reached.
-   For example, in the ``default:`` clause in a ``switch`` statement for which
-   all possible values are covered in ``case`` statements.  Use this in places
-   where you might be tempted to put an ``assert(0)`` or ``abort()`` call.
-
-   .. versionadded:: 3.7
-
 .. c:macro:: Py_ABS(x)
 
    Return the absolute value of ``x``.

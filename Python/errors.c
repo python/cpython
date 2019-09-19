@@ -1603,6 +1603,19 @@ PyErr_ProgramTextObject(PyObject *filename, int lineno)
     return err_programtext(tstate, fp, lineno);
 }
 
+void _Py_NO_RETURN
+Py_UNREACHABLE(void)
+{
+#ifdef Py_DEBUG
+    Py_FatalError(
+        "We've reached an unreachable state. Anything is possible.\n"
+        "The limits were in our heads all along. Follow your dreams.\n"
+        "https://xkcd.com/2200");
+#else
+    Py_FatalError("Python internals reached an unreachable code path");
+#endif
+}
+
 #ifdef __cplusplus
 }
 #endif

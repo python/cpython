@@ -323,6 +323,8 @@ PyAPI_FUNC(int) PyOS_snprintf(char *str, size_t size, const char  *format, ...)
 PyAPI_FUNC(int) PyOS_vsnprintf(char *str, size_t size, const char  *format, va_list va)
                         Py_GCC_ATTRIBUTE((format(printf, 3, 0)));
 
+PyAPI_FUNC(void) _Py_NO_RETURN Py_UNREACHABLE(void);
+
 #ifndef Py_LIMITED_API
 #  define Py_CPYTHON_ERRORS_H
 #  include  "cpython/pyerrors.h"

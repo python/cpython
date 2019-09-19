@@ -1,0 +1,1 @@
+Convert :c:func:`Py_UNREACHABLE` macro to a function.
