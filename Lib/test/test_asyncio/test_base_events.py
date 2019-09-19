@@ -152,20 +152,11 @@ class BaseEventLoopTests(test_utils.TestCase):
     def setUp(self):
         super().setUp()
         self.loop = base_events.BaseEventLoop()
-        self.mock_event_loop(self.loop)
+        self.loop._selector = mock.Mock()
+        self.loop._selector.select.return_value = ()
         self.set_event_loop(self.loop)
-
-    def mock_event_loop(self, loop):
-        loop._selector = mock.Mock()
-        loop._selector.select.return_value = ()
-        loop._process_events = mock.Mock()
-        loop._write_to_self = mock.Mock()
 
     def test_not_implemented(self):
-        # setUp() calls mock_event_loop() which mocks _process_events
-        self.loop = base_events.BaseEventLoop()
-        self.set_event_loop(self.loop)
-
         m = mock.Mock()
         self.assertRaises(
             NotImplementedError,
@@ -225,6 +216,9 @@ class BaseEventLoopTests(test_utils.TestCase):
                 raise NotImplementedError(
                     'cannot submit into a dummy executor')
 
+        self.loop._process_events = mock.Mock()
+        self.loop._write_to_self = mock.Mock()
+
         executor = DummyExecutor()
         self.loop.set_default_executor(executor)
         self.assertIs(executor, self.loop._default_executor)
@@ -234,6 +228,9 @@ class BaseEventLoopTests(test_utils.TestCase):
 
         with self.assertWarns(DeprecationWarning):
             self.loop.set_default_executor(executor)
+
+        # Avoid cleaning up the executor mock
+        self.loop._default_executor = None
 
     def test_call_soon(self):
         def cb():
@@ -793,7 +790,6 @@ class BaseEventLoopTests(test_utils.TestCase):
                 return MyTask(coro, loop=loop)
 
         loop = EventLoop()
-        self.mock_event_loop(loop)
         self.set_event_loop(loop)
 
         coro = test()
