@@ -27,7 +27,7 @@ are :term:`text encodings <text encoding>`, which encode text to bytes (and
 the reverse), but there are also codecs provided that encode text to text, and
 bytes to bytes. Custom codecs may encode and decode between arbitrary types,
 but some module features are restricted to be used specifically with
- :term:`text encodings <text encoding>` or with codecs that encode to
+:term:`text encodings <text encoding>` or with codecs that encode to
 :class:`bytes`.
 
 The module defines the following functions for encoding and decoding with
@@ -479,7 +479,7 @@ functions:
 
    The unencodable character is replaced by an appropriate XML/HTML numeric
    character reference, which is a decimal form of Unicode code point with
-   format ``&#num;``
+   format ``&#num;`` .
 
 
 .. function:: namereplace_errors(exception)
