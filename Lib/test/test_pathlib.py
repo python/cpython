@@ -664,6 +664,14 @@ class _BasePurePathTest(object):
             self.assertEqual(hash(pp), hash(p))
             self.assertEqual(str(pp), str(p))
 
+    def test_format_common(self):
+        s = '/path/to/enlightement'
+        n, delta = len(s), 13
+        template = '{{:<{}}}'.format(n + delta)  # '{:<30}'
+        path = pathlib.Path(s)
+        out = template.format(path)
+        self.assertEqual(out, str(path) + (' ' * delta))
+
 
 class PurePosixPathTest(_BasePurePathTest, unittest.TestCase):
     cls = pathlib.PurePosixPath

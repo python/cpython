@@ -979,6 +979,10 @@ class PurePath(object):
                 return False
         return True
 
+    def __format__(self, spec):
+        return format(str(self), spec)
+
+
 # Can't subclass os.PathLike from PurePath and keep the constructor
 # optimizations in PurePath._parse_args().
 os.PathLike.register(PurePath)
