@@ -158,7 +158,7 @@ def coroutine(func):
 
 
 # A marker for iscoroutinefunction.
-_is_coroutine = object()
+_is_coroutine = True
 
 
 def iscoroutinefunction(func):
