@@ -1552,7 +1552,6 @@ builtin_len(PyObject *module, PyObject *obj)
         assert(PyErr_Occurred());
         return NULL;
     }
-
     return PyLong_FromSsize_t(res);
 }
 
