@@ -213,8 +213,8 @@ Running an asyncio Program
 .. function:: run(coro, \*, debug=False)
 
     This function runs the passed coroutine, taking care of
-    managing the asyncio event loop and *finalizing asynchronous
-    generators*.
+    managing the asyncio event loop, *finalizing asynchronous
+    generators*, and closing the threadpool.
 
     This function cannot be called when another asyncio event loop is
     running in the same thread.
@@ -229,6 +229,8 @@ Running an asyncio Program
        **Important:** this function has been added to asyncio in
        Python 3.7 on a :term:`provisional basis <provisional api>`.
 
+    .. versionchanged:: 3.9
+       Updated to use :meth:`loop.shutdown_default_executor`.
 
 Creating Tasks
 ==============
