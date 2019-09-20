@@ -633,8 +633,8 @@ class AsyncMockAssert(unittest.TestCase):
             # Will raise a warning because never awaited
             self.mock('foo')
             self.mock('baz')
-        kalls_args = ([call(), call('foo'), call('baz')])
-        self.assertEqual(self.mock.mock_calls, kalls_args)
+        mock_kalls = ([call(), call('foo'), call('baz')])
+        self.assertEqual(self.mock.mock_calls, mock_kalls)
 
     def test_assert_has_mock_calls_on_async_mock_with_spec(self):
         a_class_mock = AsyncMock(AsyncClass)
@@ -648,19 +648,14 @@ class AsyncMockAssert(unittest.TestCase):
         with self.assertWarns(RuntimeWarning):
             # Will raise a warning because never awaited
             a_class_mock.async_method(1, 2, 3, a=4, b=5)
-        kalls_args_kwargs = [call(), call(1, 2, 3, a=4, b=5)]
-        self.assertEqual(a_class_mock.async_method.mock_calls, kalls_args_kwargs)
-        self.assertEqual(
-            a_class_mock.mock_calls,
-            [
-                call.async_method(),
-                call.async_method(1, 2, 3, a=4, b=5)
-            ]
-        )
+        method_kalls = [call(), call(1, 2, 3, a=4, b=5)]
+        mock_kalls = [call.async_method(), call.async_method(1, 2, 3, a=4, b=5)]
+        self.assertEqual(a_class_mock.async_method.mock_calls, method_kalls)
+        self.assertEqual(a_class_mock.mock_calls, mock_kalls)
 
     def test_async_method_calls_recorded(self):
         with self.assertWarns(RuntimeWarning):
-            # Will raise a warning because never awaited
+            # Will raise warnings because never awaited
             self.mock.something(3, fish=None)
             self.mock.something_else.something(6, cake=sentinel.Cake)
 
@@ -684,7 +679,7 @@ class AsyncMockAssert(unittest.TestCase):
 
         assert_attrs(self.mock)
         with self.assertWarns(RuntimeWarning):
-            # Will raise a warning because never awaited
+            # Will raise warnings because never awaited
             self.mock()
             self.mock(1, 2)
             self.mock(a=3)
@@ -694,7 +689,7 @@ class AsyncMockAssert(unittest.TestCase):
 
         a_mock = AsyncMock(AsyncClass)
         with self.assertWarns(RuntimeWarning):
-            # Will raise a warning because never awaited
+            # Will raise warnings because never awaited
             a_mock.async_method()
             a_mock.async_method(1, a=3)
 
