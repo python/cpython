@@ -262,7 +262,7 @@ def _known(symbol):
                 raise
     if symbol.name not in decl:
         decl = decl + symbol.name
-    return Variable(varid, decl)
+    return Variable(varid, 'static', decl)
 
 
 def known_row(varid, decl):
@@ -291,7 +291,7 @@ def known_rows(symbols, *,
             except KeyError:
                 found = _find_match(symbol, cache, filenames)
                 if found is None:
-                    found = Variable(symbol.id, UNKNOWN)
+                    found = Variable(symbol.id, UNKNOWN, UNKNOWN)
             yield _as_known(found.id, found.vartype)
     else:
         raise NotImplementedError  # XXX incorporate KNOWN
