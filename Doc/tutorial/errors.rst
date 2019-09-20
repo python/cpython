@@ -101,7 +101,7 @@ The :keyword:`try` statement works as follows.
 * If no exception occurs, the *except clause* is skipped and execution of the
   :keyword:`try` statement is finished.
 
-* If an exception occurs during execution of the *try clause*, the rest of the
+* If an exception occurs during execution of the :keyword:`try` clause, the rest of the
   clause is skipped.  Then if its type matches the exception named after the
   :keyword:`except` keyword, the *except clause* is executed, and then execution
   continues after the *try/except* block.
