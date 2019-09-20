@@ -5224,6 +5224,191 @@ class TestAddArgumentMetavar(TestCase):
         self.do_test_no_exception(nargs=3, metavar=("1", "2", "3"))
 
 
+class TestAddArgumentMetavarWrapNoException(TestCase):
+    """Check that certain special character wrap with no exceptions
+    Based off TestAddArgumentMetavar"""
+
+    def do_test_no_exception(self, metavar):
+        parser = argparse.ArgumentParser(prog='PROG' * 19)  # force wrapping
+        parser.add_argument("--foo", metavar=metavar)
+
+    def test_metavar_nil(self):
+        self.do_test_no_exception(metavar='')
+
+    def test_metavar_space(self):
+        self.do_test_no_exception(metavar=' ')
+
+    def test_metavar_Line_Feed(self):
+        self.do_test_no_exception(metavar='\n')
+
+    def test_metavar_Tab(self):
+        self.do_test_no_exception(metavar='\t')
+
+    def test_metavar_Carriage_Return(self):
+        self.do_test_no_exception(metavar='\r')
+
+    def test_metavar_Carriage_Return_and_Line_Feed(self):
+        self.do_test_no_exception(metavar='\r\n')
+
+    # The rest would be unlikely in practice but should not fail
+    
+    def test_metavar_vLine_Tabulation(self):
+        self.do_test_no_exception(metavar='\v')
+
+    def test_metavar_x0b_Line_Tabulation(self):
+        self.do_test_no_exception(metavar='\x0b')
+
+    def test_metavar_f_Form_Feed(self):
+        self.do_test_no_exception(metavar='\f')
+
+    def test_metavar_x0c_Form_Feed(self):
+        self.do_test_no_exception(metavar='\x0c')
+
+    def test_metavar_File_Separator(self):
+        self.do_test_no_exception(metavar='\x1c')
+
+    def test_metavar_Group_Separator(self):
+        self.do_test_no_exception(metavar='\x1d')
+
+    def test_metavar_Record_Separator(self):
+        self.do_test_no_exception(metavar='\x1e')
+
+    def test_metavar_C1_Control_Code(self):
+        self.do_test_no_exception(metavar='\x85')
+
+    def test_metavar_Line_Separator(self):
+        self.do_test_no_exception(metavar='\u2028')
+
+    def test_metavar_Paragraph_Separator(self):
+        self.do_test_no_exception(metavar='\u2029')
+
+    def test_metavar_backslash(self):
+        self.do_test_no_exception(metavar='\\')
+
+    def test_metavar_single_quote(self):
+        self.do_test_no_exception(metavar='\'')
+
+    def test_metavar_double_quote(self):
+        self.do_test_no_exception(metavar='\"')
+
+    def test_metavar_ASCII_bell(self):
+        self.do_test_no_exception(metavar='\a')
+
+    def test_metavar_ASCII_backspace(self):
+        self.do_test_no_exception(metavar='\b')
+
+    # Unicode whitespaces per wikipedia.org/wiki/Whitespace_character
+    
+    def test_metavar_unicode_horizontal_tab(self):
+        self.do_test_no_exception(metavar='\u0009')
+
+    def test_metavar_unicode_line_feed(self):
+        self.do_test_no_exception(metavar='\u000A')
+
+    def test_metavar_unicode_vertical_tab(self):
+        self.do_test_no_exception(metavar='\u000B')
+
+    def test_metavar_unicode_form_feed(self):
+        self.do_test_no_exception(metavar='\u000C')
+
+    def test_metavar_unicode_carriage_return(self):
+        self.do_test_no_exception(metavar='\u000D')
+
+    def test_metavar_unicode_space(self):
+        self.do_test_no_exception(metavar='\u0020')
+
+    def test_metavar_unicode_next_line(self):
+        self.do_test_no_exception(metavar='\u0085')
+
+    def test_metavar_unicode_non_breaking_space(self):
+        self.do_test_no_exception(metavar='\u00A0')
+
+    def test_metavar_unicode_ogham_space_mark(self):
+        self.do_test_no_exception(metavar='\u1680')
+
+    def test_metavar_unicode_en_quad(self):
+        self.do_test_no_exception(metavar='\u2000')
+
+    def test_metavar_unicode_em_quad(self):
+        self.do_test_no_exception(metavar='\u2001')
+
+    def test_metavar_unicode_en_space(self):
+        self.do_test_no_exception(metavar='\u2002')
+
+    def test_metavar_unicode_em_space(self):
+        self.do_test_no_exception(metavar='\u2003')
+
+    def test_metavar_unicode_three_per_em_space(self):
+        self.do_test_no_exception(metavar='\u2004')
+
+    def test_metavar_unicode_four_per_em_space(self):
+        self.do_test_no_exception(metavar='\u2005')
+
+    def test_metavar_unicode_six_per_em_space(self):
+        self.do_test_no_exception(metavar='\u2006')
+
+    def test_metavar_unicode_figure_space(self):
+        self.do_test_no_exception(metavar='\u2007')
+
+    def test_metavar_unicode_puctuation_space(self):
+        self.do_test_no_exception(metavar='\u2008')
+
+    def test_metavar_unicode_thin_space(self):
+        self.do_test_no_exception(metavar='\u2009')
+
+    def test_metavar_unicode_hair_space(self):
+        self.do_test_no_exception(metavar='\u200A')
+
+    def test_metavar_unicode_line_separator(self):
+        self.do_test_no_exception(metavar='\u2028')
+
+    def test_metavar_unicode_paragraph_separator(self):
+        self.do_test_no_exception(metavar='\u2029')
+
+    def test_metavar_unicode_narrow_no_break_space(self):
+        self.do_test_no_exception(metavar='\u202F')
+
+    def test_metavar_unicode_medium_mathematical_space(self):
+        self.do_test_no_exception(metavar='\u205F')
+
+    def test_metavar_unicode_ideographic_space(self):
+        self.do_test_no_exception(metavar='\u3000')
+
+    def test_metavar_unicode_mongolian_vowel_separator(self):
+        self.do_test_no_exception(metavar='\u180E')
+
+    def test_metavar_unicode_zero_width_space(self):
+        self.do_test_no_exception(metavar='\u200B')
+
+    def test_metavar_unicode_zero_width_non_joiner(self):
+        self.do_test_no_exception(metavar='\u200C')
+
+    def test_metavar_unicode_zero_width_joiner(self):
+        self.do_test_no_exception(metavar='\u200D')
+
+    def test_metavar_unicode_word_joiner(self):
+        self.do_test_no_exception(metavar='\u2060')
+
+    def test_metavar_unicode_zero_width_non_breaking_space(self):
+        self.do_test_no_exception(metavar='\uFEFF')
+
+    # visible 'whitespace' characters, mainly with typesetting usages.
+    def test_metavar_unicode_middle_dot(self):
+        self.do_test_no_exception(metavar='\u00B7')
+
+    def test_metavar_unicode_shouldered_open_box(self):
+        self.do_test_no_exception(metavar='\u237D')
+
+    def test_metavar_unicode_symbol_for_space(self):
+        self.do_test_no_exception(metavar='\u2420')
+
+    def test_metavar_unicode_blank_symbol(self):
+        self.do_test_no_exception(metavar='\u2422')
+
+    def test_metavar_unicode_open_box(self):
+        self.do_test_no_exception(metavar='\u2423')
+        
+
 class TestInvalidNargs(TestCase):
 
     EXPECTED_INVALID_MESSAGE = "invalid nargs value"
@@ -5295,6 +5480,32 @@ class TestWrappingMetavar(TestCase):
               --proxy <http[s]://example:1234>
             '''))
 
+
+class TestHelpUsageWrapAllowsNilAndTab(HelpTestCase):
+    """Usage message should wrap successfully when metavar='' or literal tab
+    Other whitespace characters may behave differently on different systems,
+    but should not cause an assertion error."""
+
+    parser_signature = Sig(prog='PROG' * 19)
+    argument_signatures = [
+        Sig('--nil', metavar=''),
+        Sig('--Tab', metavar='\ttab')
+    ]
+    argument_group_signatures = []
+    usage = '''\
+    usage: PROGPROGPROGPROGPROGPROGPROGPROGPROGPROGPROGPROGPROGPROGPROGPROGPROGPROGPROG
+           [-h] [--nil] [--Tab 	tab]
+        '''
+    help = usage + '''\
+
+    optional arguments:
+      -h, --help  show this help message and exit
+      --nil \
+
+      --Tab 	tab
+    '''
+    version = ''
+    
 
 class TestExitOnError(TestCase):
 
