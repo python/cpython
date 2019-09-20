@@ -1,0 +1,3 @@
+argparse.py now allows metavar to be certain whitespace characters, such as
+'' and '\t'. This fixes a bug where wrapping usage across multiple lines
+would raise an assertion error.
