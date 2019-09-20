@@ -1,0 +1,2 @@
+Setting the ``level`` attribute of a ``logger.Logger`` is deprecated. The
+log level should only ever be set using the ``setLevel()`` method.

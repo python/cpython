@@ -1410,14 +1410,16 @@ class Logger(Filterer):
 
     @level.setter
     def level(self, level):
-        self._level = level
-        self.manager._clear_cache()
+        warnings.warn("Use the setLevel() method to set the log level",
+                      DeprecationWarning, stacklevel=2)
+        self.setLevel(level)
 
     def setLevel(self, level):
         """
         Set the logging level of this logger.  level must be an int or a str.
         """
-        self.level = _checkLevel(level)
+        self._level = _checkLevel(level)
+        self.manager._clear_cache()
 
     def debug(self, msg, *args, **kwargs):
         """

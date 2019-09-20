@@ -4908,7 +4908,9 @@ class LoggerTest(BaseTest):
 
         # Ensure setting level directly still clears cache
         self.assertEqual(logger2._cache, {logging.ERROR: False})
-        logger2.level = logging.ERROR
+        with warnings.catch_warnings(record=True) as w:
+            logger2.level = logging.ERROR
+            self.assertEqual(1, len(w))
         self.assertEqual(logger2._cache, {})
         self.assertTrue(logger2.isEnabledFor(logging.ERROR))
         self.assertEqual(logger2._cache, {logging.ERROR: True})
