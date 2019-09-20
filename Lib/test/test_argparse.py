@@ -5482,32 +5482,6 @@ class TestWrappingMetavar(TestCase):
             '''))
 
 
-class TestHelpUsageWrapAllowsNilAndTab(HelpTestCase):
-    """Usage message should wrap successfully when metavar='' or literal tab
-    Other whitespace characters may behave differently on different systems,
-    but should not cause an assertion error."""
-
-    parser_signature = Sig(prog='PROG' * 19)
-    argument_signatures = [
-        Sig('--nil', metavar=''),
-        Sig('--Tab', metavar='\ttab')
-    ]
-    argument_group_signatures = []
-    usage = '''\
-    usage: PROGPROGPROGPROGPROGPROGPROGPROGPROGPROGPROGPROGPROGPROGPROGPROGPROGPROGPROG
-           [-h] [--nil] [--Tab 	tab]
-        '''
-    help = usage + '''\
-
-    optional arguments:
-      -h, --help  show this help message and exit
-      --nil \
-
-      --Tab 	tab
-    '''
-    version = ''
-
-
 class TestExitOnError(TestCase):
 
     def setUp(self):
