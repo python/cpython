@@ -1,12 +1,13 @@
 #include "Python.h"
 #include "osdefs.h"       /* DELIM */
-#include "pycore_initconfig.h"
 #include "pycore_fileutils.h"
 #include "pycore_getopt.h"
+#include "pycore_initconfig.h"
+#include "pycore_pathconfig.h"
+#include "pycore_pyerrors.h"
 #include "pycore_pylifecycle.h"
 #include "pycore_pymem.h"
 #include "pycore_pystate.h"   /* _PyRuntime */
-#include "pycore_pathconfig.h"
 #include <locale.h>       /* setlocale() */
 #ifdef HAVE_LANGINFO_H
 #  include <langinfo.h>   /* nl_langinfo(CODESET) */
@@ -2538,4 +2539,98 @@ error:
     Py_XDECREF(result);
     Py_XDECREF(dict);
     return NULL;
+}
+
+
+static void
+init_dump_ascii_wstr(const wchar_t *str)
+{
+    if (str == NULL) {
+        PySys_WriteStderr("(not set)");
+    }
+
+    PySys_WriteStderr("'");
+    for (; *str != L'\0'; str++) {
+        wchar_t ch = *str;
+        if (ch == L'\'') {
+            PySys_WriteStderr("\\'");
+        } else if (0x20 <= ch && ch < 0x7f) {
+            PySys_WriteStderr("%lc", ch);
+        }
+        else if (ch <= 0xff) {
+            PySys_WriteStderr("\\x%02x", ch);
+        }
+#if SIZEOF_WCHAR_T > 2
+        else if (ch > 0xffff) {
+            PySys_WriteStderr("\\U%08x", ch);
+        }
+#endif
+        else {
+            PySys_WriteStderr("\\u%04x", ch);
+        }
+    }
+    PySys_WriteStderr("'");
+}
+
+
+/* Dump the Python path configuration into sys.stderr */
+void
+_Py_DumpPathConfig(PyThreadState *tstate)
+{
+    PyObject *exc_type, *exc_value, *exc_tb;
+    _PyErr_Fetch(tstate, &exc_type, &exc_value, &exc_tb);
+
+    PySys_WriteStderr("Python path configuration:\n");
+
+#define DUMP_CONFIG(NAME, FIELD) \
+        do { \
+            PySys_WriteStderr("  " NAME " = "); \
+            init_dump_ascii_wstr(config->FIELD); \
+            PySys_WriteStderr("\n"); \
+        } while (0)
+
+    PyConfig *config = &tstate->interp->config;
+    DUMP_CONFIG("PYTHONHOME", home);
+    DUMP_CONFIG("PYTHONPATH", pythonpath_env);
+    DUMP_CONFIG("program name", program_name);
+    PySys_WriteStderr("  isolated = %i\n", config->isolated);
+    PySys_WriteStderr("  environment = %i\n", config->use_environment);
+    PySys_WriteStderr("  user site = %i\n", config->user_site_directory);
+    PySys_WriteStderr("  import site = %i\n", config->site_import);
+#undef DUMP_CONFIG
+
+#define DUMP_SYS(NAME) \
+        do { \
+            obj = PySys_GetObject(#NAME); \
+            PySys_FormatStderr("  sys.%s = ", #NAME); \
+            if (obj != NULL) { \
+                PySys_FormatStderr("%A", obj); \
+            } \
+            else { \
+                PySys_WriteStderr("(not set)"); \
+            } \
+            PySys_FormatStderr("\n"); \
+        } while (0)
+
+    PyObject *obj;
+    DUMP_SYS(_base_executable);
+    DUMP_SYS(base_prefix);
+    DUMP_SYS(base_exec_prefix);
+    DUMP_SYS(executable);
+    DUMP_SYS(prefix);
+    DUMP_SYS(exec_prefix);
+#undef DUMP_SYS
+
+    PyObject *sys_path = PySys_GetObject("path");  /* borrowed reference */
+    if (sys_path != NULL && PyList_Check(sys_path)) {
+        PySys_WriteStderr("  sys.path = [\n");
+        Py_ssize_t len = PyList_GET_SIZE(sys_path);
+        for (Py_ssize_t i=0; i < len; i++) {
+            PyObject *path = PyList_GET_ITEM(sys_path, i);
+            PySys_FormatStderr("    %A,\n", path);
+        }
+        PySys_WriteStderr("  ]\n");
+    }
+
+    _PyErr_Restore(tstate, exc_type, exc_value, exc_tb);
 }
