@@ -366,9 +366,9 @@ The following error handlers are only applicable to encoding (within
 |                         | in :func:`xmlcharrefreplace_errors`.          |
 +-------------------------+-----------------------------------------------+
 | ``'namereplace'``       | Replace with ``\N{...}`` escape sequences,    |
-|                         | what appears in the brace is the Name property|
-|                         | from Unicode Character Database. Implemented  |
-|                         | in :func:`namereplace_errors`.                |
+|                         | what appears in the braces is the Name        |
+|                         | property from Unicode Character Database.     |
+|                         | Implemented in :func:`namereplace_errors`.    |
 +-------------------------+-----------------------------------------------+
 
 .. index::
@@ -487,9 +487,10 @@ functions:
    Implements the ``'namereplace'`` error handling (for encoding within
    :term:`text encoding` only).
 
-   The unencodable character is replaced by a ``\N{...}`` escape sequence,
-   what appears in the brace is the Name property from Unicode Character
-   Database.
+   The unencodable character is replaced by a ``\N{...}`` escape sequence. The
+   set of characters that appear in the braces is the Name property from
+   Unicode Character Database. For example, the German lowercase letter ``"ß"``
+   will be converted to byte sequence ``\N{LATIN SMALL LETTER SHARP S}`` .
 
    .. versionadded:: 3.5
 
