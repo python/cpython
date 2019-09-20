@@ -392,6 +392,35 @@ _ctypes_alloc_format_string_with_shape(int ndim, const Py_ssize_t *shape,
     return result;
 }
 
+/* StructParamObject and StructParam_Type are used in _ctypes_callproc()
+   for argument.keep to call PyMem_Free(ptr) on Py_DECREF(argument).
+
+   StructUnionType_paramfunc() creates such object when a ctypes Structure is
+   passed by copy to a C function. */
+typedef struct {
+    PyObject_HEAD
+    void *ptr;
+} StructParamObject;
+
+
+static void
+StructParam_dealloc(PyObject *myself)
+{
+    StructParamObject *self = (StructParamObject *)myself;
+    PyMem_Free(self->ptr);
+    Py_TYPE(self)->tp_free(myself);
+}
+
+
+static PyTypeObject StructParam_Type = {
+    PyVarObject_HEAD_INIT(NULL, 0)
+    .tp_name = "_ctypes.StructParam_Type",
+    .tp_basicsize = sizeof(StructParamObject),
+    .tp_dealloc = StructParam_dealloc,
+    .tp_flags = Py_TPFLAGS_DEFAULT,
+};
+
+
 /*
   PyCStructType_Type - a meta type/class.  Creating a new class using this one as
   __metaclass__ will call the constructor StructUnionType_new.  It replaces the
@@ -403,35 +432,47 @@ static PyCArgObject *
 StructUnionType_paramfunc(CDataObject *self)
 {
     PyCArgObject *parg;
-    CDataObject *copied_self;
+    PyObject *obj;
     StgDictObject *stgdict;
+    void *ptr;
 
     if ((size_t)self->b_size > sizeof(void*)) {
-        void *new_ptr = PyMem_Malloc(self->b_size);
-        if (new_ptr == NULL)
+        ptr = PyMem_Malloc(self->b_size);
+        if (ptr == NULL) {
             return NULL;
-        memcpy(new_ptr, self->b_ptr, self->b_size);
-        copied_self = (CDataObject *)PyCData_AtAddress(
-            (PyObject *)Py_TYPE(self), new_ptr);
-        copied_self->b_needsfree = 1;
+        }
+        memcpy(ptr, self->b_ptr, self->b_size);
+
+        /* Create a Python object which calls PyMem_Free(ptr) in
+           its deallocator. The object will be destroyed
+           at _ctypes_callproc() cleanup. */
+        obj = (&StructParam_Type)->tp_alloc(&StructParam_Type, 0);
+        if (obj == NULL) {
+            PyMem_Free(ptr);
+            return NULL;
+        }
+
+        StructParamObject *struct_param = (StructParamObject *)obj;
+        struct_param->ptr = ptr;
     } else {
-        copied_self = self;
-        Py_INCREF(copied_self);
+        ptr = self->b_ptr;
+        obj = (PyObject *)self;
+        Py_INCREF(obj);
     }
 
     parg = PyCArgObject_new();
     if (parg == NULL) {
-        Py_DECREF(copied_self);
+        Py_DECREF(obj);
         return NULL;
     }
 
     parg->tag = 'V';
-    stgdict = PyObject_stgdict((PyObject *)copied_self);
+    stgdict = PyObject_stgdict((PyObject *)self);
     assert(stgdict); /* Cannot be NULL for structure/union instances */
     parg->pffi_type = &stgdict->ffi_type_pointer;
-    parg->value.p = copied_self->b_ptr;
-    parg->size = copied_self->b_size;
-    parg->obj = (PyObject *)copied_self;
+    parg->value.p = ptr;
+    parg->size = self->b_size;
+    parg->obj = obj;
     return parg;
 }
 
@@ -1127,7 +1168,11 @@ PyCPointerType_from_param(PyObject *type, PyObject *value)
         */
         StgDictObject *v = PyObject_stgdict(value);
         assert(v); /* Cannot be NULL for pointer or array objects */
-        if (PyObject_IsSubclass(v->proto, typedict->proto)) {
+        int ret = PyObject_IsSubclass(v->proto, typedict->proto);
+        if (ret < 0) {
+            return NULL;
+        }
+        if (ret) {
             Py_INCREF(value);
             return value;
         }
@@ -5154,7 +5199,8 @@ Pointer_subscript(PyObject *myself, PyObject *item)
         PyObject *np;
         StgDictObject *stgdict, *itemdict;
         PyObject *proto;
-        Py_ssize_t i, len, cur;
+        Py_ssize_t i, len;
+        size_t cur;
 
         /* Since pointers have no length, and we want to apply
            different semantics to negative indices than normal
@@ -5699,6 +5745,10 @@ PyInit__ctypes(void)
     DictRemover_Type.tp_new = PyType_GenericNew;
     if (PyType_Ready(&DictRemover_Type) < 0)
         return NULL;
+
+    if (PyType_Ready(&StructParam_Type) < 0) {
+        return NULL;
+    }
 
 #ifdef MS_WIN32
     if (create_comerror() < 0)

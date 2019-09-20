@@ -10,6 +10,7 @@ import traceback
 import webbrowser
 
 from tkinter import *
+from tkinter.font import Font
 from tkinter.ttk import Scrollbar
 import tkinter.simpledialog as tkSimpleDialog
 import tkinter.messagebox as tkMessageBox
@@ -25,6 +26,7 @@ from idlelib import pyparse
 from idlelib import query
 from idlelib import replace
 from idlelib import search
+from idlelib.tree import wheel_event
 from idlelib import window
 
 # The default tab setting for a Text widget, in average-width characters.
@@ -114,20 +116,19 @@ class EditorWindow(object):
             self.tkinter_vars = {}  # keys: Tkinter event names
                                     # values: Tkinter variable instances
             self.top.instance_dict = {}
-        self.recent_files_path = os.path.join(
+        self.recent_files_path = idleConf.userdir and os.path.join(
                 idleConf.userdir, 'recent-files.lst')
 
         self.prompt_last_line = ''  # Override in PyShell
         self.text_frame = text_frame = Frame(top)
         self.vbar = vbar = Scrollbar(text_frame, name='vbar')
-        self.width = idleConf.GetOption('main', 'EditorWindow',
-                                        'width', type='int')
+        width = idleConf.GetOption('main', 'EditorWindow', 'width', type='int')
         text_options = {
                 'name': 'text',
                 'padx': 5,
                 'wrap': 'none',
                 'highlightthickness': 0,
-                'width': self.width,
+                'width': width,
                 'tabstyle': 'wordprocessor',  # new in 8.5
                 'height': idleConf.GetOption(
                         'main', 'EditorWindow', 'height', type='int'),
@@ -151,9 +152,11 @@ class EditorWindow(object):
         else:
             # Elsewhere, use right-click for popup menus.
             text.bind("<3>",self.right_menu_event)
-        text.bind('<MouseWheel>', self.mousescroll)
-        text.bind('<Button-4>', self.mousescroll)
-        text.bind('<Button-5>', self.mousescroll)
+
+        text.bind('<MouseWheel>', wheel_event)
+        text.bind('<Button-4>', wheel_event)
+        text.bind('<Button-5>', wheel_event)
+        text.bind('<Configure>', self.handle_winconfig)
         text.bind("<<cut>>", self.cut)
         text.bind("<<copy>>", self.copy)
         text.bind("<<paste>>", self.paste)
@@ -211,6 +214,7 @@ class EditorWindow(object):
         text['font'] = idleConf.GetFont(self.root, 'main', 'EditorWindow')
         text.grid(row=1, column=1, sticky=NSEW)
         text.focus_set()
+        self.set_width()
 
         # usetabs true  -> literal tab characters are used by indent and
         #                  dedent cmds, possibly mixed with spaces if
@@ -337,6 +341,22 @@ class EditorWindow(object):
             text.bind("<<toggle-line-numbers>>", self.toggle_line_numbers_event)
         else:
             self.update_menu_state('options', '*Line Numbers', 'disabled')
+
+    def handle_winconfig(self, event=None):
+        self.set_width()
+
+    def set_width(self):
+        text = self.text
+        inner_padding = sum(map(text.tk.getint, [text.cget('border'),
+                                                 text.cget('padx')]))
+        pixel_width = text.winfo_width() - 2 * inner_padding
+
+        # Divide the width of the Text widget by the font width,
+        # which is taken to be the width of '0' (zero).
+        # http://www.tcl.tk/man/tcl8.6/TkCmd/text.htm#M21
+        zero_char_width = \
+            Font(text, font=text.cget('font')).measure('0')
+        self.width = pixel_width // zero_char_width
 
     def _filename_to_unicode(self, filename):
         """Return filename as BMP unicode so displayable in Tk."""
@@ -482,23 +502,6 @@ class EditorWindow(object):
             event = 'scroll'
             args = (lines, 'units')
         self.text.yview(event, *args)
-        return 'break'
-
-    def mousescroll(self, event):
-        """Handle scrollwheel event.
-
-        For wheel up, event.delta = 120*n on Windows, -1*n on darwin,
-        where n can be > 1 if one scrolls fast.  Flicking the wheel
-        generates up to maybe 20 events with n up to 10 or more 1.
-        Macs use wheel down (delta = 1*n) to scroll up, so positive
-        delta means to scroll up on both systems.
-
-        X-11 sends Control-Button-4 event instead.
-        """
-        up = {EventType.MouseWheel: event.delta > 0,
-              EventType.Button: event.num == 4}
-        lines = -5 if up[event.type] else 5
-        self.text.yview_scroll(lines, 'units')
         return 'break'
 
     rmenu = None
@@ -830,6 +833,7 @@ class EditorWindow(object):
         # Finally, update the main text widget.
         new_font = idleConf.GetFont(self.root, 'main', 'EditorWindow')
         self.text['font'] = new_font
+        self.set_width()
 
     def RemoveKeybindings(self):
         "Remove the keybindings before they are changed."
@@ -920,9 +924,11 @@ class EditorWindow(object):
 
     def update_recent_files_list(self, new_file=None):
         "Load and update the recent files list and menus"
+        # TODO: move to iomenu.
         rf_list = []
-        if os.path.exists(self.recent_files_path):
-            with open(self.recent_files_path, 'r',
+        file_path = self.recent_files_path
+        if file_path and os.path.exists(file_path):
+            with open(file_path, 'r',
                       encoding='utf_8', errors='replace') as rf_list_file:
                 rf_list = rf_list_file.readlines()
         if new_file:
@@ -938,19 +944,19 @@ class EditorWindow(object):
         rf_list = [path for path in rf_list if path not in bad_paths]
         ulchars = "1234567890ABCDEFGHIJK"
         rf_list = rf_list[0:len(ulchars)]
-        try:
-            with open(self.recent_files_path, 'w',
-                        encoding='utf_8', errors='replace') as rf_file:
-                rf_file.writelines(rf_list)
-        except OSError as err:
-            if not getattr(self.root, "recentfilelist_error_displayed", False):
-                self.root.recentfilelist_error_displayed = True
-                tkMessageBox.showwarning(title='IDLE Warning',
-                    message="Cannot update File menu Recent Files list. "
-                            "Your operating system says:\n%s\n"
-                            "Select OK and IDLE will continue without updating."
-                        % self._filename_to_unicode(str(err)),
-                    parent=self.text)
+        if file_path:
+            try:
+                with open(file_path, 'w',
+                          encoding='utf_8', errors='replace') as rf_file:
+                    rf_file.writelines(rf_list)
+            except OSError as err:
+                if not getattr(self.root, "recentfiles_message", False):
+                    self.root.recentfiles_message = True
+                    tkMessageBox.showwarning(title='IDLE Warning',
+                        message="Cannot save Recent Files list to disk.\n"
+                                f"  {err}\n"
+                                "Select OK to continue.",
+                        parent=self.text)
         # for each edit window instance, construct the recent files menu
         for instance in self.top.instance_dict:
             menu = instance.recent_files_menu
@@ -1055,10 +1061,13 @@ class EditorWindow(object):
             return self.io.maybesave()
 
     def close(self):
-        reply = self.maybesave()
-        if str(reply) != "cancel":
-            self._close()
-        return reply
+        try:
+            reply = self.maybesave()
+            if str(reply) != "cancel":
+                self._close()
+            return reply
+        except AttributeError:  # bpo-35379: close called twice
+            pass
 
     def _close(self):
         if self.io.filename:

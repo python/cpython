@@ -388,15 +388,28 @@ example::
      File "<stdin>", line 2, in <module>
    KeyboardInterrupt
 
-A *finally clause* is always executed before leaving the :keyword:`try`
-statement, whether an exception has occurred or not. When an exception has
-occurred in the :keyword:`!try` clause and has not been handled by an
-:keyword:`except` clause (or it has occurred in an :keyword:`!except` or
-:keyword:`!else` clause), it is re-raised after the :keyword:`finally` clause has
-been executed.  The :keyword:`!finally` clause is also executed "on the way out"
-when any other clause of the :keyword:`!try` statement is left via a
-:keyword:`break`, :keyword:`continue` or :keyword:`return` statement.  A more
-complicated example::
+If a :keyword:`finally` clause is present, the :keyword:`finally` clause will execute as the last task before the :keyword:`try` statement completes. The :keyword:`finally` clause runs whether or not the :keyword:`try` statement produces an exception. The following points discuss more complex cases when an exception occurs:
+
+* If an exception occurs during execution of the :keyword:`!try` clause, the exception may be handled by an :keyword:`except` clause. In all cases, the exception is re-raised after the :keyword:`!finally` clause has been executed.
+
+* An exception could occur during execution of an :keyword:`!except` or :keyword:`!else` clause. Again, the exception is re-raised after the :keyword:`!finally` clause has been executed.
+
+* If the :keyword:`!try` statement reaches a :keyword:`break`, :keyword:`continue` or :keyword:`return` statement, the :keyword:`finally` clause will execute just prior to the :keyword:`break`, :keyword:`continue` or :keyword:`return` statement's execution.
+
+* If a :keyword:`finally` clause includes a :keyword:`return` statement, the :keyword:`finally` clause's :keyword:`return` statement will execute before, and instead of, the :keyword:`return` statement in a :keyword:`try` clause.
+
+For example::
+
+   >>> def bool_return():
+   ...     try:
+   ...         return True
+   ...     finally:
+   ...         return False
+   ...
+   >>> bool_return()
+   False
+
+A more complicated example::
 
    >>> def divide(x, y):
    ...     try:

@@ -110,7 +110,7 @@ static void pymem_destructor(PyObject *ptr)
   WinDLL(..., use_last_error=True) swap the system LastError value with the
   ctypes private copy.
 
-  The values are also swapped immeditately before and after ctypes callback
+  The values are also swapped immediately before and after ctypes callback
   functions are called, if the callbacks are constructed using the new
   optional use_errno parameter set to True: CFUNCTYPE(..., use_errno=TRUE) or
   WINFUNCTYPE(..., use_errno=True).
@@ -242,7 +242,9 @@ static WCHAR *FormatError(DWORD code)
 {
     WCHAR *lpMsgBuf;
     DWORD n;
-    n = FormatMessageW(FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM,
+    n = FormatMessageW(FORMAT_MESSAGE_ALLOCATE_BUFFER |
+                       FORMAT_MESSAGE_FROM_SYSTEM |
+                       FORMAT_MESSAGE_IGNORE_INSERTS,
                        NULL,
                        code,
                        MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), /* Default language */

@@ -14,7 +14,17 @@ class Struct "PyStructObject *" "&PyStructType"
 [clinic start generated code]*/
 /*[clinic end generated code: output=da39a3ee5e6b4b0d input=9b032058a83ed7c3]*/
 
-static PyTypeObject PyStructType;
+typedef struct {
+    PyObject *PyStructType;
+    PyObject *unpackiter_type;
+    PyObject *StructError;
+} _structmodulestate;
+
+#define _structmodulestate(o) ((_structmodulestate *)PyModule_GetState(o))
+
+static struct PyModuleDef _structmodule;
+
+#define _structmodulestate_global _structmodulestate(PyState_FindModule(&_structmodule))
 
 /* The translation function for each format character is table driven */
 typedef struct _formatdef {
@@ -46,13 +56,8 @@ typedef struct {
 } PyStructObject;
 
 
-#define PyStruct_Check(op) PyObject_TypeCheck(op, &PyStructType)
-#define PyStruct_CheckExact(op) (Py_TYPE(op) == &PyStructType)
-
-
-/* Exception */
-
-static PyObject *StructError;
+#define PyStruct_Check(op) PyObject_TypeCheck(op, (PyTypeObject *)_structmodulestate_global->PyStructType)
+#define PyStruct_CheckExact(op) (Py_TYPE(op) == (PyTypeObject *)_structmodulestate_global->PyStructType)
 
 
 /* Define various structs to figure out the alignments of types */
@@ -115,7 +120,7 @@ get_pylong(PyObject *v)
                 return NULL;
         }
         else {
-            PyErr_SetString(StructError,
+            PyErr_SetString(_structmodulestate_global->StructError,
                             "required argument is not an integer");
             return NULL;
         }
@@ -143,7 +148,7 @@ get_long(PyObject *v, long *p)
     Py_DECREF(v);
     if (x == (long)-1 && PyErr_Occurred()) {
         if (PyErr_ExceptionMatches(PyExc_OverflowError))
-            PyErr_SetString(StructError,
+            PyErr_SetString(_structmodulestate_global->StructError,
                             "argument out of range");
         return -1;
     }
@@ -167,7 +172,7 @@ get_ulong(PyObject *v, unsigned long *p)
     Py_DECREF(v);
     if (x == (unsigned long)-1 && PyErr_Occurred()) {
         if (PyErr_ExceptionMatches(PyExc_OverflowError))
-            PyErr_SetString(StructError,
+            PyErr_SetString(_structmodulestate_global->StructError,
                             "argument out of range");
         return -1;
     }
@@ -190,7 +195,7 @@ get_longlong(PyObject *v, long long *p)
     Py_DECREF(v);
     if (x == (long long)-1 && PyErr_Occurred()) {
         if (PyErr_ExceptionMatches(PyExc_OverflowError))
-            PyErr_SetString(StructError,
+            PyErr_SetString(_structmodulestate_global->StructError,
                             "argument out of range");
         return -1;
     }
@@ -213,7 +218,7 @@ get_ulonglong(PyObject *v, unsigned long long *p)
     Py_DECREF(v);
     if (x == (unsigned long long)-1 && PyErr_Occurred()) {
         if (PyErr_ExceptionMatches(PyExc_OverflowError))
-            PyErr_SetString(StructError,
+            PyErr_SetString(_structmodulestate_global->StructError,
                             "argument out of range");
         return -1;
     }
@@ -236,7 +241,7 @@ get_ssize_t(PyObject *v, Py_ssize_t *p)
     Py_DECREF(v);
     if (x == (Py_ssize_t)-1 && PyErr_Occurred()) {
         if (PyErr_ExceptionMatches(PyExc_OverflowError))
-            PyErr_SetString(StructError,
+            PyErr_SetString(_structmodulestate_global->StructError,
                             "argument out of range");
         return -1;
     }
@@ -259,7 +264,7 @@ get_size_t(PyObject *v, size_t *p)
     Py_DECREF(v);
     if (x == (size_t)-1 && PyErr_Occurred()) {
         if (PyErr_ExceptionMatches(PyExc_OverflowError))
-            PyErr_SetString(StructError,
+            PyErr_SetString(_structmodulestate_global->StructError,
                             "argument out of range");
         return -1;
     }
@@ -293,7 +298,7 @@ pack_halffloat(char *p,      /* start of 2-byte string */
 {
     double x = PyFloat_AsDouble(v);
     if (x == -1.0 && PyErr_Occurred()) {
-        PyErr_SetString(StructError,
+        PyErr_SetString(_structmodulestate_global->StructError,
                         "required argument is not a float");
         return -1;
     }
@@ -339,13 +344,13 @@ _range_error(const formatdef *f, int is_unsigned)
     const size_t ulargest = (size_t)-1 >> ((SIZEOF_SIZE_T - f->size)*8);
     assert(f->size >= 1 && f->size <= SIZEOF_SIZE_T);
     if (is_unsigned)
-        PyErr_Format(StructError,
+        PyErr_Format(_structmodulestate_global->StructError,
             "'%c' format requires 0 <= number <= %zu",
             f->format,
             ulargest);
     else {
         const Py_ssize_t largest = (Py_ssize_t)(ulargest >> 1);
-        PyErr_Format(StructError,
+        PyErr_Format(_structmodulestate_global->StructError,
             "'%c' format requires %zd <= number <= %zd",
             f->format,
             ~ largest,
@@ -524,7 +529,7 @@ np_byte(char *p, PyObject *v, const formatdef *f)
     if (get_long(v, &x) < 0)
         return -1;
     if (x < -128 || x > 127) {
-        PyErr_SetString(StructError,
+        PyErr_SetString(_structmodulestate_global->StructError,
                         "byte format requires -128 <= number <= 127");
         return -1;
     }
@@ -539,7 +544,7 @@ np_ubyte(char *p, PyObject *v, const formatdef *f)
     if (get_long(v, &x) < 0)
         return -1;
     if (x < 0 || x > 255) {
-        PyErr_SetString(StructError,
+        PyErr_SetString(_structmodulestate_global->StructError,
                         "ubyte format requires 0 <= number <= 255");
         return -1;
     }
@@ -550,8 +555,8 @@ np_ubyte(char *p, PyObject *v, const formatdef *f)
 static int
 np_char(char *p, PyObject *v, const formatdef *f)
 {
-    if (!PyBytes_Check(v) || PyBytes_GET_SIZE(v) != 1) {
-        PyErr_SetString(StructError,
+    if (!PyBytes_Check(v) || PyBytes_Size(v) != 1) {
+        PyErr_SetString(_structmodulestate_global->StructError,
                         "char format requires a bytes object of length 1");
         return -1;
     }
@@ -567,7 +572,7 @@ np_short(char *p, PyObject *v, const formatdef *f)
     if (get_long(v, &x) < 0)
         return -1;
     if (x < SHRT_MIN || x > SHRT_MAX) {
-        PyErr_SetString(StructError,
+        PyErr_SetString(_structmodulestate_global->StructError,
                         "short format requires " Py_STRINGIFY(SHRT_MIN)
                         " <= number <= " Py_STRINGIFY(SHRT_MAX));
         return -1;
@@ -585,7 +590,7 @@ np_ushort(char *p, PyObject *v, const formatdef *f)
     if (get_long(v, &x) < 0)
         return -1;
     if (x < 0 || x > USHRT_MAX) {
-        PyErr_SetString(StructError,
+        PyErr_SetString(_structmodulestate_global->StructError,
                         "ushort format requires 0 <= number <= "
                         Py_STRINGIFY(USHRT_MAX));
         return -1;
@@ -716,7 +721,7 @@ np_float(char *p, PyObject *v, const formatdef *f)
 {
     float x = (float)PyFloat_AsDouble(v);
     if (x == -1 && PyErr_Occurred()) {
-        PyErr_SetString(StructError,
+        PyErr_SetString(_structmodulestate_global->StructError,
                         "required argument is not a float");
         return -1;
     }
@@ -729,7 +734,7 @@ np_double(char *p, PyObject *v, const formatdef *f)
 {
     double x = PyFloat_AsDouble(v);
     if (x == -1 && PyErr_Occurred()) {
-        PyErr_SetString(StructError,
+        PyErr_SetString(_structmodulestate_global->StructError,
                         "required argument is not a float");
         return -1;
     }
@@ -948,7 +953,7 @@ bp_float(char *p, PyObject *v, const formatdef *f)
 {
     double x = PyFloat_AsDouble(v);
     if (x == -1 && PyErr_Occurred()) {
-        PyErr_SetString(StructError,
+        PyErr_SetString(_structmodulestate_global->StructError,
                         "required argument is not a float");
         return -1;
     }
@@ -960,7 +965,7 @@ bp_double(char *p, PyObject *v, const formatdef *f)
 {
     double x = PyFloat_AsDouble(v);
     if (x == -1 && PyErr_Occurred()) {
-        PyErr_SetString(StructError,
+        PyErr_SetString(_structmodulestate_global->StructError,
                         "required argument is not a float");
         return -1;
     }
@@ -1163,7 +1168,7 @@ lp_float(char *p, PyObject *v, const formatdef *f)
 {
     double x = PyFloat_AsDouble(v);
     if (x == -1 && PyErr_Occurred()) {
-        PyErr_SetString(StructError,
+        PyErr_SetString(_structmodulestate_global->StructError,
                         "required argument is not a float");
         return -1;
     }
@@ -1175,7 +1180,7 @@ lp_double(char *p, PyObject *v, const formatdef *f)
 {
     double x = PyFloat_AsDouble(v);
     if (x == -1 && PyErr_Occurred()) {
-        PyErr_SetString(StructError,
+        PyErr_SetString(_structmodulestate_global->StructError,
                         "required argument is not a float");
         return -1;
     }
@@ -1242,7 +1247,7 @@ getentry(int c, const formatdef *f)
             return f;
         }
     }
-    PyErr_SetString(StructError, "bad char in struct format");
+    PyErr_SetString(_structmodulestate_global->StructError, "bad char in struct format");
     return NULL;
 }
 
@@ -1293,7 +1298,7 @@ prepare_s(PyStructObject *self)
     len = 0;
     ncodes = 0;
     while ((c = *s++) != '\0') {
-        if (Py_ISSPACE(Py_CHARMASK(c)))
+        if (Py_ISSPACE(c))
             continue;
         if ('0' <= c && c <= '9') {
             num = c - '0';
@@ -1307,7 +1312,7 @@ prepare_s(PyStructObject *self)
                 num = num*10 + (c - '0');
             }
             if (c == '\0') {
-                PyErr_SetString(StructError,
+                PyErr_SetString(_structmodulestate_global->StructError,
                                 "repeat count given without format specifier");
                 return -1;
             }
@@ -1358,7 +1363,7 @@ prepare_s(PyStructObject *self)
     s = fmt;
     size = 0;
     while ((c = *s++) != '\0') {
-        if (Py_ISSPACE(Py_CHARMASK(c)))
+        if (Py_ISSPACE(c))
             continue;
         if ('0' <= c && c <= '9') {
             num = c - '0';
@@ -1397,7 +1402,7 @@ prepare_s(PyStructObject *self)
     return 0;
 
   overflow:
-    PyErr_SetString(StructError,
+    PyErr_SetString(_structmodulestate_global->StructError,
                     "total struct size too long");
     return -1;
 }
@@ -1407,9 +1412,11 @@ s_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 {
     PyObject *self;
 
-    assert(type != NULL && type->tp_alloc != NULL);
+    assert(type != NULL);
+    allocfunc alloc_func = PyType_GetSlot(type, Py_tp_alloc);
+    assert(alloc_func != NULL);
 
-    self = type->tp_alloc(type, 0);
+    self = alloc_func(type, 0);
     if (self != NULL) {
         PyStructObject *s = (PyStructObject*)self;
         Py_INCREF(Py_None);
@@ -1455,7 +1462,7 @@ Struct___init___impl(PyStructObject *self, PyObject *format)
         PyErr_Format(PyExc_TypeError,
                      "Struct() argument 1 must be a str or bytes object, "
                      "not %.200s",
-                     Py_TYPE(format)->tp_name);
+                     _PyType_Name(Py_TYPE(format)));
         return -1;
     }
 
@@ -1468,13 +1475,16 @@ Struct___init___impl(PyStructObject *self, PyObject *format)
 static void
 s_dealloc(PyStructObject *s)
 {
+    PyTypeObject *tp = Py_TYPE(s);
     if (s->weakreflist != NULL)
         PyObject_ClearWeakRefs((PyObject *)s);
     if (s->s_codes != NULL) {
         PyMem_FREE(s->s_codes);
     }
-    Py_DECREF(s->s_format);
-    Py_TYPE(s)->tp_free((PyObject *)s);
+    Py_XDECREF(s->s_format);
+    freefunc free_func = PyType_GetSlot(Py_TYPE(s), Py_tp_free);
+    free_func(s);
+    Py_DECREF(tp);
 }
 
 static PyObject *
@@ -1535,7 +1545,7 @@ Struct_unpack_impl(PyStructObject *self, Py_buffer *buffer)
 {
     assert(self->s_codes != NULL);
     if (buffer->len != self->s_size) {
-        PyErr_Format(StructError,
+        PyErr_Format(_structmodulestate_global->StructError,
                      "unpack requires a buffer of %zd bytes",
                      self->s_size);
         return NULL;
@@ -1568,7 +1578,7 @@ Struct_unpack_from_impl(PyStructObject *self, Py_buffer *buffer,
 
     if (offset < 0) {
         if (offset + self->s_size > 0) {
-            PyErr_Format(StructError,
+            PyErr_Format(_structmodulestate_global->StructError,
                          "not enough data to unpack %zd bytes at offset %zd",
                          self->s_size,
                          offset);
@@ -1576,7 +1586,7 @@ Struct_unpack_from_impl(PyStructObject *self, Py_buffer *buffer,
         }
 
         if (offset + buffer->len < 0) {
-            PyErr_Format(StructError,
+            PyErr_Format(_structmodulestate_global->StructError,
                          "offset %zd out of range for %zd-byte buffer",
                          offset,
                          buffer->len);
@@ -1586,7 +1596,7 @@ Struct_unpack_from_impl(PyStructObject *self, Py_buffer *buffer,
     }
 
     if ((buffer->len - offset) < self->s_size) {
-        PyErr_Format(StructError,
+        PyErr_Format(_structmodulestate_global->StructError,
                      "unpack_from requires a buffer of at least %zu bytes for "
                      "unpacking %zd bytes at offset %zd "
                      "(actual buffer size is %zd)",
@@ -1614,10 +1624,12 @@ static void
 unpackiter_dealloc(unpackiterobject *self)
 {
     /* bpo-31095: UnTrack is needed before calling any callbacks */
+    PyTypeObject *tp = Py_TYPE(self);
     PyObject_GC_UnTrack(self);
     Py_XDECREF(self->so);
     PyBuffer_Release(&self->buf);
     PyObject_GC_Del(self);
+    Py_DECREF(tp);
 }
 
 static int
@@ -1663,35 +1675,28 @@ unpackiter_iternext(unpackiterobject *self)
     return result;
 }
 
-static PyTypeObject unpackiter_type = {
-    PyVarObject_HEAD_INIT(NULL, 0)
-    "unpack_iterator",                          /* tp_name */
-    sizeof(unpackiterobject),                   /* tp_basicsize */
-    0,                                          /* tp_itemsize */
-    (destructor)unpackiter_dealloc,             /* tp_dealloc */
-    0,                                          /* tp_vectorcall_offset */
-    0,                                          /* tp_getattr */
-    0,                                          /* tp_setattr */
-    0,                                          /* tp_as_async */
-    0,                                          /* tp_repr */
-    0,                                          /* tp_as_number */
-    0,                                          /* tp_as_sequence */
-    0,                                          /* tp_as_mapping */
-    0,                                          /* tp_hash */
-    0,                                          /* tp_call */
-    0,                                          /* tp_str */
-    PyObject_GenericGetAttr,                    /* tp_getattro */
-    0,                                          /* tp_setattro */
-    0,                                          /* tp_as_buffer */
-    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC,    /* tp_flags */
-    0,                                          /* tp_doc */
-    (traverseproc)unpackiter_traverse,          /* tp_traverse */
-    0,                                          /* tp_clear */
-    0,                                          /* tp_richcompare */
-    0,                                          /* tp_weaklistoffset */
-    PyObject_SelfIter,                          /* tp_iter */
-    (iternextfunc)unpackiter_iternext,          /* tp_iternext */
-    unpackiter_methods                          /* tp_methods */
+PyObject *unpackiter_new(PyTypeObject *type, PyObject *args, PyObject *kwds) {
+    PyErr_Format(PyExc_TypeError, "Cannot create '%.200s objects", _PyType_Name(type));
+    return NULL;
+}
+
+static PyType_Slot unpackiter_type_slots[] = {
+    {Py_tp_dealloc, unpackiter_dealloc},
+    {Py_tp_getattro, PyObject_GenericGetAttr},
+    {Py_tp_traverse, unpackiter_traverse},
+    {Py_tp_iter, PyObject_SelfIter},
+    {Py_tp_iternext, unpackiter_iternext},
+    {Py_tp_methods, unpackiter_methods},
+    {Py_tp_new, unpackiter_new},
+    {0, 0},
+};
+
+static PyType_Spec unpackiter_type_spec = {
+    "_struct.unpack_iterator",
+    sizeof(unpackiterobject),
+    0,
+    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC,
+    unpackiter_type_slots
 };
 
 /*[clinic input]
@@ -1717,12 +1722,12 @@ Struct_iter_unpack(PyStructObject *self, PyObject *buffer)
     assert(self->s_codes != NULL);
 
     if (self->s_size == 0) {
-        PyErr_Format(StructError,
+        PyErr_Format(_structmodulestate_global->StructError,
                      "cannot iteratively unpack with a struct of length 0");
         return NULL;
     }
 
-    iter = (unpackiterobject *) PyType_GenericAlloc(&unpackiter_type, 0);
+    iter = (unpackiterobject *) PyType_GenericAlloc((PyTypeObject *)_structmodulestate_global->unpackiter_type, 0);
     if (iter == NULL)
         return NULL;
 
@@ -1731,7 +1736,7 @@ Struct_iter_unpack(PyStructObject *self, PyObject *buffer)
         return NULL;
     }
     if (iter->buf.len % self->s_size != 0) {
-        PyErr_Format(StructError,
+        PyErr_Format(_structmodulestate_global->StructError,
                      "iterative unpacking requires a buffer of "
                      "a multiple of %zd bytes",
                      self->s_size);
@@ -1777,7 +1782,7 @@ s_pack_internal(PyStructObject *soself, PyObject *const *args, int offset, char*
                 void *p;
                 isstring = PyBytes_Check(v);
                 if (!isstring && !PyByteArray_Check(v)) {
-                    PyErr_SetString(StructError,
+                    PyErr_SetString(_structmodulestate_global->StructError,
                                     "argument for 's' must be a bytes object");
                     return -1;
                 }
@@ -1799,7 +1804,7 @@ s_pack_internal(PyStructObject *soself, PyObject *const *args, int offset, char*
                 void *p;
                 isstring = PyBytes_Check(v);
                 if (!isstring && !PyByteArray_Check(v)) {
-                    PyErr_SetString(StructError,
+                    PyErr_SetString(_structmodulestate_global->StructError,
                                     "argument for 'p' must be a bytes object");
                     return -1;
                 }
@@ -1821,7 +1826,7 @@ s_pack_internal(PyStructObject *soself, PyObject *const *args, int offset, char*
             } else {
                 if (e->pack(res, v, e) < 0) {
                     if (PyLong_Check(v) && PyErr_ExceptionMatches(PyExc_OverflowError))
-                        PyErr_SetString(StructError,
+                        PyErr_SetString(_structmodulestate_global->StructError,
                                         "int too large to convert");
                     return -1;
                 }
@@ -1845,8 +1850,8 @@ strings.");
 static PyObject *
 s_pack(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
 {
+    char *buf;
     PyStructObject *soself;
-    PyObject *result;
 
     /* Validate arguments. */
     soself = (PyStructObject *)self;
@@ -1854,23 +1859,27 @@ s_pack(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
     assert(soself->s_codes != NULL);
     if (nargs != soself->s_len)
     {
-        PyErr_Format(StructError,
+        PyErr_Format(_structmodulestate_global->StructError,
             "pack expected %zd items for packing (got %zd)", soself->s_len, nargs);
         return NULL;
     }
 
-    /* Allocate a new buffer */
-    result = PyBytes_FromStringAndSize((char *)NULL, soself->s_size);
-    if (result == NULL)
-        return NULL;
-
-    /* Call the guts */
-    if ( s_pack_internal(soself, args, 0, PyBytes_AS_STRING(result)) != 0 ) {
-        Py_DECREF(result);
+    /* Allocate a new string */
+    _PyBytesWriter writer;
+    _PyBytesWriter_Init(&writer);
+    buf = _PyBytesWriter_Alloc(&writer, soself->s_size);
+    if (buf == NULL) {
+        _PyBytesWriter_Dealloc(&writer);
         return NULL;
     }
 
-    return result;
+    /* Call the guts */
+    if ( s_pack_internal(soself, args, 0, buf) != 0 ) {
+        _PyBytesWriter_Dealloc(&writer);
+        return NULL;
+    }
+
+    return _PyBytesWriter_Finish(&writer, buf + soself->s_size);
 }
 
 PyDoc_STRVAR(s_pack_into__doc__,
@@ -1895,15 +1904,15 @@ s_pack_into(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
     if (nargs != (soself->s_len + 2))
     {
         if (nargs == 0) {
-            PyErr_Format(StructError,
+            PyErr_Format(_structmodulestate_global->StructError,
                         "pack_into expected buffer argument");
         }
         else if (nargs == 1) {
-            PyErr_Format(StructError,
+            PyErr_Format(_structmodulestate_global->StructError,
                         "pack_into expected offset argument");
         }
         else {
-            PyErr_Format(StructError,
+            PyErr_Format(_structmodulestate_global->StructError,
                         "pack_into expected %zd items for packing (got %zd)",
                         soself->s_len, (nargs - 2));
         }
@@ -1926,7 +1935,7 @@ s_pack_into(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
     if (offset < 0) {
          /* Check that negative offset is low enough to fit data */
         if (offset + soself->s_size > 0) {
-            PyErr_Format(StructError,
+            PyErr_Format(_structmodulestate_global->StructError,
                          "no space to pack %zd bytes at offset %zd",
                          soself->s_size,
                          offset);
@@ -1936,7 +1945,7 @@ s_pack_into(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
 
         /* Check that negative offset is not crossing buffer boundary */
         if (offset + buffer.len < 0) {
-            PyErr_Format(StructError,
+            PyErr_Format(_structmodulestate_global->StructError,
                          "offset %zd out of range for %zd-byte buffer",
                          offset,
                          buffer.len);
@@ -1952,7 +1961,7 @@ s_pack_into(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
         assert(offset >= 0);
         assert(soself->s_size >= 0);
 
-        PyErr_Format(StructError,
+        PyErr_Format(_structmodulestate_global->StructError,
                      "pack_into requires a buffer of at least %zu bytes for "
                      "packing %zd bytes at offset %zd "
                      "(actual buffer size is %zd)",
@@ -2014,6 +2023,11 @@ static struct PyMethodDef s_methods[] = {
     {NULL,       NULL}          /* sentinel */
 };
 
+static PyMemberDef s_members[] = {
+    {"__weaklistoffset__", T_PYSSIZET, offsetof(PyStructObject, weakreflist), READONLY},
+    {NULL}  /* sentinel */
+};
+
 #define OFF(x) offsetof(PyStructObject, x)
 
 static PyGetSetDef s_getsetlist[] = {
@@ -2022,47 +2036,32 @@ static PyGetSetDef s_getsetlist[] = {
     {NULL} /* sentinel */
 };
 
-static
-PyTypeObject PyStructType = {
-    PyVarObject_HEAD_INIT(NULL, 0)
-    "Struct",
+PyDoc_STRVAR(s__doc__,
+"Struct(fmt) --> compiled struct object\n"
+"\n"
+);
+
+static PyType_Slot PyStructType_slots[] = {
+    {Py_tp_dealloc, s_dealloc},
+    {Py_tp_getattro, PyObject_GenericGetAttr},
+    {Py_tp_setattro, PyObject_GenericSetAttr},
+    {Py_tp_doc, (void*)s__doc__},
+    {Py_tp_methods, s_methods},
+    {Py_tp_members, s_members},
+    {Py_tp_getset, s_getsetlist},
+    {Py_tp_init, Struct___init__},
+    {Py_tp_alloc, PyType_GenericAlloc},
+    {Py_tp_new, s_new},
+    {Py_tp_free, PyObject_Del},
+    {0, 0},
+};
+
+static PyType_Spec PyStructType_spec = {
+    "_struct.Struct",
     sizeof(PyStructObject),
     0,
-    (destructor)s_dealloc,      /* tp_dealloc */
-    0,                                          /* tp_vectorcall_offset */
-    0,                                          /* tp_getattr */
-    0,                                          /* tp_setattr */
-    0,                                          /* tp_as_async */
-    0,                                          /* tp_repr */
-    0,                                          /* tp_as_number */
-    0,                                          /* tp_as_sequence */
-    0,                                          /* tp_as_mapping */
-    0,                                          /* tp_hash */
-    0,                                          /* tp_call */
-    0,                                          /* tp_str */
-    PyObject_GenericGetAttr,                    /* tp_getattro */
-    PyObject_GenericSetAttr,                    /* tp_setattro */
-    0,                                          /* tp_as_buffer */
-    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE,   /* tp_flags */
-    Struct___init____doc__,                     /* tp_doc */
-    0,                                          /* tp_traverse */
-    0,                                          /* tp_clear */
-    0,                                          /* tp_richcompare */
-    offsetof(PyStructObject, weakreflist),      /* tp_weaklistoffset */
-    0,                                          /* tp_iter */
-    0,                                          /* tp_iternext */
-    s_methods,                                  /* tp_methods */
-    NULL,                                       /* tp_members */
-    s_getsetlist,                               /* tp_getset */
-    0,                                          /* tp_base */
-    0,                                          /* tp_dict */
-    0,                                          /* tp_descr_get */
-    0,                                          /* tp_descr_set */
-    0,                                          /* tp_dictoffset */
-    Struct___init__,                            /* tp_init */
-    PyType_GenericAlloc,                        /* tp_alloc */
-    s_new,                                      /* tp_new */
-    PyObject_Del,                               /* tp_free */
+    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE,
+    PyStructType_slots
 };
 
 
@@ -2098,7 +2097,7 @@ cache_struct_converter(PyObject *fmt, PyStructObject **ptr)
         return 0;
     }
 
-    s_object = _PyObject_CallOneArg((PyObject *)(&PyStructType), fmt);
+    s_object = _PyObject_CallOneArg(_structmodulestate_global->PyStructType, fmt);
     if (s_object != NULL) {
         if (PyDict_GET_SIZE(cache) >= MAXCACHE)
             PyDict_Clear(cache);
@@ -2308,16 +2307,40 @@ Whitespace between formats is ignored.\n\
 The variable struct.error is an exception raised on errors.\n");
 
 
+static int
+_structmodule_traverse(PyObject *module, visitproc visit, void *arg)
+{
+    Py_VISIT(_structmodulestate(module)->PyStructType);
+    Py_VISIT(_structmodulestate(module)->unpackiter_type);
+    Py_VISIT(_structmodulestate(module)->StructError);
+    return 0;
+}
+
+static int
+_structmodule_clear(PyObject *module)
+{
+    Py_CLEAR(_structmodulestate(module)->PyStructType);
+    Py_CLEAR(_structmodulestate(module)->unpackiter_type);
+    Py_CLEAR(_structmodulestate(module)->StructError);
+    return 0;
+}
+
+static void
+_structmodule_free(void *module)
+{
+    _structmodule_clear((PyObject *)module);
+}
+
 static struct PyModuleDef _structmodule = {
     PyModuleDef_HEAD_INIT,
     "_struct",
     module_doc,
-    -1,
+    sizeof(_structmodulestate),
     module_functions,
     NULL,
-    NULL,
-    NULL,
-    NULL
+    _structmodule_traverse,
+    _structmodule_clear,
+    _structmodule_free,
 };
 
 PyMODINIT_FUNC
@@ -2329,12 +2352,19 @@ PyInit__struct(void)
     if (m == NULL)
         return NULL;
 
-    Py_TYPE(&PyStructType) = &PyType_Type;
-    if (PyType_Ready(&PyStructType) < 0)
+    PyObject *PyStructType = PyType_FromSpec(&PyStructType_spec);
+    if (PyStructType == NULL) {
         return NULL;
+    }
+    Py_INCREF(PyStructType);
+    PyModule_AddObject(m, "Struct", PyStructType);
+    _structmodulestate(m)->PyStructType = PyStructType;
 
-    if (PyType_Ready(&unpackiter_type) < 0)
+    PyObject *unpackiter_type = PyType_FromSpec(&unpackiter_type_spec);
+    if (unpackiter_type == NULL) {
         return NULL;
+    }
+    _structmodulestate(m)->unpackiter_type = unpackiter_type;
 
     /* Check endian and swap in faster functions */
     {
@@ -2376,17 +2406,12 @@ PyInit__struct(void)
     }
 
     /* Add some symbolic constants to the module */
-    if (StructError == NULL) {
-        StructError = PyErr_NewException("struct.error", NULL, NULL);
-        if (StructError == NULL)
-            return NULL;
-    }
-
+    PyObject *StructError = PyErr_NewException("struct.error", NULL, NULL);
+    if (StructError == NULL)
+        return NULL;
     Py_INCREF(StructError);
     PyModule_AddObject(m, "error", StructError);
-
-    Py_INCREF((PyObject*)&PyStructType);
-    PyModule_AddObject(m, "Struct", (PyObject*)&PyStructType);
+    _structmodulestate(m)->StructError = StructError;
 
     return m;
 }

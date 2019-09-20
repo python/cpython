@@ -48,6 +48,8 @@ The preconfiguration (``PyPreConfig`` type) is stored in
 ``_PyRuntime.preconfig`` and the configuration (``PyConfig`` type) is stored in
 ``PyInterpreterState.config``.
 
+See also :ref:`Initialization, Finalization, and Threads <initialization>`.
+
 .. seealso::
    :pep:`587` "Python Initialization Configuration".
 
@@ -72,8 +74,12 @@ PyWideStringList
 
    .. c:function:: PyStatus PyWideStringList_Insert(PyWideStringList *list, Py_ssize_t index, const wchar_t *item)
 
-      Insert *item* into *list* at *index*. If *index* is greater than *list*
-      length, just append *item* to *list*.
+      Insert *item* into *list* at *index*.
+
+      If *index* is greater than or equal to *list* length, append *item* to
+      *list*.
+
+      *index* must be greater than or equal to 0.
 
       Python must be preinitialized to call this function.
 
@@ -870,7 +876,7 @@ Path Configuration
 If at least one "output field" is not set, Python computes the path
 configuration to fill unset fields. If
 :c:member:`~PyConfig.module_search_paths_set` is equal to 0,
-:c:member:`~PyConfig.module_search_paths` is overriden and
+:c:member:`~PyConfig.module_search_paths` is overridden and
 :c:member:`~PyConfig.module_search_paths_set` is set to 1.
 
 It is possible to completely ignore the function computing the default

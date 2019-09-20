@@ -43,7 +43,7 @@ static PyTypeObject FloatInfoType;
 PyDoc_STRVAR(floatinfo__doc__,
 "sys.float_info\n\
 \n\
-A structseq holding information about the float type. It contains low level\n\
+A named tuple holding information about the float type. It contains low level\n\
 information about the precision and internal representation. Please study\n\
 your system's :file:`float.h` for more information.");
 
@@ -1042,7 +1042,7 @@ double_round(double x, int ndigits) {
 /*[clinic input]
 float.__round__
 
-    ndigits as o_ndigits: object = NULL
+    ndigits as o_ndigits: object = None
     /
 
 Return the Integral closest to x, rounding half toward even.
@@ -1052,13 +1052,13 @@ When an argument is passed, work like built-in round(x, ndigits).
 
 static PyObject *
 float___round___impl(PyObject *self, PyObject *o_ndigits)
-/*[clinic end generated code: output=374c36aaa0f13980 input=1ca2316b510293b8]*/
+/*[clinic end generated code: output=374c36aaa0f13980 input=fc0fe25924fbc9ed]*/
 {
     double x, rounded;
     Py_ssize_t ndigits;
 
     x = PyFloat_AsDouble(self);
-    if (o_ndigits == NULL || o_ndigits == Py_None) {
+    if (o_ndigits == Py_None) {
         /* single-argument round or with None ndigits:
          * round to nearest integer */
         rounded = round(x);
@@ -2031,7 +2031,7 @@ PyFloat_ClearFreeList(void)
 }
 
 void
-PyFloat_Fini(void)
+_PyFloat_Fini(void)
 {
     (void)PyFloat_ClearFreeList();
 }

@@ -6,6 +6,7 @@
 extern "C" {
 #endif
 
+#ifndef Py_LIMITED_API
 #include "asdl.h"
 
 #undef Yield   /* undefine macro conflicting with <winbase.h> */
@@ -708,6 +709,7 @@ type_ignore_ty _Py_TypeIgnore(int lineno, string tag, PyArena *arena);
 PyObject* PyAST_mod2obj(mod_ty t);
 mod_ty PyAST_obj2mod(PyObject* ast, PyArena* arena, int mode);
 int PyAST_Check(PyObject* obj);
+#endif /* !Py_LIMITED_API */
 
 #ifdef __cplusplus
 }

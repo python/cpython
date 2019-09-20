@@ -305,8 +305,9 @@ POBJS=		\
 PARSER_OBJS=	$(POBJS) Parser/myreadline.o Parser/parsetok.o Parser/tokenizer.o
 
 PARSER_HEADERS= \
-		$(srcdir)/Parser/parser.h \
+		$(srcdir)/Include/grammar.h \
 		$(srcdir)/Include/parsetok.h \
+		$(srcdir)/Parser/parser.h \
 		$(srcdir)/Parser/tokenizer.h
 
 ##########################################################################
@@ -460,7 +461,7 @@ check-clean-src:
 
 # Profile generation build must start from a clean tree.
 profile-clean-stamp:
-	$(MAKE) clean profile-removal
+	$(MAKE) clean
 	touch $@
 
 # Compile with profile generation enabled.
@@ -484,7 +485,7 @@ profile-run-stamp:
 	$(MAKE) run_profile_task
 	$(MAKE) build_all_merge_profile
 	# Remove profile generation binary since we are done with it.
-	$(MAKE) clean
+	$(MAKE) clean-retain-profile
 	# This is an expensive target to build and it does not have proper
 	# makefile dependency information.  So, we create a "stamp" file
 	# to record its completion and avoid re-running it.
@@ -511,7 +512,7 @@ profile-opt: profile-run-stamp
 .PHONY=coverage coverage-lcov coverage-report
 coverage:
 	@echo "Building with support for coverage checking:"
-	$(MAKE) clean profile-removal
+	$(MAKE) clean
 	$(MAKE) @DEF_MAKE_RULE@ CFLAGS="$(CFLAGS) -O0 -pg -fprofile-arcs -ftest-coverage" LIBS="$(LIBS) -lgcov"
 
 coverage-lcov:
@@ -865,7 +866,7 @@ regen-symbol: $(srcdir)/Include/graminit.h
 		$(srcdir)/Include/graminit.h \
 		$(srcdir)/Lib/symbol.py
 
-Python/compile.o Python/symtable.o Python/ast_unparse.o Python/ast.o: $(srcdir)/Include/graminit.h $(srcdir)/Include/Python-ast.h
+Python/compile.o Python/symtable.o Python/ast_unparse.o Python/ast.o Python/future.o Parser/parsetok.o: $(srcdir)/Include/graminit.h $(srcdir)/Include/Python-ast.h
 
 Python/getplatform.o: $(srcdir)/Python/getplatform.c
 		$(CC) -c $(PY_CORE_CFLAGS) -DPLATFORM='"$(MACHDEP)"' -o $@ $(srcdir)/Python/getplatform.c
@@ -965,11 +966,11 @@ PYTHON_HEADERS= \
 		$(srcdir)/Include/abstract.h \
 		$(srcdir)/Include/asdl.h \
 		$(srcdir)/Include/ast.h \
-		$(srcdir)/Include/bltinmodule.h \
 		$(srcdir)/Include/bitset.h \
+		$(srcdir)/Include/bltinmodule.h \
 		$(srcdir)/Include/boolobject.h \
-		$(srcdir)/Include/bytes_methods.h \
 		$(srcdir)/Include/bytearrayobject.h \
+		$(srcdir)/Include/bytes_methods.h \
 		$(srcdir)/Include/bytesobject.h \
 		$(srcdir)/Include/cellobject.h \
 		$(srcdir)/Include/ceval.h \
@@ -978,6 +979,7 @@ PYTHON_HEADERS= \
 		$(srcdir)/Include/codecs.h \
 		$(srcdir)/Include/compile.h \
 		$(srcdir)/Include/complexobject.h \
+		$(srcdir)/Include/context.h \
 		$(srcdir)/Include/descrobject.h \
 		$(srcdir)/Include/dictobject.h \
 		$(srcdir)/Include/dtoa.h \
@@ -1007,6 +1009,7 @@ PYTHON_HEADERS= \
 		$(srcdir)/Include/node.h \
 		$(srcdir)/Include/object.h \
 		$(srcdir)/Include/objimpl.h \
+		$(srcdir)/Include/odictobject.h \
 		$(srcdir)/Include/opcode.h \
 		$(srcdir)/Include/osdefs.h \
 		$(srcdir)/Include/osmodule.h \
@@ -1021,15 +1024,15 @@ PYTHON_HEADERS= \
 		$(srcdir)/Include/pyfpe.h \
 		$(srcdir)/Include/pyhash.h \
 		$(srcdir)/Include/pylifecycle.h \
-		$(srcdir)/Include/pymath.h \
+		$(srcdir)/Include/pymacconfig.h \
 		$(srcdir)/Include/pymacro.h \
+		$(srcdir)/Include/pymath.h \
 		$(srcdir)/Include/pymem.h \
 		$(srcdir)/Include/pyport.h \
 		$(srcdir)/Include/pystate.h \
-		$(srcdir)/Include/context.h \
 		$(srcdir)/Include/pystrcmp.h \
-		$(srcdir)/Include/pystrtod.h \
 		$(srcdir)/Include/pystrhex.h \
+		$(srcdir)/Include/pystrtod.h \
 		$(srcdir)/Include/pythonrun.h \
 		$(srcdir)/Include/pythread.h \
 		$(srcdir)/Include/pytime.h \
@@ -1040,6 +1043,7 @@ PYTHON_HEADERS= \
 		$(srcdir)/Include/structseq.h \
 		$(srcdir)/Include/symtable.h \
 		$(srcdir)/Include/sysmodule.h \
+		$(srcdir)/Include/token.h \
 		$(srcdir)/Include/traceback.h \
 		$(srcdir)/Include/tracemalloc.h \
 		$(srcdir)/Include/tupleobject.h \
@@ -1370,6 +1374,7 @@ LIBSUBDIRS=	tkinter tkinter/test tkinter/test/test_tkinter \
 		test/test_importlib/source \
 		test/test_importlib/zipdata01 \
 		test/test_importlib/zipdata02 \
+		test/ziptestdata \
 		asyncio \
 		test/test_asyncio \
 		collections concurrent concurrent/futures encodings \
@@ -1748,7 +1753,9 @@ docclean:
 	-rm -rf Doc/build
 	-rm -rf Doc/tools/sphinx Doc/tools/pygments Doc/tools/docutils
 
-clean: pycremoval
+# like the 'clean' target but retain the profile guided optimization (PGO)
+# data.  The PGO data is only valid if source code remains unchanged.
+clean-retain-profile: pycremoval
 	find . -name '*.[oa]' -exec rm -f {} ';'
 	find . -name '*.s[ol]' -exec rm -f {} ';'
 	find . -name '*.so.[0-9]*.[0-9]*' -exec rm -f {} ';'
@@ -1770,14 +1777,19 @@ profile-removal:
 	rm -rf $(COVERAGE_REPORT)
 	rm -f profile-run-stamp
 
-clobber: clean profile-removal
+clean: clean-retain-profile
+	@if test @DEF_MAKE_ALL_RULE@ = profile-opt; then \
+		rm -f profile-gen-stamp profile-clean-stamp; \
+		$(MAKE) profile-removal; \
+	fi
+
+clobber: clean
 	-rm -f $(BUILDPYTHON) $(LIBRARY) $(LDLIBRARY) $(DLLLIBRARY) \
 		tags TAGS \
 		config.cache config.log pyconfig.h Modules/config.c
 	-rm -rf build platform
 	-rm -rf $(PYTHONFRAMEWORKDIR)
 	-rm -f python-config.py python-config
-	-rm -f profile-gen-stamp profile-clean-stamp
 
 # Make things extra clean, before making a distribution:
 # remove all generated files, even Makefile[.pre]
@@ -1851,6 +1863,8 @@ Python/thread.o: @THREADHEADERS@ $(srcdir)/Python/condvar.h
 .PHONY: frameworkinstallmaclib frameworkinstallapps frameworkinstallunixtools
 .PHONY: frameworkaltinstallunixtools recheck clean clobber distclean
 .PHONY: smelly funny patchcheck touch altmaninstall commoninstall
+.PHONY: clean-retain-profile profile-removal run_profile_task
+.PHONY: build_all_generate_profile build_all_merge_profile
 .PHONY: gdbhooks
 
 # IF YOU PUT ANYTHING HERE IT WILL GO AWAY

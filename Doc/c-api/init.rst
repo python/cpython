@@ -7,6 +7,8 @@
 Initialization, Finalization, and Threads
 *****************************************
 
+See also :ref:`Python Initialization Configuration <init-config>`.
+
 .. _pre-init-safe:
 
 Before Python Initialization
@@ -299,8 +301,9 @@ Initializing and finalizing the interpreter
    than once; this can happen if an application calls :c:func:`Py_Initialize` and
    :c:func:`Py_FinalizeEx` more than once.
 
-   .. versionadded:: 3.6
+   .. audit-event:: cpython._PySys_ClearAuditHooks "" c.Py_FinalizeEx
 
+   .. versionadded:: 3.6
 
 .. c:function:: void Py_Finalize()
 
@@ -990,11 +993,15 @@ All of the following functions must be called after :c:func:`Py_Initialize`.
    be held, but may be held if it is necessary to serialize calls to this
    function.
 
+   .. audit-event:: cpython.PyInterpreterState_New "" c.PyInterpreterState_New
+
 
 .. c:function:: void PyInterpreterState_Clear(PyInterpreterState *interp)
 
    Reset all information in an interpreter state object.  The global interpreter
    lock must be held.
+
+   .. audit-event:: cpython.PyInterpreterState_Clear "" c.PyInterpreterState_Clear
 
 
 .. c:function:: void PyInterpreterState_Delete(PyInterpreterState *interp)

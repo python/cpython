@@ -15,8 +15,6 @@ extern "C" {
  * KeyboardInterrupt exception, suggesting the user pressed ^C. */
 PyAPI_DATA(int) _Py_UnhandledKeyboardInterrupt;
 
-PyAPI_FUNC(int) Py_BytesMain(int argc, char **argv);
-
 extern int _Py_SetFileSystemEncoding(
     const char *encoding,
     const char *errors);
@@ -43,6 +41,8 @@ extern PyStatus _PySys_Create(
     PyThreadState *tstate,
     PyObject **sysmod_p);
 extern PyStatus _PySys_SetPreliminaryStderr(PyObject *sysdict);
+extern PyStatus _PySys_ReadPreinitWarnOptions(PyConfig *config);
+extern PyStatus _PySys_ReadPreinitXOptions(PyConfig *config);
 extern int _PySys_InitMain(
     _PyRuntimeState *runtime,
     PyThreadState *tstate);
@@ -60,18 +60,19 @@ extern PyStatus _PyImportZip_Init(PyThreadState *tstate);
 
 /* Various internal finalizers */
 
-extern void PyMethod_Fini(void);
-extern void PyFrame_Fini(void);
-extern void PyCFunction_Fini(void);
-extern void PyDict_Fini(void);
-extern void PyTuple_Fini(void);
-extern void PyList_Fini(void);
-extern void PySet_Fini(void);
-extern void PyBytes_Fini(void);
-extern void PyFloat_Fini(void);
+extern void _PyMethod_Fini(void);
+extern void _PyFrame_Fini(void);
+extern void _PyCFunction_Fini(void);
+extern void _PyDict_Fini(void);
+extern void _PyTuple_Fini(void);
+extern void _PyList_Fini(void);
+extern void _PySet_Fini(void);
+extern void _PyBytes_Fini(void);
+extern void _PyFloat_Fini(void);
+extern void _PySlice_Fini(void);
+extern void _PyAsyncGen_Fini(void);
+
 extern void PyOS_FiniInterrupts(void);
-extern void PySlice_Fini(void);
-extern void PyAsyncGen_Fini(void);
 
 extern void _PyExc_Fini(void);
 extern void _PyImport_Fini(void);
@@ -80,10 +81,10 @@ extern void _PyGC_Fini(_PyRuntimeState *runtime);
 extern void _PyType_Fini(void);
 extern void _Py_HashRandomization_Fini(void);
 extern void _PyUnicode_Fini(void);
-extern void PyLong_Fini(void);
+extern void _PyLong_Fini(void);
 extern void _PyFaulthandler_Fini(void);
 extern void _PyHash_Fini(void);
-extern int _PyTraceMalloc_Fini(void);
+extern void _PyTraceMalloc_Fini(void);
 extern void _PyWarnings_Fini(PyInterpreterState *interp);
 
 extern void _PyGILState_Init(
@@ -108,6 +109,8 @@ PyAPI_FUNC(PyObject*) _PyErr_WriteUnraisableDefaultHook(PyObject *unraisable);
 PyAPI_FUNC(void) _PyErr_Print(PyThreadState *tstate);
 PyAPI_FUNC(void) _PyErr_Display(PyObject *file, PyObject *exception,
                                 PyObject *value, PyObject *tb);
+
+PyAPI_FUNC(void) _PyThreadState_DeleteCurrent(_PyRuntimeState *runtime);
 
 #ifdef __cplusplus
 }

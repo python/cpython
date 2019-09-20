@@ -135,7 +135,7 @@ static PyObject *
 sys_exit(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
-    PyObject *status = NULL;
+    PyObject *status = Py_None;
 
     if (!_PyArg_CheckPositional("exit", nargs, 0, 1)) {
         goto exit;
@@ -228,7 +228,7 @@ sys_intern(PyObject *module, PyObject *arg)
     PyObject *s;
 
     if (!PyUnicode_Check(arg)) {
-        _PyArg_BadArgument("intern", 0, "str", arg);
+        _PyArg_BadArgument("intern", "argument", "str", arg);
         goto exit;
     }
     if (PyUnicode_READY(arg) == -1) {
@@ -306,9 +306,15 @@ sys_setswitchinterval(PyObject *module, PyObject *arg)
     PyObject *return_value = NULL;
     double interval;
 
-    interval = PyFloat_AsDouble(arg);
-    if (PyErr_Occurred()) {
-        goto exit;
+    if (PyFloat_CheckExact(arg)) {
+        interval = PyFloat_AS_DOUBLE(arg);
+    }
+    else
+    {
+        interval = PyFloat_AsDouble(arg);
+        if (interval == -1.0 && PyErr_Occurred()) {
+            goto exit;
+        }
     }
     return_value = sys_setswitchinterval_impl(module, interval);
 
@@ -869,7 +875,7 @@ sys_call_tracing(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     }
     func = args[0];
     if (!PyTuple_Check(args[1])) {
-        _PyArg_BadArgument("call_tracing", 2, "tuple", args[1]);
+        _PyArg_BadArgument("call_tracing", "argument 2", "tuple", args[1]);
         goto exit;
     }
     funcargs = args[1];
@@ -989,4 +995,4 @@ sys_getandroidapilevel(PyObject *module, PyObject *Py_UNUSED(ignored))
 #ifndef SYS_GETANDROIDAPILEVEL_METHODDEF
     #define SYS_GETANDROIDAPILEVEL_METHODDEF
 #endif /* !defined(SYS_GETANDROIDAPILEVEL_METHODDEF) */
-/*[clinic end generated code: output=acef77d2bb8f6da9 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=decd687b7631de4b input=a9049054013a1b77]*/

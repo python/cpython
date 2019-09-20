@@ -20,7 +20,7 @@ functionality.  The fields of the type object are examined in detail in this
 section.  The fields will be described in the order in which they occur in the
 structure.
 
-In addition to the following quick reference, the :ref:`examples`
+In addition to the following quick reference, the :ref:`typedef-examples`
 section provides at-a-glance insight into the meaning and use of
 :c:type:`PyTypeObject`.
 
@@ -1311,12 +1311,6 @@ and :c:type:`PyType_Type` effectively act as defaults.)
    ``Py_NotImplemented``, if another error occurred it must return *NULL* and
    set an exception condition.
 
-   .. note::
-
-      If you want to implement a type for which only a limited set of
-      comparisons makes sense (e.g. ``==`` and ``!=``, but not ``<`` and
-      friends), directly raise :exc:`TypeError` in the rich comparison function.
-
    The following constants are defined to be used as the third argument for
    :c:member:`~PyTypeObject.tp_richcompare` and for :c:func:`PyObject_RichCompare`:
 
@@ -2450,7 +2444,7 @@ Slot Type typedefs
 .. c:type:: int (*objobjargproc)(PyObject *, PyObject *, PyObject *)
 
 
-.. _examples:
+.. _typedef-examples:
 
 Examples
 ========

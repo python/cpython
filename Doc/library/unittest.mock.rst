@@ -317,8 +317,8 @@ the *new_callable* argument to :func:`patch`.
 
     .. method:: assert_called_with(*args, **kwargs)
 
-        This method is a convenient way of asserting that calls are made in a
-        particular way:
+        This method is a convenient way of asserting that the last call has been
+        made in a particular way:
 
             >>> mock = Mock()
             >>> mock.method(1, 2, 3, test='wow')
@@ -514,6 +514,20 @@ the *new_callable* argument to :func:`patch`.
             >>> mock.call_count
             2
 
+        For :class:`AsyncMock` the :attr:`call_count` is only iterated if the function
+        has been awaited:
+
+            >>> mock = AsyncMock()
+            >>> mock()  # doctest: +SKIP
+            <coroutine object AsyncMockMixin._mock_call at ...>
+            >>> mock.call_count
+            0
+            >>> async def main():
+            ...     await mock()
+            ...
+            >>> asyncio.run(main())
+            >>> mock.call_count
+            1
 
     .. attribute:: return_value
 
@@ -1307,8 +1321,10 @@ patch
     is patched with a *new* object. When the function/with statement exits
     the patch is undone.
 
-    If *new* is omitted, then the target is replaced with a
-    :class:`MagicMock`. If :func:`patch` is used as a decorator and *new* is
+    If *new* is omitted, then the target is replaced with an
+    :class:`AsyncMock` if the patched object is an async function or
+    a :class:`MagicMock` otherwise.
+    If :func:`patch` is used as a decorator and *new* is
     omitted, the created mock is passed in as an extra argument to the
     decorated function. If :func:`patch` is used as a context manager the created
     mock is returned by the context manager.
@@ -1326,8 +1342,8 @@ patch
     patch to pass in the object being mocked as the spec/spec_set object.
 
     *new_callable* allows you to specify a different class, or callable object,
-    that will be called to create the *new* object. By default :class:`MagicMock` is
-    used.
+    that will be called to create the *new* object. By default :class:`AsyncMock`
+    is used for async functions and :class:`MagicMock` for the rest.
 
     A more powerful form of *spec* is *autospec*. If you set ``autospec=True``
     then the mock will be created with a spec from the object being replaced.
@@ -1491,6 +1507,10 @@ work as expected::
     ...
     >>> test()
 
+.. versionchanged:: 3.8
+
+    :func:`patch` now returns an :class:`AsyncMock` if the target is an async function.
+
 
 patch.object
 ~~~~~~~~~~~~
@@ -1552,14 +1572,35 @@ patch.dict
     :func:`patch.dict` can also be called with arbitrary keyword arguments to set
     values in the dictionary.
 
-    :func:`patch.dict` can be used as a context manager, decorator or class
-    decorator. When used as a class decorator :func:`patch.dict` honours
-    ``patch.TEST_PREFIX`` for choosing which methods to wrap.
-
     .. versionchanged:: 3.8
 
         :func:`patch.dict` now returns the patched dictionary when used as a context
         manager.
+
+:func:`patch.dict` can be used as a context manager, decorator or class
+decorator:
+
+    >>> foo = {}
+    >>> @patch.dict(foo, {'newkey': 'newvalue'})
+    ... def test():
+    ...     assert foo == {'newkey': 'newvalue'}
+    >>> test()
+    >>> assert foo == {}
+
+When used as a class decorator :func:`patch.dict` honours
+``patch.TEST_PREFIX`` (default to ``'test'``) for choosing which methods to wrap:
+
+    >>> import os
+    >>> import unittest
+    >>> from unittest.mock import patch
+    >>> @patch.dict('os.environ', {'newkey': 'newvalue'})
+    ... class TestSample(unittest.TestCase):
+    ...     def test_sample(self):
+    ...         self.assertEqual(os.environ['newkey'], 'newvalue')
+
+If you want to use a different prefix for your test, you can inform the
+patchers of the different prefix by setting ``patch.TEST_PREFIX``. For
+more details about how to change the value of see :ref:`test-prefix`.
 
 :func:`patch.dict` can be used to add members to a dictionary, or simply let a test
 change a dictionary, and ensure the dictionary is restored when the test
@@ -1772,6 +1813,8 @@ builtin :func:`ord`::
     >>> test()
     101
 
+
+.. _test-prefix:
 
 TEST_PREFIX
 ~~~~~~~~~~~
@@ -2273,6 +2316,12 @@ create_autospec
 
 See :ref:`auto-speccing` for examples of how to use auto-speccing with
 :func:`create_autospec` and the *autospec* argument to :func:`patch`.
+
+
+.. versionchanged:: 3.8
+
+    :func:`create_autospec` now returns an :class:`AsyncMock` if the target is
+    an async function.
 
 
 ANY

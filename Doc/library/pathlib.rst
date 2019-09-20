@@ -946,23 +946,32 @@ call fails (for example because the path doesn't exist).
 
 .. method:: Path.rename(target)
 
-   Rename this file or directory to the given *target*.  On Unix, if
-   *target* exists and is a file, it will be replaced silently if the user
-   has permission.  *target* can be either a string or another path object::
+   Rename this file or directory to the given *target*, and return a new Path
+   instance pointing to *target*.  On Unix, if *target* exists and is a file,
+   it will be replaced silently if the user has permission.  *target* can be
+   either a string or another path object::
 
       >>> p = Path('foo')
       >>> p.open('w').write('some text')
       9
       >>> target = Path('bar')
       >>> p.rename(target)
+      PosixPath('bar')
       >>> target.open().read()
       'some text'
+
+   .. versionchanged:: 3.8
+      Added return value, return the new Path instance.
 
 
 .. method:: Path.replace(target)
 
-   Rename this file or directory to the given *target*.  If *target* points
-   to an existing file or directory, it will be unconditionally replaced.
+   Rename this file or directory to the given *target*, and return a new Path
+   instance pointing to *target*.  If *target* points to an existing file or
+   directory, it will be unconditionally replaced.
+
+   .. versionchanged:: 3.8
+      Added return value, return the new Path instance.
 
 
 .. method:: Path.resolve(strict=False)
@@ -1109,6 +1118,9 @@ call fails (for example because the path doesn't exist).
       18
       >>> p.read_text()
       'Text file contents'
+
+   An existing file of the same name is overwritten. The optional parameters
+   have the same meaning as in :func:`open`.
 
    .. versionadded:: 3.5
 
