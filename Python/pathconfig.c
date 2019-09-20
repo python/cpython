@@ -74,6 +74,13 @@ pathconfig_calculate(_PyPathConfig *pathconfig, const PyConfig *config)
     PyMemAllocatorEx old_alloc;
     _PyMem_SetDefaultAllocator(PYMEM_DOMAIN_RAW, &old_alloc);
 
+    if (copy_wstr(&new_config.module_search_path,
+                  _Py_path_config.module_search_path) < 0)
+    {
+        status = _PyStatus_NO_MEMORY();
+        goto error;
+    }
+
     /* Calculate program_full_path, prefix, exec_prefix,
        dll_path (Windows), and module_search_path */
     status = _PyPathConfig_Calculate(&new_config, config);
