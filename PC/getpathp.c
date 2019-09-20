@@ -1003,9 +1003,12 @@ calculate_path_impl(const PyConfig *config,
 
     calculate_home_prefix(calculate, prefix);
 
-    status = calculate_module_search_path(config, calculate, pathconfig, prefix);
-    if (_PyStatus_EXCEPTION(status)) {
-        return status;
+    if (pathconfig->module_search_path == NULL) {
+        status = calculate_module_search_path(config, calculate,
+                                              pathconfig, prefix);
+        if (_PyStatus_EXCEPTION(status)) {
+            return status;
+        }
     }
 
 done:
