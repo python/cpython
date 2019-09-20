@@ -128,7 +128,7 @@ class Slot:
     def __delete__(self, obj):
         if self.readonly:
             raise AttributeError(f'{self.name} is readonly')
-        self.instances[id(obj)] = self.default
+        self.instances[id(obj)] = self.default  # XXX refleak?
 
     def _ensure___del__(self, cls, slotnames):  # See the comment in __init__().
         try:
