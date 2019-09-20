@@ -5231,6 +5231,7 @@ class TestAddArgumentMetavarWrapNoException(TestCase):
     def do_test_no_exception(self, metavar):
         parser = argparse.ArgumentParser(prog='PROG' * 19)  # force wrapping
         parser.add_argument("--foo", metavar=metavar)
+        parser.format_usage()
 
     def test_metavar_nil(self):
         self.do_test_no_exception(metavar='')
