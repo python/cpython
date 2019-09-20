@@ -285,7 +285,7 @@ def getuserbase():
     if ENABLE_USER_SITE and USER_BASE is None:
         USER_BASE = _getuserbase()
     else:
-        USER_BASE = None
+        USER_BASE = ''
         
     return USER_BASE
 
@@ -302,7 +302,7 @@ def getusersitepackages():
     if ENABLE_USER_SITE and USER_SITE is None:
         USER_SITE = _get_path(userbase)
     else:
-        USER_SITE = None
+        USER_SITE = ''
         
     return USER_SITE
 
