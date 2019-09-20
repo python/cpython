@@ -555,8 +555,9 @@ def mode(data):
 
     """
     data = iter(data)
+    pairs = Counter(data).most_common(1)
     try:
-        return Counter(data).most_common(1)[0][0]
+        return pairs[0][0]
     except IndexError:
         raise StatisticsError('no mode for empty data') from None
 
