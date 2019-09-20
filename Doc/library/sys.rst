@@ -1310,7 +1310,7 @@ always available.
    but it doesn't need to be the same tracing function (e.g. it could be a
    low overhead tracing function that simply returns ``None`` to disable
    itself immediately on each frame).
-   
+
    For more information on code and frame objects, refer to :ref:`types`.
 
    .. audit-event:: sys.settrace "" sys.settrace
