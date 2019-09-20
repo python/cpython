@@ -282,8 +282,11 @@ def getuserbase():
     it.
     """
     global USER_BASE
-    if USER_BASE is None:
+    if ENABLE_USER_SITE and USER_BASE is None:
         USER_BASE = _getuserbase()
+    else:
+        USER_BASE = None
+        
     return USER_BASE
 
 
@@ -296,9 +299,11 @@ def getusersitepackages():
     global USER_SITE
     userbase = getuserbase() # this will also set USER_BASE
 
-    if USER_SITE is None:
+    if ENABLE_USER_SITE and USER_SITE is None:
         USER_SITE = _get_path(userbase)
-
+    else:
+        USER_SITE = None
+        
     return USER_SITE
 
 def addusersitepackages(known_paths):
