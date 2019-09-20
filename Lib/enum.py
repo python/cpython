@@ -672,7 +672,7 @@ class Flag(Enum):
         Generate the next value when not given.
 
         name: the name of the member
-        start: the initital start value or None
+        start: the initial start value or None
         count: the number of existing members
         last_value: the last value assigned or None
         """
@@ -699,7 +699,7 @@ class Flag(Enum):
     @classmethod
     def _create_pseudo_member_(cls, value):
         """
-        Create a composite member iff value contains only members.
+        Create a composite member if value contains only members.
         """
         pseudo_member = cls._value2member_map_.get(value, None)
         if pseudo_member is None:
