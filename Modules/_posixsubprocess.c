@@ -910,11 +910,11 @@ PyDoc_STRVAR(subprocess_fork_exec_doc,
 Forks a child process, closes parent file descriptors as appropriate in the\n\
 child and dups the few that are needed before calling exec() in the child\n\
 process.\n\
-\n
-If close_fds is true, close file descriptors 3 and higher, except those listed\n
-in the sorted tuple pass_fds.\n
 \n\
-The preexec_fn, if supplied, will be called immediately before closing file\n
+If close_fds is true, close file descriptors 3 and higher, except those listed\n\
+in the sorted tuple pass_fds.\n\
+\n\
+The preexec_fn, if supplied, will be called immediately before closing file\n\
 descriptors and exec.\n\
 WARNING: preexec_fn is NOT SAFE if your application uses threads.\n\
          It may trigger infrequent, difficult to debug deadlocks.\n\
