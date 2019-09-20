@@ -1306,8 +1306,9 @@ always available.
    trace function. This is also required for activating the trace function on
    the current frame, which :func:`settrace` doesn't do. If you do this, you
    must also call :func:`settrace` with the same tracing function for it to
-   work. For more information on code and frame objects, refer to
-   :ref:`types`.
+   affect called functions.
+   
+   For more information on code and frame objects, refer to :ref:`types`.
 
    .. audit-event:: sys.settrace "" sys.settrace
 
