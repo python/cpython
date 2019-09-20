@@ -1206,6 +1206,11 @@ class BuiltinTest(unittest.TestCase):
 
         self.assertRaises(TypeError, pow)
 
+        # Test passing in arguments as keywords.
+        self.assertEqual(pow(0, exp=0), 1)
+        self.assertEqual(pow(base=2, exp=4), 16)
+        self.assertEqual(pow(base=5, exp=2, mod=14), 11)
+
     def test_input(self):
         self.write_testfile()
         fp = open(TESTFN, 'r')
