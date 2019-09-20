@@ -2054,6 +2054,7 @@ interp_destroy(PyObject *self, PyObject *args, PyObject *kwds)
     if (_ensure_not_running(interp) < 0) {
         return NULL;
     }
+
     // Safely ensure current thread has the GIL (bpo-38154)
     PyThreadState *current_tstate = PyGILState_GetThisThreadState();
     if (!_Py_IsFinalizing() && !PyGILState_Check()){
