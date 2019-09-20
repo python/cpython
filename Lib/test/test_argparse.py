@@ -5252,7 +5252,7 @@ class TestAddArgumentMetavarWrapNoException(TestCase):
         self.do_test_no_exception(metavar='\r\n')
 
     # The rest would be unlikely in practice but should not fail
-    
+
     def test_metavar_vLine_Tabulation(self):
         self.do_test_no_exception(metavar='\v')
 
@@ -5299,7 +5299,7 @@ class TestAddArgumentMetavarWrapNoException(TestCase):
         self.do_test_no_exception(metavar='\b')
 
     # Unicode whitespaces per wikipedia.org/wiki/Whitespace_character
-    
+
     def test_metavar_unicode_horizontal_tab(self):
         self.do_test_no_exception(metavar='\u0009')
 
@@ -5408,7 +5408,7 @@ class TestAddArgumentMetavarWrapNoException(TestCase):
 
     def test_metavar_unicode_open_box(self):
         self.do_test_no_exception(metavar='\u2423')
-        
+
 
 class TestInvalidNargs(TestCase):
 
@@ -5506,7 +5506,7 @@ class TestHelpUsageWrapAllowsNilAndTab(HelpTestCase):
       --Tab 	tab
     '''
     version = ''
-    
+
 
 class TestExitOnError(TestCase):
 
