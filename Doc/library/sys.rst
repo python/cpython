@@ -1304,9 +1304,12 @@ always available.
    assigning ``frame.f_trace = tracefunc`` explicitly, rather than relying on
    it being set indirectly via the return value from an already installed
    trace function. This is also required for activating the trace function on
-   the current frame, which :func:`settrace` doesn't do. If you do this, you
-   must also call :func:`settrace` with the same tracing function for it to
-   affect called functions.
+   the current frame, which :func:`settrace` doesn't do. Note that in order
+   for this to work, a global tracing function must have been installed
+   with :func:`settrace` in order to enable the runtime tracing machinery,
+   but it doesn't need to be the same tracing function (e.g. it could be a
+   low overhead tracing function that simply returns ``None`` to disable
+   itself immediately on each frame).
    
    For more information on code and frame objects, refer to :ref:`types`.
 
