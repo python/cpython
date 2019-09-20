@@ -226,8 +226,6 @@ Running an asyncio Program
     programs, and should ideally only be called once.
 
     .. versionadded:: 3.7
-       **Important:** this function has been added to asyncio in
-       Python 3.7 on a :term:`provisional basis <provisional api>`.
 
     .. versionchanged:: 3.9
        Updated to use :meth:`loop.shutdown_default_executor`.
