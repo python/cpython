@@ -1089,10 +1089,7 @@ class HTTPConnection:
         self._method = method
         if not url:
             url = '/'
-        # Prevent CVE-2019-9740.
-        if match := _contains_disallowed_url_pchar_re.search(url):
-            raise InvalidURL(f"URL can't contain control characters. {url!r} "
-                             f"(found at least {match.group()!r})")
+        self._validate_url(url)
         request = '%s %s %s' % (method, url, self._http_vsn_str)
 
         # Non-ASCII characters should have been eliminated earlier
@@ -1173,6 +1170,13 @@ class HTTPConnection:
         else:
             # For HTTP/1.0, the server will assume "not chunked"
             pass
+
+    def _validate_url(self, url):
+        """Validate a url for putrequest"""
+        # Prevent CVE-2019-9740.
+        if match := _contains_disallowed_url_pchar_re.search(url):
+            raise InvalidURL(f"URL can't contain control characters. {url!r} "
+                             f"(found at least {match.group()!r})")
 
     def putheader(self, header, *values):
         """Send a request header line to the server.
