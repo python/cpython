@@ -472,7 +472,7 @@ pyinit_core_reconfigure(_PyRuntimeState *runtime,
     config = &interp->config;
 
     if (config->_install_importlib) {
-        status = _PyConfig_SetPathConfig(config);
+        status = _PyPathConfig_Init();
         if (_PyStatus_EXCEPTION(status)) {
             return status;
         }
@@ -623,6 +623,8 @@ pycore_init_builtins(PyInterpreterState *interp)
 static PyStatus
 pycore_init_import_warnings(PyInterpreterState *interp, PyObject *sysmod)
 {
+    const PyConfig *config = &interp->config;
+
     PyStatus status = _PyImport_Init(interp);
     if (_PyStatus_EXCEPTION(status)) {
         return status;
@@ -638,15 +640,15 @@ pycore_init_import_warnings(PyInterpreterState *interp, PyObject *sysmod)
         return _PyStatus_ERR("can't initialize warnings");
     }
 
-    if (interp->config._install_importlib) {
-        status = _PyConfig_SetPathConfig(&interp->config);
+    if (config->_install_importlib) {
+        status = _PyPathConfig_Init();
         if (_PyStatus_EXCEPTION(status)) {
             return status;
         }
     }
 
     /* This call sets up builtin and frozen import support */
-    if (interp->config._install_importlib) {
+    if (config->_install_importlib) {
         status = init_importlib(interp, sysmod);
         if (_PyStatus_EXCEPTION(status)) {
             return status;

@@ -15,6 +15,9 @@ extern "C" {
 
 
 _PyPathConfig _Py_path_config = _PyPathConfig_INIT;
+#ifdef MS_WINDOWS
+wchar_t *_Py_dll_path = NULL;
+#endif
 
 
 static int
@@ -51,9 +54,6 @@ pathconfig_clear(_PyPathConfig *config)
     CLEAR(config->prefix);
     CLEAR(config->program_full_path);
     CLEAR(config->exec_prefix);
-#ifdef MS_WINDOWS
-    CLEAR(config->dll_path);
-#endif
     CLEAR(config->module_search_path);
     CLEAR(config->home);
     CLEAR(config->program_name);
@@ -114,47 +114,6 @@ done:
 }
 
 
-PyStatus
-_PyPathConfig_SetGlobal(const _PyPathConfig *config)
-{
-    PyStatus status;
-    _PyPathConfig new_config = _PyPathConfig_INIT;
-
-    PyMemAllocatorEx old_alloc;
-    _PyMem_SetDefaultAllocator(PYMEM_DOMAIN_RAW, &old_alloc);
-
-#define COPY_ATTR(ATTR) \
-    do { \
-        if (copy_wstr(&new_config.ATTR, config->ATTR) < 0) { \
-            pathconfig_clear(&new_config); \
-            status = _PyStatus_NO_MEMORY(); \
-            goto done; \
-        } \
-    } while (0)
-
-    COPY_ATTR(program_full_path);
-    COPY_ATTR(prefix);
-    COPY_ATTR(exec_prefix);
-#ifdef MS_WINDOWS
-    COPY_ATTR(dll_path);
-#endif
-    COPY_ATTR(module_search_path);
-    COPY_ATTR(program_name);
-    COPY_ATTR(home);
-    COPY_ATTR(base_executable);
-
-    pathconfig_clear(&_Py_path_config);
-    /* Steal new_config strings; don't clear new_config */
-    _Py_path_config = new_config;
-
-    status = _PyStatus_OK();
-
-done:
-    PyMem_SetAllocator(PYMEM_DOMAIN_RAW, &old_alloc);
-    return status;
-}
-
-
 void
 _PyPathConfig_ClearGlobal(void)
 {
@@ -162,6 +121,10 @@ _PyPathConfig_ClearGlobal(void)
     _PyMem_SetDefaultAllocator(PYMEM_DOMAIN_RAW, &old_alloc);
 
     pathconfig_clear(&_Py_path_config);
+#ifdef MS_WINDOWS
+    PyMem_RawFree(_Py_dll_path);
+    _Py_dll_path = NULL;
+#endif
 
     PyMem_SetAllocator(PYMEM_DOMAIN_RAW, &old_alloc);
 }
@@ -200,12 +163,36 @@ _PyWideStringList_Join(const PyWideStringList *list, wchar_t sep)
 
 /* Set the global path configuration from config. */
 PyStatus
-_PyConfig_SetPathConfig(const PyConfig *config)
+_PyPathConfig_Init(void)
 {
+#ifdef MS_WINDOWS
+    if (_Py_dll_path == NULL) {
+        /* Already set: nothing to do */
+        return _PyStatus_OK();
+    }
+
     PyMemAllocatorEx old_alloc;
     _PyMem_SetDefaultAllocator(PYMEM_DOMAIN_RAW, &old_alloc);
 
+    _Py_dll_path = _Py_GetDLLPath();
+
+    PyMem_SetAllocator(PYMEM_DOMAIN_RAW, &old_alloc);
+
+    if (_Py_dll_path == NULL) {
+        return _PyStatus_NO_MEMORY();
+    }
+#endif
+    return _PyStatus_OK();
+}
+
+
+static PyStatus
+pathconfig_global_init_from_config(const PyConfig *config)
+{
     PyStatus status;
+    PyMemAllocatorEx old_alloc;
+    _PyMem_SetDefaultAllocator(PYMEM_DOMAIN_RAW, &old_alloc);
+
     _PyPathConfig pathconfig = _PyPathConfig_INIT;
 
     pathconfig.module_search_path = _PyWideStringList_Join(&config->module_search_paths, DELIM);
@@ -222,12 +209,6 @@ _PyConfig_SetPathConfig(const PyConfig *config)
     if (copy_wstr(&pathconfig.exec_prefix, config->exec_prefix) < 0) {
         goto no_memory;
     }
-#ifdef MS_WINDOWS
-    pathconfig.dll_path = _Py_GetDLLPath();
-    if (pathconfig.dll_path == NULL) {
-        goto no_memory;
-    }
-#endif
     if (copy_wstr(&pathconfig.program_name, config->program_name) < 0) {
         goto no_memory;
     }
@@ -238,19 +219,18 @@ _PyConfig_SetPathConfig(const PyConfig *config)
         goto no_memory;
     }
 
-    status = _PyPathConfig_SetGlobal(&pathconfig);
-    if (_PyStatus_EXCEPTION(status)) {
-        goto done;
-    }
+    pathconfig_clear(&_Py_path_config);
+    /* Steal new_config strings; don't clear new_config */
+    _Py_path_config = pathconfig;
 
     status = _PyStatus_OK();
     goto done;
 
 no_memory:
+    pathconfig_clear(&pathconfig);
     status = _PyStatus_NO_MEMORY();
 
 done:
-    pathconfig_clear(&pathconfig);
     PyMem_SetAllocator(PYMEM_DOMAIN_RAW, &old_alloc);
     return status;
 }
@@ -402,12 +382,17 @@ _PyConfig_InitPathConfig(PyConfig *config)
 static void
 pathconfig_global_init(void)
 {
+    /* Initialize _Py_dll_path if needed */
+    PyStatus status = _PyPathConfig_Init();
+    if (_PyStatus_EXCEPTION(status)) {
+        Py_ExitStatusException(status);
+    }
+
     if (_Py_path_config.module_search_path != NULL) {
         /* Already initialized */
         return;
     }
 
-    PyStatus status;
     PyConfig config;
     _PyConfig_InitCompatConfig(&config);
 
@@ -416,7 +401,7 @@ pathconfig_global_init(void)
         goto error;
     }
 
-    status = _PyConfig_SetPathConfig(&config);
+    status = pathconfig_global_init_from_config(&config);
     if (_PyStatus_EXCEPTION(status)) {
         goto error;
     }
@@ -450,10 +435,6 @@ Py_SetPath(const wchar_t *path)
     alloc_error |= (new_config.prefix == NULL);
     new_config.exec_prefix = _PyMem_RawWcsdup(L"");
     alloc_error |= (new_config.exec_prefix == NULL);
-#ifdef MS_WINDOWS
-    new_config.dll_path = _Py_GetDLLPath();
-    alloc_error |= (new_config.dll_path == NULL);
-#endif
     new_config.module_search_path = _PyMem_RawWcsdup(path);
     alloc_error |= (new_config.module_search_path == NULL);
 
