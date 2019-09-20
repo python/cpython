@@ -13,10 +13,7 @@ typedef struct _PyPathConfig {
     wchar_t *program_full_path;
     wchar_t *prefix;
     wchar_t *exec_prefix;
-#ifdef MS_WINDOWS
-    wchar_t *dll_path;
-#endif
-    /* Set by Py_SetPath(), or computed by _PyPathConfig_Init() */
+    /* Set by Py_SetPath(), or computed by _PyConfig_InitPathConfig() */
     wchar_t *module_search_path;
     /* Python program name */
     wchar_t *program_name;
@@ -38,6 +35,9 @@ typedef struct _PyPathConfig {
 /* Note: _PyPathConfig_INIT sets other fields to 0/NULL */
 
 PyAPI_DATA(_PyPathConfig) _Py_path_config;
+#ifdef MS_WINDOWS
+PyAPI_DATA(wchar_t*) _Py_dll_path;
+#endif
 
 extern void _PyPathConfig_ClearGlobal(void);
 extern PyStatus _PyPathConfig_SetGlobal(
@@ -58,6 +58,8 @@ extern int _Py_FindEnvConfigValue(
 #ifdef MS_WINDOWS
 extern wchar_t* _Py_GetDLLPath(void);
 #endif
+
+extern PyStatus _PyPathConfig_Init(void);
 
 #ifdef __cplusplus
 }
