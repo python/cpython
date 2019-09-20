@@ -173,9 +173,10 @@ def _handle_existing_loggers(existing, child_loggers, disable_existing):
     for log in existing:
         logger = root.manager.loggerDict[log]
         if log in child_loggers:
-            logger.level = logging.NOTSET
-            logger.handlers = []
-            logger.propagate = True
+            if not isinstance(logger, logging.PlaceHolder):
+                logger.setLevel(logging.NOTSET)
+                logger.handlers = []
+                logger.propagate = True
         else:
             logger.disabled = disable_existing
 
