@@ -603,6 +603,7 @@ def multimode(data):
 # mean=0.300.  Only the latter (which corresponds with R6) gives the
 # desired cut point with 30% of the population falling below that
 # value, making it comparable to a result from an inv_cdf() function.
+# The R6 exclusive method is also idempotent.
 
 # For describing population data where the end points are known to
 # be included in the data, the R7 inclusive method is a reasonable
