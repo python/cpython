@@ -1209,7 +1209,7 @@ class BasicTest(TestCase):
 
         conn = UnsafeHTTPConnection('example.com')
         conn.sock = FakeSocket('')
-        conn.putrequest('GET', InvalidObject())
+        conn.putrequest('GET', InvalidObject(), skip_host=True)
 
 
 class ExtendedReadTest(TestCase):
