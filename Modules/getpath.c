@@ -1213,10 +1213,12 @@ calculate_path_impl(const PyConfig *config,
                 "Consider setting $PYTHONHOME to <prefix>[:<exec_prefix>]\n");
     }
 
-    status = calculate_module_search_path(config, calculate,
-                                       prefix, exec_prefix, pathconfig);
-    if (_PyStatus_EXCEPTION(status)) {
-        return status;
+    if (pathconfig->module_search_path == NULL) {
+        status = calculate_module_search_path(config, calculate,
+                                              prefix, exec_prefix, pathconfig);
+        if (_PyStatus_EXCEPTION(status)) {
+            return status;
+        }
     }
 
     status = calculate_reduce_prefix(calculate, prefix, Py_ARRAY_LENGTH(prefix));

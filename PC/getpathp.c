@@ -128,6 +128,8 @@ typedef struct {
 
     wchar_t argv0_path[MAXPATHLEN+1];
     wchar_t zip_path[MAXPATHLEN+1];
+
+    wchar_t *dll_path;
 } PyCalculatePath;
 
 
@@ -666,28 +668,36 @@ error:
 }
 
 
-static void
+static PyStatus
 calculate_init(PyCalculatePath *calculate,
                const PyConfig *config)
 {
     calculate->home = config->home;
     calculate->path_env = _wgetenv(L"PATH");
+
+    calculate->dll_path = _Py_GetDLLPath();
+    if (calculate->dll_path == NULL) {
+        return _PyStatus_NO_MEMORY();
+    }
+
+    return _PyStatus_OK();
 }
 
 
 static int
-get_pth_filename(wchar_t *spbuffer, _PyPathConfig *pathconfig)
+get_pth_filename(PyCalculatePath *calculate, wchar_t *filename,
+                 const _PyPathConfig *pathconfig)
 {
-    if (pathconfig->dll_path[0]) {
-        if (!change_ext(spbuffer, pathconfig->dll_path, L"._pth") &&
-            exists(spbuffer))
+    if (calculate->dll_path[0]) {
+        if (!change_ext(filename, calculate->dll_path, L"._pth") &&
+            exists(filename))
         {
             return 1;
         }
     }
     if (pathconfig->program_full_path[0]) {
-        if (!change_ext(spbuffer, pathconfig->program_full_path, L"._pth") &&
-            exists(spbuffer))
+        if (!change_ext(filename, pathconfig->program_full_path, L"._pth") &&
+            exists(filename))
         {
             return 1;
         }
@@ -697,15 +707,16 @@ get_pth_filename(wchar_t *spbuffer, _PyPathConfig *pathconfig)
 
 
 static int
-calculate_pth_file(_PyPathConfig *pathconfig, wchar_t *prefix)
+calculate_pth_file(PyCalculatePath *calculate, _PyPathConfig *pathconfig,
+                   wchar_t *prefix)
 {
-    wchar_t spbuffer[MAXPATHLEN+1];
+    wchar_t filename[MAXPATHLEN+1];
 
-    if (!get_pth_filename(spbuffer, pathconfig)) {
+    if (!get_pth_filename(calculate, filename, pathconfig)) {
         return 0;
     }
 
-    return read_pth_file(pathconfig, prefix, spbuffer);
+    return read_pth_file(pathconfig, prefix, filename);
 }
 
 
@@ -966,13 +977,6 @@ calculate_path_impl(const PyConfig *config,
 {
     PyStatus status;
 
-    assert(pathconfig->dll_path == NULL);
-
-    pathconfig->dll_path = _Py_GetDLLPath();
-    if (pathconfig->dll_path == NULL) {
-        return _PyStatus_NO_MEMORY();
-    }
-
     status = get_program_full_path(config, calculate, pathconfig);
     if (_PyStatus_EXCEPTION(status)) {
         return status;
@@ -986,7 +990,7 @@ calculate_path_impl(const PyConfig *config,
     memset(prefix, 0, sizeof(prefix));
 
     /* Search for a sys.path file */
-    if (calculate_pth_file(pathconfig, prefix)) {
+    if (calculate_pth_file(calculate, pathconfig, prefix)) {
         goto done;
     }
 
@@ -994,14 +998,17 @@ calculate_path_impl(const PyConfig *config,
 
     /* Calculate zip archive path from DLL or exe path */
     change_ext(calculate->zip_path,
-               pathconfig->dll_path[0] ? pathconfig->dll_path : pathconfig->program_full_path,
+               calculate->dll_path[0] ? calculate->dll_path : pathconfig->program_full_path,
                L".zip");
 
     calculate_home_prefix(calculate, prefix);
 
-    status = calculate_module_search_path(config, calculate, pathconfig, prefix);
-    if (_PyStatus_EXCEPTION(status)) {
-        return status;
+    if (pathconfig->module_search_path == NULL) {
+        status = calculate_module_search_path(config, calculate,
+                                              pathconfig, prefix);
+        if (_PyStatus_EXCEPTION(status)) {
+            return status;
+        }
     }
 
 done:
@@ -1023,23 +1030,23 @@ calculate_free(PyCalculatePath *calculate)
 {
     PyMem_RawFree(calculate->machine_path);
     PyMem_RawFree(calculate->user_path);
+    PyMem_RawFree(calculate->dll_path);
 }
 
 
 PyStatus
 _PyPathConfig_Calculate(_PyPathConfig *pathconfig, const PyConfig *config)
 {
+    PyStatus status;
     PyCalculatePath calculate;
     memset(&calculate, 0, sizeof(calculate));
 
-    calculate_init(&calculate, config);
-
-    PyStatus status = calculate_path_impl(config, &calculate, pathconfig);
+    status = calculate_init(&calculate, config);
     if (_PyStatus_EXCEPTION(status)) {
         goto done;
     }
 
-    status = _PyStatus_OK();
+    status = calculate_path_impl(config, &calculate, pathconfig);
 
 done:
     calculate_free(&calculate);
@@ -1067,7 +1074,12 @@ _Py_CheckPython3(void)
 
     /* If there is a python3.dll next to the python3y.dll,
        assume this is a build tree; use that DLL */
-    wcscpy(py3path, _Py_path_config.dll_path);
+    if (_Py_dll_path != NULL) {
+        wcscpy(py3path, _Py_dll_path);
+    }
+    else {
+        wcscpy(py3path, L"");
+    }
     s = wcsrchr(py3path, L'\\');
     if (!s) {
         s = py3path;
