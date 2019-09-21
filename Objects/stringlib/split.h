@@ -112,16 +112,35 @@ STRINGLIB(split_char)(PyObject* str_obj,
         return NULL;
 
     i = j = 0;
-    while ((j < str_len) && (maxcount-- > 0)) {
+    while (i < str_len && str[i] == ch){
+        i++;
+        j++;
+    }
+    if(i<str_len){
+        j++;
+        while(j<str_len){
+            if(str[j-1]==ch && str[j-1]!=ch){
+                i=j;
+            }
+            if(str[j]==ch && str[j-1]!=ch){
+                SPLIT_ADD(str, i, j);
+            }
+            j++;
+        }
+    }
+    if(str[str_len-1]!=ch){
+        SPLIT_ADD(str, i, j);
+    }
+    /*while ((j < str_len) && (maxcount-- > 0)) {
         for(; j < str_len; j++) {
-            /* I found that using memchr makes no difference */
+            // I found that using memchr makes no difference 
             if (str[j] == ch) {
                 SPLIT_ADD(str, i, j);
                 i = j = j + 1;
                 break;
             }
         }
-    }
+    } */
 #ifndef STRINGLIB_MUTABLE
     if (count == 0 && STRINGLIB_CHECK_EXACT(str_obj)) {
         /* ch not in str_obj, so just use str_obj as list[0] */
