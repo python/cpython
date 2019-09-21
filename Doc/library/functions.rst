@@ -1307,8 +1307,8 @@ are always available.  They are listed here in alphabetical order.
       inverses.
 
    .. versionchanged:: 3.9
-      Argument names are now more descriptive (for example, *x* is now *base*)
-      and allowed to be passed in as keywords.
+      Allow keyword arguments.  Formerly, only positional arguments were
+      supported.
 
 
 .. function:: print(*objects, sep=' ', end='\\n', file=sys.stdout, flush=False)
