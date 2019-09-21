@@ -1155,6 +1155,63 @@ class BasicTest(TestCase):
         thread.join()
         self.assertEqual(result, b"proxied data\n")
 
+    def test_putrequest_override_validation(self):
+        """
+        It should be possible to override the default validation
+        behavior in putrequest (bpo-38216).
+        """
+        class UnsafeHTTPConnection(client.HTTPConnection):
+            def _prepare_path(self, url):
+                return url.encode('ascii')
+
+        conn = UnsafeHTTPConnection('example.com')
+        conn.sock = FakeSocket('')
+        conn.putrequest('GET', '/\x00')
+
+    def test_putrequest_override_encoding(self):
+        """
+        It should be possible to override the default encoding
+        to transmit bytes in another encoding even if invalid
+        (bpo-36274).
+        """
+        class UnsafeHTTPConnection(client.HTTPConnection):
+            def _prepare_path(self, url):
+                # Prevent CVE-2019-9740.
+                if match := client._contains_disallowed_url_pchar_re.search(
+                        url):
+                    raise InvalidURL(
+                        f"URL can't contain control characters. {url!r} "
+                        f"(found at least {match.group()!r})")
+
+                return url.encode('utf-8')
+
+        conn = UnsafeHTTPConnection('example.com')
+        conn.sock = FakeSocket('')
+        conn.putrequest('GET', '/☃')
+
+    def test_prepare_path_only(self):
+        """
+        Ensure that _prepare_path fully processes the URL
+        and that no other demands are on the object.
+        """
+        class UnsafeHTTPConnection(client.HTTPConnection):
+            def _prepare_path(self, url):
+                # ignore URL and return some bytes
+                return b'/'
+
+        class InvalidObject:
+            """
+            Stub object that doesn't behave anything like a string
+            and should cause tests to fail if any demands are put
+            on the url parameter other than in _prepare_path
+            (__bool__ allowed).
+            """
+
+        conn = UnsafeHTTPConnection('example.com')
+        conn.sock = FakeSocket('')
+        conn.putrequest('GET', InvalidObject())
+
+
 class ExtendedReadTest(TestCase):
     """
     Test peek(), read1(), readline()
@@ -1278,6 +1335,7 @@ class ExtendedReadTest(TestCase):
     def test_peek_0(self):
         p = self.resp.peek(0)
         self.assertLessEqual(0, len(p))
+
 
 class ExtendedReadTestChunked(ExtendedReadTest):
     """
