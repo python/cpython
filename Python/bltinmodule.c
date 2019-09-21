@@ -1800,7 +1800,7 @@ pow as builtin_pow
     exp: object
     mod: object = None
 
-Equivalent to base**exp (with two arguments) or base**exp % mod (with three arguments)
+Equivalent to base**exp with 2 arguments or base**exp % mod with 3 arguments
 
 Some types, such as ints, are able to use a more efficient algorithm when
 invoked using the three argument form.
@@ -1809,7 +1809,7 @@ invoked using the three argument form.
 static PyObject *
 builtin_pow_impl(PyObject *module, PyObject *base, PyObject *exp,
                  PyObject *mod)
-/*[clinic end generated code: output=3ca1538221bbf15f input=bd72d0a0ec8e5eb5]*/
+/*[clinic end generated code: output=3ca1538221bbf15f input=435dbd48a12efb23]*/
 {
     return PyNumber_Power(base, exp, mod);
 }
