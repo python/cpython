@@ -19,6 +19,7 @@ import types
 import unittest
 import warnings
 from contextlib import ExitStack
+from functools import partial
 from inspect import CO_COROUTINE
 from itertools import product
 from textwrap import dedent
@@ -1205,6 +1206,18 @@ class BuiltinTest(unittest.TestCase):
         self.assertRaises(ValueError, pow, 1, 2, 0)
 
         self.assertRaises(TypeError, pow)
+
+        # Test passing in arguments as keywords.
+        self.assertEqual(pow(0, exp=0), 1)
+        self.assertEqual(pow(base=2, exp=4), 16)
+        self.assertEqual(pow(base=5, exp=2, mod=14), 11)
+        twopow = partial(pow, base=2)
+        self.assertEqual(twopow(exp=5), 32)
+        fifth_power = partial(pow, exp=5)
+        self.assertEqual(fifth_power(2), 32)
+        mod10 = partial(pow, mod=10)
+        self.assertEqual(mod10(2, 6), 4)
+        self.assertEqual(mod10(exp=6, base=2), 4)
 
     def test_input(self):
         self.write_testfile()
