@@ -116,6 +116,13 @@ Added the *indent* option to :func:`~ast.dump` which allows it to produce a
 multiline indented output.
 (Contributed by Serhiy Storchaka in :issue:`37995`.)
 
+asyncio
+-------
+
+Added a new couroutine :meth:`loop.shutdown_default_executor` that schedules
+a shutdown for the default executor that waits on the threadpool to finish
+closing. Also, :func:`asyncio.run` has been updated to use the new coroutine.
+(Contributed by Kyle Stanley in :issue:`34037`.)
 
 threading
 ---------
