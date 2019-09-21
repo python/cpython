@@ -77,8 +77,7 @@ class TestModule(unittest.TestCase):
         names = set(name for name in dir(datetime)
                     if not name.startswith('__') and not name.endswith('__'))
         allowed = set(['MAXYEAR', 'MINYEAR', 'date', 'datetime',
-                       'datetime_CAPI', 'IsoCalendarDate',
-                       'time', 'timedelta', 'timezone',
+                       'datetime_CAPI', 'time', 'timedelta', 'timezone',
                        'tzinfo', 'sys'])
         self.assertEqual(names - allowed, set([]))
 

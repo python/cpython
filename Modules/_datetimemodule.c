@@ -3258,6 +3258,20 @@ iso_calendar_date_repr(PyDateTime_IsoCalendarDate *self)
 }
 
 static PyObject *
+isocalendardate_reduce(PyObject *self, PyObject *Py_UNUSED(ignored))
+{
+    // Construct the tuple that this reduces to
+    PyObject * reduce_tuple = Py_BuildValue(
+        "O((OOO))", &PyTuple_Type,
+        PyTuple_GET_ITEM(self, 0),
+        PyTuple_GET_ITEM(self, 1),
+        PyTuple_GET_ITEM(self, 2)
+    );
+
+    return reduce_tuple;
+}
+
+static PyObject *
 iso_calendar_date_year(PyDateTime_IsoCalendarDate *self, void *unused)
 {
     PyObject* year =  PyTuple_GetItem((PyObject *)self, 0);
@@ -3297,6 +3311,12 @@ static PyGetSetDef iso_calendar_date_getset[] = {
     {NULL}
 };
 
+static PyMethodDef iso_calendar_date_methods[] = {
+    {"__reduce__", (PyCFunction)isocalendardate_reduce, METH_NOARGS,
+     PyDoc_STR("__reduce__() -> (cls, state)")},
+    {NULL, NULL},
+};
+
 static PyTypeObject PyDateTime_IsoCalendarDateType = {
     PyVarObject_HEAD_INIT(NULL, 0)
     "datetime.IsoCalendarDate",                         /* tp_name */
@@ -3325,7 +3345,7 @@ static PyTypeObject PyDateTime_IsoCalendarDateType = {
     0,                                                  /* tp_weaklistoffset */
     0,                                                  /* tp_iter */
     0,                                                  /* tp_iternext */
-    0,                                                  /* tp_methods */
+    iso_calendar_date_methods,                          /* tp_methods */
     0,                                                  /* tp_members */
     iso_calendar_date_getset,                           /* tp_getset */
     &PyTuple_Type,                                      /* tp_base */
@@ -6686,9 +6706,6 @@ PyInit__datetime(void)
     Py_INCREF(&PyDateTime_DateTimeType);
     PyModule_AddObject(m, "datetime",
                        (PyObject *)&PyDateTime_DateTimeType);
-
-    Py_INCREF((PyObject *) &PyDateTime_IsoCalendarDateType);
-    PyModule_AddObject(m, "IsoCalendarDate", (PyObject *) &PyDateTime_IsoCalendarDateType);
 
     Py_INCREF(&PyDateTime_TimeType);
     PyModule_AddObject(m, "time", (PyObject *) &PyDateTime_TimeType);
