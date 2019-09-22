@@ -509,9 +509,11 @@ def get_function_source(func):
 class TestCase(unittest.TestCase):
     @staticmethod
     def close_loop(loop):
-        executor = loop._default_executor
-        if executor is not None:
-            executor.shutdown(wait=True)
+        if loop._default_executor is not None:
+            if not loop.is_closed():
+                loop.run_until_complete(loop.shutdown_default_executor())
+            else:
+                loop._default_executor.shutdown(wait=True)
         loop.close()
         policy = support.maybe_get_event_loop_policy()
         if policy is not None:

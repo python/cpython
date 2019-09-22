@@ -2024,7 +2024,7 @@ static struct PyMethodDef s_methods[] = {
 };
 
 static PyMemberDef s_members[] = {
-    {"__weaklistoffset__", T_NONE, offsetof(PyStructObject, weakreflist), READONLY},
+    {"__weaklistoffset__", T_PYSSIZET, offsetof(PyStructObject, weakreflist), READONLY},
     {NULL}  /* sentinel */
 };
 

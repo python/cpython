@@ -1,0 +1,1 @@
+Mention ``frame.f_trace`` in :func:`sys.settrace` docs.
