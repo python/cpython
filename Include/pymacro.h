@@ -118,6 +118,8 @@
         "We've reached an unreachable state. Anything is possible.\n" \
         "The limits were in our heads all along. Follow your dreams.\n" \
         "https://xkcd.com/2200")
+#elif defined(__GNUC__) || defined(__clang__)
+#define Py_UNREACHABLE() __builtin_unreachable()
 #else
 #define Py_UNREACHABLE() \
     Py_FatalError("Unreachable C code path reached")
