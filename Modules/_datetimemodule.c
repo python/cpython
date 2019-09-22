@@ -3274,8 +3274,8 @@ isocalendardate_reduce(PyObject *self, PyObject *Py_UNUSED(ignored))
 static PyObject *
 iso_calendar_date_year(PyDateTime_IsoCalendarDate *self, void *unused)
 {
-    PyObject* year =  PyTuple_GetItem((PyObject *)self, 0);
-    if(year == NULL) {
+    PyObject *year = PyTuple_GetItem((PyObject *)self, 0);
+    if (year == NULL) {
         return NULL;
     }
     Py_INCREF(year);
@@ -3285,7 +3285,7 @@ iso_calendar_date_year(PyDateTime_IsoCalendarDate *self, void *unused)
 static PyObject *
 iso_calendar_date_week(PyDateTime_IsoCalendarDate *self, void *unused)
 {
-    PyObject* week =  PyTuple_GetItem((PyObject *)self, 1);
+    PyObject *week = PyTuple_GetItem((PyObject *)self, 1);
     if (week == NULL) {
         return NULL;
     }
@@ -3296,8 +3296,8 @@ iso_calendar_date_week(PyDateTime_IsoCalendarDate *self, void *unused)
 static PyObject *
 iso_calendar_date_weekday(PyDateTime_IsoCalendarDate *self, void *unused)
 {
-    PyObject* weekday =  PyTuple_GetItem((PyObject *)self, 2);
-    if(weekday == NULL) {
+    PyObject *weekday = PyTuple_GetItem((PyObject *)self, 2);
+    if (weekday == NULL) {
         return NULL;
     }
     Py_INCREF(weekday);
@@ -3361,36 +3361,26 @@ static PyTypeObject PyDateTime_IsoCalendarDateType = {
 /*[clinic input]
 @classmethod
 datetime.IsoCalendarDate.__new__ as iso_calendar_date_new
-    sequence as seq: object
+    year: int
+    week: int
+    weekday: int
 [clinic start generated code]*/
 
 static PyObject *
-iso_calendar_date_new_impl(PyTypeObject *type, PyObject *seq)
-/*[clinic end generated code: output=bf2e1982e7012dae input=f9bb6626d4947edc]*/
+iso_calendar_date_new_impl(PyTypeObject *type, int year, int week,
+                           int weekday)
+/*[clinic end generated code: output=383d33d8dc7183a2 input=4f2c663c9d19c4ee]*/
+
 {
-    PyDateTime_IsoCalendarDate* self;
-    Py_ssize_t len = PyObject_Length(seq);
-    if (len == -1) {
-        return NULL;
-    }
-
-    if (len != 3) {
-        PyErr_Format(PyExc_TypeError,
-                     "%.500s() takes a 3-sequence (%zd-sequence given)",
-                     type->tp_name, len);
-        return NULL;
-    }
-
-    self = (PyDateTime_IsoCalendarDate *) type->tp_alloc(type, len);
+    PyDateTime_IsoCalendarDate *self;
+    self = (PyDateTime_IsoCalendarDate *) type->tp_alloc(type, 3);
     if (self == NULL) {
         return NULL;
     }
 
-    for (int i = 0; i < len; ++i) {
-        PyObject* v = PyTuple_GetItem(seq, i);
-        Py_INCREF(v);
-        PyTuple_SET_ITEM(self, i, v);
-    }
+    PyTuple_SET_ITEM(self, 0, PyLong_FromLong(year));
+    PyTuple_SET_ITEM(self, 1, PyLong_FromLong(week));
+    PyTuple_SET_ITEM(self, 2, PyLong_FromLong(weekday));
 
     return (PyObject *)self;
 }
@@ -3415,17 +3405,11 @@ date_isocalendar(PyDateTime_Date *self, PyObject *Py_UNUSED(ignored))
         week = 0;
     }
 
-    PyObject *seq = Py_BuildValue("iii", year, week + 1, day + 1);
-    if (seq == NULL) {
-        return NULL;
-    }
-
-    PyObject* v = iso_calendar_date_new_impl(&PyDateTime_IsoCalendarDateType, seq);
+    PyObject* v = iso_calendar_date_new_impl(&PyDateTime_IsoCalendarDateType,
+                    year, week + 1, day + 1);
     if(v == NULL) {
-        Py_DECREF(seq);
         return NULL;
     }
-    Py_DECREF(seq);
     return v;
 }
 

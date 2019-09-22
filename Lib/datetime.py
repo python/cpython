@@ -1120,7 +1120,7 @@ class date:
             if today >= _isoweek1monday(year+1):
                 year += 1
                 week = 0
-        return _IsoCalendarDate((year, week+1, day+1))
+        return _IsoCalendarDate(year, week+1, day+1)
 
     # Pickle support.
 
@@ -1213,11 +1213,8 @@ class tzinfo:
 
 class IsoCalendarDate(tuple):
 
-    def __new__(cls, seq):
-        if len(seq) != 3:
-            raise TypeError(f'{cls.__name__}() takes a 3-sequence '
-                    f'({len(seq)}-sequence given)')
-        return super().__new__(cls, seq)
+    def __new__(cls, year, week, weekday):
+        return super().__new__(cls, (year, week, weekday))
 
     @property
     def year(self):
