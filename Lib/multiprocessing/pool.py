@@ -296,7 +296,7 @@ class Pool(object):
             if worker.exitcode is not None:
                 # worker exited
                 util.debug('cleaning up worker %d' % i)
-                pid =  worker.ident
+                pid = worker.ident
                 worker.join()
                 cleaned = True
                 if pid in job_assignments:
