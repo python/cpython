@@ -3407,7 +3407,7 @@ date_isocalendar(PyDateTime_Date *self, PyObject *Py_UNUSED(ignored))
 
     PyObject* v = iso_calendar_date_new_impl(&PyDateTime_IsoCalendarDateType,
                     year, week + 1, day + 1);
-    if(v == NULL) {
+    if (v == NULL) {
         return NULL;
     }
     return v;
