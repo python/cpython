@@ -21,6 +21,11 @@ def run(main, *, debug=False):
     It should be used as a main entry point for asyncio programs, and should
     ideally only be called once.
 
+    Return the `base_events.run_until_complete()` that this return the
+    Future's result, or raise a RuntimeError if `asyncio.run()`is called
+    from a running event loop, or a ValueError if `main` is not a
+    courutine.
+
     Example:
 
         async def main():
