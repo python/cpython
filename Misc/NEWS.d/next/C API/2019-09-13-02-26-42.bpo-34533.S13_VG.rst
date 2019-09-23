@@ -1,1 +1,1 @@
-Make the _csv module compatible with PEP384
+Remove all static state from the _csv module
