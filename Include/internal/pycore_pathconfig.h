@@ -60,6 +60,7 @@ extern wchar_t* _Py_GetDLLPath(void);
 #endif
 
 extern PyStatus _PyPathConfig_Init(void);
+extern void _Py_DumpPathConfig(PyThreadState *tstate);
 
 #ifdef __cplusplus
 }
