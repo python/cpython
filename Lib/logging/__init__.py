@@ -1681,8 +1681,8 @@ class Logger(Filterer):
         """
         logger = self
         while logger:
-            if logger.level:
-                return logger.level
+            if logger._level:
+                return logger._level
             logger = logger.parent
         return NOTSET
 
