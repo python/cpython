@@ -299,12 +299,13 @@ class Pool(object):
                 pid = worker.ident
                 worker.join()
                 cleaned = True
-                if pid in job_assignments:
+                job_info = job_assignments.pop(pid, None)
+                if job_info is not None:
                     # If the worker process died without communicating back
                     # while running a job, add a default result for it.
-                    job = job_assignments[pid]
-                    outqueue.put((job, i, (False, RuntimeError("Worker died"))))
-                    del job_assignments[pid]
+                    outqueue.put(
+                        (*job_info, (False, RuntimeError("Worker died")))
+                    )
                 del pool[i]
         return cleaned
 
@@ -602,7 +603,7 @@ class Pool(object):
                 # task_info is True or False when a task has completed but
                 # None indicates information about which process has
                 # accepted a job from the queue.
-                job_assignments[value] = job
+                job_assignments[value] = (job, i)
             else:
                 try:
                     cache[job]._set(i, (task_info, value))
@@ -623,7 +624,7 @@ class Pool(object):
 
             job, i, (task_info, value) = task
             if task_info is None:
-                job_assignments[value] = job
+                job_assignments[value] = (job, i)
             else:
                 try:
                     cache[job]._set(i, (task_info, value))
