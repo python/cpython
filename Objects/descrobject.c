@@ -880,7 +880,7 @@ PyDescr_NewMethod(PyTypeObject *type, PyMethodDef *method)
             vectorcall = method_vectorcall_O;
             break;
         default:
-            PyErr_SetString(PyExc_SystemError, "bad call flags");
+            PyErr_SetString(PyExc_SystemError, "bad call flagsooo");
             return NULL;
     }
 

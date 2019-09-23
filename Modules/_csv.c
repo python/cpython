@@ -19,9 +19,10 @@ typedef struct {
     PyObject *error_obj;   /* CSV exception */
     PyObject *dialects;   /* Dialect registry */
     long field_limit;   /* max parsed field size */
-    PyObject* Dialect_Type;
-    PyObject* Reader_Type;
-    PyObject* Writer_Type;
+    PyObject *write_str;
+    PyObject *Dialect_Type;
+    PyObject *Reader_Type;
+    PyObject *Writer_Type;
 } _csvstate;
 
 static struct PyModuleDef _csvmodule;
@@ -34,6 +35,7 @@ _csv_clear(PyObject *m)
 {
     Py_CLEAR(_csvstate(m)->error_obj);
     Py_CLEAR(_csvstate(m)->dialects);
+    Py_CLEAR(_csvstate(m)->write_str);
     Py_CLEAR(_csvstate(m)->Dialect_Type);
     Py_CLEAR(_csvstate(m)->Reader_Type);
     Py_CLEAR(_csvstate(m)->Writer_Type);
@@ -45,6 +47,7 @@ _csv_traverse(PyObject *m, visitproc visit, void *arg)
 {
     Py_VISIT(_csvstate(m)->error_obj);
     Py_VISIT(_csvstate(m)->dialects);
+    Py_VISIT(_csvstate(m)->write_str);
     Py_VISIT(_csvstate(m)->Dialect_Type);
     Py_VISIT(_csvstate(m)->Reader_Type);
     Py_VISIT(_csvstate(m)->Writer_Type);
@@ -236,7 +239,7 @@ _set_char(const char *name, Py_UCS4 *target, PyObject *src, Py_UCS4 dflt)
             if (!PyUnicode_Check(src)) {
                 PyErr_Format(PyExc_TypeError,
                     "\"%s\" must be string, not %.200s", name,
-                    src->ob_type->tp_name);
+                    _PyType_Name(Py_TYPE(src)));
                 return -1;
             }
             len = PyUnicode_GetLength(src);
@@ -290,6 +293,22 @@ dialect_check_quoting(int quoting)
     return -1;
 }
 
+static PyObject *
+Dialect___reduce__(PyObject *self, PyObject *Py_UNUSED(ignored))
+{
+    PyErr_Format(PyExc_TypeError,
+        "cannot pickle '%.100s' instances", _PyType_Name(Py_TYPE(self)));
+    return NULL;
+}
+
+static PyObject *
+Dialect___reduce_ex__(PyObject *self, PyObject *Py_UNUSED(ignored))
+{
+    PyErr_Format(PyExc_TypeError,
+        "cannot pickle '%.100s' instances", _PyType_Name(Py_TYPE(self)));
+    return NULL;
+}
+
 #define D_OFF(x) offsetof(DialectObj, x)
 
 static struct PyMemberDef Dialect_memberlist[] = {
@@ -308,12 +327,22 @@ static PyGetSetDef Dialect_getsetlist[] = {
     {NULL},
 };
 
+PyDoc_STRVAR(dialect_reduce_doc,
+"returns null and raises an exception to avoid pickling");
+
+static PyMethodDef Dialect_methodlist[] = {
+    {"__reduce__", (PyCFunction)Dialect___reduce__, METH_NOARGS, dialect_reduce_doc},
+    {"__reduce_ex__", (PyCFunction)Dialect___reduce_ex__, METH_O, dialect_reduce_doc},
+    { NULL }
+};
+
 static void
 Dialect_dealloc(DialectObj *self)
 {
-    PyObject *tp = (PyObject *) Py_TYPE(self);
+    PyTypeObject *tp = Py_TYPE(self);
     Py_XDECREF(self->lineterminator);
-    Py_TYPE(self)->tp_free((PyObject *)self);
+    freefunc free_func = PyType_GetSlot(tp, Py_tp_free);
+    free_func(self);
     Py_DECREF(tp);
 }
 
@@ -379,7 +408,8 @@ dialect_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
             return dialect;
     }
 
-    self = (DialectObj *)type->tp_alloc(type, 0);
+    allocfunc alloc_func = PyType_GetSlot(type, Py_tp_alloc);
+    self = (DialectObj *)alloc_func(type, 0);
     if (self == NULL) {
         Py_XDECREF(dialect);
         return NULL;
@@ -469,6 +499,7 @@ static PyType_Slot Dialect_Type_slots[] = {
     {Py_tp_doc, (void *)Dialect_Type_doc},
     {Py_tp_getset, Dialect_getsetlist},
     {Py_tp_members, Dialect_memberlist},
+    {Py_tp_methods, Dialect_methodlist},
     {Py_tp_new, dialect_new},
     {0, 0},
 };
@@ -782,7 +813,7 @@ Reader_iternext(ReaderObj *self)
                          "iterator should return strings, "
                          "not %.200s "
                          "(did you open the file in text mode?)",
-                         lineobj->ob_type->tp_name
+                         _PyType_Name(Py_TYPE(lineobj))
                 );
             Py_DECREF(lineobj);
             return NULL;
@@ -1137,7 +1168,7 @@ csv_writerow(WriterObj *self, PyObject *seq)
     if (iter == NULL)
         return PyErr_Format(_csvstate_global->error_obj,
                             "iterable expected, not %.200s",
-                            seq->ob_type->tp_name);
+                            _PyType_Name(Py_TYPE(seq)));
 
     /* Join all fields in internal buffer.
      */
@@ -1329,7 +1360,6 @@ csv_writer(PyObject *module, PyObject *args, PyObject *keyword_args)
 {
     PyObject * output_file, * dialect = NULL;
     WriterObj * self = PyObject_GC_New(WriterObj, (PyTypeObject*)_csvstate_global->Writer_Type);
-    _Py_IDENTIFIER(write);
 
     if (!self)
         return NULL;
@@ -1346,7 +1376,7 @@ csv_writer(PyObject *module, PyObject *args, PyObject *keyword_args)
         Py_DECREF(self);
         return NULL;
     }
-    if (_PyObject_LookupAttrId(output_file, &PyId_write, &self->write) < 0) {
+    if (_PyObject_LookupAttr(output_file, _csvstate(module)->write_str, &self->write) < 0) {
         Py_DECREF(self);
         return NULL;
     }
@@ -1650,6 +1680,10 @@ PyInit__csv(void)
         return NULL;
     Py_INCREF(_csvstate(module)->error_obj);
     PyModule_AddObject(module, "Error", _csvstate(module)->error_obj);
+
+    _csvstate(module)->write_str = PyUnicode_InternFromString("write");
+    if (_csvstate(module)->write_str == NULL)
+        return NULL;
 
     PyState_AddModule(module, &_csvmodule);
     return module;
