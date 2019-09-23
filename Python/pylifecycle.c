@@ -941,7 +941,8 @@ pyinit_main(_PyRuntimeState *runtime, PyInterpreterState *interp)
         return status;
     }
 
-    status = _PyUnicode_InitEncodings(interp);
+    PyThreadState *tstate = _PyRuntimeState_GetThreadState(runtime);
+    status = _PyUnicode_InitEncodings(tstate);
     if (_PyStatus_EXCEPTION(status)) {
         return status;
     }
@@ -1508,7 +1509,7 @@ new_interpreter(PyThreadState **tstate_p)
             return status;
         }
 
-        status = _PyUnicode_InitEncodings(interp);
+        status = _PyUnicode_InitEncodings(tstate);
         if (_PyStatus_EXCEPTION(status)) {
             return status;
         }

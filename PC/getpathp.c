@@ -532,8 +532,7 @@ _Py_GetDLLPath(void)
 
 
 static PyStatus
-get_program_full_path(const PyConfig *config,
-                      PyCalculatePath *calculate, _PyPathConfig *pathconfig)
+get_program_full_path(_PyPathConfig *pathconfig)
 {
     const wchar_t *pyvenv_launcher;
     wchar_t program_full_path[MAXPATHLEN+1];
@@ -977,7 +976,7 @@ calculate_path_impl(const PyConfig *config,
 {
     PyStatus status;
 
-    status = get_program_full_path(config, calculate, pathconfig);
+    status = get_program_full_path(pathconfig);
     if (_PyStatus_EXCEPTION(status)) {
         return status;
     }
