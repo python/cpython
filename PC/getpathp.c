@@ -130,6 +130,8 @@ typedef struct {
     wchar_t zip_path[MAXPATHLEN+1];
 
     wchar_t *dll_path;
+
+    const wchar_t *pythonpath_env;
 } PyCalculatePath;
 
 
@@ -322,7 +324,7 @@ gotlandmark(wchar_t *prefix, const wchar_t *landmark)
 
 
 /* assumes argv0_path is MAXPATHLEN+1 bytes long, already \0 term'd.
-   assumption provided by only caller, calculate_path_impl() */
+   assumption provided by only caller, calculate_path() */
 static int
 search_for_prefix(wchar_t *prefix, const wchar_t *argv0_path, const wchar_t *landmark)
 {
@@ -534,6 +536,7 @@ _Py_GetDLLPath(void)
 static PyStatus
 get_program_full_path(_PyPathConfig *pathconfig)
 {
+    PyStatus status;
     const wchar_t *pyvenv_launcher;
     wchar_t program_full_path[MAXPATHLEN+1];
     memset(program_full_path, 0, sizeof(program_full_path));
@@ -548,12 +551,18 @@ get_program_full_path(_PyPathConfig *pathconfig)
     pyvenv_launcher = _wgetenv(L"__PYVENV_LAUNCHER__");
     if (pyvenv_launcher && pyvenv_launcher[0]) {
         /* If overridden, preserve the original full path */
-        pathconfig->base_executable = PyMem_RawMalloc(
-            sizeof(wchar_t) * (MAXPATHLEN + 1));
-        PyStatus status = canonicalize(pathconfig->base_executable,
-                                       program_full_path);
-        if (_PyStatus_EXCEPTION(status)) {
-            return status;
+        if (pathconfig->base_executable == NULL) {
+            pathconfig->base_executable = PyMem_RawMalloc(
+                sizeof(wchar_t) * (MAXPATHLEN + 1));
+            if (pathconfig->base_executable == NULL) {
+                return _PyStatus_NO_MEMORY();
+            }
+
+            status = canonicalize(pathconfig->base_executable,
+                                  program_full_path);
+            if (_PyStatus_EXCEPTION(status)) {
+                return status;
+            }
         }
 
         wcscpy_s(program_full_path, MAXPATHLEN+1, pyvenv_launcher);
@@ -562,11 +571,20 @@ get_program_full_path(_PyPathConfig *pathconfig)
         _wputenv_s(L"__PYVENV_LAUNCHER__", L"");
     }
 
-    pathconfig->program_full_path = PyMem_RawMalloc(
-        sizeof(wchar_t) * (MAXPATHLEN + 1));
+    if (pathconfig->program_full_path == NULL) {
+        pathconfig->program_full_path = PyMem_RawMalloc(
+            sizeof(wchar_t) * (MAXPATHLEN + 1));
+        if (pathconfig->program_full_path == NULL) {
+            return _PyStatus_NO_MEMORY();
+        }
 
-    return canonicalize(pathconfig->program_full_path,
-                        program_full_path);
+        status = canonicalize(pathconfig->program_full_path,
+                              program_full_path);
+        if (_PyStatus_EXCEPTION(status)) {
+            return status;
+        }
+    }
+    return _PyStatus_OK();
 }
 
 
@@ -657,7 +675,13 @@ read_pth_file(_PyPathConfig *pathconfig, wchar_t *prefix, const wchar_t *path)
     }
 
     fclose(sp_file);
-    pathconfig->module_search_path = buf;
+    if (pathconfig->module_search_path == NULL) {
+        pathconfig->module_search_path = _PyMem_RawWcsdup(buf);
+        if (pathconfig->module_search_path == NULL) {
+            Py_FatalError("out of memory");
+        }
+    }
+    PyMem_RawFree(buf);
     return 1;
 
 error:
@@ -668,8 +692,7 @@ error:
 
 
 static PyStatus
-calculate_init(PyCalculatePath *calculate,
-               const PyConfig *config)
+calculate_init(PyCalculatePath *calculate, const PyConfig *config)
 {
     calculate->home = config->home;
     calculate->path_env = _wgetenv(L"PATH");
@@ -678,6 +701,8 @@ calculate_init(PyCalculatePath *calculate,
     if (calculate->dll_path == NULL) {
         return _PyStatus_NO_MEMORY();
     }
+
+    calculate->pythonpath_env = config->pythonpath_env;
 
     return _PyStatus_OK();
 }
@@ -785,8 +810,8 @@ calculate_home_prefix(PyCalculatePath *calculate, wchar_t *prefix)
 
 
 static PyStatus
-calculate_module_search_path(const PyConfig *config,
-                             PyCalculatePath *calculate, _PyPathConfig *pathconfig,
+calculate_module_search_path(PyCalculatePath *calculate,
+                             _PyPathConfig *pathconfig,
                              wchar_t *prefix)
 {
     int skiphome = calculate->home==NULL ? 0 : 1;
@@ -796,7 +821,7 @@ calculate_module_search_path(const PyConfig *config,
 #endif
     /* We only use the default relative PYTHONPATH if we haven't
        anything better to use! */
-    int skipdefault = (config->pythonpath_env != NULL ||
+    int skipdefault = (calculate->pythonpath_env != NULL ||
                        calculate->home != NULL ||
                        calculate->machine_path != NULL ||
                        calculate->user_path != NULL);
@@ -835,30 +860,20 @@ calculate_module_search_path(const PyConfig *config,
         bufsz += wcslen(calculate->machine_path) + 1;
     }
     bufsz += wcslen(calculate->zip_path) + 1;
-    if (config->pythonpath_env != NULL) {
-        bufsz += wcslen(config->pythonpath_env) + 1;
+    if (calculate->pythonpath_env != NULL) {
+        bufsz += wcslen(calculate->pythonpath_env) + 1;
     }
 
     wchar_t *buf, *start_buf;
     buf = PyMem_RawMalloc(bufsz * sizeof(wchar_t));
     if (buf == NULL) {
-        /* We can't exit, so print a warning and limp along */
-        fprintf(stderr, "Can't malloc dynamic PYTHONPATH.\n");
-        if (config->pythonpath_env) {
-            fprintf(stderr, "Using environment $PYTHONPATH.\n");
-            pathconfig->module_search_path = config->pythonpath_env;
-        }
-        else {
-            fprintf(stderr, "Using default static path.\n");
-            pathconfig->module_search_path = PYTHONPATH;
-        }
-        return _PyStatus_OK();
+        Py_FatalError("Can't malloc dynamic PYTHONPATH");
     }
     start_buf = buf;
 
-    if (config->pythonpath_env) {
+    if (calculate->pythonpath_env) {
         if (wcscpy_s(buf, bufsz - (buf - start_buf),
-                     config->pythonpath_env)) {
+                     calculate->pythonpath_env)) {
             return INIT_ERR_BUFFER_OVERFLOW();
         }
         buf = wcschr(buf, L'\0');
@@ -971,8 +986,7 @@ calculate_module_search_path(const PyConfig *config,
 
 
 static PyStatus
-calculate_path_impl(const PyConfig *config,
-                    PyCalculatePath *calculate, _PyPathConfig *pathconfig)
+calculate_path(PyCalculatePath *calculate, _PyPathConfig *pathconfig)
 {
     PyStatus status;
 
@@ -1003,21 +1017,24 @@ calculate_path_impl(const PyConfig *config,
     calculate_home_prefix(calculate, prefix);
 
     if (pathconfig->module_search_path == NULL) {
-        status = calculate_module_search_path(config, calculate,
-                                              pathconfig, prefix);
+        status = calculate_module_search_path(calculate, pathconfig, prefix);
         if (_PyStatus_EXCEPTION(status)) {
             return status;
         }
     }
 
 done:
-    pathconfig->prefix = _PyMem_RawWcsdup(prefix);
     if (pathconfig->prefix == NULL) {
-        return _PyStatus_NO_MEMORY();
+        pathconfig->prefix = _PyMem_RawWcsdup(prefix);
+        if (pathconfig->prefix == NULL) {
+            return _PyStatus_NO_MEMORY();
+        }
     }
-    pathconfig->exec_prefix = _PyMem_RawWcsdup(prefix);
     if (pathconfig->exec_prefix == NULL) {
-        return _PyStatus_NO_MEMORY();
+        pathconfig->exec_prefix = _PyMem_RawWcsdup(prefix);
+        if (pathconfig->exec_prefix == NULL) {
+            return _PyStatus_NO_MEMORY();
+        }
     }
 
     return _PyStatus_OK();
@@ -1033,6 +1050,17 @@ calculate_free(PyCalculatePath *calculate)
 }
 
 
+/* Calculate 'pathconfig' attributes:
+
+   - base_executable
+   - program_full_path
+   - module_search_path
+   - prefix
+   - exec_prefix
+   - isolated
+   - site_import
+
+   If an attribute is already set (non NULL), it is left unchanged. */
 PyStatus
 _PyPathConfig_Calculate(_PyPathConfig *pathconfig, const PyConfig *config)
 {
@@ -1045,7 +1073,7 @@ _PyPathConfig_Calculate(_PyPathConfig *pathconfig, const PyConfig *config)
         goto done;
     }
 
-    status = calculate_path_impl(config, &calculate, pathconfig);
+    status = calculate_path(&calculate, pathconfig);
 
 done:
     calculate_free(&calculate);
