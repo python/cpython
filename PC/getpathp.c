@@ -692,9 +692,10 @@ error:
 
 
 static PyStatus
-calculate_init(PyCalculatePath *calculate, const PyConfig *config)
+calculate_init(PyCalculatePath *calculate, _PyPathConfig *pathconfig,
+               const PyConfig *config)
 {
-    calculate->home = config->home;
+    calculate->home = pathconfig->home;
     calculate->path_env = _wgetenv(L"PATH");
 
     calculate->dll_path = _Py_GetDLLPath();
@@ -1068,7 +1069,7 @@ _PyPathConfig_Calculate(_PyPathConfig *pathconfig, const PyConfig *config)
     PyCalculatePath calculate;
     memset(&calculate, 0, sizeof(calculate));
 
-    status = calculate_init(&calculate, config);
+    status = calculate_init(&calculate, pathconfig, config);
     if (_PyStatus_EXCEPTION(status)) {
         goto done;
     }
