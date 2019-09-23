@@ -425,6 +425,11 @@ PyConfig
 
       :data:`sys.base_exec_prefix`.
 
+   .. c:member:: wchar_t* base_executable
+
+      :data:`sys._base_executable`: ``__PYVENV_LAUNCHER__`` environment
+      variable value, or copy of :c:member:`PyConfig.executable`.
+
    .. c:member:: wchar_t* base_prefix
 
       :data:`sys.base_prefix`.
@@ -862,11 +867,13 @@ Path Configuration
 * Path configuration input fields:
 
   * :c:member:`PyConfig.home`
-  * :c:member:`PyConfig.pythonpath_env`
   * :c:member:`PyConfig.pathconfig_warnings`
+  * :c:member:`PyConfig.program_name`
+  * :c:member:`PyConfig.pythonpath_env`
 
 * Path configuration output fields:
 
+  * :c:member:`PyConfig.base_executable`
   * :c:member:`PyConfig.exec_prefix`
   * :c:member:`PyConfig.executable`
   * :c:member:`PyConfig.prefix`
@@ -917,6 +924,9 @@ The following configuration files are used by the path configuration:
 * ``pyvenv.cfg``
 * ``python._pth`` (Windows only)
 * ``pybuilddir.txt`` (Unix only)
+
+The ``__PYVENV_LAUNCHER__`` environment variable is used to set
+:c:member:`PyConfig.base_executable`
 
 
 Py_RunMain()
