@@ -248,13 +248,20 @@ config_init_module_search_paths(PyConfig *config, _PyPathConfig *pathconfig)
 
 /* Calculate the path configuration:
 
-   - base_executable (Windows only)
    - exec_prefix
-   - isolated (Windows only)
    - module_search_path
    - prefix
    - program_full_path
-   - site_import (Windows only)
+
+   On Windows, more fields are calculated:
+
+   - base_executable
+   - isolated
+   - site_import
+
+   On other platforms, isolated and site_import are left unchanged, and
+   _PyConfig_InitPathConfig() copies executable to base_executable (if it's not
+   set).
 
    Priority, highest to lowest:
 
