@@ -133,6 +133,9 @@ typedef struct {
 
     int prefix_found;         /* found platform independent libraries? */
     int exec_prefix_found;    /* found the platform dependent libraries? */
+
+    int warnings;
+    const wchar_t *pythonpath_env;
 } PyCalculatePath;
 
 static const wchar_t delimiter[2] = {DELIM, '\0'};
@@ -365,17 +368,16 @@ add_exe_suffix(wchar_t *progpath, size_t progpathlen)
    bytes long.
 */
 static PyStatus
-search_for_prefix(const PyConfig *config, PyCalculatePath *calculate,
-                  wchar_t *prefix, size_t prefix_len,
-                  int *found)
+search_for_prefix(PyCalculatePath *calculate, _PyPathConfig *pathconfig,
+                  wchar_t *prefix, size_t prefix_len, int *found)
 {
     PyStatus status;
     size_t n;
     wchar_t *vpath;
 
     /* If PYTHONHOME is set, we believe it unconditionally */
-    if (config->home) {
-        if (safe_wcscpy(prefix, config->home, prefix_len) < 0) {
+    if (pathconfig->home) {
+        if (safe_wcscpy(prefix, pathconfig->home, prefix_len) < 0) {
             return PATHLEN_ERR();
         }
         wchar_t *delim = wcschr(prefix, DELIM);
@@ -482,19 +484,19 @@ search_for_prefix(const PyConfig *config, PyCalculatePath *calculate,
 
 
 static PyStatus
-calculate_prefix(const PyConfig *config,
-                 PyCalculatePath *calculate, wchar_t *prefix, size_t prefix_len)
+calculate_prefix(PyCalculatePath *calculate, _PyPathConfig *pathconfig,
+                 wchar_t *prefix, size_t prefix_len)
 {
     PyStatus status;
 
-    status = search_for_prefix(config, calculate, prefix, prefix_len,
-                            &calculate->prefix_found);
+    status = search_for_prefix(calculate, pathconfig, prefix, prefix_len,
+                               &calculate->prefix_found);
     if (_PyStatus_EXCEPTION(status)) {
         return status;
     }
 
     if (!calculate->prefix_found) {
-        if (config->pathconfig_warnings) {
+        if (calculate->warnings) {
             fprintf(stderr,
                 "Could not find platform independent libraries <prefix>\n");
         }
@@ -544,8 +546,7 @@ calculate_reduce_prefix(PyCalculatePath *calculate,
    MAXPATHLEN bytes long.
 */
 static PyStatus
-search_for_exec_prefix(const PyConfig *config,
-                       PyCalculatePath *calculate,
+search_for_exec_prefix(PyCalculatePath *calculate, _PyPathConfig *pathconfig,
                        wchar_t *exec_prefix, size_t exec_prefix_len,
                        int *found)
 {
@@ -553,15 +554,15 @@ search_for_exec_prefix(const PyConfig *config,
     size_t n;
 
     /* If PYTHONHOME is set, we believe it unconditionally */
-    if (config->home) {
-        wchar_t *delim = wcschr(config->home, DELIM);
+    if (pathconfig->home) {
+        wchar_t *delim = wcschr(pathconfig->home, DELIM);
         if (delim) {
             if (safe_wcscpy(exec_prefix, delim+1, exec_prefix_len) < 0) {
                 return PATHLEN_ERR();
             }
         }
         else {
-            if (safe_wcscpy(exec_prefix, config->home, exec_prefix_len) < 0) {
+            if (safe_wcscpy(exec_prefix, pathconfig->home, exec_prefix_len) < 0) {
                 return PATHLEN_ERR();
             }
         }
@@ -668,21 +669,20 @@ search_for_exec_prefix(const PyConfig *config,
 
 
 static PyStatus
-calculate_exec_prefix(const PyConfig *config,
-                      PyCalculatePath *calculate,
+calculate_exec_prefix(PyCalculatePath *calculate, _PyPathConfig *pathconfig,
                       wchar_t *exec_prefix, size_t exec_prefix_len)
 {
     PyStatus status;
 
-    status = search_for_exec_prefix(config, calculate,
-                                 exec_prefix, exec_prefix_len,
-                                 &calculate->exec_prefix_found);
+    status = search_for_exec_prefix(calculate, pathconfig,
+                                    exec_prefix, exec_prefix_len,
+                                    &calculate->exec_prefix_found);
     if (_PyStatus_EXCEPTION(status)) {
         return status;
     }
 
     if (!calculate->exec_prefix_found) {
-        if (config->pathconfig_warnings) {
+        if (calculate->warnings) {
             fprintf(stderr,
                 "Could not find platform dependent libraries <exec_prefix>\n");
         }
@@ -721,8 +721,7 @@ calculate_reduce_exec_prefix(PyCalculatePath *calculate,
 
 
 static PyStatus
-calculate_program_full_path(const PyConfig *config,
-                            PyCalculatePath *calculate, _PyPathConfig *pathconfig)
+calculate_program_full_path(PyCalculatePath *calculate, _PyPathConfig *pathconfig)
 {
     PyStatus status;
     wchar_t program_full_path[MAXPATHLEN + 1];
@@ -743,8 +742,8 @@ calculate_program_full_path(const PyConfig *config,
      * other way to find a directory to start the search from.  If
      * $PATH isn't exported, you lose.
      */
-    if (wcschr(config->program_name, SEP)) {
-        if (safe_wcscpy(program_full_path, config->program_name,
+    if (wcschr(pathconfig->program_name, SEP)) {
+        if (safe_wcscpy(program_full_path, pathconfig->program_name,
                         program_full_path_len) < 0) {
             return PATHLEN_ERR();
         }
@@ -795,8 +794,8 @@ calculate_program_full_path(const PyConfig *config,
                 }
             }
 
-            status = joinpath(program_full_path, config->program_name,
-                            program_full_path_len);
+            status = joinpath(program_full_path, pathconfig->program_name,
+                              program_full_path_len);
             if (_PyStatus_EXCEPTION(status)) {
                 return status;
             }
@@ -1030,15 +1029,14 @@ calculate_zip_path(PyCalculatePath *calculate, const wchar_t *prefix)
 
 
 static PyStatus
-calculate_module_search_path(const PyConfig *config,
-                             PyCalculatePath *calculate,
-                             const wchar_t *prefix, const wchar_t *exec_prefix,
-                             _PyPathConfig *pathconfig)
+calculate_module_search_path(PyCalculatePath *calculate,
+                             _PyPathConfig *pathconfig,
+                             const wchar_t *prefix, const wchar_t *exec_prefix)
 {
     /* Calculate size of return buffer */
     size_t bufsz = 0;
-    if (config->pythonpath_env != NULL) {
-        bufsz += wcslen(config->pythonpath_env) + 1;
+    if (calculate->pythonpath_env != NULL) {
+        bufsz += wcslen(calculate->pythonpath_env) + 1;
     }
 
     wchar_t *defpath = calculate->pythonpath;
@@ -1072,8 +1070,8 @@ calculate_module_search_path(const PyConfig *config,
     buf[0] = '\0';
 
     /* Run-time value of $PYTHONPATH goes first */
-    if (config->pythonpath_env) {
-        wcscpy(buf, config->pythonpath_env);
+    if (calculate->pythonpath_env) {
+        wcscpy(buf, calculate->pythonpath_env);
         wcscat(buf, delimiter);
     }
 
@@ -1149,6 +1147,10 @@ calculate_init(PyCalculatePath *calculate,
     if (!calculate->lib_python) {
         return DECODE_LOCALE_ERR("EXEC_PREFIX define", len);
     }
+
+    calculate->warnings = config->pathconfig_warnings;
+    calculate->pythonpath_env = config->pythonpath_env;
+
     return _PyStatus_OK();
 }
 
@@ -1165,14 +1167,15 @@ calculate_free(PyCalculatePath *calculate)
 
 
 static PyStatus
-calculate_path_impl(const PyConfig *config,
-                    PyCalculatePath *calculate, _PyPathConfig *pathconfig)
+calculate_path(PyCalculatePath *calculate, _PyPathConfig *pathconfig)
 {
     PyStatus status;
 
-    status = calculate_program_full_path(config, calculate, pathconfig);
-    if (_PyStatus_EXCEPTION(status)) {
-        return status;
+    if (pathconfig->program_full_path == NULL) {
+        status = calculate_program_full_path(calculate, pathconfig);
+        if (_PyStatus_EXCEPTION(status)) {
+            return status;
+        }
     }
 
     status = calculate_argv0_path(calculate, pathconfig->program_full_path);
@@ -1187,8 +1190,8 @@ calculate_path_impl(const PyConfig *config,
 
     wchar_t prefix[MAXPATHLEN+1];
     memset(prefix, 0, sizeof(prefix));
-    status = calculate_prefix(config, calculate,
-                           prefix, Py_ARRAY_LENGTH(prefix));
+    status = calculate_prefix(calculate, pathconfig,
+                              prefix, Py_ARRAY_LENGTH(prefix));
     if (_PyStatus_EXCEPTION(status)) {
         return status;
     }
@@ -1200,52 +1203,65 @@ calculate_path_impl(const PyConfig *config,
 
     wchar_t exec_prefix[MAXPATHLEN+1];
     memset(exec_prefix, 0, sizeof(exec_prefix));
-    status = calculate_exec_prefix(config, calculate,
-                                exec_prefix, Py_ARRAY_LENGTH(exec_prefix));
+    status = calculate_exec_prefix(calculate, pathconfig,
+                                   exec_prefix, Py_ARRAY_LENGTH(exec_prefix));
     if (_PyStatus_EXCEPTION(status)) {
         return status;
     }
 
     if ((!calculate->prefix_found || !calculate->exec_prefix_found) &&
-        config->pathconfig_warnings)
+        calculate->warnings)
     {
         fprintf(stderr,
                 "Consider setting $PYTHONHOME to <prefix>[:<exec_prefix>]\n");
     }
 
     if (pathconfig->module_search_path == NULL) {
-        status = calculate_module_search_path(config, calculate,
-                                              prefix, exec_prefix, pathconfig);
+        status = calculate_module_search_path(calculate, pathconfig,
+                                              prefix, exec_prefix);
         if (_PyStatus_EXCEPTION(status)) {
             return status;
         }
     }
 
-    status = calculate_reduce_prefix(calculate, prefix, Py_ARRAY_LENGTH(prefix));
-    if (_PyStatus_EXCEPTION(status)) {
-        return status;
-    }
-
-    pathconfig->prefix = _PyMem_RawWcsdup(prefix);
     if (pathconfig->prefix == NULL) {
-        return _PyStatus_NO_MEMORY();
+        status = calculate_reduce_prefix(calculate, prefix, Py_ARRAY_LENGTH(prefix));
+        if (_PyStatus_EXCEPTION(status)) {
+            return status;
+        }
+
+        pathconfig->prefix = _PyMem_RawWcsdup(prefix);
+        if (pathconfig->prefix == NULL) {
+            return _PyStatus_NO_MEMORY();
+        }
     }
 
-    status = calculate_reduce_exec_prefix(calculate,
-                                       exec_prefix, Py_ARRAY_LENGTH(exec_prefix));
-    if (_PyStatus_EXCEPTION(status)) {
-        return status;
-    }
-
-    pathconfig->exec_prefix = _PyMem_RawWcsdup(exec_prefix);
     if (pathconfig->exec_prefix == NULL) {
-        return _PyStatus_NO_MEMORY();
+        status = calculate_reduce_exec_prefix(calculate,
+                                              exec_prefix,
+                                              Py_ARRAY_LENGTH(exec_prefix));
+        if (_PyStatus_EXCEPTION(status)) {
+            return status;
+        }
+
+        pathconfig->exec_prefix = _PyMem_RawWcsdup(exec_prefix);
+        if (pathconfig->exec_prefix == NULL) {
+            return _PyStatus_NO_MEMORY();
+        }
     }
 
     return _PyStatus_OK();
 }
 
 
+/* Calculate 'pathconfig' attributes:
+
+   - program_full_path
+   - module_search_path
+   - prefix
+   - exec_prefix
+
+   If an attribute is already set (non NULL), it is left unchanged. */
 PyStatus
 _PyPathConfig_Calculate(_PyPathConfig *pathconfig, const PyConfig *config)
 {
@@ -1258,7 +1274,7 @@ _PyPathConfig_Calculate(_PyPathConfig *pathconfig, const PyConfig *config)
         goto done;
     }
 
-    status = calculate_path_impl(config, &calculate, pathconfig);
+    status = calculate_path(&calculate, pathconfig);
     if (_PyStatus_EXCEPTION(status)) {
         goto done;
     }
