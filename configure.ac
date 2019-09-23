@@ -1787,6 +1787,26 @@ yes)
       CFLAGS_NODIST="$CFLAGS_NODIST -Werror=implicit-function-declaration"
     fi
 
+    AC_MSG_CHECKING(if we can use visibility in $CC)
+     ac_save_cc="$CC"
+     CC="$CC -fvisibility=hidden"
+     AC_CACHE_VAL(ac_cv_enable_visibility,
+       AC_COMPILE_IFELSE(
+         [
+	   AC_LANG_PROGRAM([[]], [[]])
+	 ],[
+           ac_cv_enable_visibility=yes
+	 ],[
+           ac_cv_enable_visibility=no
+	 ]))
+     CC="$ac_save_cc"
+    AC_MSG_RESULT($ac_cv_enable_visibility)
+
+    if test $ac_cv_enable_visibility = yes
+    then
+      CFLAGS_NODIST="$CFLAGS_NODIST -fvisibility=hidden"
+    fi
+
     # if using gcc on alpha, use -mieee to get (near) full IEEE 754
     # support.  Without this, treatment of subnormals doesn't follow
     # the standard.

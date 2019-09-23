@@ -671,18 +671,20 @@ extern char * _getpty(int *, int, mode_t, int);
 #       endif /* HAVE_DECLSPEC_DLL */
 #endif /* Py_ENABLE_SHARED */
 
+#include "exports.h"
+
 /* If no external linkage macros defined by now, create defaults */
 #ifndef PyAPI_FUNC
-#       define PyAPI_FUNC(RTYPE) RTYPE
+#       define PyAPI_FUNC(RTYPE) Py_EXPORTED_SYMBOL RTYPE
 #endif
 #ifndef PyAPI_DATA
-#       define PyAPI_DATA(RTYPE) extern RTYPE
+#       define PyAPI_DATA(RTYPE) extern Py_EXPORTED_SYMBOL RTYPE
 #endif
 #ifndef PyMODINIT_FUNC
 #       if defined(__cplusplus)
-#               define PyMODINIT_FUNC extern "C" PyObject*
+#               define PyMODINIT_FUNC extern "C" Py_EXPORTED_SYMBOL PyObject*
 #       else /* __cplusplus */
-#               define PyMODINIT_FUNC PyObject*
+#               define PyMODINIT_FUNC Py_EXPORTED_SYMBOL PyObject*
 #       endif /* __cplusplus */
 #endif
 

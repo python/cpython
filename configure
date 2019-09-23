@@ -7341,6 +7341,47 @@ $as_echo "$ac_cv_enable_implicit_function_declaration_error" >&6; }
       CFLAGS_NODIST="$CFLAGS_NODIST -Werror=implicit-function-declaration"
     fi
 
+    { $as_echo "$as_me:${as_lineno-$LINENO}: checking if we can use visibility in $CC" >&5
+$as_echo_n "checking if we can use visibility in $CC... " >&6; }
+     ac_save_cc="$CC"
+     CC="$CC -fvisibility=hidden"
+     if ${ac_cv_enable_visibility+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+
+int
+main ()
+{
+
+  ;
+  return 0;
+}
+
+_ACEOF
+if ac_fn_c_try_compile "$LINENO"; then :
+
+           ac_cv_enable_visibility=yes
+
+else
+
+           ac_cv_enable_visibility=no
+
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
+fi
+
+     CC="$ac_save_cc"
+    { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_enable_visibility" >&5
+$as_echo "$ac_cv_enable_visibility" >&6; }
+
+    if test $ac_cv_enable_visibility = yes
+    then
+      CFLAGS_NODIST="$CFLAGS_NODIST -fvisibility=hidden"
+    fi
+
     # if using gcc on alpha, use -mieee to get (near) full IEEE 754
     # support.  Without this, treatment of subnormals doesn't follow
     # the standard.
