@@ -1593,7 +1593,7 @@ are always available.  They are listed here in alphabetical order.
 
 .. function:: super([type[, object-or-type]])
 
-   Return a proxy object that delegates attribute accesses to a parent or sibling
+   Return a proxy object that delegates attribute access to a parent or sibling
    class of *type*.  This is useful for accessing inherited attributes that have
    been overridden in a class.
 
