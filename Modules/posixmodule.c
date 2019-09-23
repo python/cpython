@@ -6260,7 +6260,7 @@ os_sched_param(PyTypeObject *type, PyObject *args, PyObject *kwargs)
     if (!sequence) {
         return NULL;
     }
-    int result = PyArg_ParseTupleAndKeywords(args, kwargs, _format, _keywords,
+    int result = PyArg_ParseTupleAndKeywords(sequence, kwargs, _format, _keywords,
         &sched_priority);
     Py_DECREF(sequence);
     if (!result) {
@@ -12493,7 +12493,8 @@ DirEntry_dealloc(DirEntry *entry)
     Py_XDECREF(entry->path);
     Py_XDECREF(entry->stat);
     Py_XDECREF(entry->lstat);
-    tp->tp_free(entry);
+    freefunc free_func = PyType_GetSlot(tp, Py_tp_free);
+    free_func(entry);
     Py_DECREF(tp);
 }
 
@@ -13209,7 +13210,8 @@ ScandirIterator_dealloc(ScandirIterator *iterator)
     if (PyObject_CallFinalizerFromDealloc((PyObject *)iterator) < 0)
         return;
 
-    tp->tp_free((PyObject *)iterator);
+    freefunc free_func = PyType_GetSlot(tp, Py_tp_free);
+    free_func(iterator);
     Py_DECREF(tp);
 }
 
