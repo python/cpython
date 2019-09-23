@@ -2547,6 +2547,7 @@ init_dump_ascii_wstr(const wchar_t *str)
 {
     if (str == NULL) {
         PySys_WriteStderr("(not set)");
+        return;
     }
 
     PySys_WriteStderr("'");
