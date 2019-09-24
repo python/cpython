@@ -639,7 +639,7 @@ class _BaseAddress(_IPAddressBase):
         # From here on down, support for 'bnXx'
 
         import re
-        fmt_re = '^(?P<alternate>#?)(?P<grouping>_?)(?P<fmt_base>[xbnX]){1}$'
+        fmt_re = '^(?P<alternate>#?)(?P<grouping>_?)(?P<fmt_base>[xbnX])$'
         m = re.match(fmt_re, fmt)
         if not m:
             return super().__format__(fmt)
