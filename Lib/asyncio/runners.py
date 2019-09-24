@@ -9,7 +9,7 @@ from . import coroutines
 from . import events
 from . import exceptions
 from . import tasks
-
+from . import constants
 
 class _State(enum.Enum):
     CREATED = "created"
@@ -69,7 +69,8 @@ class Runner:
             loop = self._loop
             _cancel_all_tasks(loop)
             loop.run_until_complete(loop.shutdown_asyncgens())
-            loop.run_until_complete(loop.shutdown_default_executor())
+            loop.run_until_complete(
+                loop.shutdown_default_executor(constants.THREAD_JOIN_TIMEOUT))
         finally:
             if self._set_event_loop:
                 events.set_event_loop(None)
@@ -160,8 +161,8 @@ def run(main, *, debug=None):
     """Execute the coroutine and return the result.
 
     This function runs the passed coroutine, taking care of
-    managing the asyncio event loop and finalizing asynchronous
-    generators.
+    managing the asyncio event loop, finalizing asynchronous
+    generators and closing the threadpool.
 
     This function cannot be called when another asyncio event loop is
     running in the same thread.
@@ -171,6 +172,9 @@ def run(main, *, debug=None):
     This function always creates a new event loop and closes it at the end.
     It should be used as a main entry point for asyncio programs, and should
     ideally only be called once.
+
+    The threadpool is given a timeout duration of 5 minutes. If its threads
+    haven't finishing joining within that duration, the threadpool is terminated.
 
     Example:
 

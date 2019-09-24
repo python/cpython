@@ -1,0 +1,1 @@
+Add *timeout* parameter to :meth:`asyncio.loop.shutdown_default_executor`.

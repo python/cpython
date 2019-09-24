@@ -41,6 +41,10 @@ Running an asyncio Program
    the end.  It should be used as a main entry point for asyncio
    programs, and should ideally only be called once.
 
+   The threadpool is given a timeout duration of 5 minutes to join its threads.
+   If the threadpool hasn't finishing joining within that duration, a warning is
+   emitted and the threadpool is closed.
+
    Example::
 
        async def main():
