@@ -335,18 +335,13 @@ class Stats:
 
     def get_profile_dict(self, keys_filter=None):
         """
-            Returns a dict where the key is a function name and the value is a dict
-            with the following keys:
-                - ncalls
-                - tottime
-                - percall_tottime
-                - cumtime
-                - percall_cumtime
-                - file_name
-                - line_number
+        Returns a dict where the key is a function name and the value is a
+        dict with the following keys:
+            ncalls, tottime, percall_tottime, cumtime, percall_cumtime,
+            file_name, line_number
 
-            keys_filter can be optionally set to limit the key-value pairs in the
-            retrieved dict.
+        :param list keys_filter: Optional parameterto limit the keys returned
+            in the retrieved dict
         """
         pstats_dict = {}
         func_list = self.fcn_list[:] if self.fcn_list else list(self.stats.keys())
