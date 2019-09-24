@@ -3232,6 +3232,8 @@ class RunCoroutineThreadsafeTests(test_utils.TestCase):
         self.loop.set_exception_handler(callback)
 
         # Set corrupted task factory
+        self.addCleanup(self.loop.set_task_factory,
+                        self.loop.get_task_factory())
         self.loop.set_task_factory(task_factory)
 
         # Run event loop

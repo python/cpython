@@ -167,6 +167,18 @@ Running and stopping the loop
 
    .. versionadded:: 3.6
 
+.. coroutinemethod:: loop.shutdown_default_executor()
+
+   Schedule the closure of the default executor and wait for it to join all of
+   the threads in the :class:`ThreadPoolExecutor`. After calling this method, a
+   :exc:`RuntimeError` will be raised if :meth:`loop.run_in_executor` is called
+   while using the default executor.
+
+   Note that there is no need to call this function when
+   :func:`asyncio.run` is used.
+
+   .. versionadded:: 3.9
+
 
 Scheduling callbacks
 ^^^^^^^^^^^^^^^^^^^^

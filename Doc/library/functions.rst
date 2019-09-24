@@ -1274,11 +1274,12 @@ are always available.  They are listed here in alphabetical order.
    returns ``8364``.  This is the inverse of :func:`chr`.
 
 
-.. function:: pow(x, y[, z])
+.. function:: pow(base, exp[, mod])
 
-   Return *x* to the power *y*; if *z* is present, return *x* to the power *y*,
-   modulo *z* (computed more efficiently than ``pow(x, y) % z``). The two-argument
-   form ``pow(x, y)`` is equivalent to using the power operator: ``x**y``.
+   Return *base* to the power *exp*; if *mod* is present, return *base* to the
+   power *exp*, modulo *mod* (computed more efficiently than
+   ``pow(base, exp) % mod``). The two-argument form ``pow(base, exp)`` is
+   equivalent to using the power operator: ``base**exp``.
 
    The arguments must have numeric types.  With mixed operand types, the
    coercion rules for binary arithmetic operators apply.  For :class:`int`
@@ -1287,14 +1288,15 @@ are always available.  They are listed here in alphabetical order.
    converted to float and a float result is delivered.  For example, ``10**2``
    returns ``100``, but ``10**-2`` returns ``0.01``.
 
-   For :class:`int` operands *x* and *y*, if *z* is present, *z* must also be
-   of integer type and *z* must be nonzero. If *z* is present and *y* is
-   negative, *x* must be relatively prime to *z*. In that case, ``pow(inv_x,
-   -y, z)`` is returned, where *inv_x* is an inverse to *x* modulo *z*.
+   For :class:`int` operands *base* and *exp*, if *mod* is present, *mod* must
+   also be of integer type and *mod* must be nonzero. If *mod* is present and
+   *exp* is negative, *base* must be relatively prime to *mod*. In that case,
+   ``pow(inv_base, -exp, mod)`` is returned, where *inv_base* is an inverse to
+   *base* modulo *mod*.
 
    Here's an example of computing an inverse for ``38`` modulo ``97``::
 
-      >>> pow(38, -1, 97)
+      >>> pow(38, -1, mod=97)
       23
       >>> 23 * 38 % 97 == 1
       True
@@ -1303,6 +1305,10 @@ are always available.  They are listed here in alphabetical order.
       For :class:`int` operands, the three-argument form of ``pow`` now allows
       the second argument to be negative, permitting computation of modular
       inverses.
+
+   .. versionchanged:: 3.9
+      Allow keyword arguments.  Formerly, only positional arguments were
+      supported.
 
 
 .. function:: print(*objects, sep=' ', end='\\n', file=sys.stdout, flush=False)

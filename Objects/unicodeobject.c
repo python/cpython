@@ -15804,13 +15804,13 @@ error:
 
 
 static PyStatus
-init_stdio_encoding(PyInterpreterState *interp)
+init_stdio_encoding(PyThreadState *tstate)
 {
     /* Update the stdio encoding to the normalized Python codec name. */
-    PyConfig *config = &interp->config;
+    PyConfig *config = &tstate->interp->config;
     if (config_get_codec_name(&config->stdio_encoding) < 0) {
         return _PyStatus_ERR("failed to get the Python codec name "
-                            "of the stdio encoding");
+                             "of the stdio encoding");
     }
     return _PyStatus_OK();
 }
@@ -15864,15 +15864,18 @@ init_fs_codec(PyInterpreterState *interp)
 
 
 static PyStatus
-init_fs_encoding(PyInterpreterState *interp)
+init_fs_encoding(PyThreadState *tstate)
 {
+    PyInterpreterState *interp = tstate->interp;
+
     /* Update the filesystem encoding to the normalized Python codec name.
        For example, replace "ANSI_X3.4-1968" (locale encoding) with "ascii"
        (Python codec name). */
     PyConfig *config = &interp->config;
     if (config_get_codec_name(&config->filesystem_encoding) < 0) {
+        _Py_DumpPathConfig(tstate);
         return _PyStatus_ERR("failed to get the Python codec "
-                            "of the filesystem encoding");
+                             "of the filesystem encoding");
     }
 
     if (init_fs_codec(interp) < 0) {
@@ -15885,14 +15888,12 @@ init_fs_encoding(PyInterpreterState *interp)
 PyStatus
 _PyUnicode_InitEncodings(PyThreadState *tstate)
 {
-    PyInterpreterState *interp = tstate->interp;
-
-    PyStatus status = init_fs_encoding(interp);
+    PyStatus status = init_fs_encoding(tstate);
     if (_PyStatus_EXCEPTION(status)) {
         return status;
     }
 
-    return init_stdio_encoding(interp);
+    return init_stdio_encoding(tstate);
 }
 
 

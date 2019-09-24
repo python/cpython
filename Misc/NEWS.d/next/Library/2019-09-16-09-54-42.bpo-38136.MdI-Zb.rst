@@ -1,0 +1,3 @@
+Changes AsyncMock call count and await count to be two different counters.
+Now await count only counts when a coroutine has been awaited, not when it
+has been called, and vice-versa. Update the documentation around this.

@@ -149,8 +149,6 @@ extern PyStatus _PyConfig_Copy(
     PyConfig *config,
     const PyConfig *config2);
 extern PyStatus _PyConfig_InitPathConfig(PyConfig *config);
-extern PyStatus _PyConfig_SetPathConfig(
-    const PyConfig *config);
 extern void _PyConfig_Write(const PyConfig *config,
     _PyRuntimeState *runtime);
 extern PyStatus _PyConfig_SetPyArgv(

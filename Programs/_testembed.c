@@ -20,11 +20,12 @@
  * Executed via 'EmbeddingTests' in Lib/test/test_capi.py
  *********************************************************/
 
+/* Use path starting with "./" avoids a search along the PATH */
+#define PROGRAM_NAME L"./_testembed"
+
 static void _testembed_Py_Initialize(void)
 {
-    /* HACK: the "./" at front avoids a search along the PATH in
-       Modules/getpath.c */
-    Py_SetProgramName(L"./_testembed");
+    Py_SetProgramName(PROGRAM_NAME);
     Py_Initialize();
 }
 
@@ -363,8 +364,7 @@ config_set_wide_string_list(PyConfig *config, PyWideStringList *list,
 
 static void config_set_program_name(PyConfig *config)
 {
-    /* Use path starting with "./" avoids a search along the PATH */
-    const wchar_t *program_name = L"./_testembed";
+    const wchar_t *program_name = PROGRAM_NAME;
     config_set_string(config, &config->program_name, program_name);
 }
 
@@ -1263,7 +1263,7 @@ static int _audit_hook_run(const char *eventName, PyObject *args, void *userData
 static int test_audit_run_command(void)
 {
     AuditRunCommandTest test = {"cpython.run_command"};
-    wchar_t *argv[] = {L"./_testembed", L"-c", L"pass"};
+    wchar_t *argv[] = {PROGRAM_NAME, L"-c", L"pass"};
 
     Py_IgnoreEnvironmentFlag = 0;
     PySys_AddAuditHook(_audit_hook_run, (void*)&test);
@@ -1274,7 +1274,7 @@ static int test_audit_run_command(void)
 static int test_audit_run_file(void)
 {
     AuditRunCommandTest test = {"cpython.run_file"};
-    wchar_t *argv[] = {L"./_testembed", L"filename.py"};
+    wchar_t *argv[] = {PROGRAM_NAME, L"filename.py"};
 
     Py_IgnoreEnvironmentFlag = 0;
     PySys_AddAuditHook(_audit_hook_run, (void*)&test);
@@ -1312,21 +1312,21 @@ static int run_audit_run_test(int argc, wchar_t **argv, void *test)
 static int test_audit_run_interactivehook(void)
 {
     AuditRunCommandTest test = {"cpython.run_interactivehook", 10};
-    wchar_t *argv[] = {L"./_testembed"};
+    wchar_t *argv[] = {PROGRAM_NAME};
     return run_audit_run_test(Py_ARRAY_LENGTH(argv), argv, &test);
 }
 
 static int test_audit_run_startup(void)
 {
     AuditRunCommandTest test = {"cpython.run_startup", 10};
-    wchar_t *argv[] = {L"./_testembed"};
+    wchar_t *argv[] = {PROGRAM_NAME};
     return run_audit_run_test(Py_ARRAY_LENGTH(argv), argv, &test);
 }
 
 static int test_audit_run_stdin(void)
 {
     AuditRunCommandTest test = {"cpython.run_stdin"};
-    wchar_t *argv[] = {L"./_testembed"};
+    wchar_t *argv[] = {PROGRAM_NAME};
     return run_audit_run_test(Py_ARRAY_LENGTH(argv), argv, &test);
 }
 
@@ -1420,6 +1420,88 @@ static int test_init_sys_add(void)
 fail:
     PyConfig_Clear(&config);
     Py_ExitStatusException(status);
+}
+
+
+static int test_init_setpath(void)
+{
+    Py_SetProgramName(PROGRAM_NAME);
+
+    char *env = getenv("TESTPATH");
+    if (!env) {
+        fprintf(stderr, "missing TESTPATH env var\n");
+        return 1;
+    }
+    wchar_t *path = Py_DecodeLocale(env, NULL);
+    if (path == NULL) {
+        fprintf(stderr, "failed to decode TESTPATH\n");
+        return 1;
+    }
+    Py_SetPath(path);
+    PyMem_RawFree(path);
+    putenv("TESTPATH=");
+
+    Py_Initialize();
+    dump_config();
+    Py_Finalize();
+    return 0;
+}
+
+
+static int mysetenv(const char *name, const char *value)
+{
+    size_t len = strlen(name) + 1 + strlen(value) + 1;
+    char *env = PyMem_RawMalloc(len);
+    if (env == NULL) {
+        fprintf(stderr, "out of memory\n");
+        return -1;
+    }
+    strcpy(env, name);
+    strcat(env, "=");
+    strcat(env, value);
+
+    putenv(env);
+
+    /* Don't call PyMem_RawFree(env), but leak env memory block:
+       putenv() does not copy the string. */
+
+    return 0;
+}
+
+
+static int test_init_setpythonhome(void)
+{
+    char *env = getenv("TESTHOME");
+    if (!env) {
+        fprintf(stderr, "missing TESTHOME env var\n");
+        return 1;
+    }
+    wchar_t *home = Py_DecodeLocale(env, NULL);
+    if (home == NULL) {
+        fprintf(stderr, "failed to decode TESTHOME\n");
+        return 1;
+    }
+    Py_SetPythonHome(home);
+    PyMem_RawFree(home);
+    putenv("TESTHOME=");
+
+    char *path = getenv("TESTPATH");
+    if (!path) {
+        fprintf(stderr, "missing TESTPATH env var\n");
+        return 1;
+    }
+
+    if (mysetenv("PYTHONPATH", path) < 0) {
+        return 1;
+    }
+    putenv("TESTPATH=");
+
+    Py_SetProgramName(PROGRAM_NAME);
+
+    Py_Initialize();
+    dump_config();
+    Py_Finalize();
+    return 0;
 }
 
 
@@ -1559,7 +1641,10 @@ static struct TestCase TestCases[] = {
     {"test_init_run_main", test_init_run_main},
     {"test_init_main", test_init_main},
     {"test_init_sys_add", test_init_sys_add},
+    {"test_init_setpath", test_init_setpath},
+    {"test_init_setpythonhome", test_init_setpythonhome},
     {"test_run_main", test_run_main},
+
     {"test_open_code_hook", test_open_code_hook},
     {"test_audit", test_audit},
     {"test_audit_subinterpreter", test_audit_subinterpreter},

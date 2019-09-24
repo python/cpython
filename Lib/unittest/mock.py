@@ -926,13 +926,21 @@ class NonCallableMock(Base):
         If `any_order` is True then the calls can be in any order, but
         they must all appear in `mock_calls`."""
         expected = [self._call_matcher(c) for c in calls]
-        cause = expected if isinstance(expected, Exception) else None
+        cause = next((e for e in expected if isinstance(e, Exception)), None)
         all_calls = _CallList(self._call_matcher(c) for c in self.mock_calls)
         if not any_order:
             if expected not in all_calls:
+                if cause is None:
+                    problem = 'Calls not found.'
+                else:
+                    problem = ('Error processing expected calls.\n'
+                               'Errors: {}').format(
+                                   [e if isinstance(e, Exception) else None
+                                    for e in expected])
                 raise AssertionError(
-                    'Calls not found.\nExpected: %r%s'
-                    % (_CallList(calls), self._calls_repr(prefix="Actual"))
+                    f'{problem}\n'
+                    f'Expected: {_CallList(calls)}\n'
+                    f'Actual: {self._calls_repr(prefix="Actual")}'
                 ) from cause
             return
 
@@ -983,9 +991,13 @@ class NonCallableMock(Base):
         _type = type(self)
         if issubclass(_type, MagicMock) and _new_name in _async_method_magics:
             klass = AsyncMock
-        if issubclass(_type, AsyncMockMixin):
+        elif _new_name  in _sync_async_magics:
+            # Special case these ones b/c users will assume they are async,
+            # but they are actually sync (ie. __aiter__)
             klass = MagicMock
-        if not issubclass(_type, CallableMixin):
+        elif issubclass(_type, AsyncMockMixin):
+            klass = AsyncMock
+        elif not issubclass(_type, CallableMixin):
             if issubclass(_type, NonCallableMagicMock):
                 klass = MagicMock
             elif issubclass(_type, NonCallableMock) :
@@ -1072,14 +1084,20 @@ class CallableMixin(Base):
         # can't use self in-case a function / method we are mocking uses self
         # in the signature
         self._mock_check_sig(*args, **kwargs)
+        self._increment_mock_call(*args, **kwargs)
         return self._mock_call(*args, **kwargs)
 
 
     def _mock_call(self, /, *args, **kwargs):
+        return self._execute_mock_call(*args, **kwargs)
+
+    def _increment_mock_call(self, /, *args, **kwargs):
         self.called = True
         self.call_count += 1
 
         # handle call_args
+        # needs to be set here so assertions on call arguments pass before
+        # execution in the case of awaited calls
         _call = _Call((args, kwargs), two=True)
         self.call_args = _call
         self.call_args_list.append(_call)
@@ -1118,6 +1136,10 @@ class CallableMixin(Base):
 
             # follow the parental chain:
             _new_parent = _new_parent._mock_new_parent
+
+    def _execute_mock_call(self, /, *args, **kwargs):
+        # seperate from _increment_mock_call so that awaited functions are
+        # executed seperately from their call
 
         effect = self.side_effect
         if effect is not None:
@@ -1881,7 +1903,7 @@ _non_defaults = {
     '__reduce__', '__reduce_ex__', '__getinitargs__', '__getnewargs__',
     '__getstate__', '__setstate__', '__getformat__', '__setformat__',
     '__repr__', '__dir__', '__subclasses__', '__format__',
-    '__getnewargs_ex__', '__aenter__', '__aexit__', '__anext__', '__aiter__',
+    '__getnewargs_ex__',
 }
 
 
@@ -1900,10 +1922,12 @@ _magics = {
 
 # Magic methods used for async `with` statements
 _async_method_magics = {"__aenter__", "__aexit__", "__anext__"}
-# `__aiter__` is a plain function but used with async calls
-_async_magics = _async_method_magics | {"__aiter__"}
+# Magic methods that are only used with async calls but are synchronous functions themselves
+_sync_async_magics = {"__aiter__"}
+_async_magics = _async_method_magics | _sync_async_magics
 
-_all_magics = _magics | _non_defaults
+_all_sync_magics = _magics | _non_defaults
+_all_magics = _all_sync_magics | _async_magics
 
 _unsupported_magics = {
     '__getattr__', '__setattr__',
@@ -2228,12 +2252,20 @@ class AsyncMockMixin(Base):
         they must all appear in :attr:`await_args_list`.
         """
         expected = [self._call_matcher(c) for c in calls]
-        cause = expected if isinstance(expected, Exception) else None
+        cause = next((e for e in expected if isinstance(e, Exception)), None)
         all_awaits = _CallList(self._call_matcher(c) for c in self.await_args_list)
         if not any_order:
             if expected not in all_awaits:
+                if cause is None:
+                    problem = 'Awaits not found.'
+                else:
+                    problem = ('Error processing expected awaits.\n'
+                               'Errors: {}').format(
+                                   [e if isinstance(e, Exception) else None
+                                    for e in expected])
                 raise AssertionError(
-                    f'Awaits not found.\nExpected: {_CallList(calls)}\n'
+                    f'{problem}\n'
+                    f'Expected: {_CallList(calls)}\n'
                     f'Actual: {self.await_args_list}'
                 ) from cause
             return

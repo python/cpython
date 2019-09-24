@@ -216,6 +216,9 @@ class BaseEventLoopTests(test_utils.TestCase):
                 raise NotImplementedError(
                     'cannot submit into a dummy executor')
 
+        self.loop._process_events = mock.Mock()
+        self.loop._write_to_self = mock.Mock()
+
         executor = DummyExecutor()
         self.loop.set_default_executor(executor)
         self.assertIs(executor, self.loop._default_executor)
@@ -225,6 +228,9 @@ class BaseEventLoopTests(test_utils.TestCase):
 
         with self.assertWarns(DeprecationWarning):
             self.loop.set_default_executor(executor)
+
+        # Avoid cleaning up the executor mock
+        self.loop._default_executor = None
 
     def test_call_soon(self):
         def cb():
