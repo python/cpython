@@ -66,6 +66,8 @@ _HAS_IPv6 = hasattr(socket, 'AF_INET6')
 # Maximum timeout passed to select to avoid OS limitations
 MAXIMUM_SELECT_TIMEOUT = 24 * 3600
 
+# Default timeout for joining each thread in `shutdown_default_executor()`
+THREAD_JOIN_TIMEOUT = 300
 
 def _format_handle(handle):
     cb = handle._callback
