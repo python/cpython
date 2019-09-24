@@ -1594,7 +1594,7 @@ are always available.  They are listed here in alphabetical order.
 .. function:: super([type[, object-or-type]])
 
    Return a proxy object that delegates attribute access to a parent or sibling
-   class of *type*.  This is useful for accessing inherited methods that have
+   class of *type*.  This is commonly used for accessing inherited methods that have
    been overridden in a class.
 
    The *object-or-type* determines the :term:`method resolution order`
