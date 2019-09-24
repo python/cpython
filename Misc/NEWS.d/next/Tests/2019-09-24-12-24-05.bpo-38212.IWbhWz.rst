@@ -1,0 +1,2 @@
+Multiprocessing tests: increase test_queue_feeder_donot_stop_onexc() timeout
+from 1 to 60 seconds.
