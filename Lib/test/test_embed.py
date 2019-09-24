@@ -470,7 +470,8 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
                 xoptions[opt] = True
         return xoptions
 
-    def _get_expected_config(self, env):
+    def _get_expected_config_impl(self):
+        env = remove_python_envvars()
         code = textwrap.dedent('''
             import json
             import sys
@@ -499,13 +500,19 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
         except json.JSONDecodeError:
             self.fail(f"fail to decode stdout: {stdout!r}")
 
+    def _get_expected_config(self):
+        cls = InitConfigTests
+        if cls.EXPECTED_CONFIG is None:
+            cls.EXPECTED_CONFIG = self._get_expected_config_impl()
+
+        # get a copy
+        return {key: dict(value)
+                for key, value in cls.EXPECTED_CONFIG.items()}
+
     def get_expected_config(self, expected_preconfig, expected, env, api,
                             modify_path_cb=None):
         cls = self.__class__
-        if cls.EXPECTED_CONFIG is None:
-            cls.EXPECTED_CONFIG = self._get_expected_config(env)
-        configs = {key: dict(value)
-                   for key, value in self.EXPECTED_CONFIG.items()}
+        configs = self._get_expected_config()
 
         pre_config = configs['pre_config']
         for key, value in expected_preconfig.items():
@@ -553,9 +560,10 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
             if value is self.GET_DEFAULT_CONFIG:
                 expected[key] = config[key]
 
-        prepend_path = expected['pythonpath_env']
-        if prepend_path is not None:
-            expected['module_search_paths'] = [prepend_path, *expected['module_search_paths']]
+        pythonpath_env = expected['pythonpath_env']
+        if pythonpath_env is not None:
+            paths = pythonpath_env.split(os.path.pathsep)
+            expected['module_search_paths'] = [*paths, *expected['module_search_paths']]
         if modify_path_cb is not None:
             expected['module_search_paths'] = expected['module_search_paths'].copy()
             modify_path_cb(expected['module_search_paths'])
@@ -604,8 +612,11 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
 
     def check_all_configs(self, testname, expected_config=None,
                      expected_preconfig=None, modify_path_cb=None, stderr=None,
-                     *, api):
-        env = remove_python_envvars()
+                     *, api, env=None, ignore_stderr=False):
+        new_env = remove_python_envvars()
+        if env is not None:
+            new_env.update(env)
+        env = new_env
 
         if api == API_ISOLATED:
             default_preconfig = self.PRE_CONFIG_ISOLATED
@@ -634,7 +645,7 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
         out, err = self.run_embedded_interpreter(testname, env=env)
         if stderr is None and not expected_config['verbose']:
             stderr = ""
-        if stderr is not None:
+        if stderr is not None and not ignore_stderr:
             self.assertEqual(err.rstrip(), stderr)
         try:
             configs = json.loads(out)
@@ -965,6 +976,62 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
         }
         self.check_all_configs("test_init_dont_parse_argv", config, pre_config,
                                api=API_PYTHON)
+
+    def test_init_setpath(self):
+        # Test Py_SetProgramName() + Py_SetPath()
+        config = self._get_expected_config()
+        paths = config['config']['module_search_paths']
+
+        config = {
+            'module_search_paths': paths,
+            'prefix': '',
+            'base_prefix': '',
+            'exec_prefix': '',
+            'base_exec_prefix': '',
+        }
+        env = {'TESTPATH': os.path.pathsep.join(paths)}
+        self.check_all_configs("test_init_setpath", config,
+                               api=API_COMPAT, env=env,
+                               ignore_stderr=True)
+
+    def test_init_setpythonhome(self):
+        # Test Py_SetPythonHome(home) + PYTHONPATH env var
+        # + Py_SetProgramName()
+        config = self._get_expected_config()
+        paths = config['config']['module_search_paths']
+        paths_str = os.path.pathsep.join(paths)
+
+        for path in paths:
+            if not os.path.isdir(path):
+                continue
+            if os.path.exists(os.path.join(path, 'os.py')):
+                home = os.path.dirname(path)
+                break
+        else:
+            self.fail(f"Unable to find home in {paths!r}")
+
+        prefix = exec_prefix = home
+        ver = sys.version_info
+        if MS_WINDOWS:
+            expected_paths = paths
+        else:
+            expected_paths = [
+                os.path.join(prefix, 'lib', f'python{ver.major}{ver.minor}.zip'),
+                os.path.join(home, 'lib', f'python{ver.major}.{ver.minor}'),
+                os.path.join(home, 'lib', f'python{ver.major}.{ver.minor}/lib-dynload')]
+
+        config = {
+            'home': home,
+            'module_search_paths': expected_paths,
+            'prefix': prefix,
+            'base_prefix': prefix,
+            'exec_prefix': exec_prefix,
+            'base_exec_prefix': exec_prefix,
+            'pythonpath_env': paths_str,
+        }
+        env = {'TESTHOME': home, 'TESTPATH': paths_str}
+        self.check_all_configs("test_init_setpythonhome", config,
+                               api=API_COMPAT, env=env)
 
 
 class AuditingTests(EmbeddingTestsMixin, unittest.TestCase):

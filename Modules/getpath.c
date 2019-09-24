@@ -1012,12 +1012,12 @@ calculate_zip_path(PyCalculatePath *calculate, const wchar_t *prefix,
                    wchar_t *zip_path, size_t zip_path_len)
 {
     PyStatus status;
-    if (safe_wcscpy(zip_path, prefix, zip_path_len) < 0) {
-        return PATHLEN_ERR();
-    }
 
     if (calculate->prefix_found > 0) {
         /* Use the reduced prefix returned by Py_GetPrefix() */
+        if (safe_wcscpy(zip_path, prefix, zip_path_len) < 0) {
+            return PATHLEN_ERR();
+        }
         reduce(zip_path);
         reduce(zip_path);
     }
