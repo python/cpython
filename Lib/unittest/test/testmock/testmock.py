@@ -850,6 +850,7 @@ class MockTest(unittest.TestCase):
     def test_setting_call(self):
         mock = Mock()
         def __call__(self, a):
+            self._increment_mock_call(a)
             return self._mock_call(a)
 
         type(mock).__call__ = __call__
@@ -2025,7 +2026,7 @@ class MockTest(unittest.TestCase):
             )
 
             mocks = [
-                Mock, MagicMock, NonCallableMock, NonCallableMagicMock
+                Mock, MagicMock, NonCallableMock, NonCallableMagicMock, AsyncMock
             ]
 
             for mock in mocks:
