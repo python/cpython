@@ -48,7 +48,7 @@ def _sphinx_version():
 
 class EditorWindow(object):
     from idlelib.percolator import Percolator
-    from idlelib.colorizer import ColorDelegator, color_config
+#    from idlelib.colorizer import ColorDelegator, color_config
     from idlelib.undo import UndoDelegator
     from idlelib.iomenu import IOBinding, encoding
     from idlelib import mainmenu
@@ -775,6 +775,7 @@ class EditorWindow(object):
         self.ResetColorizer()
 
     def _addcolorizer(self):
+        return
         if self.color:
             return
         if self.ispythonsource(self.io.filename):
@@ -795,6 +796,7 @@ class EditorWindow(object):
     def ResetColorizer(self):
         "Update the color theme"
         # Called from self.filename_change_hook and from configdialog.py
+        return
         self._rmcolorizer()
         self._addcolorizer()
         EditorWindow.color_config(self.text)
