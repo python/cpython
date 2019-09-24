@@ -5,6 +5,10 @@ from . import events
 from . import tasks
 
 
+# Default timeout for joining each thread in `shutdown_default_executor()`
+THREAD_JOIN_TIMEOUT = 300
+
+
 def run(main, *, debug=False):
     """Run a coroutine.
 
