@@ -1652,6 +1652,18 @@ class TestCase(unittest.TestCase):
         t = astuple(c, tuple_factory=list)
         self.assertEqual(t, ['outer', T(1, ['inner', T(11, 12, 13)], 2)])
 
+    def test_helper_asdict_defaultdict(self):
+        @dataclass
+        class C:
+            d: dict
+
+        from collections import defaultdict
+        c = C(defaultdict(int))
+        self.assertEqual(asdict(c), {
+            'd': defaultdict(int)
+        })
+
+
     def test_dynamic_class_creation(self):
         cls_dict = {'__annotations__': {'x': int, 'y': int},
                     }
