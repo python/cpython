@@ -485,9 +485,11 @@ since multiple such modules can be created from a single definition.
 
    Only effective on modules created using single-phase initialization.
 
-   The function is intended for implementing alternative import mechanisms.
-   Python calls PyState_AddModule automatically when importing a module; it
-   is generally not necessary to call it at module initialization time.
+   Python calls ``PyState_AddModule`` automatically after importing a module,
+   so it is unnecessary (but harmless) to call it from module initialization
+   code, unless that code itself needs the module to be registered.
+   The function is mainly intended for implementing alternative import
+   mechanisms.
 
    Return 0 on success or -1 on failure.
 
