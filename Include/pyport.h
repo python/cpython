@@ -481,7 +481,7 @@ extern "C" {
         } \
     } while(0)
 
-/* Py_SET_ERANGE_ON_OVERFLOW(x)
+/* Py_SET_ERANGE_IF_OVERFLOW(x)
  * An alias of Py_SET_ERRNO_ON_MATH_ERROR for backward-compatibility.
  */
 #define Py_SET_ERANGE_IF_OVERFLOW(X) Py_SET_ERRNO_ON_MATH_ERROR(X)
