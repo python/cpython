@@ -1987,6 +1987,7 @@ class MagicProxy(object):
         return self.create_mock()
 
 
+
 class _ANY(object):
     "A helper object that compares equal to everything."
 
