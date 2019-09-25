@@ -344,6 +344,9 @@ PyCStructUnionType_update_stgdict(PyObject *type, PyObject *fields, int isStruct
     int pack = 0;
     Py_ssize_t ffi_ofs;
     int big_endian;
+#if defined(X86_64)
+    int arrays_seen = 0;
+#endif
 
     /* HACK Alert: I cannot be bothered to fix ctypes.com, so there has to
        be a way to use the old, broken sematics: _fields_ are not extended
@@ -468,6 +471,10 @@ PyCStructUnionType_update_stgdict(PyObject *type, PyObject *fields, int isStruct
             Py_XDECREF(pair);
             return -1;
         }
+#if defined(X86_64)
+        if (PyCArrayTypeObject_Check(desc))
+            arrays_seen = 1;
+#endif
         dict = PyType_stgdict(desc);
         if (dict == NULL) {
             Py_DECREF(pair);
@@ -607,6 +614,106 @@ PyCStructUnionType_update_stgdict(PyObject *type, PyObject *fields, int isStruct
     stgdict->size = size;
     stgdict->align = total_align;
     stgdict->length = len;      /* ADD ffi_ofs? */
+
+#if defined(X86_64)
+
+#define MAX_ELEMENTS 16
+
+    if (arrays_seen && (size <= 16)) {
+        /*
+         * See bpo-22273. Arrays are normally treated as pointers, which is
+         * fine when an array name is being passed as parameter, but not when
+         * passing structures by value that contain arrays. On 64-bit Linux,
+         * small structures passed by value are passed in registers, and in
+         * order to do this, libffi needs to know the true type of the array
+         * members of structs. Treating them as pointers breaks things.
+         *
+         * By small structures, we mean ones that are 16 bytes or less. In that
+         * case, there can't be more than 16 elements after unrolling arrays,
+         * as we (will) disallow bitfields. So we can collect the true ffi_type
+         * values in a fixed-size local array on the stack and, if any arrays
+         * were seen, replace the ffi_type_pointer.elements with a more
+         * accurate set, to allow libffi to marshal them into registers
+         * correctly. It means one more loop over the fields, but if we got
+         * here, the structure is small, so there aren't too many of those.
+         */
+        ffi_type *actual_types[MAX_ELEMENTS + 1];
+        int actual_type_index = 0;
+
+        memset(actual_types, 0, sizeof(actual_types));
+        for (i = 0; i < len; ++i) {
+            PyObject *name, *desc;
+            PyObject *pair = PySequence_GetItem(fields, i);
+            StgDictObject *dict;
+            int bitsize = 0;
+
+            if (pair == NULL) {
+                return -1;
+            }
+            if (!PyArg_ParseTuple(pair, "UO|i", &name, &desc, &bitsize)) {
+                PyErr_SetString(PyExc_TypeError,
+                                "'_fields_' must be a sequence of (name, C type) pairs");
+                Py_XDECREF(pair);
+                return -1;
+            }
+            dict = PyType_stgdict(desc);
+            if (dict == NULL) {
+                Py_DECREF(pair);
+                PyErr_Format(PyExc_TypeError,
+                             "second item in _fields_ tuple (index %zd) must be a C type",
+                             i);
+                return -1;
+            }
+            if (!PyCArrayTypeObject_Check(desc)) {
+                /* Not an array. Just copy over the element ffi_type. */
+                actual_types[actual_type_index++] = &dict->ffi_type_pointer;
+                assert(actual_type_index <= MAX_ELEMENTS);
+            }
+            else {
+                int length = dict->length;
+                StgDictObject *edict;
+
+                edict = PyType_stgdict(dict->proto);
+                if (edict == NULL) {
+                    Py_DECREF(pair);
+                    PyErr_Format(PyExc_TypeError,
+                                 "second item in _fields_ tuple (index %zd) must be a C type",
+                                 i);
+                    return -1;
+                }
+                /* Copy over the element's type, length times. */
+                while (length > 0) {
+                    actual_types[actual_type_index++] = &edict->ffi_type_pointer;
+                    assert(actual_type_index <= MAX_ELEMENTS);
+                    length--;
+                }
+            }
+            Py_DECREF(pair);
+        }
+
+        actual_types[actual_type_index++] = NULL;
+        /*
+         * Replace the old elements with the new, taking into account
+         * base class elements where necessary.
+         */
+        assert(stgdict->ffi_type_pointer.elements);
+        PyMem_Free(stgdict->ffi_type_pointer.elements);
+        stgdict->ffi_type_pointer.elements = PyMem_New(ffi_type *,
+                                                       ffi_ofs + actual_type_index);
+        if (stgdict->ffi_type_pointer.elements == NULL) {
+            PyErr_NoMemory();
+            return -1;
+        }
+        if (ffi_ofs) {
+            memcpy(stgdict->ffi_type_pointer.elements,
+                   basedict->ffi_type_pointer.elements,
+                   ffi_ofs * sizeof(ffi_type *));
+
+        }
+        memcpy(&stgdict->ffi_type_pointer.elements[ffi_ofs], actual_types,
+               actual_type_index * sizeof(ffi_type *));
+    }
+#endif
 
     /* We did check that this flag was NOT set above, it must not
        have been set until now. */
