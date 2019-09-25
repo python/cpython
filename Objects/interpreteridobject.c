@@ -35,51 +35,44 @@ newinterpid(PyTypeObject *cls, int64_t id, int force)
     return self;
 }
 
+static int
+interp_id_converter(PyObject *arg, void *ptr)
+{
+    int64_t id;
+    if (PyObject_TypeCheck(arg, &_PyInterpreterID_Type)) {
+        id = ((interpid *)arg)->id;
+    }
+    else if (PyIndex_Check(arg)) {
+        id = PyLong_AsLongLong(arg);
+        if (id == -1 && PyErr_Occurred()) {
+            return 0;
+        }
+        if (id < 0) {
+            PyErr_Format(PyExc_ValueError,
+                         "interpreter ID must be a non-negative int, got %R", arg);
+            return 0;
+        }
+    }
+    else {
+        PyErr_Format(PyExc_TypeError,
+                     "interpreter ID must be an int, got %.100s",
+                     arg->ob_type->tp_name);
+        return 0;
+    }
+    *(int64_t *)ptr = id;
+    return 1;
+}
+
 static PyObject *
 interpid_new(PyTypeObject *cls, PyObject *args, PyObject *kwds)
 {
     static char *kwlist[] = {"id", "force", NULL};
-    PyObject *idobj;
+    int64_t id;
     int force = 0;
     if (!PyArg_ParseTupleAndKeywords(args, kwds,
-                                     "O|$p:InterpreterID.__init__", kwlist,
-                                     &idobj, &force)) {
+                                     "O&|$p:InterpreterID.__init__", kwlist,
+                                     interp_id_converter, &id, &force)) {
         return NULL;
-    }
-
-    // Coerce and check the ID.
-    int64_t id;
-    if (PyObject_TypeCheck(idobj, &_PyInterpreterID_Type)) {
-        id = ((interpid *)idobj)->id;
-    }
-    else {
-        PyObject *pyid;
-        if (PyIndex_Check(idobj)) {
-            pyid = idobj;
-            Py_INCREF(pyid);
-        }
-        else if (PyUnicode_Check(idobj)) {
-            pyid = PyNumber_Long(idobj);
-            if (pyid == NULL) {
-                return NULL;
-            }
-        }
-        else {
-            PyErr_Format(PyExc_TypeError,
-                         "interpreter ID must be an int, got %.100s",
-                         idobj->ob_type->tp_name);
-            return NULL;
-        }
-        id = PyLong_AsLongLong(pyid);
-        Py_DECREF(pyid);
-        if (id == -1 && PyErr_Occurred()) {
-            return NULL;
-        }
-        if (id < 0) {
-            PyErr_Format(PyExc_ValueError,
-                         "interpreter ID must be a non-negative int, got %R", idobj);
-            return NULL;
-        }
     }
 
     return (PyObject *)newinterpid(cls, id, force);
@@ -287,19 +280,7 @@ PyInterpreterState *
 _PyInterpreterID_LookUp(PyObject *requested_id)
 {
     int64_t id;
-    if (PyObject_TypeCheck(requested_id, &_PyInterpreterID_Type)) {
-        id = ((interpid *)requested_id)->id;
-    }
-    else if (PyIndex_Check(requested_id)) {
-        id = PyLong_AsLongLong(requested_id);
-        if (id == -1 && PyErr_Occurred() != NULL) {
-            return NULL;
-        }
-        assert(id <= INT64_MAX);
-    }
-    else {
-        PyErr_Format(PyExc_TypeError, "interpreter ID must be an int, got %.100s",
-                     requested_id->ob_type->tp_name);
+    if (!interp_id_converter(requested_id, &id)) {
         return NULL;
     }
     return _PyInterpreterState_LookUpID(id);
