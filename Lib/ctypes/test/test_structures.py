@@ -480,7 +480,7 @@ class StructureTestCase(unittest.TestCase):
         self.assertEqual(s.first, got.first)
         self.assertEqual(s.second, got.second)
 
-    @unittest.skipIf(MACHINE in ('armv7l', 'ppc64'),
+    @unittest.skipIf(MACHINE.startswith(('arm', 'ppc')),
                      'Test temporarily disabled on this architecture')
     def test_array_in_struct(self):
         # See bpo-22273
