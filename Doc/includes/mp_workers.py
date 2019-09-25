@@ -8,7 +8,8 @@ from multiprocessing import Process, Queue, current_process, freeze_support
 #
 
 def worker(input, output):
-    for func, args in iter(input.get, 'STOP'):
+    while True:
+        func,args=input.get()
         result = calculate(func, args)
         output.put(result)
 
@@ -51,8 +52,11 @@ def test():
         task_queue.put(task)
 
     # Start worker processes
+    processes=[]
     for i in range(NUMBER_OF_PROCESSES):
-        Process(target=worker, args=(task_queue, done_queue)).start()
+        p=Process(target=worker, args=(task_queue, done_queue))
+        p.start()
+        processes.append(p)
 
     # Get and print results
     print('Unordered results:')
@@ -68,8 +72,9 @@ def test():
         print('\t', done_queue.get())
 
     # Tell child processes to stop
-    for i in range(NUMBER_OF_PROCESSES):
-        task_queue.put('STOP')
+    for p in processes:
+        p.terminate()
+        #task_queue.put('STOP')
 
 
 if __name__ == '__main__':
