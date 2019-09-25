@@ -21,9 +21,10 @@ def run(main, *, debug=False):
     It should be used as a main entry point for asyncio programs, and should
     ideally only be called once.
 
-    Return a result of *coro* execution, or raise a RuntimeError
-    if `asyncio.run()`is called from a running event loop, or a ValueError
-    if `main` is not a courutine.
+    Within the new event loop, *coro* is executed, returning the result. If
+    ``asyncio.run()`` is called within a running event loop, a
+    :exc:`RuntimeError` is raised. If *coro* is not a :term:`coroutine`, a
+    :exc:`ValueError` is raised.
 
     Example:
 
