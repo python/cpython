@@ -225,6 +225,18 @@ Running an asyncio Program
     the end.  It should be used as a main entry point for asyncio
     programs, and should ideally only be called once.
 
+    Return a result of *coro* execution, or raise a :exc:`RuntimeError`
+    if ``asyncio.run()`` is called from a running event loop, or a
+    :exc:`ValueError` if *coro* is not a courutine.
+
+    Example::
+
+        async def main():
+            await asyncio.sleep(1)
+            print('hello')
+
+        asyncio.run(main())
+
     .. versionadded:: 3.7
        **Important:** this function has been added to asyncio in
        Python 3.7 on a :term:`provisional basis <provisional api>`.
