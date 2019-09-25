@@ -13,8 +13,8 @@ def run(main, *, debug=False):
     """Run a coroutine.
 
     This function runs the passed coroutine, taking care of
-    managing the asyncio event loop and finalizing asynchronous
-    generators.
+    managing the asyncio event loop, finalizing asynchronous
+    generators, and closing the threadpool.
 
     This function cannot be called when another asyncio event loop is
     running in the same thread.
