@@ -1,5 +1,6 @@
 import asyncio
 import inspect
+import re
 import unittest
 
 from unittest.mock import (call, AsyncMock, patch, MagicMock, create_autospec,
@@ -698,3 +699,30 @@ class AsyncMockAssert(unittest.TestCase):
         asyncio.run(self._runnable_test())
         with self.assertRaises(AssertionError):
             self.mock.assert_not_awaited()
+
+    def test_assert_has_awaits_not_matching_spec_error(self):
+        async def f(x=None): pass
+
+        self.mock = AsyncMock(spec=f)
+        asyncio.run(self._runnable_test(1))
+
+        with self.assertRaisesRegex(
+                AssertionError,
+                '^{}$'.format(
+                    re.escape('Awaits not found.\n'
+                              'Expected: [call()]\n'
+                              'Actual: [call(1)]'))) as cm:
+            self.mock.assert_has_awaits([call()])
+        self.assertIsNone(cm.exception.__cause__)
+
+        with self.assertRaisesRegex(
+                AssertionError,
+                '^{}$'.format(
+                    re.escape(
+                        'Error processing expected awaits.\n'
+                        "Errors: [None, TypeError('too many positional "
+                        "arguments')]\n"
+                        'Expected: [call(), call(1, 2)]\n'
+                        'Actual: [call(1)]'))) as cm:
+            self.mock.assert_has_awaits([call(), call(1, 2)])
+        self.assertIsInstance(cm.exception.__cause__, TypeError)
