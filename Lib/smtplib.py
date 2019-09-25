@@ -867,20 +867,20 @@ class SMTP:
             else:
                 self._rset()
             raise SMTPSenderRefused(code, resp, from_addr)
-        senderrs = {}
+        senders = {}
         if isinstance(to_addrs, str):
             to_addrs = [to_addrs]
         for each in to_addrs:
             (code, resp) = self.rcpt(each, rcpt_options)
             if (code != 250) and (code != 251):
-                senderrs[each] = (code, resp)
+                senders[each] = (code, resp)
             if code == 421:
                 self.close()
-                raise SMTPRecipientsRefused(senderrs)
-        if len(senderrs) == len(to_addrs):
+                raise SMTPRecipientsRefused(senders)
+        if len(senders) == len(to_addrs):
             # the server refused all our recipients
             self._rset()
-            raise SMTPRecipientsRefused(senderrs)
+            raise SMTPRecipientsRefused(senders)
         (code, resp) = self.data(msg)
         if code != 250:
             if code == 421:
@@ -889,7 +889,7 @@ class SMTP:
                 self._rset()
             raise SMTPDataError(code, resp)
         #if we got here then somebody got our mail
-        return senderrs
+        return senders
 
     def send_message(self, msg, from_addr=None, to_addrs=None,
                      mail_options=(), rcpt_options=()):
