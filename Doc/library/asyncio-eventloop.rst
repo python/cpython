@@ -174,7 +174,7 @@ Running and stopping the loop
    :exc:`RuntimeError` will be raised if :meth:`loop.run_in_executor` is called
    while using the default executor.
 
-   The *timeout* parameter specifies the amount of time each thread will be 
+   The *timeout* parameter specifies the amount of time each thread will be
    given to finish joining. The default value is ``None``, which means that each
    thread will be given an indefinite amount of time to join.
 
