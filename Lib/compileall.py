@@ -364,6 +364,11 @@ def main():
     if args.opt_levels is None:
         args.opt_levels = [-1]
 
+    if args.ddir is not None and (
+        args.stripdir is not None or args.prependdir is not None
+    ):
+        parser.error("-d cannot be used in combination with -s or -p")
+
     # if flist is provided then load it
     if args.flist:
         try:

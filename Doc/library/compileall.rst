@@ -57,7 +57,7 @@ compile Python sources.
 
    Remove (``-s``) or append (``-p``) the given prefix of paths
    recorded in the ``.pyc`` files.
-   Raises :exc:`ValueError` if combined with ``-d``.
+   Cannot be combined with ``-d``.
 
 .. cmdoption:: -x regex
 
@@ -126,7 +126,7 @@ compile Python sources.
 
 .. versionchanged:: 3.9
    Added the ``-s``, ``-p``, ``-e`` options.
-   Raised the default default recursion limit from 10 to
+   Raised the default recursion limit from 10 to
    :py:func:`sys.getrecursionlimit()`.
    Added the possibility to specify the ``-o`` option multiple times.
 
