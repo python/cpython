@@ -652,7 +652,7 @@ PyCStructUnionType_update_stgdict(PyObject *type, PyObject *fields, int isStruct
 
 #define MAX_ELEMENTS 16
 
-    if (arrays_seen && (size <= 16)) {
+    if (arrays_seen && (size <= MAX_ELEMENTS)) {
         /*
          * See bpo-22273. Arrays are normally treated as pointers, which is
          * fine when an array name is being passed as parameter, but not when

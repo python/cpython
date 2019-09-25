@@ -1,9 +1,12 @@
+import platform
 import unittest
 from ctypes import *
 from ctypes.test import need_symbol
 from struct import calcsize
 import _ctypes_test
 from test import support
+
+MACHINE = platform.machine()
 
 class SubclassesTest(unittest.TestCase):
     def test_subclass(self):
@@ -477,6 +480,8 @@ class StructureTestCase(unittest.TestCase):
         self.assertEqual(s.first, got.first)
         self.assertEqual(s.second, got.second)
 
+    @unittest.skipIf(MACHINE in ('armv7l', 'ppc64'),
+                     'Test temporarily disabled on this architecture')
     def test_array_in_struct(self):
         # See bpo-22273
 
