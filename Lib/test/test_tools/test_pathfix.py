@@ -3,7 +3,11 @@ import subprocess
 import sys
 import unittest
 from test import support
-from test.test_tools import import_tool, scriptsdir
+from test.test_tools import import_tool, scriptsdir, skip_if_missing
+
+
+# need Tools/script/ directory: skip if run on Python installed on the system
+skip_if_missing()
 
 
 class TestPathfixFunctional(unittest.TestCase):
