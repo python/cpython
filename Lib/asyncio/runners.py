@@ -26,7 +26,7 @@ def run(main, *, debug=False):
     ideally only be called once.
 
     Each thread within the threadpool is given a timeout duration of 5
-    minutes. If the thread hasn't finishing joining  within that duration,
+    minutes. If the thread hasn't finishing joining within that duration,
     the lock is released and the thread is terminated.
 
     Example:
