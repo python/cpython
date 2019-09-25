@@ -50,7 +50,7 @@ def _debug(*args):
         logger = logging.getLogger("http.cookiejar")
     return logger.debug(*args)
 
-
+HTTPONLY_ATTR = "HTTPOnly"
 DEFAULT_HTTP_PORT = str(http.client.HTTP_PORT)
 MISSING_FILENAME_TEXT = ("a filename was not supplied (nor was the CookieJar "
                          "instance initialised with one)")
@@ -2004,6 +2004,7 @@ class MozillaCookieJar(FileCookieJar):
     header by default (Mozilla can cope with that).
 
     """
+    httponly_prefix = "#HttpOnly_"
     magic_re = re.compile("#( Netscape)? HTTP Cookie File")
     header = """\
 # Netscape HTTP Cookie File
@@ -2024,7 +2025,14 @@ class MozillaCookieJar(FileCookieJar):
         try:
             while 1:
                 line = f.readline()
+                rest = {}
+
                 if line == "": break
+
+                # detect httponly flag if present
+                if line.startswith(self.httponly_prefix):
+                    rest[HTTPONLY_ATTR] = ""
+                    line = line[len(self.httponly_prefix):]
 
                 # last field may be absent, so keep any trailing tab
                 if line.endswith("\n"): line = line[:-1]
@@ -2063,7 +2071,7 @@ class MozillaCookieJar(FileCookieJar):
                            discard,
                            None,
                            None,
-                           {})
+                           rest)
                 if not ignore_discard and c.discard:
                     continue
                 if not ignore_expires and c.is_expired(now):
@@ -2086,13 +2094,14 @@ class MozillaCookieJar(FileCookieJar):
             f.write(self.header)
             now = time.time()
             for cookie in self:
+                domain = cookie.domain
                 if not ignore_discard and cookie.discard:
                     continue
                 if not ignore_expires and cookie.is_expired(now):
                     continue
                 if cookie.secure: secure = "TRUE"
                 else: secure = "FALSE"
-                if cookie.domain.startswith("."): initial_dot = "TRUE"
+                if domain.startswith("."): initial_dot = "TRUE"
                 else: initial_dot = "FALSE"
                 if cookie.expires is not None:
                     expires = str(cookie.expires)
@@ -2107,7 +2116,9 @@ class MozillaCookieJar(FileCookieJar):
                 else:
                     name = cookie.name
                     value = cookie.value
+                if cookie.has_nonstandard_attr(HTTPONLY_ATTR):
+                    domain = self.httponly_prefix + domain
                 f.write(
-                    "\t".join([cookie.domain, initial_dot, cookie.path,
+                    "\t".join([domain, initial_dot, cookie.path,
                                secure, expires, name, value])+
                     "\n")
