@@ -1,4 +1,5 @@
 import copy
+import re
 import sys
 import tempfile
 
@@ -1394,6 +1395,32 @@ class MockTest(unittest.TestCase):
             mock.assert_has_calls(calls[:-1])
         mock.assert_has_calls(calls[:-1], any_order=True)
 
+    def test_assert_has_calls_not_matching_spec_error(self):
+        def f(x=None): pass
+
+        mock = Mock(spec=f)
+        mock(1)
+
+        with self.assertRaisesRegex(
+                AssertionError,
+                '^{}$'.format(
+                    re.escape('Calls not found.\n'
+                              'Expected: [call()]\n'
+                              'Actual: [call(1)]'))) as cm:
+            mock.assert_has_calls([call()])
+        self.assertIsNone(cm.exception.__cause__)
+
+
+        with self.assertRaisesRegex(
+                AssertionError,
+                '^{}$'.format(
+                    re.escape(
+                        'Error processing expected calls.\n'
+                        "Errors: [None, TypeError('too many positional arguments')]\n"
+                        "Expected: [call(), call(1, 2)]\n"
+                        'Actual: [call(1)]'))) as cm:
+            mock.assert_has_calls([call(), call(1, 2)])
+        self.assertIsInstance(cm.exception.__cause__, TypeError)
 
     def test_assert_any_call(self):
         mock = Mock()
