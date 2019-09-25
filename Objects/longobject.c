@@ -3295,8 +3295,9 @@ long_sub(PyLongObject *a, PyLongObject *b)
         return PyLong_FromLong(MEDIUM_VALUE(a) - MEDIUM_VALUE(b));
     }
     if (Py_SIZE(a) < 0) {
-        if (Py_SIZE(b) < 0)
+        if (Py_SIZE(b) < 0) {
             z = x_sub(b, a);
+        }
         else {
             z = x_add(a, b);
             if (z != NULL) {
