@@ -46,6 +46,16 @@
 #define PY_OPENSSL_HAS_BLAKE2 1
 #endif
 
+static PyModuleDef _hashlibmodule;
+
+typedef struct {
+    PyTypeObject *EVPtype;
+} _hashlibstate;
+
+#define _hashlibstate(o) ((_hashlibstate *)PyModule_GetState(o))
+#define _hashlibstate_global ((_hashlibstate *)PyModule_GetState(PyState_FindModule(&_hashlibmodule)))
+
+
 typedef struct {
     PyObject_HEAD
     EVP_MD_CTX          *ctx;   /* OpenSSL message digest context */
@@ -53,14 +63,12 @@ typedef struct {
 } EVPobject;
 
 
-static PyTypeObject EVPtype;
-
 #include "clinic/_hashopenssl.c.h"
 /*[clinic input]
 module _hashlib
-class _hashlib.HASH "EVPobject *" "&EVPtype"
+class _hashlib.HASH "EVPobject *" "((_hashlibstate *)PyModule_GetState(module))->EVPtype"
 [clinic start generated code]*/
-/*[clinic end generated code: output=da39a3ee5e6b4b0d input=a881a5092eecad28]*/
+/*[clinic end generated code: output=da39a3ee5e6b4b0d input=1adf85e8eb2ab979]*/
 
 
 /* LCOV_EXCL_START */
@@ -231,7 +239,9 @@ py_digest_by_name(const char *name)
 static EVPobject *
 newEVPobject(void)
 {
-    EVPobject *retval = (EVPobject *)PyObject_New(EVPobject, &EVPtype);
+    EVPobject *retval = (EVPobject *)PyObject_New(
+        EVPobject, _hashlibstate_global->EVPtype
+    );
     if (retval == NULL) {
         return NULL;
     }
@@ -273,10 +283,12 @@ EVP_hash(EVPobject *self, const void *vp, Py_ssize_t len)
 static void
 EVP_dealloc(EVPobject *self)
 {
+    PyTypeObject *tp = Py_TYPE(self);
     if (self->lock != NULL)
         PyThread_free_lock(self->lock);
     EVP_MD_CTX_free(self->ctx);
     PyObject_Del(self);
+    Py_DECREF(tp);
 }
 
 static int
@@ -501,46 +513,23 @@ PyDoc_STRVAR(hashtype_doc,
 "name -- the hash algorithm being used by this object\n"
 "digest_size -- number of bytes in this hashes output");
 
-static PyTypeObject EVPtype = {
-    PyVarObject_HEAD_INIT(NULL, 0)
+static PyType_Slot EVPtype_slots[] = {
+    {Py_tp_dealloc, EVP_dealloc},
+    {Py_tp_repr, EVP_repr},
+    {Py_tp_doc, (char *)hashtype_doc},
+    {Py_tp_methods, EVP_methods},
+    {Py_tp_getset, EVP_getseters},
+    {0, 0},
+};
+
+static PyType_Spec EVPtype_spec = {
     "_hashlib.HASH",    /*tp_name*/
     sizeof(EVPobject),  /*tp_basicsize*/
     0,                  /*tp_itemsize*/
-    /* methods */
-    (destructor)EVP_dealloc, /*tp_dealloc*/
-    0,                  /*tp_vectorcall_offset*/
-    0,                  /*tp_getattr*/
-    0,                  /*tp_setattr*/
-    0,                  /*tp_as_async*/
-    (reprfunc)EVP_repr, /*tp_repr*/
-    0,                  /*tp_as_number*/
-    0,                  /*tp_as_sequence*/
-    0,                  /*tp_as_mapping*/
-    0,                  /*tp_hash*/
-    0,                  /*tp_call*/
-    0,                  /*tp_str*/
-    0,                  /*tp_getattro*/
-    0,                  /*tp_setattro*/
-    0,                  /*tp_as_buffer*/
-    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE, /*tp_flags*/
-    hashtype_doc,       /*tp_doc*/
-    0,                  /*tp_traverse*/
-    0,                  /*tp_clear*/
-    0,                  /*tp_richcompare*/
-    0,                  /*tp_weaklistoffset*/
-    0,                  /*tp_iter*/
-    0,                  /*tp_iternext*/
-    EVP_methods,        /* tp_methods */
-    NULL,        /* tp_members */
-    EVP_getseters,      /* tp_getset */
-    0,                  /* tp_base */
-    0,                  /* tp_dict */
-    0,                  /* tp_descr_get */
-    0,                  /* tp_descr_set */
-    0,                  /* tp_dictoffset */
+    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE,
+    EVPtype_slots
 };
 
-\
 static PyObject *
 EVPnew(const EVP_MD *digest,
        const unsigned char *cp, Py_ssize_t len, int usedforsecurity)
@@ -1120,17 +1109,39 @@ static struct PyMethodDef EVP_functions[] = {
 
 /* Initialize this module. */
 
+static int
+hashlib_traverse(PyObject *m, visitproc visit, void *arg)
+{
+    _hashlibstate *state = _hashlibstate(m);
+    Py_VISIT(state->EVPtype);
+    return 0;
+}
+
+static int
+hashlib_clear(PyObject *m)
+{
+    _hashlibstate *state = _hashlibstate(m);
+    Py_CLEAR(state->EVPtype);
+    return 0;
+}
+
+static void
+hashlib_free(void *m)
+{
+    hashlib_clear((PyObject *)m);
+}
+
 
 static struct PyModuleDef _hashlibmodule = {
     PyModuleDef_HEAD_INIT,
     "_hashlib",
     NULL,
-    -1,
+    sizeof(_hashlibstate),
     EVP_functions,
     NULL,
-    NULL,
-    NULL,
-    NULL
+    hashlib_traverse,
+    hashlib_clear,
+    hashlib_free
 };
 
 PyMODINIT_FUNC
@@ -1144,18 +1155,20 @@ PyInit__hashlib(void)
     ERR_load_crypto_strings();
 #endif
 
-    /* TODO build EVP_functions openssl_* entries dynamically based
-     * on what hashes are supported rather than listing many
-     * but having some be unsupported.  Only init appropriate
-     * constants. */
-
-    Py_TYPE(&EVPtype) = &PyType_Type;
-    if (PyType_Ready(&EVPtype) < 0)
-        return NULL;
+    m = PyState_FindModule(&_hashlibmodule);
+    if (m != NULL) {
+        Py_INCREF(m);
+        return m;
+    }
 
     m = PyModule_Create(&_hashlibmodule);
     if (m == NULL)
         return NULL;
+
+    PyTypeObject *EVPtype = (PyTypeObject *)PyType_FromSpec(&EVPtype_spec);
+    if (EVPtype == NULL)
+        return NULL;
+    _hashlibstate(m)->EVPtype = EVPtype;
 
     openssl_md_meth_names = generate_hash_name_list();
     if (openssl_md_meth_names == NULL) {
@@ -1167,8 +1180,9 @@ PyInit__hashlib(void)
         return NULL;
     }
 
-    Py_INCREF((PyObject *)&EVPtype);
-    PyModule_AddObject(m, "HASH", (PyObject *)&EVPtype);
+    Py_INCREF((PyObject *)_hashlibstate(m)->EVPtype);
+    PyModule_AddObject(m, "HASH", (PyObject *)_hashlibstate(m)->EVPtype);
 
+    PyState_AddModule(m, &_hashlibmodule);
     return m;
 }
