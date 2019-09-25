@@ -864,29 +864,38 @@ Path Configuration
 
 :c:type:`PyConfig` contains multiple fields for the path configuration:
 
-* Path configuration input fields:
+* Path configuration inputs:
 
   * :c:member:`PyConfig.home`
   * :c:member:`PyConfig.pathconfig_warnings`
   * :c:member:`PyConfig.program_name`
   * :c:member:`PyConfig.pythonpath_env`
+  * current working directory: to get absolute paths
+  * ``PATH`` environment variable to get the program full path
+    (from :c:member:`PyConfig.program_name`)
+  * ``__PYVENV_LAUNCHER__`` environment variable
+  * (Windows only) Application paths in the registry under
+    "Software\Python\PythonCore\X.Y\PythonPath" of HKEY_CURRENT_USER and
+    HKEY_LOCAL_MACHINE (where X.Y is the Python version).
 
 * Path configuration output fields:
 
+  * :c:member:`PyConfig.base_exec_prefix`
   * :c:member:`PyConfig.base_executable`
+  * :c:member:`PyConfig.base_prefix`
   * :c:member:`PyConfig.exec_prefix`
   * :c:member:`PyConfig.executable`
-  * :c:member:`PyConfig.prefix`
   * :c:member:`PyConfig.module_search_paths_set`,
     :c:member:`PyConfig.module_search_paths`
+  * :c:member:`PyConfig.prefix`
 
-If at least one "output field" is not set, Python computes the path
+If at least one "output field" is not set, Python calculates the path
 configuration to fill unset fields. If
 :c:member:`~PyConfig.module_search_paths_set` is equal to 0,
 :c:member:`~PyConfig.module_search_paths` is overridden and
 :c:member:`~PyConfig.module_search_paths_set` is set to 1.
 
-It is possible to completely ignore the function computing the default
+It is possible to completely ignore the function calculating the default
 path configuration by setting explicitly all path configuration output
 fields listed above. A string is considered as set even if it is non-empty.
 ``module_search_paths`` is considered as set if
@@ -894,7 +903,7 @@ fields listed above. A string is considered as set even if it is non-empty.
 configuration input fields are ignored as well.
 
 Set :c:member:`~PyConfig.pathconfig_warnings` to 0 to suppress warnings when
-computing the path configuration (Unix only, Windows does not log any warning).
+calculating the path configuration (Unix only, Windows does not log any warning).
 
 If :c:member:`~PyConfig.base_prefix` or :c:member:`~PyConfig.base_exec_prefix`
 fields are not set, they inherit their value from :c:member:`~PyConfig.prefix`
