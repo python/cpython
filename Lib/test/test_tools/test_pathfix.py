@@ -91,14 +91,14 @@ class TestPathfixFunctional(unittest.TestCase):
             '#! /usr/bin/python3 -Rs')
         self.assertEqual(
             self.pathfix(
-                '#! /usr/bin/env python -W something',
+                '#! /usr/bin/env python -W default',
                 ['-i', '/usr/bin/python3', '-a', 's', '-k']),
-            '#! /usr/bin/python3 -sW something')
+            '#! /usr/bin/python3 -sW default')
 
     def test_pathfix_adding_errors(self):
         self.pathfix(
-            '#! /usr/bin/env python -W something',
-            ['-i', '/usr/bin/python3', '-a', ' af', '-k'],
+            '#! /usr/bin/env python -E',
+            ['-i', '/usr/bin/python3', '-a', 'W default', '-k'],
             exitcode=2,
             stderr="-a option doesn't support whitespaces")
 
