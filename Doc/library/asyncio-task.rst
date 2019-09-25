@@ -225,9 +225,9 @@ Running an asyncio Program
     the end.  It should be used as a main entry point for asyncio
     programs, and should ideally only be called once.
 
-    Return a result of *coro* execution, or raise a RuntimeError if
-    ``asyncio.run()`` is called from a running event loop, or a
-    ValueError if *coro* is not a courutine.
+    Return a result of *coro* execution, or raise a :exc:`RuntimeError`
+    if ``asyncio.run()`` is called from a running event loop, or a
+    :exc:`ValueError` if *coro* is not a courutine.
 
     Example::
 
