@@ -1042,6 +1042,11 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
     def tmpdir_with_python(self):
         # Temporary directory with a copy of the Python program
         with tempfile.TemporaryDirectory() as tmpdir:
+            # bpo-38234: On macOS and FreeBSD, the temporary directory
+            # can be symbolic link. For example, /tmp can be a symbolic link
+            # to /var/tmp. Call realpath() to resolve all symbolic links.
+            tmpdir = os.path.realpath(tmpdir)
+
             if MS_WINDOWS:
                 # Copy pythonXY.dll (or pythonXY_d.dll)
                 ver = sys.version_info
