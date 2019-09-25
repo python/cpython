@@ -757,34 +757,34 @@ static void
 calculate_pyvenv_file(PyCalculatePath *calculate,
                       wchar_t *argv0_path, size_t argv0_path_len)
 {
-    wchar_t envbuffer[MAXPATHLEN+1];
+    wchar_t filename[MAXPATHLEN+1];
     const wchar_t *env_cfg = L"pyvenv.cfg";
 
-    wcscpy_s(envbuffer, MAXPATHLEN+1, argv0_path);
-    join(envbuffer, env_cfg);
+    /* Filename: <argv0_path_len> / "pyvenv.cfg" */
+    wcscpy_s(filename, MAXPATHLEN+1, argv0_path);
+    join(filename, env_cfg);
 
-    FILE *env_file = _Py_wfopen(envbuffer, L"r");
+    FILE *env_file = _Py_wfopen(filename, L"r");
     if (env_file == NULL) {
         errno = 0;
 
-        reduce(envbuffer);
-        reduce(envbuffer);
-        join(envbuffer, env_cfg);
+        /* Filename: <basename(basename(argv0_path_len))> / "pyvenv.cfg" */
+        reduce(filename);
+        reduce(filename);
+        join(filename, env_cfg);
 
-        env_file = _Py_wfopen(envbuffer, L"r");
+        env_file = _Py_wfopen(filename, L"r");
         if (env_file == NULL) {
             errno = 0;
+            return;
         }
     }
 
-    if (env_file == NULL) {
-        return;
-    }
-
     /* Look for a 'home' variable and set argv0_path to it, if found */
-    wchar_t tmpbuffer[MAXPATHLEN+1];
-    if (_Py_FindEnvConfigValue(env_file, L"home", tmpbuffer, MAXPATHLEN)) {
-        wcscpy_s(argv0_path, argv0_path_len, tmpbuffer);
+    wchar_t home[MAXPATHLEN+1];
+    if (_Py_FindEnvConfigValue(env_file, L"home",
+                               home, Py_ARRAY_LENGTH(home))) {
+        wcscpy_s(argv0_path, argv0_path_len, home);
     }
     fclose(env_file);
 }

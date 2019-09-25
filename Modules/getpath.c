@@ -370,12 +370,15 @@ search_for_prefix(PyCalculatePath *calculate, _PyPathConfig *pathconfig,
                   const wchar_t *argv0_path,
                   wchar_t *prefix, size_t prefix_len, int *found)
 {
+    wchar_t path[MAXPATHLEN+1];
+    memset(path, 0, sizeof(path));
+    size_t path_len = Py_ARRAY_LENGTH(path);
+
     PyStatus status;
-    size_t n;
-    wchar_t *vpath;
 
     /* If PYTHONHOME is set, we believe it unconditionally */
     if (pathconfig->home) {
+        /* Path: <home> / <lib_python> */
         if (safe_wcscpy(prefix, pathconfig->home, prefix_len) < 0) {
             return PATHLEN_ERR();
         }
@@ -387,27 +390,25 @@ search_for_prefix(PyCalculatePath *calculate, _PyPathConfig *pathconfig,
         if (_PyStatus_EXCEPTION(status)) {
             return status;
         }
-        status = joinpath(prefix, LANDMARK, prefix_len);
-        if (_PyStatus_EXCEPTION(status)) {
-            return status;
-        }
         *found = 1;
         return _PyStatus_OK();
     }
 
     /* Check to see if argv[0] is in the build directory */
-    if (safe_wcscpy(prefix, argv0_path, prefix_len) < 0) {
+    if (safe_wcscpy(path, argv0_path, path_len) < 0) {
         return PATHLEN_ERR();
     }
-    status = joinpath(prefix, L"Modules/Setup.local", prefix_len);
+    status = joinpath(path, L"Modules/Setup.local", path_len);
     if (_PyStatus_EXCEPTION(status)) {
         return status;
     }
 
-    if (isfile(prefix)) {
-        /* Check VPATH to see if argv0_path is in the build directory. */
-        vpath = Py_DecodeLocale(VPATH, NULL);
+    if (isfile(path)) {
+        /* Check VPATH to see if argv0_path is in the build directory.
+           VPATH can be empty. */
+        wchar_t *vpath = Py_DecodeLocale(VPATH, NULL);
         if (vpath != NULL) {
+            /* Path: <argv0_path> / <vpath> / Lib / LANDMARK */
             if (safe_wcscpy(prefix, argv0_path, prefix_len) < 0) {
                 return PATHLEN_ERR();
             }
@@ -428,6 +429,7 @@ search_for_prefix(PyCalculatePath *calculate, _PyPathConfig *pathconfig,
 
             if (ismodule(prefix, prefix_len)) {
                 *found = -1;
+                reduce(prefix);
                 return _PyStatus_OK();
             }
         }
@@ -440,7 +442,8 @@ search_for_prefix(PyCalculatePath *calculate, _PyPathConfig *pathconfig,
     }
 
     do {
-        n = wcslen(prefix);
+        /* Path: <argv0_path or substring> / <lib_python> / LANDMARK */
+        size_t n = wcslen(prefix);
         status = joinpath(prefix, calculate->lib_python, prefix_len);
         if (_PyStatus_EXCEPTION(status)) {
             return status;
@@ -452,13 +455,15 @@ search_for_prefix(PyCalculatePath *calculate, _PyPathConfig *pathconfig,
 
         if (ismodule(prefix, prefix_len)) {
             *found = 1;
+            reduce(prefix);
             return _PyStatus_OK();
         }
         prefix[n] = L'\0';
         reduce(prefix);
     } while (prefix[0]);
 
-    /* Look at configure's PREFIX */
+    /* Look at configure's PREFIX.
+       Path: <PREFIX macro> / <lib_python> / LANDMARK */
     if (safe_wcscpy(prefix, calculate->prefix, prefix_len) < 0) {
         return PATHLEN_ERR();
     }
@@ -473,6 +478,7 @@ search_for_prefix(PyCalculatePath *calculate, _PyPathConfig *pathconfig,
 
     if (ismodule(prefix, prefix_len)) {
         *found = 1;
+        reduce(prefix);
         return _PyStatus_OK();
     }
 
@@ -509,9 +515,6 @@ calculate_prefix(PyCalculatePath *calculate, _PyPathConfig *pathconfig,
             return status;
         }
     }
-    else {
-        reduce(prefix);
-    }
     return _PyStatus_OK();
 }
 
@@ -546,6 +549,67 @@ calculate_set_prefix(PyCalculatePath *calculate, _PyPathConfig *pathconfig,
 }
 
 
+static PyStatus
+calculate_pybuilddir(const wchar_t *argv0_path,
+                     wchar_t *exec_prefix, size_t exec_prefix_len,
+                     int *found)
+{
+    PyStatus status;
+
+    wchar_t filename[MAXPATHLEN+1];
+    memset(filename, 0, sizeof(filename));
+    size_t filename_len = Py_ARRAY_LENGTH(filename);
+
+    /* Check to see if argv[0] is in the build directory. "pybuilddir.txt"
+       is written by setup.py and contains the relative path to the location
+       of shared library modules.
+
+       Filename: <argv0_path> / "pybuilddir.txt" */
+    if (safe_wcscpy(filename, argv0_path, filename_len) < 0) {
+        return PATHLEN_ERR();
+    }
+    status = joinpath(filename, L"pybuilddir.txt", filename_len);
+    if (_PyStatus_EXCEPTION(status)) {
+        return status;
+    }
+
+    if (!isfile(filename)) {
+        return _PyStatus_OK();
+    }
+
+    FILE *fp = _Py_wfopen(filename, L"rb");
+    if (fp == NULL) {
+        errno = 0;
+        return _PyStatus_OK();
+    }
+
+    char buf[MAXPATHLEN + 1];
+    size_t n = fread(buf, 1, Py_ARRAY_LENGTH(buf) - 1, fp);
+    buf[n] = '\0';
+    fclose(fp);
+
+    size_t dec_len;
+    wchar_t *pybuilddir = _Py_DecodeUTF8_surrogateescape(buf, n, &dec_len);
+    if (!pybuilddir) {
+        return DECODE_LOCALE_ERR("pybuilddir.txt", dec_len);
+    }
+
+    /* Path: <argv0_path> / <pybuilddir content> */
+    if (safe_wcscpy(exec_prefix, argv0_path, exec_prefix_len) < 0) {
+        PyMem_RawFree(pybuilddir);
+        return PATHLEN_ERR();
+    }
+    status = joinpath(exec_prefix, pybuilddir, exec_prefix_len);
+    PyMem_RawFree(pybuilddir);
+    if (_PyStatus_EXCEPTION(status)) {
+        return status;
+    }
+
+    *found = -1;
+    return _PyStatus_OK();
+}
+
+
 /* search_for_exec_prefix requires that argv0_path be no more than
    MAXPATHLEN bytes long.
 */
@@ -556,10 +620,10 @@ search_for_exec_prefix(PyCalculatePath *calculate, _PyPathConfig *pathconfig,
                        int *found)
 {
     PyStatus status;
-    size_t n;
 
     /* If PYTHONHOME is set, we believe it unconditionally */
     if (pathconfig->home) {
+        /* Path: <home> / <lib_python> / "lib-dynload" */
         wchar_t *delim = wcschr(pathconfig->home, DELIM);
         if (delim) {
             if (safe_wcscpy(exec_prefix, delim+1, exec_prefix_len) < 0) {
@@ -583,47 +647,15 @@ search_for_exec_prefix(PyCalculatePath *calculate, _PyPathConfig *pathconfig,
         return _PyStatus_OK();
     }
 
-    /* Check to see if argv[0] is in the build directory. "pybuilddir.txt"
-       is written by setup.py and contains the relative path to the location
-       of shared library modules. */
-    if (safe_wcscpy(exec_prefix, argv0_path, exec_prefix_len) < 0) {
-        return PATHLEN_ERR();
-    }
-    status = joinpath(exec_prefix, L"pybuilddir.txt", exec_prefix_len);
+    /* Check for pybuilddir.txt */
+    assert(*found == 0);
+    status = calculate_pybuilddir(argv0_path, exec_prefix, exec_prefix_len,
+                                  found);
     if (_PyStatus_EXCEPTION(status)) {
         return status;
     }
-
-    if (isfile(exec_prefix)) {
-        FILE *f = _Py_wfopen(exec_prefix, L"rb");
-        if (f == NULL) {
-            errno = 0;
-        }
-        else {
-            char buf[MAXPATHLEN + 1];
-            n = fread(buf, 1, Py_ARRAY_LENGTH(buf) - 1, f);
-            buf[n] = '\0';
-            fclose(f);
-
-            wchar_t *pybuilddir;
-            size_t dec_len;
-            pybuilddir = _Py_DecodeUTF8_surrogateescape(buf, n, &dec_len);
-            if (!pybuilddir) {
-                return DECODE_LOCALE_ERR("pybuilddir.txt", dec_len);
-            }
-
-            if (safe_wcscpy(exec_prefix, argv0_path, exec_prefix_len) < 0) {
-                return PATHLEN_ERR();
-            }
-            status = joinpath(exec_prefix, pybuilddir, exec_prefix_len);
-            PyMem_RawFree(pybuilddir );
-            if (_PyStatus_EXCEPTION(status)) {
-                return status;
-            }
-
-            *found = -1;
-            return _PyStatus_OK();
-        }
+    if (*found) {
+        return _PyStatus_OK();
     }
 
     /* Search from argv0_path, until root is found */
@@ -633,7 +665,8 @@ search_for_exec_prefix(PyCalculatePath *calculate, _PyPathConfig *pathconfig,
     }
 
     do {
-        n = wcslen(exec_prefix);
+        /* Path: <argv0_path or substring> / <lib_python> / "lib-dynload" */
+        size_t n = wcslen(exec_prefix);
         status = joinpath(exec_prefix, calculate->lib_python, exec_prefix_len);
         if (_PyStatus_EXCEPTION(status)) {
             return status;
@@ -650,7 +683,9 @@ search_for_exec_prefix(PyCalculatePath *calculate, _PyPathConfig *pathconfig,
         reduce(exec_prefix);
     } while (exec_prefix[0]);
 
-    /* Look at configure's EXEC_PREFIX */
+    /* Look at configure's EXEC_PREFIX.
+
+       Path: <EXEC_PREFIX macro> / <lib_python> / "lib-dynload" */
     if (safe_wcscpy(exec_prefix, calculate->exec_prefix, exec_prefix_len) < 0) {
         return PATHLEN_ERR();
     }
@@ -962,43 +997,49 @@ calculate_read_pyenv(PyCalculatePath *calculate,
                      wchar_t *argv0_path, size_t argv0_path_len)
 {
     PyStatus status;
-    wchar_t tmpbuffer[MAXPATHLEN+1];
-    const size_t buflen = Py_ARRAY_LENGTH(tmpbuffer);
-    wchar_t *env_cfg = L"pyvenv.cfg";
+    const wchar_t *env_cfg = L"pyvenv.cfg";
     FILE *env_file;
 
-    if (safe_wcscpy(tmpbuffer, argv0_path, buflen) < 0) {
+    wchar_t filename[MAXPATHLEN+1];
+    const size_t filename_len = Py_ARRAY_LENGTH(filename);
+    memset(filename, 0, sizeof(filename));
+
+    /* Filename: <argv0_path_len> / "pyvenv.cfg" */
+    if (safe_wcscpy(filename, argv0_path, filename_len) < 0) {
         return PATHLEN_ERR();
     }
 
-    status = joinpath(tmpbuffer, env_cfg, buflen);
+    status = joinpath(filename, env_cfg, filename_len);
     if (_PyStatus_EXCEPTION(status)) {
         return status;
     }
-    env_file = _Py_wfopen(tmpbuffer, L"r");
+    env_file = _Py_wfopen(filename, L"r");
     if (env_file == NULL) {
         errno = 0;
 
-        reduce(tmpbuffer);
-        reduce(tmpbuffer);
-        status = joinpath(tmpbuffer, env_cfg, buflen);
+        /* Filename: <basename(basename(argv0_path_len))> / "pyvenv.cfg" */
+        reduce(filename);
+        reduce(filename);
+        status = joinpath(filename, env_cfg, filename_len);
         if (_PyStatus_EXCEPTION(status)) {
             return status;
         }
 
-        env_file = _Py_wfopen(tmpbuffer, L"r");
+        env_file = _Py_wfopen(filename, L"r");
         if (env_file == NULL) {
             errno = 0;
+            return _PyStatus_OK();
         }
     }
 
-    if (env_file == NULL) {
-        return _PyStatus_OK();
-    }
-
     /* Look for a 'home' variable and set argv0_path to it, if found */
-    if (_Py_FindEnvConfigValue(env_file, L"home", tmpbuffer, buflen)) {
-        if (safe_wcscpy(argv0_path, tmpbuffer, argv0_path_len) < 0) {
+    wchar_t home[MAXPATHLEN+1];
+    memset(home, 0, sizeof(home));
+
+    if (_Py_FindEnvConfigValue(env_file, L"home",
+                               home, Py_ARRAY_LENGTH(home))) {
+        if (safe_wcscpy(argv0_path, home, argv0_path_len) < 0) {
+            fclose(env_file);
             return PATHLEN_ERR();
         }
     }
@@ -1200,6 +1241,8 @@ calculate_path(PyCalculatePath *calculate, _PyPathConfig *pathconfig)
         return status;
     }
 
+    /* If a pyvenv.cfg configure file is found,
+       argv0_path is overriden with its 'home' variable. */
     status = calculate_read_pyenv(calculate,
                                   argv0_path, Py_ARRAY_LENGTH(argv0_path));
     if (_PyStatus_EXCEPTION(status)) {
