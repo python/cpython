@@ -344,9 +344,7 @@ PyCStructUnionType_update_stgdict(PyObject *type, PyObject *fields, int isStruct
     int pack = 0;
     Py_ssize_t ffi_ofs;
     int big_endian;
-#if defined(X86_64)
     int arrays_seen = 0;
-#endif
 
     /* HACK Alert: I cannot be bothered to fix ctypes.com, so there has to
        be a way to use the old, broken sematics: _fields_ are not extended
@@ -471,10 +469,8 @@ PyCStructUnionType_update_stgdict(PyObject *type, PyObject *fields, int isStruct
             Py_XDECREF(pair);
             return -1;
         }
-#if defined(X86_64)
         if (PyCArrayTypeObject_Check(desc))
             arrays_seen = 1;
-#endif
         dict = PyType_stgdict(desc);
         if (dict == NULL) {
             Py_DECREF(pair);
@@ -615,8 +611,6 @@ PyCStructUnionType_update_stgdict(PyObject *type, PyObject *fields, int isStruct
     stgdict->align = total_align;
     stgdict->length = len;      /* ADD ffi_ofs? */
 
-#if defined(X86_64)
-
 #define MAX_ELEMENTS 16
 
     if (arrays_seen && (size <= 16)) {
@@ -636,6 +630,10 @@ PyCStructUnionType_update_stgdict(PyObject *type, PyObject *fields, int isStruct
          * accurate set, to allow libffi to marshal them into registers
          * correctly. It means one more loop over the fields, but if we got
          * here, the structure is small, so there aren't too many of those.
+         *
+         * Although the passing in registers is specific to 64-bit Linux, the
+         * array-in-struct vs. pointer problem is general. But we restrict the
+         * type transformation to small structs nonetheless.
          */
         ffi_type *actual_types[MAX_ELEMENTS + 1];
         int actual_type_index = 0;
@@ -713,7 +711,6 @@ PyCStructUnionType_update_stgdict(PyObject *type, PyObject *fields, int isStruct
         memcpy(&stgdict->ffi_type_pointer.elements[ffi_ofs], actual_types,
                actual_type_index * sizeof(ffi_type *));
     }
-#endif
 
     /* We did check that this flag was NOT set above, it must not
        have been set until now. */
