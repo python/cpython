@@ -2317,17 +2317,22 @@ dict_update_common(PyObject *self, PyObject *args, PyObject *kwds,
         result = -1;
     }
     else if (arg != NULL) {
-        _Py_IDENTIFIER(keys);
-        PyObject *func;
-        if (_PyObject_LookupAttrId(arg, &PyId_keys, &func) < 0) {
-            result = -1;
-        }
-        else if (func != NULL) {
-            Py_DECREF(func);
+        if (PyDict_CheckExact(arg)) {
             result = PyDict_Merge(self, arg, 1);
         }
         else {
-            result = PyDict_MergeFromSeq2(self, arg, 1);
+            _Py_IDENTIFIER(keys);
+            PyObject *func;
+            if (_PyObject_LookupAttrId(arg, &PyId_keys, &func) < 0) {
+                result = -1;
+            }
+            else if (func != NULL) {
+                Py_DECREF(func);
+                result = PyDict_Merge(self, arg, 1);
+            }
+            else {
+                result = PyDict_MergeFromSeq2(self, arg, 1);
+            }
         }
     }
 
