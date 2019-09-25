@@ -3,11 +3,14 @@ from test import support
 import unittest
 
 from collections import namedtuple
+import contextlib
 import json
 import os
 import re
+import shutil
 import subprocess
 import sys
+import tempfile
 import textwrap
 
 
@@ -25,6 +28,12 @@ API_PYTHON = 2
 API_ISOLATED = 3
 
 
+def debug_build(program):
+    program = os.path.basename(program)
+    name = os.path.splitext(program)[0]
+    return name.endswith("_d")
+
+
 def remove_python_envvars():
     env = dict(os.environ)
     # Remove PYTHON* environment variables to get deterministic environment
@@ -40,7 +49,7 @@ class EmbeddingTestsMixin:
         basepath = os.path.dirname(os.path.dirname(os.path.dirname(here)))
         exename = "_testembed"
         if MS_WINDOWS:
-            ext = ("_d" if "_d" in sys.executable else "") + ".exe"
+            ext = ("_d" if debug_build(sys.executable) else "") + ".exe"
             exename += ext
             exepath = os.path.dirname(sys.executable)
         else:
@@ -58,7 +67,8 @@ class EmbeddingTestsMixin:
         os.chdir(self.oldcwd)
 
     def run_embedded_interpreter(self, *args, env=None,
-                                 timeout=None, returncode=0, input=None):
+                                 timeout=None, returncode=0, input=None,
+                                 cwd=None):
         """Runs a test in the embedded interpreter"""
         cmd = [self.test_exe]
         cmd.extend(args)
@@ -72,7 +82,8 @@ class EmbeddingTestsMixin:
                              stdout=subprocess.PIPE,
                              stderr=subprocess.PIPE,
                              universal_newlines=True,
-                             env=env)
+                             env=env,
+                             cwd=cwd)
         try:
             (out, err) = p.communicate(input=input, timeout=timeout)
         except:
@@ -460,6 +471,11 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
 
     EXPECTED_CONFIG = None
 
+    @classmethod
+    def tearDownClass(cls):
+        # clear cache
+        cls.EXPECTED_CONFIG = None
+
     def main_xoptions(self, xoptions_list):
         xoptions = {}
         for opt in xoptions_list:
@@ -490,11 +506,12 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
         args = [sys.executable, '-S', '-c', code]
         proc = subprocess.run(args, env=env,
                               stdout=subprocess.PIPE,
-                              stderr=subprocess.STDOUT)
+                              stderr=subprocess.PIPE)
         if proc.returncode:
             raise Exception(f"failed to get the default config: "
                             f"stdout={proc.stdout!r} stderr={proc.stderr!r}")
         stdout = proc.stdout.decode('utf-8')
+        # ignore stderr
         try:
             return json.loads(stdout)
         except json.JSONDecodeError:
@@ -506,8 +523,15 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
             cls.EXPECTED_CONFIG = self._get_expected_config_impl()
 
         # get a copy
-        return {key: dict(value)
-                for key, value in cls.EXPECTED_CONFIG.items()}
+        configs = {}
+        for config_key, config_value in cls.EXPECTED_CONFIG.items():
+            config = {}
+            for key, value in config_value.items():
+                if isinstance(value, list):
+                    value = value.copy()
+                config[key] = value
+            configs[config_key] = config
+        return configs
 
     def get_expected_config(self, expected_preconfig, expected, env, api,
                             modify_path_cb=None):
@@ -612,7 +636,7 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
 
     def check_all_configs(self, testname, expected_config=None,
                      expected_preconfig=None, modify_path_cb=None, stderr=None,
-                     *, api, env=None, ignore_stderr=False):
+                     *, api, env=None, ignore_stderr=False, cwd=None):
         new_env = remove_python_envvars()
         if env is not None:
             new_env.update(env)
@@ -642,7 +666,8 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
                                  expected_config, env,
                                  api, modify_path_cb)
 
-        out, err = self.run_embedded_interpreter(testname, env=env)
+        out, err = self.run_embedded_interpreter(testname,
+                                                 env=env, cwd=cwd)
         if stderr is None and not expected_config['verbose']:
             stderr = ""
         if stderr is not None and not ignore_stderr:
@@ -994,6 +1019,48 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
                                api=API_COMPAT, env=env,
                                ignore_stderr=True)
 
+    def module_search_paths(self, prefix=None, exec_prefix=None):
+        config = self._get_expected_config()
+        if prefix is None:
+            prefix = config['config']['prefix']
+        if exec_prefix is None:
+            exec_prefix = config['config']['prefix']
+        if MS_WINDOWS:
+            return config['config']['module_search_paths']
+        else:
+            ver = sys.version_info
+            return [
+                os.path.join(prefix, 'lib',
+                             f'python{ver.major}{ver.minor}.zip'),
+                os.path.join(prefix, 'lib',
+                             f'python{ver.major}.{ver.minor}'),
+                os.path.join(exec_prefix, 'lib',
+                             f'python{ver.major}.{ver.minor}', 'lib-dynload'),
+            ]
+
+    @contextlib.contextmanager
+    def tmpdir_with_python(self):
+        # Temporary directory with a copy of the Python program
+        with tempfile.TemporaryDirectory() as tmpdir:
+            if MS_WINDOWS:
+                # Copy pythonXY.dll (or pythonXY_d.dll)
+                ver = sys.version_info
+                dll = f'python{ver.major}{ver.minor}'
+                if debug_build(sys.executable):
+                    dll += '_d'
+                dll += '.dll'
+                dll = os.path.join(os.path.dirname(self.test_exe), dll)
+                dll_copy = os.path.join(tmpdir, os.path.basename(dll))
+                shutil.copyfile(dll, dll_copy)
+
+            # Copy Python program
+            exec_copy = os.path.join(tmpdir, os.path.basename(self.test_exe))
+            shutil.copyfile(self.test_exe, exec_copy)
+            shutil.copystat(self.test_exe, exec_copy)
+            self.test_exe = exec_copy
+
+            yield tmpdir
+
     def test_init_setpythonhome(self):
         # Test Py_SetPythonHome(home) + PYTHONPATH env var
         # + Py_SetProgramName()
@@ -1012,13 +1079,7 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
 
         prefix = exec_prefix = home
         ver = sys.version_info
-        if MS_WINDOWS:
-            expected_paths = paths
-        else:
-            expected_paths = [
-                os.path.join(prefix, 'lib', f'python{ver.major}{ver.minor}.zip'),
-                os.path.join(home, 'lib', f'python{ver.major}.{ver.minor}'),
-                os.path.join(home, 'lib', f'python{ver.major}.{ver.minor}/lib-dynload')]
+        expected_paths = self.module_search_paths(prefix=home, exec_prefix=home)
 
         config = {
             'home': home,
@@ -1032,6 +1093,95 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
         env = {'TESTHOME': home, 'TESTPATH': paths_str}
         self.check_all_configs("test_init_setpythonhome", config,
                                api=API_COMPAT, env=env)
+
+    def copy_paths_by_env(self, config):
+        all_configs = self._get_expected_config()
+        paths = all_configs['config']['module_search_paths']
+        paths_str = os.path.pathsep.join(paths)
+        config['pythonpath_env'] = paths_str
+        env = {'PYTHONPATH': paths_str}
+        return env
+
+    @unittest.skipIf(MS_WINDOWS, 'Windows does not use pybuilddir.txt')
+    def test_init_pybuilddir(self):
+        # Test path configuration with pybuilddir.txt configuration file
+
+        with self.tmpdir_with_python() as tmpdir:
+            # pybuilddir.txt is a sub-directory relative to the current
+            # directory (tmpdir)
+            subdir = 'libdir'
+            libdir = os.path.join(tmpdir, subdir)
+            os.mkdir(libdir)
+
+            filename = os.path.join(tmpdir, 'pybuilddir.txt')
+            with open(filename, "w", encoding="utf8") as fp:
+                fp.write(subdir)
+
+            module_search_paths = self.module_search_paths()
+            module_search_paths[-1] = libdir
+
+            executable = self.test_exe
+            config = {
+                'base_executable': executable,
+                'executable': executable,
+                'module_search_paths': module_search_paths,
+            }
+            env = self.copy_paths_by_env(config)
+            self.check_all_configs("test_init_compat_config", config,
+                                   api=API_COMPAT, env=env,
+                                   ignore_stderr=True, cwd=tmpdir)
+
+    def test_init_pyvenv_cfg(self):
+        # Test path configuration with pyvenv.cfg configuration file
+
+        with self.tmpdir_with_python() as tmpdir, \
+             tempfile.TemporaryDirectory() as pyvenv_home:
+            ver = sys.version_info
+
+            if not MS_WINDOWS:
+                lib_dynload = os.path.join(pyvenv_home,
+                                           'lib',
+                                           f'python{ver.major}.{ver.minor}',
+                                           'lib-dynload')
+                os.makedirs(lib_dynload)
+            else:
+                lib_dynload = os.path.join(pyvenv_home, 'lib')
+                os.makedirs(lib_dynload)
+                # getpathp.c uses Lib\os.py as the LANDMARK
+                shutil.copyfile(os.__file__, os.path.join(lib_dynload, 'os.py'))
+
+            filename = os.path.join(tmpdir, 'pyvenv.cfg')
+            with open(filename, "w", encoding="utf8") as fp:
+                print("home = %s" % pyvenv_home, file=fp)
+                print("include-system-site-packages = false", file=fp)
+
+            paths = self.module_search_paths()
+            if not MS_WINDOWS:
+                paths[-1] = lib_dynload
+            else:
+                for index, path in enumerate(paths):
+                    if index == 0:
+                        paths[index] = os.path.join(tmpdir, os.path.basename(path))
+                    else:
+                        paths[index] = os.path.join(pyvenv_home, os.path.basename(path))
+                paths[-1] = pyvenv_home
+
+            executable = self.test_exe
+            exec_prefix = pyvenv_home
+            config = {
+                'base_exec_prefix': exec_prefix,
+                'exec_prefix': exec_prefix,
+                'base_executable': executable,
+                'executable': executable,
+                'module_search_paths': paths,
+            }
+            if MS_WINDOWS:
+                config['base_prefix'] = pyvenv_home
+                config['prefix'] = pyvenv_home
+            env = self.copy_paths_by_env(config)
+            self.check_all_configs("test_init_compat_config", config,
+                                   api=API_COMPAT, env=env,
+                                   ignore_stderr=True, cwd=tmpdir)
 
 
 class AuditingTests(EmbeddingTestsMixin, unittest.TestCase):
