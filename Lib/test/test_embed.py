@@ -635,16 +635,19 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
         self.assertEqual(configs['global_config'], expected)
 
     def check_all_configs(self, testname, expected_config=None,
-                     expected_preconfig=None, modify_path_cb=None, stderr=None,
-                     *, api, env=None, ignore_stderr=False, cwd=None):
+                          expected_preconfig=None, modify_path_cb=None,
+                          stderr=None, *, api, preconfig_api=None,
+                          env=None, ignore_stderr=False, cwd=None):
         new_env = remove_python_envvars()
         if env is not None:
             new_env.update(env)
         env = new_env
 
-        if api == API_ISOLATED:
+        if preconfig_api is None:
+            preconfig_api = api
+        if preconfig_api == API_ISOLATED:
             default_preconfig = self.PRE_CONFIG_ISOLATED
-        elif api == API_PYTHON:
+        elif preconfig_api == API_PYTHON:
             default_preconfig = self.PRE_CONFIG_PYTHON
         else:
             default_preconfig = self.PRE_CONFIG_COMPAT
@@ -1002,8 +1005,21 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
         self.check_all_configs("test_init_dont_parse_argv", config, pre_config,
                                api=API_PYTHON)
 
+    def default_program_name(self, config):
+        if MS_WINDOWS:
+            program_name = 'python'
+            executable = self.test_exe
+        else:
+            program_name = 'python3'
+            executable = shutil.which(program_name) or ''
+        config.update({
+            'program_name': program_name,
+            'base_executable': executable,
+            'executable': executable,
+        })
+
     def test_init_setpath(self):
-        # Test Py_SetProgramName() + Py_SetPath()
+        # Test Py_SetPath()
         config = self._get_expected_config()
         paths = config['config']['module_search_paths']
 
@@ -1014,9 +1030,36 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
             'exec_prefix': '',
             'base_exec_prefix': '',
         }
+        self.default_program_name(config)
         env = {'TESTPATH': os.path.pathsep.join(paths)}
         self.check_all_configs("test_init_setpath", config,
                                api=API_COMPAT, env=env,
+                               ignore_stderr=True)
+
+    def test_init_setpath_config(self):
+        # Test Py_SetPath() with PyConfig
+        config = self._get_expected_config()
+        paths = config['config']['module_search_paths']
+
+        config = {
+            # set by Py_SetPath()
+            'module_search_paths': paths,
+            'prefix': '',
+            'base_prefix': '',
+            'exec_prefix': '',
+            'base_exec_prefix': '',
+            # overriden by PyConfig
+            'program_name': 'conf_program_name',
+            'base_executable': 'conf_executable',
+            'executable': 'conf_executable',
+        }
+        env = {'TESTPATH': os.path.pathsep.join(paths)}
+        # Py_SetPath() preinitialized Python using the compat API,
+        # so we need preconfig_api=API_COMPAT.
+        self.check_all_configs("test_init_setpath_config", config,
+                               api=API_PYTHON,
+                               preconfig_api=API_COMPAT,
+                               env=env,
                                ignore_stderr=True)
 
     def module_search_paths(self, prefix=None, exec_prefix=None):
@@ -1067,8 +1110,7 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
             yield tmpdir
 
     def test_init_setpythonhome(self):
-        # Test Py_SetPythonHome(home) + PYTHONPATH env var
-        # + Py_SetProgramName()
+        # Test Py_SetPythonHome(home) with PYTHONPATH env var
         config = self._get_expected_config()
         paths = config['config']['module_search_paths']
         paths_str = os.path.pathsep.join(paths)
@@ -1095,7 +1137,8 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
             'base_exec_prefix': exec_prefix,
             'pythonpath_env': paths_str,
         }
-        env = {'TESTHOME': home, 'TESTPATH': paths_str}
+        self.default_program_name(config)
+        env = {'TESTHOME': home, 'PYTHONPATH': paths_str}
         self.check_all_configs("test_init_setpythonhome", config,
                                api=API_COMPAT, env=env)
 
