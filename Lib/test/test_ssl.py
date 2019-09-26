@@ -1193,13 +1193,17 @@ class ContextTests(unittest.TestCase):
         ctx = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
         # OpenSSL default is MINIMUM_SUPPORTED, however some vendors like
         # Fedora override the setting to TLS 1.0.
+        minimum_range = {
+            # stock OpenSSL
+            ssl.TLSVersion.MINIMUM_SUPPORTED,
+            # Fedora 29 uses TLS 1.0 by default
+            ssl.TLSVersion.TLSv1,
+            # RHEL 8 uses TLS 1.2 by default
+            ssl.TLSVersion.TLSv1_2
+        }
+
         self.assertIn(
-            ctx.minimum_version,
-            {ssl.TLSVersion.MINIMUM_SUPPORTED,
-             # Fedora 29 uses TLS 1.0 by default
-             ssl.TLSVersion.TLSv1,
-             # RHEL 8 uses TLS 1.2 by default
-             ssl.TLSVersion.TLSv1_2}
+            ctx.minimum_version, minimum_range
         )
         self.assertEqual(
             ctx.maximum_version, ssl.TLSVersion.MAXIMUM_SUPPORTED
@@ -1245,8 +1249,8 @@ class ContextTests(unittest.TestCase):
 
         ctx = ssl.SSLContext(ssl.PROTOCOL_TLSv1_1)
 
-        self.assertEqual(
-            ctx.minimum_version, ssl.TLSVersion.MINIMUM_SUPPORTED
+        self.assertIn(
+            ctx.minimum_version, minimum_range
         )
         self.assertEqual(
             ctx.maximum_version, ssl.TLSVersion.MAXIMUM_SUPPORTED
