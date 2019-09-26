@@ -1230,6 +1230,44 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
                                    api=API_COMPAT, env=env,
                                    ignore_stderr=True, cwd=tmpdir)
 
+    def test_global_pathconfig(self):
+        # Test C API functions getting the path configuration:
+        #
+        # - Py_GetExecPrefix()
+        # - Py_GetPath()
+        # - Py_GetPrefix()
+        # - Py_GetProgramFullPath()
+        # - Py_GetProgramName()
+        # - Py_GetPythonHome()
+        #
+        # The global path configuration (_Py_path_config) must be a copy
+        # of the path configuration of PyInterpreter.config (PyConfig).
+        ctypes = support.import_module('ctypes')
+        _testinternalcapi = support.import_module('_testinternalcapi')
+
+        def get_func(name):
+            func = getattr(ctypes.pythonapi, name)
+            func.argtypes = ()
+            func.restype = ctypes.c_wchar_p
+            return func
+
+        Py_GetPath = get_func('Py_GetPath')
+        Py_GetPrefix = get_func('Py_GetPrefix')
+        Py_GetExecPrefix = get_func('Py_GetExecPrefix')
+        Py_GetProgramName = get_func('Py_GetProgramName')
+        Py_GetProgramFullPath = get_func('Py_GetProgramFullPath')
+        Py_GetPythonHome = get_func('Py_GetPythonHome')
+
+        config = _testinternalcapi.get_configs()['config']
+
+        self.assertEqual(Py_GetPath().split(os.path.pathsep),
+                         config['module_search_paths'])
+        self.assertEqual(Py_GetPrefix(), config['prefix'])
+        self.assertEqual(Py_GetExecPrefix(), config['exec_prefix'])
+        self.assertEqual(Py_GetProgramName(), config['program_name'])
+        self.assertEqual(Py_GetProgramFullPath(), config['executable'])
+        self.assertEqual(Py_GetPythonHome(), config['home'])
+
 
 class AuditingTests(EmbeddingTestsMixin, unittest.TestCase):
     def test_open_code_hook(self):
