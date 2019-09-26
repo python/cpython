@@ -53,7 +53,7 @@ class CompileallTestsBase:
         # It will be 100 directories deep, or shorter if the OS limits it.
         for i in range(10):
             longer_path = os.path.join(
-                long_path, *(f"long_directory_{i}_{j}" for j in range(10))
+                long_path, *(f"dir_{i}_{j}" for j in range(10))
             )
 
             # Check if we can open __pycache__/*.pyc.
@@ -87,8 +87,12 @@ class CompileallTestsBase:
             long_source = longer_source
             long_cache = longer_cache
 
+        # On Windows, MAX_PATH is 260 characters, our path with the 20
+        # directories is 160 characters long, leaving something for the
+        # root (self.directory) as well.
+        # Tests assume long_path contains at least 10 directories.
         if i < 2:
-            raise ValueError('Path limit is too short')
+            raise ValueError(f'"Long path" is too short: {long_path}')
 
         self.source_path_long = long_source
         self.bc_path_long = long_cache
