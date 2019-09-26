@@ -257,10 +257,10 @@ left with zeros.  It understands about plus and minus signs::
 Old string formatting
 ---------------------
 
-The ``%`` operator can also be used for string formatting. It interprets the
-left argument much like to C's :c:func:`sprintf`\ -style format string to be
-applied to the right argument, and returns the string resulting from this
-formatting operation. For example::
+The % operator (modulo) can also be used for string formatting. Given ``'string'
+% values``, instances of ``%`` in ``string`` are replaced with zero or more
+elements of ``values``. This operation is commonly known as string
+interpolation. For example::
 
    >>> import math
    >>> print('The value of pi is approximately %5.3f.' % math.pi)
