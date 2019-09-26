@@ -128,6 +128,7 @@ typedef struct {
         int an_int;
         Test4 a_union;
     } nested;
+    int another_int;
 } Test5;
 
 EXPORT(long)
@@ -149,6 +150,30 @@ _testfunc_union_by_value2(Test5 in) {
      * reflected in the caller.
      */
     memset(&in, 0, sizeof(in));
+    return result;
+}
+
+EXPORT(long)
+_testfunc_union_by_reference1(Test4 *in) {
+    long result = in->a_long;
+
+    memset(in, 0, sizeof(Test4));
+    return result;
+}
+
+EXPORT(long)
+_testfunc_union_by_reference2(Test4 *in) {
+    long result = in->a_struct.an_int + in->a_struct.another_int;
+
+    memset(in, 0, sizeof(Test4));
+    return result;
+}
+
+EXPORT(long)
+_testfunc_union_by_reference3(Test5 *in) {
+    long result = in->an_int + in->nested.an_int + in->another_int;
+
+    memset(in, 0, sizeof(Test5));
     return result;
 }
 
