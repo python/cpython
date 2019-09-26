@@ -1425,8 +1425,6 @@ fail:
 
 static int test_init_setpath(void)
 {
-    Py_SetProgramName(PROGRAM_NAME);
-
     char *env = getenv("TESTPATH");
     if (!env) {
         fprintf(stderr, "missing TESTPATH env var\n");
@@ -1448,23 +1446,35 @@ static int test_init_setpath(void)
 }
 
 
-static int mysetenv(const char *name, const char *value)
+static int test_init_setpath_config(void)
 {
-    size_t len = strlen(name) + 1 + strlen(value) + 1;
-    char *env = PyMem_RawMalloc(len);
-    if (env == NULL) {
-        fprintf(stderr, "out of memory\n");
-        return -1;
+    char *env = getenv("TESTPATH");
+    if (!env) {
+        fprintf(stderr, "missing TESTPATH env var\n");
+        return 1;
     }
-    strcpy(env, name);
-    strcat(env, "=");
-    strcat(env, value);
+    wchar_t *path = Py_DecodeLocale(env, NULL);
+    if (path == NULL) {
+        fprintf(stderr, "failed to decode TESTPATH\n");
+        return 1;
+    }
+    Py_SetPath(path);
+    PyMem_RawFree(path);
+    putenv("TESTPATH=");
 
-    putenv(env);
+    PyStatus status;
+    PyConfig config;
 
-    /* Don't call PyMem_RawFree(env), but leak env memory block:
-       putenv() does not copy the string. */
+    status = PyConfig_InitPythonConfig(&config);
+    if (PyStatus_Exception(status)) {
+        Py_ExitStatusException(status);
+    }
+    config_set_string(&config, &config.program_name, L"conf_program_name");
+    config_set_string(&config, &config.executable, L"conf_executable");
+    init_from_config_clear(&config);
 
+    dump_config();
+    Py_Finalize();
     return 0;
 }
 
@@ -1484,19 +1494,6 @@ static int test_init_setpythonhome(void)
     Py_SetPythonHome(home);
     PyMem_RawFree(home);
     putenv("TESTHOME=");
-
-    char *path = getenv("TESTPATH");
-    if (!path) {
-        fprintf(stderr, "missing TESTPATH env var\n");
-        return 1;
-    }
-
-    if (mysetenv("PYTHONPATH", path) < 0) {
-        return 1;
-    }
-    putenv("TESTPATH=");
-
-    Py_SetProgramName(PROGRAM_NAME);
 
     Py_Initialize();
     dump_config();
@@ -1642,6 +1639,7 @@ static struct TestCase TestCases[] = {
     {"test_init_main", test_init_main},
     {"test_init_sys_add", test_init_sys_add},
     {"test_init_setpath", test_init_setpath},
+    {"test_init_setpath_config", test_init_setpath_config},
     {"test_init_setpythonhome", test_init_setpythonhome},
     {"test_run_main", test_run_main},
 
