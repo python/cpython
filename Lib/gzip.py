@@ -179,6 +179,13 @@ class GzipFile(_compression.BaseStream):
             filename = os.fspath(filename)
         if mode is None:
             mode = getattr(fileobj, 'mode', 'rb')
+            if not mode.startswith('r'):
+                import warnings
+                warnings.warn(
+                    "GzipFile was opened for writing, but this will "
+                    "change in future Python releases.  "
+                    "Specify the mode argument for opening it for writing.",
+                    FutureWarning, 2)
 
         if mode.startswith('r'):
             self.mode = READ
