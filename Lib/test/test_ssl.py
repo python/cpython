@@ -190,11 +190,13 @@ def has_tls_version(version):
     # be compiled in but disabled by a policy or config option.
     ctx = ssl.SSLContext()
     if (
+            hasattr(ctx, 'minimum_version') and
             ctx.minimum_version != ssl.TLSVersion.MINIMUM_SUPPORTED and
             version < ctx.minimum_version
     ):
         return False
     if (
+        hasattr(ctx, 'maximum_version') and
         ctx.maximum_version != ssl.TLSVersion.MAXIMUM_SUPPORTED and
         version > ctx.maximum_version
     ):
