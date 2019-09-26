@@ -576,6 +576,53 @@ class StructureTestCase(unittest.TestCase):
             self.assertEqual(f2, [0x4567, 0x0123, 0xcdef, 0x89ab,
                                   0x3210, 0x7654, 0xba98, 0xfedc])
 
+    def test_union_by_value(self):
+        # See bpo-16575
+
+        # These should mirror the structures in Modules/_ctypes/_ctypes_test.c
+
+        class Nested1(Structure):
+            _fields = [
+                ('an_int', c_int),
+                ('another_int', c_int),
+            ]
+
+        class Test4(Union):
+            _fields_ = [
+                ('a_long', c_long),
+                ('a_struct', Nested1),
+            ]
+
+        class Nested2(Structure):
+            _fields = [
+                ('an_int', c_int),
+                ('a_union', Test4),
+            ]
+
+        class Test5(Structure):
+            _fields = [
+                ('an_int', c_int),
+                ('nested', Nested2),
+            ]
+
+        test4 = Test4()
+        dll = CDLL(_ctypes_test.__file__)
+        with self.assertRaises(TypeError) as ctx:
+            func = dll._testfunc_union_by_value1
+            func.restype = c_long
+            func.argtypes = (Test4,)
+            result = func(test4)
+        self.assertEqual(ctx.exception.args[0], 'item 1 in _argtypes_ passes '
+                         'a union by value, which is unsupported.')
+        test5 = Test5()
+        with self.assertRaises(TypeError) as ctx:
+            func = dll._testfunc_union_by_value2
+            func.restype = c_long
+            func.argtypes = (Test5,)
+            result = func(test5)
+        self.assertEqual(ctx.exception.args[0], 'item 1 in _argtypes_ passes '
+                         'a union by value, which is unsupported.')
+
 class PointerMemberTestCase(unittest.TestCase):
 
     def test(self):
