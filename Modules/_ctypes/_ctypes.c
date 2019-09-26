@@ -2400,9 +2400,6 @@ converters_from_argtypes(PyObject *ob)
                 }
                 return NULL;
             }
-            if (stgdict->flags & TYPEFLAG_HASBITFIELD) {
-                printf("found stgdict with bitfield\n");
-            }
         }
 
         if (_PyObject_LookupAttrId(tp, &PyId_from_param, &cnv) <= 0) {
