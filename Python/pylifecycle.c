@@ -475,7 +475,7 @@ pyinit_core_reconfigure(_PyRuntimeState *runtime,
     config = &interp->config;
 
     if (config->_install_importlib) {
-        status = _PyPathConfig_Init();
+        status = _PyConfig_WritePathConfig(config);
         if (_PyStatus_EXCEPTION(status)) {
             return status;
         }
@@ -646,7 +646,7 @@ pycore_init_import_warnings(PyThreadState *tstate, PyObject *sysmod)
     }
 
     if (config->_install_importlib) {
-        status = _PyPathConfig_Init();
+        status = _PyConfig_WritePathConfig(config);
         if (_PyStatus_EXCEPTION(status)) {
             return status;
         }
