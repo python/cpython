@@ -133,7 +133,7 @@ _PyWideStringList_Join(const PyWideStringList *list, wchar_t sep)
     for (Py_ssize_t i=0; i < list->length; i++) {
         wchar_t *path = list->items[i];
         if (i != 0) {
-            *str++ = SEP;
+            *str++ = sep;
         }
         len = wcslen(path);
         memcpy(str, path, len * sizeof(wchar_t));
@@ -145,11 +145,11 @@ _PyWideStringList_Join(const PyWideStringList *list, wchar_t sep)
 }
 
 
-/* Initialize _Py_dll_path on Windows. Do nothing on other platforms. */
-PyStatus
-_PyPathConfig_Init(void)
-{
 #ifdef MS_WINDOWS
+/* Initialize _Py_dll_path on Windows. Do nothing on other platforms. */
+static PyStatus
+_PyPathConfig_InitDLLPath(void)
+{
     if (_Py_dll_path == NULL) {
         /* Already set: nothing to do */
         return _PyStatus_OK();
@@ -165,9 +165,9 @@ _PyPathConfig_Init(void)
     if (_Py_dll_path == NULL) {
         return _PyStatus_NO_MEMORY();
     }
-#endif
     return _PyStatus_OK();
 }
+#endif
 
 
 static PyStatus
@@ -214,6 +214,20 @@ no_memory:
 done:
     PyMem_SetAllocator(PYMEM_DOMAIN_RAW, &old_alloc);
     return status;
+}
+
+
+PyStatus
+_PyConfig_WritePathConfig(const PyConfig *config)
+{
+#ifdef MS_WINDOWS
+    PyStatus status = _PyPathConfig_InitDLLPath();
+    if (_PyStatus_EXCEPTION(status)) {
+        return status;
+    }
+#endif
+
+    return pathconfig_set_from_config(&_Py_path_config, config);
 }
 
 
@@ -441,11 +455,12 @@ pathconfig_global_init(void)
 {
     PyStatus status;
 
-    /* Initialize _Py_dll_path if needed */
-    status = _PyPathConfig_Init();
+#ifdef MS_WINDOWS
+    status = _PyPathConfig_InitDLLPath();
     if (_PyStatus_EXCEPTION(status)) {
         Py_ExitStatusException(status);
     }
+#endif
 
     if (_Py_path_config.module_search_path == NULL) {
         status = pathconfig_global_read(&_Py_path_config);

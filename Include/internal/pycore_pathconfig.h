@@ -66,7 +66,7 @@ extern int _Py_FindEnvConfigValue(
 extern wchar_t* _Py_GetDLLPath(void);
 #endif
 
-extern PyStatus _PyPathConfig_Init(void);
+extern PyStatus _PyConfig_WritePathConfig(const PyConfig *config);
 extern void _Py_DumpPathConfig(PyThreadState *tstate);
 
 #ifdef __cplusplus
