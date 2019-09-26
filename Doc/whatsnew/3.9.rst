@@ -75,27 +75,27 @@ New Features
 Other Language Changes
 ======================
 
-* :func:`builtins.__import__` now raises :exc:`ImportError` instead of
-  :exc:`ValueError` as used to occur when a relative import went past
+* :func:`__import__` now raises :exc:`ImportError` instead of
+  :exc:`ValueError`, which used to occur when a relative import went past
   its top-level package.
   (Contributed by Ngalim Siregar in :issue:`37444`.)
 
 
 * Python now gets the absolute path of the script filename specified on
   the command line (ex: ``python3 script.py``): the ``__file__`` attribute of
-  the ``__main__`` module, ``sys.argv[0]`` and ``sys.path[0]`` become an
+  the :mod:`__main__` module, ``sys.argv[0]`` and ``sys.path[0]`` become an
   absolute path, rather than a relative path. These paths now remain valid
   after the current directory is changed by :func:`os.chdir`. As a side effect,
-  a traceback also displays the absolute path for ``__main__`` module frames in
-  this case.
+  a traceback also displays the absolute path for :mod:`__main__` module frames
+  in this case.
   (Contributed by Victor Stinner in :issue:`20443`.)
 
 * In development mode and in debug build, *encoding* and *errors* arguments are
   now checked on string encoding and decoding operations. Examples:
   :func:`open`, :meth:`str.encode` and :meth:`bytes.decode`.
 
-  By default, for best performances, the *errors* argument is only checked at
-  the first encoding/decoding error, and the *encoding* argument is sometimes
+  By default, for best performance, the *errors* argument is only checked at
+  the first encoding/decoding error and the *encoding* argument is sometimes
   ignored for empty strings.
   (Contributed by Victor Stinner in :issue:`37388`.)
 
@@ -119,15 +119,16 @@ multiline indented output.
 asyncio
 -------
 
-Added a new couroutine :meth:`loop.shutdown_default_executor` that schedules
-a shutdown for the default executor that waits on the threadpool to finish
-closing. Also, :func:`asyncio.run` has been updated to use the new coroutine.
+Added a new :term:`coroutine` :meth:`~asyncio.loop.shutdown_default_executor`
+that schedules a shutdown for the default executor that waits on the
+:class:`~concurrent.futures.ThreadPoolExecutor` to finish closing. Also,
+:func:`asyncio.run` has been updated to use the new :term:`coroutine`.
 (Contributed by Kyle Stanley in :issue:`34037`.)
 
 threading
 ---------
 
-In a subinterpreter, spawning a daemon thread now raises an exception. Daemon
+In a subinterpreter, spawning a daemon thread now raises a :exc:`RuntimeError`. Daemon
 threads were never supported in subinterpreters. Previously, the subinterpreter
 finalization crashed with a Python fatal error if a daemon thread was still
 running.
@@ -164,8 +165,8 @@ Optimizations
 Build and C API Changes
 =======================
 
-* Add a new public :c:func:`PyObject_CallNoArgs` function to the C API:
-  call a callable Python object without any arguments. It is the most efficient
+* Add a new public :c:func:`PyObject_CallNoArgs` function to the C API, which
+  calls a callable Python object without any arguments. It is the most efficient
   way to call a callable Python object without any argument.
   (Contributed by Victor Stinner in :issue:`37194`.)
 
@@ -176,18 +177,18 @@ Deprecated
 
 * Currently :func:`math.factorial` accepts :class:`float` instances with
   non-negative integer values (like ``5.0``).  It raises a :exc:`ValueError`
-  for non-integral and negative floats.  It is deprecated now.  In future
+  for non-integral and negative floats.  It is now deprecated.  In future
   Python versions it will raise a :exc:`TypeError` for all floats.
   (Contributed by Serhiy Storchaka in :issue:`37315`.)
 
 * The :mod:`parser` module is deprecated and will be removed in future versions
-  of Python. For the majority of use cases users can leverage the Abstract Syntax
+  of Python. For the majority of use cases, users can leverage the Abstract Syntax
   Tree (AST) generation and compilation stage, using the :mod:`ast` module.
 
 * The :mod:`random` module currently accepts any hashable type as a
   possible seed value.  Unfortunately, some of those types are not
   guaranteed to have a deterministic hash value.  After Python 3.9,
-  the module will restrict its seeds to *None*, :class:`int`,
+  the module will restrict its seeds to :const:`None`, :class:`int`,
   :class:`float`, :class:`str`, :class:`bytes`, and :class:`bytearray`.
 
 
@@ -195,7 +196,7 @@ Removed
 =======
 
 * The undocumented ``sys.callstats()`` function has been removed. Since Python
-  3.7, it was deprecated and always returned ``None``. It required a special
+  3.7, it was deprecated and always returned :const:`None`. It required a special
   build option ``CALL_PROFILE`` which was already removed in Python 3.7.
   (Contributed by Victor Stinner in :issue:`37414`.)
 
@@ -213,7 +214,7 @@ Removed
   (Contributed by Victor Stinner in :issue:`37312`.)
 
 * ``aifc.openfp()`` alias to ``aifc.open()``, ``sunau.openfp()`` alias to
-  ``sunau.open()``, and ``wave.openfp()`` alias to ``wave.open()`` have been
+  ``sunau.open()``, and ``wave.openfp()`` alias to :func:`wave.open()` have been
   removed. They were deprecated since Python 3.7.
   (Contributed by Victor Stinner in :issue:`37320`.)
 
@@ -229,16 +230,16 @@ Removed
   (Contributed by Serhiy Storchaka in :issue:`36543`.)
 
 * The old :mod:`plistlib` API has been removed, it was deprecated since Python
-  3.4. Use the :func:`load`, :func:`loads`, :func:`dump`, and :func:`dumps`
-  functions. Additionally, the ``use_builtin_types`` parameter was removed,
-  standard :class:`bytes` objects are always used.
+  3.4. Use the :func:`~plistlib.load`, :func:`~plistlib.loads`, :func:`~plistlib.dump`, and
+  :func:`~plistlib.dumps` functions. Additionally, the *use_builtin_types* parameter was
+  removed, standard :class:`bytes` objects are always used instead.
   (Contributed by Jon Janzen in :issue:`36409`.)
 
-* ``PyThreadState_DeleteCurrent()`` has been removed. It was not documented.
+* The C function ``PyThreadState_DeleteCurrent()`` has been removed. It was not documented.
   (Contributed by Joannah Nanjekye in :issue:`37878`.)
 
 * The C function ``PyGen_NeedsFinalizing`` has been removed. It was not
-  documented, tested or used anywhere within CPython after the implementation
+  documented, tested, or used anywhere within CPython after the implementation
   of :pep:`442`. Patch by Joannah Nanjekye.
   (Contributed by Joannah Nanjekye in :issue:`15088`)
 
@@ -253,11 +254,10 @@ that may require changes to your code.
 Changes in the Python API
 -------------------------
 
-* :func:`builtins.__import__` and :func:`importlib.util.resolve_name` now raise
+* :func:`__import__` and :func:`importlib.util.resolve_name` now raise
   :exc:`ImportError` where it previously raised :exc:`ValueError`. Callers
   catching the specific exception type and supporting both Python 3.9 and
-  earlier versions will need to catch both:
-  ``except (ImportError, ValueError):``
+  earlier versions will need to catch both using ``except (ImportError, ValueError):``.
 
 * The :mod:`venv` activation scripts no longer special-case when
   ``__VENV_PROMPT__`` is set to ``""``.
