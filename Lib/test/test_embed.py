@@ -15,6 +15,7 @@ import textwrap
 
 
 MS_WINDOWS = (os.name == 'nt')
+MACOS = (sys.platform == 'darwin')
 
 PYMEM_ALLOCATOR_NOT_SET = 0
 PYMEM_ALLOCATOR_DEBUG = 2
@@ -1011,7 +1012,10 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
             executable = self.test_exe
         else:
             program_name = 'python3'
-            executable = shutil.which(program_name) or ''
+            if MACOS:
+                executable = self.test_exe
+            else:
+                executable = shutil.which(program_name) or ''
         config.update({
             'program_name': program_name,
             'base_executable': executable,
@@ -1054,13 +1058,8 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
             'executable': 'conf_executable',
         }
         env = {'TESTPATH': os.path.pathsep.join(paths)}
-        # Py_SetPath() preinitialized Python using the compat API,
-        # so we need preconfig_api=API_COMPAT.
         self.check_all_configs("test_init_setpath_config", config,
-                               api=API_PYTHON,
-                               preconfig_api=API_COMPAT,
-                               env=env,
-                               ignore_stderr=True)
+                               api=API_PYTHON, env=env, ignore_stderr=True)
 
     def module_search_paths(self, prefix=None, exec_prefix=None):
         config = self._get_expected_config()
