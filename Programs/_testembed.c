@@ -1448,6 +1448,17 @@ static int test_init_setpath(void)
 
 static int test_init_setpath_config(void)
 {
+    PyStatus status;
+    PyPreConfig preconfig;
+    PyPreConfig_InitPythonConfig(&preconfig);
+
+    /* Explicitly preinitializes with Python preconfiguration to avoid
+      Py_SetPath() implicit preinitialization with compat preconfiguration. */
+    status = Py_PreInitialize(&preconfig);
+    if (PyStatus_Exception(status)) {
+        Py_ExitStatusException(status);
+    }
+
     char *env = getenv("TESTPATH");
     if (!env) {
         fprintf(stderr, "missing TESTPATH env var\n");
@@ -1462,7 +1473,6 @@ static int test_init_setpath_config(void)
     PyMem_RawFree(path);
     putenv("TESTPATH=");
 
-    PyStatus status;
     PyConfig config;
 
     status = PyConfig_InitPythonConfig(&config);
