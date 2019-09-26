@@ -58,7 +58,10 @@ pathconfig_clear(_PyPathConfig *config)
     CLEAR(config->module_search_path);
     CLEAR(config->program_name);
     CLEAR(config->home);
+#ifdef MS_WINDOWS
     CLEAR(config->base_executable);
+#endif
+
 #undef CLEAR
 
     PyMem_SetAllocator(PYMEM_DOMAIN_RAW, &old_alloc);
@@ -83,9 +86,11 @@ pathconfig_copy(_PyPathConfig *config, const _PyPathConfig *config2)
     COPY_ATTR(module_search_path);
     COPY_ATTR(program_name);
     COPY_ATTR(home);
+#ifdef MS_WINDOWS
     config->isolated = config2->isolated;
     config->site_import = config2->site_import;
     COPY_ATTR(base_executable);
+#endif
 
 #undef COPY_ATTR
 
@@ -189,12 +194,14 @@ pathconfig_set_from_config(_PyPathConfig *pathconfig, const PyConfig *config)
             } \
         }
 
-    COPY_CONFIG(base_executable, base_executable);
     COPY_CONFIG(program_full_path, executable);
     COPY_CONFIG(prefix, prefix);
     COPY_CONFIG(exec_prefix, exec_prefix);
     COPY_CONFIG(program_name, program_name);
     COPY_CONFIG(home, home);
+#ifdef MS_WINDOWS
+    COPY_CONFIG(base_executable, base_executable);
+#endif
 
 #undef COPY_CONFIG
 
@@ -330,18 +337,32 @@ config_calculate_pathconfig(PyConfig *config)
             } \
         }
 
+#ifdef MS_WINDOWS
+    if (config->executable != NULL && config->base_executable == NULL) {
+        /* If executable is set explicitly in the configuration,
+           ignore calculated base_executable: _PyConfig_InitPathConfig()
+           will copy executable to base_executable */
+    }
+    else {
+        COPY_ATTR(base_executable, base_executable);
+    }
+#endif
+
     COPY_ATTR(program_full_path, executable);
     COPY_ATTR(prefix, prefix);
     COPY_ATTR(exec_prefix, exec_prefix);
-    COPY_ATTR(base_executable, base_executable);
+
 #undef COPY_ATTR
 
+#ifdef MS_WINDOWS
+    /* If a ._pth file is found: isolated and site_import are overriden */
     if (pathconfig.isolated != -1) {
         config->isolated = pathconfig.isolated;
     }
     if (pathconfig.site_import != -1) {
         config->site_import = pathconfig.site_import;
     }
+#endif
 
     status = _PyStatus_OK();
     goto done;
@@ -360,9 +381,9 @@ _PyConfig_InitPathConfig(PyConfig *config)
 {
     /* Do we need to calculate the path? */
     if (!config->module_search_paths_set
-        || (config->executable == NULL)
-        || (config->prefix == NULL)
-        || (config->exec_prefix == NULL))
+        || config->executable == NULL
+        || config->prefix == NULL
+        || config->exec_prefix == NULL)
     {
         PyStatus status = config_calculate_pathconfig(config);
         if (_PyStatus_EXCEPTION(status)) {
@@ -442,7 +463,9 @@ pathconfig_global_init(void)
     assert(_Py_path_config.module_search_path != NULL);
     assert(_Py_path_config.program_name != NULL);
     /* home can be NULL */
+#ifdef MS_WINDOWS
     assert(_Py_path_config.base_executable != NULL);
+#endif
 }
 
 
