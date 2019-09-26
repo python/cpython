@@ -41,19 +41,33 @@ class CompileallTestsBase:
         os.mkdir(self.subdirectory)
         self.source_path3 = os.path.join(self.subdirectory, '_test3.py')
         shutil.copyfile(self.source_path, self.source_path3)
+
+    def tearDown(self):
+        shutil.rmtree(self.directory)
+
+    def create_long_path(self):
         many_directories = [str(number) for number in range(1, 100)]
-        self.long_path = os.path.join(self.directory,
+        long_path = os.path.join(self.directory,
                                       "long",
                                       *many_directories)
-        os.makedirs(self.long_path)
-        self.source_path_long = os.path.join(self.long_path, '_test4.py')
+        try:
+            os.makedirs(long_path)
+        except FileNotFoundError:
+            if sys.platform == "win32":
+                # On Windows, a  FileNotFoundError("The filename or extension
+                # is too long") is raised for long paths
+                self.skipTest('Cannot create a long path')
+            raise
+        except OSError:
+            if exc.errno == errno.ENAMETOOLONG:
+                self.skipTest('Cannot create a long path')
+            else:
+                raise
+        self.source_path_long = os.path.join(self.long_path, '_test_long.py')
         shutil.copyfile(self.source_path, self.source_path_long)
         self.bc_path_long = importlib.util.cache_from_source(
             self.source_path_long
         )
-
-    def tearDown(self):
-        shutil.rmtree(self.directory)
 
     def add_bad_source_file(self):
         self.bad_source_path = os.path.join(self.directory, '_test_bad.py')
@@ -206,6 +220,7 @@ class CompileallTestsBase:
 
     def text_compile_dir_maxlevels(self):
         # Test the actual impact of maxlevels attr
+        self.create_long_path()
         compileall.compile_dir(os.path.join(self.directory, "long"),
                                maxlevels=10, quiet=True)
         self.assertFalse(os.path.isfile(self.bc_path_long))
