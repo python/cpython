@@ -1,0 +1,3 @@
+test_ssl now handles disabled TLS/SSL versions better. OpenSSL's crypto
+policy and run-time settings are recognized and tests for disabled versions
+are skipped.
