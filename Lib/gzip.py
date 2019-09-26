@@ -180,13 +180,7 @@ class GzipFile(_compression.BaseStream):
         if mode is None:
             mode = getattr(fileobj, 'mode', 'rb')
 
-        if mode.startswith('r'):
-            self.mode = READ
-            raw = _GzipReader(fileobj)
-            self._buffer = io.BufferedReader(raw)
-            self.name = filename
-
-        elif mode.startswith(('w', 'a', 'x')):
+        if mode.startswith(('w', 'a', 'x')) or '+' in mode:
             self.mode = WRITE
             self._init_write(filename)
             self.compress = zlib.compressobj(compresslevel,
@@ -195,6 +189,11 @@ class GzipFile(_compression.BaseStream):
                                              zlib.DEF_MEM_LEVEL,
                                              0)
             self._write_mtime = mtime
+        elif mode.startswith('r'):
+            self.mode = READ
+            raw = _GzipReader(fileobj)
+            self._buffer = io.BufferedReader(raw)
+            self.name = filename
         else:
             raise ValueError("Invalid mode: {!r}".format(mode))
 

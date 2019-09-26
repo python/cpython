@@ -461,11 +461,11 @@ class TestGzip(BaseTest):
                 self.assertEqual(g.mode, gzip.WRITE)
             with self.assertRaises(ValueError):
                 gzip.GzipFile(fileobj=f, mode='z')
-        for mode in "rb", "r+b":
+        for mode in "rb", "r":
             with open(self.filename, mode) as f:
                 with gzip.GzipFile(fileobj=f) as g:
                     self.assertEqual(g.mode, gzip.READ)
-        for mode in "wb", "ab", "xb":
+        for mode in "wb", "ab", "xb", "rb+":
             if "x" in mode:
                 support.unlink(self.filename)
             with open(self.filename, mode) as f:
