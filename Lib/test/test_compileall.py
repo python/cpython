@@ -72,9 +72,13 @@ class CompileallTestsBase:
                 # is too long") is raised for long paths
                 if sys.platform == "win32":
                     break
+                else:
+                    raise
             except OSError as exc:
                 if exc.errno == errno.ENAMETOOLONG:
                     break
+                else:
+                    raise
 
             # Remove the __pycache__
             shutil.rmtree(os.path.dirname(longer_cache))
