@@ -48,34 +48,46 @@ class CompileallTestsBase:
 
     def create_long_path(self):
         long_path = os.path.join(self.directory, "long")
-        os.makedirs(long_path)
 
-        # Create a path as long as possible (with a limit)
-        for i in range(100):
-            long_path = os.path.join(long_path, f"long_directory_{i}")
+        # Create a long path, 10 directories at a time.
+        # It will be 100 directories deep, or shorter if the OS limits it.
+        for i in range(10):
+            longer_path = os.path.join(
+                long_path, *(f"long_directory_{i}_{j}" for j in range(10))
+            )
+
+            # Check if we can open __pycache__/*.pyc.
+            # Also, put in the source file that we want to compile
+            longer_source = os.path.join(longer_path, '_test_long.py')
+            longer_cache = importlib.util.cache_from_source(longer_source)
             try:
-                os.mkdir(long_path)
+                os.makedirs(longer_path)
+                shutil.copyfile(self.source_path, longer_source)
+                os.makedirs(os.path.dirname(longer_cache))
+                # Make sure we can write to the cache
+                with open(longer_cache, 'w'):
+                    pass
             except FileNotFoundError:
                 # On Windows, a  FileNotFoundError("The filename or extension
                 # is too long") is raised for long paths
-                if sys.platform != "win32":
-                    raise
+                if sys.platform == "win32":
+                    break
             except OSError as exc:
-                if exc.errno != errno.ENAMETOOLONG:
-                    raise
+                if exc.errno == errno.ENAMETOOLONG:
+                    break
 
-        print(i)
-        if i < 10:
+            # Remove the __pycache__
+            shutil.rmtree(os.path.dirname(longer_cache))
+
+            long_path = longer_path
+            long_source = longer_source
+            long_cache = longer_cache
+
+        if i < 2:
             raise ValueError('Path limit is too short')
 
-        # Shorten the path again so the files fit
-        long_path = os.path.dirname(os.path.dirname(long_path))
-
-        self.source_path_long = os.path.join(long_path, '_test_long.py')
-        shutil.copyfile(self.source_path, self.source_path_long)
-        self.bc_path_long = importlib.util.cache_from_source(
-            self.source_path_long
-        )
+        self.source_path_long = long_source
+        self.bc_path_long = long_cache
 
     def add_bad_source_file(self):
         self.bad_source_path = os.path.join(self.directory, '_test_bad.py')
@@ -233,7 +245,7 @@ class CompileallTestsBase:
                                maxlevels=10, quiet=True)
         self.assertFalse(os.path.isfile(self.bc_path_long))
         compileall.compile_dir(os.path.join(self.directory, "long"),
-                               maxlevels=110, quiet=True)
+                               quiet=True)
         self.assertTrue(os.path.isfile(self.bc_path_long))
 
     def test_strip_only(self):
