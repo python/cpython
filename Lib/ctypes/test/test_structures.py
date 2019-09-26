@@ -603,6 +603,7 @@ class StructureTestCase(unittest.TestCase):
             _fields_ = [
                 ('an_int', c_int),
                 ('nested', Nested2),
+                ('another_int', c_int),
             ]
 
         test4 = Test4()
@@ -622,6 +623,38 @@ class StructureTestCase(unittest.TestCase):
             result = func(test5)
         self.assertEqual(ctx.exception.args[0], 'item 1 in _argtypes_ passes '
                          'a union by value, which is unsupported.')
+
+        # passing by reference should be OK
+        test4.a_long = 12345;
+        func = dll._testfunc_union_by_reference1
+        func.restype = c_long
+        func.argtypes = (POINTER(Test4),)
+        result = func(byref(test4))
+        self.assertEqual(result, 12345)
+        self.assertEqual(test4.a_long, 0)
+        self.assertEqual(test4.a_struct.an_int, 0)
+        self.assertEqual(test4.a_struct.another_int, 0)
+        test4.a_struct.an_int = 0x12340000
+        test4.a_struct.another_int = 0x5678
+        func = dll._testfunc_union_by_reference2
+        func.restype = c_long
+        func.argtypes = (POINTER(Test4),)
+        result = func(byref(test4))
+        self.assertEqual(result, 0x12345678)
+        self.assertEqual(test4.a_long, 0)
+        self.assertEqual(test4.a_struct.an_int, 0)
+        self.assertEqual(test4.a_struct.another_int, 0)
+        test5.an_int = 0x12000000
+        test5.nested.an_int = 0x345600
+        test5.another_int = 0x78
+        func = dll._testfunc_union_by_reference3
+        func.restype = c_long
+        func.argtypes = (POINTER(Test5),)
+        result = func(byref(test5))
+        self.assertEqual(result, 0x12345678)
+        self.assertEqual(test5.an_int, 0)
+        self.assertEqual(test5.nested.an_int, 0)
+        self.assertEqual(test5.another_int, 0)
 
 class PointerMemberTestCase(unittest.TestCase):
 
