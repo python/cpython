@@ -1099,11 +1099,11 @@ calculate_free(PyCalculatePath *calculate)
    - __PYVENV_LAUNCHER__ environment variable
    - GetModuleFileNameW(NULL): fully qualified path of the executable file of
      the current process
-   - .pth configuration file
+   - ._pth configuration file
    - pyvenv.cfg configuration file
    - Registry key "Software\Python\PythonCore\X.Y\PythonPath"
-     of HKEY_LOCAL_MACHINE and HKEY_CURRENT_USER where X.Y is the Python
-     version (major.minor).
+     of HKEY_CURRENT_USER and HKEY_LOCAL_MACHINE where X.Y is the Python
+     version.
 
    Outputs, 'pathconfig' fields:
 
