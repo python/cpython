@@ -582,7 +582,7 @@ class StructureTestCase(unittest.TestCase):
         # These should mirror the structures in Modules/_ctypes/_ctypes_test.c
 
         class Nested1(Structure):
-            _fields = [
+            _fields_ = [
                 ('an_int', c_int),
                 ('another_int', c_int),
             ]
@@ -594,13 +594,13 @@ class StructureTestCase(unittest.TestCase):
             ]
 
         class Nested2(Structure):
-            _fields = [
+            _fields_ = [
                 ('an_int', c_int),
                 ('a_union', Test4),
             ]
 
         class Test5(Structure):
-            _fields = [
+            _fields_ = [
                 ('an_int', c_int),
                 ('nested', Nested2),
             ]
