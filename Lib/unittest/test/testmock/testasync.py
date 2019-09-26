@@ -406,15 +406,34 @@ class AsyncContextManagerTest(unittest.TestCase):
                 val = await response.json()
                 return val
 
-    def test_async_magic_methods_are_async_mocks_with_magicmock(self):
-        cm_mock = MagicMock(self.WithAsyncContextManager())
+    def test_async_magic_methods_return_async_mocks(self):
+        cm_mock = MagicMock()
         self.assertIsInstance(cm_mock.__aenter__, AsyncMock)
         self.assertIsInstance(cm_mock.__aexit__, AsyncMock)
+        self.assertIsInstance(cm_mock.__anext__, AsyncMock)
+        # __aiter__ is actually a synchronous object
+        # so should return a MagicMock
+        self.assertIsInstance(cm_mock.__aiter__, MagicMock)
+
+    def test_sync_magic_methods_return_magic_mocks(self):
+        am_mock = AsyncMock()
+        self.assertIsInstance(am_mock.__enter__, MagicMock)
+        self.assertIsInstance(am_mock.__exit__, MagicMock)
+        self.assertIsInstance(am_mock.__next__, MagicMock)
+        self.assertIsInstance(am_mock.__len__, MagicMock)
 
     def test_magicmock_has_async_magic_methods(self):
         cm = MagicMock(name='magic_cm')
         self.assertTrue(hasattr(cm, "__aenter__"))
         self.assertTrue(hasattr(cm, "__aexit__"))
+        self.assertTrue(hasattr(cm, "__anext__"))
+
+    def test_asyncmock_has_sync_magic_methods(self):
+        am = AsyncMock(name='async_cm')
+        self.assertTrue(hasattr(am, "__enter__"))
+        self.assertTrue(hasattr(am, "__exit__"))
+        self.assertTrue(hasattr(am, "__next__"))
+        self.assertTrue(hasattr(am, "__len__"))
 
     def test_magic_methods_are_async_functions(self):
         cm = MagicMock(name='magic_cm')
