@@ -504,6 +504,9 @@ StructUnionType_new(PyTypeObject *type, PyObject *args, PyObject *kwds, int isSt
         Py_DECREF(result);
         return NULL;
     }
+    if (!isStruct) {
+        dict->flags |= TYPEFLAG_HASUNION;
+    }
     /* replace the class dict by our updated stgdict, which holds info
        about storage requirements of the instances */
     if (-1 == PyDict_Update((PyObject *)dict, result->tp_dict)) {
