@@ -522,6 +522,7 @@ PyCStructUnionType_update_stgdict(PyObject *type, PyObject *fields, int isStruct
         stgdict->ffi_type_pointer.elements[ffi_ofs + i] = &dict->ffi_type_pointer;
         if (dict->flags & (TYPEFLAG_ISPOINTER | TYPEFLAG_HASPOINTER))
             stgdict->flags |= TYPEFLAG_HASPOINTER;
+        stgdict->flags |= dict->flags & (TYPEFLAG_HASUNION | TYPEFLAG_HASBITFIELD);
         dict->flags |= DICTFLAG_FINAL; /* mark field type final */
         if (PyTuple_Size(pair) == 3) { /* bits specified */
             stgdict->flags |= TYPEFLAG_HASBITFIELD;
