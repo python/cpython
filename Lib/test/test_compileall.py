@@ -41,6 +41,16 @@ class CompileallTestsBase:
         os.mkdir(self.subdirectory)
         self.source_path3 = os.path.join(self.subdirectory, '_test3.py')
         shutil.copyfile(self.source_path, self.source_path3)
+        many_directories = [str(number) for number in range(1, 100)]
+        self.long_path = os.path.join(self.directory,
+                                      "long",
+                                      *many_directories)
+        os.makedirs(self.long_path)
+        self.source_path_long = os.path.join(self.long_path, '_test4.py')
+        shutil.copyfile(self.source_path, self.source_path_long)
+        self.bc_path_long = importlib.util.cache_from_source(
+            self.source_path_long
+        )
 
     def tearDown(self):
         shutil.rmtree(self.directory)
@@ -193,6 +203,123 @@ class CompileallTestsBase:
     def test_compile_missing_multiprocessing(self, compile_file_mock):
         compileall.compile_dir(self.directory, quiet=True, workers=5)
         self.assertTrue(compile_file_mock.called)
+
+    def text_compile_dir_maxlevels(self):
+        # Test the actual impact of maxlevels attr
+        compileall.compile_dir(os.path.join(self.directory, "long"),
+                               maxlevels=10, quiet=True)
+        self.assertFalse(os.path.isfile(self.bc_path_long))
+        compileall.compile_dir(os.path.join(self.directory, "long"),
+                               maxlevels=110, quiet=True)
+        self.assertTrue(os.path.isfile(self.bc_path_long))
+
+    def test_strip_only(self):
+        fullpath = ["test", "build", "real", "path"]
+        path = os.path.join(self.directory, *fullpath)
+        os.makedirs(path)
+        script = script_helper.make_script(path, "test", "1 / 0")
+        bc = importlib.util.cache_from_source(script)
+        stripdir = os.path.join(self.directory, *fullpath[:2])
+        compileall.compile_dir(path, quiet=True, stripdir=stripdir)
+        rc, out, err = script_helper.assert_python_failure(bc)
+        expected_in = os.path.join(*fullpath[2:])
+        self.assertIn(
+            expected_in,
+            str(err, encoding=sys.getdefaultencoding())
+        )
+        self.assertNotIn(
+            stripdir,
+            str(err, encoding=sys.getdefaultencoding())
+        )
+
+    def test_prepend_only(self):
+        fullpath = ["test", "build", "real", "path"]
+        path = os.path.join(self.directory, *fullpath)
+        os.makedirs(path)
+        script = script_helper.make_script(path, "test", "1 / 0")
+        bc = importlib.util.cache_from_source(script)
+        prependdir = "/foo"
+        compileall.compile_dir(path, quiet=True, prependdir=prependdir)
+        rc, out, err = script_helper.assert_python_failure(bc)
+        expected_in = os.path.join(prependdir, self.directory, *fullpath)
+        self.assertIn(
+            expected_in,
+            str(err, encoding=sys.getdefaultencoding())
+        )
+
+    def test_strip_and_prepend(self):
+        fullpath = ["test", "build", "real", "path"]
+        path = os.path.join(self.directory, *fullpath)
+        os.makedirs(path)
+        script = script_helper.make_script(path, "test", "1 / 0")
+        bc = importlib.util.cache_from_source(script)
+        stripdir = os.path.join(self.directory, *fullpath[:2])
+        prependdir = "/foo"
+        compileall.compile_dir(path, quiet=True,
+                               stripdir=stripdir, prependdir=prependdir)
+        rc, out, err = script_helper.assert_python_failure(bc)
+        expected_in = os.path.join(prependdir, *fullpath[2:])
+        self.assertIn(
+            expected_in,
+            str(err, encoding=sys.getdefaultencoding())
+        )
+        self.assertNotIn(
+            stripdir,
+            str(err, encoding=sys.getdefaultencoding())
+        )
+
+    def test_strip_prepend_and_ddir(self):
+        fullpath = ["test", "build", "real", "path", "ddir"]
+        path = os.path.join(self.directory, *fullpath)
+        os.makedirs(path)
+        script_helper.make_script(path, "test", "1 / 0")
+        with self.assertRaises(ValueError):
+            compileall.compile_dir(path, quiet=True, ddir="/bar",
+                                   stripdir="/foo", prependdir="/bar")
+
+    def test_multiple_optimization_levels(self):
+        script = script_helper.make_script(self.directory,
+                                           "test_optimization",
+                                           "a = 0")
+        bc = []
+        for opt_level in "", 1, 2, 3:
+            bc.append(importlib.util.cache_from_source(script,
+                                                       optimization=opt_level))
+        test_combinations = [[0, 1], [1, 2], [0, 2], [0, 1, 2]]
+        for opt_combination in test_combinations:
+            compileall.compile_file(script, quiet=True,
+                                    optimize=opt_combination)
+            for opt_level in opt_combination:
+                self.assertTrue(os.path.isfile(bc[opt_level]))
+                try:
+                    os.unlink(bc[opt_level])
+                except Exception:
+                    pass
+
+    @support.skip_unless_symlink
+    def test_ignore_symlink_destination(self):
+        # Create folders for allowed files, symlinks and prohibited area
+        allowed_path = os.path.join(self.directory, "test", "dir", "allowed")
+        symlinks_path = os.path.join(self.directory, "test", "dir", "symlinks")
+        prohibited_path = os.path.join(self.directory, "test", "dir", "prohibited")
+        os.makedirs(allowed_path)
+        os.makedirs(symlinks_path)
+        os.makedirs(prohibited_path)
+
+        # Create scripts and symlinks and remember their byte-compiled versions
+        allowed_script = script_helper.make_script(allowed_path, "test_allowed", "a = 0")
+        prohibited_script = script_helper.make_script(prohibited_path, "test_prohibited", "a = 0")
+        allowed_symlink = os.path.join(symlinks_path, "test_allowed.py")
+        prohibited_symlink = os.path.join(symlinks_path, "test_prohibited.py")
+        os.symlink(allowed_script, allowed_symlink)
+        os.symlink(prohibited_script, prohibited_symlink)
+        allowed_bc = importlib.util.cache_from_source(allowed_symlink)
+        prohibited_bc = importlib.util.cache_from_source(prohibited_symlink)
+
+        compileall.compile_dir(symlinks_path, quiet=True, limit_sl_dest=allowed_path)
+
+        self.assertTrue(os.path.isfile(allowed_bc))
+        self.assertFalse(os.path.isfile(prohibited_bc))
 
 
 class CompileallTestsWithSourceEpoch(CompileallTestsBase,
@@ -436,6 +563,20 @@ class CommandLineTestsBase:
         self.assertCompiled(spamfn)
         self.assertCompiled(eggfn)
 
+    @support.skip_unless_symlink
+    def test_symlink_loop(self):
+        # Currently, compileall ignores symlinks to directories.
+        # If that limitation is ever lifted, it should protect against
+        # recursion in symlink loops.
+        pkg = os.path.join(self.pkgdir, 'spam')
+        script_helper.make_pkg(pkg)
+        os.symlink('.', os.path.join(pkg, 'evil'))
+        os.symlink('.', os.path.join(pkg, 'evil2'))
+        self.assertRunOK('-q', self.pkgdir)
+        self.assertCompiled(os.path.join(
+            self.pkgdir, 'spam', 'evil', 'evil2', '__init__.py'
+        ))
+
     def test_quiet(self):
         noisy = self.assertRunOK(self.pkgdir)
         quiet = self.assertRunOK('-q', self.pkgdir)
@@ -576,6 +717,74 @@ class CommandLineTestsBase:
             compileall.main()
             self.assertTrue(compile_dir.called)
             self.assertEqual(compile_dir.call_args[-1]['workers'], 0)
+
+    def test_strip_and_prepend(self):
+        fullpath = ["test", "build", "real", "path"]
+        path = os.path.join(self.directory, *fullpath)
+        os.makedirs(path)
+        script = script_helper.make_script(path, "test", "1 / 0")
+        bc = importlib.util.cache_from_source(script)
+        stripdir = os.path.join(self.directory, *fullpath[:2])
+        prependdir = "/foo"
+        self.assertRunOK("-s", stripdir, "-p", prependdir, path)
+        rc, out, err = script_helper.assert_python_failure(bc)
+        expected_in = os.path.join(prependdir, *fullpath[2:])
+        self.assertIn(
+            expected_in,
+            str(err, encoding=sys.getdefaultencoding())
+        )
+        self.assertNotIn(
+            stripdir,
+            str(err, encoding=sys.getdefaultencoding())
+        )
+
+    def test_multiple_optimization_levels(self):
+        path = os.path.join(self.directory, "optimizations")
+        os.makedirs(path)
+        script = script_helper.make_script(path,
+                                           "test_optimization",
+                                           "a = 0")
+        bc = []
+        for opt_level in "", 1, 2, 3:
+            bc.append(importlib.util.cache_from_source(script,
+                                                       optimization=opt_level))
+        test_combinations = [["0", "1"],
+                             ["1", "2"],
+                             ["0", "2"],
+                             ["0", "1", "2"]]
+        for opt_combination in test_combinations:
+            self.assertRunOK(path, *("-o" + str(n) for n in opt_combination))
+            for opt_level in opt_combination:
+                self.assertTrue(os.path.isfile(bc[int(opt_level)]))
+                try:
+                    os.unlink(bc[opt_level])
+                except Exception:
+                    pass
+
+    @support.skip_unless_symlink
+    def test_ignore_symlink_destination(self):
+        # Create folders for allowed files, symlinks and prohibited area
+        allowed_path = os.path.join(self.directory, "test", "dir", "allowed")
+        symlinks_path = os.path.join(self.directory, "test", "dir", "symlinks")
+        prohibited_path = os.path.join(self.directory, "test", "dir", "prohibited")
+        os.makedirs(allowed_path)
+        os.makedirs(symlinks_path)
+        os.makedirs(prohibited_path)
+
+        # Create scripts and symlinks and remember their byte-compiled versions
+        allowed_script = script_helper.make_script(allowed_path, "test_allowed", "a = 0")
+        prohibited_script = script_helper.make_script(prohibited_path, "test_prohibited", "a = 0")
+        allowed_symlink = os.path.join(symlinks_path, "test_allowed.py")
+        prohibited_symlink = os.path.join(symlinks_path, "test_prohibited.py")
+        os.symlink(allowed_script, allowed_symlink)
+        os.symlink(prohibited_script, prohibited_symlink)
+        allowed_bc = importlib.util.cache_from_source(allowed_symlink)
+        prohibited_bc = importlib.util.cache_from_source(prohibited_symlink)
+
+        self.assertRunOK(symlinks_path, "-e", allowed_path)
+
+        self.assertTrue(os.path.isfile(allowed_bc))
+        self.assertFalse(os.path.isfile(prohibited_bc))
 
 
 class CommandLineTestsWithSourceEpoch(CommandLineTestsBase,
