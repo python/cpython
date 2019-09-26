@@ -496,6 +496,12 @@ All methods are executed atomically.
 
       There is no return value.
 
+   .. method:: locked()
+
+      Check if a lock is locked. Returns a boolean to indicate the lock status.
+
+      When the lock is acquired, returns true. If the lock is free returns false.
+
 
 .. _rlock-objects:
 
