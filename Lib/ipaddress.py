@@ -653,7 +653,7 @@ class _BaseAddress(_IPAddressBase):
         if fmt_base == 'n':
             if self._version == 4:
                 fmt_base = 'b'  # Binary is default for ipv4
-            if self._version == 6:
+            else:
                 fmt_base = 'x'  # Hex is default for ipv6
 
         if fmt_base == 'b':
