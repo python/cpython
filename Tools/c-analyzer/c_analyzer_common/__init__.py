@@ -1,4 +1,5 @@
 import os.path
+import sys
 
 
 PKG_ROOT = os.path.dirname(__file__)
@@ -14,6 +15,10 @@ SOURCE_DIRS = [os.path.join(REPO_ROOT, name) for name in [
         'Modules',
         ]]
 
+#PYTHON = os.path.join(REPO_ROOT, 'python')
+PYTHON = sys.executable
+
 
 # Clean up the namespace.
+del sys
 del os

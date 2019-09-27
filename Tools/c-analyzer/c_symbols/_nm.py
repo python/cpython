@@ -1,46 +1,24 @@
-import os
 import os.path
 import shutil
-import sys
 
 from c_analyzer_common import util, info
-from . import source
+
 from .info import Symbol
 
 
-#PYTHON = os.path.join(REPO_ROOT, 'python')
-PYTHON = sys.executable
+# XXX need tests:
+# * iter_symbols
 
-
-def iter_symbols(binary=PYTHON, dirnames=None, *,
-                 # Alternately, use look_up_known_symbol()
-                 # from c_globals.supported.
-                 find_local_symbol=source.find_symbol,
-                 _file_exists=os.path.exists,
-                 _iter_symbols_nm=(lambda b, *a: _iter_symbols_nm(b, *a)),
-                 ):
-    """Yield a Symbol for each symbol found in the binary."""
-    if not _file_exists(binary):
-        raise Exception('executable missing (need to build it first?)')
-
-    if find_local_symbol:
-        cache = {}
-        def find_local_symbol(name, *, _find=find_local_symbol):
-            return _find(name, dirnames, _perfilecache=cache)
-    else:
-        find_local_symbol = None
-
-    if os.name == 'nt':
-        # XXX Support this.
-        raise NotImplementedError
-    else:
-        yield from _iter_symbols_nm(binary, find_local_symbol)
-
-
-#############################
-# binary format (e.g. ELF)
+NM_KINDS = {
+        'b': Symbol.KIND.VARIABLE,  # uninitialized
+        'd': Symbol.KIND.VARIABLE,  # initialized
+        #'g': Symbol.KIND.VARIABLE,  # uninitialized
+        #'s': Symbol.KIND.VARIABLE,  # initialized
+        't': Symbol.KIND.FUNCTION,
+        }
 
 SPECIAL_SYMBOLS = {
+        # binary format (e.g. ELF)
         '__bss_start',
         '__data_start',
         '__dso_handle',
@@ -63,29 +41,21 @@ def _is_special_symbol(name):
     return False
 
 
-#############################
-# "nm"
+def iter_symbols(binfile, find_local_symbol=None,
+                 *,
+                 nm=None,
+                 _which=shutil.which,
+                 _run=util.run_cmd,
+                 ):
+    """Yield a Symbol for each relevant entry reported by the "nm" command."""
+    if nm is None:
+        nm = _which('nm')
+        if not nm:
+            raise NotImplementedError
 
-NM_KINDS = {
-        'b': Symbol.KIND.VARIABLE,  # uninitialized
-        'd': Symbol.KIND.VARIABLE,  # initialized
-        #'g': Symbol.KIND.VARIABLE,  # uninitialized
-        #'s': Symbol.KIND.VARIABLE,  # initialized
-        't': Symbol.KIND.FUNCTION,
-        }
-
-
-def _iter_symbols_nm(binary, find_local_symbol=None,
-                     *,
-                     _which=shutil.which,
-                     _run=util.run_cmd,
-                     ):
-    nm = _which('nm')
-    if not nm:
-        raise NotImplementedError
     argv = [nm,
             '--line-numbers',
-            binary,
+            binfile,
             ]
     try:
         output = _run(argv)

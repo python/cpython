@@ -1,8 +1,8 @@
-from c_analyzer_common import SOURCE_DIRS
+from c_analyzer_common import SOURCE_DIRS, PYTHON
 from c_analyzer_common.info import UNKNOWN, Variable
 from c_symbols import (
         info as s_info,
-        binary as b_symbols,
+        find as b_symbols,
         source as s_symbols,
         resolve,
         )
@@ -12,7 +12,7 @@ from c_parser import declarations
 # XXX needs tests:
 # * iter_variables
 
-def globals_from_binary(binfile=b_symbols.PYTHON, *,
+def globals_from_binary(binfile=PYTHON, *,
                         knownvars=None,
                         dirnames=None,
                         _iter_symbols=b_symbols.iter_symbols,
