@@ -3,13 +3,13 @@ import os.path
 import re
 import sys
 
-from c_analyzer_common import SOURCE_DIRS, REPO_ROOT
+from c_analyzer_common import SOURCE_DIRS, REPO_ROOT, show
 from c_analyzer_common.info import UNKNOWN
 from c_analyzer_common.known import (
     from_file as known_from_file,
     DATA_FILE as KNOWN_FILE,
     )
-from . import find, show
+from . import find
 from .supported import is_supported, ignored_from_file, IGNORED_FILE, _is_object
 
 
