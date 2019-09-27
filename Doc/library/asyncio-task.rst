@@ -212,7 +212,7 @@ Running an asyncio Program
 
 .. function:: run(coro, \*, debug=False)
 
-    Execute the :term:`coroutine` *coro*  and return the result.
+    Execute the :term:`coroutine` *coro* and return the result.
 
     This function runs the passed coroutine, taking care of
     managing the asyncio event loop, *finalizing asynchronous
