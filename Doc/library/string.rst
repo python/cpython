@@ -229,12 +229,13 @@ keyword.  If it's a number, it refers to a positional argument, and if it's a ke
 it refers to a named keyword argument.  If the numerical arg_names in a format string
 are 0, 1, 2, ... in sequence, they can all be omitted (not just some)
 and the numbers 0, 1, 2, ... will be automatically inserted in that order.
-Because *arg_name* is not quote-delimited, it is not possible to specify arbitrary
-dictionary keys (e.g., the strings ``'10'`` or ``':-]'``) within a format string.
 The *arg_name* can be followed by any number of index or
 attribute expressions. An expression of the form ``'.name'`` selects the named
 attribute using :func:`getattr`, while an expression of the form ``'[index]'``
-does an index lookup using :func:`__getitem__`.
+does an index lookup using :func:`__getitem__`. If *element_index* matches
+*index_string*, then a string with value *element_index* will be used as key.
+As *element_index* cannot be quote-delimited, it is not possible to use
+a string key that matches `digit`+ such as ``'10'`` within a format string.
 
 .. versionchanged:: 3.1
    The positional argument specifiers can be omitted for :meth:`str.format`,
@@ -251,6 +252,7 @@ Some simple format string examples::
    "My quest is {name}"              # References keyword argument 'name'
    "Weight in tons {0.weight}"       # 'weight' attribute of first positional arg
    "Units destroyed: {players[0]}"   # First element of keyword argument 'players'.
+   "Welcome {player[name]}"          # Value of key 'name' of keyword argument 'player'
 
 The *conversion* field causes a type coercion before formatting.  Normally, the
 job of formatting a value is done by the :meth:`__format__` method of the value
