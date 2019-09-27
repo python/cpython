@@ -1,2 +1,2 @@
-Escape the server_title of :class:`DocXMLRPCServer` when rendering the
-document page. (Contributed by Dong-hee Na in :issue:`38243`.)
+Escape the server title of :class:`DocXMLRPCServer` when rendering the
+document page as HTML. (Contributed by Dong-hee Na in :issue:`38243`.)

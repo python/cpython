@@ -194,13 +194,14 @@ class DocXMLRPCHTTPGETServer(unittest.TestCase):
             response.read())
 
     def test_server_title_escape(self):
+        # bpo-38243: Ensure that the server title and documentation
+        # are escaped for HTML.
         self.serv.set_server_title('test_title<script>')
         self.serv.set_server_documentation('test_documentation<script>')
         self.assertEqual('test_title<script>', self.serv.server_title)
         self.assertEqual('test_documentation<script>',
                 self.serv.server_documentation)
 
-        # bpo-38243
         generated = self.serv.generate_html_documentation()
         title = re.search(r'<title>(.+?)</title>', generated).group()
         documentation = re.search(r'<p><tt>(.+?)</tt></p>', generated).group()
