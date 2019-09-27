@@ -193,14 +193,6 @@ class DocXMLRPCHTTPGETServer(unittest.TestCase):
              b'method_annotation</strong></a>(x: bytes)</dt></dl>'),
             response.read())
 
-
-class XMLRPCDocGeneratorTest(unittest.TestCase):
-    def setUp(self):
-        self.serv = DocXMLRPCServer(("localhost", 0), logRequests=False)
-
-    def tearDown(self):
-        self.serv.server_close()
-
     def test_server_title_escape(self):
         self.serv.set_server_title('test_title<script>')
         self.serv.set_server_documentation('test_documentation<script>')
