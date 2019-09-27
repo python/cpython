@@ -1172,15 +1172,20 @@ class HTTPConnection:
             # For HTTP/1.0, the server will assume "not chunked"
             pass
 
+
+    # The encoding URLs are constrained to before hitting the wire.
+    _prepare_path_encoding = 'ascii'
+
     def _prepare_path(self, url):
         """Validate a url for putrequest and return encoded bytes."""
         # Prevent CVE-2019-9740.
-        if match := _contains_disallowed_url_pchar_re.search(url):
+        match = _contains_disallowed_url_pchar_re.search(url)
+        if match:
             raise InvalidURL(f"URL can't contain control characters. {url!r} "
                              f"(found at least {match.group()!r})")
 
-        # Require ASCII characters only
-        return url.encode('ascii')
+        # Require a specific character set (normally ASCII).
+        return url.encode(self._prepare_path_encoding)
 
     def putheader(self, header, *values):
         """Send a request header line to the server.

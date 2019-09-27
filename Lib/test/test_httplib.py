@@ -1175,15 +1175,7 @@ class BasicTest(TestCase):
         (bpo-36274).
         """
         class UnsafeHTTPConnection(client.HTTPConnection):
-            def _prepare_path(self, url):
-                # Prevent CVE-2019-9740.
-                if match := client._contains_disallowed_url_pchar_re.search(
-                        url):
-                    raise InvalidURL(
-                        f"URL can't contain control characters. {url!r} "
-                        f"(found at least {match.group()!r})")
-
-                return url.encode('utf-8')
+            _prepare_path_encoding = 'utf-8'
 
         conn = UnsafeHTTPConnection('example.com')
         conn.sock = FakeSocket('')
