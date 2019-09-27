@@ -235,7 +235,7 @@ attribute using :func:`getattr`, while an expression of the form ``'[index]'``
 does an index lookup using :func:`__getitem__`. If *element_index* matches
 *index_string*, then a string with value *element_index* will be used as key.
 As *element_index* cannot be quote-delimited, it is not possible to use
-a string key that matches `digit`+ such as ``'10'`` within a format string.
+a string key that matches *digit+* such as ``'10'`` within a format string.
 
 .. versionchanged:: 3.1
    The positional argument specifiers can be omitted for :meth:`str.format`,
