@@ -163,7 +163,7 @@ def find_variables(varids, filenames=None, *,
             srcfiles = [varid.filename]
         else:
             if not filenames:
-                yield Variable(varid, UNKNOWN)
+                yield Variable(varid, UNKNOWN, UNKNOWN)
                 continue
             srcfiles = filenames
         for filename in srcfiles:
@@ -177,4 +177,4 @@ def find_variables(varids, filenames=None, *,
                 used.add(found)
                 break
         else:
-            yield Variable(varid, UNKNOWN)
+            yield Variable(varid, UNKNOWN, UNKNOWN)

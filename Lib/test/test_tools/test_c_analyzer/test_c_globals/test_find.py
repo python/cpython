@@ -64,7 +64,9 @@ class StaticsFromBinaryTests(_Base):
                                          **self.kwargs))
 
         self.assertEqual(found, [
+            info.Variable.from_parts('dir1/spam.c', None, 'var1', 'int'),
             info.Variable.from_parts('dir1/spam.c', None, 'var2', 'static int'),
+            info.Variable.from_parts('dir1/spam.c', None, 'var3', 'char *'),
             info.Variable.from_parts('dir1/eggs.c', None, 'var1', 'static int'),
             info.Variable.from_parts('dir1/eggs.c', 'func1', 'var2', 'static char *'),
             ])
@@ -299,7 +301,7 @@ class StaticsTest(_Base):
             info.Variable.from_parts('src1/spam.c', None, 'var1', 'static const char *'),
             info.Variable.from_parts('src1/spam.c', None, 'var1b', 'const char *'),
             info.Variable.from_parts('src1/spam.c', 'ham', 'initialized', 'static int'),
-            info.Variable.from_parts('src1/spam.c', 'ham', 'result', 'int'),
+            info.Variable.from_parts('src1/spam.c', 'ham', 'result', 'int'),  # skipped
             info.Variable.from_parts('src1/spam.c', None, 'var2', 'static PyObject *'),
             info.Variable.from_parts('src1/eggs.c', 'tofu', 'ready', 'static int'),
             info.Variable.from_parts('src1/spam.c', None, 'freelist', 'static (PyTupleObject *)[10]'),
@@ -318,6 +320,7 @@ class StaticsTest(_Base):
 
         self.assertEqual(found, [
             info.Variable.from_parts('src1/spam.c', None, 'var1', 'static const char *'),
+            info.Variable.from_parts('src1/spam.c', None, 'var1b', 'const char *'),
             info.Variable.from_parts('src1/spam.c', 'ham', 'initialized', 'static int'),
             info.Variable.from_parts('src1/spam.c', None, 'var2', 'static PyObject *'),
             info.Variable.from_parts('src1/eggs.c', 'tofu', 'ready', 'static int'),
