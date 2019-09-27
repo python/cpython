@@ -1073,8 +1073,6 @@ os.close(fd)
         self.assertEqual(messages, [])
 
     def test_stream_reader_create_warning(self):
-        with contextlib.suppress(AttributeError):
-            del asyncio.StreamReader
         with self.assertWarns(DeprecationWarning):
             asyncio.StreamReader(loop=self.loop)
 
