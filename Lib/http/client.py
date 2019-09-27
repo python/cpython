@@ -1094,7 +1094,6 @@ class HTTPConnection:
             self._http_vsn_str.encode('ascii')
         ))
 
-        # Non-ASCII characters should have been eliminated earlier
         self._output(request)
 
         if self._http_vsn == 11:
