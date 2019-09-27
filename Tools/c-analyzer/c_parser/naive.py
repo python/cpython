@@ -1,8 +1,7 @@
 import re
 
-from c_analyzer_common.info import UNKNOWN
+from c_analyzer_common.info import UNKNOWN, Variable
 
-from .info import Variable
 from .preprocessor import _iter_clean_lines
 
 

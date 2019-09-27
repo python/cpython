@@ -1,12 +1,12 @@
 from c_analyzer_common import SOURCE_DIRS
-from c_analyzer_common.info import UNKNOWN
+from c_analyzer_common.info import UNKNOWN, Variable
 from c_symbols import (
         info as s_info,
         binary as b_symbols,
         source as s_symbols,
         resolve,
         )
-from c_parser import info, declarations
+from c_parser import declarations
 
 
 # XXX needs tests:
@@ -72,12 +72,12 @@ def iter_variables(kind='platform', *,
                 )
     elif kind == 'declarations':
         for decl in _iter_raw(dirnames):
-            if not isinstance(decl, info.Variable):
+            if not isinstance(decl, Variable):
                 continue
             yield decl
     elif kind == 'preprocessed':
         for decl in _iter_preprocessed(dirnames):
-            if not isinstance(decl, info.Variable):
+            if not isinstance(decl, Variable):
                 continue
             yield decl
     else:

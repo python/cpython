@@ -3,9 +3,8 @@ import unittest
 
 from .. import tool_imports_for_tests
 with tool_imports_for_tests():
-    from c_analyzer_common import SOURCE_DIRS
+    from c_analyzer_common import SOURCE_DIRS, info
     from c_analyzer_common.known import DATA_FILE as KNOWN_FILE
-    from c_parser import info
     import c_globals as cg
     from c_globals.supported import IGNORED_FILE
     from c_globals.__main__ import cmd_check, cmd_show, parse_args, main

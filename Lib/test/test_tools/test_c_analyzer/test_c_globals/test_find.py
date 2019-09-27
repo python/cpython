@@ -2,7 +2,7 @@ import unittest
 
 from .. import tool_imports_for_tests
 with tool_imports_for_tests():
-    from c_parser import info
+    from c_analyzer_common import info
     from c_globals.find import globals_from_binary, globals
 
 

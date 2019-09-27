@@ -4,8 +4,7 @@ import unittest
 
 from .. import tool_imports_for_tests
 with tool_imports_for_tests():
-    from c_parser.info import Variable
-    from c_analyzer_common.info import ID
+    from c_analyzer_common.info import ID, Variable
     from c_analyzer_common.known import from_file
 
 

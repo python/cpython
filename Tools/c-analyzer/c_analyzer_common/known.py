@@ -1,10 +1,8 @@
 import csv
 import os.path
 
-from c_parser.info import Variable
-
 from . import DATA_DIR
-from .info import ID, UNKNOWN
+from .info import ID, UNKNOWN, Variable
 from .util import read_tsv
 
 

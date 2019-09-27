@@ -1,8 +1,8 @@
 import os.path
 
 from c_analyzer_common import files
-from c_analyzer_common.info import UNKNOWN
-from c_parser import declarations, info
+from c_analyzer_common.info import UNKNOWN, Variable
+from c_parser import declarations
 from .info import Symbol
 from .source import _find_symbol
 
@@ -72,7 +72,7 @@ def find_in_source(symbol, dirnames, *,
      ) = _find_symbol(symbol.name, filenames, _perfilecache)
     if filename == UNKNOWN:
         return None
-    return info.Variable.from_parts(filename, funcname, symbol.name, decl)
+    return Variable.from_parts(filename, funcname, symbol.name, decl)
 
 
 def get_resolver(knownvars=None, dirnames=None, *,
@@ -130,7 +130,7 @@ def symbols_to_variables(symbols, *,
     Use get_resolver() for a "resolve" func to use.
     """
     for symbol in symbols:
-        if isinstance(symbol, info.Variable):
+        if isinstance(symbol, Variable):
             # XXX validate?
             yield symbol
             continue
@@ -139,7 +139,7 @@ def symbols_to_variables(symbols, *,
         resolved = resolve(symbol)
         if resolved is None:
             #raise NotImplementedError(symbol)
-            resolved = info.Variable(
+            resolved = Variable(
                     id=symbol.id,
                     storage=UNKNOWN,
                     vartype=UNKNOWN,

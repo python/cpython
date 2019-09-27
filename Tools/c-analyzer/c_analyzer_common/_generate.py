@@ -4,11 +4,10 @@ from c_parser.preprocessor import _iter_clean_lines
 from c_parser.naive import (
         iter_variables, parse_variable_declaration, find_variables,
         )
-from c_parser.info import Variable
 
 from . import SOURCE_DIRS, REPO_ROOT
 from .known import DATA_FILE as KNOWN_FILE, HEADER as KNOWN_HEADER
-from .info import UNKNOWN, ID
+from .info import UNKNOWN, ID, Variable
 from .util import write_tsv
 from .files import iter_cpython_files
 

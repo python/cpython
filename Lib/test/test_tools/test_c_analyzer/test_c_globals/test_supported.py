@@ -4,8 +4,7 @@ import unittest
 
 from .. import tool_imports_for_tests
 with tool_imports_for_tests():
-    from c_analyzer_common.info import ID
-    from c_parser import info
+    from c_analyzer_common.info import ID, Variable
     from c_globals.supported import is_supported, ignored_from_file
 
 
@@ -14,8 +13,8 @@ class IsSupportedTests(unittest.TestCase):
     @unittest.expectedFailure
     def test_supported(self):
         statics = [
-                info.StaticVar('src1/spam.c', None, 'var1', 'const char *'),
-                info.StaticVar('src1/spam.c', None, 'var1', 'int'),
+                Variable('src1/spam.c', None, 'var1', 'const char *'),
+                Variable('src1/spam.c', None, 'var1', 'int'),
                 ]
         for static in statics:
             with self.subTest(static):
@@ -26,8 +25,8 @@ class IsSupportedTests(unittest.TestCase):
     @unittest.expectedFailure
     def test_not_supported(self):
         statics = [
-                info.StaticVar('src1/spam.c', None, 'var1', 'PyObject *'),
-                info.StaticVar('src1/spam.c', None, 'var1', 'PyObject[10]'),
+                Variable('src1/spam.c', None, 'var1', 'PyObject *'),
+                Variable('src1/spam.c', None, 'var1', 'PyObject[10]'),
                 ]
         for static in statics:
             with self.subTest(static):
