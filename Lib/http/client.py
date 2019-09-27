@@ -1173,8 +1173,9 @@ class HTTPConnection:
             pass
 
 
-    # The encoding URLs are constrained to before hitting the wire.
-    _prepare_path_encoding = 'ascii'
+    def _encode_prepared_path(self, str_url):
+        # ASCII also helps prevent CVE-2019-9740.
+        return str_url.encode('ascii')
 
     def _prepare_path(self, url):
         """Validate a url for putrequest and return encoded bytes."""
@@ -1184,8 +1185,7 @@ class HTTPConnection:
             raise InvalidURL(f"URL can't contain control characters. {url!r} "
                              f"(found at least {match.group()!r})")
 
-        # Require a specific character set (normally ASCII).
-        return url.encode(self._prepare_path_encoding)
+        return self._encode_prepared_path(url)
 
     def putheader(self, header, *values):
         """Send a request header line to the server.

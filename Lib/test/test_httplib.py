@@ -1175,7 +1175,8 @@ class BasicTest(TestCase):
         (bpo-36274).
         """
         class UnsafeHTTPConnection(client.HTTPConnection):
-            _prepare_path_encoding = 'utf-8'
+            def _encode_prepared_path(self, str_url):
+                return str_url.encode('utf-8')
 
         conn = UnsafeHTTPConnection('example.com')
         conn.sock = FakeSocket('')
