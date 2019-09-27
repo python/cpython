@@ -500,7 +500,7 @@ All methods are executed atomically.
 
       Check if a lock is locked. Returns a boolean to indicate the lock status.
 
-      When the lock is acquired, returns true. If the lock is free returns false.
+      Return ``True`` when the lock is locked, ``False`` otherwise.
 
 
 .. _rlock-objects:
