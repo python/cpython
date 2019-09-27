@@ -6,7 +6,7 @@ from . import tasks
 
 
 def run(main, *, debug=False):
-    """Execute the coroutine *coro* and return the result.
+    """Execute the coroutine and return the result.
 
     This function runs the passed coroutine, taking care of
     managing the asyncio event loop and finalizing asynchronous
