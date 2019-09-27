@@ -1,19 +1,14 @@
 __all__ = (
-    'Stream', 'StreamMode',
-    'open_connection', 'start_server',
-    'connect', 'connect_read_pipe', 'connect_write_pipe',
-    'StreamServer')
+    'StreamReader', 'StreamWriter', 'StreamReaderProtocol',
+    'open_connection', 'start_server')
 
-import enum
 import socket
 import sys
 import warnings
 import weakref
 
 if hasattr(socket, 'AF_UNIX'):
-    __all__ += ('open_unix_connection', 'start_unix_server',
-                'connect_unix',
-                'UnixStreamServer')
+    __all__ += ('open_unix_connection', 'start_unix_server')
 
 from . import coroutines
 from . import events
@@ -21,132 +16,10 @@ from . import exceptions
 from . import format_helpers
 from . import protocols
 from .log import logger
-from . import tasks
+from .tasks import sleep
 
 
 _DEFAULT_LIMIT = 2 ** 16  # 64 KiB
-
-
-class StreamMode(enum.Flag):
-    READ = enum.auto()
-    WRITE = enum.auto()
-    READWRITE = READ | WRITE
-
-
-def _ensure_can_read(mode):
-    if not mode & StreamMode.READ:
-        raise RuntimeError("The stream is write-only")
-
-
-def _ensure_can_write(mode):
-    if not mode & StreamMode.WRITE:
-        raise RuntimeError("The stream is read-only")
-
-
-class _ContextManagerHelper:
-    __slots__ = ('_awaitable', '_result')
-
-    def __init__(self, awaitable):
-        self._awaitable = awaitable
-        self._result = None
-
-    def __await__(self):
-        return self._awaitable.__await__()
-
-    async def __aenter__(self):
-        ret = await self._awaitable
-        result = await ret.__aenter__()
-        self._result = result
-        return result
-
-    async def __aexit__(self, exc_type, exc_val, exc_tb):
-        return await self._result.__aexit__(exc_type, exc_val, exc_tb)
-
-
-def connect(host=None, port=None, *,
-            limit=_DEFAULT_LIMIT,
-            ssl=None, family=0, proto=0,
-            flags=0, sock=None, local_addr=None,
-            server_hostname=None,
-            ssl_handshake_timeout=None,
-            happy_eyeballs_delay=None, interleave=None):
-    # Design note:
-    # Don't use decorator approach but exilicit non-async
-    # function to fail fast and explicitly
-    # if passed arguments don't match the function signature
-    return _ContextManagerHelper(_connect(host, port, limit,
-                                          ssl, family, proto,
-                                          flags, sock, local_addr,
-                                          server_hostname,
-                                          ssl_handshake_timeout,
-                                          happy_eyeballs_delay,
-                                          interleave))
-
-
-async def _connect(host, port,
-                  limit,
-                  ssl, family, proto,
-                  flags, sock, local_addr,
-                  server_hostname,
-                  ssl_handshake_timeout,
-                  happy_eyeballs_delay, interleave):
-    loop = events.get_running_loop()
-    stream = Stream(mode=StreamMode.READWRITE,
-                    limit=limit,
-                    loop=loop,
-                    _asyncio_internal=True)
-    await loop.create_connection(
-        lambda: _StreamProtocol(stream, loop=loop,
-                                _asyncio_internal=True),
-        host, port,
-        ssl=ssl, family=family, proto=proto,
-        flags=flags, sock=sock, local_addr=local_addr,
-        server_hostname=server_hostname,
-        ssl_handshake_timeout=ssl_handshake_timeout,
-        happy_eyeballs_delay=happy_eyeballs_delay, interleave=interleave)
-    return stream
-
-
-def connect_read_pipe(pipe, *, limit=_DEFAULT_LIMIT):
-    # Design note:
-    # Don't use decorator approach but explicit non-async
-    # function to fail fast and explicitly
-    # if passed arguments don't match the function signature
-    return _ContextManagerHelper(_connect_read_pipe(pipe, limit))
-
-
-async def _connect_read_pipe(pipe, limit):
-    loop = events.get_running_loop()
-    stream = Stream(mode=StreamMode.READ,
-                    limit=limit,
-                    loop=loop,
-                    _asyncio_internal=True)
-    await loop.connect_read_pipe(
-        lambda: _StreamProtocol(stream, loop=loop,
-                                _asyncio_internal=True),
-        pipe)
-    return stream
-
-
-def connect_write_pipe(pipe, *, limit=_DEFAULT_LIMIT):
-    # Design note:
-    # Don't use decorator approach but explicit non-async
-    # function to fail fast and explicitly
-    # if passed arguments don't match the function signature
-    return _ContextManagerHelper(_connect_write_pipe(pipe, limit))
-
-
-async def _connect_write_pipe(pipe, limit):
-    loop = events.get_running_loop()
-    stream = Stream(mode=StreamMode.WRITE,
-                    limit=limit,
-                    loop=loop,
-                    _asyncio_internal=True)
-    await loop.connect_write_pipe(
-        lambda: _StreamProtocol(stream, loop=loop,
-                                _asyncio_internal=True),
-        pipe)
-    return stream
 
 
 async def open_connection(host=None, port=None, *,
@@ -168,11 +41,6 @@ async def open_connection(host=None, port=None, *,
     StreamReaderProtocol classes, just copy the code -- there's
     really nothing special here except some convenience.)
     """
-    warnings.warn("open_connection() is deprecated since Python 3.8 "
-                  "in favor of connect(), and scheduled for removal "
-                  "in Python 3.10",
-                  DeprecationWarning,
-                  stacklevel=2)
     if loop is None:
         loop = events.get_event_loop()
     else:
@@ -183,7 +51,8 @@ async def open_connection(host=None, port=None, *,
     protocol = StreamReaderProtocol(reader, loop=loop, _asyncio_internal=True)
     transport, _ = await loop.create_connection(
         lambda: protocol, host, port, **kwds)
-    writer = StreamWriter(transport, protocol, reader, loop)
+    writer = StreamWriter(transport, protocol, reader, loop,
+                          _asyncio_internal=True)
     return reader, writer
 
 
@@ -210,11 +79,6 @@ async def start_server(client_connected_cb, host=None, port=None, *,
     The return value is the same as loop.create_server(), i.e. a
     Server object which can be used to stop the service.
     """
-    warnings.warn("start_server() is deprecated since Python 3.8 "
-                  "in favor of StreamServer(), and scheduled for removal "
-                  "in Python 3.10",
-                  DeprecationWarning,
-                  stacklevel=2)
     if loop is None:
         loop = events.get_event_loop()
     else:
@@ -223,7 +87,8 @@ async def start_server(client_connected_cb, host=None, port=None, *,
                       DeprecationWarning, stacklevel=2)
 
     def factory():
-        reader = StreamReader(limit=limit, loop=loop)
+        reader = StreamReader(limit=limit, loop=loop,
+                              _asyncio_internal=True)
         protocol = StreamReaderProtocol(reader, client_connected_cb,
                                         loop=loop,
                                         _asyncio_internal=True)
@@ -232,194 +97,12 @@ async def start_server(client_connected_cb, host=None, port=None, *,
     return await loop.create_server(factory, host, port, **kwds)
 
 
-class _BaseStreamServer:
-    # Design notes.
-    # StreamServer and UnixStreamServer are exposed as FINAL classes,
-    # not function factories.
-    # async with serve(host, port) as server:
-    #      server.start_serving()
-    # looks ugly.
-    # The class doesn't provide API for enumerating connected streams
-    # It can be a subject for improvements in Python 3.9
-
-    _server_impl = None
-
-    def __init__(self, client_connected_cb,
-                 /,
-                 limit=_DEFAULT_LIMIT,
-                 shutdown_timeout=60,
-                 _asyncio_internal=False):
-        if not _asyncio_internal:
-            raise RuntimeError("_ServerStream is a private asyncio class")
-        self._client_connected_cb = client_connected_cb
-        self._limit = limit
-        self._loop = events.get_running_loop()
-        self._streams = {}
-        self._shutdown_timeout = shutdown_timeout
-
-    def __init_subclass__(cls):
-        if not cls.__module__.startswith('asyncio.'):
-            raise TypeError(f"asyncio.{cls.__name__} "
-                            "class cannot be inherited from")
-
-    async def bind(self):
-        if self._server_impl is not None:
-            return
-        self._server_impl = await self._bind()
-
-    def is_bound(self):
-        return self._server_impl is not None
-
-    @property
-    def sockets(self):
-        # multiple value for socket bound to both IPv4 and IPv6 families
-        if self._server_impl is None:
-            return ()
-        return self._server_impl.sockets
-
-    def is_serving(self):
-        if self._server_impl is None:
-            return False
-        return self._server_impl.is_serving()
-
-    async def start_serving(self):
-        await self.bind()
-        await self._server_impl.start_serving()
-
-    async def serve_forever(self):
-        await self.start_serving()
-        await self._server_impl.serve_forever()
-
-    async def close(self):
-        if self._server_impl is None:
-            return
-        self._server_impl.close()
-        streams = list(self._streams.keys())
-        active_tasks = list(self._streams.values())
-        if streams:
-            await tasks.wait([stream.close() for stream in streams])
-        await self._server_impl.wait_closed()
-        self._server_impl = None
-        await self._shutdown_active_tasks(active_tasks)
-
-    async def abort(self):
-        if self._server_impl is None:
-            return
-        self._server_impl.close()
-        streams = list(self._streams.keys())
-        active_tasks = list(self._streams.values())
-        if streams:
-            await tasks.wait([stream.abort() for stream in streams])
-        await self._server_impl.wait_closed()
-        self._server_impl = None
-        await self._shutdown_active_tasks(active_tasks)
-
-    async def __aenter__(self):
-        await self.bind()
-        return self
-
-    async def __aexit__(self, exc_type, exc_value, exc_tb):
-        await self.close()
-
-    def _attach(self, stream, task):
-        self._streams[stream] = task
-
-    def _detach(self, stream, task):
-        del self._streams[stream]
-
-    async def _shutdown_active_tasks(self, active_tasks):
-        if not active_tasks:
-            return
-        # NOTE: tasks finished with exception are reported
-        # by the Task.__del__() method.
-        done, pending = await tasks.wait(active_tasks,
-                                         timeout=self._shutdown_timeout)
-        if not pending:
-            return
-        for task in pending:
-            task.cancel()
-        done, pending = await tasks.wait(pending,
-                                         timeout=self._shutdown_timeout)
-        for task in pending:
-            self._loop.call_exception_handler({
-                "message": (f'{task!r} ignored cancellation request '
-                            f'from a closing {self!r}'),
-                "stream_server": self
-            })
-
-    def __repr__(self):
-        ret = [f'{self.__class__.__name__}']
-        if self.is_serving():
-            ret.append('serving')
-        if self.sockets:
-            ret.append(f'sockets={self.sockets!r}')
-        return '<' + ' '.join(ret) + '>'
-
-    def __del__(self, _warn=warnings.warn):
-        if self._server_impl is not None:
-            _warn(f"unclosed stream server {self!r}",
-                  ResourceWarning, source=self)
-            self._server_impl.close()
-
-
-class StreamServer(_BaseStreamServer):
-
-    def __init__(self, client_connected_cb, /, host=None, port=None, *,
-                 limit=_DEFAULT_LIMIT,
-                 family=socket.AF_UNSPEC,
-                 flags=socket.AI_PASSIVE, sock=None, backlog=100,
-                 ssl=None, reuse_address=None, reuse_port=None,
-                 ssl_handshake_timeout=None,
-                 shutdown_timeout=60):
-        super().__init__(client_connected_cb,
-                         limit=limit,
-                         shutdown_timeout=shutdown_timeout,
-                         _asyncio_internal=True)
-        self._host = host
-        self._port = port
-        self._family = family
-        self._flags = flags
-        self._sock = sock
-        self._backlog = backlog
-        self._ssl = ssl
-        self._reuse_address = reuse_address
-        self._reuse_port = reuse_port
-        self._ssl_handshake_timeout = ssl_handshake_timeout
-
-    async def _bind(self):
-        def factory():
-            protocol = _ServerStreamProtocol(self,
-                                             self._limit,
-                                             self._client_connected_cb,
-                                             loop=self._loop,
-                                             _asyncio_internal=True)
-            return protocol
-        return await self._loop.create_server(
-            factory,
-            self._host,
-            self._port,
-            start_serving=False,
-            family=self._family,
-            flags=self._flags,
-            sock=self._sock,
-            backlog=self._backlog,
-            ssl=self._ssl,
-            reuse_address=self._reuse_address,
-            reuse_port=self._reuse_port,
-            ssl_handshake_timeout=self._ssl_handshake_timeout)
-
-
 if hasattr(socket, 'AF_UNIX'):
     # UNIX Domain Sockets are supported on this platform
 
     async def open_unix_connection(path=None, *,
                                    loop=None, limit=_DEFAULT_LIMIT, **kwds):
         """Similar to `open_connection` but works with UNIX Domain Sockets."""
-        warnings.warn("open_unix_connection() is deprecated since Python 3.8 "
-                      "in favor of connect_unix(), and scheduled for removal "
-                      "in Python 3.10",
-                      DeprecationWarning,
-                      stacklevel=2)
         if loop is None:
             loop = events.get_event_loop()
         else:
@@ -431,58 +114,13 @@ if hasattr(socket, 'AF_UNIX'):
                                         _asyncio_internal=True)
         transport, _ = await loop.create_unix_connection(
             lambda: protocol, path, **kwds)
-        writer = StreamWriter(transport, protocol, reader, loop)
+        writer = StreamWriter(transport, protocol, reader, loop,
+                              _asyncio_internal=True)
         return reader, writer
-
-
-    def connect_unix(path=None, *,
-                     limit=_DEFAULT_LIMIT,
-                     ssl=None, sock=None,
-                     server_hostname=None,
-                     ssl_handshake_timeout=None):
-        """Similar to `connect()` but works with UNIX Domain Sockets."""
-        # Design note:
-        # Don't use decorator approach but exilicit non-async
-        # function to fail fast and explicitly
-        # if passed arguments don't match the function signature
-        return _ContextManagerHelper(_connect_unix(path,
-                                                   limit,
-                                                   ssl, sock,
-                                                   server_hostname,
-                                                   ssl_handshake_timeout))
-
-
-    async def _connect_unix(path,
-                           limit,
-                           ssl, sock,
-                           server_hostname,
-                           ssl_handshake_timeout):
-        """Similar to `connect()` but works with UNIX Domain Sockets."""
-        loop = events.get_running_loop()
-        stream = Stream(mode=StreamMode.READWRITE,
-                        limit=limit,
-                        loop=loop,
-                        _asyncio_internal=True)
-        await loop.create_unix_connection(
-            lambda: _StreamProtocol(stream,
-                                    loop=loop,
-                                    _asyncio_internal=True),
-            path,
-            ssl=ssl,
-            sock=sock,
-            server_hostname=server_hostname,
-            ssl_handshake_timeout=ssl_handshake_timeout)
-        return stream
-
 
     async def start_unix_server(client_connected_cb, path=None, *,
                                 loop=None, limit=_DEFAULT_LIMIT, **kwds):
         """Similar to `start_server` but works with UNIX Domain Sockets."""
-        warnings.warn("start_unix_server() is deprecated since Python 3.8 "
-                      "in favor of UnixStreamServer(), and scheduled "
-                      "for removal in Python 3.10",
-                      DeprecationWarning,
-                      stacklevel=2)
         if loop is None:
             loop = events.get_event_loop()
         else:
@@ -491,49 +129,14 @@ if hasattr(socket, 'AF_UNIX'):
                           DeprecationWarning, stacklevel=2)
 
         def factory():
-            reader = StreamReader(limit=limit, loop=loop)
+            reader = StreamReader(limit=limit, loop=loop,
+                                  _asyncio_internal=True)
             protocol = StreamReaderProtocol(reader, client_connected_cb,
                                             loop=loop,
                                             _asyncio_internal=True)
             return protocol
 
         return await loop.create_unix_server(factory, path, **kwds)
-
-    class UnixStreamServer(_BaseStreamServer):
-
-        def __init__(self, client_connected_cb, /, path=None, *,
-                     limit=_DEFAULT_LIMIT,
-                     sock=None,
-                     backlog=100,
-                     ssl=None,
-                     ssl_handshake_timeout=None,
-                     shutdown_timeout=60):
-            super().__init__(client_connected_cb,
-                             limit=limit,
-                             shutdown_timeout=shutdown_timeout,
-                             _asyncio_internal=True)
-            self._path = path
-            self._sock = sock
-            self._backlog = backlog
-            self._ssl = ssl
-            self._ssl_handshake_timeout = ssl_handshake_timeout
-
-        async def _bind(self):
-            def factory():
-                protocol = _ServerStreamProtocol(self,
-                                                 self._limit,
-                                                 self._client_connected_cb,
-                                                 loop=self._loop,
-                                                 _asyncio_internal=True)
-                return protocol
-            return await self._loop.create_unix_server(
-                factory,
-                self._path,
-                start_serving=False,
-                sock=self._sock,
-                backlog=self._backlog,
-                ssl=self._ssl,
-                ssl_handshake_timeout=self._ssl_handshake_timeout)
 
 
 class FlowControlMixin(protocols.Protocol):
@@ -613,8 +216,6 @@ class FlowControlMixin(protocols.Protocol):
         raise NotImplementedError
 
 
-# begin legacy stream APIs
-
 class StreamReaderProtocol(FlowControlMixin, protocols.Protocol):
     """Helper class to adapt between Protocol and StreamReader.
 
@@ -624,47 +225,105 @@ class StreamReaderProtocol(FlowControlMixin, protocols.Protocol):
     call inappropriate methods of the protocol.)
     """
 
+    _source_traceback = None
+
     def __init__(self, stream_reader, client_connected_cb=None, loop=None,
                  *, _asyncio_internal=False):
         super().__init__(loop=loop, _asyncio_internal=_asyncio_internal)
-        self._stream_reader = stream_reader
+        if stream_reader is not None:
+            self._stream_reader_wr = weakref.ref(stream_reader,
+                                                 self._on_reader_gc)
+            self._source_traceback = stream_reader._source_traceback
+        else:
+            self._stream_reader_wr = None
+        if client_connected_cb is not None:
+            # This is a stream created by the `create_server()` function.
+            # Keep a strong reference to the reader until a connection
+            # is established.
+            self._strong_reader = stream_reader
+        self._reject_connection = False
         self._stream_writer = None
+        self._transport = None
         self._client_connected_cb = client_connected_cb
         self._over_ssl = False
         self._closed = self._loop.create_future()
 
+    def _on_reader_gc(self, wr):
+        transport = self._transport
+        if transport is not None:
+            # connection_made was called
+            context = {
+                'message': ('An open stream object is being garbage '
+                            'collected; call "stream.close()" explicitly.')
+            }
+            if self._source_traceback:
+                context['source_traceback'] = self._source_traceback
+            self._loop.call_exception_handler(context)
+            transport.abort()
+        else:
+            self._reject_connection = True
+        self._stream_reader_wr = None
+
+    @property
+    def _stream_reader(self):
+        if self._stream_reader_wr is None:
+            return None
+        return self._stream_reader_wr()
+
     def connection_made(self, transport):
-        self._stream_reader.set_transport(transport)
+        if self._reject_connection:
+            context = {
+                'message': ('An open stream was garbage collected prior to '
+                            'establishing network connection; '
+                            'call "stream.close()" explicitly.')
+            }
+            if self._source_traceback:
+                context['source_traceback'] = self._source_traceback
+            self._loop.call_exception_handler(context)
+            transport.abort()
+            return
+        self._transport = transport
+        reader = self._stream_reader
+        if reader is not None:
+            reader.set_transport(transport)
         self._over_ssl = transport.get_extra_info('sslcontext') is not None
         if self._client_connected_cb is not None:
             self._stream_writer = StreamWriter(transport, self,
-                                               self._stream_reader,
-                                               self._loop)
-            res = self._client_connected_cb(self._stream_reader,
+                                               reader,
+                                               self._loop,
+                                               _asyncio_internal=True)
+            res = self._client_connected_cb(reader,
                                             self._stream_writer)
             if coroutines.iscoroutine(res):
                 self._loop.create_task(res)
+            self._strong_reader = None
 
     def connection_lost(self, exc):
-        if self._stream_reader is not None:
+        reader = self._stream_reader
+        if reader is not None:
             if exc is None:
-                self._stream_reader.feed_eof()
+                reader.feed_eof()
             else:
-                self._stream_reader.set_exception(exc)
+                reader.set_exception(exc)
         if not self._closed.done():
             if exc is None:
                 self._closed.set_result(None)
             else:
                 self._closed.set_exception(exc)
         super().connection_lost(exc)
-        self._stream_reader = None
+        self._stream_reader_wr = None
         self._stream_writer = None
+        self._transport = None
 
     def data_received(self, data):
-        self._stream_reader.feed_data(data)
+        reader = self._stream_reader
+        if reader is not None:
+            reader.feed_data(data)
 
     def eof_received(self):
-        self._stream_reader.feed_eof()
+        reader = self._stream_reader
+        if reader is not None:
+            reader.feed_eof()
         if self._over_ssl:
             # Prevent a warning in SSLProtocol.eof_received:
             # "returning true from eof_received()
@@ -672,12 +331,22 @@ class StreamReaderProtocol(FlowControlMixin, protocols.Protocol):
             return False
         return True
 
+    def _get_close_waiter(self, stream):
+        return self._closed
+
     def __del__(self):
         # Prevent reports about unhandled exceptions.
         # Better than self._closed._log_traceback = False hack
         closed = self._closed
         if closed.done() and not closed.cancelled():
             closed.exception()
+
+
+def _swallow_unhandled_exception(task):
+    # Do a trick to suppress unhandled exception
+    # if stream.write() was used without await and
+    # stream.drain() was paused and resumed with an exception
+    task.exception()
 
 
 class StreamWriter:
@@ -690,13 +359,21 @@ class StreamWriter:
     directly.
     """
 
-    def __init__(self, transport, protocol, reader, loop):
+    def __init__(self, transport, protocol, reader, loop,
+                 *, _asyncio_internal=False):
+        if not _asyncio_internal:
+            warnings.warn(f"{self.__class__} should be instaniated "
+                          "by asyncio internals only, "
+                          "please avoid its creation from user code",
+                          DeprecationWarning)
         self._transport = transport
         self._protocol = protocol
         # drain() expects that the reader has an exception() method
         assert reader is None or isinstance(reader, StreamReader)
         self._reader = reader
         self._loop = loop
+        self._complete_fut = self._loop.create_future()
+        self._complete_fut.set_result(None)
 
     def __repr__(self):
         info = [self.__class__.__name__, f'transport={self._transport!r}']
@@ -710,9 +387,35 @@ class StreamWriter:
 
     def write(self, data):
         self._transport.write(data)
+        return self._fast_drain()
 
     def writelines(self, data):
         self._transport.writelines(data)
+        return self._fast_drain()
+
+    def _fast_drain(self):
+        # The helper tries to use fast-path to return already existing complete future
+        # object if underlying transport is not paused and actual waiting for writing
+        # resume is not needed
+        if self._reader is not None:
+            # this branch will be simplified after merging reader with writer
+            exc = self._reader.exception()
+            if exc is not None:
+                fut = self._loop.create_future()
+                fut.set_exception(exc)
+                return fut
+        if not self._transport.is_closing():
+            if self._protocol._connection_lost:
+                fut = self._loop.create_future()
+                fut.set_exception(ConnectionResetError('Connection lost'))
+                return fut
+            if not self._protocol._paused:
+                # fast path, the stream is not paused
+                # no need to wait for resume signal
+                return self._complete_fut
+        ret = self._loop.create_task(self.drain())
+        ret.add_done_callback(_swallow_unhandled_exception)
+        return ret
 
     def write_eof(self):
         return self._transport.write_eof()
@@ -721,13 +424,14 @@ class StreamWriter:
         return self._transport.can_write_eof()
 
     def close(self):
-        return self._transport.close()
+        self._transport.close()
+        return self._protocol._get_close_waiter(self)
 
     def is_closing(self):
         return self._transport.is_closing()
 
     async def wait_closed(self):
-        await self._protocol._closed
+        await self._protocol._get_close_waiter(self)
 
     def get_extra_info(self, name, default=None):
         return self._transport.get_extra_info(name, default)
@@ -745,19 +449,25 @@ class StreamWriter:
             if exc is not None:
                 raise exc
         if self._transport.is_closing():
-            # Yield to the event loop so connection_lost() may be
-            # called.  Without this, _drain_helper() would return
-            # immediately, and code that calls
-            #     write(...); await drain()
-            # in a loop would never call connection_lost(), so it
-            # would not see an error when the socket is closed.
-            await tasks.sleep(0, loop=self._loop)
+            # Wait for protocol.connection_lost() call
+            # Raise connection closing error if any,
+            # ConnectionResetError otherwise
+            await sleep(0)
         await self._protocol._drain_helper()
 
 
 class StreamReader:
 
-    def __init__(self, limit=_DEFAULT_LIMIT, loop=None):
+    _source_traceback = None
+
+    def __init__(self, limit=_DEFAULT_LIMIT, loop=None,
+                 *, _asyncio_internal=False):
+        if not _asyncio_internal:
+            warnings.warn(f"{self.__class__} should be instaniated "
+                          "by asyncio internals only, "
+                          "please avoid its creation from user code",
+                          DeprecationWarning)
+
         # The line length limit is  a security feature;
         # it also doubles as half the buffer limit.
 
@@ -775,6 +485,9 @@ class StreamReader:
         self._exception = None
         self._transport = None
         self._paused = False
+        if self._loop.get_debug():
+            self._source_traceback = format_helpers.extract_stack(
+                sys._getframe(1))
 
     def __repr__(self):
         info = ['StreamReader']
@@ -1768,3 +1481,5 @@ class Stream:
 
     async def __aexit__(self, exc_type, exc_val, exc_tb):
         await self.close()
+=======
+>>>>>>> parent of 23b4b697e5... bpo-36889: Merge asyncio streams (GH-13251)
