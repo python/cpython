@@ -13,30 +13,29 @@ from . import find
 from .supported import is_supported, ignored_from_file, IGNORED_FILE, _is_object
 
 
-def _match_unused_global(variable, knownvars, used):
-    found = []
-    for varid in knownvars:
-        if varid in used:
-            continue
-        if varid.funcname is not None:
-            continue
-        if varid.name != variable.name:
-            continue
-        if variable.filename and variable.filename != UNKNOWN:
-            if variable.filename == varid.filename:
-                found.append(varid)
-        else:
-            found.append(varid)
-    return found
-
-
 def _check_results(unknown, knownvars, used):
+    def _match_unused_global(variable):
+        found = []
+        for varid in knownvars:
+            if varid in used:
+                continue
+            if varid.funcname is not None:
+                continue
+            if varid.name != variable.name:
+                continue
+            if variable.filename and variable.filename != UNKNOWN:
+                if variable.filename == varid.filename:
+                    found.append(varid)
+            else:
+                found.append(varid)
+        return found
+
     badknown = set()
     for variable in sorted(unknown):
         msg = None
         if variable.funcname != UNKNOWN:
             msg = f'could not find global symbol {variable.id}'
-        elif m := _match_unused_global(variable, knownvars, used):
+        elif m := _match_unused_global(variable):
             assert isinstance(m, list)
             badknown.update(m)
         elif variable.name in ('completed', 'id'):  # XXX Figure out where these variables are.
@@ -69,27 +68,21 @@ def _find_globals(dirnames, known, ignored):
     if dirnames == SOURCE_DIRS:
         dirnames = [os.path.relpath(d, REPO_ROOT) for d in dirnames]
 
-    ignored = ignored_from_file(ignored)
-    known = known_from_file(known)
-
-    used = set()
-    unknown = set()
     knownvars = (known or {}).get('variables')
     for variable in find.globals_from_binary(knownvars=knownvars,
                                              dirnames=dirnames):
-    #for variable in find.globals(dirnames, known, kind='platform'):
         if variable.vartype == UNKNOWN:
-            unknown.add(variable)
-            continue
-        yield variable, is_supported(variable, ignored, known)
-        used.add(variable.id)
-
-    #_check_results(unknown, knownvars, used)
+            yield variable, None
+        else:
+            yield variable, is_supported(variable, ignored, known)
 
 
 def cmd_check(cmd, dirs=SOURCE_DIRS, *,
-              ignored=IGNORED_FILE,
               known=KNOWN_FILE,
+              ignored=IGNORED_FILE,
+              checkfound=False,
+              _known_from_file=known_from_file,
+              _ignored_from_file=ignored_from_file,
               _find=_find_globals,
               _show=show.basic,
               _print=print,
@@ -100,7 +93,24 @@ def cmd_check(cmd, dirs=SOURCE_DIRS, *,
     In the failure case, the list of unsupported variables
     will be printed out.
     """
-    unsupported = [v for v, s in _find(dirs, known, ignored) if not s]
+    known = _known_from_file(known)
+    ignored = _ignored_from_file(ignored)
+
+    used = set()
+    unknown = set()
+    unsupported = []
+    for var, supported in _find(dirs, known, ignored):
+        if supported is None:
+            unknown.add(var)
+            continue
+        used.add(var.id)
+        if not supported:
+            unsupported.append(var)
+
+    if checkfound:
+        # XXX Move this check to its own command.
+        _check_results(unknown, known['variables'], used)
+
     if not unsupported:
         #_print('okay')
         return
@@ -113,10 +123,12 @@ def cmd_check(cmd, dirs=SOURCE_DIRS, *,
 
 
 def cmd_show(cmd, dirs=SOURCE_DIRS, *,
-             ignored=IGNORED_FILE,
              known=KNOWN_FILE,
+             ignored=IGNORED_FILE,
              skip_objects=False,
-              _find=_find_globals,
+             _known_from_file=known_from_file,
+             _ignored_from_file=ignored_from_file,
+             _find=_find_globals,
              _show=show.basic,
              _print=print,
              ):
@@ -125,9 +137,14 @@ def cmd_show(cmd, dirs=SOURCE_DIRS, *,
 
     The variables will be distinguished as "supported" or "unsupported".
     """
+    known = _known_from_file(known)
+    ignored = _ignored_from_file(ignored)
+
     allsupported = []
     allunsupported = []
     for found, supported in _find(dirs, known, ignored):
+        if supported is None:
+            continue
         if skip_objects:  # XXX Support proper filters instead.
             if _is_object(found.vartype):
                 continue

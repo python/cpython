@@ -46,6 +46,8 @@ class CMDBase(unittest.TestCase):
 
     maxDiff = None
 
+    _return_known_from_file = None
+    _return_ignored_from_file = None
     _return_find = ()
 
     @property
@@ -55,6 +57,14 @@ class CMDBase(unittest.TestCase):
         except AttributeError:
             self._calls = []
             return self._calls
+
+    def _known_from_file(self, *args):
+        self.calls.append(('_known_from_file', args))
+        return self._return_known_from_file or {}
+
+    def _ignored_from_file(self, *args):
+        self.calls.append(('_ignored_from_file', args))
+        return self._return_ignored_from_file or {}
 
     def _find(self, *args):
         self.calls.append(('_find', args))
@@ -70,49 +80,61 @@ class CMDBase(unittest.TestCase):
 class CheckTests(CMDBase):
 
     def test_defaults(self):
+        known = self._return_known_from_file = object()
+        ignored = self._return_ignored_from_file = object()
         self._return_find = []
 
         cmd_check('check',
+                  _known_from_file=self._known_from_file,
+                  _ignored_from_file=self._ignored_from_file,
                   _find=self._find,
                   _show=self._show,
                   _print=self._print,
                   )
 
-        self.assertEqual(self.calls[0], (
-            '_find', (
-                SOURCE_DIRS,
-                KNOWN_FILE,
-                IGNORED_FILE,
-                ),
-            ))
+        self.assertEqual(self.calls[:3], [
+            ('_known_from_file', (KNOWN_FILE,)),
+            ('_ignored_from_file', (IGNORED_FILE,)),
+            ('_find', (SOURCE_DIRS, known, ignored)),
+            ])
 
     def test_all_supported(self):
+        known = self._return_known_from_file = object()
+        ignored = self._return_ignored_from_file = object()
         self._return_find = [(v, s) for v, s in TYPICAL if s]
         dirs = ['src1', 'src2', 'Include']
 
         cmd_check('check',
-                 dirs,
-                 ignored='ignored.tsv',
-                 known='known.tsv',
-                 _find=self._find,
-                 _show=self._show,
-                 _print=self._print,
-                 )
+                  dirs,
+                  known='known.tsv',
+                  ignored='ignored.tsv',
+                  _known_from_file=self._known_from_file,
+                  _ignored_from_file=self._ignored_from_file,
+                  _find=self._find,
+                  _show=self._show,
+                  _print=self._print,
+                  )
 
         self.assertEqual(self.calls, [
-            ('_find', (dirs, 'known.tsv', 'ignored.tsv')),
+            ('_known_from_file', ('known.tsv',)),
+            ('_ignored_from_file', ('ignored.tsv',)),
+            ('_find', (dirs, known, ignored)),
             #('_print', ('okay',)),
             ])
 
     def test_some_unsupported(self):
+        known = self._return_known_from_file = object()
+        ignored = self._return_ignored_from_file = object()
         self._return_find = TYPICAL
         dirs = ['src1', 'src2', 'Include']
 
         with self.assertRaises(SystemExit) as cm:
             cmd_check('check',
                       dirs,
-                      ignored='ignored.tsv',
                       known='known.tsv',
+                      ignored='ignored.tsv',
+                      _known_from_file=self._known_from_file,
+                      _ignored_from_file=self._ignored_from_file,
                       _find=self._find,
                       _show=self._show,
                       _print=self._print,
@@ -120,7 +142,9 @@ class CheckTests(CMDBase):
 
         unsupported = [v for v, s in TYPICAL if not s]
         self.assertEqual(self.calls, [
-            ('_find', (dirs, 'known.tsv', 'ignored.tsv')),
+            ('_known_from_file', ('known.tsv',)),
+            ('_ignored_from_file', ('ignored.tsv',)),
+            ('_find', (dirs, known, ignored)),
             ('_print', ('ERROR: found unsupported global variables',)),
             ('_print', ()),
             ('_show', (sorted(unsupported),)),
@@ -132,23 +156,27 @@ class CheckTests(CMDBase):
 class ShowTests(CMDBase):
 
     def test_defaults(self):
+        known = self._return_known_from_file = object()
+        ignored = self._return_ignored_from_file = object()
         self._return_find = []
 
         cmd_show('show',
+                 _known_from_file=self._known_from_file,
+                 _ignored_from_file=self._ignored_from_file,
                  _find=self._find,
                  _show=self._show,
                  _print=self._print,
                  )
 
-        self.assertEqual(self.calls[0], (
-            '_find', (
-                SOURCE_DIRS,
-                KNOWN_FILE,
-                IGNORED_FILE,
-                ),
-            ))
+        self.assertEqual(self.calls[:3], [
+            ('_known_from_file', (KNOWN_FILE,)),
+            ('_ignored_from_file', (IGNORED_FILE,)),
+            ('_find', (SOURCE_DIRS, known, ignored)),
+            ])
 
     def test_typical(self):
+        known = self._return_known_from_file = object()
+        ignored = self._return_ignored_from_file = object()
         self._return_find = TYPICAL
         dirs = ['src1', 'src2', 'Include']
 
@@ -156,6 +184,8 @@ class ShowTests(CMDBase):
                  dirs,
                  known='known.tsv',
                  ignored='ignored.tsv',
+                 _known_from_file=self._known_from_file,
+                 _ignored_from_file=self._ignored_from_file,
                  _find=self._find,
                  _show=self._show,
                  _print=self._print,
@@ -164,7 +194,9 @@ class ShowTests(CMDBase):
         supported = [v for v, s in TYPICAL if s]
         unsupported = [v for v, s in TYPICAL if not s]
         self.assertEqual(self.calls, [
-            ('_find', (dirs, 'known.tsv', 'ignored.tsv')),
+            ('_known_from_file', ('known.tsv',)),
+            ('_ignored_from_file', ('ignored.tsv',)),
+            ('_find', (dirs, known, ignored)),
             ('_print', ('supported:',)),
             ('_print', ('----------',)),
             ('_show', (sorted(supported),)),
