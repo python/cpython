@@ -269,12 +269,30 @@ _PyPreCmdline_Read(_PyPreCmdline *cmdline, const PyPreConfig *preconfig)
 /* --- PyPreConfig ----------------------------------------------- */
 
 
-void
+static PyStatus
+preconfig_check_struct_size(PyPreConfig *config)
+{
+    if (config->struct_size != sizeof(PyPreConfig)) {
+        return _PyStatus_ERR("unsupported PyPreConfig structure size "
+                             "(Python version mismatch?)");
+    }
+    return _PyStatus_OK();
+}
+
+
+PyStatus
 _PyPreConfig_InitCompatConfig(PyPreConfig *config)
 {
+    size_t struct_size = config->struct_size;
     memset(config, 0, sizeof(*config));
+    config->struct_size = struct_size;
 
-    config->_config_version = _Py_CONFIG_VERSION;
+    PyStatus status = preconfig_check_struct_size(config);
+    if (_PyStatus_EXCEPTION(status)) {
+        _PyStatus_UPDATE_FUNC(status);
+        return status;
+    }
+
     config->_config_init = (int)_PyConfig_INIT_COMPAT;
     config->parse_argv = 0;
     config->isolated = -1;
@@ -295,13 +313,18 @@ _PyPreConfig_InitCompatConfig(PyPreConfig *config)
 #ifdef MS_WINDOWS
     config->legacy_windows_fs_encoding = -1;
 #endif
+    return _PyStatus_OK();
 }
 
 
-void
+PyStatus
 PyPreConfig_InitPythonConfig(PyPreConfig *config)
 {
-    _PyPreConfig_InitCompatConfig(config);
+    PyStatus status = _PyPreConfig_InitCompatConfig(config);
+    if (_PyStatus_EXCEPTION(status)) {
+        _PyStatus_UPDATE_FUNC(status);
+        return status;
+    }
 
     config->_config_init = (int)_PyConfig_INIT_PYTHON;
     config->isolated = 0;
@@ -316,13 +339,18 @@ PyPreConfig_InitPythonConfig(PyPreConfig *config)
 #ifdef MS_WINDOWS
     config->legacy_windows_fs_encoding = 0;
 #endif
+    return _PyStatus_OK();
 }
 
 
-void
+PyStatus
 PyPreConfig_InitIsolatedConfig(PyPreConfig *config)
 {
-    _PyPreConfig_InitCompatConfig(config);
+    PyStatus status = _PyPreConfig_InitCompatConfig(config);
+    if (_PyStatus_EXCEPTION(status)) {
+        _PyStatus_UPDATE_FUNC(status);
+        return status;
+    }
 
     config->_config_init = (int)_PyConfig_INIT_ISOLATED;
     config->configure_locale = 0;
@@ -333,41 +361,55 @@ PyPreConfig_InitIsolatedConfig(PyPreConfig *config)
 #ifdef MS_WINDOWS
     config->legacy_windows_fs_encoding = 0;
 #endif
+    return _PyStatus_OK();
 }
 
 
-void
+PyStatus
 _PyPreConfig_InitFromPreConfig(PyPreConfig *config,
                                const PyPreConfig *config2)
 {
-    PyPreConfig_InitPythonConfig(config);
+    PyStatus status = PyPreConfig_InitPythonConfig(config);
+    if (_PyStatus_EXCEPTION(status)) {
+        return status;
+    }
+
     preconfig_copy(config, config2);
+    return _PyStatus_OK();
 }
 
 
-void
+PyStatus
 _PyPreConfig_InitFromConfig(PyPreConfig *preconfig, const PyConfig *config)
 {
+    PyStatus status;
     _PyConfigInitEnum config_init = (_PyConfigInitEnum)config->_config_init;
     switch (config_init) {
     case _PyConfig_INIT_PYTHON:
-        PyPreConfig_InitPythonConfig(preconfig);
+        status = PyPreConfig_InitPythonConfig(preconfig);
         break;
     case _PyConfig_INIT_ISOLATED:
-        PyPreConfig_InitIsolatedConfig(preconfig);
+        status = PyPreConfig_InitIsolatedConfig(preconfig);
         break;
     case _PyConfig_INIT_COMPAT:
     default:
-        _PyPreConfig_InitCompatConfig(preconfig);
+        status = _PyPreConfig_InitCompatConfig(preconfig);
     }
+
+    if (_PyStatus_EXCEPTION(status)) {
+        return status;
+    }
+
     _PyPreConfig_GetConfig(preconfig, config);
+    return _PyStatus_OK();
 }
 
 
 static void
 preconfig_copy(PyPreConfig *config, const PyPreConfig *config2)
 {
-    assert(config2->_config_version == _Py_CONFIG_VERSION);
+    assert(config->struct_size == sizeof(PyPreConfig));
+
 #define COPY_ATTR(ATTR) config->ATTR = config2->ATTR
 
     COPY_ATTR(_config_init);
@@ -787,6 +829,12 @@ _PyPreConfig_Read(PyPreConfig *config, const _PyArgv *args)
         return status;
     }
 
+    status = preconfig_check_struct_size(config);
+    if (_PyStatus_EXCEPTION(status)) {
+        _PyStatus_UPDATE_FUNC(status);
+        return status;
+    }
+
     preconfig_get_global_vars(config);
 
     /* Copy LC_CTYPE locale, since it's modified later */
@@ -801,7 +849,12 @@ _PyPreConfig_Read(PyPreConfig *config, const _PyArgv *args)
 
     /* Save the config to be able to restore it if encodings change */
     PyPreConfig save_config;
-    _PyPreConfig_InitFromPreConfig(&save_config, config);
+    save_config.struct_size = sizeof(PyPreConfig);
+
+    status = _PyPreConfig_InitFromPreConfig(&save_config, config);
+    if (_PyStatus_EXCEPTION(status)) {
+        return status;
+    }
 
     /* Set LC_CTYPE to the user preferred locale */
     if (config->configure_locale) {
@@ -923,7 +976,12 @@ PyStatus
 _PyPreConfig_Write(const PyPreConfig *src_config)
 {
     PyPreConfig config;
-    _PyPreConfig_InitFromPreConfig(&config, src_config);
+    config.struct_size = sizeof(PyPreConfig);
+
+    PyStatus status = _PyPreConfig_InitFromPreConfig(&config, src_config);
+    if (_PyStatus_EXCEPTION(status)) {
+        return status;
+    }
 
     if (_PyRuntime.core_initialized) {
         /* bpo-34008: Calling this functions after Py_Initialize() ignores
