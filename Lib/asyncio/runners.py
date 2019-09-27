@@ -21,8 +21,8 @@ def run(main, *, debug=False):
     It should be used as a main entry point for asyncio programs, and should
     ideally only be called once.
 
-   Return the result of *coro* execution. If *coro* is not a :term:`coroutine`,
-   a :exc:`ValueError` is raised.
+    Return the result of *coro* execution. If *coro* is not a :term:`coroutine`,
+    a :exc:`ValueError` is raised.
 
     Example:
 
