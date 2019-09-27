@@ -4,7 +4,7 @@ import unittest
 from ..util import PseudoStr, StrProxy, Object
 from .. import tool_imports_for_tests
 with tool_imports_for_tests():
-    from c_analyzer_common.info import ID
+    from c_analyzer_common.info import ID, UNKNOWN
     from c_parser.info import (
         normalize_vartype, Variable,
         )
@@ -31,38 +31,47 @@ class VariableTests(unittest.TestCase):
 
     VALID_ARGS = (
             ('x/y/z/spam.c', 'func', 'eggs'),
+            'static',
             'int',
             )
     VALID_KWARGS = dict(zip(Variable._fields, VALID_ARGS))
     VALID_EXPECTED = VALID_ARGS
 
     def test_init_typical_global(self):
-        static = Variable(
-                id=ID(
-                    filename='x/y/z/spam.c',
-                    funcname=None,
-                    name='eggs',
-                    ),
-                vartype='int',
-                )
+        for storage in ('static', 'extern', 'implicit'):
+            with self.subTest(storage):
+                static = Variable(
+                        id=ID(
+                            filename='x/y/z/spam.c',
+                            funcname=None,
+                            name='eggs',
+                            ),
+                        storage=storage,
+                        vartype='int',
+                        )
 
-        self.assertEqual(static, (
-                ('x/y/z/spam.c', None, 'eggs'),
-                'int',
-                ))
+                self.assertEqual(static, (
+                        ('x/y/z/spam.c', None, 'eggs'),
+                        storage,
+                        'int',
+                        ))
 
     def test_init_typical_local(self):
-        static = Variable(
-                id=ID(
-                    filename='x/y/z/spam.c',
-                    funcname='func',
-                    name='eggs',
-                    ),
-                vartype='int',
-                )
+        for storage in ('static', 'local'):
+            with self.subTest(storage):
+                static = Variable(
+                        id=ID(
+                            filename='x/y/z/spam.c',
+                            funcname='func',
+                            name='eggs',
+                            ),
+                        storage=storage,
+                        vartype='int',
+                        )
 
         self.assertEqual(static, (
                 ('x/y/z/spam.c', 'func', 'eggs'),
+                storage,
                 'int',
                 ))
 
@@ -71,10 +80,12 @@ class VariableTests(unittest.TestCase):
             with self.subTest(repr(value)):
                 static = Variable(
                         id=value,
+                        storage=value,
                         vartype=value,
                         )
 
                 self.assertEqual(static, (
+                        None,
                         None,
                         None,
                         ))
@@ -89,34 +100,42 @@ class VariableTests(unittest.TestCase):
                     PseudoStr('func'),
                     PseudoStr('spam'),
                     ),
+                 storage=PseudoStr('static'),
                  vartype=PseudoStr('int'),
                  ),
              (id,
+              'static',
               'int',
               )),
             ('non-str 1',
              dict(
                  id=id,
+                 storage=Object(),
                  vartype=Object(),
                  ),
              (id,
+              '<object>',
               '<object>',
               )),
             ('non-str 2',
              dict(
                  id=id,
+                 storage=StrProxy('static'),
                  vartype=StrProxy('variable'),
                  ),
              (id,
+              'static',
               'variable',
               )),
             ('non-str',
              dict(
                  id=id,
-                 vartype=('a', 'b', 'c'),
+                 storage=('a', 'b', 'c'),
+                 vartype=('x', 'y', 'z'),
                  ),
              (id,
               "('a', 'b', 'c')",
+              "('x', 'y', 'z')",
               )),
             ]
         for summary, kwargs, expected in tests:
@@ -134,42 +153,56 @@ class VariableTests(unittest.TestCase):
     def test_iterable(self):
         static = Variable(**self.VALID_KWARGS)
 
-        id, vartype = static
+        id, storage, vartype = static
 
-        values = (id, vartype)
+        values = (id, storage, vartype)
         for value, expected in zip(values, self.VALID_EXPECTED):
             self.assertEqual(value, expected)
 
     def test_fields(self):
-        static = Variable(('a', 'b', 'z'), 'x')
+        static = Variable(('a', 'b', 'z'), 'x', 'y')
 
         self.assertEqual(static.id, ('a', 'b', 'z'))
-        self.assertEqual(static.vartype, 'x')
+        self.assertEqual(static.storage, 'x')
+        self.assertEqual(static.vartype, 'y')
 
     def test___getattr__(self):
-        static = Variable(('a', 'b', 'z'), 'x')
+        static = Variable(('a', 'b', 'z'), 'x', 'y')
 
         self.assertEqual(static.filename, 'a')
         self.assertEqual(static.funcname, 'b')
         self.assertEqual(static.name, 'z')
 
     def test_validate_typical(self):
-        static = Variable(
-                id=ID(
-                    filename='x/y/z/spam.c',
-                    funcname='func',
-                    name='eggs',
-                    ),
-                vartype='int',
-                )
+        validstorage = ('static', 'extern', 'implicit', 'local')
+        self.assertEqual(set(validstorage), set(Variable.STORAGE))
 
-        static.validate()  # This does not fail.
+        for storage in validstorage:
+            with self.subTest(storage):
+                static = Variable(
+                        id=ID(
+                            filename='x/y/z/spam.c',
+                            funcname='func',
+                            name='eggs',
+                            ),
+                        storage=storage,
+                        vartype='int',
+                        )
+
+                static.validate()  # This does not fail.
 
     def test_validate_missing_field(self):
         for field in Variable._fields:
             with self.subTest(field):
                 static = Variable(**self.VALID_KWARGS)
                 static = static._replace(**{field: None})
+
+                with self.assertRaises(TypeError):
+                    static.validate()
+        for field in ('storage', 'vartype'):
+            with self.subTest(field):
+                static = Variable(**self.VALID_KWARGS)
+                static = static._replace(**{field: UNKNOWN})
 
                 with self.assertRaises(TypeError):
                     static.validate()
@@ -185,6 +218,7 @@ class VariableTests(unittest.TestCase):
                 ) + badch
         tests = [
             ('id', ()),  # Any non-empty str is okay.
+            ('storage', ('external', 'global') + notnames),
             ('vartype', ()),  # Any non-empty str is okay.
             ]
         seen = set()
@@ -199,6 +233,8 @@ class VariableTests(unittest.TestCase):
                         static.validate()
 
         for field, invalid in tests:
+            if field == 'id':
+                continue
             valid = seen - set(invalid)
             for value in valid:
                 with self.subTest(f'{field}={value!r}'):

@@ -15,9 +15,6 @@ class FromFileTests(unittest.TestCase):
 
     _return_read_tsv = ()
 
-    def tearDown(self):
-        Variable._isglobal.instances.clear()
-
     @property
     def calls(self):
         try:
