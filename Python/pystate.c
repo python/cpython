@@ -807,7 +807,7 @@ PyThreadState_Clear(PyThreadState *tstate)
 }
 
 
-/* Common code for PyThreadState_Delete() and _PyThreadState_DeleteCurrent() */
+/* Common code for PyThreadState_Delete() and PyThreadState_DeleteCurrent() */
 static void
 tstate_delete_common(_PyRuntimeState *runtime, PyThreadState *tstate)
 {
@@ -856,14 +856,14 @@ PyThreadState_Delete(PyThreadState *tstate)
 }
 
 
-void
+static void
 _PyThreadState_DeleteCurrent(_PyRuntimeState *runtime)
 {
     struct _gilstate_runtime_state *gilstate = &runtime->gilstate;
     PyThreadState *tstate = _PyRuntimeGILState_GetThreadState(gilstate);
     if (tstate == NULL)
         Py_FatalError(
-            "_PyThreadState_DeleteCurrent: no current tstate");
+            "PyThreadState_DeleteCurrent: no current tstate");
     tstate_delete_common(runtime, tstate);
     if (gilstate->autoInterpreterState &&
         PyThread_tss_get(&gilstate->autoTSSkey) == tstate)
@@ -872,6 +872,12 @@ _PyThreadState_DeleteCurrent(_PyRuntimeState *runtime)
     }
     _PyRuntimeGILState_SetThreadState(gilstate, NULL);
     PyEval_ReleaseLock();
+}
+
+void
+PyThreadState_DeleteCurrent()
+{
+    _PyThreadState_DeleteCurrent(&_PyRuntime);
 }
 
 
