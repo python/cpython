@@ -17,7 +17,7 @@ At large scale, the structure of the module is following:
 * Wrapper submodules for re and io related types.
 """
 
-from abc import abstractmethod, abstractproperty, ABCMeta
+from abc import abstractmethod, ABCMeta
 import collections
 import collections.abc
 import contextlib
@@ -1794,11 +1794,13 @@ class IO(Generic[AnyStr]):
 
     __slots__ = ()
 
-    @abstractproperty
+    @property
+    @abstractmethod
     def mode(self) -> str:
         pass
 
-    @abstractproperty
+    @property
+    @abstractmethod
     def name(self) -> str:
         pass
 
@@ -1894,23 +1896,28 @@ class TextIO(IO[str]):
 
     __slots__ = ()
 
-    @abstractproperty
+    @property
+    @abstractmethod
     def buffer(self) -> BinaryIO:
         pass
 
-    @abstractproperty
+    @property
+    @abstractmethod
     def encoding(self) -> str:
         pass
 
-    @abstractproperty
+    @property
+    @abstractmethod
     def errors(self) -> Optional[str]:
         pass
 
-    @abstractproperty
+    @property
+    @abstractmethod
     def line_buffering(self) -> bool:
         pass
 
-    @abstractproperty
+    @property
+    @abstractmethod
     def newlines(self) -> Any:
         pass
 
