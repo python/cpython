@@ -52,6 +52,7 @@ _modules = {}  # Initialize cache of modules we've seen.
 
 class _Object:
     "Information about Python class or function."
+
     def __init__(self, module, name, file, lineno, parent):
         self.module = module
         self.name = name
@@ -83,9 +84,11 @@ def _nest_function(ob, func_name, lineno, is_async=False):
     "Return a Function after nesting within ob."
     return Function(ob.module, func_name, ob.file, lineno, ob, is_async)
 
+
 def _nest_class(ob, class_name, lineno, super=None):
     "Return a Class after nesting within ob."
     return Class(ob.module, class_name, super, ob.file, lineno, ob)
+
 
 def readmodule(module, path=None):
     """Return Class objects for the top-level classes in module.
@@ -99,6 +102,7 @@ def readmodule(module, path=None):
             res[key] = value
     return res
 
+
 def readmodule_ex(module, path=None):
     """Return a dictionary with all functions and classes in module.
 
@@ -107,6 +111,7 @@ def readmodule_ex(module, path=None):
     Do this by reading source, without importing (and executing) it.
     """
     return _readmodule(module, path or [])
+
 
 def _readmodule(module, path, inpackage=None):
     """Do the hard work for readmodule[_ex].
@@ -154,7 +159,8 @@ def _readmodule(module, path, inpackage=None):
         search_path = path + sys.path
     spec = importlib.util._find_spec_from_path(fullmodule, search_path)
     if spec is None:
-        raise ModuleNotFoundError(f"no module named {fullmodule!r}", name=fullmodule)
+        raise ModuleNotFoundError(
+            f"no module named {fullmodule!r}", name=fullmodule)
     _modules[fullmodule] = tree
     # Is module a package?
     if spec.submodule_search_locations is not None:
@@ -278,7 +284,7 @@ def _main():
     else:
         path = []
     tree = readmodule_ex(mod, path)
-    lineno_key = lambda a: getattr(a, 'lineno', 0)
+    def lineno_key(a): return getattr(a, 'lineno', 0)
     objs = sorted(tree.values(), key=lineno_key, reverse=True)
     indent_level = 2
     while objs:
@@ -300,6 +306,7 @@ def _main():
                   .format(' ' * obj.indent, obj.name, obj.super, obj.lineno))
         elif isinstance(obj, Function):
             print("{}def {} {}".format(' ' * obj.indent, obj.name, obj.lineno))
+
 
 if __name__ == "__main__":
     _main()
