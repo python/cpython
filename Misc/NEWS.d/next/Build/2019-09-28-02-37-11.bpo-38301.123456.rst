@@ -1,0 +1,2 @@
+In Solaris family, we must be sure to use ``-D_REENTRANT``.
+Patch by Jesús Cea Avión.
