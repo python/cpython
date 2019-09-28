@@ -48,7 +48,8 @@ class StreamTests(test_utils.TestCase):
     def _basetest_open_connection(self, open_connection_fut):
         messages = []
         self.loop.set_exception_handler(lambda loop, ctx: messages.append(ctx))
-        reader, writer = self.loop.run_until_complete(open_connection_fut)
+        with self.assertWarns(DeprecationWarning):
+            reader, writer = self.loop.run_until_complete(open_connection_fut)
         writer.write(b'GET / HTTP/1.0\r\n\r\n')
         f = reader.readline()
         data = self.loop.run_until_complete(f)
@@ -76,7 +77,8 @@ class StreamTests(test_utils.TestCase):
         messages = []
         self.loop.set_exception_handler(lambda loop, ctx: messages.append(ctx))
         try:
-            reader, writer = self.loop.run_until_complete(open_connection_fut)
+            with self.assertWarns(DeprecationWarning):
+                reader, writer = self.loop.run_until_complete(open_connection_fut)
         finally:
             asyncio.set_event_loop(None)
         writer.write(b'GET / HTTP/1.0\r\n\r\n')
@@ -112,7 +114,8 @@ class StreamTests(test_utils.TestCase):
     def _basetest_open_connection_error(self, open_connection_fut):
         messages = []
         self.loop.set_exception_handler(lambda loop, ctx: messages.append(ctx))
-        reader, writer = self.loop.run_until_complete(open_connection_fut)
+        with self.assertWarns(DeprecationWarning):
+            reader, writer = self.loop.run_until_complete(open_connection_fut)
         writer._protocol.connection_lost(ZeroDivisionError())
         f = reader.read()
         with self.assertRaises(ZeroDivisionError):
