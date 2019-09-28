@@ -1037,15 +1037,6 @@ os.close(fd)
 
         self.assertEqual(messages, [])
 
-    def test_stream_reader_protocol_create_warning(self):
-        reader = asyncio.StreamReader(loop=self.loop)
-        asyncio.StreamReaderProtocol(reader, loop=self.loop)
-
-    def test_stream_writer_create_warning(self):
-        reader = asyncio.StreamReader(loop=self.loop)
-        proto = asyncio.StreamReaderProtocol(reader, loop=self.loop)
-        asyncio.StreamWriter('transport', proto, reader, self.loop)
-
 
 if __name__ == '__main__':
     unittest.main()

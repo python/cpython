@@ -582,14 +582,6 @@ class SubprocessMixin:
 
         self.loop.run_until_complete(execute())
 
-    def test_subprocess_protocol_create_warning(self):
-        subprocess.SubprocessStreamProtocol(limit=10, loop=self.loop)
-
-    def test_process_create_warning(self):
-        proto = subprocess.SubprocessStreamProtocol(limit=10, loop=self.loop)
-        transp = mock.Mock()
-        subprocess.Process(transp, proto, loop=self.loop)
-
     def test_create_subprocess_exec_text_mode_fails(self):
         async def execute():
             with self.assertRaises(ValueError):
