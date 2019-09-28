@@ -815,4 +815,3 @@ class StreamReader:
         if val == b'':
             raise StopAsyncIteration
         return val
-

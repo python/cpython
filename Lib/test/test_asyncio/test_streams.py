@@ -162,7 +162,7 @@ class StreamTests(test_utils.TestCase):
         # Read bytes.
         stream = asyncio.StreamReader(loop=self.loop,
                                       _asyncio_internal=True)
-        read_task = self.loop.create_task(stream.read(30) 
+        read_task = self.loop.create_task(stream.read(30))
 
         def cb():
             stream.feed_data(self.DATA)
