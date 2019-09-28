@@ -114,13 +114,7 @@ class SubprocessStreamProtocol(streams.FlowControlMixin,
 
 
 class Process:
-    def __init__(self, transport, protocol, loop, *, _asyncio_internal=False):
-        if not _asyncio_internal:
-            warnings.warn(f"{self.__class__} should be instantiated "
-                          "by asyncio internals only, "
-                          "please avoid its creation from user code",
-                          DeprecationWarning)
-
+    def __init__(self, transport, protocol, loop):
         self._transport = transport
         self._protocol = protocol
         self._loop = loop
@@ -223,7 +217,7 @@ async def create_subprocess_shell(cmd, stdin=None, stdout=None, stderr=None,
         protocol_factory,
         cmd, stdin=stdin, stdout=stdout,
         stderr=stderr, **kwds)
-    return Process(transport, protocol, loop, _asyncio_internal=True)
+    return Process(transport, protocol, loop)
 
 
 async def create_subprocess_exec(program, *args, stdin=None, stdout=None,
@@ -244,4 +238,4 @@ async def create_subprocess_exec(program, *args, stdin=None, stdout=None,
         program, *args,
         stdin=stdin, stdout=stdout,
         stderr=stderr, **kwds)
-    return Process(transport, protocol, loop, _asyncio_internal=True)
+    return Process(transport, protocol, loop)
