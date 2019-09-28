@@ -281,7 +281,7 @@ except AttributeError:
 class DocDescriptor:
     """Helper for builtins.open.__doc__
     """
-    def __get__(self, obj, typ):
+    def __get__(self, obj, typ=None):
         return (
             "open(file, mode='r', buffering=-1, encoding=None, "
                  "errors=None, newline=None, closefd=True)\n\n" +
@@ -407,7 +407,7 @@ class IOBase(metaclass=abc.ABCMeta):
         """Destructor.  Calls close()."""
         try:
             closed = self.closed
-        except Exception:
+        except AttributeError:
             # If getting closed fails, then the object is probably
             # in an unusable state, so ignore.
             return
@@ -865,7 +865,7 @@ class _BufferedIOMixin(BufferedIOBase):
         clsname = self.__class__.__qualname__
         try:
             name = self.name
-        except Exception:
+        except AttributeError:
             return "<{}.{}>".format(modname, clsname)
         else:
             return "<{}.{} name={!r}>".format(modname, clsname, name)
@@ -2079,13 +2079,13 @@ class TextIOWrapper(TextIOBase):
                                  self.__class__.__qualname__)
         try:
             name = self.name
-        except Exception:
+        except AttributeError:
             pass
         else:
             result += " name={0!r}".format(name)
         try:
             mode = self.mode
-        except Exception:
+        except AttributeError:
             pass
         else:
             result += " mode={0!r}".format(mode)

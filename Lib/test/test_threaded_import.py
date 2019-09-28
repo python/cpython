@@ -15,7 +15,7 @@ import threading
 import unittest
 from unittest import mock
 from test.support import (
-    verbose, import_module, run_unittest, TESTFN, reap_threads,
+    verbose, run_unittest, TESTFN, reap_threads,
     forget, unlink, rmtree, start_threads)
 
 def task(N, done, done_tasks, errors):

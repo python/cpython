@@ -197,44 +197,44 @@ platform-dependent.
 +--------+--------------------------+--------------------+----------------+------------+
 | ``c``  | :c:type:`char`           | bytes of length 1  | 1              |            |
 +--------+--------------------------+--------------------+----------------+------------+
-| ``b``  | :c:type:`signed char`    | integer            | 1              | \(1),\(3)  |
+| ``b``  | :c:type:`signed char`    | integer            | 1              | \(1), \(2) |
 +--------+--------------------------+--------------------+----------------+------------+
-| ``B``  | :c:type:`unsigned char`  | integer            | 1              | \(3)       |
+| ``B``  | :c:type:`unsigned char`  | integer            | 1              | \(2)       |
 +--------+--------------------------+--------------------+----------------+------------+
 | ``?``  | :c:type:`_Bool`          | bool               | 1              | \(1)       |
 +--------+--------------------------+--------------------+----------------+------------+
-| ``h``  | :c:type:`short`          | integer            | 2              | \(3)       |
+| ``h``  | :c:type:`short`          | integer            | 2              | \(2)       |
 +--------+--------------------------+--------------------+----------------+------------+
-| ``H``  | :c:type:`unsigned short` | integer            | 2              | \(3)       |
+| ``H``  | :c:type:`unsigned short` | integer            | 2              | \(2)       |
 +--------+--------------------------+--------------------+----------------+------------+
-| ``i``  | :c:type:`int`            | integer            | 4              | \(3)       |
+| ``i``  | :c:type:`int`            | integer            | 4              | \(2)       |
 +--------+--------------------------+--------------------+----------------+------------+
-| ``I``  | :c:type:`unsigned int`   | integer            | 4              | \(3)       |
+| ``I``  | :c:type:`unsigned int`   | integer            | 4              | \(2)       |
 +--------+--------------------------+--------------------+----------------+------------+
-| ``l``  | :c:type:`long`           | integer            | 4              | \(3)       |
+| ``l``  | :c:type:`long`           | integer            | 4              | \(2)       |
 +--------+--------------------------+--------------------+----------------+------------+
-| ``L``  | :c:type:`unsigned long`  | integer            | 4              | \(3)       |
+| ``L``  | :c:type:`unsigned long`  | integer            | 4              | \(2)       |
 +--------+--------------------------+--------------------+----------------+------------+
-| ``q``  | :c:type:`long long`      | integer            | 8              | \(2), \(3) |
+| ``q``  | :c:type:`long long`      | integer            | 8              | \(2)       |
 +--------+--------------------------+--------------------+----------------+------------+
-| ``Q``  | :c:type:`unsigned long   | integer            | 8              | \(2), \(3) |
+| ``Q``  | :c:type:`unsigned long   | integer            | 8              | \(2)       |
 |        | long`                    |                    |                |            |
 +--------+--------------------------+--------------------+----------------+------------+
-| ``n``  | :c:type:`ssize_t`        | integer            |                | \(4)       |
+| ``n``  | :c:type:`ssize_t`        | integer            |                | \(3)       |
 +--------+--------------------------+--------------------+----------------+------------+
-| ``N``  | :c:type:`size_t`         | integer            |                | \(4)       |
+| ``N``  | :c:type:`size_t`         | integer            |                | \(3)       |
 +--------+--------------------------+--------------------+----------------+------------+
-| ``e``  | \(7)                     | float              | 2              | \(5)       |
+| ``e``  | \(6)                     | float              | 2              | \(4)       |
 +--------+--------------------------+--------------------+----------------+------------+
-| ``f``  | :c:type:`float`          | float              | 4              | \(5)       |
+| ``f``  | :c:type:`float`          | float              | 4              | \(4)       |
 +--------+--------------------------+--------------------+----------------+------------+
-| ``d``  | :c:type:`double`         | float              | 8              | \(5)       |
+| ``d``  | :c:type:`double`         | float              | 8              | \(4)       |
 +--------+--------------------------+--------------------+----------------+------------+
 | ``s``  | :c:type:`char[]`         | bytes              |                |            |
 +--------+--------------------------+--------------------+----------------+------------+
 | ``p``  | :c:type:`char[]`         | bytes              |                |            |
 +--------+--------------------------+--------------------+----------------+------------+
-| ``P``  | :c:type:`void \*`        | integer            |                | \(6)       |
+| ``P``  | :c:type:`void \*`        | integer            |                | \(5)       |
 +--------+--------------------------+--------------------+----------------+------------+
 
 .. versionchanged:: 3.3
@@ -254,11 +254,6 @@ Notes:
    standard mode, it is always represented by one byte.
 
 (2)
-   The ``'q'`` and ``'Q'`` conversion codes are available in native mode only if
-   the platform C compiler supports C :c:type:`long long`, or, on Windows,
-   :c:type:`__int64`.  They are always available in standard modes.
-
-(3)
    When attempting to pack a non-integer using any of the integer conversion
    codes, if the non-integer has a :meth:`__index__` method then that method is
    called to convert the argument to an integer before packing.
@@ -266,26 +261,26 @@ Notes:
    .. versionchanged:: 3.2
       Use of the :meth:`__index__` method for non-integers is new in 3.2.
 
-(4)
+(3)
    The ``'n'`` and ``'N'`` conversion codes are only available for the native
    size (selected as the default or with the ``'@'`` byte order character).
    For the standard size, you can use whichever of the other integer formats
    fits your application.
 
-(5)
+(4)
    For the ``'f'``, ``'d'`` and ``'e'`` conversion codes, the packed
    representation uses the IEEE 754 binary32, binary64 or binary16 format (for
    ``'f'``, ``'d'`` or ``'e'`` respectively), regardless of the floating-point
    format used by the platform.
 
-(6)
+(5)
    The ``'P'`` format character is only available for the native byte ordering
    (selected as the default or with the ``'@'`` byte order character). The byte
    order character ``'='`` chooses to use little- or big-endian ordering based
    on the host system. The struct module does not interpret this as native
    ordering, so the ``'P'`` format is not available.
 
-(7)
+(6)
    The IEEE 754 binary16 "half precision" type was introduced in the 2008
    revision of the `IEEE 754 standard <ieee 754 standard_>`_. It has a sign
    bit, a 5-bit exponent and 11-bit precision (with 10 bits explicitly stored),

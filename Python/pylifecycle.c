@@ -472,7 +472,7 @@ pyinit_core_reconfigure(_PyRuntimeState *runtime,
     config = &interp->config;
 
     if (config->_install_importlib) {
-        status = _PyConfig_SetPathConfig(config);
+        status = _PyConfig_WritePathConfig(config);
         if (_PyStatus_EXCEPTION(status)) {
             return status;
         }
@@ -623,6 +623,8 @@ pycore_init_builtins(PyInterpreterState *interp)
 static PyStatus
 pycore_init_import_warnings(PyInterpreterState *interp, PyObject *sysmod)
 {
+    const PyConfig *config = &interp->config;
+
     PyStatus status = _PyImport_Init(interp);
     if (_PyStatus_EXCEPTION(status)) {
         return status;
@@ -638,15 +640,15 @@ pycore_init_import_warnings(PyInterpreterState *interp, PyObject *sysmod)
         return _PyStatus_ERR("can't initialize warnings");
     }
 
-    if (interp->config._install_importlib) {
-        status = _PyConfig_SetPathConfig(&interp->config);
+    if (config->_install_importlib) {
+        status = _PyConfig_WritePathConfig(config);
         if (_PyStatus_EXCEPTION(status)) {
             return status;
         }
     }
 
     /* This call sets up builtin and frozen import support */
-    if (interp->config._install_importlib) {
+    if (config->_install_importlib) {
         status = init_importlib(interp, sysmod);
         if (_PyStatus_EXCEPTION(status)) {
             return status;
@@ -719,10 +721,14 @@ _Py_PreInitializeFromPyArgv(const PyPreConfig *src_config, const _PyArgv *args)
     }
     _PyRuntimeState *runtime = &_PyRuntime;
 
-    if (runtime->pre_initialized) {
+    if (runtime->preinitialized) {
         /* If it's already configured: ignored the new configuration */
         return _PyStatus_OK();
     }
+
+    /* Note: preinitialized remains 1 on error, it is only set to 0
+       at exit on success. */
+    runtime->preinitializing = 1;
 
     PyPreConfig config;
     _PyPreConfig_InitFromPreConfig(&config, src_config);
@@ -737,7 +743,8 @@ _Py_PreInitializeFromPyArgv(const PyPreConfig *src_config, const _PyArgv *args)
         return status;
     }
 
-    runtime->pre_initialized = 1;
+    runtime->preinitializing = 0;
+    runtime->preinitialized = 1;
     return _PyStatus_OK();
 }
 
@@ -777,7 +784,7 @@ _Py_PreInitializeFromConfig(const PyConfig *config,
     }
     _PyRuntimeState *runtime = &_PyRuntime;
 
-    if (runtime->pre_initialized) {
+    if (runtime->preinitialized) {
         /* Already initialized: do nothing */
         return _PyStatus_OK();
     }
@@ -934,7 +941,8 @@ pyinit_main(_PyRuntimeState *runtime, PyInterpreterState *interp)
         return status;
     }
 
-    status = _PyUnicode_InitEncodings(interp);
+    PyThreadState *tstate = _PyRuntimeState_GetThreadState(runtime);
+    status = _PyUnicode_InitEncodings(tstate);
     if (_PyStatus_EXCEPTION(status)) {
         return status;
     }
@@ -1501,7 +1509,7 @@ new_interpreter(PyThreadState **tstate_p)
             return status;
         }
 
-        status = _PyUnicode_InitEncodings(interp);
+        status = _PyUnicode_InitEncodings(tstate);
         if (_PyStatus_EXCEPTION(status)) {
             return status;
         }
@@ -1961,13 +1969,14 @@ done:
 
 
 static void
-_Py_FatalError_DumpTracebacks(int fd)
+_Py_FatalError_DumpTracebacks(int fd, PyInterpreterState *interp,
+                              PyThreadState *tstate)
 {
     fputc('\n', stderr);
     fflush(stderr);
 
     /* display the current Python stack */
-    _Py_DumpTracebackThreads(fd, NULL, NULL);
+    _Py_DumpTracebackThreads(fd, interp, tstate);
 }
 
 /* Print the current exception (if an exception is set) with its traceback,
@@ -2062,10 +2071,39 @@ fatal_output_debug(const char *msg)
 }
 #endif
 
+
+static void
+fatal_error_dump_runtime(FILE *stream, _PyRuntimeState *runtime)
+{
+    fprintf(stream, "Python runtime state: ");
+    if (runtime->finalizing) {
+        fprintf(stream, "finalizing (tstate=%p)", runtime->finalizing);
+    }
+    else if (runtime->initialized) {
+        fprintf(stream, "initialized");
+    }
+    else if (runtime->core_initialized) {
+        fprintf(stream, "core initialized");
+    }
+    else if (runtime->preinitialized) {
+        fprintf(stream, "preinitialized");
+    }
+    else if (runtime->preinitializing) {
+        fprintf(stream, "preinitializing");
+    }
+    else {
+        fprintf(stream, "unknown");
+    }
+    fprintf(stream, "\n");
+    fflush(stream);
+}
+
+
 static void _Py_NO_RETURN
 fatal_error(const char *prefix, const char *msg, int status)
 {
-    const int fd = fileno(stderr);
+    FILE *stream = stderr;
+    const int fd = fileno(stream);
     static int reentrant = 0;
 
     if (reentrant) {
@@ -2075,45 +2113,48 @@ fatal_error(const char *prefix, const char *msg, int status)
     }
     reentrant = 1;
 
-    fprintf(stderr, "Fatal Python error: ");
+    fprintf(stream, "Fatal Python error: ");
     if (prefix) {
-        fputs(prefix, stderr);
-        fputs(": ", stderr);
+        fputs(prefix, stream);
+        fputs(": ", stream);
     }
     if (msg) {
-        fputs(msg, stderr);
+        fputs(msg, stream);
     }
     else {
-        fprintf(stderr, "<message not set>");
+        fprintf(stream, "<message not set>");
     }
-    fputs("\n", stderr);
-    fflush(stderr); /* it helps in Windows debug build */
+    fputs("\n", stream);
+    fflush(stream); /* it helps in Windows debug build */
+
+    _PyRuntimeState *runtime = &_PyRuntime;
+    fatal_error_dump_runtime(stream, runtime);
+
+    PyThreadState *tstate = _PyRuntimeState_GetThreadState(runtime);
+    PyInterpreterState *interp = NULL;
+    if (tstate != NULL) {
+        interp = tstate->interp;
+    }
 
     /* Check if the current thread has a Python thread state
-       and holds the GIL */
-    PyThreadState *tss_tstate = PyGILState_GetThisThreadState();
-    if (tss_tstate != NULL) {
-        PyThreadState *tstate = _PyThreadState_GET();
-        if (tss_tstate != tstate) {
-            /* The Python thread does not hold the GIL */
-            tss_tstate = NULL;
-        }
-    }
-    else {
-        /* Py_FatalError() has been called from a C thread
-           which has no Python thread state. */
-    }
-    int has_tstate_and_gil = (tss_tstate != NULL);
+       and holds the GIL.
 
+       tss_tstate is NULL if Py_FatalError() is called from a C thread which
+       has no Python thread state.
+
+       tss_tstate != tstate if the current Python thread does not hold the GIL.
+       */
+    PyThreadState *tss_tstate = PyGILState_GetThisThreadState();
+    int has_tstate_and_gil = (tss_tstate != NULL && tss_tstate == tstate);
     if (has_tstate_and_gil) {
         /* If an exception is set, print the exception with its traceback */
         if (!_Py_FatalError_PrintExc(fd)) {
             /* No exception is set, or an exception is set without traceback */
-            _Py_FatalError_DumpTracebacks(fd);
+            _Py_FatalError_DumpTracebacks(fd, interp, tss_tstate);
         }
     }
     else {
-        _Py_FatalError_DumpTracebacks(fd);
+        _Py_FatalError_DumpTracebacks(fd, interp, tss_tstate);
     }
 
     /* The main purpose of faulthandler is to display the traceback.

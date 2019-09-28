@@ -1,0 +1,2 @@
+Fixes potential crash when calling :func:`os.readlink` (or indirectly
+through :func:`~os.path.realpath`) on a file that is not a supported link.

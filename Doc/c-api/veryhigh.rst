@@ -335,12 +335,12 @@ the same library that the Python runtime is using.
 
 .. c:function:: PyObject* PyEval_EvalFrameEx(PyFrameObject *f, int throwflag)
 
-   This is the main, unvarnished function of Python interpretation.  It is
-   literally 2000 lines long.  The code object associated with the execution
-   frame *f* is executed, interpreting bytecode and executing calls as needed.
-   The additional *throwflag* parameter can mostly be ignored - if true, then
-   it causes an exception to immediately be thrown; this is used for the
-   :meth:`~generator.throw` methods of generator objects.
+   This is the main, unvarnished function of Python interpretation.  The code
+   object associated with the execution frame *f* is executed, interpreting
+   bytecode and executing calls as needed.  The additional *throwflag*
+   parameter can mostly be ignored - if true, then it causes an exception
+   to immediately be thrown; this is used for the :meth:`~generator.throw`
+   methods of generator objects.
 
    .. versionchanged:: 3.4
       This function now includes a debug assertion to help ensure that it

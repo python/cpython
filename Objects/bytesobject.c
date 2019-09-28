@@ -2004,7 +2004,7 @@ do_strip(PyBytesObject *self, int striptype)
 Py_LOCAL_INLINE(PyObject *)
 do_argstrip(PyBytesObject *self, int striptype, PyObject *bytes)
 {
-    if (bytes != NULL && bytes != Py_None) {
+    if (bytes != Py_None) {
         return do_xstrip(self, striptype, bytes);
     }
     return do_strip(self, striptype);
@@ -2939,7 +2939,6 @@ PyBytes_Concat(PyObject **pv, PyObject *w)
         Py_ssize_t oldsize;
         Py_buffer wb;
 
-        wb.len = -1;
         if (PyObject_GetBuffer(w, &wb, PyBUF_SIMPLE) != 0) {
             PyErr_Format(PyExc_TypeError, "can't concat %.100s to %.100s",
                          Py_TYPE(w)->tp_name, Py_TYPE(*pv)->tp_name);

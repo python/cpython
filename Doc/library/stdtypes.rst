@@ -265,9 +265,8 @@ which is narrower than complex.  Comparisons between numbers of mixed type use
 the same rule. [2]_ The constructors :func:`int`, :func:`float`, and
 :func:`complex` can be used to produce numbers of a specific type.
 
-All numeric types (except complex) support the following operations, sorted by
-ascending priority (all numeric operations have a higher priority than
-comparison operations):
+All numeric types (except complex) support the following operations (for priorities of
+the operations, see :ref:`operator-summary`):
 
 +---------------------+---------------------------------+---------+--------------------+
 | Operation           | Result                          | Notes   | Full documentation |
@@ -1756,9 +1755,13 @@ expression support in the :mod:`re` module).
 .. method:: str.isspace()
 
    Return true if there are only whitespace characters in the string and there is
-   at least one character, false otherwise.  Whitespace characters  are those
-   characters defined in the Unicode character database as "Other" or "Separator"
-   and those with bidirectional property being one of "WS", "B", or "S".
+   at least one character, false otherwise.
+
+   A character is *whitespace* if in the Unicode character database
+   (see :mod:`unicodedata`), either its general category is ``Zs``
+   ("Separator, space"), or its bidirectional class is one of ``WS``,
+   ``B``, or ``S``.
+
 
 .. method:: str.istitle()
 
@@ -3801,7 +3804,7 @@ copying.
          >>> z.nbytes
          48
 
-      Cast 1D/unsigned char to 2D/unsigned long::
+      Cast 1D/unsigned long to 2D/unsigned long::
 
          >>> buf = struct.pack("L"*6, *list(range(6)))
          >>> x = memoryview(buf)
@@ -4206,6 +4209,10 @@ pairs within braces, for example: ``{'jack': 4098, 'sjoerd': 4127}`` or ``{4098:
    These are the operations that dictionaries support (and therefore, custom
    mapping types should support too):
 
+   .. describe:: list(d)
+
+      Return a list of all the keys used in the dictionary *d*.
+
    .. describe:: len(d)
 
       Return the number of items in the dictionary *d*.
@@ -4340,8 +4347,16 @@ pairs within braces, for example: ``{'jack': 4098, 'sjoerd': 4127}`` or ``{4098:
       Return a new view of the dictionary's values.  See the
       :ref:`documentation of view objects <dict-views>`.
 
+      An equality comparison between one ``dict.values()`` view and another
+      will always return ``False``. This also applies when comparing
+      ``dict.values()`` to itself::
+
+         >>> d = {'a': 1}
+         >>> d.values() == d.values()
+         False
+
    Dictionaries compare equal if and only if they have the same ``(key,
-   value)`` pairs. Order comparisons ('<', '<=', '>=', '>') raise
+   value)`` pairs (regardless of ordering). Order comparisons ('<', '<=', '>=', '>') raise
    :exc:`TypeError`.
 
    Dictionaries preserve insertion order.  Note that updating a key does not

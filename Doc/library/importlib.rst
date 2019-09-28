@@ -274,6 +274,8 @@ ABC hierarchy::
       parent package. If a spec cannot be found, ``None`` is returned.
       When passed in, ``target`` is a module object that the finder may
       use to make a more educated guess about what spec to return.
+      :func:`importlib.util.spec_from_loader` may be useful for implementing
+      concrete ``MetaPathFinders``.
 
       .. versionadded:: 3.4
 
@@ -323,7 +325,8 @@ ABC hierarchy::
       within the :term:`path entry` to which it is assigned.  If a spec
       cannot be found, ``None`` is returned.  When passed in, ``target``
       is a module object that the finder may use to make a more educated
-      guess about what spec to return.
+      guess about what spec to return. :func:`importlib.util.spec_from_loader`
+      may be useful for implementing concrete ``PathEntryFinders``.
 
       .. versionadded:: 3.4
 
@@ -500,7 +503,7 @@ ABC hierarchy::
     packages or a module).
 
     Loaders that wish to support resource reading are expected to
-    provide a method called ``get_resource_loader(fullname)`` which
+    provide a method called ``get_resource_reader(fullname)`` which
     returns an object implementing this ABC's interface. If the module
     specified by fullname is not a package, this method should return
     :const:`None`. An object compatible with this ABC should only be
@@ -1379,8 +1382,8 @@ an :term:`importer`.
    bytecode file. An empty string represents no optimization, so
    ``/foo/bar/baz.py`` with an *optimization* of ``''`` will result in a
    bytecode path of ``/foo/bar/__pycache__/baz.cpython-32.pyc``. ``None`` causes
-   the interpter's optimization level to be used. Any other value's string
-   representation being used, so ``/foo/bar/baz.py`` with an *optimization* of
+   the interpreter's optimization level to be used. Any other value's string
+   representation is used, so ``/foo/bar/baz.py`` with an *optimization* of
    ``2`` will lead to the bytecode path of
    ``/foo/bar/__pycache__/baz.cpython-32.opt-2.pyc``. The string representation
    of *optimization* can only be alphanumeric, else :exc:`ValueError` is raised.
@@ -1638,15 +1641,16 @@ import, then you should use :func:`importlib.util.find_spec`.
   # For illustrative purposes.
   name = 'itertools'
 
-  spec = importlib.util.find_spec(name)
-  if spec is None:
-      print("can't find the itertools module")
-  else:
+  if name in sys.modules:
+      print(f"{name!r} already in sys.modules")
+  elif (spec := importlib.util.find_spec(name)) is not None:
       # If you chose to perform the actual import ...
       module = importlib.util.module_from_spec(spec)
-      spec.loader.exec_module(module)
-      # Adding the module to sys.modules is optional.
       sys.modules[name] = module
+      spec.loader.exec_module(module)
+      print(f"{name!r} has been imported")
+  else:
+      print(f"can't find the {name!r} module")
 
 
 Importing a source file directly
@@ -1665,10 +1669,9 @@ To import a Python source file directly, use the following recipe
 
   spec = importlib.util.spec_from_file_location(module_name, file_path)
   module = importlib.util.module_from_spec(spec)
-  spec.loader.exec_module(module)
-  # Optional; only necessary if you want to be able to import the module
-  # by name later.
   sys.modules[module_name] = module
+  spec.loader.exec_module(module)
+
 
 
 Setting up an importer
@@ -1740,8 +1743,8 @@ Python 3.6 and newer for other parts of the code).
           msg = f'No module named {absolute_name!r}'
           raise ModuleNotFoundError(msg, name=absolute_name)
       module = importlib.util.module_from_spec(spec)
-      spec.loader.exec_module(module)
       sys.modules[absolute_name] = module
+      spec.loader.exec_module(module)
       if path is not None:
           setattr(parent_module, child_name, module)
       return module

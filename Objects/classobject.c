@@ -62,22 +62,34 @@ method_vectorcall(PyObject *method, PyObject *const *args,
     }
     else {
         Py_ssize_t nkwargs = (kwnames == NULL) ? 0 : PyTuple_GET_SIZE(kwnames);
-        PyObject **newargs;
         Py_ssize_t totalargs = nargs + nkwargs;
-        newargs = PyMem_Malloc((totalargs+1) * sizeof(PyObject *));
-        if (newargs == NULL) {
-            PyErr_NoMemory();
-            return NULL;
+        if (totalargs == 0) {
+            return _PyObject_Vectorcall(func, &self, 1, NULL);
+        }
+
+        PyObject *newargs_stack[_PY_FASTCALL_SMALL_STACK];
+        PyObject **newargs;
+        if (totalargs <= (Py_ssize_t)Py_ARRAY_LENGTH(newargs_stack) - 1) {
+            newargs = newargs_stack;
+        }
+        else {
+            newargs = PyMem_Malloc((totalargs+1) * sizeof(PyObject *));
+            if (newargs == NULL) {
+                PyErr_NoMemory();
+                return NULL;
+            }
         }
         /* use borrowed references */
         newargs[0] = self;
-        if (totalargs) { /* bpo-37138: if totalargs == 0, then args may be
-                          * NULL and calling memcpy() with a NULL pointer
-                          * is undefined behaviour. */
-            memcpy(newargs + 1, args, totalargs * sizeof(PyObject *));
-        }
+        /* bpo-37138: since totalargs > 0, it's impossible that args is NULL.
+         * We need this, since calling memcpy() with a NULL pointer is
+         * undefined behaviour. */
+        assert(args != NULL);
+        memcpy(newargs + 1, args, totalargs * sizeof(PyObject *));
         result = _PyObject_Vectorcall(func, newargs, nargs+1, kwnames);
-        PyMem_Free(newargs);
+        if (newargs != newargs_stack) {
+            PyMem_Free(newargs);
+        }
     }
     return result;
 }

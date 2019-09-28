@@ -45,9 +45,9 @@ static void _PyMem_SetupDebugHooksDomain(PyMemAllocatorDomain domain);
 #    define _Py_NO_ADDRESS_SAFETY_ANALYSIS \
         __attribute__((no_address_safety_analysis))
 #  endif
-   // TSAN is supported since GCC 4.8, but __SANITIZE_THREAD__ macro
+   // TSAN is supported since GCC 5.1, but __SANITIZE_THREAD__ macro
    // is provided only since GCC 7.
-#  if __GNUC__ > 4 || (__GNUC__ == 4 && __GNUC_MINOR__ >= 8)
+#  if __GNUC__ > 5 || (__GNUC__ == 5 && __GNUC_MINOR__ >= 1)
 #    define _Py_NO_SANITIZE_THREAD __attribute__((no_sanitize_thread))
 #  endif
 #endif
@@ -1415,13 +1415,13 @@ address_in_range(void *p, poolp pool)
    block allocations typically result in a couple of instructions).
    Unless the optimizer reorders everything, being too smart...
 
-   Return 1 if pymalloc allocated memory and wrote the pointer into *ptr_p.
+   Return a pointer to newly allocated memory if pymalloc allocated memory.
 
-   Return 0 if pymalloc failed to allocate the memory block: on bigger
+   Return NULL if pymalloc failed to allocate the memory block: on bigger
    requests, on error in the code below (as a last chance to serve the request)
    or when the max memory limit has been reached. */
-static int
-pymalloc_alloc(void *ctx, void **ptr_p, size_t nbytes)
+static void*
+pymalloc_alloc(void *ctx, size_t nbytes)
 {
     block *bp;
     poolp pool;
@@ -1433,15 +1433,15 @@ pymalloc_alloc(void *ctx, void **ptr_p, size_t nbytes)
         running_on_valgrind = RUNNING_ON_VALGRIND;
     }
     if (UNLIKELY(running_on_valgrind)) {
-        return 0;
+        return NULL;
     }
 #endif
 
     if (nbytes == 0) {
-        return 0;
+        return NULL;
     }
     if (nbytes > SMALL_REQUEST_THRESHOLD) {
-        return 0;
+        return NULL;
     }
 
     /*
@@ -1609,19 +1609,18 @@ pymalloc_alloc(void *ctx, void **ptr_p, size_t nbytes)
 
 success:
     assert(bp != NULL);
-    *ptr_p = (void *)bp;
-    return 1;
+    return (void *)bp;
 
 failed:
-    return 0;
+    return NULL;
 }
 
 
 static void *
 _PyObject_Malloc(void *ctx, size_t nbytes)
 {
-    void* ptr;
-    if (pymalloc_alloc(ctx, &ptr, nbytes)) {
+    void* ptr = pymalloc_alloc(ctx, nbytes);
+    if (ptr != NULL) {
         _Py_AllocatedBlocks++;
         return ptr;
     }
@@ -1637,12 +1636,11 @@ _PyObject_Malloc(void *ctx, size_t nbytes)
 static void *
 _PyObject_Calloc(void *ctx, size_t nelem, size_t elsize)
 {
-    void* ptr;
-
     assert(elsize == 0 || nelem <= (size_t)PY_SSIZE_T_MAX / elsize);
     size_t nbytes = nelem * elsize;
 
-    if (pymalloc_alloc(ctx, &ptr, nbytes)) {
+    void *ptr = pymalloc_alloc(ctx, nbytes);
+    if (ptr != NULL) {
         memset(ptr, 0, nbytes);
         _Py_AllocatedBlocks++;
         return ptr;
@@ -1743,8 +1741,8 @@ pymalloc_free(void *ctx, void *p)
      * are no arenas in usable_arenas with that value.
      */
     struct arena_object* lastnf = nfp2lasta[nf];
-    assert((nf == 0 && lastnf == NULL) || 
-           (nf > 0 && 
+    assert((nf == 0 && lastnf == NULL) ||
+           (nf > 0 &&
             lastnf != NULL &&
             lastnf->nfreepools == nf &&
             (lastnf->nextarena == NULL ||

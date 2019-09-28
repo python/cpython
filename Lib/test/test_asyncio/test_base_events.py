@@ -91,25 +91,26 @@ class BaseEventTests(test_utils.TestCase):
         self.assertIsNone(
             base_events._ipaddr_info('1.2.3.4', 1, UNSPEC, 0, 0))
 
-        # IPv4 address with family IPv6.
-        self.assertIsNone(
-            base_events._ipaddr_info('1.2.3.4', 1, INET6, STREAM, TCP))
+        if support.IPV6_ENABLED:
+            # IPv4 address with family IPv6.
+            self.assertIsNone(
+                base_events._ipaddr_info('1.2.3.4', 1, INET6, STREAM, TCP))
 
-        self.assertEqual(
-            (INET6, STREAM, TCP, '', ('::3', 1, 0, 0)),
-            base_events._ipaddr_info('::3', 1, INET6, STREAM, TCP))
+            self.assertEqual(
+                (INET6, STREAM, TCP, '', ('::3', 1, 0, 0)),
+                base_events._ipaddr_info('::3', 1, INET6, STREAM, TCP))
 
-        self.assertEqual(
-            (INET6, STREAM, TCP, '', ('::3', 1, 0, 0)),
-            base_events._ipaddr_info('::3', 1, UNSPEC, STREAM, TCP))
+            self.assertEqual(
+                (INET6, STREAM, TCP, '', ('::3', 1, 0, 0)),
+                base_events._ipaddr_info('::3', 1, UNSPEC, STREAM, TCP))
 
-        # IPv6 address with family IPv4.
-        self.assertIsNone(
-            base_events._ipaddr_info('::3', 1, INET, STREAM, TCP))
+            # IPv6 address with family IPv4.
+            self.assertIsNone(
+                base_events._ipaddr_info('::3', 1, INET, STREAM, TCP))
 
-        # IPv6 address with zone index.
-        self.assertIsNone(
-            base_events._ipaddr_info('::3%lo0', 1, INET6, STREAM, TCP))
+            # IPv6 address with zone index.
+            self.assertIsNone(
+                base_events._ipaddr_info('::3%lo0', 1, INET6, STREAM, TCP))
 
     def test_port_parameter_types(self):
         # Test obscure kinds of arguments for "port".
@@ -190,7 +191,7 @@ class BaseEventLoopTests(test_utils.TestCase):
         self.loop.close()
 
         # operation blocked when the loop is closed
-        f = asyncio.Future(loop=self.loop)
+        f = self.loop.create_future()
         self.assertRaises(RuntimeError, self.loop.run_forever)
         self.assertRaises(RuntimeError, self.loop.run_until_complete, f)
 
@@ -321,7 +322,7 @@ class BaseEventLoopTests(test_utils.TestCase):
 
         def test_thread(loop, debug, create_loop=False):
             event = threading.Event()
-            fut = asyncio.Future(loop=loop)
+            fut = loop.create_future()
             loop.call_soon(event.set)
             args = (loop, event, debug, create_loop, fut)
             thread = threading.Thread(target=check_in_thread, args=args)
@@ -469,7 +470,7 @@ class BaseEventLoopTests(test_utils.TestCase):
             self.loop.run_until_complete, 'blah')
 
     def test_run_until_complete_loop(self):
-        task = asyncio.Future(loop=self.loop)
+        task = self.loop.create_future()
         other_loop = self.new_test_loop()
         self.addCleanup(other_loop.close)
         self.assertRaises(ValueError,
@@ -552,7 +553,7 @@ class BaseEventLoopTests(test_utils.TestCase):
 
         # Test call_soon (events.Handle)
         with mock.patch('asyncio.base_events.logger') as log:
-            fut = asyncio.Future(loop=self.loop)
+            fut = self.loop.create_future()
             self.loop.call_soon(zero_error, fut)
             fut.add_done_callback(lambda fut: self.loop.stop())
             self.loop.run_forever()
@@ -562,7 +563,7 @@ class BaseEventLoopTests(test_utils.TestCase):
 
         # Test call_later (events.TimerHandle)
         with mock.patch('asyncio.base_events.logger') as log:
-            fut = asyncio.Future(loop=self.loop)
+            fut = self.loop.create_future()
             self.loop.call_later(0.01, zero_error, fut)
             fut.add_done_callback(lambda fut: self.loop.stop())
             self.loop.run_forever()
@@ -993,7 +994,7 @@ class MyProto(asyncio.Protocol):
         self.state = 'INITIAL'
         self.nbytes = 0
         if create_future:
-            self.done = asyncio.Future()
+            self.done = asyncio.get_running_loop().create_future()
 
     def connection_made(self, transport):
         self.transport = transport
@@ -1023,7 +1024,7 @@ class MyDatagramProto(asyncio.DatagramProtocol):
         self.state = 'INITIAL'
         self.nbytes = 0
         if create_future:
-            self.done = asyncio.Future(loop=loop)
+            self.done = loop.create_future()
 
     def connection_made(self, transport):
         self.transport = transport
@@ -1068,7 +1069,7 @@ class BaseEventLoopWithSelectorTests(test_utils.TestCase):
                     (2, 1, 6, '', ('107.6.106.82', 80))]
 
         def getaddrinfo_task(*args, **kwds):
-            return asyncio.Task(getaddrinfo(*args, **kwds), loop=self.loop)
+            return self.loop.create_task(getaddrinfo(*args, **kwds))
 
         idx = -1
         errors = ['err1', 'err2']
@@ -1095,7 +1096,7 @@ class BaseEventLoopWithSelectorTests(test_utils.TestCase):
         m_socket.socket.return_value = sock
 
         def getaddrinfo(*args, **kw):
-            fut = asyncio.Future(loop=self.loop)
+            fut = self.loop.create_future()
             addr = (socket.AF_INET, socket.SOCK_STREAM, 0, '',
                     ('127.0.0.1', 80))
             fut.set_result([addr])
@@ -1149,7 +1150,7 @@ class BaseEventLoopWithSelectorTests(test_utils.TestCase):
             srv.close()
             self.loop.run_until_complete(srv.wait_closed())
 
-    @unittest.skipUnless(hasattr(socket, 'AF_INET6'), 'no IPv6 support')
+    @unittest.skipUnless(support.IPV6_ENABLED, 'no IPv6 support')
     def test_create_server_ipv6(self):
         async def main():
             srv = await asyncio.start_server(
@@ -1186,7 +1187,7 @@ class BaseEventLoopWithSelectorTests(test_utils.TestCase):
             return []
 
         def getaddrinfo_task(*args, **kwds):
-            return asyncio.Task(getaddrinfo(*args, **kwds), loop=self.loop)
+            return self.loop.create_task(getaddrinfo(*args, **kwds))
 
         self.loop.getaddrinfo = getaddrinfo_task
         coro = self.loop.create_connection(MyProto, 'example.com', 80)
@@ -1198,7 +1199,7 @@ class BaseEventLoopWithSelectorTests(test_utils.TestCase):
             return [(2, 1, 6, '', ('107.6.106.82', 80))]
 
         def getaddrinfo_task(*args, **kwds):
-            return asyncio.Task(getaddrinfo(*args, **kwds), loop=self.loop)
+            return self.loop.create_task(getaddrinfo(*args, **kwds))
 
         self.loop.getaddrinfo = getaddrinfo_task
         self.loop.sock_connect = mock.Mock()
@@ -1214,7 +1215,7 @@ class BaseEventLoopWithSelectorTests(test_utils.TestCase):
                     (2, 1, 6, '', ('0.0.0.2', 80))]
 
         def getaddrinfo_task(*args, **kwds):
-            return asyncio.Task(getaddrinfo(*args, **kwds), loop=self.loop)
+            return self.loop.create_task(getaddrinfo(*args, **kwds))
 
         self.loop.getaddrinfo = getaddrinfo_task
         self.loop.sock_connect = mock.Mock()
@@ -1241,7 +1242,7 @@ class BaseEventLoopWithSelectorTests(test_utils.TestCase):
                     (2, 1, 6, '', ('0.0.0.2', 80))]
 
         def getaddrinfo_task(*args, **kwds):
-            return asyncio.Task(getaddrinfo(*args, **kwds), loop=self.loop)
+            return self.loop.create_task(getaddrinfo(*args, **kwds))
 
         self.loop.getaddrinfo = getaddrinfo_task
         self.loop.sock_connect = mock.Mock()
@@ -1280,23 +1281,26 @@ class BaseEventLoopWithSelectorTests(test_utils.TestCase):
             t.close()
             test_utils.run_briefly(self.loop)  # allow transport to close
 
-        sock.family = socket.AF_INET6
-        coro = self.loop.create_connection(asyncio.Protocol, '::1', 80)
-        t, p = self.loop.run_until_complete(coro)
-        try:
-            # Without inet_pton we use getaddrinfo, which transforms ('::1', 80)
-            # to ('::1', 80, 0, 0). The last 0s are flow info, scope id.
-            [address] = sock.connect.call_args[0]
-            host, port = address[:2]
-            self.assertRegex(host, r'::(0\.)*1')
-            self.assertEqual(port, 80)
-            _, kwargs = m_socket.socket.call_args
-            self.assertEqual(kwargs['family'], m_socket.AF_INET6)
-            self.assertEqual(kwargs['type'], m_socket.SOCK_STREAM)
-        finally:
-            t.close()
-            test_utils.run_briefly(self.loop)  # allow transport to close
+        if support.IPV6_ENABLED:
+            sock.family = socket.AF_INET6
+            coro = self.loop.create_connection(asyncio.Protocol, '::1', 80)
+            t, p = self.loop.run_until_complete(coro)
+            try:
+                # Without inet_pton we use getaddrinfo, which transforms
+                # ('::1', 80) to ('::1', 80, 0, 0). The last 0s are flow info,
+                # scope id.
+                [address] = sock.connect.call_args[0]
+                host, port = address[:2]
+                self.assertRegex(host, r'::(0\.)*1')
+                self.assertEqual(port, 80)
+                _, kwargs = m_socket.socket.call_args
+                self.assertEqual(kwargs['family'], m_socket.AF_INET6)
+                self.assertEqual(kwargs['type'], m_socket.SOCK_STREAM)
+            finally:
+                t.close()
+                test_utils.run_briefly(self.loop)  # allow transport to close
 
+    @unittest.skipUnless(support.IPV6_ENABLED, 'no IPv6 support')
     @unittest.skipIf(sys.platform.startswith('aix'),
                     "bpo-25545: IPv6 scope id and getaddrinfo() behave differently on AIX")
     @patch_socket
@@ -1369,7 +1373,7 @@ class BaseEventLoopWithSelectorTests(test_utils.TestCase):
                 return []
 
         def getaddrinfo_task(*args, **kwds):
-            return asyncio.Task(getaddrinfo(*args, **kwds), loop=self.loop)
+            return self.loop.create_task(getaddrinfo(*args, **kwds))
         self.loop.getaddrinfo = getaddrinfo_task
 
         coro = self.loop.create_connection(
@@ -1397,7 +1401,7 @@ class BaseEventLoopWithSelectorTests(test_utils.TestCase):
         self.loop.getaddrinfo = mock.Mock()
 
         def mock_getaddrinfo(*args, **kwds):
-            f = asyncio.Future(loop=self.loop)
+            f = self.loop.create_future()
             f.set_result([(socket.AF_INET, socket.SOCK_STREAM,
                            socket.SOL_TCP, '', ('1.2.3.4', 80))])
             return f
@@ -1505,7 +1509,7 @@ class BaseEventLoopWithSelectorTests(test_utils.TestCase):
             return []
 
         def getaddrinfo_task(*args, **kwds):
-            return asyncio.Task(getaddrinfo(*args, **kwds), loop=self.loop)
+            return self.loop.create_task(getaddrinfo(*args, **kwds))
 
         self.loop.getaddrinfo = getaddrinfo_task
         fut = self.loop.create_server(MyProto, '', 0)

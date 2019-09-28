@@ -182,6 +182,10 @@ ArgumentParser objects
    .. versionchanged:: 3.5
       *allow_abbrev* parameter was added.
 
+   .. versionchanged:: 3.8
+      In previous versions, *allow_abbrev* also disabled grouping of short
+      flags such as ``-vv`` to mean ``-v -v``.
+
 The following sections describe how each of these are used.
 
 
@@ -1098,9 +1102,8 @@ container should match the type_ specified::
    usage: doors.py [-h] {1,2,3}
    doors.py: error: argument door: invalid choice: 4 (choose from 1, 2, 3)
 
-Any object that supports the ``in`` operator can be passed as the *choices*
-value, so :class:`dict` objects, :class:`set` objects, custom containers,
-etc. are all supported.
+Any container can be passed as the *choices* value, so :class:`list` objects,
+:class:`set` objects, and custom containers are all supported.
 
 
 required
@@ -1998,7 +2001,14 @@ Exiting methods
 .. method:: ArgumentParser.exit(status=0, message=None)
 
    This method terminates the program, exiting with the specified *status*
-   and, if given, it prints a *message* before that.
+   and, if given, it prints a *message* before that. The user can override
+   this method to handle these steps differently::
+
+    class ErrorCatchingArgumentParser(argparse.ArgumentParser):
+        def exit(self, status=0, message=None):
+            if status:
+                raise Exception(f'Exiting because of an error: {message}')
+            exit(status)
 
 .. method:: ArgumentParser.error(message)
 

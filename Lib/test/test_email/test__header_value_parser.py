@@ -118,7 +118,7 @@ class TestParser(TestParserMixin, TestEmailBase):
                          '=?us-ascii?q?first?==?utf-8?q?second?=',
                          'first',
                          'first',
-                         [],
+                         [errors.InvalidHeaderDefect],
                          '=?utf-8?q?second?=')
 
     def test_get_encoded_word_sets_extra_attributes(self):
@@ -361,7 +361,42 @@ class TestParser(TestParserMixin, TestEmailBase):
             '=?utf-8?q?foo?==?utf-8?q?bar?=',
             'foobar',
             'foobar',
+            [errors.InvalidHeaderDefect,
+            errors.InvalidHeaderDefect],
+            '')
+
+    def test_get_unstructured_ew_without_leading_whitespace(self):
+        self._test_get_x(
+            self._get_unst,
+            'nowhitespace=?utf-8?q?somevalue?=',
+            'nowhitespacesomevalue',
+            'nowhitespacesomevalue',
             [errors.InvalidHeaderDefect],
+            '')
+
+    def test_get_unstructured_ew_without_trailing_whitespace(self):
+        self._test_get_x(
+            self._get_unst,
+            '=?utf-8?q?somevalue?=nowhitespace',
+            'somevaluenowhitespace',
+            'somevaluenowhitespace',
+            [errors.InvalidHeaderDefect],
+            '')
+
+    def test_get_unstructured_without_trailing_whitespace_hang_case(self):
+        self._test_get_x(self._get_unst,
+            '=?utf-8?q?somevalue?=aa',
+            'somevalueaa',
+            'somevalueaa',
+            [errors.InvalidHeaderDefect],
+            '')
+
+    def test_get_unstructured_invalid_ew(self):
+        self._test_get_x(self._get_unst,
+            '=?utf-8?q?=somevalue?=',
+            '=?utf-8?q?=somevalue?=',
+            '=?utf-8?q?=somevalue?=',
+            [],
             '')
 
     # get_qp_ctext
@@ -503,6 +538,10 @@ class TestParser(TestParserMixin, TestEmailBase):
         self._test_get_x(parser.get_bare_quoted_string,
                          '""', '""', '', [], '')
 
+    def test_get_bare_quoted_string_missing_endquotes(self):
+        self._test_get_x(parser.get_bare_quoted_string,
+                         '"', '""', '', [errors.InvalidHeaderDefect], '')
+
     def test_get_bare_quoted_string_following_wsp_preserved(self):
         self._test_get_x(parser.get_bare_quoted_string,
              '"foo"\t bar', '"foo"', 'foo', [], '\t bar')
@@ -546,7 +585,8 @@ class TestParser(TestParserMixin, TestEmailBase):
             '"=?utf-8?Q?not_really_valid?="',
             '"not really valid"',
             'not really valid',
-            [errors.InvalidHeaderDefect],
+            [errors.InvalidHeaderDefect,
+             errors.InvalidHeaderDefect],
             '')
 
     # get_comment
@@ -1424,6 +1464,16 @@ class TestParser(TestParserMixin, TestEmailBase):
         self.assertEqual(addr_spec.domain, 'example.com')
         self.assertEqual(addr_spec.addr_spec, 'star.a.star@example.com')
 
+    def test_get_addr_spec_multiple_domains(self):
+        with self.assertRaises(errors.HeaderParseError):
+            parser.get_addr_spec('star@a.star@example.com')
+
+        with self.assertRaises(errors.HeaderParseError):
+            parser.get_addr_spec('star@a@example.com')
+
+        with self.assertRaises(errors.HeaderParseError):
+            parser.get_addr_spec('star@172.17.0.1@example.com')
+
     # get_obs_route
 
     def test_get_obs_route_simple(self):
@@ -1665,6 +1715,14 @@ class TestParser(TestParserMixin, TestEmailBase):
         self.assertEqual(len(display_name), 4)
         self.assertEqual(display_name[3].comments, ['with trailing comment'])
         self.assertEqual(display_name.display_name, 'simple phrase.')
+
+    def test_get_display_name_for_invalid_address_field(self):
+        # bpo-32178: Test that address fields starting with `:` don't cause
+        # IndexError when parsing the display name.
+        display_name = self._test_get_x(
+            parser.get_display_name,
+            ':Foo ', '', '', [errors.InvalidHeaderDefect], ':Foo ')
+        self.assertEqual(display_name.value, '')
 
     # get_name_addr
 
@@ -2690,6 +2748,13 @@ class Test_parse_mime_parameters(TestParserMixin, TestEmailBase):
             # Defects are apparent missing *0*, and two 'out of sequence'.
             [errors.InvalidHeaderDefect]*3),
 
+        # bpo-37461: Check that we don't go into an infinite loop.
+        'extra_dquote': (
+            'r*="\'a\'\\"',
+            ' r="\\""',
+            'r*=\'a\'"',
+            [('r', '"')],
+            [errors.InvalidHeaderDefect]*2),
     }
 
 @parameterize

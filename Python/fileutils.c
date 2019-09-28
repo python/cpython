@@ -878,7 +878,12 @@ _Py_attribute_data_to_stat(BY_HANDLE_FILE_INFORMATION *info, ULONG reparse_tag,
     FILE_TIME_to_time_t_nsec(&info->ftLastAccessTime, &result->st_atime, &result->st_atime_nsec);
     result->st_nlink = info->nNumberOfLinks;
     result->st_ino = (((uint64_t)info->nFileIndexHigh) << 32) + info->nFileIndexLow;
-    if (reparse_tag == IO_REPARSE_TAG_SYMLINK) {
+    /* bpo-37834: Only actual symlinks set the S_IFLNK flag. But lstat() will
+       open other name surrogate reparse points without traversing them. To
+       detect/handle these, check st_file_attributes and st_reparse_tag. */
+    result->st_reparse_tag = reparse_tag;
+    if (info->dwFileAttributes & FILE_ATTRIBUTE_REPARSE_POINT &&
+        reparse_tag == IO_REPARSE_TAG_SYMLINK) {
         /* first clear the S_IFMT bits */
         result->st_mode ^= (result->st_mode & S_IFMT);
         /* now set the bits that make this a symlink */
@@ -1129,11 +1134,18 @@ set_inheritable(int fd, int inheritable, int raise, int *atomic_flag_works)
         flags = HANDLE_FLAG_INHERIT;
     else
         flags = 0;
-    if (!SetHandleInformation(handle, HANDLE_FLAG_INHERIT, flags)) {
+
+    /* This check can be removed once support for Windows 7 ends. */
+#define CONSOLE_PSEUDOHANDLE(handle) (((ULONG_PTR)(handle) & 0x3) == 0x3 && \
+        GetFileType(handle) == FILE_TYPE_CHAR)
+
+    if (!CONSOLE_PSEUDOHANDLE(handle) &&
+        !SetHandleInformation(handle, HANDLE_FLAG_INHERIT, flags)) {
         if (raise)
             PyErr_SetFromWindowsErr(0);
         return -1;
     }
+#undef CONSOLE_PSEUDOHANDLE
     return 0;
 
 #else

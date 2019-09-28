@@ -363,7 +363,7 @@ since it is impossible to detect the termination of alien threads.
          system-wide) from the time the thread is created until the thread
          has been terminated.
 
-      .. availability:: Require :func:`get_native_id` function.
+      .. availability:: Requires :func:`get_native_id` function.
 
       .. versionadded:: 3.8
 

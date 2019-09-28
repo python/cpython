@@ -1,9 +1,8 @@
 import dis
 import unittest
-import types
-import textwrap
 
 from test.bytecode_helper import BytecodeTestCase
+
 
 def count_instr_recursively(f, opname):
     count = 0

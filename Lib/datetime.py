@@ -733,31 +733,31 @@ class timedelta:
         if isinstance(other, timedelta):
             return self._cmp(other) == 0
         else:
-            return False
+            return NotImplemented
 
     def __le__(self, other):
         if isinstance(other, timedelta):
             return self._cmp(other) <= 0
         else:
-            _cmperror(self, other)
+            return NotImplemented
 
     def __lt__(self, other):
         if isinstance(other, timedelta):
             return self._cmp(other) < 0
         else:
-            _cmperror(self, other)
+            return NotImplemented
 
     def __ge__(self, other):
         if isinstance(other, timedelta):
             return self._cmp(other) >= 0
         else:
-            _cmperror(self, other)
+            return NotImplemented
 
     def __gt__(self, other):
         if isinstance(other, timedelta):
             return self._cmp(other) > 0
         else:
-            _cmperror(self, other)
+            return NotImplemented
 
     def _cmp(self, other):
         assert isinstance(other, timedelta)
@@ -1310,31 +1310,31 @@ class time:
         if isinstance(other, time):
             return self._cmp(other, allow_mixed=True) == 0
         else:
-            return False
+            return NotImplemented
 
     def __le__(self, other):
         if isinstance(other, time):
             return self._cmp(other) <= 0
         else:
-            _cmperror(self, other)
+            return NotImplemented
 
     def __lt__(self, other):
         if isinstance(other, time):
             return self._cmp(other) < 0
         else:
-            _cmperror(self, other)
+            return NotImplemented
 
     def __ge__(self, other):
         if isinstance(other, time):
             return self._cmp(other) >= 0
         else:
-            _cmperror(self, other)
+            return NotImplemented
 
     def __gt__(self, other):
         if isinstance(other, time):
             return self._cmp(other) > 0
         else:
-            _cmperror(self, other)
+            return NotImplemented
 
     def _cmp(self, other, allow_mixed=False):
         assert isinstance(other, time)
@@ -2210,9 +2210,9 @@ class timezone(tzinfo):
         return (self._offset, self._name)
 
     def __eq__(self, other):
-        if type(other) != timezone:
-            return False
-        return self._offset == other._offset
+        if isinstance(other, timezone):
+            return self._offset == other._offset
+        return NotImplemented
 
     def __hash__(self):
         return hash(self._offset)
@@ -2269,7 +2269,7 @@ class timezone(tzinfo):
         raise TypeError("fromutc() argument must be a datetime instance"
                         " or None")
 
-    _maxoffset = timedelta(hours=23, minutes=59)
+    _maxoffset = timedelta(hours=24, microseconds=-1)
     _minoffset = -_maxoffset
 
     @staticmethod
@@ -2293,8 +2293,11 @@ class timezone(tzinfo):
         return f'UTC{sign}{hours:02d}:{minutes:02d}'
 
 timezone.utc = timezone._create(timedelta(0))
-timezone.min = timezone._create(timezone._minoffset)
-timezone.max = timezone._create(timezone._maxoffset)
+# bpo-37642: These attributes are rounded to the nearest minute for backwards
+# compatibility, even though the constructor will accept a wider range of
+# values. This may change in the future.
+timezone.min = timezone._create(-timedelta(hours=23, minutes=59))
+timezone.max = timezone._create(timedelta(hours=23, minutes=59))
 _EPOCH = datetime(1970, 1, 1, tzinfo=timezone.utc)
 
 # Some time zone algebra.  For a datetime x, let

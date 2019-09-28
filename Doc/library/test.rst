@@ -356,10 +356,27 @@ The :mod:`test.support` module defines the following constants:
 
    Check for presence of docstrings.
 
+
 .. data:: TEST_HTTP_URL
 
    Define the URL of a dedicated HTTP server for the network tests.
 
+
+.. data:: ALWAYS_EQ
+
+   Object that is equal to anything.  Used to test mixed type comparison.
+
+
+.. data:: LARGEST
+
+   Object that is greater than anything (except itself).
+   Used to test mixed type comparison.
+
+
+.. data:: SMALLEST
+
+   Object that is less than anything (except itself).
+   Used to test mixed type comparison.
 
 
 The :mod:`test.support` module defines the following functions:
@@ -1079,6 +1096,39 @@ The :mod:`test.support` module defines the following functions:
 
    Bind a unix socket, raising :exc:`unittest.SkipTest` if
    :exc:`PermissionError` is raised.
+
+
+.. function:: catch_threading_exception()
+
+   Context manager catching :class:`threading.Thread` exception using
+   :func:`threading.excepthook`.
+
+   Attributes set when an exception is catched:
+
+   * ``exc_type``
+   * ``exc_value``
+   * ``exc_traceback``
+   * ``thread``
+
+   See :func:`threading.excepthook` documentation.
+
+   These attributes are deleted at the context manager exit.
+
+   Usage::
+
+       with support.catch_threading_exception() as cm:
+           # code spawning a thread which raises an exception
+           ...
+
+           # check the thread exception, use cm attributes:
+           # exc_type, exc_value, exc_traceback, thread
+           ...
+
+       # exc_type, exc_value, exc_traceback, thread attributes of cm no longer
+       # exists at this point
+       # (to avoid reference cycles)
+
+   .. versionadded:: 3.8
 
 
 .. function:: catch_unraisable_exception()

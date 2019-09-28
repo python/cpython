@@ -245,7 +245,7 @@ class BaseHeader(str):
         the header name and the ': ' separator.
 
         """
-        # At some point we need to put fws here iif it was in the source.
+        # At some point we need to put fws here if it was in the source.
         header = parser.Header([
             parser.HeaderLabel([
                 parser.ValueTerminal(self.name, 'header-name'),

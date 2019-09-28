@@ -426,8 +426,8 @@ struct _excepthandler {
 };
 
 struct _arguments {
-    asdl_seq *args;
     asdl_seq *posonlyargs;
+    asdl_seq *args;
     arg_ty vararg;
     asdl_seq *kwonlyargs;
     asdl_seq *kw_defaults;
@@ -687,7 +687,7 @@ excepthandler_ty _Py_ExceptHandler(expr_ty type, identifier name, asdl_seq *
                                    end_lineno, int end_col_offset, PyArena
                                    *arena);
 #define arguments(a0, a1, a2, a3, a4, a5, a6, a7) _Py_arguments(a0, a1, a2, a3, a4, a5, a6, a7)
-arguments_ty _Py_arguments(asdl_seq * args, asdl_seq * posonlyargs, arg_ty
+arguments_ty _Py_arguments(asdl_seq * posonlyargs, asdl_seq * args, arg_ty
                            vararg, asdl_seq * kwonlyargs, asdl_seq *
                            kw_defaults, arg_ty kwarg, asdl_seq * defaults,
                            PyArena *arena);

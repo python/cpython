@@ -33,7 +33,8 @@ Here's a sample session using the :mod:`ftplib` module::
    drwxr-sr-x    4 1176     1176         4096 Nov 17  2008 project
    drwxr-xr-x    3 1176     1176         4096 Oct 10  2012 tools
    '226 Directory send OK.'
-   >>> ftp.retrbinary('RETR README', open('README', 'wb').write)
+   >>> with open('README', 'wb') as fp:
+   >>>     ftp.retrbinary('RETR README', fp.write)
    '226 Transfer complete.'
    >>> ftp.quit()
 
@@ -144,7 +145,7 @@ The module defines the following items:
    The set of all exceptions (as a tuple) that methods of :class:`FTP`
    instances may raise as a result of problems with the FTP connection (as
    opposed to programming errors made by the caller).  This set includes the
-   four exceptions listed above as well as :exc:`OSError`.
+   four exceptions listed above as well as :exc:`OSError` and :exc:`EOFError`.
 
 
 .. seealso::

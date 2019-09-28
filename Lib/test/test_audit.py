@@ -1,7 +1,6 @@
 """Tests for sys.audit and sys.addaudithook
 """
 
-import os
 import subprocess
 import sys
 import unittest

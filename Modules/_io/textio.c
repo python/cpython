@@ -991,9 +991,9 @@ _textiowrapper_fix_encoder_state(textio *self)
 /*[clinic input]
 _io.TextIOWrapper.__init__
     buffer: object
-    encoding: str(accept={str, NoneType}) = NULL
+    encoding: str(accept={str, NoneType}) = None
     errors: object = None
-    newline: str(accept={str, NoneType}) = NULL
+    newline: str(accept={str, NoneType}) = None
     line_buffering: bool(accept={int}) = False
     write_through: bool(accept={int}) = False
 
@@ -1032,7 +1032,7 @@ _io_TextIOWrapper___init___impl(textio *self, PyObject *buffer,
                                 const char *encoding, PyObject *errors,
                                 const char *newline, int line_buffering,
                                 int write_through)
-/*[clinic end generated code: output=72267c0c01032ed2 input=1c5dd5d78bfcc675]*/
+/*[clinic end generated code: output=72267c0c01032ed2 input=77d8696d1a1f460b]*/
 {
     PyObject *raw, *codec_info = NULL;
     _PyIO_State *state = NULL;
@@ -2860,14 +2860,14 @@ textiowrapper_repr(textio *self)
         }
         goto error;
     }
-    nameobj = _PyObject_GetAttrId((PyObject *) self, &PyId_name);
-    if (nameobj == NULL) {
-        if (PyErr_ExceptionMatches(PyExc_Exception))
-            PyErr_Clear();
-        else
+    if (_PyObject_LookupAttrId((PyObject *) self, &PyId_name, &nameobj) < 0) {
+        if (!PyErr_ExceptionMatches(PyExc_ValueError)) {
             goto error;
+        }
+        /* Ignore ValueError raised if the underlying stream was detached */
+        PyErr_Clear();
     }
-    else {
+    if (nameobj != NULL) {
         s = PyUnicode_FromFormat(" name=%R", nameobj);
         Py_DECREF(nameobj);
         if (s == NULL)
@@ -2876,14 +2876,10 @@ textiowrapper_repr(textio *self)
         if (res == NULL)
             goto error;
     }
-    modeobj = _PyObject_GetAttrId((PyObject *) self, &PyId_mode);
-    if (modeobj == NULL) {
-        if (PyErr_ExceptionMatches(PyExc_Exception))
-            PyErr_Clear();
-        else
-            goto error;
+    if (_PyObject_LookupAttrId((PyObject *) self, &PyId_mode, &modeobj) < 0) {
+        goto error;
     }
-    else {
+    if (modeobj != NULL) {
         s = PyUnicode_FromFormat(" mode=%R", modeobj);
         Py_DECREF(modeobj);
         if (s == NULL)

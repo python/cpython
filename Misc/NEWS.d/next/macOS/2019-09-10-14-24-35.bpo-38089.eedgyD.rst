@@ -1,0 +1,1 @@
+Move Azure Pipelines to latest VM versions and make macOS tests optional

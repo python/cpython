@@ -463,7 +463,7 @@ def test():
     except (ImportError, AttributeError):
         pass
 
-    # dialog for openening files
+    # dialog for opening files
 
     openfilename=askopenfilename(filetypes=[("all files", "*")])
     try:

@@ -9,6 +9,7 @@ import ensurepip
 import os
 import os.path
 import re
+import shutil
 import struct
 import subprocess
 import sys
@@ -28,8 +29,8 @@ except ImportError:
 # Platforms that set sys._base_executable can create venvs from within
 # another venv, so no need to skip tests that require venv.create().
 requireVenvCreate = unittest.skipUnless(
-    hasattr(sys, '_base_executable')
-    or sys.prefix == sys.base_prefix,
+    sys.prefix == sys.base_prefix
+    or sys._base_executable != sys.executable,
     'cannot run venv.create from within a venv on this platform')
 
 def check_output(cmd, encoding=None):
@@ -57,8 +58,14 @@ class BaseTest(unittest.TestCase):
             self.bindir = 'bin'
             self.lib = ('lib', 'python%d.%d' % sys.version_info[:2])
             self.include = 'include'
-        executable = getattr(sys, '_base_executable', sys.executable)
+        executable = sys._base_executable
         self.exe = os.path.split(executable)[-1]
+        if (sys.platform == 'win32'
+            and os.path.lexists(executable)
+            and not os.path.exists(executable)):
+            self.cannot_link_exe = True
+        else:
+            self.cannot_link_exe = False
 
     def tearDown(self):
         rmtree(self.env_dir)
@@ -102,7 +109,7 @@ class BasicTest(BaseTest):
         else:
             self.assertFalse(os.path.exists(p))
         data = self.get_text_file_contents('pyvenv.cfg')
-        executable = getattr(sys, '_base_executable', sys.executable)
+        executable = sys._base_executable
         path = os.path.dirname(executable)
         self.assertIn('home = %s' % path, data)
         fn = self.get_env_file(self.bindir, self.exe)
@@ -136,10 +143,6 @@ class BasicTest(BaseTest):
         """
         Test that the prefix values are as expected.
         """
-        #check our prefixes
-        self.assertEqual(sys.base_prefix, sys.prefix)
-        self.assertEqual(sys.base_exec_prefix, sys.exec_prefix)
-
         # check a venv's prefixes
         rmtree(self.env_dir)
         self.run_with_capture(venv.create, self.env_dir)
@@ -147,9 +150,9 @@ class BasicTest(BaseTest):
         cmd = [envpy, '-c', None]
         for prefix, expected in (
             ('prefix', self.env_dir),
-            ('prefix', self.env_dir),
-            ('base_prefix', sys.prefix),
-            ('base_exec_prefix', sys.exec_prefix)):
+            ('exec_prefix', self.env_dir),
+            ('base_prefix', sys.base_prefix),
+            ('base_exec_prefix', sys.base_exec_prefix)):
             cmd[2] = 'import sys; print(sys.%s)' % prefix
             out, err = check_output(cmd)
             self.assertEqual(out.strip(), expected.encode())
@@ -261,7 +264,12 @@ class BasicTest(BaseTest):
             # symlinked to 'python3.3' in the env, even when symlinking in
             # general isn't wanted.
             if usl:
-                self.assertTrue(os.path.islink(fn))
+                if self.cannot_link_exe:
+                    # Symlinking is skipped when our executable is already a
+                    # special app symlink
+                    self.assertFalse(os.path.islink(fn))
+                else:
+                    self.assertTrue(os.path.islink(fn))
 
     # If a venv is created from a source build and that venv is used to
     # run the test, the pyvenv.cfg in the venv created in the test will
@@ -331,6 +339,25 @@ class BasicTest(BaseTest):
             'pool.terminate()'])
         self.assertEqual(out.strip(), "python".encode())
 
+    @unittest.skipIf(os.name == 'nt', 'not relevant on Windows')
+    def test_deactivate_with_strict_bash_opts(self):
+        bash = shutil.which("bash")
+        if bash is None:
+            self.skipTest("bash required for this test")
+        rmtree(self.env_dir)
+        builder = venv.EnvBuilder(clear=True)
+        builder.create(self.env_dir)
+        activate = os.path.join(self.env_dir, self.bindir, "activate")
+        test_script = os.path.join(self.env_dir, "test_strict.sh")
+        with open(test_script, "w") as f:
+            f.write("set -euo pipefail\n"
+                    f"source {activate}\n"
+                    "deactivate\n")
+        out, err = check_output([bash, test_script])
+        self.assertEqual(out, "".encode())
+        self.assertEqual(err, "".encode())
+
+
 @requireVenvCreate
 class EnsurePipTest(BaseTest):
     """Test venv module installation of pip."""
@@ -365,11 +392,7 @@ class EnsurePipTest(BaseTest):
         with open(os.devnull, "rb") as f:
             self.assertEqual(f.read(), b"")
 
-        # Issue #20541: os.path.exists('nul') is False on Windows
-        if os.devnull.lower() == 'nul':
-            self.assertFalse(os.path.exists(os.devnull))
-        else:
-            self.assertTrue(os.path.exists(os.devnull))
+        self.assertTrue(os.path.exists(os.devnull))
 
     def do_test_with_pip(self, system_site_packages):
         rmtree(self.env_dir)
@@ -444,8 +467,9 @@ class EnsurePipTest(BaseTest):
         #    Please check the permissions and owner of that directory. If
         #    executing pip with sudo, you may want sudo's -H flag."
         # where $HOME is replaced by the HOME environment variable.
-        err = re.sub("^The directory .* or its parent directory is not owned "
-                     "by the current user .*$", "", err, flags=re.MULTILINE)
+        err = re.sub("^(WARNING: )?The directory .* or its parent directory "
+                     "is not owned by the current user .*$", "",
+                     err, flags=re.MULTILINE)
         self.assertEqual(err.rstrip(), "")
         # Being fairly specific regarding the expected behaviour for the
         # initial bundling phase in Python 3.4. If the output changes in

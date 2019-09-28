@@ -586,6 +586,8 @@ class TestPEP590(unittest.TestCase):
                 return super().__call__(*args)
 
         calls += [
+            (dict.update, ({},), {"key":True}, None),
+            ({}.update, ({},), {"key":True}, None),
             (MethodDescriptorHeap(), (0,), {}, True),
             (MethodDescriptorOverridden(), (0,), {}, 'new'),
             (MethodDescriptorSuper(), (0,), {}, True),

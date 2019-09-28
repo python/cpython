@@ -100,6 +100,7 @@
 #  define Py_UNUSED(name) _unused_ ## name
 #endif
 
-#define Py_UNREACHABLE() abort()
+#define Py_UNREACHABLE() \
+    Py_FatalError("Unreachable C code path reached")
 
 #endif /* Py_PYMACRO_H */

@@ -6,7 +6,7 @@ import unittest
 # rip off all interesting stuff from test_profile
 import cProfile
 from test.test_profile import ProfileTest, regenerate_expected_output
-from test.support.script_helper import assert_python_failure, assert_python_ok
+from test.support.script_helper import assert_python_failure
 from test import support
 
 

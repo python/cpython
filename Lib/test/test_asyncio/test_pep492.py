@@ -4,7 +4,6 @@ import sys
 import types
 import unittest
 
-from test import support
 from unittest import mock
 
 import asyncio
@@ -44,12 +43,13 @@ class BaseTest(test_utils.TestCase):
 class LockTests(BaseTest):
 
     def test_context_manager_async_with(self):
-        primitives = [
-            asyncio.Lock(loop=self.loop),
-            asyncio.Condition(loop=self.loop),
-            asyncio.Semaphore(loop=self.loop),
-            asyncio.BoundedSemaphore(loop=self.loop),
-        ]
+        with self.assertWarns(DeprecationWarning):
+            primitives = [
+                asyncio.Lock(loop=self.loop),
+                asyncio.Condition(loop=self.loop),
+                asyncio.Semaphore(loop=self.loop),
+                asyncio.BoundedSemaphore(loop=self.loop),
+            ]
 
         async def test(lock):
             await asyncio.sleep(0.01)
@@ -66,12 +66,13 @@ class LockTests(BaseTest):
             self.assertFalse(primitive.locked())
 
     def test_context_manager_with_await(self):
-        primitives = [
-            asyncio.Lock(loop=self.loop),
-            asyncio.Condition(loop=self.loop),
-            asyncio.Semaphore(loop=self.loop),
-            asyncio.BoundedSemaphore(loop=self.loop),
-        ]
+        with self.assertWarns(DeprecationWarning):
+            primitives = [
+                asyncio.Lock(loop=self.loop),
+                asyncio.Condition(loop=self.loop),
+                asyncio.Semaphore(loop=self.loop),
+                asyncio.BoundedSemaphore(loop=self.loop),
+            ]
 
         async def test(lock):
             await asyncio.sleep(0.01)
@@ -203,7 +204,7 @@ class CoroutineTests(BaseTest):
 
         async def runner():
             coro = afunc()
-            t = asyncio.Task(coro, loop=self.loop)
+            t = self.loop.create_task(coro)
             try:
                 await asyncio.sleep(0)
                 await coro

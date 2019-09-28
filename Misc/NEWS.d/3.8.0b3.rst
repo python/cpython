@@ -1,0 +1,437 @@
+.. bpo: 37461
+.. date: 2019-07-16-08-11-00
+.. nonce: 1Ahz7O
+.. release date: 2019-07-29
+.. section: Security
+
+Fix an infinite loop when parsing specially crafted email headers. Patch by
+Abhilash Raj.
+
+..
+
+.. bpo: 37593
+.. date: 2019-07-14-23-57-27
+.. nonce: yHSTwH
+.. section: Core and Builtins
+
+Swap the positions of the *posonlyargs* and *args* parameters in the
+constructor of :class:`ast.parameters` nodes.
+
+..
+
+.. bpo: 36974
+.. date: 2019-06-11-12-59-38
+.. nonce: bVYmSA
+.. section: Core and Builtins
+
+Implemented separate vectorcall functions for every calling convention of
+builtin functions and methods. This improves performance for calls.
+
+..
+
+.. bpo: 37697
+.. date: 2019-07-28-17-44-21
+.. nonce: 7UV5d0
+.. section: Library
+
+Syncronize ``importlib.metadata`` with `importlib_metadata 0.19
+<https://gitlab.com/python-devs/importlib_metadata/-/milestones/20>`_,
+improving handling of EGG-INFO files and fixing a crash when entry point
+names contained colons.
+
+..
+
+.. bpo: 37691
+.. date: 2019-07-26-22-30-01
+.. nonce: 1Li3rx
+.. section: Library
+
+Let math.dist() accept coordinates as sequences (or iterables) rather than
+just tuples.
+
+..
+
+.. bpo: 37664
+.. date: 2019-07-24-18-27-44
+.. nonce: o-GYZC
+.. section: Library
+
+Update wheels bundled with ensurepip (pip 19.2.1 and setuptools 41.0.1)
+
+..
+
+.. bpo: 36324
+.. date: 2019-07-19-22-44-41
+.. nonce: 1VjywS
+.. section: Library
+
+Make internal attributes for statistics.NormalDist() private.
+
+..
+
+.. bpo: 37491
+.. date: 2019-07-17-06-54-43
+.. nonce: op0aMs
+.. section: Library
+
+Fix ``IndexError`` when parsing email headers with unexpectedly ending
+bare-quoted string value. Patch by Abhilash Raj.
+
+..
+
+.. bpo: 37579
+.. date: 2019-07-13-10-59-43
+.. nonce: B1Tq9i
+.. section: Library
+
+Return :exc:`NotImplemented` in Python implementation of ``__eq__`` for
+:class:`~datetime.timedelta` and :class:`~datetime.time` when the other
+object being compared is not of the same type to match C implementation.
+Patch by Karthikeyan Singaravelan.
+
+..
+
+.. bpo: 21478
+.. date: 2019-07-10-23-07-11
+.. nonce: cCw9rF
+.. section: Library
+
+Record calls to parent when autospecced object is attached to a mock using
+:func:`unittest.mock.attach_mock`. Patch by Karthikeyan Singaravelan.
+
+..
+
+.. bpo: 37502
+.. date: 2019-07-08-03-15-04
+.. nonce: qZGC4g
+.. section: Library
+
+pickle.loads() no longer raises TypeError when the buffers argument is set
+to None
+
+..
+
+.. bpo: 37520
+.. date: 2019-07-07-21-09-08
+.. nonce: Gg0KD6
+.. section: Library
+
+Correct behavior for zipfile.Path.parent when the path object identifies a
+subdirectory.
+
+..
+
+.. bpo: 18374
+.. date: 2019-07-05-21-46-45
+.. nonce: qgE0H3
+.. section: Library
+
+Fix the ``.col_offset`` attribute of nested :class:`ast.BinOp` instances
+which had a too large value in some situations.
+
+..
+
+.. bpo: 37421
+.. date: 2019-07-03-12-47-52
+.. nonce: gR5hC8
+.. section: Library
+
+Fix :func:`multiprocessing.util.get_temp_dir` finalizer: clear also the
+'tempdir' configuration of the current process, so next call to
+``get_temp_dir()`` will create a new temporary directory, rather than
+reusing the removed temporary directory.
+
+..
+
+.. bpo: 37481
+.. date: 2019-07-02-13-08-30
+.. nonce: hd5k09
+.. section: Library
+
+The distutils ``bdist_wininst`` command is deprecated in Python 3.8, use
+``bdist_wheel`` (wheel packages) instead.
+
+..
+
+.. bpo: 26967
+.. date: 2019-06-23-12-46-10
+.. nonce: xEuem1
+.. section: Library
+
+An :class:`~argparse.ArgumentParser` with ``allow_abbrev=False`` no longer
+disables grouping of short flags, such as ``-vv``, but only disables
+abbreviation of long flags as documented. Patch by Zac Hatfield-Dodds.
+
+..
+
+.. bpo: 37347
+.. date: 2019-06-20-14-23-48
+.. nonce: Gf9yYI
+.. section: Library
+
+:meth:`sqlite3.Connection.create_aggregate`,
+:meth:`sqlite3.Connection.create_function`,
+:meth:`sqlite3.Connection.set_authorizer`,
+:meth:`sqlite3.Connection.set_progress_handler`
+:meth:`sqlite3.Connection.set_trace_callback` methods lead to segfaults if
+some of these methods are called twice with an equal object but not the
+same. Now callbacks are stored more carefully. Patch by Aleksandr Balezin.
+
+..
+
+.. bpo: 36564
+.. date: 2019-04-08-13-00-13
+.. nonce: _n67m_
+.. section: Library
+
+Fix infinite loop in email header folding logic that would be triggered when
+an email policy's max_line_length is not long enough to include the required
+markup and any values in the message. Patch by Paul Ganssle
+
+..
+
+.. bpo: 32910
+.. date: 2019-07-25-10-30-32
+.. nonce: caLLAe
+.. section: Documentation
+
+Remove implementation-specific behaviour of how venv's Deactivate works.
+
+..
+
+.. bpo: 37284
+.. date: 2019-07-13-12-58-20
+.. nonce: rP8WpB
+.. section: Documentation
+
+Add a brief note to indicate that any new ``sys.implementation`` required
+attributes must go through the PEP process.
+
+..
+
+.. bpo: 30088
+.. date: 2019-07-13-12-43-01
+.. nonce: CIcBjy
+.. section: Documentation
+
+Documented that :class:`mailbox.Maildir` constructor doesn't attempt to
+verify the maildir folder layout correctness. Patch by Sviatoslav Sydorenko.
+
+..
+
+.. bpo: 37521
+.. date: 2019-07-12-15-09-56
+.. nonce: 7tiFR-
+.. section: Documentation
+
+Fix `importlib` examples to insert any newly created modules via
+importlib.util.module_from_spec() immediately into sys.modules instead of
+after calling loader.exec_module().
+
+Thanks to Benjamin Mintz for finding the bug.
+
+..
+
+.. bpo: 37456
+.. date: 2019-07-06-17-51-36
+.. nonce: lgAQHn
+.. section: Documentation
+
+Slash ('/') is now part of syntax.
+
+..
+
+.. bpo: 37487
+.. date: 2019-07-06-17-19-26
+.. nonce: QagfZ5
+.. section: Documentation
+
+Fix PyList_GetItem index description to include 0.
+
+..
+
+.. bpo: 37149
+.. date: 2019-07-06-02-19-02
+.. nonce: NumHn3
+.. section: Documentation
+
+Replace the dead link to the Tkinter 8.5 reference by John Shipman, New
+Mexico Tech, with a link to the archive.org copy.
+
+..
+
+.. bpo: 37478
+.. date: 2019-07-06-00-57-27
+.. nonce: B0ioLw
+.. section: Documentation
+
+Added possible exceptions to the description of os.chdir().
+
+..
+
+.. bpo: 37558
+.. date: 2019-07-11-10-33-56
+.. nonce: SKHRsL
+.. section: Tests
+
+Fix test_shared_memory_cleaned_after_process_termination name handling
+
+..
+
+.. bpo: 37526
+.. date: 2019-07-09-12-33-18
+.. nonce: vmm5y7
+.. section: Tests
+
+Add :func:`test.support.catch_threading_exception`: context manager catching
+:class:`threading.Thread` exception using :func:`threading.excepthook`.
+
+..
+
+.. bpo: 37421
+.. date: 2019-07-08-10-11-36
+.. nonce: OY77go
+.. section: Tests
+
+test_concurrent_futures now explicitly stops the ForkServer instance if it's
+running.
+
+..
+
+.. bpo: 37421
+.. date: 2019-07-05-14-47-55
+.. nonce: n8o2to
+.. section: Tests
+
+multiprocessing tests now stop the ForkServer instance if it's running:
+close the "alive" file descriptor to ask the server to stop and then remove
+its UNIX address.
+
+..
+
+.. bpo: 36044
+.. date: 2019-07-11-01-28-24
+.. nonce: gIgfiJ
+.. section: Build
+
+Reduce the number of unit tests run for the PGO generation task.  This
+speeds up the task by a factor of about 15x.  Running the full unit test
+suite is slow.  This change may result in a slightly less optimized build
+since not as many code branches will be executed.  If you are willing to
+wait for the much slower build, the old behavior can be restored using
+'./configure [..] PROFILE_TASK="-m test --pgo-extended"'.  We make no
+guarantees as to which PGO task set produces a faster build.  Users who care
+should run their own relevant benchmarks as results can depend on the
+environment, workload, and compiler tool chain.
+
+..
+
+.. bpo: 37672
+.. date: 2019-07-24-14-36-28
+.. nonce: uKEVHN
+.. section: Windows
+
+Switch Windows Store package's pip to use bundled :file:`pip.ini` instead of
+:envvar:`PIP_USER` variable.
+
+..
+
+.. bpo: 37692
+.. date: 2019-07-27-15-14-20
+.. nonce: TRHGjD
+.. section: IDLE
+
+Improve highlight config sample with example shell interaction and better
+labels for shell elements.
+
+..
+
+.. bpo: 37628
+.. date: 2019-07-26-17-51-13
+.. nonce: kX4AUF
+.. section: IDLE
+
+Settings dialog no longer expands with font size.
+
+..
+
+.. bpo: 37627
+.. date: 2019-07-20-23-33-53
+.. nonce: dQhUNB
+.. section: IDLE
+
+Initialize the Customize Run dialog with the command line arguments most
+recently entered before.  The user can optionally edit before submitting
+them.
+
+..
+
+.. bpo: 33610
+.. date: 2019-07-18-10-11-36
+.. nonce: xYqMLg
+.. section: IDLE
+
+Fix code context not showing the correct context when first toggled on.
+
+..
+
+.. bpo: 37530
+.. date: 2019-07-11-00-05-31
+.. nonce: AuyCyD
+.. section: IDLE
+
+Optimize code context to reduce unneeded background activity. Font and
+highlight changes now occur along with text changes instead of after a
+random delay.
+
+..
+
+.. bpo: 27452
+.. date: 2019-07-03-22-47-44
+.. nonce: nePPLi
+.. section: IDLE
+
+Cleanup ``config.py`` by inlining ``RemoveFile`` and simplifying the
+handling of ``file`` in ``CreateConfigHandlers``.
+
+..
+
+.. bpo: 17535
+.. date: 2019-06-13-01-07-20
+.. nonce: K8i2St
+.. section: IDLE
+
+Add optional line numbers for IDLE editor windows.  Windows open without
+line numbers unless set otherwise in the General tab of the configuration
+dialog.
+
+..
+
+.. bpo: 26806
+.. date: 2019-06-10-22-48-50
+.. nonce: Zltkum
+.. section: IDLE
+
+To compensate for stack frames added by IDLE and avoid possible problems
+with low recursion limits, add 30 to limits in the user code execution
+process.  Subtract 30 when reporting recursion limits to make this addition
+mostly transparent.
+
+..
+
+.. bpo: 36390
+.. date: 2019-03-21-08-35-00
+.. nonce: OdDCGk
+.. section: IDLE
+
+Gather Format menu functions into format.py.  Combine paragraph.py,
+rstrip.py, and format methods from editor.py.
+
+..
+
+.. bpo: 37675
+.. date: 2019-07-24-16-20-54
+.. nonce: 951Cvf
+.. section: Tools/Demos
+
+2to3 now works when run from a zipped standard library.

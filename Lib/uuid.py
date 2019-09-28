@@ -680,7 +680,7 @@ def _random_getnode():
     return random.getrandbits(48) | (1 << 40)
 
 
-# _OS_GETTERS, when known, are targetted for a specific OS or platform.
+# _OS_GETTERS, when known, are targeted for a specific OS or platform.
 # The order is by 'common practice' on the specified platform.
 # Note: 'posix' and 'windows' _OS_GETTERS are prefixed by a dll/dlload() method
 # which, when successful, means none of these "external" methods are called.

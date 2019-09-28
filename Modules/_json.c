@@ -439,7 +439,7 @@ scanstring_unicode(PyObject *pystr, Py_ssize_t end, int strict, Py_ssize_t *next
             if (c == '"' || c == '\\') {
                 break;
             }
-            else if (strict && c <= 0x1f) {
+            else if (c <= 0x1f && strict) {
                 raise_errmsg("Invalid control character at", pystr, next);
                 goto bail;
             }

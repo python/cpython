@@ -185,8 +185,10 @@ PyObject_AsFileDescriptor(PyObject *o)
     if (PyLong_Check(o)) {
         fd = _PyLong_AsInt(o);
     }
-    else if ((meth = _PyObject_GetAttrId(o, &PyId_fileno)) != NULL)
-    {
+    else if (_PyObject_LookupAttrId(o, &PyId_fileno, &meth) < 0) {
+        return -1;
+    }
+    else if (meth != NULL) {
         PyObject *fno = _PyObject_CallNoArg(meth);
         Py_DECREF(meth);
         if (fno == NULL)

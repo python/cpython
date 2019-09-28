@@ -22,10 +22,13 @@ from docutils import nodes, utils
 
 from sphinx import addnodes
 from sphinx.builders import Builder
+try:
+    from sphinx.errors import NoUri
+except ImportError:
+    from sphinx.environment import NoUri
 from sphinx.locale import translators
 from sphinx.util import status_iterator, logging
 from sphinx.util.nodes import split_explicit_title
-from sphinx.writers.html import HTMLTranslator
 from sphinx.writers.text import TextWriter, TextTranslator
 from sphinx.writers.latex import LaTeXTranslator
 from sphinx.domains.python import PyModulelevel, PyClassmember
@@ -44,37 +47,6 @@ Body.enum.converters['loweralpha'] = \
     Body.enum.converters['upperalpha'] = \
     Body.enum.converters['lowerroman'] = \
     Body.enum.converters['upperroman'] = lambda x: None
-
-# monkey-patch HTML and LaTeX translators to keep doctest blocks in the
-# doctest docs themselves
-orig_visit_literal_block = HTMLTranslator.visit_literal_block
-orig_depart_literal_block = LaTeXTranslator.depart_literal_block
-
-
-def new_visit_literal_block(self, node):
-    meta = self.builder.env.metadata[self.builder.current_docname]
-    old_trim_doctest_flags = self.highlighter.trim_doctest_flags
-    if 'keepdoctest' in meta:
-        self.highlighter.trim_doctest_flags = False
-    try:
-        orig_visit_literal_block(self, node)
-    finally:
-        self.highlighter.trim_doctest_flags = old_trim_doctest_flags
-
-
-def new_depart_literal_block(self, node):
-    meta = self.builder.env.metadata[self.curfilestack[-1]]
-    old_trim_doctest_flags = self.highlighter.trim_doctest_flags
-    if 'keepdoctest' in meta:
-        self.highlighter.trim_doctest_flags = False
-    try:
-        orig_depart_literal_block(self, node)
-    finally:
-        self.highlighter.trim_doctest_flags = old_trim_doctest_flags
-
-
-HTMLTranslator.visit_literal_block = new_visit_literal_block
-LaTeXTranslator.depart_literal_block = new_depart_literal_block
 
 
 # Support for marking up and linking to bugs.python.org issues
@@ -199,13 +171,18 @@ class AuditEvent(Directive):
                     .format(name, info['args'], new_info['args'])
                 )
 
-        if len(self.arguments) >= 3 and self.arguments[2]:
-            target = self.arguments[2]
-            ids = []
-        else:
-            target = "audit_event_{}_{}".format(name, len(info['source']))
-            target = re.sub(r'\W', '_', label)
-            ids = [target]
+        ids = []
+        try:
+            target = self.arguments[2].strip("\"'")
+        except (IndexError, TypeError):
+            target = None
+        if not target:
+            target = "audit_event_{}_{}".format(
+                re.sub(r'\W', '_', name),
+                len(info['source']),
+            )
+            ids.append(target)
+
         info['source'].append((env.docname, target))
 
         pnode = nodes.paragraph(text, classes=["audit-hook"], ids=ids)
@@ -531,6 +508,7 @@ def process_audit_events(app, doctree, fromdocname):
         nodes.colspec(colwidth=30),
         nodes.colspec(colwidth=55),
         nodes.colspec(colwidth=15),
+        cols=3,
     )
     head = nodes.thead()
     body = nodes.tbody()
@@ -560,13 +538,17 @@ def process_audit_events(app, doctree, fromdocname):
         row += nodes.entry('', node)
 
         node = nodes.paragraph()
-        for i, (doc, label) in enumerate(audit_event['source'], start=1):
+        backlinks = enumerate(sorted(set(audit_event['source'])), start=1)
+        for i, (doc, label) in backlinks:
             if isinstance(label, str):
                 ref = nodes.reference("", nodes.Text("[{}]".format(i)), internal=True)
-                ref['refuri'] = "{}#{}".format(
-                    app.builder.get_relative_uri(fromdocname, doc),
-                    label,
-                )
+                try:
+                    ref['refuri'] = "{}#{}".format(
+                        app.builder.get_relative_uri(fromdocname, doc),
+                        label,
+                    )
+                except NoUri:
+                    continue
                 node += ref
         row += nodes.entry('', node)
 

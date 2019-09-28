@@ -550,7 +550,7 @@ The *lineno* and *col_offset* attributes of the AST for decorated function
 and class refer now to the position of the corresponding ``def``, ``async
 def`` and ``class`` instead of the position of the first decorator. This
 leads to more correct line reporting in tracing. This is the only case when
-the position of child AST nodes can preceed the position of the parent AST
+the position of child AST nodes can precede the position of the parent AST
 node.
 
 ..
@@ -1358,7 +1358,7 @@ Improved syntax error messages for unbalanced parentheses.
 .. section: Core and Builtins
 
 The list constructor will pre-size and not over-allocate when the input
-lenght is known.
+length is known.
 
 ..
 
@@ -2366,7 +2366,7 @@ running external programs like ``cmd /c ver``.
 
 Previously, calling the strftime() method on a datetime object with a
 trailing '%' in the format string would result in an exception. However,
-this only occured when the datetime C module was being used; the python
+this only occurred when the datetime C module was being used; the python
 implementation did not match this behavior. Datetime is now PEP-399
 compliant, and will not throw an exception on a trailing '%'.
 
@@ -2418,7 +2418,7 @@ over browsers in the ``BROWSER`` environment variable.
 .. nonce: eSLKBE
 .. section: Library
 
-Avoid stripping trailing whitespace in doctest fancy diff. Orignial patch by
+Avoid stripping trailing whitespace in doctest fancy diff. Original patch by
 R. David Murray & Jairo Trad. Enhanced by Sanyam Khurana.
 
 ..
@@ -5278,7 +5278,7 @@ Improved error handling and fixed a reference leak in
 .. nonce: zncfvW
 .. section: Library
 
-Deleting a key from a read-only dbm database raises module specfic error
+Deleting a key from a read-only dbm database raises module specific error
 instead of KeyError.
 
 ..

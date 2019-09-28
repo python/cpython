@@ -150,6 +150,7 @@ class TCPTimeoutTestCase(TimeoutTestCase):
     def tearDown(self):
         self.sock.close()
 
+    @unittest.skipIf(True, 'need to replace these hosts; see bpo-35518')
     def testConnectTimeout(self):
         # Testing connect timeout is tricky: we need to have IP connectivity
         # to a host that silently drops our packets.  We can't simulate this

@@ -394,7 +394,8 @@ Trigonometric functions
 .. function:: dist(p, q)
 
    Return the Euclidean distance between two points *p* and *q*, each
-   given as a tuple of coordinates.  The two tuples must be the same size.
+   given as a sequence (or iterable) of coordinates.  The two points
+   must have the same dimension.
 
    Roughly equivalent to::
 

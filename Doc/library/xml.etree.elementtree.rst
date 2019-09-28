@@ -659,7 +659,7 @@ Functions
 
 
 .. function:: tostring(element, encoding="us-ascii", method="xml", *, \
-                       xml_declaration=None, default_namespace=None,
+                       xml_declaration=None, default_namespace=None, \
                        short_empty_elements=True)
 
    Generates a string representation of an XML element, including all
@@ -677,9 +677,13 @@ Functions
    .. versionadded:: 3.8
       The *xml_declaration* and *default_namespace* parameters.
 
+   .. versionchanged:: 3.8
+      The :func:`tostring` function now preserves the attribute order
+      specified by the user.
+
 
 .. function:: tostringlist(element, encoding="us-ascii", method="xml", *, \
-                           xml_declaration=None, default_namespace=None,
+                           xml_declaration=None, default_namespace=None, \
                            short_empty_elements=True)
 
    Generates a string representation of an XML element, including all
@@ -700,6 +704,10 @@ Functions
    .. versionadded:: 3.8
       The *xml_declaration* and *default_namespace* parameters.
 
+   .. versionchanged:: 3.8
+      The :func:`tostringlist` function now preserves the attribute order
+      specified by the user.
+
 
 .. function:: XML(text, parser=None)
 
@@ -716,6 +724,95 @@ Functions
    data.  *parser* is an optional parser instance.  If not given, the standard
    :class:`XMLParser` parser is used.  Returns a tuple containing an
    :class:`Element` instance and a dictionary.
+
+
+.. _elementtree-xinclude:
+
+XInclude support
+----------------
+
+This module provides limited support for
+`XInclude directives <https://www.w3.org/TR/xinclude/>`_, via the :mod:`xml.etree.ElementInclude` helper module.  This module can be used to insert subtrees and text strings into element trees, based on information in the tree.
+
+Example
+^^^^^^^
+
+Here's an example that demonstrates use of the XInclude module. To include an XML document in the current document, use the ``{http://www.w3.org/2001/XInclude}include`` element and set the **parse** attribute to ``"xml"``, and use the **href** attribute to specify the document to include.
+
+.. code-block:: xml
+
+    <?xml version="1.0"?>
+    <document xmlns:xi="http://www.w3.org/2001/XInclude">
+      <xi:include href="source.xml" parse="xml" />
+    </document>
+
+By default, the **href** attribute is treated as a file name. You can use custom loaders to override this behaviour. Also note that the standard helper does not support XPointer syntax.
+
+To process this file, load it as usual, and pass the root element to the :mod:`xml.etree.ElementTree` module:
+
+.. code-block:: python
+
+   from xml.etree import ElementTree, ElementInclude
+
+   tree = ElementTree.parse("document.xml")
+   root = tree.getroot()
+
+   ElementInclude.include(root)
+
+The ElementInclude module replaces the ``{http://www.w3.org/2001/XInclude}include`` element with the root element from the **source.xml** document. The result might look something like this:
+
+.. code-block:: xml
+
+    <document xmlns:xi="http://www.w3.org/2001/XInclude">
+      <para>This is a paragraph.</para>
+    </document>
+
+If the **parse** attribute is omitted, it defaults to "xml". The href attribute is required.
+
+To include a text document, use the ``{http://www.w3.org/2001/XInclude}include`` element, and set the **parse** attribute to "text":
+
+.. code-block:: xml
+
+    <?xml version="1.0"?>
+    <document xmlns:xi="http://www.w3.org/2001/XInclude">
+      Copyright (c) <xi:include href="year.txt" parse="text" />.
+    </document>
+
+The result might look something like:
+
+.. code-block:: xml
+
+    <document xmlns:xi="http://www.w3.org/2001/XInclude">
+      Copyright (c) 2003.
+    </document>
+
+Reference
+---------
+
+.. _elementinclude-functions:
+
+Functions
+^^^^^^^^^
+
+.. function:: xml.etree.ElementInclude.default_loader( href, parse, encoding=None)
+
+   Default loader. This default loader reads an included resource from disk.  *href* is a URL.
+   *parse* is for parse mode either "xml" or "text".  *encoding*
+   is an optional text encoding.  If not given, encoding is ``utf-8``.  Returns the
+   expanded resource.  If the parse mode is ``"xml"``, this is an ElementTree
+   instance.  If the parse mode is "text", this is a Unicode string.  If the
+   loader fails, it can return None or raise an exception.
+
+
+.. function:: xml.etree.ElementInclude.include( elem, loader=None)
+
+   This function expands XInclude directives.  *elem* is the root element.  *loader* is
+   an optional resource loader.  If omitted, it defaults to :func:`default_loader`.
+   If given, it should be a callable that implements the same interface as
+   :func:`default_loader`.  Returns the expanded resource.  If the parse mode is
+   ``"xml"``, this is an ElementTree instance.  If the parse mode is "text",
+   this is a Unicode string.  If the loader fails, it can return None or
+   raise an exception.
 
 
 .. _elementtree-element-objects:
@@ -929,6 +1026,36 @@ Element Objects
 
      if element is None:
          print("element not found")
+
+   Prior to Python 3.8, the serialisation order of the XML attributes of
+   elements was artificially made predictable by sorting the attributes by
+   their name. Based on the now guaranteed ordering of dicts, this arbitrary
+   reordering was removed in Python 3.8 to preserve the order in which
+   attributes were originally parsed or created by user code.
+
+   In general, user code should try not to depend on a specific ordering of
+   attributes, given that the `XML Information Set
+   <https://www.w3.org/TR/xml-infoset/>`_ explicitly excludes the attribute
+   order from conveying information. Code should be prepared to deal with
+   any ordering on input. In cases where deterministic XML output is required,
+   e.g. for cryptographic signing or test data sets, canonical serialisation
+   is available with the :func:`canonicalize` function.
+
+   In cases where canonical output is not applicable but a specific attribute
+   order is still desirable on output, code should aim for creating the
+   attributes directly in the desired order, to avoid perceptual mismatches
+   for readers of the code. In cases where this is difficult to achieve, a
+   recipe like the following can be applied prior to serialisation to enforce
+   an order independently from the Element creation::
+
+     def reorder_attributes(root):
+         for el in root.iter():
+             attrib = el.attrib
+             if len(attrib) > 1:
+                 # adjust attribute order, e.g. by sorting
+                 attribs = sorted(attrib.items())
+                 attrib.clear()
+                 attrib.update(attribs)
 
 
 .. _elementtree-elementtree-objects:

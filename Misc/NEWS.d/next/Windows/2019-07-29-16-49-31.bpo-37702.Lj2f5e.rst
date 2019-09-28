@@ -1,0 +1,2 @@
+Fix memory leak on Windows in creating an SSLContext object or
+running urllib.request.urlopen('https://...').

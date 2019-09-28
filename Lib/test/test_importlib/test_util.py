@@ -4,7 +4,6 @@ init = util.import_importlib('importlib')
 machinery = util.import_importlib('importlib.machinery')
 importlib_util = util.import_importlib('importlib.util')
 
-import contextlib
 import importlib.util
 import os
 import pathlib
@@ -862,7 +861,7 @@ class MagicNumberTests(unittest.TestCase):
         in advance. Such exceptional releases will then require an
         adjustment to this test case.
         """
-        EXPECTED_MAGIC_NUMBER = 3410
+        EXPECTED_MAGIC_NUMBER = 3413
         actual = int.from_bytes(importlib.util.MAGIC_NUMBER[:2], 'little')
 
         msg = (

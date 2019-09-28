@@ -201,16 +201,12 @@ PySys_Audit(const char *event, const char *argFormat, ...)
         ts->tracing++;
         ts->use_tracing = 0;
         while ((hook = PyIter_Next(hooks)) != NULL) {
+            _Py_IDENTIFIER(__cantrace__);
             PyObject *o;
-            int canTrace = -1;
-            o = PyObject_GetAttrString(hook, "__cantrace__");
+            int canTrace = _PyObject_LookupAttrId(hook, &PyId___cantrace__, &o);
             if (o) {
                 canTrace = PyObject_IsTrue(o);
                 Py_DECREF(o);
-            } else if (PyErr_Occurred() &&
-                       PyErr_ExceptionMatches(PyExc_AttributeError)) {
-                PyErr_Clear();
-                canTrace = 0;
             }
             if (canTrace < 0) {
                 break;
@@ -538,7 +534,10 @@ sys_displayhook_unencodable(PyObject *outf, PyObject *o)
     if (encoded == NULL)
         goto error;
 
-    buffer = _PyObject_GetAttrId(outf, &PyId_buffer);
+    if (_PyObject_LookupAttrId(outf, &PyId_buffer, &buffer) < 0) {
+        Py_DECREF(encoded);
+        goto error;
+    }
     if (buffer) {
         result = _PyObject_CallMethodIdObjArgs(buffer, &PyId_write, encoded, NULL);
         Py_DECREF(buffer);
@@ -548,7 +547,6 @@ sys_displayhook_unencodable(PyObject *outf, PyObject *o)
         Py_DECREF(result);
     }
     else {
-        PyErr_Clear();
         escaped_str = PyUnicode_FromEncodedObject(encoded,
                                                   stdout_encoding_str,
                                                   "strict");
@@ -707,7 +705,7 @@ sys_unraisablehook(PyObject *module, PyObject *unraisable)
 /*[clinic input]
 sys.exit
 
-    status: object = NULL
+    status: object = None
     /
 
 Exit the interpreter by raising SystemExit(status).
@@ -720,7 +718,7 @@ exit status will be one (i.e., failure).
 
 static PyObject *
 sys_exit_impl(PyObject *module, PyObject *status)
-/*[clinic end generated code: output=13870986c1ab2ec0 input=a737351f86685e9c]*/
+/*[clinic end generated code: output=13870986c1ab2ec0 input=b86ca9497baa94f2]*/
 {
     /* Raise SystemExit so callers may catch it or clean up. */
     PyErr_SetObject(PyExc_SystemExit, status);
@@ -1164,7 +1162,7 @@ static PyTypeObject AsyncGenHooksType;
 PyDoc_STRVAR(asyncgen_hooks_doc,
 "asyncgen_hooks\n\
 \n\
-A struct sequence providing information about asynhronous\n\
+A named tuple providing information about asynchronous\n\
 generators hooks.  The attributes are read only.");
 
 static PyStructSequence_Field asyncgen_hooks_fields[] = {
@@ -1272,7 +1270,7 @@ static PyTypeObject Hash_InfoType;
 PyDoc_STRVAR(hash_info_doc,
 "hash_info\n\
 \n\
-A struct sequence providing parameters used for computing\n\
+A named tuple providing parameters used for computing\n\
 hashes. The attributes are read only.");
 
 static PyStructSequence_Field hash_info_fields[] = {
@@ -2071,36 +2069,42 @@ _clear_preinit_entries(_Py_PreInitEntry *optionlist)
     PyMem_SetAllocator(PYMEM_DOMAIN_RAW, &old_alloc);
 }
 
-static void
-_clear_all_preinit_options(void)
+
+PyStatus
+_PySys_ReadPreinitWarnOptions(PyConfig *config)
 {
+    PyStatus status;
+    _Py_PreInitEntry entry;
+
+    for (entry = _preinit_warnoptions; entry != NULL; entry = entry->next) {
+        status = PyWideStringList_Append(&config->warnoptions, entry->value);
+        if (_PyStatus_EXCEPTION(status)) {
+            return status;
+        }
+    }
+
     _clear_preinit_entries(&_preinit_warnoptions);
-    _clear_preinit_entries(&_preinit_xoptions);
+    return _PyStatus_OK();
 }
 
-static int
-_PySys_ReadPreInitOptions(void)
+
+PyStatus
+_PySys_ReadPreinitXOptions(PyConfig *config)
 {
-    /* Rerun the add commands with the actual sys module available */
-    PyThreadState *tstate = _PyThreadState_GET();
-    if (tstate == NULL) {
-        /* Still don't have a thread state, so something is wrong! */
-        return -1;
-    }
-    _Py_PreInitEntry entry = _preinit_warnoptions;
-    while (entry != NULL) {
-        PySys_AddWarnOption(entry->value);
-        entry = entry->next;
-    }
-    entry = _preinit_xoptions;
-    while (entry != NULL) {
-        PySys_AddXOption(entry->value);
-        entry = entry->next;
+    PyStatus status;
+    _Py_PreInitEntry entry;
+
+    for (entry = _preinit_xoptions; entry != NULL; entry = entry->next) {
+        status = PyWideStringList_Append(&config->xoptions, entry->value);
+        if (_PyStatus_EXCEPTION(status)) {
+            return status;
+        }
     }
 
-    _clear_all_preinit_options();
-    return 0;
+    _clear_preinit_entries(&_preinit_xoptions);
+    return _PyStatus_OK();
 }
+
 
 static PyObject *
 get_warnoptions(void)
@@ -2265,9 +2269,7 @@ PySys_AddXOption(const wchar_t *s)
     }
     if (_PySys_AddXOptionWithError(s) < 0) {
         /* No return value, therefore clear error state if possible */
-        if (_PyThreadState_UncheckedGet()) {
-            PyErr_Clear();
-        }
+        PyErr_Clear();
     }
 }
 
@@ -2319,17 +2321,17 @@ builtin_module_names -- tuple of module names built into this interpreter\n\
 copyright -- copyright notice pertaining to this interpreter\n\
 exec_prefix -- prefix used to find the machine-specific Python library\n\
 executable -- absolute path of the executable binary of the Python interpreter\n\
-float_info -- a struct sequence with information about the float implementation.\n\
+float_info -- a named tuple with information about the float implementation.\n\
 float_repr_style -- string indicating the style of repr() output for floats\n\
-hash_info -- a struct sequence with information about the hash algorithm.\n\
+hash_info -- a named tuple with information about the hash algorithm.\n\
 hexversion -- version information encoded as a single integer\n\
 implementation -- Python implementation information.\n\
-int_info -- a struct sequence with information about the int implementation.\n\
+int_info -- a named tuple with information about the int implementation.\n\
 maxsize -- the largest supported length of containers.\n\
 maxunicode -- the value of the largest Unicode code point\n\
 platform -- platform identifier\n\
 prefix -- prefix used to find the Python library\n\
-thread_info -- a struct sequence with information about the thread implementation.\n\
+thread_info -- a named tuple with information about the thread implementation.\n\
 version -- the version of this interpreter as a string\n\
 version_info -- version information as a named tuple\n\
 "
@@ -2879,6 +2881,7 @@ _PySys_InitMain(_PyRuntimeState *runtime, PyInterpreterState *interp)
     COPY_LIST("path", config->module_search_paths);
 
     SET_SYS_FROM_WSTR("executable", config->executable);
+    SET_SYS_FROM_WSTR("_base_executable", config->base_executable);
     SET_SYS_FROM_WSTR("prefix", config->prefix);
     SET_SYS_FROM_WSTR("base_prefix", config->base_prefix);
     SET_SYS_FROM_WSTR("exec_prefix", config->exec_prefix);
@@ -2925,13 +2928,9 @@ _PySys_InitMain(_PyRuntimeState *runtime, PyInterpreterState *interp)
     if (get_xoptions() == NULL)
         return -1;
 
-    /* Transfer any sys.warnoptions and sys._xoptions set directly
-     * by an embedding application from the linked list to the module. */
-    if (_PySys_ReadPreInitOptions() != 0)
-        return -1;
-
     if (PyErr_Occurred())
         return -1;
+
     return 0;
 
 err_occurred:
@@ -3079,9 +3078,10 @@ make_sys_argv(int argc, wchar_t * const * argv)
 void
 PySys_SetArgvEx(int argc, wchar_t **argv, int updatepath)
 {
+    wchar_t* empty_argv[1] = {L""};
+
     if (argc < 1 || argv == NULL) {
         /* Ensure at least one (empty) argument is seen */
-        wchar_t* empty_argv[1] = {L""};
         argv = empty_argv;
         argc = 1;
     }

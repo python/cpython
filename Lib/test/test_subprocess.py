@@ -3,7 +3,6 @@ from unittest import mock
 from test import support
 import subprocess
 import sys
-import platform
 import signal
 import io
 import itertools
@@ -11,6 +10,7 @@ import os
 import errno
 import tempfile
 import time
+import traceback
 import selectors
 import sysconfig
 import select
@@ -21,16 +21,10 @@ import textwrap
 from test.support import FakePath
 
 try:
-    import ctypes
-except ImportError:
-    ctypes = None
-else:
-    import ctypes.util
-
-try:
     import _testcapi
 except ImportError:
     _testcapi = None
+
 
 if support.PGO:
     raise unittest.SkipTest("test is not helpful for PGO")
@@ -59,10 +53,14 @@ class BaseTestCase(unittest.TestCase):
         support.reap_children()
 
     def tearDown(self):
-        for inst in subprocess._active:
-            inst.wait()
-        subprocess._cleanup()
-        self.assertFalse(subprocess._active, "subprocess._active not empty")
+        if not mswindows:
+            # subprocess._active is not used on Windows and is set to None.
+            for inst in subprocess._active:
+                inst.wait()
+            subprocess._cleanup()
+            self.assertFalse(
+                subprocess._active, "subprocess._active not empty"
+            )
         self.doCleanups()
         support.reap_children()
 
@@ -1560,6 +1558,26 @@ class RunFuncTestCase(BaseTestCase):
         self.assertIn('stderr', c.exception.args[0])
         self.assertIn('capture_output', c.exception.args[0])
 
+    # This test _might_ wind up a bit fragile on loaded build+test machines
+    # as it depends on the timing with wide enough margins for normal situations
+    # but does assert that it happened "soon enough" to believe the right thing
+    # happened.
+    @unittest.skipIf(mswindows, "requires posix like 'sleep' shell command")
+    def test_run_with_shell_timeout_and_capture_output(self):
+        """Output capturing after a timeout mustn't hang forever on open filehandles."""
+        before_secs = time.monotonic()
+        try:
+            subprocess.run('sleep 3', shell=True, timeout=0.1,
+                           capture_output=True)  # New session unspecified.
+        except subprocess.TimeoutExpired as exc:
+            after_secs = time.monotonic()
+            stacks = traceback.format_exc()  # assertRaises doesn't give this.
+        else:
+            self.fail("TimeoutExpired not raised.")
+        self.assertLess(after_secs - before_secs, 1.5,
+                        msg="TimeoutExpired was delayed! Bad traceback:\n```\n"
+                        f"{stacks}```")
+
 
 @unittest.skipIf(mswindows, "POSIX specific tests")
 class POSIXProcessTestCase(BaseTestCase):
@@ -2679,8 +2697,12 @@ class POSIXProcessTestCase(BaseTestCase):
         with support.check_warnings(('', ResourceWarning)):
             p = None
 
-        # check that p is in the active processes list
-        self.assertIn(ident, [id(o) for o in subprocess._active])
+        if mswindows:
+            # subprocess._active is not used on Windows and is set to None.
+            self.assertIsNone(subprocess._active)
+        else:
+            # check that p is in the active processes list
+            self.assertIn(ident, [id(o) for o in subprocess._active])
 
     def test_leak_fast_process_del_killed(self):
         # Issue #12650: on Unix, if Popen.__del__() was called before the
@@ -2701,8 +2723,12 @@ class POSIXProcessTestCase(BaseTestCase):
             p = None
 
         os.kill(pid, signal.SIGKILL)
-        # check that p is in the active processes list
-        self.assertIn(ident, [id(o) for o in subprocess._active])
+        if mswindows:
+            # subprocess._active is not used on Windows and is set to None.
+            self.assertIsNone(subprocess._active)
+        else:
+            # check that p is in the active processes list
+            self.assertIn(ident, [id(o) for o in subprocess._active])
 
         # let some time for the process to exit, and create a new Popen: this
         # should trigger the wait() of p
@@ -2714,7 +2740,11 @@ class POSIXProcessTestCase(BaseTestCase):
                 pass
         # p should have been wait()ed on, and removed from the _active list
         self.assertRaises(OSError, os.waitpid, pid, 0)
-        self.assertNotIn(ident, [id(o) for o in subprocess._active])
+        if mswindows:
+            # subprocess._active is not used on Windows and is set to None.
+            self.assertIsNone(subprocess._active)
+        else:
+            self.assertNotIn(ident, [id(o) for o in subprocess._active])
 
     def test_close_fds_after_preexec(self):
         fd_status = support.findfile("fd_status.py", subdir="subprocessdata")

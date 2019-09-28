@@ -210,8 +210,7 @@ StreamReader
 
    .. method:: at_eof()
 
-      Return ``True`` if the buffer is empty and :meth:`feed_eof`
-      was called.
+      Return ``True`` if the buffer is empty.
 
 
 StreamWriter
@@ -255,7 +254,7 @@ StreamWriter
       If that fails, the data is queued in an internal write buffer until it can be
       sent.
 
-      Starting with Python 3.8, it is possible to directly await on the `write()`
+      Starting with Python 3.8, it is possible to directly await on the `writelines()`
       method::
 
          await stream.writelines(lines)

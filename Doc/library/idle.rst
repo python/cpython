@@ -207,20 +207,6 @@ Strip trailing whitespace
 Run menu (Editor window only)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-.. _python-shell:
-
-Python Shell
-   Open or wake up the Python Shell window.
-
-.. _check-module:
-
-Check Module
-   Check the syntax of the module currently open in the Editor window. If the
-   module has not been saved IDLE will either prompt the user to save or
-   autosave, as selected in the General tab of the Idle Settings dialog.  If
-   there is a syntax error, the approximate location is indicated in the
-   Editor window.
-
 .. _run-module:
 
 Run Module
@@ -238,6 +224,20 @@ Run... Customized
    Same as :ref:`Run Module <run-module>`, but run the module with customized
    settings.  *Command Line Arguments* extend :data:`sys.argv` as if passed
    on a command line. The module can be run in the Shell without restarting.
+
+.. _check-module:
+
+Check Module
+   Check the syntax of the module currently open in the Editor window. If the
+   module has not been saved IDLE will either prompt the user to save or
+   autosave, as selected in the General tab of the Idle Settings dialog.  If
+   there is a syntax error, the approximate location is indicated in the
+   Editor window.
+
+.. _python-shell:
+
+Python Shell
+   Open or wake up the Python Shell window.
 
 
 Shell menu (Shell window only)
@@ -290,22 +290,31 @@ Options menu (Shell and Editor)
 Configure IDLE
    Open a configuration dialog and change preferences for the following:
    fonts, indentation, keybindings, text color themes, startup windows and
-   size, additional help sources, and extensions.  On macOS,  open the
+   size, additional help sources, and extensions.  On macOS, open the
    configuration dialog by selecting Preferences in the application
-   menu. For more, see
+   menu. For more details, see
    :ref:`Setting preferences <preferences>` under Help and preferences.
+
+Most configuration options apply to all windows or all future windows.
+The option items below only apply to the active window.
 
 Show/Hide Code Context (Editor Window only)
    Open a pane at the top of the edit window which shows the block context
    of the code which has scrolled above the top of the window.  See
-   :ref:`Code Context <code-context>` in the Editing and Navigation section below.
+   :ref:`Code Context <code-context>` in the Editing and Navigation section
+   below.
+
+Show/Hide Line Numbers (Editor Window only)
+   Open a column to the left of the edit window which shows the number
+   of each line of text.  The default is off, which may be changed in the
+   preferences (see :ref:`Setting preferences <preferences>`).
 
 Zoom/Restore Height
    Toggles the window between normal size and maximum height. The initial size
    defaults to 40 lines by 80 chars unless changed on the General tab of the
    Configure IDLE dialog.  The maximum height for a screen is determined by
    momentarily maximizing a window the first time one is zoomed on the screen.
-   Changing screen settings may invalidate the saved height.  This toogle has
+   Changing screen settings may invalidate the saved height.  This toggle has
    no effect when a window is maximized.
 
 Window menu (Shell and Editor)
@@ -712,6 +721,10 @@ such as multiprocessing.  If such subprocess use ``input`` from sys.stdin
 or ``print`` or ``write`` to sys.stdout or sys.stderr,
 IDLE should be started in a command line window.  The secondary subprocess
 will then be attached to that window for input and output.
+
+The IDLE code running in the execution process adds frames to the call stack
+that would not be there otherwise.  IDLE wraps ``sys.getrecursionlimit`` and
+``sys.setrecursionlimit`` to reduce the effect of the additional stack frames.
 
 If ``sys`` is reset by user code, such as with ``importlib.reload(sys)``,
 IDLE's changes are lost and input from the keyboard and output to the screen

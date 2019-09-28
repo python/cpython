@@ -355,8 +355,10 @@ If :c:member:`~Py_buffer.strides` is *NULL*, the array is interpreted as
 a standard n-dimensional C-array. Otherwise, the consumer must access an
 n-dimensional array as follows:
 
-   ``ptr = (char *)buf + indices[0] * strides[0] + ... + indices[n-1] * strides[n-1]``
-   ``item = *((typeof(item) *)ptr);``
+.. code-block:: c
+
+   ptr = (char *)buf + indices[0] * strides[0] + ... + indices[n-1] * strides[n-1];
+   item = *((typeof(item) *)ptr);
 
 
 As noted above, :c:member:`~Py_buffer.buf` can point to any location within
@@ -473,11 +475,24 @@ Buffer-related functions
    (*order* is ``'A'``).  Return ``0`` otherwise.  This function always succeeds.
 
 
+.. c:function:: void* PyBuffer_GetPointer(Py_buffer *view, Py_ssize_t *indices)
+
+   Get the memory area pointed to by the *indices* inside the given *view*.
+   *indices* must point to an array of ``view->ndim`` indices.
+
+
+.. c:function:: int PyBuffer_FromContiguous(Py_buffer *view, void *buf, Py_ssize_t len, char fort)
+
+   Copy contiguous *len* bytes from *buf* to *view*.
+   *fort* can be ``'C'`` or ``'F'`` (for C-style or Fortran-style ordering).
+   ``0`` is returned on success, ``-1`` on error.
+
+
 .. c:function:: int PyBuffer_ToContiguous(void *buf, Py_buffer *src, Py_ssize_t len, char order)
 
    Copy *len* bytes from *src* to its contiguous representation in *buf*.
-   *order* can be ``'C'`` or ``'F'`` (for C-style or Fortran-style ordering).
-   ``0`` is returned on success, ``-1`` on error.
+   *order* can be ``'C'`` or ``'F'`` or ``'A'`` (for C-style or Fortran-style
+   ordering or either one). ``0`` is returned on success, ``-1`` on error.
 
    This function fails if *len* != *src->len*.
 

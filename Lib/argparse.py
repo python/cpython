@@ -1,4 +1,5 @@
 # Author: Steven J. Bethard <steven.bethard@gmail.com>.
+# New maintainer as of 29 August 2019:  Raymond Hettinger <raymond.hettinger@gmail.com>
 
 """Command-line parsing library
 
@@ -404,13 +405,19 @@ class HelpFormatter(object):
                             inserts[start] += ' ['
                         else:
                             inserts[start] = '['
-                        inserts[end] = ']'
+                        if end in inserts:
+                            inserts[end] += ']'
+                        else:
+                            inserts[end] = ']'
                     else:
                         if start in inserts:
                             inserts[start] += ' ('
                         else:
                             inserts[start] = '('
-                        inserts[end] = ')'
+                        if end in inserts:
+                            inserts[end] += ')'
+                        else:
+                            inserts[end] = ')'
                     for i in range(start + 1, end):
                         inserts[i] = '|'
 
@@ -593,7 +600,10 @@ class HelpFormatter(object):
         elif action.nargs == SUPPRESS:
             result = ''
         else:
-            formats = ['%s' for _ in range(action.nargs)]
+            try:
+                formats = ['%s' for _ in range(action.nargs)]
+            except TypeError:
+                raise ValueError("invalid nargs value") from None
             result = ' '.join(formats) % get_metavar(action.nargs)
         return result
 
@@ -850,7 +860,7 @@ class _StoreAction(Action):
                  help=None,
                  metavar=None):
         if nargs == 0:
-            raise ValueError('nargs for store actions must be > 0; if you '
+            raise ValueError('nargs for store actions must be != 0; if you '
                              'have nothing to store, actions such as store '
                              'true or store const may be more appropriate')
         if const is not None and nargs != OPTIONAL:
@@ -942,7 +952,7 @@ class _AppendAction(Action):
                  help=None,
                  metavar=None):
         if nargs == 0:
-            raise ValueError('nargs for append actions must be > 0; if arg '
+            raise ValueError('nargs for append actions must be != 0; if arg '
                              'strings are not supplying the value to append, '
                              'the append const action may be more appropriate')
         if const is not None and nargs != OPTIONAL:
@@ -1204,8 +1214,9 @@ class FileType(object):
             return open(string, self._mode, self._bufsize, self._encoding,
                         self._errors)
         except OSError as e:
-            message = _("can't open '%s': %s")
-            raise ArgumentTypeError(message % (string, e))
+            args = {'filename': string, 'error': e}
+            message = _("can't open '%(filename)s': %(error)s")
+            raise ArgumentTypeError(message % args)
 
     def __repr__(self):
         args = self._mode, self._bufsize
@@ -2132,7 +2143,7 @@ class ArgumentParser(_AttributeHolder, _ActionsContainer):
                 action = self._option_string_actions[option_string]
                 return action, option_string, explicit_arg
 
-        if self.allow_abbrev:
+        if self.allow_abbrev or not arg_string.startswith('--'):
             # search through all possible prefixes of the option string
             # and all actions in the parser for possible interpretations
             option_tuples = self._get_option_tuples(arg_string)

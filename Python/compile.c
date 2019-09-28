@@ -81,7 +81,7 @@ It's called a frame block to distinguish it from a basic block in the
 compiler IR.
 */
 
-enum fblocktype { WHILE_LOOP, FOR_LOOP, EXCEPT, FINALLY_TRY, FINALLY_END,
+enum fblocktype { WHILE_LOOP, FOR_LOOP, EXCEPT, FINALLY_TRY, FINALLY_TRY2, FINALLY_END,
                   WITH, ASYNC_WITH, HANDLER_CLEANUP };
 
 struct fblockinfo {
@@ -161,6 +161,11 @@ struct compiler {
     int c_optimize;              /* optimization level */
     int c_interactive;           /* true if in interactive mode */
     int c_nestlevel;
+    int c_do_not_emit_bytecode;  /* The compiler won't emit any bytecode
+                                    if this value is different from zero.
+                                    This can be used to temporarily visit
+                                    nodes without emitting bytecode to
+                                    check only errors. */
 
     PyObject *c_const_cache;     /* Python dict holding all constants,
                                     including names tuple */
@@ -340,6 +345,7 @@ PyAST_CompileObject(mod_ty mod, PyObject *filename, PyCompilerFlags *flags,
     c.c_flags = flags;
     c.c_optimize = (optimize == -1) ? config->optimization_level : optimize;
     c.c_nestlevel = 0;
+    c.c_do_not_emit_bytecode = 0;
 
     if (!_PyAST_Optimize(mod, arena, c.c_optimize)) {
         goto finally;
@@ -1152,6 +1158,9 @@ compiler_addop(struct compiler *c, int opcode)
     struct instr *i;
     int off;
     assert(!HAS_ARG(opcode));
+    if (c->c_do_not_emit_bytecode) {
+        return 1;
+    }
     off = compiler_next_instr(c, c->u->u_curblock);
     if (off < 0)
         return 0;
@@ -1305,6 +1314,10 @@ merge_consts_recursive(struct compiler *c, PyObject *o)
 static Py_ssize_t
 compiler_add_const(struct compiler *c, PyObject *o)
 {
+    if (c->c_do_not_emit_bytecode) {
+        return 0;
+    }
+
     PyObject *key = merge_consts_recursive(c, o);
     if (key == NULL) {
         return -1;
@@ -1318,6 +1331,10 @@ compiler_add_const(struct compiler *c, PyObject *o)
 static int
 compiler_addop_load_const(struct compiler *c, PyObject *o)
 {
+    if (c->c_do_not_emit_bytecode) {
+        return 1;
+    }
+
     Py_ssize_t arg = compiler_add_const(c, o);
     if (arg < 0)
         return 0;
@@ -1328,6 +1345,10 @@ static int
 compiler_addop_o(struct compiler *c, int opcode, PyObject *dict,
                      PyObject *o)
 {
+    if (c->c_do_not_emit_bytecode) {
+        return 1;
+    }
+
     Py_ssize_t arg = compiler_add_o(c, dict, o);
     if (arg < 0)
         return 0;
@@ -1339,6 +1360,11 @@ compiler_addop_name(struct compiler *c, int opcode, PyObject *dict,
                     PyObject *o)
 {
     Py_ssize_t arg;
+
+    if (c->c_do_not_emit_bytecode) {
+        return 1;
+    }
+
     PyObject *mangled = _Py_Mangle(c->u->u_private, o);
     if (!mangled)
         return 0;
@@ -1358,6 +1384,10 @@ compiler_addop_i(struct compiler *c, int opcode, Py_ssize_t oparg)
 {
     struct instr *i;
     int off;
+
+    if (c->c_do_not_emit_bytecode) {
+        return 1;
+    }
 
     /* oparg value is unsigned, but a signed C int is usually used to store
        it in the C code (like Python/ceval.c).
@@ -1384,6 +1414,10 @@ compiler_addop_j(struct compiler *c, int opcode, basicblock *b, int absolute)
 {
     struct instr *i;
     int off;
+
+    if (c->c_do_not_emit_bytecode) {
+        return 1;
+    }
 
     assert(HAS_ARG(opcode));
     assert(b != NULL);
@@ -1519,6 +1553,17 @@ compiler_addop_j(struct compiler *c, int opcode, basicblock *b, int absolute)
     } \
 }
 
+/* These macros allows to check only for errors and not emmit bytecode
+ * while visiting nodes.
+*/
+
+#define BEGIN_DO_NOT_EMIT_BYTECODE { \
+    c->c_do_not_emit_bytecode++;
+
+#define END_DO_NOT_EMIT_BYTECODE \
+    c->c_do_not_emit_bytecode--; \
+}
+
 /* Search if variable annotations are present statically in a block. */
 
 static int
@@ -1619,7 +1664,12 @@ compiler_unwind_fblock(struct compiler *c, struct fblockinfo *info,
             return 1;
 
         case FINALLY_END:
+            info->fb_exit = NULL;
             ADDOP_I(c, POP_FINALLY, preserve_tos);
+            if (preserve_tos) {
+                ADDOP(c, ROT_TWO);
+            }
+            ADDOP(c, POP_TOP);
             return 1;
 
         case FOR_LOOP:
@@ -1637,6 +1687,19 @@ compiler_unwind_fblock(struct compiler *c, struct fblockinfo *info,
         case FINALLY_TRY:
             ADDOP(c, POP_BLOCK);
             ADDOP_JREL(c, CALL_FINALLY, info->fb_exit);
+            return 1;
+
+        case FINALLY_TRY2:
+            ADDOP(c, POP_BLOCK);
+            if (preserve_tos) {
+                ADDOP(c, ROT_TWO);
+                ADDOP(c, POP_TOP);
+                ADDOP_JREL(c, CALL_FINALLY, info->fb_exit);
+            }
+            else {
+                ADDOP_JREL(c, CALL_FINALLY, info->fb_exit);
+                ADDOP(c, POP_TOP);
+            }
             return 1;
 
         case WITH:
@@ -2546,13 +2609,23 @@ compiler_if(struct compiler *c, stmt_ty s)
         return 0;
 
     constant = expr_constant(s->v.If.test);
-    /* constant = 0: "if 0" Leave the optimizations to
-     * the pephole optimizer to check for syntax errors
-     * in the block.
+    /* constant = 0: "if 0"
      * constant = 1: "if 1", "if 2", ...
      * constant = -1: rest */
-    if (constant == 1) {
+    if (constant == 0) {
+        BEGIN_DO_NOT_EMIT_BYTECODE
         VISIT_SEQ(c, stmt, s->v.If.body);
+        END_DO_NOT_EMIT_BYTECODE
+        if (s->v.If.orelse) {
+            VISIT_SEQ(c, stmt, s->v.If.orelse);
+        }
+    } else if (constant == 1) {
+        VISIT_SEQ(c, stmt, s->v.If.body);
+        if (s->v.If.orelse) {
+            BEGIN_DO_NOT_EMIT_BYTECODE
+            VISIT_SEQ(c, stmt, s->v.If.orelse);
+            END_DO_NOT_EMIT_BYTECODE
+        }
     } else {
         if (asdl_seq_LEN(s->v.If.orelse)) {
             next = compiler_new_block(c);
@@ -2662,8 +2735,12 @@ compiler_while(struct compiler *c, stmt_ty s)
     int constant = expr_constant(s->v.While.test);
 
     if (constant == 0) {
-        if (s->v.While.orelse)
+        BEGIN_DO_NOT_EMIT_BYTECODE
+        VISIT_SEQ(c, stmt, s->v.While.body);
+        END_DO_NOT_EMIT_BYTECODE
+        if (s->v.While.orelse) {
             VISIT_SEQ(c, stmt, s->v.While.orelse);
+        }
         return 1;
     }
     loop = compiler_new_block(c);
@@ -2810,17 +2887,47 @@ compiler_continue(struct compiler *c)
 static int
 compiler_try_finally(struct compiler *c, stmt_ty s)
 {
-    basicblock *body, *end;
+    basicblock *start, *newcurblock, *body, *end;
+    int break_finally = 1;
 
     body = compiler_new_block(c);
     end = compiler_new_block(c);
     if (body == NULL || end == NULL)
         return 0;
 
+    start = c->u->u_curblock;
+
+    /* `finally` block. Compile it first to determine if any of "break",
+       "continue" or "return" are used in it. */
+    compiler_use_next_block(c, end);
+    if (!compiler_push_fblock(c, FINALLY_END, end, end))
+        return 0;
+    VISIT_SEQ(c, stmt, s->v.Try.finalbody);
+    ADDOP(c, END_FINALLY);
+    break_finally = (c->u->u_fblock[c->u->u_nfblocks - 1].fb_exit == NULL);
+    if (break_finally) {
+        /* Pops a placeholder. See below */
+        ADDOP(c, POP_TOP);
+    }
+    compiler_pop_fblock(c, FINALLY_END, end);
+
+    newcurblock = c->u->u_curblock;
+    c->u->u_curblock = start;
+    start->b_next = NULL;
+
     /* `try` block */
+    c->u->u_lineno_set = 0;
+    c->u->u_lineno = s->lineno;
+    c->u->u_col_offset = s->col_offset;
+    if (break_finally) {
+        /* Pushes a placeholder for the value of "return" in the "try" block
+           to balance the stack for "break", "continue" and "return" in
+           the "finally" block. */
+        ADDOP_LOAD_CONST(c, Py_None);
+    }
     ADDOP_JREL(c, SETUP_FINALLY, end);
     compiler_use_next_block(c, body);
-    if (!compiler_push_fblock(c, FINALLY_TRY, body, end))
+    if (!compiler_push_fblock(c, break_finally ? FINALLY_TRY2 : FINALLY_TRY, body, end))
         return 0;
     if (s->v.Try.handlers && asdl_seq_LEN(s->v.Try.handlers)) {
         if (!compiler_try_except(c, s))
@@ -2831,15 +2938,11 @@ compiler_try_finally(struct compiler *c, stmt_ty s)
     }
     ADDOP(c, POP_BLOCK);
     ADDOP(c, BEGIN_FINALLY);
-    compiler_pop_fblock(c, FINALLY_TRY, body);
+    compiler_pop_fblock(c, break_finally ? FINALLY_TRY2 : FINALLY_TRY, body);
 
-    /* `finally` block */
-    compiler_use_next_block(c, end);
-    if (!compiler_push_fblock(c, FINALLY_END, end, NULL))
-        return 0;
-    VISIT_SEQ(c, stmt, s->v.Try.finalbody);
-    ADDOP(c, END_FINALLY);
-    compiler_pop_fblock(c, FINALLY_END, end);
+    c->u->u_curblock->b_next = end;
+    c->u->u_curblock = newcurblock;
+
     return 1;
 }
 
@@ -5813,13 +5916,11 @@ makecode(struct compiler *c, struct assembler *a)
     if (maxdepth < 0) {
         goto error;
     }
-    co = PyCode_New(posonlyargcount+posorkeywordargcount, posonlyargcount,
-                    kwonlyargcount, nlocals_int, maxdepth, flags,
-                    bytecode, consts, names, varnames,
-                    freevars, cellvars,
-                    c->c_filename, c->u->u_name,
-                    c->u->u_firstlineno,
-                    a->a_lnotab);
+    co = PyCode_NewWithPosOnlyArgs(posonlyargcount+posorkeywordargcount,
+                                   posonlyargcount, kwonlyargcount, nlocals_int, 
+                                   maxdepth, flags, bytecode, consts, names,
+                                   varnames, freevars, cellvars, c->c_filename,
+                                   c->u->u_name, c->u->u_firstlineno, a->a_lnotab);
  error:
     Py_XDECREF(consts);
     Py_XDECREF(names);

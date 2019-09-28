@@ -1396,7 +1396,7 @@ r_object(RFILE *p)
             if (lnotab == NULL)
                 goto code_error;
 
-            v = (PyObject *) PyCode_New(
+            v = (PyObject *) PyCode_NewWithPosOnlyArgs(
                             argcount, posonlyargcount, kwonlyargcount,
                             nlocals, stacksize, flags,
                             code, consts, names, varnames,
