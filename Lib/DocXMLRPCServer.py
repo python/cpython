@@ -210,7 +210,15 @@ class XMLRPCDocGenerator:
                                 methods
                             )
 
-        return documenter.page(self.server_title, documentation)
+        escape_table = {
+            "&": "&amp;",
+            '"': "&quot;",
+            "'": "&#x27;",
+            ">": "&gt;",
+            "<": "&lt;",
+        }
+        title = ''.join(escape_table.get(c, c) for c in self.server_title)
+        return documenter.page(title, documentation)
 
 class DocXMLRPCRequestHandler(SimpleXMLRPCRequestHandler):
     """XML-RPC and documentation request handler class.
