@@ -1088,13 +1088,12 @@ class HTTPConnection:
         # Save the method for use later in the response phase
         self._method = method
 
-        request = b' '.join((
-            method.encode('ascii'),
-            self._prepare_path(url or '/'),
-            self._http_vsn_str.encode('ascii')
-        ))
+        url = url or '/'
+        self._validate_path(url)
 
-        self._output(request)
+        request = '%s %s %s' % (method, url, self._http_vsn_str)
+
+        self._output(self._encode_request(request))
 
         if self._http_vsn == 11:
             # Issue some standard headers for better HTTP/1.1 compliance
@@ -1172,20 +1171,17 @@ class HTTPConnection:
             # For HTTP/1.0, the server will assume "not chunked"
             pass
 
-
-    def _encode_prepared_path(self, str_url):
+    def _encode_request(self, request):
         # ASCII also helps prevent CVE-2019-9740.
-        return str_url.encode('ascii')
+        return request.encode('ascii')
 
-    def _prepare_path(self, url):
-        """Validate a url for putrequest and return encoded bytes."""
+    def _validate_path(self, url):
+        """Validate a url for putrequest."""
         # Prevent CVE-2019-9740.
         match = _contains_disallowed_url_pchar_re.search(url)
         if match:
             raise InvalidURL(f"URL can't contain control characters. {url!r} "
                              f"(found at least {match.group()!r})")
-
-        return self._encode_prepared_path(url)
 
     def putheader(self, header, *values):
         """Send a request header line to the server.

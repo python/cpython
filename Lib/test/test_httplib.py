@@ -1161,8 +1161,8 @@ class BasicTest(TestCase):
         behavior in putrequest (bpo-38216).
         """
         class UnsafeHTTPConnection(client.HTTPConnection):
-            def _prepare_path(self, url):
-                return url.encode('ascii')
+            def _validate_path(self, url):
+                pass
 
         conn = UnsafeHTTPConnection('example.com')
         conn.sock = FakeSocket('')
@@ -1175,34 +1175,12 @@ class BasicTest(TestCase):
         (bpo-36274).
         """
         class UnsafeHTTPConnection(client.HTTPConnection):
-            def _encode_prepared_path(self, str_url):
+            def _encode_request(self, str_url):
                 return str_url.encode('utf-8')
 
         conn = UnsafeHTTPConnection('example.com')
         conn.sock = FakeSocket('')
         conn.putrequest('GET', '/☃')
-
-    def test_prepare_path_only(self):
-        """
-        Ensure that _prepare_path fully processes the URL
-        and that no other demands are on the object.
-        """
-        class UnsafeHTTPConnection(client.HTTPConnection):
-            def _prepare_path(self, url):
-                # ignore URL and return some bytes
-                return b'/'
-
-        class InvalidObject:
-            """
-            Stub object that doesn't behave anything like a string
-            and should cause tests to fail if any demands are put
-            on the url parameter other than in _prepare_path
-            (__bool__ allowed).
-            """
-
-        conn = UnsafeHTTPConnection('example.com')
-        conn.sock = FakeSocket('')
-        conn.putrequest('GET', InvalidObject(), skip_host=True)
 
 
 class ExtendedReadTest(TestCase):
