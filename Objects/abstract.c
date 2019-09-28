@@ -910,8 +910,9 @@ ternary_op(PyObject *v,
     if (z == Py_None)
         PyErr_Format(
             PyExc_TypeError,
-            "unsupported operand type(s) for ** or pow(): "
+            "unsupported operand type(s) for %.100s: "
             "'%.100s' and '%.100s'",
+            op_name,
             Py_TYPE(v)->tp_name,
             Py_TYPE(w)->tp_name);
     else
@@ -1064,6 +1065,24 @@ binary_iop(PyObject *v, PyObject *w, const int iop_slot, const int op_slot,
     return result;
 }
 
+static PyObject *
+ternary_iop(PyObject *v, PyObject *w, PyObject *z, const int iop_slot, const int op_slot,
+                const char *op_name)
+{
+    PyNumberMethods *mv = v->ob_type->tp_as_number;
+    if (mv != NULL) {
+        ternaryfunc slot = NB_TERNOP(mv, iop_slot);
+        if (slot) {
+            PyObject *x = (slot)(v, w, z);
+            if (x != Py_NotImplemented) {
+                return x;
+            }
+            Py_DECREF(x);
+        }
+    }
+    return ternary_op(v, w, z, op_slot, op_name);
+}
+
 #define INPLACE_BINOP(func, iop, op, op_name) \
     PyObject * \
     func(PyObject *v, PyObject *w) { \
@@ -1161,7 +1180,7 @@ PyNumber_InPlacePower(PyObject *v, PyObject *w, PyObject *z)
 {
     if (Py_TYPE(v)->tp_as_number &&
         Py_TYPE(v)->tp_as_number->nb_inplace_power != NULL) {
-        return ternary_op(v, w, z, NB_SLOT(nb_inplace_power), "**=");
+        return ternary_iop(v, w, z, NB_SLOT(nb_inplace_power), NB_SLOT(nb_power), "**=");
     }
     else {
         return ternary_op(v, w, z, NB_SLOT(nb_power), "**=");
