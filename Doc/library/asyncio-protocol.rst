@@ -809,7 +809,7 @@ data, and waits until the connection is closed::
 .. seealso::
 
    The :ref:`TCP echo client using streams <asyncio-tcp-echo-client-streams>`
-   example uses the high-level :func:`asyncio.connect` function.
+   example uses the high-level :func:`asyncio.open_connection` function.
 
 
 .. _asyncio-udp-echo-server-protocol:
@@ -978,7 +978,7 @@ Wait until a socket receives data using the
 
    The :ref:`register an open socket to wait for data using streams
    <asyncio_example_create_connection-streams>` example uses high-level streams
-   created by the :func:`asyncio.connect` function in a coroutine.
+   created by the :func:`open_connection` function in a coroutine.
 
 .. _asyncio_example_subprocess_proto:
 
