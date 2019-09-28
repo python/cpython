@@ -73,7 +73,7 @@ class SubprocessStreamProtocol(streams.FlowControlMixin,
         else:
             reader = None
         if reader is not None:
-            reader._feed_data(data)
+            reader.feed_data(data)
 
     def pipe_connection_lost(self, fd, exc):
         if fd == 0:
@@ -94,9 +94,9 @@ class SubprocessStreamProtocol(streams.FlowControlMixin,
             reader = None
         if reader is not None:
             if exc is None:
-                reader._feed_eof()
+                reader.feed_eof()
             else:
-                reader._set_exception(exc)
+                reader.set_exception(exc)
 
         if fd in self._pipe_fds:
             self._pipe_fds.remove(fd)
