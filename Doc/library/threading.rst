@@ -498,7 +498,13 @@ All methods are executed atomically.
 
    .. method:: locked()
 
+<<<<<<< HEAD
       Return true if the lock is acquired.
+=======
+      Check if a lock is locked. Returns a boolean to indicate the lock status.
+
+      Return ``True`` when the lock is locked, ``False`` otherwise.
+>>>>>>> 87cd99eaf5725e5ac69b5b035da2365c745708cf
 
 
 .. _rlock-objects:
