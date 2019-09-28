@@ -528,6 +528,18 @@ Py_GetArgcArgv(int *argc, wchar_t ***argv)
      ? _PyStatus_ERR("cannot decode " NAME) \
      : _PyStatus_NO_MEMORY())
 
+
+static PyStatus
+config_check_struct_size(const PyConfig *config)
+{
+    if (config->struct_size != sizeof(PyConfig)) {
+        return _PyStatus_ERR("unsupported PyConfig structure size "
+                             "(Python version mismatch?)");
+    }
+    return _PyStatus_OK();
+}
+
+
 /* Free memory allocated in config, but don't clear all attributes */
 void
 PyConfig_Clear(PyConfig *config)
@@ -568,12 +580,19 @@ PyConfig_Clear(PyConfig *config)
 }
 
 
-void
+PyStatus
 _PyConfig_InitCompatConfig(PyConfig *config)
 {
+    size_t struct_size = config->struct_size;
     memset(config, 0, sizeof(*config));
+    config->struct_size = struct_size;
 
-    config->_config_version = _Py_CONFIG_VERSION;
+    PyStatus status = config_check_struct_size(config);
+    if (_PyStatus_EXCEPTION(status)) {
+        _PyStatus_UPDATE_FUNC(status);
+        return status;
+    }
+
     config->_config_init = (int)_PyConfig_INIT_COMPAT;
     config->isolated = -1;
     config->use_environment = -1;
@@ -603,13 +622,17 @@ _PyConfig_InitCompatConfig(PyConfig *config)
 #ifdef MS_WINDOWS
     config->legacy_windows_stdio = -1;
 #endif
+    return _PyStatus_OK();
 }
 
 
-static void
+static PyStatus
 config_init_defaults(PyConfig *config)
 {
-    _PyConfig_InitCompatConfig(config);
+    PyStatus status = _PyConfig_InitCompatConfig(config);
+    if (_PyStatus_EXCEPTION(status)) {
+        return status;
+    }
 
     config->isolated = 0;
     config->use_environment = 1;
@@ -628,13 +651,18 @@ config_init_defaults(PyConfig *config)
 #ifdef MS_WINDOWS
     config->legacy_windows_stdio = 0;
 #endif
+    return _PyStatus_OK();
 }
 
 
 PyStatus
 PyConfig_InitPythonConfig(PyConfig *config)
 {
-    config_init_defaults(config);
+    PyStatus status = config_init_defaults(config);
+    if (_PyStatus_EXCEPTION(status)) {
+        _PyStatus_UPDATE_FUNC(status);
+        return status;
+    }
 
     config->_config_init = (int)_PyConfig_INIT_PYTHON;
     config->configure_c_stdio = 1;
@@ -647,7 +675,11 @@ PyConfig_InitPythonConfig(PyConfig *config)
 PyStatus
 PyConfig_InitIsolatedConfig(PyConfig *config)
 {
-    config_init_defaults(config);
+    PyStatus status = config_init_defaults(config);
+    if (_PyStatus_EXCEPTION(status)) {
+        _PyStatus_UPDATE_FUNC(status);
+        return status;
+    }
 
     config->_config_init = (int)_PyConfig_INIT_ISOLATED;
     config->isolated = 1;
@@ -742,6 +774,19 @@ PyStatus
 _PyConfig_Copy(PyConfig *config, const PyConfig *config2)
 {
     PyStatus status;
+
+    status = config_check_struct_size(config);
+    if (_PyStatus_EXCEPTION(status)) {
+        _PyStatus_UPDATE_FUNC(status);
+        return status;
+    }
+
+    status = config_check_struct_size(config2);
+    if (_PyStatus_EXCEPTION(status)) {
+        _PyStatus_UPDATE_FUNC(status);
+        return status;
+    }
+
     PyConfig_Clear(config);
 
 #define COPY_ATTR(ATTR) config->ATTR = config2->ATTR
@@ -2204,7 +2249,12 @@ core_read_precmdline(PyConfig *config, _PyPreCmdline *precmdline)
     }
 
     PyPreConfig preconfig;
-    _PyPreConfig_InitFromPreConfig(&preconfig, &_PyRuntime.preconfig);
+    preconfig.struct_size = sizeof(PyPreConfig);
+
+    status = _PyPreConfig_InitFromPreConfig(&preconfig, &_PyRuntime.preconfig);
+    if (_PyStatus_EXCEPTION(status)) {
+        return status;
+    }
 
     _PyPreConfig_GetConfig(&preconfig, config);
 
@@ -2384,6 +2434,12 @@ PyConfig_Read(PyConfig *config)
 {
     PyStatus status;
     PyWideStringList orig_argv = PyWideStringList_INIT;
+
+    status = config_check_struct_size(config);
+    if (_PyStatus_EXCEPTION(status)) {
+        _PyStatus_UPDATE_FUNC(status);
+        return status;
+    }
 
     status = _Py_PreInitializeFromConfig(config, NULL);
     if (_PyStatus_EXCEPTION(status)) {
