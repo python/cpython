@@ -131,7 +131,7 @@ PyDoc_STRVAR(module_complete_doc,
 \n\
 Checks if a string contains a complete SQL statement. Non-standard.");
 
-#ifdef HAVE_SHARED_CACHE
+#if defined(HAVE_SHARED_CACHE) && !defined(__APPLE__)
 static PyObject* module_enable_shared_cache(PyObject* self, PyObject* args, PyObject*
         kwargs)
 {
