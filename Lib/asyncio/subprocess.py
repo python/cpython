@@ -19,8 +19,8 @@ class SubprocessStreamProtocol(streams.FlowControlMixin,
                                protocols.SubprocessProtocol):
     """Like StreamReaderProtocol, but for a subprocess."""
 
-    def __init__(self, limit, loop, *, _asyncio_internal=False):
-        super().__init__(loop=loop, _asyncio_internal=_asyncio_internal)
+    def __init__(self, limit, loop):
+        super().__init__(loop=loop)
         self._limit = limit
         self.stdin = self.stdout = self.stderr = None
         self._transport = None
@@ -44,16 +44,14 @@ class SubprocessStreamProtocol(streams.FlowControlMixin,
         stdout_transport = transport.get_pipe_transport(1)
         if stdout_transport is not None:
             self.stdout = streams.StreamReader(limit=self._limit,
-                                               loop=self._loop,
-                                               _asyncio_internal=True)
+                                               loop=self._loop)
             self.stdout.set_transport(stdout_transport)
             self._pipe_fds.append(1)
 
         stderr_transport = transport.get_pipe_transport(2)
         if stderr_transport is not None:
             self.stderr = streams.StreamReader(limit=self._limit,
-                                               loop=self._loop,
-                                               _asyncio_internal=True)
+                                               loop=self._loop)
             self.stderr.set_transport(stderr_transport)
             self._pipe_fds.append(2)
 
@@ -62,8 +60,7 @@ class SubprocessStreamProtocol(streams.FlowControlMixin,
             self.stdin = streams.StreamWriter(stdin_transport,
                                               protocol=self,
                                               reader=None,
-                                              loop=self._loop,
-                                              _asyncio_internal=True)
+                                              loop=self._loop)
 
     def pipe_data_received(self, fd, data):
         if fd == 1:
@@ -221,8 +218,7 @@ async def create_subprocess_shell(cmd, stdin=None, stdout=None, stderr=None,
         )
 
     protocol_factory = lambda: SubprocessStreamProtocol(limit=limit,
-                                                        loop=loop,
-                                                        _asyncio_internal=True)
+                                                        loop=loop)
     transport, protocol = await loop.subprocess_shell(
         protocol_factory,
         cmd, stdin=stdin, stdout=stdout,
@@ -242,8 +238,7 @@ async def create_subprocess_exec(program, *args, stdin=None, stdout=None,
                       stacklevel=2
         )
     protocol_factory = lambda: SubprocessStreamProtocol(limit=limit,
-                                                        loop=loop,
-                                                        _asyncio_internal=True)
+                                                        loop=loop)
     transport, protocol = await loop.subprocess_exec(
         protocol_factory,
         program, *args,

@@ -48,11 +48,10 @@ async def open_connection(host=None, port=None, *,
                       "and scheduled for removal in Python 3.10.",
                       DeprecationWarning, stacklevel=2)
     reader = StreamReader(limit=limit, loop=loop)
-    protocol = StreamReaderProtocol(reader, loop=loop, _asyncio_internal=True)
+    protocol = StreamReaderProtocol(reader, loop=loop)
     transport, _ = await loop.create_connection(
         lambda: protocol, host, port, **kwds)
-    writer = StreamWriter(transport, protocol, reader, loop,
-                          _asyncio_internal=True)
+    writer = StreamWriter(transport, protocol, reader, loop)
     return reader, writer
 
 
@@ -87,11 +86,9 @@ async def start_server(client_connected_cb, host=None, port=None, *,
                       DeprecationWarning, stacklevel=2)
 
     def factory():
-        reader = StreamReader(limit=limit, loop=loop,
-                              _asyncio_internal=True)
+        reader = StreamReader(limit=limit, loop=loop)
         protocol = StreamReaderProtocol(reader, client_connected_cb,
-                                        loop=loop,
-                                        _asyncio_internal=True)
+                                        loop=loop)
         return protocol
 
     return await loop.create_server(factory, host, port, **kwds)
@@ -110,12 +107,10 @@ if hasattr(socket, 'AF_UNIX'):
                           "and scheduled for removal in Python 3.10.",
                           DeprecationWarning, stacklevel=2)
         reader = StreamReader(limit=limit, loop=loop)
-        protocol = StreamReaderProtocol(reader, loop=loop,
-                                        _asyncio_internal=True)
+        protocol = StreamReaderProtocol(reader, loop=loop)
         transport, _ = await loop.create_unix_connection(
             lambda: protocol, path, **kwds)
-        writer = StreamWriter(transport, protocol, reader, loop,
-                              _asyncio_internal=True)
+        writer = StreamWriter(transport, protocol, reader, loop)
         return reader, writer
 
     async def start_unix_server(client_connected_cb, path=None, *,
@@ -129,11 +124,9 @@ if hasattr(socket, 'AF_UNIX'):
                           DeprecationWarning, stacklevel=2)
 
         def factory():
-            reader = StreamReader(limit=limit, loop=loop,
-                                  _asyncio_internal=True)
+            reader = StreamReader(limit=limit, loop=loop)
             protocol = StreamReaderProtocol(reader, client_connected_cb,
-                                            loop=loop,
-                                            _asyncio_internal=True)
+                                            loop=loop)
             return protocol
 
         return await loop.create_unix_server(factory, path, **kwds)
@@ -149,20 +142,11 @@ class FlowControlMixin(protocols.Protocol):
     StreamWriter.drain() must wait for _drain_helper() coroutine.
     """
 
-    def __init__(self, loop=None, *, _asyncio_internal=False):
+    def __init__(self, loop=None):
         if loop is None:
             self._loop = events.get_event_loop()
         else:
             self._loop = loop
-        if not _asyncio_internal:
-            # NOTE:
-            # Avoid inheritance from FlowControlMixin
-            # Copy-paste the code to your project
-            # if you need flow control helpers
-            warnings.warn(f"{self.__class__} should be instantiated "
-                          "by asyncio internals only, "
-                          "please avoid its creation from user code",
-                          DeprecationWarning)
         self._paused = False
         self._drain_waiter = None
         self._connection_lost = False
@@ -227,9 +211,8 @@ class StreamReaderProtocol(FlowControlMixin, protocols.Protocol):
 
     _source_traceback = None
 
-    def __init__(self, stream_reader, client_connected_cb=None, loop=None,
-                 *, _asyncio_internal=False):
-        super().__init__(loop=loop, _asyncio_internal=_asyncio_internal)
+    def __init__(self, stream_reader, client_connected_cb=None, loop=None):
+        super().__init__(loop=loop)
         if stream_reader is not None:
             self._stream_reader_wr = weakref.ref(stream_reader,
                                                  self._on_reader_gc)
@@ -290,8 +273,7 @@ class StreamReaderProtocol(FlowControlMixin, protocols.Protocol):
         if self._client_connected_cb is not None:
             self._stream_writer = StreamWriter(transport, self,
                                                reader,
-                                               self._loop,
-                                               _asyncio_internal=True)
+                                               self._loop)
             res = self._client_connected_cb(reader,
                                             self._stream_writer)
             if coroutines.iscoroutine(res):
@@ -359,13 +341,7 @@ class StreamWriter:
     directly.
     """
 
-    def __init__(self, transport, protocol, reader, loop,
-                 *, _asyncio_internal=False):
-        if not _asyncio_internal:
-            warnings.warn(f"{self.__class__} should be instaniated "
-                          "by asyncio internals only, "
-                          "please avoid its creation from user code",
-                          DeprecationWarning)
+    def __init__(self, transport, protocol, reader, loop):
         self._transport = transport
         self._protocol = protocol
         # drain() expects that the reader has an exception() method
@@ -460,14 +436,7 @@ class StreamReader:
 
     _source_traceback = None
 
-    def __init__(self, limit=_DEFAULT_LIMIT, loop=None,
-                 *, _asyncio_internal=False):
-        if not _asyncio_internal:
-            warnings.warn(f"{self.__class__} should be instaniated "
-                          "by asyncio internals only, "
-                          "please avoid its creation from user code",
-                          DeprecationWarning)
-
+    def __init__(self, limit=_DEFAULT_LIMIT, loop=None):
         # The line length limit is  a security feature;
         # it also doubles as half the buffer limit.
 
