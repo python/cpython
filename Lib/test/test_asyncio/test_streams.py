@@ -657,8 +657,9 @@ class StreamTests(test_utils.TestCase):
                     self.server = None
 
         async def client(addr):
-            reader, writer = await asyncio.open_connection(
-                *addr, loop=self.loop)
+            with self.assertWarns(DeprecationWarning):
+                reader, writer = await asyncio.open_connection(
+                    *addr, loop=self.loop)
             # send a line
             writer.write(b"hello world!\n")
             # read it back
@@ -672,7 +673,8 @@ class StreamTests(test_utils.TestCase):
 
         # test the server variant with a coroutine as client handler
         server = MyServer(self.loop)
-        addr = server.start()
+        with self.assertWarns(DeprecationWarning):
+            addr = server.start()
         msg = self.loop.run_until_complete(self.loop.create_task(client(addr)))
         server.stop()
         self.assertEqual(msg, b"hello world!\n")
@@ -727,8 +729,9 @@ class StreamTests(test_utils.TestCase):
                     self.server = None
 
         async def client(path):
-            reader, writer = await asyncio.open_unix_connection(
-                path, loop=self.loop)
+            with self.assertWarns(DeprecationWarning):
+                reader, writer = await asyncio.open_unix_connection(
+                    path, loop=self.loop)
             # send a line
             writer.write(b"hello world!\n")
             # read it back
@@ -844,8 +847,9 @@ os.close(fd)
                 clt.close()
 
         async def client(host, port):
-            reader, writer = await asyncio.open_connection(
-                host, port, loop=self.loop)
+            with self.assertWarns(DeprecationWarning):
+                reader, writer = await asyncio.open_connection(
+                    host, port, loop=self.loop)
 
             while True:
                 writer.write(b"foo\n")
@@ -936,8 +940,9 @@ os.close(fd)
 
     def test_wait_closed_on_close(self):
         with test_utils.run_test_server() as httpd:
-            rd, wr = self.loop.run_until_complete(
-                asyncio.open_connection(*httpd.address, loop=self.loop))
+            with self.assertWarns(DeprecationWarning):
+                rd, wr = self.loop.run_until_complete(
+                    asyncio.open_connection(*httpd.address, loop=self.loop))
 
             wr.write(b'GET / HTTP/1.0\r\n\r\n')
             f = rd.readline()
@@ -953,8 +958,9 @@ os.close(fd)
 
     def test_wait_closed_on_close_with_unread_data(self):
         with test_utils.run_test_server() as httpd:
-            rd, wr = self.loop.run_until_complete(
-                asyncio.open_connection(*httpd.address, loop=self.loop))
+            with self.assertWarns(DeprecationWarning):
+                rd, wr = self.loop.run_until_complete(
+                    asyncio.open_connection(*httpd.address, loop=self.loop))
 
             wr.write(b'GET / HTTP/1.0\r\n\r\n')
             f = rd.readline()
@@ -968,8 +974,9 @@ os.close(fd)
         self.loop.set_exception_handler(lambda loop, ctx: messages.append(ctx))
 
         with test_utils.run_test_server() as httpd:
-            rd, wr = self.loop.run_until_complete(
-                asyncio.open_connection(*httpd.address, loop=self.loop))
+            with self.assertWarns(DeprecationWarning):
+                rd, wr = self.loop.run_until_complete(
+                    asyncio.open_connection(*httpd.address, loop=self.loop))
             sock = wr.get_extra_info('socket')
             self.assertNotEqual(sock.fileno(), -1)
 
@@ -1063,9 +1070,10 @@ os.close(fd)
         self.loop.set_exception_handler(lambda loop, ctx: messages.append(ctx))
 
         with test_utils.run_test_server() as httpd:
-            rd, wr = self.loop.run_until_complete(
-                asyncio.open_connection(*httpd.address,
-                                        loop=self.loop))
+            with self.assertWarns(DeprecationWarning):
+                rd, wr = self.loop.run_until_complete(
+                    asyncio.open_connection(*httpd.address,
+                                            loop=self.loop))
 
             f = wr.close()
             self.loop.run_until_complete(f)
