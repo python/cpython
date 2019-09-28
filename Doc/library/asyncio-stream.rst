@@ -87,10 +87,6 @@ and work with streams:
 
       The *ssl_handshake_timeout* parameter.
 
-   .. deprecated-removed:: 3.8 3.10
-
-      `open_connection()` is deprecated in favor of :func:`connect`.
-
 .. coroutinefunction:: start_server(client_connected_cb, host=None, \
                           port=None, \*, loop=None, limit=2**16, \
                           family=socket.AF_UNSPEC, \
@@ -124,31 +120,6 @@ and work with streams:
 
       The *ssl_handshake_timeout* and *start_serving* parameters.
 
-   .. deprecated-removed:: 3.8 3.10
-
-      `start_server()` is deprecated if favor of :class:`StreamServer`
-
-.. coroutinefunction:: connect_read_pipe(pipe, *, limit=2**16)
-
-   Takes a :term:`file-like object <file object>` *pipe* to return a
-   :class:`Stream` object of the mode :attr:`StreamMode.READ` that has
-   similar API of :class:`StreamReader`. It can also be used as an async context manager.
-
-   *limit* determines the buffer size limit used by the returned :class:`Stream`
-   instance. By default the limit is set to 64 KiB.
-
-   .. versionadded:: 3.8
-
-.. coroutinefunction:: connect_write_pipe(pipe, *, limit=2**16)
-
-   Takes a :term:`file-like object <file object>` *pipe* to return a
-   :class:`Stream` object of the mode :attr:`StreamMode.WRITE` that has
-   similar API of :class:`StreamWriter`. It can also be used as an async context manager.
-
-   *limit* determines the buffer size limit used by the returned :class:`Stream`
-   instance. By default the limit is set to 64 KiB.
-
-   .. versionadded:: 3.8
 
 .. rubric:: Unix Sockets
 
@@ -199,10 +170,6 @@ and work with streams:
 
       The *path* parameter can now be a :term:`path-like object`
 
-   .. deprecated-removed:: 3.8 3.10
-
-      ``open_unix_connection()`` is deprecated if favor of :func:`connect_unix`.
-
 
 .. coroutinefunction:: start_unix_server(client_connected_cb, path=None, \
                           \*, loop=None, limit=None, sock=None, \
@@ -224,10 +191,6 @@ and work with streams:
    .. versionchanged:: 3.7
 
       The *path* parameter can now be a :term:`path-like object`.
-
-   .. deprecated-removed:: 3.8 3.10
-
-      ``start_unix_server()`` is deprecated in favor of :class:`UnixStreamServer`.
 
 
 ---------
