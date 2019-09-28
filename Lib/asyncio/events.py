@@ -577,13 +577,10 @@ class AbstractEventLoopPolicy:
     """Abstract policy for accessing the event loop."""
 
     def get_event_loop(self):
-        """Get the event loop for the current context.
 
-        Returns an event loop object implementing the BaseEventLoop interface,
-        or raises an exception in case no event loop has been set for the
-        current context and the current policy does not specify to create one.
-
-        It should never return None."""
+        """ Get the event loop for the current context.
+            Returns an instance of EventLoop or raises an exception.
+       """
         raise NotImplementedError
 
     def set_event_loop(self, loop):
