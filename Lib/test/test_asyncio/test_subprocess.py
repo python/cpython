@@ -588,8 +588,8 @@ class SubprocessMixin:
     def test_process_create_warning(self):
         proto = subprocess.SubprocessStreamProtocol(limit=10, loop=self.loop)
         transp = mock.Mock()
-
-        subprocess.Process(transp, proto, loop=self.loop)
+        with self.assertWarns(DeprecationWarning):
+            subprocess.Process(transp, proto, loop=self.loop)
 
     def test_create_subprocess_exec_text_mode_fails(self):
         async def execute():
