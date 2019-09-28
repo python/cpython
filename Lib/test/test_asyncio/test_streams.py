@@ -670,7 +670,7 @@ class StreamTests(test_utils.TestCase):
         # test the server variant with a coroutine as client handler
         server = MyServer(self.loop)
         addr = server.start()
-        msg = self.loop.run_until_complete(asyncio.create_task(client(addr)))
+        msg = self.loop.run_until_complete(self.loop.create_task(client(addr)))
         server.stop()
         self.assertEqual(msg, b"hello world!\n")
 
