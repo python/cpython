@@ -10489,6 +10489,9 @@ then
     $as_echo "#define _REENTRANT 1" >>confdefs.h
 
     posix_threads=yes
+    if test "$ac_sys_system" = "SunOS"; then
+        CFLAGS="$CFLAGS -D_REENTRANT"
+    fi
 elif test "$ac_cv_kpthread" = "yes"
 then
     CC="$CC -Kpthread"
