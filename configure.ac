@@ -3079,6 +3079,9 @@ then
     # Defining _REENTRANT on system with POSIX threads should not hurt.
     AC_DEFINE(_REENTRANT)
     posix_threads=yes
+    if test "$ac_sys_system" = "SunOS"; then
+        CFLAGS="$CFLAGS -D_REENTRANT"
+    fi
 elif test "$ac_cv_kpthread" = "yes"
 then
     CC="$CC -Kpthread"
