@@ -59,7 +59,7 @@ class WindowsLoadTracker():
         self.p = subprocess.Popen(command, stdout=command_stdout, cwd=support.SAVEDCWD)
 
         # Close our copy of the write end of the pipe
-        os.close(command_stdout)
+        # os.close(command_stdout)
 
     def close(self):
         if self.p is None:
@@ -79,7 +79,7 @@ class WindowsLoadTracker():
         if res != 0:
             return
 
-        return overlapped.getbuffer().decode()
+        return overlapped.getbuffer().decode(encoding='oem', errors='ignore')
 
     def getloadavg(self):
         typeperf_output = self.read_output()

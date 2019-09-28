@@ -1,0 +1,2 @@
+fixed encoding issues with test execution on non english systems these
+systems will return default load 0.0
