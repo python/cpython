@@ -162,7 +162,7 @@ class StreamTests(test_utils.TestCase):
         # Read bytes.
         stream = asyncio.StreamReader(loop=self.loop,
                                       _asyncio_internal=True)
-        read_task = asyncio.Task(stream.read(30), loop=self.loop)
+        read_task = self.loop.create_task(stream.read(30) 
 
         def cb():
             stream.feed_data(self.DATA)
@@ -188,7 +188,7 @@ class StreamTests(test_utils.TestCase):
         # Read bytes, stop at eof.
         stream = asyncio.StreamReader(loop=self.loop,
                                       _asyncio_internal=True)
-        read_task = asyncio.Task(stream.read(1024), loop=self.loop)
+        read_task = self.loop.create_task(stream.read(1024))
 
         def cb():
             stream.feed_eof()
@@ -202,7 +202,7 @@ class StreamTests(test_utils.TestCase):
         # Read all bytes until eof.
         stream = asyncio.StreamReader(loop=self.loop,
                                       _asyncio_internal=True)
-        read_task = asyncio.Task(stream.read(-1), loop=self.loop)
+        read_task = self.loop.create_task(stream.read(-1))
 
         def cb():
             stream.feed_data(b'chunk1\n')
@@ -250,7 +250,7 @@ class StreamTests(test_utils.TestCase):
         stream = asyncio.StreamReader(loop=self.loop,
                                       _asyncio_internal=True)
         stream.feed_data(b'chunk1 ')
-        read_task = asyncio.Task(stream.readline(), loop=self.loop)
+        read_task = self.loop.create_task(stream.readline())
 
         def cb():
             stream.feed_data(b'chunk2 ')
