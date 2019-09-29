@@ -506,10 +506,20 @@ class _UnixReadPipeTransport(transports.ReadTransport):
                 self._loop.call_soon(self._call_connection_lost, None)
 
     def pause_reading(self):
+        if self._closing or self._paused:
+            return
+        self._paused = True
         self._loop._remove_reader(self._fileno)
+        if self._loop.get_debug():
+            logger.debug("%r pauses reading", self)
 
     def resume_reading(self):
+        if self._closing or not self._paused:
+            return
+        self._paused = False
         self._loop._add_reader(self._fileno, self._read_ready)
+        if self._loop.get_debug():
+            logger.debug("%r resumes reading", self)
 
     def set_protocol(self, protocol):
         self._protocol = protocol

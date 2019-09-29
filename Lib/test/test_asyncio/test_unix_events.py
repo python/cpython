@@ -790,6 +790,33 @@ class UnixReadPipeTransportTests(test_utils.TestCase):
         self.assertIsNone(tr._protocol)
         self.assertIsNone(tr._loop)
 
+    def test_pause_reading_on_closed_pipe(self):
+        tr = self.read_pipe_transport()
+        tr.close()
+        test_utils.run_briefly(self.loop)
+        self.assertIsNone(tr._loop)
+        tr.pause_reading()
+
+    def test_pause_reading_on_paused_pipe(self):
+        tr = self.read_pipe_transport()
+        tr.pause_reading()
+        # the second call should do nothing
+        tr.pause_reading()
+
+    def test_resume_reading_on_closed_pipe(self):
+        tr = self.read_pipe_transport()
+        tr.close()
+        test_utils.run_briefly(self.loop)
+        self.assertIsNone(tr._loop)
+        tr.resume_reading()
+
+    def test_resume_reading_on_paused_pipe(self):
+        tr = self.read_pipe_transport()
+        tr.resume_reading()
+        # the pipe is not paused
+        # resuming should do nothing
+        tr.resume_reading()
+
 
 class UnixWritePipeTransportTests(test_utils.TestCase):
 
