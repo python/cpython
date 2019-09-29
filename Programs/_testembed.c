@@ -1603,6 +1603,64 @@ static int test_init_setpythonhome(void)
 }
 
 
+static int test_init_warnoptions(void)
+{
+    PyStatus status;
+    putenv("PYTHONWARNINGS=ignore:::env1,ignore:::env2");
+
+    PySys_AddWarnOption(L"ignore:::PySys_AddWarnOption1");
+    PySys_AddWarnOption(L"ignore:::PySys_AddWarnOption2");
+
+    PyConfig config;
+    config.struct_size = sizeof(PyConfig);
+
+    status = PyConfig_InitPythonConfig(&config);
+    if (PyStatus_Exception(status)) {
+        Py_ExitStatusException(status);
+    }
+
+    config.dev_mode = 1;
+    config.bytes_warning = 1;
+
+    config_set_program_name(&config);
+
+    status = PyWideStringList_Append(&config.warnoptions,
+                                     L"ignore:::PyConfig_BeforeRead");
+    if (PyStatus_Exception(status)) {
+        Py_ExitStatusException(status);
+    }
+
+    wchar_t* argv[] = {
+        L"python3",
+        L"-Wignore:::cmdline1",
+        L"-Wignore:::cmdline2"};
+    config_set_argv(&config, Py_ARRAY_LENGTH(argv), argv);
+    config.parse_argv = 1;
+
+    status = PyConfig_Read(&config);
+    if (PyStatus_Exception(status)) {
+        Py_ExitStatusException(status);
+    }
+
+    status = PyWideStringList_Append(&config.warnoptions,
+                                     L"ignore:::PyConfig_AfterRead");
+    if (PyStatus_Exception(status)) {
+        Py_ExitStatusException(status);
+    }
+
+    status = PyWideStringList_Insert(&config.warnoptions,
+                                     0, L"ignore:::PyConfig_Insert0");
+    if (PyStatus_Exception(status)) {
+        Py_ExitStatusException(status);
+    }
+
+    init_from_config_clear(&config);
+    dump_config();
+    Py_Finalize();
+    return 0;
+}
+
+
 static void configure_init_main(PyConfig *config)
 {
     wchar_t* argv[] = {
@@ -1746,6 +1804,7 @@ static struct TestCase TestCases[] = {
     {"test_init_setpath", test_init_setpath},
     {"test_init_setpath_config", test_init_setpath_config},
     {"test_init_setpythonhome", test_init_setpythonhome},
+    {"test_init_warnoptions", test_init_warnoptions},
     {"test_run_main", test_run_main},
 
     {"test_open_code_hook", test_open_code_hook},

@@ -2037,13 +2037,13 @@ _clear_preinit_entries(_Py_PreInitEntry *optionlist)
 
 
 PyStatus
-_PySys_ReadPreinitWarnOptions(PyConfig *config)
+_PySys_ReadPreinitWarnOptions(PyWideStringList *options)
 {
     PyStatus status;
     _Py_PreInitEntry entry;
 
     for (entry = _preinit_warnoptions; entry != NULL; entry = entry->next) {
-        status = PyWideStringList_Append(&config->warnoptions, entry->value);
+        status = PyWideStringList_Append(options, entry->value);
         if (_PyStatus_EXCEPTION(status)) {
             return status;
         }

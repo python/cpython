@@ -45,7 +45,7 @@ extern "C" {
 
 /* --- PyWideStringList ------------------------------------------------ */
 
-#define PyWideStringList_INIT (PyWideStringList){.length = 0, .items = NULL}
+#define _PyWideStringList_INIT (PyWideStringList){.length = 0, .items = NULL}
 
 #ifndef NDEBUG
 PyAPI_FUNC(int) _PyWideStringList_CheckConsistency(const PyWideStringList *list);
