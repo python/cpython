@@ -445,6 +445,7 @@ class _UnixReadPipeTransport(transports.ReadTransport):
         self._fileno = pipe.fileno()
         self._protocol = protocol
         self._closing = False
+        self._paused = False
 
         mode = os.fstat(self._fileno).st_mode
         if not (stat.S_ISFIFO(mode) or
