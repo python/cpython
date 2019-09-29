@@ -3906,14 +3906,11 @@ order (MRO) for bases """
         self.assertEqual(a, 1)
 
     def test_no_ipow(self):
-        class A:
-            pass
-
         class B:
             def __rpow__(self, other):
                 return 1
 
-        a = A()
+        a = object()
         b = B()
         a **= b
         self.assertEqual(a, 1)
