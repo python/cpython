@@ -379,9 +379,11 @@ In addition, the following error handler is specific to the given codecs:
 +-------------------+------------------------+-------------------------------------------+
 | Value             | Codecs                 | Meaning                                   |
 +===================+========================+===========================================+
-|``'surrogatepass'``| utf-8, utf-16, utf-32, | Allow encoding and decoding of surrogate  |
-|                   | utf-16-be, utf-16-le,  | codes. These codecs normally treat the    |
-|                   | utf-32-be, utf-32-le   | presence of surrogates as an error.       |
+|``'surrogatepass'``| utf-8, utf-16, utf-32, | Allow encoding and decoding Surrogate code|
+|                   | utf-16-be, utf-16-le,  | point (``U+D800`` - ``U+DFFF``) as normal |
+|                   | utf-32-be, utf-32-le   | code point. Otherwise these codecs treat  |
+|                   |                        | the presence of Surrogate code point in   |
+|                   |                        | :class:`str` as an error.                 |
 +-------------------+------------------------+-------------------------------------------+
 
 .. versionadded:: 3.1
@@ -489,7 +491,7 @@ functions:
 
    The unencodable character is replaced by a ``\N{...}`` escape sequence. The
    set of characters that appear in the braces is the Name property from
-   Unicode Character Database. For example, the German lowercase letter ``"ß"``
+   Unicode Character Database. For example, the German lowercase letter ``'ß'``
    will be converted to byte sequence ``\N{LATIN SMALL LETTER SHARP S}`` .
 
    .. versionadded:: 3.5
