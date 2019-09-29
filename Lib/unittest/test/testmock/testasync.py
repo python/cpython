@@ -396,7 +396,7 @@ class AsyncArguments(unittest.TestCase):
                 RuntimeError('coroutine raised StopIteration')
             )
 
-class AsyncMagicTypes(unittest.TestCase):
+class AsyncMagicMethods(unittest.TestCase):
     def test_async_magic_methods_return_async_mocks(self):
         m_mock = MagicMock()
         self.assertIsInstance(m_mock.__aenter__, AsyncMock)
