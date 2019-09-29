@@ -1079,8 +1079,11 @@ class HTTPConnection:
         # Prevent CVE-2019-9740.
         match = _contains_disallowed_url_pchar_re.search(url)
         if match:
-            raise InvalidURL(f"URL can't contain control characters. {url!r} "
-                             f"(found at least {match.group()!r})")
+            msg = (
+                "URL can't contain control characters. {url!r} "
+                "(found at least {matched!r})"
+            ).format(matched=match.group(), **locals())
+            raise InvalidURL(msg)
 
     def putheader(self, header, *values):
         """Send a request header line to the server.
