@@ -220,7 +220,10 @@ typedef struct {
     wchar_t *program_name;
 
     PyWideStringList xoptions;     /* Command line -X options */
-    PyWideStringList warnoptions;  /* Warnings options */
+
+    /* Warnings options: lowest to highest priority. warnings.filters
+       is built in the reverse order (highest to lowest priority). */
+    PyWideStringList warnoptions;
 
     /* If equal to zero, disable the import of the module site and the
        site-dependent manipulations of sys.path that it entails. Also disable
