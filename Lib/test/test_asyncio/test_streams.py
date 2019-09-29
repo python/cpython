@@ -996,7 +996,7 @@ os.close(fd)
 
         self.assertEqual(messages, [])
 
-    def test_async_writer_api(self):
+    def test_async_writer_api_exception_after_close(self):
         async def inner(httpd):
             rd, wr = await asyncio.open_connection(*httpd.address)
 
