@@ -75,7 +75,7 @@ _Py_SetFileSystemEncoding(const char *encoding, const char *errors)
 PyStatus
 _PyArgv_AsWstrList(const _PyArgv *args, PyWideStringList *list)
 {
-    PyWideStringList wargv = PyWideStringList_INIT;
+    PyWideStringList wargv = _PyWideStringList_INIT;
     if (args->use_bytes_argv) {
         size_t size = sizeof(wchar_t*) * args->argc;
         wargv.items = (wchar_t **)PyMem_RawMalloc(size);
