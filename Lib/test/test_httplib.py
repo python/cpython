@@ -702,7 +702,7 @@ class BasicTest(TestCase):
         with self.assertRaisesRegexp(socket.error, "Invalid response"):
             conn._tunnel()
 
-  def test_putrequest_override_validation(self):
+    def test_putrequest_override_validation(self):
         """
         It should be possible to override the default validation
         behavior in putrequest (bpo-38216).
