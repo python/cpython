@@ -746,9 +746,9 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
                 'cmdline_xoption',
             ],
             'warnoptions': [
-                'config_warnoption',
                 'cmdline_warnoption',
                 'default::BytesWarning',
+                'config_warnoption',
             ],
             'run_command': 'pass\n',
 
@@ -952,9 +952,9 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
                 'faulthandler',
             ],
             'warnoptions': [
-                'ignore:::config_warnoption',
                 'ignore:::cmdline_warnoption',
                 'ignore:::sysadd_warnoption',
+                'ignore:::config_warnoption',
             ],
         }
         self.check_all_configs("test_init_sys_add", config, api=API_PYTHON)
@@ -1267,6 +1267,30 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
         self.assertEqual(Py_GetProgramName(), config['program_name'])
         self.assertEqual(Py_GetProgramFullPath(), config['executable'])
         self.assertEqual(Py_GetPythonHome(), config['home'])
+
+    def test_init_warnoptions(self):
+        # lowest to highest priority
+        warnoptions = [
+            'ignore:::PyConfig_Insert0',      # PyWideStringList_Insert(0)
+            'default',                        # PyConfig.dev_mode=1
+            'ignore:::env1',                  # PYTHONWARNINGS env var
+            'ignore:::env2',                  # PYTHONWARNINGS env var
+            'ignore:::cmdline1',              # -W opt command line option
+            'ignore:::cmdline2',              # -W opt command line option
+            'default::BytesWarning',          # PyConfig.bytes_warnings=1
+            'ignore:::PySys_AddWarnOption1',  # PySys_AddWarnOption()
+            'ignore:::PySys_AddWarnOption2',  # PySys_AddWarnOption()
+            'ignore:::PyConfig_BeforeRead',   # PyConfig.warnoptions
+            'ignore:::PyConfig_AfterRead']    # PyWideStringList_Append()
+        preconfig = dict(allocator=PYMEM_ALLOCATOR_DEBUG)
+        config = {
+            'dev_mode': 1,
+            'faulthandler': 1,
+            'bytes_warning': 1,
+            'warnoptions': warnoptions,
+        }
+        self.check_all_configs("test_init_warnoptions", config, preconfig,
+                               api=API_PYTHON)
 
 
 class AuditingTests(EmbeddingTestsMixin, unittest.TestCase):
