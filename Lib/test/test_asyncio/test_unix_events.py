@@ -736,6 +736,7 @@ class UnixReadPipeTransportTests(test_utils.TestCase):
     @mock.patch('os.read')
     def test_resume_reading(self, m_read):
         tr = self.read_pipe_transport()
+        tr.pause_reading()
         tr.resume_reading()
         self.loop.assert_reader(5, tr._read_ready)
 
@@ -812,7 +813,6 @@ class UnixReadPipeTransportTests(test_utils.TestCase):
 
     def test_resume_reading_on_paused_pipe(self):
         tr = self.read_pipe_transport()
-        tr.resume_reading()
         # the pipe is not paused
         # resuming should do nothing
         tr.resume_reading()
