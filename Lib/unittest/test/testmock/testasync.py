@@ -379,6 +379,43 @@ class AsyncArguments(unittest.TestCase):
                 RuntimeError('coroutine raised StopIteration')
             )
 
+class AsyncMagicMethods(unittest.TestCase):
+    def test_async_magic_methods_return_async_mocks(self):
+        m_mock = MagicMock()
+        self.assertIsInstance(m_mock.__aenter__, AsyncMock)
+        self.assertIsInstance(m_mock.__aexit__, AsyncMock)
+        self.assertIsInstance(m_mock.__anext__, AsyncMock)
+        # __aiter__ is actually a synchronous object
+        # so should return a MagicMock
+        self.assertIsInstance(m_mock.__aiter__, MagicMock)
+
+    def test_sync_magic_methods_return_magic_mocks(self):
+        a_mock = AsyncMock()
+        self.assertIsInstance(a_mock.__enter__, MagicMock)
+        self.assertIsInstance(a_mock.__exit__, MagicMock)
+        self.assertIsInstance(a_mock.__next__, MagicMock)
+        self.assertIsInstance(a_mock.__len__, MagicMock)
+
+    def test_magicmock_has_async_magic_methods(self):
+        m_mock = MagicMock()
+        self.assertTrue(hasattr(m_mock, "__aenter__"))
+        self.assertTrue(hasattr(m_mock, "__aexit__"))
+        self.assertTrue(hasattr(m_mock, "__anext__"))
+
+    def test_asyncmock_has_sync_magic_methods(self):
+        a_mock = AsyncMock()
+        self.assertTrue(hasattr(a_mock, "__enter__"))
+        self.assertTrue(hasattr(a_mock, "__exit__"))
+        self.assertTrue(hasattr(a_mock, "__next__"))
+        self.assertTrue(hasattr(a_mock, "__len__"))
+
+    def test_magic_methods_are_async_functions(self):
+        m_mock = MagicMock()
+        self.assertIsInstance(m_mock.__aenter__, AsyncMock)
+        self.assertIsInstance(m_mock.__aexit__, AsyncMock)
+        # AsyncMocks are also coroutine functions
+        self.assertTrue(asyncio.iscoroutinefunction(m_mock.__aenter__))
+        self.assertTrue(asyncio.iscoroutinefunction(m_mock.__aexit__))
 
 class AsyncContextManagerTest(unittest.TestCase):
 
@@ -405,24 +442,6 @@ class AsyncContextManagerTest(unittest.TestCase):
             async with self.session.post('https://python.org') as response:
                 val = await response.json()
                 return val
-
-    def test_async_magic_methods_are_async_mocks_with_magicmock(self):
-        cm_mock = MagicMock(self.WithAsyncContextManager())
-        self.assertIsInstance(cm_mock.__aenter__, AsyncMock)
-        self.assertIsInstance(cm_mock.__aexit__, AsyncMock)
-
-    def test_magicmock_has_async_magic_methods(self):
-        cm = MagicMock(name='magic_cm')
-        self.assertTrue(hasattr(cm, "__aenter__"))
-        self.assertTrue(hasattr(cm, "__aexit__"))
-
-    def test_magic_methods_are_async_functions(self):
-        cm = MagicMock(name='magic_cm')
-        self.assertIsInstance(cm.__aenter__, AsyncMock)
-        self.assertIsInstance(cm.__aexit__, AsyncMock)
-        # AsyncMocks are also coroutine functions
-        self.assertTrue(asyncio.iscoroutinefunction(cm.__aenter__))
-        self.assertTrue(asyncio.iscoroutinefunction(cm.__aexit__))
 
     def test_set_return_value_of_aenter(self):
         def inner_test(mock_type):
