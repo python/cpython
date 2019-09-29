@@ -409,7 +409,7 @@ class NonCallableMock(Base):
             if spec_arg and _is_async_obj(spec_arg):
                 bases = (AsyncMockMixin, cls)
         new = type(cls.__name__, bases, {'__doc__': cls.__doc__})
-        instance = object.__new__(new)
+        instance = _safe_super(NonCallableMock, cls).__new__(new)
         return instance
 
 
@@ -990,17 +990,18 @@ class NonCallableMock(Base):
 
         _type = type(self)
         if issubclass(_type, MagicMock) and _new_name in _async_method_magics:
+            # Any asynchronous magic becomes an AsyncMock
             klass = AsyncMock
-        elif _new_name  in _sync_async_magics:
-            # Special case these ones b/c users will assume they are async,
-            # but they are actually sync (ie. __aiter__)
-            klass = MagicMock
         elif issubclass(_type, AsyncMockMixin):
-            klass = AsyncMock
+            if _new_name in _all_sync_magics:
+                # Any synchronous magic becomes a MagicMock
+                klass = MagicMock
+            else:
+                klass = AsyncMock
         elif not issubclass(_type, CallableMixin):
             if issubclass(_type, NonCallableMagicMock):
                 klass = MagicMock
-            elif issubclass(_type, NonCallableMock) :
+            elif issubclass(_type, NonCallableMock):
                 klass = Mock
         else:
             klass = _type.__mro__[1]
@@ -1886,6 +1887,7 @@ magic_methods = (
     "round trunc floor ceil "
     "bool next "
     "fspath "
+    "aiter "
 )
 
 numerics = (
@@ -2024,7 +2026,7 @@ def _set_return_value(mock, method, name):
 
 
 
-class MagicMixin(object):
+class MagicMixin(Base):
     def __init__(self, /, *args, **kw):
         self._mock_set_magics()  # make magic work for kwargs in init
         _safe_super(MagicMixin, self).__init__(*args, **kw)
@@ -2032,13 +2034,14 @@ class MagicMixin(object):
 
 
     def _mock_set_magics(self):
-        these_magics = _magics
+        orig_magics = _magics | _async_method_magics
+        these_magics = orig_magics
 
         if getattr(self, "_mock_methods", None) is not None:
-            these_magics = _magics.intersection(self._mock_methods)
+            these_magics = orig_magics.intersection(self._mock_methods)
 
             remove_magics = set()
-            remove_magics = _magics - these_magics
+            remove_magics = orig_magics - these_magics
 
             for entry in remove_magics:
                 if entry in type(self).__dict__:
@@ -2066,33 +2069,13 @@ class NonCallableMagicMock(MagicMixin, NonCallableMock):
         self._mock_set_magics()
 
 
-class AsyncMagicMixin:
+class AsyncMagicMixin(MagicMixin):
     def __init__(self, /, *args, **kw):
-        self._mock_set_async_magics()  # make magic work for kwargs in init
+        self._mock_set_magics()  # make magic work for kwargs in init
         _safe_super(AsyncMagicMixin, self).__init__(*args, **kw)
-        self._mock_set_async_magics()  # fix magic broken by upper level init
+        self._mock_set_magics()  # fix magic broken by upper level init
 
-    def _mock_set_async_magics(self):
-        these_magics = _async_magics
-
-        if getattr(self, "_mock_methods", None) is not None:
-            these_magics = _async_magics.intersection(self._mock_methods)
-            remove_magics = _async_magics - these_magics
-
-            for entry in remove_magics:
-                if entry in type(self).__dict__:
-                    # remove unneeded magic methods
-                    delattr(self, entry)
-
-        # don't overwrite existing attributes if called a second time
-        these_magics = these_magics - set(type(self).__dict__)
-
-        _type = type(self)
-        for entry in these_magics:
-            setattr(_type, entry, MagicProxy(entry, self))
-
-
-class MagicMock(MagicMixin, AsyncMagicMixin, Mock):
+class MagicMock(MagicMixin, Mock):
     """
     MagicMock is a subclass of Mock with default implementations
     of most of the magic methods. You can use MagicMock without having to
@@ -2114,7 +2097,7 @@ class MagicMock(MagicMixin, AsyncMagicMixin, Mock):
 
 
 
-class MagicProxy(object):
+class MagicProxy(Base):
     def __init__(self, name, parent):
         self.name = name
         self.parent = parent
