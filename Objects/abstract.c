@@ -1178,13 +1178,8 @@ PyNumber_InPlaceRemainder(PyObject *v, PyObject *w)
 PyObject *
 PyNumber_InPlacePower(PyObject *v, PyObject *w, PyObject *z)
 {
-    if (Py_TYPE(v)->tp_as_number &&
-        Py_TYPE(v)->tp_as_number->nb_inplace_power != NULL) {
-        return ternary_iop(v, w, z, NB_SLOT(nb_inplace_power), NB_SLOT(nb_power), "**=");
-    }
-    else {
-        return ternary_op(v, w, z, NB_SLOT(nb_power), "**=");
-    }
+    return ternary_iop(v, w, z, NB_SLOT(nb_inplace_power),
+                                NB_SLOT(nb_power), "**=");
 }
 
 

@@ -3905,6 +3905,19 @@ order (MRO) for bases """
         a **= b
         self.assertEqual(a, 1)
 
+    def test_no_ipow(self):
+        class A:
+            pass
+
+        class B:
+            def __rpow__(self, other):
+                return 1
+
+        a = A()
+        b = B()
+        a **= b
+        self.assertEqual(a, 1)
+
     def test_mutable_bases(self):
         # Testing mutable bases...
 
