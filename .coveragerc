@@ -1,0 +1,14 @@
+[report]
+# Regexes for lines to exclude from consideration
+exclude_lines =
+    # Don't complain if non-runnable code isn't run:
+    if 0:
+    if __name__ == .__main__.:
+
+    # pragma: no cover
+    # pragma: no branch
+
+    .*# htest #
+    if not (_htest or _utest):
+    if not .*_utest:
+    if .*_htest:
