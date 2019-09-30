@@ -209,7 +209,9 @@ PyInterpreterState_New(void)
     memset(interp, 0, sizeof(*interp));
     interp->id_refcount = -1;
 
-    // TODO: Should this pass the API/ABI version from the parent interpreter?
+    // Note: If "header_version" is ever used for more than just an initial
+    // interpreter config time compatibility check, then the API/ABI version
+    // from the parent interpreter should passed down here
     interp->config.header_version = PY_VERSION_HEX;
     PyStatus status = PyConfig_InitPythonConfig(&interp->config);
     if (_PyStatus_EXCEPTION(status)) {
