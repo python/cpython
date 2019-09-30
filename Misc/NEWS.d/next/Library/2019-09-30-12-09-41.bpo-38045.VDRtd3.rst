@@ -1,0 +1,1 @@
+Improve the performance of _decompose() in the enum.py. Patch by hongweipeng.
