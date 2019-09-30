@@ -701,7 +701,7 @@ PyCStructUnionType_update_stgdict(PyObject *type, PyObject *fields, int isStruct
                 assert(actual_type_index <= MAX_ELEMENTS);
             }
             else {
-                int length = dict->length;
+                Py_ssize_t length = dict->length;
                 StgDictObject *edict;
 
                 edict = PyType_stgdict(dict->proto);
