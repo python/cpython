@@ -992,8 +992,9 @@ class NonCallableMock(Base):
             # Any asynchronous magic becomes an AsyncMock
             klass = AsyncMock
         elif issubclass(_type, AsyncMockMixin):
-            if _new_name in _all_sync_magics:
-                # Any synchronous magic becomes a MagicMock
+            if (_new_name in _all_sync_magics or
+                    self._mock_methods and _new_name in self._mock_methods):
+                # Any synchronous method on AsyncMock becomes a MagicMock
                 klass = MagicMock
             else:
                 klass = AsyncMock

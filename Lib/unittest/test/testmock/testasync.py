@@ -3,7 +3,7 @@ import inspect
 import re
 import unittest
 
-from unittest.mock import (ANY, call, AsyncMock, patch, MagicMock,
+from unittest.mock import (ANY, call, AsyncMock, patch, MagicMock, Mock,
                            create_autospec, sentinel, _CallList)
 
 
@@ -232,33 +232,50 @@ class AsyncAutospecTest(unittest.TestCase):
 
 
 class AsyncSpecTest(unittest.TestCase):
-    def test_spec_as_async_positional_magicmock(self):
-        mock = MagicMock(async_func)
-        self.assertIsInstance(mock, MagicMock)
-        m = mock()
-        self.assertTrue(inspect.isawaitable(m))
-        asyncio.run(m)
+    def test_spec_normal_methods_on_class(self):
+        def inner_test(mock_type):
+            mock = mock_type(AsyncClass)
+            self.assertIsInstance(mock.async_method, AsyncMock)
+            self.assertIsInstance(mock.normal_method, MagicMock)
 
-    def test_spec_as_async_kw_magicmock(self):
-        mock = MagicMock(spec=async_func)
-        self.assertIsInstance(mock, MagicMock)
-        m = mock()
-        self.assertTrue(inspect.isawaitable(m))
-        asyncio.run(m)
+        for mock_type in [AsyncMock, MagicMock]:
+            with self.subTest(f"test method types with {mock_type}"):
+                inner_test(mock_type)
 
-    def test_spec_as_async_kw_AsyncMock(self):
-        mock = AsyncMock(spec=async_func)
-        self.assertIsInstance(mock, AsyncMock)
-        m = mock()
-        self.assertTrue(inspect.isawaitable(m))
-        asyncio.run(m)
+    def test_spec_normal_methods_on_class_with_mock(self):
+        mock = Mock(AsyncClass)
+        self.assertIsInstance(mock.async_method, AsyncMock)
+        self.assertIsInstance(mock.normal_method, Mock)
 
-    def test_spec_as_async_positional_AsyncMock(self):
-        mock = AsyncMock(async_func)
-        self.assertIsInstance(mock, AsyncMock)
-        m = mock()
-        self.assertTrue(inspect.isawaitable(m))
-        asyncio.run(m)
+    def test_spec_mock_type_kw(self):
+        def inner_test(mock_type):
+            async_mock = mock_type(spec=async_func)
+            self.assertIsInstance(async_mock, mock_type)
+            with self.assertWarns(RuntimeWarning):
+                # Will raise a warning because never awaited
+                self.assertTrue(inspect.isawaitable(async_mock()))
+
+            sync_mock = mock_type(spec=normal_func)
+            self.assertIsInstance(sync_mock, mock_type)
+
+        for mock_type in [AsyncMock, MagicMock, Mock]:
+            with self.subTest(f"test spec kwarg with {mock_type}"):
+                inner_test(mock_type)
+
+    def test_spec_mock_type_positional(self):
+        def inner_test(mock_type):
+            async_mock = mock_type(async_func)
+            self.assertIsInstance(async_mock, mock_type)
+            with self.assertWarns(RuntimeWarning):
+                # Will raise a warning because never awaited
+                self.assertTrue(inspect.isawaitable(async_mock()))
+
+            sync_mock = mock_type(normal_func)
+            self.assertIsInstance(sync_mock, mock_type)
+
+        for mock_type in [AsyncMock, MagicMock, Mock]:
+            with self.subTest(f"test spec positional with {mock_type}"):
+                inner_test(mock_type)
 
     def test_spec_as_normal_kw_AsyncMock(self):
         mock = AsyncMock(spec=normal_func)
