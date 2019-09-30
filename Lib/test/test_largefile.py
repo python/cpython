@@ -5,8 +5,8 @@ import os
 import stat
 import sys
 import unittest
-import importlib
 import socket
+import shutil
 import threading
 from test.support import TESTFN, requires, unlink, bigmemtest, find_unused_port
 import io  # C implementation of io
@@ -154,9 +154,8 @@ class TestCopyfile(LargeFileTest, unittest.TestCase):
     open = staticmethod(io.open)
 
     def test_it(self):
-        # ...in case _USE_CP_SENDFILE has been set to False by another test.
-        import shutil as _shutil
-        shutil = importlib.reload(_shutil)
+        # Internally shutil.copyfile() can use "fast copy" methods like
+        # os.sendfile().
         size = os.path.getsize(TESTFN)
         shutil.copyfile(TESTFN, TESTFN2)
         self.assertEqual(os.path.getsize(TESTFN2), size)
