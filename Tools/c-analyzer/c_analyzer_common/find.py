@@ -1,14 +1,15 @@
-from c_analyzer_common import SOURCE_DIRS, PYTHON
+from c_analyzer_common import SOURCE_DIRS, PYTHON, files
 from c_analyzer_common.info import UNKNOWN, Variable
 from c_symbols import (
         info as s_info,
         find as s_find,
         )
+from c_parser import (
+        find as p_find,
+        )
 
-
-# XXX needs tests:
+# XXX need tests:
 # * vars_from_source
-# * vars_from_preprocessed
 
 
 def _remove_cached(cache, var):
@@ -42,21 +43,25 @@ def vars_from_binary(binfile=PYTHON, *,
         _remove_cached(cache, var)
 
 
-def vars_from_source(filenames, *,
-                     known=None,
+def vars_from_source(filenames=None, *,
+                     iter_vars=p_find.variables,
+                     preprocessed=None,
+                     known=None,  # for types
+                     dirnames=SOURCE_DIRS,
+                     _iter_files=files.iter_files_by_suffix,
                      ):
     """Yield a Variable for each declaration in the raw source code.
 
     Details are filled in from the given "known" variables and types.
     """
-    raise NotImplementedError
-
-
-def vars_from_preprocessed(filenames, *,
-                           known=None,
-                           ):
-    """Yield a Variable for each found declaration.
-
-    Details are filled in from the given "known" variables and types.
-    """
-    raise NotImplementedError
+    if filenames is None:
+        if not dirnames:
+            return
+        filenames = _iter_files(dirnames, ('.c', '.h'))
+    cache = {}
+    for var in _iter_vars(filenames,
+                          perfilecache=cache,
+                          preprocessed=preprocessed,
+                          ):
+        yield var
+        _remove_cached(cache, var)

@@ -28,8 +28,8 @@ def _resolve_known(symbol, knownvars):
 def get_resolver(known=None, dirnames=(), *,
                  filenames=None,
                  perfilecache=None,
+                 preprocessed=False,
                  _iter_files=files.iter_files_by_suffix,
-#                 _look_up_known=known.look_up_variable,
                  _from_source=p_find.variable_from_id,
                  ):
     """Return a "resolver" func for the given known vars/types and filenames.
@@ -67,6 +67,7 @@ def get_resolver(known=None, dirnames=(), *,
                     #return None
                     found = _from_source(symbol, filenames,
                                          perfilecache=perfilecache,
+                                         preprocessed=preprocessed,
                                          )
                 return found
         else:
@@ -76,6 +77,7 @@ def get_resolver(known=None, dirnames=(), *,
         def resolve(symbol):
             return _from_source(symbol, filenames,
                                 perfilecache=perfilecache,
+                                preprocessed=preprocessed,
                                 )
     else:
         def resolve(symbol):
@@ -85,6 +87,7 @@ def get_resolver(known=None, dirnames=(), *,
 
 def symbol(symbol, filenames, known=None, *,
            perfilecache=None,
+           preprocessed=False,
            _get_resolver=get_resolver,
            ):
     """Return the Variable matching the given symbol.
@@ -102,6 +105,7 @@ def symbol(symbol, filenames, known=None, *,
     """
     resolve = _get_resolver(known, filenames,
                             perfilecache=perfilecache,
+                            preprocessed=preprocessed,
                             )
     return resolve(symbol)
 

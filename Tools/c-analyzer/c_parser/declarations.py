@@ -228,6 +228,7 @@ def parse_compound(stmt, blocks):
 
 
 def iter_variables(filename, *,
+                   preprocessed=False,
                    _iter_source_lines=source.iter_lines,
                    _iter_global=iter_global_declarations,
                    _iter_local=iter_local_statements,
@@ -236,6 +237,8 @@ def iter_variables(filename, *,
                    _parse_compound=parse_compound,
                    ):
     """Yield (funcname, name, vartype) for every variable in the given file."""
+    if preprocessed:
+        raise NotImplementedError
     lines = _iter_source_lines(filename)
     for stmt, body in _iter_global(lines):
         # At the file top-level we only have to worry about vars & funcs.
