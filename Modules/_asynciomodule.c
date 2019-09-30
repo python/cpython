@@ -2657,7 +2657,6 @@ task_step_impl(TaskObj *task, PyObject *exc)
         /* Some other exception; pop it and call Task.set_exception() */
         PyErr_Fetch(&et, &ev, &tb);
 
-set_exception:
         assert(et);
         if (!ev || !PyObject_TypeCheck(ev, (PyTypeObject *) et)) {
             PyErr_NormalizeException(&et, &ev, &tb);
