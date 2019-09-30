@@ -707,7 +707,7 @@ class BasicTest(TestCase):
         It should be possible to override the default validation
         behavior in putrequest (bpo-38216).
         """
-        class UnsafeHTTPConnection(client.HTTPConnection):
+        class UnsafeHTTPConnection(httplib.HTTPConnection):
             def _validate_path(self, url):
                 pass
 
