@@ -704,7 +704,13 @@ PyConfig
 
    .. c:member:: PyWideStringList warnoptions
 
-      Options of the :mod:`warnings` module to build warnings filters.
+      :data:`sys.warnoptions`: options of the :mod:`warnings` module to build
+      warnings filters: lowest to highest priority.
+
+      The :mod:`warnings` module adds :data:`sys.warnoptions` in the reverse
+      order: the last :c:member:`PyConfig.warnoptions` item becomes the first
+      item of :data:`warnings.filters` which is checked first (highest
+      priority).
 
    .. c:member:: int write_bytecode
 
