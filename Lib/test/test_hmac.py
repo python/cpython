@@ -21,7 +21,7 @@ def ignore_warning(func):
 
 class TestVectorsTestCase(unittest.TestCase):
 
-    @requires_hashdigest('md5')
+    @requires_hashdigest('md5', openssl=True)
     def test_md5_vectors(self):
         # Test the HMAC module against test vectors from the RFC.
 
@@ -79,7 +79,7 @@ class TestVectorsTestCase(unittest.TestCase):
                  b"and Larger Than One Block-Size Data"),
                 "6f630fad67cda0ee1fb1f562db3aa53e")
 
-    @requires_hashdigest('sha1')
+    @requires_hashdigest('sha1', openssl=True)
     def test_sha_vectors(self):
         def shatest(key, data, digest):
             h = hmac.HMAC(key, data, digestmod=hashlib.sha1)
@@ -272,19 +272,19 @@ class TestVectorsTestCase(unittest.TestCase):
                                    '134676fb6de0446065c97440fa8c6a58',
                  })
 
-    @requires_hashdigest('sha224')
+    @requires_hashdigest('sha224', openssl=True)
     def test_sha224_rfc4231(self):
         self._rfc4231_test_cases(hashlib.sha224, 'sha224', 28, 64)
 
-    @requires_hashdigest('sha256')
+    @requires_hashdigest('sha256', openssl=True)
     def test_sha256_rfc4231(self):
         self._rfc4231_test_cases(hashlib.sha256, 'sha256', 32, 64)
 
-    @requires_hashdigest('sha384')
+    @requires_hashdigest('sha384', openssl=True)
     def test_sha384_rfc4231(self):
         self._rfc4231_test_cases(hashlib.sha384, 'sha384', 48, 128)
 
-    @requires_hashdigest('sha512')
+    @requires_hashdigest('sha512', openssl=True)
     def test_sha512_rfc4231(self):
         self._rfc4231_test_cases(hashlib.sha512, 'sha512', 64, 128)
 

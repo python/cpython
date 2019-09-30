@@ -556,7 +556,7 @@ EVPnew(const EVP_MD *digest,
     if ((self = newEVPobject()) == NULL)
         return NULL;
 
-    if (!EVP_DigestInit(self->ctx, digest)) {
+    if (!EVP_DigestInit_ex(self->ctx, digest, NULL)) {
         _setException(PyExc_ValueError);
         Py_DECREF(self);
         return NULL;

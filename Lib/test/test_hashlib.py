@@ -8,6 +8,7 @@
 
 import array
 from binascii import unhexlify
+import functools
 import hashlib
 import importlib
 import itertools
@@ -18,6 +19,7 @@ import unittest
 import warnings
 from test import support
 from test.support import _4G, bigmemtest, import_fresh_module
+from test.support import requires_hashdigest
 from http.client import HTTPException
 
 # Were we compiled --with-pydebug or with #define Py_DEBUG?
@@ -119,6 +121,7 @@ class HashLibTestCase(unittest.TestCase):
             constructors.add(_test_algorithm_via_hashlib_new)
 
         _hashlib = self._conditional_import_module('_hashlib')
+        self._hashlib = _hashlib
         if _hashlib:
             # These two algorithms should always be present when this module
             # is compiled.  If not, something was compiled wrong.
@@ -127,7 +130,13 @@ class HashLibTestCase(unittest.TestCase):
             for algorithm, constructors in self.constructors_to_test.items():
                 constructor = getattr(_hashlib, 'openssl_'+algorithm, None)
                 if constructor:
-                    constructors.add(constructor)
+                    try:
+                        constructor()
+                    except ValueError:
+                        # default constructor blocked by crypto policy
+                        pass
+                    else:
+                        constructors.add(constructor)
 
         def add_builtin_constructor(name):
             constructor = getattr(hashlib, "__get_builtin_constructor")(name)
