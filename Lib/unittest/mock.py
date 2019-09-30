@@ -246,7 +246,6 @@ def _setup_async_mock(mock):
     mock.await_count = 0
     mock.await_args = None
     mock.await_args_list = _CallList()
-    mock.awaited = _AwaitEvent(mock)
 
     # Mock is not configured yet so the attributes are set
     # to a function and then the corresponding mock helper function
@@ -2102,7 +2101,6 @@ class MagicProxy(Base):
 
 
 class AsyncMockMixin(Base):
-    awaited = _delegating_property('awaited')
     await_count = _delegating_property('await_count')
     await_args = _delegating_property('await_args')
     await_args_list = _delegating_property('await_args_list')
@@ -2116,7 +2114,6 @@ class AsyncMockMixin(Base):
         # It is set through __dict__ because when spec_set is True, this
         # attribute is likely undefined.
         self.__dict__['_is_coroutine'] = asyncio.coroutines._is_coroutine
-        self.__dict__['_mock_awaited'] = _AwaitEvent(self)
         self.__dict__['_mock_await_count'] = 0
         self.__dict__['_mock_await_args'] = None
         self.__dict__['_mock_await_args_list'] = _CallList()
@@ -2145,7 +2142,6 @@ class AsyncMockMixin(Base):
                 self.await_count += 1
                 self.await_args = _call
                 self.await_args_list.append(_call)
-                await self.awaited._notify()
 
         return await proxy()
 
@@ -2878,35 +2874,3 @@ class _AsyncIterator:
         except StopIteration:
             pass
         raise StopAsyncIteration
-
-
-class _AwaitEvent:
-    def __init__(self, mock):
-        self._mock = mock
-        self._condition = None
-
-    async def _notify(self):
-        condition = self._get_condition()
-        try:
-            await condition.acquire()
-            condition.notify_all()
-        finally:
-            condition.release()
-
-    def _get_condition(self):
-        """
-        Creation of condition is delayed, to minimize the chance of using the
-        wrong loop.
-        A user may create a mock with _AwaitEvent before selecting the
-        execution loop.  Requiring a user to delay creation is error-prone and
-        inflexible. Instead, condition is created when user actually starts to
-        use the mock.
-        """
-        # No synchronization is needed:
-        #   - asyncio is thread unsafe
-        #   - there are no awaits here, method will be executed without
-        #   switching asyncio context.
-        if self._condition is None:
-            self._condition = asyncio.Condition()
-
-        return self._condition
