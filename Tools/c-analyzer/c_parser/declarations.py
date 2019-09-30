@@ -281,18 +281,15 @@ def _iter_locals(lines, *,
                 compound.extend(bodies)
 
 
-def iter_all(dirnames):
+def iter_all(filename, *,
+             preprocessed=False,
+             ):
     """Yield a Declaration for each one found.
 
     If there are duplicates, due to preprocessor conditionals, then
     they are checked to make sure they are the same.
     """
-    raise NotImplementedError
-
-
-def iter_preprocessed(dirnames):
-    """Yield a Declaration for each one found.
-
-    All source files are run through the preprocessor first.
-    """
-    raise NotImplementedError
+    # XXX For the moment we cheat.
+    for funcname, name, decl in iter_variables(filename,
+                                               proprocessed=preprocessed):
+        yield 'variable', funcname, name, decl

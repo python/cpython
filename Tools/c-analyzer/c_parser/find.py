@@ -9,12 +9,14 @@ from . import declarations
 
 
 def _iter_vars(filenames, preprocessed, *,
-               _iter_variables=declarations.iter_variables,
+               _iter_decls=declarations.iter_all,
                ):
     for filename in filenames or ():
-        for funcname, name, decl in _iter_variables(filename,
-                                                    preprocessed=preprocessed,
-                                                    ):
+        for kind, funcname, name, decl in _iter_decls(filename,
+                                                      preprocessed=preprocessed,
+                                                      ):
+            if kind != 'variable':
+                continue
             yield Variable.from_parts(filename, funcname, name, decl)
 
 
@@ -29,6 +31,9 @@ def variables(*filenames,
     to decide which tool to use to parse the source code after it runs
     through the C preprocessor.  Otherwise the raw
     """
+    if len(filenames) == 1 and not (filenames[0], str):
+        filenames, = filenames
+
     if perfilecache is None:
         yield from _iter_vars(filenames, preprocessed)
     else:
