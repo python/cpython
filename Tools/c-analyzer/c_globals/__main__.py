@@ -67,7 +67,7 @@ def _check_results(unknown, knownvars, used):
 def _find_globals(dirnames, known, ignored):
     if dirnames == SOURCE_DIRS:
         dirnames = [os.path.relpath(d, REPO_ROOT) for d in dirnames]
-    # For now we only use known variables (no source lookup).
+    # XXX For now we only use known variables (no source lookup).
     dirnames = None
 
     knownvars = (known or {}).get('variables')
