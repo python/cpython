@@ -1,0 +1,66 @@
+jobs:
+- job: Make_Layouts
+  displayName: Make layouts
+  condition: and(succeeded(), eq(variables['DoLayout'], 'true'))
+
+  pool:
+    vmName: win2016-vs2017
+
+  workspace:
+    clean: all
+
+  strategy:
+    matrix:
+      win32:
+        Name: win32
+        Python: $(Build.BinariesDirectory)\bin_$(Name)\python.exe
+        PYTHONHOME: $(Build.SourcesDirectory)
+      amd64:
+        Name: amd64
+        Python: $(Build.BinariesDirectory)\bin_$(Name)\python.exe
+        PYTHONHOME: $(Build.SourcesDirectory)
+
+  steps:
+  - template: ./checkout.yml
+
+  - task: DownloadPipelineArtifact@1
+    displayName: 'Download artifact: bin_$(Name)'
+    inputs:
+      artifactName: bin_$(Name)
+      targetPath: $(Build.BinariesDirectory)\bin
+
+  - task: DownloadPipelineArtifact@1
+    displayName: 'Download artifact: bin_$(Name)_d'
+    inputs:
+      artifactName: bin_$(Name)_d
+      targetPath: $(Build.BinariesDirectory)\bin
+
+  - task: DownloadPipelineArtifact@1
+    displayName: 'Download artifact: doc'
+    inputs:
+      artifactName: doc
+      targetPath: $(Build.BinariesDirectory)\doc
+
+  - task: DownloadPipelineArtifact@1
+    displayName: 'Download artifact: tcltk_lib_$(Name)'
+    inputs:
+      artifactName: tcltk_lib_$(Name)
+      targetPath: $(Build.BinariesDirectory)\tcltk_lib
+
+  - powershell: |
+      copy $(Build.BinariesDirectory)\bin\Activate.ps1 Lib\venv\scripts\common\Activate.ps1 -Force
+    displayName: 'Copy signed files into sources'
+
+  - template: ./layout-command.yml
+
+  - powershell: |
+      $(LayoutCmd) --copy "$(Build.ArtifactStagingDirectory)\layout" --preset-default
+    displayName: 'Generate full layout'
+    env:
+      TCL_LIBRARY: $(Build.BinariesDirectory)\tcltk_lib\tcl8
+
+  - task: PublishPipelineArtifact@0
+    displayName: 'Publish Artifact: layout_full_$(Name)'
+    inputs:
+      targetPath: '$(Build.ArtifactStagingDirectory)\layout'
+      artifactName: layout_full_$(Name)

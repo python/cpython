@@ -646,7 +646,7 @@ m_remainder(double x, double y)
            Warning: some subtlety here. What we *want* to know at this point is
            whether the remainder m is less than, equal to, or greater than half
            of absy. However, we can't do that comparison directly because we
-           can't be sure that 0.5*absy is representable (the mutiplication
+           can't be sure that 0.5*absy is representable (the multiplication
            might incur precision loss due to underflow). So instead we compare
            m with the complement c = absy - m: m < 0.5*absy if and only if m <
            c, and so on. The catch is that absy - m might also not be
@@ -1072,19 +1072,22 @@ math_2(PyObject *const *args, Py_ssize_t nargs,
 
 FUNC1(acos, acos, 0,
       "acos($module, x, /)\n--\n\n"
-      "Return the arc cosine (measured in radians) of x.")
+      "Return the arc cosine (measured in radians) of x.\n\n"
+      "The result is between 0 and pi.")
 FUNC1(acosh, m_acosh, 0,
       "acosh($module, x, /)\n--\n\n"
       "Return the inverse hyperbolic cosine of x.")
 FUNC1(asin, asin, 0,
       "asin($module, x, /)\n--\n\n"
-      "Return the arc sine (measured in radians) of x.")
+      "Return the arc sine (measured in radians) of x.\n\n"
+      "The result is between -pi/2 and pi/2.")
 FUNC1(asinh, m_asinh, 0,
       "asinh($module, x, /)\n--\n\n"
       "Return the inverse hyperbolic sine of x.")
 FUNC1(atan, atan, 0,
       "atan($module, x, /)\n--\n\n"
-      "Return the arc tangent (measured in radians) of x.")
+      "Return the arc tangent (measured in radians) of x.\n\n"
+      "The result is between -pi/2 and pi/2.")
 FUNC2(atan2, m_atan2,
       "atan2($module, y, x, /)\n--\n\n"
       "Return the arc tangent (measured in radians) of y/x.\n\n"
@@ -1527,10 +1530,10 @@ Here's Python code equivalent to the C implementation below:
         a = 1
         d = 0
         for s in reversed(range(c.bit_length())):
+            # Loop invariant: (a-1)**2 < (n >> 2*(c - d)) < (a+1)**2
             e = d
             d = c >> s
             a = (a << d - e - 1) + (n >> 2*c - e - d + 1) // a
-            assert (a-1)**2 < n >> 2*(c - d) < (a+1)**2
 
         return a - (a*a > n)
 
@@ -1552,7 +1555,7 @@ prove that after that line is executed, we have
 
     (a - 1)**2 < (n >> 2*(c - d)) < (a + 1)**2
 
-To faciliate the proof, we make some changes of notation. Write `m` for
+To facilitate the proof, we make some changes of notation. Write `m` for
 `n >> 2*(c-d)`, and write `b` for the new value of `a`, so
 
     b = (a << d - e - 1) + (n >> 2*c - e - d + 1) // a
@@ -1981,6 +1984,12 @@ math_factorial(PyObject *module, PyObject *arg)
     PyObject *result, *odd_part, *pyint_form;
 
     if (PyFloat_Check(arg)) {
+        if (PyErr_WarnEx(PyExc_DeprecationWarning,
+                         "Using factorial() with floats is deprecated",
+                         1) < 0)
+        {
+            return NULL;
+        }
         PyObject *lx;
         double dx = PyFloat_AS_DOUBLE((PyFloatObject *)arg);
         if (!(Py_IS_FINITE(dx) && dx == floor(dx))) {
@@ -2418,14 +2427,14 @@ vector_norm(Py_ssize_t n, double *vec, double max, int found_nan)
 /*[clinic input]
 math.dist
 
-    p: object(subclass_of='&PyTuple_Type')
-    q: object(subclass_of='&PyTuple_Type')
+    p: object
+    q: object
     /
 
 Return the Euclidean distance between two points p and q.
 
-The points should be specified as tuples of coordinates.
-Both tuples must be the same size.
+The points should be specified as sequences (or iterables) of
+coordinates.  Both inputs must have the same dimension.
 
 Roughly equivalent to:
     sqrt(sum((px - qx) ** 2.0 for px, qx in zip(p, q)))
@@ -2433,15 +2442,33 @@ Roughly equivalent to:
 
 static PyObject *
 math_dist_impl(PyObject *module, PyObject *p, PyObject *q)
-/*[clinic end generated code: output=56bd9538d06bbcfe input=937122eaa5f19272]*/
+/*[clinic end generated code: output=56bd9538d06bbcfe input=74e85e1b6092e68e]*/
 {
     PyObject *item;
     double max = 0.0;
     double x, px, qx, result;
     Py_ssize_t i, m, n;
-    int found_nan = 0;
+    int found_nan = 0, p_allocated = 0, q_allocated = 0;
     double diffs_on_stack[NUM_STACK_ELEMS];
     double *diffs = diffs_on_stack;
+
+    if (!PyTuple_Check(p)) {
+        p = PySequence_Tuple(p);
+        if (p == NULL) {
+            return NULL;
+        }
+        p_allocated = 1;
+    }
+    if (!PyTuple_Check(q)) {
+        q = PySequence_Tuple(q);
+        if (q == NULL) {
+            if (p_allocated) {
+                Py_DECREF(p);
+            }
+            return NULL;
+        }
+        q_allocated = 1;
+    }
 
     m = PyTuple_GET_SIZE(p);
     n = PyTuple_GET_SIZE(q);
@@ -2473,11 +2500,23 @@ math_dist_impl(PyObject *module, PyObject *p, PyObject *q)
     if (diffs != diffs_on_stack) {
         PyObject_Free(diffs);
     }
+    if (p_allocated) {
+        Py_DECREF(p);
+    }
+    if (q_allocated) {
+        Py_DECREF(q);
+    }
     return PyFloat_FromDouble(result);
 
   error_exit:
     if (diffs != diffs_on_stack) {
         PyObject_Free(diffs);
+    }
+    if (p_allocated) {
+        Py_DECREF(p);
+    }
+    if (q_allocated) {
+        Py_DECREF(q);
     }
     return NULL;
 }
@@ -2998,6 +3037,275 @@ math_prod_impl(PyObject *module, PyObject *iterable, PyObject *start)
 }
 
 
+/*[clinic input]
+math.perm
+
+    n: object
+    k: object = None
+    /
+
+Number of ways to choose k items from n items without repetition and with order.
+
+Evaluates to n! / (n - k)! when k <= n and evaluates
+to zero when k > n.
+
+If k is not specified or is None, then k defaults to n
+and the function returns n!.
+
+Raises TypeError if either of the arguments are not integers.
+Raises ValueError if either of the arguments are negative.
+[clinic start generated code]*/
+
+static PyObject *
+math_perm_impl(PyObject *module, PyObject *n, PyObject *k)
+/*[clinic end generated code: output=e021a25469653e23 input=5311c5a00f359b53]*/
+{
+    PyObject *result = NULL, *factor = NULL;
+    int overflow, cmp;
+    long long i, factors;
+
+    if (k == Py_None) {
+        return math_factorial(module, n);
+    }
+    n = PyNumber_Index(n);
+    if (n == NULL) {
+        return NULL;
+    }
+    if (!PyLong_CheckExact(n)) {
+        Py_SETREF(n, _PyLong_Copy((PyLongObject *)n));
+        if (n == NULL) {
+            return NULL;
+        }
+    }
+    k = PyNumber_Index(k);
+    if (k == NULL) {
+        Py_DECREF(n);
+        return NULL;
+    }
+    if (!PyLong_CheckExact(k)) {
+        Py_SETREF(k, _PyLong_Copy((PyLongObject *)k));
+        if (k == NULL) {
+            Py_DECREF(n);
+            return NULL;
+        }
+    }
+
+    if (Py_SIZE(n) < 0) {
+        PyErr_SetString(PyExc_ValueError,
+                        "n must be a non-negative integer");
+        goto error;
+    }
+    if (Py_SIZE(k) < 0) {
+        PyErr_SetString(PyExc_ValueError,
+                        "k must be a non-negative integer");
+        goto error;
+    }
+
+    cmp = PyObject_RichCompareBool(n, k, Py_LT);
+    if (cmp != 0) {
+        if (cmp > 0) {
+            result = PyLong_FromLong(0);
+            goto done;
+        }
+        goto error;
+    }
+
+    factors = PyLong_AsLongLongAndOverflow(k, &overflow);
+    if (overflow > 0) {
+        PyErr_Format(PyExc_OverflowError,
+                     "k must not exceed %lld",
+                     LLONG_MAX);
+        goto error;
+    }
+    else if (factors == -1) {
+        /* k is nonnegative, so a return value of -1 can only indicate error */
+        goto error;
+    }
+
+    if (factors == 0) {
+        result = PyLong_FromLong(1);
+        goto done;
+    }
+
+    result = n;
+    Py_INCREF(result);
+    if (factors == 1) {
+        goto done;
+    }
+
+    factor = n;
+    Py_INCREF(factor);
+    for (i = 1; i < factors; ++i) {
+        Py_SETREF(factor, PyNumber_Subtract(factor, _PyLong_One));
+        if (factor == NULL) {
+            goto error;
+        }
+        Py_SETREF(result, PyNumber_Multiply(result, factor));
+        if (result == NULL) {
+            goto error;
+        }
+    }
+    Py_DECREF(factor);
+
+done:
+    Py_DECREF(n);
+    Py_DECREF(k);
+    return result;
+
+error:
+    Py_XDECREF(factor);
+    Py_XDECREF(result);
+    Py_DECREF(n);
+    Py_DECREF(k);
+    return NULL;
+}
+
+
+/*[clinic input]
+math.comb
+
+    n: object
+    k: object
+    /
+
+Number of ways to choose k items from n items without repetition and without order.
+
+Evaluates to n! / (k! * (n - k)!) when k <= n and evaluates
+to zero when k > n.
+
+Also called the binomial coefficient because it is equivalent
+to the coefficient of k-th term in polynomial expansion of the
+expression (1 + x)**n.
+
+Raises TypeError if either of the arguments are not integers.
+Raises ValueError if either of the arguments are negative.
+
+[clinic start generated code]*/
+
+static PyObject *
+math_comb_impl(PyObject *module, PyObject *n, PyObject *k)
+/*[clinic end generated code: output=bd2cec8d854f3493 input=9a05315af2518709]*/
+{
+    PyObject *result = NULL, *factor = NULL, *temp;
+    int overflow, cmp;
+    long long i, factors;
+
+    n = PyNumber_Index(n);
+    if (n == NULL) {
+        return NULL;
+    }
+    if (!PyLong_CheckExact(n)) {
+        Py_SETREF(n, _PyLong_Copy((PyLongObject *)n));
+        if (n == NULL) {
+            return NULL;
+        }
+    }
+    k = PyNumber_Index(k);
+    if (k == NULL) {
+        Py_DECREF(n);
+        return NULL;
+    }
+    if (!PyLong_CheckExact(k)) {
+        Py_SETREF(k, _PyLong_Copy((PyLongObject *)k));
+        if (k == NULL) {
+            Py_DECREF(n);
+            return NULL;
+        }
+    }
+
+    if (Py_SIZE(n) < 0) {
+        PyErr_SetString(PyExc_ValueError,
+                        "n must be a non-negative integer");
+        goto error;
+    }
+    if (Py_SIZE(k) < 0) {
+        PyErr_SetString(PyExc_ValueError,
+                        "k must be a non-negative integer");
+        goto error;
+    }
+
+    /* k = min(k, n - k) */
+    temp = PyNumber_Subtract(n, k);
+    if (temp == NULL) {
+        goto error;
+    }
+    if (Py_SIZE(temp) < 0) {
+        Py_DECREF(temp);
+        result = PyLong_FromLong(0);
+        goto done;
+    }
+    cmp = PyObject_RichCompareBool(temp, k, Py_LT);
+    if (cmp > 0) {
+        Py_SETREF(k, temp);
+    }
+    else {
+        Py_DECREF(temp);
+        if (cmp < 0) {
+            goto error;
+        }
+    }
+
+    factors = PyLong_AsLongLongAndOverflow(k, &overflow);
+    if (overflow > 0) {
+        PyErr_Format(PyExc_OverflowError,
+                     "min(n - k, k) must not exceed %lld",
+                     LLONG_MAX);
+        goto error;
+    }
+    if (factors == -1) {
+        /* k is nonnegative, so a return value of -1 can only indicate error */
+        goto error;
+    }
+
+    if (factors == 0) {
+        result = PyLong_FromLong(1);
+        goto done;
+    }
+
+    result = n;
+    Py_INCREF(result);
+    if (factors == 1) {
+        goto done;
+    }
+
+    factor = n;
+    Py_INCREF(factor);
+    for (i = 1; i < factors; ++i) {
+        Py_SETREF(factor, PyNumber_Subtract(factor, _PyLong_One));
+        if (factor == NULL) {
+            goto error;
+        }
+        Py_SETREF(result, PyNumber_Multiply(result, factor));
+        if (result == NULL) {
+            goto error;
+        }
+
+        temp = PyLong_FromUnsignedLongLong((unsigned long long)i + 1);
+        if (temp == NULL) {
+            goto error;
+        }
+        Py_SETREF(result, PyNumber_FloorDivide(result, temp));
+        Py_DECREF(temp);
+        if (result == NULL) {
+            goto error;
+        }
+    }
+    Py_DECREF(factor);
+
+done:
+    Py_DECREF(n);
+    Py_DECREF(k);
+    return result;
+
+error:
+    Py_XDECREF(factor);
+    Py_XDECREF(result);
+    Py_DECREF(n);
+    Py_DECREF(k);
+    return NULL;
+}
+
+
 static PyMethodDef math_methods[] = {
     {"acos",            math_acos,      METH_O,         math_acos_doc},
     {"acosh",           math_acosh,     METH_O,         math_acosh_doc},
@@ -3047,6 +3355,8 @@ static PyMethodDef math_methods[] = {
     {"tanh",            math_tanh,      METH_O,         math_tanh_doc},
     MATH_TRUNC_METHODDEF
     MATH_PROD_METHODDEF
+    MATH_PERM_METHODDEF
+    MATH_COMB_METHODDEF
     {NULL,              NULL}           /* sentinel */
 };
 

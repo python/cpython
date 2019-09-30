@@ -656,7 +656,7 @@ The module :mod:`curses` defines the following functions:
    foreground color on the default background.
 
 
-.. function:: wrapper(func, ...)
+.. function:: wrapper(func, /, *args, **kwargs)
 
    Initialize curses and call another callable object, *func*, which should be the
    rest of your curses-using application.  If the application raises an exception,
@@ -1283,7 +1283,7 @@ The :mod:`curses` module defines the following data members:
 
 .. data:: ERR
 
-   Some curses routines  that  return  an integer, such as  :func:`getch`, return
+   Some curses routines  that  return  an integer, such as :meth:`~window.getch`, return
    :const:`ERR` upon failure.
 
 

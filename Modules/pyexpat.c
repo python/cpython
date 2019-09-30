@@ -119,7 +119,7 @@ set_error(xmlparseobject *self, enum XML_Error code)
                                   XML_ErrorString(code), lineno, column);
     if (buffer == NULL)
         return NULL;
-    err = PyObject_CallFunctionObjArgs(ErrorObject, buffer, NULL);
+    err = _PyObject_CallOneArg(ErrorObject, buffer);
     Py_DECREF(buffer);
     if (  err != NULL
           && set_error_attr(err, "code", code)
@@ -208,7 +208,7 @@ call_with_frame(const char *funcname, int lineno, PyObject* func, PyObject* args
 {
     PyObject *res;
 
-    res = PyEval_CallObject(func, args);
+    res = PyObject_Call(func, args, NULL);
     if (res == NULL) {
         _PyTraceback_Add(funcname, __FILE__, lineno);
         XML_StopParser(self->itself, XML_FALSE);
@@ -810,7 +810,9 @@ pyexpat_xmlparser_ParseFile(xmlparseobject *self, PyObject *file)
     PyObject *readmethod = NULL;
     _Py_IDENTIFIER(read);
 
-    readmethod = _PyObject_GetAttrId(file, &PyId_read);
+    if (_PyObject_LookupAttrId(file, &PyId_read, &readmethod) < 0) {
+        return NULL;
+    }
     if (readmethod == NULL) {
         PyErr_SetString(PyExc_TypeError,
                         "argument must have 'read' attribute");
@@ -1468,10 +1470,10 @@ static PyTypeObject Xmlparsetype = {
         0,                              /*tp_itemsize*/
         /* methods */
         (destructor)xmlparse_dealloc,   /*tp_dealloc*/
-        (printfunc)0,           /*tp_print*/
+        0,                              /*tp_vectorcall_offset*/
         0,                      /*tp_getattr*/
         0,  /*tp_setattr*/
-        0,                      /*tp_reserved*/
+        0,                      /*tp_as_async*/
         (reprfunc)0,            /*tp_repr*/
         0,                      /*tp_as_number*/
         0,              /*tp_as_sequence*/
@@ -1501,8 +1503,8 @@ static PyTypeObject Xmlparsetype = {
 /*[clinic input]
 pyexpat.ParserCreate
 
-    encoding: str(accept={str, NoneType}) = NULL
-    namespace_separator: str(accept={str, NoneType}) = NULL
+    encoding: str(accept={str, NoneType}) = None
+    namespace_separator: str(accept={str, NoneType}) = None
     intern: object = NULL
 
 Return a new XML parser object.
@@ -1511,7 +1513,7 @@ Return a new XML parser object.
 static PyObject *
 pyexpat_ParserCreate_impl(PyObject *module, const char *encoding,
                           const char *namespace_separator, PyObject *intern)
-/*[clinic end generated code: output=295c0cf01ab1146c input=23d29704acad385d]*/
+/*[clinic end generated code: output=295c0cf01ab1146c input=e8da8e8d7122cb5d]*/
 {
     PyObject *result;
     int intern_decref = 0;

@@ -320,7 +320,7 @@ an error value).
    :mod:`warnings` module and the :option:`-W` option in the command line
    documentation.  There is no C API for warning control.
 
-.. c:function:: PyObject* PyErr_SetImportErrorSubclass(PyObject *msg, PyObject *name, PyObject *path)
+.. c:function:: PyObject* PyErr_SetImportErrorSubclass(PyObject *exception, PyObject *msg, PyObject *name, PyObject *path)
 
    Much like :c:func:`PyErr_SetImportError` but this function allows for
    specifying a subclass of :exc:`ImportError` to raise.
@@ -809,7 +809,6 @@ the variables:
    single: PyExc_SystemError
    single: PyExc_SystemExit
    single: PyExc_TabError
-   single: PyExc_TargetScopeError
    single: PyExc_TimeoutError
    single: PyExc_TypeError
    single: PyExc_UnboundLocalError
@@ -910,8 +909,6 @@ the variables:
 | :c:data:`PyExc_SystemExit`              | :exc:`SystemExit`               |          |
 +-----------------------------------------+---------------------------------+----------+
 | :c:data:`PyExc_TabError`                | :exc:`TabError`                 |          |
-+-----------------------------------------+---------------------------------+----------+
-| :c:data:`PyExc_TargetScopeError`        | :exc:`TargetScopeError`         |          |
 +-----------------------------------------+---------------------------------+----------+
 | :c:data:`PyExc_TimeoutError`            | :exc:`TimeoutError`             |          |
 +-----------------------------------------+---------------------------------+----------+

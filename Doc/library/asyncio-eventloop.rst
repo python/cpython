@@ -167,6 +167,18 @@ Running and stopping the loop
 
    .. versionadded:: 3.6
 
+.. coroutinemethod:: loop.shutdown_default_executor()
+
+   Schedule the closure of the default executor and wait for it to join all of
+   the threads in the :class:`ThreadPoolExecutor`. After calling this method, a
+   :exc:`RuntimeError` will be raised if :meth:`loop.run_in_executor` is called
+   while using the default executor.
+
+   Note that there is no need to call this function when
+   :func:`asyncio.run` is used.
+
+   .. versionadded:: 3.9
+
 
 Scheduling callbacks
 ^^^^^^^^^^^^^^^^^^^^
@@ -1454,7 +1466,7 @@ asyncio ships with two different event loop implementations:
 :class:`SelectorEventLoop` and :class:`ProactorEventLoop`.
 
 By default asyncio is configured to use :class:`SelectorEventLoop`
-on all platforms.
+on Unix and :class:`ProactorEventLoop` on Windows.
 
 
 .. class:: SelectorEventLoop
@@ -1625,8 +1637,7 @@ Wait until a file descriptor received some data using the
      :meth:`loop.create_connection` method.
 
    * Another similar :ref:`example <asyncio_example_create_connection-streams>`
-     using the high-level :func:`asyncio.open_connection` function
-     and streams.
+     using the high-level :func:`asyncio.connect` function and streams.
 
 
 .. _asyncio_example_unix_signals:

@@ -19,7 +19,7 @@ import threading
 
 import unittest
 from test import support, mock_socket
-from test.support import HOST, HOSTv4, HOSTv6
+from test.support import HOST
 from test.support import threading_setup, threading_cleanup, join_thread
 from unittest.mock import Mock
 

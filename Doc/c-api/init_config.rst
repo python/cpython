@@ -25,6 +25,7 @@ Functions:
 * :c:func:`PyConfig_SetBytesArgv`
 * :c:func:`PyConfig_SetBytesString`
 * :c:func:`PyConfig_SetString`
+* :c:func:`PyConfig_SetWideStringList`
 * :c:func:`PyPreConfig_InitIsolatedConfig`
 * :c:func:`PyPreConfig_InitPythonConfig`
 * :c:func:`PyStatus_Error`
@@ -46,6 +47,8 @@ Functions:
 The preconfiguration (``PyPreConfig`` type) is stored in
 ``_PyRuntime.preconfig`` and the configuration (``PyConfig`` type) is stored in
 ``PyInterpreterState.config``.
+
+See also :ref:`Initialization, Finalization, and Threads <initialization>`.
 
 .. seealso::
    :pep:`587` "Python Initialization Configuration".
@@ -71,8 +74,12 @@ PyWideStringList
 
    .. c:function:: PyStatus PyWideStringList_Insert(PyWideStringList *list, Py_ssize_t index, const wchar_t *item)
 
-      Insert *item* into *list* at *index*. If *index* is greater than *list*
-      length, just append *item* to *list*.
+      Insert *item* into *list* at *index*.
+
+      If *index* is greater than or equal to *list* length, append *item* to
+      *list*.
+
+      *index* must be greater than or equal to 0.
 
       Python must be preinitialized to call this function.
 
@@ -368,6 +375,12 @@ PyConfig
 
       Preinitialize Python if needed.
 
+   .. c:function:: PyStatus PyConfig_SetWideStringList(PyConfig *config, PyWideStringList *list, Py_ssize_t length, wchar_t **items)
+
+      Set the list of wide strings *list* to *length* and *items*.
+
+      Preinitialize Python if needed.
+
    .. c:function:: PyStatus PyConfig_Read(PyConfig *config)
 
       Read all Python configuration.
@@ -411,6 +424,11 @@ PyConfig
    .. c:member:: wchar_t* base_exec_prefix
 
       :data:`sys.base_exec_prefix`.
+
+   .. c:member:: wchar_t* base_executable
+
+      :data:`sys._base_executable`: ``__PYVENV_LAUNCHER__`` environment
+      variable value, or copy of :c:member:`PyConfig.executable`.
 
    .. c:member:: wchar_t* base_prefix
 
@@ -849,11 +867,13 @@ Path Configuration
 * Path configuration input fields:
 
   * :c:member:`PyConfig.home`
-  * :c:member:`PyConfig.pythonpath_env`
   * :c:member:`PyConfig.pathconfig_warnings`
+  * :c:member:`PyConfig.program_name`
+  * :c:member:`PyConfig.pythonpath_env`
 
 * Path configuration output fields:
 
+  * :c:member:`PyConfig.base_executable`
   * :c:member:`PyConfig.exec_prefix`
   * :c:member:`PyConfig.executable`
   * :c:member:`PyConfig.prefix`
@@ -863,7 +883,7 @@ Path Configuration
 If at least one "output field" is not set, Python computes the path
 configuration to fill unset fields. If
 :c:member:`~PyConfig.module_search_paths_set` is equal to 0,
-:c:member:`~PyConfig.module_search_paths` is overriden and
+:c:member:`~PyConfig.module_search_paths` is overridden and
 :c:member:`~PyConfig.module_search_paths_set` is set to 1.
 
 It is possible to completely ignore the function computing the default
@@ -904,6 +924,9 @@ The following configuration files are used by the path configuration:
 * ``pyvenv.cfg``
 * ``python._pth`` (Windows only)
 * ``pybuilddir.txt`` (Unix only)
+
+The ``__PYVENV_LAUNCHER__`` environment variable is used to set
+:c:member:`PyConfig.base_executable`
 
 
 Py_RunMain()

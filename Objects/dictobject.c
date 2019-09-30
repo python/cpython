@@ -39,7 +39,7 @@ Size of indices is dk_size.  Type of each index in indices is vary on dk_size:
 * int32 for 2**16 <= dk_size <= 2**31
 * int64 for 2**32 <= dk_size
 
-dk_entries is array of PyDictKeyEntry.  It's size is USABLE_FRACTION(dk_size).
+dk_entries is array of PyDictKeyEntry.  Its size is USABLE_FRACTION(dk_size).
 DK_ENTRIES(dk) can be used to get pointer to entries.
 
 NOTE: Since negative value is used for DKIX_EMPTY and DKIX_DUMMY, type of
@@ -282,7 +282,7 @@ _PyDict_DebugMallocStats(FILE *out)
 
 
 void
-PyDict_Fini(void)
+_PyDict_Fini(void)
 {
     PyDict_ClearFreeList();
 }
@@ -1080,20 +1080,21 @@ insertdict(PyDictObject *mp, PyObject *key, Py_hash_t hash, PyObject *value)
         return 0;
     }
 
-    if (_PyDict_HasSplitTable(mp)) {
-        mp->ma_values[ix] = value;
-        if (old_value == NULL) {
-            /* pending state */
-            assert(ix == mp->ma_used);
-            mp->ma_used++;
+    if (old_value != value) {
+        if (_PyDict_HasSplitTable(mp)) {
+            mp->ma_values[ix] = value;
+            if (old_value == NULL) {
+                /* pending state */
+                assert(ix == mp->ma_used);
+                mp->ma_used++;
+            }
         }
+        else {
+            assert(old_value != NULL);
+            DK_ENTRIES(mp->ma_keys)[ix].me_value = value;
+        }
+        mp->ma_version_tag = DICT_NEXT_VERSION();
     }
-    else {
-        assert(old_value != NULL);
-        DK_ENTRIES(mp->ma_keys)[ix].me_value = value;
-    }
-
-    mp->ma_version_tag = DICT_NEXT_VERSION();
     Py_XDECREF(old_value); /* which **CAN** re-enter (see issue #22653) */
     ASSERT_CONSISTENT(mp);
     Py_DECREF(key);
@@ -2112,8 +2113,7 @@ dict_subscript(PyDictObject *mp, PyObject *key)
             _Py_IDENTIFIER(__missing__);
             missing = _PyObject_LookupSpecial((PyObject *)mp, &PyId___missing__);
             if (missing != NULL) {
-                res = PyObject_CallFunctionObjArgs(missing,
-                                                   key, NULL);
+                res = _PyObject_CallOneArg(missing, key);
                 Py_DECREF(missing);
                 return res;
             }
@@ -2317,17 +2317,22 @@ dict_update_common(PyObject *self, PyObject *args, PyObject *kwds,
         result = -1;
     }
     else if (arg != NULL) {
-        _Py_IDENTIFIER(keys);
-        PyObject *func;
-        if (_PyObject_LookupAttrId(arg, &PyId_keys, &func) < 0) {
-            result = -1;
-        }
-        else if (func != NULL) {
-            Py_DECREF(func);
+        if (PyDict_CheckExact(arg)) {
             result = PyDict_Merge(self, arg, 1);
         }
         else {
-            result = PyDict_MergeFromSeq2(self, arg, 1);
+            _Py_IDENTIFIER(keys);
+            PyObject *func;
+            if (_PyObject_LookupAttrId(arg, &PyId_keys, &func) < 0) {
+                result = -1;
+            }
+            else if (func != NULL) {
+                Py_DECREF(func);
+                result = PyDict_Merge(self, arg, 1);
+            }
+            else {
+                result = PyDict_MergeFromSeq2(self, arg, 1);
+            }
         }
     }
 
@@ -2993,14 +2998,14 @@ dict.pop
     default: object = NULL
     /
 
-Remove specified key and return the corresponding value.
+D.pop(k[,d]) -> v, remove specified key and return the corresponding value.
 
 If key is not found, default is returned if given, otherwise KeyError is raised
 [clinic start generated code]*/
 
 static PyObject *
 dict_pop_impl(PyDictObject *self, PyObject *key, PyObject *default_value)
-/*[clinic end generated code: output=3abb47b89f24c21c input=016f6a000e4e633b]*/
+/*[clinic end generated code: output=3abb47b89f24c21c input=eeebec7812190348]*/
 {
     return _PyDict_Pop((PyObject*)self, key, default_value);
 }
@@ -3309,10 +3314,10 @@ PyTypeObject PyDict_Type = {
     sizeof(PyDictObject),
     0,
     (destructor)dict_dealloc,                   /* tp_dealloc */
-    0,                                          /* tp_print */
+    0,                                          /* tp_vectorcall_offset */
     0,                                          /* tp_getattr */
     0,                                          /* tp_setattr */
-    0,                                          /* tp_reserved */
+    0,                                          /* tp_as_async */
     (reprfunc)dict_repr,                        /* tp_repr */
     0,                                          /* tp_as_number */
     &dict_as_sequence,                          /* tp_as_sequence */
@@ -3572,10 +3577,10 @@ PyTypeObject PyDictIterKey_Type = {
     0,                                          /* tp_itemsize */
     /* methods */
     (destructor)dictiter_dealloc,               /* tp_dealloc */
-    0,                                          /* tp_print */
+    0,                                          /* tp_vectorcall_offset */
     0,                                          /* tp_getattr */
     0,                                          /* tp_setattr */
-    0,                                          /* tp_reserved */
+    0,                                          /* tp_as_async */
     0,                                          /* tp_repr */
     0,                                          /* tp_as_number */
     0,                                          /* tp_as_sequence */
@@ -3659,10 +3664,10 @@ PyTypeObject PyDictIterValue_Type = {
     0,                                          /* tp_itemsize */
     /* methods */
     (destructor)dictiter_dealloc,               /* tp_dealloc */
-    0,                                          /* tp_print */
+    0,                                          /* tp_vectorcall_offset */
     0,                                          /* tp_getattr */
     0,                                          /* tp_setattr */
-    0,                                          /* tp_reserved */
+    0,                                          /* tp_as_async */
     0,                                          /* tp_repr */
     0,                                          /* tp_as_number */
     0,                                          /* tp_as_sequence */
@@ -3766,10 +3771,10 @@ PyTypeObject PyDictIterItem_Type = {
     0,                                          /* tp_itemsize */
     /* methods */
     (destructor)dictiter_dealloc,               /* tp_dealloc */
-    0,                                          /* tp_print */
+    0,                                          /* tp_vectorcall_offset */
     0,                                          /* tp_getattr */
     0,                                          /* tp_setattr */
-    0,                                          /* tp_reserved */
+    0,                                          /* tp_as_async */
     0,                                          /* tp_repr */
     0,                                          /* tp_as_number */
     0,                                          /* tp_as_sequence */
@@ -4159,7 +4164,7 @@ dictviews_sub(PyObject* self, PyObject *other)
     if (result == NULL)
         return NULL;
 
-    tmp = _PyObject_CallMethodIdObjArgs(result, &PyId_difference_update, other, NULL);
+    tmp = _PyObject_CallMethodIdOneArg(result, &PyId_difference_update, other);
     if (tmp == NULL) {
         Py_DECREF(result);
         return NULL;
@@ -4169,24 +4174,97 @@ dictviews_sub(PyObject* self, PyObject *other)
     return result;
 }
 
-PyObject*
+static int
+dictitems_contains(_PyDictViewObject *dv, PyObject *obj);
+
+PyObject *
 _PyDictView_Intersect(PyObject* self, PyObject *other)
 {
-    PyObject *result = PySet_New(self);
+    PyObject *result;
+    PyObject *it;
+    PyObject *key;
+    Py_ssize_t len_self;
+    int rv;
+    int (*dict_contains)(_PyDictViewObject *, PyObject *);
     PyObject *tmp;
-    _Py_IDENTIFIER(intersection_update);
 
+    /* Python interpreter swaps parameters when dict view
+       is on right side of & */
+    if (!PyDictViewSet_Check(self)) {
+        PyObject *tmp = other;
+        other = self;
+        self = tmp;
+    }
+
+    len_self = dictview_len((_PyDictViewObject *)self);
+
+    /* if other is a set and self is smaller than other,
+       reuse set intersection logic */
+    if (Py_TYPE(other) == &PySet_Type && len_self <= PyObject_Size(other)) {
+        _Py_IDENTIFIER(intersection);
+        return _PyObject_CallMethodIdObjArgs(other, &PyId_intersection, self, NULL);
+    }
+
+    /* if other is another dict view, and it is bigger than self,
+       swap them */
+    if (PyDictViewSet_Check(other)) {
+        Py_ssize_t len_other = dictview_len((_PyDictViewObject *)other);
+        if (len_other > len_self) {
+            PyObject *tmp = other;
+            other = self;
+            self = tmp;
+        }
+    }
+
+    /* at this point, two things should be true
+       1. self is a dictview
+       2. if other is a dictview then it is smaller than self */
+    result = PySet_New(NULL);
     if (result == NULL)
         return NULL;
 
-    tmp = _PyObject_CallMethodIdObjArgs(result, &PyId_intersection_update, other, NULL);
+    it = PyObject_GetIter(other);
+
+    _Py_IDENTIFIER(intersection_update);
+    tmp = _PyObject_CallMethodIdOneArg(result, &PyId_intersection_update, other);
     if (tmp == NULL) {
         Py_DECREF(result);
         return NULL;
     }
-
     Py_DECREF(tmp);
+
+    if (PyDictKeys_Check(self)) {
+        dict_contains = dictkeys_contains;
+    }
+    /* else PyDictItems_Check(self) */
+    else {
+        dict_contains = dictitems_contains;
+    }
+
+    while ((key = PyIter_Next(it)) != NULL) {
+        rv = dict_contains((_PyDictViewObject *)self, key);
+        if (rv < 0) {
+            goto error;
+        }
+        if (rv) {
+            if (PySet_Add(result, key)) {
+                goto error;
+            }
+        }
+        Py_DECREF(key);
+    }
+    Py_DECREF(it);
+    if (PyErr_Occurred()) {
+        Py_DECREF(result);
+        return NULL;
+    }
     return result;
+
+error:
+    Py_DECREF(it);
+    Py_DECREF(result);
+    Py_DECREF(key);
+    return NULL;
 }
 
 static PyObject*
@@ -4199,7 +4277,7 @@ dictviews_or(PyObject* self, PyObject *other)
     if (result == NULL)
         return NULL;
 
-    tmp = _PyObject_CallMethodIdObjArgs(result, &PyId_update, other, NULL);
+    tmp = _PyObject_CallMethodIdOneArg(result, &PyId_update, other);
     if (tmp == NULL) {
         Py_DECREF(result);
         return NULL;
@@ -4219,7 +4297,7 @@ dictviews_xor(PyObject* self, PyObject *other)
     if (result == NULL)
         return NULL;
 
-    tmp = _PyObject_CallMethodIdObjArgs(result, &PyId_symmetric_difference_update, other, NULL);
+    tmp = _PyObject_CallMethodIdOneArg(result, &PyId_symmetric_difference_update, other);
     if (tmp == NULL) {
         Py_DECREF(result);
         return NULL;
@@ -4322,10 +4400,10 @@ PyTypeObject PyDictKeys_Type = {
     0,                                          /* tp_itemsize */
     /* methods */
     (destructor)dictview_dealloc,               /* tp_dealloc */
-    0,                                          /* tp_print */
+    0,                                          /* tp_vectorcall_offset */
     0,                                          /* tp_getattr */
     0,                                          /* tp_setattr */
-    0,                                          /* tp_reserved */
+    0,                                          /* tp_as_async */
     (reprfunc)dictview_repr,                    /* tp_repr */
     &dictviews_as_number,                       /* tp_as_number */
     &dictkeys_as_sequence,                      /* tp_as_sequence */
@@ -4392,7 +4470,7 @@ dictitems_contains(_PyDictViewObject *dv, PyObject *obj)
         return 0;
     }
     Py_INCREF(found);
-    result = PyObject_RichCompareBool(value, found, Py_EQ);
+    result = PyObject_RichCompareBool(found, value, Py_EQ);
     Py_DECREF(found);
     return result;
 }
@@ -4428,10 +4506,10 @@ PyTypeObject PyDictItems_Type = {
     0,                                          /* tp_itemsize */
     /* methods */
     (destructor)dictview_dealloc,               /* tp_dealloc */
-    0,                                          /* tp_print */
+    0,                                          /* tp_vectorcall_offset */
     0,                                          /* tp_getattr */
     0,                                          /* tp_setattr */
-    0,                                          /* tp_reserved */
+    0,                                          /* tp_as_async */
     (reprfunc)dictview_repr,                    /* tp_repr */
     &dictviews_as_number,                       /* tp_as_number */
     &dictitems_as_sequence,                     /* tp_as_sequence */
@@ -4509,10 +4587,10 @@ PyTypeObject PyDictValues_Type = {
     0,                                          /* tp_itemsize */
     /* methods */
     (destructor)dictview_dealloc,               /* tp_dealloc */
-    0,                                          /* tp_print */
+    0,                                          /* tp_vectorcall_offset */
     0,                                          /* tp_getattr */
     0,                                          /* tp_setattr */
-    0,                                          /* tp_reserved */
+    0,                                          /* tp_as_async */
     (reprfunc)dictview_repr,                    /* tp_repr */
     0,                                          /* tp_as_number */
     &dictvalues_as_sequence,                    /* tp_as_sequence */

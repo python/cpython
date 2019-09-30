@@ -43,8 +43,17 @@ Objects/dict*                 @methane
 # CSPRNG
 Python/bootstrap_hash.c       @python/crypto-team @tiran
 
+# Dates and times
+**/*datetime*                 @pganssle @abalkin
+**/*str*time*                 @pganssle @abalkin
+Doc/library/time.rst          @pganssle @abalkin
+Lib/test/test_time.py         @pganssle @abalkin
+Modules/timemodule.c          @pganssle @abalkin
+Python/pytime.c               @pganssle @abalkin
+Include/pytime.h              @pganssle @abalkin
+
 # Email and related
-**/*mail*                     @python/email-team @maxking
+**/*mail*                     @python/email-team
 **/*smtp*                     @python/email-team
 **/*mime*                     @python/email-team
 **/*imap*                     @python/email-team
@@ -57,7 +66,9 @@ Python/bootstrap_hash.c       @python/crypto-team @tiran
 **/*sqlite*                   @berkerpeksag
 
 # subprocess
-**/*subprocess*               @gpshead
+/Lib/subprocess.py            @gpshead
+/Lib/test/test_subprocess.py  @gpshead
+/Modules/*subprocess*         @gpshead
 
 # Windows
 /PC/                          @python/windows-team

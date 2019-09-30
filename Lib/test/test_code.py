@@ -112,7 +112,7 @@ consts: ('None',)
 
 >>> dump(posonly_args.__code__)
 name: posonly_args
-argcount: 1
+argcount: 3
 posonlyargcount: 2
 kwonlyargcount: 0
 names: ()

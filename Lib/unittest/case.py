@@ -10,6 +10,7 @@ import warnings
 import collections
 import contextlib
 import traceback
+import types
 
 from . import result
 from .util import (strclass, safe_repr, _count_diff_all_purpose,
@@ -86,23 +87,10 @@ def _id(obj):
 
 
 _module_cleanups = []
-def addModuleCleanup(*args, **kwargs):
+def addModuleCleanup(function, /, *args, **kwargs):
     """Same as addCleanup, except the cleanup items are called even if
     setUpModule fails (unlike tearDownModule)."""
-    if args:
-        function, *args = args
-    elif 'function' in kwargs:
-        function = kwargs.pop('function')
-        import warnings
-        warnings.warn("Passing 'function' as keyword argument is deprecated",
-                      DeprecationWarning, stacklevel=2)
-    else:
-        raise TypeError('addModuleCleanup expected at least 1 positional '
-                        'argument, got %d' % (len(args)-1))
-    args = tuple(args)
-
     _module_cleanups.append((function, args, kwargs))
-addModuleCleanup.__text_signature__ = '(function, /, *args, **kwargs)'
 
 
 def doModuleCleanups():
@@ -135,6 +123,10 @@ def skip(reason):
         test_item.__unittest_skip__ = True
         test_item.__unittest_skip_why__ = reason
         return test_item
+    if isinstance(reason, types.FunctionType):
+        test_item = reason
+        reason = ''
+        return decorator(test_item)
     return decorator
 
 def skipIf(condition, reason):
@@ -476,47 +468,19 @@ class TestCase(object):
         """
         self._type_equality_funcs[typeobj] = function
 
-    def addCleanup(*args, **kwargs):
+    def addCleanup(self, function, /, *args, **kwargs):
         """Add a function, with arguments, to be called when the test is
         completed. Functions added are called on a LIFO basis and are
         called after tearDown on test failure or success.
 
         Cleanup items are called even if setUp fails (unlike tearDown)."""
-        if len(args) >= 2:
-            self, function, *args = args
-        elif not args:
-            raise TypeError("descriptor 'addCleanup' of 'TestCase' object "
-                            "needs an argument")
-        elif 'function' in kwargs:
-            function = kwargs.pop('function')
-            self, *args = args
-            import warnings
-            warnings.warn("Passing 'function' as keyword argument is deprecated",
-                          DeprecationWarning, stacklevel=2)
-        else:
-            raise TypeError('addCleanup expected at least 1 positional '
-                            'argument, got %d' % (len(args)-1))
-        args = tuple(args)
-
         self._cleanups.append((function, args, kwargs))
-    addCleanup.__text_signature__ = '($self, function, /, *args, **kwargs)'
 
-    def addClassCleanup(*args, **kwargs):
+    @classmethod
+    def addClassCleanup(cls, function, /, *args, **kwargs):
         """Same as addCleanup, except the cleanup items are called even if
         setUpClass fails (unlike tearDownClass)."""
-        if len(args) >= 2:
-            cls, function, *args = args
-        elif not args:
-            raise TypeError("descriptor 'addClassCleanup' of 'TestCase' object "
-                            "needs an argument")
-        else:
-            raise TypeError('addClassCleanup expected at least 1 positional '
-                            'argument, got %d' % (len(args)-1))
-        args = tuple(args)
-
         cls._class_cleanups.append((function, args, kwargs))
-    addClassCleanup.__text_signature__ = '($cls, function, /, *args, **kwargs)'
-    addClassCleanup = classmethod(addClassCleanup)
 
     def setUp(self):
         "Hook method for setting up the test fixture before exercising it."

@@ -74,6 +74,45 @@ _testfunc_reg_struct_update_value(TestReg in)
     ((volatile TestReg *)&in)->second = 0x0badf00d;
 }
 
+/*
+ * See bpo-22273. Structs containing arrays should work on Linux 64-bit.
+ */
+
+typedef struct {
+    unsigned char data[16];
+} Test2;
+
+EXPORT(int)
+_testfunc_array_in_struct1(Test2 in)
+{
+    int result = 0;
+
+    for (unsigned i = 0; i < 16; i++)
+        result += in.data[i];
+    /* As the structure is passed by value, changes to it shouldn't be
+     * reflected in the caller.
+     */
+    memset(in.data, 0, sizeof(in.data));
+    return result;
+}
+
+typedef struct {
+    double data[2];
+} Test3;
+
+EXPORT(double)
+_testfunc_array_in_struct2(Test3 in)
+{
+    double result = 0;
+
+    for (unsigned i = 0; i < 2; i++)
+        result += in.data[i];
+    /* As the structure is passed by value, changes to it shouldn't be
+     * reflected in the caller.
+     */
+    memset(in.data, 0, sizeof(in.data));
+    return result;
+}
 
 EXPORT(void)testfunc_array(int values[4])
 {
@@ -424,30 +463,6 @@ struct BITS {
      short M: 1, N: 2, O: 3, P: 4, Q: 5, R: 6, S: 7;
 #endif
 };
-
-EXPORT(void) set_bitfields(struct BITS *bits, char name, int value)
-{
-    switch (name) {
-    case 'A': bits->A = value; break;
-    case 'B': bits->B = value; break;
-    case 'C': bits->C = value; break;
-    case 'D': bits->D = value; break;
-    case 'E': bits->E = value; break;
-    case 'F': bits->F = value; break;
-    case 'G': bits->G = value; break;
-    case 'H': bits->H = value; break;
-    case 'I': bits->I = value; break;
-#ifdef SIGNED_SHORT_BITFIELDS
-    case 'M': bits->M = value; break;
-    case 'N': bits->N = value; break;
-    case 'O': bits->O = value; break;
-    case 'P': bits->P = value; break;
-    case 'Q': bits->Q = value; break;
-    case 'R': bits->R = value; break;
-    case 'S': bits->S = value; break;
-#endif
-    }
-}
 
 EXPORT(int) unpack_bitfields(struct BITS *bits, char name)
 {

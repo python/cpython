@@ -130,10 +130,17 @@ Sequence Protocol
 
 .. c:function:: PyObject* PySequence_Fast(PyObject *o, const char *m)
 
-   Return the sequence or iterable *o* as a list, unless it is already a tuple or list, in
-   which case *o* is returned.  Use :c:func:`PySequence_Fast_GET_ITEM` to access
-   the members of the result.  Returns *NULL* on failure.  If the object is not
-   a sequence or iterable, raises :exc:`TypeError` with *m* as the message text.
+   Return the sequence or iterable *o* as an object usable by the other
+   ``PySequence_Fast*`` family of functions. If the object is not a sequence or
+   iterable, raises :exc:`TypeError` with *m* as the message text. Returns
+   *NULL* on failure.
+
+   The ``PySequence_Fast*`` functions are thus named because they assume
+   *o* is a :c:type:`PyTupleObject` or a :c:type:`PyListObject` and access
+   the data fields of *o* directly.
+
+   As a CPython implementation detail, if *o* is already a sequence or list, it
+   will be returned.
 
 
 .. c:function:: Py_ssize_t PySequence_Fast_GET_SIZE(PyObject *o)
@@ -141,8 +148,8 @@ Sequence Protocol
    Returns the length of *o*, assuming that *o* was returned by
    :c:func:`PySequence_Fast` and that *o* is not *NULL*.  The size can also be
    gotten by calling :c:func:`PySequence_Size` on *o*, but
-   :c:func:`PySequence_Fast_GET_SIZE` is faster because it can assume *o* is a list
-   or tuple.
+   :c:func:`PySequence_Fast_GET_SIZE` is faster because it can assume *o* is a
+   list or tuple.
 
 
 .. c:function:: PyObject* PySequence_Fast_GET_ITEM(PyObject *o, Py_ssize_t i)
@@ -163,7 +170,7 @@ Sequence Protocol
 
 .. c:function:: PyObject* PySequence_ITEM(PyObject *o, Py_ssize_t i)
 
-   Return the *i*\ th element of *o* or *NULL* on failure. Macro form of
+   Return the *i*\ th element of *o* or *NULL* on failure. Faster form of
    :c:func:`PySequence_GetItem` but without checking that
    :c:func:`PySequence_Check` on *o* is true and without adjustment for negative
    indices.

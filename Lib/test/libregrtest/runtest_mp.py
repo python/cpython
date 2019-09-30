@@ -13,13 +13,14 @@ from test import support
 
 from test.libregrtest.runtest import (
     runtest, INTERRUPTED, CHILD_ERROR, PROGRESS_MIN_TIME,
-    format_test_result, TestResult, is_failed)
+    format_test_result, TestResult, is_failed, TIMEOUT)
 from test.libregrtest.setup import setup_tests
 from test.libregrtest.utils import format_duration
 
 
 # Display the running tests if nothing happened last N seconds
 PROGRESS_UPDATE = 30.0   # seconds
+assert PROGRESS_UPDATE >= PROGRESS_MIN_TIME
 
 # Time to wait until a worker completes: should be immediate
 JOIN_TIMEOUT = 30.0   # seconds
@@ -103,11 +104,12 @@ class ExitThread(Exception):
 
 
 class MultiprocessThread(threading.Thread):
-    def __init__(self, pending, output, ns):
+    def __init__(self, pending, output, ns, timeout):
         super().__init__()
         self.pending = pending
         self.output = output
         self.ns = ns
+        self.timeout = timeout
         self.current_test_name = None
         self.start_time = None
         self._popen = None
@@ -125,17 +127,77 @@ class MultiprocessThread(threading.Thread):
             info.append(f'pid={popen.pid}')
         return '<%s>' % ' '.join(info)
 
-    def kill(self):
-        self._killed = True
+    def _kill(self):
+        dt = time.monotonic() - self.start_time
 
         popen = self._popen
-        if popen is None:
-            return
-        popen.kill()
+        pid = popen.pid
+        print("Kill worker process %s running for %.1f sec" % (pid, dt),
+              file=sys.stderr, flush=True)
+
+        try:
+            popen.kill()
+            return True
+        except OSError as exc:
+            print("WARNING: Failed to kill worker process %s: %r" % (pid, exc),
+                  file=sys.stderr, flush=True)
+            return False
+
+    def _close_wait(self):
+        popen = self._popen
+
         # stdout and stderr must be closed to ensure that communicate()
         # does not hang
         popen.stdout.close()
         popen.stderr.close()
+
+        try:
+            popen.wait(JOIN_TIMEOUT)
+        except (subprocess.TimeoutExpired, OSError) as exc:
+            print("WARNING: Failed to wait for worker process %s "
+                  "completion (timeout=%.1f sec): %r"
+                  % (popen.pid, JOIN_TIMEOUT, exc),
+                  file=sys.stderr, flush=True)
+
+    def kill(self):
+        """
+        Kill the current process (if any).
+
+        This method can be called by the thread running the process,
+        or by another thread.
+        """
+        self._killed = True
+
+        if self._popen is None:
+            return
+
+        if not self._kill():
+            return
+
+        self._close_wait()
+
+    def mp_result_error(self, test_name, error_type, stdout='', stderr='',
+                        err_msg=None):
+        test_time = time.monotonic() - self.start_time
+        result = TestResult(test_name, error_type, test_time, None)
+        return MultiprocessResult(result, stdout, stderr, err_msg)
+
+    def _timedout(self, test_name):
+        self._kill()
+
+        stdout = stderr = ''
+        popen = self._popen
+        try:
+            stdout, stderr = popen.communicate(timeout=JOIN_TIMEOUT)
+        except (subprocess.TimeoutExpired, OSError) as exc:
+            print("WARNING: Failed to read worker process %s output "
+                  "(timeout=%.1f sec): %r"
+                  % (popen.pid, JOIN_TIMEOUT, exc),
+                  file=sys.stderr, flush=True)
+
+        self._close_wait()
+
+        return self.mp_result_error(test_name, TIMEOUT, stdout, stderr)
 
     def _runtest(self, test_name):
         try:
@@ -144,7 +206,7 @@ class MultiprocessThread(threading.Thread):
 
             self._popen = run_test_in_subprocess(test_name, self.ns)
             popen = self._popen
-            with popen:
+            try:
                 try:
                     if self._killed:
                         # If kill() has been called before self._popen is set,
@@ -154,7 +216,14 @@ class MultiprocessThread(threading.Thread):
                         raise ExitThread
 
                     try:
-                        stdout, stderr = popen.communicate()
+                        stdout, stderr = popen.communicate(timeout=self.timeout)
+                    except subprocess.TimeoutExpired:
+                        if self._killed:
+                            # kill() has been called: communicate() fails
+                            # on reading closed stdout/stderr
+                            raise ExitThread
+
+                        return self._timedout(test_name)
                     except OSError:
                         if self._killed:
                             # kill() has been called: communicate() fails
@@ -163,10 +232,11 @@ class MultiprocessThread(threading.Thread):
                         raise
                 except:
                     self.kill()
-                    popen.wait()
                     raise
+            finally:
+                self._close_wait()
 
-            retcode = popen.wait()
+            retcode = popen.returncode
         finally:
             self.current_test_name = None
             self._popen = None
@@ -191,8 +261,7 @@ class MultiprocessThread(threading.Thread):
                     err_msg = "Failed to parse worker JSON: %s" % exc
 
         if err_msg is not None:
-            test_time = time.monotonic() - self.start_time
-            result = TestResult(test_name, CHILD_ERROR, test_time, None)
+            return self.mp_result_error(test_name, CHILD_ERROR, stdout, stderr, err_msg)
 
         return MultiprocessResult(result, stdout, stderr, err_msg)
 
@@ -236,13 +305,14 @@ class MultiprocessRunner:
         self.output = queue.Queue()
         self.pending = MultiprocessIterator(self.regrtest.tests)
         if self.ns.timeout is not None:
-            self.test_timeout = self.ns.timeout * 1.5
+            self.worker_timeout = self.ns.timeout * 1.5
         else:
-            self.test_timeout = None
+            self.worker_timeout = None
         self.workers = None
 
     def start_workers(self):
-        self.workers = [MultiprocessThread(self.pending, self.output, self.ns)
+        self.workers = [MultiprocessThread(self.pending, self.output,
+                                           self.ns, self.worker_timeout)
                         for _ in range(self.ns.use_mp)]
         print("Run tests in parallel using %s child processes"
               % len(self.workers))
@@ -259,10 +329,11 @@ class MultiprocessRunner:
                 if not worker.is_alive():
                     break
                 dt = time.monotonic() - start_time
-                print("Wait for regrtest worker %r for %.1f sec" % (worker, dt))
+                print("Wait for regrtest worker %r for %.1f sec" % (worker, dt),
+                      flush=True)
                 if dt > JOIN_TIMEOUT:
                     print("Warning -- failed to join a regrtest worker %s"
-                          % worker)
+                          % worker, flush=True)
                     break
 
     def _get_result(self):
@@ -273,12 +344,13 @@ class MultiprocessRunner:
             except queue.Empty:
                 return None
 
+        use_faulthandler = (self.ns.timeout is not None)
+        timeout = PROGRESS_UPDATE
         while True:
-            if self.test_timeout is not None:
-                faulthandler.dump_traceback_later(self.test_timeout, exit=True)
+            if use_faulthandler:
+                faulthandler.dump_traceback_later(timeout * 2.0, exit=True)
 
             # wait for a thread
-            timeout = max(PROGRESS_UPDATE, PROGRESS_MIN_TIME)
             try:
                 return self.output.get(timeout=timeout)
             except queue.Empty:
@@ -343,7 +415,7 @@ class MultiprocessRunner:
             print()
             self.regrtest.interrupted = True
         finally:
-            if self.test_timeout is not None:
+            if self.ns.timeout is not None:
                 faulthandler.cancel_dump_traceback_later()
 
         # a test failed (and --failfast is set) or all tests completed

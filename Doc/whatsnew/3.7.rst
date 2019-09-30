@@ -1017,6 +1017,22 @@ by right-clicking the button.  (Contributed by Tal Einat in :issue:`1529353`.)
 
 The changes above have been backported to 3.6 maintenance releases.
 
+NEW in 3.7.4:
+
+Add "Run Customized" to the Run menu to run a module with customized
+settings. Any command line arguments entered are added to sys.argv.
+They re-appear in the box for the next customized run.  One can also
+suppress the normal Shell main module restart.  (Contributed by Cheryl
+Sabella, Terry Jan Reedy, and others in :issue:`5680` and :issue:`37627`.)
+
+New in 3.7.5:
+
+Add optional line numbers for IDLE editor windows. Windows
+open without line numbers unless set otherwise in the General
+tab of the configuration dialog.  Line numbers for an existing
+window are shown and hidden in the Options menu.
+(Contributed by Tal Einat and Saimadhav Heblikar in :issue:`17535`.)
+
 
 importlib
 ---------
@@ -1307,7 +1323,7 @@ including failing the host name check now raises
 :exc:`~ssl.SSLCertVerificationError` and aborts the handshake with a proper
 TLS Alert message.  The new exception contains additional information.
 Host name validation can be customized with
-:attr:`SSLContext.host_flags <ssl.SSLContext.host_flags>`.
+:attr:`SSLContext.hostname_checks_common_name <ssl.SSLContext.hostname_checks_common_name>`.
 (Contributed by Christian Heimes in :issue:`31399`.)
 
 .. note::
@@ -1320,8 +1336,7 @@ The ``ssl`` module no longer sends IP addresses in SNI TLS extension.
 (Contributed by Christian Heimes in :issue:`32185`.)
 
 :func:`~ssl.match_hostname` no longer supports partial wildcards like
-``www*.example.org``. :attr:`SSLContext.host_flags <ssl.SSLContext.host_flags>`
-has partial wildcard matching disabled by default.
+``www*.example.org``.
 (Contributed by Mandeep Singh in :issue:`23033` and Christian Heimes in
 :issue:`31399`.)
 

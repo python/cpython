@@ -142,10 +142,6 @@ The following functions and structs are used to create
 
       Name of the type, used to set :c:member:`PyTypeObject.tp_name`.
 
-   .. c:member:: const char* PyType_Spec.doc
-
-      Type docstring, used to set :c:member:`PyTypeObject.tp_doc`.
-
    .. c:member:: int PyType_Spec.basicsize
    .. c:member:: int PyType_Spec.itemsize
 
@@ -191,9 +187,8 @@ The following functions and structs are used to create
       * :c:member:`~PyTypeObject.tp_cache`
       * :c:member:`~PyTypeObject.tp_subclasses`
       * :c:member:`~PyTypeObject.tp_weaklist`
+      * :c:member:`~PyTypeObject.tp_vectorcall`
       * :c:member:`~PyTypeObject.tp_print`
-      * :c:member:`~PyTypeObject.tp_weaklistoffset`
-      * :c:member:`~PyTypeObject.tp_dictoffset`
       * :c:member:`~PyBufferProcs.bf_getbuffer`
       * :c:member:`~PyBufferProcs.bf_releasebuffer`
 

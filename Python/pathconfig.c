@@ -15,11 +15,15 @@ extern "C" {
 
 
 _PyPathConfig _Py_path_config = _PyPathConfig_INIT;
+#ifdef MS_WINDOWS
+wchar_t *_Py_dll_path = NULL;
+#endif
 
 
 static int
 copy_wstr(wchar_t **dst, const wchar_t *src)
 {
+    assert(*dst == NULL);
     if (src != NULL) {
         *dst = _PyMem_RawWcsdup(src);
         if (*dst == NULL) {
@@ -48,100 +52,44 @@ pathconfig_clear(_PyPathConfig *config)
         ATTR = NULL; \
     } while (0)
 
-    CLEAR(config->prefix);
     CLEAR(config->program_full_path);
+    CLEAR(config->prefix);
     CLEAR(config->exec_prefix);
-#ifdef MS_WINDOWS
-    CLEAR(config->dll_path);
-#endif
     CLEAR(config->module_search_path);
-    CLEAR(config->home);
     CLEAR(config->program_name);
+    CLEAR(config->home);
+    CLEAR(config->base_executable);
 #undef CLEAR
 
     PyMem_SetAllocator(PYMEM_DOMAIN_RAW, &old_alloc);
 }
 
 
-/* Calculate the path configuration: initialize pathconfig from config */
 static PyStatus
-pathconfig_calculate(_PyPathConfig *pathconfig, const PyConfig *config)
+pathconfig_copy(_PyPathConfig *config, const _PyPathConfig *config2)
 {
-    PyStatus status;
-    _PyPathConfig new_config = _PyPathConfig_INIT;
-
-    PyMemAllocatorEx old_alloc;
-    _PyMem_SetDefaultAllocator(PYMEM_DOMAIN_RAW, &old_alloc);
-
-    /* Calculate program_full_path, prefix, exec_prefix,
-       dll_path (Windows), and module_search_path */
-    status = _PyPathConfig_Calculate(&new_config, config);
-    if (_PyStatus_EXCEPTION(status)) {
-        goto error;
-    }
-
-    /* Copy home and program_name from config */
-    if (copy_wstr(&new_config.home, config->home) < 0) {
-        status = _PyStatus_NO_MEMORY();
-        goto error;
-    }
-    if (copy_wstr(&new_config.program_name, config->program_name) < 0) {
-        status = _PyStatus_NO_MEMORY();
-        goto error;
-    }
-
-    pathconfig_clear(pathconfig);
-    *pathconfig = new_config;
-
-    status = _PyStatus_OK();
-    goto done;
-
-error:
-    pathconfig_clear(&new_config);
-
-done:
-    PyMem_SetAllocator(PYMEM_DOMAIN_RAW, &old_alloc);
-    return status;
-}
-
-
-PyStatus
-_PyPathConfig_SetGlobal(const _PyPathConfig *config)
-{
-    PyStatus status;
-    _PyPathConfig new_config = _PyPathConfig_INIT;
-
-    PyMemAllocatorEx old_alloc;
-    _PyMem_SetDefaultAllocator(PYMEM_DOMAIN_RAW, &old_alloc);
+    pathconfig_clear(config);
 
 #define COPY_ATTR(ATTR) \
     do { \
-        if (copy_wstr(&new_config.ATTR, config->ATTR) < 0) { \
-            pathconfig_clear(&new_config); \
-            status = _PyStatus_NO_MEMORY(); \
-            goto done; \
+        if (copy_wstr(&config->ATTR, config2->ATTR) < 0) { \
+            return _PyStatus_NO_MEMORY(); \
         } \
     } while (0)
 
     COPY_ATTR(program_full_path);
     COPY_ATTR(prefix);
     COPY_ATTR(exec_prefix);
-#ifdef MS_WINDOWS
-    COPY_ATTR(dll_path);
-#endif
     COPY_ATTR(module_search_path);
     COPY_ATTR(program_name);
     COPY_ATTR(home);
+    config->isolated = config2->isolated;
+    config->site_import = config2->site_import;
+    COPY_ATTR(base_executable);
 
-    pathconfig_clear(&_Py_path_config);
-    /* Steal new_config strings; don't clear new_config */
-    _Py_path_config = new_config;
+#undef COPY_ATTR
 
-    status = _PyStatus_OK();
-
-done:
-    PyMem_SetAllocator(PYMEM_DOMAIN_RAW, &old_alloc);
-    return status;
+    return _PyStatus_OK();
 }
 
 
@@ -152,6 +100,10 @@ _PyPathConfig_ClearGlobal(void)
     _PyMem_SetDefaultAllocator(PYMEM_DOMAIN_RAW, &old_alloc);
 
     pathconfig_clear(&_Py_path_config);
+#ifdef MS_WINDOWS
+    PyMem_RawFree(_Py_dll_path);
+    _Py_dll_path = NULL;
+#endif
 
     PyMem_SetAllocator(PYMEM_DOMAIN_RAW, &old_alloc);
 }
@@ -188,47 +140,63 @@ _PyWideStringList_Join(const PyWideStringList *list, wchar_t sep)
 }
 
 
-/* Set the global path configuration from config. */
+/* Initialize _Py_dll_path on Windows. Do nothing on other platforms. */
 PyStatus
-_PyConfig_SetPathConfig(const PyConfig *config)
+_PyPathConfig_Init(void)
 {
+#ifdef MS_WINDOWS
+    if (_Py_dll_path == NULL) {
+        /* Already set: nothing to do */
+        return _PyStatus_OK();
+    }
+
     PyMemAllocatorEx old_alloc;
     _PyMem_SetDefaultAllocator(PYMEM_DOMAIN_RAW, &old_alloc);
 
-    PyStatus status;
-    _PyPathConfig pathconfig = _PyPathConfig_INIT;
+    _Py_dll_path = _Py_GetDLLPath();
 
-    pathconfig.module_search_path = _PyWideStringList_Join(&config->module_search_paths, DELIM);
-    if (pathconfig.module_search_path == NULL) {
-        goto no_memory;
-    }
+    PyMem_SetAllocator(PYMEM_DOMAIN_RAW, &old_alloc);
 
-    if (copy_wstr(&pathconfig.program_full_path, config->executable) < 0) {
-        goto no_memory;
-    }
-    if (copy_wstr(&pathconfig.prefix, config->prefix) < 0) {
-        goto no_memory;
-    }
-    if (copy_wstr(&pathconfig.exec_prefix, config->exec_prefix) < 0) {
-        goto no_memory;
-    }
-#ifdef MS_WINDOWS
-    pathconfig.dll_path = _Py_GetDLLPath();
-    if (pathconfig.dll_path == NULL) {
-        goto no_memory;
+    if (_Py_dll_path == NULL) {
+        return _PyStatus_NO_MEMORY();
     }
 #endif
-    if (copy_wstr(&pathconfig.program_name, config->program_name) < 0) {
-        goto no_memory;
-    }
-    if (copy_wstr(&pathconfig.home, config->home) < 0) {
-        goto no_memory;
+    return _PyStatus_OK();
+}
+
+
+static PyStatus
+pathconfig_set_from_config(_PyPathConfig *pathconfig, const PyConfig *config)
+{
+    PyStatus status;
+    PyMemAllocatorEx old_alloc;
+    _PyMem_SetDefaultAllocator(PYMEM_DOMAIN_RAW, &old_alloc);
+
+    if (config->module_search_paths_set) {
+        PyMem_RawFree(pathconfig->module_search_path);
+        pathconfig->module_search_path = _PyWideStringList_Join(&config->module_search_paths, DELIM);
+        if (pathconfig->module_search_path == NULL) {
+            goto no_memory;
+        }
     }
 
-    status = _PyPathConfig_SetGlobal(&pathconfig);
-    if (_PyStatus_EXCEPTION(status)) {
-        goto done;
-    }
+#define COPY_CONFIG(PATH_ATTR, CONFIG_ATTR) \
+        if (config->CONFIG_ATTR) { \
+            PyMem_RawFree(pathconfig->PATH_ATTR); \
+            pathconfig->PATH_ATTR = NULL; \
+            if (copy_wstr(&pathconfig->PATH_ATTR, config->CONFIG_ATTR) < 0) { \
+                goto no_memory; \
+            } \
+        }
+
+    COPY_CONFIG(base_executable, base_executable);
+    COPY_CONFIG(program_full_path, executable);
+    COPY_CONFIG(prefix, prefix);
+    COPY_CONFIG(exec_prefix, exec_prefix);
+    COPY_CONFIG(program_name, program_name);
+    COPY_CONFIG(home, home);
+
+#undef COPY_CONFIG
 
     status = _PyStatus_OK();
     goto done;
@@ -237,7 +205,6 @@ no_memory:
     status = _PyStatus_NO_MEMORY();
 
 done:
-    pathconfig_clear(&pathconfig);
     PyMem_SetAllocator(PYMEM_DOMAIN_RAW, &old_alloc);
     return status;
 }
@@ -283,6 +250,61 @@ config_init_module_search_paths(PyConfig *config, _PyPathConfig *pathconfig)
 }
 
 
+/* Calculate the path configuration:
+
+   - exec_prefix
+   - module_search_path
+   - prefix
+   - program_full_path
+
+   On Windows, more fields are calculated:
+
+   - base_executable
+   - isolated
+   - site_import
+
+   On other platforms, isolated and site_import are left unchanged, and
+   _PyConfig_InitPathConfig() copies executable to base_executable (if it's not
+   set).
+
+   Priority, highest to lowest:
+
+   - PyConfig
+   - _Py_path_config: set by Py_SetPath(), Py_SetPythonHome()
+     and Py_SetProgramName()
+   - _PyPathConfig_Calculate()
+*/
+static PyStatus
+pathconfig_calculate(_PyPathConfig *pathconfig, const PyConfig *config)
+{
+    PyStatus status;
+
+    PyMemAllocatorEx old_alloc;
+    _PyMem_SetDefaultAllocator(PYMEM_DOMAIN_RAW, &old_alloc);
+
+    status = pathconfig_copy(pathconfig, &_Py_path_config);
+    if (_PyStatus_EXCEPTION(status)) {
+        goto done;
+    }
+
+    status = pathconfig_set_from_config(pathconfig, config);
+    if (_PyStatus_EXCEPTION(status)) {
+        goto done;
+    }
+
+    if (_Py_path_config.module_search_path == NULL) {
+        status = _PyPathConfig_Calculate(pathconfig, config);
+    }
+    else {
+        /* Py_SetPath() has been called: avoid _PyPathConfig_Calculate() */
+    }
+
+done:
+    PyMem_SetAllocator(PYMEM_DOMAIN_RAW, &old_alloc);
+    return status;
+}
+
+
 static PyStatus
 config_calculate_pathconfig(PyConfig *config)
 {
@@ -291,35 +313,28 @@ config_calculate_pathconfig(PyConfig *config)
 
     status = pathconfig_calculate(&pathconfig, config);
     if (_PyStatus_EXCEPTION(status)) {
-        goto error;
+        goto done;
     }
 
     if (!config->module_search_paths_set) {
         status = config_init_module_search_paths(config, &pathconfig);
         if (_PyStatus_EXCEPTION(status)) {
-            goto error;
+            goto done;
         }
     }
 
-    if (config->executable == NULL) {
-        if (copy_wstr(&config->executable,
-                      pathconfig.program_full_path) < 0) {
-            goto no_memory;
+#define COPY_ATTR(PATH_ATTR, CONFIG_ATTR) \
+        if (config->CONFIG_ATTR == NULL) { \
+            if (copy_wstr(&config->CONFIG_ATTR, pathconfig.PATH_ATTR) < 0) { \
+                goto no_memory; \
+            } \
         }
-    }
 
-    if (config->prefix == NULL) {
-        if (copy_wstr(&config->prefix, pathconfig.prefix) < 0) {
-            goto no_memory;
-        }
-    }
-
-    if (config->exec_prefix == NULL) {
-        if (copy_wstr(&config->exec_prefix,
-                      pathconfig.exec_prefix) < 0) {
-            goto no_memory;
-        }
-    }
+    COPY_ATTR(program_full_path, executable);
+    COPY_ATTR(prefix, prefix);
+    COPY_ATTR(exec_prefix, exec_prefix);
+    COPY_ATTR(base_executable, base_executable);
+#undef COPY_ATTR
 
     if (pathconfig.isolated != -1) {
         config->isolated = pathconfig.isolated;
@@ -328,13 +343,13 @@ config_calculate_pathconfig(PyConfig *config)
         config->site_import = pathconfig.site_import;
     }
 
-    pathconfig_clear(&pathconfig);
-    return _PyStatus_OK();
+    status = _PyStatus_OK();
+    goto done;
 
 no_memory:
     status = _PyStatus_NO_MEMORY();
 
-error:
+done:
     pathconfig_clear(&pathconfig);
     return status;
 }
@@ -367,38 +382,67 @@ _PyConfig_InitPathConfig(PyConfig *config)
             return _PyStatus_NO_MEMORY();
         }
     }
+
+    if (config->base_executable == NULL) {
+        if (copy_wstr(&config->base_executable,
+                      config->executable) < 0) {
+            return _PyStatus_NO_MEMORY();
+        }
+    }
+
     return _PyStatus_OK();
+}
+
+
+static PyStatus
+pathconfig_global_read(_PyPathConfig *pathconfig)
+{
+    PyStatus status;
+    PyConfig config;
+    _PyConfig_InitCompatConfig(&config);
+
+    /* Call _PyConfig_InitPathConfig() */
+    status = PyConfig_Read(&config);
+    if (_PyStatus_EXCEPTION(status)) {
+        goto done;
+    }
+
+    status = pathconfig_set_from_config(pathconfig, &config);
+
+done:
+    PyConfig_Clear(&config);
+    return status;
 }
 
 
 static void
 pathconfig_global_init(void)
 {
-    if (_Py_path_config.module_search_path != NULL) {
-        /* Already initialized */
-        return;
-    }
-
     PyStatus status;
-    PyConfig config;
-    _PyConfig_InitCompatConfig(&config);
 
-    status = PyConfig_Read(&config);
+    /* Initialize _Py_dll_path if needed */
+    status = _PyPathConfig_Init();
     if (_PyStatus_EXCEPTION(status)) {
-        goto error;
+        Py_ExitStatusException(status);
     }
 
-    status = _PyConfig_SetPathConfig(&config);
-    if (_PyStatus_EXCEPTION(status)) {
-        goto error;
+    if (_Py_path_config.module_search_path == NULL) {
+        status = pathconfig_global_read(&_Py_path_config);
+        if (_PyStatus_EXCEPTION(status)) {
+            Py_ExitStatusException(status);
+        }
+    }
+    else {
+        /* Global configuration already initialized */
     }
 
-    PyConfig_Clear(&config);
-    return;
-
-error:
-    PyConfig_Clear(&config);
-    Py_ExitStatusException(status);
+    assert(_Py_path_config.program_full_path != NULL);
+    assert(_Py_path_config.prefix != NULL);
+    assert(_Py_path_config.exec_prefix != NULL);
+    assert(_Py_path_config.module_search_path != NULL);
+    assert(_Py_path_config.program_name != NULL);
+    /* home can be NULL */
+    assert(_Py_path_config.base_executable != NULL);
 }
 
 
@@ -415,32 +459,26 @@ Py_SetPath(const wchar_t *path)
     PyMemAllocatorEx old_alloc;
     _PyMem_SetDefaultAllocator(PYMEM_DOMAIN_RAW, &old_alloc);
 
-    _PyPathConfig new_config;
-    new_config.program_full_path = _PyMem_RawWcsdup(Py_GetProgramName());
-    int alloc_error = (new_config.program_full_path == NULL);
-    new_config.prefix = _PyMem_RawWcsdup(L"");
-    alloc_error |= (new_config.prefix == NULL);
-    new_config.exec_prefix = _PyMem_RawWcsdup(L"");
-    alloc_error |= (new_config.exec_prefix == NULL);
-#ifdef MS_WINDOWS
-    new_config.dll_path = _Py_GetDLLPath();
-    alloc_error |= (new_config.dll_path == NULL);
-#endif
-    new_config.module_search_path = _PyMem_RawWcsdup(path);
-    alloc_error |= (new_config.module_search_path == NULL);
+    /* Getting the program full path calls pathconfig_global_init() */
+    wchar_t *program_full_path = _PyMem_RawWcsdup(Py_GetProgramFullPath());
 
-    /* steal the home and program_name values (to leave them unchanged) */
-    new_config.home = _Py_path_config.home;
-    _Py_path_config.home = NULL;
-    new_config.program_name = _Py_path_config.program_name;
-    _Py_path_config.program_name = NULL;
+    PyMem_RawFree(_Py_path_config.program_full_path);
+    PyMem_RawFree(_Py_path_config.prefix);
+    PyMem_RawFree(_Py_path_config.exec_prefix);
+    PyMem_RawFree(_Py_path_config.module_search_path);
 
-    pathconfig_clear(&_Py_path_config);
-    _Py_path_config = new_config;
+    _Py_path_config.program_full_path = program_full_path;
+    _Py_path_config.prefix = _PyMem_RawWcsdup(L"");
+    _Py_path_config.exec_prefix = _PyMem_RawWcsdup(L"");
+    _Py_path_config.module_search_path = _PyMem_RawWcsdup(path);
 
     PyMem_SetAllocator(PYMEM_DOMAIN_RAW, &old_alloc);
 
-    if (alloc_error) {
+    if (_Py_path_config.program_full_path == NULL
+        || _Py_path_config.prefix == NULL
+        || _Py_path_config.exec_prefix == NULL
+        || _Py_path_config.module_search_path == NULL)
+    {
         Py_FatalError("Py_SetPath() failed: out of memory");
     }
 }
@@ -711,7 +749,6 @@ _Py_FindEnvConfigValue(FILE *env_file, const wchar_t *key,
     char buffer[MAXPATHLEN * 2 + 1];  /* allow extra for key, '=', etc. */
     buffer[Py_ARRAY_LENGTH(buffer)-1] = '\0';
 
-    fseek(env_file, 0, SEEK_SET);
     while (!feof(env_file)) {
         char * p = fgets(buffer, Py_ARRAY_LENGTH(buffer) - 1, env_file);
 

@@ -21,6 +21,10 @@ def run(main, *, debug=False):
     It should be used as a main entry point for asyncio programs, and should
     ideally only be called once.
 
+    Return a result of *coro* execution, or raise a RuntimeError
+    if `asyncio.run()`is called from a running event loop, or a ValueError
+    if `main` is not a courutine.
+
     Example:
 
         async def main():
@@ -45,6 +49,7 @@ def run(main, *, debug=False):
         try:
             _cancel_all_tasks(loop)
             loop.run_until_complete(loop.shutdown_asyncgens())
+            loop.run_until_complete(loop.shutdown_default_executor())
         finally:
             events.set_event_loop(None)
             loop.close()

@@ -8,11 +8,11 @@ import random
 import re
 import subprocess
 import sys
-import sysconfig
 import textwrap
 import threading
 import time
 import unittest
+import weakref
 from test import support
 from test.support import MISSING_C_DOCSTRINGS
 from test.support.script_helper import assert_python_failure, assert_python_ok
@@ -27,14 +27,8 @@ _testcapi = support.import_module('_testcapi')
 # Were we compiled --with-pydebug or with #define Py_DEBUG?
 Py_DEBUG = hasattr(sys, 'gettotalrefcount')
 
-Py_TPFLAGS_METHOD_DESCRIPTOR = 1 << 17
-
 
 def testfunction(self):
-    """some doc"""
-    return self
-
-def testfunction_kw(self, *, kw):
     """some doc"""
     return self
 
@@ -103,7 +97,7 @@ class CAPITest(unittest.TestCase):
             def __len__(self):
                 return 1
         self.assertRaises(TypeError, _posixsubprocess.fork_exec,
-                          1,Z(),3,(1, 2),5,6,7,8,9,10,11,12,13,14,15,16,17)
+                          1,Z(),3,(1, 2),5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20)
         # Issue #15736: overflow in _PySequence_BytesToCharpArray()
         class Z(object):
             def __len__(self):
@@ -111,7 +105,7 @@ class CAPITest(unittest.TestCase):
             def __getitem__(self, i):
                 return b'x'
         self.assertRaises(MemoryError, _posixsubprocess.fork_exec,
-                          1,Z(),3,(1, 2),5,6,7,8,9,10,11,12,13,14,15,16,17)
+                          1,Z(),3,(1, 2),5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20)
 
     @unittest.skipUnless(_posixsubprocess, '_posixsubprocess required for this test.')
     def test_subprocess_fork_exec(self):
@@ -121,7 +115,7 @@ class CAPITest(unittest.TestCase):
 
         # Issue #15738: crash in subprocess_fork_exec()
         self.assertRaises(TypeError, _posixsubprocess.fork_exec,
-                          Z(),[b'1'],3,(1, 2),5,6,7,8,9,10,11,12,13,14,15,16,17)
+                          Z(),[b'1'],3,(1, 2),5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20)
 
     @unittest.skipIf(MISSING_C_DOCSTRINGS,
                      "Signature information for builtins requires docstrings")
@@ -183,6 +177,13 @@ class CAPITest(unittest.TestCase):
         o @= m1
         self.assertEqual(o, ("matmul", 42, m1))
 
+    def test_c_type_with_ipow(self):
+        # When the __ipow__ method of a type was implemented in C, using the
+        # modulo param would cause segfaults.
+        o = _testcapi.ipowType()
+        self.assertEqual(o.__ipow__(1), (1, None))
+        self.assertEqual(o.__ipow__(2, 2), (2, 2))
+
     def test_return_null_without_error(self):
         # Issue #23571: A function must not return NULL without setting an
         # error
@@ -198,6 +199,7 @@ class CAPITest(unittest.TestCase):
             self.assertRegex(err.replace(b'\r', b''),
                              br'Fatal Python error: a function returned NULL '
                                 br'without setting an error\n'
+                             br'Python runtime state: initialized\n'
                              br'SystemError: <built-in function '
                                  br'return_null_without_error> returned NULL '
                                  br'without setting an error\n'
@@ -225,6 +227,7 @@ class CAPITest(unittest.TestCase):
             self.assertRegex(err.replace(b'\r', b''),
                              br'Fatal Python error: a function returned a '
                                 br'result with an error set\n'
+                             br'Python runtime state: initialized\n'
                              br'ValueError\n'
                              br'\n'
                              br'The above exception was the direct cause '
@@ -383,6 +386,118 @@ class CAPITest(unittest.TestCase):
             del L
             self.assertEqual(PyList.num, 0)
 
+    def test_subclass_of_heap_gc_ctype_with_tpdealloc_decrefs_once(self):
+        class HeapGcCTypeSubclass(_testcapi.HeapGcCType):
+            def __init__(self):
+                self.value2 = 20
+                super().__init__()
+
+        subclass_instance = HeapGcCTypeSubclass()
+        type_refcnt = sys.getrefcount(HeapGcCTypeSubclass)
+
+        # Test that subclass instance was fully created
+        self.assertEqual(subclass_instance.value, 10)
+        self.assertEqual(subclass_instance.value2, 20)
+
+        # Test that the type reference count is only decremented once
+        del subclass_instance
+        self.assertEqual(type_refcnt - 1, sys.getrefcount(HeapGcCTypeSubclass))
+
+    def test_subclass_of_heap_gc_ctype_with_del_modifying_dunder_class_only_decrefs_once(self):
+        class A(_testcapi.HeapGcCType):
+            def __init__(self):
+                self.value2 = 20
+                super().__init__()
+
+        class B(A):
+            def __init__(self):
+                super().__init__()
+
+            def __del__(self):
+                self.__class__ = A
+                A.refcnt_in_del = sys.getrefcount(A)
+                B.refcnt_in_del = sys.getrefcount(B)
+
+        subclass_instance = B()
+        type_refcnt = sys.getrefcount(B)
+        new_type_refcnt = sys.getrefcount(A)
+
+        # Test that subclass instance was fully created
+        self.assertEqual(subclass_instance.value, 10)
+        self.assertEqual(subclass_instance.value2, 20)
+
+        del subclass_instance
+
+        # Test that setting __class__ modified the reference counts of the types
+        self.assertEqual(type_refcnt - 1, B.refcnt_in_del)
+        self.assertEqual(new_type_refcnt + 1, A.refcnt_in_del)
+
+        # Test that the original type already has decreased its refcnt
+        self.assertEqual(type_refcnt - 1, sys.getrefcount(B))
+
+        # Test that subtype_dealloc decref the newly assigned __class__ only once
+        self.assertEqual(new_type_refcnt, sys.getrefcount(A))
+
+    def test_heaptype_with_dict(self):
+        inst = _testcapi.HeapCTypeWithDict()
+        inst.foo = 42
+        self.assertEqual(inst.foo, 42)
+        self.assertEqual(inst.dictobj, inst.__dict__)
+        self.assertEqual(inst.dictobj, {"foo": 42})
+
+        inst = _testcapi.HeapCTypeWithDict()
+        self.assertEqual({}, inst.__dict__)
+
+    def test_heaptype_with_negative_dict(self):
+        inst = _testcapi.HeapCTypeWithNegativeDict()
+        inst.foo = 42
+        self.assertEqual(inst.foo, 42)
+        self.assertEqual(inst.dictobj, inst.__dict__)
+        self.assertEqual(inst.dictobj, {"foo": 42})
+
+        inst = _testcapi.HeapCTypeWithNegativeDict()
+        self.assertEqual({}, inst.__dict__)
+
+    def test_heaptype_with_weakref(self):
+        inst = _testcapi.HeapCTypeWithWeakref()
+        ref = weakref.ref(inst)
+        self.assertEqual(ref(), inst)
+        self.assertEqual(inst.weakreflist, ref)
+
+    def test_c_subclass_of_heap_ctype_with_tpdealloc_decrefs_once(self):
+        subclass_instance = _testcapi.HeapCTypeSubclass()
+        type_refcnt = sys.getrefcount(_testcapi.HeapCTypeSubclass)
+
+        # Test that subclass instance was fully created
+        self.assertEqual(subclass_instance.value, 10)
+        self.assertEqual(subclass_instance.value2, 20)
+
+        # Test that the type reference count is only decremented once
+        del subclass_instance
+        self.assertEqual(type_refcnt - 1, sys.getrefcount(_testcapi.HeapCTypeSubclass))
+
+    def test_c_subclass_of_heap_ctype_with_del_modifying_dunder_class_only_decrefs_once(self):
+        subclass_instance = _testcapi.HeapCTypeSubclassWithFinalizer()
+        type_refcnt = sys.getrefcount(_testcapi.HeapCTypeSubclassWithFinalizer)
+        new_type_refcnt = sys.getrefcount(_testcapi.HeapCTypeSubclass)
+
+        # Test that subclass instance was fully created
+        self.assertEqual(subclass_instance.value, 10)
+        self.assertEqual(subclass_instance.value2, 20)
+
+        # The tp_finalize slot will set __class__ to HeapCTypeSubclass
+        del subclass_instance
+
+        # Test that setting __class__ modified the reference counts of the types
+        self.assertEqual(type_refcnt - 1, _testcapi.HeapCTypeSubclassWithFinalizer.refcnt_in_del)
+        self.assertEqual(new_type_refcnt + 1, _testcapi.HeapCTypeSubclass.refcnt_in_del)
+
+        # Test that the original type already has decreased its refcnt
+        self.assertEqual(type_refcnt - 1, sys.getrefcount(_testcapi.HeapCTypeSubclassWithFinalizer))
+
+        # Test that subtype_dealloc decref the newly assigned __class__ only once
+        self.assertEqual(new_type_refcnt, sys.getrefcount(_testcapi.HeapCTypeSubclass))
+
 
 class TestPendingCalls(unittest.TestCase):
 
@@ -461,70 +576,6 @@ class TestPendingCalls(unittest.TestCase):
         n = 64
         self.pendingcalls_submit(l, n)
         self.pendingcalls_wait(l, n)
-
-
-class TestPEP590(unittest.TestCase):
-
-    def test_method_descriptor_flag(self):
-        import functools
-        cached = functools.lru_cache(1)(testfunction)
-
-        self.assertFalse(type(repr).__flags__ & Py_TPFLAGS_METHOD_DESCRIPTOR)
-        self.assertTrue(type(list.append).__flags__ & Py_TPFLAGS_METHOD_DESCRIPTOR)
-        self.assertTrue(type(list.__add__).__flags__ & Py_TPFLAGS_METHOD_DESCRIPTOR)
-        self.assertTrue(type(testfunction).__flags__ & Py_TPFLAGS_METHOD_DESCRIPTOR)
-        self.assertTrue(type(cached).__flags__ & Py_TPFLAGS_METHOD_DESCRIPTOR)
-
-        self.assertTrue(_testcapi.MethodDescriptorBase.__flags__ & Py_TPFLAGS_METHOD_DESCRIPTOR)
-        self.assertTrue(_testcapi.MethodDescriptorDerived.__flags__ & Py_TPFLAGS_METHOD_DESCRIPTOR)
-        self.assertFalse(_testcapi.MethodDescriptorNopGet.__flags__ & Py_TPFLAGS_METHOD_DESCRIPTOR)
-
-        # Heap type should not inherit Py_TPFLAGS_METHOD_DESCRIPTOR
-        class MethodDescriptorHeap(_testcapi.MethodDescriptorBase):
-            pass
-        self.assertFalse(MethodDescriptorHeap.__flags__ & Py_TPFLAGS_METHOD_DESCRIPTOR)
-
-    def test_vectorcall(self):
-        # Test a bunch of different ways to call objects:
-        # 1. normal call
-        # 2. vectorcall using _PyObject_Vectorcall()
-        # 3. vectorcall using PyVectorcall_Call()
-        # 4. call as bound method
-        # 5. call using functools.partial
-
-        # A list of (function, args, kwargs, result) calls to test
-        calls = [(len, (range(42),), {}, 42),
-                 (list.append, ([], 0), {}, None),
-                 ([].append, (0,), {}, None),
-                 (sum, ([36],), {"start":6}, 42),
-                 (testfunction, (42,), {}, 42),
-                 (testfunction_kw, (42,), {"kw":None}, 42)]
-
-        from _testcapi import pyobject_vectorcall, pyvectorcall_call
-        from types import MethodType
-        from functools import partial
-
-        def vectorcall(func, args, kwargs):
-            args = *args, *kwargs.values()
-            kwnames = tuple(kwargs)
-            return pyobject_vectorcall(func, args, kwnames)
-
-        for (func, args, kwargs, expected) in calls:
-            with self.subTest(str(func)):
-                args1 = args[1:]
-                meth = MethodType(func, args[0])
-                wrapped = partial(func)
-                if not kwargs:
-                    self.assertEqual(expected, func(*args))
-                    self.assertEqual(expected, pyobject_vectorcall(func, args, None))
-                    self.assertEqual(expected, pyvectorcall_call(func, args))
-                    self.assertEqual(expected, meth(*args1))
-                    self.assertEqual(expected, wrapped(*args))
-                self.assertEqual(expected, func(*args, **kwargs))
-                self.assertEqual(expected, vectorcall(func, args, kwargs))
-                self.assertEqual(expected, pyvectorcall_call(func, args, kwargs))
-                self.assertEqual(expected, meth(*args1, **kwargs))
-                self.assertEqual(expected, wrapped(*args, **kwargs))
 
 
 class SubinterpreterTest(unittest.TestCase):
@@ -653,28 +704,29 @@ class PyMemDebugTests(unittest.TestCase):
         code = 'import _testcapi; _testcapi.pyobject_malloc_without_gil()'
         self.check_malloc_without_gil(code)
 
-    def check_pyobject_is_freed(self, func):
-        code = textwrap.dedent('''
+    def check_pyobject_is_freed(self, func_name):
+        code = textwrap.dedent(f'''
             import gc, os, sys, _testcapi
             # Disable the GC to avoid crash on GC collection
             gc.disable()
-            obj = _testcapi.{func}()
-            error = (_testcapi.pyobject_is_freed(obj) == False)
-            # Exit immediately to avoid a crash while deallocating
-            # the invalid object
-            os._exit(int(error))
+            try:
+                _testcapi.{func_name}()
+                # Exit immediately to avoid a crash while deallocating
+                # the invalid object
+                os._exit(0)
+            except _testcapi.error:
+                os._exit(1)
         ''')
-        code = code.format(func=func)
         assert_python_ok('-c', code, PYTHONMALLOC=self.PYTHONMALLOC)
 
-    def test_pyobject_is_freed_uninitialized(self):
-        self.check_pyobject_is_freed('pyobject_uninitialized')
+    def test_pyobject_uninitialized_is_freed(self):
+        self.check_pyobject_is_freed('check_pyobject_uninitialized_is_freed')
 
-    def test_pyobject_is_freed_forbidden_bytes(self):
-        self.check_pyobject_is_freed('pyobject_forbidden_bytes')
+    def test_pyobject_forbidden_bytes_is_freed(self):
+        self.check_pyobject_is_freed('check_pyobject_forbidden_bytes_is_freed')
 
-    def test_pyobject_is_freed_free(self):
-        self.check_pyobject_is_freed('pyobject_freed')
+    def test_pyobject_freed_is_freed(self):
+        self.check_pyobject_is_freed('check_pyobject_freed_is_freed')
 
 
 class PyMemMallocDebugTests(PyMemDebugTests):

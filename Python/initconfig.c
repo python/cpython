@@ -1,12 +1,13 @@
 #include "Python.h"
 #include "osdefs.h"       /* DELIM */
-#include "pycore_initconfig.h"
 #include "pycore_fileutils.h"
 #include "pycore_getopt.h"
+#include "pycore_initconfig.h"
+#include "pycore_pathconfig.h"
+#include "pycore_pyerrors.h"
 #include "pycore_pylifecycle.h"
 #include "pycore_pymem.h"
 #include "pycore_pystate.h"   /* _PyRuntime */
-#include "pycore_pathconfig.h"
 #include <locale.h>       /* setlocale() */
 #ifdef HAVE_LANGINFO_H
 #  include <langinfo.h>   /* nl_langinfo(CODESET) */
@@ -83,8 +84,8 @@ static const char usage_5[] =
 "PYTHONFAULTHANDLER: dump the Python traceback on fatal errors.\n";
 static const char usage_6[] =
 "PYTHONHASHSEED: if this variable is set to 'random', a random value is used\n"
-"   to seed the hashes of str, bytes and datetime objects.  It can also be\n"
-"   set to an integer in the range [0,4294967295] to get hash values with a\n"
+"   to seed the hashes of str and bytes objects.  It can also be set to an\n"
+"   integer in the range [0,4294967295] to get hash values with a\n"
 "   predictable seed.\n"
 "PYTHONMALLOC: set the Python memory allocators and/or install debug hooks\n"
 "   on Python memory allocators. Use PYTHONMALLOC=debug to install debug\n"
@@ -297,11 +298,19 @@ _PyWideStringList_Copy(PyWideStringList *list, const PyWideStringList *list2)
 
 
 PyStatus
-PyWideStringList_Append(PyWideStringList *list, const wchar_t *item)
+PyWideStringList_Insert(PyWideStringList *list,
+                        Py_ssize_t index, const wchar_t *item)
 {
-    if (list->length == PY_SSIZE_T_MAX) {
-        /* lenght+1 would overflow */
+    Py_ssize_t len = list->length;
+    if (len == PY_SSIZE_T_MAX) {
+        /* length+1 would overflow */
         return _PyStatus_NO_MEMORY();
+    }
+    if (index < 0) {
+        return _PyStatus_ERR("PyWideStringList_Insert index must be >= 0");
+    }
+    if (index > len) {
+        index = len;
     }
 
     wchar_t *item2 = _PyMem_RawWcsdup(item);
@@ -309,17 +318,30 @@ PyWideStringList_Append(PyWideStringList *list, const wchar_t *item)
         return _PyStatus_NO_MEMORY();
     }
 
-    size_t size = (list->length + 1) * sizeof(list->items[0]);
+    size_t size = (len + 1) * sizeof(list->items[0]);
     wchar_t **items2 = (wchar_t **)PyMem_RawRealloc(list->items, size);
     if (items2 == NULL) {
         PyMem_RawFree(item2);
         return _PyStatus_NO_MEMORY();
     }
 
-    items2[list->length] = item2;
+    if (index < len) {
+        memmove(&items2[index + 1],
+                &items2[index],
+                (len - index) * sizeof(items2[0]));
+    }
+
+    items2[index] = item2;
     list->items = items2;
     list->length++;
     return _PyStatus_OK();
+}
+
+
+PyStatus
+PyWideStringList_Append(PyWideStringList *list, const wchar_t *item)
+{
+    return PyWideStringList_Insert(list, list->length, item);
 }
 
 
@@ -528,6 +550,7 @@ PyConfig_Clear(PyConfig *config)
     config->module_search_paths_set = 0;
 
     CLEAR(config->executable);
+    CLEAR(config->base_executable);
     CLEAR(config->prefix);
     CLEAR(config->base_prefix);
     CLEAR(config->exec_prefix);
@@ -731,7 +754,7 @@ _PyConfig_Copy(PyConfig *config, const PyConfig *config2)
     } while (0)
 #define COPY_WSTRLIST(LIST) \
     do { \
-        if (_PyWideStringList_Copy(&config->LIST, &config2->LIST) < 0 ) { \
+        if (_PyWideStringList_Copy(&config->LIST, &config2->LIST) < 0) { \
             return _PyStatus_NO_MEMORY(); \
         } \
     } while (0)
@@ -765,6 +788,7 @@ _PyConfig_Copy(PyConfig *config, const PyConfig *config2)
     COPY_ATTR(module_search_paths_set);
 
     COPY_WSTR_ATTR(executable);
+    COPY_WSTR_ATTR(base_executable);
     COPY_WSTR_ATTR(prefix);
     COPY_WSTR_ATTR(base_prefix);
     COPY_WSTR_ATTR(exec_prefix);
@@ -865,6 +889,7 @@ config_as_dict(const PyConfig *config)
     SET_ITEM_WSTR(home);
     SET_ITEM_WSTRLIST(module_search_paths);
     SET_ITEM_WSTR(executable);
+    SET_ITEM_WSTR(base_executable);
     SET_ITEM_WSTR(prefix);
     SET_ITEM_WSTR(base_prefix);
     SET_ITEM_WSTR(exec_prefix);
@@ -1065,7 +1090,7 @@ config_init_program_name(PyConfig *config)
        or rather, to work around Apple's overly strict requirements of
        the process name. However, we still need a usable sys.executable,
        so the actual executable path is passed in an environment variable.
-       See Lib/plat-mac/bundlebuiler.py for details about the bootstrap
+       See Lib/plat-mac/bundlebuilder.py for details about the bootstrap
        script. */
     const char *p = config_get_env(config, "PYTHONEXECUTABLE");
     if (p != NULL) {
@@ -2045,6 +2070,7 @@ config_init_warnoptions(PyConfig *config,
     /* The priority order for warnings configuration is (highest precedence
      * first):
      *
+     * - early PySys_AddWarnOption() calls
      * - the BytesWarning filter, if needed ('-b', '-bb')
      * - any '-W' command line options; then
      * - the 'PYTHONWARNINGS' environment variable; then
@@ -2100,6 +2126,13 @@ config_init_warnoptions(PyConfig *config,
             return status;
         }
     }
+
+    /* Handle early PySys_AddWarnOption() calls */
+    status = _PySys_ReadPreinitWarnOptions(config);
+    if (_PyStatus_EXCEPTION(status)) {
+        return status;
+    }
+
     return _PyStatus_OK();
 }
 
@@ -2137,6 +2170,11 @@ config_update_argv(PyConfig *config, Py_ssize_t opt_index)
         /* Force sys.argv[0] = '-m'*/
         arg0 = L"-m";
     }
+    else if (config->run_filename != NULL) {
+        /* run_filename is converted to an absolute path: update argv */
+        arg0 = config->run_filename;
+    }
+
     if (arg0 != NULL) {
         arg0 = _PyMem_RawWcsdup(arg0);
         if (arg0 == NULL) {
@@ -2183,6 +2221,37 @@ core_read_precmdline(PyConfig *config, _PyPreCmdline *precmdline)
 }
 
 
+/* Get run_filename absolute path */
+static PyStatus
+config_run_filename_abspath(PyConfig *config)
+{
+    if (!config->run_filename) {
+        return _PyStatus_OK();
+    }
+
+#ifndef MS_WINDOWS
+    if (_Py_isabs(config->run_filename)) {
+        /* path is already absolute */
+        return _PyStatus_OK();
+    }
+#endif
+
+    wchar_t *abs_filename;
+    if (_Py_abspath(config->run_filename, &abs_filename) < 0) {
+        /* failed to get the absolute path of the command line filename:
+           ignore the error, keep the relative path */
+        return _PyStatus_OK();
+    }
+    if (abs_filename == NULL) {
+        return _PyStatus_NO_MEMORY();
+    }
+
+    PyMem_RawFree(config->run_filename);
+    config->run_filename = abs_filename;
+    return _PyStatus_OK();
+}
+
+
 static PyStatus
 config_read_cmdline(PyConfig *config)
 {
@@ -2208,7 +2277,18 @@ config_read_cmdline(PyConfig *config)
             goto done;
         }
 
+        status = config_run_filename_abspath(config);
+        if (_PyStatus_EXCEPTION(status)) {
+            goto done;
+        }
+
         status = config_update_argv(config, opt_index);
+        if (_PyStatus_EXCEPTION(status)) {
+            goto done;
+        }
+    }
+    else {
+        status = config_run_filename_abspath(config);
         if (_PyStatus_EXCEPTION(status)) {
             goto done;
         }
@@ -2222,7 +2302,8 @@ config_read_cmdline(PyConfig *config)
     }
 
     status = config_init_warnoptions(config,
-                                  &cmdline_warnoptions, &env_warnoptions);
+                                     &cmdline_warnoptions,
+                                     &env_warnoptions);
     if (_PyStatus_EXCEPTION(status)) {
         goto done;
     }
@@ -2274,6 +2355,23 @@ PyConfig_SetArgv(PyConfig *config, Py_ssize_t argc, wchar_t * const *argv)
 }
 
 
+PyStatus
+PyConfig_SetWideStringList(PyConfig *config, PyWideStringList *list,
+                           Py_ssize_t length, wchar_t **items)
+{
+    PyStatus status = _Py_PreInitializeFromConfig(config, NULL);
+    if (_PyStatus_EXCEPTION(status)) {
+        return status;
+    }
+
+    PyWideStringList list2 = {.length = length, .items = items};
+    if (_PyWideStringList_Copy(list, &list2) < 0) {
+        return _PyStatus_NO_MEMORY();
+    }
+    return _PyStatus_OK();
+}
+
+
 /* Read the configuration into PyConfig from:
 
    * Command line arguments
@@ -2311,6 +2409,12 @@ PyConfig_Read(PyConfig *config)
     }
 
     status = config_read_cmdline(config);
+    if (_PyStatus_EXCEPTION(status)) {
+        goto done;
+    }
+
+    /* Handle early PySys_AddXOption() calls */
+    status = _PySys_ReadPreinitXOptions(config);
     if (_PyStatus_EXCEPTION(status)) {
         goto done;
     }
@@ -2357,6 +2461,7 @@ PyConfig_Read(PyConfig *config)
         assert(config->module_search_paths_set != 0);
         /* don't check config->module_search_paths */
         assert(config->executable != NULL);
+        assert(config->base_executable != NULL);
         assert(config->prefix != NULL);
         assert(config->base_prefix != NULL);
         assert(config->exec_prefix != NULL);
@@ -2434,4 +2539,99 @@ error:
     Py_XDECREF(result);
     Py_XDECREF(dict);
     return NULL;
+}
+
+
+static void
+init_dump_ascii_wstr(const wchar_t *str)
+{
+    if (str == NULL) {
+        PySys_WriteStderr("(not set)");
+        return;
+    }
+
+    PySys_WriteStderr("'");
+    for (; *str != L'\0'; str++) {
+        wchar_t ch = *str;
+        if (ch == L'\'') {
+            PySys_WriteStderr("\\'");
+        } else if (0x20 <= ch && ch < 0x7f) {
+            PySys_WriteStderr("%lc", ch);
+        }
+        else if (ch <= 0xff) {
+            PySys_WriteStderr("\\x%02x", ch);
+        }
+#if SIZEOF_WCHAR_T > 2
+        else if (ch > 0xffff) {
+            PySys_WriteStderr("\\U%08x", ch);
+        }
+#endif
+        else {
+            PySys_WriteStderr("\\u%04x", ch);
+        }
+    }
+    PySys_WriteStderr("'");
+}
+
+
+/* Dump the Python path configuration into sys.stderr */
+void
+_Py_DumpPathConfig(PyThreadState *tstate)
+{
+    PyObject *exc_type, *exc_value, *exc_tb;
+    _PyErr_Fetch(tstate, &exc_type, &exc_value, &exc_tb);
+
+    PySys_WriteStderr("Python path configuration:\n");
+
+#define DUMP_CONFIG(NAME, FIELD) \
+        do { \
+            PySys_WriteStderr("  " NAME " = "); \
+            init_dump_ascii_wstr(config->FIELD); \
+            PySys_WriteStderr("\n"); \
+        } while (0)
+
+    PyConfig *config = &tstate->interp->config;
+    DUMP_CONFIG("PYTHONHOME", home);
+    DUMP_CONFIG("PYTHONPATH", pythonpath_env);
+    DUMP_CONFIG("program name", program_name);
+    PySys_WriteStderr("  isolated = %i\n", config->isolated);
+    PySys_WriteStderr("  environment = %i\n", config->use_environment);
+    PySys_WriteStderr("  user site = %i\n", config->user_site_directory);
+    PySys_WriteStderr("  import site = %i\n", config->site_import);
+#undef DUMP_CONFIG
+
+#define DUMP_SYS(NAME) \
+        do { \
+            obj = PySys_GetObject(#NAME); \
+            PySys_FormatStderr("  sys.%s = ", #NAME); \
+            if (obj != NULL) { \
+                PySys_FormatStderr("%A", obj); \
+            } \
+            else { \
+                PySys_WriteStderr("(not set)"); \
+            } \
+            PySys_FormatStderr("\n"); \
+        } while (0)
+
+    PyObject *obj;
+    DUMP_SYS(_base_executable);
+    DUMP_SYS(base_prefix);
+    DUMP_SYS(base_exec_prefix);
+    DUMP_SYS(executable);
+    DUMP_SYS(prefix);
+    DUMP_SYS(exec_prefix);
+#undef DUMP_SYS
+
+    PyObject *sys_path = PySys_GetObject("path");  /* borrowed reference */
+    if (sys_path != NULL && PyList_Check(sys_path)) {
+        PySys_WriteStderr("  sys.path = [\n");
+        Py_ssize_t len = PyList_GET_SIZE(sys_path);
+        for (Py_ssize_t i=0; i < len; i++) {
+            PyObject *path = PyList_GET_ITEM(sys_path, i);
+            PySys_FormatStderr("    %A,\n", path);
+        }
+        PySys_WriteStderr("  ]\n");
+    }
+
+    _PyErr_Restore(tstate, exc_type, exc_value, exc_tb);
 }

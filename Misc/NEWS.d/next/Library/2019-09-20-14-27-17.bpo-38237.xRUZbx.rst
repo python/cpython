@@ -1,0 +1,2 @@
+The arguments for the builtin pow function are more descriptive. They can now
+also be passed in as keywords.

@@ -209,7 +209,7 @@ usually declare a static object variable at the beginning of your file::
    static PyObject *SpamError;
 
 and initialize it in your module's initialization function (:c:func:`PyInit_spam`)
-with an exception object (leaving out the error checking for now)::
+with an exception object::
 
    PyMODINIT_FUNC
    PyInit_spam(void)
@@ -221,8 +221,14 @@ with an exception object (leaving out the error checking for now)::
            return NULL;
 
        SpamError = PyErr_NewException("spam.error", NULL, NULL);
-       Py_INCREF(SpamError);
-       PyModule_AddObject(m, "error", SpamError);
+       Py_XINCREF(SpamError);
+       if (PyModule_AddObject(m, "error", SpamError) < 0) {
+           Py_XDECREF(SpamError);
+           Py_CLEAR(SpamError);
+           Py_DECREF(m);
+           return NULL;
+       }
+
        return m;
    }
 
@@ -1261,8 +1267,12 @@ function must take care of initializing the C API pointer array::
        /* Create a Capsule containing the API pointer array's address */
        c_api_object = PyCapsule_New((void *)PySpam_API, "spam._C_API", NULL);
 
-       if (c_api_object != NULL)
-           PyModule_AddObject(m, "_C_API", c_api_object);
+       if (PyModule_AddObject(m, "_C_API", c_api_object) < 0) {
+           Py_XDECREF(c_api_object);
+           Py_DECREF(m);
+           return NULL;
+       }
+
        return m;
    }
 

@@ -204,8 +204,8 @@ _io__WindowsConsoleIO_close_impl(winconsoleio *self)
     PyObject *exc, *val, *tb;
     int rc;
     _Py_IDENTIFIER(close);
-    res = _PyObject_CallMethodIdObjArgs((PyObject*)&PyRawIOBase_Type,
-                                        &PyId_close, self, NULL);
+    res = _PyObject_CallMethodIdOneArg((PyObject*)&PyRawIOBase_Type,
+                                       &PyId_close, (PyObject*)self);
     if (!self->closehandle) {
         self->handle = INVALID_HANDLE_VALUE;
         return res;
@@ -1118,10 +1118,10 @@ PyTypeObject PyWindowsConsoleIO_Type = {
     sizeof(winconsoleio),
     0,
     (destructor)winconsoleio_dealloc,           /* tp_dealloc */
-    0,                                          /* tp_print */
+    0,                                          /* tp_vectorcall_offset */
     0,                                          /* tp_getattr */
     0,                                          /* tp_setattr */
-    0,                                          /* tp_reserved */
+    0,                                          /* tp_as_async */
     (reprfunc)winconsoleio_repr,                /* tp_repr */
     0,                                          /* tp_as_number */
     0,                                          /* tp_as_sequence */

@@ -1,1 +1,0 @@
-PEP 544: Add ``Protocol`` and ``@runtime_checkable`` to the ``typing`` module.

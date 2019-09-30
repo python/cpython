@@ -55,6 +55,12 @@ Protocol) and :rfc:`1869` (SMTP Service Extensions).
     (250, b'Ok')
     >>>
 
+   .. audit-event:: smtplib.send self,data smtplib.SMTP
+
+      All commands will raise an :ref:`auditing event <auditing>`
+      ``smtplib.SMTP.send`` with arguments ``self`` and ``data``,
+      where ``data`` is the bytes about to be sent to the remote host.
+
    .. versionchanged:: 3.3
       Support for the :keyword:`with` statement was added.
 
@@ -241,6 +247,8 @@ An :class:`SMTP` instance has the following methods:
    the constructor if a host is specified during instantiation.  Returns a
    2-tuple of the response code and message sent by the server in its
    connection response.
+
+   .. audit-event:: smtplib.connect self,host,port smtplib.SMTP.connect
 
 
 .. method:: SMTP.helo(name='')

@@ -1018,11 +1018,12 @@ class UrlParseTestCase(unittest.TestCase):
             urllib.parse.urlsplit('http://\u30d5\u309a\ufe1380')
 
         for scheme in ["http", "https", "ftp"]:
-            for c in denorm_chars:
-                url = "{}://netloc{}false.netloc/path".format(scheme, c)
-                with self.subTest(url=url, char='{:04X}'.format(ord(c))):
-                    with self.assertRaises(ValueError):
-                        urllib.parse.urlsplit(url)
+            for netloc in ["netloc{}false.netloc", "n{}user@netloc"]:
+                for c in denorm_chars:
+                    url = "{}://{}/path".format(scheme, netloc.format(c))
+                    with self.subTest(url=url, char='{:04X}'.format(ord(c))):
+                        with self.assertRaises(ValueError):
+                            urllib.parse.urlsplit(url)
 
 class Utility_Tests(unittest.TestCase):
     """Testcase to test the various utility functions in the urllib."""

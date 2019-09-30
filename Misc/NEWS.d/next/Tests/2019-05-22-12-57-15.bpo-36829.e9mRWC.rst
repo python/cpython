@@ -1,2 +1,0 @@
-Add :func:`test.support.catch_unraisable_exception`: context manager
-catching unraisable exception using :func:`sys.unraisablehook`.

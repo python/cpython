@@ -2328,6 +2328,7 @@ class AbstractPickleTests(unittest.TestCase):
         elif frameless_start is not None:
             self.assertLess(pos - frameless_start, self.FRAME_SIZE_MIN)
 
+    @support.skip_if_pgo_task
     def test_framing_many_objects(self):
         obj = list(range(10**5))
         for proto in range(4, pickle.HIGHEST_PROTOCOL + 1):
@@ -2417,6 +2418,7 @@ class AbstractPickleTests(unittest.TestCase):
                                 count_opcode(pickle.FRAME, pickled))
                 self.assertEqual(obj, self.loads(some_frames_pickle))
 
+    @support.skip_if_pgo_task
     def test_framed_write_sizes_with_delayed_writer(self):
         class ChunkAccumulator:
             """Accumulate pickler output in a list of raw chunks."""
@@ -2765,6 +2767,11 @@ class AbstractPickleTests(unittest.TestCase):
             with self.assertRaises(pickle.UnpicklingError):
                 self.loads(data, buffers=[])
 
+    def test_inband_accept_default_buffers_argument(self):
+        for proto in range(5, pickle.HIGHEST_PROTOCOL + 1):
+            data_pickled = self.dumps(1, proto, buffer_callback=None)
+            data = self.loads(data_pickled, buffers=None)
+
     @unittest.skipIf(np is None, "Test needs Numpy")
     def test_buffers_numpy(self):
         def check_no_copy(x, y):
@@ -3067,22 +3074,20 @@ class BadGetattr:
 class AbstractPickleModuleTests(unittest.TestCase):
 
     def test_dump_closed_file(self):
-        import os
         f = open(TESTFN, "wb")
         try:
             f.close()
             self.assertRaises(ValueError, self.dump, 123, f)
         finally:
-            os.remove(TESTFN)
+            support.unlink(TESTFN)
 
     def test_load_closed_file(self):
-        import os
         f = open(TESTFN, "wb")
         try:
             f.close()
             self.assertRaises(ValueError, self.dump, 123, f)
         finally:
-            os.remove(TESTFN)
+            support.unlink(TESTFN)
 
     def test_load_from_and_dump_to_file(self):
         stream = io.BytesIO()
@@ -3105,6 +3110,19 @@ class AbstractPickleModuleTests(unittest.TestCase):
         self.dumps(123, protocol=-1)
         self.Pickler(f, -1)
         self.Pickler(f, protocol=-1)
+
+    def test_dump_text_file(self):
+        f = open(TESTFN, "w")
+        try:
+            for proto in protocols:
+                self.assertRaises(TypeError, self.dump, 123, f, proto)
+        finally:
+            f.close()
+            support.unlink(TESTFN)
+
+    def test_incomplete_input(self):
+        s = io.BytesIO(b"X''.")
+        self.assertRaises((EOFError, struct.error, pickle.UnpicklingError), self.load, s)
 
     def test_bad_init(self):
         # Test issue3664 (pickle can segfault from a badly initialized Pickler).

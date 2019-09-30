@@ -1,3 +1,0 @@
-More of the legacy distutils documentation has been either pruned, or else
-more clearly marked as being retained solely until the setuptools
-documentation covers it independently.

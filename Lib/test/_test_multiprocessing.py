@@ -301,7 +301,7 @@ class _TestProcess(BaseTestCase):
             target=self._test_create_grandchild_process, args=(wconn, ))
         p.start()
 
-        if not rconn.poll(timeout=5):
+        if not rconn.poll(timeout=60):
             raise AssertionError("Could not communicate with child process")
         parent_process_status = rconn.recv()
         self.assertEqual(parent_process_status, "alive")
@@ -309,7 +309,7 @@ class _TestProcess(BaseTestCase):
         p.terminate()
         p.join()
 
-        if not rconn.poll(timeout=5):
+        if not rconn.poll(timeout=60):
             raise AssertionError("Could not communicate with child process")
         parent_process_status = rconn.recv()
         self.assertEqual(parent_process_status, "not alive")
@@ -318,7 +318,7 @@ class _TestProcess(BaseTestCase):
     def _test_create_grandchild_process(cls, wconn):
         p = cls.Process(target=cls._test_report_parent_status, args=(wconn, ))
         p.start()
-        time.sleep(100)
+        time.sleep(300)
 
     @classmethod
     def _test_report_parent_status(cls, wconn):
@@ -1128,8 +1128,7 @@ class _TestQueue(BaseTestCase):
             q = self.Queue()
             q.put(NotSerializable())
             q.put(True)
-            # bpo-30595: use a timeout of 1 second for slow buildbots
-            self.assertTrue(q.get(timeout=1.0))
+            self.assertTrue(q.get(timeout=TIMEOUT))
             close_queue(q)
 
         with test.support.captured_stderr():
@@ -2800,16 +2799,17 @@ class _TestMyManager(BaseTestCase):
         self.common(manager)
         manager.shutdown()
 
-        # If the manager process exited cleanly then the exitcode
-        # will be zero.  Otherwise (after a short timeout)
-        # terminate() is used, resulting in an exitcode of -SIGTERM.
-        self.assertEqual(manager._process.exitcode, 0)
+        # bpo-30356: BaseManager._finalize_manager() sends SIGTERM
+        # to the manager process if it takes longer than 1 second to stop,
+        # which happens on slow buildbots.
+        self.assertIn(manager._process.exitcode, (0, -signal.SIGTERM))
 
     def test_mymanager_context(self):
         with MyManager() as manager:
             self.common(manager)
         # bpo-30356: BaseManager._finalize_manager() sends SIGTERM
-        # to the manager process if it takes longer than 1 second to stop.
+        # to the manager process if it takes longer than 1 second to stop,
+        # which happens on slow buildbots.
         self.assertIn(manager._process.exitcode, (0, -signal.SIGTERM))
 
     def test_mymanager_context_prestarted(self):
@@ -3719,6 +3719,35 @@ class _TestSharedMemory(BaseTestCase):
         self.assertLess(same_sms.size, 20*sms.size)  # Size was ignored.
         same_sms.close()
 
+        # Creating Shared Memory Segment with -ve size
+        with self.assertRaises(ValueError):
+            shared_memory.SharedMemory(create=True, size=-2)
+
+        # Attaching Shared Memory Segment without a name
+        with self.assertRaises(ValueError):
+            shared_memory.SharedMemory(create=False)
+
+        # Test if shared memory segment is created properly,
+        # when _make_filename returns an existing shared memory segment name
+        with unittest.mock.patch(
+            'multiprocessing.shared_memory._make_filename') as mock_make_filename:
+
+            NAME_PREFIX = shared_memory._SHM_NAME_PREFIX
+            names = ['test01_fn', 'test02_fn']
+            # Prepend NAME_PREFIX which can be '/psm_' or 'wnsm_', necessary
+            # because some POSIX compliant systems require name to start with /
+            names = [NAME_PREFIX + name for name in names]
+
+            mock_make_filename.side_effect = names
+            shm1 = shared_memory.SharedMemory(create=True, size=1)
+            self.addCleanup(shm1.unlink)
+            self.assertEqual(shm1._name, names[0])
+
+            mock_make_filename.side_effect = names
+            shm2 = shared_memory.SharedMemory(create=True, size=1)
+            self.addCleanup(shm2.unlink)
+            self.assertEqual(shm2._name, names[1])
+
         if shared_memory._USE_POSIX:
             # Posix Shared Memory can only be unlinked once.  Here we
             # test an implementation detail that is not observed across
@@ -3990,7 +4019,7 @@ class _TestSharedMemory(BaseTestCase):
 
             # Create a shared_memory segment, and send the segment name
             sm = shared_memory.SharedMemory(create=True, size=10)
-            sys.stdout.write(sm._name + '\\n')
+            sys.stdout.write(sm.name + '\\n')
             sys.stdout.flush()
             time.sleep(100)
         '''
@@ -5010,12 +5039,21 @@ class TestResourceTracker(unittest.TestCase):
                 _resource_unlink(name1, rtype)
                 p.terminate()
                 p.wait()
-                time.sleep(2.0)
-                with self.assertRaises(OSError) as ctx:
-                    _resource_unlink(name2, rtype)
-                # docs say it should be ENOENT, but OSX seems to give EINVAL
-                self.assertIn(
-                    ctx.exception.errno, (errno.ENOENT, errno.EINVAL))
+
+                deadline = time.monotonic() + 60
+                while time.monotonic() < deadline:
+                    time.sleep(.5)
+                    try:
+                        _resource_unlink(name2, rtype)
+                    except OSError as e:
+                        # docs say it should be ENOENT, but OSX seems to give
+                        # EINVAL
+                        self.assertIn(e.errno, (errno.ENOENT, errno.EINVAL))
+                        break
+                else:
+                    raise AssertionError(
+                        f"A {rtype} resource was leaked after a process was "
+                        f"abruptly terminated.")
                 err = p.stderr.read().decode('utf-8')
                 p.stderr.close()
                 expected = ('resource_tracker: There appear to be 2 leaked {} '
@@ -5641,7 +5679,16 @@ def install_tests_in_module_dict(remote_globs, start_method):
         # Sleep 500 ms to give time to child processes to complete.
         if need_sleep:
             time.sleep(0.5)
+
         multiprocessing.process._cleanup()
+
+        # Stop the ForkServer process if it's running
+        from multiprocessing import forkserver
+        forkserver._forkserver._stop()
+
+        # bpo-37421: Explicitly call _run_finalizers() to remove immediately
+        # temporary directories created by multiprocessing.util.get_temp_dir().
+        multiprocessing.util._run_finalizers()
         test.support.gc_collect()
 
     remote_globs['setUpModule'] = setUpModule

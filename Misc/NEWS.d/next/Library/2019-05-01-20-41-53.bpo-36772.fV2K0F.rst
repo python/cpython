@@ -1,2 +1,0 @@
-functools.lru_cache() can now be used as a straight decorator in
-addition to its existing usage as a function that returns a decorator.

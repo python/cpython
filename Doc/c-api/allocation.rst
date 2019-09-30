@@ -48,7 +48,7 @@ Allocating Objects on the Heap
    improving the memory management efficiency.
 
 
-.. c:function:: void PyObject_Del(PyObject *op)
+.. c:function:: void PyObject_Del(void *op)
 
    Releases memory allocated to an object using :c:func:`PyObject_New` or
    :c:func:`PyObject_NewVar`.  This is normally called from the

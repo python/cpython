@@ -133,27 +133,6 @@ class ThreadRunningTests(BasicThreadTest):
                 time.sleep(POLL_SLEEP)
             self.assertEqual(thread._count(), orig)
 
-    def test_save_exception_state_on_error(self):
-        # See issue #14474
-        def task():
-            started.release()
-            raise SyntaxError
-        def mywrite(self, *args):
-            try:
-                raise ValueError
-            except ValueError:
-                pass
-            real_write(self, *args)
-        started = thread.allocate_lock()
-        with support.captured_output("stderr") as stderr:
-            real_write = stderr.write
-            stderr.write = mywrite
-            started.acquire()
-            with support.wait_threads_exit():
-                thread.start_new_thread(task, ())
-                started.acquire()
-        self.assertIn("Traceback", stderr.getvalue())
-
     def test_unraisable_exception(self):
         def task():
             started.release()

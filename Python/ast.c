@@ -123,7 +123,7 @@ validate_arguments(arguments_ty args)
         && !validate_expr(args->kwarg->annotation, Load)) {
             return 0;
     }
-    if (asdl_seq_LEN(args->defaults) > asdl_seq_LEN(args->args)) {
+    if (asdl_seq_LEN(args->defaults) > asdl_seq_LEN(args->posonlyargs) + asdl_seq_LEN(args->args)) {
         PyErr_SetString(PyExc_ValueError, "more positional defaults than args on arguments");
         return 0;
     }
@@ -294,7 +294,7 @@ validate_expr(expr_ty exp, expr_context_ty ctx)
         if (!validate_constant(exp->v.Constant.value)) {
             PyErr_Format(PyExc_TypeError,
                          "got an invalid type in Constant: %s",
-                         Py_TYPE(exp->v.Constant.value)->tp_name);
+                         _PyType_Name(Py_TYPE(exp->v.Constant.value)));
             return 0;
         }
         return 1;
@@ -618,12 +618,11 @@ new_identifier(const char *n, struct compiling *c)
        identifier; if so, normalize to NFKC. */
     if (!PyUnicode_IS_ASCII(id)) {
         PyObject *id2;
-        _Py_IDENTIFIER(NFKC);
         if (!c->c_normalize && !init_normalization(c)) {
             Py_DECREF(id);
             return NULL;
         }
-        PyObject *form = _PyUnicode_FromId(&PyId_NFKC);
+        PyObject *form = PyUnicode_InternFromString("NFKC");
         if (form == NULL) {
             Py_DECREF(id);
             return NULL;
@@ -631,13 +630,14 @@ new_identifier(const char *n, struct compiling *c)
         PyObject *args[2] = {form, id};
         id2 = _PyObject_FastCall(c->c_normalize, args, 2);
         Py_DECREF(id);
+        Py_DECREF(form);
         if (!id2)
             return NULL;
         if (!PyUnicode_Check(id2)) {
             PyErr_Format(PyExc_TypeError,
                          "unicodedata.normalize() must return a string, not "
                          "%.200s",
-                         Py_TYPE(id2)->tp_name);
+                         _PyType_Name(Py_TYPE(id2)));
             Py_DECREF(id2);
             return NULL;
         }
@@ -1688,7 +1688,7 @@ ast_for_arguments(struct compiling *c, const node *n)
                 return NULL;
         }
     }
-    return arguments(posargs, posonlyargs, vararg, kwonlyargs, kwdefaults, kwarg, posdefaults, c->c_arena);
+    return arguments(posonlyargs, posargs, vararg, kwonlyargs, kwdefaults, kwarg, posdefaults, c->c_arena);
 }
 
 static expr_ty
@@ -2645,7 +2645,7 @@ ast_for_binop(struct compiling *c, const node *n)
             return NULL;
 
         tmp_result = BinOp(result, newoperator, tmp,
-                           LINENO(next_oper), next_oper->n_col_offset,
+                           LINENO(n), n->n_col_offset,
                            CHILD(n, i * 2 + 2)->n_end_lineno,
                            CHILD(n, i * 2 + 2)->n_end_col_offset,
                            c->c_arena);
@@ -3398,7 +3398,7 @@ ast_for_expr_stmt(struct compiling *c, const node *n)
         }
         else {
             ch = CHILD(ann, 3);
-            if (TYPE(ch) == testlist) {
+            if (TYPE(ch) == testlist_star_expr) {
                 expr3 = ast_for_testlist(c, ch);
             }
             else {
@@ -3684,9 +3684,6 @@ alias_for_import_name(struct compiling *c, const node *n, int store)
                          "unexpected import name: %d", TYPE(n));
             return NULL;
     }
-
-    PyErr_SetString(PyExc_SystemError, "unhandled import name condition");
-    return NULL;
 }
 
 static stmt_ty
@@ -4674,12 +4671,12 @@ warn_invalid_escape_sequence(struct compiling *c, const node *n,
     if (msg == NULL) {
         return -1;
     }
-    if (PyErr_WarnExplicitObject(PyExc_SyntaxWarning, msg,
+    if (PyErr_WarnExplicitObject(PyExc_DeprecationWarning, msg,
                                    c->c_filename, LINENO(n),
                                    NULL, NULL) < 0)
     {
-        if (PyErr_ExceptionMatches(PyExc_SyntaxWarning)) {
-            /* Replace the SyntaxWarning exception with a SyntaxError
+        if (PyErr_ExceptionMatches(PyExc_DeprecationWarning)) {
+            /* Replace the DeprecationWarning exception with a SyntaxError
                to get a more accurate error report */
             PyErr_Clear();
             ast_error(c, n, "%U", msg);
@@ -4769,7 +4766,7 @@ decode_bytes_with_escapes(struct compiling *c, const node *n, const char *s,
                           size_t len)
 {
     const char *first_invalid_escape;
-    PyObject *result = _PyBytes_DecodeEscape(s, len, NULL, 0, NULL,
+    PyObject *result = _PyBytes_DecodeEscape(s, len, NULL,
                                              &first_invalid_escape);
     if (result == NULL)
         return NULL;
@@ -4845,7 +4842,6 @@ fstring_compile_expr(const char *expr_start, const char *expr_end,
                      struct compiling *c, const node *n)
 
 {
-    PyCompilerFlags cf;
     node *mod_n;
     mod_ty mod;
     char *str;
@@ -4887,8 +4883,8 @@ fstring_compile_expr(const char *expr_start, const char *expr_end,
     str[len+1] = ')';
     str[len+2] = 0;
 
+    PyCompilerFlags cf = _PyCompilerFlags_INIT;
     cf.cf_flags = PyCF_ONLY_AST;
-    cf.cf_feature_version = PY_MINOR_VERSION;
     mod_n = PyParser_SimpleParseStringFlagsFilename(str, "<fstring>",
                                                     Py_eval_input, 0);
     if (!mod_n) {
@@ -5260,7 +5256,7 @@ fstring_find_expr(const char **str, const char *end, int raw, int recurse_lvl,
     *str += 1;
 
     /* If we're in = mode (detected by non-NULL expr_text), and have no format
-       spec and no explict conversion, set the conversion to 'r'. */
+       spec and no explicit conversion, set the conversion to 'r'. */
     if (*expr_text && format_spec == NULL && conversion == -1) {
         conversion = 'r';
     }
@@ -5360,7 +5356,7 @@ typedef struct {
        doubling the number allocated each time. Note that the f-string
        f'{0}a{1}' contains 3 expr_ty's: 2 FormattedValue's, and one
        Constant for the literal 'a'. So you add expr_ty's about twice as
-       fast as you add exressions in an f-string. */
+       fast as you add expressions in an f-string. */
 
     Py_ssize_t allocated;  /* Number we've allocated. */
     Py_ssize_t size;       /* Number we've used. */

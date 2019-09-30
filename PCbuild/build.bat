@@ -76,7 +76,7 @@ if "%~1"=="-k" (set kill=true) & shift & goto CheckOpts
 if "%~1"=="--pgo" (set do_pgo=true) & shift & goto CheckOpts
 if "%~1"=="--pgo-job" (set do_pgo=true) & (set pgo_job=%~2) & shift & shift & goto CheckOpts
 if "%~1"=="--test-marker" (set UseTestMarker=true) & shift & goto CheckOpts
-if "%~1"=="-V" shift & goto Version
+if "%~1"=="-V" shift & goto :Version
 rem These use the actual property names used by MSBuild.  We could just let
 rem them in through the environment, but we specify them on the command line
 rem anyway for visibility so set defaults after this
@@ -111,10 +111,16 @@ call "%dir%find_msbuild.bat" %MSBUILD%
 if ERRORLEVEL 1 (echo Cannot locate MSBuild.exe on PATH or as MSBUILD variable & exit /b 2)
 
 if "%kill%"=="true" call :Kill
+if ERRORLEVEL 1 exit /B 3
 
 if "%do_pgo%"=="true" (
     set conf=PGInstrument
     call :Build %1 %2 %3 %4 %5 %6 %7 %8 %9
+)
+rem %VARS% are evaluated eagerly, which would lose the ERRORLEVEL
+rem value if we didn't split it out here.
+if "%do_pgo%"=="true" if ERRORLEVEL 1 exit /B %ERRORLEVEL%
+if "%do_pgo%"=="true" (
     del /s "%dir%\*.pgc"
     del /s "%dir%\..\Lib\*.pyc"
     echo on
@@ -124,7 +130,8 @@ if "%do_pgo%"=="true" (
     set conf=PGUpdate
     set target=Build
 )
-goto Build
+goto :Build
+
 :Kill
 echo on
 %MSBUILD% "%dir%\pythoncore.vcxproj" /t:KillPython %verbose%^
@@ -132,7 +139,7 @@ echo on
  /p:KillPython=true
 
 @echo off
-goto :eof
+exit /B %ERRORLEVEL%
 
 :Build
 rem Call on MSBuild to do the work, echo the command.
@@ -148,9 +155,11 @@ echo on
  %1 %2 %3 %4 %5 %6 %7 %8 %9
 
 @echo off
-goto :eof
+exit /b %ERRORLEVEL%
 
 :Version
 rem Display the current build version information
 call "%dir%find_msbuild.bat" %MSBUILD%
-if not ERRORLEVEL 1 %MSBUILD% "%dir%pythoncore.vcxproj" /t:ShowVersionInfo /v:m /nologo %1 %2 %3 %4 %5 %6 %7 %8 %9
+if ERRORLEVEL 1 (echo Cannot locate MSBuild.exe on PATH or as MSBUILD variable & exit /b 2)
+%MSBUILD% "%dir%pythoncore.vcxproj" /t:ShowVersionInfo /v:m /nologo %1 %2 %3 %4 %5 %6 %7 %8 %9
+if ERRORLEVEL 1 exit /b 3

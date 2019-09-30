@@ -578,14 +578,14 @@ class CommandLineTestsBase:
             self.assertEqual(compile_dir.call_args[-1]['workers'], 0)
 
 
-class CommmandLineTestsWithSourceEpoch(CommandLineTestsBase,
+class CommandLineTestsWithSourceEpoch(CommandLineTestsBase,
                                        unittest.TestCase,
                                        metaclass=SourceDateEpochTestMeta,
                                        source_date_epoch=True):
     pass
 
 
-class CommmandLineTestsNoSourceEpoch(CommandLineTestsBase,
+class CommandLineTestsNoSourceEpoch(CommandLineTestsBase,
                                      unittest.TestCase,
                                      metaclass=SourceDateEpochTestMeta,
                                      source_date_epoch=False):

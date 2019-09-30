@@ -447,6 +447,9 @@ class TestUrlopen(unittest.TestCase):
     def setUp(self):
         super(TestUrlopen, self).setUp()
 
+        # clear _opener global variable
+        self.addCleanup(urllib.request.urlcleanup)
+
         # Ignore proxies for localhost tests.
         def restore_environ(old_environ):
             os.environ.clear()

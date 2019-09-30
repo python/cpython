@@ -475,12 +475,20 @@ Random Remarks
 
 .. These should perhaps be placed more carefully...
 
-Data attributes override method attributes with the same name; to avoid
-accidental name conflicts, which may cause hard-to-find bugs in large programs,
-it is wise to use some kind of convention that minimizes the chance of
-conflicts.  Possible conventions include capitalizing method names, prefixing
-data attribute names with a small unique string (perhaps just an underscore), or
-using verbs for methods and nouns for data attributes.
+If the same attribute name occurs in both an instance and in a class,
+then attribute lookup prioritizes the instance::
+
+    >>> class Warehouse:
+            purpose = 'storage'
+            region = 'west'
+
+    >>> w1 = Warehouse()
+    >>> print(w1.purpose, w1.region)
+    storage west
+    >>> w2 = Warehouse()
+    >>> w2.region = 'east'
+    >>> print(w2.purpose, w2.region)
+    storage east
 
 Data attributes may be referenced by methods as well as by ordinary users
 ("clients") of an object.  In other words, classes are not usable to implement

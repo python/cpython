@@ -576,7 +576,7 @@ Here is a simple example of a POINT structure, which contains two integers named
    >>> POINT(1, 2, 3)
    Traceback (most recent call last):
      File "<stdin>", line 1, in <module>
-   ValueError: too many initializers
+   TypeError: too many initializers
    >>>
 
 You can, however, build much more complicated structures.  A structure can
@@ -1175,15 +1175,20 @@ Keep in mind that retrieving sub-objects from Structure, Unions, and Arrays
 doesn't *copy* the sub-object, instead it retrieves a wrapper object accessing
 the root-object's underlying buffer.
 
-Another example that may behave different from what one would expect is this::
+Another example that may behave differently from what one would expect is this::
 
    >>> s = c_char_p()
-   >>> s.value = "abc def ghi"
+   >>> s.value = b"abc def ghi"
    >>> s.value
-   'abc def ghi'
+   b'abc def ghi'
    >>> s.value is s.value
    False
    >>>
+
+.. note::
+
+   Objects instantiated from :class:`c_char_p` can only have their value set to bytes
+   or integers.
 
 Why is it printing ``False``?  ctypes instances are objects containing a memory
 block plus some :term:`descriptor`\s accessing the contents of the memory.
@@ -1509,13 +1514,13 @@ object is available:
    :c:type:`int`, which is of course not always the truth, so you have to assign
    the correct :attr:`restype` attribute to use these functions.
 
-.. audit-event:: ctypes.dlopen name
+.. audit-event:: ctypes.dlopen name ctypes.LibraryLoader
 
    Loading a library through any of these objects raises an
    :ref:`auditing event <auditing>` ``ctypes.dlopen`` with string argument
    ``name``, the name used to load the library.
 
-.. audit-event:: ctypes.dlsym "library name"
+.. audit-event:: ctypes.dlsym library,name ctypes.LibraryLoader
 
    Accessing a function on a loaded library raises an auditing event
    ``ctypes.dlsym`` with arguments ``library`` (the library object) and ``name``
@@ -2043,10 +2048,10 @@ Data types
       This method returns a ctypes type instance using the memory specified by
       *address* which must be an integer.
 
-      .. audit-event:: ctypes.cdata address
+      .. audit-event:: ctypes.cdata address ctypes._CData.from_address
 
          This method, and others that indirectly call this method, raises an
-         :func:`auditing event <sys.audit>` ``ctypes.cdata`` with argument
+         :ref:`auditing event <auditing>` ``ctypes.cdata`` with argument
          ``address``.
 
    .. method:: from_param(obj)

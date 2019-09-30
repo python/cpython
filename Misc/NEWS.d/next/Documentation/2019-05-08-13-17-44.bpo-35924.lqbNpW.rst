@@ -1,2 +1,0 @@
-Add a note to the ``curses.addstr()`` documentation to warn that multiline
-strings can cause segfaults because of an ncurses bug.
