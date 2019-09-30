@@ -80,6 +80,8 @@ typedef struct {
     /* Flag is set to 1 when aclose() is called for the first time, or
        when a StopAsyncIteration exception is raised. */
     int ag_closed;
+
+    int ag_running_async;
 } PyAsyncGenObject;
 
 PyAPI_DATA(PyTypeObject) PyAsyncGen_Type;
