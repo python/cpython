@@ -1,0 +1,2 @@
+sendfile() (used by socket and shutil modules) was raising OverflowError for
+files > 2GB on 32-bit systems.
