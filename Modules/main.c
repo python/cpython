@@ -53,12 +53,7 @@ pymain_init(const _PyArgv *args)
 #endif
 
     PyPreConfig preconfig;
-    preconfig.struct_size = sizeof(PyPreConfig);
-
-    status = PyPreConfig_InitPythonConfig(&preconfig);
-    if (_PyStatus_EXCEPTION(status)) {
-        return status;
-    }
+    PyPreConfig_InitPythonConfig(&preconfig);
 
     status = _Py_PreInitializeFromPyArgv(&preconfig, args);
     if (_PyStatus_EXCEPTION(status)) {
@@ -66,7 +61,7 @@ pymain_init(const _PyArgv *args)
     }
 
     PyConfig config;
-    config.struct_size = sizeof(PyConfig);
+
     status = PyConfig_InitPythonConfig(&config);
     if (_PyStatus_EXCEPTION(status)) {
         goto done;

@@ -731,7 +731,6 @@ _Py_PreInitializeFromPyArgv(const PyPreConfig *src_config, const _PyArgv *args)
     runtime->preinitializing = 1;
 
     PyPreConfig config;
-    config.struct_size = sizeof(PyPreConfig);
 
     status = _PyPreConfig_InitFromPreConfig(&config, src_config);
     if (_PyStatus_EXCEPTION(status)) {
@@ -795,12 +794,8 @@ _Py_PreInitializeFromConfig(const PyConfig *config,
     }
 
     PyPreConfig preconfig;
-    preconfig.struct_size = sizeof(PyPreConfig);
 
-    status = _PyPreConfig_InitFromConfig(&preconfig, config);
-    if (_PyStatus_EXCEPTION(status)) {
-        return status;
-    }
+    _PyPreConfig_InitFromConfig(&preconfig, config);
 
     if (!config->parse_argv) {
         return Py_PreInitialize(&preconfig);
@@ -848,7 +843,6 @@ pyinit_core(_PyRuntimeState *runtime,
     }
 
     PyConfig config;
-    config.struct_size = sizeof(PyConfig);
 
     status = _PyConfig_InitCompatConfig(&config);
     if (_PyStatus_EXCEPTION(status)) {
@@ -1076,7 +1070,6 @@ Py_InitializeEx(int install_sigs)
     }
 
     PyConfig config;
-    config.struct_size = sizeof(PyConfig);
 
     status = _PyConfig_InitCompatConfig(&config);
     if (_PyStatus_EXCEPTION(status)) {
