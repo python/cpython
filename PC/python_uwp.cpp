@@ -165,12 +165,8 @@ int
 wmain(int argc, wchar_t **argv)
 {
     PyStatus status;
-
     PyPreConfig preconfig;
-    preconfig.struct_size = sizeof(PyPreConfig);
-
     PyConfig config;
-    config.struct_size = sizeof(PyConfig);
 
     const wchar_t *moduleName = NULL;
     const wchar_t *p = wcsrchr(argv[0], L'\\');
@@ -189,10 +185,7 @@ wmain(int argc, wchar_t **argv)
         }
     }
 
-    status = PyPreConfig_InitPythonConfig(&preconfig);
-    if (PyStatus_Exception(status)) {
-        goto fail_without_config;
-    }
+    PyPreConfig_InitPythonConfig(&preconfig);
     if (!moduleName) {
         status = Py_PreInitializeFromArgs(&preconfig, argc, argv);
         if (PyStatus_Exception(status)) {

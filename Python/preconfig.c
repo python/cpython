@@ -269,29 +269,10 @@ _PyPreCmdline_Read(_PyPreCmdline *cmdline, const PyPreConfig *preconfig)
 /* --- PyPreConfig ----------------------------------------------- */
 
 
-static PyStatus
-preconfig_check_struct_size(PyPreConfig *config)
-{
-    if (config->struct_size != sizeof(PyPreConfig)) {
-        return _PyStatus_ERR("unsupported PyPreConfig structure size "
-                             "(Python version mismatch?)");
-    }
-    return _PyStatus_OK();
-}
-
-
-PyStatus
+void
 _PyPreConfig_InitCompatConfig(PyPreConfig *config)
 {
-    size_t struct_size = config->struct_size;
     memset(config, 0, sizeof(*config));
-    config->struct_size = struct_size;
-
-    PyStatus status = preconfig_check_struct_size(config);
-    if (_PyStatus_EXCEPTION(status)) {
-        _PyStatus_UPDATE_FUNC(status);
-        return status;
-    }
 
     config->_config_init = (int)_PyConfig_INIT_COMPAT;
     config->parse_argv = 0;
@@ -313,18 +294,13 @@ _PyPreConfig_InitCompatConfig(PyPreConfig *config)
 #ifdef MS_WINDOWS
     config->legacy_windows_fs_encoding = -1;
 #endif
-    return _PyStatus_OK();
 }
 
 
-PyStatus
+void
 PyPreConfig_InitPythonConfig(PyPreConfig *config)
 {
-    PyStatus status = _PyPreConfig_InitCompatConfig(config);
-    if (_PyStatus_EXCEPTION(status)) {
-        _PyStatus_UPDATE_FUNC(status);
-        return status;
-    }
+    _PyPreConfig_InitCompatConfig(config);
 
     config->_config_init = (int)_PyConfig_INIT_PYTHON;
     config->isolated = 0;
@@ -339,18 +315,13 @@ PyPreConfig_InitPythonConfig(PyPreConfig *config)
 #ifdef MS_WINDOWS
     config->legacy_windows_fs_encoding = 0;
 #endif
-    return _PyStatus_OK();
 }
 
 
-PyStatus
+void
 PyPreConfig_InitIsolatedConfig(PyPreConfig *config)
 {
-    PyStatus status = _PyPreConfig_InitCompatConfig(config);
-    if (_PyStatus_EXCEPTION(status)) {
-        _PyStatus_UPDATE_FUNC(status);
-        return status;
-    }
+    _PyPreConfig_InitCompatConfig(config);
 
     config->_config_init = (int)_PyConfig_INIT_ISOLATED;
     config->configure_locale = 0;
@@ -361,7 +332,6 @@ PyPreConfig_InitIsolatedConfig(PyPreConfig *config)
 #ifdef MS_WINDOWS
     config->legacy_windows_fs_encoding = 0;
 #endif
-    return _PyStatus_OK();
 }
 
 
@@ -369,47 +339,35 @@ PyStatus
 _PyPreConfig_InitFromPreConfig(PyPreConfig *config,
                                const PyPreConfig *config2)
 {
-    PyStatus status = PyPreConfig_InitPythonConfig(config);
-    if (_PyStatus_EXCEPTION(status)) {
-        return status;
-    }
-
+    PyPreConfig_InitPythonConfig(config);
     preconfig_copy(config, config2);
     return _PyStatus_OK();
 }
 
 
-PyStatus
+void
 _PyPreConfig_InitFromConfig(PyPreConfig *preconfig, const PyConfig *config)
 {
-    PyStatus status;
     _PyConfigInitEnum config_init = (_PyConfigInitEnum)config->_config_init;
     switch (config_init) {
     case _PyConfig_INIT_PYTHON:
-        status = PyPreConfig_InitPythonConfig(preconfig);
+        PyPreConfig_InitPythonConfig(preconfig);
         break;
     case _PyConfig_INIT_ISOLATED:
-        status = PyPreConfig_InitIsolatedConfig(preconfig);
+        PyPreConfig_InitIsolatedConfig(preconfig);
         break;
     case _PyConfig_INIT_COMPAT:
     default:
-        status = _PyPreConfig_InitCompatConfig(preconfig);
-    }
-
-    if (_PyStatus_EXCEPTION(status)) {
-        return status;
+        _PyPreConfig_InitCompatConfig(preconfig);
     }
 
     _PyPreConfig_GetConfig(preconfig, config);
-    return _PyStatus_OK();
 }
 
 
 static void
 preconfig_copy(PyPreConfig *config, const PyPreConfig *config2)
 {
-    assert(config->struct_size == sizeof(PyPreConfig));
-
 #define COPY_ATTR(ATTR) config->ATTR = config2->ATTR
 
     COPY_ATTR(_config_init);
@@ -829,12 +787,6 @@ _PyPreConfig_Read(PyPreConfig *config, const _PyArgv *args)
         return status;
     }
 
-    status = preconfig_check_struct_size(config);
-    if (_PyStatus_EXCEPTION(status)) {
-        _PyStatus_UPDATE_FUNC(status);
-        return status;
-    }
-
     preconfig_get_global_vars(config);
 
     /* Copy LC_CTYPE locale, since it's modified later */
@@ -849,7 +801,6 @@ _PyPreConfig_Read(PyPreConfig *config, const _PyArgv *args)
 
     /* Save the config to be able to restore it if encodings change */
     PyPreConfig save_config;
-    save_config.struct_size = sizeof(PyPreConfig);
 
     status = _PyPreConfig_InitFromPreConfig(&save_config, config);
     if (_PyStatus_EXCEPTION(status)) {
@@ -976,7 +927,6 @@ PyStatus
 _PyPreConfig_Write(const PyPreConfig *src_config)
 {
     PyPreConfig config;
-    config.struct_size = sizeof(PyPreConfig);
 
     PyStatus status = _PyPreConfig_InitFromPreConfig(&config, src_config);
     if (_PyStatus_EXCEPTION(status)) {

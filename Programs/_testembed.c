@@ -385,12 +385,7 @@ static int check_init_compat_config(int preinit)
 
     if (preinit) {
         PyPreConfig preconfig;
-        preconfig.struct_size = sizeof(PyPreConfig);
-
-        status = _PyPreConfig_InitCompatConfig(&preconfig);
-        if (PyStatus_Exception(status)) {
-            Py_ExitStatusException(status);
-        }
+        _PyPreConfig_InitCompatConfig(&preconfig);
 
         status = Py_PreInitialize(&preconfig);
         if (PyStatus_Exception(status)) {
@@ -399,7 +394,6 @@ static int check_init_compat_config(int preinit)
     }
 
     PyConfig config;
-    config.struct_size = sizeof(PyConfig);
 
     status = _PyConfig_InitCompatConfig(&config);
     if (PyStatus_Exception(status)) {
@@ -478,15 +472,8 @@ static int test_init_global_config(void)
 
 static int test_init_from_config(void)
 {
-    PyStatus status;
-
     PyPreConfig preconfig;
-    preconfig.struct_size = sizeof(PyPreConfig);
-
-    status = _PyPreConfig_InitCompatConfig(&preconfig);
-    if (PyStatus_Exception(status)) {
-        Py_ExitStatusException(status);
-    }
+    _PyPreConfig_InitCompatConfig(&preconfig);
 
     putenv("PYTHONMALLOC=malloc_debug");
     preconfig.allocator = PYMEM_ALLOCATOR_MALLOC;
@@ -495,13 +482,12 @@ static int test_init_from_config(void)
     Py_UTF8Mode = 0;
     preconfig.utf8_mode = 1;
 
-    status = Py_PreInitialize(&preconfig);
+    PyStatus status = Py_PreInitialize(&preconfig);
     if (PyStatus_Exception(status)) {
         Py_ExitStatusException(status);
     }
 
     PyConfig config;
-    config.struct_size = sizeof(PyConfig);
 
     status = _PyConfig_InitCompatConfig(&config);
     if (PyStatus_Exception(status)) {
@@ -638,7 +624,6 @@ static int check_init_parse_argv(int parse_argv)
     PyStatus status;
 
     PyConfig config;
-    config.struct_size = sizeof(PyConfig);
 
     status = PyConfig_InitPythonConfig(&config);
     if (PyStatus_Exception(status)) {
@@ -725,7 +710,6 @@ static int test_init_python_env(void)
     set_all_env_vars();
 
     PyConfig config;
-    config.struct_size = sizeof(PyConfig);
 
     status = PyConfig_InitPythonConfig(&config);
     if (PyStatus_Exception(status)) {
@@ -780,7 +764,6 @@ static int test_init_isolated_flag(void)
 
     /* Test PyConfig.isolated=1 */
     PyConfig config;
-    config.struct_size = sizeof(PyConfig);
 
     status = PyConfig_InitPythonConfig(&config);
     if (PyStatus_Exception(status)) {
@@ -803,25 +786,17 @@ static int test_init_isolated_flag(void)
 /* PyPreConfig.isolated=1, PyConfig.isolated=0 */
 static int test_preinit_isolated1(void)
 {
-    PyStatus status;
-
     PyPreConfig preconfig;
-    preconfig.struct_size = sizeof(PyPreConfig);
-
-    status = _PyPreConfig_InitCompatConfig(&preconfig);
-    if (PyStatus_Exception(status)) {
-        Py_ExitStatusException(status);
-    }
+    _PyPreConfig_InitCompatConfig(&preconfig);
 
     preconfig.isolated = 1;
 
-    status = Py_PreInitialize(&preconfig);
+    PyStatus status = Py_PreInitialize(&preconfig);
     if (PyStatus_Exception(status)) {
         Py_ExitStatusException(status);
     }
 
     PyConfig config;
-    config.struct_size = sizeof(PyConfig);
 
     status = _PyConfig_InitCompatConfig(&config);
     if (PyStatus_Exception(status)) {
@@ -840,26 +815,19 @@ static int test_preinit_isolated1(void)
 /* PyPreConfig.isolated=0, PyConfig.isolated=1 */
 static int test_preinit_isolated2(void)
 {
-    PyStatus status;
-
     PyPreConfig preconfig;
-    preconfig.struct_size = sizeof(PyPreConfig);
-
-    status = _PyPreConfig_InitCompatConfig(&preconfig);
-    if (PyStatus_Exception(status)) {
-        Py_ExitStatusException(status);
-    }
+    _PyPreConfig_InitCompatConfig(&preconfig);
 
     preconfig.isolated = 0;
 
-    status = Py_PreInitialize(&preconfig);
+    PyStatus status = Py_PreInitialize(&preconfig);
     if (PyStatus_Exception(status)) {
         Py_ExitStatusException(status);
     }
 
     /* Test PyConfig.isolated=1 */
     PyConfig config;
-    config.struct_size = sizeof(PyConfig);
+
     status = _PyConfig_InitCompatConfig(&config);
     if (PyStatus_Exception(status)) {
         Py_ExitStatusException(status);
@@ -880,15 +848,8 @@ static int test_preinit_isolated2(void)
 
 static int test_preinit_dont_parse_argv(void)
 {
-    PyStatus status;
-
     PyPreConfig preconfig;
-    preconfig.struct_size = sizeof(PyPreConfig);
-
-    status = PyPreConfig_InitIsolatedConfig(&preconfig);
-    if (PyStatus_Exception(status)) {
-        Py_ExitStatusException(status);
-    }
+    PyPreConfig_InitIsolatedConfig(&preconfig);
 
     preconfig.isolated = 0;
 
@@ -899,13 +860,13 @@ static int test_preinit_dont_parse_argv(void)
                        L"-X", L"dev",
                        L"-X", L"utf8",
                        L"script.py"};
-    status = Py_PreInitializeFromArgs(&preconfig, Py_ARRAY_LENGTH(argv), argv);
+    PyStatus status = Py_PreInitializeFromArgs(&preconfig,
+                                               Py_ARRAY_LENGTH(argv), argv);
     if (PyStatus_Exception(status)) {
         Py_ExitStatusException(status);
     }
 
     PyConfig config;
-    config.struct_size = sizeof(PyConfig);
 
     status = PyConfig_InitIsolatedConfig(&config);
     if (PyStatus_Exception(status)) {
@@ -931,7 +892,6 @@ static int test_preinit_parse_argv(void)
 {
     PyStatus status;
     PyConfig config;
-    config.struct_size = sizeof(PyConfig);
 
     status = PyConfig_InitPythonConfig(&config);
     if (PyStatus_Exception(status)) {
@@ -989,12 +949,7 @@ static int check_preinit_isolated_config(int preinit)
 
     if (preinit) {
         PyPreConfig preconfig;
-        preconfig.struct_size = sizeof(PyPreConfig);
-
-        status = PyPreConfig_InitIsolatedConfig(&preconfig);
-        if (PyStatus_Exception(status)) {
-            Py_ExitStatusException(status);
-        }
+        PyPreConfig_InitIsolatedConfig(&preconfig);
 
         status = Py_PreInitialize(&preconfig);
         if (PyStatus_Exception(status)) {
@@ -1007,7 +962,6 @@ static int check_preinit_isolated_config(int preinit)
     }
 
     PyConfig config;
-    config.struct_size = sizeof(PyConfig);
 
     status = PyConfig_InitIsolatedConfig(&config);
     if (PyStatus_Exception(status)) {
@@ -1058,12 +1012,7 @@ static int check_init_python_config(int preinit)
 
     if (preinit) {
         PyPreConfig preconfig;
-        preconfig.struct_size = sizeof(PyPreConfig);
-
-        status = PyPreConfig_InitPythonConfig(&preconfig);
-        if (PyStatus_Exception(status)) {
-            Py_ExitStatusException(status);
-        }
+        PyPreConfig_InitPythonConfig(&preconfig);
 
         status = Py_PreInitialize(&preconfig);
         if (PyStatus_Exception(status)) {
@@ -1072,7 +1021,6 @@ static int check_init_python_config(int preinit)
     }
 
     PyConfig config;
-    config.struct_size = sizeof(PyConfig);
 
     status = PyConfig_InitPythonConfig(&config);
     if (PyStatus_Exception(status)) {
@@ -1101,27 +1049,19 @@ static int test_init_python_config(void)
 
 static int test_init_dont_configure_locale(void)
 {
-    PyStatus status;
-
     PyPreConfig preconfig;
-    preconfig.struct_size = sizeof(PyPreConfig);
-
-    status = PyPreConfig_InitPythonConfig(&preconfig);
-    if (PyStatus_Exception(status)) {
-        Py_ExitStatusException(status);
-    }
+    PyPreConfig_InitPythonConfig(&preconfig);
 
     preconfig.configure_locale = 0;
     preconfig.coerce_c_locale = 1;
     preconfig.coerce_c_locale_warn = 1;
 
-    status = Py_PreInitialize(&preconfig);
+    PyStatus status = Py_PreInitialize(&preconfig);
     if (PyStatus_Exception(status)) {
         Py_ExitStatusException(status);
     }
 
     PyConfig config;
-    config.struct_size = sizeof(PyConfig);
 
     status = PyConfig_InitPythonConfig(&config);
     if (PyStatus_Exception(status)) {
@@ -1140,7 +1080,6 @@ static int test_init_dev_mode(void)
 {
     PyStatus status;
     PyConfig config;
-    config.struct_size = sizeof(PyConfig);
 
     status = PyConfig_InitPythonConfig(&config);
     if (PyStatus_Exception(status)) {
@@ -1365,7 +1304,6 @@ static int run_audit_run_test(int argc, wchar_t **argv, void *test)
 {
     PyStatus status;
     PyConfig config;
-    config.struct_size = sizeof(PyConfig);
 
     status = PyConfig_InitPythonConfig(&config);
     if (PyStatus_Exception(status)) {
@@ -1415,7 +1353,6 @@ static int test_init_read_set(void)
 {
     PyStatus status;
     PyConfig config;
-    config.struct_size = sizeof(PyConfig);
 
     status = PyConfig_InitPythonConfig(&config);
     if (PyStatus_Exception(status)) {
@@ -1465,7 +1402,6 @@ static int test_init_sys_add(void)
     PySys_AddWarnOption(L"ignore:::sysadd_warnoption");
 
     PyConfig config;
-    config.struct_size = sizeof(PyConfig);
 
     PyStatus status;
     status = PyConfig_InitPythonConfig(&config);
@@ -1533,18 +1469,12 @@ static int test_init_setpath(void)
 
 static int test_init_setpath_config(void)
 {
-    PyStatus status;
     PyPreConfig preconfig;
-    preconfig.struct_size = sizeof(PyPreConfig);
-
-    status = PyPreConfig_InitPythonConfig(&preconfig);
-    if (PyStatus_Exception(status)) {
-        Py_ExitStatusException(status);
-    }
+    PyPreConfig_InitPythonConfig(&preconfig);
 
     /* Explicitly preinitializes with Python preconfiguration to avoid
       Py_SetPath() implicit preinitialization with compat preconfiguration. */
-    status = Py_PreInitialize(&preconfig);
+    PyStatus status = Py_PreInitialize(&preconfig);
     if (PyStatus_Exception(status)) {
         Py_ExitStatusException(status);
     }
@@ -1564,7 +1494,6 @@ static int test_init_setpath_config(void)
     putenv("TESTPATH=");
 
     PyConfig config;
-    config.struct_size = sizeof(PyConfig);
 
     status = PyConfig_InitPythonConfig(&config);
     if (PyStatus_Exception(status)) {
@@ -1612,7 +1541,6 @@ static int test_init_warnoptions(void)
     PySys_AddWarnOption(L"ignore:::PySys_AddWarnOption2");
 
     PyConfig config;
-    config.struct_size = sizeof(PyConfig);
 
     status = PyConfig_InitPythonConfig(&config);
     if (PyStatus_Exception(status)) {
@@ -1680,7 +1608,6 @@ static int test_init_run_main(void)
 {
     PyStatus status;
     PyConfig config;
-    config.struct_size = sizeof(PyConfig);
 
     status = PyConfig_InitPythonConfig(&config);
     if (PyStatus_Exception(status)) {
@@ -1697,7 +1624,6 @@ static int test_init_main(void)
 {
     PyStatus status;
     PyConfig config;
-    config.struct_size = sizeof(PyConfig);
 
     status = PyConfig_InitPythonConfig(&config);
     if (PyStatus_Exception(status)) {
@@ -1729,7 +1655,6 @@ static int test_run_main(void)
 {
     PyStatus status;
     PyConfig config;
-    config.struct_size = sizeof(PyConfig);
 
     status = PyConfig_InitPythonConfig(&config);
     if (PyStatus_Exception(status)) {
