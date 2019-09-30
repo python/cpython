@@ -321,16 +321,25 @@ PyCode_Optimize(PyObject *code, PyObject* consts, PyObject *names,
                 break;
 
                 /* Try to fold tuples of constants.
+                   Lists of constants are loaded as tuples and unpacked.
                    Skip over BUILD_SEQN 1 UNPACK_SEQN 1.
                    Replace BUILD_SEQN 2 UNPACK_SEQN 2 with ROT2.
                    Replace BUILD_SEQN 3 UNPACK_SEQN 3 with ROT3 ROT2. */
             case BUILD_TUPLE:
+            case BUILD_LIST:
                 j = get_arg(codestr, i);
+                int islist = opcode == BUILD_LIST;
+                if (islist && j <= 1) {
+                    break;
+                }
                 if (j > 0 && lastlc >= j) {
                     h = lastn_const_start(codestr, op_start, j);
                     if (ISBASICBLOCK(blocks, h, op_start)) {
                         h = fold_tuple_on_constants(codestr, codelen,
-                                                    h, i+1, consts, j);
+                                                    h, i+1-islist, consts, j);
+                        if (h >= 0 && islist) {
+                            h = copy_op_arg(codestr, i, BUILD_LIST_UNPACK, 1, i+1);
+                        }
                         break;
                     }
                 }
