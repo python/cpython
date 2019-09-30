@@ -3,6 +3,9 @@ import re
 
 from .util import classonly, _NTBase
 
+# XXX need tests:
+# * ID.match()
+
 
 UNKNOWN = '???'
 
@@ -67,6 +70,72 @@ class ID(_NTBase, namedtuple('ID', 'filename funcname name')):
     @property
     def islocal(self):
         return self.funcname is not None
+
+    def match(self, other, *,
+              match_files=(lambda f1, f2: f1 == f2),
+              ):
+        """Return True if the two match.
+    
+        At least one of the two must be completely valid (no UNKNOWN
+        anywhere).  Otherwise False is returned.  The remaining one
+        *may* have UNKNOWN for both funcname and filename.  It must
+        have a valid name though.
+
+        The caller is responsible for knowing which of the two is valid
+        (and which to use if both are valid).
+        """
+        # First check the name.
+        if self.name is None:
+            return False
+        if other.name != self.name:
+            return False
+
+        # Then check the filename.
+        if self.filename is None:
+            return False
+        if other.filename is None:
+            return False
+        if self.filename == UNKNOWN:
+            # "other" must be the valid one.
+            if other.funcname == UNKNOWN:
+                return False
+            elif self.funcname != UNKNOWN:
+                # XXX Try matching funcname even though we don't
+                # know the filename?
+                raise NotImplementedError
+            else:
+                return True
+        elif other.filename == UNKNOWN:
+            # "self" must be the valid one.
+            if self.funcname == UNKNOWN:
+                return False
+            elif other.funcname != UNKNOWN:
+                # XXX Try matching funcname even though we don't
+                # know the filename?
+                raise NotImplementedError
+            else:
+                return True
+        elif not match_files(self.filename, other.filename):
+            return False
+
+        # Finally, check the funcname.
+        if self.funcname == UNKNOWN:
+            # "other" must be the valid one.
+            if other.funcname == UNKNOWN:
+                return False
+            else:
+                return other.funcname is not None
+        elif other.funcname == UNKNOWN:
+            # "self" must be the valid one.
+            if self.funcname == UNKNOWN:
+                return False
+            else:
+                return self.funcname is not None
+        elif self.funcname == other.funcname:
+            # Both are valid.
+            return True
+
+        return False
 
 
 #############################
