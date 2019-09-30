@@ -508,10 +508,6 @@ class Regrtest:
             self.run_tests_sequential()
 
     def finalize(self):
-        if self.win_load_tracker is not None:
-            self.win_load_tracker.close()
-            self.win_load_tracker = None
-
         if self.next_single_filename:
             if self.next_single_test:
                 with open(self.next_single_filename, 'w') as fp:
@@ -680,11 +676,16 @@ class Regrtest:
                 # typeperf.exe for x64, x86 or ARM
                 print(f'Failed to create WindowsLoadTracker: {error}')
 
-        self.run_tests()
-        self.display_result()
+        try:
+            self.run_tests()
+            self.display_result()
 
-        if self.ns.verbose2 and self.bad:
-            self.rerun_failed_tests()
+            if self.ns.verbose2 and self.bad:
+                self.rerun_failed_tests()
+        finally:
+            if self.win_load_tracker is not None:
+                self.win_load_tracker.close()
+                self.win_load_tracker = None
 
         self.finalize()
 
