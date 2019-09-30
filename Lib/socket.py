@@ -356,8 +356,7 @@ class socket(_socket.socket):
                 raise _GiveupOnSendfile(err)  # not a regular file
             if not fsize:
                 return 0  # empty file
-            blocksize = fsize if not count else count
-            blocksize = min(blocksize, 2 ** 30)  # max 1GB
+            blocksize = min(count or fsize, 2 ** 30)  # max 1GiB
 
             timeout = self.gettimeout()
             if timeout == 0:
