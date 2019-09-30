@@ -315,15 +315,13 @@ canonicalize(wchar_t *buffer, const wchar_t *path)
    'prefix' is null terminated in bounds.  join() ensures
    'landmark' can not overflow prefix if too long. */
 static int
-gotlandmark(wchar_t *prefix, const wchar_t *landmark)
+gotlandmark(const wchar_t *prefix, const wchar_t *landmark)
 {
-    int ok;
-    Py_ssize_t n = wcsnlen_s(prefix, MAXPATHLEN);
-
-    join(prefix, landmark);
-    ok = ismodule(prefix, FALSE);
-    prefix[n] = '\0';
-    return ok;
+    wchar_t filename[MAXPATHLEN+1];
+    memset(filename, 0, sizeof(filename));
+    wcscpy_s(filename, Py_ARRAY_LENGTH(filename), prefix);
+    join(filename, landmark);
+    return ismodule(filename, FALSE);
 }
 
 
