@@ -906,14 +906,14 @@ object::
   ...
   >>> a_mock = AsyncMock(ExampleClass)
   >>> a_mock.sync_foo
-  <MagicMock name='a_mock.sync_foo' id='4404894528'>
+  <MagicMock name='mock.sync_foo' id='...'>
   >>> a_mock.async_foo
-  <AsyncMock name='a_mock.async_foo' id='4404894688'>
+  <AsyncMock name='mock.async_foo' id='...'>
   >>> mock = Mock(ExampleClass)
   >>> mock.sync_foo
-  <Mock name='mock.sync_foo' id='4405092912'>
+  <Mock name='mock.sync_foo' id='...'>
   >>> mock.async_foo
-  <AsyncMock name='mock.async_foo' id='4405092592'>
+  <AsyncMock name='mock.async_foo' id='...'>
 
 
   .. method:: assert_awaited()
