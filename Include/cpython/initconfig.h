@@ -45,9 +45,10 @@ PyAPI_FUNC(PyStatus) PyWideStringList_Insert(PyWideStringList *list,
 /* --- PyPreConfig ----------------------------------------------- */
 
 typedef struct {
-    /* Size of the structure in bytes: must be initialized to
-       sizeof(PyPreConfig). Field used for API and ABI compatibility. */
-    size_t struct_size;
+    /* Version of the CPython header files used to compile the embedding
+       application. Expected to be set to PY_VERSION_HEX.
+       Field is used to check for API and ABI compatibility. */
+    uint32_t header_version;
 
     int _config_init;     /* _PyConfigInitEnum value */
 
@@ -131,9 +132,10 @@ PyAPI_FUNC(PyStatus) PyPreConfig_InitIsolatedConfig(PyPreConfig *config);
 /* --- PyConfig ---------------------------------------------- */
 
 typedef struct {
-    /* Size of the structure in bytes: must be initialized to
-       sizeof(PyConfig). Field used for API and ABI compatibility. */
-    size_t struct_size;
+    /* Version of the CPython header files used to compile the embedding
+       application. Expected to be set to PY_VERSION_HEX.
+       Field is used to check for API and ABI compatibility. */
+    uint32_t header_version;
 
     int _config_init;     /* _PyConfigInitEnum value */
 

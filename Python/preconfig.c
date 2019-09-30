@@ -268,30 +268,21 @@ _PyPreCmdline_Read(_PyPreCmdline *cmdline, const PyPreConfig *preconfig)
 
 /* --- PyPreConfig ----------------------------------------------- */
 
-
-static PyStatus
-preconfig_check_struct_size(PyPreConfig *config)
-{
-    if (config->struct_size != sizeof(PyPreConfig)) {
-        return _PyStatus_ERR("unsupported PyPreConfig structure size "
-                             "(Python version mismatch?)");
-    }
-    return _PyStatus_OK();
-}
-
-
 PyStatus
 _PyPreConfig_InitCompatConfig(PyPreConfig *config)
 {
-    size_t struct_size = config->struct_size;
-    memset(config, 0, sizeof(*config));
-    config->struct_size = struct_size;
-
-    PyStatus status = preconfig_check_struct_size(config);
+    uint32_t header_version = config->header_version;
+    PyStatus status = _Py_CheckVersionCompat(header_version);
     if (_PyStatus_EXCEPTION(status)) {
         _PyStatus_UPDATE_FUNC(status);
         return status;
     }
+
+    // Future enhancement: allow old config struct layouts if an old
+    // header_version is specified
+    size_t struct_size = sizeof(*config);
+    memset(config, 0, struct_size);
+    config->header_version = header_version;
 
     config->_config_init = (int)_PyConfig_INIT_COMPAT;
     config->parse_argv = 0;
@@ -408,7 +399,13 @@ _PyPreConfig_InitFromConfig(PyPreConfig *preconfig, const PyConfig *config)
 static void
 preconfig_copy(PyPreConfig *config, const PyPreConfig *config2)
 {
-    assert(config->struct_size == sizeof(PyPreConfig));
+
+    assert(
+        !_PyStatus_EXCEPTION(_Py_CheckVersionCompat(config->header_version))
+    );
+    assert(
+        !_PyStatus_EXCEPTION(_Py_CheckVersionCompat(config2->header_version))
+    );
 
 #define COPY_ATTR(ATTR) config->ATTR = config2->ATTR
 
@@ -829,7 +826,7 @@ _PyPreConfig_Read(PyPreConfig *config, const _PyArgv *args)
         return status;
     }
 
-    status = preconfig_check_struct_size(config);
+    status = _Py_CheckVersionCompat(config->header_version);
     if (_PyStatus_EXCEPTION(status)) {
         _PyStatus_UPDATE_FUNC(status);
         return status;
@@ -849,7 +846,7 @@ _PyPreConfig_Read(PyPreConfig *config, const _PyArgv *args)
 
     /* Save the config to be able to restore it if encodings change */
     PyPreConfig save_config;
-    save_config.struct_size = sizeof(PyPreConfig);
+    save_config.header_version = config->header_version;
 
     status = _PyPreConfig_InitFromPreConfig(&save_config, config);
     if (_PyStatus_EXCEPTION(status)) {
@@ -976,7 +973,7 @@ PyStatus
 _PyPreConfig_Write(const PyPreConfig *src_config)
 {
     PyPreConfig config;
-    config.struct_size = sizeof(PyPreConfig);
+    config.header_version = PY_VERSION_HEX;
 
     PyStatus status = _PyPreConfig_InitFromPreConfig(&config, src_config);
     if (_PyStatus_EXCEPTION(status)) {

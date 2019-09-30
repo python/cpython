@@ -53,7 +53,7 @@ pymain_init(const _PyArgv *args)
 #endif
 
     PyPreConfig preconfig;
-    preconfig.struct_size = sizeof(PyPreConfig);
+    preconfig.header_version = PY_VERSION_HEX;
 
     status = PyPreConfig_InitPythonConfig(&preconfig);
     if (_PyStatus_EXCEPTION(status)) {
@@ -66,7 +66,7 @@ pymain_init(const _PyArgv *args)
     }
 
     PyConfig config;
-    config.struct_size = sizeof(PyConfig);
+    config.header_version = PY_VERSION_HEX;
     status = PyConfig_InitPythonConfig(&config);
     if (_PyStatus_EXCEPTION(status)) {
         goto done;

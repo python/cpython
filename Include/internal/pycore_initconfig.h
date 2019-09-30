@@ -87,6 +87,8 @@ PyAPI_FUNC(void) _Py_get_env_flag(
     int *flag,
     const char *name);
 
+PyAPI_FUNC(PyStatus) _Py_CheckVersionCompat(uint32_t header_version);
+
 /* Py_GetArgcArgv() helper */
 PyAPI_FUNC(void) _Py_ClearArgcArgv(void);
 

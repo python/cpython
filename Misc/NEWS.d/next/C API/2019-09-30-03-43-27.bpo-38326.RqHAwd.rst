@@ -1,0 +1,5 @@
+Replaced the ``struct_size`` field in :c:type:`PyPreConfig` and
+:c:type:`PyConfig` with a ``header_version`` field (accepting
+``PY_VERSION_HEX``). This allows the config functions to detect all violations
+of the full API/ABI compatibility expectations by embedding applications, not
+just changes to the size of the configuration structures themselves.

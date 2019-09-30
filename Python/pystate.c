@@ -61,7 +61,7 @@ _PyRuntimeState_Init_impl(_PyRuntimeState *runtime)
     _PyGC_Initialize(&runtime->gc);
     _PyEval_Initialize(&runtime->ceval);
 
-    runtime->preconfig.struct_size = sizeof(PyPreConfig);
+    runtime->preconfig.header_version = PY_VERSION_HEX;
     PyStatus status = PyPreConfig_InitPythonConfig(&runtime->preconfig);
     if (_PyStatus_EXCEPTION(status)) {
         return status;
@@ -209,7 +209,8 @@ PyInterpreterState_New(void)
     memset(interp, 0, sizeof(*interp));
     interp->id_refcount = -1;
 
-    interp->config.struct_size = sizeof(PyConfig);
+    // TODO: Should this pass the API/ABI version from the parent interpreter?
+    interp->config.header_version = PY_VERSION_HEX;
     PyStatus status = PyConfig_InitPythonConfig(&interp->config);
     if (_PyStatus_EXCEPTION(status)) {
         /* Don't report status to caller: PyConfig_InitPythonConfig()

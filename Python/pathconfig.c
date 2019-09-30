@@ -434,7 +434,7 @@ pathconfig_global_read(_PyPathConfig *pathconfig)
 {
     PyStatus status;
     PyConfig config;
-    config.struct_size = sizeof(PyConfig);
+    config.header_version = PY_VERSION_HEX;
 
     status = _PyConfig_InitCompatConfig(&config);
     if (_PyStatus_EXCEPTION(status)) {

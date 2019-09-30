@@ -6,9 +6,11 @@
 API and ABI Versioning
 ***********************
 
-``PY_VERSION_HEX`` is the Python version number encoded in a single integer.
+.. c:macro:: PY_VERSION_HEX
 
-For example if the ``PY_VERSION_HEX`` is set to ``0x030401a2``, the underlying
+   ``PY_VERSION_HEX`` is the Python version number encoded in a single integer.
+
+For example if ``PY_VERSION_HEX`` is set to ``0x030401a2``, the underlying
 version information can be found by treating it as a 32 bit number in
 the following manner:
 

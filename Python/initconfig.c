@@ -529,17 +529,6 @@ Py_GetArgcArgv(int *argc, wchar_t ***argv)
      : _PyStatus_NO_MEMORY())
 
 
-static PyStatus
-config_check_struct_size(const PyConfig *config)
-{
-    if (config->struct_size != sizeof(PyConfig)) {
-        return _PyStatus_ERR("unsupported PyConfig structure size "
-                             "(Python version mismatch?)");
-    }
-    return _PyStatus_OK();
-}
-
-
 /* Free memory allocated in config, but don't clear all attributes */
 void
 PyConfig_Clear(PyConfig *config)
@@ -579,19 +568,74 @@ PyConfig_Clear(PyConfig *config)
 #undef CLEAR
 }
 
+// Future enhancement: consider making these public in patchlevel.h
+#define _Py_GET_MAJOR_MINOR(hexversion) ((hexversion & 0xFFFF0000) >> 16)
+#define _Py_GET_RELEASE_LEVEL(hexversion) ((hexversion & 0x000000F0) >> 4)
+#define _Py_HAS_NOMINALLY_FROZEN_ABI(level) ((level == 0xC) || (level == 0xF))
+
+PyStatus
+_Py_CheckVersionCompat(uint32_t header_version)
+{
+    uint32_t runtime_version = PY_VERSION_HEX;
+
+    // Exact matches are always fine
+    if (header_version == runtime_version) {
+        return _PyStatus_OK();
+    }
+
+    // Possible future enhancement: support string formatting for init errors
+
+    // Only allow inexact matches for release candidates and final releases
+    uint8_t header_level = _Py_GET_RELEASE_LEVEL(header_version);
+    if (!_Py_HAS_NOMINALLY_FROZEN_ABI(header_level)) {
+        if (header_level != 0xA && header_level != 0xB) {
+            return _PyStatus_ERR(
+                "Embedding application failed to specify a valid header "
+                "release level"
+            );
+        }
+        return _PyStatus_ERR(
+            "Embedding applications built against a pre-release API version "
+            "must be linked to the exact corresponding library version"
+        );
+    }
+    uint8_t runtime_level = _Py_GET_RELEASE_LEVEL(runtime_version);
+    if (!_Py_HAS_NOMINALLY_FROZEN_ABI(header_level)) {
+        return _PyStatus_ERR(
+            "Embedding applications linked against a pre-release library "
+            "must be built against the exact corresponding header version"
+        );
+    }
+
+    // Otherwise require that the X.Y part of the version match
+    if (_Py_GET_MAJOR_MINOR(header_level) != _Py_GET_MAJOR_MINOR(runtime_level)) {
+        return _PyStatus_ERR(
+            "Embedding applications built against the headers for Python X.Y.z "
+            "must be linked against a library in the same Python X.Y series"
+        );
+    }
+
+    return _PyStatus_OK();
+}
+#undef _Py_GET_MAJOR_MINOR
+#undef _Py_GET_RELEASE_LEVEL
+#undef _Py_HAS_FROZEN_RUNTIME_API
 
 PyStatus
 _PyConfig_InitCompatConfig(PyConfig *config)
 {
-    size_t struct_size = config->struct_size;
-    memset(config, 0, sizeof(*config));
-    config->struct_size = struct_size;
-
-    PyStatus status = config_check_struct_size(config);
+    uint32_t header_version = config->header_version;
+    PyStatus status = _Py_CheckVersionCompat(header_version);
     if (_PyStatus_EXCEPTION(status)) {
         _PyStatus_UPDATE_FUNC(status);
         return status;
     }
+
+    // Future enhancement: allow old config struct layouts if an old
+    // header_version is specified
+    size_t struct_size = sizeof(*config);
+    memset(config, 0, struct_size);
+    config->header_version = header_version;
 
     config->_config_init = (int)_PyConfig_INIT_COMPAT;
     config->isolated = -1;
@@ -775,13 +819,13 @@ _PyConfig_Copy(PyConfig *config, const PyConfig *config2)
 {
     PyStatus status;
 
-    status = config_check_struct_size(config);
+    status = _Py_CheckVersionCompat(config->header_version);
     if (_PyStatus_EXCEPTION(status)) {
         _PyStatus_UPDATE_FUNC(status);
         return status;
     }
 
-    status = config_check_struct_size(config2);
+    status = _Py_CheckVersionCompat(config2->header_version);
     if (_PyStatus_EXCEPTION(status)) {
         _PyStatus_UPDATE_FUNC(status);
         return status;
@@ -2280,7 +2324,7 @@ core_read_precmdline(PyConfig *config, _PyPreCmdline *precmdline)
     }
 
     PyPreConfig preconfig;
-    preconfig.struct_size = sizeof(PyPreConfig);
+    preconfig.header_version = config->header_version;
 
     status = _PyPreConfig_InitFromPreConfig(&preconfig, &_PyRuntime.preconfig);
     if (_PyStatus_EXCEPTION(status)) {
@@ -2475,7 +2519,7 @@ PyConfig_Read(PyConfig *config)
     PyStatus status;
     PyWideStringList orig_argv = _PyWideStringList_INIT;
 
-    status = config_check_struct_size(config);
+    status = _Py_CheckVersionCompat(config->header_version);
     if (_PyStatus_EXCEPTION(status)) {
         _PyStatus_UPDATE_FUNC(status);
         return status;

@@ -78,7 +78,7 @@ main(int argc, char *argv[])
 
     PyStatus status;
     PyConfig config;
-    config.struct_size = sizeof(PyConfig);
+    config.header_version = PY_VERSION_HEX;
 
     status = PyConfig_InitIsolatedConfig(&config);
     if (PyStatus_Exception(status)) {

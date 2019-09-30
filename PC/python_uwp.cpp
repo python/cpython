@@ -167,10 +167,10 @@ wmain(int argc, wchar_t **argv)
     PyStatus status;
 
     PyPreConfig preconfig;
-    preconfig.struct_size = sizeof(PyPreConfig);
+    preconfig.header_version = PY_VERSION_HEX;
 
     PyConfig config;
-    config.struct_size = sizeof(PyConfig);
+    config.header_version = PY_VERSION_HEX;
 
     const wchar_t *moduleName = NULL;
     const wchar_t *p = wcsrchr(argv[0], L'\\');

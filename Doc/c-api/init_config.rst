@@ -194,8 +194,8 @@ PyPreConfig
    * Configure the LC_CTYPE locale
    * Set the UTF-8 mode
 
-   The :c:member:`struct_size` field must be explicitly initialized to
-   ``sizeof(PyPreConfig)``.
+   The :c:member:`header_version` field must be explicitly initialized to
+   :c:macro:`PY_VERSION_HEX`.
 
    Function to initialize a preconfiguration:
 
@@ -274,10 +274,10 @@ PyPreConfig
       same way the regular Python parses command line arguments: see
       :ref:`Command Line Arguments <using-on-cmdline>`.
 
-   .. c:member:: size_t struct_size
+   .. c:member:: size_t header_version
 
-      Size of the structure in bytes: must be initialized to
-      ``sizeof(PyPreConfig)``.
+      The version of the CPython headers used to build the embedding
+      application. Must be initialized to :c:macro:`PY_VERSION_HEX`.
 
       Field used for API and ABI compatibility.
 
@@ -332,7 +332,7 @@ Example using the preinitialization to enable the UTF-8 Mode::
 
     PyStatus status;
     PyPreConfig preconfig;
-    preconfig.struct_size = sizeof(PyPreConfig);
+    preconfig.header_version = PY_VERSION_HEX;
 
     status = PyPreConfig_InitPythonConfig(&preconfig);
     if (PyStatus_Exception(status)) {
@@ -360,8 +360,8 @@ PyConfig
 
    Structure containing most parameters to configure Python.
 
-   The :c:member:`struct_size` field must be explicitly initialized to
-   ``sizeof(PyConfig)``.
+   The :c:member:`header_version` field must be explicitly initialized to
+   :c:macro:`PY_VERSION_HEX`.
 
    Structure methods:
 
@@ -679,10 +679,10 @@ PyConfig
       Encoding and encoding errors of :data:`sys.stdin`, :data:`sys.stdout` and
       :data:`sys.stderr`.
 
-   .. c:member:: size_t struct_size
+   .. c:member:: size_t header_version
 
-      Size of the structure in bytes: must be initialized to
-      ``sizeof(PyConfig)``.
+      The version of the CPython headers used to build the embedding
+      application. Must be initialized to :c:macro:`PY_VERSION_HEX`.
 
       Field used for API and ABI compatibility.
 
@@ -754,7 +754,7 @@ Example setting the program name::
     {
         PyStatus status;
         PyConfig config;
-        config.struct_size = sizeof(PyConfig);
+        config.header_version = PY_VERSION_HEX;
 
         status = PyConfig_InitPythonConfig(&config);
         if (PyStatus_Exception(status)) {
@@ -787,7 +787,7 @@ configuration, and then override some parameters::
     {
         PyStatus status;
         PyConfig config;
-        config.struct_size = sizeof(PyConfig);
+        config.header_version = PY_VERSION_HEX;
 
         status = PyConfig_InitPythonConfig(&config);
         if (PyStatus_Exception(status)) {
@@ -875,7 +875,7 @@ Example of customized Python always running in isolated mode::
     {
         PyStatus status;
         PyConfig config;
-        config.struct_size = sizeof(PyConfig);
+        config.header_version = PY_VERSION_HEX;
 
         status = PyConfig_InitPythonConfig(&config);
         if (PyStatus_Exception(status)) {
@@ -1067,7 +1067,7 @@ phases::
     {
         PyStatus status;
         PyConfig config;
-        config.struct_size = sizeof(PyConfig);
+        config.header_version = PY_VERSION_HEX;
 
         status = PyConfig_InitPythonConfig(&config);
         if (PyStatus_Exception(status)) {
