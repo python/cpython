@@ -357,7 +357,7 @@ class socket(_socket.socket):
             if not fsize:
                 return 0  # empty file
             blocksize = fsize if not count else count
-            blocksize = min(blocksize, 2 ** 31 - 2)  # max 2GB
+            blocksize = min(blocksize, 2 ** 30)  # max 1GB
 
             timeout = self.gettimeout()
             if timeout == 0:
