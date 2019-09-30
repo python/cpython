@@ -136,6 +136,7 @@ def _fastcopy_sendfile(fsrc, fdst):
     # changes while being copied.
     try:
         blocksize = max(os.fstat(infd).st_size, 2 ** 23)  # min 8MB
+        blocksize = min(blocksize, 2 ** 31 - 2)  # max 2GB
     except Exception:
         blocksize = 2 ** 27  # 128MB
 
