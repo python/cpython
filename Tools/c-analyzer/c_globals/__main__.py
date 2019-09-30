@@ -4,12 +4,12 @@ import re
 import sys
 
 from c_analyzer_common import SOURCE_DIRS, REPO_ROOT, show
+from c_analyzer_common.find import vars_from_binary
 from c_analyzer_common.info import UNKNOWN
 from c_analyzer_common.known import (
     from_file as known_from_file,
     DATA_FILE as KNOWN_FILE,
     )
-from . import find
 from .supported import is_supported, ignored_from_file, IGNORED_FILE, _is_object
 
 
@@ -67,14 +67,17 @@ def _check_results(unknown, knownvars, used):
 def _find_globals(dirnames, known, ignored):
     if dirnames == SOURCE_DIRS:
         dirnames = [os.path.relpath(d, REPO_ROOT) for d in dirnames]
+    # For now we only use known variables (no source lookup).
+    dirnames = None
 
     knownvars = (known or {}).get('variables')
-    for variable in find.globals_from_binary(knownvars=knownvars,
-                                             dirnames=dirnames):
-        if variable.vartype == UNKNOWN:
-            yield variable, None
+    for var in vars_from_binary(known=known, dirnames=dirnames):
+        if not var.isglobal:
+            continue
+        elif var.vartype == UNKNOWN:
+            yield var, None
         else:
-            yield variable, is_supported(variable, ignored, known)
+            yield var, is_supported(var, ignored, known)
 
 
 def cmd_check(cmd, dirs=SOURCE_DIRS, *,
