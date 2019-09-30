@@ -41,8 +41,7 @@ def _is_special_symbol(name):
     return False
 
 
-def iter_symbols(binfile, find_local_symbol=None,
-                 *,
+def iter_symbols(binfile, *,
                  nm=None,
                  _which=shutil.which,
                  _run=util.run_cmd,
@@ -65,15 +64,12 @@ def iter_symbols(binfile, find_local_symbol=None,
             raise NotImplementedError
         raise
     for line in output.splitlines():
-        (name, kind, external, filename, funcname, vartype,
-         ) = _parse_nm_line(line,
-                            _find_local_symbol=find_local_symbol,
-                            )
+        (name, kind, external, filename, funcname,
+         ) = _parse_nm_line(line)
         if kind != Symbol.KIND.VARIABLE:
             continue
         elif _is_special_symbol(name):
             continue
-        assert vartype is None
         yield Symbol(
                 id=(filename, funcname, name),
                 kind=kind,
@@ -81,7 +77,7 @@ def iter_symbols(binfile, find_local_symbol=None,
                 )
 
 
-def _parse_nm_line(line, *, _find_local_symbol=None):
+def _parse_nm_line(line):
     _origline = line
     _, _, line = line.partition(' ')  # strip off the address
     line = line.strip()
@@ -98,18 +94,9 @@ def _parse_nm_line(line, *, _find_local_symbol=None):
     else:
         filename = info.UNKNOWN
 
-    vartype = None
     name, islocal = _parse_nm_name(name, kind)
-    if islocal:
-        funcname = info.UNKNOWN
-        if _find_local_symbol is not None:
-            filename, funcname, vartype = _find_local_symbol(name)
-            filename = filename or info.UNKNOWN
-            funcname = funcname or info.UNKNOWN
-    else:
-        funcname = None
-        # XXX fine filename and vartype?
-    return name, kind, external, filename, funcname, vartype
+    funcname = info.UNKNOWN if islocal else None
+    return name, kind, external, filename, funcname
 
 
 def _parse_nm_name(name, kind):
