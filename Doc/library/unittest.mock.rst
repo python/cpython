@@ -865,7 +865,7 @@ object::
     True
 
   The result of ``mock()`` is an async function which will have the outcome
-  of ``side_effect`` or ``return_value``:
+  of ``side_effect`` or ``return_value`` after it has been awaited:
 
   - if ``side_effect`` is a function, the async function will return the
     result of that function,
@@ -889,6 +889,32 @@ object::
     <MagicMock spec='function' id='...'>
     >>> mock()  # doctest: +SKIP
     <coroutine object AsyncMockMixin._mock_call at ...>
+
+
+  Setting the *spec* of a :class:`Mock`, :class:`MagicMock`, or :class:`AsyncMock`
+  to a class with asynchronous and synchronous functions will automatically
+  detect the synchronous functions and set them as :class:`MagicMock` (if the
+  parent mock is :class:`AsyncMock` or :class:`MagicMock`) or :class:`Mock` (if
+  the parent mock is :class:`Mock`). All asynchronous functions will be
+  :class:`AsyncMock`.
+
+  >>> class ExampleClass:
+  ...     def sync_foo():
+  ...         pass
+  ...     async def async_foo():
+  ...         pass
+  ...
+  >>> a_mock = AsyncMock(ExampleClass)
+  >>> a_mock.sync_foo
+  <MagicMock name='mock.sync_foo' id='...'>
+  >>> a_mock.async_foo
+  <AsyncMock name='mock.async_foo' id='...'>
+  >>> mock = Mock(ExampleClass)
+  >>> mock.sync_foo
+  <Mock name='mock.sync_foo' id='...'>
+  >>> mock.async_foo
+  <AsyncMock name='mock.async_foo' id='...'>
+
 
   .. method:: assert_awaited()
 
