@@ -1091,7 +1091,8 @@ class HTTPConnection:
 
         self.putrequest(method, url, **skips)
 
-        if 'content-length' not in header_names:
+        if 'content-length' not in header_names and \
+           'transfer-encoding' not in header_names:
             self._set_content_length(body, method)
         for hdr, value in headers.iteritems():
             self.putheader(hdr, value)
