@@ -243,7 +243,7 @@ Glossary
       Fortran contiguous arrays, the first index varies the fastest.
 
    coroutine
-      Coroutines is a more generalized form of subroutines. Subroutines are
+      Coroutines are a more generalized form of subroutines. Subroutines are
       entered at one point and exited at another point.  Coroutines can be
       entered, exited, and resumed at many different points.  They can be
       implemented with the :keyword:`async def` statement.  See also
