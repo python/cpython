@@ -6,10 +6,6 @@
 #include "pycore_pymem.h"
 #include "pycore_pystate.h"
 
-#ifdef __FreeBSD__
-#  include <fenv.h>     /* fedisableexcept() */
-#endif
-
 /* Includes for exit_sigint() */
 #include <stdio.h>      /* perror() */
 #ifdef HAVE_SIGNAL_H
@@ -42,15 +38,6 @@ pymain_init(const _PyArgv *args)
     if (_PyStatus_EXCEPTION(status)) {
         return status;
     }
-
-    /* 754 requires that FP exceptions run in "no stop" mode by default,
-     * and until C vendors implement C99's ways to control FP exceptions,
-     * Python requires non-stop mode.  Alas, some platforms enable FP
-     * exceptions by default.  Here we disable them.
-     */
-#ifdef __FreeBSD__
-    fedisableexcept(FE_OVERFLOW);
-#endif
 
     PyPreConfig preconfig;
     PyPreConfig_InitPythonConfig(&preconfig);
