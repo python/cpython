@@ -1204,7 +1204,11 @@ class TestClassesAndFunctions(unittest.TestCase):
         foobar = Foo(42)
         try:
             members = inspect.getmembers(foobar)
+            property_member = ('bar', inspect.getattr_static(foobar, 'bar'))
+            self.assertIn(property_member, members)
             class_members = inspect.getmembers(Foo)
+            property_class_member = ('bar', inspect.getattr_static(Foo, 'bar'))
+            self.assertIn(property_member, class_members)
         except NotImplementedError:
             self.fail('getmembers() called property!')
 
