@@ -3,6 +3,10 @@
 # NOTE WELL: You should also follow all the steps listed at
 # https://devguide.python.org/grammar/
 
+# Poniższa definicja typedarglist jest równoważna z tym zestawem reguł:
+#
+# argumenty = argument (',' [TYPE_COMMENT] argument) *
+# argument = tfpdef ['=' test]
 # Start symbols for the grammar:
 #       single_input is a single interactive statement;
 #       file_input is a module or sequence of commands read from an input file;
