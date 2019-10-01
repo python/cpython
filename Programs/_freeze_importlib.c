@@ -78,7 +78,6 @@ main(int argc, char *argv[])
 
     PyStatus status;
     PyConfig config;
-    config.struct_size = sizeof(PyConfig);
 
     status = PyConfig_InitIsolatedConfig(&config);
     if (PyStatus_Exception(status)) {

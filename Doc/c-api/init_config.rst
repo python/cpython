@@ -194,24 +194,17 @@ PyPreConfig
    * Configure the LC_CTYPE locale
    * Set the UTF-8 mode
 
-   The :c:member:`struct_size` field must be explicitly initialized to
-   ``sizeof(PyPreConfig)``.
-
    Function to initialize a preconfiguration:
 
-   .. c:function:: PyStatus PyPreConfig_InitIsolatedConfig(PyPreConfig *preconfig)
+   .. c:function:: void PyPreConfig_InitIsolatedConfig(PyPreConfig *preconfig)
 
       Initialize the preconfiguration with :ref:`Python Configuration
       <init-python-config>`.
 
-   .. c:function:: PyStatus PyPreConfig_InitPythonConfig(PyPreConfig *preconfig)
+   .. c:function:: void PyPreConfig_InitPythonConfig(PyPreConfig *preconfig)
 
       Initialize the preconfiguration with :ref:`Isolated Configuration
       <init-isolated-conf>`.
-
-   The caller of these functions is responsible to handle exceptions (error or
-   exit) using :c:func:`PyStatus_Exception` and
-   :c:func:`Py_ExitStatusException`.
 
    Structure fields:
 
@@ -274,13 +267,6 @@ PyPreConfig
       same way the regular Python parses command line arguments: see
       :ref:`Command Line Arguments <using-on-cmdline>`.
 
-   .. c:member:: size_t struct_size
-
-      Size of the structure in bytes: must be initialized to
-      ``sizeof(PyPreConfig)``.
-
-      Field used for API and ABI compatibility.
-
    .. c:member:: int use_environment
 
       See :c:member:`PyConfig.use_environment`.
@@ -332,12 +318,7 @@ Example using the preinitialization to enable the UTF-8 Mode::
 
     PyStatus status;
     PyPreConfig preconfig;
-    preconfig.struct_size = sizeof(PyPreConfig);
-
-    status = PyPreConfig_InitPythonConfig(&preconfig);
-    if (PyStatus_Exception(status)) {
-        Py_ExitStatusException(status);
-    }
+    PyPreConfig_InitPythonConfig(&preconfig);
 
     preconfig.utf8_mode = 1;
 
@@ -359,9 +340,6 @@ PyConfig
 .. c:type:: PyConfig
 
    Structure containing most parameters to configure Python.
-
-   The :c:member:`struct_size` field must be explicitly initialized to
-   ``sizeof(PyConfig)``.
 
    Structure methods:
 
@@ -679,13 +657,6 @@ PyConfig
       Encoding and encoding errors of :data:`sys.stdin`, :data:`sys.stdout` and
       :data:`sys.stderr`.
 
-   .. c:member:: size_t struct_size
-
-      Size of the structure in bytes: must be initialized to
-      ``sizeof(PyConfig)``.
-
-      Field used for API and ABI compatibility.
-
    .. c:member:: int tracemalloc
 
       If non-zero, call :func:`tracemalloc.start` at startup.
@@ -754,7 +725,6 @@ Example setting the program name::
     {
         PyStatus status;
         PyConfig config;
-        config.struct_size = sizeof(PyConfig);
 
         status = PyConfig_InitPythonConfig(&config);
         if (PyStatus_Exception(status)) {
@@ -787,7 +757,6 @@ configuration, and then override some parameters::
     {
         PyStatus status;
         PyConfig config;
-        config.struct_size = sizeof(PyConfig);
 
         status = PyConfig_InitPythonConfig(&config);
         if (PyStatus_Exception(status)) {
@@ -875,7 +844,6 @@ Example of customized Python always running in isolated mode::
     {
         PyStatus status;
         PyConfig config;
-        config.struct_size = sizeof(PyConfig);
 
         status = PyConfig_InitPythonConfig(&config);
         if (PyStatus_Exception(status)) {
@@ -1067,7 +1035,6 @@ phases::
     {
         PyStatus status;
         PyConfig config;
-        config.struct_size = sizeof(PyConfig);
 
         status = PyConfig_InitPythonConfig(&config);
         if (PyStatus_Exception(status)) {
