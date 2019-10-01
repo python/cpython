@@ -383,7 +383,7 @@ PyLong_FromLong(long ival)
 #define PYLONG_FROM_UINT(INT_TYPE, ival) \
     do { \
         if (IS_SMALL_UINT(ival)) { \
-            return get_small_int((ival)); \
+            return get_small_int((sdigit)(ival)); \
         } \
         /* Count the number of Python digits. */ \
         Py_ssize_t ndigits = 0; \
