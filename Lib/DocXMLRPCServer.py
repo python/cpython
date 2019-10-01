@@ -21,13 +21,12 @@ from SimpleXMLRPCServer import (SimpleXMLRPCServer,
             resolve_dotted_attribute)
 
 
-def _html_escape_quote(s, quote=True):
+def _html_escape_quote(s):
     s = s.replace("&", "&amp;") # Must be done first!
     s = s.replace("<", "&lt;")
     s = s.replace(">", "&gt;")
-    if quote:
-        s = s.replace('"', "&quot;")
-        s = s.replace('\'', "&#x27;")
+    s = s.replace('"', "&quot;")
+    s = s.replace('\'', "&#x27;")
     return s
 
 
