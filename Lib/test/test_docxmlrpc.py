@@ -1,5 +1,6 @@
 from DocXMLRPCServer import DocXMLRPCServer
 import httplib
+import re
 import sys
 from test import test_support
 threading = test_support.import_module('threading')
@@ -175,6 +176,25 @@ class DocXMLRPCHTTPGETServer(unittest.TestCase):
 
         self.assertIn("""Try&nbsp;self.<strong>add</strong>,&nbsp;too.""",
                       response.read())
+
+    def test_server_title_escape(self):
+        """Test that the server title and documentation
+        are escaped for HTML.
+        """
+        self.serv.set_server_title('test_title<script>')
+        self.serv.set_server_documentation('test_documentation<script>')
+        self.assertEqual('test_title<script>', self.serv.server_title)
+        self.assertEqual('test_documentation<script>',
+                self.serv.server_documentation)
+
+        generated = self.serv.generate_html_documentation()
+        title = re.search(r'<title>(.+?)</title>', generated).group()
+        documentation = re.search(r'<p><tt>(.+?)</tt></p>', generated).group()
+        self.assertEqual('<title>Python: test_title&lt;script&gt;</title>',
+                title)
+        self.assertEqual('<p><tt>test_documentation&lt;script&gt;</tt></p>',
+                documentation)
+
 
 def test_main():
     test_support.run_unittest(DocXMLRPCHTTPGETServer)
