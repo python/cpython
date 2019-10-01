@@ -750,13 +750,6 @@ class _BaseNetwork(_IPAddressBase):
             # address
             return other._ip & self.netmask._ip == self.network_address._ip
 
-    def overlaps(self, other):
-        """Tell if self is partly contained in other."""
-        return self.network_address in other or (
-            self.broadcast_address in other or (
-                other.network_address in self or (
-                    other.broadcast_address in self)))
-
     @functools.cached_property
     def broadcast_address(self):
         return self._address_class(int(self.network_address) |
@@ -1045,6 +1038,13 @@ class _BaseNetwork(_IPAddressBase):
         except AttributeError:
             raise TypeError(f"Unable to test subnet containment "
                             f"between {a} and {b}")
+
+    def overlaps(self, other):
+        """Tell if self is partly contained in other."""
+        if not isinstance(other, _BaseNetwork) or (
+            self.version != other.version):
+            return False
+        return self.subnet_of(other) or self.supernet_of(other)
 
     def subnet_of(self, other):
         """Return True if this network is a subnet of other."""
