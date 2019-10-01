@@ -1,1 +1,1 @@
-Improve the performance of _decompose() in the enum.py. Patch by hongweipeng.
+Improve the performance of :func:`enum._decompose` in :mod:`enum`. Patch by hongweipeng.
