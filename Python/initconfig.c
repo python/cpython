@@ -529,17 +529,6 @@ Py_GetArgcArgv(int *argc, wchar_t ***argv)
      : _PyStatus_NO_MEMORY())
 
 
-static PyStatus
-config_check_struct_size(const PyConfig *config)
-{
-    if (config->struct_size != sizeof(PyConfig)) {
-        return _PyStatus_ERR("unsupported PyConfig structure size "
-                             "(Python version mismatch?)");
-    }
-    return _PyStatus_OK();
-}
-
-
 /* Free memory allocated in config, but don't clear all attributes */
 void
 PyConfig_Clear(PyConfig *config)
@@ -583,15 +572,7 @@ PyConfig_Clear(PyConfig *config)
 PyStatus
 _PyConfig_InitCompatConfig(PyConfig *config)
 {
-    size_t struct_size = config->struct_size;
     memset(config, 0, sizeof(*config));
-    config->struct_size = struct_size;
-
-    PyStatus status = config_check_struct_size(config);
-    if (_PyStatus_EXCEPTION(status)) {
-        _PyStatus_UPDATE_FUNC(status);
-        return status;
-    }
 
     config->_config_init = (int)_PyConfig_INIT_COMPAT;
     config->isolated = -1;
@@ -774,18 +755,6 @@ PyStatus
 _PyConfig_Copy(PyConfig *config, const PyConfig *config2)
 {
     PyStatus status;
-
-    status = config_check_struct_size(config);
-    if (_PyStatus_EXCEPTION(status)) {
-        _PyStatus_UPDATE_FUNC(status);
-        return status;
-    }
-
-    status = config_check_struct_size(config2);
-    if (_PyStatus_EXCEPTION(status)) {
-        _PyStatus_UPDATE_FUNC(status);
-        return status;
-    }
 
     PyConfig_Clear(config);
 
@@ -2280,7 +2249,6 @@ core_read_precmdline(PyConfig *config, _PyPreCmdline *precmdline)
     }
 
     PyPreConfig preconfig;
-    preconfig.struct_size = sizeof(PyPreConfig);
 
     status = _PyPreConfig_InitFromPreConfig(&preconfig, &_PyRuntime.preconfig);
     if (_PyStatus_EXCEPTION(status)) {
@@ -2474,12 +2442,6 @@ PyConfig_Read(PyConfig *config)
 {
     PyStatus status;
     PyWideStringList orig_argv = _PyWideStringList_INIT;
-
-    status = config_check_struct_size(config);
-    if (_PyStatus_EXCEPTION(status)) {
-        _PyStatus_UPDATE_FUNC(status);
-        return status;
-    }
 
     status = _Py_PreInitializeFromConfig(config, NULL);
     if (_PyStatus_EXCEPTION(status)) {
