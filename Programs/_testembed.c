@@ -20,11 +20,12 @@
  * Executed via 'EmbeddingTests' in Lib/test/test_capi.py
  *********************************************************/
 
+/* Use path starting with "./" avoids a search along the PATH */
+#define PROGRAM_NAME L"./_testembed"
+
 static void _testembed_Py_Initialize(void)
 {
-    /* HACK: the "./" at front avoids a search along the PATH in
-       Modules/getpath.c */
-    Py_SetProgramName(L"./_testembed");
+    Py_SetProgramName(PROGRAM_NAME);
     Py_Initialize();
 }
 
@@ -363,8 +364,7 @@ config_set_wide_string_list(PyConfig *config, PyWideStringList *list,
 
 static void config_set_program_name(PyConfig *config)
 {
-    /* Use path starting with "./" avoids a search along the PATH */
-    const wchar_t *program_name = L"./_testembed";
+    const wchar_t *program_name = PROGRAM_NAME;
     config_set_string(config, &config->program_name, program_name);
 }
 
@@ -385,7 +385,12 @@ static int check_init_compat_config(int preinit)
 
     if (preinit) {
         PyPreConfig preconfig;
-        _PyPreConfig_InitCompatConfig(&preconfig);
+        preconfig.struct_size = sizeof(PyPreConfig);
+
+        status = _PyPreConfig_InitCompatConfig(&preconfig);
+        if (PyStatus_Exception(status)) {
+            Py_ExitStatusException(status);
+        }
 
         status = Py_PreInitialize(&preconfig);
         if (PyStatus_Exception(status)) {
@@ -394,7 +399,13 @@ static int check_init_compat_config(int preinit)
     }
 
     PyConfig config;
-    _PyConfig_InitCompatConfig(&config);
+    config.struct_size = sizeof(PyConfig);
+
+    status = _PyConfig_InitCompatConfig(&config);
+    if (PyStatus_Exception(status)) {
+        Py_ExitStatusException(status);
+    }
+
     config_set_program_name(&config);
     init_from_config_clear(&config);
 
@@ -470,7 +481,12 @@ static int test_init_from_config(void)
     PyStatus status;
 
     PyPreConfig preconfig;
-    _PyPreConfig_InitCompatConfig(&preconfig);
+    preconfig.struct_size = sizeof(PyPreConfig);
+
+    status = _PyPreConfig_InitCompatConfig(&preconfig);
+    if (PyStatus_Exception(status)) {
+        Py_ExitStatusException(status);
+    }
 
     putenv("PYTHONMALLOC=malloc_debug");
     preconfig.allocator = PYMEM_ALLOCATOR_MALLOC;
@@ -485,7 +501,12 @@ static int test_init_from_config(void)
     }
 
     PyConfig config;
-    _PyConfig_InitCompatConfig(&config);
+    config.struct_size = sizeof(PyConfig);
+
+    status = _PyConfig_InitCompatConfig(&config);
+    if (PyStatus_Exception(status)) {
+        Py_ExitStatusException(status);
+    }
     config.install_signal_handlers = 0;
 
     /* FIXME: test use_environment */
@@ -617,6 +638,8 @@ static int check_init_parse_argv(int parse_argv)
     PyStatus status;
 
     PyConfig config;
+    config.struct_size = sizeof(PyConfig);
+
     status = PyConfig_InitPythonConfig(&config);
     if (PyStatus_Exception(status)) {
         Py_ExitStatusException(status);
@@ -702,6 +725,8 @@ static int test_init_python_env(void)
     set_all_env_vars();
 
     PyConfig config;
+    config.struct_size = sizeof(PyConfig);
+
     status = PyConfig_InitPythonConfig(&config);
     if (PyStatus_Exception(status)) {
         Py_ExitStatusException(status);
@@ -755,6 +780,8 @@ static int test_init_isolated_flag(void)
 
     /* Test PyConfig.isolated=1 */
     PyConfig config;
+    config.struct_size = sizeof(PyConfig);
+
     status = PyConfig_InitPythonConfig(&config);
     if (PyStatus_Exception(status)) {
         Py_ExitStatusException(status);
@@ -779,7 +806,13 @@ static int test_preinit_isolated1(void)
     PyStatus status;
 
     PyPreConfig preconfig;
-    _PyPreConfig_InitCompatConfig(&preconfig);
+    preconfig.struct_size = sizeof(PyPreConfig);
+
+    status = _PyPreConfig_InitCompatConfig(&preconfig);
+    if (PyStatus_Exception(status)) {
+        Py_ExitStatusException(status);
+    }
+
     preconfig.isolated = 1;
 
     status = Py_PreInitialize(&preconfig);
@@ -788,7 +821,12 @@ static int test_preinit_isolated1(void)
     }
 
     PyConfig config;
-    _PyConfig_InitCompatConfig(&config);
+    config.struct_size = sizeof(PyConfig);
+
+    status = _PyConfig_InitCompatConfig(&config);
+    if (PyStatus_Exception(status)) {
+        Py_ExitStatusException(status);
+    }
     config_set_program_name(&config);
     set_all_env_vars();
     init_from_config_clear(&config);
@@ -805,7 +843,13 @@ static int test_preinit_isolated2(void)
     PyStatus status;
 
     PyPreConfig preconfig;
-    _PyPreConfig_InitCompatConfig(&preconfig);
+    preconfig.struct_size = sizeof(PyPreConfig);
+
+    status = _PyPreConfig_InitCompatConfig(&preconfig);
+    if (PyStatus_Exception(status)) {
+        Py_ExitStatusException(status);
+    }
+
     preconfig.isolated = 0;
 
     status = Py_PreInitialize(&preconfig);
@@ -815,7 +859,11 @@ static int test_preinit_isolated2(void)
 
     /* Test PyConfig.isolated=1 */
     PyConfig config;
-    _PyConfig_InitCompatConfig(&config);
+    config.struct_size = sizeof(PyConfig);
+    status = _PyConfig_InitCompatConfig(&config);
+    if (PyStatus_Exception(status)) {
+        Py_ExitStatusException(status);
+    }
 
     Py_IsolatedFlag = 0;
     config.isolated = 1;
@@ -835,7 +883,12 @@ static int test_preinit_dont_parse_argv(void)
     PyStatus status;
 
     PyPreConfig preconfig;
-    PyPreConfig_InitIsolatedConfig(&preconfig);
+    preconfig.struct_size = sizeof(PyPreConfig);
+
+    status = PyPreConfig_InitIsolatedConfig(&preconfig);
+    if (PyStatus_Exception(status)) {
+        Py_ExitStatusException(status);
+    }
 
     preconfig.isolated = 0;
 
@@ -852,6 +905,7 @@ static int test_preinit_dont_parse_argv(void)
     }
 
     PyConfig config;
+    config.struct_size = sizeof(PyConfig);
 
     status = PyConfig_InitIsolatedConfig(&config);
     if (PyStatus_Exception(status)) {
@@ -877,6 +931,7 @@ static int test_preinit_parse_argv(void)
 {
     PyStatus status;
     PyConfig config;
+    config.struct_size = sizeof(PyConfig);
 
     status = PyConfig_InitPythonConfig(&config);
     if (PyStatus_Exception(status)) {
@@ -934,7 +989,12 @@ static int check_preinit_isolated_config(int preinit)
 
     if (preinit) {
         PyPreConfig preconfig;
-        PyPreConfig_InitIsolatedConfig(&preconfig);
+        preconfig.struct_size = sizeof(PyPreConfig);
+
+        status = PyPreConfig_InitIsolatedConfig(&preconfig);
+        if (PyStatus_Exception(status)) {
+            Py_ExitStatusException(status);
+        }
 
         status = Py_PreInitialize(&preconfig);
         if (PyStatus_Exception(status)) {
@@ -947,6 +1007,8 @@ static int check_preinit_isolated_config(int preinit)
     }
 
     PyConfig config;
+    config.struct_size = sizeof(PyConfig);
+
     status = PyConfig_InitIsolatedConfig(&config);
     if (PyStatus_Exception(status)) {
         PyConfig_Clear(&config);
@@ -996,7 +1058,12 @@ static int check_init_python_config(int preinit)
 
     if (preinit) {
         PyPreConfig preconfig;
-        PyPreConfig_InitPythonConfig(&preconfig);
+        preconfig.struct_size = sizeof(PyPreConfig);
+
+        status = PyPreConfig_InitPythonConfig(&preconfig);
+        if (PyStatus_Exception(status)) {
+            Py_ExitStatusException(status);
+        }
 
         status = Py_PreInitialize(&preconfig);
         if (PyStatus_Exception(status)) {
@@ -1005,6 +1072,8 @@ static int check_init_python_config(int preinit)
     }
 
     PyConfig config;
+    config.struct_size = sizeof(PyConfig);
+
     status = PyConfig_InitPythonConfig(&config);
     if (PyStatus_Exception(status)) {
         Py_ExitStatusException(status);
@@ -1035,7 +1104,13 @@ static int test_init_dont_configure_locale(void)
     PyStatus status;
 
     PyPreConfig preconfig;
-    PyPreConfig_InitPythonConfig(&preconfig);
+    preconfig.struct_size = sizeof(PyPreConfig);
+
+    status = PyPreConfig_InitPythonConfig(&preconfig);
+    if (PyStatus_Exception(status)) {
+        Py_ExitStatusException(status);
+    }
+
     preconfig.configure_locale = 0;
     preconfig.coerce_c_locale = 1;
     preconfig.coerce_c_locale_warn = 1;
@@ -1046,6 +1121,8 @@ static int test_init_dont_configure_locale(void)
     }
 
     PyConfig config;
+    config.struct_size = sizeof(PyConfig);
+
     status = PyConfig_InitPythonConfig(&config);
     if (PyStatus_Exception(status)) {
         Py_ExitStatusException(status);
@@ -1063,6 +1140,8 @@ static int test_init_dev_mode(void)
 {
     PyStatus status;
     PyConfig config;
+    config.struct_size = sizeof(PyConfig);
+
     status = PyConfig_InitPythonConfig(&config);
     if (PyStatus_Exception(status)) {
         Py_ExitStatusException(status);
@@ -1263,7 +1342,7 @@ static int _audit_hook_run(const char *eventName, PyObject *args, void *userData
 static int test_audit_run_command(void)
 {
     AuditRunCommandTest test = {"cpython.run_command"};
-    wchar_t *argv[] = {L"./_testembed", L"-c", L"pass"};
+    wchar_t *argv[] = {PROGRAM_NAME, L"-c", L"pass"};
 
     Py_IgnoreEnvironmentFlag = 0;
     PySys_AddAuditHook(_audit_hook_run, (void*)&test);
@@ -1274,7 +1353,7 @@ static int test_audit_run_command(void)
 static int test_audit_run_file(void)
 {
     AuditRunCommandTest test = {"cpython.run_file"};
-    wchar_t *argv[] = {L"./_testembed", L"filename.py"};
+    wchar_t *argv[] = {PROGRAM_NAME, L"filename.py"};
 
     Py_IgnoreEnvironmentFlag = 0;
     PySys_AddAuditHook(_audit_hook_run, (void*)&test);
@@ -1286,6 +1365,8 @@ static int run_audit_run_test(int argc, wchar_t **argv, void *test)
 {
     PyStatus status;
     PyConfig config;
+    config.struct_size = sizeof(PyConfig);
+
     status = PyConfig_InitPythonConfig(&config);
     if (PyStatus_Exception(status)) {
         Py_ExitStatusException(status);
@@ -1312,21 +1393,21 @@ static int run_audit_run_test(int argc, wchar_t **argv, void *test)
 static int test_audit_run_interactivehook(void)
 {
     AuditRunCommandTest test = {"cpython.run_interactivehook", 10};
-    wchar_t *argv[] = {L"./_testembed"};
+    wchar_t *argv[] = {PROGRAM_NAME};
     return run_audit_run_test(Py_ARRAY_LENGTH(argv), argv, &test);
 }
 
 static int test_audit_run_startup(void)
 {
     AuditRunCommandTest test = {"cpython.run_startup", 10};
-    wchar_t *argv[] = {L"./_testembed"};
+    wchar_t *argv[] = {PROGRAM_NAME};
     return run_audit_run_test(Py_ARRAY_LENGTH(argv), argv, &test);
 }
 
 static int test_audit_run_stdin(void)
 {
     AuditRunCommandTest test = {"cpython.run_stdin"};
-    wchar_t *argv[] = {L"./_testembed"};
+    wchar_t *argv[] = {PROGRAM_NAME};
     return run_audit_run_test(Py_ARRAY_LENGTH(argv), argv, &test);
 }
 
@@ -1334,6 +1415,8 @@ static int test_init_read_set(void)
 {
     PyStatus status;
     PyConfig config;
+    config.struct_size = sizeof(PyConfig);
+
     status = PyConfig_InitPythonConfig(&config);
     if (PyStatus_Exception(status)) {
         Py_ExitStatusException(status);
@@ -1382,6 +1465,8 @@ static int test_init_sys_add(void)
     PySys_AddWarnOption(L"ignore:::sysadd_warnoption");
 
     PyConfig config;
+    config.struct_size = sizeof(PyConfig);
+
     PyStatus status;
     status = PyConfig_InitPythonConfig(&config);
     if (PyStatus_Exception(status)) {
@@ -1423,6 +1508,159 @@ fail:
 }
 
 
+static int test_init_setpath(void)
+{
+    char *env = getenv("TESTPATH");
+    if (!env) {
+        fprintf(stderr, "missing TESTPATH env var\n");
+        return 1;
+    }
+    wchar_t *path = Py_DecodeLocale(env, NULL);
+    if (path == NULL) {
+        fprintf(stderr, "failed to decode TESTPATH\n");
+        return 1;
+    }
+    Py_SetPath(path);
+    PyMem_RawFree(path);
+    putenv("TESTPATH=");
+
+    Py_Initialize();
+    dump_config();
+    Py_Finalize();
+    return 0;
+}
+
+
+static int test_init_setpath_config(void)
+{
+    PyStatus status;
+    PyPreConfig preconfig;
+    preconfig.struct_size = sizeof(PyPreConfig);
+
+    status = PyPreConfig_InitPythonConfig(&preconfig);
+    if (PyStatus_Exception(status)) {
+        Py_ExitStatusException(status);
+    }
+
+    /* Explicitly preinitializes with Python preconfiguration to avoid
+      Py_SetPath() implicit preinitialization with compat preconfiguration. */
+    status = Py_PreInitialize(&preconfig);
+    if (PyStatus_Exception(status)) {
+        Py_ExitStatusException(status);
+    }
+
+    char *env = getenv("TESTPATH");
+    if (!env) {
+        fprintf(stderr, "missing TESTPATH env var\n");
+        return 1;
+    }
+    wchar_t *path = Py_DecodeLocale(env, NULL);
+    if (path == NULL) {
+        fprintf(stderr, "failed to decode TESTPATH\n");
+        return 1;
+    }
+    Py_SetPath(path);
+    PyMem_RawFree(path);
+    putenv("TESTPATH=");
+
+    PyConfig config;
+    config.struct_size = sizeof(PyConfig);
+
+    status = PyConfig_InitPythonConfig(&config);
+    if (PyStatus_Exception(status)) {
+        Py_ExitStatusException(status);
+    }
+    config_set_string(&config, &config.program_name, L"conf_program_name");
+    config_set_string(&config, &config.executable, L"conf_executable");
+    init_from_config_clear(&config);
+
+    dump_config();
+    Py_Finalize();
+    return 0;
+}
+
+
+static int test_init_setpythonhome(void)
+{
+    char *env = getenv("TESTHOME");
+    if (!env) {
+        fprintf(stderr, "missing TESTHOME env var\n");
+        return 1;
+    }
+    wchar_t *home = Py_DecodeLocale(env, NULL);
+    if (home == NULL) {
+        fprintf(stderr, "failed to decode TESTHOME\n");
+        return 1;
+    }
+    Py_SetPythonHome(home);
+    PyMem_RawFree(home);
+    putenv("TESTHOME=");
+
+    Py_Initialize();
+    dump_config();
+    Py_Finalize();
+    return 0;
+}
+
+
+static int test_init_warnoptions(void)
+{
+    PyStatus status;
+    putenv("PYTHONWARNINGS=ignore:::env1,ignore:::env2");
+
+    PySys_AddWarnOption(L"ignore:::PySys_AddWarnOption1");
+    PySys_AddWarnOption(L"ignore:::PySys_AddWarnOption2");
+
+    PyConfig config;
+    config.struct_size = sizeof(PyConfig);
+
+    status = PyConfig_InitPythonConfig(&config);
+    if (PyStatus_Exception(status)) {
+        Py_ExitStatusException(status);
+    }
+
+    config.dev_mode = 1;
+    config.bytes_warning = 1;
+
+    config_set_program_name(&config);
+
+    status = PyWideStringList_Append(&config.warnoptions,
+                                     L"ignore:::PyConfig_BeforeRead");
+    if (PyStatus_Exception(status)) {
+        Py_ExitStatusException(status);
+    }
+
+    wchar_t* argv[] = {
+        L"python3",
+        L"-Wignore:::cmdline1",
+        L"-Wignore:::cmdline2"};
+    config_set_argv(&config, Py_ARRAY_LENGTH(argv), argv);
+    config.parse_argv = 1;
+
+    status = PyConfig_Read(&config);
+    if (PyStatus_Exception(status)) {
+        Py_ExitStatusException(status);
+    }
+
+    status = PyWideStringList_Append(&config.warnoptions,
+                                     L"ignore:::PyConfig_AfterRead");
+    if (PyStatus_Exception(status)) {
+        Py_ExitStatusException(status);
+    }
+
+    status = PyWideStringList_Insert(&config.warnoptions,
+                                     0, L"ignore:::PyConfig_Insert0");
+    if (PyStatus_Exception(status)) {
+        Py_ExitStatusException(status);
+    }
+
+    init_from_config_clear(&config);
+    dump_config();
+    Py_Finalize();
+    return 0;
+}
+
+
 static void configure_init_main(PyConfig *config)
 {
     wchar_t* argv[] = {
@@ -1442,6 +1680,8 @@ static int test_init_run_main(void)
 {
     PyStatus status;
     PyConfig config;
+    config.struct_size = sizeof(PyConfig);
+
     status = PyConfig_InitPythonConfig(&config);
     if (PyStatus_Exception(status)) {
         Py_ExitStatusException(status);
@@ -1457,6 +1697,7 @@ static int test_init_main(void)
 {
     PyStatus status;
     PyConfig config;
+    config.struct_size = sizeof(PyConfig);
 
     status = PyConfig_InitPythonConfig(&config);
     if (PyStatus_Exception(status)) {
@@ -1488,6 +1729,7 @@ static int test_run_main(void)
 {
     PyStatus status;
     PyConfig config;
+    config.struct_size = sizeof(PyConfig);
 
     status = PyConfig_InitPythonConfig(&config);
     if (PyStatus_Exception(status)) {
@@ -1559,7 +1801,12 @@ static struct TestCase TestCases[] = {
     {"test_init_run_main", test_init_run_main},
     {"test_init_main", test_init_main},
     {"test_init_sys_add", test_init_sys_add},
+    {"test_init_setpath", test_init_setpath},
+    {"test_init_setpath_config", test_init_setpath_config},
+    {"test_init_setpythonhome", test_init_setpythonhome},
+    {"test_init_warnoptions", test_init_warnoptions},
     {"test_run_main", test_run_main},
+
     {"test_open_code_hook", test_open_code_hook},
     {"test_audit", test_audit},
     {"test_audit_subinterpreter", test_audit_subinterpreter},

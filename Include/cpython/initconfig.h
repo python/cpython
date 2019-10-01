@@ -45,8 +45,10 @@ PyAPI_FUNC(PyStatus) PyWideStringList_Insert(PyWideStringList *list,
 /* --- PyPreConfig ----------------------------------------------- */
 
 typedef struct {
-    int _config_version;  /* Internal configuration version,
-                             used for ABI compatibility */
+    /* Size of the structure in bytes: must be initialized to
+       sizeof(PyPreConfig). Field used for API and ABI compatibility. */
+    size_t struct_size;
+
     int _config_init;     /* _PyConfigInitEnum value */
 
     /* Parse Py_PreInitializeFromBytesArgs() arguments?
@@ -122,15 +124,17 @@ typedef struct {
     int allocator;
 } PyPreConfig;
 
-PyAPI_FUNC(void) PyPreConfig_InitPythonConfig(PyPreConfig *config);
-PyAPI_FUNC(void) PyPreConfig_InitIsolatedConfig(PyPreConfig *config);
+PyAPI_FUNC(PyStatus) PyPreConfig_InitPythonConfig(PyPreConfig *config);
+PyAPI_FUNC(PyStatus) PyPreConfig_InitIsolatedConfig(PyPreConfig *config);
 
 
 /* --- PyConfig ---------------------------------------------- */
 
 typedef struct {
-    int _config_version;  /* Internal configuration version,
-                             used for ABI compatibility */
+    /* Size of the structure in bytes: must be initialized to
+       sizeof(PyConfig). Field used for API and ABI compatibility. */
+    size_t struct_size;
+
     int _config_init;     /* _PyConfigInitEnum value */
 
     int isolated;         /* Isolated mode? see PyPreConfig.isolated */
@@ -216,7 +220,10 @@ typedef struct {
     wchar_t *program_name;
 
     PyWideStringList xoptions;     /* Command line -X options */
-    PyWideStringList warnoptions;  /* Warnings options */
+
+    /* Warnings options: lowest to highest priority. warnings.filters
+       is built in the reverse order (highest to lowest priority). */
+    PyWideStringList warnoptions;
 
     /* If equal to zero, disable the import of the module site and the
        site-dependent manipulations of sys.path that it entails. Also disable
@@ -403,7 +410,6 @@ typedef struct {
 
     /* If equal to 0, stop Python initialization before the "main" phase */
     int _init_main;
-
 } PyConfig;
 
 PyAPI_FUNC(PyStatus) PyConfig_InitPythonConfig(PyConfig *config);

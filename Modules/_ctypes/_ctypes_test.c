@@ -74,6 +74,45 @@ _testfunc_reg_struct_update_value(TestReg in)
     ((volatile TestReg *)&in)->second = 0x0badf00d;
 }
 
+/*
+ * See bpo-22273. Structs containing arrays should work on Linux 64-bit.
+ */
+
+typedef struct {
+    unsigned char data[16];
+} Test2;
+
+EXPORT(int)
+_testfunc_array_in_struct1(Test2 in)
+{
+    int result = 0;
+
+    for (unsigned i = 0; i < 16; i++)
+        result += in.data[i];
+    /* As the structure is passed by value, changes to it shouldn't be
+     * reflected in the caller.
+     */
+    memset(in.data, 0, sizeof(in.data));
+    return result;
+}
+
+typedef struct {
+    double data[2];
+} Test3;
+
+EXPORT(double)
+_testfunc_array_in_struct2(Test3 in)
+{
+    double result = 0;
+
+    for (unsigned i = 0; i < 2; i++)
+        result += in.data[i];
+    /* As the structure is passed by value, changes to it shouldn't be
+     * reflected in the caller.
+     */
+    memset(in.data, 0, sizeof(in.data));
+    return result;
+}
 
 EXPORT(void)testfunc_array(int values[4])
 {

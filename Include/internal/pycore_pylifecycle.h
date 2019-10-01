@@ -41,7 +41,7 @@ extern PyStatus _PySys_Create(
     PyThreadState *tstate,
     PyObject **sysmod_p);
 extern PyStatus _PySys_SetPreliminaryStderr(PyObject *sysdict);
-extern PyStatus _PySys_ReadPreinitWarnOptions(PyConfig *config);
+extern PyStatus _PySys_ReadPreinitWarnOptions(PyWideStringList *options);
 extern PyStatus _PySys_ReadPreinitXOptions(PyConfig *config);
 extern int _PySys_InitMain(
     _PyRuntimeState *runtime,

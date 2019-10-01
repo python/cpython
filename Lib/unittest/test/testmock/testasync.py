@@ -1,9 +1,10 @@
 import asyncio
 import inspect
+import re
 import unittest
 
-from unittest.mock import (ANY, call, AsyncMock, patch, MagicMock,
-                           create_autospec, _AwaitEvent, sentinel, _CallList)
+from unittest.mock import (ANY, call, AsyncMock, patch, MagicMock, Mock,
+                           create_autospec, sentinel, _CallList)
 
 
 def tearDownModule():
@@ -177,7 +178,6 @@ class AsyncAutospecTest(unittest.TestCase):
         self.assertEqual(spec.await_count, 0)
         self.assertIsNone(spec.await_args)
         self.assertEqual(spec.await_args_list, [])
-        self.assertIsInstance(spec.awaited, _AwaitEvent)
         spec.assert_not_awaited()
 
         asyncio.run(main())
@@ -211,7 +211,6 @@ class AsyncAutospecTest(unittest.TestCase):
                 self.assertEqual(mock_method.await_count, 0)
                 self.assertEqual(mock_method.await_args_list, [])
                 self.assertIsNone(mock_method.await_args)
-                self.assertIsInstance(mock_method.awaited, _AwaitEvent)
                 mock_method.assert_not_awaited()
 
                 await awaitable
@@ -233,33 +232,50 @@ class AsyncAutospecTest(unittest.TestCase):
 
 
 class AsyncSpecTest(unittest.TestCase):
-    def test_spec_as_async_positional_magicmock(self):
-        mock = MagicMock(async_func)
-        self.assertIsInstance(mock, MagicMock)
-        m = mock()
-        self.assertTrue(inspect.isawaitable(m))
-        asyncio.run(m)
+    def test_spec_normal_methods_on_class(self):
+        def inner_test(mock_type):
+            mock = mock_type(AsyncClass)
+            self.assertIsInstance(mock.async_method, AsyncMock)
+            self.assertIsInstance(mock.normal_method, MagicMock)
 
-    def test_spec_as_async_kw_magicmock(self):
-        mock = MagicMock(spec=async_func)
-        self.assertIsInstance(mock, MagicMock)
-        m = mock()
-        self.assertTrue(inspect.isawaitable(m))
-        asyncio.run(m)
+        for mock_type in [AsyncMock, MagicMock]:
+            with self.subTest(f"test method types with {mock_type}"):
+                inner_test(mock_type)
 
-    def test_spec_as_async_kw_AsyncMock(self):
-        mock = AsyncMock(spec=async_func)
-        self.assertIsInstance(mock, AsyncMock)
-        m = mock()
-        self.assertTrue(inspect.isawaitable(m))
-        asyncio.run(m)
+    def test_spec_normal_methods_on_class_with_mock(self):
+        mock = Mock(AsyncClass)
+        self.assertIsInstance(mock.async_method, AsyncMock)
+        self.assertIsInstance(mock.normal_method, Mock)
 
-    def test_spec_as_async_positional_AsyncMock(self):
-        mock = AsyncMock(async_func)
-        self.assertIsInstance(mock, AsyncMock)
-        m = mock()
-        self.assertTrue(inspect.isawaitable(m))
-        asyncio.run(m)
+    def test_spec_mock_type_kw(self):
+        def inner_test(mock_type):
+            async_mock = mock_type(spec=async_func)
+            self.assertIsInstance(async_mock, mock_type)
+            with self.assertWarns(RuntimeWarning):
+                # Will raise a warning because never awaited
+                self.assertTrue(inspect.isawaitable(async_mock()))
+
+            sync_mock = mock_type(spec=normal_func)
+            self.assertIsInstance(sync_mock, mock_type)
+
+        for mock_type in [AsyncMock, MagicMock, Mock]:
+            with self.subTest(f"test spec kwarg with {mock_type}"):
+                inner_test(mock_type)
+
+    def test_spec_mock_type_positional(self):
+        def inner_test(mock_type):
+            async_mock = mock_type(async_func)
+            self.assertIsInstance(async_mock, mock_type)
+            with self.assertWarns(RuntimeWarning):
+                # Will raise a warning because never awaited
+                self.assertTrue(inspect.isawaitable(async_mock()))
+
+            sync_mock = mock_type(normal_func)
+            self.assertIsInstance(sync_mock, mock_type)
+
+        for mock_type in [AsyncMock, MagicMock, Mock]:
+            with self.subTest(f"test spec positional with {mock_type}"):
+                inner_test(mock_type)
 
     def test_spec_as_normal_kw_AsyncMock(self):
         mock = AsyncMock(spec=normal_func)
@@ -378,6 +394,43 @@ class AsyncArguments(unittest.TestCase):
                 RuntimeError('coroutine raised StopIteration')
             )
 
+class AsyncMagicMethods(unittest.TestCase):
+    def test_async_magic_methods_return_async_mocks(self):
+        m_mock = MagicMock()
+        self.assertIsInstance(m_mock.__aenter__, AsyncMock)
+        self.assertIsInstance(m_mock.__aexit__, AsyncMock)
+        self.assertIsInstance(m_mock.__anext__, AsyncMock)
+        # __aiter__ is actually a synchronous object
+        # so should return a MagicMock
+        self.assertIsInstance(m_mock.__aiter__, MagicMock)
+
+    def test_sync_magic_methods_return_magic_mocks(self):
+        a_mock = AsyncMock()
+        self.assertIsInstance(a_mock.__enter__, MagicMock)
+        self.assertIsInstance(a_mock.__exit__, MagicMock)
+        self.assertIsInstance(a_mock.__next__, MagicMock)
+        self.assertIsInstance(a_mock.__len__, MagicMock)
+
+    def test_magicmock_has_async_magic_methods(self):
+        m_mock = MagicMock()
+        self.assertTrue(hasattr(m_mock, "__aenter__"))
+        self.assertTrue(hasattr(m_mock, "__aexit__"))
+        self.assertTrue(hasattr(m_mock, "__anext__"))
+
+    def test_asyncmock_has_sync_magic_methods(self):
+        a_mock = AsyncMock()
+        self.assertTrue(hasattr(a_mock, "__enter__"))
+        self.assertTrue(hasattr(a_mock, "__exit__"))
+        self.assertTrue(hasattr(a_mock, "__next__"))
+        self.assertTrue(hasattr(a_mock, "__len__"))
+
+    def test_magic_methods_are_async_functions(self):
+        m_mock = MagicMock()
+        self.assertIsInstance(m_mock.__aenter__, AsyncMock)
+        self.assertIsInstance(m_mock.__aexit__, AsyncMock)
+        # AsyncMocks are also coroutine functions
+        self.assertTrue(asyncio.iscoroutinefunction(m_mock.__aenter__))
+        self.assertTrue(asyncio.iscoroutinefunction(m_mock.__aexit__))
 
 class AsyncContextManagerTest(unittest.TestCase):
 
@@ -404,24 +457,6 @@ class AsyncContextManagerTest(unittest.TestCase):
             async with self.session.post('https://python.org') as response:
                 val = await response.json()
                 return val
-
-    def test_async_magic_methods_are_async_mocks_with_magicmock(self):
-        cm_mock = MagicMock(self.WithAsyncContextManager())
-        self.assertIsInstance(cm_mock.__aenter__, AsyncMock)
-        self.assertIsInstance(cm_mock.__aexit__, AsyncMock)
-
-    def test_magicmock_has_async_magic_methods(self):
-        cm = MagicMock(name='magic_cm')
-        self.assertTrue(hasattr(cm, "__aenter__"))
-        self.assertTrue(hasattr(cm, "__aexit__"))
-
-    def test_magic_methods_are_async_functions(self):
-        cm = MagicMock(name='magic_cm')
-        self.assertIsInstance(cm.__aenter__, AsyncMock)
-        self.assertIsInstance(cm.__aexit__, AsyncMock)
-        # AsyncMocks are also coroutine functions
-        self.assertTrue(asyncio.iscoroutinefunction(cm.__aenter__))
-        self.assertTrue(asyncio.iscoroutinefunction(cm.__aexit__))
 
     def test_set_return_value_of_aenter(self):
         def inner_test(mock_type):
@@ -889,3 +924,30 @@ class AsyncMockAssert(unittest.TestCase):
         asyncio.run(self._runnable_test())
         with self.assertRaises(AssertionError):
             self.mock.assert_not_awaited()
+
+    def test_assert_has_awaits_not_matching_spec_error(self):
+        async def f(x=None): pass
+
+        self.mock = AsyncMock(spec=f)
+        asyncio.run(self._runnable_test(1))
+
+        with self.assertRaisesRegex(
+                AssertionError,
+                '^{}$'.format(
+                    re.escape('Awaits not found.\n'
+                              'Expected: [call()]\n'
+                              'Actual: [call(1)]'))) as cm:
+            self.mock.assert_has_awaits([call()])
+        self.assertIsNone(cm.exception.__cause__)
+
+        with self.assertRaisesRegex(
+                AssertionError,
+                '^{}$'.format(
+                    re.escape(
+                        'Error processing expected awaits.\n'
+                        "Errors: [None, TypeError('too many positional "
+                        "arguments')]\n"
+                        'Expected: [call(), call(1, 2)]\n'
+                        'Actual: [call(1)]'))) as cm:
+            self.mock.assert_has_awaits([call(), call(1, 2)])
+        self.assertIsInstance(cm.exception.__cause__, TypeError)

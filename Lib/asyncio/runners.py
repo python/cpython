@@ -10,7 +10,7 @@ THREAD_JOIN_TIMEOUT = 300
 
 
 def run(main, *, debug=False):
-    """Run a coroutine.
+    """Execute the coroutine and return the result.
 
     This function runs the passed coroutine, taking care of
     managing the asyncio event loop, finalizing asynchronous

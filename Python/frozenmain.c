@@ -40,6 +40,7 @@ Py_FrozenMain(int argc, char **argv)
     }
 
     PyConfig config;
+    config.struct_size = sizeof(PyConfig);
     status = PyConfig_InitPythonConfig(&config);
     if (PyStatus_Exception(status)) {
         PyConfig_Clear(&config);

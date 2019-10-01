@@ -212,6 +212,8 @@ Running an asyncio Program
 
 .. function:: run(coro, \*, debug=False)
 
+    Execute the :term:`coroutine` *coro* and return the result.
+
     This function runs the passed coroutine, taking care of
     managing the asyncio event loop, *finalizing asynchronous
     generators*, and closing the threadpool.
@@ -228,6 +230,15 @@ Running an asyncio Program
     Each thread within the threadpool is given a timeout duration of 5
     minutes. If the thread hasn't finishing joining within that duration,
     the lock is released and the thread is terminated.
+
+    Example::
+
+        async def main():
+            await asyncio.sleep(1)
+            print('hello')
+
+        asyncio.run(main())
+
 
     .. versionadded:: 3.7
 

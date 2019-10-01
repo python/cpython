@@ -118,7 +118,8 @@ The following functions and structs are used to create
 
 .. c:function:: PyObject* PyType_FromSpecWithBases(PyType_Spec *spec, PyObject *bases)
 
-   Creates and returns a heap type object from the *spec*.
+   Creates and returns a heap type object from the *spec*
+   (:const:`Py_TPFLAGS_HEAPTYPE`).
 
    If *bases* is a tuple, the created heap type contains all types contained
    in it as base types.
@@ -188,7 +189,10 @@ The following functions and structs are used to create
       * :c:member:`~PyTypeObject.tp_subclasses`
       * :c:member:`~PyTypeObject.tp_weaklist`
       * :c:member:`~PyTypeObject.tp_vectorcall`
-      * :c:member:`~PyTypeObject.tp_print`
+      * :c:member:`~PyTypeObject.tp_weaklistoffset`
+        (see :ref:`PyMemberDef <pymemberdef-offsets>`)
+      * :c:member:`~PyTypeObject.tp_dictoffset`
+        (see :ref:`PyMemberDef <pymemberdef-offsets>`)
       * :c:member:`~PyBufferProcs.bf_getbuffer`
       * :c:member:`~PyBufferProcs.bf_releasebuffer`
 

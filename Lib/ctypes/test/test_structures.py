@@ -1,9 +1,15 @@
+import platform
 import unittest
 from ctypes import *
 from ctypes.test import need_symbol
 from struct import calcsize
 import _ctypes_test
 from test import support
+
+# The following definition is meant to be used from time to time to assist
+# temporarily disabling tests on specific architectures while investigations
+# are in progress, to keep buildbots happy.
+MACHINE = platform.machine()
 
 class SubclassesTest(unittest.TestCase):
     def test_subclass(self):
@@ -477,6 +483,47 @@ class StructureTestCase(unittest.TestCase):
         self.assertEqual(s.first, got.first)
         self.assertEqual(s.second, got.second)
 
+    def test_array_in_struct(self):
+        # See bpo-22273
+
+        # These should mirror the structures in Modules/_ctypes/_ctypes_test.c
+        class Test2(Structure):
+            _fields_ = [
+                ('data', c_ubyte * 16),
+            ]
+
+        class Test3(Structure):
+            _fields_ = [
+                ('data', c_double * 2),
+            ]
+
+        s = Test2()
+        expected = 0
+        for i in range(16):
+            s.data[i] = i
+            expected += i
+        dll = CDLL(_ctypes_test.__file__)
+        func = dll._testfunc_array_in_struct1
+        func.restype = c_int
+        func.argtypes = (Test2,)
+        result = func(s)
+        self.assertEqual(result, expected)
+        # check the passed-in struct hasn't changed
+        for i in range(16):
+            self.assertEqual(s.data[i], i)
+
+        s = Test3()
+        s.data[0] = 3.14159
+        s.data[1] = 2.71828
+        expected = 3.14159 + 2.71828
+        func = dll._testfunc_array_in_struct2
+        func.restype = c_double
+        func.argtypes = (Test3,)
+        result = func(s)
+        self.assertEqual(result, expected)
+        # check the passed-in struct hasn't changed
+        self.assertEqual(s.data[0], 3.14159)
+        self.assertEqual(s.data[1], 2.71828)
 
 class PointerMemberTestCase(unittest.TestCase):
 

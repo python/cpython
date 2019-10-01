@@ -273,7 +273,7 @@ _PyWideStringList_Copy(PyWideStringList *list, const PyWideStringList *list2)
         return 0;
     }
 
-    PyWideStringList copy = PyWideStringList_INIT;
+    PyWideStringList copy = _PyWideStringList_INIT;
 
     size_t size = list2->length * sizeof(list2->items[0]);
     copy.items = PyMem_RawMalloc(size);
@@ -528,6 +528,18 @@ Py_GetArgcArgv(int *argc, wchar_t ***argv)
      ? _PyStatus_ERR("cannot decode " NAME) \
      : _PyStatus_NO_MEMORY())
 
+
+static PyStatus
+config_check_struct_size(const PyConfig *config)
+{
+    if (config->struct_size != sizeof(PyConfig)) {
+        return _PyStatus_ERR("unsupported PyConfig structure size "
+                             "(Python version mismatch?)");
+    }
+    return _PyStatus_OK();
+}
+
+
 /* Free memory allocated in config, but don't clear all attributes */
 void
 PyConfig_Clear(PyConfig *config)
@@ -568,12 +580,19 @@ PyConfig_Clear(PyConfig *config)
 }
 
 
-void
+PyStatus
 _PyConfig_InitCompatConfig(PyConfig *config)
 {
+    size_t struct_size = config->struct_size;
     memset(config, 0, sizeof(*config));
+    config->struct_size = struct_size;
 
-    config->_config_version = _Py_CONFIG_VERSION;
+    PyStatus status = config_check_struct_size(config);
+    if (_PyStatus_EXCEPTION(status)) {
+        _PyStatus_UPDATE_FUNC(status);
+        return status;
+    }
+
     config->_config_init = (int)_PyConfig_INIT_COMPAT;
     config->isolated = -1;
     config->use_environment = -1;
@@ -603,13 +622,17 @@ _PyConfig_InitCompatConfig(PyConfig *config)
 #ifdef MS_WINDOWS
     config->legacy_windows_stdio = -1;
 #endif
+    return _PyStatus_OK();
 }
 
 
-static void
+static PyStatus
 config_init_defaults(PyConfig *config)
 {
-    _PyConfig_InitCompatConfig(config);
+    PyStatus status = _PyConfig_InitCompatConfig(config);
+    if (_PyStatus_EXCEPTION(status)) {
+        return status;
+    }
 
     config->isolated = 0;
     config->use_environment = 1;
@@ -628,13 +651,18 @@ config_init_defaults(PyConfig *config)
 #ifdef MS_WINDOWS
     config->legacy_windows_stdio = 0;
 #endif
+    return _PyStatus_OK();
 }
 
 
 PyStatus
 PyConfig_InitPythonConfig(PyConfig *config)
 {
-    config_init_defaults(config);
+    PyStatus status = config_init_defaults(config);
+    if (_PyStatus_EXCEPTION(status)) {
+        _PyStatus_UPDATE_FUNC(status);
+        return status;
+    }
 
     config->_config_init = (int)_PyConfig_INIT_PYTHON;
     config->configure_c_stdio = 1;
@@ -647,7 +675,11 @@ PyConfig_InitPythonConfig(PyConfig *config)
 PyStatus
 PyConfig_InitIsolatedConfig(PyConfig *config)
 {
-    config_init_defaults(config);
+    PyStatus status = config_init_defaults(config);
+    if (_PyStatus_EXCEPTION(status)) {
+        _PyStatus_UPDATE_FUNC(status);
+        return status;
+    }
 
     config->_config_init = (int)_PyConfig_INIT_ISOLATED;
     config->isolated = 1;
@@ -742,6 +774,19 @@ PyStatus
 _PyConfig_Copy(PyConfig *config, const PyConfig *config2)
 {
     PyStatus status;
+
+    status = config_check_struct_size(config);
+    if (_PyStatus_EXCEPTION(status)) {
+        _PyStatus_UPDATE_FUNC(status);
+        return status;
+    }
+
+    status = config_check_struct_size(config2);
+    if (_PyStatus_EXCEPTION(status)) {
+        _PyStatus_UPDATE_FUNC(status);
+        return status;
+    }
+
     PyConfig_Clear(config);
 
 #define COPY_ATTR(ATTR) config->ATTR = config2->ATTR
@@ -2050,63 +2095,83 @@ config_init_env_warnoptions(PyConfig *config, PyWideStringList *warnoptions)
 
 
 static PyStatus
-config_add_warnoption(PyConfig *config, const wchar_t *option)
+warnoptions_append(PyConfig *config, PyWideStringList *options,
+                   const wchar_t *option)
 {
+    /* config_init_warnoptions() add existing config warnoptions at the end:
+       ensure that the new option is not already present in this list to
+       prevent change the options order whne config_init_warnoptions() is
+       called twice. */
     if (_PyWideStringList_Find(&config->warnoptions, option)) {
         /* Already present: do nothing */
         return _PyStatus_OK();
     }
-    return PyWideStringList_Append(&config->warnoptions, option);
+    if (_PyWideStringList_Find(options, option)) {
+        /* Already present: do nothing */
+        return _PyStatus_OK();
+    }
+    return PyWideStringList_Append(options, option);
+}
+
+
+static PyStatus
+warnoptions_extend(PyConfig *config, PyWideStringList *options,
+                   const PyWideStringList *options2)
+{
+    const Py_ssize_t len = options2->length;
+    wchar_t *const *items = options2->items;
+
+    for (Py_ssize_t i = 0; i < len; i++) {
+        PyStatus status = warnoptions_append(config, options, items[i]);
+        if (_PyStatus_EXCEPTION(status)) {
+            return status;
+        }
+    }
+    return _PyStatus_OK();
 }
 
 
 static PyStatus
 config_init_warnoptions(PyConfig *config,
                         const PyWideStringList *cmdline_warnoptions,
-                        const PyWideStringList *env_warnoptions)
+                        const PyWideStringList *env_warnoptions,
+                        const PyWideStringList *sys_warnoptions)
 {
     PyStatus status;
+    PyWideStringList options = _PyWideStringList_INIT;
 
-    /* The priority order for warnings configuration is (highest precedence
-     * first):
+    /* Priority of warnings options, lowest to highest:
      *
-     * - early PySys_AddWarnOption() calls
-     * - the BytesWarning filter, if needed ('-b', '-bb')
-     * - any '-W' command line options; then
-     * - the 'PYTHONWARNINGS' environment variable; then
-     * - the dev mode filter ('-X dev', 'PYTHONDEVMODE'); then
      * - any implicit filters added by _warnings.c/warnings.py
+     * - PyConfig.dev_mode: "default" filter
+     * - PYTHONWARNINGS environment variable
+     * - '-W' command line options
+     * - PyConfig.bytes_warning ('-b' and '-bb' command line options):
+     *   "default::BytesWarning" or "error::BytesWarning" filter
+     * - early PySys_AddWarnOption() calls
+     * - PyConfig.warnoptions
      *
-     * All settings except the last are passed to the warnings module via
-     * the `sys.warnoptions` list. Since the warnings module works on the basis
-     * of "the most recently added filter will be checked first", we add
-     * the lowest precedence entries first so that later entries override them.
+     * PyConfig.warnoptions is copied to sys.warnoptions. Since the warnings
+     * module works on the basis of "the most recently added filter will be
+     * checked first", we add the lowest precedence entries first so that later
+     * entries override them.
      */
 
     if (config->dev_mode) {
-        status = config_add_warnoption(config, L"default");
+        status = warnoptions_append(config, &options, L"default");
         if (_PyStatus_EXCEPTION(status)) {
-            return status;
+            goto error;
         }
     }
 
-    Py_ssize_t i;
-    const PyWideStringList *options;
-
-    options = env_warnoptions;
-    for (i = 0; i < options->length; i++) {
-        status = config_add_warnoption(config, options->items[i]);
-        if (_PyStatus_EXCEPTION(status)) {
-            return status;
-        }
+    status = warnoptions_extend(config, &options, env_warnoptions);
+    if (_PyStatus_EXCEPTION(status)) {
+        goto error;
     }
 
-    options = cmdline_warnoptions;
-    for (i = 0; i < options->length; i++) {
-        status = config_add_warnoption(config, options->items[i]);
-        if (_PyStatus_EXCEPTION(status)) {
-            return status;
-        }
+    status = warnoptions_extend(config, &options, cmdline_warnoptions);
+    if (_PyStatus_EXCEPTION(status)) {
+        goto error;
     }
 
     /* If the bytes_warning_flag isn't set, bytesobject.c and bytearrayobject.c
@@ -2121,19 +2186,30 @@ config_init_warnoptions(PyConfig *config,
         else {
             filter = L"default::BytesWarning";
         }
-        status = config_add_warnoption(config, filter);
+        status = warnoptions_append(config, &options, filter);
         if (_PyStatus_EXCEPTION(status)) {
-            return status;
+            goto error;
         }
     }
 
-    /* Handle early PySys_AddWarnOption() calls */
-    status = _PySys_ReadPreinitWarnOptions(config);
+    status = warnoptions_extend(config, &options, sys_warnoptions);
     if (_PyStatus_EXCEPTION(status)) {
-        return status;
+        goto error;
     }
 
+    /* Always add all PyConfig.warnoptions options */
+    status = _PyWideStringList_Extend(&options, &config->warnoptions);
+    if (_PyStatus_EXCEPTION(status)) {
+        goto error;
+    }
+
+    _PyWideStringList_Clear(&config->warnoptions);
+    config->warnoptions = options;
     return _PyStatus_OK();
+
+error:
+    _PyWideStringList_Clear(&options);
+    return status;
 }
 
 
@@ -2141,7 +2217,7 @@ static PyStatus
 config_update_argv(PyConfig *config, Py_ssize_t opt_index)
 {
     const PyWideStringList *cmdline_argv = &config->argv;
-    PyWideStringList config_argv = PyWideStringList_INIT;
+    PyWideStringList config_argv = _PyWideStringList_INIT;
 
     /* Copy argv to be able to modify it (to force -c/-m) */
     if (cmdline_argv->length <= opt_index) {
@@ -2204,7 +2280,12 @@ core_read_precmdline(PyConfig *config, _PyPreCmdline *precmdline)
     }
 
     PyPreConfig preconfig;
-    _PyPreConfig_InitFromPreConfig(&preconfig, &_PyRuntime.preconfig);
+    preconfig.struct_size = sizeof(PyPreConfig);
+
+    status = _PyPreConfig_InitFromPreConfig(&preconfig, &_PyRuntime.preconfig);
+    if (_PyStatus_EXCEPTION(status)) {
+        return status;
+    }
 
     _PyPreConfig_GetConfig(&preconfig, config);
 
@@ -2256,8 +2337,9 @@ static PyStatus
 config_read_cmdline(PyConfig *config)
 {
     PyStatus status;
-    PyWideStringList cmdline_warnoptions = PyWideStringList_INIT;
-    PyWideStringList env_warnoptions = PyWideStringList_INIT;
+    PyWideStringList cmdline_warnoptions = _PyWideStringList_INIT;
+    PyWideStringList env_warnoptions = _PyWideStringList_INIT;
+    PyWideStringList sys_warnoptions = _PyWideStringList_INIT;
 
     if (config->parse_argv < 0) {
         config->parse_argv = 1;
@@ -2301,9 +2383,16 @@ config_read_cmdline(PyConfig *config)
         }
     }
 
+    /* Handle early PySys_AddWarnOption() calls */
+    status = _PySys_ReadPreinitWarnOptions(&sys_warnoptions);
+    if (_PyStatus_EXCEPTION(status)) {
+        goto done;
+    }
+
     status = config_init_warnoptions(config,
                                      &cmdline_warnoptions,
-                                     &env_warnoptions);
+                                     &env_warnoptions,
+                                     &sys_warnoptions);
     if (_PyStatus_EXCEPTION(status)) {
         goto done;
     }
@@ -2313,6 +2402,7 @@ config_read_cmdline(PyConfig *config)
 done:
     _PyWideStringList_Clear(&cmdline_warnoptions);
     _PyWideStringList_Clear(&env_warnoptions);
+    _PyWideStringList_Clear(&sys_warnoptions);
     return status;
 }
 
@@ -2383,7 +2473,13 @@ PyStatus
 PyConfig_Read(PyConfig *config)
 {
     PyStatus status;
-    PyWideStringList orig_argv = PyWideStringList_INIT;
+    PyWideStringList orig_argv = _PyWideStringList_INIT;
+
+    status = config_check_struct_size(config);
+    if (_PyStatus_EXCEPTION(status)) {
+        _PyStatus_UPDATE_FUNC(status);
+        return status;
+    }
 
     status = _Py_PreInitializeFromConfig(config, NULL);
     if (_PyStatus_EXCEPTION(status)) {

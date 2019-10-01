@@ -678,6 +678,21 @@ handle_weakrefs(PyGC_Head *unreachable, PyGC_Head *old)
         op = FROM_GC(gc);
         next = GC_NEXT(gc);
 
+        if (PyWeakref_Check(op)) {
+            /* A weakref inside the unreachable set must be cleared.  If we
+             * allow its callback to execute inside delete_garbage(), it
+             * could expose objects that have tp_clear already called on
+             * them.  Or, it could resurrect unreachable objects.  One way
+             * this can happen is if some container objects do not implement
+             * tp_traverse.  Then, wr_object can be outside the unreachable
+             * set but can be deallocated as a result of breaking the
+             * reference cycle.  If we don't clear the weakref, the callback
+             * will run and potentially cause a crash.  See bpo-38006 for
+             * one example.
+             */
+            _PyWeakref_ClearRef((PyWeakReference *)op);
+        }
+
         if (! PyType_SUPPORTS_WEAKREFS(Py_TYPE(op)))
             continue;
 
@@ -733,6 +748,8 @@ handle_weakrefs(PyGC_Head *unreachable, PyGC_Head *old)
              * is moved to wrcb_to_call in this case.
              */
             if (gc_is_collecting(AS_GC(wr))) {
+                /* it should already have been cleared above */
+                assert(wr->wr_object == Py_None);
                 continue;
             }
 
