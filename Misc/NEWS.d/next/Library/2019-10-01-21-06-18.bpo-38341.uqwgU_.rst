@@ -1,0 +1,1 @@
+Add SMTPNotSupportedError in the smtplib exported names.
