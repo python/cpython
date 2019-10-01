@@ -432,16 +432,11 @@ _PyConfig_InitPathConfig(PyConfig *config)
 static PyStatus
 pathconfig_global_read(_PyPathConfig *pathconfig)
 {
-    PyStatus status;
     PyConfig config;
-
-    status = _PyConfig_InitCompatConfig(&config);
-    if (_PyStatus_EXCEPTION(status)) {
-        goto done;
-    }
+    _PyConfig_InitCompatConfig(&config);
 
     /* Call _PyConfig_InitPathConfig() */
-    status = PyConfig_Read(&config);
+    PyStatus status = PyConfig_Read(&config);
     if (_PyStatus_EXCEPTION(status)) {
         goto done;
     }
