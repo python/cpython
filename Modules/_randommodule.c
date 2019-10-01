@@ -543,7 +543,7 @@ PyDoc_STRVAR(random_doc,
 "Random() -> create a random number generator with its own internal state.");
 
 static PyType_Slot Random_Type_slots[] = {
-    {Py_tp_doc, random_doc},
+    {Py_tp_doc, (void *)random_doc},
     {Py_tp_methods, random_methods},
     {Py_tp_new, random_new},
     {Py_tp_free, PyObject_Free},
