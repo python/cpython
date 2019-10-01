@@ -193,10 +193,7 @@ wmain(int argc, wchar_t **argv)
         }
     }
 
-    status = PyConfig_InitPythonConfig(&config);
-    if (PyStatus_Exception(status)) {
-        goto fail_without_config;
-    }
+    PyConfig_InitPythonConfig(&config);
 
     status = PyConfig_SetArgv(&config, argc, argv);
     if (PyStatus_Exception(status)) {
