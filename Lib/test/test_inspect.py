@@ -1191,6 +1191,23 @@ class TestClassesAndFunctions(unittest.TestCase):
         self.assertIn(('f', b.f), inspect.getmembers(b))
         self.assertIn(('f', b.f), inspect.getmembers(b, inspect.ismethod))
 
+    def test_getmembers_static(self):
+        class Foo:
+            def __init__(bar):
+                self._bar = bar
+
+            @property
+            def bar(self):
+                # This property should not be called by getmembers
+                raise NotImplementedError
+            
+        foobar = Foo(42)
+        try:
+            members = inspect.getmembers(foobar)
+            class_members = inspect.getmembers(Foo)
+        except NotImplementedError:
+            self.fail('getmembers() called property!')
+
     def test_getmembers_VirtualAttribute(self):
         class M(type):
             def __getattr__(cls, name):
