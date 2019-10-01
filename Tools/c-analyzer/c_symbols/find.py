@@ -133,14 +133,14 @@ def symbols(binfile=PYTHON, *,
 
 
 def variables(binfile=PYTHON, *,
-              resolve=(lambda s: symbol(s, ())),
+              resolve,
               _iter_symbols=symbols,
               ):
     """Yield (Variable, Symbol) for each found symbol."""
     for symbol in _iter_symbols(binfile):
         if symbol.kind != Symbol.KIND.VARIABLE:
             continue
-        var = resolve(symbol)
+        var = resolve(symbol) or None
         #if var is None:
         #    var = Variable(symbol.id, UNKNOWN)
         yield var, symbol
