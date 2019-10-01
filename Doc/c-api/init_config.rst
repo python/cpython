@@ -343,12 +343,12 @@ PyConfig
 
    Structure methods:
 
-   .. c:function:: PyStatus PyConfig_InitPythonConfig(PyConfig *config)
+   .. c:function:: void PyConfig_InitPythonConfig(PyConfig *config)
 
       Initialize configuration with :ref:`Python Configuration
       <init-python-config>`.
 
-   .. c:function:: PyStatus PyConfig_InitIsolatedConfig(PyConfig *config)
+   .. c:function:: void PyConfig_InitIsolatedConfig(PyConfig *config)
 
       Initialize configuration with :ref:`Isolated Configuration
       <init-isolated-conf>`.
@@ -724,12 +724,9 @@ Example setting the program name::
     void init_python(void)
     {
         PyStatus status;
-        PyConfig config;
 
-        status = PyConfig_InitPythonConfig(&config);
-        if (PyStatus_Exception(status)) {
-            goto fail;
-        }
+        PyConfig config;
+        PyConfig_InitPythonConfig(&config);
 
         /* Set the program name. Implicitly preinitialize Python. */
         status = PyConfig_SetString(&config, &config.program_name,
@@ -756,12 +753,9 @@ configuration, and then override some parameters::
     PyStatus init_python(const char *program_name)
     {
         PyStatus status;
-        PyConfig config;
 
-        status = PyConfig_InitPythonConfig(&config);
-        if (PyStatus_Exception(status)) {
-            goto done;
-        }
+        PyConfig config;
+        PyConfig_InitPythonConfig(&config);
 
         /* Set the program name before reading the configuraton
            (decode byte string from the locale encoding).
@@ -843,13 +837,9 @@ Example of customized Python always running in isolated mode::
     int main(int argc, char **argv)
     {
         PyStatus status;
+
         PyConfig config;
-
-        status = PyConfig_InitPythonConfig(&config);
-        if (PyStatus_Exception(status)) {
-            goto fail;
-        }
-
+        PyConfig_InitPythonConfig(&config);
         config.isolated = 1;
 
         /* Decode command line arguments.
@@ -1034,14 +1024,9 @@ phases::
     void init_python(void)
     {
         PyStatus status;
+
         PyConfig config;
-
-        status = PyConfig_InitPythonConfig(&config);
-        if (PyStatus_Exception(status)) {
-            PyConfig_Clear(&config);
-            Py_ExitStatusException(status);
-        }
-
+        PyConfig_InitPythonConfig(&config);
         config._init_main = 0;
 
         /* ... customize 'config' configuration ... */
