@@ -794,46 +794,49 @@ class ZipExtFile(io.BufferedIOBase):
 
     def __init__(self, fileobj, mode, zipinfo, decrypter=None,
                  close_fileobj=False):
+        self._zinfo = zipinfo
         self._fileobj = fileobj
         self._decrypter = decrypter
         self._close_fileobj = close_fileobj
 
         self._compress_type = zipinfo.compress_type
-        self._compress_left = zipinfo.compress_size
-        self._left = zipinfo.file_size
-
-        self._decompressor = _get_decompressor(self._compress_type)
-
-        self._eof = False
-        self._readbuffer = b''
-        self._offset = 0
 
         self.newlines = None
-
-        # Adjust read size for encrypted files since the first 12 bytes
-        # are for the encryption/password information.
-        if self._decrypter is not None:
-            self._compress_left -= 12
 
         self.mode = mode
         self.name = zipinfo.filename
 
         if hasattr(zipinfo, 'CRC'):
             self._expected_crc = zipinfo.CRC
-            self._running_crc = crc32(b'')
         else:
             self._expected_crc = None
 
         self._seekable = False
         try:
             if fileobj.seekable():
-                self._orig_compress_start = fileobj.tell()
-                self._orig_compress_size = zipinfo.compress_size
                 self._orig_file_size = zipinfo.file_size
-                self._orig_start_crc = self._running_crc
                 self._seekable = True
         except AttributeError:
             pass
+        # Compress start is the byte after the 'local file header' ie. the
+        # start of 'encryption header' section, if present, or
+        # 'file data' otherwise.
+        self._compress_start = fileobj.tell()
+        self.read_init()
+
+    def read_init(self):
+        self._running_crc = crc32(b'')
+        self._compress_left = self._zinfo.compress_size
+        # Adjust read size for encrypted files since the first 12 bytes
+        # are for the encryption/password information.
+        if self._decrypter is not None:
+            self._compress_left -= 12
+        self._left = self._zinfo.file_size
+        self._eof = False
+        self._readbuffer = b''
+        self._offset = 0
+
+        self._decompressor = _get_decompressor(self._compress_type)
 
     def __repr__(self):
         result = ['<%s.%s' % (self.__class__.__module__,
@@ -1052,14 +1055,8 @@ class ZipExtFile(io.BufferedIOBase):
             read_offset = 0
         elif read_offset < 0:
             # Position is before the current position. Reset the ZipExtFile
-            self._fileobj.seek(self._orig_compress_start)
-            self._running_crc = self._orig_start_crc
-            self._compress_left = self._orig_compress_size
-            self._left = self._orig_file_size
-            self._readbuffer = b''
-            self._offset = 0
-            self._decompressor = _get_decompressor(self._compress_type)
-            self._eof = False
+            self._fileobj.seek(self._compress_start)
+            self.read_init()
             read_offset = new_pos
 
         while read_offset > 0:
