@@ -1,2 +1,0 @@
-Fixed unpickle-ability in older Python versions (<3.7) of UUID objects with
-``is_safe`` set to ``SafeUUID.unknown``.
