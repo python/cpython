@@ -404,8 +404,8 @@ typedef struct {
     int _init_main;
 } PyConfig;
 
-PyAPI_FUNC(PyStatus) PyConfig_InitPythonConfig(PyConfig *config);
-PyAPI_FUNC(PyStatus) PyConfig_InitIsolatedConfig(PyConfig *config);
+PyAPI_FUNC(void) PyConfig_InitPythonConfig(PyConfig *config);
+PyAPI_FUNC(void) PyConfig_InitIsolatedConfig(PyConfig *config);
 PyAPI_FUNC(void) PyConfig_Clear(PyConfig *);
 PyAPI_FUNC(PyStatus) PyConfig_SetString(
     PyConfig *config,

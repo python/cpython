@@ -569,7 +569,7 @@ PyConfig_Clear(PyConfig *config)
 }
 
 
-PyStatus
+void
 _PyConfig_InitCompatConfig(PyConfig *config)
 {
     memset(config, 0, sizeof(*config));
@@ -603,17 +603,13 @@ _PyConfig_InitCompatConfig(PyConfig *config)
 #ifdef MS_WINDOWS
     config->legacy_windows_stdio = -1;
 #endif
-    return _PyStatus_OK();
 }
 
 
-static PyStatus
+static void
 config_init_defaults(PyConfig *config)
 {
-    PyStatus status = _PyConfig_InitCompatConfig(config);
-    if (_PyStatus_EXCEPTION(status)) {
-        return status;
-    }
+    _PyConfig_InitCompatConfig(config);
 
     config->isolated = 0;
     config->use_environment = 1;
@@ -632,35 +628,24 @@ config_init_defaults(PyConfig *config)
 #ifdef MS_WINDOWS
     config->legacy_windows_stdio = 0;
 #endif
-    return _PyStatus_OK();
 }
 
 
-PyStatus
+void
 PyConfig_InitPythonConfig(PyConfig *config)
 {
-    PyStatus status = config_init_defaults(config);
-    if (_PyStatus_EXCEPTION(status)) {
-        _PyStatus_UPDATE_FUNC(status);
-        return status;
-    }
+    config_init_defaults(config);
 
     config->_config_init = (int)_PyConfig_INIT_PYTHON;
     config->configure_c_stdio = 1;
     config->parse_argv = 1;
-
-    return _PyStatus_OK();
 }
 
 
-PyStatus
+void
 PyConfig_InitIsolatedConfig(PyConfig *config)
 {
-    PyStatus status = config_init_defaults(config);
-    if (_PyStatus_EXCEPTION(status)) {
-        _PyStatus_UPDATE_FUNC(status);
-        return status;
-    }
+    config_init_defaults(config);
 
     config->_config_init = (int)_PyConfig_INIT_ISOLATED;
     config->isolated = 1;
@@ -675,8 +660,6 @@ PyConfig_InitIsolatedConfig(PyConfig *config)
 #ifdef MS_WINDOWS
     config->legacy_windows_stdio = 0;
 #endif
-
-    return _PyStatus_OK();
 }
 
 

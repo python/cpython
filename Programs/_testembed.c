@@ -394,11 +394,7 @@ static int check_init_compat_config(int preinit)
     }
 
     PyConfig config;
-
-    status = _PyConfig_InitCompatConfig(&config);
-    if (PyStatus_Exception(status)) {
-        Py_ExitStatusException(status);
-    }
+    _PyConfig_InitCompatConfig(&config);
 
     config_set_program_name(&config);
     init_from_config_clear(&config);
@@ -488,11 +484,8 @@ static int test_init_from_config(void)
     }
 
     PyConfig config;
+    _PyConfig_InitCompatConfig(&config);
 
-    status = _PyConfig_InitCompatConfig(&config);
-    if (PyStatus_Exception(status)) {
-        Py_ExitStatusException(status);
-    }
     config.install_signal_handlers = 0;
 
     /* FIXME: test use_environment */
@@ -621,14 +614,8 @@ static int test_init_from_config(void)
 
 static int check_init_parse_argv(int parse_argv)
 {
-    PyStatus status;
-
     PyConfig config;
-
-    status = PyConfig_InitPythonConfig(&config);
-    if (PyStatus_Exception(status)) {
-        Py_ExitStatusException(status);
-    }
+    PyConfig_InitPythonConfig(&config);
 
     config.parse_argv = parse_argv;
 
@@ -705,16 +692,10 @@ static int test_init_compat_env(void)
 
 static int test_init_python_env(void)
 {
-    PyStatus status;
-
     set_all_env_vars();
 
     PyConfig config;
-
-    status = PyConfig_InitPythonConfig(&config);
-    if (PyStatus_Exception(status)) {
-        Py_ExitStatusException(status);
-    }
+    PyConfig_InitPythonConfig(&config);
 
     config_set_program_name(&config);
     init_from_config_clear(&config);
@@ -760,15 +741,9 @@ static int test_init_env_dev_mode_alloc(void)
 
 static int test_init_isolated_flag(void)
 {
-    PyStatus status;
-
     /* Test PyConfig.isolated=1 */
     PyConfig config;
-
-    status = PyConfig_InitPythonConfig(&config);
-    if (PyStatus_Exception(status)) {
-        Py_ExitStatusException(status);
-    }
+    PyConfig_InitPythonConfig(&config);
 
     Py_IsolatedFlag = 0;
     config.isolated = 1;
@@ -797,11 +772,8 @@ static int test_preinit_isolated1(void)
     }
 
     PyConfig config;
+    _PyConfig_InitCompatConfig(&config);
 
-    status = _PyConfig_InitCompatConfig(&config);
-    if (PyStatus_Exception(status)) {
-        Py_ExitStatusException(status);
-    }
     config_set_program_name(&config);
     set_all_env_vars();
     init_from_config_clear(&config);
@@ -827,11 +799,7 @@ static int test_preinit_isolated2(void)
 
     /* Test PyConfig.isolated=1 */
     PyConfig config;
-
-    status = _PyConfig_InitCompatConfig(&config);
-    if (PyStatus_Exception(status)) {
-        Py_ExitStatusException(status);
-    }
+    _PyConfig_InitCompatConfig(&config);
 
     Py_IsolatedFlag = 0;
     config.isolated = 1;
@@ -867,12 +835,7 @@ static int test_preinit_dont_parse_argv(void)
     }
 
     PyConfig config;
-
-    status = PyConfig_InitIsolatedConfig(&config);
-    if (PyStatus_Exception(status)) {
-        PyConfig_Clear(&config);
-        Py_ExitStatusException(status);
-    }
+    PyConfig_InitIsolatedConfig(&config);
 
     config.isolated = 0;
 
@@ -890,14 +853,8 @@ static int test_preinit_dont_parse_argv(void)
 
 static int test_preinit_parse_argv(void)
 {
-    PyStatus status;
     PyConfig config;
-
-    status = PyConfig_InitPythonConfig(&config);
-    if (PyStatus_Exception(status)) {
-        PyConfig_Clear(&config);
-        Py_ExitStatusException(status);
-    }
+    PyConfig_InitPythonConfig(&config);
 
     /* Pre-initialize implicitly using argv: make sure that -X dev
        is used to configure the allocation in preinitialization */
@@ -962,12 +919,8 @@ static int check_preinit_isolated_config(int preinit)
     }
 
     PyConfig config;
+    PyConfig_InitIsolatedConfig(&config);
 
-    status = PyConfig_InitIsolatedConfig(&config);
-    if (PyStatus_Exception(status)) {
-        PyConfig_Clear(&config);
-        Py_ExitStatusException(status);
-    }
     config_set_program_name(&config);
     init_from_config_clear(&config);
 
@@ -995,8 +948,6 @@ static int test_init_isolated_config(void)
 
 static int check_init_python_config(int preinit)
 {
-    PyStatus status;
-
     /* global configuration variables must be ignored */
     set_all_global_config_variables();
     Py_IsolatedFlag = 1;
@@ -1014,18 +965,15 @@ static int check_init_python_config(int preinit)
         PyPreConfig preconfig;
         PyPreConfig_InitPythonConfig(&preconfig);
 
-        status = Py_PreInitialize(&preconfig);
+        PyStatus status = Py_PreInitialize(&preconfig);
         if (PyStatus_Exception(status)) {
             Py_ExitStatusException(status);
         }
     }
 
     PyConfig config;
+    PyConfig_InitPythonConfig(&config);
 
-    status = PyConfig_InitPythonConfig(&config);
-    if (PyStatus_Exception(status)) {
-        Py_ExitStatusException(status);
-    }
     config_set_program_name(&config);
     init_from_config_clear(&config);
 
@@ -1062,11 +1010,8 @@ static int test_init_dont_configure_locale(void)
     }
 
     PyConfig config;
+    PyConfig_InitPythonConfig(&config);
 
-    status = PyConfig_InitPythonConfig(&config);
-    if (PyStatus_Exception(status)) {
-        Py_ExitStatusException(status);
-    }
     config_set_program_name(&config);
     init_from_config_clear(&config);
 
@@ -1078,13 +1023,9 @@ static int test_init_dont_configure_locale(void)
 
 static int test_init_dev_mode(void)
 {
-    PyStatus status;
     PyConfig config;
+    PyConfig_InitPythonConfig(&config);
 
-    status = PyConfig_InitPythonConfig(&config);
-    if (PyStatus_Exception(status)) {
-        Py_ExitStatusException(status);
-    }
     putenv("PYTHONFAULTHANDLER=");
     putenv("PYTHONMALLOC=");
     config.dev_mode = 1;
@@ -1302,13 +1243,9 @@ static int test_audit_run_file(void)
 
 static int run_audit_run_test(int argc, wchar_t **argv, void *test)
 {
-    PyStatus status;
     PyConfig config;
+    PyConfig_InitPythonConfig(&config);
 
-    status = PyConfig_InitPythonConfig(&config);
-    if (PyStatus_Exception(status)) {
-        Py_ExitStatusException(status);
-    }
     config.argv.length = argc;
     config.argv.items = argv;
     config.parse_argv = 1;
@@ -1320,7 +1257,7 @@ static int run_audit_run_test(int argc, wchar_t **argv, void *test)
 
     PySys_AddAuditHook(_audit_hook_run, test);
 
-    status = Py_InitializeFromConfig(&config);
+    PyStatus status = Py_InitializeFromConfig(&config);
     if (PyStatus_Exception(status)) {
         Py_ExitStatusException(status);
     }
@@ -1353,11 +1290,7 @@ static int test_init_read_set(void)
 {
     PyStatus status;
     PyConfig config;
-
-    status = PyConfig_InitPythonConfig(&config);
-    if (PyStatus_Exception(status)) {
-        Py_ExitStatusException(status);
-    }
+    PyConfig_InitPythonConfig(&config);
 
     status = PyConfig_SetBytesString(&config, &config.program_name,
                                      "./init_read_set");
@@ -1402,12 +1335,7 @@ static int test_init_sys_add(void)
     PySys_AddWarnOption(L"ignore:::sysadd_warnoption");
 
     PyConfig config;
-
-    PyStatus status;
-    status = PyConfig_InitPythonConfig(&config);
-    if (PyStatus_Exception(status)) {
-        goto fail;
-    }
+    PyConfig_InitPythonConfig(&config);
 
     wchar_t* argv[] = {
         L"python3",
@@ -1419,6 +1347,7 @@ static int test_init_sys_add(void)
     config_set_argv(&config, Py_ARRAY_LENGTH(argv), argv);
     config.parse_argv = 1;
 
+    PyStatus status;
     status = PyWideStringList_Append(&config.xoptions,
                                      L"config_xoption");
     if (PyStatus_Exception(status)) {
@@ -1494,11 +1423,8 @@ static int test_init_setpath_config(void)
     putenv("TESTPATH=");
 
     PyConfig config;
+    PyConfig_InitPythonConfig(&config);
 
-    status = PyConfig_InitPythonConfig(&config);
-    if (PyStatus_Exception(status)) {
-        Py_ExitStatusException(status);
-    }
     config_set_string(&config, &config.program_name, L"conf_program_name");
     config_set_string(&config, &config.executable, L"conf_executable");
     init_from_config_clear(&config);
@@ -1534,24 +1460,20 @@ static int test_init_setpythonhome(void)
 
 static int test_init_warnoptions(void)
 {
-    PyStatus status;
     putenv("PYTHONWARNINGS=ignore:::env1,ignore:::env2");
 
     PySys_AddWarnOption(L"ignore:::PySys_AddWarnOption1");
     PySys_AddWarnOption(L"ignore:::PySys_AddWarnOption2");
 
     PyConfig config;
-
-    status = PyConfig_InitPythonConfig(&config);
-    if (PyStatus_Exception(status)) {
-        Py_ExitStatusException(status);
-    }
+    PyConfig_InitPythonConfig(&config);
 
     config.dev_mode = 1;
     config.bytes_warning = 1;
 
     config_set_program_name(&config);
 
+    PyStatus status;
     status = PyWideStringList_Append(&config.warnoptions,
                                      L"ignore:::PyConfig_BeforeRead");
     if (PyStatus_Exception(status)) {
@@ -1606,13 +1528,9 @@ static void configure_init_main(PyConfig *config)
 
 static int test_init_run_main(void)
 {
-    PyStatus status;
     PyConfig config;
+    PyConfig_InitPythonConfig(&config);
 
-    status = PyConfig_InitPythonConfig(&config);
-    if (PyStatus_Exception(status)) {
-        Py_ExitStatusException(status);
-    }
     configure_init_main(&config);
     init_from_config_clear(&config);
 
@@ -1622,13 +1540,9 @@ static int test_init_run_main(void)
 
 static int test_init_main(void)
 {
-    PyStatus status;
     PyConfig config;
+    PyConfig_InitPythonConfig(&config);
 
-    status = PyConfig_InitPythonConfig(&config);
-    if (PyStatus_Exception(status)) {
-        Py_ExitStatusException(status);
-    }
     configure_init_main(&config);
     config._init_main = 0;
     init_from_config_clear(&config);
@@ -1642,7 +1556,7 @@ static int test_init_main(void)
         exit(1);
     }
 
-    status = _Py_InitializeMain();
+    PyStatus status = _Py_InitializeMain();
     if (PyStatus_Exception(status)) {
         Py_ExitStatusException(status);
     }
@@ -1653,14 +1567,8 @@ static int test_init_main(void)
 
 static int test_run_main(void)
 {
-    PyStatus status;
     PyConfig config;
-
-    status = PyConfig_InitPythonConfig(&config);
-    if (PyStatus_Exception(status)) {
-        PyConfig_Clear(&config);
-        Py_ExitStatusException(status);
-    }
+    PyConfig_InitPythonConfig(&config);
 
     wchar_t *argv[] = {L"python3", L"-c",
                        (L"import sys; "
