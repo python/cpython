@@ -2362,7 +2362,7 @@ requires, and these work on all platforms with a standard C implementation.
 |           | string if the object is        | +063415,               |       |
 |           | naive).                        | -030712.345216         |       |
 +-----------+--------------------------------+------------------------+-------+
-| ``%Z``    | Time zone name (empty string   | (empty), UTC, EST, CST |       |
+| ``%Z``    | Time zone name (empty string   | (empty), UTC, GMT      | \(6)  |
 |           | if the object is naive).       |                        |       |
 +-----------+--------------------------------+------------------------+-------+
 | ``%j``    | Day of the year as a           | 001, 002, ..., 366     | \(9)  |
@@ -2536,6 +2536,14 @@ Notes:
       If :meth:`tzname` returns ``None``, ``%Z`` is replaced by an empty
       string. Otherwise ``%Z`` is replaced by the returned value, which must
       be a string.
+
+      Note that :meth:`strptime` only accepts certain values for ``%Z``:
+
+      1. the hard-coded values ``UTC`` and ``GMT``
+      2. any value in ``time.tzname`` for your machine's locale
+
+      So someone living in Japan may have ``JST``, ``UTC``, and ``GMT`` as valid
+      values, but probably not ``EST``.
 
    .. versionchanged:: 3.2
       When the ``%z`` directive is provided to the :meth:`strptime` method, an
