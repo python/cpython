@@ -1,1 +1,1 @@
-Prevent ``inspect.getmembers`` to call properties. Used ``inspect.getattr_static`` instead.
+Prevent :func:`inspect.getmembers` from calling descriptors.
