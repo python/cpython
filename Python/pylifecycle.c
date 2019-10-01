@@ -843,11 +843,7 @@ pyinit_core(_PyRuntimeState *runtime,
     }
 
     PyConfig config;
-
-    status = _PyConfig_InitCompatConfig(&config);
-    if (_PyStatus_EXCEPTION(status)) {
-        goto done;
-    }
+    _PyConfig_InitCompatConfig(&config);
 
     status = _PyConfig_Copy(&config, src_config);
     if (_PyStatus_EXCEPTION(status)) {
@@ -1070,11 +1066,7 @@ Py_InitializeEx(int install_sigs)
     }
 
     PyConfig config;
-
-    status = _PyConfig_InitCompatConfig(&config);
-    if (_PyStatus_EXCEPTION(status)) {
-        Py_ExitStatusException(status);
-    }
+    _PyConfig_InitCompatConfig(&config);
 
     config.install_signal_handlers = install_sigs;
 

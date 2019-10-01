@@ -144,7 +144,7 @@ typedef enum {
     _PyConfig_INIT_ISOLATED = 3
 } _PyConfigInitEnum;
 
-PyAPI_FUNC(PyStatus) _PyConfig_InitCompatConfig(PyConfig *config);
+PyAPI_FUNC(void) _PyConfig_InitCompatConfig(PyConfig *config);
 extern PyStatus _PyConfig_Copy(
     PyConfig *config,
     const PyConfig *config2);

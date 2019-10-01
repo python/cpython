@@ -61,11 +61,7 @@ pymain_init(const _PyArgv *args)
     }
 
     PyConfig config;
-
-    status = PyConfig_InitPythonConfig(&config);
-    if (_PyStatus_EXCEPTION(status)) {
-        goto done;
-    }
+    PyConfig_InitPythonConfig(&config);
 
     /* pass NULL as the config: config is read from command line arguments,
        environment variables, configuration files */
