@@ -20,6 +20,17 @@ from SimpleXMLRPCServer import (SimpleXMLRPCServer,
             CGIXMLRPCRequestHandler,
             resolve_dotted_attribute)
 
+
+def _html_escape_quote(s, quote=True):
+    s = s.replace("&", "&amp;") # Must be done first!
+    s = s.replace("<", "&lt;")
+    s = s.replace(">", "&gt;")
+    if quote:
+        s = s.replace('"', "&quot;")
+        s = s.replace('\'', "&#x27;")
+    return s
+
+
 class ServerHTMLDoc(pydoc.HTMLDoc):
     """Class used to generate pydoc HTML document for a server"""
 
@@ -210,14 +221,7 @@ class XMLRPCDocGenerator:
                                 methods
                             )
 
-        escape_table = {
-            "&": "&amp;",
-            '"': "&quot;",
-            "'": "&#x27;",
-            ">": "&gt;",
-            "<": "&lt;",
-        }
-        title = ''.join(escape_table.get(c, c) for c in self.server_title)
+        title = _html_escape_quote(self.server_title)
         return documenter.page(title, documentation)
 
 class DocXMLRPCRequestHandler(SimpleXMLRPCRequestHandler):
