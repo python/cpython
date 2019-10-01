@@ -1,0 +1,1 @@
+Fix serialization of display name in originator or destination address fields with both encoded words and special chars.

@@ -55,7 +55,7 @@ class shlex:
             punctuation_chars = ''
         elif punctuation_chars is True:
             punctuation_chars = '();<>|&'
-        self.punctuation_chars = punctuation_chars
+        self._punctuation_chars = punctuation_chars
         if punctuation_chars:
             # _pushback_chars is a push back queue used by lookahead logic
             self._pushback_chars = deque()
@@ -64,6 +64,10 @@ class shlex:
             #remove any punctuation chars from wordchars
             t = self.wordchars.maketrans(dict.fromkeys(punctuation_chars))
             self.wordchars = self.wordchars.translate(t)
+
+    @property
+    def punctuation_chars(self):
+        return self._punctuation_chars
 
     def push_token(self, tok):
         "Push a token onto the stack popped by the get_token method"

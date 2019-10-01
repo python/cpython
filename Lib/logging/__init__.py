@@ -2024,10 +2024,9 @@ def getLogger(name=None):
 
     If no name is specified, return the root logger.
     """
-    if name:
-        return Logger.manager.getLogger(name)
-    else:
+    if not name or isinstance(name, str) and name == root.name:
         return root
+    return Logger.manager.getLogger(name)
 
 def critical(msg, *args, **kwargs):
     """

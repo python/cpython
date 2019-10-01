@@ -40,10 +40,12 @@ extern "C" {
     (err._type == _PyStatus_TYPE_EXIT)
 #define _PyStatus_EXCEPTION(err) \
     (err._type != _PyStatus_TYPE_OK)
+#define _PyStatus_UPDATE_FUNC(err) \
+    do { err.func = _PyStatus_GET_FUNC(); } while (0)
 
 /* --- PyWideStringList ------------------------------------------------ */
 
-#define PyWideStringList_INIT (PyWideStringList){.length = 0, .items = NULL}
+#define _PyWideStringList_INIT (PyWideStringList){.length = 0, .items = NULL}
 
 #ifndef NDEBUG
 PyAPI_FUNC(int) _PyWideStringList_CheckConsistency(const PyWideStringList *list);
@@ -122,7 +124,7 @@ PyAPI_FUNC(void) _PyPreConfig_InitCompatConfig(PyPreConfig *preconfig);
 extern void _PyPreConfig_InitFromConfig(
     PyPreConfig *preconfig,
     const PyConfig *config);
-extern void _PyPreConfig_InitFromPreConfig(
+extern PyStatus _PyPreConfig_InitFromPreConfig(
     PyPreConfig *preconfig,
     const PyPreConfig *config2);
 extern PyObject* _PyPreConfig_AsDict(const PyPreConfig *preconfig);
@@ -134,8 +136,6 @@ extern PyStatus _PyPreConfig_Write(const PyPreConfig *preconfig);
 
 
 /* --- PyConfig ---------------------------------------------- */
-
-#define _Py_CONFIG_VERSION 1
 
 typedef enum {
     /* Py_Initialize() API: backward compatibility with Python 3.6 and 3.7 */
@@ -149,8 +149,6 @@ extern PyStatus _PyConfig_Copy(
     PyConfig *config,
     const PyConfig *config2);
 extern PyStatus _PyConfig_InitPathConfig(PyConfig *config);
-extern PyStatus _PyConfig_SetPathConfig(
-    const PyConfig *config);
 extern void _PyConfig_Write(const PyConfig *config,
     _PyRuntimeState *runtime);
 extern PyStatus _PyConfig_SetPyArgv(

@@ -114,7 +114,8 @@ class MimeTypes:
         but non-standard types.
         """
         url = os.fspath(url)
-        scheme, url = urllib.parse._splittype(url)
+        p = urllib.parse.urlparse(url)
+        scheme, url = p.scheme, p.path
         if scheme == 'data':
             # syntax of data URLs:
             # dataurl   := "data:" [ mediatype ] [ ";base64" ] "," data
@@ -414,6 +415,7 @@ def _default_mime_types():
         '.js'     : 'application/javascript',
         '.mjs'    : 'application/javascript',
         '.json'   : 'application/json',
+        '.webmanifest': 'application/manifest+json',
         '.doc'    : 'application/msword',
         '.dot'    : 'application/msword',
         '.wiz'    : 'application/msword',

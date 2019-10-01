@@ -127,6 +127,10 @@ diffs. For comparing directories and files, see also, the :mod:`filecmp` module.
       the next difference highlight at the top of the browser without any leading
       context).
 
+      .. note::
+         *fromdesc* and *todesc* are interpreted as unescaped HTML and should be
+         properly escaped while receiving input from untrusted sources.
+
       .. versionchanged:: 3.5
          *charset* keyword-only argument was added.  The default charset of
          HTML document changed from ``'ISO-8859-1'`` to ``'utf-8'``.
@@ -542,6 +546,16 @@ The :class:`SequenceMatcher` class has this constructor:
       :meth:`get_opcodes` hasn't already been called, in which case you may want
       to try :meth:`quick_ratio` or :meth:`real_quick_ratio` first to get an
       upper bound.
+
+      .. note::
+
+         Caution: The result of a :meth:`ratio` call may depend on the order of
+         the arguments. For instance::
+
+            >>> SequenceMatcher(None, 'tide', 'diet').ratio()
+            0.25
+            >>> SequenceMatcher(None, 'diet', 'tide').ratio()
+            0.5
 
 
    .. method:: quick_ratio()

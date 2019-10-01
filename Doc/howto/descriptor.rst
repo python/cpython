@@ -117,7 +117,7 @@ The important points to remember are:
 * non-data descriptors may be overridden by instance dictionaries.
 
 The object returned by ``super()`` also has a custom :meth:`__getattribute__`
-method for invoking descriptors.  The call ``super(B, obj).m()`` searches
+method for invoking descriptors.  The attribute lookup ``super(B, obj).m`` searches
 ``obj.__class__.__mro__`` for the base class ``A`` immediately following ``B``
 and then returns ``A.__dict__['m'].__get__(obj, B)``.  If not a descriptor,
 ``m`` is returned unchanged.  If not in the dictionary, ``m`` reverts to a

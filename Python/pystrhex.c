@@ -57,7 +57,7 @@ static PyObject *_Py_strhex_impl(const char* argbuf, const Py_ssize_t arglen,
     }
     resultlen += arglen * 2;
 
-    if (abs_bytes_per_sep >= arglen) {
+    if ((size_t)abs_bytes_per_sep >= (size_t)arglen) {
         bytes_per_sep_group = 0;
         abs_bytes_per_sep = 0;
     }

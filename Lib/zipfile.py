@@ -7,6 +7,7 @@ import binascii
 import functools
 import importlib.util
 import io
+import itertools
 import os
 import posixpath
 import shutil
@@ -375,11 +376,11 @@ class ZipInfo (object):
         self.volume = 0                 # Volume number of file header
         self.internal_attr = 0          # Internal attributes
         self.external_attr = 0          # External file attributes
+        self.compress_size = 0          # Size of the compressed file
+        self.file_size = 0              # Size of the uncompressed file
         # Other attributes are set by class ZipFile:
         # header_offset         Byte offset to the file header
         # CRC                   CRC-32 of the uncompressed file
-        # compress_size         Size of the compressed file
-        # file_size             Size of the uncompressed file
 
     def __repr__(self):
         result = ['<%s filename=%r' % (self.__class__.__name__, self.filename)]
@@ -702,6 +703,7 @@ def _get_compressor(compress_type, compresslevel=None):
 
 
 def _get_decompressor(compress_type):
+    _check_compression(compress_type)
     if compress_type == ZIP_STORED:
         return None
     elif compress_type == ZIP_DEFLATED:
@@ -1563,9 +1565,7 @@ class ZipFile:
                              "another write handle open on it. "
                              "Close the first handle before opening another.")
 
-        # Sizes and CRC are overwritten with correct data after processing the file
-        if not hasattr(zinfo, 'file_size'):
-            zinfo.file_size = 0
+        # Size and CRC are overwritten with correct data after processing the file
         zinfo.compress_size = 0
         zinfo.CRC = 0
 
@@ -2104,6 +2104,65 @@ class PyZipFile(ZipFile):
         return (fname, archivename)
 
 
+def _unique_everseen(iterable, key=None):
+    "List unique elements, preserving order. Remember all elements ever seen."
+    # unique_everseen('AAAABBBCCDAABBB') --> A B C D
+    # unique_everseen('ABBCcAD', str.lower) --> A B C D
+    seen = set()
+    seen_add = seen.add
+    if key is None:
+        for element in itertools.filterfalse(seen.__contains__, iterable):
+            seen_add(element)
+            yield element
+    else:
+        for element in iterable:
+            k = key(element)
+            if k not in seen:
+                seen_add(k)
+                yield element
+
+
+def _parents(path):
+    """
+    Given a path with elements separated by
+    posixpath.sep, generate all parents of that path.
+
+    >>> list(_parents('b/d'))
+    ['b']
+    >>> list(_parents('/b/d/'))
+    ['/b']
+    >>> list(_parents('b/d/f/'))
+    ['b/d', 'b']
+    >>> list(_parents('b'))
+    []
+    >>> list(_parents(''))
+    []
+    """
+    return itertools.islice(_ancestry(path), 1, None)
+
+
+def _ancestry(path):
+    """
+    Given a path with elements separated by
+    posixpath.sep, generate all elements of that path
+
+    >>> list(_ancestry('b/d'))
+    ['b/d', 'b']
+    >>> list(_ancestry('/b/d/'))
+    ['/b/d', '/b']
+    >>> list(_ancestry('b/d/f/'))
+    ['b/d/f', 'b/d', 'b']
+    >>> list(_ancestry('b'))
+    ['b']
+    >>> list(_ancestry(''))
+    []
+    """
+    path = path.rstrip(posixpath.sep)
+    while path and path != posixpath.sep:
+        yield path
+        path, tail = posixpath.split(path)
+
+
 class Path:
     """
     A pathlib-compatible interface for zip files.
@@ -2227,12 +2286,17 @@ class Path:
     __truediv__ = joinpath
 
     @staticmethod
-    def _add_implied_dirs(names):
-        return names + [
-            name + "/"
-            for name in map(posixpath.dirname, names)
-            if name and name + "/" not in names
-        ]
+    def _implied_dirs(names):
+        return _unique_everseen(
+            parent + "/"
+            for name in names
+            for parent in _parents(name)
+            if parent + "/" not in names
+        )
+
+    @classmethod
+    def _add_implied_dirs(cls, names):
+        return names + list(cls._implied_dirs(names))
 
     @property
     def parent(self):

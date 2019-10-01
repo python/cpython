@@ -1293,6 +1293,14 @@ else
   DEF_MAKE_RULE="all"
 fi
 
+AC_ARG_VAR(PROFILE_TASK, Python args for PGO generation task)
+AC_MSG_CHECKING(PROFILE_TASK)
+if test -z "$PROFILE_TASK"
+then
+	PROFILE_TASK='-m test --pgo'
+fi
+AC_MSG_RESULT($PROFILE_TASK)
+
 # Make llvm-relatec checks work on systems where llvm tools are not installed with their
 # normal names in the default $PATH (ie: Ubuntu).  They exist under the
 # non-suffixed name in their versioned llvm directory.
@@ -1330,7 +1338,7 @@ if test "$Py_LTO" = 'true' ; then
   case $CC in
     *clang*)
       AC_SUBST(LLVM_AR)
-      AC_PATH_TARGET_TOOL(LLVM_AR, llvm-ar, '', ${llvm_path})
+      AC_PATH_TOOL(LLVM_AR, llvm-ar, '', ${llvm_path})
       AC_SUBST(LLVM_AR_FOUND)
       if test -n "${LLVM_AR}" -a -x "${LLVM_AR}"
       then
@@ -1396,7 +1404,7 @@ AC_SUBST(LLVM_PROF_MERGER)
 AC_SUBST(LLVM_PROF_FILE)
 AC_SUBST(LLVM_PROF_ERR)
 AC_SUBST(LLVM_PROFDATA)
-AC_PATH_TARGET_TOOL(LLVM_PROFDATA, llvm-profdata, '', ${llvm_path})
+AC_PATH_TOOL(LLVM_PROFDATA, llvm-profdata, '', ${llvm_path})
 AC_SUBST(LLVM_PROF_FOUND)
 if test -n "${LLVM_PROFDATA}" -a -x "${LLVM_PROFDATA}"
 then
@@ -2305,7 +2313,7 @@ if test "$ac_cv_sizeof_off_t" -gt "$ac_cv_sizeof_long" -a \
 	"$ac_cv_sizeof_long_long" -ge "$ac_cv_sizeof_off_t"; then
   AC_DEFINE(HAVE_LARGEFILE_SUPPORT, 1,
   [Defined to enable large file support when an off_t is bigger than a long
-   and long long is available and at least as big as an off_t. You may need
+   and long long is at least as big as an off_t. You may need
    to add some flags for configuration and compilation to enable this mode.
    (For Solaris and Linux, the necessary defines are already defined.)])
   AC_MSG_RESULT(yes)
@@ -2686,6 +2694,8 @@ then
 		# Issue #18075: the default maximum stack size (8MBytes) is too
 		# small for the default recursion limit. Increase the stack size
 		# to ensure that tests don't crash
+		# Note: This matches the value of THREAD_STACK_SIZE in
+		# thread_pthread.h
 		LINKFORSHARED="-Wl,-stack_size,1000000 $LINKFORSHARED"
 
 		if test "$enable_framework"
@@ -3053,6 +3063,9 @@ then
     # Defining _REENTRANT on system with POSIX threads should not hurt.
     AC_DEFINE(_REENTRANT)
     posix_threads=yes
+    if test "$ac_sys_system" = "SunOS"; then
+        CFLAGS="$CFLAGS -D_REENTRANT"
+    fi
 elif test "$ac_cv_kpthread" = "yes"
 then
     CC="$CC -Kpthread"
@@ -3528,13 +3541,13 @@ fi
 AC_CHECK_FUNCS(alarm accept4 setitimer getitimer bind_textdomain_codeset chown \
  clock confstr copy_file_range ctermid dup3 execv explicit_bzero explicit_memset \
  faccessat fchmod fchmodat fchown fchownat \
- fexecve fdopendir fork fpathconf fstatat ftime ftruncate futimesat \
+ fdwalk fexecve fdopendir fork fpathconf fstatat ftime ftruncate futimesat \
  futimens futimes gai_strerror getentropy \
  getgrgid_r getgrnam_r \
  getgrouplist getgroups getlogin getloadavg getpeername getpgid getpid \
  getpriority getresuid getresgid getpwent getpwnam_r getpwuid_r getspnam getspent getsid getwd \
  if_nameindex \
- initgroups kill killpg lchmod lchown lockf linkat lstat lutimes mmap \
+ initgroups kill killpg lchown lockf linkat lstat lutimes mmap \
  memrchr mbrtowc mkdirat mkfifo \
  madvise mkfifoat mknod mknodat mktime mremap nice openat pathconf pause pipe2 plock poll \
  posix_fallocate posix_fadvise posix_spawn posix_spawnp pread preadv preadv2 \
@@ -3854,15 +3867,6 @@ AC_CHECK_FUNCS(setpgrp,
   AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[#include <unistd.h>]], [[setpgrp(0,0);]])],
     [AC_DEFINE(SETPGRP_HAVE_ARG, 1, [Define if setpgrp() must be called as setpgrp(0, 0).])],
     [])
-)
-AC_CHECK_FUNCS(gettimeofday,
-  AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[#include <sys/time.h>]],
-  				     [[gettimeofday((struct timeval*)0,(struct timezone*)0);]])],
-    [],
-    [AC_DEFINE(GETTIMEOFDAY_NO_TZ, 1,
-      [Define if gettimeofday() does not have second (timezone) argument
-       This is the case on Motorola V4 (R40V4.2)])
-    ])
 )
 
 # We search for both crypt and crypt_r as one or the other may be defined

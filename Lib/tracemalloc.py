@@ -43,6 +43,8 @@ class Statistic:
         return hash((self.traceback, self.size, self.count))
 
     def __eq__(self, other):
+        if not isinstance(other, Statistic):
+            return NotImplemented
         return (self.traceback == other.traceback
                 and self.size == other.size
                 and self.count == other.count)
@@ -84,6 +86,8 @@ class StatisticDiff:
                      self.count, self.count_diff))
 
     def __eq__(self, other):
+        if not isinstance(other, StatisticDiff):
+            return NotImplemented
         return (self.traceback == other.traceback
                 and self.size == other.size
                 and self.size_diff == other.size_diff
@@ -153,9 +157,13 @@ class Frame:
         return self._frame[1]
 
     def __eq__(self, other):
+        if not isinstance(other, Frame):
+            return NotImplemented
         return (self._frame == other._frame)
 
     def __lt__(self, other):
+        if not isinstance(other, Frame):
+            return NotImplemented
         return (self._frame < other._frame)
 
     def __hash__(self):
@@ -200,9 +208,13 @@ class Traceback(Sequence):
         return hash(self._frames)
 
     def __eq__(self, other):
+        if not isinstance(other, Traceback):
+            return NotImplemented
         return (self._frames == other._frames)
 
     def __lt__(self, other):
+        if not isinstance(other, Traceback):
+            return NotImplemented
         return (self._frames < other._frames)
 
     def __str__(self):
@@ -271,6 +283,8 @@ class Trace:
         return Traceback(self._trace[2])
 
     def __eq__(self, other):
+        if not isinstance(other, Trace):
+            return NotImplemented
         return (self._trace == other._trace)
 
     def __hash__(self):
@@ -303,6 +317,8 @@ class _Traces(Sequence):
         return trace._trace in self._traces
 
     def __eq__(self, other):
+        if not isinstance(other, _Traces):
+            return NotImplemented
         return (self._traces == other._traces)
 
     def __repr__(self):

@@ -1,4 +1,4 @@
-import unittest.mock
+import unittest
 from test import support
 import builtins
 import contextlib
@@ -14,7 +14,6 @@ from unittest import mock
 
 py_uuid = support.import_fresh_module('uuid', blocked=['_uuid'])
 c_uuid = support.import_fresh_module('uuid', fresh=['_uuid'])
-
 
 def importable(name):
     try:
@@ -459,7 +458,7 @@ class BaseTestUUID:
         # uuid.getnode to fall back on uuid._random_getnode, which will
         # generate a valid value.
         too_large_getter = lambda: 1 << 48
-        with unittest.mock.patch.multiple(
+        with mock.patch.multiple(
             self.uuid,
             _node=None,  # Ignore any cached node value.
             _GETTERS=[too_large_getter],
@@ -538,8 +537,8 @@ class BaseTestUUID:
         f = self.uuid._generate_time_safe
         if f is None:
             self.skipTest('need uuid._generate_time_safe')
-        with unittest.mock.patch.object(self.uuid, '_generate_time_safe',
-                                        lambda: (f()[0], safe_value)):
+        with mock.patch.object(self.uuid, '_generate_time_safe',
+                               lambda: (f()[0], safe_value)):
             yield
 
     @unittest.skipUnless(os.name == 'posix', 'POSIX-only test')
@@ -674,27 +673,57 @@ class TestUUIDWithExtModule(BaseTestUUID, unittest.TestCase):
 class BaseTestInternals:
     _uuid = py_uuid
 
-    @unittest.skipUnless(os.name == 'posix', 'requires Posix')
-    def test_find_mac(self):
+
+    def test_find_under_heading(self):
+        data = '''\
+Name  Mtu   Network     Address           Ipkts Ierrs    Opkts Oerrs  Coll
+en0   1500  link#2      fe.ad.c.1.23.4   1714807956     0 711348489     0     0
+                        01:00:5e:00:00:01
+en0   1500  192.168.129 x071             1714807956     0 711348489     0     0
+                        224.0.0.1
+en0   1500  192.168.90  x071             1714807956     0 711348489     0     0
+                        224.0.0.1
+'''
+
+        def mock_get_command_stdout(command, args):
+            return io.BytesIO(data.encode())
+
+        # The above data is from AIX - with '.' as _MAC_DELIM and strings
+        # shorter than 17 bytes (no leading 0). (_MAC_OMITS_LEADING_ZEROES=True)
+        with mock.patch.multiple(self.uuid,
+                                 _MAC_DELIM=b'.',
+                                 _MAC_OMITS_LEADING_ZEROES=True,
+                                 _get_command_stdout=mock_get_command_stdout):
+            mac = self.uuid._find_mac_under_heading(
+                command='netstat',
+                args='-ian',
+                heading=b'Address',
+            )
+
+        self.assertEqual(mac, 0xfead0c012304)
+
+    def test_find_mac_near_keyword(self):
+        # key and value are on the same line
         data = '''
-fake hwaddr
+fake      Link encap:UNSPEC  hwaddr 00-00
 cscotun0  Link encap:UNSPEC  HWaddr 00-00-00-00-00-00-00-00-00-00-00-00-00-00-00-00
 eth0      Link encap:Ethernet  HWaddr 12:34:56:78:90:ab
 '''
 
-        popen = unittest.mock.MagicMock()
-        popen.stdout = io.BytesIO(data.encode())
+        def mock_get_command_stdout(command, args):
+            return io.BytesIO(data.encode())
 
-        with unittest.mock.patch.object(shutil, 'which',
-                                        return_value='/sbin/ifconfig'):
-            with unittest.mock.patch.object(subprocess, 'Popen',
-                                            return_value=popen):
-                mac = self.uuid._find_mac(
-                    command='ifconfig',
-                    args='',
-                    hw_identifiers=[b'hwaddr'],
-                    get_index=lambda x: x + 1,
-                )
+        # The above data will only be parsed properly on non-AIX unixes.
+        with mock.patch.multiple(self.uuid,
+                                 _MAC_DELIM=b':',
+                                 _MAC_OMITS_LEADING_ZEROES=False,
+                                 _get_command_stdout=mock_get_command_stdout):
+            mac = self.uuid._find_mac_near_keyword(
+                command='ifconfig',
+                args='',
+                keywords=[b'hwaddr'],
+                get_word_index=lambda x: x + 1,
+            )
 
         self.assertEqual(mac, 0x1234567890ab)
 

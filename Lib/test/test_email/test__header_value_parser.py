@@ -297,7 +297,7 @@ class TestParser(TestParserMixin, TestEmailBase):
             [],
             '')
 
-    def test_get_unstructured_invaild_ew(self):
+    def test_get_unstructured_invalid_ew(self):
         self._test_get_x(self._get_unst,
             '=?test val',
             '=?test val',
@@ -381,6 +381,22 @@ class TestParser(TestParserMixin, TestEmailBase):
             'somevaluenowhitespace',
             'somevaluenowhitespace',
             [errors.InvalidHeaderDefect],
+            '')
+
+    def test_get_unstructured_without_trailing_whitespace_hang_case(self):
+        self._test_get_x(self._get_unst,
+            '=?utf-8?q?somevalue?=aa',
+            'somevalueaa',
+            'somevalueaa',
+            [errors.InvalidHeaderDefect],
+            '')
+
+    def test_get_unstructured_invalid_ew(self):
+        self._test_get_x(self._get_unst,
+            '=?utf-8?q?=somevalue?=',
+            '=?utf-8?q?=somevalue?=',
+            '=?utf-8?q?=somevalue?=',
+            [],
             '')
 
     # get_qp_ctext
@@ -1699,6 +1715,14 @@ class TestParser(TestParserMixin, TestEmailBase):
         self.assertEqual(len(display_name), 4)
         self.assertEqual(display_name[3].comments, ['with trailing comment'])
         self.assertEqual(display_name.display_name, 'simple phrase.')
+
+    def test_get_display_name_for_invalid_address_field(self):
+        # bpo-32178: Test that address fields starting with `:` don't cause
+        # IndexError when parsing the display name.
+        display_name = self._test_get_x(
+            parser.get_display_name,
+            ':Foo ', '', '', [errors.InvalidHeaderDefect], ':Foo ')
+        self.assertEqual(display_name.value, '')
 
     # get_name_addr
 

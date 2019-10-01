@@ -114,6 +114,19 @@ def _have_socket_vsock():
     return ret
 
 
+def _have_socket_bluetooth():
+    """Check whether AF_BLUETOOTH sockets are supported on this host."""
+    try:
+        # RFCOMM is supported by all platforms with bluetooth support. Windows
+        # does not support omitting the protocol.
+        s = socket.socket(socket.AF_BLUETOOTH, socket.SOCK_STREAM, socket.BTPROTO_RFCOMM)
+    except (AttributeError, OSError):
+        return False
+    else:
+        s.close()
+    return True
+
+
 @contextlib.contextmanager
 def socket_setdefaulttimeout(timeout):
     old_timeout = socket.getdefaulttimeout()
@@ -137,6 +150,8 @@ HAVE_SOCKET_QIPCRTR = _have_socket_qipcrtr()
 HAVE_SOCKET_VSOCK = _have_socket_vsock()
 
 HAVE_SOCKET_UDPLITE = hasattr(socket, "IPPROTO_UDPLITE")
+
+HAVE_SOCKET_BLUETOOTH = _have_socket_bluetooth()
 
 # Size in bytes of the int type
 SIZEOF_INT = array.array("i").itemsize
@@ -1908,6 +1923,19 @@ class BasicCANTest(unittest.TestCase):
         socket.CAN_BCM_RX_TIMEOUT   # cyclic message is absent
         socket.CAN_BCM_RX_CHANGED   # updated CAN frame (detected content change)
 
+        # flags
+        socket.CAN_BCM_SETTIMER
+        socket.CAN_BCM_STARTTIMER
+        socket.CAN_BCM_TX_COUNTEVT
+        socket.CAN_BCM_TX_ANNOUNCE
+        socket.CAN_BCM_TX_CP_CAN_ID
+        socket.CAN_BCM_RX_FILTER_ID
+        socket.CAN_BCM_RX_CHECK_DLC
+        socket.CAN_BCM_RX_NO_AUTOTIMER
+        socket.CAN_BCM_RX_ANNOUNCE_RESUME
+        socket.CAN_BCM_TX_RESET_MULTI_IDX
+        socket.CAN_BCM_RX_RTR_FRAME
+
     def testCreateSocket(self):
         with socket.socket(socket.PF_CAN, socket.SOCK_RAW, socket.CAN_RAW) as s:
             pass
@@ -1920,7 +1948,9 @@ class BasicCANTest(unittest.TestCase):
 
     def testBindAny(self):
         with socket.socket(socket.PF_CAN, socket.SOCK_RAW, socket.CAN_RAW) as s:
-            s.bind(('', ))
+            address = ('', )
+            s.bind(address)
+            self.assertEqual(s.getsockname(), address)
 
     def testTooLongInterfaceName(self):
         # most systems limit IFNAMSIZ to 16, take 1024 to be sure
@@ -2242,6 +2272,45 @@ class BasicVSOCKTest(unittest.TestCase):
             self.assertEqual(orig_min * 2,
                              s.getsockopt(socket.AF_VSOCK,
                              socket.SO_VM_SOCKETS_BUFFER_MIN_SIZE))
+
+
+@unittest.skipUnless(HAVE_SOCKET_BLUETOOTH,
+                     'Bluetooth sockets required for this test.')
+class BasicBluetoothTest(unittest.TestCase):
+
+    def testBluetoothConstants(self):
+        socket.BDADDR_ANY
+        socket.BDADDR_LOCAL
+        socket.AF_BLUETOOTH
+        socket.BTPROTO_RFCOMM
+
+        if sys.platform != "win32":
+            socket.BTPROTO_HCI
+            socket.SOL_HCI
+            socket.BTPROTO_L2CAP
+
+            if not sys.platform.startswith("freebsd"):
+                socket.BTPROTO_SCO
+
+    def testCreateRfcommSocket(self):
+        with socket.socket(socket.AF_BLUETOOTH, socket.SOCK_STREAM, socket.BTPROTO_RFCOMM) as s:
+            pass
+
+    @unittest.skipIf(sys.platform == "win32", "windows does not support L2CAP sockets")
+    def testCreateL2capSocket(self):
+        with socket.socket(socket.AF_BLUETOOTH, socket.SOCK_SEQPACKET, socket.BTPROTO_L2CAP) as s:
+            pass
+
+    @unittest.skipIf(sys.platform == "win32", "windows does not support HCI sockets")
+    def testCreateHciSocket(self):
+        with socket.socket(socket.AF_BLUETOOTH, socket.SOCK_RAW, socket.BTPROTO_HCI) as s:
+            pass
+
+    @unittest.skipIf(sys.platform == "win32" or sys.platform.startswith("freebsd"),
+                     "windows and freebsd do not support SCO sockets")
+    def testCreateScoSocket(self):
+        with socket.socket(socket.AF_BLUETOOTH, socket.SOCK_SEQPACKET, socket.BTPROTO_SCO) as s:
+            pass
 
 
 class BasicTCPTest(SocketConnectedTest):
@@ -4530,7 +4599,7 @@ class NonBlockingTCPTests(ThreadedTCPSocketTest):
 
     def testAccept(self):
         # Testing non-blocking accept
-        self.serv.setblocking(0)
+        self.serv.setblocking(False)
 
         # connect() didn't start: non-blocking accept() fails
         start_time = time.monotonic()
@@ -4561,7 +4630,7 @@ class NonBlockingTCPTests(ThreadedTCPSocketTest):
         # Testing non-blocking recv
         conn, addr = self.serv.accept()
         self.addCleanup(conn.close)
-        conn.setblocking(0)
+        conn.setblocking(False)
 
         # the server didn't send data yet: non-blocking recv() fails
         with self.assertRaises(BlockingIOError):
@@ -5631,15 +5700,15 @@ class NonblockConstantTest(unittest.TestCase):
         with socket.socket(socket.AF_INET,
                            socket.SOCK_STREAM | socket.SOCK_NONBLOCK) as s:
             self.checkNonblock(s)
-            s.setblocking(1)
+            s.setblocking(True)
             self.checkNonblock(s, nonblock=False)
-            s.setblocking(0)
+            s.setblocking(False)
             self.checkNonblock(s)
             s.settimeout(None)
             self.checkNonblock(s, nonblock=False)
             s.settimeout(2.0)
             self.checkNonblock(s, timeout=2.0)
-            s.setblocking(1)
+            s.setblocking(True)
             self.checkNonblock(s, nonblock=False)
         # defaulttimeout
         t = socket.getdefaulttimeout()
@@ -6369,11 +6438,53 @@ class CreateServerFunctionalTest(unittest.TestCase):
             self.echo_server(sock)
             self.echo_client(("::1", port), socket.AF_INET6)
 
+@requireAttrs(socket, "send_fds")
+@requireAttrs(socket, "recv_fds")
+@requireAttrs(socket, "AF_UNIX")
+class SendRecvFdsTests(unittest.TestCase):
+    def testSendAndRecvFds(self):
+        def close_pipes(pipes):
+            for fd1, fd2 in pipes:
+                os.close(fd1)
+                os.close(fd2)
+
+        def close_fds(fds):
+            for fd in fds:
+                os.close(fd)
+
+        # send 10 file descriptors
+        pipes = [os.pipe() for _ in range(10)]
+        self.addCleanup(close_pipes, pipes)
+        fds = [rfd for rfd, wfd in pipes]
+
+        # use a UNIX socket pair to exchange file descriptors locally
+        sock1, sock2 = socket.socketpair(socket.AF_UNIX, socket.SOCK_STREAM)
+        with sock1, sock2:
+            socket.send_fds(sock1, [MSG], fds)
+            # request more data and file descriptors than expected
+            msg, fds2, flags, addr = socket.recv_fds(sock2, len(MSG) * 2, len(fds) * 2)
+            self.addCleanup(close_fds, fds2)
+
+        self.assertEqual(msg, MSG)
+        self.assertEqual(len(fds2), len(fds))
+        self.assertEqual(flags, 0)
+        # don't test addr
+
+        # test that file descriptors are connected
+        for index, fds in enumerate(pipes):
+            rfd, wfd = fds
+            os.write(wfd, str(index).encode())
+
+        for index, rfd in enumerate(fds2):
+            data = os.read(rfd, 100)
+            self.assertEqual(data,  str(index).encode())
+
 
 def test_main():
     tests = [GeneralModuleTests, BasicTCPTest, TCPCloserTest, TCPTimeoutTest,
              TestExceptions, BufferIOTest, BasicTCPTest2, BasicUDPTest,
-             UDPTimeoutTest, CreateServerTest, CreateServerFunctionalTest]
+             UDPTimeoutTest, CreateServerTest, CreateServerFunctionalTest,
+             SendRecvFdsTests]
 
     tests.extend([
         NonBlockingTCPTests,
@@ -6403,6 +6514,7 @@ def test_main():
         BasicVSOCKTest,
         ThreadedVSOCKSocketStreamTest,
     ])
+    tests.append(BasicBluetoothTest)
     tests.extend([
         CmsgMacroTests,
         SendmsgUDPTest,
@@ -6444,6 +6556,7 @@ def test_main():
     thread_info = support.threading_setup()
     support.run_unittest(*tests)
     support.threading_cleanup(*thread_info)
+
 
 if __name__ == "__main__":
     test_main()

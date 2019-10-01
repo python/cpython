@@ -1128,8 +1128,7 @@ class _TestQueue(BaseTestCase):
             q = self.Queue()
             q.put(NotSerializable())
             q.put(True)
-            # bpo-30595: use a timeout of 1 second for slow buildbots
-            self.assertTrue(q.get(timeout=1.0))
+            self.assertTrue(q.get(timeout=TIMEOUT))
             close_queue(q)
 
         with test.support.captured_stderr():
@@ -2800,16 +2799,17 @@ class _TestMyManager(BaseTestCase):
         self.common(manager)
         manager.shutdown()
 
-        # If the manager process exited cleanly then the exitcode
-        # will be zero.  Otherwise (after a short timeout)
-        # terminate() is used, resulting in an exitcode of -SIGTERM.
-        self.assertEqual(manager._process.exitcode, 0)
+        # bpo-30356: BaseManager._finalize_manager() sends SIGTERM
+        # to the manager process if it takes longer than 1 second to stop,
+        # which happens on slow buildbots.
+        self.assertIn(manager._process.exitcode, (0, -signal.SIGTERM))
 
     def test_mymanager_context(self):
         with MyManager() as manager:
             self.common(manager)
         # bpo-30356: BaseManager._finalize_manager() sends SIGTERM
-        # to the manager process if it takes longer than 1 second to stop.
+        # to the manager process if it takes longer than 1 second to stop,
+        # which happens on slow buildbots.
         self.assertIn(manager._process.exitcode, (0, -signal.SIGTERM))
 
     def test_mymanager_context_prestarted(self):
@@ -3718,6 +3718,35 @@ class _TestSharedMemory(BaseTestCase):
         same_sms = shared_memory.SharedMemory('test01_tsmb', size=20*sms.size)
         self.assertLess(same_sms.size, 20*sms.size)  # Size was ignored.
         same_sms.close()
+
+        # Creating Shared Memory Segment with -ve size
+        with self.assertRaises(ValueError):
+            shared_memory.SharedMemory(create=True, size=-2)
+
+        # Attaching Shared Memory Segment without a name
+        with self.assertRaises(ValueError):
+            shared_memory.SharedMemory(create=False)
+
+        # Test if shared memory segment is created properly,
+        # when _make_filename returns an existing shared memory segment name
+        with unittest.mock.patch(
+            'multiprocessing.shared_memory._make_filename') as mock_make_filename:
+
+            NAME_PREFIX = shared_memory._SHM_NAME_PREFIX
+            names = ['test01_fn', 'test02_fn']
+            # Prepend NAME_PREFIX which can be '/psm_' or 'wnsm_', necessary
+            # because some POSIX compliant systems require name to start with /
+            names = [NAME_PREFIX + name for name in names]
+
+            mock_make_filename.side_effect = names
+            shm1 = shared_memory.SharedMemory(create=True, size=1)
+            self.addCleanup(shm1.unlink)
+            self.assertEqual(shm1._name, names[0])
+
+            mock_make_filename.side_effect = names
+            shm2 = shared_memory.SharedMemory(create=True, size=1)
+            self.addCleanup(shm2.unlink)
+            self.assertEqual(shm2._name, names[1])
 
         if shared_memory._USE_POSIX:
             # Posix Shared Memory can only be unlinked once.  Here we

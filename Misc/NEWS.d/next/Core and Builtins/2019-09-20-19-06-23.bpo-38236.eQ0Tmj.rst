@@ -1,0 +1,2 @@
+Python now dumps path configuration if it fails to import the Python codecs
+of the filesystem and stdio encodings.

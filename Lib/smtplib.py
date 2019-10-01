@@ -333,8 +333,6 @@ class SMTP:
                     raise OSError("nonnumeric port")
         if not port:
             port = self.default_port
-        if self.debuglevel > 0:
-            self._print_debug('connect:', (host, port))
         sys.audit("smtplib.connect", self, host, port)
         self.sock = self._get_socket(host, port, self.timeout)
         self.file = None

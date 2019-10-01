@@ -1,0 +1,2 @@
+"python3 -m test -jN --timeout=TIMEOUT" now kills a worker process if it runs
+longer than *TIMEOUT* seconds.

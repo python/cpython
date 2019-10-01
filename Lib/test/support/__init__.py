@@ -12,8 +12,10 @@ import fnmatch
 import functools
 import gc
 import glob
+import hashlib
 import importlib
 import importlib.util
+import locale
 import logging.handlers
 import nntplib
 import os
@@ -67,6 +69,11 @@ try:
 except ImportError:
     resource = None
 
+try:
+    import _hashlib
+except ImportError:
+    _hashlib = None
+
 __all__ = [
     # globals
     "PIPE_MAX_SIZE", "verbose", "max_memuse", "use_resources", "failfast",
@@ -84,15 +91,15 @@ __all__ = [
     "create_empty_file", "can_symlink", "fs_is_case_insensitive",
     # unittest
     "is_resource_enabled", "requires", "requires_freebsd_version",
-    "requires_linux_version", "requires_mac_ver", "check_syntax_error",
-    "check_syntax_warning",
+    "requires_linux_version", "requires_mac_ver", "requires_hashdigest",
+    "check_syntax_error", "check_syntax_warning",
     "TransientResource", "time_out", "socket_peer_reset", "ioerror_peer_reset",
     "transient_internet", "BasicTestRunner", "run_unittest", "run_doctest",
     "skip_unless_symlink", "requires_gzip", "requires_bz2", "requires_lzma",
     "bigmemtest", "bigaddrspacetest", "cpython_only", "get_attribute",
     "requires_IEEE_754", "skip_unless_xattr", "requires_zlib",
     "anticipate_failure", "load_package_tests", "detect_api_mismatch",
-    "check__all__", "skip_unless_bind_unix_socket",
+    "check__all__", "skip_unless_bind_unix_socket", "skip_if_buggy_ucrt_strfptime",
     "ignore_warnings",
     # sys
     "is_jython", "is_android", "check_impl_detail", "unix_shell",
@@ -112,6 +119,7 @@ __all__ = [
     "run_with_locale", "swap_item",
     "swap_attr", "Matcher", "set_memlimit", "SuppressCrashReport", "sortdict",
     "run_with_tz", "PGO", "missing_compiler_executable", "fd_count",
+    "ALWAYS_EQ", "NEVER_EQ", "LARGEST", "SMALLEST"
     ]
 
 class Error(Exception):
@@ -646,6 +654,36 @@ def requires_mac_ver(*min_version):
     return decorator
 
 
+def requires_hashdigest(digestname, openssl=None, usedforsecurity=True):
+    """Decorator raising SkipTest if a hashing algorithm is not available
+
+    The hashing algorithm could be missing or blocked by a strict crypto
+    policy.
+
+    If 'openssl' is True, then the decorator checks that OpenSSL provides
+    the algorithm. Otherwise the check falls back to built-in
+    implementations. The usedforsecurity flag is passed to the constructor.
+
+    ValueError: [digital envelope routines: EVP_DigestInit_ex] disabled for FIPS
+    ValueError: unsupported hash type md4
+    """
+    def decorator(func):
+        @functools.wraps(func)
+        def wrapper(*args, **kwargs):
+            try:
+                if openssl and _hashlib is not None:
+                    _hashlib.new(digestname, usedforsecurity=usedforsecurity)
+                else:
+                    hashlib.new(digestname, usedforsecurity=usedforsecurity)
+            except ValueError:
+                raise unittest.SkipTest(
+                    f"hash digest '{digestname}' is not available."
+                )
+            return func(*args, **kwargs)
+        return wrapper
+    return decorator
+
+
 HOST = "localhost"
 HOSTv4 = "127.0.0.1"
 HOSTv6 = "::1"
@@ -971,6 +1009,10 @@ SAVEDCWD = os.getcwd()
 # Set by libregrtest/main.py so we can skip tests that are not
 # useful for PGO
 PGO = False
+
+# Set by libregrtest/main.py if we are running the extended (time consuming)
+# PGO task.  If this is True, PGO is also True.
+PGO_EXTENDED = False
 
 @contextlib.contextmanager
 def temp_dir(path=None, quiet=False):
@@ -1491,6 +1533,9 @@ def get_socket_conn_refused_errs():
         # bpo-31910: socket.create_connection() fails randomly
         # with EADDRNOTAVAIL on Travis CI
         errors.append(errno.EADDRNOTAVAIL)
+    if hasattr(errno, 'EHOSTUNREACH'):
+        # bpo-37583: The destination host cannot be reached
+        errors.append(errno.EHOSTUNREACH)
     if not IPV6_ENABLED:
         errors.append(errno.EAFNOSUPPORT)
     return errors
@@ -2501,6 +2546,27 @@ def skip_unless_symlink(test):
     msg = "Requires functional symlink implementation"
     return test if ok else unittest.skip(msg)(test)
 
+_buggy_ucrt = None
+def skip_if_buggy_ucrt_strfptime(test):
+    """
+    Skip decorator for tests that use buggy strptime/strftime
+
+    If the UCRT bugs are present time.localtime().tm_zone will be
+    an empty string, otherwise we assume the UCRT bugs are fixed
+
+    See bpo-37552 [Windows] strptime/strftime return invalid
+    results with UCRT version 17763.615
+    """
+    global _buggy_ucrt
+    if _buggy_ucrt is None:
+        if(sys.platform == 'win32' and
+                locale.getdefaultlocale()[1]  == 'cp65001' and
+                time.localtime().tm_zone == ''):
+            _buggy_ucrt = True
+        else:
+            _buggy_ucrt = False
+    return unittest.skip("buggy MSVC UCRT strptime/strftime")(test) if _buggy_ucrt else test
+
 class PythonSymlink:
     """Creates a symlink for the current Python executable"""
     def __init__(self, link=None):
@@ -2614,6 +2680,12 @@ def skip_unless_xattr(test):
     """Skip decorator for tests that require functional extended attributes"""
     ok = can_xattr()
     msg = "no non-broken extended attribute support"
+    return test if ok else unittest.skip(msg)(test)
+
+def skip_if_pgo_task(test):
+    """Skip decorator for tests not run in (non-extended) PGO task"""
+    ok = not PGO or PGO_EXTENDED
+    msg = "Not run for (non-extended) PGO task"
     return test if ok else unittest.skip(msg)(test)
 
 _bind_nix_socket_error = None
@@ -2956,7 +3028,7 @@ def fd_count():
     if sys.platform.startswith(('linux', 'freebsd')):
         try:
             names = os.listdir("/proc/self/fd")
-            # Substract one because listdir() opens internally a file
+            # Subtract one because listdir() internally opens a file
             # descriptor to list the content of the /proc/self/fd/ directory.
             return len(names) - 1
         except FileNotFoundError:
@@ -3070,6 +3142,54 @@ class FakePath:
         else:
             return self.path
 
+
+class _ALWAYS_EQ:
+    """
+    Object that is equal to anything.
+    """
+    def __eq__(self, other):
+        return True
+    def __ne__(self, other):
+        return False
+
+ALWAYS_EQ = _ALWAYS_EQ()
+
+class _NEVER_EQ:
+    """
+    Object that is not equal to anything.
+    """
+    def __eq__(self, other):
+        return False
+    def __ne__(self, other):
+        return True
+    def __hash__(self):
+        return 1
+
+NEVER_EQ = _NEVER_EQ()
+
+@functools.total_ordering
+class _LARGEST:
+    """
+    Object that is greater than anything (except itself).
+    """
+    def __eq__(self, other):
+        return isinstance(other, _LARGEST)
+    def __lt__(self, other):
+        return False
+
+LARGEST = _LARGEST()
+
+@functools.total_ordering
+class _SMALLEST:
+    """
+    Object that is less than anything (except itself).
+    """
+    def __eq__(self, other):
+        return isinstance(other, _SMALLEST)
+    def __gt__(self, other):
+        return False
+
+SMALLEST = _SMALLEST()
 
 def maybe_get_event_loop_policy():
     """Return the global event loop policy if one is set, else return None."""

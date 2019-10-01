@@ -1,0 +1,3 @@
+Enhance regrtest multiprocess timeout: write a message when killing a worker
+process, catch popen.kill() and popen.wait() exceptions, put a timeout on the
+second call to popen.communicate().

@@ -1,0 +1,1 @@
+Add warning to :meth:`datetime.utctimetuple`,  :meth:`datetime.utcnow` and :meth:`datetime.utcfromtimestamp` .

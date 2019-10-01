@@ -39,24 +39,29 @@
    module.
    (Contributed by P.Y. Developer in :issue:`12345`.)
 
-   This saves the maintainer the effort of going through the Mercurial log
+   This saves the maintainer the effort of going through the Git log
    when researching a change.
 
-This article explains the new features in Python 3.8, compared to 3.7.
+:Editor: Raymond Hettinger
 
+This article explains the new features in Python 3.8, compared to 3.7.
 For full details, see the :ref:`changelog <changelog>`.
 
-.. note::
+Prerelease users should be aware that this document is currently in
+draft form. It will be updated as Python 3.8 moves towards release, so
+it's worth checking back even after reading earlier versions. Some
+notable items not yet covered are:
 
-   Prerelease users should be aware that this document is currently in draft
-   form. It will be updated substantially as Python 3.8 moves towards release,
-   so it's worth checking back even after reading earlier versions.
+* :pep:`578` - Runtime audit hooks for potentially sensitive operations
+* ``python -m asyncio`` runs a natively async REPL
 
-   Some notable items not yet covered here:
+.. testsetup::
 
-   * :pep:`578` - Runtime audit hooks for potentially sensitive operations
-   * ``python -m asyncio`` runs a natively async REPL
-   * ...
+   from datetime import date
+   from math import cos, radians
+   from unicodedata import normalize
+   import re
+   import math
 
 
 Summary -- Release highlights
@@ -76,36 +81,114 @@ New Features
 Assignment expressions
 ----------------------
 
-There is new syntax (the "walrus operator", ``:=``) to assign values
-to variables as part of an expression.  Example::
+There is new syntax ``:=`` that assigns values to variables as part of a larger
+expression. It is affectionately known as "walrus operator" due to
+its resemblance to `the eyes and tusks of a walrus
+<https://en.wikipedia.org/wiki/Walrus#/media/File:Pacific_Walrus_-_Bull_(8247646168).jpg>`_.
+
+In this example, the assignment expression helps avoid calling
+:func:`len` twice::
 
   if (n := len(a)) > 10:
       print(f"List is too long ({n} elements, expected <= 10)")
+
+A similar benefit arises during regular expression matching where
+match objects are needed twice, once to test whether a match
+occurred and another to extract a subgroup::
+
+  discount = 0.0
+  if (mo := re.search(r'(\d+)% discount', advertisement)):
+      discount = float(mo.group(1)) / 100.0
+
+The operator is also useful with while-loops that compute
+a value to test loop termination and then need that same
+value again in the body of the loop::
+
+  # Loop over fixed length blocks
+  while (block := f.read(256)) != '':
+      process(block)
+
+Another motivating use case arises in list comprehensions where
+a value computed in a filtering condition is also needed in
+the expression body::
+
+   [clean_name.title() for name in names
+    if (clean_name := normalize('NFC', name)) in allowed_names]
+
+Try to limit use of the walrus operator to clean cases that reduce
+complexity and improve readability.
 
 See :pep:`572` for a full description.
 
 (Contributed by Emily Morehouse in :issue:`35224`.)
 
-.. TODO: Emily will sprint on docs at PyCon US 2019.
-
 
 Positional-only parameters
 --------------------------
 
-There is new syntax (``/``) to indicate that some function parameters
-must be specified positionally (i.e., cannot be used as keyword
-arguments).  This is the same notation as shown by ``help()`` for
-functions implemented in C (produced by Larry Hastings' "Argument
-Clinic" tool).  Example::
+There is a new function parameter syntax ``/`` to indicate that some
+function parameters must be specified positionally and cannot be used as
+keyword arguments.  This is the same notation shown by ``help()`` for C
+functions annotated with Larry Hastings' `Argument Clinic
+<https://docs.python.org/3/howto/clinic.html>`_ tool.
+
+In the following example, parameters *a* and *b* are positional-only,
+while *c* or *d* can be positional or keyword, and *e* or *f* are
+required to be keywords::
+
+  def f(a, b, /, c, d, *, e, f):
+      print(a, b, c, d, e, f)
+
+The following is a valid call::
+
+  f(10, 20, 30, d=40, e=50, f=60)
+
+However, these are invalid calls::
+
+  f(10, b=20, c=30, d=40, e=50, f=60)   # b cannot be a keyword argument
+  f(10, 20, 30, 40, 50, f=60)           # e must be a keyword argument
+
+One use case for this notation is that it allows pure Python functions
+to fully emulate behaviors of existing C coded functions.  For example,
+the built-in :func:`pow` function does not accept keyword arguments::
 
   def pow(x, y, z=None, /):
-      r = x**y
-      if z is not None:
-          r %= z
-      return r
+      "Emulate the built in pow() function"
+      r = x ** y
+      return r if z is None else r%z
 
-Now ``pow(2, 10)`` and ``pow(2, 10, 17)`` are valid calls, but
-``pow(x=2, y=10)`` and ``pow(2, 10, z=17)`` are invalid.
+Another use case is to preclude keyword arguments when the parameter
+name is not helpful.  For example, the builtin :func:`len` function has
+the signature ``len(obj, /)``.  This precludes awkward calls such as::
+
+  len(obj='hello')  # The "obj" keyword argument impairs readability
+
+A further benefit of marking a parameter as positional-only is that it
+allows the parameter name to be changed in the future without risk of
+breaking client code.  For example, in the :mod:`statistics` module, the
+parameter name *dist* may be changed in the future.  This was made
+possible with the following function specification::
+
+  def quantiles(dist, /, *, n=4, method='exclusive')
+      ...
+
+Since the parameters to the left of ``/`` are not exposed as possible
+keywords, the parameters names remain available for use in ``**kwargs``::
+
+  >>> def f(a, b, /, **kwargs):
+  ...     print(a, b, kwargs)
+  ...
+  >>> f(10, 20, a=1, b=2, c=3)         # a and b are used in two ways
+  10 20 {'a': 1, 'b': 2, 'c': 3}
+
+This greatly simplifies the implementation of functions and methods
+that need to accept arbitrary keyword arguments.  For example, here
+is an except from code in the :mod:`collections` module::
+
+  class Counter(dict):
+
+      def __init__(self, iterable=None, /, **kwds):
+          # Note "iterable" is a possible keyword argument
 
 See :pep:`570` for a full description.
 
@@ -174,17 +257,31 @@ Android and Cygwin, whose cases are handled by the script);
 this change is backward incompatible on purpose.
 (Contributed by Victor Stinner in :issue:`36721`.)
 
-f-strings now support =  for quick and easy debugging
------------------------------------------------------
 
-Add ``=`` specifier to f-strings. ``f'{expr=}'`` expands
-to the text of the expression, an equal sign, then the repr of the
-evaluated expression.  So::
+f-strings support ``=`` for self-documenting expressions and debugging
+----------------------------------------------------------------------
 
-  x = 3
-  print(f'{x*9 + 15=}')
+Added an ``=`` specifier to :term:`f-string`\s. An f-string such as
+``f'{expr=}'`` will expand to the text of the expression, an equal sign,
+then the representation of the evaluated expression.  For example:
 
-Would print ``x*9 + 15=42``.
+  >>> user = 'eric_idle'
+  >>> member_since = date(1975, 7, 31)
+  >>> f'{user=} {member_since=}'
+  "user='eric_idle' member_since=datetime.date(1975, 7, 31)"
+
+The usual :ref:`f-string format specifiers <f-strings>` allow more
+control over how the result of the expression is displayed::
+
+  >>> delta = date.today() - member_since
+  >>> f'{user=!s}  {delta.days=:,d}'
+  'user=eric_idle  delta.days=16,075'
+
+The ``=`` specifier will display the whole expression so that
+calculations can be shown::
+
+  >>> print(f'{theta=}  {cos(radians(theta))=:.3f}')
+  theta=30  cos(radians(theta))=0.866
 
 (Contributed by Eric V. Smith and Larry Hastings in :issue:`36817`.)
 
@@ -285,9 +382,13 @@ Other Language Changes
   was lifted.
   (Contributed by Serhiy Storchaka in :issue:`32489`.)
 
-* The :class:`int` type now has a new :meth:`~int.as_integer_ratio` method
-  compatible with the existing :meth:`float.as_integer_ratio` method.
-  (Contributed by Lisa Roach in :issue:`33073`.)
+* The :class:`bool`, :class:`int`, and :class:`fractions.Fraction` types
+  now have an :meth:`~int.as_integer_ratio` method like that found in
+  :class:`float` and :class:`decimal.Decimal`.  This minor API extension
+  makes it possible to write ``numerator, denominator =
+  x.as_integer_ratio()`` and have it work across multiple numeric types.
+  (Contributed by Lisa Roach in :issue:`33073` and Raymond Hettinger in
+  :issue:`37819`.)
 
 * Constructors of :class:`int`, :class:`float` and :class:`complex` will now
   use the :meth:`~object.__index__` special method, if available and the
@@ -295,7 +396,13 @@ Other Language Changes
   or :meth:`~object.__complex__` is not available.
   (Contributed by Serhiy Storchaka in :issue:`20092`.)
 
-* Added support of ``\N{name}`` escapes in :mod:`regular expressions <re>`.
+* Added support of ``\N{name}`` escapes in :mod:`regular expressions <re>`::
+
+    >>> notice = 'Copyright © 2019'
+    >>> copyright_year_pattern = re.compile(r'\N{copyright sign}\s*(\d{4})')
+    >>> int(copyright_year_pattern.search(notice).group(1))
+    2019
+
   (Contributed by Jonathan Eunice and Serhiy Storchaka in :issue:`30688`.)
 
 * Dict and dictviews are now iterable in reversed insertion order using
@@ -306,24 +413,26 @@ Other Language Changes
   never intended to permit more than a bare name on the left-hand side of a
   keyword argument assignment term. See :issue:`34641`.
 
-* Iterable unpacking is now allowed without parentheses in :keyword:`yield`
-  and :keyword:`return` statements.
+* Generalized iterable unpacking in :keyword:`yield` and
+  :keyword:`return` statements no longer requires enclosing parentheses.
+  This brings the *yield* and *return* syntax into better agreement with
+  normal assignment syntax::
+
+    >>> def parse(family):
+            lastname, *members = family.split()
+            return lastname.upper(), *members
+
+    >>> parse('simpsons homer marge bart lisa sally')
+    ('SIMPSONS', 'homer', 'marge', 'bart', 'lisa', 'sally')
+
+
   (Contributed by David Cuthbert and Jordan Chapman in :issue:`32117`.)
 
-* A backslash-character pair that is not a valid escape sequence generates
-  a :exc:`DeprecationWarning` since Python 3.6. In Python 3.8 it generates
-  a :exc:`SyntaxWarning` instead.
-  (Contributed by Serhiy Storchaka in :issue:`32912`.)
-
-* The compiler now produces a :exc:`SyntaxWarning` in some cases when a comma
-  is missed before tuple or list.  For example::
-
-     data = [
-         (1, 2, 3) # oops, missing comma!
-         (4, 5, 6)
-     ]
-
-  (Contributed by Serhiy Storchaka in :issue:`15248`.)
+* When a comma is missed in code such as ``[(10, 20) (30, 40)]``, the
+  compiler displays a :exc:`SyntaxWarning` with a helpful suggestion.
+  This improves on just having a :exc:`TypeError` indicating that the
+  first tuple was not callable.  (Contributed by Serhiy Storchaka in
+  :issue:`15248`.)
 
 * Arithmetic operations between subclasses of :class:`datetime.date` or
   :class:`datetime.datetime` and :class:`datetime.timedelta` objects now return
@@ -340,26 +449,102 @@ Other Language Changes
   and Windows use this to properly terminate scripts in interactive sessions.
   (Contributed by Google via Gregory P. Smith in :issue:`1054041`.)
 
-* Added new ``replace()`` method to the code type (:class:`types.CodeType`).
+* Some advanced styles of programming require updating the
+  :class:`types.CodeType` object for an existing function.  Since code
+  objects are immutable, a new code object needs to be created, one
+  that is modeled on the existing code object.  With 19 parameters,
+  this was somewhat tedious.  Now, the new ``replace()`` method makes
+  it possible to create a clone with a few altered parameters.
+
+  Here's an example that alters the :func:`statistics.mean` function to
+  prevent the *data* parameter from being used as a keyword argument::
+
+    >>> from statistics import mean
+    >>> mean(data=[10, 20, 90])
+    40
+    >>> mean.__code__ = mean.__code__.replace(co_posonlyargcount=1)
+    >>> mean(data=[10, 20, 90])
+    Traceback (most recent call last):
+      ...
+    TypeError: mean() got some positional-only arguments passed as keyword arguments: 'data'
+
   (Contributed by Victor Stinner in :issue:`37032`.)
 
-* For integers, the three-argument form of the :func:`pow` function now permits
-  the exponent to be negative in the case where the base is relatively prime to
-  the modulus. It then computes a modular inverse to the base when the exponent
-  is ``-1``, and a suitable power of that inverse for other negative exponents.
+* For integers, the three-argument form of the :func:`pow` function now
+  permits the exponent to be negative in the case where the base is
+  relatively prime to the modulus. It then computes a modular inverse to
+  the base when the exponent is ``-1``, and a suitable power of that
+  inverse for other negative exponents.  For example, to compute the
+  `modular multiplicative inverse
+  <https://en.wikipedia.org/wiki/Modular_multiplicative_inverse>`_ of 38
+  modulo 137, write::
+
+    >>> pow(38, -1, 137)
+    119
+    >>> 119 * 38 % 137
+    1
+
+  Modular inverses arise in the solution of `linear Diophantine
+  equations <https://en.wikipedia.org/wiki/Diophantine_equation>`_.
+  For example, to find integer solutions for ``4258𝑥 + 147𝑦 = 369``,
+  first rewrite as ``4258𝑥 ≡ 369 (mod 147)`` then solve:
+
+    >>> x = 369 * pow(4258, -1, 147) % 147
+    >>> y = (4258 * x - 369) // -147
+    >>> 4258 * x + 147 * y
+    369
+
   (Contributed by Mark Dickinson in :issue:`36027`.)
 
-* When dictionary comprehensions are evaluated, the key is now evaluated before
-  the value, as proposed by :pep:`572`.
+* Dict comprehensions have been synced-up with dict literals so that the
+  key is computed first and the value second::
+
+    >>> # Dict comprehension
+    >>> cast = {input('role? '): input('actor? ') for i in range(2)}
+    role? King Arthur
+    actor? Chapman
+    role? Black Knight
+    actor? Cleese
+
+    >>> # Dict literal
+    >>> cast = {input('role? '): input('actor? ')}
+    role? Sir Robin
+    actor? Eric Idle
+
+  The guaranteed execution order is helpful with assignment expressions
+  because variables assigned in the key expression will be available in
+  the value expression::
+
+    >>> names = ['Martin von Löwis', 'Łukasz Langa', 'Walter Dörwald']
+    >>> {(n := normalize('NFC', name)).casefold() : n for name in names}
+    {'martin von löwis': 'Martin von Löwis',
+     'łukasz langa': 'Łukasz Langa',
+     'walter dörwald': 'Walter Dörwald'}
 
 
 New Modules
 ===========
 
 * The new :mod:`importlib.metadata` module provides (provisional) support for
-  reading metadata from third-party packages.  For example, you can extract an
-  installed package's version number, list of entry points, and more.  See
-  :issue:`34632` for additional details.
+  reading metadata from third-party packages.  For example, it can extract an
+  installed package's version number, list of entry points, and more::
+
+    >>> # Note following example requires that the popular "requests"
+    >>> # package has been installed.
+    >>>
+    >>> from importlib.metadata import version, requires, files
+    >>> version('requests')
+    '2.22.0'
+    >>> list(requires('requests'))
+    ['chardet (<3.1.0,>=3.0.2)']
+    >>> list(files('requests'))[:5]
+    [PackagePath('requests-2.22.0.dist-info/INSTALLER'),
+     PackagePath('requests-2.22.0.dist-info/LICENSE'),
+     PackagePath('requests-2.22.0.dist-info/METADATA'),
+     PackagePath('requests-2.22.0.dist-info/RECORD'),
+     PackagePath('requests-2.22.0.dist-info/WHEEL')]
+
+  (Contributed in :issue:`34632` by Barry Warsaw and Jason R. Coombs.)
 
 
 Improved Modules
@@ -468,6 +653,32 @@ gettext
 Added :func:`~gettext.pgettext` and its variants.
 (Contributed by Franz Glasner, Éric Araujo, and Cheryl Sabella in :issue:`2504`.)
 
+
+idlelib and IDLE
+----------------
+
+Output over N lines (50 by default) is squeezed down to a button.
+N can be changed in the PyShell section of the General page of the
+Settings dialog.  Fewer, but possibly extra long, lines can be squeezed by
+right clicking on the output.  Squeezed output can be expanded in place
+by double-clicking the button or into the clipboard or a separate window
+by right-clicking the button.  (Contributed by Tal Einat in :issue:`1529353`.)
+
+Add "Run Customized" to the Run menu to run a module with customized
+settings. Any command line arguments entered are added to sys.argv.
+They also re-appear in the box for the next customized run.  One can also
+suppress the normal Shell main module restart.  (Contributed by Cheryl
+Sabella, Terry Jan Reedy, and others in :issue:`5680` and :issue:`37627`.)
+
+Add optional line numbers for IDLE editor windows. Windows
+open without line numbers unless set otherwise in the General
+tab of the configuration dialog.  Line numbers for an existing
+window are shown and hidden in the Options menu.
+(Contributed by Tal Einat and Saimadhav Heblikar in :issue:`17535`.)
+
+The changes above have been backported to 3.7 maintenance releases.
+
+
 inspect
 -------
 
@@ -482,6 +693,7 @@ for :func:`property`, :func:`classmethod`, and :func:`staticmethod`::
       def __init__(self, bit_rate, duration):
           self.bit_rate = round(bit_rate / 1000.0, 1)
           self.duration = ceil(duration)
+
 
 io
 --
@@ -515,6 +727,11 @@ for certain types of invalid or corrupt gzip files.
 idlelib and IDLE
 ----------------
 
+Add optional line numbers for IDLE editor windows. Windows
+open without line numbers unless set otherwise in the General
+tab of the configuration dialog.
+(Contributed by Tal Einat and Saimadhav Heblikar in :issue:`17535`.)
+
 Output over N lines (50 by default) is squeezed down to a button.
 N can be changed in the PyShell section of the General page of the
 Settings dialog.  Fewer, but possibly extra long, lines can be squeezed by
@@ -544,7 +761,14 @@ Formerly, it only supported the 2-D case.
 
 Added new function, :func:`math.prod`, as analogous function to :func:`sum`
 that returns the product of a 'start' value (default: 1) times an iterable of
-numbers. (Contributed by Pablo Galindo in :issue:`35606`)
+numbers::
+
+    >>> prior = 0.8
+    >>> likelihoods = [0.625, 0.84, 0.30]
+    >>> math.prod(likelihoods, start=prior)
+    0.126
+
+(Contributed by Pablo Galindo in :issue:`35606`)
 
 Added new function :func:`math.isqrt` for computing integer square roots.
 (Contributed by Mark Dickinson in :issue:`36887`.)
@@ -582,6 +806,21 @@ A new :func:`os.memfd_create` function was added to wrap the
 ``memfd_create()`` syscall.
 (Contributed by Zackery Spytz and Christian Heimes in :issue:`26836`.)
 
+On Windows, much of the manual logic for handling reparse points (including
+symlinks and directory junctions) has been delegated to the operating system.
+Specifically, :func:`os.stat` will now traverse anything supported by the
+operating system, while :func:`os.lstat` will only open reparse points that
+identify as "name surrogates" while others are opened as for :func:`os.stat`.
+In all cases, :attr:`stat_result.st_mode` will only have ``S_IFLNK`` set for
+symbolic links and not other kinds of reparse points. To identify other kinds
+of reparse point, check the new :attr:`stat_result.st_reparse_tag` attribute.
+
+On Windows, :func:`os.readlink` is now able to read directory junctions. Note
+that :func:`~os.path.islink` will return ``False`` for directory junctions,
+and so code that checks ``islink`` first will continue to treat junctions as
+directories, while code that handles errors from :func:`os.readlink` may now
+treat junctions as links.
+
 
 os.path
 -------
@@ -597,6 +836,12 @@ characters or bytes unrepresentable at the OS level.
 :func:`~os.path.expanduser` on Windows now prefers the :envvar:`USERPROFILE`
 environment variable and does not use :envvar:`HOME`, which is not normally set
 for regular user accounts.
+
+:func:`~os.path.isdir` on Windows no longer returns true for a link to a
+non-existent directory.
+
+:func:`~os.path.realpath` on Windows now resolves reparse points, including
+symlinks and directory junctions.
 
 
 ncurses
@@ -683,6 +928,9 @@ format for new archives to improve portability and standards conformance,
 inherited from the corresponding change to the :mod:`tarfile` module.
 (Contributed by C.A.M. Gerlach in :issue:`30661`.)
 
+:func:`shutil.rmtree` on Windows now removes directory junctions without
+recursively removing their contents first.
+
 
 ssl
 ---
@@ -763,10 +1011,18 @@ in a standardized and extensible format, and offers several other benefits.
 threading
 ---------
 
-Add a new :func:`threading.excepthook` function which handles uncaught
-:meth:`threading.Thread.run` exception. It can be overridden to control how
-uncaught :meth:`threading.Thread.run` exceptions are handled.
-(Contributed by Victor Stinner in :issue:`1230540`.)
+* Add a new :func:`threading.excepthook` function which handles uncaught
+  :meth:`threading.Thread.run` exception. It can be overridden to control how
+  uncaught :meth:`threading.Thread.run` exceptions are handled.
+  (Contributed by Victor Stinner in :issue:`1230540`.)
+
+* Add a new
+  :func:`threading.get_native_id` function and a :data:`~threading.Thread.native_id`
+  attribute to the :class:`threading.Thread` class. These return the native
+  integral Thread ID of the current thread assigned by the kernel.
+  This feature is only available on certain platforms, see
+  :func:`get_native_id <threading.get_native_id>` for more information.
+  (Contributed by Jake Tesler in :issue:`36084`.)
 
 
 tokenize
@@ -832,8 +1088,9 @@ unicodedata
   <http://blog.unicode.org/2019/05/unicode-12-1-en.html>`_ release.
 
 * New function :func:`~unicodedata.is_normalized` can be used to verify a string
-  is in a specific normal form. (Contributed by Max Belanger and David Euresti in
-  :issue:`32285`).
+  is in a specific normal form, often much faster than by actually normalizing
+  the string.  (Contributed by Max Belanger, David Euresti, and Greg Price in
+  :issue:`32285` and :issue:`37966`).
 
 
 unittest
@@ -851,6 +1108,32 @@ unittest
 
 * Several mock assert functions now also print a list of actual calls upon
   failure. (Contributed by Petter Strandmark in :issue:`35047`.)
+
+* :mod:`unittest` module gained support for coroutines to be used as test cases
+  with :class:`unittest.IsolatedAsyncioTestCase`.
+  (Contributed by Andrew Svetlov in :issue:`32972`.)
+
+  Example::
+
+    import unittest
+
+
+    class TestRequest(unittest.IsolatedAsyncioTestCase):
+
+        async def asyncSetUp(self):
+            self.connection = await AsyncConnection()
+
+        async def test_get(self):
+            response = await self.connection.get("https://example.com")
+            self.assertEqual(response.status_code, 200)
+
+        async def asyncTearDown(self):
+            await self.connection.close()
+
+
+    if __name__ == "__main__":
+        unittest.main()
+
 
 venv
 ----
@@ -1064,6 +1347,11 @@ Build and C API Changes
   parameter for indicating the number of positional-only arguments.
   (Contributed by Pablo Galindo in :issue:`37221`.)
 
+* :c:func:`Py_SetPath` now sets :data:`sys.executable` to the program full
+  path (:c:func:`Py_GetProgramFullPath`) rather than to the program name
+  (:c:func:`Py_GetProgramName`).
+  (Contributed by Victor Stinner in :issue:`38234`.)
+
 
 Deprecated
 ==========
@@ -1101,6 +1389,13 @@ Deprecated
   ``Ellipsis`` are considered deprecated and will be removed in future Python
   versions. :class:`~ast.Constant` should be used instead.
   (Contributed by Serhiy Storchaka in :issue:`32892`.)
+
+* :class:`ast.NodeVisitor` methods ``visit_Num()``, ``visit_Str()``,
+  ``visit_Bytes()``, ``visit_NameConstant()`` and ``visit_Ellipsis()`` are
+  deprecated now and will not be called in future Python versions.
+  Add the :meth:`~ast.NodeVisitor.visit_Constant` method to handle all
+  constant nodes.
+  (Contributed by Serhiy Storchaka in :issue:`36917`.)
 
 * The following functions and methods are deprecated in the :mod:`gettext`
   module: :func:`~gettext.lgettext`, :func:`~gettext.ldgettext`,
@@ -1175,7 +1470,8 @@ The following features and APIs have been removed from Python 3.8:
   script is tied to. (Contributed by Brett Cannon in :issue:`25427`.)
 
 * ``parse_qs``, ``parse_qsl``, and ``escape`` are removed from :mod:`cgi`
-  module.  They are deprecated from Python 3.2 or older.
+  module.  They are deprecated from Python 3.2 or older. They should be imported
+  from the ``urllib.parse`` and ``html`` modules instead.
 
 * ``filemode`` function is removed from :mod:`tarfile` module.
   It is not documented and deprecated since Python 3.3.
@@ -1235,7 +1531,7 @@ Changes in Python behavior
   :class:`int`, :class:`float`, :class:`complex` and few classes from
   the standard library.  They now inherit ``__str__()`` from :class:`object`.
   As result, defining the ``__repr__()`` method in the subclass of these
-  classes will affect they string representation.
+  classes will affect their string representation.
   (Contributed by Serhiy Storchaka in :issue:`36793`.)
 
 * On AIX, :attr:`sys.platform` doesn't contain the major version anymore.
@@ -1265,6 +1561,12 @@ Changes in the Python API
   exception on errors like missing program, but the child process fails with a
   non-zero :attr:`~Popen.returncode`.
   (Contributed by Joannah Nanjekye and Victor Stinner in :issue:`35537`.)
+
+* The *preexec_fn* argument of * :class:`subprocess.Popen` is no longer
+  compatible with subinterpreters. The use of the parameter in a
+  subinterpreter now raises :exc:`RuntimeError`.
+  (Contributed by Eric Snow in :issue:`34651`, modified by Christian Heimes
+  in :issue:`37951`.)
 
 * The :meth:`imap.IMAP4.logout` method no longer ignores silently arbitrary
   exceptions.
@@ -1317,7 +1619,7 @@ Changes in the Python API
 * :func:`shutil.copyfile` default buffer size on Windows was changed from
   16 KiB to 1 MiB.
 
-* ``PyGC_Head`` struct is changed completely.  All code touched the
+* The ``PyGC_Head`` struct has changed completely.  All code that touched the
   struct member should be rewritten.  (See :issue:`33597`)
 
 * The ``PyInterpreterState`` struct has been moved into the "internal"

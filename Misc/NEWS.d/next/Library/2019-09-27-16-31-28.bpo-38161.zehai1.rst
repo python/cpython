@@ -1,0 +1,1 @@
+Removes _AwaitEvent from AsyncMock.

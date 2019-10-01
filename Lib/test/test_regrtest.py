@@ -6,6 +6,7 @@ Note: test_regrtest cannot be run twice in parallel.
 
 import contextlib
 import faulthandler
+import glob
 import io
 import os.path
 import platform
@@ -53,8 +54,6 @@ class ParseArgsTestCase(unittest.TestCase):
                     libregrtest._parse_args([opt])
                 self.assertIn('Run Python regression tests.', out.getvalue())
 
-    @unittest.skipUnless(hasattr(faulthandler, 'dump_traceback_later'),
-                         "faulthandler.dump_traceback_later() required")
     def test_timeout(self):
         ns = libregrtest._parse_args(['--timeout', '4.2'])
         self.assertEqual(ns.timeout, 4.2)
@@ -529,6 +528,31 @@ class BaseTestCase(unittest.TestCase):
         return proc.stdout
 
 
+class CheckActualTests(BaseTestCase):
+    """
+    Check that regrtest appears to find the expected set of tests.
+    """
+
+    def test_finds_expected_number_of_tests(self):
+        args = ['-Wd', '-E', '-bb', '-m', 'test.regrtest', '--list-tests']
+        output = self.run_python(args)
+        rough_number_of_tests_found = len(output.splitlines())
+        actual_testsuite_glob = os.path.join(os.path.dirname(__file__),
+                                             'test*.py')
+        rough_counted_test_py_files = len(glob.glob(actual_testsuite_glob))
+        # We're not trying to duplicate test finding logic in here,
+        # just give a rough estimate of how many there should be and
+        # be near that.  This is a regression test to prevent mishaps
+        # such as https://bugs.python.org/issue37667 in the future.
+        # If you need to change the values in here during some
+        # mythical future test suite reorganization, don't go
+        # overboard with logic and keep that goal in mind.
+        self.assertGreater(rough_number_of_tests_found,
+                           rough_counted_test_py_files*9//10,
+                           msg='Unexpectedly low number of tests found in:\n'
+                           f'{", ".join(output.splitlines())}')
+
+
 class ProgramsTestCase(BaseTestCase):
     """
     Test various ways to run the Python test suite. Use options close
@@ -546,8 +570,7 @@ class ProgramsTestCase(BaseTestCase):
         self.python_args = ['-Wd', '-E', '-bb']
         self.regrtest_args = ['-uall', '-rwW',
                               '--testdir=%s' % self.tmptestdir]
-        if hasattr(faulthandler, 'dump_traceback_later'):
-            self.regrtest_args.extend(('--timeout', '3600', '-j4'))
+        self.regrtest_args.extend(('--timeout', '3600', '-j4'))
         if sys.platform == 'win32':
             self.regrtest_args.append('-n')
 
@@ -1127,6 +1150,34 @@ class ArgsTestCase(BaseTestCase):
         self.check_executed_tests(output, [testname],
                                   env_changed=[testname],
                                   fail_env_changed=True)
+
+    @unittest.skipIf(True, 'bpo-37531, bpo-38207: test hangs randomly')
+    def test_multiprocessing_timeout(self):
+        code = textwrap.dedent(r"""
+            import time
+            import unittest
+            try:
+                import faulthandler
+            except ImportError:
+                faulthandler = None
+
+            class Tests(unittest.TestCase):
+                # test hangs and so should be stopped by the timeout
+                def test_sleep(self):
+                    # we want to test regrtest multiprocessing timeout,
+                    # not faulthandler timeout
+                    if faulthandler is not None:
+                        faulthandler.cancel_dump_traceback_later()
+
+                    time.sleep(60 * 5)
+        """)
+        testname = self.create_test(code=code)
+
+        output = self.run_tests("-j2", "--timeout=1.0", testname, exitcode=2)
+        self.check_executed_tests(output, [testname],
+                                  failed=testname)
+        self.assertRegex(output,
+                         re.compile('%s timed out' % testname, re.MULTILINE))
 
     def test_unraisable_exc(self):
         # --fail-env-changed must catch unraisable exception

@@ -14,11 +14,18 @@ from test.libregrtest.cmdline import _parse_args
 from test.libregrtest.runtest import (
     findtests, runtest, get_abs_module,
     STDTESTS, NOTTESTS, PASSED, FAILED, ENV_CHANGED, SKIPPED, RESOURCE_DENIED,
-    INTERRUPTED, CHILD_ERROR, TEST_DID_NOT_RUN,
+    INTERRUPTED, CHILD_ERROR, TEST_DID_NOT_RUN, TIMEOUT,
     PROGRESS_MIN_TIME, format_test_result, is_failed)
 from test.libregrtest.setup import setup_tests
+from test.libregrtest.pgo import setup_pgo_tests
 from test.libregrtest.utils import removepy, count, format_duration, printlist
 from test import support
+
+
+# bpo-38203: Maximum delay in seconds to exit Python (call Py_Finalize()).
+# Used to protect against threading._shutdown() hang.
+# Must be smaller than buildbot "1200 seconds without output" limit.
+EXIT_TIMEOUT = 120.0
 
 
 class Regrtest:
@@ -114,6 +121,8 @@ class Regrtest:
             self.run_no_tests.append(test_name)
         elif ok == INTERRUPTED:
             self.interrupted = True
+        elif ok == TIMEOUT:
+            self.bad.append(test_name)
         else:
             raise ValueError("invalid test result: %r" % ok)
 
@@ -154,11 +163,6 @@ class Regrtest:
 
     def parse_args(self, kwargs):
         ns = _parse_args(sys.argv[1:], **kwargs)
-
-        if ns.timeout and not hasattr(faulthandler, 'dump_traceback_later'):
-            print("Warning: The timeout option requires "
-                  "faulthandler.dump_traceback_later", file=sys.stderr)
-            ns.timeout = None
 
         if ns.xmlpath:
             support.junit_xml_list = self.testsuite_xml = []
@@ -213,6 +217,10 @@ class Regrtest:
                         self.tests.append(match.group())
 
         removepy(self.tests)
+
+        if self.ns.pgo:
+            # add default PGO tests if no tests are specified
+            setup_pgo_tests(self.ns)
 
         stdtests = STDTESTS[:]
         nottests = NOTTESTS.copy()
@@ -500,10 +508,6 @@ class Regrtest:
             self.run_tests_sequential()
 
     def finalize(self):
-        if self.win_load_tracker is not None:
-            self.win_load_tracker.close()
-            self.win_load_tracker = None
-
         if self.next_single_filename:
             if self.next_single_test:
                 with open(self.next_single_filename, 'w') as fp:
@@ -609,16 +613,24 @@ class Regrtest:
 
         test_cwd = self.create_temp_dir()
 
-        # Run the tests in a context manager that temporarily changes the CWD
-        # to a temporary and writable directory. If it's not possible to
-        # create or change the CWD, the original CWD will be used.
-        # The original CWD is available from support.SAVEDCWD.
-        with support.temp_cwd(test_cwd, quiet=True):
-            # When using multiprocessing, worker processes will use test_cwd
-            # as their parent temporary directory. So when the main process
-            # exit, it removes also subdirectories of worker processes.
-            self.ns.tempdir = test_cwd
-            self._main(tests, kwargs)
+        try:
+            # Run the tests in a context manager that temporarily changes the CWD
+            # to a temporary and writable directory. If it's not possible to
+            # create or change the CWD, the original CWD will be used.
+            # The original CWD is available from support.SAVEDCWD.
+            with support.temp_cwd(test_cwd, quiet=True):
+                # When using multiprocessing, worker processes will use test_cwd
+                # as their parent temporary directory. So when the main process
+                # exit, it removes also subdirectories of worker processes.
+                self.ns.tempdir = test_cwd
+
+                self._main(tests, kwargs)
+        except SystemExit as exc:
+            # bpo-38203: Python can hang at exit in Py_Finalize(), especially
+            # on threading._shutdown() call: put a timeout
+            faulthandler.dump_traceback_later(EXIT_TIMEOUT, exit=True)
+
+            sys.exit(exc.code)
 
     def getloadavg(self):
         if self.win_load_tracker is not None:
@@ -638,6 +650,7 @@ class Regrtest:
             input("Press any key to continue...")
 
         support.PGO = self.ns.pgo
+        support.PGO_EXTENDED = self.ns.pgo_extended
 
         setup_tests(self.ns)
 
@@ -663,11 +676,16 @@ class Regrtest:
                 # typeperf.exe for x64, x86 or ARM
                 print(f'Failed to create WindowsLoadTracker: {error}')
 
-        self.run_tests()
-        self.display_result()
+        try:
+            self.run_tests()
+            self.display_result()
 
-        if self.ns.verbose2 and self.bad:
-            self.rerun_failed_tests()
+            if self.ns.verbose2 and self.bad:
+                self.rerun_failed_tests()
+        finally:
+            if self.win_load_tracker is not None:
+                self.win_load_tracker.close()
+                self.win_load_tracker = None
 
         self.finalize()
 

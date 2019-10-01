@@ -1,0 +1,2 @@
+Make dict and weakref offsets opaque for C heap types by passing the offsets
+through PyMemberDef
