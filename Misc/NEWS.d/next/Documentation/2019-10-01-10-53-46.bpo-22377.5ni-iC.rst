@@ -1,1 +1,2 @@
-Improves ``%Z`` in datetime documentation.
+Improves documentation of the values that :meth:`datetime.datetime.strptime` accepts for ``%Z``.
+Patch by Karl Dubost.
