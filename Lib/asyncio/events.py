@@ -631,6 +631,7 @@ class BaseDefaultEventLoopPolicy(AbstractEventLoopPolicy):
 
     def get_event_loop(self):
         """Get the event loop for the current context.
+
            Returns an instance of EventLoop or raises an exception.
         """
         if (self._local._loop is None and
