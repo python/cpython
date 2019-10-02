@@ -596,7 +596,8 @@ The :func:`compile` built-in has been improved to accept the
 ``ast.PyCF_ALLOW_TOP_LEVEL_AWAIT`` flag. With this new flag passed,
 :func:`compile` will allow top-level :keyword:`await`, :keyword:`async for` and
 :keyword:`async with` constructs that are usually considered invalid syntax.
-Asynchronous code object marked with the :data:`inspect.CO_COROUTINE` flag may then be returned.
+Asynchronous code object marked with the :data:`inspect.CO_COROUTINE` flag may
+then be returned.
 
 (Contributed by Matthias Bussonnier in :issue:`34616`)
 
