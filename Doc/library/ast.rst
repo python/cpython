@@ -368,9 +368,18 @@ The following options are accepted:
    Specify what kind of code must be compiled, like the *mode* argument
    in :func:`parse`.
 
+.. cmdoption:: -t, --type-comments
+
+   Parse type comments as specified by :pep:`484` and :pep:`526`.
+
 .. cmdoption:: -a, --include-attributes
 
    Include attributes such as line numbers and column offsets.
+
+.. cmdoption:: -i <indent>
+               --indent <indent>
+
+   Indentation of nodes in AST.
 
 If :file:`infile` is specified its contents are parsed to AST and dumped
 to stdout.  Otherwise, the content is read from stdin.

@@ -562,15 +562,19 @@ def main():
     parser.add_argument('-m', '--mode', default='exec',
                         choices=('exec', 'single', 'eval', 'func_type'),
                         help='specify what kind of code must be parsed')
+    parser.add_argument('-t', '--type-comments', default='store_true',
+                        help='check and return type comments')
     parser.add_argument('-a', '--include-attributes', action='store_true',
                         help='include attributes such as line numbers and '
                              'column offsets')
+    parser.add_argument('-i', '--indent', type=int, default=3,
+                        help='indent level')
     args = parser.parse_args()
 
     with args.infile as infile:
         source = infile.read()
-    tree = parse(source, args.infile.name, args.mode, type_comments=True)
-    print(dump(tree, include_attributes=args.include_attributes, indent=3))
+    tree = parse(source, args.infile.name, args.mode, type_comments=args.type_comments)
+    print(dump(tree, include_attributes=args.include_attributes, indent=args.indent))
 
 if __name__ == '__main__':
     main()
