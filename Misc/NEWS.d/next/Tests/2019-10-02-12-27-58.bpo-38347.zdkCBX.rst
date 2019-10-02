@@ -1,0 +1,1 @@
+Add a test case for the recursive search including filenames with a '-'.
