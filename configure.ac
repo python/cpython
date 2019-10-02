@@ -1524,13 +1524,10 @@ then
 	case $ac_cv_prog_cc_g in
 	yes)
 	    if test "$Py_DEBUG" = 'true' ; then
-		# Optimization messes up debuggers, so turn it off for
-		# debug builds.
-                if "$CC" -v --help 2>/dev/null |grep -- -Og > /dev/null; then
-                    OPT="-g -Og -Wall"
-                else
-                    OPT="-g -O0 -Wall"
-                fi
+		# Optimization messes up debuggers, so turn it off
+		# for debug builds. Prefer -O0 over -Og: -O0 provides
+		# a better debugging experience in gdb (see bpo-38350).
+		OPT="-g -O0 -Wall"
 	    else
 		OPT="-g $WRAP -O3 -Wall"
 	    fi

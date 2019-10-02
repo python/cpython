@@ -1,0 +1,3 @@
+When using ``./configure --with-pydebug``, ``-O0`` optimization level is now
+used instead of ``-Og``. In practice, ``-O0`` provides a better debugging
+experience in gdb than ``-Og``.
