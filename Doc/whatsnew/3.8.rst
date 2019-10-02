@@ -1100,7 +1100,7 @@ unittest
 --------
 
 * Added :class:`~unittest.mock.AsyncMock` to support an asynchronous version of
-  :class:`~unittest.Mock`. Appropriate new assert functions for testing have
+  :class:`~unittest.mock.Mock`. Appropriate new assert functions for testing have
   been added as well.
   (Contributed by Lisa Roach in :issue:`26467`).
 
