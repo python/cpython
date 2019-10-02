@@ -1338,8 +1338,8 @@ Build and C API Changes
   :class:`~fractions.Fraction`).  :c:func:`PyNumber_Check` will now return
   ``1`` for objects implementing :meth:`~object.__index__`.
   :c:func:`PyNumber_Long`, :c:func:`PyNumber_Float` and
-  :c:func:`PyFloat_AsDouble` also now use the meth:`object.__index__` method if
-  available.
+  :c:func:`PyFloat_AsDouble` also now use the :meth:`object.__index__` method
+  if available.
   (Contributed by Serhiy Storchaka in :issue:`36048` and :issue:`20092`.)
 
 * Heap-allocated type objects will now increase their reference count
