@@ -120,26 +120,27 @@ class TestWorkerProcess(threading.Thread):
     def __repr__(self):
         info = [f'TestWorkerProcess #{self.worker_id}']
         if self.is_alive():
-            dt = time.monotonic() - self.start_time
-            info.append("running for %s" % format_duration(dt))
+            info.append("running")
         else:
             info.append('stopped')
         test = self.current_test_name
         if test:
             info.append(f'test={test}')
         popen = self._popen
-        if popen:
-            info.append(f'pid={popen.pid}')
+        if popen is not None:
+            dt = time.monotonic() - self.start_time
+            info.extend((f'pid={self._popen.pid}',
+                         f'time={format_duration(dt)}'))
         return '<%s>' % ' '.join(info)
 
     def _kill(self):
-        if self._killed:
-            return
-        self._killed = True
-
         popen = self._popen
         if popen is None:
             return
+
+        if self._killed:
+            return
+        self._killed = True
 
         print(f"Kill {self}", file=sys.stderr, flush=True)
         try:
@@ -177,9 +178,10 @@ class TestWorkerProcess(threading.Thread):
 
         self.current_test_name = test_name
         try:
+            popen = run_test_in_subprocess(test_name, self.ns)
+
             self._killed = False
-            self._popen = run_test_in_subprocess(test_name, self.ns)
-            popen = self._popen
+            self._popen = popen
         except:
             self.current_test_name = None
             raise
