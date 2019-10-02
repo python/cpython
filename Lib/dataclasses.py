@@ -6,6 +6,7 @@ import inspect
 import keyword
 import builtins
 import functools
+import itertools
 import _thread
 
 
@@ -762,34 +763,39 @@ def _hash_exception(cls, fields):
     raise TypeError(f'Cannot overwrite attribute __hash__ '
                     f'in class {cls.__name__}')
 
-#
-#                +-------------------------------------- unsafe_hash?
-#                |      +------------------------------- eq?
-#                |      |      +------------------------ frozen?
-#                |      |      |      +----------------  has-explicit-hash?
-#                |      |      |      |
-#                |      |      |      |        +-------  action
-#                |      |      |      |        |
-#                v      v      v      v        v
-_hash_action = {(False, False, False, False): None,
-                (False, False, False, True ): None,
-                (False, False, True,  False): None,
-                (False, False, True,  True ): None,
-                (False, True,  False, False): _hash_set_none,
-                (False, True,  False, True ): None,
-                (False, True,  True,  False): _hash_add,
-                (False, True,  True,  True ): None,
-                (True,  False, False, False): _hash_add,
-                (True,  False, False, True ): _hash_exception,
-                (True,  False, True,  False): _hash_add,
-                (True,  False, True,  True ): _hash_exception,
-                (True,  True,  False, False): _hash_add,
-                (True,  True,  False, True ): _hash_exception,
-                (True,  True,  True,  False): _hash_add,
-                (True,  True,  True,  True ): _hash_exception,
-                }
-# See https://bugs.python.org/issue32929#msg312829 for an if-statement
-# version of this table.
+def _gen_hash_action():
+    tab = {}
+    for state in itertools.product((False, True), repeat=4):
+        unsafe_hash, has_explicit_hash, eq, frozen = state
+
+        if unsafe_hash:
+            # If there's already a __hash__, raise TypeError, otherwise add __hash__.
+            if has_explicit_hash:
+                hash_action = _hash_exception
+            else:
+                hash_action = _hash_add
+        else:
+            # unsafe_hash is False (the default).
+            if has_explicit_hash:
+                # There's already a __hash__, don't overwrite it.
+                hash_action = None
+            else:
+                if eq and frozen:
+                    # It's frozen and we added __eq__, generate __hash__.
+                    hash_action = _hash_add
+                elif eq and not frozen:
+                    # It's not frozen but has __eq__, make it unhashable.
+                    #  This is the default if no params to @dataclass.
+                    hash_action = _hash_set_none
+                else:
+                    # There's no __eq__, use the base class __hash__.
+                    hash_action = None
+
+        tab[state] = hash_action
+
+    return tab
+
+_hash_action = _gen_hash_action()
 
 
 def _process_class(cls, init, repr, eq, order, unsafe_hash, frozen):
