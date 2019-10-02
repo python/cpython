@@ -21,6 +21,7 @@ has the following attributes:
     name    -- name of the object;
     file    -- file in which the object is defined;
     lineno  -- line in the file where the object's definition starts;
+    endline -- line in the file where the object's scope ends
     parent  -- parent of this object, if any;
     children -- nested objects contained in this object.
 The 'children' attribute is a dictionary mapping names to objects.
@@ -179,6 +180,20 @@ def _readmodule(module, path, inpackage=None):
     return _create_tree(fullmodule, path, fname, source, tree, inpackage)
 
 
+class Stack(list):
+    """Smart list, which adds the ending line of a class/function when it 
+    is removed from the stack (when its scope has ended).
+    """
+    def __init__(self):
+        import inspect
+        super().__init__()
+
+    def __delitem__(self, key):
+        frames = inspect.stack()
+        setattr(self[key][0], 'endline', frames[1].frame.f_locals['start'][0] - 1)
+        super().__delitem__(key)
+
+        
 def _create_tree(fullmodule, path, fname, source, tree, inpackage):
     """Return the tree for a particular module.
 
@@ -193,7 +208,7 @@ def _create_tree(fullmodule, path, fname, source, tree, inpackage):
     """
     f = io.StringIO(source)
 
-    stack = [] # Initialize stack of (class, indent) pairs.
+    stack = Stack() # Initialize stack of (class, indent) pairs.
 
     g = tokenize.generate_tokens(f.readline)
     try:
