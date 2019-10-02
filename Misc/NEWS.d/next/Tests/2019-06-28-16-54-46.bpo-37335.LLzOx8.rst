@@ -1,2 +1,0 @@
-Improve locale coercion tests by using codec lookup instead of more fragile
-replace().

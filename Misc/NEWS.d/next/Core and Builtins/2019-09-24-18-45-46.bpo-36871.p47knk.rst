@@ -1,3 +1,0 @@
-Improve error handling for the assert_has_calls method of mocks.
-Fixed a bug where any errors encountered while binding the expected calls
-to the mock's spec were silently swallowed, leading to misleading error output.
