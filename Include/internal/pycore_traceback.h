@@ -8,7 +8,8 @@ extern "C" {
 #  error "this header requires Py_BUILD_CORE define"
 #endif
 
-#include "pystate.h"   /* PyInterpreterState */
+/* Forward declaration */
+typedef struct _is PyInterpreterState;
 
 /* Write the Python traceback into the file 'fd'. For example:
 

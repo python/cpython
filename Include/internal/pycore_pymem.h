@@ -8,8 +8,7 @@ extern "C" {
 #  error "this header requires Py_BUILD_CORE define"
 #endif
 
-#include "objimpl.h"
-#include "pymem.h"
+#include "pymem.h"   /* PyMemAllocatorName */
 
 
 /* GC runtime state */
