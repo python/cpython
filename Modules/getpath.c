@@ -959,7 +959,7 @@ calculate_argv0_path(PyCalculatePath *calculate, const wchar_t *program_full_pat
 #if HAVE_READLINK
     wchar_t tmpbuffer[MAXPATHLEN + 1];
     const size_t buflen = Py_ARRAY_LENGTH(tmpbuffer);
-    int linklen = _Py_wreadlink(program_full_path, tmpbuffer, buflen);
+    int linklen = _Py_wreadlink(argv0_path, tmpbuffer, buflen);
     while (linklen != -1) {
         if (_Py_isabs(tmpbuffer)) {
             /* tmpbuffer should never be longer than MAXPATHLEN,
