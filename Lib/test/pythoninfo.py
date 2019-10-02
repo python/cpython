@@ -464,8 +464,37 @@ def collect_ssl(info_add):
     )
     copy_attributes(info_add, ssl, 'ssl.%s', attributes, formatter=format_attr)
 
+    options_names = []
+    protocol_names = {}
+    verify_modes = {}
+    for name in dir(ssl):
+        if name.startswith('OP_'):
+            options_names.append((name, getattr(ssl, name)))
+        elif name.startswith('PROTOCOL_'):
+            protocol_names[getattr(ssl, name)] = name
+        elif name.startswith('CERT_'):
+            verify_modes[getattr(ssl, name)] = name
+    options_names.sort(key=lambda item: item[1], reverse=True)
+
+    def formatter(attr_name, value):
+        if attr_name == 'options':
+            options_text = []
+            for opt_name, opt_value in options_names:
+                if value & opt_value:
+                    options_text.append(opt_name)
+                    value &= ~opt_value
+            if value:
+                options_text.append(str(value))
+            return '|' .join(options_text)
+        elif attr_name == 'verify_mode':
+            return verify_modes.get(value, value)
+        elif attr_name == 'protocol':
+            return protocol_names.get(value, value)
+        else:
+            return value
+
     for name, ctx in (
-        ('SSLContext', ssl.SSLContext()),
+        ('SSLContext(PROTOCOL_TLS)', ssl.SSLContext(ssl.PROTOCOL_TLS)),
         ('default_https_context', ssl._create_default_https_context()),
         ('stdlib_context', ssl._create_stdlib_context()),
     ):
@@ -476,7 +505,7 @@ def collect_ssl(info_add):
             'options',
             'verify_mode',
         )
-        copy_attributes(info_add, ctx, f'ssl.{name}.%s', attributes)
+        copy_attributes(info_add, ctx, 'ssl.%s.%%s' % name, attributes, formatter=formatter)
 
     env_names = ["OPENSSL_CONF", "SSLKEYLOGFILE"]
     if _ssl is not None and hasattr(_ssl, 'get_default_verify_paths'):
