@@ -405,8 +405,8 @@ Other Language Changes
 
   (Contributed by Jonathan Eunice and Serhiy Storchaka in :issue:`30688`.)
 
-* Dict and dictviews are now iterable in reversed insertion order using
-  :func:`reversed`. (Contributed by Rémi Lapeyre in :issue:`33462`.)
+* :class:`dict` and dictionary views are now iterable in reversed insertion
+  order using :func:`reversed`. (Contributed by Rémi Lapeyre in :issue:`33462`.)
 
 * The syntax allowed for keyword names in function calls was further
   restricted. In particular, ``f((keyword)=arg)`` is no longer allowed. It was
@@ -414,8 +414,8 @@ Other Language Changes
   keyword argument assignment term. See :issue:`34641`.
 
 * Generalized iterable unpacking in :keyword:`yield` and
-  :keyword:`return` statements no longer requires enclosing parentheses.
-  This brings the *yield* and *return* syntax into better agreement with
+  :keyword:`return` statements no longer requires enclosing parenthesis.
+  This brings the ``yield`` and ``return`` syntax into better agreement with
   normal assignment syntax::
 
     >>> def parse(family):
@@ -439,7 +439,7 @@ Other Language Changes
   an instance of the subclass, rather than the base class. This also affects
   the return type of operations whose implementation (directly or indirectly)
   uses :class:`datetime.timedelta` arithmetic, such as
-  :meth:`datetime.datetime.astimezone`.
+  :meth:`~datetime.datetime.astimezone`.
   (Contributed by Paul Ganssle in :issue:`32417`.)
 
 * When the Python interpreter is interrupted by Ctrl-C (SIGINT) and the
@@ -554,9 +554,10 @@ Improved Modules
 ast
 ---
 
-AST nodes now have ``end_lineno`` and ``end_col_offset`` attributes,
-which give the precise location of the end of the node.  (This only
-applies to nodes that have ``lineno`` and ``col_offset`` attributes.)
+AST nodes now have :attr:`~ast.AST.end_lineno` and
+:attr:`~ast.AST.end_col_offset` attributes, which give the precise location of
+the end of the node.  (This only applies to nodes that have ``lineno`` and
+``col_offset`` attributes.)
 
 The :func:`ast.parse` function has some new flags:
 
@@ -568,7 +569,7 @@ The :func:`ast.parse` function has some new flags:
 
 * ``feature_version=(3, N)`` allows specifying an earlier Python 3
   version.  (For example, ``feature_version=(3, 4)`` will treat
-  ``async`` and ``await`` as non-reserved words.)
+  :keyword:`async` and :keyword:`await` as non-reserved words.)
 
 New function :func:`ast.get_source_segment` returns the source code
 for a specific AST node.
@@ -593,20 +594,21 @@ builtins
 
 The :func:`compile` built-in has been improved to accept the
 ``ast.PyCF_ALLOW_TOP_LEVEL_AWAIT`` flag. With this new flag passed,
-:func:`compile` will allow top-level ``await``, ``async for`` and ``async with``
-constructs that are usually considered invalid syntax. Asynchronous code object
-marked with the ``CO_COROUTINE`` flag may then be returned.
+:func:`compile` will allow top-level :keyword:`await`, :keyword:`async for` and
+:keyword:`async with` constructs that are usually considered invalid syntax.
+Asynchronous code object marked with the :data:`inspect.CO_COROUTINE` flag may then be returned.
 
 (Contributed by Matthias Bussonnier in :issue:`34616`)
 
 collections
 -----------
 
-The :meth:`_asdict()` method for :func:`collections.namedtuple` now returns
-a :class:`dict` instead of a :class:`collections.OrderedDict`. This works because
-regular dicts have guaranteed ordering since Python 3.7. If the extra
-features of :class:`OrderedDict` are required, the suggested remediation is
-to cast the result to the desired type: ``OrderedDict(nt._asdict())``.
+The :meth:`~collections.somenamedtuple._asdict` method for
+:func:`collections.namedtuple` now returns
+a :class:`dict` instead of a :class:`collections.OrderedDict`. This works
+because regular dicts have guaranteed ordering since Python 3.7. If the extra
+features of :class:`collections.OrderedDict` are required, the suggested
+remediation is to cast the result to the desired type: ``OrderedDict(nt._asdict())``.
 (Contributed by Raymond Hettinger in :issue:`35864`.)
 
 
@@ -682,10 +684,10 @@ The changes above have been backported to 3.7 maintenance releases.
 inspect
 -------
 
-The :func:`inspect.getdoc` function can now find docstrings for ``__slots__``
-if that attribute is a :class:`dict` where the values are docstrings.
-This provides documentation options similar to what we already have
-for :func:`property`, :func:`classmethod`, and :func:`staticmethod`::
+The :func:`inspect.getdoc` function can now find docstrings for
+:attr:`~object.__slots__` if that attribute is a :class:`dict` where the values
+are docstrings. This provides documentation options similar to what we already
+have for :func:`property`, :func:`classmethod`, and :func:`staticmethod`::
 
   class AudioClip:
       __slots__ = {'bit_rate': 'expressed in kilohertz to one decimal place',
@@ -745,7 +747,7 @@ The changes above have been backported to 3.7 maintenance releases.
 json.tool
 ---------
 
-Add option ``--json-lines`` to parse every input line as separate JSON object.
+Add option ``--json-lines`` to parse every input line as separate JSON objects.
 (Contributed by Weipeng Hong in :issue:`31553`.)
 
 
@@ -875,7 +877,7 @@ pickle
 
 Reduction methods can now include a 6th item in the tuple they return. This
 item should specify a custom state-setting method that's called instead of the
-regular ``__setstate__`` method.
+regular :meth:`object.__setstate__` method.
 (Contributed by Pierre Glaser and Olivier Grisel in :issue:`35900`)
 
 :mod:`pickle` extensions subclassing the C-optimized :class:`~pickle.Pickler`
@@ -935,8 +937,8 @@ recursively removing their contents first.
 ssl
 ---
 
-Added :attr:`SSLContext.post_handshake_auth` to enable and
-:meth:`ssl.SSLSocket.verify_client_post_handshake` to initiate TLS 1.3
+Added :attr:`~ssl.SSLContext.post_handshake_auth` to enable and
+:meth:`~ssl.SSLSocket.verify_client_post_handshake` to initiate TLS 1.3
 post-handshake authentication.
 (Contributed by Christian Heimes in :issue:`34670`.)
 
@@ -1096,8 +1098,9 @@ unicodedata
 unittest
 --------
 
-* Added :class:`AsyncMock` to support an asynchronous version of :class:`Mock`.
-  Appropriate new assert functions for testing have been added as well.
+* Added :class:`~unittest.mock.AsyncMock` to support an asynchronous version of
+  :class:`~unittest.Mock`. Appropriate new assert functions for testing have
+  been added as well.
   (Contributed by Lisa Roach in :issue:`26467`).
 
 * Added :func:`~unittest.addModuleCleanup()` and
@@ -1110,7 +1113,7 @@ unittest
   failure. (Contributed by Petter Strandmark in :issue:`35047`.)
 
 * :mod:`unittest` module gained support for coroutines to be used as test cases
-  with :class:`unittest.IsolatedAsyncioTestCase`.
+  with :class:`~unittest.IsolatedAsyncioTestCase`.
   (Contributed by Andrew Svetlov in :issue:`32972`.)
 
   Example::
@@ -1219,7 +1222,8 @@ Optimizations
   objects (e.g. tuple, list, dict) size is reduced 4 or 8 bytes.
   (Contributed by Inada Naoki in :issue:`33597`)
 
-* :class:`uuid.UUID` now uses ``__slots__`` to reduce its memory footprint.
+* :class:`uuid.UUID` now uses :attr:`~object.__slots__` to
+  reduce  its memory footprint.
 
 * Improved performance of :func:`operator.itemgetter` by 33%.  Optimized
   argument handling and added a fast path for the common case of a single
@@ -1233,9 +1237,10 @@ Optimizations
   Joe Jevnik, Serhiy Storchaka in :issue:`32492`.)
 
 * The :class:`list` constructor does not overallocate the internal item buffer
-  if the input iterable has a known length (the input implements ``__len__``).
-  This makes the created list 12% smaller on average. (Contributed by
-  Raymond Hettinger and Pablo Galindo in :issue:`33234`.)
+  if the input iterable has a known length (the input implements
+  :meth:`~object.__len__`). This makes the created list 12% smaller
+  on average.
+  (Contributed by Raymond Hettinger and Pablo Galindo in :issue:`33234`.)
 
 * Doubled the speed of class variable writes.  When a non-dunder attribute
   was updated, there was an unnecessary call to update slots.
@@ -1327,12 +1332,12 @@ Build and C API Changes
   :c:func:`PyArg_ParseTuple` with integer converting format units like ``'i'``
   will now use the :meth:`~object.__index__` special method instead of
   :meth:`~object.__int__`, if available.  The deprecation warning will be
-  emitted for objects with the ``__int__()`` method but without the
-  ``__index__()`` method (like :class:`~decimal.Decimal` and
+  emitted for objects with the :meth:`~object.__int__` method but without the
+  :meth:`~object.__index__` method (like :class:`~decimal.Decimal` and
   :class:`~fractions.Fraction`).  :c:func:`PyNumber_Check` will now return
-  ``1`` for objects implementing ``__index__()``.
+  ``1`` for objects implementing :meth:`~object.__index__`.
   :c:func:`PyNumber_Long`, :c:func:`PyNumber_Float` and
-  :c:func:`PyFloat_AsDouble` also now use the ``__index__()`` method if
+  :c:func:`PyFloat_AsDouble` also now use the meth:`object.__index__` method if
   available.
   (Contributed by Serhiy Storchaka in :issue:`36048` and :issue:`20092`.)
 
@@ -1372,9 +1377,9 @@ Deprecated
   deprecated and will be prohibited in Python 3.9.
   (Contributed by Elvis Pranskevichus in :issue:`34075`.)
 
-* The :meth:`__getitem__` methods of :class:`xml.dom.pulldom.DOMEventStream`,
-  :class:`wsgiref.util.FileWrapper` and :class:`fileinput.FileInput` have been
-  deprecated.
+* The :meth:`object.__getitem__` methods of
+  :class:`~xml.dom.pulldom.DOMEventStream`, :class:`wsgiref.util.FileWrapper`
+  and :class:`fileinput.FileInput` have been deprecated.
 
   Implementations of these methods have been ignoring their *index* parameter,
   and returning the next item instead.
@@ -1382,8 +1387,8 @@ Deprecated
   (Contributed by Berker Peksag in :issue:`9372`.)
 
 * The :class:`typing.NamedTuple` class has deprecated the ``_field_types``
-  attribute in favor of the ``__annotations__`` attribute which has the same
-  information.  (Contributed by Raymond Hettinger in :issue:`36320`.)
+  attribute in favor of the :attr:`~object.__annotations__` attribute which has
+  the same information.  (Contributed by Raymond Hettinger in :issue:`36320`.)
 
 * :mod:`ast` classes ``Num``, ``Str``, ``Bytes``, ``NameConstant`` and
   ``Ellipsis`` are considered deprecated and will be removed in future Python
@@ -1510,9 +1515,9 @@ that may require changes to your code.
 Changes in Python behavior
 --------------------------
 
-* Yield expressions (both ``yield`` and ``yield from`` clauses) are now disallowed
-  in comprehensions and generator expressions (aside from the iterable expression
-  in the leftmost :keyword:`!for` clause).
+* :ref:`Yield expressions <yieldexpr>` (both :keyword:`yield` and ``yield from``
+  clauses) are now disallowed in comprehensions and generator expressions
+  (aside from the iterable expression in the leftmost :keyword:`!for` clause).
   (Contributed by Serhiy Storchaka in :issue:`10544`.)
 
 * The compiler now produces a :exc:`SyntaxWarning` when identity checks
@@ -1527,11 +1532,11 @@ Changes in Python behavior
   raised when getting the attribute from the type dictionary are no longer
   ignored.  (Contributed by Serhiy Storchaka in :issue:`35459`.)
 
-* Removed ``__str__`` implementations from builtin types :class:`bool`,
-  :class:`int`, :class:`float`, :class:`complex` and few classes from
-  the standard library.  They now inherit ``__str__()`` from :class:`object`.
-  As result, defining the ``__repr__()`` method in the subclass of these
-  classes will affect their string representation.
+* Removed :meth:`~object.__str__` implementations from builtin types
+  :class:`bool`, :class:`int`, :class:`float`, :class:`complex` and few classes
+  from the standard library.  They now inherit :meth:`~object.__str__` from
+  :class:`object`. As result, defining the :meth:`~object.__repr__` method
+  in the subclass of these classes will affect their string representation.
   (Contributed by Serhiy Storchaka in :issue:`36793`.)
 
 * On AIX, :attr:`sys.platform` doesn't contain the major version anymore.
@@ -1568,7 +1573,7 @@ Changes in the Python API
   (Contributed by Eric Snow in :issue:`34651`, modified by Christian Heimes
   in :issue:`37951`.)
 
-* The :meth:`imap.IMAP4.logout` method no longer ignores silently arbitrary
+* The :meth:`imaplib.IMAP4.logout` method no longer ignores silently arbitrary
   exceptions.
 
 * The function :func:`platform.popen` has been removed, it was deprecated since
@@ -1622,7 +1627,7 @@ Changes in the Python API
 * The ``PyGC_Head`` struct has changed completely.  All code that touched the
   struct member should be rewritten.  (See :issue:`33597`)
 
-* The ``PyInterpreterState`` struct has been moved into the "internal"
+* The :c:type:`PyInterpreterState` struct has been moved into the "internal"
   header files (specifically Include/internal/pycore_pystate.h).  An
   opaque ``PyInterpreterState`` is still available as part of the public
   API (and stable ABI).  The docs indicate that none of the struct's
