@@ -8,8 +8,9 @@ extern "C" {
 #  error "this header requires Py_BUILD_CORE define"
 #endif
 
-#include "pycore_initconfig.h"   /* _PyArgv */
-#include "pycore_pystate.h"      /* _PyRuntimeState */
+/* Forward declarations */
+typedef struct _PyArgv _PyArgv;
+typedef struct pyruntimestate _PyRuntimeState;
 
 /* True if the main interpreter thread exited due to an unhandled
  * KeyboardInterrupt exception, suggesting the user pressed ^C. */
