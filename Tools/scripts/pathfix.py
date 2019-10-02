@@ -89,7 +89,7 @@ def main():
     sys.exit(bad)
 
 
-ispythonprog = re.compile(r'^[a-zA-Z0-9_]+\.py$')
+ispythonprog = re.compile(r'^[a-zA-Z0-9_-]+\.py$')
 
 
 def ispython(name):
