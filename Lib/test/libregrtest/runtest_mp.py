@@ -116,30 +116,35 @@ class TestWorkerProcess(threading.Thread):
         self._popen = None
         self._killed = False
         self._stopped = False
+        # Lock used to make stop() reliable when regrtest is interrupted by
+        # CTRL+c: prevent modifying _popen and _killed attributes at the same
+        # time from two different threads
+        self._lock = threading.RLock()
 
     def __repr__(self):
         info = [f'TestWorkerProcess #{self.worker_id}']
         if self.is_alive():
-            dt = time.monotonic() - self.start_time
-            info.append("running for %s" % format_duration(dt))
+            info.append("running")
         else:
             info.append('stopped')
         test = self.current_test_name
         if test:
             info.append(f'test={test}')
-        popen = self._popen
-        if popen:
-            info.append(f'pid={popen.pid}')
+        with self._lock:
+            if self._popen is not None:
+                dt = time.monotonic() - self.start_time
+                info.append(f'pid={self._popen.pid} ({format_duration(dt)})')
         return '<%s>' % ' '.join(info)
 
     def _kill(self):
-        if self._killed:
-            return
-        self._killed = True
+        with self._lock:
+            popen = self._popen
+            if popen is None:
+                return
 
-        popen = self._popen
-        if popen is None:
-            return
+            if self._killed:
+                return
+            self._killed = True
 
         print(f"Kill {self}", file=sys.stderr, flush=True)
         try:
@@ -177,9 +182,10 @@ class TestWorkerProcess(threading.Thread):
 
         self.current_test_name = test_name
         try:
-            self._killed = False
-            self._popen = run_test_in_subprocess(test_name, self.ns)
-            popen = self._popen
+            popen = run_test_in_subprocess(test_name, self.ns)
+            with self._lock:
+                self._popen = popen
+                self._killed = False
         except:
             self.current_test_name = None
             raise
@@ -218,7 +224,8 @@ class TestWorkerProcess(threading.Thread):
             raise
         finally:
             self._wait_completed()
-            self._popen = None
+            with self._lock:
+                self._popen = None
             self.current_test_name = None
 
     def _runtest(self, test_name):
