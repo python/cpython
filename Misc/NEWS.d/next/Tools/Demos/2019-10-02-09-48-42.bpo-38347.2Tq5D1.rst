@@ -1,0 +1,1 @@
+Allow Python scripts to contain a '-' in their filename when working recursively.
