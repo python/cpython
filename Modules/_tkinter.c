@@ -87,6 +87,15 @@ Copyright (C) 1994 Steen Lumholt.
 #define FHANDLETYPE TCL_UNIX_FD
 #endif
 
+/* If Tcl can wait for a Unix file descriptor, define the EventHook() routine
+   which uses this to handle Tcl events while the user is typing commands. */
+
+#if FHANDLETYPE == TCL_UNIX_FD
+#define WAIT_FOR_STDIN
+#endif
+
+#endif /* HAVE_CREATEFILEHANDLER */
+
 /* Use OS native encoding for converting between Python strings and
    Tcl objects.
    On Windows use UTF-16 (or UTF-32 for 32-bit Tcl_UniChar) with the
@@ -104,15 +113,6 @@ Copyright (C) 1994 Steen Lumholt.
 #else
 #define NATIVE_BYTEORDER 1
 #endif
-
-/* If Tcl can wait for a Unix file descriptor, define the EventHook() routine
-   which uses this to handle Tcl events while the user is typing commands. */
-
-#if FHANDLETYPE == TCL_UNIX_FD
-#define WAIT_FOR_STDIN
-#endif
-
-#endif /* HAVE_CREATEFILEHANDLER */
 
 #ifdef MS_WINDOWS
 #include <conio.h>
@@ -1103,10 +1103,10 @@ AsObj(PyObject *value)
 #if USE_TCL_UNICODE
         if (sizeof(Tcl_UniChar) == 2)
             encoded = _PyUnicode_EncodeUTF16(value,
-                    "surrogateescape", NATIVE_BYTEORDER);
+                    "surrogatepass", NATIVE_BYTEORDER);
         else if (sizeof(Tcl_UniChar) == 4)
             encoded = _PyUnicode_EncodeUTF32(value,
-                    "surrogateescape", NATIVE_BYTEORDER);
+                    "surrogatepass", NATIVE_BYTEORDER);
         else
             Py_UNREACHABLE();
 #else
