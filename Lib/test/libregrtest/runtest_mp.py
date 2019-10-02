@@ -120,16 +120,17 @@ class TestWorkerProcess(threading.Thread):
     def __repr__(self):
         info = [f'TestWorkerProcess #{self.worker_id}']
         if self.is_alive():
-            dt = time.monotonic() - self.start_time
-            info.append("running for %s" % format_duration(dt))
+            info.append("running")
         else:
             info.append('stopped')
         test = self.current_test_name
         if test:
             info.append(f'test={test}')
         popen = self._popen
-        if popen:
-            info.append(f'pid={popen.pid}')
+        if popen is not None:
+            dt = time.monotonic() - self.start_time
+            info.extend((f'pid={self._popen.pid}',
+                         f'time={format_duration(dt)}'))
         return '<%s>' % ' '.join(info)
 
     def _kill(self):
