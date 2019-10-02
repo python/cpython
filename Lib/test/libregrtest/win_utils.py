@@ -32,6 +32,7 @@ class WindowsLoadTracker():
     def __init__(self):
         self.load = 0.0
         self.counter_name = ''
+        self._buffer = b''
         self.popen = None
         self.start()
 
@@ -100,7 +101,9 @@ class WindowsLoadTracker():
         if res != 0:
             return
 
-        output = overlapped.getbuffer()
+        # self._buffer stores an incomplete line
+        output = self._buffer + overlapped.getbuffer()
+        output, _, self._buffer = output.rpartition(b'\n')
         return output.decode('oem', 'replace')
 
     def getloadavg(self):
