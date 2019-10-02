@@ -1,8 +1,6 @@
 """Parse a Python module and describe its classes and functions.
-
 Parse enough of a Python file to recognize imports and class and
 function definitions, and to find out the superclasses of a class.
-
 The interface consists of a single function:
     readmodule_ex(module, path=None)
 where module is the name of a Python module, and path is an optional
@@ -14,7 +12,6 @@ defined via the from XXX import YYY construct).  The values are
 instances of classes Class and Function.  One special key/value pair is
 present for packages: the key '__path__' has a list as its value which
 contains the package search path.
-
 Classes and Functions have a common superclass: _Object.  Every instance
 has the following attributes:
     module  -- name of the module;
@@ -25,9 +22,7 @@ has the following attributes:
     parent  -- parent of this object, if any;
     children -- nested objects contained in this object.
 The 'children' attribute is a dictionary mapping names to objects.
-
 Instances of Function describe functions with the attributes from _Object.
-
 Instances of Class describe classes with the attributes from _Object,
 plus the following:
     super   -- list of super classes (Class instances if possible);
@@ -53,6 +48,7 @@ _modules = {}  # Initialize cache of modules we've seen.
 
 class _Object:
     "Information about Python class or function."
+
     def __init__(self, module, name, file, lineno, parent):
         self.module = module
         self.name = name
@@ -67,12 +63,14 @@ class _Object:
 
 class Function(_Object):
     "Information about a Python function, including methods."
+
     def __init__(self, module, name, file, lineno, parent=None):
         _Object.__init__(self, module, name, file, lineno, parent)
 
 
 class Class(_Object):
     "Information about a Python class."
+
     def __init__(self, module, name, super, file, lineno, parent=None):
         _Object.__init__(self, module, name, file, lineno, parent)
         self.super = [] if super is None else super
@@ -90,15 +88,16 @@ def _nest_function(ob, func_name, lineno):
         ob._addmethod(func_name, lineno)
     return newfunc
 
+
 def _nest_class(ob, class_name, lineno, super=None):
     "Return a Class after nesting within ob."
     newclass = Class(ob.module, class_name, super, ob.file, lineno, ob)
     ob._addchild(class_name, newclass)
     return newclass
 
+
 def readmodule(module, path=None):
     """Return Class objects for the top-level classes in module.
-
     This is the original interface, before Functions were added.
     """
 
@@ -108,18 +107,18 @@ def readmodule(module, path=None):
             res[key] = value
     return res
 
+
 def readmodule_ex(module, path=None):
     """Return a dictionary with all functions and classes in module.
-
     Search for module in PATH + sys.path.
     If possible, include imported superclasses.
     Do this by reading source, without importing (and executing) it.
     """
     return _readmodule(module, path or [])
 
+
 def _readmodule(module, path, inpackage=None):
     """Do the hard work for readmodule[_ex].
-
     If inpackage is given, it must be the dotted name of the package in
     which we are searching for a submodule, and then PATH must be the
     package search path; otherwise, we are searching for a top-level
@@ -147,7 +146,7 @@ def _readmodule(module, path, inpackage=None):
     i = module.rfind('.')
     if i >= 0:
         package = module[:i]
-        submodule = module[i+1:]
+        submodule = module[i + 1:]
         parent = _readmodule(package, path, inpackage)
         if inpackage is not None:
             package = "%s.%s" % (inpackage, package)
@@ -193,17 +192,15 @@ class Stack(list):
         setattr(self[key][0], 'endline', frames[1].frame.f_locals['start'][0] - 1)
         super().__delitem__(key)
 
-        
+
 def _create_tree(fullmodule, path, fname, source, tree, inpackage):
     """Return the tree for a particular module.
-
     fullmodule (full module name), inpackage+module, becomes o.module.
     path is passed to recursive calls of _readmodule.
     fname becomes o.file.
     source is tokenized.  Imports cause recursive calls to _readmodule.
     tree is {} or {'__path__': <submodule search locations>}.
     inpackage, None or string, is passed to recursive calls of _readmodule.
-
     The effect of recursive calls is mutation of global _modules.
     """
     f = io.StringIO(source)
@@ -242,14 +239,14 @@ def _create_tree(fullmodule, path, fname, source, tree, inpackage):
                     del stack[-1]
                 tokentype, class_name, start = next(g)[0:3]
                 if tokentype != NAME:
-                    continue # Skip class with syntax error.
+                    continue  # Skip class with syntax error.
                 # Parse what follows the class name.
                 tokentype, token, start = next(g)[0:3]
                 inherit = None
                 if token == '(':
-                    names = [] # Initialize list of superclasses.
+                    names = []  # Initialize list of superclasses.
                     level = 1
-                    super = [] # Tokens making up current superclass.
+                    super = []  # Tokens making up current superclass.
                     while True:
                         tokentype, token, start = next(g)[0:3]
                         if token in (')', ',') and level == 1:
@@ -286,7 +283,7 @@ def _create_tree(fullmodule, path, fname, source, tree, inpackage):
                 if stack:
                     cur_obj = stack[-1][0]
                     cur_class = _nest_class(
-                            cur_obj, class_name, lineno, inherit)
+                        cur_obj, class_name, lineno, inherit)
                 else:
                     cur_class = Class(fullmodule, class_name, inherit,
                                       fname, lineno)
@@ -339,7 +336,6 @@ def _create_tree(fullmodule, path, fname, source, tree, inpackage):
 
 def _getnamelist(g):
     """Return list of (dotted-name, as-name or None) tuples for token source g.
-
     An as-name is the name that follows 'as' in an as clause.
     """
     names = []
@@ -414,6 +410,7 @@ def _main():
                   .format(' ' * obj.indent, obj.name, obj.super, obj.lineno))
         elif isinstance(obj, Function):
             print("{}def {} {}".format(' ' * obj.indent, obj.name, obj.lineno))
+
 
 if __name__ == "__main__":
     _main()
