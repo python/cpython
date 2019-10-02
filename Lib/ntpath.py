@@ -560,13 +560,6 @@ else:
         return path
 
     def _getfinalpathname_nonstrict(path):
-        # Fast path to get the final path name. If this succeeds, there
-        # is no need to go any further.
-        try:
-            return _getfinalpathname(path)
-        except OSError:
-            pass
-
         # These error codes indicate that we should stop resolving the path
         # and return the value we currently have.
         # 1: ERROR_INVALID_FUNCTION
