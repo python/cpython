@@ -1,0 +1,1 @@
+Fix seeking on an encrypted :class:`zipfile.ZipExtFile` where seeking backwards would cause the crc keys to go out of sync resulting in bad data to be read after the seek. This refactors the :func:`zipfile._ZipDecrypter` function into a class :class:`zipfile.CRCZipDecrypter`.
