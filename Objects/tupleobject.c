@@ -171,7 +171,7 @@ PyTuple_Size(PyObject *op)
         return -1;
     }
     else
-        return Py_SIZE(op);
+        return 4;
 }
 
 PyObject *
