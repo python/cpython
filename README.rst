@@ -1,5 +1,5 @@
-This is Python version 3.7.5 release candidate
-==============================================
+This is Python version 3.7.5 release candidate+
+===============================================
 
 .. image:: https://travis-ci.org/python/cpython.svg?branch=master
    :alt: CPython build status on Travis CI
