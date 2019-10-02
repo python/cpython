@@ -134,13 +134,13 @@ class TestWorkerProcess(threading.Thread):
         return '<%s>' % ' '.join(info)
 
     def _kill(self):
-        if self._killed:
-            return
-        self._killed = True
-
         popen = self._popen
         if popen is None:
             return
+
+        if self._killed:
+            return
+        self._killed = True
 
         print(f"Kill {self}", file=sys.stderr, flush=True)
         try:
@@ -178,9 +178,10 @@ class TestWorkerProcess(threading.Thread):
 
         self.current_test_name = test_name
         try:
+            popen = run_test_in_subprocess(test_name, self.ns)
+
             self._killed = False
-            self._popen = run_test_in_subprocess(test_name, self.ns)
-            popen = self._popen
+            self._popen = popen
         except:
             self.current_test_name = None
             raise
