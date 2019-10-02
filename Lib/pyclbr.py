@@ -43,6 +43,7 @@ import io
 import sys
 import importlib.util
 import tokenize
+import inspect
 from token import NAME, DEDENT, OP
 
 __all__ = ["readmodule", "readmodule_ex", "Class", "Function"]
@@ -185,7 +186,6 @@ class Stack(list):
     is removed from the stack (when its scope has ended).
     """
     def __init__(self):
-        import inspect
         super().__init__()
 
     def __delitem__(self, key):
@@ -208,7 +208,7 @@ def _create_tree(fullmodule, path, fname, source, tree, inpackage):
     """
     f = io.StringIO(source)
 
-    stack = Stack() # Initialize stack of (class, indent) pairs.
+    stack = Stack()  # Initialize stack of (class, indent) pairs.
 
     g = tokenize.generate_tokens(f.readline)
     try:
