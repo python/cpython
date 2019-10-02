@@ -8,9 +8,9 @@ extern "C" {
 #  error "this header requires Py_BUILD_CORE define"
 #endif
 
-#include "pycore_atomic.h"
-#include "pycore_pystate.h"
-#include "pythread.h"
+/* Forward declarations */
+typedef struct pyruntimestate _PyRuntimeState;
+struct _ceval_runtime_state;
 
 PyAPI_FUNC(void) _Py_FinishPendingCalls(_PyRuntimeState *runtime);
 PyAPI_FUNC(void) _PyEval_Initialize(struct _ceval_runtime_state *);
