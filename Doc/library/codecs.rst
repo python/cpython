@@ -328,7 +328,7 @@ The following error handlers can be used with all Python
 +-------------------------+-----------------------------------------------+
 | ``'replace'``           | Replace with a replacement marker. On         |
 |                         | encoding, use ``?`` (ASCII character). On     |
-|                         | decoding, use ``U+FFFD`` (the official        |
+|                         | decoding, use ``�`` (U+FFFD, the official     |
 |                         | REPLACEMENT CHARACTER). Implemented in        |
 |                         | :func:`replace_errors`.                       |
 +-------------------------+-----------------------------------------------+
@@ -457,8 +457,8 @@ functions:
 
    Implements the ``'replace'`` error handling.
 
-   Substitutes ``?`` (ASCII character) for encoding errors or ``U+FFFD`` (the
-   official REPLACEMENT CHARACTER) for decoding errors.
+   Substitutes ``?`` (ASCII character) for encoding errors or ``�`` (U+FFFD,
+   the official REPLACEMENT CHARACTER) for decoding errors.
 
 
 .. function:: backslashreplace_errors(exception)
