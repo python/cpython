@@ -146,11 +146,11 @@ class TestWorkerProcess(threading.Thread):
                 return
             self._killed = True
 
-        print(f"Kill {self}", file=sys.stderr, flush=True)
-        try:
-            popen.kill()
-        except OSError as exc:
-            print_warning(f"Failed to kill {self}: {exc!r}")
+            print(f"Kill {self}", file=sys.stderr, flush=True)
+            try:
+                popen.kill()
+            except OSError as exc:
+                print_warning(f"Failed to kill {self}: {exc!r}")
 
     def stop(self):
         # Method called from a different thread to stop this thread
@@ -191,33 +191,23 @@ class TestWorkerProcess(threading.Thread):
             raise
 
         try:
-            if self._stopped:
-                # If kill() has been called before self._popen is set,
-                # self._popen is still running. Call again kill()
-                # to ensure that the process is killed.
-                self._kill()
-                raise ExitThread
-
             try:
-                stdout, stderr = popen.communicate(timeout=self.timeout)
-            except subprocess.TimeoutExpired:
                 if self._stopped:
-                    # kill() has been called: communicate() fails
-                    # on reading closed stdout/stderr
                     raise ExitThread
 
+                try:
+                    stdout, stderr = popen.communicate(timeout=self.timeout)
+                except Exception:
+                    if self._stopped:
+                        raise ExitThread
+                    else:
+                        raise
+            except subprocess.TimeoutExpired:
                 return self._timedout(test_name)
-            except OSError:
-                if self._stopped:
-                    # kill() has been called: communicate() fails
-                    # on reading closed stdout/stderr
-                    raise ExitThread
-                raise
 
             retcode = popen.returncode
             stdout = stdout.strip()
             stderr = stderr.rstrip()
-
             return (retcode, stdout, stderr)
         except:
             self._kill()
