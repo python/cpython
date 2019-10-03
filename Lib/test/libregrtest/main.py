@@ -139,16 +139,8 @@ class Regrtest:
                     print(xml_data, file=sys.__stderr__)
                     raise
 
-    def display_progress(self, test_index, text):
-        if self.ns.quiet:
-            return
-
-        # "[ 51/405/1] test_tcl passed"
-        line = f"{test_index:{self.test_count_width}}{self.test_count}"
-        fails = len(self.bad) + len(self.environment_changed)
-        if fails and not self.ns.pgo:
-            line = f"{line}/{fails}"
-        line = f"[{line}] {text}"
+    def log(self, line=''):
+        empty = not line
 
         # add the system load prefix: "load avg: 1.80 "
         load_avg = self.getloadavg()
@@ -159,7 +151,22 @@ class Regrtest:
         test_time = time.monotonic() - self.start_time
         test_time = datetime.timedelta(seconds=int(test_time))
         line = f"{test_time} {line}"
+
+        if empty:
+            line = line[:-1]
+
         print(line, flush=True)
+
+    def display_progress(self, test_index, text):
+        if self.ns.quiet:
+            return
+
+        # "[ 51/405/1] test_tcl passed"
+        line = f"{test_index:{self.test_count_width}}{self.test_count}"
+        fails = len(self.bad) + len(self.environment_changed)
+        if fails and not self.ns.pgo:
+            line = f"{line}/{fails}"
+        self.log(f"[{line}] {text}")
 
     def parse_args(self, kwargs):
         ns = _parse_args(sys.argv[1:], **kwargs)
@@ -302,11 +309,11 @@ class Regrtest:
 
         self.first_result = self.get_tests_result()
 
-        print()
-        print("Re-running failed tests in verbose mode")
+        self.log()
+        self.log("Re-running failed tests in verbose mode")
         self.rerun = self.bad[:]
         for test_name in self.rerun:
-            print(f"Re-running {test_name} in verbose mode", flush=True)
+            self.log(f"Re-running {test_name} in verbose mode")
             self.ns.verbose = True
             result = runtest(self.ns, test_name)
 
@@ -387,7 +394,7 @@ class Regrtest:
 
         save_modules = sys.modules.keys()
 
-        print("Run tests sequentially")
+        self.log("Run tests sequentially")
 
         previous_test = None
         for test_index, test_name in enumerate(self.tests, 1):
