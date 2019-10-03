@@ -1200,7 +1200,7 @@ class TestClassesAndFunctions(unittest.TestCase):
             def bar(self):
                 # This property should not be called by getmembers
                 raise NotImplementedError
-            
+
         foobar = Foo(42)
         try:
             members = inspect.getmembers(foobar)
