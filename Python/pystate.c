@@ -856,7 +856,7 @@ PyThreadState_Delete(PyThreadState *tstate)
 }
 
 
-static void
+void
 _PyThreadState_DeleteCurrent(_PyRuntimeState *runtime)
 {
     struct _gilstate_runtime_state *gilstate = &runtime->gilstate;
@@ -875,7 +875,7 @@ _PyThreadState_DeleteCurrent(_PyRuntimeState *runtime)
 }
 
 void
-PyThreadState_DeleteCurrent()
+PyThreadState_DeleteCurrent(void)
 {
     _PyThreadState_DeleteCurrent(&_PyRuntime);
 }
