@@ -129,10 +129,6 @@ class MimeTypesTestCase(unittest.TestCase):
         common_types = mimetypes.common_types
 
         mimetypes.init()
-        self.assertIsNot(suffix_map, mimetypes.suffix_map)
-        self.assertIsNot(encodings_map, mimetypes.encodings_map)
-        self.assertIsNot(types_map, mimetypes.types_map)
-        self.assertIsNot(common_types, mimetypes.common_types)
         self.assertEqual(suffix_map, mimetypes.suffix_map)
         self.assertEqual(encodings_map, mimetypes.encodings_map)
         self.assertEqual(types_map, mimetypes.types_map)
@@ -160,6 +156,22 @@ class MimeTypesTestCase(unittest.TestCase):
             type='image/jpg', strict=True), [])
         self.assertEqual(self.db.guess_extension(
             type='image/jpg', strict=False), '.jpg')
+
+    def test_local_init_edits_local_maps(self):
+        from mimetypes import init, common_types, encodings_map, suffix_map, types_map
+
+        self.addCleanup(mimetypes._default_mime_types)
+        mimetypes._common_types_default['.fake'] = 'application/fake'
+        mimetypes._encodings_map_default['.fake'] = 'fake'
+        mimetypes._suffix_map_default['.fake'] = '.fake'
+        mimetypes._types_map_default['.fake'] = 'application/fake'
+
+        init()
+
+        self.assertEqual(common_types['.fake'], 'application/fake')
+        self.assertEqual(encodings_map['.fake'], 'fake')
+        self.assertEqual(suffix_map['.fake'], '.fake')
+        self.assertEqual(types_map['.fake'], 'application/fake')
 
 
 @unittest.skipUnless(sys.platform.startswith("win"), "Windows only")

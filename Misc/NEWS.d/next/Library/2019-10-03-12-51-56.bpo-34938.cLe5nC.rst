@@ -1,0 +1,4 @@
+Fix calls to :func:`mimetypes.init` not affecting one of
+:attr:`mimetypes.encodings_map`, :attr:`mimetypes.suffix_map`,
+:attr:`mimetypes.types_map`, or :attr:`mimetypes.common_types` when
+importing it and the map using ``from mimetypes import init, types_map``.

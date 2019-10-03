@@ -344,7 +344,6 @@ def add_type(type, ext, strict=True):
 
 
 def init(files=None):
-    global suffix_map, types_map, encodings_map, common_types
     global inited, _db
     inited = True    # so that MimeTypes.__init__() doesn't call us again
 
@@ -363,10 +362,14 @@ def init(files=None):
     for file in files:
         if os.path.isfile(file):
             db.read(file)
-    encodings_map = db.encodings_map
-    suffix_map = db.suffix_map
-    types_map = db.types_map[True]
-    common_types = db.types_map[False]
+    encodings_map.clear()
+    encodings_map.update(db.encodings_map)
+    suffix_map.clear()
+    suffix_map.update(db.suffix_map)
+    types_map.clear()
+    types_map.update(db.types_map[True])
+    common_types.clear()
+    common_types.update(db.types_map[False])
     # Make the DB a global variable now that it is fully initialized
     _db = db
 
@@ -388,7 +391,7 @@ def _default_mime_types():
     global types_map, _types_map_default
     global common_types, _common_types_default
 
-    suffix_map = _suffix_map_default = {
+    _suffix_map_default = {
         '.svgz': '.svg.gz',
         '.tgz': '.tar.gz',
         '.taz': '.tar.gz',
@@ -396,13 +399,15 @@ def _default_mime_types():
         '.tbz2': '.tar.bz2',
         '.txz': '.tar.xz',
         }
+    suffix_map = _suffix_map_default.copy()
 
-    encodings_map = _encodings_map_default = {
+    _encodings_map_default = {
         '.gz': 'gzip',
         '.Z': 'compress',
         '.bz2': 'bzip2',
         '.xz': 'xz',
         }
+    encodings_map = _encodings_map_default.copy()
 
     # Before adding new types, make sure they are either registered with IANA,
     # at http://www.iana.org/assignments/media-types
@@ -411,7 +416,7 @@ def _default_mime_types():
     # If you add to these, please keep them sorted by mime type.
     # Make sure the entry with the preferred file extension for a particular mime type
     # appears before any others of the same mimetype.
-    types_map = _types_map_default = {
+    _types_map_default = {
         '.js'     : 'application/javascript',
         '.mjs'    : 'application/javascript',
         '.json'   : 'application/json',
@@ -544,12 +549,13 @@ def _default_mime_types():
         '.avi'    : 'video/x-msvideo',
         '.movie'  : 'video/x-sgi-movie',
         }
+    types_map = _types_map_default.copy()
 
     # These are non-standard types, commonly found in the wild.  They will
     # only match if strict=0 flag is given to the API methods.
 
     # Please sort these too
-    common_types = _common_types_default = {
+    _common_types_default = {
         '.rtf' : 'application/rtf',
         '.midi': 'audio/midi',
         '.mid' : 'audio/midi',
@@ -559,6 +565,7 @@ def _default_mime_types():
         '.pic' : 'image/pict',
         '.xul' : 'text/xul',
         }
+    common_types = _common_types_default.copy()
 
 
 _default_mime_types()
