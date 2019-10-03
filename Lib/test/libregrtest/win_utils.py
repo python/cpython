@@ -14,7 +14,7 @@ BUFSIZE = 8192
 LOAD_FACTOR_1 = 0.9200444146293232478931553241
 
 # Seconds per measurement
-SAMPLING_INTERVAL = 5
+SAMPLING_INTERVAL = 1
 # Windows registry subkey of HKEY_LOCAL_MACHINE where the counter names
 # of typeperf are registered
 COUNTER_REGISTRY_KEY = (r"SOFTWARE\Microsoft\Windows NT\CurrentVersion"
@@ -32,7 +32,7 @@ class WindowsLoadTracker():
     def __init__(self):
         self.load = 0.0
         self.counter_name = ''
-        self._buffer = b''
+        self._buffer = ''
         self.popen = None
         self.start()
 
@@ -95,44 +95,60 @@ class WindowsLoadTracker():
     def __del__(self):
         self.close()
 
-    def read_output(self):
+    def _parse_line(self, line):
+        # typeperf outputs in a CSV format like this:
+        # "07/19/2018 01:32:26.605","3.000000"
+        # (date, process queue length)
+        tokens = line.split(',')
+        if len(tokens) != 2:
+            raise ValueError
+
+        value = tokens[1]
+        if not value.startswith('"') or not value.endswith('"'):
+            raise ValueError
+        value = value[1:-1]
+        return float(value)
+
+    def read_lines(self):
         overlapped, _ = _winapi.ReadFile(self.pipe, BUFSIZE, True)
         bytes_read, res = overlapped.GetOverlappedResult(False)
         if res != 0:
-            return
+            return ()
 
-        # self._buffer stores an incomplete line
-        output = self._buffer + overlapped.getbuffer()
-        output, _, self._buffer = output.rpartition(b'\n')
-        return output.decode('oem', 'replace')
+        output = overlapped.getbuffer()
+        output = output.decode('oem', 'replace')
+        output = self._buffer + output
+        lines = output.splitlines(True)
+
+        # bpo-36670: typeperf only writes a newline *before* writing a value,
+        # not after. Sometimes, the written line in incomplete (ex: only
+        # timestamp, without the process queue length). Only pass the last line
+        # to the parser if it's a valid value, otherwise store it in
+        # self._buffer.
+        try:
+            self._parse_line(lines[-1])
+        except ValueError:
+            self._buffer = lines.pop(-1)
+        else:
+            self._buffer = ''
+
+        return lines
 
     def getloadavg(self):
-        typeperf_output = self.read_output()
-        # Nothing to update, just return the current load
-        if not typeperf_output:
-            return self.load
+        for line in self.read_lines():
+            line = line.rstrip()
 
-        # Process the backlog of load values
-        for line in typeperf_output.splitlines():
             # Ignore the initial header:
             # "(PDH-CSV 4.0)","\\\\WIN\\System\\Processor Queue Length"
-            if '\\\\' in line:
+            if 'PDH-CSV' in line:
                 continue
 
             # Ignore blank lines
-            if not line.strip():
+            if not line:
                 continue
 
-            # typeperf outputs in a CSV format like this:
-            # "07/19/2018 01:32:26.605","3.000000"
-            # (date, process queue length)
             try:
-                tokens = line.split(',')
-                if len(tokens) != 2:
-                    raise ValueError
-
-                value = tokens[1].replace('"', '')
-                load = float(value)
+                load = self._parse_line(line)
             except ValueError:
                 print_warning("Failed to parse typeperf output: %a" % line)
                 continue
