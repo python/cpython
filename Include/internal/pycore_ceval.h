@@ -9,10 +9,10 @@ extern "C" {
 #endif
 
 /* Forward declarations */
-typedef struct pyruntimestate _PyRuntimeState;
+struct pyruntimestate;
 struct _ceval_runtime_state;
 
-PyAPI_FUNC(void) _Py_FinishPendingCalls(_PyRuntimeState *runtime);
+PyAPI_FUNC(void) _Py_FinishPendingCalls(struct pyruntimestate *runtime);
 PyAPI_FUNC(void) _PyEval_Initialize(struct _ceval_runtime_state *);
 PyAPI_FUNC(void) _PyEval_FiniThreads(
     struct _ceval_runtime_state *ceval);
@@ -26,7 +26,7 @@ PyAPI_FUNC(int) _PyEval_AddPendingCall(
 PyAPI_FUNC(void) _PyEval_SignalAsyncExc(
     struct _ceval_runtime_state *ceval);
 PyAPI_FUNC(void) _PyEval_ReInitThreads(
-    _PyRuntimeState *runtime);
+    struct pyruntimestate *runtime);
 PyAPI_FUNC(void) _PyEval_SetCoroutineOriginTrackingDepth(
     PyThreadState *tstate,
     int new_depth);

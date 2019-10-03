@@ -9,8 +9,8 @@ extern "C" {
 #endif
 
 /* Forward declarations */
-typedef struct _PyArgv _PyArgv;
-typedef struct pyruntimestate _PyRuntimeState;
+struct _PyArgv;
+struct pyruntimestate;
 
 /* True if the main interpreter thread exited due to an unhandled
  * KeyboardInterrupt exception, suggesting the user pressed ^C. */
@@ -38,14 +38,14 @@ extern PyStatus _PyFaulthandler_Init(int enable);
 extern int _PyTraceMalloc_Init(int enable);
 extern PyObject * _PyBuiltin_Init(PyThreadState *tstate);
 extern PyStatus _PySys_Create(
-    _PyRuntimeState *runtime,
+    struct pyruntimestate *runtime,
     PyThreadState *tstate,
     PyObject **sysmod_p);
 extern PyStatus _PySys_SetPreliminaryStderr(PyObject *sysdict);
 extern PyStatus _PySys_ReadPreinitWarnOptions(PyWideStringList *options);
 extern PyStatus _PySys_ReadPreinitXOptions(PyConfig *config);
 extern int _PySys_InitMain(
-    _PyRuntimeState *runtime,
+    struct pyruntimestate *runtime,
     PyThreadState *tstate);
 extern PyStatus _PyImport_Init(PyThreadState *tstate);
 extern PyStatus _PyExc_Init(void);
@@ -78,7 +78,7 @@ extern void PyOS_FiniInterrupts(void);
 extern void _PyExc_Fini(void);
 extern void _PyImport_Fini(void);
 extern void _PyImport_Fini2(void);
-extern void _PyGC_Fini(_PyRuntimeState *runtime);
+extern void _PyGC_Fini(struct pyruntimestate *runtime);
 extern void _PyType_Fini(void);
 extern void _Py_HashRandomization_Fini(void);
 extern void _PyUnicode_Fini(void);
@@ -89,18 +89,18 @@ extern void _PyTraceMalloc_Fini(void);
 extern void _PyWarnings_Fini(PyInterpreterState *interp);
 
 extern void _PyGILState_Init(
-    _PyRuntimeState *runtime,
+    struct pyruntimestate *runtime,
     PyThreadState *tstate);
-extern void _PyGILState_Fini(_PyRuntimeState *runtime);
+extern void _PyGILState_Fini(struct pyruntimestate *runtime);
 
-PyAPI_FUNC(void) _PyGC_DumpShutdownStats(_PyRuntimeState *runtime);
+PyAPI_FUNC(void) _PyGC_DumpShutdownStats(struct pyruntimestate *runtime);
 
 PyAPI_FUNC(PyStatus) _Py_PreInitializeFromPyArgv(
     const PyPreConfig *src_config,
-    const _PyArgv *args);
+    const struct _PyArgv *args);
 PyAPI_FUNC(PyStatus) _Py_PreInitializeFromConfig(
     const PyConfig *config,
-    const _PyArgv *args);
+    const struct _PyArgv *args);
 
 
 PyAPI_FUNC(int) _Py_HandleSystemExit(int *exitcode_p);
@@ -111,7 +111,7 @@ PyAPI_FUNC(void) _PyErr_Print(PyThreadState *tstate);
 PyAPI_FUNC(void) _PyErr_Display(PyObject *file, PyObject *exception,
                                 PyObject *value, PyObject *tb);
 
-PyAPI_FUNC(void) _PyThreadState_DeleteCurrent(_PyRuntimeState *runtime);
+PyAPI_FUNC(void) _PyThreadState_DeleteCurrent(struct pyruntimestate *runtime);
 
 #ifdef __cplusplus
 }
