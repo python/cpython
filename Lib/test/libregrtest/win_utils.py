@@ -10,11 +10,11 @@ from test.libregrtest.utils import print_warning
 
 # Max size of asynchronous reads
 BUFSIZE = 8192
-# Exponential damping factor (see below)
+# Seconds per measurement
+SAMPLING_INTERVAL = 5
+# Exponential damping factor for a sampling interval of 5 seconds (see below)
 LOAD_FACTOR_1 = 0.9200444146293232478931553241
 
-# Seconds per measurement
-SAMPLING_INTERVAL = 1
 # Windows registry subkey of HKEY_LOCAL_MACHINE where the counter names
 # of typeperf are registered
 COUNTER_REGISTRY_KEY = (r"SOFTWARE\Microsoft\Windows NT\CurrentVersion"
