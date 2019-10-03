@@ -25,6 +25,7 @@ from test.libregrtest import utils
 Py_DEBUG = hasattr(sys, 'gettotalrefcount')
 ROOT_DIR = os.path.join(os.path.dirname(__file__), '..', '..')
 ROOT_DIR = os.path.abspath(os.path.normpath(ROOT_DIR))
+LOG_PREFIX = r'[0-9]+:[0-9]+:[0-9]+ (?:load avg: [0-9]+\.[0-9]{2} )?'
 
 TEST_INTERRUPTED = textwrap.dedent("""
     from signal import SIGINT, raise_signal
@@ -388,8 +389,8 @@ class BaseTestCase(unittest.TestCase):
         self.assertRegex(output, regex)
 
     def parse_executed_tests(self, output):
-        regex = (r'^[0-9]+:[0-9]+:[0-9]+ (?:load avg: [0-9]+\.[0-9]{2} )?\[ *[0-9]+(?:/ *[0-9]+)*\] (%s)'
-                 % self.TESTNAME_REGEX)
+        regex = (r'^%s\[ *[0-9]+(?:/ *[0-9]+)*\] (%s)'
+                 % (LOG_PREFIX, self.TESTNAME_REGEX))
         parser = re.finditer(regex, output, re.MULTILINE)
         return list(match.group(1) for match in parser)
 
@@ -449,9 +450,10 @@ class BaseTestCase(unittest.TestCase):
         if rerun:
             regex = list_regex('%s re-run test%s', rerun)
             self.check_line(output, regex)
-            self.check_line(output, "Re-running failed tests in verbose mode")
+            regex = LOG_PREFIX + r"Re-running failed tests in verbose mode"
+            self.check_line(output, regex)
             for test_name in rerun:
-                regex = f"Re-running {test_name} in verbose mode"
+                regex = LOG_PREFIX + f"Re-running {test_name} in verbose mode"
                 self.check_line(output, regex)
 
         if no_test_ran:
@@ -1232,9 +1234,9 @@ class TestUtils(unittest.TestCase):
         self.assertEqual(utils.format_duration(10e-3),
                          '10 ms')
         self.assertEqual(utils.format_duration(1.5),
-                         '1 sec 500 ms')
+                         '1.5 sec')
         self.assertEqual(utils.format_duration(1),
-                         '1 sec')
+                         '1.0 sec')
         self.assertEqual(utils.format_duration(2 * 60),
                          '2 min')
         self.assertEqual(utils.format_duration(2 * 60 + 1),
