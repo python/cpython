@@ -1,4 +1,5 @@
 import _winapi
+import math
 import msvcrt
 import os
 import subprocess
@@ -10,11 +11,14 @@ from test.libregrtest.utils import print_warning
 
 # Max size of asynchronous reads
 BUFSIZE = 8192
-# Exponential damping factor (see below)
-LOAD_FACTOR_1 = 0.9200444146293232478931553241
-
 # Seconds per measurement
-SAMPLING_INTERVAL = 5
+SAMPLING_INTERVAL = 1
+# Exponential damping factor to compute exponentially weighted moving average
+# on 1 minute (60 seconds)
+LOAD_FACTOR_1 = 1 / math.exp(SAMPLING_INTERVAL / 60)
+# Initialize the load using the arithmetic mean of the first NVALUE values
+# of the Processor Queue Length
+NVALUE = 5
 # Windows registry subkey of HKEY_LOCAL_MACHINE where the counter names
 # of typeperf are registered
 COUNTER_REGISTRY_KEY = (r"SOFTWARE\Microsoft\Windows NT\CurrentVersion"
@@ -30,9 +34,10 @@ class WindowsLoadTracker():
     """
 
     def __init__(self):
-        self.load = 0.0
-        self.counter_name = ''
-        self.popen = None
+        self._values = []
+        self._load = None
+        self._buffer = ''
+        self._popen = None
         self.start()
 
     def start(self):
@@ -64,7 +69,7 @@ class WindowsLoadTracker():
         # Spawn off the load monitor
         counter_name = self._get_counter_name()
         command = ['typeperf', counter_name, '-si', str(SAMPLING_INTERVAL)]
-        self.popen = subprocess.Popen(' '.join(command), stdout=command_stdout, cwd=support.SAVEDCWD)
+        self._popen = subprocess.Popen(' '.join(command), stdout=command_stdout, cwd=support.SAVEDCWD)
 
         # Close our copy of the write end of the pipe
         os.close(command_stdout)
@@ -84,52 +89,88 @@ class WindowsLoadTracker():
         process_queue_length = counters_dict['44']
         return f'"\\{system}\\{process_queue_length}"'
 
-    def close(self):
-        if self.popen is None:
+    def close(self, kill=True):
+        if self._popen is None:
             return
-        self.popen.kill()
-        self.popen.wait()
-        self.popen = None
+
+        self._load = None
+
+        if kill:
+            self._popen.kill()
+        self._popen.wait()
+        self._popen = None
 
     def __del__(self):
         self.close()
 
-    def read_output(self):
+    def _parse_line(self, line):
+        # typeperf outputs in a CSV format like this:
+        # "07/19/2018 01:32:26.605","3.000000"
+        # (date, process queue length)
+        tokens = line.split(',')
+        if len(tokens) != 2:
+            raise ValueError
+
+        value = tokens[1]
+        if not value.startswith('"') or not value.endswith('"'):
+            raise ValueError
+        value = value[1:-1]
+        return float(value)
+
+    def _read_lines(self):
         overlapped, _ = _winapi.ReadFile(self.pipe, BUFSIZE, True)
         bytes_read, res = overlapped.GetOverlappedResult(False)
         if res != 0:
-            return
+            return ()
 
         output = overlapped.getbuffer()
-        return output.decode('oem', 'replace')
+        output = output.decode('oem', 'replace')
+        output = self._buffer + output
+        lines = output.splitlines(True)
+
+        # bpo-36670: typeperf only writes a newline *before* writing a value,
+        # not after. Sometimes, the written line in incomplete (ex: only
+        # timestamp, without the process queue length). Only pass the last line
+        # to the parser if it's a valid value, otherwise store it in
+        # self._buffer.
+        try:
+            self._parse_line(lines[-1])
+        except ValueError:
+            self._buffer = lines.pop(-1)
+        else:
+            self._buffer = ''
+
+        return lines
 
     def getloadavg(self):
-        typeperf_output = self.read_output()
-        # Nothing to update, just return the current load
-        if not typeperf_output:
-            return self.load
+        if self._popen is None:
+            return None
 
-        # Process the backlog of load values
-        for line in typeperf_output.splitlines():
+        returncode = self._popen.poll()
+        if returncode is not None:
+            self.close(kill=False)
+            return None
+
+        try:
+            lines = self._read_lines()
+        except BrokenPipeError:
+            self.close()
+            return None
+
+        for line in lines:
+            line = line.rstrip()
+
             # Ignore the initial header:
             # "(PDH-CSV 4.0)","\\\\WIN\\System\\Processor Queue Length"
-            if '\\\\' in line:
+            if 'PDH-CSV' in line:
                 continue
 
             # Ignore blank lines
-            if not line.strip():
+            if not line:
                 continue
 
-            # typeperf outputs in a CSV format like this:
-            # "07/19/2018 01:32:26.605","3.000000"
-            # (date, process queue length)
             try:
-                tokens = line.split(',')
-                if len(tokens) != 2:
-                    raise ValueError
-
-                value = tokens[1].replace('"', '')
-                load = float(value)
+                processor_queue_length = self._parse_line(line)
             except ValueError:
                 print_warning("Failed to parse typeperf output: %a" % line)
                 continue
@@ -137,7 +178,13 @@ class WindowsLoadTracker():
             # We use an exponentially weighted moving average, imitating the
             # load calculation on Unix systems.
             # https://en.wikipedia.org/wiki/Load_(computing)#Unix-style_load_calculation
-            new_load = self.load * LOAD_FACTOR_1 + load * (1.0 - LOAD_FACTOR_1)
-            self.load = new_load
+            # https://en.wikipedia.org/wiki/Moving_average#Exponential_moving_average
+            if self._load is not None:
+                self._load = (self._load * LOAD_FACTOR_1
+                              + processor_queue_length  * (1.0 - LOAD_FACTOR_1))
+            elif len(self._values) < NVALUE:
+                self._values.append(processor_queue_length)
+            else:
+                self._load = sum(self._values) / len(self._values)
 
-        return self.load
+        return self._load
