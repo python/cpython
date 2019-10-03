@@ -175,8 +175,8 @@ Running and stopping the loop
    while using the default executor.
 
    The *timeout* parameter specifies the amount of time all of the threads will
-   be given to finish joining. The default value is ``None``, which means that each
-   thread will be given an indefinite amount of time to join.
+   be given to finish joining. The default value is ``None``, which means the
+   threads will be given an indefinite amount of time to join.
 
    Note that there is no need to call this function when
    :func:`asyncio.run` is used.
