@@ -104,13 +104,14 @@ class ExitThread(Exception):
 
 
 class TestWorkerProcess(threading.Thread):
-    def __init__(self, worker_id, pending, output, ns, timeout):
+    def __init__(self, worker_id, runner):
         super().__init__()
         self.worker_id = worker_id
-        self.pending = pending
-        self.output = output
-        self.ns = ns
-        self.timeout = timeout
+        self.pending = runner.pending
+        self.output = runner.output
+        self.ns = runner.ns
+        self.timeout = runner.worker_timeout
+        self.regrtest = runner.regrtest
         self.current_test_name = None
         self.start_time = None
         self._popen = None
@@ -294,7 +295,8 @@ class TestWorkerProcess(threading.Thread):
             if not self.is_alive():
                 break
             dt = time.monotonic() - start_time
-            print(f"Waiting for {self} thread for {format_duration(dt)}", flush=True)
+            self.regrtest.log(f"Waiting for {self} thread "
+                              f"for {format_duration(dt)}")
             if dt > JOIN_TIMEOUT:
                 print_warning(f"Failed to join {self} in {format_duration(dt)}")
                 break
@@ -316,6 +318,7 @@ def get_running(workers):
 class MultiprocessTestRunner:
     def __init__(self, regrtest):
         self.regrtest = regrtest
+        self.log = self.regrtest.log
         self.ns = regrtest.ns
         self.output = queue.Queue()
         self.pending = MultiprocessIterator(self.regrtest.tests)
@@ -326,11 +329,10 @@ class MultiprocessTestRunner:
         self.workers = None
 
     def start_workers(self):
-        self.workers = [TestWorkerProcess(index, self.pending, self.output,
-                                          self.ns, self.worker_timeout)
+        self.workers = [TestWorkerProcess(index, self)
                         for index in range(1, self.ns.use_mp + 1)]
-        print("Run tests in parallel using %s child processes"
-              % len(self.workers))
+        self.log("Run tests in parallel using %s child processes"
+                 % len(self.workers))
         for worker in self.workers:
             worker.start()
 
@@ -364,7 +366,7 @@ class MultiprocessTestRunner:
             # display progress
             running = get_running(self.workers)
             if running and not self.ns.pgo:
-                print('running: %s' % ', '.join(running), flush=True)
+                self.log('running: %s' % ', '.join(running))
 
     def display_result(self, mp_result):
         result = mp_result.result
@@ -384,8 +386,7 @@ class MultiprocessTestRunner:
         if item[0]:
             # Thread got an exception
             format_exc = item[1]
-            print(f"regrtest worker thread failed: {format_exc}",
-                  file=sys.stderr, flush=True)
+            print_warning(f"regrtest worker thread failed: {format_exc}")
             return True
 
         self.test_index += 1
