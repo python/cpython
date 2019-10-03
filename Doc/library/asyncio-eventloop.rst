@@ -174,9 +174,12 @@ Running and stopping the loop
    :exc:`RuntimeError` will be raised if :meth:`loop.run_in_executor` is called
    while using the default executor.
 
-   The *timeout* parameter specifies the amount of time all of the threads will
+   The *timeout* parameter specifies the amount of time the threadpool will
    be given to finish joining. The default value is ``None``, which means the
-   threads will be given an indefinite amount of time to join.
+   threadpool will be given an indefinite amount of time.
+
+   If the timeout duration is reached, a warning is emitted and threadpool is
+   terminated without waiting for its threads to finish joining.
 
    Note that there is no need to call this function when
    :func:`asyncio.run` is used.
