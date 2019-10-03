@@ -141,6 +141,8 @@ static wchar_t * get_env(wchar_t * key)
 }
 
 #if defined(_DEBUG)
+/* Do not define EXECUTABLEPATH_VALUE in debug builds as it'll
+   never point to the debug build. */
 #if defined(_WINDOWS)
 
 #define PYTHON_EXECUTABLE L"pythonw_d.exe"
@@ -154,10 +156,12 @@ static wchar_t * get_env(wchar_t * key)
 #if defined(_WINDOWS)
 
 #define PYTHON_EXECUTABLE L"pythonw.exe"
+#define EXECUTABLEPATH_VALUE L"WindowedExecutablePath"
 
 #else
 
 #define PYTHON_EXECUTABLE L"python.exe"
+#define EXECUTABLEPATH_VALUE L"ExecutablePath"
 
 #endif
 #endif
@@ -297,8 +301,12 @@ _locate_pythons_for_key(HKEY root, LPCWSTR subkey, REGSAM flags, int bits,
                 }
                 data_size = sizeof(ip->executable) - 1;
                 append_name = FALSE;
-                status = RegQueryValueExW(ip_key, L"ExecutablePath", NULL, &type,
+#ifdef EXECUTABLEPATH_VALUE
+                status = RegQueryValueExW(ip_key, EXECUTABLEPATH_VALUE, NULL, &type,
                                           (LPBYTE)ip->executable, &data_size);
+#else
+                status = ERROR_FILE_NOT_FOUND; /* actual error doesn't matter */
+#endif
                 if (status != ERROR_SUCCESS || type != REG_SZ || !data_size) {
                     append_name = TRUE;
                     data_size = sizeof(ip->executable) - 1;
