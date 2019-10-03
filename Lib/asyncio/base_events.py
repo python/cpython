@@ -552,9 +552,9 @@ class BaseEventLoop(events.AbstractEventLoop):
     async def shutdown_default_executor(self, timeout=None):
         """Schedule the shutdown of the default executor.
 
-        The timeout parameter specifies the amount of time each thread will
+        The timeout parameter specifies the amount of time the threadpool will
         be given to finish joining. The default value is None, which means
-        that each thread will be given an indefinite amount of time to join.
+        that the threadpool will be given an indefinite amount of time.
         """
         self._executor_shutdown_called = True
         if self._default_executor is None:
