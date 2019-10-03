@@ -227,9 +227,9 @@ Running an asyncio Program
     the end.  It should be used as a main entry point for asyncio
     programs, and should ideally only be called once.
 
-    Each thread within the threadpool is given a timeout duration of 5
-    minutes. If the thread hasn't finishing joining within that duration,
-    the lock is released and the thread is terminated.
+    The threadpool is given a timeout duration of 5 minutes to join its threads.
+    If the threadpool hasn't finishing joining within that duration, a warning is
+    emitted and the threadpool is closed.
 
     Example::
 
