@@ -1117,6 +1117,7 @@ AsObj(PyObject *value)
         }
         size = PyBytes_GET_SIZE(encoded);
         if (size > INT_MAX) {
+            Py_DECREF(encoded);
             PyErr_SetString(PyExc_OverflowError, "string is too long");
             return NULL;
         }
