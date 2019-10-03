@@ -679,14 +679,6 @@ class ModifiedInterpreter(InteractiveInterpreter):
         self.more = 0
         # at the moment, InteractiveInterpreter expects str
         assert isinstance(source, str)
-        #if isinstance(source, str):
-        #    from idlelib import iomenu
-        #    try:
-        #        source = source.encode(iomenu.encoding)
-        #    except UnicodeError:
-        #        self.tkconsole.resetoutput()
-        #        self.write("Unsupported characters in input\n")
-        #        return
         # InteractiveInterpreter.runsource() calls its runcode() method,
         # which is overridden (see below)
         return InteractiveInterpreter.runsource(self, source, filename)
