@@ -1193,7 +1193,7 @@ class TestClassesAndFunctions(unittest.TestCase):
 
     def test_getmembers_static(self):
         class Foo:
-            def __init__(bar):
+            def __init__(self, bar):
                 self._bar = bar
 
             @property
