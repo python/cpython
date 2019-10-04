@@ -973,7 +973,7 @@ calculate_program_impl(PyCalculatePath *calculate, _PyPathConfig *pathconfig)
 
 #ifdef __APPLE__
     wchar_t *abs_path = NULL;
-    status = calculate_program_macos(fullpath, fullpath_len, &abs_path);
+    status = calculate_program_macos(&abs_path);
     if (_PyStatus_EXCEPTION(status)) {
         return status;
     }

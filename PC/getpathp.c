@@ -781,7 +781,7 @@ calculate_pyvenv_file(PyCalculatePath *calculate,
 
     /* Look for a 'home' variable and set argv0_path to it, if found */
     wchar_t *home = NULL;
-    status = _Py_FindEnvConfigValue(env_file, L"home", &home);
+    PyStatus status = _Py_FindEnvConfigValue(env_file, L"home", &home);
     if (_PyStatus_EXCEPTION(status)) {
         fclose(env_file);
         return status;
