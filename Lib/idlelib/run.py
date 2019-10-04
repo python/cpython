@@ -425,7 +425,7 @@ class StdioFile(io.TextIOBase):
         return True
 
 
-class StdOutFile(StdioFile):
+class StdOutputFile(StdioFile):
 
     def writable(self):
         return True
@@ -433,15 +433,12 @@ class StdOutFile(StdioFile):
     def write(self, s):
         if self.closed:
             raise ValueError("write to closed file")
-        s = str.encode(s, self.encoding, self.errors).decode(self.encoding)
+        s = str.encode(s, self.encoding, self.errors).decode(self.encoding, self.errors)
         return self.shell.write(s, self.tags)
 
 
-class StdInFile(StdioFile):
-
-    def __init__(self, shell, tags, encoding=None):
-        StdioFile.__init__(self, shell, tags, encoding)
-        self._line_buffer = ''
+class StdInputFile(StdioFile):
+    _line_buffer = ''
 
     def readable(self):
         return True
@@ -496,10 +493,12 @@ class MyHandler(rpc.RPCHandler):
         executive = Executive(self)
         self.register("exec", executive)
         self.console = self.get_remote_proxy("console")
-        sys.stdin = StdInFile(self.console, "stdin", iomenu.encoding)
-        sys.stdout = StdOutFile(self.console, "stdout", iomenu.encoding)
-        sys.stderr = StdOutFile(self.console, "stderr", iomenu.encoding,
-                                "backslashreplace")
+        sys.stdin = StdInputFile(self.console, "stdin",
+                                 iomenu.encoding, iomenu.errors)
+        sys.stdout = StdOutputFile(self.console, "stdout",
+                                   iomenu.encoding, iomenu.errors)
+        sys.stderr = StdOutputFile(self.console, "stderr",
+                                   iomenu.encoding, "backslashreplace")
 
         sys.displayhook = rpc.displayhook
         # page help() text to shell.
