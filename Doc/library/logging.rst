@@ -117,11 +117,11 @@ is the module's name in the Python package namespace.
    See :ref:`levels` for a list of levels.
 
 
-.. method:: Logger.isEnabledFor(lvl)
+.. method:: Logger.isEnabledFor(level)
 
-   Indicates if a message of severity *lvl* would be processed by this logger.
+   Indicates if a message of severity *level* would be processed by this logger.
    This method checks first the module-level level set by
-   ``logging.disable(lvl)`` and then the logger's effective level as determined
+   ``logging.disable(level)`` and then the logger's effective level as determined
    by :meth:`getEffectiveLevel`.
 
 
@@ -218,9 +218,9 @@ is the module's name in the Python package namespace.
    interpreted as for :meth:`debug`.
 
 
-.. method:: Logger.log(lvl, msg, *args, **kwargs)
+.. method:: Logger.log(level, msg, *args, **kwargs)
 
-   Logs a message with integer level *lvl* on this logger. The other arguments are
+   Logs a message with integer level *level* on this logger. The other arguments are
    interpreted as for :meth:`debug`.
 
 
@@ -278,7 +278,7 @@ is the module's name in the Python package namespace.
    Logger-level filtering is applied using :meth:`~Logger.filter`.
 
 
-.. method:: Logger.makeRecord(name, lvl, fn, lno, msg, args, exc_info, func=None, extra=None)
+.. method:: Logger.makeRecord(name, level, fn, lno, msg, args, exc_info, func=None, extra=None)
 
    This is a factory method which can be overridden in subclasses to create
    specialized :class:`LogRecord` instances.
@@ -870,12 +870,12 @@ functions.
       handlers being added multiple times to the root logger, which can in turn
       lead to multiple messages for the same event.
 
-.. function:: disable(lvl)
+.. function:: disable(level)
 
-   Provides an overriding level *lvl* for all loggers which takes precedence over
+   Provides an overriding level *level* for all loggers which takes precedence over
    the logger's own level. When the need arises to temporarily throttle logging
    output down across the whole application, this function can be useful. Its
-   effect is to disable all logging calls of severity *lvl* and below, so that
+   effect is to disable all logging calls of severity *level* and below, so that
    if you call it with a value of INFO, then all INFO and DEBUG events would be
    discarded, whereas those of severity WARNING and above would be processed
    according to the logger's effective level. If
@@ -884,9 +884,9 @@ functions.
    levels of individual loggers.
 
 
-.. function:: addLevelName(lvl, levelName)
+.. function:: addLevelName(level, levelName)
 
-   Associates level *lvl* with text *levelName* in an internal dictionary, which is
+   Associates level *level* with text *levelName* in an internal dictionary, which is
    used to map numeric levels to a textual representation, for example when a
    :class:`Formatter` formats a message. This function can also be used to define
    your own levels. The only constraints are that all levels used must be
@@ -896,15 +896,15 @@ functions.
    .. note:: If you are thinking of defining your own levels, please see the
       section on :ref:`custom-levels`.
 
-.. function:: getLevelName(lvl)
+.. function:: getLevelName(level)
 
-   Returns the textual representation of logging level *lvl*. If the level is one
+   Returns the textual representation of logging level *level*. If the level is one
    of the predefined levels :const:`CRITICAL`, :const:`ERROR`, :const:`WARNING`,
    :const:`INFO` or :const:`DEBUG` then you get the corresponding string. If you
    have associated levels with names using :func:`addLevelName` then the name you
-   have associated with *lvl* is returned. If a numeric value corresponding to one
+   have associated with *level* is returned. If a numeric value corresponding to one
    of the defined levels is passed in, the corresponding string representation is
-   returned. Otherwise, the string "Level %s" % lvl is returned.
+   returned. Otherwise, the string "Level %s" % level is returned.
 
    .. note:: Integer levels should be used when e.g. setting levels on instances
       of :class:`Logger` and handlers. This function is used to convert between
