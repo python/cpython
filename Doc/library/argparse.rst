@@ -1792,6 +1792,9 @@ Sub-commands
      >>> parser.parse_args(['2', 'frobble'])
      Namespace(subparser_name='2', y='frobble')
 
+   .. versionadded:: 3.7
+      The *required* keyword argument.
+
 
 FileType objects
 ^^^^^^^^^^^^^^^^
