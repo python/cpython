@@ -368,9 +368,9 @@ The following options are accepted:
    Specify what kind of code must be compiled, like the *mode* argument
    in :func:`parse`.
 
-.. cmdoption:: -t, --type-comments
+.. cmdoption:: --no-type-comments
 
-   Parse type comments as specified by :pep:`484` and :pep:`526`.
+   Don't parse type comments.
 
 .. cmdoption:: -a, --include-attributes
 
