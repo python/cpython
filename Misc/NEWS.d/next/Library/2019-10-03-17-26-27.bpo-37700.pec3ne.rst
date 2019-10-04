@@ -1,3 +1,2 @@
-Fix raising a different exception depending on platform when copying a Unix
-socket using :func:`shutil.copyfile` by always raising a
-:exc:`shutil.SpecialFileError` instead.
+:func:`shutil.copyfile` always raises a :exc:`shutil.SpecialFileError`
+when trying to copy a Unix socket.
