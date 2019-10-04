@@ -768,21 +768,98 @@ calculate_set_exec_prefix(PyCalculatePath *calculate,
 
 
 static PyStatus
-calculate_program_full_path(PyCalculatePath *calculate, _PyPathConfig *pathconfig)
+calculate_which(const wchar_t *path_env, wchar_t *program_name,
+                wchar_t *fullpath, size_t fullpath_len, int *found)
 {
-    PyStatus status;
-    wchar_t program_full_path[MAXPATHLEN + 1];
-    const size_t program_full_path_len = Py_ARRAY_LENGTH(program_full_path);
-    memset(program_full_path, 0, sizeof(program_full_path));
+    while (1) {
+        wchar_t *delim = wcschr(path_env, DELIM);
+
+        if (delim) {
+            size_t len = delim - path_env;
+            if (len >= fullpath_len) {
+                return PATHLEN_ERR();
+            }
+            wcsncpy(fullpath, path_env, len);
+            fullpath[len] = '\0';
+        }
+        else {
+            if (safe_wcscpy(fullpath, path_env,
+                        fullpath_len) < 0) {
+                return PATHLEN_ERR();
+            }
+        }
+
+        PyStatus status = joinpath(fullpath, program_name, fullpath_len);
+        if (_PyStatus_EXCEPTION(status)) {
+            return status;
+        }
+
+        if (isxfile(fullpath)) {
+            *found = 1;
+            return _PyStatus_OK();
+        }
+
+        if (!delim) {
+            break;
+        }
+        path_env = delim + 1;
+    }
+
+    /* not found */
+    return _PyStatus_OK();
+}
+
 
 #ifdef __APPLE__
+static PyStatus
+calculate_program_macos(wchar_t *fullpath, size_t fullpath_len, int *found)
+{
     char execpath[MAXPATHLEN + 1];
 #if MAC_OS_X_VERSION_MAX_ALLOWED >= MAC_OS_X_VERSION_10_4
     uint32_t nsexeclength = Py_ARRAY_LENGTH(execpath) - 1;
 #else
     unsigned long nsexeclength = Py_ARRAY_LENGTH(execpath) - 1;
 #endif
-#endif
+
+    /* On Mac OS X, if a script uses an interpreter of the form
+       "#!/opt/python2.3/bin/python", the kernel only passes "python"
+       as argv[0], which falls through to the $PATH search below.
+       If /opt/python2.3/bin isn't in your path, or is near the end,
+       this algorithm may incorrectly find /usr/bin/python. To work
+       around this, we can use _NSGetExecutablePath to get a better
+       hint of what the intended interpreter was, although this
+       will fail if a relative path was used. but in that case,
+       absolutize() should help us out below
+     */
+    if (_NSGetExecutablePath(execpath, &nsexeclength) != 0
+        || (wchar_t)execpath[0] != SEP)
+    {
+        /* _NSGetExecutablePath() failed or the path is relative */
+        return _PyStatus_OK();
+    }
+
+    size_t len;
+    wchar_t *path = Py_DecodeLocale(execpath, &len);
+    if (path == NULL) {
+        return DECODE_LOCALE_ERR("executable path", len);
+    }
+    if (safe_wcscpy(fullpath, path, fullpath_len) < 0) {
+        PyMem_RawFree(path);
+        return PATHLEN_ERR();
+    }
+    PyMem_RawFree(path);
+
+    *found = 1;
+    return _PyStatus_OK();
+}
+#endif  /* __APPLE__ */
+
+
+static PyStatus
+calculate_program_impl(PyCalculatePath *calculate, _PyPathConfig *pathconfig,
+                       wchar_t *fullpath, size_t fullpath_len)
+{
+    PyStatus status;
 
     /* If there is no slash in the argv0 path, then we have to
      * assume python is on the user's $PATH, since there's no
@@ -790,96 +867,82 @@ calculate_program_full_path(PyCalculatePath *calculate, _PyPathConfig *pathconfi
      * $PATH isn't exported, you lose.
      */
     if (wcschr(pathconfig->program_name, SEP)) {
-        if (safe_wcscpy(program_full_path, pathconfig->program_name,
-                        program_full_path_len) < 0) {
+        if (safe_wcscpy(fullpath, pathconfig->program_name,
+                        fullpath_len) < 0) {
             return PATHLEN_ERR();
         }
+        return _PyStatus_OK();
     }
+
 #ifdef __APPLE__
-     /* On Mac OS X, if a script uses an interpreter of the form
-      * "#!/opt/python2.3/bin/python", the kernel only passes "python"
-      * as argv[0], which falls through to the $PATH search below.
-      * If /opt/python2.3/bin isn't in your path, or is near the end,
-      * this algorithm may incorrectly find /usr/bin/python. To work
-      * around this, we can use _NSGetExecutablePath to get a better
-      * hint of what the intended interpreter was, although this
-      * will fail if a relative path was used. but in that case,
-      * absolutize() should help us out below
-      */
-    else if(0 == _NSGetExecutablePath(execpath, &nsexeclength) &&
-            (wchar_t)execpath[0] == SEP)
-    {
-        size_t len;
-        wchar_t *path = Py_DecodeLocale(execpath, &len);
-        if (path == NULL) {
-            return DECODE_LOCALE_ERR("executable path", len);
-        }
-        if (safe_wcscpy(program_full_path, path, program_full_path_len) < 0) {
-            PyMem_RawFree(path);
-            return PATHLEN_ERR();
-        }
-        PyMem_RawFree(path);
+    int found = 0;
+    status = calculate_program_macos(fullpath, fullpath_len, &found);
+    if (_PyStatus_EXCEPTION(status)) {
+        return status;
+    }
+    if (found) {
+        return _PyStatus_OK();
     }
 #endif /* __APPLE__ */
-    else if (calculate->path_env) {
-        wchar_t *path = calculate->path_env;
-        while (1) {
-            wchar_t *delim = wcschr(path, DELIM);
 
-            if (delim) {
-                size_t len = delim - path;
-                if (len >= program_full_path_len) {
-                    return PATHLEN_ERR();
-                }
-                wcsncpy(program_full_path, path, len);
-                program_full_path[len] = '\0';
-            }
-            else {
-                if (safe_wcscpy(program_full_path, path,
-                                program_full_path_len) < 0) {
-                    return PATHLEN_ERR();
-                }
-            }
-
-            status = joinpath(program_full_path, pathconfig->program_name,
-                              program_full_path_len);
-            if (_PyStatus_EXCEPTION(status)) {
-                return status;
-            }
-
-            if (isxfile(program_full_path)) {
-                break;
-            }
-
-            if (!delim) {
-                program_full_path[0] = L'\0';
-                break;
-            }
-            path = delim + 1;
-        }
-    }
-    else {
-        program_full_path[0] = '\0';
-    }
-    if (!_Py_isabs(program_full_path) && program_full_path[0] != '\0') {
-        status = absolutize(program_full_path, program_full_path_len);
+    if (calculate->path_env) {
+        int found = 0;
+        status = calculate_which(calculate->path_env, pathconfig->program_name,
+                                 fullpath, fullpath_len,
+                                 &found);
         if (_PyStatus_EXCEPTION(status)) {
             return status;
         }
+        if (found) {
+            return _PyStatus_OK();
+        }
     }
-#if defined(__CYGWIN__) || defined(__MINGW32__)
-    /* For these platforms it is necessary to ensure that the .exe suffix
-     * is appended to the filename, otherwise there is potential for
-     * sys.executable to return the name of a directory under the same
-     * path (bpo-28441).
-     */
+
+    /* In the last resort, use an empty string */
+    fullpath[0] = '\0';
+    return _PyStatus_OK();
+}
+
+
+/* Calculate pathconfig->program_full_path */
+static PyStatus
+calculate_program(PyCalculatePath *calculate, _PyPathConfig *pathconfig)
+{
+    PyStatus status;
+    wchar_t program_full_path[MAXPATHLEN + 1];
+    const size_t program_full_path_len = Py_ARRAY_LENGTH(program_full_path);
+    memset(program_full_path, 0, sizeof(program_full_path));
+
+    status = calculate_program_impl(calculate, pathconfig,
+                                    program_full_path, program_full_path_len);
+    if (_PyStatus_EXCEPTION(status)) {
+        return status;
+    }
+
     if (program_full_path[0] != '\0') {
+        /* program_full_path is not empty */
+
+        /* Make sure that program_full_path is an absolute path
+           (or an empty string) */
+        if (!_Py_isabs(program_full_path)) {
+            status = absolutize(program_full_path, program_full_path_len);
+            if (_PyStatus_EXCEPTION(status)) {
+                return status;
+            }
+        }
+
+#if defined(__CYGWIN__) || defined(__MINGW32__)
+        /* For these platforms it is necessary to ensure that the .exe suffix
+         * is appended to the filename, otherwise there is potential for
+         * sys.executable to return the name of a directory under the same
+         * path (bpo-28441).
+         */
         status = add_exe_suffix(program_full_path, program_full_path_len);
         if (_PyStatus_EXCEPTION(status)) {
             return status;
         }
-    }
 #endif
+    }
 
     pathconfig->program_full_path = _PyMem_RawWcsdup(program_full_path);
     if (pathconfig->program_full_path == NULL) {
@@ -889,8 +952,124 @@ calculate_program_full_path(PyCalculatePath *calculate, _PyPathConfig *pathconfi
 }
 
 
+#if HAVE_READLINK
 static PyStatus
-calculate_argv0_path(PyCalculatePath *calculate, const wchar_t *program_full_path,
+resolve_symlinks(wchar_t *path, size_t path_len)
+{
+    wchar_t new_path[MAXPATHLEN + 1];
+    const size_t new_path_len = Py_ARRAY_LENGTH(new_path);
+    unsigned int links = 0;
+
+    while (1) {
+        int linklen = _Py_wreadlink(path, new_path, new_path_len);
+        if (linklen == -1) {
+            break;
+        }
+
+        if (_Py_isabs(new_path)) {
+            /* new_path should never be longer than MAXPATHLEN,
+               but extra check does not hurt */
+            if (safe_wcscpy(path, new_path, path_len) < 0) {
+                return PATHLEN_ERR();
+            }
+        }
+        else {
+            /* new_path is relative to path */
+            reduce(path);
+            PyStatus status = joinpath(path, new_path, path_len);
+            if (_PyStatus_EXCEPTION(status)) {
+                return status;
+            }
+        }
+
+        links++;
+        /* 40 is the Linux kernel 4.2 limit */
+        if (links >= 40) {
+            return _PyStatus_ERR("maximum number of symbolic links reached");
+        }
+    }
+    return _PyStatus_OK();
+}
+#endif /* HAVE_READLINK */
+
+
+#ifdef WITH_NEXT_FRAMEWORK
+static PyStatus
+calculate_argv0_path_framework(PyCalculatePath *calculate,
+                               const wchar_t *program_full_path,
+                               wchar_t *argv0_path, size_t argv0_path_len)
+{
+    NSModule pythonModule;
+
+    /* On Mac OS X we have a special case if we're running from a framework.
+       This is because the python home should be set relative to the library,
+       which is in the framework, not relative to the executable, which may
+       be outside of the framework. Except when we're in the build
+       directory... */
+    pythonModule = NSModuleForSymbol(NSLookupAndBindSymbol("_Py_Initialize"));
+
+    /* Use dylib functions to find out where the framework was loaded from */
+    const char* modPath = NSLibraryNameForModule(pythonModule);
+    if (modPath == NULL) {
+        return _PyStatus_OK();
+    }
+
+    /* We're in a framework.
+       See if we might be in the build directory. The framework in the
+       build directory is incomplete, it only has the .dylib and a few
+       needed symlinks, it doesn't have the Lib directories and such.
+       If we're running with the framework from the build directory we must
+       be running the interpreter in the build directory, so we use the
+       build-directory-specific logic to find Lib and such. */
+    size_t len;
+    wchar_t* wbuf = Py_DecodeLocale(modPath, &len);
+    if (wbuf == NULL) {
+        return DECODE_LOCALE_ERR("framework location", len);
+    }
+
+    /* Path: reduce(modPath) / lib_python / LANDMARK */
+    PyStatus status;
+    if (safe_wcscpy(argv0_path, wbuf, argv0_path_len) < 0) {
+        status = PATHLEN_ERR();
+        goto done;
+    }
+    reduce(argv0_path);
+    status = joinpath(argv0_path, calculate->lib_python, argv0_path_len);
+    if (_PyStatus_EXCEPTION(status)) {
+        goto done;
+    }
+    status = joinpath(argv0_path, LANDMARK, argv0_path_len);
+    if (_PyStatus_EXCEPTION(status)) {
+        goto done;
+    }
+
+    if (ismodule(argv0_path, Py_ARRAY_LENGTH(argv0_path))) {
+        /* Use the location of the library as argv0_path */
+        if (safe_wcscpy(argv0_path, wbuf, argv0_path_len) < 0) {
+            status = PATHLEN_ERR();
+            goto done;
+        }
+    }
+    else {
+        /* We are in the build directory so use the name of the
+           executable - we know that the absolute path is passed */
+        if (safe_wcscpy(argv0_path, program_full_path, argv0_path_len) < 0) {
+            status = PATHLEN_ERR();
+            goto done;
+        }
+    }
+    status = _PyStatus_OK();
+
+done:
+    PyMem_RawFree(wbuf);
+    return status;
+}
+#endif
+
+
+static PyStatus
+calculate_argv0_path(PyCalculatePath *calculate,
+                     const wchar_t *program_full_path,
                      wchar_t *argv0_path, size_t argv0_path_len)
 {
     if (safe_wcscpy(argv0_path, program_full_path, argv0_path_len) < 0) {
@@ -898,88 +1077,15 @@ calculate_argv0_path(PyCalculatePath *calculate, const wchar_t *program_full_pat
     }
 
 #ifdef WITH_NEXT_FRAMEWORK
-    NSModule pythonModule;
-
-    /* On Mac OS X we have a special case if we're running from a framework.
-    ** This is because the python home should be set relative to the library,
-    ** which is in the framework, not relative to the executable, which may
-    ** be outside of the framework. Except when we're in the build directory...
-    */
-    pythonModule = NSModuleForSymbol(NSLookupAndBindSymbol("_Py_Initialize"));
-    /* Use dylib functions to find out where the framework was loaded from */
-    const char* modPath = NSLibraryNameForModule(pythonModule);
-    if (modPath != NULL) {
-        /* We're in a framework. */
-        /* See if we might be in the build directory. The framework in the
-        ** build directory is incomplete, it only has the .dylib and a few
-        ** needed symlinks, it doesn't have the Lib directories and such.
-        ** If we're running with the framework from the build directory we must
-        ** be running the interpreter in the build directory, so we use the
-        ** build-directory-specific logic to find Lib and such.
-        */
-        PyStatus status;
-        size_t len;
-        wchar_t* wbuf = Py_DecodeLocale(modPath, &len);
-        if (wbuf == NULL) {
-            return DECODE_LOCALE_ERR("framework location", len);
-        }
-
-        if (safe_wcscpy(argv0_path, wbuf, argv0_path_len) < 0) {
-            return PATHLEN_ERR();
-        }
-        reduce(argv0_path);
-        status = joinpath(argv0_path, calculate->lib_python, argv0_path_len);
-        if (_PyStatus_EXCEPTION(status)) {
-            PyMem_RawFree(wbuf);
-            return status;
-        }
-        status = joinpath(argv0_path, LANDMARK, argv0_path_len);
-        if (_PyStatus_EXCEPTION(status)) {
-            PyMem_RawFree(wbuf);
-            return status;
-        }
-        if (!ismodule(argv0_path, Py_ARRAY_LENGTH(argv0_path))) {
-            /* We are in the build directory so use the name of the
-               executable - we know that the absolute path is passed */
-            if (safe_wcscpy(argv0_path, program_full_path,
-                            argv0_path_len) < 0) {
-                return PATHLEN_ERR();
-            }
-        }
-        else {
-            /* Use the location of the library as the program_full_path */
-            if (safe_wcscpy(argv0_path, wbuf, argv0_path_len) < 0) {
-                return PATHLEN_ERR();
-            }
-        }
-        PyMem_RawFree(wbuf);
+    PyStatus status;
+    status = calculate_argv0_path_framework(calculate, program_full_path,
+                                            argv0_path, argv0_path_len);
+    if (_PyStatus_EXCEPTION(status)) {
+        return status;
     }
 #endif
 
-#if HAVE_READLINK
-    wchar_t tmpbuffer[MAXPATHLEN + 1];
-    const size_t buflen = Py_ARRAY_LENGTH(tmpbuffer);
-    int linklen = _Py_wreadlink(argv0_path, tmpbuffer, buflen);
-    while (linklen != -1) {
-        if (_Py_isabs(tmpbuffer)) {
-            /* tmpbuffer should never be longer than MAXPATHLEN,
-               but extra check does not hurt */
-            if (safe_wcscpy(argv0_path, tmpbuffer, argv0_path_len) < 0) {
-                return PATHLEN_ERR();
-            }
-        }
-        else {
-            /* Interpret relative to program_full_path */
-            PyStatus status;
-            reduce(argv0_path);
-            status = joinpath(argv0_path, tmpbuffer, argv0_path_len);
-            if (_PyStatus_EXCEPTION(status)) {
-                return status;
-            }
-        }
-        linklen = _Py_wreadlink(argv0_path, tmpbuffer, buflen);
-    }
-#endif /* HAVE_READLINK */
+    resolve_symlinks(argv0_path, argv0_path_len);
 
     reduce(argv0_path);
     /* At this point, argv0_path is guaranteed to be less than
@@ -1226,7 +1332,7 @@ calculate_path(PyCalculatePath *calculate, _PyPathConfig *pathconfig)
     PyStatus status;
 
     if (pathconfig->program_full_path == NULL) {
-        status = calculate_program_full_path(calculate, pathconfig);
+        status = calculate_program(calculate, pathconfig);
         if (_PyStatus_EXCEPTION(status)) {
             return status;
         }
@@ -1275,8 +1381,8 @@ calculate_path(PyCalculatePath *calculate, _PyPathConfig *pathconfig)
         return status;
     }
 
-    if ((!calculate->prefix_found || !calculate->exec_prefix_found) &&
-        calculate->warnings)
+    if ((!calculate->prefix_found || !calculate->exec_prefix_found)
+        && calculate->warnings)
     {
         fprintf(stderr,
                 "Consider setting $PYTHONHOME to <prefix>[:<exec_prefix>]\n");
