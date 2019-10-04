@@ -777,12 +777,17 @@ _PyPathConfig_ComputeSysPath0(const PyWideStringList *argv, PyObject **path0_p)
 #endif
 
 /* Search for a prefix value in an environment file (pyvenv.cfg).
-   If found, copy it into the provided buffer. */
-int
+
+   - If found, copy it into *value_p: string which must be freed by
+     PyMem_RawFree().
+   - If not found, *value_p is set to NULL.
+*/
+PyStatus
 _Py_FindEnvConfigValue(FILE *env_file, const wchar_t *key,
-                       wchar_t *value, size_t value_size)
+                       wchar_t **value_p)
 {
-    int result = 0; /* meaning not found */
+    *value_p = NULL;
+
     char buffer[MAXPATHLEN * 2 + 1];  /* allow extra for key, '=', etc. */
     buffer[Py_ARRAY_LENGTH(buffer)-1] = '\0';
 
@@ -812,18 +817,24 @@ _Py_FindEnvConfigValue(FILE *env_file, const wchar_t *key,
                 if ((tok != NULL) && !wcscmp(tok, L"=")) {
                     tok = WCSTOK(NULL, L"\r\n", &state);
                     if (tok != NULL) {
-                        wcsncpy(value, tok, value_size - 1);
-                        value[value_size - 1] = L'\0';
-                        result = 1;
+                        *value_p = _PyMem_RawWcsdup(tok);
                         PyMem_RawFree(tmpbuffer);
-                        break;
+
+                        if (*value_p == NULL) {
+                            return _PyStatus_NO_MEMORY();
+                        }
+
+                        /* found */
+                        return _PyStatus_OK();
                     }
                 }
             }
             PyMem_RawFree(tmpbuffer);
         }
     }
-    return result;
+
+    /* not found */
+    return _PyStatus_OK();
 }
 
 #ifdef __cplusplus

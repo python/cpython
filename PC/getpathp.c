@@ -752,7 +752,7 @@ calculate_pth_file(PyCalculatePath *calculate, _PyPathConfig *pathconfig,
    executable's directory and then in the parent directory.
    If found, open it for use when searching for prefixes.
 */
-static void
+static PyStatus
 calculate_pyvenv_file(PyCalculatePath *calculate,
                       wchar_t *argv0_path, size_t argv0_path_len)
 {
@@ -775,17 +775,23 @@ calculate_pyvenv_file(PyCalculatePath *calculate,
         env_file = _Py_wfopen(filename, L"r");
         if (env_file == NULL) {
             errno = 0;
-            return;
+            return _PyStatus_OK();
         }
     }
 
     /* Look for a 'home' variable and set argv0_path to it, if found */
-    wchar_t home[MAXPATHLEN+1];
-    if (_Py_FindEnvConfigValue(env_file, L"home",
-                               home, Py_ARRAY_LENGTH(home))) {
+    wchar_t *home = NULL;
+    PyStatus status = _Py_FindEnvConfigValue(env_file, L"home", &home);
+    if (_PyStatus_EXCEPTION(status)) {
+        fclose(env_file);
+        return status;
+    }
+    if (home) {
         wcscpy_s(argv0_path, argv0_path_len, home);
+        PyMem_RawFree(home);
     }
     fclose(env_file);
+    return _PyStatus_OK();
 }
 
 
@@ -1022,7 +1028,11 @@ calculate_path(PyCalculatePath *calculate, _PyPathConfig *pathconfig)
         goto done;
     }
 
-    calculate_pyvenv_file(calculate, argv0_path, Py_ARRAY_LENGTH(argv0_path));
+    status = calculate_pyvenv_file(calculate,
+                                   argv0_path, Py_ARRAY_LENGTH(argv0_path));
+    if (_PyStatus_EXCEPTION(status)) {
+        return status;
+    }
 
     /* Calculate zip archive path from DLL or exe path */
     wchar_t zip_path[MAXPATHLEN+1];
