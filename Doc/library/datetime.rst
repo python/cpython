@@ -2535,7 +2535,7 @@ Notes:
    ``%Z``
       If :meth:`tzname` returns ``None``, ``%Z`` is replaced by an empty
       string. Otherwise ``%Z`` is replaced by the returned value, which must
-      be a string.
+      be a string. It will return a ``ValueError`` for any invalid strings.
 
       Note that :meth:`strptime` only accepts certain values for ``%Z``:
 
