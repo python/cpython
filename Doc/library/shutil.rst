@@ -54,6 +54,9 @@ Directory and files operations
    *dst* and return *dst* in the most efficient way possible.
    *src* and *dst* are path-like objects or path names given as strings.
 
+   When *src* is a named pipe or a Unix socket, a :exc:`SpecialFileError`
+   is raised.
+
    *dst* must be the complete target file name; look at :func:`~shutil.copy`
    for a copy that accepts a target directory path.  If *src* and *dst*
    specify the same file, :exc:`SameFileError` is raised.
@@ -80,6 +83,11 @@ Directory and files operations
       Platform-specific fast-copy syscalls may be used internally in order to
       copy the file more efficiently. See
       :ref:`shutil-platform-dependent-efficient-copy-operations` section.
+
+   .. versionchanged:: 3.9
+      Raise :exc:`SpecialFileError` instead of :exc:`OSError` when copying a
+      Unix socket. Since the former is a subclass of the latter, this change is
+      backward compatible.
 
 .. exception:: SameFileError
 

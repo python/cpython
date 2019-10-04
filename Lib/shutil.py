@@ -246,10 +246,13 @@ def copyfile(src, dst, *, follow_symlinks=True):
             # File most likely does not exist
             pass
         else:
-            # XXX What about other special files? (sockets, devices...)
+            # XXX What about other special files? (devices...)
             if stat.S_ISFIFO(st.st_mode):
                 fn = fn.path if isinstance(fn, os.DirEntry) else fn
                 raise SpecialFileError("`%s` is a named pipe" % fn)
+            elif stat.S_ISSOCK(st.st_mode):
+                fn = fn.path if isinstance(fn, os.DirEntry) else fn
+                raise SpecialFileError("`%s` is a socket" % fn)
             if _WINDOWS and i == 0:
                 file_size = st.st_size
 

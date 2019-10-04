@@ -13,6 +13,7 @@ import functools
 import pathlib
 import subprocess
 import random
+import socket
 import string
 import contextlib
 import io
@@ -663,6 +664,29 @@ class TestCopyTree(BaseTest, unittest.TestCase):
             shutil.rmtree(TESTFN, ignore_errors=True)
             shutil.rmtree(TESTFN2, ignore_errors=True)
 
+    @unittest.skipUnless(hasattr(socket, 'AF_UNIX'), 'requires socket.AF_UNIX')
+    def test_copytree_socket(self):
+        os.mkdir(TESTFN)
+        self.addCleanup(shutil.rmtree, TESTFN, ignore_errors=True)
+        sock_path = tempfile.mktemp(dir=TESTFN)
+
+        sock = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
+        self.addCleanup(sock.close)
+        support.bind_unix_socket(sock, sock_path)
+        self.addCleanup(support.unlink, sock_path)
+
+        try:
+            shutil.copytree(TESTFN, TESTFN2)
+        except shutil.Error as e:
+            errors = e.args[0]
+            self.assertEqual(len(errors), 1)
+            src, dst, error_msg = errors[0]
+            self.assertEqual("`%s` is a socket" % sock_path, error_msg)
+        else:
+            self.fail("shutil.Error should have been raised")
+        finally:
+            shutil.rmtree(TESTFN2, ignore_errors=True)
+
     def test_copytree_special_func(self):
         src_dir = self.mkdtemp()
         dst_dir = os.path.join(self.mkdtemp(), 'destination')
@@ -1164,6 +1188,20 @@ class TestCopy(BaseTest, unittest.TestCase):
                                 shutil.copyfile, __file__, TESTFN)
         finally:
             os.remove(TESTFN)
+
+    @unittest.skipUnless(hasattr(socket, 'AF_UNIX'), 'requires socket.AF_UNIX')
+    def test_copyfile_socket(self):
+        tmp_dir = self.mkdtemp()
+        src = tempfile.mktemp(dir=tmp_dir)
+        dst = os.path.join(tmp_dir, 'dst')
+
+        sock = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
+        self.addCleanup(sock.close)
+        support.bind_unix_socket(sock, src)
+        self.addCleanup(support.unlink, src)
+
+        self.assertRaises(shutil.SpecialFileError,
+                            shutil.copyfile, src, dst)
 
     def test_copyfile_return_value(self):
         # copytree returns its destination path.
