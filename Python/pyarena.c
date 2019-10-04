@@ -132,7 +132,6 @@ PyArena_New()
         return (PyArena*)PyErr_NoMemory();
 
     arena->a_head = block_new(DEFAULT_BLOCK_SIZE);
-    arena->a_cur = arena->a_head;
     if (!arena->a_head) {
         PyMem_Free((void *)arena);
         return (PyArena*)PyErr_NoMemory();
@@ -143,6 +142,7 @@ PyArena_New()
         PyMem_Free((void *)arena);
         return (PyArena*)PyErr_NoMemory();
     }
+    arena->a_cur = arena->a_head;
 #if defined(Py_DEBUG)
     arena->total_allocs = 0;
     arena->total_size = 0;
