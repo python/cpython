@@ -2,6 +2,8 @@ import re
 import shlex
 import subprocess
 
+from c_analyzer_common.info import UNKNOWN
+
 from . import source
 
 
@@ -194,7 +196,7 @@ def parse_func(stmt, body):
     return name, signature
 
 
-def parse_var(stmt):
+def _parse_var(stmt):
     """Return (name, vartype) for the given variable declaration."""
     stmt = stmt.rstrip(';')
     m = LOCAL_STMT_START_RE.match(stmt)
@@ -220,6 +222,27 @@ def parse_var(stmt):
     return name, vartype
 
 
+def extract_storage(decl, *, infunc=None):
+    """Return (storage, vartype) based on the given declaration.
+
+    The default storage is "implicit" (or "local" if infunc is True).
+    """
+    if decl == UNKNOWN:
+        return decl
+    if decl.startswith('static '):
+        return 'static'
+        #return 'static', decl.partition(' ')[2].strip()
+    elif decl.startswith('extern '):
+        return 'extern'
+        #return 'extern', decl.partition(' ')[2].strip()
+    elif re.match('.*\b(static|extern)\b', decl):
+        raise NotImplementedError
+    elif infunc:
+        return 'local'
+    else:
+        return 'implicit'
+
+
 def parse_compound(stmt, blocks):
     """Return (headers, bodies) for the given compound statement."""
     # XXX Identify declarations inside compound statements
@@ -233,7 +256,7 @@ def iter_variables(filename, *,
                    _iter_global=iter_global_declarations,
                    _iter_local=iter_local_statements,
                    _parse_func=parse_func,
-                   _parse_var=parse_var,
+                   _parse_var=_parse_var,
                    _parse_compound=parse_compound,
                    ):
     """Yield (funcname, name, vartype) for every variable in the given file."""
@@ -259,7 +282,7 @@ def iter_variables(filename, *,
 
 def _iter_locals(lines, *,
                  _iter_statements=iter_local_statements,
-                 _parse_var=parse_var,
+                 _parse_var=_parse_var,
                  _parse_compound=parse_compound,
                  ):
     compound = [lines]

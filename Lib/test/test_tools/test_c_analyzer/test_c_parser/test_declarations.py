@@ -5,7 +5,7 @@ from .. import tool_imports_for_tests
 with tool_imports_for_tests():
     from c_parser.declarations import (
         iter_global_declarations, iter_local_statements,
-        parse_func, parse_var, parse_compound,
+        parse_func, _parse_var, parse_compound,
         iter_variables,
         )
 
@@ -515,7 +515,7 @@ class ParseVarTests(TestCaseBase):
             ])
         for stmt, expected in tests:
             with self.subTest(stmt):
-                name, vartype = parse_var(stmt)
+                name, vartype = _parse_var(stmt)
 
                 self.assertEqual((name, vartype), expected)
 

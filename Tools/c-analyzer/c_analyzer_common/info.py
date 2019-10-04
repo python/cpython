@@ -152,26 +152,7 @@ def normalize_vartype(vartype):
     return str(vartype)
 
 
-def extract_storage(decl, *, isfunc=False):
-    """Return (storage, vartype) based on the given declaration.
-
-    The default storage is "implicit" or "local".
-    """
-    if decl == UNKNOWN:
-        return decl, decl
-    if decl.startswith('static '):
-        return 'static', decl
-        #return 'static', decl.partition(' ')[2].strip()
-    elif decl.startswith('extern '):
-        return 'extern', decl
-        #return 'extern', decl.partition(' ')[2].strip()
-    elif re.match('.*\b(static|extern)\b', decl):
-        raise NotImplementedError
-    elif isfunc:
-        return 'local', decl
-    else:
-        return 'implicit', decl
-
+# XXX Variable.vartype -> decl (Declaration).
 
 class Variable(_NTBase,
                namedtuple('Variable', 'id storage vartype')):
@@ -189,7 +170,8 @@ class Variable(_NTBase,
     @classonly
     def from_parts(cls, filename, funcname, name, decl, storage=None):
         if storage is None:
-            storage, decl = extract_storage(decl, isfunc=funcname)
+            from c_parser.declarations import extract_storage
+            storage = extract_storage(decl, infunc=funcname)
         id = ID(filename, funcname, name)
         self = cls(id, storage, decl)
         return self
