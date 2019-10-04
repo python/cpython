@@ -1,9 +1,10 @@
 import csv
 import os.path
 
-from . import DATA_DIR
-from .info import ID, UNKNOWN, Variable
-from .util import read_tsv
+from ..common import DATA_DIR
+from ..common.info import ID, UNKNOWN
+from ..common.util import read_tsv
+from .info import Variable
 
 # XXX need tests:
 # * from_file()

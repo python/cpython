@@ -4,9 +4,9 @@ import re
 import sys
 
 from c_analyzer.common import SOURCE_DIRS, REPO_ROOT, show
-from c_analyzer.common.find import vars_from_binary
 from c_analyzer.common.info import UNKNOWN
-from c_analyzer.common.known import (
+from c_analyzer.variables.find import vars_from_binary
+from c_analyzer.variables.known import (
     from_file as known_from_file,
     DATA_FILE as KNOWN_FILE,
     )

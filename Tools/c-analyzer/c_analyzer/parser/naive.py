@@ -1,6 +1,7 @@
 import re
 
-from ..common.info import UNKNOWN, Variable
+from ..common.info import UNKNOWN
+from ..variables.info import Variable
 
 from .preprocessor import _iter_clean_lines
 

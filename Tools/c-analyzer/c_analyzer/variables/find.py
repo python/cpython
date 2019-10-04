@@ -1,5 +1,5 @@
 from ..common import SOURCE_DIRS, PYTHON, files
-from ..common.info import UNKNOWN, Variable
+from ..common.info import UNKNOWN
 from ..parser import (
         find as p_find,
         )
@@ -7,6 +7,7 @@ from ..symbols import (
         info as s_info,
         find as s_find,
         )
+from .info import Variable
 
 # XXX need tests:
 # * vars_from_source

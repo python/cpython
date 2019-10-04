@@ -4,8 +4,10 @@ import unittest
 
 from .. import tool_imports_for_tests
 with tool_imports_for_tests():
-    from c_analyzer.common.info import Variable
-    from c_analyzer.common.known import from_file
+    from c_analyzer.variables.info import Variable
+    from c_analyzer.variables.known import (
+            from_file,
+            )
 
 
 class FromFileTests(unittest.TestCase):

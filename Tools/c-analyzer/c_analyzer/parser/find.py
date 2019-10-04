@@ -1,4 +1,5 @@
-from ..common.info import Variable, UNKNOWN
+from ..common.info import UNKNOWN
+from ..variables.info import Variable
 
 from . import declarations
 

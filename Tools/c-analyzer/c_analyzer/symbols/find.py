@@ -2,9 +2,11 @@ import os
 import os.path
 import shutil
 
-from ..common import PYTHON, known, files
-from ..common.info import UNKNOWN, Variable
+from ..common import PYTHON, files
+from ..common.info import UNKNOWN
 from ..parser import find as p_find
+from ..variables import known
+from ..variables.info import Variable
 
 from . import _nm
 from .info import Symbol
