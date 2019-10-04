@@ -1213,7 +1213,7 @@ FromObj(TkappObject *tkapp, Tcl_Obj *value)
     Tcl_Interp *interp = Tkapp_Interp(tkapp);
 
     if (value->typePtr == NULL) {
-        return unicodeFromTclStringAndSize(value->bytes, value->length);
+        return unicodeFromTclObj(value);
     }
 
     if (value->typePtr == tkapp->BooleanType ||
