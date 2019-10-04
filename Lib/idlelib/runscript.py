@@ -147,8 +147,7 @@ class ScriptBinding:
         interp = self.shell.interp
         if pyshell.use_subprocess and restart:
             interp.restart_subprocess(
-                    with_cwd=False, filename=
-                    self.editwin._filename_to_unicode(filename))
+                    with_cwd=False, filename=filename)
         dirname = os.path.dirname(filename)
         argv = [filename]
         if self.cli_args:
