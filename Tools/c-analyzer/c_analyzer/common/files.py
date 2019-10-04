@@ -2,7 +2,10 @@ import glob
 import os
 import os.path
 
-from . import SOURCE_DIRS, REPO_ROOT
+# XXX need tests:
+# * walk_tree()
+# * glob_tree()
+# * iter_files_by_suffix()
 
 
 C_SOURCE_SUFFIXES = ('.c', '.h')
@@ -115,24 +118,3 @@ def iter_files_by_suffix(root, suffixes, relparent=None, *,
     # XXX Ignore repeated suffixes?
     for suffix in suffixes:
         yield from _iter_files(root, suffix, relparent)
-
-
-def iter_cpython_files(*,
-                       walk=walk_tree,
-                       _files=iter_files_by_suffix,
-                       ):
-    """Yield each file in the tree for each of the given directory names."""
-    excludedtrees = [
-        os.path.join('Include', 'cpython', ''),
-        ]
-    def is_excluded(filename):
-        for root in excludedtrees:
-            if filename.startswith(root):
-                return True
-        return False
-    for filename in _files(SOURCE_DIRS, C_SOURCE_SUFFIXES, REPO_ROOT,
-                           walk=walk,
-                           ):
-        if is_excluded(filename):
-            continue
-        yield filename

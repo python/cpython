@@ -6,7 +6,7 @@ from .. import tool_imports_for_tests
 with tool_imports_for_tests():
     from c_analyzer.common.info import ID
     from c_analyzer.variables.info import Variable
-    from c_globals.supported import (
+    from cpython.supported import (
             is_supported, ignored_from_file,
             )
 

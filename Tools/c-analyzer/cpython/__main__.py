@@ -1,17 +1,17 @@
 import argparse
-import os.path
 import re
 import sys
 
-from c_analyzer.common import SOURCE_DIRS, REPO_ROOT, show
+from c_analyzer.common import show
 from c_analyzer.common.info import UNKNOWN
-from c_analyzer.variables.find import vars_from_binary
-from c_analyzer.variables.known import (
+
+from . import SOURCE_DIRS
+from .find import supported_vars
+from .known import (
     from_file as known_from_file,
     DATA_FILE as KNOWN_FILE,
     )
-
-from .supported import is_supported, ignored_from_file, IGNORED_FILE, _is_object
+from .supported import IGNORED_FILE
 
 
 def _check_results(unknown, knownvars, used):
@@ -65,29 +65,29 @@ def _check_results(unknown, knownvars, used):
         raise Exception('could not find all symbols')
 
 
-def _find_globals(dirnames, known, ignored):
-    if dirnames == SOURCE_DIRS:
-        dirnames = [os.path.relpath(d, REPO_ROOT) for d in dirnames]
-    # XXX For now we only use known variables (no source lookup).
-    dirnames = None
+# XXX Move this check to its own command.
+def cmd_check_cache(cmd, dirs=SOURCE_DIRS, *,
+                    known=KNOWN_FILE,
+                    ignored=IGNORED_FILE,
+                    _known_from_file=known_from_file,
+                    _find=supported_vars,
+                    ):
+    known = _known_from_file(known)
 
-    knownvars = (known or {}).get('variables')
-    for var in vars_from_binary(known=known, dirnames=dirnames):
-        if not var.isglobal:
+    used = set()
+    unknown = set()
+    for var, supported in _find(dirs, known=known, ignored=ignored):
+        if supported is None:
+            unknown.add(var)
             continue
-        elif var.vartype == UNKNOWN:
-            yield var, None
-        else:
-            yield var, is_supported(var, ignored, known)
+        used.add(var.id)
+    _check_results(unknown, known['variables'], used)
 
 
 def cmd_check(cmd, dirs=SOURCE_DIRS, *,
               known=KNOWN_FILE,
               ignored=IGNORED_FILE,
-              checkfound=False,
-              _known_from_file=known_from_file,
-              _ignored_from_file=ignored_from_file,
-              _find=_find_globals,
+              _find=supported_vars,
               _show=show.basic,
               _print=print,
               ):
@@ -97,23 +97,10 @@ def cmd_check(cmd, dirs=SOURCE_DIRS, *,
     In the failure case, the list of unsupported variables
     will be printed out.
     """
-    known = _known_from_file(known)
-    ignored = _ignored_from_file(ignored)
-
-    used = set()
-    unknown = set()
     unsupported = []
-    for var, supported in _find(dirs, known, ignored):
-        if supported is None:
-            unknown.add(var)
-            continue
-        used.add(var.id)
+    for var, supported in _find(dirs, known=known, ignored=ignored):
         if not supported:
             unsupported.append(var)
-
-    if checkfound:
-        # XXX Move this check to its own command.
-        _check_results(unknown, known['variables'], used)
 
     if not unsupported:
         #_print('okay')
@@ -130,9 +117,7 @@ def cmd_show(cmd, dirs=SOURCE_DIRS, *,
              known=KNOWN_FILE,
              ignored=IGNORED_FILE,
              skip_objects=False,
-             _known_from_file=known_from_file,
-             _ignored_from_file=ignored_from_file,
-             _find=_find_globals,
+              _find=supported_vars,
              _show=show.basic,
              _print=print,
              ):
@@ -141,17 +126,15 @@ def cmd_show(cmd, dirs=SOURCE_DIRS, *,
 
     The variables will be distinguished as "supported" or "unsupported".
     """
-    known = _known_from_file(known)
-    ignored = _ignored_from_file(ignored)
-
     allsupported = []
     allunsupported = []
-    for found, supported in _find(dirs, known, ignored):
+    for found, supported in _find(dirs,
+                                  known=known,
+                                  ignored=ignored,
+                                  skip_objects=skip_objects,
+                                  ):
         if supported is None:
             continue
-        if skip_objects:  # XXX Support proper filters instead.
-            if _is_object(found.vartype):
-                continue
         (allsupported if supported else allunsupported
          ).append(found)
 

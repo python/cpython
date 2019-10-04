@@ -1,83 +1,70 @@
 import csv
-import os.path
 
-from ..common import DATA_DIR
-from ..common.info import ID, UNKNOWN
-from ..common.util import read_tsv
-from .info import Variable
+from c_analyzer.common.info import ID, UNKNOWN
+from c_analyzer.common.util import read_tsv
+
 
 # XXX need tests:
-# * from_file()
+# * read_file()
 # * look_up_variable()
 
-
-DATA_FILE = os.path.join(DATA_DIR, 'known.tsv')
 
 COLUMNS = ('filename', 'funcname', 'name', 'kind', 'declaration')
 HEADER = '\t'.join(COLUMNS)
 
 
-def from_file(infile, *,
+def read_file(infile, *,
               _read_tsv=read_tsv,
               ):
-    """Return the info for known declarations in the given file."""
+    """Yield (kind, id, decl) for each row in the data file.
+
+    The caller is responsible for validating each row.
+    """
+    for row in _read_tsv(infile, HEADER):
+        filename, funcname, name, kind, declaration = row
+        if not funcname or funcname == '-':
+            funcname = None
+        id = ID(filename, funcname, name)
+        yield kind, id, declaration
+
+
+def _handle_var(varid, decl):
+    from ..parser.declarations import extract_storage
+    from ..variables.info import Variable
+    storage = extract_storage(decl, infunc=varid.funcname)
+    return Variable(id, storage, decl)
+
+
+def from_file(infile, *,
+              handle_var=_handle_var,
+              _read_file=read_file,
+              ):
+    """Return the info for known declarations in the given file.
+
+    "handle_var" is a function that takes (varid, decl) and returns
+    a corresponding Variable.
+    """
     known = {
         'variables': {},
         #'types': {},
         #'constants': {},
         #'macros': {},
         }
-    for row in _read_tsv(infile, HEADER):
-        filename, funcname, name, kind, declaration = row
-        if not funcname or funcname == '-':
-            funcname = None
-        id = ID(filename, funcname, name)
+    for kind, id, decl in _read_file(infile):
         if kind == 'variable':
             values = known['variables']
-            if funcname:
-                storage = _get_storage(declaration) or 'local'
-            else:
-                storage = _get_storage(declaration) or 'implicit'
-            value = Variable(id, storage, declaration)
+            value = handle_var(id, decl)
         else:
             raise ValueError(f'unsupported kind in row {row}')
         value.validate()
-#        if value.name == 'id' and declaration == UNKNOWN:
-#            # None of these are variables.
-#            declaration = 'int id';
-#        else:
-#            value.validate()
         values[id] = value
     return known
-
-
-def _get_storage(decl):
-    # statics
-    if decl.startswith('static '):
-        return 'static'
-    if decl.startswith(('Py_LOCAL(', 'Py_LOCAL_INLINE(')):
-        return 'static'
-    if decl.startswith(('_Py_IDENTIFIER(', '_Py_static_string(')):
-        return 'static'
-    if decl.startswith('PyDoc_VAR('):
-        return 'static'
-    if decl.startswith(('SLOT1BINFULL(', 'SLOT1BIN(')):
-        return 'static'
-    if decl.startswith('WRAP_METHOD('):
-        return 'static'
-    # public extern
-    if decl.startswith('extern '):
-        return 'extern'
-    if decl.startswith('PyAPI_DATA('):
-        return 'extern'
-    # implicit or local
-    return None
 
 
 def look_up_variable(varid, knownvars, *,
                      match_files=(lambda f1, f2: f1 == f2),
                      ):
-    """Return the known variable matching the given ID.
+    """Return (the known variable matching the given ID.
 
     "knownvars" is a mapping of ID to Variable.
 

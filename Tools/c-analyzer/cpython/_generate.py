@@ -1,14 +1,16 @@
 # The code here consists of hacks for pre-populating the known.tsv file.
 
-from c_parser.preprocessor import _iter_clean_lines
-from c_parser.naive import (
+from c_analyzer.parser.preprocessor import _iter_clean_lines
+from c_analyzer.parser.naive import (
         iter_variables, parse_variable_declaration, find_variables,
         )
+from c_analyzer.common.known import HEADER as KNOWN_HEADER
+from c_analyzer.common.info import UNKNOWN, ID
+from c_analyzer.variables import Variable
+from c_analyzer.util import write_tsv
 
 from . import SOURCE_DIRS, REPO_ROOT
-from .known import DATA_FILE as KNOWN_FILE, HEADER as KNOWN_HEADER
-from .info import UNKNOWN, ID, Variable
-from .util import write_tsv
+from .known import DATA_FILE as KNOWN_FILE
 from .files import iter_cpython_files
 
 

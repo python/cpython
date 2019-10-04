@@ -2,10 +2,9 @@ import os
 import os.path
 import shutil
 
-from ..common import PYTHON, files
+from ..common import files
 from ..common.info import UNKNOWN
 from ..parser import find as p_find
-from ..variables import known
 from ..variables.info import Variable
 
 from . import _nm
@@ -122,7 +121,7 @@ def _get_platform_tool():
         raise NotImplementedError
 
 
-def symbols(binfile=PYTHON, *,
+def symbols(binfile, *,
             _file_exists=os.path.exists,
             _get_platform_tool=_get_platform_tool,
             ):
@@ -134,7 +133,7 @@ def symbols(binfile=PYTHON, *,
     yield from _iter_symbols(binfile)
 
 
-def variables(binfile=PYTHON, *,
+def variables(binfile, *,
               resolve,
               _iter_symbols=symbols,
               ):
