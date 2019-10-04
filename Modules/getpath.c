@@ -657,11 +657,6 @@ calculate_pybuilddir(const wchar_t *argv0_path,
         return _PyStatus_NO_MEMORY();
     }
 
-    if (!isfile(filename)) {
-        PyMem_RawFree(filename);
-        return _PyStatus_OK();
-    }
-
     FILE *fp = _Py_wfopen(filename, L"rb");
     PyMem_RawFree(filename);
     if (fp == NULL) {
