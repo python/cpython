@@ -358,21 +358,6 @@ class EditorWindow(object):
             Font(text, font=text.cget('font')).measure('0')
         self.width = pixel_width // zero_char_width
 
-    def _filename_to_unicode(self, filename):
-        """Return filename as BMP unicode so displayable in Tk."""
-        # Decode bytes to unicode.
-        if isinstance(filename, bytes):
-            try:
-                filename = filename.decode(self.filesystemencoding)
-            except UnicodeDecodeError:
-                try:
-                    filename = filename.decode(self.encoding)
-                except UnicodeDecodeError:
-                    # byte-to-byte conversion
-                    filename = filename.decode('iso8859-1')
-        # Replace non-BMP char with diamond questionmark.
-        return re.sub('[\U00010000-\U0010FFFF]', '\ufffd', filename)
-
     def new_callback(self, event):
         dirname, basename = self.io.defaultfilename()
         self.flist.new(dirname)
@@ -963,10 +948,8 @@ class EditorWindow(object):
             menu.delete(0, END)  # clear, and rebuild:
             for i, file_name in enumerate(rf_list):
                 file_name = file_name.rstrip()  # zap \n
-                # make unicode string to display non-ASCII chars correctly
-                ufile_name = self._filename_to_unicode(file_name)
                 callback = instance.__recent_file_callback(file_name)
-                menu.add_command(label=ulchars[i] + " " + ufile_name,
+                menu.add_command(label=ulchars[i] + " " + file_name,
                                  command=callback,
                                  underline=0)
 
@@ -1004,16 +987,10 @@ class EditorWindow(object):
 
     def short_title(self):
         filename = self.io.filename
-        if filename:
-            filename = os.path.basename(filename)
-        else:
-            filename = "untitled"
-        # return unicode string to display non-ASCII chars correctly
-        return self._filename_to_unicode(filename)
+        return os.path.basename(filename) if filename else "untitled"
 
     def long_title(self):
-        # return unicode string to display non-ASCII chars correctly
-        return self._filename_to_unicode(self.io.filename or "")
+        return self.io.filename or ""
 
     def center_insert_event(self, event):
         self.center()
