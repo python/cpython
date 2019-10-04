@@ -9,7 +9,7 @@ extern "C" {
 #endif
 
 /* Forward declaration */
-typedef struct _is PyInterpreterState;
+struct _is;
 
 /* Write the Python traceback into the file 'fd'. For example:
 
@@ -57,7 +57,7 @@ PyAPI_FUNC(void) _Py_DumpTraceback(
 
 PyAPI_FUNC(const char*) _Py_DumpTracebackThreads(
     int fd,
-    PyInterpreterState *interp,
+    struct _is *interp,
     PyThreadState *current_tstate);
 
 /* Write a Unicode object into the file descriptor fd. Encode the string to
