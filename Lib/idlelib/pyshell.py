@@ -679,14 +679,6 @@ class ModifiedInterpreter(InteractiveInterpreter):
         self.more = 0
         # at the moment, InteractiveInterpreter expects str
         assert isinstance(source, str)
-        #if isinstance(source, str):
-        #    from idlelib import iomenu
-        #    try:
-        #        source = source.encode(iomenu.encoding)
-        #    except UnicodeError:
-        #        self.tkconsole.resetoutput()
-        #        self.write("Unsupported characters in input\n")
-        #        return
         # InteractiveInterpreter.runsource() calls its runcode() method,
         # which is overridden (see below)
         return InteractiveInterpreter.runsource(self, source, filename)
@@ -1298,16 +1290,6 @@ class PyShell(OutputWindow):
         self.set_line_and_column()
 
     def write(self, s, tags=()):
-        if isinstance(s, str) and len(s) and max(s) > '\uffff':
-            # Tk doesn't support outputting non-BMP characters
-            # Let's assume what printed string is not very long,
-            # find first non-BMP character and construct informative
-            # UnicodeEncodeError exception.
-            for start, char in enumerate(s):
-                if char > '\uffff':
-                    break
-            raise UnicodeEncodeError("UCS-2", char, start, start+1,
-                                     'Non-BMP character not supported in Tk')
         try:
             self.text.mark_gravity("iomark", "right")
             count = OutputWindow.write(self, s, tags, "iomark")
