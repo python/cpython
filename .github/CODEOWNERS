@@ -22,6 +22,14 @@ Objects/dict*                 @methane
 /Modules/_blake2/**           @python/crypto-team @tiran
 /Modules/_sha3/**             @python/crypto-team @tiran
 
+# logging
+**/*logging*                  @vsajip
+
+# venv
+**/*venv*                     @vsajip
+
+# Launcher
+/PC/launcher.c                @vsajip
 
 # HTML
 /Lib/html/                    @ezio-melotti
