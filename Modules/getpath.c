@@ -183,25 +183,6 @@ isfile(const wchar_t *filename)
 }
 
 
-/* Is module -- check for .pyc too */
-static int
-ismodule(wchar_t *filename, size_t filename_len)
-{
-    if (isfile(filename)) {
-        return 1;
-    }
-
-    /* Check for the compiled version of prefix. */
-    if (wcslen(filename) + 2 <= filename_len) {
-        wcscat(filename, L"c");
-        if (isfile(filename)) {
-            return 1;
-        }
-    }
-    return 0;
-}
-
-
 /* Is executable file */
 static int
 isxfile(const wchar_t *filename)
@@ -222,7 +203,7 @@ isxfile(const wchar_t *filename)
 
 /* Is directory */
 static int
-isdir(wchar_t *filename)
+isdir(const wchar_t *filename)
 {
     struct stat buf;
     if (_Py_wstat(filename, &buf) != 0) {
@@ -238,29 +219,29 @@ isdir(wchar_t *filename)
 /* Add a path component, by appending stuff to buffer.
    buflen: 'buffer' length in characters including trailing NUL. */
 static PyStatus
-joinpath(wchar_t *buffer, const wchar_t *stuff, size_t buflen)
+joinpath(wchar_t *path, const wchar_t *path2, size_t path_len)
 {
-    size_t n, k;
-    if (!_Py_isabs(stuff)) {
-        n = wcslen(buffer);
-        if (n >= buflen) {
+    size_t n;
+    if (!_Py_isabs(path2)) {
+        n = wcslen(path);
+        if (n >= path_len) {
             return PATHLEN_ERR();
         }
 
-        if (n > 0 && buffer[n-1] != SEP) {
-            buffer[n++] = SEP;
+        if (n > 0 && path[n-1] != SEP) {
+            path[n++] = SEP;
         }
     }
     else {
         n = 0;
     }
 
-    k = wcslen(stuff);
-    if (n + k >= buflen) {
+    size_t k = wcslen(path2);
+    if (n + k >= path_len) {
         return PATHLEN_ERR();
     }
-    wcsncpy(buffer+n, stuff, k);
-    buffer[n+k] = '\0';
+    wcsncpy(path + n, path2, k);
+    path[n + k] = '\0';
 
     return _PyStatus_OK();
 }
@@ -280,27 +261,27 @@ safe_wcscpy(wchar_t *dst, const wchar_t *src, size_t n)
 
 
 /* copy_absolute requires that path be allocated at least
-   'pathlen' characters (including trailing NUL). */
+   'abs_path_len' characters (including trailing NUL). */
 static PyStatus
-copy_absolute(wchar_t *path, const wchar_t *p, size_t pathlen)
+copy_absolute(wchar_t *abs_path, const wchar_t *path, size_t abs_path_len)
 {
-    if (_Py_isabs(p)) {
-        if (safe_wcscpy(path, p, pathlen) < 0) {
+    if (_Py_isabs(path)) {
+        if (safe_wcscpy(abs_path, path, abs_path_len) < 0) {
             return PATHLEN_ERR();
         }
     }
     else {
-        if (!_Py_wgetcwd(path, pathlen)) {
+        if (!_Py_wgetcwd(abs_path, abs_path_len)) {
             /* unable to get the current directory */
-            if (safe_wcscpy(path, p, pathlen) < 0) {
+            if (safe_wcscpy(abs_path, path, abs_path_len) < 0) {
                 return PATHLEN_ERR();
             }
             return _PyStatus_OK();
         }
-        if (p[0] == '.' && p[1] == SEP) {
-            p += 2;
+        if (path[0] == '.' && path[1] == SEP) {
+            path += 2;
         }
-        PyStatus status = joinpath(path, p, pathlen);
+        PyStatus status = joinpath(abs_path, path, abs_path_len);
         if (_PyStatus_EXCEPTION(status)) {
             return status;
         }
@@ -330,6 +311,41 @@ absolutize(wchar_t *path, size_t path_len)
 }
 
 
+/* Is module -- check for .pyc too */
+static PyStatus
+ismodule(const wchar_t *path, int *result)
+{
+    wchar_t filename[MAXPATHLEN+1];
+    size_t filename_len = Py_ARRAY_LENGTH(filename);
+
+    if (safe_wcscpy(filename, path, filename_len) < 0) {
+        return PATHLEN_ERR();
+    }
+
+    PyStatus status = joinpath(filename, LANDMARK, filename_len);
+    if (_PyStatus_EXCEPTION(status)) {
+        return status;
+    }
+
+    if (isfile(filename)) {
+        *result = 1;
+        return _PyStatus_OK();
+    }
+
+    /* Check for the compiled version of prefix. */
+    if (wcslen(filename) + 2 <= filename_len) {
+        wcscat(filename, L"c");
+        if (isfile(filename)) {
+            *result = 1;
+            return _PyStatus_OK();
+        }
+    }
+
+    *result = 0;
+    return _PyStatus_OK();
+}
+
+
 #if defined(__CYGWIN__) || defined(__MINGW32__)
 #ifndef EXE_SUFFIX
 #define EXE_SUFFIX L".exe"
@@ -337,26 +353,25 @@ absolutize(wchar_t *path, size_t path_len)
 
 /* pathlen: 'path' length in characters including trailing NUL */
 static PyStatus
-add_exe_suffix(wchar_t *progpath, size_t progpathlen)
+add_exe_suffix(wchar_t *path, size_t pathlen)
 {
     /* Check for already have an executable suffix */
-    size_t n = wcslen(progpath);
+    size_t n = wcslen(path);
     size_t s = wcslen(EXE_SUFFIX);
-    if (wcsncasecmp(EXE_SUFFIX, progpath + n - s, s) == 0) {
+    if (wcsncasecmp(EXE_SUFFIX, path + n - s, s) == 0) {
         return _PyStatus_OK();
     }
 
-    if (n + s >= progpathlen) {
+    if (n + s >= pathlen) {
         return PATHLEN_ERR();
     }
-    wcsncpy(progpath + n, EXE_SUFFIX, s);
-    progpath[n+s] = '\0';
+    wcsncpy(path + n, EXE_SUFFIX, s);
+    path[n + s] = '\0';
 
-    if (!isxfile(progpath)) {
+    if (!isxfile(path)) {
         /* Path that added suffix is invalid: truncate (remove suffix) */
-        progpath[n] = '\0';
+        path[n] = '\0';
     }
-
     return _PyStatus_OK();
 }
 #endif
@@ -422,14 +437,14 @@ search_for_prefix(PyCalculatePath *calculate, _PyPathConfig *pathconfig,
             if (_PyStatus_EXCEPTION(status)) {
                 return status;
             }
-            status = joinpath(prefix, LANDMARK, prefix_len);
+
+            int module;
+            status = ismodule(prefix, &module);
             if (_PyStatus_EXCEPTION(status)) {
                 return status;
             }
-
-            if (ismodule(prefix, prefix_len)) {
+            if (module) {
                 *found = -1;
-                reduce(prefix);
                 return _PyStatus_OK();
             }
         }
@@ -448,14 +463,14 @@ search_for_prefix(PyCalculatePath *calculate, _PyPathConfig *pathconfig,
         if (_PyStatus_EXCEPTION(status)) {
             return status;
         }
-        status = joinpath(prefix, LANDMARK, prefix_len);
+
+        int module;
+        status = ismodule(prefix, &module);
         if (_PyStatus_EXCEPTION(status)) {
             return status;
         }
-
-        if (ismodule(prefix, prefix_len)) {
+        if (module) {
             *found = 1;
-            reduce(prefix);
             return _PyStatus_OK();
         }
         prefix[n] = L'\0';
@@ -471,14 +486,14 @@ search_for_prefix(PyCalculatePath *calculate, _PyPathConfig *pathconfig,
     if (_PyStatus_EXCEPTION(status)) {
         return status;
     }
-    status = joinpath(prefix, LANDMARK, prefix_len);
+
+    int module;
+    status = ismodule(prefix, &module);
     if (_PyStatus_EXCEPTION(status)) {
         return status;
     }
-
-    if (ismodule(prefix, prefix_len)) {
+    if (module) {
         *found = 1;
-        reduce(prefix);
         return _PyStatus_OK();
     }
 
@@ -1038,12 +1053,13 @@ calculate_argv0_path_framework(PyCalculatePath *calculate,
     if (_PyStatus_EXCEPTION(status)) {
         goto done;
     }
-    status = joinpath(argv0_path, LANDMARK, argv0_path_len);
+
+    int module;
+    status = ismodule(argv0_path, &module);
     if (_PyStatus_EXCEPTION(status)) {
         goto done;
     }
-
-    if (ismodule(argv0_path, Py_ARRAY_LENGTH(argv0_path))) {
+    if (module) {
         /* Use the location of the library as argv0_path */
         if (safe_wcscpy(argv0_path, wbuf, argv0_path_len) < 0) {
             status = PATHLEN_ERR();
