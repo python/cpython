@@ -5,7 +5,7 @@ from . import events
 from . import tasks
 
 
-# Default timeout for joining each thread in `shutdown_default_executor()`
+# Default timeout for joining the threads in the threadpool
 THREAD_JOIN_TIMEOUT = 300
 
 
