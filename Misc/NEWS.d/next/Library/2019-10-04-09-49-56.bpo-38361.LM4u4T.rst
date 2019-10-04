@@ -1,0 +1,1 @@
+Fixed an issue where ``ident`` could include a leading path separator when :func:`syslog.openlog` was called without arguments.
