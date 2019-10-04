@@ -1,7 +1,7 @@
 import os.path
 import shutil
 
-from c_analyzer_common import util, info
+from c_analyzer.common import util, info
 
 from .info import Symbol
 

@@ -2,8 +2,8 @@ import unittest
 
 from .. import tool_imports_for_tests
 with tool_imports_for_tests():
-    from c_analyzer_common import info
-    from c_analyzer_common.find import vars_from_binary
+    from c_analyzer.common import info
+    from c_analyzer.common.find import vars_from_binary
 
 
 class _Base(unittest.TestCase):

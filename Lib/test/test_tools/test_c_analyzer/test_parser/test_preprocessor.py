@@ -6,7 +6,7 @@ import sys
 from ..util import wrapped_arg_combos, StrProxy
 from .. import tool_imports_for_tests
 with tool_imports_for_tests():
-    from c_parser.preprocessor import (
+    from c_analyzer.parser.preprocessor import (
         iter_lines,
         # directives
         parse_directive, PreprocessorDirective,

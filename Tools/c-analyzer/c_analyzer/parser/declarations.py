@@ -2,7 +2,7 @@ import re
 import shlex
 import subprocess
 
-from c_analyzer_common.info import UNKNOWN
+from ..common.info import UNKNOWN
 
 from . import source
 
@@ -194,6 +194,27 @@ def parse_func(stmt, body):
     assert name
 
     return name, signature
+
+
+#TYPE_SPEC = rf'''(?:
+#        )'''
+#VAR_DECLARATOR = rf'''(?:
+#        )'''
+#VAR_DECL = rf'''(?:
+#            {TYPE_SPEC}+
+#            {VAR_DECLARATOR}
+#            \s*
+#        )'''
+#VAR_DECLARATION = rf'''(?:
+#            {VAR_DECL}
+#            (?: = [^=] [^;]* )?
+#            ;
+#        )'''
+#
+#
+#def parse_variable(decl, *, inFunc=False):
+#    """Return [(name, storage, vartype)] for the given variable declaration."""
+#    ...
 
 
 def _parse_var(stmt):

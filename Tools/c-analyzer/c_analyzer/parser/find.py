@@ -1,4 +1,4 @@
-from c_analyzer_common.info import Variable, UNKNOWN
+from ..common.info import Variable, UNKNOWN
 
 from . import declarations
 

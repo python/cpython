@@ -170,7 +170,7 @@ class Variable(_NTBase,
     @classonly
     def from_parts(cls, filename, funcname, name, decl, storage=None):
         if storage is None:
-            from c_parser.declarations import extract_storage
+            from ..parser.declarations import extract_storage
             storage = extract_storage(decl, infunc=funcname)
         id = ID(filename, funcname, name)
         self = cls(id, storage, decl)

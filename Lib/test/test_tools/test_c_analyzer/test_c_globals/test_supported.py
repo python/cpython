@@ -4,7 +4,7 @@ import unittest
 
 from .. import tool_imports_for_tests
 with tool_imports_for_tests():
-    from c_analyzer_common.info import ID, Variable
+    from c_analyzer.common.info import ID, Variable
     from c_globals.supported import is_supported, ignored_from_file
 
 

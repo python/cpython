@@ -3,7 +3,7 @@ import shlex
 import os
 import re
 
-from c_analyzer_common import util, info
+from ..common import util, info
 
 
 CONTINUATION = '\\' + os.linesep

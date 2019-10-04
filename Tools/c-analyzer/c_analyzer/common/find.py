@@ -1,11 +1,11 @@
-from c_analyzer_common import SOURCE_DIRS, PYTHON, files
-from c_analyzer_common.info import UNKNOWN, Variable
-from c_symbols import (
+from ..common import SOURCE_DIRS, PYTHON, files
+from ..common.info import UNKNOWN, Variable
+from ..parser import (
+        find as p_find,
+        )
+from ..symbols import (
         info as s_info,
         find as s_find,
-        )
-from c_parser import (
-        find as p_find,
         )
 
 # XXX need tests:

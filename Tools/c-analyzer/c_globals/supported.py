@@ -1,9 +1,12 @@
 import os.path
 import re
 
-from c_analyzer_common import DATA_DIR
-from c_analyzer_common.info import ID
-from c_analyzer_common.util import read_tsv, write_tsv
+from c_analyzer.common import DATA_DIR
+from c_analyzer.common.info import ID
+from c_analyzer.common.util import read_tsv, write_tsv
+
+# XXX need tests:
+# * generate / script
 
 
 IGNORED_FILE = os.path.join(DATA_DIR, 'ignored.tsv')
@@ -379,11 +382,12 @@ def _generate_ignored_file(variables, filename=None, *,
 
 
 if __name__ == '__main__':
-    from c_analyzer_common import SOURCE_DIRS
-    from c_analyzer_common.known import (
+    from c_analyzer.common import SOURCE_DIRS
+    from c_analyzer.common.known import (
         from_file as known_from_file,
         DATA_FILE as KNOWN_FILE,
         )
+    # XXX This is wrong!
     from . import find
     known = known_from_file(KNOWN_FILE)
     knownvars = (known or {}).get('variables')

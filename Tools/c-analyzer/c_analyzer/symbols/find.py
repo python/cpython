@@ -2,9 +2,9 @@ import os
 import os.path
 import shutil
 
-from c_analyzer_common import PYTHON, known, files
-from c_analyzer_common.info import UNKNOWN, Variable
-from c_parser import find as p_find
+from ..common import PYTHON, known, files
+from ..common.info import UNKNOWN, Variable
+from ..parser import find as p_find
 
 from . import _nm
 from .info import Symbol

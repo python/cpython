@@ -1,7 +1,7 @@
 from collections import namedtuple
 
-from c_analyzer_common.info import ID
-from c_analyzer_common.util import classonly, _NTBase
+from c_analyzer.common.info import ID
+from c_analyzer.common.util import classonly, _NTBase
 
 
 class Symbol(_NTBase, namedtuple('Symbol', 'id kind external')):

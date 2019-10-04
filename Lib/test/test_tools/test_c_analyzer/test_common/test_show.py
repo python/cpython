@@ -2,8 +2,8 @@ import unittest
 
 from .. import tool_imports_for_tests
 with tool_imports_for_tests():
-    from c_analyzer_common import info
-    from c_analyzer_common.show import basic
+    from c_analyzer.common import info
+    from c_analyzer.common.show import basic
 
 
 TYPICAL = [

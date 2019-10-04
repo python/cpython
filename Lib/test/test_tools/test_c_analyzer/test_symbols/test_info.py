@@ -4,8 +4,8 @@ import unittest
 from ..util import PseudoStr, StrProxy, Object
 from .. import tool_imports_for_tests
 with tool_imports_for_tests():
-    from c_analyzer_common.info import ID
-    from c_symbols.info import Symbol
+    from c_analyzer.common.info import ID
+    from c_analyzer.symbols.info import Symbol
 
 
 class SymbolTests(unittest.TestCase):

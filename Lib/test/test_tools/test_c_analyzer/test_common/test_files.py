@@ -3,7 +3,7 @@ import unittest
 
 from .. import tool_imports_for_tests
 with tool_imports_for_tests():
-    from c_analyzer_common.files import (
+    from c_analyzer.common.files import (
             iter_files, _walk_tree, glob_tree,
             )
 
