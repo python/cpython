@@ -748,7 +748,7 @@ The changes above have been backported to 3.7 maintenance releases.
 json.tool
 ---------
 
-Add option ``--json-lines`` to parse every input line as separate JSON objects.
+Add option ``--json-lines`` to parse every input line as a separate JSON object.
 (Contributed by Weipeng Hong in :issue:`31553`.)
 
 
@@ -1574,7 +1574,7 @@ Changes in the Python API
   (Contributed by Eric Snow in :issue:`34651`, modified by Christian Heimes
   in :issue:`37951`.)
 
-* The :meth:`imaplib.IMAP4.logout` method no longer ignores silently arbitrary
+* The :meth:`imaplib.IMAP4.logout` method no longer silently ignores arbitrary
   exceptions.
 
 * The function :func:`platform.popen` has been removed, it was deprecated since
