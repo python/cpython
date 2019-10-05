@@ -328,16 +328,16 @@ PyCode_Optimize(PyObject *code, PyObject* consts, PyObject *names,
             case BUILD_TUPLE:
             case BUILD_LIST:
                 j = get_arg(codestr, i);
-                int islist = opcode == BUILD_LIST;
-                if (islist && j <= 1) {
+                int is_tuple = opcode == BUILD_TUPLE;
+                if (!is_tuple && j <= 1) {
                     break;
                 }
                 if (j > 0 && lastlc >= j) {
                     h = lastn_const_start(codestr, op_start, j);
                     if (ISBASICBLOCK(blocks, h, op_start)) {
                         h = fold_tuple_on_constants(codestr, codelen,
-                                                    h, i+1-islist, consts, j);
-                        if (h >= 0 && islist) {
+                                                    h, i+is_tuple, consts, j);
+                        if (!is_tuple && h >= 0) {
                             codestr[op_start] = PACKOPARG(BUILD_LIST_UNPACK, 1);
                         }
                         break;
