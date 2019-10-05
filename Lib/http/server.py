@@ -642,7 +642,7 @@ class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
     def __init__(self, *args, directory=None, **kwargs):
         if directory is None:
             directory = os.getcwd()
-        self.directory = directory
+        self.directory = os.fspath(directory)
         super().__init__(*args, **kwargs)
 
     def do_GET(self):

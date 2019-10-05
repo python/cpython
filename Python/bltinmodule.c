@@ -1796,22 +1796,22 @@ builtin_ord(PyObject *module, PyObject *c)
 /*[clinic input]
 pow as builtin_pow
 
-    x: object
-    y: object
-    z: object = None
-    /
+    base: object
+    exp: object
+    mod: object = None
 
-Equivalent to x**y (with two arguments) or x**y % z (with three arguments)
+Equivalent to base**exp with 2 arguments or base**exp % mod with 3 arguments
 
 Some types, such as ints, are able to use a more efficient algorithm when
 invoked using the three argument form.
 [clinic start generated code]*/
 
 static PyObject *
-builtin_pow_impl(PyObject *module, PyObject *x, PyObject *y, PyObject *z)
-/*[clinic end generated code: output=50a14d5d130d404b input=653d57d38d41fc07]*/
+builtin_pow_impl(PyObject *module, PyObject *base, PyObject *exp,
+                 PyObject *mod)
+/*[clinic end generated code: output=3ca1538221bbf15f input=435dbd48a12efb23]*/
 {
-    return PyNumber_Power(x, y, z);
+    return PyNumber_Power(base, exp, mod);
 }
 
 
@@ -1820,8 +1820,9 @@ static PyObject *
 builtin_print(PyObject *self, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     static const char * const _keywords[] = {"sep", "end", "file", "flush", 0};
-    static struct _PyArg_Parser _parser = {"|OOOO:print", _keywords, 0};
-    PyObject *sep = NULL, *end = NULL, *file = NULL, *flush = NULL;
+    static struct _PyArg_Parser _parser = {"|OOOp:print", _keywords, 0};
+    PyObject *sep = NULL, *end = NULL, *file = NULL;
+    int flush = 0;
     int i, err;
 
     if (kwnames != NULL &&
@@ -1883,18 +1884,11 @@ builtin_print(PyObject *self, PyObject *const *args, Py_ssize_t nargs, PyObject 
     if (err)
         return NULL;
 
-    if (flush != NULL) {
-        PyObject *tmp;
-        int do_flush = PyObject_IsTrue(flush);
-        if (do_flush == -1)
+    if (flush) {
+        PyObject *tmp = _PyObject_CallMethodIdNoArgs(file, &PyId_flush);
+        if (tmp == NULL)
             return NULL;
-        else if (do_flush) {
-            tmp = _PyObject_CallMethodIdNoArgs(file, &PyId_flush);
-            if (tmp == NULL)
-                return NULL;
-            else
-                Py_DECREF(tmp);
-        }
+        Py_DECREF(tmp);
     }
 
     Py_RETURN_NONE;
@@ -2146,7 +2140,7 @@ builtin_repr(PyObject *module, PyObject *obj)
 round as builtin_round
 
     number: object
-    ndigits: object = NULL
+    ndigits: object = None
 
 Round a number to a given precision in decimal digits.
 
@@ -2156,7 +2150,7 @@ the return value has the same type as the number.  ndigits may be negative.
 
 static PyObject *
 builtin_round_impl(PyObject *module, PyObject *number, PyObject *ndigits)
-/*[clinic end generated code: output=ff0d9dd176c02ede input=854bc3a217530c3d]*/
+/*[clinic end generated code: output=ff0d9dd176c02ede input=275678471d7aca15]*/
 {
     PyObject *round, *result;
 
@@ -2174,7 +2168,7 @@ builtin_round_impl(PyObject *module, PyObject *number, PyObject *ndigits)
         return NULL;
     }
 
-    if (ndigits == NULL || ndigits == Py_None)
+    if (ndigits == Py_None)
         result = _PyObject_CallNoArg(round);
     else
         result = _PyObject_CallOneArg(round, ndigits);
@@ -2255,16 +2249,12 @@ builtin_vars(PyObject *self, PyObject *args)
         return NULL;
     if (v == NULL) {
         d = PyEval_GetLocals();
-        if (d == NULL)
-            return NULL;
-        Py_INCREF(d);
+        Py_XINCREF(d);
     }
     else {
-        d = _PyObject_GetAttrId(v, &PyId___dict__);
-        if (d == NULL) {
+        if (_PyObject_LookupAttrId(v, &PyId___dict__, &d) == 0) {
             PyErr_SetString(PyExc_TypeError,
                 "vars() argument must have __dict__ attribute");
-            return NULL;
         }
     }
     return d;
@@ -2352,7 +2342,7 @@ builtin_sum_impl(PyObject *module, PyObject *iterable, PyObject *start)
                     return NULL;
                 return PyLong_FromLong(i_result);
             }
-            if (PyLong_CheckExact(item)) {
+            if (PyLong_CheckExact(item) || PyBool_Check(item)) {
                 long b = PyLong_AsLongAndOverflow(item, &overflow);
                 if (overflow == 0 &&
                     (i_result >= 0 ? (b <= LONG_MAX - i_result)
@@ -2400,7 +2390,7 @@ builtin_sum_impl(PyObject *module, PyObject *iterable, PyObject *start)
                 Py_DECREF(item);
                 continue;
             }
-            if (PyLong_CheckExact(item)) {
+            if (PyLong_Check(item)) {
                 long value;
                 int overflow;
                 value = PyLong_AsLongAndOverflow(item, &overflow);
@@ -2548,10 +2538,6 @@ zip_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
         PyObject *item = PyTuple_GET_ITEM(args, i);
         PyObject *it = PyObject_GetIter(item);
         if (it == NULL) {
-            if (PyErr_ExceptionMatches(PyExc_TypeError))
-                PyErr_Format(PyExc_TypeError,
-                    "zip argument #%zd must support iteration",
-                    i+1);
             Py_DECREF(ittuple);
             return NULL;
         }

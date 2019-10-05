@@ -73,10 +73,10 @@ menudefs = [
    ]),
 
  ('run', [
-   ('Python Shell', '<<open-python-shell>>'),
-   ('C_heck Module', '<<check-module>>'),
    ('R_un Module', '<<run-module>>'),
    ('Run... _Customized', '<<run-custom>>'),
+   ('C_heck Module', '<<check-module>>'),
+   ('Python Shell', '<<open-python-shell>>'),
    ]),
 
  ('shell', [

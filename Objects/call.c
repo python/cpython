@@ -5,9 +5,6 @@
 #include "frameobject.h"
 
 
-static PyObject *
-cfunction_call_varargs(PyObject *func, PyObject *args, PyObject *kwargs);
-
 static PyObject *const *
 _PyStack_UnpackDict(PyObject *const *args, Py_ssize_t nargs, PyObject *kwargs,
                     PyObject **p_kwnames);
@@ -236,11 +233,6 @@ PyObject_Call(PyObject *callable, PyObject *args, PyObject *kwargs)
     if (_PyVectorcall_Function(callable) != NULL) {
         return PyVectorcall_Call(callable, args, kwargs);
     }
-    else if (PyCFunction_Check(callable)) {
-        /* This must be a METH_VARARGS function, otherwise we would be
-         * in the previous case */
-        return cfunction_call_varargs(callable, args, kwargs);
-    }
     else {
         call = callable->ob_type->tp_call;
         if (call == NULL) {
@@ -258,6 +250,13 @@ PyObject_Call(PyObject *callable, PyObject *args, PyObject *kwargs)
 
         return _Py_CheckFunctionResult(callable, result, NULL);
     }
+}
+
+
+PyObject *
+PyCFunction_Call(PyObject *callable, PyObject *args, PyObject *kwargs)
+{
+    return PyObject_Call(callable, args, kwargs);
 }
 
 
@@ -322,8 +321,7 @@ _PyFunction_Vectorcall(PyObject *func, PyObject* const* stack,
     assert(nargs >= 0);
     assert(kwnames == NULL || PyTuple_CheckExact(kwnames));
     assert((nargs == 0 && nkwargs == 0) || stack != NULL);
-    /* kwnames must only contains str strings, no subclass, and all keys must
-       be unique */
+    /* kwnames must only contain strings and all keys must be unique */
 
     if (co->co_kwonlyargcount == 0 && nkwargs == 0 &&
         (co->co_flags & ~PyCF_MASK) == (CO_OPTIMIZED | CO_NEWLOCALS | CO_NOFREE))
@@ -361,60 +359,6 @@ _PyFunction_Vectorcall(PyObject *func, PyObject* const* stack,
                                     nkwargs, 1,
                                     d, (int)nd, kwdefs,
                                     closure, name, qualname);
-}
-
-
-/* --- PyCFunction call functions --------------------------------- */
-
-static PyObject *
-cfunction_call_varargs(PyObject *func, PyObject *args, PyObject *kwargs)
-{
-    assert(!PyErr_Occurred());
-    assert(kwargs == NULL || PyDict_Check(kwargs));
-
-    PyCFunction meth = PyCFunction_GET_FUNCTION(func);
-    PyObject *self = PyCFunction_GET_SELF(func);
-    PyObject *result;
-
-    assert(PyCFunction_GET_FLAGS(func) & METH_VARARGS);
-    if (PyCFunction_GET_FLAGS(func) & METH_KEYWORDS) {
-        if (Py_EnterRecursiveCall(" while calling a Python object")) {
-            return NULL;
-        }
-
-        result = (*(PyCFunctionWithKeywords)(void(*)(void))meth)(self, args, kwargs);
-
-        Py_LeaveRecursiveCall();
-    }
-    else {
-        if (kwargs != NULL && PyDict_GET_SIZE(kwargs) != 0) {
-            PyErr_Format(PyExc_TypeError, "%.200s() takes no keyword arguments",
-                         ((PyCFunctionObject*)func)->m_ml->ml_name);
-            return NULL;
-        }
-
-        if (Py_EnterRecursiveCall(" while calling a Python object")) {
-            return NULL;
-        }
-
-        result = (*meth)(self, args);
-
-        Py_LeaveRecursiveCall();
-    }
-
-    return _Py_CheckFunctionResult(func, result, NULL);
-}
-
-
-PyObject *
-PyCFunction_Call(PyObject *func, PyObject *args, PyObject *kwargs)
-{
-    /* For METH_VARARGS, we cannot use vectorcall as the vectorcall pointer
-     * is NULL. This is intentional, since vectorcall would be slower. */
-    if (PyCFunction_GET_FLAGS(func) & METH_VARARGS) {
-        return cfunction_call_varargs(func, args, kwargs);
-    }
-    return PyVectorcall_Call(func, args, kwargs);
 }
 
 
@@ -943,12 +887,12 @@ _PyStack_AsDict(PyObject *const *values, PyObject *kwnames)
    vector; return NULL with exception set on error. Return the keyword names
    tuple in *p_kwnames.
 
+   This also checks that all keyword names are strings. If not, a TypeError is
+   raised.
+
    The newly allocated argument vector supports PY_VECTORCALL_ARGUMENTS_OFFSET.
 
-   When done, you must call _PyStack_UnpackDict_Free(stack, nargs, kwnames)
-
-   The type of keyword keys is not checked, these checks should be done
-   later (ex: _PyArg_ParseStackAndKeywords). */
+   When done, you must call _PyStack_UnpackDict_Free(stack, nargs, kwnames) */
 static PyObject *const *
 _PyStack_UnpackDict(PyObject *const *args, Py_ssize_t nargs, PyObject *kwargs,
                     PyObject **p_kwnames)
@@ -994,12 +938,26 @@ _PyStack_UnpackDict(PyObject *const *args, Py_ssize_t nargs, PyObject *kwargs,
        called in the performance critical hot code. */
     Py_ssize_t pos = 0, i = 0;
     PyObject *key, *value;
+    unsigned long keys_are_strings = Py_TPFLAGS_UNICODE_SUBCLASS;
     while (PyDict_Next(kwargs, &pos, &key, &value)) {
+        keys_are_strings &= Py_TYPE(key)->tp_flags;
         Py_INCREF(key);
         Py_INCREF(value);
         PyTuple_SET_ITEM(kwnames, i, key);
         kwstack[i] = value;
         i++;
+    }
+
+    /* keys_are_strings has the value Py_TPFLAGS_UNICODE_SUBCLASS if that
+     * flag is set for all keys. Otherwise, keys_are_strings equals 0.
+     * We do this check once at the end instead of inside the loop above
+     * because it simplifies the deallocation in the failing case.
+     * It happens to also make the loop above slightly more efficient. */
+    if (!keys_are_strings) {
+        PyErr_SetString(PyExc_TypeError,
+                        "keywords must be strings");
+        _PyStack_UnpackDict_Free(stack, nargs, kwnames);
+        return NULL;
     }
 
     *p_kwnames = kwnames;

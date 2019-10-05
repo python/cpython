@@ -32,6 +32,7 @@
 #define PyTZInfo_Check(op) PyObject_TypeCheck(op, &PyDateTime_TZInfoType)
 #define PyTZInfo_CheckExact(op) (Py_TYPE(op) == &PyDateTime_TZInfoType)
 
+#define PyTimezone_Check(op) PyObject_TypeCheck(op, &PyDateTime_TimeZoneType)
 
 /*[clinic input]
 module datetime
@@ -1099,7 +1100,9 @@ new_timezone(PyObject *offset, PyObject *name)
         Py_INCREF(PyDateTime_TimeZone_UTC);
         return PyDateTime_TimeZone_UTC;
     }
-    if ((GET_TD_DAYS(offset) == -1 && GET_TD_SECONDS(offset) == 0) ||
+    if ((GET_TD_DAYS(offset) == -1 &&
+            GET_TD_SECONDS(offset) == 0 &&
+            GET_TD_MICROSECONDS(offset) < 1) ||
         GET_TD_DAYS(offset) < -1 || GET_TD_DAYS(offset) >= 1) {
         PyErr_Format(PyExc_ValueError, "offset must be a timedelta"
                      " strictly between -timedelta(hours=24) and"
@@ -1169,7 +1172,9 @@ call_tzinfo_method(PyObject *tzinfo, const char *name, PyObject *tzinfoarg)
     if (offset == Py_None || offset == NULL)
         return offset;
     if (PyDelta_Check(offset)) {
-        if ((GET_TD_DAYS(offset) == -1 && GET_TD_SECONDS(offset) == 0) ||
+        if ((GET_TD_DAYS(offset) == -1 &&
+                GET_TD_SECONDS(offset) == 0 &&
+                GET_TD_MICROSECONDS(offset) < 1) ||
             GET_TD_DAYS(offset) < -1 || GET_TD_DAYS(offset) >= 1) {
             Py_DECREF(offset);
             PyErr_Format(PyExc_ValueError, "offset must be a timedelta"
@@ -3602,24 +3607,24 @@ tzinfo_reduce(PyObject *self, PyObject *Py_UNUSED(ignored))
     _Py_IDENTIFIER(__getinitargs__);
     _Py_IDENTIFIER(__getstate__);
 
-    getinitargs = _PyObject_GetAttrId(self, &PyId___getinitargs__);
+    if (_PyObject_LookupAttrId(self, &PyId___getinitargs__, &getinitargs) < 0) {
+        return NULL;
+    }
     if (getinitargs != NULL) {
         args = PyObject_CallNoArgs(getinitargs);
         Py_DECREF(getinitargs);
-        if (args == NULL) {
-            return NULL;
-        }
     }
     else {
-        PyErr_Clear();
-
         args = PyTuple_New(0);
-        if (args == NULL) {
-            return NULL;
-        }
+    }
+    if (args == NULL) {
+        return NULL;
     }
 
-    getstate = _PyObject_GetAttrId(self, &PyId___getstate__);
+    if (_PyObject_LookupAttrId(self, &PyId___getstate__, &getstate) < 0) {
+        Py_DECREF(args);
+        return NULL;
+    }
     if (getstate != NULL) {
         state = PyObject_CallNoArgs(getstate);
         Py_DECREF(getstate);
@@ -3630,7 +3635,6 @@ tzinfo_reduce(PyObject *self, PyObject *Py_UNUSED(ignored))
     }
     else {
         PyObject **dictptr;
-        PyErr_Clear();
         state = Py_None;
         dictptr = _PyObject_GetDictPtr(self);
         if (dictptr && *dictptr && PyDict_GET_SIZE(*dictptr)) {
@@ -3741,7 +3745,7 @@ timezone_richcompare(PyDateTime_TimeZone *self,
 {
     if (op != Py_EQ && op != Py_NE)
         Py_RETURN_NOTIMPLEMENTED;
-    if (!PyTZInfo_Check(other)) {
+    if (!PyTimezone_Check(other)) {
         Py_RETURN_NOTIMPLEMENTED;
     }
     return delta_richcompare(self->offset, other->offset, op);
@@ -4073,7 +4077,7 @@ time_new(PyTypeObject *type, PyObject *args, PyObject *kw)
                 return NULL;
             }
             if (PyUnicode_GET_LENGTH(state) == _PyDateTime_TIME_DATASIZE &&
-                (0x7F & PyUnicode_READ_CHAR(state, 2)) < 24)
+                (0x7F & PyUnicode_READ_CHAR(state, 0)) < 24)
             {
                 state = PyUnicode_AsLatin1String(state);
                 if (state == NULL) {
@@ -6481,6 +6485,9 @@ PyInit__datetime(void)
     PyDateTime_TimeZone_UTC = x;
     CAPI.TimeZone_UTC = PyDateTime_TimeZone_UTC;
 
+    /* bpo-37642: These attributes are rounded to the nearest minute for backwards
+     * compatibility, even though the constructor will accept a wider range of
+     * values. This may change in the future.*/
     delta = new_delta(-1, 60, 0, 1); /* -23:59 */
     if (delta == NULL)
         return NULL;

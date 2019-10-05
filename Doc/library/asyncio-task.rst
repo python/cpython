@@ -212,9 +212,11 @@ Running an asyncio Program
 
 .. function:: run(coro, \*, debug=False)
 
+    Execute the :term:`coroutine` *coro* and return the result.
+
     This function runs the passed coroutine, taking care of
-    managing the asyncio event loop and *finalizing asynchronous
-    generators*.
+    managing the asyncio event loop, *finalizing asynchronous
+    generators*, and closing the threadpool.
 
     This function cannot be called when another asyncio event loop is
     running in the same thread.
@@ -225,10 +227,18 @@ Running an asyncio Program
     the end.  It should be used as a main entry point for asyncio
     programs, and should ideally only be called once.
 
-    .. versionadded:: 3.7
-       **Important:** this function has been added to asyncio in
-       Python 3.7 on a :term:`provisional basis <provisional api>`.
+    Example::
 
+        async def main():
+            await asyncio.sleep(1)
+            print('hello')
+
+        asyncio.run(main())
+
+    .. versionadded:: 3.7
+
+    .. versionchanged:: 3.9
+       Updated to use :meth:`loop.shutdown_default_executor`.
 
 Creating Tasks
 ==============
@@ -334,6 +344,9 @@ Running Tasks Concurrently
    cancellation of one submitted Task/Future to cause other
    Tasks/Futures to be cancelled.
 
+   .. deprecated-removed:: 3.8 3.10
+      The *loop* parameter.
+
    .. _asyncio_example_gather:
 
    Example::
@@ -411,6 +424,9 @@ Shielding From Cancellation
        except CancelledError:
            res = None
 
+   .. deprecated-removed:: 3.8 3.10
+      The *loop* parameter.
+
 
 Timeouts
 ========
@@ -478,21 +494,11 @@ Waiting Primitives
    set concurrently and block until the condition specified
    by *return_when*.
 
-   .. deprecated:: 3.8
-
-      If any awaitable in *aws* is a coroutine, it is automatically
-      scheduled as a Task.  Passing coroutines objects to
-      ``wait()`` directly is deprecated as it leads to
-      :ref:`confusing behavior <asyncio_example_wait_coroutine>`.
-
    Returns two sets of Tasks/Futures: ``(done, pending)``.
 
    Usage::
 
         done, pending = await asyncio.wait(aws)
-
-   .. deprecated-removed:: 3.8 3.10
-      The *loop* parameter.
 
    *timeout* (a float or int), if specified, can be used to control
    the maximum number of seconds to wait before returning.
@@ -524,6 +530,17 @@ Waiting Primitives
 
    Unlike :func:`~asyncio.wait_for`, ``wait()`` does not cancel the
    futures when a timeout occurs.
+
+   .. deprecated:: 3.8
+
+      If any awaitable in *aws* is a coroutine, it is automatically
+      scheduled as a Task.  Passing coroutines objects to
+      ``wait()`` directly is deprecated as it leads to
+      :ref:`confusing behavior <asyncio_example_wait_coroutine>`.
+
+   .. deprecated-removed:: 3.8 3.10
+
+      The *loop* parameter.
 
    .. _asyncio_example_wait_coroutine:
    .. note::
@@ -567,6 +584,9 @@ Waiting Primitives
 
    Raises :exc:`asyncio.TimeoutError` if the timeout occurs before
    all Futures are done.
+
+   .. deprecated-removed:: 3.8 3.10
+      The *loop* parameter.
 
    Example::
 
@@ -693,6 +713,9 @@ Task Object
 
    .. versionchanged:: 3.8
       Added the ``name`` parameter.
+
+   .. deprecated-removed:: 3.8 3.10
+      The *loop* parameter.
 
    .. method:: cancel()
 

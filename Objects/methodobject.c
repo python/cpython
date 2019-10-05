@@ -19,6 +19,8 @@ static PyObject * cfunction_vectorcall_NOARGS(
     PyObject *func, PyObject *const *args, size_t nargsf, PyObject *kwnames);
 static PyObject * cfunction_vectorcall_O(
     PyObject *func, PyObject *const *args, size_t nargsf, PyObject *kwnames);
+static PyObject * cfunction_call(
+    PyObject *func, PyObject *args, PyObject *kwargs);
 
 
 PyObject *
@@ -289,7 +291,7 @@ PyTypeObject PyCFunction_Type = {
     0,                                          /* tp_as_sequence */
     0,                                          /* tp_as_mapping */
     (hashfunc)meth_hash,                        /* tp_hash */
-    PyCFunction_Call,                           /* tp_call */
+    cfunction_call,                             /* tp_call */
     0,                                          /* tp_str */
     PyObject_GenericGetAttr,                    /* tp_getattro */
     0,                                          /* tp_setattro */
@@ -319,7 +321,7 @@ PyCFunction_ClearFreeList(void)
 }
 
 void
-PyCFunction_Fini(void)
+_PyCFunction_Fini(void)
 {
     (void)PyCFunction_ClearFreeList();
 }
@@ -440,4 +442,37 @@ cfunction_vectorcall_O(
     PyObject *result = meth(PyCFunction_GET_SELF(func), args[0]);
     Py_LeaveRecursiveCall();
     return result;
+}
+
+
+static PyObject *
+cfunction_call(PyObject *func, PyObject *args, PyObject *kwargs)
+{
+    assert(!PyErr_Occurred());
+    assert(kwargs == NULL || PyDict_Check(kwargs));
+
+    int flags = PyCFunction_GET_FLAGS(func);
+    if (!(flags & METH_VARARGS)) {
+        /* If this is not a METH_VARARGS function, delegate to vectorcall */
+        return PyVectorcall_Call(func, args, kwargs);
+    }
+
+    /* For METH_VARARGS, we cannot use vectorcall as the vectorcall pointer
+     * is NULL. This is intentional, since vectorcall would be slower. */
+    PyCFunction meth = PyCFunction_GET_FUNCTION(func);
+    PyObject *self = PyCFunction_GET_SELF(func);
+
+    PyObject *result;
+    if (flags & METH_KEYWORDS) {
+        result = (*(PyCFunctionWithKeywords)(void(*)(void))meth)(self, args, kwargs);
+    }
+    else {
+        if (kwargs != NULL && PyDict_GET_SIZE(kwargs) != 0) {
+            PyErr_Format(PyExc_TypeError, "%.200s() takes no keyword arguments",
+                         ((PyCFunctionObject*)func)->m_ml->ml_name);
+            return NULL;
+        }
+        result = meth(self, args);
+    }
+    return _Py_CheckFunctionResult(func, result, NULL);
 }

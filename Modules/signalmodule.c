@@ -1329,7 +1329,7 @@ static struct PyModuleDef signalmodule = {
 PyMODINIT_FUNC
 PyInit__signal(void)
 {
-    PyObject *m, *d, *x;
+    PyObject *m, *d;
     int i;
 
     /* Create the module and add the functions */
@@ -1350,13 +1350,17 @@ PyInit__signal(void)
     /* Add some symbolic constants to the module */
     d = PyModule_GetDict(m);
 
-    x = DefaultHandler = PyLong_FromVoidPtr((void *)SIG_DFL);
-    if (PyModule_AddObject(m, "SIG_DFL", x))
+    DefaultHandler = PyLong_FromVoidPtr((void *)SIG_DFL);
+    if (!DefaultHandler ||
+        PyDict_SetItemString(d, "SIG_DFL", DefaultHandler) < 0) {
         goto finally;
+    }
 
-    x = IgnoreHandler = PyLong_FromVoidPtr((void *)SIG_IGN);
-    if (PyModule_AddObject(m, "SIG_IGN", x))
+    IgnoreHandler = PyLong_FromVoidPtr((void *)SIG_IGN);
+    if (!IgnoreHandler ||
+        PyDict_SetItemString(d, "SIG_IGN", IgnoreHandler) < 0) {
         goto finally;
+    }
 
     if (PyModule_AddIntMacro(m, NSIG))
         goto finally;
@@ -1374,8 +1378,8 @@ PyInit__signal(void)
          goto finally;
 #endif
 
-    x = IntHandler = PyDict_GetItemString(d, "default_int_handler");
-    if (!x)
+    IntHandler = PyDict_GetItemString(d, "default_int_handler");
+    if (!IntHandler)
         goto finally;
     Py_INCREF(IntHandler);
 
@@ -1568,8 +1572,10 @@ PyInit__signal(void)
 #if defined (HAVE_SETITIMER) || defined (HAVE_GETITIMER)
     ItimerError = PyErr_NewException("signal.ItimerError",
             PyExc_OSError, NULL);
-    if (PyModule_AddObject(m, "ItimerError", ItimerError))
+    if (!ItimerError ||
+        PyDict_SetItemString(d, "ItimerError", ItimerError) < 0) {
         goto finally;
+    }
 #endif
 
 #ifdef CTRL_C_EVENT
@@ -1615,6 +1621,9 @@ finisignal(void)
     Py_CLEAR(IntHandler);
     Py_CLEAR(DefaultHandler);
     Py_CLEAR(IgnoreHandler);
+#ifdef HAVE_GETITIMER
+    Py_CLEAR(ItimerError);
+#endif
 }
 
 

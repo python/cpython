@@ -12,6 +12,7 @@ import fnmatch
 import functools
 import gc
 import glob
+import hashlib
 import importlib
 import importlib.util
 import locale
@@ -68,6 +69,11 @@ try:
 except ImportError:
     resource = None
 
+try:
+    import _hashlib
+except ImportError:
+    _hashlib = None
+
 __all__ = [
     # globals
     "PIPE_MAX_SIZE", "verbose", "max_memuse", "use_resources", "failfast",
@@ -85,8 +91,8 @@ __all__ = [
     "create_empty_file", "can_symlink", "fs_is_case_insensitive",
     # unittest
     "is_resource_enabled", "requires", "requires_freebsd_version",
-    "requires_linux_version", "requires_mac_ver", "check_syntax_error",
-    "check_syntax_warning",
+    "requires_linux_version", "requires_mac_ver", "requires_hashdigest",
+    "check_syntax_error", "check_syntax_warning",
     "TransientResource", "time_out", "socket_peer_reset", "ioerror_peer_reset",
     "transient_internet", "BasicTestRunner", "run_unittest", "run_doctest",
     "skip_unless_symlink", "requires_gzip", "requires_bz2", "requires_lzma",
@@ -644,6 +650,36 @@ def requires_mac_ver(*min_version):
                             % (min_version_txt, version_txt))
             return func(*args, **kw)
         wrapper.min_version = min_version
+        return wrapper
+    return decorator
+
+
+def requires_hashdigest(digestname, openssl=None, usedforsecurity=True):
+    """Decorator raising SkipTest if a hashing algorithm is not available
+
+    The hashing algorithm could be missing or blocked by a strict crypto
+    policy.
+
+    If 'openssl' is True, then the decorator checks that OpenSSL provides
+    the algorithm. Otherwise the check falls back to built-in
+    implementations. The usedforsecurity flag is passed to the constructor.
+
+    ValueError: [digital envelope routines: EVP_DigestInit_ex] disabled for FIPS
+    ValueError: unsupported hash type md4
+    """
+    def decorator(func):
+        @functools.wraps(func)
+        def wrapper(*args, **kwargs):
+            try:
+                if openssl and _hashlib is not None:
+                    _hashlib.new(digestname, usedforsecurity=usedforsecurity)
+                else:
+                    hashlib.new(digestname, usedforsecurity=usedforsecurity)
+            except ValueError:
+                raise unittest.SkipTest(
+                    f"hash digest '{digestname}' is not available."
+                )
+            return func(*args, **kwargs)
         return wrapper
     return decorator
 
@@ -1497,6 +1533,9 @@ def get_socket_conn_refused_errs():
         # bpo-31910: socket.create_connection() fails randomly
         # with EADDRNOTAVAIL on Travis CI
         errors.append(errno.EADDRNOTAVAIL)
+    if hasattr(errno, 'EHOSTUNREACH'):
+        # bpo-37583: The destination host cannot be reached
+        errors.append(errno.EHOSTUNREACH)
     if not IPV6_ENABLED:
         errors.append(errno.EAFNOSUPPORT)
     return errors
@@ -3123,6 +3162,8 @@ class _NEVER_EQ:
         return False
     def __ne__(self, other):
         return True
+    def __hash__(self):
+        return 1
 
 NEVER_EQ = _NEVER_EQ()
 

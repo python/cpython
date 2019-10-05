@@ -376,6 +376,8 @@ static int
 visit_decref(PyObject *op, void *data)
 {
     assert(op != NULL);
+    _PyObject_ASSERT(op, !_PyObject_IsFreed(op));
+
     if (PyObject_IS_GC(op)) {
         PyGC_Head *gc = AS_GC(op);
         /* We're only interested in gc_refs for objects in the
@@ -676,6 +678,21 @@ handle_weakrefs(PyGC_Head *unreachable, PyGC_Head *old)
         op = FROM_GC(gc);
         next = GC_NEXT(gc);
 
+        if (PyWeakref_Check(op)) {
+            /* A weakref inside the unreachable set must be cleared.  If we
+             * allow its callback to execute inside delete_garbage(), it
+             * could expose objects that have tp_clear already called on
+             * them.  Or, it could resurrect unreachable objects.  One way
+             * this can happen is if some container objects do not implement
+             * tp_traverse.  Then, wr_object can be outside the unreachable
+             * set but can be deallocated as a result of breaking the
+             * reference cycle.  If we don't clear the weakref, the callback
+             * will run and potentially cause a crash.  See bpo-38006 for
+             * one example.
+             */
+            _PyWeakref_ClearRef((PyWeakReference *)op);
+        }
+
         if (! PyType_SUPPORTS_WEAKREFS(Py_TYPE(op)))
             continue;
 
@@ -731,6 +748,8 @@ handle_weakrefs(PyGC_Head *unreachable, PyGC_Head *old)
              * is moved to wrcb_to_call in this case.
              */
             if (gc_is_collecting(AS_GC(wr))) {
+                /* it should already have been cleared above */
+                assert(wr->wr_object == Py_None);
                 continue;
             }
 
@@ -1115,8 +1134,9 @@ collect(struct _gc_runtime_state *state, int generation,
     }
     if (state->debug & DEBUG_STATS) {
         double d = _PyTime_AsSecondsDouble(_PyTime_GetMonotonicClock() - t1);
-        PySys_FormatStderr(
-            "gc: done, %zd unreachable, %zd uncollectable, %.4fs elapsed\n",
+        PySys_WriteStderr(
+            "gc: done, %" PY_FORMAT_SIZE_T "d unreachable, "
+            "%" PY_FORMAT_SIZE_T "d uncollectable, %.4fs elapsed\n",
             n+m, n, d);
     }
 

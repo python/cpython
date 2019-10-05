@@ -1,0 +1,1 @@
+The :c:func:`Py_UNREACHABLE` macro now calls :c:func:`Py_FatalError`.

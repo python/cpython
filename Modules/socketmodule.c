@@ -146,7 +146,7 @@ recvfrom_into(buffer[, nbytes, [, flags])\n\
 sendall(data[, flags]) -- send all data\n\
 send(data[, flags]) -- send data, may not send all of it\n\
 sendto(data[, flags], addr) -- send data to a given address\n\
-setblocking(0 | 1) -- set or clear the blocking I/O flag\n\
+setblocking(bool) -- set or clear the blocking I/O flag\n\
 getblocking() -- return True if socket is blocking, False if non-blocking\n\
 setsockopt(level, optname, value[, optlen]) -- set socket options\n\
 settimeout(None | float) -- set or clear the timeout\n\
@@ -788,6 +788,17 @@ internal_select(PySocketSockObject *s, int writing, _PyTime_t interval,
     /* s->sock_timeout is in seconds, timeout in ms */
     ms = _PyTime_AsMilliseconds(interval, _PyTime_ROUND_CEILING);
     assert(ms <= INT_MAX);
+
+    /* On some OSes, typically BSD-based ones, the timeout parameter of the
+       poll() syscall, when negative, must be exactly INFTIM, where defined,
+       or -1. See issue 37811. */
+    if (ms < 0) {
+#ifdef INFTIM
+        ms = INFTIM;
+#else
+        ms = -1;
+#endif
+    }
 
     Py_BEGIN_ALLOW_THREADS;
     n = poll(&pollfd, 1, (int)ms);
@@ -1552,7 +1563,7 @@ makesockaddr(SOCKET_T sockfd, struct sockaddr *addr, size_t addrlen, int proto)
 #endif /* CAN_ISOTP */
           default:
           {
-              return Py_BuildValue("O&", PyUnicode_DecodeFSDefault,
+              return Py_BuildValue("(O&)", PyUnicode_DecodeFSDefault,
                                         ifname);
           }
         }

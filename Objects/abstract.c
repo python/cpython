@@ -495,6 +495,48 @@ _Py_add_one_to_index_C(int nd, Py_ssize_t *index, const Py_ssize_t *shape)
     }
 }
 
+Py_ssize_t
+PyBuffer_SizeFromFormat(const char *format)
+{
+    PyObject *structmodule = NULL;
+    PyObject *calcsize = NULL;
+    PyObject *res = NULL;
+    PyObject *fmt = NULL;
+    Py_ssize_t itemsize = -1;
+
+    structmodule = PyImport_ImportModule("struct");
+    if (structmodule == NULL) {
+        return itemsize;
+    }
+
+    calcsize = PyObject_GetAttrString(structmodule, "calcsize");
+    if (calcsize == NULL) {
+        goto done;
+    }
+
+    fmt = PyUnicode_FromString(format);
+    if (fmt == NULL) {
+        goto done;
+    }
+
+    res = PyObject_CallFunctionObjArgs(calcsize, fmt, NULL);
+    if (res == NULL) {
+        goto done;
+    }
+
+    itemsize = PyLong_AsSsize_t(res);
+    if (itemsize < 0) {
+        goto done;
+    }
+
+done:
+    Py_DECREF(structmodule);
+    Py_XDECREF(calcsize);
+    Py_XDECREF(fmt);
+    Py_XDECREF(res);
+    return itemsize;
+}
+
 int
 PyBuffer_FromContiguous(Py_buffer *view, void *buf, Py_ssize_t len, char fort)
 {

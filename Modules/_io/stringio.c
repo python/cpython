@@ -714,9 +714,9 @@ _io_StringIO___init___impl(stringio *self, PyObject *value,
     }
 
     if (self->readuniversal) {
-        self->decoder = PyObject_CallFunction(
+        self->decoder = PyObject_CallFunctionObjArgs(
             (PyObject *)&PyIncrementalNewlineDecoder_Type,
-            "Oi", Py_None, (int) self->readtranslate);
+            Py_None, self->readtranslate ? Py_True : Py_False, NULL);
         if (self->decoder == NULL)
             return -1;
     }
@@ -899,7 +899,7 @@ stringio_setstate(stringio *self, PyObject *state)
 
     /* Set carefully the position value. Alternatively, we could use the seek
        method instead of modifying self->pos directly to better protect the
-       object internal state against errneous (or malicious) inputs. */
+       object internal state against erroneous (or malicious) inputs. */
     position_obj = PyTuple_GET_ITEM(state, 2);
     if (!PyLong_Check(position_obj)) {
         PyErr_Format(PyExc_TypeError,
