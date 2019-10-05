@@ -95,7 +95,7 @@ The variables defined in the :mod:`signal` module are:
 
    All the signal numbers are defined symbolically.  For example, the hangup signal
    is defined as :const:`signal.SIGHUP`; the variable names are identical to the
-   names used in C programs, as found in ``<signal.h>``. The Unix man page for
+   names used in C programs, as found in ``<signal.h>``.  The Unix man page for
    ':c:func:`signal`' lists the existing signals (on some systems this is
    :manpage:`signal(2)`, on others the list is in :manpage:`signal(7)`). Note that
    not all systems define the same set of signal names; only those names defined by
@@ -193,10 +193,10 @@ The :mod:`signal` module defines the following functions:
    canceled (only one alarm can be scheduled at any time).  The returned value is
    then the number of seconds before any previously set alarm was to have been
    delivered. If *time* is zero, no alarm is scheduled, and any scheduled alarm is
-   canceled.  If the return value is zero, no alarm is currently scheduled.  (See
-   the Unix man page :manpage:`alarm(2)`.)
+   canceled.  If the return value is zero, no alarm is currently scheduled.
 
-   .. availability:: Unix.
+   .. availability:: Unix.  See the man page :manpage:`alarm(2)` for further
+      information.
 
 
 .. function:: getsignal(signalnum)
@@ -231,8 +231,10 @@ The :mod:`signal` module defines the following functions:
 .. function:: pause()
 
    Cause the process to sleep until a signal is received; the appropriate handler
-   will then be called.  Returns nothing.  Not on Windows. (See the Unix man page
-   :manpage:`signal(2)`.)
+   will then be called.  Returns nothing.
+
+   .. availability:: Unix.  See the man page :manpage:`signal(2)` for further
+      information.
 
    See also :func:`sigwait`, :func:`sigwaitinfo`, :func:`sigtimedwait` and
    :func:`sigpending`.
@@ -262,8 +264,8 @@ The :mod:`signal` module defines the following functions:
    If *signalnum* is 0, then no signal is sent, but error checking is still
    performed; this can be used to check if the target thread is still running.
 
-   .. availability:: Unix (see the man page :manpage:`pthread_kill(3)` for further
-      information).
+   .. availability:: Unix.  See the man page :manpage:`pthread_kill(3)` for further
+      information.
 
    See also :func:`os.kill`.
 
@@ -293,7 +295,7 @@ The :mod:`signal` module defines the following functions:
    For example, ``signal.pthread_sigmask(signal.SIG_BLOCK, [])`` reads the
    signal mask of the calling thread.
 
-   .. availability:: Unix. See the man page :manpage:`sigprocmask(3)` and
+   .. availability:: Unix.  See the man page :manpage:`sigprocmask(3)` and
       :manpage:`pthread_sigmask(3)` for further information.
 
    See also :func:`pause`, :func:`sigpending` and :func:`sigwait`.
@@ -380,8 +382,8 @@ The :mod:`signal` module defines the following functions:
    calls will be restarted when interrupted by signal *signalnum*, otherwise
    system calls will be interrupted.  Returns nothing.
 
-   .. availability:: Unix (see the man page :manpage:`siginterrupt(3)`
-      for further information).
+   .. availability:: Unix.  See the man page :manpage:`siginterrupt(3)`
+      for further information.
 
    Note that installing a signal handler with :func:`signal` will reset the
    restart behaviour to interruptible by implicitly calling
@@ -394,7 +396,7 @@ The :mod:`signal` module defines the following functions:
    be a callable Python object taking two arguments (see below), or one of the
    special values :const:`signal.SIG_IGN` or :const:`signal.SIG_DFL`.  The previous
    signal handler will be returned (see the description of :func:`getsignal`
-   above).  (See the Unix man page :manpage:`signal(2)`.)
+   above).  (See the Unix man page :manpage:`signal(2)` for further information.)
 
    When threads are enabled, this function can only be called from the main thread;
    attempting to call it from other threads will cause a :exc:`ValueError`
@@ -420,8 +422,8 @@ The :mod:`signal` module defines the following functions:
    thread (i.e., the signals which have been raised while blocked).  Return the
    set of the pending signals.
 
-   .. availability:: Unix (see the man page :manpage:`sigpending(2)` for further
-      information).
+   .. availability:: Unix.  See the man page :manpage:`sigpending(2)` for further
+      information.
 
    See also :func:`pause`, :func:`pthread_sigmask` and :func:`sigwait`.
 
@@ -434,8 +436,8 @@ The :mod:`signal` module defines the following functions:
    signals specified in the signal set *sigset*.  The function accepts the signal
    (removes it from the pending list of signals), and returns the signal number.
 
-   .. availability:: Unix (see the man page :manpage:`sigwait(3)` for further
-      information).
+   .. availability:: Unix.  See the man page :manpage:`sigwait(3)` for further
+      information.
 
    See also :func:`pause`, :func:`pthread_sigmask`, :func:`sigpending`,
    :func:`sigwaitinfo` and :func:`sigtimedwait`.
@@ -459,8 +461,8 @@ The :mod:`signal` module defines the following functions:
    :attr:`si_errno`, :attr:`si_pid`, :attr:`si_uid`, :attr:`si_status`,
    :attr:`si_band`.
 
-   .. availability:: Unix (see the man page :manpage:`sigwaitinfo(2)` for further
-      information).
+   .. availability:: Unix.  See the man page :manpage:`sigwaitinfo(2)` for further
+      information.
 
    See also :func:`pause`, :func:`sigwait` and :func:`sigtimedwait`.
 
@@ -478,8 +480,8 @@ The :mod:`signal` module defines the following functions:
    specifying a timeout. If *timeout* is specified as :const:`0`, a poll is
    performed. Returns :const:`None` if a timeout occurs.
 
-   .. availability:: Unix (see the man page :manpage:`sigtimedwait(2)` for further
-      information).
+   .. availability:: Unix.  See the man page :manpage:`sigtimedwait(2)` for further
+      information.
 
    See also :func:`pause`, :func:`sigwait` and :func:`sigwaitinfo`.
 

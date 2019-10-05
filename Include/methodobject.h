@@ -39,7 +39,7 @@ PyAPI_FUNC(int) PyCFunction_GetFlags(PyObject *);
 #define PyCFunction_GET_FLAGS(func) \
         (((PyCFunctionObject *)func) -> m_ml -> ml_flags)
 #endif
-PyAPI_FUNC(PyObject *) PyCFunction_Call(PyObject *, PyObject *, PyObject *);
+Py_DEPRECATED(3.9) PyAPI_FUNC(PyObject *) PyCFunction_Call(PyObject *, PyObject *, PyObject *);
 
 struct PyMethodDef {
     const char  *ml_name;   /* The name of the built-in function/method */
@@ -98,11 +98,6 @@ typedef struct {
 #endif
 
 PyAPI_FUNC(int) PyCFunction_ClearFreeList(void);
-
-#ifndef Py_LIMITED_API
-PyAPI_FUNC(void) _PyCFunction_DebugMallocStats(FILE *out);
-PyAPI_FUNC(void) _PyMethod_DebugMallocStats(FILE *out);
-#endif
 
 #ifdef __cplusplus
 }

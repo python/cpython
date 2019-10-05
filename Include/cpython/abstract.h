@@ -88,8 +88,7 @@ _PyVectorcall_Function(PyObject *callable)
    of keyword arguments does not change nargsf). kwnames can also be NULL if
    there are no keyword arguments.
 
-   keywords must only contains str strings (no subclass), and all keys must
-   be unique.
+   keywords must only contain strings and all keys must be unique.
 
    Return the result on success. Raise an exception and return NULL on
    error. */
@@ -244,7 +243,7 @@ PyAPI_FUNC(void *) PyBuffer_GetPointer(Py_buffer *view, Py_ssize_t *indices);
 
 /* Return the implied itemsize of the data-format area from a
    struct-style description. */
-PyAPI_FUNC(int) PyBuffer_SizeFromFormat(const char *);
+PyAPI_FUNC(Py_ssize_t) PyBuffer_SizeFromFormat(const char *format);
 
 /* Implementation in memoryobject.c */
 PyAPI_FUNC(int) PyBuffer_ToContiguous(void *buf, Py_buffer *view,

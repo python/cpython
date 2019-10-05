@@ -37,13 +37,14 @@ typedef struct {
 
 PyAPI_FUNC(PyStatus) PyWideStringList_Append(PyWideStringList *list,
     const wchar_t *item);
+PyAPI_FUNC(PyStatus) PyWideStringList_Insert(PyWideStringList *list,
+    Py_ssize_t index,
+    const wchar_t *item);
 
 
 /* --- PyPreConfig ----------------------------------------------- */
 
 typedef struct {
-    int _config_version;  /* Internal configuration version,
-                             used for ABI compatibility */
     int _config_init;     /* _PyConfigInitEnum value */
 
     /* Parse Py_PreInitializeFromBytesArgs() arguments?
@@ -126,8 +127,6 @@ PyAPI_FUNC(void) PyPreConfig_InitIsolatedConfig(PyPreConfig *config);
 /* --- PyConfig ---------------------------------------------- */
 
 typedef struct {
-    int _config_version;  /* Internal configuration version,
-                             used for ABI compatibility */
     int _config_init;     /* _PyConfigInitEnum value */
 
     int isolated;         /* Isolated mode? see PyPreConfig.isolated */
@@ -213,7 +212,10 @@ typedef struct {
     wchar_t *program_name;
 
     PyWideStringList xoptions;     /* Command line -X options */
-    PyWideStringList warnoptions;  /* Warnings options */
+
+    /* Warnings options: lowest to highest priority. warnings.filters
+       is built in the reverse order (highest to lowest priority). */
+    PyWideStringList warnoptions;
 
     /* If equal to zero, disable the import of the module site and the
        site-dependent manipulations of sys.path that it entails. Also disable
@@ -400,11 +402,10 @@ typedef struct {
 
     /* If equal to 0, stop Python initialization before the "main" phase */
     int _init_main;
-
 } PyConfig;
 
-PyAPI_FUNC(PyStatus) PyConfig_InitPythonConfig(PyConfig *config);
-PyAPI_FUNC(PyStatus) PyConfig_InitIsolatedConfig(PyConfig *config);
+PyAPI_FUNC(void) PyConfig_InitPythonConfig(PyConfig *config);
+PyAPI_FUNC(void) PyConfig_InitIsolatedConfig(PyConfig *config);
 PyAPI_FUNC(void) PyConfig_Clear(PyConfig *);
 PyAPI_FUNC(PyStatus) PyConfig_SetString(
     PyConfig *config,

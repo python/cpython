@@ -1,0 +1,3 @@
+Increase the default stack size of threads from 5MB to 16MB on macOS, to
+match the stack size of the main thread. This avoids crashes on deep recursion
+in threads.

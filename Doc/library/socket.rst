@@ -391,6 +391,9 @@ Constants
 
    .. availability:: Linux >= 2.6.25.
 
+   .. note::
+      The :data:`CAN_BCM_CAN_FD_FRAME` flag is only available on Linux >= 4.8.
+
    .. versionadded:: 3.4
 
 .. data:: CAN_RAW_FD_FRAMES
@@ -1580,6 +1583,29 @@ to sockets.
    .. availability:: Linux >= 2.6.38.
 
    .. versionadded:: 3.6
+
+.. method:: socket.send_fds(sock, buffers, fds[, flags[, address]])
+
+   Send the list of file descriptors *fds* over an :const:`AF_UNIX` socket.
+   The *fds* parameter is a sequence of file descriptors.
+   Consult :meth:`sendmsg` for the documentation of these parameters.
+
+   .. availability:: Unix supporting :meth:`~socket.sendmsg` and :const:`SCM_RIGHTS` mechanism.
+
+   .. versionadded:: 3.9
+
+.. method:: socket.recv_fds(sock, bufsize, maxfds[, flags])
+
+   Receive up to *maxfds* file descriptors. Return ``(msg, list(fds), flags, addr)``. Consult
+   :meth:`recvmsg` for the documentation of these parameters.
+
+   .. availability:: Unix supporting :meth:`~socket.recvmsg` and :const:`SCM_RIGHTS` mechanism.
+
+   .. versionadded:: 3.9
+
+   .. note::
+
+      Any truncated integers at the end of the list of file descriptors.
 
 .. method:: socket.sendfile(file, offset=0, count=None)
 

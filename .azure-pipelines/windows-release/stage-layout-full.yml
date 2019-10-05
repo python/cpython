@@ -47,6 +47,10 @@ jobs:
       artifactName: tcltk_lib_$(Name)
       targetPath: $(Build.BinariesDirectory)\tcltk_lib
 
+  - powershell: |
+      copy $(Build.BinariesDirectory)\bin\Activate.ps1 Lib\venv\scripts\common\Activate.ps1 -Force
+    displayName: 'Copy signed files into sources'
+
   - template: ./layout-command.yml
 
   - powershell: |

@@ -1047,7 +1047,7 @@ mappingproxy_copy(mappingproxyobject *pp, PyObject *Py_UNUSED(ignored))
             to the underlying mapping */
 
 static PyMethodDef mappingproxy_methods[] = {
-    {"get",       (PyCFunction)mappingproxy_get,        METH_FASTCALL,
+    {"get",       (PyCFunction)(void(*)(void))mappingproxy_get, METH_FASTCALL,
      PyDoc_STR("D.get(k[,d]) -> D[k] if k in D, else d."
                "  d defaults to None.")},
     {"keys",      (PyCFunction)mappingproxy_keys,       METH_NOARGS,
@@ -1616,29 +1616,25 @@ property_init_impl(propertyobject *self, PyObject *fget, PyObject *fset,
     /* if no docstring given and the getter has one, use that one */
     if ((doc == NULL || doc == Py_None) && fget != NULL) {
         _Py_IDENTIFIER(__doc__);
-        PyObject *get_doc = _PyObject_GetAttrId(fget, &PyId___doc__);
-        if (get_doc) {
-            if (Py_TYPE(self) == &PyProperty_Type) {
-                Py_XSETREF(self->prop_doc, get_doc);
-            }
-            else {
-                /* If this is a property subclass, put __doc__
-                in dict of the subclass instance instead,
-                otherwise it gets shadowed by __doc__ in the
-                class's dict. */
-                int err = _PyObject_SetAttrId((PyObject *)self, &PyId___doc__, get_doc);
-                Py_DECREF(get_doc);
-                if (err < 0)
-                    return -1;
-            }
-            self->getter_doc = 1;
+        PyObject *get_doc;
+        int rc = _PyObject_LookupAttrId(fget, &PyId___doc__, &get_doc);
+        if (rc <= 0) {
+            return rc;
         }
-        else if (PyErr_ExceptionMatches(PyExc_Exception)) {
-            PyErr_Clear();
+        if (Py_TYPE(self) == &PyProperty_Type) {
+            Py_XSETREF(self->prop_doc, get_doc);
         }
         else {
-            return -1;
+            /* If this is a property subclass, put __doc__
+               in dict of the subclass instance instead,
+               otherwise it gets shadowed by __doc__ in the
+               class's dict. */
+            int err = _PyObject_SetAttrId((PyObject *)self, &PyId___doc__, get_doc);
+            Py_DECREF(get_doc);
+            if (err < 0)
+                return -1;
         }
+        self->getter_doc = 1;
     }
 
     return 0;

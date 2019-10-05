@@ -92,6 +92,12 @@ class DictSetTest(unittest.TestCase):
         d1 = {'a': 1, 'b': 2}
         d2 = {'b': 3, 'c': 2}
         d3 = {'d': 4, 'e': 5}
+        d4 = {'d': 4}
+
+        class CustomSet(set):
+            def intersection(self, other):
+                return CustomSet(super().intersection(other))
+
         self.assertEqual(d1.keys() & d1.keys(), {'a', 'b'})
         self.assertEqual(d1.keys() & d2.keys(), {'b'})
         self.assertEqual(d1.keys() & d3.keys(), set())
@@ -99,6 +105,14 @@ class DictSetTest(unittest.TestCase):
         self.assertEqual(d1.keys() & set(d2.keys()), {'b'})
         self.assertEqual(d1.keys() & set(d3.keys()), set())
         self.assertEqual(d1.keys() & tuple(d1.keys()), {'a', 'b'})
+        self.assertEqual(d3.keys() & d4.keys(), {'d'})
+        self.assertEqual(d4.keys() & d3.keys(), {'d'})
+        self.assertEqual(d4.keys() & set(d3.keys()), {'d'})
+        self.assertIsInstance(d4.keys() & frozenset(d3.keys()), set)
+        self.assertIsInstance(frozenset(d3.keys()) & d4.keys(), set)
+        self.assertIs(type(d4.keys() & CustomSet(d3.keys())), set)
+        self.assertIs(type(d1.keys() & []), set)
+        self.assertIs(type([] & d1.keys()), set)
 
         self.assertEqual(d1.keys() | d1.keys(), {'a', 'b'})
         self.assertEqual(d1.keys() | d2.keys(), {'a', 'b', 'c'})

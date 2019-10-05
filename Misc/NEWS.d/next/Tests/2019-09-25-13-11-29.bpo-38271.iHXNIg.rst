@@ -1,0 +1,4 @@
+The private keys for test_ssl were encrypted with 3DES in traditional
+PKCS#5 format. 3DES and the digest algorithm of PKCS#5 are blocked by
+some strict crypto policies. Use PKCS#8 format with AES256 encryption
+instead.

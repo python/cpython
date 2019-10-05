@@ -20,7 +20,7 @@ functionality.  The fields of the type object are examined in detail in this
 section.  The fields will be described in the order in which they occur in the
 structure.
 
-In addition to the following quick reference, the :ref:`examples`
+In addition to the following quick reference, the :ref:`typedef-examples`
 section provides at-a-glance insight into the meaning and use of
 :c:type:`PyTypeObject`.
 
@@ -654,15 +654,30 @@ and :c:type:`PyType_Type` effectively act as defaults.)
    the instance is still in existence, but there are no references to it.  The
    destructor function should free all references which the instance owns, free all
    memory buffers owned by the instance (using the freeing function corresponding
-   to the allocation function used to allocate the buffer), and finally (as its
-   last action) call the type's :c:member:`~PyTypeObject.tp_free` function.  If the type is not
-   subtypable (doesn't have the :const:`Py_TPFLAGS_BASETYPE` flag bit set), it is
+   to the allocation function used to allocate the buffer), and call the type's
+   :c:member:`~PyTypeObject.tp_free` function.  If the type is not subtypable
+   (doesn't have the :const:`Py_TPFLAGS_BASETYPE` flag bit set), it is
    permissible to call the object deallocator directly instead of via
    :c:member:`~PyTypeObject.tp_free`.  The object deallocator should be the one used to allocate the
    instance; this is normally :c:func:`PyObject_Del` if the instance was allocated
    using :c:func:`PyObject_New` or :c:func:`PyObject_VarNew`, or
    :c:func:`PyObject_GC_Del` if the instance was allocated using
    :c:func:`PyObject_GC_New` or :c:func:`PyObject_GC_NewVar`.
+
+   Finally, if the type is heap allocated (:const:`Py_TPFLAGS_HEAPTYPE`), the
+   deallocator should decrement the reference count for its type object after
+   calling the type deallocator. In order to avoid dangling pointers, the
+   recommended way to achieve this is:
+
+   .. code-block:: c
+
+     static void foo_dealloc(foo_object *self) {
+         PyTypeObject *tp = Py_TYPE(self);
+         // free references and buffers here
+         tp->tp_free(self);
+         Py_DECREF(tp);
+     }
+
 
    **Inheritance:**
 
@@ -1021,7 +1036,8 @@ and :c:type:`PyType_Type` effectively act as defaults.)
 
    .. data:: Py_TPFLAGS_HEAPTYPE
 
-      This bit is set when the type object itself is allocated on the heap.  In this
+      This bit is set when the type object itself is allocated on the heap, for
+      example, types created dynamically using :c:func:`PyType_FromSpec`.  In this
       case, the :attr:`ob_type` field of its instances is considered a reference to
       the type, and the type object is INCREF'ed when a new instance is created, and
       DECREF'ed when an instance is destroyed (this does not apply to instances of
@@ -1310,12 +1326,6 @@ and :c:type:`PyType_Type` effectively act as defaults.)
    or ``Py_False``).  If the comparison is undefined, it must return
    ``Py_NotImplemented``, if another error occurred it must return *NULL* and
    set an exception condition.
-
-   .. note::
-
-      If you want to implement a type for which only a limited set of
-      comparisons makes sense (e.g. ``==`` and ``!=``, but not ``<`` and
-      friends), directly raise :exc:`TypeError` in the rich comparison function.
 
    The following constants are defined to be used as the third argument for
    :c:member:`~PyTypeObject.tp_richcompare` and for :c:func:`PyObject_RichCompare`:
@@ -2450,7 +2460,7 @@ Slot Type typedefs
 .. c:type:: int (*objobjargproc)(PyObject *, PyObject *, PyObject *)
 
 
-.. _examples:
+.. _typedef-examples:
 
 Examples
 ========

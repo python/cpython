@@ -1,0 +1,2 @@
+Ensure cookies with ``expires`` attribute are handled in
+:meth:`CookieJar.make_cookies`.

@@ -29,7 +29,7 @@ Character), EL (Erase Line), GA (Go Ahead), SB (Subnegotiation Begin).
 .. class:: Telnet(host=None, port=0[, timeout])
 
    :class:`Telnet` represents a connection to a Telnet server. The instance is
-   initially not connected by default; the :meth:`open` method must be used to
+   initially not connected by default; the :meth:`~Telnet.open` method must be used to
    establish a connection.  Alternatively, the host name and optional port
    number can be passed to the constructor too, in which case the connection to
    the server will be established before the constructor returns.  The optional

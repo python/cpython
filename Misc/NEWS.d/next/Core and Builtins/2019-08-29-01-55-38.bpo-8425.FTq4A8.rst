@@ -1,0 +1,3 @@
+Optimize set difference_update for the case when the other set is much
+larger than the base set.  (Suggested by Evgeny Kapun with code contributed
+by Michele Orrù).

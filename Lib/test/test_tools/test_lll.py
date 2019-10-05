@@ -1,6 +1,7 @@
 """Tests for the lll script in the Tools/script directory."""
 
 import os
+import sys
 import tempfile
 from test import support
 from test.test_tools import skip_if_missing, import_tool
@@ -26,12 +27,13 @@ class lllTests(unittest.TestCase):
 
             with support.captured_stdout() as output:
                 self.lll.main([dir1, dir2])
+            prefix = '\\\\?\\' if os.name == 'nt' else ''
             self.assertEqual(output.getvalue(),
                 f'{dir1}:\n'
-                f'symlink -> {fn1}\n'
+                f'symlink -> {prefix}{fn1}\n'
                 f'\n'
                 f'{dir2}:\n'
-                f'symlink -> {fn2}\n'
+                f'symlink -> {prefix}{fn2}\n'
             )
 
 

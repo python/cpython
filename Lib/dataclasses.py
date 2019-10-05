@@ -199,11 +199,7 @@ _POST_INIT_NAME = '__post_init__'
 # https://bugs.python.org/issue33453 for details.
 _MODULE_IDENTIFIER_RE = re.compile(r'^(?:\s*(\w+)\s*\.)?\s*(\w+)')
 
-class _InitVarMeta(type):
-    def __getitem__(self, params):
-        return InitVar(params)
-
-class InitVar(metaclass=_InitVarMeta):
+class InitVar:
     __slots__ = ('type', )
 
     def __init__(self, type):
@@ -211,6 +207,9 @@ class InitVar(metaclass=_InitVarMeta):
 
     def __repr__(self):
         return f'dataclasses.InitVar[{self.type.__name__}]'
+
+    def __class_getitem__(cls, type):
+        return InitVar(type)
 
 
 # Instances of Field are only ever created from within this module,
@@ -1015,13 +1014,14 @@ def fields(class_or_instance):
 
 def _is_dataclass_instance(obj):
     """Returns True if obj is an instance of a dataclass."""
-    return not isinstance(obj, type) and hasattr(obj, _FIELDS)
+    return hasattr(type(obj), _FIELDS)
 
 
 def is_dataclass(obj):
     """Returns True if obj is a dataclass or an instance of a
     dataclass."""
-    return hasattr(obj, _FIELDS)
+    cls = obj if isinstance(obj, type) else type(obj)
+    return hasattr(cls, _FIELDS)
 
 
 def asdict(obj, *, dict_factory=dict):
@@ -1189,7 +1189,7 @@ def make_dataclass(cls_name, fields, *, bases=(), namespace=None, init=True,
             raise TypeError(f'Invalid field: {item!r}')
 
         if not isinstance(name, str) or not name.isidentifier():
-            raise TypeError(f'Field names must be valid identifers: {name!r}')
+            raise TypeError(f'Field names must be valid identifiers: {name!r}')
         if keyword.iskeyword(name):
             raise TypeError(f'Field names must not be keywords: {name!r}')
         if name in seen:

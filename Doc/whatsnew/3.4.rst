@@ -1849,7 +1849,7 @@ Python's default implementation to a SipHash implementation on platforms that
 have a 64 bit data type.  Any performance differences in comparison with the
 older FNV algorithm are trivial.
 
-The PEP adds additional fields to the :attr:`sys.hash_info` struct sequence to
+The PEP adds additional fields to the :attr:`sys.hash_info` named tuple to
 describe the hash algorithm in use by the currently executing binary.  Otherwise,
 the PEP does not alter any existing CPython APIs.
 

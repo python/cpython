@@ -376,6 +376,8 @@ static int
 visit_decref(PyObject *op, void *data)
 {
     assert(op != NULL);
+    _PyObject_ASSERT(op, !_PyObject_IsFreed(op));
+
     if (PyObject_IS_GC(op)) {
         PyGC_Head *gc = AS_GC(op);
         /* We're only interested in gc_refs for objects in the
@@ -676,6 +678,21 @@ handle_weakrefs(PyGC_Head *unreachable, PyGC_Head *old)
         op = FROM_GC(gc);
         next = GC_NEXT(gc);
 
+        if (PyWeakref_Check(op)) {
+            /* A weakref inside the unreachable set must be cleared.  If we
+             * allow its callback to execute inside delete_garbage(), it
+             * could expose objects that have tp_clear already called on
+             * them.  Or, it could resurrect unreachable objects.  One way
+             * this can happen is if some container objects do not implement
+             * tp_traverse.  Then, wr_object can be outside the unreachable
+             * set but can be deallocated as a result of breaking the
+             * reference cycle.  If we don't clear the weakref, the callback
+             * will run and potentially cause a crash.  See bpo-38006 for
+             * one example.
+             */
+            _PyWeakref_ClearRef((PyWeakReference *)op);
+        }
+
         if (! PyType_SUPPORTS_WEAKREFS(Py_TYPE(op)))
             continue;
 
@@ -731,6 +748,8 @@ handle_weakrefs(PyGC_Head *unreachable, PyGC_Head *old)
              * is moved to wrcb_to_call in this case.
              */
             if (gc_is_collecting(AS_GC(wr))) {
+                /* it should already have been cleared above */
+                assert(wr->wr_object == Py_None);
                 continue;
             }
 
@@ -962,6 +981,25 @@ clear_freelists(void)
     (void)PyContext_ClearFreeList();
 }
 
+// Show stats for objects in each gennerations.
+static void
+show_stats_each_generations(struct _gc_runtime_state *state)
+{
+    char buf[100];
+    size_t pos = 0;
+
+    for (int i = 0; i < NUM_GENERATIONS && pos < sizeof(buf); i++) {
+        pos += PyOS_snprintf(buf+pos, sizeof(buf)-pos,
+                             " %"PY_FORMAT_SIZE_T"d",
+                             gc_list_size(GEN_HEAD(state, i)));
+    }
+
+    PySys_FormatStderr(
+        "gc: objects in each generation:%s\n"
+        "gc: objects in permanent generation: %zd\n",
+        buf, gc_list_size(&state->permanent_generation.head));
+}
+
 /* This is the main function.  Read this to understand how the
  * collection process works. */
 static Py_ssize_t
@@ -979,17 +1017,9 @@ collect(struct _gc_runtime_state *state, int generation,
     _PyTime_t t1 = 0;   /* initialize to prevent a compiler warning */
 
     if (state->debug & DEBUG_STATS) {
-        PySys_WriteStderr("gc: collecting generation %d...\n",
-                          generation);
-        PySys_WriteStderr("gc: objects in each generation:");
-        for (i = 0; i < NUM_GENERATIONS; i++)
-            PySys_FormatStderr(" %zd",
-                              gc_list_size(GEN_HEAD(state, i)));
-        PySys_WriteStderr("\ngc: objects in permanent generation: %zd",
-                         gc_list_size(&state->permanent_generation.head));
+        PySys_WriteStderr("gc: collecting generation %d...\n", generation);
+        show_stats_each_generations(state);
         t1 = _PyTime_GetMonotonicClock();
-
-        PySys_WriteStderr("\n");
     }
 
     if (PyDTrace_GC_START_ENABLED())
@@ -1103,16 +1133,11 @@ collect(struct _gc_runtime_state *state, int generation,
             debug_cycle("uncollectable", FROM_GC(gc));
     }
     if (state->debug & DEBUG_STATS) {
-        _PyTime_t t2 = _PyTime_GetMonotonicClock();
-
-        if (m == 0 && n == 0)
-            PySys_WriteStderr("gc: done");
-        else
-            PySys_FormatStderr(
-                "gc: done, %zd unreachable, %zd uncollectable",
-                n+m, n);
-        PySys_WriteStderr(", %.4fs elapsed\n",
-                          _PyTime_AsSecondsDouble(t2 - t1));
+        double d = _PyTime_AsSecondsDouble(_PyTime_GetMonotonicClock() - t1);
+        PySys_WriteStderr(
+            "gc: done, %" PY_FORMAT_SIZE_T "d unreachable, "
+            "%" PY_FORMAT_SIZE_T "d uncollectable, %.4fs elapsed\n",
+            n+m, n, d);
     }
 
     /* Append instances in the uncollectable set to a Python
