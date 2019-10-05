@@ -698,109 +698,6 @@ PyCStructUnionType_update_stgdict(PyObject *type, PyObject *fields, int isStruct
          * elements, plus one NULL pointer.
          */
 
-        Py_ssize_t num_ffi_type_pointers = 0;  /* for the dummy fields */
-        Py_ssize_t num_ffi_types = 0;  /* for the dummy structures */
-        size_t alloc_size;  /* total bytes to allocate */
-        void * type_block;  /* to hold all the type information needed */
-        ffi_type ** element_types;  /* of this struct/union */
-        ffi_type ** dummy_types;  /* of the dummy struct elements */
-        ffi_type * structs;  /* point to struct aliases of arrays */
-        Py_ssize_t element_index;  /* index into element_types for this */
-        Py_ssize_t dummy_index = 0; /* index into dummy field pointers */
-        Py_ssize_t struct_index = 0; /* index into dummy structs */
-
-        /* first pass to see how much memory to allocate */
-        for (i = 0; i < len; ++i) {
-            PyObject *name, *desc;
-            PyObject *pair = PySequence_GetItem(fields, i);
-            StgDictObject *dict;
-            int bitsize = 0;
-
-            if (pair == NULL) {
-                return -1;
-            }
-            if (!PyArg_ParseTuple(pair, "UO|i", &name, &desc, &bitsize)) {
-                PyErr_SetString(PyExc_TypeError,
-                    "'_fields_' must be a sequence of (name, C type) pairs");
-                Py_XDECREF(pair);
-                return -1;
-            }
-            dict = PyType_stgdict(desc);
-            if (dict == NULL) {
-                Py_DECREF(pair);
-                PyErr_Format(PyExc_TypeError,
-                    "second item in _fields_ tuple (index %zd) must be a C type",
-                    i);
-                return -1;
-            }
-            if (!PyCArrayTypeObject_Check(desc)) {
-                /* Not an array. Just need an ffi_type pointer. */
-                num_ffi_type_pointers++;
-            }
-            else {
-                /* It's an array. */
-                Py_ssize_t length = dict->length;
-                StgDictObject *edict;
-
-                edict = PyType_stgdict(dict->proto);
-                if (edict == NULL) {
-                    Py_DECREF(pair);
-                    PyErr_Format(PyExc_TypeError,
-                        "second item in _fields_ tuple (index %zd) must be a C type",
-                        i);
-                    return -1;
-                }
-                /*
-                 * We need one extra ffi_type to hold the struct, and one
-                 * ffi_type pointer per array element + one for a NULL to
-                 * mark the end.
-                 */
-                num_ffi_types++;
-                num_ffi_type_pointers += length + 1;
-            }
-            Py_DECREF(pair);
-        }
-
-        /*
-         * At this point, we know we need storage for some ffi_types and some
-         * ffi_type pointers. We'll allocate these in one block.
-         * There are three sub-blocks of information: the ffi_type pointers to
-         * this structure/union's elements, the ffi_type_pointers to the
-         * dummy fields standing in for array elements, and the 
-         * ffi_types representing the dummy structures.
-         */
-        alloc_size = (ffi_ofs + 1 + len + num_ffi_type_pointers) * sizeof(ffi_type *) +
-                        num_ffi_types * sizeof(ffi_type);
-        type_block = PyMem_Malloc(alloc_size);
-
-        if (type_block == NULL) {
-            PyErr_NoMemory();
-            return -1;
-        }
-        /*
-         * the first block takes up ffi_ofs + len + 1 which is the pointers
-         * for this struct/union. The second block takes up num_ffi_type_pointers
-         * - len, so the sum of these is ffi_ofs + 1 + num_ffi_type_pointers as
-         * allocated above. The last bit is the num_ffi_types structs.
-         */
-        element_types = (ffi_type **) type_block;
-        dummy_types = &element_types[ffi_ofs + len + 1];
-        structs = (ffi_type *) &dummy_types[num_ffi_type_pointers];
-
-        if (num_ffi_types > 0) {
-            memset(structs, 0, num_ffi_types * sizeof(ffi_type));
-            for (i = 0; i < num_ffi_types; i++) {
-                structs[i].type = FFI_TYPE_STRUCT;
-            }
-        }
-        if (ffi_ofs && (basedict != NULL)) {
-            memcpy(element_types,
-                basedict->ffi_type_pointer.elements,
-                ffi_ofs * sizeof(ffi_type *));
-        }
-        element_index = ffi_ofs;
-
-        /* second pass to actually set the type pointers */
         for (i = 0; i < len; ++i) {
             PyObject *name, *desc;
             PyObject *pair = PySequence_GetItem(fields, i);
@@ -824,14 +721,17 @@ PyCStructUnionType_update_stgdict(PyObject *type, PyObject *fields, int isStruct
                              i);
                 return -1;
             }
-            if (!PyCArrayTypeObject_Check(desc)) {
-                /* Not an array. Just copy over the element ffi_type. */
-                element_types[element_index++] = &dict->ffi_type_pointer;
-                assert(element_index <= (len - ffi_ofs));
-            }
-            else {
+            /*
+             * If it's an array, the corresponding entry in
+             * stgdict->ffi_type_pointer.elements needs to be replaced with
+             * a pointer to a dummy struct.
+             */
+            if (PyCArrayTypeObject_Check(desc)) {
                 Py_ssize_t length = dict->length;
                 StgDictObject *edict;
+                ffi_type * dummy_struct;
+                ffi_type ** dummy_fields;
+                Py_ssize_t dummy_index;
 
                 edict = PyType_stgdict(dict->proto);
                 if (edict == NULL) {
@@ -841,30 +741,36 @@ PyCStructUnionType_update_stgdict(PyObject *type, PyObject *fields, int isStruct
                                  i);
                     return -1;
                 }
-                element_types[element_index++] = &structs[struct_index];
-                assert(element_index <= (len - ffi_ofs));
-                structs[struct_index].elements = &dummy_types[dummy_index];
-                ++struct_index;
+
+                /* Do separate allocations for now. */
+                dummy_struct = PyMem_New(ffi_type, 1);
+                if (dummy_struct == NULL) {
+                    PyErr_NoMemory();
+                    return -1;
+                }
+                dummy_fields = PyMem_New(ffi_type *, length + 1);
+                if (dummy_fields == NULL) {
+                    PyErr_NoMemory();
+                    return -1;
+                }
+                memset(dummy_struct, 0, sizeof(ffi_type));
+                dummy_struct->size = length * edict->ffi_type_pointer.size;
+                dummy_struct->alignment = edict->ffi_type_pointer.alignment;
+                dummy_struct->type = FFI_TYPE_STRUCT;
+                dummy_struct->elements = dummy_fields;
+
+                stgdict->ffi_type_pointer.elements[ffi_ofs + i] = dummy_struct;
+
                 /* Copy over the element's type, length times. */
+                dummy_index = 0;
                 while (length > 0) {
-                    assert(dummy_index < (num_ffi_type_pointers));
-                    dummy_types[dummy_index++] = &edict->ffi_type_pointer;
+                    dummy_fields[dummy_index++] = &edict->ffi_type_pointer;
                     length--;
                 }
-                assert(dummy_index < (num_ffi_type_pointers));
-                dummy_types[dummy_index++] = NULL;
+                dummy_fields[dummy_index] = NULL;
             }
             Py_DECREF(pair);
         }
-
-        element_types[element_index] = NULL;
-        /*
-         * Replace the old elements with the new, taking into account
-         * base class elements where necessary.
-         */
-        assert(stgdict->ffi_type_pointer.elements);
-        PyMem_Free(stgdict->ffi_type_pointer.elements);
-        stgdict->ffi_type_pointer.elements = element_types;
     }
 
     /* We did check that this flag was NOT set above, it must not
