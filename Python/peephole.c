@@ -338,7 +338,7 @@ PyCode_Optimize(PyObject *code, PyObject* consts, PyObject *names,
                         h = fold_tuple_on_constants(codestr, codelen,
                                                     h, i+1-islist, consts, j);
                         if (h >= 0 && islist) {
-                            h = copy_op_arg(codestr, i, BUILD_LIST_UNPACK, 1, i+1);
+                            codestr[op_start] = PACKOPARG(BUILD_LIST_UNPACK, 1);
                         }
                         break;
                     }
