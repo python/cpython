@@ -1,0 +1,2 @@
+Skip test_get_event_loop_new_process on systems which don’t provide it
+(e.g., building environments of some Linux distributions).
