@@ -3248,7 +3248,9 @@ module_init(void)
         goto fail;
     }
 
-    current_tasks = PyDict_New();
+    if (current_tasks == NULL) {
+        current_tasks = PyDict_New();
+    }
     if (current_tasks == NULL) {
         goto fail;
     }
@@ -3259,7 +3261,9 @@ module_init(void)
     }
 
 
-    context_kwname = Py_BuildValue("(s)", "context");
+    if (context_kwname == NULL) {
+        context_kwname = Py_BuildValue("(s)", "context");
+    }
     if (context_kwname == NULL) {
         goto fail;
     }
