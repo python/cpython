@@ -568,8 +568,9 @@ class BaseEventLoop(events.AbstractEventLoop):
             thread.join(timeout)
 
         if (thread.is_alive()):
-            warnings.Warning("The ThreadPoolExecutor did not finishing joining"
-                             f"its threads within {timeout} seconds.")
+            warnings.warn("The ThreadPoolExecutor did not finishing joining"
+                             f"its threads within {timeout} seconds.",
+                             RuntimeWarning)
             self._default_executor.shutdown(wait=False)
 
     def _do_shutdown(self, future):
