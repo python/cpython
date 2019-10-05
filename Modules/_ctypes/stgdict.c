@@ -843,8 +843,8 @@ PyCStructUnionType_update_stgdict(PyObject *type, PyObject *fields, int isStruct
                                  i);
                     return -1;
                 }
+                assert(element_index < (ffi_ofs + len));
                 element_types[element_index++] = &structs[struct_index];
-                assert(element_index <= (len - ffi_ofs));
                 structs[struct_index].size = length * edict->ffi_type_pointer.size;
                 structs[struct_index].alignment = edict->ffi_type_pointer.alignment;
                 structs[struct_index].type = FFI_TYPE_STRUCT;
