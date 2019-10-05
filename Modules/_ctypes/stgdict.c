@@ -729,8 +729,8 @@ PyCStructUnionType_update_stgdict(PyObject *type, PyObject *fields, int isStruct
             if (PyCArrayTypeObject_Check(desc)) {
                 Py_ssize_t length = dict->length;
                 StgDictObject *edict;
-                ffi_type * dummy_struct;
-                ffi_type ** dummy_fields;
+                ffi_type *dummy_struct;
+                ffi_type **dummy_fields;
                 Py_ssize_t dummy_index;
 
                 edict = PyType_stgdict(dict->proto);
@@ -745,11 +745,13 @@ PyCStructUnionType_update_stgdict(PyObject *type, PyObject *fields, int isStruct
                 /* Do separate allocations for now. */
                 dummy_struct = PyMem_New(ffi_type, 1);
                 if (dummy_struct == NULL) {
+                    Py_DECREF(pair);
                     PyErr_NoMemory();
                     return -1;
                 }
                 dummy_fields = PyMem_New(ffi_type *, length + 1);
                 if (dummy_fields == NULL) {
+                    Py_DECREF(pair);
                     PyErr_NoMemory();
                     return -1;
                 }
