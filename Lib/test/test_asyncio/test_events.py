@@ -13,6 +13,7 @@ try:
     import ssl
 except ImportError:
     ssl = None
+import stat
 import subprocess
 import sys
 import threading
@@ -2652,7 +2653,8 @@ class GetEventLoopTestsMixin:
             asyncio.get_event_loop = self.get_event_loop_saved
 
     if sys.platform != 'win32':
-
+        @unittest.skipUnless(stat.S_IMODE(os.stat('/dev/shm').st_mode) >= 0o777,
+                             "Doesn't work without /dev/shm.")
         def test_get_event_loop_new_process(self):
             # Issue bpo-32126: The multiprocessing module used by
             # ProcessPoolExecutor is not functional when the
