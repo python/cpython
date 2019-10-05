@@ -1,0 +1,1 @@
+Fix usage of _OLD_VIRTUAL_PATH in activate.bat.  Do not use parenthesis in the if statement.  Instead of if/else, use if defined/if not defined on separate lines.
