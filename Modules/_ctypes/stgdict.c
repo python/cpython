@@ -825,9 +825,9 @@ PyCStructUnionType_update_stgdict(PyObject *type, PyObject *fields, int isStruct
                              i);
                 return -1;
             }
+            assert(element_index < (ffi_ofs + len)); /* will be used below */
             if (!PyCArrayTypeObject_Check(desc)) {
                 /* Not an array. Just copy over the element ffi_type. */
-                assert(element_index < (len - ffi_ofs));
                 element_types[element_index++] = &dict->ffi_type_pointer;
             }
             else {
@@ -843,7 +843,6 @@ PyCStructUnionType_update_stgdict(PyObject *type, PyObject *fields, int isStruct
                                  i);
                     return -1;
                 }
-                assert(element_index < (ffi_ofs + len));
                 element_types[element_index++] = &structs[struct_index];
                 structs[struct_index].size = length * edict->ffi_type_pointer.size;
                 structs[struct_index].alignment = edict->ffi_type_pointer.alignment;
