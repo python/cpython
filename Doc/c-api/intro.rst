@@ -174,6 +174,17 @@ complete listing.
    .. versionchanged:: 3.8
       MSVC support was added.
 
+.. c:macro:: PyDoc_STRVAR(name, str)
+
+   A shortcut for ``static const char name[] = str``, commonly used
+   to initialize a module, function, class, or method docstring.
+
+   Example::
+
+      PyDoc_STRVAR(module_doc, "This is the module's docstring.");
+
+   .. versionchanged:: 3.8
+      This macro previously inserted ``static char name[]``.
 
 .. _api-objects:
 

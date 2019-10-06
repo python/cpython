@@ -153,7 +153,7 @@ or request "multi-phase initialization" by returning the definition struct itsel
    .. c:member:: const char *m_doc
 
       Docstring for the module; usually a docstring variable created with
-      :c:func:`PyDoc_STRVAR` is used.
+      :c:macro:`PyDoc_STRVAR` is used.
 
    .. c:member:: Py_ssize_t m_size
 
