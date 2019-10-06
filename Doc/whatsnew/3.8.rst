@@ -405,7 +405,7 @@ Other Language Changes
 
   (Contributed by Jonathan Eunice and Serhiy Storchaka in :issue:`30688`.)
 
-* :class:`dict` and dictionary views are now iterable in reversed insertion
+* :class:`dict` and :term:`dictionary view`s are now iterable in reversed insertion
   order using :func:`reversed`. (Contributed by Rémi Lapeyre in :issue:`33462`.)
 
 * The syntax allowed for keyword names in function calls was further
@@ -414,7 +414,7 @@ Other Language Changes
   keyword argument assignment term. See :issue:`34641`.
 
 * Generalized iterable unpacking in :keyword:`yield` and
-  :keyword:`return` statements no longer requires enclosing parenthesis.
+  :keyword:`return` statements no longer requires enclosing parentheses.
   This brings the ``yield`` and ``return`` syntax into better agreement with
   normal assignment syntax::
 
