@@ -158,17 +158,6 @@ class DictSetTest(unittest.TestCase):
         self.assertTrue(de.keys().isdisjoint(de.keys()))
         self.assertTrue(de.keys().isdisjoint([1]))
 
-    def test_keys_set_operations_with_iterator(self):
-        origin = {1: 2, 3: 4}
-        self.assertEqual((origin.keys() & iter([1, 2])), {1})
-        self.assertEqual((origin.keys() | iter([1, 2])), {1, 2, 3})
-        self.assertEqual((origin.keys() ^ iter([1, 2])), {2, 3})
-
-        items = origin.items()
-        self.assertEqual((items & iter([(1, 2)])), {(1, 2)})
-        self.assertEqual((items ^ iter([(1, 2)])), {(3, 4)})
-        self.assertEqual((items | iter([(1, 2)])), {(1, 2), (3, 4)})
-
     def test_items_set_operations(self):
         d1 = {'a': 1, 'b': 2}
         d2 = {'a': 2, 'b': 2}
@@ -224,6 +213,16 @@ class DictSetTest(unittest.TestCase):
         self.assertTrue(de.items().isdisjoint([]))
         self.assertTrue(de.items().isdisjoint(de.items()))
         self.assertTrue(de.items().isdisjoint([1]))
+
+    def test_set_operations_with_iterator(self):
+        origin = {1: 2, 3: 4}
+        self.assertEqual((origin.keys() | iter([1, 2])), {1, 2, 3})
+        self.assertEqual((origin.keys() ^ iter([1, 2])), {2, 3})
+
+        items = origin.items()
+        self.assertEqual((items & iter([(1, 2)])), {(1, 2)})
+        self.assertEqual((items ^ iter([(1, 2)])), {(3, 4)})
+        self.assertEqual((items | iter([(1, 2)])), {(1, 2), (3, 4)})
 
     def test_recursive_repr(self):
         d = {}
