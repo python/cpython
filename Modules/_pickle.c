@@ -1609,22 +1609,27 @@ _Unpickler_SetInputStream(UnpicklerObject *self, PyObject *file)
     if (_PyObject_LookupAttrId(file, &PyId_peek, &self->peek) < 0) {
         return -1;
     }
-    (void)_PyObject_LookupAttrId(file, &PyId_read, &self->read);
-    (void)_PyObject_LookupAttrId(file, &PyId_readinto, &self->readinto);
-    (void)_PyObject_LookupAttrId(file, &PyId_readline, &self->readline);
-    if (!self->readline || !self->readinto || !self->read) {
-        if (!PyErr_Occurred()) {
-            PyErr_SetString(PyExc_TypeError,
-                            "file must have 'read', 'readinto' and "
-                            "'readline' attributes");
-        }
-        Py_CLEAR(self->read);
-        Py_CLEAR(self->readinto);
-        Py_CLEAR(self->readline);
-        Py_CLEAR(self->peek);
-        return -1;
+    if (_PyObject_LookupAttrId(file, &PyId_read, &self->read) <= 0) {
+        goto error;
+    }
+    if (_PyObject_LookupAttrId(file, &PyId_readinto, &self->readinto) <= 0) {
+        goto error;
+    }
+    if (_PyObject_LookupAttrId(file, &PyId_readline, &self->readline) <= 0) {
+        goto error;
     }
     return 0;
+error:
+    if (!PyErr_Occurred()) {
+        PyErr_SetString(PyExc_TypeError,
+                        "file must have 'read', 'readinto' and "
+                        "'readline' attributes");
+    }
+    Py_CLEAR(self->read);
+    Py_CLEAR(self->readinto);
+    Py_CLEAR(self->readline);
+    Py_CLEAR(self->peek);
+    return -1;
 }
 
 /* Returns -1 (with an exception set) on failure, 0 on success. This may
