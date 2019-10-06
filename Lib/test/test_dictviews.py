@@ -164,6 +164,11 @@ class DictSetTest(unittest.TestCase):
         self.assertEqual((origin.keys() | iter([1, 2])), {1, 2, 3})
         self.assertEqual((origin.keys() ^ iter([1, 2])), {2, 3})
 
+        items = origin.items()
+        self.assertEqual((items & iter([(1, 2)])), {(1, 2)})
+        self.assertEqual((items ^ iter([(1, 2)])), {(3, 4)})
+        self.assertEqual((items | iter([(1, 2)])), {(1, 2), (3, 4)})
+
     def test_items_set_operations(self):
         d1 = {'a': 1, 'b': 2}
         d2 = {'a': 2, 'b': 2}
