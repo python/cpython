@@ -4225,14 +4225,6 @@ _PyDictView_Intersect(PyObject* self, PyObject *other)
 
     it = PyObject_GetIter(other);
 
-    _Py_IDENTIFIER(intersection_update);
-    tmp = _PyObject_CallMethodIdOneArg(result, &PyId_intersection_update, other);
-    if (tmp == NULL) {
-        Py_DECREF(result);
-        return NULL;
-    }
-    Py_DECREF(tmp);
-
     if (PyDictKeys_Check(self)) {
         dict_contains = dictkeys_contains;
     }
