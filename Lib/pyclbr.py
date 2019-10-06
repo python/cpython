@@ -83,11 +83,9 @@ def _nest_function(ob, func_name, lineno, is_async=False):
     "Return a Function after nesting within ob."
     return Function(ob.module, func_name, ob.file, lineno, ob, is_async)
 
-
 def _nest_class(ob, class_name, lineno, super=None):
     "Return a Class after nesting within ob."
     return Class(ob.module, class_name, super, ob.file, lineno, ob)
-
 
 def readmodule(module, path=None):
     """Return Class objects for the top-level classes in module.
@@ -101,7 +99,6 @@ def readmodule(module, path=None):
             res[key] = value
     return res
 
-
 def readmodule_ex(module, path=None):
     """Return a dictionary with all functions and classes in module.
 
@@ -110,7 +107,6 @@ def readmodule_ex(module, path=None):
     Do this by reading source, without importing (and executing) it.
     """
     return _readmodule(module, path or [])
-
 
 def _readmodule(module, path, inpackage=None):
     """Do the hard work for readmodule[_ex].
