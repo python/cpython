@@ -216,6 +216,7 @@ class DictSetTest(unittest.TestCase):
 
     def test_set_operations_with_iterator(self):
         origin = {1: 2, 3: 4}
+        self.assertEqual((origin.keys() & iter([1, 2])), {1})
         self.assertEqual((origin.keys() | iter([1, 2])), {1, 2, 3})
         self.assertEqual((origin.keys() ^ iter([1, 2])), {2, 3})
 
