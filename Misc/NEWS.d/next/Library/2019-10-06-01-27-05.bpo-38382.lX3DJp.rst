@@ -1,0 +1,3 @@
+Fix premature return on ZeroDivisionError in statistics.harmonic_mean that
+caused the function to return 0 instead of raising an error with negative
+values or with values with invalid types.
