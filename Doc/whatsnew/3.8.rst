@@ -405,8 +405,8 @@ Other Language Changes
 
   (Contributed by Jonathan Eunice and Serhiy Storchaka in :issue:`30688`.)
 
-* :class:`dict` and :term:`dictionary view`s are now iterable in reversed
-  insertion order using :func:`reversed`.
+* :class:`dict` and :term:`dictionary views <dictionary-view>` are now iterable
+  in reversed insertion order using :func:`reversed`.
   (Contributed by Rémi Lapeyre in :issue:`33462`.)
 
 * The syntax allowed for keyword names in function calls was further
