@@ -238,17 +238,16 @@ named_row_richcompare(pysqlite_NamedRow *self, PyObject *_other, int opid)
         Py_RETURN_NOTIMPLEMENTED;
     }
 
-    if (PyType_IsSubtype(Py_TYPE(_other), &pysqlite_NamedRowType)) {
+    if (PyObject_TypeCheck(_other, &pysqlite_NamedRowType)) {
         pysqlite_NamedRow *other = (pysqlite_NamedRow *)_other;
-        PyObject *res = PyObject_RichCompare(self->fields,
-                                             other->fields, opid);
-        if ((opid == Py_EQ && res == Py_True) ||
-            (opid == Py_NE && res == Py_False))
-        {
-            Py_DECREF(res);
+        int eq = PyObject_RichCompareBool(self->fields, other->fields, Py_EQ);
+        if (eq < 0) {
+            return NULL;
+        }
+        if (eq) {
             return PyObject_RichCompare(self->data, other->data, opid);
         }
-        Py_XDECREF(res);
+        return PyBool_FromLong(opid != Py_EQ);
     }
     Py_RETURN_NOTIMPLEMENTED;
 }
