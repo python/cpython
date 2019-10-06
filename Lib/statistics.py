@@ -282,14 +282,6 @@ def _find_rteq(a, l, x):
     raise ValueError
 
 
-def _fail_neg(values, errmsg='negative value'):
-    """Iterate over values, failing if any are less than zero."""
-    for x in values:
-        if x < 0:
-            raise StatisticsError(errmsg)
-        yield x
-
-
 # === Measures of central tendency (averages) ===
 
 def mean(data):
@@ -402,8 +394,10 @@ def harmonic_mean(data):
             return x
         else:
             raise TypeError('unsupported type')
+    if any(x < 0 for x in data):
+        raise StatisticsError(errmsg)
     try:
-        T, total, count = _sum(1/x for x in _fail_neg(data, errmsg))
+        T, total, count = _sum(1/x for x in data)
     except ZeroDivisionError:
         return 0
     assert count == n

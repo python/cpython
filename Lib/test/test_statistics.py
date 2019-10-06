@@ -1005,34 +1005,6 @@ class ConvertTest(unittest.TestCase):
             self.assertTrue(_nan_equal(x, nan))
 
 
-class FailNegTest(unittest.TestCase):
-    """Test _fail_neg private function."""
-
-    def test_pass_through(self):
-        # Test that values are passed through unchanged.
-        values = [1, 2.0, Fraction(3), Decimal(4)]
-        new = list(statistics._fail_neg(values))
-        self.assertEqual(values, new)
-
-    def test_negatives_raise(self):
-        # Test that negatives raise an exception.
-        for x in [1, 2.0, Fraction(3), Decimal(4)]:
-            seq = [-x]
-            it = statistics._fail_neg(seq)
-            self.assertRaises(statistics.StatisticsError, next, it)
-
-    def test_error_msg(self):
-        # Test that a given error message is used.
-        msg = "badness #%d" % random.randint(10000, 99999)
-        try:
-            next(statistics._fail_neg([-1], msg))
-        except statistics.StatisticsError as e:
-            errmsg = e.args[0]
-        else:
-            self.fail("expected exception, but it didn't happen")
-        self.assertEqual(errmsg, msg)
-
-
 # === Tests for public functions ===
 
 class UnivariateCommonMixin:
@@ -1472,7 +1444,7 @@ class TestHarmonicMean(NumericTestCase, AverageMixin, UnivariateTypeMixin):
     def test_negative_error(self):
         # Test that harmonic mean raises when given a negative value.
         exc = statistics.StatisticsError
-        for values in ([-1], [1, -2, 3]):
+        for values in ([-1], [1, -2, 3], [0, -1, 3]):
             with self.subTest(values=values):
                 self.assertRaises(exc, self.func, values)
 
