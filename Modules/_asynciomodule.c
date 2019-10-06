@@ -33,6 +33,7 @@ static PyObject *asyncio_task_repr_info_func;
 static PyObject *asyncio_InvalidStateError;
 static PyObject *asyncio_CancelledError;
 static PyObject *context_kwname;
+static int module_initialized;
 
 static PyObject *cached_running_holder;
 static volatile uint64_t cached_running_holder_tsid;
@@ -3247,10 +3248,13 @@ module_init(void)
     if (asyncio_mod == NULL) {
         goto fail;
     }
-
-    if (current_tasks == NULL) {
-        current_tasks = PyDict_New();
+    if (module_initialized != 0) {
+        return 0;
+    } else {
+        module_initialized = 1;
     }
+
+    current_tasks = PyDict_New();
     if (current_tasks == NULL) {
         goto fail;
     }
@@ -3261,9 +3265,7 @@ module_init(void)
     }
 
 
-    if (context_kwname == NULL) {
-        context_kwname = Py_BuildValue("(s)", "context");
-    }
+    context_kwname = Py_BuildValue("(s)", "context");
     if (context_kwname == NULL) {
         goto fail;
     }
