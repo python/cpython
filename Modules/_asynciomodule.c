@@ -3250,7 +3250,8 @@ module_init(void)
     }
     if (module_initialized != 0) {
         return 0;
-    } else {
+    } 
+    else {
         module_initialized = 1;
     }
 
