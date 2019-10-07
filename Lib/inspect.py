@@ -347,7 +347,10 @@ def getmembers(object, predicate=None):
         # like calling their __get__ (see bug #1785), so fall back to
         # looking in the __dict__.
         try:
-            value = getattr_static(object, key)
+            if isinstance(getattr_static(object, key), property):
+                value = getattr_static(object, key)
+            else:
+                value = getattr(object, key)
             # handle the duplicate key
             if key in processed:
                 raise AttributeError
