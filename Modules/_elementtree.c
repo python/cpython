@@ -2317,8 +2317,6 @@ create_elementiter(ElementObject *self, PyObject *tag, int gettext)
     Py_INCREF(self);
     it->root_element = self;
 
-    PyObject_GC_Track(it);
-
     it->parent_stack = PyMem_New(ParentLocator, INIT_PARENT_STACK_SIZE);
     if (it->parent_stack == NULL) {
         Py_DECREF(it);
@@ -2327,6 +2325,8 @@ create_elementiter(ElementObject *self, PyObject *tag, int gettext)
     }
     it->parent_stack_used = 0;
     it->parent_stack_size = INIT_PARENT_STACK_SIZE;
+
+    PyObject_GC_Track(it);
 
     return (PyObject *)it;
 }

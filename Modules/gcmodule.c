@@ -1922,6 +1922,18 @@ _PyGC_Dump(PyGC_Head *g)
     _PyObject_Dump(FROM_GC(g));
 }
 
+static int
+visit_validate(PyObject *op, void *parent_raw)
+{
+    PyObject *parent = _PyObject_CAST(parent_raw);
+    if (_PyObject_IsFreed(op)) {
+        _PyObject_ASSERT_FAILED_MSG(parent,
+                                    "PyObject_GC_Track() object is not valid");
+    }
+    return 0;
+}
+
+
 /* extension modules might be compiled with GC support so these
    functions must always be available */
 
@@ -1935,6 +1947,13 @@ PyObject_GC_Track(void *op_raw)
                                     "by the garbage collector");
     }
     _PyObject_GC_TRACK(op);
+
+#ifdef Py_DEBUG
+    /* Check that the object is valid: validate objects traversed
+       by tp_traverse() */
+    traverseproc traverse = Py_TYPE(op)->tp_traverse;
+    (void)traverse(op, visit_validate, op);
+#endif
 }
 
 void
