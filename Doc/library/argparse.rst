@@ -1583,7 +1583,7 @@ Sub-commands
      stored; by default ``None`` and no value is stored
 
    * required_ - Whether or not a subcommand must be provided, by default
-     ``False``.
+     ``False`` (added in 3.7)
 
    * help_ - help for sub-parser group in help output, by default ``None``
 
@@ -1738,6 +1738,9 @@ Sub-commands
      >>> subparser2.add_argument('y')
      >>> parser.parse_args(['2', 'frobble'])
      Namespace(subparser_name='2', y='frobble')
+
+   .. versionchanged:: 3.7
+      New *required* keyword argument.
 
 
 FileType objects
