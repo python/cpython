@@ -442,65 +442,63 @@ PyUnicode_GetMax(void)
 int
 _PyUnicode_CheckConsistency(PyObject *op, int check_content)
 {
+#define CHECK(expr) \
+    do { if (!(expr)) { _PyObject_ASSERT_FAILED_MSG(op, Py_STRINGIFY(expr)); } } while (0)
+
     PyASCIIObject *ascii;
     unsigned int kind;
 
-    _PyObject_ASSERT(op, PyUnicode_Check(op));
+    assert(op != NULL);
+    CHECK(PyUnicode_Check(op));
 
     ascii = (PyASCIIObject *)op;
     kind = ascii->state.kind;
 
     if (ascii->state.ascii == 1 && ascii->state.compact == 1) {
-        _PyObject_ASSERT(op, kind == PyUnicode_1BYTE_KIND);
-        _PyObject_ASSERT(op, ascii->state.ready == 1);
+        CHECK(kind == PyUnicode_1BYTE_KIND);
+        CHECK(ascii->state.ready == 1);
     }
     else {
         PyCompactUnicodeObject *compact = (PyCompactUnicodeObject *)op;
-#ifndef NDEBUG
         void *data;
-#endif
 
         if (ascii->state.compact == 1) {
-#ifndef NDEBUG
             data = compact + 1;
-#endif
-            _PyObject_ASSERT(op, kind == PyUnicode_1BYTE_KIND
+            CHECK(kind == PyUnicode_1BYTE_KIND
                                  || kind == PyUnicode_2BYTE_KIND
                                  || kind == PyUnicode_4BYTE_KIND);
-            _PyObject_ASSERT(op, ascii->state.ascii == 0);
-            _PyObject_ASSERT(op, ascii->state.ready == 1);
-            _PyObject_ASSERT(op, compact->utf8 != data);
+            CHECK(ascii->state.ascii == 0);
+            CHECK(ascii->state.ready == 1);
+            CHECK(compact->utf8 != data);
         }
         else {
-#ifndef NDEBUG
             PyUnicodeObject *unicode = (PyUnicodeObject *)op;
 
             data = unicode->data.any;
-#endif
             if (kind == PyUnicode_WCHAR_KIND) {
-                _PyObject_ASSERT(op, ascii->length == 0);
-                _PyObject_ASSERT(op, ascii->hash == -1);
-                _PyObject_ASSERT(op, ascii->state.compact == 0);
-                _PyObject_ASSERT(op, ascii->state.ascii == 0);
-                _PyObject_ASSERT(op, ascii->state.ready == 0);
-                _PyObject_ASSERT(op, ascii->state.interned == SSTATE_NOT_INTERNED);
-                _PyObject_ASSERT(op, ascii->wstr != NULL);
-                _PyObject_ASSERT(op, data == NULL);
-                _PyObject_ASSERT(op, compact->utf8 == NULL);
+                CHECK(ascii->length == 0);
+                CHECK(ascii->hash == -1);
+                CHECK(ascii->state.compact == 0);
+                CHECK(ascii->state.ascii == 0);
+                CHECK(ascii->state.ready == 0);
+                CHECK(ascii->state.interned == SSTATE_NOT_INTERNED);
+                CHECK(ascii->wstr != NULL);
+                CHECK(data == NULL);
+                CHECK(compact->utf8 == NULL);
             }
             else {
-                _PyObject_ASSERT(op, kind == PyUnicode_1BYTE_KIND
+                CHECK(kind == PyUnicode_1BYTE_KIND
                                      || kind == PyUnicode_2BYTE_KIND
                                      || kind == PyUnicode_4BYTE_KIND);
-                _PyObject_ASSERT(op, ascii->state.compact == 0);
-                _PyObject_ASSERT(op, ascii->state.ready == 1);
-                _PyObject_ASSERT(op, data != NULL);
+                CHECK(ascii->state.compact == 0);
+                CHECK(ascii->state.ready == 1);
+                CHECK(data != NULL);
                 if (ascii->state.ascii) {
-                    _PyObject_ASSERT(op, compact->utf8 == data);
-                    _PyObject_ASSERT(op, compact->utf8_length == ascii->length);
+                    CHECK(compact->utf8 == data);
+                    CHECK(compact->utf8_length == ascii->length);
                 }
                 else
-                    _PyObject_ASSERT(op, compact->utf8 != data);
+                    CHECK(compact->utf8 != data);
             }
         }
         if (kind != PyUnicode_WCHAR_KIND) {
@@ -512,16 +510,16 @@ _PyUnicode_CheckConsistency(PyObject *op, int check_content)
 #endif
                )
             {
-                _PyObject_ASSERT(op, ascii->wstr == data);
-                _PyObject_ASSERT(op, compact->wstr_length == ascii->length);
+                CHECK(ascii->wstr == data);
+                CHECK(compact->wstr_length == ascii->length);
             } else
-                _PyObject_ASSERT(op, ascii->wstr != data);
+                CHECK(ascii->wstr != data);
         }
 
         if (compact->utf8 == NULL)
-            _PyObject_ASSERT(op, compact->utf8_length == 0);
+            CHECK(compact->utf8_length == 0);
         if (ascii->wstr == NULL)
-            _PyObject_ASSERT(op, compact->wstr_length == 0);
+            CHECK(compact->wstr_length == 0);
     }
 
     /* check that the best kind is used: O(n) operation */
@@ -540,23 +538,25 @@ _PyUnicode_CheckConsistency(PyObject *op, int check_content)
         }
         if (kind == PyUnicode_1BYTE_KIND) {
             if (ascii->state.ascii == 0) {
-                _PyObject_ASSERT(op, maxchar >= 128);
-                _PyObject_ASSERT(op, maxchar <= 255);
+                CHECK(maxchar >= 128);
+                CHECK(maxchar <= 255);
             }
             else
-                _PyObject_ASSERT(op, maxchar < 128);
+                CHECK(maxchar < 128);
         }
         else if (kind == PyUnicode_2BYTE_KIND) {
-            _PyObject_ASSERT(op, maxchar >= 0x100);
-            _PyObject_ASSERT(op, maxchar <= 0xFFFF);
+            CHECK(maxchar >= 0x100);
+            CHECK(maxchar <= 0xFFFF);
         }
         else {
-            _PyObject_ASSERT(op, maxchar >= 0x10000);
-            _PyObject_ASSERT(op, maxchar <= MAX_UNICODE);
+            CHECK(maxchar >= 0x10000);
+            CHECK(maxchar <= MAX_UNICODE);
         }
-        _PyObject_ASSERT(op, PyUnicode_READ(kind, data, ascii->length) == 0);
+        CHECK(PyUnicode_READ(kind, data, ascii->length) == 0);
     }
     return 1;
+
+#undef CHECK
 }
 
 
