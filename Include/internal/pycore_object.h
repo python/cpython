@@ -11,7 +11,6 @@ extern "C" {
 #include "pycore_pystate.h"   /* _PyRuntime */
 
 PyAPI_FUNC(int) _PyType_CheckConsistency(PyTypeObject *type);
-PyAPI_FUNC(int) _PyUnicode_CheckConsistency(PyObject *op, int check_content);
 PyAPI_FUNC(int) _PyDict_CheckConsistency(PyObject *mp, int check_content);
 
 /* Tell the GC to track this object.
