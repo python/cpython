@@ -32,8 +32,7 @@ class ABCMeta(type):
     #       external code.
     _abc_invalidation_counter = 0
 
-    def __new__(mcls, name, bases, namespace, /, **kwargs):
-        cls = super().__new__(mcls, name, bases, namespace, **kwargs)
+    def __init__(cls, name, bases, namespace, /, **kwargs):
         # Compute set of abstract method names
         abstracts = {name
                      for name, value in namespace.items()
@@ -49,7 +48,6 @@ class ABCMeta(type):
         cls._abc_cache = WeakSet()
         cls._abc_negative_cache = WeakSet()
         cls._abc_negative_cache_version = ABCMeta._abc_invalidation_counter
-        return cls
 
     def register(cls, subclass):
         """Register a virtual subclass of an ABC.

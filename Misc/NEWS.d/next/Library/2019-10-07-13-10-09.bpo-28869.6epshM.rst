@@ -1,0 +1,2 @@
+Types created by calling :func:`~abc.ABCMeta` have now a proper
+:attr:`__module__` attribute.

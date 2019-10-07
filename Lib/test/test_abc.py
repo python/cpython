@@ -488,6 +488,13 @@ def test_factory(abc_ABCMeta, abc_get_cache_token):
                 pass
             self.assertEqual(C.__class__, abc_ABCMeta)
 
+        def test_type_module(self):
+            class A(metaclass=abc_ABCMeta):
+                pass
+            self.assertEqual(A.__module__, __name__)
+            B = abc_ABCMeta('B', (), {})
+            self.assertEqual(B.__module__, __name__)
+
 
     class TestABCWithInitSubclass(unittest.TestCase):
         def test_works_with_init_subclass(self):
