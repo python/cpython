@@ -2187,6 +2187,9 @@ _PyObject_AssertFailed(PyObject *obj, const char *expr, const char *msg,
         /* This might succeed or fail, but we're about to abort, so at least
            try to provide any extra info we can: */
         _PyObject_Dump(obj);
+
+        fprintf(stderr, "\n");
+        fflush(stderr);
     }
 
     Py_FatalError("_PyObject_AssertFailed");
