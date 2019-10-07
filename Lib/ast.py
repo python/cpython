@@ -63,7 +63,7 @@ def literal_eval(node_or_string):
         if isinstance(node, Constant):
             if type(node.value) in (int, float, complex):
                 return node.value
-        raise ValueError('malformed node or string: ' + repr(node))
+        raise ValueError('malformed node or string: ' + dump(node))
     def _convert_signed_num(node):
         if isinstance(node, UnaryOp) and isinstance(node.op, (UAdd, USub)):
             operand = _convert_num(node.operand)

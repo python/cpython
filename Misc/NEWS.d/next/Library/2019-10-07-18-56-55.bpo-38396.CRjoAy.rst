@@ -1,0 +1,1 @@
+When raising ValueError use dump instead of repr on ast.literal_eval.
