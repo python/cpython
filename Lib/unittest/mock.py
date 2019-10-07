@@ -2750,9 +2750,9 @@ def mock_open(mock=None, read_data='', data=()):
     `read_data` is a string for the `read`, `readline` and `readlines` of the
     file handle to return.  This is an empty string by default.
 
-    `data` is any value acceptable for `dict` constructor. The keys
+    `data` is any value acceptable for the `dict` constructor. The keys
     represent file names. If a file name, found in `data`, is
-    mock-opened, and the value matching the file name in `data` will
+    mock-opened, then the value matching the file name in `data` will
     be used instead of `read_data`. The default is an empty tuple.
     """
 
