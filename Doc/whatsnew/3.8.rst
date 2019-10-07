@@ -620,6 +620,16 @@ where the DLL is stored (if a full or partial path is used to load the initial
 DLL) and paths added by :func:`~os.add_dll_directory`.
 
 
+datetime
+--------
+
+Added new alternate constructors :meth:`datetime.date.fromisocalendar` and
+:meth:`datetime.datetime.fromisocalendar`, which construct :class:`date` and
+:class:`datetime` objects respectively from ISO year, week number and weekday;
+these are the inverse of each class's ``isocalendar`` method.
+(Contributed by Paul Ganssle in :issue:`36004`.)
+
+
 functools
 ---------
 
@@ -637,14 +647,12 @@ than as a function returning a decorator.  So both of these are now supported::
 (Contributed by Raymond Hettinger in :issue:`36772`.)
 
 
-datetime
---------
+gc
+--
 
-Added new alternate constructors :meth:`datetime.date.fromisocalendar` and
-:meth:`datetime.datetime.fromisocalendar`, which construct :class:`date` and
-:class:`datetime` objects respectively from ISO year, week number and weekday;
-these are the inverse of each class's ``isocalendar`` method.
-(Contributed by Paul Ganssle in :issue:`36004`.)
+:func:`~gc.get_objects` can now receive an optional *generation* parameter
+indicating a generation to get objects from. Contributed in
+:issue:`36016` by Pablo Galindo.
 
 
 gettext
@@ -652,6 +660,18 @@ gettext
 
 Added :func:`~gettext.pgettext` and its variants.
 (Contributed by Franz Glasner, Éric Araujo, and Cheryl Sabella in :issue:`2504`.)
+
+
+gzip
+----
+
+Added the *mtime* parameter to :func:`gzip.compress` for reproducible output.
+(Contributed by Guo Ci Teo in :issue:`34898`.)
+
+A :exc:`~gzip.BadGzipFile` exception is now raised instead of :exc:`OSError`
+for certain types of invalid or corrupt gzip files.
+(Contributed by Filip Gruszczyński, Michele Orrù, and Zackery Spytz in
+:issue:`6584`.)
 
 
 idlelib and IDLE
@@ -702,44 +722,6 @@ In development mode (:option:`-X` ``env``) and in debug build, the
 :class:`io.IOBase` finalizer now logs the exception if the ``close()`` method
 fails. The exception is ignored silently by default in release build.
 (Contributed by Victor Stinner in :issue:`18748`.)
-
-
-gc
---
-
-:func:`~gc.get_objects` can now receive an optional *generation* parameter
-indicating a generation to get objects from. Contributed in
-:issue:`36016` by Pablo Galindo.
-
-
-gzip
-----
-
-Added the *mtime* parameter to :func:`gzip.compress` for reproducible output.
-(Contributed by Guo Ci Teo in :issue:`34898`.)
-
-A :exc:`~gzip.BadGzipFile` exception is now raised instead of :exc:`OSError`
-for certain types of invalid or corrupt gzip files.
-(Contributed by Filip Gruszczyński, Michele Orrù, and Zackery Spytz in
-:issue:`6584`.)
-
-
-idlelib and IDLE
-----------------
-
-Add optional line numbers for IDLE editor windows. Windows
-open without line numbers unless set otherwise in the General
-tab of the configuration dialog.
-(Contributed by Tal Einat and Saimadhav Heblikar in :issue:`17535`.)
-
-Output over N lines (50 by default) is squeezed down to a button.
-N can be changed in the PyShell section of the General page of the
-Settings dialog.  Fewer, but possibly extra long, lines can be squeezed by
-right clicking on the output.  Squeezed output can be expanded in place
-by double-clicking the button or into the clipboard or a separate window
-by right-clicking the button.  (Contributed by Tal Einat in :issue:`1529353`.)
-
-The changes above have been backported to 3.7 maintenance releases.
 
 
 json.tool
@@ -899,18 +881,6 @@ py_compile
 (Contributed by Joannah Nanjekye in :issue:`22640`.)
 
 
-socket
-------
-
-Added :meth:`~socket.create_server()` and :meth:`~socket.has_dualstack_ipv6()`
-convenience functions to automate the necessary tasks usually involved when
-creating a server socket, including accepting both IPv4 and IPv6 connections
-on the same socket.  (Contributed by Giampaolo Rodolà in :issue:`17561`.)
-
-The :func:`socket.if_nameindex()`, :func:`socket.if_nametoindex()`, and
-:func:`socket.if_indextoname()` functions have been implemented on Windows.
-(Contributed by Zackery Spytz in :issue:`37007`.)
-
 shlex
 ----------
 
@@ -930,6 +900,19 @@ inherited from the corresponding change to the :mod:`tarfile` module.
 
 :func:`shutil.rmtree` on Windows now removes directory junctions without
 recursively removing their contents first.
+
+
+socket
+------
+
+Added :meth:`~socket.create_server()` and :meth:`~socket.has_dualstack_ipv6()`
+convenience functions to automate the necessary tasks usually involved when
+creating a server socket, including accepting both IPv4 and IPv6 connections
+on the same socket.  (Contributed by Giampaolo Rodolà in :issue:`17561`.)
+
+The :func:`socket.if_nameindex()`, :func:`socket.if_nametoindex()`, and
+:func:`socket.if_indextoname()` functions have been implemented on Windows.
+(Contributed by Zackery Spytz in :issue:`37007`.)
 
 
 ssl
