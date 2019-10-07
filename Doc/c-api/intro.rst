@@ -176,15 +176,21 @@ complete listing.
 
 .. c:macro:: PyDoc_STRVAR(name, str)
 
-   A shortcut for ``static const char name[] = str``, commonly used
-   to initialize a module, function, class, or method docstring.
+   Creates a variable with name ``name`` that can be used in docstrings.
+
+   Use the :c:macro:`PyDoc_STRVAR` or :c:macro:`PyDoc_STR` macros for
+   docstrings to support building Python without docstrings,
+   as specified in :pep:`7`.
 
    Example::
 
-      PyDoc_STRVAR(module_doc, "This is the module's docstring.");
+      PyDoc_STRVAR(pop_doc, "Remove and return the rightmost element.");
 
-   .. versionchanged:: 3.8
-      This macro previously inserted ``static char name[]``.
+      static PyMethodDef deque_methods[] = {
+          // ...
+          {"pop", (PyCFunction)deque_pop, METH_NOARGS, pop_doc},
+          // ...
+      }
 
 .. _api-objects:
 
