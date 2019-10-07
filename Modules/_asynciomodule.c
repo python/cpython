@@ -33,6 +33,7 @@ static PyObject *asyncio_task_repr_info_func;
 static PyObject *asyncio_InvalidStateError;
 static PyObject *asyncio_CancelledError;
 static PyObject *context_kwname;
+static int module_initialized;
 
 static PyObject *cached_running_holder;
 static volatile uint64_t cached_running_holder_tsid;
@@ -3253,6 +3254,12 @@ module_init(void)
     asyncio_mod = PyImport_ImportModule("asyncio");
     if (asyncio_mod == NULL) {
         goto fail;
+    }
+    if (module_initialized != 0) {
+        return 0;
+    } 
+    else {
+        module_initialized = 1;
     }
 
     current_tasks = PyDict_New();
