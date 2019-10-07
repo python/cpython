@@ -938,8 +938,9 @@ form.
       >>> print('[%s]+' % re.escape(legal_chars))
       [abcdefghijklmnopqrstuvwxyz0123456789!\#\$%\&'\*\+\-\.\^_`\|\~:]+
 
-      >>> print(' '.join(map(re.escape, string.punctuation)))
-      ! " \# \$ % \& ' \( \) \* \+ , \- \. / : ; < = > \? @ \[ \\ \] \^ _ ` \{ \| \} \~
+      >>> operators = ['+', '-', '*', '/', '**']
+      >>> print('|'.join(map(re.escape, sorted(operators, reverse=True))))
+      /|\-|\+|\*\*|\*
 
    This function must not be used for the replacement string in :func:`sub`
    and :func:`subn`, only backslashes should be escaped.  For example::
