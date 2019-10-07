@@ -426,9 +426,12 @@ _PyObject_IsFreed(PyObject *op)
     /* ignore op->ob_ref: its value can have be modified
        by Py_INCREF() and Py_DECREF(). */
 #ifdef Py_TRACE_REFS
-    if (_PyMem_IsPtrFreed(op->_ob_next) || _PyMem_IsPtrFreed(op->_ob_prev)) {
+    if (op->_ob_next != NULL && _PyMem_IsPtrFreed(op->_ob_next)) {
         return 1;
     }
+    if (op->_ob_prev != NULL && _PyMem_IsPtrFreed(op->_ob_prev)) {
+         return 1;
+     }
 #endif
     return 0;
 }
