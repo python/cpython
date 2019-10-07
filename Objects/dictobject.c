@@ -4186,7 +4186,6 @@ _PyDictView_Intersect(PyObject* self, PyObject *other)
     Py_ssize_t len_self;
     int rv;
     int (*dict_contains)(_PyDictViewObject *, PyObject *);
-    PyObject *tmp;
 
     /* Python interpreter swaps parameters when dict view
        is on right side of & */
