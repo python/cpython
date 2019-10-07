@@ -3206,10 +3206,10 @@ _PyBytesWriter_GetSize(_PyBytesWriter *writer, char *str)
     return str - start;
 }
 
-Py_LOCAL_INLINE(void)
+#ifndef NDEBUG
+Py_LOCAL_INLINE(int)
 _PyBytesWriter_CheckConsistency(_PyBytesWriter *writer, char *str)
 {
-#ifdef Py_DEBUG
     char *start, *end;
 
     if (writer->use_small_buffer) {
@@ -3239,15 +3239,16 @@ _PyBytesWriter_CheckConsistency(_PyBytesWriter *writer, char *str)
     end = start + writer->allocated;
     assert(str != NULL);
     assert(start <= str && str <= end);
-#endif
+    return 1;
 }
+#endif
 
 void*
 _PyBytesWriter_Resize(_PyBytesWriter *writer, void *str, Py_ssize_t size)
 {
     Py_ssize_t allocated, pos;
 
-    _PyBytesWriter_CheckConsistency(writer, str);
+    assert(_PyBytesWriter_CheckConsistency(writer, str));
     assert(writer->allocated < size);
 
     allocated = size;
@@ -3303,7 +3304,7 @@ _PyBytesWriter_Resize(_PyBytesWriter *writer, void *str, Py_ssize_t size)
     writer->allocated = allocated;
 
     str = _PyBytesWriter_AsString(writer) + pos;
-    _PyBytesWriter_CheckConsistency(writer, str);
+    assert(_PyBytesWriter_CheckConsistency(writer, str));
     return str;
 
 error:
@@ -3316,7 +3317,7 @@ _PyBytesWriter_Prepare(_PyBytesWriter *writer, void *str, Py_ssize_t size)
 {
     Py_ssize_t new_min_size;
 
-    _PyBytesWriter_CheckConsistency(writer, str);
+    assert(_PyBytesWriter_CheckConsistency(writer, str));
     assert(size >= 0);
 
     if (size == 0) {
@@ -3377,7 +3378,7 @@ _PyBytesWriter_Finish(_PyBytesWriter *writer, void *str)
     Py_ssize_t size;
     PyObject *result;
 
-    _PyBytesWriter_CheckConsistency(writer, str);
+    assert(_PyBytesWriter_CheckConsistency(writer, str));
 
     size = _PyBytesWriter_GetSize(writer, str);
     if (size == 0 && !writer->use_bytearray) {

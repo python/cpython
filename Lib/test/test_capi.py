@@ -719,6 +719,9 @@ class PyMemDebugTests(unittest.TestCase):
         ''')
         assert_python_ok('-c', code, PYTHONMALLOC=self.PYTHONMALLOC)
 
+    def test_pyobject_null_is_freed(self):
+        self.check_pyobject_is_freed('check_pyobject_null_is_freed')
+
     def test_pyobject_uninitialized_is_freed(self):
         self.check_pyobject_is_freed('check_pyobject_uninitialized_is_freed')
 
