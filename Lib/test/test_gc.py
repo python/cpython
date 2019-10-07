@@ -985,16 +985,19 @@ class GCCallbackTests(unittest.TestCase):
             br'gcmodule\.c:[0-9]+: gc_decref: Assertion "gc_get_refs\(g\) > 0" failed.')
         self.assertRegex(stderr,
             br'refcount is too small')
-        self.assertRegex(stderr,
-            br'object  : \[1, 2, 3\]')
-        self.assertRegex(stderr,
-            br'type    : list')
-        self.assertRegex(stderr,
-            br'refcount: 1')
         # "address : 0x7fb5062efc18"
         # "address : 7FB5062EFC18"
+        address_regex = br'[0-9a-fA-Fx]+'
         self.assertRegex(stderr,
-            br'address : [0-9a-fA-Fx]+')
+            br'object address  : ' + address_regex)
+        self.assertRegex(stderr,
+            br'object refcount : 1')
+        self.assertRegex(stderr,
+            br'object type     : ' + address_regex)
+        self.assertRegex(stderr,
+            br'object type name: list')
+        self.assertRegex(stderr,
+            br'object repr     : \[1, 2, 3\]')
 
 
 class GCTogglingTests(unittest.TestCase):
