@@ -22,16 +22,16 @@ class TestPathfixFunctional(unittest.TestCase):
         self.addCleanup(support.unlink, self.temp_file)
 
     def pathfix(self, shebang, pathfix_flags, exitcode=0, stdout='', stderr='',
-                filename=''):
-        if filename == '':
-            filename = self.temp_file
+                target_file=''):
+        if target_file == '':
+            target_file = self.temp_file
 
         with open(self.temp_file, 'w', encoding='utf8') as f:
             f.write(f'{shebang}\n' + 'print("Hello world")\n')
 
         proc = subprocess.run(
             [sys.executable, self.script,
-             *pathfix_flags, '-n', filename],
+             *pathfix_flags, '-n', target_file],
             capture_output=True, text=1)
 
         if stdout == '' and proc.returncode == 0:
@@ -61,7 +61,7 @@ class TestPathfixFunctional(unittest.TestCase):
                method_name != 'test_recursive' and \
                method_name != 'test_pathfix_adding_errors' and \
                callable(method):
-                method(filename=self.temp_directory, stderr=expected_stderr)
+                method(target_file=self.temp_directory, stderr=expected_stderr)
 
     def test_pathfix(self, **kwargs):
         self.assertEqual(
