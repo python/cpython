@@ -148,7 +148,7 @@ dist:
 	cp -pPR build/epub/Python.epub dist/python-$(DISTVERSION)-docs.epub
 
 check:
-	$(PYTHON) tools/rstlint.py -i tools
+	$(PYTHON)2 tools/rstlint.py -i tools
 
 serve:
 	../Tools/scripts/serve.py build/html
