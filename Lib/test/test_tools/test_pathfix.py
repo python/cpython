@@ -17,7 +17,7 @@ class TestPathfixFunctional(unittest.TestCase):
         self.temp_directory = support.TESTFN + '.d'
         self.addCleanup(support.rmtree, self.temp_directory)
         os.mkdir(self.temp_directory)
-        self.temp_file = self.temp_directory + os.sep + \
+        self.temp_file = self.temp_directory + '/' + \
                          os.path.basename(support.TESTFN) + '-t.py'
         self.addCleanup(support.unlink, self.temp_file)
 
