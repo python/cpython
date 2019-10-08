@@ -54,7 +54,7 @@ from idlelib.editor import EditorWindow, fixwordbreaks
 from idlelib.filelist import FileList
 from idlelib.outwin import OutputWindow
 from idlelib import rpc
-from idlelib.run import idle_formatwarning, PseudoInputFile, PseudoOutputFile
+from idlelib.run import idle_formatwarning, StdInputFile, StdOutputFile
 from idlelib.undo import UndoDelegator
 
 HOST = '127.0.0.1' # python execution server on localhost loopback
@@ -902,10 +902,14 @@ class PyShell(OutputWindow):
         self.save_stderr = sys.stderr
         self.save_stdin = sys.stdin
         from idlelib import iomenu
-        self.stdin = PseudoInputFile(self, "stdin", iomenu.encoding)
-        self.stdout = PseudoOutputFile(self, "stdout", iomenu.encoding)
-        self.stderr = PseudoOutputFile(self, "stderr", iomenu.encoding)
-        self.console = PseudoOutputFile(self, "console", iomenu.encoding)
+        self.stdin = StdInputFile(self, "stdin",
+                                  iomenu.encoding, iomenu.errors)
+        self.stdout = StdOutputFile(self, "stdout",
+                                    iomenu.encoding, iomenu.errors)
+        self.stderr = StdOutputFile(self, "stderr",
+                                    iomenu.encoding, "backslashreplace")
+        self.console = StdOutputFile(self, "console",
+                                     iomenu.encoding, iomenu.errors)
         if not use_subprocess:
             sys.stdout = self.stdout
             sys.stderr = self.stderr
