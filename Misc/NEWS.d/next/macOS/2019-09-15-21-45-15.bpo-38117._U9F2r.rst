@@ -1,1 +1,0 @@
-Updated OpenSSL to 1.0.2t in macOS installer for 2.7.x.

@@ -1,2 +1,0 @@
-Fix file descriptors transfer in multiprocessing on FreeBSD: use
-``CMSG_SPACE()`` rather than ``CMSG_LEN()``; see :rfc:`3542`.

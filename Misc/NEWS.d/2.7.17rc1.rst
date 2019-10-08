@@ -1,0 +1,785 @@
+.. bpo: 38243
+.. date: 2019-09-25-13-21-09
+.. nonce: 1pfz24
+.. release date: 2019-10-07
+.. section: Security
+
+Escape the server title of :class:`DocXMLRPCServer.DocXMLRPCServer` when
+rendering the document page as HTML. (Contributed by Dong-hee Na in
+:issue:`38243`.)
+
+..
+
+.. bpo: 38174
+.. date: 2019-09-23-21-02-46
+.. nonce: MeWuJd
+.. section: Security
+
+Update vendorized expat library version to 2.2.8, which resolves
+CVE-2019-15903.
+
+..
+
+.. bpo: 34631
+.. date: 2019-06-17-08-43-19
+.. nonce: pJ8CGR
+.. section: Security
+
+Updated OpenSSL to 1.0.2s in Windows installer
+
+..
+
+.. bpo: 35647
+.. date: 2019-05-20-00-49-29
+.. nonce: oWmiGU
+.. section: Security
+
+Don't set cookie for a request when the request path is a prefix match of
+the cookie's path attribute but doesn't end with "/". Patch by Karthikeyan
+Singaravelan.
+
+..
+
+.. bpo: 35121
+.. date: 2019-05-20-00-35-12
+.. nonce: RRi-HU
+.. section: Security
+
+Don't send cookies of domain A without Domain attribute to domain B when
+domain A is a suffix match of domain B while using a cookiejar with
+:class:`cookielib.DefaultCookiePolicy` policy. Patch by Karthikeyan
+Singaravelan.
+
+..
+
+.. bpo: 34155
+.. date: 2019-05-04-13-33-37
+.. nonce: MJll68
+.. section: Security
+
+Fix parsing of invalid email addresses with more than one ``@`` (e.g.
+a@b@c.com.) to not return the part before 2nd ``@`` as valid email address.
+Patch by maxking & jpic.
+
+..
+
+.. bpo: 36742
+.. date: 2019-04-29-15-34-59
+.. nonce: QCUY0i
+.. section: Security
+
+Fixes mishandling of pre-normalization characters in urlsplit().
+
+..
+
+.. bpo: 30458
+.. date: 2019-04-10-08-53-30
+.. nonce: 51E-DA
+.. section: Security
+
+Address CVE-2019-9740 by disallowing URL paths with embedded whitespace or
+control characters through into the underlying http client request.  Such
+potentially malicious header injection URLs now cause an httplib.InvalidURL
+exception to be raised.
+
+..
+
+.. bpo: 36216
+.. date: 2019-03-06-09-38-40
+.. nonce: 6q1m4a
+.. section: Security
+
+Changes urlsplit() to raise ValueError when the URL contains characters that
+decompose under IDNA encoding (NFKC-normalization) into characters that
+affect how the URL is parsed.
+
+..
+
+.. bpo: 35907
+.. date: 2019-02-13-17-21-10
+.. nonce: ckk2zg
+.. section: Security
+
+CVE-2019-9948: Avoid file reading by disallowing ``local-file://`` and
+``local_file://`` URL schemes in :func:`urllib.urlopen`,
+:meth:`urllib.URLopener.open` and :meth:`urllib.URLopener.retrieve`.
+
+..
+
+.. bpo: 38106
+.. date: 2019-09-12-16-36-16
+.. nonce: 4pApn7
+.. section: Core and Builtins
+
+Fix race in PyThread_release_lock that was leading to memory corruption and
+deadlocks. The fix applies to POSIX systems where Python locks are
+implemented with mutex and condition variable because POSIX semaphores are
+either not provided, or are known to be broken. One particular example of
+such system is macOS.
+
+..
+
+.. bpo: 37329
+.. date: 2019-06-18-15-08-32
+.. nonce: 7XVDRv
+.. section: Core and Builtins
+
+valgrind: suppress a false alarm in memory leak checks. _PyWarnings_Init()
+only allocates memory once at startup but it is not released at exit. Ignore
+this issue to be able to catch other bugs more easily.
+
+..
+
+.. bpo: 26423
+.. date: 2019-05-27-18-00-19
+.. nonce: RgUOE8
+.. section: Core and Builtins
+
+Fix possible overflow in ``wrap_lenfunc()`` when ``sizeof(long) <
+sizeof(Py_ssize_t)`` (e.g., 64-bit Windows).
+
+..
+
+.. bpo: 27987
+.. date: 2019-04-16-11-52-21
+.. nonce: n2_DcQ
+.. section: Core and Builtins
+
+pymalloc returns memory blocks aligned by 16 bytes, instead of 8 bytes, on
+64-bit platforms to conform x86-64 ABI. Recent compilers assume this
+alignment more often. Patch by Inada Naoki.
+
+..
+
+.. bpo: 36504
+.. date: 2019-04-02-04-10-32
+.. nonce: k_V8Bm
+.. section: Core and Builtins
+
+Fix signed integer overflow in _ctypes.c's ``PyCArrayType_new()``.
+
+..
+
+.. bpo: 36459
+.. date: 2019-03-27-22-35-16
+.. nonce: UAvkKp
+.. section: Core and Builtins
+
+Fix a possible double ``PyMem_FREE()`` due to tokenizer.c's ``tok_nextc()``.
+
+..
+
+.. bpo: 36430
+.. date: 2019-03-25-23-37-26
+.. nonce: sd9xxQ
+.. section: Core and Builtins
+
+Fix a possible reference leak in :func:`itertools.count`.
+
+..
+
+.. bpo: 18368
+.. date: 2019-03-14-17-30-46
+.. nonce: WXaHAo
+.. section: Core and Builtins
+
+PyOS_StdioReadline() no longer leaks memory when realloc() fails.
+
+..
+
+.. bpo: 36262
+.. date: 2019-03-11-15-37-33
+.. nonce: v3N6Fz
+.. section: Core and Builtins
+
+Fix an unlikely memory leak on conversion from string to float in the
+function ``_Py_dg_strtod()`` used by ``float(str)``, ``complex(str)``,
+:func:`pickle.load`, :func:`marshal.load`, etc.
+
+..
+
+.. bpo: 36149
+.. date: 2019-02-28-13-52-18
+.. nonce: GJdnh4
+.. section: Core and Builtins
+
+Fix use of uninitialized memory in cPickle when reading a truncated pickle
+from a file object.
+
+..
+
+.. bpo: 33006
+.. date: 2018-03-07-09-10-42
+.. nonce: Bzx3LA
+.. section: Core and Builtins
+
+Clarified Doc string for builtin filter function. 2nd Argument can be any
+iterable. Patch by Tony Flury
+
+..
+
+.. bpo: 38216
+.. date: 2019-09-27-15-24-45
+.. nonce: -7yvZR
+.. section: Library
+
+Allow the rare code that wants to send invalid http requests from the
+`http.client` library a way to do so.  The fixes for bpo-30458 led to
+breakage for some projects that were relying on this ability to test their
+own behavior in the face of bad requests.
+
+..
+
+.. bpo: 38175
+.. date: 2019-09-15-10-30-33
+.. nonce: 61XlUv
+.. section: Library
+
+Fix a memory leak in comparison of :class:`sqlite3.Row` objects.
+
+..
+
+.. bpo: 33936
+.. date: 2019-09-14-10-34-00
+.. nonce: 8wCI_n
+.. section: Library
+
+_hashlib no longer calls obsolete OpenSSL initialization function with
+OpenSSL 1.1.0+.
+
+..
+
+.. bpo: 34410
+.. date: 2019-08-31-01-52-59
+.. nonce: 7KbWZQ
+.. section: Library
+
+Fixed a crash in the :func:`tee` iterator when re-enter it. RuntimeError is
+now raised in this case.
+
+..
+
+.. bpo: 37965
+.. date: 2019-08-28-14-04-18
+.. nonce: 7xGE-C
+.. section: Library
+
+Fix C compiler warning caused by distutils.ccompiler.CCompiler.has_function.
+
+..
+
+.. bpo: 34521
+.. date: 2019-08-23-14-47-09
+.. nonce: Y2BYu5
+.. section: Library
+
+Fix file descriptors transfer in multiprocessing on FreeBSD: use
+``CMSG_SPACE()`` rather than ``CMSG_LEN()``; see :rfc:`3542`.
+
+..
+
+.. bpo: 37664
+.. date: 2019-07-24-18-27-44
+.. nonce: o-GYZC
+.. section: Library
+
+Update wheels bundled with ensurepip (pip 19.2.3 and setuptools 41.2.0)
+
+..
+
+.. bpo: 37437
+.. date: 2019-06-27-20-33-50
+.. nonce: du39_A
+.. section: Library
+
+Update vendorized expat version to 2.2.7.
+
+..
+
+.. bpo: 36742
+.. date: 2019-06-10-12-02-45
+.. nonce: UEdHXJ
+.. section: Library
+
+:func:`urlparse.urlsplit` error message for invalid ``netloc`` according to
+NFKC normalization is now a :class:`str` string, rather than a
+:class:`unicode` string, to prevent error when displaying the error.
+
+..
+
+.. bpo: 12639
+.. date: 2019-05-30-16-16-47
+.. nonce: TQFOR4
+.. section: Library
+
+:meth:`msilib.Directory.start_component()` no longer fails if *keyfile* is
+not ``None``.
+
+..
+
+.. bpo: 36713
+.. date: 2019-05-23-15-57-36
+.. nonce: sjPhnf
+.. section: Library
+
+Rename the :meth:`test_ascii_replace` to :meth:`test_ascii_strict`.
+
+..
+
+.. bpo: 28552
+.. date: 2019-04-18-16-10-29
+.. nonce: MW1TLt
+.. section: Library
+
+Fix :mod:`distutils.sysconfig` if :data:`sys.executable` is ``None`` or an
+empty string: use :func:`os.getcwd` to initialize ``project_base``.  Fix
+also the distutils build command: don't use :data:`sys.executable` if it is
+``None`` or an empty string.
+
+..
+
+.. bpo: 36337
+.. date: 2019-03-18-10-08-30
+.. nonce: QhJnXy
+.. section: Library
+
+Fix buffer overflow in :meth:`~socket.socket.send` and
+:meth:`~socket.socket.sendall` methods of :func:`socket.socket` for data
+larger than 2 GiB.
+
+..
+
+.. bpo: 36291
+.. date: 2019-03-14-15-54-46
+.. nonce: UalHXP
+.. section: Library
+
+Fix a possible reference leak in the json module.
+
+..
+
+.. bpo: 36289
+.. date: 2019-03-14-15-42-48
+.. nonce: wYKS47
+.. section: Library
+
+Fix a possible reference leak in the io module.
+
+..
+
+.. bpo: 36212
+.. date: 2019-03-14-14-40-22
+.. nonce: IEgRI8
+.. section: Library
+
+Fix two possible reference leaks in the hotshot module.
+
+..
+
+.. bpo: 36235
+.. date: 2019-03-08-13-32-21
+.. nonce: _M72wU
+.. section: Library
+
+Fix ``CFLAGS`` in ``customize_compiler()`` of ``distutils.sysconfig``: when
+the ``CFLAGS`` environment variable is defined, don't override ``CFLAGS``
+variable with the ``OPT`` variable anymore. Initial patch written by David
+Malcolm.
+
+..
+
+.. bpo: 35807
+.. date: 2019-03-06-13-21-33
+.. nonce: W7mmu3
+.. section: Library
+
+Update ensurepip to install pip 19.0.3 and setuptools 40.8.0.
+
+..
+
+.. bpo: 36186
+.. date: 2019-03-04-16-39-16
+.. nonce: Hqw1A_
+.. section: Library
+
+Fix linuxaudiodev.linux_audio_device() error handling: close the internal
+file descriptor if it fails to open the device.
+
+..
+
+.. bpo: 13096
+.. date: 2019-03-04-16-13-01
+.. nonce: SGPt_n
+.. section: Library
+
+Fix memory leak in ctypes POINTER handling of large values.
+
+..
+
+.. bpo: 36179
+.. date: 2019-03-04-10-42-46
+.. nonce: jEyuI-
+.. section: Library
+
+Fix two unlikely reference leaks in _hashopenssl. The leaks only occur in
+out-of-memory cases.
+
+..
+
+.. bpo: 36106
+.. date: 2019-02-25-13-21-43
+.. nonce: VuhEiQ
+.. section: Library
+
+Resolve potential name clash with libm's sinpi(). Patch by Dmitrii
+Pasechnik.
+
+..
+
+.. bpo: 31292
+.. date: 2017-08-30-20-27-00
+.. nonce: dKIaZb
+.. section: Library
+
+Fix ``setup.py check --restructuredtext`` for files containing ``include``
+directives.
+
+..
+
+.. bpo: 37487
+.. date: 2019-07-06-17-19-26
+.. nonce: QagfZ5
+.. section: Documentation
+
+Fix PyList_GetItem index description to include 0.
+
+..
+
+.. bpo: 37149
+.. date: 2019-07-06-02-19-02
+.. nonce: NumHn3
+.. section: Documentation
+
+Replace the dead link to the Tkinter 8.5 reference by John Shipman, New
+Mexico Tech, with a link to the archive.org copy.
+
+..
+
+.. bpo: 35126
+.. date: 2019-02-18-10-01-07
+.. nonce: LWwl8X
+.. section: Documentation
+
+Improve the examples in the "How do I convert a number to string?" question
+of the "Programming" section of the FAQ.  Contributed by Stéphane Wirtel.
+
+..
+
+.. bpo: 35605
+.. date: 2018-12-30-09-56-13
+.. nonce: gAWt32
+.. section: Documentation
+
+Fix documentation build for sphinx<1.6.  Patch by Anthony Sottile.
+
+..
+
+.. bpo: 35564
+.. date: 2018-12-22-22-52-05
+.. nonce: TuEU_D
+.. section: Documentation
+
+Explicitly set master_doc variable in conf.py for compliance with Sphinx 2.0
+
+..
+
+.. bpo: 33832
+.. date: 2018-06-15-15-57-37
+.. nonce: xBFhKw
+.. section: Documentation
+
+Add glossary entry for 'magic method'.
+
+..
+
+.. bpo: 37411
+.. date: 2019-06-26-15-28-45
+.. nonce: 5lGNhM
+.. section: Tests
+
+Fix test_wsgiref.testEnviron() to no longer depend on the environment
+variables (don't fail if "X" variable is set).
+
+..
+
+.. bpo: 37359
+.. date: 2019-06-24-10-47-07
+.. nonce: CkdtyO
+.. section: Tests
+
+Add --cleanup option to python3 -m test to remove ``test_python_*``
+directories of previous failed jobs. Add "make cleantest" to run ``python3
+-m test --cleanup``.
+
+..
+
+.. bpo: 37362
+.. date: 2019-06-21-15-47-33
+.. nonce: D3xppx
+.. section: Tests
+
+test_gdb no longer fails if it gets an "unexpected" message on stderr: it
+now ignores stderr. The purpose of test_gdb is to test that python-gdb.py
+commands work as expected, not to test gdb.
+
+..
+
+.. bpo: 36816
+.. date: 2019-05-08-15-55-46
+.. nonce: WBKRGZ
+.. section: Tests
+
+Update Lib/test/selfsigned_pythontestdotnet.pem to match
+self-signed.pythontest.net's new TLS certificate.
+
+..
+
+.. bpo: 35925
+.. date: 2019-05-06-18-29-54
+.. nonce: gwQPuC
+.. section: Tests
+
+Skip specific nntplib and ssl networking tests when they would otherwise
+fail due to a modern OS or distro with a default OpenSSL policy of rejecting
+connections to servers with weak certificates or disabling TLS below
+TLSv1.2.
+
+..
+
+.. bpo: 36560
+.. date: 2019-04-09-14-08-02
+.. nonce: _ejeOr
+.. section: Tests
+
+Fix reference leak hunting in regrtest: compute also deltas (of reference
+count and file descriptor count) during warmup, to ensure that everything is
+initialized before starting to hunt reference leaks.
+
+..
+
+.. bpo: 36234
+.. date: 2019-03-08-12-53-37
+.. nonce: NRVK6W
+.. section: Tests
+
+test_posix.PosixUidGidTests: add tests for invalid uid/gid type (str). Patch
+written by David Malcolm.
+
+..
+
+.. bpo: 36019
+.. date: 2019-03-05-13-27-36
+.. nonce: ebUjCm
+.. section: Tests
+
+Add test.support.TEST_HTTP_URL and replace references of
+http://www.example.com by this new constant. Contributed by Stéphane Wirtel.
+
+..
+
+.. bpo: 27313
+.. date: 2019-02-24-03-19-43
+.. nonce: Sj9veH
+.. section: Tests
+
+Avoid test_ttk_guionly ComboboxTest failure with macOS Cocoa Tk.
+
+..
+
+.. bpo: 26386
+.. date: 2019-02-24-02-44-52
+.. nonce: YZylPP
+.. section: Tests
+
+Re-enable missing widget testcases in test_ttk_guionly.
+
+..
+
+.. bpo: 34836
+.. date: 2019-01-11-14-01-19
+.. nonce: 7fat9-
+.. section: Tests
+
+Fix ``test_default_ecdh_curve`` when TLSv1.3 is enabled by default.
+
+..
+
+.. bpo: 38301
+.. date: 2019-09-28-02-37-11
+.. nonce: 123456
+.. section: Build
+
+In Solaris family, we must be sure to use ``-D_REENTRANT``. Patch by Jesús
+Cea Avión.
+
+..
+
+.. bpo: 14353
+.. date: 2019-05-12-10-52-37
+.. nonce: LK1qWM
+.. section: Build
+
+Fix detection of the bind_textdomain_codeset function for building gettext
+support into the locale module.
+
+..
+
+.. bpo: 36605
+.. date: 2019-04-11-18-50-58
+.. nonce: gk5czf
+.. section: Build
+
+``make tags`` and ``make TAGS`` now also parse ``Modules/_io/*.c`` and
+``Modules/_io/*.h``.
+
+..
+
+.. bpo: 35264
+.. date: 2018-11-16-15-19-09
+.. nonce: h5GxH3
+.. section: Build
+
+Fix SSL module build with OpenSSL 1.1.0
+
+..
+
+.. bpo: 38117
+.. date: 2019-09-16-12-47-12
+.. nonce: JaiB0X
+.. section: Windows
+
+Updates bundled OpenSSL to 1.0.2t
+
+..
+
+.. bpo: 37445
+.. date: 2019-06-28-18-10-29
+.. nonce: LsdYO6
+.. section: Windows
+
+Include the ``FORMAT_MESSAGE_IGNORE_INSERTS`` flag in ``FormatMessageW()``
+calls.
+
+..
+
+.. bpo: 35360
+.. date: 2019-06-18-09-53-15
+.. nonce: tdqSmo
+.. section: Windows
+
+Update Windows builds to use SQLite 3.28.0.
+
+..
+
+.. bpo: 1104
+.. date: 2017-11-24-12-53-54
+.. nonce: 1CWSZp
+.. section: Windows
+
+Correctly handle string length in ``msilib.SummaryInfo.GetProperty()`` to
+prevent it from truncating the last character.
+
+..
+
+.. bpo: 38117
+.. date: 2019-09-15-21-45-15
+.. nonce: _U9F2r
+.. section: macOS
+
+Updated OpenSSL to 1.0.2t in macOS installer for 2.7.x.
+
+..
+
+.. bpo: 19960
+.. date: 2019-06-20-01-16-16
+.. nonce: LpLUPF
+.. section: macOS
+
+When building 2.7 on macOS without system header files installed in
+``/usr/include``, a few extension modules dependent on system-supplied
+third-party libraries were not being built, most notably zlib.
+
+..
+
+.. bpo: 35360
+.. date: 2019-06-18-10-02-11
+.. nonce: -CWbfy
+.. section: macOS
+
+Update macOS installer to use SQLite 3.28.0.
+
+..
+
+.. bpo: 34631
+.. date: 2019-06-18-05-39-01
+.. nonce: StdZhE
+.. section: macOS
+
+Updated OpenSSL to 1.0.2s in macOS installer.
+
+..
+
+.. bpo: 36231
+.. date: 2019-06-03-05-49-49
+.. nonce: RfmW_p
+.. section: macOS
+
+Support building Python on macOS without /usr/include installed. As of macOS
+10.14, system header files are only available within an SDK provided by
+either the Command Line Tools or the Xcode app.
+
+..
+
+.. bpo: 37177
+.. date: 2019-06-07-00-17-41
+.. nonce: voU6pQ
+.. section: IDLE
+
+Properly 'attach' search dialogs to their main window so that they behave
+like other dialogs and do not get hidden behind their main window.
+
+..
+
+.. bpo: 13102
+.. date: 2019-05-05-16-27-53
+.. nonce: AGNWYJ
+.. section: IDLE
+
+When saving a file, call os.fsync() so bits are flushed to e.g. USB drive.
+
+..
+
+.. bpo: 37675
+.. date: 2019-07-24-16-20-54
+.. nonce: 951Cvf
+.. section: Tools/Demos
+
+2to3 now works when run from a zipped standard library.
+
+..
+
+.. bpo: 14546
+.. date: 2019-04-30-14-30-29
+.. nonce: r38Y-6
+.. section: Tools/Demos
+
+Fix the argument handling in Tools/scripts/lll.py.
+
+..
+
+.. bpo: 37170
+.. date: 2019-06-06-08-47-04
+.. nonce: hO_fpM
+.. section: C API
+
+Fix the cast on error in :c:func:`PyLong_AsUnsignedLongLongMask()`.

@@ -1,1 +1,0 @@
-PyOS_StdioReadline() no longer leaks memory when realloc() fails.

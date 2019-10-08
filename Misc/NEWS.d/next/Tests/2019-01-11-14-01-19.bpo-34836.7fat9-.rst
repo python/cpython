@@ -1,1 +1,0 @@
-Fix ``test_default_ecdh_curve`` when TLSv1.3 is enabled by default.

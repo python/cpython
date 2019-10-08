@@ -1,5 +1,0 @@
-Fix race in PyThread_release_lock that was leading to memory corruption and
-deadlocks. The fix applies to POSIX systems where Python locks are implemented
-with mutex and condition variable because POSIX semaphores are either not
-provided, or are known to be broken. One particular example of such system is
-macOS.

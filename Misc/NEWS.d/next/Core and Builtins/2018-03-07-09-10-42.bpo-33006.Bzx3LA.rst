@@ -1,2 +1,0 @@
-Clarified Doc string for builtin filter function. 2nd Argument can be any
-iterable. Patch by Tony Flury

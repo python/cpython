@@ -1,2 +1,0 @@
-Fix detection of the bind_textdomain_codeset function for building gettext
-support into the locale module.

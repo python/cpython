@@ -1,3 +1,0 @@
-:func:`urlparse.urlsplit` error message for invalid ``netloc`` according to
-NFKC normalization is now a :class:`str` string, rather than a
-:class:`unicode` string, to prevent error when displaying the error.
