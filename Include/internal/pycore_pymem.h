@@ -8,8 +8,7 @@ extern "C" {
 #  error "this header requires Py_BUILD_CORE define"
 #endif
 
-#include "objimpl.h"
-#include "pymem.h"
+#include "pymem.h"   /* PyMemAllocatorName */
 
 
 /* GC runtime state */
@@ -155,9 +154,25 @@ PyAPI_FUNC(int) _PyMem_SetDefaultAllocator(
     PyMemAllocatorDomain domain,
     PyMemAllocatorEx *old_alloc);
 
+/* Special bytes broadcast into debug memory blocks at appropriate times.
+   Strings of these are unlikely to be valid addresses, floats, ints or
+   7-bit ASCII.
+
+   - PYMEM_CLEANBYTE: clean (newly allocated) memory
+   - PYMEM_DEADBYTE dead (newly freed) memory
+   - PYMEM_FORBIDDENBYTE: untouchable bytes at each end of a block
+
+   Byte patterns 0xCB, 0xBB and 0xFB have been replaced with 0xCD, 0xDD and
+   0xFD to use the same values than Windows CRT debug malloc() and free().
+   If modified, _PyMem_IsPtrFreed() should be updated as well. */
+#define PYMEM_CLEANBYTE      0xCD
+#define PYMEM_DEADBYTE       0xDD
+#define PYMEM_FORBIDDENBYTE  0xFD
+
 /* Heuristic checking if a pointer value is newly allocated
-   (uninitialized) or newly freed. The pointer is not dereferenced, only the
-   pointer value is checked.
+   (uninitialized), newly freed or NULL (is equal to zero).
+
+   The pointer is not dereferenced, only the pointer value is checked.
 
    The heuristic relies on the debug hooks on Python memory allocators which
    fills newly allocated memory with CLEANBYTE (0xCD) and newly freed memory
@@ -167,11 +182,13 @@ static inline int _PyMem_IsPtrFreed(void *ptr)
 {
     uintptr_t value = (uintptr_t)ptr;
 #if SIZEOF_VOID_P == 8
-    return (value == (uintptr_t)0xCDCDCDCDCDCDCDCD
+    return (value == 0
+            || value == (uintptr_t)0xCDCDCDCDCDCDCDCD
             || value == (uintptr_t)0xDDDDDDDDDDDDDDDD
             || value == (uintptr_t)0xFDFDFDFDFDFDFDFD);
 #elif SIZEOF_VOID_P == 4
-    return (value == (uintptr_t)0xCDCDCDCD
+    return (value == 0
+            || value == (uintptr_t)0xCDCDCDCD
             || value == (uintptr_t)0xDDDDDDDD
             || value == (uintptr_t)0xFDFDFDFD);
 #else

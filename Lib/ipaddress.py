@@ -560,6 +560,8 @@ class _IPAddressBase:
         return self.__class__, (str(self),)
 
 
+_address_fmt_re = None
+
 @functools.total_ordering
 class _BaseAddress(_IPAddressBase):
 
@@ -623,72 +625,49 @@ class _BaseAddress(_IPAddressBase):
 
         Supported presentation types are:
         's': returns the IP address as a string (default)
-        'b' or 'n': converts to binary and returns a zero-padded string
+        'b': converts to binary and returns a zero-padded string
         'X' or 'x': converts to upper- or lower-case hex and returns a zero-padded string
+        'n': the same as 'b' for IPv4 and 'x' for IPv6
 
         For binary and hex presentation types, the alternate form specifier
         '#' and the grouping option '_' are supported.
         """
 
-
         # Support string formatting
         if not fmt or fmt[-1] == 's':
-            # let format() handle it
             return format(str(self), fmt)
 
         # From here on down, support for 'bnXx'
+        global _address_fmt_re
+        if _address_fmt_re is None:
+            import re
+            _address_fmt_re = re.compile('(#?)(_?)([xbnX])')
 
-        import re
-        fmt_re = '^(?P<alternate>#?)(?P<grouping>_?)(?P<fmt_base>[xbnX]){1}$'
-        m = re.match(fmt_re, fmt)
+        m = _address_fmt_re.fullmatch(fmt)
         if not m:
             return super().__format__(fmt)
 
-        groupdict = m.groupdict()
-        alternate = groupdict['alternate']
-        grouping = groupdict['grouping']
-        fmt_base = groupdict['fmt_base']
+        alternate, grouping, fmt_base = m.groups()
 
         # Set some defaults
         if fmt_base == 'n':
             if self._version == 4:
                 fmt_base = 'b'  # Binary is default for ipv4
-            if self._version == 6:
+            else:
                 fmt_base = 'x'  # Hex is default for ipv6
 
-        # Handle binary formatting
         if fmt_base == 'b':
-            if self._version == 4:
-                # resulting string is '0b' + 32 bits
-                #  plus 7 _ if needed
-                padlen = IPV4LENGTH+2 + (7*len(grouping))
-            elif self._version == 6:
-                # resulting string is '0b' + 128 bits
-                #  plus 31 _ if needed
-                padlen = IPV6LENGTH+2 + (31*len(grouping))
+            padlen = self._max_prefixlen
+        else:
+            padlen = self._max_prefixlen // 4
 
-        # Handle hex formatting
-        elif fmt_base in 'Xx':
-            if self._version == 4:
-                # resulting string is '0x' + 8 hex digits
-                # plus a single _ if needed
-                padlen = int(IPV4LENGTH/4)+2 + len(grouping)
-            elif self._version == 6:
-                # resulting string is '0x' + 32 hex digits
-                # plus 7 _ if needed
-                padlen = int(IPV6LENGTH/4)+2 + (7*len(grouping))
+        if grouping:
+            padlen += padlen // 4 - 1
 
-        retstr = f'{int(self):#0{padlen}{grouping}{fmt_base}}'
+        if alternate:
+            padlen += 2  # 0b or 0x
 
-        if fmt_base == 'X':
-            retstr = retstr.upper()
-
-        # If alternate is not set, strip the two leftmost
-        #  characters ('0b')
-        if not alternate:
-            retstr = retstr[2:]
-
-        return retstr
+        return format(int(self), f'{alternate}0{padlen}{grouping}{fmt_base}')
 
 
 @functools.total_ordering

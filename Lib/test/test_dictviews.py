@@ -214,6 +214,17 @@ class DictSetTest(unittest.TestCase):
         self.assertTrue(de.items().isdisjoint(de.items()))
         self.assertTrue(de.items().isdisjoint([1]))
 
+    def test_set_operations_with_iterator(self):
+        origin = {1: 2, 3: 4}
+        self.assertEqual(origin.keys() & iter([1, 2]), {1})
+        self.assertEqual(origin.keys() | iter([1, 2]), {1, 2, 3})
+        self.assertEqual(origin.keys() ^ iter([1, 2]), {2, 3})
+
+        items = origin.items()
+        self.assertEqual(items & iter([(1, 2)]), {(1, 2)})
+        self.assertEqual(items ^ iter([(1, 2)]), {(3, 4)})
+        self.assertEqual(items | iter([(1, 2)]), {(1, 2), (3, 4)})
+
     def test_recursive_repr(self):
         d = {}
         d[42] = d.values()

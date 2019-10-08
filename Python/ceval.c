@@ -2943,6 +2943,7 @@ main_loop:
             while (oparg--)
                 Py_DECREF(POP());
             PUSH(sum);
+            PREDICT(CALL_FUNCTION_EX);
             DISPATCH();
         }
 
@@ -3522,6 +3523,7 @@ main_loop:
         }
 
         case TARGET(CALL_FUNCTION_EX): {
+            PREDICTED(CALL_FUNCTION_EX);
             PyObject *func, *callargs, *kwargs = NULL, *result;
             if (oparg & 0x01) {
                 kwargs = POP();

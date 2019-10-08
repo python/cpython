@@ -137,22 +137,24 @@ skip_signature(const char *doc)
 int
 _PyType_CheckConsistency(PyTypeObject *type)
 {
-#define ASSERT(expr) _PyObject_ASSERT((PyObject *)type, (expr))
+#define CHECK(expr) \
+    do { if (!(expr)) { _PyObject_ASSERT_FAILED_MSG((PyObject *)type, Py_STRINGIFY(expr)); } } while (0)
+
+    CHECK(!_PyObject_IsFreed((PyObject *)type));
 
     if (!(type->tp_flags & Py_TPFLAGS_READY)) {
-        /* don't check types before PyType_Ready() */
+        /* don't check static types before PyType_Ready() */
         return 1;
     }
 
-    ASSERT(!_PyObject_IsFreed((PyObject *)type));
-    ASSERT(Py_REFCNT(type) >= 1);
-    ASSERT(PyType_Check(type));
+    CHECK(Py_REFCNT(type) >= 1);
+    CHECK(PyType_Check(type));
 
-    ASSERT(!(type->tp_flags & Py_TPFLAGS_READYING));
-    ASSERT(type->tp_dict != NULL);
+    CHECK(!(type->tp_flags & Py_TPFLAGS_READYING));
+    CHECK(type->tp_dict != NULL);
 
     return 1;
-#undef ASSERT
+#undef CHECK
 }
 
 static const char *

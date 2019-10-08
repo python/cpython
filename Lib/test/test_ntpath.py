@@ -329,16 +329,14 @@ class TestNtpath(NtpathTestCase):
         self.addCleanup(support.unlink, ABSTFN + "c")
         self.addCleanup(support.unlink, ABSTFN + "a")
 
-        P = "\\\\?\\"
-
         os.symlink(ABSTFN, ABSTFN)
-        self.assertPathEqual(ntpath.realpath(ABSTFN), P + ABSTFN)
+        self.assertPathEqual(ntpath.realpath(ABSTFN), ABSTFN)
 
         # cycles are non-deterministic as to which path is returned, but
         # it will always be the fully resolved path of one member of the cycle
         os.symlink(ABSTFN + "1", ABSTFN + "2")
         os.symlink(ABSTFN + "2", ABSTFN + "1")
-        expected = (P + ABSTFN + "1", P + ABSTFN + "2")
+        expected = (ABSTFN + "1", ABSTFN + "2")
         self.assertPathIn(ntpath.realpath(ABSTFN + "1"), expected)
         self.assertPathIn(ntpath.realpath(ABSTFN + "2"), expected)
 
@@ -357,14 +355,14 @@ class TestNtpath(NtpathTestCase):
                           expected)
 
         os.symlink(ntpath.basename(ABSTFN) + "a\\b", ABSTFN + "a")
-        self.assertPathEqual(ntpath.realpath(ABSTFN + "a"), P + ABSTFN + "a")
+        self.assertPathEqual(ntpath.realpath(ABSTFN + "a"), ABSTFN + "a")
 
         os.symlink("..\\" + ntpath.basename(ntpath.dirname(ABSTFN))
                    + "\\" + ntpath.basename(ABSTFN) + "c", ABSTFN + "c")
-        self.assertPathEqual(ntpath.realpath(ABSTFN + "c"), P + ABSTFN + "c")
+        self.assertPathEqual(ntpath.realpath(ABSTFN + "c"), ABSTFN + "c")
 
         # Test using relative path as well.
-        self.assertPathEqual(ntpath.realpath(ntpath.basename(ABSTFN)), P + ABSTFN)
+        self.assertPathEqual(ntpath.realpath(ntpath.basename(ABSTFN)), ABSTFN)
 
     @support.skip_unless_symlink
     @unittest.skipUnless(HAVE_GETFINALPATHNAME, 'need _getfinalpathname')

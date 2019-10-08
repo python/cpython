@@ -34,34 +34,41 @@ def from_file(infile, *,
         id = ID(filename, funcname, name)
         if kind == 'variable':
             values = known['variables']
-            value = Variable(id, declaration)
-            value._isglobal = _is_global(declaration) or id.funcname is None
+            if funcname:
+                storage = _get_storage(declaration) or 'local'
+            else:
+                storage = _get_storage(declaration) or 'implicit'
+            value = Variable(id, storage, declaration)
         else:
             raise ValueError(f'unsupported kind in row {row}')
-        if value.name == 'id' and declaration == UNKNOWN:
-            # None of these are variables.
-            declaration = 'int id';
-        else:
-            value.validate()
+        value.validate()
+#        if value.name == 'id' and declaration == UNKNOWN:
+#            # None of these are variables.
+#            declaration = 'int id';
+#        else:
+#            value.validate()
         values[id] = value
     return known
 
 
-def _is_global(vartype):
+def _get_storage(decl):
     # statics
-    if vartype.startswith('static '):
-        return True
-    if vartype.startswith(('Py_LOCAL(', 'Py_LOCAL_INLINE(')):
-        return True
-    if vartype.startswith(('_Py_IDENTIFIER(', '_Py_static_string(')):
-        return True
-    if vartype.startswith('PyDoc_VAR('):
-        return True
-    if vartype.startswith(('SLOT1BINFULL(', 'SLOT1BIN(')):
-        return True
-    if vartype.startswith('WRAP_METHOD('):
-        return True
+    if decl.startswith('static '):
+        return 'static'
+    if decl.startswith(('Py_LOCAL(', 'Py_LOCAL_INLINE(')):
+        return 'static'
+    if decl.startswith(('_Py_IDENTIFIER(', '_Py_static_string(')):
+        return 'static'
+    if decl.startswith('PyDoc_VAR('):
+        return 'static'
+    if decl.startswith(('SLOT1BINFULL(', 'SLOT1BIN(')):
+        return 'static'
+    if decl.startswith('WRAP_METHOD('):
+        return 'static'
     # public extern
-    if vartype.startswith('PyAPI_DATA('):
-        return True
-    return False
+    if decl.startswith('extern '):
+        return 'extern'
+    if decl.startswith('PyAPI_DATA('):
+        return 'extern'
+    # implicit or local
+    return None

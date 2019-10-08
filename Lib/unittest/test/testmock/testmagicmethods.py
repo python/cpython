@@ -271,9 +271,6 @@ class TestMockingMagicMethods(unittest.TestCase):
         self.assertEqual(mock == mock, True)
         self.assertEqual(mock != mock, False)
 
-
-    # This should be fixed with issue38163
-    @unittest.expectedFailure
     def test_asyncmock_defaults(self):
         mock = AsyncMock()
         self.assertEqual(int(mock), 1)

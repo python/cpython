@@ -82,6 +82,13 @@ class Slot:
         self.default = default
         self.readonly = readonly
 
+        # The instance cache is not inherently tied to the normal
+        # lifetime of the instances.  So must do something in order to
+        # avoid keeping the instances alive by holding a reference here.
+        # Ideally we would use weakref.WeakValueDictionary to do this.
+        # However, most builtin types do not support weakrefs.  So
+        # instead we monkey-patch __del__ on the attached class to clear
+        # the instance.
         self.instances = {}
         self.name = None
 
@@ -89,6 +96,12 @@ class Slot:
         if self.name is not None:
             raise TypeError('already used')
         self.name = name
+        try:
+            slotnames = cls.__slot_names__
+        except AttributeError:
+            slotnames = cls.__slot_names__ = []
+        slotnames.append(name)
+        self._ensure___del__(cls, slotnames)
 
     def __get__(self, obj, cls):
         if obj is None:  # called on the class
@@ -115,7 +128,23 @@ class Slot:
     def __delete__(self, obj):
         if self.readonly:
             raise AttributeError(f'{self.name} is readonly')
-        self.instances[id(obj)] = self.default
+        self.instances[id(obj)] = self.default  # XXX refleak?
+
+    def _ensure___del__(self, cls, slotnames):  # See the comment in __init__().
+        try:
+            old___del__ = cls.__del__
+        except AttributeError:
+            old___del__ = (lambda s: None)
+        else:
+            if getattr(old___del__, '_slotted', False):
+                return
+
+        def __del__(_self):
+            for name in slotnames:
+                delattr(_self, name)
+            old___del__(_self)
+        __del__._slotted = True
+        cls.__del__ = __del__
 
     def set(self, obj, value):
         """Update the cached value for an object.

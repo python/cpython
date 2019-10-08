@@ -33,6 +33,7 @@ static PyObject *asyncio_task_repr_info_func;
 static PyObject *asyncio_InvalidStateError;
 static PyObject *asyncio_CancelledError;
 static PyObject *context_kwname;
+static int module_initialized;
 
 static PyObject *cached_running_holder;
 static volatile uint64_t cached_running_holder_tsid;
@@ -2657,7 +2658,6 @@ task_step_impl(TaskObj *task, PyObject *exc)
         /* Some other exception; pop it and call Task.set_exception() */
         PyErr_Fetch(&et, &ev, &tb);
 
-set_exception:
         assert(et);
         if (!ev || !PyObject_TypeCheck(ev, (PyTypeObject *) et)) {
             PyErr_NormalizeException(&et, &ev, &tb);
@@ -3247,6 +3247,12 @@ module_init(void)
     asyncio_mod = PyImport_ImportModule("asyncio");
     if (asyncio_mod == NULL) {
         goto fail;
+    }
+    if (module_initialized != 0) {
+        return 0;
+    } 
+    else {
+        module_initialized = 1;
     }
 
     current_tasks = PyDict_New();

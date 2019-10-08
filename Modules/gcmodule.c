@@ -373,10 +373,9 @@ update_refs(PyGC_Head *containers)
 
 /* A traversal callback for subtract_refs. */
 static int
-visit_decref(PyObject *op, void *data)
+visit_decref(PyObject *op, void *parent)
 {
-    assert(op != NULL);
-    _PyObject_ASSERT(op, !_PyObject_IsFreed(op));
+    _PyObject_ASSERT(_PyObject_CAST(parent), !_PyObject_IsFreed(op));
 
     if (PyObject_IS_GC(op)) {
         PyGC_Head *gc = AS_GC(op);
@@ -402,10 +401,11 @@ subtract_refs(PyGC_Head *containers)
     traverseproc traverse;
     PyGC_Head *gc = GC_NEXT(containers);
     for (; gc != containers; gc = GC_NEXT(gc)) {
-        traverse = Py_TYPE(FROM_GC(gc))->tp_traverse;
+        PyObject *op = FROM_GC(gc);
+        traverse = Py_TYPE(op)->tp_traverse;
         (void) traverse(FROM_GC(gc),
                        (visitproc)visit_decref,
-                       NULL);
+                       op);
     }
 }
 
@@ -678,6 +678,21 @@ handle_weakrefs(PyGC_Head *unreachable, PyGC_Head *old)
         op = FROM_GC(gc);
         next = GC_NEXT(gc);
 
+        if (PyWeakref_Check(op)) {
+            /* A weakref inside the unreachable set must be cleared.  If we
+             * allow its callback to execute inside delete_garbage(), it
+             * could expose objects that have tp_clear already called on
+             * them.  Or, it could resurrect unreachable objects.  One way
+             * this can happen is if some container objects do not implement
+             * tp_traverse.  Then, wr_object can be outside the unreachable
+             * set but can be deallocated as a result of breaking the
+             * reference cycle.  If we don't clear the weakref, the callback
+             * will run and potentially cause a crash.  See bpo-38006 for
+             * one example.
+             */
+            _PyWeakref_ClearRef((PyWeakReference *)op);
+        }
+
         if (! PyType_SUPPORTS_WEAKREFS(Py_TYPE(op)))
             continue;
 
@@ -733,6 +748,8 @@ handle_weakrefs(PyGC_Head *unreachable, PyGC_Head *old)
              * is moved to wrcb_to_call in this case.
              */
             if (gc_is_collecting(AS_GC(wr))) {
+                /* it should already have been cleared above */
+                assert(wr->wr_object == Py_None);
                 continue;
             }
 
@@ -1906,6 +1923,18 @@ _PyGC_Dump(PyGC_Head *g)
     _PyObject_Dump(FROM_GC(g));
 }
 
+static int
+visit_validate(PyObject *op, void *parent_raw)
+{
+    PyObject *parent = _PyObject_CAST(parent_raw);
+    if (_PyObject_IsFreed(op)) {
+        _PyObject_ASSERT_FAILED_MSG(parent,
+                                    "PyObject_GC_Track() object is not valid");
+    }
+    return 0;
+}
+
+
 /* extension modules might be compiled with GC support so these
    functions must always be available */
 
@@ -1919,6 +1948,13 @@ PyObject_GC_Track(void *op_raw)
                                     "by the garbage collector");
     }
     _PyObject_GC_TRACK(op);
+
+#ifdef Py_DEBUG
+    /* Check that the object is valid: validate objects traversed
+       by tp_traverse() */
+    traverseproc traverse = Py_TYPE(op)->tp_traverse;
+    (void)traverse(op, visit_validate, op);
+#endif
 }
 
 void
