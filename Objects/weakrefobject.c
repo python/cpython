@@ -149,7 +149,10 @@ weakref_hash(PyWeakReference *self)
         PyErr_SetString(PyExc_TypeError, "weak object has gone away");
         return -1;
     }
-    self->hash = PyObject_Hash(PyWeakref_GET_OBJECT(self));
+    PyObject* obj = PyWeakref_GET_OBJECT(self);
+    Py_INCREF(obj);
+    self->hash = PyObject_Hash(obj);
+    Py_DECREF(obj);
     return self->hash;
 }
 
@@ -207,8 +210,14 @@ weakref_richcompare(PyWeakReference* self, PyWeakReference* other, int op)
         else
             Py_RETURN_FALSE;
     }
-    return PyObject_RichCompare(PyWeakref_GET_OBJECT(self),
-                                PyWeakref_GET_OBJECT(other), op);
+    PyObject* obj = PyWeakref_GET_OBJECT(self);
+    PyObject* other_obj = PyWeakref_GET_OBJECT(other);
+    Py_INCREF(obj);
+    Py_INCREF(other);
+    PyObject* res = PyObject_RichCompare(obj, other_obj, op);
+    Py_DECREF(obj);
+    Py_DECREF(other);
+    return res;
 }
 
 /* Given the head of an object's list of weak references, extract the
@@ -536,9 +545,13 @@ static int
 proxy_bool(PyWeakReference *proxy)
 {
     PyObject *o = PyWeakref_GET_OBJECT(proxy);
-    if (!proxy_checkref(proxy))
+    if (!proxy_checkref(proxy)) {
         return -1;
-    return PyObject_IsTrue(o);
+    }
+    Py_INCREF(o);
+    int res = PyObject_IsTrue(o);
+    Py_DECREF(o);
+    return res;
 }
 
 static void
@@ -585,12 +598,12 @@ WRAP_BINARY(proxy_getitem, PyObject_GetItem)
 static int
 proxy_setitem(PyWeakReference *proxy, PyObject *key, PyObject *value)
 {
-    int res = 0;
     if (!proxy_checkref(proxy))
         return -1;
 
     PyObject *obj = PyWeakref_GET_OBJECT(proxy);
     Py_INCREF(obj);
+    int res;
     if (value == NULL) {
         res = PyObject_DelItem(obj, key);
     } else {
