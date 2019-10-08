@@ -406,6 +406,9 @@ class ReferencesTestCase(TestBase):
         obj = MyObj()
         p = weakref.proxy(obj)
         with self.assertRaises(TypeError):
+            # "blech" in p calls MyObj.__iter__ through the proxy,
+            # without keeping a reference to the real object, so it
+            # can be killed in the middle of the call
             "blech" in p
 
     def test_getweakrefcount(self):
