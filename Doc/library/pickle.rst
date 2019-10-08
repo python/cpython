@@ -146,6 +146,10 @@ to read the pickle produced.
   Refer to :pep:`3154` for information about improvements brought by
   protocol 4.
 
+* Protocol version 5 was added in Python 3.8.  It adds support for out-of-band
+  data and speedup for in-band data.  Refer to :pep:`574` for information about
+  improvements brought by protocol 5.
+
 .. note::
    Serialization is a more primitive notion than persistence; although
    :mod:`pickle` reads and writes file objects, it does not handle the issue of
