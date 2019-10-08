@@ -481,7 +481,11 @@ proxy_setattr(PyWeakReference *proxy, PyObject *name, PyObject *value)
 {
     if (!proxy_checkref(proxy))
         return -1;
-    return PyObject_SetAttr(PyWeakref_GET_OBJECT(proxy), name, value);
+    PyObject *obj = PyWeakref_GET_OBJECT(proxy);
+    Py_INCREF(obj);
+    int res = PyObject_SetAttr(obj, name, value);
+    Py_DECREF(obj);
+    return res;
 }
 
 static PyObject *
@@ -553,9 +557,13 @@ proxy_contains(PyWeakReference *proxy, PyObject *value)
 {
     if (!proxy_checkref(proxy))
         return -1;
-    return PySequence_Contains(PyWeakref_GET_OBJECT(proxy), value);
-}
 
+    PyObject *obj = PyWeakref_GET_OBJECT(proxy);
+    Py_INCREF(obj);
+    int res = PySequence_Contains(obj, value);
+    Py_DECREF(obj);
+    return res;
+}
 
 /* mapping slots */
 
@@ -564,7 +572,12 @@ proxy_length(PyWeakReference *proxy)
 {
     if (!proxy_checkref(proxy))
         return -1;
-    return PyObject_Length(PyWeakref_GET_OBJECT(proxy));
+
+    PyObject *obj = PyWeakref_GET_OBJECT(proxy);
+    Py_INCREF(obj);
+    Py_ssize_t res = PyObject_Length(obj);
+    Py_DECREF(obj);
+    return res;
 }
 
 WRAP_BINARY(proxy_getitem, PyObject_GetItem)
@@ -572,13 +585,19 @@ WRAP_BINARY(proxy_getitem, PyObject_GetItem)
 static int
 proxy_setitem(PyWeakReference *proxy, PyObject *key, PyObject *value)
 {
+    int res = 0;
     if (!proxy_checkref(proxy))
         return -1;
 
-    if (value == NULL)
-        return PyObject_DelItem(PyWeakref_GET_OBJECT(proxy), key);
-    else
-        return PyObject_SetItem(PyWeakref_GET_OBJECT(proxy), key, value);
+    PyObject *obj = PyWeakref_GET_OBJECT(proxy);
+    Py_INCREF(obj);
+    if (value == NULL) {
+        res = PyObject_DelItem(obj, key);
+    } else {
+        res = PyObject_SetItem(obj, key, value);
+    }
+    Py_DECREF(obj);
+    return res;
 }
 
 /* iterator slots */
@@ -588,7 +607,11 @@ proxy_iter(PyWeakReference *proxy)
 {
     if (!proxy_checkref(proxy))
         return NULL;
-    return PyObject_GetIter(PyWeakref_GET_OBJECT(proxy));
+    PyObject *obj = PyWeakref_GET_OBJECT(proxy);
+    Py_INCREF(obj);
+    PyObject* res = PyObject_GetIter(obj);
+    Py_DECREF(obj);
+    return res;
 }
 
 static PyObject *
@@ -596,7 +619,12 @@ proxy_iternext(PyWeakReference *proxy)
 {
     if (!proxy_checkref(proxy))
         return NULL;
-    return PyIter_Next(PyWeakref_GET_OBJECT(proxy));
+
+    PyObject *obj = PyWeakref_GET_OBJECT(proxy);
+    Py_INCREF(obj);
+    PyObject* res = PyIter_Next(obj);
+    Py_DECREF(obj);
+    return res;
 }
 
 
