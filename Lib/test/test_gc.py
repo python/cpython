@@ -822,6 +822,60 @@ class GCTests(unittest.TestCase):
         self.assertRaises(TypeError, gc.get_objects, "1")
         self.assertRaises(TypeError, gc.get_objects, 1.234)
 
+    def test_38379(self):
+        N = 100
+
+        class A:  # simple self-loop
+            def __init__(self):
+                self.me = self
+
+        class Z(A):  # resurrecting __del__
+            def __del__(self):
+                zs.append(self)
+
+        zs = []
+
+        def getstats():
+            d = gc.get_stats()[-1]
+            return d['collected'], d['uncollectable']
+
+        gc.collect()
+        gc.disable()
+
+        oldc, oldnc = getstats()
+        for i in range(N):
+            A()
+        t = gc.collect()
+        c, nc = getstats()
+        self.assertEqual(t, 2*N) # instance object & its dict
+        self.assertEqual(c - oldc, 2*N)
+        self.assertEqual(nc - oldnc, 0)
+
+        oldc, oldnc = c, nc
+        Z()
+        # Nothing is collected - Z() is merely resurrected.
+        t = gc.collect()
+        c, nc = getstats()
+        #self.assertEqual(t, 2)  # before
+        self.assertEqual(t, 0)  # after
+        #self.assertEqual(c - oldc, 2)   # before
+        self.assertEqual(c - oldc, 0)   # after
+        self.assertEqual(nc - oldnc, 0)
+
+        oldc, oldnc = c, nc
+        for i in range(N):
+            A()
+        Z()
+        # Z() prevents anything from being collected.
+        t = gc.collect()
+        c, nc = getstats()
+        #self.assertEqual(t, 2*N + 2)  # before
+        self.assertEqual(t, 0)  # after
+        #self.assertEqual(c - oldc, 2*N + 2)   # before
+        self.assertEqual(c - oldc, 0)   # after
+        self.assertEqual(nc - oldnc, 0)
+
+        gc.enable()
 
 class GCCallbackTests(unittest.TestCase):
     def setUp(self):
