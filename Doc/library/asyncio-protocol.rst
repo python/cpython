@@ -69,6 +69,10 @@ This documentation page contains the following sections:
 Transports
 ==========
 
+**Source code:** :source:`Lib/asyncio/transports.py`
+
+----------------------------------------------------
+
 Transports are classes provided by :mod:`asyncio` in order to abstract
 various kinds of communication channels.
 
@@ -430,6 +434,10 @@ Subprocess Transports
 
 Protocols
 =========
+
+**Source code:** :source:`Lib/asyncio/protocols.py`
+
+---------------------------------------------------
 
 asyncio provides a set of abstract base classes that should be used
 to implement network protocols.  Those classes are meant to be used

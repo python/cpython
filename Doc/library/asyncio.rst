@@ -4,7 +4,9 @@
 .. module:: asyncio
    :synopsis: Asynchronous I/O.
 
---------------
+**Source code:** :source:`Lib/asyncio/`
+
+---------------------------------------
 
 .. sidebar:: Hello World!
 

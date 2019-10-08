@@ -1,10 +1,15 @@
 .. currentmodule:: asyncio
 
+.. _asyncio-event-loop:
 
 ==========
 Event Loop
 ==========
 
+**Source code:** :source:`Lib/asyncio/events.py`,
+:source:`Lib/asyncio/base_events.py`
+
+------------------------------------
 
 .. rubric:: Preface
 
@@ -80,8 +85,6 @@ This documentation page contains the following sections:
 * The `Examples`_ section showcases how to work with some event
   loop APIs.
 
-
-.. _asyncio-event-loop:
 
 Event Loop Methods
 ==================
