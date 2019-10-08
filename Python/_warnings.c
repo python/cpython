@@ -1213,7 +1213,7 @@ _PyErr_WarnUnawaitedCoroutine(PyObject *coro)
 }
 
 PyDoc_STRVAR(warn_explicit_doc,
-"Low-level inferface to warnings functionality.");
+"Low-level interface to warnings functionality.");
 
 static PyMethodDef warnings_functions[] = {
     WARNINGS_WARN_METHODDEF
