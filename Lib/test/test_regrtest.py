@@ -1153,7 +1153,6 @@ class ArgsTestCase(BaseTestCase):
                                   env_changed=[testname],
                                   fail_env_changed=True)
 
-    @unittest.skipIf(True, 'bpo-37531, bpo-38207: test hangs randomly')
     def test_multiprocessing_timeout(self):
         code = textwrap.dedent(r"""
             import time
