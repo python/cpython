@@ -17,13 +17,17 @@ class TestPathfixFunctional(unittest.TestCase):
         self.temp_file = support.TESTFN
         self.addCleanup(support.unlink, support.TESTFN)
 
-    def pathfix(self, shebang, pathfix_flags, exitcode=0, stdout='', stderr=''):
+    def pathfix(self, shebang, pathfix_flags, exitcode=0, stdout='', stderr='',
+                filename=''):
+        if filename == '':
+            filename = self.temp_file
+
         with open(self.temp_file, 'w', encoding='utf8') as f:
             f.write(f'{shebang}\n' + 'print("Hello world")\n')
 
         proc = subprocess.run(
             [sys.executable, self.script,
-             *pathfix_flags, '-n', self.temp_file],
+             *pathfix_flags, '-n', filename],
             capture_output=True, text=1)
 
         if stdout == '' and proc.returncode == 0:
@@ -43,6 +47,22 @@ class TestPathfixFunctional(unittest.TestCase):
             self.assertEqual(shebang, new_shebang)
 
         return new_shebang
+
+    def test_recursive(self):
+        self.temp_directory = support.TESTFN + '.d'
+        self.addCleanup(support.rmtree, self.temp_directory)
+        os.mkdir(self.temp_directory)
+        self.temp_file = self.temp_directory + os.sep + \
+                         os.path.basename(support.TESTFN) + '-t.py'
+        temp_directory_basename = os.path.basename(self.temp_directory)
+        expected_stderr = f'recursedown(\'{temp_directory_basename}\')\n'
+        self.assertEqual(
+            self.pathfix(
+                '#! /usr/bin/env python',
+                ['-i', '/usr/bin/python3'],
+                filename=self.temp_directory,
+                stderr=expected_stderr),
+            '#! /usr/bin/python3')
 
     def test_pathfix(self):
         self.assertEqual(
