@@ -1,6 +1,5 @@
 .. currentmodule:: asyncio
 
-.. _asyncio-event-loop:
 
 ==========
 Event Loop
@@ -85,6 +84,8 @@ This documentation page contains the following sections:
 * The `Examples`_ section showcases how to work with some event
   loop APIs.
 
+
+.. _asyncio-event-loop:
 
 Event Loop Methods
 ==================
