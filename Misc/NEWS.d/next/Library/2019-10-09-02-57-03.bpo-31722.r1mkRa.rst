@@ -1,2 +1,2 @@
-Fix :class:`io.IncrementalNewlineDecoder` to be subclass of :class:`codecs.IncrementalDecoder`.
+Update :class:`codecs.IncrementalDecoder` to use :meth:`__subclasshook__` method.
 (Contributed by Dong-hee Na in :issue:`31722`.)
