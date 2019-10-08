@@ -166,7 +166,7 @@ weakref_repr(PyWeakReference *self)
     if (PyWeakref_GET_OBJECT(self) == Py_None)
         return PyUnicode_FromFormat("<weakref at %p; dead>", self);
 
-    PyObect* obj = PyWeakref_GET_OBJECT(self);
+    PyObject* obj = PyWeakref_GET_OBJECT(self);
     Py_INCREF(obj);
     if (_PyObject_LookupAttrId(obj, &PyId___name__, &name) < 0) {
         Py_DECREF(obj);
@@ -217,10 +217,10 @@ weakref_richcompare(PyWeakReference* self, PyWeakReference* other, int op)
     PyObject* obj = PyWeakref_GET_OBJECT(self);
     PyObject* other_obj = PyWeakref_GET_OBJECT(other);
     Py_INCREF(obj);
-    Py_INCREF(other);
+    Py_INCREF(other_obj);
     PyObject* res = PyObject_RichCompare(obj, other_obj, op);
     Py_DECREF(obj);
-    Py_DECREF(other);
+    Py_DECREF(other_obj);
     return res;
 }
 
