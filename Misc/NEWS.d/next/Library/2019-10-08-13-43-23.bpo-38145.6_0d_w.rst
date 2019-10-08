@@ -1,0 +1,1 @@
+In the 'distutils' command 'bdist_dumb', the short option 'd' was used for both the 'bdist-dir' and 'dist-dir' options. The short for the 'bdist-dir' option is now 'b'.
