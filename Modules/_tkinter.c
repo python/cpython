@@ -2304,6 +2304,12 @@ _tkinter_tkapp_split(TkappObject *self, PyObject *arg)
     PyObject *v;
     char *list;
 
+    if (PyErr_WarnEx(PyExc_DeprecationWarning,
+            "split() is deprecated; consider using splitlist() instead", 1))
+    {
+        return NULL;
+    }
+
     if (PyTclObject_Check(arg)) {
         Tcl_Obj *value = ((PyTclObject*)arg)->value;
         int objc;
