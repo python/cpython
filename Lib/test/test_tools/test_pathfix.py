@@ -14,24 +14,16 @@ class TestPathfixFunctional(unittest.TestCase):
     script = os.path.join(scriptsdir, 'pathfix.py')
 
     def setUp(self):
-        self.temp_directory = support.TESTFN + '.d'
-        self.addCleanup(support.rmtree, self.temp_directory)
-        os.mkdir(self.temp_directory)
-        self.temp_file = self.temp_directory + '/' + \
-                         os.path.basename(support.TESTFN) + '-t.py'
-        self.addCleanup(support.unlink, self.temp_file)
+        self.temp_file = support.TESTFN
+        self.addCleanup(support.unlink, support.TESTFN)
 
-    def pathfix(self, shebang, pathfix_flags, exitcode=0, stdout='', stderr='',
-                target_file=''):
-        if target_file == '':
-            target_file = self.temp_file
-
+    def pathfix(self, shebang, pathfix_flags, exitcode=0, stdout='', stderr=''):
         with open(self.temp_file, 'w', encoding='utf8') as f:
             f.write(f'{shebang}\n' + 'print("Hello world")\n')
 
         proc = subprocess.run(
             [sys.executable, self.script,
-             *pathfix_flags, '-n', target_file],
+             *pathfix_flags, '-n', self.temp_file],
             capture_output=True, text=1)
 
         if stdout == '' and proc.returncode == 0:
@@ -52,66 +44,55 @@ class TestPathfixFunctional(unittest.TestCase):
 
         return new_shebang
 
-    def test_recursive(self):
-        temp_directory_basename = os.path.basename(self.temp_directory)
-        expected_stderr = f'recursedown(\'{temp_directory_basename}\')\n'
-        for method_name in dir(self):
-            method = getattr(self, method_name)
-            if method_name.startswith('test_') and \
-               method_name != 'test_recursive' and \
-               method_name != 'test_pathfix_adding_errors' and \
-               callable(method):
-                method(target_file=self.temp_directory, stderr=expected_stderr)
-
-    def test_pathfix(self, **kwargs):
+    def test_pathfix(self):
         self.assertEqual(
             self.pathfix(
                 '#! /usr/bin/env python',
-                ['-i', '/usr/bin/python3'], **kwargs),
+                ['-i', '/usr/bin/python3']),
             '#! /usr/bin/python3')
         self.assertEqual(
             self.pathfix(
                 '#! /usr/bin/env python -R',
-                ['-i', '/usr/bin/python3'], **kwargs),
+                ['-i', '/usr/bin/python3']),
             '#! /usr/bin/python3')
 
-    def test_pathfix_keeping_flags(self, **kwargs):
+    def test_pathfix_keeping_flags(self):
         self.assertEqual(
             self.pathfix(
                 '#! /usr/bin/env python -R',
-                ['-i', '/usr/bin/python3', '-k'], **kwargs),
+                ['-i', '/usr/bin/python3', '-k']),
             '#! /usr/bin/python3 -R')
         self.assertEqual(
             self.pathfix(
                 '#! /usr/bin/env python',
-                ['-i', '/usr/bin/python3', '-k'], **kwargs),
+                ['-i', '/usr/bin/python3', '-k']),
             '#! /usr/bin/python3')
 
-    def test_pathfix_adding_flag(self, **kwargs):
+    def test_pathfix_adding_flag(self):
         self.assertEqual(
             self.pathfix(
                 '#! /usr/bin/env python',
-                ['-i', '/usr/bin/python3', '-a', 's'], **kwargs),
+                ['-i', '/usr/bin/python3', '-a', 's']),
             '#! /usr/bin/python3 -s')
         self.assertEqual(
             self.pathfix(
                 '#! /usr/bin/env python -S',
-                ['-i', '/usr/bin/python3', '-a', 's'], **kwargs),
+                ['-i', '/usr/bin/python3', '-a', 's']),
             '#! /usr/bin/python3 -s')
         self.assertEqual(
             self.pathfix(
                 '#! /usr/bin/env python -V',
-                ['-i', '/usr/bin/python3', '-a', 'v', '-k'], **kwargs),
+                ['-i', '/usr/bin/python3', '-a', 'v', '-k']),
             '#! /usr/bin/python3 -vV')
         self.assertEqual(
             self.pathfix(
                 '#! /usr/bin/env python',
-                ['-i', '/usr/bin/python3', '-a', 'Rs'], **kwargs),
+                ['-i', '/usr/bin/python3', '-a', 'Rs']),
             '#! /usr/bin/python3 -Rs')
         self.assertEqual(
             self.pathfix(
                 '#! /usr/bin/env python -W default',
-                ['-i', '/usr/bin/python3', '-a', 's', '-k'], **kwargs),
+                ['-i', '/usr/bin/python3', '-a', 's', '-k']),
             '#! /usr/bin/python3 -sW default')
 
     def test_pathfix_adding_errors(self):
