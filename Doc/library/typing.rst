@@ -308,7 +308,7 @@ User defined generic type aliases are also supported. Examples::
        return sum(x*y for x, y in v)
 
 .. versionchanged:: 3.7
-    :class:`Generic` no longer has a metaclass.
+    :class:`Generic` no longer has a custom metaclass.
 
 A user-defined generic class can have ABCs as base classes without a metaclass
 conflict. Generic metaclasses are not supported. The outcome of parameterizing
