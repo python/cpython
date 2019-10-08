@@ -1593,7 +1593,7 @@ _prohibited = ('__new__', '__init__', '__slots__', '__getnewargs__',
                '_fields', '_field_defaults', '_field_types',
                '_make', '_replace', '_asdict', '_source')
 
-_special = ('__module__', '__name__', '__qualname__', '__annotations__')
+_special = ('__module__', '__name__', '__annotations__')
 
 
 class NamedTupleMeta(type):
