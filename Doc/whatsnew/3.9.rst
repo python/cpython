@@ -191,6 +191,11 @@ Deprecated
   the module will restrict its seeds to :const:`None`, :class:`int`,
   :class:`float`, :class:`str`, :class:`bytes`, and :class:`bytearray`.
 
+* Deprecated the ``split()`` method of :class:`_tkinter.TkappType` in
+  favour of the ``splitlist()`` method which has more consistent and
+  predicable behavior.
+  (Contributed by Serhiy Storchaka in :issue:`38371`.)
+
 
 Removed
 =======
