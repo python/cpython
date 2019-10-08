@@ -702,6 +702,20 @@ class BasicTest(TestCase):
         with self.assertRaisesRegexp(socket.error, "Invalid response"):
             conn._tunnel()
 
+    def test_putrequest_override_validation(self):
+        """
+        It should be possible to override the default validation
+        behavior in putrequest (bpo-38216).
+        """
+        class UnsafeHTTPConnection(httplib.HTTPConnection):
+            def _validate_path(self, url):
+                pass
+
+        conn = UnsafeHTTPConnection('example.com')
+        conn.sock = FakeSocket('')
+        conn.putrequest('GET', '/\x00')
+
+
 class OfflineTest(TestCase):
     def test_responses(self):
         self.assertEqual(httplib.responses[httplib.NOT_FOUND], "Not Found")
