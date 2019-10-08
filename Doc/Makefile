@@ -5,7 +5,9 @@
 
 # You can set these variables from the command line.
 PYTHON       = python
-SPHINXBUILD  = sphinx-build
+VENVDIR      = ./venv
+SPHINXBUILD  = PATH=$(VENVDIR)/bin:$$PATH sphinx-build
+BLURB        = PATH=$(VENVDIR)/bin:$$PATH blurb
 PAPER        =
 SOURCES      =
 DISTVERSION  = $(shell $(PYTHON) tools/extensions/patchlevel.py)
@@ -102,7 +104,12 @@ htmlview: html
 	 $(PYTHON) -c "import webbrowser; webbrowser.open('build/html/index.html')"
 
 clean:
-	-rm -rf build/*
+	-rm -rf build/* $(VENVDIR)/*
+
+venv:
+	$(PYTHON) -m venv $(VENVDIR)
+	$(VENVDIR)/bin/python3 -m pip install -U Sphinx blurb
+	@echo "The venv has been created in the $(VENVDIR) directory"
 
 dist:
 	rm -rf dist
@@ -148,7 +155,7 @@ dist:
 	cp -pPR build/epub/Python.epub dist/python-$(DISTVERSION)-docs.epub
 
 check:
-	$(PYTHON)2 tools/rstlint.py -i tools
+	$(PYTHON)2 tools/rstlint.py -i tools -i $(VENVDIR)
 
 serve:
 	../Tools/scripts/serve.py build/html
