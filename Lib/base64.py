@@ -55,8 +55,8 @@ def b64encode(s, altchars=None, padded=True):
     alternative alphabet for the '+' and '/' characters.  This allows an
     application to e.g. generate url or filesystem safe Base64 strings.
 
-    If padded is True (the default), padding will be  be applied to the
-    result bytes. If padding if False, no padding is applied.
+    If padded is True (the default), padding will be applied to the
+    result bytes. If padding is False, no padding is applied.
     """
     encoded = binascii.b2a_base64(s, newline=False)
     if altchars is not None:
