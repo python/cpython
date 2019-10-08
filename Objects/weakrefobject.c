@@ -166,7 +166,10 @@ weakref_repr(PyWeakReference *self)
     if (PyWeakref_GET_OBJECT(self) == Py_None)
         return PyUnicode_FromFormat("<weakref at %p; dead>", self);
 
-    if (_PyObject_LookupAttrId(PyWeakref_GET_OBJECT(self), &PyId___name__, &name) < 0) {
+    PyObect* obj = PyWeakref_GET_OBJECT(self);
+    Py_INCREF(obj);
+    if (_PyObject_LookupAttrId(obj, &PyId___name__, &name) < 0) {
+        Py_DECREF(obj);
         return NULL;
     }
     if (name == NULL || !PyUnicode_Check(name)) {
@@ -174,16 +177,17 @@ weakref_repr(PyWeakReference *self)
             "<weakref at %p; to '%s' at %p>",
             self,
             Py_TYPE(PyWeakref_GET_OBJECT(self))->tp_name,
-            PyWeakref_GET_OBJECT(self));
+            obj);
     }
     else {
         repr = PyUnicode_FromFormat(
             "<weakref at %p; to '%s' at %p (%U)>",
             self,
             Py_TYPE(PyWeakref_GET_OBJECT(self))->tp_name,
-            PyWeakref_GET_OBJECT(self),
+            obj,
             name);
     }
+    Py_DECREF(obj);
     Py_XDECREF(name);
     return repr;
 }
