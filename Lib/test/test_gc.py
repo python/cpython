@@ -823,6 +823,9 @@ class GCTests(unittest.TestCase):
         self.assertRaises(TypeError, gc.get_objects, 1.234)
 
     def test_38379(self):
+        # When a finalizer resurrects objects, stats were reporting them as
+        # having been collected.  This affected both collect()'s return
+        # value and the dicts returned by get_stats().
         N = 100
 
         class A:  # simple self-loop
@@ -842,6 +845,7 @@ class GCTests(unittest.TestCase):
         gc.collect()
         gc.disable()
 
+        # No problems if just collecting A() instances.
         oldc, oldnc = getstats()
         for i in range(N):
             A()
@@ -851,6 +855,7 @@ class GCTests(unittest.TestCase):
         self.assertEqual(c - oldc, 2*N)
         self.assertEqual(nc - oldnc, 0)
 
+        # But Z() is not actually collected.
         oldc, oldnc = c, nc
         Z()
         # Nothing is collected - Z() is merely resurrected.
@@ -862,6 +867,9 @@ class GCTests(unittest.TestCase):
         self.assertEqual(c - oldc, 0)   # after
         self.assertEqual(nc - oldnc, 0)
 
+        # Unfortunately, a Z() prevents _anything_ from being collected.
+        # It should be possible to collect the A instances anyway, but
+        # that will require non-trivial code changes.
         oldc, oldnc = c, nc
         for i in range(N):
             A()
@@ -875,7 +883,7 @@ class GCTests(unittest.TestCase):
         self.assertEqual(c - oldc, 0)   # after
         self.assertEqual(nc - oldnc, 0)
 
-        # But the trash is reclaimed on the next run.
+        # But the A() trash is reclaimed on the next run.
         oldc, oldnc = c, nc
         t = gc.collect()
         c, nc = getstats()
