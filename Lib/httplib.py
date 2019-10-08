@@ -1026,7 +1026,7 @@ class HTTPConnection:
             msg = (
                 "URL can't contain control characters. {url!r} "
                 "(found at least {matched!r})"
-            ).format(matched=match.group(), **locals())
+            ).format(matched=match.group(), url=url)
             raise InvalidURL(msg)
 
     def putheader(self, header, *values):
