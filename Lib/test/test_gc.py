@@ -875,6 +875,14 @@ class GCTests(unittest.TestCase):
         self.assertEqual(c - oldc, 0)   # after
         self.assertEqual(nc - oldnc, 0)
 
+        # But the trash is reclaimed on the next run.
+        oldc, oldnc = c, nc
+        t = gc.collect()
+        c, nc = getstats()
+        self.assertEqual(t, 2*N)
+        self.assertEqual(c - oldc, 2*N)
+        self.assertEqual(nc - oldnc, 0)
+
         gc.enable()
 
 class GCCallbackTests(unittest.TestCase):
