@@ -100,6 +100,11 @@ typedef struct {
     double data[2];
 } Test3;
 
+typedef struct {
+    float data[2];
+    float more_data[2];
+} Test3B;
+
 EXPORT(double)
 _testfunc_array_in_struct2(Test3 in)
 {
@@ -107,6 +112,22 @@ _testfunc_array_in_struct2(Test3 in)
 
     for (unsigned i = 0; i < 2; i++)
         result += in.data[i];
+    /* As the structure is passed by value, changes to it shouldn't be
+     * reflected in the caller.
+     */
+    memset(in.data, 0, sizeof(in.data));
+    return result;
+}
+
+EXPORT(double)
+_testfunc_array_in_struct2a(Test3B in)
+{
+    double result = 0;
+
+    for (unsigned i = 0; i < 2; i++)
+        result += in.data[i];
+    for (unsigned i = 0; i < 2; i++)
+        result += in.more_data[i];
     /* As the structure is passed by value, changes to it shouldn't be
      * reflected in the caller.
      */
