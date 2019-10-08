@@ -4177,6 +4177,9 @@ class MiscIOTest(unittest.TestCase):
         proc = assert_python_failure('-X', 'dev', '-c', code)
         self.assertEqual(proc.rc, 10, proc)
 
+    def test_subclass_of_codecs_incremental_decoder(self):
+        self.assertTrue(self.io.IncrementalNewlineDecoder,
+                        codecs.IncrementalDecoder)
 
 class CMiscIOTest(MiscIOTest):
     io = io

@@ -7,8 +7,10 @@ Written by Marc-Andre Lemburg (mal@lemburg.com).
 
 """
 
+import abc
 import builtins
 import sys
+import _collections_abc
 
 ### Registry and builtin stateless codec functions
 
@@ -251,7 +253,7 @@ class BufferedIncrementalEncoder(IncrementalEncoder):
     def setstate(self, state):
         self.buffer = state or ""
 
-class IncrementalDecoder(object):
+class IncrementalDecoder(abc.ABC):
     """
     An IncrementalDecoder decodes an input in multiple steps. The input can
     be passed piece by piece to the decode() method. The IncrementalDecoder
@@ -299,6 +301,13 @@ class IncrementalDecoder(object):
         state must have been returned by getstate().  The effect of
         setstate((b"", 0)) must be equivalent to reset().
         """
+
+    @classmethod
+    def __subclasshook__(cls, C):
+        if issubclass(C, _io.IncrementalNewlineDecoder):
+            return _collections_abc._check_methods(C, "decode", "reset",
+                                                   "getstate", "setstate")
+        return NotImplemented
 
 class BufferedIncrementalDecoder(IncrementalDecoder):
     """
@@ -1110,6 +1119,11 @@ _false = 0
 if _false:
     import encodings
 
+try:
+    import _io
+    IncrementalDecoder.register(_io.IncrementalNewlineDecoder)
+except ImportError:
+    pass
 ### Tests
 
 if __name__ == '__main__':
