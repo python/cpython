@@ -644,9 +644,9 @@ PyCStructUnionType_update_stgdict(PyObject *type, PyObject *fields, int isStruct
     stgdict->align = total_align;
     stgdict->length = len;      /* ADD ffi_ofs? */
 
-#define MAX_ELEMENTS 16
+#define MAX_STRUCT_SIZE 16
 
-    if (arrays_seen && (size <= MAX_ELEMENTS)) {
+    if (arrays_seen && (size <= MAX_STRUCT_SIZE)) {
         /*
          * See bpo-22273. Arrays are normally treated as pointers, which is
          * fine when an array name is being passed as parameter, but not when
@@ -722,7 +722,7 @@ PyCStructUnionType_update_stgdict(PyObject *type, PyObject *fields, int isStruct
             if (!PyArg_ParseTuple(pair, "UO|i", &name, &desc, &bitsize)) {
                 PyErr_SetString(PyExc_TypeError,
                     "'_fields_' must be a sequence of (name, C type) pairs");
-                Py_XDECREF(pair);
+                Py_DECREF(pair);
                 return -1;
             }
             dict = PyType_stgdict(desc);
@@ -809,14 +809,21 @@ PyCStructUnionType_update_stgdict(PyObject *type, PyObject *fields, int isStruct
                 PyMem_Free(type_block);
                 return -1;
             }
+            /* In theory, we made this call in the first pass, so it *shouldn't*
+             * fail. However, you never know, and the code above might change
+             * later - keeping the check in here is a tad defensive but it
+             * will affect program size only slightly and performance hardly at
+             * all.
+             */
             if (!PyArg_ParseTuple(pair, "UO|i", &name, &desc, &bitsize)) {
                 PyErr_SetString(PyExc_TypeError,
                                 "'_fields_' must be a sequence of (name, C type) pairs");
-                Py_XDECREF(pair);
+                Py_DECREF(pair);
                 PyMem_Free(type_block);
                 return -1;
             }
             dict = PyType_stgdict(desc);
+            /* Possibly this check could be avoided, but see above comment. */
             if (dict == NULL) {
                 Py_DECREF(pair);
                 PyMem_Free(type_block);
