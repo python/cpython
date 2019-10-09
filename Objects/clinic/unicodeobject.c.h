@@ -484,7 +484,7 @@ PyDoc_STRVAR(unicode_strip__doc__,
 "strip($self, chars=None, /)\n"
 "--\n"
 "\n"
-"Return a copy of the string with leading and trailing whitespace remove.\n"
+"Return a copy of the string with leading and trailing whitespace removed.\n"
 "\n"
 "If chars is given and not None, remove characters in chars instead.");
 
@@ -951,4 +951,4 @@ unicode_sizeof(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
     return unicode_sizeof_impl(self);
 }
-/*[clinic end generated code: output=561c88c912b8fe3b input=a9049054013a1b77]*/
+/*[clinic end generated code: output=49bf50c732b9b53b input=a9049054013a1b77]*/
