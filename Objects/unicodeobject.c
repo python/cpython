@@ -12544,7 +12544,7 @@ str.strip as unicode_strip
     chars: object = None
     /
 
-Return a copy of the string with leading and trailing whitespace remove.
+Return a copy of the string with leading and trailing whitespace removed.
 
 If chars is given and not None, remove characters in chars instead.
 [clinic start generated code]*/
