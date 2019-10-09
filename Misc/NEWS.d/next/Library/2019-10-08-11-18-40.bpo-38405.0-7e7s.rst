@@ -1,0 +1,1 @@
+Nested subclasses of :class:`typing.NamedTuple` are now pickleable.
