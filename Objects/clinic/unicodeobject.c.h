@@ -1232,4 +1232,4 @@ unicode_sizeof(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
     return unicode_sizeof_impl(self);
 }
-/*[clinic end generated code: output=5e15747f78f18329 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=e4ed33400979c7e8 input=a9049054013a1b77]*/
