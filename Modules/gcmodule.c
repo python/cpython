@@ -1095,12 +1095,9 @@ collect(struct _gc_runtime_state *state, int generation,
     validate_list(&finalizers, 0);
     validate_list(&unreachable, PREV_MASK_COLLECTING);
 
-    /* Collect statistics on collectable objects found and print
-     * debugging information.
-     */
-    for (gc = GC_NEXT(&unreachable); gc != &unreachable; gc = GC_NEXT(gc)) {
-        m++;
-        if (state->debug & DEBUG_COLLECTABLE) {
+    /* Print debugging information. */
+    if (state->debug & DEBUG_COLLECTABLE) {
+        for (gc = GC_NEXT(&unreachable); gc != &unreachable; gc = GC_NEXT(gc)) {
             debug_cycle("collectable", FROM_GC(gc));
         }
     }
@@ -1122,6 +1119,7 @@ collect(struct _gc_runtime_state *state, int generation,
          * the reference cycles to be broken.  It may also cause some objects
          * in finalizers to be freed.
          */
+        m += gc_list_size(&unreachable);
         delete_garbage(state, &unreachable, old);
     }
 
