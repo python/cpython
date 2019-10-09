@@ -887,13 +887,9 @@ collect(int generation, Py_ssize_t *n_collected, Py_ssize_t *n_uncollectable,
      */
     move_legacy_finalizer_reachable(&finalizers);
 
-    /* Collect statistics on collectable objects found and print
-     * debugging information.
-     */
-    for (gc = unreachable.gc.gc_next; gc != &unreachable;
-                    gc = gc->gc.gc_next) {
-        m++;
-        if (_PyRuntime.gc.debug & DEBUG_COLLECTABLE) {
+    /* Print debugging information. */
+    if (_PyRuntime.gc.debug & DEBUG_COLLECTABLE) {
+        for (gc = unreachable.gc.gc_next; gc != &unreachable; gc = gc->gc.gc_next) {
             debug_cycle("collectable", FROM_GC(gc));
         }
     }
@@ -913,6 +909,7 @@ collect(int generation, Py_ssize_t *n_collected, Py_ssize_t *n_uncollectable,
          * the reference cycles to be broken.  It may also cause some objects
          * in finalizers to be freed.
          */
+        m += gc_list_size(&unreachable);
         delete_garbage(&unreachable, old);
     }
 
