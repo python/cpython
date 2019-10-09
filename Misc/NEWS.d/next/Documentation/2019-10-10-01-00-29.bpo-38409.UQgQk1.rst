@@ -1,1 +1,0 @@
-Grammatically corrected help(str.strip) documentation. Patch by Hansraj Das
