@@ -1277,6 +1277,7 @@ Type.__doc__ = \
 
 
 class SupportsInt(_Protocol):
+    """An ABC with one abstract method __int__."""
     __slots__ = ()
 
     @abstractmethod
@@ -1285,6 +1286,7 @@ class SupportsInt(_Protocol):
 
 
 class SupportsFloat(_Protocol):
+    """An ABC with one abstract method __float__."""
     __slots__ = ()
 
     @abstractmethod
@@ -1293,6 +1295,7 @@ class SupportsFloat(_Protocol):
 
 
 class SupportsComplex(_Protocol):
+    """An ABC with one abstract method __complex__."""
     __slots__ = ()
 
     @abstractmethod
@@ -1301,6 +1304,7 @@ class SupportsComplex(_Protocol):
 
 
 class SupportsBytes(_Protocol):
+    """An ABC with one abstract method __bytes__."""
     __slots__ = ()
 
     @abstractmethod
@@ -1309,6 +1313,7 @@ class SupportsBytes(_Protocol):
 
 
 class SupportsAbs(_Protocol[T_co]):
+    """An ABC with one abstract method __abs__ that is covariant in its return type."""
     __slots__ = ()
 
     @abstractmethod
@@ -1317,6 +1322,7 @@ class SupportsAbs(_Protocol[T_co]):
 
 
 class SupportsRound(_Protocol[T_co]):
+    """An ABC with one abstract method __round__ that is covariant in its return type."""
     __slots__ = ()
 
     @abstractmethod
