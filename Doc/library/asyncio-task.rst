@@ -18,9 +18,9 @@ and Tasks.
 Coroutines
 ==========
 
-Coroutines declared with async/await syntax is the preferred way of
-writing asyncio applications.  For example, the following snippet
-of code (requires Python 3.7+) prints "hello", waits 1 second,
+:term:`Coroutines <coroutine>` declared with the async/await syntax is the
+preferred way of writing asyncio applications.  For example, the following
+snippet of code (requires Python 3.7+) prints "hello", waits 1 second,
 and then prints "world"::
 
     >>> import asyncio
@@ -237,6 +237,10 @@ Running an asyncio Program
 
     .. versionadded:: 3.7
 
+
+    .. note::
+       The source code for ``asyncio.run()`` can be found in
+       :source:`Lib/asyncio/runners.py`.
 
 Creating Tasks
 ==============
