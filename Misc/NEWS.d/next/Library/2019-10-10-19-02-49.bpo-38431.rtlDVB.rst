@@ -1,0 +1,2 @@
+:class:`dataclasses.InitVar` now supports non-class types, like
+``List[int]``.

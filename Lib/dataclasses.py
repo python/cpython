@@ -206,7 +206,10 @@ class InitVar:
         self.type = type
 
     def __repr__(self):
-        return f'dataclasses.InitVar[{self.type.__name__}]'
+        if isinstance(self.type, type):
+            return f'dataclasses.InitVar[{self.type.__name__}]'
+        else:
+            return f'dataclasses.InitVar[{self.type!r}]'
 
     def __class_getitem__(cls, type):
         return InitVar(type)
