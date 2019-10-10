@@ -5,6 +5,10 @@
 Event Loop
 ==========
 
+**Source code:** :source:`Lib/asyncio/events.py`,
+:source:`Lib/asyncio/base_events.py`
+
+------------------------------------
 
 .. rubric:: Preface
 
