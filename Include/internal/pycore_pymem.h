@@ -162,7 +162,7 @@ PyAPI_FUNC(int) _PyMem_SetDefaultAllocator(
    - PYMEM_DEADBYTE dead (newly freed) memory
    - PYMEM_FORBIDDENBYTE: untouchable bytes at each end of a block
 
-   Byte patterns 0xCB, 0xBB and 0xFB have been replaced with 0xCD, 0xDD and
+   Byte patterns 0xCB, 0xDB and 0xFB have been replaced with 0xCD, 0xDD and
    0xFD to use the same values than Windows CRT debug malloc() and free().
    If modified, _PyMem_IsPtrFreed() should be updated as well. */
 #define PYMEM_CLEANBYTE      0xCD
