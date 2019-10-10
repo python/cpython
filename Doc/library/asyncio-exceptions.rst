@@ -7,6 +7,9 @@
 Exceptions
 ==========
 
+**Source code:** :source:`Lib/asyncio/exceptions.py`
+
+----------------------------------------------------
 
 .. exception:: TimeoutError
 
