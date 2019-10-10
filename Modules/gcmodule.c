@@ -1921,6 +1921,8 @@ _PyGC_Dump(PyGC_Head *g)
     _PyObject_Dump(FROM_GC(g));
 }
 
+
+#ifdef Py_DEBUG
 static int
 visit_validate(PyObject *op, void *parent_raw)
 {
@@ -1931,6 +1933,7 @@ visit_validate(PyObject *op, void *parent_raw)
     }
     return 0;
 }
+#endif
 
 
 /* extension modules might be compiled with GC support so these
