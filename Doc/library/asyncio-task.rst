@@ -240,9 +240,9 @@ Running an asyncio Program
     .. versionchanged:: 3.9
        Updated to use :meth:`loop.shutdown_default_executor`.
 
-.. note::
-   The source code for ``asyncio.run()`` can be found in
-   :source:`Lib/asyncio/runners.py`.
+    .. note::
+       The source code for ``asyncio.run()`` can be found in
+       :source:`Lib/asyncio/runners.py`.
 
 Creating Tasks
 ==============
