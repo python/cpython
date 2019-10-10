@@ -1,0 +1,1 @@
+Improved the performance of repeated/literal :class:`list` addition.
