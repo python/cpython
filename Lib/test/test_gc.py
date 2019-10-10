@@ -823,6 +823,7 @@ class GCTests(unittest.TestCase):
         self.assertRaises(TypeError, gc.get_objects, 1.234)
 
     def test_resurrection_does_not_block_cleanup_of_other_objects(self):
+
         # When a finalizer resurrects objects, stats were reporting them as
         # having been collected.  This affected both collect()'s return
         # value and the dicts returned by get_stats().
@@ -861,30 +862,25 @@ class GCTests(unittest.TestCase):
         # Nothing is collected - Z() is merely resurrected.
         t = gc.collect()
         c, nc = getstats()
-        #self.assertEqual(t, 2)  # before
-        self.assertEqual(t, 0)  # after
-        #self.assertEqual(c - oldc, 2)   # before
-        self.assertEqual(c - oldc, 0)   # after
+        self.assertEqual(t, 0)  # before
+        self.assertEqual(c - oldc, 0)   # before
         self.assertEqual(nc - oldnc, 0)
 
-        # Unfortunately, a Z() prevents _anything_ from being collected.
-        # It should be possible to collect the A instances anyway, but
-        # that will require non-trivial code changes.
+        # Z() should not prevents anything from being collected.
         oldc, oldnc = c, nc
         for i in range(N):
             A()
         Z()
-        # Z() prevents anything from being collected.
         t = gc.collect()
         c, nc = getstats()
-        self.assertEqual(t, 2*N)  # after
-        self.assertEqual(c - oldc, 2*N)   # after
+        self.assertEqual(t, 2*N)  # before
+        self.assertEqual(c - oldc, 2*N)   # before
         self.assertEqual(nc - oldnc, 0)
 
-        # The A() trash should have been eliminated and
-        # the Z objects should be removed now
-        zs.clear()
+        # The A() trash should have been reclaimed already but the
+        # 2 copies of Z are still in zs (and the associated dicts).
         oldc, oldnc = c, nc
+        zs.clear()
         t = gc.collect()
         c, nc = getstats()
         self.assertEqual(t, 4)
@@ -1213,7 +1209,6 @@ class GCTogglingTests(unittest.TestCase):
             # If __del__ resurrected c2, the instance would be damaged, with an
             # empty __dict__.
             self.assertEqual(x, None)
-
 
 def test_main():
     enabled = gc.isenabled()

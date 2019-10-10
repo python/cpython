@@ -302,7 +302,7 @@ gc_list_size(PyGC_Head *list)
 }
 
 /* Append objects in a GC list to a Python list.
- * Return 0 if all OK, < 0 if error (out of memory for list).
+ * Return 0 if all OK, < 0 if error (out of memory for list)deduce_unreachable.
  */
 static int
 append_objects(PyObject *py_list, PyGC_Head *gc_list)
@@ -613,7 +613,20 @@ move_legacy_finalizers(PyGC_Head *unreachable, PyGC_Head *finalizers)
     }
 }
 
-/* A traversal callback for move_recursive_reachable. */
+static inline void
+restore_unreachable_mask(PyGC_Head *unreachable)
+{
+    PyGC_Head *gc, *next;
+    unreachable->_gc_next &= ~NEXT_MASK_UNREACHABLE;
+    for (gc = GC_NEXT(unreachable); gc != unreachable; gc = next) {
+        PyObject *op = FROM_GC(gc);
+        _PyObject_ASSERT(op, gc->_gc_next & NEXT_MASK_UNREACHABLE);
+        gc->_gc_next &= ~NEXT_MASK_UNREACHABLE;
+        next = (PyGC_Head*)gc->_gc_next;
+    }
+}
+
+/* A traversal callback for move_legacy_finalizer_reachable. */
 static int
 visit_move(PyObject *op, PyGC_Head *tolist)
 {
@@ -627,20 +640,20 @@ visit_move(PyObject *op, PyGC_Head *tolist)
     return 0;
 }
 
-/* Move objects that are reachable from gc_list from their original place
-   into gc_list.
+/* Move objects that are reachable from finalizers, from the unreachable set
+ * into finalizers set.
  */
 static void
-move_recursive_reachable(PyGC_Head *gc_list)
+move_legacy_finalizer_reachable(PyGC_Head *finalizers)
 {
     traverseproc traverse;
-    PyGC_Head *gc = GC_NEXT(gc_list);
-    for (; gc != gc_list; gc = GC_NEXT(gc)) {
+    PyGC_Head *gc = GC_NEXT(finalizers);
+    for (; gc != finalizers; gc = GC_NEXT(gc)) {
         /* Note that the finalizers list may grow during this. */
         traverse = Py_TYPE(FROM_GC(gc))->tp_traverse;
         (void) traverse(FROM_GC(gc),
                         (visitproc)visit_move,
-                        (void *)gc_list);
+                        (void *)finalizers);
     }
 }
 
@@ -895,7 +908,7 @@ finalize_garbage(PyGC_Head *collectable)
    from the outside (some objects could have been resurrected by a
    finalizer). */
 static int
-deduce_unreachable(PyGC_Head *collectable, PyGC_Head *still_reachable)
+check_garbage(PyGC_Head *collectable)
 {
     int ret = 0;
     PyGC_Head *gc;
@@ -911,28 +924,13 @@ deduce_unreachable(PyGC_Head *collectable, PyGC_Head *still_reachable)
                                   gc_get_refs(gc) >= 0,
                                   "refcount is too small");
         if (gc_get_refs(gc) != 0) {
-            // We found a object that is reachable from the outside,
-            // Restore the previous link (it was removed when we
-            // called gc_set_refs).
-            _PyGCHead_SET_PREV(gc, prev);
-            // Mark it as not collecting (now is reachable).
-            gc_clear_collecting(gc);
-            // Move the object into the still_reachable set.
-            PyGC_Head *tmp = GC_PREV(gc);
-            gc_list_move(gc, still_reachable);
-            gc = tmp;
-            // Signal that we found some reachable objects.
             ret = -1;
-        } else {
-            _PyGCHead_SET_PREV(gc, prev);
         }
+        // Restore gc_prev here.
+        _PyGCHead_SET_PREV(gc, prev);
+        gc_clear_collecting(gc);
         prev = gc;
     }
-    // Move also all the objects that are reachable from the
-    // still_reachable objects into the same collection (when exiting
-    // this function, the still_reachable collection will correspond
-    // to everything that we cannot remove in this collection).
-    move_recursive_reachable(still_reachable);
     return ret;
 }
 
@@ -1018,6 +1016,26 @@ show_stats_each_generations(struct _gc_runtime_state *state)
         buf, gc_list_size(&state->permanent_generation.head));
 }
 
+static void
+deduce_unreachable(PyGC_Head *base, PyGC_Head *unreachable) {
+    /* Using ob_refcnt and gc_refs, calculate which objects in the
+     * container set are reachable from outside the set (i.e., have a
+     * refcount greater than 0 when all the references within the
+     * set are taken into account).
+     */
+    update_refs(base);  // gc_prev is used for gc_refs
+    subtract_refs(base);
+
+    /* Leave everything reachable from outside young in young, and move
+     * everything else (in young) to unreachable.
+     * NOTE:  This used to move the reachable objects into a reachable
+     * set instead.  But most things usually turn out to be reachable,
+     * so it's more efficient to move the unreachable things.
+     */
+    gc_list_init(unreachable);
+    move_unreachable(base, unreachable);  // gc_prev is pointer again
+}
+
 /* This is the main function.  Read this to understand how the
  * collection process works. */
 static Py_ssize_t
@@ -1063,27 +1081,10 @@ collect(struct _gc_runtime_state *state, int generation,
 
     validate_list(young, 0);
     validate_list(old, 0);
-    /* Using ob_refcnt and gc_refs, calculate which objects in the
-     * container set are reachable from outside the set (i.e., have a
-     * refcount greater than 0 when all the references within the
-     * set are taken into account).
-     */
-    update_refs(young);  // gc_prev is used for gc_refs
-    subtract_refs(young);
-
-    /* Leave everything reachable from outside young in young, and move
-     * everything else (in young) to unreachable.
-     * NOTE:  This used to move the reachable objects into a reachable
-     * set instead.  But most things usually turn out to be reachable,
-     * so it's more efficient to move the unreachable things.
-     */
-    gc_list_init(&unreachable);
-    move_unreachable(young, &unreachable);  // gc_prev is pointer again
+    deduce_unreachable(young, &unreachable);
     validate_list(young, 0);
 
     untrack_tuples(young);
-
-
     /* Move reachable objects to next generation. */
     if (young != old) {
         if (generation == NUM_GENERATIONS - 2) {
@@ -1110,7 +1111,7 @@ collect(struct _gc_runtime_state *state, int generation,
      * unreachable objects reachable *from* those are also uncollectable,
      * and we move those into the finalizers list too.
      */
-    move_recursive_reachable(&finalizers);
+    move_legacy_finalizer_reachable(&finalizers);
 
     validate_list(&finalizers, 0);
     validate_list(&unreachable, PREV_MASK_COLLECTING);
@@ -1131,21 +1132,23 @@ collect(struct _gc_runtime_state *state, int generation,
     /* Call tp_finalize on objects which have one. */
     finalize_garbage(&unreachable);
 
-    // The deduce_unreachable function will move all objects that are still
-    // reachable from the outside into the still_unreachable set.
     PyGC_Head still_unreachable;
-    gc_list_init(&still_unreachable);
-    if (deduce_unreachable(&unreachable, &still_unreachable)) { // clear PREV_MASK_COLLECTING here
-        // Move every resurrected object (and the ones reachable from them) into
-        // the yoing list for future collection.
-        gc_list_merge(&still_unreachable, young);
+    PyGC_Head *final_unreachable = &unreachable;
+    if (check_garbage(&unreachable)) { 
+        // Get what objects are still unreachable from the outside
+        // after the resurrections
+        deduce_unreachable(&unreachable, &still_unreachable);
+        restore_unreachable_mask(&still_unreachable);
+        // Move the resurrected objects to old
+        gc_list_merge(&unreachable, old);
+        final_unreachable = &still_unreachable;
     }
     /* Call tp_clear on objects in the unreachable set.  This will cause
     * the reference cycles to be broken.  It may also cause some objects
     * in finalizers to be freed.
     */
-    m += gc_list_size(&unreachable);
-    delete_garbage(state, &unreachable, old);
+    m += gc_list_size(final_unreachable);
+    delete_garbage(state, final_unreachable, old);
 
     /* Collect statistics on uncollectable objects found and print
      * debugging information. */
