@@ -1,0 +1,3 @@
+Add missing :data:`stat.S_IFDOOR`, :data:`stat.S_IFPORT`, :data:`stat.S_IFWHT`,
+:func:`stat.S_ISDOOR`, :func:`stat.S_ISPORT`, and :func:`stat.S_ISWHT` values to
+the Python implementation of :mod:`stat`.
