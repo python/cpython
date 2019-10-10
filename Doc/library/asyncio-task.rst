@@ -210,10 +210,6 @@ is :meth:`loop.run_in_executor`.
 Running an asyncio Program
 ==========================
 
-**Source code:** :source:`Lib/asyncio/runners.py`
-
--------------------------------------------------
-
 .. function:: run(coro, \*, debug=False)
 
     Execute the :term:`coroutine` *coro* and return the result.
@@ -243,6 +239,10 @@ Running an asyncio Program
 
     .. versionchanged:: 3.9
        Updated to use :meth:`loop.shutdown_default_executor`.
+
+.. note::
+   The source code for ``asyncio.run()`` can be found in
+   :source:`Lib/asyncio/runners.py`.
 
 Creating Tasks
 ==============
