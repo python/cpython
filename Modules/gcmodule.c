@@ -1020,7 +1020,7 @@ show_stats_each_generations(struct _gc_runtime_state *state)
         buf, gc_list_size(&state->permanent_generation.head));
 }
 
-static void
+static inline void
 deduce_unreachable(PyGC_Head *base, PyGC_Head *unreachable) {
     /* Using ob_refcnt and gc_refs, calculate which objects in the
      * container set are reachable from outside the set (i.e., have a
