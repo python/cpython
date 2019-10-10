@@ -1,0 +1,2 @@
+Remove ‘res’ may be used uninitialized warning. (Contributed by Dong-hee Na
+in :issue:`38425`.)
