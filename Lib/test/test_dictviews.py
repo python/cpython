@@ -296,6 +296,10 @@ class DictSetTest(unittest.TestCase):
         self.assertIsInstance(d.items(), collections.abc.Iterable)
         self.assertIsInstance(d.items(), collections.abc.Container)
 
+    def test_bpo38202(self):
+        with self.assertRaises(TypeError):
+            {}.keys() & 1
+
 
 if __name__ == "__main__":
     unittest.main()
