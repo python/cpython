@@ -1197,7 +1197,6 @@ PyObject* PyAST_mod2obj(mod_ty t)
 /* mode is 0 for "exec", 1 for "eval" and 2 for "single" input */
 mod_ty PyAST_obj2mod(PyObject* ast, PyArena* arena, int mode)
 {
-    mod_ty res;
     PyObject *req_type[3];
     const char * const req_name[] = {"Module", "Expression", "Interactive"};
     int isinstance;
@@ -1223,6 +1222,8 @@ mod_ty PyAST_obj2mod(PyObject* ast, PyArena* arena, int mode)
                      req_name[mode], _PyType_Name(Py_TYPE(ast)));
         return NULL;
     }
+
+    mod_ty res = NULL;
     if (obj2ast_mod(ast, &res, arena) != 0)
         return NULL;
     else
