@@ -247,11 +247,6 @@ Running an asyncio Program
 Creating Tasks
 ==============
 
-**Source code:** :source:`Lib/asyncio/tasks.py`,
-:source:`Lib/asyncio/base_tasks.py`
-
------------------------------------
-
 .. function:: create_task(coro, \*, name=None)
 
    Wrap the *coro* :ref:`coroutine <coroutine>` into a :class:`Task`
