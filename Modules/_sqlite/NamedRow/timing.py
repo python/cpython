@@ -1,51 +1,83 @@
 import collections
 import timeit
+import random
 import sqlite3
 from named_row import NamedRow
 
 
-SETUP = """\
-import sqlite3, collections
-from named_row import NamedRow
-conn = sqlite3.connect(":memory:")
-conn.execute('CREATE TABLE t(a, b)')
-for i in range(1000):
-    conn.execute("INSERT INTO t VALUES(?,?)", (i, i))
-cursor = conn.cursor()
-"""
-SQLITE3_ROW = SETUP + "cursor.row_factory=sqlite3.Row"
-SQLITE3_NAMED = SETUP + "cursor.row_factory=sqlite3.NamedRow"
-NAMED_TUPLE = SETUP + "cursor.row_factory=collections.namedtuple('Row', ['a','b'])"
-NAMED_ROW = SETUP + "cursor.row_factory=NamedRow"
-
-NUMBER = 1000
-INDEX = """for x in cursor.execute("SELECT * FROM t").fetchall(): x[0]"""
-DICTS = """for x in cursor.execute("SELECT * FROM t").fetchall(): x['a']"""
-ATTRS = """for x in cursor.execute("SELECT * FROM t").fetchall(): x.a"""
-
-tests = (
-    (SETUP, INDEX, "sqlite3 indx"),
-    (SQLITE3_ROW, INDEX, "sqlite3.Row indx"),
-    (SQLITE3_ROW, DICTS, "sqlite3.Row dict"),
-    (SQLITE3_NAMED, INDEX, "sqlite3.NamedRow indx"),
-    (SQLITE3_NAMED, DICTS, "sqlite3.NamedRow dict"),
-    (SQLITE3_NAMED, ATTRS, "sqlite3.NamedRow attr"),
-    (NAMED_TUPLE, INDEX, "namedtuple indx"),
-    (NAMED_TUPLE, ATTRS, "namedtuple attr"),
-    (NAMED_ROW, DICTS, "NamedRow dict"),
-    (NAMED_ROW, ATTRS, "NamedRow attr"),
+FIELD_MAP = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
+FIELD_NAME_LENGTH = 12
+TESTS = (
+    ("Native", "index"),
+    ("Row", "index"),
+    ("Row", "dict"),
+    ("NamedRow", "index"),
+    ("NamedRow", "dict"),
+    ("NamedRow", "attr"),
 )
 
-base = 0
 
-for setup, test, title in tests:
-    try:
-        v = timeit.timeit(test, setup=setup, number=1000)
-    except AttributeError:
-        print("AttributeError", title)
-        continue
+connection = sqlite3.Connection("timing.db")
+connection.executescript(
+    """CREATE TABLE IF NOT EXISTS t (
+    title char(15),
+    fields int,
+    timeit real
+);
+CREATE UNIQUE INDEX IF NOT EXISTS onlyone ON t (title, fields);"""
+)
 
-    if setup == SETUP:
-        base = v
-    percent = int(100 * ((v / base)) - 100)
-    print(f"+{percent}%", round(1000 * v), "usec", title)
+
+def make_field(idx: int) -> str:
+    return FIELD_MAP[idx] * random.randrange(4, 15)
+
+
+for number_of_fields in range(2, 41):
+    # Each round will have identical fields to the proceeding. Show off the
+    # speed of NamedRow over Row
+    random.seed(101038)
+    fields = [make_field(i) for i in range(number_of_fields)]
+    select = ", ".join([f"{i} AS {fields[i]}" for i in range(number_of_fields)])
+    print(f"Fields {number_of_fields}")
+
+    # Process all tests for the same number of fields. Does this help with
+    # fluctuations in background processes?
+    for factory, test_method in TESTS:
+        factory_row = ""
+        if factory != "Native":
+            factory_row = f"conn.row_factory=sqlite3.{factory}"
+
+        setup = "\n".join(
+            [
+                "import sqlite3",
+                "conn = sqlite3.connect(':memory:')",
+                factory_row,
+                "cursor = conn.cursor()",
+            ]
+        )
+        string, formatter = {
+            "index": ("row[{0}]", int),
+            "dict": ("row['{0}']", lambda i: fields[i]),
+            "attr": ("row.{0}", lambda i: fields[i]),
+        }[test_method]
+
+        timing = [f'row = cursor.execute("SELECT {select}").fetchone()']
+        timing.extend([string.format(formatter(i)) for i in range(number_of_fields)])
+        timing = "\n".join(timing)
+
+        title = f"{factory} {test_method}"
+        try:
+            v = timeit.timeit(timing, setup=setup, number=10000)
+        except AttributeError:
+            print("AttributeError", title)
+            continue
+
+        connection.execute(
+            "INSERT INTO t (title, fields, timeit) "
+            "VALUES(?,?,?) ON CONFLICT (title, fields) "
+            "DO UPDATE SET timeit=excluded.timeit "
+            "WHERE excluded.timeit < t.timeit;",
+            (title, number_of_fields, v),
+        )
+    connection.commit()
+connection.close()
