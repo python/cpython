@@ -5,10 +5,6 @@ This is Python version 3.9.0 alpha 0
    :alt: CPython build status on Travis CI
    :target: https://travis-ci.org/python/cpython
 
-.. image:: https://ci.appveyor.com/api/projects/status/4mew1a93xdkbf5ua/branch/master?svg=true
-   :alt: CPython build status on Appveyor
-   :target: https://ci.appveyor.com/project/python/cpython/branch/master
-
 .. image:: https://dev.azure.com/python/cpython/_apis/build/status/Azure%20Pipelines%20CI?branchName=master
    :alt: CPython build status on Azure DevOps
    :target: https://dev.azure.com/python/cpython/_build/latest?definitionId=4&branchName=master
