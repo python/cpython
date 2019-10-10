@@ -1,0 +1,2 @@
+Fix ``__repr__`` method for ``dataclasses.InitVar`` to work with typing
+objects.
