@@ -1551,6 +1551,11 @@ main_loop:
                 sum = unicode_concatenate(tstate, left, right, f, next_instr);
                 /* unicode_concatenate consumed the ref to left */
             }
+            else if (PyList_CheckExact(left) && PyList_CheckExact(right)
+                     && Py_REFCNT(left) == 1) {
+                sum = PySequence_InPlaceConcat(left, right);
+                Py_DECREF(left);
+            }
             else {
                 sum = PyNumber_Add(left, right);
                 Py_DECREF(left);
