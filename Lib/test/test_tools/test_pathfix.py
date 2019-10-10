@@ -55,7 +55,7 @@ class TestPathfixFunctional(unittest.TestCase):
         tmpdir = support.TESTFN + '.d'
         self.addCleanup(support.rmtree, tmpdir)
         os.mkdir(tmpdir)
-        expected_stderr = f'recursedown(\'{os.path.basename(tmpdir)}\')\n'
+        expected_stderr = f"recursedown('{os.path.basename(tmpdir)}')\n"
         self.assertEqual(
             self.pathfix(
                 '#! /usr/bin/env python',
