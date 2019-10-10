@@ -302,7 +302,7 @@ gc_list_size(PyGC_Head *list)
 }
 
 /* Append objects in a GC list to a Python list.
- * Return 0 if all OK, < 0 if error (out of memory for list)deduce_unreachable.
+ * Return 0 if all OK, < 0 if error (out of memory for list)
  */
 static int
 append_objects(PyObject *py_list, PyGC_Head *gc_list)
@@ -614,8 +614,11 @@ move_legacy_finalizers(PyGC_Head *unreachable, PyGC_Head *finalizers)
 }
 
 static inline void
-restore_unreachable_mask(PyGC_Head *unreachable)
+clear_unreachable_mask(PyGC_Head *unreachable)
 {
+    /* Check that the list head does not have the unreachable bit set */
+    assert(((uintptr_t)unreachable & NEXT_MASK_UNREACHABLE) == 0);
+
     PyGC_Head *gc, *next;
     unreachable->_gc_next &= ~NEXT_MASK_UNREACHABLE;
     for (gc = GC_NEXT(unreachable); gc != unreachable; gc = next) {
@@ -624,6 +627,7 @@ restore_unreachable_mask(PyGC_Head *unreachable)
         gc->_gc_next &= ~NEXT_MASK_UNREACHABLE;
         next = (PyGC_Head*)gc->_gc_next;
     }
+    validate_list(unreachable, PREV_MASK_COLLECTING);
 }
 
 /* A traversal callback for move_legacy_finalizer_reachable. */
@@ -1026,8 +1030,8 @@ deduce_unreachable(PyGC_Head *base, PyGC_Head *unreachable) {
     update_refs(base);  // gc_prev is used for gc_refs
     subtract_refs(base);
 
-    /* Leave everything reachable from outside young in young, and move
-     * everything else (in young) to unreachable.
+    /* Leave everything reachable from outside base in base, and move
+     * everything else (in base) to unreachable.
      * NOTE:  This used to move the reachable objects into a reachable
      * set instead.  But most things usually turn out to be reachable,
      * so it's more efficient to move the unreachable things.
@@ -1138,7 +1142,7 @@ collect(struct _gc_runtime_state *state, int generation,
         // Get what objects are still unreachable from the outside
         // after the resurrections
         deduce_unreachable(&unreachable, &still_unreachable);
-        restore_unreachable_mask(&still_unreachable);
+        clear_unreachable_mask(&still_unreachable);
         // Move the resurrected objects to old
         gc_list_merge(&unreachable, old);
         final_unreachable = &still_unreachable;
