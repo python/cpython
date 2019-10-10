@@ -1141,9 +1141,9 @@ collect(struct _gc_runtime_state *state, int generation,
         gc_list_merge(&still_unreachable, young);
     }
     /* Call tp_clear on objects in the unreachable set.  This will cause
-        * the reference cycles to be broken.  It may also cause some objects
-        * in finalizers to be freed.
-        */
+    * the reference cycles to be broken.  It may also cause some objects
+    * in finalizers to be freed.
+    */
     m += gc_list_size(&unreachable);
     delete_garbage(state, &unreachable, old);
 

@@ -1213,7 +1213,7 @@ class GCTogglingTests(unittest.TestCase):
             # If __del__ resurrected c2, the instance would be damaged, with an
             # empty __dict__.
             self.assertEqual(x, None)
-    
+
 
 def test_main():
     enabled = gc.isenabled()
