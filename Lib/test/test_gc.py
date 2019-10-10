@@ -866,7 +866,7 @@ class GCTests(unittest.TestCase):
         self.assertEqual(c - oldc, 0)   # before
         self.assertEqual(nc - oldnc, 0)
 
-        # Z() should not prevents anything from being collected.
+        # Z() should not prevent anything else from being collected.
         oldc, oldnc = c, nc
         for i in range(N):
             A()

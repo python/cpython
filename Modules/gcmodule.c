@@ -1139,12 +1139,14 @@ collect(struct _gc_runtime_state *state, int generation,
     PyGC_Head still_unreachable;
     PyGC_Head *final_unreachable = &unreachable;
     if (check_garbage(&unreachable)) { 
+        PyGC_Head* resurrected = &unreachable;
         // Get what objects are still unreachable from the outside
-        // after the resurrections
-        deduce_unreachable(&unreachable, &still_unreachable);
+        // after the resurrections. After this call, the "resurrected"
+        // list has all objects that have been resurrected.
+        deduce_unreachable(resurrected, &still_unreachable);
         clear_unreachable_mask(&still_unreachable);
         // Move the resurrected objects to old
-        gc_list_merge(&unreachable, old);
+        gc_list_merge(resurrected, old);
         final_unreachable = &still_unreachable;
     }
     /* Call tp_clear on objects in the unreachable set.  This will cause
