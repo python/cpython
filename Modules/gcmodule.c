@@ -37,7 +37,10 @@ module gc
 [clinic start generated code]*/
 /*[clinic end generated code: output=da39a3ee5e6b4b0d input=b5c9690ecc842d79]*/
 
-#define GC_DEBUG (0)  /* Enable more asserts */
+
+#ifdef Py_DEBUG
+#  define GC_DEBUG
+#endif
 
 #define GC_NEXT _PyGCHead_NEXT
 #define GC_PREV _PyGCHead_PREV
@@ -316,7 +319,7 @@ append_objects(PyObject *py_list, PyGC_Head *gc_list)
     return 0;
 }
 
-#if GC_DEBUG
+#ifdef GC_DEBUG
 // validate_list checks list consistency.  And it works as document
 // describing when expected_mask is set / unset.
 static void
