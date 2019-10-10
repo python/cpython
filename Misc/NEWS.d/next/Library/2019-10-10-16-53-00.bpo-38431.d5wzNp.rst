@@ -1,1 +1,2 @@
-Fix ``__repr__`` method for :class:`dataclasses.InitVar` to support typing objects.
+Fix ``__repr__`` method for :class:`dataclasses.InitVar` to support typing objects,
+patched by: Samuel Colvin.
