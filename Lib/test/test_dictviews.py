@@ -214,6 +214,25 @@ class DictSetTest(unittest.TestCase):
         self.assertTrue(de.items().isdisjoint(de.items()))
         self.assertTrue(de.items().isdisjoint([1]))
 
+    def test_set_operations_with_noniterable(self):
+        with self.assertRaises(TypeError):
+            {}.keys() & 1
+        with self.assertRaises(TypeError):
+            {}.keys() | 1
+        with self.assertRaises(TypeError):
+            {}.keys() ^ 1
+        with self.assertRaises(TypeError):
+            {}.keys() - 1
+
+        with self.assertRaises(TypeError):
+            {}.items() & 1
+        with self.assertRaises(TypeError):
+            {}.items() | 1
+        with self.assertRaises(TypeError):
+            {}.items() ^ 1
+        with self.assertRaises(TypeError):
+            {}.items() - 1
+
     def test_recursive_repr(self):
         d = {}
         d[42] = d.values()
@@ -295,10 +314,6 @@ class DictSetTest(unittest.TestCase):
         self.assertIsInstance(d.items(), collections.abc.Sized)
         self.assertIsInstance(d.items(), collections.abc.Iterable)
         self.assertIsInstance(d.items(), collections.abc.Container)
-
-    def test_bpo38202(self):
-        with self.assertRaises(TypeError):
-            {}.keys() & 1
 
 
 if __name__ == "__main__":
