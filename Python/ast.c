@@ -958,9 +958,8 @@ PyAST_FromNode(const node *n, PyCompilerFlags *flags, const char *filename_str,
 
 }
 
-/* Return the AST repr of the operator represented as syntax (|, ^, etc.)
-*/
-
+/* Return the AST representation of the operator represented as syntax (|, ^, etc.)
+ */
 static operator_ty
 get_operator(struct compiling *c, const node *n)
 {
