@@ -1020,8 +1020,36 @@ show_stats_each_generations(struct _gc_runtime_state *state)
         buf, gc_list_size(&state->permanent_generation.head));
 }
 
+/* Deduce wich objects among "base" are unreachable from outside the list
+   and move them to 'unreachable'. The process consist in the following steps:
+
+1. Copy all references to a different field (gc_prev is used to hold this copy 
+   to save memory).
+2. Traverse all objects in "base" and visit all referred objects using
+   "tp_traverse" and for every visited object, substract 1 to the reference
+   count (the one that we copied in the previous step). After this step, all
+   objects that can be reached from outside must have positive reference count,
+   while all unreachable objects must have a count of exactly 0.
+3. Indentify all unreachable objects (the ones with 0 reference count) and move
+   them to the "unreachable" list. This step also needs to move back to "base" all
+   objects that were initially marked as unreachable but are referred transitively
+   by the reachable objects (the ones with positive reference count).
+
+Contracts:
+
+    * The "base" has to be a valid list with no mask set.
+
+    * The "unreachable" list must be uninitialized (this function calls
+      gc_list_init over 'unreachable').
+    
+IMPORTANT: This function leaves 'unreachable' with the NEXT_MASK_UNREACHABLE
+flag set but it does not clear it to skip unnecessary iteration. Before the
+flag is cleared (for example, by using 'clear_unreachable_mask' function or
+by a call to 'move_legacy_finalizers'), the 'unreachable' list is not a normal
+list and we can not use mostgc_list_* functions for it. */
 static inline void
 deduce_unreachable(PyGC_Head *base, PyGC_Head *unreachable) {
+    validate_list(base, 0);
     /* Using ob_refcnt and gc_refs, calculate which objects in the
      * container set are reachable from outside the set (i.e., have a
      * refcount greater than 0 when all the references within the
@@ -1038,6 +1066,7 @@ deduce_unreachable(PyGC_Head *base, PyGC_Head *unreachable) {
      */
     gc_list_init(unreachable);
     move_unreachable(base, unreachable);  // gc_prev is pointer again
+    validate_list(base, 0);
 }
 
 /* This is the main function.  Read this to understand how the
@@ -1082,11 +1111,9 @@ collect(struct _gc_runtime_state *state, int generation,
         old = GEN_HEAD(state, generation+1);
     else
         old = young;
-
-    validate_list(young, 0);
     validate_list(old, 0);
+
     deduce_unreachable(young, &unreachable);
-    validate_list(young, 0);
 
     untrack_tuples(young);
     /* Move reachable objects to next generation. */
