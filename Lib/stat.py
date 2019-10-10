@@ -40,6 +40,10 @@ S_IFREG  = 0o100000  # regular file
 S_IFIFO  = 0o010000  # fifo (named pipe)
 S_IFLNK  = 0o120000  # symbolic link
 S_IFSOCK = 0o140000  # socket file
+# Fallbacks for uncommon platform-specific constants
+S_IFDOOR = 0
+S_IFPORT = 0
+S_IFWHT = 0
 
 # Functions to test for each file type
 
@@ -70,6 +74,18 @@ def S_ISLNK(mode):
 def S_ISSOCK(mode):
     """Return True if mode is from a socket."""
     return S_IFMT(mode) == S_IFSOCK
+
+def S_ISDOOR(mode):
+    """Return True if mode is from a door."""
+    return False
+
+def S_ISPORT(mode):
+    """Return True if mode is from an event port."""
+    return False
+
+def S_ISWHT(mode):
+    """Return True if mode is from a whiteout."""
+    return False
 
 # Names for permission bits
 
