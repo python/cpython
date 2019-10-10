@@ -822,7 +822,7 @@ class GCTests(unittest.TestCase):
         self.assertRaises(TypeError, gc.get_objects, "1")
         self.assertRaises(TypeError, gc.get_objects, 1.234)
 
-    def test_38379(self):
+    def test_resurrection_does_not_block_cleanup_of_other_objects(self):
         # When a finalizer resurrects objects, stats were reporting them as
         # having been collected.  This affected both collect()'s return
         # value and the dicts returned by get_stats().
@@ -877,18 +877,18 @@ class GCTests(unittest.TestCase):
         # Z() prevents anything from being collected.
         t = gc.collect()
         c, nc = getstats()
-        #self.assertEqual(t, 2*N + 2)  # before
-        self.assertEqual(t, 0)  # after
-        #self.assertEqual(c - oldc, 2*N + 2)   # before
-        self.assertEqual(c - oldc, 0)   # after
+        self.assertEqual(t, 2*N)  # after
+        self.assertEqual(c - oldc, 2*N)   # after
         self.assertEqual(nc - oldnc, 0)
 
-        # But the A() trash is reclaimed on the next run.
+        # The A() trash should have been eliminated and
+        # the Z objects should be removed now
+        zs.clear()
         oldc, oldnc = c, nc
         t = gc.collect()
         c, nc = getstats()
-        self.assertEqual(t, 2*N)
-        self.assertEqual(c - oldc, 2*N)
+        self.assertEqual(t, 4)
+        self.assertEqual(c - oldc, 4)
         self.assertEqual(nc - oldnc, 0)
 
         gc.enable()
@@ -1213,6 +1213,7 @@ class GCTogglingTests(unittest.TestCase):
             # If __del__ resurrected c2, the instance would be damaged, with an
             # empty __dict__.
             self.assertEqual(x, None)
+    
 
 def test_main():
     enabled = gc.isenabled()
