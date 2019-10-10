@@ -261,6 +261,9 @@ typedef union sock_addr {
 #ifdef AF_VSOCK
     struct sockaddr_vm vm;
 #endif
+#ifdef HAVE_LINUX_TIPC_H
+    struct sockaddr_tipc tipc;
+#endif
 } sock_addr_t;
 
 /* The object holding a socket.  It holds some extra information,

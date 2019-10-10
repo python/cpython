@@ -12,6 +12,7 @@ import textwrap
 import threading
 import time
 import unittest
+import weakref
 from test import support
 from test.support import MISSING_C_DOCSTRINGS
 from test.support.script_helper import assert_python_failure, assert_python_ok
@@ -198,6 +199,7 @@ class CAPITest(unittest.TestCase):
             self.assertRegex(err.replace(b'\r', b''),
                              br'Fatal Python error: a function returned NULL '
                                 br'without setting an error\n'
+                             br'Python runtime state: initialized\n'
                              br'SystemError: <built-in function '
                                  br'return_null_without_error> returned NULL '
                                  br'without setting an error\n'
@@ -225,6 +227,7 @@ class CAPITest(unittest.TestCase):
             self.assertRegex(err.replace(b'\r', b''),
                              br'Fatal Python error: a function returned a '
                                 br'result with an error set\n'
+                             br'Python runtime state: initialized\n'
                              br'ValueError\n'
                              br'\n'
                              br'The above exception was the direct cause '
@@ -434,6 +437,32 @@ class CAPITest(unittest.TestCase):
 
         # Test that subtype_dealloc decref the newly assigned __class__ only once
         self.assertEqual(new_type_refcnt, sys.getrefcount(A))
+
+    def test_heaptype_with_dict(self):
+        inst = _testcapi.HeapCTypeWithDict()
+        inst.foo = 42
+        self.assertEqual(inst.foo, 42)
+        self.assertEqual(inst.dictobj, inst.__dict__)
+        self.assertEqual(inst.dictobj, {"foo": 42})
+
+        inst = _testcapi.HeapCTypeWithDict()
+        self.assertEqual({}, inst.__dict__)
+
+    def test_heaptype_with_negative_dict(self):
+        inst = _testcapi.HeapCTypeWithNegativeDict()
+        inst.foo = 42
+        self.assertEqual(inst.foo, 42)
+        self.assertEqual(inst.dictobj, inst.__dict__)
+        self.assertEqual(inst.dictobj, {"foo": 42})
+
+        inst = _testcapi.HeapCTypeWithNegativeDict()
+        self.assertEqual({}, inst.__dict__)
+
+    def test_heaptype_with_weakref(self):
+        inst = _testcapi.HeapCTypeWithWeakref()
+        ref = weakref.ref(inst)
+        self.assertEqual(ref(), inst)
+        self.assertEqual(inst.weakreflist, ref)
 
     def test_c_subclass_of_heap_ctype_with_tpdealloc_decrefs_once(self):
         subclass_instance = _testcapi.HeapCTypeSubclass()
@@ -689,6 +718,9 @@ class PyMemDebugTests(unittest.TestCase):
                 os._exit(1)
         ''')
         assert_python_ok('-c', code, PYTHONMALLOC=self.PYTHONMALLOC)
+
+    def test_pyobject_null_is_freed(self):
+        self.check_pyobject_is_freed('check_pyobject_null_is_freed')
 
     def test_pyobject_uninitialized_is_freed(self):
         self.check_pyobject_is_freed('check_pyobject_uninitialized_is_freed')

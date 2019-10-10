@@ -51,7 +51,8 @@ Python version to another as source text will always allow correct parse trees
 to be created in the target version, with the only restriction being that
 migrating to an older version of the interpreter will not support more recent
 language constructs.  The parse trees are not typically compatible from one
-version to another, whereas source code has always been forward-compatible.
+version to another, though source code has usually been forward-compatible within
+a major release series.
 
 Each element of the sequences returned by :func:`st2list` or :func:`st2tuple`
 has a simple form.  Sequences representing non-terminal elements in the grammar

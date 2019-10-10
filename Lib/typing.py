@@ -17,7 +17,7 @@ At large scale, the structure of the module is following:
 * Wrapper submodules for re and io related types.
 """
 
-from abc import abstractmethod, abstractproperty, ABCMeta
+from abc import abstractmethod, ABCMeta
 import collections
 import collections.abc
 import contextlib
@@ -1513,6 +1513,7 @@ Type.__doc__ = \
 
 @runtime_checkable
 class SupportsInt(Protocol):
+    """An ABC with one abstract method __int__."""
     __slots__ = ()
 
     @abstractmethod
@@ -1522,6 +1523,7 @@ class SupportsInt(Protocol):
 
 @runtime_checkable
 class SupportsFloat(Protocol):
+    """An ABC with one abstract method __float__."""
     __slots__ = ()
 
     @abstractmethod
@@ -1531,6 +1533,7 @@ class SupportsFloat(Protocol):
 
 @runtime_checkable
 class SupportsComplex(Protocol):
+    """An ABC with one abstract method __complex__."""
     __slots__ = ()
 
     @abstractmethod
@@ -1540,6 +1543,7 @@ class SupportsComplex(Protocol):
 
 @runtime_checkable
 class SupportsBytes(Protocol):
+    """An ABC with one abstract method __bytes__."""
     __slots__ = ()
 
     @abstractmethod
@@ -1549,6 +1553,7 @@ class SupportsBytes(Protocol):
 
 @runtime_checkable
 class SupportsIndex(Protocol):
+    """An ABC with one abstract method __index__."""
     __slots__ = ()
 
     @abstractmethod
@@ -1558,6 +1563,7 @@ class SupportsIndex(Protocol):
 
 @runtime_checkable
 class SupportsAbs(Protocol[T_co]):
+    """An ABC with one abstract method __abs__ that is covariant in its return type."""
     __slots__ = ()
 
     @abstractmethod
@@ -1567,6 +1573,7 @@ class SupportsAbs(Protocol[T_co]):
 
 @runtime_checkable
 class SupportsRound(Protocol[T_co]):
+    """An ABC with one abstract method __round__ that is covariant in its return type."""
     __slots__ = ()
 
     @abstractmethod
@@ -1593,7 +1600,7 @@ _prohibited = ('__new__', '__init__', '__slots__', '__getnewargs__',
                '_fields', '_field_defaults', '_field_types',
                '_make', '_replace', '_asdict', '_source')
 
-_special = ('__module__', '__name__', '__qualname__', '__annotations__')
+_special = ('__module__', '__name__', '__annotations__')
 
 
 class NamedTupleMeta(type):
@@ -1653,7 +1660,7 @@ class NamedTuple(metaclass=NamedTupleMeta):
     """
     _root = True
 
-    def __new__(self, typename, fields=None, **kwargs):
+    def __new__(cls, typename, fields=None, /, **kwargs):
         if fields is None:
             fields = kwargs.items()
         elif kwargs:
@@ -1662,26 +1669,25 @@ class NamedTuple(metaclass=NamedTupleMeta):
         return _make_nmtuple(typename, fields)
 
 
-def _dict_new(cls, *args, **kwargs):
+def _dict_new(cls, /, *args, **kwargs):
     return dict(*args, **kwargs)
 
 
-def _typeddict_new(cls, _typename, _fields=None, **kwargs):
-    total = kwargs.pop('total', True)
-    if _fields is None:
-        _fields = kwargs
+def _typeddict_new(cls, typename, fields=None, /, *, total=True, **kwargs):
+    if fields is None:
+        fields = kwargs
     elif kwargs:
         raise TypeError("TypedDict takes either a dict or keyword arguments,"
                         " but not both")
 
-    ns = {'__annotations__': dict(_fields), '__total__': total}
+    ns = {'__annotations__': dict(fields), '__total__': total}
     try:
         # Setting correct module is necessary to make typed dict classes pickleable.
         ns['__module__'] = sys._getframe(1).f_globals.get('__name__', '__main__')
     except (AttributeError, ValueError):
         pass
 
-    return _TypedDictMeta(_typename, (), ns)
+    return _TypedDictMeta(typename, (), ns)
 
 
 def _check_fails(cls, other):
@@ -1795,11 +1801,13 @@ class IO(Generic[AnyStr]):
 
     __slots__ = ()
 
-    @abstractproperty
+    @property
+    @abstractmethod
     def mode(self) -> str:
         pass
 
-    @abstractproperty
+    @property
+    @abstractmethod
     def name(self) -> str:
         pass
 
@@ -1895,23 +1903,28 @@ class TextIO(IO[str]):
 
     __slots__ = ()
 
-    @abstractproperty
+    @property
+    @abstractmethod
     def buffer(self) -> BinaryIO:
         pass
 
-    @abstractproperty
+    @property
+    @abstractmethod
     def encoding(self) -> str:
         pass
 
-    @abstractproperty
+    @property
+    @abstractmethod
     def errors(self) -> Optional[str]:
         pass
 
-    @abstractproperty
+    @property
+    @abstractmethod
     def line_buffering(self) -> bool:
         pass
 
-    @abstractproperty
+    @property
+    @abstractmethod
     def newlines(self) -> Any:
         pass
 

@@ -14,6 +14,7 @@
 # Sometimes you may find shebangs with flags such as `#! /usr/bin/env python -si`.
 # Normally, pathfix overwrites the entire line, including the flags.
 # To change interpreter and keep flags from the original shebang line, use -k.
+# If you want to keep flags and add to them one single literal flag, use option -a.
 
 
 # Undoubtedly you can do this using find and sed or perl, but this is
@@ -39,6 +40,7 @@ new_interpreter = None
 preserve_timestamps = False
 create_backup = True
 keep_flags = False
+add_flags = b''
 
 
 def main():
@@ -46,11 +48,12 @@ def main():
     global preserve_timestamps
     global create_backup
     global keep_flags
+    global add_flags
 
-    usage = ('usage: %s -i /interpreter -p -n -k file-or-directory ...\n' %
+    usage = ('usage: %s -i /interpreter -p -n -k -a file-or-directory ...\n' %
              sys.argv[0])
     try:
-        opts, args = getopt.getopt(sys.argv[1:], 'i:kpn')
+        opts, args = getopt.getopt(sys.argv[1:], 'i:a:kpn')
     except getopt.error as msg:
         err(str(msg) + '\n')
         err(usage)
@@ -64,6 +67,11 @@ def main():
             create_backup = False
         if o == '-k':
             keep_flags = True
+        if o == '-a':
+            add_flags = a.encode()
+            if b' ' in add_flags:
+                err("-a option doesn't support whitespaces")
+                sys.exit(2)
     if not new_interpreter or not new_interpreter.startswith(b'/') or \
            not args:
         err('-i option or file-or-directory missing\n')
@@ -188,15 +196,32 @@ def parse_shebang(shebangline):
     return shebangline[start:]
 
 
+def populate_flags(shebangline):
+    old_flags = b''
+    if keep_flags:
+        old_flags = parse_shebang(shebangline)
+        if old_flags:
+            old_flags = old_flags[2:]
+    if not (old_flags or add_flags):
+        return b''
+    # On Linux, the entire string following the interpreter name
+    # is passed as a single argument to the interpreter.
+    # e.g. "#! /usr/bin/python3 -W Error -s" runs "/usr/bin/python3 "-W Error -s"
+    # so shebang should have single '-' where flags are given and
+    # flag might need argument for that reasons adding new flags is
+    # between '-' and original flags
+    # e.g. #! /usr/bin/python3 -sW Error
+    return b' -' + add_flags + old_flags
+
+
 def fixline(line):
     if not line.startswith(b'#!'):
         return line
 
     if b"python" not in line:
         return line
-    flags = b''
-    if keep_flags:
-        flags = parse_shebang(line)
+
+    flags = populate_flags(line)
     return b'#! ' + new_interpreter + flags + b'\n'
 
 

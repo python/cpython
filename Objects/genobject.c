@@ -1326,7 +1326,8 @@ static PyGetSetDef async_gen_getsetlist[] = {
 
 static PyMemberDef async_gen_memberlist[] = {
     {"ag_frame",   T_OBJECT, offsetof(PyAsyncGenObject, ag_frame),   READONLY},
-    {"ag_running", T_BOOL,   offsetof(PyAsyncGenObject, ag_running), READONLY},
+    {"ag_running", T_BOOL,   offsetof(PyAsyncGenObject, ag_running_async),
+        READONLY},
     {"ag_code",    T_OBJECT, offsetof(PyAsyncGenObject, ag_code),    READONLY},
     {NULL}      /* Sentinel */
 };
@@ -1420,6 +1421,7 @@ PyAsyncGen_New(PyFrameObject *f, PyObject *name, PyObject *qualname)
     o->ag_finalizer = NULL;
     o->ag_closed = 0;
     o->ag_hooks_inited = 0;
+    o->ag_running_async = 0;
     return (PyObject*)o;
 }
 
@@ -1467,6 +1469,7 @@ async_gen_unwrap_value(PyAsyncGenObject *gen, PyObject *result)
             gen->ag_closed = 1;
         }
 
+        gen->ag_running_async = 0;
         return NULL;
     }
 
@@ -1474,6 +1477,7 @@ async_gen_unwrap_value(PyAsyncGenObject *gen, PyObject *result)
         /* async yield */
         _PyGen_SetStopIterationValue(((_PyAsyncGenWrappedValue*)result)->agw_val);
         Py_DECREF(result);
+        gen->ag_running_async = 0;
         return NULL;
     }
 
@@ -1518,12 +1522,20 @@ async_gen_asend_send(PyAsyncGenASend *o, PyObject *arg)
     }
 
     if (o->ags_state == AWAITABLE_STATE_INIT) {
+        if (o->ags_gen->ag_running_async) {
+            PyErr_SetString(
+                PyExc_RuntimeError,
+                "anext(): asynchronous generator is already running");
+            return NULL;
+        }
+
         if (arg == NULL || arg == Py_None) {
             arg = o->ags_sendval;
         }
         o->ags_state = AWAITABLE_STATE_ITER;
     }
 
+    o->ags_gen->ag_running_async = 1;
     result = gen_send_ex((PyGenObject*)o->ags_gen, arg, 0, 0);
     result = async_gen_unwrap_value(o->ags_gen, result);
 
@@ -1787,8 +1799,23 @@ async_gen_athrow_send(PyAsyncGenAThrow *o, PyObject *arg)
     }
 
     if (o->agt_state == AWAITABLE_STATE_INIT) {
+        if (o->agt_gen->ag_running_async) {
+            if (o->agt_args == NULL) {
+                PyErr_SetString(
+                    PyExc_RuntimeError,
+                    "aclose(): asynchronous generator is already running");
+            }
+            else {
+                PyErr_SetString(
+                    PyExc_RuntimeError,
+                    "athrow(): asynchronous generator is already running");
+            }
+            return NULL;
+        }
+
         if (o->agt_gen->ag_closed) {
-            PyErr_SetNone(PyExc_StopIteration);
+            o->agt_state = AWAITABLE_STATE_CLOSED;
+            PyErr_SetNone(PyExc_StopAsyncIteration);
             return NULL;
         }
 
@@ -1798,6 +1825,7 @@ async_gen_athrow_send(PyAsyncGenAThrow *o, PyObject *arg)
         }
 
         o->agt_state = AWAITABLE_STATE_ITER;
+        o->agt_gen->ag_running_async = 1;
 
         if (o->agt_args == NULL) {
             /* aclose() mode */
@@ -1843,6 +1871,7 @@ async_gen_athrow_send(PyAsyncGenAThrow *o, PyObject *arg)
         /* aclose() mode */
         if (retval) {
             if (_PyAsyncGenWrappedValue_CheckExact(retval)) {
+                o->agt_gen->ag_running_async = 0;
                 Py_DECREF(retval);
                 goto yield_close;
             }
@@ -1856,11 +1885,13 @@ async_gen_athrow_send(PyAsyncGenAThrow *o, PyObject *arg)
     }
 
 yield_close:
+    o->agt_gen->ag_running_async = 0;
     PyErr_SetString(
         PyExc_RuntimeError, ASYNC_GEN_IGNORED_EXIT_MSG);
     return NULL;
 
 check_error:
+    o->agt_gen->ag_running_async = 0;
     if (PyErr_ExceptionMatches(PyExc_StopAsyncIteration) ||
             PyErr_ExceptionMatches(PyExc_GeneratorExit))
     {
@@ -1895,6 +1926,7 @@ async_gen_athrow_throw(PyAsyncGenAThrow *o, PyObject *args)
     } else {
         /* aclose() mode */
         if (retval && _PyAsyncGenWrappedValue_CheckExact(retval)) {
+            o->agt_gen->ag_running_async = 0;
             Py_DECREF(retval);
             PyErr_SetString(PyExc_RuntimeError, ASYNC_GEN_IGNORED_EXIT_MSG);
             return NULL;

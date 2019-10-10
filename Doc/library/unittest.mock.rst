@@ -514,21 +514,6 @@ the *new_callable* argument to :func:`patch`.
             >>> mock.call_count
             2
 
-        For :class:`AsyncMock` the :attr:`call_count` is only iterated if the function
-        has been awaited:
-
-            >>> mock = AsyncMock()
-            >>> mock()  # doctest: +SKIP
-            <coroutine object AsyncMockMixin._mock_call at ...>
-            >>> mock.call_count
-            0
-            >>> async def main():
-            ...     await mock()
-            ...
-            >>> asyncio.run(main())
-            >>> mock.call_count
-            1
-
     .. attribute:: return_value
 
         Set this to configure the value returned by calling the mock:
@@ -880,7 +865,7 @@ object::
     True
 
   The result of ``mock()`` is an async function which will have the outcome
-  of ``side_effect`` or ``return_value``:
+  of ``side_effect`` or ``return_value`` after it has been awaited:
 
   - if ``side_effect`` is a function, the async function will return the
     result of that function,
@@ -905,21 +890,50 @@ object::
     >>> mock()  # doctest: +SKIP
     <coroutine object AsyncMockMixin._mock_call at ...>
 
+
+  Setting the *spec* of a :class:`Mock`, :class:`MagicMock`, or :class:`AsyncMock`
+  to a class with asynchronous and synchronous functions will automatically
+  detect the synchronous functions and set them as :class:`MagicMock` (if the
+  parent mock is :class:`AsyncMock` or :class:`MagicMock`) or :class:`Mock` (if
+  the parent mock is :class:`Mock`). All asynchronous functions will be
+  :class:`AsyncMock`.
+
+  >>> class ExampleClass:
+  ...     def sync_foo():
+  ...         pass
+  ...     async def async_foo():
+  ...         pass
+  ...
+  >>> a_mock = AsyncMock(ExampleClass)
+  >>> a_mock.sync_foo
+  <MagicMock name='mock.sync_foo' id='...'>
+  >>> a_mock.async_foo
+  <AsyncMock name='mock.async_foo' id='...'>
+  >>> mock = Mock(ExampleClass)
+  >>> mock.sync_foo
+  <Mock name='mock.sync_foo' id='...'>
+  >>> mock.async_foo
+  <AsyncMock name='mock.async_foo' id='...'>
+
+
   .. method:: assert_awaited()
 
-      Assert that the mock was awaited at least once.
+      Assert that the mock was awaited at least once. Note that this is separate
+      from the object having been called, the ``await`` keyword must be used:
 
           >>> mock = AsyncMock()
-          >>> async def main():
-          ...     await mock()
+          >>> async def main(coroutine_mock):
+          ...     await coroutine_mock
           ...
-          >>> asyncio.run(main())
+          >>> coroutine_mock = mock()
+          >>> mock.called
+          True
           >>> mock.assert_awaited()
-          >>> mock_2 = AsyncMock()
-          >>> mock_2.assert_awaited()
           Traceback (most recent call last):
           ...
           AssertionError: Expected mock to have been awaited.
+          >>> asyncio.run(main(coroutine_mock))
+          >>> mock.assert_awaited()
 
   .. method:: assert_awaited_once()
 
@@ -1004,14 +1018,15 @@ object::
         ...     await mock(*args, **kwargs)
         ...
         >>> calls = [call("foo"), call("bar")]
-        >>> mock.assert_has_calls(calls)
+        >>> mock.assert_has_awaits(calls)
         Traceback (most recent call last):
         ...
-        AssertionError: Calls not found.
+        AssertionError: Awaits not found.
         Expected: [call('foo'), call('bar')]
+        Actual: []
         >>> asyncio.run(main('foo'))
         >>> asyncio.run(main('bar'))
-        >>> mock.assert_has_calls(calls)
+        >>> mock.assert_has_awaits(calls)
 
   .. method:: assert_not_awaited()
 

@@ -60,6 +60,7 @@ _PyRuntimeState_Init_impl(_PyRuntimeState *runtime)
 
     _PyGC_Initialize(&runtime->gc);
     _PyEval_Initialize(&runtime->ceval);
+
     PyPreConfig_InitPythonConfig(&runtime->preconfig);
 
     runtime->gilstate.check_enabled = 1;
@@ -204,14 +205,7 @@ PyInterpreterState_New(void)
     memset(interp, 0, sizeof(*interp));
     interp->id_refcount = -1;
 
-    PyStatus status = PyConfig_InitPythonConfig(&interp->config);
-    if (_PyStatus_EXCEPTION(status)) {
-        /* Don't report status to caller: PyConfig_InitPythonConfig()
-           can only fail with a memory allocation error. */
-        PyConfig_Clear(&interp->config);
-        PyMem_RawFree(interp);
-        return NULL;
-    }
+    PyConfig_InitPythonConfig(&interp->config);
 
     interp->eval_frame = _PyEval_EvalFrameDefault;
 #ifdef HAVE_DLOPEN
@@ -807,7 +801,7 @@ PyThreadState_Clear(PyThreadState *tstate)
 }
 
 
-/* Common code for PyThreadState_Delete() and _PyThreadState_DeleteCurrent() */
+/* Common code for PyThreadState_Delete() and PyThreadState_DeleteCurrent() */
 static void
 tstate_delete_common(_PyRuntimeState *runtime, PyThreadState *tstate)
 {
@@ -863,7 +857,7 @@ _PyThreadState_DeleteCurrent(_PyRuntimeState *runtime)
     PyThreadState *tstate = _PyRuntimeGILState_GetThreadState(gilstate);
     if (tstate == NULL)
         Py_FatalError(
-            "_PyThreadState_DeleteCurrent: no current tstate");
+            "PyThreadState_DeleteCurrent: no current tstate");
     tstate_delete_common(runtime, tstate);
     if (gilstate->autoInterpreterState &&
         PyThread_tss_get(&gilstate->autoTSSkey) == tstate)
@@ -872,6 +866,12 @@ _PyThreadState_DeleteCurrent(_PyRuntimeState *runtime)
     }
     _PyRuntimeGILState_SetThreadState(gilstate, NULL);
     PyEval_ReleaseLock();
+}
+
+void
+PyThreadState_DeleteCurrent(void)
+{
+    _PyThreadState_DeleteCurrent(&_PyRuntime);
 }
 
 

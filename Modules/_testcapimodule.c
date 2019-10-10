@@ -1952,7 +1952,7 @@ unicode_asutf8andsize(PyObject *self, PyObject *args)
         return NULL;
     }
 
-    buffer = PyUnicode_AsUTF8AndSize(unicode, &utf8_len); 
+    buffer = PyUnicode_AsUTF8AndSize(unicode, &utf8_len);
     if (buffer == NULL) {
         return NULL;
     }
@@ -4612,6 +4612,14 @@ test_pyobject_is_freed(const char *test_name, PyObject *op)
 
 
 static PyObject*
+check_pyobject_null_is_freed(PyObject *self, PyObject *Py_UNUSED(args))
+{
+    PyObject *op = NULL;
+    return test_pyobject_is_freed("check_pyobject_null_is_freed", op);
+}
+
+
+static PyObject*
 check_pyobject_uninitialized_is_freed(PyObject *self, PyObject *Py_UNUSED(args))
 {
     PyObject *op = (PyObject *)PyObject_Malloc(sizeof(PyObject));
@@ -5475,6 +5483,7 @@ static PyMethodDef TestMethods[] = {
     {"pymem_api_misuse", pymem_api_misuse, METH_NOARGS},
     {"pymem_malloc_without_gil", pymem_malloc_without_gil, METH_NOARGS},
     {"pymem_getallocatorsname", test_pymem_getallocatorsname, METH_NOARGS},
+    {"check_pyobject_null_is_freed", check_pyobject_null_is_freed, METH_NOARGS},
     {"check_pyobject_uninitialized_is_freed", check_pyobject_uninitialized_is_freed, METH_NOARGS},
     {"check_pyobject_forbidden_bytes_is_freed", check_pyobject_forbidden_bytes_is_freed, METH_NOARGS},
     {"check_pyobject_freed_is_freed", check_pyobject_freed_is_freed, METH_NOARGS},
@@ -6363,6 +6372,106 @@ static PyType_Spec HeapCTypeSubclassWithFinalizer_spec = {
     HeapCTypeSubclassWithFinalizer_slots
 };
 
+typedef struct {
+    PyObject_HEAD
+    PyObject *dict;
+} HeapCTypeWithDictObject;
+
+static void
+heapctypewithdict_dealloc(HeapCTypeWithDictObject* self)
+{
+
+    PyTypeObject *tp = Py_TYPE(self);
+    Py_XDECREF(self->dict);
+    PyObject_DEL(self);
+    Py_DECREF(tp);
+}
+
+static PyGetSetDef heapctypewithdict_getsetlist[] = {
+    {"__dict__", PyObject_GenericGetDict, PyObject_GenericSetDict},
+    {NULL} /* Sentinel */
+};
+
+static struct PyMemberDef heapctypewithdict_members[] = {
+    {"dictobj", T_OBJECT, offsetof(HeapCTypeWithDictObject, dict)},
+    {"__dictoffset__", T_PYSSIZET, offsetof(HeapCTypeWithDictObject, dict), READONLY},
+    {NULL} /* Sentinel */
+};
+
+static PyType_Slot HeapCTypeWithDict_slots[] = {
+    {Py_tp_members, heapctypewithdict_members},
+    {Py_tp_getset, heapctypewithdict_getsetlist},
+    {Py_tp_dealloc, heapctypewithdict_dealloc},
+    {0, 0},
+};
+
+static PyType_Spec HeapCTypeWithDict_spec = {
+    "_testcapi.HeapCTypeWithDict",
+    sizeof(HeapCTypeWithDictObject),
+    0,
+    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE,
+    HeapCTypeWithDict_slots
+};
+
+static struct PyMemberDef heapctypewithnegativedict_members[] = {
+    {"dictobj", T_OBJECT, offsetof(HeapCTypeWithDictObject, dict)},
+    {"__dictoffset__", T_PYSSIZET, -(Py_ssize_t)sizeof(void*), READONLY},
+    {NULL} /* Sentinel */
+};
+
+static PyType_Slot HeapCTypeWithNegativeDict_slots[] = {
+    {Py_tp_members, heapctypewithnegativedict_members},
+    {Py_tp_getset, heapctypewithdict_getsetlist},
+    {Py_tp_dealloc, heapctypewithdict_dealloc},
+    {0, 0},
+};
+
+static PyType_Spec HeapCTypeWithNegativeDict_spec = {
+    "_testcapi.HeapCTypeWithNegativeDict",
+    sizeof(HeapCTypeWithDictObject),
+    0,
+    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE,
+    HeapCTypeWithNegativeDict_slots
+};
+
+typedef struct {
+    PyObject_HEAD
+    PyObject *weakreflist;
+} HeapCTypeWithWeakrefObject;
+
+static struct PyMemberDef heapctypewithweakref_members[] = {
+    {"weakreflist", T_OBJECT, offsetof(HeapCTypeWithWeakrefObject, weakreflist)},
+    {"__weaklistoffset__", T_PYSSIZET,
+      offsetof(HeapCTypeWithWeakrefObject, weakreflist), READONLY},
+    {NULL} /* Sentinel */
+};
+
+static void
+heapctypewithweakref_dealloc(HeapCTypeWithWeakrefObject* self)
+{
+
+    PyTypeObject *tp = Py_TYPE(self);
+    if (self->weakreflist != NULL)
+        PyObject_ClearWeakRefs((PyObject *) self);
+    Py_XDECREF(self->weakreflist);
+    PyObject_DEL(self);
+    Py_DECREF(tp);
+}
+
+static PyType_Slot HeapCTypeWithWeakref_slots[] = {
+    {Py_tp_members, heapctypewithweakref_members},
+    {Py_tp_dealloc, heapctypewithweakref_dealloc},
+    {0, 0},
+};
+
+static PyType_Spec HeapCTypeWithWeakref_spec = {
+    "_testcapi.HeapCTypeWithWeakref",
+    sizeof(HeapCTypeWithWeakrefObject),
+    0,
+    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE,
+    HeapCTypeWithWeakref_slots
+};
+
 static PyMethodDef meth_instance_methods[] = {
     {"meth_varargs", meth_varargs, METH_VARARGS},
     {"meth_varargs_keywords", (PyCFunction)(void(*)(void))meth_varargs_keywords, METH_VARARGS|METH_KEYWORDS},
@@ -6595,6 +6704,24 @@ PyInit__testcapi(void)
     }
     Py_DECREF(subclass_bases);
     PyModule_AddObject(m, "HeapCTypeSubclass", HeapCTypeSubclass);
+
+    PyObject *HeapCTypeWithDict = PyType_FromSpec(&HeapCTypeWithDict_spec);
+    if (HeapCTypeWithDict == NULL) {
+        return NULL;
+    }
+    PyModule_AddObject(m, "HeapCTypeWithDict", HeapCTypeWithDict);
+
+    PyObject *HeapCTypeWithNegativeDict = PyType_FromSpec(&HeapCTypeWithNegativeDict_spec);
+    if (HeapCTypeWithNegativeDict == NULL) {
+        return NULL;
+    }
+    PyModule_AddObject(m, "HeapCTypeWithNegativeDict", HeapCTypeWithNegativeDict);
+
+    PyObject *HeapCTypeWithWeakref = PyType_FromSpec(&HeapCTypeWithWeakref_spec);
+    if (HeapCTypeWithWeakref == NULL) {
+        return NULL;
+    }
+    PyModule_AddObject(m, "HeapCTypeWithWeakref", HeapCTypeWithWeakref);
 
     PyObject *subclass_with_finalizer_bases = PyTuple_Pack(1, HeapCTypeSubclass);
     if (subclass_with_finalizer_bases == NULL) {

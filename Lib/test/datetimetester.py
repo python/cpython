@@ -62,6 +62,12 @@ class TestModule(unittest.TestCase):
         self.assertEqual(datetime.MINYEAR, 1)
         self.assertEqual(datetime.MAXYEAR, 9999)
 
+    def test_all(self):
+        """Test that __all__ only points to valid attributes."""
+        all_attrs = dir(datetime_module)
+        for attr in datetime_module.__all__:
+            self.assertIn(attr, all_attrs)
+
     def test_name_cleanup(self):
         if '_Pure' in self.__class__.__name__:
             self.skipTest('Only run for Fast C implementation')

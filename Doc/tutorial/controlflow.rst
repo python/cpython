@@ -4,8 +4,8 @@
 More Control Flow Tools
 ***********************
 
-Besides the :keyword:`while` statement just introduced, Python knows the usual
-control flow statements known from other languages, with some twists.
+Besides the :keyword:`while` statement just introduced, Python uses the usual
+flow control statements known from other languages, with some twists.
 
 
 .. _tut-if:

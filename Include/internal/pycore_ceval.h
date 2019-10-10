@@ -8,11 +8,11 @@ extern "C" {
 #  error "this header requires Py_BUILD_CORE define"
 #endif
 
-#include "pycore_atomic.h"
-#include "pycore_pystate.h"
-#include "pythread.h"
+/* Forward declarations */
+struct pyruntimestate;
+struct _ceval_runtime_state;
 
-PyAPI_FUNC(void) _Py_FinishPendingCalls(_PyRuntimeState *runtime);
+PyAPI_FUNC(void) _Py_FinishPendingCalls(struct pyruntimestate *runtime);
 PyAPI_FUNC(void) _PyEval_Initialize(struct _ceval_runtime_state *);
 PyAPI_FUNC(void) _PyEval_FiniThreads(
     struct _ceval_runtime_state *ceval);
@@ -26,7 +26,7 @@ PyAPI_FUNC(int) _PyEval_AddPendingCall(
 PyAPI_FUNC(void) _PyEval_SignalAsyncExc(
     struct _ceval_runtime_state *ceval);
 PyAPI_FUNC(void) _PyEval_ReInitThreads(
-    _PyRuntimeState *runtime);
+    struct pyruntimestate *runtime);
 PyAPI_FUNC(void) _PyEval_SetCoroutineOriginTrackingDepth(
     PyThreadState *tstate,
     int new_depth);
