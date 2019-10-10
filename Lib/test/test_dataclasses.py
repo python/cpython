@@ -1102,6 +1102,8 @@ class TestCase(unittest.TestCase):
 
         # Make sure the repr is correct.
         self.assertEqual(repr(InitVar[int]), 'dataclasses.InitVar[int]')
+        self.assertEqual(repr(InitVar[List[int]]),
+                         'dataclasses.InitVar[typing.List[int]]')
 
     def test_init_var_inheritance(self):
         # Note that this deliberately tests that a dataclass need not
@@ -2882,11 +2884,6 @@ class TestStringAnnotations(unittest.TestCase):
 
                 # x is not an InitVar, so there will be a member x.
                 self.assertEqual(C(10).x, 10)
-
-    def test_initvar_repr(self):
-        self.assertEqual(repr(InitVar[str]), 'dataclasses.InitVar[str]')
-        self.assertEqual(repr(InitVar[Optional[str]]),
-                         'dataclasses.InitVar[typing.Union[str, NoneType]]')
 
     def test_classvar_module_level_import(self):
         from test import dataclass_module_1

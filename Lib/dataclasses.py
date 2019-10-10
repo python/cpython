@@ -206,10 +206,10 @@ class InitVar:
         self.type = type
 
     def __repr__(self):
-        try:
+        if isinstance(self.type, type):
             type_name = self.type.__name__
-        except AttributeError:
-            # typing objects, e.g. Union
+        else:
+            # typing objects, e.g. List[int]
             type_name = repr(self.type)
         return f'dataclasses.InitVar[{type_name}]'
 
