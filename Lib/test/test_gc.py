@@ -862,8 +862,8 @@ class GCTests(unittest.TestCase):
         # Nothing is collected - Z() is merely resurrected.
         t = gc.collect()
         c, nc = getstats()
-        self.assertEqual(t, 0)  # before
-        self.assertEqual(c - oldc, 0)   # before
+        self.assertEqual(t, 0)
+        self.assertEqual(c - oldc, 0)
         self.assertEqual(nc - oldnc, 0)
 
         # Z() should not prevent anything else from being collected.
@@ -873,8 +873,8 @@ class GCTests(unittest.TestCase):
         Z()
         t = gc.collect()
         c, nc = getstats()
-        self.assertEqual(t, 2*N)  # before
-        self.assertEqual(c - oldc, 2*N)   # before
+        self.assertEqual(t, 2*N)
+        self.assertEqual(c - oldc, 2*N)
         self.assertEqual(nc - oldnc, 0)
 
         # The A() trash should have been reclaimed already but the
