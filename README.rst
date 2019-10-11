@@ -1,21 +1,17 @@
 This is Python version 3.8.0 release candidate 1
 ================================================
 
-.. image:: https://travis-ci.org/python/cpython.svg?branch=master
+.. image:: https://travis-ci.org/python/cpython.svg?branch=3.8
    :alt: CPython build status on Travis CI
-   :target: https://travis-ci.org/python/cpython
+   :target: https://travis-ci.org/python/cpython/branches
 
-.. image:: https://ci.appveyor.com/api/projects/status/4mew1a93xdkbf5ua/branch/master?svg=true
-   :alt: CPython build status on Appveyor
-   :target: https://ci.appveyor.com/project/python/cpython/branch/master
-
-.. image:: https://dev.azure.com/python/cpython/_apis/build/status/Azure%20Pipelines%20CI?branchName=master
+.. image:: https://dev.azure.com/python/cpython/_apis/build/status/Azure%20Pipelines%20CI?branchName=3.8
    :alt: CPython build status on Azure DevOps
-   :target: https://dev.azure.com/python/cpython/_build/latest?definitionId=4&branchName=master
+   :target: https://dev.azure.com/python/cpython/_build/latest?definitionId=4&branchName=3.8
 
-.. image:: https://codecov.io/gh/python/cpython/branch/master/graph/badge.svg
+.. image:: https://codecov.io/gh/python/cpython/branch/3.8/graph/badge.svg
    :alt: CPython code coverage on Codecov
-   :target: https://codecov.io/gh/python/cpython
+   :target: https://codecov.io/gh/python/cpython/branch/3.8
 
 .. image:: https://img.shields.io/badge/zulip-join_chat-brightgreen.svg
    :alt: Python Zulip chat
