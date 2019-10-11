@@ -19,6 +19,8 @@ class TestPathfixFunctional(unittest.TestCase):
     def pathfix(self, shebang, pathfix_flags, exitcode=0, stdout='', stderr='',
                 directory=''):
         if directory:
+            # bpo-38347: Test filename should contain lowercase, upercase,
+            # "-", "_" and digits.
             filename = os.path.join(directory, 'script-A_1.py')
             pathfix_arg = directory
         else:
