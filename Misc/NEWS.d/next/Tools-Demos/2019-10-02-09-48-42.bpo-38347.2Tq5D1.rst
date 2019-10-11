@@ -1,0 +1,1 @@
+pathfix.py: Assume all files that end on '.py' are Python scripts when working recursively.
