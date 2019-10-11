@@ -1129,7 +1129,7 @@ insert_to_emptydict(PyDictObject *mp, PyObject *key, Py_hash_t hash,
     MAINTAIN_TRACKING(mp, key, value);
 
     size_t hashpos = (size_t)hash & (PyDict_MINSIZE-1);
-    PyDictKeyEntry *ep = &DK_ENTRIES(mp->ma_keys)[0];
+    PyDictKeyEntry *ep = DK_ENTRIES(mp->ma_keys);
     dictkeys_set_index(mp->ma_keys, hashpos, 0);
     ep->me_key = key;
     ep->me_hash = hash;
