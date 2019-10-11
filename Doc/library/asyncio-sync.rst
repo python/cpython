@@ -187,11 +187,11 @@ Condition
        cond = asyncio.Condition()
 
        # ... later
-       await lock.acquire()
+       await cond.acquire()
        try:
            await cond.wait()
        finally:
-           lock.release()
+           cond.release()
 
    .. coroutinemethod:: acquire()
 
