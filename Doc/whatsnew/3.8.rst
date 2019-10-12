@@ -625,7 +625,7 @@ datetime
 
 Added new alternate constructors :meth:`datetime.date.fromisocalendar` and
 :meth:`datetime.datetime.fromisocalendar`, which construct :class:`date` and
-:class:`datetime` objects respectively from ISO year, week number and weekday;
+:class:`datetime` objects respectively from ISO year, week number, and weekday;
 these are the inverse of each class's ``isocalendar`` method.
 (Contributed by Paul Ganssle in :issue:`36004`.)
 
@@ -1437,12 +1437,13 @@ The following features and APIs have been removed from Python 3.8:
 * The :mod:`macpath` module, deprecated in Python 3.7, has been removed.
   (Contributed by Victor Stinner in :issue:`35471`.)
 
-* The function :func:`platform.popen` has been removed, after having been deprecated since
-  Python 3.3: use :func:`os.popen` instead.
+* The function :func:`platform.popen` has been removed, after having been
+  deprecated since Python 3.3: use :func:`os.popen` instead.
   (Contributed by Victor Stinner in :issue:`35345`.)
 
-* The function :func:`time.clock` has been removed, after having been deprecated since Python
-  3.3: use :func:`time.perf_counter` or :func:`time.process_time` instead, depending
+* The function :func:`time.clock` has been removed, after having been
+  deprecated since Python 3.3: use :func:`time.perf_counter` or
+  :func:`time.process_time` instead, depending
   on your requirements, to have well-defined behavior.
   (Contributed by Matthias Bussonnier in :issue:`36895`.)
 
@@ -1538,7 +1539,7 @@ Changes in the Python API
 
 * :class:`subprocess.Popen` can now use :func:`os.posix_spawn` in some cases
   for better performance. On Windows Subsystem for Linux and QEMU User
-  Emulation, the :class:`Popen` constructor using :func:`os.posix_spawn` no longer raise an
+  Emulation, the :class:`Popen` constructor using :func:`os.posix_spawn` no longer raises an
   exception on errors like "missing program".  Instead the child process fails with a
   non-zero :attr:`~Popen.returncode`.
   (Contributed by Joannah Nanjekye and Victor Stinner in :issue:`35537`.)
@@ -1568,7 +1569,7 @@ Changes in the Python API
   changing the selection.  (Contributed by Serhiy Storchaka in :issue:`31508`.)
 
 * The :meth:`writexml`, :meth:`toxml` and :meth:`toprettyxml` methods of
-  :mod:`xml.dom.minidom`, and the :func:`write` method of the :mod:`xml.etree` module,
+  :mod:`xml.dom.minidom`, and the :meth:`write` method of :mod:`xml.etree`,
   now preserve the attribute order specified by the user.
   (Contributed by Diego Rojas and Raymond Hettinger in :issue:`34160`.)
 
