@@ -1894,6 +1894,27 @@ class POSIXProcessTestCase(BaseTestCase):
         with self.assertRaises(ValueError):
             subprocess.check_call([sys.executable, "-c", "pass"], extra_groups=[])
 
+    @unittest.skipUnless(hasattr(os, 'umask'), 'umask() is not available.')
+    def test_umask(self):
+        # we use mkdtemp in the next line to create an empty directory
+        # under our exclusive control; from that, we can invent a pathname
+        # that we _know_ won't exist.  This is guaranteed to fail.
+        tmpdir = None
+        try:
+            tmpdir = tempfile.mkdtemp()
+            name = os.path.join(tmpdir, "beans")
+            # We set an unusual umask in the child so as a unique mode
+            # for us to test the child's touched file for.
+            subprocess.check_call(
+                    [sys.executable, "-c", f"open({name!r}, 'w')"],  # touch
+                    umask=0o073)
+            # Ignore execute permissions entirely in our test,
+            # filesystems could be mounted to ignore or force that.
+            self.assertEqual(0o604, os.stat(name).st_mode & 0o666)
+        finally:
+            if tmpdir is not None:
+                shutil.rmtree(tmpdir)
+
     def test_run_abort(self):
         # returncode handles signal termination
         with support.SuppressCrashReport():
@@ -2950,7 +2971,7 @@ class POSIXProcessTestCase(BaseTestCase):
                         -1, -1, -1, -1,
                         1, 2, 3, 4,
                         True, True,
-                        False, [], 0,
+                        False, [], 0, -1,
                         func)
                 # Attempt to prevent
                 # "TypeError: fork_exec() takes exactly N arguments (M given)"
@@ -2999,7 +3020,7 @@ class POSIXProcessTestCase(BaseTestCase):
                         -1, -1, -1, -1,
                         1, 2, 3, 4,
                         True, True,
-                        None, None, None,
+                        None, None, None, -1,
                         None)
                 self.assertIn('fds_to_keep', str(c.exception))
         finally:
