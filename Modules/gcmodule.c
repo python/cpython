@@ -301,6 +301,16 @@ gc_list_size(PyGC_Head *list)
     return n;
 }
 
+/* Walk the list and mark all objects as non-collecting */
+static inline void
+gc_list_clear_collecting(PyGC_Head *collectable)
+{
+    PyGC_Head *gc;
+    for (gc = GC_NEXT(collectable); gc != collectable; gc = GC_NEXT(gc)) {
+        gc_clear_collecting(gc);
+    }
+}
+
 /* Append objects in a GC list to a Python list.
  * Return 0 if all OK, < 0 if error (out of memory for list)
  */
@@ -908,36 +918,6 @@ finalize_garbage(PyGC_Head *collectable)
     gc_list_merge(&seen, collectable);
 }
 
-/* Walk the collectable list and check that they are really unreachable
-   from the outside (some objects could have been resurrected by a
-   finalizer). */
-static int
-check_garbage(PyGC_Head *collectable)
-{
-    int ret = 0;
-    PyGC_Head *gc;
-    for (gc = GC_NEXT(collectable); gc != collectable; gc = GC_NEXT(gc)) {
-        // Use gc_refs and break gc_prev again.
-        gc_set_refs(gc, Py_REFCNT(FROM_GC(gc)));
-        _PyObject_ASSERT(FROM_GC(gc), gc_get_refs(gc) != 0);
-    }
-    subtract_refs(collectable);
-    PyGC_Head *prev = collectable;
-    for (gc = GC_NEXT(collectable); gc != collectable; gc = GC_NEXT(gc)) {
-        _PyObject_ASSERT_WITH_MSG(FROM_GC(gc),
-                                  gc_get_refs(gc) >= 0,
-                                  "refcount is too small");
-        if (gc_get_refs(gc) != 0) {
-            ret = -1;
-        }
-        // Restore gc_prev here.
-        _PyGCHead_SET_PREV(gc, prev);
-        gc_clear_collecting(gc);
-        prev = gc;
-    }
-    return ret;
-}
-
 /* Break reference cycles by clearing the containers involved.  This is
  * tricky business as the lists can be changing and we don't know which
  * objects may be freed.  It is possible I screwed something up here.
@@ -975,6 +955,7 @@ delete_garbage(struct _gc_runtime_state *state,
         }
         if (GC_NEXT(collectable) == gc) {
             /* object is still alive, move it, it may die later */
+            gc_clear_collecting(gc);
             gc_list_move(gc, old);
         }
     }
@@ -1067,6 +1048,41 @@ deduce_unreachable(PyGC_Head *base, PyGC_Head *unreachable) {
     gc_list_init(unreachable);
     move_unreachable(base, unreachable);  // gc_prev is pointer again
     validate_list(base, 0);
+}
+
+/* Handle objects that may have resurrected after a call to 'finalize_garbage', moving
+   them to 'old_generation' and placing the rest on 'still_unreachable'.
+
+   Contracts:
+       * After this function 'unreachable' must not be used anymore and 'still_unreachable'
+         will contain the objects that did not resurrect.
+
+       * The "still_unreachable" list must be uninitialized (this function calls
+         gc_list_init over 'still_unreachable').
+
+IMPORTANT: After a call to this function, the 'still_unreachable' set will have the
+PREV_MARK_COLLECTING set, but the objects in this set are going to be removed (and
+'delete_garbage' handles special cases that will go back to 'old_generation') so
+the removal of the flag can be skipped to avoid extra iteration. */
+static inline void
+handle_resurrected_objects(PyGC_Head *unreachable, PyGC_Head* still_unreachable,
+                           PyGC_Head *old_generation)
+{
+    // Remove the PREV_MASK_COLLECTING from unreachable
+    // to prepare it for a new call to 'deduce_unreachable'
+    gc_list_clear_collecting(unreachable);
+
+    // After the call to deduce_unreachable, the 'still_unreachable' set will
+    // have the PREV_MARK_COLLECTING set, but the objects are going to be
+    // removed (and 'delete_garbage' handles special cases that will go
+    // back to 'old_generation') so we can not remove the flag to avoid
+    // extra iteration.
+    PyGC_Head* resurrected = unreachable;
+    deduce_unreachable(resurrected, still_unreachable);
+    clear_unreachable_mask(still_unreachable);
+
+    // Move the resurrected objects to the old generation for future collection.
+    gc_list_merge(resurrected, old_generation);
 }
 
 /* This is the main function.  Read this to understand how the
@@ -1163,25 +1179,18 @@ collect(struct _gc_runtime_state *state, int generation,
     /* Call tp_finalize on objects which have one. */
     finalize_garbage(&unreachable);
 
-    PyGC_Head *final_unreachable = &unreachable;
-    if (check_garbage(&unreachable)) { 
-        PyGC_Head still_unreachable;
-        PyGC_Head* resurrected = &unreachable;
-        // Get what objects are still unreachable from the outside
-        // after the resurrections. After this call, the "resurrected"
-        // list has all objects that have been resurrected.
-        deduce_unreachable(resurrected, &still_unreachable);
-        clear_unreachable_mask(&still_unreachable);
-        // Move the resurrected objects to old
-        gc_list_merge(resurrected, old);
-        final_unreachable = &still_unreachable;
-    }
-    /* Call tp_clear on objects in the unreachable set.  This will cause
+    /* Handle any objects that may have resurrected after the call
+     * to 'finalize_garbage' and continue the collection with the
+     * objects that are still unreachable */
+    PyGC_Head final_unreachable;
+    handle_resurrected_objects(&unreachable, &final_unreachable, old);
+
+    /* Call tp_clear on objects in the final_unreachable set.  This will cause
     * the reference cycles to be broken.  It may also cause some objects
     * in finalizers to be freed.
     */
-    m += gc_list_size(final_unreachable);
-    delete_garbage(state, final_unreachable, old);
+    m += gc_list_size(&final_unreachable);
+    delete_garbage(state, &final_unreachable, old);
 
     /* Collect statistics on uncollectable objects found and print
      * debugging information. */
