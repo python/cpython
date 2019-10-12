@@ -51,6 +51,12 @@ class MimeTypesTestCase(unittest.TestCase):
         eq(self.db.guess_type('foo.xul', strict=False), ('text/xul', None))
         eq(self.db.guess_extension('image/jpg', strict=False), '.jpg')
 
+    def test_tricky_cases(self):
+        # bpo-38449: Tricky cases should be handled also.
+        eq = self.assertEqual
+        eq(self.db.guess_type(";1.tar.gz"), ('application/x-tar', 'gzip'))
+        eq(self.db.guess_type(r" \"\`;b&b&c |.tar.gz"), ('application/x-tar', 'gzip'))
+
     def test_guess_all_types(self):
         eq = self.assertEqual
         unless = self.assertTrue
