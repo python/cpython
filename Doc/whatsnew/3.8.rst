@@ -1659,6 +1659,10 @@ Changes in the Python API
   environment variable and does not use :envvar:`HOME`, which is not normally
   set for regular user accounts.
 
+* The Exception :class:`asyncio.CancelledError` now inherits from
+  :class:`BaseException` rather than a :class:`Exception`.
+  (Contributed by Yury Selivanov in :issue:`13528`.)
+
 .. _bpo-36085-whatsnew:
 
 * DLL dependencies for extension modules and DLLs loaded with :mod:`ctypes` on
