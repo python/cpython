@@ -1060,9 +1060,8 @@ deduce_unreachable(PyGC_Head *base, PyGC_Head *unreachable) {
          gc_list_init over 'still_unreachable').
 
 IMPORTANT: After a call to this function, the 'still_unreachable' set will have the
-PREV_MARK_COLLECTING set, but the objects in this set are going to be removed (and
-'delete_garbage' handles special cases that will go back to 'old_generation') so
-the removal of the flag can be skipped to avoid extra iteration. */
+PREV_MARK_COLLECTING set, but the objects in this set are going to be removed so
+we can skip the expense of clearing the flag to avoid extra iteration. */
 static inline void
 handle_resurrected_objects(PyGC_Head *unreachable, PyGC_Head* still_unreachable,
                            PyGC_Head *old_generation)
@@ -1073,9 +1072,7 @@ handle_resurrected_objects(PyGC_Head *unreachable, PyGC_Head* still_unreachable,
 
     // After the call to deduce_unreachable, the 'still_unreachable' set will
     // have the PREV_MARK_COLLECTING set, but the objects are going to be
-    // removed (and 'delete_garbage' handles special cases that will go
-    // back to 'old_generation') so we can not remove the flag to avoid
-    // extra iteration.
+    // removed so we can skip the expense of clearing the flag.
     PyGC_Head* resurrected = unreachable;
     deduce_unreachable(resurrected, still_unreachable);
     clear_unreachable_mask(still_unreachable);
