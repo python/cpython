@@ -114,8 +114,7 @@ class MimeTypes:
         but non-standard types.
         """
         url = os.fspath(url)
-        p = urllib.parse.urlparse(url)
-        scheme, url = p.scheme, p.path
+        scheme, url = urllib.parse._splittype(url)
         if scheme == 'data':
             # syntax of data URLs:
             # dataurl   := "data:" [ mediatype ] [ ";base64" ] "," data
