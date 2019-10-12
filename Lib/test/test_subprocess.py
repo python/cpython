@@ -1894,7 +1894,8 @@ class POSIXProcessTestCase(BaseTestCase):
         with self.assertRaises(ValueError):
             subprocess.check_call([sys.executable, "-c", "pass"], extra_groups=[])
 
-    @unittest.skipUnless(hasattr(os, 'umask'), 'umask() is not available.')
+    @unittest.skipIf(mswindows or not hasattr(os, 'umask'),
+                     'POSIX umask() is not available.')
     def test_umask(self):
         tmpdir = None
         try:
@@ -1904,10 +1905,13 @@ class POSIXProcessTestCase(BaseTestCase):
             # for us to test the child's touched file for.
             subprocess.check_call(
                     [sys.executable, "-c", f"open({name!r}, 'w')"],  # touch
-                    umask=0o073)
+                    umask=0o053)
             # Ignore execute permissions entirely in our test,
             # filesystems could be mounted to ignore or force that.
-            self.assertEqual(0o604, os.stat(name).st_mode & 0o666)
+            st_mode = os.stat(name).st_mode & 0o666
+            expected_mode = 0o624
+            self.assertEqual(expected_mode, st_mode,
+                             msg=f'{oct(expected_mode)} != {oct(st_mode)}')
         finally:
             if tmpdir is not None:
                 shutil.rmtree(tmpdir)
