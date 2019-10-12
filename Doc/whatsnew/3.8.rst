@@ -82,7 +82,7 @@ Assignment expressions
 ----------------------
 
 There is new syntax ``:=`` that assigns values to variables as part of a larger
-expression. It is affectionately known as "walrus operator" due to
+expression. It is affectionately known as "the walrus operator" due to
 its resemblance to `the eyes and tusks of a walrus
 <https://en.wikipedia.org/wiki/Walrus#/media/File:Pacific_Walrus_-_Bull_(8247646168).jpg>`_.
 
