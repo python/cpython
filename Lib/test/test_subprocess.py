@@ -58,9 +58,11 @@ ZERO_RETURN_CMD = (sys.executable, '-c', 'pass')
 
 
 def setUpModule():
-    if os.access('/bin/true', os.X_OK):
+    shell_true = shutil.which('true')
+    if (os.access(shell_true, os.X_OK) and
+        subprocess.run([shell_true]).returncode == 0):
         global ZERO_RETURN_CMD
-        ZERO_RETURN_CMD = ('/bin/true',)  # Faster than Python startup.
+        ZERO_RETURN_CMD = (shell_true,)  # Faster than Python startup.
 
 
 class BaseTestCase(unittest.TestCase):
