@@ -632,8 +632,7 @@ clear_unreachable_mask(PyGC_Head *unreachable)
     PyGC_Head *gc, *next;
     unreachable->_gc_next &= ~NEXT_MASK_UNREACHABLE;
     for (gc = GC_NEXT(unreachable); gc != unreachable; gc = next) {
-        PyObject *op = FROM_GC(gc);
-        _PyObject_ASSERT(op, gc->_gc_next & NEXT_MASK_UNREACHABLE);
+        _PyObject_ASSERT((PyObject*)FROM_GC(gc), gc->_gc_next & NEXT_MASK_UNREACHABLE);
         gc->_gc_next &= ~NEXT_MASK_UNREACHABLE;
         next = (PyGC_Head*)gc->_gc_next;
     }
