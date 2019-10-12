@@ -822,6 +822,76 @@ class GCTests(unittest.TestCase):
         self.assertRaises(TypeError, gc.get_objects, "1")
         self.assertRaises(TypeError, gc.get_objects, 1.234)
 
+    def test_resurrection_only_happens_once_per_object(self):
+        class A:  # simple self-loop
+            def __init__(self):
+                self.me = self
+
+        class Lazarus(A):
+            resurrected = 0
+            resurrected_instances = []
+
+            def __del__(self):
+                Lazarus.resurrected += 1
+                Lazarus.resurrected_instances.append(self)
+
+        gc.collect()
+        gc.disable()
+
+        # We start with 0 resurrections
+        laz = Lazarus()
+        self.assertEqual(Lazarus.resurrected, 0)
+
+        # Deleting the instance and triggering a collection
+        # resurrects the object
+        del laz
+        gc.collect()
+        self.assertEqual(Lazarus.resurrected, 1)
+        self.assertEqual(len(Lazarus.resurrected_instances), 1)
+
+        # Clearing the references and forcing a collection
+        # should not resurrect the object again.
+        Lazarus.resurrected_instances.clear()
+        self.assertEqual(Lazarus.resurrected, 1)
+        gc.collect()
+        self.assertEqual(Lazarus.resurrected, 1)
+
+        gc.enable()
+
+    def test_resurrection_is_transitive(self):
+        class Cargo:
+            def __init__(self):
+                self.me = self
+
+        class Lazarus:
+            resurrected_instances = []
+
+            def __del__(self):
+                Lazarus.resurrected_instances.append(self)
+
+        gc.collect()
+        gc.disable()
+
+        laz = Lazarus()
+        cargo = Cargo()
+        cargo_id = id(cargo)
+
+        # Create a cycle between cargo and laz
+        laz.cargo = cargo
+        cargo.laz = laz
+
+        # Drop the references, force a collection and check that
+        # everything was resurrected.
+        del laz, cargo
+        gc.collect()
+        self.assertEqual(len(Lazarus.resurrected_instances), 1)
+        instance = Lazarus.resurrected_instances.pop()
+        self.assertTrue(hasattr(instance, "cargo"))
+        self.assertEqual(id(instance.cargo), cargo_id)
+
+        gc.collect()
+        gc.enable()
+
     def test_resurrection_does_not_block_cleanup_of_other_objects(self):
 
         # When a finalizer resurrects objects, stats were reporting them as
