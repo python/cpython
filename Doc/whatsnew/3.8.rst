@@ -183,7 +183,7 @@ keywords, the parameters names remain available for use in ``**kwargs``::
 
 This greatly simplifies the implementation of functions and methods
 that need to accept arbitrary keyword arguments.  For example, here
-is an except from code in the :mod:`collections` module::
+is an excerpt from code in the :mod:`collections` module::
 
   class Counter(dict):
 
@@ -215,7 +215,7 @@ subdirectories).
 Debug build uses the same ABI as release build
 -----------------------------------------------
 
-Python now uses the same ABI whether it built in release or debug mode. On
+Python now uses the same ABI whether it's built in release or debug mode. On
 Unix, when Python is built in debug mode, it is now possible to load C
 extensions built in release mode and C extensions built using the stable ABI.
 
@@ -567,7 +567,7 @@ The :func:`ast.parse` function has some new flags:
   comments" (returned for function definition AST nodes);
 
 * ``feature_version=(3, N)`` allows specifying an earlier Python 3
-  version.  (For example, ``feature_version=(3, 4)`` will treat
+  version. (For example, ``feature_version=(3, 4)`` will treat
   ``async`` and ``await`` as non-reserved words.)
 
 New function :func:`ast.get_source_segment` returns the source code
@@ -1284,7 +1284,7 @@ Build and C API Changes
     without calling functions. This API is now installed by ``make install``.
 
   (Contributed by Victor Stinner in :issue:`35134` and :issue:`35081`,
-  work initiated by Eric Snow in Python 3.7)
+  work initiated by Eric Snow in Python 3.7.)
 
 * Some macros have been converted to static inline functions: parameter types
   and return type are well defined, they don't have issues specific to macros,
@@ -1378,12 +1378,11 @@ Deprecated
 
   Implementations of these methods have been ignoring their *index* parameter,
   and returning the next item instead.
-
   (Contributed by Berker Peksag in :issue:`9372`.)
 
 * The :class:`typing.NamedTuple` class has deprecated the ``_field_types``
   attribute in favor of the ``__annotations__`` attribute which has the same
-  information.  (Contributed by Raymond Hettinger in :issue:`36320`.)
+  information. (Contributed by Raymond Hettinger in :issue:`36320`.)
 
 * :mod:`ast` classes ``Num``, ``Str``, ``Bytes``, ``NameConstant`` and
   ``Ellipsis`` are considered deprecated and will be removed in future Python
@@ -1411,7 +1410,6 @@ Deprecated
   parameter of functions :func:`~gettext.translation` and
   :func:`~gettext.install` are also deprecated, since they are only used for
   for the ``l*gettext()`` functions.
-
   (Contributed by Serhiy Storchaka in :issue:`33710`.)
 
 * The :meth:`~threading.Thread.isAlive()` method of :class:`threading.Thread` has been deprecated.
@@ -1493,11 +1491,11 @@ The following features and APIs have been removed from Python 3.8:
 
 * The ``bufsize`` keyword argument of :func:`fileinput.input` and
   :func:`fileinput.FileInput` which was ignored and deprecated since Python 3.6
-  has been removed. :issue:`36952` (Contributed by Matthias Bussonnier)
+  has been removed. :issue:`36952` (Contributed by Matthias Bussonnier.)
 
 * The functions :func:`sys.set_coroutine_wrapper` and
   :func:`sys.get_coroutine_wrapper` deprecated in Python 3.7 have been removed;
-  :issue:`36933` (Contributed by Matthias Bussonnier)
+  :issue:`36933` (Contributed by Matthias Bussonnier.)
 
 
 Porting to Python 3.8
@@ -1523,9 +1521,9 @@ Changes in Python behavior
   (Contributed by Serhiy Storchaka in :issue:`34850`.)
 
 * The CPython interpreter can swallow exceptions in some circumstances.
-  In Python 3.8 this happens in less cases.  In particular, exceptions
+  In Python 3.8 this happens in fewer cases.  In particular, exceptions
   raised when getting the attribute from the type dictionary are no longer
-  ignored.  (Contributed by Serhiy Storchaka in :issue:`35459`.)
+  ignored. (Contributed by Serhiy Storchaka in :issue:`35459`.)
 
 * Removed ``__str__`` implementations from builtin types :class:`bool`,
   :class:`int`, :class:`float`, :class:`complex` and few classes from
@@ -1620,7 +1618,7 @@ Changes in the Python API
   16 KiB to 1 MiB.
 
 * The ``PyGC_Head`` struct has changed completely.  All code that touched the
-  struct member should be rewritten.  (See :issue:`33597`)
+  struct member should be rewritten.  (See :issue:`33597`.)
 
 * The ``PyInterpreterState`` struct has been moved into the "internal"
   header files (specifically Include/internal/pycore_pystate.h).  An
