@@ -1896,9 +1896,6 @@ class POSIXProcessTestCase(BaseTestCase):
 
     @unittest.skipUnless(hasattr(os, 'umask'), 'umask() is not available.')
     def test_umask(self):
-        # we use mkdtemp in the next line to create an empty directory
-        # under our exclusive control; from that, we can invent a pathname
-        # that we _know_ won't exist.  This is guaranteed to fail.
         tmpdir = None
         try:
             tmpdir = tempfile.mkdtemp()
