@@ -1,0 +1,2 @@
+Semaphores and BoundedSemaphores can now release more than one waiting
+thread at a time.

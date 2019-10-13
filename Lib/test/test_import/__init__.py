@@ -772,6 +772,11 @@ class RelativeImportTests(unittest.TestCase):
         ns = dict(__package__=object())
         self.assertRaises(TypeError, check_relative)
 
+    def test_parentless_import_shadowed_by_global(self):
+        # Test as if this were done from the REPL where this error most commonly occurs (bpo-37409).
+        script_helper.assert_python_failure('-W', 'ignore', '-c',
+            "foo = 1; from . import foo")
+
     def test_absolute_import_without_future(self):
         # If explicit relative import syntax is used, then do not try
         # to perform an absolute import in the face of failure.
@@ -1323,6 +1328,16 @@ class CircularImportTests(unittest.TestCase):
         self.assertIn('spam', errmsg)
         self.assertIn('partially initialized module', errmsg)
         self.assertIn('circular import', errmsg)
+
+    def test_circular_from_import(self):
+        with self.assertRaises(ImportError) as cm:
+            import test.test_import.data.circular_imports.from_cycle1
+        self.assertIn(
+            "cannot import name 'b' from partially initialized module "
+            "'test.test_import.data.circular_imports.from_cycle1' "
+            "(most likely due to a circular import)",
+            str(cm.exception),
+        )
 
 
 if __name__ == '__main__':

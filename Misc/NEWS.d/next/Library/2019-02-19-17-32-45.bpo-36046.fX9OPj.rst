@@ -1,0 +1,2 @@
+Added ``user``, ``group`` and ``extra_groups`` parameters to the
+subprocess.Popen constructor. Patch by Patrick McLean.

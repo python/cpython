@@ -191,6 +191,14 @@ creation according to their needs, the :class:`EnvBuilder` class.
         Installs activation scripts appropriate to the platform into the virtual
         environment.
 
+    .. method:: upgrade_dependencies(context)
+
+       Upgrades the core venv dependency packages (currently ``pip`` and
+       ``setuptools``) in the environment. This is done by shelling out to the
+       ``pip`` executable in the environment.
+
+       .. versionadded:: 3.8
+
     .. method:: post_setup(context)
 
         A placeholder method which can be overridden in third party

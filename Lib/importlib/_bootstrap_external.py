@@ -270,6 +270,8 @@ _code_type = type(_write_atomic.__code__)
 #                         comprehensions #35224)
 #     Python 3.8b2  3412 (Swap the position of positional args and positional
 #                         only args in ast.arguments #37593)
+#     Python 3.8b4  3413 (Fix "break" and "continue" in "finally" #37830)
+#     Python 3.9a0  3420 (add LOAD_ASSERTION_ERROR #34880)
 #
 # MAGIC must change whenever the bytecode emitted by the compiler may no
 # longer be understood by older implementations of the eval loop (usually
@@ -278,7 +280,7 @@ _code_type = type(_write_atomic.__code__)
 # Whenever MAGIC_NUMBER is changed, the ranges in the magic_values array
 # in PC/launcher.c must also be updated.
 
-MAGIC_NUMBER = (3412).to_bytes(2, 'little') + b'\r\n'
+MAGIC_NUMBER = (3420).to_bytes(2, 'little') + b'\r\n'
 _RAW_MAGIC_NUMBER = int.from_bytes(MAGIC_NUMBER, 'little')  # For import.c
 
 _PYCACHE = '__pycache__'
@@ -1367,57 +1369,18 @@ class PathFinder:
             return None
         return spec.loader
 
-    search_template = r'(?:{pattern}(-.*)?\.(dist|egg)-info|EGG-INFO)'
-
     @classmethod
-    def find_distributions(cls, name=None, path=None):
+    def find_distributions(cls, *args, **kwargs):
         """
         Find distributions.
 
         Return an iterable of all Distribution instances capable of
-        loading the metadata for packages matching the ``name``
-        (or all names if not supplied) along the paths in the list
-        of directories ``path`` (defaults to sys.path).
+        loading the metadata for packages matching ``context.name``
+        (or all names if ``None`` indicated) along the paths in the list
+        of directories ``context.path``.
         """
-        import re
-        from importlib.metadata import PathDistribution
-        if path is None:
-            path = sys.path
-        pattern = '.*' if name is None else re.escape(name)
-        found = cls._search_paths(pattern, path)
-        return map(PathDistribution, found)
-
-    @classmethod
-    def _search_paths(cls, pattern, paths):
-        """Find metadata directories in paths heuristically."""
-        import itertools
-        return itertools.chain.from_iterable(
-            cls._search_path(path, pattern)
-            for path in map(cls._switch_path, paths)
-            )
-
-    @staticmethod
-    def _switch_path(path):
-        from contextlib import suppress
-        import zipfile
-        from pathlib import Path
-        with suppress(Exception):
-            return zipfile.Path(path)
-        return Path(path)
-
-    @classmethod
-    def _predicate(cls, pattern, root, item):
-        import re
-        return re.match(pattern, str(item.name), flags=re.IGNORECASE)
-
-    @classmethod
-    def _search_path(cls, root, pattern):
-        if not root.is_dir():
-            return ()
-        normalized = pattern.replace('-', '_')
-        matcher = cls.search_template.format(pattern=normalized)
-        return (item for item in root.iterdir()
-                if cls._predicate(matcher, root, item))
+        from importlib.metadata import MetadataPathFinder
+        return MetadataPathFinder.find_distributions(*args, **kwargs)
 
 
 class FileFinder:

@@ -33,6 +33,7 @@ static PyObject *asyncio_task_repr_info_func;
 static PyObject *asyncio_InvalidStateError;
 static PyObject *asyncio_CancelledError;
 static PyObject *context_kwname;
+static int module_initialized;
 
 static PyObject *cached_running_holder;
 static volatile uint64_t cached_running_holder_tsid;
@@ -937,7 +938,7 @@ _asyncio_Future_remove_done_callback(FutureObj *self, PyObject *fn)
     ENSURE_FUTURE_ALIVE(self)
 
     if (self->fut_callback0 != NULL) {
-        int cmp = PyObject_RichCompareBool(fn, self->fut_callback0, Py_EQ);
+        int cmp = PyObject_RichCompareBool(self->fut_callback0, fn, Py_EQ);
         if (cmp == -1) {
             return NULL;
         }
@@ -962,7 +963,7 @@ _asyncio_Future_remove_done_callback(FutureObj *self, PyObject *fn)
     if (len == 1) {
         PyObject *cb_tup = PyList_GET_ITEM(self->fut_callbacks, 0);
         int cmp = PyObject_RichCompareBool(
-            fn, PyTuple_GET_ITEM(cb_tup, 0), Py_EQ);
+            PyTuple_GET_ITEM(cb_tup, 0), fn, Py_EQ);
         if (cmp == -1) {
             return NULL;
         }
@@ -984,7 +985,7 @@ _asyncio_Future_remove_done_callback(FutureObj *self, PyObject *fn)
         int ret;
         PyObject *item = PyList_GET_ITEM(self->fut_callbacks, i);
         Py_INCREF(item);
-        ret = PyObject_RichCompareBool(fn, PyTuple_GET_ITEM(item, 0), Py_EQ);
+        ret = PyObject_RichCompareBool(PyTuple_GET_ITEM(item, 0), fn, Py_EQ);
         if (ret == 0) {
             if (j < len) {
                 PyList_SET_ITEM(newlist, j, item);
@@ -2628,18 +2629,19 @@ task_step_impl(TaskObj *task, PyObject *exc)
         if (_PyGen_FetchStopIterationValue(&o) == 0) {
             /* The error is StopIteration and that means that
                the underlying coroutine has resolved */
+
+            PyObject *res;
             if (task->task_must_cancel) {
                 // Task is cancelled right before coro stops.
-                Py_DECREF(o);
                 task->task_must_cancel = 0;
-                et = asyncio_CancelledError;
-                Py_INCREF(et);
-                ev = NULL;
-                tb = NULL;
-                goto set_exception;
+                res = future_cancel((FutureObj*)task);
             }
-            PyObject *res = future_set_result((FutureObj*)task, o);
+            else {
+                res = future_set_result((FutureObj*)task, o);
+            }
+
             Py_DECREF(o);
+
             if (res == NULL) {
                 return NULL;
             }
@@ -2656,7 +2658,6 @@ task_step_impl(TaskObj *task, PyObject *exc)
         /* Some other exception; pop it and call Task.set_exception() */
         PyErr_Fetch(&et, &ev, &tb);
 
-set_exception:
         assert(et);
         if (!ev || !PyObject_TypeCheck(ev, (PyTypeObject *) et)) {
             PyErr_NormalizeException(&et, &ev, &tb);
@@ -3246,6 +3247,12 @@ module_init(void)
     asyncio_mod = PyImport_ImportModule("asyncio");
     if (asyncio_mod == NULL) {
         goto fail;
+    }
+    if (module_initialized != 0) {
+        return 0;
+    } 
+    else {
+        module_initialized = 1;
     }
 
     current_tasks = PyDict_New();

@@ -147,8 +147,7 @@ class ScriptBinding:
         interp = self.shell.interp
         if pyshell.use_subprocess and restart:
             interp.restart_subprocess(
-                    with_cwd=False, filename=
-                    self.editwin._filename_to_unicode(filename))
+                    with_cwd=False, filename=filename)
         dirname = os.path.dirname(filename)
         argv = [filename]
         if self.cli_args:
@@ -164,7 +163,7 @@ class ScriptBinding:
                 _sys.argv = argv
             import os as _os
             _os.chdir({dirname!r})
-            del _sys, _basename, _os
+            del _sys, argv, _basename, _os
             \n""")
         interp.prepend_syspath(filename)
         # XXX KBK 03Jul04 When run w/o subprocess, runtime warnings still

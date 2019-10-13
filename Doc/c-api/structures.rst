@@ -9,6 +9,10 @@ There are a large number of structures which are used in the definition of
 object types for Python.  This section describes these structures and how they
 are used.
 
+
+Base object types and macros
+----------------------------
+
 All Python objects ultimately share a small number of fields at the beginning
 of the object's representation in memory.  These are represented by the
 :c:type:`PyObject` and :c:type:`PyVarObject` types, which are defined, in turn,
@@ -101,6 +105,9 @@ the definition of all other Python objects.
       _PyObject_EXTRA_INIT
       1, type, size,
 
+
+Implementing functions and methods
+----------------------------------
 
 .. c:type:: PyCFunction
 
@@ -204,6 +211,7 @@ also keyword arguments.  So there are a total of 6 calling conventions:
    Keyword arguments are passed the same way as in the vectorcall protocol:
    there is an additional fourth :c:type:`PyObject\*` parameter
    which is a tuple representing the names of the keyword arguments
+   (which are guaranteed to be strings)
    or possibly *NULL* if there are no keywords.  The values of the keyword
    arguments are stored in the *args* array, after the positional arguments.
 
@@ -270,6 +278,9 @@ definition with the same method name.
    than wrapper object calls.
 
 
+Accessing attributes of extension types
+---------------------------------------
+
 .. c:type:: PyMemberDef
 
    Structure which describes an attribute of a type which corresponds to a C
@@ -335,6 +346,19 @@ definition with the same method name.
    Only :c:macro:`T_OBJECT` and :c:macro:`T_OBJECT_EX`
    members can be deleted.  (They are set to *NULL*).
 
+   .. _pymemberdef-offsets:
+
+   Heap allocated types (created using :c:func:`PyType_FromSpec` or similar),
+   ``PyMemberDef`` may contain defintitions for the special members
+   ``__dictoffset__`` and ``__weaklistoffset__``, corresponding to
+   :c:member:`~PyTypeObject.tp_dictoffset` and
+   :c:member:`~PyTypeObject.tp_weaklistoffset` in type objects.
+   These must be defined with ``T_PYSSIZET`` and ``READONLY``, for example::
+
+      static PyMemberDef spam_type_members[] = {
+          {"__dictoffset__", T_PYSSIZET, offsetof(Spam_object, dict), READONLY},
+          {NULL}  /* Sentinel */
+      };
 
 .. c:type:: PyGetSetDef
 

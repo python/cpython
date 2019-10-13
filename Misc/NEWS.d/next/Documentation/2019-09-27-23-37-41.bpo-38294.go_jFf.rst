@@ -1,0 +1,1 @@
+Add list of no-longer-escaped chars to re.escape documentation

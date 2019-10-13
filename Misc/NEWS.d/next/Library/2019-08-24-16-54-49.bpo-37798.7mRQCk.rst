@@ -1,0 +1,2 @@
+Update test_statistics.py to verify that the statistics module works well
+for both C and Python implementations. Patch by Dong-hee Na

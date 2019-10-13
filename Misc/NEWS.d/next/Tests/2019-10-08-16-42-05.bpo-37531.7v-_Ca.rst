@@ -1,0 +1,5 @@
+On timeout, regrtest no longer attempts to call ``popen.communicate()``
+again: it can hang until all child processes using stdout and stderr pipes
+completes. Kill the worker process and ignores its output. Change also the
+faulthandler timeout of the main process from 1 minute to 5 minutes, for Python
+slowest buildbots.

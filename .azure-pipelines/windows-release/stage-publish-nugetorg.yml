@@ -36,6 +36,6 @@ jobs:
     condition: and(succeeded(), eq(variables['SigningCertificate'], variables['__RealSigningCertificate']))
     inputs:
       command: push
-      packagesToPush: $(Build.BinariesDirectory)\nuget\*.nupkg'
+      packagesToPush: '$(Build.BinariesDirectory)\nuget\*.nupkg'
       nuGetFeedType: external
       publishFeedCredentials: 'Python on Nuget'

@@ -210,13 +210,20 @@ _linenumbers_drag_scrolling_spec = {
     'file': 'sidebar',
     'kwds': {},
     'msg': textwrap.dedent("""\
-        Click on the line numbers and drag down below the edge of the
+        1. Click on the line numbers and drag down below the edge of the
         window, moving the mouse a bit and then leaving it there for a while.
         The text and line numbers should gradually scroll down, with the
         selection updated continuously.
-        Do the same as above, dragging to above the window. The text and line
+
+        2. With the lines still selected, click on a line number above the
+        selected lines. Only the line whose number was clicked should be
+        selected.
+
+        3. Repeat step #1, dragging to above the window. The text and line
         numbers should gradually scroll up, with the selection updated
-        continuously."""),
+        continuously.
+
+        4. Repeat step #2, clicking a line number below the selection."""),
     }
 
 _multi_call_spec = {

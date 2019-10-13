@@ -1,0 +1,2 @@
+Fixes distutils not finding vcruntime140.dll with only the v142 toolset
+installed.

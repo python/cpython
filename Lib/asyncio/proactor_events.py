@@ -11,6 +11,7 @@ import os
 import socket
 import warnings
 import signal
+import threading
 import collections
 
 from . import base_events
@@ -627,7 +628,9 @@ class BaseProactorEventLoop(base_events.BaseEventLoop):
         proactor.set_loop(self)
         self._make_self_pipe()
         self_no = self._csock.fileno()
-        signal.set_wakeup_fd(self_no)
+        if threading.current_thread() is threading.main_thread():
+            # wakeup fd can only be installed to a file descriptor from the main thread
+            signal.set_wakeup_fd(self_no)
 
     def _make_socket_transport(self, sock, protocol, waiter=None,
                                extra=None, server=None):

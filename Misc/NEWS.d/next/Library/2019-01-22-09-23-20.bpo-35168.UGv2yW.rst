@@ -1,0 +1,1 @@
+:attr:`shlex.shlex.punctuation_chars` is now a read-only property.

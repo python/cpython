@@ -1,0 +1,1 @@
+Make _posixsubprocess PEP-384 compatible
