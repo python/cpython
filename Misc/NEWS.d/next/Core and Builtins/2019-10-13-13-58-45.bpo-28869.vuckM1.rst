@@ -1,0 +1,4 @@
+:meth:`type.__new__` now skips one additional frame when determine the
+default value for ``__module__`` if it was not called directly from
+:meth:`type.__call__`. This fixes ``__module__`` of classes created by
+calling a metaclass (like :class:`abc.ABCMeta`).
