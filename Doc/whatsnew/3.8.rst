@@ -82,7 +82,7 @@ Assignment expressions
 ----------------------
 
 There is new syntax ``:=`` that assigns values to variables as part of a larger
-expression. It is affectionately known as "walrus operator" due to
+expression. It is affectionately known as "the walrus operator" due to
 its resemblance to `the eyes and tusks of a walrus
 <https://en.wikipedia.org/wiki/Walrus#/media/File:Pacific_Walrus_-_Bull_(8247646168).jpg>`_.
 
@@ -620,6 +620,16 @@ where the DLL is stored (if a full or partial path is used to load the initial
 DLL) and paths added by :func:`~os.add_dll_directory`.
 
 
+datetime
+--------
+
+Added new alternate constructors :meth:`datetime.date.fromisocalendar` and
+:meth:`datetime.datetime.fromisocalendar`, which construct :class:`date` and
+:class:`datetime` objects respectively from ISO year, week number, and weekday;
+these are the inverse of each class's ``isocalendar`` method.
+(Contributed by Paul Ganssle in :issue:`36004`.)
+
+
 functools
 ---------
 
@@ -637,14 +647,12 @@ than as a function returning a decorator.  So both of these are now supported::
 (Contributed by Raymond Hettinger in :issue:`36772`.)
 
 
-datetime
---------
+gc
+--
 
-Added new alternate constructors :meth:`datetime.date.fromisocalendar` and
-:meth:`datetime.datetime.fromisocalendar`, which construct :class:`date` and
-:class:`datetime` objects respectively from ISO year, week number and weekday;
-these are the inverse of each class's ``isocalendar`` method.
-(Contributed by Paul Ganssle in :issue:`36004`.)
+:func:`~gc.get_objects` can now receive an optional *generation* parameter
+indicating a generation to get objects from. Contributed in
+:issue:`36016` by Pablo Galindo.
 
 
 gettext
@@ -652,6 +660,18 @@ gettext
 
 Added :func:`~gettext.pgettext` and its variants.
 (Contributed by Franz Glasner, Éric Araujo, and Cheryl Sabella in :issue:`2504`.)
+
+
+gzip
+----
+
+Added the *mtime* parameter to :func:`gzip.compress` for reproducible output.
+(Contributed by Guo Ci Teo in :issue:`34898`.)
+
+A :exc:`~gzip.BadGzipFile` exception is now raised instead of :exc:`OSError`
+for certain types of invalid or corrupt gzip files.
+(Contributed by Filip Gruszczyński, Michele Orrù, and Zackery Spytz in
+:issue:`6584`.)
 
 
 idlelib and IDLE
@@ -702,44 +722,6 @@ In development mode (:option:`-X` ``env``) and in debug build, the
 :class:`io.IOBase` finalizer now logs the exception if the ``close()`` method
 fails. The exception is ignored silently by default in release build.
 (Contributed by Victor Stinner in :issue:`18748`.)
-
-
-gc
---
-
-:func:`~gc.get_objects` can now receive an optional *generation* parameter
-indicating a generation to get objects from. Contributed in
-:issue:`36016` by Pablo Galindo.
-
-
-gzip
-----
-
-Added the *mtime* parameter to :func:`gzip.compress` for reproducible output.
-(Contributed by Guo Ci Teo in :issue:`34898`.)
-
-A :exc:`~gzip.BadGzipFile` exception is now raised instead of :exc:`OSError`
-for certain types of invalid or corrupt gzip files.
-(Contributed by Filip Gruszczyński, Michele Orrù, and Zackery Spytz in
-:issue:`6584`.)
-
-
-idlelib and IDLE
-----------------
-
-Add optional line numbers for IDLE editor windows. Windows
-open without line numbers unless set otherwise in the General
-tab of the configuration dialog.
-(Contributed by Tal Einat and Saimadhav Heblikar in :issue:`17535`.)
-
-Output over N lines (50 by default) is squeezed down to a button.
-N can be changed in the PyShell section of the General page of the
-Settings dialog.  Fewer, but possibly extra long, lines can be squeezed by
-right clicking on the output.  Squeezed output can be expanded in place
-by double-clicking the button or into the clipboard or a separate window
-by right-clicking the button.  (Contributed by Tal Einat in :issue:`1529353`.)
-
-The changes above have been backported to 3.7 maintenance releases.
 
 
 json.tool
@@ -899,18 +881,6 @@ py_compile
 (Contributed by Joannah Nanjekye in :issue:`22640`.)
 
 
-socket
-------
-
-Added :meth:`~socket.create_server()` and :meth:`~socket.has_dualstack_ipv6()`
-convenience functions to automate the necessary tasks usually involved when
-creating a server socket, including accepting both IPv4 and IPv6 connections
-on the same socket.  (Contributed by Giampaolo Rodola in :issue:`17561`.)
-
-The :func:`socket.if_nameindex()`, :func:`socket.if_nametoindex()`, and
-:func:`socket.if_indextoname()` functions have been implemented on Windows.
-(Contributed by Zackery Spytz in :issue:`37007`.)
-
 shlex
 ----------
 
@@ -930,6 +900,19 @@ inherited from the corresponding change to the :mod:`tarfile` module.
 
 :func:`shutil.rmtree` on Windows now removes directory junctions without
 recursively removing their contents first.
+
+
+socket
+------
+
+Added :meth:`~socket.create_server()` and :meth:`~socket.has_dualstack_ipv6()`
+convenience functions to automate the necessary tasks usually involved when
+creating a server socket, including accepting both IPv4 and IPv6 connections
+on the same socket.  (Contributed by Giampaolo Rodolà in :issue:`17561`.)
+
+The :func:`socket.if_nameindex()`, :func:`socket.if_nametoindex()`, and
+:func:`socket.if_indextoname()` functions have been implemented on Windows.
+(Contributed by Zackery Spytz in :issue:`37007`.)
 
 
 ssl
@@ -1202,14 +1185,14 @@ Optimizations
   +26% on Linux, +50% on macOS and +40% on Windows. Also, much less CPU cycles
   are consumed.
   See :ref:`shutil-platform-dependent-efficient-copy-operations` section.
-  (Contributed by Giampaolo Rodola' in :issue:`33671`.)
+  (Contributed by Giampaolo Rodolà in :issue:`33671`.)
 
 * :func:`shutil.copytree` uses :func:`os.scandir` function and all copy
   functions depending from it use cached :func:`os.stat` values. The speedup
   for copying a directory with 8000 files is around +9% on Linux, +20% on
   Windows and +30% on a Windows SMB share. Also the number of :func:`os.stat`
   syscalls is reduced by 38% making :func:`shutil.copytree` especially faster
-  on network filesystems. (Contributed by Giampaolo Rodola' in :issue:`33695`.)
+  on network filesystems. (Contributed by Giampaolo Rodolà in :issue:`33695`.)
 
 * The default protocol in the :mod:`pickle` module is now Protocol 4,
   first introduced in Python 3.4.  It offers better performance and smaller
@@ -1361,7 +1344,7 @@ Deprecated
   (Contributed by Victor Stinner in :issue:`37481`.)
 
 * Deprecated methods ``getchildren()`` and ``getiterator()`` in
-  the :mod:`~xml.etree.ElementTree` module emit now a
+  the :mod:`~xml.etree.ElementTree` module now emit a
   :exc:`DeprecationWarning` instead of :exc:`PendingDeprecationWarning`.
   They will be removed in Python 3.9.
   (Contributed by Serhiy Storchaka in :issue:`29209`.)
@@ -1454,28 +1437,29 @@ The following features and APIs have been removed from Python 3.8:
 * The :mod:`macpath` module, deprecated in Python 3.7, has been removed.
   (Contributed by Victor Stinner in :issue:`35471`.)
 
-* The function :func:`platform.popen` has been removed, it was deprecated since
-  Python 3.3: use :func:`os.popen` instead.
+* The function :func:`platform.popen` has been removed, after having been
+  deprecated since Python 3.3: use :func:`os.popen` instead.
   (Contributed by Victor Stinner in :issue:`35345`.)
 
-* The function :func:`time.clock` has been removed, it was deprecated since Python
-  3.3: use :func:`time.perf_counter` or :func:`time.process_time` instead, depending
-  on your requirements, to have a well defined behavior.
+* The function :func:`time.clock` has been removed, after having been
+  deprecated since Python 3.3: use :func:`time.perf_counter` or
+  :func:`time.process_time` instead, depending
+  on your requirements, to have well-defined behavior.
   (Contributed by Matthias Bussonnier in :issue:`36895`.)
 
 * The ``pyvenv`` script has been removed in favor of ``python3.8 -m venv``
   to help eliminate confusion as to what Python interpreter the ``pyvenv``
   script is tied to. (Contributed by Brett Cannon in :issue:`25427`.)
 
-* ``parse_qs``, ``parse_qsl``, and ``escape`` are removed from :mod:`cgi`
-  module.  They are deprecated from Python 3.2 or older. They should be imported
+* ``parse_qs``, ``parse_qsl``, and ``escape`` are removed from the :mod:`cgi`
+  module.  They are deprecated in Python 3.2 or older. They should be imported
   from the ``urllib.parse`` and ``html`` modules instead.
 
-* ``filemode`` function is removed from :mod:`tarfile` module.
+* ``filemode`` function is removed from the :mod:`tarfile` module.
   It is not documented and deprecated since Python 3.3.
 
 * The :class:`~xml.etree.ElementTree.XMLParser` constructor no longer accepts
-  the *html* argument.  It never had effect and was deprecated in Python 3.4.
+  the *html* argument.  It never had an effect and was deprecated in Python 3.4.
   All other parameters are now :ref:`keyword-only <keyword-only_parameter>`.
   (Contributed by Serhiy Storchaka in :issue:`29209`.)
 
@@ -1534,8 +1518,8 @@ Changes in Python behavior
 
 * On AIX, :attr:`sys.platform` doesn't contain the major version anymore.
   It is always ``'aix'``, instead of ``'aix3'`` .. ``'aix7'``.  Since
-  older Python versions include the version number, it is recommended to
-  always use the ``sys.platform.startswith('aix')``.
+  older Python versions include the version number, so it is recommended to
+  always use ``sys.platform.startswith('aix')``.
   (Contributed by M. Felt in :issue:`36588`.)
 
 * :c:func:`PyEval_AcquireLock` and :c:func:`PyEval_AcquireThread` now
@@ -1555,8 +1539,8 @@ Changes in the Python API
 
 * :class:`subprocess.Popen` can now use :func:`os.posix_spawn` in some cases
   for better performance. On Windows Subsystem for Linux and QEMU User
-  Emulation, Popen constructor using :func:`os.posix_spawn` no longer raise an
-  exception on errors like missing program, but the child process fails with a
+  Emulation, the :class:`Popen` constructor using :func:`os.posix_spawn` no longer raises an
+  exception on errors like "missing program".  Instead the child process fails with a
   non-zero :attr:`~Popen.returncode`.
   (Contributed by Joannah Nanjekye and Victor Stinner in :issue:`35537`.)
 
@@ -1569,7 +1553,7 @@ Changes in the Python API
 * The :meth:`imap.IMAP4.logout` method no longer ignores silently arbitrary
   exceptions.
 
-* The function :func:`platform.popen` has been removed, it was deprecated since
+* The function :func:`platform.popen` has been removed, after having been deprecated since
   Python 3.3: use :func:`os.popen` instead.
   (Contributed by Victor Stinner in :issue:`35345`.)
 
@@ -1584,9 +1568,9 @@ Changes in the Python API
   specialized methods like :meth:`~tkinter.ttk.Treeview.selection_set` for
   changing the selection.  (Contributed by Serhiy Storchaka in :issue:`31508`.)
 
-* The :meth:`writexml`, :meth:`toxml` and :meth:`toprettyxml` methods of the
-  :mod:`xml.dom.minidom` module, and :mod:`xml.etree` now preserve the attribute
-  order specified by the user.
+* The :meth:`writexml`, :meth:`toxml` and :meth:`toprettyxml` methods of
+  :mod:`xml.dom.minidom`, and the :meth:`write` method of :mod:`xml.etree`,
+  now preserve the attribute order specified by the user.
   (Contributed by Diego Rojas and Raymond Hettinger in :issue:`34160`.)
 
 * A :mod:`dbm.dumb` database opened with flags ``'r'`` is now read-only.
@@ -1596,7 +1580,7 @@ Changes in the Python API
 
 * The ``doctype()`` method defined in a subclass of
   :class:`~xml.etree.ElementTree.XMLParser` will no longer be called and will
-  cause emitting a :exc:`RuntimeWarning` instead of a :exc:`DeprecationWarning`.
+  emit a :exc:`RuntimeWarning` instead of a :exc:`DeprecationWarning`.
   Define the :meth:`doctype() <xml.etree.ElementTree.TreeBuilder.doctype>`
   method on a target for handling an XML doctype declaration.
   (Contributed by Serhiy Storchaka in :issue:`29209`.)
@@ -1639,7 +1623,7 @@ Changes in the Python API
 
 * The :meth:`mmap.flush() <mmap.mmap.flush>` method now returns ``None`` on
   success and raises an exception on error under all platforms.  Previously,
-  its behavior was platform-depended: a nonzero value was returned on success;
+  its behavior was platform-dependent: a nonzero value was returned on success;
   zero was returned on error under Windows.  A zero value was returned on
   success; an exception was raised on error under Unix.
   (Contributed by Berker Peksag in :issue:`2122`.)
@@ -1683,7 +1667,7 @@ Changes in the Python API
 * :class:`types.CodeType` has a new parameter in the second position of the
   constructor (*posonlyargcount*) to support positional-only arguments defined
   in :pep:`570`. The first argument (*argcount*) now represents the total
-  number of positional arguments (including positional-only arguments). A new
+  number of positional arguments (including positional-only arguments). The new
   ``replace()`` method of :class:`types.CodeType` can be used to make the code
   future-proof.
 
@@ -1691,9 +1675,9 @@ Changes in the Python API
 Changes in the C API
 --------------------
 
-* The :c:type:`PyCompilerFlags` structure gets a new *cf_feature_version*
+* The :c:type:`PyCompilerFlags` structure got a new *cf_feature_version*
   field. It should be initialized to ``PY_MINOR_VERSION``. The field is ignored
-  by default, it is used if and only if ``PyCF_ONLY_AST`` flag is set in
+  by default, and is used if and only if ``PyCF_ONLY_AST`` flag is set in
   *cf_flags*.
 
 * The :c:func:`PyEval_ReInitThreads` function has been removed from the C API.
