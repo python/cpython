@@ -59,6 +59,8 @@ ZERO_RETURN_CMD = (sys.executable, '-c', 'pass')
 
 def setUpModule():
     shell_true = shutil.which('true')
+    if shell_true is None:
+        return
     if (os.access(shell_true, os.X_OK) and
         subprocess.run([shell_true]).returncode == 0):
         global ZERO_RETURN_CMD
