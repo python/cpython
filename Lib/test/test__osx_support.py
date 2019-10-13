@@ -24,7 +24,7 @@ class Test_OSXSupport(unittest.TestCase):
         for cv in ('CFLAGS', 'LDFLAGS', 'CPPFLAGS',
                             'BASECFLAGS', 'BLDSHARED', 'LDSHARED', 'CC',
                             'CXX', 'PY_CFLAGS', 'PY_LDFLAGS', 'PY_CPPFLAGS',
-                            'PY_CORE_CFLAGS'):
+                            'PY_CORE_CFLAGS', 'PY_CORE_LDFLAGS'):
             if cv in self.env:
                 self.env.unset(cv)
 

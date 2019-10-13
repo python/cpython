@@ -107,9 +107,9 @@ in :mod:`logging` itself) and defining handlers which are declared either in
                                     enabled. The default is ``True`` because this
                                     enables old behaviour in a
                                     backward-compatible way. This behaviour is to
-                                    disable any existing loggers unless they or
-                                    their ancestors are explicitly named in the
-                                    logging configuration.
+                                    disable any existing non-root loggers unless
+                                    they or their ancestors are explicitly named
+                                    in the logging configuration.
 
    .. versionchanged:: 3.4
       An instance of a subclass of :class:`~configparser.RawConfigParser` is
@@ -226,6 +226,11 @@ otherwise, the context is used to determine what to instantiate.
   (with defaults of ``None``) and these are used to construct a
   :class:`~logging.Formatter` instance.
 
+  .. versionchanged:: 3.8
+     a ``validate`` key (with default of ``True``) can be added into
+     the ``formatters`` section of the configuring dict, this is to
+     validate the format.
+
 * *filters* - the corresponding value will be a dict in which each key
   is a filter id and each value is a dict describing how to configure
   the corresponding Filter instance.
@@ -308,8 +313,8 @@ otherwise, the context is used to determine what to instantiate.
   If the specified value is ``True``, the configuration is processed
   as described in the section on :ref:`logging-config-dict-incremental`.
 
-* *disable_existing_loggers* - whether any existing loggers are to be
-  disabled. This setting mirrors the parameter of the same name in
+* *disable_existing_loggers* - whether any existing non-root loggers are
+  to be disabled. This setting mirrors the parameter of the same name in
   :func:`fileConfig`. If absent, this parameter defaults to ``True``.
   This value is ignored if *incremental* is ``True``.
 

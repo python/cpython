@@ -16,12 +16,15 @@ typedef uint16_t ucs2_t, DBCHAR;
 typedef unsigned short ucs2_t, DBCHAR;
 #endif
 
-typedef union {
-    void *p;
-    int i;
+/*
+ * A struct that provides 8 bytes of state for multibyte
+ * codecs. Codecs are free to use this how they want. Note: if you
+ * need to add a new field to this struct, ensure that its byte order
+ * is independent of CPU endianness so that the return value of
+ * getstate doesn't differ between little and big endian CPUs.
+ */
+typedef struct {
     unsigned char c[8];
-    ucs2_t u2[4];
-    Py_UCS4 u4[2];
 } MultibyteCodec_State;
 
 typedef int (*mbcodec_init)(const void *config);

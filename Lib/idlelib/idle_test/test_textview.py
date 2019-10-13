@@ -6,12 +6,12 @@ Using mock Text would not change this.  Other mocks are used to retrieve
 information about calls.
 """
 from idlelib import textview as tv
-import unittest
 from test.support import requires
 requires('gui')
 
 import os
-from tkinter import Tk
+import unittest
+from tkinter import Tk, TclError, CHAR, NONE, WORD
 from tkinter.ttk import Button
 from idlelib.idle_test.mock_idle import Func
 from idlelib.idle_test.mock_tk import Mbox_func
@@ -69,13 +69,65 @@ class ViewWindowTest(unittest.TestCase):
         view.destroy()
 
 
-class TextFrameTest(unittest.TestCase):
+class AutoHideScrollbarTest(unittest.TestCase):
+    # Method set is tested in ScrollableTextFrameTest
+    def test_forbidden_geometry(self):
+        scroll = tv.AutoHideScrollbar(root)
+        self.assertRaises(TclError, scroll.pack)
+        self.assertRaises(TclError, scroll.place)
+
+
+class ScrollableTextFrameTest(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
         cls.root = root = Tk()
         root.withdraw()
-        cls.frame = tv.TextFrame(root, 'test text')
+
+    @classmethod
+    def tearDownClass(cls):
+        cls.root.update_idletasks()
+        cls.root.destroy()
+        del cls.root
+
+    def make_frame(self, wrap=NONE, **kwargs):
+        frame = tv.ScrollableTextFrame(self.root, wrap=wrap, **kwargs)
+        def cleanup_frame():
+            frame.update_idletasks()
+            frame.destroy()
+        self.addCleanup(cleanup_frame)
+        return frame
+
+    def test_line1(self):
+        frame = self.make_frame()
+        frame.text.insert('1.0', 'test text')
+        self.assertEqual(frame.text.get('1.0', '1.end'), 'test text')
+
+    def test_horiz_scrollbar(self):
+        # The horizontal scrollbar should be shown/hidden according to
+        # the 'wrap' setting: It should only be shown when 'wrap' is
+        # set to NONE.
+
+        # wrap = NONE -> with horizontal scrolling
+        frame = self.make_frame(wrap=NONE)
+        self.assertEqual(frame.text.cget('wrap'), NONE)
+        self.assertIsNotNone(frame.xscroll)
+
+        # wrap != NONE -> no horizontal scrolling
+        for wrap in [CHAR, WORD]:
+            with self.subTest(wrap=wrap):
+                frame = self.make_frame(wrap=wrap)
+                self.assertEqual(frame.text.cget('wrap'), wrap)
+                self.assertIsNone(frame.xscroll)
+
+
+class ViewFrameTest(unittest.TestCase):
+
+    @classmethod
+    def setUpClass(cls):
+        cls.root = root = Tk()
+        root.withdraw()
+        cls.frame = tv.ViewFrame(root, 'test text')
 
     @classmethod
     def tearDownClass(cls):

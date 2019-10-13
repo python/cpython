@@ -32,12 +32,12 @@ tk.mainloop()
 
 import enum
 import sys
+import types
 
 import _tkinter # If this fails your Python may not be configured for Tk
 TclError = _tkinter.TclError
 from tkinter.constants import *
 import re
-
 
 wantobjects = 1
 
@@ -484,6 +484,8 @@ class Variable:
         Note: if the Variable's master matters to behavior
         also compare self._master == other._master
         """
+        if not isinstance(other, Variable):
+            return NotImplemented
         return self.__class__.__name__ == other.__class__.__name__ \
             and self._name == other._name
 
@@ -2239,7 +2241,7 @@ class Tk(Misc, Wm):
     _w = '.'
 
     def __init__(self, screenName=None, baseName=None, className='Tk',
-                 useTk=1, sync=0, use=None):
+                 useTk=True, sync=False, use=None):
         """Return a new Toplevel widget on screen SCREENNAME. A new Tcl interpreter will
         be created. BASENAME will be used for the identification of the profile file (see
         readprofile).
@@ -2257,7 +2259,7 @@ class Tk(Misc, Wm):
             baseName, ext = os.path.splitext(baseName)
             if ext not in ('.py', '.pyc'):
                 baseName = baseName + ext
-        interactive = 0
+        interactive = False
         self.tk = _tkinter.create(screenName, baseName, className, interactive, wantobjects, useTk, sync, use)
         if useTk:
             self._loadtk()
@@ -2359,7 +2361,7 @@ class Tk(Misc, Wm):
 # copied into the Pack, Place or Grid class.
 
 
-def Tcl(screenName=None, baseName=None, className='Tk', useTk=0):
+def Tcl(screenName=None, baseName=None, className='Tk', useTk=False):
     return Tk(screenName, baseName, className, useTk)
 
 
@@ -4124,6 +4126,15 @@ class PhotoImage(Image):
             args = args + ('-from',) + tuple(from_coords)
         self.tk.call(args)
 
+    def transparency_get(self, x, y):
+        """Return True if the pixel at x,y is transparent."""
+        return self.tk.getboolean(self.tk.call(
+            self.name, 'transparency', 'get', x, y))
+
+    def transparency_set(self, x, y, boolean):
+        """Set the transparency of the pixel at x,y."""
+        self.tk.call(self.name, 'transparency', 'set', x, y, boolean)
+
 
 class BitmapImage(Image):
     """Widget which can display images in XBM format."""
@@ -4280,7 +4291,7 @@ class Spinbox(Widget, XView):
         select to commands. If the selection isn't currently in
         the spinbox, then a new selection is created to include
         the characters between index and the most recent selection
-        anchor point, inclusive. Returns an empty string.
+        anchor point, inclusive.
         """
         return self.selection("adjust", index)
 
@@ -4288,7 +4299,7 @@ class Spinbox(Widget, XView):
         """Clear the selection
 
         If the selection isn't in this widget then the
-        command has no effect. Returns an empty string.
+        command has no effect.
         """
         return self.selection("clear")
 
@@ -4296,9 +4307,9 @@ class Spinbox(Widget, XView):
         """Sets or gets the currently selected element.
 
         If a spinbutton element is specified, it will be
-        displayed depressed
+        displayed depressed.
         """
-        return self.selection("element", element)
+        return self.tk.call(self._w, 'selection', 'element', element)
 
     def selection_from(self, index):
         """Set the fixed end of a selection to INDEX."""
@@ -4559,6 +4570,10 @@ def _test():
     root.deiconify()
     root.mainloop()
 
+
+__all__ = [name for name, obj in globals().items()
+           if not name.startswith('_') and not isinstance(obj, types.ModuleType)
+           and name not in {'wantobjects'}]
 
 if __name__ == '__main__':
     _test()

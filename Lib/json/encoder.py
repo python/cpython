@@ -268,7 +268,7 @@ def _make_iterencode(markers, _default, _encoder, _indent, _floatstr,
         list=list,
         str=str,
         tuple=tuple,
-        _intstr=int.__str__,
+        _intstr=int.__repr__,
     ):
 
     if _indent is not None and not isinstance(_indent, str):
@@ -307,7 +307,7 @@ def _make_iterencode(markers, _default, _encoder, _indent, _floatstr,
             elif value is False:
                 yield buf + 'false'
             elif isinstance(value, int):
-                # Subclasses of int/float may override __str__, but we still
+                # Subclasses of int/float may override __repr__, but we still
                 # want to encode them as integers/floats in JSON. One example
                 # within the standard library is IntEnum.
                 yield buf + _intstr(value)

@@ -2,7 +2,7 @@
 
 """
 This script should be called *manually* when we want to upgrade SSLError
-`library` and `reason` mnemnonics to a more recent OpenSSL version.
+`library` and `reason` mnemonics to a more recent OpenSSL version.
 
 It takes two arguments:
 - the path to the OpenSSL source tree (e.g. git checkout)

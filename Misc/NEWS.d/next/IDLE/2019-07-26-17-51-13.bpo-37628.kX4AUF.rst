@@ -1,0 +1,1 @@
+Settings dialog no longer expands with font size.

@@ -62,7 +62,7 @@ Fix a crash in the StreamWriter.reset() of CJK codecs.
 .. nonce: M2rJNs
 .. section: Library
 
-Add math.isclose() and cmath.isclose() functions as per PEP 485. Contributed
+Add math.isclose() and cmath.isclose() functions as per :pep:`485`. Contributed
 by Chris Barker and Tal Einat.
 
 ..

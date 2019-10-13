@@ -3,19 +3,15 @@ import inspect
 import pydoc
 import sys
 import unittest
-import sys
 import threading
 from collections import OrderedDict
 from enum import Enum, IntEnum, EnumMeta, Flag, IntFlag, unique, auto
 from io import StringIO
 from pickle import dumps, loads, PicklingError, HIGHEST_PROTOCOL
 from test import support
+from test.support import ALWAYS_EQ
 from datetime import timedelta
 
-try:
-    import threading
-except ImportError:
-    threading = None
 
 # for pickle tests
 try:
@@ -450,12 +446,63 @@ class TestEnum(unittest.TestCase):
         self.assertEqual('{:<20}'.format(Season.SPRING),
                          '{:<20}'.format(str(Season.SPRING)))
 
-    def test_format_enum_custom(self):
+    def test_str_override_enum(self):
+        class EnumWithStrOverrides(Enum):
+            one = auto()
+            two = auto()
+
+            def __str__(self):
+                return 'Str!'
+        self.assertEqual(str(EnumWithStrOverrides.one), 'Str!')
+        self.assertEqual('{}'.format(EnumWithStrOverrides.one), 'Str!')
+
+    def test_format_override_enum(self):
+        class EnumWithFormatOverride(Enum):
+            one = 1.0
+            two = 2.0
+            def __format__(self, spec):
+                return 'Format!!'
+        self.assertEqual(str(EnumWithFormatOverride.one), 'EnumWithFormatOverride.one')
+        self.assertEqual('{}'.format(EnumWithFormatOverride.one), 'Format!!')
+
+    def test_str_and_format_override_enum(self):
+        class EnumWithStrFormatOverrides(Enum):
+            one = auto()
+            two = auto()
+            def __str__(self):
+                return 'Str!'
+            def __format__(self, spec):
+                return 'Format!'
+        self.assertEqual(str(EnumWithStrFormatOverrides.one), 'Str!')
+        self.assertEqual('{}'.format(EnumWithStrFormatOverrides.one), 'Format!')
+
+    def test_str_override_mixin(self):
+        class MixinEnumWithStrOverride(float, Enum):
+            one = 1.0
+            two = 2.0
+            def __str__(self):
+                return 'Overridden!'
+        self.assertEqual(str(MixinEnumWithStrOverride.one), 'Overridden!')
+        self.assertEqual('{}'.format(MixinEnumWithStrOverride.one), 'Overridden!')
+
+    def test_str_and_format_override_mixin(self):
+        class MixinWithStrFormatOverrides(float, Enum):
+            one = 1.0
+            two = 2.0
+            def __str__(self):
+                return 'Str!'
+            def __format__(self, spec):
+                return 'Format!'
+        self.assertEqual(str(MixinWithStrFormatOverrides.one), 'Str!')
+        self.assertEqual('{}'.format(MixinWithStrFormatOverrides.one), 'Format!')
+
+    def test_format_override_mixin(self):
         class TestFloat(float, Enum):
             one = 1.0
             two = 2.0
             def __format__(self, spec):
                 return 'TestFloat success!'
+        self.assertEqual(str(TestFloat.one), 'TestFloat.one')
         self.assertEqual('{}'.format(TestFloat.one), 'TestFloat success!')
 
     def assertFormatIsValue(self, spec, member):
@@ -1463,13 +1510,10 @@ class TestEnum(unittest.TestCase):
         self.assertEqual(list(map(int, Color)), [1, 2, 3])
 
     def test_equality(self):
-        class AlwaysEqual:
-            def __eq__(self, other):
-                return True
         class OrdinaryEnum(Enum):
             a = 1
-        self.assertEqual(AlwaysEqual(), OrdinaryEnum.a)
-        self.assertEqual(OrdinaryEnum.a, AlwaysEqual())
+        self.assertEqual(ALWAYS_EQ, OrdinaryEnum.a)
+        self.assertEqual(OrdinaryEnum.a, ALWAYS_EQ)
 
     def test_ordered_mixin(self):
         class OrderedEnum(Enum):
@@ -1863,6 +1907,15 @@ class TestEnum(unittest.TestCase):
             REVERT_ALL = "REVERT_ALL"
             RETRY = "RETRY"
 
+    def test_empty_globals(self):
+        # bpo-35717: sys._getframe(2).f_globals['__name__'] fails with KeyError
+        # when using compile and exec because f_globals is empty
+        code = "from enum import Enum; Enum('Animal', 'ANT BEE CAT DOG')"
+        code = compile(code, "<string>", "exec")
+        global_ns = {}
+        local_ls = {}
+        exec(code, global_ns, local_ls)
+
 
 class TestOrder(unittest.TestCase):
 
@@ -2205,12 +2258,13 @@ class TestFlag(unittest.TestCase):
             d = 4
             f = 6
         # Bizarre.c | Bizarre.d
-        self.assertRaisesRegex(ValueError, "5 is not a valid Bizarre", Bizarre, 5)
-        self.assertRaisesRegex(ValueError, "5 is not a valid Bizarre", Bizarre, 5)
-        self.assertRaisesRegex(ValueError, "2 is not a valid Bizarre", Bizarre, 2)
-        self.assertRaisesRegex(ValueError, "2 is not a valid Bizarre", Bizarre, 2)
-        self.assertRaisesRegex(ValueError, "1 is not a valid Bizarre", Bizarre, 1)
-        self.assertRaisesRegex(ValueError, "1 is not a valid Bizarre", Bizarre, 1)
+        name = "TestFlag.test_cascading_failure.<locals>.Bizarre"
+        self.assertRaisesRegex(ValueError, "5 is not a valid " + name, Bizarre, 5)
+        self.assertRaisesRegex(ValueError, "5 is not a valid " + name, Bizarre, 5)
+        self.assertRaisesRegex(ValueError, "2 is not a valid " + name, Bizarre, 2)
+        self.assertRaisesRegex(ValueError, "2 is not a valid " + name, Bizarre, 2)
+        self.assertRaisesRegex(ValueError, "1 is not a valid " + name, Bizarre, 1)
+        self.assertRaisesRegex(ValueError, "1 is not a valid " + name, Bizarre, 1)
 
     def test_duplicate_auto(self):
         class Dupes(Enum):
@@ -2726,6 +2780,23 @@ class TestIntFlag(unittest.TestCase):
         self.assertEqual(256, len(seen), 'too many composite members created')
 
 
+class TestEmptyAndNonLatinStrings(unittest.TestCase):
+
+    def test_empty_string(self):
+        with self.assertRaises(ValueError):
+            empty_abc = Enum('empty_abc', ('', 'B', 'C'))
+
+    def test_non_latin_character_string(self):
+        greek_abc = Enum('greek_abc', ('\u03B1', 'B', 'C'))
+        item = getattr(greek_abc, '\u03B1')
+        self.assertEqual(item.value, 1)
+
+    def test_non_latin_number_string(self):
+        hebrew_123 = Enum('hebrew_123', ('\u05D0', '2', '3'))
+        item = getattr(hebrew_123, '\u05D0')
+        self.assertEqual(item.value, 1)
+
+
 class TestUnique(unittest.TestCase):
 
     def test_unique_clean(self):
@@ -2804,7 +2875,7 @@ class Color(enum.Enum)
  |      The value of the Enum member.
  |\x20\x20
  |  ----------------------------------------------------------------------
- |  Data descriptors inherited from enum.EnumMeta:
+ |  Readonly properties inherited from enum.EnumMeta:
  |\x20\x20
  |  __members__
  |      Returns a mapping of member name->value.

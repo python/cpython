@@ -15,3 +15,5 @@ for (name_last, age) in cur:
 cur.execute(SELECT)
 for row in cur:
     print('%s is %d years old.' % (row[0], row[1]))
+
+con.close()

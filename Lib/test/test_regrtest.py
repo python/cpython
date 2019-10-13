@@ -6,6 +6,7 @@ Note: test_regrtest cannot be run twice in parallel.
 
 import contextlib
 import faulthandler
+import glob
 import io
 import os.path
 import platform
@@ -15,21 +16,20 @@ import sys
 import sysconfig
 import tempfile
 import textwrap
-import threading
 import unittest
 from test import libregrtest
 from test import support
 from test.libregrtest import utils
 
 
-Py_DEBUG = hasattr(sys, 'getobjects')
+Py_DEBUG = hasattr(sys, 'gettotalrefcount')
 ROOT_DIR = os.path.join(os.path.dirname(__file__), '..', '..')
 ROOT_DIR = os.path.abspath(os.path.normpath(ROOT_DIR))
+LOG_PREFIX = r'[0-9]+:[0-9]+:[0-9]+ (?:load avg: [0-9]+\.[0-9]{2} )?'
 
 TEST_INTERRUPTED = textwrap.dedent("""
-    from signal import SIGINT
+    from signal import SIGINT, raise_signal
     try:
-        from _testcapi import raise_signal
         raise_signal(SIGINT)
     except ImportError:
         import os
@@ -55,8 +55,6 @@ class ParseArgsTestCase(unittest.TestCase):
                     libregrtest._parse_args([opt])
                 self.assertIn('Run Python regression tests.', out.getvalue())
 
-    @unittest.skipUnless(hasattr(faulthandler, 'dump_traceback_later'),
-                         "faulthandler.dump_traceback_later() required")
     def test_timeout(self):
         ns = libregrtest._parse_args(['--timeout', '4.2'])
         self.assertEqual(ns.timeout, 4.2)
@@ -110,7 +108,7 @@ class ParseArgsTestCase(unittest.TestCase):
                 self.assertTrue(ns.quiet)
                 self.assertEqual(ns.verbose, 0)
 
-    def test_slow(self):
+    def test_slowest(self):
         for opt in '-o', '--slowest':
             with self.subTest(opt=opt):
                 ns = libregrtest._parse_args([opt])
@@ -256,9 +254,7 @@ class ParseArgsTestCase(unittest.TestCase):
                 self.checkError([opt], 'expected one argument')
                 self.checkError([opt, 'foo'], 'invalid int value')
                 self.checkError([opt, '2', '-T'], "don't go together")
-                self.checkError([opt, '2', '-l'], "don't go together")
                 self.checkError([opt, '0', '-T'], "don't go together")
-                self.checkError([opt, '0', '-l'], "don't go together")
 
     def test_coverage(self):
         for opt in '-T', '--coverage':
@@ -352,10 +348,19 @@ class BaseTestCase(unittest.TestCase):
         self.tmptestdir = tempfile.mkdtemp()
         self.addCleanup(support.rmtree, self.tmptestdir)
 
-    def create_test(self, name=None, code=''):
+    def create_test(self, name=None, code=None):
         if not name:
             name = 'noop%s' % BaseTestCase.TEST_UNIQUE_ID
             BaseTestCase.TEST_UNIQUE_ID += 1
+
+        if code is None:
+            code = textwrap.dedent("""
+                    import unittest
+
+                    class Tests(unittest.TestCase):
+                        def test_empty_test(self):
+                            pass
+                """)
 
         # test_regrtest cannot be run twice in parallel because
         # of setUp() and create_test()
@@ -384,14 +389,14 @@ class BaseTestCase(unittest.TestCase):
         self.assertRegex(output, regex)
 
     def parse_executed_tests(self, output):
-        regex = (r'^[0-9]+:[0-9]+:[0-9]+ (?:load avg: [0-9]+\.[0-9]{2} )?\[ *[0-9]+(?:/ *[0-9]+)*\] (%s)'
-                 % self.TESTNAME_REGEX)
+        regex = (r'^%s\[ *[0-9]+(?:/ *[0-9]+)*\] (%s)'
+                 % (LOG_PREFIX, self.TESTNAME_REGEX))
         parser = re.finditer(regex, output, re.MULTILINE)
         return list(match.group(1) for match in parser)
 
     def check_executed_tests(self, output, tests, skipped=(), failed=(),
                              env_changed=(), omitted=(),
-                             rerun=(),
+                             rerun=(), no_test_ran=(),
                              randomize=False, interrupted=False,
                              fail_env_changed=False):
         if isinstance(tests, str):
@@ -406,6 +411,8 @@ class BaseTestCase(unittest.TestCase):
             omitted = [omitted]
         if isinstance(rerun, str):
             rerun = [rerun]
+        if isinstance(no_test_ran, str):
+            no_test_ran = [no_test_ran]
 
         executed = self.parse_executed_tests(output)
         if randomize:
@@ -443,13 +450,18 @@ class BaseTestCase(unittest.TestCase):
         if rerun:
             regex = list_regex('%s re-run test%s', rerun)
             self.check_line(output, regex)
-            self.check_line(output, "Re-running failed tests in verbose mode")
-            for name in rerun:
-                regex = "Re-running test %r in verbose mode" % name
+            regex = LOG_PREFIX + r"Re-running failed tests in verbose mode"
+            self.check_line(output, regex)
+            for test_name in rerun:
+                regex = LOG_PREFIX + f"Re-running {test_name} in verbose mode"
                 self.check_line(output, regex)
 
+        if no_test_ran:
+            regex = list_regex('%s test%s run no tests', no_test_ran)
+            self.check_line(output, regex)
+
         good = (len(tests) - len(skipped) - len(failed)
-                - len(omitted) - len(env_changed))
+                - len(omitted) - len(env_changed) - len(no_test_ran))
         if good:
             regex = r'%s test%s OK\.$' % (good, plural(good))
             if not skipped and not failed and good > 1:
@@ -466,12 +478,16 @@ class BaseTestCase(unittest.TestCase):
             result.append('ENV CHANGED')
         if interrupted:
             result.append('INTERRUPTED')
-        if not result:
+        if not any((good, result, failed, interrupted, skipped,
+                    env_changed, fail_env_changed)):
+            result.append("NO TEST RUN")
+        elif not result:
             result.append('SUCCESS')
         result = ', '.join(result)
         if rerun:
-            self.check_line(output, 'Tests result: %s' % result)
+            self.check_line(output, 'Tests result: FAILURE')
             result = 'FAILURE then %s' % result
+
         self.check_line(output, 'Tests result: %s' % result)
 
     def parse_random_seed(self, output):
@@ -484,7 +500,7 @@ class BaseTestCase(unittest.TestCase):
         if not input:
             input = ''
         if 'stderr' not in kw:
-            kw['stderr'] = subprocess.PIPE
+            kw['stderr'] = subprocess.STDOUT
         proc = subprocess.run(args,
                               universal_newlines=True,
                               input=input,
@@ -514,6 +530,31 @@ class BaseTestCase(unittest.TestCase):
         return proc.stdout
 
 
+class CheckActualTests(BaseTestCase):
+    """
+    Check that regrtest appears to find the expected set of tests.
+    """
+
+    def test_finds_expected_number_of_tests(self):
+        args = ['-Wd', '-E', '-bb', '-m', 'test.regrtest', '--list-tests']
+        output = self.run_python(args)
+        rough_number_of_tests_found = len(output.splitlines())
+        actual_testsuite_glob = os.path.join(os.path.dirname(__file__),
+                                             'test*.py')
+        rough_counted_test_py_files = len(glob.glob(actual_testsuite_glob))
+        # We're not trying to duplicate test finding logic in here,
+        # just give a rough estimate of how many there should be and
+        # be near that.  This is a regression test to prevent mishaps
+        # such as https://bugs.python.org/issue37667 in the future.
+        # If you need to change the values in here during some
+        # mythical future test suite reorganization, don't go
+        # overboard with logic and keep that goal in mind.
+        self.assertGreater(rough_number_of_tests_found,
+                           rough_counted_test_py_files*9//10,
+                           msg='Unexpectedly low number of tests found in:\n'
+                           f'{", ".join(output.splitlines())}')
+
+
 class ProgramsTestCase(BaseTestCase):
     """
     Test various ways to run the Python test suite. Use options close
@@ -531,8 +572,7 @@ class ProgramsTestCase(BaseTestCase):
         self.python_args = ['-Wd', '-E', '-bb']
         self.regrtest_args = ['-uall', '-rwW',
                               '--testdir=%s' % self.tmptestdir]
-        if hasattr(faulthandler, 'dump_traceback_later'):
-            self.regrtest_args.extend(('--timeout', '3600', '-j4'))
+        self.regrtest_args.extend(('--timeout', '3600', '-j4'))
         if sys.platform == 'win32':
             self.regrtest_args.append('-n')
 
@@ -601,7 +641,11 @@ class ProgramsTestCase(BaseTestCase):
         # Tools\buildbot\test.bat
         script = os.path.join(ROOT_DIR, 'Tools', 'buildbot', 'test.bat')
         test_args = ['--testdir=%s' % self.tmptestdir]
-        if platform.architecture()[0] == '64bit':
+        if platform.machine() == 'ARM64':
+            test_args.append('-arm64') # ARM 64-bit build
+        elif platform.machine() == 'ARM':
+            test_args.append('-arm32')   # 32-bit ARM build
+        elif platform.architecture()[0] == '64bit':
             test_args.append('-x64')   # 64-bit build
         if not Py_DEBUG:
             test_args.append('+d')     # Release build, use python.exe
@@ -614,7 +658,11 @@ class ProgramsTestCase(BaseTestCase):
         if not os.path.isfile(script):
             self.skipTest(f'File "{script}" does not exist')
         rt_args = ["-q"]             # Quick, don't run tests twice
-        if platform.architecture()[0] == '64bit':
+        if platform.machine() == 'ARM64':
+            rt_args.append('-arm64') # ARM 64-bit build
+        elif platform.machine() == 'ARM':
+            rt_args.append('-arm32')   # 32-bit ARM build
+        elif platform.architecture()[0] == '64bit':
             rt_args.append('-x64')   # 64-bit build
         if Py_DEBUG:
             rt_args.append('-d')     # Debug build, use python_d.exe
@@ -650,7 +698,14 @@ class ArgsTestCase(BaseTestCase):
         # test -u command line option
         tests = {}
         for resource in ('audio', 'network'):
-            code = 'from test import support\nsupport.requires(%r)' % resource
+            code = textwrap.dedent("""
+                        from test import support; support.requires(%r)
+                        import unittest
+                        class PassingTest(unittest.TestCase):
+                            def test_pass(self):
+                                pass
+                    """ % resource)
+
             tests[resource] = self.create_test(resource, code)
         test_names = sorted(tests.values())
 
@@ -756,22 +811,23 @@ class ArgsTestCase(BaseTestCase):
                  % (self.TESTNAME_REGEX, len(tests)))
         self.check_line(output, regex)
 
-    def test_slow_interrupted(self):
+    def test_slowest_interrupted(self):
         # Issue #25373: test --slowest with an interrupted test
         code = TEST_INTERRUPTED
         test = self.create_test("sigint", code=code)
 
         for multiprocessing in (False, True):
-            if multiprocessing:
-                args = ("--slowest", "-j2", test)
-            else:
-                args = ("--slowest", test)
-            output = self.run_tests(*args, exitcode=130)
-            self.check_executed_tests(output, test,
-                                      omitted=test, interrupted=True)
+            with self.subTest(multiprocessing=multiprocessing):
+                if multiprocessing:
+                    args = ("--slowest", "-j2", test)
+                else:
+                    args = ("--slowest", test)
+                output = self.run_tests(*args, exitcode=130)
+                self.check_executed_tests(output, test,
+                                          omitted=test, interrupted=True)
 
-            regex = ('10 slowest tests:\n')
-            self.check_line(output, regex)
+                regex = ('10 slowest tests:\n')
+                self.check_line(output, regex)
 
     def test_coverage(self):
         # test --coverage
@@ -890,13 +946,13 @@ class ArgsTestCase(BaseTestCase):
                                 testname)
         self.assertEqual(output.splitlines(), all_methods)
 
+    @support.cpython_only
     def test_crashed(self):
         # Any code which causes a crash
         code = 'import faulthandler; faulthandler._sigsegv()'
         crash_test = self.create_test(name="crash", code=code)
-        ok_test = self.create_test(name="ok")
 
-        tests = [crash_test, ok_test]
+        tests = [crash_test]
         output = self.run_tests("-j2", *tests, exitcode=2)
         self.check_executed_tests(output, tests, failed=crash_test,
                                   randomize=True)
@@ -966,6 +1022,7 @@ class ArgsTestCase(BaseTestCase):
                                   fail_env_changed=True)
 
     def test_rerun_fail(self):
+        # FAILURE then FAILURE
         code = textwrap.dedent("""
             import unittest
 
@@ -980,6 +1037,192 @@ class ArgsTestCase(BaseTestCase):
         self.check_executed_tests(output, [testname],
                                   failed=testname, rerun=testname)
 
+    def test_rerun_success(self):
+        # FAILURE then SUCCESS
+        code = textwrap.dedent("""
+            import builtins
+            import unittest
+
+            class Tests(unittest.TestCase):
+                failed = False
+
+                def test_fail_once(self):
+                    if not hasattr(builtins, '_test_failed'):
+                        builtins._test_failed = True
+                        self.fail("bug")
+        """)
+        testname = self.create_test(code=code)
+
+        output = self.run_tests("-w", testname, exitcode=0)
+        self.check_executed_tests(output, [testname],
+                                  rerun=testname)
+
+    def test_no_tests_ran(self):
+        code = textwrap.dedent("""
+            import unittest
+
+            class Tests(unittest.TestCase):
+                def test_bug(self):
+                    pass
+        """)
+        testname = self.create_test(code=code)
+
+        output = self.run_tests(testname, "-m", "nosuchtest", exitcode=0)
+        self.check_executed_tests(output, [testname], no_test_ran=testname)
+
+    def test_no_tests_ran_skip(self):
+        code = textwrap.dedent("""
+            import unittest
+
+            class Tests(unittest.TestCase):
+                def test_skipped(self):
+                    self.skipTest("because")
+        """)
+        testname = self.create_test(code=code)
+
+        output = self.run_tests(testname, exitcode=0)
+        self.check_executed_tests(output, [testname])
+
+    def test_no_tests_ran_multiple_tests_nonexistent(self):
+        code = textwrap.dedent("""
+            import unittest
+
+            class Tests(unittest.TestCase):
+                def test_bug(self):
+                    pass
+        """)
+        testname = self.create_test(code=code)
+        testname2 = self.create_test(code=code)
+
+        output = self.run_tests(testname, testname2, "-m", "nosuchtest", exitcode=0)
+        self.check_executed_tests(output, [testname, testname2],
+                                  no_test_ran=[testname, testname2])
+
+    def test_no_test_ran_some_test_exist_some_not(self):
+        code = textwrap.dedent("""
+            import unittest
+
+            class Tests(unittest.TestCase):
+                def test_bug(self):
+                    pass
+        """)
+        testname = self.create_test(code=code)
+        other_code = textwrap.dedent("""
+            import unittest
+
+            class Tests(unittest.TestCase):
+                def test_other_bug(self):
+                    pass
+        """)
+        testname2 = self.create_test(code=other_code)
+
+        output = self.run_tests(testname, testname2, "-m", "nosuchtest",
+                                "-m", "test_other_bug", exitcode=0)
+        self.check_executed_tests(output, [testname, testname2],
+                                  no_test_ran=[testname])
+
+    @support.cpython_only
+    def test_findleaks(self):
+        code = textwrap.dedent(r"""
+            import _testcapi
+            import gc
+            import unittest
+
+            @_testcapi.with_tp_del
+            class Garbage:
+                def __tp_del__(self):
+                    pass
+
+            class Tests(unittest.TestCase):
+                def test_garbage(self):
+                    # create an uncollectable object
+                    obj = Garbage()
+                    obj.ref_cycle = obj
+                    obj = None
+        """)
+        testname = self.create_test(code=code)
+
+        output = self.run_tests("--fail-env-changed", testname, exitcode=3)
+        self.check_executed_tests(output, [testname],
+                                  env_changed=[testname],
+                                  fail_env_changed=True)
+
+        # --findleaks is now basically an alias to --fail-env-changed
+        output = self.run_tests("--findleaks", testname, exitcode=3)
+        self.check_executed_tests(output, [testname],
+                                  env_changed=[testname],
+                                  fail_env_changed=True)
+
+    def test_multiprocessing_timeout(self):
+        code = textwrap.dedent(r"""
+            import time
+            import unittest
+            try:
+                import faulthandler
+            except ImportError:
+                faulthandler = None
+
+            class Tests(unittest.TestCase):
+                # test hangs and so should be stopped by the timeout
+                def test_sleep(self):
+                    # we want to test regrtest multiprocessing timeout,
+                    # not faulthandler timeout
+                    if faulthandler is not None:
+                        faulthandler.cancel_dump_traceback_later()
+
+                    time.sleep(60 * 5)
+        """)
+        testname = self.create_test(code=code)
+
+        output = self.run_tests("-j2", "--timeout=1.0", testname, exitcode=2)
+        self.check_executed_tests(output, [testname],
+                                  failed=testname)
+        self.assertRegex(output,
+                         re.compile('%s timed out' % testname, re.MULTILINE))
+
+    def test_unraisable_exc(self):
+        # --fail-env-changed must catch unraisable exception
+        code = textwrap.dedent(r"""
+            import unittest
+            import weakref
+
+            class MyObject:
+                pass
+
+            def weakref_callback(obj):
+                raise Exception("weakref callback bug")
+
+            class Tests(unittest.TestCase):
+                def test_unraisable_exc(self):
+                    obj = MyObject()
+                    ref = weakref.ref(obj, weakref_callback)
+                    # call weakref_callback() which logs
+                    # an unraisable exception
+                    obj = None
+        """)
+        testname = self.create_test(code=code)
+
+        output = self.run_tests("--fail-env-changed", "-v", testname, exitcode=3)
+        self.check_executed_tests(output, [testname],
+                                  env_changed=[testname],
+                                  fail_env_changed=True)
+        self.assertIn("Warning -- Unraisable exception", output)
+
+    def test_cleanup(self):
+        dirname = os.path.join(self.tmptestdir, "test_python_123")
+        os.mkdir(dirname)
+        filename = os.path.join(self.tmptestdir, "test_python_456")
+        open(filename, "wb").close()
+        names = [dirname, filename]
+
+        cmdargs = ['-m', 'test',
+                   '--tempdir=%s' % self.tmptestdir,
+                   '--cleanup']
+        self.run_python(cmdargs)
+
+        for name in names:
+            self.assertFalse(os.path.exists(name), name)
+
 
 class TestUtils(unittest.TestCase):
     def test_format_duration(self):
@@ -990,9 +1233,9 @@ class TestUtils(unittest.TestCase):
         self.assertEqual(utils.format_duration(10e-3),
                          '10 ms')
         self.assertEqual(utils.format_duration(1.5),
-                         '1 sec 500 ms')
+                         '1.5 sec')
         self.assertEqual(utils.format_duration(1),
-                         '1 sec')
+                         '1.0 sec')
         self.assertEqual(utils.format_duration(2 * 60),
                          '2 min')
         self.assertEqual(utils.format_duration(2 * 60 + 1),

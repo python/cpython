@@ -273,7 +273,7 @@ Methods and properties
 
 .. testsetup::
 
-   from pathlib import PurePosixPath, PureWindowsPath
+   from pathlib import PurePath, PurePosixPath, PureWindowsPath
 
 Pure paths provide the following methods and properties:
 
@@ -460,6 +460,19 @@ Pure paths provide the following methods and properties:
       False
       >>> PureWindowsPath('//some/share').is_absolute()
       True
+
+
+.. method:: PurePath.is_relative_to(*other)
+
+   Return whether or not this path is relative to the *other* path.
+
+      >>> p = PurePath('/etc/passwd')
+      >>> p.is_relative_to('/etc')
+      True
+      >>> p.is_relative_to('/usr')
+      False
+
+   .. versionadded:: 3.9
 
 
 .. method:: PurePath.is_reserved()
@@ -728,7 +741,7 @@ call fails (for example because the path doesn't exist).
 
 .. method:: Path.glob(pattern)
 
-   Glob the given *pattern* in the directory represented by this path,
+   Glob the given relative *pattern* in the directory represented by this path,
    yielding all matching files (of any kind)::
 
       >>> sorted(Path('.').glob('*.py'))
@@ -933,23 +946,32 @@ call fails (for example because the path doesn't exist).
 
 .. method:: Path.rename(target)
 
-   Rename this file or directory to the given *target*.  On Unix, if
-   *target* exists and is a file, it will be replaced silently if the user
-   has permission.  *target* can be either a string or another path object::
+   Rename this file or directory to the given *target*, and return a new Path
+   instance pointing to *target*.  On Unix, if *target* exists and is a file,
+   it will be replaced silently if the user has permission.  *target* can be
+   either a string or another path object::
 
       >>> p = Path('foo')
       >>> p.open('w').write('some text')
       9
       >>> target = Path('bar')
       >>> p.rename(target)
+      PosixPath('bar')
       >>> target.open().read()
       'some text'
+
+   .. versionchanged:: 3.8
+      Added return value, return the new Path instance.
 
 
 .. method:: Path.replace(target)
 
-   Rename this file or directory to the given *target*.  If *target* points
-   to an existing file or directory, it will be unconditionally replaced.
+   Rename this file or directory to the given *target*, and return a new Path
+   instance pointing to *target*.  If *target* points to an existing file or
+   directory, it will be unconditionally replaced.
+
+   .. versionchanged:: 3.8
+      Added return value, return the new Path instance.
 
 
 .. method:: Path.resolve(strict=False)
@@ -976,12 +998,12 @@ call fails (for example because the path doesn't exist).
    is raised.
 
    .. versionadded:: 3.6
-      The *strict* argument.
+      The *strict* argument (pre-3.6 behavior is strict).
 
 .. method:: Path.rglob(pattern)
 
-   This is like calling :meth:`Path.glob` with "``**``" added in front of the
-   given *pattern*::
+   This is like calling :func:`Path.glob` with "``**/``" added in front of the
+   given relative *pattern*::
 
       >>> sorted(Path().rglob("*.py"))
       [PosixPath('build/lib/pathlib.py'),
@@ -1048,10 +1070,26 @@ call fails (for example because the path doesn't exist).
    otherwise :exc:`FileExistsError` is raised.
 
 
-.. method:: Path.unlink()
+.. method:: Path.unlink(missing_ok=False)
 
    Remove this file or symbolic link.  If the path points to a directory,
    use :func:`Path.rmdir` instead.
+
+   If *missing_ok* is false (the default), :exc:`FileNotFoundError` is
+   raised if the path does not exist.
+
+   If *missing_ok* is true, :exc:`FileNotFoundError` exceptions will be
+   ignored (same behavior as the POSIX ``rm -f`` command).
+
+   .. versionchanged:: 3.8
+      The *missing_ok* parameter was added.
+
+
+.. method:: Path.link_to(target)
+
+   Create a hard link pointing to a path named *target*.
+
+   .. versionchanged:: 3.8
 
 
 .. method:: Path.write_bytes(data)
@@ -1080,6 +1118,9 @@ call fails (for example because the path doesn't exist).
       18
       >>> p.read_text()
       'Text file contents'
+
+   An existing file of the same name is overwritten. The optional parameters
+   have the same meaning as in :func:`open`.
 
    .. versionadded:: 3.5
 

@@ -1,3 +1,0 @@
-Tracebacks show now correct line number for subexpressions in multiline
-expressions. Tracebacks show now the line number of the first line for
-multiline expressions instead of the line number of the last subexpression.

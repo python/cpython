@@ -39,8 +39,8 @@ The primary entry point is a :term:`generator`:
    column where the token begins in the source; a 2-tuple ``(erow, ecol)`` of
    ints specifying the row and column where the token ends in the source; and
    the line on which the token was found. The line passed (the last tuple item)
-   is the *logical* line; continuation lines are included.  The 5 tuple is
-   returned as a :term:`named tuple` with the field names:
+   is the *physical* line.  The 5 tuple is returned as a :term:`named tuple`
+   with the field names:
    ``type string start end line``.
 
    The returned :term:`named tuple` has an additional property named

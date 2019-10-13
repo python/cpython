@@ -1,2 +1,0 @@
-Add .wasm -> application/wasm to list of recognized file types and content
-type headers

@@ -1,0 +1,2 @@
+Email with single part but content-type set to ``multipart/*`` doesn't raise
+AttributeError anymore.

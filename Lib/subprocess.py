@@ -50,8 +50,17 @@ import signal
 import sys
 import threading
 import warnings
+import contextlib
 from time import monotonic as _time
 
+try:
+    import pwd
+except ImportError:
+    pwd = None
+try:
+    import grp
+except ImportError:
+    grp = None
 
 __all__ = ["Popen", "PIPE", "STDOUT", "call", "check_call", "getstatusoutput",
            "getoutput", "check_output", "run", "CalledProcessError", "DEVNULL",
@@ -202,7 +211,6 @@ if _mswindows:
             return "%s(%d)" % (self.__class__.__name__, int(self))
 
         __del__ = Close
-        __str__ = __repr__
 else:
     # When select or poll has indicated that the file is writable,
     # we can write up to _PIPE_BUF bytes without risk of blocking.
@@ -218,22 +226,38 @@ else:
         _PopenSelector = selectors.SelectSelector
 
 
-# This lists holds Popen instances for which the underlying process had not
-# exited at the time its __del__ method got called: those processes are wait()ed
-# for synchronously from _cleanup() when a new Popen object is created, to avoid
-# zombie processes.
-_active = []
+if _mswindows:
+    # On Windows we just need to close `Popen._handle` when we no longer need
+    # it, so that the kernel can free it. `Popen._handle` gets closed
+    # implicitly when the `Popen` instance is finalized (see `Handle.__del__`,
+    # which is calling `CloseHandle` as requested in [1]), so there is nothing
+    # for `_cleanup` to do.
+    #
+    # [1] https://docs.microsoft.com/en-us/windows/desktop/ProcThread/
+    # creating-processes
+    _active = None
 
-def _cleanup():
-    for inst in _active[:]:
-        res = inst._internal_poll(_deadstate=sys.maxsize)
-        if res is not None:
-            try:
-                _active.remove(inst)
-            except ValueError:
-                # This can happen if two threads create a new Popen instance.
-                # It's harmless that it was already removed, so ignore.
-                pass
+    def _cleanup():
+        pass
+else:
+    # This lists holds Popen instances for which the underlying process had not
+    # exited at the time its __del__ method got called: those processes are
+    # wait()ed for synchronously from _cleanup() when a new Popen object is
+    # created, to avoid zombie processes.
+    _active = []
+
+    def _cleanup():
+        if _active is None:
+            return
+        for inst in _active[:]:
+            res = inst._internal_poll(_deadstate=sys.maxsize)
+            if res is not None:
+                try:
+                    _active.remove(inst)
+                except ValueError:
+                    # This can happen if two threads create a new Popen instance.
+                    # It's harmless that it was already removed, so ignore.
+                    pass
 
 PIPE = -1
 STDOUT = -2
@@ -262,9 +286,7 @@ def _args_from_interpreter_flags():
         # 'inspect': 'i',
         # 'interactive': 'i',
         'dont_write_bytecode': 'B',
-        'no_user_site': 's',
         'no_site': 'S',
-        'ignore_environment': 'E',
         'verbose': 'v',
         'bytes_warning': 'b',
         'quiet': 'q',
@@ -275,6 +297,14 @@ def _args_from_interpreter_flags():
         v = getattr(sys.flags, flag)
         if v > 0:
             args.append('-' + opt * v)
+
+    if sys.flags.isolated:
+        args.append('-I')
+    else:
+        if sys.flags.ignore_environment:
+            args.append('-E')
+        if sys.flags.no_user_site:
+            args.append('-s')
 
     # -W options
     warnopts = sys.warnoptions[:]
@@ -373,7 +403,7 @@ def check_output(*popenargs, timeout=None, **kwargs):
     b'when in the course of barman events\n'
 
     By default, all communication is in bytes, and therefore any "input"
-    should be bytes, and the return value wil be bytes.  If in text mode,
+    should be bytes, and the return value will be bytes.  If in text mode,
     any "input" should be a string, and the return value will be a string
     decoded according to locale encoding, or by "encoding" if set. Text mode
     is triggered by setting any of text, encoding, errors or universal_newlines.
@@ -453,12 +483,12 @@ def run(*popenargs,
     The other arguments are the same as for the Popen constructor.
     """
     if input is not None:
-        if 'stdin' in kwargs:
+        if kwargs.get('stdin') is not None:
             raise ValueError('stdin and input arguments may not both be used.')
         kwargs['stdin'] = PIPE
 
     if capture_output:
-        if ('stdout' in kwargs) or ('stderr' in kwargs):
+        if kwargs.get('stdout') is not None or kwargs.get('stderr') is not None:
             raise ValueError('stdout and stderr arguments may not be used '
                              'with capture_output.')
         kwargs['stdout'] = PIPE
@@ -467,11 +497,20 @@ def run(*popenargs,
     with Popen(*popenargs, **kwargs) as process:
         try:
             stdout, stderr = process.communicate(input, timeout=timeout)
-        except TimeoutExpired:
+        except TimeoutExpired as exc:
             process.kill()
-            stdout, stderr = process.communicate()
-            raise TimeoutExpired(process.args, timeout, output=stdout,
-                                 stderr=stderr)
+            if _mswindows:
+                # Windows accumulates the output in a single blocking
+                # read() call run on child threads, with the timeout
+                # being done in a join() on those threads.  communicate()
+                # _after_ kill() is required to collect that and add it
+                # to the exception.
+                exc.stdout, exc.stderr = process.communicate()
+            else:
+                # POSIX _communicate already populated the output so
+                # far into the TimeoutExpired exception.
+                process.wait()
+            raise
         except:  # Including KeyboardInterrupt, communicate handled that.
             process.kill()
             # We don't call process.wait() as .__exit__ does that for us.
@@ -515,7 +554,7 @@ def list2cmdline(seq):
     # "Parsing C++ Command-Line Arguments"
     result = []
     needquote = False
-    for arg in seq:
+    for arg in map(os.fsdecode, seq):
         bs_buf = []
 
         # Add a space to separate this argument from the others
@@ -600,6 +639,56 @@ def getoutput(cmd):
     return getstatusoutput(cmd)[1]
 
 
+def _use_posix_spawn():
+    """Check if posix_spawn() can be used for subprocess.
+
+    subprocess requires a posix_spawn() implementation that properly reports
+    errors to the parent process, & sets errno on the following failures:
+
+    * Process attribute actions failed.
+    * File actions failed.
+    * exec() failed.
+
+    Prefer an implementation which can use vfork() in some cases for best
+    performance.
+    """
+    if _mswindows or not hasattr(os, 'posix_spawn'):
+        # os.posix_spawn() is not available
+        return False
+
+    if sys.platform == 'darwin':
+        # posix_spawn() is a syscall on macOS and properly reports errors
+        return True
+
+    # Check libc name and runtime libc version
+    try:
+        ver = os.confstr('CS_GNU_LIBC_VERSION')
+        # parse 'glibc 2.28' as ('glibc', (2, 28))
+        parts = ver.split(maxsplit=1)
+        if len(parts) != 2:
+            # reject unknown format
+            raise ValueError
+        libc = parts[0]
+        version = tuple(map(int, parts[1].split('.')))
+
+        if sys.platform == 'linux' and libc == 'glibc' and version >= (2, 24):
+            # glibc 2.24 has a new Linux posix_spawn implementation using vfork
+            # which properly reports errors to the parent process.
+            return True
+        # Note: Don't use the implementation in earlier glibc because it doesn't
+        # use vfork (even if glibc 2.26 added a pipe to properly report errors
+        # to the parent process).
+    except (AttributeError, ValueError, OSError):
+        # os.confstr() or CS_GNU_LIBC_VERSION value not available
+        pass
+
+    # By default, assume that posix_spawn() does not properly report errors.
+    return False
+
+
+_USE_POSIX_SPAWN = _use_posix_spawn()
+
+
 class Popen(object):
     """ Execute a child program in a new process.
 
@@ -638,6 +727,14 @@ class Popen(object):
 
       start_new_session (POSIX only)
 
+      group (POSIX only)
+
+      extra_groups (POSIX only)
+
+      user (POSIX only)
+
+      umask (POSIX only)
+
       pass_fds (POSIX only)
 
       encoding and errors: Text mode encoding and error handling to use for
@@ -654,7 +751,8 @@ class Popen(object):
                  shell=False, cwd=None, env=None, universal_newlines=None,
                  startupinfo=None, creationflags=0,
                  restore_signals=True, start_new_session=False,
-                 pass_fds=(), *, encoding=None, errors=None, text=None):
+                 pass_fds=(), *, user=None, group=None, extra_groups=None,
+                 encoding=None, errors=None, text=None, umask=-1):
         """Create new Popen instance."""
         _cleanup()
         # Held while anything is calling waitpid before returncode has been
@@ -743,12 +841,93 @@ class Popen(object):
 
         self._closed_child_pipe_fds = False
 
+        if self.text_mode:
+            if bufsize == 1:
+                line_buffering = True
+                # Use the default buffer size for the underlying binary streams
+                # since they don't support line buffering.
+                bufsize = -1
+            else:
+                line_buffering = False
+
+        gid = None
+        if group is not None:
+            if not hasattr(os, 'setregid'):
+                raise ValueError("The 'group' parameter is not supported on the "
+                                 "current platform")
+
+            elif isinstance(group, str):
+                if grp is None:
+                    raise ValueError("The group parameter cannot be a string "
+                                     "on systems without the grp module")
+
+                gid = grp.getgrnam(group).gr_gid
+            elif isinstance(group, int):
+                gid = group
+            else:
+                raise TypeError("Group must be a string or an integer, not {}"
+                                .format(type(group)))
+
+            if gid < 0:
+                raise ValueError(f"Group ID cannot be negative, got {gid}")
+
+        gids = None
+        if extra_groups is not None:
+            if not hasattr(os, 'setgroups'):
+                raise ValueError("The 'extra_groups' parameter is not "
+                                 "supported on the current platform")
+
+            elif isinstance(extra_groups, str):
+                raise ValueError("Groups must be a list, not a string")
+
+            gids = []
+            for extra_group in extra_groups:
+                if isinstance(extra_group, str):
+                    if grp is None:
+                        raise ValueError("Items in extra_groups cannot be "
+                                         "strings on systems without the "
+                                         "grp module")
+
+                    gids.append(grp.getgrnam(extra_group).gr_gid)
+                elif isinstance(extra_group, int):
+                    gids.append(extra_group)
+                else:
+                    raise TypeError("Items in extra_groups must be a string "
+                                    "or integer, not {}"
+                                    .format(type(extra_group)))
+
+            # make sure that the gids are all positive here so we can do less
+            # checking in the C code
+            for gid_check in gids:
+                if gid_check < 0:
+                    raise ValueError(f"Group ID cannot be negative, got {gid_check}")
+
+        uid = None
+        if user is not None:
+            if not hasattr(os, 'setreuid'):
+                raise ValueError("The 'user' parameter is not supported on "
+                                 "the current platform")
+
+            elif isinstance(user, str):
+                if pwd is None:
+                    raise ValueError("The user parameter cannot be a string "
+                                     "on systems without the pwd module")
+
+                uid = pwd.getpwnam(user).pw_uid
+            elif isinstance(user, int):
+                uid = user
+            else:
+                raise TypeError("User must be a string or an integer")
+
+            if uid < 0:
+                raise ValueError(f"User ID cannot be negative, got {uid}")
+
         try:
             if p2cwrite != -1:
                 self.stdin = io.open(p2cwrite, 'wb', bufsize)
                 if self.text_mode:
                     self.stdin = io.TextIOWrapper(self.stdin, write_through=True,
-                            line_buffering=(bufsize == 1),
+                            line_buffering=line_buffering,
                             encoding=encoding, errors=errors)
             if c2pread != -1:
                 self.stdout = io.open(c2pread, 'rb', bufsize)
@@ -767,7 +946,9 @@ class Popen(object):
                                 p2cread, p2cwrite,
                                 c2pread, c2pwrite,
                                 errread, errwrite,
-                                restore_signals, start_new_session)
+                                restore_signals,
+                                gid, gids, uid, umask,
+                                start_new_session)
         except:
             # Cleanup if the child failed starting.
             for f in filter(None, (self.stdin, self.stdout, self.stderr)):
@@ -969,12 +1150,16 @@ class Popen(object):
             return endtime - _time()
 
 
-    def _check_timeout(self, endtime, orig_timeout):
+    def _check_timeout(self, endtime, orig_timeout, stdout_seq, stderr_seq,
+                       skip_check_and_raise=False):
         """Convenience for checking if a timeout has expired."""
         if endtime is None:
             return
-        if _time() > endtime:
-            raise TimeoutExpired(self.args, orig_timeout)
+        if skip_check_and_raise or _time() > endtime:
+            raise TimeoutExpired(
+                    self.args, orig_timeout,
+                    output=b''.join(stdout_seq) if stdout_seq else None,
+                    stderr=b''.join(stderr_seq) if stderr_seq else None)
 
 
     def wait(self, timeout=None):
@@ -1000,6 +1185,34 @@ class Popen(object):
                 pass
             raise  # resume the KeyboardInterrupt
 
+    def _close_pipe_fds(self,
+                        p2cread, p2cwrite,
+                        c2pread, c2pwrite,
+                        errread, errwrite):
+        # self._devnull is not always defined.
+        devnull_fd = getattr(self, '_devnull', None)
+
+        with contextlib.ExitStack() as stack:
+            if _mswindows:
+                if p2cread != -1:
+                    stack.callback(p2cread.Close)
+                if c2pwrite != -1:
+                    stack.callback(c2pwrite.Close)
+                if errwrite != -1:
+                    stack.callback(errwrite.Close)
+            else:
+                if p2cread != -1 and p2cwrite != -1 and p2cread != devnull_fd:
+                    stack.callback(os.close, p2cread)
+                if c2pwrite != -1 and c2pread != -1 and c2pwrite != devnull_fd:
+                    stack.callback(os.close, c2pwrite)
+                if errwrite != -1 and errread != -1 and errwrite != devnull_fd:
+                    stack.callback(os.close, errwrite)
+
+            if devnull_fd is not None:
+                stack.callback(os.close, devnull_fd)
+
+        # Prevent a double close of these handles/fds from __init__ on error.
+        self._closed_child_pipe_fds = True
 
     if _mswindows:
         #
@@ -1105,13 +1318,30 @@ class Popen(object):
                            p2cread, p2cwrite,
                            c2pread, c2pwrite,
                            errread, errwrite,
-                           unused_restore_signals, unused_start_new_session):
+                           unused_restore_signals,
+                           unused_gid, unused_gids, unused_uid,
+                           unused_umask,
+                           unused_start_new_session):
             """Execute program (MS Windows version)"""
 
             assert not pass_fds, "pass_fds not supported on Windows."
 
-            if not isinstance(args, str):
+            if isinstance(args, str):
+                pass
+            elif isinstance(args, bytes):
+                if shell:
+                    raise TypeError('bytes args is not allowed on Windows')
+                args = list2cmdline([args])
+            elif isinstance(args, os.PathLike):
+                if shell:
+                    raise TypeError('path-like args is not allowed when '
+                                    'shell is true')
+                args = list2cmdline([args])
+            else:
                 args = list2cmdline(args)
+
+            if executable is not None:
+                executable = os.fsdecode(executable)
 
             # Process startup details
             if startupinfo is None:
@@ -1161,6 +1391,11 @@ class Popen(object):
                 comspec = os.environ.get("COMSPEC", "cmd.exe")
                 args = '{} /c "{}"'.format (comspec, args)
 
+            if cwd is not None:
+                cwd = os.fsdecode(cwd)
+
+            sys.audit("subprocess.Popen", executable, args, cwd, env)
+
             # Start the process
             try:
                 hp, ht, pid, tid = _winapi.CreateProcess(executable, args,
@@ -1169,7 +1404,7 @@ class Popen(object):
                                          int(not close_fds),
                                          creationflags,
                                          env,
-                                         os.fspath(cwd) if cwd is not None else None,
+                                         cwd,
                                          startupinfo)
             finally:
                 # Child is launched. Close the parent's copy of those pipe
@@ -1178,17 +1413,9 @@ class Popen(object):
                 # output pipe are maintained in this process or else the
                 # pipe will not close when the child process exits and the
                 # ReadFile will hang.
-                if p2cread != -1:
-                    p2cread.Close()
-                if c2pwrite != -1:
-                    c2pwrite.Close()
-                if errwrite != -1:
-                    errwrite.Close()
-                if hasattr(self, '_devnull'):
-                    os.close(self._devnull)
-                # Prevent a double close of these handles/fds from __init__
-                # on error.
-                self._closed_child_pipe_fds = True
+                self._close_pipe_fds(p2cread, p2cwrite,
+                                     c2pread, c2pwrite,
+                                     errread, errwrite)
 
             # Retain the process handle, but close the thread handle
             self._child_created = True
@@ -1375,16 +1602,62 @@ class Popen(object):
                     errread, errwrite)
 
 
+        def _posix_spawn(self, args, executable, env, restore_signals,
+                         p2cread, p2cwrite,
+                         c2pread, c2pwrite,
+                         errread, errwrite):
+            """Execute program using os.posix_spawn()."""
+            if env is None:
+                env = os.environ
+
+            kwargs = {}
+            if restore_signals:
+                # See _Py_RestoreSignals() in Python/pylifecycle.c
+                sigset = []
+                for signame in ('SIGPIPE', 'SIGXFZ', 'SIGXFSZ'):
+                    signum = getattr(signal, signame, None)
+                    if signum is not None:
+                        sigset.append(signum)
+                kwargs['setsigdef'] = sigset
+
+            file_actions = []
+            for fd in (p2cwrite, c2pread, errread):
+                if fd != -1:
+                    file_actions.append((os.POSIX_SPAWN_CLOSE, fd))
+            for fd, fd2 in (
+                (p2cread, 0),
+                (c2pwrite, 1),
+                (errwrite, 2),
+            ):
+                if fd != -1:
+                    file_actions.append((os.POSIX_SPAWN_DUP2, fd, fd2))
+            if file_actions:
+                kwargs['file_actions'] = file_actions
+
+            self.pid = os.posix_spawn(executable, args, env, **kwargs)
+            self._child_created = True
+
+            self._close_pipe_fds(p2cread, p2cwrite,
+                                 c2pread, c2pwrite,
+                                 errread, errwrite)
+
         def _execute_child(self, args, executable, preexec_fn, close_fds,
                            pass_fds, cwd, env,
                            startupinfo, creationflags, shell,
                            p2cread, p2cwrite,
                            c2pread, c2pwrite,
                            errread, errwrite,
-                           restore_signals, start_new_session):
+                           restore_signals,
+                           gid, gids, uid, umask,
+                           start_new_session):
             """Execute program (POSIX version)"""
 
             if isinstance(args, (str, bytes)):
+                args = [args]
+            elif isinstance(args, os.PathLike):
+                if shell:
+                    raise TypeError('path-like args is not allowed when '
+                                    'shell is true')
                 args = [args]
             else:
                 args = list(args)
@@ -1399,6 +1672,29 @@ class Popen(object):
 
             if executable is None:
                 executable = args[0]
+
+            sys.audit("subprocess.Popen", executable, args, cwd, env)
+
+            if (_USE_POSIX_SPAWN
+                    and os.path.dirname(executable)
+                    and preexec_fn is None
+                    and not close_fds
+                    and not pass_fds
+                    and cwd is None
+                    and (p2cread == -1 or p2cread > 2)
+                    and (c2pwrite == -1 or c2pwrite > 2)
+                    and (errwrite == -1 or errwrite > 2)
+                    and not start_new_session
+                    and gid is None
+                    and gids is None
+                    and uid is None
+                    and umask < 0):
+                self._posix_spawn(args, executable, env, restore_signals,
+                                  p2cread, p2cwrite,
+                                  c2pread, c2pwrite,
+                                  errread, errwrite)
+                return
+
             orig_executable = executable
 
             # For transferring possible exec failure from child to parent.
@@ -1445,24 +1741,17 @@ class Popen(object):
                             p2cread, p2cwrite, c2pread, c2pwrite,
                             errread, errwrite,
                             errpipe_read, errpipe_write,
-                            restore_signals, start_new_session, preexec_fn)
+                            restore_signals, start_new_session,
+                            gid, gids, uid, umask,
+                            preexec_fn)
                     self._child_created = True
                 finally:
                     # be sure the FD is closed no matter what
                     os.close(errpipe_write)
 
-                # self._devnull is not always defined.
-                devnull_fd = getattr(self, '_devnull', None)
-                if p2cread != -1 and p2cwrite != -1 and p2cread != devnull_fd:
-                    os.close(p2cread)
-                if c2pwrite != -1 and c2pread != -1 and c2pwrite != devnull_fd:
-                    os.close(c2pwrite)
-                if errwrite != -1 and errread != -1 and errwrite != devnull_fd:
-                    os.close(errwrite)
-                if devnull_fd is not None:
-                    os.close(devnull_fd)
-                # Prevent a double close of these fds from __init__ on error.
-                self._closed_child_pipe_fds = True
+                self._close_pipe_fds(p2cread, p2cwrite,
+                                     c2pread, c2pwrite,
+                                     errread, errwrite)
 
                 # Wait for exec to fail or succeed; possibly raising an
                 # exception (limited in size)
@@ -1669,10 +1958,15 @@ class Popen(object):
                 while selector.get_map():
                     timeout = self._remaining_time(endtime)
                     if timeout is not None and timeout < 0:
-                        raise TimeoutExpired(self.args, orig_timeout)
+                        self._check_timeout(endtime, orig_timeout,
+                                            stdout, stderr,
+                                            skip_check_and_raise=True)
+                        raise RuntimeError(  # Impossible :)
+                            '_check_timeout(..., skip_check_and_raise=True) '
+                            'failed to raise TimeoutExpired.')
 
                     ready = selector.select(timeout)
-                    self._check_timeout(endtime, orig_timeout)
+                    self._check_timeout(endtime, orig_timeout, stdout, stderr)
 
                     # XXX Rewrite these to use non-blocking I/O on the file
                     # objects; they are no longer using C stdio!

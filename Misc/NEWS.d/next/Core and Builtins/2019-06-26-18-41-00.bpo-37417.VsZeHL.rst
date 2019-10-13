@@ -1,0 +1,2 @@
+:meth:`bytearray.extend` now correctly handles errors that arise during iteration.
+Patch by Brandt Bucher.

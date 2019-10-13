@@ -1,0 +1,4 @@
+For :mod:`asyncio`, add a new coroutine :meth:`loop.shutdown_default_executor`.
+The new coroutine provides an API to schedule an executor shutdown that waits
+on the threadpool to finish closing. Also, :func:`asyncio.run` has been updated
+to utilize the new coroutine. Patch by Kyle Stanley.

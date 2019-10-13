@@ -76,7 +76,8 @@ The :mod:`functools` module defines the following functions:
    .. versionadded:: 3.2
 
 
-.. decorator:: lru_cache(maxsize=128, typed=False)
+.. decorator:: lru_cache(user_function)
+               lru_cache(maxsize=128, typed=False)
 
    Decorator to wrap a function with a memoizing callable that saves up to the
    *maxsize* most recent calls.  It can save time when an expensive or I/O bound
@@ -89,6 +90,15 @@ The :mod:`functools` module defines the following functions:
    separate cache entries.  For example, `f(a=1, b=2)` and `f(b=2, a=1)`
    differ in their keyword argument order and may have two separate cache
    entries.
+
+   If *user_function* is specified, it must be a callable. This allows the
+   *lru_cache* decorator to be applied directly to a user function, leaving
+   the *maxsize* at its default value of 128::
+
+       @lru_cache
+       def count_vowels(sentence):
+           sentence = sentence.casefold()
+           return sum(sentence.count(vowel) for vowel in 'aeiou')
 
    If *maxsize* is set to ``None``, the LRU feature is disabled and the cache can
    grow without bound.  The LRU feature performs best when *maxsize* is a
@@ -117,6 +127,11 @@ The :mod:`functools` module defines the following functions:
    example, the most popular articles on a news server tend to change each day).
    The cache's size limit assures that the cache does not grow without bound on
    long-running processes such as web servers.
+
+   In general, the LRU cache should only be used when you want to reuse
+   previously computed values.  Accordingly, it doesn't make sense to cache
+   functions with side-effects, functions that need to create distinct mutable
+   objects on each call, or impure functions such as time() or random().
 
    Example of an LRU cache for static web content::
 
@@ -159,6 +174,9 @@ The :mod:`functools` module defines the following functions:
 
    .. versionchanged:: 3.3
       Added the *typed* option.
+
+   .. versionchanged:: 3.8
+      Added the *user_function* option.
 
 .. decorator:: total_ordering
 
@@ -203,18 +221,18 @@ The :mod:`functools` module defines the following functions:
       Returning NotImplemented from the underlying comparison function for
       unrecognised types is now supported.
 
-.. function:: partial(func, *args, **keywords)
+.. function:: partial(func, /, *args, **keywords)
 
-   Return a new :class:`partial` object which when called will behave like *func*
-   called with the positional arguments *args* and keyword arguments *keywords*. If
-   more arguments are supplied to the call, they are appended to *args*. If
-   additional keyword arguments are supplied, they extend and override *keywords*.
+   Return a new :ref:`partial object<partial-objects>` which when called
+   will behave like *func* called with the positional arguments *args*
+   and keyword arguments *keywords*. If more arguments are supplied to the
+   call, they are appended to *args*. If additional keyword arguments are
+   supplied, they extend and override *keywords*.
    Roughly equivalent to::
 
-      def partial(func, *args, **keywords):
+      def partial(func, /, *args, **keywords):
           def newfunc(*fargs, **fkeywords):
-              newkeywords = keywords.copy()
-              newkeywords.update(fkeywords)
+              newkeywords = {**keywords, **fkeywords}
               return func(*args, *fargs, **newkeywords)
           newfunc.func = func
           newfunc.args = args
@@ -234,7 +252,7 @@ The :mod:`functools` module defines the following functions:
       18
 
 
-.. class:: partialmethod(func, *args, **keywords)
+.. class:: partialmethod(func, /, *args, **keywords)
 
    Return a new :class:`partialmethod` descriptor which behaves
    like :class:`partial` except that it is designed to be used as a method
@@ -247,7 +265,7 @@ The :mod:`functools` module defines the following functions:
    :func:`classmethod`, :func:`staticmethod`, :func:`abstractmethod` or
    another instance of :class:`partialmethod`), calls to ``__get__`` are
    delegated to the underlying descriptor, and an appropriate
-   :class:`partial` object returned as the result.
+   :ref:`partial object<partial-objects>` returned as the result.
 
    When *func* is a non-descriptor callable, an appropriate bound method is
    created dynamically. This behaves like a normal Python function when
@@ -257,7 +275,7 @@ The :mod:`functools` module defines the following functions:
 
    Example::
 
-      >>> class Cell(object):
+      >>> class Cell:
       ...     def __init__(self):
       ...         self._alive = False
       ...     @property
@@ -468,6 +486,9 @@ The :mod:`functools` module defines the following functions:
 
    The same pattern can be used for other similar decorators: ``staticmethod``,
    ``abstractmethod``, and others.
+
+   .. versionadded:: 3.8
+
 
 .. function:: update_wrapper(wrapper, wrapped, assigned=WRAPPER_ASSIGNMENTS, updated=WRAPPER_UPDATES)
 

@@ -102,7 +102,7 @@ to start a process.  These *start methods* are
     will not be inherited.  Starting a process using this method is
     rather slow compared to using *fork* or *forkserver*.
 
-    Available on Unix and Windows.  The default on Windows.
+    Available on Unix and Windows.  The default on Windows and macOS.
 
   *fork*
     The parent process uses :func:`os.fork` to fork the Python
@@ -124,6 +124,12 @@ to start a process.  These *start methods* are
     Available on Unix platforms which support passing file descriptors
     over Unix pipes.
 
+.. versionchanged:: 3.8
+
+   On macOS, the *spawn* start method is now the default.  The *fork* start
+   method should be considered unsafe as it can lead to crashes of the
+   subprocess. See :issue:`33725`.
+
 .. versionchanged:: 3.4
    *spawn* added on all unix platforms, and *forkserver* added for
    some unix platforms.
@@ -131,13 +137,17 @@ to start a process.  These *start methods* are
    handles on Windows.
 
 On Unix using the *spawn* or *forkserver* start methods will also
-start a *semaphore tracker* process which tracks the unlinked named
-semaphores created by processes of the program.  When all processes
-have exited the semaphore tracker unlinks any remaining semaphores.
+start a *resource tracker* process which tracks the unlinked named
+system resources (such as named semaphores or
+:class:`~multiprocessing.shared_memory.SharedMemory` objects) created
+by processes of the program.  When all processes
+have exited the resource tracker unlinks any remaining tracked object.
 Usually there should be none, but if a process was killed by a signal
-there may be some "leaked" semaphores.  (Unlinking the named semaphores
-is a serious matter since the system allows only a limited number, and
-they will not be automatically unlinked until the next reboot.)
+there may be some "leaked" resources.  (Neither leaked semaphores nor shared
+memory segments will be automatically unlinked until the next reboot. This is
+problematic for both objects because the system allows only a limited number of
+named semaphores, and shared memory segments occupy some space in the main
+memory.)
 
 To select a start method you use the :func:`set_start_method` in
 the ``if __name__ == '__main__'`` clause of the main module.  For
@@ -185,6 +195,13 @@ the *fork* context cannot be passed to processes started using the
 A library which wants to use a particular start method should probably
 use :func:`get_context` to avoid interfering with the choice of the
 library user.
+
+.. warning::
+
+   The ``'spawn'`` and ``'forkserver'`` start methods cannot currently
+   be used with "frozen" executables (i.e., binaries produced by
+   packages like **PyInstaller** and **cx_Freeze**) on Unix.
+   The ``'fork'`` start method does work.
 
 
 Exchanging objects between processes
@@ -626,14 +643,14 @@ The :mod:`multiprocessing` package mostly replicates the API of the
        >>> import multiprocessing, time, signal
        >>> p = multiprocessing.Process(target=time.sleep, args=(1000,))
        >>> print(p, p.is_alive())
-       <Process(..., initial)> False
+       <Process ... initial> False
        >>> p.start()
        >>> print(p, p.is_alive())
-       <Process(..., started)> True
+       <Process ... started> True
        >>> p.terminate()
        >>> time.sleep(0.1)
        >>> print(p, p.is_alive())
-       <Process(..., stopped[SIGTERM])> False
+       <Process ... stopped exitcode=-SIGTERM> False
        >>> p.exitcode == -signal.SIGTERM
        True
 
@@ -932,6 +949,14 @@ Miscellaneous
    Return the :class:`Process` object corresponding to the current process.
 
    An analogue of :func:`threading.current_thread`.
+
+.. function:: parent_process()
+
+   Return the :class:`Process` object corresponding to the parent process of
+   the :func:`current_process`. For the main process, ``parent_process`` will
+   be ``None``.
+
+   .. versionadded:: 3.8
 
 .. function:: freeze_support()
 
@@ -1647,7 +1672,7 @@ their parent process exits.  The manager classes are defined in the
       Connect a local manager object to a remote manager process::
 
       >>> from multiprocessing.managers import BaseManager
-      >>> m = BaseManager(address=('127.0.0.1', 5000), authkey=b'abc')
+      >>> m = BaseManager(address=('127.0.0.1', 50000), authkey=b'abc')
       >>> m.connect()
 
    .. method:: shutdown()
@@ -2150,6 +2175,10 @@ with the :class:`Pool` class.
       the process pool as separate tasks.  The (approximate) size of these
       chunks can be specified by setting *chunksize* to a positive integer.
 
+      Note that it may cause high memory usage for very long iterables. Consider
+      using :meth:`imap` or :meth:`imap_unordered` with explicit *chunksize*
+      option for better efficiency.
+
    .. method:: map_async(func, iterable[, chunksize[, callback[, error_callback]]])
 
       A variant of the :meth:`.map` method which returns a result object.
@@ -2168,7 +2197,7 @@ with the :class:`Pool` class.
 
    .. method:: imap(func, iterable[, chunksize])
 
-      A lazier version of :meth:`map`.
+      A lazier version of :meth:`.map`.
 
       The *chunksize* argument is the same as the one used by the :meth:`.map`
       method.  For very long iterables using a large value for *chunksize* can
@@ -2250,6 +2279,10 @@ with the :class:`Pool` class.
 
       Return whether the call completed without raising an exception.  Will
       raise :exc:`AssertionError` if the result is not ready.
+
+      .. versionchanged:: 3.7
+         If the result is not ready, :exc:`ValueError` is raised instead of
+         :exc:`AssertionError`.
 
 The following example demonstrates the use of a pool::
 

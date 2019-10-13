@@ -1,14 +1,17 @@
 import unittest
 from test.support import (verbose, refcount_test, run_unittest,
                           strip_python_stderr, cpython_only, start_threads,
-                          temp_dir, requires_type_collecting, TESTFN, unlink)
+                          temp_dir, requires_type_collecting, TESTFN, unlink,
+                          import_module)
 from test.support.script_helper import assert_python_ok, make_script
 
-import sys
-import time
 import gc
-import weakref
+import sys
+import sysconfig
+import textwrap
 import threading
+import time
+import weakref
 
 try:
     from _testcapi import with_tp_del
@@ -61,6 +64,14 @@ class Uncollectable(object):
             self.partner = partner
     def __tp_del__(self):
         pass
+
+if sysconfig.get_config_vars().get('PY_CFLAGS', ''):
+    BUILD_WITH_NDEBUG = ('-DNDEBUG' in sysconfig.get_config_vars()['PY_CFLAGS'])
+else:
+    # Usually, sys.gettotalrefcount() is only present if Python has been
+    # compiled in debug mode. If it's missing, expect that Python has
+    # been released in release mode: with NDEBUG defined.
+    BUILD_WITH_NDEBUG = (not hasattr(sys, 'gettotalrefcount'))
 
 ### Tests
 ###############################################################################
@@ -755,6 +766,132 @@ class GCTests(unittest.TestCase):
         gc.unfreeze()
         self.assertEqual(gc.get_freeze_count(), 0)
 
+    def test_get_objects(self):
+        gc.collect()
+        l = []
+        l.append(l)
+        self.assertTrue(
+                any(l is element for element in gc.get_objects(generation=0))
+        )
+        self.assertFalse(
+                any(l is element for element in  gc.get_objects(generation=1))
+        )
+        self.assertFalse(
+                any(l is element for element in gc.get_objects(generation=2))
+        )
+        gc.collect(generation=0)
+        self.assertFalse(
+                any(l is element for element in gc.get_objects(generation=0))
+        )
+        self.assertTrue(
+                any(l is element for element in  gc.get_objects(generation=1))
+        )
+        self.assertFalse(
+                any(l is element for element in gc.get_objects(generation=2))
+        )
+        gc.collect(generation=1)
+        self.assertFalse(
+                any(l is element for element in gc.get_objects(generation=0))
+        )
+        self.assertFalse(
+                any(l is element for element in  gc.get_objects(generation=1))
+        )
+        self.assertTrue(
+                any(l is element for element in gc.get_objects(generation=2))
+        )
+        gc.collect(generation=2)
+        self.assertFalse(
+                any(l is element for element in gc.get_objects(generation=0))
+        )
+        self.assertFalse(
+                any(l is element for element in  gc.get_objects(generation=1))
+        )
+        self.assertTrue(
+                any(l is element for element in gc.get_objects(generation=2))
+        )
+        del l
+        gc.collect()
+
+    def test_get_objects_arguments(self):
+        gc.collect()
+        self.assertEqual(len(gc.get_objects()),
+                         len(gc.get_objects(generation=None)))
+
+        self.assertRaises(ValueError, gc.get_objects, 1000)
+        self.assertRaises(ValueError, gc.get_objects, -1000)
+        self.assertRaises(TypeError, gc.get_objects, "1")
+        self.assertRaises(TypeError, gc.get_objects, 1.234)
+
+    def test_38379(self):
+        # When a finalizer resurrects objects, stats were reporting them as
+        # having been collected.  This affected both collect()'s return
+        # value and the dicts returned by get_stats().
+        N = 100
+
+        class A:  # simple self-loop
+            def __init__(self):
+                self.me = self
+
+        class Z(A):  # resurrecting __del__
+            def __del__(self):
+                zs.append(self)
+
+        zs = []
+
+        def getstats():
+            d = gc.get_stats()[-1]
+            return d['collected'], d['uncollectable']
+
+        gc.collect()
+        gc.disable()
+
+        # No problems if just collecting A() instances.
+        oldc, oldnc = getstats()
+        for i in range(N):
+            A()
+        t = gc.collect()
+        c, nc = getstats()
+        self.assertEqual(t, 2*N) # instance object & its dict
+        self.assertEqual(c - oldc, 2*N)
+        self.assertEqual(nc - oldnc, 0)
+
+        # But Z() is not actually collected.
+        oldc, oldnc = c, nc
+        Z()
+        # Nothing is collected - Z() is merely resurrected.
+        t = gc.collect()
+        c, nc = getstats()
+        #self.assertEqual(t, 2)  # before
+        self.assertEqual(t, 0)  # after
+        #self.assertEqual(c - oldc, 2)   # before
+        self.assertEqual(c - oldc, 0)   # after
+        self.assertEqual(nc - oldnc, 0)
+
+        # Unfortunately, a Z() prevents _anything_ from being collected.
+        # It should be possible to collect the A instances anyway, but
+        # that will require non-trivial code changes.
+        oldc, oldnc = c, nc
+        for i in range(N):
+            A()
+        Z()
+        # Z() prevents anything from being collected.
+        t = gc.collect()
+        c, nc = getstats()
+        #self.assertEqual(t, 2*N + 2)  # before
+        self.assertEqual(t, 0)  # after
+        #self.assertEqual(c - oldc, 2*N + 2)   # before
+        self.assertEqual(c - oldc, 0)   # after
+        self.assertEqual(nc - oldnc, 0)
+
+        # But the A() trash is reclaimed on the next run.
+        oldc, oldnc = c, nc
+        t = gc.collect()
+        c, nc = getstats()
+        self.assertEqual(t, 2*N)
+        self.assertEqual(c - oldc, 2*N)
+        self.assertEqual(nc - oldnc, 0)
+
+        gc.enable()
 
 class GCCallbackTests(unittest.TestCase):
     def setUp(self):
@@ -845,7 +982,7 @@ class GCCallbackTests(unittest.TestCase):
     def test_collect_garbage(self):
         self.preclean()
         # Each of these cause four objects to be garbage: Two
-        # Uncolectables and their instance dicts.
+        # Uncollectables and their instance dicts.
         Uncollectable()
         Uncollectable()
         C1055820(666)
@@ -876,6 +1013,61 @@ class GCCallbackTests(unittest.TestCase):
 
         # Uncollectables should be gone
         self.assertEqual(len(gc.garbage), 0)
+
+
+    @unittest.skipIf(BUILD_WITH_NDEBUG,
+                     'built with -NDEBUG')
+    def test_refcount_errors(self):
+        self.preclean()
+        # Verify the "handling" of objects with broken refcounts
+
+        # Skip the test if ctypes is not available
+        import_module("ctypes")
+
+        import subprocess
+        code = textwrap.dedent('''
+            from test.support import gc_collect, SuppressCrashReport
+
+            a = [1, 2, 3]
+            b = [a]
+
+            # Avoid coredump when Py_FatalError() calls abort()
+            SuppressCrashReport().__enter__()
+
+            # Simulate the refcount of "a" being too low (compared to the
+            # references held on it by live data), but keeping it above zero
+            # (to avoid deallocating it):
+            import ctypes
+            ctypes.pythonapi.Py_DecRef(ctypes.py_object(a))
+
+            # The garbage collector should now have a fatal error
+            # when it reaches the broken object
+            gc_collect()
+        ''')
+        p = subprocess.Popen([sys.executable, "-c", code],
+                             stdout=subprocess.PIPE,
+                             stderr=subprocess.PIPE)
+        stdout, stderr = p.communicate()
+        p.stdout.close()
+        p.stderr.close()
+        # Verify that stderr has a useful error message:
+        self.assertRegex(stderr,
+            br'gcmodule\.c:[0-9]+: gc_decref: Assertion "gc_get_refs\(g\) > 0" failed.')
+        self.assertRegex(stderr,
+            br'refcount is too small')
+        # "address : 0x7fb5062efc18"
+        # "address : 7FB5062EFC18"
+        address_regex = br'[0-9a-fA-Fx]+'
+        self.assertRegex(stderr,
+            br'object address  : ' + address_regex)
+        self.assertRegex(stderr,
+            br'object refcount : 1')
+        self.assertRegex(stderr,
+            br'object type     : ' + address_regex)
+        self.assertRegex(stderr,
+            br'object type name: list')
+        self.assertRegex(stderr,
+            br'object repr     : \[1, 2, 3\]')
 
 
 class GCTogglingTests(unittest.TestCase):

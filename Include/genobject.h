@@ -8,6 +8,8 @@
 extern "C" {
 #endif
 
+#include "pystate.h"   /* _PyErr_StackItem */
+
 struct _frame; /* Avoid including frameobject.h */
 
 /* _PyGenObject_HEAD defines the initial segment of generator
@@ -41,7 +43,6 @@ PyAPI_DATA(PyTypeObject) PyGen_Type;
 PyAPI_FUNC(PyObject *) PyGen_New(struct _frame *);
 PyAPI_FUNC(PyObject *) PyGen_NewWithQualName(struct _frame *,
     PyObject *name, PyObject *qualname);
-PyAPI_FUNC(int) PyGen_NeedsFinalizing(PyGenObject *);
 PyAPI_FUNC(int) _PyGen_SetStopIterationValue(PyObject *);
 PyAPI_FUNC(int) _PyGen_FetchStopIterationValue(PyObject **);
 PyAPI_FUNC(PyObject *) _PyGen_Send(PyGenObject *, PyObject *);
@@ -78,6 +79,8 @@ typedef struct {
     /* Flag is set to 1 when aclose() is called for the first time, or
        when a StopAsyncIteration exception is raised. */
     int ag_closed;
+
+    int ag_running_async;
 } PyAsyncGenObject;
 
 PyAPI_DATA(PyTypeObject) PyAsyncGen_Type;

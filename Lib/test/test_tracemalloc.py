@@ -111,6 +111,26 @@ class TestTracemallocEnabled(unittest.TestCase):
         traceback = tracemalloc.get_object_traceback(obj)
         self.assertEqual(traceback, obj_traceback)
 
+    def test_new_reference(self):
+        tracemalloc.clear_traces()
+        # gc.collect() indirectly calls PyList_ClearFreeList()
+        support.gc_collect()
+
+        # Create a list and "destroy it": put it in the PyListObject free list
+        obj = []
+        obj = None
+
+        # Create a list which should reuse the previously created empty list
+        obj = []
+
+        nframe = tracemalloc.get_traceback_limit()
+        frames = get_frames(nframe, -3)
+        obj_traceback = tracemalloc.Traceback(frames)
+
+        traceback = tracemalloc.get_object_traceback(obj)
+        self.assertIsNotNone(traceback)
+        self.assertEqual(traceback, obj_traceback)
+
     def test_set_traceback_limit(self):
         obj_size = 10
 
@@ -865,7 +885,7 @@ class TestCommandLine(unittest.TestCase):
             return
         if b'PYTHONTRACEMALLOC: invalid number of frames' in stderr:
             return
-        self.fail(f"unexpeced output: {stderr!a}")
+        self.fail(f"unexpected output: {stderr!a}")
 
 
     def test_env_var_invalid(self):
@@ -894,7 +914,7 @@ class TestCommandLine(unittest.TestCase):
             return
         if b'-X tracemalloc=NFRAME: invalid number of frames' in stderr:
             return
-        self.fail(f"unexpeced output: {stderr!a}")
+        self.fail(f"unexpected output: {stderr!a}")
 
     def test_sys_xoptions_invalid(self):
         for nframe in INVALID_NFRAME:
