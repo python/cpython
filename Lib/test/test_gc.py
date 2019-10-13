@@ -822,7 +822,78 @@ class GCTests(unittest.TestCase):
         self.assertRaises(TypeError, gc.get_objects, "1")
         self.assertRaises(TypeError, gc.get_objects, 1.234)
 
-    def test_38379(self):
+    def test_resurrection_only_happens_once_per_object(self):
+        class A:  # simple self-loop
+            def __init__(self):
+                self.me = self
+
+        class Lazarus(A):
+            resurrected = 0
+            resurrected_instances = []
+
+            def __del__(self):
+                Lazarus.resurrected += 1
+                Lazarus.resurrected_instances.append(self)
+
+        gc.collect()
+        gc.disable()
+
+        # We start with 0 resurrections
+        laz = Lazarus()
+        self.assertEqual(Lazarus.resurrected, 0)
+
+        # Deleting the instance and triggering a collection
+        # resurrects the object
+        del laz
+        gc.collect()
+        self.assertEqual(Lazarus.resurrected, 1)
+        self.assertEqual(len(Lazarus.resurrected_instances), 1)
+
+        # Clearing the references and forcing a collection
+        # should not resurrect the object again.
+        Lazarus.resurrected_instances.clear()
+        self.assertEqual(Lazarus.resurrected, 1)
+        gc.collect()
+        self.assertEqual(Lazarus.resurrected, 1)
+
+        gc.enable()
+
+    def test_resurrection_is_transitive(self):
+        class Cargo:
+            def __init__(self):
+                self.me = self
+
+        class Lazarus:
+            resurrected_instances = []
+
+            def __del__(self):
+                Lazarus.resurrected_instances.append(self)
+
+        gc.collect()
+        gc.disable()
+
+        laz = Lazarus()
+        cargo = Cargo()
+        cargo_id = id(cargo)
+
+        # Create a cycle between cargo and laz
+        laz.cargo = cargo
+        cargo.laz = laz
+
+        # Drop the references, force a collection and check that
+        # everything was resurrected.
+        del laz, cargo
+        gc.collect()
+        self.assertEqual(len(Lazarus.resurrected_instances), 1)
+        instance = Lazarus.resurrected_instances.pop()
+        self.assertTrue(hasattr(instance, "cargo"))
+        self.assertEqual(id(instance.cargo), cargo_id)
+
+        gc.collect()
+        gc.enable()
+
+    def test_resurrection_does_not_block_cleanup_of_other_objects(self):
+
         # When a finalizer resurrects objects, stats were reporting them as
         # having been collected.  This affected both collect()'s return
         # value and the dicts returned by get_stats().
@@ -861,34 +932,29 @@ class GCTests(unittest.TestCase):
         # Nothing is collected - Z() is merely resurrected.
         t = gc.collect()
         c, nc = getstats()
-        #self.assertEqual(t, 2)  # before
-        self.assertEqual(t, 0)  # after
-        #self.assertEqual(c - oldc, 2)   # before
-        self.assertEqual(c - oldc, 0)   # after
+        self.assertEqual(t, 0)
+        self.assertEqual(c - oldc, 0)
         self.assertEqual(nc - oldnc, 0)
 
-        # Unfortunately, a Z() prevents _anything_ from being collected.
-        # It should be possible to collect the A instances anyway, but
-        # that will require non-trivial code changes.
+        # Z() should not prevent anything else from being collected.
         oldc, oldnc = c, nc
         for i in range(N):
             A()
         Z()
-        # Z() prevents anything from being collected.
-        t = gc.collect()
-        c, nc = getstats()
-        #self.assertEqual(t, 2*N + 2)  # before
-        self.assertEqual(t, 0)  # after
-        #self.assertEqual(c - oldc, 2*N + 2)   # before
-        self.assertEqual(c - oldc, 0)   # after
-        self.assertEqual(nc - oldnc, 0)
-
-        # But the A() trash is reclaimed on the next run.
-        oldc, oldnc = c, nc
         t = gc.collect()
         c, nc = getstats()
         self.assertEqual(t, 2*N)
         self.assertEqual(c - oldc, 2*N)
+        self.assertEqual(nc - oldnc, 0)
+
+        # The A() trash should have been reclaimed already but the
+        # 2 copies of Z are still in zs (and the associated dicts).
+        oldc, oldnc = c, nc
+        zs.clear()
+        t = gc.collect()
+        c, nc = getstats()
+        self.assertEqual(t, 4)
+        self.assertEqual(c - oldc, 4)
         self.assertEqual(nc - oldnc, 0)
 
         gc.enable()
