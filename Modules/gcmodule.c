@@ -565,7 +565,7 @@ move_unreachable(PyGC_Head *young, PyGC_Head *unreachable)
             // NOTE: Since all objects in unreachable set has
             // NEXT_MASK_UNREACHABLE flag, we set it unconditionally.
             // But this may pollute the unreachable list head's 'next' pointer
-            // too.  That's semantically senseless but expedient here - the
+            // too. That's semantically senseless but expedient here - the
             // damage is repaired when this fumction ends.
             last->_gc_next = (NEXT_MASK_UNREACHABLE | (uintptr_t)gc);
             _PyGCHead_SET_PREV(gc, last);
