@@ -85,7 +85,7 @@ static PyObject *
 type_new(PyTypeObject *metatype, PyObject *args, PyObject *kwds);
 
 static PyObject *
-type_new_ex(PyTypeObject *metatype, PyObject *args, PyObject *kwds, int setmodule);
+type_new_ex(PyTypeObject *metatype, PyObject *args, PyObject *kwds, int depth);
 
 /*
  * finds the beginning of the docstring's introspection signature.
@@ -997,7 +997,7 @@ type_call(PyTypeObject *type, PyObject *args, PyObject *kwds)
     }
 
     if (type->tp_new == type_new) {
-        obj = type_new_ex(type, args, kwds, 1);
+        obj = type_new_ex(type, args, kwds, 0);
     }
     else {
         obj = type->tp_new(type, args, kwds);
@@ -2347,8 +2347,39 @@ _PyType_CalculateMetaclass(PyTypeObject *metatype, PyObject *bases)
     return winner;
 }
 
+
+static int
+type_set_default_module(PyObject *dict, int depth)
+{
+    if (_PyDict_GetItemIdWithError(dict, &PyId___module__) != NULL) {
+        return 0;
+    }
+    if (PyErr_Occurred()) {
+        return -1;
+    }
+
+    PyFrameObject *f = PyEval_GetFrame();
+    if (f == NULL) {
+        return 0;
+    }
+    while (depth-- > 0 && f->f_back) {
+        f = f->f_back;
+    }
+
+    PyObject *name = _PyDict_GetItemIdWithError(f->f_globals, &PyId___name__);
+    if (name != NULL) {
+        if (_PyDict_SetItemId(dict, &PyId___module__, name) < 0) {
+            return -1;
+        }
+    }
+    else if (PyErr_Occurred()) {
+        return -1;
+    }
+    return 0;
+}
+
 static PyObject *
-type_new_ex(PyTypeObject *metatype, PyObject *args, PyObject *kwds, int setmodule)
+type_new_ex(PyTypeObject *metatype, PyObject *args, PyObject *kwds, int depth)
 {
     PyObject *name, *bases = NULL, *orig_dict, *dict = NULL;
     PyObject *qualname, *slots = NULL, *tmp, *newslots, *cell;
@@ -2611,22 +2642,8 @@ type_new_ex(PyTypeObject *metatype, PyObject *args, PyObject *kwds, int setmodul
     type->tp_dict = dict;
 
     /* Set __module__ in the dict */
-    if (setmodule && _PyDict_GetItemIdWithError(dict, &PyId___module__) == NULL) {
-        if (PyErr_Occurred()) {
-            goto error;
-        }
-        tmp = PyEval_GetGlobals();
-        if (tmp != NULL) {
-            tmp = _PyDict_GetItemIdWithError(tmp, &PyId___name__);
-            if (tmp != NULL) {
-                if (_PyDict_SetItemId(dict, &PyId___module__,
-                                      tmp) < 0)
-                    goto error;
-            }
-            else if (PyErr_Occurred()) {
-                goto error;
-            }
-        }
+    if (type_set_default_module(dict, depth) < 0) {
+        goto error;
     }
 
     /* Set ht_qualname to dict['__qualname__'] if available, else to
@@ -2851,7 +2868,7 @@ static const short slotoffsets[] = {
 static PyObject *
 type_new(PyTypeObject *metatype, PyObject *args, PyObject *kwds)
 {
-    return type_new_ex(metatype, args, kwds, 0);
+    return type_new_ex(metatype, args, kwds, 1);
 }
 
 PyObject *
