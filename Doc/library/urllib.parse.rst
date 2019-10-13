@@ -580,7 +580,7 @@ task isn't already covered by the URL parsing functions above.
    Example: ``unquote('/El%20Ni%C3%B1o/')`` yields ``'/El Niño/'``.
 
    .. versionchanged:: 3.9
-      String parameter supports bytes and string objects.
+      *string* parameter supports bytes and str objects (previously only str).
 
 
 
