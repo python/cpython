@@ -210,7 +210,12 @@ class InitVar(metaclass=_InitVarMeta):
         self.type = type
 
     def __repr__(self):
-        return f'dataclasses.InitVar[{self.type.__name__}]'
+        if isinstance(self.type, type):
+            type_name = self.type.__name__
+        else:
+            # typing objects, e.g. List[int]
+            type_name = repr(self.type)
+        return f'dataclasses.InitVar[{type_name}]'
 
 
 # Instances of Field are only ever created from within this module,
