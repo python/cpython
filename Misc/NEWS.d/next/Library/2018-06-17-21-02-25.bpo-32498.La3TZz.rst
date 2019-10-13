@@ -1,2 +1,2 @@
-Made ``urllib.parse.unquote()`` accepting both string and bytes.  Patch by 
+Made ``urllib.parse.unquote()`` accept both string and bytes.  Patch by 
 Stein Karlsen.
