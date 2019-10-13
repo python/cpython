@@ -8996,7 +8996,7 @@ PyDoc_STRVAR(posix_sendfile__doc__,
 "sendfile(out_fd, in_fd, offset, count) -> byteswritten\n\
 sendfile(out_fd, in_fd, offset, count[, headers][, trailers], flags=0)\n\
             -> byteswritten\n\
-Copy count bytes from file descriptor in to file descriptor out.");
+Copy count bytes from file descriptor in_fd to file descriptor out_fd.");
 
 /* AC 3.5: don't bother converting, has optional group*/
 static PyObject *
