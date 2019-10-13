@@ -227,6 +227,25 @@ class DictSetTest(unittest.TestCase):
         self.assertEqual(items | iter([(1, 2)]), {(1, 2), (3, 4)})
         self.assertEqual(items - iter([(1, 2)]), {(3, 4)})
 
+    def test_set_operations_with_noniterable(self):
+        with self.assertRaises(TypeError):
+            {}.keys() & 1
+        with self.assertRaises(TypeError):
+            {}.keys() | 1
+        with self.assertRaises(TypeError):
+            {}.keys() ^ 1
+        with self.assertRaises(TypeError):
+            {}.keys() - 1
+
+        with self.assertRaises(TypeError):
+            {}.items() & 1
+        with self.assertRaises(TypeError):
+            {}.items() | 1
+        with self.assertRaises(TypeError):
+            {}.items() ^ 1
+        with self.assertRaises(TypeError):
+            {}.items() - 1
+
     def test_recursive_repr(self):
         d = {}
         d[42] = d.values()

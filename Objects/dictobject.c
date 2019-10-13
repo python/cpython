@@ -4227,6 +4227,10 @@ _PyDictView_Intersect(PyObject* self, PyObject *other)
         return NULL;
 
     it = PyObject_GetIter(other);
+    if (it == NULL) {
+        Py_DECREF(result);
+        return NULL;
+    }
 
     if (PyDictKeys_Check(self)) {
         dict_contains = dictkeys_contains;
