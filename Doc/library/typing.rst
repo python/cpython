@@ -1041,8 +1041,8 @@ The module defines the following classes, functions and decorators:
    a dictionary constructed by merging all the ``__annotations__`` along
    ``C.__mro__`` in reverse order.
 
-.. function:: get_origin(typ)
-.. function:: get_args(typ)
+.. function:: get_origin(tp)
+.. function:: get_args(tp)
 
    Provide basic introspection for generic types and special typing forms.
 
