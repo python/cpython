@@ -698,55 +698,46 @@ mmap__exit__method(PyObject *self, PyObject *args)
 static PyObject *
 mmap__repr__method(PyObject *self)
 {
-    PyObject *repr;
-    mmap_object *m_obj;
-    m_obj = (mmap_object *) self;
-
-    const char *reprfmt;
-    const char *access_str;
-
-    switch (m_obj->access) {
-        case ACCESS_DEFAULT:
-            access_str = "ACCESS_DEFAULT";
-            break;
-
-        case ACCESS_READ:
-            access_str = "ACCESS_READ";
-            break;
-
-        case ACCESS_WRITE:
-            access_str = "ACCESS_WRITE";
-            break;
-
-        case ACCESS_COPY:
-            access_str = "ACCESS_COPY";
-            break;
-
-        default:
-            Py_UNREACHABLE();
-    }
-
-    const char *tp_name = Py_TYPE(self)->tp_name;
+    mmap_object *mobj = (mmap_object *)self;
 
 #ifdef MS_WINDOWS
-    if (m_obj->map_handle == NULL)
+#define _Py_FORMAT_OFFSET "lld"
+    if (mobj->map_handle == NULL)
 #elif defined(UNIX)
-    if (m_obj->data == NULL)
+# ifdef HAVE_LARGEFILE_SUPPORT
+# define _Py_FORMAT_OFFSET "lld"
+# else
+# define _Py_FORMAT_OFFSET "ld"
+# endif
+    if (mobj->data == NULL)
 #endif
     {
-        reprfmt = "<%s closed=True access=%s>";
-        repr = PyUnicode_FromFormat(reprfmt, tp_name, access_str);
-    }
-    else {
-        PyObject *length = PyLong_FromSize_t(m_obj->size);
-        PyObject *pos = PyLong_FromSize_t(m_obj->pos);
-        PyObject *offset = PyLong_FromSize_t((Py_ssize_t)m_obj->offset);
-        reprfmt = "<%s closed=False access=%s length=%R pos=%R offset=%R>";
-        repr = PyUnicode_FromFormat(reprfmt, tp_name, access_str,
-                                    length, pos, offset);
-    }
+        return PyUnicode_FromFormat("<%s closed=True>", Py_TYPE(self)->tp_name);
+    } else {
+        const char *access_str;
 
-    return repr;
+        switch (mobj->access) {
+            case ACCESS_DEFAULT:
+                access_str = "ACCESS_DEFAULT";
+                break;
+            case ACCESS_READ:
+                access_str = "ACCESS_READ";
+                break;
+            case ACCESS_WRITE:
+                access_str = "ACCESS_WRITE";
+                break;
+            case ACCESS_COPY:
+                access_str = "ACCESS_COPY";
+                break;
+            default:
+                Py_UNREACHABLE();
+        }
+
+        return PyUnicode_FromFormat("<%s closed=False, access=%s, length=%zd, "
+                                    "pos=%zd, offset=%" _Py_FORMAT_OFFSET ">",
+                                    Py_TYPE(self)->tp_name, access_str,
+                                    mobj->size, mobj->pos, mobj->offset);
+    }
 }
 
 #ifdef MS_WINDOWS
@@ -822,7 +813,6 @@ static struct PyMethodDef mmap_object_methods[] = {
     {"write_byte",      (PyCFunction) mmap_write_byte_method,   METH_VARARGS},
     {"__enter__",       (PyCFunction) mmap__enter__method,      METH_NOARGS},
     {"__exit__",        (PyCFunction) mmap__exit__method,       METH_VARARGS},
-    {"__repr__",        (PyCFunction) mmap__repr__method,       METH_NOARGS},
 #ifdef MS_WINDOWS
     {"__sizeof__",      (PyCFunction) mmap__sizeof__method,     METH_NOARGS},
 #endif
@@ -1099,23 +1089,23 @@ static PyTypeObject mmap_object_type = {
     sizeof(mmap_object),                        /* tp_basicsize */
     0,                                          /* tp_itemsize */
     /* methods */
-    (destructor) mmap_object_dealloc,           /* tp_dealloc */
+    (destructor)mmap_object_dealloc,            /* tp_dealloc */
     0,                                          /* tp_vectorcall_offset */
     0,                                          /* tp_getattr */
     0,                                          /* tp_setattr */
     0,                                          /* tp_as_async */
-    0,                                          /* tp_repr */
+    (reprfunc)mmap__repr__method,               /* tp_repr */
     0,                                          /* tp_as_number */
-    &mmap_as_sequence,                          /*tp_as_sequence*/
-    &mmap_as_mapping,                           /*tp_as_mapping*/
-    0,                                          /*tp_hash*/
-    0,                                          /*tp_call*/
-    0,                                          /*tp_str*/
-    PyObject_GenericGetAttr,                    /*tp_getattro*/
-    0,                                          /*tp_setattro*/
-    &mmap_as_buffer,                            /*tp_as_buffer*/
-    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE,   /*tp_flags*/
-    mmap_doc,                                   /*tp_doc*/
+    &mmap_as_sequence,                          /* tp_as_sequence */
+    &mmap_as_mapping,                           /* tp_as_mapping */
+    0,                                          /* tp_hash */
+    0,                                          /* tp_call */
+    0,                                          /* tp_str */
+    PyObject_GenericGetAttr,                    /* tp_getattro */
+    0,                                          /* tp_setattro */
+    &mmap_as_buffer,                            /* tp_as_buffer */
+    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE,   /* tp_flags */
+    mmap_doc,                                   /* tp_doc */
     0,                                          /* tp_traverse */
     0,                                          /* tp_clear */
     0,                                          /* tp_richcompare */
