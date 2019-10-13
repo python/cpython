@@ -356,8 +356,8 @@ class socket(_socket.socket):
                 raise _GiveupOnSendfile(err)  # not a regular file
             if not fsize:
                 return 0  # empty file
-            blocksize = fsize if not count else count
-
+            # Truncate to 1GiB to avoid OverflowError, see bpo-38319.
+            blocksize = min(count or fsize, 2 ** 30)
             timeout = self.gettimeout()
             if timeout == 0:
                 raise ValueError("non-blocking sockets are not supported")

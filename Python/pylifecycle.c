@@ -475,7 +475,7 @@ pyinit_core_reconfigure(_PyRuntimeState *runtime,
     config = &interp->config;
 
     if (config->_install_importlib) {
-        status = _PyConfig_SetPathConfig(config);
+        status = _PyConfig_WritePathConfig(config);
         if (_PyStatus_EXCEPTION(status)) {
             return status;
         }
@@ -646,7 +646,7 @@ pycore_init_import_warnings(PyThreadState *tstate, PyObject *sysmod)
     }
 
     if (config->_install_importlib) {
-        status = _PyConfig_SetPathConfig(config);
+        status = _PyConfig_WritePathConfig(config);
         if (_PyStatus_EXCEPTION(status)) {
             return status;
         }
@@ -735,7 +735,11 @@ _Py_PreInitializeFromPyArgv(const PyPreConfig *src_config, const _PyArgv *args)
     runtime->preinitializing = 1;
 
     PyPreConfig config;
-    _PyPreConfig_InitFromPreConfig(&config, src_config);
+
+    status = _PyPreConfig_InitFromPreConfig(&config, src_config);
+    if (_PyStatus_EXCEPTION(status)) {
+        return status;
+    }
 
     status = _PyPreConfig_Read(&config, args);
     if (_PyStatus_EXCEPTION(status)) {
@@ -794,6 +798,7 @@ _Py_PreInitializeFromConfig(const PyConfig *config,
     }
 
     PyPreConfig preconfig;
+
     _PyPreConfig_InitFromConfig(&preconfig, config);
 
     if (!config->parse_argv) {
@@ -1065,6 +1070,7 @@ Py_InitializeEx(int install_sigs)
 
     PyConfig config;
     _PyConfig_InitCompatConfig(&config);
+
     config.install_signal_handlers = install_sigs;
 
     status = Py_InitializeFromConfig(&config);

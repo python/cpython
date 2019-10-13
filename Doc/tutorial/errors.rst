@@ -395,8 +395,9 @@ produces an exception. The following points discuss more complex cases when an
 exception occurs:
 
 * If an exception occurs during execution of the :keyword:`!try` clause, the
-  exception may be handled by an :keyword:`except` clause. In all cases, the
-  exception is re-raised after the :keyword:`!finally` clause has been executed.
+  exception may be handled by an :keyword:`except` clause. If the exception is
+  not handled by an :keyword:`except` clause, the exception is re-raised after
+  the :keyword:`!finally` clause has been executed.
 
 * An exception could occur during execution of an :keyword:`!except` or
   :keyword:`!else` clause. Again, the exception is re-raised after the
@@ -413,7 +414,7 @@ exception occurs:
 
 For example::
 
-   >>> def bool_return(): -> bool:
+   >>> def bool_return():
    ...     try:
    ...         return True
    ...     finally:

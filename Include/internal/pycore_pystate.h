@@ -8,16 +8,9 @@ extern "C" {
 #  error "this header requires Py_BUILD_CORE define"
 #endif
 
-#include "cpython/initconfig.h"
-#include "fileobject.h"
-#include "pystate.h"
-#include "pythread.h"
-#include "sysmodule.h"
-
-#include "pycore_gil.h"   /* _gil_runtime_state  */
-#include "pycore_pathconfig.h"
-#include "pycore_pymem.h"
-#include "pycore_warnings.h"
+#include "pycore_gil.h"       /* struct _gil_runtime_state  */
+#include "pycore_pymem.h"     /* struct _gc_runtime_state */
+#include "pycore_warnings.h"  /* struct _warnings_runtime_state */
 
 
 /* ceval state */

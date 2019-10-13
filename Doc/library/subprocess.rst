@@ -339,9 +339,9 @@ functions.
                  stderr=None, preexec_fn=None, close_fds=True, shell=False, \
                  cwd=None, env=None, universal_newlines=None, \
                  startupinfo=None, creationflags=0, restore_signals=True, \
-                 start_new_session=False, pass_fds=(), *, group=None, \
-                 extra_groups=None, user=None, encoding=None, errors=None, \
-                 text=None)
+                 start_new_session=False, pass_fds=(), \*, group=None, \
+                 extra_groups=None, user=None, umask=-1, \
+                 encoding=None, errors=None, text=None)
 
    Execute a child program in a new process.  On POSIX, the class uses
    :meth:`os.execvp`-like behavior to execute the child program.  On Windows,
@@ -568,6 +568,12 @@ functions.
    value is a string, it will be looked up via :func:`pwd.getpwnam()` and
    the value in ``pw_uid`` will be used. If the value is an integer, it will
    be passed verbatim. (POSIX only)
+
+   .. availability:: POSIX
+   .. versionadded:: 3.9
+
+   If *umask* is not negative, the umask() system call will be made in the
+   child process prior to the execution of the subprocess.
 
    .. availability:: POSIX
    .. versionadded:: 3.9

@@ -1,0 +1,1 @@
+Fix error message in activate.bat
