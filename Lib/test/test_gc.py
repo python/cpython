@@ -1,4 +1,5 @@
 import unittest
+import unittest.mock
 from test.support import (verbose, refcount_test, run_unittest,
                           strip_python_stderr, cpython_only, start_threads,
                           temp_dir, requires_type_collecting, TESTFN, unlink,
@@ -996,13 +997,7 @@ class GCTests(unittest.TestCase):
         # since the callback might tinker with objects that have already had
         # tp_clear called on them (leaving them in possibly invalid states).
 
-        wr_callback_was_run = False
-        def callback(wr):
-            # We cannot allow this callback to run.  It could access objects
-            # with invalid states due to tp_clear already being run.  Or, it
-            # could resurrecte objects that were previously considered trash.
-            nonlocal wr_callback_was_run
-            wr_callback_was_run = True
+        callback = unittest.mock.Mock()
 
         class A:
             __slots__ = ['a', 'y', 'wz']
@@ -1023,8 +1018,9 @@ class GCTests(unittest.TestCase):
         # release references and create trash
         del a, wr_cycle
         gc.collect()
-        # if the callback runs, we have a bug
-        self.assertFalse(wr_callback_was_run)
+        # if called, it means there is a bug in the GC.  The weakref should be
+        # cleared before Z dies.
+        callback.assert_not_called()
 
 
 class GCCallbackTests(unittest.TestCase):
