@@ -6550,11 +6550,13 @@ ContainerNoGC_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
 {
     PyObject *value;
     char *names[] = {"value", NULL};
-    if (!PyArg_ParseTupleAndKeywords(args, kwargs, "O", names, &value))
+    if (!PyArg_ParseTupleAndKeywords(args, kwargs, "O", names, &value)) {
         return NULL;
+    }
     PyObject *self = type->tp_alloc(type, 0);
-    if (self == NULL)
+    if (self == NULL) {
         return NULL;
+    }
     Py_INCREF(value);
     ((ContainerNoGCobject *)self)->value = value;
     return self;
@@ -6780,8 +6782,9 @@ PyInit__testcapi(void)
     Py_DECREF(subclass_with_finalizer_bases);
     PyModule_AddObject(m, "HeapCTypeSubclassWithFinalizer", HeapCTypeSubclassWithFinalizer);
 
-    if (PyType_Ready(&ContainerNoGC_type) < 0)
+    if (PyType_Ready(&ContainerNoGC_type) < 0) {
         return NULL;
+    }
     Py_INCREF(&ContainerNoGC_type);
     if (PyModule_AddObject(m, "ContainerNoGC",
                            (PyObject *) &ContainerNoGC_type) < 0)
