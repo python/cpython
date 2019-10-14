@@ -7,127 +7,80 @@
 \pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\partightenfactor0
 
 \f0\fs24 \cf0 This package will install Python $FULL_VERSION for macOS $MACOSX_DEPLOYMENT_TARGET for the following architecture(s): $ARCHITECTURES.\
-\
-\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\partightenfactor0
-
-\f1\b \cf0 \ul \ulc0 macOS 10.15 Catalina Support\
-\
 \pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\partightenfactor0
-
-\f0\b0 \cf0 \ulnone At the time of the release of this release candidate, the next release of macOS, 
-\f1\b 10.15 Catalina
-\f0\b0 , was still in public beta.  Any updates needed to support 10.15 will be provided after it releases.\
-\
+\cf0 \
 \pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\partightenfactor0
 
-\f1\b \cf0 \ul \ulc0 Which installer variant should I use?
-\f0\b0 \ulnone \
-\
-\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\partightenfactor0
-
-\f1\b \cf0 CHANGED in 3.7.4: 
-\f0\b0  The 
-\f1\b 10.6+ 64-/32-bit installer variant  is being deprecated
-\f0\b0 .  
-\f1\b Python 3.8.0
-\f0\b0  will 
-\f1\b not
-\f0\b0  include a binary installer for 10.6+ and 
-\f1\b future bugfix releases of 3.7.x
-\f0\b0  may not, either.  Mac OS X 10.6 Snow Leopard was released in 2009 and has not been supported by Apple for many years including lack of security updates.  It is becoming increasingly difficult to ensure new Python features and bug fixes are compatible with such old systems especially with Apple's deprecation and removal of 32-bit support in recent and upcoming macOS releases.  We believe that there is now very little usage of this installer variant and so we would like to focus our resources on supporting newer systems.  We do not plan to intentionally break Python support on 10.6 and we will consider bug fixes for problems found when building from source on 10.6. \
-\
-\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\partightenfactor0
-\cf0 For Python.3.7, python.org currently provides two installer variants for download: one that installs a 
-\f2\i 64-bit-only 
-\f0\i0 Python capable of running on 
-\f2\i macOS 10.9 (Mavericks)
-\f0\i0  or later; and one that installs a 
-\f2\i 64-bit/32-bit Intel
-\f0\i0  Python capable of running on 
-\f2\i macOS 10.6 (Snow Leopard)
-\f0\i0  or later.  (This ReadMe was installed with the 
-\f2\i $MACOSX_DEPLOYMENT_TARGET
-\f0\i0  variant.)  If you are running on macOS 10.9 or later and if you have no need for compatibility with older systems, use the 10.9 variant.  Use the 10.6 variant if you are running on macOS 10.6 through 10.8 or if you want to produce standalone applications that can run on systems from 10.6.  The Pythons installed by these installers are built with private copies of some third-party libraries not included with or newer than those in macOS itself.  The list of these libraries varies by installer variant and is included at the end of the License.rtf file.
-\f1\b \ul \
-\
-Certificate verification and OpenSSL\
+\f1\b \cf0 \ul Certificate verification and OpenSSL\
 
 \f0\b0 \ulnone \
-\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\partightenfactor0
-\cf0 This variant of Python 3.7 includes its own private copy of OpenSSL 1.1.1.  The deprecated Apple-supplied OpenSSL libraries are no longer used.  This means that the trust certificates in system and user keychains managed by the 
+This package includes its own private copy of OpenSSL 1.1.1.   The trust certificates in system and user keychains managed by the 
 \f2\i Keychain Access 
 \f0\i0 application and the 
 \f2\i security
-\f0\i0  command line utility are no longer used as defaults by the Python 
+\f0\i0  command line utility are not used as defaults by the Python 
 \f3 ssl
 \f0  module.  A sample command script is included in 
 \f3 /Applications/Python 3.7
 \f0  to install a curated bundle of default root certificates from the third-party 
 \f3 certifi
-\f0  package ({\field{\*\fldinst{HYPERLINK "https://pypi.org/project/certifi/"}}{\fldrslt https://pypi.org/project/certifi/}}).  If you choose to use 
-\f3 certifi
-\f0 , you should consider subscribing to the{\field{\*\fldinst{HYPERLINK "https://certifi.io/en/latest/"}}{\fldrslt  project's email update service}} to be notified when the certificate bundle is updated.\
-\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\partightenfactor0
-\cf0 \
+\f0  package ({\field{\*\fldinst{HYPERLINK "https://pypi.org/project/certifi/"}}{\fldrslt https://pypi.org/project/certifi/}}).  Double-click on 
+\f3 Install Certificates
+\f0  to run it.\
+\
 The bundled 
 \f3 pip
-\f0  included with this installer has its own default certificate store for verifying download connections.\
-\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\partightenfactor0
+\f0  has its own default certificate store for verifying download connections.\
+\
 
-\f1\b \cf0 \
-CHANGED in 3.7.4: 
-\f0\b0  OpenSSL has been updated from 1.1.0 to 1.1.1.\
-\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\partightenfactor0
-\cf0 \
-
-\f1\b \ul Using IDLE or other Tk applications 
+\f1\b \ul Which installer variant should I use?
 \f0\b0 \ulnone \
 \
-Both installer variants now come with their own private version of Tcl/Tk 8.6. They no longer use system-supplied or third-party supplied versions of Tcl/Tk as in previous releases.\
-
-\f1\b \ul \
-Other changes\
-\
 \pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\partightenfactor0
-\cf0 \ulnone CHANGED in 3.7.4: 
-\f0\b0  SQLite has been updated from 3.22.0 to 3.28.0
-\f1\b \ul \
+\cf0 In almost all cases, you should use the 
+\f1\b macOS 64-bit installer for OS X 10.9 and later
+\f0\b0 .\
+\
+The legacy 
+\f1\b macOS 64-bit/32-bit installer for Mac OS X 10.6 and later 
+\f0\b0 variant  is now deprecated.  
+\f1\b Python 3.8.0
+\f0\b0  will 
+\f1\b not
+\f0\b0  include a binary installer for the 10.6+ variant and 
+\f1\b future bugfix releases of 3.7.x
+\f0\b0  may not, either.  macOS 10.6 Snow Leopard was released in 2009 and has not been supported by Apple for many years including lack of security updates.  It is becoming increasingly difficult to ensure new Python features and bug fixes are compatible with such old systems.  Note that, due to recent Apple installer packaging changes, the 10.6+ installer pkg we provide can no longer be opened by the Apple system installer application on 10.6;  10.7 and 10.8 are not affected.  We believe that there is now very little usage of this installer variant and so we would like to focus our resources on supporting newer systems.  We do not plan to intentionally break Python support on 10.6 through 10.8 and we will consider bug fixes for problems found when building from source on those systems.  
+\f1\b macOS 10.15 Catalina
+\f0\b0  removes support for running 32-bit architecture programs; we do not recommend trying to use the 10.6+ variant on it and it may not install on 10.15 systems without intervention. \
 \pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\partightenfactor0
 
-\f0\b0 \cf0 \ulnone \
-For other changes in this release, see the 
+\f1\b \cf0 \ul \
+Using IDLE or other Tk applications 
+\f0\b0 \ulnone \
+\
+This package includes its own private version of Tcl/Tk 8.6. It does not use any system-supplied or third-party supplied versions of Tcl/Tk.\
+\
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\partightenfactor0
+\cf0 Due to new security checks on macOS 10.15 Catalina, when launching IDLE macOS may open a window with a message 
+\f1\b "Python" would like to access files in your Documents folder
+\f0\b0 .  This is normal as IDLE uses your 
+\f1\b Documents
+\f0\b0  folder as its default when opening and saving files; you can still choose other locations in the 
+\f1\b Open
+\f0\b0  and 
+\f1\b Save
+\f0\b0  file dialog windows.  Click on the 
+\f1\b OK
+\f0\b0  button to proceed.\
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\partightenfactor0
+
+\f1\b \cf0 \ul \ulc0 \
+Other changes\
+\
+
+\f0\b0 \ulnone For other changes in this release, see the 
 \f2\i What's new
 \f0\i0  section in the {\field{\*\fldinst{HYPERLINK "https://www.python.org/doc/"}}{\fldrslt Documentation Set}} for this release and its 
 \f2\i Release Notes
 \f0\i0  link at {\field{\*\fldinst{HYPERLINK "https://www.python.org/downloads/"}}{\fldrslt https://www.python.org/downloads/}}.\
-
-\f1\b \ul \
-Python 3 and Python 2 Co-existence\
-
-\f0\b0 \ulnone \
-Python.org Python $VERSION and 2.7.x versions can both be installed on your system and will not conflict. Command names for Python 3 contain a 3 in them, 
-\f3 python3
-\f0  (or
-\f3  python$VERSION
-\f0 ), 
-\f3 idle3
-\f0  (or i
-\f3 dle$VERSION
-\f0 ), 
-\f3 pip3
-\f0  (or 
-\f3 pip$VERSION
-\f0 ), etc.  Python 2.7 command names contain a 2 or no digit: 
-\f3 python2
-\f0  (or 
-\f3 python2.7
-\f0  or 
-\f3 python
-\f0 ), 
-\f3 idle2
-\f0  (or 
-\f3 idle2.7
-\f0  or 
-\f3 idle
-\f0 ), etc.\
 }
