@@ -47,6 +47,8 @@
 This article explains the new features in Python 3.8, compared to 3.7.
 For full details, see the :ref:`changelog <changelog>`.
 
+Python 3.8 was released on October 14th, 2019.
+
 Prerelease users should be aware that this document is currently in
 draft form. It will be updated as Python 3.8 moves towards release, so
 it's worth checking back even after reading earlier versions. Some

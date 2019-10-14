@@ -1,0 +1,186 @@
+.. bpo: 38469
+.. date: 2019-10-13-23-41-38
+.. nonce: 9kmuQj
+.. release date: 2019-10-14
+.. section: Core and Builtins
+
+Fixed a bug where the scope of named expressions was not being resolved
+correctly in the presence of the *global* keyword. Patch by Pablo Galindo.
+
+..
+
+.. bpo: 38379
+.. date: 2019-10-09-16-50-52
+.. nonce: oz5qZx
+.. section: Core and Builtins
+
+When cyclic garbage collection (gc) runs finalizers that resurrect
+unreachable objects, the current gc run ends, without collecting any cyclic
+trash.  However, the statistics reported by ``collect()`` and
+``get_stats()`` claimed that all cyclic trash found was collected, and that
+the resurrected objects were collected.   Changed the stats to report that
+none were collected.
+
+..
+
+.. bpo: 38449
+.. date: 2019-10-11-18-49-00
+.. nonce: 9TWMlz
+.. section: Library
+
+Revert GH-15522, which introduces a regression in
+:meth:`mimetypes.guess_type` due to improper handling of filenames as urls.
+
+..
+
+.. bpo: 38431
+.. date: 2019-10-10-16-53-00
+.. nonce: d5wzNp
+.. section: Library
+
+Fix ``__repr__`` method for :class:`dataclasses.InitVar` to support typing
+objects, patch by Samuel Colvin.
+
+..
+
+.. bpo: 38109
+.. date: 2019-10-10-00-25-28
+.. nonce: 9w-IGF
+.. section: Library
+
+Add missing :data:`stat.S_IFDOOR`, :data:`stat.S_IFPORT`,
+:data:`stat.S_IFWHT`, :func:`stat.S_ISDOOR`, :func:`stat.S_ISPORT`, and
+:func:`stat.S_ISWHT` values to the Python implementation of :mod:`stat`.
+
+..
+
+.. bpo: 38405
+.. date: 2019-10-08-11-18-40
+.. nonce: 0-7e7s
+.. section: Library
+
+Nested subclasses of :class:`typing.NamedTuple` are now pickleable.
+
+..
+
+.. bpo: 38332
+.. date: 2019-10-05-02-07-52
+.. nonce: hwrPN7
+.. section: Library
+
+Prevent :exc:`KeyError` thrown by :func:`_encoded_words.decode` when given
+an encoded-word with invalid content-type encoding from propagating all the
+way to :func:`email.message.get`.
+
+..
+
+.. bpo: 38341
+.. date: 2019-10-01-21-06-18
+.. nonce: uqwgU_
+.. section: Library
+
+Add :exc:`smtplib.SMTPNotSupportedError` to the :mod:`smtplib` exported
+names.
+
+..
+
+.. bpo: 13153
+.. date: 2019-09-29-22-47-37
+.. nonce: 0mO9qR
+.. section: Library
+
+OS native encoding is now used for converting between Python strings and Tcl
+objects.  This allows to display, copy and paste to clipboard emoji and
+other non-BMP characters.  Converting strings from Tcl to Python and back
+now never fails (except MemoryError).
+
+..
+
+.. bpo: 38294
+.. date: 2019-09-27-23-37-41
+.. nonce: go_jFf
+.. section: Documentation
+
+Add list of no-longer-escaped chars to re.escape documentation
+
+..
+
+.. bpo: 37531
+.. date: 2019-10-08-16-42-05
+.. nonce: 7v-_Ca
+.. section: Tests
+
+On timeout, regrtest no longer attempts to call ``popen.communicate()``
+again: it can hang until all child processes using stdout and stderr pipes
+completes. Kill the worker process and ignores its output. Change also the
+faulthandler timeout of the main process from 1 minute to 5 minutes, for
+Python slowest buildbots.
+
+..
+
+.. bpo: 38344
+.. date: 2019-10-05-05-50-58
+.. nonce: scr2LO
+.. section: Windows
+
+Fix error message in activate.bat
+
+..
+
+.. bpo: 38359
+.. date: 2019-10-03-08-04-14
+.. nonce: wzwsl_
+.. section: Windows
+
+Ensures ``pyw.exe`` launcher reads correct registry key.
+
+..
+
+.. bpo: 38355
+.. date: 2019-10-02-15-38-49
+.. nonce: n3AWX6
+.. section: Windows
+
+Fixes ``ntpath.realpath`` failing on ``sys.executable``.
+
+..
+
+.. bpo: 36698
+.. date: 2019-10-04-18-03-09
+.. nonce: BKcmom
+.. section: IDLE
+
+IDLE no longer fails when write non-encodable characters to stderr.  It now
+escapes them with a backslash, as the regular Python interpreter. Added the
+``errors`` field to the standard streams.
+
+..
+
+.. bpo: 38118
+.. date: 2019-10-08-15-07-52
+.. nonce: pIZD6H
+.. section: Tools/Demos
+
+Update Valgrind suppression file to ignore a false alarm in
+:c:func:`PyUnicode_Decode` when using GCC builtin strcmp().
+
+..
+
+.. bpo: 38347
+.. date: 2019-10-02-09-48-42
+.. nonce: 2Tq5D1
+.. section: Tools/Demos
+
+pathfix.py: Assume all files that end on '.py' are Python scripts when
+working recursively.
+
+..
+
+.. bpo: 38395
+.. date: 2019-10-08-01-23-24
+.. nonce: MJ6Ey9
+.. section: C API
+
+Fix a crash in :class:`weakref.proxy` objects due to incorrect lifetime
+management when calling some associated methods that may delete the last
+reference to object being referenced by the proxy. Patch by Pablo Galindo.
