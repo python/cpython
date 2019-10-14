@@ -1,0 +1,1 @@
+Prevent ctypes crash when handling arrays in structs/unions.
