@@ -681,7 +681,7 @@ of applications in statistics.
        the two probability density functions
        <https://www.rasch.org/rmt/rmt101r.htm>`_.
 
-    .. method:: NormalDist.quantiles()
+    .. method:: NormalDist.quantiles(n=4)
 
         Divide the normal distribution into *n* continuous intervals with
         equal probability.  Returns a list of (n - 1) cut points separating
