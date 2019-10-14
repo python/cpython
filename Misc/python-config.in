@@ -25,8 +25,8 @@ except getopt.error:
 if not opts:
     exit_with_usage()
 
-pyver = sysconfig.get_config_var('VERSION')
 getvar = sysconfig.get_config_var
+pyver = getvar('VERSION')
 
 opt_flags = [flag for (flag, val) in opts]
 
