@@ -12,6 +12,9 @@
  * we may still need to support gcc >= 4, as some Ubuntu LTS and Centos versions
  * have 4 < gcc < 5.
  */
+    #ifndef __has_attribute
+      #define __has_attribute(x) 0  // Compatibility with non-clang compilers.
+    #endif
     #if (defined(__GNUC__) && (__GNUC__ >= 4)) ||\
         (defined(__clang__) && __has_attribute(visibility))
         #define Py_IMPORTED_SYMBOL __attribute__ ((visibility ("default")))
