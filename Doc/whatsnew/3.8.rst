@@ -1835,7 +1835,7 @@ Changes in the C API
 * The :file:`libpython38.a` file to allow MinGW tools to link directly against
   :file:`python38.dll` is no longer included in the regular Windows distribution.
   If you require this file, it may be generated with the ``gendef`` and
-  ``dlltool`` tools, which are part of the MinGW binutils package::
+  ``dlltool`` tools, which are part of the MinGW binutils package:
 
   .. code-block:: shell
 
