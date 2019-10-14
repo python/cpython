@@ -599,6 +599,7 @@ marked with the ``CO_COROUTINE`` flag may then be returned.
 
 (Contributed by Matthias Bussonnier in :issue:`34616`)
 
+
 collections
 -----------
 
@@ -608,6 +609,14 @@ regular dicts have guaranteed ordering since Python 3.7. If the extra
 features of :class:`OrderedDict` are required, the suggested remediation is
 to cast the result to the desired type: ``OrderedDict(nt._asdict())``.
 (Contributed by Raymond Hettinger in :issue:`35864`.)
+
+
+curses
+-------
+
+Added a new variable holding structured version information for the
+underlying ncurses library: :data:`~curses.ncurses_version`.
+(Contributed by Serhiy Storchaka in :issue:`31680`.)
 
 
 ctypes
@@ -826,14 +835,6 @@ non-existent directory.
 symlinks and directory junctions.
 
 
-ncurses
--------
-
-Added a new variable holding structured version information for the
-underlying ncurses library: :data:`~curses.ncurses_version`.
-(Contributed by Serhiy Storchaka in :issue:`31680`.)
-
-
 pathlib
 -------
 
@@ -918,7 +919,7 @@ The :func:`socket.if_nameindex()`, :func:`socket.if_nametoindex()`, and
 ssl
 ---
 
-Added :attr:`SSLContext.post_handshake_auth` to enable and
+Added :attr:`ssl.SSLContext.post_handshake_auth` to enable and
 :meth:`ssl.SSLSocket.verify_client_post_handshake` to initiate TLS 1.3
 post-handshake authentication.
 (Contributed by Christian Heimes in :issue:`34670`.)
