@@ -19,11 +19,9 @@ import struct
 from functools import partial
 from pathlib import Path
 
-RECURSION_LIMIT = sys.getrecursionlimit()
-
 __all__ = ["compile_dir","compile_file","compile_path"]
 
-def _walk_dir(dir, maxlevels=RECURSION_LIMIT, quiet=0):
+def _walk_dir(dir, maxlevels, quiet=0):
     if quiet < 2 and isinstance(dir, os.PathLike):
         dir = os.fspath(dir)
     if not quiet:
@@ -46,7 +44,7 @@ def _walk_dir(dir, maxlevels=RECURSION_LIMIT, quiet=0):
             yield from _walk_dir(fullname, maxlevels=maxlevels - 1,
                                  quiet=quiet)
 
-def compile_dir(dir, maxlevels=RECURSION_LIMIT, ddir=None, force=False,
+def compile_dir(dir, maxlevels=None, ddir=None, force=False,
                 rx=None, quiet=0, legacy=False, optimize=-1, workers=1,
                 invalidation_mode=None, stripdir=None,
                 prependdir=None, limit_sl_dest=None):
@@ -83,6 +81,8 @@ def compile_dir(dir, maxlevels=RECURSION_LIMIT, ddir=None, force=False,
             from concurrent.futures import ProcessPoolExecutor
         except ImportError:
             workers = 1
+    if maxlevels is None:
+        maxlevels = sys.getrecursionlimit()
     files = _walk_dir(dir, quiet=quiet, maxlevels=maxlevels)
     success = True
     if workers != 1 and ProcessPoolExecutor is not None:
@@ -285,7 +285,7 @@ def main():
     parser = argparse.ArgumentParser(
         description='Utilities to support installing Python libraries.')
     parser.add_argument('-l', action='store_const', const=0,
-                        default=RECURSION_LIMIT, dest='maxlevels',
+                        default=None, dest='maxlevels',
                         help="don't recurse into subdirectories")
     parser.add_argument('-r', type=int, dest='recursion',
                         help=('control the maximum recursion level. '
