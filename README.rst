@@ -59,21 +59,23 @@ On Unix, Linux, BSD, macOS, and Cygwin::
 This will install Python as ``python3``.
 
 You can pass many options to the configure script; run ``./configure --help``
-to find out more.  On macOS and Cygwin, the executable is called ``python.exe``;
-elsewhere it's just ``python``.
+to find out more.  On macOS case-insensitive file systems and on Cygwin,
+the executable is called ``python.exe``; elsewhere it's just ``python``.
 
-If you are running on macOS with the latest updates installed, make sure to install
-openSSL or some other SSL software along with Homebrew or another package manager.
-If issues persist, see https://devguide.python.org/setup/#macos-and-os-x for more 
-information. 
+Building a complete Python installation requires the use of various
+additional third-party libraries, depending on your build platform and
+configure options.  Not all standard library modules are buildable or
+useable on all platforms.  Refer to the
+`Install dependencies <https://devguide.python.org/setup/#install-dependencies>`_
+section of the `Developer Guide`_ for current detailed information on
+dependencies for various Linux distributions and macOS.
 
-On macOS, if you have configured Python with ``--enable-framework``, you
-should use ``make frameworkinstall`` to do the installation.  Note that this
-installs the Python executable in a place that is not normally on your PATH,
-you may want to set up a symlink in ``/usr/local/bin``.
+On macOS, there are additional configure and build options related
+to macOS framework and universal builds.  Refer to `Mac/README.rst
+<https://github.com/python/cpython/blob/3.7/Mac/README.rst>`_.
 
 On Windows, see `PCbuild/readme.txt
-<https://github.com/python/cpython/blob/master/PCbuild/readme.txt>`_.
+<https://github.com/python/cpython/blob/3.7/PCbuild/readme.txt>`_.
 
 If you wish, you can create a subdirectory and invoke configure from there.
 For example::
@@ -135,9 +137,9 @@ What's New
 We have a comprehensive overview of the changes in the `What's New in Python
 3.7 <https://docs.python.org/3.7/whatsnew/3.7.html>`_ document.  For a more
 detailed change log, read `Misc/NEWS
-<https://github.com/python/cpython/blob/master/Misc/NEWS.d>`_, but a full
+<https://github.com/python/cpython/blob/3.7/Misc/NEWS.d>`_, but a full
 accounting of changes can only be gleaned from the `commit history
-<https://github.com/python/cpython/commits/master>`_.
+<https://github.com/python/cpython/commits/3.7>`_.
 
 If you want to install multiple versions of Python see the section below
 entitled "Installing multiple versions".
@@ -155,7 +157,7 @@ is primarily for documentation authors, translators, and people with special
 formatting requirements.
 
 For information about building Python's documentation, refer to `Doc/README.rst
-<https://github.com/python/cpython/blob/master/Doc/README.rst>`_.
+<https://github.com/python/cpython/blob/3.7/Doc/README.rst>`_.
 
 
 Converting From Python 2.x to 3.x
