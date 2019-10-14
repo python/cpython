@@ -2310,69 +2310,6 @@ dict_fromkeys_impl(PyTypeObject *type, PyObject *iterable, PyObject *value)
     return _PyDict_FromKeys((PyObject *)type, iterable, value);
 }
 
-/* Used for dict subtraction. */
-static int
-dict_diff_arg(PyObject *self, PyObject *arg)
-{
-    PyObject *keys, *key;
-    PyObject *keys_method;
-    int in;
-
-    _Py_IDENTIFIER(keys);
-
-    // XXX: PEP 584
-
-    // This keys() lookup stuff is a bit complex... it mirrors dict.update:
-    // https://mail.python.org/pipermail/python-ideas/2019-March/055687.html
-
-    if (_PyObject_LookupAttrId(arg, &PyId_keys, &keys_method) < 0) {
-        return -1;
-    }
-
-    if (keys_method && (!PyDict_Check(arg) ||
-                        Py_TYPE(arg)->tp_iter != (getiterfunc)dict_iter))
-    {
-        arg = _PyObject_CallNoArg(keys_method);
-        Py_DECREF(keys_method);
-
-        if (arg == NULL) {
-            return -1;
-        }
-
-        keys = PyObject_GetIter(arg);
-        Py_DECREF(arg);
-    }
-    else {
-        keys = PyObject_GetIter(arg);
-    }
-
-    if (keys == NULL) {
-        return -1;
-    }
-
-    while ((key = PyIter_Next(keys))) {
-
-        in = PyDict_Contains(self, key);
-
-        if (in < 0 || (in && PyDict_DelItem(self, key))) {
-            Py_DECREF(keys);
-            Py_DECREF(key);
-            return -1;
-        }
-
-        Py_DECREF(key);
-    }
-
-    Py_DECREF(keys);
-
-    if (PyErr_Occurred()) {
-        return -1;
-    }
-
-    return 0;
-}
-
-
 /* Single-arg dict update; used by dict_update_common and addition ops. */
 static int
 dict_update_arg(PyObject *self, PyObject *arg)
@@ -3224,11 +3161,11 @@ dict_sizeof(PyDictObject *mp, PyObject *Py_UNUSED(ignored))
 }
 
 static PyObject *
-dict_add(PyObject *self, PyObject *other)
+dict_concat(PyDictObject *self, PyObject *other)
 {
     PyObject *new;
 
-    if (!PyDict_Check(self) || !PyDict_Check(other)) {
+    if (!PyDict_Check(other)) {
         Py_RETURN_NOTIMPLEMENTED;
     }
 
@@ -3250,7 +3187,7 @@ dict_add(PyObject *self, PyObject *other)
         return NULL;
     }
 
-    if (dict_update_arg(new, self) || dict_update_arg(new, other)) {
+    if (dict_update_arg(new, (PyObject*)self) || dict_update_arg(new, other)) {
         Py_DECREF(new);
         return NULL;
     }
@@ -3259,7 +3196,7 @@ dict_add(PyObject *self, PyObject *other)
 }
 
 static PyObject *
-dict_iadd(PyDictObject *self, PyObject *other)
+dict_inplace_concat(PyDictObject *self, PyObject *other)
 {
     // XXX: PEP 584
 
@@ -3271,59 +3208,6 @@ dict_iadd(PyDictObject *self, PyObject *other)
     // }
 
     if (dict_update_arg((PyObject *)self, other)) {
-        return NULL;
-    }
-
-    Py_INCREF((PyObject *)self);
-
-    return (PyObject *)self;
-}
-
-static PyObject *
-dict_sub(PyObject *self, PyObject *other)
-{
-    PyObject *new;
-
-    if (!PyDict_Check(self) || !PyDict_Check(other)) {
-        Py_RETURN_NOTIMPLEMENTED;
-    }
-
-    if (PyDict_CheckExact(self)) {
-        new = PyDict_New();
-    }
-    else {
-
-        // XXX: PEP 584
-
-        // See dict_add for limitations of this construction:
-
-        new = _PyObject_CallNoArg((PyObject *)Py_TYPE(self));
-    }
-
-    if (new == NULL) {
-        return NULL;
-    }
-
-    if (dict_update_arg(new, self) || dict_diff_arg(new, other)) {
-        Py_DECREF(new);
-        return NULL;
-    }
-
-    return new;
-}
-
-static PyObject *
-dict_isub(PyDictObject *self, PyObject *other)
-{
-    // XXX: PEP 584
-
-    // See dict_iadd for this removal:
-
-    // if (!PyMapping_Check(other)) {
-    //     Py_RETURN_NOTIMPLEMENTED;
-    // }
-
-    if (dict_diff_arg((PyObject *)self, other)) {
         return NULL;
     }
 
@@ -3423,18 +3307,17 @@ _PyDict_Contains(PyObject *op, PyObject *key, Py_hash_t hash)
     return (ix != DKIX_EMPTY && value != NULL);
 }
 
-/* Hack to implement "key in dict" */
 static PySequenceMethods dict_as_sequence = {
-    0,                          /* sq_length */
-    0,                          /* sq_concat */
-    0,                          /* sq_repeat */
-    0,                          /* sq_item */
-    0,                          /* sq_slice */
-    0,                          /* sq_ass_item */
-    0,                          /* sq_ass_slice */
-    PyDict_Contains,            /* sq_contains */
-    0,                          /* sq_inplace_concat */
-    0,                          /* sq_inplace_repeat */
+    0,                               /* sq_length */
+    (binaryfunc)dict_concat,         /* sq_concat */
+    0,                               /* sq_repeat */
+    0,                               /* sq_item */
+    0,                               /* sq_slice */
+    0,                               /* sq_ass_item */
+    0,                               /* sq_ass_slice */
+    PyDict_Contains,                 /* sq_contains */
+    (binaryfunc)dict_inplace_concat, /* sq_inplace_concat */
+    0,                               /* sq_inplace_repeat */
 };
 
 static PyObject *
@@ -3476,38 +3359,6 @@ dict_iter(PyDictObject *dict)
     return dictiter_new(dict, &PyDictIterKey_Type);
 }
 
-static PyNumberMethods dict_as_number = {
-    (binaryfunc)dict_add,               /*nb_add*/
-    (binaryfunc)dict_sub,               /*nb_subtract*/
-    0,                                  /*nb_multiply*/
-    0,                                  /*nb_remainder*/
-    0,                                  /*nb_divmod*/
-    0,                                  /*nb_power*/
-    0,                                  /*nb_negative*/
-    0,                                  /*nb_positive*/
-    0,                                  /*nb_absolute*/
-    0,                                  /*nb_bool*/
-    0,                                  /*nb_invert*/
-    0,                                  /*nb_lshift*/
-    0,                                  /*nb_rshift*/
-    0,                                  /*nb_and*/
-    0,                                  /*nb_xor*/
-    (binaryfunc)dict_add,               /*nb_or*/
-    0,                                  /*nb_int*/
-    0,                                  /*nb_reserved*/
-    0,                                  /*nb_float*/
-    (binaryfunc)dict_iadd,              /*nb_inplace_add*/
-    (binaryfunc)dict_isub,              /*nb_inplace_subtract*/
-    0,                                  /*nb_inplace_multiply*/
-    0,                                  /*nb_inplace_remainder*/
-    0,                                  /*nb_inplace_power*/
-    0,                                  /*nb_inplace_lshift*/
-    0,                                  /*nb_inplace_rshift*/
-    0,                                  /*nb_inplace_and*/
-    0,                                  /*nb_inplace_xor*/
-    (binaryfunc)dict_iadd,              /*nb_inplace_or*/
-};
-
 PyDoc_STRVAR(dictionary_doc,
 "dict() -> new empty dictionary\n"
 "dict(mapping) -> new dictionary initialized from a mapping object's\n"
@@ -3530,7 +3381,7 @@ PyTypeObject PyDict_Type = {
     0,                                          /* tp_setattr */
     0,                                          /* tp_as_async */
     (reprfunc)dict_repr,                        /* tp_repr */
-    &dict_as_number,                            /* tp_as_number */
+    0,                                          /* tp_as_number */
     &dict_as_sequence,                          /* tp_as_sequence */
     &dict_as_mapping,                           /* tp_as_mapping */
     PyObject_HashNotImplemented,                /* tp_hash */

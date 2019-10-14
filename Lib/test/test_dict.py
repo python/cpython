@@ -63,47 +63,9 @@ class DictTest(unittest.TestCase):
         self.assertIs(a.__add__(()), NotImplemented)
         self.assertIs(a.__add__("BAD"), NotImplemented)
 
-        self.assertIs(a.__radd__(None), NotImplemented)
-        self.assertIs(a.__radd__(()), NotImplemented)
-        self.assertIs(a.__radd__("BAD"), NotImplemented)
-
         self.assertRaises(TypeError, a.__iadd__, None)
         self.assertEqual(a.__iadd__(()), {0: 0, 1: 1, 2: 1})
         self.assertRaises(ValueError, a.__iadd__, "BAD")
-
-    def test_subtraction(self):
-
-        a = {0: 0, 1: 1, 2: 1}
-        b = {1: 1, 2: 2, 3: 3}
-
-        c = a.copy()
-        c -= b
-
-        self.assertEqual(a - b, {0: 0})
-        self.assertEqual(c, {0: 0})
-
-        c = b.copy()
-        c -= a
-
-        self.assertEqual(b - a, {3: 3})
-        self.assertEqual(c, {3: 3})
-
-        c = a.copy()
-        c -= (1, 2, 3)
-
-        self.assertEqual(c, {0: 0})
-
-        self.assertIs(a.__sub__(None), NotImplemented)
-        self.assertIs(a.__sub__(()), NotImplemented)
-        self.assertIs(a.__sub__("BAD"), NotImplemented)
-
-        self.assertIs(a.__rsub__(None), NotImplemented)
-        self.assertIs(a.__rsub__(()), NotImplemented)
-        self.assertIs(a.__rsub__("BAD"), NotImplemented)
-
-        self.assertRaises(TypeError, a.__isub__, None)
-        self.assertEqual(a.__isub__(()), {0: 0, 1: 1, 2: 1})
-        self.assertEqual(a.__isub__("BAD"), {0: 0, 1: 1, 2: 1})
 
     def test_bool(self):
         self.assertIs(not {}, True)
