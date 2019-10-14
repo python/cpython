@@ -1015,12 +1015,14 @@ class GCTests(unittest.TestCase):
         wr_cycle.append(wr_cycle)
         # ensure trash unrelated to this test is gone
         gc.collect()
+        gc.disable()
         # release references and create trash
         del a, wr_cycle
         gc.collect()
         # if called, it means there is a bug in the GC.  The weakref should be
         # cleared before Z dies.
         callback.assert_not_called()
+        gc.enable()
 
 
 class GCCallbackTests(unittest.TestCase):
