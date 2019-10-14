@@ -47,14 +47,6 @@
 This article explains the new features in Python 3.8, compared to 3.7.
 For full details, see the :ref:`changelog <changelog>`.
 
-Prerelease users should be aware that this document is currently in
-draft form. It will be updated as Python 3.8 moves towards release, so
-it's worth checking back even after reading earlier versions. Some
-notable items not yet covered are:
-
-* :pep:`578` - Runtime audit hooks for potentially sensitive operations
-* ``python -m asyncio`` runs a natively async REPL
-
 .. testsetup::
 
    from datetime import date
@@ -285,6 +277,18 @@ calculations can be shown::
   theta=30  cos(radians(theta))=0.866
 
 (Contributed by Eric V. Smith and Larry Hastings in :issue:`36817`.)
+
+
+PEP 578: Python Runtime Audit Hooks
+-----------------------------------
+
+The PEP adds an Audit Hook and Verified Open Hook. Both are available from
+Python and native code, allowing applications and frameworks written in pure
+Python code to take advantage of extra notifications, while also allowing
+embedders or system administrators to deploy builds of Python where auditing is
+always enabled.
+
+See :pep:`578` for full details.
 
 
 PEP 587: Python Initialization Configuration
@@ -583,6 +587,23 @@ The :func:`ast.parse` function has some new flags:
 
 asyncio
 -------
+
+Running ``python -m asyncio`` launches a natively async REPL.  This allows rapid
+experimentation with code that has a top-level :keyword:`await`.  There is no
+longer a need to directly call ``asyncio.run()`` which would spawn a new event
+loop on every invocation:
+
+.. code-block:: none
+
+    $ python -m asyncio
+    asyncio REPL 3.8.0
+    Use "await" directly instead of "asyncio.run()".
+    Type "help", "copyright", "credits" or "license" for more information.
+    >>> import asyncio
+    >>> await asyncio.sleep(10, result='hello')
+    hello
+
+(Contributed by Yury Selivanov in :issue:`37028`.)
 
 On Windows, the default event loop is now :class:`~asyncio.ProactorEventLoop`.
 (Contributed by Victor Stinner in :issue:`34687`.)
