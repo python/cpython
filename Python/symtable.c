@@ -1470,7 +1470,7 @@ symtable_extend_namedexpr_scope(struct symtable *st, expr_ty e)
         /* If we find a FunctionBlock entry, add as GLOBAL/LOCAL or NONLOCAL/LOCAL */
         if (ste->ste_type == FunctionBlock) {
             long target_in_scope = _PyST_GetSymbol(ste, target_name);
-            if (target_in_scope & DEF_GLOBAL){
+            if (target_in_scope & DEF_GLOBAL) {
                 if (!symtable_add_def(st, target_name, DEF_GLOBAL))
                     VISIT_QUIT(st, 0);
             } else {
