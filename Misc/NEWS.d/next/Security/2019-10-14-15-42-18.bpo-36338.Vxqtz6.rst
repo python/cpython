@@ -1,0 +1,2 @@
+The :mod:`urllib.urlparse` module now rejects invalid IPv6 addresses and
+invalid port numbers when parsing an URL.

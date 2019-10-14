@@ -1,0 +1,2 @@
+Fix :func:`urllib.parse.urlparse` for IPv6 address when user or password
+contains "[" or "]" character.

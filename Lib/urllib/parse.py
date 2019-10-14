@@ -167,13 +167,7 @@ class _NetlocResultMixinBase(object):
     def port(self):
         port = self._hostinfo[1]
         if port is not None:
-            try:
-                port = int(port, 10)
-            except ValueError:
-                message = f'Port could not be cast to integer value as {port!r}'
-                raise ValueError(message) from None
-            if not ( 0 <= port <= 65535):
-                raise ValueError("Port out of range 0-65535")
+            port = _validate_port(port)
         return port
 
 
@@ -388,17 +382,48 @@ def _splitparams(url):
         i = url.find(';')
     return url[:i], url[i+1:]
 
+def _validate_port(port_str):
+    try:
+        port = int(port_str, 10)
+    except ValueError:
+        message = f'Port could not be cast to integer value as {port_str!r}'
+        raise ValueError(message) from None
+    if not (0 <= port <= 65535):
+        raise ValueError("Port out of range 0-65535: %r" % port_str)
+    return port
+
+def _check_ipv6_host(host):
+    # "[ipv6]" host: ensure that it starts with "[", ends with "]"
+    # and that ipv6 doesn't contain "[" nor "]".
+    if not(host.startswith('[') and host.endswith(']')):
+        return False
+
+    parts = host[1:-1].split('%', 1)
+    ipv6 = parts[0]
+    scope = (parts[1] if len(parts) > 1 else None)
+
+    import ipaddress
+    try:
+        ipaddress.IPv6Address(ipv6)
+    except ipaddress.AddressValueError:
+        return False
+
+    if scope is not None and any(char in '%[]' for char in scope):
+        return False
+
+    return True
+
 def _splitnetloc(url, start=0):
     delim = len(url)   # position of end of domain part of url, default is end
     for c in '/?#':    # look for delimiters; the order is NOT important
         wdelim = url.find(c, start)        # find first of this delim
         if wdelim >= 0:                    # if found
             delim = min(delim, wdelim)     # use earliest delim position
-    return url[start:delim], url[delim:]   # return (domain, rest)
+    netloc = url[start:delim]
+    url = url[delim:]
+    return (netloc, url)
 
-def _checknetloc(netloc):
-    if not netloc or netloc.isascii():
-        return
+def _checknetloc_nfkc(netloc):
     # looking for characters like \u2100 that expand to 'a/c'
     # IDNA uses NFKC equivalence, so normalize for this check
     import unicodedata
@@ -413,6 +438,21 @@ def _checknetloc(netloc):
         if c in netloc2:
             raise ValueError("netloc '" + netloc + "' contains invalid " +
                              "characters under NFKC normalization")
+
+def _checknetloc(netloc):
+    # Optimization: skip the check for empty string and ASCII-only strings.
+    # NFKC normalization has no effect on ASCII strings.
+    if netloc and not netloc.isascii():
+        _checknetloc_nfkc(netloc)
+    host, port = _splitport(netloc)
+    # don't validate "user:passwd@"
+    user_passwd, host = _splituser(host)
+    if '[' in host or ']' in host:
+        # "http://[ipv6%scope]:port/path" URL
+        if not _check_ipv6_host(host):
+            raise ValueError(f"Invalid network location: {netloc!r}")
+    if port is not None:
+        _validate_port(port)
 
 def urlsplit(url, scheme='', allow_fragments=True):
     """Parse a URL into 5 components:
@@ -439,9 +479,6 @@ def urlsplit(url, scheme='', allow_fragments=True):
 
     if url[:2] == '//':
         netloc, url = _splitnetloc(url, 2)
-        if (('[' in netloc and ']' not in netloc) or
-                (']' in netloc and '[' not in netloc)):
-            raise ValueError("Invalid IPv6 URL")
     if allow_fragments and '#' in url:
         url, fragment = url.split('#', 1)
     if '?' in url:

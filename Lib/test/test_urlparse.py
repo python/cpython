@@ -450,6 +450,7 @@ class UrlParseTestCase(unittest.TestCase):
         self.checkJoin('a', 'b', 'b')
 
     def test_RFC2732(self):
+        # IPv6 address
         str_cases = [
             ('http://Test.python.org:5432/foo/', 'test.python.org', 5432),
             ('http://12.34.56.78:5432/foo/', '12.34.56.78', 5432),
@@ -481,7 +482,8 @@ class UrlParseTestCase(unittest.TestCase):
             ('http://[::12.34.56.78]:/foo/', '::12.34.56.78', None),
             ('http://[::ffff:12.34.56.78]:/foo/',
              '::ffff:12.34.56.78', None),
-            ]
+            ('http://[::]/', '::', None),
+        ]
         def _encode(t):
             return t[0].encode('ascii'), t[1].encode('ascii'), t[2]
         bytes_cases = [_encode(x) for x in str_cases]
@@ -489,15 +491,52 @@ class UrlParseTestCase(unittest.TestCase):
             urlparsed = urllib.parse.urlparse(url)
             self.assertEqual((urlparsed.hostname, urlparsed.port) , (hostname, port))
 
+        # bpo-36338: reject invalid IPv6 addresses
         str_cases = [
-                'http://::12.34.56.78]/',
-                'http://[::1/foo/',
-                'ftp://[::1/foo/bad]/bad',
-                'http://[::1/foo/bad]/bad',
-                'http://[::ffff:12.34.56.78']
+            # invalid IPv6 address
+            'http://[abcd:x::]/',
+            'http://[::1]example.com/',
+            # missing "[" or "]"
+            'http://::12.34.56.78]/',
+            'http://[::1/foo/',
+            'ftp://[::1/foo/bad]/bad',
+            'http://[::1/foo/bad]/bad',
+            'http://[::ffff:12.34.56.78',
+            # double ":"
+            'http://[::1]::80/',
+            # invalid "[" or "]" characters
+            'http://[[::1]]/',
+            'http://[::1][]/',
+            'http://[::1]:[]/',
+            'http://good.com[bad.com]',
+            'http://benign.com\\[attacker.com]',
+        ]
         bytes_cases = [x.encode('ascii') for x in str_cases]
         for invalid_url in str_cases + bytes_cases:
             self.assertRaises(ValueError, urllib.parse.urlparse, invalid_url)
+
+    def test_user_passwd(self):
+        # bpo-33342: username and password with "[" and "]" characters
+        for username in ("", "user", "[", "user[", "us]er", "us%er"):
+            for password in ("", "password", "p[ass]word", "]", "pa%%word"):
+                for url_host, hostname, port in (
+                    ("localhost", "localhost", None),
+                    ("127.0.0.1", "127.0.0.1", None),
+                    ("[::1]", '::1', None),
+                    ("[::1]:", '::1', None),
+                    ("[::1%scope]", '::1%scope', None),
+                    ("[::1]:443", '::1', 443),
+                ):
+                    netloc = f"{username}:{password}@{url_host}"
+                    url = f"//{netloc}/path"
+                    with self.subTest(url=url):
+                        urlparsed = urllib.parse.urlparse(url)
+                        self.assertEqual(urlparsed.netloc, netloc)
+                        self.assertEqual(urlparsed.username, username)
+                        self.assertEqual(urlparsed.password, password)
+                        self.assertEqual(urlparsed.hostname, hostname)
+                        self.assertEqual(urlparsed.port, port)
+                        self.assertEqual(urlparsed.path, "/path")
 
     def test_urldefrag(self):
         str_cases = [
@@ -530,6 +569,12 @@ class UrlParseTestCase(unittest.TestCase):
         p = urllib.parse.urlsplit(b'http://[FE80::822a:a8ff:fe49:470c%tESt]:1234')
         self.assertEqual(p.hostname, b"fe80::822a:a8ff:fe49:470c%tESt")
         self.assertEqual(p.netloc, b'[FE80::822a:a8ff:fe49:470c%tESt]:1234')
+
+        for invalid_char in ('%', '[', ']'):
+            invalid_url = f'http://[::1%sco{invalid_char}pe]'
+            with self.subTest(invalid_url=invalid_url):
+                with self.assertRaises(ValueError):
+                    urllib.parse.urlparse(invalid_url)
 
     def test_urlsplit_attributes(self):
         url = "HTTP://WWW.PYTHON.ORG/doc/#frag"
@@ -620,9 +665,8 @@ class UrlParseTestCase(unittest.TestCase):
 
         # Verify an illegal port raises ValueError
         url = b"HTTP://WWW.PYTHON.ORG:65536/doc/#frag"
-        p = urllib.parse.urlsplit(url)
-        with self.assertRaisesRegex(ValueError, "out of range"):
-            p.port
+        with self.assertRaisesRegex(ValueError, "Port out of range 0-65535"):
+            urllib.parse.urlsplit(url)
 
     def test_attributes_bad_port(self):
         """Check handling of invalid ports."""
