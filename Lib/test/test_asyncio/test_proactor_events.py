@@ -632,6 +632,23 @@ class ProactorDatagramTransportTests(test_utils.TestCase):
         self.sock.close.assert_called_with()
         self.protocol.connection_lost.assert_called_with(None)
 
+    def test_loop_close_with_write_buffer(self):
+        data1 = b'data1'
+        data2 = b'data2'
+        transport = self.datagram_transport()
+        transport.sendto(data1, ('0.0.0.0', 1234))
+        self.proactor.sendto.assert_called_with(
+            self.sock, data1, addr=('0.0.0.0', 1234))
+        transport.sendto(data2, ('0.0.0.0', 1234))
+        transport.close()
+        self.assertIsNotNone(transport._write_fut)
+        transport._loop_writing(transport._write_fut)
+        self.proactor.sendto.assert_called_with(
+            self.sock, data2, addr=('0.0.0.0', 1234))
+        transport._loop_writing(transport._write_fut)
+        test_utils.run_briefly(self.loop)
+        self.protocol.connection_lost.assert_called_with(None)
+
     def test__loop_writing_exception(self):
         err = self.proactor.sendto.side_effect = RuntimeError()
 
