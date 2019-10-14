@@ -1300,9 +1300,9 @@ prepare_s(PyStructObject *self)
     while ((c = *s++) != '\0') {
         if (Py_ISSPACE(c))
             continue;
-        if ('0' <= c && c <= '9') {
+        if (Py_ISDIGIT(c)) {
             num = c - '0';
-            while ('0' <= (c = *s++) && c <= '9') {
+            while (Py_ISDIGIT((c = *s++))) {
                 /* overflow-safe version of
                    if (num*10 + (c - '0') > PY_SSIZE_T_MAX) { ... } */
                 if (num >= PY_SSIZE_T_MAX / 10 && (
@@ -1365,9 +1365,9 @@ prepare_s(PyStructObject *self)
     while ((c = *s++) != '\0') {
         if (Py_ISSPACE(c))
             continue;
-        if ('0' <= c && c <= '9') {
+        if (Py_ISDIGIT(c)) {
             num = c - '0';
-            while ('0' <= (c = *s++) && c <= '9')
+            while (Py_ISDIGIT((c = *s++)))
                 num = num*10 + (c - '0');
         }
         else
