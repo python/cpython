@@ -818,7 +818,16 @@ class NonCallableMock(Base):
                 break
             else:
                 children = child._mock_children
-                sig = child._spec_signature
+                # If an autospecced object is attached using attach_mock the
+                # child would be a function with mock object as attribute from
+                # which signature has to be derived. If there is no signature
+                # attribute then fallback to None to ensure old signature is
+                # not used.
+                child = _extract_mock(child)
+                try:
+                    sig = child._spec_signature
+                except AttributeError:
+                    sig = None
 
         return sig
 
