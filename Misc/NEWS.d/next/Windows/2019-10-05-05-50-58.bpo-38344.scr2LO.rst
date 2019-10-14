@@ -1,1 +1,0 @@
-Fix syntax in activate.bat
