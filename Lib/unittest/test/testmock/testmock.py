@@ -1922,13 +1922,23 @@ class MockTest(unittest.TestCase):
             self.assertEqual(mock_func.mock._extract_mock_name(), 'mock.child')
 
 
-    def test_attach_mock_patch_autospec_method(self):
+    def test_attach_mock_patch_autospec(self):
         with mock.patch(f'{__name__}.Something.meth', autospec=True) as mocked:
             manager = Mock()
             manager.attach_mock(mocked, 'attach_meth')
             obj = Something()
             obj.meth(1, 2, 3, d=4)
             manager.assert_has_calls([call.attach_meth(mock.ANY, 1, 2, 3, d=4)])
+            obj.meth.assert_has_calls([call(mock.ANY, 1, 2, 3, d=4)])
+            mocked.assert_has_calls([call(mock.ANY, 1, 2, 3, d=4)])
+
+        with mock.patch(f'{__name__}.something', autospec=True) as mocked:
+            manager = Mock()
+            manager.attach_mock(mocked, 'attach_func')
+            something(1)
+            manager.assert_has_calls([call.attach_func(1)])
+            something.assert_has_calls([call(1)])
+            mocked.assert_has_calls([call(1)])
 
 
     def test_attribute_deletion(self):
