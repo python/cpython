@@ -22,6 +22,11 @@ except ImportError:
                 raise TypeError('requires _testcapi.with_tp_del')
         return C
 
+try:
+    from _testcapi import ContainerNoGC
+except ImportError:
+    ContainerNoGC = None
+
 ### Support code
 ###############################################################################
 
@@ -958,6 +963,69 @@ class GCTests(unittest.TestCase):
         self.assertEqual(nc - oldnc, 0)
 
         gc.enable()
+
+    @unittest.skipIf(ContainerNoGC is None,
+                     'requires ContainerNoGC extension type')
+    def test_trash_weakref_clear(self):
+        # Test that trash weakrefs are properly cleared (bpo-38006).
+        #
+        # Structure we are creating:
+        #
+        #   Z <- Y <- A--+--> WZ -> C
+        #             ^  |
+        #             +--+
+        # where:
+        #   WZ is a weakref to Z with callback C
+        #   Y doesn't implement tp_traverse
+        #   A contains a reference to itself, Y and WZ
+        #
+        # A, Y, Z, WZ are all trash.  The GC doesn't know that Z is trash
+        # because Y does not implement tp_traverse.  To show the bug, WZ needs
+        # to live long enough so that Z is deallocated before it.  Then, if
+        # gcmodule is buggy, when Z is being deallocated, C will run.
+        #
+        # To ensure WZ lives long enough, we put it in a second reference
+        # cycle.  That trick only works due to the ordering of the GC prev/next
+        # linked lists.  So, this test is a bit fragile.
+        #
+        # The bug reported in bpo-38006 is caused because the GC did not
+        # clear WZ before starting the process of calling tp_clear on the
+        # trash.  Normally, handle_weakrefs() would find the weakref via Z and
+        # clear it.  However, since the GC cannot find Z, WR is not cleared and
+        # it can execute during delete_garbage().  That can lead to disaster
+        # since the callback might tinker with objects that have already had
+        # tp_clear called on them (leaving them in possibly invalid states).
+
+        wr_callback_was_run = False
+        def callback(wr):
+            # We cannot allow this callback to run.  It could access objects
+            # with invalid states due to tp_clear already being run.  Or, it
+            # could resurrecte objects that were previously considered trash.
+            nonlocal wr_callback_was_run
+            wr_callback_was_run = True
+
+        class A:
+            __slots__ = ['a', 'y', 'wz']
+
+        class Z:
+            pass
+
+        # setup required object graph, as described above
+        a = A()
+        a.a = a
+        a.y = ContainerNoGC(Z())
+        a.wz = weakref.ref(a.y.value, callback)
+        # create second cycle to keep WZ alive longer
+        wr_cycle = [a.wz]
+        wr_cycle.append(wr_cycle)
+        # ensure trash unrelated to this test is gone
+        gc.collect()
+        # release references and create trash
+        del a, wr_cycle
+        gc.collect()
+        # if the callback runs, we have a bug
+        self.assertFalse(wr_callback_was_run)
+
 
 class GCCallbackTests(unittest.TestCase):
     def setUp(self):
