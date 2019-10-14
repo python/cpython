@@ -1,0 +1,2 @@
+``repr()`` of buffered and text streams now silences only expected
+exceptions when get the value of "name" and "mode" attributes.

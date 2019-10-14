@@ -8,7 +8,7 @@
 
 --------------
 
-.. highlightlang:: none
+.. highlight:: none
 
 **This module is automatically imported during initialization.** The automatic
 import can be suppressed using the interpreter's :option:`-S` option.
@@ -45,9 +45,9 @@ sys.prefix and sys.exec_prefix are set to that directory and
 it is also checked for site-packages (sys.base_prefix and
 sys.base_exec_prefix will always be the "real" prefixes of the Python
 installation). If "pyvenv.cfg" (a bootstrap configuration file) contains
-the key "include-system-site-packages" set to anything other than "false"
-(case-insensitive), the system-level prefixes will still also be
-searched for site-packages; otherwise they won't.
+the key "include-system-site-packages" set to anything other than "true"
+(case-insensitive), the system-level prefixes will not be
+searched for site-packages; otherwise they will.
 
 .. index::
    single: # (hash); comment
@@ -60,6 +60,19 @@ are never added to ``sys.path``, and no check is made that the item refers to a
 directory rather than a file.  No item is added to ``sys.path`` more than
 once.  Blank lines and lines beginning with ``#`` are skipped.  Lines starting
 with ``import`` (followed by space or tab) are executed.
+
+.. note::
+
+   An executable line in a :file:`.pth` file is run at every Python startup,
+   regardless of whether a particular module is actually going to be used.
+   Its impact should thus be kept to a minimum.
+   The primary intended purpose of executable lines is to make the
+   corresponding module(s) importable
+   (load 3rd-party import hooks, adjust :envvar:`PATH` etc).
+   Any other initialization is supposed to be done upon a module's
+   actual import, if and when it happens.
+   Limiting a code chunk to a single line is a deliberate measure
+   to discourage putting anything more complex here.
 
 .. index::
    single: package

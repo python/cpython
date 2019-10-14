@@ -130,7 +130,7 @@ class Compile:
         self.flags = PyCF_DONT_IMPLY_DEDENT
 
     def __call__(self, source, filename, symbol):
-        codeob = compile(source, filename, symbol, self.flags, 1)
+        codeob = compile(source, filename, symbol, self.flags, True)
         for feature in _features:
             if codeob.co_flags & feature.compiler_flag:
                 self.flags |= feature.compiler_flag

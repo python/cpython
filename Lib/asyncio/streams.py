@@ -4,6 +4,7 @@ __all__ = (
 
 import socket
 import sys
+import warnings
 import weakref
 
 if hasattr(socket, 'AF_UNIX'):
@@ -42,6 +43,10 @@ async def open_connection(host=None, port=None, *,
     """
     if loop is None:
         loop = events.get_event_loop()
+    else:
+        warnings.warn("The loop argument is deprecated since Python 3.8, "
+                      "and scheduled for removal in Python 3.10.",
+                      DeprecationWarning, stacklevel=2)
     reader = StreamReader(limit=limit, loop=loop)
     protocol = StreamReaderProtocol(reader, loop=loop)
     transport, _ = await loop.create_connection(
@@ -75,6 +80,10 @@ async def start_server(client_connected_cb, host=None, port=None, *,
     """
     if loop is None:
         loop = events.get_event_loop()
+    else:
+        warnings.warn("The loop argument is deprecated since Python 3.8, "
+                      "and scheduled for removal in Python 3.10.",
+                      DeprecationWarning, stacklevel=2)
 
     def factory():
         reader = StreamReader(limit=limit, loop=loop)
@@ -93,6 +102,10 @@ if hasattr(socket, 'AF_UNIX'):
         """Similar to `open_connection` but works with UNIX Domain Sockets."""
         if loop is None:
             loop = events.get_event_loop()
+        else:
+            warnings.warn("The loop argument is deprecated since Python 3.8, "
+                          "and scheduled for removal in Python 3.10.",
+                          DeprecationWarning, stacklevel=2)
         reader = StreamReader(limit=limit, loop=loop)
         protocol = StreamReaderProtocol(reader, loop=loop)
         transport, _ = await loop.create_unix_connection(
@@ -105,6 +118,10 @@ if hasattr(socket, 'AF_UNIX'):
         """Similar to `start_server` but works with UNIX Domain Sockets."""
         if loop is None:
             loop = events.get_event_loop()
+        else:
+            warnings.warn("The loop argument is deprecated since Python 3.8, "
+                          "and scheduled for removal in Python 3.10.",
+                          DeprecationWarning, stacklevel=2)
 
         def factory():
             reader = StreamReader(limit=limit, loop=loop)
@@ -178,6 +195,9 @@ class FlowControlMixin(protocols.Protocol):
         waiter = self._loop.create_future()
         self._drain_waiter = waiter
         await waiter
+
+    def _get_close_waiter(self, stream):
+        raise NotImplementedError
 
 
 class StreamReaderProtocol(FlowControlMixin, protocols.Protocol):
@@ -293,6 +313,9 @@ class StreamReaderProtocol(FlowControlMixin, protocols.Protocol):
             return False
         return True
 
+    def _get_close_waiter(self, stream):
+        return self._closed
+
     def __del__(self):
         # Prevent reports about unhandled exceptions.
         # Better than self._closed._log_traceback = False hack
@@ -318,6 +341,8 @@ class StreamWriter:
         assert reader is None or isinstance(reader, StreamReader)
         self._reader = reader
         self._loop = loop
+        self._complete_fut = self._loop.create_future()
+        self._complete_fut.set_result(None)
 
     def __repr__(self):
         info = [self.__class__.__name__, f'transport={self._transport!r}']
@@ -342,13 +367,13 @@ class StreamWriter:
         return self._transport.can_write_eof()
 
     def close(self):
-        self._transport.close()
+        return self._transport.close()
 
     def is_closing(self):
         return self._transport.is_closing()
 
     async def wait_closed(self):
-        await self._protocol._closed
+        await self._protocol._get_close_waiter(self)
 
     def get_extra_info(self, name, default=None):
         return self._transport.get_extra_info(name, default)
@@ -366,22 +391,17 @@ class StreamWriter:
             if exc is not None:
                 raise exc
         if self._transport.is_closing():
+            # Wait for protocol.connection_lost() call
+            # Raise connection closing error if any,
+            # ConnectionResetError otherwise
             # Yield to the event loop so connection_lost() may be
             # called.  Without this, _drain_helper() would return
             # immediately, and code that calls
             #     write(...); await drain()
             # in a loop would never call connection_lost(), so it
             # would not see an error when the socket is closed.
-            await sleep(0, loop=self._loop)
+            await sleep(0)
         await self._protocol._drain_helper()
-
-    async def aclose(self):
-        self.close()
-        await self.wait_closed()
-
-    async def awrite(self, data):
-        self.write(data)
-        await self.drain()
 
 
 class StreamReader:

@@ -648,10 +648,10 @@ exit:
 }
 
 PyDoc_STRVAR(cmath_log__doc__,
-"log($module, x, y_obj=None, /)\n"
+"log($module, z, base=<unrepresentable>, /)\n"
 "--\n"
 "\n"
-"The logarithm of z to the given base.\n"
+"log(z[, base]) -> the logarithm of z to the given base.\n"
 "\n"
 "If the base not specified, returns the natural logarithm (base e) of z.");
 
@@ -766,13 +766,25 @@ cmath_rect(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     if (!_PyArg_CheckPositional("rect", nargs, 2, 2)) {
         goto exit;
     }
-    r = PyFloat_AsDouble(args[0]);
-    if (PyErr_Occurred()) {
-        goto exit;
+    if (PyFloat_CheckExact(args[0])) {
+        r = PyFloat_AS_DOUBLE(args[0]);
     }
-    phi = PyFloat_AsDouble(args[1]);
-    if (PyErr_Occurred()) {
-        goto exit;
+    else
+    {
+        r = PyFloat_AsDouble(args[0]);
+        if (r == -1.0 && PyErr_Occurred()) {
+            goto exit;
+        }
+    }
+    if (PyFloat_CheckExact(args[1])) {
+        phi = PyFloat_AS_DOUBLE(args[1]);
+    }
+    else
+    {
+        phi = PyFloat_AsDouble(args[1]);
+        if (phi == -1.0 && PyErr_Occurred()) {
+            goto exit;
+        }
     }
     return_value = cmath_rect_impl(module, r, phi);
 
@@ -897,17 +909,56 @@ cmath_isclose(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObjec
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"a", "b", "rel_tol", "abs_tol", NULL};
-    static _PyArg_Parser _parser = {"DD|$dd:isclose", _keywords, 0};
+    static _PyArg_Parser _parser = {NULL, _keywords, "isclose", 0};
+    PyObject *argsbuf[4];
+    Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 2;
     Py_complex a;
     Py_complex b;
     double rel_tol = 1e-09;
     double abs_tol = 0.0;
     int _return_value;
 
-    if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser,
-        &a, &b, &rel_tol, &abs_tol)) {
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 2, 2, 0, argsbuf);
+    if (!args) {
         goto exit;
     }
+    a = PyComplex_AsCComplex(args[0]);
+    if (PyErr_Occurred()) {
+        goto exit;
+    }
+    b = PyComplex_AsCComplex(args[1]);
+    if (PyErr_Occurred()) {
+        goto exit;
+    }
+    if (!noptargs) {
+        goto skip_optional_kwonly;
+    }
+    if (args[2]) {
+        if (PyFloat_CheckExact(args[2])) {
+            rel_tol = PyFloat_AS_DOUBLE(args[2]);
+        }
+        else
+        {
+            rel_tol = PyFloat_AsDouble(args[2]);
+            if (rel_tol == -1.0 && PyErr_Occurred()) {
+                goto exit;
+            }
+        }
+        if (!--noptargs) {
+            goto skip_optional_kwonly;
+        }
+    }
+    if (PyFloat_CheckExact(args[3])) {
+        abs_tol = PyFloat_AS_DOUBLE(args[3]);
+    }
+    else
+    {
+        abs_tol = PyFloat_AsDouble(args[3]);
+        if (abs_tol == -1.0 && PyErr_Occurred()) {
+            goto exit;
+        }
+    }
+skip_optional_kwonly:
     _return_value = cmath_isclose_impl(module, a, b, rel_tol, abs_tol);
     if ((_return_value == -1) && PyErr_Occurred()) {
         goto exit;
@@ -917,4 +968,4 @@ cmath_isclose(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObjec
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=86a365d23f34aaff input=a9049054013a1b77]*/
+/*[clinic end generated code: output=3edc4484b10ae752 input=a9049054013a1b77]*/

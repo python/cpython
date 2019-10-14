@@ -480,13 +480,14 @@ Kqueue Objects
    Create a kqueue object from a given file descriptor.
 
 
-.. method:: kqueue.control(changelist, max_events[, timeout=None]) -> eventlist
+.. method:: kqueue.control(changelist, max_events[, timeout]) -> eventlist
 
    Low level interface to kevent
 
-   - changelist must be an iterable of kevent object or ``None``
+   - changelist must be an iterable of kevent objects or ``None``
    - max_events must be 0 or a positive integer
-   - timeout in seconds (floats possible)
+   - timeout in seconds (floats possible); the default is ``None``,
+     to wait forever
 
    .. versionchanged:: 3.5
       The function is now retried with a recomputed timeout when interrupted by

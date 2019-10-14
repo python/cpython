@@ -11,7 +11,7 @@ import warnings
 from . import connection
 from . import process
 from .context import reduction
-from . import semaphore_tracker
+from . import resource_tracker
 from . import spawn
 from . import util
 
@@ -38,6 +38,25 @@ class ForkServer(object):
         self._inherited_fds = None
         self._lock = threading.Lock()
         self._preload_modules = ['__main__']
+
+    def _stop(self):
+        # Method used by unit tests to stop the server
+        with self._lock:
+            self._stop_unlocked()
+
+    def _stop_unlocked(self):
+        if self._forkserver_pid is None:
+            return
+
+        # close the "alive" file descriptor asks the server to stop
+        os.close(self._forkserver_alive_fd)
+        self._forkserver_alive_fd = None
+
+        os.waitpid(self._forkserver_pid, 0)
+        self._forkserver_pid = None
+
+        os.unlink(self._forkserver_address)
+        self._forkserver_address = None
 
     def set_forkserver_preload(self, modules_names):
         '''Set list of module names to try to load in forkserver process.'''
@@ -69,7 +88,7 @@ class ForkServer(object):
             parent_r, child_w = os.pipe()
             child_r, parent_w = os.pipe()
             allfds = [child_r, child_w, self._forkserver_alive_fd,
-                      semaphore_tracker.getfd()]
+                      resource_tracker.getfd()]
             allfds += fds
             try:
                 reduction.sendfds(client, allfds)
@@ -90,7 +109,7 @@ class ForkServer(object):
         ensure_running() will do nothing.
         '''
         with self._lock:
-            semaphore_tracker.ensure_running()
+            resource_tracker.ensure_running()
             if self._forkserver_pid is not None:
                 # forkserver was launched before, is it still running?
                 pid, status = os.waitpid(self._forkserver_pid, os.WNOHANG)
@@ -290,11 +309,12 @@ def _serve_one(child_r, fds, unused_fds, handlers):
         os.close(fd)
 
     (_forkserver._forkserver_alive_fd,
-     semaphore_tracker._semaphore_tracker._fd,
+     resource_tracker._resource_tracker._fd,
      *_forkserver._inherited_fds) = fds
 
     # Run process object received over pipe
-    code = spawn._main(child_r)
+    parent_sentinel = os.dup(child_r)
+    code = spawn._main(child_r, parent_sentinel)
 
     return code
 

@@ -3,7 +3,6 @@ from unittest import mock
 from test import support
 import subprocess
 import sys
-import platform
 import signal
 import io
 import itertools
@@ -11,6 +10,7 @@ import os
 import errno
 import tempfile
 import time
+import traceback
 import selectors
 import sysconfig
 import select
@@ -18,19 +18,22 @@ import shutil
 import threading
 import gc
 import textwrap
+import json
 from test.support import FakePath
-
-try:
-    import ctypes
-except ImportError:
-    ctypes = None
-else:
-    import ctypes.util
 
 try:
     import _testcapi
 except ImportError:
     _testcapi = None
+
+try:
+    import pwd
+except ImportError:
+    pwd = None
+try:
+    import grp
+except ImportError:
+    grp = None
 
 if support.PGO:
     raise unittest.SkipTest("test is not helpful for PGO")
@@ -59,10 +62,14 @@ class BaseTestCase(unittest.TestCase):
         support.reap_children()
 
     def tearDown(self):
-        for inst in subprocess._active:
-            inst.wait()
-        subprocess._cleanup()
-        self.assertFalse(subprocess._active, "subprocess._active not empty")
+        if not mswindows:
+            # subprocess._active is not used on Windows and is set to None.
+            for inst in subprocess._active:
+                inst.wait()
+            subprocess._cleanup()
+            self.assertFalse(
+                subprocess._active, "subprocess._active not empty"
+            )
         self.doCleanups()
         support.reap_children()
 
@@ -304,6 +311,18 @@ class ProcessTestCase(BaseTestCase):
                                     "doesnotexist")
         self._assert_python([doesnotexist, "-c"], executable=sys.executable)
 
+    def test_bytes_executable(self):
+        doesnotexist = os.path.join(os.path.dirname(sys.executable),
+                                    "doesnotexist")
+        self._assert_python([doesnotexist, "-c"],
+                            executable=os.fsencode(sys.executable))
+
+    def test_pathlike_executable(self):
+        doesnotexist = os.path.join(os.path.dirname(sys.executable),
+                                    "doesnotexist")
+        self._assert_python([doesnotexist, "-c"],
+                            executable=FakePath(sys.executable))
+
     def test_executable_takes_precedence(self):
         # Check that the executable argument takes precedence over args[0].
         #
@@ -319,6 +338,16 @@ class ProcessTestCase(BaseTestCase):
         # Check that the executable argument replaces the default shell
         # when shell=True.
         self._assert_python([], executable=sys.executable, shell=True)
+
+    @unittest.skipIf(mswindows, "executable argument replaces shell")
+    def test_bytes_executable_replaces_shell(self):
+        self._assert_python([], executable=os.fsencode(sys.executable),
+                            shell=True)
+
+    @unittest.skipIf(mswindows, "executable argument replaces shell")
+    def test_pathlike_executable_replaces_shell(self):
+        self._assert_python([], executable=FakePath(sys.executable),
+                            shell=True)
 
     # For use in the test_cwd* tests below.
     def _normalize_cwd(self, cwd):
@@ -357,6 +386,11 @@ class ProcessTestCase(BaseTestCase):
         temp_dir = tempfile.gettempdir()
         temp_dir = self._normalize_cwd(temp_dir)
         self._assert_cwd(temp_dir, sys.executable, cwd=temp_dir)
+
+    def test_cwd_with_bytes(self):
+        temp_dir = tempfile.gettempdir()
+        temp_dir = self._normalize_cwd(temp_dir)
+        self._assert_cwd(temp_dir, sys.executable, cwd=os.fsencode(temp_dir))
 
     def test_cwd_with_pathlike(self):
         temp_dir = tempfile.gettempdir()
@@ -1473,6 +1507,34 @@ class RunFuncTestCase(BaseTestCase):
                              env=newenv)
         self.assertEqual(cp.returncode, 33)
 
+    def test_run_with_pathlike_path(self):
+        # bpo-31961: test run(pathlike_object)
+        # the name of a command that can be run without
+        # any arguments that exit fast
+        prog = 'tree.com' if mswindows else 'ls'
+        path = shutil.which(prog)
+        if path is None:
+            self.skipTest(f'{prog} required for this test')
+        path = FakePath(path)
+        res = subprocess.run(path, stdout=subprocess.DEVNULL)
+        self.assertEqual(res.returncode, 0)
+        with self.assertRaises(TypeError):
+            subprocess.run(path, stdout=subprocess.DEVNULL, shell=True)
+
+    def test_run_with_bytes_path_and_arguments(self):
+        # bpo-31961: test run([bytes_object, b'additional arguments'])
+        path = os.fsencode(sys.executable)
+        args = [path, '-c', b'import sys; sys.exit(57)']
+        res = subprocess.run(args)
+        self.assertEqual(res.returncode, 57)
+
+    def test_run_with_pathlike_path_and_arguments(self):
+        # bpo-31961: test run([pathlike_object, 'additional arguments'])
+        path = FakePath(sys.executable)
+        args = [path, '-c', 'import sys; sys.exit(57)']
+        res = subprocess.run(args)
+        self.assertEqual(res.returncode, 57)
+
     def test_capture_output(self):
         cp = self.run_python(("import sys;"
                               "sys.stdout.write('BDFL'); "
@@ -1504,6 +1566,38 @@ class RunFuncTestCase(BaseTestCase):
                                       capture_output=True, stderr=tf)
         self.assertIn('stderr', c.exception.args[0])
         self.assertIn('capture_output', c.exception.args[0])
+
+    # This test _might_ wind up a bit fragile on loaded build+test machines
+    # as it depends on the timing with wide enough margins for normal situations
+    # but does assert that it happened "soon enough" to believe the right thing
+    # happened.
+    @unittest.skipIf(mswindows, "requires posix like 'sleep' shell command")
+    def test_run_with_shell_timeout_and_capture_output(self):
+        """Output capturing after a timeout mustn't hang forever on open filehandles."""
+        before_secs = time.monotonic()
+        try:
+            subprocess.run('sleep 3', shell=True, timeout=0.1,
+                           capture_output=True)  # New session unspecified.
+        except subprocess.TimeoutExpired as exc:
+            after_secs = time.monotonic()
+            stacks = traceback.format_exc()  # assertRaises doesn't give this.
+        else:
+            self.fail("TimeoutExpired not raised.")
+        self.assertLess(after_secs - before_secs, 1.5,
+                        msg="TimeoutExpired was delayed! Bad traceback:\n```\n"
+                        f"{stacks}```")
+
+
+def _get_test_grp_name():
+    for name_group in ('staff', 'nogroup', 'grp', 'nobody', 'nfsnobody'):
+        if grp:
+            try:
+                grp.getgrnam(name_group)
+            except KeyError:
+                continue
+            return name_group
+    else:
+        raise unittest.SkipTest('No identified group name to use for this test on this platform.')
 
 
 @unittest.skipIf(mswindows, "POSIX specific tests")
@@ -1650,16 +1744,155 @@ class POSIXProcessTestCase(BaseTestCase):
         # still indicates that it was called.
         try:
             output = subprocess.check_output(
-                    [sys.executable, "-c",
-                     "import os; print(os.getpgid(os.getpid()))"],
+                    [sys.executable, "-c", "import os; print(os.getsid(0))"],
                     start_new_session=True)
         except OSError as e:
             if e.errno != errno.EPERM:
                 raise
         else:
-            parent_pgid = os.getpgid(os.getpid())
-            child_pgid = int(output)
-            self.assertNotEqual(parent_pgid, child_pgid)
+            parent_sid = os.getsid(0)
+            child_sid = int(output)
+            self.assertNotEqual(parent_sid, child_sid)
+
+    @unittest.skipUnless(hasattr(os, 'setreuid'), 'no setreuid on platform')
+    def test_user(self):
+        # For code coverage of the user parameter.  We don't care if we get an
+        # EPERM error from it depending on the test execution environment, that
+        # still indicates that it was called.
+
+        uid = os.geteuid()
+        test_users = [65534 if uid != 65534 else 65533, uid]
+        name_uid = "nobody" if sys.platform != 'darwin' else "unknown"
+
+        if pwd is not None:
+            test_users.append(name_uid)
+
+        for user in test_users:
+            # posix_spawn() may be used with close_fds=False
+            for close_fds in (False, True):
+                with self.subTest(user=user, close_fds=close_fds):
+                    try:
+                        output = subprocess.check_output(
+                                [sys.executable, "-c",
+                                 "import os; print(os.getuid())"],
+                                user=user,
+                                close_fds=close_fds)
+                    except PermissionError:  # (EACCES, EPERM)
+                        pass
+                    except OSError as e:
+                        if e.errno not in (errno.EACCES, errno.EPERM):
+                            raise
+                    else:
+                        if isinstance(user, str):
+                            user_uid = pwd.getpwnam(user).pw_uid
+                        else:
+                            user_uid = user
+                        child_user = int(output)
+                        self.assertEqual(child_user, user_uid)
+
+        with self.assertRaises(ValueError):
+            subprocess.check_call([sys.executable, "-c", "pass"], user=-1)
+
+        if pwd is None:
+            with self.assertRaises(ValueError):
+                subprocess.check_call([sys.executable, "-c", "pass"], user=name_uid)
+
+    @unittest.skipIf(hasattr(os, 'setreuid'), 'setreuid() available on platform')
+    def test_user_error(self):
+        with self.assertRaises(ValueError):
+            subprocess.check_call([sys.executable, "-c", "pass"], user=65535)
+
+    @unittest.skipUnless(hasattr(os, 'setregid'), 'no setregid() on platform')
+    def test_group(self):
+        gid = os.getegid()
+        group_list = [65534 if gid != 65534 else 65533]
+        name_group = _get_test_grp_name()
+
+        if grp is not None:
+            group_list.append(name_group)
+
+        for group in group_list + [gid]:
+            # posix_spawn() may be used with close_fds=False
+            for close_fds in (False, True):
+                with self.subTest(group=group, close_fds=close_fds):
+                    try:
+                        output = subprocess.check_output(
+                                [sys.executable, "-c",
+                                 "import os; print(os.getgid())"],
+                                group=group,
+                                close_fds=close_fds)
+                    except PermissionError:  # (EACCES, EPERM)
+                        pass
+                    else:
+                        if isinstance(group, str):
+                            group_gid = grp.getgrnam(group).gr_gid
+                        else:
+                            group_gid = group
+
+                        child_group = int(output)
+                        self.assertEqual(child_group, group_gid)
+
+        # make sure we bomb on negative values
+        with self.assertRaises(ValueError):
+            subprocess.check_call([sys.executable, "-c", "pass"], group=-1)
+
+        if grp is None:
+            with self.assertRaises(ValueError):
+                subprocess.check_call([sys.executable, "-c", "pass"], group=name_group)
+
+    @unittest.skipIf(hasattr(os, 'setregid'), 'setregid() available on platform')
+    def test_group_error(self):
+        with self.assertRaises(ValueError):
+            subprocess.check_call([sys.executable, "-c", "pass"], group=65535)
+
+    @unittest.skipUnless(hasattr(os, 'setgroups'), 'no setgroups() on platform')
+    def test_extra_groups(self):
+        gid = os.getegid()
+        group_list = [65534 if gid != 65534 else 65533]
+        name_group = _get_test_grp_name()
+        perm_error = False
+
+        if grp is not None:
+            group_list.append(name_group)
+
+        try:
+            output = subprocess.check_output(
+                    [sys.executable, "-c",
+                     "import os, sys, json; json.dump(os.getgroups(), sys.stdout)"],
+                    extra_groups=group_list)
+        except OSError as ex:
+            if ex.errno != errno.EPERM:
+                raise
+            perm_error = True
+
+        else:
+            parent_groups = os.getgroups()
+            child_groups = json.loads(output)
+
+            if grp is not None:
+                desired_gids = [grp.getgrnam(g).gr_gid if isinstance(g, str) else g
+                                for g in group_list]
+            else:
+                desired_gids = group_list
+
+            if perm_error:
+                self.assertEqual(set(child_groups), set(parent_groups))
+            else:
+                self.assertEqual(set(desired_gids), set(child_groups))
+
+        # make sure we bomb on negative values
+        with self.assertRaises(ValueError):
+            subprocess.check_call([sys.executable, "-c", "pass"], extra_groups=[-1])
+
+        if grp is None:
+            with self.assertRaises(ValueError):
+                subprocess.check_call([sys.executable, "-c", "pass"],
+                                      extra_groups=[name_group])
+
+    @unittest.skipIf(hasattr(os, 'setgroups'), 'setgroups() available on platform')
+    def test_extra_groups_error(self):
+        with self.assertRaises(ValueError):
+            subprocess.check_call([sys.executable, "-c", "pass"], extra_groups=[])
 
     def test_run_abort(self):
         # returncode handles signal termination
@@ -2625,8 +2858,12 @@ class POSIXProcessTestCase(BaseTestCase):
         with support.check_warnings(('', ResourceWarning)):
             p = None
 
-        # check that p is in the active processes list
-        self.assertIn(ident, [id(o) for o in subprocess._active])
+        if mswindows:
+            # subprocess._active is not used on Windows and is set to None.
+            self.assertIsNone(subprocess._active)
+        else:
+            # check that p is in the active processes list
+            self.assertIn(ident, [id(o) for o in subprocess._active])
 
     def test_leak_fast_process_del_killed(self):
         # Issue #12650: on Unix, if Popen.__del__() was called before the
@@ -2647,8 +2884,12 @@ class POSIXProcessTestCase(BaseTestCase):
             p = None
 
         os.kill(pid, signal.SIGKILL)
-        # check that p is in the active processes list
-        self.assertIn(ident, [id(o) for o in subprocess._active])
+        if mswindows:
+            # subprocess._active is not used on Windows and is set to None.
+            self.assertIsNone(subprocess._active)
+        else:
+            # check that p is in the active processes list
+            self.assertIn(ident, [id(o) for o in subprocess._active])
 
         # let some time for the process to exit, and create a new Popen: this
         # should trigger the wait() of p
@@ -2660,7 +2901,11 @@ class POSIXProcessTestCase(BaseTestCase):
                 pass
         # p should have been wait()ed on, and removed from the _active list
         self.assertRaises(OSError, os.waitpid, pid, 0)
-        self.assertNotIn(ident, [id(o) for o in subprocess._active])
+        if mswindows:
+            # subprocess._active is not used on Windows and is set to None.
+            self.assertIsNone(subprocess._active)
+        else:
+            self.assertNotIn(ident, [id(o) for o in subprocess._active])
 
     def test_close_fds_after_preexec(self):
         fd_status = support.findfile("fd_status.py", subdir="subprocessdata")
@@ -2698,13 +2943,23 @@ class POSIXProcessTestCase(BaseTestCase):
                 ([b"arg"], [b"exe"], 123,  [b"env"]),
                 ([b"arg"], [b"exe"], None, 123),
             ):
-                with self.assertRaises(TypeError):
+                with self.assertRaises(TypeError) as err:
                     _posixsubprocess.fork_exec(
                         args, exe_list,
                         True, (), cwd, env_list,
                         -1, -1, -1, -1,
                         1, 2, 3, 4,
-                        True, True, func)
+                        True, True,
+                        False, [], 0,
+                        func)
+                # Attempt to prevent
+                # "TypeError: fork_exec() takes exactly N arguments (M given)"
+                # from passing the test.  More refactoring to have us start
+                # with a valid *args list, confirm a good call with that works
+                # before mutating it in various ways to ensure that bad calls
+                # with individual arg type errors raise a typeerror would be
+                # ideal.  Saving that for a future PR...
+                self.assertNotIn('takes exactly', str(err.exception))
         finally:
             if not gc_enabled:
                 gc.disable()
@@ -2743,7 +2998,9 @@ class POSIXProcessTestCase(BaseTestCase):
                         True, fds_to_keep, None, [b"env"],
                         -1, -1, -1, -1,
                         1, 2, 3, 4,
-                        True, True, None)
+                        True, True,
+                        None, None, None,
+                        None)
                 self.assertIn('fds_to_keep', str(c.exception))
         finally:
             if not gc_enabled:
@@ -3155,7 +3412,7 @@ class MiscTests(unittest.TestCase):
 
     def test__all__(self):
         """Ensure that __all__ is populated properly."""
-        intentionally_excluded = {"list2cmdline", "Handle"}
+        intentionally_excluded = {"list2cmdline", "Handle", "pwd", "grp"}
         exported = set(subprocess.__all__)
         possible_exports = set()
         import types

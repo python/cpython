@@ -117,6 +117,7 @@ asyncio ships with the following built-in policies:
 
    .. availability:: Windows.
 
+.. _asyncio-watchers:
 
 Process Watchers
 ================
@@ -129,10 +130,11 @@ In asyncio, child processes are created with
 :func:`create_subprocess_exec` and :meth:`loop.subprocess_exec`
 functions.
 
-asyncio defines the :class:`AbstractChildWatcher` abstract base class,
-which child watchers should implement, and has two different
-implementations: :class:`SafeChildWatcher` (configured to be used
-by default) and :class:`FastChildWatcher`.
+asyncio defines the :class:`AbstractChildWatcher` abstract base class, which child
+watchers should implement, and has four different implementations:
+:class:`ThreadedChildWatcher` (configured to be used by default),
+:class:`MultiLoopChildWatcher`, :class:`SafeChildWatcher`, and
+:class:`FastChildWatcher`.
 
 See also the :ref:`Subprocess and Threads <asyncio-subprocess-threads>`
 section.
@@ -184,6 +186,15 @@ implementation used by the asyncio event loop:
 
       Note: loop may be ``None``.
 
+   .. method:: is_active()
+
+      Return ``True`` if the watcher is ready to use.
+
+      Spawning a subprocess with *inactive* current child watcher raises
+      :exc:`RuntimeError`.
+
+      .. versionadded:: 3.8
+
    .. method:: close()
 
       Close the watcher.
@@ -191,16 +202,48 @@ implementation used by the asyncio event loop:
       This method has to be called to ensure that underlying
       resources are cleaned-up.
 
-.. class:: SafeChildWatcher
+.. class:: ThreadedChildWatcher
 
-   This implementation avoids disrupting other code spawning processes
+   This implementation starts a new waiting thread for every subprocess spawn.
+
+   It works reliably even when the asyncio event loop is run in a non-main OS thread.
+
+   There is no noticeable overhead when handling a big number of children (*O(1)* each
+   time a child terminates), but stating a thread per process requires extra memory.
+
+   This watcher is used by default.
+
+   .. versionadded:: 3.8
+
+.. class:: MultiLoopChildWatcher
+
+   This implementation registers a :py:data:`SIGCHLD` signal handler on
+   instantiation. That can break third-party code that installs a custom handler for
+   `SIGCHLD`.  signal).
+
+   The watcher avoids disrupting other code spawning processes
    by polling every process explicitly on a :py:data:`SIGCHLD` signal.
 
-   This is a safe solution but it has a significant overhead when
+   There is no limitation for running subprocesses from different threads once the
+   watcher is installed.
+
+   The solution is safe but it has a significant overhead when
    handling a big number of processes (*O(n)* each time a
    :py:data:`SIGCHLD` is received).
 
-   asyncio uses this safe implementation by default.
+   .. versionadded:: 3.8
+
+.. class:: SafeChildWatcher
+
+   This implementation uses active event loop from the main thread to handle
+   :py:data:`SIGCHLD` signal. If the main thread has no running event loop another
+   thread cannot spawn a subprocess (:exc:`RuntimeError` is raised).
+
+   The watcher avoids disrupting other code spawning processes
+   by polling every process explicitly on a :py:data:`SIGCHLD` signal.
+
+   This solution is as safe as :class:`MultiLoopChildWatcher` and has the same *O(N)*
+   complexity but requires a running event loop in the main thread to work.
 
 .. class:: FastChildWatcher
 
@@ -210,6 +253,9 @@ implementation used by the asyncio event loop:
 
    There is no noticeable overhead when handling a big number of
    children (*O(1)* each time a child terminates).
+
+   This solution requires a running event loop in the main thread to work, as
+   :class:`SafeChildWatcher`.
 
 
 Custom Policies

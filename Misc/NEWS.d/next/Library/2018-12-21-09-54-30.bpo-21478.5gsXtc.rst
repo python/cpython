@@ -1,2 +1,0 @@
-Calls to a child function created with :func:`unittest.mock.create_autospec`
-should propagate to the parent. Patch by Karthikeyan Singaravelan.

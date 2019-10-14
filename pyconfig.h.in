@@ -12,6 +12,10 @@
    support for AIX C++ shared extension modules. */
 #undef AIX_GENUINE_CPLUSPLUS
 
+/* Alternative SOABI used in debug build to load C extensions built in release
+   mode */
+#undef ALT_SOABI
+
 /* The Android API level. */
 #undef ANDROID_API_LEVEL
 
@@ -39,10 +43,6 @@
 
 /* Define if getpgrp() must be called as getpgrp(0). */
 #undef GETPGRP_HAVE_ARG
-
-/* Define if gettimeofday() does not have second (timezone) argument This is
-   the case on Motorola V4 (R40V4.2) */
-#undef GETTIMEOFDAY_NO_TZ
 
 /* Define to 1 if you have the `accept4' function. */
 #undef HAVE_ACCEPT4
@@ -143,6 +143,9 @@
 
 /* Define to 1 if you have the `copysign' function. */
 #undef HAVE_COPYSIGN
+
+/* Define to 1 if you have the `copy_file_range' function. */
+#undef HAVE_COPY_FILE_RANGE
 
 /* Define to 1 if you have the <crypt.h> header file. */
 #undef HAVE_CRYPT_H
@@ -298,6 +301,12 @@
 /* Define to 1 if you have the `execv' function. */
 #undef HAVE_EXECV
 
+/* Define to 1 if you have the `explicit_bzero' function. */
+#undef HAVE_EXPLICIT_BZERO
+
+/* Define to 1 if you have the `explicit_memset' function. */
+#undef HAVE_EXPLICIT_MEMSET
+
 /* Define to 1 if you have the `expm1' function. */
 #undef HAVE_EXPM1
 
@@ -327,6 +336,9 @@
 
 /* Define to 1 if you have the `fdopendir' function. */
 #undef HAVE_FDOPENDIR
+
+/* Define to 1 if you have the `fdwalk' function. */
+#undef HAVE_FDWALK
 
 /* Define to 1 if you have the `fexecve' function. */
 #undef HAVE_FEXECVE
@@ -497,9 +509,6 @@
 /* Define to 1 if you have the `getspnam' function. */
 #undef HAVE_GETSPNAM
 
-/* Define to 1 if you have the `gettimeofday' function. */
-#undef HAVE_GETTIMEOFDAY
-
 /* Define to 1 if you have the `getwd' function. */
 #undef HAVE_GETWD
 
@@ -556,9 +565,9 @@
 #undef HAVE_LANGINFO_H
 
 /* Defined to enable large file support when an off_t is bigger than a long
-   and long long is available and at least as big as an off_t. You may need to
-   add some flags for configuration and compilation to enable this mode. (For
-   Solaris and Linux, the necessary defines are already defined.) */
+   and long long is at least as big as an off_t. You may need to add some
+   flags for configuration and compilation to enable this mode. (For Solaris
+   and Linux, the necessary defines are already defined.) */
 #undef HAVE_LARGEFILE_SUPPORT
 
 /* Define to 1 if you have the 'lchflags' function. */
@@ -615,6 +624,9 @@
 /* Define to 1 if you have the <linux/can/raw.h> header file. */
 #undef HAVE_LINUX_CAN_RAW_H
 
+/* Define to 1 if you have the <linux/memfd.h> header file. */
+#undef HAVE_LINUX_MEMFD_H
+
 /* Define to 1 if you have the <linux/netlink.h> header file. */
 #undef HAVE_LINUX_NETLINK_H
 
@@ -648,11 +660,17 @@
 /* Define to 1 if you have the `lutimes' function. */
 #undef HAVE_LUTIMES
 
+/* Define to 1 if you have the `madvise' function. */
+#undef HAVE_MADVISE
+
 /* Define this if you have the makedev macro. */
 #undef HAVE_MAKEDEV
 
 /* Define to 1 if you have the `mbrtowc' function. */
 #undef HAVE_MBRTOWC
+
+/* Define if you have the 'memfd_create' function. */
+#undef HAVE_MEMFD_CREATE
 
 /* Define to 1 if you have the <memory.h> header file. */
 #undef HAVE_MEMORY_H
@@ -830,6 +848,9 @@
 
 /* Define to 1 if you have the `round' function. */
 #undef HAVE_ROUND
+
+/* Define to 1 if you have the `rtpSpawn' function. */
+#undef HAVE_RTPSPAWN
 
 /* Define to 1 if you have the `sched_get_priority_max' function. */
 #undef HAVE_SCHED_GET_PRIORITY_MAX
@@ -1099,6 +1120,9 @@
 
 /* Define to 1 if you have the <sys/lock.h> header file. */
 #undef HAVE_SYS_LOCK_H
+
+/* Define to 1 if you have the <sys/memfd.h> header file. */
+#undef HAVE_SYS_MEMFD_H
 
 /* Define to 1 if you have the <sys/mkdev.h> header file. */
 #undef HAVE_SYS_MKDEV_H
@@ -1373,6 +1397,9 @@
 /* Define hash algorithm for str, bytes and memoryview. SipHash24: 1, FNV: 2,
    externally defined: 0 */
 #undef Py_HASH_ALGORITHM
+
+/* Define if you want to enable tracing references for debugging purpose */
+#undef Py_TRACE_REFS
 
 /* assume C89 semantics that RETSIGTYPE is always void */
 #undef RETSIGTYPE

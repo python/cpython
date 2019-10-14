@@ -1,0 +1,2 @@
+Fix an off-by-one error in PyState_AddModule that could cause out-of-bounds
+memory access.

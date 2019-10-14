@@ -51,15 +51,32 @@ _queue_SimpleQueue_put(simplequeueobject *self, PyObject *const *args, Py_ssize_
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"item", "block", "timeout", NULL};
-    static _PyArg_Parser _parser = {"O|pO:put", _keywords, 0};
+    static _PyArg_Parser _parser = {NULL, _keywords, "put", 0};
+    PyObject *argsbuf[3];
+    Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 1;
     PyObject *item;
     int block = 1;
     PyObject *timeout = Py_None;
 
-    if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser,
-        &item, &block, &timeout)) {
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 3, 0, argsbuf);
+    if (!args) {
         goto exit;
     }
+    item = args[0];
+    if (!noptargs) {
+        goto skip_optional_pos;
+    }
+    if (args[1]) {
+        block = PyObject_IsTrue(args[1]);
+        if (block < 0) {
+            goto exit;
+        }
+        if (!--noptargs) {
+            goto skip_optional_pos;
+        }
+    }
+    timeout = args[2];
+skip_optional_pos:
     return_value = _queue_SimpleQueue_put_impl(self, item, block, timeout);
 
 exit:
@@ -86,13 +103,15 @@ _queue_SimpleQueue_put_nowait(simplequeueobject *self, PyObject *const *args, Py
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"item", NULL};
-    static _PyArg_Parser _parser = {"O:put_nowait", _keywords, 0};
+    static _PyArg_Parser _parser = {NULL, _keywords, "put_nowait", 0};
+    PyObject *argsbuf[1];
     PyObject *item;
 
-    if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser,
-        &item)) {
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 1, 0, argsbuf);
+    if (!args) {
         goto exit;
     }
+    item = args[0];
     return_value = _queue_SimpleQueue_put_nowait_impl(self, item);
 
 exit:
@@ -125,14 +144,30 @@ _queue_SimpleQueue_get(simplequeueobject *self, PyObject *const *args, Py_ssize_
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"block", "timeout", NULL};
-    static _PyArg_Parser _parser = {"|pO:get", _keywords, 0};
+    static _PyArg_Parser _parser = {NULL, _keywords, "get", 0};
+    PyObject *argsbuf[2];
+    Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 0;
     int block = 1;
     PyObject *timeout = Py_None;
 
-    if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser,
-        &block, &timeout)) {
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 0, 2, 0, argsbuf);
+    if (!args) {
         goto exit;
     }
+    if (!noptargs) {
+        goto skip_optional_pos;
+    }
+    if (args[0]) {
+        block = PyObject_IsTrue(args[0]);
+        if (block < 0) {
+            goto exit;
+        }
+        if (!--noptargs) {
+            goto skip_optional_pos;
+        }
+    }
+    timeout = args[1];
+skip_optional_pos:
     return_value = _queue_SimpleQueue_get_impl(self, block, timeout);
 
 exit:
@@ -215,4 +250,4 @@ _queue_SimpleQueue_qsize(simplequeueobject *self, PyObject *Py_UNUSED(ignored))
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=c12ce9050f153304 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=b4717e2974cbc909 input=a9049054013a1b77]*/

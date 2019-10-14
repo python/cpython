@@ -1,0 +1,2 @@
+Remove obsolete copy of PBKDF2_HMAC_fast. All supported OpenSSL versions
+contain a fast implementation.

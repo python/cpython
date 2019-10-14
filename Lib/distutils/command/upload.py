@@ -125,8 +125,9 @@ class upload(PyPIRCCommand):
         data['comment'] = ''
 
         if self.sign:
-            data['gpg_signature'] = (os.path.basename(filename) + ".asc",
-                                     open(filename+".asc", "rb").read())
+            with open(filename + ".asc", "rb") as f:
+                data['gpg_signature'] = (os.path.basename(filename) + ".asc",
+                                         f.read())
 
         # set up the authentication
         user_pass = (self.username + ":" + self.password).encode('ascii')

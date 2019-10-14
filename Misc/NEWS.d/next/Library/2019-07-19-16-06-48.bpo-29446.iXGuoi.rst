@@ -1,0 +1,1 @@
+Make `from tkinter import *` import only the expected objects.

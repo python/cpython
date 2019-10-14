@@ -66,7 +66,7 @@ PyDoc_STRVAR(EVP_update__doc__,
     {"update", (PyCFunction)EVP_update, METH_O, EVP_update__doc__},
 
 PyDoc_STRVAR(EVP_new__doc__,
-"new($module, /, name, string=b\'\')\n"
+"new($module, /, name, string=b\'\', *, usedforsecurity=True)\n"
 "--\n"
 "\n"
 "Return a new hash object using the named algorithm.\n"
@@ -80,28 +80,361 @@ PyDoc_STRVAR(EVP_new__doc__,
     {"new", (PyCFunction)(void(*)(void))EVP_new, METH_FASTCALL|METH_KEYWORDS, EVP_new__doc__},
 
 static PyObject *
-EVP_new_impl(PyObject *module, PyObject *name_obj, PyObject *data_obj);
+EVP_new_impl(PyObject *module, PyObject *name_obj, PyObject *data_obj,
+             int usedforsecurity);
 
 static PyObject *
 EVP_new(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
-    static const char * const _keywords[] = {"name", "string", NULL};
-    static _PyArg_Parser _parser = {"O|O:new", _keywords, 0};
+    static const char * const _keywords[] = {"name", "string", "usedforsecurity", NULL};
+    static _PyArg_Parser _parser = {NULL, _keywords, "new", 0};
+    PyObject *argsbuf[3];
+    Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 1;
     PyObject *name_obj;
     PyObject *data_obj = NULL;
+    int usedforsecurity = 1;
 
-    if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser,
-        &name_obj, &data_obj)) {
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 2, 0, argsbuf);
+    if (!args) {
         goto exit;
     }
-    return_value = EVP_new_impl(module, name_obj, data_obj);
+    name_obj = args[0];
+    if (!noptargs) {
+        goto skip_optional_pos;
+    }
+    if (args[1]) {
+        data_obj = args[1];
+        if (!--noptargs) {
+            goto skip_optional_pos;
+        }
+    }
+skip_optional_pos:
+    if (!noptargs) {
+        goto skip_optional_kwonly;
+    }
+    usedforsecurity = PyObject_IsTrue(args[2]);
+    if (usedforsecurity < 0) {
+        goto exit;
+    }
+skip_optional_kwonly:
+    return_value = EVP_new_impl(module, name_obj, data_obj, usedforsecurity);
 
 exit:
     return return_value;
 }
 
-#if ((OPENSSL_VERSION_NUMBER >= 0x10000000 && !defined(OPENSSL_NO_HMAC) && !defined(OPENSSL_NO_SHA)))
+PyDoc_STRVAR(_hashlib_openssl_md5__doc__,
+"openssl_md5($module, /, string=b\'\', *, usedforsecurity=True)\n"
+"--\n"
+"\n"
+"Returns a md5 hash object; optionally initialized with a string");
+
+#define _HASHLIB_OPENSSL_MD5_METHODDEF    \
+    {"openssl_md5", (PyCFunction)(void(*)(void))_hashlib_openssl_md5, METH_FASTCALL|METH_KEYWORDS, _hashlib_openssl_md5__doc__},
+
+static PyObject *
+_hashlib_openssl_md5_impl(PyObject *module, PyObject *data_obj,
+                          int usedforsecurity);
+
+static PyObject *
+_hashlib_openssl_md5(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+{
+    PyObject *return_value = NULL;
+    static const char * const _keywords[] = {"string", "usedforsecurity", NULL};
+    static _PyArg_Parser _parser = {NULL, _keywords, "openssl_md5", 0};
+    PyObject *argsbuf[2];
+    Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 0;
+    PyObject *data_obj = NULL;
+    int usedforsecurity = 1;
+
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 0, 1, 0, argsbuf);
+    if (!args) {
+        goto exit;
+    }
+    if (!noptargs) {
+        goto skip_optional_pos;
+    }
+    if (args[0]) {
+        data_obj = args[0];
+        if (!--noptargs) {
+            goto skip_optional_pos;
+        }
+    }
+skip_optional_pos:
+    if (!noptargs) {
+        goto skip_optional_kwonly;
+    }
+    usedforsecurity = PyObject_IsTrue(args[1]);
+    if (usedforsecurity < 0) {
+        goto exit;
+    }
+skip_optional_kwonly:
+    return_value = _hashlib_openssl_md5_impl(module, data_obj, usedforsecurity);
+
+exit:
+    return return_value;
+}
+
+PyDoc_STRVAR(_hashlib_openssl_sha1__doc__,
+"openssl_sha1($module, /, string=b\'\', *, usedforsecurity=True)\n"
+"--\n"
+"\n"
+"Returns a sha1 hash object; optionally initialized with a string");
+
+#define _HASHLIB_OPENSSL_SHA1_METHODDEF    \
+    {"openssl_sha1", (PyCFunction)(void(*)(void))_hashlib_openssl_sha1, METH_FASTCALL|METH_KEYWORDS, _hashlib_openssl_sha1__doc__},
+
+static PyObject *
+_hashlib_openssl_sha1_impl(PyObject *module, PyObject *data_obj,
+                           int usedforsecurity);
+
+static PyObject *
+_hashlib_openssl_sha1(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+{
+    PyObject *return_value = NULL;
+    static const char * const _keywords[] = {"string", "usedforsecurity", NULL};
+    static _PyArg_Parser _parser = {NULL, _keywords, "openssl_sha1", 0};
+    PyObject *argsbuf[2];
+    Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 0;
+    PyObject *data_obj = NULL;
+    int usedforsecurity = 1;
+
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 0, 1, 0, argsbuf);
+    if (!args) {
+        goto exit;
+    }
+    if (!noptargs) {
+        goto skip_optional_pos;
+    }
+    if (args[0]) {
+        data_obj = args[0];
+        if (!--noptargs) {
+            goto skip_optional_pos;
+        }
+    }
+skip_optional_pos:
+    if (!noptargs) {
+        goto skip_optional_kwonly;
+    }
+    usedforsecurity = PyObject_IsTrue(args[1]);
+    if (usedforsecurity < 0) {
+        goto exit;
+    }
+skip_optional_kwonly:
+    return_value = _hashlib_openssl_sha1_impl(module, data_obj, usedforsecurity);
+
+exit:
+    return return_value;
+}
+
+PyDoc_STRVAR(_hashlib_openssl_sha224__doc__,
+"openssl_sha224($module, /, string=b\'\', *, usedforsecurity=True)\n"
+"--\n"
+"\n"
+"Returns a sha224 hash object; optionally initialized with a string");
+
+#define _HASHLIB_OPENSSL_SHA224_METHODDEF    \
+    {"openssl_sha224", (PyCFunction)(void(*)(void))_hashlib_openssl_sha224, METH_FASTCALL|METH_KEYWORDS, _hashlib_openssl_sha224__doc__},
+
+static PyObject *
+_hashlib_openssl_sha224_impl(PyObject *module, PyObject *data_obj,
+                             int usedforsecurity);
+
+static PyObject *
+_hashlib_openssl_sha224(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+{
+    PyObject *return_value = NULL;
+    static const char * const _keywords[] = {"string", "usedforsecurity", NULL};
+    static _PyArg_Parser _parser = {NULL, _keywords, "openssl_sha224", 0};
+    PyObject *argsbuf[2];
+    Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 0;
+    PyObject *data_obj = NULL;
+    int usedforsecurity = 1;
+
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 0, 1, 0, argsbuf);
+    if (!args) {
+        goto exit;
+    }
+    if (!noptargs) {
+        goto skip_optional_pos;
+    }
+    if (args[0]) {
+        data_obj = args[0];
+        if (!--noptargs) {
+            goto skip_optional_pos;
+        }
+    }
+skip_optional_pos:
+    if (!noptargs) {
+        goto skip_optional_kwonly;
+    }
+    usedforsecurity = PyObject_IsTrue(args[1]);
+    if (usedforsecurity < 0) {
+        goto exit;
+    }
+skip_optional_kwonly:
+    return_value = _hashlib_openssl_sha224_impl(module, data_obj, usedforsecurity);
+
+exit:
+    return return_value;
+}
+
+PyDoc_STRVAR(_hashlib_openssl_sha256__doc__,
+"openssl_sha256($module, /, string=b\'\', *, usedforsecurity=True)\n"
+"--\n"
+"\n"
+"Returns a sha256 hash object; optionally initialized with a string");
+
+#define _HASHLIB_OPENSSL_SHA256_METHODDEF    \
+    {"openssl_sha256", (PyCFunction)(void(*)(void))_hashlib_openssl_sha256, METH_FASTCALL|METH_KEYWORDS, _hashlib_openssl_sha256__doc__},
+
+static PyObject *
+_hashlib_openssl_sha256_impl(PyObject *module, PyObject *data_obj,
+                             int usedforsecurity);
+
+static PyObject *
+_hashlib_openssl_sha256(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+{
+    PyObject *return_value = NULL;
+    static const char * const _keywords[] = {"string", "usedforsecurity", NULL};
+    static _PyArg_Parser _parser = {NULL, _keywords, "openssl_sha256", 0};
+    PyObject *argsbuf[2];
+    Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 0;
+    PyObject *data_obj = NULL;
+    int usedforsecurity = 1;
+
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 0, 1, 0, argsbuf);
+    if (!args) {
+        goto exit;
+    }
+    if (!noptargs) {
+        goto skip_optional_pos;
+    }
+    if (args[0]) {
+        data_obj = args[0];
+        if (!--noptargs) {
+            goto skip_optional_pos;
+        }
+    }
+skip_optional_pos:
+    if (!noptargs) {
+        goto skip_optional_kwonly;
+    }
+    usedforsecurity = PyObject_IsTrue(args[1]);
+    if (usedforsecurity < 0) {
+        goto exit;
+    }
+skip_optional_kwonly:
+    return_value = _hashlib_openssl_sha256_impl(module, data_obj, usedforsecurity);
+
+exit:
+    return return_value;
+}
+
+PyDoc_STRVAR(_hashlib_openssl_sha384__doc__,
+"openssl_sha384($module, /, string=b\'\', *, usedforsecurity=True)\n"
+"--\n"
+"\n"
+"Returns a sha384 hash object; optionally initialized with a string");
+
+#define _HASHLIB_OPENSSL_SHA384_METHODDEF    \
+    {"openssl_sha384", (PyCFunction)(void(*)(void))_hashlib_openssl_sha384, METH_FASTCALL|METH_KEYWORDS, _hashlib_openssl_sha384__doc__},
+
+static PyObject *
+_hashlib_openssl_sha384_impl(PyObject *module, PyObject *data_obj,
+                             int usedforsecurity);
+
+static PyObject *
+_hashlib_openssl_sha384(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+{
+    PyObject *return_value = NULL;
+    static const char * const _keywords[] = {"string", "usedforsecurity", NULL};
+    static _PyArg_Parser _parser = {NULL, _keywords, "openssl_sha384", 0};
+    PyObject *argsbuf[2];
+    Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 0;
+    PyObject *data_obj = NULL;
+    int usedforsecurity = 1;
+
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 0, 1, 0, argsbuf);
+    if (!args) {
+        goto exit;
+    }
+    if (!noptargs) {
+        goto skip_optional_pos;
+    }
+    if (args[0]) {
+        data_obj = args[0];
+        if (!--noptargs) {
+            goto skip_optional_pos;
+        }
+    }
+skip_optional_pos:
+    if (!noptargs) {
+        goto skip_optional_kwonly;
+    }
+    usedforsecurity = PyObject_IsTrue(args[1]);
+    if (usedforsecurity < 0) {
+        goto exit;
+    }
+skip_optional_kwonly:
+    return_value = _hashlib_openssl_sha384_impl(module, data_obj, usedforsecurity);
+
+exit:
+    return return_value;
+}
+
+PyDoc_STRVAR(_hashlib_openssl_sha512__doc__,
+"openssl_sha512($module, /, string=b\'\', *, usedforsecurity=True)\n"
+"--\n"
+"\n"
+"Returns a sha512 hash object; optionally initialized with a string");
+
+#define _HASHLIB_OPENSSL_SHA512_METHODDEF    \
+    {"openssl_sha512", (PyCFunction)(void(*)(void))_hashlib_openssl_sha512, METH_FASTCALL|METH_KEYWORDS, _hashlib_openssl_sha512__doc__},
+
+static PyObject *
+_hashlib_openssl_sha512_impl(PyObject *module, PyObject *data_obj,
+                             int usedforsecurity);
+
+static PyObject *
+_hashlib_openssl_sha512(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+{
+    PyObject *return_value = NULL;
+    static const char * const _keywords[] = {"string", "usedforsecurity", NULL};
+    static _PyArg_Parser _parser = {NULL, _keywords, "openssl_sha512", 0};
+    PyObject *argsbuf[2];
+    Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 0;
+    PyObject *data_obj = NULL;
+    int usedforsecurity = 1;
+
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 0, 1, 0, argsbuf);
+    if (!args) {
+        goto exit;
+    }
+    if (!noptargs) {
+        goto skip_optional_pos;
+    }
+    if (args[0]) {
+        data_obj = args[0];
+        if (!--noptargs) {
+            goto skip_optional_pos;
+        }
+    }
+skip_optional_pos:
+    if (!noptargs) {
+        goto skip_optional_kwonly;
+    }
+    usedforsecurity = PyObject_IsTrue(args[1]);
+    if (usedforsecurity < 0) {
+        goto exit;
+    }
+skip_optional_kwonly:
+    return_value = _hashlib_openssl_sha512_impl(module, data_obj, usedforsecurity);
+
+exit:
+    return return_value;
+}
 
 PyDoc_STRVAR(pbkdf2_hmac__doc__,
 "pbkdf2_hmac($module, /, hash_name, password, salt, iterations,\n"
@@ -123,17 +456,60 @@ pbkdf2_hmac(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject 
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"hash_name", "password", "salt", "iterations", "dklen", NULL};
-    static _PyArg_Parser _parser = {"sy*y*l|O:pbkdf2_hmac", _keywords, 0};
+    static _PyArg_Parser _parser = {NULL, _keywords, "pbkdf2_hmac", 0};
+    PyObject *argsbuf[5];
+    Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 4;
     const char *hash_name;
     Py_buffer password = {NULL, NULL};
     Py_buffer salt = {NULL, NULL};
     long iterations;
     PyObject *dklen_obj = Py_None;
 
-    if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser,
-        &hash_name, &password, &salt, &iterations, &dklen_obj)) {
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 4, 5, 0, argsbuf);
+    if (!args) {
         goto exit;
     }
+    if (!PyUnicode_Check(args[0])) {
+        _PyArg_BadArgument("pbkdf2_hmac", "argument 'hash_name'", "str", args[0]);
+        goto exit;
+    }
+    Py_ssize_t hash_name_length;
+    hash_name = PyUnicode_AsUTF8AndSize(args[0], &hash_name_length);
+    if (hash_name == NULL) {
+        goto exit;
+    }
+    if (strlen(hash_name) != (size_t)hash_name_length) {
+        PyErr_SetString(PyExc_ValueError, "embedded null character");
+        goto exit;
+    }
+    if (PyObject_GetBuffer(args[1], &password, PyBUF_SIMPLE) != 0) {
+        goto exit;
+    }
+    if (!PyBuffer_IsContiguous(&password, 'C')) {
+        _PyArg_BadArgument("pbkdf2_hmac", "argument 'password'", "contiguous buffer", args[1]);
+        goto exit;
+    }
+    if (PyObject_GetBuffer(args[2], &salt, PyBUF_SIMPLE) != 0) {
+        goto exit;
+    }
+    if (!PyBuffer_IsContiguous(&salt, 'C')) {
+        _PyArg_BadArgument("pbkdf2_hmac", "argument 'salt'", "contiguous buffer", args[2]);
+        goto exit;
+    }
+    if (PyFloat_Check(args[3])) {
+        PyErr_SetString(PyExc_TypeError,
+                        "integer argument expected, got float" );
+        goto exit;
+    }
+    iterations = PyLong_AsLong(args[3]);
+    if (iterations == -1 && PyErr_Occurred()) {
+        goto exit;
+    }
+    if (!noptargs) {
+        goto skip_optional_pos;
+    }
+    dklen_obj = args[4];
+skip_optional_pos:
     return_value = pbkdf2_hmac_impl(module, hash_name, &password, &salt, iterations, dklen_obj);
 
 exit:
@@ -148,8 +524,6 @@ exit:
 
     return return_value;
 }
-
-#endif /* ((OPENSSL_VERSION_NUMBER >= 0x10000000 && !defined(OPENSSL_NO_HMAC) && !defined(OPENSSL_NO_SHA))) */
 
 #if (OPENSSL_VERSION_NUMBER > 0x10100000L && !defined(OPENSSL_NO_SCRYPT) && !defined(LIBRESSL_VERSION_NUMBER))
 
@@ -173,7 +547,9 @@ _hashlib_scrypt(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObj
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"password", "salt", "n", "r", "p", "maxmem", "dklen", NULL};
-    static _PyArg_Parser _parser = {"y*|$y*O!O!O!ll:scrypt", _keywords, 0};
+    static _PyArg_Parser _parser = {NULL, _keywords, "scrypt", 0};
+    PyObject *argsbuf[7];
+    Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 1;
     Py_buffer password = {NULL, NULL};
     Py_buffer salt = {NULL, NULL};
     PyObject *n_obj = Py_None;
@@ -182,10 +558,86 @@ _hashlib_scrypt(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObj
     long maxmem = 0;
     long dklen = 64;
 
-    if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser,
-        &password, &salt, &PyLong_Type, &n_obj, &PyLong_Type, &r_obj, &PyLong_Type, &p_obj, &maxmem, &dklen)) {
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 1, 0, argsbuf);
+    if (!args) {
         goto exit;
     }
+    if (PyObject_GetBuffer(args[0], &password, PyBUF_SIMPLE) != 0) {
+        goto exit;
+    }
+    if (!PyBuffer_IsContiguous(&password, 'C')) {
+        _PyArg_BadArgument("scrypt", "argument 'password'", "contiguous buffer", args[0]);
+        goto exit;
+    }
+    if (!noptargs) {
+        goto skip_optional_kwonly;
+    }
+    if (args[1]) {
+        if (PyObject_GetBuffer(args[1], &salt, PyBUF_SIMPLE) != 0) {
+            goto exit;
+        }
+        if (!PyBuffer_IsContiguous(&salt, 'C')) {
+            _PyArg_BadArgument("scrypt", "argument 'salt'", "contiguous buffer", args[1]);
+            goto exit;
+        }
+        if (!--noptargs) {
+            goto skip_optional_kwonly;
+        }
+    }
+    if (args[2]) {
+        if (!PyLong_Check(args[2])) {
+            _PyArg_BadArgument("scrypt", "argument 'n'", "int", args[2]);
+            goto exit;
+        }
+        n_obj = args[2];
+        if (!--noptargs) {
+            goto skip_optional_kwonly;
+        }
+    }
+    if (args[3]) {
+        if (!PyLong_Check(args[3])) {
+            _PyArg_BadArgument("scrypt", "argument 'r'", "int", args[3]);
+            goto exit;
+        }
+        r_obj = args[3];
+        if (!--noptargs) {
+            goto skip_optional_kwonly;
+        }
+    }
+    if (args[4]) {
+        if (!PyLong_Check(args[4])) {
+            _PyArg_BadArgument("scrypt", "argument 'p'", "int", args[4]);
+            goto exit;
+        }
+        p_obj = args[4];
+        if (!--noptargs) {
+            goto skip_optional_kwonly;
+        }
+    }
+    if (args[5]) {
+        if (PyFloat_Check(args[5])) {
+            PyErr_SetString(PyExc_TypeError,
+                            "integer argument expected, got float" );
+            goto exit;
+        }
+        maxmem = PyLong_AsLong(args[5]);
+        if (maxmem == -1 && PyErr_Occurred()) {
+            goto exit;
+        }
+        if (!--noptargs) {
+            goto skip_optional_kwonly;
+        }
+    }
+    if (PyFloat_Check(args[6])) {
+        PyErr_SetString(PyExc_TypeError,
+                        "integer argument expected, got float" );
+        goto exit;
+    }
+    dklen = PyLong_AsLong(args[6]);
+    if (dklen == -1 && PyErr_Occurred()) {
+        goto exit;
+    }
+skip_optional_kwonly:
     return_value = _hashlib_scrypt_impl(module, &password, &salt, n_obj, r_obj, p_obj, maxmem, dklen);
 
 exit:
@@ -221,13 +673,41 @@ _hashlib_hmac_digest(PyObject *module, PyObject *const *args, Py_ssize_t nargs, 
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"key", "msg", "digest", NULL};
-    static _PyArg_Parser _parser = {"y*y*s:hmac_digest", _keywords, 0};
+    static _PyArg_Parser _parser = {NULL, _keywords, "hmac_digest", 0};
+    PyObject *argsbuf[3];
     Py_buffer key = {NULL, NULL};
     Py_buffer msg = {NULL, NULL};
     const char *digest;
 
-    if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser,
-        &key, &msg, &digest)) {
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 3, 3, 0, argsbuf);
+    if (!args) {
+        goto exit;
+    }
+    if (PyObject_GetBuffer(args[0], &key, PyBUF_SIMPLE) != 0) {
+        goto exit;
+    }
+    if (!PyBuffer_IsContiguous(&key, 'C')) {
+        _PyArg_BadArgument("hmac_digest", "argument 'key'", "contiguous buffer", args[0]);
+        goto exit;
+    }
+    if (PyObject_GetBuffer(args[1], &msg, PyBUF_SIMPLE) != 0) {
+        goto exit;
+    }
+    if (!PyBuffer_IsContiguous(&msg, 'C')) {
+        _PyArg_BadArgument("hmac_digest", "argument 'msg'", "contiguous buffer", args[1]);
+        goto exit;
+    }
+    if (!PyUnicode_Check(args[2])) {
+        _PyArg_BadArgument("hmac_digest", "argument 'digest'", "str", args[2]);
+        goto exit;
+    }
+    Py_ssize_t digest_length;
+    digest = PyUnicode_AsUTF8AndSize(args[2], &digest_length);
+    if (digest == NULL) {
+        goto exit;
+    }
+    if (strlen(digest) != (size_t)digest_length) {
+        PyErr_SetString(PyExc_ValueError, "embedded null character");
         goto exit;
     }
     return_value = _hashlib_hmac_digest_impl(module, &key, &msg, digest);
@@ -245,11 +725,7 @@ exit:
     return return_value;
 }
 
-#ifndef PBKDF2_HMAC_METHODDEF
-    #define PBKDF2_HMAC_METHODDEF
-#endif /* !defined(PBKDF2_HMAC_METHODDEF) */
-
 #ifndef _HASHLIB_SCRYPT_METHODDEF
     #define _HASHLIB_SCRYPT_METHODDEF
 #endif /* !defined(_HASHLIB_SCRYPT_METHODDEF) */
-/*[clinic end generated code: output=fe5931d2b301ca12 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=acb22ccddb7043c7 input=a9049054013a1b77]*/

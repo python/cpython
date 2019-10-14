@@ -203,6 +203,8 @@ def classify_class_attrs(object):
     for (name, kind, cls, value) in inspect.classify_class_attrs(object):
         if inspect.isdatadescriptor(value):
             kind = 'data descriptor'
+            if isinstance(value, property) and value.fset is None:
+                kind = 'readonly property'
         results.append((name, kind, cls, value))
     return results
 
@@ -865,7 +867,7 @@ class HTMLDoc(Doc):
                 thisclass = attrs[0][2]
             attrs, inherited = _split_list(attrs, lambda t: t[2] is thisclass)
 
-            if thisclass is builtins.object:
+            if object is not builtins.object and thisclass is builtins.object:
                 attrs = inherited
                 continue
             elif thisclass is object:
@@ -884,6 +886,8 @@ class HTMLDoc(Doc):
                           lambda t: t[1] == 'class method')
             attrs = spill('Static methods %s' % tag, attrs,
                           lambda t: t[1] == 'static method')
+            attrs = spilldescriptors("Readonly properties %s" % tag, attrs,
+                                     lambda t: t[1] == 'readonly property')
             attrs = spilldescriptors('Data descriptors %s' % tag, attrs,
                                      lambda t: t[1] == 'data descriptor')
             attrs = spilldata('Data and other attributes %s' % tag, attrs,
@@ -947,6 +951,12 @@ class HTMLDoc(Doc):
                 else:
                     note = ' unbound %s method' % self.classlink(imclass,mod)
 
+        if (inspect.iscoroutinefunction(object) or
+                inspect.isasyncgenfunction(object)):
+            asyncqualifier = 'async '
+        else:
+            asyncqualifier = ''
+
         if name == realname:
             title = '<a name="%s"><strong>%s</strong></a>' % (anchor, realname)
         else:
@@ -975,8 +985,8 @@ class HTMLDoc(Doc):
         if not argspec:
             argspec = '(...)'
 
-        decl = title + self.escape(argspec) + (note and self.grey(
-               '<font face="helvetica, arial">%s</font>' % note))
+        decl = asyncqualifier + title + self.escape(argspec) + (note and
+               self.grey('<font face="helvetica, arial">%s</font>' % note))
 
         if skipdocs:
             return '<dl><dt>%s</dt></dl>\n' % decl
@@ -993,8 +1003,8 @@ class HTMLDoc(Doc):
 
         if name:
             push('<dl><dt><strong>%s</strong></dt>\n' % name)
-        if object.__doc__ is not None:
-            doc = self.markup(getdoc(object), self.preformat)
+        doc = self.markup(getdoc(object), self.preformat)
+        if doc:
             push('<dd><tt>%s</tt></dd>\n' % doc)
         push('</dl>\n')
 
@@ -1323,7 +1333,7 @@ location listed above.
                 thisclass = attrs[0][2]
             attrs, inherited = _split_list(attrs, lambda t: t[2] is thisclass)
 
-            if thisclass is builtins.object:
+            if object is not builtins.object and thisclass is builtins.object:
                 attrs = inherited
                 continue
             elif thisclass is object:
@@ -1341,6 +1351,8 @@ location listed above.
                           lambda t: t[1] == 'class method')
             attrs = spill("Static methods %s:\n" % tag, attrs,
                           lambda t: t[1] == 'static method')
+            attrs = spilldescriptors("Readonly properties %s:\n" % tag, attrs,
+                                     lambda t: t[1] == 'readonly property')
             attrs = spilldescriptors("Data descriptors %s:\n" % tag, attrs,
                                      lambda t: t[1] == 'data descriptor')
             attrs = spilldata("Data and other attributes %s:\n" % tag, attrs,
@@ -1376,6 +1388,12 @@ location listed above.
                 else:
                     note = ' unbound %s method' % classname(imclass,mod)
 
+        if (inspect.iscoroutinefunction(object) or
+                inspect.isasyncgenfunction(object)):
+            asyncqualifier = 'async '
+        else:
+            asyncqualifier = ''
+
         if name == realname:
             title = self.bold(realname)
         else:
@@ -1399,7 +1417,7 @@ location listed above.
                     argspec = argspec[1:-1] # remove parentheses
         if not argspec:
             argspec = '(...)'
-        decl = title + argspec + note
+        decl = asyncqualifier + title + argspec + note
 
         if skipdocs:
             return decl + '\n'
