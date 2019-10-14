@@ -75,10 +75,10 @@ dependencies for various Linux distributions and macOS.
 
 On macOS, there are additional configure and build options related
 to macOS framework and universal builds.  Refer to `Mac/README.rst
-<https://github.com/python/cpython/blob/master/Mac/README.rst>`_.
+<https://github.com/python/cpython/blob/3.8/Mac/README.rst>`_.
 
 On Windows, see `PCbuild/readme.txt
-<https://github.com/python/cpython/blob/master/PCbuild/readme.txt>`_.
+<https://github.com/python/cpython/blob/3.8/PCbuild/readme.txt>`_.
 
 If you wish, you can create a subdirectory and invoke configure from there.
 For example::
@@ -139,9 +139,9 @@ What's New
 We have a comprehensive overview of the changes in the `What's New in Python
 3.8 <https://docs.python.org/3.8/whatsnew/3.8.html>`_ document.  For a more
 detailed change log, read `Misc/NEWS
-<https://github.com/python/cpython/blob/master/Misc/NEWS.d>`_, but a full
+<https://github.com/python/cpython/blob/3.8/Misc/NEWS.d>`_, but a full
 accounting of changes can only be gleaned from the `commit history
-<https://github.com/python/cpython/commits/master>`_.
+<https://github.com/python/cpython/commits/3.8>`_.
 
 If you want to install multiple versions of Python, see the section below
 entitled "Installing multiple versions".
@@ -159,7 +159,7 @@ is primarily for documentation authors, translators, and people with special
 formatting requirements.
 
 For information about building Python's documentation, refer to `Doc/README.rst
-<https://github.com/python/cpython/blob/master/Doc/README.rst>`_.
+<https://github.com/python/cpython/blob/3.8/Doc/README.rst>`_.
 
 
 Converting From Python 2.x to 3.x
