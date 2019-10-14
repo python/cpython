@@ -461,25 +461,30 @@ static inline void _Py_INCREF(PyObject *op)
 
 #define Py_INCREF(op) _Py_INCREF(_PyObject_CAST(op))
 
+#ifdef Py_REF_DEBUG
 static inline void _Py_DECREF(const char *filename, int lineno,
                               PyObject *op)
 {
-    (void)filename; /* may be unused, shut up -Wunused-parameter */
-    (void)lineno; /* may be unused, shut up -Wunused-parameter */
-    _Py_DEC_REFTOTAL;
-    if (--op->ob_refcnt != 0) {
-#ifdef Py_REF_DEBUG
-        if (op->ob_refcnt < 0) {
-            _Py_NegativeRefcount(filename, lineno, op);
-        }
-#endif
+    _Py_RefTotal--;
+    if (--op->ob_refcnt == 0) {
+        _Py_Dealloc(op);
     }
-    else {
+    else if (op->ob_refcnt < 0) {
+        _Py_NegativeRefcount(filename, lineno, op);
+    }
+}
+
+#  define Py_DECREF(op) _Py_DECREF(__FILE__, __LINE__, _PyObject_CAST(op))
+#else
+static inline void _Py_DECREF(PyObject *op)
+{
+    if (--op->ob_refcnt == 0) {
         _Py_Dealloc(op);
     }
 }
 
-#define Py_DECREF(op) _Py_DECREF(__FILE__, __LINE__, _PyObject_CAST(op))
+#  define Py_DECREF(op) _Py_DECREF(_PyObject_CAST(op))
+#endif   /* !Py_REF_DEBUG */
 
 
 /* Safely decref `op` and set `op` to NULL, especially useful in tp_clear
