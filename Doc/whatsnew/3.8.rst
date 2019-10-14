@@ -1048,17 +1048,33 @@ typing
 
 The :mod:`typing` module incorporates several new features:
 
-* Protocol definitions.  See :pep:`544`, :class:`typing.Protocol` and
-  :func:`typing.runtime_checkable`.  Simple ABCs like
-  :class:`typing.SupportsInt` are now ``Protocol`` subclasses.
-
 * A dictionary type with per-key types.  See :pep:`589` and
   :class:`typing.TypedDict`.
+  TypedDict uses only string keys.  By default, every key is required
+  to be present. Specify "total=False" to allow keys to be optional::
+
+      class Location(TypedDict, total=False):
+          lat_long: tuple
+          grid_square: str
+          xy_coordinate: tuple
 
 * Literal types.  See :pep:`586` and :class:`typing.Literal`.
+  Literal types indicate that a parameter or return value
+  is constrained to one or more specific literal values::
+
+      def get_status(port: int) -> Literal['connected', 'disconnected']:
+          ...
 
 * "Final" variables, functions, methods and classes.  See :pep:`591`,
   :class:`typing.Final` and :func:`typing.final`.
+  The final qualifier instructs a static type checker to restrict
+  subclassing, overriding, or reassignment::
+
+      pi: Final[float] = 3.1415926536
+
+* Protocol definitions.  See :pep:`544`, :class:`typing.Protocol` and
+  :func:`typing.runtime_checkable`.  Simple ABCs like
+  :class:`typing.SupportsInt` are now ``Protocol`` subclasses.
 
 * New protocol class :class:`typing.SupportsIndex`.
 
@@ -1527,7 +1543,7 @@ Changes in Python behavior
   terminate the current thread if called while the interpreter is
   finalizing, making them consistent with :c:func:`PyEval_RestoreThread`,
   :c:func:`Py_END_ALLOW_THREADS`, and :c:func:`PyGILState_Ensure`. If this
-  behaviour is not desired, guard the call by checking :c:func:`_Py_IsFinalizing`
+  behavior is not desired, guard the call by checking :c:func:`_Py_IsFinalizing`
   or :c:func:`sys.is_finalizing`.
 
 Changes in the Python API
