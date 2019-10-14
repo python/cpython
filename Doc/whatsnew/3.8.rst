@@ -212,6 +212,7 @@ subdirectories).
 
 (Contributed by Carl Meyer in :issue:`33499`.)
 
+
 Debug build uses the same ABI as release build
 -----------------------------------------------
 
@@ -284,6 +285,7 @@ calculations can be shown::
   theta=30  cos(radians(theta))=0.866
 
 (Contributed by Eric V. Smith and Larry Hastings in :issue:`36817`.)
+
 
 PEP 587: Python Initialization Configuration
 --------------------------------------------
@@ -411,7 +413,8 @@ Other Language Changes
 * The syntax allowed for keyword names in function calls was further
   restricted. In particular, ``f((keyword)=arg)`` is no longer allowed. It was
   never intended to permit more than a bare name on the left-hand side of a
-  keyword argument assignment term. See :issue:`34641`.
+  keyword argument assignment term.
+  (Contributed by Benjamin Peterson in :issue:`34641`.)
 
 * Generalized iterable unpacking in :keyword:`yield` and
   :keyword:`return` statements no longer requires enclosing parentheses.
@@ -424,7 +427,6 @@ Other Language Changes
 
     >>> parse('simpsons homer marge bart lisa sally')
     ('SIMPSONS', 'homer', 'marge', 'bart', 'lisa', 'sally')
-
 
   (Contributed by David Cuthbert and Jordan Chapman in :issue:`32117`.)
 
@@ -521,6 +523,8 @@ Other Language Changes
      'łukasz langa': 'Łukasz Langa',
      'walter dörwald': 'Walter Dörwald'}
 
+  (Contributed by Jörn Heissler in :issue:`35224`.)
+
 
 New Modules
 ===========
@@ -544,12 +548,11 @@ New Modules
      PackagePath('requests-2.22.0.dist-info/RECORD'),
      PackagePath('requests-2.22.0.dist-info/WHEEL')]
 
-  (Contributed in :issue:`34632` by Barry Warsaw and Jason R. Coombs.)
+  (Contributed by Barry Warsaw and Jason R. Coombs in :issue:`34632`.)
 
 
 Improved Modules
 ================
-
 
 ast
 ---
@@ -557,6 +560,11 @@ ast
 AST nodes now have ``end_lineno`` and ``end_col_offset`` attributes,
 which give the precise location of the end of the node.  (This only
 applies to nodes that have ``lineno`` and ``col_offset`` attributes.)
+
+New function :func:`ast.get_source_segment` returns the source code
+for a specific AST node.
+
+(Contributed by Ivan Levkivskyi in :issue:`33416`.)
 
 The :func:`ast.parse` function has some new flags:
 
@@ -570,8 +578,7 @@ The :func:`ast.parse` function has some new flags:
   version. (For example, ``feature_version=(3, 4)`` will treat
   ``async`` and ``await`` as non-reserved words.)
 
-New function :func:`ast.get_source_segment` returns the source code
-for a specific AST node.
+(Contributed by Guido van Rossum in :issue:`35766`.)
 
 
 asyncio
@@ -596,7 +603,6 @@ The :func:`compile` built-in has been improved to accept the
 :func:`compile` will allow top-level ``await``, ``async for`` and ``async with``
 constructs that are usually considered invalid syntax. Asynchronous code object
 marked with the ``CO_COROUTINE`` flag may then be returned.
-
 (Contributed by Matthias Bussonnier in :issue:`34616`)
 
 
@@ -627,6 +633,7 @@ to specify flags for the underlying ``LoadLibraryEx`` call. The default flags ar
 set to only load DLL dependencies from trusted locations, including the path
 where the DLL is stored (if a full or partial path is used to load the initial
 DLL) and paths added by :func:`~os.add_dll_directory`.
+(Contributed by Steve Dower in :issue:`36085`.)
 
 
 datetime
@@ -660,8 +667,8 @@ gc
 --
 
 :func:`~gc.get_objects` can now receive an optional *generation* parameter
-indicating a generation to get objects from. Contributed in
-:issue:`36016` by Pablo Galindo.
+indicating a generation to get objects from.
+(Contributed by Pablo Galindo in :issue:`36016`.)
 
 
 gettext
@@ -723,6 +730,8 @@ for :func:`property`, :func:`classmethod`, and :func:`staticmethod`::
           self.bit_rate = round(bit_rate / 1000.0, 1)
           self.duration = ceil(duration)
 
+(Contributed by Raymond Hettinger in :issue:`36326`.)
+
 
 io
 --
@@ -780,7 +789,7 @@ multiprocessing
 ---------------
 
 Added new :mod:`multiprocessing.shared_memory` module.
-(Contributed Davin Potts in :issue:`35813`.)
+(Contributed by Davin Potts in :issue:`35813`.)
 
 On macOS, the *spawn* start method is now used by default.
 (Contributed by Victor Stinner in :issue:`33725`.)
@@ -792,6 +801,7 @@ os
 Added new function :func:`~os.add_dll_directory` on Windows for providing
 additional search paths for native dependencies when importing extension
 modules or loading DLLs using :mod:`ctypes`.
+(Contributed by Steve Dower in :issue:`36085`.)
 
 A new :func:`os.memfd_create` function was added to wrap the
 ``memfd_create()`` syscall.
@@ -812,6 +822,8 @@ and so code that checks ``islink`` first will continue to treat junctions as
 directories, while code that handles errors from :func:`os.readlink` may now
 treat junctions as links.
 
+(Contributed by Steve Dower in :issue:`37834`.)
+
 
 os.path
 -------
@@ -827,12 +839,15 @@ characters or bytes unrepresentable at the OS level.
 :func:`~os.path.expanduser` on Windows now prefers the :envvar:`USERPROFILE`
 environment variable and does not use :envvar:`HOME`, which is not normally set
 for regular user accounts.
+(Contributed by Anthony Sottile in :issue:`36264`.)
 
 :func:`~os.path.isdir` on Windows no longer returns true for a link to a
 non-existent directory.
 
 :func:`~os.path.realpath` on Windows now resolves reparse points, including
 symlinks and directory junctions.
+
+(Contributed by Steve Dower in :issue:`37834`.)
 
 
 pathlib
@@ -883,10 +898,11 @@ py_compile
 
 
 shlex
-----------
+-----
 
 The new :func:`shlex.join` function acts as the inverse of :func:`shlex.split`.
 (Contributed by Bo Bayles in :issue:`32102`.)
+
 
 shutil
 ------
@@ -901,6 +917,7 @@ inherited from the corresponding change to the :mod:`tarfile` module.
 
 :func:`shutil.rmtree` on Windows now removes directory junctions without
 recursively removing their contents first.
+(Contributed by Steve Dower in :issue:`37834`.)
 
 
 socket
@@ -995,18 +1012,18 @@ in a standardized and extensible format, and offers several other benefits.
 threading
 ---------
 
-* Add a new :func:`threading.excepthook` function which handles uncaught
-  :meth:`threading.Thread.run` exception. It can be overridden to control how
-  uncaught :meth:`threading.Thread.run` exceptions are handled.
-  (Contributed by Victor Stinner in :issue:`1230540`.)
+Add a new :func:`threading.excepthook` function which handles uncaught
+:meth:`threading.Thread.run` exception. It can be overridden to control how
+uncaught :meth:`threading.Thread.run` exceptions are handled.
+(Contributed by Victor Stinner in :issue:`1230540`.)
 
-* Add a new
-  :func:`threading.get_native_id` function and a :data:`~threading.Thread.native_id`
-  attribute to the :class:`threading.Thread` class. These return the native
-  integral Thread ID of the current thread assigned by the kernel.
-  This feature is only available on certain platforms, see
-  :func:`get_native_id <threading.get_native_id>` for more information.
-  (Contributed by Jake Tesler in :issue:`36084`.)
+Add a new :func:`threading.get_native_id` function and
+a :data:`~threading.Thread.native_id`
+attribute to the :class:`threading.Thread` class. These return the native
+integral Thread ID of the current thread assigned by the kernel.
+This feature is only available on certain platforms, see
+:func:`get_native_id <threading.get_native_id>` for more information.
+(Contributed by Jake Tesler in :issue:`36084`.)
 
 
 tokenize
@@ -1016,6 +1033,7 @@ The :mod:`tokenize` module now implicitly emits a ``NEWLINE`` token when
 provided with input that does not have a trailing new line.  This behavior
 now matches what the C tokenizer does internally.
 (Contributed by Ammar Askar in :issue:`33899`.)
+
 
 tkinter
 -------
@@ -1035,6 +1053,7 @@ The :class:`tkinter.PhotoImage` class now has
 :meth:`~tkinter.PhotoImage.transparency_get` and
 :meth:`~tkinter.PhotoImage.transparency_set` methods.  (Contributed by
 Zackery Spytz in :issue:`25451`.)
+
 
 time
 ----
@@ -1084,95 +1103,98 @@ The :mod:`typing` module incorporates several new features:
 unicodedata
 -----------
 
-* The :mod:`unicodedata` module has been upgraded to use the `Unicode 12.1.0
-  <http://blog.unicode.org/2019/05/unicode-12-1-en.html>`_ release.
+The :mod:`unicodedata` module has been upgraded to use the `Unicode 12.1.0
+<http://blog.unicode.org/2019/05/unicode-12-1-en.html>`_ release.
 
-* New function :func:`~unicodedata.is_normalized` can be used to verify a string
-  is in a specific normal form, often much faster than by actually normalizing
-  the string.  (Contributed by Max Belanger, David Euresti, and Greg Price in
-  :issue:`32285` and :issue:`37966`).
+New function :func:`~unicodedata.is_normalized` can be used to verify a string
+is in a specific normal form, often much faster than by actually normalizing
+the string.  (Contributed by Max Belanger, David Euresti, and Greg Price in
+:issue:`32285` and :issue:`37966`).
 
 
 unittest
 --------
 
-* Added :class:`AsyncMock` to support an asynchronous version of :class:`Mock`.
-  Appropriate new assert functions for testing have been added as well.
-  (Contributed by Lisa Roach in :issue:`26467`).
+Added :class:`AsyncMock` to support an asynchronous version of :class:`Mock`.
+Appropriate new assert functions for testing have been added as well.
+(Contributed by Lisa Roach in :issue:`26467`).
 
-* Added :func:`~unittest.addModuleCleanup()` and
-  :meth:`~unittest.TestCase.addClassCleanup()` to unittest to support
-  cleanups for :func:`~unittest.setUpModule()` and
-  :meth:`~unittest.TestCase.setUpClass()`.
-  (Contributed by Lisa Roach in :issue:`24412`.)
+Added :func:`~unittest.addModuleCleanup()` and
+:meth:`~unittest.TestCase.addClassCleanup()` to unittest to support
+cleanups for :func:`~unittest.setUpModule()` and
+:meth:`~unittest.TestCase.setUpClass()`.
+(Contributed by Lisa Roach in :issue:`24412`.)
 
-* Several mock assert functions now also print a list of actual calls upon
-  failure. (Contributed by Petter Strandmark in :issue:`35047`.)
+Several mock assert functions now also print a list of actual calls upon
+failure. (Contributed by Petter Strandmark in :issue:`35047`.)
 
-* :mod:`unittest` module gained support for coroutines to be used as test cases
-  with :class:`unittest.IsolatedAsyncioTestCase`.
-  (Contributed by Andrew Svetlov in :issue:`32972`.)
+:mod:`unittest` module gained support for coroutines to be used as test cases
+with :class:`unittest.IsolatedAsyncioTestCase`.
+(Contributed by Andrew Svetlov in :issue:`32972`.)
 
-  Example::
+Example::
 
-    import unittest
-
-
-    class TestRequest(unittest.IsolatedAsyncioTestCase):
-
-        async def asyncSetUp(self):
-            self.connection = await AsyncConnection()
-
-        async def test_get(self):
-            response = await self.connection.get("https://example.com")
-            self.assertEqual(response.status_code, 200)
-
-        async def asyncTearDown(self):
-            await self.connection.close()
+   import unittest
 
 
-    if __name__ == "__main__":
-        unittest.main()
+   class TestRequest(unittest.IsolatedAsyncioTestCase):
+
+       async def asyncSetUp(self):
+           self.connection = await AsyncConnection()
+
+       async def test_get(self):
+           response = await self.connection.get("https://example.com")
+           self.assertEqual(response.status_code, 200)
+
+       async def asyncTearDown(self):
+           await self.connection.close()
+
+
+   if __name__ == "__main__":
+       unittest.main()
 
 
 venv
 ----
 
-* :mod:`venv` now includes an ``Activate.ps1`` script on all platforms for
-  activating virtual environments under PowerShell Core 6.1.
-  (Contributed by Brett Cannon in :issue:`32718`.)
+:mod:`venv` now includes an ``Activate.ps1`` script on all platforms for
+activating virtual environments under PowerShell Core 6.1.
+(Contributed by Brett Cannon in :issue:`32718`.)
+
 
 weakref
 -------
 
-* The proxy objects returned by :func:`weakref.proxy` now support the matrix
-  multiplication operators ``@`` and ``@=`` in addition to the other
-  numeric operators. (Contributed by Mark Dickinson in :issue:`36669`.)
+The proxy objects returned by :func:`weakref.proxy` now support the matrix
+multiplication operators ``@`` and ``@=`` in addition to the other
+numeric operators. (Contributed by Mark Dickinson in :issue:`36669`.)
+
 
 xml
 ---
 
-* As mitigation against DTD and external entity retrieval, the
-  :mod:`xml.dom.minidom` and :mod:`xml.sax` modules no longer process
-  external entities by default.
-  (Contributed by Christian Heimes in :issue:`17239`.)
+As mitigation against DTD and external entity retrieval, the
+:mod:`xml.dom.minidom` and :mod:`xml.sax` modules no longer process
+external entities by default.
+(Contributed by Christian Heimes in :issue:`17239`.)
 
-* The ``.find*()`` methods in the :mod:`xml.etree.ElementTree` module
-  support wildcard searches like ``{*}tag`` which ignores the namespace
-  and ``{namespace}*`` which returns all tags in the given namespace.
-  (Contributed by Stefan Behnel in :issue:`28238`.)
+The ``.find*()`` methods in the :mod:`xml.etree.ElementTree` module
+support wildcard searches like ``{*}tag`` which ignores the namespace
+and ``{namespace}*`` which returns all tags in the given namespace.
+(Contributed by Stefan Behnel in :issue:`28238`.)
 
-* The :mod:`xml.etree.ElementTree` module provides a new function
-  :func:`–xml.etree.ElementTree.canonicalize()` that implements C14N 2.0.
-  (Contributed by Stefan Behnel in :issue:`13611`.)
+The :mod:`xml.etree.ElementTree` module provides a new function
+:func:`–xml.etree.ElementTree.canonicalize()` that implements C14N 2.0.
+(Contributed by Stefan Behnel in :issue:`13611`.)
 
-* The target object of :class:`xml.etree.ElementTree.XMLParser` can
-  receive namespace declaration events through the new callback methods
-  ``start_ns()`` and ``end_ns()``.  Additionally, the
-  :class:`xml.etree.ElementTree.TreeBuilder` target can be configured
-  to process events about comments and processing instructions to include
-  them in the generated tree.
-  (Contributed by Stefan Behnel in :issue:`36676` and :issue:`36673`.)
+The target object of :class:`xml.etree.ElementTree.XMLParser` can
+receive namespace declaration events through the new callback methods
+``start_ns()`` and ``end_ns()``.  Additionally, the
+:class:`xml.etree.ElementTree.TreeBuilder` target can be configured
+to process events about comments and processing instructions to include
+them in the generated tree.
+(Contributed by Stefan Behnel in :issue:`36676` and :issue:`36673`.)
+
 
 Optimizations
 =============
@@ -1220,6 +1242,7 @@ Optimizations
   (Contributed by Inada Naoki in :issue:`33597`)
 
 * :class:`uuid.UUID` now uses ``__slots__`` to reduce its memory footprint.
+  (Contributed by Wouter Bolsterlee and Tal Einat in :issue:`30977`)
 
 * Improved performance of :func:`operator.itemgetter` by 33%.  Optimized
   argument handling and added a fast path for the common case of a single
@@ -1412,7 +1435,8 @@ Deprecated
   for the ``l*gettext()`` functions.
   (Contributed by Serhiy Storchaka in :issue:`33710`.)
 
-* The :meth:`~threading.Thread.isAlive()` method of :class:`threading.Thread` has been deprecated.
+* The :meth:`~threading.Thread.isAlive()` method of :class:`threading.Thread`
+  has been deprecated.
   (Contributed by Dong-hee Na in :issue:`35283`.)
 
 * Many builtin and extension functions that take integer arguments will
@@ -1516,7 +1540,7 @@ Changes in Python behavior
 
 * The compiler now produces a :exc:`SyntaxWarning` when identity checks
   (``is`` and ``is not``) are used with certain types of literals
-  (e.g. strings, ints).  These can often work by accident in CPython,
+  (e.g. strings, numbers).  These can often work by accident in CPython,
   but are not guaranteed by the language spec.  The warning advises users
   to use equality tests (``==`` and ``!=``) instead.
   (Contributed by Serhiy Storchaka in :issue:`34850`.)
@@ -1545,6 +1569,8 @@ Changes in Python behavior
   :c:func:`Py_END_ALLOW_THREADS`, and :c:func:`PyGILState_Ensure`. If this
   behavior is not desired, guard the call by checking :c:func:`_Py_IsFinalizing`
   or :c:func:`sys.is_finalizing`.
+  (Contributed by Joannah Nanjekye in :issue:`36475`.)
+
 
 Changes in the Python API
 -------------------------
@@ -1569,6 +1595,7 @@ Changes in the Python API
 
 * The :meth:`imap.IMAP4.logout` method no longer ignores silently arbitrary
   exceptions.
+  (Contributed by Victor Stinner in :issue:`36348`.)
 
 * The function :func:`platform.popen` has been removed, after having been deprecated since
   Python 3.3: use :func:`os.popen` instead.
@@ -1657,8 +1684,9 @@ Changes in the Python API
 * :func:`~os.path.expanduser` on Windows now prefers the :envvar:`USERPROFILE`
   environment variable and does not use :envvar:`HOME`, which is not normally
   set for regular user accounts.
+  (Contributed by Anthony Sottile in :issue:`36264`.)
 
-* The Exception :class:`asyncio.CancelledError` now inherits from
+* The exception :class:`asyncio.CancelledError` now inherits from
   :class:`BaseException` rather than a :class:`Exception`.
   (Contributed by Yury Selivanov in :issue:`13528`.)
 
@@ -1675,7 +1703,7 @@ Changes in the Python API
   directory while loading your library. Note that Windows 7 users will need to
   ensure that Windows Update KB2533625 has been installed (this is also verified
   by the installer).
-  (See :issue:`36085`.)
+  (Contributed by Steve Dower in :issue:`36085`.)
 
 * The header files and functions related to pgen have been removed after its
   replacement by a pure Python implementation. (Contributed by Pablo Galindo
@@ -1696,6 +1724,7 @@ Changes in the C API
   field. It should be initialized to ``PY_MINOR_VERSION``. The field is ignored
   by default, and is used if and only if ``PyCF_ONLY_AST`` flag is set in
   *cf_flags*.
+  (Contributed by Guido van Rossum in :issue:`35766`.)
 
 * The :c:func:`PyEval_ReInitThreads` function has been removed from the C API.
   It should not be called explicitly: use :c:func:`PyOS_AfterFork_Child`
@@ -1742,7 +1771,9 @@ Changes in the C API
     :c:func:`PyObject_GC_NewVar`, or any other custom allocator that uses
     :c:func:`PyObject_Init` or :c:func:`PyObject_INIT`.
 
-    Example::
+    Example:
+
+    .. code-block:: c
 
         static foo_struct *
         foo_new(PyObject *type) {
@@ -1759,7 +1790,9 @@ Changes in the C API
   * Ensure that all custom ``tp_dealloc`` functions of heap-allocated types
     decrease the type's reference count.
 
-    Example::
+    Example:
+
+    .. code-block:: c
 
         static void
         foo_dealloc(foo_struct *instance) {
@@ -1776,7 +1809,9 @@ Changes in the C API
 * The :c:macro:`Py_DEPRECATED()` macro has been implemented for MSVC.
   The macro now must be placed before the symbol name.
 
-  Example::
+  Example:
+
+  .. code-block:: c
 
       Py_DEPRECATED(3.8) PyAPI_FUNC(int) Py_OldFunction(void);
 
@@ -1797,12 +1832,12 @@ Changes in the C API
 * The functions :c:func:`PyNode_AddChild` and :c:func:`PyParser_AddToken` now accept
   two additional ``int`` arguments *end_lineno* and *end_col_offset*.
 
-.. highlight:: shell
-
 * The :file:`libpython38.a` file to allow MinGW tools to link directly against
   :file:`python38.dll` is no longer included in the regular Windows distribution.
   If you require this file, it may be generated with the ``gendef`` and
-  ``dlltool`` tools, which are part of the MinGW binutils package::
+  ``dlltool`` tools, which are part of the MinGW binutils package:
+
+  .. code-block:: shell
 
       gendef python38.dll > tmp.def
       dlltool --dllname python38.dll --def tmp.def --output-lib libpython38.a
@@ -1813,7 +1848,7 @@ Changes in the C API
   placed in the same directory as :file:`pythonXY.lib`, which is generally the
   :file:`libs` directory under your Python installation.
 
-.. highlight:: python3
+  (Contributed by Steve Dower in :issue:`37351`.)
 
 
 CPython bytecode changes
