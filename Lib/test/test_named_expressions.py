@@ -476,7 +476,6 @@ spam()"""
         global GLOBAL_VAR
         def f():
             global GLOBAL_VAR
-            GLOBAL_VAR = None
             [GLOBAL_VAR := sentinel for _ in range(1)]
             self.assertEqual(GLOBAL_VAR, sentinel)
         try:
@@ -500,7 +499,6 @@ spam()"""
             nonlocal_var = None
             def g():
                 nonlocal nonlocal_var
-                nonlocal_var = None
                 [nonlocal_var := sentinel for _ in range(1)]
             g()
             self.assertEqual(nonlocal_var, sentinel)
@@ -511,7 +509,6 @@ spam()"""
         def f():
             nonlocal_var = None
             def g():
-                nonlocal_var = None
                 [nonlocal_var := sentinel for _ in range(1)]
             g()
             self.assertEqual(nonlocal_var, None)
