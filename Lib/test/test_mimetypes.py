@@ -51,14 +51,6 @@ class MimeTypesTestCase(unittest.TestCase):
         eq(self.db.guess_type('foo.xul', strict=False), ('text/xul', None))
         eq(self.db.guess_extension('image/jpg', strict=False), '.jpg')
 
-    def test_url(self):
-        result = self.db.guess_type('http://host.html')
-        msg = 'URL only has a host name, not a file'
-        self.assertSequenceEqual(result, (None, None), msg)
-        result = self.db.guess_type('http://example.com/host.html')
-        msg = 'Should be text/html'
-        self.assertSequenceEqual(result, ('text/html', None), msg)
-
     def test_guess_all_types(self):
         eq = self.assertEqual
         unless = self.assertTrue

@@ -733,6 +733,8 @@ class Popen(object):
 
       user (POSIX only)
 
+      umask (POSIX only)
+
       pass_fds (POSIX only)
 
       encoding and errors: Text mode encoding and error handling to use for
@@ -750,7 +752,7 @@ class Popen(object):
                  startupinfo=None, creationflags=0,
                  restore_signals=True, start_new_session=False,
                  pass_fds=(), *, user=None, group=None, extra_groups=None,
-                 encoding=None, errors=None, text=None):
+                 encoding=None, errors=None, text=None, umask=-1):
         """Create new Popen instance."""
         _cleanup()
         # Held while anything is calling waitpid before returncode has been
@@ -945,7 +947,7 @@ class Popen(object):
                                 c2pread, c2pwrite,
                                 errread, errwrite,
                                 restore_signals,
-                                gid, gids, uid,
+                                gid, gids, uid, umask,
                                 start_new_session)
         except:
             # Cleanup if the child failed starting.
@@ -1318,6 +1320,7 @@ class Popen(object):
                            errread, errwrite,
                            unused_restore_signals,
                            unused_gid, unused_gids, unused_uid,
+                           unused_umask,
                            unused_start_new_session):
             """Execute program (MS Windows version)"""
 
@@ -1645,7 +1648,7 @@ class Popen(object):
                            c2pread, c2pwrite,
                            errread, errwrite,
                            restore_signals,
-                           gid, gids, uid,
+                           gid, gids, uid, umask,
                            start_new_session):
             """Execute program (POSIX version)"""
 
@@ -1684,7 +1687,8 @@ class Popen(object):
                     and not start_new_session
                     and gid is None
                     and gids is None
-                    and uid is None):
+                    and uid is None
+                    and umask < 0):
                 self._posix_spawn(args, executable, env, restore_signals,
                                   p2cread, p2cwrite,
                                   c2pread, c2pwrite,
@@ -1738,7 +1742,7 @@ class Popen(object):
                             errread, errwrite,
                             errpipe_read, errpipe_write,
                             restore_signals, start_new_session,
-                            gid, gids, uid,
+                            gid, gids, uid, umask,
                             preexec_fn)
                     self._child_created = True
                 finally:

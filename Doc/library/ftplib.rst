@@ -22,7 +22,7 @@ as mirroring other FTP servers.  It is also used by the module
 Here's a sample session using the :mod:`ftplib` module::
 
    >>> from ftplib import FTP
-   >>> ftp = FTP('ftp.debian.org')     # connect to host, default port
+   >>> ftp = FTP('ftp.us.debian.org')  # connect to host, default port
    >>> ftp.login()                     # user anonymous, passwd anonymous@
    '230 Login successful.'
    >>> ftp.cwd('debian')               # change into "debian" directory

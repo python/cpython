@@ -82,7 +82,7 @@ Assignment expressions
 ----------------------
 
 There is new syntax ``:=`` that assigns values to variables as part of a larger
-expression. It is affectionately known as "walrus operator" due to
+expression. It is affectionately known as "the walrus operator" due to
 its resemblance to `the eyes and tusks of a walrus
 <https://en.wikipedia.org/wiki/Walrus#/media/File:Pacific_Walrus_-_Bull_(8247646168).jpg>`_.
 
@@ -183,7 +183,7 @@ keywords, the parameters names remain available for use in ``**kwargs``::
 
 This greatly simplifies the implementation of functions and methods
 that need to accept arbitrary keyword arguments.  For example, here
-is an except from code in the :mod:`collections` module::
+is an excerpt from code in the :mod:`collections` module::
 
   class Counter(dict):
 
@@ -215,7 +215,7 @@ subdirectories).
 Debug build uses the same ABI as release build
 -----------------------------------------------
 
-Python now uses the same ABI whether it built in release or debug mode. On
+Python now uses the same ABI whether it's built in release or debug mode. On
 Unix, when Python is built in debug mode, it is now possible to load C
 extensions built in release mode and C extensions built using the stable ABI.
 
@@ -567,7 +567,7 @@ The :func:`ast.parse` function has some new flags:
   comments" (returned for function definition AST nodes);
 
 * ``feature_version=(3, N)`` allows specifying an earlier Python 3
-  version.  (For example, ``feature_version=(3, 4)`` will treat
+  version. (For example, ``feature_version=(3, 4)`` will treat
   ``async`` and ``await`` as non-reserved words.)
 
 New function :func:`ast.get_source_segment` returns the source code
@@ -599,6 +599,7 @@ marked with the ``CO_COROUTINE`` flag may then be returned.
 
 (Contributed by Matthias Bussonnier in :issue:`34616`)
 
+
 collections
 -----------
 
@@ -610,6 +611,14 @@ to cast the result to the desired type: ``OrderedDict(nt._asdict())``.
 (Contributed by Raymond Hettinger in :issue:`35864`.)
 
 
+curses
+-------
+
+Added a new variable holding structured version information for the
+underlying ncurses library: :data:`~curses.ncurses_version`.
+(Contributed by Serhiy Storchaka in :issue:`31680`.)
+
+
 ctypes
 ------
 
@@ -618,6 +627,16 @@ to specify flags for the underlying ``LoadLibraryEx`` call. The default flags ar
 set to only load DLL dependencies from trusted locations, including the path
 where the DLL is stored (if a full or partial path is used to load the initial
 DLL) and paths added by :func:`~os.add_dll_directory`.
+
+
+datetime
+--------
+
+Added new alternate constructors :meth:`datetime.date.fromisocalendar` and
+:meth:`datetime.datetime.fromisocalendar`, which construct :class:`date` and
+:class:`datetime` objects respectively from ISO year, week number, and weekday;
+these are the inverse of each class's ``isocalendar`` method.
+(Contributed by Paul Ganssle in :issue:`36004`.)
 
 
 functools
@@ -637,14 +656,12 @@ than as a function returning a decorator.  So both of these are now supported::
 (Contributed by Raymond Hettinger in :issue:`36772`.)
 
 
-datetime
---------
+gc
+--
 
-Added new alternate constructors :meth:`datetime.date.fromisocalendar` and
-:meth:`datetime.datetime.fromisocalendar`, which construct :class:`date` and
-:class:`datetime` objects respectively from ISO year, week number and weekday;
-these are the inverse of each class's ``isocalendar`` method.
-(Contributed by Paul Ganssle in :issue:`36004`.)
+:func:`~gc.get_objects` can now receive an optional *generation* parameter
+indicating a generation to get objects from. Contributed in
+:issue:`36016` by Pablo Galindo.
 
 
 gettext
@@ -652,6 +669,18 @@ gettext
 
 Added :func:`~gettext.pgettext` and its variants.
 (Contributed by Franz Glasner, Éric Araujo, and Cheryl Sabella in :issue:`2504`.)
+
+
+gzip
+----
+
+Added the *mtime* parameter to :func:`gzip.compress` for reproducible output.
+(Contributed by Guo Ci Teo in :issue:`34898`.)
+
+A :exc:`~gzip.BadGzipFile` exception is now raised instead of :exc:`OSError`
+for certain types of invalid or corrupt gzip files.
+(Contributed by Filip Gruszczyński, Michele Orrù, and Zackery Spytz in
+:issue:`6584`.)
 
 
 idlelib and IDLE
@@ -702,44 +731,6 @@ In development mode (:option:`-X` ``env``) and in debug build, the
 :class:`io.IOBase` finalizer now logs the exception if the ``close()`` method
 fails. The exception is ignored silently by default in release build.
 (Contributed by Victor Stinner in :issue:`18748`.)
-
-
-gc
---
-
-:func:`~gc.get_objects` can now receive an optional *generation* parameter
-indicating a generation to get objects from. Contributed in
-:issue:`36016` by Pablo Galindo.
-
-
-gzip
-----
-
-Added the *mtime* parameter to :func:`gzip.compress` for reproducible output.
-(Contributed by Guo Ci Teo in :issue:`34898`.)
-
-A :exc:`~gzip.BadGzipFile` exception is now raised instead of :exc:`OSError`
-for certain types of invalid or corrupt gzip files.
-(Contributed by Filip Gruszczyński, Michele Orrù, and Zackery Spytz in
-:issue:`6584`.)
-
-
-idlelib and IDLE
-----------------
-
-Add optional line numbers for IDLE editor windows. Windows
-open without line numbers unless set otherwise in the General
-tab of the configuration dialog.
-(Contributed by Tal Einat and Saimadhav Heblikar in :issue:`17535`.)
-
-Output over N lines (50 by default) is squeezed down to a button.
-N can be changed in the PyShell section of the General page of the
-Settings dialog.  Fewer, but possibly extra long, lines can be squeezed by
-right clicking on the output.  Squeezed output can be expanded in place
-by double-clicking the button or into the clipboard or a separate window
-by right-clicking the button.  (Contributed by Tal Einat in :issue:`1529353`.)
-
-The changes above have been backported to 3.7 maintenance releases.
 
 
 json.tool
@@ -844,14 +835,6 @@ non-existent directory.
 symlinks and directory junctions.
 
 
-ncurses
--------
-
-Added a new variable holding structured version information for the
-underlying ncurses library: :data:`~curses.ncurses_version`.
-(Contributed by Serhiy Storchaka in :issue:`31680`.)
-
-
 pathlib
 -------
 
@@ -899,18 +882,6 @@ py_compile
 (Contributed by Joannah Nanjekye in :issue:`22640`.)
 
 
-socket
-------
-
-Added :meth:`~socket.create_server()` and :meth:`~socket.has_dualstack_ipv6()`
-convenience functions to automate the necessary tasks usually involved when
-creating a server socket, including accepting both IPv4 and IPv6 connections
-on the same socket.  (Contributed by Giampaolo Rodola in :issue:`17561`.)
-
-The :func:`socket.if_nameindex()`, :func:`socket.if_nametoindex()`, and
-:func:`socket.if_indextoname()` functions have been implemented on Windows.
-(Contributed by Zackery Spytz in :issue:`37007`.)
-
 shlex
 ----------
 
@@ -932,10 +903,23 @@ inherited from the corresponding change to the :mod:`tarfile` module.
 recursively removing their contents first.
 
 
+socket
+------
+
+Added :meth:`~socket.create_server()` and :meth:`~socket.has_dualstack_ipv6()`
+convenience functions to automate the necessary tasks usually involved when
+creating a server socket, including accepting both IPv4 and IPv6 connections
+on the same socket.  (Contributed by Giampaolo Rodolà in :issue:`17561`.)
+
+The :func:`socket.if_nameindex()`, :func:`socket.if_nametoindex()`, and
+:func:`socket.if_indextoname()` functions have been implemented on Windows.
+(Contributed by Zackery Spytz in :issue:`37007`.)
+
+
 ssl
 ---
 
-Added :attr:`SSLContext.post_handshake_auth` to enable and
+Added :attr:`ssl.SSLContext.post_handshake_auth` to enable and
 :meth:`ssl.SSLSocket.verify_client_post_handshake` to initiate TLS 1.3
 post-handshake authentication.
 (Contributed by Christian Heimes in :issue:`34670`.)
@@ -1064,17 +1048,33 @@ typing
 
 The :mod:`typing` module incorporates several new features:
 
-* Protocol definitions.  See :pep:`544`, :class:`typing.Protocol` and
-  :func:`typing.runtime_checkable`.  Simple ABCs like
-  :class:`typing.SupportsInt` are now ``Protocol`` subclasses.
-
 * A dictionary type with per-key types.  See :pep:`589` and
   :class:`typing.TypedDict`.
+  TypedDict uses only string keys.  By default, every key is required
+  to be present. Specify "total=False" to allow keys to be optional::
+
+      class Location(TypedDict, total=False):
+          lat_long: tuple
+          grid_square: str
+          xy_coordinate: tuple
 
 * Literal types.  See :pep:`586` and :class:`typing.Literal`.
+  Literal types indicate that a parameter or return value
+  is constrained to one or more specific literal values::
+
+      def get_status(port: int) -> Literal['connected', 'disconnected']:
+          ...
 
 * "Final" variables, functions, methods and classes.  See :pep:`591`,
   :class:`typing.Final` and :func:`typing.final`.
+  The final qualifier instructs a static type checker to restrict
+  subclassing, overriding, or reassignment::
+
+      pi: Final[float] = 3.1415926536
+
+* Protocol definitions.  See :pep:`544`, :class:`typing.Protocol` and
+  :func:`typing.runtime_checkable`.  Simple ABCs like
+  :class:`typing.SupportsInt` are now ``Protocol`` subclasses.
 
 * New protocol class :class:`typing.SupportsIndex`.
 
@@ -1202,14 +1202,14 @@ Optimizations
   +26% on Linux, +50% on macOS and +40% on Windows. Also, much less CPU cycles
   are consumed.
   See :ref:`shutil-platform-dependent-efficient-copy-operations` section.
-  (Contributed by Giampaolo Rodola' in :issue:`33671`.)
+  (Contributed by Giampaolo Rodolà in :issue:`33671`.)
 
 * :func:`shutil.copytree` uses :func:`os.scandir` function and all copy
   functions depending from it use cached :func:`os.stat` values. The speedup
   for copying a directory with 8000 files is around +9% on Linux, +20% on
   Windows and +30% on a Windows SMB share. Also the number of :func:`os.stat`
   syscalls is reduced by 38% making :func:`shutil.copytree` especially faster
-  on network filesystems. (Contributed by Giampaolo Rodola' in :issue:`33695`.)
+  on network filesystems. (Contributed by Giampaolo Rodolà in :issue:`33695`.)
 
 * The default protocol in the :mod:`pickle` module is now Protocol 4,
   first introduced in Python 3.4.  It offers better performance and smaller
@@ -1284,7 +1284,7 @@ Build and C API Changes
     without calling functions. This API is now installed by ``make install``.
 
   (Contributed by Victor Stinner in :issue:`35134` and :issue:`35081`,
-  work initiated by Eric Snow in Python 3.7)
+  work initiated by Eric Snow in Python 3.7.)
 
 * Some macros have been converted to static inline functions: parameter types
   and return type are well defined, they don't have issues specific to macros,
@@ -1361,7 +1361,7 @@ Deprecated
   (Contributed by Victor Stinner in :issue:`37481`.)
 
 * Deprecated methods ``getchildren()`` and ``getiterator()`` in
-  the :mod:`~xml.etree.ElementTree` module emit now a
+  the :mod:`~xml.etree.ElementTree` module now emit a
   :exc:`DeprecationWarning` instead of :exc:`PendingDeprecationWarning`.
   They will be removed in Python 3.9.
   (Contributed by Serhiy Storchaka in :issue:`29209`.)
@@ -1378,12 +1378,11 @@ Deprecated
 
   Implementations of these methods have been ignoring their *index* parameter,
   and returning the next item instead.
-
   (Contributed by Berker Peksag in :issue:`9372`.)
 
 * The :class:`typing.NamedTuple` class has deprecated the ``_field_types``
   attribute in favor of the ``__annotations__`` attribute which has the same
-  information.  (Contributed by Raymond Hettinger in :issue:`36320`.)
+  information. (Contributed by Raymond Hettinger in :issue:`36320`.)
 
 * :mod:`ast` classes ``Num``, ``Str``, ``Bytes``, ``NameConstant`` and
   ``Ellipsis`` are considered deprecated and will be removed in future Python
@@ -1411,7 +1410,6 @@ Deprecated
   parameter of functions :func:`~gettext.translation` and
   :func:`~gettext.install` are also deprecated, since they are only used for
   for the ``l*gettext()`` functions.
-
   (Contributed by Serhiy Storchaka in :issue:`33710`.)
 
 * The :meth:`~threading.Thread.isAlive()` method of :class:`threading.Thread` has been deprecated.
@@ -1456,28 +1454,29 @@ The following features and APIs have been removed from Python 3.8:
 * The :mod:`macpath` module, deprecated in Python 3.7, has been removed.
   (Contributed by Victor Stinner in :issue:`35471`.)
 
-* The function :func:`platform.popen` has been removed, it was deprecated since
-  Python 3.3: use :func:`os.popen` instead.
+* The function :func:`platform.popen` has been removed, after having been
+  deprecated since Python 3.3: use :func:`os.popen` instead.
   (Contributed by Victor Stinner in :issue:`35345`.)
 
-* The function :func:`time.clock` has been removed, it was deprecated since Python
-  3.3: use :func:`time.perf_counter` or :func:`time.process_time` instead, depending
-  on your requirements, to have a well defined behavior.
+* The function :func:`time.clock` has been removed, after having been
+  deprecated since Python 3.3: use :func:`time.perf_counter` or
+  :func:`time.process_time` instead, depending
+  on your requirements, to have well-defined behavior.
   (Contributed by Matthias Bussonnier in :issue:`36895`.)
 
 * The ``pyvenv`` script has been removed in favor of ``python3.8 -m venv``
   to help eliminate confusion as to what Python interpreter the ``pyvenv``
   script is tied to. (Contributed by Brett Cannon in :issue:`25427`.)
 
-* ``parse_qs``, ``parse_qsl``, and ``escape`` are removed from :mod:`cgi`
-  module.  They are deprecated from Python 3.2 or older. They should be imported
+* ``parse_qs``, ``parse_qsl``, and ``escape`` are removed from the :mod:`cgi`
+  module.  They are deprecated in Python 3.2 or older. They should be imported
   from the ``urllib.parse`` and ``html`` modules instead.
 
-* ``filemode`` function is removed from :mod:`tarfile` module.
+* ``filemode`` function is removed from the :mod:`tarfile` module.
   It is not documented and deprecated since Python 3.3.
 
 * The :class:`~xml.etree.ElementTree.XMLParser` constructor no longer accepts
-  the *html* argument.  It never had effect and was deprecated in Python 3.4.
+  the *html* argument.  It never had an effect and was deprecated in Python 3.4.
   All other parameters are now :ref:`keyword-only <keyword-only_parameter>`.
   (Contributed by Serhiy Storchaka in :issue:`29209`.)
 
@@ -1493,11 +1492,11 @@ The following features and APIs have been removed from Python 3.8:
 
 * The ``bufsize`` keyword argument of :func:`fileinput.input` and
   :func:`fileinput.FileInput` which was ignored and deprecated since Python 3.6
-  has been removed. :issue:`36952` (Contributed by Matthias Bussonnier)
+  has been removed. :issue:`36952` (Contributed by Matthias Bussonnier.)
 
 * The functions :func:`sys.set_coroutine_wrapper` and
   :func:`sys.get_coroutine_wrapper` deprecated in Python 3.7 have been removed;
-  :issue:`36933` (Contributed by Matthias Bussonnier)
+  :issue:`36933` (Contributed by Matthias Bussonnier.)
 
 
 Porting to Python 3.8
@@ -1523,28 +1522,28 @@ Changes in Python behavior
   (Contributed by Serhiy Storchaka in :issue:`34850`.)
 
 * The CPython interpreter can swallow exceptions in some circumstances.
-  In Python 3.8 this happens in less cases.  In particular, exceptions
+  In Python 3.8 this happens in fewer cases.  In particular, exceptions
   raised when getting the attribute from the type dictionary are no longer
-  ignored.  (Contributed by Serhiy Storchaka in :issue:`35459`.)
+  ignored. (Contributed by Serhiy Storchaka in :issue:`35459`.)
 
 * Removed ``__str__`` implementations from builtin types :class:`bool`,
   :class:`int`, :class:`float`, :class:`complex` and few classes from
   the standard library.  They now inherit ``__str__()`` from :class:`object`.
   As result, defining the ``__repr__()`` method in the subclass of these
-  classes will affect they string representation.
+  classes will affect their string representation.
   (Contributed by Serhiy Storchaka in :issue:`36793`.)
 
 * On AIX, :attr:`sys.platform` doesn't contain the major version anymore.
   It is always ``'aix'``, instead of ``'aix3'`` .. ``'aix7'``.  Since
-  older Python versions include the version number, it is recommended to
-  always use the ``sys.platform.startswith('aix')``.
+  older Python versions include the version number, so it is recommended to
+  always use ``sys.platform.startswith('aix')``.
   (Contributed by M. Felt in :issue:`36588`.)
 
 * :c:func:`PyEval_AcquireLock` and :c:func:`PyEval_AcquireThread` now
   terminate the current thread if called while the interpreter is
   finalizing, making them consistent with :c:func:`PyEval_RestoreThread`,
   :c:func:`Py_END_ALLOW_THREADS`, and :c:func:`PyGILState_Ensure`. If this
-  behaviour is not desired, guard the call by checking :c:func:`_Py_IsFinalizing`
+  behavior is not desired, guard the call by checking :c:func:`_Py_IsFinalizing`
   or :c:func:`sys.is_finalizing`.
 
 Changes in the Python API
@@ -1557,8 +1556,8 @@ Changes in the Python API
 
 * :class:`subprocess.Popen` can now use :func:`os.posix_spawn` in some cases
   for better performance. On Windows Subsystem for Linux and QEMU User
-  Emulation, Popen constructor using :func:`os.posix_spawn` no longer raise an
-  exception on errors like missing program, but the child process fails with a
+  Emulation, the :class:`Popen` constructor using :func:`os.posix_spawn` no longer raises an
+  exception on errors like "missing program".  Instead the child process fails with a
   non-zero :attr:`~Popen.returncode`.
   (Contributed by Joannah Nanjekye and Victor Stinner in :issue:`35537`.)
 
@@ -1571,7 +1570,7 @@ Changes in the Python API
 * The :meth:`imap.IMAP4.logout` method no longer ignores silently arbitrary
   exceptions.
 
-* The function :func:`platform.popen` has been removed, it was deprecated since
+* The function :func:`platform.popen` has been removed, after having been deprecated since
   Python 3.3: use :func:`os.popen` instead.
   (Contributed by Victor Stinner in :issue:`35345`.)
 
@@ -1586,9 +1585,9 @@ Changes in the Python API
   specialized methods like :meth:`~tkinter.ttk.Treeview.selection_set` for
   changing the selection.  (Contributed by Serhiy Storchaka in :issue:`31508`.)
 
-* The :meth:`writexml`, :meth:`toxml` and :meth:`toprettyxml` methods of the
-  :mod:`xml.dom.minidom` module, and :mod:`xml.etree` now preserve the attribute
-  order specified by the user.
+* The :meth:`writexml`, :meth:`toxml` and :meth:`toprettyxml` methods of
+  :mod:`xml.dom.minidom`, and the :meth:`write` method of :mod:`xml.etree`,
+  now preserve the attribute order specified by the user.
   (Contributed by Diego Rojas and Raymond Hettinger in :issue:`34160`.)
 
 * A :mod:`dbm.dumb` database opened with flags ``'r'`` is now read-only.
@@ -1598,7 +1597,7 @@ Changes in the Python API
 
 * The ``doctype()`` method defined in a subclass of
   :class:`~xml.etree.ElementTree.XMLParser` will no longer be called and will
-  cause emitting a :exc:`RuntimeWarning` instead of a :exc:`DeprecationWarning`.
+  emit a :exc:`RuntimeWarning` instead of a :exc:`DeprecationWarning`.
   Define the :meth:`doctype() <xml.etree.ElementTree.TreeBuilder.doctype>`
   method on a target for handling an XML doctype declaration.
   (Contributed by Serhiy Storchaka in :issue:`29209`.)
@@ -1620,7 +1619,7 @@ Changes in the Python API
   16 KiB to 1 MiB.
 
 * The ``PyGC_Head`` struct has changed completely.  All code that touched the
-  struct member should be rewritten.  (See :issue:`33597`)
+  struct member should be rewritten.  (See :issue:`33597`.)
 
 * The ``PyInterpreterState`` struct has been moved into the "internal"
   header files (specifically Include/internal/pycore_pystate.h).  An
@@ -1641,7 +1640,7 @@ Changes in the Python API
 
 * The :meth:`mmap.flush() <mmap.mmap.flush>` method now returns ``None`` on
   success and raises an exception on error under all platforms.  Previously,
-  its behavior was platform-depended: a nonzero value was returned on success;
+  its behavior was platform-dependent: a nonzero value was returned on success;
   zero was returned on error under Windows.  A zero value was returned on
   success; an exception was raised on error under Unix.
   (Contributed by Berker Peksag in :issue:`2122`.)
@@ -1658,6 +1657,10 @@ Changes in the Python API
 * :func:`~os.path.expanduser` on Windows now prefers the :envvar:`USERPROFILE`
   environment variable and does not use :envvar:`HOME`, which is not normally
   set for regular user accounts.
+
+* The Exception :class:`asyncio.CancelledError` now inherits from
+  :class:`BaseException` rather than a :class:`Exception`.
+  (Contributed by Yury Selivanov in :issue:`13528`.)
 
 .. _bpo-36085-whatsnew:
 
@@ -1681,7 +1684,7 @@ Changes in the Python API
 * :class:`types.CodeType` has a new parameter in the second position of the
   constructor (*posonlyargcount*) to support positional-only arguments defined
   in :pep:`570`. The first argument (*argcount*) now represents the total
-  number of positional arguments (including positional-only arguments). A new
+  number of positional arguments (including positional-only arguments). The new
   ``replace()`` method of :class:`types.CodeType` can be used to make the code
   future-proof.
 
@@ -1689,9 +1692,9 @@ Changes in the Python API
 Changes in the C API
 --------------------
 
-* The :c:type:`PyCompilerFlags` structure gets a new *cf_feature_version*
+* The :c:type:`PyCompilerFlags` structure got a new *cf_feature_version*
   field. It should be initialized to ``PY_MINOR_VERSION``. The field is ignored
-  by default, it is used if and only if ``PyCF_ONLY_AST`` flag is set in
+  by default, and is used if and only if ``PyCF_ONLY_AST`` flag is set in
   *cf_flags*.
 
 * The :c:func:`PyEval_ReInitThreads` function has been removed from the C API.

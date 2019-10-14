@@ -68,14 +68,11 @@ def find_in_source(symbol, dirnames, *,
     if symbol.funcname and symbol.funcname != UNKNOWN:
         raise NotImplementedError
 
-    (filename, funcname, vartype
+    (filename, funcname, decl
      ) = _find_symbol(symbol.name, filenames, _perfilecache)
     if filename == UNKNOWN:
         return None
-    return info.Variable(
-            id=(filename, funcname, symbol.name),
-            vartype=vartype,
-            )
+    return info.Variable.from_parts(filename, funcname, symbol.name, decl)
 
 
 def get_resolver(knownvars=None, dirnames=None, *,
@@ -144,6 +141,7 @@ def symbols_to_variables(symbols, *,
             #raise NotImplementedError(symbol)
             resolved = info.Variable(
                     id=symbol.id,
+                    storage=UNKNOWN,
                     vartype=UNKNOWN,
                     )
         yield resolved

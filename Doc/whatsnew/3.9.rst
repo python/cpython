@@ -197,9 +197,19 @@ Deprecated
   it for writing and silencing a warning.
   (Contributed by Serhiy Storchaka in :issue:`28286`.)
 
+* Deprecated the ``split()`` method of :class:`_tkinter.TkappType` in
+  favour of the ``splitlist()`` method which has more consistent and
+  predicable behavior.
+  (Contributed by Serhiy Storchaka in :issue:`38371`.)
+
 
 Removed
 =======
+
+* The abstract base classes in :mod:`collections.abc` no longer are
+  exposed in the regular :mod:`collections` module.  This will help
+  create a clearer distinction between the concrete classes and the abstract
+  base classes.
 
 * The undocumented ``sys.callstats()`` function has been removed. Since Python
   3.7, it was deprecated and always returned :const:`None`. It required a special

@@ -95,11 +95,9 @@ class StreamReaderTests(BaseTest):
     def test_readline(self):
         DATA = b'line1\nline2\nline3'
 
-        stream = asyncio.Stream(mode=asyncio.StreamMode.READ,
-                                loop=self.loop,
-                                _asyncio_internal=True)
-        stream._feed_data(DATA)
-        stream._feed_eof()
+        stream = asyncio.StreamReader(loop=self.loop)
+        stream.feed_data(DATA)
+        stream.feed_eof()
 
         async def reader():
             data = []

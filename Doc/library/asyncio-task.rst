@@ -18,9 +18,9 @@ and Tasks.
 Coroutines
 ==========
 
-Coroutines declared with async/await syntax is the preferred way of
-writing asyncio applications.  For example, the following snippet
-of code (requires Python 3.7+) prints "hello", waits 1 second,
+:term:`Coroutines <coroutine>` declared with the async/await syntax is the
+preferred way of writing asyncio applications.  For example, the following
+snippet of code (requires Python 3.7+) prints "hello", waits 1 second,
 and then prints "world"::
 
     >>> import asyncio
@@ -212,6 +212,8 @@ Running an asyncio Program
 
 .. function:: run(coro, \*, debug=False)
 
+    Execute the :term:`coroutine` *coro* and return the result.
+
     This function runs the passed coroutine, taking care of
     managing the asyncio event loop, *finalizing asynchronous
     generators*, and closing the threadpool.
@@ -225,10 +227,6 @@ Running an asyncio Program
     the end.  It should be used as a main entry point for asyncio
     programs, and should ideally only be called once.
 
-    Return a result of *coro* execution, or raise a :exc:`RuntimeError`
-    if ``asyncio.run()`` is called from a running event loop, or a
-    :exc:`ValueError` if *coro* is not a courutine.
-
     Example::
 
         async def main():
@@ -241,6 +239,10 @@ Running an asyncio Program
 
     .. versionchanged:: 3.9
        Updated to use :meth:`loop.shutdown_default_executor`.
+
+    .. note::
+       The source code for ``asyncio.run()`` can be found in
+       :source:`Lib/asyncio/runners.py`.
 
 Creating Tasks
 ==============

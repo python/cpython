@@ -6,6 +6,10 @@
 Synchronization Primitives
 ==========================
 
+**Source code:** :source:`Lib/asyncio/locks.py`
+
+-----------------------------------------------
+
 asyncio synchronization primitives are designed to be similar to
 those of the :mod:`threading` module with two important caveats:
 

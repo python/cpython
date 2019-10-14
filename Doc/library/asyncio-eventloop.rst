@@ -5,6 +5,10 @@
 Event Loop
 ==========
 
+**Source code:** :source:`Lib/asyncio/events.py`,
+:source:`Lib/asyncio/base_events.py`
+
+------------------------------------
 
 .. rubric:: Preface
 
@@ -1637,7 +1641,8 @@ Wait until a file descriptor received some data using the
      :meth:`loop.create_connection` method.
 
    * Another similar :ref:`example <asyncio_example_create_connection-streams>`
-     using the high-level :func:`asyncio.connect` function and streams.
+     using the high-level :func:`asyncio.open_connection` function
+     and streams.
 
 
 .. _asyncio_example_unix_signals:

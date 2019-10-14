@@ -2774,13 +2774,24 @@ static PyObject *
 os_ttyname_impl(PyObject *module, int fd)
 /*[clinic end generated code: output=c424d2e9d1cd636a input=9ff5a58b08115c55]*/
 {
-    char *ret;
 
-    ret = ttyname(fd);
-    if (ret == NULL) {
+    long size = sysconf(_SC_TTY_NAME_MAX);
+    if (size == -1) {
         return posix_error();
     }
-    return PyUnicode_DecodeFSDefault(ret);
+    char *buffer = (char *)PyMem_RawMalloc(size);
+    if (buffer == NULL) {
+        return PyErr_NoMemory();
+    }
+    int ret = ttyname_r(fd, buffer, size);
+    if (ret != 0) {
+        PyMem_RawFree(buffer);
+        errno = ret;
+        return posix_error();
+    }
+    PyObject *res = PyUnicode_DecodeFSDefault(buffer);
+    PyMem_RawFree(buffer);
+    return res;
 }
 #endif
 
@@ -8982,10 +8993,10 @@ os_write_impl(PyObject *module, int fd, Py_buffer *data)
 
 #ifdef HAVE_SENDFILE
 PyDoc_STRVAR(posix_sendfile__doc__,
-"sendfile(out, in, offset, count) -> byteswritten\n\
-sendfile(out, in, offset, count[, headers][, trailers], flags=0)\n\
+"sendfile(out_fd, in_fd, offset, count) -> byteswritten\n\
+sendfile(out_fd, in_fd, offset, count[, headers][, trailers], flags=0)\n\
             -> byteswritten\n\
-Copy count bytes from file descriptor in to file descriptor out.");
+Copy count bytes from file descriptor in_fd to file descriptor out_fd.");
 
 /* AC 3.5: don't bother converting, has optional group*/
 static PyObject *
@@ -9005,8 +9016,7 @@ posix_sendfile(PyObject *self, PyObject *args, PyObject *kwdict)
     off_t sbytes;
     struct sf_hdtr sf;
     int flags = 0;
-    /* Beware that "in" clashes with Python's own "in" operator keyword */
-    static char *keywords[] = {"out", "in",
+    static char *keywords[] = {"out_fd", "in_fd",
                                 "offset", "count",
                                 "headers", "trailers", "flags", NULL};
 
@@ -9122,7 +9132,7 @@ done:
 #else
     Py_ssize_t count;
     PyObject *offobj;
-    static char *keywords[] = {"out", "in",
+    static char *keywords[] = {"out_fd", "in_fd",
                                 "offset", "count", NULL};
     if (!PyArg_ParseTupleAndKeywords(args, kwdict, "iiOn:sendfile",
             keywords, &out, &in, &offobj, &count))
@@ -9159,8 +9169,8 @@ done:
 /*[clinic input]
 os._fcopyfile
 
-    infd: int
-    outfd: int
+    in_fd: int
+    out_fd: int
     flags: int
     /
 
@@ -9168,13 +9178,13 @@ Efficiently copy content or metadata of 2 regular file descriptors (macOS).
 [clinic start generated code]*/
 
 static PyObject *
-os__fcopyfile_impl(PyObject *module, int infd, int outfd, int flags)
-/*[clinic end generated code: output=8e8885c721ec38e3 input=69e0770e600cb44f]*/
+os__fcopyfile_impl(PyObject *module, int in_fd, int out_fd, int flags)
+/*[clinic end generated code: output=c9d1a35a992e401b input=1e34638a86948795]*/
 {
     int ret;
 
     Py_BEGIN_ALLOW_THREADS
-    ret = fcopyfile(infd, outfd, NULL, flags);
+    ret = fcopyfile(in_fd, out_fd, NULL, flags);
     Py_END_ALLOW_THREADS
     if (ret < 0)
         return posix_error();

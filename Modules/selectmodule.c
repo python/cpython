@@ -2362,7 +2362,7 @@ static PyMethodDef kqueue_queue_methods[] = {
 
 static PyType_Slot kqueue_queue_Type_slots[] = {
     {Py_tp_dealloc, kqueue_queue_dealloc},
-    {Py_tp_doc, select_kqueue__doc__},
+    {Py_tp_doc, (void*)select_kqueue__doc__},
     {Py_tp_getset, kqueue_queue_getsetlist},
     {Py_tp_methods, kqueue_queue_methods},
     {Py_tp_new, select_kqueue},

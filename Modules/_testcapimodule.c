@@ -1952,7 +1952,7 @@ unicode_asutf8andsize(PyObject *self, PyObject *args)
         return NULL;
     }
 
-    buffer = PyUnicode_AsUTF8AndSize(unicode, &utf8_len); 
+    buffer = PyUnicode_AsUTF8AndSize(unicode, &utf8_len);
     if (buffer == NULL) {
         return NULL;
     }
@@ -4612,6 +4612,14 @@ test_pyobject_is_freed(const char *test_name, PyObject *op)
 
 
 static PyObject*
+check_pyobject_null_is_freed(PyObject *self, PyObject *Py_UNUSED(args))
+{
+    PyObject *op = NULL;
+    return test_pyobject_is_freed("check_pyobject_null_is_freed", op);
+}
+
+
+static PyObject*
 check_pyobject_uninitialized_is_freed(PyObject *self, PyObject *Py_UNUSED(args))
 {
     PyObject *op = (PyObject *)PyObject_Malloc(sizeof(PyObject));
@@ -5475,6 +5483,7 @@ static PyMethodDef TestMethods[] = {
     {"pymem_api_misuse", pymem_api_misuse, METH_NOARGS},
     {"pymem_malloc_without_gil", pymem_malloc_without_gil, METH_NOARGS},
     {"pymem_getallocatorsname", test_pymem_getallocatorsname, METH_NOARGS},
+    {"check_pyobject_null_is_freed", check_pyobject_null_is_freed, METH_NOARGS},
     {"check_pyobject_uninitialized_is_freed", check_pyobject_uninitialized_is_freed, METH_NOARGS},
     {"check_pyobject_forbidden_bytes_is_freed", check_pyobject_forbidden_bytes_is_freed, METH_NOARGS},
     {"check_pyobject_freed_is_freed", check_pyobject_freed_is_freed, METH_NOARGS},
@@ -6406,7 +6415,7 @@ static PyType_Spec HeapCTypeWithDict_spec = {
 
 static struct PyMemberDef heapctypewithnegativedict_members[] = {
     {"dictobj", T_OBJECT, offsetof(HeapCTypeWithDictObject, dict)},
-    {"__dictoffset__", T_PYSSIZET, -sizeof(void*), READONLY},
+    {"__dictoffset__", T_PYSSIZET, -(Py_ssize_t)sizeof(void*), READONLY},
     {NULL} /* Sentinel */
 };
 

@@ -6,7 +6,7 @@ from . import tasks
 
 
 def run(main, *, debug=False):
-    """Run a coroutine.
+    """Execute the coroutine and return the result.
 
     This function runs the passed coroutine, taking care of
     managing the asyncio event loop and finalizing asynchronous
@@ -20,10 +20,6 @@ def run(main, *, debug=False):
     This function always creates a new event loop and closes it at the end.
     It should be used as a main entry point for asyncio programs, and should
     ideally only be called once.
-
-    Return a result of *coro* execution, or raise a RuntimeError
-    if `asyncio.run()`is called from a running event loop, or a ValueError
-    if `main` is not a courutine.
 
     Example:
 

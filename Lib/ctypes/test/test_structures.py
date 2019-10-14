@@ -1,4 +1,5 @@
 import platform
+import sys
 import unittest
 from ctypes import *
 from ctypes.test import need_symbol
@@ -497,6 +498,16 @@ class StructureTestCase(unittest.TestCase):
                 ('data', c_double * 2),
             ]
 
+        class Test3A(Structure):
+            _fields_ = [
+                ('data', c_float * 2),
+            ]
+
+        class Test3B(Test3A):
+            _fields_ = [
+                ('more_data', c_float * 2),
+            ]
+
         s = Test2()
         expected = 0
         for i in range(16):
@@ -524,6 +535,46 @@ class StructureTestCase(unittest.TestCase):
         # check the passed-in struct hasn't changed
         self.assertEqual(s.data[0], 3.14159)
         self.assertEqual(s.data[1], 2.71828)
+
+        s = Test3B()
+        s.data[0] = 3.14159
+        s.data[1] = 2.71828
+        s.more_data[0] = -3.0
+        s.more_data[1] = -2.0
+
+        expected = 3.14159 + 2.71828 - 5.0
+        func = dll._testfunc_array_in_struct2a
+        func.restype = c_double
+        func.argtypes = (Test3B,)
+        result = func(s)
+        self.assertAlmostEqual(result, expected, places=6)
+        # check the passed-in struct hasn't changed
+        self.assertAlmostEqual(s.data[0], 3.14159, places=6)
+        self.assertAlmostEqual(s.data[1], 2.71828, places=6)
+        self.assertAlmostEqual(s.more_data[0], -3.0, places=6)
+        self.assertAlmostEqual(s.more_data[1], -2.0, places=6)
+
+    def test_38368(self):
+        class U(Union):
+            _fields_ = [
+                ('f1', c_uint8 * 16),
+                ('f2', c_uint16 * 8),
+                ('f3', c_uint32 * 4),
+            ]
+        u = U()
+        u.f3[0] = 0x01234567
+        u.f3[1] = 0x89ABCDEF
+        u.f3[2] = 0x76543210
+        u.f3[3] = 0xFEDCBA98
+        f1 = [u.f1[i] for i in range(16)]
+        f2 = [u.f2[i] for i in range(8)]
+        if sys.byteorder == 'little':
+            self.assertEqual(f1, [0x67, 0x45, 0x23, 0x01,
+                                  0xef, 0xcd, 0xab, 0x89,
+                                  0x10, 0x32, 0x54, 0x76,
+                                  0x98, 0xba, 0xdc, 0xfe])
+            self.assertEqual(f2, [0x4567, 0x0123, 0xcdef, 0x89ab,
+                                  0x3210, 0x7654, 0xba98, 0xfedc])
 
 class PointerMemberTestCase(unittest.TestCase):
 

@@ -54,7 +54,7 @@ from idlelib.editor import EditorWindow, fixwordbreaks
 from idlelib.filelist import FileList
 from idlelib.outwin import OutputWindow
 from idlelib import rpc
-from idlelib.run import idle_formatwarning, PseudoInputFile, PseudoOutputFile
+from idlelib.run import idle_formatwarning, StdInputFile, StdOutputFile
 from idlelib.undo import UndoDelegator
 
 HOST = '127.0.0.1' # python execution server on localhost loopback
@@ -679,14 +679,6 @@ class ModifiedInterpreter(InteractiveInterpreter):
         self.more = 0
         # at the moment, InteractiveInterpreter expects str
         assert isinstance(source, str)
-        #if isinstance(source, str):
-        #    from idlelib import iomenu
-        #    try:
-        #        source = source.encode(iomenu.encoding)
-        #    except UnicodeError:
-        #        self.tkconsole.resetoutput()
-        #        self.write("Unsupported characters in input\n")
-        #        return
         # InteractiveInterpreter.runsource() calls its runcode() method,
         # which is overridden (see below)
         return InteractiveInterpreter.runsource(self, source, filename)
@@ -910,10 +902,14 @@ class PyShell(OutputWindow):
         self.save_stderr = sys.stderr
         self.save_stdin = sys.stdin
         from idlelib import iomenu
-        self.stdin = PseudoInputFile(self, "stdin", iomenu.encoding)
-        self.stdout = PseudoOutputFile(self, "stdout", iomenu.encoding)
-        self.stderr = PseudoOutputFile(self, "stderr", iomenu.encoding)
-        self.console = PseudoOutputFile(self, "console", iomenu.encoding)
+        self.stdin = StdInputFile(self, "stdin",
+                                  iomenu.encoding, iomenu.errors)
+        self.stdout = StdOutputFile(self, "stdout",
+                                    iomenu.encoding, iomenu.errors)
+        self.stderr = StdOutputFile(self, "stderr",
+                                    iomenu.encoding, "backslashreplace")
+        self.console = StdOutputFile(self, "console",
+                                     iomenu.encoding, iomenu.errors)
         if not use_subprocess:
             sys.stdout = self.stdout
             sys.stderr = self.stderr
@@ -1298,16 +1294,6 @@ class PyShell(OutputWindow):
         self.set_line_and_column()
 
     def write(self, s, tags=()):
-        if isinstance(s, str) and len(s) and max(s) > '\uffff':
-            # Tk doesn't support outputting non-BMP characters
-            # Let's assume what printed string is not very long,
-            # find first non-BMP character and construct informative
-            # UnicodeEncodeError exception.
-            for start, char in enumerate(s):
-                if char > '\uffff':
-                    break
-            raise UnicodeEncodeError("UCS-2", char, start, start+1,
-                                     'Non-BMP character not supported in Tk')
         try:
             self.text.mark_gravity("iomark", "right")
             count = OutputWindow.write(self, s, tags, "iomark")

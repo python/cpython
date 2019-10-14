@@ -316,12 +316,13 @@ the preinitialization.
 
 Example using the preinitialization to enable the UTF-8 Mode::
 
+    PyStatus status;
     PyPreConfig preconfig;
     PyPreConfig_InitPythonConfig(&preconfig);
 
     preconfig.utf8_mode = 1;
 
-    PyStatus status = Py_PreInitialize(&preconfig);
+    status = Py_PreInitialize(&preconfig);
     if (PyStatus_Exception(status)) {
         Py_ExitStatusException(status);
     }
@@ -342,12 +343,12 @@ PyConfig
 
    Structure methods:
 
-   .. c:function:: PyStatus PyConfig_InitPythonConfig(PyConfig *config)
+   .. c:function:: void PyConfig_InitPythonConfig(PyConfig *config)
 
       Initialize configuration with :ref:`Python Configuration
       <init-python-config>`.
 
-   .. c:function:: PyStatus PyConfig_InitIsolatedConfig(PyConfig *config)
+   .. c:function:: void PyConfig_InitIsolatedConfig(PyConfig *config)
 
       Initialize configuration with :ref:`Isolated Configuration
       <init-isolated-conf>`.
@@ -674,7 +675,13 @@ PyConfig
 
    .. c:member:: PyWideStringList warnoptions
 
-      Options of the :mod:`warnings` module to build warnings filters.
+      :data:`sys.warnoptions`: options of the :mod:`warnings` module to build
+      warnings filters: lowest to highest priority.
+
+      The :mod:`warnings` module adds :data:`sys.warnoptions` in the reverse
+      order: the last :c:member:`PyConfig.warnoptions` item becomes the first
+      item of :data:`warnings.filters` which is checked first (highest
+      priority).
 
    .. c:member:: int write_bytecode
 
@@ -717,12 +724,9 @@ Example setting the program name::
     void init_python(void)
     {
         PyStatus status;
-        PyConfig config;
 
-        status = PyConfig_InitPythonConfig(&config);
-        if (PyStatus_Exception(status)) {
-            goto fail;
-        }
+        PyConfig config;
+        PyConfig_InitPythonConfig(&config);
 
         /* Set the program name. Implicitly preinitialize Python. */
         status = PyConfig_SetString(&config, &config.program_name,
@@ -749,12 +753,9 @@ configuration, and then override some parameters::
     PyStatus init_python(const char *program_name)
     {
         PyStatus status;
-        PyConfig config;
 
-        status = PyConfig_InitPythonConfig(&config);
-        if (PyStatus_Exception(status)) {
-            goto done;
-        }
+        PyConfig config;
+        PyConfig_InitPythonConfig(&config);
 
         /* Set the program name before reading the configuraton
            (decode byte string from the locale encoding).
@@ -835,14 +836,10 @@ Example of customized Python always running in isolated mode::
 
     int main(int argc, char **argv)
     {
-        PyConfig config;
         PyStatus status;
 
-        status = PyConfig_InitPythonConfig(&config);
-        if (PyStatus_Exception(status)) {
-            goto fail;
-        }
-
+        PyConfig config;
+        PyConfig_InitPythonConfig(&config);
         config.isolated = 1;
 
         /* Decode command line arguments.
@@ -1027,14 +1024,9 @@ phases::
     void init_python(void)
     {
         PyStatus status;
+
         PyConfig config;
-
-        status = PyConfig_InitPythonConfig(&config);
-        if (PyStatus_Exception(status)) {
-            PyConfig_Clear(&config);
-            Py_ExitStatusException(status);
-        }
-
+        PyConfig_InitPythonConfig(&config);
         config._init_main = 0;
 
         /* ... customize 'config' configuration ... */
