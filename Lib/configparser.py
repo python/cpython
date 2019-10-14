@@ -888,9 +888,11 @@ class RawConfigParser(MutableMapping):
             return (option in self._sections[section]
                     or option in self._defaults)
 
-    def set(self, section, option, value=None):
+    def set(self, section, option, value=_UNSET):
         """Set an option."""
-        if value:
+        if value == _UNSET:
+            value = None
+        else:
             value = self._interpolation.before_set(self, section, option,
                                                    value)
         if not section or section == self.default_section:
