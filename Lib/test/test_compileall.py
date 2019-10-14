@@ -51,7 +51,14 @@ class CompileallTestsBase:
 
         # Create a long path, 10 directories at a time.
         # It will be 100 directories deep, or shorter if the OS limits it.
-        for i in range(10):
+        MAX_ITERATIONS = 10
+
+        # Workaround: use a shorter path on Windows.
+        # see: https://bugs.python.org/issue38470
+        if sys.platform == "win32":
+            MAX_ITERATIONS = 2
+
+        for i in range(MAX_ITERATIONS):
             longer_path = os.path.join(
                 long_path, *(f"dir_{i}_{j}" for j in range(10))
             )
@@ -91,7 +98,7 @@ class CompileallTestsBase:
         # directories is 160 characters long, leaving something for the
         # root (self.directory) as well.
         # Tests assume long_path contains at least 10 directories.
-        if i < 2:
+        if i < 1:
             raise ValueError(f'"Long path" is too short: {long_path}')
 
         self.source_path_long = long_source
