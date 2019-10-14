@@ -1467,10 +1467,16 @@ symtable_extend_namedexpr_scope(struct symtable *st, expr_ty e)
             continue;
         }
 
-        /* If we find a FunctionBlock entry, add as NONLOCAL/LOCAL */
+        /* If we find a FunctionBlock entry, add as GLOBAL/LOCAL or NONLOCAL/LOCAL */
         if (ste->ste_type == FunctionBlock) {
-            if (!symtable_add_def(st, target_name, DEF_NONLOCAL))
-                VISIT_QUIT(st, 0);
+            long target_in_scope = _PyST_GetSymbol(ste, target_name);
+            if (target_in_scope & DEF_GLOBAL) {
+                if (!symtable_add_def(st, target_name, DEF_GLOBAL))
+                    VISIT_QUIT(st, 0);
+            } else {
+                if (!symtable_add_def(st, target_name, DEF_NONLOCAL))
+                    VISIT_QUIT(st, 0);
+            }
             if (!symtable_record_directive(st, target_name, e->lineno, e->col_offset))
                 VISIT_QUIT(st, 0);
 

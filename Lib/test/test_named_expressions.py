@@ -1,6 +1,7 @@
 import os
 import unittest
 
+GLOBAL_VAR = None
 
 class NamedExpressionInvalidTest(unittest.TestCase):
 
@@ -469,6 +470,50 @@ spam()"""
                 exec(code, ns)
                 self.assertEqual(ns["x"], 2)
                 self.assertEqual(ns["result"], [0, 1, 2])
+
+    def test_named_expression_global_scope(self):
+        sentinel = object()
+        global GLOBAL_VAR
+        def f():
+            global GLOBAL_VAR
+            [GLOBAL_VAR := sentinel for _ in range(1)]
+            self.assertEqual(GLOBAL_VAR, sentinel)
+        try:
+            f()
+            self.assertEqual(GLOBAL_VAR, sentinel)
+        finally:
+            GLOBAL_VAR = None
+
+    def test_named_expression_global_scope_no_global_keyword(self):
+        sentinel = object()
+        def f():
+            GLOBAL_VAR = None
+            [GLOBAL_VAR := sentinel for _ in range(1)]
+            self.assertEqual(GLOBAL_VAR, sentinel)
+        f()
+        self.assertEqual(GLOBAL_VAR, None)
+
+    def test_named_expression_nonlocal_scope(self):
+        sentinel = object()
+        def f():
+            nonlocal_var = None
+            def g():
+                nonlocal nonlocal_var
+                [nonlocal_var := sentinel for _ in range(1)]
+            g()
+            self.assertEqual(nonlocal_var, sentinel)
+        f()
+
+    def test_named_expression_nonlocal_scope_no_nonlocal_keyword(self):
+        sentinel = object()
+        def f():
+            nonlocal_var = None
+            def g():
+                [nonlocal_var := sentinel for _ in range(1)]
+            g()
+            self.assertEqual(nonlocal_var, None)
+        f()
+
 
 if __name__ == "__main__":
     unittest.main()
