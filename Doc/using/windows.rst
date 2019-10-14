@@ -325,6 +325,9 @@ If you have installed another version of Python and added it to your
 one from the Microsoft Store. To access the new installation, use
 ``python3.exe`` or ``python3.x.exe``.
 
+The ``py.exe`` launcher will detect this Python installation, but will prefer
+installations from the traditional installer.
+
 To remove Python, open Settings and use Apps and Features, or else find
 Python in Start and right-click to select Uninstall. Uninstalling will
 remove all packages you installed directly into this Python installation, but
@@ -332,9 +335,6 @@ will not remove any virtual environments
 
 Known Issues
 ------------
-
-Currently, the ``py.exe`` launcher cannot be used to start Python when it
-has been installed from the Microsoft Store.
 
 Because of restrictions on Microsoft Store apps, Python scripts may not have
 full write access to shared locations such as ``TEMP`` and the registry.
