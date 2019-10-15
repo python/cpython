@@ -1,0 +1,26 @@
+.. bpo: 38368
+.. date: 2019-10-14-17-56-45
+.. nonce: c-5PhD
+.. release date: 2019-10-14
+.. section: Library
+
+Prevent ctypes crash when handling arrays in structs/unions.
+
+..
+
+.. bpo: 38449
+.. date: 2019-10-12-08-57-34
+.. nonce: 9TWMlz
+.. section: Library
+
+Revert GH-15522, which introduces a regression in
+:meth:`mimetypes.guess_type` due to improper handling of filenames as urls.
+
+..
+
+.. bpo: 38344
+.. date: 2019-10-05-05-50-58
+.. nonce: scr2LO
+.. section: Windows
+
+Fix syntax in activate.bat.
