@@ -373,10 +373,9 @@ update_refs(PyGC_Head *containers)
 
 /* A traversal callback for subtract_refs. */
 static int
-visit_decref(PyObject *op, void *data)
+visit_decref(PyObject *op, void *parent)
 {
-    assert(op != NULL);
-    _PyObject_ASSERT(op, !_PyObject_IsFreed(op));
+    _PyObject_ASSERT(_PyObject_CAST(parent), !_PyObject_IsFreed(op));
 
     if (PyObject_IS_GC(op)) {
         PyGC_Head *gc = AS_GC(op);
@@ -402,10 +401,11 @@ subtract_refs(PyGC_Head *containers)
     traverseproc traverse;
     PyGC_Head *gc = GC_NEXT(containers);
     for (; gc != containers; gc = GC_NEXT(gc)) {
-        traverse = Py_TYPE(FROM_GC(gc))->tp_traverse;
+        PyObject *op = FROM_GC(gc);
+        traverse = Py_TYPE(op)->tp_traverse;
         (void) traverse(FROM_GC(gc),
                        (visitproc)visit_decref,
-                       NULL);
+                       op);
     }
 }
 

@@ -25,13 +25,14 @@ _Py_IDENTIFIER(__isabstractmethod__);
 int
 _PyObject_CheckConsistency(PyObject *op, int check_content)
 {
-    _PyObject_ASSERT(op, op != NULL);
-    _PyObject_ASSERT(op, !_PyObject_IsFreed(op));
-    _PyObject_ASSERT(op, Py_REFCNT(op) >= 1);
+#define CHECK(expr) \
+    do { if (!(expr)) { _PyObject_ASSERT_FAILED_MSG(op, Py_STRINGIFY(expr)); } } while (0)
 
-    PyTypeObject *type = op->ob_type;
-    _PyObject_ASSERT(op, type != NULL);
-    _PyType_CheckConsistency(type);
+    CHECK(!_PyObject_IsFreed(op));
+    CHECK(Py_REFCNT(op) >= 1);
+
+    CHECK(op->ob_type != NULL);
+    _PyType_CheckConsistency(op->ob_type);
 
     if (PyUnicode_Check(op)) {
         _PyUnicode_CheckConsistency(op, check_content);
@@ -40,6 +41,8 @@ _PyObject_CheckConsistency(PyObject *op, int check_content)
         _PyDict_CheckConsistency(op, check_content);
     }
     return 1;
+
+#undef CHECK
 }
 
 
@@ -463,41 +466,41 @@ _PyObject_IsFreed(PyObject *op)
 void
 _PyObject_Dump(PyObject* op)
 {
-    if (op == NULL) {
-        fprintf(stderr, "<object at NULL>\n");
-        fflush(stderr);
-        return;
-    }
-
     if (_PyObject_IsFreed(op)) {
         /* It seems like the object memory has been freed:
            don't access it to prevent a segmentation fault. */
         fprintf(stderr, "<object at %p is freed>\n", op);
+        fflush(stderr);
         return;
     }
 
-    PyGILState_STATE gil;
-    PyObject *error_type, *error_value, *error_traceback;
-
-    fprintf(stderr, "object  : ");
-    fflush(stderr);
-    gil = PyGILState_Ensure();
-
-    PyErr_Fetch(&error_type, &error_value, &error_traceback);
-    (void)PyObject_Print(op, stderr, 0);
-    fflush(stderr);
-    PyErr_Restore(error_type, error_value, error_traceback);
-
-    PyGILState_Release(gil);
+    /* first, write fields which are the least likely to crash */
+    fprintf(stderr, "object address  : %p\n", (void *)op);
     /* XXX(twouters) cast refcount to long until %zd is
        universally available */
-    fprintf(stderr, "\n"
-        "type    : %s\n"
-        "refcount: %ld\n"
-        "address : %p\n",
-        Py_TYPE(op)==NULL ? "NULL" : Py_TYPE(op)->tp_name,
-        (long)op->ob_refcnt,
-        (void *)op);
+    fprintf(stderr, "object refcount : %ld\n", (long)op->ob_refcnt);
+    fflush(stderr);
+
+    PyTypeObject *type = Py_TYPE(op);
+    fprintf(stderr, "object type     : %p\n", type);
+    fprintf(stderr, "object type name: %s\n",
+            type==NULL ? "NULL" : type->tp_name);
+
+    /* the most dangerous part */
+    fprintf(stderr, "object repr     : ");
+    fflush(stderr);
+
+    PyGILState_STATE gil = PyGILState_Ensure();
+    PyObject *error_type, *error_value, *error_traceback;
+    PyErr_Fetch(&error_type, &error_value, &error_traceback);
+
+    (void)PyObject_Print(op, stderr, 0);
+    fflush(stderr);
+
+    PyErr_Restore(error_type, error_value, error_traceback);
+    PyGILState_Release(gil);
+
+    fprintf(stderr, "\n");
     fflush(stderr);
 }
 
@@ -2148,6 +2151,7 @@ _PyObject_AssertFailed(PyObject *obj, const char *expr, const char *msg,
         fprintf(stderr, "%s: ", function);
     }
     fflush(stderr);
+
     if (expr) {
         fprintf(stderr, "Assertion \"%s\" failed", expr);
     }
@@ -2155,26 +2159,18 @@ _PyObject_AssertFailed(PyObject *obj, const char *expr, const char *msg,
         fprintf(stderr, "Assertion failed");
     }
     fflush(stderr);
+
     if (msg) {
         fprintf(stderr, ": %s", msg);
     }
     fprintf(stderr, "\n");
     fflush(stderr);
 
-    if (obj == NULL) {
-        fprintf(stderr, "<object at NULL>\n");
-    }
-    else if (_PyObject_IsFreed(obj)) {
+    if (_PyObject_IsFreed(obj)) {
         /* It seems like the object memory has been freed:
            don't access it to prevent a segmentation fault. */
         fprintf(stderr, "<object at %p is freed>\n", obj);
-    }
-    else if (Py_TYPE(obj) == NULL) {
-        fprintf(stderr, "<object at %p: ob_type=NULL>\n", obj);
-    }
-    else if (_PyObject_IsFreed((PyObject *)Py_TYPE(obj))) {
-        fprintf(stderr, "<object at %p: type at %p is freed>\n",
-                obj, (void *)Py_TYPE(obj));
+        fflush(stderr);
     }
     else {
         /* Display the traceback where the object has been allocated.
@@ -2193,8 +2189,10 @@ _PyObject_AssertFailed(PyObject *obj, const char *expr, const char *msg,
         /* This might succeed or fail, but we're about to abort, so at least
            try to provide any extra info we can: */
         _PyObject_Dump(obj);
+
+        fprintf(stderr, "\n");
+        fflush(stderr);
     }
-    fflush(stderr);
 
     Py_FatalError("_PyObject_AssertFailed");
 }
