@@ -232,9 +232,6 @@ resource_setrlimit_impl(PyObject *module, int resource, PyObject *limits)
         if (errno == EINVAL)
             PyErr_SetString(PyExc_ValueError,
                             "current limit exceeds maximum limit");
-        else if (errno == EPERM)
-            PyErr_SetString(PyExc_ValueError,
-                            "not allowed to raise maximum limit");
         else
             PyErr_SetFromErrno(PyExc_OSError);
         return NULL;
