@@ -182,15 +182,20 @@ class Traceback(Sequence):
     Sequence of Frame instances sorted from the oldest frame
     to the most recent frame.
     """
-    __slots__ = ("_frames",)
+    __slots__ = ("_frames", '_total_nframe')
 
-    def __init__(self, frames):
+    def __init__(self, frames, total_nframe=None):
         Sequence.__init__(self)
         # frames is a tuple of frame tuples: see Frame constructor for the
         # format of a frame tuple; it is reversed, because _tracemalloc
         # returns frames sorted from most recent to oldest, but the
         # Python API expects oldest to most recent
         self._frames = tuple(reversed(frames))
+        self._total_nframe = total_nframe
+
+    @property
+    def total_nframe(self):
+        return self._total_nframe
 
     def __len__(self):
         return len(self._frames)
@@ -221,7 +226,12 @@ class Traceback(Sequence):
         return str(self[0])
 
     def __repr__(self):
-        return "<Traceback %r>" % (tuple(self),)
+        s = "<Traceback %r" % tuple(self)
+        if self._total_nframe is None:
+            s += ">"
+        else:
+            s += f" total_nframe={self.total_nframe}>"
+        return s
 
     def format(self, limit=None, most_recent_first=False):
         lines = []
@@ -280,7 +290,7 @@ class Trace:
 
     @property
     def traceback(self):
-        return Traceback(self._trace[2])
+        return Traceback(*self._trace[2:])
 
     def __eq__(self, other):
         if not isinstance(other, Trace):
@@ -378,7 +388,7 @@ class Filter(BaseFilter):
             return self._match_frame(filename, lineno)
 
     def _match(self, trace):
-        domain, size, traceback = trace
+        domain, size, traceback, total_nframe = trace
         res = self._match_traceback(traceback)
         if self.domain is not None:
             if self.inclusive:
@@ -398,7 +408,7 @@ class DomainFilter(BaseFilter):
         return self._domain
 
     def _match(self, trace):
-        domain, size, traceback = trace
+        domain, size, traceback, total_nframe = trace
         return (domain == self.domain) ^ (not self.inclusive)
 
 
@@ -475,7 +485,7 @@ class Snapshot:
         tracebacks = {}
         if not cumulative:
             for trace in self.traces._traces:
-                domain, size, trace_traceback = trace
+                domain, size, trace_traceback, total_nframe = trace
                 try:
                     traceback = tracebacks[trace_traceback]
                 except KeyError:
@@ -496,7 +506,7 @@ class Snapshot:
         else:
             # cumulative statistics
             for trace in self.traces._traces:
-                domain, size, trace_traceback = trace
+                domain, size, trace_traceback, total_nframe = trace
                 for frame in trace_traceback:
                     try:
                         traceback = tracebacks[frame]
