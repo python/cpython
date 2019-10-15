@@ -4,11 +4,7 @@
 #include <windows.h>
 #endif
 
-#if defined(MS_WIN32) || defined(__CYGWIN__)
-#define EXPORT(x) __declspec(dllexport) x
-#else
-#define EXPORT(x) x
-#endif
+#define EXPORT(x) Py_EXPORTED_SYMBOL x
 
 /* some functions handy for testing */
 
