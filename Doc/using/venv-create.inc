@@ -132,3 +132,18 @@ detail (typically a script or shell function will be used).
 .. versionadded:: 3.8
    PowerShell activation scripts installed under POSIX for PowerShell Core
    support.
+
+The venv module supports a Running Command file (commandparser ini format) within
+a users home directory (``~/.venvrc``) to overload CLI defaults. This allows
+any CLI argument mention above to me overloaded by default.
+- Please replace '-' chars with '_' to match cli args.
+Example Usage:
+
+[venv]
+upgrade_deps = true
+
+This would result in ``--upgrade-deps`` to defualt to True.
+Please use ``--help`` to test ``~/.venvrc``
+
+.. versionadded:: 3.9
+   Add support for ~/.venvrc to overload CLI argument defaults

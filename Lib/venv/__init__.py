@@ -4,6 +4,7 @@ Virtual environment (venv) package for Python. Based on PEP 405.
 Copyright (C) 2011-2014 Vinay Sajip.
 Licensed to the PSF under a contributor agreement.
 """
+import configparser
 import logging
 import os
 import shutil
@@ -11,10 +12,21 @@ import subprocess
 import sys
 import sysconfig
 import types
-
+from typing import NamedTuple, Optional
 
 CORE_VENV_DEPS = ('pip', 'setuptools')
 logger = logging.getLogger(__name__)
+
+
+class CliDefaults(NamedTuple):
+    clear: bool = False
+    copies: bool = True if os.name == 'nt' else False
+    prompt: Optional[str] = None
+    system_site_packages: bool = False
+    upgrade: bool = False
+    upgrade_deps: bool = False
+    use_symlinks: bool = False if os.name == 'nt' else True
+    without_pip: bool = True
 
 
 class EnvBuilder:
@@ -409,8 +421,34 @@ def create(env_dir, system_site_packages=False, clear=False,
                          prompt=prompt, upgrade_deps=upgrade_deps)
     builder.create(env_dir)
 
+
+def get_default_args(rc_file='~/.venvrc'):
+    """ Check if a .venvrc exists in a user's home directory
+        + override defaults if it exists. Use `--help` to test rc file """
+    venvrc_path = os.path.expanduser(rc_file)
+    if not os.path.exists(venvrc_path):
+        return CliDefaults()
+
+    cp = configparser.ConfigParser()
+    cp.read(venvrc_path)
+    if not cp.has_section("venv"):
+        return CliDefaults()
+
+    arg_overloads = {}
+    for name, value in cp.items("venv"):
+        if value.lower() == "true":
+            arg_overloads[name] = True
+        elif value.lower() == "false":
+            arg_overloads[name] = False
+        else:
+            arg_overloads[name] = value
+
+    return CliDefaults(**arg_overloads)
+
+
 def main(args=None):
     compatible = True
+    defaults = get_default_args()
     if sys.version_info < (3, 3):
         compatible = False
     elif not hasattr(sys, 'base_prefix'):
@@ -429,47 +467,47 @@ def main(args=None):
                                                 'created, you may wish to '
                                                 'activate it, e.g. by '
                                                 'sourcing an activate script '
-                                                'in its bin directory.')
+                                                'in its bin directory.',
+                                         formatter_class=argparse.ArgumentDefaultsHelpFormatter)
         parser.add_argument('dirs', metavar='ENV_DIR', nargs='+',
                             help='A directory to create the environment in.')
-        parser.add_argument('--system-site-packages', default=False,
+        parser.add_argument('--system-site-packages',
+                            default=defaults.system_site_packages,
                             action='store_true', dest='system_site',
                             help='Give the virtual environment access to the '
                                  'system site-packages dir.')
-        if os.name == 'nt':
-            use_symlinks = False
-        else:
-            use_symlinks = True
         group = parser.add_mutually_exclusive_group()
-        group.add_argument('--symlinks', default=use_symlinks,
+        group.add_argument('--symlinks', default=defaults.use_symlinks,
                            action='store_true', dest='symlinks',
                            help='Try to use symlinks rather than copies, '
                                 'when symlinks are not the default for '
                                 'the platform.')
-        group.add_argument('--copies', default=not use_symlinks,
+        group.add_argument('--copies', default=defaults.copies,
                            action='store_false', dest='symlinks',
                            help='Try to use copies rather than symlinks, '
                                 'even when symlinks are the default for '
                                 'the platform.')
-        parser.add_argument('--clear', default=False, action='store_true',
+        parser.add_argument('--clear', default=defaults.clear,
+                            action='store_true',
                             dest='clear', help='Delete the contents of the '
                                                'environment directory if it '
                                                'already exists, before '
                                                'environment creation.')
-        parser.add_argument('--upgrade', default=False, action='store_true',
-                            dest='upgrade', help='Upgrade the environment '
-                                               'directory to use this version '
-                                               'of Python, assuming Python '
-                                               'has been upgraded in-place.')
+        parser.add_argument('--upgrade', default=defaults.upgrade,
+                            action='store_true', dest='upgrade',
+                            help='Upgrade the environment '
+                                 'directory to use this version of Python, '
+                                 'assuming Python has been upgraded in-place.')
         parser.add_argument('--without-pip', dest='with_pip',
-                            default=True, action='store_false',
+                            default=defaults.without_pip, action='store_false',
                             help='Skips installing or upgrading pip in the '
                                  'virtual environment (pip is bootstrapped '
                                  'by default)')
-        parser.add_argument('--prompt',
+        parser.add_argument('--prompt', default=defaults.prompt,
                             help='Provides an alternative prompt prefix for '
                                  'this environment.')
-        parser.add_argument('--upgrade-deps', default=False, action='store_true',
+        parser.add_argument('--upgrade-deps', default=defaults.upgrade_deps,
+                            action='store_true',
                             dest='upgrade_deps',
                             help='Upgrade core dependencies: {} to the latest '
                                  'version in PyPI'.format(
