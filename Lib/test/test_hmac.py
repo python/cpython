@@ -312,10 +312,17 @@ class TestVectorsTestCase(unittest.TestCase):
                 self.fail('Expected warning about small block_size')
 
     def test_with_digestmod_no_default(self):
-        with self.assertRaises(ValueError):
+        """The digestmod parameter is required as of Python 3.8."""
+        with self.assertRaises(TypeError):
             key = b"\x0b" * 16
             data = b"Hi There"
             hmac.HMAC(key, data, digestmod=None)
+        with self.assertRaisesRegex(TypeError, r'required.*digestmod'):
+            hmac.new(b"key", b"message")
+        with self.assertRaisesRegex(TypeError, r'required.*digestmod'):
+            hmac.HMAC(b"key", msg=b"msg", digestmod=None)
+        with self.assertRaisesRegex(TypeError, r'required.*digestmod'):
+            hmac.HMAC(b"key", msg=b"msg", digestmod='')
 
 
 class ConstructorTestCase(unittest.TestCase):
