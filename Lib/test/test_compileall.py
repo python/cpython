@@ -46,57 +46,6 @@ class CompileallTestsBase:
     def tearDown(self):
         shutil.rmtree(self.directory)
 
-    def create_long_path(self):
-        long_path = os.path.join(self.directory, "long")
-
-        # Create a long path, 10 directories at a time.
-        # It will be 100 directories deep, or shorter if the OS limits it.
-        for i in range(10):
-            longer_path = os.path.join(
-                long_path, *(f"dir_{i}_{j}" for j in range(10))
-            )
-
-            # Check if we can open __pycache__/*.pyc.
-            # Also, put in the source file that we want to compile
-            longer_source = os.path.join(longer_path, '_test_long.py')
-            longer_cache = importlib.util.cache_from_source(longer_source)
-            try:
-                os.makedirs(longer_path)
-                shutil.copyfile(self.source_path, longer_source)
-                os.makedirs(os.path.dirname(longer_cache))
-                # Make sure we can write to the cache
-                with open(longer_cache, 'w'):
-                    pass
-            except FileNotFoundError:
-                # On Windows, a  FileNotFoundError("The filename or extension
-                # is too long") is raised for long paths
-                if sys.platform == "win32":
-                    break
-                else:
-                    raise
-            except OSError as exc:
-                if exc.errno == errno.ENAMETOOLONG:
-                    break
-                else:
-                    raise
-
-            # Remove the __pycache__
-            shutil.rmtree(os.path.dirname(longer_cache))
-
-            long_path = longer_path
-            long_source = longer_source
-            long_cache = longer_cache
-
-        # On Windows, MAX_PATH is 260 characters, our path with the 20
-        # directories is 160 characters long, leaving something for the
-        # root (self.directory) as well.
-        # Tests assume long_path contains at least 10 directories.
-        if i < 2:
-            raise ValueError(f'"Long path" is too short: {long_path}')
-
-        self.source_path_long = long_source
-        self.bc_path_long = long_cache
-
     def add_bad_source_file(self):
         self.bad_source_path = os.path.join(self.directory, '_test_bad.py')
         with open(self.bad_source_path, 'w') as file:
@@ -247,14 +196,21 @@ class CompileallTestsBase:
         self.assertTrue(compile_file_mock.called)
 
     def test_compile_dir_maxlevels(self):
-        # Test the actual impact of maxlevels attr
-        self.create_long_path()
-        compileall.compile_dir(os.path.join(self.directory, "long"),
-                               maxlevels=10, quiet=True)
-        self.assertFalse(os.path.isfile(self.bc_path_long))
-        compileall.compile_dir(os.path.join(self.directory, "long"),
-                               quiet=True)
-        self.assertTrue(os.path.isfile(self.bc_path_long))
+        # Test the actual impact of maxlevels parameter
+        depth = 3
+        path = self.directory
+        for i in range(1, depth + 1):
+            path = os.path.join(path, f"dir_{i}")
+            source = os.path.join(path, 'script.py')
+            os.mkdir(path)
+            shutil.copyfile(self.source_path, source)
+        pyc_filename = importlib.util.cache_from_source(source)
+
+        compileall.compile_dir(self.directory, quiet=True, maxlevels=depth - 1)
+        self.assertFalse(os.path.isfile(pyc_filename))
+
+        compileall.compile_dir(self.directory, quiet=True, maxlevels=depth)
+        self.assertTrue(os.path.isfile(pyc_filename))
 
     def test_strip_only(self):
         fullpath = ["test", "build", "real", "path"]
