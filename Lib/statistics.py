@@ -828,7 +828,7 @@ def covariance(x, y):
     
     >>> x = list(range(9))
     >>> y = list(range(3)) * 3
-    >>> covariance(x, z)
+    >>> covariance(x, y)
     0.75
     """
     n = len(x)
