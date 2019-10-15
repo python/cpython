@@ -815,6 +815,55 @@ def pstdev(data, mu=None):
         return var.sqrt()
     except AttributeError:
         return math.sqrt(var)
+    
+
+# === Measures of joint variability ===
+
+# See https://en.wikipedia.org/wiki/Covariance
+#     https://en.wikipedia.org/wiki/Pearson_correlation_coefficient
+
+    
+def covariance(x, y):
+    """Covariance
+    
+    >>> x = list(range(9))
+    >>> y = list(range(3)) * 3
+    >>> covariance(x, z)
+    0.75
+    """
+    n = len(x)
+    if len(y) != n:
+        raise StatisticsError('covariance requires that x and y have same number of data points')
+    if n < 1:
+        raise StatisticsError('covariance requires at least one data point')
+    xbar = mean(x)
+    ybar = mean(y)
+    total = fsum((x - xbar) * (y - ybar))
+    return total / n
+
+
+def pearsons_correlation(x, y):
+    """Pearson's correlation coefficient
+    
+    >>> x = list(range(9))
+    >>> y = list(reverded(x))
+    >>> pearsons_correlation(x, x)
+    1
+    >>> pearsons_correlation(x, y)
+    -1
+    >>> z = list(range(3)) * 3
+    >>> pearsons_correlation(x, z)
+    0.31
+    """
+    n = len(x)
+    if len(y) != n:
+        raise StatisticsError('pearsons_correlation requires that x and y have same number of data points')
+    if n < 1:
+        raise StatisticsError('pearsons_correlation requires at least one data point')
+    cov = covariance(x, y)
+    stdx = stdev(x)
+    stdy = stdev(y)
+    return cov / (stdx * stdy)
 
 
 ## Normal Distribution #####################################################
