@@ -846,14 +846,14 @@ def pearsons_correlation(x, y):
     """Pearson's correlation coefficient
     
     >>> x = list(range(9))
-    >>> y = list(reverded(x))
+    >>> y = list(reversed(x))
     >>> pearsons_correlation(x, x)
     1.0
     >>> pearsons_correlation(x, y)
     -1.0
     >>> z = list(range(3)) * 3
-    >>> pearsons_correlation(x, z)
-    0.31
+    >>> pearsons_correlation(x, z)  #doctest: +ELLIPSIS
+    0.31... 
     """
     n = len(x)
     if len(y) != n:
