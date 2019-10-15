@@ -14,7 +14,7 @@
 This module implements the HMAC algorithm as described by :rfc:`2104`.
 
 
-.. function:: new(key, msg=None, digestmod=b'')
+.. function:: new(key, msg=None, digestmod='')
 
    Return a new hmac object.  *key* is a bytes or bytearray object giving the
    secret key.  If *msg* is present, the method call ``update(msg)`` is made.
