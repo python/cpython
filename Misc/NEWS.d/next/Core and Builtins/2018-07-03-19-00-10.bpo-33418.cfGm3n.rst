@@ -1,2 +1,0 @@
-Fix potential memory leak in function object when it creates reference
-cycle.

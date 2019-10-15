@@ -1,13 +1,16 @@
 import contextlib
+import importlib.util
 import io
 import os
-import importlib.util
 import pathlib
 import posixpath
-import time
 import struct
-import zipfile
+import subprocess
+import sys
+import time
 import unittest
+import unittest.mock as mock
+import zipfile
 
 
 from tempfile import TemporaryFile
@@ -402,6 +405,43 @@ class AbstractTestsWithSourceFile:
             self.assertEqual(one_info._compresslevel, 1)
             self.assertEqual(nine_info._compresslevel, 9)
 
+    def test_writing_errors(self):
+        class BrokenFile(io.BytesIO):
+            def write(self, data):
+                nonlocal count
+                if count is not None:
+                    if count == stop:
+                        raise OSError
+                    count += 1
+                super().write(data)
+
+        stop = 0
+        while True:
+            testfile = BrokenFile()
+            count = None
+            with zipfile.ZipFile(testfile, 'w', self.compression) as zipfp:
+                with zipfp.open('file1', 'w') as f:
+                    f.write(b'data1')
+                count = 0
+                try:
+                    with zipfp.open('file2', 'w') as f:
+                        f.write(b'data2')
+                except OSError:
+                    stop += 1
+                else:
+                    break
+                finally:
+                    count = None
+            with zipfile.ZipFile(io.BytesIO(testfile.getvalue())) as zipfp:
+                self.assertEqual(zipfp.namelist(), ['file1'])
+                self.assertEqual(zipfp.read('file1'), b'data1')
+
+        with zipfile.ZipFile(io.BytesIO(testfile.getvalue())) as zipfp:
+            self.assertEqual(zipfp.namelist(), ['file1', 'file2'])
+            self.assertEqual(zipfp.read('file1'), b'data1')
+            self.assertEqual(zipfp.read('file2'), b'data2')
+
+
     def tearDown(self):
         unlink(TESTFN)
         unlink(TESTFN2)
@@ -548,6 +588,26 @@ class StoredTestsWithSourceFile(AbstractTestsWithSourceFile,
         os.utime(TESTFN, (0, 0))
         with zipfile.ZipFile(TESTFN2, "w") as zipfp:
             self.assertRaises(ValueError, zipfp.write, TESTFN)
+
+        with zipfile.ZipFile(TESTFN2, "w", strict_timestamps=False) as zipfp:
+            zipfp.write(TESTFN)
+            zinfo = zipfp.getinfo(TESTFN)
+            self.assertEqual(zinfo.date_time, (1980, 1, 1, 0, 0, 0))
+
+    def test_add_file_after_2107(self):
+        # Set atime and mtime to 2108-12-30
+        try:
+            os.utime(TESTFN, (4386268800, 4386268800))
+        except OverflowError:
+            self.skipTest('Host fs cannot set timestamp to required value.')
+
+        with zipfile.ZipFile(TESTFN2, "w") as zipfp:
+            self.assertRaises(struct.error, zipfp.write, TESTFN)
+
+        with zipfile.ZipFile(TESTFN2, "w", strict_timestamps=False) as zipfp:
+            zipfp.write(TESTFN)
+            zinfo = zipfp.getinfo(TESTFN)
+            self.assertEqual(zinfo.date_time, (2107, 12, 31, 23, 59, 59))
 
 
 @requires_zlib
@@ -749,6 +809,20 @@ class StoredTestZip64InSmallFiles(AbstractTestZip64InSmallFiles,
 
         with zipfile.ZipFile(TESTFN2, "r", zipfile.ZIP_STORED) as zipfp:
             self.assertEqual(zipfp.namelist(), ["absolute"])
+
+    def test_append(self):
+        # Test that appending to the Zip64 archive doesn't change
+        # extra fields of existing entries.
+        with zipfile.ZipFile(TESTFN2, "w", allowZip64=True) as zipfp:
+            zipfp.writestr("strfile", self.data)
+        with zipfile.ZipFile(TESTFN2, "r", allowZip64=True) as zipfp:
+            zinfo = zipfp.getinfo("strfile")
+            extra = zinfo.extra
+        with zipfile.ZipFile(TESTFN2, "a", allowZip64=True) as zipfp:
+            zipfp.writestr("strfile2", self.data)
+        with zipfile.ZipFile(TESTFN2, "r", allowZip64=True) as zipfp:
+            zinfo = zipfp.getinfo("strfile")
+            self.assertEqual(zinfo.extra, extra)
 
 @requires_zlib
 class DeflateTestZip64InSmallFiles(AbstractTestZip64InSmallFiles,
@@ -1584,6 +1658,33 @@ class OtherTests(unittest.TestCase):
         self.assertRaises(ValueError,
                           zipfile.ZipInfo, 'seventies', (1979, 1, 1, 0, 0, 0))
 
+    def test_create_empty_zipinfo_repr(self):
+        """Before bpo-26185, repr() on empty ZipInfo object was failing."""
+        zi = zipfile.ZipInfo(filename="empty")
+        self.assertEqual(repr(zi), "<ZipInfo filename='empty' file_size=0>")
+
+    def test_create_empty_zipinfo_default_attributes(self):
+        """Ensure all required attributes are set."""
+        zi = zipfile.ZipInfo()
+        self.assertEqual(zi.orig_filename, "NoName")
+        self.assertEqual(zi.filename, "NoName")
+        self.assertEqual(zi.date_time, (1980, 1, 1, 0, 0, 0))
+        self.assertEqual(zi.compress_type, zipfile.ZIP_STORED)
+        self.assertEqual(zi.comment, b"")
+        self.assertEqual(zi.extra, b"")
+        self.assertIn(zi.create_system, (0, 3))
+        self.assertEqual(zi.create_version, zipfile.DEFAULT_VERSION)
+        self.assertEqual(zi.extract_version, zipfile.DEFAULT_VERSION)
+        self.assertEqual(zi.reserved, 0)
+        self.assertEqual(zi.flag_bits, 0)
+        self.assertEqual(zi.volume, 0)
+        self.assertEqual(zi.internal_attr, 0)
+        self.assertEqual(zi.external_attr, 0)
+
+        # Before bpo-26185, both were missing
+        self.assertEqual(zi.file_size, 0)
+        self.assertEqual(zi.compress_size, 0)
+
     def test_zipfile_with_short_extra_field(self):
         """If an extra field in the header is less than 4 bytes, skip it."""
         zipdata = (
@@ -1646,6 +1747,8 @@ class OtherTests(unittest.TestCase):
                 self.assertEqual(fp.read(5), txt[bloc:bloc+5])
                 fp.seek(0, os.SEEK_END)
                 self.assertEqual(fp.tell(), len(txt))
+                fp.seek(0, os.SEEK_SET)
+                self.assertEqual(fp.tell(), 0)
         # Check seek on memory file
         data = io.BytesIO()
         with zipfile.ZipFile(data, mode="w") as zipf:
@@ -1661,6 +1764,18 @@ class OtherTests(unittest.TestCase):
                 self.assertEqual(fp.read(5), txt[bloc:bloc+5])
                 fp.seek(0, os.SEEK_END)
                 self.assertEqual(fp.tell(), len(txt))
+                fp.seek(0, os.SEEK_SET)
+                self.assertEqual(fp.tell(), 0)
+
+    @requires_bz2
+    def test_decompress_without_3rd_party_library(self):
+        data = b'PK\x05\x06\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00'
+        zip_file = io.BytesIO(data)
+        with zipfile.ZipFile(zip_file, 'w', compression=zipfile.ZIP_BZIP2) as zf:
+            zf.writestr('a.txt', b'a')
+        with mock.patch('zipfile.bz2', None):
+            with zipfile.ZipFile(zip_file) as zf:
+                self.assertRaises(RuntimeError, zf.extract, 'a.txt')
 
     def tearDown(self):
         unlink(TESTFN)
@@ -2316,6 +2431,194 @@ class CommandLineTest(unittest.TestCase):
                             self.assertTrue(os.path.isfile(path))
                             with open(path, 'rb') as f:
                                 self.assertEqual(f.read(), zf.read(zi))
+
+
+# Poor man's technique to consume a (smallish) iterable.
+consume = tuple
+
+
+def add_dirs(zf):
+    """
+    Given a writable zip file zf, inject directory entries for
+    any directories implied by the presence of children.
+    """
+    for name in zipfile.Path._implied_dirs(zf.namelist()):
+        zf.writestr(name, b"")
+    return zf
+
+
+def build_alpharep_fixture():
+    """
+    Create a zip file with this structure:
+
+    .
+    ├── a.txt
+    ├── b
+    │   ├── c.txt
+    │   ├── d
+    │   │   └── e.txt
+    │   └── f.txt
+    └── g
+        └── h
+            └── i.txt
+
+    This fixture has the following key characteristics:
+
+    - a file at the root (a)
+    - a file two levels deep (b/d/e)
+    - multiple files in a directory (b/c, b/f)
+    - a directory containing only a directory (g/h)
+
+    "alpha" because it uses alphabet
+    "rep" because it's a representative example
+    """
+    data = io.BytesIO()
+    zf = zipfile.ZipFile(data, "w")
+    zf.writestr("a.txt", b"content of a")
+    zf.writestr("b/c.txt", b"content of c")
+    zf.writestr("b/d/e.txt", b"content of e")
+    zf.writestr("b/f.txt", b"content of f")
+    zf.writestr("g/h/i.txt", b"content of i")
+    zf.filename = "alpharep.zip"
+    return zf
+
+
+class TestExecutablePrependedZip(unittest.TestCase):
+    """Test our ability to open zip files with an executable prepended."""
+
+    def setUp(self):
+        self.exe_zip = findfile('exe_with_zip', subdir='ziptestdata')
+        self.exe_zip64 = findfile('exe_with_z64', subdir='ziptestdata')
+
+    def _test_zip_works(self, name):
+        # bpo-28494 sanity check: ensure is_zipfile works on these.
+        self.assertTrue(zipfile.is_zipfile(name),
+                        f'is_zipfile failed on {name}')
+        # Ensure we can operate on these via ZipFile.
+        with zipfile.ZipFile(name) as zipfp:
+            for n in zipfp.namelist():
+                data = zipfp.read(n)
+                self.assertIn(b'FAVORITE_NUMBER', data)
+
+    def test_read_zip_with_exe_prepended(self):
+        self._test_zip_works(self.exe_zip)
+
+    def test_read_zip64_with_exe_prepended(self):
+        self._test_zip_works(self.exe_zip64)
+
+    @unittest.skipUnless(sys.executable, 'sys.executable required.')
+    @unittest.skipUnless(os.access('/bin/bash', os.X_OK),
+                         'Test relies on #!/bin/bash working.')
+    def test_execute_zip2(self):
+        output = subprocess.check_output([self.exe_zip, sys.executable])
+        self.assertIn(b'number in executable: 5', output)
+
+    @unittest.skipUnless(sys.executable, 'sys.executable required.')
+    @unittest.skipUnless(os.access('/bin/bash', os.X_OK),
+                         'Test relies on #!/bin/bash working.')
+    def test_execute_zip64(self):
+        output = subprocess.check_output([self.exe_zip64, sys.executable])
+        self.assertIn(b'number in executable: 5', output)
+
+
+class TestPath(unittest.TestCase):
+    def setUp(self):
+        self.fixtures = contextlib.ExitStack()
+        self.addCleanup(self.fixtures.close)
+
+    def zipfile_alpharep(self):
+        with self.subTest():
+            yield build_alpharep_fixture()
+        with self.subTest():
+            yield add_dirs(build_alpharep_fixture())
+
+    def zipfile_ondisk(self):
+        tmpdir = pathlib.Path(self.fixtures.enter_context(temp_dir()))
+        for alpharep in self.zipfile_alpharep():
+            buffer = alpharep.fp
+            alpharep.close()
+            path = tmpdir / alpharep.filename
+            with path.open("wb") as strm:
+                strm.write(buffer.getvalue())
+            yield path
+
+    def test_iterdir_and_types(self):
+        for alpharep in self.zipfile_alpharep():
+            root = zipfile.Path(alpharep)
+            assert root.is_dir()
+            a, b, g = root.iterdir()
+            assert a.is_file()
+            assert b.is_dir()
+            assert g.is_dir()
+            c, f, d = b.iterdir()
+            assert c.is_file() and f.is_file()
+            e, = d.iterdir()
+            assert e.is_file()
+            h, = g.iterdir()
+            i, = h.iterdir()
+            assert i.is_file()
+
+    def test_open(self):
+        for alpharep in self.zipfile_alpharep():
+            root = zipfile.Path(alpharep)
+            a, b, g = root.iterdir()
+            with a.open() as strm:
+                data = strm.read()
+            assert data == b"content of a"
+
+    def test_read(self):
+        for alpharep in self.zipfile_alpharep():
+            root = zipfile.Path(alpharep)
+            a, b, g = root.iterdir()
+            assert a.read_text() == "content of a"
+            assert a.read_bytes() == b"content of a"
+
+    def test_joinpath(self):
+        for alpharep in self.zipfile_alpharep():
+            root = zipfile.Path(alpharep)
+            a = root.joinpath("a")
+            assert a.is_file()
+            e = root.joinpath("b").joinpath("d").joinpath("e.txt")
+            assert e.read_text() == "content of e"
+
+    def test_traverse_truediv(self):
+        for alpharep in self.zipfile_alpharep():
+            root = zipfile.Path(alpharep)
+            a = root / "a"
+            assert a.is_file()
+            e = root / "b" / "d" / "e.txt"
+            assert e.read_text() == "content of e"
+
+    def test_pathlike_construction(self):
+        """
+        zipfile.Path should be constructable from a path-like object
+        """
+        for zipfile_ondisk in self.zipfile_ondisk():
+            pathlike = pathlib.Path(str(zipfile_ondisk))
+            zipfile.Path(pathlike)
+
+    def test_traverse_pathlike(self):
+        for alpharep in self.zipfile_alpharep():
+            root = zipfile.Path(alpharep)
+            root / pathlib.Path("a")
+
+    def test_parent(self):
+        for alpharep in self.zipfile_alpharep():
+            root = zipfile.Path(alpharep)
+            assert (root / 'a').parent.at == ''
+            assert (root / 'a' / 'b').parent.at == 'a/'
+
+    def test_dir_parent(self):
+        for alpharep in self.zipfile_alpharep():
+            root = zipfile.Path(alpharep)
+            assert (root / 'b').parent.at == ''
+            assert (root / 'b/').parent.at == ''
+
+    def test_missing_dir_parent(self):
+        for alpharep in self.zipfile_alpharep():
+            root = zipfile.Path(alpharep)
+            assert (root / 'missing dir/').parent.at == ''
+
 
 if __name__ == "__main__":
     unittest.main()

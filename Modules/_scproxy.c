@@ -62,7 +62,10 @@ get_proxy_settings(PyObject* Py_UNUSED(mod), PyObject *Py_UNUSED(ignored))
     PyObject* v;
     int r;
 
+    Py_BEGIN_ALLOW_THREADS
     proxyDict = SCDynamicStoreCopyProxies(NULL);
+    Py_END_ALLOW_THREADS
+
     if (!proxyDict) {
         Py_RETURN_NONE;
     }
@@ -172,7 +175,10 @@ get_proxies(PyObject* Py_UNUSED(mod), PyObject *Py_UNUSED(ignored))
     int r;
     CFDictionaryRef proxyDict = NULL;
 
+    Py_BEGIN_ALLOW_THREADS
     proxyDict = SCDynamicStoreCopyProxies(NULL);
+    Py_END_ALLOW_THREADS
+
     if (proxyDict == NULL) {
         return PyDict_New();
     }

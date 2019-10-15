@@ -2115,3 +2115,23 @@ Alternatively, inputs can be rounded upon creation using the
 
    >>> Context(prec=5, rounding=ROUND_DOWN).create_decimal('1.2345678')
    Decimal('1.2345')
+
+Q. Is the CPython implementation fast for large numbers?
+
+A. Yes.  In the CPython and PyPy3 implementations, the C/CFFI versions of
+the decimal module integrate the high speed `libmpdec
+<https://www.bytereef.org/mpdecimal/doc/libmpdec/index.html>`_ library for
+arbitrary precision correctly-rounded decimal floating point arithmetic.
+``libmpdec`` uses `Karatsuba multiplication
+<https://en.wikipedia.org/wiki/Karatsuba_algorithm>`_
+for medium-sized numbers and the `Number Theoretic Transform
+<https://en.wikipedia.org/wiki/Discrete_Fourier_transform_(general)#Number-theoretic_transform>`_
+for very large numbers.  However, to realize this performance gain, the
+context needs to be set for unrounded calculations.
+
+    >>> c = getcontext()
+    >>> c.prec = MAX_PREC
+    >>> c.Emax = MAX_EMAX
+    >>> c.Emin = MIN_EMIN
+
+.. versionadded:: 3.3

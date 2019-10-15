@@ -1,15 +1,19 @@
-import unittest.mock
+import unittest
 from test import support
 import builtins
 import contextlib
+import copy
 import io
 import os
+import pickle
 import shutil
 import subprocess
+import sys
+import weakref
+from unittest import mock
 
 py_uuid = support.import_fresh_module('uuid', blocked=['_uuid'])
 c_uuid = support.import_fresh_module('uuid', fresh=['_uuid'])
-
 
 def importable(name):
     try:
@@ -311,6 +315,140 @@ class BaseTestUUID:
         node2 = self.uuid.getnode()
         self.assertEqual(node1, node2, '%012x != %012x' % (node1, node2))
 
+    def test_pickle_roundtrip(self):
+        def check(actual, expected):
+            self.assertEqual(actual, expected)
+            self.assertEqual(actual.is_safe, expected.is_safe)
+
+        with support.swap_item(sys.modules, 'uuid', self.uuid):
+            for is_safe in self.uuid.SafeUUID:
+                u = self.uuid.UUID('d82579ce6642a0de7ddf490a7aec7aa5',
+                                   is_safe=is_safe)
+                check(copy.copy(u), u)
+                check(copy.deepcopy(u), u)
+                for proto in range(pickle.HIGHEST_PROTOCOL + 1):
+                    with self.subTest(protocol=proto):
+                        check(pickle.loads(pickle.dumps(u, proto)), u)
+
+    def test_unpickle_previous_python_versions(self):
+        def check(actual, expected):
+            self.assertEqual(actual, expected)
+            self.assertEqual(actual.is_safe, expected.is_safe)
+
+        pickled_uuids = [
+            # Python 2.7, protocol 0
+            b'ccopy_reg\n_reconstructor\n(cuuid\nUUID\nc__builtin__\nobject\nN'
+            b'tR(dS\'int\'\nL287307832597519156748809049798316161701L\nsb.',
+            # Python 2.7, protocol 1
+            b'ccopy_reg\n_reconstructor\n(cuuid\nUUID\nc__builtin__\nobject\nN'
+            b'tR}U\x03intL287307832597519156748809049798316161701L\nsb.',
+            # Python 2.7, protocol 2
+            b'\x80\x02cuuid\nUUID\n)\x81}U\x03int\x8a\x11\xa5z\xecz\nI\xdf}'
+            b'\xde\xa0Bf\xcey%\xd8\x00sb.',
+            # Python 3.6, protocol 0
+            b'ccopy_reg\n_reconstructor\n(cuuid\nUUID\nc__builtin__\nobject\nN'
+            b'tR(dVint\nL287307832597519156748809049798316161701L\nsb.',
+            # Python 3.6, protocol 1
+            b'ccopy_reg\n_reconstructor\n(cuuid\nUUID\nc__builtin__\nobject\nN'
+            b'tR}X\x03\x00\x00\x00intL287307832597519156748809049798316161701L'
+            b'\nsb.',
+            # Python 3.6, protocol 2
+            b'\x80\x02cuuid\nUUID\n)\x81}X\x03\x00\x00\x00int\x8a\x11\xa5z\xec'
+            b'z\nI\xdf}\xde\xa0Bf\xcey%\xd8\x00sb.',
+            # Python 3.6, protocol 3
+            b'\x80\x03cuuid\nUUID\n)\x81}X\x03\x00\x00\x00int\x8a\x11\xa5z\xec'
+            b'z\nI\xdf}\xde\xa0Bf\xcey%\xd8\x00sb.',
+            # Python 3.6, protocol 4
+            b'\x80\x04\x95+\x00\x00\x00\x00\x00\x00\x00\x8c\x04uuid\x8c\x04UUI'
+            b'D\x93)\x81}\x8c\x03int\x8a\x11\xa5z\xecz\nI\xdf}\xde\xa0Bf\xcey%'
+            b'\xd8\x00sb.',
+            # Python 3.7, protocol 0
+            b'ccopy_reg\n_reconstructor\n(cuuid\nUUID\nc__builtin__\nobject\nN'
+            b'tR(dVint\nL287307832597519156748809049798316161701L\nsVis_safe\n'
+            b'cuuid\nSafeUUID\n(NtRsb.',
+            # Python 3.7, protocol 1
+            b'ccopy_reg\n_reconstructor\n(cuuid\nUUID\nc__builtin__\nobject\nN'
+            b'tR}(X\x03\x00\x00\x00intL287307832597519156748809049798316161701'
+            b'L\nX\x07\x00\x00\x00is_safecuuid\nSafeUUID\n(NtRub.',
+            # Python 3.7, protocol 2
+            b'\x80\x02cuuid\nUUID\n)\x81}(X\x03\x00\x00\x00int\x8a\x11\xa5z'
+            b'\xecz\nI\xdf}\xde\xa0Bf\xcey%\xd8\x00X\x07\x00\x00\x00is_safecuu'
+            b'id\nSafeUUID\nN\x85Rub.',
+            # Python 3.7, protocol 3
+            b'\x80\x03cuuid\nUUID\n)\x81}(X\x03\x00\x00\x00int\x8a\x11\xa5z'
+            b'\xecz\nI\xdf}\xde\xa0Bf\xcey%\xd8\x00X\x07\x00\x00\x00is_safecuu'
+            b'id\nSafeUUID\nN\x85Rub.',
+            # Python 3.7, protocol 4
+            b'\x80\x04\x95F\x00\x00\x00\x00\x00\x00\x00\x8c\x04uuid\x94\x8c'
+            b'\x04UUID\x93)\x81}(\x8c\x03int\x8a\x11\xa5z\xecz\nI\xdf}\xde\xa0'
+            b'Bf\xcey%\xd8\x00\x8c\x07is_safeh\x00\x8c\x08SafeUUID\x93N\x85Rub'
+            b'.',
+        ]
+        pickled_uuids_safe = [
+            # Python 3.7, protocol 0
+            b'ccopy_reg\n_reconstructor\n(cuuid\nUUID\nc__builtin__\nobject\nN'
+            b'tR(dVint\nL287307832597519156748809049798316161701L\nsVis_safe\n'
+            b'cuuid\nSafeUUID\n(I0\ntRsb.',
+            # Python 3.7, protocol 1
+            b'ccopy_reg\n_reconstructor\n(cuuid\nUUID\nc__builtin__\nobject\nN'
+            b'tR}(X\x03\x00\x00\x00intL287307832597519156748809049798316161701'
+            b'L\nX\x07\x00\x00\x00is_safecuuid\nSafeUUID\n(K\x00tRub.',
+            # Python 3.7, protocol 2
+            b'\x80\x02cuuid\nUUID\n)\x81}(X\x03\x00\x00\x00int\x8a\x11\xa5z'
+            b'\xecz\nI\xdf}\xde\xa0Bf\xcey%\xd8\x00X\x07\x00\x00\x00is_safecuu'
+            b'id\nSafeUUID\nK\x00\x85Rub.',
+            # Python 3.7, protocol 3
+            b'\x80\x03cuuid\nUUID\n)\x81}(X\x03\x00\x00\x00int\x8a\x11\xa5z'
+            b'\xecz\nI\xdf}\xde\xa0Bf\xcey%\xd8\x00X\x07\x00\x00\x00is_safecuu'
+            b'id\nSafeUUID\nK\x00\x85Rub.',
+            # Python 3.7, protocol 4
+            b'\x80\x04\x95G\x00\x00\x00\x00\x00\x00\x00\x8c\x04uuid\x94\x8c'
+            b'\x04UUID\x93)\x81}(\x8c\x03int\x8a\x11\xa5z\xecz\nI\xdf}\xde\xa0'
+            b'Bf\xcey%\xd8\x00\x8c\x07is_safeh\x00\x8c\x08SafeUUID\x93K\x00'
+            b'\x85Rub.',
+        ]
+        pickled_uuids_unsafe = [
+            # Python 3.7, protocol 0
+            b'ccopy_reg\n_reconstructor\n(cuuid\nUUID\nc__builtin__\nobject\nN'
+            b'tR(dVint\nL287307832597519156748809049798316161701L\nsVis_safe\n'
+            b'cuuid\nSafeUUID\n(I-1\ntRsb.',
+            # Python 3.7, protocol 1
+            b'ccopy_reg\n_reconstructor\n(cuuid\nUUID\nc__builtin__\nobject\nN'
+            b'tR}(X\x03\x00\x00\x00intL287307832597519156748809049798316161701'
+            b'L\nX\x07\x00\x00\x00is_safecuuid\nSafeUUID\n(J\xff\xff\xff\xfftR'
+            b'ub.',
+            # Python 3.7, protocol 2
+            b'\x80\x02cuuid\nUUID\n)\x81}(X\x03\x00\x00\x00int\x8a\x11\xa5z'
+            b'\xecz\nI\xdf}\xde\xa0Bf\xcey%\xd8\x00X\x07\x00\x00\x00is_safecuu'
+            b'id\nSafeUUID\nJ\xff\xff\xff\xff\x85Rub.',
+            # Python 3.7, protocol 3
+            b'\x80\x03cuuid\nUUID\n)\x81}(X\x03\x00\x00\x00int\x8a\x11\xa5z'
+            b'\xecz\nI\xdf}\xde\xa0Bf\xcey%\xd8\x00X\x07\x00\x00\x00is_safecuu'
+            b'id\nSafeUUID\nJ\xff\xff\xff\xff\x85Rub.',
+            # Python 3.7, protocol 4
+            b'\x80\x04\x95J\x00\x00\x00\x00\x00\x00\x00\x8c\x04uuid\x94\x8c'
+            b'\x04UUID\x93)\x81}(\x8c\x03int\x8a\x11\xa5z\xecz\nI\xdf}\xde\xa0'
+            b'Bf\xcey%\xd8\x00\x8c\x07is_safeh\x00\x8c\x08SafeUUID\x93J\xff'
+            b'\xff\xff\xff\x85Rub.',
+        ]
+
+        u = self.uuid.UUID('d82579ce6642a0de7ddf490a7aec7aa5')
+        u_safe = self.uuid.UUID('d82579ce6642a0de7ddf490a7aec7aa5',
+                                is_safe=self.uuid.SafeUUID.safe)
+        u_unsafe = self.uuid.UUID('d82579ce6642a0de7ddf490a7aec7aa5',
+                                  is_safe=self.uuid.SafeUUID.unsafe)
+
+        with support.swap_item(sys.modules, 'uuid', self.uuid):
+            for pickled in pickled_uuids:
+                # is_safe was added in 3.7.  When unpickling values from older
+                # versions, is_safe will be missing, so it should be set to
+                # SafeUUID.unknown.
+                check(pickle.loads(pickled), u)
+            for pickled in pickled_uuids_safe:
+                check(pickle.loads(pickled), u_safe)
+            for pickled in pickled_uuids_unsafe:
+                check(pickle.loads(pickled), u_unsafe)
+
     # bpo-32502: UUID1 requires a 48-bit identifier, but hardware identifiers
     # need not necessarily be 48 bits (e.g., EUI-64).
     def test_uuid1_eui64(self):
@@ -320,11 +458,10 @@ class BaseTestUUID:
         # uuid.getnode to fall back on uuid._random_getnode, which will
         # generate a valid value.
         too_large_getter = lambda: 1 << 48
-        with unittest.mock.patch.multiple(
+        with mock.patch.multiple(
             self.uuid,
             _node=None,  # Ignore any cached node value.
-            _NODE_GETTERS_WIN32=[too_large_getter],
-            _NODE_GETTERS_UNIX=[too_large_getter],
+            _GETTERS=[too_large_getter],
         ):
             node = self.uuid.getnode()
         self.assertTrue(0 < node < (1 << 48), '%012x' % node)
@@ -400,8 +537,8 @@ class BaseTestUUID:
         f = self.uuid._generate_time_safe
         if f is None:
             self.skipTest('need uuid._generate_time_safe')
-        with unittest.mock.patch.object(self.uuid, '_generate_time_safe',
-                                        lambda: (f()[0], safe_value)):
+        with mock.patch.object(self.uuid, '_generate_time_safe',
+                               lambda: (f()[0], safe_value)):
             yield
 
     @unittest.skipUnless(os.name == 'posix', 'POSIX-only test')
@@ -429,6 +566,23 @@ class BaseTestUUID:
         with self.mock_generate_time_safe(3):
             u = self.uuid.uuid1()
             self.assertEqual(u.is_safe, self.uuid.SafeUUID.unknown)
+
+    def test_uuid1_time(self):
+        with mock.patch.object(self.uuid, '_has_uuid_generate_time_safe', False), \
+             mock.patch.object(self.uuid, '_generate_time_safe', None), \
+             mock.patch.object(self.uuid, '_last_timestamp', None), \
+             mock.patch.object(self.uuid, 'getnode', return_value=93328246233727), \
+             mock.patch('time.time_ns', return_value=1545052026752910643), \
+             mock.patch('random.getrandbits', return_value=5317): # guaranteed to be random
+            u = self.uuid.uuid1()
+            self.assertEqual(u, self.uuid.UUID('a7a55b92-01fc-11e9-94c5-54e1acf6da7f'))
+
+        with mock.patch.object(self.uuid, '_has_uuid_generate_time_safe', False), \
+             mock.patch.object(self.uuid, '_generate_time_safe', None), \
+             mock.patch.object(self.uuid, '_last_timestamp', None), \
+             mock.patch('time.time_ns', return_value=1545052026752910643):
+            u = self.uuid.uuid1(node=93328246233727, clock_seq=5317)
+            self.assertEqual(u, self.uuid.UUID('a7a55b92-01fc-11e9-94c5-54e1acf6da7f'))
 
     def test_uuid3(self):
         equal = self.assertEqual
@@ -502,6 +656,11 @@ class BaseTestUUID:
 
             self.assertNotEqual(parent_value, child_value)
 
+    def test_uuid_weakref(self):
+        # bpo-35701: check that weak referencing to a UUID object can be created
+        strong = self.uuid.uuid4()
+        weak = weakref.ref(strong)
+        self.assertIs(strong, weak())
 
 class TestUUIDWithoutExtModule(BaseTestUUID, unittest.TestCase):
     uuid = py_uuid
@@ -512,29 +671,59 @@ class TestUUIDWithExtModule(BaseTestUUID, unittest.TestCase):
 
 
 class BaseTestInternals:
-    uuid = None
+    _uuid = py_uuid
 
-    @unittest.skipUnless(os.name == 'posix', 'requires Posix')
-    def test_find_mac(self):
+
+    def test_find_under_heading(self):
+        data = '''\
+Name  Mtu   Network     Address           Ipkts Ierrs    Opkts Oerrs  Coll
+en0   1500  link#2      fe.ad.c.1.23.4   1714807956     0 711348489     0     0
+                        01:00:5e:00:00:01
+en0   1500  192.168.129 x071             1714807956     0 711348489     0     0
+                        224.0.0.1
+en0   1500  192.168.90  x071             1714807956     0 711348489     0     0
+                        224.0.0.1
+'''
+
+        def mock_get_command_stdout(command, args):
+            return io.BytesIO(data.encode())
+
+        # The above data is from AIX - with '.' as _MAC_DELIM and strings
+        # shorter than 17 bytes (no leading 0). (_MAC_OMITS_LEADING_ZEROES=True)
+        with mock.patch.multiple(self.uuid,
+                                 _MAC_DELIM=b'.',
+                                 _MAC_OMITS_LEADING_ZEROES=True,
+                                 _get_command_stdout=mock_get_command_stdout):
+            mac = self.uuid._find_mac_under_heading(
+                command='netstat',
+                args='-ian',
+                heading=b'Address',
+            )
+
+        self.assertEqual(mac, 0xfead0c012304)
+
+    def test_find_mac_near_keyword(self):
+        # key and value are on the same line
         data = '''
-fake hwaddr
+fake      Link encap:UNSPEC  hwaddr 00-00
 cscotun0  Link encap:UNSPEC  HWaddr 00-00-00-00-00-00-00-00-00-00-00-00-00-00-00-00
 eth0      Link encap:Ethernet  HWaddr 12:34:56:78:90:ab
 '''
 
-        popen = unittest.mock.MagicMock()
-        popen.stdout = io.BytesIO(data.encode())
+        def mock_get_command_stdout(command, args):
+            return io.BytesIO(data.encode())
 
-        with unittest.mock.patch.object(shutil, 'which',
-                                        return_value='/sbin/ifconfig'):
-            with unittest.mock.patch.object(subprocess, 'Popen',
-                                            return_value=popen):
-                mac = self.uuid._find_mac(
-                    command='ifconfig',
-                    args='',
-                    hw_identifiers=[b'hwaddr'],
-                    get_index=lambda x: x + 1,
-                )
+        # The above data will only be parsed properly on non-AIX unixes.
+        with mock.patch.multiple(self.uuid,
+                                 _MAC_DELIM=b':',
+                                 _MAC_OMITS_LEADING_ZEROES=False,
+                                 _get_command_stdout=mock_get_command_stdout):
+            mac = self.uuid._find_mac_near_keyword(
+                command='ifconfig',
+                args='',
+                keywords=[b'hwaddr'],
+                get_word_index=lambda x: x + 1,
+            )
 
         self.assertEqual(mac, 0x1234567890ab)
 
@@ -547,27 +736,32 @@ eth0      Link encap:Ethernet  HWaddr 12:34:56:78:90:ab
         self.assertTrue(0 < node < (1 << 48),
                         "%s is not an RFC 4122 node ID" % hex)
 
-    @unittest.skipUnless(os.name == 'posix', 'requires Posix')
+    @unittest.skipUnless(_uuid._ifconfig_getnode in _uuid._GETTERS,
+        "ifconfig is not used for introspection on this platform")
     def test_ifconfig_getnode(self):
         node = self.uuid._ifconfig_getnode()
         self.check_node(node, 'ifconfig')
 
-    @unittest.skipUnless(os.name == 'posix', 'requires Posix')
+    @unittest.skipUnless(_uuid._ip_getnode in _uuid._GETTERS,
+        "ip is not used for introspection on this platform")
     def test_ip_getnode(self):
         node = self.uuid._ip_getnode()
         self.check_node(node, 'ip')
 
-    @unittest.skipUnless(os.name == 'posix', 'requires Posix')
+    @unittest.skipUnless(_uuid._arp_getnode in _uuid._GETTERS,
+        "arp is not used for introspection on this platform")
     def test_arp_getnode(self):
         node = self.uuid._arp_getnode()
         self.check_node(node, 'arp')
 
-    @unittest.skipUnless(os.name == 'posix', 'requires Posix')
+    @unittest.skipUnless(_uuid._lanscan_getnode in _uuid._GETTERS,
+        "lanscan is not used for introspection on this platform")
     def test_lanscan_getnode(self):
         node = self.uuid._lanscan_getnode()
         self.check_node(node, 'lanscan')
 
-    @unittest.skipUnless(os.name == 'posix', 'requires Posix')
+    @unittest.skipUnless(_uuid._netstat_getnode in _uuid._GETTERS,
+        "netstat is not used for introspection on this platform")
     def test_netstat_getnode(self):
         node = self.uuid._netstat_getnode()
         self.check_node(node, 'netstat')

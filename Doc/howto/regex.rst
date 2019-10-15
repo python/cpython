@@ -96,8 +96,9 @@ special nature.
 
 You can match the characters not listed within the class by :dfn:`complementing`
 the set.  This is indicated by including a ``'^'`` as the first character of the
-class; ``'^'`` outside a character class will simply match the ``'^'``
-character.  For example, ``[^5]`` will match any character except ``'5'``.
+class. For example, ``[^5]`` will match any character except ``'5'``.  If the
+caret appears elsewhere in a character class, it does not have special meaning.
+For example: ``[5^]`` will match either a ``'5'`` or a ``'^'``.
 
 Perhaps the most important metacharacter is the backslash, ``\``.   As in Python
 string literals, the backslash can be followed by various characters to signal
@@ -940,6 +941,13 @@ given numbers, so you can retrieve information about a group in two ways::
    'Lots'
    >>> m.group(1)
    'Lots'
+
+Additionally, you can retrieve named groups as a dictionary with
+:meth:`~re.Match.groupdict`::
+
+   >>> m = re.match(r'(?P<first>\w+) (?P<last>\w+)', 'Jane Doe')
+   >>> m.groupdict()
+   {'first': 'Jane', 'last': 'Doe'}
 
 Named groups are handy because they let you use easily-remembered names, instead
 of having to remember numbers.  Here's an example RE from the :mod:`imaplib`

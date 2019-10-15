@@ -11,6 +11,7 @@ import unittest
 import inspect
 
 from test.support import captured_stderr, disable_gc, gc_collect
+from test import support
 
 class TestPEP380Operation(unittest.TestCase):
     """
@@ -562,11 +563,12 @@ class TestPEP380Operation(unittest.TestCase):
             self.assertEqual(next(gi), 1)
             gi.throw(AttributeError)
 
-        with captured_stderr() as output:
+        with support.catch_unraisable_exception() as cm:
             gi = g()
             self.assertEqual(next(gi), 1)
             gi.close()
-        self.assertIn('ZeroDivisionError', output.getvalue())
+
+            self.assertEqual(ZeroDivisionError, cm.unraisable.exc_type)
 
     def test_exception_in_initial_next_call(self):
         """

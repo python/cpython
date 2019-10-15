@@ -576,7 +576,7 @@ Here is a simple example of a POINT structure, which contains two integers named
    >>> POINT(1, 2, 3)
    Traceback (most recent call last):
      File "<stdin>", line 1, in <module>
-   ValueError: too many initializers
+   TypeError: too many initializers
    >>>
 
 You can, however, build much more complicated structures.  A structure can
@@ -1025,6 +1025,22 @@ As we can easily check, our array is sorted now::
    1 5 7 33 99
    >>>
 
+The function factories can be used as decorator factories, so we may as well
+write::
+
+   >>> @CFUNCTYPE(c_int, POINTER(c_int), POINTER(c_int))
+   ... def py_cmp_func(a, b):
+   ...     print("py_cmp_func", a[0], b[0])
+   ...     return a[0] - b[0]
+   ...
+   >>> qsort(ia, len(ia), sizeof(c_int), py_cmp_func)
+   py_cmp_func 5 1
+   py_cmp_func 33 99
+   py_cmp_func 7 33
+   py_cmp_func 1 7
+   py_cmp_func 5 7
+   >>>
+
 .. note::
 
    Make sure you keep references to :func:`CFUNCTYPE` objects as long as they
@@ -1159,15 +1175,20 @@ Keep in mind that retrieving sub-objects from Structure, Unions, and Arrays
 doesn't *copy* the sub-object, instead it retrieves a wrapper object accessing
 the root-object's underlying buffer.
 
-Another example that may behave different from what one would expect is this::
+Another example that may behave differently from what one would expect is this::
 
    >>> s = c_char_p()
-   >>> s.value = "abc def ghi"
+   >>> s.value = b"abc def ghi"
    >>> s.value
-   'abc def ghi'
+   b'abc def ghi'
    >>> s.value is s.value
    False
    >>>
+
+.. note::
+
+   Objects instantiated from :class:`c_char_p` can only have their value set to bytes
+   or integers.
 
 Why is it printing ``False``?  ctypes instances are objects containing a memory
 block plus some :term:`descriptor`\s accessing the contents of the memory.
@@ -1306,14 +1327,14 @@ There are several ways to load shared libraries into the Python process.  One
 way is to instantiate one of the following classes:
 
 
-.. class:: CDLL(name, mode=DEFAULT_MODE, handle=None, use_errno=False, use_last_error=False)
+.. class:: CDLL(name, mode=DEFAULT_MODE, handle=None, use_errno=False, use_last_error=False, winmode=0)
 
    Instances of this class represent loaded shared libraries. Functions in these
    libraries use the standard C calling convention, and are assumed to return
    :c:type:`int`.
 
 
-.. class:: OleDLL(name, mode=DEFAULT_MODE, handle=None, use_errno=False, use_last_error=False)
+.. class:: OleDLL(name, mode=DEFAULT_MODE, handle=None, use_errno=False, use_last_error=False, winmode=0)
 
    Windows only: Instances of this class represent loaded shared libraries,
    functions in these libraries use the ``stdcall`` calling convention, and are
@@ -1326,7 +1347,7 @@ way is to instantiate one of the following classes:
       :exc:`WindowsError` used to be raised.
 
 
-.. class:: WinDLL(name, mode=DEFAULT_MODE, handle=None, use_errno=False, use_last_error=False)
+.. class:: WinDLL(name, mode=DEFAULT_MODE, handle=None, use_errno=False, use_last_error=False, winmode=0)
 
    Windows only: Instances of this class represent loaded shared libraries,
    functions in these libraries use the ``stdcall`` calling convention, and are
@@ -1377,6 +1398,17 @@ the Windows error code which is managed by the :func:`GetLastError` and
 :func:`SetLastError` Windows API functions; :func:`ctypes.get_last_error` and
 :func:`ctypes.set_last_error` are used to request and change the ctypes private
 copy of the windows error code.
+
+The *winmode* parameter is used on Windows to specify how the library is loaded
+(since *mode* is ignored). It takes any value that is valid for the Win32 API
+``LoadLibraryEx`` flags parameter. When omitted, the default is to use the flags
+that result in the most secure DLL load to avoiding issues such as DLL
+hijacking. Passing the full path to the DLL is the safest way to ensure the
+correct library and dependencies are loaded.
+
+.. versionchanged:: 3.8
+   Added *winmode* parameter.
+
 
 .. data:: RTLD_GLOBAL
    :noindex:
@@ -1482,6 +1514,17 @@ object is available:
    :c:type:`int`, which is of course not always the truth, so you have to assign
    the correct :attr:`restype` attribute to use these functions.
 
+.. audit-event:: ctypes.dlopen name ctypes.LibraryLoader
+
+   Loading a library through any of these objects raises an
+   :ref:`auditing event <auditing>` ``ctypes.dlopen`` with string argument
+   ``name``, the name used to load the library.
+
+.. audit-event:: ctypes.dlsym library,name ctypes.LibraryLoader
+
+   Accessing a function on a loaded library raises an auditing event
+   ``ctypes.dlsym`` with arguments ``library`` (the library object) and ``name``
+   (the symbol's name as a string or integer).
 
 .. _ctypes-foreign-functions:
 
@@ -1577,7 +1620,9 @@ Foreign functions can also be created by instantiating function prototypes.
 Function prototypes are similar to function prototypes in C; they describe a
 function (return type, argument types, calling convention) without defining an
 implementation.  The factory functions must be called with the desired result
-type and the argument types of the function.
+type and the argument types of the function, and can be used as decorator
+factories, and as such, be applied to functions through the ``@wrapper`` syntax.
+See :ref:`ctypes-callback-functions` for examples.
 
 
 .. function:: CFUNCTYPE(restype, *argtypes, use_errno=False, use_last_error=False)
@@ -2003,6 +2048,12 @@ Data types
       This method returns a ctypes type instance using the memory specified by
       *address* which must be an integer.
 
+      .. audit-event:: ctypes.cdata address ctypes._CData.from_address
+
+         This method, and others that indirectly call this method, raises an
+         :ref:`auditing event <auditing>` ``ctypes.cdata`` with argument
+         ``address``.
+
    .. method:: from_param(obj)
 
       This method adapts *obj* to a ctypes type.  It is called with the actual
@@ -2347,7 +2398,7 @@ other data types containing pointer type fields.
       and so on).  Later assignments to the :attr:`_fields_` class variable will
       raise an AttributeError.
 
-      It is possible to defined sub-subclasses of structure types, they inherit
+      It is possible to define sub-subclasses of structure types, they inherit
       the fields of the base class plus the :attr:`_fields_` defined in the
       sub-subclass, if any.
 
@@ -2395,7 +2446,7 @@ other data types containing pointer type fields.
          td.lptdesc = POINTER(some_type)
          td.u.lptdesc = POINTER(some_type)
 
-   It is possible to defined sub-subclasses of structures, they inherit the
+   It is possible to define sub-subclasses of structures, they inherit the
    fields of the base class.  If the subclass definition has a separate
    :attr:`_fields_` variable, the fields specified in this are appended to the
    fields of the base class.

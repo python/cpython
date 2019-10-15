@@ -2,7 +2,7 @@
 ====================================
 
 .. module:: abc
-   :synopsis: Abstract base classes according to PEP 3119.
+   :synopsis: Abstract base classes according to :pep:`3119`.
 
 .. moduleauthor:: Guido van Rossum
 .. sectionauthor:: Georg Brandl
@@ -18,10 +18,10 @@ see the PEP for why this was added to Python. (See also :pep:`3141` and the
 :mod:`numbers` module regarding a type hierarchy for numbers based on ABCs.)
 
 The :mod:`collections` module has some concrete classes that derive from
-ABCs; these can, of course, be further derived. In addition the
+ABCs; these can, of course, be further derived. In addition, the
 :mod:`collections.abc` submodule has some ABCs that can be used to test whether
-a class or instance provides a particular interface, for example, is it
-hashable or a mapping.
+a class or instance provides a particular interface, for example, if it is
+hashable or if it is a mapping.
 
 
 This module provides the metaclass :class:`ABCMeta` for defining ABCs and
@@ -217,7 +217,7 @@ The :mod:`abc` module also provides the following decorator:
    the descriptor must identify itself as abstract using
    :attr:`__isabstractmethod__`. In general, this attribute should be ``True``
    if any of the methods used to compose the descriptor are abstract. For
-   example, Python's built-in property does the equivalent of::
+   example, Python's built-in :class:`property` does the equivalent of::
 
       class Descriptor:
           ...

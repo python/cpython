@@ -11,8 +11,11 @@ import faulthandler
 import fnmatch
 import functools
 import gc
+import glob
+import hashlib
 import importlib
 import importlib.util
+import locale
 import logging.handlers
 import nntplib
 import os
@@ -33,6 +36,8 @@ import types
 import unittest
 import urllib.error
 import warnings
+
+from .testresult import get_test_runner
 
 try:
     import multiprocessing.process
@@ -64,11 +69,16 @@ try:
 except ImportError:
     resource = None
 
+try:
+    import _hashlib
+except ImportError:
+    _hashlib = None
+
 __all__ = [
     # globals
     "PIPE_MAX_SIZE", "verbose", "max_memuse", "use_resources", "failfast",
     # exceptions
-    "Error", "TestFailed", "ResourceDenied",
+    "Error", "TestFailed", "TestDidNotRun", "ResourceDenied",
     # imports
     "import_module", "import_fresh_module", "CleanImport",
     # modules
@@ -81,14 +91,16 @@ __all__ = [
     "create_empty_file", "can_symlink", "fs_is_case_insensitive",
     # unittest
     "is_resource_enabled", "requires", "requires_freebsd_version",
-    "requires_linux_version", "requires_mac_ver", "check_syntax_error",
+    "requires_linux_version", "requires_mac_ver", "requires_hashdigest",
+    "check_syntax_error", "check_syntax_warning",
     "TransientResource", "time_out", "socket_peer_reset", "ioerror_peer_reset",
     "transient_internet", "BasicTestRunner", "run_unittest", "run_doctest",
     "skip_unless_symlink", "requires_gzip", "requires_bz2", "requires_lzma",
     "bigmemtest", "bigaddrspacetest", "cpython_only", "get_attribute",
     "requires_IEEE_754", "skip_unless_xattr", "requires_zlib",
     "anticipate_failure", "load_package_tests", "detect_api_mismatch",
-    "check__all__", "skip_unless_bind_unix_socket",
+    "check__all__", "skip_unless_bind_unix_socket", "skip_if_buggy_ucrt_strfptime",
+    "ignore_warnings",
     # sys
     "is_jython", "is_android", "check_impl_detail", "unix_shell",
     "setswitchinterval",
@@ -102,10 +114,12 @@ __all__ = [
     # threads
     "threading_setup", "threading_cleanup", "reap_threads", "start_threads",
     # miscellaneous
-    "check_warnings", "check_no_resource_warning", "EnvironmentVarGuard",
+    "check_warnings", "check_no_resource_warning", "check_no_warnings",
+    "EnvironmentVarGuard",
     "run_with_locale", "swap_item",
     "swap_attr", "Matcher", "set_memlimit", "SuppressCrashReport", "sortdict",
     "run_with_tz", "PGO", "missing_compiler_executable", "fd_count",
+    "ALWAYS_EQ", "NEVER_EQ", "LARGEST", "SMALLEST"
     ]
 
 class Error(Exception):
@@ -113,6 +127,9 @@ class Error(Exception):
 
 class TestFailed(Error):
     """Test failed."""
+
+class TestDidNotRun(Error):
+    """Test did not run any subtests."""
 
 class ResourceDenied(unittest.SkipTest):
     """Test skipped because it requested a disallowed resource.
@@ -136,6 +153,22 @@ def _ignore_deprecated_imports(ignore=True):
             yield
     else:
         yield
+
+
+def ignore_warnings(*, category):
+    """Decorator to suppress deprecation warnings.
+
+    Use of context managers to hide warnings make diffs
+    more noisy and tools like 'git blame' less useful.
+    """
+    def decorator(test):
+        @functools.wraps(test)
+        def wrapper(self, *args, **kwargs):
+            with warnings.catch_warnings():
+                warnings.simplefilter('ignore', category=category)
+                return test(self, *args, **kwargs)
+        return wrapper
+    return decorator
 
 
 def import_module(name, deprecated=False, *, required_on=()):
@@ -278,6 +311,7 @@ use_resources = None     # Flag set to [] by regrtest.py
 max_memuse = 0           # Disable bigmem tests (they will still be run with
                          # small sizes, to make sure they work.)
 real_max_memuse = 0
+junit_xml_list = None    # list of testsuite XML elements
 failfast = False
 
 # _original_stdout is meant to hold stdout at the time regrtest began.
@@ -458,7 +492,9 @@ def _is_gui_available():
     if hasattr(_is_gui_available, 'result'):
         return _is_gui_available.result
     reason = None
-    if sys.platform.startswith('win'):
+    if sys.platform.startswith('win') and platform.win32_is_iot():
+        reason = "gui is not available on Windows IoT Core"
+    elif sys.platform.startswith('win'):
         # if Python is running as a service (such as the buildbot service),
         # gui interaction may be disallowed
         import ctypes
@@ -618,6 +654,36 @@ def requires_mac_ver(*min_version):
     return decorator
 
 
+def requires_hashdigest(digestname, openssl=None, usedforsecurity=True):
+    """Decorator raising SkipTest if a hashing algorithm is not available
+
+    The hashing algorithm could be missing or blocked by a strict crypto
+    policy.
+
+    If 'openssl' is True, then the decorator checks that OpenSSL provides
+    the algorithm. Otherwise the check falls back to built-in
+    implementations. The usedforsecurity flag is passed to the constructor.
+
+    ValueError: [digital envelope routines: EVP_DigestInit_ex] disabled for FIPS
+    ValueError: unsupported hash type md4
+    """
+    def decorator(func):
+        @functools.wraps(func)
+        def wrapper(*args, **kwargs):
+            try:
+                if openssl and _hashlib is not None:
+                    _hashlib.new(digestname, usedforsecurity=usedforsecurity)
+                else:
+                    hashlib.new(digestname, usedforsecurity=usedforsecurity)
+            except ValueError:
+                raise unittest.SkipTest(
+                    f"hash digest '{digestname}' is not available."
+                )
+            return func(*args, **kwargs)
+        return wrapper
+    return decorator
+
+
 HOST = "localhost"
 HOSTv4 = "127.0.0.1"
 HOSTv6 = "::1"
@@ -679,9 +745,8 @@ def find_unused_port(family=socket.AF_INET, socktype=socket.SOCK_STREAM):
     issue if/when we come across it.
     """
 
-    tempsock = socket.socket(family, socktype)
-    port = bind_port(tempsock)
-    tempsock.close()
+    with socket.socket(family, socktype) as tempsock:
+        port = bind_port(tempsock)
     del tempsock
     return port
 
@@ -808,6 +873,10 @@ else:
 # module name.
 TESTFN = "{}_{}_tmp".format(TESTFN, os.getpid())
 
+# Define the URL of a dedicated HTTP server for the network tests.
+# The URL must use clear-text HTTP: no redirection to encrypted HTTPS.
+TEST_HTTP_URL = "http://www.pythontest.net"
+
 # FS_NONASCII: non-ASCII character encodable by os.fsencode(),
 # or None if there is no such character.
 FS_NONASCII = None
@@ -845,7 +914,11 @@ for character in (
     '\u20AC',
 ):
     try:
-        os.fsdecode(os.fsencode(character))
+        # If Python is set up to use the legacy 'mbcs' in Windows,
+        # 'replace' error mode is used, and encode() returns b'?'
+        # for characters missing in the ANSI codepage
+        if os.fsdecode(os.fsencode(character)) != character:
+            raise UnicodeError
     except UnicodeError:
         pass
     else:
@@ -937,6 +1010,10 @@ SAVEDCWD = os.getcwd()
 # useful for PGO
 PGO = False
 
+# Set by libregrtest/main.py if we are running the extended (time consuming)
+# PGO task.  If this is True, PGO is also True.
+PGO_EXTENDED = False
+
 @contextlib.contextmanager
 def temp_dir(path=None, quiet=False):
     """Return a context manager that creates a temporary directory.
@@ -972,7 +1049,7 @@ def temp_dir(path=None, quiet=False):
         yield path
     finally:
         # In case the process forks, let only the parent remove the
-        # directory. The child has a diffent process id. (bpo-30028)
+        # directory. The child has a different process id. (bpo-30028)
         if dir_created and pid == os.getpid():
             rmtree(path)
 
@@ -991,7 +1068,7 @@ def change_cwd(path, quiet=False):
     """
     saved_dir = os.getcwd()
     try:
-        os.chdir(path)
+        os.chdir(os.path.realpath(path))
     except OSError as exc:
         if not quiet:
             raise
@@ -1083,6 +1160,7 @@ def make_bad_fd():
         file.close()
         unlink(TESTFN)
 
+
 def check_syntax_error(testcase, statement, errtext='', *, lineno=None, offset=None):
     with testcase.assertRaisesRegex(SyntaxError, errtext) as cm:
         compile(statement, '<test string>', 'exec')
@@ -1093,6 +1171,33 @@ def check_syntax_error(testcase, statement, errtext='', *, lineno=None, offset=N
     testcase.assertIsNotNone(err.offset)
     if offset is not None:
         testcase.assertEqual(err.offset, offset)
+
+def check_syntax_warning(testcase, statement, errtext='', *, lineno=1, offset=None):
+    # Test also that a warning is emitted only once.
+    with warnings.catch_warnings(record=True) as warns:
+        warnings.simplefilter('always', SyntaxWarning)
+        compile(statement, '<testcase>', 'exec')
+    testcase.assertEqual(len(warns), 1, warns)
+
+    warn, = warns
+    testcase.assertTrue(issubclass(warn.category, SyntaxWarning), warn.category)
+    if errtext:
+        testcase.assertRegex(str(warn.message), errtext)
+    testcase.assertEqual(warn.filename, '<testcase>')
+    testcase.assertIsNotNone(warn.lineno)
+    if lineno is not None:
+        testcase.assertEqual(warn.lineno, lineno)
+
+    # SyntaxWarning should be converted to SyntaxError when raised,
+    # since the latter contains more information and provides better
+    # error report.
+    with warnings.catch_warnings(record=True) as warns:
+        warnings.simplefilter('error', SyntaxWarning)
+        check_syntax_error(testcase, statement, errtext,
+                           lineno=lineno, offset=offset)
+    # No warnings are leaked when a SyntaxError is raised.
+    testcase.assertEqual(warns, [])
+
 
 def open_urlresource(url, *args, **kw):
     import urllib.request, urllib.parse
@@ -1231,6 +1336,30 @@ def check_warnings(*filters, **kwargs):
 
 
 @contextlib.contextmanager
+def check_no_warnings(testcase, message='', category=Warning, force_gc=False):
+    """Context manager to check that no warnings are emitted.
+
+    This context manager enables a given warning within its scope
+    and checks that no warnings are emitted even with that warning
+    enabled.
+
+    If force_gc is True, a garbage collection is attempted before checking
+    for warnings. This may help to catch warnings emitted when objects
+    are deleted, such as ResourceWarning.
+
+    Other keyword arguments are passed to warnings.filterwarnings().
+    """
+    with warnings.catch_warnings(record=True) as warns:
+        warnings.filterwarnings('always',
+                                message=message,
+                                category=category)
+        yield
+        if force_gc:
+            gc_collect()
+    testcase.assertEqual(warns, [])
+
+
+@contextlib.contextmanager
 def check_no_resource_warning(testcase):
     """Context manager to check that no ResourceWarning is emitted.
 
@@ -1244,11 +1373,8 @@ def check_no_resource_warning(testcase):
     You must remove the object which may emit ResourceWarning before
     the end of the context manager.
     """
-    with warnings.catch_warnings(record=True) as warns:
-        warnings.filterwarnings('always', category=ResourceWarning)
+    with check_no_warnings(testcase, category=ResourceWarning, force_gc=True):
         yield
-        gc_collect()
-    testcase.assertEqual(warns, [])
 
 
 class CleanImport(object):
@@ -1394,6 +1520,27 @@ socket_peer_reset = TransientResource(OSError, errno=errno.ECONNRESET)
 ioerror_peer_reset = TransientResource(OSError, errno=errno.ECONNRESET)
 
 
+def get_socket_conn_refused_errs():
+    """
+    Get the different socket error numbers ('errno') which can be received
+    when a connection is refused.
+    """
+    errors = [errno.ECONNREFUSED]
+    if hasattr(errno, 'ENETUNREACH'):
+        # On Solaris, ENETUNREACH is returned sometimes instead of ECONNREFUSED
+        errors.append(errno.ENETUNREACH)
+    if hasattr(errno, 'EADDRNOTAVAIL'):
+        # bpo-31910: socket.create_connection() fails randomly
+        # with EADDRNOTAVAIL on Travis CI
+        errors.append(errno.EADDRNOTAVAIL)
+    if hasattr(errno, 'EHOSTUNREACH'):
+        # bpo-37583: The destination host cannot be reached
+        errors.append(errno.EHOSTUNREACH)
+    if not IPV6_ENABLED:
+        errors.append(errno.EAFNOSUPPORT)
+    return errors
+
+
 @contextlib.contextmanager
 def transient_internet(resource_name, *, timeout=30.0, errnos=()):
     """Return a context manager that raises ResourceDenied when various issues
@@ -1404,6 +1551,9 @@ def transient_internet(resource_name, *, timeout=30.0, errnos=()):
         ('EHOSTUNREACH', 113),
         ('ENETUNREACH', 101),
         ('ETIMEDOUT', 110),
+        # socket.create_connection() fails randomly with
+        # EADDRNOTAVAIL on Travis CI.
+        ('EADDRNOTAVAIL', 99),
     ]
     default_gai_errnos = [
         ('EAI_AGAIN', -3),
@@ -1551,7 +1701,7 @@ def python_is_optimized():
 
 _header = 'nP'
 _align = '0n'
-if hasattr(sys, "gettotalrefcount"):
+if hasattr(sys, "getobjects"):
     _header = '2P' + _header
     _align = '0P'
 _vheader = _header + 'n'
@@ -1698,10 +1848,11 @@ class _MemoryWatchdog:
             sys.stderr.flush()
             return
 
-        watchdog_script = findfile("memory_watchdog.py")
-        self.mem_watchdog = subprocess.Popen([sys.executable, watchdog_script],
-                                             stdin=f, stderr=subprocess.DEVNULL)
-        f.close()
+        with f:
+            watchdog_script = findfile("memory_watchdog.py")
+            self.mem_watchdog = subprocess.Popen([sys.executable, watchdog_script],
+                                                 stdin=f,
+                                                 stderr=subprocess.DEVNULL)
         self.started = True
 
     def stop(self):
@@ -1874,13 +2025,17 @@ def _filter_suite(suite, pred):
 
 def _run_suite(suite):
     """Run tests from a unittest.TestSuite-derived class."""
-    if verbose:
-        runner = unittest.TextTestRunner(sys.stdout, verbosity=2,
-                                         failfast=failfast)
-    else:
-        runner = BasicTestRunner()
+    runner = get_test_runner(sys.stdout,
+                             verbosity=verbose,
+                             capture_output=(junit_xml_list is not None))
 
     result = runner.run(suite)
+
+    if junit_xml_list is not None:
+        junit_xml_list.append(result.get_xml_element())
+
+    if not result.testsRun and not result.skipped:
+        raise TestDidNotRun
     if not result.wasSuccessful():
         if len(result.errors) == 1 and not result.failures:
             err = result.errors[0][1]
@@ -1928,7 +2083,7 @@ def set_match_tests(patterns):
         patterns = ()
     elif all(map(_is_full_match_test, patterns)):
         # Simple case: all patterns are full test identifier.
-        # The test.bisect utility only uses such full test identifiers.
+        # The test.bisect_cmd utility only uses such full test identifiers.
         func = set(patterns).__contains__
     else:
         regex = '|'.join(map(fnmatch.translate, patterns))
@@ -1938,8 +2093,8 @@ def set_match_tests(patterns):
 
         def match_test_regex(test_id):
             if regex_match(test_id):
-                # The regex matchs the whole identifier like
-                # 'test.test_os.FileTests.test_access'
+                # The regex matches the whole identifier, for example
+                # 'test.test_os.FileTests.test_access'.
                 return True
             else:
                 # Try to match parts of the test identifier.
@@ -2201,19 +2356,19 @@ def start_threads(threads, unlock=None):
         try:
             if unlock:
                 unlock()
-            endtime = starttime = time.time()
+            endtime = starttime = time.monotonic()
             for timeout in range(1, 16):
                 endtime += 60
                 for t in started:
-                    t.join(max(endtime - time.time(), 0.01))
-                started = [t for t in started if t.isAlive()]
+                    t.join(max(endtime - time.monotonic(), 0.01))
+                started = [t for t in started if t.is_alive()]
                 if not started:
                     break
                 if verbose:
                     print('Unable to join %d threads during a period of '
                           '%d minutes' % (len(started), timeout))
         finally:
-            started = [t for t in started if t.isAlive()]
+            started = [t for t in started if t.is_alive()]
             if started:
                 faulthandler.dump_traceback(sys.stdout)
                 raise AssertionError('Unable to join %d threads' % len(started))
@@ -2391,6 +2546,105 @@ def skip_unless_symlink(test):
     msg = "Requires functional symlink implementation"
     return test if ok else unittest.skip(msg)(test)
 
+_buggy_ucrt = None
+def skip_if_buggy_ucrt_strfptime(test):
+    """
+    Skip decorator for tests that use buggy strptime/strftime
+
+    If the UCRT bugs are present time.localtime().tm_zone will be
+    an empty string, otherwise we assume the UCRT bugs are fixed
+
+    See bpo-37552 [Windows] strptime/strftime return invalid
+    results with UCRT version 17763.615
+    """
+    global _buggy_ucrt
+    if _buggy_ucrt is None:
+        if(sys.platform == 'win32' and
+                locale.getdefaultlocale()[1]  == 'cp65001' and
+                time.localtime().tm_zone == ''):
+            _buggy_ucrt = True
+        else:
+            _buggy_ucrt = False
+    return unittest.skip("buggy MSVC UCRT strptime/strftime")(test) if _buggy_ucrt else test
+
+class PythonSymlink:
+    """Creates a symlink for the current Python executable"""
+    def __init__(self, link=None):
+        self.link = link or os.path.abspath(TESTFN)
+        self._linked = []
+        self.real = os.path.realpath(sys.executable)
+        self._also_link = []
+
+        self._env = None
+
+        self._platform_specific()
+
+    def _platform_specific(self):
+        pass
+
+    if sys.platform == "win32":
+        def _platform_specific(self):
+            import _winapi
+
+            if os.path.lexists(self.real) and not os.path.exists(self.real):
+                # App symlink appears to not exist, but we want the
+                # real executable here anyway
+                self.real = _winapi.GetModuleFileName(0)
+
+            dll = _winapi.GetModuleFileName(sys.dllhandle)
+            src_dir = os.path.dirname(dll)
+            dest_dir = os.path.dirname(self.link)
+            self._also_link.append((
+                dll,
+                os.path.join(dest_dir, os.path.basename(dll))
+            ))
+            for runtime in glob.glob(os.path.join(src_dir, "vcruntime*.dll")):
+                self._also_link.append((
+                    runtime,
+                    os.path.join(dest_dir, os.path.basename(runtime))
+                ))
+
+            self._env = {k.upper(): os.getenv(k) for k in os.environ}
+            self._env["PYTHONHOME"] = os.path.dirname(self.real)
+            if sysconfig.is_python_build(True):
+                self._env["PYTHONPATH"] = os.path.dirname(os.__file__)
+
+    def __enter__(self):
+        os.symlink(self.real, self.link)
+        self._linked.append(self.link)
+        for real, link in self._also_link:
+            os.symlink(real, link)
+            self._linked.append(link)
+        return self
+
+    def __exit__(self, exc_type, exc_value, exc_tb):
+        for link in self._linked:
+            try:
+                os.remove(link)
+            except IOError as ex:
+                if verbose:
+                    print("failed to clean up {}: {}".format(link, ex))
+
+    def _call(self, python, args, env, returncode):
+        cmd = [python, *args]
+        p = subprocess.Popen(cmd, stdout=subprocess.PIPE,
+                             stderr=subprocess.PIPE, env=env)
+        r = p.communicate()
+        if p.returncode != returncode:
+            if verbose:
+                print(repr(r[0]))
+                print(repr(r[1]), file=sys.stderr)
+            raise RuntimeError(
+                'unexpected return code: {0} (0x{0:08X})'.format(p.returncode))
+        return r
+
+    def call_real(self, *args, returncode=0):
+        return self._call(self.real, args, None, returncode)
+
+    def call_link(self, *args, returncode=0):
+        return self._call(self.link, args, self._env, returncode)
+
+
 _can_xattr = None
 def can_xattr():
     global _can_xattr
@@ -2426,6 +2680,12 @@ def skip_unless_xattr(test):
     """Skip decorator for tests that require functional extended attributes"""
     ok = can_xattr()
     msg = "no non-broken extended attribute support"
+    return test if ok else unittest.skip(msg)(test)
+
+def skip_if_pgo_task(test):
+    """Skip decorator for tests not run in (non-extended) PGO task"""
+    ok = not PGO or PGO_EXTENDED
+    msg = "Not run for (non-extended) PGO task"
     return test if ok else unittest.skip(msg)(test)
 
 _bind_nix_socket_error = None
@@ -2725,7 +2985,7 @@ def missing_compiler_executable(cmd_names=[]):
         if cmd_names:
             assert cmd is not None, \
                     "the '%s' executable is not configured" % name
-        elif cmd is None:
+        elif not cmd:
             continue
         if spawn.find_executable(cmd[0]) is None:
             return cmd[0]
@@ -2768,7 +3028,7 @@ def fd_count():
     if sys.platform.startswith(('linux', 'freebsd')):
         try:
             names = os.listdir("/proc/self/fd")
-            # Substract one because listdir() opens internally a file
+            # Subtract one because listdir() internally opens a file
             # descriptor to list the content of the /proc/self/fd/ directory.
             return len(names) - 1
         except FileNotFoundError:
@@ -2883,6 +3143,196 @@ class FakePath:
             return self.path
 
 
+class _ALWAYS_EQ:
+    """
+    Object that is equal to anything.
+    """
+    def __eq__(self, other):
+        return True
+    def __ne__(self, other):
+        return False
+
+ALWAYS_EQ = _ALWAYS_EQ()
+
+class _NEVER_EQ:
+    """
+    Object that is not equal to anything.
+    """
+    def __eq__(self, other):
+        return False
+    def __ne__(self, other):
+        return True
+    def __hash__(self):
+        return 1
+
+NEVER_EQ = _NEVER_EQ()
+
+@functools.total_ordering
+class _LARGEST:
+    """
+    Object that is greater than anything (except itself).
+    """
+    def __eq__(self, other):
+        return isinstance(other, _LARGEST)
+    def __lt__(self, other):
+        return False
+
+LARGEST = _LARGEST()
+
+@functools.total_ordering
+class _SMALLEST:
+    """
+    Object that is less than anything (except itself).
+    """
+    def __eq__(self, other):
+        return isinstance(other, _SMALLEST)
+    def __gt__(self, other):
+        return False
+
+SMALLEST = _SMALLEST()
+
 def maybe_get_event_loop_policy():
     """Return the global event loop policy if one is set, else return None."""
     return asyncio.events._event_loop_policy
+
+# Helpers for testing hashing.
+NHASHBITS = sys.hash_info.width # number of bits in hash() result
+assert NHASHBITS in (32, 64)
+
+# Return mean and sdev of number of collisions when tossing nballs balls
+# uniformly at random into nbins bins.  By definition, the number of
+# collisions is the number of balls minus the number of occupied bins at
+# the end.
+def collision_stats(nbins, nballs):
+    n, k = nbins, nballs
+    # prob a bin empty after k trials = (1 - 1/n)**k
+    # mean # empty is then n * (1 - 1/n)**k
+    # so mean # occupied is n - n * (1 - 1/n)**k
+    # so collisions = k - (n - n*(1 - 1/n)**k)
+    #
+    # For the variance:
+    # n*(n-1)*(1-2/n)**k + meanempty - meanempty**2 =
+    # n*(n-1)*(1-2/n)**k + meanempty * (1 - meanempty)
+    #
+    # Massive cancellation occurs, and, e.g., for a 64-bit hash code
+    # 1-1/2**64 rounds uselessly to 1.0.  Rather than make heroic (and
+    # error-prone) efforts to rework the naive formulas to avoid those,
+    # we use the `decimal` module to get plenty of extra precision.
+    #
+    # Note:  the exact values are straightforward to compute with
+    # rationals, but in context that's unbearably slow, requiring
+    # multi-million bit arithmetic.
+    import decimal
+    with decimal.localcontext() as ctx:
+        bits = n.bit_length() * 2  # bits in n**2
+        # At least that many bits will likely cancel out.
+        # Use that many decimal digits instead.
+        ctx.prec = max(bits, 30)
+        dn = decimal.Decimal(n)
+        p1empty = ((dn - 1) / dn) ** k
+        meanempty = n * p1empty
+        occupied = n - meanempty
+        collisions = k - occupied
+        var = dn*(dn-1)*((dn-2)/dn)**k + meanempty * (1 - meanempty)
+        return float(collisions), float(var.sqrt())
+
+
+class catch_unraisable_exception:
+    """
+    Context manager catching unraisable exception using sys.unraisablehook.
+
+    Storing the exception value (cm.unraisable.exc_value) creates a reference
+    cycle. The reference cycle is broken explicitly when the context manager
+    exits.
+
+    Storing the object (cm.unraisable.object) can resurrect it if it is set to
+    an object which is being finalized. Exiting the context manager clears the
+    stored object.
+
+    Usage:
+
+        with support.catch_unraisable_exception() as cm:
+            # code creating an "unraisable exception"
+            ...
+
+            # check the unraisable exception: use cm.unraisable
+            ...
+
+        # cm.unraisable attribute no longer exists at this point
+        # (to break a reference cycle)
+    """
+
+    def __init__(self):
+        self.unraisable = None
+        self._old_hook = None
+
+    def _hook(self, unraisable):
+        # Storing unraisable.object can resurrect an object which is being
+        # finalized. Storing unraisable.exc_value creates a reference cycle.
+        self.unraisable = unraisable
+
+    def __enter__(self):
+        self._old_hook = sys.unraisablehook
+        sys.unraisablehook = self._hook
+        return self
+
+    def __exit__(self, *exc_info):
+        sys.unraisablehook = self._old_hook
+        del self.unraisable
+
+
+class catch_threading_exception:
+    """
+    Context manager catching threading.Thread exception using
+    threading.excepthook.
+
+    Attributes set when an exception is catched:
+
+    * exc_type
+    * exc_value
+    * exc_traceback
+    * thread
+
+    See threading.excepthook() documentation for these attributes.
+
+    These attributes are deleted at the context manager exit.
+
+    Usage:
+
+        with support.catch_threading_exception() as cm:
+            # code spawning a thread which raises an exception
+            ...
+
+            # check the thread exception, use cm attributes:
+            # exc_type, exc_value, exc_traceback, thread
+            ...
+
+        # exc_type, exc_value, exc_traceback, thread attributes of cm no longer
+        # exists at this point
+        # (to avoid reference cycles)
+    """
+
+    def __init__(self):
+        self.exc_type = None
+        self.exc_value = None
+        self.exc_traceback = None
+        self.thread = None
+        self._old_hook = None
+
+    def _hook(self, args):
+        self.exc_type = args.exc_type
+        self.exc_value = args.exc_value
+        self.exc_traceback = args.exc_traceback
+        self.thread = args.thread
+
+    def __enter__(self):
+        self._old_hook = threading.excepthook
+        threading.excepthook = self._hook
+        return self
+
+    def __exit__(self, *exc_info):
+        threading.excepthook = self._old_hook
+        del self.exc_type
+        del self.exc_value
+        del self.exc_traceback
+        del self.thread

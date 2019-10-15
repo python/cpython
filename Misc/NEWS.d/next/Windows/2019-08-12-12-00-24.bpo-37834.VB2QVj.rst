@@ -1,0 +1,2 @@
+Treat all name surrogate reparse points on Windows in :func:`os.lstat` and
+other reparse points as regular files in :func:`os.stat`.

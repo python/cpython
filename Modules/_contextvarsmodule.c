@@ -16,7 +16,7 @@ static PyObject *
 _contextvars_copy_context_impl(PyObject *module)
 /*[clinic end generated code: output=1fcd5da7225c4fa9 input=89bb9ae485888440]*/
 {
-    return (PyObject *)PyContext_CopyCurrent();
+    return PyContext_CopyCurrent();
 }
 
 

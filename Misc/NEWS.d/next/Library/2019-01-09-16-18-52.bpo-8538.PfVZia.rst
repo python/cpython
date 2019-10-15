@@ -1,0 +1,2 @@
+Add support for boolean actions like ``--foo`` and ``--no-foo`` to argparse.
+Patch contributed by Rémi Lapeyre.

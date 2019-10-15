@@ -1,0 +1,2 @@
+Removed methods Element.getchildren(), Element.getiterator() and
+ElementTree.getiterator() and the xml.etree.cElementTree module.

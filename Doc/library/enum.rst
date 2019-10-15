@@ -383,14 +383,21 @@ enumeration, with the exception of special methods (:meth:`__str__`,
 variable names listed in :attr:`_ignore_`.
 
 Note:  if your enumeration defines :meth:`__new__` and/or :meth:`__init__` then
-whatever value(s) were given to the enum member will be passed into those
-methods.  See `Planet`_ for an example.
+any value(s) given to the enum member will be passed into those methods.
+See `Planet`_ for an example.
 
 
-Restricted subclassing of enumerations
---------------------------------------
+Restricted Enum subclassing
+---------------------------
 
-Subclassing an enumeration is allowed only if the enumeration does not define
+A new :class:`Enum` class must have one base Enum class, up to one concrete
+data type, and as many :class:`object`-based mixin classes as needed.  The
+order of these base classes is::
+
+    class EnumName([mix-in, ...,] [data-type,] base-enum):
+        pass
+
+Also, subclassing an enumeration is allowed only if the enumeration does not define
 any members.  So this is forbidden::
 
     >>> class MoreColor(Color):
@@ -723,8 +730,7 @@ Some rules:
 2. While :class:`Enum` can have members of any type, once you mix in an
    additional type, all the members must have values of that type, e.g.
    :class:`int` above.  This restriction does not apply to mix-ins which only
-   add methods and don't specify another data type such as :class:`int` or
-   :class:`str`.
+   add methods and don't specify another type.
 3. When another data type is mixed in, the :attr:`value` attribute is *not the
    same* as the enum member itself, although it is equivalent and will compare
    equal.
@@ -732,10 +738,43 @@ Some rules:
    :meth:`__str__` and :meth:`__repr__` respectively; other codes (such as
    `%i` or `%h` for IntEnum) treat the enum member as its mixed-in type.
 5. :ref:`Formatted string literals <f-strings>`, :meth:`str.format`,
-   and :func:`format` will use the mixed-in
-   type's :meth:`__format__`.  If the :class:`Enum` class's :func:`str` or
-   :func:`repr` is desired, use the `!s` or `!r` format codes.
+   and :func:`format` will use the mixed-in type's :meth:`__format__`
+   unless :meth:`__str__` or :meth:`__format__` is overridden in the subclass,
+   in which case the overridden methods or :class:`Enum` methods will be used.
+   Use the !s and !r format codes to force usage of the :class:`Enum` class's
+   :meth:`__str__` and :meth:`__repr__` methods.
 
+When to use :meth:`__new__` vs. :meth:`__init__`
+------------------------------------------------
+
+:meth:`__new__` must be used whenever you want to customize the actual value of
+the :class:`Enum` member.  Any other modifications may go in either
+:meth:`__new__` or :meth:`__init__`, with :meth:`__init__` being preferred.
+
+For example, if you want to pass several items to the constructor, but only
+want one of them to be the value::
+
+    >>> class Coordinate(bytes, Enum):
+    ...     """
+    ...     Coordinate with binary codes that can be indexed by the int code.
+    ...     """
+    ...     def __new__(cls, value, label, unit):
+    ...         obj = bytes.__new__(cls, [value])
+    ...         obj._value_ = value
+    ...         obj.label = label
+    ...         obj.unit = unit
+    ...         return obj
+    ...     PX = (0, 'P.X', 'km')
+    ...     PY = (1, 'P.Y', 'km')
+    ...     VX = (2, 'V.X', 'km/s')
+    ...     VY = (3, 'V.Y', 'km/s')
+    ...
+
+    >>> print(Coordinate['PY'])
+    Coordinate.PY
+
+    >>> print(Coordinate(3))
+    Coordinate.VY
 
 Interesting examples
 --------------------
@@ -976,7 +1015,7 @@ Enum Classes
 The :class:`EnumMeta` metaclass is responsible for providing the
 :meth:`__contains__`, :meth:`__dir__`, :meth:`__iter__` and other methods that
 allow one to do things with an :class:`Enum` class that fail on a typical
-class, such as `list(Color)` or `some_var in Color`.  :class:`EnumMeta` is
+class, such as `list(Color)` or `some_enum_var in Color`.  :class:`EnumMeta` is
 responsible for ensuring that various other methods on the final :class:`Enum`
 class are correct (such as :meth:`__new__`, :meth:`__getnewargs__`,
 :meth:`__str__` and :meth:`__repr__`).
@@ -1014,7 +1053,7 @@ Supported ``_sunder_`` names
 
 - ``_missing_`` -- a lookup function used when a value is not found; may be
   overridden
-- ``_ignore_`` -- a list of names, either as a :func:`list` or a :func:`str`,
+- ``_ignore_`` -- a list of names, either as a :class:`list` or a :class:`str`,
   that will not be transformed into members, and will be removed from the final
   class
 - ``_order_`` -- used in Python 2/3 code to ensure member order is consistent

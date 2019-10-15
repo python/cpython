@@ -48,12 +48,12 @@ future_check_features(PyFutureFeatures *ff, stmt_ty s, PyObject *filename)
         } else if (strcmp(feature, "braces") == 0) {
             PyErr_SetString(PyExc_SyntaxError,
                             "not a chance");
-            PyErr_SyntaxLocationObject(filename, s->lineno, s->col_offset);
+            PyErr_SyntaxLocationObject(filename, s->lineno, s->col_offset + 1);
             return 0;
         } else {
             PyErr_Format(PyExc_SyntaxError,
                          UNDEFINED_FUTURE_FEATURE, feature);
-            PyErr_SyntaxLocationObject(filename, s->lineno, s->col_offset);
+            PyErr_SyntaxLocationObject(filename, s->lineno, s->col_offset + 1);
             return 0;
         }
     }

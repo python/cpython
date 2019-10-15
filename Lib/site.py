@@ -73,6 +73,7 @@ import sys
 import os
 import builtins
 import _sitebuiltins
+import io
 
 # Prefixes for site-packages; add additional prefixes like /usr/local here
 PREFIXES = [sys.prefix, sys.exec_prefix]
@@ -156,7 +157,7 @@ def addpackage(sitedir, name, known_paths):
         reset = False
     fullname = os.path.join(sitedir, name)
     try:
-        f = open(fullname, "r")
+        f = io.TextIOWrapper(io.open_code(fullname))
     except OSError:
         return
     with f:
@@ -439,7 +440,16 @@ def enablerlcompleter():
                 readline.read_history_file(history)
             except OSError:
                 pass
-            atexit.register(readline.write_history_file, history)
+
+            def write_history():
+                try:
+                    readline.write_history_file(history)
+                except (FileNotFoundError, PermissionError):
+                    # home directory does not exist or is not writable
+                    # https://bugs.python.org/issue19891
+                    pass
+
+            atexit.register(write_history)
 
     sys.__interactivehook__ = register_readline
 
@@ -448,7 +458,7 @@ def venv(known_paths):
 
     env = os.environ
     if sys.platform == 'darwin' and '__PYVENV_LAUNCHER__' in env:
-        executable = os.environ['__PYVENV_LAUNCHER__']
+        executable = sys._base_executable = os.environ['__PYVENV_LAUNCHER__']
     else:
         executable = sys.executable
     exe_dir, _ = os.path.split(os.path.abspath(executable))

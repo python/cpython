@@ -1,0 +1,4 @@
+<n0:foo xmlns:n0="http://z0" n0:att1="val1" n0:att2="val2"> 
+ <n0:bar n0:att3="val3"></n0:bar>
+ <n0:bar></n0:bar>
+</n0:foo>

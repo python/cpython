@@ -51,9 +51,9 @@ Module-level decorators, classes, and functions
 
    The :func:`dataclass` decorator examines the class to find
    ``field``\s.  A ``field`` is defined as class variable that has a
-   type annotation.  With two exceptions described below, nothing in
-   :func:`dataclass` examines the type specified in the variable
-   annotation.
+   :term:`type annotation <variable annotation>`.  With two
+   exceptions described below, nothing in :func:`dataclass`
+   examines the type specified in the variable annotation.
 
    The order of the fields in all of the generated methods is the
    order in which they appear in the class definition.
@@ -308,7 +308,7 @@ Module-level decorators, classes, and functions
 
    Raises :exc:`TypeError` if ``instance`` is not a dataclass instance.
 
-.. function:: astuple(*, tuple_factory=tuple)
+.. function:: astuple(instance, *, tuple_factory=tuple)
 
    Converts the dataclass ``instance`` to a tuple (by using the
    factory function ``tuple_factory``).  Each dataclass is converted
@@ -356,7 +356,7 @@ Module-level decorators, classes, and functions
          def add_one(self):
              return self.x + 1
 
-.. function:: replace(instance, **changes)
+.. function:: replace(instance, /, **changes)
 
    Creates a new object of the same type of ``instance``, replacing
    fields with values from ``changes``.  If ``instance`` is not a Data
@@ -447,7 +447,7 @@ parameters to the generated :meth:`__init__` method, and are passed to
 the optional :meth:`__post_init__` method.  They are not otherwise used
 by dataclasses.
 
-For example, suppose a field will be initialzed from a database, if a
+For example, suppose a field will be initialized from a database, if a
 value is not provided when creating the class::
 
   @dataclass
@@ -532,7 +532,7 @@ Mutable default values
      class C:
          x = []
          def add(self, element):
-             self.x += element
+             self.x.append(element)
 
      o1 = C()
      o2 = C()

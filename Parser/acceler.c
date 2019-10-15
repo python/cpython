@@ -10,22 +10,21 @@
    are not part of the static data structure written on graminit.[ch]
    by the parser generator. */
 
-#include "pgenheaders.h"
+#include "Python.h"
 #include "grammar.h"
 #include "node.h"
 #include "token.h"
 #include "parser.h"
 
 /* Forward references */
-static void fixdfa(grammar *, dfa *);
+static void fixdfa(grammar *, const dfa *);
 static void fixstate(grammar *, state *);
 
 void
 PyGrammar_AddAccelerators(grammar *g)
 {
-    dfa *d;
     int i;
-    d = g->g_dfa;
+    const dfa *d = g->g_dfa;
     for (i = g->g_ndfas; --i >= 0; d++)
         fixdfa(g, d);
     g->g_accel = 1;
@@ -34,10 +33,9 @@ PyGrammar_AddAccelerators(grammar *g)
 void
 PyGrammar_RemoveAccelerators(grammar *g)
 {
-    dfa *d;
     int i;
     g->g_accel = 0;
-    d = g->g_dfa;
+    const dfa *d = g->g_dfa;
     for (i = g->g_ndfas; --i >= 0; d++) {
         state *s;
         int j;
@@ -51,7 +49,7 @@ PyGrammar_RemoveAccelerators(grammar *g)
 }
 
 static void
-fixdfa(grammar *g, dfa *d)
+fixdfa(grammar *g, const dfa *d)
 {
     state *s;
     int j;
@@ -63,7 +61,7 @@ fixdfa(grammar *g, dfa *d)
 static void
 fixstate(grammar *g, state *s)
 {
-    arc *a;
+    const arc *a;
     int k;
     int *accel;
     int nl = g->g_ll.ll_nlabels;
@@ -78,14 +76,14 @@ fixstate(grammar *g, state *s)
     a = s->s_arc;
     for (k = s->s_narcs; --k >= 0; a++) {
         int lbl = a->a_lbl;
-        label *l = &g->g_ll.ll_label[lbl];
+        const label *l = &g->g_ll.ll_label[lbl];
         int type = l->lb_type;
         if (a->a_arrow >= (1 << 7)) {
             printf("XXX too many states!\n");
             continue;
         }
         if (ISNONTERMINAL(type)) {
-            dfa *d1 = PyGrammar_FindDFA(g, type);
+            const dfa *d1 = PyGrammar_FindDFA(g, type);
             int ibit;
             if (type - NT_OFFSET >= (1 << 7)) {
                 printf("XXX too high nonterminal number!\n");

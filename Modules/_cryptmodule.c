@@ -34,7 +34,18 @@ static PyObject *
 crypt_crypt_impl(PyObject *module, const char *word, const char *salt)
 /*[clinic end generated code: output=0512284a03d2803c input=0e8edec9c364352b]*/
 {
-    return Py_BuildValue("s", crypt(word, salt));
+    char *crypt_result;
+#ifdef HAVE_CRYPT_R
+    struct crypt_data data;
+    memset(&data, 0, sizeof(data));
+    crypt_result = crypt_r(word, salt, &data);
+#else
+    crypt_result = crypt(word, salt);
+#endif
+    if (crypt_result == NULL) {
+        return PyErr_SetFromErrno(PyExc_OSError);
+    }
+    return Py_BuildValue("s", crypt_result);
 }
 
 

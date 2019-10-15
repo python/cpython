@@ -1,0 +1,4 @@
+OS native encoding is now used for converting between Python strings and
+Tcl objects.  This allows to display, copy and paste to clipboard emoji and
+other non-BMP characters.  Converting strings from Tcl to Python and back
+now never fails (except MemoryError).

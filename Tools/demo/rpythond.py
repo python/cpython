@@ -26,16 +26,16 @@ def main():
     s.listen(1)
     while True:
         conn, (remotehost, remoteport) = s.accept()
-        print('connection from', remotehost, remoteport)
-        request = b''
-        while 1:
-            data = conn.recv(BUFSIZE)
-            if not data:
-                break
-            request += data
-        reply = execute(request.decode())
-        conn.send(reply.encode())
-        conn.close()
+        with conn:
+            print('connection from', remotehost, remoteport)
+            request = b''
+            while 1:
+                data = conn.recv(BUFSIZE)
+                if not data:
+                    break
+                request += data
+            reply = execute(request.decode())
+            conn.send(reply.encode())
 
 def execute(request):
     stdout = sys.stdout

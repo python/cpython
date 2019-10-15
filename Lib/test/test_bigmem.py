@@ -64,6 +64,7 @@ import sys
 ascii_char_size = 1
 ucs2_char_size = 2
 ucs4_char_size = 4
+pointer_size = 4 if sys.maxsize < 2**32 else 8
 
 
 class BaseStrTest:
@@ -372,7 +373,7 @@ class BaseStrTest:
     # suffer for the list size. (Otherwise, it'd cost another 48 times
     # size in bytes!) Nevertheless, a list of size takes
     # 8*size bytes.
-    @bigmemtest(size=_2G + 5, memuse=2 * ascii_char_size + 8)
+    @bigmemtest(size=_2G + 5, memuse=ascii_char_size * 2 + pointer_size)
     def test_split_large(self, size):
         _ = self.from_latin1
         s = _(' a') * size + _(' ')
@@ -604,15 +605,15 @@ class StrTest(unittest.TestCase, BaseStrTest):
         for name, memuse in self._adjusted.items():
             getattr(type(self), name).memuse = memuse
 
-    @bigmemtest(size=_2G, memuse=ucs4_char_size * 3)
+    @bigmemtest(size=_2G, memuse=ucs4_char_size * 3 + ascii_char_size * 2)
     def test_capitalize(self, size):
         self._test_capitalize(size)
 
-    @bigmemtest(size=_2G, memuse=ucs4_char_size * 3)
+    @bigmemtest(size=_2G, memuse=ucs4_char_size * 3 + ascii_char_size * 2)
     def test_title(self, size):
         self._test_title(size)
 
-    @bigmemtest(size=_2G, memuse=ucs4_char_size * 3)
+    @bigmemtest(size=_2G, memuse=ucs4_char_size * 3 + ascii_char_size * 2)
     def test_swapcase(self, size):
         self._test_swapcase(size)
 
@@ -630,7 +631,7 @@ class StrTest(unittest.TestCase, BaseStrTest):
         except MemoryError:
             pass # acceptable on 32-bit
 
-    @bigmemtest(size=_4G // 5 + 70, memuse=ascii_char_size + ucs4_char_size + 1)
+    @bigmemtest(size=_4G // 5 + 70, memuse=ascii_char_size + 8 + 1)
     def test_encode_utf7(self, size):
         try:
             return self.basic_encode_test(size, 'utf7')
@@ -820,7 +821,7 @@ class TupleTest(unittest.TestCase):
     # having more than 2<<31 references to any given object. Hence the
     # use of different types of objects as contents in different tests.
 
-    @bigmemtest(size=_2G + 2, memuse=16)
+    @bigmemtest(size=_2G + 2, memuse=pointer_size * 2)
     def test_compare(self, size):
         t1 = ('',) * size
         t2 = ('',) * size
@@ -843,15 +844,15 @@ class TupleTest(unittest.TestCase):
         t = t + t
         self.assertEqual(len(t), size * 2)
 
-    @bigmemtest(size=_2G // 2 + 2, memuse=24)
+    @bigmemtest(size=_2G // 2 + 2, memuse=pointer_size * 3)
     def test_concat_small(self, size):
         return self.basic_concat_test(size)
 
-    @bigmemtest(size=_2G + 2, memuse=24)
+    @bigmemtest(size=_2G + 2, memuse=pointer_size * 3)
     def test_concat_large(self, size):
         return self.basic_concat_test(size)
 
-    @bigmemtest(size=_2G // 5 + 10, memuse=8 * 5)
+    @bigmemtest(size=_2G // 5 + 10, memuse=pointer_size * 5)
     def test_contains(self, size):
         t = (1, 2, 3, 4, 5) * size
         self.assertEqual(len(t), size * 5)
@@ -859,7 +860,7 @@ class TupleTest(unittest.TestCase):
         self.assertFalse((1, 2, 3, 4, 5) in t)
         self.assertFalse(0 in t)
 
-    @bigmemtest(size=_2G + 10, memuse=8)
+    @bigmemtest(size=_2G + 10, memuse=pointer_size)
     def test_hash(self, size):
         t1 = (0,) * size
         h1 = hash(t1)
@@ -867,7 +868,7 @@ class TupleTest(unittest.TestCase):
         t2 = (0,) * (size + 1)
         self.assertFalse(h1 == hash(t2))
 
-    @bigmemtest(size=_2G + 10, memuse=8)
+    @bigmemtest(size=_2G + 10, memuse=pointer_size)
     def test_index_and_slice(self, size):
         t = (None,) * size
         self.assertEqual(len(t), size)
@@ -892,11 +893,11 @@ class TupleTest(unittest.TestCase):
         t = t * 2
         self.assertEqual(len(t), size * 2)
 
-    @bigmemtest(size=_2G // 2 + 2, memuse=24)
+    @bigmemtest(size=_2G // 2 + 2, memuse=pointer_size * 3)
     def test_repeat_small(self, size):
         return self.basic_test_repeat(size)
 
-    @bigmemtest(size=_2G + 2, memuse=24)
+    @bigmemtest(size=_2G + 2, memuse=pointer_size * 3)
     def test_repeat_large(self, size):
         return self.basic_test_repeat(size)
 
@@ -904,48 +905,42 @@ class TupleTest(unittest.TestCase):
     def test_repeat_large_2(self, size):
         return self.basic_test_repeat(size)
 
-    @bigmemtest(size=_1G - 1, memuse=9)
+    @bigmemtest(size=_1G - 1, memuse=pointer_size * 2)
     def test_from_2G_generator(self, size):
-        self.skipTest("test needs much more memory than advertised, see issue5438")
         try:
-            t = tuple(range(size))
+            t = tuple(iter([42]*size))
         except MemoryError:
             pass # acceptable on 32-bit
         else:
-            count = 0
-            for item in t:
-                self.assertEqual(item, count)
-                count += 1
-            self.assertEqual(count, size)
+            self.assertEqual(len(t), size)
+            self.assertEqual(t[:10], (42,) * 10)
+            self.assertEqual(t[-10:], (42,) * 10)
 
-    @bigmemtest(size=_1G - 25, memuse=9)
+    @bigmemtest(size=_1G - 25, memuse=pointer_size * 2)
     def test_from_almost_2G_generator(self, size):
-        self.skipTest("test needs much more memory than advertised, see issue5438")
         try:
-            t = tuple(range(size))
-            count = 0
-            for item in t:
-                self.assertEqual(item, count)
-                count += 1
-            self.assertEqual(count, size)
+            t = tuple(iter([42]*size))
         except MemoryError:
-            pass # acceptable, expected on 32-bit
+            pass # acceptable on 32-bit
+        else:
+            self.assertEqual(len(t), size)
+            self.assertEqual(t[:10], (42,) * 10)
+            self.assertEqual(t[-10:], (42,) * 10)
 
     # Like test_concat, split in two.
     def basic_test_repr(self, size):
-        t = (0,) * size
+        t = (False,) * size
         s = repr(t)
-        # The repr of a tuple of 0's is exactly three times the tuple length.
-        self.assertEqual(len(s), size * 3)
-        self.assertEqual(s[:5], '(0, 0')
-        self.assertEqual(s[-5:], '0, 0)')
-        self.assertEqual(s.count('0'), size)
+        # The repr of a tuple of Falses is exactly 7 times the tuple length.
+        self.assertEqual(len(s), size * 7)
+        self.assertEqual(s[:10], '(False, Fa')
+        self.assertEqual(s[-10:], 'se, False)')
 
-    @bigmemtest(size=_2G // 3 + 2, memuse=8 + 3 * ascii_char_size)
+    @bigmemtest(size=_2G // 7 + 2, memuse=pointer_size + ascii_char_size * 7)
     def test_repr_small(self, size):
         return self.basic_test_repr(size)
 
-    @bigmemtest(size=_2G + 2, memuse=8 + 3 * ascii_char_size)
+    @bigmemtest(size=_2G + 2, memuse=pointer_size + ascii_char_size * 7)
     def test_repr_large(self, size):
         return self.basic_test_repr(size)
 
@@ -956,7 +951,7 @@ class ListTest(unittest.TestCase):
     # lists hold references to various objects to test their refcount
     # limits.
 
-    @bigmemtest(size=_2G + 2, memuse=16)
+    @bigmemtest(size=_2G + 2, memuse=pointer_size * 2)
     def test_compare(self, size):
         l1 = [''] * size
         l2 = [''] * size
@@ -979,14 +974,16 @@ class ListTest(unittest.TestCase):
         l = l + l
         self.assertEqual(len(l), size * 2)
 
-    @bigmemtest(size=_2G // 2 + 2, memuse=24)
+    @bigmemtest(size=_2G // 2 + 2, memuse=pointer_size * 3)
     def test_concat_small(self, size):
         return self.basic_test_concat(size)
 
-    @bigmemtest(size=_2G + 2, memuse=24)
+    @bigmemtest(size=_2G + 2, memuse=pointer_size * 3)
     def test_concat_large(self, size):
         return self.basic_test_concat(size)
 
+    # XXX This tests suffers from overallocation, just like test_append.
+    # This should be fixed in future.
     def basic_test_inplace_concat(self, size):
         l = [sys.stdout] * size
         l += l
@@ -994,15 +991,15 @@ class ListTest(unittest.TestCase):
         self.assertTrue(l[0] is l[-1])
         self.assertTrue(l[size - 1] is l[size + 1])
 
-    @bigmemtest(size=_2G // 2 + 2, memuse=24)
+    @bigmemtest(size=_2G // 2 + 2, memuse=pointer_size * 2 * 9/8)
     def test_inplace_concat_small(self, size):
         return self.basic_test_inplace_concat(size)
 
-    @bigmemtest(size=_2G + 2, memuse=24)
+    @bigmemtest(size=_2G + 2, memuse=pointer_size * 2 * 9/8)
     def test_inplace_concat_large(self, size):
         return self.basic_test_inplace_concat(size)
 
-    @bigmemtest(size=_2G // 5 + 10, memuse=8 * 5)
+    @bigmemtest(size=_2G // 5 + 10, memuse=pointer_size * 5)
     def test_contains(self, size):
         l = [1, 2, 3, 4, 5] * size
         self.assertEqual(len(l), size * 5)
@@ -1010,12 +1007,12 @@ class ListTest(unittest.TestCase):
         self.assertFalse([1, 2, 3, 4, 5] in l)
         self.assertFalse(0 in l)
 
-    @bigmemtest(size=_2G + 10, memuse=8)
+    @bigmemtest(size=_2G + 10, memuse=pointer_size)
     def test_hash(self, size):
         l = [0] * size
         self.assertRaises(TypeError, hash, l)
 
-    @bigmemtest(size=_2G + 10, memuse=8)
+    @bigmemtest(size=_2G + 10, memuse=pointer_size)
     def test_index_and_slice(self, size):
         l = [None] * size
         self.assertEqual(len(l), size)
@@ -1079,14 +1076,16 @@ class ListTest(unittest.TestCase):
         l = l * 2
         self.assertEqual(len(l), size * 2)
 
-    @bigmemtest(size=_2G // 2 + 2, memuse=24)
+    @bigmemtest(size=_2G // 2 + 2, memuse=pointer_size * 3)
     def test_repeat_small(self, size):
         return self.basic_test_repeat(size)
 
-    @bigmemtest(size=_2G + 2, memuse=24)
+    @bigmemtest(size=_2G + 2, memuse=pointer_size * 3)
     def test_repeat_large(self, size):
         return self.basic_test_repeat(size)
 
+    # XXX This tests suffers from overallocation, just like test_append.
+    # This should be fixed in future.
     def basic_test_inplace_repeat(self, size):
         l = ['']
         l *= size
@@ -1099,34 +1098,34 @@ class ListTest(unittest.TestCase):
         self.assertEqual(len(l), size * 2)
         self.assertTrue(l[size - 1] is l[-1])
 
-    @bigmemtest(size=_2G // 2 + 2, memuse=16)
+    @bigmemtest(size=_2G // 2 + 2, memuse=pointer_size * 2 * 9/8)
     def test_inplace_repeat_small(self, size):
         return self.basic_test_inplace_repeat(size)
 
-    @bigmemtest(size=_2G + 2, memuse=16)
+    @bigmemtest(size=_2G + 2, memuse=pointer_size * 2 * 9/8)
     def test_inplace_repeat_large(self, size):
         return self.basic_test_inplace_repeat(size)
 
     def basic_test_repr(self, size):
-        l = [0] * size
+        l = [False] * size
         s = repr(l)
-        # The repr of a list of 0's is exactly three times the list length.
-        self.assertEqual(len(s), size * 3)
-        self.assertEqual(s[:5], '[0, 0')
-        self.assertEqual(s[-5:], '0, 0]')
-        self.assertEqual(s.count('0'), size)
+        # The repr of a list of Falses is exactly 7 times the list length.
+        self.assertEqual(len(s), size * 7)
+        self.assertEqual(s[:10], '[False, Fa')
+        self.assertEqual(s[-10:], 'se, False]')
+        self.assertEqual(s.count('F'), size)
 
-    @bigmemtest(size=_2G // 3 + 2, memuse=8 + 3 * ascii_char_size)
+    @bigmemtest(size=_2G // 7 + 2, memuse=pointer_size + ascii_char_size * 7)
     def test_repr_small(self, size):
         return self.basic_test_repr(size)
 
-    @bigmemtest(size=_2G + 2, memuse=8 + 3 * ascii_char_size)
+    @bigmemtest(size=_2G + 2, memuse=pointer_size + ascii_char_size * 7)
     def test_repr_large(self, size):
         return self.basic_test_repr(size)
 
     # list overallocates ~1/8th of the total size (on first expansion) so
     # the single list.append call puts memuse at 9 bytes per size.
-    @bigmemtest(size=_2G, memuse=9)
+    @bigmemtest(size=_2G, memuse=pointer_size * 9/8)
     def test_append(self, size):
         l = [object()] * size
         l.append(object())
@@ -1134,12 +1133,14 @@ class ListTest(unittest.TestCase):
         self.assertTrue(l[-3] is l[-2])
         self.assertFalse(l[-2] is l[-1])
 
-    @bigmemtest(size=_2G // 5 + 2, memuse=8 * 5)
+    @bigmemtest(size=_2G // 5 + 2, memuse=pointer_size * 5)
     def test_count(self, size):
         l = [1, 2, 3, 4, 5] * size
         self.assertEqual(l.count(1), size)
         self.assertEqual(l.count("1"), 0)
 
+    # XXX This tests suffers from overallocation, just like test_append.
+    # This should be fixed in future.
     def basic_test_extend(self, size):
         l = [object] * size
         l.extend(l)
@@ -1147,15 +1148,15 @@ class ListTest(unittest.TestCase):
         self.assertTrue(l[0] is l[-1])
         self.assertTrue(l[size - 1] is l[size + 1])
 
-    @bigmemtest(size=_2G // 2 + 2, memuse=16)
+    @bigmemtest(size=_2G // 2 + 2, memuse=pointer_size * 2 * 9/8)
     def test_extend_small(self, size):
         return self.basic_test_extend(size)
 
-    @bigmemtest(size=_2G + 2, memuse=16)
+    @bigmemtest(size=_2G + 2, memuse=pointer_size * 2 * 9/8)
     def test_extend_large(self, size):
         return self.basic_test_extend(size)
 
-    @bigmemtest(size=_2G // 5 + 2, memuse=8 * 5)
+    @bigmemtest(size=_2G // 5 + 2, memuse=pointer_size * 5)
     def test_index(self, size):
         l = [1, 2, 3, 4, 5] * size
         size *= 5
@@ -1166,7 +1167,7 @@ class ListTest(unittest.TestCase):
         self.assertRaises(ValueError, l.index, 6)
 
     # This tests suffers from overallocation, just like test_append.
-    @bigmemtest(size=_2G + 10, memuse=9)
+    @bigmemtest(size=_2G + 10, memuse=pointer_size * 9/8)
     def test_insert(self, size):
         l = [1.0] * size
         l.insert(size - 1, "A")
@@ -1185,7 +1186,7 @@ class ListTest(unittest.TestCase):
         self.assertEqual(l[:3], [1.0, "C", 1.0])
         self.assertEqual(l[size - 3:], ["A", 1.0, "B"])
 
-    @bigmemtest(size=_2G // 5 + 4, memuse=8 * 5)
+    @bigmemtest(size=_2G // 5 + 4, memuse=pointer_size * 5)
     def test_pop(self, size):
         l = ["a", "b", "c", "d", "e"] * size
         size *= 5
@@ -1209,7 +1210,7 @@ class ListTest(unittest.TestCase):
         self.assertEqual(item, "c")
         self.assertEqual(l[-2:], ["b", "d"])
 
-    @bigmemtest(size=_2G + 10, memuse=8)
+    @bigmemtest(size=_2G + 10, memuse=pointer_size)
     def test_remove(self, size):
         l = [10] * size
         self.assertEqual(len(l), size)
@@ -1229,7 +1230,7 @@ class ListTest(unittest.TestCase):
         self.assertEqual(len(l), size)
         self.assertEqual(l[-2:], [10, 10])
 
-    @bigmemtest(size=_2G // 5 + 2, memuse=8 * 5)
+    @bigmemtest(size=_2G // 5 + 2, memuse=pointer_size * 5)
     def test_reverse(self, size):
         l = [1, 2, 3, 4, 5] * size
         l.reverse()
@@ -1237,7 +1238,7 @@ class ListTest(unittest.TestCase):
         self.assertEqual(l[-5:], [5, 4, 3, 2, 1])
         self.assertEqual(l[:5], [5, 4, 3, 2, 1])
 
-    @bigmemtest(size=_2G // 5 + 2, memuse=8 * 5)
+    @bigmemtest(size=_2G // 5 + 2, memuse=pointer_size * 5 * 1.5)
     def test_sort(self, size):
         l = [1, 2, 3, 4, 5] * size
         l.sort()
