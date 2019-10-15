@@ -3573,6 +3573,16 @@ class TestSignatureBind(unittest.TestCase):
         iterator = iter(range(5))
         self.assertEqual(self.call(setcomp_func, iterator), {0, 1, 4, 9, 16})
 
+    def test_signature_bind_posonly_kwargs(self):
+        def foo(bar, /, **kwargs):
+            return bar, kwargs.get(bar)
+
+        sig = inspect.signature(foo)
+        result = sig.bind("pos-only", bar="keyword")
+
+        self.assertEqual(result.kwargs, {"bar": "keyword"})
+        self.assertIn(("bar", "pos-only"), result.arguments.items())
+
 
 class TestBoundArguments(unittest.TestCase):
     def test_signature_bound_arguments_unhashable(self):
