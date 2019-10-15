@@ -35,6 +35,7 @@ def vars_from_binary(binfile, *,
     """
     cache = {}
     resolve = _get_symbol_resolver(known, dirnames,
+                                   handle_var=Variable.from_id,
                                    perfilecache=cache,
                                    )
     for var, symbol in _iter_vars(binfile, resolve=resolve):
@@ -60,9 +61,10 @@ def vars_from_source(filenames=None, *,
             return
         filenames = _iter_files(dirnames, ('.c', '.h'))
     cache = {}
-    for var in _iter_vars(filenames,
-                          perfilecache=cache,
-                          preprocessed=preprocessed,
-                          ):
+    for varid, decl in _iter_vars(filenames,
+                                  perfilecache=cache,
+                                  preprocessed=preprocessed,
+                                  ):
+        var = Variable.from_id(varid, decl)
         yield var
         _remove_cached(cache, var)

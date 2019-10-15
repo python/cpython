@@ -5,7 +5,6 @@ import shutil
 from ..common import files
 from ..common.info import UNKNOWN
 from ..parser import find as p_find
-from ..variables.info import Variable
 
 from . import _nm
 from .info import Symbol
@@ -27,6 +26,7 @@ def _resolve_known(symbol, knownvars):
 
 
 def get_resolver(known=None, dirnames=(), *,
+                 handle_var,
                  filenames=None,
                  perfilecache=None,
                  preprocessed=False,
@@ -66,20 +66,22 @@ def get_resolver(known=None, dirnames=(), *,
                 found = _resolve_known(symbol, knownvars)
                 if found is None:
                     #return None
-                    found = _from_source(symbol, filenames,
-                                         perfilecache=perfilecache,
-                                         preprocessed=preprocessed,
-                                         )
+                    varid, decl = _from_source(symbol, filenames,
+                                               perfilecache=perfilecache,
+                                               preprocessed=preprocessed,
+                                               )
+                    found = handle_var(varid, decl)
                 return found
         else:
             def resolve(symbol):
                 return _resolve_known(symbol, knownvars)
     elif filenames:
         def resolve(symbol):
-            return _from_source(symbol, filenames,
-                                perfilecache=perfilecache,
-                                preprocessed=preprocessed,
-                                )
+            varid, decl = _from_source(symbol, filenames,
+                                       perfilecache=perfilecache,
+                                       preprocessed=preprocessed,
+                                       )
+            return handle_var(varid, decl)
     else:
         def resolve(symbol):
             return None
@@ -91,7 +93,7 @@ def symbol(symbol, filenames, known=None, *,
            preprocessed=False,
            _get_resolver=get_resolver,
            ):
-    """Return the Variable matching the given symbol.
+    """Return a Variable for the one matching the given symbol.
     
     "symbol" can be one of several objects:
 
@@ -142,6 +144,4 @@ def variables(binfile, *,
         if symbol.kind != Symbol.KIND.VARIABLE:
             continue
         var = resolve(symbol) or None
-        #if var is None:
-        #    var = Variable(symbol.id, UNKNOWN)
         yield var, symbol

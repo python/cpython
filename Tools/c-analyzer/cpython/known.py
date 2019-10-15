@@ -1,8 +1,8 @@
 import csv
 import os.path
 
-from c_analyzer.common import known as _common
 from c_analyzer.parser.declarations import extract_storage
+from c_analyzer.variables import known as _common
 from c_analyzer.variables.info import Variable
 
 from . import DATA_DIR

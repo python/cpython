@@ -1,7 +1,8 @@
 import csv
 
-from c_analyzer.common.info import ID, UNKNOWN
-from c_analyzer.common.util import read_tsv
+from ..common.info import ID, UNKNOWN
+from ..common.util import read_tsv
+from .info import Variable
 
 
 # XXX need tests:
@@ -28,22 +29,11 @@ def read_file(infile, *,
         yield kind, id, declaration
 
 
-def _handle_var(varid, decl):
-    from ..parser.declarations import extract_storage
-    from ..variables.info import Variable
-    storage = extract_storage(decl, infunc=varid.funcname)
-    return Variable(id, storage, decl)
-
-
 def from_file(infile, *,
-              handle_var=_handle_var,
+              handle_var=Variable.from_id,
               _read_file=read_file,
               ):
-    """Return the info for known declarations in the given file.
-
-    "handle_var" is a function that takes (varid, decl) and returns
-    a corresponding Variable.
-    """
+    """Return the info for known declarations in the given file."""
     known = {
         'variables': {},
         #'types': {},
@@ -64,7 +54,7 @@ def from_file(infile, *,
 def look_up_variable(varid, knownvars, *,
                      match_files=(lambda f1, f2: f1 == f2),
                      ):
-    """Return (the known variable matching the given ID.
+    """Return the known Variable matching the given ID.
 
     "knownvars" is a mapping of ID to Variable.
 

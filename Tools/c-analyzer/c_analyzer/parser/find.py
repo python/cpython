@@ -1,5 +1,4 @@
-from ..common.info import UNKNOWN
-from ..variables.info import Variable
+from ..common.info import UNKNOWN, ID
 
 from . import declarations
 
@@ -18,15 +17,17 @@ def _iter_vars(filenames, preprocessed, *,
                                                       ):
             if kind != 'variable':
                 continue
-            yield Variable.from_parts(filename, funcname, name, decl)
+            yield ID(filename, funcname, name), decl
 
+
+# XXX Add a "handle_var" arg like we did for get_resolver()?
 
 def variables(*filenames,
               perfilecache=None,
               preprocessed=False,
               _iter_vars=_iter_vars,
               ):
-    """Yield a Variable for each one found in the given files.
+    """Yield (varid, decl) for each variable found in the given files.
 
     If "preprocessed" is provided (and not False/None) then it is used
     to decide which tool to use to parse the source code after it runs
@@ -38,7 +39,7 @@ def variables(*filenames,
     if perfilecache is None:
         yield from _iter_vars(filenames, preprocessed)
     else:
-        # XXX Cache per-file variables (e.g. `{filename: [Variable]}`).
+        # XXX Cache per-file variables (e.g. `{filename: [(varid, decl)]}`).
         raise NotImplementedError
 
 
@@ -46,29 +47,29 @@ def variable(name, filenames, *,
              local=False,
              perfilecache=None,
              preprocessed=False,
-             _iter_variables=variables,
+             _iter_vars=variables,
              ):
-    """Return the first found Variable that matches.
+    """Return (varid, decl) for the first found variable that matches.
 
     If "local" is True then the first matching local variable in the
     file will always be returned.  To avoid that, pass perfilecache and
     pop each variable from the cache after using it.
     """
-    for var in _iter_variables(filenames,
-                               perfilecache=perfilecache,
-                               preprocessed=preprocessed,
-                               ):
-        if var.name != name:
+    for varid, decl in _iter_vars(filenames,
+                                  perfilecache=perfilecache,
+                                  preprocessed=preprocessed,
+                                  ):
+        if varid.name != name:
             continue
         if local:
-            if var.funcname:
-                if var.funcname == UNKNOWN:
+            if varid.funcname:
+                if varid.funcname == UNKNOWN:
                     raise NotImplementedError
-                return var
-        elif not var.funcname:
-            return var
+                return varid, decl
+        elif not varid.funcname:
+            return varid, decl
     else:
-       return None  # No matching variable was found.
+       return None, None  # No matching variable was found.
 
 
 def variable_from_id(id, filenames, *,
@@ -76,7 +77,7 @@ def variable_from_id(id, filenames, *,
                      preprocessed=False,
                      _get_var=variable,
                      ):
-    """Return the first found Variable that matches."""
+    """Return (varid, decl) for the first found variable that matches."""
     local = False
     if isinstance(id, str):
         name = id

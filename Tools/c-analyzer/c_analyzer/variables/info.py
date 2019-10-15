@@ -32,12 +32,18 @@ class Variable(_NTBase,
 
     @classonly
     def from_parts(cls, filename, funcname, name, decl, storage=None):
+        varid = ID(filename, funcname, name)
         if storage is None:
-            from ..parser.declarations import extract_storage
-            storage = extract_storage(decl, infunc=funcname)
-        id = ID(filename, funcname, name)
-        self = cls(id, storage, decl)
+            self = cls.from_id(varid, decl)
+        else:
+            self = cls(varid, storage, decl)
         return self
+
+    @classonly
+    def from_id(cls, varid, decl):
+        from ..parser.declarations import extract_storage
+        storage = extract_storage(decl, infunc=varid.funcname)
+        return cls(varid, storage, decl)
 
     def __new__(cls, id, storage, vartype):
         self = super().__new__(

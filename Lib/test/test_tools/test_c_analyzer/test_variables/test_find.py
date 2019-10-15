@@ -36,10 +36,14 @@ class VarsFromBinaryTests(_Base):
 
     def _iter_vars(self, binfile, resolve):
         self.calls.append(('_iter_vars', (binfile, resolve)))
-        return [(v, v) for v in self._return_iter_vars]
+        return [(v, v.id) for v in self._return_iter_vars]
 
-    def _get_symbol_resolver(self, known, dirnames=None, perfilecache=None):
-        self.calls.append(('_get_symbol_resolver', (known, dirnames, perfilecache)))
+    def _get_symbol_resolver(self, known=None, dirnames=(), *,
+                             handle_var,
+                             perfilecache=None,
+                             ):
+        self.calls.append(('_get_symbol_resolver',
+                           (known, dirnames, handle_var, perfilecache)))
         return self._return_get_symbol_resolver
 
     def test_typical(self):
@@ -69,7 +73,7 @@ class VarsFromBinaryTests(_Base):
             info.Variable.from_parts('dir1/eggs.c', 'func1', 'var2', 'static char *'),
             ])
         self.assertEqual(self.calls, [
-            ('_get_symbol_resolver', (known, dirnames, {})),
+            ('_get_symbol_resolver', (known, dirnames, info.Variable.from_id, {})),
             ('_iter_vars', ('python', resolver)),
             ])
 

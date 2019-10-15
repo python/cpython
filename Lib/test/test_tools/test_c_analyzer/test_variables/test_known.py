@@ -4,9 +4,9 @@ import unittest
 
 from .. import tool_imports_for_tests
 with tool_imports_for_tests():
-    from c_analyzer.variables.info import Variable
     from c_analyzer.common.info import ID
-    from c_analyzer.common.known import (
+    from c_analyzer.variables.info import Variable
+    from c_analyzer.variables.known import (
             read_file,
             from_file,
             )

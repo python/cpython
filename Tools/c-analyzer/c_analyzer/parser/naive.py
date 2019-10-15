@@ -1,7 +1,6 @@
 import re
 
-from ..common.info import UNKNOWN
-from ..variables.info import Variable
+from ..common.info import UNKNOWN, ID
 
 from .preprocessor import _iter_clean_lines
 
@@ -55,7 +54,7 @@ def parse_variable_declaration(srcline):
 
 
 def parse_variable(srcline, funcname=None):
-    """Return a Variable for the variable declared on the line (or None)."""
+    """Return (varid, decl) for the variable declared on the line (or None)."""
     line = srcline.strip()
 
     # XXX Handle more than just static variables.
@@ -74,7 +73,7 @@ def iter_variables(filename, *,
                    _get_srclines=get_srclines,
                    _default_parse_variable=parse_variable,
                    ):
-    """Yield a Variable for each in the given source file."""
+    """Yield (varid, decl) for each variable in the given source file."""
     if parse_variable is None:
         parse_variable = _default_parse_variable
 
@@ -99,13 +98,13 @@ def iter_variables(filename, *,
         info = parse_variable(line, funcname)
         if isinstance(info, list):
             for name, _funcname, decl in info:
-                yield Variable.from_parts(filename, _funcname, name, decl)
+                yield ID(filename, _funcname, name), decl
             continue
         name, decl = info
 
         if name is None:
             continue
-        yield Variable.from_parts(filename, funcname, name, decl)
+        yield ID(filename, funcname, name), decl
 
 
 def _match_varid(variable, name, funcname, ignored=None):
@@ -134,12 +133,12 @@ def find_variable(filename, funcname, name, *,
 
     Return None if the variable is not found.
     """
-    for variable in _iter_variables(filename,
+    for varid, decl in _iter_variables(filename,
                                     srccache=srccache,
                                     parse_variable=parse_variable,
                                     ):
-        if _match_varid(variable, name, funcname, ignored):
-            return variable
+        if _match_varid(varid, name, funcname, ignored):
+            return varid, decl
     else:
         return None
 
@@ -149,10 +148,10 @@ def find_variables(varids, filenames=None, *,
                    parse_variable=None,
                    _find_symbol=find_variable,
                    ):
-    """Yield a Variable for each ID.
+    """Yield (varid, decl) for each ID.
 
     If the variable is not found then its decl will be UNKNOWN.  That
-    way there will be one resulting Variable per given ID.
+    way there will be one resulting variable per given ID.
     """
     if srccache is _NOT_SET:
         srccache = {}
@@ -163,18 +162,18 @@ def find_variables(varids, filenames=None, *,
             srcfiles = [varid.filename]
         else:
             if not filenames:
-                yield Variable(varid, UNKNOWN, UNKNOWN)
+                yield varid, UNKNOWN
                 continue
             srcfiles = filenames
         for filename in srcfiles:
-            found = _find_varid(filename, varid.funcname, varid.name,
-                                 ignored=used,
-                                 srccache=srccache,
-                                 parse_variable=parse_variable,
-                                 )
-            if found:
-                yield found
-                used.add(found)
+            varid, decl = _find_varid(filename, varid.funcname, varid.name,
+                                      ignored=used,
+                                      srccache=srccache,
+                                      parse_variable=parse_variable,
+                                      )
+            if varid:
+                yield varid, decl
+                used.add(varid)
                 break
         else:
-            yield Variable(varid, UNKNOWN, UNKNOWN)
+            yield varid, UNKNOWN
