@@ -1,4 +1,2 @@
-Use `getvar` for all still existing `sysconfig.get_config_var()` calls.
-The affected file is `Python3.9-config.in`.
-Misc/python-config.in now uses `getvar` for all still existing `sysconfig.get_config_var()` calls.
-Patch by Joannah Nanjekye 
+Misc/python-config.in now uses `getvar()` for all still existing `sysconfig.get_config_var()` calls.
+Patch by Joannah Nanjekye.
