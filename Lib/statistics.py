@@ -852,8 +852,8 @@ def pearsons_correlation(x, y):
     >>> pearsons_correlation(x, y)
     -1.0
     >>> z = list(range(3)) * 3
-    >>> pearsons_correlation(x, z)  #doctest: +ELLIPSIS
-    0.31... 
+    >>> pearsons_correlation(x, z)
+    0.31622776601683794
     """
     n = len(x)
     if len(y) != n:
