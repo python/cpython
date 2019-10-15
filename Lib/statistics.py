@@ -838,8 +838,8 @@ def covariance(x, y):
         raise StatisticsError('covariance requires at least one data point')
     xbar = mean(x)
     ybar = mean(y)
-    total = fsum((x - xbar) * (y - ybar))
-    return total / n
+    total = fsum((xi - xbar) * (yi - ybar) for xi, yi in zip(x, y))
+    return total / (n - 1)
 
 
 def pearsons_correlation(x, y):
@@ -848,9 +848,9 @@ def pearsons_correlation(x, y):
     >>> x = list(range(9))
     >>> y = list(reverded(x))
     >>> pearsons_correlation(x, x)
-    1
+    1.0
     >>> pearsons_correlation(x, y)
-    -1
+    -1.0
     >>> z = list(range(3)) * 3
     >>> pearsons_correlation(x, z)
     0.31
