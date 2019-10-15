@@ -1,2 +1,2 @@
-:class:`dict` objects now support PEP 584 addition and subtraction operations, with semantics similar to :meth:`dict.update`.
+:class:`dict` (and :class:`collections.UserDict`) objects now support PEP 584's merge (``+``) and update (``+=``) operators.
 Patch by Brandt Bucher.
