@@ -73,6 +73,26 @@ second argument to the four "spread" functions to avoid recalculating it:
 2.5
 
 
+Statistics for relations between two variables
+----------------------------------------------
+
+==================  ====================================================
+Function            Description
+==================  ====================================================
+covariance          Sample covariance for two variables.
+correlation         Pearson's correlation coefficient for two variables.
+==================  ====================================================
+
+Calculate covariance and Pearson's correlation for two variables:
+
+>>> x = [1, 2, 3, 4, 5, 6, 7, 8, 9]
+>>> y = [1, 2, 3, 1, 2, 3, 1, 2, 3]
+>>> covariance(x, y)
+0.75
+>>> correlation(x, y)
+0.31622776601683794
+
+
 Exceptions
 ----------
 
@@ -815,21 +835,22 @@ def pstdev(data, mu=None):
         return var.sqrt()
     except AttributeError:
         return math.sqrt(var)
-    
+
 
 # === Measures of joint variability ===
 
 # See https://en.wikipedia.org/wiki/Covariance
 #     https://en.wikipedia.org/wiki/Pearson_correlation_coefficient
 
-    
+
 def covariance(x, y):
     """Covariance
-    
-    >>> x = list(range(9))
-    >>> y = list(range(3)) * 3
+
+    >>> x = [1, 2, 3, 4, 5, 6, 7, 8, 9]
+    >>> y = [1, 2, 3, 1, 2, 3, 1, 2, 3]
     >>> covariance(x, y)
     0.75
+
     """
     n = len(x)
     if len(y) != n:
@@ -842,18 +863,16 @@ def covariance(x, y):
     return total / (n - 1)
 
 
-def pearsons_correlation(x, y):
+def correlation(x, y):
     """Pearson's correlation coefficient
-    
-    >>> x = list(range(9))
+
+    >>> x = [1, 2, 3, 4, 5, 6, 7, 8, 9]
     >>> y = list(reversed(x))
-    >>> pearsons_correlation(x, x)
+    >>> correlation(x, x)
     1.0
-    >>> pearsons_correlation(x, y)
+    >>> correlation(x, y)
     -1.0
-    >>> z = list(range(3)) * 3
-    >>> pearsons_correlation(x, z)
-    0.31622776601683794
+
     """
     n = len(x)
     if len(y) != n:
