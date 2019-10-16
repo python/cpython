@@ -495,14 +495,6 @@ class BaseStartTLS(func_tests.FunctionalTestCaseMixin):
 
         server_context = test_utils.simple_server_sslcontext()
         client_context = test_utils.simple_client_sslcontext()
-        if (sys.platform.startswith('freebsd')
-                or sys.platform.startswith('win')
-                or sys.platform.startswith('darwin')):
-            # bpo-35031: Some FreeBSD and Windows buildbots fail to run this test
-            # as the eof was not being received by the server if the payload
-            # size is not big enough. This behaviour only appears if the
-            # client is using TLS1.3.  Also seen on macOS.
-            client_context.options |= ssl.OP_NO_TLSv1_3
         answer = None
 
         def client(sock, addr):
@@ -519,9 +511,10 @@ class BaseStartTLS(func_tests.FunctionalTestCaseMixin):
             sock.close()
 
         class ServerProto(asyncio.Protocol):
-            def __init__(self, on_con, on_con_lost):
+            def __init__(self, on_con, on_con_lost, on_got_hello):
                 self.on_con = on_con
                 self.on_con_lost = on_con_lost
+                self.on_got_hello = on_got_hello
                 self.data = b''
                 self.transport = None
 
@@ -535,7 +528,7 @@ class BaseStartTLS(func_tests.FunctionalTestCaseMixin):
             def data_received(self, data):
                 self.data += data
                 if len(self.data) >= len(HELLO_MSG):
-                    self.transport.write(ANSWER)
+                    self.on_got_hello.set_result(None)
 
             def connection_lost(self, exc):
                 self.transport = None
@@ -544,7 +537,7 @@ class BaseStartTLS(func_tests.FunctionalTestCaseMixin):
                 else:
                     self.on_con_lost.set_exception(exc)
 
-        async def main(proto, on_con, on_con_lost):
+        async def main(proto, on_con, on_con_lost, on_got_hello):
             tr = await on_con
             tr.write(HELLO_MSG)
 
@@ -554,8 +547,10 @@ class BaseStartTLS(func_tests.FunctionalTestCaseMixin):
                 tr, proto, server_context,
                 server_side=True,
                 ssl_handshake_timeout=self.TIMEOUT)
-
             proto.replace_transport(new_tr)
+
+            await on_got_hello
+            new_tr.write(ANSWER)
 
             await on_con_lost
             self.assertEqual(proto.data, HELLO_MSG)
@@ -564,7 +559,8 @@ class BaseStartTLS(func_tests.FunctionalTestCaseMixin):
         async def run_main():
             on_con = self.loop.create_future()
             on_con_lost = self.loop.create_future()
-            proto = ServerProto(on_con, on_con_lost)
+            on_got_hello = self.loop.create_future()
+            proto = ServerProto(on_con, on_con_lost, on_got_hello)
 
             server = await self.loop.create_server(
                 lambda: proto, '127.0.0.1', 0)
@@ -573,7 +569,7 @@ class BaseStartTLS(func_tests.FunctionalTestCaseMixin):
             with self.tcp_client(lambda sock: client(sock, addr),
                                  timeout=self.TIMEOUT):
                 await asyncio.wait_for(
-                    main(proto, on_con, on_con_lost),
+                    main(proto, on_con, on_con_lost, on_got_hello),
                     loop=self.loop, timeout=self.TIMEOUT)
 
             server.close()
