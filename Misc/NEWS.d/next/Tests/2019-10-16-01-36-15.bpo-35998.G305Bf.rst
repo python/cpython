@@ -1,0 +1,5 @@
+Fix a race condition in test_asyncio.test_start_tls_server_1(). Previously,
+there was a race condition between the test main() function which replaces the
+protocol and the test ServerProto protocol which sends ANSWER once it gets
+HELLO. Now, only the test main() function is responsible to send data,
+ServerProto no longer sends data.
