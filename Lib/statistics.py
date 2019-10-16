@@ -843,7 +843,7 @@ def pstdev(data, mu=None):
 #     https://en.wikipedia.org/wiki/Pearson_correlation_coefficient
 
 
-def covariance(x, y):
+def covariance(x, y, /):
     """Covariance
 
     >>> x = [1, 2, 3, 4, 5, 6, 7, 8, 9]
@@ -854,16 +854,16 @@ def covariance(x, y):
     """
     n = len(x)
     if len(y) != n:
-        raise StatisticsError('covariance requires that x and y have same number of data points')
-    if n < 1:
-        raise StatisticsError('covariance requires at least one data point')
+        raise StatisticsError('covariance requires that both variables have same number of data points')
+    if n < 2:
+        raise StatisticsError('covariance requires at least two data points')
     xbar = mean(x)
     ybar = mean(y)
     total = fsum((xi - xbar) * (yi - ybar) for xi, yi in zip(x, y))
     return total / (n - 1)
 
 
-def correlation(x, y):
+def correlation(x, y, /):
     """Pearson's correlation coefficient
 
     >>> x = [1, 2, 3, 4, 5, 6, 7, 8, 9]
@@ -876,13 +876,16 @@ def correlation(x, y):
     """
     n = len(x)
     if len(y) != n:
-        raise StatisticsError('correlation requires that x and y have same number of data points')
+        raise StatisticsError('correlation requires that both variables have same number of data points')
     if n < 1:
-        raise StatisticsError('correlation requires at least one data point')
+        raise StatisticsError('correlation requires at least two data points')
     cov = covariance(x, y)
     stdx = stdev(x)
     stdy = stdev(y)
-    return cov / (stdx * stdy)
+    try:
+        return cov / (stdx * stdy)
+    except ZeroDivisionError:
+        raise StatisticsError('standard deviation of at least one of the variables is zero')
 
 
 ## Normal Distribution #####################################################
