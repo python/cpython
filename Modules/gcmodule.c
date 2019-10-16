@@ -265,9 +265,10 @@ update_refs(PyGC_Head *containers)
 
 /* A traversal callback for subtract_refs. */
 static int
-visit_decref(PyObject *op, void *data)
+visit_decref(PyObject *op, void *parent_raw)
 {
-    assert(op != NULL);
+    _PyObject_ASSERT((PyObject *)parent_raw, !_PyObject_IsFreed(op));
+
     if (PyObject_IS_GC(op)) {
         PyGC_Head *gc = AS_GC(op);
         /* We're only interested in gc_refs for objects in the
@@ -292,10 +293,11 @@ subtract_refs(PyGC_Head *containers)
     traverseproc traverse;
     PyGC_Head *gc = containers->gc.gc_next;
     for (; gc != containers; gc=gc->gc.gc_next) {
-        traverse = Py_TYPE(FROM_GC(gc))->tp_traverse;
-        (void) traverse(FROM_GC(gc),
-                       (visitproc)visit_decref,
-                       NULL);
+        PyObject *op = FROM_GC(gc);
+        traverse = Py_TYPE(op)->tp_traverse;
+        (void) traverse(op,
+                        (visitproc)visit_decref,
+                        op);
     }
 }
 

@@ -3215,7 +3215,8 @@ _PyBytesWriter_Init(_PyBytesWriter *writer)
     /* Set all attributes before small_buffer to 0 */
     memset(writer, 0, offsetof(_PyBytesWriter, small_buffer));
 #ifdef Py_DEBUG
-    memset(writer->small_buffer, 0xCB, sizeof(writer->small_buffer));
+    memset(writer->small_buffer, PYMEM_CLEANBYTE,
+           sizeof(writer->small_buffer));
 #endif
 }
 
@@ -3343,7 +3344,7 @@ _PyBytesWriter_Resize(_PyBytesWriter *writer, void *str, Py_ssize_t size)
 
         writer->use_small_buffer = 0;
 #ifdef Py_DEBUG
-        memset(writer->small_buffer, 0xDB, sizeof(writer->small_buffer));
+        memset(writer->small_buffer, PYMEM_CLEANBYTE, sizeof(writer->small_buffer));
 #endif
     }
     writer->allocated = allocated;

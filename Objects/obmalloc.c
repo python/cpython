@@ -1,4 +1,5 @@
 #include "Python.h"
+#include "internal/mem.h"
 
 #include <stdbool.h>
 
@@ -1948,19 +1949,12 @@ _Py_GetAllocatedBlocks(void)
  * it wraps a real allocator, adding extra debugging info to the memory blocks.
  */
 
-/* Special bytes broadcast into debug memory blocks at appropriate times.
- * Strings of these are unlikely to be valid addresses, floats, ints or
- * 7-bit ASCII. If modified, _PyMem_IsPtrFreed() should be updated as well.
- *
- * Byte patterns 0xCB, 0xBB and 0xFB have been replaced with 0xCD, 0xDD and
- * 0xFD to use the same values than Windows CRT debug malloc() and free().
- */
 #undef CLEANBYTE
 #undef DEADBYTE
 #undef FORBIDDENBYTE
-#define CLEANBYTE      0xCD    /* clean (newly allocated) memory */
-#define DEADBYTE       0xDD    /* dead (newly freed) memory */
-#define FORBIDDENBYTE  0xFD    /* untouchable bytes at each end of a block */
+#define CLEANBYTE      PYMEM_CLEANBYTE
+#define DEADBYTE       PYMEM_DEADBYTE
+#define FORBIDDENBYTE  PYMEM_FORBIDDENBYTE
 
 static size_t serialno = 0;     /* incremented on each debug {m,re}alloc */
 

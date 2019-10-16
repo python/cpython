@@ -426,9 +426,12 @@ _PyObject_IsFreed(PyObject *op)
     /* ignore op->ob_ref: its value can have be modified
        by Py_INCREF() and Py_DECREF(). */
 #ifdef Py_TRACE_REFS
-    if (_PyMem_IsPtrFreed(op->_ob_next) || _PyMem_IsPtrFreed(op->_ob_prev)) {
+    if (op->_ob_next != NULL && _PyMem_IsPtrFreed(op->_ob_next)) {
         return 1;
     }
+    if (op->_ob_prev != NULL && _PyMem_IsPtrFreed(op->_ob_prev)) {
+         return 1;
+     }
 #endif
     return 0;
 }
@@ -438,41 +441,41 @@ _PyObject_IsFreed(PyObject *op)
 void
 _PyObject_Dump(PyObject* op)
 {
-    if (op == NULL) {
-        fprintf(stderr, "<NULL object>\n");
+    if (_PyObject_IsFreed(op)) {
+        /* It seems like the object memory has been freed:
+           don't access it to prevent a segmentation fault. */
+        fprintf(stderr, "<object at %p is freed>\n", op);
         fflush(stderr);
         return;
     }
 
-    if (_PyObject_IsFreed(op)) {
-        /* It seems like the object memory has been freed:
-           don't access it to prevent a segmentation fault. */
-        fprintf(stderr, "<Freed object>\n");
-        return;
-    }
-
-    PyGILState_STATE gil;
-    PyObject *error_type, *error_value, *error_traceback;
-
-    fprintf(stderr, "object  : ");
-    fflush(stderr);
-    gil = PyGILState_Ensure();
-
-    PyErr_Fetch(&error_type, &error_value, &error_traceback);
-    (void)PyObject_Print(op, stderr, 0);
-    fflush(stderr);
-    PyErr_Restore(error_type, error_value, error_traceback);
-
-    PyGILState_Release(gil);
+    /* first, write fields which are the least likely to crash */
+    fprintf(stderr, "object address  : %p\n", (void *)op);
     /* XXX(twouters) cast refcount to long until %zd is
        universally available */
-    fprintf(stderr, "\n"
-        "type    : %s\n"
-        "refcount: %ld\n"
-        "address : %p\n",
-        Py_TYPE(op)==NULL ? "NULL" : Py_TYPE(op)->tp_name,
-        (long)op->ob_refcnt,
-        op);
+    fprintf(stderr, "object refcount : %ld\n", (long)op->ob_refcnt);
+    fflush(stderr);
+
+    PyTypeObject *type = Py_TYPE(op);
+    fprintf(stderr, "object type     : %p\n", type);
+    fprintf(stderr, "object type name: %s\n",
+            type==NULL ? "NULL" : type->tp_name);
+
+    /* the most dangerous part */
+    fprintf(stderr, "object repr     : ");
+    fflush(stderr);
+
+    PyGILState_STATE gil = PyGILState_Ensure();
+    PyObject *error_type, *error_value, *error_traceback;
+    PyErr_Fetch(&error_type, &error_value, &error_traceback);
+
+    (void)PyObject_Print(op, stderr, 0);
+    fflush(stderr);
+
+    PyErr_Restore(error_type, error_value, error_traceback);
+    PyGILState_Release(gil);
+
+    fprintf(stderr, "\n");
     fflush(stderr);
 }
 
@@ -2214,6 +2217,65 @@ _PyTrash_thread_destroy_chain(void)
     }
     --tstate->trash_delete_nesting;
 }
+
+
+void
+_PyObject_AssertFailed(PyObject *obj, const char *expr, const char *msg,
+                       const char *file, int line, const char *function)
+{
+    extern void _PyMem_DumpTraceback(int fd, const void *ptr);
+
+    fprintf(stderr, "%s:%d: ", file, line);
+    if (function) {
+        fprintf(stderr, "%s: ", function);
+    }
+    fflush(stderr);
+
+    if (expr) {
+        fprintf(stderr, "Assertion \"%s\" failed", expr);
+    }
+    else {
+        fprintf(stderr, "Assertion failed");
+    }
+    fflush(stderr);
+
+    if (msg) {
+        fprintf(stderr, ": %s", msg);
+    }
+    fprintf(stderr, "\n");
+    fflush(stderr);
+
+    if (_PyObject_IsFreed(obj)) {
+        /* It seems like the object memory has been freed:
+           don't access it to prevent a segmentation fault. */
+        fprintf(stderr, "<object at %p is freed>\n", obj);
+        fflush(stderr);
+    }
+    else {
+        /* Display the traceback where the object has been allocated.
+           Do it before dumping repr(obj), since repr() is more likely
+           to crash than dumping the traceback. */
+        void *ptr;
+        PyTypeObject *type = Py_TYPE(obj);
+        if (PyType_IS_GC(type)) {
+            ptr = (void *)((char *)obj - sizeof(PyGC_Head));
+        }
+        else {
+            ptr = (void *)obj;
+        }
+        _PyMem_DumpTraceback(fileno(stderr), ptr);
+
+        /* This might succeed or fail, but we're about to abort, so at least
+           try to provide any extra info we can: */
+        _PyObject_Dump(obj);
+
+        fprintf(stderr, "\n");
+        fflush(stderr);
+    }
+
+    Py_FatalError("_PyObject_AssertFailed");
+}
+
 
 #ifndef Py_TRACE_REFS
 /* For Py_LIMITED_API, we need an out-of-line version of _Py_Dealloc.
