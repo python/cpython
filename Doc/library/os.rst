@@ -3946,6 +3946,7 @@ written in Python, such as a mail server's external command delivery program.
 
 
 .. data:: CLD_EXITED
+          CLD_KILLED
           CLD_DUMPED
           CLD_TRAPPED
           CLD_CONTINUED
