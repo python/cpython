@@ -6538,6 +6538,53 @@ static PyTypeObject MethStatic_Type = {
         "Class with static methods to test calling conventions"),
 };
 
+/* ContainerNoGC -- a simple container without GC methods */
+
+typedef struct {
+    PyObject_HEAD
+    PyObject *value;
+} ContainerNoGCobject;
+
+static PyObject *
+ContainerNoGC_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
+{
+    PyObject *value;
+    char *names[] = {"value", NULL};
+    if (!PyArg_ParseTupleAndKeywords(args, kwargs, "O", names, &value)) {
+        return NULL;
+    }
+    PyObject *self = type->tp_alloc(type, 0);
+    if (self == NULL) {
+        return NULL;
+    }
+    Py_INCREF(value);
+    ((ContainerNoGCobject *)self)->value = value;
+    return self;
+}
+
+static void
+ContainerNoGC_dealloc(ContainerNoGCobject *self)
+{
+    Py_DECREF(self->value);
+    Py_TYPE(self)->tp_free((PyObject *)self);
+}
+
+static PyMemberDef ContainerNoGC_members[] = {
+    {"value", T_OBJECT, offsetof(ContainerNoGCobject, value), READONLY,
+     PyDoc_STR("a container value for test purposes")},
+    {0}
+};
+
+static PyTypeObject ContainerNoGC_type = {
+    PyVarObject_HEAD_INIT(NULL, 0)
+    "_testcapi.ContainerNoGC",
+    sizeof(ContainerNoGCobject),
+    .tp_dealloc = (destructor)ContainerNoGC_dealloc,
+    .tp_flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE,
+    .tp_members = ContainerNoGC_members,
+    .tp_new = ContainerNoGC_new,
+};
+
 
 static struct PyModuleDef _testcapimodule = {
     PyModuleDef_HEAD_INIT,
@@ -6734,6 +6781,14 @@ PyInit__testcapi(void)
     }
     Py_DECREF(subclass_with_finalizer_bases);
     PyModule_AddObject(m, "HeapCTypeSubclassWithFinalizer", HeapCTypeSubclassWithFinalizer);
+
+    if (PyType_Ready(&ContainerNoGC_type) < 0) {
+        return NULL;
+    }
+    Py_INCREF(&ContainerNoGC_type);
+    if (PyModule_AddObject(m, "ContainerNoGC",
+                           (PyObject *) &ContainerNoGC_type) < 0)
+        return NULL;
 
     PyState_AddModule(m, &_testcapimodule);
     return m;
