@@ -3168,30 +3168,23 @@ dict_concat(PyDictObject *self, PyObject *other)
     if (!PyDict_Check(other)) {
         Py_RETURN_NOTIMPLEMENTED;
     }
-
     if (PyDict_CheckExact(self)) {
         new = PyDict_New();
     }
     else {
-
         // XXX: PEP 584
-
         // If subclass constructors/initializers have been overridden to require
         // at least one arg, this next bit could fail with a confusing TypeError...
         // dict.fromkeys currently has this issue, though, so nothing new.
-
         new = _PyObject_CallNoArg((PyObject *)Py_TYPE(self));
     }
-
     if (new == NULL) {
         return NULL;
     }
-
     if (dict_update_arg(new, (PyObject*)self) || dict_update_arg(new, other)) {
         Py_DECREF(new);
         return NULL;
     }
-
     return new;
 }
 
@@ -3199,20 +3192,15 @@ static PyObject *
 dict_inplace_concat(PyDictObject *self, PyObject *other)
 {
     // XXX: PEP 584
-
     // Don't fall back to __add__ here? Could be confusing for subclasses...
     // https://mail.python.org/pipermail/python-ideas/2019-March/055581.html
-
     // if (!PyMapping_Check(other)) {
     //     Py_RETURN_NOTIMPLEMENTED;
     // }
-
-    if (dict_update_arg((PyObject *)self, other)) {
+    if (dict_update_arg((PyObject *)self, other) < 0) {
         return NULL;
     }
-
     Py_INCREF((PyObject *)self);
-
     return (PyObject *)self;
 }
 

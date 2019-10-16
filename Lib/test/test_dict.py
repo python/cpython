@@ -38,25 +38,21 @@ class DictTest(unittest.TestCase):
             self.assertEqual(eval(dictliteral), dict(items))
 
     def test_addition(self):
-
         a = {0: 0, 1: 1, 2: 1}
         b = {1: 1, 2: 2, 3: 3}
 
         c = a.copy()
         c += b
-
         self.assertEqual(a + b, {0: 0, 1: 1, 2: 2, 3: 3})
         self.assertEqual(c, {0: 0, 1: 1, 2: 2, 3: 3})
 
         c = b.copy()
         c += a
-
         self.assertEqual(b + a, {1: 1, 2: 1, 3: 3, 0: 0})
         self.assertEqual(c, {1: 1, 2: 1, 3: 3, 0: 0})
 
         c = a.copy()
         c += [(1, 1), (2, 2), (3, 3)]
-
         self.assertEqual(c, {0: 0, 1: 1, 2: 2, 3: 3})
 
         self.assertIs(a.__add__(None), NotImplemented)

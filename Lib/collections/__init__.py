@@ -983,34 +983,24 @@ class UserDict(_collections_abc.MutableMapping):
     def __repr__(self): return repr(self.data)
 
     def __add__(self, other):
-
         if isinstance(other, UserDict):
             return self.__class__(self.data + other.data)
-
         if isinstance(other, type(self.data)):
             return self.__class__(self.data + other)
-
         return self.__class__(self.data + dict(other))
-
     def __radd__(self, other):
-
         if isinstance(other, UserDict):
             return self.__class__(other.data + self.data)
-
         if isinstance(other, type(self.data)):
             return self.__class__(other + self.data)
-
         return self.__class__(dict(other) + self.data)
-
     def __iadd__(self, other):
-
         if isinstance(other, UserDict):
             self.data += other.data
         elif isinstance(other, type(self.data)):
             self.data += other
         else:
             self.data += dict(other)
-
         return self
 
     def __copy__(self):
