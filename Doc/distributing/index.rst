@@ -1,8 +1,8 @@
 .. _distributing-index:
 
-###############################
-  Distributing Python Modules
-###############################
+****************************
+Distributing Python Packages
+****************************
 
 :Email: distutils-sig@python.org
 
