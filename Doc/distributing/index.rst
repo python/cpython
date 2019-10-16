@@ -31,10 +31,10 @@ installing other Python projects, refer to the
 Key terms
 =========
 
-* the `Python Package Index <https://pypi.org>`__ is a public
+* The `Python Package Index <https://pypi.org>`__ is a public
   repository of open source licensed packages made available for use by
-  other Python users
-* the `Python Packaging Authority
+  other Python users.
+* The `Python Packaging Authority
   <https://www.pypa.io/>`__ are the group of
   developers and documentation authors responsible for the maintenance and
   evolution of the standard packaging tools and the associated metadata and
