@@ -118,6 +118,8 @@ __all__ = [
     'quantiles',
     'stdev',
     'variance',
+    'correlation',
+    'covariance',
 ]
 
 import math
