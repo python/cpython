@@ -1,0 +1,1 @@
+Covariance and Pearson's correlation functionality was added to statistics module
