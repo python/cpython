@@ -152,6 +152,11 @@ class TestWorkerProcess(threading.Thread):
         print(f"Kill {self}", file=sys.stderr, flush=True)
         try:
             popen.kill()
+        except ProcessLookupError:
+            # Process completed, the TestWorkerProcess thread read its exit
+            # status, but Popen.send_signal() read the returncode just before
+            # Popen.wait() set returncode.
+            pass
         except OSError as exc:
             print_warning(f"Failed to kill {self}: {exc!r}")
 
