@@ -1466,10 +1466,12 @@ def PEM_cert_to_DER_cert(pem_cert_string):
     d = pem_cert_string.strip()[len(PEM_HEADER):-len(PEM_FOOTER)]
     return base64.decodebytes(d.encode('ASCII', 'strict'))
 
-def get_server_certificate(addr, ssl_version=PROTOCOL_TLS, ca_certs=None):
+def get_server_certificate(addr, ssl_version=PROTOCOL_TLS, hostname=None,
+                           ca_certs=None):
     """Retrieve the certificate from the server at the specified address,
     and return it as a PEM-encoded string.
     If 'ca_certs' is specified, validate the server cert against it.
+    If 'hostname' is specified, send it to the server using SNI.
     If 'ssl_version' is specified, use it in the connection attempt."""
 
     host, port = addr
@@ -1481,7 +1483,7 @@ def get_server_certificate(addr, ssl_version=PROTOCOL_TLS, ca_certs=None):
                                      cert_reqs=cert_reqs,
                                      cafile=ca_certs)
     with  create_connection(addr) as sock:
-        with context.wrap_socket(sock) as sslsock:
+        with context.wrap_socket(sock, server_hostname=hostname) as sslsock:
             dercert = sslsock.getpeercert(True)
     return DER_cert_to_PEM_cert(dercert)
 

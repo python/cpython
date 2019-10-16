@@ -1919,7 +1919,10 @@ class SimpleBackgroundTests(unittest.TestCase):
     """Tests that connect to a simple server running in the background"""
 
     def setUp(self):
-        server = ThreadedEchoServer(SIGNED_CERTFILE)
+        self.server_context = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
+        self.server_context.load_cert_chain(SIGNED_CERTFILE)
+        server = ThreadedEchoServer(context=self.server_context)
+
         self.server_addr = (HOST, server.port)
         server.__enter__()
         self.addCleanup(server.__exit__, None, None, None)
@@ -2100,6 +2103,10 @@ class SimpleBackgroundTests(unittest.TestCase):
     def test_get_server_certificate(self):
         _test_get_server_certificate(self, *self.server_addr, cert=SIGNING_CA)
 
+    @needs_sni
+    def test_get_server_certificate_sni(self):
+        _test_get_server_certificate(self, *self.server_addr, hostname="foobar", cert=SIGNING_CA)
+
     def test_get_server_certificate_fail(self):
         # Connection failure crashes ThreadedEchoServer, so run this in an
         # independent test method
@@ -2255,19 +2262,29 @@ class NetworkedTests(unittest.TestCase):
     def test_get_server_certificate_ipv6(self):
         with support.transient_internet('ipv6.google.com'):
             _test_get_server_certificate(self, 'ipv6.google.com', 443)
+            _test_get_server_certificate(self, 'ipv6.google.com', 443, hostname="foobar")
             _test_get_server_certificate_fail(self, 'ipv6.google.com', 443)
 
 
-def _test_get_server_certificate(test, host, port, cert=None):
-    pem = ssl.get_server_certificate((host, port))
+def _test_get_server_certificate(test, host, port, hostname=None, cert=None):
+    called_hostnames = []
+
+    # We store servername_cb arguments to make sure they match the hostname
+    def servername_cb(ssl_sock, server_name, initial_context):
+        called_hostnames.append(server_name)
+    test.server_context.set_servername_callback(servername_cb)
+
+    pem = ssl.get_server_certificate((host, port), hostname=hostname)
     if not pem:
         test.fail("No server certificate on %s:%s!" % (host, port))
 
-    pem = ssl.get_server_certificate((host, port), ca_certs=cert)
+    pem = ssl.get_server_certificate((host, port), hostname=hostname, ca_certs=cert)
     if not pem:
         test.fail("No server certificate on %s:%s!" % (host, port))
     if support.verbose:
-        sys.stdout.write("\nVerified certificate for %s:%s is\n%s\n" % (host, port ,pem))
+        sys.stdout.write("\nVerified certificate for %s:%s is\n%s\n" % (host, port, pem))
+
+    test.assertEqual(called_hostnames, [hostname, hostname])
 
 def _test_get_server_certificate_fail(test, host, port):
     try:
