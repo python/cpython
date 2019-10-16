@@ -237,11 +237,6 @@ PyAPI_FUNC(PyObject *) PyType_GenericNew(struct _typeobject *,
 PyAPI_FUNC(unsigned int) PyType_ClearCache(void);
 PyAPI_FUNC(void) PyType_Modified(struct _typeobject *);
 
-#ifndef Py_LIMITED_API
-PyAPI_FUNC(PyObject *) _PyType_GetDocFromInternalDoc(const char *, const char *);
-PyAPI_FUNC(PyObject *) _PyType_GetTextSignatureFromInternalDoc(const char *, const char *);
-#endif
-
 /* Generic operations on objects */
 PyAPI_FUNC(PyObject *) PyObject_Repr(PyObject *);
 PyAPI_FUNC(PyObject *) PyObject_Str(PyObject *);
@@ -366,10 +361,6 @@ given type object has a specified feature.
 
 /* Type structure has tp_finalize member (3.4) */
 #define Py_TPFLAGS_HAVE_FINALIZE (1UL << 0)
-
-#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= 0x03080000
-#define Py_TPFLAGS_HEAP_IMMUTABLE (1UL << 1)
-#endif
 
 #ifdef Py_LIMITED_API
 #  define PyType_HasFeature(t,f)  ((PyType_GetFlags(t) & (f)) != 0)

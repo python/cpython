@@ -1096,48 +1096,6 @@ PyErr_NewExceptionWithDoc(const char *name, const char *doc,
     return ret;
 }
 
-int
-PyErr_PrepareStaticException(PyTypeObject **err, const char *name,
-                             const char *doc, PyObject *base)
-{
-    PyObject *mybase = NULL;
-
-    if (*err) {
-        Py_INCREF(*err);
-        return 0;
-    }
-
-    if (!base) {
-        base = PyExc_Exception;
-    }
-
-    PyType_Slot slots[] = {
-        {Py_tp_doc, doc ? doc : "Pseudostatic exception"},
-        {0, NULL}
-    };
-
-    PyType_Spec spec = {
-        name,
-        sizeof(PyType_Type),
-        0,
-        Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HEAP_IMMUTABLE,
-        slots
-    };
-
-    if (!PyTuple_Check(base)) {
-        mybase = PyTuple_Pack(1, base);
-    }
-
-    *err = (PyTypeObject *)PyType_FromSpecWithBases(&spec, mybase ? mybase : base);
-    if (*err == NULL) {
-        return -1;
-    }
-
-    ((PyHeapTypeObject *)(*err))->ht_moduleptr = (PyObject **)err;
-
-    Py_XDECREF(mybase);
-    return 0;
-}
 
 PyDoc_STRVAR(UnraisableHookArgs__doc__,
 "UnraisableHookArgs\n\

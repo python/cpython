@@ -2569,7 +2569,7 @@ _elementtree__set_factories_impl(PyObject *module, PyObject *comment_factory,
 
 static int
 treebuilder_extend_element_text_or_tail(PyObject *element, PyObject **data,
-                                     PyObject **dest, _Py_Identifier *name)
+                                        PyObject **dest, _Py_Identifier *name)
 {
     /* Fast paths for the "almost always" cases. */
     if (Element_CheckExact(element)) {
@@ -3655,9 +3655,10 @@ _elementtree.XMLParser.__init__
 
 [clinic start generated code]*/
 
+static int
 _elementtree_XMLParser___init___impl(XMLParserObject *self, PyObject *target,
                                      const char *encoding)
-/*[clinic end generated code: output=3ae45ec6cdf344e4 input=96288fcba916cfce]*/
+/*[clinic end generated code: output=3ae45ec6cdf344e4 input=53e35a829ae043e8]*/
 {
     self->entity = PyDict_New();
     if (!self->entity)

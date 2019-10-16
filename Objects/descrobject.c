@@ -349,6 +349,40 @@ exit:
 }
 
 static PyObject *
+method_vectorcall_METH_METHOD(
+    PyObject *func, PyObject *const *args, size_t nargsf, PyObject *kwnames)
+{
+    Py_ssize_t nargs = PyVectorcall_NARGS(nargsf);
+    if (method_check_args(func, args, nargs, NULL)) {
+        return NULL;
+    }
+    PyObject *argstuple = _PyTuple_FromArray(args+1, nargs-1);
+    if (argstuple == NULL) {
+        return NULL;
+    }
+    PyObject *result = NULL;
+    /* Create a temporary dict for keyword arguments */
+    PyObject *kwdict = NULL;
+    if (kwnames != NULL && PyTuple_GET_SIZE(kwnames) > 0) {
+        kwdict = _PyStack_AsDict(args + nargs, kwnames);
+        if (kwdict == NULL) {
+            goto exit;
+        }
+    }
+    PyCMethod meth = (PyCFunctionWithKeywords)
+                                   method_enter_call(func);
+    if (meth == NULL) {
+        goto exit;
+    }
+    result = meth(args[0], ((PyMethodDescrObject *)func)->d_common.d_type, argstuple, kwdict);
+    Py_LeaveRecursiveCall();
+exit:
+    Py_DECREF(argstuple);
+    Py_XDECREF(kwdict);
+    return result;
+}
+
+static PyObject *
 method_vectorcall_FASTCALL(
     PyObject *func, PyObject *const *args, size_t nargsf, PyObject *kwnames)
 {
@@ -882,13 +916,16 @@ PyDescr_NewMethod(PyTypeObject *type, PyMethodDef *method)
 {
     /* Figure out correct vectorcall function to use */
     vectorcallfunc vectorcall;
-    switch (method->ml_flags & (METH_VARARGS | METH_FASTCALL | METH_NOARGS | METH_O | METH_KEYWORDS))
+    switch (method->ml_flags & (METH_VARARGS | METH_FASTCALL | METH_NOARGS | METH_O | METH_KEYWORDS | METH_METHOD))
     {
         case METH_VARARGS:
             vectorcall = method_vectorcall_VARARGS;
             break;
         case METH_VARARGS | METH_KEYWORDS:
             vectorcall = method_vectorcall_VARARGS_KEYWORDS;
+            break;
+        case METH_VARARGS | METH_KEYWORDS | METH_METHOD:
+            vectorcall = method_vectorcall_METH_METHOD;
             break;
         case METH_FASTCALL:
             vectorcall = method_vectorcall_FASTCALL;

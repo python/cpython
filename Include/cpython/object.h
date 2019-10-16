@@ -283,7 +283,6 @@ typedef struct _heaptypeobject {
     PyObject *ht_name, *ht_slots, *ht_qualname;
     struct _dictkeysobject *ht_cached_keys;
     PyObject *ht_module;
-    PyObject **ht_moduleptr;
     /* here are optional user slots, followed by the members. */
 } PyHeapTypeObject;
 
@@ -298,9 +297,6 @@ PyAPI_FUNC(PyObject *) _PyObject_LookupSpecial(PyObject *, _Py_Identifier *);
 PyAPI_FUNC(PyTypeObject *) _PyType_CalculateMetaclass(PyTypeObject *, PyObject *);
 PyAPI_FUNC(PyObject *) _PyType_GetDocFromInternalDoc(const char *, const char *);
 PyAPI_FUNC(PyObject *) _PyType_GetTextSignatureFromInternalDoc(const char *, const char *);
-PyAPI_FUNC(PyObject *) PyType_GetModule(PyTypeObject *);
-PyAPI_FUNC(PyObject *) PyType_GetModule(PyTypeObject *);
-PyAPI_FUNC(PyTypeObject *) PyType_DefiningTypeFromSlotFunc(PyTypeObject *, int, void *);
 
 PyAPI_FUNC(PyObject *) PyType_GetModule(PyTypeObject *);
 PyAPI_FUNC(PyTypeObject *) PyType_DefiningTypeFromSlotFunc(PyTypeObject *, int, void *);

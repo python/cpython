@@ -672,16 +672,4 @@ skip_optional_pos:
 exit:
     return return_value;
 }
-<<<<<<< HEAD
-<<<<<<< HEAD
 /*[clinic end generated code: output=7246104f6c7d3167 input=a9049054013a1b77]*/
-=======
-<<<<<<< HEAD
-/*[clinic end generated code: output=b22b4aedd53c340a input=a9049054013a1b77]*/
-=======
-/*[clinic end generated code: output=f8aefa47b0a783b6 input=a9049054013a1b77]*/
->>>>>>> clinic support for METH_METHOD and heaptype state access
->>>>>>> clinic support for METH_METHOD and heaptype state access
-=======
-/*[clinic end generated code: output=b22b4aedd53c340a input=a9049054013a1b77]*/
->>>>>>> consoleio

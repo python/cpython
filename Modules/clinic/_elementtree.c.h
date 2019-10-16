@@ -19,18 +19,8 @@ _elementtree_Element_append(ElementObject *self, PyObject *arg)
     PyObject *return_value = NULL;
     PyObject *subelement;
 
-<<<<<<< HEAD
-<<<<<<< HEAD
     if (!PyObject_TypeCheck(arg, &Element_Type)) {
         _PyArg_BadArgument("append", "argument", (&Element_Type)->tp_name, arg);
-=======
-    if (!PyArg_ParseTuple(args, "O!:append",
-        ((elementtreestate *)PyModule_GetState(PyType_GetModule(cls)))->Element_Type, &subelement)) {
->>>>>>> clinic support for METH_METHOD and heaptype state access
-=======
-    if (!PyObject_TypeCheck(arg, &Element_Type)) {
-        _PyArg_BadArgument("append", 0, (&Element_Type)->tp_name, arg);
->>>>>>> rewordme
         goto exit;
     }
     subelement = arg;
@@ -91,18 +81,8 @@ _elementtree_Element___deepcopy__(ElementObject *self, PyObject *arg)
     PyObject *return_value = NULL;
     PyObject *memo;
 
-<<<<<<< HEAD
-<<<<<<< HEAD
     if (!PyDict_Check(arg)) {
         _PyArg_BadArgument("__deepcopy__", "argument", "dict", arg);
-=======
-    if (!PyArg_ParseTuple(args, "O!:__deepcopy__",
-        &PyDict_Type, &memo)) {
->>>>>>> clinic support for METH_METHOD and heaptype state access
-=======
-    if (!PyDict_Check(arg)) {
-        _PyArg_BadArgument("__deepcopy__", 0, "dict", arg);
->>>>>>> rewordme
         goto exit;
     }
     memo = arg;
@@ -411,45 +391,6 @@ exit:
     return return_value;
 }
 
-<<<<<<< HEAD
-=======
-PyDoc_STRVAR(_elementtree_Element_getiterator__doc__,
-"getiterator($self, /, tag=None)\n"
-"--\n"
-"\n");
-
-#define _ELEMENTTREE_ELEMENT_GETITERATOR_METHODDEF    \
-    {"getiterator", (PyCFunction)(void(*)(void))_elementtree_Element_getiterator, METH_FASTCALL|METH_KEYWORDS, _elementtree_Element_getiterator__doc__},
-
-static PyObject *
-_elementtree_Element_getiterator_impl(ElementObject *self, PyObject *tag);
-
-static PyObject *
-_elementtree_Element_getiterator(ElementObject *self, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
-{
-    PyObject *return_value = NULL;
-    static const char * const _keywords[] = {"tag", NULL};
-    static _PyArg_Parser _parser = {NULL, _keywords, "getiterator", 0};
-    PyObject *argsbuf[1];
-    Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 0;
-    PyObject *tag = Py_None;
-
-    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 0, 1, 0, argsbuf);
-    if (!args) {
-        goto exit;
-    }
-    if (!noptargs) {
-        goto skip_optional_pos;
-    }
-    tag = args[0];
-skip_optional_pos:
-    return_value = _elementtree_Element_getiterator_impl(self, tag);
-
-exit:
-    return return_value;
-}
-
->>>>>>> clinic support for METH_METHOD and heaptype state access
 PyDoc_STRVAR(_elementtree_Element_itertext__doc__,
 "itertext($self, /)\n"
 "--\n"
@@ -486,10 +427,6 @@ _elementtree_Element_insert(ElementObject *self, PyObject *const *args, Py_ssize
     Py_ssize_t index;
     PyObject *subelement;
 
-<<<<<<< HEAD
-<<<<<<< HEAD
-=======
->>>>>>> rewordme
     if (!_PyArg_CheckPositional("insert", nargs, 2, 2)) {
         goto exit;
     }
@@ -511,15 +448,7 @@ _elementtree_Element_insert(ElementObject *self, PyObject *const *args, Py_ssize
         index = ival;
     }
     if (!PyObject_TypeCheck(args[1], &Element_Type)) {
-<<<<<<< HEAD
         _PyArg_BadArgument("insert", "argument 2", (&Element_Type)->tp_name, args[1]);
-=======
-    if (!PyArg_ParseTuple(args, "nO!:insert",
-        &index, ((elementtreestate *)PyModule_GetState(PyType_GetModule(cls)))->Element_Type, &subelement)) {
->>>>>>> clinic support for METH_METHOD and heaptype state access
-=======
-        _PyArg_BadArgument("insert", 2, (&Element_Type)->tp_name, args[1]);
->>>>>>> rewordme
         goto exit;
     }
     subelement = args[1];
@@ -610,18 +539,8 @@ _elementtree_Element_remove(ElementObject *self, PyObject *arg)
     PyObject *return_value = NULL;
     PyObject *subelement;
 
-<<<<<<< HEAD
-<<<<<<< HEAD
     if (!PyObject_TypeCheck(arg, &Element_Type)) {
         _PyArg_BadArgument("remove", "argument", (&Element_Type)->tp_name, arg);
-=======
-    if (!PyArg_ParseTuple(args, "O!:remove",
-        ((elementtreestate *)PyModule_GetState(PyType_GetModule(cls)))->Element_Type, &subelement)) {
->>>>>>> clinic support for METH_METHOD and heaptype state access
-=======
-    if (!PyObject_TypeCheck(arg, &Element_Type)) {
-        _PyArg_BadArgument("remove", 0, (&Element_Type)->tp_name, arg);
->>>>>>> rewordme
         goto exit;
     }
     subelement = arg;
@@ -997,16 +916,4 @@ skip_optional:
 exit:
     return return_value;
 }
-<<<<<<< HEAD
-<<<<<<< HEAD
 /*[clinic end generated code: output=bee26d0735a3fddc input=a9049054013a1b77]*/
-=======
-<<<<<<< HEAD
-/*[clinic end generated code: output=386a68425d072b5c input=a9049054013a1b77]*/
-=======
-/*[clinic end generated code: output=ce180ba5cfcfd627 input=a9049054013a1b77]*/
->>>>>>> clinic support for METH_METHOD and heaptype state access
->>>>>>> clinic support for METH_METHOD and heaptype state access
-=======
-/*[clinic end generated code: output=386a68425d072b5c input=a9049054013a1b77]*/
->>>>>>> rewordme

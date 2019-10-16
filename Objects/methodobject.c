@@ -44,10 +44,11 @@ PyCMethod_New(PyMethodDef *ml, PyObject *self, PyObject *module, PyTypeObject *c
 {
     /* Figure out correct vectorcall function to use */
     vectorcallfunc vectorcall;
-    switch (ml->ml_flags & (METH_VARARGS | METH_FASTCALL | METH_NOARGS | METH_O | METH_KEYWORDS))
+    switch (ml->ml_flags & (METH_VARARGS | METH_FASTCALL | METH_NOARGS | METH_O | METH_KEYWORDS | METH_METHOD))
     {
         case METH_VARARGS:
         case METH_VARARGS | METH_KEYWORDS:
+        case METH_VARARGS | METH_KEYWORDS | METH_METHOD:
             /* For METH_VARARGS functions, it's more efficient to use tp_call
              * instead of vectorcall. */
             vectorcall = NULL;
@@ -70,6 +71,7 @@ PyCMethod_New(PyMethodDef *ml, PyObject *self, PyObject *module, PyTypeObject *c
     }
 
     PyCFunctionObject *op = NULL;
+
     if (ml->ml_flags & METH_METHOD) {
         PyCMethodObject *om;
         if (ml->ml_flags & (METH_NOARGS | METH_O | METH_CLASS | METH_STATIC)) {
@@ -104,6 +106,8 @@ PyCMethod_New(PyMethodDef *ml, PyObject *self, PyObject *module, PyTypeObject *c
                 return NULL;
         }
     }
+
+
     op->m_weakreflist = NULL;
     op->m_ml = ml;
     Py_XINCREF(self);
@@ -372,7 +376,7 @@ PyTypeObject PyCMethod_Type = {
     .tp_dealloc = (destructor)meth_dealloc,
     .tp_repr = (reprfunc)meth_repr,
     .tp_hash = (hashfunc)meth_hash,
-    .tp_call = PyCFunction_Call,
+    .tp_call = cfunction_call,
     .tp_getattro = PyObject_GenericGetAttr,
     .tp_flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC,
     .tp_traverse = (traverseproc)meth_traverse,
@@ -381,7 +385,7 @@ PyTypeObject PyCMethod_Type = {
     .tp_methods = meth_methods,
     .tp_members = meth_members,
     .tp_getset = meth_getsets,
-    .tp_base = &PyCFunction_Type, 
+    .tp_base = &PyCFunction_Type,
 };
 
 /* Vectorcall functions for each of the PyCFunction calling conventions,
@@ -530,7 +534,11 @@ cfunction_call(PyObject *func, PyObject *args, PyObject *kwargs)
     PyObject *self = PyCFunction_GET_SELF(func);
 
     PyObject *result;
-    if (flags & METH_KEYWORDS) {
+    if (flags & METH_METHOD) {
+        PyTypeObject *cls = PyCMethod_GetClass(func);
+        result = (*(PyCMethod)(void(*)(void))meth)(self, cls, args, kwargs);
+    }
+    else if (flags & METH_KEYWORDS) {
         result = (*(PyCFunctionWithKeywords)(void(*)(void))meth)(self, args, kwargs);
     }
     else {

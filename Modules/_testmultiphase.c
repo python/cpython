@@ -15,9 +15,6 @@ module _testmultiphase
 [clinic start generated code]*/
 /*[clinic end generated code: output=da39a3ee5e6b4b0d input=a11493b5ab5f8846]*/
 
-static PyObject *staterr = NULL;
-static PyObject *staterr_multiple_inheritance = NULL;
-
 /*[clinic input]
 class _testmultiphase.Example "ExampleObject *" "!Example"
 [clinic start generated code]*/
@@ -793,30 +790,6 @@ PyInit__testmultiphase_with_bad_traverse(PyObject *spec) {
     return PyModuleDef_Init(&def_with_bad_traverse);
 }
 
-PyDoc_STRVAR(check_staterr_doc,
-"Check that staterr is NULL");
-
-static PyObject *
-check_staterr_null(PyObject *self) {
-    if (staterr == NULL) {
-        return Py_True;
-    }
-    return Py_False;
-}
-
-static PyMethodDef check_staterr_methods[] = {
-    {"check_staterr_null", (PyCFunction) check_staterr_null, METH_NOARGS, check_staterr_doc},
-    {NULL, NULL}           /* sentinel */
-};
-
-static PyModuleDef check_staterr = TEST_MODULE_DEF(
-    "_testmultiphase_check_staterr", NULL, check_staterr_methods);
-
-PyMODINIT_FUNC
-PyInit__testmultiphase_check_staterr(PyObject *spec) {
-    return PyModuleDef_Init(&check_staterr);
-}
-
 static int
 meth_state_access_exec(PyObject *m) {
     PyObject *temp;
@@ -832,17 +805,6 @@ meth_state_access_exec(PyObject *m) {
         return -1;
     }
     if (PyModule_AddObject(m, "StateAccessType", temp) != 0) {
-        return -1;
-    }
-
-    if (PyErr_PrepareStaticException((PyTypeObject **)&staterr,
-                                      "_testmultiphase.staterr",
-                                      "A pseudo-static exception",
-                                      NULL)) {
-        return -1;
-    }
-
-    if (PyModule_AddObject(m, "StaticError", staterr) != 0) {
         return -1;
     }
 
@@ -873,49 +835,6 @@ PyInit__testmultiphase_meth_state_access(PyObject *spec) {
     return PyModuleDef_Init(&def_meth_state_access);
 }
 
-static int
-immutable_exc_multip_inheritance_exec(PyObject *m) {
-    int retval = 0;
-    PyObject *base_tuple;
-
-    base_tuple = PyTuple_Pack(2, PyExc_TypeError, PyExc_BufferError);
-    if (base_tuple == NULL) {
-        retval = -1;
-        goto exit;
-    }
-
-    if (PyErr_PrepareStaticException((PyTypeObject **)&staterr_multiple_inheritance,
-                                      "_testmultiphase.staterr_multiple_inheritance",
-                                      "Immutable exception for testing of multiple inheritance",
-                                      base_tuple)) {
-        retval = -1;
-        goto exit;
-    }
-
-    if (PyModule_AddObject(m, "Staterr", staterr_multiple_inheritance) != 0) {
-        retval = -1;
-        goto exit;
-    }
-
-exit:
-    Py_XDECREF(base_tuple);
-    return retval;
-}
-
-static PyModuleDef_Slot immutable_exc_multip_inheritance_slots[] = {
-    {Py_mod_exec, immutable_exc_multip_inheritance_exec},
-    {0, NULL}
-};
-
-static PyModuleDef def_immutable_exc_multip_inheritance = TEST_MODULE_DEF(
-                                                          "_testmultiphase_immutable_exc_multip_inheritance",
-                                                          immutable_exc_multip_inheritance_slots,
-                                                          NULL);
-
-PyMODINIT_FUNC
-PyInit__testmultiphase_immutable_exc_multip_inheritance(PyObject *spec) {
-    return PyModuleDef_Init(&def_immutable_exc_multip_inheritance);
-}
 
 /*** Helper for imp test ***/
 
