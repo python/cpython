@@ -3803,17 +3803,24 @@ class Test_import(FixerTestCase):
         # so we can check that it's doing the right thing
         self.files_checked = []
         self.present_files = set()
+        self.present_directories = set()
         self.always_exists = True
         def fake_exists(name):
             self.files_checked.append(name)
             return self.always_exists or (name in self.present_files)
 
+        def fake_isdir(name):
+            self.files_checked.append(name)
+            return self.always_exists or (name in self.present_directories)
+
         from lib2to3.fixes import fix_import
         fix_import.exists = fake_exists
+        fix_import.isdir = fake_isdir
 
     def tearDown(self):
         from lib2to3.fixes import fix_import
         fix_import.exists = os.path.exists
+        fix_import.isdir = os.path.isdir
 
     def check_both(self, b, a):
         self.always_exists = True
@@ -3828,7 +3835,7 @@ class Test_import(FixerTestCase):
 
         self.always_exists = False
         self.present_files = set(['__init__.py'])
-        expected_extensions = ('.py', os.path.sep, '.pyc', '.so', '.sl', '.pyd')
+        expected_extensions = ('.py', '', '.pyc', '.so', '.sl', '.pyd')
         names_to_test = (p("/spam/eggs.py"), "ni.py", p("../../shrubbery.py"))
 
         for name in names_to_test:
@@ -3868,8 +3875,17 @@ class Test_import(FixerTestCase):
         b = "import bar"
         a = "from . import bar"
         self.always_exists = False
-        self.present_files = set(["__init__.py", "bar" + os.path.sep])
+        self.present_files = set(["__init__.py", "bar" + os.path.sep + "__init__.py"])
+        self.present_directories = set(["bar"])
         self.check(b, a)
+
+    def test_import_from_non_package(self):
+        # import with a directory that is not a python package (no change)
+        a = "import json"
+        self.always_exists = False
+        self.present_files = set(["__init__.py"])
+        self.present_directories = set(["json"])
+        self.unchanged(a)
 
     def test_already_relative_import(self):
         s = "from . import bar"
