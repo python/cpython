@@ -31,7 +31,7 @@ installing other Python projects, refer to the
 Key terms
 =========
 
-* the `Python Packaging Index <https://pypi.org>`__ is a public
+* the `Python Package Index <https://pypi.org>`__ is a public
   repository of open source licensed packages made available for use by
   other Python users
 * the `Python Packaging Authority
@@ -125,20 +125,20 @@ Reading the Python Packaging User Guide
 The Python Packaging User Guide covers the various key steps and elements
 involved in creating and publishing a project:
 
-* `Project structure`_
-* `Building and packaging the project`_
-* `Uploading the project to the Python Packaging Index`_
+* `Creating the project structure`_
+* `Building distributions`_
+* `Uploading the distributions to the Python Package Index`_
 
-.. _Project structure: \
-    https://packaging.python.org/tutorials/distributing-packages/
-.. _Building and packaging the project: \
-   https://packaging.python.org/tutorials/distributing-packages/#packaging-your-project
-.. _Uploading the project to the Python Packaging Index: \
-   https://packaging.python.org/tutorials/distributing-packages/#uploading-your-project-to-pypi
+.. _Creating the project structure: \
+   https://packaging.python.org/tutorials/packaging-projects/#creating-the-package-files
+.. _Building distributions: \
+   https://packaging.python.org/tutorials/packaging-projects/#generating-distribution-archives
+.. _Uploading the distributions to the Python Package Index: \
+   https://packaging.python.org/tutorials/packaging-projects/#uploading-the-distribution-archives
 
 
-How do I...?
-============
+How do I...
+===========
 
 These are quick answers or links for some common tasks.
 
@@ -147,13 +147,13 @@ These are quick answers or links for some common tasks.
 
 This isn't an easy topic, but here are a few tips:
 
-* check the Python Packaging Index to see if the name is already in use
-* check popular hosting sites like GitHub, BitBucket, etc to see if there
-  is already a project with that name
-* check what comes up in a web search for the name you're considering
+* check the Python Package Index to see if the name is already in use;
+* check popular hosting sites like GitHub, BitBucket, etc. to see if there
+  is already a project with that name;
+* check what comes up in a web search for the name you're considering;
 * avoid particularly common words, especially ones with multiple meanings,
   as they can make it difficult for users to find your software when
-  searching for it
+  searching for it.
 
 
 ... create and distribute binary extensions?
