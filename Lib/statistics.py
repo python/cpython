@@ -877,7 +877,7 @@ def correlation(x, y, /):
     n = len(x)
     if len(y) != n:
         raise StatisticsError('correlation requires that both variables have same number of data points')
-    if n < 1:
+    if n < 2:
         raise StatisticsError('correlation requires at least two data points')
     cov = covariance(x, y)
     stdx = stdev(x)
