@@ -1227,16 +1227,16 @@ class PosixTester(unittest.TestCase):
             posix.close(f)
 
     @unittest.skipUnless(hasattr(signal, 'SIGCHLD'), 'CLD_XXXX be placed in si_code for a SIGCHLD signal')
-    @unittest.skipUnless(hasattr(posix, 'waitid_result'), "test needs posix.waitid_result")
+    @unittest.skipUnless(hasattr(os, 'waitid_result'), "test needs posix.waitid_result")
     def test_cld_xxxx_constants(self):
         # reference: http://man7.org/linux/man-pages/man2/sigaction.2.html
-        self.assertEqual(posix.CLD_EXITED, 1)
-        self.assertEqual(posix.CLD_KILLED, 2)
-        self.assertEqual(posix.CLD_DUMPED, 3)
-        self.assertEqual(posix.CLD_TRAPPED, 4)
-        self.assertEqual(posix.CLD_STOPPED, 5)
+        self.assertEqual(os.CLD_EXITED, 1)
+        self.assertEqual(os.CLD_KILLED, 2)
+        self.assertEqual(os.CLD_DUMPED, 3)
+        self.assertEqual(os.CLD_TRAPPED, 4)
+        self.assertEqual(os.CLD_STOPPED, 5)
         # FIXME: CLD_CONTINUED was added since Linux 2.6.9
-        # self.assertEqual(posix.CLD_CONTINUED, 6)
+        # self.assertEqual(os.CLD_CONTINUED, 6)
 
     @unittest.skipUnless(os.symlink in os.supports_dir_fd, "test needs dir_fd support in os.symlink()")
     def test_symlink_dir_fd(self):

@@ -1,2 +1,0 @@
-:data:`~os.CLD_KILLED` is added for posixmodule.
-(Contributed by Dong-hee Na in :issue:`38493`.)

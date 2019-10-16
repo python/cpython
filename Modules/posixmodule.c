@@ -14066,6 +14066,9 @@ all_ins(PyObject *m)
 #ifdef CLD_TRAPPED
     if (PyModule_AddIntMacro(m, CLD_TRAPPED)) return -1;
 #endif
+#ifdef CLD_STOPPED
+    if (PyModule_AddIntMacro(m, CLD_STOPPED)) return -1;
+#endif
 #ifdef CLD_CONTINUED
     if (PyModule_AddIntMacro(m, CLD_CONTINUED)) return -1;
 #endif

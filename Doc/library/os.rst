@@ -3949,6 +3949,7 @@ written in Python, such as a mail server's external command delivery program.
           CLD_KILLED
           CLD_DUMPED
           CLD_TRAPPED
+          CLD_STOPPED
           CLD_CONTINUED
 
    These are the possible values for :attr:`si_code` in the result returned by
@@ -3957,6 +3958,9 @@ written in Python, such as a mail server's external command delivery program.
    .. availability:: Unix.
 
    .. versionadded:: 3.3
+
+   .. versionchanged:: 3.9
+      Added :data:`CLD_KILLED` and :data:`CLD_STOPPED` values.
 
 
 .. function:: waitpid(pid, options)
