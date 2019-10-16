@@ -1227,7 +1227,7 @@ class PosixTester(unittest.TestCase):
             posix.close(f)
 
     @unittest.skipUnless(hasattr(signal, 'SIGCHLD'), 'CLD_XXXX be placed in si_code for a SIGCHLD signal')
-    @unittest.skipUnless(hasattr(os, 'waitid_result'), "test needs posix.waitid_result")
+    @unittest.skipUnless(hasattr(os, 'waitid_result'), "test needs os.waitid_result")
     def test_cld_xxxx_constants(self):
         # reference: http://man7.org/linux/man-pages/man2/sigaction.2.html
         self.assertEqual(os.CLD_EXITED, 1)
