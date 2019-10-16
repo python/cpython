@@ -1,2 +1,2 @@
-resource.setrusage() now raises PermissionError` instead of KeyError  if the
+resource.setrusage() now raises PermissionError instead of KeyError  if the
 user doesn't have privileges.  (patch by Giampaolo Rodola)
