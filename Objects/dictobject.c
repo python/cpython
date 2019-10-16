@@ -3169,19 +3169,16 @@ dict_concat(PyDictObject *self, PyObject *other)
         Py_RETURN_NOTIMPLEMENTED;
     }
     if (PyDict_CheckExact(self)) {
-        new = PyDict_New();
+        new = PyDict_Copy((PyObject*)self);
     }
     else {
-        // XXX: PEP 584
-        // If subclass constructors/initializers have been overridden to require
-        // at least one arg, this next bit could fail with a confusing TypeError...
-        // dict.fromkeys currently has this issue, though, so nothing new.
-        new = _PyObject_CallNoArg((PyObject *)Py_TYPE(self));
+        _Py_IDENTIFIER(copy);
+        new = _PyObject_CallMethodIdNoArgs((PyObject*)self, &PyId_copy);
     }
     if (new == NULL) {
         return NULL;
     }
-    if (dict_update_arg(new, (PyObject*)self) || dict_update_arg(new, other)) {
+    if (dict_update_arg(new, other) < 0) {
         Py_DECREF(new);
         return NULL;
     }
