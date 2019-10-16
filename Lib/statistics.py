@@ -873,6 +873,11 @@ def covariance(x, y, /):
 def correlation(x, y, /):
     """Pearson's correlation coefficient
 
+    Return the Pearson's correlation coefficient for two variables. Pearson's correlation coefficient *r*
+    takes values between +1 and -1. It measures the strength and direction of the linear relationship between
+    two variables, where +1 means very strong, positive linear relationship, -1 very strong, negative linear
+    relationship, and 0 no linear relationship.
+
     >>> x = [1, 2, 3, 4, 5, 6, 7, 8, 9]
     >>> y = list(reversed(x))
     >>> correlation(x, x)
