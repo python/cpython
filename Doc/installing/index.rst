@@ -2,9 +2,9 @@
 
 .. _installing-index:
 
-*************************
-Installing Python Modules
-*************************
+**************************
+Installing Python Packages
+**************************
 
 :Email: distutils-sig@python.org
 
@@ -44,10 +44,10 @@ Key terms
   ``venv``. It allows virtual environments to be used on versions of
   Python prior to 3.4, which either don't provide ``venv`` at all, or
   aren't able to automatically install ``pip`` into created environments.
-* The `Python Packaging Index <https://pypi.org>`__ is a public
+* The `Python Package Index <https://pypi.org>`__ is a public
   repository of open source licensed packages made available for use by
   other Python users.
-* the `Python Packaging Authority
+* The `Python Packaging Authority
   <https://www.pypa.io/>`__ is the group of
   developers and documentation authors responsible for the maintenance and
   evolution of the standard packaging tools and the associated metadata and
@@ -77,8 +77,8 @@ Basic usage
 The standard packaging tools are all designed to be used from the command
 line.
 
-The following command will install the latest version of a module and its
-dependencies from the Python Packaging Index::
+The following command will install the latest version of a package and its
+dependencies from the Python Package Index::
 
     python -m pip install SomePackage
 
@@ -93,14 +93,14 @@ dependencies from the Python Packaging Index::
 
 It's also possible to specify an exact or minimum version directly on the
 command line. When using comparator operators such as ``>``, ``<`` or some other
-special character which get interpreted by shell, the package name and the
+special character which get interpreted by shell, the package name and
 version should be enclosed within double quotes::
 
     python -m pip install SomePackage==1.0.4    # specific version
     python -m pip install "SomePackage>=1.0.4"  # minimum version
 
-Normally, if a suitable module is already installed, attempting to install
-it again will have no effect. Upgrading existing modules must be requested
+Normally, if a suitable package is already installed, attempting to install
+it again will have no effect. Upgrading existing packages must be requested
 explicitly::
 
     python -m pip install --upgrade SomePackage
@@ -118,8 +118,8 @@ above.
     <https://packaging.python.org/installing/>`__
 
 
-How do I ...?
-=============
+How do I ...
+============
 
 These are quick answers or links for some common tasks.
 
@@ -196,8 +196,8 @@ Common installation issues
 Installing into the system Python on Linux
 ------------------------------------------
 
-On Linux systems, a Python installation will typically be included as part
-of the distribution. Installing into this Python installation requires
+On Linux, a Python installation will typically be included as part
+of the Linux distribution. Installing into this Python installation requires
 root access to the system, and may interfere with the operation of the
 system package manager and other components of the system if a component
 is unexpectedly upgraded using ``pip``.
@@ -220,14 +220,14 @@ There are also additional resources for `installing pip.
 Installing binary extensions
 ----------------------------
 
-Python has typically relied heavily on source based distribution, with end
-users being expected to compile extension modules from source as part of
+Python has typically relied heavily on source based distributions, with end
+users being expected to compile binary extensions from source as part of
 the installation process.
 
 With the introduction of support for the binary ``wheel`` format, and the
 ability to publish wheels for at least Windows and Mac OS X through the
-Python Packaging Index, this problem is expected to diminish over time,
-as users are more regularly able to install pre-built extensions rather
+Python Package Index, this problem is expected to diminish over time,
+as users are more regularly able to install pre-built binary extensions rather
 than needing to build them themselves.
 
 Some of the solutions for installing `scientific software
