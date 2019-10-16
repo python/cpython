@@ -1475,7 +1475,7 @@ def get_server_certificate(addr, ssl_version=PROTOCOL_TLS, ca_certs=None):
                                      cert_reqs=cert_reqs,
                                      cafile=ca_certs)
     with  create_connection(addr) as sock:
-        with context.wrap_socket(sock) as sslsock:
+        with context.wrap_socket(sock, server_hostname=host) as sslsock:
             dercert = sslsock.getpeercert(True)
     return DER_cert_to_PEM_cert(dercert)
 
