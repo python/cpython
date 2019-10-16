@@ -81,6 +81,7 @@ Function            Description
 ==================  ====================================================
 covariance          Sample covariance for two variables.
 correlation         Pearson's correlation coefficient for two variables.
+linear_regression   Intercept and slope fot simple linear regression.
 ==================  ====================================================
 
 Calculate covariance and Pearson's correlation for two variables:
@@ -89,8 +90,10 @@ Calculate covariance and Pearson's correlation for two variables:
 >>> y = [1, 2, 3, 1, 2, 3, 1, 2, 3]
 >>> covariance(x, y)
 0.75
->>> correlation(x, y)
-0.31622776601683794
+>>> correlation(x, y)  #doctest: +ELLIPSIS
+0.31622776601...
+>>> linear_regression(x, y)  #doctest: +ELLIPSIS
+(1.5, 0.099999999999...)
 
 
 Exceptions
@@ -120,6 +123,7 @@ __all__ = [
     'variance',
     'correlation',
     'covariance',
+    'linear_regression',
 ]
 
 import math
@@ -839,10 +843,11 @@ def pstdev(data, mu=None):
         return math.sqrt(var)
 
 
-# === Measures of joint variability ===
+# === Statistics for relations between two variables ===
 
 # See https://en.wikipedia.org/wiki/Covariance
 #     https://en.wikipedia.org/wiki/Pearson_correlation_coefficient
+#     https://en.wikipedia.org/wiki/Simple_linear_regression
 
 
 def covariance(x, y, /):
@@ -888,6 +893,37 @@ def correlation(x, y, /):
         return cov / (stdx * stdy)
     except ZeroDivisionError:
         raise StatisticsError('standard deviation of at least one of the variables is zero')
+
+
+def linear_regression(x, y, /):
+    """Calculate intercept and slope for simple linear regression
+
+    Return the ``(intercept, slope)`` tuple of the simple linear regression parameters. Simple linear regression
+    describes relationship between *x* and *y* in terms of linear function::
+
+        y = intercept + slope * x + noise
+
+    where ``intercept`` and ``slope`` are the regression parameters that are estimated, and
+    noise term is an unobserved random variable, the unexplained variability of the data.
+
+    >>> x = [1, 2, 3, 4, 5]
+    >>> noise = NormalDist().samples(5, seed=42)
+    >>> y = [2 + 3 * x[i] + noise[i] for i in range(5)]
+    >>> linear_regression(x, y)  #doctest: +ELLIPSIS
+    (1.75684970486..., 3.09078914170...)
+
+    """
+    n = len(x)
+    if len(y) != n:
+        raise StatisticsError('linear regression requires that both variables have same number of data points')
+    if n < 2:
+        raise StatisticsError('linear regression requires at least two data points')
+    try:
+        slope = correlation(x, y) * ( stdev(y) / stdev(x) )
+    except ZeroDivisionError:
+        raise StatisticsError('standard deviation of at least one of the variables is zero')
+    intercept = mean(y) - slope * mean(x)
+    return intercept, slope
 
 
 ## Normal Distribution #####################################################
