@@ -632,7 +632,7 @@ form.
 
    .. note::
 
-      The compiled versions of the most recent patterns passed to
+      The compiled versions of the 512 most recent patterns passed to
       :func:`re.compile` and the module-level matching functions are cached, so
       programs that use only a few regular expressions at a time needn't worry
       about compiling regular expressions.
