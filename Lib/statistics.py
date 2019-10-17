@@ -900,34 +900,35 @@ def correlation(x, y, /):
         raise StatisticsError('standard deviation of at least one of the variables is zero')
 
 
-def linear_regression(x, y, /):
+def linear_regression(regressor, dependent_variable):
     """Calculate intercept and slope for simple linear regression
 
     Return the ``(intercept, slope)`` tuple of the simple linear regression parameters. Simple linear regression
-    describes relationship between *x* and *y* in terms of linear function::
+    describes relationship between *regressor* and *dependent variable* in terms of linear function::
 
-        y = intercept + slope * x + noise
+        dependent_variable = intercept + slope * regressor + noise
 
     where ``intercept`` and ``slope`` are the regression parameters that are estimated, and
-    noise term is an unobserved random variable, the unexplained variability of the data.
+    noise term is an unobserved random variable, the unexplained variability of the data (the difference between
+    prediction and the actual values of dependent variable).
 
-    >>> x = [1, 2, 3, 4, 5]
+    >>> regressor = [1, 2, 3, 4, 5]
     >>> noise = NormalDist().samples(5, seed=42)
-    >>> y = [2 + 3 * x[i] + noise[i] for i in range(5)]
-    >>> linear_regression(x, y)  #doctest: +ELLIPSIS
+    >>> dependent_variable = [2 + 3 * regressor[i] + noise[i] for i in range(5)]
+    >>> linear_regression(regressor, dependent_variable)  #doctest: +ELLIPSIS
     (1.75684970486..., 3.09078914170...)
 
     """
-    n = len(x)
-    if len(y) != n:
+    n = len(regressor)
+    if len(dependent_variable) != n:
         raise StatisticsError('linear regression requires that both variables have same number of data points')
     if n < 2:
         raise StatisticsError('linear regression requires at least two data points')
     try:
-        slope = correlation(x, y) * ( stdev(y) / stdev(x) )
+        slope = correlation(regressor, dependent_variable) * ( stdev(dependent_variable) / stdev(regressor) )
     except ZeroDivisionError:
         raise StatisticsError('standard deviation of at least one of the variables is zero')
-    intercept = mean(y) - slope * mean(x)
+    intercept = mean(dependent_variable) - slope * mean(regressor)
     return intercept, slope
 
 
