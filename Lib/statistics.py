@@ -919,10 +919,11 @@ def linear_regression(regressor, dependent_variable):
 
         dependent_variable = intercept + slope * regressor + noise
 
-    where ``intercept`` and ``slope`` are the regression parameters that are
-    estimated, and noise term is an unobserved random variable, the unexplained
-    variability of the data (the difference between prediction and the actual
-    values of dependent variable).
+   where ``intercept`` and ``slope`` are the regression parameters that are
+   estimated, and noise term is an unobserved random variable, for the
+   variability of the data that was not explained byt the linear regression
+   (it is equal to the difference between prediction and the actual values
+   of dependent variable).
 
     >>> regressor = [1, 2, 3, 4, 5]
     >>> noise = NormalDist().samples(5, seed=42)

@@ -68,6 +68,17 @@ tends to deviate from the typical or average values.
 :func:`variance`         Sample variance of data.
 =======================  =============================================
 
+Statistics for relations between two variables
+----------------------------------------------
+
+These functions calculate statistics regarding relations between two random variables.
+
+=========================  =====================================================
+:func:`covariance`         Sample covariance for two variables.
+:func:`correlation`        Pearson's correlation coefficient for two variables.
+:func:`linear_regression`  Intercept and slope fot simple linear regression.
+=========================  =====================================================
+
 
 Function details
 ----------------
@@ -558,6 +569,93 @@ However, for reading convenience, most of the examples show sorted sequences.
         [81.0, 86.2, 89.0, 99.4, 102.5, 103.6, 106.0, 109.8, 111.0]
 
    .. versionadded:: 3.8
+
+.. function:: covariance(x, y, /)
+
+   Calculates covariance of two variables *x* and *y*. Covariance is
+   a measure of the joint variability of two variables.
+
+   Raises :exc:`StatisticsError` if both variables have same number of data
+   points, or if any of the variables has less then two data points.
+
+   Examples:
+
+   .. doctest::
+
+      >>> x = [1, 2, 3, 4, 5, 6, 7, 8, 9]
+      >>> y = [1, 2, 3, 1, 2, 3, 1, 2, 3]
+      >>> covariance(x, y)
+      0.75
+      >>> z = [9, 8, 7, 6, 5, 4, 3, 2, 1]
+      >>> covariance(x, z)
+      -7.5
+      >>> covariance(z, x)
+      -7.5
+
+.. function:: correlation(x, y, /)
+
+   Return the `Pearson's correlation coefficient
+   <https://en.wikipedia.org/wiki/Pearson_correlation_coefficient>`_
+   for two variables. Pearson's correlation coefficient *r* takes values
+   between -1 and +1. It measures the strength and direction of the linear
+   relationship, where +1 means very strong, positive linear relationship,
+   -1 very strong, negative linear relationship, and 0 no linear relationship.
+
+   Raises :exc:`StatisticsError` if both variables have same number of data
+   points, or if any of the variables has less then two data points, or if
+   :func:`stdev` of any of the two variables is equal to zero (it is constant).
+
+   Examples:
+
+   .. doctest::
+
+      >>> x = [1, 2, 3, 4, 5, 6, 7, 8, 9]
+      >>> y = [9, 8, 7, 6, 5, 4, 3, 2, 1]
+      >>> correlation(x, x)
+      1.0
+      >>> correlation(x, y)
+      -1.0
+
+.. function:: linear_regression(regressor, dependent_variable)
+
+   Return the ``(intercept, slope)`` tuple of the `simple linear regression
+   <https://en.wikipedia.org/wiki/Simple_linear_regression>`_
+   parameters. Simple linear regression describes relationship between
+   *regressor* and *dependent variable* in terms of linear function:
+
+      *dependent_variable = intercept + slope * regressor + noise*
+
+   where ``intercept`` and ``slope`` are the regression parameters that are
+   estimated, and noise term is an unobserved random variable, for the
+   variability of the data that was not explained byt the linear regression
+   (it is equal to the difference between prediction and the actual values
+   of dependent variable).
+
+   Raises :exc:`StatisticsError` if both variables have same number of data
+   points, or if any of the variables has less then two data points, or if
+   :func:`stdev` of any of the two variables is equal to zero (it is constant).
+
+   For example, if we took the data on the data on `release dates of the Monty
+   Python films <https://en.wikipedia.org/wiki/Monty_Python#Films>`_, and used
+   it to predict the cumulative number of Monty Python films produced, we could
+   predict what would be the number of films they could have made till year
+   2019, assuming that they kept the pace.
+
+   .. doctest::
+
+      >>> year = [1971, 1975, 1979, 1982, 1983]
+      >>> films_total = [1, 2, 3, 4, 5]
+      >>> intercept, slope = linear_regression(year, films_total)
+      >>> round(intercept + slope * 2019)
+      16
+
+   We could also use it to predict how many Monty Python films existed when
+   Brian Cohen was born.
+
+   .. doctest::
+
+      >>> round(intercept + slope * 1)
+      -610
 
 
 Exceptions
