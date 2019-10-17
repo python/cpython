@@ -84,7 +84,8 @@ correlation         Pearson's correlation coefficient for two variables.
 linear_regression   Intercept and slope fot simple linear regression.
 ==================  ====================================================
 
-Calculate covariance and Pearson's correlation for two variables:
+Calculate covariance, Pearson's correlation, and simple linear regression
+for two variables:
 
 >>> x = [1, 2, 3, 4, 5, 6, 7, 8, 9]
 >>> y = [1, 2, 3, 1, 2, 3, 1, 2, 3]
@@ -853,10 +854,18 @@ def pstdev(data, mu=None):
 def covariance(x, y, /):
     """Covariance
 
+    Calculates covariance of two variables *x* and *y*. Covariance is
+    a measure of the joint variability of two variables.
+
     >>> x = [1, 2, 3, 4, 5, 6, 7, 8, 9]
     >>> y = [1, 2, 3, 1, 2, 3, 1, 2, 3]
     >>> covariance(x, y)
     0.75
+    >>> z = [9, 8, 7, 6, 5, 4, 3, 2, 1]
+    >>> covariance(x, z)
+    -7.5
+    >>> covariance(z, x)
+    -7.5
 
     """
     n = len(x)
@@ -873,13 +882,14 @@ def covariance(x, y, /):
 def correlation(x, y, /):
     """Pearson's correlation coefficient
 
-    Return the Pearson's correlation coefficient for two variables. Pearson's correlation coefficient *r*
-    takes values between -1 and +1. It measures the strength and direction of the linear relationship between
-    two variables, where +1 means very strong, positive linear relationship, -1 very strong, negative linear
+    Return the Pearson's correlation coefficient for two variables. Pearson's
+    correlation coefficient *r* takes values between -1 and +1. It measures the
+    strength and direction of the linear relationship, where +1 means very
+    strong, positive linear relationship, -1 very strong, negative linear
     relationship, and 0 no linear relationship.
 
     >>> x = [1, 2, 3, 4, 5, 6, 7, 8, 9]
-    >>> y = list(reversed(x))
+    >>> y = [9, 8, 7, 6, 5, 4, 3, 2, 1]
     >>> correlation(x, x)
     1.0
     >>> correlation(x, y)
@@ -903,14 +913,16 @@ def correlation(x, y, /):
 def linear_regression(regressor, dependent_variable):
     """Calculate intercept and slope for simple linear regression
 
-    Return the ``(intercept, slope)`` tuple of the simple linear regression parameters. Simple linear regression
-    describes relationship between *regressor* and *dependent variable* in terms of linear function::
+    Return the ``(intercept, slope)`` tuple of the simple linear regression
+    parameters. Simple linear regression describes relationship between
+    *regressor* and *dependent variable* in terms of linear function::
 
         dependent_variable = intercept + slope * regressor + noise
 
-    where ``intercept`` and ``slope`` are the regression parameters that are estimated, and
-    noise term is an unobserved random variable, the unexplained variability of the data (the difference between
-    prediction and the actual values of dependent variable).
+    where ``intercept`` and ``slope`` are the regression parameters that are
+    estimated, and noise term is an unobserved random variable, the unexplained
+    variability of the data (the difference between prediction and the actual
+    values of dependent variable).
 
     >>> regressor = [1, 2, 3, 4, 5]
     >>> noise = NormalDist().samples(5, seed=42)
@@ -925,7 +937,10 @@ def linear_regression(regressor, dependent_variable):
     if n < 2:
         raise StatisticsError('linear regression requires at least two data points')
     try:
-        slope = correlation(regressor, dependent_variable) * ( stdev(dependent_variable) / stdev(regressor) )
+        cor = correlation(regressor, dependent_variable)
+        stdx = stdev(regressor)
+        stdy = stdev(dependent_variable)
+        slope = cor * (stdy / stdx)
     except ZeroDivisionError:
         raise StatisticsError('standard deviation of at least one of the variables is zero')
     intercept = mean(dependent_variable) - slope * mean(regressor)
