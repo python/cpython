@@ -24,9 +24,9 @@ This module defines base classes for standard Python codecs (encoders and
 decoders) and provides access to the internal Python codec registry, which
 manages the codec and error handling lookup process. Most standard codecs
 are :term:`text encodings <text encoding>`, which encode text to bytes (and
-the reverse), but there are also codecs provided that encode text to text, and
-bytes to bytes. Custom codecs may encode and decode between arbitrary types,
-but some module features are restricted to be used specifically with
+decode bytes to text), but there are also codecs provided that encode text to
+text, and bytes to bytes. Custom codecs may encode and decode between arbitrary
+types, but some module features are restricted to be used specifically with
 :term:`text encodings <text encoding>` or with codecs that encode to
 :class:`bytes`.
 
@@ -909,7 +909,7 @@ Encodings and Unicode
 ---------------------
 
 Strings are stored internally as sequences of code points in
-range ``0x0``--``0x10FFFF``. (See :pep:`393` for
+range ``U+0000``--``U+10FFFF``. (See :pep:`393` for
 more details about the implementation.)
 Once a string object is used outside of CPU and memory, endianness
 and how these arrays are stored as bytes become an issue. As with other
