@@ -911,9 +911,9 @@ _NOT_FOUND = object()
 
 
 class cached_property:
-    def __init__(self, func):
+    def __init__(self, func, name=None):
         self.func = func
-        self.attrname = None
+        self.attrname = name
         self.__doc__ = func.__doc__
         self.lock = RLock()
 
@@ -946,7 +946,10 @@ class cached_property:
                 # check if another thread filled cache while we awaited lock
                 val = cache.get(self.attrname, _NOT_FOUND)
                 if val is _NOT_FOUND:
-                    val = self.func(instance)
+                    if callable(self.func):
+                        val = self.func(instance)
+                    else:
+                        val = self.func.func(instance, *self.func.args, **self.func.keywords)
                     try:
                         cache[self.attrname] = val
                     except TypeError:
