@@ -335,5 +335,5 @@ def iter_all(filename, *,
     """
     # XXX For the moment we cheat.
     for funcname, name, decl in iter_variables(filename,
-                                               proprocessed=preprocessed):
+                                               preprocessed=preprocessed):
         yield 'variable', funcname, name, decl
