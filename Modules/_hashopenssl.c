@@ -1153,6 +1153,8 @@ PyInit__hashlib(void)
     /* Load all digest algorithms and initialize cpuid */
     OPENSSL_add_all_algorithms_noconf();
     ERR_load_crypto_strings();
+#else
+    OPENSSL_init_crypto(OPENSSL_INIT_ADD_ALL_CIPHERS|OPENSSL_INIT_ADD_ALL_DIGESTS, NULL);
 #endif
 
     m = PyState_FindModule(&_hashlibmodule);
