@@ -805,7 +805,7 @@ numbers::
     >>> math.prod(likelihoods, start=prior)
     0.126
 
-(Contributed by Pablo Galindo in :issue:`35606`)
+(Contributed by Pablo Galindo in :issue:`35606`.)
 
 Added new function :func:`math.isqrt` for computing integer square roots.
 (Contributed by Mark Dickinson in :issue:`36887`.)
@@ -911,12 +911,12 @@ pickle
 Reduction methods can now include a 6th item in the tuple they return. This
 item should specify a custom state-setting method that's called instead of the
 regular ``__setstate__`` method.
-(Contributed by Pierre Glaser and Olivier Grisel in :issue:`35900`)
+(Contributed by Pierre Glaser and Olivier Grisel in :issue:`35900`.)
 
 :mod:`pickle` extensions subclassing the C-optimized :class:`~pickle.Pickler`
 can now override the pickling logic of functions and classes by defining the
 special :meth:`~pickle.Pickler.reducer_override` method.
-(Contributed by Pierre Glaser and Olivier Grisel in :issue:`35900`)
+(Contributed by Pierre Glaser and Olivier Grisel in :issue:`35900`.)
 
 
 plistlib
@@ -1276,7 +1276,7 @@ Optimizations
 
 * Removed one ``Py_ssize_t`` member from ``PyGC_Head``.  All GC tracked
   objects (e.g. tuple, list, dict) size is reduced 4 or 8 bytes.
-  (Contributed by Inada Naoki in :issue:`33597`)
+  (Contributed by Inada Naoki in :issue:`33597`.)
 
 * :class:`uuid.UUID` now uses ``__slots__`` to reduce its memory footprint.
   (Contributed by Wouter Bolsterlee and Tal Einat in :issue:`30977`)
