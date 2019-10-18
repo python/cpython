@@ -4324,7 +4324,7 @@ os_system_impl(PyObject *module, const Py_UNICODE *command)
 {
     long result;
 
-    if (PySys_Audit("system", "(u)", command) < 0) {
+    if (PySys_Audit("os.system", "(u)", command) < 0) {
         return -1;
     }
 
@@ -4351,7 +4351,7 @@ os_system_impl(PyObject *module, PyObject *command)
     long result;
     const char *bytes = PyBytes_AsString(command);
 
-    if (PySys_Audit("system", "(O)", command) < 0) {
+    if (PySys_Audit("os.system", "(O)", command) < 0) {
         return -1;
     }
 
