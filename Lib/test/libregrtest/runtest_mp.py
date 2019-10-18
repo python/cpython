@@ -3,6 +3,7 @@ import faulthandler
 import json
 import os
 import queue
+import signal
 import subprocess
 import sys
 import threading
@@ -30,6 +31,8 @@ assert MAIN_PROCESS_TIMEOUT >= PROGRESS_UPDATE
 
 # Time to wait until a worker completes: should be immediate
 JOIN_TIMEOUT = 30.0   # seconds
+
+USE_PROCESS_GROUP = (hasattr(os, "setsid") and hasattr(os, "killpg"))
 
 
 def must_stop(result, ns):
@@ -59,12 +62,16 @@ def run_test_in_subprocess(testname, ns):
     # Running the child from the same working directory as regrtest's original
     # invocation ensures that TEMPDIR for the child is the same when
     # sysconfig.is_python_build() is true. See issue 15300.
+    kw = {}
+    if USE_PROCESS_GROUP:
+        kw['start_new_session'] = True
     return subprocess.Popen(cmd,
                             stdout=subprocess.PIPE,
                             stderr=subprocess.PIPE,
                             universal_newlines=True,
                             close_fds=(os.name != 'nt'),
-                            cwd=support.SAVEDCWD)
+                            cwd=support.SAVEDCWD,
+                            **kw)
 
 
 def run_tests_worker(ns, test_name):
@@ -149,16 +156,24 @@ class TestWorkerProcess(threading.Thread):
             return
         self._killed = True
 
-        print(f"Kill {self}", file=sys.stderr, flush=True)
+        if USE_PROCESS_GROUP:
+            what = f"{self} process group"
+        else:
+            what = f"{self}"
+
+        print(f"Kill {what}", file=sys.stderr, flush=True)
         try:
-            popen.kill()
+            if USE_PROCESS_GROUP:
+                os.killpg(popen.pid, signal.SIGKILL)
+            else:
+                popen.kill()
         except ProcessLookupError:
-            # Process completed, the TestWorkerProcess thread read its exit
-            # status, but Popen.send_signal() read the returncode just before
-            # Popen.wait() set returncode.
+            # popen.kill(): the process completed, the TestWorkerProcess thread
+            # read its exit status, but Popen.send_signal() read the returncode
+            # just before Popen.wait() set returncode.
             pass
         except OSError as exc:
-            print_warning(f"Failed to kill {self}: {exc!r}")
+            print_warning(f"Failed to kill {what}: {exc!r}")
 
     def stop(self):
         # Method called from a different thread to stop this thread
