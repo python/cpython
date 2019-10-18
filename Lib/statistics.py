@@ -1092,7 +1092,7 @@ class NormalDist:
         "Two NormalDist objects are equal if their mu and sigma are both equal."
         if not isinstance(x2, NormalDist):
             return NotImplemented
-        return (x1._mu, x2._sigma) == (x2._mu, x2._sigma)
+        return x1._mu == x2._mu and x1._sigma == x2._sigma
 
     def __hash__(self):
         "NormalDist objects hash equal if their mu and sigma are both equal."
