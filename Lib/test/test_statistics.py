@@ -2651,9 +2651,13 @@ class TestNormalDist:
         nd2 = NormalDist(2, 4)
         nd3 = NormalDist()
         nd4 = NormalDist(2, 4)
+        nd5 = NormalDist(2, 8)
+        nd6 = NormalDist(8, 4)
         self.assertNotEqual(nd1, nd2)
         self.assertEqual(nd1, nd3)
         self.assertEqual(nd2, nd4)
+        self.assertNotEqual(nd2, nd5)
+        self.assertNotEqual(nd2, nd6)
 
         # Test NotImplemented when types are different
         class A:
