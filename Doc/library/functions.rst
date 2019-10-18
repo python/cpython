@@ -248,6 +248,12 @@ section.
       character.  This is to facilitate detection of incomplete and complete
       statements in the :mod:`code` module.
 
+   .. warning::
+
+      It is possible to crash the Python interpreter with a
+      sufficiently large/complex string when compiling to an AST
+      object due to stack depth limitations in Python's AST compiler.
+
    .. versionchanged:: 2.3
       The *flags* and *dont_inherit* arguments were added.
 
