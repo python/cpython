@@ -43,6 +43,7 @@ def _is_special_symbol(name):
 
 def iter_symbols(binfile, *,
                  nm=None,
+                 handle_id=None,
                  _which=shutil.which,
                  _run=util.run_cmd,
                  ):
@@ -51,6 +52,8 @@ def iter_symbols(binfile, *,
         nm = _which('nm')
         if not nm:
             raise NotImplementedError
+    if handle_id is None:
+        handle_id = info.ID
 
     argv = [nm,
             '--line-numbers',
@@ -71,7 +74,7 @@ def iter_symbols(binfile, *,
         elif _is_special_symbol(name):
             continue
         yield Symbol(
-                id=(filename, funcname, name),
+                id=handle_id(filename, funcname, name),
                 kind=kind,
                 external=external,
                 )

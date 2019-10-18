@@ -1,6 +1,7 @@
 import os.path
 
-from c_analyzer.common.info import UNKNOWN
+from c_analyzer.common import files
+from c_analyzer.common.info import UNKNOWN, ID
 from c_analyzer.variables import find as _common
 
 from . import SOURCE_DIRS, PYTHON, REPO_ROOT
@@ -18,41 +19,66 @@ from .supported import (
 # * supported_vars()
 
 
+def _handle_id(filename, funcname, name, *,
+               _relpath=os.path.relpath,
+               ):
+    filename = _relpath(filename, REPO_ROOT)
+    return ID(filename, funcname, name)
+
+
 def vars_from_binary(*,
-                     dirnames=SOURCE_DIRS,
-                     known=None,
+                     known=KNOWN_FILE,
+                     _known_from_file=known_from_file,
+                     _iter_files=files.iter_files_by_suffix,
                      _iter_vars=_common.vars_from_binary,
                      ):
     """Yield a Variable for each found Symbol.
 
     Details are filled in from the given "known" variables and types.
     """
-    yield from _iter_vars(PYTHON, known=known, dirnames=dirnames)
+    if isinstance(known, str):
+        known = _known_from_file(known)
+    dirnames = SOURCE_DIRS
+    suffixes = ('.c',)
+    filenames = _iter_files(dirnames, suffixes)
+    # XXX For now we only use known variables (no source lookup).
+    filenames = None
+    yield from _iter_vars(PYTHON,
+                          known=known,
+                          filenames=filenames,
+                          handle_id=_handle_id,
+                          )
 
 
 def vars_from_source(*,
                      preprocessed=None,
-                     known=None,  # for types
+                     known=KNOWN_FILE,
+                     _known_from_file=known_from_file,
+                     _iter_files=files.iter_files_by_suffix,
                      _iter_vars=_common.vars_from_source,
                      ):
     """Yield a Variable for each declaration in the raw source code.
 
     Details are filled in from the given "known" variables and types.
     """
-    yield from _iter_vars(
-            dirnames=SOURCE_DIRS,
-            preprocessed=preprocessed,
-            known=known,
-            )
+    if isinstance(known, str):
+        known = _known_from_file(known)
+    dirnames = SOURCE_DIRS
+    suffixes = ('.c',)
+    filenames = _iter_files(dirnames, suffixes)
+    yield from _iter_vars(filenames,
+                          preprocessed=preprocessed,
+                          known=known,
+                          handle_id=_handle_id,
+                          )
 
 
-def supported_vars(dirnames=SOURCE_DIRS, *,
+def supported_vars(*,
                    known=KNOWN_FILE,
                    ignored=IGNORED_FILE,
                    skip_objects=False,
                    _known_from_file=known_from_file,
                    _ignored_from_file=ignored_from_file,
-                   _relpath=os.path.relpath,
                    _iter_vars=vars_from_binary,
                    _is_supported=is_supported,
                    ):
@@ -62,13 +88,7 @@ def supported_vars(dirnames=SOURCE_DIRS, *,
     if isinstance(ignored, str):
         ignored = _ignored_from_file(ignored)
 
-    if dirnames == SOURCE_DIRS:
-        dirnames = [_relpath(d, REPO_ROOT) for d in dirnames]
-    # XXX For now we only use known variables (no source lookup).
-    dirnames = None
-
-    knownvars = (known or {}).get('variables')
-    for var in _iter_vars(known=known, dirnames=dirnames):
+    for var in _iter_vars(known=known):
         if not var.isglobal:
             continue
         elif var.vartype == UNKNOWN:

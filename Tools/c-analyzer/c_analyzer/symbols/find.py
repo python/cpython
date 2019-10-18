@@ -3,17 +3,18 @@ import os.path
 import shutil
 
 from ..common import files
-from ..common.info import UNKNOWN
+from ..common.info import UNKNOWN, ID
 from ..parser import find as p_find
 
 from . import _nm
 from .info import Symbol
 
 # XXX need tests:
-# * get_resolver
-# * symbol
-# * symbols
-# * variables
+# * get_resolver()
+# * get_resolver_from_dirs()
+# * symbol()
+# * symbols()
+# * variables()
 
 
 def _resolve_known(symbol, knownvars):
@@ -25,15 +26,17 @@ def _resolve_known(symbol, knownvars):
     return knownvars.pop(varid)
 
 
-def get_resolver(known=None, dirnames=(), *,
+def get_resolver(filenames=None, known=None, *,
                  handle_var,
-                 filenames=None,
+                 check_filename=None,
                  perfilecache=None,
                  preprocessed=False,
-                 _iter_files=files.iter_files_by_suffix,
                  _from_source=p_find.variable_from_id,
                  ):
     """Return a "resolver" func for the given known vars/types and filenames.
+
+    "handle_var" is a callable that takes (ID, decl) and returns a
+    Variable.  Variable.from_id is a suitable callable.
 
     The returned func takes a single Symbol and returns a corresponding
     Variable.  If the symbol was located then the variable will be
@@ -41,24 +44,13 @@ def get_resolver(known=None, dirnames=(), *,
     is returned.
     """
     knownvars = (known or {}).get('variables')
-    if filenames:
-        filenames = list(filenames)
-        def check_filename(filename):
-            return filename in filenames
-    elif dirnames:
-        dirnames = [d if d.endswith(os.path.sep) else d + os.path.sep
-                    for d in dirnames]
-        filenames = list(_iter_files(dirnames, ('.c', '.h')))
-        def check_filename(filename):
-            for dirname in dirnames:
-                if filename.startswith(dirname):
-                    return True
-            else:
-                return False
-
     if knownvars:
         knownvars = dict(knownvars)  # a copy
         if filenames:
+            if check_filename is None:
+                filenames = list(filenames)
+                def check_filename(filename):
+                    return filename in filenames
             def resolve(symbol):
                 # XXX Check "found" instead?
                 if not check_filename(symbol.filename):
@@ -88,9 +80,42 @@ def get_resolver(known=None, dirnames=(), *,
     return resolve
 
 
+def get_resolver_from_dirs(dirnames, known=None, *,
+                           handle_var,
+                           suffixes=('.c',),
+                           perfilecache=None,
+                           preprocessed=False,
+                           _iter_files=files.iter_files_by_suffix,
+                           _get_resolver=get_resolver,
+                           ):
+    """Return a "resolver" func for the given known vars/types and filenames.
+
+    "dirnames" should be absolute paths.  If not then they will be
+    resolved relative to CWD.
+
+    See get_resolver().
+    """
+    dirnames = [d if d.endswith(os.path.sep) else d + os.path.sep
+                for d in dirnames]
+    filenames = _iter_files(dirnames, suffixes)
+    def check_filename(filename):
+        for dirname in dirnames:
+            if filename.startswith(dirname):
+                return True
+        else:
+            return False
+    return _get_resolver(filenames, known,
+                         handle_var=handle_var,
+                         check_filename=check_filename,
+                         perfilecache=perfilecache,
+                         preprocessed=preprocessed,
+                         )
+
+
 def symbol(symbol, filenames, known=None, *,
            perfilecache=None,
            preprocessed=False,
+           handle_id=None,
            _get_resolver=get_resolver,
            ):
     """Return a Variable for the one matching the given symbol.
@@ -107,6 +132,7 @@ def symbol(symbol, filenames, known=None, *,
     "" or "UNKNOWN" then only local variables will be searched for.
     """
     resolve = _get_resolver(known, filenames,
+                            handle_id=handle_id,
                             perfilecache=perfilecache,
                             preprocessed=preprocessed,
                             )
@@ -118,12 +144,13 @@ def _get_platform_tool():
         # XXX Support this.
         raise NotImplementedError
     elif nm := shutil.which('nm'):
-        return lambda b: _nm.iter_symbols(b, nm=nm)
+        return lambda b, hi: _nm.iter_symbols(b, nm=nm, handle_id=hi)
     else:
         raise NotImplementedError
 
 
 def symbols(binfile, *,
+            handle_id=None,
             _file_exists=os.path.exists,
             _get_platform_tool=_get_platform_tool,
             ):
@@ -132,15 +159,16 @@ def symbols(binfile, *,
         raise Exception('executable missing (need to build it first?)')
 
     _iter_symbols = _get_platform_tool()
-    yield from _iter_symbols(binfile)
+    yield from _iter_symbols(binfile, handle_id)
 
 
 def variables(binfile, *,
               resolve,
+              handle_id=None,
               _iter_symbols=symbols,
               ):
     """Yield (Variable, Symbol) for each found symbol."""
-    for symbol in _iter_symbols(binfile):
+    for symbol in _iter_symbols(binfile, handle_id=handle_id):
         if symbol.kind != Symbol.KIND.VARIABLE:
             continue
         var = resolve(symbol) or None

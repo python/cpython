@@ -34,16 +34,17 @@ class VarsFromBinaryTests(_Base):
                 _get_symbol_resolver=self._get_symbol_resolver,
                 )
 
-    def _iter_vars(self, binfile, resolve):
-        self.calls.append(('_iter_vars', (binfile, resolve)))
+    def _iter_vars(self, binfile, resolve, handle_id):
+        self.calls.append(('_iter_vars', (binfile, resolve, handle_id)))
         return [(v, v.id) for v in self._return_iter_vars]
 
     def _get_symbol_resolver(self, known=None, dirnames=(), *,
                              handle_var,
+                             filenames=None,
                              perfilecache=None,
                              ):
         self.calls.append(('_get_symbol_resolver',
-                           (known, dirnames, handle_var, perfilecache)))
+                           (known, dirnames, handle_var, filenames, perfilecache)))
         return self._return_get_symbol_resolver
 
     def test_typical(self):
@@ -57,11 +58,11 @@ class VarsFromBinaryTests(_Base):
             info.Variable.from_parts('dir1/eggs.c', 'func1', 'var2', 'static char *'),
             ]
         known = object()
-        dirnames = object()
+        filenames = object()
 
         found = list(vars_from_binary('python',
                                       known=known,
-                                      dirnames=dirnames,
+                                      filenames=filenames,
                                       **self.kwargs))
 
         self.assertEqual(found, [
@@ -73,8 +74,8 @@ class VarsFromBinaryTests(_Base):
             info.Variable.from_parts('dir1/eggs.c', 'func1', 'var2', 'static char *'),
             ])
         self.assertEqual(self.calls, [
-            ('_get_symbol_resolver', (known, dirnames, info.Variable.from_id, {})),
-            ('_iter_vars', ('python', resolver)),
+            ('_get_symbol_resolver', (filenames, known, info.Variable.from_id, None, {})),
+            ('_iter_vars', ('python', resolver, None)),
             ])
 
 #        self._return_iter_symbols = [

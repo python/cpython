@@ -66,7 +66,7 @@ def _check_results(unknown, knownvars, used):
 
 
 # XXX Move this check to its own command.
-def cmd_check_cache(cmd, dirs=SOURCE_DIRS, *,
+def cmd_check_cache(cmd, *,
                     known=KNOWN_FILE,
                     ignored=IGNORED_FILE,
                     _known_from_file=known_from_file,
@@ -76,7 +76,7 @@ def cmd_check_cache(cmd, dirs=SOURCE_DIRS, *,
 
     used = set()
     unknown = set()
-    for var, supported in _find(dirs, known=known, ignored=ignored):
+    for var, supported in _find(known=known, ignored=ignored):
         if supported is None:
             unknown.add(var)
             continue
@@ -84,7 +84,7 @@ def cmd_check_cache(cmd, dirs=SOURCE_DIRS, *,
     _check_results(unknown, known['variables'], used)
 
 
-def cmd_check(cmd, dirs=SOURCE_DIRS, *,
+def cmd_check(cmd, *,
               known=KNOWN_FILE,
               ignored=IGNORED_FILE,
               _find=supported_vars,
@@ -98,7 +98,7 @@ def cmd_check(cmd, dirs=SOURCE_DIRS, *,
     will be printed out.
     """
     unsupported = []
-    for var, supported in _find(dirs, known=known, ignored=ignored):
+    for var, supported in _find(known=known, ignored=ignored):
         if not supported:
             unsupported.append(var)
 
@@ -113,7 +113,7 @@ def cmd_check(cmd, dirs=SOURCE_DIRS, *,
     sys.exit(1)
 
 
-def cmd_show(cmd, dirs=SOURCE_DIRS, *,
+def cmd_show(cmd, *,
              known=KNOWN_FILE,
              ignored=IGNORED_FILE,
              skip_objects=False,
@@ -128,8 +128,7 @@ def cmd_show(cmd, dirs=SOURCE_DIRS, *,
     """
     allsupported = []
     allunsupported = []
-    for found, supported in _find(dirs,
-                                  known=known,
+    for found, supported in _find(known=known,
                                   ignored=ignored,
                                   skip_objects=skip_objects,
                                   ):
@@ -169,9 +168,9 @@ def parse_args(prog=PROG, argv=sys.argv[1:], *, _fail=None):
     common.add_argument('--known', metavar='FILE',
                         default=KNOWN_FILE,
                         help='path to file that lists known types')
-    common.add_argument('dirs', metavar='DIR', nargs='*',
-                        default=SOURCE_DIRS,
-                        help='a directory to check')
+    #common.add_argument('dirs', metavar='DIR', nargs='*',
+    #                    default=SOURCE_DIRS,
+    #                    help='a directory to check')
 
     parser = argparse.ArgumentParser(
             prog=prog,

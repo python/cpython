@@ -2,7 +2,7 @@ import os.path
 import sys
 
 
-TOOL_ROOT = (
+TOOL_ROOT = os.path.abspath(
         os.path.dirname(  # c-analyzer/
             os.path.dirname(__file__)))  # cpython/
 DATA_DIR = TOOL_ROOT
