@@ -77,7 +77,7 @@ def variable(name, filenames, *,
         elif not varid.funcname:
             return varid, decl
     else:
-       return None, None  # No matching variable was found.
+        return None, None  # No matching variable was found.
 
 
 def variable_from_id(id, filenames, *,

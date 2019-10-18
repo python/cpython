@@ -75,7 +75,7 @@ class ID(_NTBase, namedtuple('ID', 'filename funcname name')):
               match_files=(lambda f1, f2: f1 == f2),
               ):
         """Return True if the two match.
-    
+
         At least one of the two must be completely valid (no UNKNOWN
         anywhere).  Otherwise False is returned.  The remaining one
         *may* have UNKNOWN for both funcname and filename.  It must

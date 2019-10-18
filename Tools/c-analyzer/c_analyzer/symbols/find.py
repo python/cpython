@@ -119,7 +119,7 @@ def symbol(symbol, filenames, known=None, *,
            _get_resolver=get_resolver,
            ):
     """Return a Variable for the one matching the given symbol.
-    
+
     "symbol" can be one of several objects:
 
     * Symbol - use the contained info
