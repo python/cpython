@@ -1,0 +1,2 @@
+Fix urllib.parse.urlparse() with numeric paths. A string like "path:80" is
+no longer parsed as a path but as a scheme ("path") and a path ("80").
