@@ -683,6 +683,22 @@ than as a function returning a decorator.  So both of these are now supported::
 
 (Contributed by Raymond Hettinger in :issue:`36772`.)
 
+Added a new :func:`functools.cached_property` decorator, for computed properties
+cached for the life of the instance. ::
+
+   import functools
+   import statistics
+
+   class Dataset:
+      def __init__(self, sequence_of_numbers):
+         self.data = sequence_of_numbers
+
+      @functools.cached_property
+      def variance(self):
+         return statistics.variance(self.data)
+
+(Contributed by Carl Meyer in :issue:`21145`)
+
 
 gc
 --
