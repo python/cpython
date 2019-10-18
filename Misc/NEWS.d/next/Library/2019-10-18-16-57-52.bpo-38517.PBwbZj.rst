@@ -1,0 +1,2 @@
+Add support for partial functions and partialmethod's to
+functools.cached_property
