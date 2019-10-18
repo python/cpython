@@ -47,6 +47,7 @@ def vars_from_binary(*,
                           known=known,
                           filenames=filenames,
                           handle_id=_handle_id,
+                          check_filename=(lambda n: True),
                           )
 
 
