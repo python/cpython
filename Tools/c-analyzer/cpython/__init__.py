@@ -10,8 +10,10 @@ REPO_ROOT = (
         os.path.dirname(  # ..
             os.path.dirname(TOOL_ROOT)))  # Tools/
 
-SOURCE_DIRS = [os.path.join(REPO_ROOT, name) for name in [
+INCLUDE_DIRS = [os.path.join(REPO_ROOT, name) for name in [
         'Include',
+        ]]
+SOURCE_DIRS = [os.path.join(REPO_ROOT, name) for name in [
         'Python',
         'Parser',
         'Objects',
