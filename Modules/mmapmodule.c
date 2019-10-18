@@ -97,7 +97,7 @@ typedef struct {
 #else
     off_t       offset;
 #endif
-    int     exports;
+    Py_ssize_t  exports;
 
 #ifdef MS_WINDOWS
     HANDLE      map_handle;
