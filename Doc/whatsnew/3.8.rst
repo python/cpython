@@ -700,6 +700,30 @@ cached for the life of the instance. ::
 (Contributed by Carl Meyer in :issue:`21145`)
 
 
+Added a new :func:`functools.singledispatchmethod` decorator that converts
+methods into :term:`generic functions <generic function>` using
+:term:`single dispatch`::
+
+    from functools import singledispatchmethod
+    from contextlib import suppress
+
+    class TaskManager:
+
+        def __init__(self, tasks):
+            self.tasks = list(tasks)
+
+        @singledispatchmethod
+        def discard(self, value):
+            with suppress(ValueError):
+                self.tasks.remove(value)
+
+        @discard.register(list)
+        def _(self, tasks):
+            targets = set(tasks)
+            self.tasks = [x for x in self.tasks if x not in targets]
+
+(Contributed by Ethan Smith in :issue:`32380`)
+
 gc
 --
 
