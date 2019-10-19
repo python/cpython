@@ -815,9 +815,20 @@ Added two new combinatoric functions :func:`math.perm` and :func:`math.comb`::
     120
 
 (Contributed by Yash Aggarwal, Keller Fuchs, Serhiy Storchaka, and Raymond
-Hettinger in ::`37128`, :issue:`37178`, and :issue:`35431`.)
+Hettinger in :issue:`37128`, :issue:`37178`, and :issue:`35431`.)
 
-Added new function :func:`math.isqrt` for computing integer square roots.
+Added a new function :func:`math.isqrt` for computing accurate integer square
+roots without conversion to floating point.  The new function supports
+arbitrarily large integers.  It is faster than ``floor(sqrt(n))`` but slower
+than :func:`math.sqrt`::
+
+    >>> r = 650320427
+    >>> s = r ** 2
+    >>> isqrt(s - 1)         # correct
+    650320426
+    >>> floor(sqrt(s - 1))   # incorrect
+    650320427
+
 (Contributed by Mark Dickinson in :issue:`36887`.)
 
 The function :func:`math.factorial` no longer accepts arguments that are not
