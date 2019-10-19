@@ -329,6 +329,12 @@ append_objects(PyObject *py_list, PyGC_Head *gc_list)
     return 0;
 }
 
+// Constants for validate_list's flags argument.
+enum flagstates {collecting_clear_unreachable_clear,
+                 collecting_clear_unreachable_set,
+                 collecting_set_unreachable_clear,
+                 collecting_set_unreachable_set};
+
 #ifdef GC_DEBUG
 // validate_list checks list consistency.  And it works as document
 // describing when flags are expected to be set / unset.
@@ -336,16 +342,31 @@ append_objects(PyObject *py_list, PyGC_Head *gc_list)
 // the prev and next pointers are "polluted" with flags.
 // What's checked:
 // - The `head` pointers are not polluted.
-// - The objects' prev pointers' PREV_MASK_COLLECTING flags are all
-//   `prev_value` (PREV_MASK_COLLECTING for set, 0 for clear).
-// - The objects' next pointers' NEXT_MASK_UNREACHABLE flags are all
-//   `next_value` (NEXT_MASK_UNREACHABLE for set, 0 for clear).
+// - The objects' PREV_MASK_COLLECTING and NEXT_MASK_UNREACHABLE flags are all
+//   `set or clear, as specified by the 'flags' argument.
 // - The prev and next pointers are mutually consistent.
 static void
-validate_list(PyGC_Head *head, uintptr_t prev_value, uintptr_t next_value)
+validate_list(PyGC_Head *head, enum flagstates flags)
 {
     assert((head->_gc_prev & PREV_MASK_COLLECTING) == 0);
     assert((head->_gc_next & NEXT_MASK_UNREACHABLE) == 0);
+    uintptr_t prev_value = 0, next_value = 0;
+    switch (flags) {
+        case collecting_clear_unreachable_clear:
+            break;
+        case collecting_set_unreachable_clear:
+            prev_value = PREV_MASK_COLLECTING;
+            break;
+        case collecting_clear_unreachable_set:
+            next_value = NEXT_MASK_UNREACHABLE;
+            break;
+        case collecting_set_unreachable_set:
+            prev_value = PREV_MASK_COLLECTING;
+            next_value = NEXT_MASK_UNREACHABLE;
+            break;
+        default:
+            assert(! "bad internal flags argument");
+    }
     PyGC_Head *prev = head;
     PyGC_Head *gc = GC_NEXT(head);
     while (gc != head) {
@@ -361,7 +382,7 @@ validate_list(PyGC_Head *head, uintptr_t prev_value, uintptr_t next_value)
     assert(prev == GC_PREV(head));
 }
 #else
-#define validate_list(x, y, z) do{}while(0)
+#define validate_list(x, y) do{}while(0)
 #endif
 
 /*** end of list stuff ***/
@@ -657,7 +678,7 @@ clear_unreachable_mask(PyGC_Head *unreachable)
         gc->_gc_next &= ~NEXT_MASK_UNREACHABLE;
         next = (PyGC_Head*)gc->_gc_next;
     }
-    validate_list(unreachable, PREV_MASK_COLLECTING, 0);
+    validate_list(unreachable, collecting_set_unreachable_clear);
 }
 
 /* A traversal callback for move_legacy_finalizer_reachable. */
@@ -1050,7 +1071,7 @@ by a call to 'move_legacy_finalizers'), the 'unreachable' list is not a normal
 list and we can not use most gc_list_* functions for it. */
 static inline void
 deduce_unreachable(PyGC_Head *base, PyGC_Head *unreachable) {
-    validate_list(base, 0, 0);
+    validate_list(base, collecting_clear_unreachable_clear);
     /* Using ob_refcnt and gc_refs, calculate which objects in the
      * container set are reachable from outside the set (i.e., have a
      * refcount greater than 0 when all the references within the
@@ -1067,8 +1088,8 @@ deduce_unreachable(PyGC_Head *base, PyGC_Head *unreachable) {
      */
     gc_list_init(unreachable);
     move_unreachable(base, unreachable);  // gc_prev is pointer again
-    validate_list(base, 0, 0);
-    validate_list(unreachable, PREV_MASK_COLLECTING, NEXT_MASK_UNREACHABLE);
+    validate_list(base, collecting_clear_unreachable_clear);
+    validate_list(unreachable, collecting_set_unreachable_set);
 }
 
 /* Handle objects that may have resurrected after a call to 'finalize_garbage', moving
@@ -1145,7 +1166,7 @@ collect(struct _gc_runtime_state *state, int generation,
         old = GEN_HEAD(state, generation+1);
     else
         old = young;
-    validate_list(old, 0, 0);
+    validate_list(old, collecting_clear_unreachable_clear);
 
     deduce_unreachable(young, &unreachable);
 
@@ -1178,8 +1199,8 @@ collect(struct _gc_runtime_state *state, int generation,
      */
     move_legacy_finalizer_reachable(&finalizers);
 
-    validate_list(&finalizers, 0, 0);
-    validate_list(&unreachable, PREV_MASK_COLLECTING, 0);
+    validate_list(&finalizers, collecting_clear_unreachable_clear);
+    validate_list(&unreachable, collecting_set_unreachable_clear);
 
     /* Print debugging information. */
     if (state->debug & DEBUG_COLLECTABLE) {
@@ -1191,8 +1212,8 @@ collect(struct _gc_runtime_state *state, int generation,
     /* Clear weakrefs and invoke callbacks as necessary. */
     m += handle_weakrefs(&unreachable, old);
 
-    validate_list(old, 0, 0);
-    validate_list(&unreachable, PREV_MASK_COLLECTING, 0);
+    validate_list(old, collecting_clear_unreachable_clear);
+    validate_list(&unreachable, collecting_set_unreachable_clear);
 
     /* Call tp_finalize on objects which have one. */
     finalize_garbage(&unreachable);
@@ -1230,7 +1251,7 @@ collect(struct _gc_runtime_state *state, int generation,
      * this if they insist on creating this type of structure.
      */
     handle_legacy_finalizers(state, &finalizers, old);
-    validate_list(old, 0, 0);
+    validate_list(old, collecting_clear_unreachable_clear);
 
     /* Clear free list only during the collection of the highest
      * generation */
