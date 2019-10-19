@@ -1313,17 +1313,13 @@ class DictTest(unittest.TestCase):
         self.assertRaises(StopIteration, next, r)
 
     def test_reverse_iterator_for_empty_dict(self):
-        empty_dict = {}
-        self.assertEqual(list(reversed(empty_dict)), [])
-        self.assertEqual(list(reversed(empty_dict.items())), [])
-        self.assertEqual(list(reversed(empty_dict.values())), [])
-        self.assertEqual(list(reversed(empty_dict.keys())), [])
+        # bpo-38525: revered iterator should work properly
 
-        empty_dict = dict()
-        self.assertEqual(list(reversed(empty_dict)), [])
-        self.assertEqual(list(reversed(empty_dict.items())), [])
-        self.assertEqual(list(reversed(empty_dict.values())), [])
-        self.assertEqual(list(reversed(empty_dict.keys())), [])
+        # empty dict is directly used for reference count test
+        self.assertEqual(list(reversed({})), [])
+        self.assertEqual(list(reversed({}.items())), [])
+        self.assertEqual(list(reversed({}.values())), [])
+        self.assertEqual(list(reversed({}.keys())), [])
 
     def test_dict_copy_order(self):
         # bpo-34320
