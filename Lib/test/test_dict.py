@@ -1312,11 +1312,18 @@ class DictTest(unittest.TestCase):
         self.assertEqual(list(r), list('dcba'))
         self.assertRaises(StopIteration, next, r)
 
-    def test_empty_reversed(self):
-        r = reversed({})
-        self.assertEqual(list(r), [])
-        r = reversed({}.items())
-        self.assertEqual(list(r), [])
+    def test_reverse_iterator_for_empty_dict(self):
+        empty_dict = {}
+        self.assertEqual(list(reversed(empty_dict)), [])
+        self.assertEqual(list(reversed(empty_dict.items())), [])
+        self.assertEqual(list(reversed(empty_dict.values())), [])
+        self.assertEqual(list(reversed(empty_dict.keys())), [])
+
+        empty_dict = dict()
+        self.assertEqual(list(reversed(empty_dict)), [])
+        self.assertEqual(list(reversed(empty_dict.items())), [])
+        self.assertEqual(list(reversed(empty_dict.values())), [])
+        self.assertEqual(list(reversed(empty_dict.keys())), [])
 
     def test_dict_copy_order(self):
         # bpo-34320

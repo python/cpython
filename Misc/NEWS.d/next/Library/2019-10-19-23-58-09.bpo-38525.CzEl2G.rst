@@ -1,1 +1,2 @@
-Fix dictreviter_iternext for empty :class:`dict` Patch by Dong-hee Na.
+Fix a segmentation fault when using reverse iterators of empty ``dict``
+objects that were created as empty ``dict`` literals. Patch by Dong-hee Na.
