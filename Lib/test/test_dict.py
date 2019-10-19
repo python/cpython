@@ -1327,6 +1327,16 @@ class DictTest(unittest.TestCase):
         self.assertEqual(list(reversed(dict().values())), [])
         self.assertEqual(list(reversed(dict().keys())), [])
 
+    def test_reverse_iterator_for_shared_shared_dicts(self):
+        class A:
+            def __init__(self, x, y):
+                if x: self.x = x
+                if y: self.y = y
+
+        self.assertEqual(list(reversed(A(1, 2).__dict__)), ['y', 'x'])
+        self.assertEqual(list(reversed(A(1, 0).__dict__)), ['x'])
+        self.assertEqual(list(reversed(A(0, 1).__dict__)), ['y'])
+
     def test_dict_copy_order(self):
         # bpo-34320
         od = collections.OrderedDict([('a', 1), ('b', 2)])
