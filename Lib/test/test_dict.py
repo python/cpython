@@ -1154,6 +1154,19 @@ class DictTest(unittest.TestCase):
             values = list(it) + [drop]
             self.assertEqual(sorted(values), sorted(data.values()))
 
+    def test_reverseiterator_empty_dict(self):
+        # Check bpo-38525
+
+        the_dict = {}
+        self.assertEqual(list(reversed(the_dict)), list())
+        self.assertEqual(list(reversed(the_dict.values())), list())
+        self.assertEqual(list(reversed(the_dict.keys())), list())
+
+        the_dict = dict()
+        self.assertEqual(list(reversed(the_dict)), list())
+        self.assertEqual(list(reversed(the_dict.values())), list())
+        self.assertEqual(list(reversed(the_dict.keys())), list())
+
     def test_instance_dict_getattr_str_subclass(self):
         class Foo:
             def __init__(self, msg):
