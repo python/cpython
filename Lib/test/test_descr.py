@@ -4582,11 +4582,11 @@ order (MRO) for bases """
             __getattr__ = descr
 
         self.assertRaises(AttributeError, getattr, A(), "attr")
-        self.assertEqual(descr.counter, 1)
+        self.assertEqual(descr.counter, 3)
         self.assertRaises(AttributeError, getattr, B(), "attr")
-        self.assertEqual(descr.counter, 2)
-        self.assertRaises(AttributeError, getattr, C(), "attr")
         self.assertEqual(descr.counter, 4)
+        self.assertRaises(AttributeError, getattr, C(), "attr")
+        self.assertEqual(descr.counter, 10)
 
         class EvilGetattribute(object):
             # This used to segfault

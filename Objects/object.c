@@ -6,6 +6,7 @@
 #include "pycore_object.h"
 #include "pycore_pystate.h"
 #include "pycore_context.h"
+#include "pycore_suggestions.h"
 #include "frameobject.h"
 #include "interpreteridobject.h"
 
@@ -930,6 +931,7 @@ PyObject *
 PyObject_GetAttr(PyObject *v, PyObject *name)
 {
     PyTypeObject *tp = Py_TYPE(v);
+    PyObject* result = NULL;
 
     if (!PyUnicode_Check(name)) {
         PyErr_Format(PyExc_TypeError,
@@ -938,17 +940,30 @@ PyObject_GetAttr(PyObject *v, PyObject *name)
         return NULL;
     }
     if (tp->tp_getattro != NULL)
-        return (*tp->tp_getattro)(v, name);
-    if (tp->tp_getattr != NULL) {
+        result = (*tp->tp_getattro)(v, name);
+    else if (tp->tp_getattr != NULL) {
         const char *name_str = PyUnicode_AsUTF8(name);
         if (name_str == NULL)
             return NULL;
-        return (*tp->tp_getattr)(v, (char *)name_str);
+        result = (*tp->tp_getattr)(v, (char *)name_str);
+    } else {
+        PyErr_Format(PyExc_AttributeError,
+                    "'%.50s' object has no attribute '%U'",
+                    tp->tp_name, name);
     }
-    PyErr_Format(PyExc_AttributeError,
-                 "'%.50s' object has no attribute '%U'",
-                 tp->tp_name, name);
-    return NULL;
+
+    // xxx use thread local storage for this thing
+    static int should_offer_suggestions = 1;
+    if (!result && should_offer_suggestions && PyErr_ExceptionMatches(PyExc_AttributeError)) {
+        should_offer_suggestions = 0;
+        int ret = _Py_offer_suggestions(v, name);
+        should_offer_suggestions = 1;
+        if (ret == -1) {
+            return NULL;
+        }
+   }
+        
+    return result;
 }
 
 int

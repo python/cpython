@@ -368,6 +368,7 @@ PYTHON_OBJS=	\
 		Python/dtoa.o \
 		Python/formatter_unicode.o \
 		Python/fileutils.o \
+		Python/suggestions.o \
 		Python/$(DYNLOADFILE) \
 		$(LIBOBJS) \
 		$(MACHDEP_OBJS) \
@@ -1086,6 +1087,7 @@ PYTHON_HEADERS= \
 		$(srcdir)/Include/internal/pycore_import.h \
 		$(srcdir)/Include/internal/pycore_initconfig.h \
 		$(srcdir)/Include/internal/pycore_object.h \
+		$(srcdir)/Include/internal/pycore_suggestions.h \
 		$(srcdir)/Include/internal/pycore_pathconfig.h \
 		$(srcdir)/Include/internal/pycore_pyerrors.h \
 		$(srcdir)/Include/internal/pycore_pyhash.h \

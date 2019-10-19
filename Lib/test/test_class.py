@@ -516,7 +516,7 @@ class ClassTests(unittest.TestCase):
         try:
             A().a # Raised AttributeError: A instance has no attribute 'a'
         except AttributeError as x:
-            if str(x) != "booh":
+            if not str(x).startswith("booh"):
                 self.fail("attribute error for A().a got masked: %s" % x)
 
         class E:
@@ -533,6 +533,30 @@ class ClassTests(unittest.TestCase):
             pass
         else:
             self.fail("attribute error for I.__init__ got masked")
+
+    def test_getattr_suggestions(self):
+        class A:
+            blech = None
+
+        try:
+            A().bluch
+        except AttributeError as x:
+            self.assertIn("blech", str(x))
+
+        try:
+            A().somethingverywrong
+        except AttributeError as x:
+            self.assertNotIn("blech", str(x))
+
+        # A class with a very big __dict__ will not be consider
+        # for suggestions.
+        for index in range(101):
+            setattr(A, f"index_{index}", None)
+
+        try:
+            A().bluch
+        except AttributeError as x:
+            self.assertNotIn("blech", str(x))
 
     def assertNotOrderable(self, a, b):
         with self.assertRaises(TypeError):

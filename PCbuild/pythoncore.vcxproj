@@ -179,6 +179,7 @@
     <ClInclude Include="..\Include\internal\pycore_traceback.h" />
     <ClInclude Include="..\Include\internal\pycore_tupleobject.h" />
     <ClInclude Include="..\Include\internal\pycore_warnings.h" />
+    <ClInclude Include="..\Include\internal\pycore_suggestions.h" />
     <ClInclude Include="..\Include\interpreteridobject.h" />
     <ClInclude Include="..\Include\intrcheck.h" />
     <ClInclude Include="..\Include\iterobject.h" />
@@ -462,6 +463,7 @@
     <ClCompile Include="..\Python\dtoa.c" />
     <ClCompile Include="..\Python\Python-ast.c" />
     <ClCompile Include="..\Python\pythonrun.c" />
+    <ClCompile Include="..\Python\suggestions.c" />
     <ClCompile Include="..\Python\structmember.c" />
     <ClCompile Include="..\Python\symtable.c" />
     <ClCompile Include="..\Python\sysmodule.c" />

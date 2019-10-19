@@ -714,6 +714,7 @@ class NonCallableMock(Base):
             return object.__dir__(self)
 
         extras = self._mock_methods or []
+        extras = list(extras)
         from_type = dir(type(self))
         from_dict = list(self.__dict__)
         from_child_mocks = [
