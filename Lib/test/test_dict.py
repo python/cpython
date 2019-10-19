@@ -1312,6 +1312,12 @@ class DictTest(unittest.TestCase):
         self.assertEqual(list(r), list('dcba'))
         self.assertRaises(StopIteration, next, r)
 
+    def test_empty_reversed(self):
+        r = reversed({})
+        self.assertEqual(list(r), [])
+        r = reversed({}.items())
+        self.assertEqual(list(r), [])
+
     def test_dict_copy_order(self):
         # bpo-34320
         od = collections.OrderedDict([('a', 1), ('b', 2)])

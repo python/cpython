@@ -3826,7 +3826,7 @@ dictreviter_iternext(dictiterobject *di)
     PyObject *key, *value, *result;
 
     if (d->ma_values) {
-        if (i < 0) {
+        if (i < 0 || i >= d->ma_used) {
             goto fail;
         }
         key = DK_ENTRIES(k)[i].me_key;

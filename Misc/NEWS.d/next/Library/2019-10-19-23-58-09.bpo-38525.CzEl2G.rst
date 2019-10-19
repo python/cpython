@@ -1,0 +1,1 @@
+Fix dictreviter_iternext for empty :class:`dict` Patch by Dong-hee Na.
