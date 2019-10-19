@@ -803,6 +803,19 @@ fails. The exception is ignored silently by default in release build.
 (Contributed by Victor Stinner in :issue:`18748`.)
 
 
+itertools
+---------
+
+The :func:`itertools.accumulate` function added an option *initial* keyword
+argument to specify an initial value::
+
+    >>> from itertools import accumulate
+    >>> list(accumulate([10, 5, 30, 15], initial=1000))
+    [1000, 1010, 1015, 1045, 1060]
+
+(Contributed by Lisa Roach in :issue:`34659`.)
+
+
 json.tool
 ---------
 
