@@ -1,0 +1,8 @@
+.. bpo: 0
+.. date: 2019-10-19
+.. no changes: True
+.. nonce: 29bK5q
+.. release date: 2019-10-19
+.. section: Library
+
+There were no new changes in version 2.7.17.
