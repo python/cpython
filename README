@@ -582,19 +582,30 @@ Reliant UNIX: The thread support does not compile on Reliant UNIX, and
         platform as well.  This should be resolved in time for a
         future release.
 
-MacOSX: The tests will crash on both 10.1 and 10.2 with SEGV in
+macOS:  Building a complete Python installation requires the use of various
+        additional third-party libraries, depending on your build platform and
+        configure options.  Not all standard library modules are buildable or
+        useable on all platforms.  Refer to the "Install Dependencies" section
+        section of the "Developer Guide" for current detailed information on
+        dependencies for macOS:
+            https://devguide.python.org/setup/#install-dependencies
+
+        On macOS, there are additional configure and build options related
+        to macOS framework and universal builds.  Refer to Mac/README.rst.
+
+        The tests will crash on both 10.1 and 10.2 with SEGV in
         test_re and test_sre due to the small default stack size.  If
         you set the stack size to 2048 before doing a "make test" the
         failure can be avoided.  If you're using the tcsh or csh shells,
         use "limit stacksize 2048" and for the bash shell (the default
-        as of OSX 10.3), use "ulimit -s 2048".
+        as of macOS 10.3), use "ulimit -s 2048".
 
         On naked Darwin you may want to add the configure option
         "--disable-toolbox-glue" to disable the glue code for the Carbon
         interface modules. The modules themselves are currently only built
         if you add the --enable-framework option, see below.
 
-        On a clean OSX /usr/local does not exist. Do a
+        On a clean macOS /usr/local does not exist. Do a
         "sudo mkdir -m 775 /usr/local"
         before you do a make install. It is probably not a good idea to
         do "sudo make install" which installs everything as superuser,
@@ -604,20 +615,6 @@ MacOSX: The tests will crash on both 10.1 and 10.2 with SEGV in
         Some people have reported problems building Python after using "fink"
         to install additional unix software. Disabling fink (remove all 
         references to /sw from your .profile or .login) should solve this.
-
-        You may want to try the configure option "--enable-framework"
-        which installs Python as a framework. The location can be set
-        as argument to the --enable-framework option (default
-        /Library/Frameworks). A framework install is probably needed if you
-        want to use any Aqua-based GUI toolkit (whether Tkinter, wxPython,
-        Carbon, Cocoa or anything else).
-
-        You may also want to try the configure option "--enable-universalsdk"
-        which builds Python as a universal binary with support for the 
-        i386 and PPC architetures. This requires Xcode 2.1 or later to build.
-
-        See Mac/README for more information on framework and 
-        universal builds.
 
 Cygwin: With recent (relative to the time of writing, 2001-12-19)
         Cygwin installations, there are problems with the interaction
@@ -948,11 +945,6 @@ The only thing you may have to install manually is the Python mode for
 Emacs found in Misc/python-mode.el.  (But then again, more recent
 versions of Emacs may already have it.)  Follow the instructions that
 came with Emacs for installation of site-specific files.
-
-On Mac OS X, if you have configured Python with --enable-framework, you
-should use "make frameworkinstall" to do the installation. Note that this
-installs the Python executable in a place that is not normally on your
-PATH, you may want to set up a symlink in /usr/local/bin.
 
 
 Installing multiple versions
