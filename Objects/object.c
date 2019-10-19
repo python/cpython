@@ -12,6 +12,7 @@
 #include "pycore_pystate.h"       // _PyThreadState_GET()
 #include "pycore_symtable.h"      // PySTEntry_Type
 #include "pycore_unionobject.h"   // _Py_UnionType
+#include "pycore_suggestions.h"
 #include "frameobject.h"
 #include "interpreteridobject.h"
 
@@ -884,10 +885,31 @@ _PyObject_SetAttrId(PyObject *v, _Py_Identifier *name, PyObject *w)
     return result;
 }
 
+static inline int
+add_context_to_attribute_error_exception(PyObject* v, PyObject* name)
+{
+    assert(PyErr_Occurred());
+    // Intercept AttributeError exceptions and augment them to offer
+    // suggestions later.
+    if (PyErr_ExceptionMatches(PyExc_AttributeError)){
+        PyObject *type, *value, *traceback;
+        PyErr_Fetch(&type, &value, &traceback);
+        PyErr_NormalizeException(&type, &value, &traceback);
+        if (PyErr_GivenExceptionMatches(value, PyExc_AttributeError) &&
+            (PyObject_SetAttrString(value, "name", name) ||
+             PyObject_SetAttrString(value, "obj", v))) {
+            return 1;
+        }
+        PyErr_Restore(type, value, traceback);
+    }
+    return 0;
+}
+
 PyObject *
 PyObject_GetAttr(PyObject *v, PyObject *name)
 {
     PyTypeObject *tp = Py_TYPE(v);
+    PyObject* result = NULL;
 
     if (!PyUnicode_Check(name)) {
         PyErr_Format(PyExc_TypeError,
@@ -896,17 +918,23 @@ PyObject_GetAttr(PyObject *v, PyObject *name)
         return NULL;
     }
     if (tp->tp_getattro != NULL)
-        return (*tp->tp_getattro)(v, name);
-    if (tp->tp_getattr != NULL) {
+        result = (*tp->tp_getattro)(v, name);
+    else if (tp->tp_getattr != NULL) {
         const char *name_str = PyUnicode_AsUTF8(name);
         if (name_str == NULL)
             return NULL;
-        return (*tp->tp_getattr)(v, (char *)name_str);
+        result = (*tp->tp_getattr)(v, (char *)name_str);
+    } else {
+        PyErr_Format(PyExc_AttributeError,
+                    "'%.50s' object has no attribute '%U'",
+                    tp->tp_name, name);
     }
-    PyErr_Format(PyExc_AttributeError,
-                 "'%.50s' object has no attribute '%U'",
-                 tp->tp_name, name);
-    return NULL;
+
+    if (!result && add_context_to_attribute_error_exception(v, name)) {
+        return NULL;
+    }
+
+    return result;
 }
 
 int
@@ -1165,6 +1193,11 @@ _PyObject_GetMethod(PyObject *obj, PyObject *name, PyObject **method)
     PyErr_Format(PyExc_AttributeError,
                  "'%.50s' object has no attribute '%U'",
                  tp->tp_name, name);
+
+    if (add_context_to_attribute_error_exception(obj, name)) {
+        return 0;
+    }
+
     return 0;
 }
 

@@ -24,6 +24,7 @@
 #include "errcode.h"              // E_EOF
 #include "code.h"                 // PyCodeObject
 #include "marshal.h"              // PyMarshal_ReadLongFromFile()
+#include "pycore_suggestions.h"   // _Py_offer_suggestions
 
 #ifdef MS_WINDOWS
 #  include "malloc.h"             // alloca()
@@ -1080,6 +1081,12 @@ PyErr_Display(PyObject *exception, PyObject *value, PyObject *tb)
     if (file == Py_None) {
         return;
     }
+
+    if (PyErr_GivenExceptionMatches(exception, PyExc_AttributeError) &&
+        _Py_offer_suggestions_for_attribute_error((PyAttributeErrorObject*) value) != 0) {
+             PyErr_Clear();
+    }
+
     Py_INCREF(file);
     _PyErr_Display(file, exception, value, tb);
     Py_DECREF(file);
