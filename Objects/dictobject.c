@@ -3452,10 +3452,15 @@ dictiter_new(PyDictObject *dict, PyTypeObject *itertype)
     di->di_dict = dict;
     di->di_used = dict->ma_used;
     di->len = dict->ma_used;
-    if ((itertype == &PyDictRevIterKey_Type ||
+    if (itertype == &PyDictRevIterKey_Type ||
          itertype == &PyDictRevIterItem_Type ||
-         itertype == &PyDictRevIterValue_Type) && dict->ma_used) {
+         itertype == &PyDictRevIterValue_Type) {
+        if (dict->ma_values) {
+            di->di_pos = dict->ma_used - 1;
+        }
+        else {
             di->di_pos = dict->ma_keys->dk_nentries - 1;
+        }
     }
     else {
         di->di_pos = 0;

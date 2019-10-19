@@ -1,0 +1,2 @@
+Fix a segmentation fault when using reverse iterators of empty ``dict`` objects.
+Patch by Dong-hee Na and Inada Naoki.
