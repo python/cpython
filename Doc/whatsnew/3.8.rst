@@ -807,6 +807,16 @@ numbers::
 
 (Contributed by Pablo Galindo in :issue:`35606`.)
 
+Added two new combinatoric functions :func:`math.perm` and :func:`math.comb`::
+
+    >>> math.perm(10, 3)    # Permutations of 10 things taken 3 at a time
+    720
+    >>> math.comb(10, 3)    # Combinations of 10 things taken 3 at a time
+    120
+
+(Contributed by Yash Aggarwal, Keller Fuchs, Serhiy Storchaka, and Raymond
+Hettinger in ::`37128`, :issue:`37178`, and :issue:`35431`.)
+
 Added new function :func:`math.isqrt` for computing integer square roots.
 (Contributed by Mark Dickinson in :issue:`36887`.)
 
