@@ -1321,6 +1321,12 @@ class DictTest(unittest.TestCase):
         self.assertEqual(list(reversed({}.values())), [])
         self.assertEqual(list(reversed({}.keys())), [])
 
+        # dict() and {} don't trigger the same code path
+        self.assertEqual(list(reversed(dict())), [])
+        self.assertEqual(list(reversed(dict().items())), [])
+        self.assertEqual(list(reversed(dict().values())), [])
+        self.assertEqual(list(reversed(dict().keys())), [])
+
     def test_dict_copy_order(self):
         # bpo-34320
         od = collections.OrderedDict([('a', 1), ('b', 2)])
