@@ -3508,10 +3508,12 @@ PyCFuncPtr_FromDll(PyTypeObject *type, PyObject *args, PyObject *kwds)
     if (PySys_Audit("ctypes.dlsym",
                     ((uintptr_t)name & ~0xFFFF) ? "Os" : "On",
                     dll, name) < 0) {
+        Py_DECREF(ftuple);
         return NULL;
     }
 #else
     if (PySys_Audit("ctypes.dlsym", "Os", dll, name) < 0) {
+        Py_DECREF(ftuple);
         return NULL;
     }
 #endif
