@@ -445,7 +445,7 @@ Other Language Changes
   an instance of the subclass, rather than the base class. This also affects
   the return type of operations whose implementation (directly or indirectly)
   uses :class:`datetime.timedelta` arithmetic, such as
-  :meth:`datetime.datetime.astimezone`.
+  :meth:`~datetime.datetime.astimezone`.
   (Contributed by Paul Ganssle in :issue:`32417`.)
 
 * When the Python interpreter is interrupted by Ctrl-C (SIGINT) and the
@@ -535,7 +535,7 @@ Other Language Changes
   direct control over the state-updating behavior of a specific object.  If
   not *None*, this callable will have priority over the object's
   :meth:`~__setstate__` method.
-  (Contributed by Pierre Glaser is :issue:`35900`.)
+  (Contributed by Pierre Glaser and Olivier Grisel in :issue:`35900`.)
 
 New Modules
 ===========
@@ -586,8 +586,8 @@ The :func:`ast.parse` function has some new flags:
   comments" (returned for function definition AST nodes);
 
 * ``feature_version=(3, N)`` allows specifying an earlier Python 3
-  version. (For example, ``feature_version=(3, 4)`` will treat
-  ``async`` and ``await`` as non-reserved words.)
+  version.  For example, ``feature_version=(3, 4)`` will treat
+  :keyword:`async` and :keyword:`await` as non-reserved words.
 
 (Contributed by Guido van Rossum in :issue:`35766`.)
 
@@ -637,11 +637,12 @@ marked with the ``CO_COROUTINE`` flag may then be returned.
 collections
 -----------
 
-The :meth:`_asdict()` method for :func:`collections.namedtuple` now returns
-a :class:`dict` instead of a :class:`collections.OrderedDict`. This works because
-regular dicts have guaranteed ordering since Python 3.7. If the extra
-features of :class:`OrderedDict` are required, the suggested remediation is
-to cast the result to the desired type: ``OrderedDict(nt._asdict())``.
+The :meth:`~collections.somenamedtuple._asdict` method for
+:func:`collections.namedtuple` now returns a :class:`dict` instead of a
+:class:`collections.OrderedDict`. This works because regular dicts have
+guaranteed ordering since Python 3.7. If the extra features of
+:class:`OrderedDict` are required, the suggested remediation is to cast the
+result to the desired type: ``OrderedDict(nt._asdict())``.
 (Contributed by Raymond Hettinger in :issue:`35864`.)
 
 
@@ -857,7 +858,7 @@ argument to specify an initial value::
 json.tool
 ---------
 
-Add option ``--json-lines`` to parse every input line as separate JSON object.
+Add option ``--json-lines`` to parse every input line as a separate JSON object.
 (Contributed by Weipeng Hong in :issue:`31553`.)
 
 
@@ -1022,11 +1023,6 @@ to a path.
 pickle
 ------
 
-Reduction methods can now include a 6th item in the tuple they return. This
-item should specify a custom state-setting method that's called instead of the
-regular ``__setstate__`` method.
-(Contributed by Pierre Glaser and Olivier Grisel in :issue:`35900`.)
-
 :mod:`pickle` extensions subclassing the C-optimized :class:`~pickle.Pickler`
 can now override the pickling logic of functions and classes by defining the
 special :meth:`~pickle.Pickler.reducer_override` method.
@@ -1113,8 +1109,8 @@ The :func:`socket.if_nameindex()`, :func:`socket.if_nametoindex()`, and
 ssl
 ---
 
-Added :attr:`ssl.SSLContext.post_handshake_auth` to enable and
-:meth:`ssl.SSLSocket.verify_client_post_handshake` to initiate TLS 1.3
+Added :attr:`~ssl.SSLContext.post_handshake_auth` to enable and
+:meth:`~ssl.SSLSocket.verify_client_post_handshake` to initiate TLS 1.3
 post-handshake authentication.
 (Contributed by Christian Heimes in :issue:`34670`.)
 
@@ -1292,8 +1288,9 @@ the string.  (Contributed by Max Belanger, David Euresti, and Greg Price in
 unittest
 --------
 
-Added :class:`AsyncMock` to support an asynchronous version of :class:`Mock`.
-Appropriate new assert functions for testing have been added as well.
+Added :class:`~unittest.mock.AsyncMock` to support an asynchronous version of
+:class:`~unittest.mock.Mock`.  Appropriate new assert functions for testing
+have been added as well.
 (Contributed by Lisa Roach in :issue:`26467`).
 
 Added :func:`~unittest.addModuleCleanup()` and
@@ -1790,7 +1787,7 @@ Changes in the Python API
   (Contributed by Eric Snow in :issue:`34651`, modified by Christian Heimes
   in :issue:`37951`.)
 
-* The :meth:`imap.IMAP4.logout` method no longer ignores silently arbitrary
+* The :meth:`imap.IMAP4.logout` method no longer silently ignores arbitrary
   exceptions.
   (Contributed by Victor Stinner in :issue:`36348`.)
 
@@ -1845,7 +1842,7 @@ Changes in the Python API
 * The ``PyGC_Head`` struct has changed completely.  All code that touched the
   struct member should be rewritten.  (See :issue:`33597`.)
 
-* The ``PyInterpreterState`` struct has been moved into the "internal"
+* The c:type:`PyInterpreterState` struct has been moved into the "internal"
   header files (specifically Include/internal/pycore_pystate.h).  An
   opaque ``PyInterpreterState`` is still available as part of the public
   API (and stable ABI).  The docs indicate that none of the struct's
