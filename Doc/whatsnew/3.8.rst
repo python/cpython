@@ -355,8 +355,8 @@ It is meant to formalize existing optimizations which were already done
 for various classes.
 Any extension type implementing a callable can use this protocol.
 
-This is currently provisional,
-the aim is to make it fully public in Python 3.9.
+This is currently provisional.
+The aim is to make it fully public in Python 3.9.
 
 See :pep:`590` for a full description.
 
@@ -445,7 +445,7 @@ Other Language Changes
   an instance of the subclass, rather than the base class. This also affects
   the return type of operations whose implementation (directly or indirectly)
   uses :class:`datetime.timedelta` arithmetic, such as
-  :meth:`datetime.datetime.astimezone`.
+  :meth:`~datetime.datetime.astimezone`.
   (Contributed by Paul Ganssle in :issue:`32417`.)
 
 * When the Python interpreter is interrupted by Ctrl-C (SIGINT) and the
@@ -529,6 +529,13 @@ Other Language Changes
 
   (Contributed by Jörn Heissler in :issue:`35224`.)
 
+* The :meth:`object.__reduce__` method can now return a tuple from two to
+  six elements long. Formerly, five was the limit.  The new, optional sixth
+  element is a callable with a ``(obj, state)`` signature.  This allows the
+  direct control over the state-updating behavior of a specific object.  If
+  not *None*, this callable will have priority over the object's
+  :meth:`~__setstate__` method.
+  (Contributed by Pierre Glaser and Olivier Grisel in :issue:`35900`.)
 
 New Modules
 ===========
@@ -579,8 +586,8 @@ The :func:`ast.parse` function has some new flags:
   comments" (returned for function definition AST nodes);
 
 * ``feature_version=(3, N)`` allows specifying an earlier Python 3
-  version. (For example, ``feature_version=(3, 4)`` will treat
-  ``async`` and ``await`` as non-reserved words.)
+  version.  For example, ``feature_version=(3, 4)`` will treat
+  :keyword:`async` and :keyword:`await` as non-reserved words.
 
 (Contributed by Guido van Rossum in :issue:`35766`.)
 
@@ -630,12 +637,37 @@ marked with the ``CO_COROUTINE`` flag may then be returned.
 collections
 -----------
 
-The :meth:`_asdict()` method for :func:`collections.namedtuple` now returns
-a :class:`dict` instead of a :class:`collections.OrderedDict`. This works because
-regular dicts have guaranteed ordering since Python 3.7. If the extra
-features of :class:`OrderedDict` are required, the suggested remediation is
-to cast the result to the desired type: ``OrderedDict(nt._asdict())``.
+The :meth:`~collections.somenamedtuple._asdict` method for
+:func:`collections.namedtuple` now returns a :class:`dict` instead of a
+:class:`collections.OrderedDict`. This works because regular dicts have
+guaranteed ordering since Python 3.7. If the extra features of
+:class:`OrderedDict` are required, the suggested remediation is to cast the
+result to the desired type: ``OrderedDict(nt._asdict())``.
 (Contributed by Raymond Hettinger in :issue:`35864`.)
+
+
+cProfile
+--------
+
+The :class:`cProfile.Profile <profile.Profile>` class can now be used as a context manager.
+Profile a block of code by running::
+
+      import cProfile
+
+      with cProfile.Profile() as profiler:
+            # code to be profiled
+            ...
+
+(Contributed by Scott Sanderson in :issue:`29235`.)
+
+
+csv
+---
+
+The :class:`csv.DictReader` now returns instances of :class:`dict` instead of
+a :class:`collections.OrderedDict`.  The tool is now faster and uses less
+memory while still preserving the field order.
+(Contributed by Michael Seek in :issue:`34003`.)
 
 
 curses
@@ -700,6 +732,30 @@ cached for the life of the instance. ::
 (Contributed by Carl Meyer in :issue:`21145`)
 
 
+Added a new :func:`functools.singledispatchmethod` decorator that converts
+methods into :term:`generic functions <generic function>` using
+:term:`single dispatch`::
+
+    from functools import singledispatchmethod
+    from contextlib import suppress
+
+    class TaskManager:
+
+        def __init__(self, tasks):
+            self.tasks = list(tasks)
+
+        @singledispatchmethod
+        def discard(self, value):
+            with suppress(ValueError):
+                self.tasks.remove(value)
+
+        @discard.register(list)
+        def _(self, tasks):
+            targets = set(tasks)
+            self.tasks = [x for x in self.tasks if x not in targets]
+
+(Contributed by Ethan Smith in :issue:`32380`)
+
 gc
 --
 
@@ -727,7 +783,7 @@ for certain types of invalid or corrupt gzip files.
 :issue:`6584`.)
 
 
-idlelib and IDLE
+IDLE and idlelib
 ----------------
 
 Output over N lines (50 by default) is squeezed down to a button.
@@ -743,11 +799,18 @@ They also re-appear in the box for the next customized run.  One can also
 suppress the normal Shell main module restart.  (Contributed by Cheryl
 Sabella, Terry Jan Reedy, and others in :issue:`5680` and :issue:`37627`.)
 
-Add optional line numbers for IDLE editor windows. Windows
+Added optional line numbers for IDLE editor windows. Windows
 open without line numbers unless set otherwise in the General
 tab of the configuration dialog.  Line numbers for an existing
 window are shown and hidden in the Options menu.
 (Contributed by Tal Einat and Saimadhav Heblikar in :issue:`17535`.)
+
+OS native encoding is now used for converting between Python strings and Tcl
+objects. This allows IDLE to work with emoji and other non-BMP characters.
+These characters can be displayed or copied and pasted to or from the
+clipboard.  Converting strings from Tcl to Python and back now never fails.
+(Many people worked on this for eight years but the problem was finally
+solved by Serhiy Storchaka in :issue:`13153`.)
 
 The changes above have been backported to 3.7 maintenance releases.
 
@@ -779,11 +842,42 @@ fails. The exception is ignored silently by default in release build.
 (Contributed by Victor Stinner in :issue:`18748`.)
 
 
+itertools
+---------
+
+The :func:`itertools.accumulate` function added an option *initial* keyword
+argument to specify an initial value::
+
+    >>> from itertools import accumulate
+    >>> list(accumulate([10, 5, 30, 15], initial=1000))
+    [1000, 1010, 1015, 1045, 1060]
+
+(Contributed by Lisa Roach in :issue:`34659`.)
+
+
 json.tool
 ---------
 
-Add option ``--json-lines`` to parse every input line as separate JSON object.
+Add option ``--json-lines`` to parse every input line as a separate JSON object.
 (Contributed by Weipeng Hong in :issue:`31553`.)
+
+
+logging
+-------
+
+Added a *force* keyword argument to :func:`logging.basicConfig()`
+When set to *True*, any existing handlers attached
+to the root logger are removed and closed before carrying out the
+configuration specified by the other arguments.
+
+This solves a long-standing problem.  Once a logger or *basicConfig()* had
+been called, subsequent calls to *basicConfig()* were silently ignored.
+This made it difficult to update, experiment with, or teach the various
+logging configuration options using the interactive prompt or a Jupyter
+notebook.
+
+(Suggested by Raymond Hettinger, implemented by Dong-hee Na, and
+reviewed by Vinay Sajip in :issue:`33897`.)
 
 
 math
@@ -807,7 +901,28 @@ numbers::
 
 (Contributed by Pablo Galindo in :issue:`35606`.)
 
-Added new function :func:`math.isqrt` for computing integer square roots.
+Added two new combinatoric functions :func:`math.perm` and :func:`math.comb`::
+
+    >>> math.perm(10, 3)    # Permutations of 10 things taken 3 at a time
+    720
+    >>> math.comb(10, 3)    # Combinations of 10 things taken 3 at a time
+    120
+
+(Contributed by Yash Aggarwal, Keller Fuchs, Serhiy Storchaka, and Raymond
+Hettinger in :issue:`37128`, :issue:`37178`, and :issue:`35431`.)
+
+Added a new function :func:`math.isqrt` for computing accurate integer square
+roots without conversion to floating point.  The new function supports
+arbitrarily large integers.  It is faster than ``floor(sqrt(n))`` but slower
+than :func:`math.sqrt`::
+
+    >>> r = 650320427
+    >>> s = r ** 2
+    >>> isqrt(s - 1)         # correct
+    650320426
+    >>> floor(sqrt(s - 1))   # incorrect
+    650320427
+
 (Contributed by Mark Dickinson in :issue:`36887`.)
 
 The function :func:`math.factorial` no longer accepts arguments that are not
@@ -908,11 +1023,6 @@ to a path.
 pickle
 ------
 
-Reduction methods can now include a 6th item in the tuple they return. This
-item should specify a custom state-setting method that's called instead of the
-regular ``__setstate__`` method.
-(Contributed by Pierre Glaser and Olivier Grisel in :issue:`35900`.)
-
 :mod:`pickle` extensions subclassing the C-optimized :class:`~pickle.Pickler`
 can now override the pickling logic of functions and classes by defining the
 special :meth:`~pickle.Pickler.reducer_override` method.
@@ -925,6 +1035,32 @@ plistlib
 Added new :class:`plistlib.UID` and enabled support for reading and writing
 NSKeyedArchiver-encoded binary plists.
 (Contributed by Jon Janzen in :issue:`26707`.)
+
+
+pprint
+------
+
+The :mod:`pprint` module added a *sort_dicts* parameter to several functions.
+By default, those functions continue to sort dictionaries before rendering or
+printing.  However, if *sort_dicts* is set to *False*, the dictionaries retain
+the order that keys were inserted.  This can be useful for comparison to JSON
+inputs during debugging.
+
+In addition, there is a convenience new function, :func:`pprint.pp` that is
+like :func:`pprint.pprint` but with *sort_dicts* defaulting to *False*::
+
+    >>> from pprint import pprint, pp
+    >>> d = dict(source='input.txt', operation='filter', destination='output.txt')
+    >>> pp(d, width=40)                  # Original order
+    {'source': 'input.txt',
+     'operation': 'filter',
+     'destination': 'output.txt'}
+    >>> pprint(d, width=40)              # Keys sorted alphabetically
+    {'destination': 'output.txt',
+     'operation': 'filter',
+     'source': 'input.txt'}
+
+(Contributed by Rémi Lapeyre in :issue:`30670`.)
 
 
 py_compile
@@ -973,8 +1109,8 @@ The :func:`socket.if_nameindex()`, :func:`socket.if_nametoindex()`, and
 ssl
 ---
 
-Added :attr:`ssl.SSLContext.post_handshake_auth` to enable and
-:meth:`ssl.SSLSocket.verify_client_post_handshake` to initiate TLS 1.3
+Added :attr:`~ssl.SSLContext.post_handshake_auth` to enable and
+:meth:`~ssl.SSLSocket.verify_client_post_handshake` to initiate TLS 1.3
 post-handshake authentication.
 (Contributed by Christian Heimes in :issue:`34670`.)
 
@@ -1152,8 +1288,9 @@ the string.  (Contributed by Max Belanger, David Euresti, and Greg Price in
 unittest
 --------
 
-Added :class:`AsyncMock` to support an asynchronous version of :class:`Mock`.
-Appropriate new assert functions for testing have been added as well.
+Added :class:`~unittest.mock.AsyncMock` to support an asynchronous version of
+:class:`~unittest.mock.Mock`.  Appropriate new assert functions for testing
+have been added as well.
 (Contributed by Lisa Roach in :issue:`26467`).
 
 Added :func:`~unittest.addModuleCleanup()` and
@@ -1231,6 +1368,16 @@ receive namespace declaration events through the new callback methods
 to process events about comments and processing instructions to include
 them in the generated tree.
 (Contributed by Stefan Behnel in :issue:`36676` and :issue:`36673`.)
+
+
+xmlrpc
+------
+
+:class:`xmlrpc.client.ServerProxy` now supports an optional *headers* keyword
+argument for a sequence of HTTP headers to be sent with each request.  Among
+other things, this makes it possible to upgrade from default basic
+authentication to faster session authentication.
+(Contributed by Cédric Krier in :issue:`35153`.)
 
 
 Optimizations
@@ -1456,6 +1603,11 @@ Deprecated
   constant nodes.
   (Contributed by Serhiy Storchaka in :issue:`36917`.)
 
+* The :func:`asyncio.coroutine` :term:`decorator` is deprecated and will be
+  removed in version 3.10.  Instead of ``@asyncio.coroutine``, use
+  :keyword:`async def` instead.
+  (Contributed by Andrew Svetlov in :issue:`36921`.)
+
 * The following functions and methods are deprecated in the :mod:`gettext`
   module: :func:`~gettext.lgettext`, :func:`~gettext.ldgettext`,
   :func:`~gettext.lngettext` and :func:`~gettext.ldngettext`.
@@ -1502,7 +1654,7 @@ Deprecated
     :class:`multiprocessing.managers.SharedMemoryServer`.
   - *obj* in :func:`weakref.finalize`.
 
-  In future releases of Python they will be :ref:`positional-only
+  In future releases of Python, they will be :ref:`positional-only
   <positional-only_parameter>`.
   (Contributed by Serhiy Storchaka in :issue:`36492`.)
 
@@ -1511,6 +1663,11 @@ API and Feature Removals
 ========================
 
 The following features and APIs have been removed from Python 3.8:
+
+*  Starting with Python 3.3, importing ABCs from :mod:`collections` was
+   deprecated, and importing should be done from :mod:`collections.abc`. Being
+   able to import from collections was marked for removal in 3.8, but has been
+   delayed to 3.9. (See :issue:`36952`.)
 
 * The :mod:`macpath` module, deprecated in Python 3.7, has been removed.
   (Contributed by Victor Stinner in :issue:`35471`.)
@@ -1630,7 +1787,7 @@ Changes in the Python API
   (Contributed by Eric Snow in :issue:`34651`, modified by Christian Heimes
   in :issue:`37951`.)
 
-* The :meth:`imap.IMAP4.logout` method no longer ignores silently arbitrary
+* The :meth:`imap.IMAP4.logout` method no longer silently ignores arbitrary
   exceptions.
   (Contributed by Victor Stinner in :issue:`36348`.)
 
@@ -1685,7 +1842,7 @@ Changes in the Python API
 * The ``PyGC_Head`` struct has changed completely.  All code that touched the
   struct member should be rewritten.  (See :issue:`33597`.)
 
-* The ``PyInterpreterState`` struct has been moved into the "internal"
+* The :c:type:`PyInterpreterState` struct has been moved into the "internal"
   header files (specifically Include/internal/pycore_pystate.h).  An
   opaque ``PyInterpreterState`` is still available as part of the public
   API (and stable ABI).  The docs indicate that none of the struct's
