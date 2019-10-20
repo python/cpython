@@ -148,10 +148,26 @@ easiest way of using magic methods is with the :class:`MagicMock` class. It
 allows you to do things like:
 
     >>> mock = MagicMock()
-    >>> mock.__str__.return_value = 'foobarbaz'
-    >>> str(mock)
-    'foobarbaz'
-    >>> mock.__str__.assert_called_with()
+    >>> len(mock)
+    0
+    >>> mock.__len__.assert_called_with()
+    >>> another_mock = MagicMock()
+    >>> another_mock * mock
+    <MagicMock name='mock.__mul__()' id='...'>
+
+This wouldn't work with a regular Mock class:
+
+    >>> mock = Mock()
+    >>> len(mock)
+    Traceback (most recent call last):
+      File "<stdin>", line 1, in <module>
+    TypeError: object of type 'Mock' has no len()
+    >>> another_mock = Mock()
+    >>> another_mock * mock
+    Traceback (most recent call last):
+      File "<stdin>", line 1, in <module>
+    TypeError: unsupported operand type(s) for *: 'Mock' and 'Mock'
+
 
 Mock allows you to assign functions (or other Mock instances) to magic methods
 and they will be called appropriately. The :class:`MagicMock` class is just a Mock
@@ -405,7 +421,7 @@ the *new_callable* argument to :func:`patch`.
             False
 
         .. versionchanged:: 3.6
-           Added two keyword only argument to the reset_mock function.
+           Added two keyword-only arguments to the reset_mock function.
 
         This can be useful where you want to make a series of assertions that
         reuse the same object. Note that :meth:`reset_mock` *doesn't* clear the
@@ -415,8 +431,8 @@ the *new_callable* argument to :func:`patch`.
         parameter as ``True``. Child mocks and the return value mock
         (if any) are reset as well.
 
-        .. note:: *return_value*, and :attr:`side_effect` are keyword only
-                  argument.
+        .. note:: *return_value*, and :attr:`side_effect` are keyword-only
+                  arguments.
 
 
     .. method:: mock_add_spec(spec, spec_set=False)
@@ -439,7 +455,7 @@ the *new_callable* argument to :func:`patch`.
 
         Set attributes on the mock through keyword arguments.
 
-        Attributes plus return values and side effects can be set on child
+        Attributes, return values and side effects can be set on child
         mocks using standard dot notation and unpacking a dictionary in the
         method call:
 
@@ -527,10 +543,19 @@ the *new_callable* argument to :func:`patch`.
         the normal way:
 
             >>> mock = Mock()
-            >>> mock.return_value.attribute = sentinel.Attribute
+            >>> mock.return_value
+            <Mock name='mock()' id='...'>
+
+        You can call the return value just like any other mock:
+
             >>> mock.return_value()
             <Mock name='mock()()' id='...'>
-            >>> mock.return_value.assert_called_with()
+
+        You can set attributes on the return value too:
+
+            >>> mock.return_value.attribute = 'some random attribute value'
+            >>> mock.return_value.attribute
+            'some random attribute value'
 
         :attr:`return_value` can also be set in the constructor:
 
