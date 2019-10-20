@@ -1531,6 +1531,11 @@ Deprecated
   constant nodes.
   (Contributed by Serhiy Storchaka in :issue:`36917`.)
 
+* The :func:`asyncio.coroutine` :term:`decorator` is deprecated and will be
+  removed in version 3.10.  Instead of ``@asyncio.coroutine``, use
+  :keyword:`async def` instead.
+  (Contributed by Andrew Svetlov in :issue:`36921`.)
+
 * The following functions and methods are deprecated in the :mod:`gettext`
   module: :func:`~gettext.lgettext`, :func:`~gettext.ldgettext`,
   :func:`~gettext.lngettext` and :func:`~gettext.ldngettext`.
