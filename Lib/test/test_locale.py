@@ -334,8 +334,7 @@ class TestFrFRNumberFormatting(FrFRCookedTest, BaseFormattingTest):
         euro = '\u20ac'
         self._test_currency(50000, "50000,00 " + euro)
         self._test_currency(50000, "50 000,00 " + euro, grouping=True)
-        # XXX is the trailing space a bug?
-        self._test_currency(50000, "50 000,00 EUR ",
+        self._test_currency(50000, "50 000,00 EUR",
             grouping=True, international=True)
 
 
