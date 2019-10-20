@@ -810,6 +810,8 @@ how the command-line arguments should be handled. The supplied actions are:
     >>> parser.parse_args(["--foo", "f1", "--foo", "f2", "f3", "f4"])
     Namespace(foo=['f1', 'f2', 'f3', 'f4'])
 
+  .. versionadded:: 3.8
+
 You may also specify an arbitrary action by passing an Action subclass or
 other object that implements the same interface.  The recommended way to do
 this is to extend :class:`Action`, overriding the ``__call__`` method
