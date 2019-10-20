@@ -1291,6 +1291,16 @@ them in the generated tree.
 (Contributed by Stefan Behnel in :issue:`36676` and :issue:`36673`.)
 
 
+xmlprc
+------
+
+:class:`xmlrpc.client.ServerProxy` now supports an optional *headers* keyword
+argument for a sequence of HTTP headers to be sent with each request.  Among
+other things, this makes it possible to upgrade from default basic
+authentication to faster session authentication.
+(Contributed by Cédric Krier in :issue:`35153`.)
+
+
 Optimizations
 =============
 
