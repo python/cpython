@@ -11,6 +11,7 @@ import tempfile
 import time
 import unittest
 import io
+import errno
 
 from unittest import mock, skipUnless
 try:
@@ -22,7 +23,11 @@ except ImportError:
 from test import support
 from test.support import script_helper
 
-class CompileallTests(unittest.TestCase):
+from .test_py_compile import without_source_date_epoch
+from .test_py_compile import SourceDateEpochTestMeta
+
+
+class CompileallTestsBase:
 
     def setUp(self):
         self.directory = tempfile.mkdtemp()
@@ -46,27 +51,28 @@ class CompileallTests(unittest.TestCase):
         with open(self.bad_source_path, 'w') as file:
             file.write('x (\n')
 
-    def data(self):
+    def timestamp_metadata(self):
         with open(self.bc_path, 'rb') as file:
             data = file.read(12)
         mtime = int(os.stat(self.source_path).st_mtime)
         compare = struct.pack('<4sll', importlib.util.MAGIC_NUMBER, 0, mtime)
         return data, compare
 
-    @unittest.skipUnless(hasattr(os, 'stat'), 'test needs os.stat()')
     def recreation_check(self, metadata):
         """Check that compileall recreates bytecode when the new metadata is
         used."""
+        if os.environ.get('SOURCE_DATE_EPOCH'):
+            raise unittest.SkipTest('SOURCE_DATE_EPOCH is set')
         py_compile.compile(self.source_path)
-        self.assertEqual(*self.data())
+        self.assertEqual(*self.timestamp_metadata())
         with open(self.bc_path, 'rb') as file:
             bc = file.read()[len(metadata):]
         with open(self.bc_path, 'wb') as file:
             file.write(metadata)
             file.write(bc)
-        self.assertNotEqual(*self.data())
+        self.assertNotEqual(*self.timestamp_metadata())
         compileall.compile_dir(self.directory, force=False, quiet=True)
-        self.assertTrue(*self.data())
+        self.assertTrue(*self.timestamp_metadata())
 
     def test_mtime(self):
         # Test a change in mtime leads to a new .pyc.
@@ -161,7 +167,7 @@ class CompileallTests(unittest.TestCase):
         self.assertRegex(line, r'Listing ([^WindowsPath|PosixPath].*)')
         self.assertTrue(os.path.isfile(self.bc_path))
 
-    @mock.patch('compileall.ProcessPoolExecutor')
+    @mock.patch('concurrent.futures.ProcessPoolExecutor')
     def test_compile_pool_called(self, pool_mock):
         compileall.compile_dir(self.directory, quiet=True, workers=5)
         self.assertTrue(pool_mock.called)
@@ -171,23 +177,163 @@ class CompileallTests(unittest.TestCase):
                                     "workers must be greater or equal to 0"):
             compileall.compile_dir(self.directory, workers=-1)
 
-    @mock.patch('compileall.ProcessPoolExecutor')
+    @mock.patch('concurrent.futures.ProcessPoolExecutor')
     def test_compile_workers_cpu_count(self, pool_mock):
         compileall.compile_dir(self.directory, quiet=True, workers=0)
         self.assertEqual(pool_mock.call_args[1]['max_workers'], None)
 
-    @mock.patch('compileall.ProcessPoolExecutor')
+    @mock.patch('concurrent.futures.ProcessPoolExecutor')
     @mock.patch('compileall.compile_file')
     def test_compile_one_worker(self, compile_file_mock, pool_mock):
         compileall.compile_dir(self.directory, quiet=True)
         self.assertFalse(pool_mock.called)
         self.assertTrue(compile_file_mock.called)
 
-    @mock.patch('compileall.ProcessPoolExecutor', new=None)
+    @mock.patch('concurrent.futures.ProcessPoolExecutor', new=None)
     @mock.patch('compileall.compile_file')
     def test_compile_missing_multiprocessing(self, compile_file_mock):
         compileall.compile_dir(self.directory, quiet=True, workers=5)
         self.assertTrue(compile_file_mock.called)
+
+    def test_compile_dir_maxlevels(self):
+        # Test the actual impact of maxlevels parameter
+        depth = 3
+        path = self.directory
+        for i in range(1, depth + 1):
+            path = os.path.join(path, f"dir_{i}")
+            source = os.path.join(path, 'script.py')
+            os.mkdir(path)
+            shutil.copyfile(self.source_path, source)
+        pyc_filename = importlib.util.cache_from_source(source)
+
+        compileall.compile_dir(self.directory, quiet=True, maxlevels=depth - 1)
+        self.assertFalse(os.path.isfile(pyc_filename))
+
+        compileall.compile_dir(self.directory, quiet=True, maxlevels=depth)
+        self.assertTrue(os.path.isfile(pyc_filename))
+
+    def test_strip_only(self):
+        fullpath = ["test", "build", "real", "path"]
+        path = os.path.join(self.directory, *fullpath)
+        os.makedirs(path)
+        script = script_helper.make_script(path, "test", "1 / 0")
+        bc = importlib.util.cache_from_source(script)
+        stripdir = os.path.join(self.directory, *fullpath[:2])
+        compileall.compile_dir(path, quiet=True, stripdir=stripdir)
+        rc, out, err = script_helper.assert_python_failure(bc)
+        expected_in = os.path.join(*fullpath[2:])
+        self.assertIn(
+            expected_in,
+            str(err, encoding=sys.getdefaultencoding())
+        )
+        self.assertNotIn(
+            stripdir,
+            str(err, encoding=sys.getdefaultencoding())
+        )
+
+    def test_prepend_only(self):
+        fullpath = ["test", "build", "real", "path"]
+        path = os.path.join(self.directory, *fullpath)
+        os.makedirs(path)
+        script = script_helper.make_script(path, "test", "1 / 0")
+        bc = importlib.util.cache_from_source(script)
+        prependdir = "/foo"
+        compileall.compile_dir(path, quiet=True, prependdir=prependdir)
+        rc, out, err = script_helper.assert_python_failure(bc)
+        expected_in = os.path.join(prependdir, self.directory, *fullpath)
+        self.assertIn(
+            expected_in,
+            str(err, encoding=sys.getdefaultencoding())
+        )
+
+    def test_strip_and_prepend(self):
+        fullpath = ["test", "build", "real", "path"]
+        path = os.path.join(self.directory, *fullpath)
+        os.makedirs(path)
+        script = script_helper.make_script(path, "test", "1 / 0")
+        bc = importlib.util.cache_from_source(script)
+        stripdir = os.path.join(self.directory, *fullpath[:2])
+        prependdir = "/foo"
+        compileall.compile_dir(path, quiet=True,
+                               stripdir=stripdir, prependdir=prependdir)
+        rc, out, err = script_helper.assert_python_failure(bc)
+        expected_in = os.path.join(prependdir, *fullpath[2:])
+        self.assertIn(
+            expected_in,
+            str(err, encoding=sys.getdefaultencoding())
+        )
+        self.assertNotIn(
+            stripdir,
+            str(err, encoding=sys.getdefaultencoding())
+        )
+
+    def test_strip_prepend_and_ddir(self):
+        fullpath = ["test", "build", "real", "path", "ddir"]
+        path = os.path.join(self.directory, *fullpath)
+        os.makedirs(path)
+        script_helper.make_script(path, "test", "1 / 0")
+        with self.assertRaises(ValueError):
+            compileall.compile_dir(path, quiet=True, ddir="/bar",
+                                   stripdir="/foo", prependdir="/bar")
+
+    def test_multiple_optimization_levels(self):
+        script = script_helper.make_script(self.directory,
+                                           "test_optimization",
+                                           "a = 0")
+        bc = []
+        for opt_level in "", 1, 2, 3:
+            bc.append(importlib.util.cache_from_source(script,
+                                                       optimization=opt_level))
+        test_combinations = [[0, 1], [1, 2], [0, 2], [0, 1, 2]]
+        for opt_combination in test_combinations:
+            compileall.compile_file(script, quiet=True,
+                                    optimize=opt_combination)
+            for opt_level in opt_combination:
+                self.assertTrue(os.path.isfile(bc[opt_level]))
+                try:
+                    os.unlink(bc[opt_level])
+                except Exception:
+                    pass
+
+    @support.skip_unless_symlink
+    def test_ignore_symlink_destination(self):
+        # Create folders for allowed files, symlinks and prohibited area
+        allowed_path = os.path.join(self.directory, "test", "dir", "allowed")
+        symlinks_path = os.path.join(self.directory, "test", "dir", "symlinks")
+        prohibited_path = os.path.join(self.directory, "test", "dir", "prohibited")
+        os.makedirs(allowed_path)
+        os.makedirs(symlinks_path)
+        os.makedirs(prohibited_path)
+
+        # Create scripts and symlinks and remember their byte-compiled versions
+        allowed_script = script_helper.make_script(allowed_path, "test_allowed", "a = 0")
+        prohibited_script = script_helper.make_script(prohibited_path, "test_prohibited", "a = 0")
+        allowed_symlink = os.path.join(symlinks_path, "test_allowed.py")
+        prohibited_symlink = os.path.join(symlinks_path, "test_prohibited.py")
+        os.symlink(allowed_script, allowed_symlink)
+        os.symlink(prohibited_script, prohibited_symlink)
+        allowed_bc = importlib.util.cache_from_source(allowed_symlink)
+        prohibited_bc = importlib.util.cache_from_source(prohibited_symlink)
+
+        compileall.compile_dir(symlinks_path, quiet=True, limit_sl_dest=allowed_path)
+
+        self.assertTrue(os.path.isfile(allowed_bc))
+        self.assertFalse(os.path.isfile(prohibited_bc))
+
+
+class CompileallTestsWithSourceEpoch(CompileallTestsBase,
+                                     unittest.TestCase,
+                                     metaclass=SourceDateEpochTestMeta,
+                                     source_date_epoch=True):
+    pass
+
+
+class CompileallTestsWithoutSourceEpoch(CompileallTestsBase,
+                                        unittest.TestCase,
+                                        metaclass=SourceDateEpochTestMeta,
+                                        source_date_epoch=False):
+    pass
+
 
 class EncodingTest(unittest.TestCase):
     """Issue 6716: compileall should escape source code when printing errors
@@ -212,7 +358,7 @@ class EncodingTest(unittest.TestCase):
             sys.stdout = orig_stdout
 
 
-class CommandLineTests(unittest.TestCase):
+class CommandLineTestsBase:
     """Test compileall's CLI."""
 
     @classmethod
@@ -285,6 +431,7 @@ class CommandLineTests(unittest.TestCase):
         self.assertNotCompiled(self.initfn)
         self.assertNotCompiled(self.barfn)
 
+    @without_source_date_epoch  # timestamp invalidation test
     def test_no_args_respects_force_flag(self):
         self._skip_if_sys_path_not_writable()
         bazfn = script_helper.make_script(self.directory, 'baz', '')
@@ -353,6 +500,7 @@ class CommandLineTests(unittest.TestCase):
         self.assertTrue(os.path.exists(self.pkgdir_cachedir))
         self.assertFalse(os.path.exists(cachecachedir))
 
+    @without_source_date_epoch  # timestamp invalidation test
     def test_force(self):
         self.assertRunOK('-q', self.pkgdir)
         pycpath = importlib.util.cache_from_source(self.barfn)
@@ -413,6 +561,20 @@ class CommandLineTests(unittest.TestCase):
         self.assertCompiled(hamfn)
         self.assertCompiled(spamfn)
         self.assertCompiled(eggfn)
+
+    @support.skip_unless_symlink
+    def test_symlink_loop(self):
+        # Currently, compileall ignores symlinks to directories.
+        # If that limitation is ever lifted, it should protect against
+        # recursion in symlink loops.
+        pkg = os.path.join(self.pkgdir, 'spam')
+        script_helper.make_pkg(pkg)
+        os.symlink('.', os.path.join(pkg, 'evil'))
+        os.symlink('.', os.path.join(pkg, 'evil2'))
+        self.assertRunOK('-q', self.pkgdir)
+        self.assertCompiled(os.path.join(
+            self.pkgdir, 'spam', 'evil', 'evil2', '__init__.py'
+        ))
 
     def test_quiet(self):
         noisy = self.assertRunOK(self.pkgdir)
@@ -553,7 +715,90 @@ class CommandLineTests(unittest.TestCase):
                         new=[sys.executable, self.directory, "-j0"]):
             compileall.main()
             self.assertTrue(compile_dir.called)
-            self.assertEqual(compile_dir.call_args[-1]['workers'], None)
+            self.assertEqual(compile_dir.call_args[-1]['workers'], 0)
+
+    def test_strip_and_prepend(self):
+        fullpath = ["test", "build", "real", "path"]
+        path = os.path.join(self.directory, *fullpath)
+        os.makedirs(path)
+        script = script_helper.make_script(path, "test", "1 / 0")
+        bc = importlib.util.cache_from_source(script)
+        stripdir = os.path.join(self.directory, *fullpath[:2])
+        prependdir = "/foo"
+        self.assertRunOK("-s", stripdir, "-p", prependdir, path)
+        rc, out, err = script_helper.assert_python_failure(bc)
+        expected_in = os.path.join(prependdir, *fullpath[2:])
+        self.assertIn(
+            expected_in,
+            str(err, encoding=sys.getdefaultencoding())
+        )
+        self.assertNotIn(
+            stripdir,
+            str(err, encoding=sys.getdefaultencoding())
+        )
+
+    def test_multiple_optimization_levels(self):
+        path = os.path.join(self.directory, "optimizations")
+        os.makedirs(path)
+        script = script_helper.make_script(path,
+                                           "test_optimization",
+                                           "a = 0")
+        bc = []
+        for opt_level in "", 1, 2, 3:
+            bc.append(importlib.util.cache_from_source(script,
+                                                       optimization=opt_level))
+        test_combinations = [["0", "1"],
+                             ["1", "2"],
+                             ["0", "2"],
+                             ["0", "1", "2"]]
+        for opt_combination in test_combinations:
+            self.assertRunOK(path, *("-o" + str(n) for n in opt_combination))
+            for opt_level in opt_combination:
+                self.assertTrue(os.path.isfile(bc[int(opt_level)]))
+                try:
+                    os.unlink(bc[opt_level])
+                except Exception:
+                    pass
+
+    @support.skip_unless_symlink
+    def test_ignore_symlink_destination(self):
+        # Create folders for allowed files, symlinks and prohibited area
+        allowed_path = os.path.join(self.directory, "test", "dir", "allowed")
+        symlinks_path = os.path.join(self.directory, "test", "dir", "symlinks")
+        prohibited_path = os.path.join(self.directory, "test", "dir", "prohibited")
+        os.makedirs(allowed_path)
+        os.makedirs(symlinks_path)
+        os.makedirs(prohibited_path)
+
+        # Create scripts and symlinks and remember their byte-compiled versions
+        allowed_script = script_helper.make_script(allowed_path, "test_allowed", "a = 0")
+        prohibited_script = script_helper.make_script(prohibited_path, "test_prohibited", "a = 0")
+        allowed_symlink = os.path.join(symlinks_path, "test_allowed.py")
+        prohibited_symlink = os.path.join(symlinks_path, "test_prohibited.py")
+        os.symlink(allowed_script, allowed_symlink)
+        os.symlink(prohibited_script, prohibited_symlink)
+        allowed_bc = importlib.util.cache_from_source(allowed_symlink)
+        prohibited_bc = importlib.util.cache_from_source(prohibited_symlink)
+
+        self.assertRunOK(symlinks_path, "-e", allowed_path)
+
+        self.assertTrue(os.path.isfile(allowed_bc))
+        self.assertFalse(os.path.isfile(prohibited_bc))
+
+
+class CommandLineTestsWithSourceEpoch(CommandLineTestsBase,
+                                       unittest.TestCase,
+                                       metaclass=SourceDateEpochTestMeta,
+                                       source_date_epoch=True):
+    pass
+
+
+class CommandLineTestsNoSourceEpoch(CommandLineTestsBase,
+                                     unittest.TestCase,
+                                     metaclass=SourceDateEpochTestMeta,
+                                     source_date_epoch=False):
+    pass
+
 
 
 if __name__ == "__main__":

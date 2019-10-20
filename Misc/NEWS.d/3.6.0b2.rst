@@ -378,7 +378,6 @@ xml.etree.ElementTree.Element.
 .. section: Library
 
 Stop using localtime() and gmtime() in the time module.
-
 Introduced platform independent _PyTime_localtime API that is similar to
 POSIX localtime_r, but available on all platforms.  Patch by Ed Schouten.
 
@@ -390,7 +389,6 @@ POSIX localtime_r, but available on all platforms.  Patch by Ed Schouten.
 .. section: Library
 
 Fixed calendar functions for extreme months: 0001-01 and 9999-12.
-
 Methods itermonthdays() and itermonthdays2() are reimplemented so that they
 don't call itermonthdates() which can cause datetime.date under/overflow.
 

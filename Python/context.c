@@ -1,9 +1,10 @@
 #include "Python.h"
 
+#include "pycore_context.h"
+#include "pycore_hamt.h"
+#include "pycore_object.h"
+#include "pycore_pystate.h"
 #include "structmember.h"
-#include "internal/pystate.h"
-#include "internal/context.h"
-#include "internal/hamt.h"
 
 
 #define CONTEXT_FREELIST_MAXLEN 255
@@ -112,7 +113,7 @@ PyContext_Enter(PyObject *octx)
         return -1;
     }
 
-    PyThreadState *ts = PyThreadState_GET();
+    PyThreadState *ts = _PyThreadState_GET();
     assert(ts != NULL);
 
     ctx->ctx_prev = (PyContext *)ts->context;  /* borrow */
@@ -138,7 +139,7 @@ PyContext_Exit(PyObject *octx)
         return -1;
     }
 
-    PyThreadState *ts = PyThreadState_GET();
+    PyThreadState *ts = _PyThreadState_GET();
     assert(ts != NULL);
 
     if (ts->context != (PyObject *)ctx) {
@@ -178,7 +179,7 @@ PyContextVar_Get(PyObject *ovar, PyObject *def, PyObject **val)
     ENSURE_ContextVar(ovar, -1)
     PyContextVar *var = (PyContextVar *)ovar;
 
-    PyThreadState *ts = PyThreadState_GET();
+    PyThreadState *ts = _PyThreadState_GET();
     assert(ts != NULL);
     if (ts->context == NULL) {
         goto not_found;
@@ -382,7 +383,7 @@ context_new_from_vars(PyHamtObject *vars)
 static inline PyContext *
 context_get(void)
 {
-    PyThreadState *ts = PyThreadState_GET();
+    PyThreadState *ts = _PyThreadState_GET();
     assert(ts != NULL);
     PyContext *current_ctx = (PyContext *)ts->context;
     if (current_ctx == NULL) {
@@ -591,12 +592,12 @@ _contextvars_Context_keys_impl(PyContext *self)
 /*[clinic input]
 _contextvars.Context.values
 
-Return a list of all variables’ values in the context object.
+Return a list of all variables' values in the context object.
 [clinic start generated code]*/
 
 static PyObject *
 _contextvars_Context_values_impl(PyContext *self)
-/*[clinic end generated code: output=d286dabfc8db6dde input=6c3d08639ba3bf67]*/
+/*[clinic end generated code: output=d286dabfc8db6dde input=ce8075d04a6ea526]*/
 {
     return _PyHamt_NewIterValues(self->ctx_vars);
 }
@@ -630,7 +631,7 @@ context_run(PyContext *self, PyObject *const *args,
         return NULL;
     }
 
-    PyObject *call_result = _PyObject_FastCallKeywords(
+    PyObject *call_result = _PyObject_Vectorcall(
         args[0], args + 1, nargs - 1, kwnames);
 
     if (PyContext_Exit((PyObject *)self)) {
@@ -647,7 +648,7 @@ static PyMethodDef PyContext_methods[] = {
     _CONTEXTVARS_CONTEXT_KEYS_METHODDEF
     _CONTEXTVARS_CONTEXT_VALUES_METHODDEF
     _CONTEXTVARS_CONTEXT_COPY_METHODDEF
-    {"run", (PyCFunction)context_run, METH_FASTCALL | METH_KEYWORDS, NULL},
+    {"run", (PyCFunction)(void(*)(void))context_run, METH_FASTCALL | METH_KEYWORDS, NULL},
     {NULL, NULL}
 };
 
@@ -1140,14 +1141,14 @@ error:
 }
 
 static PyObject *
-token_get_var(PyContextToken *self)
+token_get_var(PyContextToken *self, void *Py_UNUSED(ignored))
 {
     Py_INCREF(self->tok_var);
     return (PyObject *)self->tok_var;
 }
 
 static PyObject *
-token_get_old_value(PyContextToken *self)
+token_get_old_value(PyContextToken *self, void *Py_UNUSED(ignored))
 {
     if (self->tok_oldval == NULL) {
         return get_token_missing();

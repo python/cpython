@@ -295,6 +295,8 @@ On top of the core functionality, :class:`ConfigParser` supports
 interpolation.  This means values can be preprocessed before returning them
 from ``get()`` calls.
 
+.. index:: single: % (percent); interpolation in configuration files
+
 .. class:: BasicInterpolation()
 
    The default implementation used by :class:`ConfigParser`.  It enables
@@ -311,6 +313,8 @@ from ``get()`` calls.
       my_dir: %(home_dir)s/lumberjack
       my_pictures: %(my_dir)s/Pictures
 
+      [Escape]
+      gain: 80%%  # use a %% to escape the % sign (% is the only character that needs to be escaped)
 
    In the example above, :class:`ConfigParser` with *interpolation* set to
    ``BasicInterpolation()`` would resolve ``%(home_dir)s`` to the value of
@@ -322,6 +326,8 @@ from ``get()`` calls.
    With ``interpolation`` set to ``None``, the parser would simply return
    ``%(my_dir)s/Pictures`` as the value of ``my_pictures`` and
    ``%(home_dir)s/lumberjack`` as the value of ``my_dir``.
+
+.. index:: single: $ (dollar); interpolation in configuration files
 
 .. class:: ExtendedInterpolation()
 
@@ -341,6 +347,9 @@ from ``get()`` calls.
       home_dir: /Users
       my_dir: ${home_dir}/lumberjack
       my_pictures: ${my_dir}/Pictures
+
+      [Escape]
+      cost: $$80  # use a $$ to escape the $ sign ($ is the only character that needs to be escaped)
 
    Values from other sections can be fetched as well:
 
@@ -397,11 +406,11 @@ However, there are a few differences that should be taken into account:
   because default values cannot be deleted from the section (because technically
   they are not there).  If they are overridden in the section, deleting causes
   the default value to be visible again.  Trying to delete a default value
-  causes a ``KeyError``.
+  causes a :exc:`KeyError`.
 
 * ``DEFAULTSECT`` cannot be removed from the parser:
 
-  * trying to delete it raises ``ValueError``,
+  * trying to delete it raises :exc:`ValueError`,
 
   * ``parser.clear()`` leaves it intact,
 
@@ -472,9 +481,9 @@ the :meth:`__init__` options:
      ...                                'bar': 'y',
      ...                                'baz': 'z'}
      ... })
-     >>> parser.sections()  # doctest: +SKIP
+     >>> parser.sections()
      ['section1', 'section2', 'section3']
-     >>> [option for option in parser['section3']]  # doctest: +SKIP
+     >>> [option for option in parser['section3']]
      ['foo', 'bar', 'baz']
 
 * *allow_no_value*, default value: ``False``
@@ -663,7 +672,7 @@ More advanced customization may be achieved by overriding default values of
 these parser attributes.  The defaults are defined on the classes, so they may
 be overridden by subclasses or by attribute assignment.
 
-.. attribute:: BOOLEAN_STATES
+.. attribute:: ConfigParser.BOOLEAN_STATES
 
   By default when using :meth:`~ConfigParser.getboolean`, config parsers
   consider the following values ``True``: ``'1'``, ``'yes'``, ``'true'``,
@@ -686,7 +695,7 @@ be overridden by subclasses or by attribute assignment.
   Other typical Boolean pairs include ``accept``/``reject`` or
   ``enabled``/``disabled``.
 
-.. method:: optionxform(option)
+.. method:: ConfigParser.optionxform(option)
 
   This method transforms option names on every read, get, or set
   operation.  The default converts the name to lowercase.  This also
@@ -717,7 +726,13 @@ be overridden by subclasses or by attribute assignment.
      >>> list(custom['Section2'].keys())
      ['AnotherKey']
 
-.. attribute:: SECTCRE
+  .. note::
+     The optionxform function transforms option names to a canonical form.
+     This should be an idempotent function: if the name is already in
+     canonical form, it should be returned unchanged.
+
+
+.. attribute:: ConfigParser.SECTCRE
 
   A compiled regular expression used to parse section headers.  The default
   matches ``[section]`` to the name ``"section"``.  Whitespace is considered
@@ -917,7 +932,7 @@ ConfigParser Objects
       providing consistent behavior across the parser: non-string
       keys and values are implicitly converted to strings.
 
-   .. versionchanged:: 3.7
+   .. versionchanged:: 3.8
       The default *dict_type* is :class:`dict`, since it now preserves
       insertion order.
 
@@ -1195,7 +1210,7 @@ RawConfigParser Objects
    names, and values via its unsafe ``add_section`` and ``set`` methods,
    as well as the legacy ``defaults=`` keyword argument handling.
 
-   .. versionchanged:: 3.7
+   .. versionchanged:: 3.8
       The default *dict_type* is :class:`dict`, since it now preserves
       insertion order.
 

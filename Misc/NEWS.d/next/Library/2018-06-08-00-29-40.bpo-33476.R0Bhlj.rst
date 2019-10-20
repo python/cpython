@@ -1,2 +1,0 @@
-Fix _header_value_parser.py when address group is missing final ';'.
-Contributed by Enrique Perez-Terron

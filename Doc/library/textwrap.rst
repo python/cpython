@@ -77,6 +77,9 @@ functions should be good enough; otherwise, you should use an instance of
    equal: the lines ``"  hello"`` and ``"\thello"`` are considered to have no
    common leading whitespace.
 
+   Lines containing only whitespace are ignored in the input and normalized to a
+   single newline character in the output.
+
    For example::
 
       def test():
@@ -267,6 +270,8 @@ hyphenated words; only then will long words be broken if necessary, unless
 
       .. versionadded:: 3.4
 
+
+   .. index:: single: ...; placeholder
 
    .. attribute:: placeholder
 

@@ -1,4 +1,4 @@
-.. highlightlang:: sh
+.. highlight:: sh
 
 .. _using-on-unix:
 
@@ -72,15 +72,15 @@ latest release's source or just grab a fresh `clone
 <https://devguide.python.org/setup/#getting-the-source-code>`_.  (If you want
 to contribute patches, you will need a clone.)
 
-The build process consists in the usual ::
+The build process consists of the usual commands::
 
    ./configure
    make
    make install
 
-invocations. Configuration options and caveats for specific Unix platforms are
-extensively documented in the :source:`README.rst` file in the root of the Python
-source tree.
+Configuration options and caveats for specific Unix platforms are extensively
+documented in the :source:`README.rst` file in the root of the Python source
+tree.
 
 .. warning::
 
@@ -134,14 +134,3 @@ some Unices may not have the :program:`env` command, so you may need to hardcode
 ``/usr/bin/python3`` as the interpreter path.
 
 To use shell commands in your Python scripts, look at the :mod:`subprocess` module.
-
-
-Editors and IDEs
-================
-
-There are a number of IDEs that support Python programming language.
-Many editors and IDEs provide syntax highlighting, debugging tools, and PEP-8 checks.
-
-Please go to `Python Editors <https://wiki.python.org/moin/PythonEditors>`_ and
-`Integrated Development Environments <https://wiki.python.org/moin/IntegratedDevelopmentEnvironments>`_
-for a comprehensive list.

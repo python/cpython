@@ -33,7 +33,7 @@ Add Py_tp_finalize slot for the stable ABI.
 .. nonce: 2mNeD8
 .. section: Core and Builtins
 
-Introduce a distinct type for PEP 492 coroutines; add types.CoroutineType,
+Introduce a distinct type for :pep:`492` coroutines; add types.CoroutineType,
 inspect.getcoroutinestate, inspect.getcoroutinelocals; coroutines no longer
 use CO_GENERATOR flag; sys.set_coroutine_wrapper works only for 'async def'
 coroutines; inspect.iscoroutine no longer uses collections.abc.Coroutine,
@@ -110,8 +110,8 @@ by Martin Panter.
 .. nonce: aAbWbQ
 .. section: Library
 
-Restore semantic round-trip correctness in tokenize/untokenize for tab-
-indented blocks.
+Restore semantic round-trip correctness in tokenize/untokenize for
+tab-indented blocks.
 
 ..
 

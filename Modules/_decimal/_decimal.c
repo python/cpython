@@ -672,10 +672,10 @@ static PyTypeObject PyDecSignalDictMixin_Type =
     sizeof(PyDecSignalDictObject),            /* tp_basicsize */
     0,                                        /* tp_itemsize */
     0,                                        /* tp_dealloc */
-    0,                                        /* tp_print */
+    0,                                        /* tp_vectorcall_offset */
     (getattrfunc) 0,                          /* tp_getattr */
     (setattrfunc) 0,                          /* tp_setattr */
-    0,                                        /* tp_reserved */
+    0,                                        /* tp_as_async */
     (reprfunc) signaldict_repr,               /* tp_repr */
     0,                                        /* tp_as_number */
     0,                                        /* tp_as_sequence */
@@ -1665,10 +1665,10 @@ static PyTypeObject PyDecContextManager_Type =
     sizeof(PyDecContextManagerObject),      /* tp_basicsize */
     0,                                      /* tp_itemsize */
     (destructor) ctxmanager_dealloc,        /* tp_dealloc */
-    0,                                      /* tp_print */
+    0,                                      /* tp_vectorcall_offset */
     (getattrfunc) 0,                        /* tp_getattr */
     (setattrfunc) 0,                        /* tp_setattr */
-    0,                                      /* tp_reserved */
+    0,                                      /* tp_as_async */
     (reprfunc) 0,                           /* tp_repr */
     0,                                      /* tp_as_number */
     0,                                      /* tp_as_sequence */
@@ -4598,30 +4598,30 @@ static PyNumberMethods dec_number_methods =
 static PyMethodDef dec_methods [] =
 {
   /* Unary arithmetic functions, optional context arg */
-  { "exp", (PyCFunction)dec_mpd_qexp, METH_VARARGS|METH_KEYWORDS, doc_exp },
-  { "ln", (PyCFunction)dec_mpd_qln, METH_VARARGS|METH_KEYWORDS, doc_ln },
-  { "log10", (PyCFunction)dec_mpd_qlog10, METH_VARARGS|METH_KEYWORDS, doc_log10 },
-  { "next_minus", (PyCFunction)dec_mpd_qnext_minus, METH_VARARGS|METH_KEYWORDS, doc_next_minus },
-  { "next_plus", (PyCFunction)dec_mpd_qnext_plus, METH_VARARGS|METH_KEYWORDS, doc_next_plus },
-  { "normalize", (PyCFunction)dec_mpd_qreduce, METH_VARARGS|METH_KEYWORDS, doc_normalize },
-  { "to_integral", (PyCFunction)PyDec_ToIntegralValue, METH_VARARGS|METH_KEYWORDS, doc_to_integral },
-  { "to_integral_exact", (PyCFunction)PyDec_ToIntegralExact, METH_VARARGS|METH_KEYWORDS, doc_to_integral_exact },
-  { "to_integral_value", (PyCFunction)PyDec_ToIntegralValue, METH_VARARGS|METH_KEYWORDS, doc_to_integral_value },
-  { "sqrt", (PyCFunction)dec_mpd_qsqrt, METH_VARARGS|METH_KEYWORDS, doc_sqrt },
+  { "exp", (PyCFunction)(void(*)(void))dec_mpd_qexp, METH_VARARGS|METH_KEYWORDS, doc_exp },
+  { "ln", (PyCFunction)(void(*)(void))dec_mpd_qln, METH_VARARGS|METH_KEYWORDS, doc_ln },
+  { "log10", (PyCFunction)(void(*)(void))dec_mpd_qlog10, METH_VARARGS|METH_KEYWORDS, doc_log10 },
+  { "next_minus", (PyCFunction)(void(*)(void))dec_mpd_qnext_minus, METH_VARARGS|METH_KEYWORDS, doc_next_minus },
+  { "next_plus", (PyCFunction)(void(*)(void))dec_mpd_qnext_plus, METH_VARARGS|METH_KEYWORDS, doc_next_plus },
+  { "normalize", (PyCFunction)(void(*)(void))dec_mpd_qreduce, METH_VARARGS|METH_KEYWORDS, doc_normalize },
+  { "to_integral", (PyCFunction)(void(*)(void))PyDec_ToIntegralValue, METH_VARARGS|METH_KEYWORDS, doc_to_integral },
+  { "to_integral_exact", (PyCFunction)(void(*)(void))PyDec_ToIntegralExact, METH_VARARGS|METH_KEYWORDS, doc_to_integral_exact },
+  { "to_integral_value", (PyCFunction)(void(*)(void))PyDec_ToIntegralValue, METH_VARARGS|METH_KEYWORDS, doc_to_integral_value },
+  { "sqrt", (PyCFunction)(void(*)(void))dec_mpd_qsqrt, METH_VARARGS|METH_KEYWORDS, doc_sqrt },
 
   /* Binary arithmetic functions, optional context arg */
-  { "compare", (PyCFunction)dec_mpd_qcompare, METH_VARARGS|METH_KEYWORDS, doc_compare },
-  { "compare_signal", (PyCFunction)dec_mpd_qcompare_signal, METH_VARARGS|METH_KEYWORDS, doc_compare_signal },
-  { "max", (PyCFunction)dec_mpd_qmax, METH_VARARGS|METH_KEYWORDS, doc_max },
-  { "max_mag", (PyCFunction)dec_mpd_qmax_mag, METH_VARARGS|METH_KEYWORDS, doc_max_mag },
-  { "min", (PyCFunction)dec_mpd_qmin, METH_VARARGS|METH_KEYWORDS, doc_min },
-  { "min_mag", (PyCFunction)dec_mpd_qmin_mag, METH_VARARGS|METH_KEYWORDS, doc_min_mag },
-  { "next_toward", (PyCFunction)dec_mpd_qnext_toward, METH_VARARGS|METH_KEYWORDS, doc_next_toward },
-  { "quantize", (PyCFunction)dec_mpd_qquantize, METH_VARARGS|METH_KEYWORDS, doc_quantize },
-  { "remainder_near", (PyCFunction)dec_mpd_qrem_near, METH_VARARGS|METH_KEYWORDS, doc_remainder_near },
+  { "compare", (PyCFunction)(void(*)(void))dec_mpd_qcompare, METH_VARARGS|METH_KEYWORDS, doc_compare },
+  { "compare_signal", (PyCFunction)(void(*)(void))dec_mpd_qcompare_signal, METH_VARARGS|METH_KEYWORDS, doc_compare_signal },
+  { "max", (PyCFunction)(void(*)(void))dec_mpd_qmax, METH_VARARGS|METH_KEYWORDS, doc_max },
+  { "max_mag", (PyCFunction)(void(*)(void))dec_mpd_qmax_mag, METH_VARARGS|METH_KEYWORDS, doc_max_mag },
+  { "min", (PyCFunction)(void(*)(void))dec_mpd_qmin, METH_VARARGS|METH_KEYWORDS, doc_min },
+  { "min_mag", (PyCFunction)(void(*)(void))dec_mpd_qmin_mag, METH_VARARGS|METH_KEYWORDS, doc_min_mag },
+  { "next_toward", (PyCFunction)(void(*)(void))dec_mpd_qnext_toward, METH_VARARGS|METH_KEYWORDS, doc_next_toward },
+  { "quantize", (PyCFunction)(void(*)(void))dec_mpd_qquantize, METH_VARARGS|METH_KEYWORDS, doc_quantize },
+  { "remainder_near", (PyCFunction)(void(*)(void))dec_mpd_qrem_near, METH_VARARGS|METH_KEYWORDS, doc_remainder_near },
 
   /* Ternary arithmetic functions, optional context arg */
-  { "fma", (PyCFunction)dec_mpd_qfma, METH_VARARGS|METH_KEYWORDS, doc_fma },
+  { "fma", (PyCFunction)(void(*)(void))dec_mpd_qfma, METH_VARARGS|METH_KEYWORDS, doc_fma },
 
   /* Boolean functions, no context arg */
   { "is_canonical", dec_mpd_iscanonical, METH_NOARGS, doc_is_canonical },
@@ -4634,8 +4634,8 @@ static PyMethodDef dec_methods [] =
   { "is_zero", dec_mpd_iszero, METH_NOARGS, doc_is_zero },
 
   /* Boolean functions, optional context arg */
-  { "is_normal", (PyCFunction)dec_mpd_isnormal, METH_VARARGS|METH_KEYWORDS, doc_is_normal },
-  { "is_subnormal", (PyCFunction)dec_mpd_issubnormal, METH_VARARGS|METH_KEYWORDS, doc_is_subnormal },
+  { "is_normal", (PyCFunction)(void(*)(void))dec_mpd_isnormal, METH_VARARGS|METH_KEYWORDS, doc_is_normal },
+  { "is_subnormal", (PyCFunction)(void(*)(void))dec_mpd_issubnormal, METH_VARARGS|METH_KEYWORDS, doc_is_subnormal },
 
   /* Unary functions, no context arg */
   { "adjusted", dec_mpd_adjexp, METH_NOARGS, doc_adjusted },
@@ -4648,24 +4648,24 @@ static PyMethodDef dec_methods [] =
   { "copy_negate", dec_mpd_qcopy_negate, METH_NOARGS, doc_copy_negate },
 
   /* Unary functions, optional context arg */
-  { "logb", (PyCFunction)dec_mpd_qlogb, METH_VARARGS|METH_KEYWORDS, doc_logb },
-  { "logical_invert", (PyCFunction)dec_mpd_qinvert, METH_VARARGS|METH_KEYWORDS, doc_logical_invert },
-  { "number_class", (PyCFunction)dec_mpd_class, METH_VARARGS|METH_KEYWORDS, doc_number_class },
-  { "to_eng_string", (PyCFunction)dec_mpd_to_eng, METH_VARARGS|METH_KEYWORDS, doc_to_eng_string },
+  { "logb", (PyCFunction)(void(*)(void))dec_mpd_qlogb, METH_VARARGS|METH_KEYWORDS, doc_logb },
+  { "logical_invert", (PyCFunction)(void(*)(void))dec_mpd_qinvert, METH_VARARGS|METH_KEYWORDS, doc_logical_invert },
+  { "number_class", (PyCFunction)(void(*)(void))dec_mpd_class, METH_VARARGS|METH_KEYWORDS, doc_number_class },
+  { "to_eng_string", (PyCFunction)(void(*)(void))dec_mpd_to_eng, METH_VARARGS|METH_KEYWORDS, doc_to_eng_string },
 
   /* Binary functions, optional context arg for conversion errors */
-  { "compare_total", (PyCFunction)dec_mpd_compare_total, METH_VARARGS|METH_KEYWORDS, doc_compare_total },
-  { "compare_total_mag", (PyCFunction)dec_mpd_compare_total_mag, METH_VARARGS|METH_KEYWORDS, doc_compare_total_mag },
-  { "copy_sign", (PyCFunction)dec_mpd_qcopy_sign, METH_VARARGS|METH_KEYWORDS, doc_copy_sign },
-  { "same_quantum", (PyCFunction)dec_mpd_same_quantum, METH_VARARGS|METH_KEYWORDS, doc_same_quantum },
+  { "compare_total", (PyCFunction)(void(*)(void))dec_mpd_compare_total, METH_VARARGS|METH_KEYWORDS, doc_compare_total },
+  { "compare_total_mag", (PyCFunction)(void(*)(void))dec_mpd_compare_total_mag, METH_VARARGS|METH_KEYWORDS, doc_compare_total_mag },
+  { "copy_sign", (PyCFunction)(void(*)(void))dec_mpd_qcopy_sign, METH_VARARGS|METH_KEYWORDS, doc_copy_sign },
+  { "same_quantum", (PyCFunction)(void(*)(void))dec_mpd_same_quantum, METH_VARARGS|METH_KEYWORDS, doc_same_quantum },
 
   /* Binary functions, optional context arg */
-  { "logical_and", (PyCFunction)dec_mpd_qand, METH_VARARGS|METH_KEYWORDS, doc_logical_and },
-  { "logical_or", (PyCFunction)dec_mpd_qor, METH_VARARGS|METH_KEYWORDS, doc_logical_or },
-  { "logical_xor", (PyCFunction)dec_mpd_qxor, METH_VARARGS|METH_KEYWORDS, doc_logical_xor },
-  { "rotate", (PyCFunction)dec_mpd_qrotate, METH_VARARGS|METH_KEYWORDS, doc_rotate },
-  { "scaleb", (PyCFunction)dec_mpd_qscaleb, METH_VARARGS|METH_KEYWORDS, doc_scaleb },
-  { "shift", (PyCFunction)dec_mpd_qshift, METH_VARARGS|METH_KEYWORDS, doc_shift },
+  { "logical_and", (PyCFunction)(void(*)(void))dec_mpd_qand, METH_VARARGS|METH_KEYWORDS, doc_logical_and },
+  { "logical_or", (PyCFunction)(void(*)(void))dec_mpd_qor, METH_VARARGS|METH_KEYWORDS, doc_logical_or },
+  { "logical_xor", (PyCFunction)(void(*)(void))dec_mpd_qxor, METH_VARARGS|METH_KEYWORDS, doc_logical_xor },
+  { "rotate", (PyCFunction)(void(*)(void))dec_mpd_qrotate, METH_VARARGS|METH_KEYWORDS, doc_rotate },
+  { "scaleb", (PyCFunction)(void(*)(void))dec_mpd_qscaleb, METH_VARARGS|METH_KEYWORDS, doc_scaleb },
+  { "shift", (PyCFunction)(void(*)(void))dec_mpd_qshift, METH_VARARGS|METH_KEYWORDS, doc_shift },
 
   /* Miscellaneous */
   { "from_float", dec_from_float, METH_O|METH_CLASS, doc_from_float },
@@ -4694,10 +4694,10 @@ static PyTypeObject PyDec_Type =
     sizeof(PyDecObject),                    /* tp_basicsize */
     0,                                      /* tp_itemsize */
     (destructor) dec_dealloc,               /* tp_dealloc */
-    0,                                      /* tp_print */
+    0,                                      /* tp_vectorcall_offset */
     (getattrfunc) 0,                        /* tp_getattr */
     (setattrfunc) 0,                        /* tp_setattr */
-    0,                                      /* tp_reserved */
+    0,                                      /* tp_as_async */
     (reprfunc) dec_repr,                    /* tp_repr */
     &dec_number_methods,                    /* tp_as_number */
     0,                                      /* tp_as_sequence */
@@ -5303,7 +5303,7 @@ static PyMethodDef context_methods [] =
   { "subtract", ctx_mpd_qsub, METH_VARARGS, doc_ctx_subtract },
 
   /* Binary or ternary arithmetic functions */
-  { "power", (PyCFunction)ctx_mpd_qpow, METH_VARARGS|METH_KEYWORDS, doc_ctx_power },
+  { "power", (PyCFunction)(void(*)(void))ctx_mpd_qpow, METH_VARARGS|METH_KEYWORDS, doc_ctx_power },
 
   /* Ternary arithmetic functions */
   { "fma", ctx_mpd_qfma, METH_VARARGS, doc_ctx_fma },
@@ -5380,17 +5380,17 @@ static PyTypeObject PyDecContext_Type =
     sizeof(PyDecContextObject),                /* tp_basicsize */
     0,                                         /* tp_itemsize */
     (destructor) context_dealloc,              /* tp_dealloc */
-    0,                                         /* tp_print */
+    0,                                         /* tp_vectorcall_offset */
     (getattrfunc) 0,                           /* tp_getattr */
     (setattrfunc) 0,                           /* tp_setattr */
-    0,                                         /* tp_reserved */
+    0,                                         /* tp_as_async */
     (reprfunc) context_repr,                   /* tp_repr */
     0,                                         /* tp_as_number */
     0,                                         /* tp_as_sequence */
     0,                                         /* tp_as_mapping */
     (hashfunc) 0,                              /* tp_hash */
     0,                                         /* tp_call */
-    (reprfunc) context_repr,                   /* tp_str */
+    0,                                         /* tp_str */
     (getattrofunc) context_getattr,            /* tp_getattro */
     (setattrofunc) context_setattr,            /* tp_setattro */
     (PyBufferProcs *) 0,                       /* tp_as_buffer */
@@ -5421,7 +5421,7 @@ static PyMethodDef _decimal_methods [] =
 {
   { "getcontext", (PyCFunction)PyDec_GetCurrentContext, METH_NOARGS, doc_getcontext},
   { "setcontext", (PyCFunction)PyDec_SetCurrentContext, METH_O, doc_setcontext},
-  { "localcontext", (PyCFunction)ctxmanager_new, METH_VARARGS|METH_KEYWORDS, doc_localcontext},
+  { "localcontext", (PyCFunction)(void(*)(void))ctxmanager_new, METH_VARARGS|METH_KEYWORDS, doc_localcontext},
 #ifdef EXTRA_FUNCTIONALITY
   { "IEEEContext", (PyCFunction)ieee_context, METH_O, doc_ieee_context},
 #endif

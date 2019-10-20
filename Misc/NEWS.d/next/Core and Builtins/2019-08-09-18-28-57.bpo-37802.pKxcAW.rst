@@ -1,0 +1,3 @@
+Slightly improve performance of :c:func:`PyLong_FromUnsignedLong`,
+:c:func:`PyLong_FromUnsignedLongLong` and :c:func:`PyLong_FromSize_t`.
+Patch by Sergey Fedoseev.

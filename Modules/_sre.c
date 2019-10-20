@@ -340,7 +340,7 @@ _sre_unicode_tolower_impl(PyObject *module, int character)
 LOCAL(void)
 state_reset(SRE_STATE* state)
 {
-    /* FIXME: dynamic! */
+    /* state->mark will be set to 0 in SRE_OP_MARK dynamically. */
     /*memset(state->mark, 0, sizeof(*state->mark) * SRE_MARK_SIZE);*/
 
     state->lastmark = -1;
@@ -1082,7 +1082,7 @@ pattern_subx(PatternObject* self, PyObject* ptemplate, PyObject* string,
             match = pattern_new_match(self, &state, 1);
             if (!match)
                 goto error;
-            item = PyObject_CallFunctionObjArgs(filter, match, NULL);
+            item = _PyObject_CallOneArg(filter, match);
             Py_DECREF(match);
             if (!item)
                 goto error;
@@ -1305,7 +1305,7 @@ PyDoc_STRVAR(pattern_doc, "Compiled regular expression object.");
 
 /* PatternObject's 'groupindex' method. */
 static PyObject *
-pattern_groupindex(PatternObject *self)
+pattern_groupindex(PatternObject *self, void *Py_UNUSED(ignored))
 {
     if (self->groupindex == NULL)
         return PyDict_New();
@@ -1899,15 +1899,7 @@ match_getslice_by_index(MatchObject* self, Py_ssize_t index, PyObject* def)
     void* ptr;
     Py_ssize_t i, j;
 
-    if (index < 0 || index >= self->groups) {
-        /* raise IndexError if we were given a bad group number */
-        PyErr_SetString(
-            PyExc_IndexError,
-            "no such group"
-            );
-        return NULL;
-    }
-
+    assert(0 <= index && index < self->groups);
     index *= 2;
 
     if (self->string == Py_None || self->mark[index] < 0) {
@@ -1940,16 +1932,24 @@ match_getindex(MatchObject* self, PyObject* index)
         return 0;
 
     if (PyIndex_Check(index)) {
-        return PyNumber_AsSsize_t(index, NULL);
+        i = PyNumber_AsSsize_t(index, NULL);
     }
+    else {
+        i = -1;
 
-    i = -1;
-
-    if (self->pattern->groupindex) {
-        index = PyDict_GetItem(self->pattern->groupindex, index);
-        if (index && PyLong_Check(index)) {
-            i = PyLong_AsSsize_t(index);
+        if (self->pattern->groupindex) {
+            index = PyDict_GetItemWithError(self->pattern->groupindex, index);
+            if (index && PyLong_Check(index)) {
+                i = PyLong_AsSsize_t(index);
+            }
         }
+    }
+    if (i < 0 || i >= self->groups) {
+        /* raise IndexError if we were given a bad group number */
+        if (!PyErr_Occurred()) {
+            PyErr_SetString(PyExc_IndexError, "no such group");
+        }
+        return -1;
     }
 
     return i;
@@ -1958,7 +1958,13 @@ match_getindex(MatchObject* self, PyObject* index)
 static PyObject*
 match_getslice(MatchObject* self, PyObject* index, PyObject* def)
 {
-    return match_getslice_by_index(self, match_getindex(self, index), def);
+    Py_ssize_t i = match_getindex(self, index);
+
+    if (i < 0) {
+        return NULL;
+    }
+
+    return match_getslice_by_index(self, i, def);
 }
 
 /*[clinic input]
@@ -2114,11 +2120,7 @@ _sre_SRE_Match_start_impl(MatchObject *self, PyObject *group)
 {
     Py_ssize_t index = match_getindex(self, group);
 
-    if (index < 0 || index >= self->groups) {
-        PyErr_SetString(
-            PyExc_IndexError,
-            "no such group"
-            );
+    if (index < 0) {
         return -1;
     }
 
@@ -2141,11 +2143,7 @@ _sre_SRE_Match_end_impl(MatchObject *self, PyObject *group)
 {
     Py_ssize_t index = match_getindex(self, group);
 
-    if (index < 0 || index >= self->groups) {
-        PyErr_SetString(
-            PyExc_IndexError,
-            "no such group"
-            );
+    if (index < 0) {
         return -1;
     }
 
@@ -2195,11 +2193,7 @@ _sre_SRE_Match_span_impl(MatchObject *self, PyObject *group)
 {
     Py_ssize_t index = match_getindex(self, group);
 
-    if (index < 0 || index >= self->groups) {
-        PyErr_SetString(
-            PyExc_IndexError,
-            "no such group"
-            );
+    if (index < 0) {
         return NULL;
     }
 
@@ -2272,7 +2266,7 @@ PyDoc_STRVAR(match_group_doc,
     For 0 returns the entire match.");
 
 static PyObject *
-match_lastindex_get(MatchObject *self)
+match_lastindex_get(MatchObject *self, void *Py_UNUSED(ignored))
 {
     if (self->lastindex >= 0)
         return PyLong_FromSsize_t(self->lastindex);
@@ -2280,7 +2274,7 @@ match_lastindex_get(MatchObject *self)
 }
 
 static PyObject *
-match_lastgroup_get(MatchObject *self)
+match_lastgroup_get(MatchObject *self, void *Py_UNUSED(ignored))
 {
     if (self->pattern->indexgroup &&
         self->lastindex >= 0 &&
@@ -2295,7 +2289,7 @@ match_lastgroup_get(MatchObject *self)
 }
 
 static PyObject *
-match_regs_get(MatchObject *self)
+match_regs_get(MatchObject *self, void *Py_UNUSED(ignored))
 {
     if (self->regs) {
         Py_INCREF(self->regs);
@@ -2312,7 +2306,7 @@ match_repr(MatchObject *self)
     if (group0 == NULL)
         return NULL;
     result = PyUnicode_FromFormat(
-            "<%s object; span=(%d, %d), match=%.50R>",
+            "<%s object; span=(%zd, %zd), match=%.50R>",
             Py_TYPE(self)->tp_name,
             self->mark[0], self->mark[1], group0);
     Py_DECREF(group0);
@@ -2600,10 +2594,10 @@ static PyTypeObject Pattern_Type = {
     "re.Pattern",
     sizeof(PatternObject), sizeof(SRE_CODE),
     (destructor)pattern_dealloc,        /* tp_dealloc */
-    0,                                  /* tp_print */
+    0,                                  /* tp_vectorcall_offset */
     0,                                  /* tp_getattr */
     0,                                  /* tp_setattr */
-    0,                                  /* tp_reserved */
+    0,                                  /* tp_as_async */
     (reprfunc)pattern_repr,             /* tp_repr */
     0,                                  /* tp_as_number */
     0,                                  /* tp_as_sequence */
@@ -2678,10 +2672,10 @@ static PyTypeObject Match_Type = {
     "re.Match",
     sizeof(MatchObject), sizeof(Py_ssize_t),
     (destructor)match_dealloc,  /* tp_dealloc */
-    0,                          /* tp_print */
+    0,                          /* tp_vectorcall_offset */
     0,                          /* tp_getattr */
     0,                          /* tp_setattr */
-    0,                          /* tp_reserved */
+    0,                          /* tp_as_async */
     (reprfunc)match_repr,       /* tp_repr */
     0,                          /* tp_as_number */
     0,                          /* tp_as_sequence */
@@ -2722,10 +2716,10 @@ static PyTypeObject Scanner_Type = {
     "_" SRE_MODULE ".SRE_Scanner",
     sizeof(ScannerObject), 0,
     (destructor)scanner_dealloc,/* tp_dealloc */
-    0,                          /* tp_print */
+    0,                          /* tp_vectorcall_offset */
     0,                          /* tp_getattr */
     0,                          /* tp_setattr */
-    0,                          /* tp_reserved */
+    0,                          /* tp_as_async */
     0,                          /* tp_repr */
     0,                          /* tp_as_number */
     0,                          /* tp_as_sequence */

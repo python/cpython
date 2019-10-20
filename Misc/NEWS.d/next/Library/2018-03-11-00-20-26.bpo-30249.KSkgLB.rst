@@ -1,2 +1,0 @@
-Improve struct.unpack_from() exception messages for problems with the buffer
-size and offset.

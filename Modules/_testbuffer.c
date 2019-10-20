@@ -1531,7 +1531,7 @@ ndarray_getbuf(NDArrayObject *self, Py_buffer *view, int flags)
     return 0;
 }
 
-static int
+static void
 ndarray_releasebuf(NDArrayObject *self, Py_buffer *view)
 {
     if (!ND_IS_CONSUMER(self)) {
@@ -1539,8 +1539,6 @@ ndarray_releasebuf(NDArrayObject *self, Py_buffer *view)
         if (--ndbuf->exports == 0 && ndbuf != self->head)
             ndbuf_delete(self, ndbuf);
     }
-
-    return 0;
 }
 
 static PyBufferProcs ndarray_as_buffer = {
@@ -2635,7 +2633,7 @@ static PyMethodDef ndarray_methods [] =
 {
     { "tolist", ndarray_tolist, METH_NOARGS, NULL },
     { "tobytes", ndarray_tobytes, METH_NOARGS, NULL },
-    { "push", (PyCFunction)ndarray_push, METH_VARARGS|METH_KEYWORDS, NULL },
+    { "push", (PyCFunction)(void(*)(void))ndarray_push, METH_VARARGS|METH_KEYWORDS, NULL },
     { "pop", ndarray_pop, METH_NOARGS, NULL },
     { "add_suboffsets", ndarray_add_suboffsets, METH_NOARGS, NULL },
     { "memoryview_from_buffer", ndarray_memoryview_from_buffer, METH_NOARGS, NULL },
@@ -2648,10 +2646,10 @@ static PyTypeObject NDArray_Type = {
     sizeof(NDArrayObject),       /* Basic object size */
     0,                           /* Item size for varobject */
     (destructor)ndarray_dealloc, /* tp_dealloc */
-    0,                           /* tp_print */
+    0,                           /* tp_vectorcall_offset */
     0,                           /* tp_getattr */
     0,                           /* tp_setattr */
-    0,                           /* tp_compare */
+    0,                           /* tp_as_async */
     0,                           /* tp_repr */
     0,                           /* tp_as_number */
     &ndarray_as_sequence,        /* tp_as_sequence */
@@ -2768,10 +2766,10 @@ static PyTypeObject StaticArray_Type = {
     sizeof(StaticArrayObject),       /* Basic object size */
     0,                               /* Item size for varobject */
     (destructor)staticarray_dealloc, /* tp_dealloc */
-    0,                               /* tp_print */
+    0,                               /* tp_vectorcall_offset */
     0,                               /* tp_getattr */
     0,                               /* tp_setattr */
-    0,                               /* tp_compare */
+    0,                               /* tp_as_async */
     0,                               /* tp_repr */
     0,                               /* tp_as_number */
     0,                               /* tp_as_sequence */

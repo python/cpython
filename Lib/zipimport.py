@@ -351,7 +351,7 @@ def _get_module_info(self, fullname):
 # data_size and file_offset are 0.
 def _read_directory(archive):
     try:
-        fp = _io.open(archive, 'rb')
+        fp = _io.open_code(archive)
     except OSError:
         raise ZipImportError(f"can't open Zip file: {archive!r}", path=archive)
 
@@ -533,7 +533,7 @@ def _get_data(archive, toc_entry):
     if data_size < 0:
         raise ZipImportError('negative data size')
 
-    with _io.open(archive, 'rb') as fp:
+    with _io.open_code(archive) as fp:
         # Check to make sure the local file header is correct
         try:
             fp.seek(file_offset)
@@ -578,33 +578,53 @@ def _eq_mtime(t1, t2):
     # dostime only stores even seconds, so be lenient
     return abs(t1 - t2) <= 1
 
+
 # Given the contents of a .py[co] file, unmarshal the data
 # and return the code object. Return None if it the magic word doesn't
-# match (we do this instead of raising an exception as we fall back
+# match, or if the recorded .py[co] metadata does not match the source,
+# (we do this instead of raising an exception as we fall back
 # to .py if available and we don't want to mask other errors).
-def _unmarshal_code(pathname, data, mtime):
-    if len(data) < 16:
-        raise ZipImportError('bad pyc data')
+def _unmarshal_code(self, pathname, fullpath, fullname, data):
+    exc_details = {
+        'name': fullname,
+        'path': fullpath,
+    }
 
-    if data[:4] != _bootstrap_external.MAGIC_NUMBER:
-        _bootstrap._verbose_message('{!r} has bad magic', pathname)
-        return None  # signal caller to try alternative
+    try:
+        flags = _bootstrap_external._classify_pyc(data, fullname, exc_details)
+    except ImportError:
+        return None
 
-    flags = _unpack_uint32(data[4:8])
-    if flags != 0:
-        # Hash-based pyc. We currently refuse to handle checked hash-based
-        # pycs. We could validate hash-based pycs against the source, but it
-        # seems likely that most people putting hash-based pycs in a zipfile
-        # will use unchecked ones.
+    hash_based = flags & 0b1 != 0
+    if hash_based:
+        check_source = flags & 0b10 != 0
         if (_imp.check_hash_based_pycs != 'never' and
-            (flags != 0x1 or _imp.check_hash_based_pycs == 'always')):
-            return None
-    elif mtime != 0 and not _eq_mtime(_unpack_uint32(data[8:12]), mtime):
-        _bootstrap._verbose_message('{!r} has bad mtime', pathname)
-        return None  # signal caller to try alternative
+                (check_source or _imp.check_hash_based_pycs == 'always')):
+            source_bytes = _get_pyc_source(self, fullpath)
+            if source_bytes is not None:
+                source_hash = _imp.source_hash(
+                    _bootstrap_external._RAW_MAGIC_NUMBER,
+                    source_bytes,
+                )
 
-    # XXX the pyc's size field is ignored; timestamp collisions are probably
-    # unimportant with zip files.
+                try:
+                    _boostrap_external._validate_hash_pyc(
+                        data, source_hash, fullname, exc_details)
+                except ImportError:
+                    return None
+    else:
+        source_mtime, source_size = \
+            _get_mtime_and_size_of_source(self, fullpath)
+
+        if source_mtime:
+            # We don't use _bootstrap_external._validate_timestamp_pyc
+            # to allow for a more lenient timestamp check.
+            if (not _eq_mtime(_unpack_uint32(data[8:12]), source_mtime) or
+                    _unpack_uint32(data[12:16]) != source_size):
+                _bootstrap._verbose_message(
+                    f'bytecode is stale for {fullname!r}')
+                return None
+
     code = marshal.loads(data[16:])
     if not isinstance(code, _code_type):
         raise TypeError(f'compiled module {pathname!r} is not a code object')
@@ -639,9 +659,9 @@ def _parse_dostime(d, t):
         -1, -1, -1))
 
 # Given a path to a .pyc file in the archive, return the
-# modification time of the matching .py file, or 0 if no source
-# is available.
-def _get_mtime_of_source(self, path):
+# modification time of the matching .py file and its size,
+# or (0, 0) if no source is available.
+def _get_mtime_and_size_of_source(self, path):
     try:
         # strip 'c' or 'o' from *.py[co]
         assert path[-1:] in ('c', 'o')
@@ -651,9 +671,27 @@ def _get_mtime_of_source(self, path):
         # with an embedded pyc time stamp
         time = toc_entry[5]
         date = toc_entry[6]
-        return _parse_dostime(date, time)
+        uncompressed_size = toc_entry[3]
+        return _parse_dostime(date, time), uncompressed_size
     except (KeyError, IndexError, TypeError):
-        return 0
+        return 0, 0
+
+
+# Given a path to a .pyc file in the archive, return the
+# contents of the matching .py file, or None if no source
+# is available.
+def _get_pyc_source(self, path):
+    # strip 'c' or 'o' from *.py[co]
+    assert path[-1:] in ('c', 'o')
+    path = path[:-1]
+
+    try:
+        toc_entry = self._files[path]
+    except KeyError:
+        return None
+    else:
+        return _get_data(self.archive, toc_entry)
+
 
 # Get the code object associated with the module specified by
 # 'fullname'.
@@ -670,8 +708,7 @@ def _get_module_code(self, fullname):
             modpath = toc_entry[0]
             data = _get_data(self.archive, toc_entry)
             if isbytecode:
-                mtime = _get_mtime_of_source(self, fullpath)
-                code = _unmarshal_code(modpath, data, mtime)
+                code = _unmarshal_code(self, modpath, fullpath, fullname, data)
             else:
                 code = _compile_source(modpath, data)
             if code is None:

@@ -85,6 +85,10 @@ static PyObject* module_connect(PyObject* self, PyObject* args, PyObject*
         factory = (PyObject*)&pysqlite_ConnectionType;
     }
 
+    if (PySys_Audit("sqlite3.connect", "O", database) < 0) {
+        return NULL;
+    }
+
     result = PyObject_Call(factory, args, kwargs);
 
     return result;
@@ -199,7 +203,7 @@ static PyObject* module_register_converter(PyObject* self, PyObject* args)
     }
 
     /* convert the name to upper case */
-    name = _PyObject_CallMethodId(orig_name, &PyId_upper, NULL);
+    name = _PyObject_CallMethodIdNoArgs(orig_name, &PyId_upper);
     if (!name) {
         goto error;
     }
@@ -245,12 +249,12 @@ static void converters_init(PyObject* dict)
 }
 
 static PyMethodDef module_methods[] = {
-    {"connect",  (PyCFunction)module_connect,
+    {"connect",  (PyCFunction)(void(*)(void))module_connect,
      METH_VARARGS | METH_KEYWORDS, module_connect_doc},
-    {"complete_statement",  (PyCFunction)module_complete,
+    {"complete_statement",  (PyCFunction)(void(*)(void))module_complete,
      METH_VARARGS | METH_KEYWORDS, module_complete_doc},
 #ifdef HAVE_SHARED_CACHE
-    {"enable_shared_cache",  (PyCFunction)module_enable_shared_cache,
+    {"enable_shared_cache",  (PyCFunction)(void(*)(void))module_enable_shared_cache,
      METH_VARARGS | METH_KEYWORDS, module_enable_shared_cache_doc},
 #endif
     {"register_adapter", (PyCFunction)module_register_adapter,
@@ -366,10 +370,6 @@ PyMODINIT_FUNC PyInit__sqlite3(void)
     PyModule_AddObject(module, "Connection", (PyObject*) &pysqlite_ConnectionType);
     Py_INCREF(&pysqlite_CursorType);
     PyModule_AddObject(module, "Cursor", (PyObject*) &pysqlite_CursorType);
-    Py_INCREF(&pysqlite_CacheType);
-    PyModule_AddObject(module, "Statement", (PyObject*)&pysqlite_StatementType);
-    Py_INCREF(&pysqlite_StatementType);
-    PyModule_AddObject(module, "Cache", (PyObject*) &pysqlite_CacheType);
     Py_INCREF(&pysqlite_PrepareProtocolType);
     PyModule_AddObject(module, "PrepareProtocol", (PyObject*) &pysqlite_PrepareProtocolType);
     Py_INCREF(&pysqlite_RowType);

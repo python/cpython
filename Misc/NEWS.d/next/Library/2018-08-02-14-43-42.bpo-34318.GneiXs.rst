@@ -1,7 +1,0 @@
-:func:`~unittest.TestCase.assertRaises`,
-:func:`~unittest.TestCase.assertRaisesRegex`,
-:func:`~unittest.TestCase.assertWarns` and
-:func:`~unittest.TestCase.assertWarnsRegex` no longer success if the passed
-callable is None. They no longer ignore unknown keyword arguments in the
-context manager mode. A DeprecationWarning was raised in these cases
-since Python 3.5.
