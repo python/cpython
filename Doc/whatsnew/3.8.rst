@@ -1842,7 +1842,7 @@ Changes in the Python API
 * The ``PyGC_Head`` struct has changed completely.  All code that touched the
   struct member should be rewritten.  (See :issue:`33597`.)
 
-* The c:type:`PyInterpreterState` struct has been moved into the "internal"
+* The :c:type:`PyInterpreterState` struct has been moved into the "internal"
   header files (specifically Include/internal/pycore_pystate.h).  An
   opaque ``PyInterpreterState`` is still available as part of the public
   API (and stable ABI).  The docs indicate that none of the struct's
