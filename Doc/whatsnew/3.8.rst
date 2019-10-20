@@ -355,8 +355,8 @@ It is meant to formalize existing optimizations which were already done
 for various classes.
 Any extension type implementing a callable can use this protocol.
 
-This is currently provisional,
-the aim is to make it fully public in Python 3.9.
+This is currently provisional.
+The aim is to make it fully public in Python 3.9.
 
 See :pep:`590` for a full description.
 
@@ -870,7 +870,7 @@ When set to *True*, any existing handlers attached
 to the root logger are removed and closed before carrying out the
 configuration specified by the other arguments.
 
-This solves a long standing problem.  Once a logger or *basicConfig()* had
+This solves a long-standing problem.  Once a logger or *basicConfig()* had
 been called, subsequent calls to *basicConfig()* were silently ignored.
 This made it difficult to update, experiment with, or teach the various
 logging configuration options using the interactive prompt or a Jupyter
@@ -1042,7 +1042,7 @@ pprint
 
 The :mod:`pprint` module added a *sort_dicts* parameter to several functions.
 By default, those functions continue to sort dictionaries before rendering or
-printing.  However if *sort_dicts* is set to *False*, the dictionaries retain
+printing.  However, if *sort_dicts* is set to *False*, the dictionaries retain
 the order that keys were inserted.  This can be useful for comparison to JSON
 inputs during debugging.
 
@@ -1654,7 +1654,7 @@ Deprecated
     :class:`multiprocessing.managers.SharedMemoryServer`.
   - *obj* in :func:`weakref.finalize`.
 
-  In future releases of Python they will be :ref:`positional-only
+  In future releases of Python, they will be :ref:`positional-only
   <positional-only_parameter>`.
   (Contributed by Serhiy Storchaka in :issue:`36492`.)
 
