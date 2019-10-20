@@ -645,6 +645,21 @@ to cast the result to the desired type: ``OrderedDict(nt._asdict())``.
 (Contributed by Raymond Hettinger in :issue:`35864`.)
 
 
+cProfile
+--------
+
+The :class:`cProfile.Profile <profile.Profile>` class can now be used as a context manager.
+Profile a block of code by running::
+
+      import cProfile
+
+      with cProfile.Profile() as profiler:
+            # code to be profiled
+            ...
+
+(Contributed by Scott Sanderson in :issue:`29235`.)
+
+
 csv
 ---
 
