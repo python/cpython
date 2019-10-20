@@ -529,6 +529,13 @@ Other Language Changes
 
   (Contributed by Jörn Heissler in :issue:`35224`.)
 
+* The :meth:`object.__reduce__` method can now return a tuple from two to
+  six elements long. Formerly, five was the limit.  The new, optional sixth
+  element is a callable with a ``(obj, state)`` signature.  This allows the
+  direct control over the state-updating behavior of a specific object.  If
+  not *None*, this callable will have priority over the object's
+  :meth:`~__setstate__` method.
+  (Contributed by Pierre Glaser is :issue:`35900`.)
 
 New Modules
 ===========
