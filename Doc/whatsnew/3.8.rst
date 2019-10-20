@@ -751,7 +751,7 @@ for certain types of invalid or corrupt gzip files.
 :issue:`6584`.)
 
 
-idlelib and IDLE
+IDLE and idlelib
 ----------------
 
 Output over N lines (50 by default) is squeezed down to a button.
@@ -767,11 +767,18 @@ They also re-appear in the box for the next customized run.  One can also
 suppress the normal Shell main module restart.  (Contributed by Cheryl
 Sabella, Terry Jan Reedy, and others in :issue:`5680` and :issue:`37627`.)
 
-Add optional line numbers for IDLE editor windows. Windows
+Added optional line numbers for IDLE editor windows. Windows
 open without line numbers unless set otherwise in the General
 tab of the configuration dialog.  Line numbers for an existing
 window are shown and hidden in the Options menu.
 (Contributed by Tal Einat and Saimadhav Heblikar in :issue:`17535`.)
+
+OS native encoding is now used for converting between Python strings and Tcl
+objects. This allows IDLE to work with emoji and other non-BMP characters.
+These characters can be displayed or copied and pasted to or from the
+clipboard.  Converting strings from Tcl to Python and back now never fails.
+(Many people worked on this for eight years but the problem was finally
+solved by Serhiy Storchaka in :issue:`13153`.)
 
 The changes above have been backported to 3.7 maintenance releases.
 
