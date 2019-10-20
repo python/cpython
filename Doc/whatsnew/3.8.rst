@@ -1358,7 +1358,7 @@ them in the generated tree.
 (Contributed by Stefan Behnel in :issue:`36676` and :issue:`36673`.)
 
 
-xmlprc
+xmlrpc
 ------
 
 :class:`xmlrpc.client.ServerProxy` now supports an optional *headers* keyword
