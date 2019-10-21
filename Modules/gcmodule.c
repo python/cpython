@@ -468,13 +468,16 @@ visit_reachable(PyObject *op, PyGC_Head *reachable)
     PyGC_Head *gc = AS_GC(op);
     const Py_ssize_t gc_refs = gc_get_refs(gc);
 
-    // Ignore untracked objects and objects in other generation.
+    // Ignore objects in other generation.
     // This also skips objects "to the left" of the current position in
     // move_unreachable's scan of the 'young' list - they've already been
     // traversed, and no longer have the PREV_MASK_COLLECTING flag.
-    if (gc->_gc_next == 0 || !gc_is_collecting(gc)) {
+    if (! gc_is_collecting(gc)) {
         return 0;
     }
+    // It would be a logic error elsewhere if the collecting flag were set on
+    // an untracked object.
+    assert(gc->_gc_next != 0);
 
     if (gc->_gc_next & NEXT_MASK_UNREACHABLE) {
         /* This had gc_refs = 0 when move_unreachable got
