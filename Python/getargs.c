@@ -1199,7 +1199,19 @@ convertsimple(PyObject *arg, const char **p_format, va_list *p_va, int flags,
                trailing 0-byte
 
             */
-            FETCH_SIZE;
+            int *q = NULL; Py_ssize_t *q2 = NULL;
+            if (flags & FLAG_SIZE_T) {
+                q2 = va_arg(*p_va, Py_ssize_t*);
+            }
+            else {
+                if (PyErr_WarnEx(PyExc_DeprecationWarning,
+                            "PY_SSIZE_T_CLEAN will be required for '#' formats", 1))
+                {
+                    Py_DECREF(s);
+                    return NULL;
+                }
+                q = va_arg(*p_va, int*);
+            }
 
             format++;
             if (q == NULL && q2 == NULL) {
@@ -1232,7 +1244,19 @@ convertsimple(PyObject *arg, const char **p_format, va_list *p_va, int flags,
                 }
             }
             memcpy(*buffer, ptr, size+1);
-            STORE_SIZE(size);
+
+            if (flags & FLAG_SIZE_T) {
+                *q2 = size;
+            }
+            else {
+                if (INT_MAX < size) {
+                    Py_DECREF(s);
+                    PyErr_SetString(PyExc_OverflowError,
+                                    "size does not fit in an int");
+                    return converterr("", arg, msgbuf, bufsize);
+                }
+                *q = (int)size;
+            }
         } else {
             /* Using a 0-terminated buffer:
 
