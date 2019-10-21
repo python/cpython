@@ -1156,7 +1156,19 @@ convertsimple(PyObject *arg, const char **p_format, va_list *p_va, int flags,
             memcpy(*buffer,
                    PyString_AS_STRING(s),
                    size + 1);
-            STORE_SIZE(size);
+
+            if (flags & FLAG_SIZE_T) {
+                *q2 = size;
+            }
+            else {
+                if (INT_MAX < size) {
+                    Py_DECREF(s);
+                    PyErr_SetString(PyExc_OverflowError,
+                                    "size does not fit in an int");
+                    return converterr("", arg, msgbuf, bufsize);
+                }
+                *q = (int)size;
+            }
         } else {
             /* Using a 0-terminated buffer:
 
