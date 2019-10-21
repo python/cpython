@@ -1,0 +1,1 @@
+``functools.cached_property`` instances now have the ``updatable`` attribute, which allows for cached value's setting/update and clearing via attribute assignment and deletion respectively.
