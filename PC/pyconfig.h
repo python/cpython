@@ -296,7 +296,7 @@ Py_NO_ENABLE_SHARED to find out.  Also support MS_NO_COREDLL for b/w compat */
 #       define SIZEOF_HKEY 8
 #       define SIZEOF_SIZE_T 8
 /* configure.ac defines HAVE_LARGEFILE_SUPPORT iff
-   sizeof(off_t) > sizeof(long), and sizeof(PY_LONG_LONG) >= sizeof(off_t).
+   sizeof(off_t) > sizeof(long), and sizeof(long long) >= sizeof(off_t).
    On Win64 the second condition is not true, but if fpos_t replaces off_t
    then this is true. The uses of HAVE_LARGEFILE_SUPPORT imply that Win64
    should define this. */

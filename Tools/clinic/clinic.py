@@ -3016,7 +3016,7 @@ class long_long_converter(CConverter):
                     goto exit;
                 }}}}
                 {paramname} = PyLong_AsLongLong({argname});
-                if ({paramname} == (PY_LONG_LONG)-1 && PyErr_Occurred()) {{{{
+                if ({paramname} == -1 && PyErr_Occurred()) {{{{
                     goto exit;
                 }}}}
                 """.format(argname=argname, paramname=self.name)
