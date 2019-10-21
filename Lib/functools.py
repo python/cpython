@@ -916,6 +916,7 @@ class cached_property:
         self.attrname = None
         self.__doc__ = func.__doc__
         self.lock = RLock()
+        self.updatable = False
 
     def __set_name__(self, owner, name):
         if self.attrname is None:
@@ -929,17 +930,8 @@ class cached_property:
     def __get__(self, instance, owner=None):
         if instance is None:
             return self
-        if self.attrname is None:
-            raise TypeError(
-                "Cannot use cached_property instance without calling __set_name__ on it.")
-        try:
-            cache = instance.__dict__
-        except AttributeError:  # not all objects have __dict__ (e.g. class defines slots)
-            msg = (
-                f"No '__dict__' attribute on {type(instance).__name__!r} "
-                f"instance to cache {self.attrname!r} property."
-            )
-            raise TypeError(msg) from None
+        self._assert_attrname()
+        cache = self._get_cache(instance)
         val = cache.get(self.attrname, _NOT_FOUND)
         if val is _NOT_FOUND:
             with self.lock:
@@ -947,12 +939,58 @@ class cached_property:
                 val = cache.get(self.attrname, _NOT_FOUND)
                 if val is _NOT_FOUND:
                     val = self.func(instance)
-                    try:
-                        cache[self.attrname] = val
-                    except TypeError:
-                        msg = (
-                            f"The '__dict__' attribute on {type(instance).__name__!r} instance "
-                            f"does not support item assignment for caching {self.attrname!r} property."
-                        )
-                        raise TypeError(msg) from None
+                    self._update_cache(val, cache, instance)
         return val
+
+    def __set__(self, instance, value):
+        if not self.updatable:
+            raise AttributeError("can't set attribute")
+        self._assert_attrname()
+        cache = self._get_cache(instance)
+        with self.lock:
+            self._update_cache(value, cache, instance)
+
+    def __delete__(self, instance):
+        if not self.updatable:
+            raise AttributeError("can't delete attribute")
+        self._assert_attrname()
+        cache = self._get_cache(instance)
+        with self.lock:
+            self._clear_cache(cache, instance)
+
+    def _assert_attrname(self):
+        if self.attrname is None:
+            raise TypeError(
+                "Cannot use cached_property instance without calling __set_name__ on it.")
+
+    def _get_cache(self, instance):
+        try:
+            return instance.__dict__
+        except AttributeError:  # not all objects have __dict__ (e.g. class defines slots)
+            msg = (
+                f"No '__dict__' attribute on {type(instance).__name__!r} "
+                f"instance to cache {self.attrname!r} property."
+            )
+            raise TypeError(msg) from None
+
+    def _update_cache(self, val, cache, instance):
+        try:
+            cache[self.attrname] = val
+        except TypeError:
+            msg = (
+                f"The '__dict__' attribute on {type(instance).__name__!r} instance "
+                f"does not support item assignment for caching {self.attrname!r} property."
+            )
+            raise TypeError(msg) from None
+
+    def _clear_cache(self, cache, instance):
+        try:
+            del cache[self.attrname]
+        except KeyError:
+            raise AttributeError("can't clear unset cached property") from None
+        except TypeError:
+            msg = (
+                f"The '__dict__' attribute on {type(instance).__name__!r} instance "
+                f"does not support item deletion for caching {self.attrname!r} property."
+            )
+            raise TypeError(msg) from None

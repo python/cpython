@@ -27,6 +27,11 @@ The :mod:`functools` module defines the following functions:
    to :func:`property`, with the addition of caching. Useful for expensive
    computed properties of instances that are otherwise effectively immutable.
 
+   The cached attribute can be updated and cleared by setting the
+   ``updatable`` attribute of the decorated method to ``True``. The usual
+   attribute syntax is used for updating (``instance.prop = value`` and
+   ``del instance.prop``).
+
    Example::
 
        class DataSet:
@@ -41,7 +46,12 @@ The :mod:`functools` module defines the following functions:
            def variance(self):
                return statistics.variance(self._data)
 
+           variance.updatable = True
+
    .. versionadded:: 3.8
+
+   .. versionchanged:: 3.9
+      Support updatable cached values
 
    .. note::
 

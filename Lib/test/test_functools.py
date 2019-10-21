@@ -2396,6 +2396,22 @@ class CachedCostItem:
         return self._cost
 
 
+class UpdatableCachedCostItem:
+    _cost = 1
+
+    def __init__(self):
+        self.lock = py_functools.RLock()
+
+    @py_functools.cached_property
+    def cost(self):
+        """The cost of the item."""
+        with self.lock:
+            self._cost += 1
+        return self._cost
+
+    cost.updatable = True
+
+
 class OptionallyCachedCostItem:
     _cost = 1
 
@@ -2438,6 +2454,30 @@ class TestCachedProperty(unittest.TestCase):
         item = CachedCostItem()
         self.assertEqual(item.cost, 2)
         self.assertEqual(item.cost, 2) # not 3
+
+    def test_cached_updated(self):
+        item = UpdatableCachedCostItem()
+        self.assertEqual(item.cost, 2)
+        self.assertEqual(item.cost, 2)
+        item.cost = 42
+        self.assertEqual(item.cost, 42)
+        self.assertEqual(item.cost, 42)
+        del item.cost
+        self.assertEqual(item.cost, 3)
+        self.assertEqual(item.cost, 3)
+
+    def test_updated(self):
+        item = CachedCostItem()
+        with self.assertRaisesRegex(
+                AttributeError,
+                "can't set attribute",
+        ):
+            item.cost = 42
+        with self.assertRaisesRegex(
+                AttributeError,
+                "can't delete attribute",
+        ):
+            del item.cost
 
     def test_cached_attribute_name_differs_from_func_name(self):
         item = OptionallyCachedCostItem()
@@ -2484,10 +2524,45 @@ class TestCachedProperty(unittest.TestCase):
             pass
 
         with self.assertRaisesRegex(
-            TypeError,
-            "The '__dict__' attribute on 'MyMeta' instance does not support item assignment for caching 'prop' property.",
+                TypeError,
+                "The '__dict__' attribute on 'MyMeta' instance does not support item assignment for caching 'prop' property.",
         ):
             MyClass.prop
+
+    def test_immutable_dict_updatable(self):
+        class MyMeta(type):
+            @py_functools.cached_property
+            def prop(self):
+                return True
+            prop.updatable = True
+
+        class MyClass(metaclass=MyMeta):
+            pass
+
+        assert_raises_dict_assign = self.assertRaisesRegex(
+            TypeError,
+            "The '__dict__' attribute on 'MyMeta' instance does not support item assignment for caching 'prop' property.",
+        )
+        with assert_raises_dict_assign:
+            MyClass.prop
+        with assert_raises_dict_assign:
+            MyClass.prop = False
+
+    def test_immutable_dict_updatable_clear(self):
+        class MyMeta(type):
+            @py_functools.cached_property
+            def prop(self):
+                return True
+            prop.updatable = True
+
+        class MyClass(metaclass=MyMeta):
+            pass
+
+        with self.assertRaisesRegex(
+                TypeError,
+                "The '__dict__' attribute on 'MyMeta' instance does not support item deletion for caching 'prop' property.",
+        ):
+            del MyClass.prop
 
     def test_reuse_different_names(self):
         """Disallow this case because decorated function a would not be cached."""
@@ -2534,17 +2609,35 @@ class TestCachedProperty(unittest.TestCase):
 
         Foo.cp = cp
 
-        with self.assertRaisesRegex(
-                TypeError,
-                "Cannot use cached_property instance without calling __set_name__ on it.",
-        ):
+        assert_raises_set_name = self.assertRaisesRegex(
+            TypeError,
+            "Cannot use cached_property instance without calling __set_name__ on it.",
+        )
+
+        with assert_raises_set_name:
             Foo().cp
+
+        cp.updatable = True
+
+        with assert_raises_set_name:
+            Foo().cp = 42
+
+        with assert_raises_set_name:
+            del Foo().cp
 
     def test_access_from_class(self):
         self.assertIsInstance(CachedCostItem.cost, py_functools.cached_property)
 
     def test_doc(self):
         self.assertEqual(CachedCostItem.cost.__doc__, "The cost of the item.")
+
+    def test_delete_unset(self):
+        item = UpdatableCachedCostItem()
+        with self.assertRaisesRegex(
+                AttributeError,
+                "can't clear unset cached property",
+        ):
+            del item.cost
 
 
 if __name__ == '__main__':
