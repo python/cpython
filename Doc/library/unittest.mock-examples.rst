@@ -208,15 +208,13 @@ If you need an attribute setting on your mock, just do it:
     3
 
 Sometimes you want to mock up a more complex situation, like for example
-``mock.connection.cursor().execute("SELECT 1")``. If we wanted this call to
-return a list, then we have to configure the result of the nested call.
+``mock.connection.cursor().execute("SELECT 1")``.
 
 We can use :data:`call` to construct the set of calls in a "chained call" like
 this for easy assertion afterwards:
 
     >>> mock = Mock()
-    >>> cursor = mock.connection.cursor.return_value
-    >>> cursor.execute.return_value = ['foo']
+    >>> mock.connection.cursor.return_value.execute.return_value = ['foo']
     >>> mock.connection.cursor().execute("SELECT 1")
     ['foo']
     >>> expected = call.connection.cursor().execute("SELECT 1").call_list()
@@ -300,28 +298,29 @@ Mocking asynchronous context manager
 Since Python 3.8, ``AsyncMock`` and ``MagicMock`` have support to mock
 :ref:`async-context-managers` through ``__aenter__`` and ``__aexit__``.
 By default, ``__aenter__`` and ``__aexit__`` are ``AsyncMock`` instances that
-return an async function.
+return an async function. So you can do:
 
-    >>> class AsyncContextManager:
-    ...     async def __aenter__(self):
-    ...         return self
-    ...     async def __aexit__(self, exc_type, exc, tb):
-    ...         pass
-    ...
-    >>> mock_instance = MagicMock(AsyncContextManager())  # AsyncMock also works here
     >>> async def main():
-    ...     async with mock_instance as result:
-    ...         pass
-    ...
+    ...     async with MagicMock() as async_context_manager: # Replacing MagicMock with AsyncMock would also work
+    ...         print('Inside async context manager')
     >>> asyncio.run(main())
-    >>> mock_instance.__aenter__.assert_awaited_once()
-    >>> mock_instance.__aexit__.assert_awaited_once()
+    Inside async context manager
+
+This would not work with Mock class, though, because it doesn't have the pre-assigned ``__aexit__`` and ``__aenter__`` methods.
+
+    >>> async def main():
+    ...     async with Mock() as context_manager:
+    ...         print('Inside async context manager')
+    >>> asyncio.run(main())
+    Traceback (most recent call last):
+      ...
+    AttributeError: __aexit__
 
 
 Creating a Mock from an Existing Object
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-One problem with over use of mocking is that it couples your tests to the
+One problem with overuse of mocking is that it couples your tests to the
 implementation of your mocks rather than your real code. Suppose you have a
 class that implements ``some_method``. In a test for another class, you
 provide a mock of this object that *also* provides ``some_method``. If later
