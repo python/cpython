@@ -14057,11 +14057,17 @@ all_ins(PyObject *m)
 #ifdef CLD_EXITED
     if (PyModule_AddIntMacro(m, CLD_EXITED)) return -1;
 #endif
+#ifdef CLD_KILLED
+    if (PyModule_AddIntMacro(m, CLD_KILLED)) return -1;
+#endif
 #ifdef CLD_DUMPED
     if (PyModule_AddIntMacro(m, CLD_DUMPED)) return -1;
 #endif
 #ifdef CLD_TRAPPED
     if (PyModule_AddIntMacro(m, CLD_TRAPPED)) return -1;
+#endif
+#ifdef CLD_STOPPED
+    if (PyModule_AddIntMacro(m, CLD_STOPPED)) return -1;
 #endif
 #ifdef CLD_CONTINUED
     if (PyModule_AddIntMacro(m, CLD_CONTINUED)) return -1;

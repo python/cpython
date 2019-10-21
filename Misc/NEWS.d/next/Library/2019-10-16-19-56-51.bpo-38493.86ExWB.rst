@@ -1,0 +1,2 @@
+Added :data:`~os.CLD_KILLED` and :data:`~os.CLD_STOPPED` for :attr:`si_code`.
+Patch by Dong-hee Na.
