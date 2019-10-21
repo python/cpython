@@ -1,0 +1,2 @@
+Removes trailing space in formatted currency with `international=True` and a locale with symbol following value.
+E.g. `locale.currency(1345345345352.22, international=True)` returned `'1345345345352,22 EUR '` instead of `'1345345345352,22 EUR'` on Ubuntu. Windows 10 was not affected.
