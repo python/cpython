@@ -2378,11 +2378,15 @@ class WindowsPathTest(_BasePathTest, unittest.TestCase):
         P = self.cls
         p = P(BASE)
         self.assertEqual(set(p.glob("FILEa")), { P(BASE, "fileA") })
+        self.assertEqual(set(p.glob("F*a")), { P(BASE, "fileA") })
+        self.assertEqual(set(map(str, p.glob("FILEa"))), {f"{p}\\FILEa"})
+        self.assertEqual(set(map(str, p.glob("F*a"))), {f"{p}\\fileA"})
 
     def test_rglob(self):
         P = self.cls
         p = P(BASE, "dirC")
         self.assertEqual(set(p.rglob("FILEd")), { P(BASE, "dirC/dirD/fileD") })
+        self.assertEqual(set(map(str, p.rglob("FILEd"))), {f"{p}\\dirD\\FILEd"})
 
     def test_expanduser(self):
         P = self.cls
