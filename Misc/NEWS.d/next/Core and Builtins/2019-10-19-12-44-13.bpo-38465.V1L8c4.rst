@@ -1,0 +1,1 @@
+:class:`bytearray`, :class:`~array.array` and :class:`~mmap.mmap` objects allow now to export more than 2**31 buffers at a time.
