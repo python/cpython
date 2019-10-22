@@ -126,11 +126,12 @@ copy_op_arg(_Py_CODEUNIT *codestr, Py_ssize_t i, unsigned char op,
    The consts table must still be in list form so that the
    new constant (c1, c2, ... cn) can be appended.
    Called with codestr pointing to the first LOAD_CONST.
+   If frozenset is nonzero, do the same thing with BUILD_SET and a frozenset.
 */
 static Py_ssize_t
 fold_tuple_on_constants(_Py_CODEUNIT *codestr, Py_ssize_t codelen,
                         Py_ssize_t c_start, Py_ssize_t opcode_end,
-                        PyObject *consts, int n)
+                        PyObject *consts, int n, int frozenset)
 {
     /* Pre-conditions */
     assert(PyList_CheckExact(consts));
@@ -160,6 +161,15 @@ fold_tuple_on_constants(_Py_CODEUNIT *codestr, Py_ssize_t codelen,
         return -1;
     }
 #endif
+
+    if (frozenset) {
+        PyObject *tmp = newconst;
+        newconst = PyFrozenSet_New(tmp);
+        Py_DECREF(tmp);
+        if (!newconst) {
+            return -1;
+        }
+    }
 
     /* Append folded constant onto consts */
     if (PyList_Append(consts, newconst)) {
@@ -321,16 +331,26 @@ PyCode_Optimize(PyObject *code, PyObject* consts, PyObject *names,
                 break;
 
                 /* Try to fold tuples of constants.
+                   Sets of constants are loaded as frozensets and unpacked.
                    Skip over BUILD_SEQN 1 UNPACK_SEQN 1.
                    Replace BUILD_SEQN 2 UNPACK_SEQN 2 with ROT2.
                    Replace BUILD_SEQN 3 UNPACK_SEQN 3 with ROT3 ROT2. */
             case BUILD_TUPLE:
+            case BUILD_SET:
                 j = get_arg(codestr, i);
+                int is_tuple = opcode == BUILD_TUPLE;
+                if (!is_tuple && j <= 1) {
+                    break;
+                }
                 if (j > 0 && lastlc >= j) {
                     h = lastn_const_start(codestr, op_start, j);
                     if (ISBASICBLOCK(blocks, h, op_start)) {
                         h = fold_tuple_on_constants(codestr, codelen,
-                                                    h, i+1, consts, j);
+                                                    h, i+is_tuple, consts, j,
+                                                    !is_tuple);
+                        if (!is_tuple && h >= 0) {
+                            codestr[i] = PACKOPARG(BUILD_SET_UNPACK, 1);
+                        }
                         break;
                     }
                 }
