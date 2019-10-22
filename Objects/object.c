@@ -702,6 +702,10 @@ _PyObject_FunctionStr(PyObject *x)
             goto done;
         }
         ret = PyObject_RichCompareBool(module, builtinsname, Py_NE);
+        if (ret < 0) {
+            // error
+            goto done;
+        }
         if (ret > 0) {
             result = PyUnicode_FromFormat("%S.%S()", module, qualname);
             goto done;
