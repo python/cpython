@@ -1068,7 +1068,7 @@ def buildPythonDocs():
     runCommand('make clean')
     # Create virtual environment for docs builds with blurb and sphinx
     runCommand('make venv')
-    runCommand('venv/bin/python3 -m pip install -U Sphinx==2.0.1')
+    runCommand('venv/bin/python3 -m pip install -U Sphinx==2.2.0')
     runCommand('make html PYTHON=venv/bin/python')
     os.chdir(curDir)
     if not os.path.exists(docdir):
