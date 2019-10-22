@@ -1,0 +1,1 @@
+Sped up the creation time of constant :class:`set` literals. Patch by Brandt Bucher.
