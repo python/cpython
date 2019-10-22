@@ -769,7 +769,6 @@ type_set_bases(PyTypeObject *type, PyObject *new_bases, void *context)
         goto bail;
     if (mro_hierarchy(type, temp) < 0)
         goto undo;
-    Py_DECREF(temp);
 
     /* Take no action in case if type->tp_bases has been replaced
        through reentrance.  */
@@ -782,10 +781,12 @@ type_set_bases(PyTypeObject *type, PyObject *new_bases, void *context)
         /* for now, sod that: just remove from all old_bases,
            add to all new_bases */
         remove_all_subclasses(type, old_bases);
-        res = add_all_subclasses(type, new_bases);
+        if (add_all_subclasses(type, new_bases) < 0) {
+            goto undo;
+        }
         update_all_slots(type);
     }
-
+    Py_DECREF(temp);
     Py_DECREF(old_bases);
     Py_DECREF(old_base);
 
