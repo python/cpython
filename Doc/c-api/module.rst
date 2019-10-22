@@ -487,9 +487,11 @@ since multiple such modules can be created from a single definition.
 
    Python calls ``PyState_AddModule`` automatically after importing a module,
    so it is unnecessary (but harmless) to call it from module initialization
-   code. An explicit call is needed only if the module's own init code subsequently calls ``PyState_FindModule``.
+   code. An explicit call is needed only if the module's own init code
+   subsequently calls ``PyState_FindModule``.
    The function is mainly intended for implementing alternative import
-   mechanisms (either by calling it directly, or by referring to its implementation for details of the required state updates).
+   mechanisms (either by calling it directly, or by referring to its
+   implementation for details of the required state updates).
 
    Return 0 on success or -1 on failure.
 
