@@ -33,6 +33,7 @@ from idlelib.codecontext import CodeContext
 from idlelib.parenmatch import ParenMatch
 from idlelib.format import FormatParagraph
 from idlelib.squeezer import Squeezer
+from idlelib.textview import ScrollableTextFrame
 
 changes = ConfigChanges()
 # Reload changed options in the following classes.
@@ -556,7 +557,9 @@ class FontPage(Frame):
                 frame_font_param, variable=self.font_bold,
                 onvalue=1, offvalue=0, text='Bold')
         # frame_sample.
-        self.font_sample = Text(frame_sample, width=20, height=20)
+        font_sample_frame = ScrollableTextFrame(frame_sample)
+        self.font_sample = font_sample_frame.text
+        self.font_sample.config(wrap=NONE, width=1, height=1)
         self.font_sample.insert(END, font_sample_text)
         # frame_indent.
         indent_title = Label(
@@ -568,8 +571,9 @@ class FontPage(Frame):
 
         # Grid and pack widgets:
         self.columnconfigure(1, weight=1)
+        self.rowconfigure(2, weight=1)
         frame_font.grid(row=0, column=0, padx=5, pady=5)
-        frame_sample.grid(row=0, column=1, rowspan=2, padx=5, pady=5,
+        frame_sample.grid(row=0, column=1, rowspan=3, padx=5, pady=5,
                           sticky='nsew')
         frame_indent.grid(row=1, column=0, padx=5, pady=5, sticky='ew')
         # frame_font.
@@ -582,7 +586,7 @@ class FontPage(Frame):
         self.sizelist.pack(side=LEFT, anchor=W)
         self.bold_toggle.pack(side=LEFT, anchor=W, padx=20)
         # frame_sample.
-        self.font_sample.pack(expand=TRUE, fill=BOTH)
+        font_sample_frame.pack(expand=TRUE, fill=BOTH)
         # frame_indent.
         indent_title.pack(side=TOP, anchor=W, padx=5)
         self.indent_scale.pack(side=TOP, padx=5, fill=X)
@@ -804,7 +808,7 @@ class HighPage(Frame):
                 (*)theme_message: Label
         """
         self.theme_elements = {
-            'Normal Text': ('normal', '00'),
+            'Normal Code or Text': ('normal', '00'),
             'Code Context': ('context', '01'),
             'Python Keywords': ('keyword', '02'),
             'Python Definitions': ('definition', '03'),
@@ -815,10 +819,10 @@ class HighPage(Frame):
             'Found Text': ('hit', '08'),
             'Cursor': ('cursor', '09'),
             'Editor Breakpoint': ('break', '10'),
-            'Shell Normal Text': ('console', '11'),
-            'Shell Error Text': ('error', '12'),
-            'Shell Stdout Text': ('stdout', '13'),
-            'Shell Stderr Text': ('stderr', '14'),
+            'Shell Prompt': ('console', '11'),
+            'Error Text': ('error', '12'),
+            'Shell User Output': ('stdout', '13'),
+            'Shell User Exception': ('stderr', '14'),
             'Line Number': ('linenumber', '16'),
             }
         self.builtin_name = tracers.add(
@@ -840,35 +844,36 @@ class HighPage(Frame):
         frame_theme = LabelFrame(self, borderwidth=2, relief=GROOVE,
                                  text=' Highlighting Theme ')
         # frame_custom.
-        text = self.highlight_sample = Text(
-                frame_custom, relief=SOLID, borderwidth=1,
-                font=('courier', 12, ''), cursor='hand2', width=21, height=13,
+        sample_frame = ScrollableTextFrame(
+                frame_custom, relief=SOLID, borderwidth=1)
+        text = self.highlight_sample = sample_frame.text
+        text.configure(
+                font=('courier', 12, ''), cursor='hand2', width=1, height=1,
                 takefocus=FALSE, highlightthickness=0, wrap=NONE)
         text.bind('<Double-Button-1>', lambda e: 'break')
         text.bind('<B1-Motion>', lambda e: 'break')
-        text_and_tags=(
-            ('\n', 'normal'),
-            ('#you can click here', 'comment'), ('\n', 'normal'),
-            ('#to choose items', 'comment'), ('\n', 'normal'),
-            ('code context section', 'context'), ('\n\n', 'normal'),
+        string_tags=(
+            ('# Click selects item.', 'comment'), ('\n', 'normal'),
+            ('code context section', 'context'), ('\n', 'normal'),
+            ('| cursor', 'cursor'), ('\n', 'normal'),
             ('def', 'keyword'), (' ', 'normal'),
             ('func', 'definition'), ('(param):\n  ', 'normal'),
-            ('"""string"""', 'string'), ('\n  var0 = ', 'normal'),
+            ('"Return None."', 'string'), ('\n  var0 = ', 'normal'),
             ("'string'", 'string'), ('\n  var1 = ', 'normal'),
             ("'selected'", 'hilite'), ('\n  var2 = ', 'normal'),
             ("'found'", 'hit'), ('\n  var3 = ', 'normal'),
             ('list', 'builtin'), ('(', 'normal'),
             ('None', 'keyword'), (')\n', 'normal'),
             ('  breakpoint("line")', 'break'), ('\n\n', 'normal'),
-            (' error ', 'error'), (' ', 'normal'),
-            ('cursor |', 'cursor'), ('\n ', 'normal'),
-            ('shell', 'console'), (' ', 'normal'),
-            ('stdout', 'stdout'), (' ', 'normal'),
-            ('stderr', 'stderr'), ('\n\n', 'normal'))
-        for texttag in text_and_tags:
-            text.insert(END, texttag[0], texttag[1])
+            ('>>>', 'console'), (' 3.14**2\n', 'normal'),
+            ('9.8596', 'stdout'), ('\n', 'normal'),
+            ('>>>', 'console'), (' pri ', 'normal'),
+            ('n', 'error'), ('t(\n', 'normal'),
+            ('SyntaxError', 'stderr'), ('\n', 'normal'))
+        for string, tag in string_tags:
+            text.insert(END, string, tag)
         n_lines = len(text.get('1.0', END).splitlines())
-        for lineno in range(1, n_lines + 1):
+        for lineno in range(1, n_lines):
             text.insert(f'{lineno}.0',
                         f'{lineno:{len(str(n_lines))}d} ',
                         'linenumber')
@@ -920,9 +925,9 @@ class HighPage(Frame):
         frame_custom.pack(side=LEFT, padx=5, pady=5, expand=TRUE, fill=BOTH)
         frame_theme.pack(side=TOP, padx=5, pady=5, fill=X)
         # frame_custom.
-        self.frame_color_set.pack(side=TOP, padx=5, pady=5, expand=TRUE, fill=X)
+        self.frame_color_set.pack(side=TOP, padx=5, pady=5, fill=X)
         frame_fg_bg_toggle.pack(side=TOP, padx=5, pady=0)
-        self.highlight_sample.pack(
+        sample_frame.pack(
                 side=TOP, padx=5, pady=5, expand=TRUE, fill=BOTH)
         self.button_set_color.pack(side=TOP, expand=TRUE, fill=X, padx=8, pady=4)
         self.targetlist.pack(side=TOP, expand=TRUE, fill=X, padx=8, pady=3)
@@ -1788,7 +1793,7 @@ class GenPage(Frame):
         """Return frame of widgets for General tab.
 
         Enable users to provisionally change general options. Function
-        load_general_cfg intializes tk variables and helplist using
+        load_general_cfg initializes tk variables and helplist using
         idleConf.  Radiobuttons startup_shell_on and startup_editor_on
         set var startup_edit. Radiobuttons save_ask_on and save_auto_on
         set var autosave. Entry boxes win_width_int and win_height_int

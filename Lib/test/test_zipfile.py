@@ -5,8 +5,11 @@ import os
 import pathlib
 import posixpath
 import struct
+import subprocess
+import sys
 import time
 import unittest
+import unittest.mock as mock
 import zipfile
 
 
@@ -1655,6 +1658,33 @@ class OtherTests(unittest.TestCase):
         self.assertRaises(ValueError,
                           zipfile.ZipInfo, 'seventies', (1979, 1, 1, 0, 0, 0))
 
+    def test_create_empty_zipinfo_repr(self):
+        """Before bpo-26185, repr() on empty ZipInfo object was failing."""
+        zi = zipfile.ZipInfo(filename="empty")
+        self.assertEqual(repr(zi), "<ZipInfo filename='empty' file_size=0>")
+
+    def test_create_empty_zipinfo_default_attributes(self):
+        """Ensure all required attributes are set."""
+        zi = zipfile.ZipInfo()
+        self.assertEqual(zi.orig_filename, "NoName")
+        self.assertEqual(zi.filename, "NoName")
+        self.assertEqual(zi.date_time, (1980, 1, 1, 0, 0, 0))
+        self.assertEqual(zi.compress_type, zipfile.ZIP_STORED)
+        self.assertEqual(zi.comment, b"")
+        self.assertEqual(zi.extra, b"")
+        self.assertIn(zi.create_system, (0, 3))
+        self.assertEqual(zi.create_version, zipfile.DEFAULT_VERSION)
+        self.assertEqual(zi.extract_version, zipfile.DEFAULT_VERSION)
+        self.assertEqual(zi.reserved, 0)
+        self.assertEqual(zi.flag_bits, 0)
+        self.assertEqual(zi.volume, 0)
+        self.assertEqual(zi.internal_attr, 0)
+        self.assertEqual(zi.external_attr, 0)
+
+        # Before bpo-26185, both were missing
+        self.assertEqual(zi.file_size, 0)
+        self.assertEqual(zi.compress_size, 0)
+
     def test_zipfile_with_short_extra_field(self):
         """If an extra field in the header is less than 4 bytes, skip it."""
         zipdata = (
@@ -1736,6 +1766,16 @@ class OtherTests(unittest.TestCase):
                 self.assertEqual(fp.tell(), len(txt))
                 fp.seek(0, os.SEEK_SET)
                 self.assertEqual(fp.tell(), 0)
+
+    @requires_bz2
+    def test_decompress_without_3rd_party_library(self):
+        data = b'PK\x05\x06\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00'
+        zip_file = io.BytesIO(data)
+        with zipfile.ZipFile(zip_file, 'w', compression=zipfile.ZIP_BZIP2) as zf:
+            zf.writestr('a.txt', b'a')
+        with mock.patch('zipfile.bz2', None):
+            with zipfile.ZipFile(zip_file) as zf:
+                self.assertRaises(RuntimeError, zf.extract, 'a.txt')
 
     def tearDown(self):
         unlink(TESTFN)
@@ -2397,38 +2437,88 @@ class CommandLineTest(unittest.TestCase):
 consume = tuple
 
 
-def add_dirs(zipfile):
+def add_dirs(zf):
     """
-    Given a writable zipfile, inject directory entries for
+    Given a writable zip file zf, inject directory entries for
     any directories implied by the presence of children.
     """
-    names = zipfile.namelist()
-    consume(
-        zipfile.writestr(name + "/", b"")
-        for name in map(posixpath.dirname, names)
-        if name and name + "/" not in names
-    )
-    return zipfile
+    for name in zipfile.Path._implied_dirs(zf.namelist()):
+        zf.writestr(name, b"")
+    return zf
 
 
-def build_abcde_files():
+def build_alpharep_fixture():
     """
     Create a zip file with this structure:
 
     .
     ├── a.txt
-    └── b
-        ├── c.txt
-        └── d
-            └── e.txt
+    ├── b
+    │   ├── c.txt
+    │   ├── d
+    │   │   └── e.txt
+    │   └── f.txt
+    └── g
+        └── h
+            └── i.txt
+
+    This fixture has the following key characteristics:
+
+    - a file at the root (a)
+    - a file two levels deep (b/d/e)
+    - multiple files in a directory (b/c, b/f)
+    - a directory containing only a directory (g/h)
+
+    "alpha" because it uses alphabet
+    "rep" because it's a representative example
     """
     data = io.BytesIO()
     zf = zipfile.ZipFile(data, "w")
     zf.writestr("a.txt", b"content of a")
     zf.writestr("b/c.txt", b"content of c")
     zf.writestr("b/d/e.txt", b"content of e")
-    zf.filename = "abcde.zip"
+    zf.writestr("b/f.txt", b"content of f")
+    zf.writestr("g/h/i.txt", b"content of i")
+    zf.filename = "alpharep.zip"
     return zf
+
+
+class TestExecutablePrependedZip(unittest.TestCase):
+    """Test our ability to open zip files with an executable prepended."""
+
+    def setUp(self):
+        self.exe_zip = findfile('exe_with_zip', subdir='ziptestdata')
+        self.exe_zip64 = findfile('exe_with_z64', subdir='ziptestdata')
+
+    def _test_zip_works(self, name):
+        # bpo-28494 sanity check: ensure is_zipfile works on these.
+        self.assertTrue(zipfile.is_zipfile(name),
+                        f'is_zipfile failed on {name}')
+        # Ensure we can operate on these via ZipFile.
+        with zipfile.ZipFile(name) as zipfp:
+            for n in zipfp.namelist():
+                data = zipfp.read(n)
+                self.assertIn(b'FAVORITE_NUMBER', data)
+
+    def test_read_zip_with_exe_prepended(self):
+        self._test_zip_works(self.exe_zip)
+
+    def test_read_zip64_with_exe_prepended(self):
+        self._test_zip_works(self.exe_zip64)
+
+    @unittest.skipUnless(sys.executable, 'sys.executable required.')
+    @unittest.skipUnless(os.access('/bin/bash', os.X_OK),
+                         'Test relies on #!/bin/bash working.')
+    def test_execute_zip2(self):
+        output = subprocess.check_output([self.exe_zip, sys.executable])
+        self.assertIn(b'number in executable: 5', output)
+
+    @unittest.skipUnless(sys.executable, 'sys.executable required.')
+    @unittest.skipUnless(os.access('/bin/bash', os.X_OK),
+                         'Test relies on #!/bin/bash working.')
+    def test_execute_zip64(self):
+        output = subprocess.check_output([self.exe_zip64, sys.executable])
+        self.assertIn(b'number in executable: 5', output)
 
 
 class TestPath(unittest.TestCase):
@@ -2436,60 +2526,64 @@ class TestPath(unittest.TestCase):
         self.fixtures = contextlib.ExitStack()
         self.addCleanup(self.fixtures.close)
 
-    def zipfile_abcde(self):
+    def zipfile_alpharep(self):
         with self.subTest():
-            yield build_abcde_files()
+            yield build_alpharep_fixture()
         with self.subTest():
-            yield add_dirs(build_abcde_files())
+            yield add_dirs(build_alpharep_fixture())
 
     def zipfile_ondisk(self):
         tmpdir = pathlib.Path(self.fixtures.enter_context(temp_dir()))
-        for zipfile_abcde in self.zipfile_abcde():
-            buffer = zipfile_abcde.fp
-            zipfile_abcde.close()
-            path = tmpdir / zipfile_abcde.filename
+        for alpharep in self.zipfile_alpharep():
+            buffer = alpharep.fp
+            alpharep.close()
+            path = tmpdir / alpharep.filename
             with path.open("wb") as strm:
                 strm.write(buffer.getvalue())
             yield path
 
-    def test_iterdir_istype(self):
-        for zipfile_abcde in self.zipfile_abcde():
-            root = zipfile.Path(zipfile_abcde)
+    def test_iterdir_and_types(self):
+        for alpharep in self.zipfile_alpharep():
+            root = zipfile.Path(alpharep)
             assert root.is_dir()
-            a, b = root.iterdir()
+            a, b, g = root.iterdir()
             assert a.is_file()
             assert b.is_dir()
-            c, d = b.iterdir()
-            assert c.is_file()
+            assert g.is_dir()
+            c, f, d = b.iterdir()
+            assert c.is_file() and f.is_file()
             e, = d.iterdir()
             assert e.is_file()
+            h, = g.iterdir()
+            i, = h.iterdir()
+            assert i.is_file()
 
     def test_open(self):
-        for zipfile_abcde in self.zipfile_abcde():
-            root = zipfile.Path(zipfile_abcde)
-            a, b = root.iterdir()
+        for alpharep in self.zipfile_alpharep():
+            root = zipfile.Path(alpharep)
+            a, b, g = root.iterdir()
             with a.open() as strm:
                 data = strm.read()
             assert data == b"content of a"
 
     def test_read(self):
-        for zipfile_abcde in self.zipfile_abcde():
-            root = zipfile.Path(zipfile_abcde)
-            a, b = root.iterdir()
+        for alpharep in self.zipfile_alpharep():
+            root = zipfile.Path(alpharep)
+            a, b, g = root.iterdir()
             assert a.read_text() == "content of a"
             assert a.read_bytes() == b"content of a"
 
     def test_joinpath(self):
-        for zipfile_abcde in self.zipfile_abcde():
-            root = zipfile.Path(zipfile_abcde)
+        for alpharep in self.zipfile_alpharep():
+            root = zipfile.Path(alpharep)
             a = root.joinpath("a")
             assert a.is_file()
             e = root.joinpath("b").joinpath("d").joinpath("e.txt")
             assert e.read_text() == "content of e"
 
     def test_traverse_truediv(self):
-        for zipfile_abcde in self.zipfile_abcde():
-            root = zipfile.Path(zipfile_abcde)
+        for alpharep in self.zipfile_alpharep():
+            root = zipfile.Path(alpharep)
             a = root / "a"
             assert a.is_file()
             e = root / "b" / "d" / "e.txt"
@@ -2504,26 +2598,27 @@ class TestPath(unittest.TestCase):
             zipfile.Path(pathlike)
 
     def test_traverse_pathlike(self):
-        for zipfile_abcde in self.zipfile_abcde():
-            root = zipfile.Path(zipfile_abcde)
+        for alpharep in self.zipfile_alpharep():
+            root = zipfile.Path(alpharep)
             root / pathlib.Path("a")
 
     def test_parent(self):
-        for zipfile_abcde in self.zipfile_abcde():
-            root = zipfile.Path(zipfile_abcde)
+        for alpharep in self.zipfile_alpharep():
+            root = zipfile.Path(alpharep)
             assert (root / 'a').parent.at == ''
             assert (root / 'a' / 'b').parent.at == 'a/'
 
     def test_dir_parent(self):
-        for zipfile_abcde in self.zipfile_abcde():
-            root = zipfile.Path(zipfile_abcde)
+        for alpharep in self.zipfile_alpharep():
+            root = zipfile.Path(alpharep)
             assert (root / 'b').parent.at == ''
             assert (root / 'b/').parent.at == ''
 
     def test_missing_dir_parent(self):
-        for zipfile_abcde in self.zipfile_abcde():
-            root = zipfile.Path(zipfile_abcde)
+        for alpharep in self.zipfile_alpharep():
+            root = zipfile.Path(alpharep)
             assert (root / 'missing dir/').parent.at == ''
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -356,10 +356,33 @@ The :mod:`test.support` module defines the following constants:
 
    Check for presence of docstrings.
 
+
 .. data:: TEST_HTTP_URL
 
    Define the URL of a dedicated HTTP server for the network tests.
 
+
+.. data:: ALWAYS_EQ
+
+   Object that is equal to anything.  Used to test mixed type comparison.
+
+
+.. data:: NEVER_EQ
+
+   Object that is not equal to anything (even to :data:`ALWAYS_EQ`).
+   Used to test mixed type comparison.
+
+
+.. data:: LARGEST
+
+   Object that is greater than anything (except itself).
+   Used to test mixed type comparison.
+
+
+.. data:: SMALLEST
+
+   Object that is less than anything (except itself).
+   Used to test mixed type comparison.
 
 
 The :mod:`test.support` module defines the following functions:
@@ -1480,3 +1503,33 @@ script execution tests.
    containing the *source*.  If *compiled* is ``True``, both source files will
    be compiled and added to the zip package.  Return a tuple of the full zip
    path and the archive name for the zip file.
+
+
+:mod:`test.support.bytecode_helper` --- Support tools for testing correct bytecode generation
+=============================================================================================
+
+.. module:: test.support.bytecode_helper
+   :synopsis: Support tools for testing correct bytecode generation.
+
+The :mod:`test.support.bytecode_helper` module provides support for testing
+and inspecting bytecode generation.
+
+The module defines the follwing class:
+
+.. class:: BytecodeTestCase(unittest.TestCase)
+
+   This class has custom assertion methods for inspecting bytecode.
+
+.. method:: BytecodeTestCase.get_disassembly_as_string(co)
+
+   Return the disassembly of *co* as string.
+
+
+.. method:: BytecodeTestCase.assertInBytecode(x, opname, argval=_UNSPECIFIED)
+
+   Return instr if *opname* is found, otherwise throws :exc:`AssertionError`.
+
+
+.. method:: BytecodeTestCase.assertNotInBytecode(x, opname, argval=_UNSPECIFIED)
+
+   Throws :exc:`AssertionError` if *opname* is found.

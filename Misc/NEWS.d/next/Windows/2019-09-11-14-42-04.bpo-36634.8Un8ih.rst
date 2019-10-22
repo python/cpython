@@ -1,0 +1,2 @@
+:func:`os.cpu_count` now returns active processors rather than maximum
+processors.

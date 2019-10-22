@@ -1,0 +1,2 @@
+_hashlib no longer calls obsolete OpenSSL initialization function with
+OpenSSL 1.1.0+.

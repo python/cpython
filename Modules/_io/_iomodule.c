@@ -103,9 +103,9 @@ _io.open
     file: object
     mode: str = "r"
     buffering: int = -1
-    encoding: str(accept={str, NoneType}) = NULL
-    errors: str(accept={str, NoneType}) = NULL
-    newline: str(accept={str, NoneType}) = NULL
+    encoding: str(accept={str, NoneType}) = None
+    errors: str(accept={str, NoneType}) = None
+    newline: str(accept={str, NoneType}) = None
     closefd: bool(accept={int}) = True
     opener: object = None
 
@@ -233,7 +233,7 @@ static PyObject *
 _io_open_impl(PyObject *module, PyObject *file, const char *mode,
               int buffering, const char *encoding, const char *errors,
               const char *newline, int closefd, PyObject *opener)
-/*[clinic end generated code: output=aefafc4ce2b46dc0 input=03da2940c8a65871]*/
+/*[clinic end generated code: output=aefafc4ce2b46dc0 input=7295902222e6b311]*/
 {
     unsigned i;
 
@@ -383,8 +383,10 @@ _io_open_impl(PyObject *module, PyObject *file, const char *mode,
             encoding = "utf-8";
         }
 #endif
-        raw = PyObject_CallFunction(RawIO_class,
-                                    "OsiO", path_or_fd, rawmode, closefd, opener);
+        raw = PyObject_CallFunction(RawIO_class, "OsOO",
+                                    path_or_fd, rawmode,
+                                    closefd ? Py_True : Py_False,
+                                    opener);
     }
 
     if (raw == NULL)
@@ -476,10 +478,10 @@ _io_open_impl(PyObject *module, PyObject *file, const char *mode,
 
     /* wraps into a TextIOWrapper */
     wrapper = PyObject_CallFunction((PyObject *)&PyTextIOWrapper_Type,
-                                    "Osssi",
+                                    "OsssO",
                                     buffer,
                                     encoding, errors, newline,
-                                    line_buffering);
+                                    line_buffering ? Py_True : Py_False);
     if (wrapper == NULL)
         goto error;
     result = wrapper;

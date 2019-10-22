@@ -2242,6 +2242,13 @@ main_loop:
             }
         }
 
+        case TARGET(LOAD_ASSERTION_ERROR): {
+            PyObject *value = PyExc_AssertionError;
+            Py_INCREF(value);
+            PUSH(value);
+            FAST_DISPATCH();
+        }
+
         case TARGET(LOAD_BUILD_CLASS): {
             _Py_IDENTIFIER(__build_class__);
 
@@ -2936,6 +2943,7 @@ main_loop:
             while (oparg--)
                 Py_DECREF(POP());
             PUSH(sum);
+            PREDICT(CALL_FUNCTION_EX);
             DISPATCH();
         }
 
@@ -3220,11 +3228,6 @@ main_loop:
         }
 
         case TARGET(SETUP_FINALLY): {
-            /* NOTE: If you add any new block-setup opcodes that
-               are not try/except/finally handlers, you may need
-               to update the PyGen_NeedsFinalizing() function.
-               */
-
             PyFrame_BlockSetup(f, SETUP_FINALLY, INSTR_OFFSET() + oparg,
                                STACK_LEVEL());
             DISPATCH();
@@ -3504,7 +3507,9 @@ main_loop:
             PyObject **sp, *res, *names;
 
             names = POP();
-            assert(PyTuple_CheckExact(names) && PyTuple_GET_SIZE(names) <= oparg);
+            assert(PyTuple_Check(names));
+            assert(PyTuple_GET_SIZE(names) <= oparg);
+            /* We assume without checking that names contains only strings */
             sp = stack_pointer;
             res = call_function(tstate, &sp, oparg, names);
             stack_pointer = sp;
@@ -3518,6 +3523,7 @@ main_loop:
         }
 
         case TARGET(CALL_FUNCTION_EX): {
+            PREDICTED(CALL_FUNCTION_EX);
             PyObject *func, *callargs, *kwargs = NULL, *result;
             if (oparg & 0x01) {
                 kwargs = POP();
@@ -4997,7 +5003,7 @@ do_call_core(PyThreadState *tstate, PyObject *func, PyObject *callargs, PyObject
     PyObject *result;
 
     if (PyCFunction_Check(func)) {
-        C_TRACE(result, PyCFunction_Call(func, callargs, kwdict));
+        C_TRACE(result, PyObject_Call(func, callargs, kwdict));
         return result;
     }
     else if (Py_TYPE(func) == &PyMethodDescr_Type) {
@@ -5229,10 +5235,16 @@ import_from(PyThreadState *tstate, PyObject *v, PyObject *name)
         PyErr_SetImportError(errmsg, pkgname, NULL);
     }
     else {
-        errmsg = PyUnicode_FromFormat(
-            "cannot import name %R from %R (%S)",
-            name, pkgname_or_unknown, pkgpath
-        );
+        _Py_IDENTIFIER(__spec__);
+        PyObject *spec = _PyObject_GetAttrId(v, &PyId___spec__);
+        const char *fmt =
+            _PyModuleSpec_IsInitializing(spec) ?
+            "cannot import name %R from partially initialized module %R "
+            "(most likely due to a circular import) (%S)" :
+            "cannot import name %R from %R (%S)";
+        Py_XDECREF(spec);
+
+        errmsg = PyUnicode_FromFormat(fmt, name, pkgname_or_unknown, pkgpath);
         /* NULL checks for errmsg and pkgname done by PyErr_SetImportError. */
         PyErr_SetImportError(errmsg, pkgname, pkgpath);
     }
@@ -5372,20 +5384,12 @@ format_kwargs_error(PyThreadState *tstate, PyObject *func, PyObject *kwargs)
         _PyErr_Fetch(tstate, &exc, &val, &tb);
         if (val && PyTuple_Check(val) && PyTuple_GET_SIZE(val) == 1) {
             PyObject *key = PyTuple_GET_ITEM(val, 0);
-            if (!PyUnicode_Check(key)) {
-                _PyErr_Format(tstate, PyExc_TypeError,
-                              "%.200s%.200s keywords must be strings",
-                              PyEval_GetFuncName(func),
-                              PyEval_GetFuncDesc(func));
-            }
-            else {
-                _PyErr_Format(tstate, PyExc_TypeError,
-                              "%.200s%.200s got multiple "
-                              "values for keyword argument '%U'",
-                              PyEval_GetFuncName(func),
-                              PyEval_GetFuncDesc(func),
-                              key);
-            }
+            _PyErr_Format(tstate, PyExc_TypeError,
+                          "%.200s%.200s got multiple "
+                          "values for keyword argument '%S'",
+                          PyEval_GetFuncName(func),
+                          PyEval_GetFuncDesc(func),
+                          key);
             Py_XDECREF(exc);
             Py_XDECREF(val);
             Py_XDECREF(tb);

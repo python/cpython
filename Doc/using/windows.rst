@@ -293,12 +293,6 @@ The Microsoft Store package
 
 .. versionadded:: 3.7.2
 
-.. note::
-   The Microsoft Store package is currently considered unstable while its
-   interactions with other tools and other copies of Python are evaluated.
-   While Python itself is stable, this installation method may change its
-   behavior and capabilities during Python 3.7 releases.
-
 The Microsoft Store package is an easily installable Python interpreter that
 is intended mainly for interactive use, for example, by students.
 
@@ -318,7 +312,10 @@ session by typing ``python``. Further, pip and IDLE may be used by typing
 All three commands are also available with version number suffixes, for
 example, as ``python3.exe`` and ``python3.x.exe`` as well as
 ``python.exe`` (where ``3.x`` is the specific version you want to launch,
-such as |version|).
+such as |version|). Open "Manage App Execution Aliases" through Start to
+select which version of Python is associated with each command. It is
+recommended to make sure that ``pip`` and ``idle`` are consistent with
+whichever version of ``python`` is selected.
 
 Virtual environments can be created with ``python -m venv`` and activated
 and used as normal.
@@ -328,6 +325,9 @@ If you have installed another version of Python and added it to your
 one from the Microsoft Store. To access the new installation, use
 ``python3.exe`` or ``python3.x.exe``.
 
+The ``py.exe`` launcher will detect this Python installation, but will prefer
+installations from the traditional installer.
+
 To remove Python, open Settings and use Apps and Features, or else find
 Python in Start and right-click to select Uninstall. Uninstalling will
 remove all packages you installed directly into this Python installation, but
@@ -335,9 +335,6 @@ will not remove any virtual environments
 
 Known Issues
 ------------
-
-Currently, the ``py.exe`` launcher cannot be used to start Python when it
-has been installed from the Microsoft Store.
 
 Because of restrictions on Microsoft Store apps, Python scripts may not have
 full write access to shared locations such as ``TEMP`` and the registry.

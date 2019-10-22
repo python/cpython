@@ -400,8 +400,8 @@ Object Protocol
    :c:func:`PyVectorcall_NARGS(nargsf) <PyVectorcall_NARGS>`.
 
    *kwnames* can be either NULL (no keyword arguments) or a tuple of keyword
-   names. In the latter case, the values of the keyword arguments are stored
-   in *args* after the positional arguments.
+   names, which must be strings. In the latter case, the values of the keyword
+   arguments are stored in *args* after the positional arguments.
    The number of keyword arguments does not influence *nargsf*.
 
    *kwnames* must contain only objects of type ``str`` (not a subclass),

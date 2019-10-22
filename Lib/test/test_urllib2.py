@@ -634,17 +634,12 @@ class OpenerDirectorTests(unittest.TestCase):
             [("http_error_302")],
             ]
         handlers = add_ordered_mock_handlers(o, meth_spec)
-
-        class Unknown:
-            def __eq__(self, other):
-                return True
-
         req = Request("http://example.com/")
         o.open(req)
         assert len(o.calls) == 2
         calls = [(handlers[0], "http_open", (req,)),
                  (handlers[2], "http_error_302",
-                  (req, Unknown(), 302, "", {}))]
+                  (req, support.ALWAYS_EQ, 302, "", {}))]
         for expected, got in zip(calls, o.calls):
             handler, method_name, args = expected
             self.assertEqual((handler, method_name), got[:2])
@@ -1347,21 +1342,22 @@ class HandlerTests(unittest.TestCase):
                 self.assertTrue(request.startswith(expected), repr(request))
 
     def test_proxy(self):
-        o = OpenerDirector()
-        ph = urllib.request.ProxyHandler(dict(http="proxy.example.com:3128"))
-        o.add_handler(ph)
-        meth_spec = [
-            [("http_open", "return response")]
-            ]
-        handlers = add_ordered_mock_handlers(o, meth_spec)
+        u = "proxy.example.com:3128"
+        for d in dict(http=u), dict(HTTP=u):
+            o = OpenerDirector()
+            ph = urllib.request.ProxyHandler(d)
+            o.add_handler(ph)
+            meth_spec = [
+                [("http_open", "return response")]
+                ]
+            handlers = add_ordered_mock_handlers(o, meth_spec)
 
-        req = Request("http://acme.example.com/")
-        self.assertEqual(req.host, "acme.example.com")
-        o.open(req)
-        self.assertEqual(req.host, "proxy.example.com:3128")
-
-        self.assertEqual([(handlers[0], "http_open")],
-                         [tup[0:2] for tup in o.calls])
+            req = Request("http://acme.example.com/")
+            self.assertEqual(req.host, "acme.example.com")
+            o.open(req)
+            self.assertEqual(req.host, u)
+            self.assertEqual([(handlers[0], "http_open")],
+                             [tup[0:2] for tup in o.calls])
 
     def test_proxy_no_proxy(self):
         os.environ['no_proxy'] = 'python.org'

@@ -322,6 +322,7 @@ class ProxyAuthTests(unittest.TestCase):
     PASSWD = "test123"
     REALM = "TestRealm"
 
+    @support.requires_hashdigest("md5")
     def setUp(self):
         super(ProxyAuthTests, self).setUp()
         # Ignore proxy bypass settings in the environment.

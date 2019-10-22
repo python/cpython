@@ -571,13 +571,18 @@ task isn't already covered by the URL parsing functions above.
    percent-encoded sequences into Unicode characters, as accepted by the
    :meth:`bytes.decode` method.
 
-   *string* must be a :class:`str`.
+   *string* may be either a :class:`str` or a :class:`bytes`.
 
    *encoding* defaults to ``'utf-8'``.
    *errors* defaults to ``'replace'``, meaning invalid sequences are replaced
    by a placeholder character.
 
    Example: ``unquote('/El%20Ni%C3%B1o/')`` yields ``'/El Niño/'``.
+
+   .. versionchanged:: 3.9
+      *string* parameter supports bytes and str objects (previously only str).
+
+
 
 
 .. function:: unquote_plus(string, encoding='utf-8', errors='replace')

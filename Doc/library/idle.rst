@@ -207,20 +207,6 @@ Strip trailing whitespace
 Run menu (Editor window only)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-.. _python-shell:
-
-Python Shell
-   Open or wake up the Python Shell window.
-
-.. _check-module:
-
-Check Module
-   Check the syntax of the module currently open in the Editor window. If the
-   module has not been saved IDLE will either prompt the user to save or
-   autosave, as selected in the General tab of the Idle Settings dialog.  If
-   there is a syntax error, the approximate location is indicated in the
-   Editor window.
-
 .. _run-module:
 
 Run Module
@@ -238,6 +224,20 @@ Run... Customized
    Same as :ref:`Run Module <run-module>`, but run the module with customized
    settings.  *Command Line Arguments* extend :data:`sys.argv` as if passed
    on a command line. The module can be run in the Shell without restarting.
+
+.. _check-module:
+
+Check Module
+   Check the syntax of the module currently open in the Editor window. If the
+   module has not been saved IDLE will either prompt the user to save or
+   autosave, as selected in the General tab of the Idle Settings dialog.  If
+   there is a syntax error, the approximate location is indicated in the
+   Editor window.
+
+.. _python-shell:
+
+Python Shell
+   Open or wake up the Python Shell window.
 
 
 Shell menu (Shell window only)
@@ -295,8 +295,8 @@ Configure IDLE
    menu. For more details, see
    :ref:`Setting preferences <preferences>` under Help and preferences.
 
-   Most configuration options apply to all windows or all future windows.
-   The option items below only apply to the active window.
+Most configuration options apply to all windows or all future windows.
+The option items below only apply to the active window.
 
 Show/Hide Code Context (Editor Window only)
    Open a pane at the top of the edit window which shows the block context

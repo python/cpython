@@ -1,0 +1,1 @@
+Revert the removal of PyThreadState_DeleteCurrent() with documentation.

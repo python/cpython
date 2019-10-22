@@ -1,0 +1,1 @@
+Fix wording of arguments for :class:`Request` in :mod:`urllib.request`
