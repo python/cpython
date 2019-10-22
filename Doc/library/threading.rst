@@ -62,8 +62,8 @@ This module defines the following functions:
    should be cleared explicitly to break the reference cycle when the
    exception is no longer needed.
 
-   Storing *object* using a custom hook can resurrect it if it is set to an
-   object which is being finalized. Avoid storing *object* after the custom
+   Storing *thread* using a custom hook can resurrect it if it is set to an
+   object which is being finalized. Avoid storing *thread* after the custom
    hook completes to avoid resurrecting objects.
 
    .. seealso::
