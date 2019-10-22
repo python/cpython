@@ -813,7 +813,6 @@ the variables:
    single: PyExc_SystemError
    single: PyExc_SystemExit
    single: PyExc_TabError
-   single: PyExc_TargetScopeError
    single: PyExc_TimeoutError
    single: PyExc_TypeError
    single: PyExc_UnboundLocalError
@@ -914,8 +913,6 @@ the variables:
 | :c:data:`PyExc_SystemExit`              | :exc:`SystemExit`               |          |
 +-----------------------------------------+---------------------------------+----------+
 | :c:data:`PyExc_TabError`                | :exc:`TabError`                 |          |
-+-----------------------------------------+---------------------------------+----------+
-| :c:data:`PyExc_TargetScopeError`        | :exc:`TargetScopeError`         |          |
 +-----------------------------------------+---------------------------------+----------+
 | :c:data:`PyExc_TimeoutError`            | :exc:`TimeoutError`             |          |
 +-----------------------------------------+---------------------------------+----------+

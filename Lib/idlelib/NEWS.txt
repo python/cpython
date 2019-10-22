@@ -2,6 +2,32 @@ What's New in IDLE 3.8.0 (since 3.7.0)
 Released on 2019-10-20?
 ======================================
 
+bpo-35379: When exiting IDLE, catch any AttributeError.  One happens
+when EditorWindow.close is called twice.  Printing a traceback, when
+IDLE is run from a terminal, is useless and annoying.
+
+bpo-38183: To avoid test issues, test_idle ignores the user config
+directory.  It no longer tries to create or access .idlerc or any files
+within.  Users must run IDLE to discover problems with saving settings.
+
+bpo-38077: IDLE no longer adds 'argv' to the user namespace when
+initializing it.  This bug only affected 3.7.4 and 3.8.0b2 to 3.8.0b4.
+
+bpo-38401: Shell restart lines now fill the window width, always start
+with '=', and avoid wrapping unnecessarily. The line will still wrap
+if the included file name is long relative to the width.
+
+bpo-37092: Add mousewheel scrolling for IDLE module, path, and stack
+browsers.  Patch by George Zhang.
+
+bpo-35771: To avoid occasional spurious test_idle failures on slower
+machines, increase the ``hover_delay`` in test_tooltip.
+
+bpo-37824: Properly handle user input warnings in IDLE shell.
+Cease turning SyntaxWarnings into SyntaxErrors.
+
+bpo-37929: IDLE Settings dialog now closes properly when there is no
+shell window.
 
 bpo-37849: Fix completions list appearing too high or low when shown
 above the current line.

@@ -242,7 +242,6 @@ class ElementTreeTest(unittest.TestCase):
         check_method(element.extend)
         check_method(element.insert)
         check_method(element.remove)
-        check_method(element.getchildren)
         check_method(element.find)
         check_method(element.iterfind)
         check_method(element.findall)
@@ -254,7 +253,6 @@ class ElementTreeTest(unittest.TestCase):
         check_method(element.items)
         check_method(element.iter)
         check_method(element.itertext)
-        check_method(element.getiterator)
 
         # These methods return an iterable. See bug 6472.
 
@@ -741,24 +739,20 @@ class ElementTreeTest(unittest.TestCase):
                 ('end-ns', ''),
             ])
 
-    # Element.getchildren() and ElementTree.getiterator() are deprecated.
-    @checkwarnings(("This method will be removed in future versions.  "
-                    "Use .+ instead.",
-                    DeprecationWarning))
-    def test_getchildren(self):
-        # Test Element.getchildren()
+    def test_children(self):
+        # Test Element children iteration
 
         with open(SIMPLE_XMLFILE, "rb") as f:
             tree = ET.parse(f)
-        self.assertEqual([summarize_list(elem.getchildren())
+        self.assertEqual([summarize_list(elem)
                           for elem in tree.getroot().iter()], [
                 ['element', 'element', 'empty-element'],
                 [],
                 [],
                 [],
             ])
-        self.assertEqual([summarize_list(elem.getchildren())
-                          for elem in tree.getiterator()], [
+        self.assertEqual([summarize_list(elem)
+                          for elem in tree.iter()], [
                 ['element', 'element', 'empty-element'],
                 [],
                 [],
@@ -766,13 +760,13 @@ class ElementTreeTest(unittest.TestCase):
             ])
 
         elem = ET.XML(SAMPLE_XML)
-        self.assertEqual(len(elem.getchildren()), 3)
-        self.assertEqual(len(elem[2].getchildren()), 1)
-        self.assertEqual(elem[:], elem.getchildren())
+        self.assertEqual(len(list(elem)), 3)
+        self.assertEqual(len(list(elem[2])), 1)
+        self.assertEqual(elem[:], list(elem))
         child1 = elem[0]
         child2 = elem[2]
         del elem[1:2]
-        self.assertEqual(len(elem.getchildren()), 2)
+        self.assertEqual(len(list(elem)), 2)
         self.assertEqual(child1, elem[0])
         self.assertEqual(child2, elem[1])
         elem[0:2] = [child2, child1]
@@ -780,13 +774,130 @@ class ElementTreeTest(unittest.TestCase):
         self.assertEqual(child1, elem[1])
         self.assertNotEqual(child1, elem[0])
         elem.clear()
-        self.assertEqual(elem.getchildren(), [])
+        self.assertEqual(list(elem), [])
 
     def test_writestring(self):
         elem = ET.XML("<html><body>text</body></html>")
         self.assertEqual(ET.tostring(elem), b'<html><body>text</body></html>')
         elem = ET.fromstring("<html><body>text</body></html>")
         self.assertEqual(ET.tostring(elem), b'<html><body>text</body></html>')
+
+    def test_indent(self):
+        elem = ET.XML("<root></root>")
+        ET.indent(elem)
+        self.assertEqual(ET.tostring(elem), b'<root />')
+
+        elem = ET.XML("<html><body>text</body></html>")
+        ET.indent(elem)
+        self.assertEqual(ET.tostring(elem), b'<html>\n  <body>text</body>\n</html>')
+
+        elem = ET.XML("<html> <body>text</body>  </html>")
+        ET.indent(elem)
+        self.assertEqual(ET.tostring(elem), b'<html>\n  <body>text</body>\n</html>')
+
+        elem = ET.XML("<html><body>text</body>tail</html>")
+        ET.indent(elem)
+        self.assertEqual(ET.tostring(elem), b'<html>\n  <body>text</body>tail</html>')
+
+        elem = ET.XML("<html><body><p>par</p>\n<p>text</p>\t<p><br/></p></body></html>")
+        ET.indent(elem)
+        self.assertEqual(
+            ET.tostring(elem),
+            b'<html>\n'
+            b'  <body>\n'
+            b'    <p>par</p>\n'
+            b'    <p>text</p>\n'
+            b'    <p>\n'
+            b'      <br />\n'
+            b'    </p>\n'
+            b'  </body>\n'
+            b'</html>'
+        )
+
+        elem = ET.XML("<html><body><p>pre<br/>post</p><p>text</p></body></html>")
+        ET.indent(elem)
+        self.assertEqual(
+            ET.tostring(elem),
+            b'<html>\n'
+            b'  <body>\n'
+            b'    <p>pre<br />post</p>\n'
+            b'    <p>text</p>\n'
+            b'  </body>\n'
+            b'</html>'
+        )
+
+    def test_indent_space(self):
+        elem = ET.XML("<html><body><p>pre<br/>post</p><p>text</p></body></html>")
+        ET.indent(elem, space='\t')
+        self.assertEqual(
+            ET.tostring(elem),
+            b'<html>\n'
+            b'\t<body>\n'
+            b'\t\t<p>pre<br />post</p>\n'
+            b'\t\t<p>text</p>\n'
+            b'\t</body>\n'
+            b'</html>'
+        )
+
+        elem = ET.XML("<html><body><p>pre<br/>post</p><p>text</p></body></html>")
+        ET.indent(elem, space='')
+        self.assertEqual(
+            ET.tostring(elem),
+            b'<html>\n'
+            b'<body>\n'
+            b'<p>pre<br />post</p>\n'
+            b'<p>text</p>\n'
+            b'</body>\n'
+            b'</html>'
+        )
+
+    def test_indent_space_caching(self):
+        elem = ET.XML("<html><body><p>par</p><p>text</p><p><br/></p><p /></body></html>")
+        ET.indent(elem)
+        self.assertEqual(
+            {el.tail for el in elem.iter()},
+            {None, "\n", "\n  ", "\n    "}
+        )
+        self.assertEqual(
+            {el.text for el in elem.iter()},
+            {None, "\n  ", "\n    ", "\n      ", "par", "text"}
+        )
+        self.assertEqual(
+            len({el.tail for el in elem.iter()}),
+            len({id(el.tail) for el in elem.iter()}),
+        )
+
+    def test_indent_level(self):
+        elem = ET.XML("<html><body><p>pre<br/>post</p><p>text</p></body></html>")
+        with self.assertRaises(ValueError):
+            ET.indent(elem, level=-1)
+        self.assertEqual(
+            ET.tostring(elem),
+            b"<html><body><p>pre<br />post</p><p>text</p></body></html>"
+        )
+
+        ET.indent(elem, level=2)
+        self.assertEqual(
+            ET.tostring(elem),
+            b'<html>\n'
+            b'      <body>\n'
+            b'        <p>pre<br />post</p>\n'
+            b'        <p>text</p>\n'
+            b'      </body>\n'
+            b'    </html>'
+        )
+
+        elem = ET.XML("<html><body><p>pre<br/>post</p><p>text</p></body></html>")
+        ET.indent(elem, level=1, space=' ')
+        self.assertEqual(
+            ET.tostring(elem),
+            b'<html>\n'
+            b'  <body>\n'
+            b'   <p>pre<br />post</p>\n'
+            b'   <p>text</p>\n'
+            b'  </body>\n'
+            b' </html>'
+        )
 
     def test_tostring_default_namespace(self):
         elem = ET.XML('<body xmlns="http://effbot.org/ns"><tag/></body>')
@@ -2100,6 +2211,35 @@ class BasicElementTest(ElementTestCase, unittest.TestCase):
         self.assertIsNot(element_foo.attrib, attrib)
         self.assertNotEqual(element_foo.attrib, attrib)
 
+    def test_copy(self):
+        # Only run this test if Element.copy() is defined.
+        if "copy" not in dir(ET.Element):
+            raise unittest.SkipTest("Element.copy() not present")
+
+        element_foo = ET.Element("foo", { "zix": "wyp" })
+        element_foo.append(ET.Element("bar", { "baz": "qix" }))
+
+        with self.assertWarns(DeprecationWarning):
+            element_foo2 = element_foo.copy()
+
+        # elements are not the same
+        self.assertIsNot(element_foo2, element_foo)
+
+        # string attributes are equal
+        self.assertEqual(element_foo2.tag, element_foo.tag)
+        self.assertEqual(element_foo2.text, element_foo.text)
+        self.assertEqual(element_foo2.tail, element_foo.tail)
+
+        # number of children is the same
+        self.assertEqual(len(element_foo2), len(element_foo))
+
+        # children are the same
+        for (child1, child2) in itertools.zip_longest(element_foo, element_foo2):
+            self.assertIs(child1, child2)
+
+        # attrib is a copy
+        self.assertEqual(element_foo2.attrib, element_foo.attrib)
+
     def test___copy__(self):
         element_foo = ET.Element("foo", { "zix": "wyp" })
         element_foo.append(ET.Element("bar", { "baz": "qix" }))
@@ -2837,40 +2977,6 @@ class ElementIterTest(unittest.TestCase):
         self.assertEqual(summarize_list(doc.iter()), all_tags)
         self.assertEqual(self._ilist(doc), all_tags)
         self.assertEqual(self._ilist(doc, '*'), all_tags)
-
-    # Element.getiterator() is deprecated.
-    @checkwarnings(("This method will be removed in future versions.  "
-                    "Use .+ instead.", DeprecationWarning))
-    def test_getiterator(self):
-        doc = ET.XML('''
-            <document>
-                <house>
-                    <room>bedroom1</room>
-                    <room>bedroom2</room>
-                </house>
-                <shed>nothing here
-                </shed>
-                <house>
-                    <room>bedroom8</room>
-                </house>
-            </document>''')
-
-        self.assertEqual(summarize_list(doc.getiterator('room')),
-                         ['room'] * 3)
-        self.assertEqual(summarize_list(doc.getiterator('house')),
-                         ['house'] * 2)
-
-        # test that getiterator also accepts 'tag' as a keyword arg
-        self.assertEqual(
-            summarize_list(doc.getiterator(tag='room')),
-            ['room'] * 3)
-
-        # make sure both tag=None and tag='*' return all tags
-        all_tags = ['document', 'house', 'room', 'room',
-                    'shed', 'house', 'room']
-        self.assertEqual(summarize_list(doc.getiterator()), all_tags)
-        self.assertEqual(summarize_list(doc.getiterator(None)), all_tags)
-        self.assertEqual(summarize_list(doc.getiterator('*')), all_tags)
 
     def test_copy(self):
         a = ET.Element('a')

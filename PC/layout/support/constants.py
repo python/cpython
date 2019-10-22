@@ -10,7 +10,7 @@ import sys
 
 VER_MAJOR, VER_MINOR, VER_MICRO, VER_FIELD4 = struct.pack(">i", sys.hexversion)
 VER_FIELD3 = VER_MICRO << 8 | VER_FIELD4
-VER_NAME = {"alpha": "a", "beta": "b", "rc": "rc"}.get(
+VER_NAME = {"alpha": "a", "beta": "b", "candidate": "rc"}.get(
     sys.version_info.releaselevel, ""
 )
 VER_SERIAL = sys.version_info.serial if VER_NAME else ""

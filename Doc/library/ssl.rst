@@ -293,7 +293,7 @@ Random generation
    Read the Wikipedia article, `Cryptographically secure pseudorandom number
    generator (CSPRNG)
    <https://en.wikipedia.org/wiki/Cryptographically_secure_pseudorandom_number_generator>`_,
-   to get the requirements of a cryptographically generator.
+   to get the requirements of a cryptographically strong generator.
 
    .. versionadded:: 3.3
 
@@ -613,9 +613,9 @@ Constants
 .. data:: VERIFY_CRL_CHECK_LEAF
 
    Possible value for :attr:`SSLContext.verify_flags`. In this mode, only the
-   peer cert is check but non of the intermediate CA certificates. The mode
+   peer cert is checked but none of the intermediate CA certificates. The mode
    requires a valid CRL that is signed by the peer cert's issuer (its direct
-   ancestor CA). If no proper has been loaded
+   ancestor CA). If no proper CRL has has been loaded with
    :attr:`SSLContext.load_verify_locations`, validation will fail.
 
    .. versionadded:: 3.4
@@ -1882,13 +1882,15 @@ to speed up repeated connections from the same clients.
    :meth:`~SSLContext.wrap_socket` in order to match the hostname.  Enabling
    hostname checking automatically sets :attr:`~SSLContext.verify_mode` from
    :data:`CERT_NONE` to :data:`CERT_REQUIRED`.  It cannot be set back to
-   :data:`CERT_NONE` as long as hostname checking is enabled.
+   :data:`CERT_NONE` as long as hostname checking is enabled. The
+   :data:`PROTOCOL_TLS_CLIENT` protocol enables hostname checking by default.
+   With other protocols, hostname checking must be enabled explicitly.
 
    Example::
 
       import socket, ssl
 
-      context = ssl.SSLContext()
+      context = ssl.SSLContext(ssl.PROTOCOL_TLSv1_2)
       context.verify_mode = ssl.CERT_REQUIRED
       context.check_hostname = True
       context.load_default_certs()
@@ -2217,19 +2219,23 @@ If you prefer to tune security settings yourself, you might create
 a context from scratch (but beware that you might not get the settings
 right)::
 
-   >>> context = ssl.SSLContext()
-   >>> context.verify_mode = ssl.CERT_REQUIRED
-   >>> context.check_hostname = True
+   >>> context = ssl.SSLContext(ssl.PROTOCOL_TLS_CLIENT)
    >>> context.load_verify_locations("/etc/ssl/certs/ca-bundle.crt")
 
 (this snippet assumes your operating system places a bundle of all CA
 certificates in ``/etc/ssl/certs/ca-bundle.crt``; if not, you'll get an
 error and have to adjust the location)
 
+The :data:`PROTOCOL_TLS_CLIENT` protocol configures the context for cert
+validation and hostname verification. :attr:`~SSLContext.verify_mode` is
+set to :data:`CERT_REQUIRED` and :attr:`~SSLContext.check_hostname` is set
+to ``True``. All other protocols create SSL contexts with insecure defaults.
+
 When you use the context to connect to a server, :const:`CERT_REQUIRED`
-validates the server certificate: it ensures that the server certificate
-was signed with one of the CA certificates, and checks the signature for
-correctness::
+and :attr:`~SSLContext.check_hostname` validate the server certificate: it
+ensures that the server certificate was signed with one of the CA
+certificates, checks the signature for correctness, and verifies other
+properties like validity and identity of the hostname::
 
    >>> conn = context.wrap_socket(socket.socket(socket.AF_INET),
    ...                            server_hostname="www.python.org")

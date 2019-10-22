@@ -1,0 +1,2 @@
+Prohibit parallel running of aclose() / asend() / athrow(). Fix ag_running
+to reflect the actual running status of the AG.

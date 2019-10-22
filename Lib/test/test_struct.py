@@ -679,6 +679,10 @@ class UnpackIteratorTest(unittest.TestCase):
         with self.assertRaises(struct.error):
             s.iter_unpack(b"12")
 
+    def test_uninstantiable(self):
+        iter_unpack_type = type(struct.Struct(">ibcp").iter_unpack(b""))
+        self.assertRaises(TypeError, iter_unpack_type)
+
     def test_iterate(self):
         s = struct.Struct('>IB')
         b = bytes(range(1, 16))

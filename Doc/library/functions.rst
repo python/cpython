@@ -222,10 +222,12 @@ are always available.  They are listed here in alphabetical order.
    implied first argument.
 
    Class methods are different than C++ or Java static methods. If you want those,
-   see :func:`staticmethod`.
-
+   see :func:`staticmethod` in this section.
    For more information on class methods, see :ref:`types`.
 
+   .. versionchanged:: 3.9
+      Class methods can now wrap other :term:`descriptors <descriptor>` such as
+      :func:`property`.
 
 .. function:: compile(source, filename, mode, flags=0, dont_inherit=False, optimize=-1)
 
@@ -454,7 +456,7 @@ are always available.  They are listed here in alphabetical order.
               n += 1
 
 
-.. function:: eval(expression, globals=None, locals=None)
+.. function:: eval(expression[, globals[, locals]])
 
    The arguments are a string and optional globals and locals.  If provided,
    *globals* must be a dictionary.  If provided, *locals* can be any mapping
@@ -1068,12 +1070,12 @@ are always available.  They are listed here in alphabetical order.
    ``'a'``   open for writing, appending to the end of the file if it exists
    ``'b'``   binary mode
    ``'t'``   text mode (default)
-   ``'+'``   open a disk file for updating (reading and writing)
+   ``'+'``   open for updating (reading and writing)
    ========= ===============================================================
 
    The default mode is ``'r'`` (open for reading text, synonym of ``'rt'``).
-   For binary read-write access, the mode ``'w+b'`` opens and truncates the file
-   to 0 bytes.  ``'r+b'`` opens the file without truncation.
+   Modes ``'w+'`` and ``'w+b'`` open and truncate the file.  Modes ``'r+'``
+   and ``'r+b'`` open the file with no truncation.
 
    As mentioned in the :ref:`io-overview`, Python distinguishes between binary
    and text I/O.  Files opened in binary mode (including ``'b'`` in the *mode*
@@ -1272,11 +1274,12 @@ are always available.  They are listed here in alphabetical order.
    returns ``8364``.  This is the inverse of :func:`chr`.
 
 
-.. function:: pow(x, y[, z])
+.. function:: pow(base, exp[, mod])
 
-   Return *x* to the power *y*; if *z* is present, return *x* to the power *y*,
-   modulo *z* (computed more efficiently than ``pow(x, y) % z``). The two-argument
-   form ``pow(x, y)`` is equivalent to using the power operator: ``x**y``.
+   Return *base* to the power *exp*; if *mod* is present, return *base* to the
+   power *exp*, modulo *mod* (computed more efficiently than
+   ``pow(base, exp) % mod``). The two-argument form ``pow(base, exp)`` is
+   equivalent to using the power operator: ``base**exp``.
 
    The arguments must have numeric types.  With mixed operand types, the
    coercion rules for binary arithmetic operators apply.  For :class:`int`
@@ -1285,14 +1288,15 @@ are always available.  They are listed here in alphabetical order.
    converted to float and a float result is delivered.  For example, ``10**2``
    returns ``100``, but ``10**-2`` returns ``0.01``.
 
-   For :class:`int` operands *x* and *y*, if *z* is present, *z* must also be
-   of integer type and *z* must be nonzero. If *z* is present and *y* is
-   negative, *x* must be relatively prime to *z*. In that case, ``pow(inv_x,
-   -y, z)`` is returned, where *inv_x* is an inverse to *x* modulo *z*.
+   For :class:`int` operands *base* and *exp*, if *mod* is present, *mod* must
+   also be of integer type and *mod* must be nonzero. If *mod* is present and
+   *exp* is negative, *base* must be relatively prime to *mod*. In that case,
+   ``pow(inv_base, -exp, mod)`` is returned, where *inv_base* is an inverse to
+   *base* modulo *mod*.
 
    Here's an example of computing an inverse for ``38`` modulo ``97``::
 
-      >>> pow(38, -1, 97)
+      >>> pow(38, -1, mod=97)
       23
       >>> 23 * 38 % 97 == 1
       True
@@ -1301,6 +1305,10 @@ are always available.  They are listed here in alphabetical order.
       For :class:`int` operands, the three-argument form of ``pow`` now allows
       the second argument to be negative, permitting computation of modular
       inverses.
+
+   .. versionchanged:: 3.9
+      Allow keyword arguments.  Formerly, only positional arguments were
+      supported.
 
 
 .. function:: print(*objects, sep=' ', end='\\n', file=sys.stdout, flush=False)
@@ -1587,10 +1595,17 @@ are always available.  They are listed here in alphabetical order.
 
    Return a proxy object that delegates method calls to a parent or sibling
    class of *type*.  This is useful for accessing inherited methods that have
-   been overridden in a class. The search order is same as that used by
-   :func:`getattr` except that the *type* itself is skipped.
+   been overridden in a class.
 
-   The :attr:`~class.__mro__` attribute of the *type* lists the method
+   The *object-or-type* determines the :term:`method resolution order`
+   to be searched.  The search starts from the class right after the
+   *type*.
+
+   For example, if :attr:`~class.__mro__` of *object-or-type* is
+   ``D -> B -> C -> A -> object`` and the value of *type* is ``B``,
+   then :func:`super` searches ``C -> A -> object``.
+
+   The :attr:`~class.__mro__` attribute of the *object-or-type* lists the method
    resolution search order used by both :func:`getattr` and :func:`super`.  The
    attribute is dynamic and can change whenever the inheritance hierarchy is
    updated.
@@ -1621,6 +1636,10 @@ are always available.  They are listed here in alphabetical order.
           def method(self, arg):
               super().method(arg)    # This does the same thing as:
                                      # super(C, self).method(arg)
+
+   In addition to method lookups, :func:`super` also works for attribute
+   lookups.  One possible use case for this is calling :term:`descriptor`\s
+   in a parent or sibling class.
 
    Note that :func:`super` is implemented as part of the binding process for
    explicit dotted attribute lookups such as ``super().__getitem__(name)``.
