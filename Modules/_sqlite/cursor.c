@@ -277,7 +277,7 @@ _pysqlite_fetch_one_row(pysqlite_Cursor* self)
                 Py_INCREF(Py_None);
                 converted = Py_None;
             } else if (coltype == SQLITE_INTEGER) {
-                converted = _pysqlite_long_from_int64(sqlite3_column_int64(self->statement->st, i));
+                converted = PyLong_FromLongLong(sqlite3_column_int64(self->statement->st, i));
             } else if (coltype == SQLITE_FLOAT) {
                 converted = PyFloat_FromDouble(sqlite3_column_double(self->statement->st, i));
             } else if (coltype == SQLITE_TEXT) {
@@ -558,7 +558,7 @@ _pysqlite_query_execute(pysqlite_Cursor* self, int multiple, PyObject* args)
             Py_BEGIN_ALLOW_THREADS
             lastrowid = sqlite3_last_insert_rowid(self->connection->db);
             Py_END_ALLOW_THREADS
-            self->lastrowid = _pysqlite_long_from_int64(lastrowid);
+            self->lastrowid = PyLong_FromLongLong(lastrowid);
         }
 
         if (rc == SQLITE_ROW) {
