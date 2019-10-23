@@ -150,6 +150,13 @@ customization consistently by always using the value specified by
 case), and one used ``__VENV_NAME__`` instead.
 (Contributed by Brett Cannon in :issue:`37663`.)
 
+pathlib
+-------
+
+Added :meth:`~pathlib.Path.readlink()` which acts similar to
+:func:`~os.readlink`.
+(Contributed by Girts Folkmanis in :issue:`30618`)
+
 pprint
 ------
 
