@@ -1812,6 +1812,16 @@ class _BasePathTest(object):
         self.assertEqual(os.stat(r).st_size, size)
         self.assertFileNotFound(q.stat)
 
+    @support.skip_unless_symlink
+    def test_readlink(self):
+        P = self.cls(BASE)
+        self.assertEqual((P / 'linkA').readlink(), self.cls('fileA'))
+        self.assertEqual((P / 'brokenLink').readlink(),
+                         self.cls('non-existing'))
+        self.assertEqual((P / 'linkB').readlink(), self.cls('dirB'))
+        with self.assertRaises(OSError):
+            (P / 'fileA').readlink()
+
     def test_touch_common(self):
         P = self.cls(BASE)
         p = P / 'newfileA'
