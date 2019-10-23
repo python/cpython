@@ -3830,22 +3830,21 @@ dictreviter_iternext(dictiterobject *di)
     PyDictKeysObject *k = d->ma_keys;
     PyObject *key, *value, *result;
 
+    if (i < 0) {
+        goto fail;
+    }
     if (d->ma_values) {
-        if (i < 0) {
-            goto fail;
-        }
         key = DK_ENTRIES(k)[i].me_key;
         value = d->ma_values[i];
         assert (value != NULL);
     }
     else {
         PyDictKeyEntry *entry_ptr = &DK_ENTRIES(k)[i];
-        while (i >= 0 && entry_ptr->me_value == NULL) {
+        while (entry_ptr->me_value == NULL) {
+            if (--i < 0) {
+                goto fail;
+            }
             entry_ptr--;
-            i--;
-        }
-        if (i < 0) {
-            goto fail;
         }
         key = entry_ptr->me_key;
         value = entry_ptr->me_value;
