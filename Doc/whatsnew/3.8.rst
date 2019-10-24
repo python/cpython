@@ -595,6 +595,40 @@ The :func:`ast.parse` function has some new flags:
 asyncio
 -------
 
+:func:`asyncio.run` has graduated from the provisional to stable API. This
+function can be used to execute a :term:`coroutine` and return the result while
+automatically managing the event loop. For example::
+
+    import asyncio
+
+    async def main():
+        await asyncio.sleep(0)
+        return 42
+
+    asyncio.run(main())
+
+This is *roughly* equivalent to::
+
+    import asyncio
+
+    async def main():
+        await asyncio.sleep(0)
+        return 42
+
+    loop = asyncio.new_event_loop()
+    asyncio.set_event_loop(loop)
+    try:
+        loop.run_until_complete(main())
+    finally:
+        asyncio.set_event_loop(None)
+        loop.close()
+
+
+The actual implementation is significantly more complex. Thus,
+:func:`asyncio.run` should be the preferred way of running asyncio programs.
+
+(Contributed by Yury Selivanov in :issue:`32314`.)
+
 Running ``python -m asyncio`` launches a natively async REPL.  This allows rapid
 experimentation with code that has a top-level :keyword:`await`.  There is no
 longer a need to directly call ``asyncio.run()`` which would spawn a new event
@@ -612,6 +646,10 @@ loop on every invocation:
 
 (Contributed by Yury Selivanov in :issue:`37028`.)
 
+The exception :class:`asyncio.CancelledError` now inherits from
+:class:`BaseException` rather than :class:`Exception`.
+(Contributed by Yury Selivanov in :issue:`32528`.)
+
 On Windows, the default event loop is now :class:`~asyncio.ProactorEventLoop`.
 (Contributed by Victor Stinner in :issue:`34687`.)
 
@@ -621,6 +659,26 @@ On Windows, the default event loop is now :class:`~asyncio.ProactorEventLoop`.
 :class:`~asyncio.ProactorEventLoop` can now be interrupted by
 :exc:`KeyboardInterrupt` ("CTRL+C").
 (Contributed by Vladimir Matveev in :issue:`23057`.)
+
+Added :meth:`asyncio.Task.get_coro` for getting the wrapped coroutine
+within an :class:`asyncio.Task`.
+(Contributed by Alex Grönholm in :issue:`36999`.)
+
+Asyncio tasks can now be named, either by passing the ``name`` keyword
+argument to :func:`asyncio.create_task` or
+the :meth:`~asyncio.loop.create_task` event loop method, or by
+calling the :meth:`~asyncio.Task.set_name` method on the task object. The
+task name is visible in the ``repr()`` output of :class:`asyncio.Task` and
+can also be retrieved using the :meth:`~asyncio.Task.get_name` method.
+(Contributed by Alex Grönholm in :issue:`34270`.)
+
+Added support for
+`Happy Eyeballs <https://en.wikipedia.org/wiki/Happy_Eyeballs>`_ to
+:func:`asyncio.loop.create_connection`. To specify the behavior, two new
+parameters have been added: *happy_eyeballs_delay* and *interleave*. The Happy
+Eyeballs algorithm improves responsiveness in applications that support IPv4
+and IPv6 by attempting to simultaneously connect using both.
+(Contributed by twisteroid ambassador in :issue:`33530`.)
 
 
 builtins
@@ -1575,7 +1633,7 @@ Deprecated
 
 * Passing an object that is not an instance of
   :class:`concurrent.futures.ThreadPoolExecutor` to
-  :meth:`asyncio.loop.set_default_executor()` is
+  :meth:`loop.set_default_executor() <asyncio.loop.set_default_executor>` is
   deprecated and will be prohibited in Python 3.9.
   (Contributed by Elvis Pranskevichus in :issue:`34075`.)
 
@@ -1607,6 +1665,19 @@ Deprecated
   removed in version 3.10.  Instead of ``@asyncio.coroutine``, use
   :keyword:`async def` instead.
   (Contributed by Andrew Svetlov in :issue:`36921`.)
+
+* In :mod:`asyncio`, the explicit passing of a *loop* argument has been
+  deprecated and will be removed in version 3.10 for the following:
+  :func:`asyncio.sleep`, :func:`asyncio.gather`, :func:`asyncio.shield`,
+  :func:`asyncio.wait_for`, :func:`asyncio.wait`, :func:`asyncio.as_completed`,
+  :class:`asyncio.Task`, :class:`asyncio.Lock`, :class:`asyncio.Event`,
+  :class:`asyncio.Condition`, :class:`asyncio.Semaphore`,
+  :class:`asyncio.BoundedSemaphore`, :class:`asyncio.Queue`,
+  :func:`asyncio.create_subprocess_exec`, and
+  :func:`asyncio.create_subprocess_shell`.
+
+* The explicit passing of coroutine objects to :func:`asyncio.wait` has been
+  deprecated and will be removed in version 3.10.
 
 * The following functions and methods are deprecated in the :mod:`gettext`
   module: :func:`~gettext.lgettext`, :func:`~gettext.ldgettext`,
@@ -1852,13 +1923,6 @@ Changes in the Python API
   you adjust (possibly including adding accessor functions to the
   public API).  (See :issue:`35886`.)
 
-* Asyncio tasks can now be named, either by passing the ``name`` keyword
-  argument to :func:`asyncio.create_task` or
-  the :meth:`~asyncio.loop.create_task` event loop method, or by
-  calling the :meth:`~asyncio.Task.set_name` method on the task object. The
-  task name is visible in the ``repr()`` output of :class:`asyncio.Task` and
-  can also be retrieved using the :meth:`~asyncio.Task.get_name` method.
-
 * The :meth:`mmap.flush() <mmap.mmap.flush>` method now returns ``None`` on
   success and raises an exception on error under all platforms.  Previously,
   its behavior was platform-dependent: a nonzero value was returned on success;
@@ -1881,8 +1945,19 @@ Changes in the Python API
   (Contributed by Anthony Sottile in :issue:`36264`.)
 
 * The exception :class:`asyncio.CancelledError` now inherits from
-  :class:`BaseException` rather than a :class:`Exception`.
-  (Contributed by Yury Selivanov in :issue:`13528`.)
+  :class:`BaseException` rather than :class:`Exception`.
+  (Contributed by Yury Selivanov in :issue:`32528`.)
+
+* The function :func:`asyncio.wait_for` now correctly waits for cancellation
+  when using an instance of :class:`asyncio.Task`. Previously, upon reaching
+  *timeout*, it was cancelled and immediately returned.
+  (Contributed by Elvis Pranskevichus in :issue:`32751`.)
+
+* The function :func:`asyncio.BaseTransport.get_extra_info` now returns a safe
+  to use socket object when 'socket' is passed to the *name* parameter.
+  (Contributed by Yury Selivanov in :issue:`37027`.)
+
+* :class:`asyncio.BufferedProtocol` has graduated to the stable API.
 
 .. _bpo-36085-whatsnew:
 
