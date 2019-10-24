@@ -1270,7 +1270,7 @@ class ThreadedChildWatcher(AbstractChildWatcher):
 
     def _join_threads(self):
         threads = [thread for thread in list(self._threads.values())
-                   if thread.is_alive()]
+                   if thread.is_alive() and not thread.daemon]
         for thread in threads:
             thread.join()
 
