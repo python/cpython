@@ -668,6 +668,7 @@ Added support for
 parameters have been added: *happy_eyeballs_delay* and *interleave*. The Happy
 Eyeballs algorithm improves responsiveness in applications that support IPv4
 and IPv6 by attempting to simultaneously connect using both.
+(Contributed by twisteroid ambassador in :issue:`33530`.)
 
 
 builtins
