@@ -1790,15 +1790,17 @@ class Document(Node, DocumentLS):
 
     def writexml(self, writer, indent="", addindent="", newl="", encoding=None,
                  standalone=None):
+        declarations = []
+
+        if encoding:
+            declarations.append('encoding="{}"'.format(encoding))
         # In case standalone declaration is set
         if standalone is not None:
-            standalone = ' standalone="{}"'.format('yes' if standalone else 'no')
-        else:
-            standalone = ''
+            declarations.append(
+                'standalone="{}"'.format('yes' if standalone else 'no')
+            )
 
-        encoding = "encoding=\"{}\"".format(encoding) if encoding else ''
-
-        writer.write(f'<?xml version="1.0" {encoding}{standalone}?>{newl}')
+        writer.write(f'<?xml version="1.0" {" ".join(declarations)}?>{newl}')
 
         for node in self.childNodes:
             node.writexml(writer, indent, addindent, newl)
