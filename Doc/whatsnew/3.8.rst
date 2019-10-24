@@ -599,6 +599,7 @@ asyncio
 function can be used to execute a :term:`coroutine` and return the result while
 automatically managing the event loop. For example:
 
+    >>> import asyncio
     >>> async def main():
     ...     await asyncio.sleep(0)
     ...     return 42
