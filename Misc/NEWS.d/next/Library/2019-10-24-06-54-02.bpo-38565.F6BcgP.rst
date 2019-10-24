@@ -1,0 +1,1 @@
+expose typed filed for lru_cache().cache_info()
