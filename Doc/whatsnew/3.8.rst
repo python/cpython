@@ -616,6 +616,9 @@ This is *roughly* equivalent to:
     42
     >>> asyncio.set_event_loop(None)
     >>> loop.close()
+    
+The actual implementation is significantly more complex. Thus,
+:func:`asyncio.run` should be the preferred way of running asyncio programs.
 
 (Contributed by Yury Selivanov in :issue:`32314`.)
 
