@@ -417,7 +417,7 @@ def _unwrap_partial(func):
 ### LRU Cache function decorator
 ################################################################################
 
-_CacheInfo = namedtuple("CacheInfo", ["hits", "misses", "maxsize", "currsize"])
+_CacheInfo = namedtuple("CacheInfo", ["hits", "misses", "maxsize", "currsize", "typed"])
 
 class _HashedSeq(list):
     """ This class guarantees that hash() will be called no more than once
@@ -611,7 +611,7 @@ def _lru_cache_wrapper(user_function, maxsize, typed, _CacheInfo):
     def cache_info():
         """Report cache statistics"""
         with lock:
-            return _CacheInfo(hits, misses, maxsize, cache_len())
+            return _CacheInfo(hits, misses, maxsize, cache_len(), typed)
 
     def cache_clear():
         """Clear the cache and cache statistics"""

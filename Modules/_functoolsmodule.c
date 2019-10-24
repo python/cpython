@@ -1248,13 +1248,13 @@ static PyObject *
 lru_cache_cache_info(lru_cache_object *self, PyObject *unused)
 {
     if (self->maxsize == -1) {
-        return PyObject_CallFunction(self->cache_info_type, "nnOn",
+        return PyObject_CallFunction(self->cache_info_type, "nnOnn",
                                      self->hits, self->misses, Py_None,
-                                     PyDict_GET_SIZE(self->cache));
+                                     PyDict_GET_SIZE(self->cache), self->typed);
     }
-    return PyObject_CallFunction(self->cache_info_type, "nnnn",
+    return PyObject_CallFunction(self->cache_info_type, "nnnnn",
                                  self->hits, self->misses, self->maxsize,
-                                 PyDict_GET_SIZE(self->cache));
+                                 PyDict_GET_SIZE(self->cache), self->typed);
 }
 
 static PyObject *

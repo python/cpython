@@ -1164,11 +1164,12 @@ class TestLRU:
         def orig(x, y):
             return 3 * x + y
         f = self.module.lru_cache(maxsize=20)(orig)
-        hits, misses, maxsize, currsize = f.cache_info()
+        hits, misses, maxsize, currsize, typed = f.cache_info()
         self.assertEqual(maxsize, 20)
         self.assertEqual(currsize, 0)
         self.assertEqual(hits, 0)
         self.assertEqual(misses, 0)
+        self.assertEqual(typed, False)
 
         domain = range(5)
         for i in range(1000):
@@ -1176,29 +1177,33 @@ class TestLRU:
             actual = f(x, y)
             expected = orig(x, y)
             self.assertEqual(actual, expected)
-        hits, misses, maxsize, currsize = f.cache_info()
+        hits, misses, maxsize, currsize, typed = f.cache_info()
         self.assertTrue(hits > misses)
         self.assertEqual(hits + misses, 1000)
         self.assertEqual(currsize, 20)
+        self.assertEqual(typed, False)
 
         f.cache_clear()   # test clearing
-        hits, misses, maxsize, currsize = f.cache_info()
+        hits, misses, maxsize, currsize, typed = f.cache_info()
         self.assertEqual(hits, 0)
         self.assertEqual(misses, 0)
         self.assertEqual(currsize, 0)
+        self.assertEqual(typed, False)
         f(x, y)
-        hits, misses, maxsize, currsize = f.cache_info()
+        hits, misses, maxsize, currsize, typed = f.cache_info()
         self.assertEqual(hits, 0)
         self.assertEqual(misses, 1)
         self.assertEqual(currsize, 1)
+        self.assertEqual(typed, False)
 
         # Test bypassing the cache
         self.assertIs(f.__wrapped__, orig)
         f.__wrapped__(x, y)
-        hits, misses, maxsize, currsize = f.cache_info()
+        hits, misses, maxsize, currsize, typed = f.cache_info()
         self.assertEqual(hits, 0)
         self.assertEqual(misses, 1)
         self.assertEqual(currsize, 1)
+        self.assertEqual(typed, False)
 
         # test size zero (which means "never-cache")
         @self.module.lru_cache(0)
@@ -1211,10 +1216,11 @@ class TestLRU:
         for i in range(5):
             self.assertEqual(f(), 20)
         self.assertEqual(f_cnt, 5)
-        hits, misses, maxsize, currsize = f.cache_info()
+        hits, misses, maxsize, currsize, typed = f.cache_info()
         self.assertEqual(hits, 0)
         self.assertEqual(misses, 5)
         self.assertEqual(currsize, 0)
+        self.assertEqual(typed, False)
 
         # test size one
         @self.module.lru_cache(1)
@@ -1227,10 +1233,11 @@ class TestLRU:
         for i in range(5):
             self.assertEqual(f(), 20)
         self.assertEqual(f_cnt, 1)
-        hits, misses, maxsize, currsize = f.cache_info()
+        hits, misses, maxsize, currsize, typed = f.cache_info()
         self.assertEqual(hits, 4)
         self.assertEqual(misses, 1)
         self.assertEqual(currsize, 1)
+        self.assertEqual(typed, False)
 
         # test size two
         @self.module.lru_cache(2)
@@ -1244,10 +1251,11 @@ class TestLRU:
             #    *  *              *                          *
             self.assertEqual(f(x), x*10)
         self.assertEqual(f_cnt, 4)
-        hits, misses, maxsize, currsize = f.cache_info()
+        hits, misses, maxsize, currsize, typed = f.cache_info()
         self.assertEqual(hits, 12)
         self.assertEqual(misses, 4)
         self.assertEqual(currsize, 2)
+        self.assertEqual(typed, False)
 
     def test_lru_no_args(self):
         @self.module.lru_cache
@@ -1320,22 +1328,22 @@ class TestLRU:
         # Add to cache:  One use as an argument gives one call
         self.assertEqual(f(mock_int, 1), 16)
         self.assertEqual(mock_int.__hash__.call_count, 1)
-        self.assertEqual(f.cache_info(), (0, 1, 1, 1))
+        self.assertEqual(f.cache_info(), (0, 1, 1, 1, False))
 
         # Cache hit: One use as an argument gives one additional call
         self.assertEqual(f(mock_int, 1), 16)
         self.assertEqual(mock_int.__hash__.call_count, 2)
-        self.assertEqual(f.cache_info(), (1, 1, 1, 1))
+        self.assertEqual(f.cache_info(), (1, 1, 1, 1, False))
 
         # Cache eviction: No use as an argument gives no additional call
         self.assertEqual(f(6, 2), 20)
         self.assertEqual(mock_int.__hash__.call_count, 2)
-        self.assertEqual(f.cache_info(), (1, 2, 1, 1))
+        self.assertEqual(f.cache_info(), (1, 2, 1, 1, False))
 
         # Cache miss: One use as an argument gives one additional call
         self.assertEqual(f(mock_int, 1), 16)
         self.assertEqual(mock_int.__hash__.call_count, 3)
-        self.assertEqual(f.cache_info(), (1, 3, 1, 1))
+        self.assertEqual(f.cache_info(), (1, 3, 1, 1, False))
 
     def test_lru_reentrancy_with_len(self):
         # Test to make sure the LRU cache code isn't thrown-off by
@@ -1386,10 +1394,10 @@ class TestLRU:
         self.assertEqual([fib(n) for n in range(16)],
             [0, 1, 1, 2, 3, 5, 8, 13, 21, 34, 55, 89, 144, 233, 377, 610])
         self.assertEqual(fib.cache_info(),
-            self.module._CacheInfo(hits=28, misses=16, maxsize=None, currsize=16))
+            self.module._CacheInfo(hits=28, misses=16, maxsize=None, currsize=16, typed=False))
         fib.cache_clear()
         self.assertEqual(fib.cache_info(),
-            self.module._CacheInfo(hits=0, misses=0, maxsize=None, currsize=0))
+            self.module._CacheInfo(hits=0, misses=0, maxsize=None, currsize=0, typed=False))
 
     def test_lru_with_maxsize_negative(self):
         @self.module.lru_cache(maxsize=-10)
@@ -1398,7 +1406,7 @@ class TestLRU:
         for i in (0, 1):
             self.assertEqual([eq(n) for n in range(150)], list(range(150)))
         self.assertEqual(eq.cache_info(),
-            self.module._CacheInfo(hits=0, misses=300, maxsize=0, currsize=0))
+            self.module._CacheInfo(hits=0, misses=300, maxsize=0, currsize=0, typed=False))
 
     def test_lru_with_exceptions(self):
         # Verify that user_function exceptions get passed through without
@@ -1431,6 +1439,8 @@ class TestLRU:
             self.assertEqual(type(square(x=3.0)), type(9.0))
             self.assertEqual(square.cache_info().hits, 4)
             self.assertEqual(square.cache_info().misses, 4)
+            _, _, _, _, typed = square.cache_info()
+            self.assertEqual(typed, True)
 
     def test_lru_with_keyword_args(self):
         @self.module.lru_cache()
@@ -1443,10 +1453,10 @@ class TestLRU:
             [0, 1, 1, 2, 3, 5, 8, 13, 21, 34, 55, 89, 144, 233, 377, 610]
         )
         self.assertEqual(fib.cache_info(),
-            self.module._CacheInfo(hits=28, misses=16, maxsize=128, currsize=16))
+            self.module._CacheInfo(hits=28, misses=16, maxsize=128, currsize=16, typed=False))
         fib.cache_clear()
         self.assertEqual(fib.cache_info(),
-            self.module._CacheInfo(hits=0, misses=0, maxsize=128, currsize=0))
+            self.module._CacheInfo(hits=0, misses=0, maxsize=128, currsize=0, typed=False))
 
     def test_lru_with_keyword_args_maxsize_none(self):
         @self.module.lru_cache(maxsize=None)
@@ -1457,10 +1467,10 @@ class TestLRU:
         self.assertEqual([fib(n=number) for number in range(16)],
             [0, 1, 1, 2, 3, 5, 8, 13, 21, 34, 55, 89, 144, 233, 377, 610])
         self.assertEqual(fib.cache_info(),
-            self.module._CacheInfo(hits=28, misses=16, maxsize=None, currsize=16))
+            self.module._CacheInfo(hits=28, misses=16, maxsize=None, currsize=16, typed=False))
         fib.cache_clear()
         self.assertEqual(fib.cache_info(),
-            self.module._CacheInfo(hits=0, misses=0, maxsize=None, currsize=0))
+            self.module._CacheInfo(hits=0, misses=0, maxsize=None, currsize=0, typed=False))
 
     def test_kwargs_order(self):
         # PEP 468: Preserving Keyword Argument Order
@@ -1470,7 +1480,7 @@ class TestLRU:
         self.assertEqual(f(a=1, b=2), [('a', 1), ('b', 2)])
         self.assertEqual(f(b=2, a=1), [('b', 2), ('a', 1)])
         self.assertEqual(f.cache_info(),
-            self.module._CacheInfo(hits=0, misses=2, maxsize=10, currsize=2))
+            self.module._CacheInfo(hits=0, misses=2, maxsize=10, currsize=2, typed=False))
 
     def test_lru_cache_decoration(self):
         def f(zomg: 'zomg_annotation'):
@@ -1485,7 +1495,7 @@ class TestLRU:
         def orig(x, y):
             return 3 * x + y
         f = self.module.lru_cache(maxsize=n*m)(orig)
-        hits, misses, maxsize, currsize = f.cache_info()
+        hits, misses, maxsize, currsize, typed = f.cache_info()
         self.assertEqual(currsize, 0)
 
         start = threading.Event()
@@ -1508,7 +1518,7 @@ class TestLRU:
             with support.start_threads(threads):
                 start.set()
 
-            hits, misses, maxsize, currsize = f.cache_info()
+            hits, misses, maxsize, currsize, typed = f.cache_info()
             if self.module is py_functools:
                 # XXX: Why can be not equal?
                 self.assertLessEqual(misses, n)
@@ -1538,7 +1548,7 @@ class TestLRU:
         def f(x):
             pause.wait(10)
             return 3 * x
-        self.assertEqual(f.cache_info(), (0, 0, m*n, 0))
+        self.assertEqual(f.cache_info(), (0, 0, m*n, 0, False))
         def test():
             for i in range(m):
                 start.wait(10)
@@ -1553,7 +1563,7 @@ class TestLRU:
                 start.reset()
                 stop.wait(10)
                 pause.reset()
-                self.assertEqual(f.cache_info(), (0, (i+1)*n, m*n, i+1))
+                self.assertEqual(f.cache_info(), (0, (i+1)*n, m*n, i+1, False))
 
     def test_lru_cache_threaded3(self):
         @self.module.lru_cache(maxsize=2)
@@ -1602,22 +1612,22 @@ class TestLRU:
         a = X(5)
         b = X(5)
         c = X(7)
-        self.assertEqual(X.f.cache_info(), (0, 0, 2, 0))
+        self.assertEqual(X.f.cache_info(), (0, 0, 2, 0, False))
 
         for x in 1, 2, 2, 3, 1, 1, 1, 2, 3, 3:
             self.assertEqual(a.f(x), x*10 + 5)
         self.assertEqual((a.f_cnt, b.f_cnt, c.f_cnt), (6, 0, 0))
-        self.assertEqual(X.f.cache_info(), (4, 6, 2, 2))
+        self.assertEqual(X.f.cache_info(), (4, 6, 2, 2, False))
 
         for x in 1, 2, 1, 1, 1, 1, 3, 2, 2, 2:
             self.assertEqual(b.f(x), x*10 + 5)
         self.assertEqual((a.f_cnt, b.f_cnt, c.f_cnt), (6, 4, 0))
-        self.assertEqual(X.f.cache_info(), (10, 10, 2, 2))
+        self.assertEqual(X.f.cache_info(), (10, 10, 2, 2, False))
 
         for x in 2, 1, 1, 1, 1, 2, 1, 3, 2, 1:
             self.assertEqual(c.f(x), x*10 + 7)
         self.assertEqual((a.f_cnt, b.f_cnt, c.f_cnt), (6, 4, 5))
-        self.assertEqual(X.f.cache_info(), (15, 15, 2, 2))
+        self.assertEqual(X.f.cache_info(), (15, 15, 2, 2, False))
 
         self.assertEqual(a.f.cache_info(), X.f.cache_info())
         self.assertEqual(b.f.cache_info(), X.f.cache_info())
