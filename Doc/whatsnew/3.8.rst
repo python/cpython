@@ -640,6 +640,10 @@ loop on every invocation:
 
 (Contributed by Yury Selivanov in :issue:`37028`.)
 
+The exception :class:`asyncio.CancelledError` now inherits from
+:class:`BaseException` rather than :class:`Exception`.
+(Contributed by Yury Selivanov in :issue:`32528`.)
+
 On Windows, the default event loop is now :class:`~asyncio.ProactorEventLoop`.
 (Contributed by Victor Stinner in :issue:`34687`.)
 
@@ -1935,8 +1939,8 @@ Changes in the Python API
   (Contributed by Anthony Sottile in :issue:`36264`.)
 
 * The exception :class:`asyncio.CancelledError` now inherits from
-  :class:`BaseException` rather than a :class:`Exception`.
-  (Contributed by Yury Selivanov in :issue:`13528`.)
+  :class:`BaseException` rather than :class:`Exception`.
+  (Contributed by Yury Selivanov in :issue:`32528`.)
 
 * The function :func:`asyncio.wait_for` now correctly waits for cancellation
   when using an instance of :class:`asyncio.Task`. Previously, upon reaching
