@@ -1,0 +1,7 @@
+:pep:`572`: As described in the PEP, assignment expressions now raise
+:exc:`SyntaxError` when their interaction with comprehension scoping results
+in an ambiguous target scope.
+
+The ``TargetScopeError`` subclass originally proposed by the PEP has been
+removed in favour of just raising regular syntax errors for the disallowed
+cases.

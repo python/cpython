@@ -500,10 +500,14 @@ _PyUnicode_CheckConsistency(PyObject *op, int check_content)
     }
     else {
         PyCompactUnicodeObject *compact = (PyCompactUnicodeObject *)op;
+#ifndef NDEBUG
         void *data;
+#endif
 
         if (ascii->state.compact == 1) {
+#ifndef NDEBUG
             data = compact + 1;
+#endif
             _PyObject_ASSERT(op, kind == PyUnicode_1BYTE_KIND
                                  || kind == PyUnicode_2BYTE_KIND
                                  || kind == PyUnicode_4BYTE_KIND);
@@ -512,9 +516,11 @@ _PyUnicode_CheckConsistency(PyObject *op, int check_content)
             _PyObject_ASSERT(op, compact->utf8 != data);
         }
         else {
+#ifndef NDEBUG
             PyUnicodeObject *unicode = (PyUnicodeObject *)op;
 
             data = unicode->data.any;
+#endif
             if (kind == PyUnicode_WCHAR_KIND) {
                 _PyObject_ASSERT(op, ascii->length == 0);
                 _PyObject_ASSERT(op, ascii->hash == -1);
@@ -7186,6 +7192,12 @@ PyUnicode_AsASCIIString(PyObject *unicode)
 #define NEED_RETRY
 #endif
 
+/* INT_MAX is the theoretical largest chunk (or INT_MAX / 2 when
+   transcoding from UTF-16), but INT_MAX / 4 perfoms better in
+   both cases also and avoids partial characters overrunning the
+   length limit in MultiByteToWideChar on Windows */
+#define DECODING_CHUNK_SIZE (INT_MAX/4)
+
 #ifndef WC_ERR_INVALID_CHARS
 #  define WC_ERR_INVALID_CHARS 0x0080
 #endif
@@ -7422,8 +7434,8 @@ decode_code_page_stateful(int code_page,
     do
     {
 #ifdef NEED_RETRY
-        if (size > INT_MAX) {
-            chunk_size = INT_MAX;
+        if (size > DECODING_CHUNK_SIZE) {
+            chunk_size = DECODING_CHUNK_SIZE;
             final = 0;
             done = 0;
         }
@@ -7827,10 +7839,8 @@ encode_code_page(int code_page,
     do
     {
 #ifdef NEED_RETRY
-        /* UTF-16 encoding may double the size, so use only INT_MAX/2
-           chunks. */
-        if (len > INT_MAX/2) {
-            chunk_len = INT_MAX/2;
+        if (len > DECODING_CHUNK_SIZE) {
+            chunk_len = DECODING_CHUNK_SIZE;
             done = 0;
         }
         else
@@ -12512,7 +12522,7 @@ do_strip(PyObject *self, int striptype)
 static PyObject *
 do_argstrip(PyObject *self, int striptype, PyObject *sep)
 {
-    if (sep != NULL && sep != Py_None) {
+    if (sep != Py_None) {
         if (PyUnicode_Check(sep))
             return _PyUnicode_XStrip(self, striptype, sep);
         else {
@@ -12549,7 +12559,7 @@ unicode_strip_impl(PyObject *self, PyObject *chars)
 /*[clinic input]
 str.lstrip as unicode_lstrip
 
-    chars: object = NULL
+    chars: object = None
     /
 
 Return a copy of the string with leading whitespace removed.
@@ -12559,7 +12569,7 @@ If chars is given and not None, remove characters in chars instead.
 
 static PyObject *
 unicode_lstrip_impl(PyObject *self, PyObject *chars)
-/*[clinic end generated code: output=3b43683251f79ca7 input=9e56f3c45f5ff4c3]*/
+/*[clinic end generated code: output=3b43683251f79ca7 input=529f9f3834448671]*/
 {
     return do_argstrip(self, LEFTSTRIP, chars);
 }
@@ -12568,7 +12578,7 @@ unicode_lstrip_impl(PyObject *self, PyObject *chars)
 /*[clinic input]
 str.rstrip as unicode_rstrip
 
-    chars: object = NULL
+    chars: object = None
     /
 
 Return a copy of the string with trailing whitespace removed.
@@ -12578,7 +12588,7 @@ If chars is given and not None, remove characters in chars instead.
 
 static PyObject *
 unicode_rstrip_impl(PyObject *self, PyObject *chars)
-/*[clinic end generated code: output=4a59230017cc3b7a input=ac89d0219cb411ee]*/
+/*[clinic end generated code: output=4a59230017cc3b7a input=62566c627916557f]*/
 {
     return do_argstrip(self, RIGHTSTRIP, chars);
 }

@@ -2,8 +2,8 @@ import asyncio
 import inspect
 import unittest
 
-from unittest.mock import (call, AsyncMock, patch, MagicMock, create_autospec,
-                           _AwaitEvent)
+from unittest.mock import (ANY, call, AsyncMock, patch, MagicMock,
+                           create_autospec, _AwaitEvent)
 
 
 def tearDownModule():
@@ -17,6 +17,10 @@ class AsyncClass:
         pass
     def normal_method(self):
         pass
+
+class AwaitableClass:
+    def __await__(self):
+        yield
 
 async def async_func():
     pass
@@ -160,6 +164,10 @@ class AsyncAutospecTest(unittest.TestCase):
         with self.assertRaises(RuntimeError):
             create_autospec(async_func, instance=True)
 
+    def test_create_autospec_awaitable_class(self):
+        awaitable_mock = create_autospec(spec=AwaitableClass())
+        self.assertIsInstance(create_autospec(awaitable_mock), AsyncMock)
+
     def test_create_autospec(self):
         spec = create_autospec(async_func_args)
         awaitable = spec(1, 2, c=3)
@@ -183,6 +191,10 @@ class AsyncAutospecTest(unittest.TestCase):
         spec.assert_awaited_once_with(1, 2, c=3)
         spec.assert_awaited_with(1, 2, c=3)
         spec.assert_awaited()
+
+        with self.assertRaises(AssertionError):
+            spec.assert_any_await(e=1)
+
 
     def test_patch_with_autospec(self):
 
@@ -321,6 +333,13 @@ class AsyncSpecSetTest(unittest.TestCase):
         self.assertIsInstance(mock.normal_method, MagicMock)
         self.assertIsInstance(mock, MagicMock)
 
+    def test_magicmock_lambda_spec(self):
+        mock_obj = MagicMock()
+        mock_obj.mock_func = MagicMock(spec=lambda x: x)
+
+        with patch.object(mock_obj, "mock_func") as cm:
+            self.assertIsInstance(cm, MagicMock)
+
 
 class AsyncArguments(unittest.TestCase):
     def test_add_return_value(self):
@@ -361,17 +380,14 @@ class AsyncArguments(unittest.TestCase):
 
 
 class AsyncContextManagerTest(unittest.TestCase):
+
     class WithAsyncContextManager:
-        def __init__(self):
-            self.entered = False
-            self.exited = False
 
         async def __aenter__(self, *args, **kwargs):
-            self.entered = True
             return self
 
         async def __aexit__(self, *args, **kwargs):
-            self.exited = True
+            pass
 
     def test_magic_methods_are_async_mocks(self):
         mock = MagicMock(self.WithAsyncContextManager())
@@ -390,11 +406,7 @@ class AsyncContextManagerTest(unittest.TestCase):
             return result
 
         result = asyncio.run(use_context_manager())
-        self.assertFalse(instance.entered)
-        self.assertFalse(instance.exited)
         self.assertTrue(called)
-        self.assertTrue(mock_instance.entered)
-        self.assertTrue(mock_instance.exited)
         self.assertTrue(mock_instance.__aenter__.called)
         self.assertTrue(mock_instance.__aexit__.called)
         self.assertIsNot(mock_instance, result)
@@ -598,6 +610,30 @@ class AsyncMockAssert(unittest.TestCase):
 
         asyncio.run(self._runnable_test('SomethingElse'))
         self.mock.assert_has_awaits(calls)
+
+    def test_awaits_asserts_with_any(self):
+        class Foo:
+            def __eq__(self, other): pass
+
+        asyncio.run(self._runnable_test(Foo(), 1))
+
+        self.mock.assert_has_awaits([call(ANY, 1)])
+        self.mock.assert_awaited_with(ANY, 1)
+        self.mock.assert_any_await(ANY, 1)
+
+    def test_awaits_asserts_with_spec_and_any(self):
+        class Foo:
+            def __eq__(self, other): pass
+
+        mock_with_spec = AsyncMock(spec=Foo)
+
+        async def _custom_mock_runnable_test(*args):
+            await mock_with_spec(*args)
+
+        asyncio.run(_custom_mock_runnable_test(Foo(), 1))
+        mock_with_spec.assert_has_awaits([call(ANY, 1)])
+        mock_with_spec.assert_awaited_with(ANY, 1)
+        mock_with_spec.assert_any_await(ANY, 1)
 
     def test_assert_has_awaits_ordered(self):
         calls = [call('NormalFoo'), call('baz')]

@@ -1,0 +1,1 @@
+Fixed comparing and creating of InterpreterID and ChannelID.

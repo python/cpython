@@ -238,7 +238,7 @@ class Finalize(object):
         if self._kwargs:
             x += ', kwargs=' + str(self._kwargs)
         if self._key[0] is not None:
-            x += ', exitprority=' + str(self._key[0])
+            x += ', exitpriority=' + str(self._key[0])
         return x + '>'
 
 
@@ -429,7 +429,7 @@ def spawnv_passfds(path, args, passfds):
         return _posixsubprocess.fork_exec(
             args, [os.fsencode(path)], True, passfds, None, None,
             -1, -1, -1, -1, -1, -1, errpipe_read, errpipe_write,
-            False, False, None)
+            False, False, None, None, None, None)
     finally:
         os.close(errpipe_read)
         os.close(errpipe_write)

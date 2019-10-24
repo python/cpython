@@ -1,0 +1,2 @@
+Properly handle user input warnings in IDLE shell. Cease turning
+SyntaxWarnings into SyntaxErrors.

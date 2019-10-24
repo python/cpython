@@ -616,7 +616,7 @@ os_chflags(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *
         goto exit;
     }
     if (!PyLong_Check(args[1])) {
-        _PyArg_BadArgument("chflags", 2, "int", args[1]);
+        _PyArg_BadArgument("chflags", "argument 'flags'", "int", args[1]);
         goto exit;
     }
     flags = PyLong_AsUnsignedLongMask(args[1]);
@@ -674,7 +674,7 @@ os_lchflags(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject 
         goto exit;
     }
     if (!PyLong_Check(args[1])) {
-        _PyArg_BadArgument("lchflags", 2, "int", args[1]);
+        _PyArg_BadArgument("lchflags", "argument 'flags'", "int", args[1]);
         goto exit;
     }
     flags = PyLong_AsUnsignedLongMask(args[1]);
@@ -1267,19 +1267,6 @@ exit:
 
     return return_value;
 }
-
-#endif /* defined(MS_WINDOWS) */
-
-#if defined(MS_WINDOWS)
-
-PyDoc_STRVAR(os__isdir__doc__,
-"_isdir($module, path, /)\n"
-"--\n"
-"\n"
-"Return true if the pathname refers to an existing directory.");
-
-#define OS__ISDIR_METHODDEF    \
-    {"_isdir", (PyCFunction)os__isdir, METH_O, os__isdir__doc__},
 
 #endif /* defined(MS_WINDOWS) */
 
@@ -1984,8 +1971,8 @@ os_uname(PyObject *module, PyObject *Py_UNUSED(ignored))
 #endif /* defined(HAVE_UNAME) */
 
 PyDoc_STRVAR(os_utime__doc__,
-"utime($module, /, path, times=None, *, ns=None, dir_fd=None,\n"
-"      follow_symlinks=True)\n"
+"utime($module, /, path, times=None, *, ns=<unrepresentable>,\n"
+"      dir_fd=None, follow_symlinks=True)\n"
 "--\n"
 "\n"
 "Set the access and modified time of path.\n"
@@ -2028,7 +2015,7 @@ os_utime(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kw
     PyObject *argsbuf[5];
     Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 1;
     path_t path = PATH_T_INITIALIZE("utime", "path", 0, PATH_UTIME_HAVE_FD);
-    PyObject *times = NULL;
+    PyObject *times = Py_None;
     PyObject *ns = NULL;
     int dir_fd = DEFAULT_DIR_FD;
     int follow_symlinks = 1;
@@ -2221,8 +2208,8 @@ exit:
 
 PyDoc_STRVAR(os_posix_spawn__doc__,
 "posix_spawn($module, path, argv, env, /, *, file_actions=(),\n"
-"            setpgroup=None, resetids=False, setsid=False,\n"
-"            setsigmask=(), setsigdef=(), scheduler=None)\n"
+"            setpgroup=<unrepresentable>, resetids=False, setsid=False,\n"
+"            setsigmask=(), setsigdef=(), scheduler=<unrepresentable>)\n"
 "--\n"
 "\n"
 "Execute the program specified by path in a new process.\n"
@@ -2358,8 +2345,8 @@ exit:
 
 PyDoc_STRVAR(os_posix_spawnp__doc__,
 "posix_spawnp($module, path, argv, env, /, *, file_actions=(),\n"
-"             setpgroup=None, resetids=False, setsid=False,\n"
-"             setsigmask=(), setsigdef=(), scheduler=None)\n"
+"             setpgroup=<unrepresentable>, resetids=False, setsid=False,\n"
+"             setsigmask=(), setsigdef=(), scheduler=<unrepresentable>)\n"
 "--\n"
 "\n"
 "Execute the program specified by path in a new process.\n"
@@ -2611,8 +2598,9 @@ exit:
 #if defined(HAVE_FORK)
 
 PyDoc_STRVAR(os_register_at_fork__doc__,
-"register_at_fork($module, /, *, before=None, after_in_child=None,\n"
-"                 after_in_parent=None)\n"
+"register_at_fork($module, /, *, before=<unrepresentable>,\n"
+"                 after_in_child=<unrepresentable>,\n"
+"                 after_in_parent=<unrepresentable>)\n"
 "--\n"
 "\n"
 "Register callables to be called when forking a new process.\n"
@@ -4969,7 +4957,7 @@ os_write(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
         goto exit;
     }
     if (!PyBuffer_IsContiguous(&data, 'C')) {
-        _PyArg_BadArgument("write", 2, "contiguous buffer", args[1]);
+        _PyArg_BadArgument("write", "argument 2", "contiguous buffer", args[1]);
         goto exit;
     }
     _return_value = os_write_impl(module, fd, &data);
@@ -5292,7 +5280,7 @@ os_pwrite(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
         goto exit;
     }
     if (!PyBuffer_IsContiguous(&buffer, 'C')) {
-        _PyArg_BadArgument("pwrite", 2, "contiguous buffer", args[1]);
+        _PyArg_BadArgument("pwrite", "argument 2", "contiguous buffer", args[1]);
         goto exit;
     }
     if (!Py_off_t_converter(args[2], &offset)) {
@@ -6025,7 +6013,7 @@ os_putenv(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
         goto exit;
     }
     if (!PyUnicode_Check(args[0])) {
-        _PyArg_BadArgument("putenv", 1, "str", args[0]);
+        _PyArg_BadArgument("putenv", "argument 1", "str", args[0]);
         goto exit;
     }
     if (PyUnicode_READY(args[0]) == -1) {
@@ -6033,7 +6021,7 @@ os_putenv(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     }
     name = args[0];
     if (!PyUnicode_Check(args[1])) {
-        _PyArg_BadArgument("putenv", 2, "str", args[1]);
+        _PyArg_BadArgument("putenv", "argument 2", "str", args[1]);
         goto exit;
     }
     if (PyUnicode_READY(args[1]) == -1) {
@@ -6867,10 +6855,8 @@ os_abort(PyObject *module, PyObject *Py_UNUSED(ignored))
 #if defined(MS_WINDOWS)
 
 PyDoc_STRVAR(os_startfile__doc__,
-"startfile($module, /, filepath, operation=None)\n"
+"startfile($module, /, filepath, operation=<unrepresentable>)\n"
 "--\n"
-"\n"
-"startfile(filepath [, operation])\n"
 "\n"
 "Start a file with its associated application.\n"
 "\n"
@@ -7229,7 +7215,7 @@ os_setxattr(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject 
         goto exit;
     }
     if (!PyBuffer_IsContiguous(&value, 'C')) {
-        _PyArg_BadArgument("setxattr", 3, "contiguous buffer", args[2]);
+        _PyArg_BadArgument("setxattr", "argument 'value'", "contiguous buffer", args[2]);
         goto exit;
     }
     if (!noptargs) {
@@ -8274,10 +8260,6 @@ exit:
     #define OS__GETFINALPATHNAME_METHODDEF
 #endif /* !defined(OS__GETFINALPATHNAME_METHODDEF) */
 
-#ifndef OS__ISDIR_METHODDEF
-    #define OS__ISDIR_METHODDEF
-#endif /* !defined(OS__ISDIR_METHODDEF) */
-
 #ifndef OS__GETVOLUMEPATHNAME_METHODDEF
     #define OS__GETVOLUMEPATHNAME_METHODDEF
 #endif /* !defined(OS__GETVOLUMEPATHNAME_METHODDEF) */
@@ -8741,4 +8723,4 @@ exit:
 #ifndef OS__REMOVE_DLL_DIRECTORY_METHODDEF
     #define OS__REMOVE_DLL_DIRECTORY_METHODDEF
 #endif /* !defined(OS__REMOVE_DLL_DIRECTORY_METHODDEF) */
-/*[clinic end generated code: output=1e001c855e011720 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=113d9fbdd18a62f5 input=a9049054013a1b77]*/

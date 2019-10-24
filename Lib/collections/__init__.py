@@ -47,7 +47,7 @@ def __getattr__(name):
         obj = getattr(_collections_abc, name)
         import warnings
         warnings.warn("Using or importing the ABCs from 'collections' instead "
-                      "of from 'collections.abc' is deprecated since Python 3.3,"
+                      "of from 'collections.abc' is deprecated since Python 3.3, "
                       "and in 3.9 it will stop working",
                       DeprecationWarning, stacklevel=2)
         globals()[name] = obj
@@ -1184,12 +1184,10 @@ class UserString(_collections_abc.Sequence):
         if isinstance(sub, UserString):
             sub = sub.data
         return self.data.count(sub, start, end)
-    def encode(self, encoding=None, errors=None): # XXX improve this?
-        if encoding:
-            if errors:
-                return self.__class__(self.data.encode(encoding, errors))
-            return self.__class__(self.data.encode(encoding))
-        return self.__class__(self.data.encode())
+    def encode(self, encoding='utf-8', errors='strict'):
+        encoding = 'utf-8' if encoding is None else encoding
+        errors = 'strict' if errors is None else errors
+        return self.data.encode(encoding, errors)
     def endswith(self, suffix, start=0, end=_sys.maxsize):
         return self.data.endswith(suffix, start, end)
     def expandtabs(self, tabsize=8):

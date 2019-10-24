@@ -70,8 +70,15 @@ def connect(host=None, port=None, *,
             server_hostname=None,
             ssl_handshake_timeout=None,
             happy_eyeballs_delay=None, interleave=None):
+    """Connect to TCP socket on *host* : *port* address to send and receive data.
+
+    *limit* determines the buffer size limit used by the returned `Stream`
+    instance. By default the *limit* is set to 64 KiB.
+
+    The rest of the arguments are passed directly to `loop.create_connection()`.
+    """
     # Design note:
-    # Don't use decorator approach but exilicit non-async
+    # Don't use decorator approach but explicit non-async
     # function to fail fast and explicitly
     # if passed arguments don't match the function signature
     return _ContextManagerHelper(_connect(host, port, limit,
@@ -108,6 +115,13 @@ async def _connect(host, port,
 
 
 def connect_read_pipe(pipe, *, limit=_DEFAULT_LIMIT):
+    """Establish a connection to a file-like object *pipe* to receive data.
+
+    Takes a file-like object *pipe* to return a Stream object of the mode
+    StreamMode.READ that has similar API of StreamReader. It can also be used
+    as an async context manager.
+    """
+
     # Design note:
     # Don't use decorator approach but explicit non-async
     # function to fail fast and explicitly
@@ -129,6 +143,13 @@ async def _connect_read_pipe(pipe, limit):
 
 
 def connect_write_pipe(pipe, *, limit=_DEFAULT_LIMIT):
+    """Establish a connection to a file-like object *pipe* to send data.
+
+    Takes a file-like object *pipe* to return a Stream object of the mode
+    StreamMode.WRITE that has similar API of StreamWriter. It can also be used
+    as an async context manager.
+    """
+
     # Design note:
     # Don't use decorator approach but explicit non-async
     # function to fail fast and explicitly
@@ -442,7 +463,7 @@ if hasattr(socket, 'AF_UNIX'):
                      ssl_handshake_timeout=None):
         """Similar to `connect()` but works with UNIX Domain Sockets."""
         # Design note:
-        # Don't use decorator approach but exilicit non-async
+        # Don't use decorator approach but explicit non-async
         # function to fail fast and explicitly
         # if passed arguments don't match the function signature
         return _ContextManagerHelper(_connect_unix(path,
@@ -1133,9 +1154,9 @@ class _BaseStreamProtocol(FlowControlMixin, protocols.Protocol):
         stream = self._stream
         if stream is not None:
             if exc is None:
-                stream.feed_eof()
+                stream._feed_eof()
             else:
-                stream.set_exception(exc)
+                stream._set_exception(exc)
         if not self._closed.done():
             if exc is None:
                 self._closed.set_result(None)
@@ -1147,12 +1168,12 @@ class _BaseStreamProtocol(FlowControlMixin, protocols.Protocol):
     def data_received(self, data):
         stream = self._stream
         if stream is not None:
-            stream.feed_data(data)
+            stream._feed_data(data)
 
     def eof_received(self):
         stream = self._stream
         if stream is not None:
-            stream.feed_eof()
+            stream._feed_eof()
         if self._over_ssl:
             # Prevent a warning in SSLProtocol.eof_received:
             # "returning true from eof_received()
@@ -1219,7 +1240,7 @@ class _StreamProtocol(_BaseStreamProtocol):
         stream = self._stream
         if stream is None:
             return
-        stream.set_transport(transport)
+        stream._set_transport(transport)
         stream._protocol = self
 
     def connection_lost(self, exc):
@@ -1351,6 +1372,11 @@ class Stream:
 
     @property
     def transport(self):
+        warnings.warn("Stream.transport attribute is deprecated "
+                      "since Python 3.8 and is scheduled for removal in 3.10; "
+                      "it is an internal API",
+                      DeprecationWarning,
+                      stacklevel=2)
         return self._transport
 
     def write(self, data):
@@ -1366,7 +1392,7 @@ class Stream:
     def _fast_drain(self):
         # The helper tries to use fast-path to return already existing
         # complete future object if underlying transport is not paused
-        #and actual waiting for writing resume is not needed
+        # and actual waiting for writing resume is not needed
         exc = self.exception()
         if exc is not None:
             fut = self._loop.create_future()
@@ -1450,6 +1476,14 @@ class Stream:
         return self._exception
 
     def set_exception(self, exc):
+        warnings.warn("Stream.set_exception() is deprecated "
+                      "since Python 3.8 and is scheduled for removal in 3.10; "
+                      "it is an internal API",
+                      DeprecationWarning,
+                      stacklevel=2)
+        self._set_exception(exc)
+
+    def _set_exception(self, exc):
         self._exception = exc
 
         waiter = self._waiter
@@ -1467,6 +1501,14 @@ class Stream:
                 waiter.set_result(None)
 
     def set_transport(self, transport):
+        warnings.warn("Stream.set_transport() is deprecated "
+                      "since Python 3.8 and is scheduled for removal in 3.10; "
+                      "it is an internal API",
+                      DeprecationWarning,
+                      stacklevel=2)
+        self._set_transport(transport)
+
+    def _set_transport(self, transport):
         if transport is self._transport:
             return
         assert self._transport is None, 'Transport already set'
@@ -1478,6 +1520,14 @@ class Stream:
             self._transport.resume_reading()
 
     def feed_eof(self):
+        warnings.warn("Stream.feed_eof() is deprecated "
+                      "since Python 3.8 and is scheduled for removal in 3.10; "
+                      "it is an internal API",
+                      DeprecationWarning,
+                      stacklevel=2)
+        self._feed_eof()
+
+    def _feed_eof(self):
         self._eof = True
         self._wakeup_waiter()
 
@@ -1486,6 +1536,14 @@ class Stream:
         return self._eof and not self._buffer
 
     def feed_data(self, data):
+        warnings.warn("Stream.feed_data() is deprecated "
+                      "since Python 3.8 and is scheduled for removal in 3.10; "
+                      "it is an internal API",
+                      DeprecationWarning,
+                      stacklevel=2)
+        self._feed_data(data)
+
+    def _feed_data(self, data):
         _ensure_can_read(self._mode)
         assert not self._eof, 'feed_data after feed_eof'
 

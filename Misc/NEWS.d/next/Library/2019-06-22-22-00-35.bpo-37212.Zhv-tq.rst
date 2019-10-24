@@ -1,0 +1,2 @@
+:func:`unittest.mock.call` now preserves the order of keyword arguments in
+repr output. Patch by Karthikeyan Singaravelan.

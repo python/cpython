@@ -1166,10 +1166,10 @@ Basic customization
    with appropriate arguments and then modifying the newly-created instance
    as necessary before returning it.
 
-   If :meth:`__new__` returns an instance of *cls*, then the new instance's
-   :meth:`__init__` method will be invoked like ``__init__(self[, ...])``, where
-   *self* is the new instance and the remaining arguments are the same as were
-   passed to :meth:`__new__`.
+   If :meth:`__new__` is invoked during object construction and it returns an
+   instance or subclass of *cls*, then the new instance’s :meth:`__init__` method
+   will be invoked like ``__init__(self[, ...])``, where *self* is the new instance
+   and the remaining arguments are the same as were passed to the object constructor.
 
    If :meth:`__new__` does not return an instance of *cls*, then the new instance's
    :meth:`__init__` method will not be invoked.
@@ -1445,8 +1445,8 @@ Basic customization
 
    .. note::
 
-      By default, the :meth:`__hash__` values of str, bytes and datetime
-      objects are "salted" with an unpredictable random value.  Although they
+      By default, the :meth:`__hash__` values of str and bytes objects are
+      "salted" with an unpredictable random value.  Although they
       remain constant within an individual Python process, they are not
       predictable between repeated invocations of Python.
 
@@ -1618,21 +1618,32 @@ refers to the attribute whose name is the key of the property in the owner
 class' :attr:`~object.__dict__`.
 
 
-.. method:: object.__get__(self, instance, owner)
+.. method:: object.__get__(self, instance, owner=None)
 
-   Called to get the attribute of the owner class (class attribute access) or of an
-   instance of that class (instance attribute access). *owner* is always the owner
-   class, while *instance* is the instance that the attribute was accessed through,
-   or ``None`` when the attribute is accessed through the *owner*.  This method
-   should return the (computed) attribute value or raise an :exc:`AttributeError`
-   exception.
+   Called to get the attribute of the owner class (class attribute access) or
+   of an instance of that class (instance attribute access). The optional
+   *owner* argument is the owner class, while *instance* is the instance that
+   the attribute was accessed through, or ``None`` when the attribute is
+   accessed through the *owner*.
 
+   This method should return the computed attribute value or raise an
+   :exc:`AttributeError` exception.
+
+   :PEP:`252` specifies that :meth:`__get__` is callable with one or two
+   arguments.  Python's own built-in descriptors support this specification;
+   however, it is likely that some third-party tools have descriptors
+   that require both arguments.  Python's own :meth:`__getattribute__`
+   implementation always passes in both arguments whether they are required
+   or not.
 
 .. method:: object.__set__(self, instance, value)
 
    Called to set the attribute on an instance *instance* of the owner class to a
    new value, *value*.
 
+   Note, adding :meth:`__set__` or :meth:`__delete__` changes the kind of
+   descriptor to a "data descriptor".  See :ref:`descriptor-invocation` for
+   more details.
 
 .. method:: object.__delete__(self, instance)
 
@@ -2144,7 +2155,9 @@ through the container; for mappings, :meth:`__iter__` should be the same as
 
    Called to implement :func:`operator.length_hint`. Should return an estimated
    length for the object (which may be greater or less than the actual length).
-   The length must be an integer ``>=`` 0. This method is purely an
+   The length must be an integer ``>=`` 0. The return value may also be
+   :const:`NotImplemented`, which is treated the same as if the
+   ``__length_hint__`` method didn't exist at all. This method is purely an
    optimization and is never required for correctness.
 
    .. versionadded:: 3.4

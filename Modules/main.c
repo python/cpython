@@ -292,7 +292,7 @@ pymain_run_module(const wchar_t *modname, int set_argv0)
         Py_DECREF(runmodule);
         return pymain_exit_err_print();
     }
-    runargs = Py_BuildValue("(Oi)", module, set_argv0);
+    runargs = PyTuple_Pack(2, module, set_argv0 ? Py_True : Py_False);
     if (runargs == NULL) {
         fprintf(stderr,
             "Could not create arguments for runpy._run_module_as_main\n");

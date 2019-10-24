@@ -5,9 +5,6 @@
 #include "frameobject.h"
 
 
-static PyObject *
-cfunction_call_varargs(PyObject *func, PyObject *args, PyObject *kwargs);
-
 static PyObject *const *
 _PyStack_UnpackDict(PyObject *const *args, Py_ssize_t nargs, PyObject *kwargs,
                     PyObject **p_kwnames);
@@ -236,11 +233,6 @@ PyObject_Call(PyObject *callable, PyObject *args, PyObject *kwargs)
     if (_PyVectorcall_Function(callable) != NULL) {
         return PyVectorcall_Call(callable, args, kwargs);
     }
-    else if (PyCFunction_Check(callable)) {
-        /* This must be a METH_VARARGS function, otherwise we would be
-         * in the previous case */
-        return cfunction_call_varargs(callable, args, kwargs);
-    }
     else {
         call = callable->ob_type->tp_call;
         if (call == NULL) {
@@ -258,6 +250,13 @@ PyObject_Call(PyObject *callable, PyObject *args, PyObject *kwargs)
 
         return _Py_CheckFunctionResult(callable, result, NULL);
     }
+}
+
+
+PyObject *
+PyCFunction_Call(PyObject *callable, PyObject *args, PyObject *kwargs)
+{
+    return PyObject_Call(callable, args, kwargs);
 }
 
 
@@ -360,60 +359,6 @@ _PyFunction_Vectorcall(PyObject *func, PyObject* const* stack,
                                     nkwargs, 1,
                                     d, (int)nd, kwdefs,
                                     closure, name, qualname);
-}
-
-
-/* --- PyCFunction call functions --------------------------------- */
-
-static PyObject *
-cfunction_call_varargs(PyObject *func, PyObject *args, PyObject *kwargs)
-{
-    assert(!PyErr_Occurred());
-    assert(kwargs == NULL || PyDict_Check(kwargs));
-
-    PyCFunction meth = PyCFunction_GET_FUNCTION(func);
-    PyObject *self = PyCFunction_GET_SELF(func);
-    PyObject *result;
-
-    assert(PyCFunction_GET_FLAGS(func) & METH_VARARGS);
-    if (PyCFunction_GET_FLAGS(func) & METH_KEYWORDS) {
-        if (Py_EnterRecursiveCall(" while calling a Python object")) {
-            return NULL;
-        }
-
-        result = (*(PyCFunctionWithKeywords)(void(*)(void))meth)(self, args, kwargs);
-
-        Py_LeaveRecursiveCall();
-    }
-    else {
-        if (kwargs != NULL && PyDict_GET_SIZE(kwargs) != 0) {
-            PyErr_Format(PyExc_TypeError, "%.200s() takes no keyword arguments",
-                         ((PyCFunctionObject*)func)->m_ml->ml_name);
-            return NULL;
-        }
-
-        if (Py_EnterRecursiveCall(" while calling a Python object")) {
-            return NULL;
-        }
-
-        result = (*meth)(self, args);
-
-        Py_LeaveRecursiveCall();
-    }
-
-    return _Py_CheckFunctionResult(func, result, NULL);
-}
-
-
-PyObject *
-PyCFunction_Call(PyObject *func, PyObject *args, PyObject *kwargs)
-{
-    /* For METH_VARARGS, we cannot use vectorcall as the vectorcall pointer
-     * is NULL. This is intentional, since vectorcall would be slower. */
-    if (PyCFunction_GET_FLAGS(func) & METH_VARARGS) {
-        return cfunction_call_varargs(func, args, kwargs);
-    }
-    return PyVectorcall_Call(func, args, kwargs);
 }
 
 

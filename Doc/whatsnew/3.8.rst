@@ -122,8 +122,6 @@ See :pep:`572` for a full description.
 
 (Contributed by Emily Morehouse in :issue:`35224`.)
 
-.. TODO: Emily will sprint on docs at PyCon US 2019.
-
 
 Positional-only parameters
 --------------------------
@@ -767,7 +765,7 @@ numbers::
 
     >>> prior = 0.8
     >>> likelihoods = [0.625, 0.84, 0.30]
-    >>> (link: http://math.prod) math.prod(likelihoods, start=prior)
+    >>> math.prod(likelihoods, start=prior)
     0.126
 
 (Contributed by Pablo Galindo in :issue:`35606`)
@@ -808,6 +806,21 @@ A new :func:`os.memfd_create` function was added to wrap the
 ``memfd_create()`` syscall.
 (Contributed by Zackery Spytz and Christian Heimes in :issue:`26836`.)
 
+On Windows, much of the manual logic for handling reparse points (including
+symlinks and directory junctions) has been delegated to the operating system.
+Specifically, :func:`os.stat` will now traverse anything supported by the
+operating system, while :func:`os.lstat` will only open reparse points that
+identify as "name surrogates" while others are opened as for :func:`os.stat`.
+In all cases, :attr:`stat_result.st_mode` will only have ``S_IFLNK`` set for
+symbolic links and not other kinds of reparse points. To identify other kinds
+of reparse point, check the new :attr:`stat_result.st_reparse_tag` attribute.
+
+On Windows, :func:`os.readlink` is now able to read directory junctions. Note
+that :func:`~os.path.islink` will return ``False`` for directory junctions,
+and so code that checks ``islink`` first will continue to treat junctions as
+directories, while code that handles errors from :func:`os.readlink` may now
+treat junctions as links.
+
 
 os.path
 -------
@@ -823,6 +836,12 @@ characters or bytes unrepresentable at the OS level.
 :func:`~os.path.expanduser` on Windows now prefers the :envvar:`USERPROFILE`
 environment variable and does not use :envvar:`HOME`, which is not normally set
 for regular user accounts.
+
+:func:`~os.path.isdir` on Windows no longer returns true for a link to a
+non-existent directory.
+
+:func:`~os.path.realpath` on Windows now resolves reparse points, including
+symlinks and directory junctions.
 
 
 ncurses
@@ -908,6 +927,9 @@ shutil
 format for new archives to improve portability and standards conformance,
 inherited from the corresponding change to the :mod:`tarfile` module.
 (Contributed by C.A.M. Gerlach in :issue:`30661`.)
+
+:func:`shutil.rmtree` on Windows now removes directory junctions without
+recursively removing their contents first.
 
 
 ssl
@@ -1066,8 +1088,9 @@ unicodedata
   <http://blog.unicode.org/2019/05/unicode-12-1-en.html>`_ release.
 
 * New function :func:`~unicodedata.is_normalized` can be used to verify a string
-  is in a specific normal form. (Contributed by Max Belanger and David Euresti in
-  :issue:`32285`).
+  is in a specific normal form, often much faster than by actually normalizing
+  the string.  (Contributed by Max Belanger, David Euresti, and Greg Price in
+  :issue:`32285` and :issue:`37966`).
 
 
 unittest
@@ -1085,6 +1108,32 @@ unittest
 
 * Several mock assert functions now also print a list of actual calls upon
   failure. (Contributed by Petter Strandmark in :issue:`35047`.)
+
+* :mod:`unittest` module gained support for coroutines to be used as test cases
+  with :class:`unittest.IsolatedAsyncioTestCase`.
+  (Contributed by Andrew Svetlov in :issue:`32972`.)
+
+  Example::
+
+    import unittest
+
+
+    class TestRequest(unittest.IsolatedAsyncioTestCase):
+
+        async def asyncSetUp(self):
+            self.connection = await AsyncConnection()
+
+        async def test_get(self):
+            response = await self.connection.get("https://example.com")
+            self.assertEqual(response.status_code, 200)
+
+        async def asyncTearDown(self):
+            await self.connection.close()
+
+
+    if __name__ == "__main__":
+        unittest.main()
+
 
 venv
 ----
@@ -1336,6 +1385,13 @@ Deprecated
   versions. :class:`~ast.Constant` should be used instead.
   (Contributed by Serhiy Storchaka in :issue:`32892`.)
 
+* :class:`ast.NodeVisitor` methods ``visit_Num()``, ``visit_Str()``,
+  ``visit_Bytes()``, ``visit_NameConstant()`` and ``visit_Ellipsis()`` are
+  deprecated now and will not be called in future Python versions.
+  Add the :meth:`~ast.NodeVisitor.visit_Constant` method to handle all
+  constant nodes.
+  (Contributed by Serhiy Storchaka in :issue:`36917`.)
+
 * The following functions and methods are deprecated in the :mod:`gettext`
   module: :func:`~gettext.lgettext`, :func:`~gettext.ldgettext`,
   :func:`~gettext.lngettext` and :func:`~gettext.ldngettext`.
@@ -1409,7 +1465,8 @@ The following features and APIs have been removed from Python 3.8:
   script is tied to. (Contributed by Brett Cannon in :issue:`25427`.)
 
 * ``parse_qs``, ``parse_qsl``, and ``escape`` are removed from :mod:`cgi`
-  module.  They are deprecated from Python 3.2 or older.
+  module.  They are deprecated from Python 3.2 or older. They should be imported
+  from the ``urllib.parse`` and ``html`` modules instead.
 
 * ``filemode`` function is removed from :mod:`tarfile` module.
   It is not documented and deprecated since Python 3.3.
@@ -1499,6 +1556,12 @@ Changes in the Python API
   exception on errors like missing program, but the child process fails with a
   non-zero :attr:`~Popen.returncode`.
   (Contributed by Joannah Nanjekye and Victor Stinner in :issue:`35537`.)
+
+* The *preexec_fn* argument of * :class:`subprocess.Popen` is no longer
+  compatible with subinterpreters. The use of the parameter in a
+  subinterpreter now raises :exc:`RuntimeError`.
+  (Contributed by Eric Snow in :issue:`34651`, modified by Christian Heimes
+  in :issue:`37951`.)
 
 * The :meth:`imap.IMAP4.logout` method no longer ignores silently arbitrary
   exceptions.

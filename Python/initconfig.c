@@ -83,8 +83,8 @@ static const char usage_5[] =
 "PYTHONFAULTHANDLER: dump the Python traceback on fatal errors.\n";
 static const char usage_6[] =
 "PYTHONHASHSEED: if this variable is set to 'random', a random value is used\n"
-"   to seed the hashes of str, bytes and datetime objects.  It can also be\n"
-"   set to an integer in the range [0,4294967295] to get hash values with a\n"
+"   to seed the hashes of str and bytes objects.  It can also be set to an\n"
+"   integer in the range [0,4294967295] to get hash values with a\n"
 "   predictable seed.\n"
 "PYTHONMALLOC: set the Python memory allocators and/or install debug hooks\n"
 "   on Python memory allocators. Use PYTHONMALLOC=debug to install debug\n"
@@ -297,11 +297,19 @@ _PyWideStringList_Copy(PyWideStringList *list, const PyWideStringList *list2)
 
 
 PyStatus
-PyWideStringList_Append(PyWideStringList *list, const wchar_t *item)
+PyWideStringList_Insert(PyWideStringList *list,
+                        Py_ssize_t index, const wchar_t *item)
 {
-    if (list->length == PY_SSIZE_T_MAX) {
+    Py_ssize_t len = list->length;
+    if (len == PY_SSIZE_T_MAX) {
         /* length+1 would overflow */
         return _PyStatus_NO_MEMORY();
+    }
+    if (index < 0) {
+        return _PyStatus_ERR("PyWideStringList_Insert index must be >= 0");
+    }
+    if (index > len) {
+        index = len;
     }
 
     wchar_t *item2 = _PyMem_RawWcsdup(item);
@@ -309,17 +317,30 @@ PyWideStringList_Append(PyWideStringList *list, const wchar_t *item)
         return _PyStatus_NO_MEMORY();
     }
 
-    size_t size = (list->length + 1) * sizeof(list->items[0]);
+    size_t size = (len + 1) * sizeof(list->items[0]);
     wchar_t **items2 = (wchar_t **)PyMem_RawRealloc(list->items, size);
     if (items2 == NULL) {
         PyMem_RawFree(item2);
         return _PyStatus_NO_MEMORY();
     }
 
-    items2[list->length] = item2;
+    if (index < len) {
+        memmove(&items2[index + 1],
+                &items2[index],
+                (len - index) * sizeof(items2[0]));
+    }
+
+    items2[index] = item2;
     list->items = items2;
     list->length++;
     return _PyStatus_OK();
+}
+
+
+PyStatus
+PyWideStringList_Append(PyWideStringList *list, const wchar_t *item)
+{
+    return PyWideStringList_Insert(list, list->length, item);
 }
 
 
@@ -2048,6 +2069,7 @@ config_init_warnoptions(PyConfig *config,
     /* The priority order for warnings configuration is (highest precedence
      * first):
      *
+     * - early PySys_AddWarnOption() calls
      * - the BytesWarning filter, if needed ('-b', '-bb')
      * - any '-W' command line options; then
      * - the 'PYTHONWARNINGS' environment variable; then
@@ -2103,6 +2125,13 @@ config_init_warnoptions(PyConfig *config,
             return status;
         }
     }
+
+    /* Handle early PySys_AddWarnOption() calls */
+    status = _PySys_ReadPreinitWarnOptions(config);
+    if (_PyStatus_EXCEPTION(status)) {
+        return status;
+    }
+
     return _PyStatus_OK();
 }
 
@@ -2272,7 +2301,8 @@ config_read_cmdline(PyConfig *config)
     }
 
     status = config_init_warnoptions(config,
-                                  &cmdline_warnoptions, &env_warnoptions);
+                                     &cmdline_warnoptions,
+                                     &env_warnoptions);
     if (_PyStatus_EXCEPTION(status)) {
         goto done;
     }
@@ -2378,6 +2408,12 @@ PyConfig_Read(PyConfig *config)
     }
 
     status = config_read_cmdline(config);
+    if (_PyStatus_EXCEPTION(status)) {
+        goto done;
+    }
+
+    /* Handle early PySys_AddXOption() calls */
+    status = _PySys_ReadPreinitXOptions(config);
     if (_PyStatus_EXCEPTION(status)) {
         goto done;
     }

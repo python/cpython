@@ -835,8 +835,8 @@ class BasicSocketTests(unittest.TestCase):
                 cert, enc, trust = element
                 self.assertIsInstance(cert, bytes)
                 self.assertIn(enc, {"x509_asn", "pkcs_7_asn"})
-                self.assertIsInstance(trust, (set, bool))
-                if isinstance(trust, set):
+                self.assertIsInstance(trust, (frozenset, set, bool))
+                if isinstance(trust, (frozenset, set)):
                     trust_oids.update(trust)
 
         serverAuth = "1.3.6.1.5.5.7.3.1"
@@ -1109,6 +1109,7 @@ class ContextTests(unittest.TestCase):
 
     @unittest.skipUnless(hasattr(ssl.SSLContext, 'minimum_version'),
                          "required OpenSSL 1.1.0g")
+    @unittest.skipIf(IS_LIBRESSL, "see bpo-34001")
     def test_min_max_version(self):
         ctx = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
         # OpenSSL default is MINIMUM_SUPPORTED, however some vendors like
@@ -2209,7 +2210,7 @@ class ThreadedEchoServer(threading.Thread):
             self.running = False
             self.sock = connsock
             self.addr = addr
-            self.sock.setblocking(1)
+            self.sock.setblocking(True)
             self.sslconn = None
             threading.Thread.__init__(self)
             self.daemon = True
@@ -3255,7 +3256,7 @@ class ThreadedTests(unittest.TestCase):
         wrapped = False
         with server:
             s = socket.socket()
-            s.setblocking(1)
+            s.setblocking(True)
             s.connect((HOST, server.port))
             if support.verbose:
                 sys.stdout.write("\n")
@@ -3731,10 +3732,10 @@ class ThreadedTests(unittest.TestCase):
                 self.assertEqual(s.version(), 'TLSv1.1')
 
         # client 1.0, server 1.2 (mismatch)
-        server_context.minimum_version = ssl.TLSVersion.TLSv1_2
         server_context.maximum_version = ssl.TLSVersion.TLSv1_2
+        server_context.minimum_version = ssl.TLSVersion.TLSv1_2
         client_context.maximum_version = ssl.TLSVersion.TLSv1
-        client_context.maximum_version = ssl.TLSVersion.TLSv1
+        client_context.minimum_version = ssl.TLSVersion.TLSv1
         with ThreadedEchoServer(context=server_context) as server:
             with client_context.wrap_socket(socket.socket(),
                                             server_hostname=hostname) as s:

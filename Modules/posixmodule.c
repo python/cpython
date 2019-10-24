@@ -1625,6 +1625,7 @@ win32_wchdir(LPCWSTR path)
 */
 #define HAVE_STAT_NSEC 1
 #define HAVE_STRUCT_STAT_ST_FILE_ATTRIBUTES 1
+#define HAVE_STRUCT_STAT_ST_REPARSE_TAG 1
 
 static void
 find_data_to_file_info(WIN32_FIND_DATAW *pFileData,
@@ -1658,136 +1659,185 @@ attributes_from_dir(LPCWSTR pszFile, BY_HANDLE_FILE_INFORMATION *info, ULONG *re
     return TRUE;
 }
 
-static BOOL
-get_target_path(HANDLE hdl, wchar_t **target_path)
-{
-    int buf_size, result_length;
-    wchar_t *buf;
-
-    /* We have a good handle to the target, use it to determine
-       the target path name (then we'll call lstat on it). */
-    buf_size = GetFinalPathNameByHandleW(hdl, 0, 0,
-                                         VOLUME_NAME_DOS);
-    if(!buf_size)
-        return FALSE;
-
-    buf = (wchar_t *)PyMem_RawMalloc((buf_size + 1) * sizeof(wchar_t));
-    if (!buf) {
-        SetLastError(ERROR_OUTOFMEMORY);
-        return FALSE;
-    }
-
-    result_length = GetFinalPathNameByHandleW(hdl,
-                       buf, buf_size, VOLUME_NAME_DOS);
-
-    if(!result_length) {
-        PyMem_RawFree(buf);
-        return FALSE;
-    }
-
-    buf[result_length] = 0;
-
-    *target_path = buf;
-    return TRUE;
-}
-
 static int
 win32_xstat_impl(const wchar_t *path, struct _Py_stat_struct *result,
                  BOOL traverse)
 {
-    int code;
-    HANDLE hFile, hFile2;
-    BY_HANDLE_FILE_INFORMATION info;
-    ULONG reparse_tag = 0;
-    wchar_t *target_path;
-    const wchar_t *dot;
+    HANDLE hFile;
+    BY_HANDLE_FILE_INFORMATION fileInfo;
+    FILE_ATTRIBUTE_TAG_INFO tagInfo = { 0 };
+    DWORD fileType, error;
+    BOOL isUnhandledTag = FALSE;
+    int retval = 0;
 
-    hFile = CreateFileW(
-        path,
-        FILE_READ_ATTRIBUTES, /* desired access */
-        0, /* share mode */
-        NULL, /* security attributes */
-        OPEN_EXISTING,
-        /* FILE_FLAG_BACKUP_SEMANTICS is required to open a directory */
-        /* FILE_FLAG_OPEN_REPARSE_POINT does not follow the symlink.
-           Because of this, calls like GetFinalPathNameByHandle will return
-           the symlink path again and not the actual final path. */
-        FILE_ATTRIBUTE_NORMAL|FILE_FLAG_BACKUP_SEMANTICS|
-            FILE_FLAG_OPEN_REPARSE_POINT,
-        NULL);
+    DWORD access = FILE_READ_ATTRIBUTES;
+    DWORD flags = FILE_FLAG_BACKUP_SEMANTICS; /* Allow opening directories. */
+    if (!traverse) {
+        flags |= FILE_FLAG_OPEN_REPARSE_POINT;
+    }
 
+    hFile = CreateFileW(path, access, 0, NULL, OPEN_EXISTING, flags, NULL);
     if (hFile == INVALID_HANDLE_VALUE) {
-        /* Either the target doesn't exist, or we don't have access to
-           get a handle to it. If the former, we need to return an error.
-           If the latter, we can use attributes_from_dir. */
-        DWORD lastError = GetLastError();
-        if (lastError != ERROR_ACCESS_DENIED &&
-            lastError != ERROR_SHARING_VIOLATION)
-            return -1;
-        /* Could not get attributes on open file. Fall back to
-           reading the directory. */
-        if (!attributes_from_dir(path, &info, &reparse_tag))
-            /* Very strange. This should not fail now */
-            return -1;
-        if (info.dwFileAttributes & FILE_ATTRIBUTE_REPARSE_POINT) {
-            if (traverse) {
-                /* Should traverse, but could not open reparse point handle */
-                SetLastError(lastError);
+        /* Either the path doesn't exist, or the caller lacks access. */
+        error = GetLastError();
+        switch (error) {
+        case ERROR_ACCESS_DENIED:     /* Cannot sync or read attributes. */
+        case ERROR_SHARING_VIOLATION: /* It's a paging file. */
+            /* Try reading the parent directory. */
+            if (!attributes_from_dir(path, &fileInfo, &tagInfo.ReparseTag)) {
+                /* Cannot read the parent directory. */
+                SetLastError(error);
                 return -1;
             }
-        }
-    } else {
-        if (!GetFileInformationByHandle(hFile, &info)) {
-            CloseHandle(hFile);
-            return -1;
-        }
-        if (info.dwFileAttributes & FILE_ATTRIBUTE_REPARSE_POINT) {
-            if (!win32_get_reparse_tag(hFile, &reparse_tag)) {
-                CloseHandle(hFile);
-                return -1;
-            }
-            /* Close the outer open file handle now that we're about to
-               reopen it with different flags. */
-            if (!CloseHandle(hFile))
-                return -1;
-
-            if (traverse) {
-                /* In order to call GetFinalPathNameByHandle we need to open
-                   the file without the reparse handling flag set. */
-                hFile2 = CreateFileW(
-                           path, FILE_READ_ATTRIBUTES, FILE_SHARE_READ,
-                           NULL, OPEN_EXISTING,
-                           FILE_ATTRIBUTE_NORMAL|FILE_FLAG_BACKUP_SEMANTICS,
-                           NULL);
-                if (hFile2 == INVALID_HANDLE_VALUE)
-                    return -1;
-
-                if (!get_target_path(hFile2, &target_path)) {
-                    CloseHandle(hFile2);
+            if (fileInfo.dwFileAttributes & FILE_ATTRIBUTE_REPARSE_POINT) {
+                if (traverse ||
+                    !IsReparseTagNameSurrogate(tagInfo.ReparseTag)) {
+                    /* The stat call has to traverse but cannot, so fail. */
+                    SetLastError(error);
                     return -1;
                 }
-
-                if (!CloseHandle(hFile2)) {
-                    return -1;
-                }
-
-                code = win32_xstat_impl(target_path, result, FALSE);
-                PyMem_RawFree(target_path);
-                return code;
             }
-        } else
-            CloseHandle(hFile);
-    }
-    _Py_attribute_data_to_stat(&info, reparse_tag, result);
+            break;
 
-    /* Set S_IEXEC if it is an .exe, .bat, ... */
-    dot = wcsrchr(path, '.');
-    if (dot) {
-        if (_wcsicmp(dot, L".bat") == 0 || _wcsicmp(dot, L".cmd") == 0 ||
-            _wcsicmp(dot, L".exe") == 0 || _wcsicmp(dot, L".com") == 0)
-            result->st_mode |= 0111;
+        case ERROR_INVALID_PARAMETER:
+            /* \\.\con requires read or write access. */
+            hFile = CreateFileW(path, access | GENERIC_READ,
+                        FILE_SHARE_READ | FILE_SHARE_WRITE, NULL,
+                        OPEN_EXISTING, flags, NULL);
+            if (hFile == INVALID_HANDLE_VALUE) {
+                SetLastError(error);
+                return -1;
+            }
+            break;
+
+        case ERROR_CANT_ACCESS_FILE:
+            /* bpo37834: open unhandled reparse points if traverse fails. */
+            if (traverse) {
+                traverse = FALSE;
+                isUnhandledTag = TRUE;
+                hFile = CreateFileW(path, access, 0, NULL, OPEN_EXISTING,
+                            flags | FILE_FLAG_OPEN_REPARSE_POINT, NULL);
+            }
+            if (hFile == INVALID_HANDLE_VALUE) {
+                SetLastError(error);
+                return -1;
+            }
+            break;
+
+        default:
+            return -1;
+        }
     }
-    return 0;
+
+    if (hFile != INVALID_HANDLE_VALUE) {
+        /* Handle types other than files on disk. */
+        fileType = GetFileType(hFile);
+        if (fileType != FILE_TYPE_DISK) {
+            if (fileType == FILE_TYPE_UNKNOWN && GetLastError() != 0) {
+                retval = -1;
+                goto cleanup;
+            }
+            DWORD fileAttributes = GetFileAttributesW(path);
+            memset(result, 0, sizeof(*result));
+            if (fileAttributes != INVALID_FILE_ATTRIBUTES &&
+                fileAttributes & FILE_ATTRIBUTE_DIRECTORY) {
+                /* \\.\pipe\ or \\.\mailslot\ */
+                result->st_mode = _S_IFDIR;
+            } else if (fileType == FILE_TYPE_CHAR) {
+                /* \\.\nul */
+                result->st_mode = _S_IFCHR;
+            } else if (fileType == FILE_TYPE_PIPE) {
+                /* \\.\pipe\spam */
+                result->st_mode = _S_IFIFO;
+            }
+            /* FILE_TYPE_UNKNOWN, e.g. \\.\mailslot\waitfor.exe\spam */
+            goto cleanup;
+        }
+
+        /* Query the reparse tag, and traverse a non-link. */
+        if (!traverse) {
+            if (!GetFileInformationByHandleEx(hFile, FileAttributeTagInfo,
+                    &tagInfo, sizeof(tagInfo))) {
+                /* Allow devices that do not support FileAttributeTagInfo. */
+                switch (GetLastError()) {
+                case ERROR_INVALID_PARAMETER:
+                case ERROR_INVALID_FUNCTION:
+                case ERROR_NOT_SUPPORTED:
+                    tagInfo.FileAttributes = FILE_ATTRIBUTE_NORMAL;
+                    tagInfo.ReparseTag = 0;
+                    break;
+                default:
+                    retval = -1;
+                    goto cleanup;
+                }
+            } else if (tagInfo.FileAttributes &
+                         FILE_ATTRIBUTE_REPARSE_POINT) {
+                if (IsReparseTagNameSurrogate(tagInfo.ReparseTag)) {
+                    if (isUnhandledTag) {
+                        /* Traversing previously failed for either this link
+                           or its target. */
+                        SetLastError(ERROR_CANT_ACCESS_FILE);
+                        retval = -1;
+                        goto cleanup;
+                    }
+                /* Traverse a non-link, but not if traversing already failed
+                   for an unhandled tag. */
+                } else if (!isUnhandledTag) {
+                    CloseHandle(hFile);
+                    return win32_xstat_impl(path, result, TRUE);
+                }
+            }
+        }
+
+        if (!GetFileInformationByHandle(hFile, &fileInfo)) {
+            switch (GetLastError()) {
+            case ERROR_INVALID_PARAMETER:
+            case ERROR_INVALID_FUNCTION:
+            case ERROR_NOT_SUPPORTED:
+                /* Volumes and physical disks are block devices, e.g.
+                   \\.\C: and \\.\PhysicalDrive0. */
+                memset(result, 0, sizeof(*result));
+                result->st_mode = 0x6000; /* S_IFBLK */
+                goto cleanup;
+            }
+            retval = -1;
+            goto cleanup;
+        }
+    }
+
+    _Py_attribute_data_to_stat(&fileInfo, tagInfo.ReparseTag, result);
+
+    if (!(fileInfo.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY)) {
+        /* Fix the file execute permissions. This hack sets S_IEXEC if
+           the filename has an extension that is commonly used by files
+           that CreateProcessW can execute. A real implementation calls
+           GetSecurityInfo, OpenThreadToken/OpenProcessToken, and
+           AccessCheck to check for generic read, write, and execute
+           access. */
+        const wchar_t *fileExtension = wcsrchr(path, '.');
+        if (fileExtension) {
+            if (_wcsicmp(fileExtension, L".exe") == 0 ||
+                _wcsicmp(fileExtension, L".bat") == 0 ||
+                _wcsicmp(fileExtension, L".cmd") == 0 ||
+                _wcsicmp(fileExtension, L".com") == 0) {
+                result->st_mode |= 0111;
+            }
+        }
+    }
+
+cleanup:
+    if (hFile != INVALID_HANDLE_VALUE) {
+        /* Preserve last error if we are failing */
+        error = retval ? GetLastError() : 0;
+        if (!CloseHandle(hFile)) {
+            retval = -1;
+        } else if (retval) {
+            /* Restore last error */
+            SetLastError(error);
+        }
+    }
+
+    return retval;
 }
 
 static int
@@ -1806,9 +1856,8 @@ win32_xstat(const wchar_t *path, struct _Py_stat_struct *result, BOOL traverse)
    default does not traverse symlinks and instead returns attributes for
    the symlink.
 
-   Therefore, win32_lstat will get the attributes traditionally, and
-   win32_stat will first explicitly resolve the symlink target and then will
-   call win32_lstat on that result. */
+   Instead, we will open the file (which *does* traverse symlinks by default)
+   and GetFileInformationByHandle(). */
 
 static int
 win32_lstat(const wchar_t* path, struct _Py_stat_struct *result)
@@ -1877,6 +1926,9 @@ static PyStructSequence_Field stat_result_fields[] = {
 #ifdef HAVE_STRUCT_STAT_ST_FSTYPE
     {"st_fstype",  "Type of filesystem"},
 #endif
+#ifdef HAVE_STRUCT_STAT_ST_REPARSE_TAG
+    {"st_reparse_tag", "Windows reparse tag"},
+#endif
     {0}
 };
 
@@ -1926,6 +1978,12 @@ static PyStructSequence_Field stat_result_fields[] = {
 #define ST_FSTYPE_IDX (ST_FILE_ATTRIBUTES_IDX+1)
 #else
 #define ST_FSTYPE_IDX ST_FILE_ATTRIBUTES_IDX
+#endif
+
+#ifdef HAVE_STRUCT_STAT_ST_REPARSE_TAG
+#define ST_REPARSE_TAG_IDX (ST_FSTYPE_IDX+1)
+#else
+#define ST_REPARSE_TAG_IDX ST_FSTYPE_IDX
 #endif
 
 static PyStructSequence_Desc stat_result_desc = {
@@ -2154,6 +2212,10 @@ _pystat_fromstructstat(STRUCT_STAT *st)
 #ifdef HAVE_STRUCT_STAT_ST_FSTYPE
    PyStructSequence_SET_ITEM(v, ST_FSTYPE_IDX,
                               PyUnicode_FromString(st->st_fstype));
+#endif
+#ifdef HAVE_STRUCT_STAT_ST_REPARSE_TAG
+    PyStructSequence_SET_ITEM(v, ST_REPARSE_TAG_IDX,
+                              PyLong_FromUnsignedLong(st->st_reparse_tag));
 #endif
 
     if (PyErr_Occurred()) {
@@ -3877,8 +3939,9 @@ os__getfinalpathname_impl(PyObject *module, path_t *path)
     }
 
     result = PyUnicode_FromWideChar(target_path, result_length);
-    if (path->narrow)
+    if (result && path->narrow) {
         Py_SETREF(result, PyUnicode_EncodeFSDefault(result));
+    }
 
 cleanup:
     if (target_path != buf) {
@@ -3886,44 +3949,6 @@ cleanup:
     }
     CloseHandle(hFile);
     return result;
-}
-
-/*[clinic input]
-os._isdir
-
-    path as arg: object
-    /
-
-Return true if the pathname refers to an existing directory.
-[clinic start generated code]*/
-
-static PyObject *
-os__isdir(PyObject *module, PyObject *arg)
-/*[clinic end generated code: output=404f334d85d4bf25 input=36cb6785874d479e]*/
-{
-    DWORD attributes;
-    path_t path = PATH_T_INITIALIZE("_isdir", "path", 0, 0);
-
-    if (!path_converter(arg, &path)) {
-        if (PyErr_ExceptionMatches(PyExc_ValueError)) {
-            PyErr_Clear();
-            Py_RETURN_FALSE;
-        }
-        return NULL;
-    }
-
-    Py_BEGIN_ALLOW_THREADS
-    attributes = GetFileAttributesW(path.wide);
-    Py_END_ALLOW_THREADS
-
-    path_cleanup(&path);
-    if (attributes == INVALID_FILE_ATTRIBUTES)
-        Py_RETURN_FALSE;
-
-    if (attributes & FILE_ATTRIBUTE_DIRECTORY)
-        Py_RETURN_TRUE;
-    else
-        Py_RETURN_FALSE;
 }
 
 
@@ -4711,7 +4736,7 @@ exit:
 os.utime
 
     path: path_t(allow_fd='PATH_UTIME_HAVE_FD')
-    times: object = NULL
+    times: object = None
     *
     ns: object = NULL
     dir_fd: dir_fd(requires='futimensat') = None
@@ -4748,7 +4773,7 @@ dir_fd and follow_symlinks may not be available on your platform.
 static PyObject *
 os_utime_impl(PyObject *module, path_t *path, PyObject *times, PyObject *ns,
               int dir_fd, int follow_symlinks)
-/*[clinic end generated code: output=cfcac69d027b82cf input=081cdc54ca685385]*/
+/*[clinic end generated code: output=cfcac69d027b82cf input=2fbd62a2f228f8f4]*/
 {
 #ifdef MS_WINDOWS
     HANDLE hFile;
@@ -4761,14 +4786,14 @@ os_utime_impl(PyObject *module, path_t *path, PyObject *times, PyObject *ns,
 
     memset(&utime, 0, sizeof(utime_t));
 
-    if (times && (times != Py_None) && ns) {
+    if (times != Py_None && ns) {
         PyErr_SetString(PyExc_ValueError,
                      "utime: you may specify either 'times'"
                      " or 'ns' but not both");
         return NULL;
     }
 
-    if (times && (times != Py_None)) {
+    if (times != Py_None) {
         time_t a_sec, m_sec;
         long a_nsec, m_nsec;
         if (!PyTuple_CheckExact(times) || (PyTuple_Size(times) != 2)) {
@@ -7464,6 +7489,12 @@ wait_helper(pid_t pid, int status, struct rusage *ru)
     if (pid == -1)
         return posix_error();
 
+    // If wait succeeded but no child was ready to report status, ru will not
+    // have been populated.
+    if (pid == 0) {
+        memset(ru, 0, sizeof(*ru));
+    }
+
     if (struct_rusage == NULL) {
         PyObject *m = PyImport_ImportModuleNoBlock("resource");
         if (m == NULL)
@@ -7796,12 +7827,11 @@ os_readlink_impl(PyObject *module, path_t *path, int dir_fd)
         return PyBytes_FromStringAndSize(buffer, length);
 #elif defined(MS_WINDOWS)
     DWORD n_bytes_returned;
-    DWORD io_result;
+    DWORD io_result = 0;
     HANDLE reparse_point_handle;
     char target_buffer[_Py_MAXIMUM_REPARSE_DATA_BUFFER_SIZE];
     _Py_REPARSE_DATA_BUFFER *rdb = (_Py_REPARSE_DATA_BUFFER *)target_buffer;
-    const wchar_t *print_name;
-    PyObject *result;
+    PyObject *result = NULL;
 
     /* First get a handle to the reparse point */
     Py_BEGIN_ALLOW_THREADS
@@ -7813,42 +7843,51 @@ os_readlink_impl(PyObject *module, path_t *path, int dir_fd)
         OPEN_EXISTING,
         FILE_FLAG_OPEN_REPARSE_POINT|FILE_FLAG_BACKUP_SEMANTICS,
         0);
-    Py_END_ALLOW_THREADS
-
-    if (reparse_point_handle == INVALID_HANDLE_VALUE) {
-        return path_error(path);
+    if (reparse_point_handle != INVALID_HANDLE_VALUE) {
+        /* New call DeviceIoControl to read the reparse point */
+        io_result = DeviceIoControl(
+            reparse_point_handle,
+            FSCTL_GET_REPARSE_POINT,
+            0, 0, /* in buffer */
+            target_buffer, sizeof(target_buffer),
+            &n_bytes_returned,
+            0 /* we're not using OVERLAPPED_IO */
+            );
+        CloseHandle(reparse_point_handle);
     }
-
-    Py_BEGIN_ALLOW_THREADS
-    /* New call DeviceIoControl to read the reparse point */
-    io_result = DeviceIoControl(
-        reparse_point_handle,
-        FSCTL_GET_REPARSE_POINT,
-        0, 0, /* in buffer */
-        target_buffer, sizeof(target_buffer),
-        &n_bytes_returned,
-        0 /* we're not using OVERLAPPED_IO */
-        );
-    CloseHandle(reparse_point_handle);
     Py_END_ALLOW_THREADS
 
     if (io_result == 0) {
         return path_error(path);
     }
 
-    if (rdb->ReparseTag != IO_REPARSE_TAG_SYMLINK)
+    wchar_t *name = NULL;
+    Py_ssize_t nameLen = 0;
+    if (rdb->ReparseTag == IO_REPARSE_TAG_SYMLINK)
     {
-        PyErr_SetString(PyExc_ValueError,
-                "not a symbolic link");
-        return NULL;
+        name = (wchar_t *)((char*)rdb->SymbolicLinkReparseBuffer.PathBuffer +
+                           rdb->SymbolicLinkReparseBuffer.SubstituteNameOffset);
+        nameLen = rdb->SymbolicLinkReparseBuffer.SubstituteNameLength / sizeof(wchar_t);
     }
-    print_name = (wchar_t *)((char*)rdb->SymbolicLinkReparseBuffer.PathBuffer +
-                 rdb->SymbolicLinkReparseBuffer.PrintNameOffset);
-
-    result = PyUnicode_FromWideChar(print_name,
-            rdb->SymbolicLinkReparseBuffer.PrintNameLength / sizeof(wchar_t));
-    if (path->narrow) {
-        Py_SETREF(result, PyUnicode_EncodeFSDefault(result));
+    else if (rdb->ReparseTag == IO_REPARSE_TAG_MOUNT_POINT)
+    {
+        name = (wchar_t *)((char*)rdb->MountPointReparseBuffer.PathBuffer +
+                           rdb->MountPointReparseBuffer.SubstituteNameOffset);
+        nameLen = rdb->MountPointReparseBuffer.SubstituteNameLength / sizeof(wchar_t);
+    }
+    else
+    {
+        PyErr_SetString(PyExc_ValueError, "not a symbolic link");
+    }
+    if (name) {
+        if (nameLen > 4 && wcsncmp(name, L"\\??\\", 4) == 0) {
+            /* Our buffer is mutable, so this is okay */
+            name[1] = L'\\';
+        }
+        result = PyUnicode_FromWideChar(name, nameLen);
+        if (result && path->narrow) {
+            Py_SETREF(result, PyUnicode_EncodeFSDefault(result));
+        }
     }
     return result;
 #endif
@@ -8383,6 +8422,21 @@ os_close_impl(PyObject *module, int fd)
 }
 
 
+#ifdef HAVE_FDWALK
+static int
+_fdwalk_close_func(void *lohi, int fd)
+{
+    int lo = ((int *)lohi)[0];
+    int hi = ((int *)lohi)[1];
+
+    if (fd >= hi)
+        return 1;
+    else if (fd >= lo)
+        close(fd);
+    return 0;
+}
+#endif /* HAVE_FDWALK */
+
 /*[clinic input]
 os.closerange
 
@@ -8397,11 +8451,21 @@ static PyObject *
 os_closerange_impl(PyObject *module, int fd_low, int fd_high)
 /*[clinic end generated code: output=0ce5c20fcda681c2 input=5855a3d053ebd4ec]*/
 {
+#ifdef HAVE_FDWALK
+    int lohi[2];
+#else
     int i;
+#endif
     Py_BEGIN_ALLOW_THREADS
     _Py_BEGIN_SUPPRESS_IPH
+#ifdef HAVE_FDWALK
+    lohi[0] = Py_MAX(fd_low, 0);
+    lohi[1] = fd_high;
+    fdwalk(_fdwalk_close_func, lohi);
+#else
     for (i = Py_MAX(fd_low, 0); i < fd_high; i++)
         close(i);
+#endif
     _Py_END_SUPPRESS_IPH
     Py_END_ALLOW_THREADS
     Py_RETURN_NONE;
@@ -11515,8 +11579,6 @@ os.startfile
     filepath: path_t
     operation: Py_UNICODE = NULL
 
-startfile(filepath [, operation])
-
 Start a file with its associated application.
 
 When "operation" is not specified or "open", this acts like
@@ -11538,7 +11600,7 @@ the underlying Win32 ShellExecute function doesn't work if it is.
 static PyObject *
 os_startfile_impl(PyObject *module, path_t *filepath,
                   const Py_UNICODE *operation)
-/*[clinic end generated code: output=66dc311c94d50797 input=63950bf2986380d0]*/
+/*[clinic end generated code: output=66dc311c94d50797 input=c940888a5390f039]*/
 {
     HINSTANCE rc;
 
@@ -12140,23 +12202,7 @@ os_cpu_count_impl(PyObject *module)
 {
     int ncpu = 0;
 #ifdef MS_WINDOWS
-    /* Vista is supported and the GetMaximumProcessorCount API is Win7+
-       Need to fallback to Vista behavior if this call isn't present */
-    HINSTANCE hKernel32;
-    static DWORD(CALLBACK *_GetMaximumProcessorCount)(WORD) = NULL;
-    Py_BEGIN_ALLOW_THREADS
-    hKernel32 = GetModuleHandleW(L"KERNEL32");
-    *(FARPROC*)&_GetMaximumProcessorCount = GetProcAddress(hKernel32,
-        "GetMaximumProcessorCount");
-    Py_END_ALLOW_THREADS
-    if (_GetMaximumProcessorCount != NULL) {
-        ncpu = _GetMaximumProcessorCount(ALL_PROCESSOR_GROUPS);
-    }
-    else {
-        SYSTEM_INFO sysinfo;
-        GetSystemInfo(&sysinfo);
-        ncpu = sysinfo.dwNumberOfProcessors;
-    }
+    ncpu = GetActiveProcessorCount(ALL_PROCESSOR_GROUPS);
 #elif defined(__hpux)
     ncpu = mpctl(MPC_GETNUMSPUS, NULL, NULL);
 #elif defined(HAVE_SYSCONF) && defined(_SC_NPROCESSORS_ONLN)
@@ -13647,7 +13693,6 @@ static PyMethodDef posix_methods[] = {
     OS_PATHCONF_METHODDEF
     OS_ABORT_METHODDEF
     OS__GETFULLPATHNAME_METHODDEF
-    OS__ISDIR_METHODDEF
     OS__GETDISKUSAGE_METHODDEF
     OS__GETFINALPATHNAME_METHODDEF
     OS__GETVOLUMEPATHNAME_METHODDEF

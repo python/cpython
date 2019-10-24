@@ -752,6 +752,14 @@ iterations of the loop.
      from the block stack.
 
 
+.. opcode:: LOAD_ASSERTION_ERROR
+
+   Pushes :exc:`AssertionError` onto the stack.  Used by the :keyword:`assert`
+   statement.
+
+   .. versionadded:: 3.9
+
+
 .. opcode:: LOAD_BUILD_CLASS
 
    Pushes :func:`builtins.__build_class__` onto the stack.  It is later called

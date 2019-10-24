@@ -344,6 +344,9 @@ provides three different variants:
 
       If not specified, the directory to serve is the current working directory.
 
+      .. versionchanged:: 3.9
+         Accepts a :term:`path-like object`.
+
    The :class:`SimpleHTTPRequestHandler` class defines the following methods:
 
    .. method:: do_HEAD()

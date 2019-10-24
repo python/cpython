@@ -294,7 +294,7 @@ validate_expr(expr_ty exp, expr_context_ty ctx)
         if (!validate_constant(exp->v.Constant.value)) {
             PyErr_Format(PyExc_TypeError,
                          "got an invalid type in Constant: %s",
-                         Py_TYPE(exp->v.Constant.value)->tp_name);
+                         _PyType_Name(Py_TYPE(exp->v.Constant.value)));
             return 0;
         }
         return 1;
@@ -618,12 +618,11 @@ new_identifier(const char *n, struct compiling *c)
        identifier; if so, normalize to NFKC. */
     if (!PyUnicode_IS_ASCII(id)) {
         PyObject *id2;
-        _Py_IDENTIFIER(NFKC);
         if (!c->c_normalize && !init_normalization(c)) {
             Py_DECREF(id);
             return NULL;
         }
-        PyObject *form = _PyUnicode_FromId(&PyId_NFKC);
+        PyObject *form = PyUnicode_InternFromString("NFKC");
         if (form == NULL) {
             Py_DECREF(id);
             return NULL;
@@ -631,13 +630,14 @@ new_identifier(const char *n, struct compiling *c)
         PyObject *args[2] = {form, id};
         id2 = _PyObject_FastCall(c->c_normalize, args, 2);
         Py_DECREF(id);
+        Py_DECREF(form);
         if (!id2)
             return NULL;
         if (!PyUnicode_Check(id2)) {
             PyErr_Format(PyExc_TypeError,
                          "unicodedata.normalize() must return a string, not "
                          "%.200s",
-                         Py_TYPE(id2)->tp_name);
+                         _PyType_Name(Py_TYPE(id2)));
             Py_DECREF(id2);
             return NULL;
         }
@@ -4766,7 +4766,7 @@ decode_bytes_with_escapes(struct compiling *c, const node *n, const char *s,
                           size_t len)
 {
     const char *first_invalid_escape;
-    PyObject *result = _PyBytes_DecodeEscape(s, len, NULL, 0, NULL,
+    PyObject *result = _PyBytes_DecodeEscape(s, len, NULL,
                                              &first_invalid_escape);
     if (result == NULL)
         return NULL;
@@ -5356,7 +5356,7 @@ typedef struct {
        doubling the number allocated each time. Note that the f-string
        f'{0}a{1}' contains 3 expr_ty's: 2 FormattedValue's, and one
        Constant for the literal 'a'. So you add expr_ty's about twice as
-       fast as you add exressions in an f-string. */
+       fast as you add expressions in an f-string. */
 
     Py_ssize_t allocated;  /* Number we've allocated. */
     Py_ssize_t size;       /* Number we've used. */

@@ -164,7 +164,7 @@ class ScriptBinding:
                 _sys.argv = argv
             import os as _os
             _os.chdir({dirname!r})
-            del _sys, _basename, _os
+            del _sys, argv, _basename, _os
             \n""")
         interp.prepend_syspath(filename)
         # XXX KBK 03Jul04 When run w/o subprocess, runtime warnings still

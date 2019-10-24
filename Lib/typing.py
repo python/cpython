@@ -524,11 +524,13 @@ class ForwardRef(_Final, _root=True):
     def __eq__(self, other):
         if not isinstance(other, ForwardRef):
             return NotImplemented
-        return (self.__forward_arg__ == other.__forward_arg__ and
-                self.__forward_value__ == other.__forward_value__)
+        if self.__forward_evaluated__ and other.__forward_evaluated__:
+            return (self.__forward_arg__ == other.__forward_arg__ and
+                    self.__forward_value__ == other.__forward_value__)
+        return self.__forward_arg__ == other.__forward_arg__
 
     def __hash__(self):
-        return hash((self.__forward_arg__, self.__forward_value__))
+        return hash(self.__forward_arg__)
 
     def __repr__(self):
         return f'ForwardRef({self.__forward_arg__!r})'
@@ -989,10 +991,13 @@ def _allow_reckless_class_cheks():
         return True
 
 
-_PROTO_WHITELIST = ['Callable', 'Awaitable',
-                    'Iterable', 'Iterator', 'AsyncIterable', 'AsyncIterator',
-                    'Hashable', 'Sized', 'Container', 'Collection', 'Reversible',
-                    'ContextManager', 'AsyncContextManager']
+_PROTO_WHITELIST = {
+    'collections.abc': [
+        'Callable', 'Awaitable', 'Iterable', 'Iterator', 'AsyncIterable',
+        'Hashable', 'Sized', 'Container', 'Collection', 'Reversible',
+    ],
+    'contextlib': ['AbstractContextManager', 'AbstractAsyncContextManager'],
+}
 
 
 class _ProtocolMeta(ABCMeta):
@@ -1105,7 +1110,8 @@ class Protocol(Generic, metaclass=_ProtocolMeta):
         # ... otherwise check consistency of bases, and prohibit instantiation.
         for base in cls.__bases__:
             if not (base in (object, Generic) or
-                    base.__module__ == 'collections.abc' and base.__name__ in _PROTO_WHITELIST or
+                    base.__module__ in _PROTO_WHITELIST and
+                    base.__name__ in _PROTO_WHITELIST[base.__module__] or
                     issubclass(base, Generic) and base._is_protocol):
                 raise TypeError('Protocols can only inherit from other'
                                 ' protocols, got %r' % base)
@@ -1647,7 +1653,7 @@ class NamedTuple(metaclass=NamedTupleMeta):
     """
     _root = True
 
-    def __new__(self, typename, fields=None, **kwargs):
+    def __new__(cls, typename, fields=None, /, **kwargs):
         if fields is None:
             fields = kwargs.items()
         elif kwargs:
@@ -1656,26 +1662,25 @@ class NamedTuple(metaclass=NamedTupleMeta):
         return _make_nmtuple(typename, fields)
 
 
-def _dict_new(cls, *args, **kwargs):
+def _dict_new(cls, /, *args, **kwargs):
     return dict(*args, **kwargs)
 
 
-def _typeddict_new(cls, _typename, _fields=None, **kwargs):
-    total = kwargs.pop('total', True)
-    if _fields is None:
-        _fields = kwargs
+def _typeddict_new(cls, typename, fields=None, /, *, total=True, **kwargs):
+    if fields is None:
+        fields = kwargs
     elif kwargs:
         raise TypeError("TypedDict takes either a dict or keyword arguments,"
                         " but not both")
 
-    ns = {'__annotations__': dict(_fields), '__total__': total}
+    ns = {'__annotations__': dict(fields), '__total__': total}
     try:
         # Setting correct module is necessary to make typed dict classes pickleable.
         ns['__module__'] = sys._getframe(1).f_globals.get('__name__', '__main__')
     except (AttributeError, ValueError):
         pass
 
-    return _TypedDictMeta(_typename, (), ns)
+    return _TypedDictMeta(typename, (), ns)
 
 
 def _check_fails(cls, other):

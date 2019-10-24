@@ -669,7 +669,7 @@ class UnixReadPipeTransportTests(test_utils.TestCase):
         return transport
 
     def test_ctor(self):
-        waiter = asyncio.Future(loop=self.loop)
+        waiter = self.loop.create_future()
         tr = self.read_pipe_transport(waiter=waiter)
         self.loop.run_until_complete(waiter)
 
@@ -819,7 +819,7 @@ class UnixWritePipeTransportTests(test_utils.TestCase):
         return transport
 
     def test_ctor(self):
-        waiter = asyncio.Future(loop=self.loop)
+        waiter = self.loop.create_future()
         tr = self.write_pipe_transport(waiter=waiter)
         self.loop.run_until_complete(waiter)
 
