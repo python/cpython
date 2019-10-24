@@ -597,26 +597,32 @@ asyncio
 
 :func:`asyncio.run` has graduated from the provisional to stable API. This
 function can be used to execute a :term:`coroutine` and return the result while
-automatically managing the event loop. For example:
+automatically managing the event loop. For example::
 
-    >>> import asyncio
-    >>> async def main():
-    ...     await asyncio.sleep(0)
-    ...     return 42
-    >>> asyncio.run(main())
-    42
+    import asyncio
 
-This is *roughly* equivalent to:
+    async def main():
+        await asyncio.sleep(0)
+        return 42
 
-    >>> async def main():
-    ...     await asyncio.sleep(0)
-    ...     return 42
-    >>> loop = asyncio.new_event_loop()
-    >>> asyncio.set_event_loop(loop)
-    >>> loop.run_until_complete(main())
-    42
-    >>> asyncio.set_event_loop(None)
-    >>> loop.close()
+    asyncio.run(main())
+
+This is *roughly* equivalent to::
+
+    import asyncio
+
+    async def main():
+        await asyncio.sleep(0)
+        return 42
+
+    loop = asyncio.new_event_loop()
+    asyncio.set_event_loop(loop)
+    try:
+        loop.run_until_complete(main())
+    finally:
+        asyncio.set_event_loop(None)
+        loop.close()
+
 
 The actual implementation is significantly more complex. Thus,
 :func:`asyncio.run` should be the preferred way of running asyncio programs.
