@@ -1,0 +1,1 @@
+Update importlib.metadata with changes from `importlib_metadata 0.21 <https://gitlab.com/python-devs/importlib_metadata/blob/0.21/importlib_metadata/docs/changelog.rst>`_.

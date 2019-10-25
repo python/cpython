@@ -8,16 +8,9 @@ extern "C" {
 #  error "this header requires Py_BUILD_CORE define"
 #endif
 
-#include "cpython/initconfig.h"
-#include "fileobject.h"
-#include "pystate.h"
-#include "pythread.h"
-#include "sysmodule.h"
-
-#include "pycore_gil.h"   /* _gil_runtime_state  */
-#include "pycore_pathconfig.h"
-#include "pycore_pymem.h"
-#include "pycore_warnings.h"
+#include "pycore_gil.h"       /* struct _gil_runtime_state  */
+#include "pycore_pymem.h"     /* struct _gc_runtime_state */
+#include "pycore_warnings.h"  /* struct _warnings_runtime_state */
 
 
 /* ceval state */
@@ -190,8 +183,11 @@ struct _gilstate_runtime_state {
 /* Full Python runtime state */
 
 typedef struct pyruntimestate {
-    /* Is Python pre-initialized? Set to 1 by Py_PreInitialize() */
-    int pre_initialized;
+    /* Is running Py_PreInitialize()? */
+    int preinitializing;
+
+    /* Is Python preinitialized? Set to 1 by Py_PreInitialize() */
+    int preinitialized;
 
     /* Is Python core initialized? Set to 1 by _Py_InitializeCore() */
     int core_initialized;
@@ -199,6 +195,8 @@ typedef struct pyruntimestate {
     /* Is Python fully initialized? Set to 1 by Py_Initialize() */
     int initialized;
 
+    /* Set by Py_FinalizeEx(). Only reset to NULL if Py_Initialize()
+       is called again. */
     PyThreadState *finalizing;
 
     struct pyinterpreters {
@@ -241,7 +239,7 @@ typedef struct pyruntimestate {
 } _PyRuntimeState;
 
 #define _PyRuntimeState_INIT \
-    {.pre_initialized = 0, .core_initialized = 0, .initialized = 0}
+    {.preinitialized = 0, .core_initialized = 0, .initialized = 0}
 /* Note: _PyRuntimeState_INIT sets other fields to 0/NULL */
 
 PyAPI_DATA(_PyRuntimeState) _PyRuntime;

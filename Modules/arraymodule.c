@@ -43,7 +43,7 @@ typedef struct arrayobject {
     Py_ssize_t allocated;
     const struct arraydescr *ob_descr;
     PyObject *weakreflist; /* List of weak references */
-    int ob_exports;  /* Number of exported buffers */
+    Py_ssize_t ob_exports;  /* Number of exported buffers */
 } arrayobject;
 
 static PyTypeObject Arraytype;

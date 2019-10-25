@@ -1794,13 +1794,13 @@ win32_xstat_impl(const wchar_t *path, struct _Py_stat_struct *result,
             case ERROR_INVALID_PARAMETER:
             case ERROR_INVALID_FUNCTION:
             case ERROR_NOT_SUPPORTED:
-                retval = -1;
+                /* Volumes and physical disks are block devices, e.g.
+                   \\.\C: and \\.\PhysicalDrive0. */
+                memset(result, 0, sizeof(*result));
+                result->st_mode = 0x6000; /* S_IFBLK */
                 goto cleanup;
             }
-            /* Volumes and physical disks are block devices, e.g.
-               \\.\C: and \\.\PhysicalDrive0. */
-            memset(result, 0, sizeof(*result));
-            result->st_mode = 0x6000; /* S_IFBLK */
+            retval = -1;
             goto cleanup;
         }
     }
@@ -1827,7 +1827,14 @@ win32_xstat_impl(const wchar_t *path, struct _Py_stat_struct *result,
 
 cleanup:
     if (hFile != INVALID_HANDLE_VALUE) {
-        CloseHandle(hFile);
+        /* Preserve last error if we are failing */
+        error = retval ? GetLastError() : 0;
+        if (!CloseHandle(hFile)) {
+            retval = -1;
+        } else if (retval) {
+            /* Restore last error */
+            SetLastError(error);
+        }
     }
 
     return retval;
@@ -2767,13 +2774,24 @@ static PyObject *
 os_ttyname_impl(PyObject *module, int fd)
 /*[clinic end generated code: output=c424d2e9d1cd636a input=9ff5a58b08115c55]*/
 {
-    char *ret;
 
-    ret = ttyname(fd);
-    if (ret == NULL) {
+    long size = sysconf(_SC_TTY_NAME_MAX);
+    if (size == -1) {
         return posix_error();
     }
-    return PyUnicode_DecodeFSDefault(ret);
+    char *buffer = (char *)PyMem_RawMalloc(size);
+    if (buffer == NULL) {
+        return PyErr_NoMemory();
+    }
+    int ret = ttyname_r(fd, buffer, size);
+    if (ret != 0) {
+        PyMem_RawFree(buffer);
+        errno = ret;
+        return posix_error();
+    }
+    PyObject *res = PyUnicode_DecodeFSDefault(buffer);
+    PyMem_RawFree(buffer);
+    return res;
 }
 #endif
 
@@ -4306,7 +4324,7 @@ os_system_impl(PyObject *module, const Py_UNICODE *command)
 {
     long result;
 
-    if (PySys_Audit("system", "(u)", command) < 0) {
+    if (PySys_Audit("os.system", "(u)", command) < 0) {
         return -1;
     }
 
@@ -4333,7 +4351,7 @@ os_system_impl(PyObject *module, PyObject *command)
     long result;
     const char *bytes = PyBytes_AsString(command);
 
-    if (PySys_Audit("system", "(O)", command) < 0) {
+    if (PySys_Audit("os.system", "(O)", command) < 0) {
         return -1;
     }
 
@@ -4729,7 +4747,7 @@ exit:
 os.utime
 
     path: path_t(allow_fd='PATH_UTIME_HAVE_FD')
-    times: object = NULL
+    times: object = None
     *
     ns: object = NULL
     dir_fd: dir_fd(requires='futimensat') = None
@@ -4766,7 +4784,7 @@ dir_fd and follow_symlinks may not be available on your platform.
 static PyObject *
 os_utime_impl(PyObject *module, path_t *path, PyObject *times, PyObject *ns,
               int dir_fd, int follow_symlinks)
-/*[clinic end generated code: output=cfcac69d027b82cf input=081cdc54ca685385]*/
+/*[clinic end generated code: output=cfcac69d027b82cf input=2fbd62a2f228f8f4]*/
 {
 #ifdef MS_WINDOWS
     HANDLE hFile;
@@ -4779,14 +4797,14 @@ os_utime_impl(PyObject *module, path_t *path, PyObject *times, PyObject *ns,
 
     memset(&utime, 0, sizeof(utime_t));
 
-    if (times && (times != Py_None) && ns) {
+    if (times != Py_None && ns) {
         PyErr_SetString(PyExc_ValueError,
                      "utime: you may specify either 'times'"
                      " or 'ns' but not both");
         return NULL;
     }
 
-    if (times && (times != Py_None)) {
+    if (times != Py_None) {
         time_t a_sec, m_sec;
         long a_nsec, m_nsec;
         if (!PyTuple_CheckExact(times) || (PyTuple_Size(times) != 2)) {
@@ -7482,6 +7500,12 @@ wait_helper(pid_t pid, int status, struct rusage *ru)
     if (pid == -1)
         return posix_error();
 
+    // If wait succeeded but no child was ready to report status, ru will not
+    // have been populated.
+    if (pid == 0) {
+        memset(ru, 0, sizeof(*ru));
+    }
+
     if (struct_rusage == NULL) {
         PyObject *m = PyImport_ImportModuleNoBlock("resource");
         if (m == NULL)
@@ -7818,7 +7842,7 @@ os_readlink_impl(PyObject *module, path_t *path, int dir_fd)
     HANDLE reparse_point_handle;
     char target_buffer[_Py_MAXIMUM_REPARSE_DATA_BUFFER_SIZE];
     _Py_REPARSE_DATA_BUFFER *rdb = (_Py_REPARSE_DATA_BUFFER *)target_buffer;
-    PyObject *result;
+    PyObject *result = NULL;
 
     /* First get a handle to the reparse point */
     Py_BEGIN_ALLOW_THREADS
@@ -7872,7 +7896,7 @@ os_readlink_impl(PyObject *module, path_t *path, int dir_fd)
             name[1] = L'\\';
         }
         result = PyUnicode_FromWideChar(name, nameLen);
-        if (path->narrow) {
+        if (result && path->narrow) {
             Py_SETREF(result, PyUnicode_EncodeFSDefault(result));
         }
     }
@@ -8409,6 +8433,21 @@ os_close_impl(PyObject *module, int fd)
 }
 
 
+#ifdef HAVE_FDWALK
+static int
+_fdwalk_close_func(void *lohi, int fd)
+{
+    int lo = ((int *)lohi)[0];
+    int hi = ((int *)lohi)[1];
+
+    if (fd >= hi)
+        return 1;
+    else if (fd >= lo)
+        close(fd);
+    return 0;
+}
+#endif /* HAVE_FDWALK */
+
 /*[clinic input]
 os.closerange
 
@@ -8423,11 +8462,21 @@ static PyObject *
 os_closerange_impl(PyObject *module, int fd_low, int fd_high)
 /*[clinic end generated code: output=0ce5c20fcda681c2 input=5855a3d053ebd4ec]*/
 {
+#ifdef HAVE_FDWALK
+    int lohi[2];
+#else
     int i;
+#endif
     Py_BEGIN_ALLOW_THREADS
     _Py_BEGIN_SUPPRESS_IPH
+#ifdef HAVE_FDWALK
+    lohi[0] = Py_MAX(fd_low, 0);
+    lohi[1] = fd_high;
+    fdwalk(_fdwalk_close_func, lohi);
+#else
     for (i = Py_MAX(fd_low, 0); i < fd_high; i++)
         close(i);
+#endif
     _Py_END_SUPPRESS_IPH
     Py_END_ALLOW_THREADS
     Py_RETURN_NONE;
@@ -8789,11 +8838,10 @@ os_readv_impl(PyObject *module, int fd, PyObject *buffers)
 
 #ifdef HAVE_PREAD
 /*[clinic input]
-# TODO length should be size_t!  but Python doesn't support parsing size_t yet.
 os.pread
 
     fd: int
-    length: int
+    length: Py_ssize_t
     offset: Py_off_t
     /
 
@@ -8804,8 +8852,8 @@ the beginning of the file.  The file offset remains unchanged.
 [clinic start generated code]*/
 
 static PyObject *
-os_pread_impl(PyObject *module, int fd, int length, Py_off_t offset)
-/*[clinic end generated code: output=435b29ee32b54a78 input=084948dcbaa35d4c]*/
+os_pread_impl(PyObject *module, int fd, Py_ssize_t length, Py_off_t offset)
+/*[clinic end generated code: output=3f875c1eef82e32f input=85cb4a5589627144]*/
 {
     Py_ssize_t n;
     int async_err = 0;
@@ -8945,10 +8993,10 @@ os_write_impl(PyObject *module, int fd, Py_buffer *data)
 
 #ifdef HAVE_SENDFILE
 PyDoc_STRVAR(posix_sendfile__doc__,
-"sendfile(out, in, offset, count) -> byteswritten\n\
-sendfile(out, in, offset, count[, headers][, trailers], flags=0)\n\
+"sendfile(out_fd, in_fd, offset, count) -> byteswritten\n\
+sendfile(out_fd, in_fd, offset, count[, headers][, trailers], flags=0)\n\
             -> byteswritten\n\
-Copy count bytes from file descriptor in to file descriptor out.");
+Copy count bytes from file descriptor in_fd to file descriptor out_fd.");
 
 /* AC 3.5: don't bother converting, has optional group*/
 static PyObject *
@@ -8968,8 +9016,7 @@ posix_sendfile(PyObject *self, PyObject *args, PyObject *kwdict)
     off_t sbytes;
     struct sf_hdtr sf;
     int flags = 0;
-    /* Beware that "in" clashes with Python's own "in" operator keyword */
-    static char *keywords[] = {"out", "in",
+    static char *keywords[] = {"out_fd", "in_fd",
                                 "offset", "count",
                                 "headers", "trailers", "flags", NULL};
 
@@ -9085,7 +9132,7 @@ done:
 #else
     Py_ssize_t count;
     PyObject *offobj;
-    static char *keywords[] = {"out", "in",
+    static char *keywords[] = {"out_fd", "in_fd",
                                 "offset", "count", NULL};
     if (!PyArg_ParseTupleAndKeywords(args, kwdict, "iiOn:sendfile",
             keywords, &out, &in, &offobj, &count))
@@ -9122,8 +9169,8 @@ done:
 /*[clinic input]
 os._fcopyfile
 
-    infd: int
-    outfd: int
+    in_fd: int
+    out_fd: int
     flags: int
     /
 
@@ -9131,13 +9178,13 @@ Efficiently copy content or metadata of 2 regular file descriptors (macOS).
 [clinic start generated code]*/
 
 static PyObject *
-os__fcopyfile_impl(PyObject *module, int infd, int outfd, int flags)
-/*[clinic end generated code: output=8e8885c721ec38e3 input=69e0770e600cb44f]*/
+os__fcopyfile_impl(PyObject *module, int in_fd, int out_fd, int flags)
+/*[clinic end generated code: output=c9d1a35a992e401b input=1e34638a86948795]*/
 {
     int ret;
 
     Py_BEGIN_ALLOW_THREADS
-    ret = fcopyfile(infd, outfd, NULL, flags);
+    ret = fcopyfile(in_fd, out_fd, NULL, flags);
     Py_END_ALLOW_THREADS
     if (ret < 0)
         return posix_error();
@@ -11541,8 +11588,6 @@ os.startfile
     filepath: path_t
     operation: Py_UNICODE = NULL
 
-startfile(filepath [, operation])
-
 Start a file with its associated application.
 
 When "operation" is not specified or "open", this acts like
@@ -11564,7 +11609,7 @@ the underlying Win32 ShellExecute function doesn't work if it is.
 static PyObject *
 os_startfile_impl(PyObject *module, path_t *filepath,
                   const Py_UNICODE *operation)
-/*[clinic end generated code: output=66dc311c94d50797 input=63950bf2986380d0]*/
+/*[clinic end generated code: output=66dc311c94d50797 input=c940888a5390f039]*/
 {
     HINSTANCE rc;
 
@@ -12166,23 +12211,7 @@ os_cpu_count_impl(PyObject *module)
 {
     int ncpu = 0;
 #ifdef MS_WINDOWS
-    /* Vista is supported and the GetMaximumProcessorCount API is Win7+
-       Need to fallback to Vista behavior if this call isn't present */
-    HINSTANCE hKernel32;
-    static DWORD(CALLBACK *_GetMaximumProcessorCount)(WORD) = NULL;
-    Py_BEGIN_ALLOW_THREADS
-    hKernel32 = GetModuleHandleW(L"KERNEL32");
-    *(FARPROC*)&_GetMaximumProcessorCount = GetProcAddress(hKernel32,
-        "GetMaximumProcessorCount");
-    Py_END_ALLOW_THREADS
-    if (_GetMaximumProcessorCount != NULL) {
-        ncpu = _GetMaximumProcessorCount(ALL_PROCESSOR_GROUPS);
-    }
-    else {
-        SYSTEM_INFO sysinfo;
-        GetSystemInfo(&sysinfo);
-        ncpu = sysinfo.dwNumberOfProcessors;
-    }
+    ncpu = GetActiveProcessorCount(ALL_PROCESSOR_GROUPS);
 #elif defined(__hpux)
     ncpu = mpctl(MPC_GETNUMSPUS, NULL, NULL);
 #elif defined(HAVE_SYSCONF) && defined(_SC_NPROCESSORS_ONLN)
@@ -14028,11 +14057,17 @@ all_ins(PyObject *m)
 #ifdef CLD_EXITED
     if (PyModule_AddIntMacro(m, CLD_EXITED)) return -1;
 #endif
+#ifdef CLD_KILLED
+    if (PyModule_AddIntMacro(m, CLD_KILLED)) return -1;
+#endif
 #ifdef CLD_DUMPED
     if (PyModule_AddIntMacro(m, CLD_DUMPED)) return -1;
 #endif
 #ifdef CLD_TRAPPED
     if (PyModule_AddIntMacro(m, CLD_TRAPPED)) return -1;
+#endif
+#ifdef CLD_STOPPED
+    if (PyModule_AddIntMacro(m, CLD_STOPPED)) return -1;
 #endif
 #ifdef CLD_CONTINUED
     if (PyModule_AddIntMacro(m, CLD_CONTINUED)) return -1;

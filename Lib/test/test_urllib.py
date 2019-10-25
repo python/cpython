@@ -194,6 +194,15 @@ class urlopen_FileTests(unittest.TestCase):
         # by the tearDown() method for the test
         self.returned_obj.close()
 
+    def test_headers(self):
+        self.assertIsInstance(self.returned_obj.headers, email.message.Message)
+
+    def test_url(self):
+        self.assertEqual(self.returned_obj.url, self.pathname)
+
+    def test_status(self):
+        self.assertIsNone(self.returned_obj.status)
+
     def test_info(self):
         self.assertIsInstance(self.returned_obj.info(), email.message.Message)
 
@@ -1040,8 +1049,6 @@ class UnquotingTests(unittest.TestCase):
                          "%s" % result)
         self.assertRaises((TypeError, AttributeError), urllib.parse.unquote, None)
         self.assertRaises((TypeError, AttributeError), urllib.parse.unquote, ())
-        with support.check_warnings(('', BytesWarning), quiet=True):
-            self.assertRaises((TypeError, AttributeError), urllib.parse.unquote, b'')
 
     def test_unquoting_badpercent(self):
         # Test unquoting on bad percent-escapes
@@ -1200,6 +1207,29 @@ class UnquotingTests(unittest.TestCase):
         expect = '\u6f22\u00fc'
         self.assertEqual(expect, result,
                          "using unquote(): %r != %r" % (expect, result))
+
+    def test_unquoting_with_bytes_input(self):
+        # ASCII characters decoded to a string
+        given = b'blueberryjam'
+        expect = 'blueberryjam'
+        result = urllib.parse.unquote(given)
+        self.assertEqual(expect, result,
+                         "using unquote(): %r != %r" % (expect, result))
+
+        # A mix of non-ASCII hex-encoded characters and ASCII characters
+        given = b'bl\xc3\xa5b\xc3\xa6rsyltet\xc3\xb8y'
+        expect = 'bl\u00e5b\u00e6rsyltet\u00f8y'
+        result = urllib.parse.unquote(given)
+        self.assertEqual(expect, result,
+                         "using unquote(): %r != %r" % (expect, result))
+
+        # A mix of non-ASCII percent-encoded characters and ASCII characters
+        given = b'bl%c3%a5b%c3%a6rsyltet%c3%b8j'
+        expect = 'bl\u00e5b\u00e6rsyltet\u00f8j'
+        result = urllib.parse.unquote(given)
+        self.assertEqual(expect, result,
+                         "using unquote(): %r != %r" % (expect, result))
+
 
 class urlencode_Tests(unittest.TestCase):
     """Tests for urlencode()"""

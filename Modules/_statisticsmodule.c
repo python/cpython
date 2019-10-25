@@ -32,8 +32,11 @@ _statistics__normal_dist_inv_cdf_impl(PyObject *module, double p, double mu,
 /*[clinic end generated code: output=02fd19ddaab36602 input=24715a74be15296a]*/
 {
     double q, num, den, r, x;
+    if (p <= 0.0 || p >= 1.0 || sigma <= 0.0) {
+        goto error;
+    }
+
     q = p - 0.5;
-    // Algorithm AS 241: The Percentage Points of the Normal Distribution
     if(fabs(q) <= 0.425) {
         r = 0.180625 - q * q;
         // Hash sum-55.8831928806149014439
@@ -53,10 +56,16 @@ _statistics__normal_dist_inv_cdf_impl(PyObject *module, double p, double mu,
                      6.8718700749205790830e+2) * r +
                      4.2313330701600911252e+1) * r +
                      1.0);
+        if (den == 0.0) {
+            goto error;
+        }
         x = num / den;
         return mu + (x * sigma);
     }
     r = (q <= 0.0) ? p : (1.0 - p);
+    if (r <= 0.0 || r >= 1.0) {
+        goto error;
+    }
     r = sqrt(-log(r));
     if (r <= 5.0) {
         r = r - 1.6;
@@ -97,11 +106,18 @@ _statistics__normal_dist_inv_cdf_impl(PyObject *module, double p, double mu,
                      5.99832206555887937690e-1) * r +
                      1.0);
     }
+    if (den == 0.0) {
+        goto error;
+    }
     x = num / den;
     if (q < 0.0) {
         x = -x;
     }
     return mu + (x * sigma);
+
+  error:
+    PyErr_SetString(PyExc_ValueError, "inv_cdf undefined for these parameters");
+    return -1.0;
 }
 
 
@@ -110,10 +126,13 @@ static PyMethodDef statistics_methods[] = {
     {NULL, NULL, 0, NULL}
 };
 
+PyDoc_STRVAR(statistics_doc,
+"Accelerators for the statistics module.\n");
+
 static struct PyModuleDef statisticsmodule = {
         PyModuleDef_HEAD_INIT,
         "_statistics",
-        _statistics__normal_dist_inv_cdf__doc__,
+        statistics_doc,
         -1,
         statistics_methods,
         NULL,

@@ -530,14 +530,28 @@ else:
         if seen is None:
             seen = set()
 
+        # These error codes indicate that we should stop reading links and
+        # return the path we currently have.
+        # 1: ERROR_INVALID_FUNCTION
+        # 2: ERROR_FILE_NOT_FOUND
+        # 3: ERROR_DIRECTORY_NOT_FOUND
+        # 5: ERROR_ACCESS_DENIED
+        # 21: ERROR_NOT_READY (implies drive with no media)
+        # 32: ERROR_SHARING_VIOLATION (probably an NTFS paging file)
+        # 50: ERROR_NOT_SUPPORTED (implies no support for reparse points)
+        # 67: ERROR_BAD_NET_NAME (implies remote server unavailable)
+        # 87: ERROR_INVALID_PARAMETER
+        # 4390: ERROR_NOT_A_REPARSE_POINT
+        # 4392: ERROR_INVALID_REPARSE_DATA
+        # 4393: ERROR_REPARSE_TAG_INVALID
+        allowed_winerror = 1, 2, 3, 5, 21, 32, 50, 67, 87, 4390, 4392, 4393
+
         while normcase(path) not in seen:
             seen.add(normcase(path))
             try:
                 path = _nt_readlink(path)
             except OSError as ex:
-                # Stop on file (2) or directory (3) not found, or
-                # paths that are not reparse points (4390)
-                if ex.winerror in (2, 3, 4390):
+                if ex.winerror in allowed_winerror:
                     break
                 raise
             except ValueError:
@@ -546,16 +560,21 @@ else:
         return path
 
     def _getfinalpathname_nonstrict(path):
-        # Fast path to get the final path name. If this succeeds, there
-        # is no need to go any further.
-        try:
-            return _getfinalpathname(path)
-        except OSError:
-            pass
-
-        # Allow file (2) or directory (3) not found, invalid syntax (123),
-        # and symlinks that cannot be followed (1921)
-        allowed_winerror = 2, 3, 123, 1921
+        # These error codes indicate that we should stop resolving the path
+        # and return the value we currently have.
+        # 1: ERROR_INVALID_FUNCTION
+        # 2: ERROR_FILE_NOT_FOUND
+        # 3: ERROR_DIRECTORY_NOT_FOUND
+        # 5: ERROR_ACCESS_DENIED
+        # 21: ERROR_NOT_READY (implies drive with no media)
+        # 32: ERROR_SHARING_VIOLATION (probably an NTFS paging file)
+        # 50: ERROR_NOT_SUPPORTED
+        # 67: ERROR_BAD_NET_NAME (implies remote server unavailable)
+        # 87: ERROR_INVALID_PARAMETER
+        # 123: ERROR_INVALID_NAME
+        # 1920: ERROR_CANT_ACCESS_FILE
+        # 1921: ERROR_CANT_RESOLVE_FILENAME (implies unfollowable symlink)
+        allowed_winerror = 1, 2, 3, 5, 21, 32, 50, 67, 87, 123, 1920, 1921
 
         # Non-strict algorithm is to find as much of the target directory
         # as we can and join the rest.
@@ -570,6 +589,9 @@ else:
                 if ex.winerror not in allowed_winerror:
                     raise
                 path, name = split(path)
+                # TODO (bpo-38186): Request the real file name from the directory
+                # entry using FindFirstFileW. For now, we will return the path
+                # as best we have it
                 if path and not name:
                     return abspath(path + tail)
                 tail = join(name, tail) if tail else name
@@ -587,9 +609,13 @@ else:
             unc_prefix = '\\\\?\\UNC\\'
             new_unc_prefix = '\\\\'
             cwd = os.getcwd()
-        did_not_exist = not exists(path)
         had_prefix = path.startswith(prefix)
-        path = _getfinalpathname_nonstrict(path)
+        try:
+            path = _getfinalpathname(path)
+            initial_winerror = 0
+        except OSError as ex:
+            initial_winerror = ex.winerror
+            path = _getfinalpathname_nonstrict(path)
         # The path returned by _getfinalpathname will always start with \\?\ -
         # strip off that prefix unless it was already provided on the original
         # path.
@@ -607,7 +633,7 @@ else:
             except OSError as ex:
                 # If the path does not exist and originally did not exist, then
                 # strip the prefix anyway.
-                if ex.winerror in {2, 3} and did_not_exist:
+                if ex.winerror == initial_winerror:
                     path = spath
         return path
 

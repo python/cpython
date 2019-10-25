@@ -597,9 +597,9 @@ _elementtree_TreeBuilder___init__(PyObject *self, PyObject *args, PyObject *kwar
     PyObject * const *fastargs;
     Py_ssize_t nargs = PyTuple_GET_SIZE(args);
     Py_ssize_t noptargs = nargs + (kwargs ? PyDict_GET_SIZE(kwargs) : 0) - 0;
-    PyObject *element_factory = NULL;
-    PyObject *comment_factory = NULL;
-    PyObject *pi_factory = NULL;
+    PyObject *element_factory = Py_None;
+    PyObject *comment_factory = Py_None;
+    PyObject *pi_factory = Py_None;
     int insert_comments = 0;
     int insert_pis = 0;
 
@@ -916,4 +916,4 @@ skip_optional:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=f5dbf9b4a095d310 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=bee26d0735a3fddc input=a9049054013a1b77]*/

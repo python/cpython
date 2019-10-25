@@ -645,6 +645,68 @@ class ASTHelpers_Test(unittest.TestCase):
             "lineno=1, col_offset=0, end_lineno=1, end_col_offset=24)], type_ignores=[])"
         )
 
+    def test_dump_indent(self):
+        node = ast.parse('spam(eggs, "and cheese")')
+        self.assertEqual(ast.dump(node, indent=3), """\
+Module(
+   body=[
+      Expr(
+         value=Call(
+            func=Name(id='spam', ctx=Load()),
+            args=[
+               Name(id='eggs', ctx=Load()),
+               Constant(value='and cheese', kind=None)],
+            keywords=[]))],
+   type_ignores=[])""")
+        self.assertEqual(ast.dump(node, annotate_fields=False, indent='\t'), """\
+Module(
+\t[
+\t\tExpr(
+\t\t\tCall(
+\t\t\t\tName('spam', Load()),
+\t\t\t\t[
+\t\t\t\t\tName('eggs', Load()),
+\t\t\t\t\tConstant('and cheese', None)],
+\t\t\t\t[]))],
+\t[])""")
+        self.assertEqual(ast.dump(node, include_attributes=True, indent=3), """\
+Module(
+   body=[
+      Expr(
+         value=Call(
+            func=Name(
+               id='spam',
+               ctx=Load(),
+               lineno=1,
+               col_offset=0,
+               end_lineno=1,
+               end_col_offset=4),
+            args=[
+               Name(
+                  id='eggs',
+                  ctx=Load(),
+                  lineno=1,
+                  col_offset=5,
+                  end_lineno=1,
+                  end_col_offset=9),
+               Constant(
+                  value='and cheese',
+                  kind=None,
+                  lineno=1,
+                  col_offset=11,
+                  end_lineno=1,
+                  end_col_offset=23)],
+            keywords=[],
+            lineno=1,
+            col_offset=0,
+            end_lineno=1,
+            end_col_offset=24),
+         lineno=1,
+         col_offset=0,
+         end_lineno=1,
+         end_col_offset=24)],
+   type_ignores=[])""")
+
     def test_dump_incomplete(self):
         node = ast.Raise(lineno=3, col_offset=4)
         self.assertEqual(ast.dump(node),

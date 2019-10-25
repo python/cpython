@@ -1168,7 +1168,11 @@ PyCPointerType_from_param(PyObject *type, PyObject *value)
         */
         StgDictObject *v = PyObject_stgdict(value);
         assert(v); /* Cannot be NULL for pointer or array objects */
-        if (PyObject_IsSubclass(v->proto, typedict->proto)) {
+        int ret = PyObject_IsSubclass(v->proto, typedict->proto);
+        if (ret < 0) {
+            return NULL;
+        }
+        if (ret) {
             Py_INCREF(value);
             return value;
         }
@@ -5195,7 +5199,8 @@ Pointer_subscript(PyObject *myself, PyObject *item)
         PyObject *np;
         StgDictObject *stgdict, *itemdict;
         PyObject *proto;
-        Py_ssize_t i, len, cur;
+        Py_ssize_t i, len;
+        size_t cur;
 
         /* Since pointers have no length, and we want to apply
            different semantics to negative indices than normal

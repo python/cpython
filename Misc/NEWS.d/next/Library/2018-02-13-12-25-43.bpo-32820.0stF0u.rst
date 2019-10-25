@@ -1,0 +1,4 @@
+Added __format__ to IPv4 and IPv6 classes.  Always outputs a fully zero-
+padded string. Supports b/x/n modifiers (bin/hex/native format).  Native
+format for IPv4 is bin, native format for IPv6 is hex. Also supports '#' and
+'_' modifiers.

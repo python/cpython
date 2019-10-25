@@ -206,8 +206,8 @@ if __name__ == '__main__':
     with open('ssl_key.pem', 'w') as f:
         f.write(key)
     print("password protecting ssl_key.pem in ssl_key.passwd.pem")
-    check_call(['openssl','rsa','-in','ssl_key.pem','-out','ssl_key.passwd.pem','-des3','-passout','pass:somepass'])
-    check_call(['openssl','rsa','-in','ssl_key.pem','-out','keycert.passwd.pem','-des3','-passout','pass:somepass'])
+    check_call(['openssl','pkey','-in','ssl_key.pem','-out','ssl_key.passwd.pem','-aes256','-passout','pass:somepass'])
+    check_call(['openssl','pkey','-in','ssl_key.pem','-out','keycert.passwd.pem','-aes256','-passout','pass:somepass'])
 
     with open('keycert.pem', 'w') as f:
         f.write(key)

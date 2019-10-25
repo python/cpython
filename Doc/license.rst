@@ -22,7 +22,7 @@ Virginia where he released several versions of the software.
 In May 2000, Guido and the Python core development team moved to BeOpen.com to
 form the BeOpen PythonLabs team.  In October of the same year, the PythonLabs
 team moved to Digital Creations (now Zope Corporation; see
-http://www.zope.com/).  In 2001, the Python Software Foundation (PSF, see
+https://www.zope.org/).  In 2001, the Python Software Foundation (PSF, see
 https://www.python.org/psf/) was formed, a non-profit organization created
 specifically to own Python-related Intellectual Property.  Zope Corporation is a
 sponsoring member of the PSF.

@@ -1,11 +1,9 @@
 
-<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
-  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<!DOCTYPE html>
 
 <html xmlns="http://www.w3.org/1999/xhtml">
   <head>
-    <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
-    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <meta charset="utf-8" />
     <title>IDLE &#8212; Python 3.9.0a0 documentation</title>
     <link rel="stylesheet" href="../_static/pydoctheme.css" type="text/css" />
     <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
@@ -108,17 +106,17 @@
 <p>IDLE is Python’s Integrated Development and Learning Environment.</p>
 <p>IDLE has the following features:</p>
 <ul class="simple">
-<li>coded in 100% pure Python, using the <a class="reference internal" href="tkinter.html#module-tkinter" title="tkinter: Interface to Tcl/Tk for graphical user interfaces"><code class="xref py py-mod docutils literal notranslate"><span class="pre">tkinter</span></code></a> GUI toolkit</li>
-<li>cross-platform: works mostly the same on Windows, Unix, and macOS</li>
-<li>Python shell window (interactive interpreter) with colorizing
-of code input, output, and error messages</li>
-<li>multi-window text editor with multiple undo, Python colorizing,
-smart indent, call tips, auto completion, and other features</li>
-<li>search within any window, replace within editor windows, and search
-through multiple files (grep)</li>
-<li>debugger with persistent breakpoints, stepping, and viewing
-of global and local namespaces</li>
-<li>configuration, browsers, and other dialogs</li>
+<li><p>coded in 100% pure Python, using the <a class="reference internal" href="tkinter.html#module-tkinter" title="tkinter: Interface to Tcl/Tk for graphical user interfaces"><code class="xref py py-mod docutils literal notranslate"><span class="pre">tkinter</span></code></a> GUI toolkit</p></li>
+<li><p>cross-platform: works mostly the same on Windows, Unix, and macOS</p></li>
+<li><p>Python shell window (interactive interpreter) with colorizing
+of code input, output, and error messages</p></li>
+<li><p>multi-window text editor with multiple undo, Python colorizing,
+smart indent, call tips, auto completion, and other features</p></li>
+<li><p>search within any window, replace within editor windows, and search
+through multiple files (grep)</p></li>
+<li><p>debugger with persistent breakpoints, stepping, and viewing
+of global and local namespaces</p></li>
+<li><p>configuration, browsers, and other dialogs</p></li>
 </ul>
 <div class="section" id="menus">
 <h2>Menus<a class="headerlink" href="#menus" title="Permalink to this headline">¶</a></h2>
@@ -134,161 +132,216 @@ to the window currently selected.  It has an IDLE menu, and some entries
 described below are moved around to conform to Apple guidelines.</p>
 <div class="section" id="file-menu-shell-and-editor">
 <h3>File menu (Shell and Editor)<a class="headerlink" href="#file-menu-shell-and-editor" title="Permalink to this headline">¶</a></h3>
-<dl class="docutils">
-<dt>New File</dt><dd>Create a new file editing window.</dd>
-<dt>Open…</dt><dd>Open an existing file with an Open dialog.</dd>
-<dt>Recent Files</dt><dd>Open a list of recent files.  Click one to open it.</dd>
-<dt>Open Module…</dt><dd>Open an existing module (searches sys.path).</dd>
+<dl class="simple">
+<dt>New File</dt><dd><p>Create a new file editing window.</p>
+</dd>
+<dt>Open…</dt><dd><p>Open an existing file with an Open dialog.</p>
+</dd>
+<dt>Recent Files</dt><dd><p>Open a list of recent files.  Click one to open it.</p>
+</dd>
+<dt>Open Module…</dt><dd><p>Open an existing module (searches sys.path).</p>
+</dd>
 </dl>
-<dl class="docutils" id="index-1">
-<dt>Class Browser</dt><dd>Show functions, classes, and methods in the current Editor file in a
-tree structure.  In the shell, open a module first.</dd>
-<dt>Path Browser</dt><dd>Show sys.path directories, modules, functions, classes and methods in a
-tree structure.</dd>
-<dt>Save</dt><dd>Save the current window to the associated file, if there is one.  Windows
+<dl class="simple" id="index-1">
+<dt>Class Browser</dt><dd><p>Show functions, classes, and methods in the current Editor file in a
+tree structure.  In the shell, open a module first.</p>
+</dd>
+<dt>Path Browser</dt><dd><p>Show sys.path directories, modules, functions, classes and methods in a
+tree structure.</p>
+</dd>
+<dt>Save</dt><dd><p>Save the current window to the associated file, if there is one.  Windows
 that have been changed since being opened or last saved have a * before
 and after the window title.  If there is no associated file,
-do Save As instead.</dd>
-<dt>Save As…</dt><dd>Save the current window with a Save As dialog.  The file saved becomes the
-new associated file for the window.</dd>
-<dt>Save Copy As…</dt><dd>Save the current window to different file without changing the associated
-file.</dd>
-<dt>Print Window</dt><dd>Print the current window to the default printer.</dd>
-<dt>Close</dt><dd>Close the current window (ask to save if unsaved).</dd>
-<dt>Exit</dt><dd>Close all windows and quit IDLE (ask to save unsaved windows).</dd>
+do Save As instead.</p>
+</dd>
+<dt>Save As…</dt><dd><p>Save the current window with a Save As dialog.  The file saved becomes the
+new associated file for the window.</p>
+</dd>
+<dt>Save Copy As…</dt><dd><p>Save the current window to different file without changing the associated
+file.</p>
+</dd>
+<dt>Print Window</dt><dd><p>Print the current window to the default printer.</p>
+</dd>
+<dt>Close</dt><dd><p>Close the current window (ask to save if unsaved).</p>
+</dd>
+<dt>Exit</dt><dd><p>Close all windows and quit IDLE (ask to save unsaved windows).</p>
+</dd>
 </dl>
 </div>
 <div class="section" id="edit-menu-shell-and-editor">
 <h3>Edit menu (Shell and Editor)<a class="headerlink" href="#edit-menu-shell-and-editor" title="Permalink to this headline">¶</a></h3>
-<dl class="docutils">
-<dt>Undo</dt><dd>Undo the last change to the current window.  A maximum of 1000 changes may
-be undone.</dd>
-<dt>Redo</dt><dd>Redo the last undone change to the current window.</dd>
-<dt>Cut</dt><dd>Copy selection into the system-wide clipboard; then delete the selection.</dd>
-<dt>Copy</dt><dd>Copy selection into the system-wide clipboard.</dd>
-<dt>Paste</dt><dd>Insert contents of the system-wide clipboard into the current window.</dd>
+<dl class="simple">
+<dt>Undo</dt><dd><p>Undo the last change to the current window.  A maximum of 1000 changes may
+be undone.</p>
+</dd>
+<dt>Redo</dt><dd><p>Redo the last undone change to the current window.</p>
+</dd>
+<dt>Cut</dt><dd><p>Copy selection into the system-wide clipboard; then delete the selection.</p>
+</dd>
+<dt>Copy</dt><dd><p>Copy selection into the system-wide clipboard.</p>
+</dd>
+<dt>Paste</dt><dd><p>Insert contents of the system-wide clipboard into the current window.</p>
+</dd>
 </dl>
 <p>The clipboard functions are also available in context menus.</p>
-<dl class="docutils">
-<dt>Select All</dt><dd>Select the entire contents of the current window.</dd>
-<dt>Find…</dt><dd>Open a search dialog with many options</dd>
-<dt>Find Again</dt><dd>Repeat the last search, if there is one.</dd>
-<dt>Find Selection</dt><dd>Search for the currently selected string, if there is one.</dd>
-<dt>Find in Files…</dt><dd>Open a file search dialog.  Put results in a new output window.</dd>
-<dt>Replace…</dt><dd>Open a search-and-replace dialog.</dd>
-<dt>Go to Line</dt><dd>Move cursor to the line number requested and make that line visible.</dd>
-<dt>Show Completions</dt><dd>Open a scrollable list allowing selection of keywords and attributes. See
-<a class="reference internal" href="#completions"><span class="std std-ref">Completions</span></a> in the Editing and navigation section below.</dd>
-<dt>Expand Word</dt><dd>Expand a prefix you have typed to match a full word in the same window;
-repeat to get a different expansion.</dd>
-<dt>Show call tip</dt><dd>After an unclosed parenthesis for a function, open a small window with
+<dl class="simple">
+<dt>Select All</dt><dd><p>Select the entire contents of the current window.</p>
+</dd>
+<dt>Find…</dt><dd><p>Open a search dialog with many options</p>
+</dd>
+<dt>Find Again</dt><dd><p>Repeat the last search, if there is one.</p>
+</dd>
+<dt>Find Selection</dt><dd><p>Search for the currently selected string, if there is one.</p>
+</dd>
+<dt>Find in Files…</dt><dd><p>Open a file search dialog.  Put results in a new output window.</p>
+</dd>
+<dt>Replace…</dt><dd><p>Open a search-and-replace dialog.</p>
+</dd>
+<dt>Go to Line</dt><dd><p>Move cursor to the line number requested and make that line visible.</p>
+</dd>
+<dt>Show Completions</dt><dd><p>Open a scrollable list allowing selection of keywords and attributes. See
+<a class="reference internal" href="#completions"><span class="std std-ref">Completions</span></a> in the Editing and navigation section below.</p>
+</dd>
+<dt>Expand Word</dt><dd><p>Expand a prefix you have typed to match a full word in the same window;
+repeat to get a different expansion.</p>
+</dd>
+<dt>Show call tip</dt><dd><p>After an unclosed parenthesis for a function, open a small window with
 function parameter hints.  See <a class="reference internal" href="#calltips"><span class="std std-ref">Calltips</span></a> in the
-Editing and navigation section below.</dd>
-<dt>Show surrounding parens</dt><dd>Highlight the surrounding parenthesis.</dd>
+Editing and navigation section below.</p>
+</dd>
+<dt>Show surrounding parens</dt><dd><p>Highlight the surrounding parenthesis.</p>
+</dd>
 </dl>
 </div>
 <div class="section" id="format-menu-editor-window-only">
 <span id="format-menu"></span><h3>Format menu (Editor window only)<a class="headerlink" href="#format-menu-editor-window-only" title="Permalink to this headline">¶</a></h3>
-<dl class="docutils">
-<dt>Indent Region</dt><dd>Shift selected lines right by the indent width (default 4 spaces).</dd>
-<dt>Dedent Region</dt><dd>Shift selected lines left by the indent width (default 4 spaces).</dd>
-<dt>Comment Out Region</dt><dd>Insert ## in front of selected lines.</dd>
-<dt>Uncomment Region</dt><dd>Remove leading # or ## from selected lines.</dd>
-<dt>Tabify Region</dt><dd>Turn <em>leading</em> stretches of spaces into tabs. (Note: We recommend using
-4 space blocks to indent Python code.)</dd>
-<dt>Untabify Region</dt><dd>Turn <em>all</em> tabs into the correct number of spaces.</dd>
-<dt>Toggle Tabs</dt><dd>Open a dialog to switch between indenting with spaces and tabs.</dd>
-<dt>New Indent Width</dt><dd>Open a dialog to change indent width. The accepted default by the Python
-community is 4 spaces.</dd>
-<dt>Format Paragraph</dt><dd>Reformat the current blank-line-delimited paragraph in comment block or
+<dl class="simple">
+<dt>Indent Region</dt><dd><p>Shift selected lines right by the indent width (default 4 spaces).</p>
+</dd>
+<dt>Dedent Region</dt><dd><p>Shift selected lines left by the indent width (default 4 spaces).</p>
+</dd>
+<dt>Comment Out Region</dt><dd><p>Insert ## in front of selected lines.</p>
+</dd>
+<dt>Uncomment Region</dt><dd><p>Remove leading # or ## from selected lines.</p>
+</dd>
+<dt>Tabify Region</dt><dd><p>Turn <em>leading</em> stretches of spaces into tabs. (Note: We recommend using
+4 space blocks to indent Python code.)</p>
+</dd>
+<dt>Untabify Region</dt><dd><p>Turn <em>all</em> tabs into the correct number of spaces.</p>
+</dd>
+<dt>Toggle Tabs</dt><dd><p>Open a dialog to switch between indenting with spaces and tabs.</p>
+</dd>
+<dt>New Indent Width</dt><dd><p>Open a dialog to change indent width. The accepted default by the Python
+community is 4 spaces.</p>
+</dd>
+<dt>Format Paragraph</dt><dd><p>Reformat the current blank-line-delimited paragraph in comment block or
 multiline string or selected line in a string.  All lines in the
-paragraph will be formatted to less than N columns, where N defaults to 72.</dd>
-<dt>Strip trailing whitespace</dt><dd>Remove trailing space and other whitespace characters after the last
+paragraph will be formatted to less than N columns, where N defaults to 72.</p>
+</dd>
+<dt>Strip trailing whitespace</dt><dd><p>Remove trailing space and other whitespace characters after the last
 non-whitespace character of a line by applying str.rstrip to each line,
-including lines within multiline strings.</dd>
+including lines within multiline strings.</p>
+</dd>
 </dl>
 </div>
 <div class="section" id="run-menu-editor-window-only">
 <span id="index-2"></span><h3>Run menu (Editor window only)<a class="headerlink" href="#run-menu-editor-window-only" title="Permalink to this headline">¶</a></h3>
-<dl class="docutils" id="run-module">
-<dt>Run Module</dt><dd>Do <a class="reference internal" href="#check-module"><span class="std std-ref">Check Module</span></a>.  If no error, restart the shell to clean the
+<dl class="simple" id="run-module">
+<dt>Run Module</dt><dd><p>Do <a class="reference internal" href="#check-module"><span class="std std-ref">Check Module</span></a>.  If no error, restart the shell to clean the
 environment, then execute the module.  Output is displayed in the Shell
 window.  Note that output requires use of <code class="docutils literal notranslate"><span class="pre">print</span></code> or <code class="docutils literal notranslate"><span class="pre">write</span></code>.
 When execution is complete, the Shell retains focus and displays a prompt.
 At this point, one may interactively explore the result of execution.
 This is similar to executing a file with <code class="docutils literal notranslate"><span class="pre">python</span> <span class="pre">-i</span> <span class="pre">file</span></code> at a command
-line.</dd>
+line.</p>
+</dd>
 </dl>
-<dl class="docutils" id="run-custom">
-<dt>Run… Customized</dt><dd>Same as <a class="reference internal" href="#run-module"><span class="std std-ref">Run Module</span></a>, but run the module with customized
+<dl class="simple" id="run-custom">
+<dt>Run… Customized</dt><dd><p>Same as <a class="reference internal" href="#run-module"><span class="std std-ref">Run Module</span></a>, but run the module with customized
 settings.  <em>Command Line Arguments</em> extend <a class="reference internal" href="sys.html#sys.argv" title="sys.argv"><code class="xref py py-data docutils literal notranslate"><span class="pre">sys.argv</span></code></a> as if passed
-on a command line. The module can be run in the Shell without restarting.</dd>
+on a command line. The module can be run in the Shell without restarting.</p>
+</dd>
 </dl>
-<dl class="docutils" id="check-module">
-<dt>Check Module</dt><dd>Check the syntax of the module currently open in the Editor window. If the
+<dl class="simple" id="check-module">
+<dt>Check Module</dt><dd><p>Check the syntax of the module currently open in the Editor window. If the
 module has not been saved IDLE will either prompt the user to save or
 autosave, as selected in the General tab of the Idle Settings dialog.  If
 there is a syntax error, the approximate location is indicated in the
-Editor window.</dd>
+Editor window.</p>
+</dd>
 </dl>
-<dl class="docutils" id="python-shell">
-<dt>Python Shell</dt><dd>Open or wake up the Python Shell window.</dd>
+<dl class="simple" id="python-shell">
+<dt>Python Shell</dt><dd><p>Open or wake up the Python Shell window.</p>
+</dd>
 </dl>
 </div>
 <div class="section" id="shell-menu-shell-window-only">
 <h3>Shell menu (Shell window only)<a class="headerlink" href="#shell-menu-shell-window-only" title="Permalink to this headline">¶</a></h3>
-<dl class="docutils">
-<dt>View Last Restart</dt><dd>Scroll the shell window to the last Shell restart.</dd>
-<dt>Restart Shell</dt><dd>Restart the shell to clean the environment.</dd>
-<dt>Previous History</dt><dd>Cycle through earlier commands in history which match the current entry.</dd>
-<dt>Next History</dt><dd>Cycle through later commands in history which match the current entry.</dd>
-<dt>Interrupt Execution</dt><dd>Stop a running program.</dd>
+<dl class="simple">
+<dt>View Last Restart</dt><dd><p>Scroll the shell window to the last Shell restart.</p>
+</dd>
+<dt>Restart Shell</dt><dd><p>Restart the shell to clean the environment.</p>
+</dd>
+<dt>Previous History</dt><dd><p>Cycle through earlier commands in history which match the current entry.</p>
+</dd>
+<dt>Next History</dt><dd><p>Cycle through later commands in history which match the current entry.</p>
+</dd>
+<dt>Interrupt Execution</dt><dd><p>Stop a running program.</p>
+</dd>
 </dl>
 </div>
 <div class="section" id="debug-menu-shell-window-only">
 <h3>Debug menu (Shell window only)<a class="headerlink" href="#debug-menu-shell-window-only" title="Permalink to this headline">¶</a></h3>
-<dl class="docutils">
-<dt>Go to File/Line</dt><dd>Look on the current line. with the cursor, and the line above for a filename
+<dl class="simple">
+<dt>Go to File/Line</dt><dd><p>Look on the current line. with the cursor, and the line above for a filename
 and line number.  If found, open the file if not already open, and show the
 line.  Use this to view source lines referenced in an exception traceback
 and lines found by Find in Files. Also available in the context menu of
-the Shell window and Output windows.</dd>
+the Shell window and Output windows.</p>
+</dd>
 </dl>
-<dl class="docutils" id="index-3">
-<dt>Debugger (toggle)</dt><dd>When activated, code entered in the Shell or run from an Editor will run
+<dl class="simple" id="index-3">
+<dt>Debugger (toggle)</dt><dd><p>When activated, code entered in the Shell or run from an Editor will run
 under the debugger.  In the Editor, breakpoints can be set with the context
-menu.  This feature is still incomplete and somewhat experimental.</dd>
-<dt>Stack Viewer</dt><dd>Show the stack traceback of the last exception in a tree widget, with
-access to locals and globals.</dd>
-<dt>Auto-open Stack Viewer</dt><dd>Toggle automatically opening the stack viewer on an unhandled exception.</dd>
+menu.  This feature is still incomplete and somewhat experimental.</p>
+</dd>
+<dt>Stack Viewer</dt><dd><p>Show the stack traceback of the last exception in a tree widget, with
+access to locals and globals.</p>
+</dd>
+<dt>Auto-open Stack Viewer</dt><dd><p>Toggle automatically opening the stack viewer on an unhandled exception.</p>
+</dd>
 </dl>
 </div>
 <div class="section" id="options-menu-shell-and-editor">
 <h3>Options menu (Shell and Editor)<a class="headerlink" href="#options-menu-shell-and-editor" title="Permalink to this headline">¶</a></h3>
-<dl class="docutils">
-<dt>Configure IDLE</dt><dd>Open a configuration dialog and change preferences for the following:
+<dl class="simple">
+<dt>Configure IDLE</dt><dd><p>Open a configuration dialog and change preferences for the following:
 fonts, indentation, keybindings, text color themes, startup windows and
 size, additional help sources, and extensions.  On macOS, open the
 configuration dialog by selecting Preferences in the application
 menu. For more details, see
-<a class="reference internal" href="#preferences"><span class="std std-ref">Setting preferences</span></a> under Help and preferences.</dd>
+<a class="reference internal" href="#preferences"><span class="std std-ref">Setting preferences</span></a> under Help and preferences.</p>
+</dd>
 </dl>
 <p>Most configuration options apply to all windows or all future windows.
 The option items below only apply to the active window.</p>
-<dl class="docutils">
-<dt>Show/Hide Code Context (Editor Window only)</dt><dd>Open a pane at the top of the edit window which shows the block context
+<dl class="simple">
+<dt>Show/Hide Code Context (Editor Window only)</dt><dd><p>Open a pane at the top of the edit window which shows the block context
 of the code which has scrolled above the top of the window.  See
 <a class="reference internal" href="#code-context"><span class="std std-ref">Code Context</span></a> in the Editing and Navigation section
-below.</dd>
-<dt>Show/Hide Line Numbers (Editor Window only)</dt><dd>Open a column to the left of the edit window which shows the number
+below.</p>
+</dd>
+<dt>Show/Hide Line Numbers (Editor Window only)</dt><dd><p>Open a column to the left of the edit window which shows the number
 of each line of text.  The default is off, which may be changed in the
-preferences (see <a class="reference internal" href="#preferences"><span class="std std-ref">Setting preferences</span></a>).</dd>
-<dt>Zoom/Restore Height</dt><dd>Toggles the window between normal size and maximum height. The initial size
+preferences (see <a class="reference internal" href="#preferences"><span class="std std-ref">Setting preferences</span></a>).</p>
+</dd>
+<dt>Zoom/Restore Height</dt><dd><p>Toggles the window between normal size and maximum height. The initial size
 defaults to 40 lines by 80 chars unless changed on the General tab of the
 Configure IDLE dialog.  The maximum height for a screen is determined by
 momentarily maximizing a window the first time one is zoomed on the screen.
 Changing screen settings may invalidate the saved height.  This toggle has
-no effect when a window is maximized.</dd>
+no effect when a window is maximized.</p>
+</dd>
 </dl>
 </div>
 <div class="section" id="window-menu-shell-and-editor">
@@ -298,13 +351,17 @@ no effect when a window is maximized.</dd>
 </div>
 <div class="section" id="help-menu-shell-and-editor">
 <h3>Help menu (Shell and Editor)<a class="headerlink" href="#help-menu-shell-and-editor" title="Permalink to this headline">¶</a></h3>
-<dl class="docutils">
-<dt>About IDLE</dt><dd>Display version, copyright, license, credits, and more.</dd>
-<dt>IDLE Help</dt><dd>Display this IDLE document, detailing the menu options, basic editing and
-navigation, and other tips.</dd>
-<dt>Python Docs</dt><dd>Access local Python documentation, if installed, or start a web browser
-and open docs.python.org showing the latest Python documentation.</dd>
-<dt>Turtle Demo</dt><dd>Run the turtledemo module with example Python code and turtle drawings.</dd>
+<dl class="simple">
+<dt>About IDLE</dt><dd><p>Display version, copyright, license, credits, and more.</p>
+</dd>
+<dt>IDLE Help</dt><dd><p>Display this IDLE document, detailing the menu options, basic editing and
+navigation, and other tips.</p>
+</dd>
+<dt>Python Docs</dt><dd><p>Access local Python documentation, if installed, or start a web browser
+and open docs.python.org showing the latest Python documentation.</p>
+</dd>
+<dt>Turtle Demo</dt><dd><p>Run the turtledemo module with example Python code and turtle drawings.</p>
+</dd>
 </dl>
 <p>Additional help sources may be added here with the Configure IDLE dialog under
 the General tab. See the <a class="reference internal" href="#help-sources"><span class="std std-ref">Help sources</span></a> subsection below
@@ -314,27 +371,34 @@ for more on Help menu choices.</p>
 <span id="index-4"></span><h3>Context Menus<a class="headerlink" href="#context-menus" title="Permalink to this headline">¶</a></h3>
 <p>Open a context menu by right-clicking in a window (Control-click on macOS).
 Context menus have the standard clipboard functions also on the Edit menu.</p>
-<dl class="docutils">
-<dt>Cut</dt><dd>Copy selection into the system-wide clipboard; then delete the selection.</dd>
-<dt>Copy</dt><dd>Copy selection into the system-wide clipboard.</dd>
-<dt>Paste</dt><dd>Insert contents of the system-wide clipboard into the current window.</dd>
+<dl class="simple">
+<dt>Cut</dt><dd><p>Copy selection into the system-wide clipboard; then delete the selection.</p>
+</dd>
+<dt>Copy</dt><dd><p>Copy selection into the system-wide clipboard.</p>
+</dd>
+<dt>Paste</dt><dd><p>Insert contents of the system-wide clipboard into the current window.</p>
+</dd>
 </dl>
 <p>Editor windows also have breakpoint functions.  Lines with a breakpoint set are
 specially marked.  Breakpoints only have an effect when running under the
 debugger.  Breakpoints for a file are saved in the user’s .idlerc directory.</p>
-<dl class="docutils">
-<dt>Set Breakpoint</dt><dd>Set a breakpoint on the current line.</dd>
-<dt>Clear Breakpoint</dt><dd>Clear the breakpoint on that line.</dd>
+<dl class="simple">
+<dt>Set Breakpoint</dt><dd><p>Set a breakpoint on the current line.</p>
+</dd>
+<dt>Clear Breakpoint</dt><dd><p>Clear the breakpoint on that line.</p>
+</dd>
 </dl>
 <p>Shell and Output windows also have the following.</p>
-<dl class="docutils">
-<dt>Go to file/line</dt><dd>Same as in Debug menu.</dd>
+<dl class="simple">
+<dt>Go to file/line</dt><dd><p>Same as in Debug menu.</p>
+</dd>
 </dl>
 <p>The Shell window also has an output squeezing facility explained in the <em>Python
 Shell window</em> subsection below.</p>
-<dl class="docutils">
-<dt>Squeeze</dt><dd>If the cursor is over an output line, squeeze all the output between
-the code above and the prompt below down to a ‘Squeezed text’ label.</dd>
+<dl class="simple">
+<dt>Squeeze</dt><dd><p>If the cursor is over an output line, squeeze all the output between
+the code above and the prompt below down to a ‘Squeezed text’ label.</p>
+</dd>
 </dl>
 </div>
 </div>
@@ -357,32 +421,26 @@ and that other files do not.  Run Python code with the Run menu.</p>
 <p>In this section, ‘C’ refers to the <kbd class="kbd docutils literal notranslate">Control</kbd> key on Windows and Unix and
 the <kbd class="kbd docutils literal notranslate">Command</kbd> key on macOS.</p>
 <ul>
-<li><p class="first"><kbd class="kbd docutils literal notranslate">Backspace</kbd> deletes to the left; <kbd class="kbd docutils literal notranslate">Del</kbd> deletes to the right</p>
-</li>
-<li><p class="first"><kbd class="kbd docutils literal notranslate">C-Backspace</kbd> delete word left; <kbd class="kbd docutils literal notranslate">C-Del</kbd> delete word to the right</p>
-</li>
-<li><p class="first">Arrow keys and <kbd class="kbd docutils literal notranslate">Page Up</kbd>/<kbd class="kbd docutils literal notranslate">Page Down</kbd> to move around</p>
-</li>
-<li><p class="first"><kbd class="kbd docutils literal notranslate">C-LeftArrow</kbd> and <kbd class="kbd docutils literal notranslate">C-RightArrow</kbd> moves by words</p>
-</li>
-<li><p class="first"><kbd class="kbd docutils literal notranslate">Home</kbd>/<kbd class="kbd docutils literal notranslate">End</kbd> go to begin/end of line</p>
-</li>
-<li><p class="first"><kbd class="kbd docutils literal notranslate">C-Home</kbd>/<kbd class="kbd docutils literal notranslate">C-End</kbd> go to begin/end of file</p>
-</li>
-<li><p class="first">Some useful Emacs bindings are inherited from Tcl/Tk:</p>
+<li><p><kbd class="kbd docutils literal notranslate">Backspace</kbd> deletes to the left; <kbd class="kbd docutils literal notranslate">Del</kbd> deletes to the right</p></li>
+<li><p><kbd class="kbd docutils literal notranslate">C-Backspace</kbd> delete word left; <kbd class="kbd docutils literal notranslate">C-Del</kbd> delete word to the right</p></li>
+<li><p>Arrow keys and <kbd class="kbd docutils literal notranslate">Page Up</kbd>/<kbd class="kbd docutils literal notranslate">Page Down</kbd> to move around</p></li>
+<li><p><kbd class="kbd docutils literal notranslate">C-LeftArrow</kbd> and <kbd class="kbd docutils literal notranslate">C-RightArrow</kbd> moves by words</p></li>
+<li><p><kbd class="kbd docutils literal notranslate">Home</kbd>/<kbd class="kbd docutils literal notranslate">End</kbd> go to begin/end of line</p></li>
+<li><p><kbd class="kbd docutils literal notranslate">C-Home</kbd>/<kbd class="kbd docutils literal notranslate">C-End</kbd> go to begin/end of file</p></li>
+<li><p>Some useful Emacs bindings are inherited from Tcl/Tk:</p>
 <blockquote>
 <div><ul class="simple">
-<li><kbd class="kbd docutils literal notranslate">C-a</kbd> beginning of line</li>
-<li><kbd class="kbd docutils literal notranslate">C-e</kbd> end of line</li>
-<li><kbd class="kbd docutils literal notranslate">C-k</kbd> kill line (but doesn’t put it in clipboard)</li>
-<li><kbd class="kbd docutils literal notranslate">C-l</kbd> center window around the insertion point</li>
-<li><kbd class="kbd docutils literal notranslate">C-b</kbd> go backward one character without deleting (usually you can
-also use the cursor key for this)</li>
-<li><kbd class="kbd docutils literal notranslate">C-f</kbd> go forward one character without deleting (usually you can
-also use the cursor key for this)</li>
-<li><kbd class="kbd docutils literal notranslate">C-p</kbd> go up one line (usually you can also use the cursor key for
-this)</li>
-<li><kbd class="kbd docutils literal notranslate">C-d</kbd> delete next character</li>
+<li><p><kbd class="kbd docutils literal notranslate">C-a</kbd> beginning of line</p></li>
+<li><p><kbd class="kbd docutils literal notranslate">C-e</kbd> end of line</p></li>
+<li><p><kbd class="kbd docutils literal notranslate">C-k</kbd> kill line (but doesn’t put it in clipboard)</p></li>
+<li><p><kbd class="kbd docutils literal notranslate">C-l</kbd> center window around the insertion point</p></li>
+<li><p><kbd class="kbd docutils literal notranslate">C-b</kbd> go backward one character without deleting (usually you can
+also use the cursor key for this)</p></li>
+<li><p><kbd class="kbd docutils literal notranslate">C-f</kbd> go forward one character without deleting (usually you can
+also use the cursor key for this)</p></li>
+<li><p><kbd class="kbd docutils literal notranslate">C-p</kbd> go up one line (usually you can also use the cursor key for
+this)</p></li>
+<li><p><kbd class="kbd docutils literal notranslate">C-d</kbd> delete next character</p></li>
 </ul>
 </div></blockquote>
 </li>
@@ -485,17 +543,15 @@ If one pastes more that one statement into Shell, the result will be a
 <p>The editing features described in previous subsections work when entering
 code interactively.  IDLE’s Shell window also responds to the following keys.</p>
 <ul>
-<li><p class="first"><kbd class="kbd docutils literal notranslate">C-c</kbd> interrupts executing command</p>
-</li>
-<li><p class="first"><kbd class="kbd docutils literal notranslate">C-d</kbd> sends end-of-file; closes window if typed at a <code class="docutils literal notranslate"><span class="pre">&gt;&gt;&gt;</span></code> prompt</p>
-</li>
-<li><p class="first"><kbd class="kbd docutils literal notranslate">Alt-/</kbd> (Expand word) is also useful to reduce typing</p>
+<li><p><kbd class="kbd docutils literal notranslate">C-c</kbd> interrupts executing command</p></li>
+<li><p><kbd class="kbd docutils literal notranslate">C-d</kbd> sends end-of-file; closes window if typed at a <code class="docutils literal notranslate"><span class="pre">&gt;&gt;&gt;</span></code> prompt</p></li>
+<li><p><kbd class="kbd docutils literal notranslate">Alt-/</kbd> (Expand word) is also useful to reduce typing</p>
 <p>Command history</p>
 <ul class="simple">
-<li><kbd class="kbd docutils literal notranslate">Alt-p</kbd> retrieves previous command matching what you have typed. On
-macOS use <kbd class="kbd docutils literal notranslate">C-p</kbd>.</li>
-<li><kbd class="kbd docutils literal notranslate">Alt-n</kbd> retrieves next. On macOS use <kbd class="kbd docutils literal notranslate">C-n</kbd>.</li>
-<li><kbd class="kbd docutils literal notranslate">Return</kbd> while on any previous command retrieves that command</li>
+<li><p><kbd class="kbd docutils literal notranslate">Alt-p</kbd> retrieves previous command matching what you have typed. On
+macOS use <kbd class="kbd docutils literal notranslate">C-p</kbd>.</p></li>
+<li><p><kbd class="kbd docutils literal notranslate">Alt-n</kbd> retrieves next. On macOS use <kbd class="kbd docutils literal notranslate">C-n</kbd>.</p></li>
+<li><p><kbd class="kbd docutils literal notranslate">Return</kbd> while on any previous command retrieves that command</p></li>
 </ul>
 </li>
 </ul>
@@ -545,12 +601,12 @@ functions to be used from IDLE’s Python shell.</p>
 </div>
 <p>If there are arguments:</p>
 <ul class="simple">
-<li>If <code class="docutils literal notranslate"><span class="pre">-</span></code>, <code class="docutils literal notranslate"><span class="pre">-c</span></code>, or <code class="docutils literal notranslate"><span class="pre">r</span></code> is used, all arguments are placed in
+<li><p>If <code class="docutils literal notranslate"><span class="pre">-</span></code>, <code class="docutils literal notranslate"><span class="pre">-c</span></code>, or <code class="docutils literal notranslate"><span class="pre">r</span></code> is used, all arguments are placed in
 <code class="docutils literal notranslate"><span class="pre">sys.argv[1:...]</span></code> and <code class="docutils literal notranslate"><span class="pre">sys.argv[0]</span></code> is set to <code class="docutils literal notranslate"><span class="pre">''</span></code>, <code class="docutils literal notranslate"><span class="pre">'-c'</span></code>,
 or <code class="docutils literal notranslate"><span class="pre">'-r'</span></code>.  No editor window is opened, even if that is the default
-set in the Options dialog.</li>
-<li>Otherwise, arguments are files opened for editing and
-<code class="docutils literal notranslate"><span class="pre">sys.argv</span></code> reflects the arguments passed to IDLE itself.</li>
+set in the Options dialog.</p></li>
+<li><p>Otherwise, arguments are files opened for editing and
+<code class="docutils literal notranslate"><span class="pre">sys.argv</span></code> reflects the arguments passed to IDLE itself.</p></li>
 </ul>
 </div>
 <div class="section" id="startup-failure">
@@ -903,11 +959,11 @@ also used for testing.</p>
 <br />
     <br />
 
-    Last updated on Aug 04, 2019.
+    Last updated on Sep 01, 2019.
     <a href="https://docs.python.org/3/bugs.html">Found a bug</a>?
     <br />
 
-    Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 2.1.1.
+    Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 2.1.2.
     </div>
 
   </body>

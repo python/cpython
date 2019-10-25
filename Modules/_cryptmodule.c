@@ -42,6 +42,9 @@ crypt_crypt_impl(PyObject *module, const char *word, const char *salt)
 #else
     crypt_result = crypt(word, salt);
 #endif
+    if (crypt_result == NULL) {
+        return PyErr_SetFromErrno(PyExc_OSError);
+    }
     return Py_BuildValue("s", crypt_result);
 }
 

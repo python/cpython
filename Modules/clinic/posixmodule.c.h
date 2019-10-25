@@ -1971,8 +1971,8 @@ os_uname(PyObject *module, PyObject *Py_UNUSED(ignored))
 #endif /* defined(HAVE_UNAME) */
 
 PyDoc_STRVAR(os_utime__doc__,
-"utime($module, /, path, times=None, *, ns=None, dir_fd=None,\n"
-"      follow_symlinks=True)\n"
+"utime($module, /, path, times=None, *, ns=<unrepresentable>,\n"
+"      dir_fd=None, follow_symlinks=True)\n"
 "--\n"
 "\n"
 "Set the access and modified time of path.\n"
@@ -2015,7 +2015,7 @@ os_utime(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kw
     PyObject *argsbuf[5];
     Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 1;
     path_t path = PATH_T_INITIALIZE("utime", "path", 0, PATH_UTIME_HAVE_FD);
-    PyObject *times = NULL;
+    PyObject *times = Py_None;
     PyObject *ns = NULL;
     int dir_fd = DEFAULT_DIR_FD;
     int follow_symlinks = 1;
@@ -2208,8 +2208,8 @@ exit:
 
 PyDoc_STRVAR(os_posix_spawn__doc__,
 "posix_spawn($module, path, argv, env, /, *, file_actions=(),\n"
-"            setpgroup=None, resetids=False, setsid=False,\n"
-"            setsigmask=(), setsigdef=(), scheduler=None)\n"
+"            setpgroup=<unrepresentable>, resetids=False, setsid=False,\n"
+"            setsigmask=(), setsigdef=(), scheduler=<unrepresentable>)\n"
 "--\n"
 "\n"
 "Execute the program specified by path in a new process.\n"
@@ -2345,8 +2345,8 @@ exit:
 
 PyDoc_STRVAR(os_posix_spawnp__doc__,
 "posix_spawnp($module, path, argv, env, /, *, file_actions=(),\n"
-"             setpgroup=None, resetids=False, setsid=False,\n"
-"             setsigmask=(), setsigdef=(), scheduler=None)\n"
+"             setpgroup=<unrepresentable>, resetids=False, setsid=False,\n"
+"             setsigmask=(), setsigdef=(), scheduler=<unrepresentable>)\n"
 "--\n"
 "\n"
 "Execute the program specified by path in a new process.\n"
@@ -2598,8 +2598,9 @@ exit:
 #if defined(HAVE_FORK)
 
 PyDoc_STRVAR(os_register_at_fork__doc__,
-"register_at_fork($module, /, *, before=None, after_in_child=None,\n"
-"                 after_in_parent=None)\n"
+"register_at_fork($module, /, *, before=<unrepresentable>,\n"
+"                 after_in_child=<unrepresentable>,\n"
+"                 after_in_parent=<unrepresentable>)\n"
 "--\n"
 "\n"
 "Register callables to be called when forking a new process.\n"
@@ -4798,14 +4799,14 @@ PyDoc_STRVAR(os_pread__doc__,
     {"pread", (PyCFunction)(void(*)(void))os_pread, METH_FASTCALL, os_pread__doc__},
 
 static PyObject *
-os_pread_impl(PyObject *module, int fd, int length, Py_off_t offset);
+os_pread_impl(PyObject *module, int fd, Py_ssize_t length, Py_off_t offset);
 
 static PyObject *
 os_pread(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     int fd;
-    int length;
+    Py_ssize_t length;
     Py_off_t offset;
 
     if (!_PyArg_CheckPositional("pread", nargs, 3, 3)) {
@@ -4825,9 +4826,17 @@ os_pread(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
                         "integer argument expected, got float" );
         goto exit;
     }
-    length = _PyLong_AsInt(args[1]);
-    if (length == -1 && PyErr_Occurred()) {
-        goto exit;
+    {
+        Py_ssize_t ival = -1;
+        PyObject *iobj = PyNumber_Index(args[1]);
+        if (iobj != NULL) {
+            ival = PyLong_AsSsize_t(iobj);
+            Py_DECREF(iobj);
+        }
+        if (ival == -1 && PyErr_Occurred()) {
+            goto exit;
+        }
+        length = ival;
     }
     if (!Py_off_t_converter(args[2], &offset)) {
         goto exit;
@@ -4977,7 +4986,7 @@ exit:
 #if defined(__APPLE__)
 
 PyDoc_STRVAR(os__fcopyfile__doc__,
-"_fcopyfile($module, infd, outfd, flags, /)\n"
+"_fcopyfile($module, in_fd, out_fd, flags, /)\n"
 "--\n"
 "\n"
 "Efficiently copy content or metadata of 2 regular file descriptors (macOS).");
@@ -4986,14 +4995,14 @@ PyDoc_STRVAR(os__fcopyfile__doc__,
     {"_fcopyfile", (PyCFunction)(void(*)(void))os__fcopyfile, METH_FASTCALL, os__fcopyfile__doc__},
 
 static PyObject *
-os__fcopyfile_impl(PyObject *module, int infd, int outfd, int flags);
+os__fcopyfile_impl(PyObject *module, int in_fd, int out_fd, int flags);
 
 static PyObject *
 os__fcopyfile(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
-    int infd;
-    int outfd;
+    int in_fd;
+    int out_fd;
     int flags;
 
     if (!_PyArg_CheckPositional("_fcopyfile", nargs, 3, 3)) {
@@ -5004,8 +5013,8 @@ os__fcopyfile(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
                         "integer argument expected, got float" );
         goto exit;
     }
-    infd = _PyLong_AsInt(args[0]);
-    if (infd == -1 && PyErr_Occurred()) {
+    in_fd = _PyLong_AsInt(args[0]);
+    if (in_fd == -1 && PyErr_Occurred()) {
         goto exit;
     }
     if (PyFloat_Check(args[1])) {
@@ -5013,8 +5022,8 @@ os__fcopyfile(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
                         "integer argument expected, got float" );
         goto exit;
     }
-    outfd = _PyLong_AsInt(args[1]);
-    if (outfd == -1 && PyErr_Occurred()) {
+    out_fd = _PyLong_AsInt(args[1]);
+    if (out_fd == -1 && PyErr_Occurred()) {
         goto exit;
     }
     if (PyFloat_Check(args[2])) {
@@ -5026,7 +5035,7 @@ os__fcopyfile(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     if (flags == -1 && PyErr_Occurred()) {
         goto exit;
     }
-    return_value = os__fcopyfile_impl(module, infd, outfd, flags);
+    return_value = os__fcopyfile_impl(module, in_fd, out_fd, flags);
 
 exit:
     return return_value;
@@ -6854,10 +6863,8 @@ os_abort(PyObject *module, PyObject *Py_UNUSED(ignored))
 #if defined(MS_WINDOWS)
 
 PyDoc_STRVAR(os_startfile__doc__,
-"startfile($module, /, filepath, operation=None)\n"
+"startfile($module, /, filepath, operation=<unrepresentable>)\n"
 "--\n"
-"\n"
-"startfile(filepath [, operation])\n"
 "\n"
 "Start a file with its associated application.\n"
 "\n"
@@ -8724,4 +8731,4 @@ exit:
 #ifndef OS__REMOVE_DLL_DIRECTORY_METHODDEF
     #define OS__REMOVE_DLL_DIRECTORY_METHODDEF
 #endif /* !defined(OS__REMOVE_DLL_DIRECTORY_METHODDEF) */
-/*[clinic end generated code: output=3c5cb675b0d09145 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=fe7897441fed5402 input=a9049054013a1b77]*/

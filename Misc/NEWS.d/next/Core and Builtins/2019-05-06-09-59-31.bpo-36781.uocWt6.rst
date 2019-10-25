@@ -1,0 +1,1 @@
+:func:`sum` has been optimized for boolean values.
