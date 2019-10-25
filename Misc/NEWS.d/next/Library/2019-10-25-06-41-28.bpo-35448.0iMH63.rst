@@ -1,0 +1,2 @@
+A check_exist parameter for ConfigParser's read method which raises a
+FileNotFoundError when it couldn't find the given file.

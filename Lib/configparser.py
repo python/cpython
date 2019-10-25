@@ -676,7 +676,7 @@ class RawConfigParser(MutableMapping):
         opts.update(self._defaults)
         return list(opts.keys())
 
-    def read(self, filenames, encoding=None):
+    def read(self, filenames, encoding=None, check_exist=False):
         """Read and parse a filename or an iterable of filenames.
 
         Files that cannot be opened are silently ignored; this is
@@ -695,6 +695,11 @@ class RawConfigParser(MutableMapping):
             try:
                 with open(filename, encoding=encoding) as fp:
                     self._read(fp, filename)
+            except FileNotFoundError:
+                if check_exist:
+                    raise
+                else:
+                    continue
             except OSError:
                 continue
             if isinstance(filename, os.PathLike):

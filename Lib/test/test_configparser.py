@@ -757,6 +757,13 @@ boolean {0[0]} NO
         parsed_files = cf.read([file1_bytestring, b'nonexistent-file'])
         self.assertEqual(parsed_files, [file1_bytestring])
 
+    def test_read_non_existent_file(self):
+        cf = self.newconfig()
+        parsed_files = cf.read('nonexistent-file')
+        self.assertEqual(parsed_files, [])
+        with self.assertRaises(FileNotFoundError):
+            cf.read('nonexistent-file', check_exist=True)
+
     # shared by subclasses
     def get_interpolation_config(self):
         return self.fromstring(

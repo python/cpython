@@ -971,7 +971,7 @@ ConfigParser Objects
       *section* is :const:`None` or an empty string, DEFAULT is assumed.
 
 
-   .. method:: read(filenames, encoding=None)
+   .. method:: read(filenames, encoding=None, check_exist=False)
 
       Attempt to read and parse an iterable of filenames, returning a list of
       filenames which were successfully parsed.
@@ -985,16 +985,16 @@ ConfigParser Objects
       directory), and all existing configuration files in the iterable will be
       read.
 
-      If none of the named files exist, the :class:`ConfigParser`
-      instance will contain an empty dataset.  An application which requires
-      initial values to be loaded from a file should load the required file or
-      files using :meth:`read_file` before calling :meth:`read` for any
-      optional files::
+      If none of the named files exist and *check_exist* is False, the
+      :class:`ConfigParser` instance will contain an empty dataset. An
+      application which requires a field to be loaded should set *check_exist*
+      to ``True``. If *check_exist* is active, it will raise a
+      :exc:`FileNotFoundError` whenever it couldn't find the file::
 
          import configparser, os
 
          config = configparser.ConfigParser()
-         config.read_file(open('defaults.cfg'))
+         config.read('defaults.cfg', check_exist=True)
          config.read(['site.cfg', os.path.expanduser('~/.myapp.cfg')],
                      encoding='cp1250')
 
@@ -1008,6 +1008,8 @@ ConfigParser Objects
       .. versionadded:: 3.7
          The *filenames* parameter accepts a :class:`bytes` object.
 
+      .. versionadded:: 3.9
+         The *check_exist* parameter.
 
    .. method:: read_file(f, source=None)
 
