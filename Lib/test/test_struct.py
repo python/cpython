@@ -652,6 +652,13 @@ class StructTest(unittest.TestCase):
         s2 = struct.Struct(s.format.encode())
         self.assertEqual(s2.format, s.format)
 
+    def test_issue35714(self):
+        # Embedded null characters should not be allowed in format strings.
+        for s in '\0', '\144\u0064\000xf', 'd\0d', '>ih\0', '=Q\0\0':
+            with self.assertRaisesRegex(struct.error,
+                                        'embedded null character'):
+                struct.calcsize(s)
+
 
 class UnpackIteratorTest(unittest.TestCase):
     """

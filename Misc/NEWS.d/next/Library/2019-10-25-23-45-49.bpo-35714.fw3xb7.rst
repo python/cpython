@@ -1,0 +1,2 @@
+:exc:`struct.error` is now raised if there is a null character in a
+:mod:`struct` format string.
