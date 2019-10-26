@@ -138,6 +138,10 @@ Standard names are defined for the following types:
 
    The type for code objects such as returned by :func:`compile`.
 
+   .. audit-event:: code.__new__ code,filename,name,argcount,posonlyargcount,kwonlyargcount,nlocals,stacksize,flags CodeType
+
+   Note that the audited arguments may not match the names or positions
+   required by the initializer.
 
 .. data:: CellType
 
