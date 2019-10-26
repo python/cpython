@@ -330,7 +330,16 @@ accessible to C code.  They all work with the current interpreter thread's
 
    See :pep:`578` for a detailed description of auditing. Functions in the
    runtime and standard library that raise events include the details in each
-   function's documentation.
+   function's documentation and listed in the :ref:`audit events table
+   <audit-events>`.
+
+   .. audit-event:: sys.addaudithook "" c.PySys_AddAuditHook
+
+      If the interpreter is initialized, this function raises a auditing event
+      ``sys.addaudithook`` with no arguments. If any existing hooks raise an
+      exception derived from :class:`Exception`, the new hook will not be
+      added and the exception is cleared. As a result, callers cannot assume
+      that their hook has been added unless they control all existing hooks.
 
    .. versionadded:: 3.8
 
