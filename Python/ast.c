@@ -852,8 +852,9 @@ ast_for_decorator(struct compiling *c, const node *n)
         name_expr = NULL;
     }
     else if (NCH(n) == 5) { /* Call with no arguments */
-        d = Call(name_expr, NULL, NULL, NULL, NULL, LINENO(n),
-                 n->n_col_offset, c->c_arena);
+        d = Call(name_expr, NULL, NULL, NULL, NULL,
+                 name_expr->lineno, name_expr->col_offset,
+                 c->c_arena);
         if (!d)
             return NULL;
         name_expr = NULL;
