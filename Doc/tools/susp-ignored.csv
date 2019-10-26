@@ -1,6 +1,7 @@
 c-api/arg,,:ref,"PyArg_ParseTuple(args, ""O|O:ref"", &object, &callback)"
 c-api/list,,:high,list[low:high]
 c-api/sequence,,:i2,o[i1:i2]
+c-api/tuple,,:high,p[low:high]
 c-api/unicode,,:end,str[start:end]
 distutils/setupscript,,::,
 extending/embedding,,:numargs,"if(!PyArg_ParseTuple(args, "":numargs""))"
