@@ -71,8 +71,9 @@ List Objects
 
 .. c:function:: int PyList_SetItem(PyObject *list, Py_ssize_t index, PyObject *item)
 
-   Set the item at index *index* in list to *item*.  Return ``0`` on success
-   or ``-1`` on failure.
+   Set the item at index *index* in list to *item*.  Return ``0`` on success.
+   If *index* is out of bounds, return ``-1`` and set an :exc:`IndexError`
+   exception.
 
    .. note::
 
@@ -111,8 +112,7 @@ List Objects
 
    Return a list of the objects in *list* containing the objects *between* *low*
    and *high*.  Return *NULL* and set an exception if unsuccessful.  Analogous
-   to ``list[low:high]``.  Negative indices, as when slicing from Python, are not
-   supported.
+   to ``list[low:high]``.  Indexing from the end of the list is not supported.
 
 
 .. c:function:: int PyList_SetSlice(PyObject *list, Py_ssize_t low, Py_ssize_t high, PyObject *itemlist)
@@ -120,8 +120,8 @@ List Objects
    Set the slice of *list* between *low* and *high* to the contents of
    *itemlist*.  Analogous to ``list[low:high] = itemlist``. The *itemlist* may
    be *NULL*, indicating the assignment of an empty list (slice deletion).
-   Return ``0`` on success, ``-1`` on failure.  Negative indices, as when
-   slicing from Python, are not supported.
+   Return ``0`` on success, ``-1`` on failure.  Indexing from the end of the
+   list is not supported.
 
 
 .. c:function:: int PyList_Sort(PyObject *list)
