@@ -57,7 +57,7 @@ Tuple Objects
 .. c:function:: PyObject* PyTuple_GetItem(PyObject *p, Py_ssize_t pos)
 
    Return the object at position *pos* in the tuple pointed to by *p*.  If *pos* is
-   out of bounds, return *NULL* and sets an :exc:`IndexError` exception.
+   out of bounds, return *NULL* and set an :exc:`IndexError` exception.
 
 
 .. c:function:: PyObject* PyTuple_GET_ITEM(PyObject *p, Py_ssize_t pos)
@@ -67,18 +67,21 @@ Tuple Objects
 
 .. c:function:: PyObject* PyTuple_GetSlice(PyObject *p, Py_ssize_t low, Py_ssize_t high)
 
-   Take a slice of the tuple pointed to by *p* from *low* to *high* and return it
-   as a new tuple.
+   Return the slice of the tuple pointed to by *p* between *low* and *high*,
+   or *NULL* on failure.  This is the equivalent of the Python expression
+   ``p[low:high]``.  Indexing from the end of the list is not supported.
 
 
 .. c:function:: int PyTuple_SetItem(PyObject *p, Py_ssize_t pos, PyObject *o)
 
    Insert a reference to object *o* at position *pos* of the tuple pointed to by
-   *p*. Return ``0`` on success.
+   *p*.  Return ``0`` on success.  If *pos* is out of bounds, return ``-1``
+   and set an :exc:`IndexError` exception.
 
    .. note::
 
-      This function "steals" a reference to *o*.
+      This function "steals" a reference to *o* and discards a reference to
+      an item already in the tuple at the affected position.
 
 
 .. c:function:: void PyTuple_SET_ITEM(PyObject *p, Py_ssize_t pos, PyObject *o)
@@ -88,7 +91,10 @@ Tuple Objects
 
    .. note::
 
-      This function "steals" a reference to *o*.
+      This macro "steals" a reference to *o*, and, unlike
+      :c:func:`PyTuple_SetItem`, does *not* discard a reference to any item that
+      is being replaced; any reference in the tuple at position *pos* will be
+      leaked.
 
 
 .. c:function:: int _PyTuple_Resize(PyObject **p, Py_ssize_t newsize)
