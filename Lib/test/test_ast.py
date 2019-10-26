@@ -129,11 +129,11 @@ exec_tests = [
     # Asynchronous comprehensions
     "async def f():\n [i async for b in c]",
     # Decorated FunctionDef
-    "@deco1\n@deco2()\ndef f(): pass",
+    "@deco1\n@deco2()\n@deco3(1)\ndef f(): pass",
     # Decorated AsyncFunctionDef
-    "@deco1\n@deco2()\nasync def f(): pass",
+    "@deco1\n@deco2()\n@deco3(1)\nasync def f(): pass",
     # Decorated ClassDef
-    "@deco1\n@deco2()\nclass C: pass",
+    "@deco1\n@deco2()\n@deco3(1)\nclass C: pass",
     # Decorator with generator argument
     "@deco(a for a in b)\ndef f(): pass",
     # Simple assignment expression
@@ -1870,9 +1870,9 @@ exec_results = [
 ('Module', [('Expr', (1, 0), ('Dict', (1, 0), [None, ('Constant', (1, 10), 2, None)], [('Dict', (1, 3), [('Constant', (1, 4), 1, None)], [('Constant', (1, 6), 2, None)]), ('Constant', (1, 12), 3, None)]))], []),
 ('Module', [('Expr', (1, 0), ('Set', (1, 0), [('Starred', (1, 1), ('Set', (1, 2), [('Constant', (1, 3), 1, None), ('Constant', (1, 6), 2, None)]), ('Load',)), ('Constant', (1, 10), 3, None)]))], []),
 ('Module', [('AsyncFunctionDef', (1, 0), 'f', ('arguments', [], [], None, [], [], None, []), [('Expr', (2, 1), ('ListComp', (2, 1), ('Name', (2, 2), 'i', ('Load',)), [('comprehension', ('Name', (2, 14), 'b', ('Store',)), ('Name', (2, 19), 'c', ('Load',)), [], 1)]))], [], None, None)], []),
-('Module', [('FunctionDef', (3, 0), 'f', ('arguments', [], [], None, [], [], None, []), [('Pass', (3, 9))], [('Name', (1, 1), 'deco1', ('Load',)), ('Call', (2, 0), ('Name', (2, 1), 'deco2', ('Load',)), [], [])], None, None)], []),
-('Module', [('AsyncFunctionDef', (3, 0), 'f', ('arguments', [], [], None, [], [], None, []), [('Pass', (3, 15))], [('Name', (1, 1), 'deco1', ('Load',)), ('Call', (2, 0), ('Name', (2, 1), 'deco2', ('Load',)), [], [])], None, None)], []),
-('Module', [('ClassDef', (3, 0), 'C', [], [], [('Pass', (3, 9))], [('Name', (1, 1), 'deco1', ('Load',)), ('Call', (2, 0), ('Name', (2, 1), 'deco2', ('Load',)), [], [])])], []),
+('Module', [('FunctionDef', (4, 0), 'f', ('arguments', [], [], None, [], [], None, []), [('Pass', (4, 9))], [('Name', (1, 1), 'deco1', ('Load',)), ('Call', (2, 1), ('Name', (2, 1), 'deco2', ('Load',)), [], []), ('Call', (3, 1), ('Name', (3, 1), 'deco3', ('Load',)), [('Constant', (3, 7), 1, None)], [])], None, None)], []),
+('Module', [('AsyncFunctionDef', (4, 0), 'f', ('arguments', [], [], None, [], [], None, []), [('Pass', (4, 15))], [('Name', (1, 1), 'deco1', ('Load',)), ('Call', (2, 1), ('Name', (2, 1), 'deco2', ('Load',)), [], []), ('Call', (3, 1), ('Name', (3, 1), 'deco3', ('Load',)), [('Constant', (3, 7), 1, None)], [])], None, None)], []),
+('Module', [('ClassDef', (4, 0), 'C', [], [], [('Pass', (4, 9))], [('Name', (1, 1), 'deco1', ('Load',)), ('Call', (2, 1), ('Name', (2, 1), 'deco2', ('Load',)), [], []), ('Call', (3, 1), ('Name', (3, 1), 'deco3', ('Load',)), [('Constant', (3, 7), 1, None)], [])])], []),
 ('Module', [('FunctionDef', (2, 0), 'f', ('arguments', [], [], None, [], [], None, []), [('Pass', (2, 9))], [('Call', (1, 1), ('Name', (1, 1), 'deco', ('Load',)), [('GeneratorExp', (1, 5), ('Name', (1, 6), 'a', ('Load',)), [('comprehension', ('Name', (1, 12), 'a', ('Store',)), ('Name', (1, 17), 'b', ('Load',)), [], 0)])], [])], None, None)], []),
 ('Module', [('Expr', (1, 0), ('NamedExpr', (1, 1), ('Name', (1, 1), 'a', ('Store',)), ('Constant', (1, 6), 1, None)))], []),
 ('Module', [('FunctionDef', (1, 0), 'f', ('arguments', [('arg', (1, 6), 'a', None, None)], [], None, [], [], None, []), [('Pass', (1, 14))], [], None, None)], []),

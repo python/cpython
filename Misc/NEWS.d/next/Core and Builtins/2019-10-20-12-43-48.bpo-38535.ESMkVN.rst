@@ -1,0 +1,2 @@
+Fixed line numbers and column offsets for AST nodes for calls without
+arguments in decorators.
