@@ -103,6 +103,12 @@ exec_tests = [
     "{r for l in x if g}",
     # setcomp with naked tuple
     "{r for l,m in x}",
+    # Decorated FunctionDef
+    "@deco1\n@deco2()\n@deco3(1)\ndef f(): pass",
+    # Decorated ClassDef
+    "@deco1\n@deco2()\n@deco3(1)\nclass C: pass",
+    # Decorator with generator argument
+    "@deco(a for a in b)\ndef f(): pass",
 ]
 
 # These are compiled through "single"
@@ -546,6 +552,9 @@ exec_results = [
 ('Module', [('Expr', (1, 0), ('DictComp', (1, 1), ('Name', (1, 1), 'a', ('Load',)), ('Name', (1, 5), 'b', ('Load',)), [('comprehension', ('Tuple', (1, 11), [('Name', (1, 11), 'v', ('Store',)), ('Name', (1, 13), 'w', ('Store',))], ('Store',)), ('Name', (1, 18), 'x', ('Load',)), [])]))]),
 ('Module', [('Expr', (1, 0), ('SetComp', (1, 1), ('Name', (1, 1), 'r', ('Load',)), [('comprehension', ('Name', (1, 7), 'l', ('Store',)), ('Name', (1, 12), 'x', ('Load',)), [('Name', (1, 17), 'g', ('Load',))])]))]),
 ('Module', [('Expr', (1, 0), ('SetComp', (1, 1), ('Name', (1, 1), 'r', ('Load',)), [('comprehension', ('Tuple', (1, 7), [('Name', (1, 7), 'l', ('Store',)), ('Name', (1, 9), 'm', ('Store',))], ('Store',)), ('Name', (1, 14), 'x', ('Load',)), [])]))]),
+('Module', [('FunctionDef', (1, 0), 'f', ('arguments', [], None, None, []), [('Pass', (4, 9))], [('Name', (1, 1), 'deco1', ('Load',)), ('Call', (2, 1), ('Name', (2, 1), 'deco2', ('Load',)), [], [], None, None), ('Call', (3, 1), ('Name', (3, 1), 'deco3', ('Load',)), [('Num', (3, 7), 1)], [], None, None)])]),
+('Module', [('ClassDef', (1, 0), 'C', [], [('Pass', (4, 9))], [('Name', (1, 1), 'deco1', ('Load',)), ('Call', (2, 1), ('Name', (2, 1), 'deco2', ('Load',)), [], [], None, None), ('Call', (3, 1), ('Name', (3, 1), 'deco3', ('Load',)), [('Num', (3, 7), 1)], [], None, None)])]),
+('Module', [('FunctionDef', (1, 0), 'f', ('arguments', [], None, None, []), [('Pass', (2, 9))], [('Call', (1, 1), ('Name', (1, 1), 'deco', ('Load',)), [('GeneratorExp', (1, 6), ('Name', (1, 6), 'a', ('Load',)), [('comprehension', ('Name', (1, 12), 'a', ('Store',)), ('Name', (1, 17), 'b', ('Load',)), [])])], [], None, None)])]),
 ]
 single_results = [
 ('Interactive', [('Expr', (1, 0), ('BinOp', (1, 0), ('Num', (1, 0), 1), ('Add',), ('Num', (1, 2), 2)))]),
