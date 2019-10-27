@@ -81,7 +81,7 @@ Type Objects
 
    Generic handler for the :c:member:`~PyTypeObject.tp_alloc` slot of a type object.  Use
    Python's default memory allocation mechanism to allocate a new instance and
-   initialize all its contents to *NULL*.
+   initialize all its contents to ``NULL``.
 
 .. c:function:: PyObject* PyType_GenericNew(PyTypeObject *type, PyObject *args, PyObject *kwds)
 
@@ -98,7 +98,7 @@ Type Objects
 .. c:function:: void* PyType_GetSlot(PyTypeObject *type, int slot)
 
    Return the function pointer stored in the given slot. If the
-   result is *NULL*, this indicates that either the slot is *NULL*,
+   result is ``NULL``, this indicates that either the slot is ``NULL``,
    or that the function was called with invalid parameters.
    Callers will typically cast the result pointer into the appropriate
    function type.
@@ -124,8 +124,8 @@ The following functions and structs are used to create
    If *bases* is a tuple, the created heap type contains all types contained
    in it as base types.
 
-   If *bases* is *NULL*, the *Py_tp_base* slot is used instead.
-   If that also is *NULL*, the new type derives from :class:`object`.
+   If *bases* is ``NULL``, the *Py_tp_base* slot is used instead.
+   If that also is ``NULL``, the new type derives from :class:`object`.
 
    This function calls :c:func:`PyType_Ready` on the new type.
 
@@ -205,4 +205,4 @@ The following functions and structs are used to create
       The desired value of the slot. In most cases, this is a pointer
       to a function.
 
-      May not be *NULL*.
+      May not be ``NULL``.

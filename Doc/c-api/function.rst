@@ -26,7 +26,7 @@ There are a few functions specific to Python functions.
 .. c:function:: int PyFunction_Check(PyObject *o)
 
    Return true if *o* is a function object (has type :c:data:`PyFunction_Type`).
-   The parameter must not be *NULL*.
+   The parameter must not be ``NULL``.
 
 
 .. c:function:: PyObject* PyFunction_New(PyObject *code, PyObject *globals)
@@ -36,7 +36,7 @@ There are a few functions specific to Python functions.
 
    The function's docstring and name are retrieved from the code object. *__module__*
    is retrieved from *globals*. The argument defaults, annotations and closure are
-   set to *NULL*. *__qualname__* is set to the same value as the function's name.
+   set to ``NULL``. *__qualname__* is set to the same value as the function's name.
 
 
 .. c:function:: PyObject* PyFunction_NewWithQualName(PyObject *code, PyObject *globals, PyObject *qualname)
@@ -69,7 +69,7 @@ There are a few functions specific to Python functions.
 .. c:function:: PyObject* PyFunction_GetDefaults(PyObject *op)
 
    Return the argument default values of the function object *op*. This can be a
-   tuple of arguments or *NULL*.
+   tuple of arguments or ``NULL``.
 
 
 .. c:function:: int PyFunction_SetDefaults(PyObject *op, PyObject *defaults)
@@ -82,7 +82,7 @@ There are a few functions specific to Python functions.
 
 .. c:function:: PyObject* PyFunction_GetClosure(PyObject *op)
 
-   Return the closure associated with the function object *op*. This can be *NULL*
+   Return the closure associated with the function object *op*. This can be ``NULL``
    or a tuple of cell objects.
 
 
@@ -97,7 +97,7 @@ There are a few functions specific to Python functions.
 .. c:function:: PyObject *PyFunction_GetAnnotations(PyObject *op)
 
    Return the annotations of the function object *op*. This can be a
-   mutable dictionary or *NULL*.
+   mutable dictionary or ``NULL``.
 
 
 .. c:function:: int PyFunction_SetAnnotations(PyObject *op, PyObject *annotations)
