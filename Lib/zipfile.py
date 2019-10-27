@@ -792,10 +792,10 @@ class ZipExtFile(io.BufferedIOBase):
     # Chunk size to read during seek
     MAX_SEEK_READ = 1 << 24
 
-    def __init__(self, fileobj, mode, zipinfo, decrypter=None,
+    def __init__(self, fileobj, mode, zipinfo, pwd=None,
                  close_fileobj=False):
         self._fileobj = fileobj
-        self._decrypter = decrypter
+        self._pwd = pwd
         self._close_fileobj = close_fileobj
 
         self._compress_type = zipinfo.compress_type
@@ -809,11 +809,6 @@ class ZipExtFile(io.BufferedIOBase):
         self._offset = 0
 
         self.newlines = None
-
-        # Adjust read size for encrypted files since the first 12 bytes
-        # are for the encryption/password information.
-        if self._decrypter is not None:
-            self._compress_left -= 12
 
         self.mode = mode
         self.name = zipinfo.filename
@@ -834,6 +829,30 @@ class ZipExtFile(io.BufferedIOBase):
                 self._seekable = True
         except AttributeError:
             pass
+
+        self._decrypter = None
+        if pwd:
+            if zipinfo.flag_bits & 0x8:
+                # compare against the file type from extended local headers
+                check_byte = (zipinfo._raw_time >> 8) & 0xff
+            else:
+                # compare against the CRC otherwise
+                check_byte = (zipinfo.CRC >> 24) & 0xff
+            h = self._init_decrypter()
+            if h != check_byte:
+                raise RuntimeError("Bad password for file %r" % zipinfo.orig_filename)
+
+
+    def _init_decrypter(self):
+        self._decrypter = _ZipDecrypter(self._pwd)
+        # The first 12 bytes in the cypher stream is an encryption header
+        #  used to strengthen the algorithm. The first 11 bytes are
+        #  completely random, while the 12th contains the MSB of the CRC,
+        #  or the MSB of the file time depending on the header type
+        #  and is used to check the correctness of the password.
+        header = self._fileobj.read(12)
+        self._compress_left -= 12
+        return self._decrypter(header)[11]
 
     def __repr__(self):
         result = ['<%s.%s' % (self.__class__.__module__,
@@ -1061,6 +1080,8 @@ class ZipExtFile(io.BufferedIOBase):
             self._decompressor = _get_decompressor(self._compress_type)
             self._eof = False
             read_offset = new_pos
+            if self._decrypter is not None:
+                self._init_decrypter()
 
         while read_offset > 0:
             read_len = min(self.MAX_SEEK_READ, read_offset)
@@ -1524,32 +1545,16 @@ class ZipFile:
 
             # check for encrypted flag & handle password
             is_encrypted = zinfo.flag_bits & 0x1
-            zd = None
             if is_encrypted:
                 if not pwd:
                     pwd = self.pwd
                 if not pwd:
                     raise RuntimeError("File %r is encrypted, password "
                                        "required for extraction" % name)
+            else:
+                pwd = None
 
-                zd = _ZipDecrypter(pwd)
-                # The first 12 bytes in the cypher stream is an encryption header
-                #  used to strengthen the algorithm. The first 11 bytes are
-                #  completely random, while the 12th contains the MSB of the CRC,
-                #  or the MSB of the file time depending on the header type
-                #  and is used to check the correctness of the password.
-                header = zef_file.read(12)
-                h = zd(header[0:12])
-                if zinfo.flag_bits & 0x8:
-                    # compare against the file type from extended local headers
-                    check_byte = (zinfo._raw_time >> 8) & 0xff
-                else:
-                    # compare against the CRC otherwise
-                    check_byte = (zinfo.CRC >> 24) & 0xff
-                if h[11] != check_byte:
-                    raise RuntimeError("Bad password for file %r" % name)
-
-            return ZipExtFile(zef_file, mode, zinfo, zd, True)
+            return ZipExtFile(zef_file, mode, zinfo, pwd, True)
         except:
             zef_file.close()
             raise
