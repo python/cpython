@@ -23,6 +23,7 @@
       'fr': 'French',
       'ja': 'Japanese',
       'ko': 'Korean',
+      'pt-br': 'Brazilian Portuguese',
       'zh-cn': 'Simplified Chinese',
   };
 
