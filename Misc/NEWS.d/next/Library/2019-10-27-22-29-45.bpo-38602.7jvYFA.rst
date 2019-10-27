@@ -1,0 +1,2 @@
+:data:`~fcntl.F_OFD_GETLK`, :data:`~fcntl.F_OFD_SETLK` and
+:data:`~fcntl.F_OFD_SETLKW` are added. Patch by Dong-hee Na.
