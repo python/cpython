@@ -430,7 +430,7 @@ class MiscReadTest(CommonReadTest):
                     "wrong uname for %s" % tarinfo.name)
 
     def test_find_members(self):
-        self.assertTrue(self.tar.getmembers()[-1].name == "misc/eof",
+        self.assertTrue(self.tar.getmembers()[-1].name == "misc/hard-link",
                 "could not find all members")
 
     def test_extract_hardlink(self):
@@ -453,7 +453,6 @@ class MiscReadTest(CommonReadTest):
 
     @unittest.skipUnless(hasattr(os, "link"),
                          "Missing hardlink implementation")
-    @support.skip_unless_symlink
     def test_skip_hardlink(self):
         # Test skipping hard link if file points to itself (e.g. bug #29612)
         with tarfile.open(tarname, errorlevel=1, encoding="iso8859-1") as tar:
