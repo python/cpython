@@ -126,7 +126,7 @@ that schedules a shutdown for the default executor that waits on the
 (Contributed by Kyle Stanley in :issue:`34037`.)
 
 fcntl
---
+-----
 
 :data:`~fcntl.F_OFD_GETLK`, :data:`~fcntl.F_OFD_SETLK` and
 :data:`~fcntl.F_OFD_SETLKW` are added for fcntlmodule.
