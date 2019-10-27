@@ -451,6 +451,15 @@ class MiscReadTest(CommonReadTest):
                 data = f.read()
             self.assertEqual(md5sum(data), md5_regtype)
 
+    @unittest.skipUnless(hasattr(os, "link"),
+                         "Missing hardlink implementation")
+    @support.skip_unless_symlink
+    def test_skip_hardlink(self):
+        # Test skipping hard link if file points to itself (e.g. bug #29612)
+        with tarfile.open(tarname, errorlevel=1, encoding="iso8859-1") as tar:
+            tar.extract("misc/hard-link", TEMPDIR)
+            self.assertFalse(os.path.islink(os.path.join(TEMPDIR, "misc/hard-link")))
+
     def test_extractall(self):
         # Test if extractall() correctly restores directory permissions
         # and times (see issue1735).
