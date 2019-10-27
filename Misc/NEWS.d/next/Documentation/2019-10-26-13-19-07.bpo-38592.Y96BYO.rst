@@ -1,0 +1,1 @@
+Add Brazilian Portuguese to the language switcher at Python Documentation website.
