@@ -207,24 +207,28 @@ If you need an attribute setting on your mock, just do it:
     >>> mock.x
     3
 
-Sometimes you want to mock up a more complex situation, like for example
-``mock.connection.cursor().execute("SELECT 1")``.
+Sometimes you want to mock up a more complex expression, such as
+``db.connection.cursor().execute("SELECT 1")``. If we wanted this
+call to return ``['foo']``, we could do:
 
-We can use :data:`call` to construct the set of calls in a "chained call" like
-this for easy assertion afterwards:
+   >>> db = Mock()
+   >>> db.connection.cursor.return_value.execute.return_value = ['foo']
 
-    >>> mock = Mock()
-    >>> mock.connection.cursor.return_value.execute.return_value = ['foo']
-    >>> mock.connection.cursor().execute("SELECT 1")
-    ['foo']
-    >>> expected = call.connection.cursor().execute("SELECT 1").call_list()
-    >>> mock.mock_calls
-    [call.connection.cursor(), call.connection.cursor().execute('SELECT 1')]
-    >>> mock.mock_calls == expected
-    True
+Since we haven't specified a ``return_value`` for ``mock.connection.cursor()``,
+a regular new mock object will be created by default.  When calling ``execute``
+on the new mock, this previously non-existant method will be created for the mock
+(which is an inherent feature of mocks) and will return ``['foo']`` when called::
 
-It is the call to ``.call_list()`` that turns our call object into a list of
-calls representing the chained calls.
+   >>> cursor = db.connection.cursor()
+   >>> cursor  # check that cursor is a new mock with an execute method
+   <Mock name='db.connection.cursor()' id='...'>
+   >>> cursor.execute("SELECT 1")
+   ['foo']
+
+This is equivalent to executing the initial expression::
+
+   >>> db.connection.cursor().execute("SELECT 1")
+   ['foo']
 
 
 Raising exceptions with mocks
@@ -301,16 +305,19 @@ By default, ``__aenter__`` and ``__aexit__`` are ``AsyncMock`` instances that
 return an async function. So you can do:
 
     >>> async def main():
-    ...     async with MagicMock() as async_context_manager: # Replacing MagicMock with AsyncMock would also work
+    ...     async with MagicMock() as async_context_manager: # AsyncMock works here too
     ...         print('Inside async context manager')
+    ...
     >>> asyncio.run(main())
     Inside async context manager
 
-This would not work with Mock class, though, because it doesn't have the pre-assigned ``__aexit__`` and ``__aenter__`` methods.
+This would not work with Mock class, though, because it doesn't
+have the pre-assigned ``__aexit__`` and ``__aenter__`` methods.
 
     >>> async def main():
     ...     async with Mock() as context_manager:
     ...         print('Inside async context manager')
+    ...
     >>> asyncio.run(main())
     Traceback (most recent call last):
       ...
