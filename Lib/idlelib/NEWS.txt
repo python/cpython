@@ -1,5 +1,13 @@
+What's New in IDLE 3.9.0 (since 3.8.0)
+Released on 2020-10-05?
+======================================
+
+
+bpo-38598: Do not try to compile IDLE shell or output windows.
+
+
 What's New in IDLE 3.8.0 (since 3.7.0)
-Released on 2019-10-20?
+Released on 2019-10-14
 ======================================
 
 bpo-36698: IDLE no longer fails when writing non-encodable characters
