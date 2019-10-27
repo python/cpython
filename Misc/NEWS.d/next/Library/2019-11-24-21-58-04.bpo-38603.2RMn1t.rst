@@ -1,0 +1,3 @@
+`inspect.getdoc` now correctly inherits docstrings in dynamically generated
+subclasses for methods that rely on `super()` (as the owning class can be
+retrieved by inspecting the `__class__` cell).
