@@ -2,6 +2,15 @@ What's New in IDLE 3.8.0 (since 3.7.0)
 Released on 2019-10-20?
 ======================================
 
+bpo-36698: IDLE no longer fails when writing non-encodable characters
+to stderr.  It now escapes them with a backslash, like the regular
+Python interpreter.  Add an errors field to the standard streams.
+
+bpo-13153: Improve tkinter's handing of non-BMP (astral) unicode
+characters, such as 'rocket \U0001f680'.  Whether a proper glyph or
+replacement char is displayed depends on the OS and font.  For IDLE,
+astral chars in code interfere with editing.
+
 bpo-35379: When exiting IDLE, catch any AttributeError.  One happens
 when EditorWindow.close is called twice.  Printing a traceback, when
 IDLE is run from a terminal, is useless and annoying.
