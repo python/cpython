@@ -1,0 +1,1 @@
+Add an option to toggle IDLE's cursor blink.

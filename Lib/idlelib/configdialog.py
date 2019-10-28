@@ -236,6 +236,7 @@ class ConfigDialog(Toplevel):
             instance.set_notabs_indentwidth()
             instance.ApplyKeybindings()
             instance.reset_help_menu_entries()
+            instance.UpdateCursorBlink()
         for klass in reloadables:
             klass.reload()
 
@@ -1844,6 +1845,9 @@ class GenPage(Frame):
                 frame_context: Frame
                     context_title: Label
                     (*)context_int: Entry - context_lines
+                frame_cursor_blink_default: Frame
+                    cursor_blink_default_title: Label
+                    (*)cursor_blink_default_bool: Checkbutton - cursor_blink_default
             frame_shell: LabelFrame
                 frame_auto_squeeze_min_lines: Frame
                     auto_squeeze_min_lines_title: Label
@@ -1885,6 +1889,8 @@ class GenPage(Frame):
                 ('main', 'EditorWindow', 'line-numbers-default'))
         self.context_lines = tracers.add(
                 StringVar(self), ('extensions', 'CodeContext', 'maxlines'))
+        self.cursor_blink_default = tracers.add(
+                BooleanVar(self), ('main', 'EditorWindow', 'cursor-blink'))
 
         # Create widgets:
         # Section frames.
@@ -1976,6 +1982,13 @@ class GenPage(Frame):
                 validatecommand=self.digits_only, validate='key',
         )
 
+        frame_cursor_blink_default = Frame(frame_editor, borderwidth=0)
+        cursor_blink_default_title = Label(
+            frame_cursor_blink_default, text='Cursor Blink')
+        self.cursor_blink_default_bool = Checkbutton(
+                frame_cursor_blink_default,
+                variable=self.cursor_blink_default, width=1)
+
         # Frame_shell.
         frame_auto_squeeze_min_lines = Frame(frame_shell, borderwidth=0)
         auto_squeeze_min_lines_title = Label(frame_auto_squeeze_min_lines,
@@ -2054,6 +2067,10 @@ class GenPage(Frame):
         frame_context.pack(side=TOP, padx=5, pady=0, fill=X)
         context_title.pack(side=LEFT, anchor=W, padx=5, pady=5)
         self.context_int.pack(side=TOP, padx=5, pady=5)
+        # frame_cursor_blink_default.
+        frame_cursor_blink_default.pack(side=TOP, padx=5, pady=0, fill=X)
+        cursor_blink_default_title.pack(side=LEFT, anchor=W, padx=5, pady=5)
+        self.cursor_blink_default_bool.pack(side=LEFT, padx=5, pady=5)
 
         # frame_auto_squeeze_min_lines
         frame_auto_squeeze_min_lines.pack(side=TOP, padx=5, pady=0, fill=X)
@@ -2096,6 +2113,8 @@ class GenPage(Frame):
                 'main', 'EditorWindow', 'line-numbers-default', type='bool'))
         self.context_lines.set(idleConf.GetOption(
                 'extensions', 'CodeContext', 'maxlines', type='int'))
+        self.cursor_blink_default.set(idleConf.GetOption(
+                'main', 'EditorWindow', 'cursor-blink', type='bool'))
 
         # Set variables for shell windows.
         self.auto_squeeze_min_lines.set(idleConf.GetOption(

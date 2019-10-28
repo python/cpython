@@ -134,6 +134,10 @@ class EditorWindow(object):
                         'main', 'EditorWindow', 'height', type='int'),
                 }
         self.text = text = MultiCallCreator(Text)(text_frame, **text_options)
+        # Store the current value of the insertofftime now so we can restore
+        # it if needed.
+        self.text._insertofftime = self.text['insertofftime']
+        self.UpdateCursorBlink()
         self.top.focused_widget = self.text
 
         self.createmenubar()
@@ -802,6 +806,16 @@ class EditorWindow(object):
         else:
             text.mark_set("insert", pos + "+1c")
         text.see(pos)
+
+    def UpdateCursorBlink(self):
+        "Update the cursor blink configuration."
+        cursorblink = idleConf.GetOption(
+                'main', 'EditorWindow', 'cursor-blink', type='bool')
+        if not cursorblink:
+            self.text.config(insertofftime=0)
+        else:
+            # Restore the original value
+            self.text.config(insertofftime=self.text._insertofftime)
 
     def ResetFont(self):
         "Update the text widgets' font if it is changed"
