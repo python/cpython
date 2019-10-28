@@ -71,7 +71,6 @@ def open(file, mode="r", buffering=-1, encoding=None, errors=None,
     'b'       binary mode
     't'       text mode (default)
     '+'       open a disk file for updating (reading and writing)
-    'U'       universal newline mode (deprecated)
     ========= ===============================================================
 
     The default mode is 'rt' (open for reading text). For binary random
@@ -86,10 +85,6 @@ def open(file, mode="r", buffering=-1, encoding=None, errors=None,
     't' is appended to the mode argument), the contents of the file are
     returned as strings, the bytes having been first decoded using a
     platform-dependent encoding or using the specified encoding if given.
-
-    'U' mode is deprecated and will raise an exception in future versions
-    of Python.  It has no effect in Python 3.  Use newline to control
-    universal newlines mode.
 
     buffering is an optional integer used to set the buffering policy.
     Pass 0 to switch buffering off (only allowed in binary mode), 1 to select
@@ -176,7 +171,7 @@ def open(file, mode="r", buffering=-1, encoding=None, errors=None,
     if errors is not None and not isinstance(errors, str):
         raise TypeError("invalid errors: %r" % errors)
     modes = set(mode)
-    if modes - set("axrwb+tU") or len(mode) > len(modes):
+    if modes - set("axrwb+t") or len(mode) > len(modes):
         raise ValueError("invalid mode: %r" % mode)
     creating = "x" in modes
     reading = "r" in modes
@@ -185,13 +180,6 @@ def open(file, mode="r", buffering=-1, encoding=None, errors=None,
     updating = "+" in modes
     text = "t" in modes
     binary = "b" in modes
-    if "U" in modes:
-        if creating or writing or appending or updating:
-            raise ValueError("mode U cannot be combined with 'x', 'w', 'a', or '+'")
-        import warnings
-        warnings.warn("'U' mode is deprecated",
-                      DeprecationWarning, 2)
-        reading = True
     if text and binary:
         raise ValueError("can't have text and binary mode at once")
     if creating + reading + writing + appending > 1:
