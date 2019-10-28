@@ -330,7 +330,7 @@ PyAST_CompileObject(mod_ty mod, PyObject *filename, PyCompilerFlags *flags,
     }
     if (!compiler_init(&c))
         return NULL;
-    Py_INCREF(filename);
+    Py_XINCREF(filename);
     c.c_filename = filename;
     c.c_arena = arena;
     c.c_future = PyFuture_FromASTObject(mod, filename);
