@@ -1,1 +1,2 @@
-Fix behavior of argparse when '--' as argument to option.
+'--' should be treated as other characters when '--' is
+a part of argument.
