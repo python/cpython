@@ -216,12 +216,7 @@ def get_layout(ns):
 
     if ns.include_dev:
 
-        def _c(d):
-            if d.is_dir():
-                return d.name != "internal"
-            return True
-
-        for dest, src in rglob(ns.source / "Include", "**/*.h", _c):
+        for dest, src in rglob(ns.source / "Include", "**/*.h"):
             yield "include/{}".format(dest), src
         src = ns.source / "PC" / "pyconfig.h"
         yield "include/pyconfig.h", src
