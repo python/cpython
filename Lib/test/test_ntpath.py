@@ -319,8 +319,8 @@ class TestNtpath(NtpathTestCase):
     @support.skip_unless_symlink
     @unittest.skipUnless(HAVE_GETFINALPATHNAME, 'need _getfinalpathname')
     def test_realpath_symlink_loops(self):
-        # Bug #930024, return the path unchanged if we get into an infinite
-        # symlink loop.
+        # Symlink loops are non-deterministic as to which path is returned, but
+        # it will always be the fully resolved path of one member of the cycle
         ABSTFN = ntpath.abspath(support.TESTFN)
         self.addCleanup(support.unlink, ABSTFN)
         self.addCleanup(support.unlink, ABSTFN + "1")
@@ -332,8 +332,6 @@ class TestNtpath(NtpathTestCase):
         os.symlink(ABSTFN, ABSTFN)
         self.assertPathEqual(ntpath.realpath(ABSTFN), ABSTFN)
 
-        # cycles are non-deterministic as to which path is returned, but
-        # it will always be the fully resolved path of one member of the cycle
         os.symlink(ABSTFN + "1", ABSTFN + "2")
         os.symlink(ABSTFN + "2", ABSTFN + "1")
         expected = (ABSTFN + "1", ABSTFN + "2")
@@ -401,6 +399,34 @@ class TestNtpath(NtpathTestCase):
     @unittest.skipUnless(HAVE_GETFINALPATHNAME, 'need _getfinalpathname')
     def test_realpath_nul(self):
         tester("ntpath.realpath('NUL')", r'\\.\NUL')
+
+    @unittest.skipUnless(HAVE_GETFINALPATHNAME, 'need _getfinalpathname')
+    def test_realpath_cwd(self):
+        ABSTFN = ntpath.abspath(support.TESTFN)
+
+        support.unlink(ABSTFN)
+        support.rmtree(ABSTFN)
+        os.mkdir(ABSTFN)
+        self.addCleanup(support.rmtree, ABSTFN)
+
+        test_dir_long = ntpath.join(ABSTFN, "MyVeryLongDirectoryName")
+        test_dir_short = ntpath.join(ABSTFN, "MYVERY~1")
+        test_file_long = ntpath.join(test_dir_long, "file.txt")
+        test_file_short = ntpath.join(test_dir_short, "file.txt")
+
+        os.mkdir(test_dir_long)
+
+        with open(test_file_long, "wb") as f:
+            f.write(b"content")
+
+        self.assertPathEqual(test_file_long, ntpath.realpath(test_file_short))
+
+        with support.change_cwd(test_dir_long):
+            self.assertPathEqual(test_file_long, ntpath.realpath("file.txt"))
+        with support.change_cwd(test_dir_long.lower()):
+            self.assertPathEqual(test_file_long, ntpath.realpath("file.txt"))
+        with support.change_cwd(test_dir_short):
+            self.assertPathEqual(test_file_long, ntpath.realpath("file.txt"))
 
     def test_expandvars(self):
         with support.EnvironmentVarGuard() as env:

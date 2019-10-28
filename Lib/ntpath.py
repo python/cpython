@@ -549,7 +549,12 @@ else:
         while normcase(path) not in seen:
             seen.add(normcase(path))
             try:
+                old_path = path
                 path = _nt_readlink(path)
+                # Links may be relative, so resolve them against their
+                # own location
+                if not isabs(path):
+                    path = normpath(join(dirname(old_path), path))
             except OSError as ex:
                 if ex.winerror in allowed_winerror:
                     break
@@ -593,9 +598,9 @@ else:
                 # entry using FindFirstFileW. For now, we will return the path
                 # as best we have it
                 if path and not name:
-                    return abspath(path + tail)
+                    return path + tail
                 tail = join(name, tail) if tail else name
-        return abspath(tail)
+        return tail
 
     def realpath(path):
         path = normpath(path)
@@ -604,12 +609,19 @@ else:
             unc_prefix = b'\\\\?\\UNC\\'
             new_unc_prefix = b'\\\\'
             cwd = os.getcwdb()
+            # bpo-38081: Special case for realpath(b'nul')
+            if normcase(path) == normcase(os.fsencode(devnull)):
+                return b'\\\\.\\NUL'
         else:
             prefix = '\\\\?\\'
             unc_prefix = '\\\\?\\UNC\\'
             new_unc_prefix = '\\\\'
             cwd = os.getcwd()
-        had_prefix = path.startswith(prefix)
+            # bpo-38081: Special case for realpath('nul')
+            if normcase(path) == normcase(devnull):
+                return '\\\\.\\NUL'
+        if not (had_prefix := path.startswith(prefix)) and not isabs(path):
+            path = join(cwd, path)
         try:
             path = _getfinalpathname(path)
             initial_winerror = 0
