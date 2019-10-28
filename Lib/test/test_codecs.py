@@ -716,12 +716,17 @@ class UTF16Test(ReadTest, unittest.TestCase):
                          encoding=self.encoding) as reader:
             self.assertEqual(reader.read(), s1)
 
-    def test_removed_u_mode(self):
-        # "U" mode has been removed in Python 3.9
-        for mode in ("U", "rU", "r+U"):
+    def test_invalid_modes(self):
+        for mode in ('U', 'rU', 'r+U'):
             with self.assertRaises(ValueError) as cm:
-                codecs.open(support.TESTFN, mode)
+                codecs.open(support.TESTFN, mode, encoding=self.encoding)
             self.assertIn('invalid mode', str(cm.exception))
+
+        for mode in ('rt', 'wt', 'at', 'r+t'):
+            with self.assertRaises(ValueError) as cm:
+                codecs.open(support.TESTFN, mode, encoding=self.encoding)
+            self.assertIn("can't have text and binary mode at once",
+                          str(cm.exception))
 
 
 class UTF16LETest(ReadTest, unittest.TestCase):
