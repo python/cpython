@@ -937,9 +937,7 @@ PyAST_FromNodeObject(const node *n, PyCompilerFlags *flags,
             goto out;
     }
  out:
-    if (c.c_normalize) {
-        Py_DECREF(c.c_normalize);
-    }
+    Py_XDECREF(c.c_normalize);
     return res;
 }
 
