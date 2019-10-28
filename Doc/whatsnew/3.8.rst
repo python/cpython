@@ -1970,7 +1970,7 @@ Changes in the Python API
   resolution. If your application relies on these mechanisms, you should check
   for :func:`~os.add_dll_directory` and if it exists, use it to add your DLLs
   directory while loading your library. Note that Windows 7 users will need to
-  ensure that Windows Update KB2533625 has been installed (this is also verified
+  ensure that Windows Update KB2533623 has been installed (this is also verified
   by the installer).
   (Contributed by Steve Dower in :issue:`36085`.)
 
