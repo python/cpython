@@ -4165,10 +4165,11 @@ static PySequenceMethods dictkeys_as_sequence = {
 static PyObject*
 dictviews_sub(PyObject* self, PyObject *other)
 {
+    PyObject *left = self;
     if (PyDictKeys_Check(self)) {
-        self = (PyObject *)((_PyDictViewObject *)self)->dv_dict;
+        left = (PyObject *)((_PyDictViewObject *)self)->dv_dict;
     }
-    PyObject *result = PySet_New(self);
+    PyObject *result = PySet_New(left);
     if (result == NULL) {
         return NULL;
     }
@@ -4276,10 +4277,11 @@ error:
 static PyObject*
 dictviews_or(PyObject* self, PyObject *other)
 {
+    PyObject *left = self;
     if (PyDictKeys_Check(self)) {
-        self = (PyObject *)((_PyDictViewObject *)self)->dv_dict;
+        left = (PyObject *)((_PyDictViewObject *)self)->dv_dict;
     }
-    PyObject *result = PySet_New(self);
+    PyObject *result = PySet_New(left);
     if (result == NULL) {
         return NULL;
     }
@@ -4299,10 +4301,11 @@ dictviews_or(PyObject* self, PyObject *other)
 static PyObject*
 dictviews_xor(PyObject* self, PyObject *other)
 {
+    PyObject *left = self;
     if (PyDictKeys_Check(self)) {
-        self = (PyObject *)((_PyDictViewObject *)self)->dv_dict;
+        left = (PyObject *)((_PyDictViewObject *)self)->dv_dict;
     }
-    PyObject *result = PySet_New(self);
+    PyObject *result = PySet_New(left);
     if (result == NULL) {
         return NULL;
     }
