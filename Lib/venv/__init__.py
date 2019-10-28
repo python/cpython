@@ -15,6 +15,9 @@ import types
 from typing import NamedTuple, Optional
 
 CORE_VENV_DEPS = ('pip', 'setuptools')
+VENV_INI_DEFAULT = '~/.venv.ini'
+if sys.platform == "win32":
+    VENV_INI_DEFAULT = os.path.expandvars(r'%APPDATA%\Python\venv\venv.ini')
 logger = logging.getLogger(__name__)
 
 
@@ -422,15 +425,15 @@ def create(env_dir, system_site_packages=False, clear=False,
     builder.create(env_dir)
 
 
-def get_default_args(rc_file='~/.venvrc'):
-    """ Check if a .venvrc exists in a user's home directory
-        + override defaults if it exists. Use `--help` to test rc file """
-    venvrc_path = os.path.expanduser(rc_file)
-    if not os.path.exists(venvrc_path):
+def get_default_args(venv_ini_default=VENV_INI_DEFAULT):
+    """ Check if a venv.ini exists in the platform location
+        + override defaults if it exists. Use `--help` to test ini config """
+    venvini_path = os.path.expanduser(venv_ini_default)
+    if not os.path.exists(venvini_path):
         return CliDefaults()
 
     cp = configparser.ConfigParser()
-    cp.read(venvrc_path)
+    cp.read(venvini_path)
     if not cp.has_section("venv"):
         return CliDefaults()
 

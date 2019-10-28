@@ -384,29 +384,29 @@ class BasicTest(BaseTest):
 class CliTest(BaseTest):
     """ Test various CLI related functions """
 
-    BAD_VENVRC = "|not_venv_or_ini|\nkey = value\n"
-    GOOD_VENVRC = "[venv]\nupgrade_deps = TrUe"  # case on purpose for test
+    BAD_VENV_INI = "|not_venv_or_ini|\nkey = value\n"
+    GOOD_VENV_INI = "[venv]\nupgrade_deps = TrUe"  # case on purpose for test
 
     def test_get_default_args(self):
         # Use env_dir as it gets cleaned up
         defaults = venv.CliDefaults()
-        venvrc_path = os.path.join(self.env_dir, "venvrc")
+        venv_ini_path = os.path.join(self.env_dir, "venv.ini")
 
         # Test we handle no config existing
-        # - Not using homedir incase user has a .venvrc
-        self.assertEqual(venv.get_default_args(venvrc_path), defaults)
+        # - Not using homedir incase user has a venv.ini
+        self.assertEqual(venv.get_default_args(venv_ini_path), defaults)
 
         # Write out bad RC file + ensure we throw exception
-        with open(venvrc_path, "w") as vfp:
-            vfp.write(self.BAD_VENVRC)
+        with open(venv_ini_path, "w") as vfp:
+            vfp.write(self.BAD_VENV_INI)
         with self.assertRaises(configparser.MissingSectionHeaderError):
-            venv.get_default_args(venvrc_path)
+            venv.get_default_args(venv_ini_path)
 
         # Write out good RC file and expect upgrade_deps == True
         expected = venv.CliDefaults(upgrade_deps=True)
-        with open(venvrc_path, "w") as vfp:
-            vfp.write(self.GOOD_VENVRC)
-        self.assertEqual(venv.get_default_args(venvrc_path), expected)
+        with open(venv_ini_path, "w") as vfp:
+            vfp.write(self.GOOD_VENV_INI)
+        self.assertEqual(venv.get_default_args(venv_ini_path), expected)
 
 
 @requireVenvCreate

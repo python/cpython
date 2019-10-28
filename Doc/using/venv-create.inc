@@ -133,17 +133,23 @@ detail (typically a script or shell function will be used).
    PowerShell activation scripts installed under POSIX for PowerShell Core
    support.
 
-The venv module supports a Running Command file (commandparser ini format) within
-a users home directory (``~/.venvrc``) to overload CLI defaults. This allows
-any CLI argument mention above to me overloaded by default.
-- Please replace '-' chars with '_' to match cli args.
-Example Usage:
+The venv module supports an ini config file in the following locations:
 
-[venv]
-upgrade_deps = true
+* ``$HOME/.venv.ini`` on Linux/Unix (+ Darwin/Mac OSX) platforms
+* ``%APPDATA%\Python\venv\venv.ini'`` on Windows platforms
+
+to overload CLI defaults. This allows any CLI argument mentioned above
+to be overloaded by default.
+
+* Please replace '-' chars with '_' to match cli args.
+
+Example ``venv.ini``:
+
+    [venv]
+    upgrade_deps = true
 
 This would result in ``--upgrade-deps`` to defualt to True.
-Please use ``--help`` to test ``~/.venvrc``
+Please use ``--help`` to test ``venv.ini`` applied defaults
 
 .. versionadded:: 3.9
-   Add support for ~/.venvrc to overload CLI argument defaults
+   Add support for venv.ini to overload CLI argument defaults
