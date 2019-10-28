@@ -125,8 +125,15 @@ that schedules a shutdown for the default executor that waits on the
 :func:`asyncio.run` has been updated to use the new :term:`coroutine`.
 (Contributed by Kyle Stanley in :issue:`34037`.)
 
+fcntl
+-----
+
+Added constants :data:`~fcntl.F_OFD_GETLK`, :data:`~fcntl.F_OFD_SETLK`
+and :data:`~fcntl.F_OFD_SETLKW`.
+(Contributed by Dong-hee Na in :issue:`38602`.)
+
 os
-__
+--
 
 Added :data:`~os.CLD_KILLED` and :data:`~os.CLD_STOPPED` for :attr:`si_code`.
 (Contributed by Dong-hee Na in :issue:`38493`.)
