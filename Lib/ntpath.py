@@ -61,6 +61,14 @@ def normcase(s):
 def isabs(s):
     """Test whether a path is absolute"""
     s = os.fspath(s)
+    # Paths beginning with \\?\ are always absolute, but do not
+    # necessarily contain a drive.
+    if isinstance(s, bytes):
+        if s.replace(b'/', b'\\').startswith(b'\\\\?\\'):
+            return True
+    else:
+        if s.replace('/', '\\').startswith('\\\\?\\'):
+            return True
     s = splitdrive(s)[1]
     return len(s) > 0 and s[0] in _get_bothseps(s)
 
@@ -620,7 +628,8 @@ else:
             # bpo-38081: Special case for realpath('nul')
             if normcase(path) == normcase(devnull):
                 return '\\\\.\\NUL'
-        if not (had_prefix := path.startswith(prefix)) and not isabs(path):
+        had_prefix = path.startswith(prefix)
+        if not had_prefix and not isabs(path):
             path = join(cwd, path)
         try:
             path = _getfinalpathname(path)
