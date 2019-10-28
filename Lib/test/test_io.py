@@ -3900,10 +3900,11 @@ class MiscIOTest(unittest.TestCase):
         g.close()
 
     def test_removed_u_mode(self):
-        with self.assertRaises(ValueError) as cm:
-            # "U" mode has been removed in Python 3.9
-            self.open(support.TESTFN, "U")
-        self.assertIn('invalid mode', str(cm.exception))
+        # "U" mode has been removed in Python 3.9
+        for mode in ("U", "rU", "r+U"):
+            with self.assertRaises(ValueError) as cm:
+                self.open(support.TESTFN, mode)
+            self.assertIn('invalid mode', str(cm.exception))
 
     def test_io_after_close(self):
         for kwargs in [

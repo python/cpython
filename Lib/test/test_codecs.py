@@ -716,6 +716,14 @@ class UTF16Test(ReadTest, unittest.TestCase):
                          encoding=self.encoding) as reader:
             self.assertEqual(reader.read(), s1)
 
+    def test_removed_u_mode(self):
+        # "U" mode has been removed in Python 3.9
+        for mode in ("U", "rU", "r+U"):
+            with self.assertRaises(ValueError) as cm:
+                codecs.open(support.TESTFN, mode)
+            self.assertIn('invalid mode', str(cm.exception))
+
+
 class UTF16LETest(ReadTest, unittest.TestCase):
     encoding = "utf-16-le"
     ill_formed_sequence = b"\x80\xdc"
