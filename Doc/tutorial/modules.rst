@@ -198,6 +198,12 @@ named :file:`spam.py` in a list of directories given by the variable
    script is calculated after the symlink is followed. In other words the
    directory containing the symlink is **not** added to the module search path.
 
+.. note::
+   The :mod:`site` module is responsible for appending site-specific paths to
+   the module search path. It also provides a way to get a list of all
+   site-specific paths, which can be global and per user site-packages
+   directories (:pep:`370`), from the command line via ``python -m site``.
+
 After initialization, Python programs can modify :data:`sys.path`.  The
 directory containing the script being run is placed at the beginning of the
 search path, ahead of the standard library path. This means that scripts in that
