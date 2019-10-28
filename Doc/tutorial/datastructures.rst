@@ -681,6 +681,20 @@ to a variable.  For example, ::
    encountered in some programs: typing ``=`` in an expression when ``==`` was
    intended.
 
+For example::
+
+   >>> the_world_is_flat = True
+   >>> if the_world_is_flat==True:
+   ...     print("Be careful not to fall off!")
+   ...
+   Be careful not to fall off!
+   
+Can be write like this::
+   
+   >>> if the_world_is_flat:=True:
+   ...     print("Be careful not to fall off!")
+   ...
+   Be careful not to fall off!
 
 .. _tut-comparing:
 
