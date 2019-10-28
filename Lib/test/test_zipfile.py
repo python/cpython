@@ -1,6 +1,7 @@
 import contextlib
 import importlib.util
 import io
+import itertools
 import os
 import pathlib
 import posixpath
@@ -773,12 +774,67 @@ class AbstractTestZip64InSmallFiles:
             self.assertEqual(content, "%d" % (i**3 % 57))
         zipf2.close()
 
+    def tearDown(self):
+        zipfile.ZIP64_LIMIT = self._limit
+        zipfile.ZIP_FILECOUNT_LIMIT = self._filecount_limit
+        unlink(TESTFN)
+        unlink(TESTFN2)
+
+
+class StoredTestZip64InSmallFiles(AbstractTestZip64InSmallFiles,
+                                  unittest.TestCase):
+    compression = zipfile.ZIP_STORED
+
+    def large_file_exception_test(self, f, compression):
+        with zipfile.ZipFile(f, "w", compression, allowZip64=False) as zipfp:
+            self.assertRaises(zipfile.LargeZipFile,
+                              zipfp.write, TESTFN, "another.name")
+
+    def large_file_exception_test2(self, f, compression):
+        with zipfile.ZipFile(f, "w", compression, allowZip64=False) as zipfp:
+            self.assertRaises(zipfile.LargeZipFile,
+                              zipfp.writestr, "another.name", self.data)
+
+    def test_large_file_exception(self):
+        for f in get_files(self):
+            self.large_file_exception_test(f, zipfile.ZIP_STORED)
+            self.large_file_exception_test2(f, zipfile.ZIP_STORED)
+
+    def test_absolute_arcnames(self):
+        with zipfile.ZipFile(TESTFN2, "w", zipfile.ZIP_STORED,
+                             allowZip64=True) as zipfp:
+            zipfp.write(TESTFN, "/absolute")
+
+        with zipfile.ZipFile(TESTFN2, "r", zipfile.ZIP_STORED) as zipfp:
+            self.assertEqual(zipfp.namelist(), ["absolute"])
+
+    def test_append(self):
+        # Test that appending to the Zip64 archive doesn't change
+        # extra fields of existing entries.
+        with zipfile.ZipFile(TESTFN2, "w", allowZip64=True) as zipfp:
+            zipfp.writestr("strfile", self.data)
+        with zipfile.ZipFile(TESTFN2, "r", allowZip64=True) as zipfp:
+            zinfo = zipfp.getinfo("strfile")
+            extra = zinfo.extra
+        with zipfile.ZipFile(TESTFN2, "a", allowZip64=True) as zipfp:
+            zipfp.writestr("strfile2", self.data)
+        with zipfile.ZipFile(TESTFN2, "r", allowZip64=True) as zipfp:
+            zinfo = zipfp.getinfo("strfile")
+            self.assertEqual(zinfo.extra, extra)
+
     def make_zip64_file(
         self, file_size_64_set=False, file_size_extra=False,
         compress_size_64_set=False, compress_size_extra=False,
         header_offset_64_set=False, header_offset_extra=False,
     ):
-        """Generate bytes sequence for a zip with (incomplete) zip64 data."""
+        """Generate bytes sequence for a zip with (incomplete) zip64 data.
+
+        The actual values (not the zip 64 0xffffffff values) stored in the file
+        are:
+        file_size: 8
+        compress_size: 8
+        header_offset: 0
+        """
         actual_size = 8
         actual_header_offset = 0
         local_zip64_fields = []
@@ -822,30 +878,33 @@ class AbstractTestZip64InSmallFiles:
         )
 
         central_dir_size = struct.pack('<Q', 58 + 8 * len(central_zip64_fields))
-        offset_to_central_dir = struct.pack('<Q', 50 + 8 * len(central_zip64_fields))
+        offset_to_central_dir = struct.pack('<Q', 50 + 8 * len(local_zip64_fields))
 
         local_extra_length = struct.pack("<H", 4 + 8 * len(local_zip64_fields))
         central_extra_length = struct.pack("<H", 4 + 8 * len(central_zip64_fields))
 
+        filename = b"test.txt"
+        content = b"test1234"
+        filename_length = struct.pack("<H", len(filename))
         zip64_contents = (
             # Local file header
             b"PK\x03\x04\x14\x00\x00\x00\x00\x00\x00\x00!\x00\x9e%\xf5\xaf"
             + compress_size
             + file_size
-            + b"\x08\x00"
+            + filename_length
             + local_extra_length
-            + b"test.txt"
+            + filename
             + local_extra
-            + b"test1234"
+            + content
             # Central directory:
             + b"PK\x01\x02-\x03-\x00\x00\x00\x00\x00\x00\x00!\x00\x9e%\xf5\xaf"
             + compress_size
             + file_size
-            + b"\x08\x00"
+            + filename_length
             + central_extra_length
             + b"\x00\x00\x00\x00\x00\x00\x00\x00\x80\x01"
             + header_offset
-            + b"test.txt"
+            + filename
             + central_extra
             # Zip64 end of central directory
             + b"PK\x06\x06,\x00\x00\x00\x00\x00\x00\x00-\x00-"
@@ -956,53 +1015,33 @@ class AbstractTestZip64InSmallFiles:
             zipfile.ZipFile(io.BytesIO(missing_header_offset_extra))
         self.assertIn('header offset', str(e.exception).lower())
 
-    def tearDown(self):
-        zipfile.ZIP64_LIMIT = self._limit
-        zipfile.ZIP_FILECOUNT_LIMIT = self._filecount_limit
-        unlink(TESTFN)
-        unlink(TESTFN2)
+    def test_generated_valid_zip64_extra(self):
+        # These values are what is set in the make_zip64_file method.
+        expected_file_size = 8
+        expected_compress_size = 8
+        expected_header_offset = 0
+        expected_content = b"test1234"
 
+        # Loop through the various valid combinations of zip64 masks
+        # present and extra fields present.
+        params = (
+            {"file_size_64_set": True, "file_size_extra": True},
+            {"compress_size_64_set": True, "compress_size_extra": True},
+            {"header_offset_64_set": True, "header_offset_extra": True},
+        )
 
-class StoredTestZip64InSmallFiles(AbstractTestZip64InSmallFiles,
-                                  unittest.TestCase):
-    compression = zipfile.ZIP_STORED
+        for r in range(1, len(params) + 1):
+            for combo in itertools.combinations(params, r):
+                kwargs = {}
+                for c in combo:
+                    kwargs.update(c)
+                with zipfile.ZipFile(io.BytesIO(self.make_zip64_file(**kwargs))) as zf:
+                    zinfo = zf.infolist()[0]
+                    self.assertEqual(zinfo.file_size, expected_file_size)
+                    self.assertEqual(zinfo.compress_size, expected_compress_size)
+                    self.assertEqual(zinfo.header_offset, expected_header_offset)
+                    self.assertEqual(zf.read(zinfo), expected_content)
 
-    def large_file_exception_test(self, f, compression):
-        with zipfile.ZipFile(f, "w", compression, allowZip64=False) as zipfp:
-            self.assertRaises(zipfile.LargeZipFile,
-                              zipfp.write, TESTFN, "another.name")
-
-    def large_file_exception_test2(self, f, compression):
-        with zipfile.ZipFile(f, "w", compression, allowZip64=False) as zipfp:
-            self.assertRaises(zipfile.LargeZipFile,
-                              zipfp.writestr, "another.name", self.data)
-
-    def test_large_file_exception(self):
-        for f in get_files(self):
-            self.large_file_exception_test(f, zipfile.ZIP_STORED)
-            self.large_file_exception_test2(f, zipfile.ZIP_STORED)
-
-    def test_absolute_arcnames(self):
-        with zipfile.ZipFile(TESTFN2, "w", zipfile.ZIP_STORED,
-                             allowZip64=True) as zipfp:
-            zipfp.write(TESTFN, "/absolute")
-
-        with zipfile.ZipFile(TESTFN2, "r", zipfile.ZIP_STORED) as zipfp:
-            self.assertEqual(zipfp.namelist(), ["absolute"])
-
-    def test_append(self):
-        # Test that appending to the Zip64 archive doesn't change
-        # extra fields of existing entries.
-        with zipfile.ZipFile(TESTFN2, "w", allowZip64=True) as zipfp:
-            zipfp.writestr("strfile", self.data)
-        with zipfile.ZipFile(TESTFN2, "r", allowZip64=True) as zipfp:
-            zinfo = zipfp.getinfo("strfile")
-            extra = zinfo.extra
-        with zipfile.ZipFile(TESTFN2, "a", allowZip64=True) as zipfp:
-            zipfp.writestr("strfile2", self.data)
-        with zipfile.ZipFile(TESTFN2, "r", allowZip64=True) as zipfp:
-            zinfo = zipfp.getinfo("strfile")
-            self.assertEqual(zinfo.extra, extra)
 
 @requires_zlib
 class DeflateTestZip64InSmallFiles(AbstractTestZip64InSmallFiles,
