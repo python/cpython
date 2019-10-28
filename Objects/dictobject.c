@@ -4165,14 +4165,17 @@ static PySequenceMethods dictkeys_as_sequence = {
 static PyObject*
 dictviews_sub(PyObject* self, PyObject *other)
 {
+    if (PyDictKeys_Check(self)) {
+        self = (PyObject *)((_PyDictViewObject *)self)->dv_dict;
+    }
     PyObject *result = PySet_New(self);
-    PyObject *tmp;
-    _Py_IDENTIFIER(difference_update);
-
-    if (result == NULL)
+    if (result == NULL) {
         return NULL;
+    }
 
-    tmp = _PyObject_CallMethodIdOneArg(result, &PyId_difference_update, other);
+    _Py_IDENTIFIER(difference_update);
+    PyObject *tmp = _PyObject_CallMethodIdOneArg(
+            result, &PyId_difference_update, other);
     if (tmp == NULL) {
         Py_DECREF(result);
         return NULL;
@@ -4273,14 +4276,17 @@ error:
 static PyObject*
 dictviews_or(PyObject* self, PyObject *other)
 {
+    if (PyDictKeys_Check(self)) {
+        self = (PyObject *)((_PyDictViewObject *)self)->dv_dict;
+    }
     PyObject *result = PySet_New(self);
-    PyObject *tmp;
-    _Py_IDENTIFIER(update);
-
-    if (result == NULL)
+    if (result == NULL) {
         return NULL;
+    }
 
-    tmp = _PyObject_CallMethodIdOneArg(result, &PyId_update, other);
+    _Py_IDENTIFIER(update);
+    PyObject *tmp = _PyObject_CallMethodIdOneArg(
+            result, &PyId_update, other);
     if (tmp == NULL) {
         Py_DECREF(result);
         return NULL;
@@ -4293,14 +4299,17 @@ dictviews_or(PyObject* self, PyObject *other)
 static PyObject*
 dictviews_xor(PyObject* self, PyObject *other)
 {
+    if (PyDictKeys_Check(self)) {
+        self = (PyObject *)((_PyDictViewObject *)self)->dv_dict;
+    }
     PyObject *result = PySet_New(self);
-    PyObject *tmp;
-    _Py_IDENTIFIER(symmetric_difference_update);
-
-    if (result == NULL)
+    if (result == NULL) {
         return NULL;
+    }
 
-    tmp = _PyObject_CallMethodIdOneArg(result, &PyId_symmetric_difference_update, other);
+    _Py_IDENTIFIER(symmetric_difference_update);
+    PyObject *tmp = _PyObject_CallMethodIdOneArg(
+            result, &PyId_symmetric_difference_update, other);
     if (tmp == NULL) {
         Py_DECREF(result);
         return NULL;
