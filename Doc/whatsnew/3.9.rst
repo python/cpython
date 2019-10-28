@@ -128,8 +128,8 @@ that schedules a shutdown for the default executor that waits on the
 fcntl
 -----
 
-:data:`~fcntl.F_OFD_GETLK`, :data:`~fcntl.F_OFD_SETLK` and
-:data:`~fcntl.F_OFD_SETLKW` are added for fcntlmodule.
+Added constants :data:`~fcntl.F_OFD_GETLK`, :data:`~fcntl.F_OFD_SETLK`
+and :data:`~fcntl.F_OFD_SETLKW`.
 (Contributed by Dong-hee Na in :issue:`38602`.)
 
 os
