@@ -1,0 +1,20 @@
+.. bpo: 38174
+.. date: 2019-09-23-21-02-46
+.. nonce: MeWuJd
+.. release date: 2019-10-12
+.. section: Security
+
+Update vendorized expat library version to 2.2.8, which resolves
+CVE-2019-15903.
+
+..
+
+.. bpo: 38216
+.. date: 2019-09-27-15-24-45
+.. nonce: -7yvZR
+.. section: Library
+
+Allow the rare code that wants to send invalid http requests from the
+`http.client` library a way to do so.  The fixes for bpo-30458 led to
+breakage for some projects that were relying on this ability to test their
+own behavior in the face of bad requests.
