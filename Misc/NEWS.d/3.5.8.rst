@@ -1,0 +1,9 @@
+.. bpo: 38243
+.. date: 2019-09-25-13-21-09
+.. nonce: 1pfz24
+.. release date: 2019-10-28
+.. section: Security
+
+Escape the server title of :class:`xmlrpc.server.DocXMLRPCServer` when
+rendering the document page as HTML. (Contributed by Dong-hee Na in
+:issue:`38243`.)
