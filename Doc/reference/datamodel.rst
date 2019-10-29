@@ -1716,7 +1716,7 @@ the descriptor defines :meth:`__set__` and/or :meth:`__delete__`, it is a data
 descriptor; if it defines neither, it is a non-data descriptor.  Normally, data
 descriptors define both :meth:`__get__` and :meth:`__set__`, while non-data
 descriptors have just the :meth:`__get__` method.  Data descriptors with
-:meth:`__set__` and :meth:`__get__` defined always override a redefinition in an
+:meth:`__get__` and :meth:`__set__` (and/or :meth:`__delete__`) defined always override a redefinition in an
 instance dictionary.  In contrast, non-data descriptors can be overridden by
 instances.
 
