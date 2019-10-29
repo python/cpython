@@ -414,7 +414,7 @@ dictkeys_set_index(PyDictKeysObject *keys, Py_ssize_t i, Py_ssize_t ix)
 
 /* GROWTH_RATE. Growth rate upon hitting maximum load.
  * Currently set to used*3.
- * This means that dicts double in size when growing without deletions,
+ * This means that dicts three times in size when growing without deletions,
  * but have more head room when the number of deletions is on a par with the
  * number of insertions.  See also bpo-17563 and bpo-33205.
  *
