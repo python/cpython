@@ -480,14 +480,26 @@ class ZipInfo (object):
 
                 # ZIP64 extension (large files and/or large archives)
                 if self.file_size in (0xffffffffffffffff, 0xffffffff):
+                    if len(counts) <= idx:
+                        raise BadZipFile(
+                            "Corrupt zip64 extra field. File size not found."
+                        )
                     self.file_size = counts[idx]
                     idx += 1
 
                 if self.compress_size == 0xFFFFFFFF:
+                    if len(counts) <= idx:
+                        raise BadZipFile(
+                            "Corrupt zip64 extra field. Compress size not found."
+                        )
                     self.compress_size = counts[idx]
                     idx += 1
 
                 if self.header_offset == 0xffffffff:
+                    if len(counts) <= idx:
+                        raise BadZipFile(
+                            "Corrupt zip64 extra field. Header offset not found."
+                        )
                     old = self.header_offset
                     self.header_offset = counts[idx]
                     idx+=1
