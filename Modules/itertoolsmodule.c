@@ -3076,12 +3076,15 @@ static PyTypeObject cwr_type = {
 /* permutations object ********************************************************
 
 def permutations(iterable, r=None):
-    'permutations(range(3), 2) --> (0,1) (0,2) (1,0) (1,2) (2,0) (2,1)'
+    # permutations('ABCD', 2) --> AB AC AD BA BC BD CA CB CD DA DB DC
+    # permutations(range(3)) --> 012 021 102 120 201 210
     pool = tuple(iterable)
     n = len(pool)
     r = n if r is None else r
-    indices = range(n)
-    cycles = range(n-r+1, n+1)[::-1]
+    if r > n:
+        return
+    indices = list(range(n))
+    cycles = list(range(n, n-r, -1))
     yield tuple(pool[i] for i in indices[:r])
     while n:
         for i in reversed(range(r)):
