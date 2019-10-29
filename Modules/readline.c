@@ -1066,15 +1066,16 @@ done:
 }
 
 
-/* Helper to initialize GNU readline properly. */
-
-static void
+/* Helper to initialize GNU readline properly.
+   Return -1 on memory allocation failure, return 0 on success. */
+static int
 setup_readline(readlinestate *mod_state)
 {
 #ifdef SAVE_LOCALE
     char *saved_locale = strdup(setlocale(LC_CTYPE, NULL));
-    if (!saved_locale)
-        Py_FatalError("not enough memory to save locale");
+    if (!saved_locale) {
+        return -1;
+    }
 #endif
 
     /* The name must be defined before initialization */
@@ -1156,6 +1157,7 @@ setup_readline(readlinestate *mod_state)
         rl_initialize();
 
     RESTORE_LOCALE(saved_locale)
+    return 0;
 }
 
 /* Wrapper around GNU readline that handles signals differently. */
@@ -1369,7 +1371,10 @@ PyInit_readline(void)
 
     mod_state = (readlinestate *) PyModule_GetState(m);
     PyOS_ReadlineFunctionPointer = call_readline;
-    setup_readline(mod_state);
+    if (setup_readline(mod_state) < 0) {
+        PyErr_NoMemory();
+        goto error;
+    }
 
     return m;
 
