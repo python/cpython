@@ -2049,7 +2049,9 @@ def _run_suite(suite):
 
 # By default, don't filter tests
 _match_test_func = None
-_match_test_patterns = None
+
+_accept_test_patterns = None
+_ignore_test_patterns = None
 
 
 def match_test(test):
@@ -2070,13 +2072,40 @@ def _is_full_match_test(pattern):
     return ('.' in pattern) and (not re.search(r'[?*\[\]]', pattern))
 
 
-def set_match_tests(patterns):
-    global _match_test_func, _match_test_patterns
+def set_match_tests(accept_patterns, reject_patterns):
+    global _match_test_func, _accept_test_patterns, _ignore_test_patterns
 
-    if patterns == _match_test_patterns:
-        # No change: no need to recompile patterns.
-        return
 
+    if accept_patterns is None:
+        accept_patterns = ()
+    if reject_patterns is None:
+        reject_patterns = ()
+
+    accept_func = reject_func = None
+
+    if accept_patterns != _accept_test_patterns:
+        accept_patterns, accept_func = _update_match_function(accept_patterns)
+    if reject_patterns != _ignore_test_patterns:
+        reject_patterns, reject_func = _update_match_function(reject_patterns)
+
+    # Create a copy since patterns can be mutable and so modified later
+    _accept_test_patterns = tuple(accept_patterns)
+    _ignore_test_patterns = tuple(reject_patterns)
+
+    if accept_func or reject_func:
+        def match_function(test_id):
+            accept = True
+            reject = False
+            if accept_func:
+                accept = accept_func(test_id)
+            if reject_func:
+                reject = reject_func(test_id)
+            return accept and not reject
+
+        _match_test_func = match_function
+
+
+def _update_match_function(patterns):
     if not patterns:
         func = None
         # set_match_tests(None) behaves as set_match_tests(())
@@ -2084,7 +2113,7 @@ def set_match_tests(patterns):
     elif all(map(_is_full_match_test, patterns)):
         # Simple case: all patterns are full test identifier.
         # The test.bisect_cmd utility only uses such full test identifiers.
-        func = set(patterns).__contains__
+        func = lambda elem: elem in set(patterns)
     else:
         regex = '|'.join(map(fnmatch.translate, patterns))
         # The search *is* case sensitive on purpose:
@@ -2104,10 +2133,7 @@ def set_match_tests(patterns):
 
         func = match_test_regex
 
-    # Create a copy since patterns can be mutable and so modified later
-    _match_test_patterns = tuple(patterns)
-    _match_test_func = func
-
+    return patterns, func
 
 
 def run_unittest(*classes):
