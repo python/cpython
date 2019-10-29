@@ -774,6 +774,8 @@ Instances of the :class:`Popen` class have the following methods:
 
    Sends the signal *signal* to the child.
 
+   Do nothing if the process completed.
+
    .. note::
 
       On Windows, SIGTERM is an alias for :meth:`terminate`. CTRL_C_EVENT and
