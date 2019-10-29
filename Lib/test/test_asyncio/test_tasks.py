@@ -979,12 +979,12 @@ class BaseTaskTests:
             def coro(s):
                 return s
         c = coro('test')
-
-        task =self.new_task(
+        task = self.new_task(
             self.loop,
             asyncio.wait([c, c, coro('spam')]))
 
-        done, pending = self.loop.run_until_complete(task)
+        with self.assertWarns(DeprecationWarning):
+            done, pending = self.loop.run_until_complete(task)
 
         self.assertFalse(pending)
         self.assertEqual(set(f.result() for f in done), {'test', 'spam'})
@@ -1346,7 +1346,9 @@ class BaseTaskTests:
             futs = list(asyncio.as_completed(fs, loop=loop))
         self.assertEqual(len(futs), 2)
         waiter = asyncio.wait(futs)
-        done, pending = loop.run_until_complete(waiter)
+        # Deprecation from passing coros in futs to asyncio.wait()
+        with self.assertWarns(DeprecationWarning):
+            done, pending = loop.run_until_complete(waiter)
         self.assertEqual(set(f.result() for f in done), {'a', 'b'})
 
     def test_as_completed_duplicate_coroutines(self):
@@ -1751,7 +1753,8 @@ class BaseTaskTests:
 
         async def outer():
             nonlocal proof
-            d, p = await asyncio.wait([inner()])
+            with self.assertWarns(DeprecationWarning):
+                d, p = await asyncio.wait([inner()])
             proof += 100
 
         f = asyncio.ensure_future(outer(), loop=self.loop)
