@@ -3307,6 +3307,19 @@ class WaitTests(test_utils.TestCase):
             self.loop.run_until_complete(
                 asyncio.wait_for(coroutine_function(), 0.01, loop=self.loop))
 
+    def test_coro_is_deprecated_in_wait(self):
+        # Remove test when passing coros to asyncio.wait() is removed in 3.11
+        # Test with coro as first arg
+        with self.assertWarns(DeprecationWarning):
+            self.loop.run_until_complete(
+                asyncio.wait([coroutine_function()]))
+
+        # Test with coro as second arg
+        task = self.loop.create_task(coroutine_function())
+        with self.assertWarns(DeprecationWarning):
+            self.loop.run_until_complete(
+                asyncio.wait([task, coroutine_function()]))
+
 
 class CompatibilityTests(test_utils.TestCase):
     # Tests for checking a bridge between old-styled coroutines

@@ -421,6 +421,11 @@ async def wait(fs, *, loop=None, timeout=None, return_when=ALL_COMPLETED):
                       "and scheduled for removal in Python 3.10.",
                       DeprecationWarning, stacklevel=2)
 
+    if any(coroutines.iscoroutine(f) for f in set(fs)):
+        warnings.warn("Passing coroutines objects to asyncio.wait() is "
+                      "deprecated since Python 3.8, and scheduled for removal "
+                      "in Python 3.11", DeprecationWarning)
+
     fs = {ensure_future(f, loop=loop) for f in set(fs)}
 
     return await _wait(fs, timeout, return_when, loop)
