@@ -1677,7 +1677,8 @@ Deprecated
   :func:`asyncio.create_subprocess_shell`.
 
 * The explicit passing of coroutine objects to :func:`asyncio.wait` has been
-  deprecated and will be removed in version 3.10.
+  deprecated and will be removed in version 3.11.
+  (Contributed by Yury Selivanov in :issue:`34790`.)
 
 * The following functions and methods are deprecated in the :mod:`gettext`
   module: :func:`~gettext.lgettext`, :func:`~gettext.ldgettext`,
