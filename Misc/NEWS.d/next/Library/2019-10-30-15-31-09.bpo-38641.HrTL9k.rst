@@ -1,0 +1,1 @@
+Added starred expressions support to ``return`` and ``yield`` statements.
