@@ -1083,7 +1083,7 @@ An extended example which also demonstrates the use of pointers accesses the
 Quoting the docs for that value:
 
    This pointer is initialized to point to an array of :c:type:`struct _frozen`
-   records, terminated by one whose members are all *NULL* or zero.  When a frozen
+   records, terminated by one whose members are all ``NULL`` or zero.  When a frozen
    module is imported, it is searched in this table.  Third-party code could play
    tricks with this to provide a dynamically created collection of frozen modules.
 

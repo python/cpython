@@ -80,8 +80,8 @@ the constructor functions work with any iterable Python object.
 .. c:function:: PyObject* PySet_New(PyObject *iterable)
 
    Return a new :class:`set` containing objects returned by the *iterable*.  The
-   *iterable* may be *NULL* to create a new empty set.  Return the new set on
-   success or *NULL* on failure.  Raise :exc:`TypeError` if *iterable* is not
+   *iterable* may be ``NULL`` to create a new empty set.  Return the new set on
+   success or ``NULL`` on failure.  Raise :exc:`TypeError` if *iterable* is not
    actually iterable.  The constructor is also useful for copying a set
    (``c=set(s)``).
 
@@ -89,8 +89,8 @@ the constructor functions work with any iterable Python object.
 .. c:function:: PyObject* PyFrozenSet_New(PyObject *iterable)
 
    Return a new :class:`frozenset` containing objects returned by the *iterable*.
-   The *iterable* may be *NULL* to create a new empty frozenset.  Return the new
-   set on success or *NULL* on failure.  Raise :exc:`TypeError` if *iterable* is
+   The *iterable* may be ``NULL`` to create a new empty frozenset.  Return the new
+   set on success or ``NULL`` on failure.  Raise :exc:`TypeError` if *iterable* is
    not actually iterable.
 
 
@@ -149,7 +149,7 @@ subtypes but not for instances of :class:`frozenset` or its subtypes.
 .. c:function:: PyObject* PySet_Pop(PyObject *set)
 
    Return a new reference to an arbitrary object in the *set*, and removes the
-   object from the *set*.  Return *NULL* on failure.  Raise :exc:`KeyError` if the
+   object from the *set*.  Return ``NULL`` on failure.  Raise :exc:`KeyError` if the
    set is empty. Raise a :exc:`SystemError` if *set* is not an instance of
    :class:`set` or its subtype.
 
