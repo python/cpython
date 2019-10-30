@@ -66,12 +66,6 @@ try:
 except ImportError:
     msvcrt = None
 
-#
-#
-#
-
-# Timeout to wait until a process completes
-TIMEOUT = 60.0 # seconds
 
 def latin(s):
     return s.encode('latin')
@@ -86,7 +80,7 @@ def close_queue(queue):
 def join_process(process):
     # Since multiprocessing.Process has the same API than threading.Thread
     # (join() and is_alive(), the support function can be reused
-    support.join_thread(process, timeout=TIMEOUT)
+    support.join_thread(process)
 
 
 if os.name == "posix":
@@ -1128,7 +1122,7 @@ class _TestQueue(BaseTestCase):
             q = self.Queue()
             q.put(NotSerializable())
             q.put(True)
-            self.assertTrue(q.get(timeout=TIMEOUT))
+            self.assertTrue(q.get(timeout=support.LONG_TIMEOUT))
             close_queue(q)
 
         with test.support.captured_stderr():
@@ -1531,7 +1525,7 @@ class _TestCondition(BaseTestCase):
                          args=(cond, state, success, sem))
         p.daemon = True
         p.start()
-        self.assertTrue(sem.acquire(timeout=TIMEOUT))
+        self.assertTrue(sem.acquire(timeout=support.LONG_TIMEOUT))
 
         # Only increment 3 times, so state == 4 is never reached.
         for i in range(3):
@@ -3388,7 +3382,7 @@ class _TestPicklingConnections(BaseTestCase):
     @classmethod
     def tearDownClass(cls):
         from multiprocessing import resource_sharer
-        resource_sharer.stop(timeout=TIMEOUT)
+        resource_sharer.stop(timeout=support.LONG_TIMEOUT)
 
     @classmethod
     def _listener(cls, conn, families):
@@ -4033,7 +4027,7 @@ class _TestSharedMemory(BaseTestCase):
             p.terminate()
             p.wait()
 
-            deadline = time.monotonic() + 60
+            deadline = time.monotonic() + support.LONG_TIMEOUT
             t = 0.1
             while time.monotonic() < deadline:
                 time.sleep(t)
@@ -5040,7 +5034,7 @@ class TestResourceTracker(unittest.TestCase):
                 p.terminate()
                 p.wait()
 
-                deadline = time.monotonic() + 60
+                deadline = time.monotonic() + support.LONG_TIMEOUT
                 while time.monotonic() < deadline:
                     time.sleep(.5)
                     try:

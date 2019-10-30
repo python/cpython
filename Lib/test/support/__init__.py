@@ -119,8 +119,52 @@ __all__ = [
     "run_with_locale", "swap_item",
     "swap_attr", "Matcher", "set_memlimit", "SuppressCrashReport", "sortdict",
     "run_with_tz", "PGO", "missing_compiler_executable", "fd_count",
-    "ALWAYS_EQ", "NEVER_EQ", "LARGEST", "SMALLEST"
+    "ALWAYS_EQ", "NEVER_EQ", "LARGEST", "SMALLEST",
+    "LOOPBACK_TIMEOUT", "INTERNET_TIMEOUT", "SHORT_TIMEOUT", "LONG_TIMEOUT",
     ]
+
+
+# Timeout in seconds for tests using a network server listening on the network
+# local loopback interface like 127.0.0.1.
+#
+# The timeout is long enough to prevent test failure: it takes into account
+# that the client and the server can run in different threads or even different
+# processes.
+#
+# The timeout should be long enough for connect(), recv() and send() methods
+# of socket.socket.
+LOOPBACK_TIMEOUT = 5.0
+if sys.platform == 'win32' and platform.machine() == 'ARM':
+    # bpo-37553: test_socket.SendfileUsingSendTest is taking longer than 2
+    # seconds on Windows ARM32 buildbot
+    LOOPBACK_TIMEOUT = 10
+
+# Timeout in seconds for network requests going to the Internet. The timeout is
+# short enough to prevent a test to wait for too long if the Internet request
+# is blocked for whatever reason.
+#
+# Usually, a timeout using INTERNET_TIMEOUT should not mark a test as failed,
+# but skip the test instead: see transient_internet().
+INTERNET_TIMEOUT = 60.0
+
+# Timeout in seconds to mark a test as failed if the test takes "too long".
+#
+# The timeout value depends on the regrtest --timeout command line option.
+#
+# If a test using SHORT_TIMEOUT starts to fail randomly on slow buildbots, use
+# LONG_TIMEOUT instead.
+SHORT_TIMEOUT = 30.0
+
+# Timeout in seconds to detect when a test hangs.
+#
+# It is long enough to reduce the risk of test failure on the slowest Python
+# buildbots. It should not be used to mark a test as failed if the test takes
+# "too long". The timeout value depends on the regrtest --timeout command line
+# option.
+LONG_TIMEOUT = 5 * 60.0
+
+_NOT_SET = object()
+
 
 class Error(Exception):
     """Base class for regression test exceptions."""
@@ -1231,7 +1275,7 @@ def open_urlresource(url, *args, **kw):
     opener = urllib.request.build_opener()
     if gzip:
         opener.addheaders.append(('Accept-Encoding', 'gzip'))
-    f = opener.open(url, timeout=15)
+    f = opener.open(url, timeout=INTERNET_TIMEOUT)
     if gzip and f.headers.get('Content-Encoding') == 'gzip':
         f = gzip.GzipFile(fileobj=f)
     try:
@@ -1542,9 +1586,12 @@ def get_socket_conn_refused_errs():
 
 
 @contextlib.contextmanager
-def transient_internet(resource_name, *, timeout=30.0, errnos=()):
+def transient_internet(resource_name, *, timeout=_NOT_SET, errnos=()):
     """Return a context manager that raises ResourceDenied when various issues
     with the Internet connection manifest themselves as exceptions."""
+    if timeout is _NOT_SET:
+        timeout = INTERNET_TIMEOUT
+
     default_errnos = [
         ('ECONNREFUSED', 111),
         ('ECONNRESET', 104),
@@ -2264,7 +2311,7 @@ def reap_threads(func):
 
 
 @contextlib.contextmanager
-def wait_threads_exit(timeout=60.0):
+def wait_threads_exit(timeout=None):
     """
     bpo-31234: Context manager to wait until all threads created in the with
     statement exit.
@@ -2278,6 +2325,8 @@ def wait_threads_exit(timeout=60.0):
     which doesn't allow to wait for thread exit, whereas thread.Thread has a
     join() method.
     """
+    if timeout is None:
+        timeout = SHORT_TIMEOUT
     old_count = _thread._count()
     try:
         yield
@@ -2298,10 +2347,12 @@ def wait_threads_exit(timeout=60.0):
             gc_collect()
 
 
-def join_thread(thread, timeout=30.0):
+def join_thread(thread, timeout=None):
     """Join a thread. Raise an AssertionError if the thread is still alive
     after timeout seconds.
     """
+    if timeout is None:
+        timeout = SHORT_TIMEOUT
     thread.join(timeout)
     if thread.is_alive():
         msg = f"failed to join the thread in {timeout:.1f} seconds"
