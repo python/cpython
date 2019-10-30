@@ -2736,7 +2736,15 @@ compiler_while(struct compiler *c, stmt_ty s)
 
     if (constant == 0) {
         BEGIN_DO_NOT_EMIT_BYTECODE
+        // Push a dummy block so the VISIT_SEQ knows that we are
+        // inside a while loop so it can correctly evaluate syntax
+        // errors.
+        if (!compiler_push_fblock(c, WHILE_LOOP, NULL, NULL)) {
+            return 0;
+        }
         VISIT_SEQ(c, stmt, s->v.While.body);
+        // Remove the dummy block now that is not needed.
+        compiler_pop_fblock(c, WHILE_LOOP, NULL);
         END_DO_NOT_EMIT_BYTECODE
         if (s->v.While.orelse) {
             VISIT_SEQ(c, stmt, s->v.While.orelse);
