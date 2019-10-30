@@ -1924,11 +1924,16 @@ long_format_binary(PyObject *aa, int base, int alternate,
     int negative;
     int bits;
 
-    assert(base == 2 || base == 8 || base == 16);
     if (a == NULL || !PyLong_Check(a)) {
         PyErr_BadInternalCall();
         return -1;
     }
+    if (base != 2 && base != 8 && base != 16) {
+        PyErr_SetString(PyExc_ValueError,
+                        "base must be 2, 8, or 16");
+        return -1;
+    }
+
     size_a = Py_ABS(Py_SIZE(a));
     negative = Py_SIZE(a) < 0;
 

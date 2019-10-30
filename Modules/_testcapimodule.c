@@ -5263,6 +5263,27 @@ meth_fastcall_keywords(PyObject* self, PyObject* const* args,
     return Py_BuildValue("NNN", _null_to_none(self), pyargs, pykwargs);
 }
 
+// The interpreter should not crash if an invalid base is passed to
+// PyNumber_ToBase().
+static PyObject *
+test_pynumber_tobase_aborts(PyObject *self, PyObject *Py_UNUSED(ignored))
+{
+    PyObject *obj = PyLong_FromLong(1);
+    if (obj == NULL) {
+        return NULL;
+    }
+    PyObject *ret = PyNumber_ToBase(obj, 1);
+    Py_DECREF(obj);
+    if (ret != NULL || !PyErr_ExceptionMatches(PyExc_ValueError)) {
+        Py_XDECREF(ret);
+        PyErr_SetString(TestError,
+            "test_pynumber_tobase_aborts: incorrect result");
+        return NULL;
+    }
+    PyErr_Clear();
+    Py_RETURN_NONE;
+}
+
 static PyMethodDef TestMethods[] = {
     {"raise_exception",         raise_exception,                 METH_VARARGS},
     {"raise_memoryerror",       raise_memoryerror,               METH_NOARGS},
@@ -5517,6 +5538,7 @@ static PyMethodDef TestMethods[] = {
     {"meth_varargs", meth_varargs, METH_VARARGS},
     {"meth_varargs_keywords", (PyCFunction)(void(*)(void))meth_varargs_keywords, METH_VARARGS|METH_KEYWORDS},
     {"meth_o", meth_o, METH_O},
+    {"test_pynumber_tobase_aborts", test_pynumber_tobase_aborts, METH_NOARGS},
     {"meth_noargs", meth_noargs, METH_NOARGS},
     {"meth_fastcall", (PyCFunction)(void(*)(void))meth_fastcall, METH_FASTCALL},
     {"meth_fastcall_keywords", (PyCFunction)(void(*)(void))meth_fastcall_keywords, METH_FASTCALL|METH_KEYWORDS},
