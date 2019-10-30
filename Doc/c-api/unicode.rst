@@ -526,9 +526,9 @@ APIs:
    .. note::
       The width formatter unit is number of characters rather than bytes.
       The precision formatter unit is number of bytes for ``"%s"`` and
-      ``"%V"`` (if the ``PyObject*`` argument is NULL), and a number of
+      ``"%V"`` (if the ``PyObject*`` argument is ``NULL``), and a number of
       characters for ``"%A"``, ``"%U"``, ``"%S"``, ``"%R"`` and ``"%V"``
-      (if the ``PyObject*`` argument is not NULL).
+      (if the ``PyObject*`` argument is not ``NULL``).
 
    .. [1] For integer specifiers (d, u, ld, li, lu, lld, lli, llu, zd, zi,
       zu, i, x): the 0-conversion flag has effect even when a precision is given.
@@ -1172,7 +1172,7 @@ These are the UTF-32 codec APIs:
    If byteorder is ``0``, the output string will always start with the Unicode BOM
    mark (U+FEFF). In the other two modes, no BOM mark is prepended.
 
-   If *Py_UNICODE_WIDE* is not defined, surrogate pairs will be output
+   If ``Py_UNICODE_WIDE`` is not defined, surrogate pairs will be output
    as a single code point.
 
    Return ``NULL`` if an exception was raised by the codec.
@@ -1246,7 +1246,7 @@ These are the UTF-16 codec APIs:
    If byteorder is ``0``, the output string will always start with the Unicode BOM
    mark (U+FEFF). In the other two modes, no BOM mark is prepended.
 
-   If *Py_UNICODE_WIDE* is defined, a single :c:type:`Py_UNICODE` value may get
+   If ``Py_UNICODE_WIDE`` is defined, a single :c:type:`Py_UNICODE` value may get
    represented as a surrogate pair. If it is not defined, each :c:type:`Py_UNICODE`
    values is interpreted as a UCS-2 character.
 

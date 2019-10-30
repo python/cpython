@@ -399,7 +399,7 @@ Object Protocol
    To get actual number of arguments, use
    :c:func:`PyVectorcall_NARGS(nargsf) <PyVectorcall_NARGS>`.
 
-   *kwnames* can be either NULL (no keyword arguments) or a tuple of keyword
+   *kwnames* can be either ``NULL`` (no keyword arguments) or a tuple of keyword
    names, which must be strings. In the latter case, the values of the keyword
    arguments are stored in *args* after the positional arguments.
    The number of keyword arguments does not influence *nargsf*.

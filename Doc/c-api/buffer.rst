@@ -130,7 +130,7 @@ a buffer, see :c:func:`PyObject_GetBuffer`.
    .. c:member:: Py_ssize_t itemsize
 
       Item size in bytes of a single element. Same as the value of :func:`struct.calcsize`
-      called on non-NULL :c:member:`~Py_buffer.format` values.
+      called on non-``NULL`` :c:member:`~Py_buffer.format` values.
 
       Important exception: If a consumer requests a buffer without the
       :c:macro:`PyBUF_FORMAT` flag, :c:member:`~Py_buffer.format` will
@@ -199,7 +199,7 @@ a buffer, see :c:func:`PyObject_GetBuffer`.
       memory block).
 
       If all suboffsets are negative (i.e. no de-referencing is needed), then
-      this field must be NULL (the default value).
+      this field must be ``NULL`` (the default value).
 
       This type of array representation is used by the Python Imaging Library
       (PIL). See `complex arrays`_ for further information how to access elements
@@ -407,7 +407,7 @@ to two ``char x[2][3]`` arrays that can be located anywhere in memory.
 
 
 Here is a function that returns a pointer to the element in an N-D array
-pointed to by an N-dimensional index when there are both non-NULL strides
+pointed to by an N-dimensional index when there are both non-``NULL`` strides
 and suboffsets::
 
    void *get_item_pointer(int ndim, void *buf, Py_ssize_t *strides,
@@ -522,4 +522,4 @@ Buffer-related functions
 
    If this function is used as part of a :ref:`getbufferproc <buffer-structs>`,
    *exporter* MUST be set to the exporting object and *flags* must be passed
-   unmodified. Otherwise, *exporter* MUST be NULL.
+   unmodified. Otherwise, *exporter* MUST be ``NULL``.

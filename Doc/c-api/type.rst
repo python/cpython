@@ -181,7 +181,7 @@ The following functions and structs are used to create
       * ``Py_nb_add`` to set :c:member:`PyNumberMethods.nb_add`
       * ``Py_sq_length`` to set :c:member:`PySequenceMethods.sq_length`
 
-      The following fields cannot be set using *PyType_Spec* and *PyType_Slot*:
+      The following fields cannot be set using :c:type:`PyType_Spec` and :c:type:`PyType_Slot`:
 
       * :c:member:`~PyTypeObject.tp_dict`
       * :c:member:`~PyTypeObject.tp_mro`

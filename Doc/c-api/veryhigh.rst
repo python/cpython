@@ -80,7 +80,7 @@ the same library that the Python runtime is using.
 .. c:function:: int PyRun_SimpleString(const char *command)
 
    This is a simplified interface to :c:func:`PyRun_SimpleStringFlags` below,
-   leaving the *PyCompilerFlags\** argument set to NULL.
+   leaving the :c:type:`PyCompilerFlags`\* argument set to ``NULL``.
 
 
 .. c:function:: int PyRun_SimpleStringFlags(const char *command, PyCompilerFlags *flags)

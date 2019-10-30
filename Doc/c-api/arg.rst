@@ -345,7 +345,7 @@ Other objects
    If the *converter* returns ``Py_CLEANUP_SUPPORTED``, it may get called a
    second time if the argument parsing eventually fails, giving the converter a
    chance to release any memory that it had already allocated. In this second
-   call, the *object* parameter will be NULL; *address* will have the same value
+   call, the *object* parameter will be ``NULL``; *address* will have the same value
    as in the original call.
 
    .. versionchanged:: 3.1

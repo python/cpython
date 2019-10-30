@@ -329,7 +329,7 @@ Process-wide parameters
    It overrides :envvar:`PYTHONIOENCODING` values, and allows embedding code
    to control IO encoding when the environment variable does not work.
 
-   ``encoding`` and/or ``errors`` may be NULL to use
+   *encoding* and/or *errors* may be ``NULL`` to use
    :envvar:`PYTHONIOENCODING` and/or default values (depending on other
    settings).
 
