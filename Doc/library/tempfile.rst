@@ -116,7 +116,7 @@ The module defines the following user-callable items:
 
    .. versionchanged:: 3.8
       Added *errors* parameter.
-      Implemented :py:data:`io.IOBase` inteface.
+      Implemented :class:`io.IOBase` inteface.
 
 
 .. function:: TemporaryDirectory(suffix=None, prefix=None, dir=None)
