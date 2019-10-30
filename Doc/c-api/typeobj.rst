@@ -43,8 +43,8 @@ type objects) *must* have the :attr:`ob_size` field.
              PyObject* PyObject._ob_prev
 
    These fields are only present when the macro ``Py_TRACE_REFS`` is defined.
-   Their initialization to *NULL* is taken care of by the ``PyObject_HEAD_INIT``
-   macro.  For statically allocated objects, these fields always remain *NULL*.
+   Their initialization to ``NULL`` is taken care of by the ``PyObject_HEAD_INIT``
+   macro.  For statically allocated objects, these fields always remain ``NULL``.
    For dynamically allocated objects, these two fields are used to link the object
    into a doubly-linked list of *all* live objects on the heap.  This could be used
    for various debugging purposes; currently the only use is to print the objects
@@ -71,7 +71,7 @@ type objects) *must* have the :attr:`ob_size` field.
    argument to the ``PyObject_HEAD_INIT`` macro, and its value should normally be
    ``&PyType_Type``.  However, for dynamically loadable extension modules that must
    be usable on Windows (at least), the compiler complains that this is not a valid
-   initializer.  Therefore, the convention is to pass *NULL* to the
+   initializer.  Therefore, the convention is to pass ``NULL`` to the
    ``PyObject_HEAD_INIT`` macro and to initialize this field explicitly at the
    start of the module's initialization function, before doing anything else.  This
    is typically done like this::
@@ -79,7 +79,7 @@ type objects) *must* have the :attr:`ob_size` field.
       Foo_Type.ob_type = &PyType_Type;
 
    This should be done before any instances of the type are created.
-   :c:func:`PyType_Ready` checks if :attr:`ob_type` is *NULL*, and if so,
+   :c:func:`PyType_Ready` checks if :attr:`ob_type` is ``NULL``, and if so,
    initializes it to the :attr:`ob_type` field of the base class.
    :c:func:`PyType_Ready` will not change this field if it is non-zero.
 
@@ -205,7 +205,7 @@ type objects) *must* have the :attr:`ob_size` field.
 
    This field is inherited by subtypes together with :c:member:`~PyTypeObject.tp_getattro`: a subtype
    inherits both :c:member:`~PyTypeObject.tp_getattr` and :c:member:`~PyTypeObject.tp_getattro` from its base type when
-   the subtype's :c:member:`~PyTypeObject.tp_getattr` and :c:member:`~PyTypeObject.tp_getattro` are both *NULL*.
+   the subtype's :c:member:`~PyTypeObject.tp_getattr` and :c:member:`~PyTypeObject.tp_getattro` are both ``NULL``.
 
 
 .. c:member:: setattrfunc PyTypeObject.tp_setattr
@@ -218,10 +218,10 @@ type objects) *must* have the :attr:`ob_size` field.
 
       PyObject * tp_setattr(PyObject *o, char *attr_name, PyObject *v);
 
-   The *v* argument is set to *NULL* to delete the attribute.
+   The *v* argument is set to ``NULL`` to delete the attribute.
    This field is inherited by subtypes together with :c:member:`~PyTypeObject.tp_setattro`: a subtype
    inherits both :c:member:`~PyTypeObject.tp_setattr` and :c:member:`~PyTypeObject.tp_setattro` from its base type when
-   the subtype's :c:member:`~PyTypeObject.tp_setattr` and :c:member:`~PyTypeObject.tp_setattro` are both *NULL*.
+   the subtype's :c:member:`~PyTypeObject.tp_setattr` and :c:member:`~PyTypeObject.tp_setattro` are both ``NULL``.
 
 
 .. c:member:: PyAsyncMethods* tp_as_async
@@ -310,13 +310,13 @@ type objects) *must* have the :attr:`ob_size` field.
    This field is inherited by subtypes together with
    :c:member:`~PyTypeObject.tp_richcompare`: a subtype inherits both of
    :c:member:`~PyTypeObject.tp_richcompare` and :c:member:`~PyTypeObject.tp_hash`, when the subtype's
-   :c:member:`~PyTypeObject.tp_richcompare` and :c:member:`~PyTypeObject.tp_hash` are both *NULL*.
+   :c:member:`~PyTypeObject.tp_richcompare` and :c:member:`~PyTypeObject.tp_hash` are both ``NULL``.
 
 
 .. c:member:: ternaryfunc PyTypeObject.tp_call
 
    An optional pointer to a function that implements calling the object.  This
-   should be *NULL* if the object is not callable.  The signature is the same as
+   should be ``NULL`` if the object is not callable.  The signature is the same as
    for :c:func:`PyObject_Call`.
 
    This field is inherited by subtypes.
@@ -350,7 +350,7 @@ type objects) *must* have the :attr:`ob_size` field.
 
    This field is inherited by subtypes together with :c:member:`~PyTypeObject.tp_getattr`: a subtype
    inherits both :c:member:`~PyTypeObject.tp_getattr` and :c:member:`~PyTypeObject.tp_getattro` from its base type when
-   the subtype's :c:member:`~PyTypeObject.tp_getattr` and :c:member:`~PyTypeObject.tp_getattro` are both *NULL*.
+   the subtype's :c:member:`~PyTypeObject.tp_getattr` and :c:member:`~PyTypeObject.tp_getattro` are both ``NULL``.
 
 
 .. c:member:: setattrofunc PyTypeObject.tp_setattro
@@ -358,13 +358,13 @@ type objects) *must* have the :attr:`ob_size` field.
    An optional pointer to the function for setting and deleting attributes.
 
    The signature is the same as for :c:func:`PyObject_SetAttr`, but setting
-   *v* to *NULL* to delete an attribute must be supported.  It is usually
+   *v* to ``NULL`` to delete an attribute must be supported.  It is usually
    convenient to set this field to :c:func:`PyObject_GenericSetAttr`, which
    implements the normal way of setting object attributes.
 
    This field is inherited by subtypes together with :c:member:`~PyTypeObject.tp_setattr`: a subtype
    inherits both :c:member:`~PyTypeObject.tp_setattr` and :c:member:`~PyTypeObject.tp_setattro` from its base type when
-   the subtype's :c:member:`~PyTypeObject.tp_setattr` and :c:member:`~PyTypeObject.tp_setattro` are both *NULL*.
+   the subtype's :c:member:`~PyTypeObject.tp_setattr` and :c:member:`~PyTypeObject.tp_setattro` are both ``NULL``.
 
 
 .. c:member:: PyBufferProcs* PyTypeObject.tp_as_buffer
@@ -385,7 +385,7 @@ type objects) *must* have the :attr:`ob_size` field.
    :c:member:`~PyTypeObject.tp_as_number`, :c:member:`~PyTypeObject.tp_as_sequence`, :c:member:`~PyTypeObject.tp_as_mapping`, and
    :c:member:`~PyTypeObject.tp_as_buffer`) that were historically not always present are valid; if
    such a flag bit is clear, the type fields it guards must not be accessed and
-   must be considered to have a zero or *NULL* value instead.
+   must be considered to have a zero or ``NULL`` value instead.
 
    Inheritance of this field is complicated.  Most flag bits are inherited
    individually, i.e. if the base type has a flag bit set, the subtype inherits
@@ -396,7 +396,7 @@ type objects) *must* have the :attr:`ob_size` field.
    the :c:member:`~PyTypeObject.tp_traverse` and :c:member:`~PyTypeObject.tp_clear` fields, i.e. if the
    :const:`Py_TPFLAGS_HAVE_GC` flag bit is clear in the subtype and the
    :c:member:`~PyTypeObject.tp_traverse` and :c:member:`~PyTypeObject.tp_clear` fields in the subtype exist and have
-   *NULL* values.
+   ``NULL`` values.
 
    The following bit masks are currently defined; these can be ORed together using
    the ``|`` operator to form the value of the :c:member:`~PyTypeObject.tp_flags` field.  The macro
@@ -510,7 +510,7 @@ type objects) *must* have the :attr:`ob_size` field.
 
    Note that :c:func:`Py_VISIT` is called only on those members that can participate
    in reference cycles.  Although there is also a ``self->key`` member, it can only
-   be *NULL* or a Python string and therefore cannot be part of a reference cycle.
+   be ``NULL`` or a Python string and therefore cannot be part of a reference cycle.
 
    On the other hand, even if you know a member can never be part of a cycle, as a
    debugging aid you may want to visit it anyway just so the :mod:`gc` module's
@@ -543,7 +543,7 @@ type objects) *must* have the :attr:`ob_size` field.
 
    Implementations of :c:member:`~PyTypeObject.tp_clear` should drop the instance's references to
    those of its members that may be Python objects, and set its pointers to those
-   members to *NULL*, as in the following example::
+   members to ``NULL``, as in the following example::
 
       static int
       local_clear(localobject *self)
@@ -557,12 +557,12 @@ type objects) *must* have the :attr:`ob_size` field.
 
    The :c:func:`Py_CLEAR` macro should be used, because clearing references is
    delicate:  the reference to the contained object must not be decremented until
-   after the pointer to the contained object is set to *NULL*.  This is because
+   after the pointer to the contained object is set to ``NULL``.  This is because
    decrementing the reference count may cause the contained object to become trash,
    triggering a chain of reclamation activity that may include invoking arbitrary
    Python code (due to finalizers, or weakref callbacks, associated with the
    contained object). If it's possible for such code to reference *self* again,
-   it's important that the pointer to the contained object be *NULL* at that time,
+   it's important that the pointer to the contained object be ``NULL`` at that time,
    so that *self* knows the contained object can no longer be used.  The
    :c:func:`Py_CLEAR` macro performs the operations in a safe order.
 
@@ -602,7 +602,7 @@ type objects) *must* have the :attr:`ob_size` field.
    This field is inherited by subtypes together with :c:member:`~PyTypeObject.tp_hash`:
    a subtype inherits :c:member:`~PyTypeObject.tp_richcompare` and :c:member:`~PyTypeObject.tp_hash` when
    the subtype's :c:member:`~PyTypeObject.tp_richcompare` and :c:member:`~PyTypeObject.tp_hash` are both
-   *NULL*.
+   ``NULL``.
 
    The following constants are defined to be used as the third argument for
    :c:member:`~PyTypeObject.tp_richcompare` and for :c:func:`PyObject_RichCompare`:
@@ -647,7 +647,7 @@ type objects) *must* have the :attr:`ob_size` field.
    reference list head (ignoring the GC header, if present); this offset is used by
    :c:func:`PyObject_ClearWeakRefs` and the :c:func:`PyWeakref_\*` functions.  The
    instance structure needs to include a field of type :c:type:`PyObject\*` which is
-   initialized to *NULL*.
+   initialized to ``NULL``.
 
    Do not confuse this field with :c:member:`~PyTypeObject.tp_weaklist`; that is the list head for
    weak references to the type object itself.
@@ -685,9 +685,9 @@ type objects) *must* have the :attr:`ob_size` field.
 .. c:member:: iternextfunc PyTypeObject.tp_iternext
 
    An optional pointer to a function that returns the next item in an iterator.
-   When the iterator is exhausted, it must return *NULL*; a :exc:`StopIteration`
+   When the iterator is exhausted, it must return ``NULL``; a :exc:`StopIteration`
    exception may or may not be set.  When another error occurs, it must return
-   *NULL* too.  Its presence signals that the instances of this type are
+   ``NULL`` too.  Its presence signals that the instances of this type are
    iterators.
 
    Iterator types should also define the :c:member:`~PyTypeObject.tp_iter` function, and that
@@ -701,7 +701,7 @@ type objects) *must* have the :attr:`ob_size` field.
 
 .. c:member:: struct PyMethodDef* PyTypeObject.tp_methods
 
-   An optional pointer to a static *NULL*-terminated array of :c:type:`PyMethodDef`
+   An optional pointer to a static ``NULL``-terminated array of :c:type:`PyMethodDef`
    structures, declaring regular methods of this type.
 
    For each entry in the array, an entry is added to the type's dictionary (see
@@ -713,7 +713,7 @@ type objects) *must* have the :attr:`ob_size` field.
 
 .. c:member:: struct PyMemberDef* PyTypeObject.tp_members
 
-   An optional pointer to a static *NULL*-terminated array of :c:type:`PyMemberDef`
+   An optional pointer to a static ``NULL``-terminated array of :c:type:`PyMemberDef`
    structures, declaring regular data members (fields or slots) of instances of
    this type.
 
@@ -726,7 +726,7 @@ type objects) *must* have the :attr:`ob_size` field.
 
 .. c:member:: struct PyGetSetDef* PyTypeObject.tp_getset
 
-   An optional pointer to a static *NULL*-terminated array of :c:type:`PyGetSetDef`
+   An optional pointer to a static ``NULL``-terminated array of :c:type:`PyGetSetDef`
    structures, declaring computed attributes of instances of this type.
 
    For each entry in the array, an entry is added to the type's dictionary (see
@@ -751,7 +751,7 @@ type objects) *must* have the :attr:`ob_size` field.
 
    The type's dictionary is stored here by :c:func:`PyType_Ready`.
 
-   This field should normally be initialized to *NULL* before PyType_Ready is
+   This field should normally be initialized to ``NULL`` before PyType_Ready is
    called; it may also be initialized to a dictionary containing initial attributes
    for the type.  Once :c:func:`PyType_Ready` has initialized the type, extra
    attributes for the type may be added to this dictionary only if they don't
@@ -788,7 +788,7 @@ type objects) *must* have the :attr:`ob_size` field.
 
       int tp_descr_set(PyObject *self, PyObject *obj, PyObject *value);
 
-   The *value* argument is set to *NULL* to delete the value.
+   The *value* argument is set to ``NULL`` to delete the value.
    This field is inherited by subtypes.
 
    .. XXX explain.
@@ -864,7 +864,7 @@ type objects) *must* have the :attr:`ob_size` field.
    arguments represent positional and keyword arguments of the call to
    :meth:`__init__`.
 
-   The :c:member:`~PyTypeObject.tp_init` function, if not *NULL*, is called when an instance is
+   The :c:member:`~PyTypeObject.tp_init` function, if not ``NULL``, is called when an instance is
    created normally by calling its type, after the type's :c:member:`~PyTypeObject.tp_new` function
    has returned an instance of the type.  If the :c:member:`~PyTypeObject.tp_new` function returns an
    instance of some other type that is not a subtype of the original type, no
@@ -905,7 +905,7 @@ type objects) *must* have the :attr:`ob_size` field.
 
    An optional pointer to an instance creation function.
 
-   If this function is *NULL* for a particular type, that type cannot be called to
+   If this function is ``NULL`` for a particular type, that type cannot be called to
    create new instances; presumably there is some other way to create instances,
    like a factory function.
 
@@ -928,7 +928,7 @@ type objects) *must* have the :attr:`ob_size` field.
    deferred to :c:member:`~PyTypeObject.tp_init`.
 
    This field is inherited by subtypes, except it is not inherited by static types
-   whose :c:member:`~PyTypeObject.tp_base` is *NULL* or ``&PyBaseObject_Type``.
+   whose :c:member:`~PyTypeObject.tp_base` is ``NULL`` or ``&PyBaseObject_Type``.
 
 
 .. c:member:: destructor PyTypeObject.tp_free
@@ -971,7 +971,7 @@ type objects) *must* have the :attr:`ob_size` field.
 
    Tuple of base types.
 
-   This is set for types created by a class statement.  It should be *NULL* for
+   This is set for types created by a class statement.  It should be ``NULL`` for
    statically defined types.
 
    This field is not inherited.
@@ -1169,14 +1169,14 @@ Mapping Object Structures
 
    This function is used by :c:func:`PyMapping_Size` and
    :c:func:`PyObject_Size`, and has the same signature.  This slot may be set to
-   *NULL* if the object has no defined length.
+   ``NULL`` if the object has no defined length.
 
 .. c:member:: binaryfunc PyMappingMethods.mp_subscript
 
    This function is used by :c:func:`PyObject_GetItem` and
    :c:func:`PySequence_GetSlice`, and has the same signature as
    :c:func:`!PyObject_GetItem`.  This slot must be filled for the
-   :c:func:`PyMapping_Check` function to return ``1``, it can be *NULL*
+   :c:func:`PyMapping_Check` function to return ``1``, it can be ``NULL``
    otherwise.
 
 .. c:member:: objobjargproc PyMappingMethods.mp_ass_subscript
@@ -1184,8 +1184,8 @@ Mapping Object Structures
    This function is used by :c:func:`PyObject_SetItem`,
    :c:func:`PyObject_DelItem`, :c:func:`PyObject_SetSlice` and
    :c:func:`PyObject_DelSlice`.  It has the same signature as
-   :c:func:`!PyObject_SetItem`, but *v* can also be set to *NULL* to delete
-   an item.  If this slot is *NULL*, the object does not support item
+   :c:func:`!PyObject_SetItem`, but *v* can also be set to ``NULL`` to delete
+   an item.  If this slot is ``NULL``, the object does not support item
    assignment and deletion.
 
 
@@ -1227,11 +1227,11 @@ Sequence Object Structures
    signature.  It is also used by :c:func:`PyObject_GetItem`, after trying
    the subscription via the :c:member:`~PyMappingMethods.mp_subscript` slot.
    This slot must be filled for the :c:func:`PySequence_Check`
-   function to return ``1``, it can be *NULL* otherwise.
+   function to return ``1``, it can be ``NULL`` otherwise.
 
    Negative indexes are handled as follows: if the :attr:`sq_length` slot is
    filled, it is called and the sequence length is used to compute a positive
-   index which is passed to :attr:`sq_item`.  If :attr:`sq_length` is *NULL*,
+   index which is passed to :attr:`sq_item`.  If :attr:`sq_length` is ``NULL``,
    the index is passed as is to the function.
 
 .. c:member:: ssizeobjargproc PySequenceMethods.sq_ass_item
@@ -1240,13 +1240,13 @@ Sequence Object Structures
    signature.  It is also used by :c:func:`PyObject_SetItem` and
    :c:func:`PyObject_DelItem`, after trying the item assignment and deletion
    via the :c:member:`~PyMappingMethods.mp_ass_subscript` slot.
-   This slot may be left to *NULL* if the object does not support
+   This slot may be left to ``NULL`` if the object does not support
    item assignment and deletion.
 
 .. c:member:: objobjproc PySequenceMethods.sq_contains
 
    This function may be used by :c:func:`PySequence_Contains` and has the same
-   signature.  This slot may be left to *NULL*, in this case
+   signature.  This slot may be left to ``NULL``, in this case
    :c:func:`!PySequence_Contains` simply traverses the sequence until it
    finds a match.
 
@@ -1254,7 +1254,7 @@ Sequence Object Structures
 
    This function is used by :c:func:`PySequence_InPlaceConcat` and has the same
    signature.  It should modify its first operand, and return it.  This slot
-   may be left to *NULL*, in this case :c:func:`!PySequence_InPlaceConcat`
+   may be left to ``NULL``, in this case :c:func:`!PySequence_InPlaceConcat`
    will fall back to :c:func:`PySequence_Concat`.  It is also used by the
    augmented assignment ``+=``, after trying numeric in-place addition
    via the :c:member:`~PyNumberMethods.nb_inplace_add` slot.
@@ -1263,7 +1263,7 @@ Sequence Object Structures
 
    This function is used by :c:func:`PySequence_InPlaceRepeat` and has the same
    signature.  It should modify its first operand, and return it.  This slot
-   may be left to *NULL*, in this case :c:func:`!PySequence_InPlaceRepeat`
+   may be left to ``NULL``, in this case :c:func:`!PySequence_InPlaceRepeat`
    will fall back to :c:func:`PySequence_Repeat`.  It is also used by the
    augmented assignment ``*=``, after trying numeric in-place multiplication
    via the :c:member:`~PyNumberMethods.nb_inplace_multiply` slot.
@@ -1295,7 +1295,7 @@ Buffer Object Structures
    steps:
 
    (1) Check if the request can be met. If not, raise :c:data:`PyExc_BufferError`,
-       set :c:data:`view->obj` to *NULL* and return ``-1``.
+       set :c:data:`view->obj` to ``NULL`` and return ``-1``.
 
    (2) Fill in the requested fields.
 
@@ -1341,7 +1341,7 @@ Buffer Object Structures
 
    Handle a request to release the resources of the buffer. If no resources
    need to be released, :c:member:`PyBufferProcs.bf_releasebuffer` may be
-   *NULL*. Otherwise, a standard implementation of this function will take
+   ``NULL``. Otherwise, a standard implementation of this function will take
    these optional steps:
 
    (1) Decrement an internal counter for the number of exports.
@@ -1395,7 +1395,7 @@ Async Object Structures
    The returned object must be an iterator, i.e. :c:func:`PyIter_Check` must
    return ``1`` for it.
 
-   This slot may be set to *NULL* if an object is not an :term:`awaitable`.
+   This slot may be set to ``NULL`` if an object is not an :term:`awaitable`.
 
 .. c:member:: unaryfunc PyAsyncMethods.am_aiter
 
@@ -1405,7 +1405,7 @@ Async Object Structures
 
    Must return an :term:`awaitable` object.  See :meth:`__anext__` for details.
 
-   This slot may be set to *NULL* if an object does not implement
+   This slot may be set to ``NULL`` if an object does not implement
    asynchronous iteration protocol.
 
 .. c:member:: unaryfunc PyAsyncMethods.am_anext
@@ -1415,4 +1415,4 @@ Async Object Structures
       PyObject *am_anext(PyObject *self)
 
    Must return an :term:`awaitable` object.  See :meth:`__anext__` for details.
-   This slot may be set to *NULL*.
+   This slot may be set to ``NULL``.

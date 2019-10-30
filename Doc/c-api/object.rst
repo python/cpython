@@ -53,14 +53,14 @@ Object Protocol
 .. c:function:: PyObject* PyObject_GetAttr(PyObject *o, PyObject *attr_name)
 
    Retrieve an attribute named *attr_name* from object *o*. Returns the attribute
-   value on success, or *NULL* on failure.  This is the equivalent of the Python
+   value on success, or ``NULL`` on failure.  This is the equivalent of the Python
    expression ``o.attr_name``.
 
 
 .. c:function:: PyObject* PyObject_GetAttrString(PyObject *o, const char *attr_name)
 
    Retrieve an attribute named *attr_name* from object *o*. Returns the attribute
-   value on success, or *NULL* on failure. This is the equivalent of the Python
+   value on success, or ``NULL`` on failure. This is the equivalent of the Python
    expression ``o.attr_name``.
 
 
@@ -81,7 +81,7 @@ Object Protocol
    return ``0`` on success.  This is the equivalent of the Python statement
    ``o.attr_name = v``.
 
-   If *v* is *NULL*, the attribute is deleted, however this feature is
+   If *v* is ``NULL``, the attribute is deleted, however this feature is
    deprecated in favour of using :c:func:`PyObject_DelAttr`.
 
 
@@ -92,7 +92,7 @@ Object Protocol
    return ``0`` on success.  This is the equivalent of the Python statement
    ``o.attr_name = v``.
 
-   If *v* is *NULL*, the attribute is deleted, however this feature is
+   If *v* is ``NULL``, the attribute is deleted, however this feature is
    deprecated in favour of using :c:func:`PyObject_DelAttrString`.
 
 
@@ -143,7 +143,7 @@ Object Protocol
    :const:`Py_NE`, :const:`Py_GT`, or :const:`Py_GE`, corresponding to ``<``,
    ``<=``, ``==``, ``!=``, ``>``, or ``>=`` respectively. This is the equivalent of
    the Python expression ``o1 op o2``, where ``op`` is the operator corresponding
-   to *opid*. Returns the value of the comparison on success, or *NULL* on failure.
+   to *opid*. Returns the value of the comparison on success, or ``NULL`` on failure.
 
 
 .. c:function:: int PyObject_RichCompareBool(PyObject *o1, PyObject *o2, int opid)
@@ -165,7 +165,7 @@ Object Protocol
    .. index:: builtin: repr
 
    Compute a string representation of object *o*.  Returns the string
-   representation on success, *NULL* on failure.  This is the equivalent of the
+   representation on success, ``NULL`` on failure.  This is the equivalent of the
    Python expression ``repr(o)``.  Called by the :func:`repr` built-in function.
 
    .. versionchanged:: 3.4
@@ -188,7 +188,7 @@ Object Protocol
 .. c:function:: PyObject* PyObject_Str(PyObject *o)
 
    Compute a string representation of object *o*.  Returns the string
-   representation on success, *NULL* on failure.  This is the equivalent of the
+   representation on success, ``NULL`` on failure.  This is the equivalent of the
    Python expression ``str(o)``.  Called by the :func:`str` built-in function
    and, therefore, by the :func:`print` function.
 
@@ -200,7 +200,7 @@ Object Protocol
 
    .. index:: builtin: bytes
 
-   Compute a bytes representation of object *o*.  *NULL* is returned on
+   Compute a bytes representation of object *o*.  ``NULL`` is returned on
    failure and a bytes object on success.  This is equivalent to the Python
    expression ``bytes(o)``, when *o* is not an integer.  Unlike ``bytes(o)``,
    a TypeError is raised when *o* is an integer instead of a zero-initialized
@@ -258,11 +258,11 @@ Object Protocol
    Call a callable Python object *callable*, with arguments given by the
    tuple *args*, and named arguments given by the dictionary *kwargs*.
 
-   *args* must not be *NULL*, use an empty tuple if no arguments are needed.
-   If no named arguments are needed, *kwargs* can be *NULL*.
+   *args* must not be ``NULL``, use an empty tuple if no arguments are needed.
+   If no named arguments are needed, *kwargs* can be ``NULL``.
 
    Return the result of the call on success, or raise an exception and return
-   *NULL* on failure.
+   ``NULL`` on failure.
 
    This is the equivalent of the Python expression:
    ``callable(*args, **kwargs)``.
@@ -271,10 +271,10 @@ Object Protocol
 .. c:function:: PyObject* PyObject_CallObject(PyObject *callable, PyObject *args)
 
    Call a callable Python object *callable*, with arguments given by the
-   tuple *args*.  If no arguments are needed, then *args* can be *NULL*.
+   tuple *args*.  If no arguments are needed, then *args* can be ``NULL``.
 
    Return the result of the call on success, or raise an exception and return
-   *NULL* on failure.
+   ``NULL`` on failure.
 
    This is the equivalent of the Python expression: ``callable(*args)``.
 
@@ -283,10 +283,10 @@ Object Protocol
 
    Call a callable Python object *callable*, with a variable number of C arguments.
    The C arguments are described using a :c:func:`Py_BuildValue` style format
-   string.  The format can be *NULL*, indicating that no arguments are provided.
+   string.  The format can be ``NULL``, indicating that no arguments are provided.
 
    Return the result of the call on success, or raise an exception and return
-   *NULL* on failure.
+   ``NULL`` on failure.
 
    This is the equivalent of the Python expression: ``callable(*args)``.
 
@@ -303,10 +303,10 @@ Object Protocol
    arguments.  The C arguments are described by a :c:func:`Py_BuildValue` format
    string that should  produce a tuple.
 
-   The format can be *NULL*, indicating that no arguments are provided.
+   The format can be ``NULL``, indicating that no arguments are provided.
 
    Return the result of the call on success, or raise an exception and return
-   *NULL* on failure.
+   ``NULL`` on failure.
 
    This is the equivalent of the Python expression:
    ``obj.name(arg1, arg2, ...)``.
@@ -322,10 +322,10 @@ Object Protocol
 
    Call a callable Python object *callable*, with a variable number of
    :c:type:`PyObject\*` arguments.  The arguments are provided as a variable number
-   of parameters followed by *NULL*.
+   of parameters followed by ``NULL``.
 
    Return the result of the call on success, or raise an exception and return
-   *NULL* on failure.
+   ``NULL`` on failure.
 
    This is the equivalent of the Python expression:
    ``callable(arg1, arg2, ...)``.
@@ -336,10 +336,10 @@ Object Protocol
    Calls a method of the Python object *obj*, where the name of the method is given as a
    Python string object in *name*.  It is called with a variable number of
    :c:type:`PyObject\*` arguments.  The arguments are provided as a variable number
-   of parameters followed by *NULL*.
+   of parameters followed by ``NULL``.
 
    Return the result of the call on success, or raise an exception and return
-   *NULL* on failure.
+   ``NULL`` on failure.
 
 
 .. c:function:: Py_hash_t PyObject_Hash(PyObject *o)
@@ -380,8 +380,8 @@ Object Protocol
 
    .. index:: builtin: type
 
-   When *o* is non-*NULL*, returns a type object corresponding to the object type
-   of object *o*. On failure, raises :exc:`SystemError` and returns *NULL*.  This
+   When *o* is non-``NULL``, returns a type object corresponding to the object type
+   of object *o*. On failure, raises :exc:`SystemError` and returns ``NULL``.  This
    is equivalent to the Python expression ``type(o)``. This function increments the
    reference count of the return value. There's really no reason to use this
    function instead of the common expression ``o->ob_type``, which returns a
@@ -392,7 +392,7 @@ Object Protocol
 .. c:function:: int PyObject_TypeCheck(PyObject *o, PyTypeObject *type)
 
    Return true if the object *o* is of type *type* or a subtype of *type*.  Both
-   parameters must be non-*NULL*.
+   parameters must be non-``NULL``.
 
 
 .. c:function:: Py_ssize_t PyObject_Size(PyObject *o)
@@ -417,7 +417,7 @@ Object Protocol
 
 .. c:function:: PyObject* PyObject_GetItem(PyObject *o, PyObject *key)
 
-   Return element of *o* corresponding to the object *key* or *NULL* on failure.
+   Return element of *o* corresponding to the object *key* or ``NULL`` on failure.
    This is the equivalent of the Python expression ``o[key]``.
 
 
@@ -437,15 +437,15 @@ Object Protocol
 .. c:function:: PyObject* PyObject_Dir(PyObject *o)
 
    This is equivalent to the Python expression ``dir(o)``, returning a (possibly
-   empty) list of strings appropriate for the object argument, or *NULL* if there
-   was an error.  If the argument is *NULL*, this is like the Python ``dir()``,
+   empty) list of strings appropriate for the object argument, or ``NULL`` if there
+   was an error.  If the argument is ``NULL``, this is like the Python ``dir()``,
    returning the names of the current locals; in this case, if no execution frame
-   is active then *NULL* is returned but :c:func:`PyErr_Occurred` will return false.
+   is active then ``NULL`` is returned but :c:func:`PyErr_Occurred` will return false.
 
 
 .. c:function:: PyObject* PyObject_GetIter(PyObject *o)
 
    This is equivalent to the Python expression ``iter(o)``. It returns a new
    iterator for the object argument, or the object  itself if the object is already
-   an iterator.  Raises :exc:`TypeError` and returns *NULL* if the object cannot be
+   an iterator.  Raises :exc:`TypeError` and returns ``NULL`` if the object cannot be
    iterated.
