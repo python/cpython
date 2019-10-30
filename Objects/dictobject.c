@@ -4167,7 +4167,11 @@ dictviews_sub(PyObject* self, PyObject *other)
 {
     PyObject *left = self;
     if (PyDictKeys_Check(self)) {
-        left = (PyObject *)((_PyDictViewObject *)self)->dv_dict;
+        // PySet_New() has fast path for the dict object.
+        PyObject *dict = (PyObject *)((_PyDictViewObject *)self)->dv_dict;
+        if (PyDict_CheckExact(dict)) {
+            left = dict;
+        }
     }
     PyObject *result = PySet_New(left);
     if (result == NULL) {
@@ -4279,7 +4283,11 @@ dictviews_or(PyObject* self, PyObject *other)
 {
     PyObject *left = self;
     if (PyDictKeys_Check(self)) {
-        left = (PyObject *)((_PyDictViewObject *)self)->dv_dict;
+        // PySet_New() has fast path for the dict object.
+        PyObject *dict = (PyObject *)((_PyDictViewObject *)self)->dv_dict;
+        if (PyDict_CheckExact(dict)) {
+            left = dict;
+        }
     }
     PyObject *result = PySet_New(left);
     if (result == NULL) {
@@ -4303,7 +4311,11 @@ dictviews_xor(PyObject* self, PyObject *other)
 {
     PyObject *left = self;
     if (PyDictKeys_Check(self)) {
-        left = (PyObject *)((_PyDictViewObject *)self)->dv_dict;
+        // PySet_New() has fast path for the dict object.
+        PyObject *dict = (PyObject *)((_PyDictViewObject *)self)->dv_dict;
+        if (PyDict_CheckExact(dict)) {
+            left = dict;
+        }
     }
     PyObject *result = PySet_New(left);
     if (result == NULL) {
