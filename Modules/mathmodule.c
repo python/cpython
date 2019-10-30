@@ -1014,12 +1014,6 @@ math_1(PyObject *arg, double (*func) (double), int can_overflow)
 }
 
 static PyObject *
-math_1_to_int(PyObject *arg, double (*func) (double), int can_overflow)
-{
-    return math_1_to_whatever(arg, func, PyLong_FromDouble, can_overflow);
-}
-
-static PyObject *
 math_2(PyObject *const *args, Py_ssize_t nargs,
        double (*func) (double, double), const char *funcname)
 {
@@ -1112,19 +1106,22 @@ math_ceil(PyObject *module, PyObject *number)
 /*[clinic end generated code: output=6c3b8a78bc201c67 input=2725352806399cab]*/
 {
     _Py_IDENTIFIER(__ceil__);
-    PyObject *method, *result;
 
     if (!PyFloat_CheckExact(number)) {
-        method = _PyObject_LookupSpecial(number, &PyId___ceil__);
+        PyObject *method = _PyObject_LookupSpecial(number, &PyId___ceil__);
         if (method != NULL) {
-            result = _PyObject_CallNoArg(method);
+            PyObject *result = _PyObject_CallNoArg(method);
             Py_DECREF(method);
             return result;
         }
         if (PyErr_Occurred())
             return NULL;
     }
-    return math_1_to_int(number, ceil, 0);
+    double x = PyFloat_AsDouble(number);
+    if (x == -1.0 && PyErr_Occurred())
+        return NULL;
+
+    return PyLong_FromDouble(ceil(x));
 }
 
 FUNC2(copysign, copysign,
@@ -1172,19 +1169,22 @@ math_floor(PyObject *module, PyObject *number)
 /*[clinic end generated code: output=c6a65c4884884b8a input=63af6b5d7ebcc3d6]*/
 {
     _Py_IDENTIFIER(__floor__);
-    PyObject *method, *result;
 
     if (!PyFloat_CheckExact(number)) {
-        method = _PyObject_LookupSpecial(number, &PyId___floor__);
+        PyObject *method = _PyObject_LookupSpecial(number, &PyId___floor__);
         if (method != NULL) {
-            result = _PyObject_CallNoArg(method);
+            PyObject *result = _PyObject_CallNoArg(method);
             Py_DECREF(method);
             return result;
         }
         if (PyErr_Occurred())
             return NULL;
     }
-    return math_1_to_int(number, floor, 0);
+    double x = PyFloat_AsDouble(number);
+    if (x == -1.0 && PyErr_Occurred())
+        return NULL;
+
+    return PyLong_FromDouble(floor(x));
 }
 
 FUNC1A(gamma, m_tgamma,
