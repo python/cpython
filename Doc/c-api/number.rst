@@ -275,8 +275,8 @@ Number Protocol
    convert to a Py_ssize_t value would raise an :exc:`OverflowError`, then the
    *exc* argument is the type of exception that will be raised (usually
    :exc:`IndexError` or :exc:`OverflowError`).  If *exc* is ``NULL``, then the
-   exception is cleared and the value is clipped to *PY_SSIZE_T_MIN* for a negative
-   integer or *PY_SSIZE_T_MAX* for a positive integer.
+   exception is cleared and the value is clipped to ``PY_SSIZE_T_MIN`` for a negative
+   integer or ``PY_SSIZE_T_MAX`` for a positive integer.
 
 
 .. c:function:: int PyIndex_Check(PyObject *o)

@@ -19,9 +19,9 @@ return ``1`` for success and ``0`` for failure).
 
 Concretely, the error indicator consists of three object pointers: the
 exception's type, the exception's value, and the traceback object.  Any
-of those pointers can be NULL if non-set (although some combinations are
-forbidden, for example you can't have a non-NULL traceback if the exception
-type is NULL).
+of those pointers can be ``NULL`` if non-set (although some combinations are
+forbidden, for example you can't have a non-``NULL`` traceback if the exception
+type is ``NULL``).
 
 When a function must fail because some function it called failed, it generally
 doesn't set the error indicator; the function it called already set it.  It is
@@ -92,7 +92,7 @@ Raising exceptions
 
 These functions help you set the current thread's error indicator.
 For convenience, some of these functions will always return a
-NULL pointer for use in a ``return`` statement.
+``NULL`` pointer for use in a ``return`` statement.
 
 
 .. c:function:: void PyErr_SetString(PyObject *type, const char *message)
