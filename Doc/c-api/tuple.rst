@@ -182,7 +182,7 @@ type.
    +-----------+------------------+-----------------------------------------+
 
 
-.. c:var:: char* PyStructSequence_UnnamedField
+.. c:var:: const char * const PyStructSequence_UnnamedField
 
    Special value for a field name to leave it unnamed.
 
