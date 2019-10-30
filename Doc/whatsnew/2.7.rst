@@ -1169,7 +1169,7 @@ changes, or look through the Subversion logs for all the details.
   correctly copy bound instance methods.  (Implemented by
   Robert Collins; :issue:`1515`.)
 
-* The :mod:`ctypes` module now always converts ``None`` to a C NULL
+* The :mod:`ctypes` module now always converts ``None`` to a C ``NULL``
   pointer for arguments declared as pointers.  (Changed by Thomas
   Heller; :issue:`4606`.)  The underlying `libffi library
   <https://sourceware.org/libffi/>`__ has been updated to version

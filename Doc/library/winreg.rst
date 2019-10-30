@@ -343,7 +343,7 @@ This module offers the following functions:
    value set by the :func:`SetValue` method for the key identified by *key*.
 
    Values in the registry have name, type, and data components. This method
-   retrieves the data for a key's first value that has a NULL name. But the
+   retrieves the data for a key's first value that has a ``NULL`` name. But the
    underlying API call doesn't return the type, so always use
    :func:`QueryValueEx` if possible.
 
@@ -391,7 +391,7 @@ This module offers the following functions:
    <https://msdn.microsoft.com/en-us/library/ms724878%28v=VS.85%29.aspx>`__
    for more details.
 
-   This function passes NULL for *security_attributes* to the API.
+   This function passes ``NULL`` for *security_attributes* to the API.
 
 
 .. function:: SetValue(key, sub_key, type, value)
