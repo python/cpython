@@ -2509,7 +2509,7 @@ Changes in the C API
 
 * :c:func:`PyThread_set_key_value` now always set the value. In Python
   3.3, the function did nothing if the key already exists (if the current
-  value is a non-NULL pointer).
+  value is a non-``NULL`` pointer).
 
 * The ``f_tstate`` (thread state) field of the :c:type:`PyFrameObject`
   structure has been removed to fix a bug: see :issue:`14432` for the

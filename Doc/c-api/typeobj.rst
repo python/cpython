@@ -740,7 +740,7 @@ and :c:type:`PyType_Type` effectively act as defaults.)
    This field is inherited by subtypes together with
    :c:member:`~PyTypeObject.tp_call`: a subtype inherits
    :c:member:`~PyTypeObject.tp_vectorcall_offset` from its base type when
-   the subtype’s :c:member:`~PyTypeObject.tp_call` is NULL.
+   the subtype’s :c:member:`~PyTypeObject.tp_call` is ``NULL``.
 
    Note that `heap types`_ (including subclasses defined in Python) do not
    inherit the :const:`_Py_TPFLAGS_HAVE_VECTORCALL` flag.
@@ -1180,7 +1180,7 @@ and :c:type:`PyType_Type` effectively act as defaults.)
 
       This bit is set on *static* subtypes if ``tp_flags`` is not overridden:
       a subtype inherits ``_Py_TPFLAGS_HAVE_VECTORCALL`` from its base type
-      when the subtype’s :c:member:`~PyTypeObject.tp_call` is NULL
+      when the subtype’s :c:member:`~PyTypeObject.tp_call` is ``NULL``
       and the subtype's ``Py_TPFLAGS_HEAPTYPE`` is not set.
 
       `Heap types`_ do not inherit ``_Py_TPFLAGS_HAVE_VECTORCALL``.
@@ -1955,7 +1955,7 @@ This results in types that are limited relative to types defined in Python:
   :ref:`sub-interpreters <sub-interpreter-support>`, so they should not
   include any subinterpreter-specific state.
 
-Also, since *PyTypeObject* is not part of the :ref:`stable ABI <stable>`,
+Also, since :c:type:`PyTypeObject` is not part of the :ref:`stable ABI <stable>`,
 any extension modules using static types must be compiled for a specific
 Python minor version.
 
