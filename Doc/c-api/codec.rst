@@ -21,7 +21,7 @@ Codec registry and support functions
 
    *object* is passed through the encoder function found for the given
    *encoding* using the error handling method defined by *errors*.  *errors* may
-   be *NULL* to use the default method defined for the codec.  Raises a
+   be ``NULL`` to use the default method defined for the codec.  Raises a
    :exc:`LookupError` if no encoder can be found.
 
 .. c:function:: PyObject* PyCodec_Decode(PyObject *object, const char *encoding, const char *errors)
@@ -30,7 +30,7 @@ Codec registry and support functions
 
    *object* is passed through the decoder function found for the given
    *encoding* using the error handling method defined by *errors*.  *errors* may
-   be *NULL* to use the default method defined for the codec.  Raises a
+   be ``NULL`` to use the default method defined for the codec.  Raises a
    :exc:`LookupError` if no encoder can be found.
 
 
@@ -40,7 +40,7 @@ Codec lookup API
 In the following functions, the *encoding* string is looked up converted to all
 lower-case characters, which makes encodings looked up through this mechanism
 effectively case-insensitive.  If no codec is found, a :exc:`KeyError` is set
-and *NULL* returned.
+and ``NULL`` returned.
 
 .. c:function:: PyObject* PyCodec_Encoder(const char *encoding)
 
@@ -92,7 +92,7 @@ Registry API for Unicode encoding error handlers
 .. c:function:: PyObject* PyCodec_LookupError(const char *name)
 
    Lookup the error handling callback function registered under *name*.  As a
-   special case *NULL* can be passed, in which case the error handling callback
+   special case ``NULL`` can be passed, in which case the error handling callback
    for "strict" will be returned.
 
 .. c:function:: PyObject* PyCodec_StrictErrors(PyObject *exc)
