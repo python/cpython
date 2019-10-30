@@ -27,7 +27,7 @@ than explicitly calling :c:func:`PyGen_New` or :c:func:`PyGen_NewWithQualName`.
 
 .. c:function:: int PyGen_CheckExact(PyObject *ob)
 
-   Return true if *ob*'s type is *PyGen_Type*; *ob* must not be ``NULL``.
+   Return true if *ob*'s type is :c:type:`PyGen_Type`; *ob* must not be ``NULL``.
 
 
 .. c:function:: PyObject* PyGen_New(PyFrameObject *frame)
