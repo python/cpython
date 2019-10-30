@@ -1,0 +1,2 @@
+Fixes AsyncMock so it doesn't crash when used with AsyncContextManagers
+or AsyncIterators.

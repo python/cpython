@@ -114,18 +114,6 @@ def getaddresses(fieldvalues):
     return a.addresslist
 
 
-
-ecre = re.compile(r'''
-  =\?                   # literal =?
-  (?P<charset>[^?]*?)   # non-greedy up to the next ? is the charset
-  \?                    # literal ?
-  (?P<encoding>[qb])    # either a "q" or a "b", case insensitive
-  \?                    # literal ?
-  (?P<atom>.*?)         # non-greedy up to the next ?= is the atom
-  \?=                   # literal ?=
-  ''', re.VERBOSE | re.IGNORECASE)
-
-
 def _format_timetuple_and_zone(timetuple, zone):
     return '%s, %02d %s %04d %02d:%02d:%02d %s' % (
         ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'][timetuple[6]],
@@ -215,6 +203,12 @@ def parsedate_to_datetime(data):
 
 
 def parseaddr(addr):
+    """
+    Parse addr into its constituent realname and email address parts.
+
+    Return a tuple of realname and email address, unless the parse fails, in
+    which case return a 2-tuple of ('', '').
+    """
     addrs = _AddressList(addr).addresslist
     if not addrs:
         return '', ''
@@ -265,21 +259,13 @@ def decode_params(params):
 
     params is a sequence of 2-tuples containing (param name, string value).
     """
-    # Copy params so we don't mess with the original
-    params = params[:]
-    new_params = []
+    new_params = [params[0]]
     # Map parameter's name to a list of continuations.  The values are a
     # 3-tuple of the continuation number, the string value, and a flag
     # specifying whether a particular segment is %-encoded.
     rfc2231_params = {}
-    name, value = params.pop(0)
-    new_params.append((name, value))
-    while params:
-        name, value = params.pop(0)
-        if name.endswith('*'):
-            encoded = True
-        else:
-            encoded = False
+    for name, value in params[1:]:
+        encoded = name.endswith('*')
         value = unquote(value)
         mo = rfc2231_continuation.match(name)
         if mo:

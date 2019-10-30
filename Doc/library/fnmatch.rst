@@ -16,6 +16,13 @@ This module provides support for Unix shell-style wildcards, which are *not* the
 same as regular expressions (which are documented in the :mod:`re` module).  The
 special characters used in shell-style wildcards are:
 
+.. index::
+   single: * (asterisk); in glob-style wildcards
+   single: ? (question mark); in glob-style wildcards
+   single: [] (square brackets); in glob-style wildcards
+   single: ! (exclamation); in glob-style wildcards
+   single: - (minus); in glob-style wildcards
+
 +------------+------------------------------------+
 | Pattern    | Meaning                            |
 +============+====================================+
@@ -35,7 +42,7 @@ For example, ``'[?]'`` matches the character ``'?'``.
 
 Note that the filename separator (``'/'`` on Unix) is *not* special to this
 module.  See module :mod:`glob` for pathname expansion (:mod:`glob` uses
-:func:`fnmatch` to match pathname segments).  Similarly, filenames starting with
+:func:`.filter` to match pathname segments).  Similarly, filenames starting with
 a period are not special for this module, and are matched by the ``*`` and ``?``
 patterns.
 
@@ -86,7 +93,7 @@ patterns.
       '(?s:.*\\.txt)\\Z'
       >>> reobj = re.compile(regex)
       >>> reobj.match('foobar.txt')
-      <_sre.SRE_Match object; span=(0, 10), match='foobar.txt'>
+      <re.Match object; span=(0, 10), match='foobar.txt'>
 
 
 .. seealso::

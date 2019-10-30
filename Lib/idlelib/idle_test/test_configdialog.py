@@ -1,7 +1,6 @@
-"""Test idlelib.configdialog.
+"""Test configdialog, coverage 94%.
 
 Half the class creates dialog, half works with user customizations.
-Coverage: 95%.
 """
 from idlelib import configdialog
 from test.support import requires
@@ -9,7 +8,7 @@ requires('gui')
 import unittest
 from unittest import mock
 from idlelib.idle_test.mock_idle import Func
-from tkinter import Tk, Frame, StringVar, IntVar, BooleanVar, DISABLED, NORMAL
+from tkinter import Tk, StringVar, IntVar, BooleanVar, DISABLED, NORMAL
 from idlelib import config
 from idlelib.configdialog import idleConf, changes, tracers
 
@@ -44,10 +43,9 @@ def tearDownModule():
     tracers.detach()
     tracers.clear()
     changes.clear()
-    del dialog
     root.update_idletasks()
     root.destroy()
-    del root
+    root = dialog = None
 
 
 class FontPageTest(unittest.TestCase):
@@ -62,6 +60,7 @@ class FontPageTest(unittest.TestCase):
         page = cls.page = dialog.fontpage
         dialog.note.select(page)
         page.set_samples = Func()  # Mask instance method.
+        page.update()
 
     @classmethod
     def tearDownClass(cls):
@@ -192,6 +191,7 @@ class FontPageTest(unittest.TestCase):
     def test_set_samples(self):
         d = self.page
         del d.set_samples  # Unmask method for test
+        orig_samples = d.font_sample, d.highlight_sample
         d.font_sample, d.highlight_sample = {}, {}
         d.font_name.set('test')
         d.font_size.set('5')
@@ -202,7 +202,7 @@ class FontPageTest(unittest.TestCase):
         d.set_samples()
         self.assertTrue(d.font_sample == d.highlight_sample == expected)
 
-        del d.font_sample, d.highlight_sample
+        d.font_sample, d.highlight_sample = orig_samples
         d.set_samples = Func()  # Re-mask for other tests.
 
 
@@ -211,6 +211,7 @@ class IndentTest(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         cls.page = dialog.fontpage
+        cls.page.update()
 
     def test_load_tab_cfg(self):
         d = self.page
@@ -241,6 +242,7 @@ class HighPageTest(unittest.TestCase):
         page.paint_theme_sample = Func()
         page.set_highlight_target = Func()
         page.set_color_sample = Func()
+        page.update()
 
     @classmethod
     def tearDownClass(cls):
@@ -604,40 +606,35 @@ class HighPageTest(unittest.TestCase):
 
     def test_paint_theme_sample(self):
         eq = self.assertEqual
-        d = self.page
-        del d.paint_theme_sample
-        hs_tag = d.highlight_sample.tag_cget
+        page = self.page
+        del page.paint_theme_sample  # Delete masking mock.
+        hs_tag = page.highlight_sample.tag_cget
         gh = idleConf.GetHighlight
-        fg = 'foreground'
-        bg = 'background'
 
         # Create custom theme based on IDLE Dark.
-        d.theme_source.set(True)
-        d.builtin_name.set('IDLE Dark')
+        page.theme_source.set(True)
+        page.builtin_name.set('IDLE Dark')
         theme = 'IDLE Test'
-        d.create_new(theme)
-        d.set_color_sample.called = 0
+        page.create_new(theme)
+        page.set_color_sample.called = 0
 
         # Base theme with nothing in `changes`.
-        d.paint_theme_sample()
-        eq(hs_tag('break', fg), gh(theme, 'break', fgBg='fg'))
-        eq(hs_tag('cursor', bg), gh(theme, 'normal', fgBg='bg'))
-        self.assertNotEqual(hs_tag('console', fg), 'blue')
-        self.assertNotEqual(hs_tag('console', bg), 'yellow')
-        eq(d.set_color_sample.called, 1)
+        page.paint_theme_sample()
+        new_console = {'foreground': 'blue',
+                       'background': 'yellow',}
+        for key, value in new_console.items():
+            self.assertNotEqual(hs_tag('console', key), value)
+        eq(page.set_color_sample.called, 1)
 
         # Apply changes.
-        changes.add_option('highlight', theme, 'console-foreground', 'blue')
-        changes.add_option('highlight', theme, 'console-background', 'yellow')
-        d.paint_theme_sample()
+        for key, value in new_console.items():
+            changes.add_option('highlight', theme, 'console-'+key, value)
+        page.paint_theme_sample()
+        for key, value in new_console.items():
+            eq(hs_tag('console', key), value)
+        eq(page.set_color_sample.called, 2)
 
-        eq(hs_tag('break', fg), gh(theme, 'break', fgBg='fg'))
-        eq(hs_tag('cursor', bg), gh(theme, 'normal', fgBg='bg'))
-        eq(hs_tag('console', fg), 'blue')
-        eq(hs_tag('console', bg), 'yellow')
-        eq(d.set_color_sample.called, 2)
-
-        d.paint_theme_sample = Func()
+        page.paint_theme_sample = Func()
 
     def test_delete_custom(self):
         eq = self.assertEqual
@@ -820,23 +817,25 @@ class KeysPageTest(unittest.TestCase):
         self.assertEqual(d.load_keys_list.called, 1)
 
     def test_keybinding(self):
+        idleConf.SetOption('extensions', 'ZzDummy', 'enable', 'True')
         d = self.page
         d.custom_name.set('my custom keys')
         d.bindingslist.delete(0, 'end')
         d.bindingslist.insert(0, 'copy')
-        d.bindingslist.insert(1, 'expand-word')
+        d.bindingslist.insert(1, 'z-in')
         d.bindingslist.selection_set(0)
         d.bindingslist.selection_anchor(0)
         # Core binding - adds to keys.
         d.keybinding.set('<Key-F11>')
         self.assertEqual(keyspage,
                          {'my custom keys': {'copy': '<Key-F11>'}})
+
         # Not a core binding - adds to extensions.
         d.bindingslist.selection_set(1)
         d.bindingslist.selection_anchor(1)
         d.keybinding.set('<Key-F11>')
         self.assertEqual(extpage,
-                         {'AutoExpand_cfgBindings': {'expand-word': '<Key-F11>'}})
+                         {'ZzDummy_cfgBindings': {'z-in': '<Key-F11>'}})
 
     def test_set_keys_type(self):
         eq = self.assertEqual
@@ -1084,6 +1083,7 @@ class GenPageTest(unittest.TestCase):
         dialog.note.select(page)
         page.set = page.set_add_delete_state = Func()
         page.upc = page.update_help_changes = Func()
+        page.update()
 
     @classmethod
     def tearDownClass(cls):
@@ -1125,6 +1125,34 @@ class GenPageTest(unittest.TestCase):
         self.assertEqual(mainpage,
                          {'General': {'editor-on-startup': '0'}})
 
+    def test_editor_size(self):
+        d = self.page
+        d.win_height_int.delete(0, 'end')
+        d.win_height_int.insert(0, '11')
+        self.assertEqual(mainpage, {'EditorWindow': {'height': '11'}})
+        changes.clear()
+        d.win_width_int.delete(0, 'end')
+        d.win_width_int.insert(0, '11')
+        self.assertEqual(mainpage, {'EditorWindow': {'width': '11'}})
+
+    def test_autocomplete_wait(self):
+        self.page.auto_wait_int.delete(0, 'end')
+        self.page.auto_wait_int.insert(0, '11')
+        self.assertEqual(extpage, {'AutoComplete': {'popupwait': '11'}})
+
+    def test_parenmatch(self):
+        d = self.page
+        eq = self.assertEqual
+        d.paren_style_type['menu'].invoke(0)
+        eq(extpage, {'ParenMatch': {'style': 'opener'}})
+        changes.clear()
+        d.paren_flash_time.delete(0, 'end')
+        d.paren_flash_time.insert(0, '11')
+        eq(extpage, {'ParenMatch': {'flash-delay': '11'}})
+        changes.clear()
+        d.bell_on.invoke()
+        eq(extpage, {'ParenMatch': {'bell': 'False'}})
+
     def test_autosave(self):
         d = self.page
         d.save_auto_on.invoke()
@@ -1132,13 +1160,15 @@ class GenPageTest(unittest.TestCase):
         d.save_ask_on.invoke()
         self.assertEqual(mainpage, {'General': {'autosave': '0'}})
 
-    def test_editor_size(self):
-        d = self.page
-        d.win_height_int.insert(0, '1')
-        self.assertEqual(mainpage, {'EditorWindow': {'height': '140'}})
-        changes.clear()
-        d.win_width_int.insert(0, '1')
-        self.assertEqual(mainpage, {'EditorWindow': {'width': '180'}})
+    def test_paragraph(self):
+        self.page.format_width_int.delete(0, 'end')
+        self.page.format_width_int.insert(0, '11')
+        self.assertEqual(extpage, {'FormatParagraph': {'max-width': '11'}})
+
+    def test_context(self):
+        self.page.context_int.delete(0, 'end')
+        self.page.context_int.insert(0, '1')
+        self.assertEqual(extpage, {'CodeContext': {'maxlines': '1'}})
 
     def test_source_selected(self):
         d = self.page

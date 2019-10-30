@@ -3,6 +3,7 @@ import re
 import subprocess
 import sys
 import os
+import warnings
 from test import support
 
 # Skip this test if the _tkinter module wasn't built.
@@ -429,9 +430,12 @@ class TclTest(unittest.TestCase):
         self.assertEqual(passValue(False), False if self.wantobjects else '0')
         self.assertEqual(passValue('string'), 'string')
         self.assertEqual(passValue('string\u20ac'), 'string\u20ac')
+        self.assertEqual(passValue('string\U0001f4bb'), 'string\U0001f4bb')
         self.assertEqual(passValue('str\x00ing'), 'str\x00ing')
         self.assertEqual(passValue('str\x00ing\xbd'), 'str\x00ing\xbd')
         self.assertEqual(passValue('str\x00ing\u20ac'), 'str\x00ing\u20ac')
+        self.assertEqual(passValue('str\x00ing\U0001f4bb'),
+                         'str\x00ing\U0001f4bb')
         self.assertEqual(passValue(b'str\x00ing'),
                          b'str\x00ing' if self.wantobjects else 'str\x00ing')
         self.assertEqual(passValue(b'str\xc0\x80ing'),
@@ -490,6 +494,7 @@ class TclTest(unittest.TestCase):
         check('string')
         check('string\xbd')
         check('string\u20ac')
+        check('string\U0001f4bb')
         check('')
         check(b'string', 'string')
         check(b'string\xe2\x82\xac', 'string\xe2\x82\xac')
@@ -531,6 +536,7 @@ class TclTest(unittest.TestCase):
             ('a\n b\t\r c\n ', ('a', 'b', 'c')),
             (b'a\n b\t\r c\n ', ('a', 'b', 'c')),
             ('a \u20ac', ('a', '\u20ac')),
+            ('a \U0001f4bb', ('a', '\U0001f4bb')),
             (b'a \xe2\x82\xac', ('a', '\u20ac')),
             (b'a\xc0\x80b c\xc0\x80d', ('a\x00b', 'c\x00d')),
             ('a {b c}', ('a', 'b c')),
@@ -568,9 +574,12 @@ class TclTest(unittest.TestCase):
     def test_split(self):
         split = self.interp.tk.split
         call = self.interp.tk.call
-        self.assertRaises(TypeError, split)
-        self.assertRaises(TypeError, split, 'a', 'b')
-        self.assertRaises(TypeError, split, 2)
+        with warnings.catch_warnings():
+            warnings.filterwarnings('ignore', r'\bsplit\b.*\bsplitlist\b',
+                                    DeprecationWarning)
+            self.assertRaises(TypeError, split)
+            self.assertRaises(TypeError, split, 'a', 'b')
+            self.assertRaises(TypeError, split, 2)
         testcases = [
             ('2', '2'),
             ('', ''),
@@ -612,7 +621,8 @@ class TclTest(unittest.TestCase):
                     expected),
             ]
         for arg, res in testcases:
-            self.assertEqual(split(arg), res, msg=arg)
+            with self.assertWarns(DeprecationWarning):
+                self.assertEqual(split(arg), res, msg=arg)
 
     def test_splitdict(self):
         splitdict = tkinter._splitdict
@@ -649,6 +659,43 @@ class TclTest(unittest.TestCase):
                 expected = {'a': (1, 2, 3), 'something': 'foo', 'status': ''}
             self.assertEqual(splitdict(tcl, arg), expected)
 
+    def test_join(self):
+        join = tkinter._join
+        tcl = self.interp.tk
+        def unpack(s):
+            return tcl.call('lindex', s, 0)
+        def check(value):
+            self.assertEqual(unpack(join([value])), value)
+            self.assertEqual(unpack(join([value, 0])), value)
+            self.assertEqual(unpack(unpack(join([[value]]))), value)
+            self.assertEqual(unpack(unpack(join([[value, 0]]))), value)
+            self.assertEqual(unpack(unpack(join([[value], 0]))), value)
+            self.assertEqual(unpack(unpack(join([[value, 0], 0]))), value)
+        check('')
+        check('spam')
+        check('sp am')
+        check('sp\tam')
+        check('sp\nam')
+        check(' \t\n')
+        check('{spam}')
+        check('{sp am}')
+        check('"spam"')
+        check('"sp am"')
+        check('{"spam"}')
+        check('"{spam}"')
+        check('sp\\am')
+        check('"sp\\am"')
+        check('"{}" "{}"')
+        check('"\\')
+        check('"{')
+        check('"}')
+        check('\n\\')
+        check('\n{')
+        check('\n}')
+        check('\\\n')
+        check('{\n')
+        check('}\n')
+
     def test_new_tcl_obj(self):
         self.assertRaises(TypeError, _tkinter.Tcl_Obj)
 
@@ -662,32 +709,44 @@ class BigmemTclTest(unittest.TestCase):
     @support.bigmemtest(size=INT_MAX + 1, memuse=5, dry_run=False)
     def test_huge_string_call(self, size):
         value = ' ' * size
-        self.assertRaises(OverflowError, self.interp.call, 'set', '_', value)
+        self.assertRaises(OverflowError, self.interp.call, 'string', 'index', value, 0)
 
     @support.cpython_only
     @unittest.skipUnless(INT_MAX < PY_SSIZE_T_MAX, "needs UINT_MAX < SIZE_MAX")
-    @support.bigmemtest(size=INT_MAX + 1, memuse=9, dry_run=False)
+    @support.bigmemtest(size=INT_MAX + 1, memuse=2, dry_run=False)
     def test_huge_string_builtins(self, size):
+        tk = self.interp.tk
         value = '1' + ' ' * size
-        self.assertRaises(OverflowError, self.interp.tk.getint, value)
-        self.assertRaises(OverflowError, self.interp.tk.getdouble, value)
-        self.assertRaises(OverflowError, self.interp.tk.getboolean, value)
-        self.assertRaises(OverflowError, self.interp.eval, value)
-        self.assertRaises(OverflowError, self.interp.evalfile, value)
-        self.assertRaises(OverflowError, self.interp.record, value)
-        self.assertRaises(OverflowError, self.interp.adderrorinfo, value)
-        self.assertRaises(OverflowError, self.interp.setvar, value, 'x', 'a')
-        self.assertRaises(OverflowError, self.interp.setvar, 'x', value, 'a')
-        self.assertRaises(OverflowError, self.interp.unsetvar, value)
-        self.assertRaises(OverflowError, self.interp.unsetvar, 'x', value)
-        self.assertRaises(OverflowError, self.interp.adderrorinfo, value)
-        self.assertRaises(OverflowError, self.interp.exprstring, value)
-        self.assertRaises(OverflowError, self.interp.exprlong, value)
-        self.assertRaises(OverflowError, self.interp.exprboolean, value)
-        self.assertRaises(OverflowError, self.interp.splitlist, value)
-        self.assertRaises(OverflowError, self.interp.split, value)
-        self.assertRaises(OverflowError, self.interp.createcommand, value, max)
-        self.assertRaises(OverflowError, self.interp.deletecommand, value)
+        self.assertRaises(OverflowError, tk.getint, value)
+        self.assertRaises(OverflowError, tk.getdouble, value)
+        self.assertRaises(OverflowError, tk.getboolean, value)
+        self.assertRaises(OverflowError, tk.eval, value)
+        self.assertRaises(OverflowError, tk.evalfile, value)
+        self.assertRaises(OverflowError, tk.record, value)
+        self.assertRaises(OverflowError, tk.adderrorinfo, value)
+        self.assertRaises(OverflowError, tk.setvar, value, 'x', 'a')
+        self.assertRaises(OverflowError, tk.setvar, 'x', value, 'a')
+        self.assertRaises(OverflowError, tk.unsetvar, value)
+        self.assertRaises(OverflowError, tk.unsetvar, 'x', value)
+        self.assertRaises(OverflowError, tk.adderrorinfo, value)
+        self.assertRaises(OverflowError, tk.exprstring, value)
+        self.assertRaises(OverflowError, tk.exprlong, value)
+        self.assertRaises(OverflowError, tk.exprboolean, value)
+        self.assertRaises(OverflowError, tk.splitlist, value)
+        self.assertRaises(OverflowError, tk.split, value)
+        self.assertRaises(OverflowError, tk.createcommand, value, max)
+        self.assertRaises(OverflowError, tk.deletecommand, value)
+
+    @support.cpython_only
+    @unittest.skipUnless(INT_MAX < PY_SSIZE_T_MAX, "needs UINT_MAX < SIZE_MAX")
+    @support.bigmemtest(size=INT_MAX + 1, memuse=6, dry_run=False)
+    def test_huge_string_builtins2(self, size):
+        # These commands require larger memory for possible error messages
+        tk = self.interp.tk
+        value = '1' + ' ' * size
+        self.assertRaises(OverflowError, tk.evalfile, value)
+        self.assertRaises(OverflowError, tk.unsetvar, value)
+        self.assertRaises(OverflowError, tk.unsetvar, 'x', value)
 
 
 def setUpModule():

@@ -47,17 +47,7 @@ int pysqlite_step(sqlite3_stmt* statement, pysqlite_Connection* connection)
  */
 int _pysqlite_seterror(sqlite3* db, sqlite3_stmt* st)
 {
-    int errorcode;
-
-#if SQLITE_VERSION_NUMBER < 3003009
-    /* SQLite often doesn't report anything useful, unless you reset the statement first.
-       When using sqlite3_prepare_v2 this is not needed. */
-    if (st != NULL) {
-        (void)sqlite3_reset(st);
-    }
-#endif
-
-    errorcode = sqlite3_errcode(db);
+    int errorcode = sqlite3_errcode(db);
 
     switch (errorcode)
     {
@@ -112,22 +102,6 @@ int _pysqlite_seterror(sqlite3* db, sqlite3_stmt* st)
 #else
 # define IS_LITTLE_ENDIAN 1
 #endif
-
-PyObject *
-_pysqlite_long_from_int64(sqlite_int64 value)
-{
-# if SIZEOF_LONG_LONG < 8
-    if (value > PY_LLONG_MAX || value < PY_LLONG_MIN) {
-        return _PyLong_FromByteArray(&value, sizeof(value),
-                                     IS_LITTLE_ENDIAN, 1 /* signed */);
-    }
-# endif
-# if SIZEOF_LONG < SIZEOF_LONG_LONG
-    if (value > LONG_MAX || value < LONG_MIN)
-        return PyLong_FromLongLong(value);
-# endif
-    return PyLong_FromLong(Py_SAFE_DOWNCAST(value, sqlite_int64, long));
-}
 
 sqlite_int64
 _pysqlite_long_as_int64(PyObject * py_val)

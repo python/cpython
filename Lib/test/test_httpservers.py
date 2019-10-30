@@ -9,10 +9,12 @@ from http.server import BaseHTTPRequestHandler, HTTPServer, \
 from http import server, HTTPStatus
 
 import os
+import socket
 import sys
 import re
 import base64
 import ntpath
+import pathlib
 import shutil
 import email.message
 import email.utils
@@ -22,12 +24,13 @@ import urllib.parse
 import tempfile
 import time
 import datetime
+import threading
 from unittest import mock
 from io import BytesIO
 
 import unittest
 from test import support
-threading = support.import_module('threading')
+
 
 class NoLogRequestHandler:
     def log_message(self, *args):
@@ -383,7 +386,8 @@ class SimpleHTTPServerTestCase(BaseTestCase):
         reader.close()
         return body
 
-    @support.requires_mac_ver(10, 5)
+    @unittest.skipIf(sys.platform == 'darwin',
+                     'undecodable name cannot always be decoded on macOS')
     @unittest.skipIf(sys.platform == 'win32',
                      'undecodable name cannot be decoded on win32')
     @unittest.skipUnless(support.TESTFN_UNDECODABLE,
@@ -607,9 +611,10 @@ class CGIHTTPServerTestCase(BaseTestCase):
 
         # The shebang line should be pure ASCII: use symlink if possible.
         # See issue #7668.
+        self._pythonexe_symlink = None
         if support.can_symlink():
             self.pythonexe = os.path.join(self.parent_dir, 'python')
-            os.symlink(sys.executable, self.pythonexe)
+            self._pythonexe_symlink = support.PythonSymlink(self.pythonexe).__enter__()
         else:
             self.pythonexe = sys.executable
 
@@ -652,8 +657,8 @@ class CGIHTTPServerTestCase(BaseTestCase):
     def tearDown(self):
         try:
             os.chdir(self.cwd)
-            if self.pythonexe != sys.executable:
-                os.remove(self.pythonexe)
+            if self._pythonexe_symlink:
+                self._pythonexe_symlink.__exit__(None, None, None)
             if self.nocgi_path:
                 os.remove(self.nocgi_path)
             if self.file1_path:
@@ -786,10 +791,10 @@ class CGIHTTPServerTestCase(BaseTestCase):
 
 
 class SocketlessRequestHandler(SimpleHTTPRequestHandler):
-    def __init__(self, *args, **kwargs):
+    def __init__(self, directory=None):
         request = mock.Mock()
         request.makefile.return_value = BytesIO()
-        super().__init__(request, None, None)
+        super().__init__(request, None, None, directory=directory)
 
         self.get_called = False
         self.protocol_version = "HTTP/1.1"
@@ -1064,41 +1069,91 @@ class BaseHTTPRequestHandlerTestCase(unittest.TestCase):
 class SimpleHTTPRequestHandlerTestCase(unittest.TestCase):
     """ Test url parsing """
     def setUp(self):
-        self.translated = os.getcwd()
-        self.translated = os.path.join(self.translated, 'filename')
-        self.handler = SocketlessRequestHandler()
+        self.translated_1 = os.path.join(os.getcwd(), 'filename')
+        self.translated_2 = os.path.join('foo', 'filename')
+        self.translated_3 = os.path.join('bar', 'filename')
+        self.handler_1 = SocketlessRequestHandler()
+        self.handler_2 = SocketlessRequestHandler(directory='foo')
+        self.handler_3 = SocketlessRequestHandler(directory=pathlib.PurePath('bar'))
 
     def test_query_arguments(self):
-        path = self.handler.translate_path('/filename')
-        self.assertEqual(path, self.translated)
-        path = self.handler.translate_path('/filename?foo=bar')
-        self.assertEqual(path, self.translated)
-        path = self.handler.translate_path('/filename?a=b&spam=eggs#zot')
-        self.assertEqual(path, self.translated)
+        path = self.handler_1.translate_path('/filename')
+        self.assertEqual(path, self.translated_1)
+        path = self.handler_2.translate_path('/filename')
+        self.assertEqual(path, self.translated_2)
+        path = self.handler_3.translate_path('/filename')
+        self.assertEqual(path, self.translated_3)
+
+        path = self.handler_1.translate_path('/filename?foo=bar')
+        self.assertEqual(path, self.translated_1)
+        path = self.handler_2.translate_path('/filename?foo=bar')
+        self.assertEqual(path, self.translated_2)
+        path = self.handler_3.translate_path('/filename?foo=bar')
+        self.assertEqual(path, self.translated_3)
+
+        path = self.handler_1.translate_path('/filename?a=b&spam=eggs#zot')
+        self.assertEqual(path, self.translated_1)
+        path = self.handler_2.translate_path('/filename?a=b&spam=eggs#zot')
+        self.assertEqual(path, self.translated_2)
+        path = self.handler_3.translate_path('/filename?a=b&spam=eggs#zot')
+        self.assertEqual(path, self.translated_3)
 
     def test_start_with_double_slash(self):
-        path = self.handler.translate_path('//filename')
-        self.assertEqual(path, self.translated)
-        path = self.handler.translate_path('//filename?foo=bar')
-        self.assertEqual(path, self.translated)
+        path = self.handler_1.translate_path('//filename')
+        self.assertEqual(path, self.translated_1)
+        path = self.handler_2.translate_path('//filename')
+        self.assertEqual(path, self.translated_2)
+        path = self.handler_3.translate_path('//filename')
+        self.assertEqual(path, self.translated_3)
+
+        path = self.handler_1.translate_path('//filename?foo=bar')
+        self.assertEqual(path, self.translated_1)
+        path = self.handler_2.translate_path('//filename?foo=bar')
+        self.assertEqual(path, self.translated_2)
+        path = self.handler_3.translate_path('//filename?foo=bar')
+        self.assertEqual(path, self.translated_3)
 
     def test_windows_colon(self):
         with support.swap_attr(server.os, 'path', ntpath):
-            path = self.handler.translate_path('c:c:c:foo/filename')
+            path = self.handler_1.translate_path('c:c:c:foo/filename')
             path = path.replace(ntpath.sep, os.sep)
-            self.assertEqual(path, self.translated)
+            self.assertEqual(path, self.translated_1)
+            path = self.handler_2.translate_path('c:c:c:foo/filename')
+            path = path.replace(ntpath.sep, os.sep)
+            self.assertEqual(path, self.translated_2)
+            path = self.handler_3.translate_path('c:c:c:foo/filename')
+            path = path.replace(ntpath.sep, os.sep)
+            self.assertEqual(path, self.translated_3)
 
-            path = self.handler.translate_path('\\c:../filename')
+            path = self.handler_1.translate_path('\\c:../filename')
             path = path.replace(ntpath.sep, os.sep)
-            self.assertEqual(path, self.translated)
+            self.assertEqual(path, self.translated_1)
+            path = self.handler_2.translate_path('\\c:../filename')
+            path = path.replace(ntpath.sep, os.sep)
+            self.assertEqual(path, self.translated_2)
+            path = self.handler_3.translate_path('\\c:../filename')
+            path = path.replace(ntpath.sep, os.sep)
+            self.assertEqual(path, self.translated_3)
 
-            path = self.handler.translate_path('c:\\c:..\\foo/filename')
+            path = self.handler_1.translate_path('c:\\c:..\\foo/filename')
             path = path.replace(ntpath.sep, os.sep)
-            self.assertEqual(path, self.translated)
+            self.assertEqual(path, self.translated_1)
+            path = self.handler_2.translate_path('c:\\c:..\\foo/filename')
+            path = path.replace(ntpath.sep, os.sep)
+            self.assertEqual(path, self.translated_2)
+            path = self.handler_3.translate_path('c:\\c:..\\foo/filename')
+            path = path.replace(ntpath.sep, os.sep)
+            self.assertEqual(path, self.translated_3)
 
-            path = self.handler.translate_path('c:c:foo\\c:c:bar/filename')
+            path = self.handler_1.translate_path('c:c:foo\\c:c:bar/filename')
             path = path.replace(ntpath.sep, os.sep)
-            self.assertEqual(path, self.translated)
+            self.assertEqual(path, self.translated_1)
+            path = self.handler_2.translate_path('c:c:foo\\c:c:bar/filename')
+            path = path.replace(ntpath.sep, os.sep)
+            self.assertEqual(path, self.translated_2)
+            path = self.handler_3.translate_path('c:c:foo\\c:c:bar/filename')
+            path = path.replace(ntpath.sep, os.sep)
+            self.assertEqual(path, self.translated_3)
 
 
 class MiscTestCase(unittest.TestCase):
@@ -1114,6 +1169,66 @@ class MiscTestCase(unittest.TestCase):
         self.assertCountEqual(server.__all__, expected)
 
 
+class ScriptTestCase(unittest.TestCase):
+
+    def mock_server_class(self):
+        return mock.MagicMock(
+            return_value=mock.MagicMock(
+                __enter__=mock.MagicMock(
+                    return_value=mock.MagicMock(
+                        socket=mock.MagicMock(
+                            getsockname=lambda: ('', 0),
+                        ),
+                    ),
+                ),
+            ),
+        )
+
+    @mock.patch('builtins.print')
+    def test_server_test_unspec(self, _):
+        mock_server = self.mock_server_class()
+        server.test(ServerClass=mock_server, bind=None)
+        self.assertIn(
+            mock_server.address_family,
+            (socket.AF_INET6, socket.AF_INET),
+        )
+
+    @mock.patch('builtins.print')
+    def test_server_test_localhost(self, _):
+        mock_server = self.mock_server_class()
+        server.test(ServerClass=mock_server, bind="localhost")
+        self.assertIn(
+            mock_server.address_family,
+            (socket.AF_INET6, socket.AF_INET),
+        )
+
+    ipv6_addrs = (
+        "::",
+        "2001:0db8:85a3:0000:0000:8a2e:0370:7334",
+        "::1",
+    )
+
+    ipv4_addrs = (
+        "0.0.0.0",
+        "8.8.8.8",
+        "127.0.0.1",
+    )
+
+    @mock.patch('builtins.print')
+    def test_server_test_ipv6(self, _):
+        for bind in self.ipv6_addrs:
+            mock_server = self.mock_server_class()
+            server.test(ServerClass=mock_server, bind=bind)
+            self.assertEqual(mock_server.address_family, socket.AF_INET6)
+
+    @mock.patch('builtins.print')
+    def test_server_test_ipv4(self, _):
+        for bind in self.ipv4_addrs:
+            mock_server = self.mock_server_class()
+            server.test(ServerClass=mock_server, bind=bind)
+            self.assertEqual(mock_server.address_family, socket.AF_INET)
+
+
 def test_main(verbose=None):
     cwd = os.getcwd()
     try:
@@ -1125,6 +1240,7 @@ def test_main(verbose=None):
             CGIHTTPServerTestCase,
             SimpleHTTPRequestHandlerTestCase,
             MiscTestCase,
+            ScriptTestCase
         )
     finally:
         os.chdir(cwd)

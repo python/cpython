@@ -1,4 +1,3 @@
-
 /* Float object implementation */
 
 /* XXX There should be overflow checks here, but it's hard to check
@@ -44,7 +43,7 @@ static PyTypeObject FloatInfoType;
 PyDoc_STRVAR(floatinfo__doc__,
 "sys.float_info\n\
 \n\
-A structseq holding information about the float type. It contains low level\n\
+A named tuple holding information about the float type. It contains low level\n\
 information about the precision and internal representation. Please study\n\
 your system's :file:`float.h` for more information.");
 
@@ -54,7 +53,7 @@ static PyStructSequence_Field floatinfo_fields[] = {
                     "is representable"},
     {"max_10_exp",      "DBL_MAX_10_EXP -- maximum int e such that 10**e "
                     "is representable"},
-    {"min",             "DBL_MIN -- Minimum positive normalizer float"},
+    {"min",             "DBL_MIN -- Minimum positive normalized float"},
     {"min_exp",         "DBL_MIN_EXP -- minimum int e such that radix**(e-1) "
                     "is a normalized float"},
     {"min_10_exp",      "DBL_MIN_10_EXP -- minimum int e such that 10**e is "
@@ -64,7 +63,7 @@ static PyStructSequence_Field floatinfo_fields[] = {
     {"epsilon",         "DBL_EPSILON -- Difference between 1 and the next "
                     "representable float"},
     {"radix",           "FLT_RADIX -- radix of exponent"},
-    {"rounds",          "FLT_ROUNDS -- addition rounds"},
+    {"rounds",          "FLT_ROUNDS -- rounding mode"},
     {0}
 };
 
@@ -176,11 +175,10 @@ PyFloat_FromString(PyObject *v)
         s_buffer = _PyUnicode_TransformDecimalAndSpaceToASCII(v);
         if (s_buffer == NULL)
             return NULL;
+        assert(PyUnicode_IS_ASCII(s_buffer));
+        /* Simply get a pointer to existing ASCII characters. */
         s = PyUnicode_AsUTF8AndSize(s_buffer, &len);
-        if (s == NULL) {
-            Py_DECREF(s_buffer);
-            return NULL;
-        }
+        assert(s != NULL);
     }
     else if (PyBytes_Check(v)) {
         s = PyBytes_AS_STRING(v);
@@ -248,6 +246,15 @@ PyFloat_AsDouble(PyObject *op)
 
     nb = Py_TYPE(op)->tp_as_number;
     if (nb == NULL || nb->nb_float == NULL) {
+        if (nb && nb->nb_index) {
+            PyObject *res = PyNumber_Index(op);
+            if (!res) {
+                return -1;
+            }
+            double val = PyLong_AsDouble(res);
+            Py_DECREF(res);
+            return val;
+        }
         PyErr_Format(PyExc_TypeError, "must be real number, not %.50s",
                      op->ob_type->tp_name);
         return -1;
@@ -465,13 +472,13 @@ float_richcompare(PyObject *v, PyObject *w, int op)
                  */
                 PyObject *temp;
 
-                temp = PyNumber_Lshift(ww, _PyLong_One);
+                temp = _PyLong_Lshift(ww, 1);
                 if (temp == NULL)
                     goto Error;
                 Py_DECREF(ww);
                 ww = temp;
 
-                temp = PyNumber_Lshift(vv, _PyLong_One);
+                temp = _PyLong_Lshift(vv, 1);
                 if (temp == NULL)
                     goto Error;
                 Py_DECREF(vv);
@@ -1035,7 +1042,7 @@ double_round(double x, int ndigits) {
 /*[clinic input]
 float.__round__
 
-    ndigits as o_ndigits: object = NULL
+    ndigits as o_ndigits: object = None
     /
 
 Return the Integral closest to x, rounding half toward even.
@@ -1045,13 +1052,13 @@ When an argument is passed, work like built-in round(x, ndigits).
 
 static PyObject *
 float___round___impl(PyObject *self, PyObject *o_ndigits)
-/*[clinic end generated code: output=374c36aaa0f13980 input=1ca2316b510293b8]*/
+/*[clinic end generated code: output=374c36aaa0f13980 input=fc0fe25924fbc9ed]*/
 {
     double x, rounded;
     Py_ssize_t ndigits;
 
     x = PyFloat_AsDouble(self);
-    if (o_ndigits == NULL || o_ndigits == Py_None) {
+    if (o_ndigits == Py_None) {
         /* single-argument round or with None ndigits:
          * round to nearest integer */
         rounded = round(x);
@@ -1494,7 +1501,7 @@ float_fromhex(PyTypeObject *type, PyObject *string)
         goto parse_error;
     result = PyFloat_FromDouble(negate ? -x : x);
     if (type != &PyFloat_Type && result != NULL) {
-        Py_SETREF(result, PyObject_CallFunctionObjArgs((PyObject *)type, result, NULL));
+        Py_SETREF(result, _PyObject_CallOneArg((PyObject *)type, result));
     }
     return result;
 
@@ -1915,17 +1922,17 @@ PyTypeObject PyFloat_Type = {
     sizeof(PyFloatObject),
     0,
     (destructor)float_dealloc,                  /* tp_dealloc */
-    0,                                          /* tp_print */
+    0,                                          /* tp_vectorcall_offset */
     0,                                          /* tp_getattr */
     0,                                          /* tp_setattr */
-    0,                                          /* tp_reserved */
+    0,                                          /* tp_as_async */
     (reprfunc)float_repr,                       /* tp_repr */
     &float_as_number,                           /* tp_as_number */
     0,                                          /* tp_as_sequence */
     0,                                          /* tp_as_mapping */
     (hashfunc)float_hash,                       /* tp_hash */
     0,                                          /* tp_call */
-    (reprfunc)float_repr,                       /* tp_str */
+    0,                                          /* tp_str */
     PyObject_GenericGetAttr,                    /* tp_getattro */
     0,                                          /* tp_setattro */
     0,                                          /* tp_as_buffer */
@@ -2001,8 +2008,9 @@ _PyFloat_Init(void)
 
     /* Init float info */
     if (FloatInfoType.tp_name == NULL) {
-        if (PyStructSequence_InitType2(&FloatInfoType, &floatinfo_desc) < 0)
+        if (PyStructSequence_InitType2(&FloatInfoType, &floatinfo_desc) < 0) {
             return 0;
+        }
     }
     return 1;
 }
@@ -2023,7 +2031,7 @@ PyFloat_ClearFreeList(void)
 }
 
 void
-PyFloat_Fini(void)
+_PyFloat_Fini(void)
 {
     (void)PyFloat_ClearFreeList();
 }
@@ -2234,11 +2242,13 @@ _PyFloat_Pack4(double x, unsigned char *p, int le)
     }
     else {
         float y = (float)x;
-        const unsigned char *s = (unsigned char*)&y;
         int i, incr = 1;
 
         if (Py_IS_INFINITY(y) && !Py_IS_INFINITY(x))
             goto Overflow;
+
+        unsigned char s[sizeof(float)];
+        memcpy(s, &y, sizeof(float));
 
         if ((float_format == ieee_little_endian_format && !le)
             || (float_format == ieee_big_endian_format && le)) {
@@ -2247,7 +2257,7 @@ _PyFloat_Pack4(double x, unsigned char *p, int le)
         }
 
         for (i = 0; i < 4; i++) {
-            *p = *s++;
+            *p = s[i];
             p += incr;
         }
         return 0;

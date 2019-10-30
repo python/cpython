@@ -428,12 +428,12 @@ SHA256Type_copy_impl(SHAobject *self)
 /*[clinic input]
 SHA256Type.digest
 
-Return the digest value as a string of binary data.
+Return the digest value as a bytes object.
 [clinic start generated code]*/
 
 static PyObject *
 SHA256Type_digest_impl(SHAobject *self)
-/*[clinic end generated code: output=46616a5e909fbc3d input=1fb752e58954157d]*/
+/*[clinic end generated code: output=46616a5e909fbc3d input=f1f4cfea5cbde35c]*/
 {
     unsigned char digest[SHA_DIGESTSIZE];
     SHAobject temp;
@@ -529,14 +529,14 @@ static PyMemberDef SHA_members[] = {
 static PyTypeObject SHA224type = {
     PyVarObject_HEAD_INIT(NULL, 0)
     "_sha256.sha224",   /*tp_name*/
-    sizeof(SHAobject),  /*tp_size*/
+    sizeof(SHAobject),  /*tp_basicsize*/
     0,                  /*tp_itemsize*/
     /* methods */
     SHA_dealloc,        /*tp_dealloc*/
-    0,                  /*tp_print*/
+    0,                  /*tp_vectorcall_offset*/
     0,                  /*tp_getattr*/
     0,                  /*tp_setattr*/
-    0,                  /*tp_reserved*/
+    0,                  /*tp_as_async*/
     0,                  /*tp_repr*/
     0,                  /*tp_as_number*/
     0,                  /*tp_as_sequence*/
@@ -563,14 +563,14 @@ static PyTypeObject SHA224type = {
 static PyTypeObject SHA256type = {
     PyVarObject_HEAD_INIT(NULL, 0)
     "_sha256.sha256",   /*tp_name*/
-    sizeof(SHAobject),  /*tp_size*/
+    sizeof(SHAobject),  /*tp_basicsize*/
     0,                  /*tp_itemsize*/
     /* methods */
     SHA_dealloc,        /*tp_dealloc*/
-    0,                  /*tp_print*/
+    0,                  /*tp_vectorcall_offset*/
     0,                  /*tp_getattr*/
     0,                  /*tp_setattr*/
-    0,                  /*tp_reserved*/
+    0,                  /*tp_as_async*/
     0,                  /*tp_repr*/
     0,                  /*tp_as_number*/
     0,                  /*tp_as_sequence*/
@@ -601,13 +601,15 @@ static PyTypeObject SHA256type = {
 _sha256.sha256
 
     string: object(c_default="NULL") = b''
+    *
+    usedforsecurity: bool = True
 
 Return a new SHA-256 hash object; optionally initialized with a string.
 [clinic start generated code]*/
 
 static PyObject *
-_sha256_sha256_impl(PyObject *module, PyObject *string)
-/*[clinic end generated code: output=fa644436dcea5c31 input=09cce3fb855056b2]*/
+_sha256_sha256_impl(PyObject *module, PyObject *string, int usedforsecurity)
+/*[clinic end generated code: output=a1de327e8e1185cf input=9be86301aeb14ea5]*/
 {
     SHAobject *new;
     Py_buffer buf;
@@ -641,13 +643,15 @@ _sha256_sha256_impl(PyObject *module, PyObject *string)
 _sha256.sha224
 
     string: object(c_default="NULL") = b''
+    *
+    usedforsecurity: bool = True
 
 Return a new SHA-224 hash object; optionally initialized with a string.
 [clinic start generated code]*/
 
 static PyObject *
-_sha256_sha224_impl(PyObject *module, PyObject *string)
-/*[clinic end generated code: output=21e3ba22c3404f93 input=27a04ba24c353a73]*/
+_sha256_sha224_impl(PyObject *module, PyObject *string, int usedforsecurity)
+/*[clinic end generated code: output=08be6b36569bc69c input=9fcfb46e460860ac]*/
 {
     SHAobject *new;
     Py_buffer buf;

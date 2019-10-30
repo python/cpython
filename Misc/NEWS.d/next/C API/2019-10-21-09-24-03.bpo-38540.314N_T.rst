@@ -1,0 +1,3 @@
+Fixed possible leak in :c:func:`PyArg_Parse` and similar functions for
+format units ``"es#"`` and ``"et#"`` when the macro
+:c:macro:`PY_SSIZE_T_CLEAN` is not defined.

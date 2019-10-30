@@ -256,8 +256,7 @@ class Morsel(dict):
     In a cookie, each such pair may have several attributes, so this class is
     used to keep the attributes associated with the appropriate key,value pair.
     This class also includes a coded_value attribute, which is used to hold
-    the network representation of the value.  This is most useful when Python
-    objects are pickled for network transit.
+    the network representation of the value.
     """
     # RFC 2109 lists these attributes as reserved:
     #   path       comment         domain
@@ -281,6 +280,7 @@ class Morsel(dict):
         "secure"   : "Secure",
         "httponly" : "HttpOnly",
         "version"  : "Version",
+        "samesite" : "SameSite",
     }
 
     _flags = {'secure', 'httponly'}
@@ -408,6 +408,8 @@ class Morsel(dict):
                 append("%s=%s" % (self._reserved[key], _getdate(value)))
             elif key == "max-age" and isinstance(value, int):
                 append("%s=%d" % (self._reserved[key], value))
+            elif key == "comment" and isinstance(value, str):
+                append("%s=%s" % (self._reserved[key], _quote(value)))
             elif key in self._flags:
                 if value:
                     append(str(self._reserved[key]))

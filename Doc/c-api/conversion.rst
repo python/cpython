@@ -1,4 +1,4 @@
-.. highlightlang:: c
+.. highlight:: c
 
 .. _string-conversion:
 
@@ -60,7 +60,7 @@ The following functions provide locale-independent string to number conversions.
    The conversion is independent of the current locale.
 
    If ``endptr`` is ``NULL``, convert the whole string.  Raise
-   ValueError and return ``-1.0`` if the string is not a valid
+   :exc:`ValueError` and return ``-1.0`` if the string is not a valid
    representation of a floating-point number.
 
    If endptr is not ``NULL``, convert as much of the string as
@@ -113,7 +113,7 @@ The following functions provide locale-independent string to number conversions.
    *val* is a finite number, an infinite number, or not a number, respectively.
 
    The return value is a pointer to *buffer* with the converted string or
-   *NULL* if the conversion failed. The caller is responsible for freeing the
+   ``NULL`` if the conversion failed. The caller is responsible for freeing the
    returned string by calling :c:func:`PyMem_Free`.
 
    .. versionadded:: 3.1

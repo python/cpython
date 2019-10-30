@@ -1,4 +1,4 @@
-.. highlightlang:: c
+.. highlight:: c
 
 .. _os:
 
@@ -22,7 +22,7 @@ Operating System Utilities
    Return true (nonzero) if the standard I/O file *fp* with name *filename* is
    deemed interactive.  This is the case for files for which ``isatty(fileno(fp))``
    is true.  If the global flag :c:data:`Py_InteractiveFlag` is true, this function
-   also returns true if the *filename* pointer is *NULL* or if the name is equal to
+   also returns true if the *filename* pointer is ``NULL`` or if the name is equal to
    one of the strings ``'<stdin>'`` or ``'???'``.
 
 
@@ -106,6 +106,17 @@ Operating System Utilities
    surrogate character, escape the bytes using the surrogateescape error
    handler instead of decoding them.
 
+   Encoding, highest priority to lowest priority:
+
+   * ``UTF-8`` on macOS, Android, and VxWorks;
+   * ``UTF-8`` on Windows if :c:data:`Py_LegacyWindowsFSEncodingFlag` is zero;
+   * ``UTF-8`` if the Python UTF-8 mode is enabled;
+   * ``ASCII`` if the ``LC_CTYPE`` locale is ``"C"``,
+     ``nl_langinfo(CODESET)`` returns the ``ASCII`` encoding (or an alias),
+     and :c:func:`mbstowcs` and :c:func:`wcstombs` functions uses the
+     ``ISO-8859-1`` encoding.
+   * the current locale encoding.
+
    Return a pointer to a newly allocated wide character string, use
    :c:func:`PyMem_RawFree` to free the memory. If size is not ``NULL``, write
    the number of wide characters excluding the null character into ``*size``
@@ -127,6 +138,13 @@ Operating System Utilities
 
    .. versionadded:: 3.5
 
+   .. versionchanged:: 3.7
+      The function now uses the UTF-8 encoding in the UTF-8 mode.
+
+   .. versionchanged:: 3.8
+      The function now uses the UTF-8 encoding on Windows if
+      :c:data:`Py_LegacyWindowsFSEncodingFlag` is zero;
+
 
 .. c:function:: char* Py_EncodeLocale(const wchar_t *text, size_t *error_pos)
 
@@ -134,12 +152,25 @@ Operating System Utilities
    :ref:`surrogateescape error handler <surrogateescape>`: surrogate characters
    in the range U+DC80..U+DCFF are converted to bytes 0x80..0xFF.
 
+   Encoding, highest priority to lowest priority:
+
+   * ``UTF-8`` on macOS, Android, and VxWorks;
+   * ``UTF-8`` on Windows if :c:data:`Py_LegacyWindowsFSEncodingFlag` is zero;
+   * ``UTF-8`` if the Python UTF-8 mode is enabled;
+   * ``ASCII`` if the ``LC_CTYPE`` locale is ``"C"``,
+     ``nl_langinfo(CODESET)`` returns the ``ASCII`` encoding (or an alias),
+     and :c:func:`mbstowcs` and :c:func:`wcstombs` functions uses the
+     ``ISO-8859-1`` encoding.
+   * the current locale encoding.
+
+   The function uses the UTF-8 encoding in the Python UTF-8 mode.
+
    Return a pointer to a newly allocated byte string, use :c:func:`PyMem_Free`
    to free the memory. Return ``NULL`` on encoding error or memory allocation
    error
 
-   If error_pos is not ``NULL``, ``*error_pos`` is set to the index of the
-   invalid character on encoding error, or set to ``(size_t)-1`` otherwise.
+   If error_pos is not ``NULL``, ``*error_pos`` is set to ``(size_t)-1`` on
+   success,  or set to the index of the invalid character on encoding error.
 
    Use the :c:func:`Py_DecodeLocale` function to decode the bytes string back
    to a wide character string.
@@ -150,6 +181,13 @@ Operating System Utilities
       :c:func:`PyUnicode_EncodeLocale` functions.
 
    .. versionadded:: 3.5
+
+   .. versionchanged:: 3.7
+      The function now uses the UTF-8 encoding in the UTF-8 mode.
+
+   .. versionchanged:: 3.8
+      The function now uses the UTF-8 encoding on Windows if
+      :c:data:`Py_LegacyWindowsFSEncodingFlag` is zero;
 
 
 .. _systemfunctions:
@@ -163,26 +201,34 @@ accessible to C code.  They all work with the current interpreter thread's
 
 .. c:function:: PyObject *PySys_GetObject(const char *name)
 
-   Return the object *name* from the :mod:`sys` module or *NULL* if it does
+   Return the object *name* from the :mod:`sys` module or ``NULL`` if it does
    not exist, without setting an exception.
 
 .. c:function:: int PySys_SetObject(const char *name, PyObject *v)
 
-   Set *name* in the :mod:`sys` module to *v* unless *v* is *NULL*, in which
+   Set *name* in the :mod:`sys` module to *v* unless *v* is ``NULL``, in which
    case *name* is deleted from the sys module. Returns ``0`` on success, ``-1``
    on error.
 
 .. c:function:: void PySys_ResetWarnOptions()
 
-   Reset :data:`sys.warnoptions` to an empty list.
+   Reset :data:`sys.warnoptions` to an empty list. This function may be
+   called prior to :c:func:`Py_Initialize`.
 
 .. c:function:: void PySys_AddWarnOption(const wchar_t *s)
 
-   Append *s* to :data:`sys.warnoptions`.
+   Append *s* to :data:`sys.warnoptions`. This function must be called prior
+   to :c:func:`Py_Initialize` in order to affect the warnings filter list.
 
 .. c:function:: void PySys_AddWarnOptionUnicode(PyObject *unicode)
 
    Append *unicode* to :data:`sys.warnoptions`.
+
+   Note: this function is not currently usable from outside the CPython
+   implementation, as it must be called prior to the implicit import of
+   :mod:`warnings` in :c:func:`Py_Initialize` to be effective, but can't be
+   called until enough of the runtime has been initialized to permit the
+   creation of Unicode objects.
 
 .. c:function:: void PySys_SetPath(const wchar_t *path)
 
@@ -229,17 +275,73 @@ accessible to C code.  They all work with the current interpreter thread's
 .. c:function:: void PySys_AddXOption(const wchar_t *s)
 
    Parse *s* as a set of :option:`-X` options and add them to the current
-   options mapping as returned by :c:func:`PySys_GetXOptions`.
+   options mapping as returned by :c:func:`PySys_GetXOptions`. This function
+   may be called prior to :c:func:`Py_Initialize`.
 
    .. versionadded:: 3.2
 
 .. c:function:: PyObject *PySys_GetXOptions()
 
    Return the current dictionary of :option:`-X` options, similarly to
-   :data:`sys._xoptions`.  On error, *NULL* is returned and an exception is
+   :data:`sys._xoptions`.  On error, ``NULL`` is returned and an exception is
    set.
 
    .. versionadded:: 3.2
+
+
+.. c:function:: int PySys_Audit(const char *event, const char *format, ...)
+
+   Raises an auditing event with any active hooks. Returns zero for success
+   and non-zero with an exception set on failure.
+
+   If any hooks have been added, *format* and other arguments will be used
+   to construct a tuple to pass. Apart from ``N``, the same format characters
+   as used in :c:func:`Py_BuildValue` are available. If the built value is not
+   a tuple, it will be added into a single-element tuple. (The ``N`` format
+   option consumes a reference, but since there is no way to know whether
+   arguments to this function will be consumed, using it may cause reference
+   leaks.)
+
+   :func:`sys.audit` performs the same function from Python code.
+
+   .. versionadded:: 3.8
+
+
+.. c:function:: int PySys_AddAuditHook(Py_AuditHookFunction hook, void *userData)
+
+   Adds to the collection of active auditing hooks. Returns zero for success
+   and non-zero on failure. If the runtime has been initialized, also sets an
+   error on failure. Hooks added through this API are called for all
+   interpreters created by the runtime.
+
+   This function is safe to call before :c:func:`Py_Initialize`. When called
+   after runtime initialization, existing audit hooks are notified and may
+   silently abort the operation by raising an error subclassed from
+   :class:`Exception` (other errors will not be silenced).
+
+   The hook function is of type :c:type:`int (*)(const char *event, PyObject
+   *args, void *userData)`, where *args* is guaranteed to be a
+   :c:type:`PyTupleObject`. The hook function is always called with the GIL
+   held by the Python interpreter that raised the event.
+
+   The *userData* pointer is passed into the hook function. Since hook
+   functions may be called from different runtimes, this pointer should not
+   refer directly to Python state.
+
+   See :pep:`578` for a detailed description of auditing. Functions in the
+   runtime and standard library that raise events include the details in each
+   function's documentation and listed in the :ref:`audit events table
+   <audit-events>`.
+
+   .. audit-event:: sys.addaudithook "" c.PySys_AddAuditHook
+
+      If the interpreter is initialized, this function raises a auditing event
+      ``sys.addaudithook`` with no arguments. If any existing hooks raise an
+      exception derived from :class:`Exception`, the new hook will not be
+      added and the exception is cleared. As a result, callers cannot assume
+      that their hook has been added unless they control all existing hooks.
+
+   .. versionadded:: 3.8
 
 
 .. _processcontrol:

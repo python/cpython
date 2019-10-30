@@ -67,13 +67,13 @@ implementations are free to support the strict mapping from IDL).  See section
 
 .. seealso::
 
-   `Document Object Model (DOM) Level 2 Specification <https://www.w3.org/TR/DOM-Level-2-Core/>`_
+   `Document Object Model (DOM) Level 2 Specification <https://www.w3.org/TR/2000/REC-DOM-Level-2-Core-20001113/>`_
       The W3C recommendation upon which the Python DOM API is based.
 
    `Document Object Model (DOM) Level 1 Specification <https://www.w3.org/TR/REC-DOM-Level-1/>`_
       The W3C recommendation for the DOM supported by :mod:`xml.dom.minidom`.
 
-   `Python Language Mapping Specification <http://www.omg.org/spec/PYTH/1.2/PDF>`_
+   `Python Language Mapping Specification <http://www.omg.org/cgi-bin/doc?formal/02-11-05.pdf>`_
       This specifies the mapping from OMG IDL to Python.
 
 

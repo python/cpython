@@ -1,0 +1,3 @@
+The functions ``PyEval_CallObject``, ``PyEval_CallFunction``,
+``PyEval_CallMethod`` and ``PyEval_CallObjectWithKeywords`` are deprecated.
+Use :c:func:`PyObject_Call` and its variants instead.

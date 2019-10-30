@@ -119,15 +119,22 @@ if "_PYTHON_PROJECT_BASE" in os.environ:
     _PROJECT_BASE = _safe_realpath(os.environ["_PYTHON_PROJECT_BASE"])
 
 def _is_python_source_dir(d):
-    for fn in ("Setup.dist", "Setup.local"):
+    for fn in ("Setup", "Setup.local"):
         if os.path.isfile(os.path.join(d, "Modules", fn)):
             return True
     return False
 
 _sys_home = getattr(sys, '_home', None)
-if (_sys_home and os.name == 'nt' and
-    _sys_home.lower().endswith(('\\pcbuild\\win32', '\\pcbuild\\amd64'))):
-    _sys_home = os.path.dirname(os.path.dirname(_sys_home))
+
+if os.name == 'nt':
+    def _fix_pcbuild(d):
+        if d and os.path.normcase(d).startswith(
+                os.path.normcase(os.path.join(_PREFIX, "PCbuild"))):
+            return _PREFIX
+        return d
+    _PROJECT_BASE = _fix_pcbuild(_PROJECT_BASE)
+    _sys_home = _fix_pcbuild(_sys_home)
+
 def is_python_build(check_home=False):
     if check_home and _sys_home:
         return _is_python_source_dir(_sys_home)
@@ -405,7 +412,7 @@ def _generate_posix_vars():
         pprint.pprint(vars, stream=f)
 
     # Create file used for sys.path fixup -- see Modules/getpath.c
-    with open('pybuilddir.txt', 'w', encoding='ascii') as f:
+    with open('pybuilddir.txt', 'w', encoding='utf8') as f:
         f.write(pybuilddir)
 
 def _init_posix(vars):
@@ -599,39 +606,30 @@ def get_platform():
     """Return a string that identifies the current platform.
 
     This is used mainly to distinguish platform-specific build directories and
-    platform-specific built distributions.  Typically includes the OS name
-    and version and the architecture (as supplied by 'os.uname()'),
-    although the exact information included depends on the OS; eg. for IRIX
-    the architecture isn't particularly important (IRIX only runs on SGI
-    hardware), but for Linux the kernel version isn't particularly
-    important.
+    platform-specific built distributions.  Typically includes the OS name and
+    version and the architecture (as supplied by 'os.uname()'), although the
+    exact information included depends on the OS; on Linux, the kernel version
+    isn't particularly important.
 
     Examples of returned values:
        linux-i586
        linux-alpha (?)
        solaris-2.6-sun4u
-       irix-5.3
-       irix64-6.2
 
     Windows will return one of:
        win-amd64 (64bit Windows on AMD64 (aka x86_64, Intel64, EM64T, etc)
-       win-ia64 (64bit Windows on Itanium)
        win32 (all others - specifically, sys.platform is returned)
 
     For other non-POSIX platforms, currently just returns 'sys.platform'.
+
     """
     if os.name == 'nt':
-        # sniff sys.version for architecture.
-        prefix = " bit ("
-        i = sys.version.find(prefix)
-        if i == -1:
-            return sys.platform
-        j = sys.version.find(")", i)
-        look = sys.version[i+len(prefix):j].lower()
-        if look == 'amd64':
+        if 'amd64' in sys.version.lower():
             return 'win-amd64'
-        if look == 'itanium':
-            return 'win-ia64'
+        if '(arm)' in sys.version.lower():
+            return 'win-arm32'
+        if '(arm64)' in sys.version.lower():
+            return 'win-arm64'
         return sys.platform
 
     if os.name != "posix" or not hasattr(os, 'uname'):
@@ -645,8 +643,8 @@ def get_platform():
     # Try to distinguish various flavours of Unix
     osname, host, release, version, machine = os.uname()
 
-    # Convert the OS name to lowercase, remove '/' characters
-    # (to accommodate BSD/OS), and translate spaces (for "Power Macintosh")
+    # Convert the OS name to lowercase, remove '/' characters, and translate
+    # spaces (for "Power Macintosh")
     osname = osname.lower().replace('/', '')
     machine = machine.replace(' ', '_')
     machine = machine.replace('/', '-')
@@ -666,8 +664,6 @@ def get_platform():
             bitness = {2147483647:"32bit", 9223372036854775807:"64bit"}
             machine += ".%s" % bitness[sys.maxsize]
         # fall through to standard osname-release-machine representation
-    elif osname[:4] == "irix":              # could be "irix64"!
-        return "%s-%s" % (osname, release)
     elif osname[:3] == "aix":
         return "%s-%s.%s" % (osname, version, release)
     elif osname[:6] == "cygwin":

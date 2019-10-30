@@ -1,0 +1,1 @@
+Improve the implementation of ``winerror_to_errno()``.

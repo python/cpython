@@ -138,15 +138,15 @@ weakref_functions[] =  {
 
 
 static struct PyModuleDef weakrefmodule = {
-	PyModuleDef_HEAD_INIT,
-	"_weakref",
-	"Weak-reference support module.",
-	-1,
-	weakref_functions,
-	NULL,
-	NULL,
-	NULL,
-	NULL
+    PyModuleDef_HEAD_INIT,
+    "_weakref",
+    "Weak-reference support module.",
+    -1,
+    weakref_functions,
+    NULL,
+    NULL,
+    NULL,
+    NULL
 };
 
 PyMODINIT_FUNC

@@ -23,7 +23,7 @@ class AboutDialog(Toplevel):
     """Modal about dialog for idle
 
     """
-    def __init__(self, parent, title=None, _htest=False, _utest=False):
+    def __init__(self, parent, title=None, *, _htest=False, _utest=False):
         """Create popup, do not return until tk widget destroyed.
 
         parent - parent of this dialog
@@ -195,11 +195,13 @@ class AboutDialog(Toplevel):
 
     def ok(self, event=None):
         "Dismiss help_about dialog."
+        self.grab_release()
         self.destroy()
 
 
 if __name__ == '__main__':
-    import unittest
-    unittest.main('idlelib.idle_test.test_help_about', verbosity=2, exit=False)
+    from unittest import main
+    main('idlelib.idle_test.test_help_about', verbosity=2, exit=False)
+
     from idlelib.idle_test.htest import run
     run(AboutDialog)

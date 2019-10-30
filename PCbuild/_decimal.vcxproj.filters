@@ -92,7 +92,7 @@
     <ClCompile Include="..\Modules\_decimal\libmpdec\io.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\Modules\_decimal\libmpdec\memory.c">
+    <ClCompile Include="..\Modules\_decimal\libmpdec\mpalloc.c">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="..\Modules\_decimal\libmpdec\mpdecimal.c">

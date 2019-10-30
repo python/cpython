@@ -125,6 +125,57 @@ a = A(destroyed)"""
         gc_collect()
         self.assertIs(wr(), None)
 
+    def test_module_getattr(self):
+        import test.good_getattr as gga
+        from test.good_getattr import test
+        self.assertEqual(test, "There is test")
+        self.assertEqual(gga.x, 1)
+        self.assertEqual(gga.y, 2)
+        with self.assertRaisesRegex(AttributeError,
+                                    "Deprecated, use whatever instead"):
+            gga.yolo
+        self.assertEqual(gga.whatever, "There is whatever")
+        del sys.modules['test.good_getattr']
+
+    def test_module_getattr_errors(self):
+        import test.bad_getattr as bga
+        from test import bad_getattr2
+        self.assertEqual(bga.x, 1)
+        self.assertEqual(bad_getattr2.x, 1)
+        with self.assertRaises(TypeError):
+            bga.nope
+        with self.assertRaises(TypeError):
+            bad_getattr2.nope
+        del sys.modules['test.bad_getattr']
+        if 'test.bad_getattr2' in sys.modules:
+            del sys.modules['test.bad_getattr2']
+
+    def test_module_dir(self):
+        import test.good_getattr as gga
+        self.assertEqual(dir(gga), ['a', 'b', 'c'])
+        del sys.modules['test.good_getattr']
+
+    def test_module_dir_errors(self):
+        import test.bad_getattr as bga
+        from test import bad_getattr2
+        with self.assertRaises(TypeError):
+            dir(bga)
+        with self.assertRaises(TypeError):
+            dir(bad_getattr2)
+        del sys.modules['test.bad_getattr']
+        if 'test.bad_getattr2' in sys.modules:
+            del sys.modules['test.bad_getattr2']
+
+    def test_module_getattr_tricky(self):
+        from test import bad_getattr3
+        # these lookups should not crash
+        with self.assertRaises(AttributeError):
+            bad_getattr3.one
+        with self.assertRaises(AttributeError):
+            bad_getattr3.delgetattr
+        if 'test.bad_getattr3' in sys.modules:
+            del sys.modules['test.bad_getattr3']
+
     def test_module_repr_minimal(self):
         # reprs when modules have no __file__, __name__, or __loader__
         m = ModuleType('foo')

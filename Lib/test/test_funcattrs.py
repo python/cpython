@@ -83,6 +83,15 @@ class FunctionPropertiesTest(FuncAttrsTest):
         self.assertEqual(c[0].__class__.__name__, "cell")
         self.cannot_set_attr(f, "__closure__", c, AttributeError)
 
+    def test_cell_new(self):
+        cell_obj = types.CellType(1)
+        self.assertEqual(cell_obj.cell_contents, 1)
+
+        cell_obj = types.CellType()
+        msg = "shouldn't be able to read an empty cell"
+        with self.assertRaises(ValueError, msg=msg):
+            cell_obj.cell_contents
+
     def test_empty_cell(self):
         def f(): print(a)
         try:

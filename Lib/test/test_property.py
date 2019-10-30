@@ -3,6 +3,7 @@
 
 import sys
 import unittest
+from test import support
 
 class PropertyBase(Exception):
     pass
@@ -172,6 +173,37 @@ class PropertyTests(unittest.TestCase):
         self.assertEqual(sub.__class__.spam.__doc__, 'Eggs')
         sub.__class__.spam.__doc__ = 'Spam'
         self.assertEqual(sub.__class__.spam.__doc__, 'Spam')
+
+    @support.refcount_test
+    def test_refleaks_in___init__(self):
+        gettotalrefcount = support.get_attribute(sys, 'gettotalrefcount')
+        fake_prop = property('fget', 'fset', 'fdel', 'doc')
+        refs_before = gettotalrefcount()
+        for i in range(100):
+            fake_prop.__init__('fget', 'fset', 'fdel', 'doc')
+        self.assertAlmostEqual(gettotalrefcount() - refs_before, 0, delta=10)
+
+    @unittest.skipIf(sys.flags.optimize >= 2,
+                     "Docstrings are omitted with -O2 and above")
+    def test_class_property(self):
+        class A:
+            @classmethod
+            @property
+            def __doc__(cls):
+                return 'A doc for %r' % cls.__name__
+        self.assertEqual(A.__doc__, "A doc for 'A'")
+
+    @unittest.skipIf(sys.flags.optimize >= 2,
+                     "Docstrings are omitted with -O2 and above")
+    def test_class_property_override(self):
+        class A:
+            """First"""
+            @classmethod
+            @property
+            def __doc__(cls):
+                return 'Second'
+        self.assertEqual(A.__doc__, 'Second')
+
 
 # Issue 5890: subclasses of property do not preserve method __doc__ strings
 class PropertySub(property):

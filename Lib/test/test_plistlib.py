@@ -1,5 +1,7 @@
 # Copyright (C) 2003-2013 Python Software Foundation
-
+import copy
+import operator
+import pickle
 import unittest
 import plistlib
 import os
@@ -9,6 +11,8 @@ import binascii
 import collections
 from test import support
 from io import BytesIO
+
+from plistlib import UID
 
 ALL_FORMATS=(plistlib.FMT_XML, plistlib.FMT_BINARY)
 
@@ -88,6 +92,17 @@ TESTDATA={
         ZwB0AHwAiACUAJoApQCuALsAygDTAOQA7QD4AQQBDwEdASsBNgE3ATgBTwFn
         AW4BcAFyAXQBdgF/AYMBhQGHAYwBlQGbAZ0BnwGhAaUBpwGwAbkBwAHBAcIB
         xQHHAsQC0gAAAAAAAAIBAAAAAAAAADkAAAAAAAAAAAAAAAAAAALs'''),
+    'KEYED_ARCHIVE': binascii.a2b_base64(b'''
+        YnBsaXN0MDDUAQIDBAUGHB1YJHZlcnNpb25YJG9iamVjdHNZJGFyY2hpdmVy
+        VCR0b3ASAAGGoKMHCA9VJG51bGzTCQoLDA0OVnB5dHlwZVYkY2xhc3NZTlMu
+        c3RyaW5nEAGAAl8QE0tleUFyY2hpdmUgVUlEIFRlc3TTEBESExQZWiRjbGFz
+        c25hbWVYJGNsYXNzZXNbJGNsYXNzaGludHNfEBdPQ19CdWlsdGluUHl0aG9u
+        VW5pY29kZaQVFhcYXxAXT0NfQnVpbHRpblB5dGhvblVuaWNvZGVfEBBPQ19Q
+        eXRob25Vbmljb2RlWE5TU3RyaW5nWE5TT2JqZWN0ohobXxAPT0NfUHl0aG9u
+        U3RyaW5nWE5TU3RyaW5nXxAPTlNLZXllZEFyY2hpdmVy0R4fVHJvb3SAAQAI
+        ABEAGgAjAC0AMgA3ADsAQQBIAE8AVgBgAGIAZAB6AIEAjACVAKEAuwDAANoA
+        7QD2AP8BAgEUAR0BLwEyATcAAAAAAAACAQAAAAAAAAAgAAAAAAAAAAAAAAAA
+        AAABOQ=='''),
 }
 
 
@@ -151,6 +166,14 @@ class TestPlistlib(unittest.TestCase):
             with self.subTest(fmt=fmt):
                 self.assertRaises(TypeError, plistlib.dumps, pl, fmt=fmt)
 
+    def test_invalid_uid(self):
+        with self.assertRaises(TypeError):
+            UID("not an int")
+        with self.assertRaises(ValueError):
+            UID(2 ** 64)
+        with self.assertRaises(ValueError):
+            UID(-19)
+
     def test_int(self):
         for pl in [0, 2**8-1, 2**8, 2**16-1, 2**16, 2**32-1, 2**32,
                    2**63-1, 2**64-1, 1, -2**63]:
@@ -168,6 +191,17 @@ class TestPlistlib(unittest.TestCase):
                 with self.subTest(pl=pl, fmt=fmt):
                     self.assertRaises(OverflowError, plistlib.dumps,
                                       pl, fmt=fmt)
+
+    def test_bytearray(self):
+        for pl in (b'<binary gunk>', b"<lots of binary gunk>\0\1\2\3" * 10):
+            for fmt in ALL_FORMATS:
+                with self.subTest(pl=pl, fmt=fmt):
+                    data = plistlib.dumps(bytearray(pl), fmt=fmt)
+                    pl2 = plistlib.loads(data)
+                    self.assertIsInstance(pl2, bytes)
+                    self.assertEqual(pl2, pl)
+                    data2 = plistlib.dumps(pl2, fmt=fmt)
+                    self.assertEqual(data, data2)
 
     def test_bytes(self):
         pl = self._create()
@@ -189,15 +223,52 @@ class TestPlistlib(unittest.TestCase):
         data = {'1': {'2': [{'3': [[[[[{'test': b'aaaaaa'}]]]]]}]}}
         self.assertEqual(plistlib.loads(plistlib.dumps(data)), data)
 
+    def test_uid(self):
+        data = UID(1)
+        self.assertEqual(plistlib.loads(plistlib.dumps(data, fmt=plistlib.FMT_BINARY)), data)
+        dict_data = {
+            'uid0': UID(0),
+            'uid2': UID(2),
+            'uid8': UID(2 ** 8),
+            'uid16': UID(2 ** 16),
+            'uid32': UID(2 ** 32),
+            'uid63': UID(2 ** 63)
+        }
+        self.assertEqual(plistlib.loads(plistlib.dumps(dict_data, fmt=plistlib.FMT_BINARY)), dict_data)
+
+    def test_uid_data(self):
+        uid = UID(1)
+        self.assertEqual(uid.data, 1)
+
+    def test_uid_eq(self):
+        self.assertEqual(UID(1), UID(1))
+        self.assertNotEqual(UID(1), UID(2))
+        self.assertNotEqual(UID(1), "not uid")
+
+    def test_uid_hash(self):
+        self.assertEqual(hash(UID(1)), hash(UID(1)))
+
+    def test_uid_repr(self):
+        self.assertEqual(repr(UID(1)), "UID(1)")
+
+    def test_uid_index(self):
+        self.assertEqual(operator.index(UID(1)), 1)
+
+    def test_uid_pickle(self):
+        for proto in range(pickle.HIGHEST_PROTOCOL + 1):
+            self.assertEqual(pickle.loads(pickle.dumps(UID(19), protocol=proto)), UID(19))
+
+    def test_uid_copy(self):
+        self.assertEqual(copy.copy(UID(1)), UID(1))
+        self.assertEqual(copy.deepcopy(UID(1)), UID(1))
+
     def test_appleformatting(self):
-        for use_builtin_types in (True, False):
-            for fmt in ALL_FORMATS:
-                with self.subTest(fmt=fmt, use_builtin_types=use_builtin_types):
-                    pl = plistlib.loads(TESTDATA[fmt],
-                        use_builtin_types=use_builtin_types)
-                    data = plistlib.dumps(pl, fmt=fmt)
-                    self.assertEqual(data, TESTDATA[fmt],
-                        "generated data was not identical to Apple's output")
+        for fmt in ALL_FORMATS:
+            with self.subTest(fmt=fmt):
+                pl = plistlib.loads(TESTDATA[fmt])
+                data = plistlib.dumps(pl, fmt=fmt)
+                self.assertEqual(data, TESTDATA[fmt],
+                    "generated data was not identical to Apple's output")
 
 
     def test_appleformattingfromliteral(self):
@@ -309,7 +380,8 @@ class TestPlistlib(unittest.TestCase):
                     'second': [1, 2],
                     'third': [3, 4],
                 })
-                self.assertIsNot(pl2['first'], pl2['second'])
+                if fmt != plistlib.FMT_BINARY:
+                    self.assertIsNot(pl2['first'], pl2['second'])
 
     def test_list_members(self):
         pl = {
@@ -353,11 +425,13 @@ class TestPlistlib(unittest.TestCase):
             testString = "string containing %s" % c
             if i >= 32 or c in "\r\n\t":
                 # \r, \n and \t are the only legal control chars in XML
-                plistlib.dumps(testString, fmt=plistlib.FMT_XML)
+                data = plistlib.dumps(testString, fmt=plistlib.FMT_XML)
+                if c != "\r":
+                    self.assertEqual(plistlib.loads(data), testString)
             else:
-                self.assertRaises(ValueError,
-                                  plistlib.dumps,
-                                  testString)
+                with self.assertRaises(ValueError):
+                    plistlib.dumps(testString, fmt=plistlib.FMT_XML)
+            plistlib.dumps(testString, fmt=plistlib.FMT_BINARY)
 
     def test_non_bmp_characters(self):
         pl = {'python': '\U0001f40d'}
@@ -365,6 +439,14 @@ class TestPlistlib(unittest.TestCase):
             with self.subTest(fmt=fmt):
                 data = plistlib.dumps(pl, fmt=fmt)
                 self.assertEqual(plistlib.loads(data), pl)
+
+    def test_lone_surrogates(self):
+        for fmt in ALL_FORMATS:
+            with self.subTest(fmt=fmt):
+                with self.assertRaises(UnicodeEncodeError):
+                    plistlib.dumps('\ud8ff', fmt=fmt)
+                with self.assertRaises(UnicodeEncodeError):
+                    plistlib.dumps('\udcff', fmt=fmt)
 
     def test_nondictroot(self):
         for fmt in ALL_FORMATS:
@@ -421,6 +503,9 @@ class TestPlistlib(unittest.TestCase):
                 pl2 = plistlib.loads(data)
                 self.assertEqual(dict(pl), dict(pl2))
 
+
+class TestBinaryPlistlib(unittest.TestCase):
+
     def test_nonstandard_refs_size(self):
         # Issue #21538: Refs and offsets are 24-bit integers
         data = (b'bplist00'
@@ -433,6 +518,45 @@ class TestPlistlib(unittest.TestCase):
                 b'\x00\x00\x00\x00\x00\x00\x00\x13')
         self.assertEqual(plistlib.loads(data), {'a': 'b'})
 
+    def test_dump_duplicates(self):
+        # Test effectiveness of saving duplicated objects
+        for x in (None, False, True, 12345, 123.45, 'abcde', b'abcde',
+                  datetime.datetime(2004, 10, 26, 10, 33, 33),
+                  bytearray(b'abcde'), [12, 345], (12, 345), {'12': 345}):
+            with self.subTest(x=x):
+                data = plistlib.dumps([x]*1000, fmt=plistlib.FMT_BINARY)
+                self.assertLess(len(data), 1100, repr(data))
+
+    def test_identity(self):
+        for x in (None, False, True, 12345, 123.45, 'abcde', b'abcde',
+                  datetime.datetime(2004, 10, 26, 10, 33, 33),
+                  bytearray(b'abcde'), [12, 345], (12, 345), {'12': 345}):
+            with self.subTest(x=x):
+                data = plistlib.dumps([x]*2, fmt=plistlib.FMT_BINARY)
+                a, b = plistlib.loads(data)
+                if isinstance(x, tuple):
+                    x = list(x)
+                self.assertEqual(a, x)
+                self.assertEqual(b, x)
+                self.assertIs(a, b)
+
+    def test_cycles(self):
+        # recursive list
+        a = []
+        a.append(a)
+        b = plistlib.loads(plistlib.dumps(a, fmt=plistlib.FMT_BINARY))
+        self.assertIs(b[0], b)
+        # recursive tuple
+        a = ([],)
+        a[0].append(a)
+        b = plistlib.loads(plistlib.dumps(a, fmt=plistlib.FMT_BINARY))
+        self.assertIs(b[0][0], b)
+        # recursive dict
+        a = {}
+        a['x'] = a
+        b = plistlib.loads(plistlib.dumps(a, fmt=plistlib.FMT_BINARY))
+        self.assertIs(b['x'], b)
+
     def test_large_timestamp(self):
         # Issue #26709: 32-bit timestamp out of range
         for ts in -2**31-1, 2**31:
@@ -442,94 +566,87 @@ class TestPlistlib(unittest.TestCase):
                 data = plistlib.dumps(d, fmt=plistlib.FMT_BINARY)
                 self.assertEqual(plistlib.loads(data), d)
 
+    def test_invalid_binary(self):
+        for data in [
+                # too short data
+                b'',
+                # too large offset_table_offset and nonstandard offset_size
+                b'\x00\x08'
+                b'\x00\x00\x00\x00\x00\x00\x03\x01'
+                b'\x00\x00\x00\x00\x00\x00\x00\x01'
+                b'\x00\x00\x00\x00\x00\x00\x00\x00'
+                b'\x00\x00\x00\x00\x00\x00\x00\x2a',
+                # integer overflow in offset_table_offset
+                b'\x00\x08'
+                b'\x00\x00\x00\x00\x00\x00\x01\x01'
+                b'\x00\x00\x00\x00\x00\x00\x00\x01'
+                b'\x00\x00\x00\x00\x00\x00\x00\x00'
+                b'\xff\xff\xff\xff\xff\xff\xff\xff',
+                # offset_size = 0
+                b'\x00\x08'
+                b'\x00\x00\x00\x00\x00\x00\x00\x01'
+                b'\x00\x00\x00\x00\x00\x00\x00\x01'
+                b'\x00\x00\x00\x00\x00\x00\x00\x00'
+                b'\x00\x00\x00\x00\x00\x00\x00\x09',
+                # ref_size = 0
+                b'\xa1\x01\x00\x08\x0a'
+                b'\x00\x00\x00\x00\x00\x00\x01\x00'
+                b'\x00\x00\x00\x00\x00\x00\x00\x02'
+                b'\x00\x00\x00\x00\x00\x00\x00\x00'
+                b'\x00\x00\x00\x00\x00\x00\x00\x0b',
+                # integer overflow in offset
+                b'\x00\xff\xff\xff\xff\xff\xff\xff\xff'
+                b'\x00\x00\x00\x00\x00\x00\x08\x01'
+                b'\x00\x00\x00\x00\x00\x00\x00\x01'
+                b'\x00\x00\x00\x00\x00\x00\x00\x00'
+                b'\x00\x00\x00\x00\x00\x00\x00\x09',
+                # invalid ASCII
+                b'\x51\xff\x08'
+                b'\x00\x00\x00\x00\x00\x00\x01\x01'
+                b'\x00\x00\x00\x00\x00\x00\x00\x01'
+                b'\x00\x00\x00\x00\x00\x00\x00\x00'
+                b'\x00\x00\x00\x00\x00\x00\x00\x0a',
+                # invalid UTF-16
+                b'\x61\xd8\x00\x08'
+                b'\x00\x00\x00\x00\x00\x00\x01\x01'
+                b'\x00\x00\x00\x00\x00\x00\x00\x01'
+                b'\x00\x00\x00\x00\x00\x00\x00\x00'
+                b'\x00\x00\x00\x00\x00\x00\x00\x0b',
+                ]:
+            with self.assertRaises(plistlib.InvalidFileException):
+                plistlib.loads(b'bplist00' + data, fmt=plistlib.FMT_BINARY)
 
-class TestPlistlibDeprecated(unittest.TestCase):
-    def test_io_deprecated(self):
-        pl_in = {
-            'key': 42,
-            'sub': {
-                'key': 9,
-                'alt': 'value',
-                'data': b'buffer',
+
+class TestKeyedArchive(unittest.TestCase):
+    def test_keyed_archive_data(self):
+        # This is the structure of a NSKeyedArchive packed plist
+        data = {
+            '$version': 100000,
+            '$objects': [
+                '$null', {
+                    'pytype': 1,
+                    '$class': UID(2),
+                    'NS.string': 'KeyArchive UID Test'
+                },
+                {
+                    '$classname': 'OC_BuiltinPythonUnicode',
+                    '$classes': [
+                        'OC_BuiltinPythonUnicode',
+                        'OC_PythonUnicode',
+                        'NSString',
+                        'NSObject'
+                    ],
+                    '$classhints': [
+                        'OC_PythonString', 'NSString'
+                    ]
+                }
+            ],
+            '$archiver': 'NSKeyedArchiver',
+            '$top': {
+                'root': UID(1)
             }
         }
-        pl_out = {
-            'key': 42,
-            'sub': {
-                'key': 9,
-                'alt': 'value',
-                'data': plistlib.Data(b'buffer'),
-            }
-        }
-
-        self.addCleanup(support.unlink, support.TESTFN)
-        with self.assertWarns(DeprecationWarning):
-            plistlib.writePlist(pl_in, support.TESTFN)
-
-        with self.assertWarns(DeprecationWarning):
-            pl2 = plistlib.readPlist(support.TESTFN)
-
-        self.assertEqual(pl_out, pl2)
-
-        os.unlink(support.TESTFN)
-
-        with open(support.TESTFN, 'wb') as fp:
-            with self.assertWarns(DeprecationWarning):
-                plistlib.writePlist(pl_in, fp)
-
-        with open(support.TESTFN, 'rb') as fp:
-            with self.assertWarns(DeprecationWarning):
-                pl2 = plistlib.readPlist(fp)
-
-        self.assertEqual(pl_out, pl2)
-
-    def test_bytes_deprecated(self):
-        pl = {
-            'key': 42,
-            'sub': {
-                'key': 9,
-                'alt': 'value',
-                'data': b'buffer',
-            }
-        }
-        with self.assertWarns(DeprecationWarning):
-            data = plistlib.writePlistToBytes(pl)
-
-        with self.assertWarns(DeprecationWarning):
-            pl2 = plistlib.readPlistFromBytes(data)
-
-        self.assertIsInstance(pl2, dict)
-        self.assertEqual(pl2, dict(
-            key=42,
-            sub=dict(
-                key=9,
-                alt='value',
-                data=plistlib.Data(b'buffer'),
-            )
-        ))
-
-        with self.assertWarns(DeprecationWarning):
-            data2 = plistlib.writePlistToBytes(pl2)
-        self.assertEqual(data, data2)
-
-    def test_dataobject_deprecated(self):
-        in_data = { 'key': plistlib.Data(b'hello') }
-        out_data = { 'key': b'hello' }
-
-        buf = plistlib.dumps(in_data)
-
-        cur = plistlib.loads(buf)
-        self.assertEqual(cur, out_data)
-        self.assertEqual(cur, in_data)
-
-        cur = plistlib.loads(buf, use_builtin_types=False)
-        self.assertEqual(cur, out_data)
-        self.assertEqual(cur, in_data)
-
-        with self.assertWarns(DeprecationWarning):
-            cur = plistlib.readPlistFromBytes(buf)
-        self.assertEqual(cur, out_data)
-        self.assertEqual(cur, in_data)
+        self.assertEqual(plistlib.loads(TESTDATA["KEYED_ARCHIVE"]), data)
 
 
 class MiscTestCase(unittest.TestCase):
@@ -539,7 +656,7 @@ class MiscTestCase(unittest.TestCase):
 
 
 def test_main():
-    support.run_unittest(TestPlistlib, TestPlistlibDeprecated, MiscTestCase)
+    support.run_unittest(TestPlistlib, TestKeyedArchive, MiscTestCase)
 
 
 if __name__ == '__main__':

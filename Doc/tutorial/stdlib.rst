@@ -15,7 +15,7 @@ operating system::
 
    >>> import os
    >>> os.getcwd()      # Return the current working directory
-   'C:\\Python37'
+   'C:\\Python39'
    >>> os.chdir('/server/accesslogs')   # Change current working directory
    >>> os.system('mkdir today')   # Run the command mkdir in the system shell
    0
@@ -72,10 +72,21 @@ three`` at the command line::
    >>> print(sys.argv)
    ['demo.py', 'one', 'two', 'three']
 
-The :mod:`getopt` module processes *sys.argv* using the conventions of the Unix
-:func:`getopt` function.  More powerful and flexible command line processing is
-provided by the :mod:`argparse` module.
+The :mod:`argparse` module provides a mechanism to process command line arguments.
+It should always be preferred over directly processing ``sys.argv`` manually.
 
+Take, for example, the below snippet of code::
+
+   >>> import argparse
+   >>> from getpass import getuser
+   >>> parser = argparse.ArgumentParser(description='An argparse example.')
+   >>> parser.add_argument('name', nargs='?', default=getuser(), help='The name of someone to greet.')
+   >>> parser.add_argument('--verbose', '-v', action='count')
+   >>> args = parser.parse_args()
+   >>> greeting = ["Hi", "Hello", "Greetings! its very nice to meet you"][args.verbose % 3]
+   >>> print(f'{greeting}, {args.name}')
+   >>> if not args.verbose:
+   >>>     print('Try running this again with multiple "-v" flags!')
 
 .. _tut-stderr:
 
@@ -317,7 +328,7 @@ sophisticated and robust capabilities of its larger packages. For example:
   names, no direct knowledge or handling of XML is needed.
 
 * The :mod:`email` package is a library for managing email messages, including
-  MIME and other RFC 2822-based message documents. Unlike :mod:`smtplib` and
+  MIME and other :rfc:`2822`-based message documents. Unlike :mod:`smtplib` and
   :mod:`poplib` which actually send and receive messages, the email package has
   a complete toolset for building or decoding complex message structures
   (including attachments) and for implementing internet encoding and header

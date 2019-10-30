@@ -256,14 +256,14 @@ Overridden parameters
     >>> f(**{1: 3}, **{1: 5})
     Traceback (most recent call last):
       ...
-    TypeError: f() keywords must be strings
+    TypeError: f() got multiple values for keyword argument '1'
 
 Unpacking non-sequence
 
     >>> a, *b = 7
     Traceback (most recent call last):
       ...
-    TypeError: 'int' object is not iterable
+    TypeError: cannot unpack non-iterable int object
 
 Unpacking sequence too short
 

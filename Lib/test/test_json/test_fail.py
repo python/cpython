@@ -93,12 +93,15 @@ class TestFail:
 
     def test_non_string_keys_dict(self):
         data = {'a' : 1, (1, 2) : 2}
+        with self.assertRaisesRegex(TypeError,
+                'keys must be str, int, float, bool or None, not tuple'):
+            self.dumps(data)
 
-        #This is for c encoder
-        self.assertRaises(TypeError, self.dumps, data)
-
-        #This is for python encoder
-        self.assertRaises(TypeError, self.dumps, data, indent=True)
+    def test_not_serializable(self):
+        import sys
+        with self.assertRaisesRegex(TypeError,
+                'Object of type module is not JSON serializable'):
+            self.dumps(sys)
 
     def test_truncated_input(self):
         test_cases = [

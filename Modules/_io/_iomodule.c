@@ -9,6 +9,7 @@
 
 #define PY_SSIZE_T_CLEAN
 #include "Python.h"
+#include "pycore_pystate.h"   /* _PyInterpreterState_GET_UNSAFE() */
 #include "structmember.h"
 #include "_iomodule.h"
 
@@ -21,38 +22,39 @@
 #endif /* HAVE_SYS_STAT_H */
 
 #ifdef MS_WINDOWS
-#include <consoleapi.h>
+#include <windows.h>
 #endif
 
 /* Various interned strings */
 
-PyObject *_PyIO_str_close;
-PyObject *_PyIO_str_closed;
-PyObject *_PyIO_str_decode;
-PyObject *_PyIO_str_encode;
-PyObject *_PyIO_str_fileno;
-PyObject *_PyIO_str_flush;
-PyObject *_PyIO_str_getstate;
-PyObject *_PyIO_str_isatty;
-PyObject *_PyIO_str_newlines;
-PyObject *_PyIO_str_nl;
-PyObject *_PyIO_str_read;
-PyObject *_PyIO_str_read1;
-PyObject *_PyIO_str_readable;
-PyObject *_PyIO_str_readall;
-PyObject *_PyIO_str_readinto;
-PyObject *_PyIO_str_readline;
-PyObject *_PyIO_str_reset;
-PyObject *_PyIO_str_seek;
-PyObject *_PyIO_str_seekable;
-PyObject *_PyIO_str_setstate;
-PyObject *_PyIO_str_tell;
-PyObject *_PyIO_str_truncate;
-PyObject *_PyIO_str_writable;
-PyObject *_PyIO_str_write;
+PyObject *_PyIO_str_close = NULL;
+PyObject *_PyIO_str_closed = NULL;
+PyObject *_PyIO_str_decode = NULL;
+PyObject *_PyIO_str_encode = NULL;
+PyObject *_PyIO_str_fileno = NULL;
+PyObject *_PyIO_str_flush = NULL;
+PyObject *_PyIO_str_getstate = NULL;
+PyObject *_PyIO_str_isatty = NULL;
+PyObject *_PyIO_str_newlines = NULL;
+PyObject *_PyIO_str_nl = NULL;
+PyObject *_PyIO_str_peek = NULL;
+PyObject *_PyIO_str_read = NULL;
+PyObject *_PyIO_str_read1 = NULL;
+PyObject *_PyIO_str_readable = NULL;
+PyObject *_PyIO_str_readall = NULL;
+PyObject *_PyIO_str_readinto = NULL;
+PyObject *_PyIO_str_readline = NULL;
+PyObject *_PyIO_str_reset = NULL;
+PyObject *_PyIO_str_seek = NULL;
+PyObject *_PyIO_str_seekable = NULL;
+PyObject *_PyIO_str_setstate = NULL;
+PyObject *_PyIO_str_tell = NULL;
+PyObject *_PyIO_str_truncate = NULL;
+PyObject *_PyIO_str_writable = NULL;
+PyObject *_PyIO_str_write = NULL;
 
-PyObject *_PyIO_empty_str;
-PyObject *_PyIO_empty_bytes;
+PyObject *_PyIO_empty_str = NULL;
+PyObject *_PyIO_empty_bytes = NULL;
 
 PyDoc_STRVAR(module_doc,
 "The io module provides the Python interfaces to stream handling. The\n"
@@ -101,9 +103,9 @@ _io.open
     file: object
     mode: str = "r"
     buffering: int = -1
-    encoding: str(accept={str, NoneType}) = NULL
-    errors: str(accept={str, NoneType}) = NULL
-    newline: str(accept={str, NoneType}) = NULL
+    encoding: str(accept={str, NoneType}) = None
+    errors: str(accept={str, NoneType}) = None
+    newline: str(accept={str, NoneType}) = None
     closefd: bool(accept={int}) = True
     opener: object = None
 
@@ -136,7 +138,6 @@ Character Meaning
 'b'       binary mode
 't'       text mode (default)
 '+'       open a disk file for updating (reading and writing)
-'U'       universal newline mode (deprecated)
 ========= ===============================================================
 
 The default mode is 'rt' (open for reading text). For binary random
@@ -151,10 +152,6 @@ bytes objects without any decoding. In text mode (the default, or when
 't' is appended to the mode argument), the contents of the file are
 returned as strings, the bytes having been first decoded using a
 platform-dependent encoding or using the specified encoding if given.
-
-'U' mode is deprecated and will raise an exception in future versions
-of Python.  It has no effect in Python 3.  Use newline to control
-universal newlines mode.
 
 buffering is an optional integer used to set the buffering policy.
 Pass 0 to switch buffering off (only allowed in binary mode), 1 to select
@@ -231,16 +228,16 @@ static PyObject *
 _io_open_impl(PyObject *module, PyObject *file, const char *mode,
               int buffering, const char *encoding, const char *errors,
               const char *newline, int closefd, PyObject *opener)
-/*[clinic end generated code: output=aefafc4ce2b46dc0 input=03da2940c8a65871]*/
+/*[clinic end generated code: output=aefafc4ce2b46dc0 input=1543f4511d2356a5]*/
 {
     unsigned i;
 
     int creating = 0, reading = 0, writing = 0, appending = 0, updating = 0;
-    int text = 0, binary = 0, universal = 0;
+    int text = 0, binary = 0;
 
     char rawmode[6], *m;
     int line_buffering, is_number;
-    long isatty;
+    long isatty = 0;
 
     PyObject *raw, *modeobj = NULL, *buffer, *wrapper, *result = NULL, *path_or_fd = NULL;
 
@@ -294,10 +291,6 @@ _io_open_impl(PyObject *module, PyObject *file, const char *mode,
         case 'b':
             binary = 1;
             break;
-        case 'U':
-            universal = 1;
-            reading = 1;
-            break;
         default:
             goto invalid_mode;
         }
@@ -320,18 +313,6 @@ _io_open_impl(PyObject *module, PyObject *file, const char *mode,
     *m = '\0';
 
     /* Parameters validation */
-    if (universal) {
-        if (creating || writing || appending || updating) {
-            PyErr_SetString(PyExc_ValueError,
-                            "mode U cannot be combined with x', 'w', 'a', or '+'");
-            goto error;
-        }
-        if (PyErr_WarnEx(PyExc_DeprecationWarning,
-                         "'U' mode is deprecated", 1) < 0)
-            goto error;
-        reading = 1;
-    }
-
     if (text && binary) {
         PyErr_SetString(PyExc_ValueError,
                         "can't have text and binary mode at once");
@@ -362,17 +343,29 @@ _io_open_impl(PyObject *module, PyObject *file, const char *mode,
         goto error;
     }
 
+    if (binary && buffering == 1) {
+        if (PyErr_WarnEx(PyExc_RuntimeWarning,
+                         "line buffering (buffering=1) isn't supported in "
+                         "binary mode, the default buffer size will be used",
+                         1) < 0) {
+           goto error;
+        }
+    }
+
     /* Create the Raw file stream */
     {
         PyObject *RawIO_class = (PyObject *)&PyFileIO_Type;
 #ifdef MS_WINDOWS
-        if (!Py_LegacyWindowsStdioFlag && _PyIO_get_console_type(path_or_fd) != '\0') {
+        PyConfig *config = &_PyInterpreterState_GET_UNSAFE()->config;
+        if (!config->legacy_windows_stdio && _PyIO_get_console_type(path_or_fd) != '\0') {
             RawIO_class = (PyObject *)&PyWindowsConsoleIO_Type;
             encoding = "utf-8";
         }
 #endif
-        raw = PyObject_CallFunction(RawIO_class,
-                                    "OsiO", path_or_fd, rawmode, closefd, opener);
+        raw = PyObject_CallFunction(RawIO_class, "OsOO",
+                                    path_or_fd, rawmode,
+                                    closefd ? Py_True : Py_False,
+                                    opener);
     }
 
     if (raw == NULL)
@@ -387,8 +380,8 @@ _io_open_impl(PyObject *module, PyObject *file, const char *mode,
         goto error;
 
     /* buffering */
-    {
-        PyObject *res = _PyObject_CallMethodId(raw, &PyId_isatty, NULL);
+    if (buffering < 0) {
+        PyObject *res = _PyObject_CallMethodIdNoArgs(raw, &PyId_isatty);
         if (res == NULL)
             goto error;
         isatty = PyLong_AsLong(res);
@@ -397,7 +390,7 @@ _io_open_impl(PyObject *module, PyObject *file, const char *mode,
             goto error;
     }
 
-    if (buffering == 1 || (buffering < 0 && isatty)) {
+    if (buffering == 1 || isatty) {
         buffering = -1;
         line_buffering = 1;
     }
@@ -464,10 +457,10 @@ _io_open_impl(PyObject *module, PyObject *file, const char *mode,
 
     /* wraps into a TextIOWrapper */
     wrapper = PyObject_CallFunction((PyObject *)&PyTextIOWrapper_Type,
-                                    "Osssi",
+                                    "OsssO",
                                     buffer,
                                     encoding, errors, newline,
-                                    line_buffering);
+                                    line_buffering ? Py_True : Py_False);
     if (wrapper == NULL)
         goto error;
     result = wrapper;
@@ -482,7 +475,7 @@ _io_open_impl(PyObject *module, PyObject *file, const char *mode,
     if (result != NULL) {
         PyObject *exc, *val, *tb, *close_result;
         PyErr_Fetch(&exc, &val, &tb);
-        close_result = _PyObject_CallMethodId(result, &PyId_close, NULL);
+        close_result = _PyObject_CallMethodIdNoArgs(result, &PyId_close);
         _PyErr_ChainExceptions(exc, val, tb);
         Py_XDECREF(close_result);
         Py_DECREF(result);
@@ -490,6 +483,25 @@ _io_open_impl(PyObject *module, PyObject *file, const char *mode,
     Py_XDECREF(path_or_fd);
     Py_XDECREF(modeobj);
     return NULL;
+}
+
+/*[clinic input]
+_io.open_code
+
+    path : unicode
+
+Opens the provided file with the intent to import the contents.
+
+This may perform extra validation beyond open(), but is otherwise interchangeable
+with calling open(path, 'rb').
+
+[clinic start generated code]*/
+
+static PyObject *
+_io_open_code_impl(PyObject *module, PyObject *path)
+/*[clinic end generated code: output=2fe4ecbd6f3d6844 input=f5c18e23f4b2ed9f]*/
+{
+    return PyFile_OpenCodeObject(path);
 }
 
 /*
@@ -618,6 +630,7 @@ iomodule_free(PyObject *mod) {
 
 static PyMethodDef module_methods[] = {
     _IO_OPEN_METHODDEF
+    _IO_OPEN_CODE_METHODDEF
     {NULL, NULL}
 };
 
@@ -740,6 +753,7 @@ PyInit__io(void)
     ADD_INTERNED(getstate)
     ADD_INTERNED(isatty)
     ADD_INTERNED(newlines)
+    ADD_INTERNED(peek)
     ADD_INTERNED(read)
     ADD_INTERNED(read1)
     ADD_INTERNED(readable)

@@ -8,7 +8,7 @@
 
 --------------
 
-.. highlightlang:: none
+.. highlight:: none
 
 **This module is automatically imported during initialization.** The automatic
 import can be suppressed using the interpreter's :option:`-S` option.
@@ -45,9 +45,13 @@ sys.prefix and sys.exec_prefix are set to that directory and
 it is also checked for site-packages (sys.base_prefix and
 sys.base_exec_prefix will always be the "real" prefixes of the Python
 installation). If "pyvenv.cfg" (a bootstrap configuration file) contains
-the key "include-system-site-packages" set to anything other than "false"
-(case-insensitive), the system-level prefixes will still also be
-searched for site-packages; otherwise they won't.
+the key "include-system-site-packages" set to anything other than "true"
+(case-insensitive), the system-level prefixes will not be
+searched for site-packages; otherwise they will.
+
+.. index::
+   single: # (hash); comment
+   statement: import
 
 A path configuration file is a file whose name has the form :file:`{name}.pth`
 and exists in one of the four directories mentioned above; its contents are
@@ -56,6 +60,19 @@ are never added to ``sys.path``, and no check is made that the item refers to a
 directory rather than a file.  No item is added to ``sys.path`` more than
 once.  Blank lines and lines beginning with ``#`` are skipped.  Lines starting
 with ``import`` (followed by space or tab) are executed.
+
+.. note::
+
+   An executable line in a :file:`.pth` file is run at every Python startup,
+   regardless of whether a particular module is actually going to be used.
+   Its impact should thus be kept to a minimum.
+   The primary intended purpose of executable lines is to make the
+   corresponding module(s) importable
+   (load 3rd-party import hooks, adjust :envvar:`PATH` etc).
+   Any other initialization is supposed to be done upon a module's
+   actual import, if and when it happens.
+   Limiting a code chunk to a single line is a deliberate measure
+   to discourage putting anything more complex here.
 
 .. index::
    single: package
@@ -97,12 +114,12 @@ not mentioned in either path configuration file.
 After these path manipulations, an attempt is made to import a module named
 :mod:`sitecustomize`, which can perform arbitrary site-specific customizations.
 It is typically created by a system administrator in the site-packages
-directory.  If this import fails with an :exc:`ImportError` exception, it is
-silently ignored.  If Python is started without output streams available, as
+directory.  If this import fails with an :exc:`ImportError` or its subclass
+exception, and the exception's :attr:`name` attribute equals to ``'sitecustomize'``,
+it is silently ignored.  If Python is started without output streams available, as
 with :file:`pythonw.exe` on Windows (which is used by default to start IDLE),
-attempted output from :mod:`sitecustomize` is ignored. Any exception other
-than :exc:`ImportError` causes a silent and perhaps mysterious failure of the
-process.
+attempted output from :mod:`sitecustomize` is ignored.  Any other exception
+causes a silent and perhaps mysterious failure of the process.
 
 .. index:: module: usercustomize
 
@@ -110,7 +127,9 @@ After this, an attempt is made to import a module named :mod:`usercustomize`,
 which can perform arbitrary user-specific customizations, if
 :data:`ENABLE_USER_SITE` is true.  This file is intended to be created in the
 user site-packages directory (see below), which is part of ``sys.path`` unless
-disabled by :option:`-s`.  An :exc:`ImportError` will be silently ignored.
+disabled by :option:`-s`.  If this import fails with an :exc:`ImportError` or
+its subclass exception, and the exception's :attr:`name` attribute equals to
+``'usercustomize'``, it is silently ignored.
 
 Note that for some non-Unix systems, ``sys.prefix`` and ``sys.exec_prefix`` are
 empty, and the path manipulations are skipped; however the import of
@@ -220,7 +239,7 @@ Module contents
 The :mod:`site` module also provides a way to get the user directories from the
 command line:
 
-.. code-block:: sh
+.. code-block:: shell-session
 
    $ python3 -m site --user-site
    /home/user/.local/lib/python3.3/site-packages
@@ -243,7 +262,7 @@ If it is called without arguments, it will print the contents of
 If both options are given, user base and user site will be printed (always in
 this order), separated by :data:`os.pathsep`.
 
-If any option is given, the script will exit with one of these values: ``O`` if
+If any option is given, the script will exit with one of these values: ``0`` if
 the user site-packages directory is enabled, ``1`` if it was disabled by the
 user, ``2`` if it is disabled for security reasons or by an administrator, and a
 value greater than 2 if there is an error.

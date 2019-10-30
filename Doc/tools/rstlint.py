@@ -27,17 +27,18 @@ directives = [
     'table', 'target-notes', 'tip', 'title', 'topic', 'unicode', 'warning',
     # Sphinx and Python docs custom ones
     'acks', 'attribute', 'autoattribute', 'autoclass', 'autodata',
-    'autoexception', 'autofunction', 'automethod', 'automodule', 'centered',
-    'cfunction', 'class', 'classmethod', 'cmacro', 'cmdoption', 'cmember',
-    'code-block', 'confval', 'cssclass', 'ctype', 'currentmodule', 'cvar',
-    'data', 'decorator', 'decoratormethod', 'deprecated-removed',
-    'deprecated(?!-removed)', 'describe', 'directive', 'doctest', 'envvar',
-    'event', 'exception', 'function', 'glossary', 'highlight', 'highlightlang',
-    'impl-detail', 'index', 'literalinclude', 'method', 'miscnews', 'module',
-    'moduleauthor', 'opcode', 'pdbcommand', 'productionlist',
-    'program', 'role', 'sectionauthor', 'seealso', 'sourcecode', 'staticmethod',
-    'tabularcolumns', 'testcode', 'testoutput', 'testsetup', 'toctree', 'todo',
-    'todolist', 'versionadded', 'versionchanged'
+    'autoexception', 'autofunction', 'automethod', 'automodule',
+    'availability', 'centered', 'cfunction', 'class', 'classmethod', 'cmacro',
+    'cmdoption', 'cmember', 'code-block', 'confval', 'cssclass', 'ctype',
+    'currentmodule', 'cvar', 'data', 'decorator', 'decoratormethod',
+    'deprecated-removed', 'deprecated(?!-removed)', 'describe', 'directive',
+    'doctest', 'envvar', 'event', 'exception', 'function', 'glossary',
+    'highlight', 'highlightlang', 'impl-detail', 'index', 'literalinclude',
+    'method', 'miscnews', 'module', 'moduleauthor', 'opcode', 'pdbcommand',
+    'productionlist', 'program', 'role', 'sectionauthor', 'seealso',
+    'sourcecode', 'staticmethod', 'tabularcolumns', 'testcode', 'testoutput',
+    'testsetup', 'toctree', 'todo', 'todolist', 'versionadded',
+    'versionchanged'
 ]
 
 all_directives = '(' + '|'.join(directives) + ')'
