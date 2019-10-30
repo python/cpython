@@ -271,9 +271,9 @@ method_check_args(PyObject *func, PyObject *const *args, Py_ssize_t nargs, PyObj
 }
 
 static inline funcptr
-method_enter_call(PyObject *func)
+method_enter_call(PyThreadState *tstate, PyObject *func)
 {
-    if (Py_EnterRecursiveCall(" while calling a Python object")) {
+    if (_Py_EnterRecursiveCall(tstate, " while calling a Python object")) {
         return NULL;
     }
     return (funcptr)((PyMethodDescrObject *)func)->d_method->ml_meth;
@@ -284,6 +284,7 @@ static PyObject *
 method_vectorcall_VARARGS(
     PyObject *func, PyObject *const *args, size_t nargsf, PyObject *kwnames)
 {
+    PyThreadState *tstate = _PyThreadState_GET();
     Py_ssize_t nargs = PyVectorcall_NARGS(nargsf);
     if (method_check_args(func, args, nargs, kwnames)) {
         return NULL;
@@ -292,14 +293,14 @@ method_vectorcall_VARARGS(
     if (argstuple == NULL) {
         return NULL;
     }
-    PyCFunction meth = (PyCFunction)method_enter_call(func);
+    PyCFunction meth = (PyCFunction)method_enter_call(tstate, func);
     if (meth == NULL) {
         Py_DECREF(argstuple);
         return NULL;
     }
     PyObject *result = meth(args[0], argstuple);
     Py_DECREF(argstuple);
-    Py_LeaveRecursiveCall();
+    _Py_LeaveRecursiveCall(tstate);
     return result;
 }
 
@@ -307,6 +308,7 @@ static PyObject *
 method_vectorcall_VARARGS_KEYWORDS(
     PyObject *func, PyObject *const *args, size_t nargsf, PyObject *kwnames)
 {
+    PyThreadState *tstate = _PyThreadState_GET();
     Py_ssize_t nargs = PyVectorcall_NARGS(nargsf);
     if (method_check_args(func, args, nargs, NULL)) {
         return NULL;
@@ -325,12 +327,12 @@ method_vectorcall_VARARGS_KEYWORDS(
         }
     }
     PyCFunctionWithKeywords meth = (PyCFunctionWithKeywords)
-                                   method_enter_call(func);
+                                   method_enter_call(tstate, func);
     if (meth == NULL) {
         goto exit;
     }
     result = meth(args[0], argstuple, kwdict);
-    Py_LeaveRecursiveCall();
+    _Py_LeaveRecursiveCall(tstate);
 exit:
     Py_DECREF(argstuple);
     Py_XDECREF(kwdict);
@@ -341,17 +343,18 @@ static PyObject *
 method_vectorcall_FASTCALL(
     PyObject *func, PyObject *const *args, size_t nargsf, PyObject *kwnames)
 {
+    PyThreadState *tstate = _PyThreadState_GET();
     Py_ssize_t nargs = PyVectorcall_NARGS(nargsf);
     if (method_check_args(func, args, nargs, kwnames)) {
         return NULL;
     }
     _PyCFunctionFast meth = (_PyCFunctionFast)
-                            method_enter_call(func);
+                            method_enter_call(tstate, func);
     if (meth == NULL) {
         return NULL;
     }
     PyObject *result = meth(args[0], args+1, nargs-1);
-    Py_LeaveRecursiveCall();
+    _Py_LeaveRecursiveCall(tstate);
     return result;
 }
 
@@ -359,17 +362,18 @@ static PyObject *
 method_vectorcall_FASTCALL_KEYWORDS(
     PyObject *func, PyObject *const *args, size_t nargsf, PyObject *kwnames)
 {
+    PyThreadState *tstate = _PyThreadState_GET();
     Py_ssize_t nargs = PyVectorcall_NARGS(nargsf);
     if (method_check_args(func, args, nargs, NULL)) {
         return NULL;
     }
     _PyCFunctionFastWithKeywords meth = (_PyCFunctionFastWithKeywords)
-                                        method_enter_call(func);
+                                        method_enter_call(tstate, func);
     if (meth == NULL) {
         return NULL;
     }
     PyObject *result = meth(args[0], args+1, nargs-1, kwnames);
-    Py_LeaveRecursiveCall();
+    _Py_LeaveRecursiveCall(tstate);
     return result;
 }
 
@@ -377,6 +381,7 @@ static PyObject *
 method_vectorcall_NOARGS(
     PyObject *func, PyObject *const *args, size_t nargsf, PyObject *kwnames)
 {
+    PyThreadState *tstate = _PyThreadState_GET();
     Py_ssize_t nargs = PyVectorcall_NARGS(nargsf);
     if (method_check_args(func, args, nargs, kwnames)) {
         return NULL;
@@ -386,12 +391,12 @@ method_vectorcall_NOARGS(
             "%.200s() takes no arguments (%zd given)", get_name(func), nargs-1);
         return NULL;
     }
-    PyCFunction meth = (PyCFunction)method_enter_call(func);
+    PyCFunction meth = (PyCFunction)method_enter_call(tstate, func);
     if (meth == NULL) {
         return NULL;
     }
     PyObject *result = meth(args[0], NULL);
-    Py_LeaveRecursiveCall();
+    _Py_LeaveRecursiveCall(tstate);
     return result;
 }
 
@@ -399,6 +404,7 @@ static PyObject *
 method_vectorcall_O(
     PyObject *func, PyObject *const *args, size_t nargsf, PyObject *kwnames)
 {
+    PyThreadState *tstate = _PyThreadState_GET();
     Py_ssize_t nargs = PyVectorcall_NARGS(nargsf);
     if (method_check_args(func, args, nargs, kwnames)) {
         return NULL;
@@ -409,12 +415,12 @@ method_vectorcall_O(
             get_name(func), nargs-1);
         return NULL;
     }
-    PyCFunction meth = (PyCFunction)method_enter_call(func);
+    PyCFunction meth = (PyCFunction)method_enter_call(tstate, func);
     if (meth == NULL) {
         return NULL;
     }
     PyObject *result = meth(args[0], args[1]);
-    Py_LeaveRecursiveCall();
+    _Py_LeaveRecursiveCall(tstate);
     return result;
 }
 

@@ -1,5 +1,6 @@
 #include "Python.h"
 #include "pycore_object.h"
+#include "pycore_pyerrors.h"
 #include "pycore_pystate.h"
 #include "pycore_tupleobject.h"
 #include "frameobject.h"
@@ -126,12 +127,15 @@ _PyObject_FastCallDict(PyObject *callable, PyObject *const *args,
 PyObject *
 _PyObject_MakeTpCall(PyObject *callable, PyObject *const *args, Py_ssize_t nargs, PyObject *keywords)
 {
+    PyThreadState *tstate = _PyThreadState_GET();
+
     /* Slow path: build a temporary tuple for positional arguments and a
      * temporary dictionary for keyword arguments (if any) */
     ternaryfunc call = Py_TYPE(callable)->tp_call;
     if (call == NULL) {
-        PyErr_Format(PyExc_TypeError, "'%.200s' object is not callable",
-                     Py_TYPE(callable)->tp_name);
+        _PyErr_Format(tstate, PyExc_TypeError,
+                      "'%.200s' object is not callable",
+                      Py_TYPE(callable)->tp_name);
         return NULL;
     }
 
@@ -162,10 +166,10 @@ _PyObject_MakeTpCall(PyObject *callable, PyObject *const *args, Py_ssize_t nargs
     }
 
     PyObject *result = NULL;
-    if (Py_EnterRecursiveCall(" while calling a Python object") == 0)
+    if (_Py_EnterRecursiveCall(tstate, " while calling a Python object") == 0)
     {
         result = call(callable, argstuple, kwdict);
-        Py_LeaveRecursiveCall();
+        _Py_LeaveRecursiveCall(tstate);
     }
 
     Py_DECREF(argstuple);
@@ -220,13 +224,14 @@ PyVectorcall_Call(PyObject *callable, PyObject *tuple, PyObject *kwargs)
 PyObject *
 PyObject_Call(PyObject *callable, PyObject *args, PyObject *kwargs)
 {
+    PyThreadState *tstate = _PyThreadState_GET();
     ternaryfunc call;
     PyObject *result;
 
     /* PyObject_Call() must not be called with an exception set,
        because it can clear it (directly or indirectly) and so the
        caller loses its exception */
-    assert(!PyErr_Occurred());
+    assert(!_PyErr_Occurred(tstate));
     assert(PyTuple_Check(args));
     assert(kwargs == NULL || PyDict_Check(kwargs));
 
@@ -236,17 +241,19 @@ PyObject_Call(PyObject *callable, PyObject *args, PyObject *kwargs)
     else {
         call = callable->ob_type->tp_call;
         if (call == NULL) {
-            PyErr_Format(PyExc_TypeError, "'%.200s' object is not callable",
-                         callable->ob_type->tp_name);
+            _PyErr_Format(tstate, PyExc_TypeError,
+                          "'%.200s' object is not callable",
+                          callable->ob_type->tp_name);
             return NULL;
         }
 
-        if (Py_EnterRecursiveCall(" while calling a Python object"))
+        if (_Py_EnterRecursiveCall(tstate, " while calling a Python object")) {
             return NULL;
+        }
 
         result = (*call)(callable, args, kwargs);
 
-        Py_LeaveRecursiveCall();
+        _Py_LeaveRecursiveCall(tstate);
 
         return _Py_CheckFunctionResult(callable, result, NULL);
     }
@@ -266,30 +273,27 @@ static PyObject* _Py_HOT_FUNCTION
 function_code_fastcall(PyCodeObject *co, PyObject *const *args, Py_ssize_t nargs,
                        PyObject *globals)
 {
-    PyFrameObject *f;
-    PyThreadState *tstate = _PyThreadState_GET();
-    PyObject **fastlocals;
-    Py_ssize_t i;
-    PyObject *result;
-
     assert(globals != NULL);
+
+    PyThreadState *tstate = _PyThreadState_GET();
+    assert(tstate != NULL);
+
     /* XXX Perhaps we should create a specialized
        _PyFrame_New_NoTrack() that doesn't take locals, but does
        take builtins without sanity checking them.
        */
-    assert(tstate != NULL);
-    f = _PyFrame_New_NoTrack(tstate, co, globals, NULL);
+    PyFrameObject *f = _PyFrame_New_NoTrack(tstate, co, globals, NULL);
     if (f == NULL) {
         return NULL;
     }
 
-    fastlocals = f->f_localsplus;
+    PyObject **fastlocals = f->f_localsplus;
 
-    for (i = 0; i < nargs; i++) {
+    for (Py_ssize_t i = 0; i < nargs; i++) {
         Py_INCREF(*args);
         fastlocals[i] = *args++;
     }
-    result = PyEval_EvalFrameEx(f,0);
+    PyObject *result = PyEval_EvalFrameEx(f, 0);
 
     if (Py_REFCNT(f) > 1) {
         Py_DECREF(f);
