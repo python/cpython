@@ -10572,9 +10572,12 @@ replace(PyObject *self, PyObject *str1,
     int mayshrink;
     Py_UCS4 maxchar, maxchar_str1, maxchar_str2;
 
+    if (slen < len1)
+        goto nothing;
+
     if (maxcount < 0)
         maxcount = PY_SSIZE_T_MAX;
-    else if (maxcount == 0 || slen == 0)
+    else if (maxcount == 0)
         goto nothing;
 
     if (str1 == str2)
