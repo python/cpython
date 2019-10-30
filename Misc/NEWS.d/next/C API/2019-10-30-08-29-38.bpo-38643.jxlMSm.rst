@@ -1,0 +1,2 @@
+Fix assertion failures when calling :c:func:`PyNumber_ToBase` with an
+invalid base.
