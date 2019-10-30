@@ -21,9 +21,9 @@ the :mod:`io` APIs instead.
 
    Create a Python file object from the file descriptor of an already
    opened file *fd*.  The arguments *name*, *encoding*, *errors* and *newline*
-   can be *NULL* to use the defaults; *buffering* can be *-1* to use the
+   can be ``NULL`` to use the defaults; *buffering* can be *-1* to use the
    default. *name* is ignored and kept for backward compatibility. Return
-   *NULL* on failure. For a more comprehensive description of the arguments,
+   ``NULL`` on failure. For a more comprehensive description of the arguments,
    please refer to the :func:`io.open` function documentation.
 
    .. warning::
