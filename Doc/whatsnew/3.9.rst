@@ -99,6 +99,11 @@ Other Language Changes
   ignored for empty strings.
   (Contributed by Victor Stinner in :issue:`37388`.)
 
+* ``"".replace("", s, n)`` now returns ``s`` instead of an empty string for
+  all non-zero ``n``.  It is now consistent with ``"".replace("", s)``.
+  There are similar changes for :class:`bytes` and :class:`bytearray` objects.
+  (Contributed by Serhiy Storchaka in :issue:`28029`.)
+
 
 New Modules
 ===========
