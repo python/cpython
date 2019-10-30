@@ -1114,15 +1114,17 @@ math_ceil(PyObject *module, PyObject *number)
     _Py_IDENTIFIER(__ceil__);
     PyObject *method, *result;
 
-    method = _PyObject_LookupSpecial(number, &PyId___ceil__);
-    if (method == NULL) {
+    if (!PyFloat_CheckExact(number)) {
+        method = _PyObject_LookupSpecial(number, &PyId___ceil__);
+        if (method != NULL) {
+            result = _PyObject_CallNoArg(method);
+            Py_DECREF(method);
+            return result;
+        }
         if (PyErr_Occurred())
             return NULL;
-        return math_1_to_int(number, ceil, 0);
     }
-    result = _PyObject_CallNoArg(method);
-    Py_DECREF(method);
-    return result;
+    return math_1_to_int(number, ceil, 0);
 }
 
 FUNC2(copysign, copysign,
@@ -1172,15 +1174,17 @@ math_floor(PyObject *module, PyObject *number)
     _Py_IDENTIFIER(__floor__);
     PyObject *method, *result;
 
-    method = _PyObject_LookupSpecial(number, &PyId___floor__);
-    if (method == NULL) {
+    if (!PyFloat_CheckExact(number)) {
+        method = _PyObject_LookupSpecial(number, &PyId___floor__);
+        if (method != NULL) {
+            result = _PyObject_CallNoArg(method);
+            Py_DECREF(method);
+            return result;
+        }
         if (PyErr_Occurred())
             return NULL;
-        return math_1_to_int(number, floor, 0);
     }
-    result = _PyObject_CallNoArg(method);
-    Py_DECREF(method);
-    return result;
+    return math_1_to_int(number, floor, 0);
 }
 
 FUNC1A(gamma, m_tgamma,
@@ -2060,6 +2064,10 @@ math_trunc(PyObject *module, PyObject *x)
 {
     _Py_IDENTIFIER(__trunc__);
     PyObject *trunc, *result;
+
+    if (PyFloat_CheckExact(x)) {
+        return PyFloat_Type.tp_as_number->nb_int(x);
+    }
 
     if (Py_TYPE(x)->tp_dict == NULL) {
         if (PyType_Ready(Py_TYPE(x)) < 0)
