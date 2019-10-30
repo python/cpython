@@ -143,7 +143,7 @@ class SubprocessMixin:
             return proc.returncode, stdout
 
         task = run(b'some data')
-        task = asyncio.wait_for(task, 60.0)
+        task = asyncio.wait_for(task, support.LONG_TIMEOUT)
         exitcode, stdout = self.loop.run_until_complete(task)
         self.assertEqual(exitcode, 0)
         self.assertEqual(stdout, b'some data')

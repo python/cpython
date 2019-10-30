@@ -1,0 +1,2 @@
+Fix test_communicate() of test_asyncio.test_subprocess: use
+``support.LONG_TIMEOUT`` (5 minutes), instead of just 1 minute.
