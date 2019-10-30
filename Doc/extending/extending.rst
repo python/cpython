@@ -536,7 +536,7 @@ Later, when it is time to call the function, you call the C function
 :c:func:`PyObject_CallObject`.  This function has two arguments, both pointers to
 arbitrary Python objects: the Python function, and the argument list.  The
 argument list must always be a tuple object, whose length is the number of
-arguments.  To call the Python function with no arguments, pass in NULL, or
+arguments.  To call the Python function with no arguments, pass in ``NULL``, or
 an empty tuple; to call it with one argument, pass a singleton tuple.
 :c:func:`Py_BuildValue` returns a tuple when its format string consists of zero
 or more format codes between parentheses.  For example::

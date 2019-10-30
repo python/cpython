@@ -1535,9 +1535,9 @@ to sockets.
    ``None`` or a :term:`bytes-like object` representing a buffer. In the later
    case it is up to the caller to ensure that the bytestring contains the
    proper bits (see the optional built-in module :mod:`struct` for a way to
-   encode C structures as bytestrings). When value is set to ``None``,
-   optlen argument is required. It's equivalent to call setsockopt C
-   function with optval=NULL and optlen=optlen.
+   encode C structures as bytestrings). When *value* is set to ``None``,
+   *optlen* argument is required. It's equivalent to call :c:func:`setsockopt` C
+   function with ``optval=NULL`` and ``optlen=optlen``.
 
 
    .. versionchanged:: 3.5
