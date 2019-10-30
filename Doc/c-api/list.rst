@@ -33,7 +33,7 @@ List Objects
 
 .. c:function:: PyObject* PyList_New(Py_ssize_t len)
 
-   Return a new list of length *len* on success, or *NULL* on failure.
+   Return a new list of length *len* on success, or ``NULL`` on failure.
 
    .. note::
 
@@ -61,7 +61,7 @@ List Objects
    Return the object at position *index* in the list pointed to by *list*.  The
    position must be non-negative; indexing from the end of the list is not
    supported.  If *index* is out of bounds (<0 or >=len(list)),
-   return *NULL* and set an :exc:`IndexError` exception.
+   return ``NULL`` and set an :exc:`IndexError` exception.
 
 
 .. c:function:: PyObject* PyList_GET_ITEM(PyObject *list, Py_ssize_t i)
@@ -111,7 +111,7 @@ List Objects
 .. c:function:: PyObject* PyList_GetSlice(PyObject *list, Py_ssize_t low, Py_ssize_t high)
 
    Return a list of the objects in *list* containing the objects *between* *low*
-   and *high*.  Return *NULL* and set an exception if unsuccessful.  Analogous
+   and *high*.  Return ``NULL`` and set an exception if unsuccessful.  Analogous
    to ``list[low:high]``.  Indexing from the end of the list is not supported.
 
 
@@ -119,7 +119,7 @@ List Objects
 
    Set the slice of *list* between *low* and *high* to the contents of
    *itemlist*.  Analogous to ``list[low:high] = itemlist``. The *itemlist* may
-   be *NULL*, indicating the assignment of an empty list (slice deletion).
+   be ``NULL``, indicating the assignment of an empty list (slice deletion).
    Return ``0`` on success, ``-1`` on failure.  Indexing from the end of the
    list is not supported.
 

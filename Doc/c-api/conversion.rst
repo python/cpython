@@ -113,7 +113,7 @@ The following functions provide locale-independent string to number conversions.
    *val* is a finite number, an infinite number, or not a number, respectively.
 
    The return value is a pointer to *buffer* with the converted string or
-   *NULL* if the conversion failed. The caller is responsible for freeing the
+   ``NULL`` if the conversion failed. The caller is responsible for freeing the
    returned string by calling :c:func:`PyMem_Free`.
 
    .. versionadded:: 3.1

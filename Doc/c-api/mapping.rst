@@ -29,7 +29,7 @@ See also :c:func:`PyObject_GetItem`, :c:func:`PyObject_SetItem` and
 
 .. c:function:: PyObject* PyMapping_GetItemString(PyObject *o, const char *key)
 
-   Return element of *o* corresponding to the string *key* or *NULL* on failure.
+   Return element of *o* corresponding to the string *key* or ``NULL`` on failure.
    This is the equivalent of the Python expression ``o[key]``.
    See also :c:func:`PyObject_GetItem`.
 
@@ -79,7 +79,7 @@ See also :c:func:`PyObject_GetItem`, :c:func:`PyObject_SetItem` and
 .. c:function:: PyObject* PyMapping_Keys(PyObject *o)
 
    On success, return a list of the keys in object *o*.  On failure, return
-   *NULL*.
+   ``NULL``.
 
    .. versionchanged:: 3.7
       Previously, the function returned a list or a tuple.
@@ -88,7 +88,7 @@ See also :c:func:`PyObject_GetItem`, :c:func:`PyObject_SetItem` and
 .. c:function:: PyObject* PyMapping_Values(PyObject *o)
 
    On success, return a list of the values in object *o*.  On failure, return
-   *NULL*.
+   ``NULL``.
 
    .. versionchanged:: 3.7
       Previously, the function returned a list or a tuple.
@@ -97,7 +97,7 @@ See also :c:func:`PyObject_GetItem`, :c:func:`PyObject_SetItem` and
 .. c:function:: PyObject* PyMapping_Items(PyObject *o)
 
    On success, return a list of the items in object *o*, where each item is a
-   tuple containing a key-value pair.  On failure, return *NULL*.
+   tuple containing a key-value pair.  On failure, return ``NULL``.
 
    .. versionchanged:: 3.7
       Previously, the function returned a list or a tuple.

@@ -22,7 +22,7 @@ Operating System Utilities
    Return true (nonzero) if the standard I/O file *fp* with name *filename* is
    deemed interactive.  This is the case for files for which ``isatty(fileno(fp))``
    is true.  If the global flag :c:data:`Py_InteractiveFlag` is true, this function
-   also returns true if the *filename* pointer is *NULL* or if the name is equal to
+   also returns true if the *filename* pointer is ``NULL`` or if the name is equal to
    one of the strings ``'<stdin>'`` or ``'???'``.
 
 
@@ -194,12 +194,12 @@ accessible to C code.  They all work with the current interpreter thread's
 
 .. c:function:: PyObject *PySys_GetObject(const char *name)
 
-   Return the object *name* from the :mod:`sys` module or *NULL* if it does
+   Return the object *name* from the :mod:`sys` module or ``NULL`` if it does
    not exist, without setting an exception.
 
 .. c:function:: int PySys_SetObject(const char *name, PyObject *v)
 
-   Set *name* in the :mod:`sys` module to *v* unless *v* is *NULL*, in which
+   Set *name* in the :mod:`sys` module to *v* unless *v* is ``NULL``, in which
    case *name* is deleted from the sys module. Returns ``0`` on success, ``-1``
    on error.
 
@@ -276,7 +276,7 @@ accessible to C code.  They all work with the current interpreter thread's
 .. c:function:: PyObject *PySys_GetXOptions()
 
    Return the current dictionary of :option:`-X` options, similarly to
-   :data:`sys._xoptions`.  On error, *NULL* is returned and an exception is
+   :data:`sys._xoptions`.  On error, ``NULL`` is returned and an exception is
    set.
 
    .. versionadded:: 3.2

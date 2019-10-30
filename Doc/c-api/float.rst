@@ -34,12 +34,12 @@ Floating Point Objects
 .. c:function:: PyObject* PyFloat_FromString(PyObject *str)
 
    Create a :c:type:`PyFloatObject` object based on the string value in *str*, or
-   *NULL* on failure.
+   ``NULL`` on failure.
 
 
 .. c:function:: PyObject* PyFloat_FromDouble(double v)
 
-   Create a :c:type:`PyFloatObject` object from *v*, or *NULL* on failure.
+   Create a :c:type:`PyFloatObject` object from *v*, or ``NULL`` on failure.
 
 
 .. c:function:: double PyFloat_AsDouble(PyObject *pyfloat)
