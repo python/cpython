@@ -42,7 +42,7 @@ PyDoc_STRVAR(float___floor____doc__,
 "__floor__($self, /)\n"
 "--\n"
 "\n"
-"Return the floor of x as an Integral.");
+"Return the floor as an Integral.");
 
 #define FLOAT___FLOOR___METHODDEF    \
     {"__floor__", (PyCFunction)float___floor__, METH_NOARGS, float___floor____doc__},
@@ -60,7 +60,7 @@ PyDoc_STRVAR(float___ceil____doc__,
 "__ceil__($self, /)\n"
 "--\n"
 "\n"
-"Return the ceiling of x as an Integral.");
+"Return the ceiling as an Integral.");
 
 #define FLOAT___CEIL___METHODDEF    \
     {"__ceil__", (PyCFunction)float___ceil__, METH_NOARGS, float___ceil____doc__},
@@ -387,4 +387,4 @@ float___format__(PyObject *self, PyObject *arg)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=398531a9a1a2c29e input=a9049054013a1b77]*/
+/*[clinic end generated code: output=25fbbe253f44e2df input=a9049054013a1b77]*/

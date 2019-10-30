@@ -931,7 +931,7 @@ Return the floor as an Integral.
 
 static PyObject *
 float___floor___impl(PyObject *self)
-/*[clinic end generated code: output=e0551dbaea8c01d1 input=38c8fb1dd0b579b4]*/
+/*[clinic end generated code: output=e0551dbaea8c01d1 input=77bb13eb12e268df]*/
 {
     double x = PyFloat_AsDouble(self);
     return PyLong_FromDouble(floor(x));
@@ -945,7 +945,7 @@ Return the ceiling as an Integral.
 
 static PyObject *
 float___ceil___impl(PyObject *self)
-/*[clinic end generated code: output=a2fd8858f73736f9 input=e3d4c94c2b8c8675]*/
+/*[clinic end generated code: output=a2fd8858f73736f9 input=79e41ae94aa0a516]*/
 {
     double x = PyFloat_AsDouble(self);
     return PyLong_FromDouble(ceil(x));
