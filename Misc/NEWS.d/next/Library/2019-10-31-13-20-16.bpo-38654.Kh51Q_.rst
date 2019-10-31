@@ -1,0 +1,1 @@
+Replaced a mutable default argument in the constructor for :class:`urllib.request.Request` with :const:`None`.
