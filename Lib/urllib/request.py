@@ -314,7 +314,7 @@ def request_host(request):
 
 class Request:
 
-    def __init__(self, url, data=None, headers={},
+    def __init__(self, url, data=None, headers=None,
                  origin_req_host=None, unverifiable=False,
                  method=None):
         self.full_url = url
@@ -323,8 +323,9 @@ class Request:
         self._data = None
         self.data = data
         self._tunnel_host = None
-        for key, value in headers.items():
-            self.add_header(key, value)
+        if headers:
+            for key, value in headers.items():
+                self.add_header(key, value)
         if origin_req_host is None:
             origin_req_host = request_host(self)
         self.origin_req_host = origin_req_host
