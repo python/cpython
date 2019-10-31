@@ -1265,6 +1265,31 @@ zlib_adler32_impl(PyObject *module, Py_buffer *data, unsigned int value)
 }
 
 /*[clinic input]
+zlib.adler32_combine
+
+    adler_1: unsigned_int(bitwise=True)
+        First checksum.
+    adler_2: unsigned_int(bitwise=True)
+        Second checksum.
+    len_2: unsigned_int(bitwise=True)
+        Length of the buffer used to generate the second checksum.
+    /
+
+Combine two Adler-32 Checksums into one.
+
+The returned checksum is an integer.
+[clinic start generated code]*/
+
+static PyObject *
+zlib_adler32_combine_impl(PyObject *module, unsigned int adler_1,
+                          unsigned int adler_2, unsigned int len_2)
+/*[clinic end generated code: output=af156f2b847877ae input=c436395ab679bbc2]*/
+{
+	unsigned long value = adler32_combine64(adler_1, adler_2, len_2);
+	return PyLong_FromUnsignedLong(value & 0xffffffffU);
+}
+
+/*[clinic input]
 zlib.crc32
 
     data: Py_buffer
@@ -1309,6 +1334,7 @@ zlib_crc32_impl(PyObject *module, Py_buffer *data, unsigned int value)
 static PyMethodDef zlib_methods[] =
 {
     ZLIB_ADLER32_METHODDEF
+    ZLIB_ADLER32_COMBINE_METHODDEF
     ZLIB_COMPRESS_METHODDEF
     ZLIB_COMPRESSOBJ_METHODDEF
     ZLIB_CRC32_METHODDEF
@@ -1351,6 +1377,7 @@ PyDoc_STRVAR(zlib_module_documentation,
 "zlib library, which is based on GNU zip.\n"
 "\n"
 "adler32(string[, start]) -- Compute an Adler-32 checksum.\n"
+"adler32_combine(adler1, adler2, len2) -- Combine two Adler-32 checksums.\n"
 "compress(data[, level]) -- Compress data, with compression level 0-9 or -1.\n"
 "compressobj([level[, ...]]) -- Return a compressor object.\n"
 "crc32(string[, start]) -- Compute a CRC-32 checksum.\n"
