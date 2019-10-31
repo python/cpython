@@ -143,6 +143,7 @@ def _install_handlers(cp, formatters):
         kwargs = section.get("kwargs", '{}')
         kwargs = eval(kwargs, vars(logging))
         h = klass(*args, **kwargs)
+        h.name = hand
         if "level" in section:
             level = section["level"]
             h.setLevel(level)
