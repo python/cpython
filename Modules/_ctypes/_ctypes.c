@@ -2299,17 +2299,6 @@ converters_from_argtypes(PyObject *ob)
             }
             */
         }
-
-        if (_PyObject_LookupAttrId(tp, &PyId_from_param, &cnv) <= 0) {
-            Py_DECREF(converters);
-            Py_DECREF(ob);
-            if (!PyErr_Occurred()) {
-                PyErr_Format(PyExc_TypeError,
-                             "item %zd in _argtypes_ has no from_param method",
-                             i+1);
-            }
-            return NULL;
-        }
         PyTuple_SET_ITEM(converters, i, cnv);
     }
     Py_DECREF(ob);
