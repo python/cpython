@@ -234,7 +234,8 @@ Multiple commands may be entered on a single line, separated by ``;;``.  (A
 single ``;`` is not used as it is the separator for multiple commands in a line
 that is passed to the Python parser.)  No intelligence is applied to separating
 the commands; the input is split at the first ``;;`` pair, even if it is in the
-middle of a quoted string.
+middle of a quoted string. To be able to use a string with double semi-colon, 
+use the following workaround: ``';'';'`` or ``";"";"``.
 
 .. index::
    pair: .pdbrc; file
