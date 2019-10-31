@@ -933,7 +933,7 @@ static PyObject *
 float___floor___impl(PyObject *self)
 /*[clinic end generated code: output=e0551dbaea8c01d1 input=77bb13eb12e268df]*/
 {
-    double x = PyFloat_AsDouble(self);
+    double x = PyFloat_AS_DOUBLE(self);
     return PyLong_FromDouble(floor(x));
 }
 
@@ -947,7 +947,7 @@ static PyObject *
 float___ceil___impl(PyObject *self)
 /*[clinic end generated code: output=a2fd8858f73736f9 input=79e41ae94aa0a516]*/
 {
-    double x = PyFloat_AsDouble(self);
+    double x = PyFloat_AS_DOUBLE(self);
     return PyLong_FromDouble(ceil(x));
 }
 
