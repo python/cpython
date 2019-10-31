@@ -130,6 +130,13 @@ that schedules a shutdown for the default executor that waits on the
 :func:`asyncio.run` has been updated to use the new :term:`coroutine`.
 (Contributed by Kyle Stanley in :issue:`34037`.)
 
+curses
+------
+
+Add :func:`curses.get_escdelay`, :func:`curses.set_escdelay`,
+:func:`curses.get_tabsize`, and :func:`curses.set_tabsize` functions.
+(Contributed by Anthony Sottile in :issue:`38312`.)
+
 fcntl
 -----
 
