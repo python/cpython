@@ -3256,6 +3256,86 @@ _curses_setupterm_impl(PyObject *module, const char *term, int fd)
 }
 
 /*[clinic input]
+_curses.get_escdelay
+
+Gets the curses ESCDELAY setting.
+
+Gets the number of milliseconds to wait after reading an escape character,
+to distinguish between an individual escape character entered on the
+keyboard from escape sequences sent by cursor and function keys.
+[clinic start generated code]*/
+
+static PyObject *
+_curses_get_escdelay_impl(PyObject *module)
+/*[clinic end generated code: output=222fa1a822555d60 input=be2d5b3dd974d0a4]*/
+{
+    return PyLong_FromLong(ESCDELAY);
+}
+/*[clinic input]
+_curses.set_escdelay
+    ms: int
+        length of the delay in milliseconds.
+    /
+
+Sets the curses ESCDELAY setting.
+
+Sets the number of milliseconds to wait after reading an escape character,
+to distinguish between an individual escape character entered on the
+keyboard from escape sequences sent by cursor and function keys.
+[clinic start generated code]*/
+
+static PyObject *
+_curses_set_escdelay_impl(PyObject *module, int ms)
+/*[clinic end generated code: output=43818efbf7980ac4 input=7796fe19f111e250]*/
+{
+    if (ms <= 0) {
+        PyErr_SetString(PyExc_ValueError, "ms must be > 0");
+        return NULL;
+    }
+
+    return PyCursesCheckERR(set_escdelay(ms), "set_escdelay");
+}
+
+/*[clinic input]
+_curses.get_tabsize
+
+Gets the curses TABSIZE setting.
+
+Gets the number of columns used by the curses library when converting a tab
+character to spaces as it adds the tab to a window.
+[clinic start generated code]*/
+
+static PyObject *
+_curses_get_tabsize_impl(PyObject *module)
+/*[clinic end generated code: output=7e9e51fb6126fbdf input=74af86bf6c9f5d7e]*/
+{
+    return PyLong_FromLong(TABSIZE);
+}
+/*[clinic input]
+_curses.set_tabsize
+    size: int
+        rendered cell width of a tab character.
+    /
+
+Sets the curses TABSIZE setting.
+
+Sets the number of columns used by the curses library when converting a tab
+character to spaces as it adds the tab to a window.
+[clinic start generated code]*/
+
+static PyObject *
+_curses_set_tabsize_impl(PyObject *module, int size)
+/*[clinic end generated code: output=c1de5a76c0daab1e input=78cba6a3021ad061]*/
+{
+    if (size <= 0) {
+        PyErr_SetString(PyExc_ValueError, "size must be > 0");
+        return NULL;
+    }
+
+    return PyCursesCheckERR(set_tabsize(size), "set_tabsize");
+}
+
+/*[clinic input]
 _curses.intrflush
 
     flag: bool(accept={int})
@@ -4415,6 +4495,10 @@ static PyMethodDef PyCurses_methods[] = {
     _CURSES_RESIZETERM_METHODDEF
     _CURSES_RESIZE_TERM_METHODDEF
     _CURSES_SAVETTY_METHODDEF
+    _CURSES_GET_ESCDELAY_METHODDEF
+    _CURSES_SET_ESCDELAY_METHODDEF
+    _CURSES_GET_TABSIZE_METHODDEF
+    _CURSES_SET_TABSIZE_METHODDEF
     _CURSES_SETSYX_METHODDEF
     _CURSES_SETUPTERM_METHODDEF
     _CURSES_START_COLOR_METHODDEF
