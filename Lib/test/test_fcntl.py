@@ -5,6 +5,7 @@ import os
 import struct
 import sys
 import unittest
+from multiprocessing import Process
 from test.support import (verbose, TESTFN, unlink, run_unittest, import_module,
                           cpython_only)
 
@@ -137,33 +138,32 @@ class TestFcntl(unittest.TestCase):
         self.assertRaises(ValueError, fcntl.flock, -1, fcntl.LOCK_SH)
         self.assertRaises(TypeError, fcntl.flock, 'spam', fcntl.LOCK_SH)
 
-    def test_lockf(self):
-        from multiprocessing import Process
+    def test_lockf_exclusive(self):
         self.f = open(TESTFN, 'wb+')
-        self.f.write(b'testpython')
-        ex_cmd = fcntl.LOCK_EX | fcntl.LOCK_NB
-        sh_cmd = fcntl.LOCK_SH | fcntl.LOCK_NB
-        def try_lock_f_on_other_process(cmd):
-            if cmd == ex_cmd:
-                self.assertRaises(BlockingIOError, fcntl.lockf, self.f, cmd, 1, 0)
-            if cmd == sh_cmd:
-                fcntl.lockf(self.f, cmd, 1, 0)
-            fcntl.lockf(self.f, cmd, 1, 1)
+        cmd = fcntl.LOCK_EX | fcntl.LOCK_NB
+        def try_lockf_on_other_process():
+            self.assertRaises(BlockingIOError, fcntl.lockf, self.f, cmd)
 
-        fcntl.lockf(self.f, ex_cmd, 1, 0)
-        p = Process(target=try_lock_f_on_other_process, args=(ex_cmd,))
+        fcntl.lockf(self.f, cmd)
+        p = Process(target=try_lockf_on_other_process)
         p.start()
         p.join()
         fcntl.lockf(self.f, fcntl.LOCK_UN)
         self.assertEqual(p.exitcode, 0)
 
-        fcntl.lockf(self.f, sh_cmd, 1, 0)
-        p = Process(target=try_lock_f_on_other_process, args=(sh_cmd,))
+    def test_lockf_share(self):
+        self.f = open(TESTFN, 'wb+')
+        cmd = fcntl.LOCK_SH | fcntl.LOCK_NB
+        def try_lockf_on_other_process():
+            fcntl.lockf(self.f, cmd)
+            fcntl.lockf(self.f, fcntl.LOCK_UN)
+
+        fcntl.lockf(self.f, cmd)
+        p = Process(target=try_lockf_on_other_process)
         p.start()
         p.join()
         fcntl.lockf(self.f, fcntl.LOCK_UN)
         self.assertEqual(p.exitcode, 0)
-
 
     @cpython_only
     def test_flock_overflow(self):
