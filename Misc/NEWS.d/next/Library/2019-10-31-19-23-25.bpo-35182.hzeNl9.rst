@@ -1,0 +1,3 @@
+Fixed :func:`Popen.communicate` subsequent call crash when the child process
+has already closed any piped standard stream, but still continues to be
+running. Patch by Andriy Maletsky.
