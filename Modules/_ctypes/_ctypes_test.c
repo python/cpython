@@ -135,6 +135,69 @@ _testfunc_array_in_struct2a(Test3B in)
     return result;
 }
 
+typedef union {
+    long a_long;
+    struct {
+        int an_int;
+        int another_int;
+    } a_struct;
+} Test4;
+
+typedef struct {
+    int an_int;
+    struct {
+        int an_int;
+        Test4 a_union;
+    } nested;
+    int another_int;
+} Test5;
+
+EXPORT(long)
+_testfunc_union_by_value1(Test4 in) {
+    long result = in.a_long + in.a_struct.an_int + in.a_struct.another_int;
+
+    /* As the union/struct are passed by value, changes to them shouldn't be
+     * reflected in the caller.
+     */
+    memset(&in, 0, sizeof(in));
+    return result;
+}
+
+EXPORT(long)
+_testfunc_union_by_value2(Test5 in) {
+    long result = in.an_int + in.nested.an_int;
+
+    /* As the union/struct are passed by value, changes to them shouldn't be
+     * reflected in the caller.
+     */
+    memset(&in, 0, sizeof(in));
+    return result;
+}
+
+EXPORT(long)
+_testfunc_union_by_reference1(Test4 *in) {
+    long result = in->a_long;
+
+    memset(in, 0, sizeof(Test4));
+    return result;
+}
+
+EXPORT(long)
+_testfunc_union_by_reference2(Test4 *in) {
+    long result = in->a_struct.an_int + in->a_struct.another_int;
+
+    memset(in, 0, sizeof(Test4));
+    return result;
+}
+
+EXPORT(long)
+_testfunc_union_by_reference3(Test5 *in) {
+    long result = in->an_int + in->nested.an_int + in->another_int;
+
+    memset(in, 0, sizeof(Test5));
+    return result;
+}
+
 EXPORT(void)testfunc_array(int values[4])
 {
     printf("testfunc_array %d %d %d %d\n",
