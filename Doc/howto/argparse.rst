@@ -265,7 +265,7 @@ Here is what is happening:
 * When using the ``--verbosity`` option, one must also specify some value,
   any value.
 
-The above example accepts arbitrary integer values for ``--verbosity``, but for
+The above example accepts arbitrary string values for ``--verbosity``, but for
 our simple program, only two values are actually useful, ``True`` or ``False``.
 Let's modify the code accordingly::
 
