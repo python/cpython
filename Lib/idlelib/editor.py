@@ -134,10 +134,6 @@ class EditorWindow(object):
                         'main', 'EditorWindow', 'height', type='int'),
                 }
         self.text = text = MultiCallCreator(Text)(text_frame, **text_options)
-        # Store the current value of the insertofftime now so we can restore
-        # it if needed.
-        self.text._insertofftime = self.text['insertofftime']
-        self.UpdateCursorBlink()
         self.top.focused_widget = self.text
 
         self.createmenubar()
@@ -244,6 +240,11 @@ class EditorWindow(object):
         # The recommended Python indentation is four spaces.
         self.indentwidth = self.tabwidth
         self.set_notabs_indentwidth()
+
+        # Store the current value of the insertofftime now so we can restore
+        # it if needed.
+        self.blink_off_time = self.text['insertofftime']
+        self.UpdateCursorBlink()
 
         # When searching backwards for a reliable place to begin parsing,
         # first start num_context_lines[0] lines back, then
@@ -812,10 +813,10 @@ class EditorWindow(object):
         cursorblink = idleConf.GetOption(
                 'main', 'EditorWindow', 'cursor-blink', type='bool')
         if not cursorblink:
-            self.text.config(insertofftime=0)
+            self.text['insertofftime'] = 0
         else:
             # Restore the original value
-            self.text.config(insertofftime=self.text._insertofftime)
+            self.text['insertofftime'] = self.blink_off_time
 
     def ResetFont(self):
         "Update the text widgets' font if it is changed"

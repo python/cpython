@@ -1821,6 +1821,9 @@ class GenPage(Frame):
                     (*)win_width_int: Entry - win_width
                     win_height_title: Label
                     (*)win_height_int: Entry - win_height
+                frame_cursor_blink: Frame
+                    cursor_blink_title: Label
+                    (*)cursor_blink_bool: Checkbutton - cursor_blink
                 frame_autocomplete: Frame
                     auto_wait_title: Label
                     (*)auto_wait_int: Entry - autocomplete_wait
@@ -1845,9 +1848,6 @@ class GenPage(Frame):
                 frame_context: Frame
                     context_title: Label
                     (*)context_int: Entry - context_lines
-                frame_cursor_blink_default: Frame
-                    cursor_blink_default_title: Label
-                    (*)cursor_blink_default_bool: Checkbutton - cursor_blink_default
             frame_shell: LabelFrame
                 frame_auto_squeeze_min_lines: Frame
                     auto_squeeze_min_lines_title: Label
@@ -1868,6 +1868,8 @@ class GenPage(Frame):
                 StringVar(self), ('main', 'EditorWindow', 'width'))
         self.win_height = tracers.add(
                 StringVar(self), ('main', 'EditorWindow', 'height'))
+        self.cursor_blink = tracers.add(
+                BooleanVar(self), ('main', 'EditorWindow', 'cursor-blink'))
         self.autocomplete_wait = tracers.add(
                 StringVar(self), ('extensions', 'AutoComplete', 'popupwait'))
         self.paren_style = tracers.add(
@@ -1889,8 +1891,6 @@ class GenPage(Frame):
                 ('main', 'EditorWindow', 'line-numbers-default'))
         self.context_lines = tracers.add(
                 StringVar(self), ('extensions', 'CodeContext', 'maxlines'))
-        self.cursor_blink_default = tracers.add(
-                BooleanVar(self), ('main', 'EditorWindow', 'cursor-blink'))
 
         # Create widgets:
         # Section frames.
@@ -1925,6 +1925,11 @@ class GenPage(Frame):
                 frame_win_size, textvariable=self.win_height, width=3,
                 validatecommand=self.digits_only, validate='key',
         )
+
+        frame_cursor_blink = Frame(frame_window, borderwidth=0)
+        cursor_blink_title = Label(frame_cursor_blink, text='Cursor Blink')
+        self.cursor_blink_bool = Checkbutton(frame_cursor_blink,
+                variable=self.cursor_blink, width=1)
 
         frame_autocomplete = Frame(frame_window, borderwidth=0,)
         auto_wait_title = Label(frame_autocomplete,
@@ -1982,13 +1987,6 @@ class GenPage(Frame):
                 validatecommand=self.digits_only, validate='key',
         )
 
-        frame_cursor_blink_default = Frame(frame_editor, borderwidth=0)
-        cursor_blink_default_title = Label(
-            frame_cursor_blink_default, text='Cursor Blink')
-        self.cursor_blink_default_bool = Checkbutton(
-                frame_cursor_blink_default,
-                variable=self.cursor_blink_default, width=1)
-
         # Frame_shell.
         frame_auto_squeeze_min_lines = Frame(frame_shell, borderwidth=0)
         auto_squeeze_min_lines_title = Label(frame_auto_squeeze_min_lines,
@@ -2037,6 +2035,10 @@ class GenPage(Frame):
         win_height_title.pack(side=RIGHT, anchor=E, pady=5)
         self.win_width_int.pack(side=RIGHT, anchor=E, padx=10, pady=5)
         win_width_title.pack(side=RIGHT, anchor=E, pady=5)
+        # frame_cursor_blink.
+        frame_cursor_blink.pack(side=TOP, padx=5, pady=0, fill=X)
+        cursor_blink_title.pack(side=LEFT, anchor=W, padx=5, pady=5)
+        self.cursor_blink_bool.pack(side=LEFT, padx=5, pady=5)
         # frame_autocomplete.
         frame_autocomplete.pack(side=TOP, padx=5, pady=0, fill=X)
         auto_wait_title.pack(side=LEFT, anchor=W, padx=5, pady=5)
@@ -2067,10 +2069,6 @@ class GenPage(Frame):
         frame_context.pack(side=TOP, padx=5, pady=0, fill=X)
         context_title.pack(side=LEFT, anchor=W, padx=5, pady=5)
         self.context_int.pack(side=TOP, padx=5, pady=5)
-        # frame_cursor_blink_default.
-        frame_cursor_blink_default.pack(side=TOP, padx=5, pady=0, fill=X)
-        cursor_blink_default_title.pack(side=LEFT, anchor=W, padx=5, pady=5)
-        self.cursor_blink_default_bool.pack(side=LEFT, padx=5, pady=5)
 
         # frame_auto_squeeze_min_lines
         frame_auto_squeeze_min_lines.pack(side=TOP, padx=5, pady=0, fill=X)
@@ -2095,6 +2093,8 @@ class GenPage(Frame):
                 'main', 'EditorWindow', 'width', type='int'))
         self.win_height.set(idleConf.GetOption(
                 'main', 'EditorWindow', 'height', type='int'))
+        self.cursor_blink.set(idleConf.GetOption(
+                'main', 'EditorWindow', 'cursor-blink', type='bool'))
         self.autocomplete_wait.set(idleConf.GetOption(
                 'extensions', 'AutoComplete', 'popupwait', type='int'))
         self.paren_style.set(idleConf.GetOption(
@@ -2113,8 +2113,6 @@ class GenPage(Frame):
                 'main', 'EditorWindow', 'line-numbers-default', type='bool'))
         self.context_lines.set(idleConf.GetOption(
                 'extensions', 'CodeContext', 'maxlines', type='int'))
-        self.cursor_blink_default.set(idleConf.GetOption(
-                'main', 'EditorWindow', 'cursor-blink', type='bool'))
 
         # Set variables for shell windows.
         self.auto_squeeze_min_lines.set(idleConf.GetOption(
