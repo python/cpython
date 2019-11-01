@@ -518,10 +518,10 @@ class TestPlistlib(unittest.TestCase):
             plistlib.dumps(neg_uid, fmt=plistlib.FMT_BINARY)
 
     def test_modified_uid_huge(self):
-        neg_uid = UID(1)
-        neg_uid.data = 2 ** 64  # dodge the size check in the constructor
+        huge_uid = UID(1)
+        huge_uid.data = 2 ** 64  # dodge the size check in the constructor
         with self.assertRaises(OverflowError):
-            plistlib.dumps(neg_uid, fmt=plistlib.FMT_BINARY)
+            plistlib.dumps(huge_uid, fmt=plistlib.FMT_BINARY)
 
 
 class TestBinaryPlistlib(unittest.TestCase):
