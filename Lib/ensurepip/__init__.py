@@ -1,6 +1,7 @@
 import os
 import os.path
 import sys
+import runpy
 import tempfile
 from importlib import resources
 
@@ -26,9 +27,17 @@ def _run_pip(args, additional_paths=None):
     if additional_paths is not None:
         sys.path = additional_paths + sys.path
 
-    # Install the bundled software
-    import pip._internal
-    return pip._internal.main(args)
+    # Invoke pip as if it's the main module, and catch the exit.
+    backup_argv = sys.argv[:]
+    sys.argv[1:] = args
+    try:
+        runpy.run_module("pip", run_name="__main__", alter_sys=True)
+    except SystemExit as e:
+        return e.code
+    finally:
+        sys.argv[:] = backup_argv
+
+    assert 0, "should never reach here"
 
 
 def version():
