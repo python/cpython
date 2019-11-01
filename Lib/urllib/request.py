@@ -323,7 +323,7 @@ class Request:
         self._data = None
         self.data = data
         self._tunnel_host = None
-        if headers:
+        if headers is not None:
             for key, value in headers.items():
                 self.add_header(key, value)
         if origin_req_host is None:
