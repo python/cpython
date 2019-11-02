@@ -209,7 +209,8 @@ If you need an attribute setting on your mock, just do it:
 
 Sometimes you want to mock up a more complex expression, such as
 ``db.connection.cursor().execute("SELECT 1")``. If we wanted this
-call to return ``['foo']``, we could do:
+call to return a list, e.g. ``['foo']``, we'd have to specify the return value
+for both of the calls:
 
    >>> db = Mock()
    >>> db.connection.cursor.return_value.execute.return_value = ['foo']
@@ -220,7 +221,7 @@ on the new mock, this previously non-existant method will be created for the moc
 (which is an inherent feature of mocks) and will return ``['foo']`` when called::
 
    >>> cursor = db.connection.cursor()
-   >>> cursor  # check that cursor is a new mock with an execute method
+   >>> cursor  # check that the cursor is a new mock with an execute method
    <Mock name='db.connection.cursor()' id='...'>
    >>> cursor.execute("SELECT 1")
    ['foo']
@@ -302,10 +303,23 @@ Mocking asynchronous context manager
 Since Python 3.8, ``AsyncMock`` and ``MagicMock`` have support to mock
 :ref:`async-context-managers` through ``__aenter__`` and ``__aexit__``.
 By default, ``__aenter__`` and ``__aexit__`` are ``AsyncMock`` instances that
-return an async function. So you can do:
+return an async function.
 
+Let's assume we have the following context manager in our code:
+
+    >>> class MyAsyncContextManager:
+    ...     async def __aenter__(self):
+    ...         print('I am MyAsyncContextManager')
+    ...         return self
+    ...     async def __aexit__(self, exc_type, exc, tb):
+    ...         print('I, MyAsyncContextManager, am exiting!')
+    ...
+
+To mock the above example in tests, we can do:
+
+    >>> mocked_context_manager = MagicMock(MyAsyncContextManager)
     >>> async def main():
-    ...     async with MagicMock() as async_context_manager: # AsyncMock works here too
+    ...     async with mocked_context_manager: # AsyncMock works here too
     ...         print('Inside async context manager')
     ...
     >>> asyncio.run(main())
@@ -315,7 +329,7 @@ This would not work with Mock class, though, because it doesn't
 have the pre-assigned ``__aexit__`` and ``__aenter__`` methods.
 
     >>> async def main():
-    ...     async with Mock() as context_manager:
+    ...     async with Mock(MyAsyncContextManager) as context_manager:
     ...         print('Inside async context manager')
     ...
     >>> asyncio.run(main())
