@@ -1087,7 +1087,8 @@ deduce_unreachable(PyGC_Head *base, PyGC_Head *unreachable) {
      * everything else (in base) to unreachable.
      * NOTE:  This used to move the reachable objects into a reachable
      * set instead.  But most things usually turn out to be reachable,
-     * so it's more efficient to move the unreachable things.
+     * so it's more efficient to move the unreachable things.  See note
+     ^ [REACHABLE OR UNREACHABLE?} at the file end.
      */
     gc_list_init(unreachable);
     move_unreachable(base, unreachable);  // gc_prev is pointer again
@@ -2183,3 +2184,39 @@ PyObject_GC_Del(void *op)
     }
     PyObject_FREE(g);
 }
+
+/* ------------------------------------------------------------------------
+Notes
+
+[REACHABLE OR UNREACHABLE?}
+
+It "sounds slick" to move the unreachable objects, until you think about
+it - the reason it pays isn't actually obvious.
+
+Suppose we create objects A, B, C in that order.  They appear in the young
+generation in the same order.  If B points to A, and C to B, and C is
+reachable from outside, then the adjusted refcounts will be 0, 0, and 1
+respectively.
+
+When move_unreachable finds A, A is moved to the unreachable list.  The
+same for B when it's first encountered.  Then C is traversed, B is moved
+_back_ to the reachable list.  B is eventually traversed, and then A is
+moved back to the reachable list.
+
+So instead of not moving at all, the reachable objects B and A are moved
+twice each.  Why is this a win?  A straightforward algorithm to move the
+reachable objects instead would move A, B, and C once each.
+
+The key is that this dance leaves the objects in order C, B, A - it's
+reversed from the original order.  On all _subsequent_ scans, none of
+them will move.  Since most objects aren't in cycles, this can save an
+unbounded number of moves across an unbounded number of later collections.
+It can cost more only the first time the chain is scanned.
+
+Drawback:  move_unreachable is also used to find out what's still trash
+after finalizers may resurrect objects.  In _that_ case most unreachable
+objects will remain unreachable, so it would be more efficient to move
+the reachable objects instead.  But this is a one-time cost, probably not
+worth complicating the code to speed just a little.
+------------------------------------------------------------------------ */
+
