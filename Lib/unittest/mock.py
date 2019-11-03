@@ -1378,6 +1378,10 @@ class _patch(object):
 
     def get_original(self):
         target = self.getter()
+        if type(target) != type:
+            raise TypeError(
+                "Target %s must be a class" % (target,)
+            )
         name = self.attribute
 
         original = DEFAULT
