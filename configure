@@ -782,7 +782,6 @@ infodir
 docdir
 oldincludedir
 includedir
-runstatedir
 localstatedir
 sharedstatedir
 sysconfdir
@@ -896,7 +895,6 @@ datadir='${datarootdir}'
 sysconfdir='${prefix}/etc'
 sharedstatedir='${prefix}/com'
 localstatedir='${prefix}/var'
-runstatedir='${localstatedir}/run'
 includedir='${prefix}/include'
 oldincludedir='/usr/include'
 docdir='${datarootdir}/doc/${PACKAGE_TARNAME}'
@@ -1149,15 +1147,6 @@ do
   | -silent | --silent | --silen | --sile | --sil)
     silent=yes ;;
 
-  -runstatedir | --runstatedir | --runstatedi | --runstated \
-  | --runstate | --runstat | --runsta | --runst | --runs \
-  | --run | --ru | --r)
-    ac_prev=runstatedir ;;
-  -runstatedir=* | --runstatedir=* | --runstatedi=* | --runstated=* \
-  | --runstate=* | --runstat=* | --runsta=* | --runst=* | --runs=* \
-  | --run=* | --ru=* | --r=*)
-    runstatedir=$ac_optarg ;;
-
   -sbindir | --sbindir | --sbindi | --sbind | --sbin | --sbi | --sb)
     ac_prev=sbindir ;;
   -sbindir=* | --sbindir=* | --sbindi=* | --sbind=* | --sbin=* \
@@ -1295,7 +1284,7 @@ fi
 for ac_var in	exec_prefix prefix bindir sbindir libexecdir datarootdir \
 		datadir sysconfdir sharedstatedir localstatedir includedir \
 		oldincludedir docdir infodir htmldir dvidir pdfdir psdir \
-		libdir localedir mandir runstatedir
+		libdir localedir mandir
 do
   eval ac_val=\$$ac_var
   # Remove trailing slashes.
@@ -1448,7 +1437,6 @@ Fine tuning of the installation directories:
   --sysconfdir=DIR        read-only single-machine data [PREFIX/etc]
   --sharedstatedir=DIR    modifiable architecture-independent data [PREFIX/com]
   --localstatedir=DIR     modifiable single-machine data [PREFIX/var]
-  --runstatedir=DIR       modifiable per-process data [LOCALSTATEDIR/run]
   --libdir=DIR            object code libraries [EPREFIX/lib]
   --includedir=DIR        C header files [PREFIX/include]
   --oldincludedir=DIR     C header files for non-gcc [/usr/include]
@@ -7341,6 +7329,47 @@ $as_echo "$ac_cv_enable_implicit_function_declaration_error" >&6; }
       CFLAGS_NODIST="$CFLAGS_NODIST -Werror=implicit-function-declaration"
     fi
 
+    { $as_echo "$as_me:${as_lineno-$LINENO}: checking if we can use visibility in $CC" >&5
+$as_echo_n "checking if we can use visibility in $CC... " >&6; }
+     ac_save_cc="$CC"
+     CC="$CC -fvisibility=hidden"
+     if ${ac_cv_enable_visibility+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+
+int
+main ()
+{
+
+  ;
+  return 0;
+}
+
+_ACEOF
+if ac_fn_c_try_compile "$LINENO"; then :
+
+           ac_cv_enable_visibility=yes
+
+else
+
+           ac_cv_enable_visibility=no
+
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
+fi
+
+     CC="$ac_save_cc"
+    { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_enable_visibility" >&5
+$as_echo "$ac_cv_enable_visibility" >&6; }
+
+    if test $ac_cv_enable_visibility = yes
+    then
+      CFLAGS_NODIST="$CFLAGS_NODIST -fvisibility=hidden"
+    fi
+
     # if using gcc on alpha, use -mieee to get (near) full IEEE 754
     # support.  Without this, treatment of subnormals doesn't follow
     # the standard.
@@ -10500,6 +10529,9 @@ then
     $as_echo "#define _REENTRANT 1" >>confdefs.h
 
     posix_threads=yes
+    if test "$ac_sys_system" = "SunOS"; then
+        CFLAGS="$CFLAGS -D_REENTRANT"
+    fi
 elif test "$ac_cv_kpthread" = "yes"
 then
     CC="$CC -Kpthread"
@@ -16731,9 +16763,12 @@ cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 
 
     #include <stdatomic.h>
-    atomic_int value = ATOMIC_VAR_INIT(1);
+    atomic_int int_var;
+    atomic_uintptr_t uintptr_var;
     int main() {
-      int loaded_value = atomic_load(&value);
+      atomic_store_explicit(&int_var, 5, memory_order_relaxed);
+      atomic_store_explicit(&uintptr_var, 0, memory_order_relaxed);
+      int loaded_value = atomic_load_explicit(&int_var, memory_order_seq_cst);
       return 0;
     }
 

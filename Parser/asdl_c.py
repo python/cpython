@@ -724,6 +724,11 @@ ast_type_reduce(PyObject *self, PyObject *unused)
     return Py_BuildValue("O()", Py_TYPE(self));
 }
 
+static PyMemberDef ast_type_members[] = {
+    {"__dictoffset__", T_PYSSIZET, offsetof(AST_object, dict), READONLY},
+    {NULL}  /* Sentinel */
+};
+
 static PyMethodDef ast_type_methods[] = {
     {"__reduce__", ast_type_reduce, METH_NOARGS, NULL},
     {NULL}
@@ -740,12 +745,12 @@ static PyType_Slot AST_type_slots[] = {
     {Py_tp_setattro, PyObject_GenericSetAttr},
     {Py_tp_traverse, ast_traverse},
     {Py_tp_clear, ast_clear},
+    {Py_tp_members, ast_type_members},
     {Py_tp_methods, ast_type_methods},
     {Py_tp_getset, ast_type_getsets},
     {Py_tp_init, ast_type_init},
     {Py_tp_alloc, PyType_GenericAlloc},
     {Py_tp_new, PyType_GenericNew},
-    {Py_tp_free, PyType_GenericNew},
     {Py_tp_free, PyObject_GC_Del},
     {0, 0},
 };
@@ -930,7 +935,6 @@ static int add_ast_fields(void)
         self.emit("if (init_identifiers() < 0) return 0;", 1)
         self.emit("state->AST_type = PyType_FromSpec(&AST_type_spec);", 1)
         self.emit("if (!state->AST_type) return 0;", 1)
-        self.emit("((PyTypeObject*)state->AST_type)->tp_dictoffset = offsetof(AST_object, dict);", 1)
         self.emit("if (add_ast_fields() < 0) return 0;", 1)
         for dfn in mod.dfns:
             self.visit(dfn)
@@ -1192,7 +1196,6 @@ PyObject* PyAST_mod2obj(mod_ty t)
 /* mode is 0 for "exec", 1 for "eval" and 2 for "single" input */
 mod_ty PyAST_obj2mod(PyObject* ast, PyArena* arena, int mode)
 {
-    mod_ty res;
     PyObject *req_type[3];
     const char * const req_name[] = {"Module", "Expression", "Interactive"};
     int isinstance;
@@ -1218,6 +1221,8 @@ mod_ty PyAST_obj2mod(PyObject* ast, PyArena* arena, int mode)
                      req_name[mode], _PyType_Name(Py_TYPE(ast)));
         return NULL;
     }
+
+    mod_ty res = NULL;
     if (obj2ast_mod(ast, &res, arena) != 0)
         return NULL;
     else
@@ -1372,6 +1377,7 @@ def main(srcfile, dump_module=False):
             f.write('\n')
             f.write('#include "Python.h"\n')
             f.write('#include "%s-ast.h"\n' % mod.name)
+            f.write('#include "structmember.h"\n')
             f.write('\n')
 
             generate_module_def(f, mod)

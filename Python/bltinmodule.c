@@ -260,7 +260,7 @@ error:
 }
 
 PyDoc_STRVAR(build_class_doc,
-"__build_class__(func, name, *bases, metaclass=None, **kwds) -> class\n\
+"__build_class__(func, name, /, *bases, [metaclass], **kwds) -> class\n\
 \n\
 Internal helper function used by the class statement.");
 
@@ -1796,22 +1796,22 @@ builtin_ord(PyObject *module, PyObject *c)
 /*[clinic input]
 pow as builtin_pow
 
-    x: object
-    y: object
-    z: object = None
-    /
+    base: object
+    exp: object
+    mod: object = None
 
-Equivalent to x**y (with two arguments) or x**y % z (with three arguments)
+Equivalent to base**exp with 2 arguments or base**exp % mod with 3 arguments
 
 Some types, such as ints, are able to use a more efficient algorithm when
 invoked using the three argument form.
 [clinic start generated code]*/
 
 static PyObject *
-builtin_pow_impl(PyObject *module, PyObject *x, PyObject *y, PyObject *z)
-/*[clinic end generated code: output=50a14d5d130d404b input=653d57d38d41fc07]*/
+builtin_pow_impl(PyObject *module, PyObject *base, PyObject *exp,
+                 PyObject *mod)
+/*[clinic end generated code: output=3ca1538221bbf15f input=435dbd48a12efb23]*/
 {
-    return PyNumber_Power(x, y, z);
+    return PyNumber_Power(base, exp, mod);
 }
 
 

@@ -3110,11 +3110,12 @@ class TestSendfile(unittest.TestCase):
 
     def test_keywords(self):
         # Keyword arguments should be supported
-        os.sendfile(out=self.sockno, offset=0, count=4096,
-            **{'in': self.fileno})
+        os.sendfile(out_fd=self.sockno, in_fd=self.fileno,
+                    offset=0, count=4096)
         if self.SUPPORT_HEADERS_TRAILERS:
-            os.sendfile(self.sockno, self.fileno, offset=0, count=4096,
-                headers=(), trailers=(), flags=0)
+            os.sendfile(out_fd=self.sockno, in_fd=self.fileno,
+                        offset=0, count=4096,
+                        headers=(), trailers=(), flags=0)
 
     # --- headers / trailers tests
 

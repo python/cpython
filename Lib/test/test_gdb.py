@@ -255,8 +255,15 @@ class DebuggerTests(unittest.TestCase):
         # gdb can insert additional '\n' and space characters in various places
         # in its output, depending on the width of the terminal it's connected
         # to (using its "wrap_here" function)
-        m = re.match(r'.*#0\s+builtin_id\s+\(self\=.*,\s+v=\s*(.*?)?\)\s+at\s+\S*Python/bltinmodule.c.*',
-                     gdb_output, re.DOTALL)
+        m = re.search(
+            # Match '#0 builtin_id(self=..., v=...)'
+            r'#0\s+builtin_id\s+\(self\=.*,\s+v=\s*(.*?)?\)'
+            # Match ' at Python/bltinmodule.c'.
+            # bpo-38239: builtin_id() is defined in Python/bltinmodule.c,
+            # but accept any "Directory\file.c" to support Link Time
+            # Optimization (LTO).
+            r'\s+at\s+\S*[A-Za-z]+/[A-Za-z0-9_-]+\.c',
+            gdb_output, re.DOTALL)
         if not m:
             self.fail('Unexpected gdb output: %r\n%s' % (gdb_output, gdb_output))
         return m.group(1), gdb_output

@@ -231,8 +231,8 @@ A user-defined class can be defined as a generic class.
 single type parameter ``T`` . This also makes ``T`` valid as a type within the
 class body.
 
-The :class:`Generic` base class uses a metaclass that defines
-:meth:`__getitem__` so that ``LoggedVar[t]`` is valid as a type::
+The :class:`Generic` base class defines :meth:`__class_getitem__` so that
+``LoggedVar[t]`` is valid as a type::
 
    from typing import Iterable
 
@@ -307,9 +307,10 @@ User defined generic type aliases are also supported. Examples::
    def inproduct(v: Vec[T]) -> T: # Same as Iterable[Tuple[T, T]]
        return sum(x*y for x, y in v)
 
-The metaclass used by :class:`Generic` is a subclass of :class:`abc.ABCMeta`.
-A generic class can be an ABC by including abstract methods or properties,
-and generic classes can also have ABCs as base classes without a metaclass
+.. versionchanged:: 3.7
+    :class:`Generic` no longer has a custom metaclass.
+
+A user-defined generic class can have ABCs as base classes without a metaclass
 conflict. Generic metaclasses are not supported. The outcome of parameterizing
 generics is cached, and most types in the typing module are hashable and
 comparable for equality.
@@ -1040,8 +1041,8 @@ The module defines the following classes, functions and decorators:
    a dictionary constructed by merging all the ``__annotations__`` along
    ``C.__mro__`` in reverse order.
 
-.. function:: get_origin(typ)
-.. function:: get_args(typ)
+.. function:: get_origin(tp)
+.. function:: get_args(tp)
 
    Provide basic introspection for generic types and special typing forms.
 

@@ -4761,14 +4761,14 @@ PyDoc_STRVAR(os_pread__doc__,
     {"pread", (PyCFunction)(void(*)(void))os_pread, METH_FASTCALL, os_pread__doc__},
 
 static PyObject *
-os_pread_impl(PyObject *module, int fd, int length, Py_off_t offset);
+os_pread_impl(PyObject *module, int fd, Py_ssize_t length, Py_off_t offset);
 
 static PyObject *
 os_pread(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     int fd;
-    int length;
+    Py_ssize_t length;
     Py_off_t offset;
 
     if (!_PyArg_CheckPositional("pread", nargs, 3, 3)) {
@@ -4788,9 +4788,17 @@ os_pread(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
                         "integer argument expected, got float" );
         goto exit;
     }
-    length = _PyLong_AsInt(args[1]);
-    if (length == -1 && PyErr_Occurred()) {
-        goto exit;
+    {
+        Py_ssize_t ival = -1;
+        PyObject *iobj = PyNumber_Index(args[1]);
+        if (iobj != NULL) {
+            ival = PyLong_AsSsize_t(iobj);
+            Py_DECREF(iobj);
+        }
+        if (ival == -1 && PyErr_Occurred()) {
+            goto exit;
+        }
+        length = ival;
     }
     if (!Py_off_t_converter(args[2], &offset)) {
         goto exit;
@@ -4940,7 +4948,7 @@ exit:
 #if defined(__APPLE__)
 
 PyDoc_STRVAR(os__fcopyfile__doc__,
-"_fcopyfile($module, infd, outfd, flags, /)\n"
+"_fcopyfile($module, in_fd, out_fd, flags, /)\n"
 "--\n"
 "\n"
 "Efficiently copy content or metadata of 2 regular file descriptors (macOS).");
@@ -4949,14 +4957,14 @@ PyDoc_STRVAR(os__fcopyfile__doc__,
     {"_fcopyfile", (PyCFunction)(void(*)(void))os__fcopyfile, METH_FASTCALL, os__fcopyfile__doc__},
 
 static PyObject *
-os__fcopyfile_impl(PyObject *module, int infd, int outfd, int flags);
+os__fcopyfile_impl(PyObject *module, int in_fd, int out_fd, int flags);
 
 static PyObject *
 os__fcopyfile(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
-    int infd;
-    int outfd;
+    int in_fd;
+    int out_fd;
     int flags;
 
     if (!_PyArg_CheckPositional("_fcopyfile", nargs, 3, 3)) {
@@ -4967,8 +4975,8 @@ os__fcopyfile(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
                         "integer argument expected, got float" );
         goto exit;
     }
-    infd = _PyLong_AsInt(args[0]);
-    if (infd == -1 && PyErr_Occurred()) {
+    in_fd = _PyLong_AsInt(args[0]);
+    if (in_fd == -1 && PyErr_Occurred()) {
         goto exit;
     }
     if (PyFloat_Check(args[1])) {
@@ -4976,8 +4984,8 @@ os__fcopyfile(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
                         "integer argument expected, got float" );
         goto exit;
     }
-    outfd = _PyLong_AsInt(args[1]);
-    if (outfd == -1 && PyErr_Occurred()) {
+    out_fd = _PyLong_AsInt(args[1]);
+    if (out_fd == -1 && PyErr_Occurred()) {
         goto exit;
     }
     if (PyFloat_Check(args[2])) {
@@ -4989,7 +4997,7 @@ os__fcopyfile(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     if (flags == -1 && PyErr_Occurred()) {
         goto exit;
     }
-    return_value = os__fcopyfile_impl(module, infd, outfd, flags);
+    return_value = os__fcopyfile_impl(module, in_fd, out_fd, flags);
 
 exit:
     return return_value;
@@ -8685,4 +8693,4 @@ exit:
 #ifndef OS__REMOVE_DLL_DIRECTORY_METHODDEF
     #define OS__REMOVE_DLL_DIRECTORY_METHODDEF
 #endif /* !defined(OS__REMOVE_DLL_DIRECTORY_METHODDEF) */
-/*[clinic end generated code: output=8b2437e5e733a2eb input=a9049054013a1b77]*/
+/*[clinic end generated code: output=b999b313f97b4875 input=a9049054013a1b77]*/

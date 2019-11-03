@@ -8,7 +8,7 @@
 #ifdef HAVE_SYS_TYPES_H
 #include <sys/types.h>
 #endif
-#if defined(HAVE_SYS_STAT_H) && defined(__FreeBSD__)
+#if defined(HAVE_SYS_STAT_H)
 #include <sys/stat.h>
 #endif
 #ifdef HAVE_SYS_SYSCALL_H
@@ -428,7 +428,7 @@ child_exec(char *const exec_array[],
            int call_setsid,
            int call_setgid, gid_t gid,
            int call_setgroups, size_t groups_size, const gid_t *groups,
-           int call_setuid, uid_t uid,
+           int call_setuid, uid_t uid, int child_umask,
            PyObject *py_fds_to_keep,
            PyObject *preexec_fn,
            PyObject *preexec_fn_args_tuple)
@@ -497,6 +497,9 @@ child_exec(char *const exec_array[],
 
     if (cwd)
         POSIX_CALL(chdir(cwd));
+
+    if (child_umask >= 0)
+        umask(child_umask);  /* umask() always succeeds. */
 
     if (restore_signals)
         _Py_RestoreSignals();
@@ -609,6 +612,7 @@ subprocess_fork_exec(PyObject* self, PyObject *args)
     int call_setgid = 0, call_setgroups = 0, call_setuid = 0;
     uid_t uid;
     gid_t gid, *groups = NULL;
+    int child_umask;
     PyObject *cwd_obj, *cwd_obj2;
     const char *cwd;
     pid_t pid;
@@ -619,14 +623,14 @@ subprocess_fork_exec(PyObject* self, PyObject *args)
     int saved_errno = 0;
 
     if (!PyArg_ParseTuple(
-            args, "OOpO!OOiiiiiiiiiiOOOO:fork_exec",
+            args, "OOpO!OOiiiiiiiiiiOOOiO:fork_exec",
             &process_args, &executable_list,
             &close_fds, &PyTuple_Type, &py_fds_to_keep,
             &cwd_obj, &env_list,
             &p2cread, &p2cwrite, &c2pread, &c2pwrite,
             &errread, &errwrite, &errpipe_read, &errpipe_write,
             &restore_signals, &call_setsid,
-            &gid_object, &groups_list, &uid_object,
+            &gid_object, &groups_list, &uid_object, &child_umask,
             &preexec_fn))
         return NULL;
 
@@ -843,7 +847,7 @@ subprocess_fork_exec(PyObject* self, PyObject *args)
                    errread, errwrite, errpipe_read, errpipe_write,
                    close_fds, restore_signals, call_setsid,
                    call_setgid, gid, call_setgroups, num_groups, groups,
-                   call_setuid, uid,
+                   call_setuid, uid, child_umask,
                    py_fds_to_keep, preexec_fn, preexec_fn_args_tuple);
         _exit(255);
         return NULL;  /* Dead code to avoid a potential compiler warning. */
@@ -900,19 +904,22 @@ cleanup:
 
 
 PyDoc_STRVAR(subprocess_fork_exec_doc,
-"fork_exec(args, executable_list, close_fds, cwd, env,\n\
+"fork_exec(args, executable_list, close_fds, pass_fds, cwd, env,\n\
           p2cread, p2cwrite, c2pread, c2pwrite,\n\
           errread, errwrite, errpipe_read, errpipe_write,\n\
           restore_signals, call_setsid,\n\
-          call_setgid, gid, groups_size, gids,\n\
-          call_setuid, uid,\n\
+          gid, groups_list, uid,\n\
           preexec_fn)\n\
 \n\
 Forks a child process, closes parent file descriptors as appropriate in the\n\
 child and dups the few that are needed before calling exec() in the child\n\
 process.\n\
 \n\
-The preexec_fn, if supplied, will be called immediately before exec.\n\
+If close_fds is true, close file descriptors 3 and higher, except those listed\n\
+in the sorted tuple pass_fds.\n\
+\n\
+The preexec_fn, if supplied, will be called immediately before closing file\n\
+descriptors and exec.\n\
 WARNING: preexec_fn is NOT SAFE if your application uses threads.\n\
          It may trigger infrequent, difficult to debug deadlocks.\n\
 \n\

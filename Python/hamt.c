@@ -6,7 +6,7 @@
 #include "structmember.h"
 
 /*
-This file provides an implemention of an immutable mapping using the
+This file provides an implementation of an immutable mapping using the
 Hash Array Mapped Trie (or HAMT) datastructure.
 
 This design allows to have:

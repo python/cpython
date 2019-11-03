@@ -143,7 +143,7 @@ class SubprocessMixin:
             return proc.returncode, stdout
 
         task = run(b'some data')
-        task = asyncio.wait_for(task, 60.0)
+        task = asyncio.wait_for(task, support.LONG_TIMEOUT)
         exitcode, stdout = self.loop.run_until_complete(task)
         self.assertEqual(exitcode, 0)
         self.assertEqual(stdout, b'some data')
@@ -581,18 +581,6 @@ class SubprocessMixin:
                     break
 
         self.loop.run_until_complete(execute())
-
-    def test_subprocess_protocol_create_warning(self):
-        with self.assertWarns(DeprecationWarning):
-            subprocess.SubprocessStreamProtocol(limit=10, loop=self.loop)
-
-    def test_process_create_warning(self):
-        proto = subprocess.SubprocessStreamProtocol(limit=10, loop=self.loop,
-                                                    _asyncio_internal=True)
-        transp = mock.Mock()
-
-        with self.assertWarns(DeprecationWarning):
-            subprocess.Process(transp, proto, loop=self.loop)
 
     def test_create_subprocess_exec_text_mode_fails(self):
         async def execute():

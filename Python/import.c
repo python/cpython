@@ -4,6 +4,7 @@
 
 #include "Python-ast.h"
 #undef Yield   /* undefine macro conflicting with <winbase.h> */
+#include "pycore_initconfig.h"
 #include "pycore_pyerrors.h"
 #include "pycore_pyhash.h"
 #include "pycore_pylifecycle.h"

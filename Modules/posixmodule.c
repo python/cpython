@@ -2859,13 +2859,24 @@ static PyObject *
 os_ttyname_impl(PyObject *module, int fd)
 /*[clinic end generated code: output=c424d2e9d1cd636a input=9ff5a58b08115c55]*/
 {
-    char *ret;
 
-    ret = ttyname(fd);
-    if (ret == NULL) {
+    long size = sysconf(_SC_TTY_NAME_MAX);
+    if (size == -1) {
         return posix_error();
     }
-    return PyUnicode_DecodeFSDefault(ret);
+    char *buffer = (char *)PyMem_RawMalloc(size);
+    if (buffer == NULL) {
+        return PyErr_NoMemory();
+    }
+    int ret = ttyname_r(fd, buffer, size);
+    if (ret != 0) {
+        PyMem_RawFree(buffer);
+        errno = ret;
+        return posix_error();
+    }
+    PyObject *res = PyUnicode_DecodeFSDefault(buffer);
+    PyMem_RawFree(buffer);
+    return res;
 }
 #endif
 
@@ -4398,7 +4409,7 @@ os_system_impl(PyObject *module, const Py_UNICODE *command)
 {
     long result;
 
-    if (PySys_Audit("system", "(u)", command) < 0) {
+    if (PySys_Audit("os.system", "(u)", command) < 0) {
         return -1;
     }
 
@@ -4425,7 +4436,7 @@ os_system_impl(PyObject *module, PyObject *command)
     long result;
     const char *bytes = PyBytes_AsString(command);
 
-    if (PySys_Audit("system", "(O)", command) < 0) {
+    if (PySys_Audit("os.system", "(O)", command) < 0) {
         return -1;
     }
 
@@ -8915,11 +8926,10 @@ os_readv_impl(PyObject *module, int fd, PyObject *buffers)
 
 #ifdef HAVE_PREAD
 /*[clinic input]
-# TODO length should be size_t!  but Python doesn't support parsing size_t yet.
 os.pread
 
     fd: int
-    length: int
+    length: Py_ssize_t
     offset: Py_off_t
     /
 
@@ -8930,8 +8940,8 @@ the beginning of the file.  The file offset remains unchanged.
 [clinic start generated code]*/
 
 static PyObject *
-os_pread_impl(PyObject *module, int fd, int length, Py_off_t offset)
-/*[clinic end generated code: output=435b29ee32b54a78 input=084948dcbaa35d4c]*/
+os_pread_impl(PyObject *module, int fd, Py_ssize_t length, Py_off_t offset)
+/*[clinic end generated code: output=3f875c1eef82e32f input=85cb4a5589627144]*/
 {
     Py_ssize_t n;
     int async_err = 0;
@@ -9071,10 +9081,10 @@ os_write_impl(PyObject *module, int fd, Py_buffer *data)
 
 #ifdef HAVE_SENDFILE
 PyDoc_STRVAR(posix_sendfile__doc__,
-"sendfile(out, in, offset, count) -> byteswritten\n\
-sendfile(out, in, offset, count[, headers][, trailers], flags=0)\n\
+"sendfile(out_fd, in_fd, offset, count) -> byteswritten\n\
+sendfile(out_fd, in_fd, offset, count[, headers][, trailers], flags=0)\n\
             -> byteswritten\n\
-Copy count bytes from file descriptor in to file descriptor out.");
+Copy count bytes from file descriptor in_fd to file descriptor out_fd.");
 
 /* AC 3.5: don't bother converting, has optional group*/
 static PyObject *
@@ -9094,8 +9104,7 @@ posix_sendfile(PyObject *self, PyObject *args, PyObject *kwdict)
     off_t sbytes;
     struct sf_hdtr sf;
     int flags = 0;
-    /* Beware that "in" clashes with Python's own "in" operator keyword */
-    static char *keywords[] = {"out", "in",
+    static char *keywords[] = {"out_fd", "in_fd",
                                 "offset", "count",
                                 "headers", "trailers", "flags", NULL};
 
@@ -9211,7 +9220,7 @@ done:
 #else
     Py_ssize_t count;
     PyObject *offobj;
-    static char *keywords[] = {"out", "in",
+    static char *keywords[] = {"out_fd", "in_fd",
                                 "offset", "count", NULL};
     if (!PyArg_ParseTupleAndKeywords(args, kwdict, "iiOn:sendfile",
             keywords, &out, &in, &offobj, &count))
@@ -9248,8 +9257,8 @@ done:
 /*[clinic input]
 os._fcopyfile
 
-    infd: int
-    outfd: int
+    in_fd: int
+    out_fd: int
     flags: int
     /
 
@@ -9257,13 +9266,13 @@ Efficiently copy content or metadata of 2 regular file descriptors (macOS).
 [clinic start generated code]*/
 
 static PyObject *
-os__fcopyfile_impl(PyObject *module, int infd, int outfd, int flags)
-/*[clinic end generated code: output=8e8885c721ec38e3 input=69e0770e600cb44f]*/
+os__fcopyfile_impl(PyObject *module, int in_fd, int out_fd, int flags)
+/*[clinic end generated code: output=c9d1a35a992e401b input=1e34638a86948795]*/
 {
     int ret;
 
     Py_BEGIN_ALLOW_THREADS
-    ret = fcopyfile(infd, outfd, NULL, flags);
+    ret = fcopyfile(in_fd, out_fd, NULL, flags);
     Py_END_ALLOW_THREADS
     if (ret < 0)
         return posix_error();
@@ -14108,11 +14117,17 @@ all_ins(PyObject *m)
 #ifdef CLD_EXITED
     if (PyModule_AddIntMacro(m, CLD_EXITED)) return -1;
 #endif
+#ifdef CLD_KILLED
+    if (PyModule_AddIntMacro(m, CLD_KILLED)) return -1;
+#endif
 #ifdef CLD_DUMPED
     if (PyModule_AddIntMacro(m, CLD_DUMPED)) return -1;
 #endif
 #ifdef CLD_TRAPPED
     if (PyModule_AddIntMacro(m, CLD_TRAPPED)) return -1;
+#endif
+#ifdef CLD_STOPPED
+    if (PyModule_AddIntMacro(m, CLD_STOPPED)) return -1;
 #endif
 #ifdef CLD_CONTINUED
     if (PyModule_AddIntMacro(m, CLD_CONTINUED)) return -1;

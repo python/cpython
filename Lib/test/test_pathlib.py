@@ -1812,6 +1812,16 @@ class _BasePathTest(object):
         self.assertEqual(os.stat(r).st_size, size)
         self.assertFileNotFound(q.stat)
 
+    @support.skip_unless_symlink
+    def test_readlink(self):
+        P = self.cls(BASE)
+        self.assertEqual((P / 'linkA').readlink(), self.cls('fileA'))
+        self.assertEqual((P / 'brokenLink').readlink(),
+                         self.cls('non-existing'))
+        self.assertEqual((P / 'linkB').readlink(), self.cls('dirB'))
+        with self.assertRaises(OSError):
+            (P / 'fileA').readlink()
+
     def test_touch_common(self):
         P = self.cls(BASE)
         p = P / 'newfileA'
@@ -2378,11 +2388,15 @@ class WindowsPathTest(_BasePathTest, unittest.TestCase):
         P = self.cls
         p = P(BASE)
         self.assertEqual(set(p.glob("FILEa")), { P(BASE, "fileA") })
+        self.assertEqual(set(p.glob("F*a")), { P(BASE, "fileA") })
+        self.assertEqual(set(map(str, p.glob("FILEa"))), {f"{p}\\FILEa"})
+        self.assertEqual(set(map(str, p.glob("F*a"))), {f"{p}\\fileA"})
 
     def test_rglob(self):
         P = self.cls
         p = P(BASE, "dirC")
         self.assertEqual(set(p.rglob("FILEd")), { P(BASE, "dirC/dirD/fileD") })
+        self.assertEqual(set(map(str, p.rglob("FILEd"))), {f"{p}\\dirD\\FILEd"})
 
     def test_expanduser(self):
         P = self.cls

@@ -33,18 +33,21 @@ always available.
    tuple of arguments. Native hooks added by :c:func:`PySys_AddAuditHook` are
    called first, followed by hooks added in the current interpreter.
 
-   Calling this function will trigger an event for all existing hooks, and if
-   any raise an exception derived from :class:`Exception`, the add will be
-   silently ignored. As a result, callers cannot assume that their hook has been
-   added unless they control all existing hooks.
+   .. audit-event:: sys.addaudithook "" sys.addaudithook
+
+      Raises a auditing event ``sys.addaudithook`` with no arguments. If any
+      existing hooks raise an exception derived from :class:`Exception`, the
+      new hook will not be added and the exception suppressed. As a result,
+      callers cannot assume that their hook has been added unless they control
+      all existing hooks.
 
    .. versionadded:: 3.8
 
    .. impl-detail::
 
-      When tracing is enabled, Python hooks are only traced if the callable has
-      a ``__cantrace__`` member that is set to a true value. Otherwise, trace
-      functions will not see the hook.
+      When tracing is enabled (see :func:`settrace`), Python hooks are only
+      traced if the callable has a ``__cantrace__`` member that is set to a
+      true value. Otherwise, trace functions will skip the hook.
 
 
 .. data:: argv
@@ -87,7 +90,7 @@ always available.
    native function is preferred when possible.
 
    See the :ref:`audit events table <audit-events>` for all events raised by
-   ``CPython``.
+   CPython.
 
    .. versionadded:: 3.8
 
@@ -1300,6 +1303,17 @@ always available.
 
    Note that as an exception is propagated down the chain of callers, an
    ``'exception'`` event is generated at each level.
+
+   For more fine-grained usage, it's possible to set a trace function by
+   assigning ``frame.f_trace = tracefunc`` explicitly, rather than relying on
+   it being set indirectly via the return value from an already installed
+   trace function. This is also required for activating the trace function on
+   the current frame, which :func:`settrace` doesn't do. Note that in order
+   for this to work, a global tracing function must have been installed
+   with :func:`settrace` in order to enable the runtime tracing machinery,
+   but it doesn't need to be the same tracing function (e.g. it could be a
+   low overhead tracing function that simply returns ``None`` to disable
+   itself immediately on each frame).
 
    For more information on code and frame objects, refer to :ref:`types`.
 
