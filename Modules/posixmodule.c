@@ -836,7 +836,6 @@ typedef struct {
     PyObject *struct_rusage;
 #endif
     PyObject *st_mode;
-    newfunc structseq_new;
 } _posixstate;
 
 static struct PyModuleDef posixmodule;
@@ -2075,31 +2074,15 @@ static PyStructSequence_Desc waitid_result_desc = {
     5
 };
 #endif
+static newfunc structseq_new;
 
 static PyObject *
-statresult_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
+statresult_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 {
-    PyObject *sequence, *kwds;
     PyStructSequence *result;
     int i;
 
-    if (!_PyArg_NoKeywords("StatResult", kwargs)) {
-        return NULL;
-    }
-
-    /* Remove the cls object from the argument list */
-    sequence = PyTuple_GetSlice(args, 1, PyTuple_Size(args));
-    if (!sequence) {
-        return NULL;
-    }
-    kwds = PyDict_New();
-    if (!kwds) {
-        Py_DECREF(sequence);
-        return NULL;
-    }
-    result = (PyStructSequence*)_posixstate_global->structseq_new(type, sequence, kwds);
-    Py_DECREF(sequence);
-    Py_DECREF(kwds);
+    result = (PyStructSequence*)structseq_new(type, args, kwds);
     if (!result)
         return NULL;
     /* If we have been initialized from a tuple,
@@ -14506,6 +14489,7 @@ INITFUNC(void)
     Py_INCREF(StatResultType);
     PyModule_AddObject(m, "stat_result", StatResultType);
     _posixstate(m)->StatResultType = StatResultType;
+    structseq_new = ((PyTypeObject *)StatResultType)->tp_new;
     ((PyTypeObject *)StatResultType)->tp_new = statresult_new;
 
     statvfs_result_desc.name = "os.statvfs_result"; /* see issue #19209 */
