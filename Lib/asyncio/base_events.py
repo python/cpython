@@ -789,7 +789,7 @@ class BaseEventLoop(events.AbstractEventLoop):
         self._write_to_self()
         return handle
 
-    def run_in_executor(self, executor, func, *args):
+    def _run_in_executor(self, executor, func, *args):
         self._check_closed()
         if self._debug:
             self._check_callback(func, 'run_in_executor')
@@ -802,6 +802,11 @@ class BaseEventLoop(events.AbstractEventLoop):
                 self._default_executor = executor
         return futures.wrap_future(
             executor.submit(func, *args), loop=self)
+
+    async def run_in_executor(self, executor, func, *args):
+        """Async function to arrange for **func** to be called in
+        the specified executor."""
+        return await self._run_in_executor(executor, func, *args)
 
     def set_default_executor(self, executor):
         if not isinstance(executor, concurrent.futures.ThreadPoolExecutor):
