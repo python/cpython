@@ -2832,6 +2832,44 @@ exit:
 
 #endif /* defined(HAVE_SCHED_H) && defined(HAVE_SCHED_SETSCHEDULER) */
 
+#if defined(HAVE_SCHED_H) && (defined(HAVE_SCHED_SETPARAM) || defined(HAVE_SCHED_SETSCHEDULER) || defined(POSIX_SPAWN_SETSCHEDULER) || defined(POSIX_SPAWN_SETSCHEDPARAM))
+
+PyDoc_STRVAR(os_sched_param__doc__,
+"sched_param(sched_priority)\n"
+"--\n"
+"\n"
+"Current has only one field: sched_priority\");\n"
+"\n"
+"  sched_priority\n"
+"    A scheduling parameter.");
+
+static PyObject *
+os_sched_param_impl(PyTypeObject *type, PyObject *sched_priority);
+
+static PyObject *
+os_sched_param(PyTypeObject *type, PyObject *args, PyObject *kwargs)
+{
+    PyObject *return_value = NULL;
+    static const char * const _keywords[] = {"sched_priority", NULL};
+    static _PyArg_Parser _parser = {NULL, _keywords, "sched_param", 0};
+    PyObject *argsbuf[1];
+    PyObject * const *fastargs;
+    Py_ssize_t nargs = PyTuple_GET_SIZE(args);
+    PyObject *sched_priority;
+
+    fastargs = _PyArg_UnpackKeywords(_PyTuple_CAST(args)->ob_item, nargs, kwargs, NULL, &_parser, 1, 1, 0, argsbuf);
+    if (!fastargs) {
+        goto exit;
+    }
+    sched_priority = fastargs[0];
+    return_value = os_sched_param_impl(type, sched_priority);
+
+exit:
+    return return_value;
+}
+
+#endif /* defined(HAVE_SCHED_H) && (defined(HAVE_SCHED_SETPARAM) || defined(HAVE_SCHED_SETSCHEDULER) || defined(POSIX_SPAWN_SETSCHEDULER) || defined(POSIX_SPAWN_SETSCHEDPARAM)) */
+
 #if defined(HAVE_SCHED_H) && defined(HAVE_SCHED_SETSCHEDULER)
 
 PyDoc_STRVAR(os_sched_setscheduler__doc__,
@@ -8693,4 +8731,4 @@ exit:
 #ifndef OS__REMOVE_DLL_DIRECTORY_METHODDEF
     #define OS__REMOVE_DLL_DIRECTORY_METHODDEF
 #endif /* !defined(OS__REMOVE_DLL_DIRECTORY_METHODDEF) */
-/*[clinic end generated code: output=b999b313f97b4875 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=fe7897441fed5402 input=a9049054013a1b77]*/
