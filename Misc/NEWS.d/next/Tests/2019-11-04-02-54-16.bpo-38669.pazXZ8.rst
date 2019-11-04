@@ -1,0 +1,1 @@
+Raise TypeError if the target is a string when patching an object.
