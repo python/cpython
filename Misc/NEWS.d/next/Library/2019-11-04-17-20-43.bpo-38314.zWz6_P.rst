@@ -1,0 +1,1 @@
+The read pipe on UNIX transports now has access to the `is_reading()` API which is noted in the documentation for asyncio protocols as being generally available on read transports.
