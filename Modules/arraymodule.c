@@ -3044,7 +3044,9 @@ array_modexec(PyObject *m)
         return -1;
     }
     Py_INCREF((PyObject *)&Arraytype);
-    if (PyModule_AddObject(m, "array", (PyObject *)&Arraytype) < 0)
+    if (PyModule_AddObject(m, "array", (PyObject *)&Arraytype) < 0) {
+        Py_DECREF((PyObject *)&Arraytype);
+        Py_CLEAR(m);
       return -1;
 
     for (descr=descriptors; descr->typecode != '\0'; descr++) {
