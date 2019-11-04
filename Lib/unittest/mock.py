@@ -1378,10 +1378,6 @@ class _patch(object):
 
     def get_original(self):
         target = self.getter()
-        if type(target) != type:
-            raise TypeError(
-                "Target %s must be a class" % (target,)
-            )
         name = self.attribute
 
         original = DEFAULT
@@ -1605,7 +1601,11 @@ def _patch_object(
     When used as a class decorator `patch.object` honours `patch.TEST_PREFIX`
     for choosing which methods to wrap.
     """
-    getter = lambda: target
+    if type(target) is str:
+        raise TypeError(f"Target {target} must be a class")
+    else:
+        getter = lambda: target
+
     return _patch(
         getter, attribute, new, spec, create,
         spec_set, autospec, new_callable, kwargs

@@ -105,6 +105,15 @@ class PatchTest(unittest.TestCase):
         self.assertEqual(Something.attribute, sentinel.Original,
                          "patch not restored")
 
+    def test_patchobject_with_string_as_target(self):
+        class Something(object):
+            def do_something(self):
+                pass
+
+        def test():
+            with patch.object('Something', 'do_something'):
+                pass
+        self.assertRaises(TypeError, test)
 
     def test_patchobject_with_none(self):
         class Something(object):
