@@ -42,7 +42,7 @@
 #define PY_OPENSSL_HAS_SHAKE 1
 #endif
 
-#ifdef NID_blake2b512
+#if defined(NID_blake2b512) && !defined(OPENSSL_NO_BLAKE2)
 #define PY_OPENSSL_HAS_BLAKE2 1
 #endif
 
