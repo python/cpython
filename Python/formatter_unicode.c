@@ -529,7 +529,7 @@ calc_number_widths(NumberFieldWidths *spec, Py_ssize_t n_prefix,
     /* min_width can go negative, that's okay. format->width == -1 means
        we don't care. */
     if (format->fill_char == '0' && format->align == '=')
-        spec->n_min_width = format->width - n_non_digit_non_padding;
+        spec->n_min_width = format->width + n_non_digit_non_padding;
     else
         spec->n_min_width = 0;
 
