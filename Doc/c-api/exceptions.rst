@@ -715,14 +715,20 @@ recursion depth automatically).
    case, a :exc:`RecursionError` is set and a nonzero value is returned.
    Otherwise, zero is returned.
 
-   *where* should be a string such as ``" in instance check"`` to be
-   concatenated to the :exc:`RecursionError` message caused by the recursion
+   *where* should be a UTF-8 encoded string such as ``" in instance check"`` to
+   be concatenated to the :exc:`RecursionError` message caused by the recursion
    depth limit.
 
-.. c:function:: void Py_LeaveRecursiveCall()
+   .. versionchanged:: 3.9
+      This function is now also available in the limited API.
+
+.. c:function:: void Py_LeaveRecursiveCall(void)
 
    Ends a :c:func:`Py_EnterRecursiveCall`.  Must be called once for each
    *successful* invocation of :c:func:`Py_EnterRecursiveCall`.
+
+   .. versionchanged:: 3.9
+      This function is now also available in the limited API.
 
 Properly implementing :c:member:`~PyTypeObject.tp_repr` for container types requires
 special recursion handling.  In addition to protecting the stack,

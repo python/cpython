@@ -85,41 +85,8 @@ PyAPI_FUNC(int) Py_MakePendingCalls(void);
 PyAPI_FUNC(void) Py_SetRecursionLimit(int);
 PyAPI_FUNC(int) Py_GetRecursionLimit(void);
 
-#define Py_EnterRecursiveCall(where)  \
-            (_Py_MakeRecCheck(PyThreadState_GET()->recursion_depth) &&  \
-             _Py_CheckRecursiveCall(where))
-#define Py_LeaveRecursiveCall()                         \
-    do{ if(_Py_MakeEndRecCheck(PyThreadState_GET()->recursion_depth))  \
-      PyThreadState_GET()->overflowed = 0;  \
-    } while(0)
-PyAPI_FUNC(int) _Py_CheckRecursiveCall(const char *where);
-
-/* Due to the macros in which it's used, _Py_CheckRecursionLimit is in
-   the stable ABI.  It should be removed therefrom when possible.
-*/
-PyAPI_DATA(int) _Py_CheckRecursionLimit;
-
-#ifdef USE_STACKCHECK
-/* With USE_STACKCHECK, trigger stack checks in _Py_CheckRecursiveCall()
-   on every 64th call to Py_EnterRecursiveCall.
-*/
-#  define _Py_MakeRecCheck(x)  \
-    (++(x) > _Py_CheckRecursionLimit || \
-     ++(PyThreadState_GET()->stackcheck_counter) > 64)
-#else
-#  define _Py_MakeRecCheck(x)  (++(x) > _Py_CheckRecursionLimit)
-#endif
-
-/* Compute the "lower-water mark" for a recursion limit. When
- * Py_LeaveRecursiveCall() is called with a recursion depth below this mark,
- * the overflowed flag is reset to 0. */
-#define _Py_RecursionLimitLowerWaterMark(limit) \
-    (((limit) > 200) \
-        ? ((limit) - 50) \
-        : (3 * ((limit) >> 2)))
-
-#define _Py_MakeEndRecCheck(x) \
-    (--(x) < _Py_RecursionLimitLowerWaterMark(_Py_CheckRecursionLimit))
+PyAPI_FUNC(int) Py_EnterRecursiveCall(const char *where);
+PyAPI_FUNC(void) Py_LeaveRecursiveCall(void);
 
 #define Py_ALLOW_RECURSION \
   do { unsigned char _old = PyThreadState_GET()->recursion_critical;\
@@ -223,6 +190,12 @@ PyAPI_FUNC(int) _PyEval_SliceIndexNotNone(PyObject *, Py_ssize_t *);
 #define FVC_ASCII     0x3
 #define FVS_MASK      0x4
 #define FVS_HAVE_SPEC 0x4
+
+#ifndef Py_LIMITED_API
+#  define Py_CPYTHON_CEVAL_H
+#  include  "cpython/ceval.h"
+#  undef Py_CPYTHON_CEVAL_H
+#endif
 
 #ifdef __cplusplus
 }

@@ -84,6 +84,9 @@
     <ClInclude Include="..\Include\cpython\abstract.h">
       <Filter>Include</Filter>
     </ClInclude>
+    <ClInclude Include="..\Include\cpython\ceval.h">
+      <Filter>Include</Filter>
+    </ClInclude>
     <ClInclude Include="..\Include\cpython\dictobject.h">
       <Filter>Include</Filter>
     </ClInclude>

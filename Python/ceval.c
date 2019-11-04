@@ -5632,3 +5632,21 @@ maybe_dtrace_line(PyFrameObject *frame,
     }
     *instr_prev = frame->f_lasti;
 }
+
+
+/* Implement Py_EnterRecursiveCall() and Py_LeaveRecursiveCall() as functions
+   for the limited API. */
+
+#undef Py_EnterRecursiveCall
+
+int Py_EnterRecursiveCall(const char *where)
+{
+    return _Py_EnterRecursiveCall_macro(where);
+}
+
+#undef Py_LeaveRecursiveCall
+
+void Py_LeaveRecursiveCall(void)
+{
+    _Py_LeaveRecursiveCall_macro();
+}
