@@ -3059,8 +3059,9 @@ array_modexec(PyObject *m)
         *p++ = (char)descr->typecode;
     }
     typecodes = PyUnicode_DecodeASCII(buffer, p - buffer, NULL);
-    assert(typecodes != NULL);
-
+    if (typecodes == NULL) {
+        return -1;
+    }
     if (PyModule_AddObject(m, "typecodes", typecodes) < 0) {
         Py_DECREF(typecodes);
         return -1;
