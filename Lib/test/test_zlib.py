@@ -48,6 +48,9 @@ class ChecksumTestCase(unittest.TestCase):
         self.assertEqual(zlib.adler32(b"", 1), 1)
         self.assertEqual(zlib.adler32(b"", 432), 432)
 
+    def test_adler32_combine(self):
+        self.assertEqual(zlib.adler32_combine(zlib.adler32(b"penguin"), zlib.adler32(b"banana"), len(b"banana")), 636028248)
+
     def test_penguins(self):
         self.assertEqual(zlib.crc32(b"penguin", 0), 0x0e5c1a120)
         self.assertEqual(zlib.crc32(b"penguin", 1), 0x43b6aa94)
