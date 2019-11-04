@@ -3041,7 +3041,8 @@ array_modexec(PyObject *m)
 
     Py_INCREF((PyObject *)&Arraytype);
     if (PyModule_AddObject(m, "ArrayType", (PyObject *)&Arraytype) < 0)
-      return -1;
+        return -1;
+    }
     Py_INCREF((PyObject *)&Arraytype);
     if (PyModule_AddObject(m, "array", (PyObject *)&Arraytype) < 0)
       return -1;
