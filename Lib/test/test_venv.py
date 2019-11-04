@@ -380,33 +380,50 @@ class BasicTest(BaseTest):
         self.assertEqual(out, "".encode())
         self.assertEqual(err, "".encode())
 
+    def test_get_default_args_errors(self):
+        bad_bool = "[venv]\nupgrade_deps = Try\n"
+        bad_format_venv_ini = "|not_venv_or_ini|\nkey = value\n"
+        bad_duplicate_keys = "[venv]\nupgrade_deps = True\nupgrade_deps = True\n"
+        no_valid_options = "[venv]\nguido_retired = True\n"
+        defaults = venv.Defaults()
 
-class CliTest(BaseTest):
-    """ Test various CLI related functions """
+        with tempfile.TemporaryDirectory() as conf_dir:
+            venv_ini_path = os.path.join(conf_dir, "venv.ini")
 
-    BAD_VENV_INI = "|not_venv_or_ini|\nkey = value\n"
-    GOOD_VENV_INI = "[venv]\nupgrade_deps = TrUe"  # case on purpose for test
+            # Test we handle no config existing
+            # - Not using homedir incase user has a venv.ini
+            self.assertEqual(venv.get_default_args(venv_ini_path), defaults)
 
-    def test_get_default_args(self):
-        # Use env_dir as it gets cleaned up
-        defaults = venv.CliDefaults()
-        venv_ini_path = os.path.join(self.env_dir, "venv.ini")
+            # Test we handle a venv section with no valid options
+            with open(venv_ini_path, "w") as vfp:
+                vfp.write(no_valid_options)
+            self.assertEqual(venv.get_default_args(venv_ini_path), defaults)
 
-        # Test we handle no config existing
-        # - Not using homedir incase user has a venv.ini
-        self.assertEqual(venv.get_default_args(venv_ini_path), defaults)
+            # Write out bad RC file + ensure we throw exception
+            for config_str, exc in (
+                (bad_bool, ValueError),
+                (bad_format_venv_ini, configparser.MissingSectionHeaderError),
+                (bad_duplicate_keys, configparser.DuplicateOptionError),
+            ):
+                with open(venv_ini_path, "w") as vfp:
+                    vfp.write(config_str)
+                with self.assertRaises(exc):
+                    venv.get_default_args(venv_ini_path)
 
-        # Write out bad RC file + ensure we throw exception
-        with open(venv_ini_path, "w") as vfp:
-            vfp.write(self.BAD_VENV_INI)
-        with self.assertRaises(configparser.MissingSectionHeaderError):
-            venv.get_default_args(venv_ini_path)
+    def test_get_default_args_success(self):
+        # Add the random key to show we ignore it
+        good_venv_ini = (
+            "[venv]\nprompt = CooperVenv\nrandom = None\nupgrade_deps = TrUe\n"
+        )
 
-        # Write out good RC file and expect upgrade_deps == True
-        expected = venv.CliDefaults(upgrade_deps=True)
-        with open(venv_ini_path, "w") as vfp:
-            vfp.write(self.GOOD_VENV_INI)
-        self.assertEqual(venv.get_default_args(venv_ini_path), expected)
+        with tempfile.TemporaryDirectory() as conf_dir:
+            venv_ini_path = os.path.join(conf_dir, "venv.ini")
+
+            # Write out good RC file and expect upgrade_deps == True
+            expected = venv.Defaults(prompt="CooperVenv", upgrade_deps=True)
+            with open(venv_ini_path, "w") as vfp:
+                vfp.write(good_venv_ini)
+            self.assertEqual(venv.get_default_args(venv_ini_path), expected)
 
 
 @requireVenvCreate

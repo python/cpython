@@ -15,13 +15,18 @@ import types
 from typing import NamedTuple, Optional
 
 CORE_VENV_DEPS = ('pip', 'setuptools')
-VENV_INI_DEFAULT = '~/.venv.ini'
-if sys.platform == "win32":
-    VENV_INI_DEFAULT = os.path.expandvars(r'%APPDATA%\Python\venv\venv.ini')
 logger = logging.getLogger(__name__)
 
+if os.name == "nt":
+    _dir = os.path.expandvars(r'%APPDATA%\Python')
+else:
+    _dir = os.path.expanduser('~/.config/python')
+os.makedirs(_dir, exist_ok=True)
+VENV_INI_DEFAULT_PATH = os.path.join(_dir, 'venv.ini')
+del _dir
 
-class CliDefaults(NamedTuple):
+
+class Defaults(NamedTuple):
     clear: bool = False
     copies: bool = True if os.name == 'nt' else False
     prompt: Optional[str] = None
@@ -425,28 +430,46 @@ def create(env_dir, system_site_packages=False, clear=False,
     builder.create(env_dir)
 
 
-def get_default_args(venv_ini_default=VENV_INI_DEFAULT):
-    """ Check if a venv.ini exists in the platform location
-        + override defaults if it exists. Use `--help` to test ini config """
-    venvini_path = os.path.expanduser(venv_ini_default)
-    if not os.path.exists(venvini_path):
-        return CliDefaults()
+def get_default_args(venv_ini_path=VENV_INI_DEFAULT_PATH):
+    """ Check if a venv.ini exists in the platform config location
+        + set defaults if conf exists. Use `--help` to test ini config """
+    bool_keys = {
+        "clear", "copies", "system_site_packages", "upgrade_deps",
+        "use_symlinks", "without_pip"
+    }
+    defaults = Defaults()
+    if not os.path.exists(venv_ini_path):
+        return defaults
 
     cp = configparser.ConfigParser()
-    cp.read(venvini_path)
+    cp.read(venv_ini_path)
     if not cp.has_section("venv"):
-        return CliDefaults()
+        return defaults
 
-    arg_overloads = {}
+    read_kwargs = {}
     for name, value in cp.items("venv"):
-        if value.lower() == "true":
-            arg_overloads[name] = True
-        elif value.lower() == "false":
-            arg_overloads[name] = False
-        else:
-            arg_overloads[name] = value
+        try:
+            getattr(defaults, name)
+        except AttributeError:
+            continue
 
-    return CliDefaults(**arg_overloads)
+        if name in bool_keys:
+            if value.lower() == "true":
+                read_kwargs[name] = True
+            elif value.lower() == "false":
+                read_kwargs[name] = False
+            else:
+                raise ValueError(
+                    f"{name} is a bool. Config can only be set to "
+                    + f"False or True only. Not '{value}'"
+                )
+        else:
+            read_kwargs[name] = value
+
+    if not read_kwargs:
+        return defaults
+
+    return Defaults(**read_kwargs)
 
 
 def main(args=None):

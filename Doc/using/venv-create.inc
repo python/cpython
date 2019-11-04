@@ -135,21 +135,30 @@ detail (typically a script or shell function will be used).
 
 The venv module supports an ini config file in the following locations:
 
-* ``$HOME/.venv.ini`` on Linux/Unix (+ Darwin/Mac OSX) platforms
-* ``%APPDATA%\Python\venv\venv.ini'`` on Windows platforms
+* ``$HOME/.config/python/venv.ini`` on Linux/Unix (+ Darwin/Mac OSX) platforms
+* ``%APPDATA%\Python\venv.ini'`` on Windows platforms
 
-to overload CLI defaults. This allows any CLI argument mentioned above
-to be overloaded by default.
+This config allows a user to alter the CLI option defaults set in the venv module.
+The config only alters the default and if specified on the command line it
+will obtain that value.
 
 * Please replace '-' chars with '_' to match cli args.
 
 Example ``venv.ini``:
 
     [venv]
-    upgrade_deps = true
+    upgrade_deps = True
 
-This would result in ``--upgrade-deps`` to defualt to True.
+This would result in ``--upgrade-deps`` to default to True.
 Please use ``--help`` to test ``venv.ini`` applied defaults
 
+If a non valid key is set in ``venv.ini`` it will be silently ignored.
+Example:
+
+    [venv]
+    guido_retired = True
+
+will result in no changes to defaults to occur
+
 .. versionadded:: 3.9
-   Add support for venv.ini to overload CLI argument defaults
+   Add support for venv.ini to supply CLI argument defaults

@@ -1,1 +1,1 @@
-Add ``venv.ini`` support to venv module to overload CLI argument defaults. Patch by Cooper Ry Lees
+Add ``venv.ini`` support to venv module to supply CLI argument defaults. Patch by Cooper Ry Lees
