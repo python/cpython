@@ -3061,7 +3061,8 @@ array_modexec(PyObject *m)
     assert(typecodes != NULL);
 
     if (PyModule_AddObject(m, "typecodes", typecodes) < 0)
-      return -1;
+        return -1;
+    }
 
     return 0;
 }
