@@ -3040,13 +3040,13 @@ array_modexec(PyObject *m)
     Py_TYPE(&PyArrayIter_Type) = &PyType_Type;
 
     Py_INCREF((PyObject *)&Arraytype);
-    if (PyModule_AddObject(m, "ArrayType", (PyObject *)&Arraytype) < 0)
+    if (PyModule_AddObject(m, "ArrayType", (PyObject *)&Arraytype) < 0) {
+        Py_DECREF((PyObject *)&Arraytype);
         return -1;
     }
     Py_INCREF((PyObject *)&Arraytype);
     if (PyModule_AddObject(m, "array", (PyObject *)&Arraytype) < 0) {
         Py_DECREF((PyObject *)&Arraytype);
-        Py_CLEAR(m);
         return -1;
     }
 
@@ -3061,7 +3061,8 @@ array_modexec(PyObject *m)
     typecodes = PyUnicode_DecodeASCII(buffer, p - buffer, NULL);
     assert(typecodes != NULL);
 
-    if (PyModule_AddObject(m, "typecodes", typecodes) < 0)
+    if (PyModule_AddObject(m, "typecodes", typecodes) < 0) {
+        Py_DECREF(typecodes);
         return -1;
     }
 
