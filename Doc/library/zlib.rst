@@ -47,6 +47,11 @@ The available exception and functions in this module are:
       platforms, use ``adler32(data) & 0xffffffff``.
 
 
+.. function:: adler32_combine(adler_1, adler_2, len_2)
+
+   Combines two Adler-32 checksums *adler_1* and *adler_2* into one. *len_2* is the length of the string used to generate *adler_2*.
+
+
 .. function:: compress(data, /, level=-1)
 
    Compresses the bytes in *data*, returning a bytes object containing compressed data.
