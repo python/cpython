@@ -2,10 +2,11 @@
 /* Generic object operations; and implementation of None */
 
 #include "Python.h"
+#include "pycore_context.h"
 #include "pycore_initconfig.h"
 #include "pycore_object.h"
+#include "pycore_pyerrors.h"
 #include "pycore_pystate.h"
-#include "pycore_context.h"
 #include "frameobject.h"
 #include "interpreteridobject.h"
 
@@ -525,31 +526,37 @@ PyObject_Repr(PyObject *v)
         return PyUnicode_FromFormat("<%s object at %p>",
                                     v->ob_type->tp_name, v);
 
+    PyThreadState *tstate = _PyThreadState_GET();
 #ifdef Py_DEBUG
     /* PyObject_Repr() must not be called with an exception set,
        because it can clear it (directly or indirectly) and so the
        caller loses its exception */
-    assert(!PyErr_Occurred());
+    assert(!_PyErr_Occurred(tstate));
 #endif
 
     /* It is possible for a type to have a tp_repr representation that loops
        infinitely. */
-    if (Py_EnterRecursiveCall(" while getting the repr of an object"))
+    if (_Py_EnterRecursiveCall(tstate,
+                               " while getting the repr of an object")) {
         return NULL;
+    }
     res = (*v->ob_type->tp_repr)(v);
-    Py_LeaveRecursiveCall();
-    if (res == NULL)
+    _Py_LeaveRecursiveCall(tstate);
+
+    if (res == NULL) {
         return NULL;
+    }
     if (!PyUnicode_Check(res)) {
-        PyErr_Format(PyExc_TypeError,
-                     "__repr__ returned non-string (type %.200s)",
-                     res->ob_type->tp_name);
+        _PyErr_Format(tstate, PyExc_TypeError,
+                      "__repr__ returned non-string (type %.200s)",
+                      res->ob_type->tp_name);
         Py_DECREF(res);
         return NULL;
     }
 #ifndef Py_DEBUG
-    if (PyUnicode_READY(res) < 0)
+    if (PyUnicode_READY(res) < 0) {
         return NULL;
+    }
 #endif
     return res;
 }
@@ -579,31 +586,36 @@ PyObject_Str(PyObject *v)
     if (Py_TYPE(v)->tp_str == NULL)
         return PyObject_Repr(v);
 
+    PyThreadState *tstate = _PyThreadState_GET();
 #ifdef Py_DEBUG
     /* PyObject_Str() must not be called with an exception set,
        because it can clear it (directly or indirectly) and so the
        caller loses its exception */
-    assert(!PyErr_Occurred());
+    assert(!_PyErr_Occurred(tstate));
 #endif
 
     /* It is possible for a type to have a tp_str representation that loops
        infinitely. */
-    if (Py_EnterRecursiveCall(" while getting the str of an object"))
+    if (_Py_EnterRecursiveCall(tstate, " while getting the str of an object")) {
         return NULL;
+    }
     res = (*Py_TYPE(v)->tp_str)(v);
-    Py_LeaveRecursiveCall();
-    if (res == NULL)
+    _Py_LeaveRecursiveCall(tstate);
+
+    if (res == NULL) {
         return NULL;
+    }
     if (!PyUnicode_Check(res)) {
-        PyErr_Format(PyExc_TypeError,
-                     "__str__ returned non-string (type %.200s)",
-                     Py_TYPE(res)->tp_name);
+        _PyErr_Format(tstate, PyExc_TypeError,
+                      "__str__ returned non-string (type %.200s)",
+                      Py_TYPE(res)->tp_name);
         Py_DECREF(res);
         return NULL;
     }
 #ifndef Py_DEBUG
-    if (PyUnicode_READY(res) < 0)
+    if (PyUnicode_READY(res) < 0) {
         return NULL;
+    }
 #endif
     assert(_PyUnicode_CheckConsistency(res, 1));
     return res;
@@ -707,7 +719,7 @@ static const char * const opstrings[] = {"<", "<=", "==", "!=", ">", ">="};
 /* Perform a rich comparison, raising TypeError when the requested comparison
    operator is not supported. */
 static PyObject *
-do_richcompare(PyObject *v, PyObject *w, int op)
+do_richcompare(PyThreadState *tstate, PyObject *v, PyObject *w, int op)
 {
     richcmpfunc f;
     PyObject *res;
@@ -744,11 +756,11 @@ do_richcompare(PyObject *v, PyObject *w, int op)
         res = (v != w) ? Py_True : Py_False;
         break;
     default:
-        PyErr_Format(PyExc_TypeError,
-                     "'%s' not supported between instances of '%.100s' and '%.100s'",
-                     opstrings[op],
-                     v->ob_type->tp_name,
-                     w->ob_type->tp_name);
+        _PyErr_Format(tstate, PyExc_TypeError,
+                      "'%s' not supported between instances of '%.100s' and '%.100s'",
+                      opstrings[op],
+                      v->ob_type->tp_name,
+                      w->ob_type->tp_name);
         return NULL;
     }
     Py_INCREF(res);
@@ -761,18 +773,20 @@ do_richcompare(PyObject *v, PyObject *w, int op)
 PyObject *
 PyObject_RichCompare(PyObject *v, PyObject *w, int op)
 {
-    PyObject *res;
+    PyThreadState *tstate = _PyThreadState_GET();
 
     assert(Py_LT <= op && op <= Py_GE);
     if (v == NULL || w == NULL) {
-        if (!PyErr_Occurred())
+        if (!_PyErr_Occurred(tstate)) {
             PyErr_BadInternalCall();
+        }
         return NULL;
     }
-    if (Py_EnterRecursiveCall(" in comparison"))
+    if (_Py_EnterRecursiveCall(tstate, " in comparison")) {
         return NULL;
-    res = do_richcompare(v, w, op);
-    Py_LeaveRecursiveCall();
+    }
+    PyObject *res = do_richcompare(tstate, v, w, op);
+    _Py_LeaveRecursiveCall(tstate);
     return res;
 }
 
