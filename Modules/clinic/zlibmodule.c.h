@@ -704,6 +704,72 @@ exit:
     return return_value;
 }
 
+PyDoc_STRVAR(zlib_adler32_combine__doc__,
+"adler32_combine($module, adler_1, adler_2, len_2, /)\n"
+"--\n"
+"\n"
+"Combine two Adler-32 Checksums into one.\n"
+"\n"
+"  adler_1\n"
+"    First checksum.\n"
+"  adler_2\n"
+"    Second checksum.\n"
+"  len_2\n"
+"    Length of the buffer used to generate the second checksum.\n"
+"\n"
+"The returned checksum is an integer.");
+
+#define ZLIB_ADLER32_COMBINE_METHODDEF    \
+    {"adler32_combine", (PyCFunction)(void(*)(void))zlib_adler32_combine, METH_FASTCALL, zlib_adler32_combine__doc__},
+
+static PyObject *
+zlib_adler32_combine_impl(PyObject *module, unsigned int adler_1,
+                          unsigned int adler_2, unsigned int len_2);
+
+static PyObject *
+zlib_adler32_combine(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
+{
+    PyObject *return_value = NULL;
+    unsigned int adler_1;
+    unsigned int adler_2;
+    unsigned int len_2;
+
+    if (!_PyArg_CheckPositional("adler32_combine", nargs, 3, 3)) {
+        goto exit;
+    }
+    if (PyFloat_Check(args[0])) {
+        PyErr_SetString(PyExc_TypeError,
+                        "integer argument expected, got float" );
+        goto exit;
+    }
+    adler_1 = (unsigned int)PyLong_AsUnsignedLongMask(args[0]);
+    if (adler_1 == (unsigned int)-1 && PyErr_Occurred()) {
+        goto exit;
+    }
+    if (PyFloat_Check(args[1])) {
+        PyErr_SetString(PyExc_TypeError,
+                        "integer argument expected, got float" );
+        goto exit;
+    }
+    adler_2 = (unsigned int)PyLong_AsUnsignedLongMask(args[1]);
+    if (adler_2 == (unsigned int)-1 && PyErr_Occurred()) {
+        goto exit;
+    }
+    if (PyFloat_Check(args[2])) {
+        PyErr_SetString(PyExc_TypeError,
+                        "integer argument expected, got float" );
+        goto exit;
+    }
+    len_2 = (unsigned int)PyLong_AsUnsignedLongMask(args[2]);
+    if (len_2 == (unsigned int)-1 && PyErr_Occurred()) {
+        goto exit;
+    }
+    return_value = zlib_adler32_combine_impl(module, adler_1, adler_2, len_2);
+
+exit:
+    return return_value;
+}
+
 PyDoc_STRVAR(zlib_crc32__doc__,
 "crc32($module, data, value=0, /)\n"
 "--\n"
@@ -785,4 +851,4 @@ exit:
 #ifndef ZLIB_DECOMPRESS___DEEPCOPY___METHODDEF
     #define ZLIB_DECOMPRESS___DEEPCOPY___METHODDEF
 #endif /* !defined(ZLIB_DECOMPRESS___DEEPCOPY___METHODDEF) */
-/*[clinic end generated code: output=faae38ef96b88b16 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=0922ad853778187c input=a9049054013a1b77]*/
