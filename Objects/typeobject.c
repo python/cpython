@@ -2,6 +2,7 @@
 
 #include "Python.h"
 #include "pycore_object.h"
+#include "pycore_pyerrors.h"
 #include "pycore_pystate.h"
 #include "frameobject.h"
 #include "structmember.h"
@@ -952,12 +953,12 @@ type_repr(PyTypeObject *type)
 static PyObject *
 type_call(PyTypeObject *type, PyObject *args, PyObject *kwds)
 {
-    PyObject *obj;
+    PyThreadState *tstate = _PyThreadState_GET();
 
     if (type->tp_new == NULL) {
-        PyErr_Format(PyExc_TypeError,
-                     "cannot create '%.100s' instances",
-                     type->tp_name);
+        _PyErr_Format(tstate, PyExc_TypeError,
+                      "cannot create '%.100s' instances",
+                      type->tp_name);
         return NULL;
     }
 
@@ -965,11 +966,11 @@ type_call(PyTypeObject *type, PyObject *args, PyObject *kwds)
     /* type_call() must not be called with an exception set,
        because it can clear it (directly or indirectly) and so the
        caller loses its exception */
-    assert(!PyErr_Occurred());
+    assert(!_PyErr_Occurred(tstate));
 #endif
 
-    obj = type->tp_new(type, args, kwds);
-    obj = _Py_CheckFunctionResult((PyObject*)type, obj, NULL);
+    PyObject *obj = type->tp_new(type, args, kwds);
+    obj = _Py_CheckFunctionResult(tstate, (PyObject*)type, obj, NULL);
     if (obj == NULL)
         return NULL;
 
@@ -990,12 +991,12 @@ type_call(PyTypeObject *type, PyObject *args, PyObject *kwds)
     if (type->tp_init != NULL) {
         int res = type->tp_init(obj, args, kwds);
         if (res < 0) {
-            assert(PyErr_Occurred());
+            assert(_PyErr_Occurred(tstate));
             Py_DECREF(obj);
             obj = NULL;
         }
         else {
-            assert(!PyErr_Occurred());
+            assert(!_PyErr_Occurred(tstate));
         }
     }
     return obj;

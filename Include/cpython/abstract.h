@@ -37,9 +37,11 @@ PyAPI_FUNC(PyObject *) _PyStack_AsDict(
    40 bytes on the stack. */
 #define _PY_FASTCALL_SMALL_STACK 5
 
-PyAPI_FUNC(PyObject *) _Py_CheckFunctionResult(PyObject *callable,
-                                               PyObject *result,
-                                               const char *where);
+PyAPI_FUNC(PyObject *) _Py_CheckFunctionResult(
+    PyThreadState *tstate,
+    PyObject *callable,
+    PyObject *result,
+    const char *where);
 
 /* === Vectorcall protocol (PEP 590) ============================= */
 
@@ -98,13 +100,15 @@ _PyObject_Vectorcall(PyObject *callable, PyObject *const *args,
 {
     assert(kwnames == NULL || PyTuple_Check(kwnames));
     assert(args != NULL || PyVectorcall_NARGS(nargsf) == 0);
+
+    PyThreadState *tstate = PyThreadState_GET();
     vectorcallfunc func = _PyVectorcall_Function(callable);
     if (func == NULL) {
         Py_ssize_t nargs = PyVectorcall_NARGS(nargsf);
         return _PyObject_MakeTpCall(callable, args, nargs, kwnames);
     }
     PyObject *res = func(callable, args, nargsf, kwnames);
-    return _Py_CheckFunctionResult(callable, res, NULL);
+    return _Py_CheckFunctionResult(tstate, callable, res, NULL);
 }
 
 /* Same as _PyObject_Vectorcall except that keyword arguments are passed as

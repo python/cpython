@@ -58,6 +58,12 @@ PyAPI_FUNC(void) _PyErr_NormalizeException(
     PyObject **val,
     PyObject **tb);
 
+PyAPI_FUNC(PyObject *) _PyErr_FormatFromCauseTstate(
+    PyThreadState *tstate,
+    PyObject *exception,
+    const char *format,
+    ...);
+
 #ifdef __cplusplus
 }
 #endif

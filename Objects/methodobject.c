@@ -454,8 +454,10 @@ cfunction_vectorcall_O(
 static PyObject *
 cfunction_call(PyObject *func, PyObject *args, PyObject *kwargs)
 {
-    assert(!PyErr_Occurred());
     assert(kwargs == NULL || PyDict_Check(kwargs));
+
+    PyThreadState *tstate = _PyThreadState_GET();
+    assert(!_PyErr_Occurred(tstate));
 
     int flags = PyCFunction_GET_FLAGS(func);
     if (!(flags & METH_VARARGS)) {
@@ -474,11 +476,12 @@ cfunction_call(PyObject *func, PyObject *args, PyObject *kwargs)
     }
     else {
         if (kwargs != NULL && PyDict_GET_SIZE(kwargs) != 0) {
-            PyErr_Format(PyExc_TypeError, "%.200s() takes no keyword arguments",
-                         ((PyCFunctionObject*)func)->m_ml->ml_name);
+            _PyErr_Format(tstate, PyExc_TypeError,
+                          "%.200s() takes no keyword arguments",
+                          ((PyCFunctionObject*)func)->m_ml->ml_name);
             return NULL;
         }
         result = meth(self, args);
     }
-    return _Py_CheckFunctionResult(func, result, NULL);
+    return _Py_CheckFunctionResult(tstate, func, result, NULL);
 }
