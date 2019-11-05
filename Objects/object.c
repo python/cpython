@@ -681,6 +681,64 @@ PyObject_Bytes(PyObject *v)
     return PyBytes_FromObject(v);
 }
 
+
+/*
+def _PyObject_FunctionStr(x):
+    try:
+        qualname = x.__qualname__
+    except AttributeError:
+        return str(x)
+    try:
+        mod = x.__module__
+        if mod is not None and mod != 'builtins':
+            return f"{x.__module__}.{qualname}()"
+    except AttributeError:
+        pass
+    return qualname
+*/
+PyObject *
+_PyObject_FunctionStr(PyObject *x)
+{
+    _Py_IDENTIFIER(__module__);
+    _Py_IDENTIFIER(__qualname__);
+    _Py_IDENTIFIER(builtins);
+    assert(!PyErr_Occurred());
+    PyObject *qualname;
+    int ret = _PyObject_LookupAttrId(x, &PyId___qualname__, &qualname);
+    if (qualname == NULL) {
+        if (ret < 0) {
+            return NULL;
+        }
+        return PyObject_Str(x);
+    }
+    PyObject *module;
+    PyObject *result = NULL;
+    ret = _PyObject_LookupAttrId(x, &PyId___module__, &module);
+    if (module != NULL && module != Py_None) {
+        PyObject *builtinsname = _PyUnicode_FromId(&PyId_builtins);
+        if (builtinsname == NULL) {
+            goto done;
+        }
+        ret = PyObject_RichCompareBool(module, builtinsname, Py_NE);
+        if (ret < 0) {
+            // error
+            goto done;
+        }
+        if (ret > 0) {
+            result = PyUnicode_FromFormat("%S.%S()", module, qualname);
+            goto done;
+        }
+    }
+    else if (ret < 0) {
+        goto done;
+    }
+    result = PyUnicode_FromFormat("%S()", qualname);
+done:
+    Py_DECREF(qualname);
+    Py_XDECREF(module);
+    return result;
+}
+
 /* For Python 3.0.1 and later, the old three-way comparison has been
    completely removed in favour of rich comparisons.  PyObject_Compare() and
    PyObject_Cmp() are gone, and the builtin cmp function no longer exists.
