@@ -3814,7 +3814,7 @@ exit_eval_frame:
     f->f_executing = 0;
     tstate->frame = f->f_back;
 
-    return _Py_CheckFunctionResult(NULL, retval, "PyEval_EvalFrameEx");
+    return _Py_CheckFunctionResult(tstate, NULL, retval, "PyEval_EvalFrameEx");
 }
 
 static void

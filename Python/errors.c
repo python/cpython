@@ -521,6 +521,21 @@ _PyErr_FormatVFromCause(PyThreadState *tstate, PyObject *exception,
 }
 
 PyObject *
+_PyErr_FormatFromCauseTstate(PyThreadState *tstate, PyObject *exception,
+                             const char *format, ...)
+{
+    va_list vargs;
+#ifdef HAVE_STDARG_PROTOTYPES
+    va_start(vargs, format);
+#else
+    va_start(vargs);
+#endif
+    _PyErr_FormatVFromCause(tstate, exception, format, vargs);
+    va_end(vargs);
+    return NULL;
+}
+
+PyObject *
 _PyErr_FormatFromCause(PyObject *exception, const char *format, ...)
 {
     PyThreadState *tstate = _PyThreadState_GET();
