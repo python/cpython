@@ -12,12 +12,6 @@
 #include "structmember.h"
 #include "pycore_accu.h"
 
-#ifdef __GNUC__
-#define UNUSED __attribute__((__unused__))
-#else
-#define UNUSED
-#endif
-
 #define PyScanner_Check(op) PyObject_TypeCheck(op, &PyScannerType)
 #define PyScanner_CheckExact(op) (Py_TYPE(op) == &PyScannerType)
 #define PyEncoder_Check(op) PyObject_TypeCheck(op, &PyEncoderType)
@@ -78,7 +72,7 @@ static PyMemberDef encoder_members[] = {
 static PyObject *
 ascii_escape_unicode(PyObject *pystr);
 static PyObject *
-py_encode_basestring_ascii(PyObject* self UNUSED, PyObject *pystr);
+py_encode_basestring_ascii(PyObject* Py_UNUSED(self), PyObject *pystr);
 void init_json(void);
 static PyObject *
 scan_once_unicode(PyScannerObject *s, PyObject *pystr, Py_ssize_t idx, Py_ssize_t *next_idx_ptr);
@@ -562,7 +556,7 @@ PyDoc_STRVAR(pydoc_scanstring,
 );
 
 static PyObject *
-py_scanstring(PyObject* self UNUSED, PyObject *args)
+py_scanstring(PyObject* Py_UNUSED(self), PyObject *args)
 {
     PyObject *pystr;
     PyObject *rval;
@@ -591,7 +585,7 @@ PyDoc_STRVAR(pydoc_encode_basestring_ascii,
 );
 
 static PyObject *
-py_encode_basestring_ascii(PyObject* self UNUSED, PyObject *pystr)
+py_encode_basestring_ascii(PyObject* Py_UNUSED(self), PyObject *pystr)
 {
     PyObject *rval;
     /* Return an ASCII-only JSON representation of a Python string */
@@ -616,7 +610,7 @@ PyDoc_STRVAR(pydoc_encode_basestring,
 );
 
 static PyObject *
-py_encode_basestring(PyObject* self UNUSED, PyObject *pystr)
+py_encode_basestring(PyObject* Py_UNUSED(self), PyObject *pystr)
 {
     PyObject *rval;
     /* Return a JSON representation of a Python string */
