@@ -1602,9 +1602,9 @@ def _patch_object(
     for choosing which methods to wrap.
     """
     if type(target) is str:
-        raise TypeError(f"Target {target} must be a class")
-    else:
-        getter = lambda: target
+        raise TypeError(f"{target!r} must be the actual object to be patched, "
+                        f"not a str")
+    getter = lambda: target
 
     return _patch(
         getter, attribute, new, spec, create,
