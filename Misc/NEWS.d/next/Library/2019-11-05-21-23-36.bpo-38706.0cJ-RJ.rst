@@ -1,0 +1,1 @@
+Change error message in exception raised by assertTrue and assertFalse from 'False is not true' and 'True is not false'  to 'False is not True' and 'True is not False' respectively.
