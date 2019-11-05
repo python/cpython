@@ -6240,16 +6240,19 @@ os_sched_getscheduler_impl(PyObject *module, pid_t pid)
 #if defined(HAVE_SCHED_SETPARAM) || defined(HAVE_SCHED_SETSCHEDULER) || defined(POSIX_SPAWN_SETSCHEDULER) || defined(POSIX_SPAWN_SETSCHEDPARAM)
 /*[clinic input]
 class os.sched_param "PyObject *" "SchedParamType"
+
 @classmethod
 os.sched_param.__new__
+
     sched_priority: object
         A scheduling parameter.
-Current has only one field: sched_priority");
+
+Currently has only one field: sched_priority
 [clinic start generated code]*/
 
 static PyObject *
 os_sched_param_impl(PyTypeObject *type, PyObject *sched_priority)
-/*[clinic end generated code: output=48f4067d60f48c13 input=723cdcfa7788714f]*/
+/*[clinic end generated code: output=48f4067d60f48c13 input=eb42909a2c0e3e6c]*/
 {
     PyObject *res;
 
