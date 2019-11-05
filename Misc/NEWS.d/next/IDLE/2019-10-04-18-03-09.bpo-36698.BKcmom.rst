@@ -1,0 +1,3 @@
+IDLE no longer fails when write non-encodable characters to stderr.  It now
+escapes them with a backslash, as the regular Python interpreter. Added the
+``errors`` field to the standard streams.

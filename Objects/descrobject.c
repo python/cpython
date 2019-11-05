@@ -264,9 +264,9 @@ method_check_args(PyObject *func, PyObject *const *args, Py_ssize_t nargs, PyObj
 typedef void (*funcptr)(void);
 
 static inline funcptr
-method_enter_call(PyObject *func)
+method_enter_call(PyThreadState *tstate, PyObject *func)
 {
-    if (Py_EnterRecursiveCall(" while calling a Python object")) {
+    if (_Py_EnterRecursiveCall(tstate, " while calling a Python object")) {
         return NULL;
     }
     return (funcptr)((PyMethodDescrObject *)func)->d_method->ml_meth;
@@ -277,6 +277,7 @@ static PyObject *
 method_vectorcall_VARARGS(
     PyObject *func, PyObject *const *args, size_t nargsf, PyObject *kwnames)
 {
+    PyThreadState *tstate = _PyThreadState_GET();
     Py_ssize_t nargs = PyVectorcall_NARGS(nargsf);
     if (method_check_args(func, args, nargs, kwnames)) {
         return NULL;
@@ -285,14 +286,14 @@ method_vectorcall_VARARGS(
     if (argstuple == NULL) {
         return NULL;
     }
-    PyCFunction meth = (PyCFunction)method_enter_call(func);
+    PyCFunction meth = (PyCFunction)method_enter_call(tstate, func);
     if (meth == NULL) {
         Py_DECREF(argstuple);
         return NULL;
     }
     PyObject *result = meth(args[0], argstuple);
     Py_DECREF(argstuple);
-    Py_LeaveRecursiveCall();
+    _Py_LeaveRecursiveCall(tstate);
     return result;
 }
 
@@ -300,6 +301,7 @@ static PyObject *
 method_vectorcall_VARARGS_KEYWORDS(
     PyObject *func, PyObject *const *args, size_t nargsf, PyObject *kwnames)
 {
+    PyThreadState *tstate = _PyThreadState_GET();
     Py_ssize_t nargs = PyVectorcall_NARGS(nargsf);
     if (method_check_args(func, args, nargs, NULL)) {
         return NULL;
@@ -318,12 +320,12 @@ method_vectorcall_VARARGS_KEYWORDS(
         }
     }
     PyCFunctionWithKeywords meth = (PyCFunctionWithKeywords)
-                                   method_enter_call(func);
+                                   method_enter_call(tstate, func);
     if (meth == NULL) {
         goto exit;
     }
     result = meth(args[0], argstuple, kwdict);
-    Py_LeaveRecursiveCall();
+    _Py_LeaveRecursiveCall(tstate);
 exit:
     Py_DECREF(argstuple);
     Py_XDECREF(kwdict);
@@ -334,17 +336,18 @@ static PyObject *
 method_vectorcall_FASTCALL(
     PyObject *func, PyObject *const *args, size_t nargsf, PyObject *kwnames)
 {
+    PyThreadState *tstate = _PyThreadState_GET();
     Py_ssize_t nargs = PyVectorcall_NARGS(nargsf);
     if (method_check_args(func, args, nargs, kwnames)) {
         return NULL;
     }
     _PyCFunctionFast meth = (_PyCFunctionFast)
-                            method_enter_call(func);
+                            method_enter_call(tstate, func);
     if (meth == NULL) {
         return NULL;
     }
     PyObject *result = meth(args[0], args+1, nargs-1);
-    Py_LeaveRecursiveCall();
+    _Py_LeaveRecursiveCall(tstate);
     return result;
 }
 
@@ -352,17 +355,18 @@ static PyObject *
 method_vectorcall_FASTCALL_KEYWORDS(
     PyObject *func, PyObject *const *args, size_t nargsf, PyObject *kwnames)
 {
+    PyThreadState *tstate = _PyThreadState_GET();
     Py_ssize_t nargs = PyVectorcall_NARGS(nargsf);
     if (method_check_args(func, args, nargs, NULL)) {
         return NULL;
     }
     _PyCFunctionFastWithKeywords meth = (_PyCFunctionFastWithKeywords)
-                                        method_enter_call(func);
+                                        method_enter_call(tstate, func);
     if (meth == NULL) {
         return NULL;
     }
     PyObject *result = meth(args[0], args+1, nargs-1, kwnames);
-    Py_LeaveRecursiveCall();
+    _Py_LeaveRecursiveCall(tstate);
     return result;
 }
 
@@ -370,6 +374,7 @@ static PyObject *
 method_vectorcall_NOARGS(
     PyObject *func, PyObject *const *args, size_t nargsf, PyObject *kwnames)
 {
+    PyThreadState *tstate = _PyThreadState_GET();
     Py_ssize_t nargs = PyVectorcall_NARGS(nargsf);
     if (method_check_args(func, args, nargs, kwnames)) {
         return NULL;
@@ -383,12 +388,12 @@ method_vectorcall_NOARGS(
         }
         return NULL;
     }
-    PyCFunction meth = (PyCFunction)method_enter_call(func);
+    PyCFunction meth = (PyCFunction)method_enter_call(tstate, func);
     if (meth == NULL) {
         return NULL;
     }
     PyObject *result = meth(args[0], NULL);
-    Py_LeaveRecursiveCall();
+    _Py_LeaveRecursiveCall(tstate);
     return result;
 }
 
@@ -396,6 +401,7 @@ static PyObject *
 method_vectorcall_O(
     PyObject *func, PyObject *const *args, size_t nargsf, PyObject *kwnames)
 {
+    PyThreadState *tstate = _PyThreadState_GET();
     Py_ssize_t nargs = PyVectorcall_NARGS(nargsf);
     if (method_check_args(func, args, nargs, kwnames)) {
         return NULL;
@@ -410,12 +416,12 @@ method_vectorcall_O(
         }
         return NULL;
     }
-    PyCFunction meth = (PyCFunction)method_enter_call(func);
+    PyCFunction meth = (PyCFunction)method_enter_call(tstate, func);
     if (meth == NULL) {
         return NULL;
     }
     PyObject *result = meth(args[0], args[1]);
-    Py_LeaveRecursiveCall();
+    _Py_LeaveRecursiveCall(tstate);
     return result;
 }
 
@@ -1617,29 +1623,25 @@ property_init_impl(propertyobject *self, PyObject *fget, PyObject *fset,
     /* if no docstring given and the getter has one, use that one */
     if ((doc == NULL || doc == Py_None) && fget != NULL) {
         _Py_IDENTIFIER(__doc__);
-        PyObject *get_doc = _PyObject_GetAttrId(fget, &PyId___doc__);
-        if (get_doc) {
-            if (Py_TYPE(self) == &PyProperty_Type) {
-                Py_XSETREF(self->prop_doc, get_doc);
-            }
-            else {
-                /* If this is a property subclass, put __doc__
-                in dict of the subclass instance instead,
-                otherwise it gets shadowed by __doc__ in the
-                class's dict. */
-                int err = _PyObject_SetAttrId((PyObject *)self, &PyId___doc__, get_doc);
-                Py_DECREF(get_doc);
-                if (err < 0)
-                    return -1;
-            }
-            self->getter_doc = 1;
+        PyObject *get_doc;
+        int rc = _PyObject_LookupAttrId(fget, &PyId___doc__, &get_doc);
+        if (rc <= 0) {
+            return rc;
         }
-        else if (PyErr_ExceptionMatches(PyExc_Exception)) {
-            PyErr_Clear();
+        if (Py_TYPE(self) == &PyProperty_Type) {
+            Py_XSETREF(self->prop_doc, get_doc);
         }
         else {
-            return -1;
+            /* If this is a property subclass, put __doc__
+               in dict of the subclass instance instead,
+               otherwise it gets shadowed by __doc__ in the
+               class's dict. */
+            int err = _PyObject_SetAttrId((PyObject *)self, &PyId___doc__, get_doc);
+            Py_DECREF(get_doc);
+            if (err < 0)
+                return -1;
         }
+        self->getter_doc = 1;
     }
 
     return 0;

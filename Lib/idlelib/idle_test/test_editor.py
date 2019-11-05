@@ -30,18 +30,6 @@ class EditorWindowTest(unittest.TestCase):
         e._close()
 
 
-class EditorFunctionTest(unittest.TestCase):
-
-    def test_filename_to_unicode(self):
-        func = Editor._filename_to_unicode
-        class dummy():
-            filesystemencoding = 'utf-8'
-        pairs = (('abc', 'abc'), ('a\U00011111c', 'a\ufffdc'),
-                 (b'abc', 'abc'), (b'a\xf0\x91\x84\x91c', 'a\ufffdc'))
-        for inp, out in pairs:
-            self.assertEqual(func(dummy, inp), out)
-
-
 class TestGetLineIndent(unittest.TestCase):
     def test_empty_lines(self):
         for tabwidth in [1, 2, 4, 6, 8]:

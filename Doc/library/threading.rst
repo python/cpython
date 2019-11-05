@@ -62,8 +62,8 @@ This module defines the following functions:
    should be cleared explicitly to break the reference cycle when the
    exception is no longer needed.
 
-   Storing *object* using a custom hook can resurrect it if it is set to an
-   object which is being finalized. Avoid storing *object* after the custom
+   Storing *thread* using a custom hook can resurrect it if it is set to an
+   object which is being finalized. Avoid storing *thread* after the custom
    hook completes to avoid resurrecting objects.
 
    .. seealso::
@@ -802,11 +802,14 @@ Semaphores also support the :ref:`context management protocol <with-locks>`.
       .. versionchanged:: 3.2
          The *timeout* parameter is new.
 
-   .. method:: release()
+   .. method:: release(n=1)
 
-      Release a semaphore, incrementing the internal counter by one.  When it
-      was zero on entry and another thread is waiting for it to become larger
-      than zero again, wake up that thread.
+      Release a semaphore, incrementing the internal counter by *n*.  When it
+      was zero on entry and other threads are waiting for it to become larger
+      than zero again, wake up *n* of those threads.
+
+      .. versionchanged:: 3.9
+         Added the *n* parameter to release multiple waiting threads at once.
 
 
 .. class:: BoundedSemaphore(value=1)

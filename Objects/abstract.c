@@ -1,6 +1,7 @@
 /* Abstract Object Interface (many thanks to Jim Fulton) */
 
 #include "Python.h"
+#include "pycore_pyerrors.h"
 #include "pycore_pystate.h"
 #include <ctype.h>
 #include "structmember.h" /* we need the offsetof() macro from there */
@@ -493,6 +494,48 @@ _Py_add_one_to_index_C(int nd, Py_ssize_t *index, const Py_ssize_t *shape)
             index[k] = 0;
         }
     }
+}
+
+Py_ssize_t
+PyBuffer_SizeFromFormat(const char *format)
+{
+    PyObject *structmodule = NULL;
+    PyObject *calcsize = NULL;
+    PyObject *res = NULL;
+    PyObject *fmt = NULL;
+    Py_ssize_t itemsize = -1;
+
+    structmodule = PyImport_ImportModule("struct");
+    if (structmodule == NULL) {
+        return itemsize;
+    }
+
+    calcsize = PyObject_GetAttrString(structmodule, "calcsize");
+    if (calcsize == NULL) {
+        goto done;
+    }
+
+    fmt = PyUnicode_FromString(format);
+    if (fmt == NULL) {
+        goto done;
+    }
+
+    res = PyObject_CallFunctionObjArgs(calcsize, fmt, NULL);
+    if (res == NULL) {
+        goto done;
+    }
+
+    itemsize = PyLong_AsSsize_t(res);
+    if (itemsize < 0) {
+        goto done;
+    }
+
+done:
+    Py_DECREF(structmodule);
+    Py_XDECREF(calcsize);
+    Py_XDECREF(fmt);
+    Py_XDECREF(res);
+    return itemsize;
 }
 
 int
@@ -2417,8 +2460,8 @@ recursive_isinstance(PyObject *inst, PyObject *cls)
     return retval;
 }
 
-int
-PyObject_IsInstance(PyObject *inst, PyObject *cls)
+static int
+object_isinstance(PyThreadState *tstate, PyObject *inst, PyObject *cls)
 {
     _Py_IDENTIFIER(__instancecheck__);
     PyObject *checker;
@@ -2433,34 +2476,31 @@ PyObject_IsInstance(PyObject *inst, PyObject *cls)
     }
 
     if (PyTuple_Check(cls)) {
-        Py_ssize_t i;
-        Py_ssize_t n;
-        int r = 0;
-
-        if (Py_EnterRecursiveCall(" in __instancecheck__"))
+        if (_Py_EnterRecursiveCall(tstate, " in __instancecheck__")) {
             return -1;
-        n = PyTuple_GET_SIZE(cls);
-        for (i = 0; i < n; ++i) {
+        }
+        Py_ssize_t n = PyTuple_GET_SIZE(cls);
+        int r = 0;
+        for (Py_ssize_t i = 0; i < n; ++i) {
             PyObject *item = PyTuple_GET_ITEM(cls, i);
-            r = PyObject_IsInstance(inst, item);
+            r = object_isinstance(tstate, inst, item);
             if (r != 0)
                 /* either found it, or got an error */
                 break;
         }
-        Py_LeaveRecursiveCall();
+        _Py_LeaveRecursiveCall(tstate);
         return r;
     }
 
     checker = _PyObject_LookupSpecial(cls, &PyId___instancecheck__);
     if (checker != NULL) {
-        PyObject *res;
         int ok = -1;
-        if (Py_EnterRecursiveCall(" in __instancecheck__")) {
+        if (_Py_EnterRecursiveCall(tstate, " in __instancecheck__")) {
             Py_DECREF(checker);
             return ok;
         }
-        res = _PyObject_CallOneArg(checker, inst);
-        Py_LeaveRecursiveCall();
+        PyObject *res = _PyObject_CallOneArg(checker, inst);
+        _Py_LeaveRecursiveCall(tstate);
         Py_DECREF(checker);
         if (res != NULL) {
             ok = PyObject_IsTrue(res);
@@ -2468,11 +2508,22 @@ PyObject_IsInstance(PyObject *inst, PyObject *cls)
         }
         return ok;
     }
-    else if (PyErr_Occurred())
+    else if (_PyErr_Occurred(tstate)) {
         return -1;
+    }
+
     /* Probably never reached anymore. */
     return recursive_isinstance(inst, cls);
 }
+
+
+int
+PyObject_IsInstance(PyObject *inst, PyObject *cls)
+{
+    PyThreadState *tstate = _PyThreadState_GET();
+    return object_isinstance(tstate, inst, cls);
+}
+
 
 static  int
 recursive_issubclass(PyObject *derived, PyObject *cls)
@@ -2492,8 +2543,8 @@ recursive_issubclass(PyObject *derived, PyObject *cls)
     return abstract_issubclass(derived, cls);
 }
 
-int
-PyObject_IsSubclass(PyObject *derived, PyObject *cls)
+static int
+object_issubclass(PyThreadState *tstate, PyObject *derived, PyObject *cls)
 {
     _Py_IDENTIFIER(__subclasscheck__);
     PyObject *checker;
@@ -2507,34 +2558,32 @@ PyObject_IsSubclass(PyObject *derived, PyObject *cls)
     }
 
     if (PyTuple_Check(cls)) {
-        Py_ssize_t i;
-        Py_ssize_t n;
-        int r = 0;
 
-        if (Py_EnterRecursiveCall(" in __subclasscheck__"))
+        if (_Py_EnterRecursiveCall(tstate, " in __subclasscheck__")) {
             return -1;
-        n = PyTuple_GET_SIZE(cls);
-        for (i = 0; i < n; ++i) {
+        }
+        Py_ssize_t n = PyTuple_GET_SIZE(cls);
+        int r = 0;
+        for (Py_ssize_t i = 0; i < n; ++i) {
             PyObject *item = PyTuple_GET_ITEM(cls, i);
-            r = PyObject_IsSubclass(derived, item);
+            r = object_issubclass(tstate, derived, item);
             if (r != 0)
                 /* either found it, or got an error */
                 break;
         }
-        Py_LeaveRecursiveCall();
+        _Py_LeaveRecursiveCall(tstate);
         return r;
     }
 
     checker = _PyObject_LookupSpecial(cls, &PyId___subclasscheck__);
     if (checker != NULL) {
-        PyObject *res;
         int ok = -1;
-        if (Py_EnterRecursiveCall(" in __subclasscheck__")) {
+        if (_Py_EnterRecursiveCall(tstate, " in __subclasscheck__")) {
             Py_DECREF(checker);
             return ok;
         }
-        res = _PyObject_CallOneArg(checker, derived);
-        Py_LeaveRecursiveCall();
+        PyObject *res = _PyObject_CallOneArg(checker, derived);
+        _Py_LeaveRecursiveCall(tstate);
         Py_DECREF(checker);
         if (res != NULL) {
             ok = PyObject_IsTrue(res);
@@ -2542,11 +2591,22 @@ PyObject_IsSubclass(PyObject *derived, PyObject *cls)
         }
         return ok;
     }
-    else if (PyErr_Occurred())
+    else if (_PyErr_Occurred(tstate)) {
         return -1;
+    }
+
     /* Probably never reached anymore. */
     return recursive_issubclass(derived, cls);
 }
+
+
+int
+PyObject_IsSubclass(PyObject *derived, PyObject *cls)
+{
+    PyThreadState *tstate = _PyThreadState_GET();
+    return object_issubclass(tstate, derived, cls);
+}
+
 
 int
 _PyObject_RealIsInstance(PyObject *inst, PyObject *cls)

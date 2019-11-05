@@ -69,10 +69,12 @@ standard headers) have one of the prefixes ``Py`` or ``_Py``.  Names beginning
 with ``_Py`` are for internal use by the Python implementation and should not be
 used by extension writers. Structure member names do not have a reserved prefix.
 
-**Important:** user code should never define names that begin with ``Py`` or
-``_Py``.  This confuses the reader, and jeopardizes the portability of the user
-code to future Python versions, which may define additional names beginning with
-one of these prefixes.
+.. note::
+
+   User code should never define names that begin with ``Py`` or ``_Py``. This
+   confuses the reader, and jeopardizes the portability of the user code to
+   future Python versions, which may define additional names beginning with one
+   of these prefixes.
 
 The header files are typically installed with Python.  On Unix, these  are
 located in the directories :file:`{prefix}/include/pythonversion/` and
@@ -90,9 +92,9 @@ multi-platform builds since the platform independent headers under
 :envvar:`prefix` include the platform specific headers from
 :envvar:`exec_prefix`.
 
-C++ users should note that though the API is defined entirely using C, the
-header files do properly declare the entry points to be ``extern "C"``, so there
-is no need to do anything special to use the API from C++.
+C++ users should note that although the API is defined entirely using C, the
+header files properly declare the entry points to be ``extern "C"``. As a result,
+there is no need to do anything special to use the API from C++.
 
 
 Useful macros
@@ -150,7 +152,7 @@ complete listing.
 
 .. c:macro:: Py_GETENV(s)
 
-   Like ``getenv(s)``, but returns *NULL* if :option:`-E` was passed on the
+   Like ``getenv(s)``, but returns ``NULL`` if :option:`-E` was passed on the
    command line (i.e. if ``Py_IgnoreEnvironmentFlag`` is set).
 
 .. c:macro:: Py_UNUSED(arg)
@@ -473,7 +475,7 @@ functions in the Python/C API can raise exceptions, unless an explicit claim is
 made otherwise in a function's documentation.  In general, when a function
 encounters an error, it sets an exception, discards any object references that
 it owns, and returns an error indicator.  If not documented otherwise, this
-indicator is either *NULL* or ``-1``, depending on the function's return type.
+indicator is either ``NULL`` or ``-1``, depending on the function's return type.
 A few functions return a Boolean true/false result, with false indicating an
 error.  Very few functions return no explicit error indicator or have an
 ambiguous return value, and require explicit testing for errors with
@@ -488,13 +490,13 @@ using global storage in an unthreaded application).  A  thread can be in one of
 two states: an exception has occurred, or not. The function
 :c:func:`PyErr_Occurred` can be used to check for this: it returns a borrowed
 reference to the exception type object when an exception has occurred, and
-*NULL* otherwise.  There are a number of functions to set the exception state:
+``NULL`` otherwise.  There are a number of functions to set the exception state:
 :c:func:`PyErr_SetString` is the most common (though not the most general)
 function to set the exception state, and :c:func:`PyErr_Clear` clears the
 exception state.
 
 The full exception state consists of three objects (all of which can  be
-*NULL*): the exception type, the corresponding exception  value, and the
+``NULL``): the exception type, the corresponding exception  value, and the
 traceback.  These have the same meanings as the Python result of
 ``sys.exc_info()``; however, they are not the same: the Python objects represent
 the last exception being handled by a Python  :keyword:`try` ...
@@ -595,10 +597,10 @@ Here is the corresponding C code, in all its glory::
 This example represents an endorsed use of the ``goto`` statement  in C!
 It illustrates the use of :c:func:`PyErr_ExceptionMatches` and
 :c:func:`PyErr_Clear` to handle specific exceptions, and the use of
-:c:func:`Py_XDECREF` to dispose of owned references that may be *NULL* (note the
+:c:func:`Py_XDECREF` to dispose of owned references that may be ``NULL`` (note the
 ``'X'`` in the name; :c:func:`Py_DECREF` would crash when confronted with a
-*NULL* reference).  It is important that the variables used to hold owned
-references are initialized to *NULL* for this to work; likewise, the proposed
+``NULL`` reference).  It is important that the variables used to hold owned
+references are initialized to ``NULL`` for this to work; likewise, the proposed
 return value is initialized to ``-1`` (failure) and only set to success after
 the final call made is successful.
 

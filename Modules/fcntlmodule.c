@@ -495,11 +495,23 @@ all_ins(PyObject* m)
 #ifdef F_SETLKW
     if (PyModule_AddIntMacro(m, F_SETLKW)) return -1;
 #endif
+#ifdef F_OFD_GETLK
+    if (PyModule_AddIntMacro(m, F_OFD_GETLK)) return -1;
+#endif
+#ifdef F_OFD_SETLK
+    if (PyModule_AddIntMacro(m, F_OFD_SETLK)) return -1;
+#endif
+#ifdef F_OFD_SETLKW
+    if (PyModule_AddIntMacro(m, F_OFD_SETLKW)) return -1;
+#endif
 #ifdef F_GETOWN
     if (PyModule_AddIntMacro(m, F_GETOWN)) return -1;
 #endif
 #ifdef F_SETOWN
     if (PyModule_AddIntMacro(m, F_SETOWN)) return -1;
+#endif
+#ifdef F_GETPATH
+    if (PyModule_AddIntMacro(m, F_GETPATH)) return -1;
 #endif
 #ifdef F_GETSIG
     if (PyModule_AddIntMacro(m, F_GETSIG)) return -1;

@@ -1102,6 +1102,8 @@ class TestCase(unittest.TestCase):
 
         # Make sure the repr is correct.
         self.assertEqual(repr(InitVar[int]), 'dataclasses.InitVar[int]')
+        self.assertEqual(repr(InitVar[List[int]]),
+                         'dataclasses.InitVar[typing.List[int]]')
 
     def test_init_var_inheritance(self):
         # Note that this deliberately tests that a dataclass need not
@@ -1299,6 +1301,32 @@ class TestCase(unittest.TestCase):
         self.assertFalse(is_dataclass(c.x))
         self.assertTrue(is_dataclass(d.d))
         self.assertFalse(is_dataclass(d.e))
+
+    def test_is_dataclass_when_getattr_always_returns(self):
+        # See bpo-37868.
+        class A:
+            def __getattr__(self, key):
+                return 0
+        self.assertFalse(is_dataclass(A))
+        a = A()
+
+        # Also test for an instance attribute.
+        class B:
+            pass
+        b = B()
+        b.__dataclass_fields__ = []
+
+        for obj in a, b:
+            with self.subTest(obj=obj):
+                self.assertFalse(is_dataclass(obj))
+
+                # Indirect tests for _is_dataclass_instance().
+                with self.assertRaisesRegex(TypeError, 'should be called on dataclass instances'):
+                    asdict(obj)
+                with self.assertRaisesRegex(TypeError, 'should be called on dataclass instances'):
+                    astuple(obj)
+                with self.assertRaisesRegex(TypeError, 'should be called on dataclass instances'):
+                    replace(obj, x=0)
 
     def test_helper_fields_with_class_instance(self):
         # Check that we can call fields() on either a class or instance,

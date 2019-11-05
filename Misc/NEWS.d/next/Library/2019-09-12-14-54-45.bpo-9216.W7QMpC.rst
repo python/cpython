@@ -1,0 +1,2 @@
+hashlib constructors now support usedforsecurity flag to signal that a
+hashing algorithm is not used in a security context.
