@@ -5351,12 +5351,17 @@ static int
 check_args_iterable(PyThreadState *tstate, PyObject *func, PyObject *args)
 {
     if (args->ob_type->tp_iter == NULL && !PySequence_Check(args)) {
-        _PyErr_Format(tstate, PyExc_TypeError,
-                      "%.200s%.200s argument after * "
-                      "must be an iterable, not %.200s",
-                      PyEval_GetFuncName(func),
-                      PyEval_GetFuncDesc(func),
-                      args->ob_type->tp_name);
+        /* check_args_iterable() may be called with a live exception:
+         * clear it to prevent calling _PyObject_FunctionStr() with an
+         * exception set. */
+        PyErr_Clear();
+        PyObject *funcstr = _PyObject_FunctionStr(func);
+        if (funcstr != NULL) {
+            _PyErr_Format(tstate, PyExc_TypeError,
+                          "%U argument after * must be an iterable, not %.200s",
+                          funcstr, Py_TYPE(args)->tp_name);
+            Py_DECREF(funcstr);
+        }
         return -1;
     }
     return 0;
@@ -5372,24 +5377,30 @@ format_kwargs_error(PyThreadState *tstate, PyObject *func, PyObject *kwargs)
      * is not a mapping.
      */
     if (_PyErr_ExceptionMatches(tstate, PyExc_AttributeError)) {
-        _PyErr_Format(tstate, PyExc_TypeError,
-                      "%.200s%.200s argument after ** "
-                      "must be a mapping, not %.200s",
-                      PyEval_GetFuncName(func),
-                      PyEval_GetFuncDesc(func),
-                      kwargs->ob_type->tp_name);
+        PyErr_Clear();
+        PyObject *funcstr = _PyObject_FunctionStr(func);
+        if (funcstr != NULL) {
+            _PyErr_Format(
+                tstate, PyExc_TypeError,
+                "%U argument after ** must be a mapping, not %.200s",
+                funcstr, Py_TYPE(kwargs)->tp_name);
+            Py_DECREF(funcstr);
+        }
     }
     else if (_PyErr_ExceptionMatches(tstate, PyExc_KeyError)) {
         PyObject *exc, *val, *tb;
         _PyErr_Fetch(tstate, &exc, &val, &tb);
         if (val && PyTuple_Check(val) && PyTuple_GET_SIZE(val) == 1) {
-            PyObject *key = PyTuple_GET_ITEM(val, 0);
-            _PyErr_Format(tstate, PyExc_TypeError,
-                          "%.200s%.200s got multiple "
-                          "values for keyword argument '%S'",
-                          PyEval_GetFuncName(func),
-                          PyEval_GetFuncDesc(func),
-                          key);
+            PyErr_Clear();
+            PyObject *funcstr = _PyObject_FunctionStr(func);
+            if (funcstr != NULL) {
+                PyObject *key = PyTuple_GET_ITEM(val, 0);
+                _PyErr_Format(
+                    tstate, PyExc_TypeError,
+                    "%U got multiple values for keyword argument '%S'",
+                    funcstr, key);
+                Py_DECREF(funcstr);
+            }
             Py_XDECREF(exc);
             Py_XDECREF(val);
             Py_XDECREF(tb);
