@@ -196,6 +196,7 @@ Object Protocol
       This function now includes a debug assertion to help ensure that it
       does not silently discard an active exception.
 
+
 .. c:function:: PyObject* PyObject_Bytes(PyObject *o)
 
    .. index:: builtin: bytes
