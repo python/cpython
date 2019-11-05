@@ -23,11 +23,10 @@ is an installation option, other places are possible; check with your local
 Python guru or system administrator.  (E.g., :file:`/usr/local/python` is a
 popular alternative location.)
 
-On Windows machines where you have installed Python from the
-:ref:`Microsoft Store <windows-store>`, the :file:`python3.8` command will be
-available. If you have the :ref:`py.exe launcher <launcher>` installed, you can
-use the :file:`py` command. See :ref:`setting-envvars` for other ways to launch
-Python.
+On Windows machines where you have installed Python from the :ref:`Microsoft Store
+<windows-store>`, the :file:`python3.8` command will be available. If you have
+the :ref:`py.exe launcher <launcher>` installed, you can use the :file:`py`
+command. See :ref:`setting-envvars` for other ways to launch Python.
 
 Typing an end-of-file character (:kbd:`Control-D` on Unix, :kbd:`Control-Z` on
 Windows) at the primary prompt causes the interpreter to exit with a zero exit
