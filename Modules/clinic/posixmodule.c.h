@@ -2838,7 +2838,7 @@ PyDoc_STRVAR(os_sched_param__doc__,
 "sched_param(sched_priority)\n"
 "--\n"
 "\n"
-"Current has only one field: sched_priority\");\n"
+"Currently has only one field: sched_priority\n"
 "\n"
 "  sched_priority\n"
 "    A scheduling parameter.");
@@ -8731,4 +8731,4 @@ exit:
 #ifndef OS__REMOVE_DLL_DIRECTORY_METHODDEF
     #define OS__REMOVE_DLL_DIRECTORY_METHODDEF
 #endif /* !defined(OS__REMOVE_DLL_DIRECTORY_METHODDEF) */
-/*[clinic end generated code: output=fe7897441fed5402 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=c6e67d475eef00c4 input=a9049054013a1b77]*/
