@@ -53,7 +53,7 @@ This returns an instance of a class with the following public methods:
                       -- set all parameters at once
       tell()          -- return current position in output file
       writeframesraw(data)
-                      -- write audio frames without pathing up the
+                      -- write audio frames without patching up the
                          file header
       writeframes(data)
                       -- write audio frames and patch up the file header
