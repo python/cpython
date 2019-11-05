@@ -14536,13 +14536,15 @@ INITFUNC(void)
 
     /* initialize scandir types */
     PyObject *ScandirIteratorType = PyType_FromSpec(&ScandirIteratorType_spec);
-    if (ScandirIteratorType == NULL)
+    if (ScandirIteratorType == NULL) {
         return NULL;
+    }
     _posixstate(m)->ScandirIteratorType = ScandirIteratorType;
 
     PyObject *DirEntryType = PyType_FromSpec(&DirEntryType_spec);
-    if (DirEntryType == NULL)
+    if (DirEntryType == NULL) {
         return NULL;
+    }
     Py_INCREF(DirEntryType);
     PyModule_AddObject(m, "DirEntry", DirEntryType);
     _posixstate(m)->DirEntryType = DirEntryType;
