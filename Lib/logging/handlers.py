@@ -58,8 +58,10 @@ class BaseRotatingHandler(logging.FileHandler):
         self.mode = mode
         self.encoding = encoding
         self.errors = errors
-        self.namer = None
-        self.rotator = None
+        if not hasattr(self, 'namer'):
+            self.namer = None
+        if not hasattr(self, 'rotator'):
+            self.rotator = None
 
     def emit(self, record):
         """
