@@ -1308,7 +1308,7 @@ are always available.  They are listed here in alphabetical order.
 .. function:: print(*objects, sep=' ', end='\\n', file=sys.stdout, flush=False)
 
    Print *objects* to the text stream *file* (the standard output by default),
-   separated by *sep* (a space by default) and followed by *end* 
+   separated by *sep* (a space by default) and followed by *end*
    (a newline by default).
    *sep*, *end*, *file* and *flush*, if present, must be given as keyword arguments.
 
