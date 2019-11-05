@@ -334,15 +334,6 @@ _PyCFunction_Fini(void)
  *
  * First, common helpers
  */
-static const char *
-get_name(PyObject *func)
-{
-    assert(PyCFunction_Check(func));
-    PyMethodDef *method = ((PyCFunctionObject *)func)->m_ml;
-    return method->ml_name;
-}
-
-typedef void (*funcptr)(void);
 
 static inline int
 cfunction_check_kwargs(PyThreadState *tstate, PyObject *func, PyObject *kwnames)
@@ -350,12 +341,18 @@ cfunction_check_kwargs(PyThreadState *tstate, PyObject *func, PyObject *kwnames)
     assert(!_PyErr_Occurred(tstate));
     assert(PyCFunction_Check(func));
     if (kwnames && PyTuple_GET_SIZE(kwnames)) {
-        _PyErr_Format(tstate, PyExc_TypeError,
-                      "%.200s() takes no keyword arguments", get_name(func));
+        PyObject *funcstr = _PyObject_FunctionStr(func);
+        if (funcstr != NULL) {
+            _PyErr_Format(tstate, PyExc_TypeError,
+                         "%U takes no keyword arguments", funcstr);
+            Py_DECREF(funcstr);
+        }
         return -1;
     }
     return 0;
 }
+
+typedef void (*funcptr)(void);
 
 static inline funcptr
 cfunction_enter_call(PyThreadState *tstate, PyObject *func)
@@ -412,9 +409,12 @@ cfunction_vectorcall_NOARGS(
     }
     Py_ssize_t nargs = PyVectorcall_NARGS(nargsf);
     if (nargs != 0) {
-        _PyErr_Format(tstate, PyExc_TypeError,
-                      "%.200s() takes no arguments (%zd given)",
-                      get_name(func), nargs);
+        PyObject *funcstr = _PyObject_FunctionStr(func);
+        if (funcstr != NULL) {
+            _PyErr_Format(tstate, PyExc_TypeError,
+                "%U takes no arguments (%zd given)", funcstr, nargs);
+            Py_DECREF(funcstr);
+        }
         return NULL;
     }
     PyCFunction meth = (PyCFunction)cfunction_enter_call(tstate, func);
@@ -436,9 +436,12 @@ cfunction_vectorcall_O(
     }
     Py_ssize_t nargs = PyVectorcall_NARGS(nargsf);
     if (nargs != 1) {
-        _PyErr_Format(tstate, PyExc_TypeError,
-                      "%.200s() takes exactly one argument (%zd given)",
-                      get_name(func), nargs);
+        PyObject *funcstr = _PyObject_FunctionStr(func);
+        if (funcstr != NULL) {
+            _PyErr_Format(tstate, PyExc_TypeError,
+                "%U takes exactly one argument (%zd given)", funcstr, nargs);
+            Py_DECREF(funcstr);
+        }
         return NULL;
     }
     PyCFunction meth = (PyCFunction)cfunction_enter_call(tstate, func);
