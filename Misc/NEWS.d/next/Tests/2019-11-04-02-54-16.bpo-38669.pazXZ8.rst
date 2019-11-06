@@ -1,1 +1,1 @@
-Raise TypeError if the target is a string when patching an object.
+Raise :exc:`TypeError` when patching a string with :meth:`unittest.mock.patch.object`.
