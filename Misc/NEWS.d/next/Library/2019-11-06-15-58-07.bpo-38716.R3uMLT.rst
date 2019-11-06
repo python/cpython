@@ -1,0 +1,1 @@
+logging: change rotating handlers namer and rotator to class level attributes. this stops init from setting them to None in the case where a subclass creates them as methods
