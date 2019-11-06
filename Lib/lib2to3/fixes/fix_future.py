@@ -6,7 +6,7 @@ from __future__ import foo is replaced with an empty line.
 
 # Local imports
 from .. import fixer_base
-from ..fixer_util import BlankLine
+from ..fixer_util import BlankLineOrPass
 
 class FixFuture(fixer_base.BaseFix):
     BM_compatible = True
@@ -17,6 +17,6 @@ class FixFuture(fixer_base.BaseFix):
     run_order = 10
 
     def transform(self, node, results):
-        new = BlankLine()
+        new = BlankLineOrPass(node)
         new.prefix = node.prefix
         return new
