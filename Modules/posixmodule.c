@@ -85,6 +85,9 @@ corresponding Unix manual entries for more information on calls.");
 #ifdef HAVE_SYS_WAIT_H
 #include <sys/wait.h>           /* For WNOHANG */
 #endif
+#ifdef HAVE_LINUX_WAIT_H
+#include <linux/wait.h> // For P_PIDFD
+#endif
 
 #ifdef HAVE_SIGNAL_H
 #include <signal.h>
@@ -14099,6 +14102,9 @@ all_ins(PyObject *m)
     if (PyModule_AddIntMacro(m, P_PID)) return -1;
     if (PyModule_AddIntMacro(m, P_PGID)) return -1;
     if (PyModule_AddIntMacro(m, P_ALL)) return -1;
+#ifdef P_PIDFD
+    if (PyModule_AddIntMacro(m, P_PIDFD)) return -1;
+#endif
 #endif
 #ifdef WEXITED
     if (PyModule_AddIntMacro(m, WEXITED)) return -1;

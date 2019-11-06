@@ -642,6 +642,9 @@
 /* Define to 1 if you have the <linux/vm_sockets.h> header file. */
 #undef HAVE_LINUX_VM_SOCKETS_H
 
+/* Define to 1 if you have the <linux/wait.h> header file. */
+#undef HAVE_LINUX_WAIT_H
+
 /* Define to 1 if you have the `lockf' function. */
 #undef HAVE_LOCKF
 
