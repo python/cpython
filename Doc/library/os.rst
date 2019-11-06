@@ -3921,7 +3921,8 @@ written in Python, such as a mail server's external command delivery program.
 .. function:: waitid(idtype, id, options)
 
    Wait for the completion of one or more child processes.
-   *idtype* can be :data:`P_PID`, :data:`P_PGID` or :data:`P_ALL`.
+   *idtype* can be :data:`P_PID`, :data:`P_PGID`, :data:`P_ALL`, or
+   :data:`P_PIDFD` on Linux.
    *id* specifies the pid to wait on.
    *options* is constructed from the ORing of one or more of :data:`WEXITED`,
    :data:`WSTOPPED` or :data:`WCONTINUED` and additionally may be ORed with
@@ -3945,6 +3946,15 @@ written in Python, such as a mail server's external command delivery program.
    .. availability:: Unix.
 
    .. versionadded:: 3.3
+
+.. data:: P_PIDFD
+
+   This is a Linux-specific *idtype* that indicates that *id* is a file
+   descriptor that refers to a process.
+
+   .. availability:: Linux 5.4+
+
+   .. versionadded:: 3.9
 
 .. data:: WEXITED
           WSTOPPED
