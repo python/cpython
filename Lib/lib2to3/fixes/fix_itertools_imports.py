@@ -2,7 +2,7 @@
 
 # Local imports
 from lib2to3 import fixer_base
-from lib2to3.fixer_util import BlankLine, syms, token
+from lib2to3.fixer_util import BlankLineOrPass, syms, token
 
 
 class FixItertoolsImports(fixer_base.BaseFix):
@@ -52,6 +52,6 @@ class FixItertoolsImports(fixer_base.BaseFix):
         if (not (imports.children or getattr(imports, 'value', None)) or
             imports.parent is None):
             p = node.prefix
-            node = BlankLine()
+            node = BlankLineOrPass(node)
             node.prefix = p
             return node

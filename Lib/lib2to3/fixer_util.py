@@ -150,6 +150,39 @@ def ImportAndCall(node, results, names):
     new.prefix = node.prefix
     return new
 
+def BlankLineOrPass(node):
+    """Returns either a blank line or a pass statement depending on
+    the node's parent's siblings to maintain syntactic correctness
+    within a suite after conversion"""
+    skip = {token.NEWLINE, token.INDENT, token.DEDENT}
+    def has_significant_sibling(node, is_forward):
+        sibling = None
+        if is_forward:
+            sibling = node.next_sibling
+        else:
+            sibling = node.prev_sibling
+        while sibling:
+            if isinstance(sibling, Node):
+                if sibling.type != syms.simple_stmt:
+                    return True
+                for child in sibling.children:
+                    if child.type not in skip:
+                        return True
+            elif isinstance(sibling, Leaf) and sibling.type not in skip:
+                return True
+            if is_forward:
+                sibling = sibling.next_sibling
+            else:
+                sibling = sibling.prev_sibling
+        return False
+
+    parent = node.parent
+    if parent and parent.parent and parent.parent.type == syms.suite:
+        if (not has_significant_sibling(parent, False)
+            and not has_significant_sibling(parent, True)):
+            return Name("pass")
+    return BlankLine()
+
 
 ###########################################################
 ### Determine whether a node represents a given literal
