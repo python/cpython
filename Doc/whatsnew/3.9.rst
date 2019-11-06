@@ -150,8 +150,9 @@ os
 Added :data:`~os.CLD_KILLED` and :data:`~os.CLD_STOPPED` for :attr:`si_code`.
 (Contributed by Dong-hee Na in :issue:`38493`.)
 
-Exposed the Linux-specific :func:`os.pidfd_open` for process management with
-file descriptors. (:issue:`38692`)
+Exposed the Linux-specific :func:`os.pidfd_open` (:issue:`38692`) and
+:data:`os.P_PIDFD` (:issue:`38713`) for process management with file
+descriptors.
 
 threading
 ---------
