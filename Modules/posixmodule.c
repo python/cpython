@@ -7861,6 +7861,30 @@ os_wait_impl(PyObject *module)
 }
 #endif /* HAVE_WAIT */
 
+#if defined(__linux__) && defined(__NR_pidfd_open)
+/*[clinic input]
+os.pidfd_open
+  pid: pid_t
+  flags: unsigned_int = 0
+
+Return a file descriptor referring to the process *pid*.
+
+The descriptor can be used to perform process management without races and
+signals.
+[clinic start generated code]*/
+
+static PyObject *
+os_pidfd_open_impl(PyObject *module, pid_t pid, unsigned int flags)
+/*[clinic end generated code: output=5c7252698947dc41 input=c3fd99ce947ccfef]*/
+{
+    int fd = syscall(__NR_pidfd_open, pid, flags);
+    if (fd < 0) {
+        return posix_error();
+    }
+    return PyLong_FromLong(fd);
+}
+#endif
+
 
 #if defined(HAVE_READLINK) || defined(MS_WINDOWS)
 /*[clinic input]
@@ -13671,6 +13695,7 @@ static PyMethodDef posix_methods[] = {
     OS_WAIT4_METHODDEF
     OS_WAITID_METHODDEF
     OS_WAITPID_METHODDEF
+    OS_PIDFD_OPEN_METHODDEF
     OS_GETSID_METHODDEF
     OS_SETSID_METHODDEF
     OS_SETPGID_METHODDEF
