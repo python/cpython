@@ -2285,6 +2285,7 @@ converters_from_argtypes(PyObject *ob)
             if (stgdict->flags & TYPEFLAG_HASUNION) {
                 Py_DECREF(converters);
                 Py_DECREF(ob);
+                Py_DECREF(cnv);
                 if (!PyErr_Occurred()) {
                     PyErr_Format(PyExc_TypeError,
                                  "item %zd in _argtypes_ passes a union by "
