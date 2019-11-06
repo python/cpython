@@ -110,7 +110,7 @@ Module-level decorators, classes, and functions
      :meth:`__le__`, :meth:`__gt__`, and :meth:`__ge__` methods will be
      generated.  These compare the class as if it were a tuple of its
      fields, in order.  Both instances in the comparison must be of the
-     identical type.  If ``order`` is true and ``eq`` is false, a
+     identical type.  If ``order`` is a truthy value and ``eq`` is a falsey value, a
      :exc:`ValueError` is raised.
 
      If the class already defines any of :meth:`__lt__`,
@@ -146,9 +146,9 @@ Module-level decorators, classes, and functions
      in a :exc:`TypeError`.
 
      If ``eq`` and ``frozen`` are both true, by default :func:`dataclass` will
-     generate a :meth:`__hash__` method for you.  If ``eq`` is true and
-     ``frozen`` is false, :meth:`__hash__` will be set to ``None``, marking it
-     unhashable (which it is, since it is mutable).  If ``eq`` is false,
+     generate a :meth:`__hash__` method for you.  If ``eq`` is a truthy value and
+     ``frozen`` is a falsey value, :meth:`__hash__` will be set to ``None``, marking it
+     unhashable (which it is, since it is mutable).  If ``eq`` is a falsey value,
      :meth:`__hash__` will be left untouched meaning the :meth:`__hash__`
      method of the superclass will be used (if the superclass is
      :class:`object`, this means it will fall back to id-based hashing).
@@ -172,7 +172,7 @@ Module-level decorators, classes, and functions
      def __init__(self, a: int, b: int = 0):
 
    :exc:`TypeError` will be raised if a field without a default value
-   follows a field with a default value.  This is true either when this
+   follows a field with a default value.  This is a truthy value either when this
    occurs in a single class, or as a result of class inheritance.
 
 .. function:: field(*, default=MISSING, default_factory=MISSING, repr=True, hash=None, init=True, compare=True, metadata=None)

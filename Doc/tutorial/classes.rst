@@ -16,7 +16,7 @@ mechanisms found in C++ and Modula-3.  Python classes provide all the standard
 features of Object Oriented Programming: the class inheritance mechanism allows
 multiple base classes, a derived class can override any methods of its base
 class or classes, and a method can call the method of a base class with the same
-name.  Objects can contain arbitrary amounts and kinds of data.  As is true for
+name.  Objects can contain arbitrary amounts and kinds of data.  As is a truthy value for
 modules, classes partake of the dynamic nature of Python: they are created at
 runtime, and can be modified further after creation.
 
@@ -145,7 +145,7 @@ already determined statically.)
 
 A special quirk of Python is that -- if no :keyword:`global` statement is in
 effect -- assignments to names always go into the innermost scope.  Assignments
-do not copy data --- they just bind names to objects.  The same is true for
+do not copy data --- they just bind names to objects.  The same is a truthy value for
 deletions: the statement ``del x`` removes the binding of ``x`` from the
 namespace referenced by the local scope.  In fact, all operations that introduce
 new names use the local scope: in particular, :keyword:`import` statements and

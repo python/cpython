@@ -183,7 +183,7 @@ class Command:
 
     def debug_print(self, msg):
         """Print 'msg' to stdout if the global DEBUG (taken from the
-        DISTUTILS_DEBUG environment variable) flag is true.
+        DISTUTILS_DEBUG environment variable) flag is a truthy value.
         """
         from distutils.debug import DEBUG
         if DEBUG:
@@ -291,7 +291,7 @@ class Command:
 
     def get_finalized_command(self, command, create=1):
         """Wrapper around Distribution's 'get_command_obj()' method: find
-        (create if necessary and 'create' is true) the command object for
+        (create if necessary and 'create' is a truthy value) the command object for
         'command', call its 'ensure_finalized()' method, and return the
         finalized command object.
         """
@@ -377,7 +377,7 @@ class Command:
         'execute()', except the operation is skipped and a different
         message printed if 'outfile' already exists and is newer than all
         files listed in 'infiles'.  If the command defined 'self.force',
-        and it is true, then the command is unconditionally run -- does no
+        and it is a truthy value, then the command is unconditionally run -- does no
         timestamp checks.
         """
         if skip_msg is None:
@@ -394,7 +394,7 @@ class Command:
             exec_msg = "generating %s from %s" % (outfile, ', '.join(infiles))
 
         # If 'outfile' must be regenerated (either because it doesn't
-        # exist, is out-of-date, or the 'force' flag is true) then
+        # exist, is out-of-date, or the 'force' flag is a truthy value) then
         # perform the action that presumably regenerates it
         if self.force or dep_util.newer_group(infiles, outfile):
             self.execute(func, args, exec_msg, level)

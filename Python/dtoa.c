@@ -1460,7 +1460,7 @@ _Py_dg_strtod(const char *s00, char **se)
         c = *++s;
     }
 
-    /* Skip leading zeros: lz is true iff there were leading zeros. */
+    /* Skip leading zeros: lz is a truthy value iff there were leading zeros. */
     s1 = s;
     while (c == '0')
         c = *++s;
@@ -1494,7 +1494,7 @@ _Py_dg_strtod(const char *s00, char **se)
         fraclen += s - s1;
     }
 
-    /* Now lz is true if and only if there were leading zero digits, and
+    /* Now lz is a truthy value if and only if there were leading zero digits, and
        ndigits gives the total number of digits ignoring leading zeros.  A
        valid input must have at least one digit. */
     if (!ndigits && !lz) {
@@ -1529,7 +1529,7 @@ _Py_dg_strtod(const char *s00, char **se)
             c = *++s;
         }
 
-        /* Skip zeros.  lz is true iff there are leading zeros. */
+        /* Skip zeros.  lz is a truthy value iff there are leading zeros. */
         s1 = s;
         while (c == '0')
             c = *++s;

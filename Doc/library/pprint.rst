@@ -51,10 +51,10 @@ The :mod:`pprint` module defines one class:
    the depth of the objects being formatted.  The desired output width is
    constrained using the *width* parameter; the default is 80 characters.  If a
    structure cannot be formatted within the constrained width, a best effort will
-   be made.  If *compact* is false (the default) each item of a long sequence
-   will be formatted on a separate line.  If *compact* is true, as many items
+   be made.  If *compact* is a falsey value (the default) each item of a long sequence
+   will be formatted on a separate line.  If *compact* is a truthy value, as many items
    as will fit within the *width* will be formatted on each output line. If
-   *sort_dicts* is true (the default), dictionaries will be formatted with their
+   *sort_dicts* is a truthy value (the default), dictionaries will be formatted with their
    keys sorted, otherwise they will display in insertion order.
 
    .. versionchanged:: 3.4
@@ -107,7 +107,7 @@ The :mod:`pprint` module also provides several shortcut functions:
 .. function:: pp(object, *args, sort_dicts=False, **kwargs)
 
    Prints the formatted representation of *object* followed by a newline.
-   If *sort_dicts* is false (the default), dictionaries will be displayed with
+   If *sort_dicts* is a falsey value (the default), dictionaries will be displayed with
    their keys in insertion order, otherwise the dict keys will be sorted.
    *args* and *kwargs* will be passed to :func:`pprint` as formatting
    parameters.

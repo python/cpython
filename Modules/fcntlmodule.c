@@ -128,13 +128,13 @@ The argument `arg` is optional, and defaults to 0; it may be an int or a
 buffer containing character data (most likely a string or an array).
 
 If the argument is a mutable buffer (such as an array) and if the
-mutate_flag argument (which is only allowed in this case) is true then the
+mutate_flag argument (which is only allowed in this case) is a truthy value then the
 buffer is (in effect) passed to the operating system and changes made by
 the OS will be reflected in the contents of the buffer after the call has
 returned.  The return value is the integer returned by the ioctl system
 call.
 
-If the argument is a mutable buffer and the mutable_flag argument is false,
+If the argument is a mutable buffer and the mutable_flag argument is a falsey value,
 the behavior is as if a string had been passed.
 
 If the argument is an immutable buffer (most likely a string) then a copy

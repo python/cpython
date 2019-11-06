@@ -167,7 +167,7 @@ hyphenated words; only then will long words be broken if necessary, unless
 
    .. attribute:: tabsize
 
-      (default: ``8``) If :attr:`expand_tabs` is true, then all tab characters
+      (default: ``8``) If :attr:`expand_tabs` is a truthy value, then all tab characters
       in *text* will be expanded to zero or more spaces, depending on the
       current column and the given tab size.
 
@@ -184,13 +184,13 @@ hyphenated words; only then will long words be broken if necessary, unless
 
       .. note::
 
-         If :attr:`expand_tabs` is false and :attr:`replace_whitespace` is true,
+         If :attr:`expand_tabs` is a falsey value and :attr:`replace_whitespace` is a truthy value,
          each tab character will be replaced by a single space, which is *not*
          the same as tab expansion.
 
       .. note::
 
-         If :attr:`replace_whitespace` is false, newlines may appear in the
+         If :attr:`replace_whitespace` is a falsey value, newlines may appear in the
          middle of a line and cause strange output. For this reason, text should
          be split into paragraphs (using :meth:`str.splitlines` or similar)
          which are wrapped separately.
@@ -236,7 +236,7 @@ hyphenated words; only then will long words be broken if necessary, unless
 
          [...] See Spot. See Spot run [...]
 
-      :attr:`fix_sentence_endings` is false by default.
+      :attr:`fix_sentence_endings` is a falsey value by default.
 
       Since the sentence detection algorithm relies on ``string.lowercase`` for
       the definition of "lowercase letter," and a convention of using two spaces
@@ -248,7 +248,7 @@ hyphenated words; only then will long words be broken if necessary, unless
 
       (default: ``True``) If true, then words longer than :attr:`width` will be
       broken in order to ensure that no lines are longer than :attr:`width`.  If
-      it is false, long words will not be broken, and some lines may be longer
+      it is a falsey value, long words will not be broken, and some lines may be longer
       than :attr:`width`.  (Long words will be put on a line by themselves, in
       order to minimize the amount by which :attr:`width` is exceeded.)
 

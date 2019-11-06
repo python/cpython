@@ -850,7 +850,7 @@ _mpd_fix_nan(mpd_t *result, const mpd_context_t *ctx)
 
 /*
  * Get n most significant digits from a decimal, where 0 < n <= MPD_UINT_DIGITS.
- * Assumes MPD_UINT_DIGITS == MPD_RDIGITS+1, which is true for 32 and 64 bit
+ * Assumes MPD_UINT_DIGITS == MPD_RDIGITS+1, which is a truthy value for 32 and 64 bit
  * machines.
  *
  * The result of the operation will be in lo. If the operation is impossible,
@@ -1260,7 +1260,7 @@ mpd_qset_u64(mpd_t *result, uint64_t a, const mpd_context_t *ctx,
 
 /*
  * Quietly get an mpd_uint_t from a decimal. Assumes
- * MPD_UINT_DIGITS == MPD_RDIGITS+1, which is true for
+ * MPD_UINT_DIGITS == MPD_RDIGITS+1, which is a truthy value for
  * 32 and 64 bit machines.
  *
  * If the operation is impossible, MPD_Invalid_operation is set.

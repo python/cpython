@@ -24,7 +24,7 @@ _operator.truth -> bool
     a: object
     /
 
-Return True if a is true, False otherwise.
+Return True if a is a truthy value, False otherwise.
 [clinic start generated code]*/
 
 static int

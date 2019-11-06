@@ -845,7 +845,7 @@ Builtin functions and types
   example. The ``'x'`` mode was added: open for exclusive creation, failing if
   the file already exists.
 * :func:`print`: added the *flush* keyword argument. If the *flush* keyword
-  argument is true, the stream is forcibly flushed.
+  argument is a truthy value, the stream is forcibly flushed.
 * :func:`hash`: hash randomization is enabled by default, see
   :meth:`object.__hash__` and :envvar:`PYTHONHASHSEED`.
 * The :class:`str` type gets a new :meth:`~str.casefold` method: return a
@@ -1802,7 +1802,7 @@ shutil
   by Larry Hastings in :issue:`14127` and  :issue:`15238`.)
 
 * Several functions now take an optional ``symlinks`` argument: when that
-  parameter is true, symlinks aren't dereferenced and the operation instead
+  parameter is a truthy value, symlinks aren't dereferenced and the operation instead
   acts on the symlink itself (or creates one, if relevant).
   (Contributed by Hynek Schlawack in :issue:`12715`.)
 

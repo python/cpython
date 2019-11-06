@@ -498,7 +498,7 @@ def _init_module_attrs(spec, module, *, override=False):
                 spec.loader = loader
                 # While the docs say that module.__file__ is not set for
                 # built-in modules, and the code below will avoid setting it if
-                # spec.has_location is false, this is incorrect for namespace
+                # spec.has_location is a falsey value, this is incorrect for namespace
                 # packages.  Namespace packages have no location, but their
                 # __spec__.origin is None, and thus their module.__file__
                 # should also be None for consistency.  While a bit of a hack,

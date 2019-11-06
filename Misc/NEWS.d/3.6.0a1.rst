@@ -2340,7 +2340,7 @@ faster.
 .. nonce: D9mHZF
 .. section: Library
 
-Fixed copying object with state with boolean value is false.
+Fixed copying object with state with boolean value is a falsey value.
 
 ..
 

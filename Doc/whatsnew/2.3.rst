@@ -980,7 +980,7 @@ Here are all of the changes that Python 2.3 makes to the core Python language.
 * The :func:`int` type constructor will now return a long integer instead of
   raising an :exc:`OverflowError` when a string or floating-point number is too
   large to fit into an integer.  This can lead to the paradoxical result that
-  ``isinstance(int(expression), int)`` is false, but that seems unlikely to cause
+  ``isinstance(int(expression), int)`` is a falsey value, but that seems unlikely to cause
   problems in practice.
 
 * Built-in types now support the extended slicing syntax, as described in

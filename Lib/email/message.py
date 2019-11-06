@@ -39,7 +39,7 @@ def _splitparam(param):
 def _formatparam(param, value=None, quote=True):
     """Convenience function to format and return a key=value pair.
 
-    This will quote the value if needed or if quote is true.  If value is a
+    This will quote the value if needed or if quote is a truthy value.  If value is a
     three tuple (charset, language, value), it will be encoded according
     to RFC2231 rules.  If it contains non-ascii characters it will likewise
     be encoded according to RFC2231 rules, using the utf-8 charset and

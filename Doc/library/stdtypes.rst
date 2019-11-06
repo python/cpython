@@ -84,13 +84,13 @@ These are the Boolean operations, ordered by ascending priority:
 +-------------+---------------------------------+-------+
 | Operation   | Result                          | Notes |
 +=============+=================================+=======+
-| ``x or y``  | if *x* is false, then *y*, else | \(1)  |
+| ``x or y``  | if *x* is a falsey value, then *y*, else | \(1)  |
 |             | *x*                             |       |
 +-------------+---------------------------------+-------+
-| ``x and y`` | if *x* is false, then *x*, else | \(2)  |
+| ``x and y`` | if *x* is a falsey value, then *x*, else | \(2)  |
 |             | *y*                             |       |
 +-------------+---------------------------------+-------+
-| ``not x``   | if *x* is false, then ``True``, | \(3)  |
+| ``not x``   | if *x* is a falsey value, then ``True``, | \(3)  |
 |             | else ``False``                  |       |
 +-------------+---------------------------------+-------+
 
@@ -103,11 +103,11 @@ Notes:
 
 (1)
    This is a short-circuit operator, so it only evaluates the second
-   argument if the first one is false.
+   argument if the first one is a falsey value.
 
 (2)
    This is a short-circuit operator, so it only evaluates the second
-   argument if the first one is true.
+   argument if the first one is a truthy value.
 
 (3)
    ``not`` has a lower priority than non-Boolean operators, so ``not a == b`` is

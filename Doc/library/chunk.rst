@@ -62,13 +62,13 @@ instance will fail with an :exc:`EOFError` exception.
    :meth:`~io.IOBase.seek` and :meth:`~io.IOBase.tell` are present and don't
    raise an exception, they are also used.
    If these methods are present and raise an exception, they are expected to not
-   have altered the object.  If the optional argument *align* is true, chunks
-   are assumed to be aligned on 2-byte boundaries.  If *align* is false, no
-   alignment is assumed.  The default value is true.  If the optional argument
-   *bigendian* is false, the chunk size is assumed to be in little-endian order.
-   This is needed for WAVE audio files. The default value is true.  If the
-   optional argument *inclheader* is true, the size given in the chunk header
-   includes the size of the header.  The default value is false.
+   have altered the object.  If the optional argument *align* is a truthy value, chunks
+   are assumed to be aligned on 2-byte boundaries.  If *align* is a falsey value, no
+   alignment is assumed.  The default value is a truthy value.  If the optional argument
+   *bigendian* is a falsey value, the chunk size is assumed to be in little-endian order.
+   This is needed for WAVE audio files. The default value is a truthy value.  If the
+   optional argument *inclheader* is a truthy value, the size given in the chunk header
+   includes the size of the header.  The default value is a falsey value.
 
    A :class:`Chunk` object supports the following methods:
 

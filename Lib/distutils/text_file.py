@@ -46,7 +46,7 @@ class TextFile:
            skip lines that are empty *after* stripping comments and
            whitespace.  (If both lstrip_ws and rstrip_ws are false,
            then some lines may consist of solely whitespace: these will
-           *not* be skipped, even if 'skip_blanks' is true.)
+           *not* be skipped, even if 'skip_blanks' is a truthy value.)
          join_lines [default: false]
            if a backslash is the last non-newline character on a line
            after stripping comments and whitespace, join the following line
@@ -63,7 +63,7 @@ class TextFile:
        semantics of 'readline()' must differ from those of the builtin file
        object's 'readline()' method!  In particular, 'readline()' returns
        None for end-of-file: an empty string might just be a blank line (or
-       an all-whitespace line), if 'rstrip_ws' is true but 'skip_blanks' is
+       an all-whitespace line), if 'rstrip_ws' is a truthy value but 'skip_blanks' is
        not."""
 
     default_options = { 'strip_comments': 1,
@@ -152,12 +152,12 @@ class TextFile:
     def readline(self):
         """Read and return a single logical line from the current file (or
            from an internal buffer if lines have previously been "unread"
-           with 'unreadline()').  If the 'join_lines' option is true, this
+           with 'unreadline()').  If the 'join_lines' option is a truthy value, this
            may involve reading multiple physical lines concatenated into a
            single string.  Updates the current line number, so calling
            'warn()' after 'readline()' emits a warning about the physical
            line(s) just read.  Returns None on end-of-file, since the empty
-           string can occur if 'rstrip_ws' is true but 'strip_blanks' is
+           string can occur if 'rstrip_ws' is a truthy value but 'strip_blanks' is
            not."""
         # If any "unread" lines waiting in 'linebuf', return the top
         # one.  (We don't actually buffer read-ahead data -- lines only
@@ -195,7 +195,7 @@ class TextFile:
                 elif pos == 0 or line[pos-1] != "\\":
                     # Have to preserve the trailing newline, because it's
                     # the job of a later step (rstrip_ws) to remove it --
-                    # and if rstrip_ws is false, we'd better preserve it!
+                    # and if rstrip_ws is a falsey value, we'd better preserve it!
                     # (NB. this means that if the final line is all comment
                     # and has no trailing newline, we will think that it's
                     # EOF; I think that's OK.)

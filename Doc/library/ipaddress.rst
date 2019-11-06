@@ -670,7 +670,7 @@ dictionaries.
 
    .. attribute:: is_site_local
 
-      These attribute is true for the network as a whole if it is true
+      These attribute is a truthy value for the network as a whole if it is a truthy value
       for both the network address and the broadcast address.
 
 

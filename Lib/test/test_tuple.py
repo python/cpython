@@ -93,7 +93,7 @@ class TupleTest(seq_tests.CommonTest):
                         -1845940830829704396)
 
     # Various tests for hashing of tuples to check that we get few collisions.
-    # Does something only if RUN_ALL_HASH_TESTS is true.
+    # Does something only if RUN_ALL_HASH_TESTS is a truthy value.
     #
     # Earlier versions of the tuple hash algorithm had massive collisions
     # reported at:

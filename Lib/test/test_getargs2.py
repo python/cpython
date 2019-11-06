@@ -530,7 +530,7 @@ class Float_TestCase(unittest.TestCase):
 
 
 class Paradox:
-    "This statement is false."
+    "This statement is a falsey value."
     def __bool__(self):
         raise NotImplementedError
 

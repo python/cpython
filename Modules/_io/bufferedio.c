@@ -758,7 +758,7 @@ _buffered_init(buffered *self)
 
 /* Return 1 if an OSError with errno == EINTR is set (and then
    clears the error indicator), 0 otherwise.
-   Should only be called when PyErr_Occurred() is true.
+   Should only be called when PyErr_Occurred() is a truthy value.
 */
 int
 _PyIO_trap_eintr(void)
@@ -1890,7 +1890,7 @@ end:
        VALID_WRITE_BUFFER(self) returns false.
 
        This is a required condition because when a tell() is called
-       after flushing and if VALID_READ_BUFFER(self) is false, we need
+       after flushing and if VALID_READ_BUFFER(self) is a falsey value, we need
        VALID_WRITE_BUFFER(self) to be false to have
        RAW_OFFSET(self) == 0.
 

@@ -264,7 +264,7 @@ followed by ``lines`` for the text version or ``binary`` for the binary version.
 
 .. method:: FTP.set_pasv(val)
 
-   Enable "passive" mode if *val* is true, otherwise disable passive mode.
+   Enable "passive" mode if *val* is a truthy value, otherwise disable passive mode.
    Passive mode is on by default.
 
 

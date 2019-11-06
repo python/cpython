@@ -4089,7 +4089,7 @@ used to determine the disposition of a process.
 
 .. function:: WEXITSTATUS(status)
 
-   If ``WIFEXITED(status)`` is true, return the integer parameter to the
+   If ``WIFEXITED(status)`` is a truthy value, return the integer parameter to the
    :manpage:`exit(2)` system call.  Otherwise, the return value is meaningless.
 
    .. availability:: Unix.

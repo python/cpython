@@ -890,7 +890,7 @@ module is the same as with the basic :class:`Custom` examples.
 
 .. rubric:: Footnotes
 
-.. [#] This is true when we know that the object is a basic type, like a string or a
+.. [#] This is a truthy value when we know that the object is a basic type, like a string or a
    float.
 
 .. [#] We relied on this in the :c:member:`~PyTypeObject.tp_dealloc` handler

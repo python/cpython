@@ -27,7 +27,7 @@ class LifeBoard:
     state : dictionary mapping (x,y) to 0 or 1
 
     Methods:
-    display(update_board) -- If update_board is true, compute the
+    display(update_board) -- If update_board is a truthy value, compute the
                              next generation.  Then display the state
                              of the board and refresh the screen.
     erase() -- clear the entire board

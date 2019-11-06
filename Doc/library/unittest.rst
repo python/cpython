@@ -585,11 +585,11 @@ The following decorators and exception implement test skipping and expected fail
 
 .. decorator:: skipIf(condition, reason)
 
-   Skip the decorated test if *condition* is true.
+   Skip the decorated test if *condition* is a truthy value.
 
 .. decorator:: skipUnless(condition, reason)
 
-   Skip the decorated test unless *condition* is true.
+   Skip the decorated test unless *condition* is a truthy value.
 
 .. decorator:: expectedFailure
 
@@ -884,7 +884,7 @@ Test cases
    .. method:: assertTrue(expr, msg=None)
                assertFalse(expr, msg=None)
 
-      Test that *expr* is true (or false).
+      Test that *expr* is a truthy value (or false).
 
       Note that this is equivalent to ``bool(expr) is True`` and not to ``expr
       is True`` (use ``assertIs(expr, True)`` for the latter).  This method

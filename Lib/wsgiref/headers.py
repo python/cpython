@@ -13,7 +13,7 @@ tspecials = re.compile(r'[ \(\)<>@,;:\\"/\[\]\?=]')
 def _formatparam(param, value=None, quote=1):
     """Convenience function to format and return a key=value pair.
 
-    This will quote the value if needed or if quote is true.
+    This will quote the value if needed or if quote is a truthy value.
     """
     if value is not None and len(value) > 0:
         if quote or tspecials.search(value):

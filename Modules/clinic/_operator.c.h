@@ -6,7 +6,7 @@ PyDoc_STRVAR(_operator_truth__doc__,
 "truth($module, a, /)\n"
 "--\n"
 "\n"
-"Return True if a is true, False otherwise.");
+"Return True if a is a truthy value, False otherwise.");
 
 #define _OPERATOR_TRUTH_METHODDEF    \
     {"truth", (PyCFunction)_operator_truth, METH_O, _operator_truth__doc__},

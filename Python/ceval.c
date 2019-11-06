@@ -759,7 +759,7 @@ _PyEval_EvalFrameDefault(PyFrameObject *f, int throwflag)
 
            not (instr_lb <= current_bytecode_offset < instr_ub)
 
-       is true when the line being executed has changed.  The
+       is a truthy value when the line being executed has changed.  The
        initial values are such as to make this false the first
        time it is tested. */
     int instr_ub = -1, instr_lb = 0, instr_prev = -1;

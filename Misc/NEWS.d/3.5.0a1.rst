@@ -2126,7 +2126,7 @@ attributes.
 .. section: Library
 
 ZipFile.close() no longer writes ZIP64 central directory records if
-allowZip64 is false.
+allowZip64 is a falsey value.
 
 ..
 

@@ -55,7 +55,7 @@ PEP 308: Conditional Expressions
 
 For a long time, people have been requesting a way to write conditional
 expressions, which are expressions that return value A or value B depending on
-whether a Boolean value is true or false.  A conditional expression lets you
+whether a Boolean value is a truthy value or false.  A conditional expression lets you
 write a single assignment statement that has the same effect as the following::
 
    if condition:
@@ -77,7 +77,7 @@ Evaluation is still lazy as in existing Boolean expressions, so the order of
 evaluation jumps around a bit.  The *condition* expression in the middle is
 evaluated first, and the *true_value* expression is evaluated only if the
 condition was true.  Similarly, the *false_value* expression is only evaluated
-when the condition is false.
+when the condition is a falsey value.
 
 This syntax may seem strange and backwards; why does the condition go in the
 *middle* of the expression, and not in the front as in C's ``c ? x : y``?  The
@@ -721,7 +721,7 @@ there was no exception, the transaction is committed.  The transaction is rolled
 back if there was an exception.
 
 In the code below, execution will just fall off the end of the function,
-returning the default value of ``None``.  ``None`` is false, so the exception
+returning the default value of ``None``.  ``None`` is a falsey value, so the exception
 will be re-raised automatically.  If you wished, you could be more explicit and
 add a :keyword:`return` statement at the marked location. ::
 
@@ -1044,7 +1044,7 @@ Here are all of the changes that Python 2.5 makes to the core Python language.
 
 * Two new built-in functions, :func:`any` and :func:`all`, evaluate whether an
   iterator contains any true or false values.  :func:`any` returns :const:`True`
-  if any value returned by the iterator is true; otherwise it will return
+  if any value returned by the iterator is a truthy value; otherwise it will return
   :const:`False`.  :func:`all` returns :const:`True` only if all of the values
   returned by the iterator evaluate as true. (Suggested by Guido van Rossum, and
   implemented by Raymond Hettinger.)
@@ -1068,7 +1068,7 @@ Here are all of the changes that Python 2.5 makes to the core Python language.
 
 * A new warning, :class:`UnicodeWarning`, is triggered when  you attempt to
   compare a Unicode string and an 8-bit string  that can't be converted to Unicode
-  using the default ASCII encoding.   The result of the comparison is false::
+  using the default ASCII encoding.   The result of the comparison is a falsey value::
 
      >>> chr(128) == unichr(128)   # Can't convert chr(128) to Unicode
      __main__:1: UnicodeWarning: Unicode equal comparison failed

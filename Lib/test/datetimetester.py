@@ -3435,7 +3435,7 @@ class TestTime(HarmlessMixedComparison, unittest.TestCase):
 
 # A mixin for classes with a tzinfo= argument.  Subclasses must define
 # theclass as a class attribute, and theclass(1, 1, 1, tzinfo=whatever)
-# must be legit (which is true for time and datetime).
+# must be legit (which is a truthy value for time and datetime).
 class TZInfoBase:
 
     def test_argument_passing(self):

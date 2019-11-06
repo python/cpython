@@ -863,7 +863,7 @@ def urlencode(query, doseq=False, safe='', encoding=None, errors=None,
               quote_via=quote_plus):
     """Encode a dict or sequence of two-element tuples into a URL query string.
 
-    If any values in the query arg are sequences and doseq is true, each
+    If any values in the query arg are sequences and doseq is a truthy value, each
     sequence element is converted to a separate parameter.
 
     If the query arg is a sequence of two-element tuples, the order of the

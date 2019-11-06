@@ -61,9 +61,9 @@ The module itself defines the following classes:
    An optional *timeout* can be specified for the socket connection.
    If the optional *user* and *password* are provided, or if suitable
    credentials are present in :file:`/.netrc` and the optional flag *usenetrc*
-   is true, the ``AUTHINFO USER`` and ``AUTHINFO PASS`` commands are used
+   is a truthy value, the ``AUTHINFO USER`` and ``AUTHINFO PASS`` commands are used
    to identify and authenticate the user to the server.  If the optional
-   flag *readermode* is true, then a ``mode reader`` command is sent before
+   flag *readermode* is a truthy value, then a ``mode reader`` command is sent before
    authentication is performed.  Reader mode is sometimes necessary if you are
    connecting to an NNTP server on the local machine and intend to call
    reader-specific commands, such as ``group``.  If you get unexpected
@@ -235,7 +235,7 @@ tuples or objects that the method normally returns will be empty.
 .. method:: NNTP.login(user=None, password=None, usenetrc=True)
 
    Send ``AUTHINFO`` commands with the user name and password.  If *user*
-   and *password* are ``None`` and *usenetrc* is true, credentials from
+   and *password* are ``None`` and *usenetrc* is a truthy value, credentials from
    ``~/.netrc`` will be used if possible.
 
    Unless intentionally delayed, login is normally performed during the

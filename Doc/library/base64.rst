@@ -203,7 +203,7 @@ The modern interface provides:
    Encode the :term:`bytes-like object` *b* using base85 (as used in e.g.
    git-style binary diffs) and return the encoded :class:`bytes`.
 
-   If *pad* is true, the input is padded with ``b'\0'`` so its length is a
+   If *pad* is a truthy value, the input is padded with ``b'\0'`` so its length is a
    multiple of 4 bytes before encoding.
 
    .. versionadded:: 3.4

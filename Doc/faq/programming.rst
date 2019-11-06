@@ -659,7 +659,7 @@ How can my code discover the name of an object?
 -----------------------------------------------
 
 Generally speaking, it can't, because objects don't really have names.
-Essentially, assignment always binds a name to a value; the same is true of
+Essentially, assignment always binds a name to a value; the same is a truthy value of
 ``def`` and ``class`` statements, but in that case the value is a
 callable. Consider the following code::
 
@@ -713,7 +713,7 @@ not::
 
     "a" in ("b", "a")
 
-The same is true of the various assignment operators (``=``, ``+=`` etc).  They
+The same is a truthy value of the various assignment operators (``=``, ``+=`` etc).  They
 are not truly operators but syntactic delimiters in assignment statements.
 
 
@@ -1884,7 +1884,7 @@ paradoxical behaviour::
    >>> c = cls.C()                # Create an instance of C
    >>> importlib.reload(cls)
    <module 'cls' from 'cls.py'>
-   >>> isinstance(c, cls.C)       # isinstance is false?!?
+   >>> isinstance(c, cls.C)       # isinstance is a falsey value?!?
    False
 
 The nature of the problem is made clear if you print out the "identity" of the

@@ -117,7 +117,7 @@ def encodestring(s, quotetabs=False, header=False):
 def decode(input, output, header=False):
     """Read 'input', apply quoted-printable decoding, and write to 'output'.
     'input' and 'output' are binary file objects.
-    If 'header' is true, decode underscore as space (per RFC 1522)."""
+    If 'header' is a truthy value, decode underscore as space (per RFC 1522)."""
 
     if a2b_qp is not None:
         data = input.read()

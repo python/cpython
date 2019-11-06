@@ -98,7 +98,7 @@ sends logging output to a disk file.  It inherits the output functionality from
    Returns a new instance of the :class:`FileHandler` class. The specified file is
    opened and used as the stream for logging. If *mode* is not specified,
    :const:`'a'` is used.  If *encoding* is not ``None``, it is used to open the file
-   with that encoding.  If *delay* is true, then file opening is deferred until the
+   with that encoding.  If *delay* is a truthy value, then file opening is deferred until the
    first call to :meth:`emit`. By default, the file grows indefinitely. If
    *errors* is specified, it's used to determine how encoding errors are handled.
 
@@ -180,7 +180,7 @@ for this value.
    Returns a new instance of the :class:`WatchedFileHandler` class. The specified
    file is opened and used as the stream for logging. If *mode* is not specified,
    :const:`'a'` is used.  If *encoding* is not ``None``, it is used to open the file
-   with that encoding.  If *delay* is true, then file opening is deferred until the
+   with that encoding.  If *delay* is a truthy value, then file opening is deferred until the
    first call to :meth:`emit`.  By default, the file grows indefinitely. If
    *errors* is provided, it determines how encoding errors are handled.
 
@@ -300,7 +300,7 @@ module, supports rotation of disk log files.
    Returns a new instance of the :class:`RotatingFileHandler` class. The specified
    file is opened and used as the stream for logging. If *mode* is not specified,
    ``'a'`` is used.  If *encoding* is not ``None``, it is used to open the file
-   with that encoding.  If *delay* is true, then file opening is deferred until the
+   with that encoding.  If *delay* is a truthy value, then file opening is deferred until the
    first call to :meth:`emit`.  By default, the file grows indefinitely. If
    *errors* is provided, it determines how encoding errors are handled.
 
@@ -388,7 +388,7 @@ timed intervals.
    is created), the last modification time of an existing log file, or else
    the current time, is used to compute when the next rotation will occur.
 
-   If the *utc* argument is true, times in UTC will be used; otherwise
+   If the *utc* argument is a truthy value, times in UTC will be used; otherwise
    local time is used.
 
    If *backupCount* is nonzero, at most *backupCount* files
@@ -396,7 +396,7 @@ timed intervals.
    one is deleted. The deletion logic uses the interval to determine which
    files to delete, so changing the interval may leave old files lying around.
 
-   If *delay* is true, then file opening is deferred until the first call to
+   If *delay* is a truthy value, then file opening is deferred until the first call to
    :meth:`emit`.
 
    If *atTime* is not ``None``, it must be a ``datetime.time`` instance which
@@ -935,7 +935,7 @@ supports sending logging messages to a Web server, using either ``GET`` or
 
    Returns a new instance of the :class:`HTTPHandler` class. The *host* can be
    of the form ``host:port``, should you need to use a specific port number.  If
-   no *method* is specified, ``GET`` is used. If *secure* is true, a HTTPS
+   no *method* is specified, ``GET`` is used. If *secure* is a truthy value, a HTTPS
    connection will be used. The *context* parameter may be set to a
    :class:`ssl.SSLContext` instance to configure the SSL settings used for the
    HTTPS connection. If *credentials* is specified, it should be a 2-tuple

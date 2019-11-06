@@ -66,7 +66,7 @@ typedef struct basicblock_ {
     struct basicblock_ *b_next;
     /* b_seen is used to perform a DFS of basicblocks. */
     unsigned b_seen : 1;
-    /* b_return is true if a RETURN_VALUE opcode is inserted. */
+    /* b_return is a truthy value if a RETURN_VALUE opcode is inserted. */
     unsigned b_return : 1;
     /* depth of stack upon entry of block, computed by stackdepth() */
     int b_startdepth;
@@ -1654,7 +1654,7 @@ compiler_pop_fblock(struct compiler *c, enum fblocktype t, basicblock *b)
     assert(u->u_fblock[u->u_nfblocks].fb_block == b);
 }
 
-/* Unwind a frame block.  If preserve_tos is true, the TOS before
+/* Unwind a frame block.  If preserve_tos is a truthy value, the TOS before
  * popping the blocks will be restored afterwards.
  */
 static int

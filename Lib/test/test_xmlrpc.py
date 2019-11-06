@@ -1294,7 +1294,7 @@ class FailingServerTestCase(unittest.TestCase):
         xmlrpc.server.SimpleXMLRPCRequestHandler.MessageClass = default_class
 
     def test_basic(self):
-        # check that flag is false by default
+        # check that flag is a falsey value by default
         flagval = xmlrpc.server.SimpleXMLRPCServer._send_traceback_header
         self.assertEqual(flagval, False)
 

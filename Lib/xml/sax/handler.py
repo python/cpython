@@ -99,7 +99,7 @@ class ContentHandler:
         The information from this event is not necessary for normal
         Namespace processing: the SAX XML reader will automatically
         replace prefixes for element and attribute names when the
-        http://xml.org/sax/features/namespaces feature is true (the
+        http://xml.org/sax/features/namespaces feature is a truthy value (the
         default).
 
         There are cases, however, when applications need to use

@@ -84,12 +84,12 @@ The module defines the following functions:
    If a mutable buffer is passed, then the behaviour is determined by the value of
    the *mutate_flag* parameter.
 
-   If it is false, the buffer's mutability is ignored and behaviour is as for a
+   If it is a falsey value, the buffer's mutability is ignored and behaviour is as for a
    read-only buffer, except that the 1024 byte limit mentioned above is avoided --
    so long as the buffer you pass is at least as long as what the operating system
    wants to put there, things should work.
 
-   If *mutate_flag* is true (the default), then the buffer is (in effect) passed
+   If *mutate_flag* is a truthy value (the default), then the buffer is (in effect) passed
    to the underlying :func:`ioctl` system call, the latter's return code is
    passed back to the calling Python, and the buffer's new contents reflect the
    action of the :func:`ioctl`.  This is a slight simplification, because if the

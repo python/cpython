@@ -1245,7 +1245,7 @@ class Misc:
         of this widget.
 
         Each item in the list consists of a visual name (see winfo_visual), a
-        depth and if includeids is true is given also the X identifier."""
+        depth and if includeids is a truthy value is given also the X identifier."""
         data = self.tk.call('winfo', 'visualsavailable', self._w,
                             'includeids' if includeids else None)
         data = [self.tk.splitlist(x) for x in self.tk.splitlist(data)]
@@ -3673,10 +3673,10 @@ class Text(Widget, XView, YView):
     def edit_redo(self):
         """Redo the last undone edit
 
-        When the undo option is true, reapplies the last
+        When the undo option is a truthy value, reapplies the last
         undone edits provided no other edits were done since
         then. Generates an error when the redo stack is empty.
-        Does nothing when the undo option is false.
+        Does nothing when the undo option is a falsey value.
         """
         return self.edit("redo")
 
@@ -3688,18 +3688,18 @@ class Text(Widget, XView, YView):
     def edit_separator(self):
         """Inserts a separator (boundary) on the undo stack.
 
-        Does nothing when the undo option is false
+        Does nothing when the undo option is a falsey value
         """
         return self.edit("separator")
 
     def edit_undo(self):
         """Undoes the last edit action
 
-        If the undo option is true. An edit action is defined
+        If the undo option is a truthy value. An edit action is defined
         as all the insert and delete commands that are recorded
         on the undo stack in between two separators. Generates
         an error when the undo stack is empty. Does nothing
-        when the undo option is false
+        when the undo option is a falsey value
         """
         return self.edit("undo")
 

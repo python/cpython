@@ -127,7 +127,7 @@ def resolve_dotted_attribute(obj, attr, allow_dotted_names=True):
     Resolves a dotted attribute name to an object.  Raises
     an AttributeError if any attribute in the chain starts with a '_'.
 
-    If the optional allow_dotted_names argument is false, dots are not
+    If the optional allow_dotted_names argument is a falsey value, dots are not
     supported and this function operates similar to getattr(obj, attr).
     """
 
@@ -189,7 +189,7 @@ class SimpleXMLRPCDispatcher:
         If a registered function matches an XML-RPC request, then it
         will be called instead of the registered instance.
 
-        If the optional allow_dotted_names argument is true and the
+        If the optional allow_dotted_names argument is a truthy value and the
         instance does not have a _dispatch method, method names
         containing dots are supported and resolved, as long as none of
         the name segments start with an '_'.

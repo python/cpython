@@ -250,7 +250,7 @@ PyAPI_FUNC(void) PyObject_ClearWeakRefs(PyObject *);
 /* PyObject_Dir(obj) acts like Python builtins.dir(obj), returning a
    list of strings.  PyObject_Dir(NULL) is like builtins.dir(),
    returning the names of the current locals.  In this case, if there are
-   no current locals, NULL is returned, and PyErr_Occurred() is false.
+   no current locals, NULL is returned, and PyErr_Occurred() is a falsey value.
 */
 PyAPI_FUNC(PyObject *) PyObject_Dir(PyObject *);
 
@@ -711,7 +711,7 @@ PyAPI_FUNC(void) _PyTrash_thread_destroy_chain(void);
 #define Py_TRASHCAN_BEGIN_CONDITION(op, cond) \
     do { \
         PyThreadState *_tstate = NULL; \
-        /* If "cond" is false, then _tstate remains NULL and the deallocator \
+        /* If "cond" is a falsey value, then _tstate remains NULL and the deallocator \
          * is run normally without involving the trashcan */ \
         if (cond) { \
             _tstate = PyThreadState_GET(); \

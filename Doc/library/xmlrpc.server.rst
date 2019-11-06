@@ -33,7 +33,7 @@ servers written in Python.  Servers can either be free standing, using
    parameter should be a factory for request handler instances; it defaults to
    :class:`SimpleXMLRPCRequestHandler`.  The *addr* and *requestHandler* parameters
    are passed to the :class:`socketserver.TCPServer` constructor.  If *logRequests*
-   is true (the default), requests will be logged; setting this parameter to false
+   is a truthy value (the default), requests will be logged; setting this parameter to false
    will turn off logging.   The *allow_none* and *encoding* parameters are passed
    on to :mod:`xmlrpc.client` and control the XML-RPC responses that will be returned
    from the server. The *bind_and_activate* parameter controls whether
@@ -107,7 +107,7 @@ alone XML-RPC servers.
    not have a :meth:`_dispatch` method, it is searched for an attribute matching
    the name of the requested method.
 
-   If the optional *allow_dotted_names* argument is true and the instance does not
+   If the optional *allow_dotted_names* argument is a truthy value and the instance does not
    have a :meth:`_dispatch` method, then if the requested method name contains
    periods, each component of the method name is searched for individually, with
    the effect that a simple hierarchical search is performed.  The value found from

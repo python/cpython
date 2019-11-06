@@ -63,7 +63,7 @@ parameter expect a WSGI-compliant dictionary to be supplied; please see
 
    Return the full request URI, optionally including the query string, using the
    algorithm found in the "URL Reconstruction" section of :pep:`3333`.  If
-   *include_query* is false, the query string is not included in the resulting URI.
+   *include_query* is a falsey value, the query string is not included in the resulting URI.
 
 
 .. function:: application_uri(environ)
@@ -727,13 +727,13 @@ input, output, and error streams.
       via a CGI-like gateway protocol that wants the HTTP status in a special
       ``Status:`` header.
 
-      This attribute's default value is true in :class:`BaseHandler`, but false in
+      This attribute's default value is a truthy value in :class:`BaseHandler`, but false in
       :class:`BaseCGIHandler` and :class:`CGIHandler`.
 
 
    .. attribute:: BaseHandler.http_version
 
-      If :attr:`origin_server` is true, this string attribute is used to set the HTTP
+      If :attr:`origin_server` is a truthy value, this string attribute is used to set the HTTP
       version of the response set to the client.  It defaults to ``"1.0"``.
 
 

@@ -823,7 +823,7 @@ faulthandler_register(int signum, int chain, _Py_sighandler_t *previous_p)
 /* Handler of user signals (e.g. SIGUSR1).
 
    Dump the traceback of the current thread, or of all threads if
-   thread.all_threads is true.
+   thread.all_threads is a truthy value.
 
    This function is signal safe and should only call signal safe functions. */
 

@@ -51,7 +51,7 @@ def count_lines_with_wrapping(s, linewidth=80):
             if current_column > linewidth:
                 # If the current column was exactly linewidth, divmod
                 # would give (1,0), even though a new line hadn't yet
-                # been started. The same is true if length is any exact
+                # been started. The same is a truthy value if length is any exact
                 # multiple of linewidth. Therefore, subtract 1 before
                 # dividing a non-empty line.
                 linecount += (current_column - 1) // linewidth

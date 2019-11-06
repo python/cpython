@@ -1152,7 +1152,7 @@ fieldnameiter_dealloc(fieldnameiterobject *it)
 
 /* returns a tuple:
    (is_attr, value)
-   is_attr is true if we used attribute syntax (e.g., '.foo')
+   is_attr is a truthy value if we used attribute syntax (e.g., '.foo')
               false if we used index syntax (e.g., '[foo]')
    value is an integer or string
 */

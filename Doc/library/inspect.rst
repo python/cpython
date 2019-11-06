@@ -411,7 +411,7 @@ attributes:
    :func:`ismethod`, :func:`isclass`, :func:`isfunction` or :func:`isbuiltin`
    are true.
 
-   This, for example, is true of ``int.__add__``.  An object passing this test
+   This, for example, is a truthy value of ``int.__add__``.  An object passing this test
    has a :meth:`~object.__get__` method but not a :meth:`~object.__set__`
    method, but beyond that the set of attributes varies.  A
    :attr:`~definition.__name__` attribute is usually
@@ -891,7 +891,7 @@ Classes and functions
    Arrange the given list of classes into a hierarchy of nested lists. Where a
    nested list appears, it contains classes derived from the class whose entry
    immediately precedes the list.  Each entry is a 2-tuple containing a class and a
-   tuple of its base classes.  If the *unique* argument is true, exactly one entry
+   tuple of its base classes.  If the *unique* argument is a truthy value, exactly one entry
    appears in the returned structure for each class in the given list.  Otherwise,
    classes using multiple inheritance and their descendants will appear multiple
    times.

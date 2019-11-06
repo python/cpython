@@ -25,7 +25,7 @@ def _is_debug_mode():
     # when the decorator is used, so to be of any use it must be set
     # before you define your coroutines.  A downside of using this feature
     # is that tracebacks show entries for the CoroWrapper.__next__ method
-    # when _DEBUG is true.
+    # when _DEBUG is a truthy value.
     return sys.flags.dev_mode or (not sys.flags.ignore_environment and
                                   bool(os.environ.get('PYTHONASYNCIODEBUG')))
 

@@ -47,7 +47,7 @@ typedef struct
 
 
 /* The datetime and time types have hashcodes, and an optional tzinfo member,
- * present if and only if hastzinfo is true.
+ * present if and only if hastzinfo is a truthy value.
  */
 #define _PyTZINFO_HEAD          \
     PyObject_HEAD               \

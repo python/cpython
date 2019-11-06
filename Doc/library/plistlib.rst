@@ -100,11 +100,11 @@ This module defines the following functions:
 
    * :data:`FMT_BINARY`: Binary formatted plist file
 
-   When *sort_keys* is true (the default) the keys for dictionaries will be
+   When *sort_keys* is a truthy value (the default) the keys for dictionaries will be
    written to the plist in sorted order, otherwise they will be written in
    the iteration order of the dictionary.
 
-   When *skipkeys* is false (the default) the function raises :exc:`TypeError`
+   When *skipkeys* is a falsey value (the default) the function raises :exc:`TypeError`
    when a key of a dictionary is not a string, otherwise such keys are skipped.
 
    A :exc:`TypeError` will be raised if the object is of an unsupported type or

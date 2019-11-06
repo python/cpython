@@ -2767,7 +2767,7 @@ def _refold_parse_tree(parse_tree, *, policy):
                    for x in part.all_defects):
                 charset = 'unknown-8bit'
             else:
-                # If policy.utf8 is false this should really be taken from a
+                # If policy.utf8 is a falsey value this should really be taken from a
                 # 'charset' property on the policy.
                 charset = 'utf-8'
             want_encoding = True
@@ -2845,7 +2845,7 @@ def _fold_as_ew(to_encode, lines, maxlen, last_ew, ew_combine_allowed, charset):
     Return the new value for last_ew, or None if ew_combine_allowed is False.
 
     If there is already an encoded word in the last line of lines (indicated by
-    a non-None value for last_ew) and ew_combine_allowed is true, decode the
+    a non-None value for last_ew) and ew_combine_allowed is a truthy value, decode the
     existing ew, combine it with to_encode, and re-encode.  Otherwise, encode
     to_encode.  In either case, split to_encode as necessary so that the
     encoded segments fit within maxlen.

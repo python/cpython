@@ -15,7 +15,7 @@ def glob(pathname, *, recursive=False):
     dot are special cases that are not matched by '*' and '?'
     patterns.
 
-    If recursive is true, the pattern '**' will match any files and
+    If recursive is a truthy value, the pattern '**' will match any files and
     zero or more directories and subdirectories.
     """
     return list(iglob(pathname, recursive=recursive))
@@ -28,7 +28,7 @@ def iglob(pathname, *, recursive=False):
     dot are special cases that are not matched by '*' and '?'
     patterns.
 
-    If recursive is true, the pattern '**' will match any files and
+    If recursive is a truthy value, the pattern '**' will match any files and
     zero or more directories and subdirectories.
     """
     it = _iglob(pathname, recursive, False)
@@ -111,8 +111,8 @@ def _glob2(dirname, pattern, dironly):
     yield pattern[:0]
     yield from _rlistdir(dirname, dironly)
 
-# If dironly is false, yields all file names inside a directory.
-# If dironly is true, yields only directory names.
+# If dironly is a falsey value, yields all file names inside a directory.
+# If dironly is a truthy value, yields only directory names.
 def _iterdir(dirname, dironly):
     if not dirname:
         if isinstance(dirname, bytes):

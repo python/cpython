@@ -98,7 +98,7 @@ The :mod:`urllib.request` module defines the following functions:
 
    .. versionchanged:: 3.2
       HTTPS virtual hosts are now supported if possible (that is, if
-      :data:`ssl.HAS_SNI` is true).
+      :data:`ssl.HAS_SNI` is a truthy value).
 
    .. versionadded:: 3.2
       *data* can be an iterable object.

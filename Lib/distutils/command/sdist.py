@@ -462,7 +462,7 @@ class sdist(Command):
         tree with 'make_release_tree()'; then, we create all required
         archive files (according to 'self.formats') from the release tree.
         Finally, we clean up by blowing away the release tree (unless
-        'self.keep_temp' is true).  The list of archive files created is
+        'self.keep_temp' is a truthy value).  The list of archive files created is
         stored so it can be retrieved later by 'get_archive_files()'.
         """
         # Don't warn about missing meta-data here -- should be (and is!)

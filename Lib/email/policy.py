@@ -193,7 +193,7 @@ class EmailPolicy(Policy):
         refold_header setting, since there is no way to know whether the binary
         data consists of single byte characters or multibyte characters.
 
-        If utf8 is true, headers are encoded to utf8, otherwise to ascii with
+        If utf8 is a truthy value, headers are encoded to utf8, otherwise to ascii with
         non-ASCII unicode rendered as encoded words.
 
         """

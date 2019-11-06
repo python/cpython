@@ -1155,7 +1155,7 @@ itertools.dropwhile.__new__
     predicate as func: object
     iterable as seq: object
     /
-Drop items from the iterable while predicate(item) is true.
+Drop items from the iterable while predicate(item) is a truthy value.
 
 Afterwards, return every element until the iterable is exhausted.
 [clinic start generated code]*/
@@ -3853,7 +3853,7 @@ itertools.filterfalse.__new__
     function as func: object
     iterable as seq: object
     /
-Return those items of iterable for which function(item) is false.
+Return those items of iterable for which function(item) is a falsey value.
 
 If function is None, return the items that are false.
 [clinic start generated code]*/

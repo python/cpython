@@ -37,7 +37,7 @@ PyAPI_FUNC(int) PyDict_Contains(PyObject *mp, PyObject *key);
 PyAPI_FUNC(int) PyDict_Update(PyObject *mp, PyObject *other);
 
 /* PyDict_Merge updates/merges from a mapping object (an object that
-   supports PyMapping_Keys() and PyObject_GetItem()).  If override is true,
+   supports PyMapping_Keys() and PyObject_GetItem()).  If override is a truthy value,
    the last occurrence of a key wins, else the first.  The Python
    dict.update(other) is equivalent to PyDict_Merge(dict, other, 1).
 */
@@ -46,7 +46,7 @@ PyAPI_FUNC(int) PyDict_Merge(PyObject *mp,
                              int override);
 
 /* PyDict_MergeFromSeq2 updates/merges from an iterable object producing
-   iterable objects of length 2.  If override is true, the last occurrence
+   iterable objects of length 2.  If override is a truthy value, the last occurrence
    of a key wins, else the first.  The Python dict constructor dict(seq2)
    is equivalent to dict={}; PyDict_MergeFromSeq(dict, seq2, 1).
 */

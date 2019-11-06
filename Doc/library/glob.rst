@@ -48,7 +48,7 @@ For example, ``'[?]'`` matches the character ``'?'``.
    .. index::
       single: **; in glob-style wildcards
 
-   If *recursive* is true, the pattern "``**``" will match any files and zero or
+   If *recursive* is a truthy value, the pattern "``**``" will match any files and zero or
    more directories, subdirectories and symbolic links to directories. If the
    pattern is followed by an :data:`os.sep` or :data:`os.altsep` then files will not
    match.

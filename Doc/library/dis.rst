@@ -804,7 +804,7 @@ iterations of the loop.
    by :opcode:`WITH_CLEANUP_START`.  SECOND is ``None`` or an exception type
    (pushed when an exception has been raised).
 
-   Pops two values from the stack.  If SECOND is not None and TOS is true
+   Pops two values from the stack.  If SECOND is not None and TOS is a truthy value
    unwinds the EXCEPT_HANDLER block which was created when the exception
    was caught and pushes ``NULL`` to the stack.
 
@@ -1008,30 +1008,30 @@ All of the following opcodes use their arguments.
 
 .. opcode:: POP_JUMP_IF_TRUE (target)
 
-   If TOS is true, sets the bytecode counter to *target*.  TOS is popped.
+   If TOS is a truthy value, sets the bytecode counter to *target*.  TOS is popped.
 
    .. versionadded:: 3.1
 
 
 .. opcode:: POP_JUMP_IF_FALSE (target)
 
-   If TOS is false, sets the bytecode counter to *target*.  TOS is popped.
+   If TOS is a falsey value, sets the bytecode counter to *target*.  TOS is popped.
 
    .. versionadded:: 3.1
 
 
 .. opcode:: JUMP_IF_TRUE_OR_POP (target)
 
-   If TOS is true, sets the bytecode counter to *target* and leaves TOS on the
-   stack.  Otherwise (TOS is false), TOS is popped.
+   If TOS is a truthy value, sets the bytecode counter to *target* and leaves TOS on the
+   stack.  Otherwise (TOS is a falsey value), TOS is popped.
 
    .. versionadded:: 3.1
 
 
 .. opcode:: JUMP_IF_FALSE_OR_POP (target)
 
-   If TOS is false, sets the bytecode counter to *target* and leaves TOS on the
-   stack.  Otherwise (TOS is true), TOS is popped.
+   If TOS is a falsey value, sets the bytecode counter to *target* and leaves TOS on the
+   stack.  Otherwise (TOS is a truthy value), TOS is popped.
 
    .. versionadded:: 3.1
 

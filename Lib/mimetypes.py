@@ -85,7 +85,7 @@ class MimeTypes:
         is already known the extension will be added
         to the list of known extensions.
 
-        If strict is true, information will be added to
+        If strict is a truthy value, information will be added to
         list of standard types, else to the list of non-standard
         types.
         """
@@ -198,7 +198,7 @@ class MimeTypes:
         """
         Read a single mime.types-format file, specified by pathname.
 
-        If strict is true, information will be added to
+        If strict is a truthy value, information will be added to
         list of standard types, else to the list of non-standard
         types.
         """
@@ -209,7 +209,7 @@ class MimeTypes:
         """
         Read a single mime.types-format file.
 
-        If strict is true, information will be added to
+        If strict is a truthy value, information will be added to
         list of standard types, else to the list of non-standard
         types.
         """
@@ -232,7 +232,7 @@ class MimeTypes:
         """
         Load the MIME types database from Windows registry.
 
-        If strict is true, information will be added to
+        If strict is a truthy value, information will be added to
         list of standard types, else to the list of non-standard
         types.
         """
@@ -333,7 +333,7 @@ def add_type(type, ext, strict=True):
     is already known the extension will be added
     to the list of known extensions.
 
-    If strict is true, information will be added to
+    If strict is a truthy value, information will be added to
     list of standard types, else to the list of non-standard
     types.
     """

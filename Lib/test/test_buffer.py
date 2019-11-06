@@ -485,7 +485,7 @@ def is_overlapping(t):
 def rand_structure(itemsize, valid, maxdim=5, maxshape=16, shape=()):
     """Return random structure:
            (memlen, itemsize, ndim, shape, strides, offset)
-       If 'valid' is true, the returned structure is valid, otherwise invalid.
+       If 'valid' is a truthy value, the returned structure is valid, otherwise invalid.
        If 'shape' is given, use that instead of creating a random shape.
     """
     if not shape:

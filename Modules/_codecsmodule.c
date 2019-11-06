@@ -303,7 +303,7 @@ _codecs_utf_16_decode_impl(PyObject *module, Py_buffer *data,
 /*[clinic end generated code: output=783b442abcbcc2d0 input=191d360bd7309180]*/
 {
     int byteorder = 0;
-    /* This is overwritten unless final is true. */
+    /* This is overwritten unless final is a truthy value. */
     Py_ssize_t consumed = data->len;
     PyObject *decoded = PyUnicode_DecodeUTF16Stateful(data->buf, data->len,
                                                       errors, &byteorder,
@@ -325,7 +325,7 @@ _codecs_utf_16_le_decode_impl(PyObject *module, Py_buffer *data,
 /*[clinic end generated code: output=899b9e6364379dcd input=c6904fdc27fb4724]*/
 {
     int byteorder = -1;
-    /* This is overwritten unless final is true. */
+    /* This is overwritten unless final is a truthy value. */
     Py_ssize_t consumed = data->len;
     PyObject *decoded = PyUnicode_DecodeUTF16Stateful(data->buf, data->len,
                                                       errors, &byteorder,
@@ -347,7 +347,7 @@ _codecs_utf_16_be_decode_impl(PyObject *module, Py_buffer *data,
 /*[clinic end generated code: output=49f6465ea07669c8 input=e49012400974649b]*/
 {
     int byteorder = 1;
-    /* This is overwritten unless final is true. */
+    /* This is overwritten unless final is a truthy value. */
     Py_ssize_t consumed = data->len;
     PyObject *decoded = PyUnicode_DecodeUTF16Stateful(data->buf, data->len,
                                                       errors, &byteorder,
@@ -376,7 +376,7 @@ _codecs_utf_16_ex_decode_impl(PyObject *module, Py_buffer *data,
                               const char *errors, int byteorder, int final)
 /*[clinic end generated code: output=0f385f251ecc1988 input=5a9c19f2e6b6cf0e]*/
 {
-    /* This is overwritten unless final is true. */
+    /* This is overwritten unless final is a truthy value. */
     Py_ssize_t consumed = data->len;
 
     PyObject *decoded = PyUnicode_DecodeUTF16Stateful(data->buf, data->len,
@@ -401,7 +401,7 @@ _codecs_utf_32_decode_impl(PyObject *module, Py_buffer *data,
 /*[clinic end generated code: output=2fc961807f7b145f input=fd7193965627eb58]*/
 {
     int byteorder = 0;
-    /* This is overwritten unless final is true. */
+    /* This is overwritten unless final is a truthy value. */
     Py_ssize_t consumed = data->len;
     PyObject *decoded = PyUnicode_DecodeUTF32Stateful(data->buf, data->len,
                                                       errors, &byteorder,
@@ -423,7 +423,7 @@ _codecs_utf_32_le_decode_impl(PyObject *module, Py_buffer *data,
 /*[clinic end generated code: output=ec8f46b67a94f3e6 input=9078ec70acfe7613]*/
 {
     int byteorder = -1;
-    /* This is overwritten unless final is true. */
+    /* This is overwritten unless final is a truthy value. */
     Py_ssize_t consumed = data->len;
     PyObject *decoded = PyUnicode_DecodeUTF32Stateful(data->buf, data->len,
                                                       errors, &byteorder,
@@ -445,7 +445,7 @@ _codecs_utf_32_be_decode_impl(PyObject *module, Py_buffer *data,
 /*[clinic end generated code: output=ff82bae862c92c4e input=f1ae1bbbb86648ff]*/
 {
     int byteorder = 1;
-    /* This is overwritten unless final is true. */
+    /* This is overwritten unless final is a truthy value. */
     Py_ssize_t consumed = data->len;
     PyObject *decoded = PyUnicode_DecodeUTF32Stateful(data->buf, data->len,
                                                       errors, &byteorder,

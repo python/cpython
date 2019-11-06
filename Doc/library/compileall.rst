@@ -158,7 +158,7 @@ Public functions
    cases where the source file does not exist at the time the byte-code file is
    executed.
 
-   If *force* is true, modules are re-compiled even if the timestamps are up to
+   If *force* is a truthy value, modules are re-compiled even if the timestamps are up to
    date.
 
    If *rx* is given, its search method is called on the complete path to each
@@ -169,7 +169,7 @@ Public functions
    information are printed to standard out. Set to ``1``, only errors are
    printed. Set to ``2``, all output is suppressed.
 
-   If *legacy* is true, byte-code files are written to their legacy locations
+   If *legacy* is a truthy value, byte-code files are written to their legacy locations
    and names, which may overwrite byte-code files created by another version of
    Python.  The default is to write files to their :pep:`3147` locations and
    names, which allows byte-code files from multiple versions of Python to
@@ -240,7 +240,7 @@ Public functions
    information are printed to standard out. Set to ``1``, only errors are
    printed. Set to ``2``, all output is suppressed.
 
-   If *legacy* is true, byte-code files are written to their legacy locations
+   If *legacy* is a truthy value, byte-code files are written to their legacy locations
    and names, which may overwrite byte-code files created by another version of
    Python.  The default is to write files to their :pep:`3147` locations and
    names, which allows byte-code files from multiple versions of Python to
@@ -280,7 +280,7 @@ Public functions
    Byte-compile all the :file:`.py` files found along ``sys.path``. Return a
    true value if all the files compiled successfully, and a false value otherwise.
 
-   If *skip_curdir* is true (the default), the current directory is not included
+   If *skip_curdir* is a truthy value (the default), the current directory is not included
    in the search.  All other parameters are passed to the :func:`compile_dir`
    function.  Note that unlike the other compile functions, ``maxlevels``
    defaults to ``0``.

@@ -371,10 +371,10 @@ The :mod:`locale` module defines the following exception and functions:
 
    Formats a number *val* according to the current :const:`LC_NUMERIC` setting.
    The format follows the conventions of the ``%`` operator.  For floating point
-   values, the decimal point is modified if appropriate.  If *grouping* is true,
+   values, the decimal point is modified if appropriate.  If *grouping* is a truthy value,
    also takes the grouping into account.
 
-   If *monetary* is true, the conversion uses monetary thousands separator and
+   If *monetary* is a truthy value, the conversion uses monetary thousands separator and
    grouping strings.
 
    Processes formatting specifiers as in ``format % val``, but takes the current
@@ -400,9 +400,9 @@ The :mod:`locale` module defines the following exception and functions:
 
    Formats a number *val* according to the current :const:`LC_MONETARY` settings.
 
-   The returned string includes the currency symbol if *symbol* is true, which is
-   the default. If *grouping* is true (which is not the default), grouping is done
-   with the value. If *international* is true (which is not the default), the
+   The returned string includes the currency symbol if *symbol* is a truthy value, which is
+   the default. If *grouping* is a truthy value (which is not the default), grouping is done
+   with the value. If *international* is a truthy value (which is not the default), the
    international currency symbol is used.
 
    Note that this function will not work with the 'C' locale, so you have to set a

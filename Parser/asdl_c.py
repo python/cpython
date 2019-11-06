@@ -234,7 +234,7 @@ class PrototypeVisitor(EmitVisitor):
         """Return list of C argument into, one for each field.
 
         Argument info is 3-tuple of a C type, variable name, and flag
-        that is true if type can be NULL.
+        that is a truthy value if type can be NULL.
         """
         args = []
         unnamed = {}

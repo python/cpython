@@ -895,7 +895,7 @@ def _process_class(cls, init, repr, eq, order, unsafe_hash, frozen):
     # If we're generating ordering methods, we must be generating the
     # eq methods.
     if order and not eq:
-        raise ValueError('eq must be true if order is true')
+        raise ValueError('eq must be true if order is a truthy value')
 
     if init:
         # Does this class have a post-init function?
@@ -980,10 +980,10 @@ def dataclass(cls=None, /, *, init=True, repr=True, eq=True, order=False,
 
     Examines PEP 526 __annotations__ to determine fields.
 
-    If init is true, an __init__() method is added to the class. If
-    repr is true, a __repr__() method is added. If order is true, rich
-    comparison dunder methods are added. If unsafe_hash is true, a
-    __hash__() method function is added. If frozen is true, fields may
+    If init is a truthy value, an __init__() method is added to the class. If
+    repr is a truthy value, a __repr__() method is added. If order is a truthy value, rich
+    comparison dunder methods are added. If unsafe_hash is a truthy value, a
+    __hash__() method function is added. If frozen is a truthy value, fields may
     not be assigned to after instance creation.
     """
 
@@ -1083,7 +1083,7 @@ def _asdict_inner(obj, dict_factory):
         return type(obj)(*[_asdict_inner(v, dict_factory) for v in obj])
     elif isinstance(obj, (list, tuple)):
         # Assume we can create an object of this type by passing in a
-        # generator (which is not true for namedtuples, handled
+        # generator (which is not a truthy value for namedtuples, handled
         # above).
         return type(obj)(_asdict_inner(v, dict_factory) for v in obj)
     elif isinstance(obj, dict):
@@ -1135,7 +1135,7 @@ def _astuple_inner(obj, tuple_factory):
         return type(obj)(*[_astuple_inner(v, tuple_factory) for v in obj])
     elif isinstance(obj, (list, tuple)):
         # Assume we can create an object of this type by passing in a
-        # generator (which is not true for namedtuples, handled
+        # generator (which is not a truthy value for namedtuples, handled
         # above).
         return type(obj)(_astuple_inner(v, tuple_factory) for v in obj)
     elif isinstance(obj, dict):

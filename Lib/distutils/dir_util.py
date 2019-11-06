@@ -21,7 +21,7 @@ def mkpath(name, mode=0o777, verbose=1, dry_run=0):
     means the current directory, which of course exists), then do nothing.
     Raise DistutilsFileError if unable to create some directory along the way
     (eg. some sub-path exists, but is a file rather than a directory).
-    If 'verbose' is true, print a one-line summary of each mkdir to stdout.
+    If 'verbose' is a truthy value, print a one-line summary of each mkdir to stdout.
     Return the list of directories actually created.
     """
 
@@ -112,7 +112,7 @@ def copy_tree(src, dst, preserve_mode=1, preserve_times=1,
 
     'preserve_mode' and 'preserve_times' are the same as for
     'copy_file'; note that they only apply to regular files, not to
-    directories.  If 'preserve_symlinks' is true, symlinks will be
+    directories.  If 'preserve_symlinks' is a truthy value, symlinks will be
     copied as symlinks (on platforms that support them!); otherwise
     (the default), the destination of the symlink will be copied.
     'update' and 'verbose' are the same as for 'copy_file'.
@@ -179,7 +179,7 @@ def remove_tree(directory, verbose=1, dry_run=0):
     """Recursively remove an entire directory tree.
 
     Any errors are ignored (apart from being reported to stdout if 'verbose'
-    is true).
+    is a truthy value).
     """
     global _path_created
 

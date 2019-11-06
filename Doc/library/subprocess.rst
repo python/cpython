@@ -52,7 +52,7 @@ compatibility with older versions, see the :ref:`call-function-trio` section.
    this function are passed through to that interface. (*timeout*,  *input*,
    *check*, and *capture_output* are not.)
 
-   If *capture_output* is true, stdout and stderr will be captured.
+   If *capture_output* is a truthy value, stdout and stderr will be captured.
    When used, the internal :class:`Popen` object is automatically created with
    ``stdout=PIPE`` and ``stderr=PIPE``. The *stdout* and *stderr* arguments may
    not be supplied at the same time as *capture_output*.  If you wish to capture
@@ -66,16 +66,16 @@ compatibility with older versions, see the :ref:`call-function-trio` section.
 
    The *input* argument is passed to :meth:`Popen.communicate` and thus to the
    subprocess's stdin.  If used it must be a byte sequence, or a string if
-   *encoding* or *errors* is specified or *text* is true.  When
+   *encoding* or *errors* is specified or *text* is a truthy value.  When
    used, the internal :class:`Popen` object is automatically created with
    ``stdin=PIPE``, and the *stdin* argument may not be used as well.
 
-   If *check* is true, and the process exits with a non-zero exit code, a
+   If *check* is a truthy value, and the process exits with a non-zero exit code, a
    :exc:`CalledProcessError` exception will be raised. Attributes of that
    exception hold the arguments, the exit code, and stdout and stderr if they
    were captured.
 
-   If *encoding* or *errors* are specified, or *text* is true,
+   If *encoding* or *errors* are specified, or *text* is a truthy value,
    file objects for stdin, stdout and stderr are opened in text mode using the
    specified *encoding* and *errors* or the :class:`io.TextIOWrapper` default.
    The *universal_newlines* argument is equivalent  to *text* and is provided
@@ -276,7 +276,7 @@ default values. The arguments that are most commonly needed are:
       single: universal newlines; subprocess module
 
    If *encoding* or *errors* are specified, or *text* (also known as
-   *universal_newlines*) is true,
+   *universal_newlines*) is a truthy value,
    the file objects *stdin*, *stdout* and *stderr* will be opened in text
    mode using the *encoding* and *errors* specified in the call or the
    defaults for :class:`io.TextIOWrapper`.
@@ -491,12 +491,12 @@ functions.
       :exc:`RuntimeError`. The new restriction may affect applications that
       are deployed in mod_wsgi, uWSGI, and other embedded environments.
 
-   If *close_fds* is true, all file descriptors except :const:`0`, :const:`1` and
+   If *close_fds* is a truthy value, all file descriptors except :const:`0`, :const:`1` and
    :const:`2` will be closed before the child process is executed.  Otherwise
-   when *close_fds* is false, file descriptors obey their inheritable flag
+   when *close_fds* is a falsey value, file descriptors obey their inheritable flag
    as described in :ref:`fd_inheritance`.
 
-   On Windows, if *close_fds* is true then no handles will be inherited by the
+   On Windows, if *close_fds* is a truthy value then no handles will be inherited by the
    child process unless explicitly passed in the ``handle_list`` element of
    :attr:`STARTUPINFO.lpAttributeList`, or by standard handle redirection.
 
@@ -531,7 +531,7 @@ functions.
    .. versionchanged:: 3.8
       *cwd* parameter accepts a bytes object on Windows.
 
-   If *restore_signals* is true (the default) all signals that Python has set to
+   If *restore_signals* is a truthy value (the default) all signals that Python has set to
    SIG_IGN are restored to SIG_DFL in the child process before the exec.
    Currently this includes the SIGPIPE, SIGXFZ and SIGXFSZ signals.
    (POSIX only)
@@ -539,7 +539,7 @@ functions.
    .. versionchanged:: 3.2
       *restore_signals* was added.
 
-   If *start_new_session* is true the setsid() system call will be made in the
+   If *start_new_session* is a truthy value the setsid() system call will be made in the
    child process prior to the execution of the subprocess.  (POSIX only)
 
    .. versionchanged:: 3.2
@@ -590,7 +590,7 @@ functions.
 
    .. _side-by-side assembly: https://en.wikipedia.org/wiki/Side-by-Side_Assembly
 
-   If *encoding* or *errors* are specified, or *text* is true, the file objects
+   If *encoding* or *errors* are specified, or *text* is a truthy value, the file objects
    *stdin*, *stdout* and *stderr* are opened in text mode with the specified
    encoding and *errors*, as described above in :ref:`frequently-used-arguments`.
    The *universal_newlines* argument is equivalent  to *text* and is provided

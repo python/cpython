@@ -17,7 +17,7 @@ There are four basic concrete server classes:
 
    This uses the Internet TCP protocol, which provides for
    continuous streams of data between the client and server.
-   If *bind_and_activate* is true, the constructor automatically attempts to
+   If *bind_and_activate* is a truthy value, the constructor automatically attempts to
    invoke :meth:`~BaseServer.server_bind` and
    :meth:`~BaseServer.server_activate`.  The other parameters are passed to
    the :class:`BaseServer` base class.
@@ -117,11 +117,11 @@ server classes.
 
    :meth:`socketserver.ForkingMixIn.server_close` waits until all child
    processes complete, except if
-   :attr:`socketserver.ForkingMixIn.block_on_close` attribute is false.
+   :attr:`socketserver.ForkingMixIn.block_on_close` attribute is a falsey value.
 
    :meth:`socketserver.ThreadingMixIn.server_close` waits until all non-daemon
    threads complete, except if
-   :attr:`socketserver.ThreadingMixIn.block_on_close` attribute is false. Use
+   :attr:`socketserver.ThreadingMixIn.block_on_close` attribute is a falsey value. Use
    daemonic threads by setting
    :data:`ThreadingMixIn.daemon_threads` to ``True`` to not wait until threads
    complete.

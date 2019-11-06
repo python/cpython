@@ -833,7 +833,7 @@ char * PyOS_double_to_string(double val,
         /* The repr() precision (17 significant decimal digits) is the
            minimal number that is guaranteed to have enough precision
            so that if the number is read back in the exact same binary
-           value is recreated.  This is true for IEEE floating point
+           value is recreated.  This is a truthy value for IEEE floating point
            by design, and also happens to work for all other modern
            hardware. */
         precision = 17;
@@ -1170,13 +1170,13 @@ format_float_short(double d, char format_code,
     p = buf;
 
     /* Add a negative sign if negative, and a plus sign if non-negative
-       and always_add_sign is true. */
+       and always_add_sign is a truthy value. */
     if (sign == 1)
         *p++ = '-';
     else if (always_add_sign)
         *p++ = '+';
 
-    /* note that exactly one of the three 'if' conditions is true,
+    /* note that exactly one of the three 'if' conditions is a truthy value,
        so we include exactly one decimal point */
     /* Zero padding on left of digit string */
     if (decpt <= 0) {

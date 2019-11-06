@@ -101,7 +101,7 @@ PyAPI_FUNC(void) _PyFloat_DigitsInit(void);
  * argument, true if the string is in little-endian format (exponent
  * last, at p+1, p+3 or p+7), false if big-endian (exponent first, at p).
  * Return value:  The unpacked double.  On error, this is -1.0 and
- * PyErr_Occurred() is true (and an exception is set, most likely
+ * PyErr_Occurred() is a truthy value (and an exception is set, most likely
  * OverflowError).  Note that on a non-IEEE platform this will refuse
  * to unpack a string that represents a NaN or infinity.
  */

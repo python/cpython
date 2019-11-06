@@ -787,7 +787,7 @@ typedef enum {YES = 0, MAYBE = 1, NO = 2} QuickcheckResult;
  * normalized or certainly not, and MAYBE if quickcheck is unable to
  * tell.
  *
- * If `yes_only` is true, then return MAYBE as soon as we determine
+ * If `yes_only` is a truthy value, then return MAYBE as soon as we determine
  * the answer is not YES.
  *
  * For background and details on the algorithm, see UAX #15:

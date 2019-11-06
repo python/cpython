@@ -414,7 +414,7 @@ be finalized; only the internally used file object will be closed. See the
    full name. Its file information is extracted as accurately as possible. *member*
    may be a filename or a :class:`TarInfo` object. You can specify a different
    directory using *path*. *path* may be a :term:`path-like object`.
-   File attributes (owner, mtime, mode) are set unless *set_attrs* is false.
+   File attributes (owner, mtime, mode) are set unless *set_attrs* is a falsey value.
 
    If *numeric_owner* is :const:`True`, the uid and gid numbers from the tarfile
    are used to set the owner/group for the extracted files. Otherwise, the named

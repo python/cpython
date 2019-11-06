@@ -13,27 +13,27 @@ import weakref
 class TypesTests(unittest.TestCase):
 
     def test_truth_values(self):
-        if None: self.fail('None is true instead of false')
-        if 0: self.fail('0 is true instead of false')
-        if 0.0: self.fail('0.0 is true instead of false')
-        if '': self.fail('\'\' is true instead of false')
-        if not 1: self.fail('1 is false instead of true')
-        if not 1.0: self.fail('1.0 is false instead of true')
-        if not 'x': self.fail('\'x\' is false instead of true')
-        if not {'x': 1}: self.fail('{\'x\': 1} is false instead of true')
+        if None: self.fail('None is a truthy value instead of false')
+        if 0: self.fail('0 is a truthy value instead of false')
+        if 0.0: self.fail('0.0 is a truthy value instead of false')
+        if '': self.fail('\'\' is a truthy value instead of false')
+        if not 1: self.fail('1 is a falsey value instead of true')
+        if not 1.0: self.fail('1.0 is a falsey value instead of true')
+        if not 'x': self.fail('\'x\' is a falsey value instead of true')
+        if not {'x': 1}: self.fail('{\'x\': 1} is a falsey value instead of true')
         def f(): pass
         class C: pass
         x = C()
-        if not f: self.fail('f is false instead of true')
-        if not C: self.fail('C is false instead of true')
-        if not sys: self.fail('sys is false instead of true')
-        if not x: self.fail('x is false instead of true')
+        if not f: self.fail('f is a falsey value instead of true')
+        if not C: self.fail('C is a falsey value instead of true')
+        if not sys: self.fail('sys is a falsey value instead of true')
+        if not x: self.fail('x is a falsey value instead of true')
 
     def test_boolean_ops(self):
-        if 0 or 0: self.fail('0 or 0 is true instead of false')
+        if 0 or 0: self.fail('0 or 0 is a truthy value instead of false')
         if 1 and 1: pass
-        else: self.fail('1 and 1 is false instead of true')
-        if not 1: self.fail('not 1 is true instead of false')
+        else: self.fail('1 and 1 is a falsey value instead of true')
+        if not 1: self.fail('not 1 is a truthy value instead of false')
 
     def test_comparisons(self):
         if 0 < 1 <= 1 == 1 >= 1 > 0 != 1: pass

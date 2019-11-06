@@ -67,7 +67,7 @@ Here are the methods of the :class:`Message` class:
    .. method:: as_string(unixfrom=False, maxheaderlen=0, policy=None)
 
       Return the entire message flattened as a string.  When optional *unixfrom*
-      is true, the envelope header is included in the returned string.
+      is a truthy value, the envelope header is included in the returned string.
       *unixfrom* defaults to ``False``.  For backward compatibility reasons,
       *maxheaderlen* defaults to ``0``, so if you want a different value you
       must override it explicitly (the value specified for *max_line_length* in
@@ -111,7 +111,7 @@ Here are the methods of the :class:`Message` class:
    .. method:: as_bytes(unixfrom=False, policy=None)
 
       Return the entire message flattened as a bytes object.  When optional
-      *unixfrom* is true, the envelope header is included in the returned
+      *unixfrom* is a truthy value, the envelope header is included in the returned
       string.  *unixfrom* defaults to ``False``.  The *policy* argument may be
       used to override the default policy obtained from the message instance.
       This can be used to control some of the formatting produced by the

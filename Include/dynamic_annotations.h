@@ -287,7 +287,7 @@
      The "barrier" argument is a pointer to the barrier object. */
 
   /* Report that the "barrier" has been initialized with initial "count".
-   If 'reinitialization_allowed' is true, initialization is allowed to happen
+   If 'reinitialization_allowed' is a truthy value, initialization is allowed to happen
    multiple times w/o calling barrier_destroy() */
 #define _Py_ANNOTATE_BARRIER_INIT(barrier, count, reinitialization_allowed) \
     AnnotateBarrierInit(__FILE__, __LINE__, barrier, count, \

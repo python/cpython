@@ -833,7 +833,7 @@ class RawConfigParser(MutableMapping):
 
         All % interpolations are expanded in the return values, based on the
         defaults passed into the constructor, unless the optional argument
-        `raw' is true.  Additional substitutions may be provided using the
+        `raw' is a truthy value.  Additional substitutions may be provided using the
         `vars' argument, which must be a dictionary whose contents overrides
         any pre-existing defaults.
 

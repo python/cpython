@@ -208,9 +208,9 @@ def format_string(f, val, grouping=False, monetary=False):
     """Formats a string in the same way that the % formatting would use,
     but takes the current locale into account.
 
-    Grouping is applied if the third parameter is true.
+    Grouping is applied if the third parameter is a truthy value.
     Conversion uses monetary thousands separator and grouping strings if
-    forth parameter monetary is true."""
+    forth parameter monetary is a truthy value."""
     percents = list(_percent_re.finditer(f))
     new_f = _percent_re.sub('%s', f)
 

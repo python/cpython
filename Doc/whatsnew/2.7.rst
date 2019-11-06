@@ -245,7 +245,7 @@ Deleting an entry and reinserting it will move it to the end::
     [('first', 1), ('third', 3), ('second', 5)]
 
 The :meth:`~collections.OrderedDict.popitem` method has an optional *last*
-argument that defaults to ``True``.  If *last* is true, the most recently
+argument that defaults to ``True``.  If *last* is a truthy value, the most recently
 added key is returned and removed; if it's false, the
 oldest key is selected::
 
@@ -1115,7 +1115,7 @@ changes, or look through the Subversion logs for all the details.
   (Both features added by Raymond Hettinger.)
 
   The :class:`~collections.namedtuple` class now has an optional *rename* parameter.
-  If *rename* is true, field names that are invalid because they've
+  If *rename* is a truthy value, field names that are invalid because they've
   been repeated or aren't legal Python identifiers will be
   renamed to legal names that are derived from the field's
   position within the list of fields:
@@ -1360,7 +1360,7 @@ changes, or look through the Subversion logs for all the details.
 
 * New function: ``itertools.compress(data, selectors)`` takes two
   iterators.  Elements of *data* are returned if the corresponding
-  value in *selectors* is true::
+  value in *selectors* is a truthy value::
 
     itertools.compress('ABCDEF', [1,0,1,0,1,1]) =>
       A, C, E, F
@@ -2081,7 +2081,7 @@ version 1.3.  Some of the new features are:
 
 * Deprecated: using an element as a Boolean (i.e., ``if elem:``) would
   return true if the element had any children, or false if there were
-  no children.  This behaviour is confusing -- ``None`` is false, but
+  no children.  This behaviour is confusing -- ``None`` is a falsey value, but
   so is a childless element? -- so it will now trigger a
   :exc:`FutureWarning`.  In your code, you should be explicit: write
   ``len(elem) != 0`` if you're interested in the number of children,

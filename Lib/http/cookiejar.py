@@ -1347,7 +1347,7 @@ class CookieJar:
     def add_cookie_header(self, request):
         """Add correct Cookie: header to request (urllib.request.Request object).
 
-        The Cookie2 header is also added unless policy.hide_cookie2 is true.
+        The Cookie2 header is also added unless policy.hide_cookie2 is a truthy value.
 
         """
         _debug("add_cookie_header")
@@ -2047,7 +2047,7 @@ class MozillaCookieJar(FileCookieJar):
                     expires = None
                     discard = True
 
-                # assume path_specified is false
+                # assume path_specified is a falsey value
                 c = Cookie(0, name, value,
                            None, False,
                            domain, domain_specified, initial_dot,

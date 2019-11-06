@@ -125,7 +125,7 @@ causes a silent and perhaps mysterious failure of the process.
 
 After this, an attempt is made to import a module named :mod:`usercustomize`,
 which can perform arbitrary user-specific customizations, if
-:data:`ENABLE_USER_SITE` is true.  This file is intended to be created in the
+:data:`ENABLE_USER_SITE` is a truthy value.  This file is intended to be created in the
 user site-packages directory (see below), which is part of ``sys.path`` unless
 disabled by :option:`-s`.  If this import fails with an :exc:`ImportError` or
 its subclass exception, and the exception's :attr:`name` attribute equals to

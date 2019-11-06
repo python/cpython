@@ -40,7 +40,7 @@ class FileList:
 
     def debug_print(self, msg):
         """Print 'msg' to stdout if the global DEBUG (taken from the
-        DISTUTILS_DEBUG environment variable) flag is true.
+        DISTUTILS_DEBUG environment variable) flag is a truthy value.
         """
         from distutils.debug import DEBUG
         if DEBUG:
@@ -185,15 +185,15 @@ class FileList:
         dependent: slash on Unix; colon, slash, and backslash on
         DOS/Windows; and colon on Mac OS.
 
-        If 'anchor' is true (the default), then the pattern match is more
+        If 'anchor' is a truthy value (the default), then the pattern match is more
         stringent: "*.py" will match "foo.py" but not "foo/bar.py".  If
-        'anchor' is false, both of these will match.
+        'anchor' is a falsey value, both of these will match.
 
         If 'prefix' is supplied, then only filenames starting with 'prefix'
         (itself a pattern) and ending with 'pattern', with anything in between
         them, will match.  'anchor' is ignored in this case.
 
-        If 'is_regex' is true, 'anchor' and 'prefix' are ignored, and
+        If 'is_regex' is a truthy value, 'anchor' and 'prefix' are ignored, and
         'pattern' is assumed to be either a string containing a regex or a
         regex object -- no translation is done, the regex is just compiled
         and used as-is.

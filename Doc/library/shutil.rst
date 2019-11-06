@@ -63,7 +63,7 @@ Directory and files operations
    Special files such as character or block devices and pipes cannot be
    copied with this function.
 
-   If *follow_symlinks* is false and *src* is a symbolic link,
+   If *follow_symlinks* is a falsey value and *src* is a symbolic link,
    a new symbolic link will be created instead of copying the
    file *src* points to.
 
@@ -94,7 +94,7 @@ Directory and files operations
    Copy the permission bits from *src* to *dst*.  The file contents, owner, and
    group are unaffected.  *src* and *dst* are path-like objects or path names
    given as strings.
-   If *follow_symlinks* is false, and both *src* and *dst* are symbolic links,
+   If *follow_symlinks* is a falsey value, and both *src* and *dst* are symbolic links,
    :func:`copymode` will attempt to modify the mode of *dst* itself (rather
    than the file it points to).  This functionality is not available on every
    platform; please see :func:`copystat` for more information.  If
@@ -112,7 +112,7 @@ Directory and files operations
    group are unaffected.  *src* and *dst* are path-like objects or path
    names given as strings.
 
-   If *follow_symlinks* is false, and *src* and *dst* both
+   If *follow_symlinks* is a falsey value, and *src* and *dst* both
    refer to symbolic links, :func:`copystat` will operate on
    the symbolic links themselves rather than the files the
    symbolic links refer to—reading the information from the
@@ -156,9 +156,9 @@ Directory and files operations
    copied into *dst* using the base filename from *src*.  Returns the
    path to the newly created file.
 
-   If *follow_symlinks* is false, and *src* is a symbolic link,
+   If *follow_symlinks* is a falsey value, and *src* is a symbolic link,
    *dst* will be created as a symbolic link.  If *follow_symlinks*
-   is true and *src* is a symbolic link, *dst* will be a copy of
+   is a truthy value and *src* is a symbolic link, *dst* will be a copy of
    the file *src* refers to.
 
    :func:`~shutil.copy` copies the file data and the file's permission
@@ -181,7 +181,7 @@ Directory and files operations
    Identical to :func:`~shutil.copy` except that :func:`copy2`
    also attempts to preserve file metadata.
 
-   When *follow_symlinks* is false, and *src* is a symbolic
+   When *follow_symlinks* is a falsey value, and *src* is a symbolic
    link, :func:`copy2` attempts to copy all metadata from the
    *src* symbolic link to the newly-created *dst* symbolic link.
    However, this functionality is not available on all platforms.
@@ -223,12 +223,12 @@ Directory and files operations
    Permissions and times of directories are copied with :func:`copystat`,
    individual files are copied using :func:`~shutil.copy2`.
 
-   If *symlinks* is true, symbolic links in the source tree are represented as
+   If *symlinks* is a truthy value, symbolic links in the source tree are represented as
    symbolic links in the new tree and the metadata of the original links will
    be copied as far as the platform allows; if false or omitted, the contents
    and metadata of the linked files are copied to the new tree.
 
-   When *symlinks* is false, if the file pointed by the symlink doesn't
+   When *symlinks* is a falsey value, if the file pointed by the symlink doesn't
    exist, an exception will be added in the list of errors raised in
    an :exc:`Error` exception at the end of the copy process.
    You can set the optional *ignore_dangling_symlinks* flag to true if you
@@ -255,14 +255,14 @@ Directory and files operations
    .. audit-event:: shutil.copytree src,dst shutil.copytree
 
    .. versionchanged:: 3.3
-      Copy metadata when *symlinks* is false.
+      Copy metadata when *symlinks* is a falsey value.
       Now returns *dst*.
 
    .. versionchanged:: 3.2
       Added the *copy_function* argument to be able to provide a custom copy
       function.
       Added the *ignore_dangling_symlinks* argument to silent dangling symlinks
-      errors when *symlinks* is false.
+      errors when *symlinks* is a falsey value.
 
    .. versionchanged:: 3.8
       Platform-specific fast-copy syscalls may be used internally in order to
@@ -277,7 +277,7 @@ Directory and files operations
    .. index:: single: directory; deleting
 
    Delete an entire directory tree; *path* must point to a directory (but not a
-   symbolic link to a directory).  If *ignore_errors* is true, errors resulting
+   symbolic link to a directory).  If *ignore_errors* is a truthy value, errors resulting
    from failed removals will be ignored; if false or omitted, such errors are
    handled by calling a handler specified by *onerror* or, if that is omitted,
    they raise an exception.
@@ -561,7 +561,7 @@ provided.  They rely on the :mod:`zipfile` and :mod:`tarfile` modules.
 
    *root_dir* and *base_dir* both default to the current directory.
 
-   If *dry_run* is true, no archive is created, but the operations that would be
+   If *dry_run* is a truthy value, no archive is created, but the operations that would be
    executed are logged to *logger*.
 
    *owner* and *group* are used when creating a tar archive. By default,

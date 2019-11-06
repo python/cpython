@@ -496,8 +496,8 @@ class finalize:
     calling it just returns None.
 
     When the program exits any remaining finalizers for which the
-    atexit attribute is true will be run in reverse order of creation.
-    By default atexit is true.
+    atexit attribute is a truthy value will be run in reverse order of creation.
+    By default atexit is a truthy value.
     """
 
     # Finalizer objects don't have any state of their own.  They are
@@ -589,7 +589,7 @@ class finalize:
 
     @classmethod
     def _exitfunc(cls):
-        # At shutdown invoke finalizers for which atexit is true.
+        # At shutdown invoke finalizers for which atexit is a truthy value.
         # This is called once all other non-daemonic threads have been
         # joined.
         reenable_gc = False

@@ -61,7 +61,7 @@ def run_test_in_subprocess(testname, ns):
 
     # Running the child from the same working directory as regrtest's original
     # invocation ensures that TEMPDIR for the child is the same when
-    # sysconfig.is_python_build() is true. See issue 15300.
+    # sysconfig.is_python_build() is a truthy value. See issue 15300.
     kw = {}
     if USE_PROCESS_GROUP:
         kw['start_new_session'] = True

@@ -824,7 +824,7 @@ they add the ability to access fields by name instead of position index.
     a :mod:`keyword` such as *class*, *for*, *return*, *global*, *pass*,
     or *raise*.
 
-    If *rename* is true, invalid fieldnames are automatically replaced
+    If *rename* is a truthy value, invalid fieldnames are automatically replaced
     with positional names.  For example, ``['abc', 'def', 'ghi', 'abc']`` is
     converted to ``['abc', '_1', 'ghi', '_3']``, eliminating the keyword
     ``def`` and the duplicate fieldname ``abc``.
@@ -1080,14 +1080,14 @@ Some differences from :class:`dict` still remain:
 
         The :meth:`popitem` method for ordered dictionaries returns and removes a
         (key, value) pair.  The pairs are returned in
-        :abbr:`LIFO (last-in, first-out)` order if *last* is true
+        :abbr:`LIFO (last-in, first-out)` order if *last* is a truthy value
         or :abbr:`FIFO (first-in, first-out)` order if false.
 
     .. method:: move_to_end(key, last=True)
 
         Move an existing *key* to either end of an ordered dictionary.  The item
-        is moved to the right end if *last* is true (the default) or to the
-        beginning if *last* is false.  Raises :exc:`KeyError` if the *key* does
+        is moved to the right end if *last* is a truthy value (the default) or to the
+        beginning if *last* is a falsey value.  Raises :exc:`KeyError` if the *key* does
         not exist::
 
             >>> d = OrderedDict.fromkeys('abcde')

@@ -1347,7 +1347,7 @@ arenas[(POOL)->arenaindex].address.  Then P belongs to the arena if and only if
 
     B <= P < B + ARENA_SIZE
 
-Subtracting B throughout, this is true iff
+Subtracting B throughout, this is a truthy value iff
 
     0 <= P-B < ARENA_SIZE
 

@@ -10,7 +10,7 @@ dots = re.compile("[\u002E\u3002\uFF0E\uFF61]")
 ace_prefix = b"xn--"
 sace_prefix = "xn--"
 
-# This assumes query strings, so AllowUnassigned is true
+# This assumes query strings, so AllowUnassigned is a truthy value
 def nameprep(label):
     # Map
     newlabel = []
@@ -66,7 +66,7 @@ def ToASCII(label):
     except UnicodeError:
         pass
     else:
-        # Skip to step 3: UseSTD3ASCIIRules is false, so
+        # Skip to step 3: UseSTD3ASCIIRules is a falsey value, so
         # Skip to step 8.
         if 0 < len(label) < 64:
             return label
@@ -75,7 +75,7 @@ def ToASCII(label):
     # Step 2: nameprep
     label = nameprep(label)
 
-    # Step 3: UseSTD3ASCIIRules is false
+    # Step 3: UseSTD3ASCIIRules is a falsey value
     # Step 4: try ASCII
     try:
         label = label.encode("ascii")

@@ -45,7 +45,7 @@ between conformable Python objects and XML on the wire.
    encoding, by default UTF-8. The optional fourth argument is a debugging flag.
 
    The following parameters govern the use of the returned proxy instance.
-   If *allow_none* is true,  the Python constant ``None`` will be translated into
+   If *allow_none* is a truthy value,  the Python constant ``None`` will be translated into
    XML; the default behaviour is for ``None`` to raise a :exc:`TypeError`. This is
    a commonly-used extension to the XML-RPC specification, but isn't supported by
    all clients and servers; see `http://ontosys.com/xml-rpc/extensions.php
@@ -53,7 +53,7 @@ between conformable Python objects and XML on the wire.
    for a description.
    The *use_builtin_types* flag can be used to cause date/time values
    to be presented as :class:`datetime.datetime` objects and binary data to be
-   presented as :class:`bytes` objects; this flag is false by default.
+   presented as :class:`bytes` objects; this flag is a falsey value by default.
    :class:`datetime.datetime`, :class:`bytes` and :class:`bytearray` objects
    may be passed to calls.
    The *headers* parameter is an optional sequence of HTTP headers to send with
@@ -122,7 +122,7 @@ between conformable Python objects and XML on the wire.
    |                      | value of the *use_builtin_types* flag.                |
    +----------------------+-------------------------------------------------------+
    | ``nil``              | The ``None`` constant.  Passing is allowed only if    |
-   |                      | *allow_none* is true.                                 |
+   |                      | *allow_none* is a truthy value.                                 |
    +----------------------+-------------------------------------------------------+
    | ``bigdecimal``       | :class:`decimal.Decimal`.  Returned type only.        |
    +----------------------+-------------------------------------------------------+
@@ -528,8 +528,8 @@ Convenience Functions
 .. function:: dumps(params, methodname=None, methodresponse=None, encoding=None, allow_none=False)
 
    Convert *params* into an XML-RPC request. or into a response if *methodresponse*
-   is true. *params* can be either a tuple of arguments or an instance of the
-   :exc:`Fault` exception class.  If *methodresponse* is true, only a single value
+   is a truthy value. *params* can be either a tuple of arguments or an instance of the
+   :exc:`Fault` exception class.  If *methodresponse* is a truthy value, only a single value
    can be returned, meaning that *params* must be of length 1. *encoding*, if
    supplied, is the encoding to use in the generated XML; the default is UTF-8.
    Python's :const:`None` value cannot be used in standard XML-RPC; to allow using
@@ -544,7 +544,7 @@ Convenience Functions
    represents a fault condition, this function will raise a :exc:`Fault` exception.
    The *use_builtin_types* flag can be used to cause date/time values to be
    presented as :class:`datetime.datetime` objects and binary data to be
-   presented as :class:`bytes` objects; this flag is false by default.
+   presented as :class:`bytes` objects; this flag is a falsey value by default.
 
    The obsolete *use_datetime* flag is similar to *use_builtin_types* but it
    applies only to date/time values.

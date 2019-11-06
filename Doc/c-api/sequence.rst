@@ -172,5 +172,5 @@ Sequence Protocol
 
    Return the *i*\ th element of *o* or ``NULL`` on failure. Faster form of
    :c:func:`PySequence_GetItem` but without checking that
-   :c:func:`PySequence_Check` on *o* is true and without adjustment for negative
+   :c:func:`PySequence_Check` on *o* is a truthy value and without adjustment for negative
    indices.

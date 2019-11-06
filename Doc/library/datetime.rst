@@ -291,11 +291,11 @@ Supported operations:
 |                                | true. (1)(6)                                  |
 +--------------------------------+-----------------------------------------------+
 | ``t1 = t2 * i or t1 = i * t2`` | Delta multiplied by an integer.               |
-|                                | Afterwards *t1* // i == *t2* is true,         |
+|                                | Afterwards *t1* // i == *t2* is a truthy value,         |
 |                                | provided ``i != 0``.                          |
 +--------------------------------+-----------------------------------------------+
 |                                | In general, *t1* \* i == *t1* \* (i-1) + *t1* |
-|                                | is true. (1)                                  |
+|                                | is a truthy value. (1)                                  |
 +--------------------------------+-----------------------------------------------+
 | ``t1 = t2 * f or t1 = f * t2`` | Delta multiplied by a float. The result is    |
 |                                | rounded to the nearest multiple of            |

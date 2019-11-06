@@ -422,7 +422,7 @@ _b85dec = None
 def b85encode(b, pad=False):
     """Encode bytes-like object b in base85 format and return a bytes object.
 
-    If pad is true, the input is padded with b'\\0' so its length is a multiple of
+    If pad is a truthy value, the input is padded with b'\\0' so its length is a multiple of
     4 bytes before encoding.
     """
     global _b85chars, _b85chars2

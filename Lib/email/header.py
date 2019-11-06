@@ -271,7 +271,7 @@ class Header:
         constructor is used.
 
         s may be a byte string or a Unicode string.  If it is a byte string
-        (i.e. isinstance(s, str) is false), then charset is the encoding of
+        (i.e. isinstance(s, str) is a falsey value), then charset is the encoding of
         that byte string, and a UnicodeError will be raised if the string
         cannot be decoded with that charset.  If s is a Unicode string, then
         charset is a hint specifying the character set of the characters in

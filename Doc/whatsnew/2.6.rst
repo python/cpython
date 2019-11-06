@@ -409,7 +409,7 @@ there was no exception, the transaction is committed.  The transaction is rolled
 back if there was an exception.
 
 In the code below, execution will just fall off the end of the function,
-returning the default value of ``None``.  ``None`` is false, so the exception
+returning the default value of ``None``.  ``None`` is a falsey value, so the exception
 will be re-raised automatically.  If you wished, you could be more explicit and
 add a :keyword:`return` statement at the marked location. ::
 
@@ -2078,11 +2078,11 @@ changes, or look through the Subversion logs for all the details.
   and its subclasses :class:`WatchedFileHandler`, :class:`RotatingFileHandler`,
   and :class:`TimedRotatingFileHandler` now
   have an optional *delay* parameter to their constructors.  If *delay*
-  is true, opening of the log file is deferred until the first
+  is a truthy value, opening of the log file is deferred until the first
   :meth:`emit` call is made.  (Contributed by Vinay Sajip.)
 
   :class:`TimedRotatingFileHandler` also has a *utc* constructor
-  parameter.  If the argument is true, UTC time will be used
+  parameter.  If the argument is a truthy value, UTC time will be used
   in determining when midnight occurs and in generating filenames;
   otherwise local time will be used.
 
@@ -2187,7 +2187,7 @@ changes, or look through the Subversion logs for all the details.
 * The :func:`os.walk` function now has a ``followlinks`` parameter. If
   set to True, it will follow symlinks pointing to directories and
   visit the directory's contents.  For backward compatibility, the
-  parameter's default value is false.  Note that the function can fall
+  parameter's default value is a falsey value.  Note that the function can fall
   into an infinite recursion if there's a symlink that points to a
   parent directory.  (:issue:`1273829`)
 
@@ -2410,7 +2410,7 @@ changes, or look through the Subversion logs for all the details.
 
   Another new variable, :attr:`dont_write_bytecode`, controls whether Python
   writes any :file:`.pyc` or :file:`.pyo` files on importing a module.
-  If this variable is true, the compiled files are not written.  The
+  If this variable is a truthy value, the compiled files are not written.  The
   variable is initially set on start-up by supplying the :option:`-B`
   switch to the Python interpreter, or by setting the
   :envvar:`PYTHONDONTWRITEBYTECODE` environment variable before
@@ -2422,8 +2422,8 @@ changes, or look through the Subversion logs for all the details.
   Information about the command-line arguments supplied to the Python
   interpreter is available by reading attributes of a named
   tuple available as ``sys.flags``.  For example, the :attr:`verbose`
-  attribute is true if Python
-  was executed in verbose mode, :attr:`debug` is true in debugging mode, etc.
+  attribute is a truthy value if Python
+  was executed in verbose mode, :attr:`debug` is a truthy value in debugging mode, etc.
   These attributes are all read-only.
   (Contributed by Christian Heimes.)
 

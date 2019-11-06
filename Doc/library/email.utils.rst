@@ -72,7 +72,7 @@ of the new API.
 
    The inverse of :meth:`parseaddr`, this takes a 2-tuple of the form ``(realname,
    email_address)`` and returns the string value suitable for a :mailheader:`To` or
-   :mailheader:`Cc` header.  If the first element of *pair* is false, then the
+   :mailheader:`Cc` header.  If the first element of *pair* is a falsey value, then the
    second element is returned unmodified.
 
    Optional *charset* is the character set that will be used in the :rfc:`2047`

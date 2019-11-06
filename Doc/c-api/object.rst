@@ -152,7 +152,7 @@ Object Protocol
    which must be one of :const:`Py_LT`, :const:`Py_LE`, :const:`Py_EQ`,
    :const:`Py_NE`, :const:`Py_GT`, or :const:`Py_GE`, corresponding to ``<``,
    ``<=``, ``==``, ``!=``, ``>``, or ``>=`` respectively. Returns ``-1`` on error,
-   ``0`` if the result is false, ``1`` otherwise. This is the equivalent of the
+   ``0`` if the result is a falsey value, ``1`` otherwise. This is the equivalent of the
    Python expression ``o1 op o2``, where ``op`` is the operator corresponding to
    *opid*.
 

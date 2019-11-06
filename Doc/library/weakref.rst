@@ -286,13 +286,13 @@ objects.
 
    .. attribute:: alive
 
-      Property which is true if the finalizer is alive, false otherwise.
+      Property which is a truthy value if the finalizer is alive, false otherwise.
 
    .. attribute:: atexit
 
-      A writable boolean property which by default is true.  When the
+      A writable boolean property which by default is a truthy value.  When the
       program exits, it calls all remaining live finalizers for which
-      :attr:`.atexit` is true.  They are called in reverse order of
+      :attr:`.atexit` is a truthy value.  They are called in reverse order of
       creation.
 
    .. note::

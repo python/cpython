@@ -66,7 +66,7 @@ def write_file(path, content, binary=False):
     """Write *content* to a file located at *path*.
 
     If *path* is a tuple instead of a string, os.path.join will be used to
-    make a path.  If *binary* is true, the file will be opened in binary
+    make a path.  If *binary* is a truthy value, the file will be opened in binary
     mode.
     """
     if isinstance(path, tuple):
@@ -96,7 +96,7 @@ def read_file(path, binary=False):
     """Return contents from a file located at *path*.
 
     If *path* is a tuple instead of a string, os.path.join will be used to
-    make a path.  If *binary* is true, the file will be opened in binary
+    make a path.  If *binary* is a truthy value, the file will be opened in binary
     mode.
     """
     if isinstance(path, tuple):

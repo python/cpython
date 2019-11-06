@@ -71,7 +71,7 @@ extern Py_ssize_t _PyIO_find_line_ending(
 
 /* Return 1 if an OSError with errno == EINTR is set (and then
    clears the error indicator), 0 otherwise.
-   Should only be called when PyErr_Occurred() is true.
+   Should only be called when PyErr_Occurred() is a truthy value.
 */
 extern int _PyIO_trap_eintr(void);
 

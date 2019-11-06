@@ -1222,7 +1222,7 @@ TreeBuilder Objects
    The *comment_factory* and *pi_factory* functions, when given, should behave
    like the :func:`Comment` and :func:`ProcessingInstruction` functions to
    create comments and processing instructions.  When not given, the default
-   factories will be used.  When *insert_comments* and/or *insert_pis* is true,
+   factories will be used.  When *insert_comments* and/or *insert_pis* is a truthy value,
    comments/pis will be inserted into the tree if they appear within the root
    element (but not outside of it).
 
@@ -1252,7 +1252,7 @@ TreeBuilder Objects
 
    .. method:: comment(text)
 
-      Creates a comment with the given *text*.  If ``insert_comments`` is true,
+      Creates a comment with the given *text*.  If ``insert_comments`` is a truthy value,
       this will also add it to the tree.
 
       .. versionadded:: 3.8
@@ -1261,7 +1261,7 @@ TreeBuilder Objects
    .. method:: pi(target, text)
 
       Creates a comment with the given *target* name and *text*.  If
-      ``insert_pis`` is true, this will also add it to the tree.
+      ``insert_pis`` is a truthy value, this will also add it to the tree.
 
       .. versionadded:: 3.8
 

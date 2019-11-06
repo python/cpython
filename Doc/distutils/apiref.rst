@@ -520,7 +520,7 @@ This module provides the following functions.
    .. method:: CCompiler.find_library_file(dirs, lib[, debug=0])
 
       Search the specified list of directories for a static or shared library file
-      *lib* and return the full path to that file.  If *debug* is true, look for a
+      *lib* and return the full path to that file.  If *debug* is a truthy value, look for a
       debugging version (if that makes sense on the current platform).  Return
       ``None`` if *lib* wasn't found in any of the specified directories.
 
@@ -1014,7 +1014,7 @@ directories.
    *preserve_mode* and *preserve_times* are the same as for
    :func:`distutils.file_util.copy_file`; note that they only apply to
    regular files, not to
-   directories.  If *preserve_symlinks* is true, symlinks will be copied as
+   directories.  If *preserve_symlinks* is a truthy value, symlinks will be copied as
    symlinks (on platforms that support them!); otherwise (the default), the
    destination of the symlink will be copied.  *update* and *verbose* are the same
    as for :func:`copy_file`.
@@ -1047,10 +1047,10 @@ This module contains some utility functions for operating on individual files.
 
    Copy file *src* to *dst*. If *dst* is a directory, then *src* is copied there
    with the same name; otherwise, it must be a filename. (If the file exists, it
-   will be ruthlessly clobbered.) If *preserve_mode* is true (the default), the
+   will be ruthlessly clobbered.) If *preserve_mode* is a truthy value (the default), the
    file's mode (type and permission bits, or whatever is analogous on the
-   current platform) is copied. If *preserve_times* is true (the default), the
-   last-modified and last-access times are copied as well. If *update* is true,
+   current platform) is copied. If *preserve_times* is a truthy value (the default), the
+   last-modified and last-access times are copied as well. If *update* is a truthy value,
    *src* will only be copied if *dst* does not exist, or if *dst* does exist but
    is older than *src*.
 
@@ -1062,7 +1062,7 @@ This module contains some utility functions for operating on individual files.
    contents.
 
    Return a tuple ``(dest_name, copied)``: *dest_name* is the actual  name of the
-   output file, and *copied* is true if the file was copied  (or would have been
+   output file, and *copied* is a truthy value if the file was copied  (or would have been
    copied, if *dry_run* true).
 
    .. % XXX if the destination file already exists, we clobber it if
@@ -1227,7 +1227,7 @@ other utility module.
    * ``1`` - normal optimization (like ``python -O``)
    * ``2`` - extra optimization (like ``python -OO``)
 
-   If *force* is true, all files are recompiled regardless of timestamps.
+   If *force* is a truthy value, all files are recompiled regardless of timestamps.
 
    The source filename encoded in each :term:`bytecode` file defaults to the filenames
    listed in *py_files*; you can modify these with *prefix* and *basedir*.
@@ -1236,7 +1236,7 @@ other utility module.
    stripped).  You can supply either or both (or neither) of *prefix* and
    *base_dir*, as you wish.
 
-   If *dry_run* is true, doesn't actually do anything that would affect the
+   If *dry_run* is a truthy value, doesn't actually do anything that would affect the
    filesystem.
 
    Byte-compilation is either done directly in this interpreter process with the
@@ -1496,21 +1496,21 @@ for other parts of the :mod:`distutils` package.
 .. function:: get_python_inc([plat_specific[, prefix]])
 
    Return the directory for either the general or platform-dependent C include
-   files.  If *plat_specific* is true, the platform-dependent include directory is
+   files.  If *plat_specific* is a truthy value, the platform-dependent include directory is
    returned; if false or omitted, the platform-independent directory is returned.
    If *prefix* is given, it is used as either the prefix instead of
    :const:`PREFIX`, or as the exec-prefix instead of :const:`EXEC_PREFIX` if
-   *plat_specific* is true.
+   *plat_specific* is a truthy value.
 
 
 .. function:: get_python_lib([plat_specific[, standard_lib[, prefix]]])
 
    Return the directory for either the general or platform-dependent library
-   installation.  If *plat_specific* is true, the platform-dependent include
+   installation.  If *plat_specific* is a truthy value, the platform-dependent include
    directory is returned; if false or omitted, the platform-independent directory
    is returned.  If *prefix* is given, it is used as either the prefix instead of
    :const:`PREFIX`, or as the exec-prefix instead of :const:`EXEC_PREFIX` if
-   *plat_specific* is true.  If *standard_lib* is true, the directory for the
+   *plat_specific* is a truthy value.  If *standard_lib* is a truthy value, the directory for the
    standard library is returned rather than the directory for the installation of
    third-party extensions.
 
@@ -1628,7 +1628,7 @@ lines, and joining lines with backslashes.
    :meth:`readline` must differ from those of the built-in file object's
    :meth:`readline` method!  In particular, :meth:`readline`  returns ``None`` for
    end-of-file: an empty string might just be a  blank line (or an all-whitespace
-   line), if *rstrip_ws* is true  but *skip_blanks* is not.
+   line), if *rstrip_ws* is a truthy value  but *skip_blanks* is not.
 
 
    .. method:: TextFile.open(filename)
@@ -1657,11 +1657,11 @@ lines, and joining lines with backslashes.
 
       Read and return a single logical line from the current file (or from an internal
       buffer if lines have previously been "unread" with :meth:`unreadline`).  If the
-      *join_lines* option  is true, this may involve reading multiple physical lines
+      *join_lines* option  is a truthy value, this may involve reading multiple physical lines
       concatenated into a single string.  Updates the current line number,  so calling
       :meth:`warn` after :meth:`readline` emits a warning  about the physical line(s)
       just read.  Returns ``None`` on end-of-file,  since the empty string can occur
-      if *rstrip_ws* is true but  *strip_blanks* is not.
+      if *rstrip_ws* is a truthy value but  *strip_blanks* is not.
 
 
    .. method:: TextFile.readlines()

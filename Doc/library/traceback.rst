@@ -54,7 +54,7 @@ The module defines the following functions:
      indicating the approximate position of the error.
 
    The optional *limit* argument has the same meaning as for :func:`print_tb`.
-   If *chain* is true (the default), then chained exceptions (the
+   If *chain* is a truthy value (the default), then chained exceptions (the
    :attr:`__cause__` or :attr:`__context__` attributes of the exception) will be
    printed as well, like the interpreter itself does when printing an unhandled
    exception.

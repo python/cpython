@@ -470,7 +470,7 @@ All methods are executed atomically.
       value, block for at most the number of seconds specified by *timeout*
       and as long as the lock cannot be acquired.  A *timeout* argument of ``-1``
       specifies an unbounded wait.  It is forbidden to specify a *timeout*
-      when *blocking* is false.
+      when *blocking* is a falsey value.
 
       The return value is ``True`` if the lock is acquired successfully,
       ``False`` if not (for example if the *timeout* expired).
@@ -862,14 +862,14 @@ thread signals an event and other threads wait for it.
 
 An event object manages an internal flag that can be set to true with the
 :meth:`~Event.set` method and reset to false with the :meth:`~Event.clear`
-method.  The :meth:`~Event.wait` method blocks until the flag is true.
+method.  The :meth:`~Event.wait` method blocks until the flag is a truthy value.
 
 
 .. class:: Event()
 
    Class implementing event objects.  An event manages a flag that can be set to
    true with the :meth:`~Event.set` method and reset to false with the
-   :meth:`clear` method.  The :meth:`wait` method blocks until the flag is true.
+   :meth:`clear` method.  The :meth:`wait` method blocks until the flag is a truthy value.
    The flag is initially false.
 
    .. versionchanged:: 3.3
@@ -877,12 +877,12 @@ method.  The :meth:`~Event.wait` method blocks until the flag is true.
 
    .. method:: is_set()
 
-      Return true if and only if the internal flag is true.
+      Return true if and only if the internal flag is a truthy value.
 
    .. method:: set()
 
       Set the internal flag to true. All threads waiting for it to become true
-      are awakened. Threads that call :meth:`wait` once the flag is true will
+      are awakened. Threads that call :meth:`wait` once the flag is a truthy value will
       not block at all.
 
    .. method:: clear()
@@ -893,7 +893,7 @@ method.  The :meth:`~Event.wait` method blocks until the flag is true.
 
    .. method:: wait(timeout=None)
 
-      Block until the internal flag is true.  If the internal flag is true on
+      Block until the internal flag is a truthy value.  If the internal flag is a truthy value on
       entry, return immediately.  Otherwise, block until another thread calls
       :meth:`.set` to set the flag to true, or until the optional timeout occurs.
 

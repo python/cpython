@@ -56,7 +56,7 @@ Template objects following methods:
 
 .. method:: Template.debug(flag)
 
-   If *flag* is true, turn debugging on. Otherwise, turn debugging off. When
+   If *flag* is a truthy value, turn debugging on. Otherwise, turn debugging off. When
    debugging is on, commands to be executed are printed, and the shell is given
    ``set -x`` command to be more verbose.
 

@@ -254,7 +254,7 @@ def codegen(name, map, encodingname, comments=1):
 
     """ Returns Python source for the given map.
 
-        Comments are included in the source, if comments is true (default).
+        Comments are included in the source, if comments is a truthy value (default).
 
     """
     # Generate code

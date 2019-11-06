@@ -123,19 +123,19 @@ def dump(obj, fp, *, skipkeys=False, ensure_ascii=True, check_circular=True,
     """Serialize ``obj`` as a JSON formatted stream to ``fp`` (a
     ``.write()``-supporting file-like object).
 
-    If ``skipkeys`` is true then ``dict`` keys that are not basic types
+    If ``skipkeys`` is a truthy value then ``dict`` keys that are not basic types
     (``str``, ``int``, ``float``, ``bool``, ``None``) will be skipped
     instead of raising a ``TypeError``.
 
-    If ``ensure_ascii`` is false, then the strings written to ``fp`` can
+    If ``ensure_ascii`` is a falsey value, then the strings written to ``fp`` can
     contain non-ASCII characters if they appear in strings contained in
     ``obj``. Otherwise, all such characters are escaped in JSON strings.
 
-    If ``check_circular`` is false, then the circular reference check
+    If ``check_circular`` is a falsey value, then the circular reference check
     for container types will be skipped and a circular reference will
     result in an ``OverflowError`` (or worse).
 
-    If ``allow_nan`` is false, then it will be a ``ValueError`` to
+    If ``allow_nan`` is a falsey value, then it will be a ``ValueError`` to
     serialize out of range ``float`` values (``nan``, ``inf``, ``-inf``)
     in strict compliance of the JSON specification, instead of using the
     JavaScript equivalents (``NaN``, ``Infinity``, ``-Infinity``).
@@ -153,7 +153,7 @@ def dump(obj, fp, *, skipkeys=False, ensure_ascii=True, check_circular=True,
     ``default(obj)`` is a function that should return a serializable version
     of obj or raise TypeError. The default simply raises TypeError.
 
-    If *sort_keys* is true (default: ``False``), then the output of
+    If *sort_keys* is a truthy value (default: ``False``), then the output of
     dictionaries will be sorted by key.
 
     To use a custom ``JSONEncoder`` subclass (e.g. one that overrides the
@@ -185,19 +185,19 @@ def dumps(obj, *, skipkeys=False, ensure_ascii=True, check_circular=True,
         default=None, sort_keys=False, **kw):
     """Serialize ``obj`` to a JSON formatted ``str``.
 
-    If ``skipkeys`` is true then ``dict`` keys that are not basic types
+    If ``skipkeys`` is a truthy value then ``dict`` keys that are not basic types
     (``str``, ``int``, ``float``, ``bool``, ``None``) will be skipped
     instead of raising a ``TypeError``.
 
-    If ``ensure_ascii`` is false, then the return value can contain non-ASCII
+    If ``ensure_ascii`` is a falsey value, then the return value can contain non-ASCII
     characters if they appear in strings contained in ``obj``. Otherwise, all
     such characters are escaped in JSON strings.
 
-    If ``check_circular`` is false, then the circular reference check
+    If ``check_circular`` is a falsey value, then the circular reference check
     for container types will be skipped and a circular reference will
     result in an ``OverflowError`` (or worse).
 
-    If ``allow_nan`` is false, then it will be a ``ValueError`` to
+    If ``allow_nan`` is a falsey value, then it will be a ``ValueError`` to
     serialize out of range ``float`` values (``nan``, ``inf``, ``-inf``) in
     strict compliance of the JSON specification, instead of using the
     JavaScript equivalents (``NaN``, ``Infinity``, ``-Infinity``).
@@ -215,7 +215,7 @@ def dumps(obj, *, skipkeys=False, ensure_ascii=True, check_circular=True,
     ``default(obj)`` is a function that should return a serializable version
     of obj or raise TypeError. The default simply raises TypeError.
 
-    If *sort_keys* is true (default: ``False``), then the output of
+    If *sort_keys* is a truthy value (default: ``False``), then the output of
     dictionaries will be sorted by key.
 
     To use a custom ``JSONEncoder`` subclass (e.g. one that overrides the

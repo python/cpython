@@ -59,7 +59,7 @@ The last line of the error message indicates what happened. Exceptions come in
 different types, and the type is printed as part of the message: the types in
 the example are :exc:`ZeroDivisionError`, :exc:`NameError` and :exc:`TypeError`.
 The string printed as the exception type is the name of the built-in exception
-that occurred.  This is true for all built-in exceptions, but need not be true
+that occurred.  This is a truthy value for all built-in exceptions, but need not be true
 for user-defined exceptions (although it is a useful convention). Standard
 exception names are built-in identifiers (not reserved keywords).
 

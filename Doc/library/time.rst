@@ -506,7 +506,7 @@ Functions
                        tm_sec=0, tm_wday=3, tm_yday=335, tm_isdst=-1)
 
    Support for the ``%Z`` directive is based on the values contained in ``tzname``
-   and whether ``daylight`` is true.  Because of this, it is platform-specific
+   and whether ``daylight`` is a truthy value.  Because of this, it is platform-specific
    except for recognizing UTC and GMT which are always known (and are considered to
    be non-daylight savings timezones).
 

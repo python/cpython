@@ -402,7 +402,7 @@ different keyword arguments. ::
                startupinfo=None, creationflags=0):
 
 *args* is commonly a sequence of strings that will be the arguments to the
-program executed as the subprocess.  (If the *shell* argument is true, *args*
+program executed as the subprocess.  (If the *shell* argument is a truthy value, *args*
 can be a string which will then be passed on to the shell for interpretation,
 just as :func:`os.system` does.)
 
@@ -845,7 +845,7 @@ Here are all of the changes that Python 2.4 makes to the core Python language.
      >>> L
      ['A', 'b', 'c', 'D']
 
-  Finally, the *reverse* parameter takes a Boolean value.  If the value is true,
+  Finally, the *reverse* parameter takes a Boolean value.  If the value is a truthy value,
   the list will be sorted into reverse order. Instead of ``L.sort();
   L.reverse()``, you can now write ``L.sort(reverse=True)``.
 

@@ -55,7 +55,7 @@ def not_(a):
     return not a
 
 def truth(a):
-    "Return True if a is true, False otherwise."
+    "Return True if a is a truthy value, False otherwise."
     return True if a else False
 
 def is_(a, b):

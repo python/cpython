@@ -43,7 +43,7 @@ class C1055820(object):
 
 class GC_Detector(object):
     # Create an instance I.  Then gc hasn't happened again so long as
-    # I.gc_happened is false.
+    # I.gc_happened is a falsey value.
 
     def __init__(self):
         self.gc_happened = False

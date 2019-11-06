@@ -3069,7 +3069,7 @@ date_fromisocalendar(PyObject *cls, PyObject *args, PyObject *kw)
  * Date arithmetic.
  */
 
-/* date + timedelta -> date.  If arg negate is true, subtract the timedelta
+/* date + timedelta -> date.  If arg negate is a truthy value, subtract the timedelta
  * instead.
  */
 static PyObject *
@@ -6682,11 +6682,11 @@ Plugging that back into [6] gives
 
 So diff = z.d.
 
-If [5] is true now, diff = 0, so z.d = 0 too, and we have the standard-time
+If [5] is a truthy value now, diff = 0, so z.d = 0 too, and we have the standard-time
 spelling we wanted in the endcase described above.  We're done.  Contrarily,
 if z.d = 0, then we have a UTC equivalent, and are also done.
 
-If [5] is not true now, diff = z.d != 0, and z.d is the offset we need to
+If [5] is not a truthy value now, diff = z.d != 0, and z.d is the offset we need to
 add to z (in effect, z is in tz's standard time, and we need to shift the
 local clock into tz's daylight time).
 

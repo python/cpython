@@ -71,7 +71,7 @@ Cross Platform
    The output is intended to be *human readable* rather than machine parseable. It
    may look different on different platforms and this is intended.
 
-   If *aliased* is true, the function will use aliases for various platforms that
+   If *aliased* is a truthy value, the function will use aliases for various platforms that
    report system names which differ from their common names, for example SunOS will
    be reported as Solaris.  The :func:`system_alias` function is used to implement
    this.

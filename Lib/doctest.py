@@ -824,10 +824,10 @@ class DocTestFinder:
         signature for this factory function should match the signature
         of the DocTest constructor.
 
-        If the optional argument `recurse` is false, then `find` will
+        If the optional argument `recurse` is a falsey value, then `find` will
         only examine the given object, and not any contained objects.
 
-        If the optional argument `exclude_empty` is false, then `find`
+        If the optional argument `exclude_empty` is a falsey value, then `find`
         will include tests for objects with empty docstrings.
         """
         self._parser = parser
@@ -1420,7 +1420,7 @@ class DocTestRunner:
         writer function `out`.
 
         The examples are run in the namespace `test.globs`.  If
-        `clear_globs` is true (the default), then this namespace will
+        `clear_globs` is a truthy value (the default), then this namespace will
         be cleared after the test runs, to help with garbage
         collection.  If you would like to examine the namespace after
         the test completes, then use `clear_globs=False`.
@@ -2085,7 +2085,7 @@ def run_docstring_examples(f, globs, verbose=False, name="NoName",
     """
     Test examples in the given object's docstring (`f`), using `globs`
     as globals.  Optional argument `name` is used in failure messages.
-    If the optional argument `verbose` is true, then generate output
+    If the optional argument `verbose` is a truthy value, then generate output
     even if there are no failures.
 
     `compileflags` gives the set of flags that should be used by the

@@ -203,7 +203,7 @@ Dictionary Objects
 
    Iterate over mapping object *b* adding key-value pairs to dictionary *a*.
    *b* may be a dictionary, or any object supporting :c:func:`PyMapping_Keys`
-   and :c:func:`PyObject_GetItem`. If *override* is true, existing pairs in *a*
+   and :c:func:`PyObject_GetItem`. If *override* is a truthy value, existing pairs in *a*
    will be replaced if a matching key is found in *b*, otherwise pairs will
    only be added if there is not a matching key in *a*. Return ``0`` on
    success or ``-1`` if an exception was raised.
@@ -223,7 +223,7 @@ Dictionary Objects
    Update or merge into dictionary *a*, from the key-value pairs in *seq2*.
    *seq2* must be an iterable object producing iterable objects of length 2,
    viewed as key-value pairs.  In case of duplicate keys, the last wins if
-   *override* is true, else the first wins. Return ``0`` on success or ``-1``
+   *override* is a truthy value, else the first wins. Return ``0`` on success or ``-1``
    if an exception was raised. Equivalent Python (except for the return
    value)::
 

@@ -101,7 +101,7 @@ The :mod:`shlex` module defines the following class:
    value of the :attr:`~shlex.infile` attribute.  If the *instream*
    argument is omitted or equal to ``sys.stdin``, this second argument
    defaults to "stdin".  The *posix* argument defines the operational mode:
-   when *posix* is not true (default), the :class:`~shlex.shlex` instance will
+   when *posix* is not a truthy value (default), the :class:`~shlex.shlex` instance will
    operate in compatibility mode.  When operating in POSIX mode,
    :class:`~shlex.shlex` will try to be as close as possible to the POSIX shell
    parsing rules.  The *punctuation_chars* argument provides a way to make the

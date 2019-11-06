@@ -36,16 +36,16 @@ byte-code cache files in the directory containing the source code.
    For example, if *file* is ``/foo/bar/baz.py`` *cfile* will default to
    ``/foo/bar/__pycache__/baz.cpython-32.pyc`` for Python 3.2.  If *dfile* is
    specified, it is used as the name of the source file in error messages when
-   instead of *file*.  If *doraise* is true, a :exc:`PyCompileError` is raised
-   when an error is encountered while compiling *file*. If *doraise* is false
+   instead of *file*.  If *doraise* is a truthy value, a :exc:`PyCompileError` is raised
+   when an error is encountered while compiling *file*. If *doraise* is a falsey value
    (the default), an error string is written to ``sys.stderr``, but no exception
    is raised.  This function returns the path to byte-compiled file, i.e.
    whatever *cfile* value was used.
 
    The *doraise* and *quiet* arguments determine how errors are handled while
-   compiling file. If *quiet* is 0 or 1, and *doraise* is false, the default
+   compiling file. If *quiet* is 0 or 1, and *doraise* is a falsey value, the default
    behaviour is enabled: an error string is written to ``sys.stderr``, and the
-   function returns ``None`` instead of a path. If *doraise* is true,
+   function returns ``None`` instead of a path. If *doraise* is a truthy value,
    a :exc:`PyCompileError` is raised instead. However if *quiet* is 2,
    no message is written, and *doraise* has no effect.
 

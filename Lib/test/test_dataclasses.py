@@ -392,7 +392,7 @@ class TestCase(unittest.TestCase):
         ]:
             with self.subTest(eq=eq, order=order):
                 if result == 'exception':
-                    with self.assertRaisesRegex(ValueError, 'eq must be true if order is true'):
+                    with self.assertRaisesRegex(ValueError, 'eq must be true if order is a truthy value'):
                         @dataclass(eq=eq, order=order)
                         class C:
                             pass

@@ -365,7 +365,7 @@ need to mix dynamically and statically typed code.
 
 Contrast the behavior of :data:`Any` with the behavior of :class:`object`.
 Similar to :data:`Any`, every type is a subtype of :class:`object`. However,
-unlike :data:`Any`, the reverse is not true: :class:`object` is *not* a
+unlike :data:`Any`, the reverse is not a truthy value: :class:`object` is *not* a
 subtype of every other type.
 
 That means when the type of a value is :class:`object`, a type checker will

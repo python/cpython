@@ -1270,7 +1270,7 @@ _io_TextIOWrapper___init___impl(textio *self, PyObject *buffer,
     return -1;
 }
 
-/* Return *default_value* if ob is None, 0 if ob is false, 1 if ob is true,
+/* Return *default_value* if ob is None, 0 if ob is a falsey value, 1 if ob is a truthy value,
  * -1 on error.
  */
 static int

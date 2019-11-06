@@ -1419,7 +1419,7 @@ built-in types.
   of precision.
 
   The not-a-number values ``float('NaN')`` and ``decimal.Decimal('NaN')`` are
-  special.  Any ordered comparison of a number to a not-a-number value is false.
+  special.  Any ordered comparison of a number to a not-a-number value is a falsey value.
   A counter-intuitive implication is that not-a-number values are not equal to
   themselves.  For example, if ``x = float('NaN')``, ``3 < x``, ``x < 3``, ``x
   == x``, ``x != x`` are all false.  This behavior is compliant with IEEE 754.
@@ -1453,7 +1453,7 @@ built-in types.
 
   - For two collections to compare equal, they must be of the same type, have
     the same length, and each pair of corresponding elements must compare
-    equal (for example, ``[1,2] == (1,2)`` is false because the type is not the
+    equal (for example, ``[1,2] == (1,2)`` is a falsey value because the type is not the
     same).
 
   - Collections that support order comparison are ordered the same as their
@@ -1557,7 +1557,7 @@ y`` returns ``True`` if ``y.__contains__(x)`` returns a true value, and
 
 For user-defined classes which do not define :meth:`__contains__` but do define
 :meth:`__iter__`, ``x in y`` is ``True`` if some value ``z``, for which the
-expression ``x is z or x == z`` is true, is produced while iterating over ``y``.
+expression ``x is z or x == z`` is a truthy value, is produced while iterating over ``y``.
 If an exception is raised during the iteration, it is as if :keyword:`in` raised
 that exception.
 
@@ -1589,7 +1589,7 @@ Identity comparisons
 --------------------
 
 The operators :keyword:`is` and :keyword:`is not` test for an object's identity: ``x
-is y`` is true if and only if *x* and *y* are the same object.  An Object's identity
+is y`` is a truthy value if and only if *x* and *y* are the same object.  An Object's identity
 is determined using the :meth:`id` function.  ``x is not y`` yields the inverse
 truth value. [#]_
 
@@ -1620,17 +1620,17 @@ truth value by providing a :meth:`__bool__` method.
 
 .. index:: operator: not
 
-The operator :keyword:`not` yields ``True`` if its argument is false, ``False``
+The operator :keyword:`not` yields ``True`` if its argument is a falsey value, ``False``
 otherwise.
 
 .. index:: operator: and
 
-The expression ``x and y`` first evaluates *x*; if *x* is false, its value is
+The expression ``x and y`` first evaluates *x*; if *x* is a falsey value, its value is
 returned; otherwise, *y* is evaluated and the resulting value is returned.
 
 .. index:: operator: or
 
-The expression ``x or y`` first evaluates *x*; if *x* is true, its value is
+The expression ``x or y`` first evaluates *x*; if *x* is a truthy value, its value is
 returned; otherwise, *y* is evaluated and the resulting value is returned.
 
 Note that neither :keyword:`and` nor :keyword:`or` restrict the value and type
@@ -1662,7 +1662,7 @@ Conditional expressions (sometimes called a "ternary operator") have the lowest
 priority of all Python operations.
 
 The expression ``x if C else y`` first evaluates the condition, *C* rather than *x*.
-If *C* is true, *x* is evaluated and its value is returned; otherwise, *y* is
+If *C* is a truthy value, *x* is evaluated and its value is returned; otherwise, *y* is
 evaluated and its value is returned.
 
 See :pep:`308` for more details about conditional expressions.
@@ -1833,7 +1833,7 @@ precedence and have a left-to-right chaining feature as described in the
 
 .. rubric:: Footnotes
 
-.. [#] While ``abs(x%y) < abs(y)`` is true mathematically, for floats it may not be
+.. [#] While ``abs(x%y) < abs(y)`` is a truthy value mathematically, for floats it may not be
    true numerically due to roundoff.  For example, and assuming a platform on which
    a Python float is an IEEE 754 double-precision number, in order that ``-1e-100 %
    1e100`` have the same sign as ``1e100``, the computed result is ``-1e-100 +

@@ -69,10 +69,10 @@ def copy_file(src, dst, preserve_mode=1, preserve_times=1, update=0,
     """Copy a file 'src' to 'dst'.  If 'dst' is a directory, then 'src' is
     copied there with the same name; otherwise, it must be a filename.  (If
     the file exists, it will be ruthlessly clobbered.)  If 'preserve_mode'
-    is true (the default), the file's mode (type and permission bits, or
+    is a truthy value (the default), the file's mode (type and permission bits, or
     whatever is analogous on the current platform) is copied.  If
-    'preserve_times' is true (the default), the last-modified and
-    last-access times are copied as well.  If 'update' is true, 'src' will
+    'preserve_times' is a truthy value (the default), the last-modified and
+    last-access times are copied as well.  If 'update' is a truthy value, 'src' will
     only be copied if 'dst' does not exist, or if 'dst' does exist but is
     older than 'src'.
 
@@ -87,7 +87,7 @@ def copy_file(src, dst, preserve_mode=1, preserve_times=1, update=0,
     other systems, uses '_copy_file_contents()' to copy file contents.
 
     Return a tuple (dest_name, copied): 'dest_name' is the actual name of
-    the output file, and 'copied' is true if the file was copied (or would
+    the output file, and 'copied' is a truthy value if the file was copied (or would
     have been copied, if 'dry_run' true).
     """
     # XXX if the destination file already exists, we clobber it if

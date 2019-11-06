@@ -626,8 +626,8 @@ Common commands: (see '--help-commands' for more)
         same state, as its option table will be reset to make it
         generate the correct help text.
 
-        If 'global_options' is true, lists the global options:
-        --verbose, --dry-run, etc.  If 'display_options' is true, lists
+        If 'global_options' is a truthy value, lists the global options:
+        --verbose, --dry-run, etc.  If 'display_options' is a truthy value, lists
         the "display-only" options: --name, --version, etc.  Finally,
         lists per-command help for every command name or command class
         in 'commands'.
@@ -846,7 +846,7 @@ Common commands: (see '--help-commands' for more)
         """Return the command object for 'command'.  Normally this object
         is cached on a previous call to 'get_command_obj()'; if no command
         object for 'command' is in the cache, then we either create and
-        return it (if 'create' is true) or return None.
+        return it (if 'create' is a truthy value) or return None.
         """
         cmd_obj = self.command_obj.get(command)
         if not cmd_obj and create:
@@ -924,7 +924,7 @@ Common commands: (see '--help-commands' for more)
         real.
 
         'command' should be a command name (string) or command object.  If
-        'reinit_subcommands' is true, also reinitializes the command's
+        'reinit_subcommands' is a truthy value, also reinitializes the command's
         sub-commands, as declared by the 'sub_commands' class attribute (if
         it has one).  See the "install" command for an example.  Only
         reinitializes the sub-commands that actually matter, ie. those

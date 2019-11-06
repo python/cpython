@@ -89,7 +89,7 @@ PyDoc_STRVAR(OrderedDict_popitem__doc__,
 "\n"
 "Remove and return a (key, value) pair from the dictionary.\n"
 "\n"
-"Pairs are returned in LIFO order if last is true or FIFO order if false.");
+"Pairs are returned in LIFO order if last is a truthy value or FIFO order if false.");
 
 #define ORDEREDDICT_POPITEM_METHODDEF    \
     {"popitem", (PyCFunction)(void(*)(void))OrderedDict_popitem, METH_FASTCALL|METH_KEYWORDS, OrderedDict_popitem__doc__},
@@ -129,7 +129,7 @@ PyDoc_STRVAR(OrderedDict_move_to_end__doc__,
 "move_to_end($self, /, key, last=True)\n"
 "--\n"
 "\n"
-"Move an existing element to the end (or beginning if last is false).\n"
+"Move an existing element to the end (or beginning if last is a falsey value).\n"
 "\n"
 "Raise KeyError if the element does not exist.");
 

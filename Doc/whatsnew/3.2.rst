@@ -1027,7 +1027,7 @@ datetime and time
     'Fri Jan  1 12:34:56 11'
 
   Several functions now have significantly expanded date ranges.  When
-  :attr:`time.accept2dyear` is false, the :func:`time.asctime` function will
+  :attr:`time.accept2dyear` is a falsey value, the :func:`time.asctime` function will
   accept any year that fits in a C int, while the :func:`time.mktime` and
   :func:`time.strftime` functions will accept the full range supported by the
   corresponding operating system functions.
@@ -1591,7 +1591,7 @@ sqlite3
 
 The :mod:`sqlite3` module was updated to pysqlite version 2.6.0.  It has two new capabilities.
 
-* The :attr:`sqlite3.Connection.in_transit` attribute is true if there is an
+* The :attr:`sqlite3.Connection.in_transit` attribute is a truthy value if there is an
   active transaction for uncommitted changes.
 
 * The :meth:`sqlite3.Connection.enable_load_extension` and
@@ -2378,7 +2378,7 @@ A number of small performance enhancements have been added:
 
 * JSON decoding performance is improved and memory consumption is reduced
   whenever the same string is repeated for multiple keys.  Also, JSON encoding
-  now uses the C speedups when the ``sort_keys`` argument is true.
+  now uses the C speedups when the ``sort_keys`` argument is a truthy value.
 
   (Contributed by Antoine Pitrou in :issue:`7451` and by Raymond Hettinger and
   Antoine Pitrou in :issue:`10314`.)

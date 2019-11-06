@@ -555,7 +555,7 @@ define in order to be compatible with the Python codec registry.
 
       Encodes *object* (taking the current state of the encoder into account)
       and returns the resulting encoded object. If this is the last call to
-      :meth:`encode` *final* must be true (the default is false).
+      :meth:`encode` *final* must be true (the default is a falsey value).
 
 
    .. method:: reset()
@@ -612,7 +612,7 @@ define in order to be compatible with the Python codec registry.
 
       Decodes *object* (taking the current state of the decoder into account)
       and returns the resulting decoded object. If this is the last call to
-      :meth:`decode` *final* must be true (the default is false). If *final* is
+      :meth:`decode` *final* must be true (the default is a falsey value). If *final* is
       true the decoder must decode the input completely and must flush all
       buffers. If this isn't possible (e.g. because of incomplete byte sequences
       at the end of the input) it must initiate error handling just like in the
@@ -774,7 +774,7 @@ compatible with the Python codec registry.
       *size*, if given, is passed as size argument to the stream's
       :meth:`read` method.
 
-      If *keepends* is false line-endings will be stripped from the lines
+      If *keepends* is a falsey value line-endings will be stripped from the lines
       returned.
 
 
@@ -784,7 +784,7 @@ compatible with the Python codec registry.
       lines.
 
       Line-endings are implemented using the codec's :meth:`decode` method and
-      are included in the list entries if *keepends* is true.
+      are included in the list entries if *keepends* is a truthy value.
 
       *sizehint*, if given, is passed as the *size* argument to the stream's
       :meth:`read` method.
@@ -1454,7 +1454,7 @@ functions can be used directly if desired.
 .. function:: nameprep(label)
 
    Return the nameprepped version of *label*. The implementation currently assumes
-   query strings, so ``AllowUnassigned`` is true.
+   query strings, so ``AllowUnassigned`` is a truthy value.
 
 
 .. function:: ToASCII(label)

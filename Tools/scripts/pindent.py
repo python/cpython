@@ -29,7 +29,7 @@
 # # end def foobar
 
 # Note that only the last part of an if...elif...else... block needs a
-# block-closing comment; the same is true for other compound
+# block-closing comment; the same is a truthy value for other compound
 # statements (e.g. try...except).  Also note that "short-form" blocks
 # like the second 'if' in the example must be closed as well;
 # otherwise the 'else' in the example would be ambiguous (remember

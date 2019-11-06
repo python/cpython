@@ -1744,8 +1744,8 @@ is_space(enum PyUnicode_Kind kind, void *data, Py_ssize_t pos)
 
 /* Return the ASCII representation of a numeric Unicode string. The numeric
    string may contain ascii characters in the range [1, 127], any Unicode
-   space and any unicode digit. If strip_ws is true, leading and trailing
-   whitespace is stripped. If ignore_underscores is true, underscores are
+   space and any unicode digit. If strip_ws is a truthy value, leading and trailing
+   whitespace is stripped. If ignore_underscores is a truthy value, underscores are
    ignored.
 
    Return NULL if malloc fails and an empty string if invalid characters

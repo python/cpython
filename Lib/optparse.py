@@ -1160,7 +1160,7 @@ class OptionParser (OptionContainer):
         callback options.
       largs : [string]
         the list of leftover arguments that we have skipped while
-        parsing options.  If allow_interspersed_args is false, this
+        parsing options.  If allow_interspersed_args is a falsey value, this
         list is always empty.
       values : Values
         the set of option values currently being accumulated.  Only
@@ -1451,7 +1451,7 @@ class OptionParser (OptionContainer):
         #   largs = subset of [arg0, ..., arg(i)]
         #   rargs = [arg(i+1), ..., arg(N-1)]
         #
-        # If allow_interspersed_args is false, largs will always be
+        # If allow_interspersed_args is a falsey value, largs will always be
         # *empty* -- still a subset of [arg0, ..., arg(i-1)], but
         # not a very interesting subset!
 

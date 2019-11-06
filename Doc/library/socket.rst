@@ -627,14 +627,14 @@ The following functions all create :ref:`socket objects <socket-objects>`.
    a default reasonable value is chosen.
    *reuse_port* dictates whether to set the :data:`SO_REUSEPORT` socket option.
 
-   If *dualstack_ipv6* is true and the platform supports it the socket will
+   If *dualstack_ipv6* is a truthy value and the platform supports it the socket will
    be able to accept both IPv4 and IPv6 connections, else it will raise
    :exc:`ValueError`. Most POSIX platforms and Windows are supposed to support
    this functionality.
    When this functionality is enabled the address returned by
    :meth:`socket.getpeername` when an IPv4 connection occurs will be an IPv6
    address represented as an IPv4-mapped IPv6 address.
-   If *dualstack_ipv6* is false it will explicitly disable this functionality
+   If *dualstack_ipv6* is a falsey value it will explicitly disable this functionality
    on platforms that enable it by default (e.g. Linux).
    This parameter can be used in conjunction with :func:`has_dualstack_ipv6`:
 
@@ -1633,7 +1633,7 @@ to sockets.
 
 .. method:: socket.setblocking(flag)
 
-   Set blocking or non-blocking mode of the socket: if *flag* is false, the
+   Set blocking or non-blocking mode of the socket: if *flag* is a falsey value, the
    socket is set to non-blocking, else to blocking mode.
 
    This method is a shorthand for certain :meth:`~socket.settimeout` calls:

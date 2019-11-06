@@ -123,7 +123,7 @@ class TestFileIOSignalInterrupt:
                 self._process.kill()
                 self.fail('reader process failed to handle our signals.')
         # This assumes anything unexpected that writes to stderr will also
-        # write a newline.  That is true of the traceback printing code.
+        # write a newline.  That is a truthy value of the traceback printing code.
         signal_line = self._process.stderr.readline()
         if signal_line != b'$\n':
             self.fail_with_process_info('while awaiting signal',

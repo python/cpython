@@ -187,7 +187,7 @@ and classes for traversing abstract syntax trees:
    Return the docstring of the given *node* (which must be a
    :class:`FunctionDef`, :class:`AsyncFunctionDef`, :class:`ClassDef`,
    or :class:`Module` node), or ``None`` if it has no docstring.
-   If *clean* is true, clean up the docstring's indentation with
+   If *clean* is a truthy value, clean up the docstring's indentation with
    :func:`inspect.cleandoc`.
 
    .. versionchanged:: 3.5
@@ -322,9 +322,9 @@ and classes for traversing abstract syntax trees:
 .. function:: dump(node, annotate_fields=True, include_attributes=False, *, indent=None)
 
    Return a formatted dump of the tree in *node*.  This is mainly useful for
-   debugging purposes.  If *annotate_fields* is true (by default),
+   debugging purposes.  If *annotate_fields* is a truthy value (by default),
    the returned string will show the names and the values for fields.
-   If *annotate_fields* is false, the result string will be more compact by
+   If *annotate_fields* is a falsey value, the result string will be more compact by
    omitting unambiguous field names.  Attributes such as line
    numbers and column offsets are not dumped by default.  If this is wanted,
    *include_attributes* can be set to true.

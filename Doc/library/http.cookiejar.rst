@@ -542,7 +542,7 @@ General strictness switches:
 
    Follow :rfc:`2965` rules on unverifiable transactions (usually, an unverifiable
    transaction is one resulting from a redirect or a request for an image hosted on
-   another site).  If this is false, cookies are *never* blocked on the basis of
+   another site).  If this is a falsey value, cookies are *never* blocked on the basis of
    verifiability
 
 

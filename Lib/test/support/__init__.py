@@ -1917,8 +1917,8 @@ def bigmemtest(size, memuse, dry_run=True):
     each, could be decorated with @bigmemtest(size=_4G, memuse=2).
 
     The 'size' argument is normally passed to the decorated test method as an
-    extra argument. If 'dry_run' is true, the value passed to the test method
-    may be less than the requested value. If 'dry_run' is false, it means the
+    extra argument. If 'dry_run' is a truthy value, the value passed to the test method
+    may be less than the requested value. If 'dry_run' is a falsey value, it means the
     test doesn't support dummy runs when -M is not specified.
     """
     def decorator(f):

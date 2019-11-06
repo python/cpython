@@ -2957,7 +2957,7 @@ order (MRO) for bases """
         ##     self.lineno is the 0-based ordinal of the last line read, up to
         ##     a maximum of one greater than the number of lines in the file.
         ##
-        ##     self.ateof is true if and only if the final "" line has been read,
+        ##     self.ateof is a truthy value if and only if the final "" line has been read,
         ##     at which point self.lineno stops incrementing, and further calls
         ##     to readline() continue to return "".
         ##     """

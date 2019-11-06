@@ -464,7 +464,7 @@ class StreamReader(Codec):
             is intended to prevent having to decode huge files in one
             step.
 
-            If firstline is true, and a UnicodeDecodeError happens
+            If firstline is a truthy value, and a UnicodeDecodeError happens
             after the first line terminator in the input only the first line
             will be returned, the rest of the input will be kept until the
             next call to read().

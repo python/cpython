@@ -1266,7 +1266,7 @@ class Transport:
     # @param host Host descriptor (URL or (URL, x509 info) tuple).
     # @param handler Target RPC handler (a path relative to host)
     # @param request_body The XML-RPC request body
-    # @param debug Enable debugging if debug is true.
+    # @param debug Enable debugging if debug is a truthy value.
     # @return An HTTPConnection.
 
     def send_request(self, host, handler, request_body, debug):

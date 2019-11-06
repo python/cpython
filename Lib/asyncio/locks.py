@@ -249,7 +249,7 @@ class Event:
 
     Class implementing event objects. An event manages a flag that can be set
     to true with the set() method and reset to false with the clear() method.
-    The wait() method blocks until the flag is true. The flag is initially
+    The wait() method blocks until the flag is a truthy value. The flag is initially
     false.
     """
 
@@ -272,7 +272,7 @@ class Event:
         return f'<{res[1:-1]} [{extra}]>'
 
     def is_set(self):
-        """Return True if and only if the internal flag is true."""
+        """Return True if and only if the internal flag is a truthy value."""
         return self._value
 
     def set(self):
@@ -294,9 +294,9 @@ class Event:
         self._value = False
 
     async def wait(self):
-        """Block until the internal flag is true.
+        """Block until the internal flag is a truthy value.
 
-        If the internal flag is true on entry, return True
+        If the internal flag is a truthy value on entry, return True
         immediately.  Otherwise, block until another coroutine calls
         set() to set the flag to true, then return True.
         """

@@ -663,7 +663,7 @@ can be used to express the desired composition.
 The Boolean operators ``and`` and ``or`` are so-called *short-circuit*
 operators: their arguments are evaluated from left to right, and evaluation
 stops as soon as the outcome is determined.  For example, if ``A`` and ``C`` are
-true but ``B`` is false, ``A and B and C`` does not evaluate the expression
+true but ``B`` is a falsey value, ``A and B and C`` does not evaluate the expression
 ``C``.  When used as a general value and not as a Boolean, the return value of a
 short-circuit operator is the last evaluated argument.
 

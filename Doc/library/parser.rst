@@ -179,10 +179,10 @@ numbering information.
    significantly faster than retrieving a tuple representation and converting that
    to nested lists.
 
-   If *line_info* is true, line number information will be included for all
+   If *line_info* is a truthy value, line number information will be included for all
    terminal tokens as a third element of the list representing the token.  Note
    that the line number provided specifies the line on which the token *ends*.
-   This information is omitted if the flag is false or omitted.
+   This information is omitted if the flag is a falsey value or omitted.
 
 
 .. function:: st2tuple(st, line_info=False, col_info=False)
@@ -191,9 +191,9 @@ numbering information.
    Python tuple representing the equivalent parse tree.  Other than returning a
    tuple instead of a list, this function is identical to :func:`st2list`.
 
-   If *line_info* is true, line number information will be included for all
+   If *line_info* is a truthy value, line number information will be included for all
    terminal tokens as a third element of the list representing the token.  This
-   information is omitted if the flag is false or omitted.
+   information is omitted if the flag is a falsey value or omitted.
 
 
 .. function:: compilest(st, filename='<syntax-tree>')

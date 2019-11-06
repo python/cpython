@@ -60,7 +60,7 @@ The default traceback display code shows these chained exceptions in
 addition to the traceback for the exception itself. An explicitly chained
 exception in :attr:`__cause__` is always shown when present. An implicitly
 chained exception in :attr:`__context__` is shown only if :attr:`__cause__`
-is :const:`None` and :attr:`__suppress_context__` is false.
+is :const:`None` and :attr:`__suppress_context__` is a falsey value.
 
 In either case, the exception itself is always shown after any chained
 exceptions so that the final line of the traceback always shows the last

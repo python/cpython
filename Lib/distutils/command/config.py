@@ -282,11 +282,11 @@ class config(Command):
         If everything succeeds, returns true; otherwise returns false.
 
         The constructed source file starts out by including the header
-        files listed in 'headers'.  If 'decl' is true, it then declares
+        files listed in 'headers'.  If 'decl' is a truthy value, it then declares
         'func' (as "int func()"); you probably shouldn't supply 'headers'
         and set 'decl' true in the same call, or you might get errors about
         a conflicting declarations for 'func'.  Finally, the constructed
-        'main()' function either references 'func' or (if 'call' is true)
+        'main()' function either references 'func' or (if 'call' is a truthy value)
         calls it.  'libraries' and 'library_dirs' are used when
         linking.
         """

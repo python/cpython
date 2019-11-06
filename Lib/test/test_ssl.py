@@ -2731,7 +2731,7 @@ def try_protocol_combo(server_protocol, client_protocol, expect_success,
                        certsreqs=None, server_options=0, client_options=0):
     """
     Try to SSL-connect using *client_protocol* to *server_protocol*.
-    If *expect_success* is true, assert that the connection succeeds,
+    If *expect_success* is a truthy value, assert that the connection succeeds,
     if it's false, assert that the connection fails.
     Also, if *expect_success* is a string, assert that it is the protocol
     version actually used by the connection.

@@ -113,14 +113,14 @@ The :keyword:`!while` statement
    single: : (colon); compound statement
 
 The :keyword:`while` statement is used for repeated execution as long as an
-expression is true:
+expression is a truthy value:
 
 .. productionlist::
    while_stmt: "while" `expression` ":" `suite`
              : ["else" ":" `suite`]
 
-This repeatedly tests the expression and, if it is true, executes the first
-suite; if the expression is false (which may be the first time it is tested) the
+This repeatedly tests the expression and, if it is a truthy value, executes the first
+suite; if the expression is a falsey value (which may be the first time it is tested) the
 suite of the :keyword:`!else` clause, if present, is executed and the loop
 terminates.
 

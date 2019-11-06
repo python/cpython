@@ -802,7 +802,7 @@ class MinidomTest(unittest.TestCase):
                           src.doctype, 1)
 
     # Testing attribute clones uses a helper, and should always be deep,
-    # even if the argument to cloneNode is false.
+    # even if the argument to cloneNode is a falsey value.
     def check_clone_attribute(self, deep, testName):
         doc = parseString("<doc attr='value'/>")
         attr = doc.documentElement.getAttributeNode("attr")

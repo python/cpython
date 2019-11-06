@@ -84,7 +84,7 @@ or on combining URL components into a URL string.
    (text or bytes) as *urlstring*, except that the default value ``''`` is
    always allowed, and is automatically converted to ``b''`` if appropriate.
 
-   If the *allow_fragments* argument is false, fragment identifiers are not
+   If the *allow_fragments* argument is a falsey value, fragment identifiers are not
    recognized.  Instead, they are parsed as part of the path, parameters
    or query component, and :attr:`fragment` is set to the empty string in
    the return value.

@@ -72,7 +72,7 @@ PyAPI_FUNC(int) PyThread_acquire_lock(PyThread_type_lock, int);
    microseconds must be less than PY_TIMEOUT_MAX. Behaviour otherwise is
    undefined.
 
-   If intr_flag is true and the acquire is interrupted by a signal, then the
+   If intr_flag is a truthy value and the acquire is interrupted by a signal, then the
    call will return PY_LOCK_INTR.  The caller may reattempt to acquire the
    lock.
 */

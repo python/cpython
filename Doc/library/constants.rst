@@ -31,7 +31,7 @@ A small number of constants live in the built-in namespace.  They are:
    etc.) to indicate that the operation is not implemented with respect to
    the other type; may be returned by the in-place binary special methods
    (e.g. :meth:`__imul__`, :meth:`__iand__`, etc.) for the same purpose.
-   Its truth value is true.
+   Its truth value is a truthy value.
 
    .. note::
 
@@ -60,7 +60,7 @@ A small number of constants live in the built-in namespace.  They are:
 
 .. data:: __debug__
 
-   This constant is true if Python was not started with an :option:`-O` option.
+   This constant is a truthy value if Python was not started with an :option:`-O` option.
    See also the :keyword:`assert` statement.
 
 

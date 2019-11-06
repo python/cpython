@@ -25,7 +25,7 @@ class TextWrapper:
     Several instance attributes control various aspects of wrapping:
       width (default: 70)
         the maximum width of wrapped lines (unless break_long_words
-        is false)
+        is a falsey value)
       initial_indent (default: "")
         string that will be prepended to the first line of wrapped
         output.  Counts towards the line's width.
@@ -38,11 +38,11 @@ class TextWrapper:
         in its line.  If false, each tab is treated as a single character.
       tabsize (default: 8)
         Expand tabs in input text to 0 .. 'tabsize' spaces, unless
-        'expand_tabs' is false.
+        'expand_tabs' is a falsey value.
       replace_whitespace (default: true)
         Replace all whitespace characters in the input text by spaces
-        after tab expansion.  Note that if expand_tabs is false and
-        replace_whitespace is true, every tab will be converted to a
+        after tab expansion.  Note that if expand_tabs is a falsey value and
+        replace_whitespace is a truthy value, every tab will be converted to a
         single space!
       fix_sentence_endings (default: false)
         Ensure that sentence-ending punctuation is always followed
@@ -234,7 +234,7 @@ class TextWrapper:
         """_wrap_chunks(chunks : [string]) -> [string]
 
         Wrap a sequence of text chunks and return a list of lines of
-        length 'self.width' or less.  (If 'break_long_words' is false,
+        length 'self.width' or less.  (If 'break_long_words' is a falsey value,
         some lines may be longer than this.)  Chunks correspond roughly
         to words and the whitespace between them: each chunk is
         indivisible (modulo 'break_long_words'), but a line break can

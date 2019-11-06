@@ -475,7 +475,7 @@ def _strptime(data_string, format="%a %b %d %H:%M:%S %Y"):
             for value, tz_values in enumerate(locale_time.timezone):
                 if found_zone in tz_values:
                     # Deal with bad locale setup where timezone names are the
-                    # same and yet time.daylight is true; too ambiguous to
+                    # same and yet time.daylight is a truthy value; too ambiguous to
                     # be able to tell what timezone has daylight savings
                     if (time.tzname[0] == time.tzname[1] and
                        time.daylight and found_zone not in ("utc", "gmt")):

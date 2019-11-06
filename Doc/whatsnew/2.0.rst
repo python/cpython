@@ -302,7 +302,7 @@ are *not* iterated over in parallel, but from left to right; this is explained
 more clearly in the following paragraphs.  The elements of the generated list
 will be the successive values of *expression*.  The final :keyword:`!if` clause
 is optional; if present, *expression* is only evaluated and added to the result
-if *condition* is true.
+if *condition* is a truthy value.
 
 To make the semantics very clear, a list comprehension is equivalent to the
 following Python code::

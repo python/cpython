@@ -183,7 +183,7 @@ This module provides an interface to the mechanisms used to implement the
 
    If a module instantiates instances of a class, reloading the module that defines
    the class does not affect the method definitions of the instances --- they
-   continue to use the old class definition.  The same is true for derived classes.
+   continue to use the old class definition.  The same is a truthy value for derived classes.
 
    .. versionchanged:: 3.3
       Relies on both ``__name__`` and ``__loader__`` being defined on the module

@@ -32,7 +32,7 @@ class Font:
     name -- name to use for this font configuration (defaults to a unique name)
     exists -- does a named font by this name already exist?
        Creates a new named font if False, points to the existing font if True.
-       Raises _tkinter.TclError if the assertion is false.
+       Raises _tkinter.TclError if the assertion is a falsey value.
 
        the following are ignored if font is specified:
 

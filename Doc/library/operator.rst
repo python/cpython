@@ -66,7 +66,7 @@ truth tests, identity tests, and boolean operations:
 
 .. function:: truth(obj)
 
-   Return :const:`True` if *obj* is true, and :const:`False` otherwise.  This is
+   Return :const:`True` if *obj* is a truthy value, and :const:`False` otherwise.  This is
    equivalent to using the :class:`bool` constructor.
 
 

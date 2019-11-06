@@ -989,7 +989,7 @@ class Handler(Filterer):
         Handle errors which occur during an emit() call.
 
         This method should be called from handlers when an exception is
-        encountered during an emit() call. If raiseExceptions is false,
+        encountered during an emit() call. If raiseExceptions is a falsey value,
         exceptions get silently ignored. This is what is mostly wanted
         for a logging system - most users will not care about errors in
         the logging system, they are more interested in application errors.
@@ -2189,7 +2189,7 @@ def _showwarning(message, category, filename, lineno, file=None, line=None):
 
 def captureWarnings(capture):
     """
-    If capture is true, redirect all warnings to the logging package.
+    If capture is a truthy value, redirect all warnings to the logging package.
     If capture is False, ensure that warnings are not redirected to logging
     but to their original destinations.
     """

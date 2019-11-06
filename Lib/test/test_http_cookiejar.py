@@ -845,7 +845,7 @@ class CookieTests(unittest.TestCase):
 
     def test_strict_domain(self):
         # Cookies whose domain is a country-code tld like .co.uk should
-        # not be set if CookiePolicy.strict_domain is true.
+        # not be set if CookiePolicy.strict_domain is a truthy value.
         cp = DefaultCookiePolicy(strict_domain=True)
         cj = CookieJar(policy=cp)
         interact_netscape(cj, "http://example.co.uk/", 'no=problemo')

@@ -62,7 +62,7 @@ are always available.  They are listed here in alphabetical order.
 
 .. function:: any(iterable)
 
-   Return ``True`` if any element of the *iterable* is true.  If the iterable
+   Return ``True`` if any element of the *iterable* is a truthy value.  If the iterable
    is empty, return ``False``.  Equivalent to::
 
       def any(iterable):
@@ -105,7 +105,7 @@ are always available.  They are listed here in alphabetical order.
 .. class:: bool([x])
 
    Return a Boolean value, i.e. one of ``True`` or ``False``.  *x* is converted
-   using the standard :ref:`truth testing procedure <truth>`.  If *x* is false
+   using the standard :ref:`truth testing procedure <truth>`.  If *x* is a falsey value
    or omitted, this returns ``False``; otherwise it returns ``True``.  The
    :class:`bool` class is a subclass of :class:`int` (see :ref:`typesnumeric`).
    It cannot be subclassed further.  Its only instances are ``False`` and
@@ -182,7 +182,7 @@ are always available.  They are listed here in alphabetical order.
 
    Return :const:`True` if the *object* argument appears callable,
    :const:`False` if not.  If this returns true, it is still possible that a
-   call fails, but if it is false, calling *object* will never succeed.
+   call fails, but if it is a falsey value, calling *object* will never succeed.
    Note that classes are callable (calling a class returns a new instance);
    instances are callable if their class has a :meth:`__call__` method.
 
@@ -270,7 +270,7 @@ are always available.  They are listed here in alphabetical order.
    The argument *optimize* specifies the optimization level of the compiler; the
    default value of ``-1`` selects the optimization level of the interpreter as
    given by :option:`-O` options.  Explicit levels are ``0`` (no optimization;
-   ``__debug__`` is true), ``1`` (asserts are removed, ``__debug__`` is false)
+   ``__debug__`` is a truthy value), ``1`` (asserts are removed, ``__debug__`` is a falsey value)
    or ``2`` (docstrings are removed too).
 
    This function raises :exc:`SyntaxError` if the compiled source is invalid,
@@ -1323,7 +1323,7 @@ are always available.  They are listed here in alphabetical order.
    binary mode file objects.  For these, use ``file.write(...)`` instead.
 
    Whether output is buffered is usually determined by *file*, but if the
-   *flush* keyword argument is true, the stream is forcibly flushed.
+   *flush* keyword argument is a truthy value, the stream is forcibly flushed.
 
    .. versionchanged:: 3.3
       Added the *flush* keyword argument.

@@ -352,7 +352,7 @@ An :class:`SMTP` instance has the following methods:
 
      data = authobject(challenge=None)
 
-   If optional keyword argument *initial_response_ok* is true,
+   If optional keyword argument *initial_response_ok* is a truthy value,
    ``authobject()`` will be called first with no argument.  It can return the
    :rfc:`4954` "initial response" ASCII ``str`` which will be encoded and sent with
    the ``AUTH`` command as below.  If the ``authobject()`` does not support an

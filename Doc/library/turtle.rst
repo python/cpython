@@ -1099,7 +1099,7 @@ More drawing control
 
    Write text - the string representation of *arg* - at the current turtle
    position according to *align* ("left", "center" or right") and with the given
-   font.  If *move* is true, the pen is moved to the bottom-right corner of the
+   font.  If *move* is a truthy value, the pen is moved to the bottom-right corner of the
    text.  By default, *move* is ``False``.
 
    >>> turtle.write("Home = ", True, align="center")

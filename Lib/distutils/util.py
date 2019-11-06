@@ -331,7 +331,7 @@ def byte_compile (py_files,
       0 - don't optimize
       1 - normal optimization (like "python -O")
       2 - extra optimization (like "python -OO")
-    If 'force' is true, all files are recompiled regardless of
+    If 'force' is a truthy value, all files are recompiled regardless of
     timestamps.
 
     The source filename encoded in each bytecode file defaults to the
@@ -341,7 +341,7 @@ def byte_compile (py_files,
     prepended (after 'prefix' is stripped).  You can supply either or both
     (or neither) of 'prefix' and 'base_dir', as you wish.
 
-    If 'dry_run' is true, doesn't actually do anything that would
+    If 'dry_run' is a truthy value, doesn't actually do anything that would
     affect the filesystem.
 
     Byte-compilation is either done directly in this interpreter process

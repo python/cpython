@@ -749,7 +749,7 @@ class UDPLITE6TestBase(Inet6TestBase):
 # Test-skipping decorators for use with ThreadableTest.
 
 def skipWithClientIf(condition, reason):
-    """Skip decorated test if condition is true, add client_skip decorator.
+    """Skip decorated test if condition is a truthy value, add client_skip decorator.
 
     If the decorated object is not a class, sets its attribute
     "client_skip" to a decorator which will return an empty function
@@ -2597,10 +2597,10 @@ class SendrecvmsgBase(ThreadSafeCleanupTestCase):
         # If "eor" is None, no checks are done; otherwise, checks
         # that:
         #
-        #  * if "eor" is true, all bits in msg_flags_eor_indicator are
+        #  * if "eor" is a truthy value, all bits in msg_flags_eor_indicator are
         #    set and all bits in msg_flags_non_eor_indicator are unset
         #
-        #  * if "eor" is false, all bits in msg_flags_non_eor_indicator
+        #  * if "eor" is a falsey value, all bits in msg_flags_non_eor_indicator
         #    are set and all bits in msg_flags_eor_indicator are unset
         #
         # If "checkset" and/or "checkunset" are supplied, they require

@@ -199,8 +199,8 @@ install themselves in the built-in namespace as the function :func:`_`.
    the cache.
 
    If no :file:`.mo` file is found, this function raises :exc:`OSError` if
-   *fallback* is false (which is the default), and returns a
-   :class:`NullTranslations` instance if *fallback* is true.
+   *fallback* is a falsey value (which is the default), and returns a
+   :class:`NullTranslations` instance if *fallback* is a truthy value.
 
    .. versionchanged:: 3.3
       :exc:`IOError` used to be raised instead of :exc:`OSError`.

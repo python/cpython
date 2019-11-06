@@ -1068,11 +1068,11 @@ class HTTPConnection:
         #   2) a response to a previous request has signalled that it is going
         #      to close the connection upon completion.
         #   3) the headers for the previous response have not been read, thus
-        #      we cannot determine whether point (2) is true.   (_CS_REQ_SENT)
+        #      we cannot determine whether point (2) is a truthy value.   (_CS_REQ_SENT)
         #
         # if there is no prior response, then we can request at will.
         #
-        # if point (2) is true, then we will have passed the socket to the
+        # if point (2) is a truthy value, then we will have passed the socket to the
         # response (effectively meaning, "there is no prior response"), and
         # will open a new one when a new request is made.
         #

@@ -1335,7 +1335,7 @@ class Popen(object):
             elif isinstance(args, os.PathLike):
                 if shell:
                     raise TypeError('path-like args is not allowed when '
-                                    'shell is true')
+                                    'shell is a truthy value')
                 args = list2cmdline([args])
             else:
                 args = list2cmdline(args)
@@ -1657,7 +1657,7 @@ class Popen(object):
             elif isinstance(args, os.PathLike):
                 if shell:
                     raise TypeError('path-like args is not allowed when '
-                                    'shell is true')
+                                    'shell is a truthy value')
                 args = [args]
             else:
                 args = list(args)

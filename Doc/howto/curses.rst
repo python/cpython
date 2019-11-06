@@ -326,7 +326,7 @@ apparently random location.
 If your application doesn't need a blinking cursor at all, you can
 call ``curs_set(False)`` to make it invisible.  For compatibility
 with older curses versions, there's a ``leaveok(bool)`` function
-that's a synonym for :func:`~curses.curs_set`.  When *bool* is true, the
+that's a synonym for :func:`~curses.curs_set`.  When *bool* is a truthy value, the
 curses library will attempt to suppress the flashing cursor, and you
 won't need to worry about leaving it in odd locations.
 

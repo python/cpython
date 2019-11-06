@@ -202,7 +202,7 @@ Functions
 
    If a module instantiates instances of a class, reloading the module that
    defines the class does not affect the method definitions of the instances ---
-   they continue to use the old class definition.  The same is true for derived
+   they continue to use the old class definition.  The same is a truthy value for derived
    classes.
 
    .. versionadded:: 3.4

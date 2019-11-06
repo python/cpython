@@ -246,7 +246,7 @@ N elements, you can unpack them into an N-tuple:
 
 Built-in functions such as :func:`max` and :func:`min` can take a single
 iterator argument and will return the largest or smallest element.  The ``"in"``
-and ``"not in"`` operators also support iterators: ``X in iterator`` is true if
+and ``"not in"`` operators also support iterators: ``X in iterator`` is a truthy value if
 X is found in the stream returned by the iterator.  You'll run into obvious
 problems if the iterator is infinite; :func:`max`, :func:`min`
 will never return, and if the element X never appears in the stream, the
@@ -374,7 +374,7 @@ brackets instead of parentheses).
 
 The elements of the generated output will be the successive values of
 ``expression``.  The ``if`` clauses are all optional; if present, ``expression``
-is only evaluated and added to the result when ``condition`` is true.
+is only evaluated and added to the result when ``condition`` is a truthy value.
 
 Generator expressions always have to be written inside parentheses, but the
 parentheses signalling a function call also count.  If you want to create an
@@ -873,7 +873,7 @@ iterable's results. ::
 
 :func:`itertools.compress(data, selectors) <itertools.compress>` takes two
 iterators and returns only those elements of *data* for which the corresponding
-element of *selectors* is true, stopping whenever either one is exhausted::
+element of *selectors* is a truthy value, stopping whenever either one is exhausted::
 
     itertools.compress([1, 2, 3, 4, 5], [True, True, False, False, True]) =>
        1, 2, 5

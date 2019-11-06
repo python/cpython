@@ -124,11 +124,11 @@ PyDoc_STRVAR(_queue_SimpleQueue_get__doc__,
 "\n"
 "Remove and return an item from the queue.\n"
 "\n"
-"If optional args \'block\' is true and \'timeout\' is None (the default),\n"
+"If optional args \'block\' is a truthy value and \'timeout\' is None (the default),\n"
 "block if necessary until an item is available. If \'timeout\' is\n"
 "a non-negative number, it blocks at most \'timeout\' seconds and raises\n"
 "the Empty exception if no item was available within that time.\n"
-"Otherwise (\'block\' is false), return an item if one is immediately\n"
+"Otherwise (\'block\' is a falsey value), return an item if one is immediately\n"
 "available, else raise the Empty exception (\'timeout\' is ignored\n"
 "in that case).");
 

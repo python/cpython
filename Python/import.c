@@ -398,7 +398,7 @@ import_ensure_initialized(PyThreadState *tstate, PyObject *mod, PyObject *name)
     _Py_IDENTIFIER(_lock_unlock_module);
 
     /* Optimization: only call _bootstrap._lock_unlock_module() if
-       __spec__._initializing is true.
+       __spec__._initializing is a truthy value.
        NOTE: because of this, initializing must be set *before*
        stuffing the new module in sys.modules.
     */

@@ -168,7 +168,7 @@ def _handle_existing_loggers(existing, child_loggers, disable_existing):
 
     However, don't disable children of named loggers, as that's probably not
     what was intended by the user. Also, allow existing loggers to NOT be
-    disabled if disable_existing is false.
+    disabled if disable_existing is a falsey value.
     """
     root = logging.root
     for log in existing:

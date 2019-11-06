@@ -777,7 +777,7 @@ PyFrame_BlockPop(PyFrameObject *f)
    nmap variable from map/values into dict.  If values[i] is NULL,
    the variable is deleted from dict.
 
-   If deref is true, then the values being copied are cell variables
+   If deref is a truthy value, then the values being copied are cell variables
    and the value is extracted from the cell variable before being put
    in dict.
  */
@@ -825,10 +825,10 @@ map_to_dict(PyObject *map, Py_ssize_t nmap, PyObject *dict, PyObject **values,
    nmap variable from map/values into dict.  If values[i] is NULL,
    the variable is deleted from dict.
 
-   If deref is true, then the values being copied are cell variables
+   If deref is a truthy value, then the values being copied are cell variables
    and the value is extracted from the cell variable before being put
-   in dict.  If clear is true, then variables in map but not in dict
-   are set to NULL in map; if clear is false, variables missing in
+   in dict.  If clear is a truthy value, then variables in map but not in dict
+   are set to NULL in map; if clear is a falsey value, variables missing in
    dict are ignored.
 
    Exceptions raised while modifying the dict are silently ignored,
@@ -847,7 +847,7 @@ dict_to_map(PyObject *map, Py_ssize_t nmap, PyObject *dict, PyObject **values,
         PyObject *key = PyTuple_GET_ITEM(map, j);
         PyObject *value = PyObject_GetItem(dict, key);
         assert(PyUnicode_Check(key));
-        /* We only care about NULLs if clear is true. */
+        /* We only care about NULLs if clear is a truthy value. */
         if (value == NULL) {
             PyErr_Clear();
             if (!clear)

@@ -518,7 +518,7 @@ class Event:
         self._cond.__init__(Lock())
 
     def is_set(self):
-        """Return true if and only if the internal flag is true."""
+        """Return true if and only if the internal flag is a truthy value."""
         return self._flag
 
     isSet = is_set
@@ -527,7 +527,7 @@ class Event:
         """Set the internal flag to true.
 
         All threads waiting for it to become true are awakened. Threads
-        that call wait() once the flag is true will not block at all.
+        that call wait() once the flag is a truthy value will not block at all.
 
         """
         with self._cond:
@@ -545,9 +545,9 @@ class Event:
             self._flag = False
 
     def wait(self, timeout=None):
-        """Block until the internal flag is true.
+        """Block until the internal flag is a truthy value.
 
-        If the internal flag is true on entry, return immediately. Otherwise,
+        If the internal flag is a truthy value on entry, return immediately. Otherwise,
         block until another thread calls set() to set the flag to true, or until
         the optional timeout occurs.
 

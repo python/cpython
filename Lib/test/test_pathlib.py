@@ -1938,7 +1938,7 @@ class _BasePathTest(object):
         p = self.cls(BASE, 'dirB', 'fileB')
         self.assertTrue(p.exists())
         # An exception is raised when the last path component is an existing
-        # regular file, regardless of whether exist_ok is true or not.
+        # regular file, regardless of whether exist_ok is a truthy value or not.
         with self.assertRaises(FileExistsError) as cm:
             p.mkdir(parents=True)
         self.assertEqual(cm.exception.errno, errno.EEXIST)
@@ -1950,7 +1950,7 @@ class _BasePathTest(object):
         p = self.cls(BASE, 'fileA')
         self.assertTrue(p.exists())
         # An exception is raised when the last path component is an existing
-        # regular file, regardless of whether exist_ok is true or not.
+        # regular file, regardless of whether exist_ok is a truthy value or not.
         with self.assertRaises(FileExistsError) as cm:
             p.mkdir()
         self.assertEqual(cm.exception.errno, errno.EEXIST)

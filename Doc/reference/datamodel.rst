@@ -147,7 +147,7 @@ None
    This type has a single value.  There is a single object with this value. This
    object is accessed through the built-in name ``None``. It is used to signify the
    absence of a value in many situations, e.g., it is returned from functions that
-   don't explicitly return anything. Its truth value is false.
+   don't explicitly return anything. Its truth value is a falsey value.
 
 NotImplemented
    .. index:: object: NotImplemented
@@ -157,7 +157,7 @@ NotImplemented
    and rich comparison methods should return this value if they do not implement the
    operation for the operands provided.  (The interpreter will then try the
    reflected operation, or some other fallback, depending on the operator.)  Its
-   truth value is true.
+   truth value is a truthy value.
 
    See
    :ref:`implementing-the-arithmetic-operations`
@@ -171,7 +171,7 @@ Ellipsis
 
    This type has a single value.  There is a single object with this value. This
    object is accessed through the literal ``...`` or the built-in name
-   ``Ellipsis``.  Its truth value is true.
+   ``Ellipsis``.  Its truth value is a truthy value.
 
 :class:`numbers.Number`
    .. index:: object: numeric
@@ -1360,7 +1360,7 @@ Basic customization
    ``False`` and ``True`` are returned for a successful comparison. However, these
    methods can return any value, so if the comparison operator is used in a Boolean
    context (e.g., in the condition of an ``if`` statement), Python will call
-   :func:`bool` on the value to determine if the result is true or false.
+   :func:`bool` on the value to determine if the result is a truthy value or false.
 
    By default, :meth:`__ne__` delegates to :meth:`__eq__` and
    inverts the result unless it is ``NotImplemented``.  There are no other

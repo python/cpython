@@ -23,7 +23,7 @@ programmers will encounter a fragment of code like this::
            y--;
    z++;
 
-Only the ``x++`` statement is executed if the condition is true, but the
+Only the ``x++`` statement is executed if the condition is a truthy value, but the
 indentation leads many to believe otherwise.  Even experienced C programmers will
 sometimes stare at it a long time wondering as to why ``y`` is being decremented even
 for ``x > y``.

@@ -227,7 +227,7 @@ PyDoc_STRVAR(itertools_dropwhile__doc__,
 "dropwhile(predicate, iterable, /)\n"
 "--\n"
 "\n"
-"Drop items from the iterable while predicate(item) is true.\n"
+"Drop items from the iterable while predicate(item) is a truthy value.\n"
 "\n"
 "Afterwards, return every element until the iterable is exhausted.");
 
@@ -563,7 +563,7 @@ PyDoc_STRVAR(itertools_filterfalse__doc__,
 "filterfalse(function, iterable, /)\n"
 "--\n"
 "\n"
-"Return those items of iterable for which function(item) is false.\n"
+"Return those items of iterable for which function(item) is a falsey value.\n"
 "\n"
 "If function is None, return the items that are false.");
 

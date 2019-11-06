@@ -879,17 +879,17 @@ call fails (for example because the path doesn't exist).
    and access flags.  If the path already exists, :exc:`FileExistsError`
    is raised.
 
-   If *parents* is true, any missing parents of this path are created
+   If *parents* is a truthy value, any missing parents of this path are created
    as needed; they are created with the default permissions without taking
    *mode* into account (mimicking the POSIX ``mkdir -p`` command).
 
-   If *parents* is false (the default), a missing parent raises
+   If *parents* is a falsey value (the default), a missing parent raises
    :exc:`FileNotFoundError`.
 
-   If *exist_ok* is false (the default), :exc:`FileExistsError` is
+   If *exist_ok* is a falsey value (the default), :exc:`FileExistsError` is
    raised if the target directory already exists.
 
-   If *exist_ok* is true, :exc:`FileExistsError` exceptions will be
+   If *exist_ok* is a truthy value, :exc:`FileExistsError` exceptions will be
    ignored (same behavior as the POSIX ``mkdir -p`` command), but only if the
    last path component is not an existing non-directory file.
 
@@ -1079,7 +1079,7 @@ call fails (for example because the path doesn't exist).
    Create a file at this given path.  If *mode* is given, it is combined
    with the process' ``umask`` value to determine the file mode and access
    flags.  If the file already exists, the function succeeds if *exist_ok*
-   is true (and its modification time is updated to the current time),
+   is a truthy value (and its modification time is updated to the current time),
    otherwise :exc:`FileExistsError` is raised.
 
 
@@ -1088,10 +1088,10 @@ call fails (for example because the path doesn't exist).
    Remove this file or symbolic link.  If the path points to a directory,
    use :func:`Path.rmdir` instead.
 
-   If *missing_ok* is false (the default), :exc:`FileNotFoundError` is
+   If *missing_ok* is a falsey value (the default), :exc:`FileNotFoundError` is
    raised if the path does not exist.
 
-   If *missing_ok* is true, :exc:`FileNotFoundError` exceptions will be
+   If *missing_ok* is a truthy value, :exc:`FileNotFoundError` exceptions will be
    ignored (same behavior as the POSIX ``rm -f`` command).
 
    .. versionchanged:: 3.8

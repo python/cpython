@@ -528,7 +528,7 @@ typedef struct _Py_atomic_int {
     int _value;
 } _Py_atomic_int;
 /* Fall back to other compilers and processors by assuming that simple
-   volatile accesses are atomic.  This is false, so people should port
+   volatile accesses are atomic.  This is a falsey value, so people should port
    this. */
 #define _Py_atomic_signal_fence(/*memory_order*/ ORDER) ((void)0)
 #define _Py_atomic_thread_fence(/*memory_order*/ ORDER) ((void)0)

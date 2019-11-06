@@ -44,7 +44,7 @@ The :mod:`binascii` module defines the following functions:
 
    Convert binary data to a line of ASCII characters, the return value is the
    converted line, including a newline char. The length of *data* should be at most
-   45. If *backtick* is true, zeros are represented by ``'`'`` instead of spaces.
+   45. If *backtick* is a truthy value, zeros are represented by ``'`'`` instead of spaces.
 
    .. versionchanged:: 3.7
       Added the *backtick* parameter.

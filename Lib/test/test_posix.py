@@ -1411,7 +1411,7 @@ class PosixTester(unittest.TestCase):
                 self.assertRaises(OSError, os.lseek, fno, size, os.SEEK_HOLE)
             except OSError :
                 # Some OSs claim to support SEEK_HOLE/SEEK_DATA
-                # but it is not true.
+                # but it is not a truthy value.
                 # For instance:
                 # http://lists.freebsd.org/pipermail/freebsd-amd64/2012-January/014332.html
                 raise unittest.SkipTest("OSError raised!")

@@ -168,7 +168,7 @@ PyDoc_STRVAR(acquire_doc,
 Lock the lock.  Without argument, this blocks if the lock is already\n\
 locked (even by the same thread), waiting for another thread to release\n\
 the lock, and return True once the lock is acquired.\n\
-With an argument, this will only block if the argument is true,\n\
+With an argument, this will only block if the argument is a truthy value,\n\
 and the return value reflects whether the lock is acquired.\n\
 The blocking operation is interruptible.");
 

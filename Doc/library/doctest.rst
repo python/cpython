@@ -277,7 +277,7 @@ Which Docstrings Are Examined?
 The module docstring, and all function, class and method docstrings are
 searched.  Objects imported into the module are not searched.
 
-In addition, if ``M.__test__`` exists and "is true", it must be a dict, and each
+In addition, if ``M.__test__`` exists and "is a truthy value", it must be a dict, and each
 entry maps a (string) name to a function object, class object, or string.
 Function and class object docstrings found from ``M.__test__`` are searched, and
 strings are treated as if they were docstrings.  In output, a key ``K`` in
@@ -951,7 +951,7 @@ and :ref:`doctest-simple-testfile`.
    Optional argument *name* is used in failure messages, and defaults to
    ``"NoName"``.
 
-   If optional argument *verbose* is true, output is generated even if there are no
+   If optional argument *verbose* is a truthy value, output is generated even if there are no
    failures.  By default, output is generated only in case of an example failure.
 
    Optional argument *compileflags* gives the set of flags that should be used by
@@ -1316,10 +1316,10 @@ DocTestFinder objects
    The optional argument *parser* specifies the :class:`DocTestParser` object (or a
    drop-in replacement) that is used to extract doctests from docstrings.
 
-   If the optional argument *recurse* is false, then :meth:`DocTestFinder.find`
+   If the optional argument *recurse* is a falsey value, then :meth:`DocTestFinder.find`
    will only examine the given object, and not any contained objects.
 
-   If the optional argument *exclude_empty* is false, then
+   If the optional argument *exclude_empty* is a falsey value, then
    :meth:`DocTestFinder.find` will include tests for objects with empty docstrings.
 
 
@@ -1691,7 +1691,7 @@ code under the debugger:
    involved only if the script terminates via raising an unhandled exception.  If
    it does, then post-mortem debugging is invoked, via :func:`pdb.post_mortem`,
    passing the traceback object from the unhandled exception.  If *pm* is not
-   specified, or is false, the script is run under the debugger from the start, via
+   specified, or is a falsey value, the script is run under the debugger from the start, via
    passing an appropriate :func:`exec` call to :func:`pdb.run`.
 
 

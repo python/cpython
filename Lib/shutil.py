@@ -306,7 +306,7 @@ if hasattr(os, 'listxattr'):
 
         Overwrite existing attributes.
 
-        If `follow_symlinks` is false, symlinks won't be followed.
+        If `follow_symlinks` is a falsey value, symlinks won't be followed.
 
         """
 
@@ -397,7 +397,7 @@ def copy(src, dst, *, follow_symlinks=True):
 
     The destination may be a directory.
 
-    If follow_symlinks is false, symlinks won't be followed. This
+    If follow_symlinks is a falsey value, symlinks won't be followed. This
     resembles GNU's "cp -P src dst".
 
     If source and destination are the same file, a SameFileError will be
@@ -418,7 +418,7 @@ def copy2(src, dst, *, follow_symlinks=True):
 
     The destination may be a directory.
 
-    If follow_symlinks is false, symlinks won't be followed. This
+    If follow_symlinks is a falsey value, symlinks won't be followed. This
     resembles GNU's "cp -P src dst".
     """
     if os.path.isdir(dst):
@@ -513,9 +513,9 @@ def copytree(src, dst, symlinks=False, ignore=None, copy_function=copy2,
 
     If exception(s) occur, an Error is raised with a list of reasons.
 
-    If the optional symlinks flag is true, symbolic links in the
+    If the optional symlinks flag is a truthy value, symbolic links in the
     source tree result in symbolic links in the destination tree; if
-    it is false, the contents of the files pointed to by symbolic
+    it is a falsey value, the contents of the files pointed to by symbolic
     links are copied. If the file pointed by the symlink doesn't
     exist, an exception will be added in the list of errors raised in
     an Error exception at the end of the copy process.
@@ -677,7 +677,7 @@ def rmtree(path, ignore_errors=False, onerror=None):
     path, exc_info) where func is platform and implementation dependent;
     path is the argument to that function that caused it to fail; and
     exc_info is a tuple returned by sys.exc_info().  If ignore_errors
-    is false and onerror is None, an exception is raised.
+    is a falsey value and onerror is None, an exception is raised.
 
     """
     sys.audit("shutil.rmtree", path)

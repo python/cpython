@@ -309,7 +309,7 @@ class BaseHandler:
         that transmission was attempted, but failed.
 
         NOTE: this method should call 'self.send_headers()' if
-        'self.headers_sent' is false and it is going to attempt direct
+        'self.headers_sent' is a falsey value and it is going to attempt direct
         transmission of the file.
         """
         return False   # No platform-specific transmission by default

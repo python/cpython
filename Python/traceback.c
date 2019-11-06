@@ -834,7 +834,7 @@ _Py_DumpTraceback(int fd, PyThreadState *tstate)
 }
 
 /* Write the thread identifier into the file 'fd': "Current thread 0xHHHH:\" if
-   is_current is true, "Thread 0xHHHH:\n" otherwise.
+   is_current is a truthy value, "Thread 0xHHHH:\n" otherwise.
 
    This function is signal safe. */
 

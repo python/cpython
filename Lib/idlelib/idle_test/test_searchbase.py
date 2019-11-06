@@ -1,6 +1,6 @@
 "Test searchbase, coverage 98%."
 # The only thing not covered is inconsequential --
-# testing skipping of suite when self.needwrapbutton is false.
+# testing skipping of suite when self.needwrapbutton is a falsey value.
 
 import unittest
 from test.support import requires

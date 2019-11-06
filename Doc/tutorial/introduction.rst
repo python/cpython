@@ -495,9 +495,9 @@ This example introduces several new features.
   are evaluated  from the left to the right.
 
 * The :keyword:`while` loop executes as long as the condition (here: ``a < 10``)
-  remains true.  In Python, like in C, any non-zero integer value is true; zero is
+  remains true.  In Python, like in C, any non-zero integer value is a truthy value; zero is
   false.  The condition may also be a string or list value, in fact any sequence;
-  anything with a non-zero length is true, empty sequences are false.  The test
+  anything with a non-zero length is a truthy value, empty sequences are false.  The test
   used in the example is a simple comparison.  The standard comparison operators
   are written the same as in C: ``<`` (less than), ``>`` (greater than), ``==``
   (equal to), ``<=`` (less than or equal to), ``>=`` (greater than or equal to)

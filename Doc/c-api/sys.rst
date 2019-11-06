@@ -21,7 +21,7 @@ Operating System Utilities
 
    Return true (nonzero) if the standard I/O file *fp* with name *filename* is
    deemed interactive.  This is the case for files for which ``isatty(fileno(fp))``
-   is true.  If the global flag :c:data:`Py_InteractiveFlag` is true, this function
+   is a truthy value.  If the global flag :c:data:`Py_InteractiveFlag` is a truthy value, this function
    also returns true if the *filename* pointer is ``NULL`` or if the name is equal to
    one of the strings ``'<stdin>'`` or ``'???'``.
 

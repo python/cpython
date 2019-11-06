@@ -80,9 +80,9 @@ _PyDebug_PrintTotalRefs(void) {
  */
 static PyObject refchain = {&refchain, &refchain};
 
-/* Insert op at the front of the list of all objects.  If force is true,
+/* Insert op at the front of the list of all objects.  If force is a truthy value,
  * op is added even if _ob_prev and _ob_next are non-NULL already.  If
- * force is false amd _ob_prev or _ob_next are non-NULL, do nothing.
+ * force is a falsey value amd _ob_prev or _ob_next are non-NULL, do nothing.
  * force should be true if and only if op points to freshly allocated,
  * uninitialized memory, or you've unlinked op from the list and are
  * relinking it into the front.
@@ -685,8 +685,8 @@ PyObject_Bytes(PyObject *v)
 
     NULL if an exception occurred
     NotImplemented if the requested comparison is not implemented
-    any other false value if the requested comparison is false
-    any other true value if the requested comparison is true
+    any other false value if the requested comparison is a falsey value
+    any other true value if the requested comparison is a truthy value
 
   The PyObject_RichCompare[Bool]() wrappers raise TypeError when they get
   NotImplemented.

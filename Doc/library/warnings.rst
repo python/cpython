@@ -464,7 +464,7 @@ Available Functions
 
    Insert an entry into the list of :ref:`warnings filter specifications
    <warning-filter>`.  The entry is inserted at the front by default; if
-   *append* is true, it is inserted at the end.  This checks the types of the
+   *append* is a truthy value, it is inserted at the end.  This checks the types of the
    arguments, compiles the *message* and *module* regular expressions, and
    inserts them as a tuple in the list of warnings filters.  Entries closer to
    the front of the list override entries later in the list, if both match a

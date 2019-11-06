@@ -113,7 +113,7 @@ the same library that the Python runtime is using.
    Similar to :c:func:`PyRun_SimpleStringFlags`, but the Python source code is read
    from *fp* instead of an in-memory string. *filename* should be the name of
    the file, it is decoded from the filesystem encoding
-   (:func:`sys.getfilesystemencoding`).  If *closeit* is true, the file is
+   (:func:`sys.getfilesystemencoding`).  If *closeit* is a truthy value, the file is
    closed before PyRun_SimpleFileExFlags returns.
 
    .. note::
@@ -263,7 +263,7 @@ the same library that the Python runtime is using.
    Similar to :c:func:`PyRun_StringFlags`, but the Python source code is read from
    *fp* instead of an in-memory string. *filename* should be the name of the file,
    it is decoded from the filesystem encoding (:func:`sys.getfilesystemencoding`).
-   If *closeit* is true, the file is closed before :c:func:`PyRun_FileExFlags`
+   If *closeit* is a truthy value, the file is closed before :c:func:`PyRun_FileExFlags`
    returns.
 
 
@@ -292,7 +292,7 @@ the same library that the Python runtime is using.
    The integer *optimize* specifies the optimization level of the compiler; a
    value of ``-1`` selects the optimization level of the interpreter as given by
    :option:`-O` options.  Explicit levels are ``0`` (no optimization;
-   ``__debug__`` is true), ``1`` (asserts are removed, ``__debug__`` is false)
+   ``__debug__`` is a truthy value), ``1`` (asserts are removed, ``__debug__`` is a falsey value)
    or ``2`` (docstrings are removed too).
 
    .. versionadded:: 3.4

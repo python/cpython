@@ -146,7 +146,7 @@ class OrderedDict(dict):
     def popitem(self, last=True):
         '''Remove and return a (key, value) pair from the dictionary.
 
-        Pairs are returned in LIFO order if last is true or FIFO order if false.
+        Pairs are returned in LIFO order if last is a truthy value or FIFO order if false.
         '''
         if not self:
             raise KeyError('dictionary is empty')
@@ -167,7 +167,7 @@ class OrderedDict(dict):
         return key, value
 
     def move_to_end(self, key, last=True):
-        '''Move an existing element to the end (or beginning if last is false).
+        '''Move an existing element to the end (or beginning if last is a falsey value).
 
         Raise KeyError if the element does not exist.
         '''

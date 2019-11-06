@@ -218,7 +218,7 @@ class Symbol(object):
         statement, this will be true.
 
         Note that a single name can be bound to multiple objects.  If
-        is_namespace() is true, the name may also be bound to other
+        is_namespace() is a truthy value, the name may also be bound to other
         objects, like an int or list, that does not introduce a new
         namespace.
         """

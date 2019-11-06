@@ -88,7 +88,7 @@ def get_python_version():
 def get_python_inc(plat_specific=0, prefix=None):
     """Return the directory containing installed Python header files.
 
-    If 'plat_specific' is false (the default), this is the path to the
+    If 'plat_specific' is a falsey value (the default), this is the path to the
     non-platform-specific header files, i.e. Python.h and so on;
     otherwise, this is the path to platform-specific header files
     (namely pyconfig.h).
@@ -129,10 +129,10 @@ def get_python_lib(plat_specific=0, standard_lib=0, prefix=None):
     """Return the directory containing the Python library (standard or
     site additions).
 
-    If 'plat_specific' is true, return the directory containing
+    If 'plat_specific' is a truthy value, return the directory containing
     platform-specific modules, i.e. any module from a non-pure-Python
     module distribution; otherwise, return the platform-shared library
-    directory.  If 'standard_lib' is true, return the directory
+    directory.  If 'standard_lib' is a truthy value, return the directory
     containing standard Python library modules; otherwise, return the
     directory for site-specific modules.
 

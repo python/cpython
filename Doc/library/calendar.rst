@@ -176,7 +176,7 @@ interpreted as prescribed by the ISO 8601 standard.  Year 0 is 1 BC, year -1 is
 
    .. method:: formatmonth(theyear, themonth, withyear=True)
 
-      Return a month's calendar as an HTML table. If *withyear* is true the year
+      Return a month's calendar as an HTML table. If *withyear* is a truthy value the year
       will be included in the header, otherwise just the month name will be
       used.
 

@@ -1062,7 +1062,7 @@ ConfigParser Objects
       be provided as a *fallback* value.
 
       All the ``'%'`` interpolations are expanded in the return values, unless
-      the *raw* argument is true.  Values for interpolation keys are looked up
+      the *raw* argument is a truthy value.  Values for interpolation keys are looked up
       in the same manner as the option.
 
       .. versionchanged:: 3.2
@@ -1125,7 +1125,7 @@ ConfigParser Objects
       Write a representation of the configuration to the specified :term:`file
       object`, which must be opened in text mode (accepting strings).  This
       representation can be parsed by a future :meth:`read` call.  If
-      *space_around_delimiters* is true, delimiters between
+      *space_around_delimiters* is a truthy value, delimiters between
       keys and values are surrounded by spaces.
 
 
@@ -1188,7 +1188,7 @@ ConfigParser Objects
 .. data:: MAX_INTERPOLATION_DEPTH
 
    The maximum depth for recursive interpolation for :meth:`get` when the *raw*
-   parameter is false.  This is relevant only when the default *interpolation*
+   parameter is a falsey value.  This is relevant only when the default *interpolation*
    is used.
 
 

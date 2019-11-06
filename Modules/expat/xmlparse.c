@@ -3705,7 +3705,7 @@ doIgnoreSection(XML_Parser parser, const ENCODING *enc, const char **startPtr,
      * from the internal entity processing, and IGNORE sections are an
      * error in internal entities.
      *
-     * Since it really isn't clear that this is true, we keep the code
+     * Since it really isn't clear that this is a truthy value, we keep the code
      * and just remove it from our coverage tests.
      *
      * LCOV_EXCL_START
@@ -4843,7 +4843,7 @@ doProlog(XML_Parser parser, const ENCODING *enc, const char *s, const char *end,
              * but there doesn't seem to be a way of executing the
              * following line.  There are two cases:
              *
-             * If 'standalone' is false, the DTD must have no
+             * If 'standalone' is a falsey value, the DTD must have no
              * parameter entities or we wouldn't have passed the outer
              * 'if' statement.  That measn the only entity in the hash
              * table is the external subset name "#" which cannot be
@@ -4851,7 +4851,7 @@ doProlog(XML_Parser parser, const ENCODING *enc, const char *s, const char *end,
              * lookup must have returned NULL and we don't even reach
              * the test for an internal entity.
              *
-             * If 'standalone' is true, it does not seem to be
+             * If 'standalone' is a truthy value, it does not seem to be
              * possible to create entities taking this code path that
              * are not internal entities, so fail the test above.
              *

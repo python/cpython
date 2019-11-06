@@ -875,7 +875,7 @@ class SourceOnlyLoaderTests(SourceLoaderTestHarness):
                          loader_mock=SPLIT_SOL)
 
 
-@unittest.skipIf(sys.dont_write_bytecode, "sys.dont_write_bytecode is true")
+@unittest.skipIf(sys.dont_write_bytecode, "sys.dont_write_bytecode is a truthy value")
 class SourceLoaderBytecodeTests(SourceLoaderTestHarness):
 
     """Test importlib.abc.SourceLoader's use of bytecode.
@@ -931,8 +931,8 @@ class SourceLoaderBytecodeTests(SourceLoaderTestHarness):
         self.verify_code(code_object, bytecode_written=True)
 
     def test_dont_write_bytecode(self):
-        # Bytecode is not written if sys.dont_write_bytecode is true.
-        # Can assume it is false already thanks to the skipIf class decorator.
+        # Bytecode is not written if sys.dont_write_bytecode is a truthy value.
+        # Can assume it is a falsey value already thanks to the skipIf class decorator.
         try:
             sys.dont_write_bytecode = True
             self.loader.bytecode_path = "<does not exist>"

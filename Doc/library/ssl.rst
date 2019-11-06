@@ -1177,7 +1177,7 @@ SSL sockets also have the following additional methods and attributes:
    .. versionchanged:: 3.4
       The handshake method also performs :func:`match_hostname` when the
       :attr:`~SSLContext.check_hostname` attribute of the socket's
-      :attr:`~SSLSocket.context` is true.
+      :attr:`~SSLSocket.context` is a truthy value.
 
    .. versionchanged:: 3.5
       The socket timeout is no more reset each time bytes are received or sent.
@@ -1799,7 +1799,7 @@ to speed up repeated connections from the same clients.
    the hostname of the service which we are connecting to.  This allows a
    single server to host multiple SSL-based services with distinct certificates,
    quite similarly to HTTP virtual hosts. Specifying *server_hostname* will
-   raise a :exc:`ValueError` if *server_side* is true.
+   raise a :exc:`ValueError` if *server_side* is a truthy value.
 
    The parameter ``do_handshake_on_connect`` specifies whether to do the SSL
    handshake automatically after doing a :meth:`socket.connect`, or whether the

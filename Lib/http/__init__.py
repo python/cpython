@@ -88,7 +88,7 @@ class HTTPStatus(IntEnum):
     LENGTH_REQUIRED = (411, 'Length Required',
         'Client must specify Content-Length')
     PRECONDITION_FAILED = (412, 'Precondition Failed',
-        'Precondition in headers is false')
+        'Precondition in headers is a falsey value')
     REQUEST_ENTITY_TOO_LARGE = (413, 'Request Entity Too Large',
         'Entity is too large')
     REQUEST_URI_TOO_LONG = (414, 'Request-URI Too Long',

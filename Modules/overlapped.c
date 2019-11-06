@@ -755,8 +755,8 @@ Overlapped_cancel(OverlappedObject *self, PyObject *Py_UNUSED(ignored))
 PyDoc_STRVAR(
     Overlapped_getresult_doc,
     "getresult(wait=False) -> result\n\n"
-    "Retrieve result of operation.  If wait is true then it blocks\n"
-    "until the operation is finished.  If wait is false and the\n"
+    "Retrieve result of operation.  If wait is a truthy value then it blocks\n"
+    "until the operation is finished.  If wait is a falsey value and the\n"
     "operation is still pending then an error is raised.");
 
 static PyObject *

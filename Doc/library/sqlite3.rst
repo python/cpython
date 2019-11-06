@@ -215,7 +215,7 @@ Module functions and constants
    for the connection, you can set the *cached_statements* parameter. The currently
    implemented default is to cache 100 statements.
 
-   If *uri* is true, *database* is interpreted as a URI. This allows you
+   If *uri* is a truthy value, *database* is interpreted as a URI. This allows you
    to specify options. For example, to open a database in read-only mode
    you can use::
 
@@ -345,7 +345,7 @@ Connection Objects
       statements under the function name *name*. *num_params* is the number of
       parameters the function accepts (if *num_params* is -1, the function may
       take any number of arguments), and *func* is a Python callable that is
-      called as the SQL function. If *deterministic* is true, the created function
+      called as the SQL function. If *deterministic* is a truthy value, the created function
       is marked as `deterministic <https://sqlite.org/deterministic.html>`_, which
       allows SQLite to perform additional optimizations. This flag is supported by
       SQLite 3.8.3 or higher, :exc:`NotSupportedError` will be raised if used

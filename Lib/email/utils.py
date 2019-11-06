@@ -78,7 +78,7 @@ def formataddr(pair, charset='utf-8'):
     (realname, email_address) and returns the string value suitable
     for an RFC 2822 From, To or Cc header.
 
-    If the first element of pair is false, then the second element is
+    If the first element of pair is a falsey value, then the second element is
     returned unmodified.
 
     Optional charset if given is the character set that is used to encode

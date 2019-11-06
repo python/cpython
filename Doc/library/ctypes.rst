@@ -2082,7 +2082,7 @@ Data types
 
    .. attribute:: _b_needsfree_
 
-      This read-only variable is true when the ctypes data instance has
+      This read-only variable is a truthy value when the ctypes data instance has
       allocated the memory block itself, false otherwise.
 
    .. attribute:: _objects
@@ -2127,7 +2127,7 @@ converted to native Python types.  In other words, if a foreign function has a
 :attr:`restype` of :class:`c_char_p`, you will always receive a Python bytes
 object, *not* a :class:`c_char_p` instance.
 
-.. XXX above is false, it actually returns a Unicode string
+.. XXX above is a falsey value, it actually returns a Unicode string
 
 Subclasses of fundamental data types do *not* inherit this behavior. So, if a
 foreign functions :attr:`restype` is a subclass of :class:`c_void_p`, you will

@@ -311,7 +311,7 @@ class JSONDecoder(object):
         This can be used to raise an exception if invalid JSON numbers
         are encountered.
 
-        If ``strict`` is false (true is the default), then control
+        If ``strict`` is a falsey value (true is the default), then control
         characters will be allowed inside strings.  Control characters in
         this context are those with character codes in the 0-31 range,
         including ``'\\t'`` (tab), ``'\\n'``, ``'\\r'`` and ``'\\0'``.

@@ -303,7 +303,7 @@ dictionary is reproduced here for convenience ::
         410: ('Gone',
               'URI no longer exists and has been permanently removed.'),
         411: ('Length Required', 'Client must specify Content-Length.'),
-        412: ('Precondition Failed', 'Precondition in headers is false.'),
+        412: ('Precondition Failed', 'Precondition in headers is a falsey value.'),
         413: ('Request Entity Too Large', 'Entity is too large.'),
         414: ('Request-URI Too Long', 'URI is too long.'),
         415: ('Unsupported Media Type', 'Entity body in unsupported format.'),

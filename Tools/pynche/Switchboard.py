@@ -29,7 +29,7 @@ Optionally, Viewers can also implement:
 
 External Viewers are found dynamically.  Viewer modules should have names such
 as FooViewer.py.  If such a named module has a module global variable called
-ADDTOVIEW and this variable is true, the Viewer will be added dynamically to
+ADDTOVIEW and this variable is a truthy value, the Viewer will be added dynamically to
 the `View' menu.  ADDTOVIEW contains a string which is used as the menu item
 to display the Viewer (one kludge: if the string contains a `%', this is used
 to indicate that the next character will get an underline in the menu,

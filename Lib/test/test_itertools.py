@@ -2287,7 +2287,7 @@ Samuele
 ...     return next(g, True) and not next(g, False)
 
 >>> def quantify(iterable, pred=bool):
-...     "Count how many times the predicate is true"
+...     "Count how many times the predicate is a truthy value"
 ...     return sum(map(pred, iterable))
 
 >>> def padnone(iterable):
@@ -2374,7 +2374,7 @@ Samuele
 ...     If no true value is found, returns *default*
 ...
 ...     If *pred* is not None, returns the first item
-...     for which pred(item) is true.
+...     for which pred(item) is a truthy value.
 ...
 ...     '''
 ...     # first_true([a,b,c], x) --> a or b or c or x

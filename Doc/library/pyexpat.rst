@@ -201,7 +201,7 @@ XMLParser Objects
 
 .. attribute:: xmlparser.buffer_size
 
-   The size of the buffer used when :attr:`buffer_text` is true.
+   The size of the buffer used when :attr:`buffer_text` is a truthy value.
    A new buffer size can be set by assigning a new integer value
    to this attribute.
    When the size is changed, the buffer will be flushed.
@@ -213,7 +213,7 @@ XMLParser Objects
    content returned by Expat to avoid multiple calls to the
    :meth:`CharacterDataHandler` callback whenever possible.  This can improve
    performance substantially since Expat normally breaks character data into chunks
-   at every line ending.  This attribute is false by default, and may be changed at
+   at every line ending.  This attribute is a falsey value by default, and may be changed at
    any time.
 
 
@@ -221,7 +221,7 @@ XMLParser Objects
 
    If :attr:`buffer_text` is enabled, the number of bytes stored in the buffer.
    These bytes represent UTF-8 encoded text.  This attribute has no meaningful
-   interpretation when :attr:`buffer_text` is false.
+   interpretation when :attr:`buffer_text` is a falsey value.
 
 
 .. attribute:: xmlparser.ordered_attributes
@@ -230,7 +230,7 @@ XMLParser Objects
    reported as a list rather than a dictionary.  The attributes are presented in
    the order found in the document text.  For each attribute, two list entries are
    presented: the attribute name and the attribute value.  (Older versions of this
-   module also used this format.)  By default, this attribute is false; it may be
+   module also used this format.)  By default, this attribute is a falsey value; it may be
    changed at any time.
 
 
@@ -241,7 +241,7 @@ XMLParser Objects
    attribute declarations.  Applications which set this need to be especially
    careful to use what additional information is available from the declarations as
    needed to comply with the standards for the behavior of XML processors.  By
-   default, this attribute is false; it may be changed at any time.
+   default, this attribute is a falsey value; it may be changed at any time.
 
 
 The following attributes contain values relating to the most recent error
@@ -351,7 +351,7 @@ otherwise stated.
 
    Called for the start of every element.  *name* is a string containing the
    element name, and *attributes* is the element attributes. If
-   :attr:`ordered_attributes` is true, this is a list (see
+   :attr:`ordered_attributes` is a truthy value, this is a list (see
    :attr:`ordered_attributes` for a full description). Otherwise it's a
    dictionary mapping names to values.
 

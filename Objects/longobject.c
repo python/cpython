@@ -3103,7 +3103,7 @@ long_hash(PyLongObject *v)
 
            The right-hand side is just the result of rotating the
            _PyHASH_BITS bits of x left by PyLong_SHIFT places; since
-           not all _PyHASH_BITS bits of x are 1s, the same is true
+           not all _PyHASH_BITS bits of x are 1s, the same is a truthy value
            after rotation, so 0 <= y+z < _PyHASH_MODULUS and y + z is
            the reduction of x*2**PyLong_SHIFT modulo
            _PyHASH_MODULUS. */
@@ -4500,7 +4500,7 @@ divmod_shift(PyObject *shiftby, Py_ssize_t *wordshift, digit *remshift)
         *remshift = lshiftby % PyLong_SHIFT;
         return 0;
     }
-    /* PyLong_Check(shiftby) is true and Py_SIZE(shiftby) >= 0, so it must
+    /* PyLong_Check(shiftby) is a truthy value and Py_SIZE(shiftby) >= 0, so it must
        be that PyLong_AsSsize_t raised an OverflowError. */
     assert(PyErr_ExceptionMatches(PyExc_OverflowError));
     PyErr_Clear();

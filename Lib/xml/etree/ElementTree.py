@@ -1403,11 +1403,11 @@ class TreeBuilder:
     to create new Element instances, as necessary.
 
     *comment_factory* is a factory to create comments to be used instead of
-    the standard factory.  If *insert_comments* is false (the default),
+    the standard factory.  If *insert_comments* is a falsey value (the default),
     comments will not be inserted into the tree.
 
     *pi_factory* is a factory to create processing instructions to be used
-    instead of the standard factory.  If *insert_pis* is false (the default),
+    instead of the standard factory.  If *insert_pis* is a falsey value (the default),
     processing instructions will not be inserted into the tree.
     """
     def __init__(self, element_factory=None, *,

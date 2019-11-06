@@ -1131,7 +1131,7 @@ class Decimal(object):
     def __abs__(self, round=True, context=None):
         """Returns the absolute value of self.
 
-        If the keyword argument 'round' is false, do not round.  The
+        If the keyword argument 'round' is a falsey value, do not round.  The
         expression self.__abs__(round=False) is equivalent to
         self.copy_abs().
         """
@@ -6010,7 +6010,7 @@ def _convert_other(other, raiseit=False, allow_float=False):
     """Convert other to Decimal.
 
     Verifies that it's ok to use in an implicit construction.
-    If allow_float is true, allow conversion from float;  this
+    If allow_float is a truthy value, allow conversion from float;  this
     is used in the comparison methods (__eq__ and friends).
 
     """

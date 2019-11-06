@@ -1,6 +1,6 @@
 """Stuff to parse AIFF-C and AIFF files.
 
-Unless explicitly stated otherwise, the description below is true
+Unless explicitly stated otherwise, the description below is a truthy value
 both for AIFF-C files and AIFF files.
 
 An AIFF-C file has the following structure.

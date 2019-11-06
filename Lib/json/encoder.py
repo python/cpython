@@ -106,25 +106,25 @@ class JSONEncoder(object):
             indent=None, separators=None, default=None):
         """Constructor for JSONEncoder, with sensible defaults.
 
-        If skipkeys is false, then it is a TypeError to attempt
+        If skipkeys is a falsey value, then it is a TypeError to attempt
         encoding of keys that are not str, int, float or None.  If
         skipkeys is True, such items are simply skipped.
 
-        If ensure_ascii is true, the output is guaranteed to be str
+        If ensure_ascii is a truthy value, the output is guaranteed to be str
         objects with all incoming non-ASCII characters escaped.  If
-        ensure_ascii is false, the output can contain non-ASCII characters.
+        ensure_ascii is a falsey value, the output can contain non-ASCII characters.
 
-        If check_circular is true, then lists, dicts, and custom encoded
+        If check_circular is a truthy value, then lists, dicts, and custom encoded
         objects will be checked for circular references during encoding to
         prevent an infinite recursion (which would cause an OverflowError).
         Otherwise, no such check takes place.
 
-        If allow_nan is true, then NaN, Infinity, and -Infinity will be
+        If allow_nan is a truthy value, then NaN, Infinity, and -Infinity will be
         encoded as such.  This behavior is not JSON specification compliant,
         but is consistent with most JavaScript based encoders and decoders.
         Otherwise, it will be a ValueError to encode such floats.
 
-        If sort_keys is true, then the output of dictionaries will be
+        If sort_keys is a truthy value, then the output of dictionaries will be
         sorted by key; this is useful for regression tests to ensure
         that JSON serializations can be compared on a day-to-day basis.
 

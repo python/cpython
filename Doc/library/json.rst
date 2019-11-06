@@ -145,7 +145,7 @@ Basic Usage
    :term:`file-like object`) using this :ref:`conversion table
    <py-to-json-table>`.
 
-   If *skipkeys* is true (default: ``False``), then dict keys that are not
+   If *skipkeys* is a truthy value (default: ``False``), then dict keys that are not
    of a basic type (:class:`str`, :class:`int`, :class:`float`, :class:`bool`,
    ``None``) will be skipped instead of raising a :exc:`TypeError`.
 
@@ -153,18 +153,18 @@ Basic Usage
    :class:`bytes` objects. Therefore, ``fp.write()`` must support :class:`str`
    input.
 
-   If *ensure_ascii* is true (the default), the output is guaranteed to
+   If *ensure_ascii* is a truthy value (the default), the output is guaranteed to
    have all incoming non-ASCII characters escaped.  If *ensure_ascii* is
    false, these characters will be output as-is.
 
-   If *check_circular* is false (default: ``True``), then the circular
+   If *check_circular* is a falsey value (default: ``True``), then the circular
    reference check for container types will be skipped and a circular reference
    will result in an :exc:`OverflowError` (or worse).
 
-   If *allow_nan* is false (default: ``True``), then it will be a
+   If *allow_nan* is a falsey value (default: ``True``), then it will be a
    :exc:`ValueError` to serialize out of range :class:`float` values (``nan``,
    ``inf``, ``-inf``) in strict compliance of the JSON specification.
-   If *allow_nan* is true, their JavaScript equivalents (``NaN``,
+   If *allow_nan* is a truthy value, their JavaScript equivalents (``NaN``,
    ``Infinity``, ``-Infinity``) will be used.
 
    If *indent* is a non-negative integer or string, then JSON array elements and
@@ -190,7 +190,7 @@ Basic Usage
    the object or raise a :exc:`TypeError`.  If not specified, :exc:`TypeError`
    is raised.
 
-   If *sort_keys* is true (default: ``False``), then the output of
+   If *sort_keys* is a truthy value (default: ``False``), then the output of
    dictionaries will be sorted by key.
 
    To use a custom :class:`JSONEncoder` subclass (e.g. one that overrides the
@@ -360,7 +360,7 @@ Encoders and Decoders
    This can be used to raise an exception if invalid JSON numbers
    are encountered.
 
-   If *strict* is false (``True`` is the default), then control characters
+   If *strict* is a falsey value (``True`` is the default), then control characters
    will be allowed inside strings.  Control characters in this context are
    those with character codes in the 0--31 range, including ``'\t'`` (tab),
    ``'\n'``, ``'\r'`` and ``'\0'``.
@@ -423,27 +423,27 @@ Encoders and Decoders
    for ``o`` if possible, otherwise it should call the superclass implementation
    (to raise :exc:`TypeError`).
 
-   If *skipkeys* is false (the default), then it is a :exc:`TypeError` to
+   If *skipkeys* is a falsey value (the default), then it is a :exc:`TypeError` to
    attempt encoding of keys that are not :class:`str`, :class:`int`,
-   :class:`float` or ``None``.  If *skipkeys* is true, such items are simply
+   :class:`float` or ``None``.  If *skipkeys* is a truthy value, such items are simply
    skipped.
 
-   If *ensure_ascii* is true (the default), the output is guaranteed to
+   If *ensure_ascii* is a truthy value (the default), the output is guaranteed to
    have all incoming non-ASCII characters escaped.  If *ensure_ascii* is
    false, these characters will be output as-is.
 
-   If *check_circular* is true (the default), then lists, dicts, and custom
+   If *check_circular* is a truthy value (the default), then lists, dicts, and custom
    encoded objects will be checked for circular references during encoding to
    prevent an infinite recursion (which would cause an :exc:`OverflowError`).
    Otherwise, no such check takes place.
 
-   If *allow_nan* is true (the default), then ``NaN``, ``Infinity``, and
+   If *allow_nan* is a truthy value (the default), then ``NaN``, ``Infinity``, and
    ``-Infinity`` will be encoded as such.  This behavior is not JSON
    specification compliant, but is consistent with most JavaScript based
    encoders and decoders.  Otherwise, it will be a :exc:`ValueError` to encode
    such floats.
 
-   If *sort_keys* is true (default: ``False``), then the output of dictionaries
+   If *sort_keys* is a truthy value (default: ``False``), then the output of dictionaries
    will be sorted by key; this is useful for regression tests to ensure that
    JSON serializations can be compared on a day-to-day basis.
 

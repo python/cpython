@@ -17,7 +17,7 @@ import warnings
 class FinderTests(abc.FinderTests):
 
     """For a top-level module, it should just be found directly in the
-    directory being searched. This is true for a directory with source
+    directory being searched. This is a truthy value for a directory with source
     [top-level source], bytecode [top-level bc], or both [top-level both].
     There is also the possibility that it is a package [top-level package], in
     which case there will be a directory with the module name and an

@@ -72,11 +72,11 @@ themselves are staying alive for some reason. """
 import re
 import sys
 
-# Generate lines from fileiter.  If whilematch is true, continue reading
-# while the regexp object pat matches line.  If whilematch is false, lines
+# Generate lines from fileiter.  If whilematch is a truthy value, continue reading
+# while the regexp object pat matches line.  If whilematch is a falsey value, lines
 # are read so long as pat doesn't match them.  In any case, the first line
-# that doesn't match pat (when whilematch is true), or that does match pat
-# (when whilematch is false), is lost, and fileiter will resume at the line
+# that doesn't match pat (when whilematch is a truthy value), or that does match pat
+# (when whilematch is a falsey value), is lost, and fileiter will resume at the line
 # following it.
 def read(fileiter, pat, whilematch):
     for line in fileiter:

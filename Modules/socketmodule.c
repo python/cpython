@@ -2782,7 +2782,7 @@ sock_setblocking(PySocketSockObject *s, PyObject *arg)
 PyDoc_STRVAR(setblocking_doc,
 "setblocking(flag)\n\
 \n\
-Set the socket to blocking (flag is true) or non-blocking (false).\n\
+Set the socket to blocking (flag is a truthy value) or non-blocking (false).\n\
 setblocking(True) is equivalent to settimeout(None);\n\
 setblocking(False) is equivalent to settimeout(0.0).");
 

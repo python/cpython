@@ -223,7 +223,7 @@ class CommonTest(unittest.TestCase):
 
     def test_contains_fake(self):
         # Sequences must use rich comparison against each item
-        # (unless "is" is true, or an earlier item answered)
+        # (unless "is" is a truthy value, or an earlier item answered)
         # So ALWAYS_EQ must be found in all non-empty sequences.
         self.assertNotIn(ALWAYS_EQ, self.type2test([]))
         self.assertIn(ALWAYS_EQ, self.type2test([1]))

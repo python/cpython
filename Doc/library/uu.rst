@@ -33,7 +33,7 @@ The :mod:`uu` module defines the following functions:
    Uuencode file *in_file* into file *out_file*.  The uuencoded file will have
    the header specifying *name* and *mode* as the defaults for the results of
    decoding the file. The default defaults are taken from *in_file*, or ``'-'``
-   and ``0o666`` respectively.  If *backtick* is true, zeros are represented by
+   and ``0o666`` respectively.  If *backtick* is a truthy value, zeros are represented by
    ``'`'`` instead of spaces.
 
    .. versionchanged:: 3.7

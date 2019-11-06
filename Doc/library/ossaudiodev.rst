@@ -296,7 +296,7 @@ simple calculations.
    Set the key audio sampling parameters---sample format, number of channels, and
    sampling rate---in one method call.  *format*,  *nchannels*, and *samplerate*
    should be as specified in the :meth:`setfmt`, :meth:`channels`, and
-   :meth:`speed`  methods.  If *strict* is true, :meth:`setparameters` checks to
+   :meth:`speed`  methods.  If *strict* is a truthy value, :meth:`setparameters` checks to
    see if each parameter was actually set to the requested value, and raises
    :exc:`OSSAudioError` if not.  Returns a tuple (*format*, *nchannels*,
    *samplerate*) indicating the parameter values that were actually set by the

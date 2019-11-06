@@ -338,7 +338,7 @@ Other options
 
 There are still some other options which can be used to handle special cases.
 
-The ``optional`` option is a boolean; if it is true,
+The ``optional`` option is a boolean; if it is a truthy value,
 a build failure in the extension will not abort the build process, but
 instead simply not install the failing extension.
 
