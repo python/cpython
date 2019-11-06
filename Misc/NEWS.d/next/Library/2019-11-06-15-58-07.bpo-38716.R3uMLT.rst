@@ -1,1 +1,1 @@
-logging: change rotating handlers namer and rotator to class level attributes. this stops init from setting them to None in the case where a subclass creates them as methods
+logging: change RotatingHandler namer and rotator to class-level attributes. This stops __init__ from setting them to None in the case where a subclass defines them with eponymous methods.
