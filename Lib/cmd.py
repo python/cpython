@@ -125,7 +125,7 @@ class Cmd:
                         try:
                             line = input(self.prompt)
                         except EOFError:
-                            line = 'EOF'
+                            raise
                     else:
                         self.stdout.write(self.prompt)
                         self.stdout.flush()
