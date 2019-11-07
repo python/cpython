@@ -4162,8 +4162,11 @@ static PySequenceMethods dictkeys_as_sequence = {
     (objobjproc)dictkeys_contains,      /* sq_contains */
 };
 
+// Create an set object from dictviews object.
+// Returns a new reference.
+// This utility function is used by set operations.
 static PyObject*
-dictviews_sub(PyObject* self, PyObject *other)
+dictviews_to_set(PyObject *self)
 {
     PyObject *left = self;
     if (PyDictKeys_Check(self)) {
@@ -4173,7 +4176,13 @@ dictviews_sub(PyObject* self, PyObject *other)
             left = dict;
         }
     }
-    PyObject *result = PySet_New(left);
+    return PySet_New(left);
+}
+
+static PyObject*
+dictviews_sub(PyObject *self, PyObject *other)
+{
+    PyObject *result = dictviews_to_set(self);
     if (result == NULL) {
         return NULL;
     }
@@ -4281,43 +4290,22 @@ error:
 static PyObject*
 dictviews_or(PyObject* self, PyObject *other)
 {
-    PyObject *left = self;
-    if (PyDictKeys_Check(self)) {
-        // PySet_New() has fast path for the dict object.
-        PyObject *dict = (PyObject *)((_PyDictViewObject *)self)->dv_dict;
-        if (PyDict_CheckExact(dict)) {
-            left = dict;
-        }
-    }
-    PyObject *result = PySet_New(left);
+    PyObject *result = dictviews_to_set(self);
     if (result == NULL) {
         return NULL;
     }
 
-    _Py_IDENTIFIER(update);
-    PyObject *tmp = _PyObject_CallMethodIdOneArg(
-            result, &PyId_update, other);
-    if (tmp == NULL) {
+    if (_PySet_Update(result, other) < 0) {
         Py_DECREF(result);
         return NULL;
     }
-
-    Py_DECREF(tmp);
     return result;
 }
 
 static PyObject*
 dictviews_xor(PyObject* self, PyObject *other)
 {
-    PyObject *left = self;
-    if (PyDictKeys_Check(self)) {
-        // PySet_New() has fast path for the dict object.
-        PyObject *dict = (PyObject *)((_PyDictViewObject *)self)->dv_dict;
-        if (PyDict_CheckExact(dict)) {
-            left = dict;
-        }
-    }
-    PyObject *result = PySet_New(left);
+    PyObject *result = dictviews_to_set(self);
     if (result == NULL) {
         return NULL;
     }
