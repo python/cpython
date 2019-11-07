@@ -1613,7 +1613,7 @@ class ConfigFileTest(BaseTest):
             format=%(levelname)s ++ %(message)s
             """
         self.apply_config(test_config)
-        self.assertEquals(logging.getLogger().handlers[0].name, 'hand1')
+        self.assertEqual(logging.getLogger().handlers[0].name, 'hand1')
 
     def test_defaults_do_no_interpolation(self):
         """bpo-33802 defaults should not get interpolated"""
