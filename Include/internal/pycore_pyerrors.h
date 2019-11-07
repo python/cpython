@@ -10,7 +10,8 @@ extern "C" {
 
 static inline PyObject* _PyErr_Occurred(PyThreadState *tstate)
 {
-    return tstate == NULL ? NULL : tstate->curexc_type;
+    assert(tstate != NULL);
+    return tstate->curexc_type;
 }
 
 
