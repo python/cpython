@@ -1168,7 +1168,7 @@ find and load modules.
 
    .. method:: is_package(fullname)
 
-      Return true if :attr:`path` appears to be for a package.
+      Return ``True`` if :attr:`path` appears to be for a package.
 
    .. method:: path_stats(path)
 

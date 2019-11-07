@@ -879,7 +879,7 @@ should, then :meth:`flush` is expected to do the flushing.
 
    .. method:: shouldFlush(record)
 
-      Returns true if the buffer is up to capacity. This method can be
+      Returns ``True`` if the buffer is up to capacity. This method can be
       overridden to implement custom flushing strategies.
 
 

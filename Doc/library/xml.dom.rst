@@ -210,7 +210,7 @@ DOM Level 2 added the ability to create new :class:`Document` and
 
 .. method:: DOMImplementation.hasFeature(feature, version)
 
-   Return true if the feature identified by the pair of strings *feature* and
+   Return ``True`` if the feature identified by the pair of strings *feature* and
    *version* is implemented.
 
 
@@ -335,17 +335,17 @@ All of the components of an XML document are subclasses of :class:`Node`.
 
 .. method:: Node.hasAttributes()
 
-   Returns true if the node has any attributes.
+   Returns ``True`` if the node has any attributes.
 
 
 .. method:: Node.hasChildNodes()
 
-   Returns true if the node has any child nodes.
+   Returns ``True`` if the node has any child nodes.
 
 
 .. method:: Node.isSameNode(other)
 
-   Returns true if *other* refers to the same node as this node. This is especially
+   Returns ``True`` if *other* refers to the same node as this node. This is especially
    useful for DOM implementations which use any sort of proxy architecture (because
    more than one object can refer to the same node).
 
@@ -604,12 +604,12 @@ of that class.
 
 .. method:: Element.hasAttribute(name)
 
-   Returns true if the element has an attribute named by *name*.
+   Returns ``True`` if the element has an attribute named by *name*.
 
 
 .. method:: Element.hasAttributeNS(namespaceURI, localName)
 
-   Returns true if the element has an attribute named by *namespaceURI* and
+   Returns ``True`` if the element has an attribute named by *namespaceURI* and
    *localName*.
 
 
