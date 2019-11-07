@@ -714,8 +714,8 @@ read_directory(const char *archive)
     unsigned int count, i;
     unsigned char buffer[46];
     size_t length;
-    char path[MAXPATHLEN + 5];
-    char name[MAXPATHLEN + 5];
+    char name[MAXPATHLEN + 1];
+    char path[2*MAXPATHLEN + 2]; /* archive + SEP + name + '\0' */
     const char *errmsg = NULL;
 
     if (strlen(archive) > MAXPATHLEN) {
@@ -838,7 +838,7 @@ read_directory(const char *archive)
             }
         }
 
-        strncpy(path + length + 1, name, MAXPATHLEN - length - 1);
+        memcpy(path + length + 1, name, name_size + 1);
 
         t = Py_BuildValue("sHIIkHHI", path, compress, data_size,
                           file_size, file_offset, time, date, crc);

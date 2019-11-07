@@ -1055,14 +1055,15 @@ validate_numnodes(node *n, int num, const char *const name)
 static int
 validate_terminal(node *terminal, int type, char *string)
 {
-    int res = (validate_ntype(terminal, type)
-               && ((string == 0) || (strcmp(string, STR(terminal)) == 0)));
-
-    if (!res && !PyErr_Occurred()) {
+    if (!validate_ntype(terminal, type)) {
+        return 0;
+    }
+    if (string != NULL && strcmp(string, STR(terminal)) != 0) {
         PyErr_Format(parser_error,
                      "Illegal terminal: expected \"%s\"", string);
+        return 0;
     }
-    return (res);
+    return 1;
 }
 
 

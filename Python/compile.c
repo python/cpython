@@ -221,7 +221,7 @@ _Py_Mangle(PyObject *privateobj, PyObject *ident)
     }
     plen = strlen(p);
 
-    if (plen + nlen >= PY_SSIZE_T_MAX - 1) {
+    if (nlen >= PY_SSIZE_T_MAX - 1 - plen) {
         PyErr_SetString(PyExc_OverflowError,
                         "private identifier too large to be mangled");
         return NULL;
@@ -233,7 +233,7 @@ _Py_Mangle(PyObject *privateobj, PyObject *ident)
     /* ident = "_" + p[:plen] + name # i.e. 1+plen+nlen bytes */
     buffer = PyString_AS_STRING(ident);
     buffer[0] = '_';
-    strncpy(buffer+1, p, plen);
+    memcpy(buffer+1, p, plen);
     strcpy(buffer+1+plen, name);
     return ident;
 }
