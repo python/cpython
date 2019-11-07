@@ -486,7 +486,7 @@ calculate_path(void)
             if (tmpbuffer[0] == SEP)
                 /* tmpbuffer should never be longer than MAXPATHLEN,
                    but extra check does not hurt */
-                strncpy(argv0_path, tmpbuffer, MAXPATHLEN);
+                strncpy(argv0_path, tmpbuffer, MAXPATHLEN + 1);
             else {
                 /* Interpret relative to progpath */
                 reduce(argv0_path);
