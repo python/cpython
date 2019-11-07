@@ -252,7 +252,12 @@ structseq_repr(PyStructSequence *obj)
     }
 
     /* "typename(", limited to  TYPE_MAXSIZE */
-    pbuf = stpncpy(pbuf, typ->tp_name, TYPE_MAXSIZE);
+    len = strlen(typ->tp_name);
+    if (len > TYPE_MAXSIZE) {
+        len = TYPE_MAXSIZE;
+    }
+    pbuf = memcpy(pbuf, typ->tp_name, len);
+    pbuf += len;
     *pbuf++ = '(';
 
     for (i=0; i < VISIBLE_SIZE(obj); i++) {
