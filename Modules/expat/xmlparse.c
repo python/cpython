@@ -39,6 +39,12 @@
 #  define _CRT_RAND_S
 #endif
 
+#ifdef _WIN32
+#  include "winconfig.h"
+#elif defined(HAVE_EXPAT_CONFIG_H)
+#  include <expat_config.h>
+#endif /* ndef _WIN32 */
+
 #include <stddef.h>
 #include <string.h> /* memset(), memcpy() */
 #include <assert.h>
@@ -57,12 +63,6 @@
 #endif
 
 #define XML_BUILDING_EXPAT 1
-
-#ifdef _WIN32
-#  include "winconfig.h"
-#elif defined(HAVE_EXPAT_CONFIG_H)
-#  include <expat_config.h>
-#endif /* ndef _WIN32 */
 
 #include "ascii.h"
 #include "expat.h"
