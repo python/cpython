@@ -837,7 +837,7 @@ class Differ:
         Compare two sequences of lines; generate the resulting delta.
     """
 
-    def __init__(self, linejunk=None, charjunk=None):
+    def __init__(self, linejunk=None, charjunk=None, autojunk=True):
         """
         Construct a text differencer, with optional filters.
 
@@ -859,6 +859,7 @@ class Differ:
 
         self.linejunk = linejunk
         self.charjunk = charjunk
+        self.autojunk = autojunk
 
     def compare(self, a, b):
         r"""
@@ -886,7 +887,7 @@ class Differ:
         + emu
         """
 
-        cruncher = SequenceMatcher(self.linejunk, a, b)
+        cruncher = SequenceMatcher(self.linejunk, a, b, self.autojunk)
         for tag, alo, ahi, blo, bhi in cruncher.get_opcodes():
             if tag == 'replace':
                 g = self._fancy_replace(a, alo, ahi, b, blo, bhi)
@@ -1330,7 +1331,7 @@ def diff_bytes(dfunc, a, b, fromfile=b'', tofile=b'',
     for line in lines:
         yield line.encode('ascii', 'surrogateescape')
 
-def ndiff(a, b, linejunk=None, charjunk=IS_CHARACTER_JUNK):
+def ndiff(a, b, linejunk=None, charjunk=IS_CHARACTER_JUNK, autojunk=True):
     r"""
     Compare `a` and `b` (lists of strings); return a `Differ`-style delta.
 
@@ -1365,7 +1366,7 @@ def ndiff(a, b, linejunk=None, charjunk=IS_CHARACTER_JUNK):
     + tree
     + emu
     """
-    return Differ(linejunk, charjunk).compare(a, b)
+    return Differ(linejunk, charjunk, autojunk).compare(a, b)
 
 def _mdiff(fromlines, tolines, context=None, linejunk=None,
            charjunk=IS_CHARACTER_JUNK):
