@@ -264,6 +264,9 @@ class BaseHTTPRequestHandler(socketserver.StreamRequestHandler):
     # the client gets back when sending a malformed request line.
     # Most web servers default to HTTP 0.9, i.e. don't send a status line.
     default_request_version = "HTTP/0.9"
+    
+    # Enable or disable requests logging
+    logging_enabled = True
 
     def parse_request(self):
         """Parse a request (internal).
@@ -573,12 +576,16 @@ class BaseHTTPRequestHandler(socketserver.StreamRequestHandler):
         every message.
 
         """
-
-        sys.stderr.write("%s - - [%s] %s\n" %
-                         (self.address_string(),
-                          self.log_date_time_string(),
-                          format%args))
-
+        if self.logging_enabled:
+            sys.stderr.write("%s - - [%s] %s\n" %
+                             (self.address_string(),
+                              self.log_date_time_string(),
+                              format%args))
+    
+    def set_logging_enabled(self, logging_enabled):
+        """Enable or disable requests logging"""
+        self.logging_enabled = logging_enabled
+            
     def version_string(self):
         """Return the server software version string."""
         return self.server_version + ' ' + self.sys_version
