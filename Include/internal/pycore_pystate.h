@@ -139,8 +139,8 @@ struct _is {
         struct {
             int level;
             int atbol;
-        } listnode_data;
-    } parser_data;
+        } listnode;
+    } parser;
 };
 
 PyAPI_FUNC(struct _is*) _PyInterpreterState_LookUpID(PY_INT64_T);

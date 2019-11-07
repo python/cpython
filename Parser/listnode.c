@@ -21,8 +21,8 @@ listnode(FILE *fp, node *n)
 {
     PyInterpreterState *interp = _PyInterpreterState_GET_UNSAFE();
 
-    interp->parser_data.listnode_data.level = 0;
-    interp->parser_data.listnode_data.atbol = 1;
+    interp->parser.listnode.level = 0;
+    interp->parser.listnode.atbol = 1;
     list1node(fp, n);
 }
 
@@ -42,23 +42,23 @@ list1node(FILE *fp, node *n)
         interp = _PyInterpreterState_GET_UNSAFE();
         switch (TYPE(n)) {
         case INDENT:
-            interp->parser_data.listnode_data.level++;
+            interp->parser.listnode.level++;
             break;
         case DEDENT:
-            interp->parser_data.listnode_data.level--;
+            interp->parser.listnode.level--;
             break;
         default:
-            if (interp->parser_data.listnode_data.atbol) {
+            if (interp->parser.listnode.atbol) {
                 int i;
-                for (i = 0; i < interp->parser_data.listnode_data.level; ++i)
+                for (i = 0; i < interp->parser.listnode.level; ++i)
                     fprintf(fp, "\t");
-                interp->parser_data.listnode_data.atbol = 0;
+                interp->parser.listnode.atbol = 0;
             }
             if (TYPE(n) == NEWLINE) {
                 if (STR(n) != NULL)
                     fprintf(fp, "%s", STR(n));
                 fprintf(fp, "\n");
-                interp->parser_data.listnode_data.atbol = 1;
+                interp->parser.listnode.atbol = 1;
             }
             else
                 fprintf(fp, "%s ", STR(n));
