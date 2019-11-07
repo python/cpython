@@ -218,6 +218,9 @@ PyErr_SetString(PyObject *exception, const char *string)
 PyObject* _Py_HOT_FUNCTION
 PyErr_Occurred(void)
 {
+    /* The caller must hold the GIL. */
+    assert(PyGILState_Check());
+
     PyThreadState *tstate = _PyThreadState_GET();
     return _PyErr_Occurred(tstate);
 }
