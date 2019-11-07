@@ -30,12 +30,10 @@ PyObject*
 _Py_CheckFunctionResult(PyThreadState *tstate, PyObject *callable,
                         PyObject *result, const char *where)
 {
-    int err_occurred = (_PyErr_Occurred(tstate) != NULL);
-
     assert((callable != NULL) ^ (where != NULL));
 
     if (result == NULL) {
-        if (!err_occurred) {
+        if (!_PyErr_Occurred(tstate)) {
             if (callable)
                 _PyErr_Format(tstate, PyExc_SystemError,
                               "%R returned NULL without setting an error",
@@ -52,7 +50,7 @@ _Py_CheckFunctionResult(PyThreadState *tstate, PyObject *callable,
         }
     }
     else {
-        if (err_occurred) {
+        if (_PyErr_Occurred(tstate)) {
             Py_DECREF(result);
 
             if (callable) {
