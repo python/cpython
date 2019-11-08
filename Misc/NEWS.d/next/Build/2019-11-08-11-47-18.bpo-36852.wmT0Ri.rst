@@ -1,0 +1,1 @@
+Rewrote some of the target detection stuff, as it was failing for MIPS Softfloat. Now uses some autotools magic to detect the target triplet
