@@ -361,6 +361,24 @@ class _TestProcess(BaseTestCase):
         self.assertNotIn(p, self.active_children())
         close_queue(q)
 
+    if threading._HAVE_THREAD_NATIVE_ID:
+        def test_process_thread_attributes(self):
+            current_mainthread_native_id = threading.main_thread().native_id
+
+            q = self.Queue(1)
+            p = self.Process(target=self._test_process_thread_attributes, args=(q,))
+            p.daemon = True
+            p.start()
+
+            child_mainthread_native_id = q.get()
+            self.assertNotEqual(current_mainthread_native_id, child_mainthread_native_id)
+            close_queue(q)
+
+        @classmethod
+        def _test_process_thread_attributes(cls, q):
+            mainthread_native_id = threading.main_thread().native_id
+            q.put(mainthread_native_id)
+
     @classmethod
     def _sleep_some(cls):
         time.sleep(100)
