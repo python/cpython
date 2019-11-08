@@ -314,6 +314,9 @@ class HelpSource(Query):
         self.entry_error['text'] = ''
         self.path_error['text'] = ''
         name = self.item_ok()
+        if name in self.used_names:
+            self.showerror('name is already in use.')
+            return None
         path = self.path_ok()
         return None if name is None or path is None else (name, path)
 

@@ -1,0 +1,2 @@
+Additional help sources added to IDLE's help menu are now sorted and must be
+unique.

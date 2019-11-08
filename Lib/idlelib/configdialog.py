@@ -2103,6 +2103,10 @@ class GenPage(Frame):
 
         # Set additional help sources.
         self.user_helplist = idleConf.GetAllExtraHelpSourcesList()
+        self.set_additional_help_sources()
+
+    def set_additional_help_sources(self):
+        self.user_helplist.sort(key=lambda x: x[0])
         self.helplist.delete(0, 'end')
         for help_item in self.user_helplist:
             self.helplist.insert(END, help_item[0])
@@ -2131,7 +2135,9 @@ class GenPage(Frame):
         Query for name and location of new help sources and add
         them to the list.
         """
-        help_source = HelpSource(self, 'New Help Source').result
+        used_names = idleConf.GetExtraHelpSourceList('user')
+        help_source = HelpSource(self, 'New Help Source',
+                used_names=[item[0] for item in used_names]).result
         if help_source:
             self.user_helplist.append(help_source)
             self.helplist.insert(END, help_source[0])
@@ -2145,10 +2151,12 @@ class GenPage(Frame):
         """
         item_index = self.helplist.index(ANCHOR)
         help_source = self.user_helplist[item_index]
+        used_names = idleConf.GetExtraHelpSourceList('user')
         new_help_source = HelpSource(
                 self, 'Edit Help Source',
                 menuitem=help_source[0],
                 filepath=help_source[1],
+                used_names=[item[0] for item in used_names]
                 ).result
         if new_help_source and new_help_source != help_source:
             self.user_helplist[item_index] = new_help_source
@@ -2171,6 +2179,7 @@ class GenPage(Frame):
     def update_help_changes(self):
         "Clear and rebuild the HelpFiles section in changes"
         changes['main']['HelpFiles'] = {}
+        self.set_additional_help_sources()
         for num in range(1, len(self.user_helplist) + 1):
             changes.add_option(
                     'main', 'HelpFiles', str(num),
