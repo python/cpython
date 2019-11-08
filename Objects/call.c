@@ -104,7 +104,7 @@ _PyObject_FastCallDict(PyObject *callable, PyObject *const *args,
     vectorcallfunc func = _PyVectorcall_Function(callable);
     if (func == NULL) {
         /* Use tp_call instead */
-        return _PyObject_MakeTpCall(callable, args, nargs, kwargs);
+        return _PyObject_MakeTpCall(tstate, callable, args, nargs, kwargs);
     }
 
     PyObject *res;
@@ -129,10 +129,10 @@ _PyObject_FastCallDict(PyObject *callable, PyObject *const *args,
 
 
 PyObject *
-_PyObject_MakeTpCall(PyObject *callable, PyObject *const *args, Py_ssize_t nargs, PyObject *keywords)
+_PyObject_MakeTpCall(PyThreadState *tstate, PyObject *callable,
+                     PyObject *const *args, Py_ssize_t nargs,
+                     PyObject *keywords)
 {
-    PyThreadState *tstate = _PyThreadState_GET();
-
     /* Slow path: build a temporary tuple for positional arguments and a
      * temporary dictionary for keyword arguments (if any) */
     ternaryfunc call = Py_TYPE(callable)->tp_call;
@@ -774,6 +774,7 @@ _PyObject_VectorcallMethod(PyObject *name, PyObject *const *args,
     assert(args != NULL);
     assert(PyVectorcall_NARGS(nargsf) >= 1);
 
+    PyThreadState *tstate = _PyThreadState_GET();
     PyObject *callable = NULL;
     /* Use args[0] as "self" argument */
     int unbound = _PyObject_GetMethod(args[0], name, &callable);
@@ -792,7 +793,8 @@ _PyObject_VectorcallMethod(PyObject *name, PyObject *const *args,
         args++;
         nargsf--;
     }
-    PyObject *result = _PyObject_Vectorcall(callable, args, nargsf, kwnames);
+    PyObject *result = _PyObject_VectorcallTstate(tstate, callable,
+                                                  args, nargsf, kwnames);
     Py_DECREF(callable);
     return result;
 }
