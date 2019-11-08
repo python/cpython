@@ -361,27 +361,27 @@ class _TestProcess(BaseTestCase):
         self.assertNotIn(p, self.active_children())
         close_queue(q)
 
-    if threading._HAVE_THREAD_NATIVE_ID:
-        def test_process_thread_attributes(self):
-            if self.TYPE == 'threads':
-                self.skipTest('test not appropriate for {}'.format(self.TYPE))
+    @unittest.skipUnless(threading._HAVE_THREAD_NATIVE_ID, "needs native_id")
+    def test_process_mainthread_native_id(self):
+        if self.TYPE == 'threads':
+            self.skipTest('test not appropriate for {}'.format(self.TYPE))
 
-            current_mainthread_native_id = threading.main_thread().native_id
+        current_mainthread_native_id = threading.main_thread().native_id
 
-            q = self.Queue(1)
-            p = self.Process(target=self._test_process_thread_attributes, args=(q,))
-            p.daemon = True
-            p.start()
+        q = self.Queue(1)
+        p = self.Process(target=self._test_process_mainthread_native_id, args=(q,))
+        p.daemon = True
+        p.start()
 
-            child_mainthread_native_id = q.get()
-            close_queue(q)
+        child_mainthread_native_id = q.get()
+        close_queue(q)
 
-            self.assertNotEqual(current_mainthread_native_id, child_mainthread_native_id)
+        self.assertNotEqual(current_mainthread_native_id, child_mainthread_native_id)
 
-        @classmethod
-        def _test_process_thread_attributes(cls, q):
-            mainthread_native_id = threading.main_thread().native_id
-            q.put(mainthread_native_id)
+    @classmethod
+    def _test_process_mainthread_native_id(cls, q):
+        mainthread_native_id = threading.main_thread().native_id
+        q.put(mainthread_native_id)
 
     @classmethod
     def _sleep_some(cls):
