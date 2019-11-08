@@ -1,0 +1,3 @@
+in example header is "[i love [python] lang]"
+parse as "i love [python", only up to the first character ']'.
+now saving works correctly, but reading does not
