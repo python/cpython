@@ -374,8 +374,9 @@ class _TestProcess(BaseTestCase):
             p.start()
 
             child_mainthread_native_id = q.get()
-            self.assertNotEqual(current_mainthread_native_id, child_mainthread_native_id)
             close_queue(q)
+
+            self.assertNotEqual(current_mainthread_native_id, child_mainthread_native_id)
 
         @classmethod
         def _test_process_thread_attributes(cls, q):
