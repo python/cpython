@@ -2839,6 +2839,11 @@ void *x = uuid_enc_be
 # pthread (first!) on Linux
 AC_SEARCH_LIBS(sem_init, pthread rt posix4)
 
+if test $ac_sys_system = Darwin
+then
+  LIBS="$LIBS -framework CoreFoundation"
+fi
+
 # check if we need libintl for locale functions
 AC_CHECK_LIB(intl, textdomain,
 	[AC_DEFINE(WITH_LIBINTL, 1,
@@ -5167,11 +5172,6 @@ AC_CHECK_FILE(/dev/ptc, [], [])
 if test "x$ac_cv_file__dev_ptc" = xyes; then
   AC_DEFINE(HAVE_DEV_PTC, 1,
   [Define to 1 if you have the /dev/ptc device file.])
-fi
-
-if test $ac_sys_system = Darwin
-then
-	LIBS="$LIBS -framework CoreFoundation"
 fi
 
 AC_CACHE_CHECK([for %zd printf() format support], ac_cv_have_size_t_format, [dnl
