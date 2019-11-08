@@ -363,6 +363,9 @@ class _TestProcess(BaseTestCase):
 
     if threading._HAVE_THREAD_NATIVE_ID:
         def test_process_thread_attributes(self):
+            if self.TYPE == 'threads':
+                self.skipTest('test not appropriate for {}'.format(self.TYPE))
+
             current_mainthread_native_id = threading.main_thread().native_id
 
             q = self.Queue(1)
