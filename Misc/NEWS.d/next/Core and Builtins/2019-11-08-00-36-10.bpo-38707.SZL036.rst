@@ -1,0 +1,1 @@
+`multiprocessing.Process` objects now retain their correct `MainThread.native_id` attribute
