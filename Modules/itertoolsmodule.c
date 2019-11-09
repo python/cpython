@@ -4259,12 +4259,11 @@ repeat_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
     Py_ssize_t cnt = -1, n_kwds = 0;
     static char *kwargs[] = {"object", "times", NULL};
 
+    if (kwds != NULL)
+        n_kwds = PyDict_GET_SIZE(kwds);
     if (!PyArg_ParseTupleAndKeywords(args, kwds, "O|n:repeat", kwargs,
                                      &element, &cnt))
         return NULL;
-
-    if (kwds != NULL)
-        n_kwds = PyDict_GET_SIZE(kwds);
     /* Does user supply times argument? */
     if ((PyTuple_Size(args) + n_kwds == 2) && cnt < 0)
         cnt = 0;
