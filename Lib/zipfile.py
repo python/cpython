@@ -465,44 +465,23 @@ class ZipInfo (object):
             if ln+4 > len(extra):
                 raise BadZipFile("Corrupt extra field %04x (size=%d)" % (tp, ln))
             if tp == 0x0001:
-                if ln >= 24:
-                    counts = unpack('<QQQ', extra[4:28])
-                elif ln == 16:
-                    counts = unpack('<QQ', extra[4:20])
-                elif ln == 8:
-                    counts = unpack('<Q', extra[4:12])
-                elif ln == 0:
-                    counts = ()
-                else:
-                    raise BadZipFile("Corrupt extra field %04x (size=%d)" % (tp, ln))
-
-                idx = 0
-
+                data = extra[4:ln+4]
                 # ZIP64 extension (large files and/or large archives)
-                if self.file_size in (0xffffffffffffffff, 0xffffffff):
-                    if len(counts) <= idx:
-                        raise BadZipFile(
-                            "Corrupt zip64 extra field. File size not found."
-                        )
-                    self.file_size = counts[idx]
-                    idx += 1
-
-                if self.compress_size == 0xFFFFFFFF:
-                    if len(counts) <= idx:
-                        raise BadZipFile(
-                            "Corrupt zip64 extra field. Compress size not found."
-                        )
-                    self.compress_size = counts[idx]
-                    idx += 1
-
-                if self.header_offset == 0xffffffff:
-                    if len(counts) <= idx:
-                        raise BadZipFile(
-                            "Corrupt zip64 extra field. Header offset not found."
-                        )
-                    old = self.header_offset
-                    self.header_offset = counts[idx]
-                    idx+=1
+                try:
+                    if self.file_size in (0xFFFF_FFFF_FFFF_FFFF, 0xFFFF_FFFF):
+                        field = "File size"
+                        self.file_size, = unpack('<Q', data[:8])
+                        data = data[8:]
+                    if self.compress_size == 0xFFFF_FFFF:
+                        field = "Compress size"
+                        self.compress_size, = unpack('<Q', data[:8])
+                        data = data[8:]
+                    if self.header_offset == 0xFFFF_FFFF:
+                        field = "Header offset"
+                        self.header_offset, = unpack('<Q', data[:8])
+                except struct.error:
+                    raise BadZipFile(f"Corrupt zip64 extra field. "
+                                     f"{field} not found.") from None
 
             extra = extra[ln+4:]
 
