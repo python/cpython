@@ -209,7 +209,13 @@ PyDoc_STRVAR(fcntl_lockf__doc__,
 "\n"
 "    0 - relative to the start of the file (SEEK_SET)\n"
 "    1 - relative to the current buffer position (SEEK_CUR)\n"
-"    2 - relative to the end of the file (SEEK_END)");
+"    2 - relative to the end of the file (SEEK_END)\n"
+"\n"
+"The default for `start` is 0, which means to start at the beginning of the file.\n"
+"The default for `len` is 0 which means to lock to the end of the file.\n"
+"The default for `whence` is also 0.\n"
+"The default for `open_file_descriptor` is False,\n"
+"if `open_file_descriptor` is set to True, open file description locks are used.");
 
 #define FCNTL_LOCKF_METHODDEF    \
     {"lockf", (PyCFunction)(void(*)(void))fcntl_lockf, METH_FASTCALL|METH_KEYWORDS, fcntl_lockf__doc__},
@@ -286,4 +292,4 @@ skip_optional_pos:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=5e734dc440dd16a0 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=8afa3b7be9a70b58 input=a9049054013a1b77]*/
