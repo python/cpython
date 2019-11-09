@@ -750,6 +750,11 @@ will do nicely::
    john.dept = 'computer lab'
    john.salary = 1000
 
+:mod:`dataclasses` and :class:`collections.NamedTuple` are alternatives to
+using classes like structs. Dataclasses support type checking and,
+if default values are not desirable, can have ``__slots__`` defined
+to increase performance.
+
 A piece of Python code that expects a particular abstract data type can often be
 passed a class that emulates the methods of that data type instead.  For
 instance, if you have a function that formats some data from a file object, you
