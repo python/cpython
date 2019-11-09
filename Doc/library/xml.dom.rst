@@ -335,17 +335,17 @@ All of the components of an XML document are subclasses of :class:`Node`.
 
 .. method:: Node.hasAttributes()
 
-   Returns ``True`` if the node has any attributes.
+   Return ``True`` if the node has any attributes.
 
 
 .. method:: Node.hasChildNodes()
 
-   Returns ``True`` if the node has any child nodes.
+   Return ``True`` if the node has any child nodes.
 
 
 .. method:: Node.isSameNode(other)
 
-   Returns ``True`` if *other* refers to the same node as this node. This is especially
+   Return ``True`` if *other* refers to the same node as this node. This is especially
    useful for DOM implementations which use any sort of proxy architecture (because
    more than one object can refer to the same node).
 
@@ -604,12 +604,12 @@ of that class.
 
 .. method:: Element.hasAttribute(name)
 
-   Returns ``True`` if the element has an attribute named by *name*.
+   Return ``True`` if the element has an attribute named by *name*.
 
 
 .. method:: Element.hasAttributeNS(namespaceURI, localName)
 
-   Returns ``True`` if the element has an attribute named by *namespaceURI* and
+   Return ``True`` if the element has an attribute named by *namespaceURI* and
    *localName*.
 
 

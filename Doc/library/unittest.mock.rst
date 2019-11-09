@@ -360,7 +360,7 @@ the *new_callable* argument to :func:`patch`.
         assert the mock has been called with the specified calls.
         The :attr:`mock_calls` list is checked for the calls.
 
-        If *any_order* is false (the default) then the calls must be
+        If *any_order* is false then the calls must be
         sequential. There can be extra calls before or after the
         specified calls.
 
@@ -1006,7 +1006,7 @@ object::
       Assert the mock has been awaited with the specified calls.
       The :attr:`await_args_list` list is checked for the awaits.
 
-      If *any_order* is false (the default) then the awaits must be
+      If *any_order* is false then the awaits must be
       sequential. There can be extra calls before or after the
       specified awaits.
 
