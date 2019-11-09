@@ -123,7 +123,7 @@ The module defines the following functions:
    If the :c:func:`flock` fails, an :exc:`OSError` exception is raised.
 
 
-.. function:: lockf(fd, cmd, len=0, start=0, whence=0)
+.. function:: lockf(fd, cmd, len=0, start=0, whence=0, /, open_file_descriptor=False)
 
    This is essentially a wrapper around the :func:`~fcntl.fcntl` locking calls.
    *fd* is the file descriptor (file objects providing a :meth:`~io.IOBase.fileno`
@@ -154,6 +154,12 @@ The module defines the following functions:
    The default for *start* is 0, which means to start at the beginning of the file.
    The default for *len* is 0 which means to lock to the end of the file.  The
    default for *whence* is also 0.
+
+   The default for *open_file_descriptor* is False, if *open_file_descriptor* is
+   set to True, open file description locks are used.
+
+   .. versionchanged:: 3.9
+      The `open_file_descriptor` keyword argument was added.
 
 Examples (all on a SVR4 compliant system)::
 
