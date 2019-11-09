@@ -184,7 +184,8 @@ exit:
 }
 
 PyDoc_STRVAR(fcntl_lockf__doc__,
-"lockf($module, fd, cmd, len=0, start=0, whence=0, /)\n"
+"lockf($module, fd, cmd, len=0, start=0, whence=0, /,\n"
+"      open_file_descriptor=False)\n"
 "--\n"
 "\n"
 "A wrapper around the fcntl() locking calls.\n"
@@ -211,23 +212,29 @@ PyDoc_STRVAR(fcntl_lockf__doc__,
 "    2 - relative to the end of the file (SEEK_END)");
 
 #define FCNTL_LOCKF_METHODDEF    \
-    {"lockf", (PyCFunction)(void(*)(void))fcntl_lockf, METH_FASTCALL, fcntl_lockf__doc__},
+    {"lockf", (PyCFunction)(void(*)(void))fcntl_lockf, METH_FASTCALL|METH_KEYWORDS, fcntl_lockf__doc__},
 
 static PyObject *
 fcntl_lockf_impl(PyObject *module, int fd, int code, PyObject *lenobj,
-                 PyObject *startobj, int whence);
+                 PyObject *startobj, int whence, int open_file_descriptor);
 
 static PyObject *
-fcntl_lockf(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
+fcntl_lockf(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
+    static const char * const _keywords[] = {"", "", "", "", "", "open_file_descriptor", NULL};
+    static _PyArg_Parser _parser = {NULL, _keywords, "lockf", 0};
+    PyObject *argsbuf[6];
+    Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 2;
     int fd;
     int code;
     PyObject *lenobj = NULL;
     PyObject *startobj = NULL;
     int whence = 0;
+    int open_file_descriptor = 0;
 
-    if (!_PyArg_CheckPositional("lockf", nargs, 2, 5)) {
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 2, 6, 0, argsbuf);
+    if (!args) {
         goto exit;
     }
     if (!conv_descriptor(args[0], &fd)) {
@@ -243,16 +250,19 @@ fcntl_lockf(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
         goto exit;
     }
     if (nargs < 3) {
-        goto skip_optional;
+        goto skip_optional_posonly;
     }
+    noptargs--;
     lenobj = args[2];
     if (nargs < 4) {
-        goto skip_optional;
+        goto skip_optional_posonly;
     }
+    noptargs--;
     startobj = args[3];
     if (nargs < 5) {
-        goto skip_optional;
+        goto skip_optional_posonly;
     }
+    noptargs--;
     if (PyFloat_Check(args[4])) {
         PyErr_SetString(PyExc_TypeError,
                         "integer argument expected, got float" );
@@ -262,10 +272,18 @@ fcntl_lockf(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     if (whence == -1 && PyErr_Occurred()) {
         goto exit;
     }
-skip_optional:
-    return_value = fcntl_lockf_impl(module, fd, code, lenobj, startobj, whence);
+skip_optional_posonly:
+    if (!noptargs) {
+        goto skip_optional_pos;
+    }
+    open_file_descriptor = PyObject_IsTrue(args[5]);
+    if (open_file_descriptor < 0) {
+        goto exit;
+    }
+skip_optional_pos:
+    return_value = fcntl_lockf_impl(module, fd, code, lenobj, startobj, whence, open_file_descriptor);
 
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=e912d25e28362c52 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=5e734dc440dd16a0 input=a9049054013a1b77]*/

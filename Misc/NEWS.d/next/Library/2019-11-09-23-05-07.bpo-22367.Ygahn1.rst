@@ -1,0 +1,2 @@
+Add an optional keyword argument ``open_file_descriptor`` to
+:func:`fcntl.lockf` function. Patch by Dong-hee Na.

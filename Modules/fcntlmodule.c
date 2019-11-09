@@ -339,6 +339,7 @@ fcntl.lockf
     start as startobj: object(c_default='NULL') = 0
     whence: int = 0
     /
+    open_file_descriptor: bool = False
 
 A wrapper around the fcntl() locking calls.
 
@@ -366,8 +367,8 @@ starts.  `whence` is as with fileobj.seek(), specifically:
 
 static PyObject *
 fcntl_lockf_impl(PyObject *module, int fd, int code, PyObject *lenobj,
-                 PyObject *startobj, int whence)
-/*[clinic end generated code: output=4985e7a172e7461a input=3a5dc01b04371f1a]*/
+                 PyObject *startobj, int whence, int open_file_descriptor)
+/*[clinic end generated code: output=eba798e67a9aee86 input=f0c8082b6b54132b]*/
 {
     int ret;
     int async_err = 0;
@@ -417,6 +418,16 @@ fcntl_lockf_impl(PyObject *module, int fd, int code, PyObject *lenobj,
         l.l_whence = whence;
         do {
             Py_BEGIN_ALLOW_THREADS
+            if (open_file_descriptor) {
+#ifdef F_OFD_SETLK
+                l.l_pid = 0;
+                ret = fcntl(fd, (code & LOCK_NB) ? F_OFD_SETLK : F_OFD_SETLKW, &l);
+#else
+                PyErr_SetString(PyExc_NotImplementedError,
+                                "lockf: open_file_descriptor is not supported on this platform");
+                return NULL;
+#endif
+            } else
             ret = fcntl(fd, (code & LOCK_NB) ? F_SETLK : F_SETLKW, &l);
             Py_END_ALLOW_THREADS
         } while (ret == -1 && errno == EINTR && !(async_err = PyErr_CheckSignals()));

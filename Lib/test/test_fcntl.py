@@ -164,6 +164,14 @@ class TestFcntl(unittest.TestCase):
         fcntl.lockf(self.f, fcntl.LOCK_UN)
         self.assertEqual(p.exitcode, 0)
 
+    @unittest.skipUnless(hasattr(fcntl, 'F_OFD_GETLK'), 'requires open file description locks')
+    def test_lockf_exclusive_ofd(self):
+        self.f = open(TESTFN, 'wb+')
+        fcntl.lockf(self.f, fcntl.LOCK_SH | fcntl.LOCK_NB, open_file_descriptor=True)
+        fcntl.lockf(self.f, fcntl.LOCK_UN, open_file_descriptor=True)
+        fcntl.lockf(self.f, fcntl.LOCK_EX | fcntl.LOCK_NB, open_file_descriptor=True)
+        fcntl.lockf(self.f, fcntl.LOCK_UN, open_file_descriptor=True)
+
     @unittest.skipIf(platform.system() == "AIX", "AIX returns PermissionError")
     def test_lockf_share(self):
         self.f = open(TESTFN, 'wb+')
