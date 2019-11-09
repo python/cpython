@@ -25,15 +25,16 @@ class FixerTestCase(support.TestCase):
                            self.refactor.post_order):
             fixer.log = self.fixer_log
 
-    def _check(self, before, after):
-        before = support.reformat(before)
-        after = support.reformat(after)
+    def _check(self, before, after, reformat=True):
+        if reformat:
+            before = support.reformat(before)
+            after = support.reformat(after)
         tree = self.refactor.refactor_string(before, self.filename)
         self.assertEqual(after, str(tree))
         return tree
 
-    def check(self, before, after, ignore_warnings=False):
-        tree = self._check(before, after)
+    def check(self, before, after, ignore_warnings=False, reformat=True):
+        tree = self._check(before, after, reformat=reformat)
         self.assertTrue(tree.was_changed)
         if not ignore_warnings:
             self.assertEqual(self.fixer_log, [])
@@ -3656,8 +3657,129 @@ class Test_future(FixerTestCase):
         a = """\n# comment"""
         self.check(b, a)
 
+    def test_suite_try_blank(self):
+        b = (
+        "try:\n"
+        "    from __future__ import with_statement\n"
+        "    from sys import exit\n"
+        "except ImportError:\n"
+        "    pass\n")
+        a =  (
+        "try:\n"
+        "    \n"
+        "    from sys import exit\n"
+        "except ImportError:\n"
+        "    pass\n")
+        self.check(b, a, reformat=False)  # to avoid dedent
+
+    def test_suite_try_pass(self):
+        b = (
+        "try:\n"
+        "    from __future__ import with_statement\n"
+        "except ImportError:\n"
+        "    pass\n")
+        a =  (
+        "try:\n"
+        "    pass\n"
+        "except ImportError:\n"
+        "    pass\n")
+        self.check(b, a)
+
+    def test_suite_if_blank(self):
+        b = (
+        "if sys.version_info < (3, 0):\n"
+        "    from __future__ import with_statement\n"
+        "    from sys import exit\n")
+        a = (
+        "if sys.version_info < (3, 0):\n"
+        "    \n"
+        "    from sys import exit\n")
+        self.check(b, a, reformat=False)  # to avoid dedent
+
+    def test_suite_if_pass(self):
+        b = (
+        "if sys.version_info < (3, 0):\n"
+        "    from __future__ import with_statement\n")
+        a = (
+        "if sys.version_info < (3, 0):\n"
+        "    pass\n")
+        self.check(b, a)  # to avoid dedent
+
+    def test_pass_with_comments(self):
+        b = (
+        "try:\n"
+        "    # this comment\n"
+        "    from __future__ import with_statement  # that comment\n"
+        "except ImportError:\n"
+        "    pass\n")
+        a = (
+        "try:\n"
+        "    # this comment\n"
+        "    pass  # that comment\n"
+        "except ImportError:\n"
+        "    pass\n")
+        self.check(b, a)
+
+    def test_pass_with_newlines(self):
+        b = (
+        "try:\n"
+        "    \n"
+        "    \n"
+        "    from __future__ import with_statement\n"
+        "    \n"
+        "except ImportError:\n"
+        "    pass\n")
+        a = (
+        "try:\n"
+        "    \n"
+        "    \n"
+        "    pass\n"
+        "    \n"
+        "except ImportError:\n"
+        "    pass\n")
+        self.check(b, a)
+
     def test_run_order(self):
         self.assert_runs_after('print')
+
+
+class Test_future_with_itertools_imports(FixerTestCase):
+
+    def setUp(self):
+        fix_list = ["future", "itertools_imports"]
+        super(Test_future_with_itertools_imports, self).setUp(fix_list)
+
+    def test_double_transform(self):
+        """Note the difference between the two conversion results, due to
+        the fact that 'future' fixer runs last"""
+        b = (
+        "try:\n"
+        "    from __future__ import with_statement\n"
+        "    from itertools import imap\n"
+        "except ImportError:\n"
+        "    pass\n")
+        a = (
+        "try:\n"
+        "    pass\n"
+        "    \n"
+        "except ImportError:\n"
+        "    pass\n")
+        self.check(b, a, reformat=False)  # to avoid dedent
+
+        b = (
+        "try:\n"
+        "    from itertools import imap\n"
+        "    from __future__ import with_statement\n"
+        "except ImportError:\n"
+        "    pass\n")
+        a = (
+        "try:\n"
+        "    \n"
+        "    pass\n"
+        "except ImportError:\n"
+        "    pass\n")
+        self.check(b, a, reformat=False)  # to avoid dedent
+
 
 class Test_itertools(FixerTestCase):
     fixer = "itertools"
@@ -3784,10 +3906,91 @@ class Test_itertools_imports(FixerTestCase):
             a = "from itertools import bar, %s, foo" % (name,)
             self.check(b, a)
 
+    def test_suite_try_blank(self):
+        b = (
+        "try:\n"
+        "    from itertools import imap\n"
+        "    from sys import exit\n"
+        "except ImportError:\n"
+        "    pass\n")
+        a =  (
+        "try:\n"
+        "    \n"
+        "    from sys import exit\n"
+        "except ImportError:\n"
+        "    pass\n")
+        self.check(b, a, reformat=False)  # to avoid dedent
+
+    def test_suite_try_pass(self):
+        b = (
+        "try:\n"
+        "    from itertools import imap\n"
+        "except ImportError:\n"
+        "    pass\n")
+        a =  (
+        "try:\n"
+        "    pass\n"
+        "except ImportError:\n"
+        "    pass\n")
+        self.check(b, a)
+
+    def test_suite_if_blank(self):
+        b = (
+        "if sys.version_info < (3, 0):\n"
+        "    from itertools import imap\n"
+        "    from sys import exit\n")
+        a = (
+        "if sys.version_info < (3, 0):\n"
+        "    \n"
+        "    from sys import exit\n")
+        self.check(b, a, reformat=False)  # to avoid dedent
+
+    def test_suite_if_pass(self):
+        b = (
+        "if sys.version_info < (3, 0):\n"
+        "    from itertools import imap\n")
+        a = (
+        "if sys.version_info < (3, 0):\n"
+        "    pass\n")
+        self.check(b, a)  # to avoid dedent
+
+    def test_pass_with_comments(self):
+        b = (
+        "try:\n"
+        "    # this comment\n"
+        "    from itertools import imap  # that comment\n"
+        "except ImportError:\n"
+        "    pass\n")
+        a = (
+        "try:\n"
+        "    # this comment\n"
+        "    pass  # that comment\n"
+        "except ImportError:\n"
+        "    pass\n")
+        self.check(b, a)
+
+    def test_pass_with_newlines(self):
+        b = (
+        "try:\n"
+        "    \n"
+        "    \n"
+        "    from itertools import imap\n"
+        "    \n"
+        "except ImportError:\n"
+        "    pass\n")
+        a = (
+        "try:\n"
+        "    \n"
+        "    \n"
+        "    pass\n"
+        "    \n"
+        "except ImportError:\n"
+        "    pass\n")
+        self.check(b, a)
+
     def test_import_star(self):
         s = "from itertools import *"
         self.unchanged(s)
-
 
     def test_unchanged(self):
         s = "from itertools import foo"
