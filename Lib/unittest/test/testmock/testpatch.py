@@ -106,7 +106,8 @@ class PatchTest(unittest.TestCase):
                          "patch not restored")
 
     def test_patchobject_with_string_as_target(self):
-        with self.assertRaisesRegex(TypeError, f"'Something' must be the actual object to be patched, not a str"):
+        msg = "'Something' must be the actual object to be patched, not a str"
+        with self.assertRaisesRegex(TypeError, msg):
             patch.object('Something', 'do_something')
 
     def test_patchobject_with_none(self):
