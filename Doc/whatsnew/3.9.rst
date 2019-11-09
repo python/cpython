@@ -147,7 +147,7 @@ Added constants :data:`~fcntl.F_OFD_GETLK`, :data:`~fcntl.F_OFD_SETLK`
 and :data:`~fcntl.F_OFD_SETLKW`.
 (Contributed by Dong-hee Na in :issue:`38602`.)
 
-Add an optional keyword argument ``open_file_descriptor``
+Add an optional keyword argument *open_file_descriptor*
 to :func:`fcntl.lockf` function.
 (Contributed by Dong-hee Na in :issue:`22367`.)
 
