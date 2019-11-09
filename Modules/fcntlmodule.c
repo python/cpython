@@ -364,17 +364,13 @@ starts.  `whence` is as with fileobj.seek(), specifically:
     1 - relative to the current buffer position (SEEK_CUR)
     2 - relative to the end of the file (SEEK_END)
 
-The default for `start` is 0, which means to start at the beginning of the file.
-The default for `len` is 0 which means to lock to the end of the file.
-The default for `whence` is also 0.
-The default for `open_file_descriptor` is False,
 if `open_file_descriptor` is set to True, open file description locks are used.
 [clinic start generated code]*/
 
 static PyObject *
 fcntl_lockf_impl(PyObject *module, int fd, int code, PyObject *lenobj,
                  PyObject *startobj, int whence, int open_file_descriptor)
-/*[clinic end generated code: output=eba798e67a9aee86 input=fa082acb66abf9e1]*/
+/*[clinic end generated code: output=eba798e67a9aee86 input=83190651f560f35e]*/
 {
     int ret;
     int async_err = 0;
@@ -433,8 +429,9 @@ fcntl_lockf_impl(PyObject *module, int fd, int code, PyObject *lenobj,
                                 "lockf: open_file_descriptor is not supported on this platform");
                 return NULL;
 #endif
-            } else
-            ret = fcntl(fd, (code & LOCK_NB) ? F_SETLK : F_SETLKW, &l);
+            } else {
+                ret = fcntl(fd, (code & LOCK_NB) ? F_SETLK : F_SETLKW, &l);
+            }
             Py_END_ALLOW_THREADS
         } while (ret == -1 && errno == EINTR && !(async_err = PyErr_CheckSignals()));
     }
