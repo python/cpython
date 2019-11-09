@@ -159,7 +159,7 @@ The module defines the following functions:
    set to True, open file description locks are used.
 
    .. versionchanged:: 3.9
-      The `open_file_descriptor` keyword argument was added.
+      The *open_file_descriptor* keyword argument was added.
 
 Examples (all on a SVR4 compliant system)::
 
