@@ -4,6 +4,8 @@ import platform
 import os
 import struct
 import sys
+import threading
+import time
 import unittest
 from multiprocessing import Process
 from test.support import (verbose, TESTFN, unlink, run_unittest, import_module,
@@ -171,6 +173,35 @@ class TestFcntl(unittest.TestCase):
         fcntl.lockf(self.f, fcntl.LOCK_UN, open_file_descriptor=True)
         fcntl.lockf(self.f, fcntl.LOCK_EX | fcntl.LOCK_NB, open_file_descriptor=True)
         fcntl.lockf(self.f, fcntl.LOCK_UN, open_file_descriptor=True)
+
+    @unittest.skipUnless(hasattr(fcntl, 'F_OFD_GETLK'), 'requires open file description locks')
+    def test_open_file_descriptor_example(self):
+        threads = []
+        num_threads = 3
+        num_iterations = 5
+        self.f = open(TESTFN, 'w+')
+        def thread_start(thread_id):
+            for i in range(num_iterations):
+                fcntl.lockf(self.f, fcntl.LOCK_EX, open_file_descriptor=True)
+                self.f.seek(0, os.SEEK_END)
+                self.f.write(f'{i}: tid={thread_id}, fd={self.f.fileno()}\n')
+                fcntl.lockf(self.f, fcntl.LOCK_UN, open_file_descriptor=True)
+                time.sleep(0.05)
+
+        for i in range(num_threads):
+            t = threading.Thread(target=thread_start, args=(i,))
+            threads.append(t)
+
+        for t in threads:
+            t.start()
+
+        for t in threads:
+            t.join()
+
+        self.f.close()
+        self.f = open(TESTFN, 'r')
+        res = self.f.readlines()
+        self.assertEqual(len(res), num_threads*num_iterations)
 
     @unittest.skipIf(platform.system() == "AIX", "AIX returns PermissionError")
     def test_lockf_share(self):
