@@ -186,6 +186,9 @@ type.
 
    Special value for a field name to leave it unnamed.
 
+   versionchanged:: 3.9
+   The type was changed from ``char *``.
+
 
 .. c:function:: PyObject* PyStructSequence_New(PyTypeObject *type)
 
