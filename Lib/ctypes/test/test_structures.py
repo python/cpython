@@ -656,7 +656,7 @@ class StructureTestCase(unittest.TestCase):
         self.assertEqual(test5.nested.an_int, 0)
         self.assertEqual(test5.another_int, 0)
 
-    @unittest.skipIf('s390' in MACHINE, 'Test causes segfault on S390')
+    #@unittest.skipIf('s390' in MACHINE, 'Test causes segfault on S390')
     def test_bitfield_by_value(self):
         # See bpo-16576
 
