@@ -2,6 +2,7 @@ import unittest
 from weakref import WeakSet
 import string
 from collections import UserString as ustr
+from collections.abc import MutableSet
 import gc
 import contextlib
 
@@ -436,6 +437,9 @@ class TestWeakSet(unittest.TestCase):
 
     def test_repr(self):
         assert repr(self.s) == repr(self.s.data)
+
+    def test_abc(self):
+        self.assertIsInstance(self.s, MutableSet)
 
 
 if __name__ == "__main__":
