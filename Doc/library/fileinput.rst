@@ -109,14 +109,14 @@ if there is no active state, :exc:`RuntimeError` is raised.
 
 .. function:: isfirstline()
 
-   Returns ``True`` if the line just read is the first line of its file, otherwise
-   returns ``False``.
+   Return ``True`` if the line just read is the first line of its file, otherwise
+   return ``False``.
 
 
 .. function:: isstdin()
 
-   Returns ``True`` if the last line was read from ``sys.stdin``, otherwise returns
-   false.
+   Return ``True`` if the last line was read from ``sys.stdin``, otherwise return
+   ``False``.
 
 
 .. function:: nextfile()

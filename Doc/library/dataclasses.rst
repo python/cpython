@@ -386,8 +386,8 @@ Module-level decorators, classes, and functions
 
 .. function:: is_dataclass(class_or_instance)
 
-   Returns ``True`` if its parameter is a dataclass or an instance of one,
-   otherwise returns ``False``.
+   Return ``True`` if its parameter is a dataclass or an instance of one,
+   otherwise return ``False``.
 
    If you need to know if a class is an instance of a dataclass (and
    not a dataclass itself), then add a further check for ``not
