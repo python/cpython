@@ -635,6 +635,9 @@ class MutableSet(Set):
         return self
 
 MutableSet.register(set)
+import _weakrefset
+MutableSet.register(_weakrefset.WeakSet)
+del _weakrefset
 
 
 ### MAPPINGS ###
