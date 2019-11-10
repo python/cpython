@@ -709,7 +709,6 @@ class StructureTestCase(unittest.TestCase):
         test7.B = 3
         test7.C = 7
         test7.D = 3
-        dll = CDLL(_ctypes_test.__file__)
         func = dll._testfunc_bitfield_by_reference2
         func.restype = c_long
         func.argtypes = (POINTER(Test7),)
@@ -730,11 +729,6 @@ class StructureTestCase(unittest.TestCase):
             ]
 
         test8 = Test8()
-        test8.A = 1
-        test8.B = 3
-        test8.C = 7
-        test8.D = 3
-        dll = CDLL(_ctypes_test.__file__)
         with self.assertRaises(TypeError) as ctx:
             func = dll._testfunc_bitfield_by_value2
             func.restype = c_long
