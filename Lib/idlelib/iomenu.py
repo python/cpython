@@ -371,8 +371,11 @@ class IOBinding:
         return "break"
 
     def writefile(self, filename):
-        self.fixlastline()
         text = self.text.get("1.0", "end-1c")
+        if self.text.get("end-2c") != "\n":
+            text += "\n"
+            if not hasattr(self.editwin, "interp"):
+                self.text.insert("end-1c", "\n")
         if self.eol_convention != "\n":
             text = text.replace("\n", self.eol_convention)
         chars = self.encode(text)
@@ -425,11 +428,6 @@ class IOBinding:
         # Fallback: save as UTF-8, with BOM - ignoring the incorrect
         # declared encoding
         return BOM_UTF8 + chars.encode("utf-8")
-
-    def fixlastline(self):
-        c = self.text.get("end-2c")
-        if c != '\n':
-            self.text.insert("end-1c", "\n")
 
     def print_window(self, event):
         confirm = tkMessageBox.askokcancel(

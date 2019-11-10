@@ -1,0 +1,1 @@
+IDLE no longer adds an unneeded newline when saving a shell window.
