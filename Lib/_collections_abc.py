@@ -552,6 +552,7 @@ class Set(Collection):
 
 Set.register(frozenset)
 
+
 class MutableSet(Set):
     """A mutable set is a finite, iterable container.
 
