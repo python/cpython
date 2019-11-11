@@ -19,14 +19,20 @@
    single: . (dot); in glob-style wildcards
 
 The :mod:`glob` module finds all the pathnames matching a specified pattern
-according to the rules used by the Unix shell, although results are returned in
-arbitrary order.  No tilde expansion is done, but ``*``, ``?``, and character
+according to the rules used by the Unix shell.
+No tilde expansion is done, but ``*``, ``?``, and character
 ranges expressed with ``[]`` will be correctly matched.  This is done by using
 the :func:`os.scandir` and :func:`fnmatch.fnmatch` functions in concert, and
 not by actually invoking a subshell.  Note that unlike :func:`fnmatch.fnmatch`,
 :mod:`glob` treats filenames beginning with a dot (``.``) as special cases.
 (For tilde and shell variable expansion, use :func:`os.path.expanduser` and
 :func:`os.path.expandvars`.)
+
+The order of returned results is consistent across all platforms, and traversal
+of a directory's children is guaranteed to be in sorted ASCIIbetical order.
+**However, this does not necessarily mean that the entire sequence will be
+returned in sorted order, since recursive patterns use a breadth-first
+search.**
 
 For a literal match, wrap the meta-characters in brackets.
 For example, ``'[?]'`` matches the character ``'?'``.
@@ -42,8 +48,7 @@ For example, ``'[?]'`` matches the character ``'?'``.
    a string containing a path specification. *pathname* can be either absolute
    (like :file:`/usr/src/Python-1.5/Makefile`) or relative (like
    :file:`../../Tools/\*/\*.gif`), and can contain shell-style wildcards. Broken
-   symlinks are included in the results (as in the shell). Whether or not the
-   results are sorted depends on the file system.
+   symlinks are included in the results (as in the shell).
 
    .. index::
       single: **; in glob-style wildcards
@@ -61,6 +66,9 @@ For example, ``'[?]'`` matches the character ``'?'``.
 
    .. versionchanged:: 3.5
       Support for recursive globs using "``**``".
+
+   .. versionchanged:: 3.9
+      Guaranteed traversal order for all platforms.
 
 
 .. function:: iglob(pathname, *, recursive=False)
