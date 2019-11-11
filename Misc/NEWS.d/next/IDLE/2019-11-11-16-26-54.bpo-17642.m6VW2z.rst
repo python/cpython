@@ -1,0 +1,1 @@
+Add hotkeys to resize the font of IDLE's shell and editor windows.
