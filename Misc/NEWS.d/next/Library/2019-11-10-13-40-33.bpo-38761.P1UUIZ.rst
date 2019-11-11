@@ -1,0 +1,1 @@
+WeakSet is now registered as a collections.abc.MutableSet.
