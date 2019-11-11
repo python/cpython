@@ -551,9 +551,6 @@ class Set(Collection):
         return h
 
 Set.register(frozenset)
-import _weakrefset
-Set.register(_weakrefset.WeakSet)
-del _weakrefset
 
 class MutableSet(Set):
     """A mutable set is a finite, iterable container.
@@ -635,9 +632,6 @@ class MutableSet(Set):
         return self
 
 MutableSet.register(set)
-import _weakrefset
-MutableSet.register(_weakrefset.WeakSet)
-del _weakrefset
 
 
 ### MAPPINGS ###
