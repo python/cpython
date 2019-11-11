@@ -55,14 +55,11 @@ class GlobTests(unittest.TestCase):
         self.assertCountEqual(glob.iglob(os.fsencode(p), **kwargs), bres)
         return res
 
-    def assertSequencesEqual_noorder(self, l1, l2):
-        l1 = list(l1)
-        l2 = list(l2)
-        self.assertEqual(set(l1), set(l2))
-        self.assertEqual(sorted(l1), sorted(l2))
+    def assertSequencesEqual(self, l1, l2):
+        self.assertListEqual(list(l1), list(l2))
 
     def test_glob_literal(self):
-        eq = self.assertSequencesEqual_noorder
+        eq = self.assertSequencesEqual
         eq(self.glob('a'), [self.norm('a')])
         eq(self.glob('a', 'D'), [self.norm('a', 'D')])
         eq(self.glob('aab'), [self.norm('aab')])
@@ -79,8 +76,8 @@ class GlobTests(unittest.TestCase):
         self.assertEqual({type(r) for r in res}, {bytes})
 
     def test_glob_one_directory(self):
-        eq = self.assertSequencesEqual_noorder
-        eq(self.glob('a*'), map(self.norm, ['a', 'aab', 'aaa']))
+        eq = self.assertSequencesEqual
+        eq(self.glob('a*'), map(self.norm, ['a', 'aaa', 'aab']))
         eq(self.glob('*a'), map(self.norm, ['a', 'aaa']))
         eq(self.glob('.*'), map(self.norm, ['.aa', '.bb']))
         eq(self.glob('?aa'), map(self.norm, ['aaa']))
@@ -89,7 +86,7 @@ class GlobTests(unittest.TestCase):
         eq(self.glob('*q'), [])
 
     def test_glob_nested_directory(self):
-        eq = self.assertSequencesEqual_noorder
+        eq = self.assertSequencesEqual
         if os.path.normcase("abCD") == "abCD":
             # case-sensitive filesystem
             eq(self.glob('a', 'bcd', 'E*'), [self.norm('a', 'bcd', 'EF')])
@@ -100,7 +97,7 @@ class GlobTests(unittest.TestCase):
         eq(self.glob('a', 'bcd', '*g'), [self.norm('a', 'bcd', 'efg')])
 
     def test_glob_directory_names(self):
-        eq = self.assertSequencesEqual_noorder
+        eq = self.assertSequencesEqual
         eq(self.glob('*', 'D'), [self.norm('a', 'D')])
         eq(self.glob('*', '*a'), [])
         eq(self.glob('a', '*', '*', '*a'),
@@ -143,7 +140,7 @@ class GlobTests(unittest.TestCase):
 
     @skip_unless_symlink
     def test_glob_symlinks(self):
-        eq = self.assertSequencesEqual_noorder
+        eq = self.assertSequencesEqual
         eq(self.glob('sym3'), [self.norm('sym3')])
         eq(self.glob('sym3', '*'), [self.norm('sym3', 'EF'),
                                     self.norm('sym3', 'efg')])
@@ -155,7 +152,7 @@ class GlobTests(unittest.TestCase):
 
     @skip_unless_symlink
     def test_glob_broken_symlinks(self):
-        eq = self.assertSequencesEqual_noorder
+        eq = self.assertSequencesEqual
         eq(self.glob('sym*'), [self.norm('sym1'), self.norm('sym2'),
                                self.norm('sym3')])
         eq(self.glob('sym1'), [self.norm('sym1')])
@@ -163,7 +160,7 @@ class GlobTests(unittest.TestCase):
 
     @unittest.skipUnless(sys.platform == "win32", "Win32 specific test")
     def test_glob_magic_in_drive(self):
-        eq = self.assertSequencesEqual_noorder
+        eq = self.assertSequencesEqual
         eq(glob.glob('*:'), [])
         eq(glob.glob(b'*:'), [])
         eq(glob.glob('?:'), [])
@@ -200,23 +197,23 @@ class GlobTests(unittest.TestCase):
         return self.glob(*parts, recursive=True, **kwargs)
 
     def test_recursive_glob(self):
-        eq = self.assertSequencesEqual_noorder
-        full = [('EF',), ('ZZZ',),
-                ('a',), ('a', 'D'),
-                ('a', 'bcd'),
-                ('a', 'bcd', 'EF'),
-                ('a', 'bcd', 'efg'),
-                ('a', 'bcd', 'efg', 'ha'),
-                ('aaa',), ('aaa', 'zzzF'),
-                ('aab',), ('aab', 'F'),
-               ]
+        eq = self.assertSequencesEqual
+        bfs = [('EF',), ('ZZZ',), ('a',), ('aaa',), ('aab',)]
         if can_symlink():
-            full += [('sym1',), ('sym2',),
-                     ('sym3',),
-                     ('sym3', 'EF'),
-                     ('sym3', 'efg'),
-                     ('sym3', 'efg', 'ha'),
-                    ]
+            bfs += [('sym1',), ('sym2',), ('sym3',)]
+        bfs += [
+            ('a', 'D'), ('a', 'bcd'),
+            ('a', 'bcd', 'EF'), ('a', 'bcd', 'efg'),
+            ('a', 'bcd', 'efg', 'ha'),
+            ('aaa', 'zzzF'),
+            ('aab', 'F'),
+        ]
+        if can_symlink():
+            bfs += [
+                ('sym3', 'EF'), ('sym3', 'efg'),
+                ('sym3', 'efg', 'ha'),
+            ]
+        full = sorted(bfs)
         eq(self.rglob('**'), self.joins(('',), *full))
         eq(self.rglob(os.curdir, '**'),
             self.joins((os.curdir, ''), *((os.curdir,) + i for i in full)))
@@ -230,11 +227,11 @@ class GlobTests(unittest.TestCase):
             ('a', ''), ('a', 'D'), ('a', 'bcd'), ('a', 'bcd', 'EF'),
             ('a', 'bcd', 'efg'), ('a', 'bcd', 'efg', 'ha')))
         eq(self.rglob('a**'), self.joins(('a',), ('aaa',), ('aab',)))
-        expect = [('a', 'bcd', 'EF'), ('EF',)]
+        expect = [('EF',), ('a', 'bcd', 'EF')]
         if can_symlink():
             expect += [('sym3', 'EF')]
         eq(self.rglob('**', 'EF'), self.joins(*expect))
-        expect = [('a', 'bcd', 'EF'), ('aaa', 'zzzF'), ('aab', 'F'), ('EF',)]
+        expect = [('EF',), ('a', 'bcd', 'EF'), ('aaa', 'zzzF'), ('aab', 'F'),]
         if can_symlink():
             expect += [('sym3', 'EF')]
         eq(self.rglob('**', '*F'), self.joins(*expect))
@@ -249,17 +246,17 @@ class GlobTests(unittest.TestCase):
             eq(glob.glob(join('**', ''), recursive=True),
                 [join(*i) for i in dirs])
             eq(glob.glob(join('**', '*'), recursive=True),
-                [join(*i) for i in full])
+                [join(*i) for i in bfs])
             eq(glob.glob(join(os.curdir, '**'), recursive=True),
                 [join(os.curdir, '')] + [join(os.curdir, *i) for i in full])
             eq(glob.glob(join(os.curdir, '**', ''), recursive=True),
                 [join(os.curdir, '')] + [join(os.curdir, *i) for i in dirs])
             eq(glob.glob(join(os.curdir, '**', '*'), recursive=True),
-                [join(os.curdir, *i) for i in full])
+                [join(os.curdir, *i) for i in bfs])
             eq(glob.glob(join('**','zz*F'), recursive=True),
                 [join('aaa', 'zzzF')])
             eq(glob.glob('**zz*F', recursive=True), [])
-            expect = [join('a', 'bcd', 'EF'), 'EF']
+            expect = ['EF', join('a', 'bcd', 'EF'),]
             if can_symlink():
                 expect += [join('sym3', 'EF')]
             eq(glob.glob(join('**', 'EF'), recursive=True), expect)
