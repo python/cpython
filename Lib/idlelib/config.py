@@ -576,6 +576,10 @@ class IdleConf:
         """
         return ('<<'+virtualEvent+'>>') in self.GetCoreKeys()
 
+    def GetFontSizes(self):
+        return ('7', '8', '9', '10', '11', '12', '13', '14',
+                '16', '18', '20', '22', '25', '29', '34', '40')
+
 # TODO make keyBindins a file or class attribute used for test above
 # and copied in function below.
 

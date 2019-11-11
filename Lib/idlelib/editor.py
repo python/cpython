@@ -193,6 +193,17 @@ class EditorWindow(object):
         text.bind("<<del-word-left>>", self.del_word_left)
         text.bind("<<del-word-right>>", self.del_word_right)
         text.bind("<<beginning-of-line>>", self.home_callback)
+        if darwin:
+            shortcut = "Command"
+        else:
+            shortcut = "Control"
+        text.bind(f"<{shortcut}-minus>", self.decrease_font_size)
+        text.bind(f"<{shortcut}-underscore>", self.decrease_font_size)
+        text.bind(f"<{shortcut}-equal>", self.increase_font_size)
+        text.bind(f"<{shortcut}-plus>", self.increase_font_size)
+        text.bind("<Control-MouseWheel>", self.update_mousewheel)
+        text.bind("<Control-Button-4>", self.increase_font_size)
+        text.bind("<Control-Button-5>", self.decrease_font_size)
 
         if flist:
             flist.inversedict[self] = key
@@ -211,7 +222,9 @@ class EditorWindow(object):
         vbar['command'] = self.handle_yview
         vbar.grid(row=1, column=2, sticky=NSEW)
         text['yscrollcommand'] = vbar.set
-        text['font'] = idleConf.GetFont(self.root, 'main', 'EditorWindow')
+        text['font'] = self.font = idleConf.GetFont(
+                self.root, 'main', 'EditorWindow')
+        self.font_sizes = [int(i) for i in idleConf.GetFontSizes()]
         text.grid(row=1, column=1, sticky=NSEW)
         text.focus_set()
         self.set_width()
@@ -344,6 +357,33 @@ class EditorWindow(object):
 
     def handle_winconfig(self, event=None):
         self.set_width()
+
+    def set_font_size(self, size):
+        self.text['font'] = self.font = (self.font[0], size, self.font[2])
+
+    def decrease_font_size(self, event=None):
+        new_size = self.font[1] - 1
+        if new_size < min(self.font_sizes):
+            self.text.bell()
+            return 'break'
+        self.set_font_size(new_size)
+        return 'break'
+
+    def increase_font_size(self, event=None):
+        new_size = self.font[1] + 1
+        if new_size > max(self.font_sizes):
+            self.text.bell()
+            return 'break'
+        self.set_font_size(new_size)
+        return 'break'
+
+    def update_mousewheel(self, event):
+        # For wheel up, event.delta = 120 on Windows, -1 on darwin.
+        # X-11 sends Control-Button-4 event instead.
+        if event.delta < 0 == (not darwin):
+            return self.decrease_font_size()
+        else:
+            return self.increase_font_size()
 
     def set_width(self):
         text = self.text
@@ -817,7 +857,7 @@ class EditorWindow(object):
             self.line_numbers.update_font()
         # Finally, update the main text widget.
         new_font = idleConf.GetFont(self.root, 'main', 'EditorWindow')
-        self.text['font'] = new_font
+        self.text['font'] = self.font = new_font
         self.set_width()
 
     def RemoveKeybindings(self):

@@ -619,9 +619,7 @@ class FontPage(Frame):
         except ValueError:
             pass
         # Set font size dropdown.
-        self.sizelist.SetMenu(('7', '8', '9', '10', '11', '12', '13', '14',
-                               '16', '18', '20', '22', '25', '29', '34', '40'),
-                              font_size)
+        self.sizelist.SetMenu(idleConf.GetFontSizes(), font_size)
         # Set font weight.
         self.font_bold.set(font_bold)
         self.set_samples()
