@@ -1,0 +1,1 @@
+Guaranteed traversal order for :meth:`glob.glob` and :meth:`glob.iglob` on all platforms.
