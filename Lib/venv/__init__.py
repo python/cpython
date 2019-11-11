@@ -18,10 +18,9 @@ CORE_VENV_DEPS = ('pip', 'setuptools')
 logger = logging.getLogger(__name__)
 
 if os.name == "nt":
-    _dir = os.path.expandvars(r'%APPDATA%\Python')
+    _dir = os.path.expandvars(R'%APPDATA%\Python')
 else:
     _dir = os.path.expanduser('~/.config/python')
-os.makedirs(_dir, exist_ok=True)
 VENV_INI_DEFAULT_PATH = os.path.join(_dir, 'venv.ini')
 del _dir
 
@@ -434,9 +433,15 @@ def get_default_args(venv_ini_path=VENV_INI_DEFAULT_PATH):
     """ Check if a venv.ini exists in the platform config location
         + set defaults if conf exists. Use `--help` to test ini config """
     bool_keys = {
-        "clear", "copies", "system_site_packages", "upgrade_deps",
-        "use_symlinks", "without_pip"
+        key
+        for key, value_type in Defaults._field_types.items()
+        if value_type is bool
     }
+
+    # Ensure we have a directory for venv.ini
+    _conf_dir = os.path.dirname(venv_ini_path)
+    os.makedirs(_conf_dir, exist_ok=True)
+
     defaults = Defaults()
     if not os.path.exists(venv_ini_path):
         return defaults
@@ -448,21 +453,11 @@ def get_default_args(venv_ini_path=VENV_INI_DEFAULT_PATH):
 
     read_kwargs = {}
     for name, value in cp.items("venv"):
-        try:
-            getattr(defaults, name)
-        except AttributeError:
+        if name not in Defaults._fields:
             continue
 
         if name in bool_keys:
-            if value.lower() == "true":
-                read_kwargs[name] = True
-            elif value.lower() == "false":
-                read_kwargs[name] = False
-            else:
-                raise ValueError(
-                    f"{name} is a bool. Config can only be set to "
-                    + f"False or True only. Not '{value}'"
-                )
+            read_kwargs[name] = cp["venv"].getboolean(name)
         else:
             read_kwargs[name] = value
 
