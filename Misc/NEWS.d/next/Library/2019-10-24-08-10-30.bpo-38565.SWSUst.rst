@@ -1,0 +1,1 @@
+Add new cache_parameters() method for functools.lru_cache() to better support pickling.
