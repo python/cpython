@@ -969,7 +969,7 @@ class Misc:
         """Return window class name of this widget."""
         return self.tk.call('winfo', 'class', self._w)
     def winfo_colormapfull(self):
-        """Return true if at the last color request the colormap was full."""
+        """Return True if at the last color request the colormap was full."""
         return self.tk.getboolean(
             self.tk.call('winfo', 'colormapfull', self._w))
     def winfo_containing(self, rootX, rootY, displayof=0):
@@ -2829,7 +2829,7 @@ class Listbox(Widget, XView, YView):
                  'selection', 'clear', first, last)
     select_clear = selection_clear
     def selection_includes(self, index):
-        """Return 1 if INDEX is part of the selection."""
+        """Return True if INDEX is part of the selection."""
         return self.tk.getboolean(self.tk.call(
             self._w, 'selection', 'includes', index))
     select_includes = selection_includes

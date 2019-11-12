@@ -178,8 +178,8 @@ are always available.  They are listed here in alphabetical order.
 .. function:: callable(object)
 
    Return :const:`True` if the *object* argument appears callable,
-   :const:`False` if not.  If this returns true, it is still possible that a
-   call fails, but if it is false, calling *object* will never succeed.
+   :const:`False` if not.  If this returns ``True``, it is still possible that a
+   call fails, but if it is ``False``, calling *object* will never succeed.
    Note that classes are callable (calling a class returns a new instance);
    instances are callable if their class has a :meth:`__call__` method.
 
@@ -777,19 +777,19 @@ are always available.  They are listed here in alphabetical order.
 
 .. function:: isinstance(object, classinfo)
 
-   Return true if the *object* argument is an instance of the *classinfo*
+   Return ``True`` if the *object* argument is an instance of the *classinfo*
    argument, or of a (direct, indirect or :term:`virtual <abstract base
    class>`) subclass thereof.  If *object* is not
-   an object of the given type, the function always returns false.
+   an object of the given type, the function always returns ``False``.
    If *classinfo* is a tuple of type objects (or recursively, other such
-   tuples), return true if *object* is an instance of any of the types.
+   tuples), return ``True`` if *object* is an instance of any of the types.
    If *classinfo* is not a type or tuple of types and such tuples,
    a :exc:`TypeError` exception is raised.
 
 
 .. function:: issubclass(class, classinfo)
 
-   Return true if *class* is a subclass (direct, indirect or :term:`virtual
+   Return ``True`` if *class* is a subclass (direct, indirect or :term:`virtual
    <abstract base class>`) of *classinfo*.  A
    class is considered a subclass of itself. *classinfo* may be a tuple of class
    objects, in which case every entry in *classinfo* will be checked. In any other
