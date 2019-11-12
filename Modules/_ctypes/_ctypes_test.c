@@ -198,6 +198,56 @@ _testfunc_union_by_reference3(Test5 *in) {
     return result;
 }
 
+typedef struct {
+    signed int A: 1, B:2, C:3, D:2;
+} Test6;
+
+EXPORT(long)
+_testfunc_bitfield_by_value1(Test6 in) {
+    long result = in.A + in.B + in.C + in.D;
+
+    /* As the struct is passed by value, changes to it shouldn't be
+     * reflected in the caller.
+     */
+    memset(&in, 0, sizeof(in));
+    return result;
+}
+
+EXPORT(long)
+_testfunc_bitfield_by_reference1(Test6 *in) {
+    long result = in->A + in->B + in->C + in->D;
+
+    memset(in, 0, sizeof(Test6));
+    return result;
+}
+
+typedef struct {
+    unsigned int A: 1, B:2, C:3, D:2;
+} Test7;
+
+EXPORT(long)
+_testfunc_bitfield_by_reference2(Test7 *in) {
+    long result = in->A + in->B + in->C + in->D;
+
+    memset(in, 0, sizeof(Test7));
+    return result;
+}
+
+typedef union {
+    signed int A: 1, B:2, C:3, D:2;
+} Test8;
+
+EXPORT(long)
+_testfunc_bitfield_by_value2(Test8 in) {
+    long result = in.A + in.B + in.C + in.D;
+
+    /* As the struct is passed by value, changes to it shouldn't be
+     * reflected in the caller.
+     */
+    memset(&in, 0, sizeof(in));
+    return result;
+}
+
 EXPORT(void)testfunc_array(int values[4])
 {
     printf("testfunc_array %d %d %d %d\n",
