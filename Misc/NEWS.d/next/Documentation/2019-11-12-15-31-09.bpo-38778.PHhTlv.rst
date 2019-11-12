@@ -1,0 +1,1 @@
+Document the fact that `RuntimeError` is raised if `os.fork()` is called in a subinterpreter.
