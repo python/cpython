@@ -846,8 +846,8 @@ should, then :meth:`flush` is expected to do the flushing.
 
    .. method:: emit(record)
 
-      Appends the record to the buffer. If :meth:`shouldFlush` returns true,
-      calls :meth:`flush` to process the buffer.
+      Append the record to the buffer. If :meth:`shouldFlush` returns true,
+      call :meth:`flush` to process the buffer.
 
 
    .. method:: flush()
@@ -858,7 +858,7 @@ should, then :meth:`flush` is expected to do the flushing.
 
    .. method:: shouldFlush(record)
 
-      Returns true if the buffer is up to capacity. This method can be
+      Return ``True`` if the buffer is up to capacity. This method can be
       overridden to implement custom flushing strategies.
 
 
