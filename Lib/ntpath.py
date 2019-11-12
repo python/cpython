@@ -534,10 +534,7 @@ except ImportError:
     # realpath is a no-op on systems without _getfinalpathname support.
     realpath = abspath
 else:
-    def _readlink_deep(path, seen=None):
-        if seen is None:
-            seen = set()
-
+    def _readlink_deep(path):
         # These error codes indicate that we should stop reading links and
         # return the path we currently have.
         # 1: ERROR_INVALID_FUNCTION
@@ -554,6 +551,7 @@ else:
         # 4393: ERROR_REPARSE_TAG_INVALID
         allowed_winerror = 1, 2, 3, 5, 21, 32, 50, 67, 87, 4390, 4392, 4393
 
+        seen = set()
         while normcase(path) not in seen:
             seen.add(normcase(path))
             try:
@@ -592,15 +590,18 @@ else:
         # Non-strict algorithm is to find as much of the target directory
         # as we can and join the rest.
         tail = ''
-        seen = set()
         while path:
             try:
-                path = _readlink_deep(path, seen)
                 path = _getfinalpathname(path)
                 return join(path, tail) if tail else path
             except OSError as ex:
                 if ex.winerror not in allowed_winerror:
                     raise
+                try:
+                    path = _readlink_deep(path)
+                except OSError:
+                    # If we fail to readlink(), so be it
+                    pass
                 path, name = split(path)
                 # TODO (bpo-38186): Request the real file name from the directory
                 # entry using FindFirstFileW. For now, we will return the path
