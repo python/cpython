@@ -239,9 +239,9 @@ library/urllib.request,,:port,:port
 library/urllib.request,,:lang,"xmlns=""http://www.w3.org/1999/xhtml"" xml:lang=""en"" lang=""en"">\n\n<head>\n"
 library/urllib.request,,:password,"""joe:password@python.org"""
 library/uuid,,:uuid,urn:uuid:12345678-1234-5678-1234-567812345678
-library/venv,,:param,":param nodist: If True, setuptools and pip are not installed into the"
+library/venv,,:param,":param nodist: If true, setuptools and pip are not installed into the"
 library/venv,,:param,":param progress: If setuptools or pip are installed, the progress of the"
-library/venv,,:param,":param nopip: If True, pip is not installed into the created"
+library/venv,,:param,":param nopip: If true, pip is not installed into the created"
 library/venv,,:param,:param context: The information for the virtual environment
 library/xmlrpc.client,,:nil,ex:nil
 library/xmlrpc.client,,:pass,http://user:pass@host:port/path

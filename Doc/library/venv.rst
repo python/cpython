@@ -273,9 +273,9 @@ subclass which installs setuptools and pip into a created virtual environment::
         This builder installs setuptools and pip so that you can pip or
         easy_install other packages into the created virtual environment.
 
-        :param nodist: If True, setuptools and pip are not installed into the
+        :param nodist: If true, setuptools and pip are not installed into the
                        created virtual environment.
-        :param nopip: If True, pip is not installed into the created
+        :param nopip: If true, pip is not installed into the created
                       virtual environment.
         :param progress: If setuptools or pip are installed, the progress of the
                          installation can be monitored by passing a progress
