@@ -799,7 +799,11 @@ class PurePath(object):
 
     @property
     def suffix(self):
-        """The final component's last suffix, if any."""
+        """
+        The final component's last suffix, if any.
+
+        This includes the leading period. For example: '.txt'
+        """
         name = self.name
         i = name.rfind('.')
         if 0 < i < len(name) - 1:
@@ -809,7 +813,11 @@ class PurePath(object):
 
     @property
     def suffixes(self):
-        """A list of the final component's suffixes, if any."""
+        """
+        A list of the final component's suffixes, if any.
+
+        These include the leading periods. For example: ['.tar', '.gz']
+        """
         name = self.name
         if name.endswith('.'):
             return []
@@ -1243,6 +1251,15 @@ class Path(PurePath):
                             data.__class__.__name__)
         with self.open(mode='w', encoding=encoding, errors=errors) as f:
             return f.write(data)
+
+    def readlink(self):
+        """
+        Return the path to which the symbolic link points.
+        """
+        path = self._accessor.readlink(self)
+        obj = self._from_parts((path,), init=False)
+        obj._init(template=self)
+        return obj
 
     def touch(self, mode=0o666, exist_ok=True):
         """

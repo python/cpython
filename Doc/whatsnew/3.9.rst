@@ -99,6 +99,11 @@ Other Language Changes
   ignored for empty strings.
   (Contributed by Victor Stinner in :issue:`37388`.)
 
+* ``"".replace("", s, n)`` now returns ``s`` instead of an empty string for
+  all non-zero ``n``.  It is now consistent with ``"".replace("", s)``.
+  There are similar changes for :class:`bytes` and :class:`bytearray` objects.
+  (Contributed by Serhiy Storchaka in :issue:`28029`.)
+
 
 New Modules
 ===========
@@ -125,11 +130,29 @@ that schedules a shutdown for the default executor that waits on the
 :func:`asyncio.run` has been updated to use the new :term:`coroutine`.
 (Contributed by Kyle Stanley in :issue:`34037`.)
 
+curses
+------
+
+Add :func:`curses.get_escdelay`, :func:`curses.set_escdelay`,
+:func:`curses.get_tabsize`, and :func:`curses.set_tabsize` functions.
+(Contributed by Anthony Sottile in :issue:`38312`.)
+
+fcntl
+-----
+
+Added constants :data:`~fcntl.F_OFD_GETLK`, :data:`~fcntl.F_OFD_SETLK`
+and :data:`~fcntl.F_OFD_SETLKW`.
+(Contributed by Dong-hee Na in :issue:`38602`.)
+
 os
-__
+--
 
 Added :data:`~os.CLD_KILLED` and :data:`~os.CLD_STOPPED` for :attr:`si_code`.
 (Contributed by Dong-hee Na in :issue:`38493`.)
+
+Exposed the Linux-specific :func:`os.pidfd_open` (:issue:`38692`) and
+:data:`os.P_PIDFD` (:issue:`38713`) for process management with file
+descriptors.
 
 threading
 ---------
@@ -149,6 +172,13 @@ customization consistently by always using the value specified by
 ``__VENV_PROMPT__``, others only if it happened to be set (which was the default
 case), and one used ``__VENV_NAME__`` instead.
 (Contributed by Brett Cannon in :issue:`37663`.)
+
+pathlib
+-------
+
+Added :meth:`~pathlib.Path.readlink()` which acts similar to
+:func:`~os.readlink`.
+(Contributed by Girts Folkmanis in :issue:`30618`)
 
 pprint
 ------
@@ -171,6 +201,12 @@ Optimizations
 Build and C API Changes
 =======================
 
+* Provide :c:func:`Py_EnterRecursiveCall` and :c:func:`Py_LeaveRecursiveCall`
+  as regular functions for the limited API. Previously, there were defined as
+  macros, but these macros didn't work with the limited API which cannot access
+  ``PyThreadState.recursion_depth`` field. Remove ``_Py_CheckRecursionLimit``
+  from the stable ABI.
+  (Contributed by Victor Stinner in :issue:`38644`.)
 * Add a new public :c:func:`PyObject_CallNoArgs` function to the C API, which
   calls a callable Python object without any arguments. It is the most efficient
   way to call a callable Python object without any argument.
@@ -269,6 +305,14 @@ that may require changes to your code.
 
 Changes in the Python API
 -------------------------
+
+* :func:`open`, :func:`io.open`, :func:`codecs.open` and
+  :class:`fileinput.FileInput` no longer accept ``'U'`` ("universal newline")
+  in the file mode. This flag was deprecated since Python 3.3. In Python 3, the
+  "universal newline" is used by default when a file is open in text mode.  The
+  :ref:`newline parameter <open-newline-parameter>` of :func:`open` controls
+  how universal newlines works.
+  (Contributed by Victor Stinner in :issue:`37330`.)
 
 * :func:`__import__` and :func:`importlib.util.resolve_name` now raise
   :exc:`ImportError` where it previously raised :exc:`ValueError`. Callers

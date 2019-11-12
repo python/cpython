@@ -449,7 +449,7 @@ default values to each of the argument help messages::
    >>> parser.add_argument('--foo', type=int, default=42, help='FOO!')
    >>> parser.add_argument('bar', nargs='*', default=[1, 2, 3], help='BAR!')
    >>> parser.print_help()
-   usage: PROG [-h] [--foo FOO] [bar [bar ...]]
+   usage: PROG [-h] [--foo FOO] [bar ...]
 
    positional arguments:
     bar         BAR! (default: [1, 2, 3])

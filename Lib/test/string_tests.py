@@ -505,6 +505,7 @@ class BaseTest:
         EQ("", "", "replace", "A", "")
         EQ("", "", "replace", "A", "A")
         EQ("", "", "replace", "", "", 100)
+        EQ("A", "", "replace", "", "A", 100)
         EQ("", "", "replace", "", "", sys.maxsize)
 
         # interleave (from=="", 'to' gets inserted everywhere)

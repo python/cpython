@@ -89,7 +89,7 @@ For bytes, :c:func:`PyBytes_Size` returns its length and
 length.  Note that Python bytes objects may contain null bytes so C's
 :c:func:`strlen` should not be used.
 
-To test the type of an object, first make sure it isn't *NULL*, and then use
+To test the type of an object, first make sure it isn't ``NULL``, and then use
 :c:func:`PyBytes_Check`, :c:func:`PyTuple_Check`, :c:func:`PyList_Check`, etc.
 
 There is also a high-level API to Python objects which is provided by the

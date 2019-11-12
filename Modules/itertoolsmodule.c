@@ -3076,12 +3076,15 @@ static PyTypeObject cwr_type = {
 /* permutations object ********************************************************
 
 def permutations(iterable, r=None):
-    'permutations(range(3), 2) --> (0,1) (0,2) (1,0) (1,2) (2,0) (2,1)'
+    # permutations('ABCD', 2) --> AB AC AD BA BC BD CA CB CD DA DB DC
+    # permutations(range(3)) --> 012 021 102 120 201 210
     pool = tuple(iterable)
     n = len(pool)
     r = n if r is None else r
-    indices = range(n)
-    cycles = range(n-r+1, n+1)[::-1]
+    if r > n:
+        return
+    indices = list(range(n))
+    cycles = list(range(n, n-r, -1))
     yield tuple(pool[i] for i in indices[:r])
     while n:
         for i in reversed(range(r)):
@@ -4253,17 +4256,17 @@ repeat_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 {
     repeatobject *ro;
     PyObject *element;
-    Py_ssize_t cnt = -1, n_kwds = 0;
+    Py_ssize_t cnt = -1, n_args;
     static char *kwargs[] = {"object", "times", NULL};
 
+    n_args = PyTuple_GET_SIZE(args);
+    if (kwds != NULL)
+        n_args += PyDict_GET_SIZE(kwds);
     if (!PyArg_ParseTupleAndKeywords(args, kwds, "O|n:repeat", kwargs,
                                      &element, &cnt))
         return NULL;
-
-    if (kwds != NULL)
-        n_kwds = PyDict_GET_SIZE(kwds);
     /* Does user supply times argument? */
-    if ((PyTuple_Size(args) + n_kwds == 2) && cnt < 0)
+    if (n_args == 2 && cnt < 0)
         cnt = 0;
 
     ro = (repeatobject *)type->tp_alloc(type, 0);

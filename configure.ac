@@ -2161,7 +2161,7 @@ sys/stat.h sys/syscall.h sys/sys_domain.h sys/termio.h sys/time.h \
 sys/times.h sys/types.h sys/uio.h sys/un.h sys/utsname.h sys/wait.h pty.h \
 libutil.h sys/resource.h netpacket/packet.h sysexits.h bluetooth.h \
 linux/tipc.h linux/random.h spawn.h util.h alloca.h endian.h \
-sys/endian.h sys/sysmacros.h linux/memfd.h sys/memfd.h sys/mman.h)
+sys/endian.h sys/sysmacros.h linux/memfd.h linux/wait.h sys/memfd.h sys/mman.h)
 AC_HEADER_DIRENT
 AC_HEADER_MAJOR
 
@@ -5414,9 +5414,12 @@ AC_LINK_IFELSE(
 [
   AC_LANG_SOURCE([[
     #include <stdatomic.h>
-    atomic_int value = ATOMIC_VAR_INIT(1);
+    atomic_int int_var;
+    atomic_uintptr_t uintptr_var;
     int main() {
-      int loaded_value = atomic_load(&value);
+      atomic_store_explicit(&int_var, 5, memory_order_relaxed);
+      atomic_store_explicit(&uintptr_var, 0, memory_order_relaxed);
+      int loaded_value = atomic_load_explicit(&int_var, memory_order_seq_cst);
       return 0;
     }
   ]])
@@ -5426,7 +5429,7 @@ AC_MSG_RESULT($have_stdatomic_h)
 
 if test "$have_stdatomic_h" = yes; then
     AC_DEFINE(HAVE_STD_ATOMIC, 1,
-              [Has stdatomic.h with atomic_int])
+              [Has stdatomic.h with atomic_int and atomic_uintptr_t])
 fi
 
 # Check for GCC >= 4.7 __atomic builtins
