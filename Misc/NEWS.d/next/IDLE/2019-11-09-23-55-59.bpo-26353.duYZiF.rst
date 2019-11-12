@@ -1,1 +1,2 @@
-IDLE no longer adds an unneeded newline when saving a shell window.
+Stop adding newline when saving an IDLE shell window.
+
