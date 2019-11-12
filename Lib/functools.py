@@ -623,6 +623,7 @@ def _lru_cache_wrapper(user_function, maxsize, typed, _CacheInfo):
             root[:] = [root, root, None, None]
             hits = misses = 0
             full = False
+
     wrapper.cache_info = cache_info
     wrapper.cache_clear = cache_clear
     return wrapper
