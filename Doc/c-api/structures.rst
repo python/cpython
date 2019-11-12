@@ -208,7 +208,8 @@ also keyword arguments.  So there are a total of 6 calling conventions:
 
    Extension of :const:`METH_FASTCALL` supporting also keyword arguments,
    with methods of type :c:type:`_PyCFunctionFastWithKeywords`.
-   Keyword arguments are passed the same way as in the vectorcall protocol:
+   Keyword arguments are passed the same way as in the
+   :ref:`vectorcall protocol <vectorcall>`:
    there is an additional fourth :c:type:`PyObject\*` parameter
    which is a tuple representing the names of the keyword arguments
    (which are guaranteed to be strings)

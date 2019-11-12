@@ -347,20 +347,20 @@ See :pep:`587` for a full description.
 (Contributed by Victor Stinner in :issue:`36763`.)
 
 
-Vectorcall: a fast calling protocol for CPython
------------------------------------------------
+PEP 590: Vectorcall: a fast calling protocol for CPython
+--------------------------------------------------------
 
-The "vectorcall" protocol is added to the Python/C API.
+:ref:`vectorcall` is added to the Python/C API.
 It is meant to formalize existing optimizations which were already done
 for various classes.
-Any extension type implementing a callable can use this protocol.
+Any static type implementing a callable can use this protocol.
 
 This is currently provisional.
 The aim is to make it fully public in Python 3.9.
 
 See :pep:`590` for a full description.
 
-(Contributed by Jeroen Demeyer and Mark Shannon in :issue:`36974`.)
+(Contributed by Jeroen Demeyer, Mark Shannon and Petr Viktorin in :issue:`36974`.)
 
 
 Pickle protocol 5 with out-of-band data buffers

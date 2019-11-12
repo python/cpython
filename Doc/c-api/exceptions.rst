@@ -697,6 +697,8 @@ The following functions are used to create and modify Unicode exceptions from C.
    ``0`` on success, ``-1`` on failure.
 
 
+.. _recursion:
+
 Recursion Control
 =================
 
@@ -704,6 +706,8 @@ These two functions provide a way to perform safe recursive calls at the C
 level, both in the core and in extension modules.  They are needed if the
 recursive code does not necessarily invoke Python code (which tracks its
 recursion depth automatically).
+They are also not needed for *tp_call* implementations
+because the :ref:`call protocol <call>` takes care of recursion handling.
 
 .. c:function:: int Py_EnterRecursiveCall(const char *where)
 
