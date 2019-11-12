@@ -627,6 +627,30 @@ _channelends_associate(_channelends *ends, int64_t interp, int send)
     return 0;
 }
 
+static int64_t *
+_channelends_list_interpreters(_channelends *ends, int64_t *count, int send)
+{
+    int64_t *ids = NULL;
+    int64_t numopen = send ? ends->numsendopen : ends->numrecvopen;
+    if (numopen >= PY_SSIZE_T_MAX) {
+        PyErr_SetString(PyExc_RuntimeError,
+                        "too many interpreters using the channel");
+        goto done;
+    }
+    ids = PyMem_NEW(int64_t, (Py_ssize_t)numopen);
+    if (ids == NULL) {
+        goto done;
+    }
+    _channelend *ref = send ? ends->send : ends->recv;
+    for (int64_t i=0; ref != NULL; ref = ref->next, i++) {
+        ids[i] = ref->interp;
+    }
+    *count = numopen;
+
+done:
+    return ids;
+}
+
 static int
 _channelends_is_open(_channelends *ends)
 {
@@ -2323,6 +2347,67 @@ PyDoc_STRVAR(channel_list_all_doc,
 \n\
 Return the list of all IDs for active channels.");
 
+
+static PyObject *
+channel_list_interpreters(PyObject *self, PyObject *args, PyObject *kwds)
+{
+    static char *kwlist[] = {"cid", NULL};
+    int64_t cid;
+    _PyChannelState *chan;
+    int send = 1;           /* Send or receive ends? */
+    int64_t count;          /* Number of interpreters to return */
+    int64_t *ids;           /* Array of interpreter IDs to return */
+    PyObject *id_obj;
+    PyObject *ret;          /* Python list of interpreter IDs */
+
+    if (!PyArg_ParseTupleAndKeywords(args, kwds, "O&:channel_list_interps",
+                                     kwlist, channel_id_converter, &cid)) {
+        return NULL;
+    }
+
+    chan = _channels_lookup(&_globals.channels, cid, NULL);
+    ids = _channelends_list_interpreters(chan->ends, &count, send);
+    
+    ret = PyList_New((Py_ssize_t)count);
+    if (ret == NULL) {
+        goto finally;
+    }
+
+    for (int64_t i=0; i < count; i++) {
+        PyInterpreterState *interp = PyInterpreterState_Head();
+        while (interp != NULL) {
+            id_obj = _PyInterpreterState_GetIDObject(interp);
+            if (id_obj == NULL) {
+                goto except;
+            }
+            if (ids[i] == PyInterpreterState_GetID(interp)) {
+                int rc = PyList_SetItem(ret, i, id_obj);
+                Py_DECREF(id_obj);
+                if (rc < 0) {
+                    goto except;
+                }
+                break;
+            }
+            interp = PyInterpreterState_Next(interp);
+        }
+    }
+
+except:
+    Py_XDECREF(ret);
+    ret = NULL;
+
+finally:
+    PyMem_Free(ids);
+    return ret;
+}
+
+PyDoc_STRVAR(channel_list_interpreters_doc,
+"channel_list_interpreters(cid) -> [id]\n\
+\n\
+Return the list of all interpreter IDs associated with the channel\n\
+XXX in the send direction.");
+
+
 static PyObject *
 channel_send(PyObject *self, PyObject *args, PyObject *kwds)
 {
@@ -2476,6 +2561,8 @@ static PyMethodDef module_functions[] = {
      METH_VARARGS | METH_KEYWORDS, channel_destroy_doc},
     {"channel_list_all",          channel_list_all,
      METH_NOARGS, channel_list_all_doc},
+    {"channel_list_interpreters", (PyCFunction)(void(*)(void))channel_list_interpreters,
+     METH_VARARGS | METH_KEYWORDS, channel_list_interpreters_doc},
     {"channel_send",              (PyCFunction)(void(*)(void))channel_send,
      METH_VARARGS | METH_KEYWORDS, channel_send_doc},
     {"channel_recv",              (PyCFunction)(void(*)(void))channel_recv,
