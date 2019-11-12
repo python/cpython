@@ -125,6 +125,15 @@ struct _is {
     struct _warnings_runtime_state warnings;
 
     PyObject *audit_hooks;
+/*
+ * See bpo-36876: miscellaneous ad hoc statics have been moved here.
+ */
+    struct {
+        struct {
+            int level;
+            int atbol;
+        } listnode;
+    } parser;
 };
 
 PyAPI_FUNC(struct _is*) _PyInterpreterState_LookUpID(PY_INT64_T);
