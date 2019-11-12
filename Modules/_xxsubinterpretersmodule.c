@@ -2382,14 +2382,11 @@ channel_list_interpreters(PyObject *self, PyObject *args, PyObject *kwds)
         while (interp != NULL) {
             id_obj = _PyInterpreterState_GetIDObject(interp);
             if (id_obj == NULL) {
+                Py_DECREF(id_obj);
                 goto except;
             }
             if (ids[i] == PyInterpreterState_GetID(interp)) {
-                int rc = PyList_SetItem(ret, i, id_obj);
-                Py_DECREF(id_obj);
-                if (rc < 0) {
-                    goto except;
-                }
+                PyList_SET_ITEM(ret, i, id_obj);
                 break;
             }
             interp = PyInterpreterState_Next(interp);
