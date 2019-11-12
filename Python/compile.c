@@ -3659,11 +3659,11 @@ starunpack_helper(struct compiler *c, asdl_seq *elts,
         if (folded == NULL) {
             return 0;
         }
-        PyObject *elt;
+        PyObject *val;
         for (i = 0; i < n; i++) {
-            elt = ((expr_ty)asdl_seq_GET(elts, i))->v.Constant.value;
-            Py_INCREF(elt);
-            PyTuple_SET_ITEM(folded, i, elt);
+            val = ((expr_ty)asdl_seq_GET(elts, i))->v.Constant.value;
+            Py_INCREF(val);
+            PyTuple_SET_ITEM(folded, i, val);
         }
         if (outer_op == BUILD_SET_UNPACK) {
             Py_SETREF(folded, PyFrozenSet_New(folded));
