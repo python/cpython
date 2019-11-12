@@ -1,3 +1,7 @@
+import concurrent.futures
+import time
+
+
 target = {'foo': 'FOO'}
 
 
@@ -14,3 +18,15 @@ class SomeClass(object):
 
 class X(object):
     pass
+
+
+def call_after_delay(func, /, *args, **kwargs):
+    time.sleep(kwargs.pop('delay'))
+    func(*args, **kwargs)
+
+
+def run_async(func, /, *args, executor=None, delay=0, **kwargs):
+    if executor is None:
+        executor = concurrent.futures.ThreadPoolExecutor(max_workers=5)
+
+    executor.submit(call_after_delay, func, *args, **kwargs, delay=delay)

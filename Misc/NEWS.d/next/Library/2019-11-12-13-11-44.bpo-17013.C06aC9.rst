@@ -1,0 +1,2 @@
+Extend :attr:`called` of :class:`Mock.called` to wait for the calls in
+multithreaded tests. Patch by Ilya Kulakov.

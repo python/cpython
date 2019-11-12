@@ -1,11 +1,12 @@
+import concurrent.futures
 import copy
 import re
 import sys
 import tempfile
 
-from test.support import ALWAYS_EQ
+from test.support import ALWAYS_EQ, start_threads
 import unittest
-from unittest.test.testmock.support import is_instance
+from unittest.test.testmock.support import is_instance, run_async
 from unittest import mock
 from unittest.mock import (
     call, DEFAULT, patch, sentinel,
@@ -2058,6 +2059,105 @@ class MockTest(unittest.TestCase):
             for mock in mocks:
                 obj = mock(spec=Something)
                 self.assertIsInstance(obj, Something)
+
+    def test_wait_until_called(self):
+        mock = Mock(spec=Something)()
+        run_async(mock.method_1, delay=0.01)
+        mock.method_1.called.wait()
+        mock.method_1.assert_called_once()
+
+    def test_wait_until_called_called_before(self):
+        mock = Mock(spec=Something)()
+        mock.method_1()
+        mock.method_1.wait_until_called()
+        mock.method_1.assert_called_once()
+
+    def test_wait_until_called_magic_method(self):
+        mock = MagicMock(spec=Something)()
+        run_async(mock.method_1.__str__, delay=0.01)
+        mock.method_1.__str__.called.wait()
+        mock.method_1.__str__.assert_called_once()
+
+    def test_wait_until_called_timeout(self):
+        mock = Mock(spec=Something)()
+        run_async(mock.method_1, delay=0.2)
+
+        with self.assertRaises(AssertionError):
+            mock.method_1.called.wait(timeout=0.1)
+
+        mock.method_1.assert_not_called()
+        mock.method_1.called.wait()
+        mock.method_1.assert_called_once()
+
+    def test_wait_until_any_call_positional(self):
+        mock = Mock(spec=Something)()
+        run_async(mock.method_1, 1, delay=0.1)
+        run_async(mock.method_1, 2, delay=0.2)
+        run_async(mock.method_1, 3, delay=0.3)
+
+        for arg in (1, 2, 3):
+            self.assertNotIn(call(arg), mock.method_1.mock_calls)
+            mock.method_1.called.wait_for(lambda m: call(arg) in m.call_args_list)
+            mock.method_1.assert_called_with(arg)
+
+    def test_wait_until_any_call_keywords(self):
+        mock = Mock(spec=Something)()
+        run_async(mock.method_1, a=1, delay=0.1)
+        run_async(mock.method_1, a=2, delay=0.2)
+        run_async(mock.method_1, a=3, delay=0.3)
+
+        for arg in (1, 2, 3):
+            self.assertNotIn(call(arg), mock.method_1.mock_calls)
+            mock.method_1.called.wait_for(lambda m: call(a=arg) in m.call_args_list)
+            mock.method_1.assert_called_with(a=arg)
+
+    def test_wait_until_any_call_no_argument(self):
+        mock = Mock(spec=Something)()
+        mock.method_1(1)
+        mock.method_1assert_called_once_with(1)
+
+        with self.assertRaises(AssertionError):
+            mock.method_1.called.wait_for(lambda m: call() in m.call_args_list, timeout=0.01)
+
+        mock.method_1()
+        mock.method_1.called.wait_for(lambda m: call() in m.call_args_list, timeout=0.01)
+
+    def test_called_is_boolean_like(self):
+        mock = Mock(spec=Something)()
+
+        self.assertFalse(mock.method_1.called)
+
+        self.assertEqual(mock.method_1.called, False)
+        self.assertEqual(mock.method_1.called, 0)
+        self.assertEqual(mock.method_1.called, 0.0)
+
+        self.assertLess(mock.method_1.called, 1)
+        self.assertLess(mock.method_1.called, 1.0)
+
+        self.assertLessEqual(mock.method_1.called, False)
+        self.assertLessEqual(mock.method_1.called, 0)
+        self.assertLessEqual(mock.method_1.called, 0.0)
+
+        self.assertEqual(str(mock.method_1.called), str(False))
+        self.assertEqual(repr(mock.method_1.called), repr(False))
+
+        mock.method_1()
+
+        self.assertTrue(mock.method_1.called)
+
+        self.assertEqual(mock.method_1.called, True)
+        self.assertEqual(mock.method_1.called, 1)
+        self.assertEqual(mock.method_1.called, 1.0)
+
+        self.assertGreater(mock.method_1.called, 0)
+        self.assertGreater(mock.method_1.called, 0.0)
+
+        self.assertGreaterEqual(mock.method_1.called, True)
+        self.assertGreaterEqual(mock.method_1.called, 1)
+        self.assertGreaterEqual(mock.method_1.called, 1.0)
+
+        self.assertEqual(str(mock.method_1.called), str(True))
+        self.assertEqual(repr(mock.method_1.called), repr(True))
 
 
 if __name__ == '__main__':

@@ -493,7 +493,7 @@ the *new_callable* argument to :func:`patch`.
 
     .. attribute:: called
 
-        A boolean representing whether or not the mock object has been called:
+        A boolean-like object representing whether or not the mock object has been called:
 
             >>> mock = Mock(return_value=None)
             >>> mock.called
@@ -501,6 +501,15 @@ the *new_callable* argument to :func:`patch`.
             >>> mock()
             >>> mock.called
             True
+
+        The object gives access to methods helpful in multithreaded tests:
+
+        - :meth:`wait(/, skip=0, timeout=None)` asserts that mock is called
+          *skip* times during *timeout*
+
+        - :meth:`wait_for(predicate, /, timeout=None)` asserts that
+          *predicate* was ``True`` at least once during the timeout;
+          *predicate* receives exactly one positional argument: the mock itself
 
     .. attribute:: call_count
 
