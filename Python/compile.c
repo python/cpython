@@ -3665,7 +3665,7 @@ starunpack_helper(struct compiler *c, asdl_seq *elts,
             Py_INCREF(elt);
             PyTuple_SET_ITEM(folded, i, elt);
         }
-        if (single_op == BUILD_SET) {
+        if (outer_op == BUILD_SET_UNPACK) {
             Py_SETREF(folded, PyFrozenSet_New(folded));
         }
         ADDOP_LOAD_CONST_NEW(c, folded);
