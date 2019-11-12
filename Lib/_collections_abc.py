@@ -82,6 +82,14 @@ def _check_methods(C, *methods):
     return True
 
 class Hashable(metaclass=ABCMeta):
+    """
+    A Hashable is an object that can be hashed.
+
+    Concrete subclasses must override:
+      * __new__ or __init__
+
+      * __hash__ - returns the hash of the object
+    """
 
     __slots__ = ()
 
@@ -97,6 +105,14 @@ class Hashable(metaclass=ABCMeta):
 
 
 class Awaitable(metaclass=ABCMeta):
+    """
+    An Awaitable is an object that can be used in an 'await' expression.
+
+    Concrete subclasses must override:
+      * __new__ or __init__
+
+      * __await__ - returns an iterator.
+    """
 
     __slots__ = ()
 
@@ -112,6 +128,20 @@ class Awaitable(metaclass=ABCMeta):
 
 
 class Coroutine(Awaitable):
+    """
+    A Coroutine is an awaitable object.
+
+    Concrete subclasses must override:
+      * __new__ or __init__
+
+      * __await__ - returns an iterator.
+
+      * send - starts or resumes execution of the coroutine. Returns the next
+            yielded value or raises StopIteration
+
+      * throw - raises an exception in the coroutine. Returns the next yielded
+            value or raises StopIteration
+    """
 
     __slots__ = ()
 
@@ -156,6 +186,14 @@ Coroutine.register(coroutine)
 
 
 class AsyncIterable(metaclass=ABCMeta):
+    """
+    An AsyncIterable is an object that can be used in an 'async for' statement.
+
+    Concrete subclasses must override:
+      * __new__ or __init__
+
+      * __aiter__ - returns an asynchronous iterator
+    """
 
     __slots__ = ()
 
@@ -171,6 +209,16 @@ class AsyncIterable(metaclass=ABCMeta):
 
 
 class AsyncIterator(AsyncIterable):
+    """
+    An AsyncIterator is an object that can be iterated over, returning an
+    awaitable on each iteration.
+
+    Concrete subclasses must override:
+      * __new__ or __init__
+
+      * __anext__ - returns the next item in the stream. This must be an
+            awaitable object
+    """
 
     __slots__ = ()
 
@@ -190,6 +238,20 @@ class AsyncIterator(AsyncIterable):
 
 
 class AsyncGenerator(AsyncIterator):
+    """
+    An AsyncGenerator is an implementation of the protocol defined in PEP 525
+    that extends asynchronous iterators with the asend(), athrow(), and
+    aclose() methods.
+
+    Concrete subclasses must override:
+      * __new__ or __init__
+
+      * asend - sends a value into the asynchronous generator. Returns the next
+            yielded value or raises StopAsyncIteration
+
+      * athrow - raises an exception in the asynchronous generator. Returns the
+            next yielded value or raises StopAsyncIteration.
+    """
 
     __slots__ = ()
 
@@ -241,6 +303,14 @@ AsyncGenerator.register(async_generator)
 
 
 class Iterable(metaclass=ABCMeta):
+    """
+    An Iterable is an object capable of returning its members one at a time.
+
+    Concrete subclasses must override:
+      * __new__ or __init__
+
+      * __iter__ - returns an iterator object
+    """
 
     __slots__ = ()
 
@@ -257,6 +327,16 @@ class Iterable(metaclass=ABCMeta):
 
 
 class Iterator(Iterable):
+    """
+    An Iterator is an object representing a stream of data. Repeated calls to
+    the iterator's __next__ method return successive items in the stream. When
+    the stream is exhausted, a StopIteration exception should be raised.
+
+    Concrete subclasses must override:
+      * __new__ or __init__
+
+      * __next__ - returns the next item in the stream
+    """
 
     __slots__ = ()
 
@@ -291,6 +371,18 @@ Iterator.register(zip_iterator)
 
 
 class Reversible(Iterable):
+    """
+    A Reversible is an iterable that can also be called by the reversed()
+    built-in method to implement reverse iteration.
+
+    Concrete subclasses must override:
+      * __new__ or __init__
+
+      * __iter__ - returns an iterator object
+
+      * __reversed__ - returns an iterator object which will return items in
+            the reverse order from the iterator object returned by __iter__
+    """
 
     __slots__ = ()
 
@@ -307,6 +399,20 @@ class Reversible(Iterable):
 
 
 class Generator(Iterator):
+    """
+    A Generator is an implementation of the protocol defined in PEP 342 that
+    extends iterators with the send(), throw(), and close() methods.
+
+    Concrete subclasses must override:
+      * __new__ or __init__
+
+      * send - returns the next yielded value or raises StopIteration, and
+            sends a value that becomes the result of the current
+            yield-expression
+
+      * throw - raises an exception at the point the generator was paused, and
+            returns the next yielded value or raises StopIteration
+    """
 
     __slots__ = ()
 
@@ -357,6 +463,14 @@ Generator.register(generator)
 
 
 class Sized(metaclass=ABCMeta):
+    """
+    A Sized is a finite collection of objects.
+
+    Concrete subclasses must override:
+      * __new__ or __init__
+
+      * __len__ - returns the length of the object
+    """
 
     __slots__ = ()
 
@@ -372,6 +486,15 @@ class Sized(metaclass=ABCMeta):
 
 
 class Container(metaclass=ABCMeta):
+    """
+    A Container is a collection of objects that can be tested for membership.
+
+    Concrete subclasses must override:
+      * __new__ or __init__
+
+      * __contains__ - returns True if the specified object is a member of
+            this container, False otherwise
+    """
 
     __slots__ = ()
 
@@ -386,6 +509,19 @@ class Container(metaclass=ABCMeta):
         return NotImplemented
 
 class Collection(Sized, Iterable, Container):
+    """
+    A Collection is a finite, iterable collection of objects.
+
+    Concrete subclasses must override:
+      * __new__ or __init__
+
+      * __contains__ - returns True if the specified object is a member of
+            this container, False otherwise
+
+      * __iter__ - returns an iterator object
+
+      * __len__ - returns the length of the object
+    """
 
     __slots__ = ()
 
@@ -396,6 +532,14 @@ class Collection(Sized, Iterable, Container):
         return NotImplemented
 
 class Callable(metaclass=ABCMeta):
+    """
+    A Callable is an object that can be called.
+
+    Concrete subclasses must override:
+      * __new__ or __init__
+
+      * __call__ - what should happen when the object is called
+    """
 
     __slots__ = ()
 
@@ -414,15 +558,22 @@ class Callable(metaclass=ABCMeta):
 
 
 class Set(Collection):
-
-    """A set is a finite, iterable container.
-
-    This class provides concrete generic implementations of all
-    methods except for __contains__, __iter__ and __len__.
+    """
+    A Set is a finite, iterable container.
 
     To override the comparisons (presumably for speed, as the
     semantics are fixed), redefine __le__ and __ge__,
     then the other operations will automatically follow suit.
+
+    Concrete subclasses must override:
+      * __new__ or __init__
+
+      * __contains__ - returns True if the specified object is a member of
+            set, False otherwise
+
+      * __iter__ - returns an iterator object
+
+      * __len__ - returns the length of the object
     """
 
     __slots__ = ()
@@ -554,15 +705,27 @@ Set.register(frozenset)
 
 
 class MutableSet(Set):
-    """A mutable set is a finite, iterable container.
-
-    This class provides concrete generic implementations of all
-    methods except for __contains__, __iter__, __len__,
-    add(), and discard().
+    """
+    A MutableSet is a finite, iterable container.
 
     To override the comparisons (presumably for speed, as the
     semantics are fixed), all you have to do is redefine __le__ and
     then the other operations will automatically follow suit.
+
+    Concrete subclasses must override:
+      * __new__ or __init__
+
+      * __contains__ - returns True if the specified object is a member of
+            set, False otherwise
+
+      * __iter__ - returns an iterator object
+
+      * __len__ - returns the length of the object
+
+      * add - add the specified object to the set
+
+      * discard - discard the specified object from the set. Should not raise
+            an exception if the specified object is not a member of the set
     """
 
     __slots__ = ()
@@ -639,16 +802,21 @@ MutableSet.register(set)
 
 
 class Mapping(Collection):
-
-    __slots__ = ()
-
-    """A Mapping is a generic container for associating key/value
+    """
+    A Mapping is a generic container for associating key/value
     pairs.
 
-    This class provides concrete generic implementations of all
-    methods except for __getitem__, __iter__, and __len__.
+    Concrete subclasses must override:
+      * __new__ or __init__
 
+      * __getitem__ - implement evaluation of self[key]
+
+      * __iter__ - return an iterator object
+
+      * __len__ - returns the length of the object
     """
+
+    __slots__ = ()
 
     @abstractmethod
     def __getitem__(self, key):
@@ -692,6 +860,9 @@ Mapping.register(mappingproxy)
 
 
 class MappingView(Sized):
+    """
+    A Mappingview is a dynamic view into a Mapping.
+    """
 
     __slots__ = '_mapping',
 
@@ -706,6 +877,9 @@ class MappingView(Sized):
 
 
 class KeysView(MappingView, Set):
+    """
+    A KeysView is a dynamic view into the keys of a Mapping.
+    """
 
     __slots__ = ()
 
@@ -723,6 +897,9 @@ KeysView.register(dict_keys)
 
 
 class ItemsView(MappingView, Set):
+    """
+    An ItemsView is a dynamic view into the items of a Mapping.
+    """
 
     __slots__ = ()
 
@@ -747,6 +924,9 @@ ItemsView.register(dict_items)
 
 
 class ValuesView(MappingView, Collection):
+    """
+    A ValuesView is a dynamic view into the values of a Mapping.
+    """
 
     __slots__ = ()
 
@@ -765,17 +945,24 @@ ValuesView.register(dict_values)
 
 
 class MutableMapping(Mapping):
-
-    __slots__ = ()
-
     """A MutableMapping is a generic container for associating
     key/value pairs.
 
-    This class provides concrete generic implementations of all
-    methods except for __getitem__, __setitem__, __delitem__,
-    __iter__, and __len__.
+    Concrete subclasses must override:
+      * __new__ or __init__
 
+      * __getitem__ - implement evaluation of self[key]
+
+      * __setitem__ - implements assignment to self[key]
+
+      * __delitem__ - implements deletion of self[key]
+
+      * __iter__ - return an iterator object
+
+      * __len__ - returns the length of the object
     """
+
+    __slots__ = ()
 
     @abstractmethod
     def __setitem__(self, key, value):
@@ -854,11 +1041,15 @@ MutableMapping.register(dict)
 
 
 class Sequence(Reversible, Collection):
+    """
+    A Sequence is a reversible Collection.
 
-    """All the operations on a read-only sequence.
+    Concrete subclasses must override:
+      * __new__ or __init__
 
-    Concrete subclasses must override __new__ or __init__,
-    __getitem__, and __len__.
+      * __getitem__ - implement evaluation of self[key]
+
+      * __len__ - returns the length of the object
     """
 
     __slots__ = ()
@@ -921,10 +1112,15 @@ Sequence.register(memoryview)
 
 
 class ByteString(Sequence):
+    """
+    A ByteString is a sequence of bytes.
 
-    """This unifies bytes and bytearray.
+    Concrete subclasses must override:
+      * __new__ or __init__
 
-    XXX Should add all their methods.
+      * __getitem__ - implement evaluation of self[key]
+
+      * __len__ - returns the length of the object
     """
 
     __slots__ = ()
@@ -934,15 +1130,23 @@ ByteString.register(bytearray)
 
 
 class MutableSequence(Sequence):
-
-    __slots__ = ()
-
     """All the operations on a read-write sequence.
 
-    Concrete subclasses must provide __new__ or __init__,
-    __getitem__, __setitem__, __delitem__, __len__, and insert().
+    Concrete subclasses must override:
+      * __new__ or __init__
 
+      * __getitem__ - implements evaluation of self[key]
+
+      * __setitem__ - implements assignment to self[key]
+
+      * __delitem__ - implements deletion of self[key]
+
+      * __len__ - returns the length of the sequence
+
+      * insert - inserts the given value before the specified index
     """
+
+    __slots__ = ()
 
     @abstractmethod
     def __setitem__(self, index, value):
