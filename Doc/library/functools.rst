@@ -108,13 +108,16 @@ The :mod:`functools` module defines the following functions:
    cached separately.  For example, ``f(3)`` and ``f(3.0)`` will be treated
    as distinct calls with distinct results.
 
+   The wrapped function is instrumented with a :func:`cache_parameters`
+   function that returns a new :class:`dict` showing the values for *maxsize*
+   and *typed*.  This is for information purposes only.  Mutating the values
+   has no effect.
+
    To help measure the effectiveness of the cache and tune the *maxsize*
    parameter, the wrapped function is instrumented with a :func:`cache_info`
    function that returns a :term:`named tuple` showing *hits*, *misses*,
-   *maxsize* and *currsize*. the wrapped function is also instrumented woth
-   a :func:`cache_parameters` function that returns a :class:`dict` which has
-   showing *maxsize* and *typed*. In a multi-threaded environment, the hits
-   and misses are approximate.
+   *maxsize* and *currsize*.  In a multi-threaded environment, the hits and
+   misses are approximate.
 
    The decorator also provides a :func:`cache_clear` function for clearing or
    invalidating the cache.
