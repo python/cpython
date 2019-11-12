@@ -1656,17 +1656,15 @@ class TestLRU:
                 self.assertIs(f_copy, f)
 
     def test_lru_cache_parameters(self):
+        @self.module.lru_cache(maxsize=2)
         def f():
             return 1
-        f = self.module.lru_cache(2)(f)
-        self.assertEqual(f.cache_parameters().get("maxsize"), 2)
-        self.assertEqual(f.cache_parameters().get("typed"), False)
+        self.assertEqual(f.cache_parameters(), {'maxsize': 2, "typed": False})
 
         @self.module.lru_cache(maxsize=1000, typed=True)
         def f():
             return 1
-        self.assertEqual(f.cache_parameters().get("maxsize"), 1000)
-        self.assertEqual(f.cache_parameters().get("typed"), True)
+        self.assertEqual(f.cache_parameters(), {'maxsize': 1000, "typed": True})
 
 
 @py_functools.lru_cache()
