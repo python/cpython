@@ -2400,11 +2400,18 @@ converters_from_argtypes(PyObject *ob)
                 }
                 return NULL;
             }
-            /*
             if (stgdict->flags & TYPEFLAG_HASBITFIELD) {
-                printf("found stgdict with bitfield\n");
+                Py_DECREF(converters);
+                Py_DECREF(ob);
+                if (!PyErr_Occurred()) {
+                    PyErr_Format(PyExc_TypeError,
+                                 "item %zd in _argtypes_ passes a struct/"
+                                 "union with a bitfield by value, which is "
+                                 "unsupported.",
+                                 i + 1);
+                }
+                return NULL;
             }
-            */
         }
 
         if (_PyObject_LookupAttrId(tp, &PyId_from_param, &cnv) <= 0) {
