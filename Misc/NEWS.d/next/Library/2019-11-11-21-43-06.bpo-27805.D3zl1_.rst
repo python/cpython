@@ -1,0 +1,2 @@
+Allow opening pipes and other non-seekable files in append mode with
+:func:`open`.
