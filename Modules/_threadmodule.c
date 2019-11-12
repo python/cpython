@@ -347,7 +347,7 @@ rlock_release(rlockobject *self, PyObject *Py_UNUSED(ignored))
 {
     unsigned long tid = PyThread_get_thread_ident();
 
-    if (self->rlock_count == 0 || self->rlock_owner != tid) {
+    if (self->rlock_count <= 0 || self->rlock_owner != tid) {
         PyErr_SetString(PyExc_RuntimeError,
                         "cannot release un-acquired lock");
         return NULL;
