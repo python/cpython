@@ -924,7 +924,7 @@ logging
 -------
 
 Added a *force* keyword argument to :func:`logging.basicConfig()`
-When set to *True*, any existing handlers attached
+When set to true, any existing handlers attached
 to the root logger are removed and closed before carrying out the
 configuration specified by the other arguments.
 
@@ -1051,7 +1051,7 @@ environment variable and does not use :envvar:`HOME`, which is not normally set
 for regular user accounts.
 (Contributed by Anthony Sottile in :issue:`36264`.)
 
-:func:`~os.path.isdir` on Windows no longer returns true for a link to a
+:func:`~os.path.isdir` on Windows no longer returns ``True`` for a link to a
 non-existent directory.
 
 :func:`~os.path.realpath` on Windows now resolves reparse points, including
@@ -1100,12 +1100,12 @@ pprint
 
 The :mod:`pprint` module added a *sort_dicts* parameter to several functions.
 By default, those functions continue to sort dictionaries before rendering or
-printing.  However, if *sort_dicts* is set to *False*, the dictionaries retain
+printing.  However, if *sort_dicts* is set to false, the dictionaries retain
 the order that keys were inserted.  This can be useful for comparison to JSON
 inputs during debugging.
 
 In addition, there is a convenience new function, :func:`pprint.pp` that is
-like :func:`pprint.pprint` but with *sort_dicts* defaulting to *False*::
+like :func:`pprint.pprint` but with *sort_dicts* defaulting to ``False``::
 
     >>> from pprint import pprint, pp
     >>> d = dict(source='input.txt', operation='filter', destination='output.txt')
