@@ -3480,6 +3480,11 @@ written in Python, such as a mail server's external command delivery program.
    Note that some platforms including FreeBSD <= 6.3 and Cygwin have
    known issues when using fork() from a thread.
 
+   .. note::
+
+      Calling fork() in a subinterpreter is not supported (:exc:`RuntimeError`
+      is raised).
+
    .. warning::
 
       See :mod:`ssl` for applications that use the SSL module with fork().
