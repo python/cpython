@@ -388,7 +388,7 @@ class IOBinding:
         "Return text with final \n if needed and os eols."
         if (self.text.get("end-2c") != '\n'
             and not hasattr(self.editwin, "interp")):  # Not shell.
-                self.text.insert("end-1c", "\n")
+            self.text.insert("end-1c", "\n")
         text = self.text.get("1.0", "end-1c")
         if self.eol_convention != "\n":
             text = text.replace("\n", self.eol_convention)
