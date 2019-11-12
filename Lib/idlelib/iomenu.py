@@ -371,10 +371,7 @@ class IOBinding:
         return "break"
 
     def writefile(self, filename):
-        self.fixlastline()
-        text = self.text.get("1.0", "end-1c")
-        if self.eol_convention != "\n":
-            text = text.replace("\n", self.eol_convention)
+        text = self.fixnewlines()
         chars = self.encode(text)
         try:
             with open(filename, "wb") as f:
@@ -386,6 +383,16 @@ class IOBinding:
             tkMessageBox.showerror("I/O Error", str(msg),
                                    parent=self.text)
             return False
+
+    def fixnewlines(self):
+        "Return text with final \n if needed and os eols."
+        if (self.text.get("end-2c") != '\n'
+            and not hasattr(self.editwin, "interp")):  # Not shell.
+            self.text.insert("end-1c", "\n")
+        text = self.text.get("1.0", "end-1c")
+        if self.eol_convention != "\n":
+            text = text.replace("\n", self.eol_convention)
+        return text
 
     def encode(self, chars):
         if isinstance(chars, bytes):
@@ -425,11 +432,6 @@ class IOBinding:
         # Fallback: save as UTF-8, with BOM - ignoring the incorrect
         # declared encoding
         return BOM_UTF8 + chars.encode("utf-8")
-
-    def fixlastline(self):
-        c = self.text.get("end-2c")
-        if c != '\n':
-            self.text.insert("end-1c", "\n")
 
     def print_window(self, event):
         confirm = tkMessageBox.askokcancel(
