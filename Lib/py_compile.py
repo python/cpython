@@ -186,6 +186,12 @@ def main(args=None):
     """
     if args is None:
         args = sys.argv[1:]
+    quiet = 0
+    try:
+        args.remove('-q')
+        quiet = 2
+    except ValueError:
+        pass
     rv = 0
     if args == ['-']:
         while True:
