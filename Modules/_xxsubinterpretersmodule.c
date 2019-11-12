@@ -2356,21 +2356,25 @@ channel_list_interpreters(PyObject *self, PyObject *args, PyObject *kwds)
     _PyChannelState *chan;
     int send = 1;           /* Send or receive ends? */
     int64_t count;          /* Number of interpreters to return */
-    int64_t *ids;           /* Array of interpreter IDs to return */
-    PyObject *id_obj;
-    PyObject *ret;          /* Python list of interpreter IDs */
+    int64_t *ids = NULL;    /* Array of interpreter IDs to return */
+    PyObject *id_obj = NULL;
+    PyObject *ret = NULL;   /* Python list of interpreter IDs */
 
-    if (!PyArg_ParseTupleAndKeywords(args, kwds, "O&:channel_list_interps",
+    if (!PyArg_ParseTupleAndKeywords(args, kwds, "O&:channel_list_interpreters",
                                      kwlist, channel_id_converter, &cid)) {
         return NULL;
     }
 
     chan = _channels_lookup(&_globals.channels, cid, NULL);
+    if (chan == NULL) {
+        goto except;
+    }
+
     ids = _channelends_list_interpreters(chan->ends, &count, send);
     
     ret = PyList_New((Py_ssize_t)count);
     if (ret == NULL) {
-        goto finally;
+        goto except;
     }
 
     for (int64_t i=0; i < count; i++) {
@@ -2391,6 +2395,8 @@ channel_list_interpreters(PyObject *self, PyObject *args, PyObject *kwds)
             interp = PyInterpreterState_Next(interp);
         }
     }
+
+    goto finally;
 
 except:
     Py_XDECREF(ret);
