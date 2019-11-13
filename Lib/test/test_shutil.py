@@ -2230,7 +2230,7 @@ class _ZeroCopyFileTest(object):
         self.assertEqual(read_file(TESTFN, binary=True), self.FILEDATA)
 
     def test_non_existent_src(self):
-        name = tempfile.mktemp(dir=self.mkdtemp())
+        name = tempfile.mktemp(dir=os.getcwd())
         with self.assertRaises(FileNotFoundError) as cm:
             shutil.copyfile(name, "new")
         self.assertEqual(cm.exception.filename, name)
