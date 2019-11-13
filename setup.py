@@ -2185,7 +2185,8 @@ class PyBuildExt(build_ext):
         openssl_includes = split_var('OPENSSL_INCLUDES', '-I')
         openssl_libdirs = split_var('OPENSSL_LDFLAGS', '-L')
         openssl_libs = split_var('OPENSSL_LIBS', '-l')
-        if not openssl_libs:
+        openssl_static_root = config_vars.get('OPENSSL_STATIC_ROOT')
+        if not openssl_libs and not openssl_static_root:
             # libssl and libcrypto not found
             return None, None
 
@@ -2205,23 +2206,46 @@ class PyBuildExt(build_ext):
             ssl_incs.extend(krb5_h)
 
         if config_vars.get("HAVE_X509_VERIFY_PARAM_SET1_HOST"):
-            ssl_ext = Extension(
-                '_ssl', ['_ssl.c'],
-                include_dirs=openssl_includes,
-                library_dirs=openssl_libdirs,
-                libraries=openssl_libs,
-                depends=['socketmodule.h']
-            )
+            if openssl_static_root:
+                ssl_ext = Extension(
+                    '_ssl', ['_ssl.c'],
+                    include_dirs=openssl_includes,
+                    extra_objects = [
+                            os.path.join(openssl_static_root, "libssl.a"),
+                            os.path.join(openssl_static_root, "libcrypto.a"),
+                    ],
+                    depends=['socketmodule.h']
+                )
+            else:
+                ssl_ext = Extension(
+                    '_ssl', ['_ssl.c'],
+                    include_dirs=openssl_includes,
+                    library_dirs=openssl_libdirs,
+                    libraries=openssl_libs,
+                    depends=['socketmodule.h']
+                )
         else:
             ssl_ext = None
 
-        hashlib_ext = Extension(
-            '_hashlib', ['_hashopenssl.c'],
-            depends=['hashlib.h'],
-            include_dirs=openssl_includes,
-            library_dirs=openssl_libdirs,
-            libraries=openssl_libs,
-        )
+        if openssl_static_root:
+            hashlib_ext = Extension(
+                '_hashlib', ['_hashopenssl.c'],
+                depends=['hashlib.h'],
+                include_dirs=openssl_includes,
+                extra_objects = [
+                        os.path.join(openssl_static_root, "libssl.a"),
+                        os.path.join(openssl_static_root, "libcrypto.a"),
+                ],
+                libraries=openssl_libs,
+            )
+        else:
+            hashlib_ext = Extension(
+                '_hashlib', ['_hashopenssl.c'],
+                depends=['hashlib.h'],
+                include_dirs=openssl_includes,
+                library_dirs=openssl_libdirs,
+                libraries=openssl_libs,
+            )
 
         return ssl_ext, hashlib_ext
 
