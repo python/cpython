@@ -157,7 +157,7 @@ The module defines the following functions:
 
    The default for *open_file_descriptor* is False, if *open_file_descriptor* is
    set to True, open file description locks are used. Note that open file description
-   locks features are suppoted on Linux(>=3.15) otherwise it will raise :exc:`NotImplementedError`
+   locks features are supported on Linux(>=3.15) otherwise it will raise :exc:`NotImplementedError`
 
    .. versionchanged:: 3.9
       The *open_file_descriptor* keyword argument was added.
