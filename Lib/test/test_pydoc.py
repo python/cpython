@@ -1311,6 +1311,17 @@ foo
             'async <a name="-an_async_generator"><strong>an_async_generator',
             html)
 
+    def test_html_for_https_links(self):
+        def a_fn_with_https_link():
+            """a link https://localhost/"""
+            pass
+
+        html = pydoc.HTMLDoc().document(a_fn_with_https_link)
+        self.assertIn(
+            '<a href="https://localhost/">https://localhost/</a>',
+            html
+        )
+
 class PydocServerTest(unittest.TestCase):
     """Tests for pydoc._start_server"""
 
