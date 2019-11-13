@@ -1089,6 +1089,7 @@ static PyObject *
 _asyncio_Future_get_loop_impl(FutureObj *self)
 /*[clinic end generated code: output=119b6ea0c9816c3f input=cba48c2136c79d1f]*/
 {
+    ENSURE_FUTURE_ALIVE(self)
     Py_INCREF(self->fut_loop);
     return self->fut_loop;
 }
