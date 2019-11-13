@@ -156,10 +156,12 @@ The module defines the following functions:
    default for *whence* is also 0.
 
    The default for *open_file_descriptor* is False, if *open_file_descriptor* is
-   set to True, open file description locks are used.
+   set to True, open file description locks are used. Note that open file description
+   locks features are suppoted on Linux(>=3.15) otherwise it will raise :exc:`NotImplementedError`
 
    .. versionchanged:: 3.9
       The *open_file_descriptor* keyword argument was added.
+      ref: https://www.gnu.org/software/libc/manual/html_node/Open-File-Description-Locks.html
 
 Examples (all on a SVR4 compliant system)::
 
