@@ -236,6 +236,7 @@ class ConfigDialog(Toplevel):
             instance.set_notabs_indentwidth()
             instance.ApplyKeybindings()
             instance.reset_help_menu_entries()
+            instance.update_cursor_blink()
         for klass in reloadables:
             klass.reload()
 
@@ -1820,6 +1821,9 @@ class GenPage(Frame):
                     (*)win_width_int: Entry - win_width
                     win_height_title: Label
                     (*)win_height_int: Entry - win_height
+                frame_cursor_blink: Frame
+                    cursor_blink_title: Label
+                    (*)cursor_blink_bool: Checkbutton - cursor_blink
                 frame_autocomplete: Frame
                     auto_wait_title: Label
                     (*)auto_wait_int: Entry - autocomplete_wait
@@ -1864,6 +1868,8 @@ class GenPage(Frame):
                 StringVar(self), ('main', 'EditorWindow', 'width'))
         self.win_height = tracers.add(
                 StringVar(self), ('main', 'EditorWindow', 'height'))
+        self.cursor_blink = tracers.add(
+                BooleanVar(self), ('main', 'EditorWindow', 'cursor-blink'))
         self.autocomplete_wait = tracers.add(
                 StringVar(self), ('extensions', 'AutoComplete', 'popupwait'))
         self.paren_style = tracers.add(
@@ -1919,6 +1925,11 @@ class GenPage(Frame):
                 frame_win_size, textvariable=self.win_height, width=3,
                 validatecommand=self.digits_only, validate='key',
         )
+
+        frame_cursor_blink = Frame(frame_window, borderwidth=0)
+        cursor_blink_title = Label(frame_cursor_blink, text='Cursor Blink')
+        self.cursor_blink_bool = Checkbutton(frame_cursor_blink,
+                variable=self.cursor_blink, width=1)
 
         frame_autocomplete = Frame(frame_window, borderwidth=0,)
         auto_wait_title = Label(frame_autocomplete,
@@ -2024,6 +2035,10 @@ class GenPage(Frame):
         win_height_title.pack(side=RIGHT, anchor=E, pady=5)
         self.win_width_int.pack(side=RIGHT, anchor=E, padx=10, pady=5)
         win_width_title.pack(side=RIGHT, anchor=E, pady=5)
+        # frame_cursor_blink.
+        frame_cursor_blink.pack(side=TOP, padx=5, pady=0, fill=X)
+        cursor_blink_title.pack(side=LEFT, anchor=W, padx=5, pady=5)
+        self.cursor_blink_bool.pack(side=LEFT, padx=5, pady=5)
         # frame_autocomplete.
         frame_autocomplete.pack(side=TOP, padx=5, pady=0, fill=X)
         auto_wait_title.pack(side=LEFT, anchor=W, padx=5, pady=5)
@@ -2078,6 +2093,8 @@ class GenPage(Frame):
                 'main', 'EditorWindow', 'width', type='int'))
         self.win_height.set(idleConf.GetOption(
                 'main', 'EditorWindow', 'height', type='int'))
+        self.cursor_blink.set(idleConf.GetOption(
+                'main', 'EditorWindow', 'cursor-blink', type='bool'))
         self.autocomplete_wait.set(idleConf.GetOption(
                 'extensions', 'AutoComplete', 'popupwait', type='int'))
         self.paren_style.set(idleConf.GetOption(
