@@ -243,7 +243,8 @@ class EditorWindow(object):
 
         # Store the current value of the insertofftime now so we can restore
         # it if needed.
-        self.blink_off_time = self.text['insertofftime']
+        if not hasattr(idleConf, 'blink_off_time'):
+            idleConf.blink_off_time = self.text['insertofftime']
         self.UpdateCursorBlink()
 
         # When searching backwards for a reliable place to begin parsing,
@@ -816,7 +817,7 @@ class EditorWindow(object):
             self.text['insertofftime'] = 0
         else:
             # Restore the original value
-            self.text['insertofftime'] = self.blink_off_time
+            self.text['insertofftime'] = idleConf.blink_off_time
 
     def ResetFont(self):
         "Update the text widgets' font if it is changed"
