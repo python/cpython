@@ -76,7 +76,7 @@ These functions calculate statistics regarding relations between two random vari
 =========================  =====================================================
 :func:`covariance`         Sample covariance for two variables.
 :func:`correlation`        Pearson's correlation coefficient for two variables.
-:func:`linear_regression`  Intercept and slope fot simple linear regression.
+:func:`linear_regression`  Intercept and slope for simple linear regression.
 =========================  =====================================================
 
 
