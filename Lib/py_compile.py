@@ -186,12 +186,6 @@ def main(args=None):
     """
     if args is None:
         args = sys.argv[1:]
-    quiet = 0
-    try:
-        args.remove('-q')
-        quiet = 2
-    except ValueError:
-        pass
     rv = 0
     if args == ['-']:
         while True:
@@ -203,12 +197,10 @@ def main(args=None):
                 compile(filename, doraise=True)
             except PyCompileError as error:
                 rv = 1
-                if quiet < 2:
-                    sys.stderr.write("%s\n" % error.msg)
+                sys.stderr.write("%s\n" % error.msg)
             except OSError as error:
                 rv = 1
-                if quiet < 2:
-                    sys.stderr.write("%s\n" % error)
+                sys.stderr.write("%s\n" % error)
     else:
         for filename in args:
             try:
@@ -216,8 +208,7 @@ def main(args=None):
             except PyCompileError as error:
                 # return value to indicate at least one failure
                 rv = 1
-                if quiet < 2:
-                    sys.stderr.write("%s\n" % error.msg)
+                sys.stderr.write("%s\n" % error.msg)
     return rv
 
 if __name__ == "__main__":
