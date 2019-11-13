@@ -108,6 +108,11 @@ The :mod:`functools` module defines the following functions:
    cached separately.  For example, ``f(3)`` and ``f(3.0)`` will be treated
    as distinct calls with distinct results.
 
+   The wrapped function is instrumented with a :func:`cache_parameters`
+   function that returns a new :class:`dict` showing the values for *maxsize*
+   and *typed*.  This is for information purposes only.  Mutating the values
+   has no effect.
+
    To help measure the effectiveness of the cache and tune the *maxsize*
    parameter, the wrapped function is instrumented with a :func:`cache_info`
    function that returns a :term:`named tuple` showing *hits*, *misses*,
@@ -177,6 +182,9 @@ The :mod:`functools` module defines the following functions:
 
    .. versionchanged:: 3.8
       Added the *user_function* option.
+
+   .. versionadded:: 3.9
+      Added the function :func:`cache_parameters`
 
 .. decorator:: total_ordering
 

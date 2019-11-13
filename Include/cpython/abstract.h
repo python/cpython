@@ -37,9 +37,11 @@ PyAPI_FUNC(PyObject *) _PyStack_AsDict(
    40 bytes on the stack. */
 #define _PY_FASTCALL_SMALL_STACK 5
 
-PyAPI_FUNC(PyObject *) _Py_CheckFunctionResult(PyObject *callable,
-                                               PyObject *result,
-                                               const char *where);
+PyAPI_FUNC(PyObject *) _Py_CheckFunctionResult(
+    PyThreadState *tstate,
+    PyObject *callable,
+    PyObject *result,
+    const char *where);
 
 /* === Vectorcall protocol (PEP 590) ============================= */
 
@@ -47,6 +49,7 @@ PyAPI_FUNC(PyObject *) _Py_CheckFunctionResult(PyObject *callable,
    or _PyObject_FastCallDict() (both forms are supported),
    except that nargs is plainly the number of arguments without flags. */
 PyAPI_FUNC(PyObject *) _PyObject_MakeTpCall(
+    PyThreadState *tstate,
     PyObject *callable,
     PyObject *const *args, Py_ssize_t nargs,
     PyObject *keywords);
@@ -93,18 +96,29 @@ _PyVectorcall_Function(PyObject *callable)
    Return the result on success. Raise an exception and return NULL on
    error. */
 static inline PyObject *
-_PyObject_Vectorcall(PyObject *callable, PyObject *const *args,
-                     size_t nargsf, PyObject *kwnames)
+_PyObject_VectorcallTstate(PyThreadState *tstate, PyObject *callable,
+                           PyObject *const *args, size_t nargsf,
+                           PyObject *kwnames)
 {
     assert(kwnames == NULL || PyTuple_Check(kwnames));
     assert(args != NULL || PyVectorcall_NARGS(nargsf) == 0);
+
     vectorcallfunc func = _PyVectorcall_Function(callable);
     if (func == NULL) {
         Py_ssize_t nargs = PyVectorcall_NARGS(nargsf);
-        return _PyObject_MakeTpCall(callable, args, nargs, kwnames);
+        return _PyObject_MakeTpCall(tstate, callable, args, nargs, kwnames);
     }
     PyObject *res = func(callable, args, nargsf, kwnames);
-    return _Py_CheckFunctionResult(callable, res, NULL);
+    return _Py_CheckFunctionResult(tstate, callable, res, NULL);
+}
+
+static inline PyObject *
+_PyObject_Vectorcall(PyObject *callable, PyObject *const *args,
+                     size_t nargsf, PyObject *kwnames)
+{
+    PyThreadState *tstate = PyThreadState_GET();
+    return _PyObject_VectorcallTstate(tstate, callable,
+                                      args, nargsf, kwnames);
 }
 
 /* Same as _PyObject_Vectorcall except that keyword arguments are passed as

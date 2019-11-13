@@ -3,6 +3,8 @@ Released on 2020-10-05?
 ======================================
 
 
+bop-26353: Stop adding newline when saving an IDLE shell window.
+
 bpo-38598: Do not try to compile IDLE shell or output windows.
 
 

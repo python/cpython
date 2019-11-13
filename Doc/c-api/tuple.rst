@@ -33,12 +33,12 @@ Tuple Objects
 
 .. c:function:: PyObject* PyTuple_New(Py_ssize_t len)
 
-   Return a new tuple object of size *len*, or *NULL* on failure.
+   Return a new tuple object of size *len*, or ``NULL`` on failure.
 
 
 .. c:function:: PyObject* PyTuple_Pack(Py_ssize_t n, ...)
 
-   Return a new tuple object of size *n*, or *NULL* on failure. The tuple values
+   Return a new tuple object of size *n*, or ``NULL`` on failure. The tuple values
    are initialized to the subsequent *n* C arguments pointing to Python objects.
    ``PyTuple_Pack(2, a, b)`` is equivalent to ``Py_BuildValue("(OO)", a, b)``.
 
@@ -50,14 +50,14 @@ Tuple Objects
 
 .. c:function:: Py_ssize_t PyTuple_GET_SIZE(PyObject *p)
 
-   Return the size of the tuple *p*, which must be non-*NULL* and point to a tuple;
+   Return the size of the tuple *p*, which must be non-``NULL`` and point to a tuple;
    no error checking is performed.
 
 
 .. c:function:: PyObject* PyTuple_GetItem(PyObject *p, Py_ssize_t pos)
 
    Return the object at position *pos* in the tuple pointed to by *p*.  If *pos* is
-   out of bounds, return *NULL* and set an :exc:`IndexError` exception.
+   out of bounds, return ``NULL`` and set an :exc:`IndexError` exception.
 
 
 .. c:function:: PyObject* PyTuple_GET_ITEM(PyObject *p, Py_ssize_t pos)
@@ -68,7 +68,7 @@ Tuple Objects
 .. c:function:: PyObject* PyTuple_GetSlice(PyObject *p, Py_ssize_t low, Py_ssize_t high)
 
    Return the slice of the tuple pointed to by *p* between *low* and *high*,
-   or *NULL* on failure.  This is the equivalent of the Python expression
+   or ``NULL`` on failure.  This is the equivalent of the Python expression
    ``p[low:high]``.  Indexing from the end of the list is not supported.
 
 
@@ -107,7 +107,7 @@ Tuple Objects
    only more efficiently.  Returns ``0`` on success. Client code should never
    assume that the resulting value of ``*p`` will be the same as before calling
    this function. If the object referenced by ``*p`` is replaced, the original
-   ``*p`` is destroyed.  On failure, returns ``-1`` and sets ``*p`` to *NULL*, and
+   ``*p`` is destroyed.  On failure, returns ``-1`` and sets ``*p`` to ``NULL``, and
    raises :exc:`MemoryError` or :exc:`SystemError`.
 
 
@@ -147,20 +147,20 @@ type.
 
    Contains the meta information of a struct sequence type to create.
 
-   +-------------------+------------------------------+------------------------------------+
-   | Field             | C Type                       | Meaning                            |
-   +===================+==============================+====================================+
-   | ``name``          | ``const char *``             | name of the struct sequence type   |
-   +-------------------+------------------------------+------------------------------------+
-   | ``doc``           | ``const char *``             | pointer to docstring for the type  |
-   |                   |                              | or NULL to omit                    |
-   +-------------------+------------------------------+------------------------------------+
-   | ``fields``        | ``PyStructSequence_Field *`` | pointer to *NULL*-terminated array |
-   |                   |                              | with field names of the new type   |
-   +-------------------+------------------------------+------------------------------------+
-   | ``n_in_sequence`` | ``int``                      | number of fields visible to the    |
-   |                   |                              | Python side (if used as tuple)     |
-   +-------------------+------------------------------+------------------------------------+
+   +-------------------+------------------------------+--------------------------------------+
+   | Field             | C Type                       | Meaning                              |
+   +===================+==============================+======================================+
+   | ``name``          | ``const char *``             | name of the struct sequence type     |
+   +-------------------+------------------------------+--------------------------------------+
+   | ``doc``           | ``const char *``             | pointer to docstring for the type    |
+   |                   |                              | or ``NULL`` to omit                  |
+   +-------------------+------------------------------+--------------------------------------+
+   | ``fields``        | ``PyStructSequence_Field *`` | pointer to ``NULL``-terminated array |
+   |                   |                              | with field names of the new type     |
+   +-------------------+------------------------------+--------------------------------------+
+   | ``n_in_sequence`` | ``int``                      | number of fields visible to the      |
+   |                   |                              | Python side (if used as tuple)       |
+   +-------------------+------------------------------+--------------------------------------+
 
 
 .. c:type:: PyStructSequence_Field
@@ -170,16 +170,16 @@ type.
    :attr:`fields` array of the :c:type:`PyStructSequence_Desc` determines which
    field of the struct sequence is described.
 
-   +-----------+------------------+--------------------------------------+
-   | Field     | C Type           | Meaning                              |
-   +===========+==================+======================================+
-   | ``name``  | ``const char *`` | name for the field or *NULL* to end  |
-   |           |                  | the list of named fields, set to     |
-   |           |                  | PyStructSequence_UnnamedField to     |
-   |           |                  | leave unnamed                        |
-   +-----------+------------------+--------------------------------------+
-   | ``doc``   | ``const char *`` | field docstring or *NULL* to omit    |
-   +-----------+------------------+--------------------------------------+
+   +-----------+------------------+-----------------------------------------+
+   | Field     | C Type           | Meaning                                 |
+   +===========+==================+=========================================+
+   | ``name``  | ``const char *`` | name for the field or ``NULL`` to end   |
+   |           |                  | the list of named fields, set to        |
+   |           |                  | :c:data:`PyStructSequence_UnnamedField` |
+   |           |                  | to leave unnamed                        |
+   +-----------+------------------+-----------------------------------------+
+   | ``doc``   | ``const char *`` | field docstring or ``NULL`` to omit     |
+   +-----------+------------------+-----------------------------------------+
 
 
 .. c:var:: char* PyStructSequence_UnnamedField
