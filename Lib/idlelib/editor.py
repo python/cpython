@@ -241,6 +241,12 @@ class EditorWindow(object):
         self.indentwidth = self.tabwidth
         self.set_notabs_indentwidth()
 
+        # Store the current value of the insertofftime now so we can restore
+        # it if needed.
+        if not hasattr(idleConf, 'blink_off_time'):
+            idleConf.blink_off_time = self.text['insertofftime']
+        self.update_cursor_blink()
+
         # When searching backwards for a reliable place to begin parsing,
         # first start num_context_lines[0] lines back, then
         # num_context_lines[1] lines back if that didn't work, and so on.
@@ -802,6 +808,16 @@ class EditorWindow(object):
         else:
             text.mark_set("insert", pos + "+1c")
         text.see(pos)
+
+    def update_cursor_blink(self):
+        "Update the cursor blink configuration."
+        cursorblink = idleConf.GetOption(
+                'main', 'EditorWindow', 'cursor-blink', type='bool')
+        if not cursorblink:
+            self.text['insertofftime'] = 0
+        else:
+            # Restore the original value
+            self.text['insertofftime'] = idleConf.blink_off_time
 
     def ResetFont(self):
         "Update the text widgets' font if it is changed"
