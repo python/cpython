@@ -3478,10 +3478,10 @@ written in Python, such as a mail server's external command delivery program.
    parent.  If an error occurs :exc:`OSError` is raised.
 
    Note that some platforms including FreeBSD <= 6.3 and Cygwin have
-   known issues when using fork() from a thread.
+   known issues when using ``fork()`` from a thread.
 
    .. versionchanged:: 3.8
-      Calling fork() in a subinterpreter is no longer supported
+      Calling ``fork()`` in a subinterpreter is no longer supported
       (:exc:`RuntimeError` is raised).
 
    .. warning::
