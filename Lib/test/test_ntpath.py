@@ -286,14 +286,16 @@ class TestNtpath(NtpathTestCase):
                                  ABSTFN + r"\missing")
             self.assertPathEqual(ntpath.realpath(r"broken\foo"),
                                  ABSTFN + r"\missing\foo")
+            # bpo-38453: We no longer recursively resolve segments of relative
+            # symlinks that the OS cannot resolve.
             self.assertPathEqual(ntpath.realpath(r"broken1"),
-                                 ABSTFN + r"\missing\bar")
+                                 ABSTFN + r"\broken\bar")
             self.assertPathEqual(ntpath.realpath(r"broken1\baz"),
-                                 ABSTFN + r"\missing\bar\baz")
+                                 ABSTFN + r"\broken\bar\baz")
             self.assertPathEqual(ntpath.realpath("broken2"),
-                                 ABSTFN + r"\missing")
+                                 ABSTFN + r"\self\self\missing")
             self.assertPathEqual(ntpath.realpath("broken3"),
-                                 ABSTFN + r"\missing")
+                                 ABSTFN + r"\subdir\parent\subdir\parent\missing")
             self.assertPathEqual(ntpath.realpath("broken4"),
                                  ABSTFN + r"\missing")
             self.assertPathEqual(ntpath.realpath("broken5"),
@@ -304,13 +306,13 @@ class TestNtpath(NtpathTestCase):
             self.assertPathEqual(ntpath.realpath(rb"broken\foo"),
                                  os.fsencode(ABSTFN + r"\missing\foo"))
             self.assertPathEqual(ntpath.realpath(rb"broken1"),
-                                 os.fsencode(ABSTFN + r"\missing\bar"))
+                                 os.fsencode(ABSTFN + r"\broken\bar"))
             self.assertPathEqual(ntpath.realpath(rb"broken1\baz"),
-                                 os.fsencode(ABSTFN + r"\missing\bar\baz"))
+                                 os.fsencode(ABSTFN + r"\broken\bar\baz"))
             self.assertPathEqual(ntpath.realpath(b"broken2"),
-                                 os.fsencode(ABSTFN + r"\missing"))
+                                 os.fsencode(ABSTFN + r"\self\self\missing"))
             self.assertPathEqual(ntpath.realpath(rb"broken3"),
-                                 os.fsencode(ABSTFN + r"\missing"))
+                                 os.fsencode(ABSTFN + r"\subdir\parent\subdir\parent\missing"))
             self.assertPathEqual(ntpath.realpath(b"broken4"),
                                  os.fsencode(ABSTFN + r"\missing"))
             self.assertPathEqual(ntpath.realpath(b"broken5"),

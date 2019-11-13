@@ -560,6 +560,12 @@ else:
                 # Links may be relative, so resolve them against their
                 # own location
                 if not isabs(path):
+                    # If it's something other than a symlink, we don't know
+                    # what it's actually going to be resolved against, so
+                    # just return the old path.
+                    if not islink(old_path):
+                        path = old_path
+                        break
                     path = normpath(join(dirname(old_path), path))
             except OSError as ex:
                 if ex.winerror in allowed_winerror:
@@ -598,9 +604,14 @@ else:
                 if ex.winerror not in allowed_winerror:
                     raise
                 try:
-                    path = _readlink_deep(path)
+                    # The OS could not resolve this path fully, so we attempt
+                    # to follow the link ourselves. If we succeed, join the tail
+                    # and return.
+                    new_path = _readlink_deep(path)
+                    if new_path != path:
+                        return join(new_path, tail) if tail else new_path
                 except OSError:
-                    # If we fail to readlink(), so be it
+                    # If we fail to readlink(), let's keep traversing
                     pass
                 path, name = split(path)
                 # TODO (bpo-38186): Request the real file name from the directory
