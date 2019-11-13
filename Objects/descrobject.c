@@ -352,6 +352,7 @@ static PyObject *
 method_vectorcall_METH_METHOD(
     PyObject *func, PyObject *const *args, size_t nargsf, PyObject *kwnames)
 {
+    PyThreadState *tstate = _PyThreadState_GET();
     Py_ssize_t nargs = PyVectorcall_NARGS(nargsf);
     if (method_check_args(func, args, nargs, NULL)) {
         return NULL;
@@ -370,7 +371,7 @@ method_vectorcall_METH_METHOD(
         }
     }
     PyCMethod meth = (PyCFunctionWithKeywords)
-                                   method_enter_call(func);
+                                   method_enter_call(tstate, func);
     if (meth == NULL) {
         goto exit;
     }
