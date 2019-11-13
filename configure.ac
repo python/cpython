@@ -5562,7 +5562,22 @@ LIBS="$save_LIBS"
 ac_includes_default="$save_includes_default"
 
 # Check for usable OpenSSL
-AX_CHECK_OPENSSL([have_openssl=yes],[have_openssl=no])
+
+# if --with-openssl-static specified by user, set WITH_OPENSSL_STATIC,
+# OPENSSL_STATIC_ROOT and OPENSSL_INCLUDES
+WITH_OPENSSL_STATIC=false
+AX_CHECK_OPENSSL_STATIC()
+if $WITH_OPENSSL_STATIC; then
+    have_openssl=yes  # AX_CHECK_OPENSSL_STATIC errors out if ssl library not found
+    OPENSSL_LIBS=""
+    OPENSSL_LDFLAGS=""
+    AC_SUBST([OPENSSL_LIBS])
+    AC_SUBST([OPENSSL_LDFLAGS])
+else
+    AX_CHECK_OPENSSL([have_openssl=yes],[have_openssl=no])
+    OPENSSL_STATIC_ROOT=""
+    AC_SUBST([OPENSSL_STATIC_ROOT])
+fi
 
 if test "$have_openssl" = yes; then
     AC_MSG_CHECKING([for X509_VERIFY_PARAM_set1_host in libssl])
@@ -5570,8 +5585,13 @@ if test "$have_openssl" = yes; then
     save_LIBS="$LIBS"
     save_LDFLAGS="$LDFLAGS"
     save_CPPFLAGS="$CPPFLAGS"
-    LDFLAGS="$LDFLAGS $OPENSSL_LDFLAGS"
-    LIBS="$OPENSSL_LIBS $LIBS"
+
+    if $WITH_OPENSSL_STATIC; then
+        LIBS="$OPENSSL_STATIC_ROOT/libssl.a $OPENSSL_STATIC_ROOT/libcrypto.a $LIBS"
+    else
+        LDFLAGS="$LDFLAGS $OPENSSL_LDFLAGS"
+        LIBS="$OPENSSL_LIBS $LIBS"
+    fi
     CPPFLAGS="$OPENSSL_INCLUDES $CPPFLAGS"
 
     AC_LINK_IFELSE([AC_LANG_PROGRAM([

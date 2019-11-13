@@ -195,6 +195,7 @@ ENSUREPIP=      @ENSUREPIP@
 OPENSSL_INCLUDES=@OPENSSL_INCLUDES@
 OPENSSL_LIBS=@OPENSSL_LIBS@
 OPENSSL_LDFLAGS=@OPENSSL_LDFLAGS@
+OPENSSL_STATIC_ROOT=@OPENSSL_STATIC_ROOT@
 
 # Modes for directories, executables and data files created by the
 # install process.  Default to user-only-writable for all file types.

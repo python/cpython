@@ -2205,7 +2205,8 @@ class PyBuildExt(build_ext):
         openssl_includes = split_var('OPENSSL_INCLUDES', '-I')
         openssl_libdirs = split_var('OPENSSL_LDFLAGS', '-L')
         openssl_libs = split_var('OPENSSL_LIBS', '-l')
-        if not openssl_libs:
+        openssl_static_root = config_vars.get('OPENSSL_STATIC_ROOT')
+        if not openssl_libs and not openssl_static_root:
             # libssl and libcrypto not found
             self.missing.extend(['_ssl', '_hashlib'])
             return None, None
@@ -2227,21 +2228,46 @@ class PyBuildExt(build_ext):
             ssl_incs.extend(krb5_h)
 
         if config_vars.get("HAVE_X509_VERIFY_PARAM_SET1_HOST"):
-            self.add(Extension(
-                '_ssl', ['_ssl.c'],
-                include_dirs=openssl_includes,
-                library_dirs=openssl_libdirs,
-                libraries=openssl_libs,
-                depends=['socketmodule.h', '_ssl/debughelpers.c'])
-            )
+            if openssl_static_root:
+                self.add(Extension(
+                    '_ssl', ['_ssl.c'],
+                    include_dirs=openssl_includes,
+                    extra_objects = [
+                        os.path.join(openssl_static_root, "libssl.a"),
+                        os.path.join(openssl_static_root, "libcrypto.a"),
+                    ],
+                    depends=['socketmodule.h', '_ssl/debughelpers.c']
+                ))
+            else:
+                self.add(Extension(
+                    '_ssl', ['_ssl.c'],
+                    include_dirs=openssl_includes,
+                    library_dirs=openssl_libdirs,
+                    libraries=openssl_libs,
+                    depends=['socketmodule.h', '_ssl/debughelpers.c']
+                ))
         else:
             self.missing.append('_ssl')
 
-        self.add(Extension('_hashlib', ['_hashopenssl.c'],
-                           depends=['hashlib.h'],
-                           include_dirs=openssl_includes,
-                           library_dirs=openssl_libdirs,
-                           libraries=openssl_libs))
+        if openssl_static_root:
+            self.add(Extension(
+                '_hashlib', ['_hashopenssl.c'],
+                depends=['hashlib.h'],
+                include_dirs=openssl_includes,
+                extra_objects = [
+                    os.path.join(openssl_static_root, "libssl.a"),
+                    os.path.join(openssl_static_root, "libcrypto.a"),
+                ],
+                libraries=openssl_libs,
+            ))
+        else:
+            self.add(Extension(
+                '_hashlib', ['_hashopenssl.c'],
+                depends=['hashlib.h'],
+                include_dirs=openssl_includes,
+                library_dirs=openssl_libdirs,
+                libraries=openssl_libs,
+            ))
 
     def detect_hash_builtins(self):
         # We always compile these even when OpenSSL is available (issue #14693).
