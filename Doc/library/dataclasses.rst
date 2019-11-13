@@ -153,7 +153,7 @@ Module-level decorators, classes, and functions
      method of the superclass will be used (if the superclass is
      :class:`object`, this means it will fall back to id-based hashing).
 
-   - ``frozen``: If true (the default is False), assigning to fields will
+   - ``frozen``: If true (the default is ``False``), assigning to fields will
      generate an exception.  This emulates read-only frozen instances.  If
      :meth:`__setattr__` or :meth:`__delattr__` is defined in the class, then
      :exc:`TypeError` is raised.  See the discussion below.
@@ -386,8 +386,8 @@ Module-level decorators, classes, and functions
 
 .. function:: is_dataclass(class_or_instance)
 
-   Returns True if its parameter is a dataclass or an instance of one,
-   otherwise returns False.
+   Return ``True`` if its parameter is a dataclass or an instance of one,
+   otherwise return ``False``.
 
    If you need to know if a class is an instance of a dataclass (and
    not a dataclass itself), then add a further check for ``not

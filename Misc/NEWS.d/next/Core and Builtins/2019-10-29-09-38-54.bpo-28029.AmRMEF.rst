@@ -1,0 +1,3 @@
+``"".replace("", s, n)`` now returns ``s`` instead of an empty string for
+all non-zero ``n``.  There are similar changes for :class:`bytes` and
+:class:`bytearray` objects.

@@ -33,18 +33,21 @@ always available.
    tuple of arguments. Native hooks added by :c:func:`PySys_AddAuditHook` are
    called first, followed by hooks added in the current interpreter.
 
-   Calling this function will trigger an event for all existing hooks, and if
-   any raise an exception derived from :class:`Exception`, the add will be
-   silently ignored. As a result, callers cannot assume that their hook has been
-   added unless they control all existing hooks.
+   .. audit-event:: sys.addaudithook "" sys.addaudithook
+
+      Raises a auditing event ``sys.addaudithook`` with no arguments. If any
+      existing hooks raise an exception derived from :class:`Exception`, the
+      new hook will not be added and the exception suppressed. As a result,
+      callers cannot assume that their hook has been added unless they control
+      all existing hooks.
 
    .. versionadded:: 3.8
 
    .. impl-detail::
 
-      When tracing is enabled, Python hooks are only traced if the callable has
-      a ``__cantrace__`` member that is set to a true value. Otherwise, trace
-      functions will not see the hook.
+      When tracing is enabled (see :func:`settrace`), Python hooks are only
+      traced if the callable has a ``__cantrace__`` member that is set to a
+      true value. Otherwise, trace functions will skip the hook.
 
 
 .. data:: argv
@@ -87,7 +90,7 @@ always available.
    native function is preferred when possible.
 
    See the :ref:`audit events table <audit-events>` for all events raised by
-   ``CPython``.
+   CPython.
 
    .. versionadded:: 3.8
 
@@ -1411,7 +1414,7 @@ always available.
      On Windows, UTF-8 is used for the console device.  Non-character
      devices such as disk files and pipes use the system locale
      encoding (i.e. the ANSI codepage).  Non-console character
-     devices such as NUL (i.e. where isatty() returns True) use the
+     devices such as NUL (i.e. where ``isatty()`` returns ``True``) use the
      value of the console input and output codepages at startup,
      respectively for stdin and stdout/stderr. This defaults to the
      system locale encoding if the process is not initially attached

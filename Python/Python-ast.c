@@ -1244,7 +1244,6 @@ static PyType_Slot AST_type_slots[] = {
     {Py_tp_init, ast_type_init},
     {Py_tp_alloc, PyType_GenericAlloc},
     {Py_tp_new, PyType_GenericNew},
-    {Py_tp_free, PyType_GenericNew},
     {Py_tp_free, PyObject_GC_Del},
     {0, 0},
 };

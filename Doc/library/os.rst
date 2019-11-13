@@ -148,7 +148,7 @@ process and user.
    versa).
 
    :data:`environb` is only available if :data:`supports_bytes_environ` is
-   True.
+   ``True``.
 
    .. versionadded:: 3.2
 
@@ -236,7 +236,7 @@ process and user.
    *default* if it doesn't. *key*, *default* and the result are bytes.
 
    :func:`getenvb` is only available if :data:`supports_bytes_environ`
-   is True.
+   is ``True``.
 
    .. availability:: most flavors of Unix.
 
@@ -3539,6 +3539,19 @@ written in Python, such as a mail server's external command delivery program.
    .. availability:: Unix.
 
 
+.. function:: pidfd_open(pid, flags=0)
+
+   Return a file descriptor referring to the process *pid*.  This descriptor can
+   be used to perform process management without races and signals.  The *flags*
+   argument is provided for future extensions; no flag values are currently
+   defined.
+
+   See the :manpage:`pidfd_open(2)` man page for more details.
+
+   .. availability:: Linux 5.3+
+   .. versionadded:: 3.9
+
+
 .. function:: plock(op)
 
    Lock program segments into memory.  The value of *op* (defined in
@@ -3908,7 +3921,8 @@ written in Python, such as a mail server's external command delivery program.
 .. function:: waitid(idtype, id, options)
 
    Wait for the completion of one or more child processes.
-   *idtype* can be :data:`P_PID`, :data:`P_PGID` or :data:`P_ALL`.
+   *idtype* can be :data:`P_PID`, :data:`P_PGID`, :data:`P_ALL`, or
+   :data:`P_PIDFD` on Linux.
    *id* specifies the pid to wait on.
    *options* is constructed from the ORing of one or more of :data:`WEXITED`,
    :data:`WSTOPPED` or :data:`WCONTINUED` and additionally may be ORed with
@@ -3933,6 +3947,15 @@ written in Python, such as a mail server's external command delivery program.
 
    .. versionadded:: 3.3
 
+.. data:: P_PIDFD
+
+   This is a Linux-specific *idtype* that indicates that *id* is a file
+   descriptor that refers to a process.
+
+   .. availability:: Linux 5.4+
+
+   .. versionadded:: 3.9
+
 .. data:: WEXITED
           WSTOPPED
           WNOWAIT
@@ -3946,8 +3969,10 @@ written in Python, such as a mail server's external command delivery program.
 
 
 .. data:: CLD_EXITED
+          CLD_KILLED
           CLD_DUMPED
           CLD_TRAPPED
+          CLD_STOPPED
           CLD_CONTINUED
 
    These are the possible values for :attr:`si_code` in the result returned by
@@ -3956,6 +3981,9 @@ written in Python, such as a mail server's external command delivery program.
    .. availability:: Unix.
 
    .. versionadded:: 3.3
+
+   .. versionchanged:: 3.9
+      Added :data:`CLD_KILLED` and :data:`CLD_STOPPED` values.
 
 
 .. function:: waitpid(pid, options)

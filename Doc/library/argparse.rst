@@ -449,7 +449,7 @@ default values to each of the argument help messages::
    >>> parser.add_argument('--foo', type=int, default=42, help='FOO!')
    >>> parser.add_argument('bar', nargs='*', default=[1, 2, 3], help='BAR!')
    >>> parser.print_help()
-   usage: PROG [-h] [--foo FOO] [bar [bar ...]]
+   usage: PROG [-h] [--foo FOO] [bar ...]
 
    positional arguments:
     bar         BAR! (default: [1, 2, 3])
@@ -837,6 +837,8 @@ how the command-line arguments should be handled. The supplied actions are:
     >>> parser.add_argument("--foo", action="extend", nargs="+", type=str)
     >>> parser.parse_args(["--foo", "f1", "--foo", "f2", "f3", "f4"])
     Namespace(foo=['f1', 'f2', 'f3', 'f4'])
+
+  .. versionadded:: 3.8
 
 You may also specify an arbitrary action by passing an Action subclass or
 other object that implements the same interface. The ``BooleanOptionalAction``

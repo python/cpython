@@ -1,0 +1,1 @@
+Simplify the :mod:`argparse` usage message for ``nargs="*"``.

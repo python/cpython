@@ -1,0 +1,2 @@
+Restores the internal C headers that were missing from the nuget.org and
+Microsoft Store packages.
