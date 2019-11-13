@@ -682,7 +682,7 @@ Before Python loads cached bytecode from ``.pyc`` file, it checks whether the
 cache is up-to-date with the source ``.py`` file. By default, Python does this
 by storing the source's last-modified timestamp and size in the cache file when
 writing it. At runtime, the import system then validates the cache file by
-checking the stored metadata in the cache file against at source's
+checking the stored metadata in the cache file against the source's
 metadata.
 
 Python also supports "hash-based" cache files, which store a hash of the source
@@ -849,7 +849,7 @@ In order to support imports of modules and initialized packages and also to
 contribute portions to namespace packages, path entry finders must implement
 the :meth:`~importlib.abc.PathEntryFinder.find_spec` method.
 
-:meth:`~importlib.abc.PathEntryFinder.find_spec` takes two argument, the
+:meth:`~importlib.abc.PathEntryFinder.find_spec` takes two arguments: the
 fully qualified name of the module being imported, and the (optional) target
 module.  ``find_spec()`` returns a fully populated spec for the module.
 This spec will always have "loader" set (with one exception).
@@ -913,7 +913,7 @@ the builtin :func:`__import__` function may be sufficient. This technique
 may also be employed at the module level to only alter the behaviour of
 import statements within that module.
 
-To selectively prevent import of some modules from a hook early on the
+To selectively prevent the import of some modules from a hook early on the
 meta path (rather than disabling the standard import system entirely),
 it is sufficient to raise :exc:`ModuleNotFoundError` directly from
 :meth:`~importlib.abc.MetaPathFinder.find_spec` instead of returning
