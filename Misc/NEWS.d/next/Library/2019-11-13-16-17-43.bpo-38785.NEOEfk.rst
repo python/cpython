@@ -1,0 +1,2 @@
+Prevent asyncio from crashing if parent ``__init__`` is not called from a
+constructor of object derived from ``asyncio.Future``.
