@@ -1136,7 +1136,6 @@ class GenPageTest(unittest.TestCase):
         self.assertEqual(mainpage, {'EditorWindow': {'width': '11'}})
 
     def test_cursor_blink(self):
-        raise Exception()
         self.page.cursor_blink_bool.select()
         self.page.cursor_blink_bool.toggle()
         self.assertEqual(mainpage, {'EditorWindow': {'cursor-blink': 0}})
