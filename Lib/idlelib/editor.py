@@ -245,7 +245,7 @@ class EditorWindow(object):
         # it if needed.
         if not hasattr(idleConf, 'blink_off_time'):
             idleConf.blink_off_time = self.text['insertofftime']
-        self.UpdateCursorBlink()
+        self.update_cursor_blink()
 
         # When searching backwards for a reliable place to begin parsing,
         # first start num_context_lines[0] lines back, then
@@ -809,7 +809,7 @@ class EditorWindow(object):
             text.mark_set("insert", pos + "+1c")
         text.see(pos)
 
-    def UpdateCursorBlink(self):
+    def update_cursor_blink(self):
         "Update the cursor blink configuration."
         cursorblink = idleConf.GetOption(
                 'main', 'EditorWindow', 'cursor-blink', type='bool')

@@ -236,7 +236,7 @@ class ConfigDialog(Toplevel):
             instance.set_notabs_indentwidth()
             instance.ApplyKeybindings()
             instance.reset_help_menu_entries()
-            instance.UpdateCursorBlink()
+            instance.update_cursor_blink()
         for klass in reloadables:
             klass.reload()
 

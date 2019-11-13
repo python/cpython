@@ -1136,9 +1136,8 @@ class GenPageTest(unittest.TestCase):
         self.assertEqual(mainpage, {'EditorWindow': {'width': '11'}})
 
     def test_cursor_blink(self):
-        self.page.cursor_blink_bool.select()
-        self.page.cursor_blink_bool.toggle()
-        self.assertEqual(mainpage, {'EditorWindow': {'cursor-blink': 0}})
+        self.page.cursor_blink_bool.invoke()
+        self.assertEqual(mainpage, {'EditorWindow': {'cursor-blink': 'False'}})
 
     def test_autocomplete_wait(self):
         self.page.auto_wait_int.delete(0, 'end')
