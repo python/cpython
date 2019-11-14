@@ -1108,6 +1108,7 @@ class PyShell(OutputWindow):
             self.resetoutput()
             self.interp.write("KeyboardInterrupt\n")
             self.showprompt()
+            self.ctip.refresh_calltip_event(None)
             return "break"
         self.endoffile = 0
         self.canceled = 1
