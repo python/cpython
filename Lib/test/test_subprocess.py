@@ -1360,6 +1360,27 @@ class ProcessTestCase(BaseTestCase):
         self.addCleanup(p.stdin.close)
         p.communicate(b"x" * 2**20)
 
+    def test_string_representation(self):
+        """Test stirng representation Popen object without returncode."""
+        code = 'import sys; sys.exit(1)'
+        cmd = [sys.executable, '-c', code]
+        with subprocess.Popen(cmd) as proc:
+            args = ('%s...' % ' '.join(cmd)[:30]).strip()
+            result = "<subprocess.Popen: pid:'%d' args:'%s'>" % (
+                proc.pid, args)
+            self.assertEqual(proc.__repr__(), result)
+
+    def test_string_representation_with_retcode(self):
+        """Test stirng representation Popen object with returncode."""
+        code = 'import sys; sys.exit(1)'
+        cmd = [sys.executable, '-c', code]
+        proc = subprocess.Popen(cmd)
+        proc.wait()
+        args = ('%s...' % ' '.join(cmd)[:30]).strip()
+        result = "<subprocess.Popen: pid:'%d' args:'%s' retcode:'%d'>" % (
+            proc.pid, args, proc.returncode)
+        self.assertEqual(proc.__repr__(), result)
+
     def test_communicate_epipe_only_stdin(self):
         # Issue 10963: communicate() should hide EPIPE
         p = subprocess.Popen(ZERO_RETURN_CMD,

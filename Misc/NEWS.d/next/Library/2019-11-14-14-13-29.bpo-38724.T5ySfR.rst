@@ -1,0 +1,1 @@
+String representation of an object ``subprocess.Popen.__repr__``

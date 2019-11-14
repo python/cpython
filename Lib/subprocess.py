@@ -979,8 +979,19 @@ class Popen(object):
             raise
 
     def __repr__(self):
-        return '<%s.%s: pid-%s>' % (
-            self.__module__, self.__class__.__name__, self.pid)
+        max_args_length = 30
+        args = ' '.join(self.args)
+
+        if len(args) > max_args_length:
+            args = ('%s...' % args[:max_args_length]).strip()
+
+        format_str = "%s.%s: pid:'%s' args:'%s'" % (
+            self.__module__, self.__class__.__name__, self.pid, args)
+
+        if self.returncode:
+            format_str += " retcode:'%d'" % self.returncode
+
+        return '<%s>' % format_str
 
     @property
     def universal_newlines(self):
