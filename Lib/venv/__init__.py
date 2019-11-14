@@ -448,16 +448,16 @@ def get_default_args(venv_ini_path=VENV_INI_DEFAULT_PATH):
 
     cp = configparser.ConfigParser()
     cp.read(venv_ini_path)
-    if not cp.has_section("venv"):
+    if not cp.has_section("DEFAULT"):
         return defaults
 
     read_kwargs = {}
-    for name, value in cp.items("venv"):
+    for name, value in cp.items("DEFAULT"):
         if name not in Defaults._fields:
             continue
 
         if name in bool_keys:
-            read_kwargs[name] = cp["venv"].getboolean(name)
+            read_kwargs[name] = cp["DEFAULT"].getboolean(name)
         else:
             read_kwargs[name] = value
 

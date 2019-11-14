@@ -381,10 +381,12 @@ class BasicTest(BaseTest):
         self.assertEqual(err, "".encode())
 
     def test_get_default_args_errors(self):
-        bad_bool = "[venv]\nupgrade_deps = Try\n"
+        bad_bool = "[DEFAULT]\nupgrade_deps = Try\n"
         bad_format_venv_ini = "|not_venv_or_ini|\nkey = value\n"
-        bad_duplicate_keys = "[venv]\nupgrade_deps = True\nupgrade_deps = True\n"
-        no_valid_options = "[venv]\nguido_retired = True\n"
+        bad_duplicate_keys = (
+            "[DEFAULT]\nupgrade_deps = True\nupgrade_deps = True\n"
+        )
+        no_valid_options = "[DEFAULT]\nguido_retired = True\n"
         defaults = venv.Defaults()
 
         with tempfile.TemporaryDirectory() as conf_dir:
@@ -413,7 +415,8 @@ class BasicTest(BaseTest):
     def test_get_default_args_success(self):
         # Add the random key to show we ignore it
         good_venv_ini = (
-            "[venv]\nprompt = CooperVenv\nrandom = None\nupgrade_deps = TrUe\n"
+            "[DEFAULT]\nprompt = CooperVenv\nrandom = None\n"
+            + "upgrade_deps = TrUe\n"
         )
 
         with tempfile.TemporaryDirectory() as conf_dir:
