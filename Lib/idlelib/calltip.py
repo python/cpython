@@ -129,47 +129,53 @@ def get_argspec(ob):
     empty line or _MAX_LINES.    For builtins, this typically includes
     the arguments in addition to the return value.
     '''
-    argspec = default = ""
-    try:
-        ob_call = ob.__call__
-    except BaseException:
-        return default
-
-    fob = ob_call if isinstance(ob_call, types.MethodType) else ob
+    argspec = ""
 
     try:
-        argspec = str(inspect.signature(fob))
-    except ValueError as err:
-        msg = str(err)
-        if msg.startswith(_invalid_method):
-            return _invalid_method
+        try:
+            ob_call = ob.__call__
+        except AttributeError:
+            return _default_callable_argspec
 
-    if '/' in argspec and len(argspec) < _MAX_COLS - len(_argument_positional):
-        # Add explanation TODO remove after 3.7, before 3.9.
-        argspec += _argument_positional
-    if isinstance(fob, type) and argspec == '()':
-        # If fob has no argument, use default callable argspec.
-        argspec = _default_callable_argspec
+        fob = ob_call if isinstance(ob_call, types.MethodType) else ob
 
-    lines = (textwrap.wrap(argspec, _MAX_COLS, subsequent_indent=_INDENT)
-             if len(argspec) > _MAX_COLS else [argspec] if argspec else [])
+        try:
+            argspec = str(inspect.signature(fob))
+        except Exception as err:
+            msg = str(err)
+            if msg.startswith(_invalid_method):
+                return _invalid_method
 
-    if isinstance(ob_call, types.MethodType):
-        doc = ob_call.__doc__
-    else:
-        doc = getattr(ob, "__doc__", "")
-    if doc:
-        for line in doc.split('\n', _MAX_LINES)[:_MAX_LINES]:
-            line = line.strip()
-            if not line:
-                break
-            if len(line) > _MAX_COLS:
-                line = line[: _MAX_COLS - 3] + '...'
-            lines.append(line)
-    argspec = '\n'.join(lines)
-    if not argspec:
-        argspec = _default_callable_argspec
-    return argspec
+        if (
+            '/' in argspec and
+            len(argspec) < _MAX_COLS - len(_argument_positional)
+        ):
+            # Add explanation TODO remove after 3.7, before 3.9.
+            argspec += _argument_positional
+        if isinstance(fob, type) and argspec == '()':
+            # If fob has no argument, use default callable argspec.
+            argspec = _default_callable_argspec
+
+        lines = (textwrap.wrap(argspec, _MAX_COLS, subsequent_indent=_INDENT)
+                 if len(argspec) > _MAX_COLS else [argspec] if argspec else [])
+
+        if isinstance(ob_call, types.MethodType):
+            doc = ob_call.__doc__
+        else:
+            doc = getattr(ob, "__doc__", "")
+        if doc:
+            for line in doc.split('\n', _MAX_LINES)[:_MAX_LINES]:
+                line = line.strip()
+                if not line:
+                    break
+                if len(line) > _MAX_COLS:
+                    line = line[: _MAX_COLS - 3] + '...'
+                lines.append(line)
+        argspec = '\n'.join(lines)
+    except Exception:
+        pass
+
+    return argspec or _default_callable_argspec
 
 
 if __name__ == '__main__':
