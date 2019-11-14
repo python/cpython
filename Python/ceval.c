@@ -722,18 +722,20 @@ PyEval_EvalCode(PyObject *co, PyObject *globals, PyObject *locals)
 /* Interpreter main loop */
 
 PyObject *
-PyEval_EvalFrame(PyFrameObject *f) {
+PyEval_EvalFrame(PyFrameObject *f)
+{
     /* This is for backward compatibility with extension modules that
        used this API; core interpreter code should call
        PyEval_EvalFrameEx() */
-    return PyEval_EvalFrameEx(f, 0);
+    PyThreadState *tstate = _PyThreadState_GET();
+    return _PyEval_EvalFrame(tstate, f, 0);
 }
 
 PyObject *
 PyEval_EvalFrameEx(PyFrameObject *f, int throwflag)
 {
-    PyInterpreterState *interp = _PyInterpreterState_GET_UNSAFE();
-    return interp->eval_frame(f, throwflag);
+    PyThreadState *tstate = _PyThreadState_GET();
+    return _PyEval_EvalFrame(tstate, f, throwflag);
 }
 
 PyObject* _Py_HOT_FUNCTION
@@ -4295,7 +4297,7 @@ _PyEval_EvalCodeWithName(PyObject *_co, PyObject *globals, PyObject *locals,
         return gen;
     }
 
-    retval = PyEval_EvalFrameEx(f,0);
+    retval = _PyEval_EvalFrame(tstate, f, 0);
 
 fail: /* Jump here from prelude on failure */
 
