@@ -1,0 +1,1 @@
+IDLE will no longer hang/freeze when calltip fails to fetch a signature.
