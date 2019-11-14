@@ -370,10 +370,10 @@ class _TestProcess(BaseTestCase):
 
         q = self.Queue(1)
         p = self.Process(target=self._test_process_mainthread_native_id, args=(q,))
-        p.daemon = True
         p.start()
 
         child_mainthread_native_id = q.get()
+        p.join()
         close_queue(q)
 
         self.assertNotEqual(current_mainthread_native_id, child_mainthread_native_id)
