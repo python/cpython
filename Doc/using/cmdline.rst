@@ -515,6 +515,12 @@ before the command-line switches other than -E or -I.  It is customary that
 command-line switches override environmental variables where there is a
 conflict.
 
+.. envvar:: PYTHONHISTFILE
+
+   If this is the name of a file, and :mod:`readline` is enabled, it will be
+   used as the history save file.  The default is :file:`~/.python_history`.
+
+
 .. envvar:: PYTHONHOME
 
    Change the location of the standard Python libraries.  By default, the

@@ -434,8 +434,11 @@ def enablerlcompleter():
             # each interpreter exit when readline was already configured
             # through a PYTHONSTARTUP hook, see:
             # http://bugs.python.org/issue5845#msg198636
-            history = os.path.join(os.path.expanduser('~'),
-                                   '.python_history')
+            history = os.environ.get('PYTHONHISTFILE')
+            if not history or not os.path.isfile(history):
+                history = os.path.join(os.path.expanduser('~'),
+                                       '.python_history')
+
             try:
                 readline.read_history_file(history)
             except OSError:
