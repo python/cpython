@@ -932,7 +932,7 @@ _PyEval_EvalFrameDefault(PyFrameObject *f, int throwflag)
     do { \
         _Py_CODEUNIT word = *next_instr; \
         opcode = _Py_OPCODE(word); \
-        if (opcode == op){ \
+        if (opcode == op) { \
             oparg = _Py_OPARG(word); \
             next_instr++; \
             goto PREDICT_ID(op); \
