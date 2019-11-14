@@ -870,9 +870,6 @@ clipboard.  Converting strings from Tcl to Python and back now never fails.
 (Many people worked on this for eight years but the problem was finally
 solved by Serhiy Storchaka in :issue:`13153`.)
 
-IDLE's auto-completion can now complete string and bytes keys of dicts.
-(Contributed by Tal Einat in :issue:`21261`.)
-
 The changes above have been backported to 3.7 maintenance releases.
 
 

@@ -1033,8 +1033,6 @@ tab of the configuration dialog.  Line numbers for an existing
 window are shown and hidden in the Options menu.
 (Contributed by Tal Einat and Saimadhav Heblikar in :issue:`17535`.)
 
-IDLE's auto-completion can now complete string and bytes keys of dicts.
-(Contributed by Tal Einat in :issue:`21261`.)
 
 importlib
 ---------
