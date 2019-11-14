@@ -1,6 +1,7 @@
 /* Type object implementation */
 
 #include "Python.h"
+#include "pycore_call.h"
 #include "pycore_object.h"
 #include "pycore_pyerrors.h"
 #include "pycore_pystate.h"
@@ -6554,19 +6555,21 @@ slot_tp_hash(PyObject *self)
 static PyObject *
 slot_tp_call(PyObject *self, PyObject *args, PyObject *kwds)
 {
+    PyThreadState *tstate = _PyThreadState_GET();
     _Py_IDENTIFIER(__call__);
     int unbound;
+
     PyObject *meth = lookup_method(self, &PyId___call__, &unbound);
-    PyObject *res;
-
-    if (meth == NULL)
+    if (meth == NULL) {
         return NULL;
+    }
 
+    PyObject *res;
     if (unbound) {
-        res = _PyObject_Call_Prepend(meth, self, args, kwds);
+        res = _PyObject_Call_Prepend(tstate, meth, self, args, kwds);
     }
     else {
-        res = PyObject_Call(meth, args, kwds);
+        res = _PyObject_Call(tstate, meth, args, kwds);
     }
 
     Py_DECREF(meth);
@@ -6688,17 +6691,16 @@ static PyObject *
 slot_tp_richcompare(PyObject *self, PyObject *other, int op)
 {
     PyThreadState *tstate = _PyThreadState_GET();
-    int unbound;
-    PyObject *func, *res;
 
-    func = lookup_maybe_method(self, &name_op[op], &unbound);
+    int unbound;
+    PyObject *func = lookup_maybe_method(self, &name_op[op], &unbound);
     if (func == NULL) {
         PyErr_Clear();
         Py_RETURN_NOTIMPLEMENTED;
     }
 
     PyObject *stack[2] = {self, other};
-    res = vectorcall_unbound(tstate, unbound, func, stack, 2);
+    PyObject *res = vectorcall_unbound(tstate, unbound, func, stack, 2);
     Py_DECREF(func);
     return res;
 }
@@ -6793,18 +6795,21 @@ slot_tp_descr_set(PyObject *self, PyObject *target, PyObject *value)
 static int
 slot_tp_init(PyObject *self, PyObject *args, PyObject *kwds)
 {
+    PyThreadState *tstate = _PyThreadState_GET();
+
     _Py_IDENTIFIER(__init__);
     int unbound;
     PyObject *meth = lookup_method(self, &PyId___init__, &unbound);
-    PyObject *res;
-
-    if (meth == NULL)
+    if (meth == NULL) {
         return -1;
+    }
+
+    PyObject *res;
     if (unbound) {
-        res = _PyObject_Call_Prepend(meth, self, args, kwds);
+        res = _PyObject_Call_Prepend(tstate, meth, self, args, kwds);
     }
     else {
-        res = PyObject_Call(meth, args, kwds);
+        res = _PyObject_Call(tstate, meth, args, kwds);
     }
     Py_DECREF(meth);
     if (res == NULL)
@@ -6823,6 +6828,7 @@ slot_tp_init(PyObject *self, PyObject *args, PyObject *kwds)
 static PyObject *
 slot_tp_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 {
+    PyThreadState *tstate = _PyThreadState_GET();
     PyObject *func, *result;
 
     func = _PyObject_GetAttrId((PyObject *)type, &PyId___new__);
@@ -6830,7 +6836,7 @@ slot_tp_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
         return NULL;
     }
 
-    result = _PyObject_Call_Prepend(func, (PyObject *)type, args, kwds);
+    result = _PyObject_Call_Prepend(tstate, func, (PyObject *)type, args, kwds);
     Py_DECREF(func);
     return result;
 }
