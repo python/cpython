@@ -1,4 +1,5 @@
 #include "Python.h"
+#include "pycore_ceval.h"   /* _PyEval_EvalFrame() */
 #include "pycore_object.h"
 #include "pycore_pyerrors.h"
 #include "pycore_pystate.h"
@@ -303,7 +304,7 @@ function_code_fastcall(PyCodeObject *co, PyObject *const *args, Py_ssize_t nargs
         Py_INCREF(*args);
         fastlocals[i] = *args++;
     }
-    PyObject *result = PyEval_EvalFrameEx(f, 0);
+    PyObject *result = _PyEval_EvalFrame(tstate, f, 0);
 
     if (Py_REFCNT(f) > 1) {
         Py_DECREF(f);
