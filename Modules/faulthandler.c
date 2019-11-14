@@ -19,8 +19,6 @@
 /* Allocate at maximum 100 MiB of the stack to raise the stack overflow */
 #define STACK_OVERFLOW_MAX_SIZE (100 * 1024 * 1024)
 
-#define FAULTHANDLER_LATER
-
 #ifndef MS_WINDOWS
    /* register() is useless on Windows, because only SIGSEGV, SIGABRT and
       SIGILL can be handled by the process, and these signals can only be used
@@ -60,7 +58,6 @@ static struct {
 #endif
 } fatal_error = {0, NULL, -1, 0};
 
-#ifdef FAULTHANDLER_LATER
 static struct {
     PyObject *file;
     int fd;
@@ -77,7 +74,6 @@ static struct {
     /* released by child thread when joined */
     PyThread_type_lock running;
 } thread;
-#endif
 
 #ifdef FAULTHANDLER_USER
 typedef struct {
@@ -589,8 +585,6 @@ faulthandler_is_enabled(PyObject *self, PyObject *Py_UNUSED(ignored))
     return PyBool_FromLong(fatal_error.enabled);
 }
 
-#ifdef FAULTHANDLER_LATER
-
 static void
 faulthandler_thread(void *unused)
 {
@@ -790,7 +784,6 @@ faulthandler_cancel_dump_traceback_later_py(PyObject *self,
     cancel_dump_traceback_later();
     Py_RETURN_NONE;
 }
-#endif  /* FAULTHANDLER_LATER */
 
 
 #ifdef FAULTHANDLER_USER
@@ -1230,9 +1223,7 @@ faulthandler_stack_overflow(PyObject *self, PyObject *Py_UNUSED(ignored))
 static int
 faulthandler_traverse(PyObject *module, visitproc visit, void *arg)
 {
-#ifdef FAULTHANDLER_LATER
     Py_VISIT(thread.file);
-#endif
 #ifdef FAULTHANDLER_USER
     if (user_signals != NULL) {
         for (size_t signum=0; signum < NSIG; signum++)
@@ -1273,7 +1264,6 @@ static PyMethodDef module_methods[] = {
      PyDoc_STR("dump_traceback(file=sys.stderr, all_threads=True): "
                "dump the traceback of the current thread, or of all threads "
                "if all_threads is True, into file")},
-#ifdef FAULTHANDLER_LATER
     {"dump_traceback_later",
      (PyCFunction)(void(*)(void))faulthandler_dump_traceback_later, METH_VARARGS|METH_KEYWORDS,
      PyDoc_STR("dump_traceback_later(timeout, repeat=False, file=sys.stderrn, exit=False):\n"
@@ -1284,8 +1274,6 @@ static PyMethodDef module_methods[] = {
      faulthandler_cancel_dump_traceback_later_py, METH_NOARGS,
      PyDoc_STR("cancel_dump_traceback_later():\ncancel the previous call "
                "to dump_traceback_later().")},
-#endif
-
 #ifdef FAULTHANDLER_USER
     {"register",
      (PyCFunction)(void(*)(void))faulthandler_register_py, METH_VARARGS|METH_KEYWORDS,
@@ -1298,7 +1286,6 @@ static PyMethodDef module_methods[] = {
      PyDoc_STR("unregister(signum): unregister the handler of the signal "
                 "'signum' registered by register()")},
 #endif
-
     {"_read_null", faulthandler_read_null, METH_NOARGS,
      PyDoc_STR("_read_null(): read from NULL, raise "
                "a SIGSEGV or SIGBUS signal depending on the platform")},
@@ -1399,9 +1386,7 @@ _PyFaulthandler_Init(int enable)
     stack.ss_size = SIGSTKSZ * 2;
 #endif
 
-#ifdef FAULTHANDLER_LATER
     memset(&thread, 0, sizeof(thread));
-#endif
 
     if (enable) {
         if (faulthandler_init_enable() < 0) {
@@ -1413,7 +1398,6 @@ _PyFaulthandler_Init(int enable)
 
 void _PyFaulthandler_Fini(void)
 {
-#ifdef FAULTHANDLER_LATER
     /* later */
     if (thread.cancel_event) {
         cancel_dump_traceback_later();
@@ -1425,7 +1409,6 @@ void _PyFaulthandler_Fini(void)
         PyThread_free_lock(thread.running);
         thread.running = NULL;
     }
-#endif
 
 #ifdef FAULTHANDLER_USER
     /* user */

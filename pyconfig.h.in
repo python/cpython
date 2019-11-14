@@ -44,10 +44,6 @@
 /* Define if getpgrp() must be called as getpgrp(0). */
 #undef GETPGRP_HAVE_ARG
 
-/* Define if gettimeofday() does not have second (timezone) argument This is
-   the case on Motorola V4 (R40V4.2) */
-#undef GETTIMEOFDAY_NO_TZ
-
 /* Define to 1 if you have the `accept4' function. */
 #undef HAVE_ACCEPT4
 
@@ -341,6 +337,9 @@
 /* Define to 1 if you have the `fdopendir' function. */
 #undef HAVE_FDOPENDIR
 
+/* Define to 1 if you have the `fdwalk' function. */
+#undef HAVE_FDWALK
+
 /* Define to 1 if you have the `fexecve' function. */
 #undef HAVE_FEXECVE
 
@@ -510,9 +509,6 @@
 /* Define to 1 if you have the `getspnam' function. */
 #undef HAVE_GETSPNAM
 
-/* Define to 1 if you have the `gettimeofday' function. */
-#undef HAVE_GETTIMEOFDAY
-
 /* Define to 1 if you have the `getwd' function. */
 #undef HAVE_GETWD
 
@@ -645,6 +641,9 @@
 
 /* Define to 1 if you have the <linux/vm_sockets.h> header file. */
 #undef HAVE_LINUX_VM_SOCKETS_H
+
+/* Define to 1 if you have the <linux/wait.h> header file. */
+#undef HAVE_LINUX_WAIT_H
 
 /* Define to 1 if you have the `lockf' function. */
 #undef HAVE_LOCKF
@@ -1022,7 +1021,7 @@
 /* Define to 1 if you have the <stdlib.h> header file. */
 #undef HAVE_STDLIB_H
 
-/* Has stdatomic.h with atomic_int */
+/* Has stdatomic.h with atomic_int and atomic_uintptr_t */
 #undef HAVE_STD_ATOMIC
 
 /* Define to 1 if you have the `strdup' function. */

@@ -1709,7 +1709,7 @@ The type of results of :c:func:`PyThread_start_new_thread` and
 (Contributed by Serhiy Storchaka in :issue:`6532`.)
 
 :c:func:`PyUnicode_AsWideCharString` now raises a :exc:`ValueError` if the
-second argument is *NULL* and the :c:type:`wchar_t*` string contains null
+second argument is ``NULL`` and the :c:type:`wchar_t*` string contains null
 characters.  (Contributed by Serhiy Storchaka in :issue:`30708`.)
 
 Changes to the startup sequence and the management of dynamic memory
@@ -2402,6 +2402,10 @@ Changes in the Python API
 * :attr:`Struct.format <struct.Struct.format>` is now a :class:`str` instance
   instead of a :class:`bytes` instance.
   (Contributed by Victor Stinner in :issue:`21071`.)
+
+* :mod:`argparse` subparsers can now be made mandatory by passing ``required=True``
+  to :meth:`ArgumentParser.add_subparsers() <argparse.ArgumentParser.add_subparsers>`.
+  (Contributed by Anthony Sottile in :issue:`26510`.)
 
 * :meth:`ast.literal_eval()` is now stricter.  Addition and subtraction of
   arbitrary numbers are no longer allowed.

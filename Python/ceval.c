@@ -659,16 +659,15 @@ Py_SetRecursionLimit(int new_limit)
     _Py_CheckRecursionLimit = ceval->recursion_limit;
 }
 
-/* the macro Py_EnterRecursiveCall() only calls _Py_CheckRecursiveCall()
+/* The function _Py_EnterRecursiveCall() only calls _Py_CheckRecursiveCall()
    if the recursion_depth reaches _Py_CheckRecursionLimit.
    If USE_STACKCHECK, the macro decrements _Py_CheckRecursionLimit
    to guarantee that _Py_CheckRecursiveCall() is regularly called.
    Without USE_STACKCHECK, there is no need for this. */
 int
-_Py_CheckRecursiveCall(const char *where)
+_Py_CheckRecursiveCall(PyThreadState *tstate, const char *where)
 {
     _PyRuntimeState *runtime = &_PyRuntime;
-    PyThreadState *tstate = _PyRuntimeState_GetThreadState(runtime);
     int recursion_limit = runtime->ceval.recursion_limit;
 
 #ifdef USE_STACKCHECK
@@ -1073,8 +1072,9 @@ _PyEval_EvalFrameDefault(PyFrameObject *f, int throwflag)
 /* Start of code */
 
     /* push frame */
-    if (Py_EnterRecursiveCall(""))
+    if (_Py_EnterRecursiveCall(tstate, "")) {
         return NULL;
+    }
 
     tstate->frame = f;
 
@@ -2943,6 +2943,7 @@ main_loop:
             while (oparg--)
                 Py_DECREF(POP());
             PUSH(sum);
+            PREDICT(CALL_FUNCTION_EX);
             DISPATCH();
         }
 
@@ -3227,11 +3228,6 @@ main_loop:
         }
 
         case TARGET(SETUP_FINALLY): {
-            /* NOTE: If you add any new block-setup opcodes that
-               are not try/except/finally handlers, you may need
-               to update the PyGen_NeedsFinalizing() function.
-               */
-
             PyFrame_BlockSetup(f, SETUP_FINALLY, INSTR_OFFSET() + oparg,
                                STACK_LEVEL());
             DISPATCH();
@@ -3527,6 +3523,7 @@ main_loop:
         }
 
         case TARGET(CALL_FUNCTION_EX): {
+            PREDICTED(CALL_FUNCTION_EX);
             PyObject *func, *callargs, *kwargs = NULL, *result;
             if (oparg & 0x01) {
                 kwargs = POP();
@@ -3813,11 +3810,11 @@ exit_yielding:
 exit_eval_frame:
     if (PyDTrace_FUNCTION_RETURN_ENABLED())
         dtrace_function_return(f);
-    Py_LeaveRecursiveCall();
+    _Py_LeaveRecursiveCall(tstate);
     f->f_executing = 0;
     tstate->frame = f->f_back;
 
-    return _Py_CheckFunctionResult(NULL, retval, "PyEval_EvalFrameEx");
+    return _Py_CheckFunctionResult(tstate, NULL, retval, "PyEval_EvalFrameEx");
 }
 
 static void
@@ -5006,7 +5003,7 @@ do_call_core(PyThreadState *tstate, PyObject *func, PyObject *callargs, PyObject
     PyObject *result;
 
     if (PyCFunction_Check(func)) {
-        C_TRACE(result, PyCFunction_Call(func, callargs, kwdict));
+        C_TRACE(result, PyObject_Call(func, callargs, kwdict));
         return result;
     }
     else if (Py_TYPE(func) == &PyMethodDescr_Type) {
@@ -5238,10 +5235,16 @@ import_from(PyThreadState *tstate, PyObject *v, PyObject *name)
         PyErr_SetImportError(errmsg, pkgname, NULL);
     }
     else {
-        errmsg = PyUnicode_FromFormat(
-            "cannot import name %R from %R (%S)",
-            name, pkgname_or_unknown, pkgpath
-        );
+        _Py_IDENTIFIER(__spec__);
+        PyObject *spec = _PyObject_GetAttrId(v, &PyId___spec__);
+        const char *fmt =
+            _PyModuleSpec_IsInitializing(spec) ?
+            "cannot import name %R from partially initialized module %R "
+            "(most likely due to a circular import) (%S)" :
+            "cannot import name %R from %R (%S)";
+        Py_XDECREF(spec);
+
+        errmsg = PyUnicode_FromFormat(fmt, name, pkgname_or_unknown, pkgpath);
         /* NULL checks for errmsg and pkgname done by PyErr_SetImportError. */
         PyErr_SetImportError(errmsg, pkgname, pkgpath);
     }
@@ -5348,12 +5351,17 @@ static int
 check_args_iterable(PyThreadState *tstate, PyObject *func, PyObject *args)
 {
     if (args->ob_type->tp_iter == NULL && !PySequence_Check(args)) {
-        _PyErr_Format(tstate, PyExc_TypeError,
-                      "%.200s%.200s argument after * "
-                      "must be an iterable, not %.200s",
-                      PyEval_GetFuncName(func),
-                      PyEval_GetFuncDesc(func),
-                      args->ob_type->tp_name);
+        /* check_args_iterable() may be called with a live exception:
+         * clear it to prevent calling _PyObject_FunctionStr() with an
+         * exception set. */
+        PyErr_Clear();
+        PyObject *funcstr = _PyObject_FunctionStr(func);
+        if (funcstr != NULL) {
+            _PyErr_Format(tstate, PyExc_TypeError,
+                          "%U argument after * must be an iterable, not %.200s",
+                          funcstr, Py_TYPE(args)->tp_name);
+            Py_DECREF(funcstr);
+        }
         return -1;
     }
     return 0;
@@ -5369,24 +5377,30 @@ format_kwargs_error(PyThreadState *tstate, PyObject *func, PyObject *kwargs)
      * is not a mapping.
      */
     if (_PyErr_ExceptionMatches(tstate, PyExc_AttributeError)) {
-        _PyErr_Format(tstate, PyExc_TypeError,
-                      "%.200s%.200s argument after ** "
-                      "must be a mapping, not %.200s",
-                      PyEval_GetFuncName(func),
-                      PyEval_GetFuncDesc(func),
-                      kwargs->ob_type->tp_name);
+        PyErr_Clear();
+        PyObject *funcstr = _PyObject_FunctionStr(func);
+        if (funcstr != NULL) {
+            _PyErr_Format(
+                tstate, PyExc_TypeError,
+                "%U argument after ** must be a mapping, not %.200s",
+                funcstr, Py_TYPE(kwargs)->tp_name);
+            Py_DECREF(funcstr);
+        }
     }
     else if (_PyErr_ExceptionMatches(tstate, PyExc_KeyError)) {
         PyObject *exc, *val, *tb;
         _PyErr_Fetch(tstate, &exc, &val, &tb);
         if (val && PyTuple_Check(val) && PyTuple_GET_SIZE(val) == 1) {
-            PyObject *key = PyTuple_GET_ITEM(val, 0);
-            _PyErr_Format(tstate, PyExc_TypeError,
-                          "%.200s%.200s got multiple "
-                          "values for keyword argument '%S'",
-                          PyEval_GetFuncName(func),
-                          PyEval_GetFuncDesc(func),
-                          key);
+            PyErr_Clear();
+            PyObject *funcstr = _PyObject_FunctionStr(func);
+            if (funcstr != NULL) {
+                PyObject *key = PyTuple_GET_ITEM(val, 0);
+                _PyErr_Format(
+                    tstate, PyExc_TypeError,
+                    "%U got multiple values for keyword argument '%S'",
+                    funcstr, key);
+                Py_DECREF(funcstr);
+            }
             Py_XDECREF(exc);
             Py_XDECREF(val);
             Py_XDECREF(tb);
@@ -5628,4 +5642,22 @@ maybe_dtrace_line(PyFrameObject *frame,
         PyDTrace_LINE(co_filename, co_name, line);
     }
     *instr_prev = frame->f_lasti;
+}
+
+
+/* Implement Py_EnterRecursiveCall() and Py_LeaveRecursiveCall() as functions
+   for the limited API. */
+
+#undef Py_EnterRecursiveCall
+
+int Py_EnterRecursiveCall(const char *where)
+{
+    return _Py_EnterRecursiveCall_inline(where);
+}
+
+#undef Py_LeaveRecursiveCall
+
+void Py_LeaveRecursiveCall(void)
+{
+    _Py_LeaveRecursiveCall_inline();
 }

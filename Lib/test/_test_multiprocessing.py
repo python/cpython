@@ -66,12 +66,6 @@ try:
 except ImportError:
     msvcrt = None
 
-#
-#
-#
-
-# Timeout to wait until a process completes
-TIMEOUT = 60.0 # seconds
 
 def latin(s):
     return s.encode('latin')
@@ -86,7 +80,7 @@ def close_queue(queue):
 def join_process(process):
     # Since multiprocessing.Process has the same API than threading.Thread
     # (join() and is_alive(), the support function can be reused
-    support.join_thread(process, timeout=TIMEOUT)
+    support.join_thread(process)
 
 
 if os.name == "posix":
@@ -1128,8 +1122,7 @@ class _TestQueue(BaseTestCase):
             q = self.Queue()
             q.put(NotSerializable())
             q.put(True)
-            # bpo-30595: use a timeout of 1 second for slow buildbots
-            self.assertTrue(q.get(timeout=1.0))
+            self.assertTrue(q.get(timeout=support.LONG_TIMEOUT))
             close_queue(q)
 
         with test.support.captured_stderr():
@@ -1532,7 +1525,7 @@ class _TestCondition(BaseTestCase):
                          args=(cond, state, success, sem))
         p.daemon = True
         p.start()
-        self.assertTrue(sem.acquire(timeout=TIMEOUT))
+        self.assertTrue(sem.acquire(timeout=support.LONG_TIMEOUT))
 
         # Only increment 3 times, so state == 4 is never reached.
         for i in range(3):
@@ -2800,16 +2793,17 @@ class _TestMyManager(BaseTestCase):
         self.common(manager)
         manager.shutdown()
 
-        # If the manager process exited cleanly then the exitcode
-        # will be zero.  Otherwise (after a short timeout)
-        # terminate() is used, resulting in an exitcode of -SIGTERM.
-        self.assertEqual(manager._process.exitcode, 0)
+        # bpo-30356: BaseManager._finalize_manager() sends SIGTERM
+        # to the manager process if it takes longer than 1 second to stop,
+        # which happens on slow buildbots.
+        self.assertIn(manager._process.exitcode, (0, -signal.SIGTERM))
 
     def test_mymanager_context(self):
         with MyManager() as manager:
             self.common(manager)
         # bpo-30356: BaseManager._finalize_manager() sends SIGTERM
-        # to the manager process if it takes longer than 1 second to stop.
+        # to the manager process if it takes longer than 1 second to stop,
+        # which happens on slow buildbots.
         self.assertIn(manager._process.exitcode, (0, -signal.SIGTERM))
 
     def test_mymanager_context_prestarted(self):
@@ -3388,7 +3382,7 @@ class _TestPicklingConnections(BaseTestCase):
     @classmethod
     def tearDownClass(cls):
         from multiprocessing import resource_sharer
-        resource_sharer.stop(timeout=TIMEOUT)
+        resource_sharer.stop(timeout=support.LONG_TIMEOUT)
 
     @classmethod
     def _listener(cls, conn, families):
@@ -3719,6 +3713,35 @@ class _TestSharedMemory(BaseTestCase):
         self.assertLess(same_sms.size, 20*sms.size)  # Size was ignored.
         same_sms.close()
 
+        # Creating Shared Memory Segment with -ve size
+        with self.assertRaises(ValueError):
+            shared_memory.SharedMemory(create=True, size=-2)
+
+        # Attaching Shared Memory Segment without a name
+        with self.assertRaises(ValueError):
+            shared_memory.SharedMemory(create=False)
+
+        # Test if shared memory segment is created properly,
+        # when _make_filename returns an existing shared memory segment name
+        with unittest.mock.patch(
+            'multiprocessing.shared_memory._make_filename') as mock_make_filename:
+
+            NAME_PREFIX = shared_memory._SHM_NAME_PREFIX
+            names = ['test01_fn', 'test02_fn']
+            # Prepend NAME_PREFIX which can be '/psm_' or 'wnsm_', necessary
+            # because some POSIX compliant systems require name to start with /
+            names = [NAME_PREFIX + name for name in names]
+
+            mock_make_filename.side_effect = names
+            shm1 = shared_memory.SharedMemory(create=True, size=1)
+            self.addCleanup(shm1.unlink)
+            self.assertEqual(shm1._name, names[0])
+
+            mock_make_filename.side_effect = names
+            shm2 = shared_memory.SharedMemory(create=True, size=1)
+            self.addCleanup(shm2.unlink)
+            self.assertEqual(shm2._name, names[1])
+
         if shared_memory._USE_POSIX:
             # Posix Shared Memory can only be unlinked once.  Here we
             # test an implementation detail that is not observed across
@@ -4004,7 +4027,7 @@ class _TestSharedMemory(BaseTestCase):
             p.terminate()
             p.wait()
 
-            deadline = time.monotonic() + 60
+            deadline = time.monotonic() + support.LONG_TIMEOUT
             t = 0.1
             while time.monotonic() < deadline:
                 time.sleep(t)
@@ -5011,7 +5034,7 @@ class TestResourceTracker(unittest.TestCase):
                 p.terminate()
                 p.wait()
 
-                deadline = time.monotonic() + 60
+                deadline = time.monotonic() + support.LONG_TIMEOUT
                 while time.monotonic() < deadline:
                     time.sleep(.5)
                     try:

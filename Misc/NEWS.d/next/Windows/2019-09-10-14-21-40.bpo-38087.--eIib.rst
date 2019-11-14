@@ -1,0 +1,1 @@
+Fix case sensitivity in test_pathlib and test_ntpath.

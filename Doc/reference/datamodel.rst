@@ -1716,7 +1716,7 @@ the descriptor defines :meth:`__set__` and/or :meth:`__delete__`, it is a data
 descriptor; if it defines neither, it is a non-data descriptor.  Normally, data
 descriptors define both :meth:`__get__` and :meth:`__set__`, while non-data
 descriptors have just the :meth:`__get__` method.  Data descriptors with
-:meth:`__set__` and :meth:`__get__` defined always override a redefinition in an
+:meth:`__get__` and :meth:`__set__` (and/or :meth:`__delete__`) defined always override a redefinition in an
 instance dictionary.  In contrast, non-data descriptors can be overridden by
 instances.
 
@@ -2155,7 +2155,9 @@ through the container; for mappings, :meth:`__iter__` should be the same as
 
    Called to implement :func:`operator.length_hint`. Should return an estimated
    length for the object (which may be greater or less than the actual length).
-   The length must be an integer ``>=`` 0. This method is purely an
+   The length must be an integer ``>=`` 0. The return value may also be
+   :const:`NotImplemented`, which is treated the same as if the
+   ``__length_hint__`` method didn't exist at all. This method is purely an
    optimization and is never required for correctness.
 
    .. versionadded:: 3.4

@@ -246,6 +246,10 @@ typedef struct {
     } data;                     /* Canonical, smallest-form Unicode buffer */
 } PyUnicodeObject;
 
+PyAPI_FUNC(int) _PyUnicode_CheckConsistency(
+    PyObject *op,
+    int check_content);
+
 /* Fast access macros */
 #define PyUnicode_WSTR_LENGTH(op) \
     (PyUnicode_IS_COMPACT_ASCII(op) ?                  \

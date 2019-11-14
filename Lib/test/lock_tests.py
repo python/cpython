@@ -182,7 +182,7 @@ class BaseLockTests(BaseTestCase):
     def test_timeout(self):
         lock = self.locktype()
         # Can't set timeout if not blocking
-        self.assertRaises(ValueError, lock.acquire, 0, 1)
+        self.assertRaises(ValueError, lock.acquire, False, 1)
         # Invalid timeout values
         self.assertRaises(ValueError, lock.acquire, timeout=-100)
         self.assertRaises(OverflowError, lock.acquire, timeout=1e100)

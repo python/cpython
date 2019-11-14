@@ -224,16 +224,12 @@ PySys_Audit(const char *event, const char *argFormat, ...)
         ts->tracing++;
         ts->use_tracing = 0;
         while ((hook = PyIter_Next(hooks)) != NULL) {
+            _Py_IDENTIFIER(__cantrace__);
             PyObject *o;
-            int canTrace = -1;
-            o = PyObject_GetAttrString(hook, "__cantrace__");
+            int canTrace = _PyObject_LookupAttrId(hook, &PyId___cantrace__, &o);
             if (o) {
                 canTrace = PyObject_IsTrue(o);
                 Py_DECREF(o);
-            } else if (_PyErr_Occurred(ts) &&
-                       _PyErr_ExceptionMatches(ts, PyExc_AttributeError)) {
-                _PyErr_Clear(ts);
-                canTrace = 0;
             }
             if (canTrace < 0) {
                 break;
@@ -579,7 +575,10 @@ sys_displayhook_unencodable(PyThreadState *tstate, PyObject *outf, PyObject *o)
     if (encoded == NULL)
         goto error;
 
-    buffer = _PyObject_GetAttrId(outf, &PyId_buffer);
+    if (_PyObject_LookupAttrId(outf, &PyId_buffer, &buffer) < 0) {
+        Py_DECREF(encoded);
+        goto error;
+    }
     if (buffer) {
         result = _PyObject_CallMethodIdOneArg(buffer, &PyId_write, encoded);
         Py_DECREF(buffer);
@@ -589,7 +588,6 @@ sys_displayhook_unencodable(PyThreadState *tstate, PyObject *outf, PyObject *o)
         Py_DECREF(result);
     }
     else {
-        _PyErr_Clear(tstate);
         escaped_str = PyUnicode_FromEncodedObject(encoded,
                                                   stdout_encoding_str,
                                                   "strict");
@@ -751,7 +749,7 @@ sys_unraisablehook(PyObject *module, PyObject *unraisable)
 /*[clinic input]
 sys.exit
 
-    status: object = NULL
+    status: object = None
     /
 
 Exit the interpreter by raising SystemExit(status).
@@ -764,7 +762,7 @@ exit status will be one (i.e., failure).
 
 static PyObject *
 sys_exit_impl(PyObject *module, PyObject *status)
-/*[clinic end generated code: output=13870986c1ab2ec0 input=a737351f86685e9c]*/
+/*[clinic end generated code: output=13870986c1ab2ec0 input=b86ca9497baa94f2]*/
 {
     /* Raise SystemExit so callers may catch it or clean up. */
     PyThreadState *tstate = _PyThreadState_GET();
@@ -1162,7 +1160,7 @@ static PyTypeObject AsyncGenHooksType;
 PyDoc_STRVAR(asyncgen_hooks_doc,
 "asyncgen_hooks\n\
 \n\
-A struct sequence providing information about asynchronous\n\
+A named tuple providing information about asynchronous\n\
 generators hooks.  The attributes are read only.");
 
 static PyStructSequence_Field asyncgen_hooks_fields[] = {
@@ -1271,7 +1269,7 @@ static PyTypeObject Hash_InfoType;
 PyDoc_STRVAR(hash_info_doc,
 "hash_info\n\
 \n\
-A struct sequence providing parameters used for computing\n\
+A named tuple providing parameters used for computing\n\
 hashes. The attributes are read only.");
 
 static PyStructSequence_Field hash_info_fields[] = {
@@ -2039,13 +2037,13 @@ _clear_preinit_entries(_Py_PreInitEntry *optionlist)
 
 
 PyStatus
-_PySys_ReadPreinitWarnOptions(PyConfig *config)
+_PySys_ReadPreinitWarnOptions(PyWideStringList *options)
 {
     PyStatus status;
     _Py_PreInitEntry entry;
 
     for (entry = _preinit_warnoptions; entry != NULL; entry = entry->next) {
-        status = PyWideStringList_Append(&config->warnoptions, entry->value);
+        status = PyWideStringList_Append(options, entry->value);
         if (_PyStatus_EXCEPTION(status)) {
             return status;
         }
@@ -2295,17 +2293,17 @@ builtin_module_names -- tuple of module names built into this interpreter\n\
 copyright -- copyright notice pertaining to this interpreter\n\
 exec_prefix -- prefix used to find the machine-specific Python library\n\
 executable -- absolute path of the executable binary of the Python interpreter\n\
-float_info -- a struct sequence with information about the float implementation.\n\
+float_info -- a named tuple with information about the float implementation.\n\
 float_repr_style -- string indicating the style of repr() output for floats\n\
-hash_info -- a struct sequence with information about the hash algorithm.\n\
+hash_info -- a named tuple with information about the hash algorithm.\n\
 hexversion -- version information encoded as a single integer\n\
 implementation -- Python implementation information.\n\
-int_info -- a struct sequence with information about the int implementation.\n\
+int_info -- a named tuple with information about the int implementation.\n\
 maxsize -- the largest supported length of containers.\n\
 maxunicode -- the value of the largest Unicode code point\n\
 platform -- platform identifier\n\
 prefix -- prefix used to find the Python library\n\
-thread_info -- a struct sequence with information about the thread implementation.\n\
+thread_info -- a named tuple with information about the thread implementation.\n\
 version -- the version of this interpreter as a string\n\
 version_info -- version information as a named tuple\n\
 "

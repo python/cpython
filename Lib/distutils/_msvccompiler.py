@@ -107,7 +107,7 @@ def _find_vcvarsall(plat_spec):
 
     if best_dir:
         vcredist = os.path.join(best_dir, "..", "..", "redist", "MSVC", "**",
-            vcruntime_plat, "Microsoft.VC141.CRT", "vcruntime140.dll")
+            vcruntime_plat, "Microsoft.VC14*.CRT", "vcruntime140.dll")
         try:
             import glob
             vcruntime = glob.glob(vcredist, recursive=True)[-1]

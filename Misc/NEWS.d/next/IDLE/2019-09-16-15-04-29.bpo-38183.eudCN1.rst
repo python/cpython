@@ -1,0 +1,3 @@
+To avoid problems, test_idle ignores the user config directory.
+It no longer tries to create or access .idlerc or any files within.
+Users must run IDLE to discover problems with saving settings.

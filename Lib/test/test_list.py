@@ -150,6 +150,11 @@ class ListTest(list_tests.CommonTest):
             a[:] = data
             self.assertEqual(list(it), [])
 
+    def test_step_overflow(self):
+        a = [0, 1, 2, 3, 4]
+        a[1::sys.maxsize] = [0]
+        self.assertEqual(a[3::sys.maxsize], [3])
+
     def test_no_comdat_folding(self):
         # Issue 8847: In the PGO build, the MSVC linker's COMDAT folding
         # optimization causes failures in code that relies on distinct

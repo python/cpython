@@ -1361,10 +1361,13 @@ class _BasePathTest(object):
             func(*args, **kwargs)
         self.assertEqual(cm.exception.errno, errno.ENOENT)
 
+    def assertEqualNormCase(self, path_a, path_b):
+        self.assertEqual(os.path.normcase(path_a), os.path.normcase(path_b))
+
     def _test_cwd(self, p):
         q = self.cls(os.getcwd())
         self.assertEqual(p, q)
-        self.assertEqual(str(p), str(q))
+        self.assertEqualNormCase(str(p), str(q))
         self.assertIs(type(p), type(q))
         self.assertTrue(p.is_absolute())
 
@@ -1375,7 +1378,7 @@ class _BasePathTest(object):
     def _test_home(self, p):
         q = self.cls(os.path.expanduser('~'))
         self.assertEqual(p, q)
-        self.assertEqual(str(p), str(q))
+        self.assertEqualNormCase(str(p), str(q))
         self.assertIs(type(p), type(q))
         self.assertTrue(p.is_absolute())
 
@@ -1559,6 +1562,23 @@ class _BasePathTest(object):
                   }
         self.assertEqual(given, {p / x for x in expect})
 
+    def test_glob_many_open_files(self):
+        depth = 30
+        P = self.cls
+        base = P(BASE) / 'deep'
+        p = P(base, *(['d']*depth))
+        p.mkdir(parents=True)
+        pattern = '/'.join(['*'] * depth)
+        iters = [base.glob(pattern) for j in range(100)]
+        for it in iters:
+            self.assertEqual(next(it), p)
+        iters = [base.rglob('d') for j in range(100)]
+        p = base
+        for i in range(depth):
+            p = p / 'd'
+            for it in iters:
+                self.assertEqual(next(it), p)
+
     def test_glob_dotdot(self):
         # ".." is not special in globs.
         P = self.cls
@@ -1583,14 +1603,14 @@ class _BasePathTest(object):
             p.resolve(strict=True)
         self.assertEqual(cm.exception.errno, errno.ENOENT)
         # Non-strict
-        self.assertEqual(str(p.resolve(strict=False)),
-                         os.path.join(BASE, 'foo'))
+        self.assertEqualNormCase(str(p.resolve(strict=False)),
+                                 os.path.join(BASE, 'foo'))
         p = P(BASE, 'foo', 'in', 'spam')
-        self.assertEqual(str(p.resolve(strict=False)),
-                         os.path.join(BASE, 'foo', 'in', 'spam'))
+        self.assertEqualNormCase(str(p.resolve(strict=False)),
+                                 os.path.join(BASE, 'foo', 'in', 'spam'))
         p = P(BASE, '..', 'foo', 'in', 'spam')
-        self.assertEqual(str(p.resolve(strict=False)),
-                         os.path.abspath(os.path.join('foo', 'in', 'spam')))
+        self.assertEqualNormCase(str(p.resolve(strict=False)),
+                                 os.path.abspath(os.path.join('foo', 'in', 'spam')))
         # These are all relative symlinks.
         p = P(BASE, 'dirB', 'fileB')
         self._check_resolve_relative(p, p)
@@ -1764,12 +1784,14 @@ class _BasePathTest(object):
         size = p.stat().st_size
         # Renaming to another path.
         q = P / 'dirA' / 'fileAA'
-        p.rename(q)
+        renamed_p = p.rename(q)
+        self.assertEqual(renamed_p, q)
         self.assertEqual(q.stat().st_size, size)
         self.assertFileNotFound(p.stat)
         # Renaming to a str of a relative path.
         r = rel_join('fileAAA')
-        q.rename(r)
+        renamed_q = q.rename(r)
+        self.assertEqual(renamed_q, self.cls(r))
         self.assertEqual(os.stat(r).st_size, size)
         self.assertFileNotFound(q.stat)
 
@@ -1779,14 +1801,26 @@ class _BasePathTest(object):
         size = p.stat().st_size
         # Replacing a non-existing path.
         q = P / 'dirA' / 'fileAA'
-        p.replace(q)
+        replaced_p = p.replace(q)
+        self.assertEqual(replaced_p, q)
         self.assertEqual(q.stat().st_size, size)
         self.assertFileNotFound(p.stat)
         # Replacing another (existing) path.
         r = rel_join('dirB', 'fileB')
-        q.replace(r)
+        replaced_q = q.replace(r)
+        self.assertEqual(replaced_q, self.cls(r))
         self.assertEqual(os.stat(r).st_size, size)
         self.assertFileNotFound(q.stat)
+
+    @support.skip_unless_symlink
+    def test_readlink(self):
+        P = self.cls(BASE)
+        self.assertEqual((P / 'linkA').readlink(), self.cls('fileA'))
+        self.assertEqual((P / 'brokenLink').readlink(),
+                         self.cls('non-existing'))
+        self.assertEqual((P / 'linkB').readlink(), self.cls('dirB'))
+        with self.assertRaises(OSError):
+            (P / 'fileA').readlink()
 
     def test_touch_common(self):
         P = self.cls(BASE)
@@ -2137,16 +2171,16 @@ class _BasePathTest(object):
         # Resolve absolute paths.
         p = (P / 'link0').resolve()
         self.assertEqual(p, P)
-        self.assertEqual(str(p), BASE)
+        self.assertEqualNormCase(str(p), BASE)
         p = (P / 'link1').resolve()
         self.assertEqual(p, P)
-        self.assertEqual(str(p), BASE)
+        self.assertEqualNormCase(str(p), BASE)
         p = (P / 'link2').resolve()
         self.assertEqual(p, P)
-        self.assertEqual(str(p), BASE)
+        self.assertEqualNormCase(str(p), BASE)
         p = (P / 'link3').resolve()
         self.assertEqual(p, P)
-        self.assertEqual(str(p), BASE)
+        self.assertEqualNormCase(str(p), BASE)
 
         # Resolve relative paths.
         old_path = os.getcwd()
@@ -2154,16 +2188,16 @@ class _BasePathTest(object):
         try:
             p = self.cls('link0').resolve()
             self.assertEqual(p, P)
-            self.assertEqual(str(p), BASE)
+            self.assertEqualNormCase(str(p), BASE)
             p = self.cls('link1').resolve()
             self.assertEqual(p, P)
-            self.assertEqual(str(p), BASE)
+            self.assertEqualNormCase(str(p), BASE)
             p = self.cls('link2').resolve()
             self.assertEqual(p, P)
-            self.assertEqual(str(p), BASE)
+            self.assertEqualNormCase(str(p), BASE)
             p = self.cls('link3').resolve()
             self.assertEqual(p, P)
-            self.assertEqual(str(p), BASE)
+            self.assertEqualNormCase(str(p), BASE)
         finally:
             os.chdir(old_path)
 
@@ -2354,11 +2388,15 @@ class WindowsPathTest(_BasePathTest, unittest.TestCase):
         P = self.cls
         p = P(BASE)
         self.assertEqual(set(p.glob("FILEa")), { P(BASE, "fileA") })
+        self.assertEqual(set(p.glob("F*a")), { P(BASE, "fileA") })
+        self.assertEqual(set(map(str, p.glob("FILEa"))), {f"{p}\\FILEa"})
+        self.assertEqual(set(map(str, p.glob("F*a"))), {f"{p}\\fileA"})
 
     def test_rglob(self):
         P = self.cls
         p = P(BASE, "dirC")
         self.assertEqual(set(p.rglob("FILEd")), { P(BASE, "dirC/dirD/fileD") })
+        self.assertEqual(set(map(str, p.rglob("FILEd"))), {f"{p}\\dirD\\FILEd"})
 
     def test_expanduser(self):
         P = self.cls

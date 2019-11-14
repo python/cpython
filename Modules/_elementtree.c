@@ -1426,42 +1426,6 @@ _elementtree_Element_get_impl(ElementObject *self, PyObject *key,
     return value;
 }
 
-/*[clinic input]
-_elementtree.Element.getchildren
-
-[clinic start generated code]*/
-
-static PyObject *
-_elementtree_Element_getchildren_impl(ElementObject *self)
-/*[clinic end generated code: output=e50ffe118637b14f input=0f754dfded150d5f]*/
-{
-    Py_ssize_t i;
-    PyObject* list;
-
-    if (PyErr_WarnEx(PyExc_DeprecationWarning,
-                     "This method will be removed in future versions.  "
-                     "Use 'list(elem)' or iteration over elem instead.",
-                     1) < 0) {
-        return NULL;
-    }
-
-    if (!self->extra)
-        return PyList_New(0);
-
-    list = PyList_New(self->extra->length);
-    if (!list)
-        return NULL;
-
-    for (i = 0; i < self->extra->length; i++) {
-        PyObject* item = self->extra->children[i];
-        Py_INCREF(item);
-        PyList_SET_ITEM(list, i, item);
-    }
-
-    return list;
-}
-
-
 static PyObject *
 create_elementiter(ElementObject *self, PyObject *tag, int gettext);
 
@@ -1489,27 +1453,6 @@ _elementtree_Element_iter_impl(ElementObject *self, PyObject *tag)
     }
 
     return create_elementiter(self, tag, 0);
-}
-
-
-/*[clinic input]
-_elementtree.Element.getiterator
-
-    tag: object = None
-
-[clinic start generated code]*/
-
-static PyObject *
-_elementtree_Element_getiterator_impl(ElementObject *self, PyObject *tag)
-/*[clinic end generated code: output=cb69ff4a3742dfa1 input=500da1a03f7b9e28]*/
-{
-    if (PyErr_WarnEx(PyExc_DeprecationWarning,
-                     "This method will be removed in future versions.  "
-                     "Use 'tree.iter()' or 'list(tree.iter())' instead.",
-                     1) < 0) {
-        return NULL;
-    }
-    return _elementtree_Element_iter_impl(self, tag);
 }
 
 
@@ -2374,8 +2317,6 @@ create_elementiter(ElementObject *self, PyObject *tag, int gettext)
     Py_INCREF(self);
     it->root_element = self;
 
-    PyObject_GC_Track(it);
-
     it->parent_stack = PyMem_New(ParentLocator, INIT_PARENT_STACK_SIZE);
     if (it->parent_stack == NULL) {
         Py_DECREF(it);
@@ -2384,6 +2325,8 @@ create_elementiter(ElementObject *self, PyObject *tag, int gettext)
     }
     it->parent_stack_used = 0;
     it->parent_stack_size = INIT_PARENT_STACK_SIZE;
+
+    PyObject_GC_Track(it);
 
     return (PyObject *)it;
 }
@@ -2465,10 +2408,10 @@ treebuilder_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 /*[clinic input]
 _elementtree.TreeBuilder.__init__
 
-    element_factory: object = NULL
+    element_factory: object = None
     *
-    comment_factory: object = NULL
-    pi_factory: object = NULL
+    comment_factory: object = None
+    pi_factory: object = None
     insert_comments: bool = False
     insert_pis: bool = False
 
@@ -2480,16 +2423,16 @@ _elementtree_TreeBuilder___init___impl(TreeBuilderObject *self,
                                        PyObject *comment_factory,
                                        PyObject *pi_factory,
                                        int insert_comments, int insert_pis)
-/*[clinic end generated code: output=8571d4dcadfdf952 input=1f967b5c245e0a71]*/
+/*[clinic end generated code: output=8571d4dcadfdf952 input=ae98a94df20b5cc3]*/
 {
-    if (element_factory && element_factory != Py_None) {
+    if (element_factory != Py_None) {
         Py_INCREF(element_factory);
         Py_XSETREF(self->element_factory, element_factory);
     } else {
         Py_CLEAR(self->element_factory);
     }
 
-    if (!comment_factory || comment_factory == Py_None) {
+    if (comment_factory == Py_None) {
         elementtreestate *st = ET_STATE_GLOBAL;
         comment_factory = st->comment_factory;
     }
@@ -2502,7 +2445,7 @@ _elementtree_TreeBuilder___init___impl(TreeBuilderObject *self,
         self->insert_comments = 0;
     }
 
-    if (!pi_factory || pi_factory == Py_None) {
+    if (pi_factory == Py_None) {
         elementtreestate *st = ET_STATE_GLOBAL;
         pi_factory = st->pi_factory;
     }
@@ -3708,14 +3651,14 @@ _elementtree.XMLParser.__init__
 
     *
     target: object = NULL
-    encoding: str(accept={str, NoneType}) = NULL
+    encoding: str(accept={str, NoneType}) = None
 
 [clinic start generated code]*/
 
 static int
 _elementtree_XMLParser___init___impl(XMLParserObject *self, PyObject *target,
                                      const char *encoding)
-/*[clinic end generated code: output=3ae45ec6cdf344e4 input=96288fcba916cfce]*/
+/*[clinic end generated code: output=3ae45ec6cdf344e4 input=53e35a829ae043e8]*/
 {
     self->entity = PyDict_New();
     if (!self->entity)
@@ -4219,9 +4162,6 @@ static PyMethodDef element_methods[] = {
     _ELEMENTTREE_ELEMENT_ITER_METHODDEF
     _ELEMENTTREE_ELEMENT_ITERTEXT_METHODDEF
     _ELEMENTTREE_ELEMENT_ITERFIND_METHODDEF
-
-    _ELEMENTTREE_ELEMENT_GETITERATOR_METHODDEF
-    _ELEMENTTREE_ELEMENT_GETCHILDREN_METHODDEF
 
     _ELEMENTTREE_ELEMENT_ITEMS_METHODDEF
     _ELEMENTTREE_ELEMENT_KEYS_METHODDEF

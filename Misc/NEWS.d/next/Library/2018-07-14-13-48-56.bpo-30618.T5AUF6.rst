@@ -1,0 +1,1 @@
+Add :meth:`~pathlib.Path.readlink`. Patch by Girts Folkmanis.

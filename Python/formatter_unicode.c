@@ -590,7 +590,7 @@ calc_number_widths(NumberFieldWidths *spec, Py_ssize_t n_prefix,
         spec->n_remainder + spec->n_rpadding;
 }
 
-/* Fill in the digit parts of a numbers's string representation,
+/* Fill in the digit parts of a number's string representation,
    as determined in calc_number_widths().
    Return -1 on error, or 0 on success. */
 static int

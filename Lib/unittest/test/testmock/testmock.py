@@ -396,6 +396,14 @@ class MockTest(unittest.TestCase):
         _check(mock)
 
 
+    def test_assert_called_exception_message(self):
+        msg = "Expected '{0}' to have been called"
+        with self.assertRaisesRegex(AssertionError, msg.format('mock')):
+            Mock().assert_called()
+        with self.assertRaisesRegex(AssertionError, msg.format('test_name')):
+            Mock(name="test_name").assert_called()
+
+
     def test_assert_called_once_with(self):
         mock = Mock()
         mock()
@@ -842,6 +850,7 @@ class MockTest(unittest.TestCase):
     def test_setting_call(self):
         mock = Mock()
         def __call__(self, a):
+            self._increment_mock_call(a)
             return self._mock_call(a)
 
         type(mock).__call__ = __call__
@@ -1426,6 +1435,32 @@ class MockTest(unittest.TestCase):
             mock.assert_has_calls(calls[:-1])
         mock.assert_has_calls(calls[:-1], any_order=True)
 
+    def test_assert_has_calls_not_matching_spec_error(self):
+        def f(x=None): pass
+
+        mock = Mock(spec=f)
+        mock(1)
+
+        with self.assertRaisesRegex(
+                AssertionError,
+                '^{}$'.format(
+                    re.escape('Calls not found.\n'
+                              'Expected: [call()]\n'
+                              'Actual: [call(1)]'))) as cm:
+            mock.assert_has_calls([call()])
+        self.assertIsNone(cm.exception.__cause__)
+
+
+        with self.assertRaisesRegex(
+                AssertionError,
+                '^{}$'.format(
+                    re.escape(
+                        'Error processing expected calls.\n'
+                        "Errors: [None, TypeError('too many positional arguments')]\n"
+                        "Expected: [call(), call(1, 2)]\n"
+                        'Actual: [call(1)]'))) as cm:
+            mock.assert_has_calls([call(), call(1, 2)])
+        self.assertIsInstance(cm.exception.__cause__, TypeError)
 
     def test_assert_any_call(self):
         mock = Mock()
@@ -1571,11 +1606,11 @@ class MockTest(unittest.TestCase):
             m.assert_called_once()
         self.assertNotIn("Calls:", str(e.exception))
 
-    #Issue21256 printout of keyword args should be in deterministic order
-    def test_sorted_call_signature(self):
+    #Issue37212 printout of keyword args now preserves the original order
+    def test_ordered_call_signature(self):
         m = Mock()
         m.hello(name='hello', daddy='hero')
-        text = "call(daddy='hero', name='hello')"
+        text = "call(name='hello', daddy='hero')"
         self.assertEqual(repr(m.hello.call_args), text)
 
     #Issue21270 overrides tuple methods for mock.call objects
@@ -2017,7 +2052,7 @@ class MockTest(unittest.TestCase):
             )
 
             mocks = [
-                Mock, MagicMock, NonCallableMock, NonCallableMagicMock
+                Mock, MagicMock, NonCallableMock, NonCallableMagicMock, AsyncMock
             ]
 
             for mock in mocks:
