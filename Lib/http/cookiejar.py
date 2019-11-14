@@ -214,10 +214,14 @@ LOOSE_HTTP_DATE_RE = re.compile(
        (?::(\d\d))?    # optional seconds
     )?                 # optional clock
        \s*
-    ([-+]?\d{2,4}|(?![APap][Mm]\b)[A-Za-z]+)? # timezone
+    (?:
+       ([-+]?\d{2,4}|(?![APap][Mm]\b)[A-Za-z]+) # timezone
        \s*
-    (?:\(\w+\))?       # ASCII representation of timezone in parens.
-       \s*$""", re.X | re.ASCII)
+    )?
+    (?:
+       \(\w+\)         # ASCII representation of timezone in parens.
+       \s*
+    )?$""", re.X | re.ASCII)
 def http2time(text):
     """Returns time in seconds since epoch of time represented by a string.
 
