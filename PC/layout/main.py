@@ -618,13 +618,18 @@ Catalog: {ns.catalog}""",
         ns=ns,
     )
 
-    if ns.include_idle and not ns.include_tcltk:
-        log_warning("Assuming --include-tcltk to support --include-idle")
-        ns.include_tcltk = True
-
     if ns.arch not in ("win32", "amd64", "arm32", "arm64"):
         log_error("--arch is not a valid value (win32, amd64, arm32, arm64)")
         return 4
+    if ns.arch in ("arm32", "arm64"):
+        for n in ("include_idle", "include_tcltk"):
+            if getattr(ns, n):
+                log_warning(f"Disabling --{n.replace('_', '-')} on unsupported platform")
+                setattr(ns, n, False)
+
+    if ns.include_idle and not ns.include_tcltk:
+        log_warning("Assuming --include-tcltk to support --include-idle")
+        ns.include_tcltk = True
 
     try:
         generate_source_files(ns)
