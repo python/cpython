@@ -978,6 +978,10 @@ class Popen(object):
 
             raise
 
+    def __repr__(self):
+        return '<%s.%s: pid-%s>' % (
+            self.__module__, self.__class__.__name__, self.pid)
+
     @property
     def universal_newlines(self):
         # universal_newlines as retained as an alias of text_mode for API
