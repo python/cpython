@@ -1,1 +1,1 @@
-Fix a crash during error handling in :meth:`py_compile.main`.
+Fix a unhandled exception during error handling in :meth:`py_compile.main`.
