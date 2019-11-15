@@ -1363,22 +1363,23 @@ class ProcessTestCase(BaseTestCase):
 
     def test_string_representation(self):
         """Test string representation Popen object."""
-        code = 'import sys; sys.exit(57)'
+        code = 'import sys; input(); sys.exit(57)'
         cmd = [sys.executable, '-c', code]
-        proc = subprocess.Popen(cmd)
 
+        max_args_length = 80
         args = ' '.join(map(shlex.quote, cmd))
-        if len(args) > 30:
-            args = f"{args[:30]}...".rstrip()
+        if len(args) > max_args_length:
+            args = f"{args[:max_args_length-3]}..."
+        result = "<Popen: returncode:'{}' args:'{}'>"
 
-        unfinished = (
-            f"<subprocess.Popen: pid:{proc.pid} "
-            f"args:{args} returncode:unfinished>"
-        )
-        self.assertEqual(repr(proc), unfinished)
-        proc.wait()
-        finished = unfinished.replace('unfinished', str(proc.returncode))
-        self.assertEqual(repr(proc), finished)
+        with subprocess.Popen(
+                cmd, stdin=subprocess.PIPE, universal_newlines=True) as proc:
+            self.assertIsNone(proc.returncode)
+            proc.communicate(input='exit...\n')
+            self.assertEqual(repr(proc), result.format(proc.returncode, args))
+            proc.wait()
+            self.assertIsNotNone(proc.returncode)
+            self.assertEqual(repr(proc), result.format(proc.returncode, args))
 
     def test_communicate_epipe_only_stdin(self):
         # Issue 10963: communicate() should hide EPIPE

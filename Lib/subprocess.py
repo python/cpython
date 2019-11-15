@@ -980,16 +980,15 @@ class Popen(object):
             raise
 
     def __repr__(self):
-        max_args_length = 30
-        returncode = self.returncode or 'unfinished'
+        max_args_length = 80
         args = ' '.join(map(shlex.quote, self.args))
 
         if len(args) > max_args_length:
-            args = f"{args[:max_args_length]}...".rstrip()
+            args = f"{args[:max_args_length-3]}..."
 
         return (
-            f"<{self.__module__}.{self.__class__.__name__}: "
-            f"pid:{self.pid} args:{args} returncode:{returncode}>"
+            f"<{self.__class__.__name__}: "
+            f"returncode:'{self.returncode}' args:'{args}'>"
         )
 
     @property
