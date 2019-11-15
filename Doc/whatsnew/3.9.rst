@@ -239,6 +239,10 @@ Build and C API Changes
   removed in Python 3.3.
   (Contributed by Victor Stinner in :issue:`38896`.)
 
+* ``PyInterpreterState.eval_frame`` (:pep:`523`) now requires a new mandatory
+  *tstate* parameter (``PyThreadState*``).
+  (Contributed by Victor Stinner in :issue:`38818`.)
+
 
 Deprecated
 ==========

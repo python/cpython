@@ -40,7 +40,7 @@ void _PyEval_Fini(void);
 static inline PyObject*
 _PyEval_EvalFrame(PyThreadState *tstate, struct _frame *f, int throwflag)
 {
-    return tstate->interp->eval_frame(f, throwflag);
+    return tstate->interp->eval_frame(tstate, f, throwflag);
 }
 
 extern PyObject *_PyEval_EvalCode(

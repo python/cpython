@@ -743,7 +743,7 @@ PyEval_EvalFrameEx(PyFrameObject *f, int throwflag)
 }
 
 PyObject* _Py_HOT_FUNCTION
-_PyEval_EvalFrameDefault(PyFrameObject *f, int throwflag)
+_PyEval_EvalFrameDefault(PyThreadState *tstate, PyFrameObject *f, int throwflag)
 {
 #ifdef DXPAIRS
     int lastopcode = 0;
@@ -755,7 +755,6 @@ _PyEval_EvalFrameDefault(PyFrameObject *f, int throwflag)
     PyObject **fastlocals, **freevars;
     PyObject *retval = NULL;            /* Return value */
     _PyRuntimeState * const runtime = &_PyRuntime;
-    PyThreadState * const tstate = _PyRuntimeState_GetThreadState(runtime);
     struct _ceval_runtime_state * const ceval = &runtime->ceval;
     _Py_atomic_int * const eval_breaker = &ceval->eval_breaker;
     PyCodeObject *co;

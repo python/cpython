@@ -1083,7 +1083,7 @@ All of the following functions must be called after :c:func:`Py_Initialize`.
 
    .. versionadded:: 3.8
 
-.. c:type:: PyObject* (*PyFrameEvalFunction)(PyFrameObject *frame, int throwflag)
+.. c:type:: PyObject* (*PyFrameEvalFunction)(PyThreadState *tstate, PyFrameObject *frame, int throwflag)
 
    Type of a frame evaluation function.
 

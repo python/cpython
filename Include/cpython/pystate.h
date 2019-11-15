@@ -188,7 +188,7 @@ typedef struct _frame *(*PyThreadFrameGetter)(PyThreadState *self_);
 
 /* Frame evaluation API */
 
-typedef PyObject* (*PyFrameEvalFunction)(struct _frame *, int);
+typedef PyObject* (*PyFrameEvalFunction)(PyThreadState *tstate, struct _frame *, int);
 
 PyAPI_FUNC(PyFrameEvalFunction) PyInterpreterState_GetEvalFrameFunc(
     PyInterpreterState *interp);
