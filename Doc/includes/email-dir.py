@@ -42,7 +42,7 @@ must be running an SMTP server.
     context = os.path.abspath(directory)
     # Create the message
     msg = EmailMessage()
-    msg['Subject'] = 'Contents of directory {}'.format(context)
+    msg['Subject'] = f'Contents of directory {context}'
     msg['To'] = ', '.join(args.recipients)
     msg['From'] = args.sender
     msg.preamble = 'You will not see this in a MIME-aware mail reader.\n'
