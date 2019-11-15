@@ -123,12 +123,12 @@ def supports_file2file_sendfile():
     srcname = None
     dstname = None
     try:
-        with tempfile.NamedTemporaryFile("wb", dir=os.getcwd(), delete=False) as f:
+        with tempfile.NamedTemporaryFile("wb", delete=False) as f:
             srcname = f.name
             f.write(b"0123456789")
 
         with open(srcname, "rb") as src:
-            with tempfile.NamedTemporaryFile("wb", dir=os.getcwd(), delete=False) as dst:
+            with tempfile.NamedTemporaryFile("wb", delete=False) as dst:
                 dstname = dst.name
                 infd = src.fileno()
                 outfd = dst.fileno()
@@ -172,12 +172,12 @@ class TestShutil(unittest.TestCase):
             shutil.rmtree(d, os.name in ('nt', 'cygwin'))
 
 
-    def mkdtemp(self, prefix=None):
+    def mkdtemp(self):
         """Create a temporary directory that will be cleaned up.
 
         Returns the path of the directory.
         """
-        d = tempfile.mkdtemp(prefix=prefix, dir=os.getcwd())
+        d = tempfile.mkdtemp()
         self.tempdirs.append(d)
         return d
 
@@ -238,7 +238,6 @@ class TestShutil(unittest.TestCase):
         os.mkdir(dir_)
         link = os.path.join(tmp, 'link')
         _winapi.CreateJunction(dir_, link)
-        self.addCleanup(support.unlink, link)
         self.assertRaises(OSError, shutil.rmtree, link)
         self.assertTrue(os.path.exists(dir_))
         self.assertTrue(os.path.lexists(link))
@@ -275,7 +274,7 @@ class TestShutil(unittest.TestCase):
 
     def test_rmtree_errors(self):
         # filename is guaranteed not to exist
-        filename = tempfile.mktemp(dir=self.mkdtemp())
+        filename = tempfile.mktemp()
         self.assertRaises(FileNotFoundError, shutil.rmtree, filename)
         # test that ignore_errors option is honored
         shutil.rmtree(filename, ignore_errors=True)
@@ -1607,7 +1606,8 @@ class TestShutil(unittest.TestCase):
 class TestWhich(unittest.TestCase):
 
     def setUp(self):
-        self.temp_dir = self.mkdtemp(prefix="Tmp")
+        self.temp_dir = tempfile.mkdtemp(prefix="Tmp")
+        self.addCleanup(shutil.rmtree, self.temp_dir, True)
         # Give the temp_file an ".exe" suffix for all.
         # It's needed on Windows and not harmful on other platforms.
         self.temp_file = tempfile.NamedTemporaryFile(dir=self.temp_dir,
@@ -1837,7 +1837,7 @@ class TestMove(unittest.TestCase):
 
     def test_move_dir(self):
         # Move a dir to another location on the same filesystem.
-        dst_dir = tempfile.mktemp(dir=self.mkdtemp())
+        dst_dir = tempfile.mktemp()
         try:
             self._check_move_dir(self.src_dir, dst_dir, dst_dir)
         finally:
@@ -2155,7 +2155,7 @@ class TestCopyFileObj(unittest.TestCase):
 
         # If file size < 1 MiB memoryview() length must be equal to
         # the actual file size.
-        with tempfile.NamedTemporaryFile(dir=os.getcwd(), delete=False) as f:
+        with tempfile.NamedTemporaryFile(delete=False) as f:
             f.write(b'foo')
         fname = f.name
         self.addCleanup(support.unlink, fname)
@@ -2164,7 +2164,7 @@ class TestCopyFileObj(unittest.TestCase):
         self.assertEqual(m.call_args[0][2], 3)
 
         # Empty files should not rely on readinto() variant.
-        with tempfile.NamedTemporaryFile(dir=os.getcwd(), delete=False) as f:
+        with tempfile.NamedTemporaryFile(delete=False) as f:
             pass
         fname = f.name
         self.addCleanup(support.unlink, fname)
@@ -2230,7 +2230,7 @@ class _ZeroCopyFileTest(object):
         self.assertEqual(read_file(TESTFN, binary=True), self.FILEDATA)
 
     def test_non_existent_src(self):
-        name = tempfile.mktemp(dir=os.getcwd())
+        name = tempfile.mktemp()
         with self.assertRaises(FileNotFoundError) as cm:
             shutil.copyfile(name, "new")
         self.assertEqual(cm.exception.filename, name)
