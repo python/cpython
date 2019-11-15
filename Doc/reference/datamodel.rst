@@ -1798,7 +1798,7 @@ Notes on using *__slots__*
   :exc:`TypeError`.
 
 * If an iterator is used for *__slots__* then a descriptor is created for each
-  of the iterator's values. However, the *__slots__* variable will be an empty
+  of the iterator's values. However, the *__slots__* attribute will be an empty
   iterator.
 
 .. _class-customization:
