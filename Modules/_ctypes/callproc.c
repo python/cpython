@@ -1648,13 +1648,13 @@ static PyObject *
 My_PyObj_FromPtr(PyObject *self, PyObject *args)
 {
     PyObject *ob;
-    if (!PyArg_ParseTuple(args, "O&:PyObj_FromPtr", converter, &ob))
-        return NULL;
-    Py_INCREF(ob);
-    if (PySys_Audit("ctypes.PyObj_FromPtr", "O", ob) < 0) {
-        Py_DECREF(ob);
+    if (!PyArg_ParseTuple(args, "O&:PyObj_FromPtr", converter, &ob)) {
         return NULL;
     }
+    if (PySys_Audit("ctypes.PyObj_FromPtr", "O", ob) < 0) {
+        return NULL;
+    }
+    Py_INCREF(ob);
     return ob;
 }
 
