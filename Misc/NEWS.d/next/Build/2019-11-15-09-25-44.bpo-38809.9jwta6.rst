@@ -1,0 +1,2 @@
+On Windows, build scripts will now recognize and use python.exe from an
+active virtual env.

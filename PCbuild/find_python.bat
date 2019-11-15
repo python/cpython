@@ -24,6 +24,9 @@
 :begin_search
 @set PYTHON=
 
+@rem If there is an active virtual env, use that one
+@if NOT "%VIRTUAL_ENV%"=="" (set PYTHON="%VIRTUAL_ENV%\Scripts\python.exe") & (set _Py_Python_Source=found in virtual env) & goto :found
+
 @set _Py_EXTERNALS_DIR=%EXTERNALS_DIR%
 @if "%_Py_EXTERNALS_DIR%"=="" (set _Py_EXTERNALS_DIR=%~dp0\..\externals)
 
