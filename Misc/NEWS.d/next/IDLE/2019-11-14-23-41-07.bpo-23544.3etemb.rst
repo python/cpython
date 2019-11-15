@@ -1,0 +1,2 @@
+The "Stack Viewer" item in the "Debug" menu can no longer be selected when
+user code is running.

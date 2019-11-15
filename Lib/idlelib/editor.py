@@ -449,7 +449,9 @@ class EditorWindow(object):
         self.menudict = menudict = {}
         for name, label in self.menu_specs:
             underline, label = prepstr(label)
-            menudict[name] = menu = Menu(mbar, name=name, tearoff=0)
+            postcommand = getattr(self, f'{name}_menu_postcommand', None)
+            menudict[name] = menu = Menu(mbar, name=name, tearoff=0,
+                                         postcommand=postcommand)
             mbar.add_cascade(label=label, menu=menu, underline=underline)
         if macosx.isCarbonTk():
             # Insert the application menu

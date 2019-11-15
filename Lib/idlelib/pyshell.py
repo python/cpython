@@ -990,6 +990,10 @@ class PyShell(OutputWindow):
         self.showprompt()
         self.set_debugger_indicator()
 
+    def debug_menu_postcommand(self):
+        state = 'disabled' if self.executing else 'normal'
+        self.update_menu_state('debug', '*Stack Viewer', state)
+
     def beginexecuting(self):
         "Helper for ModifiedInterpreter"
         self.resetoutput()
