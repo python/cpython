@@ -43,7 +43,7 @@ Unpack a MIME message into a directory of files.
             if not ext:
                 # Use a generic bag-of-bits extension
                 ext = '.bin'
-            filename = 'part-%03d%s' % (counter, ext)
+            filename = 'part-{:03}{}'.format(counter, ext)
         counter += 1
         with open(os.path.join(args.directory, filename), 'wb') as fp:
             fp.write(part.get_payload(decode=True))
