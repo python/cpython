@@ -457,7 +457,7 @@ Miscellaneous options
        on a crash.
      * Enable :ref:`asyncio debug mode <asyncio-debug-mode>`.
      * Set the :attr:`~sys.flags.dev_mode` attribute of :attr:`sys.flags` to
-       ``True``
+       ``True``.
      * :class:`io.IOBase` destructor logs ``close()`` exceptions.
 
    * ``-X utf8`` enables UTF-8 mode for operating system interfaces, overriding
@@ -780,8 +780,8 @@ conflict.
 
    * ``debug``: install debug hooks on top of the :ref:`default memory
      allocators <default-memory-allocators>`.
-   * ``malloc_debug``: same as ``malloc`` but also install debug hooks
-   * ``pymalloc_debug``: same as ``pymalloc`` but also install debug hooks
+   * ``malloc_debug``: same as ``malloc`` but also install debug hooks.
+   * ``pymalloc_debug``: same as ``pymalloc`` but also install debug hooks.
 
    See the :ref:`default memory allocators <default-memory-allocators>` and the
    :c:func:`PyMem_SetupDebugHooks` function (install debug hooks on Python
@@ -898,7 +898,7 @@ conflict.
 .. envvar:: PYTHONUTF8
 
    If set to ``1``, enables the interpreter's UTF-8 mode, where ``UTF-8`` is
-   used as the text encoding for system interfaces, regardless of the
+   used as encoding for system interfaces, regardless of the
    current locale setting.
 
    This means that:
