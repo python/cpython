@@ -123,12 +123,12 @@ def supports_file2file_sendfile():
     srcname = None
     dstname = None
     try:
-        with tempfile.NamedTemporaryFile("wb", delete=False) as f:
+        with tempfile.NamedTemporaryFile("wb", dir=os.getcwd(), delete=False) as f:
             srcname = f.name
             f.write(b"0123456789")
 
         with open(srcname, "rb") as src:
-            with tempfile.NamedTemporaryFile("wb", delete=False) as dst:
+            with tempfile.NamedTemporaryFile("wb", dir=os.getcwd(), delete=False) as dst:
                 dstname = dst.name
                 infd = src.fileno()
                 outfd = dst.fileno()
@@ -162,12 +162,12 @@ def _maxdataOK():
 
 class BaseTest:
 
-    def mkdtemp(self):
+    def mkdtemp(self, prefix=None):
         """Create a temporary directory that will be cleaned up.
 
         Returns the path of the directory.
         """
-        d = tempfile.mkdtemp()
+        d = tempfile.mkdtemp(prefix=prefix, dir=os.getcwd())
         self.addCleanup(support.rmtree, d)
         return d
 
@@ -231,6 +231,7 @@ class TestRmTree(BaseTest, unittest.TestCase):
         os.mkdir(dir_)
         link = os.path.join(tmp, 'link')
         _winapi.CreateJunction(dir_, link)
+        self.addCleanup(support.unlink, link)
         self.assertRaises(OSError, shutil.rmtree, link)
         self.assertTrue(os.path.exists(dir_))
         self.assertTrue(os.path.lexists(link))
@@ -267,7 +268,7 @@ class TestRmTree(BaseTest, unittest.TestCase):
 
     def test_rmtree_errors(self):
         # filename is guaranteed not to exist
-        filename = tempfile.mktemp()
+        filename = tempfile.mktemp(dir=self.mkdtemp())
         self.assertRaises(FileNotFoundError, shutil.rmtree, filename)
         # test that ignore_errors option is honored
         shutil.rmtree(filename, ignore_errors=True)
@@ -401,7 +402,7 @@ class TestRmTree(BaseTest, unittest.TestCase):
 
     def test_rmtree_dont_delete_file(self):
         # When called on a file instead of a directory, don't delete it.
-        handle, path = tempfile.mkstemp()
+        handle, path = tempfile.mkstemp(dir=self.mkdtemp())
         os.close(handle)
         self.assertRaises(NotADirectoryError, shutil.rmtree, path)
         os.remove(path)
@@ -438,8 +439,8 @@ class TestRmTree(BaseTest, unittest.TestCase):
 class TestCopyTree(BaseTest, unittest.TestCase):
 
     def test_copytree_simple(self):
-        src_dir = tempfile.mkdtemp()
-        dst_dir = os.path.join(tempfile.mkdtemp(), 'destination')
+        src_dir = self.mkdtemp()
+        dst_dir = os.path.join(self.mkdtemp(), 'destination')
         self.addCleanup(shutil.rmtree, src_dir)
         self.addCleanup(shutil.rmtree, os.path.dirname(dst_dir))
         write_file((src_dir, 'test.txt'), '123')
@@ -457,8 +458,8 @@ class TestCopyTree(BaseTest, unittest.TestCase):
         self.assertEqual(actual, '456')
 
     def test_copytree_dirs_exist_ok(self):
-        src_dir = tempfile.mkdtemp()
-        dst_dir = tempfile.mkdtemp()
+        src_dir = self.mkdtemp()
+        dst_dir = self.mkdtemp()
         self.addCleanup(shutil.rmtree, src_dir)
         self.addCleanup(shutil.rmtree, dst_dir)
 
@@ -517,9 +518,9 @@ class TestCopyTree(BaseTest, unittest.TestCase):
         # creating data
         join = os.path.join
         exists = os.path.exists
-        src_dir = tempfile.mkdtemp()
+        src_dir = self.mkdtemp()
         try:
-            dst_dir = join(tempfile.mkdtemp(), 'destination')
+            dst_dir = join(self.mkdtemp(), 'destination')
             write_file((src_dir, 'test.txt'), '123')
             write_file((src_dir, 'test.tmp'), '123')
             os.mkdir(join(src_dir, 'test_dir'))
@@ -579,7 +580,7 @@ class TestCopyTree(BaseTest, unittest.TestCase):
             shutil.rmtree(os.path.dirname(dst_dir))
 
     def test_copytree_retains_permissions(self):
-        tmp_dir = tempfile.mkdtemp()
+        tmp_dir = self.mkdtemp()
         src_dir = os.path.join(tmp_dir, 'source')
         os.mkdir(src_dir)
         dst_dir = os.path.join(tmp_dir, 'destination')
@@ -591,6 +592,7 @@ class TestCopyTree(BaseTest, unittest.TestCase):
         write_file((src_dir, 'restrictive.txt'), '456')
         os.chmod(os.path.join(src_dir, 'restrictive.txt'), 0o600)
         restrictive_subdir = tempfile.mkdtemp(dir=src_dir)
+        self.addCleanup(support.rmtree, restrictive_subdir)
         os.chmod(restrictive_subdir, 0o600)
 
         shutil.copytree(src_dir, dst_dir)
@@ -609,8 +611,8 @@ class TestCopyTree(BaseTest, unittest.TestCase):
         # When copying to VFAT, copystat() raises OSError. On Windows, the
         # exception object has a meaningful 'winerror' attribute, but not
         # on other operating systems. Do not assume 'winerror' is set.
-        src_dir = tempfile.mkdtemp()
-        dst_dir = os.path.join(tempfile.mkdtemp(), 'destination')
+        src_dir = self.mkdtemp()
+        dst_dir = os.path.join(self.mkdtemp(), 'destination')
         self.addCleanup(shutil.rmtree, src_dir)
         self.addCleanup(shutil.rmtree, os.path.dirname(dst_dir))
 
@@ -628,10 +630,8 @@ class TestCopyTree(BaseTest, unittest.TestCase):
             self.assertEqual(b, os.path.join(dst, 'foo'))
 
         flag = []
-        src = tempfile.mkdtemp()
-        self.addCleanup(support.rmtree, src)
-        dst = tempfile.mktemp()
-        self.addCleanup(support.rmtree, dst)
+        src = self.mkdtemp()
+        dst = tempfile.mktemp(dir=self.mkdtemp())
         with open(os.path.join(src, 'foo'), 'w') as f:
             f.close()
         shutil.copytree(src, dst, copy_function=custom_cpfun)
@@ -1624,8 +1624,7 @@ class TestMisc(BaseTest, unittest.TestCase):
 class TestWhich(BaseTest, unittest.TestCase):
 
     def setUp(self):
-        self.temp_dir = tempfile.mkdtemp(prefix="Tmp")
-        self.addCleanup(support.rmtree, self.temp_dir)
+        self.temp_dir = self.mkdtemp(prefix="Tmp")
         # Give the temp_file an ".exe" suffix for all.
         # It's needed on Windows and not harmful on other platforms.
         self.temp_file = tempfile.NamedTemporaryFile(dir=self.temp_dir,
@@ -1857,7 +1856,7 @@ class TestMove(BaseTest, unittest.TestCase):
 
     def test_move_dir(self):
         # Move a dir to another location on the same filesystem.
-        dst_dir = tempfile.mktemp()
+        dst_dir = tempfile.mktemp(dir=self.mkdtemp())
         try:
             self._check_move_dir(self.src_dir, dst_dir, dst_dir)
         finally:
@@ -2156,7 +2155,7 @@ class TestCopyFileObj(unittest.TestCase):
 
         # If file size < 1 MiB memoryview() length must be equal to
         # the actual file size.
-        with tempfile.NamedTemporaryFile(delete=False) as f:
+        with tempfile.NamedTemporaryFile(dir=os.getcwd(), delete=False) as f:
             f.write(b'foo')
         fname = f.name
         self.addCleanup(support.unlink, fname)
@@ -2165,7 +2164,7 @@ class TestCopyFileObj(unittest.TestCase):
         self.assertEqual(m.call_args[0][2], 3)
 
         # Empty files should not rely on readinto() variant.
-        with tempfile.NamedTemporaryFile(delete=False) as f:
+        with tempfile.NamedTemporaryFile(dir=os.getcwd(), delete=False) as f:
             pass
         fname = f.name
         self.addCleanup(support.unlink, fname)
@@ -2231,7 +2230,7 @@ class _ZeroCopyFileTest(object):
         self.assertEqual(read_file(TESTFN, binary=True), self.FILEDATA)
 
     def test_non_existent_src(self):
-        name = tempfile.mktemp()
+        name = tempfile.mktemp(dir=os.getcwd())
         with self.assertRaises(FileNotFoundError) as cm:
             shutil.copyfile(name, "new")
         self.assertEqual(cm.exception.filename, name)
