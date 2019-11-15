@@ -1,0 +1,1 @@
+Update :exc:`TypeError` messages for :meth:`os.path.join` to include :class:`os.PathLike` objects as acceptable input types.
