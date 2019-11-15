@@ -29,7 +29,7 @@ from .log import logger
 __all__ = (
     'SelectorEventLoop',
     'AbstractChildWatcher', 'SafeChildWatcher',
-    'FastChildWatcher',
+    'FastChildWatcher', 'PidfdChildWatcher',
     'MultiLoopChildWatcher', 'ThreadedChildWatcher',
     'DefaultEventLoopPolicy',
 )
