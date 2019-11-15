@@ -47,6 +47,7 @@ import io
 import os
 import time
 import signal
+import shlex
 import sys
 import threading
 import warnings
@@ -980,18 +981,16 @@ class Popen(object):
 
     def __repr__(self):
         max_args_length = 30
-        args = ' '.join(self.args)
+        returncode = self.returncode or 'unfinished'
+        args = ' '.join(map(shlex.quote, self.args))
 
         if len(args) > max_args_length:
-            args = ('%s...' % args[:max_args_length]).strip()
+            args = f"{args[:max_args_length]}...".rstrip()
 
-        format_str = "%s.%s: pid:'%s' args:'%s'" % (
-            self.__module__, self.__class__.__name__, self.pid, args)
-
-        if self.returncode:
-            format_str += " retcode:'%d'" % self.returncode
-
-        return '<%s>' % format_str
+        return (
+            f"<{self.__module__}.{self.__class__.__name__}: "
+            f"pid:{self.pid} args:{args} returncode:{returncode}>"
+        )
 
     @property
     def universal_newlines(self):
