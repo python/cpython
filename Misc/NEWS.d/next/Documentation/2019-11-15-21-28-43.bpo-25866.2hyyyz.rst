@@ -1,0 +1,1 @@
+Data Model: miscellaneous minor cleanups on the word "sequence".
