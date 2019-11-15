@@ -1,0 +1,1 @@
+Fix an unhandled exception in :mod:`pathlib` when :meth:`os.link` is missing. Patch by Toke Høiland-Jørgensen.
