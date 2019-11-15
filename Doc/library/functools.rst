@@ -423,6 +423,20 @@ The :mod:`functools` module defines the following functions:
    for the base ``object`` type, which means it is used if no better
    implementation is found.
 
+   If an implementation registered to :term:`abstract base class`, virtual
+   subclasses will be dispatched to that implementation::
+
+     >>> from collections.abc import Mapping
+     >>> @fun.register
+     ... def _(arg: Mapping, verbose=False):
+     ...     if verbose:
+     ...         print("Keys & Values")
+     ...     for key, value in arg.items():
+     ...         print(key, "=>", value)
+     ...
+     >>> fun({"a": "b"})
+     a => b
+
    To check which implementation will the generic function choose for
    a given type, use the ``dispatch()`` attribute::
 
