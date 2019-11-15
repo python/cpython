@@ -214,7 +214,9 @@ Build and C API Changes
   calls a callable Python object without any arguments. It is the most efficient
   way to call a callable Python object without any argument.
   (Contributed by Victor Stinner in :issue:`37194`.)
-
+* ``PyInterpreterState.eval_frame`` (:pep:`523`) now requires a new mandatory
+  *tstate* parameter (``PyThreadState*``).
+  (Contributed by Victor Stinner in :issue:`38818`.)
 
 
 Deprecated

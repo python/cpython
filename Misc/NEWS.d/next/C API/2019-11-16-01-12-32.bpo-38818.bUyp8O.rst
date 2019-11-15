@@ -1,0 +1,2 @@
+``PyInterpreterState.eval_frame`` (:pep:`523`) now requires a new mandatory
+*tstate* parameter (``PyThreadState*``).
