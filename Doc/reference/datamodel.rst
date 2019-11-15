@@ -2132,7 +2132,7 @@ operators.  It is recommended that both mappings and sequences implement the
 mappings, ``in`` should search the mapping's keys; for sequences, it should
 search through the values.  It is further recommended that both mappings and
 sequences implement the :meth:`__iter__` method to allow efficient iteration
-through the container; for mappings, :meth:`__iter__` should return an iterator
+through the container; for mappings, :meth:`__iter__` should iterate
 through the object's keys; for sequences, it should iterate through the values.
 
 .. method:: object.__len__(self)
