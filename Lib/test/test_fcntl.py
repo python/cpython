@@ -153,6 +153,7 @@ class TestFcntl(unittest.TestCase):
         self.assertRaises(ValueError, fcntl.flock, -1, fcntl.LOCK_SH)
         self.assertRaises(TypeError, fcntl.flock, 'spam', fcntl.LOCK_SH)
 
+    @unittest.skipIf(platform.system() == "AIX", "AIX returns PermissionError")
     def test_lockf_exclusive(self):
         self.f = open(TESTFN, 'wb+')
         cmd = fcntl.LOCK_EX | fcntl.LOCK_NB
@@ -163,6 +164,7 @@ class TestFcntl(unittest.TestCase):
         fcntl.lockf(self.f, fcntl.LOCK_UN)
         self.assertEqual(p.exitcode, 0)
 
+    @unittest.skipIf(platform.system() == "AIX", "AIX returns PermissionError")
     def test_lockf_share(self):
         self.f = open(TESTFN, 'wb+')
         cmd = fcntl.LOCK_SH | fcntl.LOCK_NB
