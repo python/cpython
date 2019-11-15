@@ -22,6 +22,23 @@ except AttributeError:
 else:
     HAVE_GETFINALPATHNAME = True
 
+try:
+    import ctypes
+except ImportError:
+    HAVE_GETSHORTPATHNAME = False
+else:
+    HAVE_GETSHORTPATHNAME = True
+    def _getshortpathname(path):
+        GSPN = ctypes.WinDLL("kernel32", use_last_error=True).GetShortPathNameW
+        GSPN.argtypes = [ctypes.c_wchar_p, ctypes.c_wchar_p, ctypes.c_uint32]
+        GSPN.restype = ctypes.c_uint32
+        result_len = GSPN(path, None, 0)
+        if not result_len:
+            raise OSError("failed to get short path name 0x{:08X}"
+                          .format(ctypes.get_last_error()))
+        result = ctypes.create_unicode_buffer(result_len)
+        result_len = GSPN(path, result, result_len)
+        return result[:result_len]
 
 def _norm(path):
     if isinstance(path, (bytes, str, os.PathLike)):
@@ -403,6 +420,7 @@ class TestNtpath(NtpathTestCase):
         tester("ntpath.realpath('NUL')", r'\\.\NUL')
 
     @unittest.skipUnless(HAVE_GETFINALPATHNAME, 'need _getfinalpathname')
+    @unittest.skipUnless(HAVE_GETSHORTPATHNAME, 'need _getshortpathname')
     def test_realpath_cwd(self):
         ABSTFN = ntpath.abspath(support.TESTFN)
 
@@ -412,11 +430,11 @@ class TestNtpath(NtpathTestCase):
         self.addCleanup(support.rmtree, ABSTFN)
 
         test_dir_long = ntpath.join(ABSTFN, "MyVeryLongDirectoryName")
-        test_dir_short = ntpath.join(ABSTFN, "MYVERY~1")
+        os.mkdir(test_dir_long)
+
+        test_dir_short = _getshortpathname(test_dir_long)
         test_file_long = ntpath.join(test_dir_long, "file.txt")
         test_file_short = ntpath.join(test_dir_short, "file.txt")
-
-        os.mkdir(test_dir_long)
 
         with open(test_file_long, "wb") as f:
             f.write(b"content")
