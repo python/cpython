@@ -177,7 +177,10 @@ class TestShutil(unittest.TestCase):
 
         Returns the path of the directory.
         """
-        d = tempfile.mkdtemp()
+        basedir = None
+        if sys.platform == "win32":
+            basedir = os.path.realpath(os.getcwd())
+        d = tempfile.mkdtemp(dir=basedir)
         self.tempdirs.append(d)
         return d
 
@@ -1788,8 +1791,11 @@ class TestMove(unittest.TestCase):
 
     def setUp(self):
         filename = "foo"
-        self.src_dir = tempfile.mkdtemp()
-        self.dst_dir = tempfile.mkdtemp()
+        basedir = None
+        if sys.platform == "win32":
+            basedir = os.path.realpath(os.getcwd())
+        self.src_dir = tempfile.mkdtemp(dir=basedir)
+        self.dst_dir = tempfile.mkdtemp(dir=basedir)
         self.src_file = os.path.join(self.src_dir, filename)
         self.dst_file = os.path.join(self.dst_dir, filename)
         with open(self.src_file, "wb") as f:
