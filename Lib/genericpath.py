@@ -149,7 +149,7 @@ def _check_arg_types(funcname, *args):
         elif isinstance(s, bytes):
             hasbytes = True
         else:
-            raise TypeError('%s() argument must be str or bytes, not %r' %
+            raise TypeError('%s() argument must be str, bytes or os.PathLike object, not %r' %
                             (funcname, s.__class__.__name__)) from None
     if hasstr and hasbytes:
         raise TypeError("Can't mix strings and bytes in path components") from None
