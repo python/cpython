@@ -123,6 +123,13 @@ class DateTimeTests(unittest.TestCase):
                               "http2time(%s) is not None\n"
                               "http2time(test) %s" % (test, http2time(test)))
 
+    def test_http2time_redos_regression_actually_completes(self):
+        # LOOSE_HTTP_DATE_RE was vulnerable to malicious input which caused catastrophic backtracking (REDoS).
+        # If we regress to cubic complexity, this test will take a very long time to succeed.
+        # If fixed, it should complete within a fraction of a second.
+        http2time("01 Jan 1970{}00:00:00 GMT!".format(" " * 10 ** 5))
+        http2time("01 Jan 1970 00:00:00{}GMT!".format(" " * 10 ** 5))
+
     def test_iso2time(self):
         def parse_date(text):
             return time.gmtime(iso2time(text))[:6]
