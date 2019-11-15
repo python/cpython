@@ -575,7 +575,7 @@ However, for reading convenience, most of the examples show sorted sequences.
    Calculates covariance of two variables *x* and *y*. Covariance is
    a measure of the joint variability of two variables.
 
-   Raises :exc:`StatisticsError` if both variables have same number of data
+   Raises :exc:`StatisticsError` if both variables have different number of data
    points, or if any of the variables has less then two data points.
 
    Examples:
@@ -601,7 +601,7 @@ However, for reading convenience, most of the examples show sorted sequences.
    relationship, where +1 means very strong, positive linear relationship,
    -1 very strong, negative linear relationship, and 0 no linear relationship.
 
-   Raises :exc:`StatisticsError` if both variables have same number of data
+   Raises :exc:`StatisticsError` if both variables have different number of data
    points, or if any of the variables has less then two data points, or if
    :func:`stdev` of any of the two variables is equal to zero (it is constant).
 
@@ -631,7 +631,7 @@ However, for reading convenience, most of the examples show sorted sequences.
    (it is equal to the difference between prediction and the actual values
    of dependent variable).
 
-   Raises :exc:`StatisticsError` if both variables have same number of data
+   Raises :exc:`StatisticsError` if both variables have different number of data
    points, or if any of the variables has less then two data points, or if
    :func:`stdev` of any of the two variables is equal to zero (it is constant).
 

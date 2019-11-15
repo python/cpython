@@ -81,7 +81,7 @@ Function            Description
 ==================  ====================================================
 covariance          Sample covariance for two variables.
 correlation         Pearson's correlation coefficient for two variables.
-linear_regression   Intercept and slope fot simple linear regression.
+linear_regression   Intercept and slope for simple linear regression.
 ==================  ====================================================
 
 Calculate covariance, Pearson's correlation, and simple linear regression
