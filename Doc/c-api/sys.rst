@@ -33,6 +33,12 @@ Operating System Utilities
    that clones the current process.
    Only available on systems where :c:func:`fork` is defined.
 
+   .. warning::
+      The C :c:func:`fork` call should only be made from the
+      :ref:`"main" thread <fork-and-threads>` (of the
+      :ref:`"main" interpreter <sub-interpreter-support>`).  The same is
+      true for ``PyOS_BeforeFork()``.
+
    .. versionadded:: 3.7
 
 
@@ -44,6 +50,12 @@ Operating System Utilities
    of whether process cloning was successful.
    Only available on systems where :c:func:`fork` is defined.
 
+   .. warning::
+      The C :c:func:`fork` call should only be made from the
+      :ref:`"main" thread <fork-and-threads>` (of the
+      :ref:`"main" interpreter <sub-interpreter-support>`).  The same is
+      true for ``PyOS_AfterFork_Parent()``.
+
    .. versionadded:: 3.7
 
 
@@ -54,6 +66,12 @@ Operating System Utilities
    or any similar function that clones the current process, if there is
    any chance the process will call back into the Python interpreter.
    Only available on systems where :c:func:`fork` is defined.
+
+   .. warning::
+      The C :c:func:`fork` call should only be made from the
+      :ref:`"main" thread <fork-and-threads>` (of the
+      :ref:`"main" interpreter <sub-interpreter-support>`).  The same is
+      true for ``PyOS_AfterFork_Child()``.
 
    .. versionadded:: 3.7
 
