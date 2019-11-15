@@ -427,7 +427,7 @@ attributes:
 
    Return ``True`` if the object is a data descriptor.
 
-   Data descriptors have both a :attr:`~object.__get__` and a :attr:`~object.__set__` method.
+   Data descriptors have a :attr:`~object.__set__` or a :attr:`~object.__delete__` method.
    Examples are properties (defined in Python), getsets, and members.  The
    latter two are defined in C and there are more specific tests available for
    those types, which is robust across Python implementations.  Typically, data
