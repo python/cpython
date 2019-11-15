@@ -625,6 +625,7 @@ ac_includes_default="\
 ac_subst_vars='LTLIBOBJS
 OPENSSL_LDFLAGS
 OPENSSL_LIBS
+OPENSSL_STATIC_ROOT
 OPENSSL_INCLUDES
 ENSUREPIP
 SRCDIRS
@@ -841,6 +842,7 @@ with_libc
 enable_big_digits
 with_computed_gotos
 with_ensurepip
+with_openssl_static
 with_openssl
 with_ssl_default_suites
 '
@@ -1551,6 +1553,9 @@ Optional Packages:
                           default on supported compilers)
   --with(out)-ensurepip=[=upgrade]
                           "install" or "upgrade" using bundled pip
+  --with-openssl-static=DIR
+                          root of the OpenSSL directory if you want to link
+                          OpenSSL statically.
   --with-openssl=DIR      root of the OpenSSL directory
   --with-ssl-default-suites=[python|openssl|STRING]
                           Override default cipher suites string, python: use
@@ -17071,6 +17076,148 @@ ac_includes_default="$save_includes_default"
 
 # Check for usable OpenSSL
 
+# if --with-openssl-static specified by user, set WITH_OPENSSL_STATIC,
+# OPENSSL_STATIC_ROOT and OPENSSL_INCLUDES
+WITH_OPENSSL_STATIC=false
+
+
+# Check whether --with-openssl-static was given.
+if test "${with_openssl_static+set}" = set; then :
+  withval=$with_openssl_static;
+            case "$withval" in
+            "" | y | ye | yes | n | no)
+            as_fn_error $? "Invalid --with-openssl-static value" "$LINENO" 5
+              ;;
+            *) ssldir="$withval"
+              ;;
+            esac
+
+            WITH_OPENSSL_STATIC=true
+            { $as_echo "$as_me:${as_lineno-$LINENO}: checking for openssl/ssl.h in $ssldir" >&5
+$as_echo_n "checking for openssl/ssl.h in $ssldir... " >&6; }
+            if test -f "$ssldir/include/openssl/ssl.h"; then
+                OPENSSL_INCLUDES="-I$ssldir/include"
+                { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+$as_echo "yes" >&6; }
+            else
+                { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+                as_fn_error $? "Invalid --with-openssl-static value - $ssldir/include/openssl/ssl.h does not exist" "$LINENO" 5
+            fi
+
+            { $as_echo "$as_me:${as_lineno-$LINENO}: checking for libssl.a and libcrypto.a in $ssldir" >&5
+$as_echo_n "checking for libssl.a and libcrypto.a in $ssldir... " >&6; }
+            if test -e "$ssldir/libssl.a" -a -e "$ssldir/libcrypto.a"; then
+                OPENSSL_STATIC_ROOT="$ssldir"
+                { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+$as_echo "yes" >&6; }
+            else
+                { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+                { $as_echo "$as_me:${as_lineno-$LINENO}: checking for libssl.a and libcrypto.a in $ssldir/lib" >&5
+$as_echo_n "checking for libssl.a and libcrypto.a in $ssldir/lib... " >&6; }
+                if test -e "$ssldir/lib/libssl.a" -a -e "$ssldir/lib/libcrypto.a"; then
+                    { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+$as_echo "yes" >&6; }
+                    OPENSSL_STATIC_ROOT="$ssldir/lib"
+                else
+                    { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+                    as_fn_error $? "Invalid --with-openssl-static value - libssl.a and/or libcrypto.a not found" "$LINENO" 5
+                fi
+            fi
+
+            # try the preprocessor and linker with our new flags,
+            # being careful not to pollute the global LIBS, LDFLAGS, and CPPFLAGS
+
+            save_LIBS="$LIBS"
+            save_LDFLAGS="$LDFLAGS"
+            save_CPPFLAGS="$CPPFLAGS"
+
+            echo "Trying link statically with;" \
+                "OPENSSL_LIBS=$OPENSSL_STATIC_ROOT/libssl.a $OPENSSL_STATIC_ROOT/libcrypto.a; " \
+                "OPENSSL_INCLUDES=$OPENSSL_INCLUDES" >&5
+
+            LIBS="$OPENSSL_STATIC_ROOT/libssl.a $OPENSSL_STATIC_ROOT/libcrypto.a $LIBS"
+            CPPFLAGS="$OPENSSL_INCLUDES $CPPFLAGS"
+
+            { $as_echo "$as_me:${as_lineno-$LINENO}: checking if compiling and linking against OpenSSL works" >&5
+$as_echo_n "checking if compiling and linking against OpenSSL works... " >&6; }
+            cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+#include <openssl/ssl.h>
+int
+main ()
+{
+SSL_new(NULL)
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_link "$LINENO"; then :
+
+                    { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+$as_echo "yes" >&6; }
+
+else
+
+                    { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+                    as_fn_error $? "Can't link against OpenSSL in $OPENSSL_STATIC_ROOT" "$LINENO" 5
+
+
+fi
+rm -f core conftest.err conftest.$ac_objext \
+    conftest$ac_exeext conftest.$ac_ext
+
+            { $as_echo "$as_me:${as_lineno-$LINENO}: checking if OpenSSL is compiled with -fPIC" >&5
+$as_echo_n "checking if OpenSSL is compiled with -fPIC... " >&6; }
+
+            LDFLAGS="-shared -fPIC $LDFLAGS"
+            cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+#include <openssl/ssl.h>
+                void test() {
+                    SSL_new(NULL);
+                }
+_ACEOF
+if ac_fn_c_try_link "$LINENO"; then :
+
+                    { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+$as_echo "yes" >&6; }
+
+else
+
+                    { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+                    as_fn_error $? "Can't link shared objects against OpenSSL in $OPENSSL_STATIC_ROOT. Is OpenSSL compiled with -fPIC ?" "$LINENO" 5
+
+fi
+rm -f core conftest.err conftest.$ac_objext \
+    conftest$ac_exeext conftest.$ac_ext
+
+            CPPFLAGS="$save_CPPFLAGS"
+            LDFLAGS="$save_LDFLAGS"
+            LIBS="$save_LIBS"
+
+
+
+
+else
+
+            WITH_OPENSSL_STATIC=false
+
+fi
+
+
+if $WITH_OPENSSL_STATIC; then
+    have_openssl=yes  # AX_CHECK_OPENSSL_STATIC errors out if ssl library not found
+    OPENSSL_LIBS=""
+    OPENSSL_LDFLAGS=""
+
+
+else
+
     found=false
 
 # Check whether --with-openssl was given.
@@ -17273,6 +17420,9 @@ rm -f core conftest.err conftest.$ac_objext \
 
 
 
+    OPENSSL_STATIC_ROOT=""
+
+fi
 
 if test "$have_openssl" = yes; then
     { $as_echo "$as_me:${as_lineno-$LINENO}: checking for X509_VERIFY_PARAM_set1_host in libssl" >&5
@@ -17281,8 +17431,13 @@ $as_echo_n "checking for X509_VERIFY_PARAM_set1_host in libssl... " >&6; }
     save_LIBS="$LIBS"
     save_LDFLAGS="$LDFLAGS"
     save_CPPFLAGS="$CPPFLAGS"
-    LDFLAGS="$LDFLAGS $OPENSSL_LDFLAGS"
-    LIBS="$OPENSSL_LIBS $LIBS"
+
+    if $WITH_OPENSSL_STATIC; then
+        LIBS="$OPENSSL_STATIC_ROOT/libssl.a $OPENSSL_STATIC_ROOT/libcrypto.a $LIBS"
+    else
+        LDFLAGS="$LDFLAGS $OPENSSL_LDFLAGS"
+        LIBS="$OPENSSL_LIBS $LIBS"
+    fi
     CPPFLAGS="$OPENSSL_INCLUDES $CPPFLAGS"
 
     cat confdefs.h - <<_ACEOF >conftest.$ac_ext

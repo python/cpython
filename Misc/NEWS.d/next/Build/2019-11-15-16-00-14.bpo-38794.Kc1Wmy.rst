@@ -1,0 +1,2 @@
+Support linking OpenSSL statically with a new ``--with-openssl-static``
+configure option.
