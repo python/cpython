@@ -769,9 +769,19 @@ supports the creation of additional interpreters (using
 :c:func:`Py_NewInterpreter`), but mixing multiple interpreters and the
 :c:func:`PyGILState_\*` API is unsupported.
 
+
+.. _fork-and-threads:
+
+Cautions about fork()
+---------------------
+
 Another important thing to note about threads is their behaviour in the face
 of the C :c:func:`fork` call. On most systems with :c:func:`fork`, after a
-process forks only the thread that issued the fork will exist. That also
+process forks only the thread that issued the fork will exist.  This has a
+concrete impact both on how locks must be handled and on all stored state
+in CPython's runtime.
+
+The fact that only the "current" thread remains
 means any locks held by other threads will never be released. Python solves
 this for :func:`os.fork` by acquiring the locks it uses internally before
 the fork, and releasing them afterwards. In addition, it resets any
@@ -785,6 +795,17 @@ into Python) may result in a deadlock by one of Python's internal locks
 being held by a thread that is defunct after the fork.
 :c:func:`PyOS_AfterFork_Child` tries to reset the necessary locks, but is not
 always able to.
+
+The fact that all other threads go away also means that CPython's
+runtime state there must be cleaned up properly, which :func:`os.fork`
+does.  This means finalizing all other :c:type:`PyThreadState` objects
+belonging to the current interpreter and all other
+:c:type:`PyInterpreterState` objects.  Due to this and the special
+nature of the :ref:`"main" interpreter <sub-interpreter-support>`,
+:c:func:`fork` should only be called in that interpreter's "main"
+thread, where the CPython global runtime was originally initialized.
+The only exception is if :c:func:`exec` will be called immediately
+after.
 
 
 High-level API

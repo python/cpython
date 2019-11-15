@@ -1,0 +1,3 @@
+Provides more details about the interaction between :c:func:`fork` and
+CPython's runtime, focusing just on the C-API.  This includes cautions
+about where :c:func:`fork` should and shouldn't be called.
