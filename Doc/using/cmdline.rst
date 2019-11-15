@@ -898,7 +898,7 @@ conflict.
 .. envvar:: PYTHONUTF8
 
    If set to ``1``, enables the interpreter's UTF-8 mode, where ``UTF-8`` is
-   used as encoding for system interfaces, regardless of the
+   used as the text encoding for system interfaces, regardless of the
    current locale setting.
 
    This means that:
