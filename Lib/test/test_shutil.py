@@ -1788,8 +1788,8 @@ class TestMove(unittest.TestCase):
 
     def setUp(self):
         filename = "foo"
-        self.src_dir = tempfile.mkdtemp()
-        self.dst_dir = tempfile.mkdtemp()
+        self.src_dir = tempfile.mkdtemp(dir=".")
+        self.dst_dir = tempfile.mkdtemp(dir=".")
         self.src_file = os.path.join(self.src_dir, filename)
         self.dst_file = os.path.join(self.dst_dir, filename)
         with open(self.src_file, "wb") as f:
