@@ -187,6 +187,12 @@ class DateTimeTests(unittest.TestCase):
             self.assertIsNone(iso2time(test),
                               "iso2time(%r)" % test)
 
+    def test_iso2time_performance_regression(self):
+        # If ISO_DATE_RE regresses to quadratic complexity, this test will take a very long time to succeed.
+        # If fixed, it should complete within a fraction of a second.
+        iso2time('1994-02-03{}14:15:29 -0100!'.format(' '*10**6))
+        iso2time('1994-02-03 14:15:29{}-0100!'.format(' '*10**6))
+
 
 class HeaderTests(unittest.TestCase):
 
