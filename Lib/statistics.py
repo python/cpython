@@ -93,8 +93,8 @@ for two variables:
 0.75
 >>> correlation(x, y)  #doctest: +ELLIPSIS
 0.31622776601...
->>> linear_regression(x, y)  #doctest: +ELLIPSIS
-(1.5, 0.099999999999...)
+>>> linear_regression(x, y)  #doctest:
+(1.5, 0.1)
 
 
 Exceptions
@@ -844,7 +844,7 @@ def pstdev(data, mu=None):
         return math.sqrt(var)
 
 
-# === Statistics for relations between two variables ===
+# === Statistics for relations between two inputs ===
 
 # See https://en.wikipedia.org/wiki/Covariance
 #     https://en.wikipedia.org/wiki/Pearson_correlation_coefficient
@@ -854,8 +854,8 @@ def pstdev(data, mu=None):
 def covariance(x, y, /):
     """Covariance
 
-    Calculates covariance of two variables *x* and *y*. Covariance is
-    a measure of the joint variability of two variables.
+    Return the covariance of two inputs *x* and *y*. Covariance is
+    a measure of the joint variability of two inputs.
 
     >>> x = [1, 2, 3, 4, 5, 6, 7, 8, 9]
     >>> y = [1, 2, 3, 1, 2, 3, 1, 2, 3]
@@ -870,7 +870,7 @@ def covariance(x, y, /):
     """
     n = len(x)
     if len(y) != n:
-        raise StatisticsError('covariance requires that both variables have same number of data points')
+        raise StatisticsError('covariance requires that both inputs have same number of data points')
     if n < 2:
         raise StatisticsError('covariance requires at least two data points')
     xbar = mean(x)
@@ -882,7 +882,7 @@ def covariance(x, y, /):
 def correlation(x, y, /):
     """Pearson's correlation coefficient
 
-    Return the Pearson's correlation coefficient for two variables. Pearson's
+    Return the Pearson's correlation coefficient for two inputs. Pearson's
     correlation coefficient *r* takes values between -1 and +1. It measures the
     strength and direction of the linear relationship, where +1 means very
     strong, positive linear relationship, -1 very strong, negative linear
@@ -898,7 +898,7 @@ def correlation(x, y, /):
     """
     n = len(x)
     if len(y) != n:
-        raise StatisticsError('correlation requires that both variables have same number of data points')
+        raise StatisticsError('correlation requires that both inputs have same number of data points')
     if n < 2:
         raise StatisticsError('correlation requires at least two data points')
     cov = covariance(x, y)
@@ -907,11 +907,11 @@ def correlation(x, y, /):
     try:
         return cov / (stdx * stdy)
     except ZeroDivisionError:
-        raise StatisticsError('standard deviation of at least one of the variables is zero')
+        raise StatisticsError('standard deviation of at least one of the inputs is zero')
 
 
 def linear_regression(regressor, dependent_variable):
-    """Calculate intercept and slope for simple linear regression
+    """Intercept and slope for simple linear regression
 
     Return the ``(intercept, slope)`` tuple of the simple linear regression
     parameters. Simple linear regression describes relationship between
@@ -934,16 +934,13 @@ def linear_regression(regressor, dependent_variable):
     """
     n = len(regressor)
     if len(dependent_variable) != n:
-        raise StatisticsError('linear regression requires that both variables have same number of data points')
+        raise StatisticsError('linear regression requires that both inputs have same number of data points')
     if n < 2:
         raise StatisticsError('linear regression requires at least two data points')
     try:
-        cor = correlation(regressor, dependent_variable)
-        stdx = stdev(regressor)
-        stdy = stdev(dependent_variable)
-        slope = cor * (stdy / stdx)
+        slope = covariance(regressor, dependent_variable) / variance(regressor)
     except ZeroDivisionError:
-        raise StatisticsError('standard deviation of at least one of the variables is zero')
+        raise StatisticsError('standard deviation of regressor is zero')
     intercept = mean(dependent_variable) - slope * mean(regressor)
     return intercept, slope
 

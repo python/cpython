@@ -572,11 +572,11 @@ However, for reading convenience, most of the examples show sorted sequences.
 
 .. function:: covariance(x, y, /)
 
-   Calculates covariance of two variables *x* and *y*. Covariance is
-   a measure of the joint variability of two variables.
+   Return the sample covariance of two inputs *x* and *y*. Covariance
+   is a measure of the joint variability of two inputs.
 
-   Raises :exc:`StatisticsError` if both variables have different number of data
-   points, or if any of the variables has less then two data points.
+   Both inputs must be of the same length (no less than two), otherwise
+   :exc:`StatisticsError` is raised.
 
    Examples:
 
@@ -596,14 +596,14 @@ However, for reading convenience, most of the examples show sorted sequences.
 
    Return the `Pearson's correlation coefficient
    <https://en.wikipedia.org/wiki/Pearson_correlation_coefficient>`_
-   for two variables. Pearson's correlation coefficient *r* takes values
+   for two inputs. Pearson's correlation coefficient *r* takes values
    between -1 and +1. It measures the strength and direction of the linear
    relationship, where +1 means very strong, positive linear relationship,
    -1 very strong, negative linear relationship, and 0 no linear relationship.
 
-   Raises :exc:`StatisticsError` if both variables have different number of data
-   points, or if any of the variables has less then two data points, or if
-   :func:`stdev` of any of the two variables is equal to zero (it is constant).
+   Both inputs must be of the same length (no less than two), and :func:`stdev`
+   of both inputs needs to be greater then zero, otherwise :exc:`StatisticsError`
+   is raised.
 
    Examples:
 
@@ -631,9 +631,9 @@ However, for reading convenience, most of the examples show sorted sequences.
    (it is equal to the difference between prediction and the actual values
    of dependent variable).
 
-   Raises :exc:`StatisticsError` if both variables have different number of data
-   points, or if any of the variables has less then two data points, or if
-   :func:`stdev` of any of the two variables is equal to zero (it is constant).
+   Both inputs must be of the same length (no less than two), and :func:`stdev`
+   of both inputs needs to be greater then zero, otherwise :exc:`StatisticsError`
+   is raised.
 
    For example, if we took the data on the data on `release dates of the Monty
    Python films <https://en.wikipedia.org/wiki/Monty_Python#Films>`_, and used
