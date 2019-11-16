@@ -1,1 +1,1 @@
-Fixes a ReDoS vulnerability in :mod:`http.cookiejar`.
+Fixes a ReDoS vulnerability in :mod:`http.cookiejar`. Patch by Ben Caller.
