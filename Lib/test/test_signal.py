@@ -6,7 +6,6 @@ import socket
 import statistics
 import subprocess
 import sys
-import threading
 import time
 import unittest
 from test import support

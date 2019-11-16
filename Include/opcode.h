@@ -53,6 +53,7 @@ extern "C" {
 #define LOAD_BUILD_CLASS         71
 #define YIELD_FROM               72
 #define GET_AWAITABLE            73
+#define LOAD_ASSERTION_ERROR     74
 #define INPLACE_LSHIFT           75
 #define INPLACE_RSHIFT           76
 #define INPLACE_AND              77

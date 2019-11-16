@@ -1,2 +1,0 @@
-``json.loads`` now emits ``DeprecationWarning`` when ``encoding`` option is
-specified.  Patch by Matthias Bussonnier.

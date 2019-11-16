@@ -1,0 +1,3 @@
+Add 'Run... Customized' to the Run menu to run a module with customized
+settings.  Any 'command line arguments' entered are added to sys.argv.
+One can suppress the normal Shell main module restart.

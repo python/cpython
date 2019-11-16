@@ -11,7 +11,7 @@ extern "C" {
 
 typedef struct {
     int              s_state;       /* State in current DFA */
-    dfa             *s_dfa;         /* Current DFA */
+    const dfa       *s_dfa;         /* Current DFA */
     struct _node    *s_parent;      /* Where to add next node */
 } stackentry;
 

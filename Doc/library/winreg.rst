@@ -343,7 +343,7 @@ This module offers the following functions:
    value set by the :func:`SetValue` method for the key identified by *key*.
 
    Values in the registry have name, type, and data components. This method
-   retrieves the data for a key's first value that has a NULL name. But the
+   retrieves the data for a key's first value that has a ``NULL`` name. But the
    underlying API call doesn't return the type, so always use
    :func:`QueryValueEx` if possible.
 
@@ -391,7 +391,7 @@ This module offers the following functions:
    <https://msdn.microsoft.com/en-us/library/ms724878%28v=VS.85%29.aspx>`__
    for more details.
 
-   This function passes NULL for *security_attributes* to the API.
+   This function passes ``NULL`` for *security_attributes* to the API.
 
 
 .. function:: SetValue(key, sub_key, type, value)
@@ -456,7 +456,7 @@ This module offers the following functions:
    *key* is an already open key, or one of the predefined :ref:`HKEY_* constants
    <hkey-constants>`.
 
-   Will generally raise :exc:`NotImplemented` if executed on a 32-bit operating
+   Will generally raise :exc:`NotImplementedError` if executed on a 32-bit operating
    system.
 
    If the key is not on the reflection list, the function succeeds but has no
@@ -471,7 +471,7 @@ This module offers the following functions:
    *key* is an already open key, or one of the predefined :ref:`HKEY_* constants
    <hkey-constants>`.
 
-   Will generally raise :exc:`NotImplemented` if executed on a 32-bit operating
+   Will generally raise :exc:`NotImplementedError` if executed on a 32-bit operating
    system.
 
    Restoring reflection for a key does not affect reflection of any subkeys.
@@ -486,7 +486,7 @@ This module offers the following functions:
 
    Returns ``True`` if reflection is disabled.
 
-   Will generally raise :exc:`NotImplemented` if executed on a 32-bit
+   Will generally raise :exc:`NotImplementedError` if executed on a 32-bit
    operating system.
 
 

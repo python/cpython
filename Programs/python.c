@@ -13,6 +13,6 @@ wmain(int argc, wchar_t **argv)
 int
 main(int argc, char **argv)
 {
-    return _Py_UnixMain(argc, argv);
+    return Py_BytesMain(argc, argv);
 }
 #endif

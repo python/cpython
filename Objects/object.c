@@ -2,9 +2,11 @@
 /* Generic object operations; and implementation of None */
 
 #include "Python.h"
-#include "pycore_object.h"
-#include "pycore_pystate.h"
 #include "pycore_context.h"
+#include "pycore_initconfig.h"
+#include "pycore_object.h"
+#include "pycore_pyerrors.h"
+#include "pycore_pystate.h"
 #include "frameobject.h"
 #include "interpreteridobject.h"
 
@@ -24,13 +26,14 @@ _Py_IDENTIFIER(__isabstractmethod__);
 int
 _PyObject_CheckConsistency(PyObject *op, int check_content)
 {
-    _PyObject_ASSERT(op, op != NULL);
-    _PyObject_ASSERT(op, !_PyObject_IsFreed(op));
-    _PyObject_ASSERT(op, Py_REFCNT(op) >= 1);
+#define CHECK(expr) \
+    do { if (!(expr)) { _PyObject_ASSERT_FAILED_MSG(op, Py_STRINGIFY(expr)); } } while (0)
 
-    PyTypeObject *type = op->ob_type;
-    _PyObject_ASSERT(op, type != NULL);
-    _PyType_CheckConsistency(type);
+    CHECK(!_PyObject_IsFreed(op));
+    CHECK(Py_REFCNT(op) >= 1);
+
+    CHECK(op->ob_type != NULL);
+    _PyType_CheckConsistency(op->ob_type);
 
     if (PyUnicode_Check(op)) {
         _PyUnicode_CheckConsistency(op, check_content);
@@ -39,6 +42,8 @@ _PyObject_CheckConsistency(PyObject *op, int check_content)
         _PyDict_CheckConsistency(op, check_content);
     }
     return 1;
+
+#undef CHECK
 }
 
 
@@ -123,7 +128,7 @@ void
 _Py_dump_counts(FILE* f)
 {
     PyInterpreterState *interp = _PyInterpreterState_Get();
-    if (!interp->core_config.show_alloc_count) {
+    if (!interp->config.show_alloc_count) {
         return;
     }
 
@@ -297,10 +302,7 @@ PyObject_CallFinalizer(PyObject *self)
 {
     PyTypeObject *tp = Py_TYPE(self);
 
-    /* The former could happen on heaptypes created from the C API, e.g.
-       PyType_FromSpec(). */
-    if (!PyType_HasFeature(tp, Py_TPFLAGS_HAVE_FINALIZE) ||
-        tp->tp_finalize == NULL)
+    if (tp->tp_finalize == NULL)
         return;
     /* tp_finalize should only be called once. */
     if (PyType_IS_GC(tp) && _PyGC_FINALIZED(self))
@@ -385,7 +387,7 @@ PyObject_Print(PyObject *op, FILE *fp, int flags)
                universally available */
             Py_BEGIN_ALLOW_THREADS
             fprintf(fp, "<refcnt %ld at %p>",
-                (long)op->ob_refcnt, op);
+                (long)op->ob_refcnt, (void *)op);
             Py_END_ALLOW_THREADS
         }
         else {
@@ -453,9 +455,12 @@ _PyObject_IsFreed(PyObject *op)
     /* ignore op->ob_ref: its value can have be modified
        by Py_INCREF() and Py_DECREF(). */
 #ifdef Py_TRACE_REFS
-    if (_PyMem_IsPtrFreed(op->_ob_next) || _PyMem_IsPtrFreed(op->_ob_prev)) {
+    if (op->_ob_next != NULL && _PyMem_IsPtrFreed(op->_ob_next)) {
         return 1;
     }
+    if (op->_ob_prev != NULL && _PyMem_IsPtrFreed(op->_ob_prev)) {
+         return 1;
+     }
 #endif
     return 0;
 }
@@ -465,41 +470,41 @@ _PyObject_IsFreed(PyObject *op)
 void
 _PyObject_Dump(PyObject* op)
 {
-    if (op == NULL) {
-        fprintf(stderr, "<NULL object>\n");
+    if (_PyObject_IsFreed(op)) {
+        /* It seems like the object memory has been freed:
+           don't access it to prevent a segmentation fault. */
+        fprintf(stderr, "<object at %p is freed>\n", op);
         fflush(stderr);
         return;
     }
 
-    if (_PyObject_IsFreed(op)) {
-        /* It seems like the object memory has been freed:
-           don't access it to prevent a segmentation fault. */
-        fprintf(stderr, "<Freed object>\n");
-        return;
-    }
-
-    PyGILState_STATE gil;
-    PyObject *error_type, *error_value, *error_traceback;
-
-    fprintf(stderr, "object  : ");
-    fflush(stderr);
-    gil = PyGILState_Ensure();
-
-    PyErr_Fetch(&error_type, &error_value, &error_traceback);
-    (void)PyObject_Print(op, stderr, 0);
-    fflush(stderr);
-    PyErr_Restore(error_type, error_value, error_traceback);
-
-    PyGILState_Release(gil);
+    /* first, write fields which are the least likely to crash */
+    fprintf(stderr, "object address  : %p\n", (void *)op);
     /* XXX(twouters) cast refcount to long until %zd is
        universally available */
-    fprintf(stderr, "\n"
-        "type    : %s\n"
-        "refcount: %ld\n"
-        "address : %p\n",
-        Py_TYPE(op)==NULL ? "NULL" : Py_TYPE(op)->tp_name,
-        (long)op->ob_refcnt,
-        op);
+    fprintf(stderr, "object refcount : %ld\n", (long)op->ob_refcnt);
+    fflush(stderr);
+
+    PyTypeObject *type = Py_TYPE(op);
+    fprintf(stderr, "object type     : %p\n", type);
+    fprintf(stderr, "object type name: %s\n",
+            type==NULL ? "NULL" : type->tp_name);
+
+    /* the most dangerous part */
+    fprintf(stderr, "object repr     : ");
+    fflush(stderr);
+
+    PyGILState_STATE gil = PyGILState_Ensure();
+    PyObject *error_type, *error_value, *error_traceback;
+    PyErr_Fetch(&error_type, &error_value, &error_traceback);
+
+    (void)PyObject_Print(op, stderr, 0);
+    fflush(stderr);
+
+    PyErr_Restore(error_type, error_value, error_traceback);
+    PyGILState_Release(gil);
+
+    fprintf(stderr, "\n");
     fflush(stderr);
 }
 
@@ -521,31 +526,37 @@ PyObject_Repr(PyObject *v)
         return PyUnicode_FromFormat("<%s object at %p>",
                                     v->ob_type->tp_name, v);
 
+    PyThreadState *tstate = _PyThreadState_GET();
 #ifdef Py_DEBUG
     /* PyObject_Repr() must not be called with an exception set,
        because it can clear it (directly or indirectly) and so the
        caller loses its exception */
-    assert(!PyErr_Occurred());
+    assert(!_PyErr_Occurred(tstate));
 #endif
 
     /* It is possible for a type to have a tp_repr representation that loops
        infinitely. */
-    if (Py_EnterRecursiveCall(" while getting the repr of an object"))
+    if (_Py_EnterRecursiveCall(tstate,
+                               " while getting the repr of an object")) {
         return NULL;
+    }
     res = (*v->ob_type->tp_repr)(v);
-    Py_LeaveRecursiveCall();
-    if (res == NULL)
+    _Py_LeaveRecursiveCall(tstate);
+
+    if (res == NULL) {
         return NULL;
+    }
     if (!PyUnicode_Check(res)) {
-        PyErr_Format(PyExc_TypeError,
-                     "__repr__ returned non-string (type %.200s)",
-                     res->ob_type->tp_name);
+        _PyErr_Format(tstate, PyExc_TypeError,
+                      "__repr__ returned non-string (type %.200s)",
+                      res->ob_type->tp_name);
         Py_DECREF(res);
         return NULL;
     }
 #ifndef Py_DEBUG
-    if (PyUnicode_READY(res) < 0)
+    if (PyUnicode_READY(res) < 0) {
         return NULL;
+    }
 #endif
     return res;
 }
@@ -575,31 +586,36 @@ PyObject_Str(PyObject *v)
     if (Py_TYPE(v)->tp_str == NULL)
         return PyObject_Repr(v);
 
+    PyThreadState *tstate = _PyThreadState_GET();
 #ifdef Py_DEBUG
     /* PyObject_Str() must not be called with an exception set,
        because it can clear it (directly or indirectly) and so the
        caller loses its exception */
-    assert(!PyErr_Occurred());
+    assert(!_PyErr_Occurred(tstate));
 #endif
 
     /* It is possible for a type to have a tp_str representation that loops
        infinitely. */
-    if (Py_EnterRecursiveCall(" while getting the str of an object"))
+    if (_Py_EnterRecursiveCall(tstate, " while getting the str of an object")) {
         return NULL;
+    }
     res = (*Py_TYPE(v)->tp_str)(v);
-    Py_LeaveRecursiveCall();
-    if (res == NULL)
+    _Py_LeaveRecursiveCall(tstate);
+
+    if (res == NULL) {
         return NULL;
+    }
     if (!PyUnicode_Check(res)) {
-        PyErr_Format(PyExc_TypeError,
-                     "__str__ returned non-string (type %.200s)",
-                     Py_TYPE(res)->tp_name);
+        _PyErr_Format(tstate, PyExc_TypeError,
+                      "__str__ returned non-string (type %.200s)",
+                      Py_TYPE(res)->tp_name);
         Py_DECREF(res);
         return NULL;
     }
 #ifndef Py_DEBUG
-    if (PyUnicode_READY(res) < 0)
+    if (PyUnicode_READY(res) < 0) {
         return NULL;
+    }
 #endif
     assert(_PyUnicode_CheckConsistency(res, 1));
     return res;
@@ -665,10 +681,68 @@ PyObject_Bytes(PyObject *v)
     return PyBytes_FromObject(v);
 }
 
+
+/*
+def _PyObject_FunctionStr(x):
+    try:
+        qualname = x.__qualname__
+    except AttributeError:
+        return str(x)
+    try:
+        mod = x.__module__
+        if mod is not None and mod != 'builtins':
+            return f"{x.__module__}.{qualname}()"
+    except AttributeError:
+        pass
+    return qualname
+*/
+PyObject *
+_PyObject_FunctionStr(PyObject *x)
+{
+    _Py_IDENTIFIER(__module__);
+    _Py_IDENTIFIER(__qualname__);
+    _Py_IDENTIFIER(builtins);
+    assert(!PyErr_Occurred());
+    PyObject *qualname;
+    int ret = _PyObject_LookupAttrId(x, &PyId___qualname__, &qualname);
+    if (qualname == NULL) {
+        if (ret < 0) {
+            return NULL;
+        }
+        return PyObject_Str(x);
+    }
+    PyObject *module;
+    PyObject *result = NULL;
+    ret = _PyObject_LookupAttrId(x, &PyId___module__, &module);
+    if (module != NULL && module != Py_None) {
+        PyObject *builtinsname = _PyUnicode_FromId(&PyId_builtins);
+        if (builtinsname == NULL) {
+            goto done;
+        }
+        ret = PyObject_RichCompareBool(module, builtinsname, Py_NE);
+        if (ret < 0) {
+            // error
+            goto done;
+        }
+        if (ret > 0) {
+            result = PyUnicode_FromFormat("%S.%S()", module, qualname);
+            goto done;
+        }
+    }
+    else if (ret < 0) {
+        goto done;
+    }
+    result = PyUnicode_FromFormat("%S()", qualname);
+done:
+    Py_DECREF(qualname);
+    Py_XDECREF(module);
+    return result;
+}
+
 /* For Python 3.0.1 and later, the old three-way comparison has been
    completely removed in favour of rich comparisons.  PyObject_Compare() and
    PyObject_Cmp() are gone, and the builtin cmp function no longer exists.
-   The old tp_compare slot has been renamed to tp_reserved, and should no
+   The old tp_compare slot has been renamed to tp_as_async, and should no
    longer be used.  Use tp_richcompare instead.
 
    See (*) below for practical amendments.
@@ -703,7 +777,7 @@ static const char * const opstrings[] = {"<", "<=", "==", "!=", ">", ">="};
 /* Perform a rich comparison, raising TypeError when the requested comparison
    operator is not supported. */
 static PyObject *
-do_richcompare(PyObject *v, PyObject *w, int op)
+do_richcompare(PyThreadState *tstate, PyObject *v, PyObject *w, int op)
 {
     richcmpfunc f;
     PyObject *res;
@@ -740,11 +814,11 @@ do_richcompare(PyObject *v, PyObject *w, int op)
         res = (v != w) ? Py_True : Py_False;
         break;
     default:
-        PyErr_Format(PyExc_TypeError,
-                     "'%s' not supported between instances of '%.100s' and '%.100s'",
-                     opstrings[op],
-                     v->ob_type->tp_name,
-                     w->ob_type->tp_name);
+        _PyErr_Format(tstate, PyExc_TypeError,
+                      "'%s' not supported between instances of '%.100s' and '%.100s'",
+                      opstrings[op],
+                      v->ob_type->tp_name,
+                      w->ob_type->tp_name);
         return NULL;
     }
     Py_INCREF(res);
@@ -757,18 +831,20 @@ do_richcompare(PyObject *v, PyObject *w, int op)
 PyObject *
 PyObject_RichCompare(PyObject *v, PyObject *w, int op)
 {
-    PyObject *res;
+    PyThreadState *tstate = _PyThreadState_GET();
 
     assert(Py_LT <= op && op <= Py_GE);
     if (v == NULL || w == NULL) {
-        if (!PyErr_Occurred())
+        if (!_PyErr_Occurred(tstate)) {
             PyErr_BadInternalCall();
+        }
         return NULL;
     }
-    if (Py_EnterRecursiveCall(" in comparison"))
+    if (_Py_EnterRecursiveCall(tstate, " in comparison")) {
         return NULL;
-    res = do_richcompare(v, w, op);
-    Py_LeaveRecursiveCall();
+    }
+    PyObject *res = do_richcompare(tstate, v, w, op);
+    _Py_LeaveRecursiveCall(tstate);
     return res;
 }
 
@@ -1044,8 +1120,10 @@ PyObject_SetAttr(PyObject *v, PyObject *name, PyObject *value)
     }
     if (tp->tp_setattr != NULL) {
         const char *name_str = PyUnicode_AsUTF8(name);
-        if (name_str == NULL)
+        if (name_str == NULL) {
+            Py_DECREF(name);
             return -1;
+        }
         err = (*tp->tp_setattr)(v, (char *)name_str, value);
         Py_DECREF(name);
         return err;
@@ -1152,8 +1230,7 @@ _PyObject_GetMethod(PyObject *obj, PyObject *name, PyObject **method)
     descr = _PyType_Lookup(tp, name);
     if (descr != NULL) {
         Py_INCREF(descr);
-        if (PyFunction_Check(descr) ||
-                (Py_TYPE(descr) == &PyMethodDescr_Type)) {
+        if (PyType_HasFeature(Py_TYPE(descr), Py_TPFLAGS_METHOD_DESCRIPTOR)) {
             meth_found = 1;
         } else {
             f = descr->ob_type->tp_descr_get;
@@ -1362,6 +1439,14 @@ _PyObject_GenericSetAttrWithDict(PyObject *obj, PyObject *name,
             goto done;
         }
     }
+
+    /* XXX [Steve Dower] These are really noisy - worth it? */
+    /*if (PyType_Check(obj) || PyModule_Check(obj)) {
+        if (value && PySys_Audit("object.__setattr__", "OOO", obj, name, value) < 0)
+            return -1;
+        if (!value && PySys_Audit("object.__delattr__", "OO", obj, name) < 0)
+            return -1;
+    }*/
 
     if (dict == NULL) {
         dictptr = _PyObject_GetDictPtr(obj);
@@ -1631,10 +1716,10 @@ PyTypeObject _PyNone_Type = {
     0,
     0,
     none_dealloc,       /*tp_dealloc*/ /*never called*/
-    0,                  /*tp_print*/
+    0,                  /*tp_vectorcall_offset*/
     0,                  /*tp_getattr*/
     0,                  /*tp_setattr*/
-    0,                  /*tp_reserved*/
+    0,                  /*tp_as_async*/
     none_repr,          /*tp_repr*/
     &none_as_number,    /*tp_as_number*/
     0,                  /*tp_as_sequence*/
@@ -1716,10 +1801,10 @@ PyTypeObject _PyNotImplemented_Type = {
     0,
     0,
     notimplemented_dealloc,       /*tp_dealloc*/ /*never called*/
-    0,                  /*tp_print*/
+    0,                  /*tp_vectorcall_offset*/
     0,                  /*tp_getattr*/
     0,                  /*tp_setattr*/
-    0,                  /*tp_reserved*/
+    0,                  /*tp_as_async*/
     NotImplemented_repr, /*tp_repr*/
     0,                  /*tp_as_number*/
     0,                  /*tp_as_sequence*/
@@ -1756,13 +1841,13 @@ PyObject _Py_NotImplementedStruct = {
     1, &_PyNotImplemented_Type
 };
 
-_PyInitError
+PyStatus
 _PyTypes_Init(void)
 {
 #define INIT_TYPE(TYPE, NAME) \
     do { \
         if (PyType_Ready(TYPE) < 0) { \
-            return _Py_INIT_ERR("Can't initialize " NAME " type"); \
+            return _PyStatus_ERR("Can't initialize " NAME " type"); \
         } \
     } while (0)
 
@@ -1828,10 +1913,11 @@ _PyTypes_Init(void)
     INIT_TYPE(&PyMethodDescr_Type, "method descr");
     INIT_TYPE(&PyCallIter_Type, "call iter");
     INIT_TYPE(&PySeqIter_Type, "sequence iterator");
+    INIT_TYPE(&PyPickleBuffer_Type, "pickle.PickleBuffer");
     INIT_TYPE(&PyCoro_Type, "coroutine");
     INIT_TYPE(&_PyCoroWrapper_Type, "coroutine wrapper");
     INIT_TYPE(&_PyInterpreterID_Type, "interpreter ID");
-    return _Py_INIT_OK();
+    return _PyStatus_OK();
 
 #undef INIT_TYPE
 }
@@ -1892,7 +1978,7 @@ _Py_PrintReferences(FILE *fp)
     PyObject *op;
     fprintf(fp, "Remaining objects:\n");
     for (op = refchain._ob_next; op != &refchain; op = op->_ob_next) {
-        fprintf(fp, "%p [%" PY_FORMAT_SIZE_T "d] ", op, op->ob_refcnt);
+        fprintf(fp, "%p [%" PY_FORMAT_SIZE_T "d] ", (void *)op, op->ob_refcnt);
         if (PyObject_Print(op, fp, 0) != 0)
             PyErr_Clear();
         putc('\n', fp);
@@ -1908,7 +1994,7 @@ _Py_PrintReferenceAddresses(FILE *fp)
     PyObject *op;
     fprintf(fp, "Remaining object addresses:\n");
     for (op = refchain._ob_next; op != &refchain; op = op->_ob_next)
-        fprintf(fp, "%p [%" PY_FORMAT_SIZE_T "d] %s\n", op,
+        fprintf(fp, "%p [%" PY_FORMAT_SIZE_T "d] %s\n", (void *)op,
             op->ob_refcnt, Py_TYPE(op)->tp_name);
 }
 
@@ -1951,12 +2037,10 @@ Py_ssize_t (*_Py_abstract_hack)(PyObject *) = PyObject_Size;
 void
 _PyObject_DebugTypeStats(FILE *out)
 {
-    _PyCFunction_DebugMallocStats(out);
     _PyDict_DebugMallocStats(out);
     _PyFloat_DebugMallocStats(out);
     _PyFrame_DebugMallocStats(out);
     _PyList_DebugMallocStats(out);
-    _PyMethod_DebugMallocStats(out);
     _PyTuple_DebugMallocStats(out);
 }
 
@@ -2066,7 +2150,7 @@ _PyTrash_thread_deposit_object(PyObject *op)
     tstate->trash_delete_later = op;
 }
 
-/* Dealloccate all the objects in the _PyTrash_delete_later list.  Called when
+/* Deallocate all the objects in the _PyTrash_delete_later list.  Called when
  * the call-stack unwinds again.
  */
 void
@@ -2140,6 +2224,7 @@ _PyObject_AssertFailed(PyObject *obj, const char *expr, const char *msg,
         fprintf(stderr, "%s: ", function);
     }
     fflush(stderr);
+
     if (expr) {
         fprintf(stderr, "Assertion \"%s\" failed", expr);
     }
@@ -2147,28 +2232,21 @@ _PyObject_AssertFailed(PyObject *obj, const char *expr, const char *msg,
         fprintf(stderr, "Assertion failed");
     }
     fflush(stderr);
+
     if (msg) {
         fprintf(stderr, ": %s", msg);
     }
     fprintf(stderr, "\n");
     fflush(stderr);
 
-    if (obj == NULL) {
-        fprintf(stderr, "<NULL object>\n");
-    }
-    else if (_PyObject_IsFreed(obj)) {
+    if (_PyObject_IsFreed(obj)) {
         /* It seems like the object memory has been freed:
            don't access it to prevent a segmentation fault. */
-        fprintf(stderr, "<object: freed>\n");
-    }
-    else if (Py_TYPE(obj) == NULL) {
-        fprintf(stderr, "<object: ob_type=NULL>\n");
-    }
-    else if (_PyObject_IsFreed((PyObject *)Py_TYPE(obj))) {
-        fprintf(stderr, "<object: freed type %p>\n", Py_TYPE(obj));
+        fprintf(stderr, "<object at %p is freed>\n", obj);
+        fflush(stderr);
     }
     else {
-        /* Diplay the traceback where the object has been allocated.
+        /* Display the traceback where the object has been allocated.
            Do it before dumping repr(obj), since repr() is more likely
            to crash than dumping the traceback. */
         void *ptr;
@@ -2184,8 +2262,10 @@ _PyObject_AssertFailed(PyObject *obj, const char *expr, const char *msg,
         /* This might succeed or fail, but we're about to abort, so at least
            try to provide any extra info we can: */
         _PyObject_Dump(obj);
+
+        fprintf(stderr, "\n");
+        fflush(stderr);
     }
-    fflush(stderr);
 
     Py_FatalError("_PyObject_AssertFailed");
 }

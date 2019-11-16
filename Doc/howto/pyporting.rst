@@ -31,20 +31,26 @@ are:
 
 #. Only worry about supporting Python 2.7
 #. Make sure you have good test coverage (coverage.py_ can help;
-   ``pip install coverage``)
+   ``python -m pip install coverage``)
 #. Learn the differences between Python 2 & 3
-#. Use Futurize_ (or Modernize_) to update your code (e.g. ``pip install future``)
+#. Use Futurize_ (or Modernize_) to update your code (e.g. ``python -m pip install future``)
 #. Use Pylint_ to help make sure you don't regress on your Python 3 support
-   (``pip install pylint``)
+   (``python -m pip install pylint``)
 #. Use caniusepython3_ to find out which of your dependencies are blocking your
-   use of Python 3 (``pip install caniusepython3``)
+   use of Python 3 (``python -m pip install caniusepython3``)
 #. Once your dependencies are no longer blocking you, use continuous integration
    to make sure you stay compatible with Python 2 & 3 (tox_ can help test
-   against multiple versions of Python; ``pip install tox``)
+   against multiple versions of Python; ``python -m pip install tox``)
 #. Consider using optional static type checking to make sure your type usage
    works in both Python 2 & 3 (e.g. use mypy_ to check your typing under both
-   Python 2 & Python 3).
+   Python 2 & Python 3; ``python -m pip install mypy``).
 
+.. note::
+
+   Note: Using ``python -m pip install`` guarantees that the ``pip`` you invoke
+   is the one installed for the Python currently in use, whether it be
+   a system-wide ``pip`` or one installed within a
+   :ref:`virtual environment <tut-venv>`.
 
 Details
 =======
@@ -71,7 +77,7 @@ Drop support for Python 2.6 and older
 While you can make Python 2.5 work with Python 3, it is **much** easier if you
 only have to work with Python 2.7. If dropping Python 2.5 is not an
 option then the six_ project can help you support Python 2.5 & 3 simultaneously
-(``pip install six``). Do realize, though, that nearly all the projects listed
+(``python -m pip install six``). Do realize, though, that nearly all the projects listed
 in this HOWTO will not be available to you.
 
 If you are able to skip Python 2.5 and older, then the required changes
