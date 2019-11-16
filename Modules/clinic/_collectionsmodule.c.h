@@ -2,6 +2,37 @@
 preserve
 [clinic start generated code]*/
 
+PyDoc_STRVAR(_collections__count_elements__doc__,
+"_count_elements($module, mapping, iterable, /)\n"
+"--\n"
+"\n"
+"Count elements in the iterable, updating the mapping");
+
+#define _COLLECTIONS__COUNT_ELEMENTS_METHODDEF    \
+    {"_count_elements", (PyCFunction)(void(*)(void))_collections__count_elements, METH_FASTCALL, _collections__count_elements__doc__},
+
+static PyObject *
+_collections__count_elements_impl(PyObject *module, PyObject *mapping,
+                                  PyObject *iterable);
+
+static PyObject *
+_collections__count_elements(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
+{
+    PyObject *return_value = NULL;
+    PyObject *mapping;
+    PyObject *iterable;
+
+    if (!_PyArg_CheckPositional("_count_elements", nargs, 2, 2)) {
+        goto exit;
+    }
+    mapping = args[0];
+    iterable = args[1];
+    return_value = _collections__count_elements_impl(module, mapping, iterable);
+
+exit:
+    return return_value;
+}
+
 static PyObject *
 tuplegetter_new_impl(PyTypeObject *type, Py_ssize_t index, PyObject *doc);
 
@@ -42,4 +73,4 @@ tuplegetter_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=51bd572577ca7111 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=9d2bfcc9df5faf35 input=a9049054013a1b77]*/

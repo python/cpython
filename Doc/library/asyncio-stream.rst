@@ -6,6 +6,10 @@
 Streams
 =======
 
+**Source code:** :source:`Lib/asyncio/streams.py`
+
+-------------------------------------------------
+
 Streams are high-level async/await-ready primitives to work with
 network connections.  Streams allow sending and receiving data without
 using callbacks or low-level protocols and transports.
@@ -22,13 +26,15 @@ streams::
             '127.0.0.1', 8888)
 
         print(f'Send: {message!r}')
-        await writer.awrite(message.encode())
+        writer.write(message.encode())
+        await writer.drain()
 
         data = await reader.read(100)
         print(f'Received: {data.decode()!r}')
 
         print('Close the connection')
-        await writer.aclose()
+        writer.close()
+        await writer.wait_closed()
 
     asyncio.run(tcp_echo_client('Hello World!'))
 
@@ -147,9 +153,6 @@ and work with streams:
       The *path* parameter can now be a :term:`path-like object`.
 
 
----------
-
-
 StreamReader
 ============
 
@@ -226,28 +229,42 @@ StreamWriter
    directly; use :func:`open_connection` and :func:`start_server`
    instead.
 
-   .. coroutinemethod:: awrite(data)
+   .. method:: write(data)
 
-      Write *data* to the stream.
+      The method attempts to write the *data* to the underlying socket immediately.
+      If that fails, the data is queued in an internal write buffer until it can be
+      sent.
 
-      The method respects flow control, execution is paused if the write
-      buffer reaches the high watermark.
+      The method should be used along with the ``drain()`` method::
 
-      .. versionadded:: 3.8
+         stream.write(data)
+         await stream.drain()
 
-   .. coroutinemethod:: aclose()
+   .. method:: writelines(data)
 
-      Close the stream.
+      The method writes a list (or any iterable) of bytes to the underlying socket
+      immediately.
+      If that fails, the data is queued in an internal write buffer until it can be
+      sent.
 
-      Wait until all closing actions are complete, e.g. SSL shutdown for
-      secure sockets.
+      The method should be used along with the ``drain()`` method::
 
-      .. versionadded:: 3.8
+         stream.writelines(lines)
+         await stream.drain()
+
+   .. method:: close()
+
+      The method closes the stream and the underlying socket.
+
+      The method should be used along with the ``wait_closed()`` method::
+
+         stream.close()
+         await stream.wait_closed()
 
    .. method:: can_write_eof()
 
-      Return *True* if the underlying transport supports
-      the :meth:`write_eof` method, *False* otherwise.
+      Return ``True`` if the underlying transport supports
+      the :meth:`write_eof` method, ``False`` otherwise.
 
    .. method:: write_eof()
 
@@ -263,21 +280,6 @@ StreamWriter
       Access optional transport information; see
       :meth:`BaseTransport.get_extra_info` for details.
 
-   .. method:: write(data)
-
-      Write *data* to the stream.
-
-      This method is not subject to flow control.  Calls to ``write()`` should
-      be followed by :meth:`drain`.  The :meth:`awrite` method is a
-      recommended alternative the applies flow control automatically.
-
-   .. method:: writelines(data)
-
-      Write a list (or any iterable) of bytes to the stream.
-
-      This method is not subject to flow control. Calls to ``writelines()``
-      should be followed by :meth:`drain`.
-
    .. coroutinemethod:: drain()
 
       Wait until it is appropriate to resume writing to the stream.
@@ -292,10 +294,6 @@ StreamWriter
       buffer is drained down to the low watermark and writing can
       be resumed.  When there is nothing to wait for, the :meth:`drain`
       returns immediately.
-
-   .. method:: close()
-
-      Close the stream.
 
    .. method:: is_closing()
 

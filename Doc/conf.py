@@ -23,6 +23,9 @@ try:
 except ImportError:
     _tkinter = None
 '''
+
+manpages_url = 'https://manpages.debian.org/{path}'
+
 # General substitutions.
 project = 'Python'
 copyright = '2001-%s, Python Software Foundation' % time.strftime('%Y')
@@ -45,8 +48,10 @@ highlight_language = 'python3'
 needs_sphinx = '1.8'
 
 # Ignore any .rst files in the venv/ directory.
-venvdir = os.getenv('VENVDIR', 'venv')
-exclude_patterns = [venvdir+'/*', 'README.rst']
+exclude_patterns = ['venv/*', 'README.rst']
+venvdir = os.getenv('VENVDIR')
+if venvdir is not None:
+    exclude_patterns.append(venvdir + '/*')
 
 # Disable Docutils smartquotes for several translations
 smartquotes_excludes = {

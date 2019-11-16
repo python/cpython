@@ -3,6 +3,7 @@
 import os
 import re
 import fnmatch
+import sys
 
 __all__ = ["glob", "iglob", "escape"]
 
@@ -37,6 +38,7 @@ def iglob(pathname, *, recursive=False):
     return it
 
 def _iglob(pathname, recursive, dironly):
+    sys.audit("glob.glob", pathname, recursive)
     dirname, basename = os.path.split(pathname)
     if not has_magic(pathname):
         assert not dironly

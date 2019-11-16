@@ -1,0 +1,1 @@
+Add :meth:`is_relative_to` in :class:`PurePath` to determine whether or not one path is relative to another.

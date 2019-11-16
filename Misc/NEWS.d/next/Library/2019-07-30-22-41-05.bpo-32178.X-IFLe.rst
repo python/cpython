@@ -1,0 +1,1 @@
+Fix IndexError in :mod:`email` package when trying to parse invalid address fields starting with ``:``.

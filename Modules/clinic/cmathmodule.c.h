@@ -648,10 +648,10 @@ exit:
 }
 
 PyDoc_STRVAR(cmath_log__doc__,
-"log($module, x, y_obj=None, /)\n"
+"log($module, z, base=<unrepresentable>, /)\n"
 "--\n"
 "\n"
-"The logarithm of z to the given base.\n"
+"log(z[, base]) -> the logarithm of z to the given base.\n"
 "\n"
 "If the base not specified, returns the natural logarithm (base e) of z.");
 
@@ -766,13 +766,25 @@ cmath_rect(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     if (!_PyArg_CheckPositional("rect", nargs, 2, 2)) {
         goto exit;
     }
-    r = PyFloat_AsDouble(args[0]);
-    if (PyErr_Occurred()) {
-        goto exit;
+    if (PyFloat_CheckExact(args[0])) {
+        r = PyFloat_AS_DOUBLE(args[0]);
     }
-    phi = PyFloat_AsDouble(args[1]);
-    if (PyErr_Occurred()) {
-        goto exit;
+    else
+    {
+        r = PyFloat_AsDouble(args[0]);
+        if (r == -1.0 && PyErr_Occurred()) {
+            goto exit;
+        }
+    }
+    if (PyFloat_CheckExact(args[1])) {
+        phi = PyFloat_AS_DOUBLE(args[1]);
+    }
+    else
+    {
+        phi = PyFloat_AsDouble(args[1]);
+        if (phi == -1.0 && PyErr_Occurred()) {
+            goto exit;
+        }
     }
     return_value = cmath_rect_impl(module, r, phi);
 
@@ -922,17 +934,29 @@ cmath_isclose(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObjec
         goto skip_optional_kwonly;
     }
     if (args[2]) {
-        rel_tol = PyFloat_AsDouble(args[2]);
-        if (PyErr_Occurred()) {
-            goto exit;
+        if (PyFloat_CheckExact(args[2])) {
+            rel_tol = PyFloat_AS_DOUBLE(args[2]);
+        }
+        else
+        {
+            rel_tol = PyFloat_AsDouble(args[2]);
+            if (rel_tol == -1.0 && PyErr_Occurred()) {
+                goto exit;
+            }
         }
         if (!--noptargs) {
             goto skip_optional_kwonly;
         }
     }
-    abs_tol = PyFloat_AsDouble(args[3]);
-    if (PyErr_Occurred()) {
-        goto exit;
+    if (PyFloat_CheckExact(args[3])) {
+        abs_tol = PyFloat_AS_DOUBLE(args[3]);
+    }
+    else
+    {
+        abs_tol = PyFloat_AsDouble(args[3]);
+        if (abs_tol == -1.0 && PyErr_Occurred()) {
+            goto exit;
+        }
     }
 skip_optional_kwonly:
     _return_value = cmath_isclose_impl(module, a, b, rel_tol, abs_tol);
@@ -944,4 +968,4 @@ skip_optional_kwonly:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=c7afb866e593fa45 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=3edc4484b10ae752 input=a9049054013a1b77]*/

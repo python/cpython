@@ -1,2 +1,0 @@
-With the Windows 10 Creators Update, non-elevated users can now create
-symlinks as long as the computer has Developer Mode enabled.

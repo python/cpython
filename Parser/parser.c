@@ -6,7 +6,6 @@
 /* XXX To do: error recovery */
 
 #include "Python.h"
-#include "pgenheaders.h"
 #include "token.h"
 #include "grammar.h"
 #include "node.h"
@@ -36,7 +35,7 @@ s_reset(stack *s)
 #define s_empty(s) ((s)->s_top == &(s)->s_base[MAXSTACK])
 
 static int
-s_push(stack *s, dfa *d, node *parent)
+s_push(stack *s, const dfa *d, node *parent)
 {
     stackentry *top;
     if (s->s_top == s->s_base) {
@@ -120,7 +119,7 @@ shift(stack *s, int type, char *str, int newstate, int lineno, int col_offset,
 }
 
 static int
-push(stack *s, int type, dfa *d, int newstate, int lineno, int col_offset,
+push(stack *s, int type, const dfa *d, int newstate, int lineno, int col_offset,
      int end_lineno, int end_col_offset)
 {
     int err;
@@ -145,7 +144,7 @@ classify(parser_state *ps, int type, const char *str)
     int n = g->g_ll.ll_nlabels;
 
     if (type == NAME) {
-        label *l = g->g_ll.ll_label;
+        const label *l = g->g_ll.ll_label;
         int i;
         for (i = n; i > 0; i--, l++) {
             if (l->lb_type != NAME || l->lb_str == NULL ||
@@ -169,7 +168,7 @@ classify(parser_state *ps, int type, const char *str)
     }
 
     {
-        label *l = g->g_ll.ll_label;
+        const label *l = g->g_ll.ll_label;
         int i;
         for (i = n; i > 0; i--, l++) {
             if (l->lb_type == type && l->lb_str == NULL) {
@@ -247,7 +246,7 @@ PyParser_AddToken(parser_state *ps, int type, char *str,
     /* Loop until the token is shifted or an error occurred */
     for (;;) {
         /* Fetch the current dfa and state */
-        dfa *d = ps->p_stack.s_top->s_dfa;
+        const dfa *d = ps->p_stack.s_top->s_dfa;
         state *s = &d->d_state[ps->p_stack.s_top->s_state];
 
         D(printf(" DFA '%s', state %d:",
@@ -261,7 +260,6 @@ PyParser_AddToken(parser_state *ps, int type, char *str,
                     /* Push non-terminal */
                     int nt = (x >> 8) + NT_OFFSET;
                     int arrow = x & ((1<<7)-1);
-                    dfa *d1;
                     if (nt == func_body_suite && !(ps->p_flags & PyCF_TYPE_COMMENTS)) {
                         /* When parsing type comments is not requested,
                            we can provide better errors about bad indentation
@@ -269,7 +267,7 @@ PyParser_AddToken(parser_state *ps, int type, char *str,
                         D(printf(" [switch func_body_suite to suite]"));
                         nt = suite;
                     }
-                    d1 = PyGrammar_FindDFA(
+                    const dfa *d1 = PyGrammar_FindDFA(
                         ps->p_grammar, nt);
                     if ((err = push(&ps->p_stack, nt, d1,
                         arrow, lineno, col_offset,

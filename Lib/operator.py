@@ -302,15 +302,11 @@ class methodcaller:
     """
     __slots__ = ('_name', '_args', '_kwargs')
 
-    def __init__(*args, **kwargs):
-        if len(args) < 2:
-            msg = "methodcaller needs at least one argument, the method name"
-            raise TypeError(msg)
-        self = args[0]
-        self._name = args[1]
+    def __init__(self, name, /, *args, **kwargs):
+        self._name = name
         if not isinstance(self._name, str):
             raise TypeError('method name must be a string')
-        self._args = args[2:]
+        self._args = args
         self._kwargs = kwargs
 
     def __call__(self, obj):

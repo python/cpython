@@ -76,7 +76,8 @@ The :mod:`functools` module defines the following functions:
    .. versionadded:: 3.2
 
 
-.. decorator:: lru_cache(maxsize=128, typed=False)
+.. decorator:: lru_cache(user_function)
+               lru_cache(maxsize=128, typed=False)
 
    Decorator to wrap a function with a memoizing callable that saves up to the
    *maxsize* most recent calls.  It can save time when an expensive or I/O bound
@@ -90,6 +91,15 @@ The :mod:`functools` module defines the following functions:
    differ in their keyword argument order and may have two separate cache
    entries.
 
+   If *user_function* is specified, it must be a callable. This allows the
+   *lru_cache* decorator to be applied directly to a user function, leaving
+   the *maxsize* at its default value of 128::
+
+       @lru_cache
+       def count_vowels(sentence):
+           sentence = sentence.casefold()
+           return sum(sentence.count(vowel) for vowel in 'aeiou')
+
    If *maxsize* is set to ``None``, the LRU feature is disabled and the cache can
    grow without bound.  The LRU feature performs best when *maxsize* is a
    power-of-two.
@@ -97,6 +107,11 @@ The :mod:`functools` module defines the following functions:
    If *typed* is set to true, function arguments of different types will be
    cached separately.  For example, ``f(3)`` and ``f(3.0)`` will be treated
    as distinct calls with distinct results.
+
+   The wrapped function is instrumented with a :func:`cache_parameters`
+   function that returns a new :class:`dict` showing the values for *maxsize*
+   and *typed*.  This is for information purposes only.  Mutating the values
+   has no effect.
 
    To help measure the effectiveness of the cache and tune the *maxsize*
    parameter, the wrapped function is instrumented with a :func:`cache_info`
@@ -165,6 +180,12 @@ The :mod:`functools` module defines the following functions:
    .. versionchanged:: 3.3
       Added the *typed* option.
 
+   .. versionchanged:: 3.8
+      Added the *user_function* option.
+
+   .. versionadded:: 3.9
+      Added the function :func:`cache_parameters`
+
 .. decorator:: total_ordering
 
    Given a class defining one or more rich comparison ordering methods, this
@@ -208,7 +229,7 @@ The :mod:`functools` module defines the following functions:
       Returning NotImplemented from the underlying comparison function for
       unrecognised types is now supported.
 
-.. function:: partial(func, *args, **keywords)
+.. function:: partial(func, /, *args, **keywords)
 
    Return a new :ref:`partial object<partial-objects>` which when called
    will behave like *func* called with the positional arguments *args*
@@ -217,7 +238,7 @@ The :mod:`functools` module defines the following functions:
    supplied, they extend and override *keywords*.
    Roughly equivalent to::
 
-      def partial(func, *args, **keywords):
+      def partial(func, /, *args, **keywords):
           def newfunc(*fargs, **fkeywords):
               newkeywords = {**keywords, **fkeywords}
               return func(*args, *fargs, **newkeywords)
@@ -239,7 +260,7 @@ The :mod:`functools` module defines the following functions:
       18
 
 
-.. class:: partialmethod(func, *args, **keywords)
+.. class:: partialmethod(func, /, *args, **keywords)
 
    Return a new :class:`partialmethod` descriptor which behaves
    like :class:`partial` except that it is designed to be used as a method
@@ -262,7 +283,7 @@ The :mod:`functools` module defines the following functions:
 
    Example::
 
-      >>> class Cell(object):
+      >>> class Cell:
       ...     def __init__(self):
       ...         self._alive = False
       ...     @property

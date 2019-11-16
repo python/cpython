@@ -5,6 +5,7 @@ import os
 import struct
 import sys
 import unittest
+from multiprocessing import Process
 from test.support import (verbose, TESTFN, unlink, run_unittest, import_module,
                           cpython_only)
 
@@ -12,7 +13,6 @@ from test.support import (verbose, TESTFN, unlink, run_unittest, import_module,
 fcntl = import_module('fcntl')
 
 
-# TODO - Write tests for flock() and lockf().
 
 def get_lockdata():
     try:
@@ -138,12 +138,45 @@ class TestFcntl(unittest.TestCase):
         self.assertRaises(ValueError, fcntl.flock, -1, fcntl.LOCK_SH)
         self.assertRaises(TypeError, fcntl.flock, 'spam', fcntl.LOCK_SH)
 
+    def test_lockf_exclusive(self):
+        self.f = open(TESTFN, 'wb+')
+        cmd = fcntl.LOCK_EX | fcntl.LOCK_NB
+        def try_lockf_on_other_process():
+            self.assertRaises(BlockingIOError, fcntl.lockf, self.f, cmd)
+
+        fcntl.lockf(self.f, cmd)
+        p = Process(target=try_lockf_on_other_process)
+        p.start()
+        p.join()
+        fcntl.lockf(self.f, fcntl.LOCK_UN)
+        self.assertEqual(p.exitcode, 0)
+
+    def test_lockf_share(self):
+        self.f = open(TESTFN, 'wb+')
+        cmd = fcntl.LOCK_SH | fcntl.LOCK_NB
+        def try_lockf_on_other_process():
+            fcntl.lockf(self.f, cmd)
+            fcntl.lockf(self.f, fcntl.LOCK_UN)
+
+        fcntl.lockf(self.f, cmd)
+        p = Process(target=try_lockf_on_other_process)
+        p.start()
+        p.join()
+        fcntl.lockf(self.f, fcntl.LOCK_UN)
+        self.assertEqual(p.exitcode, 0)
+
     @cpython_only
     def test_flock_overflow(self):
         import _testcapi
         self.assertRaises(OverflowError, fcntl.flock, _testcapi.INT_MAX+1,
                           fcntl.LOCK_SH)
 
+    @unittest.skipIf(sys.platform != 'darwin', "F_GETPATH is only available on macos")
+    def test_fcntl_f_getpath(self):
+        self.f = open(TESTFN, 'wb')
+        expected = os.path.abspath(TESTFN).encode('utf-8')
+        res = fcntl.fcntl(self.f.fileno(), fcntl.F_GETPATH, bytes(len(expected)))
+        self.assertEqual(expected, res)
 
 def test_main():
     run_unittest(TestFcntl)

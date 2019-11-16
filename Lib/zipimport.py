@@ -351,7 +351,7 @@ def _get_module_info(self, fullname):
 # data_size and file_offset are 0.
 def _read_directory(archive):
     try:
-        fp = _io.open(archive, 'rb')
+        fp = _io.open_code(archive)
     except OSError:
         raise ZipImportError(f"can't open Zip file: {archive!r}", path=archive)
 
@@ -533,7 +533,7 @@ def _get_data(archive, toc_entry):
     if data_size < 0:
         raise ZipImportError('negative data size')
 
-    with _io.open(archive, 'rb') as fp:
+    with _io.open_code(archive) as fp:
         # Check to make sure the local file header is correct
         try:
             fp.seek(file_offset)

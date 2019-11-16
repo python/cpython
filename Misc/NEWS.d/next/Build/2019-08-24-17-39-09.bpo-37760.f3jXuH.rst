@@ -1,0 +1,6 @@
+The :file:`Tools/unicode/makeunicodedata.py` script, which is used for
+converting information from the Unicode Character Database into generated
+code and data used by the methods of :class:`str` and by the
+:mod:`unicodedata` module, now handles each character's data as a
+``dataclass`` with named attributes, rather than a length-18 list of
+different fields.

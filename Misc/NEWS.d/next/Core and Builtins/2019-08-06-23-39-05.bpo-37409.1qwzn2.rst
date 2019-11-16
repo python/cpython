@@ -1,0 +1,2 @@
+Ensure explicit relative imports from interactive sessions and scripts (having no parent package) always raise ImportError, rather than treating the current module as the package.
+Patch by Ben Lewis.

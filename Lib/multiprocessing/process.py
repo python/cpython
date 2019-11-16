@@ -7,7 +7,8 @@
 # Licensed to PSF under a Contributor Agreement.
 #
 
-__all__ = ['BaseProcess', 'current_process', 'active_children']
+__all__ = ['BaseProcess', 'current_process', 'active_children',
+           'parent_process']
 
 #
 # Imports
@@ -46,6 +47,13 @@ def active_children():
     _cleanup()
     return list(_children)
 
+
+def parent_process():
+    '''
+    Return process object representing the parent process
+    '''
+    return _parent_process
+
 #
 #
 #
@@ -76,6 +84,7 @@ class BaseProcess(object):
         self._identity = _current_process._identity + (count,)
         self._config = _current_process._config.copy()
         self._parent_pid = os.getpid()
+        self._parent_name = _current_process.name
         self._popen = None
         self._closed = False
         self._target = target
@@ -278,9 +287,9 @@ class BaseProcess(object):
 
     ##
 
-    def _bootstrap(self):
+    def _bootstrap(self, parent_sentinel=None):
         from . import util, context
-        global _current_process, _process_counter, _children
+        global _current_process, _parent_process, _process_counter, _children
 
         try:
             if self._start_method is not None:
@@ -290,6 +299,8 @@ class BaseProcess(object):
             util._close_stdin()
             old_process = _current_process
             _current_process = self
+            _parent_process = _ParentProcess(
+                self._parent_name, self._parent_pid, parent_sentinel)
             try:
                 util._finalizer_registry.clear()
                 util._run_after_forkers()
@@ -337,6 +348,40 @@ class AuthenticationString(bytes):
                 )
         return AuthenticationString, (bytes(self),)
 
+
+#
+# Create object representing the parent process
+#
+
+class _ParentProcess(BaseProcess):
+
+    def __init__(self, name, pid, sentinel):
+        self._identity = ()
+        self._name = name
+        self._pid = pid
+        self._parent_pid = None
+        self._popen = None
+        self._closed = False
+        self._sentinel = sentinel
+        self._config = {}
+
+    def is_alive(self):
+        from multiprocessing.connection import wait
+        return not wait([self._sentinel], timeout=0)
+
+    @property
+    def ident(self):
+        return self._pid
+
+    def join(self, timeout=None):
+        '''
+        Wait until parent process terminates
+        '''
+        from multiprocessing.connection import wait
+        wait([self._sentinel], timeout=timeout)
+
+    pid = ident
+
 #
 # Create object representing the main process
 #
@@ -365,6 +410,7 @@ class _MainProcess(BaseProcess):
         pass
 
 
+_parent_process = None
 _current_process = _MainProcess()
 _process_counter = itertools.count(1)
 _children = set()
