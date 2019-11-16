@@ -73,8 +73,8 @@ second argument to the four "spread" functions to avoid recalculating it:
 2.5
 
 
-Statistics for relations between two variables
-----------------------------------------------
+Statistics for relations between two inputs
+-------------------------------------------
 
 ==================  ====================================================
 Function            Description
@@ -85,7 +85,7 @@ linear_regression   Intercept and slope for simple linear regression.
 ==================  ====================================================
 
 Calculate covariance, Pearson's correlation, and simple linear regression
-for two variables:
+for two inputs:
 
 >>> x = [1, 2, 3, 4, 5, 6, 7, 8, 9]
 >>> y = [1, 2, 3, 1, 2, 3, 1, 2, 3]
@@ -854,8 +854,8 @@ def pstdev(data, mu=None):
 def covariance(x, y, /):
     """Covariance
 
-    Return the covariance of two inputs *x* and *y*. Covariance is
-    a measure of the joint variability of two inputs.
+    Return the sample covariance of two inputs *x* and *y*. Covariance
+    is a measure of the joint variability of two inputs.
 
     >>> x = [1, 2, 3, 4, 5, 6, 7, 8, 9]
     >>> y = [1, 2, 3, 1, 2, 3, 1, 2, 3]
@@ -907,23 +907,24 @@ def correlation(x, y, /):
     try:
         return cov / (stdx * stdy)
     except ZeroDivisionError:
-        raise StatisticsError('standard deviation of at least one of the inputs is zero')
+        raise StatisticsError('at least one of the inputs is constant')
 
 
 def linear_regression(regressor, dependent_variable):
     """Intercept and slope for simple linear regression
 
     Return the ``(intercept, slope)`` tuple of the simple linear regression
-    parameters. Simple linear regression describes relationship between
-    *regressor* and *dependent variable* in terms of linear function::
+    parameters estimated using ordinary least squares. Simple linear
+    regression describes relationship between *regressor* and
+    *dependent variable* in terms of linear function::
 
         dependent_variable = intercept + slope * regressor + noise
 
-   where ``intercept`` and ``slope`` are the regression parameters that are
-   estimated, and noise term is an unobserved random variable, for the
-   variability of the data that was not explained byt the linear regression
-   (it is equal to the difference between prediction and the actual values
-   of dependent variable).
+    where ``intercept`` and ``slope`` are the regression parameters that are
+    estimated, and noise term is an unobserved random variable, for the
+    variability of the data that was not explained by the linear regression
+    (it is equal to the difference between prediction and the actual values
+    of dependent variable).
 
     >>> regressor = [1, 2, 3, 4, 5]
     >>> noise = NormalDist().samples(5, seed=42)
@@ -940,7 +941,7 @@ def linear_regression(regressor, dependent_variable):
     try:
         slope = covariance(regressor, dependent_variable) / variance(regressor)
     except ZeroDivisionError:
-        raise StatisticsError('standard deviation of regressor is zero')
+        raise StatisticsError('regressor is constant')
     intercept = mean(dependent_variable) - slope * mean(regressor)
     return intercept, slope
 

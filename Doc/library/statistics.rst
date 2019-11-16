@@ -68,10 +68,10 @@ tends to deviate from the typical or average values.
 :func:`variance`         Sample variance of data.
 =======================  =============================================
 
-Statistics for relations between two variables
-----------------------------------------------
+Statistics for relations between two inputs
+-------------------------------------------
 
-These functions calculate statistics regarding relations between two random variables.
+These functions calculate statistics regarding relations between two inputs.
 
 =========================  =====================================================
 :func:`covariance`         Sample covariance for two variables.
@@ -601,9 +601,8 @@ However, for reading convenience, most of the examples show sorted sequences.
    relationship, where +1 means very strong, positive linear relationship,
    -1 very strong, negative linear relationship, and 0 no linear relationship.
 
-   Both inputs must be of the same length (no less than two), and :func:`stdev`
-   of both inputs needs to be greater then zero, otherwise :exc:`StatisticsError`
-   is raised.
+   Both inputs must be of the same length (no less than two), and need
+   not to be constant, otherwise :exc:`StatisticsError` is raised.
 
    Examples:
 
@@ -620,20 +619,20 @@ However, for reading convenience, most of the examples show sorted sequences.
 
    Return the ``(intercept, slope)`` tuple of the `simple linear regression
    <https://en.wikipedia.org/wiki/Simple_linear_regression>`_
-   parameters. Simple linear regression describes relationship between
-   *regressor* and *dependent variable* in terms of linear function:
+   parameters estimated using ordinary least squares. Simple linear
+   regression describes relationship between *regressor* and
+   *dependent variable* in terms of linear function:
 
       *dependent_variable = intercept + slope * regressor + noise*
 
    where ``intercept`` and ``slope`` are the regression parameters that are
    estimated, and noise term is an unobserved random variable, for the
-   variability of the data that was not explained byt the linear regression
+   variability of the data that was not explained by the linear regression
    (it is equal to the difference between prediction and the actual values
    of dependent variable).
 
-   Both inputs must be of the same length (no less than two), and :func:`stdev`
-   of both inputs needs to be greater then zero, otherwise :exc:`StatisticsError`
-   is raised.
+   Both inputs must be of the same length (no less than two), and regressor
+   needs not to be constant, otherwise :exc:`StatisticsError` is raised.
 
    For example, if we took the data on the data on `release dates of the Monty
    Python films <https://en.wikipedia.org/wiki/Monty_Python#Films>`_, and used
@@ -649,7 +648,7 @@ However, for reading convenience, most of the examples show sorted sequences.
       >>> round(intercept + slope * 2019)
       16
 
-   We could also use it to predict how many Monty Python films existed when
+   We could also use it to "predict" how many Monty Python films existed when
    Brian Cohen was born.
 
    .. doctest::
