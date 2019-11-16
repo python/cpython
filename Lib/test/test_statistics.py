@@ -2314,7 +2314,7 @@ class TestQuantiles(unittest.TestCase):
 
 class TestBivariateStatistics(unittest.TestCase):
 
-    def test_unequal_size_error(self):        
+    def test_unequal_size_error(self):
         for x, y in [
             ([1, 2, 3], [1, 2]),
             ([1, 2], [1, 2, 3]),
@@ -2355,13 +2355,13 @@ class TestCorrelationAndCovariance(unittest.TestCase):
         ]:
             self.assertAlmostEqual(statistics.correlation(x, y), result)
             self.assertAlmostEqual(statistics.covariance(x, y), result)
-            
+
     def test_different_scales(self):
         x = [1, 2, 3]
         y = [10, 30, 20]
         self.assertAlmostEqual(statistics.correlation(x, y), 0.5)
         self.assertAlmostEqual(statistics.covariance(x, y), 5)
-        
+
         y = [.1, .2, .3]
         self.assertAlmostEqual(statistics.correlation(x, y), 1)
         self.assertAlmostEqual(statistics.covariance(x, y), 0.1)
