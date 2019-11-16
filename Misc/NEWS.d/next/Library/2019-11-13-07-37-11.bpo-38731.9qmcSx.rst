@@ -1,1 +1,1 @@
-Fix a unhandled exception during error handling in :meth:`py_compile.main`.
+Fix unhandled exceptions during error handling in :meth:`py_compile.main`.
