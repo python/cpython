@@ -3361,24 +3361,28 @@ PyInit__asyncio(void)
     Py_INCREF(&FutureType);
     if (PyModule_AddObject(m, "Future", (PyObject *)&FutureType) < 0) {
         Py_DECREF(&FutureType);
+        Py_DECREF(m);
         return NULL;
     }
 
     Py_INCREF(&TaskType);
     if (PyModule_AddObject(m, "Task", (PyObject *)&TaskType) < 0) {
         Py_DECREF(&TaskType);
+        Py_DECREF(m);
         return NULL;
     }
 
     Py_INCREF(all_tasks);
     if (PyModule_AddObject(m, "_all_tasks", all_tasks) < 0) {
         Py_DECREF(all_tasks);
+        Py_DECREF(m);
         return NULL;
     }
 
     Py_INCREF(current_tasks);
     if (PyModule_AddObject(m, "_current_tasks", current_tasks) < 0) {
         Py_DECREF(current_tasks);
+        Py_DECREF(m);
         return NULL;
     }
 
