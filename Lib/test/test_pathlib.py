@@ -2021,6 +2021,15 @@ class _BasePathTest(object):
         self.assertTrue(link.is_dir())
         self.assertTrue(list(link.iterdir()))
 
+    @unittest.skipIf(support.can_symlink(), "symlink support is present")
+    def test_symlink_to_not_implemented(self):
+        P = self.cls(BASE)
+        target = P / 'fileA'
+        # Symlinking a path target.
+        link = P / 'dirA' / 'linkAA'
+        with self.assertRaises(NotImplementedError):
+            link.symlink_to(target)
+
     def test_is_dir(self):
         P = self.cls(BASE)
         self.assertTrue((P / 'dirA').is_dir())

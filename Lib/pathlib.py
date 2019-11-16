@@ -435,6 +435,7 @@ class _NormalAccessor(_Accessor):
         if supports_symlinks:
             symlink = os.symlink
         else:
+            @staticmethod
             def symlink(a, b, target_is_directory):
                 raise NotImplementedError("symlink() not available on this system")
     else:
