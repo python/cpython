@@ -980,16 +980,13 @@ class Popen(object):
             raise
 
     def __repr__(self):
-        max_args_length = 80
-        args = ' '.join(map(shlex.quote, self.args))
-
-        if len(args) > max_args_length:
-            args = f"{args[:max_args_length-3]}..."
-
-        return (
+        obj_repr = (
             f"<{self.__class__.__name__}: "
-            f"returncode:'{self.returncode}' args:'{args}'>"
+            f"returncode: {self.returncode} args: {list(self.args)!r}>"
         )
+        if len(obj_repr) > 80:
+            obj_repr = obj_repr[:76] + "...>"
+        return obj_repr
 
     @property
     def universal_newlines(self):

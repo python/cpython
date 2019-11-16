@@ -1365,21 +1365,18 @@ class ProcessTestCase(BaseTestCase):
         """Test string representation Popen object."""
         code = 'import sys; input(); sys.exit(57)'
         cmd = [sys.executable, '-c', code]
-
-        max_args_length = 80
-        args = ' '.join(map(shlex.quote, cmd))
-        if len(args) > max_args_length:
-            args = f"{args[:max_args_length-3]}..."
-        result = "<Popen: returncode:'{}' args:'{}'>"
+        result = "<Popen: returncode: {}"
 
         with subprocess.Popen(
                 cmd, stdin=subprocess.PIPE, universal_newlines=True) as proc:
             self.assertIsNone(proc.returncode)
             proc.communicate(input='exit...\n')
-            self.assertEqual(repr(proc), result.format(proc.returncode, args))
+            self.assertTrue(
+                repr(proc).startswith(result.format(proc.returncode)))
             proc.wait()
             self.assertIsNotNone(proc.returncode)
-            self.assertEqual(repr(proc), result.format(proc.returncode, args))
+            self.assertTrue(
+                repr(proc).startswith(result.format(proc.returncode)))
 
     def test_communicate_epipe_only_stdin(self):
         # Issue 10963: communicate() should hide EPIPE
