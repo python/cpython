@@ -239,6 +239,12 @@ Deprecated
   the module will restrict its seeds to :const:`None`, :class:`int`,
   :class:`float`, :class:`str`, :class:`bytes`, and :class:`bytearray`.
 
+* Opening the :class:`~gzip.GzipFile` file for writing without specifying
+  the *mode* argument is deprecated.  In future Python versions it will always
+  be opened for reading by default.  Specify the *mode* argument for opening
+  it for writing and silencing a warning.
+  (Contributed by Serhiy Storchaka in :issue:`28286`.)
+
 * Deprecated the ``split()`` method of :class:`_tkinter.TkappType` in
   favour of the ``splitlist()`` method which has more consistent and
   predicable behavior.
