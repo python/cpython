@@ -152,8 +152,8 @@ the ``time()`` function, which returns system time in seconds since the Unix
 epoch, and the ``GetModuleHandleA()`` function, which returns a win32 module
 handle.
 
-This example calls both functions with a NULL pointer (``None`` should be used
-as the NULL pointer)::
+This example calls both functions with a ``NULL`` pointer (``None`` should be used
+as the ``NULL`` pointer)::
 
    >>> print(libc.time(None))  # doctest: +SKIP
    1150640792
@@ -1083,7 +1083,7 @@ An extended example which also demonstrates the use of pointers accesses the
 Quoting the docs for that value:
 
    This pointer is initialized to point to an array of :c:type:`struct _frozen`
-   records, terminated by one whose members are all *NULL* or zero.  When a frozen
+   records, terminated by one whose members are all ``NULL`` or zero.  When a frozen
    module is imported, it is searched in this table.  Third-party code could play
    tricks with this to provide a dynamically created collection of frozen modules.
 
@@ -1110,7 +1110,7 @@ Since ``table`` is a ``pointer`` to the array of ``struct_frozen`` records, we
 can iterate over it, but we just have to make sure that our loop terminates,
 because pointers have no size. Sooner or later it would probably crash with an
 access violation or whatever, so it's better to break out of the loop when we
-hit the NULL entry::
+hit the ``NULL`` entry::
 
    >>> for item in table:
    ...     if item.name is None:

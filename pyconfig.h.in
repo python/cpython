@@ -642,6 +642,9 @@
 /* Define to 1 if you have the <linux/vm_sockets.h> header file. */
 #undef HAVE_LINUX_VM_SOCKETS_H
 
+/* Define to 1 if you have the <linux/wait.h> header file. */
+#undef HAVE_LINUX_WAIT_H
+
 /* Define to 1 if you have the `lockf' function. */
 #undef HAVE_LOCKF
 
@@ -1018,7 +1021,7 @@
 /* Define to 1 if you have the <stdlib.h> header file. */
 #undef HAVE_STDLIB_H
 
-/* Has stdatomic.h with atomic_int */
+/* Has stdatomic.h with atomic_int and atomic_uintptr_t */
 #undef HAVE_STD_ATOMIC
 
 /* Define to 1 if you have the `strdup' function. */

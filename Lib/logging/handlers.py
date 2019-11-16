@@ -48,6 +48,9 @@ class BaseRotatingHandler(logging.FileHandler):
     Not meant to be instantiated directly.  Instead, use RotatingFileHandler
     or TimedRotatingFileHandler.
     """
+    namer = None
+    rotator = None
+
     def __init__(self, filename, mode, encoding=None, delay=False, errors=None):
         """
         Use the specified filename for streamed logging
@@ -58,8 +61,6 @@ class BaseRotatingHandler(logging.FileHandler):
         self.mode = mode
         self.encoding = encoding
         self.errors = errors
-        self.namer = None
-        self.rotator = None
 
     def emit(self, record):
         """
@@ -1253,7 +1254,7 @@ class BufferingHandler(logging.Handler):
         """
         self.acquire()
         try:
-            self.buffer = []
+            self.buffer.clear()
         finally:
             self.release()
 
@@ -1320,7 +1321,7 @@ class MemoryHandler(BufferingHandler):
             if self.target:
                 for record in self.buffer:
                     self.target.handle(record)
-                self.buffer = []
+                self.buffer.clear()
         finally:
             self.release()
 

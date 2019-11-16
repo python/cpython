@@ -1591,6 +1591,30 @@ class ConfigFileTest(BaseTest):
         self.apply_config(self.disable_test, disable_existing_loggers=False)
         self.assertFalse(logger.disabled)
 
+    def test_config_set_handler_names(self):
+        test_config = """
+            [loggers]
+            keys=root
+
+            [handlers]
+            keys=hand1
+
+            [formatters]
+            keys=form1
+
+            [logger_root]
+            handlers=hand1
+
+            [handler_hand1]
+            class=StreamHandler
+            formatter=form1
+
+            [formatter_form1]
+            format=%(levelname)s ++ %(message)s
+            """
+        self.apply_config(test_config)
+        self.assertEqual(logging.getLogger().handlers[0].name, 'hand1')
+
     def test_defaults_do_no_interpolation(self):
         """bpo-33802 defaults should not get interpolated"""
         ini = textwrap.dedent("""
@@ -5004,6 +5028,25 @@ class RotatingFileHandlerTest(BaseFileTest):
         rh.emit(self.next_rec())
         self.assertLogFile(namer(self.fn + ".2"))
         self.assertFalse(os.path.exists(namer(self.fn + ".3")))
+        rh.close()
+
+    def test_namer_rotator_inheritance(self):
+        class HandlerWithNamerAndRotator(logging.handlers.RotatingFileHandler):
+            def namer(self, name):
+                return name + ".test"
+
+            def rotator(self, source, dest):
+                if os.path.exists(source):
+                    os.rename(source, dest + ".rotated")
+
+        rh = HandlerWithNamerAndRotator(
+            self.fn, backupCount=2, maxBytes=1)
+        self.assertEqual(rh.namer(self.fn), self.fn + ".test")
+        rh.emit(self.next_rec())
+        self.assertLogFile(self.fn)
+        rh.emit(self.next_rec())
+        self.assertLogFile(rh.namer(self.fn + ".1") + ".rotated")
+        self.assertFalse(os.path.exists(rh.namer(self.fn + ".1")))
         rh.close()
 
     @support.requires_zlib

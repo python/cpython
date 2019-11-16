@@ -591,7 +591,11 @@ class HelpFormatter(object):
         elif action.nargs == OPTIONAL:
             result = '[%s]' % get_metavar(1)
         elif action.nargs == ZERO_OR_MORE:
-            result = '[%s [%s ...]]' % get_metavar(2)
+            metavar = get_metavar(1)
+            if len(metavar) == 2:
+                result = '[%s [%s ...]]' % metavar
+            else:
+                result = '[%s ...]' % metavar
         elif action.nargs == ONE_OR_MORE:
             result = '%s [%s ...]' % get_metavar(2)
         elif action.nargs == REMAINDER:
