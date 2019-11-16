@@ -43,6 +43,8 @@ asyncio provides a set of **high-level** APIs to:
 
 * :ref:`synchronize <asyncio-sync>` concurrent code;
 
+* concurrently run blocking functions in a :ref:`pool <asyncio-pools>`;
+
 Additionally, there are **low-level** APIs for
 *library and framework developers* to:
 
@@ -73,6 +75,7 @@ Additionally, there are **low-level** APIs for
    asyncio-subprocess.rst
    asyncio-queue.rst
    asyncio-exceptions.rst
+   asyncio-pools.rst
 
 .. toctree::
    :caption: Low-level APIs
