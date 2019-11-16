@@ -215,6 +215,9 @@ Build and C API Changes
   way to call a callable Python object without any argument.
   (Contributed by Victor Stinner in :issue:`37194`.)
 
+* The global variable :c:data:`PyStructSequence_UnnamedField` is now a constant
+  and refers to a constant string.
+  (Contributed by Serhiy Storchaka in :issue:`38650`.)
 
 
 Deprecated
