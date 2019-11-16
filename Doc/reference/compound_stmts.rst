@@ -152,7 +152,7 @@ The :keyword:`for` statement is used to iterate over the elements of a sequence
 (such as a string, tuple or list) or other iterable object:
 
 .. productionlist::
-   for_stmt: "for" `target_list` "in" `expression_list` ":" `suite`
+   for_stmt: "for" `target_list` "in" `expression_list` ":" [TYPE_COMMENT] `suite`
            : ["else" ":" `suite`]
 
 The expression list is evaluated once; it should yield an iterable object.  An
@@ -391,7 +391,7 @@ This allows common :keyword:`try`...\ :keyword:`except`...\ :keyword:`finally`
 usage patterns to be encapsulated for convenient reuse.
 
 .. productionlist::
-   with_stmt: "with" `with_item` ("," `with_item`)* ":" `suite`
+   with_stmt: "with" `with_item` ("," `with_item`)* ":" [TYPE_COMMENT] `suite`
    with_item: `expression` ["as" `target`]
 
 The execution of the :keyword:`with` statement with one "item" proceeds as follows:
