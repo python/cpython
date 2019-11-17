@@ -3757,15 +3757,18 @@ update_lines_cols(void)
 }
 
 /*[clinic input]
-_curses.update_lines_cols -> int
+_curses.update_lines_cols
 
 [clinic start generated code]*/
 
-static int
+static PyObject *
 _curses_update_lines_cols_impl(PyObject *module)
-/*[clinic end generated code: output=0345e7f072ea711a input=3a87760f7d5197f0]*/
+/*[clinic end generated code: output=423f2b1e63ed0f75 input=5f065ab7a28a5d90]*/
 {
-  return update_lines_cols();
+    if (!update_lines_cols()) {
+        return NULL;
+    }
+    Py_RETURN_NONE;
 }
 
 #endif
@@ -3849,8 +3852,10 @@ _curses_resizeterm_impl(PyObject *module, int nlines, int ncols)
     result = PyCursesCheckERR(resizeterm(nlines, ncols), "resizeterm");
     if (!result)
         return NULL;
-    if (!update_lines_cols())
+    if (!update_lines_cols()) {
+        Py_DECREF(result);
         return NULL;
+    }
     return result;
 }
 
@@ -3886,8 +3891,10 @@ _curses_resize_term_impl(PyObject *module, int nlines, int ncols)
     result = PyCursesCheckERR(resize_term(nlines, ncols), "resize_term");
     if (!result)
         return NULL;
-    if (!update_lines_cols())
+    if (!update_lines_cols()) {
+        Py_DECREF(result);
         return NULL;
+    }
     return result;
 }
 #endif /* HAVE_CURSES_RESIZE_TERM */
@@ -3958,12 +3965,18 @@ _curses_start_color_impl(PyObject *module)
         c = PyLong_FromLong((long) COLORS);
         if (c == NULL)
             return NULL;
-        PyDict_SetItemString(ModDict, "COLORS", c);
+        if (PyDict_SetItemString(ModDict, "COLORS", c) < 0) {
+            Py_DECREF(c);
+            return NULL;
+        }
         Py_DECREF(c);
         cp = PyLong_FromLong((long) COLOR_PAIRS);
         if (cp == NULL)
             return NULL;
-        PyDict_SetItemString(ModDict, "COLOR_PAIRS", cp);
+        if (PyDict_SetItemString(ModDict, "COLOR_PAIRS", cp) < 0) {
+            Py_DECREF(cp);
+            return NULL;
+        }
         Py_DECREF(cp);
         Py_RETURN_NONE;
     } else {

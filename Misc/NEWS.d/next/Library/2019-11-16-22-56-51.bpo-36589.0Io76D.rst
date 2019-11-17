@@ -1,0 +1,2 @@
+The :func:`curses.update_lines_cols` function now returns ``None`` instead
+of ``1`` on success.
