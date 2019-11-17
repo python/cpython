@@ -1360,8 +1360,9 @@ class ProcessTestCase(BaseTestCase):
         self.addCleanup(p.stdin.close)
         p.communicate(b"x" * 2**20)
 
-    def test_string_representation(self):
-        """Test string representation Popen object."""
+    def test_repr(self):
+        # Run a command that waits for user input, to check the repr() of
+        # a Proc object while and after the sub-process runs.
         code = 'import sys; input(); sys.exit(57)'
         cmd = [sys.executable, '-c', code]
         result = "<Popen: returncode: {}"
@@ -1369,10 +1370,15 @@ class ProcessTestCase(BaseTestCase):
         with subprocess.Popen(
                 cmd, stdin=subprocess.PIPE, universal_newlines=True) as proc:
             self.assertIsNone(proc.returncode)
-            proc.communicate(input='exit...\n')
             self.assertTrue(
-                repr(proc).startswith(result.format(proc.returncode)))
+                repr(proc).startswith(result.format(proc.returncode)) and
+                repr(proc).endswith('>') and
+                'import sys' in repr(proc)
+            )
+
+            proc.communicate(input='exit...\n')
             proc.wait()
+
             self.assertIsNotNone(proc.returncode)
             self.assertTrue(
                 repr(proc).startswith(result.format(proc.returncode)))
