@@ -30,12 +30,14 @@ Three classes are provided by the :mod:`imaplib` module, :class:`IMAP4` is the
 base class:
 
 
-.. class:: IMAP4(host='', port=IMAP4_PORT)
+.. class:: IMAP4(host='', port=IMAP4_PORT[, timeout])
 
    This class implements the actual IMAP4 protocol.  The connection is created and
    protocol version (IMAP4 or IMAP4rev1) is determined when the instance is
    initialized. If *host* is not specified, ``''`` (the local host) is used. If
-   *port* is omitted, the standard IMAP4 port (143) is used.
+   *port* is omitted, the standard IMAP4 port (143) is used. The optional *timeout*
+   parameter specifies a timeout in seconds for the connection attempt
+   (if not specified, the global default timeout setting will be used).
 
    The :class:`IMAP4` class supports the :keyword:`with` statement.  When used
    like this, the IMAP4 ``LOGOUT`` command is issued automatically when the
@@ -49,6 +51,9 @@ base class:
 
    .. versionchanged:: 3.5
       Support for the :keyword:`with` statement was added.
+
+   .. versionchanged:: 3.9
+      The optional *timeout* parameter was added.
 
 Three exceptions are defined as attributes of the :class:`IMAP4` class:
 
@@ -78,7 +83,7 @@ There's also a subclass for secure connections:
 
 
 .. class:: IMAP4_SSL(host='', port=IMAP4_SSL_PORT, keyfile=None, \
-                     certfile=None, ssl_context=None)
+                     certfile=None, ssl_context=None, timeout=socket._GLOBAL_DEFAULT_TIMEOUT)
 
    This is a subclass derived from :class:`IMAP4` that connects over an SSL
    encrypted socket (to use this class you need a socket module that was compiled
@@ -96,7 +101,7 @@ There's also a subclass for secure connections:
    if *keyfile*/*certfile* is provided along with *ssl_context*.
 
    .. versionchanged:: 3.3
-      *ssl_context* parameter added.
+      *ssl_context* parameter was added.
 
    .. versionchanged:: 3.4
       The class now supports hostname check with
@@ -110,6 +115,8 @@ There's also a subclass for secure connections:
        :func:`ssl.create_default_context` select the system's trusted CA
        certificates for you.
 
+   .. versionchanged:: 3.9
+      The optional *timeout* parameter was added.
 
 The second subclass allows for connections created by a child process:
 
@@ -353,7 +360,7 @@ An :class:`IMAP4` instance has the following methods:
    Send ``NOOP`` to server.
 
 
-.. method:: IMAP4.open(host, port)
+.. method:: IMAP4.open(host, port, timeout)
 
    Opens socket to *port* at *host*.  This method is implicitly called by
    the :class:`IMAP4` constructor.  The connection objects established by this
@@ -363,6 +370,8 @@ An :class:`IMAP4` instance has the following methods:
 
    .. audit-event:: imaplib.open self,host,port imaplib.IMAP4.open
 
+   .. versionchanged:: 3.9
+      The *timeout* parameter was added.
 
 .. method:: IMAP4.partial(message_num, message_part, start, length)
 

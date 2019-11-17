@@ -147,6 +147,13 @@ Added constants :data:`~fcntl.F_OFD_GETLK`, :data:`~fcntl.F_OFD_SETLK`
 and :data:`~fcntl.F_OFD_SETLKW`.
 (Contributed by Dong-hee Na in :issue:`38602`.)
 
+imaplib
+-------
+
+The :class:`~imaplib.IMAP4` and :class:`~imaplib.IMAP4_SSL` now has
+optional *timeout* parameter for constructor.
+(Contributed by Dong-hee Na in :issue:`38615`.)
+
 os
 --
 

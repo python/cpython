@@ -1,0 +1,2 @@
+The :class:`~imaplib.IMAP4` and :class:`~imaplib.IMAP4_SSL` now has optional
+*timeout* parameter for constructor. Patch by Dong-hee Na.
