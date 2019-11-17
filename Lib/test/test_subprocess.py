@@ -15,7 +15,6 @@ import selectors
 import sysconfig
 import select
 import shutil
-import shlex
 import threading
 import gc
 import textwrap
