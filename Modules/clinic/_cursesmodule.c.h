@@ -3921,23 +3921,13 @@ PyDoc_STRVAR(_curses_update_lines_cols__doc__,
 #define _CURSES_UPDATE_LINES_COLS_METHODDEF    \
     {"update_lines_cols", (PyCFunction)_curses_update_lines_cols, METH_NOARGS, _curses_update_lines_cols__doc__},
 
-static int
+static PyObject *
 _curses_update_lines_cols_impl(PyObject *module);
 
 static PyObject *
 _curses_update_lines_cols(PyObject *module, PyObject *Py_UNUSED(ignored))
 {
-    PyObject *return_value = NULL;
-    int _return_value;
-
-    _return_value = _curses_update_lines_cols_impl(module);
-    if ((_return_value == -1) && PyErr_Occurred()) {
-        goto exit;
-    }
-    return_value = PyLong_FromLong((long)_return_value);
-
-exit:
-    return return_value;
+    return _curses_update_lines_cols_impl(module);
 }
 
 #endif /* (defined(HAVE_CURSES_RESIZETERM) || defined(HAVE_CURSES_RESIZE_TERM)) */
@@ -4691,4 +4681,4 @@ _curses_use_default_colors(PyObject *module, PyObject *Py_UNUSED(ignored))
 #ifndef _CURSES_USE_DEFAULT_COLORS_METHODDEF
     #define _CURSES_USE_DEFAULT_COLORS_METHODDEF
 #endif /* !defined(_CURSES_USE_DEFAULT_COLORS_METHODDEF) */
-/*[clinic end generated code: output=985c0849e841acec input=a9049054013a1b77]*/
+/*[clinic end generated code: output=0ca4f95323c5d585 input=a9049054013a1b77]*/
