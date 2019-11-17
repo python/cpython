@@ -1360,6 +1360,30 @@ class ProcessTestCase(BaseTestCase):
         self.addCleanup(p.stdin.close)
         p.communicate(b"x" * 2**20)
 
+    def test_repr(self):
+        # Run a command that waits for user input, to check the repr() of
+        # a Proc object while and after the sub-process runs.
+        code = 'import sys; input(); sys.exit(57)'
+        cmd = [sys.executable, '-c', code]
+        result = "<Popen: returncode: {}"
+
+        with subprocess.Popen(
+                cmd, stdin=subprocess.PIPE, universal_newlines=True) as proc:
+            self.assertIsNone(proc.returncode)
+            self.assertTrue(
+                repr(proc).startswith(result.format(proc.returncode)) and
+                repr(proc).endswith('>')
+            )
+
+            proc.communicate(input='exit...\n')
+            proc.wait()
+
+            self.assertIsNotNone(proc.returncode)
+            self.assertTrue(
+                repr(proc).startswith(result.format(proc.returncode)) and
+                repr(proc).endswith('>')
+            )
+
     def test_communicate_epipe_only_stdin(self):
         # Issue 10963: communicate() should hide EPIPE
         p = subprocess.Popen(ZERO_RETURN_CMD,
