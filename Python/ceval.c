@@ -10,6 +10,7 @@
 #define PY_LOCAL_AGGRESSIVE
 
 #include "Python.h"
+#include "pycore_call.h"
 #include "pycore_ceval.h"
 #include "pycore_code.h"
 #include "pycore_object.h"
@@ -722,18 +723,20 @@ PyEval_EvalCode(PyObject *co, PyObject *globals, PyObject *locals)
 /* Interpreter main loop */
 
 PyObject *
-PyEval_EvalFrame(PyFrameObject *f) {
+PyEval_EvalFrame(PyFrameObject *f)
+{
     /* This is for backward compatibility with extension modules that
        used this API; core interpreter code should call
        PyEval_EvalFrameEx() */
-    return PyEval_EvalFrameEx(f, 0);
+    PyThreadState *tstate = _PyThreadState_GET();
+    return _PyEval_EvalFrame(tstate, f, 0);
 }
 
 PyObject *
 PyEval_EvalFrameEx(PyFrameObject *f, int throwflag)
 {
-    PyInterpreterState *interp = _PyInterpreterState_GET_UNSAFE();
-    return interp->eval_frame(f, throwflag);
+    PyThreadState *tstate = _PyThreadState_GET();
+    return _PyEval_EvalFrame(tstate, f, throwflag);
 }
 
 PyObject* _Py_HOT_FUNCTION
@@ -4042,7 +4045,8 @@ fail:
    the test in the if statements in Misc/gdbinit (pystack and pystackv). */
 
 PyObject *
-_PyEval_EvalCodeWithName(PyObject *_co, PyObject *globals, PyObject *locals,
+_PyEval_EvalCode(PyThreadState *tstate,
+           PyObject *_co, PyObject *globals, PyObject *locals,
            PyObject *const *args, Py_ssize_t argcount,
            PyObject *const *kwnames, PyObject *const *kwargs,
            Py_ssize_t kwcount, int kwstep,
@@ -4050,6 +4054,8 @@ _PyEval_EvalCodeWithName(PyObject *_co, PyObject *globals, PyObject *locals,
            PyObject *kwdefs, PyObject *closure,
            PyObject *name, PyObject *qualname)
 {
+    assert(tstate != NULL);
+
     PyCodeObject* co = (PyCodeObject*)_co;
     PyFrameObject *f;
     PyObject *retval = NULL;
@@ -4058,9 +4064,6 @@ _PyEval_EvalCodeWithName(PyObject *_co, PyObject *globals, PyObject *locals,
     const Py_ssize_t total_args = co->co_argcount + co->co_kwonlyargcount;
     Py_ssize_t i, j, n;
     PyObject *kwdict;
-
-    PyThreadState *tstate = _PyThreadState_GET();
-    assert(tstate != NULL);
 
     if (globals == NULL) {
         _PyErr_SetString(tstate, PyExc_SystemError,
@@ -4295,7 +4298,7 @@ _PyEval_EvalCodeWithName(PyObject *_co, PyObject *globals, PyObject *locals,
         return gen;
     }
 
-    retval = PyEval_EvalFrameEx(f,0);
+    retval = _PyEval_EvalFrame(tstate, f, 0);
 
 fail: /* Jump here from prelude on failure */
 
@@ -4304,7 +4307,6 @@ fail: /* Jump here from prelude on failure */
        current Python frame (f), the associated C stack is still in use,
        so recursion_depth must be boosted for the duration.
     */
-    assert(tstate != NULL);
     if (Py_REFCNT(f) > 1) {
         Py_DECREF(f);
         _PyObject_GC_TRACK(f);
@@ -4315,6 +4317,26 @@ fail: /* Jump here from prelude on failure */
         --tstate->recursion_depth;
     }
     return retval;
+}
+
+
+PyObject *
+_PyEval_EvalCodeWithName(PyObject *_co, PyObject *globals, PyObject *locals,
+           PyObject *const *args, Py_ssize_t argcount,
+           PyObject *const *kwnames, PyObject *const *kwargs,
+           Py_ssize_t kwcount, int kwstep,
+           PyObject *const *defs, Py_ssize_t defcount,
+           PyObject *kwdefs, PyObject *closure,
+           PyObject *name, PyObject *qualname)
+{
+    PyThreadState *tstate = _PyThreadState_GET();
+    return _PyEval_EvalCode(tstate, _co, globals, locals,
+               args, argcount,
+               kwnames, kwargs,
+               kwcount, kwstep,
+               defs, defcount,
+               kwdefs, closure,
+               name, qualname);
 }
 
 PyObject *
@@ -5022,10 +5044,11 @@ do_call_core(PyThreadState *tstate, PyObject *func, PyObject *callargs, PyObject
                 return NULL;
             }
 
-            C_TRACE(result, _PyObject_FastCallDict(func,
-                                                   &_PyTuple_ITEMS(callargs)[1],
-                                                   nargs - 1,
-                                                   kwdict));
+            C_TRACE(result, _PyObject_FastCallDictTstate(
+                                    tstate, func,
+                                    &_PyTuple_ITEMS(callargs)[1],
+                                    nargs - 1,
+                                    kwdict));
             Py_DECREF(func);
             return result;
         }
