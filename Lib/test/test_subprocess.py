@@ -1372,8 +1372,7 @@ class ProcessTestCase(BaseTestCase):
             self.assertIsNone(proc.returncode)
             self.assertTrue(
                 repr(proc).startswith(result.format(proc.returncode)) and
-                repr(proc).endswith('>') and
-                'import sys' in repr(proc)
+                repr(proc).endswith('>')
             )
 
             proc.communicate(input='exit...\n')
@@ -1381,7 +1380,9 @@ class ProcessTestCase(BaseTestCase):
 
             self.assertIsNotNone(proc.returncode)
             self.assertTrue(
-                repr(proc).startswith(result.format(proc.returncode)))
+                repr(proc).startswith(result.format(proc.returncode)) and
+                repr(proc).endswith('>')
+            )
 
     def test_communicate_epipe_only_stdin(self):
         # Issue 10963: communicate() should hide EPIPE
