@@ -2253,9 +2253,7 @@ Notes:
    When used with the :meth:`strptime` method, ``%U`` and ``%W`` are only used
    in calculations when the calendar year (``%Y``) is specified. Optionally the
    weekday can also be specified, but if it is omitted then the first day of
-   the week is assumed. Defaulting to the first day of the week only affects
-   these directives, i.e., specifying ``%U`` without a weekday will not
-   implicitly specify the weekday as Sunday.
+   the week is assumed.
 
 (8)
    ``%V`` is only used in calculations when the
