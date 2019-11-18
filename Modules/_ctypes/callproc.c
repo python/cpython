@@ -1631,7 +1631,7 @@ addressof(PyObject *self, PyObject *obj)
                         "invalid type");
         return NULL;
     }
-    if (PySys_Audit("ctypes.addressof", "O", obj) < 0) {
+    if (PySys_Audit("ctypes.addressof", "(O)", obj) < 0) {
         return NULL;
     }
     return PyLong_FromVoidPtr(((CDataObject *)obj)->b_ptr);
@@ -1651,7 +1651,7 @@ My_PyObj_FromPtr(PyObject *self, PyObject *args)
     if (!PyArg_ParseTuple(args, "O&:PyObj_FromPtr", converter, &ob)) {
         return NULL;
     }
-    if (PySys_Audit("ctypes.PyObj_FromPtr", "O", ob) < 0) {
+    if (PySys_Audit("ctypes.PyObj_FromPtr", "(O)", ob) < 0) {
         return NULL;
     }
     Py_INCREF(ob);
