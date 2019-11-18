@@ -641,6 +641,12 @@ CDataType_from_buffer(PyObject *type, PyObject *args)
         return NULL;
     }
 
+    if (PySys_Audit("ctypes.cdata/buffer", "nnn",
+                    (Py_ssize_t)buffer->buf, buffer->len, offset) < 0) {
+        Py_DECREF(mv);
+        return NULL;
+    }
+
     result = PyCData_AtAddress(type, (char *)buffer->buf + offset);
     if (result == NULL) {
         Py_DECREF(mv);
@@ -691,6 +697,12 @@ CDataType_from_buffer_copy(PyObject *type, PyObject *args)
         return NULL;
     }
 
+    if (PySys_Audit("ctypes.cdata/buffer", "nnn",
+                    (Py_ssize_t)buffer.buf, buffer.len, offset) < 0) {
+        PyBuffer_Release(&buffer);
+        return NULL;
+    }
+
     result = GenericPyCData_new((PyTypeObject *)type, NULL, NULL);
     if (result != NULL) {
         memcpy(((CDataObject *)result)->b_ptr,
@@ -714,6 +726,9 @@ CDataType_in_dll(PyObject *type, PyObject *args)
 
     if (!PyArg_ParseTuple(args, "Os:in_dll", &dll, &name))
         return NULL;
+    if (PySys_Audit("ctypes.dlsym", "O", args) < 0) {
+        return NULL;
+    }
 
     obj = PyObject_GetAttrString(dll, "_handle");
     if (!obj)
@@ -5535,6 +5550,9 @@ create_comerror(void)
 static PyObject *
 string_at(const char *ptr, int size)
 {
+    if (PySys_Audit("ctypes.string_at", "ni", (Py_ssize_t)ptr, size) < 0) {
+        return NULL;
+    }
     if (size == -1)
         return PyBytes_FromStringAndSize(ptr, strlen(ptr));
     return PyBytes_FromStringAndSize(ptr, size);
@@ -5626,6 +5644,9 @@ static PyObject *
 wstring_at(const wchar_t *ptr, int size)
 {
     Py_ssize_t ssize = size;
+    if (PySys_Audit("ctypes.wstring_at", "nn", (Py_ssize_t)ptr, ssize) < 0) {
+        return NULL;
+    }
     if (ssize == -1)
         ssize = wcslen(ptr);
     return PyUnicode_FromWideChar(ptr, ssize);
