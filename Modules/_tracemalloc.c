@@ -1657,7 +1657,7 @@ PyInit__tracemalloc(void)
         return NULL;
 
     if (tracemalloc_init() < 0) {
-        PY_DECREF(m);
+        Py_DECREF(m);
         return NULL;
     }
 
