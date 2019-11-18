@@ -936,9 +936,7 @@ math_1_to_whatever(PyObject *arg, double (*func) (double),
     if (x == -1.0 && PyErr_Occurred())
         return NULL;
     errno = 0;
-    PyFPE_START_PROTECT("in math_1", return 0);
     r = (*func)(x);
-    PyFPE_END_PROTECT(r);
     if (Py_IS_NAN(r) && !Py_IS_NAN(x)) {
         PyErr_SetString(PyExc_ValueError,
                         "math domain error"); /* invalid arg */
@@ -972,9 +970,7 @@ math_1a(PyObject *arg, double (*func) (double))
     if (x == -1.0 && PyErr_Occurred())
         return NULL;
     errno = 0;
-    PyFPE_START_PROTECT("in math_1a", return 0);
     r = (*func)(x);
-    PyFPE_END_PROTECT(r);
     if (errno && is_error(r))
         return NULL;
     return PyFloat_FromDouble(r);
@@ -1025,9 +1021,7 @@ math_2(PyObject *const *args, Py_ssize_t nargs,
     if ((x == -1.0 || y == -1.0) && PyErr_Occurred())
         return NULL;
     errno = 0;
-    PyFPE_START_PROTECT("in math_2", return 0);
     r = (*func)(x, y);
-    PyFPE_END_PROTECT(r);
     if (Py_IS_NAN(r)) {
         if (!Py_IS_NAN(x) && !Py_IS_NAN(y))
             errno = EDOM;
@@ -1340,8 +1334,6 @@ math_fsum(PyObject *module, PyObject *seq)
     if (iter == NULL)
         return NULL;
 
-    PyFPE_START_PROTECT("fsum", Py_DECREF(iter); return NULL)
-
     for(;;) {           /* for x in iterable */
         assert(0 <= n && n <= m);
         assert((m == NUM_PARTIALS && p == ps) ||
@@ -1436,7 +1428,6 @@ math_fsum(PyObject *module, PyObject *seq)
     sum = PyFloat_FromDouble(hi);
 
   _fsum_error:
-    PyFPE_END_PROTECT(hi)
     Py_DECREF(iter);
     if (p != ps)
         PyMem_Free(p);
@@ -2111,9 +2102,7 @@ math_frexp_impl(PyObject *module, double x)
         i = 0;
     }
     else {
-        PyFPE_START_PROTECT("in math_frexp", return 0);
         x = frexp(x, &i);
-        PyFPE_END_PROTECT(x);
     }
     return Py_BuildValue("(di)", x, i);
 }
@@ -2168,9 +2157,7 @@ math_ldexp_impl(PyObject *module, double x, PyObject *i)
         errno = 0;
     } else {
         errno = 0;
-        PyFPE_START_PROTECT("in math_ldexp", return 0);
         r = ldexp(x, (int)exp);
-        PyFPE_END_PROTECT(r);
         if (Py_IS_INFINITY(r))
             errno = ERANGE;
     }
@@ -2207,9 +2194,7 @@ math_modf_impl(PyObject *module, double x)
     }
 
     errno = 0;
-    PyFPE_START_PROTECT("in math_modf", return 0);
     x = modf(x, &y);
-    PyFPE_END_PROTECT(x);
     return Py_BuildValue("(dd)", x, y);
 }
 
@@ -2356,9 +2341,7 @@ math_fmod_impl(PyObject *module, double x, double y)
     if (Py_IS_INFINITY(y) && Py_IS_FINITE(x))
         return PyFloat_FromDouble(x);
     errno = 0;
-    PyFPE_START_PROTECT("in math_fmod", return 0);
     r = fmod(x, y);
-    PyFPE_END_PROTECT(r);
     if (Py_IS_NAN(r)) {
         if (!Py_IS_NAN(x) && !Py_IS_NAN(y))
             errno = EDOM;
@@ -2646,9 +2629,7 @@ math_pow_impl(PyObject *module, double x, double y)
     else {
         /* let libm handle finite**finite */
         errno = 0;
-        PyFPE_START_PROTECT("in math_pow", return 0);
         r = pow(x, y);
-        PyFPE_END_PROTECT(r);
         /* a NaN result should arise only from (-ve)**(finite
            non-integer); in this case we want to raise ValueError. */
         if (!Py_IS_FINITE(r)) {
