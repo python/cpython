@@ -1,2 +1,2 @@
-:mod:`runpy` now uses :meth:`io.open_code`.  If a custom handler has been
-set by :meth:`PyFile_SetOpenCodeHook` the custom handler will be called. 
+:mod:`runpy` now uses :meth:`io.open_code` to open code files.
+Patch by Jason Killen.
