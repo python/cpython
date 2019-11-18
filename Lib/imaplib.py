@@ -184,8 +184,7 @@ class IMAP4:
     class abort(error): pass        # Service errors - close and retry
     class readonly(abort): pass     # Mailbox status changed to READ-ONLY
 
-    def __init__(self, host='', port=IMAP4_PORT,
-                 timeout=None):
+    def __init__(self, host='', port=IMAP4_PORT, timeout=None):
         self.debug = Debug
         self.state = 'LOGOUT'
         self.literal = None             # A literal argument to a command
@@ -1308,8 +1307,7 @@ if HAVE_SSL:
             return self.ssl_context.wrap_socket(sock,
                                                 server_hostname=self.host)
 
-        def open(self, host='', port=IMAP4_SSL_PORT,
-                timeout=socket._GLOBAL_DEFAULT_TIMEOUT):
+        def open(self, host='', port=IMAP4_SSL_PORT, timeout=None):
             """Setup connection to remote server on "host:port".
                 (default: localhost:standard IMAP4 SSL port).
             This connection will be used by the routines:
