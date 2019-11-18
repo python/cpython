@@ -1726,7 +1726,8 @@ float___getformat___impl(PyTypeObject *type, const char *typestr)
     case ieee_big_endian_format:
         return PyUnicode_FromString("IEEE, big-endian");
     default:
-        Py_FatalError("insane float_format or double_format");
+        PyErr_SetString(PyExc_RuntimeError,
+                        "insane float_format or double_format");
         return NULL;
     }
 }
