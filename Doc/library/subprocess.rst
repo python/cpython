@@ -7,7 +7,7 @@
 .. moduleauthor:: Peter Åstrand <astrand@lysator.liu.se>
 .. sectionauthor:: Peter Åstrand <astrand@lysator.liu.se>
 
-**Source code:** :sourc:`Lib/subprocess.py`
+**Source code:** :source:`Lib/subprocess.py`
 
 --------------
 
