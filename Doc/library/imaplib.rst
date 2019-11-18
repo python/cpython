@@ -30,14 +30,14 @@ Three classes are provided by the :mod:`imaplib` module, :class:`IMAP4` is the
 base class:
 
 
-.. class:: IMAP4(host='', port=IMAP4_PORT[, timeout])
+.. class:: IMAP4(host='', port=IMAP4_PORT[, timeout=None])
 
    This class implements the actual IMAP4 protocol.  The connection is created and
    protocol version (IMAP4 or IMAP4rev1) is determined when the instance is
    initialized. If *host* is not specified, ``''`` (the local host) is used. If
    *port* is omitted, the standard IMAP4 port (143) is used. The optional *timeout*
-   parameter specifies a timeout in seconds for the connection attempt
-   (if not specified, the global default timeout setting will be used).
+   parameter specifies a timeout in seconds for the connection attempt.
+   If timeout is not given or is None, the global default socket timeout is used.
 
    The :class:`IMAP4` class supports the :keyword:`with` statement.  When used
    like this, the IMAP4 ``LOGOUT`` command is issued automatically when the
@@ -83,7 +83,7 @@ There's also a subclass for secure connections:
 
 
 .. class:: IMAP4_SSL(host='', port=IMAP4_SSL_PORT, keyfile=None, \
-                     certfile=None, ssl_context=None, timeout=socket._GLOBAL_DEFAULT_TIMEOUT)
+                     certfile=None, ssl_context=None, timeout=None)
 
    This is a subclass derived from :class:`IMAP4` that connects over an SSL
    encrypted socket (to use this class you need a socket module that was compiled
@@ -99,6 +99,10 @@ There's also a subclass for secure connections:
    the SSL connection.  Note that the *keyfile*/*certfile* parameters are
    mutually exclusive with *ssl_context*, a :class:`ValueError` is raised
    if *keyfile*/*certfile* is provided along with *ssl_context*.
+
+   The optional *timeout* parameter specifies a timeout in seconds for the
+   connection attempt. If timeout is not given or is None, the global default
+   socket timeout is used.
 
    .. versionchanged:: 3.3
       *ssl_context* parameter was added.
@@ -360,13 +364,15 @@ An :class:`IMAP4` instance has the following methods:
    Send ``NOOP`` to server.
 
 
-.. method:: IMAP4.open(host, port, timeout)
+.. method:: IMAP4.open(host, port, timeout=None)
 
    Opens socket to *port* at *host*.  This method is implicitly called by
    the :class:`IMAP4` constructor.  The connection objects established by this
    method will be used in the :meth:`IMAP4.read`, :meth:`IMAP4.readline`,
    :meth:`IMAP4.send`, and :meth:`IMAP4.shutdown` methods.  You may override
-   this method.
+   this method. The optional *timeout* parameter specifies a timeout in seconds
+   for the connection attempt. If timeout is not given or is None,
+   the global default socket timeout is used.
 
    .. audit-event:: imaplib.open self,host,port imaplib.IMAP4.open
 
