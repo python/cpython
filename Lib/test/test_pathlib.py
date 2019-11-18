@@ -1759,7 +1759,6 @@ class _BasePathTest(object):
         self.assertFileNotFound(p.stat)
         self.assertFileNotFound(p.unlink)
 
-    @unittest.skipUnless(hasattr(os, "link"), "os.link() is not present")
     def test_link_to(self):
         P = self.cls(BASE)
         p = P / 'fileA'
@@ -1778,15 +1777,6 @@ class _BasePathTest(object):
         q.link_to(r)
         self.assertEqual(os.stat(r).st_size, size)
         self.assertTrue(q.stat)
-
-    @unittest.skipIf(hasattr(os, "link"), "os.link() is present")
-    def test_link_to_not_implemented(self):
-        P = self.cls(BASE)
-        p = P / 'fileA'
-        # linking to another path.
-        q = P / 'dirA' / 'fileAA'
-        with self.assertRaises(NotImplementedError):
-            p.link_to(q)
 
     def test_rename(self):
         P = self.cls(BASE)
@@ -2020,15 +2010,6 @@ class _BasePathTest(object):
         self.assertNotEqual(link.lstat(), target.stat())
         self.assertTrue(link.is_dir())
         self.assertTrue(list(link.iterdir()))
-
-    @unittest.skipIf(support.can_symlink(), "symlink support is present")
-    def test_symlink_to_not_implemented(self):
-        P = self.cls(BASE)
-        target = P / 'fileA'
-        # Symlinking a path target.
-        link = P / 'dirA' / 'linkAA'
-        with self.assertRaises(NotImplementedError):
-            link.symlink_to(target)
 
     def test_is_dir(self):
         P = self.cls(BASE)
