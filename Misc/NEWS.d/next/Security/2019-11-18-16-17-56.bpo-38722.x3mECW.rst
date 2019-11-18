@@ -1,0 +1,1 @@
+:mod:`runpy` now uses :meth:`io.open_code` which will trigger auditing events.
