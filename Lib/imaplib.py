@@ -140,6 +140,8 @@ class IMAP4:
             host - host's name (default: localhost);
             port - port number (default: standard IMAP4 port).
             timeout - socket timeout (default: None))
+                      If timeout is not given or is None,
+                      the global default socket timeout is used
 
     All IMAP4rev1 commands are supported by methods of the same
     name (in lower-case).
@@ -1274,7 +1276,8 @@ if HAVE_SSL:
                               and private key (default: None)
                 Note: if ssl_context is provided, then parameters keyfile or
                 certfile should not be set otherwise ValueError is raised.
-                timeout - socket timeout (default: None)
+                timeout - socket timeout (default: None) If timeout is not given or is None,
+                          the global default socket timeout is used
 
         for more documentation see the docstring of the parent class IMAP4.
         """
