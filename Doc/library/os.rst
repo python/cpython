@@ -148,7 +148,7 @@ process and user.
    versa).
 
    :data:`environb` is only available if :data:`supports_bytes_environ` is
-   True.
+   ``True``.
 
    .. versionadded:: 3.2
 
@@ -236,7 +236,7 @@ process and user.
    *default* if it doesn't. *key*, *default* and the result are bytes.
 
    :func:`getenvb` is only available if :data:`supports_bytes_environ`
-   is True.
+   is ``True``.
 
    .. availability:: most flavors of Unix.
 
@@ -3478,7 +3478,11 @@ written in Python, such as a mail server's external command delivery program.
    parent.  If an error occurs :exc:`OSError` is raised.
 
    Note that some platforms including FreeBSD <= 6.3 and Cygwin have
-   known issues when using fork() from a thread.
+   known issues when using ``fork()`` from a thread.
+
+   .. versionchanged:: 3.8
+      Calling ``fork()`` in a subinterpreter is no longer supported
+      (:exc:`RuntimeError` is raised).
 
    .. warning::
 
@@ -3494,6 +3498,10 @@ written in Python, such as a mail server's external command delivery program.
    new child's process id in the parent, and *fd* is the file descriptor of the
    master end of the pseudo-terminal.  For a more portable approach, use the
    :mod:`pty` module.  If an error occurs :exc:`OSError` is raised.
+
+   .. versionchanged:: 3.8
+      Calling ``forkpty()`` in a subinterpreter is no longer supported
+      (:exc:`RuntimeError` is raised).
 
    .. availability:: some flavors of Unix.
 

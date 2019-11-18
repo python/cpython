@@ -1,0 +1,1 @@
+:mod:`pdb` now uses :meth:`io.open_code` to trigger auditing events.

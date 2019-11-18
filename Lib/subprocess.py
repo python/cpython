@@ -978,6 +978,15 @@ class Popen(object):
 
             raise
 
+    def __repr__(self):
+        obj_repr = (
+            f"<{self.__class__.__name__}: "
+            f"returncode: {self.returncode} args: {list(self.args)!r}>"
+        )
+        if len(obj_repr) > 80:
+            obj_repr = obj_repr[:76] + "...>"
+        return obj_repr
+
     @property
     def universal_newlines(self):
         # universal_newlines as retained as an alias of text_mode for API

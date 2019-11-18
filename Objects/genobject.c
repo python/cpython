@@ -1,6 +1,7 @@
 /* Generator object implementation */
 
 #include "Python.h"
+#include "pycore_ceval.h"   /* _PyEval_EvalFrame() */
 #include "pycore_object.h"
 #include "pycore_pystate.h"
 #include "frameobject.h"
@@ -219,7 +220,7 @@ gen_send_ex(PyGenObject *gen, PyObject *arg, int exc, int closing)
     gen->gi_running = 1;
     gen->gi_exc_state.previous_item = tstate->exc_info;
     tstate->exc_info = &gen->gi_exc_state;
-    result = PyEval_EvalFrameEx(f, exc);
+    result = _PyEval_EvalFrame(tstate, f, exc);
     tstate->exc_info = gen->gi_exc_state.previous_item;
     gen->gi_exc_state.previous_item = NULL;
     gen->gi_running = 0;
