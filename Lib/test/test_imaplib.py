@@ -442,13 +442,14 @@ class NewIMAPTestsMixin():
 
     def test_imaplib_timeout_test(self):
         _, server = self._setup(SimpleIMAPHandler)
-        client = self.imap_class("localhost", server.server_address[1], timeout=10.0)
+        addr = server.server_address[1]
+        client = self.imap_class("localhost", addr, timeout=10.0)
         self.assertEqual(client.sock.timeout, 10.0)
         client.shutdown()
-        client = self.imap_class("localhost", server.server_address[1], timeout=None)
+        client = self.imap_class("localhost", addr, timeout=None)
         self.assertEqual(client.sock.timeout, None)
         client.shutdown()
-        client = self.imap_class("localhost", server.server_address[1], timeout=socket._GLOBAL_DEFAULT_TIMEOUT)
+        client = self.imap_class("localhost", addr, timeout=socket._GLOBAL_DEFAULT_TIMEOUT)
         self.assertEqual(client.sock.timeout, None)
         client.shutdown()
 

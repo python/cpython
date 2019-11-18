@@ -139,7 +139,7 @@ class IMAP4:
 
             host - host's name (default: localhost);
             port - port number (default: standard IMAP4 port).
-            timeout - socket timeout (default: None))
+            timeout - socket timeout (default: None)
                       If timeout is not given or is None,
                       the global default socket timeout is used
 
