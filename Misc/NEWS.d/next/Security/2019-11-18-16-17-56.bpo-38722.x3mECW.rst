@@ -1,0 +1,2 @@
+:mod:`runpy` now uses :meth:`io.open_code` to open code files.
+Patch by Jason Killen.
