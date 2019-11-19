@@ -1,1 +1,0 @@
-venv: Don't generate unset variable warning on deactivate.
