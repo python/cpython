@@ -1335,34 +1335,33 @@ PyInit_faulthandler(void)
     /* RaiseException() codes (prefixed by an underscore) */
     if (PyModule_AddIntConstant(m, "_EXCEPTION_ACCESS_VIOLATION",
                                 EXCEPTION_ACCESS_VIOLATION)) {
-        Py_DECREF(m);
-        return NULL;
+        goto error;
     }
     if (PyModule_AddIntConstant(m, "_EXCEPTION_INT_DIVIDE_BY_ZERO",
                                 EXCEPTION_INT_DIVIDE_BY_ZERO)) {
-        Py_DECREF(m);
-        return NULL;
+        goto error;
     }
     if (PyModule_AddIntConstant(m, "_EXCEPTION_STACK_OVERFLOW",
                                 EXCEPTION_STACK_OVERFLOW)) {
-        Py_DECREF(m);
-        return NULL;
+        goto error;
     }
 
     /* RaiseException() flags (prefixed by an underscore) */
     if (PyModule_AddIntConstant(m, "_EXCEPTION_NONCONTINUABLE",
                                 EXCEPTION_NONCONTINUABLE)) {
-        Py_DECREF(m);
-        return NULL;
+        goto error;
     }
     if (PyModule_AddIntConstant(m, "_EXCEPTION_NONCONTINUABLE_EXCEPTION",
                                 EXCEPTION_NONCONTINUABLE_EXCEPTION)) {
-        Py_DECREF(m);
-        return NULL;
+        goto error;
     }
 #endif
 
     return m;
+
+error:
+    Py_DECREF(m);
+    return NULL;
 }
 
 static int
