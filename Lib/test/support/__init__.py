@@ -2067,45 +2067,45 @@ def _is_full_match_test(pattern):
     # as a full test identifier.
     # Example: 'test.test_os.FileTests.test_access'.
     #
-    # Reject patterns which contain fnmatch patterns: '*', '?', '[...]'
-    # or '[!...]'. For example, reject 'test_access*'.
+    # ignore patterns which contain fnmatch patterns: '*', '?', '[...]'
+    # or '[!...]'. For example, ignore 'test_access*'.
     return ('.' in pattern) and (not re.search(r'[?*\[\]]', pattern))
 
 
- def set_match_tests(accept_patterns=None, reject_patterns=None):
+ def set_match_tests(accept_patterns=None, ignore_patterns=None):
     global _match_test_func, _accept_test_patterns, _ignore_test_patterns
 
 
     if accept_patterns is None:
         accept_patterns = ()
-    if reject_patterns is None:
-        reject_patterns = ()
+    if ignore_patterns is None:
+        ignore_patterns = ()
 
-    accept_func = reject_func = None
+    accept_func = ignore_func = None
 
     if accept_patterns != _accept_test_patterns:
-        accept_patterns, accept_func = _update_match_function(accept_patterns)
-    if reject_patterns != _ignore_test_patterns:
-        reject_patterns, reject_func = _update_match_function(reject_patterns)
+        accept_patterns, accept_func = _compile_match_function(accept_patterns)
+    if ignore_patterns != _ignore_test_patterns:
+        ignore_patterns, ignore_func = _compile_match_function(ignore_patterns)
 
     # Create a copy since patterns can be mutable and so modified later
     _accept_test_patterns = tuple(accept_patterns)
-    _ignore_test_patterns = tuple(reject_patterns)
+    _ignore_test_patterns = tuple(ignore_patterns)
 
-    if accept_func is not None or reject_func is not None:
+    if accept_func is not None or ignore_func is not None:
         def match_function(test_id):
             accept = True
-            reject = False
+            ignore = False
             if accept_func:
                 accept = accept_func(test_id)
-            if reject_func:
-                reject = reject_func(test_id)
-            return accept and not reject
+            if ignore_func:
+                ignore = ignore_func(test_id)
+            return accept and not ignore
 
         _match_test_func = match_function
 
 
-def _update_match_function(patterns):
+def _compile_match_function(patterns):
     if not patterns:
         func = None
         # set_match_tests(None) behaves as set_match_tests(())
