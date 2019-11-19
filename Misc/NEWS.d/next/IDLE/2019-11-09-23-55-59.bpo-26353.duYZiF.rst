@@ -1,2 +1,0 @@
-Stop adding newline when saving an IDLE shell window.
-

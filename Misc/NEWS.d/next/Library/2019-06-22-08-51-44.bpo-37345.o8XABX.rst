@@ -1,6 +1,0 @@
-Add formal support for UDPLITE sockets. Support was present before, but it
-is now easier to detect support with ``hasattr(socket, 'IPPROTO_UDPLITE')``
-and there are constants defined for each of the values needed:
-:py:obj:`socket.IPPROTO_UDPLITE`, :py:obj:`UDPLITE_SEND_CSCOV`, and
-:py:obj:`UDPLITE_RECV_CSCOV`.
-Patch by Gabe Appleton.
