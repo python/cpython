@@ -2092,7 +2092,7 @@ def _is_full_match_test(pattern):
     _accept_test_patterns = tuple(accept_patterns)
     _ignore_test_patterns = tuple(reject_patterns)
 
-    if accept_func or reject_func:
+    if accept_func is not None or reject_func is not None:
         def match_function(test_id):
             accept = True
             reject = False
