@@ -530,7 +530,7 @@ class TestSupport(unittest.TestCase):
         # Test acceptance
         with support.swap_attr(support, '_match_test_func', None):
             # match all
-            support.set_match_tests([], None)
+            support.set_match_tests([])
             self.assertTrue(support.match_test(test_access))
             self.assertTrue(support.match_test(test_chdir))
 
@@ -577,7 +577,7 @@ class TestSupport(unittest.TestCase):
         # Test rejection
         with support.swap_attr(support, '_match_test_func', None):
             # match all
-            support.set_match_tests(None, [])
+            support.set_match_tests(ignore_patterns=[])
             self.assertTrue(support.match_test(test_access))
             self.assertTrue(support.match_test(test_chdir))
 

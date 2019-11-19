@@ -2113,7 +2113,7 @@ def _compile_match_function(patterns):
     elif all(map(_is_full_match_test, patterns)):
         # Simple case: all patterns are full test identifier.
         # The test.bisect_cmd utility only uses such full test identifiers.
-        func = lambda elem: elem in set(patterns)
+        func = set(patterns).__contains__
     else:
         regex = '|'.join(map(fnmatch.translate, patterns))
         # The search *is* case sensitive on purpose:
