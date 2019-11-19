@@ -335,6 +335,7 @@ class AsyncSpecSetTest(unittest.TestCase):
         @patch.object(AsyncClass, 'async_method', spec_set=True)
         def test_async(async_method):
             self.assertIsInstance(async_method, AsyncMock)
+        test_async()
 
     def test_is_async_AsyncMock(self):
         mock = AsyncMock(spec_set=AsyncClass.async_method)

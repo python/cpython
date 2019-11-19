@@ -73,14 +73,14 @@ class echo_client(asynchat.async_chat):
         self.set_terminator(terminator)
         self.buffer = b""
 
-        def handle_connect(self):
-            pass
+    def handle_connect(self):
+        pass
 
-        if sys.platform == 'darwin':
-            # select.poll returns a select.POLLHUP at the end of the tests
-            # on darwin, so just ignore it
-            def handle_expt(self):
-                pass
+    if sys.platform == 'darwin':
+        # select.poll returns a select.POLLHUP at the end of the tests
+        # on darwin, so just ignore it
+        def handle_expt(self):
+            pass
 
     def collect_incoming_data(self, data):
         self.buffer += data
