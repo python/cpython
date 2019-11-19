@@ -453,6 +453,17 @@ class NewIMAPTestsMixin():
         self.assertEqual(client.sock.timeout, None)
         client.shutdown()
 
+    def test_imaplib_timeout_functionality_test(self):
+        class TimeoutHandler(SimpleIMAPHandler):
+            def handle(self):
+                time.sleep(1)
+                SimpleIMAPHandler.handle(self)
+
+        _, server = self._setup(TimeoutHandler)
+        addr = server.server_address[1]
+        with self.assertRaises(socket.timeout):
+            client = self.imap_class("localhost", addr, timeout=0.1)
+
     def test_with_statement(self):
         _, server = self._setup(SimpleIMAPHandler, connect=False)
         with self.imap_class(*server.server_address) as imap:
