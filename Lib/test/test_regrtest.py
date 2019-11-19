@@ -997,11 +997,6 @@ class ArgsTestCase(BaseTestCase):
                        'test_method3', 'test_method4']
         testname = self.create_test(code=code)
 
-        # by default, all methods should be run
-        output = self.run_tests("-v", testname)
-        methods = self.parse_methods(output)
-        self.assertEqual(methods, all_methods)
-
         # only run a subset
         filename = support.TESTFN
         self.addCleanup(support.unlink, filename)
