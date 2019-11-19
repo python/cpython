@@ -1088,7 +1088,7 @@ deduce_unreachable(PyGC_Head *base, PyGC_Head *unreachable) {
      * NOTE:  This used to move the reachable objects into a reachable
      * set instead.  But most things usually turn out to be reachable,
      * so it's more efficient to move the unreachable things.  See note
-     ^ [REACHABLE OR UNREACHABLE?} at the file end.
+     ^ [REACHABLE OR UNREACHABLE?] at the file end.
      */
     gc_list_init(unreachable);
     move_unreachable(base, unreachable);  // gc_prev is pointer again
@@ -2188,7 +2188,7 @@ PyObject_GC_Del(void *op)
 /* ------------------------------------------------------------------------
 Notes
 
-[REACHABLE OR UNREACHABLE?}
+[REACHABLE OR UNREACHABLE?]
 
 It "sounds slick" to move the unreachable objects, until you think about
 it - the reason it pays isn't actually obvious.
