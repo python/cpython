@@ -565,17 +565,13 @@ pycore_init_types(void)
         return status;
     }
 
+    if (!_PyLong_Init()) {
+        return _PyStatus_ERR("can't init longs");
+    }
+
     status = _PyUnicode_Init();
     if (_PyStatus_EXCEPTION(status)) {
         return status;
-    }
-
-    if (_PyStructSequence_Init() < 0) {
-        return _PyStatus_ERR("can't initialize structseq");
-    }
-
-    if (!_PyLong_Init()) {
-        return _PyStatus_ERR("can't init longs");
     }
 
     status = _PyExc_Init();
@@ -587,13 +583,17 @@ pycore_init_types(void)
         return _PyStatus_ERR("can't init float");
     }
 
-    if (!_PyContext_Init()) {
-        return _PyStatus_ERR("can't init context");
+    if (_PyStructSequence_Init() < 0) {
+        return _PyStatus_ERR("can't initialize structseq");
     }
 
     status = _PyErr_Init();
     if (_PyStatus_EXCEPTION(status)) {
         return status;
+    }
+
+    if (!_PyContext_Init()) {
+        return _PyStatus_ERR("can't init context");
     }
 
     return _PyStatus_OK();
@@ -1447,16 +1447,7 @@ new_interpreter(PyThreadState **tstate_p)
     }
     config = &interp->config;
 
-    status = _PyExc_Init();
-    if (_PyStatus_EXCEPTION(status)) {
-        return status;
-    }
-
-    status = _PyErr_Init();
-    if (_PyStatus_EXCEPTION(status)) {
-        return status;
-    }
-
+    status = pycore_init_types();
 
     /* XXX The following is lax in error checking */
     PyObject *modules = PyDict_New();
