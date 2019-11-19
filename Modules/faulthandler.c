@@ -1359,9 +1359,11 @@ PyInit_faulthandler(void)
 
     return m;
 
+#ifdef MS_WINDOWS
 error:
     Py_DECREF(m);
     return NULL;
+#endif
 }
 
 static int
