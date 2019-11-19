@@ -1,1 +1,0 @@
-Fix the :c:func:`PySys_Audit` call in :class:`mmap.mmap`.

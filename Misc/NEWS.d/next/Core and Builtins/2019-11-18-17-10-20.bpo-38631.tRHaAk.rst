@@ -1,2 +1,0 @@
-Replace ``Py_FatalError()`` call with a regular :exc:`RuntimeError`
-exception in :meth:`float.__getformat__`.

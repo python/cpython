@@ -1,2 +1,0 @@
-The case the result of :func:`pathlib.WindowsPath.glob` matches now the case
-of the pattern for literal parts.

@@ -1,2 +1,0 @@
-Optimized :func:`math.floor()`, :func:`math.ceil()` and :func:`math.trunc()`
-for floats.

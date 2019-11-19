@@ -1,1 +1,0 @@
-Add a repr for ``subprocess.Popen`` objects. Patch by Andrey Doroschenko.

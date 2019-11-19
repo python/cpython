@@ -1,1 +1,0 @@
-Explicitly mention abc support in functools.singledispatch
