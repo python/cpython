@@ -420,7 +420,7 @@ class EnumMeta(type):
         if module is None:
             try:
                 module = sys._getframe(2).f_globals['__name__']
-            except (AttributeError, ValueError, KeyError) as exc:
+            except (AttributeError, ValueError, KeyError):
                 pass
         if module is None:
             _make_class_unpicklable(enum_class)

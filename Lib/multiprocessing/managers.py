@@ -248,7 +248,7 @@ class Server(object):
                     try:
                         obj, exposed, gettypeid = \
                             self.id_to_local_proxy_obj[ident]
-                    except KeyError as second_ke:
+                    except KeyError:
                         raise ke
 
                 if methodname not in exposed:
@@ -296,7 +296,7 @@ class Server(object):
             try:
                 try:
                     send(msg)
-                except Exception as e:
+                except Exception:
                     send(('#UNSERIALIZABLE', format_exc()))
             except Exception as e:
                 util.info('exception in thread serving %r',
