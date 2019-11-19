@@ -67,6 +67,10 @@ Include/pytime.h              @pganssle @abalkin
 **/*imap*                     @python/email-team
 **/*poplib*                   @python/email-team
 
+# Garbage collector
+/Modules/gcmodule.c           @pablogsal
+/Doc/library/gc.rst           @pablogsal
+
 # Parser/Pgen
 /Parser/pgen/                 @pablogsal
 
