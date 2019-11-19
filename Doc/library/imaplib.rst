@@ -369,10 +369,11 @@ An :class:`IMAP4` instance has the following methods:
    Opens socket to *port* at *host*.  This method is implicitly called by
    the :class:`IMAP4` constructor.  The connection objects established by this
    method will be used in the :meth:`IMAP4.read`, :meth:`IMAP4.readline`,
-   :meth:`IMAP4.send`, and :meth:`IMAP4.shutdown` methods.  You may override
-   this method. The optional *timeout* parameter specifies a timeout in seconds
+   :meth:`IMAP4.send`, and :meth:`IMAP4.shutdown` methods.
+   The optional *timeout* parameter specifies a timeout in seconds
    for the connection attempt. If timeout is not given or is None,
    the global default socket timeout is used.
+   You may override this method.
 
    .. audit-event:: imaplib.open self,host,port imaplib.IMAP4.open
 
