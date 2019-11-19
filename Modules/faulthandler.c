@@ -1273,25 +1273,36 @@ PyInit_faulthandler(void)
 #ifdef MS_WINDOWS
     /* RaiseException() codes (prefixed by an underscore) */
     if (PyModule_AddIntConstant(m, "_EXCEPTION_ACCESS_VIOLATION",
-                                EXCEPTION_ACCESS_VIOLATION))
-        return NULL;
+                                EXCEPTION_ACCESS_VIOLATION)) {
+        goto error;
+    }
     if (PyModule_AddIntConstant(m, "_EXCEPTION_INT_DIVIDE_BY_ZERO",
-                                EXCEPTION_INT_DIVIDE_BY_ZERO))
-        return NULL;
+                                EXCEPTION_INT_DIVIDE_BY_ZERO)) {
+        goto error;
+    }
     if (PyModule_AddIntConstant(m, "_EXCEPTION_STACK_OVERFLOW",
-                                EXCEPTION_STACK_OVERFLOW))
-        return NULL;
+                                EXCEPTION_STACK_OVERFLOW)) {
+        goto error;
+    }
 
     /* RaiseException() flags (prefixed by an underscore) */
     if (PyModule_AddIntConstant(m, "_EXCEPTION_NONCONTINUABLE",
-                                EXCEPTION_NONCONTINUABLE))
-        return NULL;
+                                EXCEPTION_NONCONTINUABLE)) {
+        goto error;
+    }
     if (PyModule_AddIntConstant(m, "_EXCEPTION_NONCONTINUABLE_EXCEPTION",
-                                EXCEPTION_NONCONTINUABLE_EXCEPTION))
-        return NULL;
+                                EXCEPTION_NONCONTINUABLE_EXCEPTION)) {
+        goto error;
+    }
 #endif
 
     return m;
+
+#ifdef MS_WINDOWS
+error:
+    Py_DECREF(m);
+    return NULL;
+#endif
 }
 
 static int
