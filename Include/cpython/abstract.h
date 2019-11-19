@@ -120,6 +120,14 @@ PyObject_Vectorcall(PyObject *callable, PyObject *const *args,
     return _PyObject_VectorcallTstate(tstate, callable,
                                       args, nargsf, kwnames);
 }
+// Backwards compatibility aliases for API that was provisional in Python 3.8
+#define _PyObject_Vectorcall PyObject_Vectorcall
+#define _PyObject_VectorcallMethod PyObject_VectorcallMethod
+#define _PyObject_FastCallDict PyObject_FastCallDict
+#define _PyVectorcall_Function PyVectorcall_Function
+#define _PyObject_CallOneArg PyObject_CallOneArg
+#define _PyObject_CallMethodNoArgs PyObject_CallMethodNoArgs
+#define _PyObject_CallMethodOneArg PyObject_CallMethodOneArg
 
 /* Same as PyObject_Vectorcall except that keyword arguments are passed as
    dict, which may be NULL if there are no keyword arguments. */
@@ -181,6 +189,9 @@ PyObject_CallMethodOneArg(PyObject *self, PyObject *name, PyObject *arg)
     return PyObject_VectorcallMethod(name, args,
            2 | PY_VECTORCALL_ARGUMENTS_OFFSET, NULL);
 }
+
+/* Call a callable Python object without any arguments */
+PyAPI_FUNC(PyObject *) PyObject_CallNoArgs(PyObject *func);
 
 /* Like PyObject_CallMethod(), but expect a _Py_Identifier*
    as the method name. */
