@@ -1,1 +1,0 @@
-Document the fact that :exc:`RuntimeError` is raised if :meth:`os.fork` is called in a subinterpreter.
