@@ -1,1 +1,1 @@
-Fix crash in argparse when using gettext.
+Fix unhandled exceptions in :mod:`argparse` when internationalizing some error messages.
