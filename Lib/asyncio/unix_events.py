@@ -330,7 +330,7 @@ class _UnixSelectorEventLoop(selector_events.BaseSelectorEventLoop):
     async def _sock_sendfile_native(self, sock, file, offset, count):
         try:
             os.sendfile
-        except AttributeError as exc:
+        except AttributeError:
             raise exceptions.SendfileNotAvailableError(
                 "os.sendfile() is not available")
         try:
@@ -339,7 +339,7 @@ class _UnixSelectorEventLoop(selector_events.BaseSelectorEventLoop):
             raise exceptions.SendfileNotAvailableError("not a regular file")
         try:
             fsize = os.fstat(fileno).st_size
-        except OSError as err:
+        except OSError:
             raise exceptions.SendfileNotAvailableError("not a regular file")
         blocksize = count if count else fsize
         if not blocksize:
