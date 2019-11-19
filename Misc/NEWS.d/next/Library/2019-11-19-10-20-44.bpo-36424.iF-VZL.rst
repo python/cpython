@@ -1,0 +1,6 @@
+Frozen dataclasses, in conjunction with with __slots__, cannot be unpickled,
+as we were using `__setattr__` to set the new instance's attribute which
+conflicts with the __slots__ definition. Adding `__getstate__` and
+`__setstate__` for these classes should alleviate the issue, as we can use
+`object.__setattr__` instead to set the frozen attributes on instance's
+state assignment.

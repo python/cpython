@@ -1914,6 +1914,22 @@ class TestCase(unittest.TestCase):
                     self.assertEqual(new_sample.x, another_new_sample.x)
                     self.assertEqual(sample.y, another_new_sample.y)
 
+    def test_frozen_dataclasses_pickleable(self):
+        global S
+        @dataclass(frozen=True)
+        class S:
+            __slots__ = ('x', 'y')
+            x: int
+            y: int
+
+        sample = S(42, 24)
+        for proto in range(pickle.HIGHEST_PROTOCOL + 1):
+            with self.subTest(sample=sample, proto=proto):
+                new_sample = pickle.loads(pickle.dumps(sample, proto))
+                self.assertEqual(sample.x, new_sample.x)
+                self.assertEqual(sample.y, new_sample.y)
+                self.assertIsNot(sample, new_sample)
+
 
 class TestFieldNoAnnotation(unittest.TestCase):
     def test_field_without_annotation(self):
