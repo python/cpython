@@ -1778,7 +1778,7 @@ class URLopener:
                 hdrs = fp.info()
                 fp.close()
                 return url2pathname(_splithost(url1)[1]), hdrs
-            except OSError as msg:
+            except OSError:
                 pass
         fp = self.open(url, data)
         try:

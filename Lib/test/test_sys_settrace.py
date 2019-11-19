@@ -161,8 +161,8 @@ def raises():
 def test_raise():
     try:
         raises()
-    except Exception as exc:
-        x = 1
+    except Exception:
+        pass
 
 test_raise.events = [(0, 'call'),
                      (1, 'line'),
@@ -191,7 +191,7 @@ def _settrace_and_raise(tracefunc):
 def settrace_and_raise(tracefunc):
     try:
         _settrace_and_raise(tracefunc)
-    except RuntimeError as exc:
+    except RuntimeError:
         pass
 
 settrace_and_raise.events = [(2, 'exception'),
