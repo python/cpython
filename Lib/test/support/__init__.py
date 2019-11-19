@@ -2072,7 +2072,7 @@ def _is_full_match_test(pattern):
     return ('.' in pattern) and (not re.search(r'[?*\[\]]', pattern))
 
 
- def set_match_tests(accept_patterns=None, ignore_patterns=None):
+def set_match_tests(accept_patterns=None, ignore_patterns=None):
     global _match_test_func, _accept_test_patterns, _ignore_test_patterns
 
 
