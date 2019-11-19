@@ -113,7 +113,7 @@ class AsyncPatchCMTest(unittest.TestCase):
         asyncio.run(test_async())
 
 
-class AsyncMockTest(unittest.TestCase):
+class AsyncMockTest(unittest.IsolatedAsyncioTestCase):
     def test_iscoroutinefunction_default(self):
         mock = AsyncMock()
         self.assertTrue(asyncio.iscoroutinefunction(mock))
@@ -138,13 +138,42 @@ class AsyncMockTest(unittest.TestCase):
         self.assertTrue(inspect.iscoroutinefunction(mock))
 
     def test_future_isfuture(self):
-        loop = asyncio.new_event_loop()
-        asyncio.set_event_loop(loop)
         fut = asyncio.Future()
-        loop.stop()
-        loop.close()
         mock = AsyncMock(fut)
         self.assertIsInstance(mock, asyncio.Future)
+
+    async def test_return_value_awaitable(self):
+        fut = asyncio.Future()
+        fut.set_result(None)
+        mock = AsyncMock(return_value=fut)
+        result = await mock()
+        self.assertIsInstance(result, asyncio.Future)
+
+    async def test_side_effect_awaitable_values(self):
+        fut = asyncio.Future()
+        fut.set_result(None)
+
+        mock = AsyncMock(side_effect=[fut])
+        result = await mock()
+        self.assertIsInstance(result, asyncio.Future)
+
+        with self.assertRaises(StopAsyncIteration):
+            await mock()
+
+    async def test_wraps_coroutine(self):
+        value = asyncio.Future()
+
+        ran = False
+        async def inner():
+            nonlocal ran
+            ran = True
+            return value
+
+        mock = AsyncMock(wraps=inner)
+        result = await mock()
+        self.assertEqual(result, value)
+        mock.assert_awaited()
+        self.assertTrue(ran)
 
 
 class AsyncAutospecTest(unittest.TestCase):
@@ -388,12 +417,8 @@ class AsyncArguments(unittest.TestCase):
         for item in vals:
             self.assertEqual(item, asyncio.run(mock()))
 
-        with self.assertRaises(RuntimeError) as e:
+        with self.assertRaises(StopAsyncIteration) as e:
             asyncio.run(mock())
-            self.assertEqual(
-                e.exception,
-                RuntimeError('coroutine raised StopIteration')
-            )
 
 class AsyncMagicMethods(unittest.TestCase):
     def test_async_magic_methods_return_async_mocks(self):
