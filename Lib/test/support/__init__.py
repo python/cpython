@@ -2096,7 +2096,9 @@ def _run_suite(suite):
 
 # By default, don't filter tests
 _match_test_func = None
-_match_test_patterns = None
+
+_accept_test_patterns = None
+_ignore_test_patterns = None
 
 
 def match_test(test):
@@ -2112,18 +2114,45 @@ def _is_full_match_test(pattern):
     # as a full test identifier.
     # Example: 'test.test_os.FileTests.test_access'.
     #
-    # Reject patterns which contain fnmatch patterns: '*', '?', '[...]'
-    # or '[!...]'. For example, reject 'test_access*'.
+    # ignore patterns which contain fnmatch patterns: '*', '?', '[...]'
+    # or '[!...]'. For example, ignore 'test_access*'.
     return ('.' in pattern) and (not re.search(r'[?*\[\]]', pattern))
 
 
-def set_match_tests(patterns):
-    global _match_test_func, _match_test_patterns
+def set_match_tests(accept_patterns=None, ignore_patterns=None):
+    global _match_test_func, _accept_test_patterns, _ignore_test_patterns
 
-    if patterns == _match_test_patterns:
-        # No change: no need to recompile patterns.
-        return
 
+    if accept_patterns is None:
+        accept_patterns = ()
+    if ignore_patterns is None:
+        ignore_patterns = ()
+
+    accept_func = ignore_func = None
+
+    if accept_patterns != _accept_test_patterns:
+        accept_patterns, accept_func = _compile_match_function(accept_patterns)
+    if ignore_patterns != _ignore_test_patterns:
+        ignore_patterns, ignore_func = _compile_match_function(ignore_patterns)
+
+    # Create a copy since patterns can be mutable and so modified later
+    _accept_test_patterns = tuple(accept_patterns)
+    _ignore_test_patterns = tuple(ignore_patterns)
+
+    if accept_func is not None or ignore_func is not None:
+        def match_function(test_id):
+            accept = True
+            ignore = False
+            if accept_func:
+                accept = accept_func(test_id)
+            if ignore_func:
+                ignore = ignore_func(test_id)
+            return accept and not ignore
+
+        _match_test_func = match_function
+
+
+def _compile_match_function(patterns):
     if not patterns:
         func = None
         # set_match_tests(None) behaves as set_match_tests(())
@@ -2151,10 +2180,7 @@ def set_match_tests(patterns):
 
         func = match_test_regex
 
-    # Create a copy since patterns can be mutable and so modified later
-    _match_test_patterns = tuple(patterns)
-    _match_test_func = func
-
+    return patterns, func
 
 
 def run_unittest(*classes):
