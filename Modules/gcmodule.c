@@ -25,6 +25,7 @@
 
 #include "Python.h"
 #include "pycore_context.h"
+#include "pycore_initconfig.h"
 #include "pycore_object.h"
 #include "pycore_pymem.h"
 #include "pycore_pystate.h"
@@ -129,7 +130,7 @@ static PyObject *gc_str = NULL;
 #define GEN_HEAD(state, n) (&(state)->generations[n].head)
 
 void
-_PyGC_Initialize(struct _gc_runtime_state *state)
+_PyGC_InitializeRuntime(struct _gc_runtime_state *state)
 {
     state->enabled = 1; /* automatic collection enabled? */
 
@@ -150,6 +151,21 @@ _PyGC_Initialize(struct _gc_runtime_state *state)
     };
     state->permanent_generation = permanent_generation;
 }
+
+
+PyStatus
+_PyGC_Init(_PyRuntimeState *runtime)
+{
+    struct _gc_runtime_state *state = &runtime->gc;
+    if (state->garbage == NULL) {
+        state->garbage = PyList_New(0);
+        if (state->garbage == NULL) {
+            return _PyStatus_NO_MEMORY();
+        }
+    }
+    return _PyStatus_OK();
+}
+
 
 /*
 _gc_prev values
@@ -905,13 +921,9 @@ handle_legacy_finalizers(struct _gc_runtime_state *state,
                          PyGC_Head *finalizers, PyGC_Head *old)
 {
     assert(!PyErr_Occurred());
+    assert(state->garbage != NULL);
 
     PyGC_Head *gc = GC_NEXT(finalizers);
-    if (state->garbage == NULL) {
-        state->garbage = PyList_New(0);
-        if (state->garbage == NULL)
-            Py_FatalError("gc couldn't create gc.garbage list");
-    }
     for (; gc != finalizers; gc = GC_NEXT(gc)) {
         PyObject *op = FROM_GC(gc);
 
