@@ -712,7 +712,7 @@ class TestCase(object):
             function, args, kwargs = cls._class_cleanups.pop()
             try:
                 function(*args, **kwargs)
-            except Exception as exc:
+            except Exception:
                 cls.tearDown_exceptions.append(sys.exc_info())
 
     def __call__(self, *args, **kwds):
