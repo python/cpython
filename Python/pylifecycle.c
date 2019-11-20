@@ -558,7 +558,7 @@ pycore_create_interpreter(_PyRuntimeState *runtime,
 
 
 static PyStatus
-pycore_init_types(PyThreadState *tstate)
+pycore_init_types(PyThreadState *tstate, int is_main_interp)
 {
     PyStatus status;
 
@@ -567,18 +567,20 @@ pycore_init_types(PyThreadState *tstate)
         return status;
     }
 
-    status = _PyTypes_Init();
-    if (_PyStatus_EXCEPTION(status)) {
-        return status;
-    }
+    if (is_main_interp) {
+        status = _PyTypes_Init();
+        if (_PyStatus_EXCEPTION(status)) {
+            return status;
+        }
 
-    if (!_PyLong_Init()) {
-        return _PyStatus_ERR("can't init longs");
-    }
+        if (!_PyLong_Init()) {
+            return _PyStatus_ERR("can't init longs");
+        }
 
-    status = _PyUnicode_Init();
-    if (_PyStatus_EXCEPTION(status)) {
-        return status;
+        status = _PyUnicode_Init();
+        if (_PyStatus_EXCEPTION(status)) {
+            return status;
+        }
     }
 
     status = _PyExc_Init();
@@ -586,12 +588,14 @@ pycore_init_types(PyThreadState *tstate)
         return status;
     }
 
-    if (!_PyFloat_Init()) {
-        return _PyStatus_ERR("can't init float");
-    }
+    if (is_main_interp) {
+        if (!_PyFloat_Init()) {
+            return _PyStatus_ERR("can't init float");
+        }
 
-    if (_PyStructSequence_Init() < 0) {
-        return _PyStatus_ERR("can't initialize structseq");
+        if (_PyStructSequence_Init() < 0) {
+            return _PyStatus_ERR("can't initialize structseq");
+        }
     }
 
     status = _PyErr_Init();
@@ -599,8 +603,10 @@ pycore_init_types(PyThreadState *tstate)
         return status;
     }
 
-    if (!_PyContext_Init()) {
-        return _PyStatus_ERR("can't init context");
+    if (is_main_interp) {
+        if (!_PyContext_Init()) {
+            return _PyStatus_ERR("can't init context");
+        }
     }
 
     return _PyStatus_OK();
@@ -690,7 +696,7 @@ pyinit_config(_PyRuntimeState *runtime,
     config = &tstate->interp->config;
     *tstate_p = tstate;
 
-    status = pycore_init_types(tstate);
+    status = pycore_init_types(tstate, 1);
     if (_PyStatus_EXCEPTION(status)) {
         return status;
     }
@@ -1477,7 +1483,7 @@ new_interpreter(PyThreadState **tstate_p)
     }
     config = &interp->config;
 
-    status = pycore_init_types(tstate);
+    status = pycore_init_types(tstate, 0);
 
     /* XXX The following is lax in error checking */
     PyObject *modules = PyDict_New();
