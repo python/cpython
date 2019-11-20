@@ -1161,6 +1161,78 @@ flush_std_files(void)
 
 */
 
+
+static void
+finalize_interp_types(PyThreadState *tstate, int is_main_interp)
+{
+    if (is_main_interp) {
+        /* Sundry finalizers */
+        _PyMethod_Fini();
+        _PyFrame_Fini();
+        _PyCFunction_Fini();
+        _PyTuple_Fini();
+        _PyList_Fini();
+        _PySet_Fini();
+        _PyBytes_Fini();
+        _PyLong_Fini();
+        _PyFloat_Fini();
+        _PyDict_Fini();
+        _PySlice_Fini();
+    }
+
+    _PyWarnings_Fini(tstate->interp);
+
+    if (is_main_interp) {
+        _Py_HashRandomization_Fini();
+        _PyArg_Fini();
+        _PyAsyncGen_Fini();
+        _PyContext_Fini();
+
+        /* Cleanup Unicode implementation */
+        _PyUnicode_Fini();
+        _Py_ClearFileSystemEncoding();
+    }
+}
+
+
+static void
+finalize_interp_clear(PyThreadState *tstate, int is_main_interp)
+{
+    /* Clear interpreter state and all thread states */
+    PyInterpreterState_Clear(tstate->interp);
+
+    finalize_interp_types(tstate, is_main_interp);
+
+    if (is_main_interp) {
+        /* XXX Still allocated:
+           - various static ad-hoc pointers to interned strings
+           - int and float free list blocks
+           - whatever various modules and libraries allocate
+        */
+
+        PyGrammar_RemoveAccelerators(&_PyParser_Grammar);
+
+        _PyExc_Fini();
+        _PyGC_Fini(tstate);
+    }
+}
+
+
+static void
+finalize_interp_delete(PyThreadState *tstate, int is_main_interp)
+{
+    if (is_main_interp) {
+        /* Cleanup auto-thread-state */
+        _PyGILState_Fini(tstate);
+    }
+
+    /* Delete current thread. After this, many C API calls become crashy. */
+    PyThreadState_Swap(NULL);
+
+    PyInterpreterState_Delete(tstate->interp);
+}
+
+
 int
 Py_FinalizeEx(void)
 {
@@ -1314,56 +1386,9 @@ Py_FinalizeEx(void)
     }
 #endif /* Py_TRACE_REFS */
 
-    /* Clear interpreter state and all thread states. */
-    PyInterpreterState_Clear(interp);
+    finalize_interp_clear(tstate, 1);
 
-    /* Now we decref the exception classes.  After this point nothing
-       can raise an exception.  That's okay, because each Fini() method
-       below has been checked to make sure no exceptions are ever
-       raised.
-    */
-
-    _PyExc_Fini();
-
-    /* Sundry finalizers */
-    _PyMethod_Fini();
-    _PyFrame_Fini();
-    _PyCFunction_Fini();
-    _PyTuple_Fini();
-    _PyList_Fini();
-    _PySet_Fini();
-    _PyBytes_Fini();
-    _PyLong_Fini();
-    _PyFloat_Fini();
-    _PyDict_Fini();
-    _PySlice_Fini();
-    _PyGC_Fini(runtime);
-    _PyWarnings_Fini(interp);
-    _Py_HashRandomization_Fini();
-    _PyArg_Fini();
-    _PyAsyncGen_Fini();
-    _PyContext_Fini();
-
-    /* Cleanup Unicode implementation */
-    _PyUnicode_Fini();
-
-    _Py_ClearFileSystemEncoding();
-
-    /* XXX Still allocated:
-       - various static ad-hoc pointers to interned strings
-       - int and float free list blocks
-       - whatever various modules and libraries allocate
-    */
-
-    PyGrammar_RemoveAccelerators(&_PyParser_Grammar);
-
-    /* Cleanup auto-thread-state */
-    _PyGILState_Fini(runtime);
-
-    /* Delete current thread. After this, many C API calls become crashy. */
-    PyThreadState_Swap(NULL);
-
-    PyInterpreterState_Delete(interp);
+    finalize_interp_delete(tstate, 1);
 
 #ifdef Py_TRACE_REFS
     /* Display addresses (& refcnts) of all objects still alive.
@@ -1607,9 +1632,8 @@ Py_EndInterpreter(PyThreadState *tstate)
     }
 
     _PyImport_Cleanup(tstate);
-    PyInterpreterState_Clear(interp);
-    PyThreadState_Swap(NULL);
-    PyInterpreterState_Delete(interp);
+    finalize_interp_clear(tstate, 0);
+    finalize_interp_delete(tstate, 0);
 }
 
 /* Add the __main__ module */

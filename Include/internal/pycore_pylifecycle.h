@@ -76,7 +76,7 @@ extern void PyOS_FiniInterrupts(void);
 extern void _PyExc_Fini(void);
 extern void _PyImport_Fini(void);
 extern void _PyImport_Fini2(void);
-extern void _PyGC_Fini(struct pyruntimestate *runtime);
+extern void _PyGC_Fini(PyThreadState *tstate);
 extern void _PyType_Fini(void);
 extern void _Py_HashRandomization_Fini(void);
 extern void _PyUnicode_Fini(void);
@@ -87,7 +87,7 @@ extern void _PyTraceMalloc_Fini(void);
 extern void _PyWarnings_Fini(PyInterpreterState *interp);
 
 extern void _PyGILState_Init(PyThreadState *tstate);
-extern void _PyGILState_Fini(struct pyruntimestate *runtime);
+extern void _PyGILState_Fini(PyThreadState *tstate);
 
 PyAPI_FUNC(void) _PyGC_DumpShutdownStats(struct pyruntimestate *runtime);
 
