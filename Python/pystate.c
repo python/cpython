@@ -39,6 +39,7 @@ extern "C" {
 
 /* Forward declarations */
 static PyThreadState *_PyGILState_GetThisThreadState(struct _gilstate_runtime_state *gilstate);
+static void _PyThreadState_Delete(PyThreadState *tstate, int check_current);
 
 
 static PyStatus
@@ -295,13 +296,13 @@ PyInterpreterState_Clear(PyInterpreterState *interp)
 
 
 static void
-zapthreads(PyInterpreterState *interp)
+zapthreads(PyInterpreterState *interp, int check_current)
 {
-    PyThreadState *p;
+    PyThreadState *tstate;
     /* No need to lock the mutex here because this should only happen
        when the threads are all really dead (XXX famous last words). */
-    while ((p = interp->tstate_head) != NULL) {
-        PyThreadState_Delete(p);
+    while ((tstate = interp->tstate_head) != NULL) {
+        _PyThreadState_Delete(tstate, check_current);
     }
 }
 
@@ -311,7 +312,11 @@ PyInterpreterState_Delete(PyInterpreterState *interp)
 {
     _PyRuntimeState *runtime = interp->runtime;
     struct pyinterpreters *interpreters = &runtime->interpreters;
-    zapthreads(interp);
+    zapthreads(interp, 0);
+
+    /* Delete current thread. After this, many C API calls become crashy. */
+    _PyThreadState_Swap(&runtime->gilstate, NULL);
+
     HEAD_LOCK(runtime);
     PyInterpreterState **p;
     for (p = &interpreters->head; ; p = &(*p)->next) {
@@ -367,7 +372,7 @@ _PyInterpreterState_DeleteExceptMain(_PyRuntimeState *runtime)
         }
 
         PyInterpreterState_Clear(interp);  // XXX must activate?
-        zapthreads(interp);
+        zapthreads(interp, 1);
         if (interp->id_mutex != NULL) {
             PyThread_free_lock(interp->id_mutex);
         }
@@ -793,7 +798,8 @@ PyThreadState_Clear(PyThreadState *tstate)
 
 /* Common code for PyThreadState_Delete() and PyThreadState_DeleteCurrent() */
 static void
-tstate_delete_common(PyThreadState *tstate)
+tstate_delete_common(PyThreadState *tstate,
+                     struct _gilstate_runtime_state *gilstate)
 {
     _PyRuntimeState *runtime = tstate->interp->runtime;
     if (tstate == NULL) {
@@ -815,22 +821,32 @@ tstate_delete_common(PyThreadState *tstate)
         tstate->on_delete(tstate->on_delete_data);
     }
     PyMem_RawFree(tstate);
+
+    if (gilstate->autoInterpreterState &&
+        PyThread_tss_get(&gilstate->autoTSSkey) == tstate)
+    {
+        PyThread_tss_set(&gilstate->autoTSSkey, NULL);
+    }
+}
+
+
+static void
+_PyThreadState_Delete(PyThreadState *tstate, int check_current)
+{
+    struct _gilstate_runtime_state *gilstate = &tstate->interp->runtime->gilstate;
+    if (check_current) {
+        if (tstate == _PyRuntimeGILState_GetThreadState(gilstate)) {
+            Py_FatalError("PyThreadState_Delete: tstate is still current");
+        }
+    }
+    tstate_delete_common(tstate, gilstate);
 }
 
 
 void
 PyThreadState_Delete(PyThreadState *tstate)
 {
-    struct _gilstate_runtime_state *gilstate = &tstate->interp->runtime->gilstate;
-    if (tstate == _PyRuntimeGILState_GetThreadState(gilstate)) {
-        Py_FatalError("PyThreadState_Delete: tstate is still current");
-    }
-    if (gilstate->autoInterpreterState &&
-        PyThread_tss_get(&gilstate->autoTSSkey) == tstate)
-    {
-        PyThread_tss_set(&gilstate->autoTSSkey, NULL);
-    }
-    tstate_delete_common(tstate);
+    _PyThreadState_Delete(tstate, 1);
 }
 
 
@@ -842,12 +858,7 @@ _PyThreadState_DeleteCurrent(_PyRuntimeState *runtime)
     if (tstate == NULL)
         Py_FatalError(
             "PyThreadState_DeleteCurrent: no current tstate");
-    tstate_delete_common(tstate);
-    if (gilstate->autoInterpreterState &&
-        PyThread_tss_get(&gilstate->autoTSSkey) == tstate)
-    {
-        PyThread_tss_set(&gilstate->autoTSSkey, NULL);
-    }
+    tstate_delete_common(tstate, gilstate);
     _PyRuntimeGILState_SetThreadState(gilstate, NULL);
     PyEval_ReleaseLock();
 }

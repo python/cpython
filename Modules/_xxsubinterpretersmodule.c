@@ -2056,7 +2056,6 @@ interp_destroy(PyObject *self, PyObject *args, PyObject *kwds)
     }
 
     // Destroy the interpreter.
-    //PyInterpreterState_Delete(interp);
     PyThreadState *tstate = PyInterpreterState_ThreadHead(interp);
     // XXX Possible GILState issues?
     PyThreadState *save_tstate = PyThreadState_Swap(tstate);
