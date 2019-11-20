@@ -1,3 +1,0 @@
-Fixed a bug in :meth:`inspect.signature.bind` that was causing it to fail
-when handling a keyword argument with same name as positional-only parameter.
-Patch by Pablo Galindo.
