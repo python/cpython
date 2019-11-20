@@ -1173,9 +1173,7 @@ finalize_interp_types(PyThreadState *tstate, int is_main_interp)
 {
     if (is_main_interp) {
         /* Sundry finalizers */
-        _PyMethod_Fini();
         _PyFrame_Fini();
-        _PyCFunction_Fini();
         _PyTuple_Fini();
         _PyList_Fini();
         _PySet_Fini();

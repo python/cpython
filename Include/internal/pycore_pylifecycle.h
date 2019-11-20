@@ -59,9 +59,7 @@ extern PyStatus _PyGC_Init(PyThreadState *tstate);
 
 /* Various internal finalizers */
 
-extern void _PyMethod_Fini(void);
 extern void _PyFrame_Fini(void);
-extern void _PyCFunction_Fini(void);
 extern void _PyDict_Fini(void);
 extern void _PyTuple_Fini(void);
 extern void _PyList_Fini(void);
