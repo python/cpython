@@ -558,9 +558,16 @@ pycore_create_interpreter(_PyRuntimeState *runtime,
 
 
 static PyStatus
-pycore_init_types(void)
+pycore_init_types(_PyRuntimeState *runtime)
 {
-    PyStatus status = _PyTypes_Init();
+    PyStatus status;
+
+    status = _PyGC_Init(runtime);
+    if (_PyStatus_EXCEPTION(status)) {
+        return status;
+    }
+
+    status = _PyTypes_Init();
     if (_PyStatus_EXCEPTION(status)) {
         return status;
     }
@@ -683,7 +690,7 @@ pyinit_config(_PyRuntimeState *runtime,
     config = &tstate->interp->config;
     *tstate_p = tstate;
 
-    status = pycore_init_types();
+    status = pycore_init_types(runtime);
     if (_PyStatus_EXCEPTION(status)) {
         return status;
     }
@@ -1447,7 +1454,7 @@ new_interpreter(PyThreadState **tstate_p)
     }
     config = &interp->config;
 
-    status = pycore_init_types();
+    status = pycore_init_types(runtime);
 
     /* XXX The following is lax in error checking */
     PyObject *modules = PyDict_New();
