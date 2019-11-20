@@ -1273,6 +1273,25 @@ class RaiseSignalTest(unittest.TestCase):
         self.assertTrue(is_ok)
 
 
+class PidfdSignalTest(unittest.TestCase):
+
+    @unittest.skipUnless(
+        hasattr(signal, "pidfd_send_signal"),
+        "pidfd support not built in",
+    )
+    def test_pidfd_send_signal(self):
+        with self.assertRaises(OSError) as cm:
+            signal.pidfd_send_signal(0, signal.SIGINT)
+        if cm.exception.errno == errno.ENOSYS:
+            self.skipTest("kernel does not support pidfds")
+        self.assertEqual(cm.exception.errno, errno.EBADF)
+        my_pidfd = os.open(f'/proc/{os.getpid()}', os.O_DIRECTORY)
+        self.addCleanup(os.close, my_pidfd)
+        with self.assertRaisesRegexp(TypeError, "^siginfo must be None$"):
+            signal.pidfd_send_signal(my_pidfd, signal.SIGINT, object(), 0)
+        with self.assertRaises(KeyboardInterrupt):
+            signal.pidfd_send_signal(my_pidfd, signal.SIGINT)
+
 def tearDownModule():
     support.reap_children()
 

@@ -197,6 +197,13 @@ now raises :exc:`ImportError` instead of :exc:`ValueError` for invalid relative
 import attempts.
 (Contributed by Ngalim Siregar in :issue:`37444`.)
 
+signal
+------
+
+Exposed the Linux-specific :func:`signal.pidfd_send_signal` for sending to
+signals to a process using a file descriptor instead of a pid. (:issue:`38712`)
+
+
 Optimizations
 =============
 
