@@ -483,7 +483,7 @@ class TestMockingMagicMethods(unittest.TestCase):
         # fixing issue34716, such that now a tuple of MagicMock instances is
         # returned from both of these methods by default. The previous
         # behaviour was to return a single MagicMock instance.
-    
+
         # Test divmod
         m = MagicMock()
         foo = divmod(m, 2)
@@ -503,7 +503,7 @@ class TestMockingMagicMethods(unittest.TestCase):
         m.__divmod__.return_value = (2, 1)
         self.assertEqual(divmod(m, 2), (2, 1))
         self.assertEqual(divmod(m, None), (2, 1))
-        
+
         # Test rdivmod
         m = MagicMock()
         bar = divmod(2, m)
@@ -518,7 +518,7 @@ class TestMockingMagicMethods(unittest.TestCase):
         self.assertEqual(len(bar_direct), 2)
         for elem in bar_direct:
             self.assertIsInstance(elem, MagicMock)
-        
+
         # Test changing the return value of rdivmod
         m.__rdivmod__.return_value = (2, 1)
         self.assertEqual(divmod(2, m), (2, 1))
@@ -532,7 +532,7 @@ class TestMockingMagicMethods(unittest.TestCase):
         self.assertEqual(len(baz), 2)
         for elem in baz:
             self.assertIsInstance(elem, MagicMock)
-        
+
         # Test the behaviour of divmod with two MagicMock instances when one
         # has a return value set for __divmod__
         a.__divmod__.return_value = (2, 1)
