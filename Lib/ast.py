@@ -909,7 +909,7 @@ class _Unparser:
     def _fstring_FormattedValue(self, t, write):
         write("{")
         expr = io.StringIO()
-        Unparser(t.value, expr)
+        _Unparser(t.value, expr)
         expr = expr.getvalue().rstrip("\n")
         if expr.startswith("{"):
             write(" ")  # Separate pair of opening brackets as "{ {"
