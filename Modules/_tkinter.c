@@ -2166,11 +2166,9 @@ _tkinter_tkapp_exprdouble_impl(TkappObject *self, const char *s)
 
     CHECK_STRING_LENGTH(s);
     CHECK_TCL_APPARTMENT;
-    PyFPE_START_PROTECT("Tkapp_ExprDouble", return 0)
     ENTER_TCL
     retval = Tcl_ExprDouble(Tkapp_Interp(self), s, &v);
     ENTER_OVERLAP
-    PyFPE_END_PROTECT(retval)
     if (retval == TCL_ERROR)
         res = Tkinter_Error(self);
     else

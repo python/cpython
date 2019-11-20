@@ -2385,9 +2385,7 @@ builtin_sum_impl(PyObject *module, PyObject *iterable, PyObject *start)
                 return PyFloat_FromDouble(f_result);
             }
             if (PyFloat_CheckExact(item)) {
-                PyFPE_START_PROTECT("add", Py_DECREF(item); Py_DECREF(iter); return 0)
                 f_result += PyFloat_AS_DOUBLE(item);
-                PyFPE_END_PROTECT(f_result)
                 Py_DECREF(item);
                 continue;
             }
@@ -2396,9 +2394,7 @@ builtin_sum_impl(PyObject *module, PyObject *iterable, PyObject *start)
                 int overflow;
                 value = PyLong_AsLongAndOverflow(item, &overflow);
                 if (!overflow) {
-                    PyFPE_START_PROTECT("add", Py_DECREF(item); Py_DECREF(iter); return 0)
                     f_result += (double)value;
-                    PyFPE_END_PROTECT(f_result)
                     Py_DECREF(item);
                     continue;
                 }
