@@ -159,6 +159,12 @@ _PyRuntimeState_ReInitThreads(_PyRuntimeState *runtime)
 #define HEAD_UNLOCK(runtime) \
     PyThread_release_lock((runtime)->interpreters.mutex)
 
+int
+_Py_IsMainInterpreter(PyThreadState* tstate)
+{
+    return (tstate->interp == tstate->interp->runtime->interpreters.main);
+}
+
 /* Forward declaration */
 static void _PyGILState_NoteThreadState(
     struct _gilstate_runtime_state *gilstate, PyThreadState* tstate);

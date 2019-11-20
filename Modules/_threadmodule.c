@@ -1466,9 +1466,9 @@ static PyObject *
 _thread__is_main_interpreter_impl(PyObject *module)
 /*[clinic end generated code: output=7dd82e1728339adc input=cc1eb00fd4598915]*/
 {
-    _PyRuntimeState *runtime = &_PyRuntime;
-    PyInterpreterState *interp = _PyRuntimeState_GetThreadState(runtime)->interp;
-    return PyBool_FromLong(interp == runtime->interpreters.main);
+    PyThreadState *tstate = _PyThreadState_GET();
+    int is_main = _Py_IsMainInterpreter(tstate);
+    return PyBool_FromLong(is_main);
 }
 
 static PyMethodDef thread_methods[] = {
