@@ -2001,12 +2001,18 @@ def _get_async_iter(self):
 
 def _get_divmod(self):
     def __divmod__(val):
-        return (type(self)(), type(self)())
+        ret_val = self.__divmod__._mock_return_value
+        if ret_val is DEFAULT:
+            return (type(self)(), type(self)())
+        return ret_val
     return __divmod__
 
 def _get_rdivmod(self):
     def __rdivmod__(val):
-        return (type(self)(), type(self)())
+        ret_val = self.__rdivmod__._mock_return_value
+        if ret_val is DEFAULT:
+            return (type(self)(), type(self)())
+        return ret_val
     return __rdivmod__
 
 _side_effect_methods = {

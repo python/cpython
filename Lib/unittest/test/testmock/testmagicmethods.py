@@ -477,20 +477,72 @@ class TestMockingMagicMethods(unittest.TestCase):
         m @= 24
         self.assertEqual(m, 24)
 
+
     def test_divmod_and_rdivmod(self):
+        # The behaviour of divmod and rdivmod has been changed in the course of
+        # fixing issue34716, such that now a tuple of MagicMock instances is
+        # returned from both of these methods by default. The previous
+        # behaviour was to return a single MagicMock instance.
+    
+        # Test divmod
         m = MagicMock()
-        self.assertIsInstance(divmod(5, m), MagicMock)
+        foo = divmod(m, 2)
+        self.assertIsInstance(foo, tuple)
+        self.assertEqual(len(foo), 2)
+        for elem in foo:
+            self.assertIsInstance(elem, MagicMock)
+
+        # Test __divmod__ directly
+        foo_direct = m.__divmod__(2)
+        self.assertIsInstance(foo_direct, tuple)
+        self.assertEqual(len(foo_direct), 2)
+        for elem in foo_direct:
+            self.assertIsInstance(elem, MagicMock)
+
+        # Test changing the return value of divmod
         m.__divmod__.return_value = (2, 1)
         self.assertEqual(divmod(m, 2), (2, 1))
+        self.assertEqual(divmod(m, None), (2, 1))
+        
+        # Test rdivmod
         m = MagicMock()
-        foo = divmod(2, m)
-        self.assertIsInstance(foo, MagicMock)
-        foo_direct = m.__divmod__(2)
-        self.assertIsInstance(foo_direct, MagicMock)
-        bar = divmod(m, 2)
-        self.assertIsInstance(bar, MagicMock)
+        bar = divmod(2, m)
+        self.assertIsInstance(bar, tuple)
+        self.assertEqual(len(bar), 2)
+        for elem in bar:
+            self.assertIsInstance(elem, MagicMock)
+
+        # Test __rdivmod__ directly
         bar_direct = m.__rdivmod__(2)
-        self.assertIsInstance(bar_direct, MagicMock)
+        self.assertIsInstance(bar_direct, tuple)
+        self.assertEqual(len(bar_direct), 2)
+        for elem in bar_direct:
+            self.assertIsInstance(elem, MagicMock)
+        
+        # Test changing the return value of rdivmod
+        m.__rdivmod__.return_value = (2, 1)
+        self.assertEqual(divmod(2, m), (2, 1))
+        self.assertEqual(divmod(None, m), (2, 1))
+
+        # Test what happens if two MagicMocks are passed into divmod
+        a = MagicMock()
+        b = MagicMock()
+        baz = divmod(a, b)
+        self.assertIsInstance(baz, tuple)
+        self.assertEqual(len(baz), 2)
+        for elem in baz:
+            self.assertIsInstance(elem, MagicMock)
+        
+        # Test the behaviour of divmod with two MagicMock instances when one
+        # has a return value set for __divmod__
+        a.__divmod__.return_value = (2, 1)
+        self.assertEqual(divmod(a, b), (2,1))
+        qux = divmod(b, a)
+        self.assertIsInstance(qux, tuple)
+        self.assertEqual(len(qux), 2)
+        for elem in qux:
+            self.assertIsInstance(elem, MagicMock)
+
 
     # http://bugs.python.org/issue23310
     # Check if you can change behaviour of magic methods in MagicMock init
