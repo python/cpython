@@ -144,7 +144,7 @@ struct _gc_runtime_state {
     Py_ssize_t long_lived_pending;
 };
 
-PyAPI_FUNC(void) _PyGC_InitializeRuntime(struct _gc_runtime_state *);
+PyAPI_FUNC(void) _PyGC_InitState(struct _gc_runtime_state *);
 
 
 /* Set the memory allocator of the specified domain to the default.

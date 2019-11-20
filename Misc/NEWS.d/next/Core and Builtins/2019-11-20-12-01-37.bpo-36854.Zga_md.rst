@@ -1,0 +1,3 @@
+The garbage collector state becomes per interpreter
+(``PyInterpreterState.gc``), rather than being global
+(``_PyRuntimeState.gc``).
