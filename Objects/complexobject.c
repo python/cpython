@@ -466,9 +466,7 @@ complex_add(PyObject *v, PyObject *w)
     Py_complex a, b;
     TO_COMPLEX(v, a);
     TO_COMPLEX(w, b);
-    PyFPE_START_PROTECT("complex_add", return 0)
     result = _Py_c_sum(a, b);
-    PyFPE_END_PROTECT(result)
     return PyComplex_FromCComplex(result);
 }
 
@@ -479,9 +477,7 @@ complex_sub(PyObject *v, PyObject *w)
     Py_complex a, b;
     TO_COMPLEX(v, a);
     TO_COMPLEX(w, b);
-    PyFPE_START_PROTECT("complex_sub", return 0)
     result = _Py_c_diff(a, b);
-    PyFPE_END_PROTECT(result)
     return PyComplex_FromCComplex(result);
 }
 
@@ -492,9 +488,7 @@ complex_mul(PyObject *v, PyObject *w)
     Py_complex a, b;
     TO_COMPLEX(v, a);
     TO_COMPLEX(w, b);
-    PyFPE_START_PROTECT("complex_mul", return 0)
     result = _Py_c_prod(a, b);
-    PyFPE_END_PROTECT(result)
     return PyComplex_FromCComplex(result);
 }
 
@@ -505,10 +499,8 @@ complex_div(PyObject *v, PyObject *w)
     Py_complex a, b;
     TO_COMPLEX(v, a);
     TO_COMPLEX(w, b);
-    PyFPE_START_PROTECT("complex_div", return 0)
     errno = 0;
     quot = _Py_c_quot(a, b);
-    PyFPE_END_PROTECT(quot)
     if (errno == EDOM) {
         PyErr_SetString(PyExc_ZeroDivisionError, "complex division by zero");
         return NULL;
@@ -547,7 +539,6 @@ complex_pow(PyObject *v, PyObject *w, PyObject *z)
         PyErr_SetString(PyExc_ValueError, "complex modulo");
         return NULL;
     }
-    PyFPE_START_PROTECT("complex_pow", return 0)
     errno = 0;
     exponent = b;
     int_exponent = (long)exponent.real;
@@ -556,7 +547,6 @@ complex_pow(PyObject *v, PyObject *w, PyObject *z)
     else
         p = _Py_c_pow(a, exponent);
 
-    PyFPE_END_PROTECT(p)
     Py_ADJUST_ERANGE2(p.real, p.imag);
     if (errno == EDOM) {
         PyErr_SetString(PyExc_ZeroDivisionError,
@@ -604,9 +594,7 @@ complex_abs(PyComplexObject *v)
 {
     double result;
 
-    PyFPE_START_PROTECT("complex_abs", return 0)
     result = _Py_c_abs(v->cval);
-    PyFPE_END_PROTECT(result)
 
     if (errno == ERANGE) {
         PyErr_SetString(PyExc_OverflowError,

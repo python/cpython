@@ -506,7 +506,6 @@ float_richcompare(PyObject *v, PyObject *w, int op)
         goto Unimplemented;
 
  Compare:
-    PyFPE_START_PROTECT("richcompare", return NULL)
     switch (op) {
     case Py_EQ:
         r = i == j;
@@ -527,7 +526,6 @@ float_richcompare(PyObject *v, PyObject *w, int op)
         r = i > j;
         break;
     }
-    PyFPE_END_PROTECT(r)
     return PyBool_FromLong(r);
 
  Unimplemented:
@@ -546,9 +544,7 @@ float_add(PyObject *v, PyObject *w)
     double a,b;
     CONVERT_TO_DOUBLE(v, a);
     CONVERT_TO_DOUBLE(w, b);
-    PyFPE_START_PROTECT("add", return 0)
     a = a + b;
-    PyFPE_END_PROTECT(a)
     return PyFloat_FromDouble(a);
 }
 
@@ -558,9 +554,7 @@ float_sub(PyObject *v, PyObject *w)
     double a,b;
     CONVERT_TO_DOUBLE(v, a);
     CONVERT_TO_DOUBLE(w, b);
-    PyFPE_START_PROTECT("subtract", return 0)
     a = a - b;
-    PyFPE_END_PROTECT(a)
     return PyFloat_FromDouble(a);
 }
 
@@ -570,9 +564,7 @@ float_mul(PyObject *v, PyObject *w)
     double a,b;
     CONVERT_TO_DOUBLE(v, a);
     CONVERT_TO_DOUBLE(w, b);
-    PyFPE_START_PROTECT("multiply", return 0)
     a = a * b;
-    PyFPE_END_PROTECT(a)
     return PyFloat_FromDouble(a);
 }
 
@@ -587,9 +579,7 @@ float_div(PyObject *v, PyObject *w)
                         "float division by zero");
         return NULL;
     }
-    PyFPE_START_PROTECT("divide", return 0)
     a = a / b;
-    PyFPE_END_PROTECT(a)
     return PyFloat_FromDouble(a);
 }
 
@@ -605,7 +595,6 @@ float_rem(PyObject *v, PyObject *w)
                         "float modulo");
         return NULL;
     }
-    PyFPE_START_PROTECT("modulo", return 0)
     mod = fmod(vx, wx);
     if (mod) {
         /* ensure the remainder has the same sign as the denominator */
@@ -619,7 +608,6 @@ float_rem(PyObject *v, PyObject *w)
            it has the same sign as the denominator. */
         mod = copysign(0.0, wx);
     }
-    PyFPE_END_PROTECT(mod)
     return PyFloat_FromDouble(mod);
 }
 
@@ -634,7 +622,6 @@ float_divmod(PyObject *v, PyObject *w)
         PyErr_SetString(PyExc_ZeroDivisionError, "float divmod()");
         return NULL;
     }
-    PyFPE_START_PROTECT("divmod", return 0)
     mod = fmod(vx, wx);
     /* fmod is typically exact, so vx-mod is *mathematically* an
        exact multiple of wx.  But this is fp arithmetic, and fp
@@ -666,7 +653,6 @@ float_divmod(PyObject *v, PyObject *w)
         /* div is zero - get the same sign as the true quotient */
         floordiv = copysign(0.0, vx / wx); /* zero w/ sign of vx/wx */
     }
-    PyFPE_END_PROTECT(floordiv)
     return Py_BuildValue("(dd)", floordiv, mod);
 }
 
@@ -793,9 +779,7 @@ float_pow(PyObject *v, PyObject *w, PyObject *z)
      * the platform pow to step in and do the rest.
      */
     errno = 0;
-    PyFPE_START_PROTECT("pow", return NULL)
     ix = pow(iv, iw);
-    PyFPE_END_PROTECT(ix)
     Py_ADJUST_ERANGE1(ix);
     if (negate_result)
         ix = -ix;
@@ -849,9 +833,7 @@ float_is_integer_impl(PyObject *self)
     if (!Py_IS_FINITE(x))
         Py_RETURN_FALSE;
     errno = 0;
-    PyFPE_START_PROTECT("is_integer", return NULL)
     o = (floor(x) == x) ? Py_True : Py_False;
-    PyFPE_END_PROTECT(x)
     if (errno != 0) {
         PyErr_SetFromErrno(errno == ERANGE ? PyExc_OverflowError :
                              PyExc_ValueError);
@@ -1567,9 +1549,7 @@ float_as_integer_ratio_impl(PyObject *self)
         return NULL;
     }
 
-    PyFPE_START_PROTECT("as_integer_ratio", goto error);
     float_part = frexp(self_double, &exponent);        /* self_double == float_part * 2**exponent exactly */
-    PyFPE_END_PROTECT(float_part);
 
     for (i=0; i<300 && float_part != floor(float_part) ; i++) {
         float_part *= 2.0;
