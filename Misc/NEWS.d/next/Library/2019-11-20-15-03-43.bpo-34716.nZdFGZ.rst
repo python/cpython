@@ -1,0 +1,3 @@
+:mod:`unittest.mock`'s :func:`MagicMock().__divmod__` and :func:`__rdivmod__` now return a tuple of `MagicMock` instances by default.
+They previously returned a single `MagicMock` instance.
+This change was made to better support the unpacking syntax often used with :func:`divmod`.
