@@ -2351,7 +2351,7 @@ Return the list of all IDs for active channels.");
 static PyObject *
 channel_list_interpreters(PyObject *self, PyObject *args, PyObject *kwds)
 {
-    static char *kwlist[] = {"cid", NULL};
+    static char *kwlist[] = {"cid", "send", "recv", NULL};
     int64_t cid;
     _PyChannelState *chan;
     int send = 0;           /* Send end? */
