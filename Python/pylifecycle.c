@@ -547,7 +547,7 @@ pycore_create_interpreter(_PyRuntimeState *runtime,
     _PyEval_FiniThreads(&runtime->ceval);
 
     /* Auto-thread-state API */
-    _PyGILState_Init(runtime, tstate);
+    _PyGILState_Init(tstate);
 
     /* Create the GIL */
     PyEval_InitThreads();
@@ -558,11 +558,11 @@ pycore_create_interpreter(_PyRuntimeState *runtime,
 
 
 static PyStatus
-pycore_init_types(_PyRuntimeState *runtime)
+pycore_init_types(PyThreadState *tstate)
 {
     PyStatus status;
 
-    status = _PyGC_Init(runtime);
+    status = _PyGC_Init(tstate);
     if (_PyStatus_EXCEPTION(status)) {
         return status;
     }
@@ -690,13 +690,13 @@ pyinit_config(_PyRuntimeState *runtime,
     config = &tstate->interp->config;
     *tstate_p = tstate;
 
-    status = pycore_init_types(runtime);
+    status = pycore_init_types(tstate);
     if (_PyStatus_EXCEPTION(status)) {
         return status;
     }
 
     PyObject *sysmod;
-    status = _PySys_Create(runtime, tstate, &sysmod);
+    status = _PySys_Create(tstate, &sysmod);
     if (_PyStatus_EXCEPTION(status)) {
         return status;
     }
@@ -915,8 +915,9 @@ _Py_ReconfigureMainInterpreter(PyInterpreterState *interp)
  * non-zero return code.
  */
 static PyStatus
-pyinit_main(_PyRuntimeState *runtime, PyThreadState *tstate)
+pyinit_main(PyThreadState *tstate)
 {
+    _PyRuntimeState *runtime = tstate->interp->runtime;
     if (!runtime->core_initialized) {
         return _PyStatus_ERR("runtime core not initialized");
     }
@@ -943,7 +944,7 @@ pyinit_main(_PyRuntimeState *runtime, PyThreadState *tstate)
         return _PyStatus_ERR("can't initialize time");
     }
 
-    if (_PySys_InitMain(runtime, tstate) < 0) {
+    if (_PySys_InitMain(tstate) < 0) {
         return _PyStatus_ERR("can't finish initializing sys");
     }
 
@@ -1022,7 +1023,7 @@ _Py_InitializeMain(void)
     }
     _PyRuntimeState *runtime = &_PyRuntime;
     PyThreadState *tstate = _PyRuntimeState_GetThreadState(runtime);
-    return pyinit_main(runtime, tstate);
+    return pyinit_main(tstate);
 }
 
 
@@ -1049,7 +1050,7 @@ Py_InitializeFromConfig(const PyConfig *config)
     config = &tstate->interp->config;
 
     if (config->_init_main) {
-        status = pyinit_main(runtime, tstate);
+        status = pyinit_main(tstate);
         if (_PyStatus_EXCEPTION(status)) {
             return status;
         }
@@ -1454,7 +1455,7 @@ new_interpreter(PyThreadState **tstate_p)
     }
     config = &interp->config;
 
-    status = pycore_init_types(runtime);
+    status = pycore_init_types(tstate);
 
     /* XXX The following is lax in error checking */
     PyObject *modules = PyDict_New();
@@ -1471,7 +1472,7 @@ new_interpreter(PyThreadState **tstate_p)
         }
         Py_INCREF(interp->sysdict);
         PyDict_SetItemString(interp->sysdict, "modules", modules);
-        if (_PySys_InitMain(runtime, tstate) < 0) {
+        if (_PySys_InitMain(tstate) < 0) {
             return _PyStatus_ERR("can't finish initializing sys");
         }
     }
