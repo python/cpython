@@ -287,6 +287,67 @@ The :mod:`test.support` module defines the following constants:
    Set to a filename containing the :data:`FS_NONASCII` character.
 
 
+.. data:: LOOPBACK_TIMEOUT
+
+   Timeout in seconds for tests using a network server listening on the network
+   local loopback interface like ``127.0.0.1``.
+
+   The timeout is long enough to prevent test failure: it takes into account
+   that the client and the server can run in different threads or even
+   different processes.
+
+   The timeout should be long enough for :meth:`~socket.socket.connect`,
+   :meth:`~socket.socket.recv` and :meth:`~socket.socket.send` methods of
+   :class:`socket.socket`.
+
+   Its default value is 5 seconds.
+
+   See also :data:`INTERNET_TIMEOUT`.
+
+
+.. data:: INTERNET_TIMEOUT
+
+   Timeout in seconds for network requests going to the Internet.
+
+   The timeout is short enough to prevent a test to wait for too long if the
+   Internet request is blocked for whatever reason.
+
+   Usually, a timeout using :data:`INTERNET_TIMEOUT` should not mark a test as
+   failed, but skip the test instead: see
+   :func:`~test.support.transient_internet`.
+
+   Its default value is 1 minute.
+
+   See also :data:`LOOPBACK_TIMEOUT`.
+
+
+.. data:: SHORT_TIMEOUT
+
+   Timeout in seconds to mark a test as failed if the test takes "too long".
+
+   The timeout value depends on the regrtest ``--timeout`` command line option.
+
+   If a test using :data:`SHORT_TIMEOUT` starts to fail randomly on slow
+   buildbots, use :data:`LONG_TIMEOUT` instead.
+
+   Its default value is 30 seconds.
+
+
+.. data:: LONG_TIMEOUT
+
+   Timeout in seconds to detect when a test hangs.
+
+   It is long enough to reduce the risk of test failure on the slowest Python
+   buildbots. It should not be used to mark a test as failed if the test takes
+   "too long".  The timeout value depends on the regrtest ``--timeout`` command
+   line option.
+
+   Its default value is 5 minutes.
+
+   See also :data:`LOOPBACK_TIMEOUT`, :data:`INTERNET_TIMEOUT` and
+   :data:`SHORT_TIMEOUT`.
+
+
 .. data:: IPV6_ENABLED
 
     Set to ``True`` if IPV6 is enabled on this host, ``False`` otherwise.

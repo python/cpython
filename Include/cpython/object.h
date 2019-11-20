@@ -348,6 +348,7 @@ static inline void _Py_Dealloc_inline(PyObject *op)
 }
 #define _Py_Dealloc(op) _Py_Dealloc_inline(op)
 
+PyAPI_FUNC(PyObject *) _PyObject_FunctionStr(PyObject *);
 
 /* Safely decref `op` and set `op` to `op2`.
  *

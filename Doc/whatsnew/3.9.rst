@@ -99,6 +99,11 @@ Other Language Changes
   ignored for empty strings.
   (Contributed by Victor Stinner in :issue:`37388`.)
 
+* ``"".replace("", s, n)`` now returns ``s`` instead of an empty string for
+  all non-zero ``n``.  It is now consistent with ``"".replace("", s)``.
+  There are similar changes for :class:`bytes` and :class:`bytearray` objects.
+  (Contributed by Serhiy Storchaka in :issue:`28029`.)
+
 
 New Modules
 ===========
@@ -125,6 +130,16 @@ that schedules a shutdown for the default executor that waits on the
 :func:`asyncio.run` has been updated to use the new :term:`coroutine`.
 (Contributed by Kyle Stanley in :issue:`34037`.)
 
+Added :class:`asyncio.PidfdChildWatcher`, a Linux-specific child watcher
+implementation that polls process file descriptors. (:issue:`38692`)
+
+curses
+------
+
+Add :func:`curses.get_escdelay`, :func:`curses.set_escdelay`,
+:func:`curses.get_tabsize`, and :func:`curses.set_tabsize` functions.
+(Contributed by Anthony Sottile in :issue:`38312`.)
+
 fcntl
 -----
 
@@ -137,6 +152,10 @@ os
 
 Added :data:`~os.CLD_KILLED` and :data:`~os.CLD_STOPPED` for :attr:`si_code`.
 (Contributed by Dong-hee Na in :issue:`38493`.)
+
+Exposed the Linux-specific :func:`os.pidfd_open` (:issue:`38692`) and
+:data:`os.P_PIDFD` (:issue:`38713`) for process management with file
+descriptors.
 
 threading
 ---------
@@ -185,11 +204,20 @@ Optimizations
 Build and C API Changes
 =======================
 
+* Provide :c:func:`Py_EnterRecursiveCall` and :c:func:`Py_LeaveRecursiveCall`
+  as regular functions for the limited API. Previously, there were defined as
+  macros, but these macros didn't work with the limited API which cannot access
+  ``PyThreadState.recursion_depth`` field. Remove ``_Py_CheckRecursionLimit``
+  from the stable ABI.
+  (Contributed by Victor Stinner in :issue:`38644`.)
 * Add a new public :c:func:`PyObject_CallNoArgs` function to the C API, which
   calls a callable Python object without any arguments. It is the most efficient
   way to call a callable Python object without any argument.
   (Contributed by Victor Stinner in :issue:`37194`.)
 
+* The global variable :c:data:`PyStructSequence_UnnamedField` is now a constant
+  and refers to a constant string.
+  (Contributed by Serhiy Storchaka in :issue:`38650`.)
 
 
 Deprecated
@@ -210,6 +238,12 @@ Deprecated
   guaranteed to have a deterministic hash value.  After Python 3.9,
   the module will restrict its seeds to :const:`None`, :class:`int`,
   :class:`float`, :class:`str`, :class:`bytes`, and :class:`bytearray`.
+
+* Opening the :class:`~gzip.GzipFile` file for writing without specifying
+  the *mode* argument is deprecated.  In future Python versions it will always
+  be opened for reading by default.  Specify the *mode* argument for opening
+  it for writing and silencing a warning.
+  (Contributed by Serhiy Storchaka in :issue:`28286`.)
 
 * Deprecated the ``split()`` method of :class:`_tkinter.TkappType` in
   favour of the ``splitlist()`` method which has more consistent and

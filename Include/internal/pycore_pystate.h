@@ -62,6 +62,11 @@ struct _is {
     struct _is *next;
     struct _ts *tstate_head;
 
+    /* Reference to the _PyRuntime global variable. This field exists
+       to not have to pass runtime in addition to tstate to a function.
+       Get runtime from tstate: tstate->interp->runtime. */
+    struct pyruntimestate *runtime;
+
     int64_t id;
     int64_t id_refcount;
     int requires_idref;
@@ -125,6 +130,15 @@ struct _is {
     struct _warnings_runtime_state warnings;
 
     PyObject *audit_hooks;
+/*
+ * See bpo-36876: miscellaneous ad hoc statics have been moved here.
+ */
+    struct {
+        struct {
+            int level;
+            int atbol;
+        } listnode;
+    } parser;
 };
 
 PyAPI_FUNC(struct _is*) _PyInterpreterState_LookUpID(PY_INT64_T);
@@ -292,7 +306,6 @@ PyAPI_FUNC(void) _PyRuntime_Finalize(void);
 /* Other */
 
 PyAPI_FUNC(void) _PyThreadState_Init(
-    _PyRuntimeState *runtime,
     PyThreadState *tstate);
 PyAPI_FUNC(void) _PyThreadState_DeleteExcept(
     _PyRuntimeState *runtime,

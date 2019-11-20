@@ -177,6 +177,7 @@ class GzipFile(_compression.BaseStream):
                 filename = ''
         else:
             filename = os.fspath(filename)
+        origmode = mode
         if mode is None:
             mode = getattr(fileobj, 'mode', 'rb')
 
@@ -187,6 +188,13 @@ class GzipFile(_compression.BaseStream):
             self.name = filename
 
         elif mode.startswith(('w', 'a', 'x')):
+            if origmode is None:
+                import warnings
+                warnings.warn(
+                    "GzipFile was opened for writing, but this will "
+                    "change in future Python releases.  "
+                    "Specify the mode argument for opening it for writing.",
+                    FutureWarning, 2)
             self.mode = WRITE
             self._init_write(filename)
             self.compress = zlib.compressobj(compresslevel,

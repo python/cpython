@@ -1,4 +1,0 @@
-ssl.match_hostname() no longer accepts IPv4 addresses with additional text
-after the address and only quad-dotted notation without trailing
-whitespaces. Some inet_aton() implementations ignore whitespace and all data
-after whitespace, e.g. '127.0.0.1 whatever'.
