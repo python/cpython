@@ -38,15 +38,12 @@ extern PyStatus _PyFaulthandler_Init(int enable);
 extern int _PyTraceMalloc_Init(int enable);
 extern PyObject * _PyBuiltin_Init(PyThreadState *tstate);
 extern PyStatus _PySys_Create(
-    struct pyruntimestate *runtime,
     PyThreadState *tstate,
     PyObject **sysmod_p);
 extern PyStatus _PySys_SetPreliminaryStderr(PyObject *sysdict);
 extern PyStatus _PySys_ReadPreinitWarnOptions(PyWideStringList *options);
 extern PyStatus _PySys_ReadPreinitXOptions(PyConfig *config);
-extern int _PySys_InitMain(
-    struct pyruntimestate *runtime,
-    PyThreadState *tstate);
+extern int _PySys_InitMain(PyThreadState *tstate);
 extern PyStatus _PyImport_Init(PyThreadState *tstate);
 extern PyStatus _PyExc_Init(void);
 extern PyStatus _PyErr_Init(void);
@@ -57,7 +54,7 @@ extern PyStatus _Py_HashRandomization_Init(const PyConfig *);
 
 extern PyStatus _PyTypes_Init(void);
 extern PyStatus _PyImportZip_Init(PyThreadState *tstate);
-extern PyStatus _PyGC_Init(struct pyruntimestate *runtime);
+extern PyStatus _PyGC_Init(PyThreadState *tstate);
 
 
 /* Various internal finalizers */
@@ -89,9 +86,7 @@ extern void _PyHash_Fini(void);
 extern void _PyTraceMalloc_Fini(void);
 extern void _PyWarnings_Fini(PyInterpreterState *interp);
 
-extern void _PyGILState_Init(
-    struct pyruntimestate *runtime,
-    PyThreadState *tstate);
+extern void _PyGILState_Init(PyThreadState *tstate);
 extern void _PyGILState_Fini(struct pyruntimestate *runtime);
 
 PyAPI_FUNC(void) _PyGC_DumpShutdownStats(struct pyruntimestate *runtime);

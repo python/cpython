@@ -2387,17 +2387,18 @@ static PyStructSequence_Desc flags_desc = {
 };
 
 static PyObject*
-make_flags(_PyRuntimeState *runtime, PyThreadState *tstate)
+make_flags(PyThreadState *tstate)
 {
-    int pos = 0;
-    PyObject *seq;
-    const PyPreConfig *preconfig = &runtime->preconfig;
-    const PyConfig *config = &tstate->interp->config;
+    PyInterpreterState *interp = tstate->interp;
+    const PyPreConfig *preconfig = &interp->runtime->preconfig;
+    const PyConfig *config = &interp->config;
 
-    seq = PyStructSequence_New(&FlagsType);
-    if (seq == NULL)
+    PyObject *seq = PyStructSequence_New(&FlagsType);
+    if (seq == NULL) {
         return NULL;
+    }
 
+    int pos = 0;
 #define SetFlag(flag) \
     PyStructSequence_SET_ITEM(seq, pos++, PyLong_FromLong(flag))
 
@@ -2607,8 +2608,7 @@ static struct PyModuleDef sysmodule = {
     } while (0)
 
 static PyStatus
-_PySys_InitCore(_PyRuntimeState *runtime, PyThreadState *tstate,
-                PyObject *sysdict)
+_PySys_InitCore(PyThreadState *tstate, PyObject *sysdict)
 {
     PyObject *version_info;
     int res;
@@ -2703,7 +2703,7 @@ _PySys_InitCore(_PyRuntimeState *runtime, PyThreadState *tstate,
         }
     }
     /* Set flags to their default values (updated by _PySys_InitMain()) */
-    SET_SYS_FROM_STRING("flags", make_flags(runtime, tstate));
+    SET_SYS_FROM_STRING("flags", make_flags(tstate));
 
 #if defined(MS_WINDOWS)
     /* getwindowsversion */
@@ -2824,7 +2824,7 @@ sys_create_xoptions_dict(const PyConfig *config)
 
 
 int
-_PySys_InitMain(_PyRuntimeState *runtime, PyThreadState *tstate)
+_PySys_InitMain(PyThreadState *tstate)
 {
     PyObject *sysdict = tstate->interp->sysdict;
     const PyConfig *config = &tstate->interp->config;
@@ -2879,7 +2879,7 @@ _PySys_InitMain(_PyRuntimeState *runtime, PyThreadState *tstate)
 #undef SET_SYS_FROM_WSTR
 
     /* Set flags to their final values */
-    SET_SYS_FROM_STRING_INT_RESULT("flags", make_flags(runtime, tstate));
+    SET_SYS_FROM_STRING_INT_RESULT("flags", make_flags(tstate));
     /* prevent user from creating new instances */
     FlagsType.tp_init = NULL;
     FlagsType.tp_new = NULL;
@@ -2944,8 +2944,7 @@ error:
 /* Create sys module without all attributes: _PySys_InitMain() should be called
    later to add remaining attributes. */
 PyStatus
-_PySys_Create(_PyRuntimeState *runtime, PyThreadState *tstate,
-              PyObject **sysmod_p)
+_PySys_Create(PyThreadState *tstate, PyObject **sysmod_p)
 {
     PyInterpreterState *interp = tstate->interp;
 
@@ -2976,7 +2975,7 @@ _PySys_Create(_PyRuntimeState *runtime, PyThreadState *tstate,
         return status;
     }
 
-    status = _PySys_InitCore(runtime, tstate, sysdict);
+    status = _PySys_InitCore(tstate, sysdict);
     if (_PyStatus_EXCEPTION(status)) {
         return status;
     }

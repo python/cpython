@@ -155,9 +155,9 @@ _PyGC_InitializeRuntime(struct _gc_runtime_state *state)
 
 
 PyStatus
-_PyGC_Init(_PyRuntimeState *runtime)
+_PyGC_Init(PyThreadState *tstate)
 {
-    struct _gc_runtime_state *state = &runtime->gc;
+    struct _gc_runtime_state *state = &tstate->interp->runtime->gc;
     if (state->garbage == NULL) {
         state->garbage = PyList_New(0);
         if (state->garbage == NULL) {

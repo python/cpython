@@ -62,6 +62,11 @@ struct _is {
     struct _is *next;
     struct _ts *tstate_head;
 
+    /* Reference to the _PyRuntime global variable. This field exists
+       to not have to pass runtime in addition to tstate to a function.
+       Get runtime from tstate: tstate->interp->runtime. */
+    struct pyruntimestate *runtime;
+
     int64_t id;
     int64_t id_refcount;
     int requires_idref;
@@ -301,7 +306,6 @@ PyAPI_FUNC(void) _PyRuntime_Finalize(void);
 /* Other */
 
 PyAPI_FUNC(void) _PyThreadState_Init(
-    _PyRuntimeState *runtime,
     PyThreadState *tstate);
 PyAPI_FUNC(void) _PyThreadState_DeleteExcept(
     _PyRuntimeState *runtime,
