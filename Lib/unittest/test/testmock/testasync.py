@@ -142,6 +142,12 @@ class AsyncMockTest(unittest.IsolatedAsyncioTestCase):
         mock = AsyncMock(fut)
         self.assertIsInstance(mock, asyncio.Future)
 
+    async def test_return_value_AsyncMock(self):
+        value = AsyncMock(return_value=10)
+        mock = AsyncMock(return_value=value)
+        result = await mock()
+        self.assertIs(result, value)
+
     async def test_return_value_awaitable(self):
         fut = asyncio.Future()
         fut.set_result(None)
@@ -159,6 +165,13 @@ class AsyncMockTest(unittest.IsolatedAsyncioTestCase):
 
         with self.assertRaises(StopAsyncIteration):
             await mock()
+
+    async def test_side_effect_is_AsyncMock(self):
+        effect = AsyncMock(return_value=10)
+        mock = AsyncMock(side_effect=effect)
+
+        result = await mock()
+        self.assertEqual(result, 10)
 
     async def test_wraps_coroutine(self):
         value = asyncio.Future()

@@ -2158,7 +2158,7 @@ class AsyncMockMixin(Base):
                     raise StopAsyncIteration
                 if _is_exception(result):
                     raise result
-            elif inspect.iscoroutinefunction(effect):
+            elif asyncio.iscoroutinefunction(effect):
                 result = await effect(*args, **kwargs)
             else:
                 result = effect(*args, **kwargs)
@@ -2170,7 +2170,7 @@ class AsyncMockMixin(Base):
             return self.return_value
 
         if self._mock_wraps is not None:
-            if inspect.iscoroutinefunction(self._mock_wraps):
+            if asyncio.iscoroutinefunction(self._mock_wraps):
                 return await self._mock_wraps(*args, **kwargs)
             return self._mock_wraps(*args, **kwargs)
 
