@@ -269,6 +269,8 @@ PyAPI_FUNC(void) _PyRuntime_Finalize(void);
 #define _Py_CURRENTLY_FINALIZING(runtime, tstate) \
     (runtime->finalizing == tstate)
 
+PyAPI_FUNC(int) _Py_IsMainInterpreter(PyThreadState* tstate);
+
 
 /* Variable and macro for in-line access to current thread
    and interpreter state */
