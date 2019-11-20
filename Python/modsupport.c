@@ -655,6 +655,19 @@ PyModule_AddObject(PyObject *m, const char *name, PyObject *o)
     return 0;
 }
 
+/* Like PyModule_AddObject, but steals o on success AND failure.
+   This is probably what you want! */
+
+int
+_PyModule_StealObject(PyObject *m, const char *name, PyObject *o)
+{
+    if (PyModule_AddObject(m, name, o) < 0) {
+        Py_XDECREF(o);
+        return -1;
+    }
+    return 0;
+}
+
 int
 PyModule_AddIntConstant(PyObject *m, const char *name, long value)
 {
