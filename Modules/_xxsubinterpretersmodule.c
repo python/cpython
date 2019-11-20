@@ -2354,15 +2354,21 @@ channel_list_interpreters(PyObject *self, PyObject *args, PyObject *kwds)
     static char *kwlist[] = {"cid", NULL};
     int64_t cid;
     _PyChannelState *chan;
-    int send = 1;           /* Send or receive ends? */
-    int64_t count;          /* Number of interpreters to return */
-    int64_t *ids = NULL;    /* Array of interpreter IDs to return */
-    PyObject *id_obj = NULL;
+    int send = 0;           /* Send end? */
+    int recv = 0;           /* Receive end? */
+    int64_t *ids = NULL;    /* Array of interpreter IDs */
+    int64_t count = 0;      /* Number of interpreters to return */
     PyObject *ret = NULL;   /* Python list of interpreter IDs */
 
-    if (!PyArg_ParseTupleAndKeywords(args, kwds, "O&:channel_list_interpreters",
-                                     kwlist, channel_id_converter, &cid)) {
+    if (!PyArg_ParseTupleAndKeywords(args, kwds, "O&|$pp:channel_list_interpreters",
+                                     kwlist, channel_id_converter, &cid, &send, &recv)) {
         return NULL;
+    }
+
+    if ((send && recv) || (!send && !recv)) {
+        PyErr_SetString(PyExc_RuntimeError,
+                        "Can only list interpreters for a single end of a channel");
+        goto except;
     }
 
     chan = _channels_lookup(&_globals.channels, cid, NULL);
@@ -2380,7 +2386,7 @@ channel_list_interpreters(PyObject *self, PyObject *args, PyObject *kwds)
     for (int64_t i=0; i < count; i++) {
         PyInterpreterState *interp = PyInterpreterState_Head();
         while (interp != NULL) {
-            id_obj = _PyInterpreterState_GetIDObject(interp);
+            PyObject *id_obj = _PyInterpreterState_GetIDObject(interp);
             if (id_obj == NULL) {
                 Py_DECREF(id_obj);
                 goto except;
@@ -2407,7 +2413,7 @@ finally:
 }
 
 PyDoc_STRVAR(channel_list_interpreters_doc,
-"channel_list_interpreters(cid) -> [id]\n\
+"channel_list_interpreters(cid, *, send=False, recv=False) -> [id]\n\
 \n\
 Return the list of all interpreter IDs associated with the channel\n\
 XXX in the send direction.");
