@@ -1213,8 +1213,9 @@ finalize_interp_clear(PyThreadState *tstate, int is_main_interp)
         PyGrammar_RemoveAccelerators(&_PyParser_Grammar);
 
         _PyExc_Fini();
-        _PyGC_Fini(tstate);
     }
+
+    _PyGC_Fini(tstate);
 }
 
 
