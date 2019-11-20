@@ -2038,9 +2038,9 @@ _PyGC_DumpShutdownStats(_PyRuntimeState *runtime)
 }
 
 void
-_PyGC_Fini(_PyRuntimeState *runtime)
+_PyGC_Fini(PyThreadState *tstate)
 {
-    struct _gc_runtime_state *state = &runtime->gc;
+    struct _gc_runtime_state *state = &tstate->interp->runtime->gc;
     Py_CLEAR(state->garbage);
     Py_CLEAR(state->callbacks);
 }
