@@ -74,6 +74,8 @@ struct _is {
 
     int finalizing;
 
+    struct _gc_runtime_state gc;
+
     PyObject *modules;
     PyObject *modules_by_index;
     PyObject *sysdict;
@@ -130,9 +132,7 @@ struct _is {
     struct _warnings_runtime_state warnings;
 
     PyObject *audit_hooks;
-/*
- * See bpo-36876: miscellaneous ad hoc statics have been moved here.
- */
+
     struct {
         struct {
             int level;
@@ -239,7 +239,6 @@ typedef struct pyruntimestate {
     void (*exitfuncs[NEXITFUNCS])(void);
     int nexitfuncs;
 
-    struct _gc_runtime_state gc;
     struct _ceval_runtime_state ceval;
     struct _gilstate_runtime_state gilstate;
 
