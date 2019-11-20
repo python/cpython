@@ -1,2 +1,0 @@
-Add parser for Message-ID header and add it to default HeaderRegistry. This
-should prevent folding of Message-ID using RFC 2048 encoded words.
