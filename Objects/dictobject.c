@@ -2625,26 +2625,15 @@ dict_copy(PyDictObject *mp, PyObject *Py_UNUSED(ignored))
     return PyDict_Copy((PyObject*)mp);
 }
 
-/*[clinic input]
-dict.with_values
-    iterable: object
-    /
-
-Create a new dictionary with keys from this dict and values from iterable.
-
-When length of iterable is different from len(self), ValueError is raised.
-This method does not support dict subclass.
-[clinic start generated code]*/
-
-static PyObject *
-dict_with_values(PyDictObject *self, PyObject *iterable)
-/*[clinic end generated code: output=f6085b5f997bddf7 input=4ce79ace2aaf207f]*/
+PyObject *
+_PyDict_WithValues(PyObject *d, PyObject *iterable)
 {
-    if (!PyDict_CheckExact(self)) {
+    if (!PyDict_CheckExact(d)) {
         PyErr_SetString(PyExc_TypeError,
-            "dict.with_values() does not support subclass of dict");
+            "_PyDict_WithValues() does not support subclass of dict");
         return NULL;
     }
+    PyDictObject *mp = (PyDictObject*)d;
 
     PyObject *seq = PySequence_Fast(iterable, "iterable must be iterable");
     if (seq == NULL) {
@@ -2652,8 +2641,8 @@ dict_with_values(PyDictObject *self, PyObject *iterable)
     }
 
     // This should not be before PySequence_Fast().
-    // Iterating iterable may mutate self.
-    const Py_ssize_t len = PyDict_GET_SIZE(self);
+    // Iterating iterable may mutate mp.
+    const Py_ssize_t len = PyDict_GET_SIZE(mp);
     if (len != PySequence_Fast_GET_SIZE(seq)) {
         PyErr_SetString(PyExc_ValueError,
             "length of iterable is different from length of this dict.");
@@ -2668,7 +2657,7 @@ dict_with_values(PyDictObject *self, PyObject *iterable)
     PyObject **src_values = PySequence_Fast_ITEMS(seq);
 
     // Try to use key sharing dict.
-    PyDictKeysObject *keys = make_keys_shared((PyObject*)self);
+    PyDictKeysObject *keys = make_keys_shared((PyObject*)mp);
     if (keys != NULL) {
         PyDictObject *newdict = (PyDictObject*)new_dict_with_shared_keys(keys);
         if (newdict == NULL) {
@@ -2692,7 +2681,7 @@ dict_with_values(PyDictObject *self, PyObject *iterable)
         }
 
         Py_DECREF(seq);
-        assert(_PyDict_CheckConsistency(newdict));
+        ASSERT_CONSISTENT(newdict);
         return (PyObject*)newdict;
     }
 
@@ -2702,15 +2691,15 @@ dict_with_values(PyDictObject *self, PyObject *iterable)
 
     // Create combined dict.
     // similar to clone_combined_dict()
-    assert(!_PyDict_HasSplitTable(self));
+    assert(!_PyDict_HasSplitTable(mp));
 
-    Py_ssize_t keys_size = _PyDict_KeysSize(self->ma_keys);
+    Py_ssize_t keys_size = _PyDict_KeysSize(mp->ma_keys);
     keys = PyObject_Malloc(keys_size);
     if (keys == NULL) {
         PyErr_NoMemory();
         goto fail;
     }
-    memcpy(keys, self->ma_keys, keys_size);
+    memcpy(keys, mp->ma_keys, keys_size);
 
     // After copying key/value pairs, we need to incref all
     // keys and overwrite values.
@@ -3341,7 +3330,6 @@ static PyMethodDef mapp_methods[] = {
     {"update",          (PyCFunction)(void(*)(void))dict_update, METH_VARARGS | METH_KEYWORDS,
      update__doc__},
     DICT_FROMKEYS_METHODDEF
-    DICT_WITH_VALUES_METHODDEF
     {"clear",           (PyCFunction)dict_clear,        METH_NOARGS,
      clear__doc__},
     {"copy",            (PyCFunction)dict_copy,         METH_NOARGS,
