@@ -558,9 +558,10 @@ pycore_create_interpreter(_PyRuntimeState *runtime,
 
 
 static PyStatus
-pycore_init_types(PyThreadState *tstate, int is_main_interp)
+pycore_init_types(PyThreadState *tstate)
 {
     PyStatus status;
+    int is_main_interp = _Py_IsMainInterpreter(tstate);
 
     status = _PyGC_Init(tstate);
     if (_PyStatus_EXCEPTION(status)) {
@@ -576,7 +577,9 @@ pycore_init_types(PyThreadState *tstate, int is_main_interp)
         if (!_PyLong_Init()) {
             return _PyStatus_ERR("can't init longs");
         }
+    }
 
+    if (is_main_interp) {
         status = _PyUnicode_Init();
         if (_PyStatus_EXCEPTION(status)) {
             return status;
@@ -696,7 +699,7 @@ pyinit_config(_PyRuntimeState *runtime,
     config = &tstate->interp->config;
     *tstate_p = tstate;
 
-    status = pycore_init_types(tstate, 1);
+    status = pycore_init_types(tstate);
     if (_PyStatus_EXCEPTION(status)) {
         return status;
     }
@@ -1179,6 +1182,9 @@ finalize_interp_types(PyThreadState *tstate, int is_main_interp)
         _PySet_Fini();
         _PyBytes_Fini();
         _PyLong_Fini();
+    }
+
+    if (is_main_interp) {
         _PyFloat_Fini();
         _PyDict_Fini();
         _PySlice_Fini();
@@ -1200,8 +1206,10 @@ finalize_interp_types(PyThreadState *tstate, int is_main_interp)
 
 
 static void
-finalize_interp_clear(PyThreadState *tstate, int is_main_interp)
+finalize_interp_clear(PyThreadState *tstate)
 {
+    int is_main_interp = _Py_IsMainInterpreter(tstate);
+
     /* Clear interpreter state and all thread states */
     PyInterpreterState_Clear(tstate->interp);
 
@@ -1224,9 +1232,9 @@ finalize_interp_clear(PyThreadState *tstate, int is_main_interp)
 
 
 static void
-finalize_interp_delete(PyThreadState *tstate, int is_main_interp)
+finalize_interp_delete(PyThreadState *tstate)
 {
-    if (is_main_interp) {
+    if (_Py_IsMainInterpreter(tstate)) {
         /* Cleanup auto-thread-state */
         _PyGILState_Fini(tstate);
     }
@@ -1388,9 +1396,8 @@ Py_FinalizeEx(void)
     }
 #endif /* Py_TRACE_REFS */
 
-    finalize_interp_clear(tstate, 1);
-
-    finalize_interp_delete(tstate, 1);
+    finalize_interp_clear(tstate);
+    finalize_interp_delete(tstate);
 
 #ifdef Py_TRACE_REFS
     /* Display addresses (& refcnts) of all objects still alive.
@@ -1482,7 +1489,7 @@ new_interpreter(PyThreadState **tstate_p)
     }
     config = &interp->config;
 
-    status = pycore_init_types(tstate, 0);
+    status = pycore_init_types(tstate);
 
     /* XXX The following is lax in error checking */
     PyObject *modules = PyDict_New();
@@ -1634,8 +1641,8 @@ Py_EndInterpreter(PyThreadState *tstate)
     }
 
     _PyImport_Cleanup(tstate);
-    finalize_interp_clear(tstate, 0);
-    finalize_interp_delete(tstate, 0);
+    finalize_interp_clear(tstate);
+    finalize_interp_delete(tstate);
 }
 
 /* Add the __main__ module */
