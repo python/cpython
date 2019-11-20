@@ -2360,14 +2360,15 @@ channel_list_interpreters(PyObject *self, PyObject *args, PyObject *kwds)
     int64_t count = 0;      /* Number of interpreters to return */
     PyObject *ret = NULL;   /* Python list of interpreter IDs */
 
-    if (!PyArg_ParseTupleAndKeywords(args, kwds, "O&|$pp:channel_list_interpreters",
-                                     kwlist, channel_id_converter, &cid, &send, &recv)) {
+    if (!PyArg_ParseTupleAndKeywords(
+            args, kwds, "O&|$pp:channel_list_interpreters",
+            kwlist, channel_id_converter, &cid, &send, &recv)) {
         return NULL;
     }
 
     if ((send && recv) || (!send && !recv)) {
-        PyErr_SetString(PyExc_RuntimeError,
-                        "Can only list interpreters for a single end of a channel");
+        PyErr_SetString(PyExc_ValueError,
+                        "Specify exactly one of send or recv");
         goto except;
     }
 
