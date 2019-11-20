@@ -4,18 +4,10 @@ import unittest
 import test.support
 import io
 import os
+import pathlib
 import random
 import tokenize
 import ast
-
-from test.test_tools import basepath, toolsdir, skip_if_missing
-
-skip_if_missing()
-
-parser_path = os.path.join(toolsdir, "parser")
-
-with test.support.DirsOnSysPath(parser_path):
-    import unparse
 
 def read_pyfile(filename):
     """Read and return the contents of a Python source file (as a
@@ -125,9 +117,7 @@ class ASTTestCase(unittest.TestCase):
 
     def check_roundtrip(self, code1, filename="internal"):
         ast1 = compile(code1, filename, "exec", ast.PyCF_ONLY_AST)
-        unparse_buffer = io.StringIO()
-        unparse.Unparser(ast1, unparse_buffer)
-        code2 = unparse_buffer.getvalue()
+        code2 = ast.unparse(ast1)
         ast2 = compile(code2, filename, "exec", ast.PyCF_ONLY_AST)
         self.assertASTEqual(ast1, ast2)
 
@@ -280,8 +270,9 @@ class DirectoryTestCase(ASTTestCase):
 
         names = []
         for d in cls.test_directories:
+            basepath = (pathlib.Path(__file__).parent / ".." / "..").resolve()
             test_dir = os.path.join(basepath, d)
-            for n in os.listdir(test_dir):
+            for n in os.listdir(test_dir): 
                 if n.endswith('.py') and not n.startswith('bad'):
                     names.append(os.path.join(test_dir, n))
 
