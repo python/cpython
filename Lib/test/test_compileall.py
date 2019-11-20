@@ -169,6 +169,10 @@ class CompileallTestsBase:
 
     @mock.patch('concurrent.futures.ProcessPoolExecutor')
     def test_compile_pool_called(self, pool_mock):
+        # Issue bpo-38848: The multiprocessing module used by
+        # ProcessPoolExecutor is not functional when the
+        # multiprocessing.synchronize module cannot be imported.
+        support.import_module('multiprocessing.synchronize')
         compileall.compile_dir(self.directory, quiet=True, workers=5)
         self.assertTrue(pool_mock.called)
 
@@ -179,6 +183,10 @@ class CompileallTestsBase:
 
     @mock.patch('concurrent.futures.ProcessPoolExecutor')
     def test_compile_workers_cpu_count(self, pool_mock):
+        # Issue bpo-38848: The multiprocessing module used by
+        # ProcessPoolExecutor is not functional when the
+        # multiprocessing.synchronize module cannot be imported.
+        support.import_module('multiprocessing.synchronize')
         compileall.compile_dir(self.directory, quiet=True, workers=0)
         self.assertEqual(pool_mock.call_args[1]['max_workers'], None)
 

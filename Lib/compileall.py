@@ -79,6 +79,10 @@ def compile_dir(dir, maxlevels=None, ddir=None, force=False,
             # Only import when needed, as low resource platforms may
             # fail to import it
             from concurrent.futures import ProcessPoolExecutor
+            # Issue bpo-38848: The multiprocessing module used by
+            # ProcessPoolExecutor is not functional when the
+            # multiprocessing.synchronize module cannot be imported.
+            import multiprocessing.synchronize
         except ImportError:
             workers = 1
     if maxlevels is None:
