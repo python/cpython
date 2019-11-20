@@ -226,6 +226,10 @@ Build and C API Changes
   and refers to a constant string.
   (Contributed by Serhiy Storchaka in :issue:`38650`.)
 
+* Exclude ``PyFPE_START_PROTECT()`` and ``PyFPE_END_PROTECT()`` macros of
+  ``pyfpe.h`` from ``Py_LIMITED_API`` (stable API).
+  (Contributed by Victor Stinner in :issue:`38835`.)
+
 
 Deprecated
 ==========
