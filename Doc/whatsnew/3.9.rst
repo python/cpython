@@ -217,6 +217,7 @@ Build and C API Changes
   ``PyThreadState.recursion_depth`` field. Remove ``_Py_CheckRecursionLimit``
   from the stable ABI.
   (Contributed by Victor Stinner in :issue:`38644`.)
+
 * Add a new public :c:func:`PyObject_CallNoArgs` function to the C API, which
   calls a callable Python object without any arguments. It is the most efficient
   way to call a callable Python object without any argument.
@@ -229,6 +230,10 @@ Build and C API Changes
 * Exclude ``PyFPE_START_PROTECT()`` and ``PyFPE_END_PROTECT()`` macros of
   ``pyfpe.h`` from ``Py_LIMITED_API`` (stable API).
   (Contributed by Victor Stinner in :issue:`38835`.)
+
+* Remove ``PyMethod_ClearFreeList()`` and ``PyCFunction_ClearFreeList()``
+  functions: the free lists of bound method objects have been removed.
+  (Contributed by Inada Naoki and Victor Stinner in :issue:`37340`.)
 
 
 Deprecated
