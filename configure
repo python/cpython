@@ -10029,7 +10029,7 @@ $as_echo "no" >&6; }
 fi
 rm -f core conftest.err conftest.$ac_objext \
     conftest$ac_exeext conftest.$ac_ext
-# AIX_BUILDDATE + GNU_HOST_TYPE are utilized in pypa tools
+# AIX_BUILDDATE + BUILD_GNU_TYPE are utilized in pypa tools
 # to set a deployment baseline for compatible wheel tags
                { $as_echo "$as_me:${as_lineno-$LINENO}: checking for the system builddate" >&5
 $as_echo_n "checking for the system builddate... " >&6; }

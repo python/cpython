@@ -2859,9 +2859,9 @@ case "$ac_sys_system" in
 		],[
 		  AC_MSG_RESULT(no)
 		])
-dnl AIX_BUILDDATE plus GNU_HOSTTYPE will be used similiar to how
+dnl AIX_BUILDDATE plus BUILD_GNU_TYPE will be used similiar to how
 dnl MACOSX_DEPLOYMENT_TARGET is used in pypa tools
-# AIX_BUILDDATE + GNU_HOST_TYPE are utilized in pypa tools
+# AIX_BUILDDATE + BUILD_GNU_TYPE are utilized in pypa tools
 # to set a deployment baseline for compatible wheel tags
                AC_MSG_CHECKING(for the system builddate)
                AIX_BUILDDATE=$(lslpp -Lcq bos.mp64 | awk -F:  '{ print $NF }')
