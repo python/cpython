@@ -1,1 +1,0 @@
-Fix regression introduced in bpo-36146 refactoring setup.py

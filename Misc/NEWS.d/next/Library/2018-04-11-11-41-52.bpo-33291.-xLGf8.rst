@@ -1,3 +1,0 @@
-Do not raise AttributeError when calling the inspect functions
-isgeneratorfunction, iscoroutinefunction, isasyncgenfunction on a method
-created from an arbitrary callable. Instead, return False.

@@ -69,6 +69,17 @@ class ArrayTestCase(unittest.TestCase):
         from operator import delitem
         self.assertRaises(TypeError, delitem, ca, 0)
 
+    def test_step_overflow(self):
+        a = (c_int * 5)()
+        a[3::sys.maxsize] = (1,)
+        self.assertListEqual(a[3::sys.maxsize], [1])
+        a = (c_char * 5)()
+        a[3::sys.maxsize] = b"A"
+        self.assertEqual(a[3::sys.maxsize], b"A")
+        a = (c_wchar * 5)()
+        a[3::sys.maxsize] = u"X"
+        self.assertEqual(a[3::sys.maxsize], u"X")
+
     def test_numeric_arrays(self):
 
         alen = 5
@@ -196,6 +207,21 @@ class ArrayTestCase(unittest.TestCase):
         class T(Array):
             _type_ = c_int
             _length_ = 0
+
+    def test_empty_element_struct(self):
+        class EmptyStruct(Structure):
+            _fields_ = []
+
+        obj = (EmptyStruct * 2)()  # bpo37188: Floating point exception
+        self.assertEqual(sizeof(obj), 0)
+
+    def test_empty_element_array(self):
+        class EmptyArray(Array):
+            _type_ = c_int
+            _length_ = 0
+
+        obj = (EmptyArray * 2)()  # bpo37188: Floating point exception
+        self.assertEqual(sizeof(obj), 0)
 
     def test_bpo36504_signed_int_overflow(self):
         # The overflow check in PyCArrayType_new() could cause signed integer

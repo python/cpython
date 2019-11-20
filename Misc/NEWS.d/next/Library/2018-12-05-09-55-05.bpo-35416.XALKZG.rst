@@ -1,1 +1,0 @@
-Fix potential resource warnings in distutils. Patch by Mickaël Schoentgen.
