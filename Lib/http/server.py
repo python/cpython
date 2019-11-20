@@ -1013,7 +1013,7 @@ class CGIHTTPRequestHandler(SimpleHTTPRequestHandler):
 
         """
         collapsed_path = _url_collapse_path(self.path)
-        dir_sep = collapsed_path.find('/', 1)
+        dir_sep = collapsed_path.rfind('/', 1)
         head, tail = collapsed_path[:dir_sep], collapsed_path[dir_sep+1:]
         if head in self.cgi_directories:
             self.cgi_info = head, tail
