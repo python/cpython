@@ -1999,11 +1999,23 @@ def _get_async_iter(self):
         return _AsyncIterator(iter(ret_val))
     return __aiter__
 
+def _get_divmod(self):
+    def __divmod__(val):
+        return (type(self)(), type(self)())
+    return __divmod__
+
+def _get_rdivmod(self):
+    def __rdivmod__(val):
+        return (type(self)(), type(self)())
+    return __rdivmod__
+
 _side_effect_methods = {
     '__eq__': _get_eq,
     '__ne__': _get_ne,
     '__iter__': _get_iter,
-    '__aiter__': _get_async_iter
+    '__aiter__': _get_async_iter,
+    '__divmod__': _get_divmod,
+    '__rdivmod__': _get_rdivmod,
 }
 
 
