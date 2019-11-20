@@ -353,8 +353,7 @@ class FormatRegion:
             maxvalue=16)
 
 
-# With mixed indents not allowed, these are semi-useless and not unittested.
-class Indents:  # pragma: no cover
+class Indents:
     "Change future indents."
 
     def __init__(self, editwin):
