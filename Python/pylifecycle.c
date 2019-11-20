@@ -1226,9 +1226,6 @@ finalize_interp_delete(PyThreadState *tstate, int is_main_interp)
         _PyGILState_Fini(tstate);
     }
 
-    /* Delete current thread. After this, many C API calls become crashy. */
-    PyThreadState_Swap(NULL);
-
     PyInterpreterState_Delete(tstate->interp);
 }
 
@@ -1577,9 +1574,9 @@ handle_error:
 
     PyErr_PrintEx(0);
     PyThreadState_Clear(tstate);
-    PyThreadState_Swap(save_tstate);
     PyThreadState_Delete(tstate);
     PyInterpreterState_Delete(interp);
+    PyThreadState_Swap(save_tstate);
 
     *tstate_p = NULL;
     return _PyStatus_OK();
