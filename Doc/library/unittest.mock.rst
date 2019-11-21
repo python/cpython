@@ -873,7 +873,7 @@ object::
     exception,
   - if ``side_effect`` is an iterable, the async function will return the
     next value of the iterable, however, if the sequence of result is
-    exhausted, ``StopIteration`` is raised immediately,
+    exhausted, ``StopAsyncIteration`` is raised immediately,
   - if ``side_effect`` is not defined, the async function will return the
     value defined by ``return_value``, hence, by default, the async function
     returns a new :class:`AsyncMock` object.
