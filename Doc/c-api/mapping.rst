@@ -14,8 +14,7 @@ See also :c:func:`PyObject_GetItem`, :c:func:`PyObject_SetItem` and
    Return ``1`` if the object provides mapping protocol or supports slicing,
    and ``0`` otherwise.  Note that it returns ``1`` for Python classes with
    a :meth:`__getitem__` method since in general case it is impossible to
-   determine what the type of keys it supports.  This function always
-   succeeds.
+   determine what type of keys it supports. This function always succeeds.
 
 
 .. c:function:: Py_ssize_t PyMapping_Size(PyObject *o)
