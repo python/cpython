@@ -6,7 +6,8 @@ import importlib.util
 import os.path
 import sys
 import contextlib
-from importlib._bootstrap import _find_spec, _calc___package__
+from importlib._bootstrap import (_ImportLockContext, _calc___package__,
+                                  _find_spec_legacy)
 
 
 LOAD_CONST = dis.opmap['LOAD_CONST']
@@ -107,17 +108,9 @@ class ModuleFinder:
 
     @contextlib.contextmanager
     def _fix_sys(self):
-        # We change sys.path and sys.modules so that the machinery
-        # can work correctly. Note that finders and loaders that import things
-        # for their own execution will entirely stop working, but there's very
-        # little we can do about that.
-        old_path = sys.path
-        sys.path = self.path
         try:
             yield
         finally:
-            sys.path = old_path
-
             for name in self.updated_modules:
                 del sys.modules[name]
 
@@ -436,6 +429,50 @@ class ModuleFinder:
         self.modules[name] = m = Module(name, real_m)
         return m
 
+    def find_spec(self, name, path):
+        # A reimplementation of importlib._bootstrap._find_spec.
+        # This version will pass self.path to PathFinder
+        # instead of None.
+        # A possible alternative is to change sys.path, but this
+        # can cause various wider-reaching problems.
+        # This technically produces wrong results in rare situations
+        # where other hooks make use of sys.path,
+        # but it's a gamble either way.
+
+        # There's a chance the module was already imported
+        # before modulefinder was run, in which case it's a reload.
+        is_reload = name in sys.modules
+        for finder in sys.meta_path:
+            with _ImportLockContext():
+                if finder is importlib.machinery.PathFinder and path is None:
+                    return finder.find_spec(name, self.path)
+                try:
+                    find_spec = finder.find_spec
+                except AttributeError:
+                    spec = _find_spec_legacy(finder, name, path)
+                    if spec is None:
+                        continue
+                else:
+                    spec = find_spec(name, path, None)
+            if spec is not None:
+                # The parent import may have already imported this module.
+                if not is_reload and name in sys.modules:
+                    module = sys.modules[name]
+                    try:
+                        __spec__ = module.__spec__
+                    except AttributeError:
+                        # We use the found spec since that is the one that
+                        # we would have used if the parent module hadn't
+                        # beaten us to the punch.
+                        return spec
+                    else:
+                        if __spec__ is None:
+                            return spec
+                        else:
+                            return __spec__
+                else:
+                    return spec
+
     def find_module(self, name, path, parent=None):
         if parent is not None:
             fullname = parent.__name__+'.'+name
@@ -444,11 +481,8 @@ class ModuleFinder:
         if fullname in self.excludes:
             self.msgout(3, "find_module -> Excluded", fullname)
             raise ImportError(name)
-
-        # We don't use the public function util.find_spec here
-        # because it tries to obtain the path by importing the parent,
-        # which we don't want it to do.
-        spec = _find_spec(fullname, path)
+        
+        spec = self.find_spec(fullname, path)
         
         if spec is None:
             raise ImportError("No module named {name!r}".format(name=fullname),
