@@ -177,8 +177,8 @@ Module-level decorators, classes, and functions
    :meth:`__init__`.
 
    .. versionchanged:: 3.9
-   Non-defaulted fields following defaulted field used raise an
-   :exc:`TypeError`, but are now converted to keyword-only.
+      Non-defaulted fields following defaulted field used raise an
+      :exc:`TypeError`, but are now converted to keyword-only.
 
 .. function:: field(*, default=MISSING, default_factory=MISSING, repr=True, hash=None, init=True, compare=True, metadata=None)
 
