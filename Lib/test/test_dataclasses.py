@@ -61,40 +61,97 @@ class TestCase(unittest.TestCase):
         o = C(3)
         self.assertEqual((o.x, o.y), (3, 0))
 
+    def test_two_fields_one_default_nondefault_follows_default(self):
         # Non-defaults following defaults.
-        with self.assertRaisesRegex(TypeError,
-                                    "non-default argument 'y' follows "
-                                    "default argument"):
-            @dataclass
-            class C:
-                x: int = 0
-                y: int
+        @dataclass
+        class C:
+            x: int = 0
+            y: int
 
+        with self.assertRaisesRegex(TypeError,
+                                    "__init__\\(\\) missing 1 "
+                                    "required keyword-only argument: "
+                                    "'y'"):
+            o = C(3)
+
+        with self.assertRaisesRegex(TypeError,
+                                    "__init__\\(\\) takes from 1 to "
+                                    "2 positional arguments but 3 "
+                                    "were given"):
+            o = C(3, 4)
+
+        o = C(3, y=4)
+        self.assertEqual((o.x, o.y), (3, 4))
+
+        o = C(x=2, y=4)
+        self.assertEqual((o.x, o.y), (2, 4))
+
+        o = C(y=5)
+        self.assertEqual((o.x, o.y), (0, 5))
+
+    def test_two_fields_one_default_derived_adds_nondefault(self):
         # A derived class adds a non-default field after a default one.
+        @dataclass
+        class B:
+            x: int = 0
+
+        @dataclass
+        class C(B):
+            y: int
+
         with self.assertRaisesRegex(TypeError,
-                                    "non-default argument 'y' follows "
-                                    "default argument"):
-            @dataclass
-            class B:
-                x: int = 0
+                                    "__init__\\(\\) missing 1 "
+                                    "required keyword-only argument: "
+                                    "'y'"):
+            o = C(3)
 
-            @dataclass
-            class C(B):
-                y: int
+        with self.assertRaisesRegex(TypeError,
+                                    "__init__\\(\\) takes from 1 to "
+                                    "2 positional arguments but 3 "
+                                    "were given"):
+            o = C(3, 4)
 
+        o = C(3, y=4)
+        self.assertEqual((o.x, o.y), (3, 4))
+
+        o = C(x=2, y=4)
+        self.assertEqual((o.x, o.y), (2, 4))
+
+        o = C(y=5)
+        self.assertEqual((o.x, o.y), (0, 5))
+
+    def test_two_fields_one_default_derived_updates_to_default(self):
         # Override a base class field and add a default to
         #  a field which didn't use to have a default.
-        with self.assertRaisesRegex(TypeError,
-                                    "non-default argument 'y' follows "
-                                    "default argument"):
-            @dataclass
-            class B:
-                x: int
-                y: int
+        @dataclass
+        class B:
+            x: int
+            y: int
 
-            @dataclass
-            class C(B):
-                x: int = 0
+        @dataclass
+        class C(B):
+            x: int = 0
+
+        with self.assertRaisesRegex(TypeError,
+                                    "__init__\\(\\) missing 1 "
+                                    "required keyword-only argument: "
+                                    "'y'"):
+            o = C(3)
+
+        with self.assertRaisesRegex(TypeError,
+                                    "__init__\\(\\) takes from 1 to "
+                                    "2 positional arguments but 3 "
+                                    "were given"):
+            o = C(3, 4)
+
+        o = C(3, y=4)
+        self.assertEqual((o.x, o.y), (3, 4))
+
+        o = C(x=2, y=4)
+        self.assertEqual((o.x, o.y), (2, 4))
+
+        o = C(y=5)
+        self.assertEqual((o.x, o.y), (0, 5))
 
     def test_overwrite_hash(self):
         # Test that declaring this class isn't an error.  It should

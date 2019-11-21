@@ -485,21 +485,6 @@ def _init_param(f):
 def _init_fn(fields, frozen, has_post_init, self_name):
     # fields contains both real fields and InitVar pseudo-fields.
 
-    # Make sure we don't have fields without defaults following fields
-    # with defaults.  This actually would be caught when exec-ing the
-    # function source code, but catching it here gives a better error
-    # message, and future-proofs us in case we build up the function
-    # using ast.
-    seen_default = False
-    for f in fields:
-        # Only consider fields in the __init__ call.
-        if f.init:
-            if not (f.default is MISSING and f.default_factory is MISSING):
-                seen_default = True
-            elif seen_default:
-                raise TypeError(f'non-default argument {f.name!r} '
-                                'follows default argument')
-
     globals = {'MISSING': MISSING,
                '_HAS_DEFAULT_FACTORY': _HAS_DEFAULT_FACTORY}
 
@@ -521,9 +506,23 @@ def _init_fn(fields, frozen, has_post_init, self_name):
     if not body_lines:
         body_lines = ['pass']
 
+    # Build arguments: once we've encountered defaulted fields, all
+    # following non-defaulted fields must be passed via keyword
+    seen_default = False
+    keyword_only = False
+    args = [self_name]
+    for f in fields:
+        if f.init:
+            if not (f.default is MISSING and f.default_factory is MISSING):
+                seen_default = True
+            elif seen_default and not keyword_only:
+                keyword_only = True
+                args.append("*")
+            args.append(_init_param(f))
+
     locals = {f'_type_{f.name}': f.type for f in fields}
     return _create_fn('__init__',
-                      [self_name] + [_init_param(f) for f in fields if f.init],
+                      args,
                       body_lines,
                       locals=locals,
                       globals=globals,

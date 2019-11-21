@@ -171,9 +171,14 @@ Module-level decorators, classes, and functions
 
      def __init__(self, a: int, b: int = 0):
 
-   :exc:`TypeError` will be raised if a field without a default value
-   follows a field with a default value.  This is true either when this
-   occurs in a single class, or as a result of class inheritance.
+   When a field without a default value follows a field with a default value
+   (including as a result of class inheritance), the former field, and all
+   successive fields, will be made keyword-only in the parameters of
+   :meth:`__init__`.
+
+   .. versionchanged:: 3.9
+   Non-defaulted fields following defaulted field used raise an
+   :exc:`TypeError`, but are now converted to keyword-only.
 
 .. function:: field(*, default=MISSING, default_factory=MISSING, repr=True, hash=None, init=True, compare=True, metadata=None)
 
