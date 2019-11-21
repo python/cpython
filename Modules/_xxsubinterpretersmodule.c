@@ -2417,7 +2417,8 @@ PyDoc_STRVAR(channel_list_interpreters_doc,
 "channel_list_interpreters(cid, *, send=False, recv=False) -> [id]\n\
 \n\
 Return the list of all interpreter IDs associated with the channel\n\
-XXX in the send direction.");
+Exactly one of 'send' or 'recv' should be True, corresponding to the end of\n\
+the channel to list interpreters for.");
 
 
 static PyObject *
