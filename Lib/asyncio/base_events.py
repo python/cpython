@@ -1306,8 +1306,12 @@ class BaseEventLoop(events.AbstractEventLoop):
 
             exceptions = []
 
-            if reuse_address is None:
-                reuse_address = os.name == 'posix' and sys.platform != 'cygwin'
+            if reuse_address:
+                # bpo-37228
+                raise RuntimeError("Passing `reuse_address=True` is no "
+                                   "longer supported, as the usage of "
+                                   "SO_REUSEPORT in UDP poses a significant "
+                                   "security concern.")
 
             for ((family, proto),
                  (local_address, remote_address)) in addr_pairs_info:
@@ -1316,9 +1320,6 @@ class BaseEventLoop(events.AbstractEventLoop):
                 try:
                     sock = socket.socket(
                         family=family, type=socket.SOCK_DGRAM, proto=proto)
-                    if reuse_address:
-                        sock.setsockopt(
-                            socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
                     if reuse_port:
                         _set_reuseport(sock)
                     if allow_broadcast:
