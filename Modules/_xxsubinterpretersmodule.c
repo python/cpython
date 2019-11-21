@@ -644,6 +644,7 @@ _channelends_list_interpreters(_channelends *ends, int64_t *count, int send)
     }
     ids = PyMem_NEW(int64_t, (Py_ssize_t)numopen);
     if (ids == NULL) {
+        PyErr_SetNone(PyExc_MemoryError);
         goto done;
     }
     _channelend *ref = send ? ends->send : ends->recv;
@@ -2383,6 +2384,9 @@ channel_list_interpreters(PyObject *self, PyObject *args, PyObject *kwds)
     }
 
     ids = _channelends_list_interpreters(chan->ends, &count, send);
+    if (ids == NULL) {
+        goto except;
+    }
     
     ret = PyList_New((Py_ssize_t)count);
     if (ret == NULL) {
