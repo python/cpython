@@ -1431,7 +1431,7 @@ output.append(4)
         1 / 0
 
     @jump_test(3, 2, [2], event='return', error=(ValueError,
-               "can't jump from a yield statement"))
+               "can't jump from a 'yield' statement"))
     def test_no_jump_from_yield(output):
         def gen():
             output.append(2)
