@@ -1787,6 +1787,16 @@ except StopIteration as e:
 
 gth = get_type_hints
 
+class ForRefExample:
+    @ann_module.dec
+    def func(self: 'ForRefExample'):
+        pass
+
+    @ann_module.dec
+    @ann_module.dec
+    def nested(self: 'ForRefExample'):
+        pass
+
 
 class GetTypeHintTests(BaseTestCase):
     def test_get_type_hints_from_various_objects(self):
@@ -1884,6 +1894,11 @@ class GetTypeHintTests(BaseTestCase):
                          {'z': ClassVar[CSub], 'y': int, 'b': int,
                           'x': ClassVar[Optional[B]]})
         self.assertEqual(gth(G), {'lst': ClassVar[List[T]]})
+
+    def test_get_type_hints_wrapped_decoratored_func(self):
+        expects = {'self': ForRefExample}
+        self.assertEqual(gth(ForRefExample.func), expects)
+        self.assertEqual(gth(ForRefExample.nested), expects)
 
 
 class CollectionsAbcTests(BaseTestCase):
