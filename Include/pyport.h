@@ -72,10 +72,34 @@ Used in:  Py_SAFE_DOWNCAST
 
 #define PY_UINT32_T uint32_t
 #define PY_UINT64_T uint64_t
+#ifdef HAVE_STDINT_H
+#include <stdint.h>
+#define PY_UINT32_T_MIN UINT32_MIN
+#define PY_UINT32_T_MAX UINT32_MAX
+#define PY_UINT64_T_MIN UINT64_MIN
+#define PY_UINT64_T_MAX UINT64_MAX
+#else
+#define PY_UINT32_T_MIN 0
+#define PY_UINT32_T_MAX ((uint32_t)-1)
+#define PY_UINT64_T_MIN 0
+#define PY_UINT64_T_MAX ((uint64_t)-1)
+#endif
 
 /* Signed variants of the above */
 #define PY_INT32_T int32_t
 #define PY_INT64_T int64_t
+#ifdef HAVE_STDINT_H
+#include <stdint.h>
+#define PY_INT32_T_MIN INT32_MIN
+#define PY_INT32_T_MAX INT32_MAX
+#define PY_INT64_T_MIN INT64_MIN
+#define PY_INT64_T_MAX INT64_MAX
+#else
+#define PY_INT32_T_MAX ((int32_t)(((uint32_t)-1)>>1))
+#define PY_INT32_T_MIN (-PY_INT32_T_MAX-1)
+#define PY_INT64_T_MAX ((int64_t)(((uint64_t)-1)>>1))
+#define PY_INT64_T_MIN (-PY_INT64_T_MAX-1)
+#endif
 
 /* If PYLONG_BITS_IN_DIGIT is not defined then we'll use 30-bit digits if all
    the necessary integer types are available, and we're on a 64-bit platform
