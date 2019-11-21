@@ -2276,16 +2276,13 @@ converters_from_argtypes(PyObject *ob)
 
     for (i = 0; i < nArgs; ++i) {
         PyObject *tp = PyTuple_GET_ITEM(ob, i);
-        PyObject *cnv = PyObject_GetAttrString(tp, "from_param");
-        if (!cnv)
-            goto argtypes_error_1;
+        PyObject *cnv;
         StgDictObject *stgdict = PyType_stgdict(tp);
 
         if (stgdict != NULL) {
             if (stgdict->flags & TYPEFLAG_HASUNION) {
                 Py_DECREF(converters);
                 Py_DECREF(ob);
-                Py_DECREF(cnv);
                 if (!PyErr_Occurred()) {
                     PyErr_Format(PyExc_TypeError,
                                  "item %zd in _argtypes_ passes a union by "
@@ -2294,12 +2291,22 @@ converters_from_argtypes(PyObject *ob)
                 }
                 return NULL;
             }
-            /*
             if (stgdict->flags & TYPEFLAG_HASBITFIELD) {
-                printf("found stgdict with bitfield\n");
+                Py_DECREF(converters);
+                Py_DECREF(ob);
+                if (!PyErr_Occurred()) {
+                    PyErr_Format(PyExc_TypeError,
+                                 "item %zd in _argtypes_ passes a struct/"
+                                 "union with a bitfield by value, which is "
+                                 "unsupported.",
+                                 i + 1);
+                }
+                return NULL;
             }
-            */
         }
+        cnv = PyObject_GetAttrString(tp, "from_param");
+        if (!cnv)
+            goto argtypes_error_1;
         PyTuple_SET_ITEM(converters, i, cnv);
     }
     Py_DECREF(ob);
