@@ -358,42 +358,84 @@ class AsyncSpecSetTest(unittest.TestCase):
             self.assertIsInstance(cm, MagicMock)
 
 
-class AsyncArguments(unittest.TestCase):
-    def test_add_return_value(self):
+class AsyncArguments(unittest.IsolatedAsyncioTestCase):
+    async def test_add_return_value(self):
         async def addition(self, var):
             return var + 1
 
         mock = AsyncMock(addition, return_value=10)
-        output = asyncio.run(mock(5))
+        output = await mock(5)
 
         self.assertEqual(output, 10)
 
-    def test_add_side_effect_exception(self):
+    async def test_add_side_effect_exception(self):
         async def addition(var):
             return var + 1
         mock = AsyncMock(addition, side_effect=Exception('err'))
         with self.assertRaises(Exception):
-            asyncio.run(mock(5))
+            await mock(5)
 
-    def test_add_side_effect_function(self):
+    async def test_add_side_effect_function(self):
         async def addition(var):
             return var + 1
         mock = AsyncMock(side_effect=addition)
-        result = asyncio.run(mock(5))
+        result = await mock(5)
         self.assertEqual(result, 6)
 
-    def test_add_side_effect_iterable(self):
+    async def test_add_side_effect_iterable(self):
         vals = [1, 2, 3]
         mock = AsyncMock(side_effect=vals)
         for item in vals:
-            self.assertEqual(item, asyncio.run(mock()))
+            self.assertEqual(item, await mock())
 
-        with self.assertRaises(RuntimeError) as e:
-            asyncio.run(mock())
-            self.assertEqual(
-                e.exception,
-                RuntimeError('coroutine raised StopIteration')
-            )
+        with self.assertRaises(StopAsyncIteration) as e:
+            await mock()
+
+    async def test_return_value_AsyncMock(self):
+        value = AsyncMock(return_value=10)
+        mock = AsyncMock(return_value=value)
+        result = await mock()
+        self.assertIs(result, value)
+
+    async def test_return_value_awaitable(self):
+        fut = asyncio.Future()
+        fut.set_result(None)
+        mock = AsyncMock(return_value=fut)
+        result = await mock()
+        self.assertIsInstance(result, asyncio.Future)
+
+    async def test_side_effect_awaitable_values(self):
+        fut = asyncio.Future()
+        fut.set_result(None)
+
+        mock = AsyncMock(side_effect=[fut])
+        result = await mock()
+        self.assertIsInstance(result, asyncio.Future)
+
+        with self.assertRaises(StopAsyncIteration):
+            await mock()
+
+    async def test_side_effect_is_AsyncMock(self):
+        effect = AsyncMock(return_value=10)
+        mock = AsyncMock(side_effect=effect)
+
+        result = await mock()
+        self.assertEqual(result, 10)
+
+    async def test_wraps_coroutine(self):
+        value = asyncio.Future()
+
+        ran = False
+        async def inner():
+            nonlocal ran
+            ran = True
+            return value
+
+        mock = AsyncMock(wraps=inner)
+        result = await mock()
+        self.assertEqual(result, value)
+        mock.assert_awaited()
+        self.assertTrue(ran)
 
 class AsyncMagicMethods(unittest.TestCase):
     def test_async_magic_methods_return_async_mocks(self):
