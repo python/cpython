@@ -1,0 +1,3 @@
+AsyncMock now returns StopAsyncIteration on the exaustion of a side_effects
+iterable. Since PEP-479 its Impossible to raise a StopIteration exception
+from a coroutine.
