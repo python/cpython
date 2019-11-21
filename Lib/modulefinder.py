@@ -445,15 +445,16 @@ class ModuleFinder:
         for finder in sys.meta_path:
             with _ImportLockContext():
                 if finder is importlib.machinery.PathFinder and path is None:
-                    return finder.find_spec(name, self.path)
-                try:
-                    find_spec = finder.find_spec
-                except AttributeError:
-                    spec = _find_spec_legacy(finder, name, path)
-                    if spec is None:
-                        continue
+                    spec = finder.find_spec(name, self.path)
                 else:
-                    spec = find_spec(name, path, None)
+                    try:
+                        find_spec = finder.find_spec
+                    except AttributeError:
+                        spec = _find_spec_legacy(finder, name, path)
+                        if spec is None:
+                            continue
+                    else:
+                        spec = find_spec(name, path, None)
             if spec is not None:
                 # The parent import may have already imported this module.
                 if not is_reload and name in sys.modules:
