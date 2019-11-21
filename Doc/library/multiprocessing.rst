@@ -2876,18 +2876,19 @@ Examples
 --------
 
 Demonstration of how to create and use customized managers and proxies:
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 .. literalinclude:: ../includes/mp_newtype.py
    :language: python3
 
 
 Using :class:`~multiprocessing.pool.Pool`:
-
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 .. literalinclude:: ../includes/mp_pool.py
    :language: python3
 
 
-An example showing how to use queues to feed tasks to a collection of worker
-processes and collect the results:
+An example showing how to use queues to feed tasks to a collection of worker processes and collect the results:
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 .. literalinclude:: ../includes/mp_workers.py
