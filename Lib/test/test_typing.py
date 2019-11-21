@@ -2780,12 +2780,12 @@ gth = get_type_hints
 
 class ForRefExample():
     @ann_module.dec
-    def func(a: 'ForRefExample'):
+    def func(self: 'ForRefExample'):
         pass
 
     @ann_module.dec
     @ann_module.dec
-    def nested(a: 'ForRefExample'):
+    def nested(self: 'ForRefExample'):
         pass
 
 class GetTypeHintTests(BaseTestCase):
@@ -2886,7 +2886,7 @@ class GetTypeHintTests(BaseTestCase):
         self.assertEqual(gth(G), {'lst': ClassVar[List[T]]})
 
     def test_get_type_hints_wrapped_decoratored_func(self):
-        expects = {'a': ForRefExample}
+        expects = {'self': ForRefExample}
         self.assertEqual(gth(ForRefExample.func), expects)
         self.assertEqual(gth(ForRefExample.nested), expects)
 

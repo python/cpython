@@ -54,6 +54,7 @@ def foo(x: int = 10):
     bar()
 
 def dec(func):
+    @wraps(func)
     def wrapper(*args, **kwargs):
         return func(*args, **kwargs)
-    return wraps(func)(wrapper)
+    return wrapper
