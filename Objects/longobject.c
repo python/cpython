@@ -40,7 +40,7 @@ PyObject *_PyLong_One = NULL;
    The integers that are preallocated are those in the range
    -NSMALLNEGINTS (inclusive) to NSMALLPOSINTS (not inclusive).
 */
-static PyLongObject small_ints[NSMALLNEGINTS + NSMALLPOSINTS];
+static PyLongObject* small_ints[NSMALLNEGINTS + NSMALLPOSINTS] = {0};
 
 #define IS_SMALL_INT(ival) (-NSMALLNEGINTS <= (ival) && (ival) < NSMALLPOSINTS)
 #define IS_SMALL_UINT(ival) ((ival) < NSMALLPOSINTS)
@@ -52,9 +52,8 @@ Py_ssize_t _Py_quick_int_allocs, _Py_quick_neg_int_allocs;
 static PyObject *
 get_small_int(sdigit ival)
 {
-    PyObject *v;
     assert(IS_SMALL_INT(ival));
-    v = (PyObject *)&small_ints[ival + NSMALLNEGINTS];
+    PyObject *v = (PyObject*)small_ints[ival + NSMALLNEGINTS];
     Py_INCREF(v);
 #ifdef COUNT_ALLOCS
     if (ival >= 0)
@@ -5784,40 +5783,30 @@ int
 _PyLong_Init(void)
 {
 #if NSMALLNEGINTS + NSMALLPOSINTS > 0
-    int ival, size;
-    PyLongObject *v = small_ints;
+    for (Py_ssize_t i=0; i < NSMALLNEGINTS + NSMALLPOSINTS; i++) {
+        sdigit ival = (sdigit)i - NSMALLNEGINTS;
+        int size = (ival < 0) ? -1 : ((ival == 0) ? 0 : 1);
 
-    for (ival = -NSMALLNEGINTS; ival <  NSMALLPOSINTS; ival++, v++) {
-        size = (ival < 0) ? -1 : ((ival == 0) ? 0 : 1);
-        if (Py_TYPE(v) == &PyLong_Type) {
-            /* The element is already initialized, most likely
-             * the Python interpreter was initialized before.
-             */
-            Py_ssize_t refcnt;
-            PyObject* op = (PyObject*)v;
+        PyLongObject *v = _PyLong_New(1);
+        if (!v) {
+            return -1;
+        }
 
-            refcnt = Py_REFCNT(op) < 0 ? 0 : Py_REFCNT(op);
-            _Py_NewReference(op);
-            /* _Py_NewReference sets the ref count to 1 but
-             * the ref count might be larger. Set the refcnt
-             * to the original refcnt + 1 */
-            Py_REFCNT(op) = refcnt + 1;
-            assert(Py_SIZE(op) == size);
-            assert(v->ob_digit[0] == (digit)abs(ival));
-        }
-        else {
-            (void)PyObject_INIT(v, &PyLong_Type);
-        }
         Py_SIZE(v) = size;
         v->ob_digit[0] = (digit)abs(ival);
+
+        small_ints[i] = v;
     }
 #endif
     _PyLong_Zero = PyLong_FromLong(0);
-    if (_PyLong_Zero == NULL)
+    if (_PyLong_Zero == NULL) {
         return 0;
+    }
+
     _PyLong_One = PyLong_FromLong(1);
-    if (_PyLong_One == NULL)
+    if (_PyLong_One == NULL) {
         return 0;
+    }
 
     /* initialize int_info */
     if (Int_InfoType.tp_name == NULL) {
@@ -5832,17 +5821,11 @@ _PyLong_Init(void)
 void
 _PyLong_Fini(void)
 {
-    /* Integers are currently statically allocated. Py_DECREF is not
-       needed, but Python must forget about the reference or multiple
-       reinitializations will fail. */
     Py_CLEAR(_PyLong_One);
     Py_CLEAR(_PyLong_Zero);
 #if NSMALLNEGINTS + NSMALLPOSINTS > 0
-    int i;
-    PyLongObject *v = small_ints;
-    for (i = 0; i < NSMALLNEGINTS + NSMALLPOSINTS; i++, v++) {
-        _Py_DEC_REFTOTAL;
-        _Py_ForgetReference((PyObject*)v);
+    for (Py_ssize_t i = 0; i < NSMALLNEGINTS + NSMALLPOSINTS; i++) {
+        Py_CLEAR(small_ints[i]);
     }
 #endif
 }
