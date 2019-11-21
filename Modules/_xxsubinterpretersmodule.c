@@ -2394,20 +2394,17 @@ channel_list_interpreters(PyObject *self, PyObject *args, PyObject *kwds)
     }
 
     for (int64_t i=0; i < count; i++) {
-        PyInterpreterState *interp = PyInterpreterState_Head();
-        while (interp != NULL) {
-            PyObject *id_obj = _PyInterpreterState_GetIDObject(interp);
-            if (id_obj == NULL) {
-                Py_DECREF(id_obj);
-                goto except;
-            }
-            if (ids[i] == PyInterpreterState_GetID(interp)) {
-                PyList_SET_ITEM(ret, i, id_obj);
-                break;
-            } else {
-                Py_DECREF(id_obj);
-            }
-            interp = PyInterpreterState_Next(interp);
+        PyInterpreterState *interp = _PyInterpreterState_LookUpID(ids[i]);
+        PyObject *id_obj = _PyInterpreterState_GetIDObject(interp);
+        if (id_obj == NULL) {
+            Py_DECREF(id_obj);
+            goto except;
+        }
+        if (ids[i] == PyInterpreterState_GetID(interp)) {
+            PyList_SET_ITEM(ret, i, id_obj);
+            break;
+        } else {
+            Py_DECREF(id_obj);
         }
     }
 
