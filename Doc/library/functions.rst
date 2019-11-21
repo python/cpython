@@ -473,7 +473,7 @@ are always available.  They are listed here in alphabetical order.
    dictionary is omitted it defaults to the *globals* dictionary.  If both
    dictionaries are omitted, the expression is executed with the *globals* and
    *locals* in the environment where :func:`eval` is called.  Note, *eval()*
-   does not have access to the :term:`nested scope`\s (non-locals) in the
+   does not have access to the :term:`nested scopes <nested scope>` (non-locals) in the
    enclosing environment.
 
    The return value is the result of
@@ -1632,7 +1632,7 @@ are always available.  They are listed here in alphabetical order.
                                      # super(C, self).method(arg)
 
    In addition to method lookups, :func:`super` also works for attribute
-   lookups.  One possible use case for this is calling :term:`descriptor`\s
+   lookups.  One possible use case for this is calling :term:`descriptors <descriptor>`
    in a parent or sibling class.
 
    Note that :func:`super` is implemented as part of the binding process for
