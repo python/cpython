@@ -494,7 +494,7 @@ Path objects are traversable using the ``/`` operator.
    Invoke :meth:`ZipFile.open` on the current path. Accepts
    the same arguments as :meth:`ZipFile.open`.
 
-.. method:: Path.listdir()
+.. method:: Path.iterdir()
 
    Enumerate the children of the current directory.
 
