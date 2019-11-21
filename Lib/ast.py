@@ -27,6 +27,7 @@
 import sys
 import io
 from _ast import *
+from contextlib import contextmanager
 
 
 def parse(source, filename='<unknown>', mode='exec', *,
@@ -592,13 +593,12 @@ class _Unparser(NodeVisitor):
         "Append a piece of text to the current line."
         self.f.write(text)
 
+    @contextmanager
     def enter(self):
         "Print ':', and increase the indentation."
         self.write(":")
         self._indent += 1
-
-    def leave(self):
-        "Decrease the indentation level."
+        yield
         self._indent -= 1
 
     def visit(self, node):
@@ -732,21 +732,18 @@ class _Unparser(NodeVisitor):
 
     def visit_Try(self, node):
         self.fill("try")
-        self.enter()
-        self.visit(node.body)
-        self.leave()
+        with self.enter():
+            self.visit(node.body)
         for ex in node.handlers:
             self.visit(ex)
         if node.orelse:
             self.fill("else")
-            self.enter()
-            self.visit(node.orelse)
-            self.leave()
+            with self.enter():
+                self.visit(node.orelse)
         if node.finalbody:
             self.fill("finally")
-            self.enter()
-            self.visit(node.finalbody)
-            self.leave()
+            with self.enter():
+                self.visit(node.finalbody)
 
     def visit_ExceptHandler(self, node):
         self.fill("except")
@@ -756,9 +753,8 @@ class _Unparser(NodeVisitor):
         if node.name:
             self.write(" as ")
             self.write(node.name)
-        self.enter()
-        self.visit(node.body)
-        self.leave()
+        with self.enter():
+            self.visit(node.body)
 
     def visit_ClassDef(self, node):
         self.write("\n")
@@ -782,9 +778,8 @@ class _Unparser(NodeVisitor):
             self.visit(e)
         self.write(")")
 
-        self.enter()
-        self.visit(node.body)
-        self.leave()
+        with self.enter():
+            self.visit(node.body)
 
     def visit_FunctionDef(self, node):
         self.__FunctionDef_helper(node, "def")
@@ -804,9 +799,8 @@ class _Unparser(NodeVisitor):
         if node.returns:
             self.write(" -> ")
             self.visit(node.returns)
-        self.enter()
-        self.visit(node.body)
-        self.leave()
+        with self.enter():
+            self.visit(node.body)
 
     def visit_For(self, node):
         self.__For_helper("for ", node)
@@ -819,62 +813,53 @@ class _Unparser(NodeVisitor):
         self.visit(node.target)
         self.write(" in ")
         self.visit(node.iter)
-        self.enter()
-        self.visit(node.body)
-        self.leave()
+        with self.enter():
+            self.visit(node.body)
         if node.orelse:
             self.fill("else")
-            self.enter()
-            self.visit(node.orelse)
-            self.leave()
+            with self.enter():
+                self.visit(node.orelse)
 
     def visit_If(self, node):
         self.fill("if ")
         self.visit(node.test)
-        self.enter()
-        self.visit(node.body)
-        self.leave()
+        with self.enter():
+            self.visit(node.body)
         # collapse nested ifs into equivalent elifs.
         while (node.orelse and len(node.orelse) == 1 and
                isinstance(node.orelse[0], If)):
             node = node.orelse[0]
             self.fill("elif ")
             self.visit(node.test)
-            self.enter()
-            self.visit(node.body)
-            self.leave()
+            with self.enter():
+                self.visit(node.body)
         # final else
         if node.orelse:
             self.fill("else")
-            self.enter()
-            self.visit(node.orelse)
-            self.leave()
+            with self.enter():
+                self.visit(node.orelse)
 
     def visit_While(self, node):
         self.fill("while ")
         self.visit(node.test)
-        self.enter()
-        self.visit(node.body)
-        self.leave()
+        with self.enter():
+            self.visit(node.body)
         if node.orelse:
             self.fill("else")
-            self.enter()
-            self.visit(node.orelse)
-            self.leave()
+            with self.enter():
+                self.visit(node.orelse)
 
     def visit_With(self, node):
         self.fill("with ")
         interleave(lambda: self.write(", "), self.visit, node.items)
-        self.enter()
-        self.visit(node.body)
-        self.leave()
+        with self.enter():
+            self.visit(node.body)
 
     def visit_AsyncWith(self, node):
         self.fill("async with ")
         interleave(lambda: self.write(", "), self.visit, node.items)
-        self.enter()
-        self.visit(node.body)
-        self.leave()
+        with self.enter():
+            self.visit(node.body)
 
     def visit_JoinedStr(self, node):
         self.write("f")
