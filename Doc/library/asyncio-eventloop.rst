@@ -476,7 +476,7 @@ Opening network connections
    .. note::
       The parameter *reuse_address* is no longer supported, as using
       :py:data:`~sockets.SO_REUSEADDR` poses a significant security concern for
-      UDP. Explicitly passing `reuse_address=True` will raise an exception.
+      UDP. Explicitly passing ``reuse_address=True`` will raise an exception.
       For supported platforms, *reuse_port* can be used instead for similar
       functionality.
 
