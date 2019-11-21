@@ -1203,23 +1203,23 @@ class ChannelTests(TestBase):
 
         self.assertEqual(cid2, int(cid1) + 1)
         
-    def _assert_interpreters_returned_are(self, cid, send, recv):
-        ilist = set(interpreters.channel_list_interpreters(cid, send=True))
-        self.assertEqual(ilist, set(send))
-        ilist = set(interpreters.channel_list_interpreters(cid, recv=True))
-        self.assertEqual(ilist, set(recv))
+    def _assert_interpreters_returned(self, cid, send, recv):
+        actual = set(interpreters.channel_list_interpreters(cid, send=True))
+        self.assertEqual(actual, set(send))
+        actual = set(interpreters.channel_list_interpreters(cid, recv=True))
+        self.assertEqual(actual, set(recv))
         
     def test_channel_list_interpreters_empty(self):
         # Test for channel with no associated interpreters.
         cid = interpreters.channel_create()
-        self._assert_interpreters_returned_are(cid, [], [])
+        self._assert_interpreters_returned(cid, [], [])
         
     def test_channel_list_interpreters_mainline(self):
         interp0 = interpreters.get_main()
         cid = interpreters.channel_create()
         interpreters.channel_send(cid, "send")
         # Test for a channel that has one end associated to an interpreter.
-        self._assert_interpreters_returned_are(
+        self._assert_interpreters_returned(
             cid, [interp0], [])
         
         interp1 = interpreters.create()
@@ -1228,7 +1228,7 @@ class ChannelTests(TestBase):
             obj = _interpreters.channel_recv({cid})
             """))
         # Test for channel that has boths ends associated to an interpreter.
-        self._assert_interpreters_returned_are(
+        self._assert_interpreters_returned(
             cid, [interp0], [interp1])
         
     def test_channel_list_interpreters_multiple(self):
@@ -1252,7 +1252,7 @@ class ChannelTests(TestBase):
             import _interpreters
             obj = _interpreters.channel_recv({cid})
             """))
-        self._assert_interpreters_returned_are(
+        self._assert_interpreters_returned(
             cid, [interp0, interp1], [interp3, interp2])
 
     ####################
