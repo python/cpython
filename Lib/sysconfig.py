@@ -665,7 +665,15 @@ def get_platform():
             machine += ".%s" % bitness[sys.maxsize]
         # fall through to standard osname-release-machine representation
     elif osname[:3] == "aix":
-        return "%s-%s.%s" % (osname, version, release)
+        # bootstrap: during build _posixsubprocess may be unavailable
+        # _aix_support imports subprocess that wants _posixsubprocess
+        # during bootstrap provide a simple tag
+        try:
+            from _aix_support import aix_platform
+        except ModuleNotFoundError:
+            return "%s-%s.%s" % (osname, version, release)
+        else:
+            return aix_platform()
     elif osname[:6] == "cygwin":
         osname = "cygwin"
         import re

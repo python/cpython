@@ -2845,8 +2845,8 @@ AC_CHECK_LIB(intl, textdomain,
 	[Define to 1 if libintl is needed for locale functions.])
         LIBS="-lintl $LIBS"])
 
-# checks for system dependent C++ extensions support
 case "$ac_sys_system" in
+# checks for system dependent C++ extensions support
 	AIX*)	AC_MSG_CHECKING(for genuine AIX C++ extensions support)
 		AC_LINK_IFELSE([
 		  AC_LANG_PROGRAM([[#include <load.h>]],
@@ -2858,7 +2858,17 @@ case "$ac_sys_system" in
 		  AC_MSG_RESULT(yes)
 		],[
 		  AC_MSG_RESULT(no)
-		]);;
+		])
+dnl AIX_BUILDDATE plus BUILD_GNU_TYPE will be used similiar to how
+dnl MACOSX_DEPLOYMENT_TARGET is used in pypa tools
+# AIX_BUILDDATE + BUILD_GNU_TYPE are utilized in pypa tools
+# to set a deployment baseline for compatible wheel tags
+               AC_MSG_CHECKING(for the system builddate)
+               AIX_BUILDDATE=$(lslpp -Lcq bos.mp64 | awk -F:  '{ print $NF }')
+               AC_DEFINE_UNQUOTED([AIX_BUILDDATE], [$AIX_BUILDDATE],
+                   [Used in get_platform() and by pip for wheel PEP425 platform tags.])
+               AC_MSG_RESULT($AIX_BUILDDATE)
+               ;;
 	*) ;;
 esac
 
