@@ -1,0 +1,1 @@
+When a non-defaulted dataclass field follows a defaulted field, the behaviour has changed from raising a ``TypeError`` to making all arguments in ``__init__`` following the defaulted field keyword-only.
