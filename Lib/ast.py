@@ -625,15 +625,15 @@ class _Unparser(NodeVisitor):
         for subnode in node.body:
             self.traverse(subnode)
 
-    def visit_Expr(self, tree):
+    def visit_Expr(self, node):
         self.fill()
-        self.traverse(tree.value)
+        self.traverse(node.value)
 
-    def visit_NamedExpr(self, tree):
+    def visit_NamedExpr(self, node):
         self.write("(")
-        self.traverse(tree.target)
+        self.traverse(node.target)
         self.write(" := ")
-        self.traverse(tree.value)
+        self.traverse(node.value)
         self.write(")")
 
     def visit_Import(self, node):
