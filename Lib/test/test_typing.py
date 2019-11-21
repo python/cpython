@@ -2778,7 +2778,7 @@ except StopIteration as e:
 
 gth = get_type_hints
 
-class ForRefExample():
+class ForRefExample:
     @ann_module.dec
     def func(self: 'ForRefExample'):
         pass
@@ -2787,6 +2787,7 @@ class ForRefExample():
     @ann_module.dec
     def nested(self: 'ForRefExample'):
         pass
+
 
 class GetTypeHintTests(BaseTestCase):
     def test_get_type_hints_from_various_objects(self):
@@ -2889,6 +2890,7 @@ class GetTypeHintTests(BaseTestCase):
         expects = {'self': ForRefExample}
         self.assertEqual(gth(ForRefExample.func), expects)
         self.assertEqual(gth(ForRefExample.nested), expects)
+
 
 class GetUtilitiesTestCase(TestCase):
     def test_get_origin(self):
