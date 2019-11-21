@@ -93,6 +93,7 @@ Include/pytime.h              @pganssle @abalkin
 /Tools/msi/                   @python/windows-team
 /Tools/nuget/                 @python/windows-team
 
+# Misc
 **/*itertools*                @rhettinger
 **/*collections*              @rhettinger
 **/*random*                   @rhettinger
@@ -107,6 +108,11 @@ Include/pytime.h              @pganssle @abalkin
 **/*idlelib*                  @terryjreedy
 
 **/*typing*                   @gvanrossum @ilevkivskyi
+
+**/*asyncore                  @giampaolo
+**/*asynchat                  @giampaolo
+**/*ftplib                    @giampaolo
+**/*shutil                    @giampaolo
 
 # macOS
 /Mac/                         @python/macos-team
