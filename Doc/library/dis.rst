@@ -710,7 +710,7 @@ iterations of the loop.
 
     Re-raises the exception currently on top of the stack.
 
-    .. versionadded:: 3.8
+    .. versionadded:: 3.9
 
 
 .. opcode:: WITH_EXCEPT_START
@@ -720,7 +720,7 @@ iterations of the loop.
     Used to implement the call ``context_manager.__exit__(*exc_info())`` when an exception
     has occurred in a :keyword:`with` statement.
 
-    .. versionadded:: 3.8
+    .. versionadded:: 3.9
 
 
 .. opcode:: LOAD_ASSERTION_ERROR
