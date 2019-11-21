@@ -187,28 +187,26 @@ def main(args=None):
     if args is None:
         args = sys.argv[1:]
     rv = 0
+    filenames = []
     if args == ['-']:
         while True:
             filename = sys.stdin.readline()
             if not filename:
                 break
             filename = filename.rstrip('\n')
-            try:
-                compile(filename, doraise=True)
-            except PyCompileError as error:
-                rv = 1
-                sys.stderr.write("%s\n" % error.msg)
-            except OSError as error:
-                rv = 1
-                sys.stderr.write("%s\n" % error)
+            filenames.append(filename)
     else:
-        for filename in args:
-            try:
-                compile(filename, doraise=True)
-            except PyCompileError as error:
-                # return value to indicate at least one failure
-                rv = 1
-                sys.stderr.write("%s\n" % error.msg)
+        filenames = args
+    for filename in filenames:
+        try:
+            compile(filename, doraise=True)
+        except PyCompileError as error:
+            # return value to indicate at least one failure
+            rv = 1
+            sys.stderr.write("%s\n" % error.msg)
+        except OSError as error:
+            rv = 1
+            sys.stderr.write("%s\n" % error)
     return rv
 
 if __name__ == "__main__":
