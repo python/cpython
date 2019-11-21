@@ -2397,7 +2397,6 @@ channel_list_interpreters(PyObject *self, PyObject *args, PyObject *kwds)
         PyInterpreterState *interp = _PyInterpreterState_LookUpID(ids[i]);
         PyObject *id_obj = _PyInterpreterState_GetIDObject(interp);
         if (id_obj == NULL) {
-            Py_DECREF(id_obj);
             goto except;
         }
         if (ids[i] == PyInterpreterState_GetID(interp)) {
