@@ -1,13 +1,12 @@
 """Find modules used by a script, using introspection."""
 
 import dis
-import importlib._bootstrap_external
 import importlib.machinery
-import marshal
-import os
+import importlib.util
+import os.path
 import sys
-import types
-import warnings
+import contextlib
+from importlib._bootstrap import _find_spec, _calc___package__
 
 
 LOAD_CONST = dis.opmap['LOAD_CONST']
@@ -17,15 +16,6 @@ STORE_GLOBAL = dis.opmap['STORE_GLOBAL']
 STORE_OPS = STORE_NAME, STORE_GLOBAL
 EXTENDED_ARG = dis.EXTENDED_ARG
 
-# Old imp constants:
-
-_SEARCH_ERROR = 0
-_PY_SOURCE = 1
-_PY_COMPILED = 2
-_C_EXTENSION = 3
-_PKG_DIRECTORY = 5
-_C_BUILTIN = 6
-_PY_FROZEN = 7
 
 # Modulefinder does a good job at simulating Python's, but it can not
 # handle __path__ modifications packages make at runtime.  Therefore there
@@ -51,60 +41,15 @@ def ReplacePackage(oldname, newname):
     replacePackageMap[oldname] = newname
 
 
-def _find_module(name, path=None):
-    """An importlib reimplementation of imp.find_module (for our purposes)."""
-
-    # It's necessary to clear the caches for our Finder first, in case any
-    # modules are being added/deleted/modified at runtime. In particular,
-    # test_modulefinder.py changes file tree contents in a cache-breaking way:
-
-    importlib.machinery.PathFinder.invalidate_caches()
-
-    spec = importlib.machinery.PathFinder.find_spec(name, path)
-
-    if spec is None:
-        raise ImportError("No module named {name!r}".format(name=name), name=name)
-
-    # Some special cases:
-
-    if spec.loader is importlib.machinery.BuiltinImporter:
-        return None, None, ("", "", _C_BUILTIN)
-
-    if spec.loader is importlib.machinery.FrozenImporter:
-        return None, None, ("", "", _PY_FROZEN)
-
-    file_path = spec.origin
-
-    if spec.loader.is_package(name):
-        return None, os.path.dirname(file_path), ("", "", _PKG_DIRECTORY)
-
-    if isinstance(spec.loader, importlib.machinery.SourceFileLoader):
-        kind = _PY_SOURCE
-        mode = "r"
-
-    elif isinstance(spec.loader, importlib.machinery.ExtensionFileLoader):
-        kind = _C_EXTENSION
-        mode = "rb"
-
-    elif isinstance(spec.loader, importlib.machinery.SourcelessFileLoader):
-        kind = _PY_COMPILED
-        mode = "rb"
-
-    else:  # Should never happen.
-        return None, None, ("", "", _SEARCH_ERROR)
-
-    file = open(file_path, mode)
-    suffix = os.path.splitext(file_path)[-1]
-
-    return file, file_path, (suffix, mode, kind)
-
-
 class Module:
-
-    def __init__(self, name, file=None, path=None):
+    # It's necessary to have our own module objects, since the real modules
+    # might get upset when setting globalnames and starimports.
+    def __init__(self, name, module):
         self.__name__ = name
-        self.__file__ = file
-        self.__path__ = path
+        self.module = module
+        self.__file__ = getattr(module, "__file__", None)
+        if hasattr(module, "__path__"):
+            self.__path__ = module.__path__
         self.__code__ = None
         # The set of global names that are assigned to in the module.
         # This includes those names imported through starimports of
@@ -118,10 +63,11 @@ class Module:
         s = "Module(%r" % (self.__name__,)
         if self.__file__ is not None:
             s = s + ", %r" % (self.__file__,)
-        if self.__path__ is not None:
+        if hasattr(self, "__path__"):
             s = s + ", %r" % (self.__path__,)
         s = s + ")"
         return s
+
 
 class ModuleFinder:
 
@@ -136,6 +82,7 @@ class ModuleFinder:
         self.excludes = excludes if excludes is not None else []
         self.replace_paths = replace_paths if replace_paths is not None else []
         self.processed_paths = []   # Used in debugging only
+        self.updated_modules = []
 
     def msg(self, level, str, *args):
         if level <= self.debug:
@@ -158,65 +105,74 @@ class ModuleFinder:
             self.indent = self.indent - 1
             self.msg(*args)
 
+    @contextlib.contextmanager
+    def _fix_sys(self):
+        # We change sys.path and sys.modules so that the machinery
+        # can work correctly. Note that finders and loaders that import things
+        # for their own execution will entirely stop working, but there's very
+        # little we can do about that.
+        old_path = sys.path
+        sys.path = self.path
+        try:
+            yield
+        finally:
+            sys.path = old_path
+
+            for name in self.updated_modules:
+                del sys.modules[name]
+
     def run_script(self, pathname):
         self.msg(2, "run_script", pathname)
-        with open(pathname) as fp:
-            stuff = ("", "r", _PY_SOURCE)
-            self.load_module('__main__', fp, pathname, stuff)
+        with self._fix_sys():
+            spec = importlib.util.spec_from_file_location("__main__", pathname)
+            self.load_module("__main__", spec)
 
     def load_file(self, pathname):
         dir, name = os.path.split(pathname)
         name, ext = os.path.splitext(name)
-        with open(pathname) as fp:
-            stuff = (ext, "r", _PY_SOURCE)
-            self.load_module(name, fp, pathname, stuff)
-
-    def import_hook(self, name, caller=None, fromlist=None, level=-1):
-        self.msg(3, "import_hook", name, caller, fromlist, level)
+        with self._fix_sys():
+            spec = importlib.util.spec_from_file_location(name, pathname)
+            self.load_module(name, spec)
+        
+    def _import_with_fixed_sys(self, name, caller=None, fromlist=None, level=0):
         parent = self.determine_parent(caller, level=level)
         q, tail = self.find_head_package(parent, name)
         m = self.load_tail(q, tail)
         if not fromlist:
             return q
-        if m.__path__:
+        if hasattr(m, "__path__"):
             self.ensure_fromlist(m, fromlist)
         return None
 
-    def determine_parent(self, caller, level=-1):
+    def import_hook(self, name, caller=None, fromlist=None, level=0):
+        self.msg(3, "import_hook", name, caller, fromlist, level)
+        with self._fix_sys():
+            self._import_with_fixed_sys(name, caller, fromlist, level)
+
+    def determine_parent(self, caller, level=0):
         self.msgin(4, "determine_parent", caller, level)
         if not caller or level == 0:
             self.msgout(4, "determine_parent -> None")
             return None
-        pname = caller.__name__
-        if level >= 1: # relative import
-            if caller.__path__:
-                level -= 1
-            if level == 0:
-                parent = self.modules[pname]
-                assert parent is caller
-                self.msgout(4, "determine_parent ->", parent)
-                return parent
-            if pname.count(".") < level:
-                raise ImportError("relative importpath too deep")
-            pname = ".".join(pname.split(".")[:-level])
+        if level < 0:
+            raise ValueError('level must be >= 0')
+        
+        # If we got this far, it's a relative import.
+        pname = _calc___package__(caller.module.__dict__)
+        if not isinstance(pname, str):
+            raise TypeError('__package__ not set to a string')
+        
+        if level == 1:
             parent = self.modules[pname]
             self.msgout(4, "determine_parent ->", parent)
             return parent
-        if caller.__path__:
-            parent = self.modules[pname]
-            assert caller is parent
-            self.msgout(4, "determine_parent ->", parent)
-            return parent
-        if '.' in pname:
-            i = pname.rfind('.')
-            pname = pname[:i]
-            parent = self.modules[pname]
-            assert parent.__name__ == pname
-            self.msgout(4, "determine_parent ->", parent)
-            return parent
-        self.msgout(4, "determine_parent -> None")
-        return None
-
+        if pname.count(".") < level-1:
+            raise ImportError("relative importpath too deep")
+        pname = ".".join(pname.split(".")[:-level+1])
+        parent = self.modules[pname]
+        self.msgout(4, "determine_parent ->", parent)
+        return parent
+    
     def find_head_package(self, parent, name):
         self.msgin(4, "find_head_package", parent, name)
         if '.' in name:
@@ -274,12 +230,15 @@ class ModuleFinder:
                     raise ImportError("No module named " + subname)
 
     def find_all_submodules(self, m):
-        if not m.__path__:
+        if not hasattr(m, "__path__"):
             return
         modules = {}
         # 'suffixes' used to be a list hardcoded to [".py", ".pyc"].
         # But we must also collect Python extension modules - although
         # we cannot separate normal dlls from Python extensions.
+        # Some loaders may also accept files with unusual suffixes,
+        # or even avoid using the file system at all.
+        # We will have to make a few assumptions here.
         suffixes = []
         suffixes += importlib.machinery.EXTENSION_SUFFIXES[:]
         suffixes += importlib.machinery.SOURCE_SUFFIXES[:]
@@ -313,46 +272,53 @@ class ModuleFinder:
         if fqname in self.badmodules:
             self.msgout(3, "import_module -> None")
             return None
-        if parent and parent.__path__ is None:
+        if parent and not hasattr(parent, "__path__"):
             self.msgout(3, "import_module -> None")
             return None
         try:
-            fp, pathname, stuff = self.find_module(partname,
-                                                   parent and parent.__path__, parent)
-        except ImportError:
+            spec = self.find_module(partname, parent and parent.__path__, parent)
+        except Exception:
             self.msgout(3, "import_module ->", None)
             return None
-        try:
-            m = self.load_module(fqname, fp, pathname, stuff)
-        finally:
-            if fp:
-                fp.close()
+        m = self.load_module(fqname, spec)
         if parent:
             setattr(parent, partname, m)
         self.msgout(3, "import_module ->", m)
         return m
-
-    def load_module(self, fqname, fp, pathname, file_info):
-        suffix, mode, type = file_info
-        self.msgin(2, "load_module", fqname, fp and "fp", pathname)
-        if type == _PKG_DIRECTORY:
-            m = self.load_package(fqname, pathname)
-            self.msgout(2, "load_module ->", m)
-            return m
-        if type == _PY_SOURCE:
-            co = compile(fp.read()+'\n', pathname, 'exec')
-        elif type == _PY_COMPILED:
+    
+    def load_module(self, name, spec):
+        self.msgin(2, "load_module", name, spec)
+        newname = replacePackageMap.get(name)
+        if not newname:
+            newname = name
+        if newname in self.modules:
+            return self.modules[newname]
+        m = self.add_module(newname, spec)
+        
+        loader = spec.loader # None for namespace packages.
+        if hasattr(loader, "get_code"):
             try:
-                data = fp.read()
-                importlib._bootstrap_external._classify_pyc(data, fqname, {})
-            except ImportError as exc:
-                self.msgout(2, "raise ImportError: " + str(exc), pathname)
+                # Note: this may return None to indicate no code could be found
+                # (for a legitimate reason, not due to an error).
+                co = loader.get_code(name)
+            except Exception as exc:
+                self.msgout(2, "raise", type(exc).__name__ + ": " + str(exc),
+                            spec.origin)
+                del self.modules[newname]
+                if self.updated_modules[-1] == newname:
+                    del self.updated_modules[-1]
+                    del sys.modules[newname]
                 raise
-            co = marshal.loads(memoryview(data)[16:])
         else:
             co = None
-        m = self.add_module(fqname)
-        m.__file__ = pathname
+            
+        # As per comment at top of file, simulate runtime __path__ additions.
+        path_extensions = packagePathMap.get(name, [])
+        # We use append instead of +, because
+        # namespace paths do not support adding lists.
+        for folder in path_extensions:
+            m.__path__.append(folder)
+        
         if co:
             if self.replace_paths:
                 co = self.replace_paths_in_code(co)
@@ -369,18 +335,14 @@ class ModuleFinder:
         else:
             self.badmodules[name]["-"] = 1
 
-    def _safe_import_hook(self, name, caller, fromlist, level=-1):
-        # wrapper for self.import_hook() that won't raise ImportError
+    def _safe_import_hook(self, name, caller, fromlist, level=0):
         if name in self.badmodules:
             self._add_badmodule(name, caller)
             return
         try:
-            self.import_hook(name, caller, level=level)
-        except ImportError as msg:
-            self.msg(2, "ImportError:", str(msg))
-            self._add_badmodule(name, caller)
-        except SyntaxError as msg:
-            self.msg(2, "SyntaxError:", str(msg))
+            self._import_with_fixed_sys(name, caller, level=level)
+        except Exception as msg:
+            self.msg(2, type(msg).__name__ + ":", str(msg))
             self._add_badmodule(name, caller)
         else:
             if fromlist:
@@ -390,9 +352,12 @@ class ModuleFinder:
                         self._add_badmodule(fullname, caller)
                         continue
                     try:
-                        self.import_hook(name, caller, [sub], level=level)
-                    except ImportError as msg:
-                        self.msg(2, "ImportError:", str(msg))
+                        self._import_with_fixed_sys(name,
+                                                    caller,
+                                                    [sub],
+                                                    level=level)
+                    except Exception as msg:
+                        self.msg(2, type(msg).__name__ + ":", str(msg))
                         self._add_badmodule(fullname, caller)
 
     def scan_opcodes(self, co):
@@ -436,7 +401,7 @@ class ModuleFinder:
                     # the code has already been parsed and we can suck out the
                     # global names.
                     mm = None
-                    if m.__path__:
+                    if hasattr(m, "__path__"):
                         # At this point we don't know whether 'name' is a
                         # submodule of 'm' or a global module. Let's just try
                         # the full name first.
@@ -461,40 +426,18 @@ class ModuleFinder:
                 # We don't expect anything else from the generator.
                 raise RuntimeError(what)
 
-        for c in co.co_consts:
-            if isinstance(c, type(co)):
-                self.scan_code(c, m)
-
-    def load_package(self, fqname, pathname):
-        self.msgin(2, "load_package", fqname, pathname)
-        newname = replacePackageMap.get(fqname)
-        if newname:
-            fqname = newname
-        m = self.add_module(fqname)
-        m.__file__ = pathname
-        m.__path__ = [pathname]
-
-        # As per comment at top of file, simulate runtime __path__ additions.
-        m.__path__ = m.__path__ + packagePathMap.get(fqname, [])
-
-        fp, buf, stuff = self.find_module("__init__", m.__path__)
-        try:
-            self.load_module(fqname, fp, buf, stuff)
-            self.msgout(2, "load_package ->", m)
-            return m
-        finally:
-            if fp:
-                fp.close()
-
-    def add_module(self, fqname):
-        if fqname in self.modules:
-            return self.modules[fqname]
-        self.modules[fqname] = m = Module(fqname)
+    def add_module(self, name, spec):
+        real_m = importlib.util.module_from_spec(spec)
+        
+        if name not in sys.modules:
+            sys.modules[name] = real_m
+            self.updated_modules.append(name)
+        
+        self.modules[name] = m = Module(name, real_m)
         return m
 
     def find_module(self, name, path, parent=None):
         if parent is not None:
-            # assert path is not None
             fullname = parent.__name__+'.'+name
         else:
             fullname = name
@@ -502,13 +445,15 @@ class ModuleFinder:
             self.msgout(3, "find_module -> Excluded", fullname)
             raise ImportError(name)
 
-        if path is None:
-            if name in sys.builtin_module_names:
-                return (None, None, ("", "", _C_BUILTIN))
-
-            path = self.path
-
-        return _find_module(name, path)
+        # We don't use the public function util.find_spec here
+        # because it tries to obtain the path by importing the parent,
+        # which we don't want it to do.
+        spec = _find_spec(fullname, path)
+        
+        if spec is None:
+            raise ImportError("No module named {name!r}".format(name=fullname),
+                              name=fullname)
+        return spec
 
     def report(self):
         """Print a report to stdout, listing the found modules with their
@@ -521,7 +466,7 @@ class ModuleFinder:
         keys = sorted(self.modules.keys())
         for key in keys:
             m = self.modules[key]
-            if m.__path__:
+            if hasattr(m, "__path__"):
                 print("P", end=' ')
             else:
                 print("m", end=' ')
@@ -559,7 +504,7 @@ class ModuleFinder:
 
         The reason it can't always be determined is that it's impossible to
         tell which names are imported when "from module import *" is done
-        with an extension module, short of actually importing it.
+        from a module without associated code, short of actually importing it.
         """
         missing = []
         maybe = []
@@ -583,7 +528,7 @@ class ModuleFinder:
                     pass
                 elif pkg.starimports:
                     # It could be missing, but the package did an "import *"
-                    # from a non-Python module, so we simply can't be sure.
+                    # from a module without code, so we simply can't be sure.
                     maybe.append(name)
                 else:
                     # It's not a global in the package, the package didn't
