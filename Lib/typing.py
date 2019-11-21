@@ -1234,7 +1234,11 @@ def get_type_hints(obj, globalns=None, localns=None):
         if isinstance(obj, types.ModuleType):
             globalns = obj.__dict__
         else:
-            globalns = getattr(obj, '__globals__', {})
+            nsobj = obj
+            # Find globalns for the unwrapped object.
+            while hasattr(nsobj, '__wrapped__'):
+                nsobj = nsobj.__wrapped__
+            globalns = getattr(nsobj, '__globals__', {})
         if localns is None:
             localns = globalns
     elif localns is None:
