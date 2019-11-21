@@ -25,7 +25,6 @@
     :license: Python License.
 """
 import sys
-import io
 from _ast import *
 from contextlib import contextmanager
 
@@ -564,14 +563,10 @@ class _Unparser(NodeVisitor):
     output source code for the abstract syntax; original formatting
     is disregarded."""
 
-    def __init__(self, tree, file = sys.stdout):
-        """Unparser(tree, file=sys.stdout) -> None.
-         Print the source for tree to file."""
-        self.f = file
+    def __init__(self):
+        self._source = []
+        self._buffer = []
         self._indent = 0
-        self.visit(tree)
-        print("", file=self.f)
-        self.f.flush()
 
     def interleave(self, inter, f, seq):
         """Call f on each item in seq, calling inter() in between."""
@@ -586,46 +581,64 @@ class _Unparser(NodeVisitor):
                 f(x)
 
     def fill(self, text = ""):
-        "Indent a piece of text, according to the current indentation level"
-        self.f.write("\n"+"    "*self._indent + text)
+        """Indent a piece of text and append it, according to the current
+        indentation level"""
+        self.write("\n"+"    "*self._indent + text)
 
     def write(self, text):
-        "Append a piece of text to the current line."
-        self.f.write(text)
+        """Append a piece of text"""
+        self._source.append(text)
+
+    def buffer_writer(self, text):
+        self._buffer.append(text)
+
+    @property
+    def buffer(self):
+        value = "".join(self._buffer)
+        self._buffer.clear()
+        return value
 
     @contextmanager
     def enter(self):
-        "Print ':', and increase the indentation."
+        """A context manager for printing ':' and increasing the indentation,
+        after exiting from context it will decrease the indentation."""
         self.write(":")
         self._indent += 1
         yield
         self._indent -= 1
 
-    def visit(self, node):
+    def traverse(self, node):
         if isinstance(node, list):
             for item in node:
                 super().visit(item)
         else:
             super().visit(node)
 
+    def visit(self, node):
+        """Outputs a source code that can be converted again and generate
+        the same AST with given tree."""
+        self._source = []
+        self.traverse(node)
+        return "".join(self._source)
+
     def visit_Module(self, node):
         for subnode in node.body:
-            self.visit(subnode)
+            self.traverse(subnode)
 
     def visit_Expr(self, tree):
         self.fill()
-        self.visit(tree.value)
+        self.traverse(tree.value)
 
     def visit_NamedExpr(self, tree):
         self.write("(")
-        self.visit(tree.target)
+        self.traverse(tree.target)
         self.write(" := ")
-        self.visit(tree.value)
+        self.traverse(tree.value)
         self.write(")")
 
     def visit_Import(self, node):
         self.fill("import ")
-        self.interleave(lambda: self.write(", "), self.visit, node.names)
+        self.interleave(lambda: self.write(", "), self.traverse, node.names)
 
     def visit_ImportFrom(self, node):
         self.fill("from ")
@@ -633,39 +646,39 @@ class _Unparser(NodeVisitor):
         if node.module:
             self.write(node.module)
         self.write(" import ")
-        self.interleave(lambda: self.write(", "), self.visit, node.names)
+        self.interleave(lambda: self.write(", "), self.traverse, node.names)
 
     def visit_Assign(self, node):
         self.fill()
         for target in node.targets:
-            self.visit(target)
+            self.traverse(target)
             self.write(" = ")
-        self.visit(node.value)
+        self.traverse(node.value)
 
     def visit_AugAssign(self, node):
         self.fill()
-        self.visit(node.target)
+        self.traverse(node.target)
         self.write(" "+self.binop[node.op.__class__.__name__]+"= ")
-        self.visit(node.value)
+        self.traverse(node.value)
 
     def visit_AnnAssign(self, node):
         self.fill()
         if not node.simple and isinstance(node.target, Name):
             self.write('(')
-        self.visit(node.target)
+        self.traverse(node.target)
         if not node.simple and isinstance(node.target, Name):
             self.write(')')
         self.write(": ")
-        self.visit(node.annotation)
+        self.traverse(node.annotation)
         if node.value:
             self.write(" = ")
-            self.visit(node.value)
+            self.traverse(node.value)
 
     def visit_Return(self, node):
         self.fill("return")
         if node.value:
             self.write(" ")
-            self.visit(node.value)
+            self.traverse(node.value)
 
     def visit_Pass(self, node):
         self.fill("pass")
@@ -678,14 +691,14 @@ class _Unparser(NodeVisitor):
 
     def visit_Delete(self, node):
         self.fill("del ")
-        self.interleave(lambda: self.write(", "), self.visit, node.targets)
+        self.interleave(lambda: self.write(", "), self.traverse, node.targets)
 
     def visit_Assert(self, node):
         self.fill("assert ")
-        self.visit(node.test)
+        self.traverse(node.test)
         if node.msg:
             self.write(", ")
-            self.visit(node.msg)
+            self.traverse(node.msg)
 
     def visit_Global(self, node):
         self.fill("global ")
@@ -700,7 +713,7 @@ class _Unparser(NodeVisitor):
         self.write("await")
         if node.value:
             self.write(" ")
-            self.visit(node.value)
+            self.traverse(node.value)
         self.write(")")
 
     def visit_Yield(self, node):
@@ -708,7 +721,7 @@ class _Unparser(NodeVisitor):
         self.write("yield")
         if node.value:
             self.write(" ")
-            self.visit(node.value)
+            self.traverse(node.value)
         self.write(")")
 
     def visit_YieldFrom(self, node):
@@ -716,7 +729,7 @@ class _Unparser(NodeVisitor):
         self.write("yield from")
         if node.value:
             self.write(" ")
-            self.visit(node.value)
+            self.traverse(node.value)
         self.write(")")
 
     def visit_Raise(self, node):
@@ -726,42 +739,42 @@ class _Unparser(NodeVisitor):
                 raise ValueError(f"Node can't use cause without an exception.")
             return
         self.write(" ")
-        self.visit(node.exc)
+        self.traverse(node.exc)
         if node.cause:
             self.write(" from ")
-            self.visit(node.cause)
+            self.traverse(node.cause)
 
     def visit_Try(self, node):
         self.fill("try")
         with self.enter():
-            self.visit(node.body)
+            self.traverse(node.body)
         for ex in node.handlers:
-            self.visit(ex)
+            self.traverse(ex)
         if node.orelse:
             self.fill("else")
             with self.enter():
-                self.visit(node.orelse)
+                self.traverse(node.orelse)
         if node.finalbody:
             self.fill("finally")
             with self.enter():
-                self.visit(node.finalbody)
+                self.traverse(node.finalbody)
 
     def visit_ExceptHandler(self, node):
         self.fill("except")
         if node.type:
             self.write(" ")
-            self.visit(node.type)
+            self.traverse(node.type)
         if node.name:
             self.write(" as ")
             self.write(node.name)
         with self.enter():
-            self.visit(node.body)
+            self.traverse(node.body)
 
     def visit_ClassDef(self, node):
         self.write("\n")
         for deco in node.decorator_list:
             self.fill("@")
-            self.visit(deco)
+            self.traverse(deco)
         self.fill("class "+node.name)
         self.write("(")
         comma = False
@@ -770,17 +783,17 @@ class _Unparser(NodeVisitor):
                 self.write(", ")
             else:
                 comma = True
-            self.visit(e)
+            self.traverse(e)
         for e in node.keywords:
             if comma:
                 self.write(", ")
             else:
                 comma = True
-            self.visit(e)
+            self.traverse(e)
         self.write(")")
 
         with self.enter():
-            self.visit(node.body)
+            self.traverse(node.body)
 
     def visit_FunctionDef(self, node):
         self.__FunctionDef_helper(node, "def")
@@ -792,16 +805,16 @@ class _Unparser(NodeVisitor):
         self.write("\n")
         for deco in node.decorator_list:
             self.fill("@")
-            self.visit(deco)
+            self.traverse(deco)
         def_str = fill_suffix+" "+node.name + "("
         self.fill(def_str)
-        self.visit(node.args)
+        self.traverse(node.args)
         self.write(")")
         if node.returns:
             self.write(" -> ")
-            self.visit(node.returns)
+            self.traverse(node.returns)
         with self.enter():
-            self.visit(node.body)
+            self.traverse(node.body)
 
     def visit_For(self, node):
         self.__For_helper("for ", node)
@@ -811,68 +824,66 @@ class _Unparser(NodeVisitor):
 
     def __For_helper(self, fill, node):
         self.fill(fill)
-        self.visit(node.target)
+        self.traverse(node.target)
         self.write(" in ")
-        self.visit(node.iter)
+        self.traverse(node.iter)
         with self.enter():
-            self.visit(node.body)
+            self.traverse(node.body)
         if node.orelse:
             self.fill("else")
             with self.enter():
-                self.visit(node.orelse)
+                self.traverse(node.orelse)
 
     def visit_If(self, node):
         self.fill("if ")
-        self.visit(node.test)
+        self.traverse(node.test)
         with self.enter():
-            self.visit(node.body)
+            self.traverse(node.body)
         # collapse nested ifs into equivalent elifs.
         while (node.orelse and len(node.orelse) == 1 and
                isinstance(node.orelse[0], If)):
             node = node.orelse[0]
             self.fill("elif ")
-            self.visit(node.test)
+            self.traverse(node.test)
             with self.enter():
-                self.visit(node.body)
+                self.traverse(node.body)
         # final else
         if node.orelse:
             self.fill("else")
             with self.enter():
-                self.visit(node.orelse)
+                self.traverse(node.orelse)
 
     def visit_While(self, node):
         self.fill("while ")
-        self.visit(node.test)
+        self.traverse(node.test)
         with self.enter():
-            self.visit(node.body)
+            self.traverse(node.body)
         if node.orelse:
             self.fill("else")
             with self.enter():
-                self.visit(node.orelse)
+                self.traverse(node.orelse)
 
     def visit_With(self, node):
         self.fill("with ")
-        self.interleave(lambda: self.write(", "), self.visit, node.items)
+        self.interleave(lambda: self.write(", "), self.traverse, node.items)
         with self.enter():
-            self.visit(node.body)
+            self.traverse(node.body)
 
     def visit_AsyncWith(self, node):
         self.fill("async with ")
-        self.interleave(lambda: self.write(", "), self.visit, node.items)
+        self.interleave(lambda: self.write(", "), self.traverse, node.items)
         with self.enter():
-            self.visit(node.body)
+            self.traverse(node.body)
 
     def visit_JoinedStr(self, node):
         self.write("f")
-        string = io.StringIO()
-        self._fstring_JoinedStr(node, string.write)
-        self.write(repr(string.getvalue()))
+        self._fstring_JoinedStr(node, self.buffer_writer)
+        self.write(repr(self.buffer))
 
     def visit_FormattedValue(self, node):
         self.write("f")
-        string = io.StringIO()
-        self._fstring_FormattedValue(node, string.write)
-        self.write(repr(string.getvalue()))
+        self._fstring_FormattedValue(node, self.buffer_writer)
+        self.write(repr(self.buffer))
 
     def _fstring_JoinedStr(self, node, write):
         for value in node.values:
@@ -887,9 +898,7 @@ class _Unparser(NodeVisitor):
 
     def _fstring_FormattedValue(self, node, write):
         write("{")
-        expr = io.StringIO()
-        _Unparser(node.value, expr)
-        expr = expr.getvalue().rstrip("\n")
+        expr = type(self)().visit(node.value).rstrip("\n")
         if expr.startswith("{"):
             write(" ")  # Separate pair of opening brackets as "{ {"
         write(expr)
@@ -933,37 +942,37 @@ class _Unparser(NodeVisitor):
 
     def visit_List(self, node):
         self.write("[")
-        self.interleave(lambda: self.write(", "), self.visit, node.elts)
+        self.interleave(lambda: self.write(", "), self.traverse, node.elts)
         self.write("]")
 
     def visit_ListComp(self, node):
         self.write("[")
-        self.visit(node.elt)
+        self.traverse(node.elt)
         for gen in node.generators:
-            self.visit(gen)
+            self.traverse(gen)
         self.write("]")
 
     def visit_GeneratorExp(self, node):
         self.write("(")
-        self.visit(node.elt)
+        self.traverse(node.elt)
         for gen in node.generators:
-            self.visit(gen)
+            self.traverse(gen)
         self.write(")")
 
     def visit_SetComp(self, node):
         self.write("{")
-        self.visit(node.elt)
+        self.traverse(node.elt)
         for gen in node.generators:
-            self.visit(gen)
+            self.traverse(gen)
         self.write("}")
 
     def visit_DictComp(self, node):
         self.write("{")
-        self.visit(node.key)
+        self.traverse(node.key)
         self.write(": ")
-        self.visit(node.value)
+        self.traverse(node.value)
         for gen in node.generators:
-            self.visit(gen)
+            self.traverse(gen)
         self.write("}")
 
     def visit_comprehension(self, node):
@@ -971,35 +980,35 @@ class _Unparser(NodeVisitor):
             self.write(" async for ")
         else:
             self.write(" for ")
-        self.visit(node.target)
+        self.traverse(node.target)
         self.write(" in ")
-        self.visit(node.iter)
+        self.traverse(node.iter)
         for if_clause in node.ifs:
             self.write(" if ")
-            self.visit(if_clause)
+            self.traverse(if_clause)
 
     def visit_IfExp(self, node):
         self.write("(")
-        self.visit(node.body)
+        self.traverse(node.body)
         self.write(" if ")
-        self.visit(node.test)
+        self.traverse(node.test)
         self.write(" else ")
-        self.visit(node.orelse)
+        self.traverse(node.orelse)
         self.write(")")
 
     def visit_Set(self, node):
         if not node.elts:
             raise ValueError("Set node should has at least one item")
         self.write("{")
-        self.interleave(lambda: self.write(", "), self.visit, node.elts)
+        self.interleave(lambda: self.write(", "), self.traverse, node.elts)
         self.write("}")
 
     def visit_Dict(self, node):
         self.write("{")
         def write_key_value_pair(k, v):
-            self.visit(k)
+            self.traverse(k)
             self.write(": ")
-            self.visit(v)
+            self.traverse(v)
 
         def write_item(item):
             k, v = item
@@ -1007,7 +1016,7 @@ class _Unparser(NodeVisitor):
                 # for dictionary unpacking operator in dicts {**{'y': 2}}
                 # see PEP 448 for details
                 self.write("**")
-                self.visit(v)
+                self.traverse(v)
             else:
                 write_key_value_pair(k, v)
         self.interleave(lambda: self.write(", "), write_item, zip(node.keys, node.values))
@@ -1017,10 +1026,10 @@ class _Unparser(NodeVisitor):
         self.write("(")
         if len(node.elts) == 1:
             elt = node.elts[0]
-            self.visit(elt)
+            self.traverse(elt)
             self.write(",")
         else:
-            self.interleave(lambda: self.write(", "), self.visit, node.elts)
+            self.interleave(lambda: self.write(", "), self.traverse, node.elts)
         self.write(")")
 
     unop = {"Invert":"~", "Not": "not", "UAdd":"+", "USub":"-"}
@@ -1028,7 +1037,7 @@ class _Unparser(NodeVisitor):
         self.write("(")
         self.write(self.unop[node.op.__class__.__name__])
         self.write(" ")
-        self.visit(node.operand)
+        self.traverse(node.operand)
         self.write(")")
 
     binop = { "Add":"+", "Sub":"-", "Mult":"*", "MatMult":"@", "Div":"/", "Mod":"%",
@@ -1036,30 +1045,30 @@ class _Unparser(NodeVisitor):
                     "FloorDiv":"//", "Pow": "**"}
     def visit_BinOp(self, node):
         self.write("(")
-        self.visit(node.left)
+        self.traverse(node.left)
         self.write(" " + self.binop[node.op.__class__.__name__] + " ")
-        self.visit(node.right)
+        self.traverse(node.right)
         self.write(")")
 
     cmpops = {"Eq":"==", "NotEq":"!=", "Lt":"<", "LtE":"<=", "Gt":">", "GtE":">=",
                         "Is":"is", "IsNot":"is not", "In":"in", "NotIn":"not in"}
     def visit_Compare(self, node):
         self.write("(")
-        self.visit(node.left)
+        self.traverse(node.left)
         for o, e in zip(node.ops, node.comparators):
             self.write(" " + self.cmpops[o.__class__.__name__] + " ")
-            self.visit(e)
+            self.traverse(e)
         self.write(")")
 
     boolops = {And: 'and', Or: 'or'}
     def visit_BoolOp(self, node):
         self.write("(")
         s = " %s " % self.boolops[node.op.__class__]
-        self.interleave(lambda: self.write(s), self.visit, node.values)
+        self.interleave(lambda: self.write(s), self.traverse, node.values)
         self.write(")")
 
     def visit_Attribute(self,node):
-        self.visit(node.value)
+        self.traverse(node.value)
         # Special case: 3.__abs__() is a syntax error, so if node.value
         # is an integer literal then we need to either parenthesize
         # it or add an extra space to get 3 .__abs__().
@@ -1069,53 +1078,53 @@ class _Unparser(NodeVisitor):
         self.write(node.attr)
 
     def visit_Call(self, node):
-        self.visit(node.func)
+        self.traverse(node.func)
         self.write("(")
         comma = False
         for e in node.args:
             if comma: self.write(", ")
             else: comma = True
-            self.visit(e)
+            self.traverse(e)
         for e in node.keywords:
             if comma: self.write(", ")
             else: comma = True
-            self.visit(e)
+            self.traverse(e)
         self.write(")")
 
     def visit_Subscript(self, node):
-        self.visit(node.value)
+        self.traverse(node.value)
         self.write("[")
-        self.visit(node.slice)
+        self.traverse(node.slice)
         self.write("]")
 
     def visit_Starred(self, node):
         self.write("*")
-        self.visit(node.value)
+        self.traverse(node.value)
 
     def visit_Ellipsis(self, node):
         self.write("...")
 
     def visit_Index(self, node):
-        self.visit(node.value)
+        self.traverse(node.value)
 
     def visit_Slice(self, node):
         if node.lower:
-            self.visit(node.lower)
+            self.traverse(node.lower)
         self.write(":")
         if node.upper:
-            self.visit(node.upper)
+            self.traverse(node.upper)
         if node.step:
             self.write(":")
-            self.visit(node.step)
+            self.traverse(node.step)
 
     def visit_ExtSlice(self, node):
-        self.interleave(lambda: self.write(', '), self.visit, node.dims)
+        self.interleave(lambda: self.write(', '), self.traverse, node.dims)
 
     def visit_arg(self, node):
         self.write(node.arg)
         if node.annotation:
             self.write(": ")
-            self.visit(node.annotation)
+            self.traverse(node.annotation)
 
     def visit_arguments(self, node):
         first = True
@@ -1128,10 +1137,10 @@ class _Unparser(NodeVisitor):
                 first = False
             else:
                 self.write(", ")
-            self.visit(a)
+            self.traverse(a)
             if d:
                 self.write("=")
-                self.visit(d)
+                self.traverse(d)
             if index == len(node.posonlyargs):
                 self.write(", /")
 
@@ -1146,7 +1155,7 @@ class _Unparser(NodeVisitor):
                 self.write(node.vararg.arg)
                 if node.vararg.annotation:
                     self.write(": ")
-                    self.visit(node.vararg.annotation)
+                    self.traverse(node.vararg.annotation)
 
         # keyword-only arguments
         if node.kwonlyargs:
@@ -1155,10 +1164,10 @@ class _Unparser(NodeVisitor):
                     first = False
                 else:
                     self.write(", ")
-                self.visit(a),
+                self.traverse(a),
                 if d:
                     self.write("=")
-                    self.visit(d)
+                    self.traverse(d)
 
         # kwargs
         if node.kwarg:
@@ -1169,7 +1178,7 @@ class _Unparser(NodeVisitor):
             self.write("**"+node.kwarg.arg)
             if node.kwarg.annotation:
                 self.write(": ")
-                self.visit(node.kwarg.annotation)
+                self.traverse(node.kwarg.annotation)
 
     def visit_keyword(self, node):
         if node.arg is None:
@@ -1177,14 +1186,14 @@ class _Unparser(NodeVisitor):
         else:
             self.write(node.arg)
             self.write("=")
-        self.visit(node.value)
+        self.traverse(node.value)
 
     def visit_Lambda(self, node):
         self.write("(")
         self.write("lambda ")
-        self.visit(node.args)
+        self.traverse(node.args)
         self.write(": ")
-        self.visit(node.body)
+        self.traverse(node.body)
         self.write(")")
 
     def visit_alias(self, node):
@@ -1193,16 +1202,15 @@ class _Unparser(NodeVisitor):
             self.write(" as "+node.asname)
 
     def visit_withitem(self, node):
-        self.visit(node.context_expr)
+        self.traverse(node.context_expr)
         if node.optional_vars:
             self.write(" as ")
-            self.visit(node.optional_vars)
+            self.traverse(node.optional_vars)
 
 
-def unparse(ast_obj,):
-    string = io.StringIO()
-    _Unparser(ast_obj, string)
-    return string.getvalue()
+def unparse(ast_obj):
+    unparser = _Unparser()
+    return unparser.visit(ast_obj)
 
 
 def main():
