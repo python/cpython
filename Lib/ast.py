@@ -556,25 +556,13 @@ _const_node_type_names = {
 
 # Large float and imaginary literals get turned into infinities in the AST.
 # We unparse those infinities to INFSTR.
-INFSTR = "1e" + repr(sys.float_info.max_10_exp + 1)
+_INFSTR = "1e" + repr(sys.float_info.max_10_exp + 1)
 
-def interleave(inter, f, seq):
-    """Call f on each item in seq, calling inter() in between.
-    """
-    seq = iter(seq)
-    try:
-        f(next(seq))
-    except StopIteration:
-        pass
-    else:
-        for x in seq:
-            inter()
-            f(x)
 
 class _Unparser(NodeVisitor):
     """Methods in this class recursively traverse an AST and
     output source code for the abstract syntax; original formatting
-    is disregarded. """
+    is disregarded."""
 
     def __init__(self, tree, file = sys.stdout):
         """Unparser(tree, file=sys.stdout) -> None.
@@ -584,6 +572,18 @@ class _Unparser(NodeVisitor):
         self.visit(tree)
         print("", file=self.f)
         self.f.flush()
+
+    def interleave(self, inter, f, seq):
+        """Call f on each item in seq, calling inter() in between."""
+        seq = iter(seq)
+        try:
+            f(next(seq))
+        except StopIteration:
+            pass
+        else:
+            for x in seq:
+                inter()
+                f(x)
 
     def fill(self, text = ""):
         "Indent a piece of text, according to the current indentation level"
@@ -625,7 +625,7 @@ class _Unparser(NodeVisitor):
 
     def visit_Import(self, node):
         self.fill("import ")
-        interleave(lambda: self.write(", "), self.visit, node.names)
+        self.interleave(lambda: self.write(", "), self.visit, node.names)
 
     def visit_ImportFrom(self, node):
         self.fill("from ")
@@ -633,7 +633,7 @@ class _Unparser(NodeVisitor):
         if node.module:
             self.write(node.module)
         self.write(" import ")
-        interleave(lambda: self.write(", "), self.visit, node.names)
+        self.interleave(lambda: self.write(", "), self.visit, node.names)
 
     def visit_Assign(self, node):
         self.fill()
@@ -678,7 +678,7 @@ class _Unparser(NodeVisitor):
 
     def visit_Delete(self, node):
         self.fill("del ")
-        interleave(lambda: self.write(", "), self.visit, node.targets)
+        self.interleave(lambda: self.write(", "), self.visit, node.targets)
 
     def visit_Assert(self, node):
         self.fill("assert ")
@@ -689,11 +689,11 @@ class _Unparser(NodeVisitor):
 
     def visit_Global(self, node):
         self.fill("global ")
-        interleave(lambda: self.write(", "), self.write, node.names)
+        self.interleave(lambda: self.write(", "), self.write, node.names)
 
     def visit_Nonlocal(self, node):
         self.fill("nonlocal ")
-        interleave(lambda: self.write(", "), self.write, node.names)
+        self.interleave(lambda: self.write(", "), self.write, node.names)
 
     def visit_Await(self, node):
         self.write("(")
@@ -851,13 +851,13 @@ class _Unparser(NodeVisitor):
 
     def visit_With(self, node):
         self.fill("with ")
-        interleave(lambda: self.write(", "), self.visit, node.items)
+        self.interleave(lambda: self.write(", "), self.visit, node.items)
         with self.enter():
             self.visit(node.body)
 
     def visit_AsyncWith(self, node):
         self.fill("async with ")
-        interleave(lambda: self.write(", "), self.visit, node.items)
+        self.interleave(lambda: self.write(", "), self.visit, node.items)
         with self.enter():
             self.visit(node.body)
 
@@ -907,7 +907,7 @@ class _Unparser(NodeVisitor):
     def _write_constant(self, value):
         if isinstance(value, (float, complex)):
             # Substitute overflowing decimal literal for AST infinities.
-            self.write(repr(value).replace("inf", INFSTR))
+            self.write(repr(value).replace("inf", _INFSTR))
         else:
             self.write(repr(value))
 
@@ -919,7 +919,7 @@ class _Unparser(NodeVisitor):
                 self._write_constant(value[0])
                 self.write(",")
             else:
-                interleave(lambda: self.write(", "), self._write_constant, value)
+                self.interleave(lambda: self.write(", "), self._write_constant, value)
             self.write(")")
         elif value is ...:
             self.write("...")
@@ -930,7 +930,7 @@ class _Unparser(NodeVisitor):
 
     def visit_List(self, node):
         self.write("[")
-        interleave(lambda: self.write(", "), self.visit, node.elts)
+        self.interleave(lambda: self.write(", "), self.visit, node.elts)
         self.write("]")
 
     def visit_ListComp(self, node):
@@ -987,7 +987,7 @@ class _Unparser(NodeVisitor):
     def visit_Set(self, node):
         assert(node.elts) # should be at least one element
         self.write("{")
-        interleave(lambda: self.write(", "), self.visit, node.elts)
+        self.interleave(lambda: self.write(", "), self.visit, node.elts)
         self.write("}")
 
     def visit_Dict(self, node):
@@ -1006,7 +1006,7 @@ class _Unparser(NodeVisitor):
                 self.visit(v)
             else:
                 write_key_value_pair(k, v)
-        interleave(lambda: self.write(", "), write_item, zip(node.keys, node.values))
+        self.interleave(lambda: self.write(", "), write_item, zip(node.keys, node.values))
         self.write("}")
 
     def visit_Tuple(self, node):
@@ -1016,7 +1016,7 @@ class _Unparser(NodeVisitor):
             self.visit(elt)
             self.write(",")
         else:
-            interleave(lambda: self.write(", "), self.visit, node.elts)
+            self.interleave(lambda: self.write(", "), self.visit, node.elts)
         self.write(")")
 
     unop = {"Invert":"~", "Not": "not", "UAdd":"+", "USub":"-"}
@@ -1051,7 +1051,7 @@ class _Unparser(NodeVisitor):
     def visit_BoolOp(self, node):
         self.write("(")
         s = " %s " % self.boolops[node.op.__class__]
-        interleave(lambda: self.write(s), self.visit, node.values)
+        self.interleave(lambda: self.write(s), self.visit, node.values)
         self.write(")")
 
     def visit_Attribute(self,node):
@@ -1105,7 +1105,7 @@ class _Unparser(NodeVisitor):
             self.visit(node.step)
 
     def visit_ExtSlice(self, node):
-        interleave(lambda: self.write(', '), self.visit, node.dims)
+        self.interleave(lambda: self.write(', '), self.visit, node.dims)
 
     def visit_arg(self, node):
         self.write(node.arg)
