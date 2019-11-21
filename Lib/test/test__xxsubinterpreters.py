@@ -1224,7 +1224,7 @@ class ChannelTests(TestBase):
         
         interp1 = interpreters.create()
         _run_output(interp1, dedent(f"""
-            import _interpreters
+            import _xxsubinterpreters as _interpreters
             obj = _interpreters.channel_recv({cid})
             """))
         # Test for channel that has boths ends associated to an interpreter.
@@ -1241,15 +1241,15 @@ class ChannelTests(TestBase):
         
         interpreters.channel_send(cid, "send")
         _run_output(interp1, dedent(f"""
-            import _interpreters
+            import _xxsubinterpreters as _interpreters
             obj = _interpreters.channel_send({cid}, "send")
             """))
         _run_output(interp2, dedent(f"""
-            import _interpreters
+            import _xxsubinterpreters as _interpreters
             obj = _interpreters.channel_recv({cid})
             """))
         _run_output(interp3, dedent(f"""
-            import _interpreters
+            import _xxsubinterpreters as _interpreters
             obj = _interpreters.channel_recv({cid})
             """))
         self._assert_interpreters_returned(
