@@ -124,7 +124,7 @@ multiline indented output.
 Added the :func:`ast.unparse` as a function in the :mod:`ast` module that can
 be used to unparse an :class:`ast.AST` object and produce a string with code
 that would produce an equivalent :class:`ast.AST` object when parsed.
-(Contributed by Pablo Galindo in :issue:`38870`.)
+(Contributed by Pablo Galindo and Batuhan Taskaya in :issue:`38870`.)
 
 asyncio
 -------
