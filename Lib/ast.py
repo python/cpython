@@ -722,7 +722,8 @@ class _Unparser(NodeVisitor):
     def visit_Raise(self, node):
         self.fill("raise")
         if not node.exc:
-            assert not node.cause
+            if node.cause:
+                raise ValueError(f"Node can't use cause without an exception.")
             return
         self.write(" ")
         self.visit(node.exc)
@@ -879,7 +880,8 @@ class _Unparser(NodeVisitor):
             meth(value, write)
 
     def _fstring_Constant(self, node, write):
-        assert isinstance(node.value, str)
+        if not isinstance(node.value, str):
+            raise ValueError("Constants inside JoinedStr should be a string.")
         value = node.value.replace("{", "{{").replace("}", "}}")
         write(value)
 
@@ -893,7 +895,8 @@ class _Unparser(NodeVisitor):
         write(expr)
         if node.conversion != -1:
             conversion = chr(node.conversion)
-            assert conversion in "sra"
+            if conversion not in "sra":
+                raise ValueError("Unknown f-string conversion.")
             write(f"!{conversion}")
         if node.format_spec:
             write(":")
@@ -985,7 +988,8 @@ class _Unparser(NodeVisitor):
         self.write(")")
 
     def visit_Set(self, node):
-        assert(node.elts) # should be at least one element
+        if not node.elts:
+            raise ValueError("Set node should has at least one item")
         self.write("{")
         self.interleave(lambda: self.write(", "), self.visit, node.elts)
         self.write("}")

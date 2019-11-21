@@ -121,6 +121,9 @@ class ASTTestCase(unittest.TestCase):
         ast2 = compile(code2, filename, "exec", ast.PyCF_ONLY_AST)
         self.assertASTEqual(ast1, ast2)
 
+    def check_invalid(self, node, raises=ValueError):
+        self.assertRaises(raises, ast.unparse, node)
+
 class UnparseTestCase(ASTTestCase):
     # Tests for specific bugs found in earlier versions of unparse
 
@@ -254,6 +257,22 @@ class UnparseTestCase(ASTTestCase):
         # See issue 26489
         self.check_roundtrip(r"""{**{'y': 2}, 'x': 1}""")
         self.check_roundtrip(r"""{**{'y': 2}, **{'x': 1}}""")
+
+    def test_invalid_raise(self):
+        self.check_invalid(ast.Raise(exc=None, cause=ast.Name(id="X")))
+
+    def test_invalid_fstring_constant(self):
+        self.check_invalid(ast.JoinedStr(values=[ast.Constant(value=100)]))
+
+    def test_invalid_fstring_conversion(self):
+        self.check_invalid(ast.FormattedValue(
+            value=ast.Constant(value='a', kind=None),
+            conversion=ord("Y"), # random character
+            format_spec=None
+        ))
+
+    def test_invalid_set(self):
+        self.check_invalid(ast.Set(elts=[]))
 
 
 class DirectoryTestCase(ASTTestCase):
