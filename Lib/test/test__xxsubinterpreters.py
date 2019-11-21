@@ -1202,6 +1202,58 @@ class ChannelTests(TestBase):
         cid2 = int(out.strip())
 
         self.assertEqual(cid2, int(cid1) + 1)
+        
+    def _assert_interpreters_returned_are(self, cid, send, recv):
+        ilist = set(interpreters.channel_list_interpreters(cid, send=True))
+        self.assertEqual(ilist, set(send))
+        ilist = set(interpreters.channel_list_interpreters(cid, recv=True))
+        self.assertEqual(ilist, set(recv))
+        
+    def test_channel_list_interpreters_empty(self):
+        # Test for channel with no associated interpreters.
+        cid = interpreters.channel_create()
+        self._assert_interpreters_returned_are(cid, [], [])
+        
+    def test_channel_list_interpreters_mainline(self):
+        interp0 = interpreters.get_main()
+        cid = interpreters.channel_create()
+        interpreters.channel_send(cid, "send")
+        # Test for a channel that has one end associated to an interpreter.
+        self._assert_interpreters_returned_are(
+            cid, [interp0], [])
+        
+        interp1 = interpreters.create()
+        _run_output(interp1, dedent(f"""
+            import _interpreters
+            obj = _interpreters.channel_recv({cid})
+            """))
+        # Test for channel that has boths ends associated to an interpreter.
+        self._assert_interpreters_returned_are(
+            cid, [interp0], [interp1])
+        
+    def test_channel_list_interpreters_multiple(self):
+        # Test for channel with both ends associated to many interpreters.
+        interp0 = interpreters.get_main()
+        interp1 = interpreters.create()
+        interp2 = interpreters.create()
+        interp3 = interpreters.create()
+        cid = interpreters.channel_create()
+        
+        interpreters.channel_send(cid, "send")
+        _run_output(interp1, dedent(f"""
+            import _interpreters
+            obj = _interpreters.channel_send({cid}, "send")
+            """))
+        _run_output(interp2, dedent(f"""
+            import _interpreters
+            obj = _interpreters.channel_recv({cid})
+            """))
+        _run_output(interp3, dedent(f"""
+            import _interpreters
+            obj = _interpreters.channel_recv({cid})
+            """))
+        self._assert_interpreters_returned_are(
+            cid, [interp0, interp1], [interp3, interp2])
 
     ####################
 
@@ -1514,7 +1566,28 @@ class ChannelTests(TestBase):
             interpreters.channel_send(cid, b'eggs')
         with self.assertRaises(interpreters.ChannelClosedError):
             interpreters.channel_recv(cid)
-
+            
+    def test_channel_list_interpreters_invalid_channel(self):
+        cid = interpreters.channel_create()    
+        # Test for invalid channel ID.    
+        with self.assertRaises(interpreters.ChannelNotFoundError):
+            interpreters.channel_list_interpreters(1000, send=True)
+            
+        interpreters.channel_close(cid)
+        # Test for a channel that has been closed.
+        with self.assertRaises(interpreters.ChannelClosedError):
+            interpreters.channel_list_interpreters(cid, send=True)
+            
+    def test_channel_list_interpreters_invalid_args(self):
+        # Tests for invalid arguments passed to the API.
+        cid = interpreters.channel_create()
+        
+        with self.assertRaises(ValueError):
+            interpreters.channel_list_interpreters(cid)
+            
+        with self.assertRaises(ValueError):
+            interpreters.channel_list_interpreters(cid, send=True, recv=True)
+        
 
 class ChannelReleaseTests(TestBase):
 
