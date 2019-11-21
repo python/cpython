@@ -85,6 +85,46 @@ static int test_repeated_init_and_subinterpreters(void)
     return 0;
 }
 
+static int test_bpo36225(void)
+{
+    PyThreadState *mainstate;
+    PyGILState_STATE gilstate;
+    int i, j;
+
+    for (i=0; i<15; i++) {
+        printf("--- Pass %d ---\n", i);
+        _testembed_Py_Initialize();
+        mainstate = PyThreadState_Get();
+
+        PyEval_ReleaseThread(mainstate);
+
+        gilstate = PyGILState_Ensure();
+        print_subinterp();
+        PyThreadState_Swap(NULL);
+
+        for (j=0; j<2; j++) {
+            Py_NewInterpreter();
+            print_subinterp();
+        }
+
+        PyThreadState_Swap(mainstate);
+        print_subinterp();
+
+        for (j=0; j<2; j++) {
+            Py_NewInterpreter();
+            print_subinterp();
+        }
+
+        PyThreadState_Swap(mainstate);
+        print_subinterp();
+        PyGILState_Release(gilstate);
+
+        PyEval_RestoreThread(mainstate);
+        Py_Finalize();
+    }
+    return 0;
+}
+
 /*****************************************************
  * Test forcing a particular IO encoding
  *****************************************************/
@@ -1603,6 +1643,7 @@ struct TestCase
 static struct TestCase TestCases[] = {
     {"test_forced_io_encoding", test_forced_io_encoding},
     {"test_repeated_init_and_subinterpreters", test_repeated_init_and_subinterpreters},
+    {"test_bpo36225", test_bpo36225},
     {"test_pre_initialization_api", test_pre_initialization_api},
     {"test_pre_initialization_sys_options", test_pre_initialization_sys_options},
     {"test_bpo20891", test_bpo20891},
