@@ -201,6 +201,33 @@ class PyCompileTestsBase:
             with self.assertRaises(py_compile.PyCompileError):
                 py_compile.compile(bad_coding, doraise=True, quiet=1)
 
+    def test_main_with_stdin(self):
+        with support.captured_stdin() as stdin, support.captured_stderr() as stderr:
+            stdin.write('{0}\n{0}\n'.format(self.source_path))
+            stdin.seek(0)
+            self.assertEqual(py_compile.main(['-']), 0)
+            self.assertEqual(stderr.getvalue(), '')
+
+    def test_main_with_files(self):
+        with support.captured_stderr() as stderr:
+            self.assertEqual(py_compile.main(
+                [self.source_path, self.source_path]), 0)
+            self.assertEqual(stderr.getvalue(), '')
+
+    def test_main_bad_syntax(self):
+        bad_syntax = os.path.join(os.path.dirname(__file__), 'badsyntax_3131.py')
+        with support.captured_stderr() as stderr:
+            self.assertEqual(py_compile.main(
+                [self.source_path, bad_syntax]), 1)
+            self.assertNotEqual(stderr.getvalue(), '')
+
+    def test_main_file_not_exists(self):
+        should_not_exists = os.path.join(os.path.dirname(__file__), 'should_not_exists.py')
+        with support.captured_stderr() as stderr:
+            self.assertEqual(py_compile.main(
+                [self.source_path, should_not_exists]), 1)
+            self.assertNotEqual(stderr.getvalue(), '')
+
 
 class PyCompileTestsWithSourceEpoch(PyCompileTestsBase,
                                     unittest.TestCase,
