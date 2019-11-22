@@ -1633,18 +1633,18 @@ Sub-commands
    * parser_class - class which will be used to create sub-parser instances, by
      default the class of the current parser (e.g. ArgumentParser)
 
-   * action_ - the basic type of action to be taken when this argument is
+   * action - the basic type of action to be taken when this argument is
      encountered at the command line
 
-   * dest_ - name of the attribute under which sub-command name will be
+   * dest - name of the attribute under which sub-command name will be
      stored; by default ``None`` and no value is stored
 
-   * required_ - Whether or not a subcommand must be provided, by default
+   * required - Whether or not a subcommand must be provided, by default
      ``False`` (added in 3.7)
 
-   * help_ - help for sub-parser group in help output, by default ``None``
+   * help - help for sub-parser group in help output, by default ``None``
 
-   * metavar_ - string presenting available sub-commands in help; by default it
+   * metavar - string presenting available sub-commands in help; by default it
      is ``None`` and presents sub-commands in form {cmd1, cmd2, ..}
 
    Some example usage::
