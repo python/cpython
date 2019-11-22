@@ -20,7 +20,7 @@ values of the build system then the bdist modules are binary compatible
 with the AIX kernel.
 
 For pep425 purposes the AIX platform tag becomes:
-"AIX-{}-{:04d}-{}".format(vmtl, builddate, bitsize)
+"AIX-{:1x}{:1d}{:02d}-{:04d}-{}".format(v, r, tl, builddate, bitsize)
 e.g., "AIX-6107-1415-32" for AIX 6.1 TL7 bd 1415, 32-bit
 and, "AIX-6107-1415-64" for AIX 6.1 TL7 bd 1415, 64-bit
 """
@@ -33,16 +33,16 @@ _is_32bit = sys.maxsize == 2147483647
 
 
 def _aix_tag(vrtl, bd):
-    # type: (int, int) -> str
+    # type: (List[int], int) -> str
     sz = 32 if _is_32bit else 64
-    return "AIX-{}-{:04d}-{}".format(vrtl, bd, sz)
+    return "AIX-{:1x}{:1d}{:02d}-{:04d}-{}".format(vrtl[0], vrtl[1], vrtl[2], bd, sz)
 
 
 # compute vrtl from the VRMF string
 def _aix_vrtl(vrmf):
-    # type: (str) -> int
+    # type: (str) -> List[int]
     v, r, tl = vrmf.split(".")[:3]
-    return int("{}{}{:02d}".format(v[-1], r, int(tl)))
+    return [int(v[-1]), int(r), int(tl)]
 
 
 def _aix_bosmp64():
@@ -67,7 +67,7 @@ def aix_platform():
 
 # extract vrtl from the BUILD_GNU_TYPE as an int
 def _aix_bgt():
-    # type: () -> int
+    # type: () -> List[int]
     assert _bgt
     return _aix_vrtl(_bgt)
 
