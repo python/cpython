@@ -1136,6 +1136,8 @@ class AbstractDigestAuthHandler:
         A2 = "%s:%s" % (req.get_method(),
                         # XXX selector: what about proxies and full urls
                         req.selector)
+        # NOTE: As per  RFC 2617, when server sends "auth,auth-int", the client could use either `auth`
+        #     or `auth-int` to the response back. we use `auth` to send the response back. 
         if 'auth' in qop.split(','):
             if nonce == self.last_nonce:
                 self.nonce_count += 1
