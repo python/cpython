@@ -2768,7 +2768,7 @@ TimerHandler(ClientData clientData)
 
     ENTER_PYTHON
 
-    res = _PyObject_CallNoArg(func);
+    res = PyObject_CallNoArgs(func);
     Py_DECREF(func);
     Py_DECREF(v); /* See Tktt_New() */
 

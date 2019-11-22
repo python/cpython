@@ -619,6 +619,13 @@ class PatchTest(unittest.TestCase):
         self.assertEqual(foo.values, original)
 
 
+    def test_patch_dict_as_context_manager(self):
+        foo = {'a': 'b'}
+        with patch.dict(foo, a='c') as patched:
+            self.assertEqual(patched, {'a': 'c'})
+        self.assertEqual(foo, {'a': 'b'})
+
+
     def test_name_preserved(self):
         foo = {}
 
@@ -1644,7 +1651,7 @@ class PatchTest(unittest.TestCase):
             p1.stop()
         self.assertEqual(squizz.squozz, 3)
 
-    def test_patch_propogrates_exc_on_exit(self):
+    def test_patch_propagates_exc_on_exit(self):
         class holder:
             exc_info = None, None, None
 
@@ -1673,9 +1680,9 @@ class PatchTest(unittest.TestCase):
 
         self.assertIs(holder.exc_info[0], RuntimeError)
         self.assertIsNotNone(holder.exc_info[1],
-                            'exception value not propgated')
+                            'exception value not propagated')
         self.assertIsNotNone(holder.exc_info[2],
-                            'exception traceback not propgated')
+                            'exception traceback not propagated')
 
 
     def test_create_and_specs(self):

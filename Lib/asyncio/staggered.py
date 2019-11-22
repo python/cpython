@@ -105,7 +105,9 @@ async def staggered_race(
 
         try:
             result = await coro_fn()
-        except Exception as e:
+        except (SystemExit, KeyboardInterrupt):
+            raise
+        except BaseException as e:
             exceptions[this_index] = e
             this_failed.set()  # Kickstart the next coroutine
         else:

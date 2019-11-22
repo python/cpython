@@ -1,6 +1,7 @@
 # Python test set -- built-in functions
 
 import ast
+import asyncio
 import builtins
 import collections
 import decimal
@@ -18,9 +19,14 @@ import types
 import unittest
 import warnings
 from contextlib import ExitStack
+from inspect import CO_COROUTINE
+from itertools import product
+from textwrap import dedent
+from types import AsyncGeneratorType, FunctionType
 from operator import neg
 from test.support import (
-    EnvironmentVarGuard, TESTFN, check_warnings, swap_attr, unlink)
+    EnvironmentVarGuard, TESTFN, check_warnings, swap_attr, unlink,
+    maybe_get_event_loop_policy)
 from test.support.script_helper import assert_python_ok
 from unittest.mock import MagicMock, patch
 try:
@@ -314,8 +320,8 @@ class BuiltinTest(unittest.TestCase):
         bom = b'\xef\xbb\xbf'
         compile(bom + b'print(1)\n', '', 'exec')
         compile(source='pass', filename='?', mode='exec')
-        compile(dont_inherit=0, filename='tmp', source='0', mode='eval')
-        compile('pass', '?', dont_inherit=1, mode='exec')
+        compile(dont_inherit=False, filename='tmp', source='0', mode='eval')
+        compile('pass', '?', dont_inherit=True, mode='exec')
         compile(memoryview(b"text"), "name", "exec")
         self.assertRaises(TypeError, compile)
         self.assertRaises(ValueError, compile, 'print(42)\n', '<string>', 'badmode')
@@ -357,6 +363,73 @@ class BuiltinTest(unittest.TestCase):
                 exec(code, ns)
                 rv = ns['f']()
                 self.assertEqual(rv, tuple(expected))
+
+    def test_compile_top_level_await(self):
+        """Test whether code some top level await can be compiled.
+
+        Make sure it compiles only with the PyCF_ALLOW_TOP_LEVEL_AWAIT flag
+        set, and make sure the generated code object has the CO_COROUTINE flag
+        set in order to execute it with  `await eval(.....)` instead of exec,
+        or via a FunctionType.
+        """
+
+        # helper function just to check we can run top=level async-for
+        async def arange(n):
+            for i in range(n):
+                yield i
+
+        modes = ('single', 'exec')
+        code_samples = [
+            '''a = await asyncio.sleep(0, result=1)''',
+            '''async for i in arange(1):
+                   a = 1''',
+            '''async with asyncio.Lock() as l:
+                   a = 1'''
+        ]
+        policy = maybe_get_event_loop_policy()
+        try:
+            for mode, code_sample in product(modes, code_samples):
+                source = dedent(code_sample)
+                with self.assertRaises(
+                        SyntaxError, msg=f"source={source} mode={mode}"):
+                    compile(source, '?', mode)
+
+                co = compile(source,
+                             '?',
+                             mode,
+                             flags=ast.PyCF_ALLOW_TOP_LEVEL_AWAIT)
+
+                self.assertEqual(co.co_flags & CO_COROUTINE, CO_COROUTINE,
+                                 msg=f"source={source} mode={mode}")
+
+                # test we can create and  advance a function type
+                globals_ = {'asyncio': asyncio, 'a': 0, 'arange': arange}
+                async_f = FunctionType(co, globals_)
+                asyncio.run(async_f())
+                self.assertEqual(globals_['a'], 1)
+
+                # test we can await-eval,
+                globals_ = {'asyncio': asyncio, 'a': 0, 'arange': arange}
+                asyncio.run(eval(co, globals_))
+                self.assertEqual(globals_['a'], 1)
+        finally:
+            asyncio.set_event_loop_policy(policy)
+
+    def test_compile_async_generator(self):
+        """
+        With the PyCF_ALLOW_TOP_LEVEL_AWAIT flag added in 3.8, we want to
+        make sure AsyncGenerators are still properly not marked with the
+        CO_COROUTINE flag.
+        """
+        code = dedent("""async def ticker():
+                for i in range(10):
+                    yield i
+                    await asyncio.sleep(0)""")
+
+        co = compile(code, '?', 'exec', flags=ast.PyCF_ALLOW_TOP_LEVEL_AWAIT)
+        glob = {}
+        exec(co, glob)
+        self.assertEqual(type(glob['ticker']()), AsyncGeneratorType)
 
     def test_delattr(self):
         sys.spam = 1
@@ -1122,7 +1195,8 @@ class BuiltinTest(unittest.TestCase):
         self.assertAlmostEqual(pow(-1, 0.5), 1j)
         self.assertAlmostEqual(pow(-1, 1/3), 0.5 + 0.8660254037844386j)
 
-        self.assertRaises(ValueError, pow, -1, -2, 3)
+        # See test_pow for additional tests for three-argument pow.
+        self.assertEqual(pow(-1, -2, 3), 1)
         self.assertRaises(ValueError, pow, 1, 2, 0)
 
         self.assertRaises(TypeError, pow)
@@ -1403,6 +1477,18 @@ class BuiltinTest(unittest.TestCase):
             z1 = zip(a, b)
             self.check_iter_pickle(z1, t, proto)
 
+    def test_zip_bad_iterable(self):
+        exception = TypeError()
+
+        class BadIterable:
+            def __iter__(self):
+                raise exception
+
+        with self.assertRaises(TypeError) as cm:
+            zip(BadIterable())
+
+        self.assertIs(cm.exception, exception)
+
     def test_format(self):
         # Test the basic machinery of the format() builtin.  Don't test
         #  the specifics of the various formatters
@@ -1517,6 +1603,11 @@ class BuiltinTest(unittest.TestCase):
         x = bytearray(b"abc")
         self.assertRaises(ValueError, x.translate, b"1", 1)
         self.assertRaises(TypeError, x.translate, b"1"*256, 1)
+
+    def test_bytearray_extend_error(self):
+        array = bytearray()
+        bad_iter = map(int, "X")
+        self.assertRaises(ValueError, array.extend, bad_iter)
 
     def test_construct_singletons(self):
         for const in None, Ellipsis, NotImplemented:
@@ -1762,7 +1853,7 @@ class TestSorted(unittest.TestCase):
         self.assertEqual(data, sorted(copy, key=lambda x: -x))
         self.assertNotEqual(data, copy)
         random.shuffle(copy)
-        self.assertEqual(data, sorted(copy, reverse=1))
+        self.assertEqual(data, sorted(copy, reverse=True))
         self.assertNotEqual(data, copy)
 
     def test_bad_arguments(self):

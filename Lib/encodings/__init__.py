@@ -12,7 +12,7 @@
     * getregentry() -> codecs.CodecInfo object
     The getregentry() API must return a CodecInfo object with encoder, decoder,
     incrementalencoder, incrementaldecoder, streamwriter and streamreader
-    atttributes which adhere to the Python Codec Interface Standard.
+    attributes which adhere to the Python Codec Interface Standard.
 
     In addition, a module may optionally also define the following
     APIs which are then used by the package's codec search function:

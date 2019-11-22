@@ -25,14 +25,26 @@
 #define PY_SSIZE_T_CLEAN
 
 #include "Python.h"
+#ifdef MS_WINDOWS
+   /* include <windows.h> early to avoid conflict with pycore_condvar.h:
+
+        #define WIN32_LEAN_AND_MEAN
+        #include <windows.h>
+
+      FSCTL_GET_REPARSE_POINT is not exported with WIN32_LEAN_AND_MEAN. */
+#  include <windows.h>
+#endif
+
+#include "pycore_ceval.h"     /* _PyEval_ReInitThreads() */
+#include "pycore_import.h"    /* _PyImport_ReInitLock() */
+#include "pycore_pystate.h"   /* _PyRuntime */
 #include "pythread.h"
 #include "structmember.h"
 #ifndef MS_WINDOWS
-#include "posixmodule.h"
+#  include "posixmodule.h"
 #else
-#include "winreparse.h"
+#  include "winreparse.h"
 #endif
-#include "pycore_pystate.h"
 
 /* On android API level 21, 'AT_EACCESS' is not declared although
  * HAVE_FACCESSAT is defined. */
@@ -104,6 +116,10 @@ corresponding Unix manual entries for more information on calls.");
 
 #ifdef HAVE_SCHED_H
 #include <sched.h>
+#endif
+
+#ifdef HAVE_COPY_FILE_RANGE
+#include <unistd.h>
 #endif
 
 #if !defined(CPU_ALLOC) && defined(HAVE_SCHED_SETAFFINITY)
@@ -180,10 +196,12 @@ corresponding Unix manual entries for more information on calls.");
 #define fsync _commit
 #else
 /* Unix functions that the configure script doesn't check for */
+#ifndef __VXWORKS__
 #define HAVE_EXECV      1
 #define HAVE_FORK       1
 #if defined(__USLC__) && defined(__SCO_VERSION__)       /* SCO UDK Compiler */
 #define HAVE_FORK1      1
+#endif
 #endif
 #define HAVE_GETEGID    1
 #define HAVE_GETEUID    1
@@ -215,6 +233,18 @@ extern char        *ctermid_r(char *);
 #endif
 
 #endif /* !_MSC_VER */
+
+#if defined(__VXWORKS__)
+#include <vxCpuLib.h>
+#include <rtpLib.h>
+#include <wait.h>
+#include <taskLib.h>
+#ifndef _P_WAIT
+#define _P_WAIT          0
+#define _P_NOWAIT        1
+#define _P_NOWAITO       1
+#endif
+#endif /* __VXWORKS__ */
 
 #ifdef HAVE_POSIX_SPAWN
 #include <spawn.h>
@@ -364,6 +394,19 @@ extern char        *ctermid_r(char *);
 #define HAVE_STRUCT_STAT_ST_FSTYPE 1
 #endif
 
+/* memfd_create is either defined in sys/mman.h or sys/memfd.h
+ * linux/memfd.h defines additional flags
+ */
+#ifdef HAVE_SYS_MMAN_H
+#include <sys/mman.h>
+#endif
+#ifdef HAVE_SYS_MEMFD_H
+#include <sys/memfd.h>
+#endif
+#ifdef HAVE_LINUX_MEMFD_H
+#include <linux/memfd.h>
+#endif
+
 #ifdef _Py_MEMORY_SANITIZER
 # include <sanitizer/msan_interface.h>
 #endif
@@ -390,7 +433,7 @@ run_at_forkers(PyObject *lst, int reverse)
             for (i = 0; i < PyList_GET_SIZE(cpy); i++) {
                 PyObject *func, *res;
                 func = PyList_GET_ITEM(cpy, i);
-                res = PyObject_CallObject(func, NULL);
+                res = _PyObject_CallNoArg(func);
                 if (res == NULL)
                     PyErr_WriteUnraisable(func);
                 else
@@ -423,11 +466,11 @@ PyOS_AfterFork_Child(void)
 {
     _PyRuntimeState *runtime = &_PyRuntime;
     _PyGILState_Reinit(runtime);
-    _PyInterpreterState_DeleteExceptMain(runtime);
-    PyEval_ReInitThreads();
+    _PyEval_ReInitThreads(runtime);
     _PyImport_ReInitLock();
     _PySignal_AfterFork();
     _PyRuntimeState_ReInitThreads(runtime);
+    _PyInterpreterState_DeleteExceptMain(runtime);
 
     run_at_forkers(_PyInterpreterState_Get()->after_forkers_child, 0);
 }
@@ -461,17 +504,6 @@ PyOS_AfterFork(void)
 void _Py_time_t_to_FILE_TIME(time_t, int, FILETIME *);
 void _Py_attribute_data_to_stat(BY_HANDLE_FILE_INFORMATION *,
                                             ULONG, struct _Py_stat_struct *);
-#endif
-
-#ifdef MS_WINDOWS
-static int
-win32_warn_bytes_api()
-{
-    return PyErr_WarnEx(PyExc_DeprecationWarning,
-        "The Windows bytes API has been deprecated, "
-        "use Unicode filenames instead",
-        1);
-}
 #endif
 
 
@@ -1342,7 +1374,7 @@ win32_get_reparse_tag(HANDLE reparse_point_handle, ULONG *reparse_tag)
 */
 #include <crt_externs.h>
 static char **environ;
-#elif !defined(_MSC_VER) && ( !defined(__WATCOMC__) || defined(__QNX__) )
+#elif !defined(_MSC_VER) && (!defined(__WATCOMC__) || defined(__QNX__) || defined(__VXWORKS__))
 extern char **environ;
 #endif /* !_MSC_VER */
 
@@ -1593,6 +1625,7 @@ win32_wchdir(LPCWSTR path)
 */
 #define HAVE_STAT_NSEC 1
 #define HAVE_STRUCT_STAT_ST_FILE_ATTRIBUTES 1
+#define HAVE_STRUCT_STAT_ST_REPARSE_TAG 1
 
 static void
 find_data_to_file_info(WIN32_FIND_DATAW *pFileData,
@@ -1626,136 +1659,185 @@ attributes_from_dir(LPCWSTR pszFile, BY_HANDLE_FILE_INFORMATION *info, ULONG *re
     return TRUE;
 }
 
-static BOOL
-get_target_path(HANDLE hdl, wchar_t **target_path)
-{
-    int buf_size, result_length;
-    wchar_t *buf;
-
-    /* We have a good handle to the target, use it to determine
-       the target path name (then we'll call lstat on it). */
-    buf_size = GetFinalPathNameByHandleW(hdl, 0, 0,
-                                         VOLUME_NAME_DOS);
-    if(!buf_size)
-        return FALSE;
-
-    buf = (wchar_t *)PyMem_RawMalloc((buf_size + 1) * sizeof(wchar_t));
-    if (!buf) {
-        SetLastError(ERROR_OUTOFMEMORY);
-        return FALSE;
-    }
-
-    result_length = GetFinalPathNameByHandleW(hdl,
-                       buf, buf_size, VOLUME_NAME_DOS);
-
-    if(!result_length) {
-        PyMem_RawFree(buf);
-        return FALSE;
-    }
-
-    buf[result_length] = 0;
-
-    *target_path = buf;
-    return TRUE;
-}
-
 static int
 win32_xstat_impl(const wchar_t *path, struct _Py_stat_struct *result,
                  BOOL traverse)
 {
-    int code;
-    HANDLE hFile, hFile2;
-    BY_HANDLE_FILE_INFORMATION info;
-    ULONG reparse_tag = 0;
-    wchar_t *target_path;
-    const wchar_t *dot;
+    HANDLE hFile;
+    BY_HANDLE_FILE_INFORMATION fileInfo;
+    FILE_ATTRIBUTE_TAG_INFO tagInfo = { 0 };
+    DWORD fileType, error;
+    BOOL isUnhandledTag = FALSE;
+    int retval = 0;
 
-    hFile = CreateFileW(
-        path,
-        FILE_READ_ATTRIBUTES, /* desired access */
-        0, /* share mode */
-        NULL, /* security attributes */
-        OPEN_EXISTING,
-        /* FILE_FLAG_BACKUP_SEMANTICS is required to open a directory */
-        /* FILE_FLAG_OPEN_REPARSE_POINT does not follow the symlink.
-           Because of this, calls like GetFinalPathNameByHandle will return
-           the symlink path again and not the actual final path. */
-        FILE_ATTRIBUTE_NORMAL|FILE_FLAG_BACKUP_SEMANTICS|
-            FILE_FLAG_OPEN_REPARSE_POINT,
-        NULL);
+    DWORD access = FILE_READ_ATTRIBUTES;
+    DWORD flags = FILE_FLAG_BACKUP_SEMANTICS; /* Allow opening directories. */
+    if (!traverse) {
+        flags |= FILE_FLAG_OPEN_REPARSE_POINT;
+    }
 
+    hFile = CreateFileW(path, access, 0, NULL, OPEN_EXISTING, flags, NULL);
     if (hFile == INVALID_HANDLE_VALUE) {
-        /* Either the target doesn't exist, or we don't have access to
-           get a handle to it. If the former, we need to return an error.
-           If the latter, we can use attributes_from_dir. */
-        DWORD lastError = GetLastError();
-        if (lastError != ERROR_ACCESS_DENIED &&
-            lastError != ERROR_SHARING_VIOLATION)
-            return -1;
-        /* Could not get attributes on open file. Fall back to
-           reading the directory. */
-        if (!attributes_from_dir(path, &info, &reparse_tag))
-            /* Very strange. This should not fail now */
-            return -1;
-        if (info.dwFileAttributes & FILE_ATTRIBUTE_REPARSE_POINT) {
-            if (traverse) {
-                /* Should traverse, but could not open reparse point handle */
-                SetLastError(lastError);
+        /* Either the path doesn't exist, or the caller lacks access. */
+        error = GetLastError();
+        switch (error) {
+        case ERROR_ACCESS_DENIED:     /* Cannot sync or read attributes. */
+        case ERROR_SHARING_VIOLATION: /* It's a paging file. */
+            /* Try reading the parent directory. */
+            if (!attributes_from_dir(path, &fileInfo, &tagInfo.ReparseTag)) {
+                /* Cannot read the parent directory. */
+                SetLastError(error);
                 return -1;
             }
-        }
-    } else {
-        if (!GetFileInformationByHandle(hFile, &info)) {
-            CloseHandle(hFile);
-            return -1;
-        }
-        if (info.dwFileAttributes & FILE_ATTRIBUTE_REPARSE_POINT) {
-            if (!win32_get_reparse_tag(hFile, &reparse_tag)) {
-                CloseHandle(hFile);
-                return -1;
-            }
-            /* Close the outer open file handle now that we're about to
-               reopen it with different flags. */
-            if (!CloseHandle(hFile))
-                return -1;
-
-            if (traverse) {
-                /* In order to call GetFinalPathNameByHandle we need to open
-                   the file without the reparse handling flag set. */
-                hFile2 = CreateFileW(
-                           path, FILE_READ_ATTRIBUTES, FILE_SHARE_READ,
-                           NULL, OPEN_EXISTING,
-                           FILE_ATTRIBUTE_NORMAL|FILE_FLAG_BACKUP_SEMANTICS,
-                           NULL);
-                if (hFile2 == INVALID_HANDLE_VALUE)
-                    return -1;
-
-                if (!get_target_path(hFile2, &target_path)) {
-                    CloseHandle(hFile2);
+            if (fileInfo.dwFileAttributes & FILE_ATTRIBUTE_REPARSE_POINT) {
+                if (traverse ||
+                    !IsReparseTagNameSurrogate(tagInfo.ReparseTag)) {
+                    /* The stat call has to traverse but cannot, so fail. */
+                    SetLastError(error);
                     return -1;
                 }
-
-                if (!CloseHandle(hFile2)) {
-                    return -1;
-                }
-
-                code = win32_xstat_impl(target_path, result, FALSE);
-                PyMem_RawFree(target_path);
-                return code;
             }
-        } else
-            CloseHandle(hFile);
-    }
-    _Py_attribute_data_to_stat(&info, reparse_tag, result);
+            break;
 
-    /* Set S_IEXEC if it is an .exe, .bat, ... */
-    dot = wcsrchr(path, '.');
-    if (dot) {
-        if (_wcsicmp(dot, L".bat") == 0 || _wcsicmp(dot, L".cmd") == 0 ||
-            _wcsicmp(dot, L".exe") == 0 || _wcsicmp(dot, L".com") == 0)
-            result->st_mode |= 0111;
+        case ERROR_INVALID_PARAMETER:
+            /* \\.\con requires read or write access. */
+            hFile = CreateFileW(path, access | GENERIC_READ,
+                        FILE_SHARE_READ | FILE_SHARE_WRITE, NULL,
+                        OPEN_EXISTING, flags, NULL);
+            if (hFile == INVALID_HANDLE_VALUE) {
+                SetLastError(error);
+                return -1;
+            }
+            break;
+
+        case ERROR_CANT_ACCESS_FILE:
+            /* bpo37834: open unhandled reparse points if traverse fails. */
+            if (traverse) {
+                traverse = FALSE;
+                isUnhandledTag = TRUE;
+                hFile = CreateFileW(path, access, 0, NULL, OPEN_EXISTING,
+                            flags | FILE_FLAG_OPEN_REPARSE_POINT, NULL);
+            }
+            if (hFile == INVALID_HANDLE_VALUE) {
+                SetLastError(error);
+                return -1;
+            }
+            break;
+
+        default:
+            return -1;
+        }
     }
-    return 0;
+
+    if (hFile != INVALID_HANDLE_VALUE) {
+        /* Handle types other than files on disk. */
+        fileType = GetFileType(hFile);
+        if (fileType != FILE_TYPE_DISK) {
+            if (fileType == FILE_TYPE_UNKNOWN && GetLastError() != 0) {
+                retval = -1;
+                goto cleanup;
+            }
+            DWORD fileAttributes = GetFileAttributesW(path);
+            memset(result, 0, sizeof(*result));
+            if (fileAttributes != INVALID_FILE_ATTRIBUTES &&
+                fileAttributes & FILE_ATTRIBUTE_DIRECTORY) {
+                /* \\.\pipe\ or \\.\mailslot\ */
+                result->st_mode = _S_IFDIR;
+            } else if (fileType == FILE_TYPE_CHAR) {
+                /* \\.\nul */
+                result->st_mode = _S_IFCHR;
+            } else if (fileType == FILE_TYPE_PIPE) {
+                /* \\.\pipe\spam */
+                result->st_mode = _S_IFIFO;
+            }
+            /* FILE_TYPE_UNKNOWN, e.g. \\.\mailslot\waitfor.exe\spam */
+            goto cleanup;
+        }
+
+        /* Query the reparse tag, and traverse a non-link. */
+        if (!traverse) {
+            if (!GetFileInformationByHandleEx(hFile, FileAttributeTagInfo,
+                    &tagInfo, sizeof(tagInfo))) {
+                /* Allow devices that do not support FileAttributeTagInfo. */
+                switch (GetLastError()) {
+                case ERROR_INVALID_PARAMETER:
+                case ERROR_INVALID_FUNCTION:
+                case ERROR_NOT_SUPPORTED:
+                    tagInfo.FileAttributes = FILE_ATTRIBUTE_NORMAL;
+                    tagInfo.ReparseTag = 0;
+                    break;
+                default:
+                    retval = -1;
+                    goto cleanup;
+                }
+            } else if (tagInfo.FileAttributes &
+                         FILE_ATTRIBUTE_REPARSE_POINT) {
+                if (IsReparseTagNameSurrogate(tagInfo.ReparseTag)) {
+                    if (isUnhandledTag) {
+                        /* Traversing previously failed for either this link
+                           or its target. */
+                        SetLastError(ERROR_CANT_ACCESS_FILE);
+                        retval = -1;
+                        goto cleanup;
+                    }
+                /* Traverse a non-link, but not if traversing already failed
+                   for an unhandled tag. */
+                } else if (!isUnhandledTag) {
+                    CloseHandle(hFile);
+                    return win32_xstat_impl(path, result, TRUE);
+                }
+            }
+        }
+
+        if (!GetFileInformationByHandle(hFile, &fileInfo)) {
+            switch (GetLastError()) {
+            case ERROR_INVALID_PARAMETER:
+            case ERROR_INVALID_FUNCTION:
+            case ERROR_NOT_SUPPORTED:
+                /* Volumes and physical disks are block devices, e.g.
+                   \\.\C: and \\.\PhysicalDrive0. */
+                memset(result, 0, sizeof(*result));
+                result->st_mode = 0x6000; /* S_IFBLK */
+                goto cleanup;
+            }
+            retval = -1;
+            goto cleanup;
+        }
+    }
+
+    _Py_attribute_data_to_stat(&fileInfo, tagInfo.ReparseTag, result);
+
+    if (!(fileInfo.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY)) {
+        /* Fix the file execute permissions. This hack sets S_IEXEC if
+           the filename has an extension that is commonly used by files
+           that CreateProcessW can execute. A real implementation calls
+           GetSecurityInfo, OpenThreadToken/OpenProcessToken, and
+           AccessCheck to check for generic read, write, and execute
+           access. */
+        const wchar_t *fileExtension = wcsrchr(path, '.');
+        if (fileExtension) {
+            if (_wcsicmp(fileExtension, L".exe") == 0 ||
+                _wcsicmp(fileExtension, L".bat") == 0 ||
+                _wcsicmp(fileExtension, L".cmd") == 0 ||
+                _wcsicmp(fileExtension, L".com") == 0) {
+                result->st_mode |= 0111;
+            }
+        }
+    }
+
+cleanup:
+    if (hFile != INVALID_HANDLE_VALUE) {
+        /* Preserve last error if we are failing */
+        error = retval ? GetLastError() : 0;
+        if (!CloseHandle(hFile)) {
+            retval = -1;
+        } else if (retval) {
+            /* Restore last error */
+            SetLastError(error);
+        }
+    }
+
+    return retval;
 }
 
 static int
@@ -1774,9 +1856,8 @@ win32_xstat(const wchar_t *path, struct _Py_stat_struct *result, BOOL traverse)
    default does not traverse symlinks and instead returns attributes for
    the symlink.
 
-   Therefore, win32_lstat will get the attributes traditionally, and
-   win32_stat will first explicitly resolve the symlink target and then will
-   call win32_lstat on that result. */
+   Instead, we will open the file (which *does* traverse symlinks by default)
+   and GetFileInformationByHandle(). */
 
 static int
 win32_lstat(const wchar_t* path, struct _Py_stat_struct *result)
@@ -1845,6 +1926,9 @@ static PyStructSequence_Field stat_result_fields[] = {
 #ifdef HAVE_STRUCT_STAT_ST_FSTYPE
     {"st_fstype",  "Type of filesystem"},
 #endif
+#ifdef HAVE_STRUCT_STAT_ST_REPARSE_TAG
+    {"st_reparse_tag", "Windows reparse tag"},
+#endif
     {0}
 };
 
@@ -1894,6 +1978,12 @@ static PyStructSequence_Field stat_result_fields[] = {
 #define ST_FSTYPE_IDX (ST_FILE_ATTRIBUTES_IDX+1)
 #else
 #define ST_FSTYPE_IDX ST_FILE_ATTRIBUTES_IDX
+#endif
+
+#ifdef HAVE_STRUCT_STAT_ST_REPARSE_TAG
+#define ST_REPARSE_TAG_IDX (ST_FSTYPE_IDX+1)
+#else
+#define ST_REPARSE_TAG_IDX ST_FSTYPE_IDX
 #endif
 
 static PyStructSequence_Desc stat_result_desc = {
@@ -2122,6 +2212,10 @@ _pystat_fromstructstat(STRUCT_STAT *st)
 #ifdef HAVE_STRUCT_STAT_ST_FSTYPE
    PyStructSequence_SET_ITEM(v, ST_FSTYPE_IDX,
                               PyUnicode_FromString(st->st_fstype));
+#endif
+#ifdef HAVE_STRUCT_STAT_ST_REPARSE_TAG
+    PyStructSequence_SET_ITEM(v, ST_REPARSE_TAG_IDX,
+                              PyLong_FromUnsignedLong(st->st_reparse_tag));
 #endif
 
     if (PyErr_Occurred()) {
@@ -3291,83 +3385,99 @@ os_lchown_impl(PyObject *module, path_t *path, uid_t uid, gid_t gid)
 static PyObject *
 posix_getcwd(int use_bytes)
 {
-    char *buf, *tmpbuf;
-    char *cwd;
-    const size_t chunk = 1024;
-    size_t buflen = 0;
-    PyObject *obj;
-
 #ifdef MS_WINDOWS
-    if (!use_bytes) {
-        wchar_t wbuf[MAXPATHLEN];
-        wchar_t *wbuf2 = wbuf;
-        PyObject *resobj;
-        DWORD len;
-        Py_BEGIN_ALLOW_THREADS
-        len = GetCurrentDirectoryW(Py_ARRAY_LENGTH(wbuf), wbuf);
-        /* If the buffer is large enough, len does not include the
-           terminating \0. If the buffer is too small, len includes
-           the space needed for the terminator. */
-        if (len >= Py_ARRAY_LENGTH(wbuf)) {
+    wchar_t wbuf[MAXPATHLEN];
+    wchar_t *wbuf2 = wbuf;
+    DWORD len;
+
+    Py_BEGIN_ALLOW_THREADS
+    len = GetCurrentDirectoryW(Py_ARRAY_LENGTH(wbuf), wbuf);
+    /* If the buffer is large enough, len does not include the
+       terminating \0. If the buffer is too small, len includes
+       the space needed for the terminator. */
+    if (len >= Py_ARRAY_LENGTH(wbuf)) {
+        if (len <= PY_SSIZE_T_MAX / sizeof(wchar_t)) {
             wbuf2 = PyMem_RawMalloc(len * sizeof(wchar_t));
-            if (wbuf2)
-                len = GetCurrentDirectoryW(len, wbuf2);
         }
-        Py_END_ALLOW_THREADS
-        if (!wbuf2) {
-            PyErr_NoMemory();
-            return NULL;
+        else {
+            wbuf2 = NULL;
         }
-        if (!len) {
-            if (wbuf2 != wbuf)
-                PyMem_RawFree(wbuf2);
-            return PyErr_SetFromWindowsErr(0);
+        if (wbuf2) {
+            len = GetCurrentDirectoryW(len, wbuf2);
         }
-        resobj = PyUnicode_FromWideChar(wbuf2, len);
+    }
+    Py_END_ALLOW_THREADS
+
+    if (!wbuf2) {
+        PyErr_NoMemory();
+        return NULL;
+    }
+    if (!len) {
         if (wbuf2 != wbuf)
             PyMem_RawFree(wbuf2);
-        return resobj;
+        return PyErr_SetFromWindowsErr(0);
     }
 
-    if (win32_warn_bytes_api())
-        return NULL;
-#endif
+    PyObject *resobj = PyUnicode_FromWideChar(wbuf2, len);
+    if (wbuf2 != wbuf) {
+        PyMem_RawFree(wbuf2);
+    }
 
-    buf = cwd = NULL;
+    if (use_bytes) {
+        if (resobj == NULL) {
+            return NULL;
+        }
+        Py_SETREF(resobj, PyUnicode_EncodeFSDefault(resobj));
+    }
+
+    return resobj;
+#else
+    const size_t chunk = 1024;
+
+    char *buf = NULL;
+    char *cwd = NULL;
+    size_t buflen = 0;
+
     Py_BEGIN_ALLOW_THREADS
     do {
-        buflen += chunk;
-#ifdef MS_WINDOWS
-        if (buflen > INT_MAX) {
-            PyErr_NoMemory();
+        char *newbuf;
+        if (buflen <= PY_SSIZE_T_MAX - chunk) {
+            buflen += chunk;
+            newbuf = PyMem_RawRealloc(buf, buflen);
+        }
+        else {
+            newbuf = NULL;
+        }
+        if (newbuf == NULL) {
+            PyMem_RawFree(buf);
+            buf = NULL;
             break;
         }
-#endif
-        tmpbuf = PyMem_RawRealloc(buf, buflen);
-        if (tmpbuf == NULL)
-            break;
+        buf = newbuf;
 
-        buf = tmpbuf;
-#ifdef MS_WINDOWS
-        cwd = getcwd(buf, (int)buflen);
-#else
         cwd = getcwd(buf, buflen);
-#endif
     } while (cwd == NULL && errno == ERANGE);
     Py_END_ALLOW_THREADS
 
+    if (buf == NULL) {
+        return PyErr_NoMemory();
+    }
     if (cwd == NULL) {
         PyMem_RawFree(buf);
         return posix_error();
     }
 
-    if (use_bytes)
+    PyObject *obj;
+    if (use_bytes) {
         obj = PyBytes_FromStringAndSize(buf, strlen(buf));
-    else
+    }
+    else {
         obj = PyUnicode_DecodeFSDefault(buf);
+    }
     PyMem_RawFree(buf);
 
     return obj;
+#endif   /* !MS_WINDOWS */
 }
 
 
@@ -3716,6 +3826,10 @@ static PyObject *
 os_listdir_impl(PyObject *module, path_t *path)
 /*[clinic end generated code: output=293045673fcd1a75 input=e3f58030f538295d]*/
 {
+    if (PySys_Audit("os.listdir", "O",
+                    path->object ? path->object : Py_None) < 0) {
+        return NULL;
+    }
 #if defined(MS_WINDOWS) && !defined(HAVE_OPENDIR)
     return _listdir_windows_no_opendir(path, NULL);
 #else
@@ -3737,29 +3851,25 @@ static PyObject *
 os__getfullpathname_impl(PyObject *module, path_t *path)
 /*[clinic end generated code: output=bb8679d56845bc9b input=332ed537c29d0a3e]*/
 {
-    wchar_t woutbuf[MAX_PATH], *woutbufp = woutbuf;
-    wchar_t *wtemp;
-    DWORD result;
-    PyObject *v;
+    wchar_t *abspath;
 
-    result = GetFullPathNameW(path->wide,
-                              Py_ARRAY_LENGTH(woutbuf),
-                              woutbuf, &wtemp);
-    if (result > Py_ARRAY_LENGTH(woutbuf)) {
-        woutbufp = PyMem_New(wchar_t, result);
-        if (!woutbufp)
-            return PyErr_NoMemory();
-        result = GetFullPathNameW(path->wide, result, woutbufp, &wtemp);
+    /* _Py_abspath() is implemented with GetFullPathNameW() on Windows */
+    if (_Py_abspath(path->wide, &abspath) < 0) {
+        return win32_error_object("GetFullPathNameW", path->object);
     }
-    if (result) {
-        v = PyUnicode_FromWideChar(woutbufp, wcslen(woutbufp));
-        if (path->narrow)
-            Py_SETREF(v, PyUnicode_EncodeFSDefault(v));
-    } else
-        v = win32_error_object("GetFullPathNameW", path->object);
-    if (woutbufp != woutbuf)
-        PyMem_Free(woutbufp);
-    return v;
+    if (abspath == NULL) {
+        return PyErr_NoMemory();
+    }
+
+    PyObject *str = PyUnicode_FromWideChar(abspath, wcslen(abspath));
+    PyMem_RawFree(abspath);
+    if (str == NULL) {
+        return NULL;
+    }
+    if (path->narrow) {
+        Py_SETREF(str, PyUnicode_EncodeFSDefault(str));
+    }
+    return str;
 }
 
 
@@ -3829,8 +3939,9 @@ os__getfinalpathname_impl(PyObject *module, path_t *path)
     }
 
     result = PyUnicode_FromWideChar(target_path, result_length);
-    if (path->narrow)
+    if (result && path->narrow) {
         Py_SETREF(result, PyUnicode_EncodeFSDefault(result));
+    }
 
 cleanup:
     if (target_path != buf) {
@@ -3838,44 +3949,6 @@ cleanup:
     }
     CloseHandle(hFile);
     return result;
-}
-
-/*[clinic input]
-os._isdir
-
-    path as arg: object
-    /
-
-Return true if the pathname refers to an existing directory.
-[clinic start generated code]*/
-
-static PyObject *
-os__isdir(PyObject *module, PyObject *arg)
-/*[clinic end generated code: output=404f334d85d4bf25 input=36cb6785874d479e]*/
-{
-    DWORD attributes;
-    path_t path = PATH_T_INITIALIZE("_isdir", "path", 0, 0);
-
-    if (!path_converter(arg, &path)) {
-        if (PyErr_ExceptionMatches(PyExc_ValueError)) {
-            PyErr_Clear();
-            Py_RETURN_FALSE;
-        }
-        return NULL;
-    }
-
-    Py_BEGIN_ALLOW_THREADS
-    attributes = GetFileAttributesW(path.wide);
-    Py_END_ALLOW_THREADS
-
-    path_cleanup(&path);
-    if (attributes == INVALID_FILE_ATTRIBUTES)
-        Py_RETURN_FALSE;
-
-    if (attributes & FILE_ATTRIBUTE_DIRECTORY)
-        Py_RETURN_TRUE;
-    else
-        Py_RETURN_FALSE;
 }
 
 
@@ -4239,6 +4312,11 @@ os_system_impl(PyObject *module, const Py_UNICODE *command)
 /*[clinic end generated code: output=5b7c3599c068ca42 input=303f5ce97df606b0]*/
 {
     long result;
+
+    if (PySys_Audit("system", "(u)", command) < 0) {
+        return -1;
+    }
+
     Py_BEGIN_ALLOW_THREADS
     _Py_BEGIN_SUPPRESS_IPH
     result = _wsystem(command);
@@ -4261,6 +4339,11 @@ os_system_impl(PyObject *module, PyObject *command)
 {
     long result;
     const char *bytes = PyBytes_AsString(command);
+
+    if (PySys_Audit("system", "(O)", command) < 0) {
+        return -1;
+    }
+
     Py_BEGIN_ALLOW_THREADS
     result = system(bytes);
     Py_END_ALLOW_THREADS
@@ -4859,7 +4942,7 @@ os__exit_impl(PyObject *module, int status)
 #define EXECV_CHAR char
 #endif
 
-#if defined(HAVE_EXECV) || defined(HAVE_SPAWNV)
+#if defined(HAVE_EXECV) || defined(HAVE_SPAWNV) || defined(HAVE_RTPSPAWN)
 static void
 free_string_array(EXECV_CHAR **array, Py_ssize_t count)
 {
@@ -4897,7 +4980,7 @@ fsconvert_strdup(PyObject *o, EXECV_CHAR **out)
 }
 #endif
 
-#if defined(HAVE_EXECV) || defined (HAVE_FEXECVE)
+#if defined(HAVE_EXECV) || defined (HAVE_FEXECVE) || defined(HAVE_RTPSPAWN)
 static EXECV_CHAR**
 parse_envlist(PyObject* env, Py_ssize_t *envc_ptr)
 {
@@ -5319,7 +5402,7 @@ parse_file_actions(PyObject *file_actions,
         return -1;
     }
 
-    for (int i = 0; i < PySequence_Fast_GET_SIZE(seq); ++i) {
+    for (Py_ssize_t i = 0; i < PySequence_Fast_GET_SIZE(seq); ++i) {
         file_action = PySequence_Fast_GET_ITEM(seq, i);
         Py_INCREF(file_action);
         if (!PyTuple_Check(file_action) || !PyTuple_GET_SIZE(file_action)) {
@@ -5465,7 +5548,7 @@ py_posix_spawn(int use_posix_spawnp, PyObject *module, path_t *path, PyObject *a
         goto exit;
     }
 
-    if (file_actions != NULL) {
+    if (file_actions != NULL && file_actions != Py_None) {
         /* There is a bug in old versions of glibc that makes some of the
          * helper functions for manipulating file actions not copy the provided
          * buffers. The problem is that posix_spawn_file_actions_addopen does not
@@ -5621,8 +5704,41 @@ os_posix_spawnp_impl(PyObject *module, path_t *path, PyObject *argv,
 }
 #endif /* HAVE_POSIX_SPAWNP */
 
+#ifdef HAVE_RTPSPAWN
+static intptr_t
+_rtp_spawn(int mode, const char *rtpFileName, const char *argv[],
+               const char  *envp[])
+{
+     RTP_ID rtpid;
+     int status;
+     pid_t res;
+     int async_err = 0;
 
-#if defined(HAVE_SPAWNV) || defined(HAVE_WSPAWNV)
+     /* Set priority=100 and uStackSize=16 MiB (0x1000000) for new processes.
+        uStackSize=0 cannot be used, the default stack size is too small for
+        Python. */
+     if (envp) {
+         rtpid = rtpSpawn(rtpFileName, argv, envp,
+                          100, 0x1000000, 0, VX_FP_TASK);
+     }
+     else {
+         rtpid = rtpSpawn(rtpFileName, argv, (const char **)environ,
+                          100, 0x1000000, 0, VX_FP_TASK);
+     }
+     if ((rtpid != RTP_ID_ERROR) && (mode == _P_WAIT)) {
+         do {
+             res = waitpid((pid_t)rtpid, &status, 0);
+         } while (res < 0 && errno == EINTR && !(async_err = PyErr_CheckSignals()));
+
+         if (res < 0)
+             return RTP_ID_ERROR;
+         return ((intptr_t)status);
+     }
+     return ((intptr_t)rtpid);
+}
+#endif
+
+#if defined(HAVE_SPAWNV) || defined(HAVE_WSPAWNV) || defined(HAVE_RTPSPAWN)
 /*[clinic input]
 os.spawnv
 
@@ -5692,13 +5808,17 @@ os_spawnv_impl(PyObject *module, int mode, path_t *path, PyObject *argv)
     }
     argvlist[argc] = NULL;
 
+#if !defined(HAVE_RTPSPAWN)
     if (mode == _OLD_P_OVERLAY)
         mode = _P_OVERLAY;
+#endif
 
     Py_BEGIN_ALLOW_THREADS
     _Py_BEGIN_SUPPRESS_IPH
 #ifdef HAVE_WSPAWNV
     spawnval = _wspawnv(mode, path->wide, argvlist);
+#elif defined(HAVE_RTPSPAWN)
+    spawnval = _rtp_spawn(mode, path->narrow, (const char **)argvlist, NULL);
 #else
     spawnval = _spawnv(mode, path->narrow, argvlist);
 #endif
@@ -5797,13 +5917,18 @@ os_spawnve_impl(PyObject *module, int mode, path_t *path, PyObject *argv,
     if (envlist == NULL)
         goto fail_1;
 
+#if !defined(HAVE_RTPSPAWN)
     if (mode == _OLD_P_OVERLAY)
         mode = _P_OVERLAY;
+#endif
 
     Py_BEGIN_ALLOW_THREADS
     _Py_BEGIN_SUPPRESS_IPH
 #ifdef HAVE_WSPAWNV
     spawnval = _wspawnve(mode, path->wide, argvlist, envlist);
+#elif defined(HAVE_RTPSPAWN)
+    spawnval = _rtp_spawn(mode, path->narrow, (const char **)argvlist,
+                           (const char **)envlist);
 #else
     spawnval = _spawnve(mode, path->narrow, argvlist, envlist);
 #endif
@@ -6012,14 +6137,14 @@ os.sched_getscheduler
     pid: pid_t
     /
 
-Get the scheduling policy for the process identifiedy by pid.
+Get the scheduling policy for the process identified by pid.
 
 Passing 0 for pid returns the scheduling policy for the calling process.
 [clinic start generated code]*/
 
 static PyObject *
 os_sched_getscheduler_impl(PyObject *module, pid_t pid)
-/*[clinic end generated code: output=dce4c0bd3f1b34c8 input=5f14cfd1f189e1a0]*/
+/*[clinic end generated code: output=dce4c0bd3f1b34c8 input=8d99dac505485ac8]*/
 {
     int policy;
 
@@ -6312,6 +6437,9 @@ os_sched_setaffinity_impl(PyObject *module, pid_t pid, PyObject *mask)
             ncpus = newncpus;
         }
         CPU_SET_S(cpu, setsize, cpu_set);
+    }
+    if (PyErr_Occurred()) {
+        goto error;
     }
     Py_CLEAR(iterator);
 
@@ -6628,6 +6756,13 @@ os_getpid_impl(PyObject *module)
 }
 #endif /* HAVE_GETPID */
 
+#ifdef NGROUPS_MAX
+#define MAX_GROUPS NGROUPS_MAX
+#else
+    /* defined to be 16 on Solaris7, so this should be a small number */
+#define MAX_GROUPS 64
+#endif
+
 #ifdef HAVE_GETGROUPLIST
 
 /* AC 3.5: funny apple logic below */
@@ -6640,13 +6775,6 @@ Returns a list of groups to which a user belongs.\n\n\
 static PyObject *
 posix_getgrouplist(PyObject *self, PyObject *args)
 {
-#ifdef NGROUPS_MAX
-#define MAX_GROUPS NGROUPS_MAX
-#else
-    /* defined to be 16 on Solaris7, so this should be a small number */
-#define MAX_GROUPS 64
-#endif
-
     const char *user;
     int i, ngroups;
     PyObject *list;
@@ -6655,7 +6783,16 @@ posix_getgrouplist(PyObject *self, PyObject *args)
 #else
     gid_t *groups, basegid;
 #endif
-    ngroups = MAX_GROUPS;
+
+    /*
+     * NGROUPS_MAX is defined by POSIX.1 as the maximum
+     * number of supplimental groups a users can belong to.
+     * We have to increment it by one because
+     * getgrouplist() returns both the supplemental groups
+     * and the primary group, i.e. all of the groups the
+     * user belongs to.
+     */
+    ngroups = 1 + MAX_GROUPS;
 
 #ifdef __APPLE__
     if (!PyArg_ParseTuple(args, "si:getgrouplist", &user, &basegid))
@@ -6724,13 +6861,6 @@ os_getgroups_impl(PyObject *module)
 /*[clinic end generated code: output=42b0c17758561b56 input=d3f109412e6a155c]*/
 {
     PyObject *result = NULL;
-
-#ifdef NGROUPS_MAX
-#define MAX_GROUPS NGROUPS_MAX
-#else
-    /* defined to be 16 on Solaris7, so this should be a small number */
-#define MAX_GROUPS 64
-#endif
     gid_t grouplist[MAX_GROUPS];
 
     /* On MacOSX getgroups(2) can return more than MAX_GROUPS results
@@ -7691,12 +7821,11 @@ os_readlink_impl(PyObject *module, path_t *path, int dir_fd)
         return PyBytes_FromStringAndSize(buffer, length);
 #elif defined(MS_WINDOWS)
     DWORD n_bytes_returned;
-    DWORD io_result;
+    DWORD io_result = 0;
     HANDLE reparse_point_handle;
     char target_buffer[_Py_MAXIMUM_REPARSE_DATA_BUFFER_SIZE];
     _Py_REPARSE_DATA_BUFFER *rdb = (_Py_REPARSE_DATA_BUFFER *)target_buffer;
-    const wchar_t *print_name;
-    PyObject *result;
+    PyObject *result = NULL;
 
     /* First get a handle to the reparse point */
     Py_BEGIN_ALLOW_THREADS
@@ -7708,42 +7837,51 @@ os_readlink_impl(PyObject *module, path_t *path, int dir_fd)
         OPEN_EXISTING,
         FILE_FLAG_OPEN_REPARSE_POINT|FILE_FLAG_BACKUP_SEMANTICS,
         0);
-    Py_END_ALLOW_THREADS
-
-    if (reparse_point_handle == INVALID_HANDLE_VALUE) {
-        return path_error(path);
+    if (reparse_point_handle != INVALID_HANDLE_VALUE) {
+        /* New call DeviceIoControl to read the reparse point */
+        io_result = DeviceIoControl(
+            reparse_point_handle,
+            FSCTL_GET_REPARSE_POINT,
+            0, 0, /* in buffer */
+            target_buffer, sizeof(target_buffer),
+            &n_bytes_returned,
+            0 /* we're not using OVERLAPPED_IO */
+            );
+        CloseHandle(reparse_point_handle);
     }
-
-    Py_BEGIN_ALLOW_THREADS
-    /* New call DeviceIoControl to read the reparse point */
-    io_result = DeviceIoControl(
-        reparse_point_handle,
-        FSCTL_GET_REPARSE_POINT,
-        0, 0, /* in buffer */
-        target_buffer, sizeof(target_buffer),
-        &n_bytes_returned,
-        0 /* we're not using OVERLAPPED_IO */
-        );
-    CloseHandle(reparse_point_handle);
     Py_END_ALLOW_THREADS
 
     if (io_result == 0) {
         return path_error(path);
     }
 
-    if (rdb->ReparseTag != IO_REPARSE_TAG_SYMLINK)
+    wchar_t *name = NULL;
+    Py_ssize_t nameLen = 0;
+    if (rdb->ReparseTag == IO_REPARSE_TAG_SYMLINK)
     {
-        PyErr_SetString(PyExc_ValueError,
-                "not a symbolic link");
-        return NULL;
+        name = (wchar_t *)((char*)rdb->SymbolicLinkReparseBuffer.PathBuffer +
+                           rdb->SymbolicLinkReparseBuffer.SubstituteNameOffset);
+        nameLen = rdb->SymbolicLinkReparseBuffer.SubstituteNameLength / sizeof(wchar_t);
     }
-    print_name = (wchar_t *)((char*)rdb->SymbolicLinkReparseBuffer.PathBuffer +
-                 rdb->SymbolicLinkReparseBuffer.PrintNameOffset);
-
-    result = PyUnicode_FromWideChar(print_name,
-            rdb->SymbolicLinkReparseBuffer.PrintNameLength / sizeof(wchar_t));
-    if (path->narrow) {
-        Py_SETREF(result, PyUnicode_EncodeFSDefault(result));
+    else if (rdb->ReparseTag == IO_REPARSE_TAG_MOUNT_POINT)
+    {
+        name = (wchar_t *)((char*)rdb->MountPointReparseBuffer.PathBuffer +
+                           rdb->MountPointReparseBuffer.SubstituteNameOffset);
+        nameLen = rdb->MountPointReparseBuffer.SubstituteNameLength / sizeof(wchar_t);
+    }
+    else
+    {
+        PyErr_SetString(PyExc_ValueError, "not a symbolic link");
+    }
+    if (name) {
+        if (nameLen > 4 && wcsncmp(name, L"\\??\\", 4) == 0) {
+            /* Our buffer is mutable, so this is okay */
+            name[1] = L'\\';
+        }
+        result = PyUnicode_FromWideChar(name, nameLen);
+        if (result && path->narrow) {
+            Py_SETREF(result, PyUnicode_EncodeFSDefault(result));
+        }
     }
     return result;
 #endif
@@ -8211,6 +8349,10 @@ os_open_impl(PyObject *module, path_t *path, int flags, int mode, int dir_fd)
 #elif defined(O_CLOEXEC)
     flags |= O_CLOEXEC;
 #endif
+
+    if (PySys_Audit("open", "OOi", path->object, Py_None, flags) < 0) {
+        return -1;
+    }
 
     _Py_BEGIN_SUPPRESS_IPH
     do {
@@ -9361,8 +9503,74 @@ os_pwritev_impl(PyObject *module, int fd, PyObject *buffers, Py_off_t offset,
 }
 #endif /* HAVE_PWRITEV */
 
+#ifdef HAVE_COPY_FILE_RANGE
+/*[clinic input]
+
+os.copy_file_range
+    src: int
+        Source file descriptor.
+    dst: int
+        Destination file descriptor.
+    count: Py_ssize_t
+        Number of bytes to copy.
+    offset_src: object = None
+        Starting offset in src.
+    offset_dst: object = None
+        Starting offset in dst.
+
+Copy count bytes from one file descriptor to another.
+
+If offset_src is None, then src is read from the current position;
+respectively for offset_dst.
+[clinic start generated code]*/
+
+static PyObject *
+os_copy_file_range_impl(PyObject *module, int src, int dst, Py_ssize_t count,
+                        PyObject *offset_src, PyObject *offset_dst)
+/*[clinic end generated code: output=1a91713a1d99fc7a input=42fdce72681b25a9]*/
+{
+    off_t offset_src_val, offset_dst_val;
+    off_t *p_offset_src = NULL;
+    off_t *p_offset_dst = NULL;
+    Py_ssize_t ret;
+    int async_err = 0;
+    /* The flags argument is provided to allow
+     * for future extensions and currently must be to 0. */
+    int flags = 0;
 
 
+    if (count < 0) {
+        PyErr_SetString(PyExc_ValueError, "negative value for 'count' not allowed");
+        return NULL;
+    }
+
+    if (offset_src != Py_None) {
+        if (!Py_off_t_converter(offset_src, &offset_src_val)) {
+            return NULL;
+        }
+        p_offset_src = &offset_src_val;
+    }
+
+    if (offset_dst != Py_None) {
+        if (!Py_off_t_converter(offset_dst, &offset_dst_val)) {
+            return NULL;
+        }
+        p_offset_dst = &offset_dst_val;
+    }
+
+    do {
+        Py_BEGIN_ALLOW_THREADS
+        ret = copy_file_range(src, p_offset_src, dst, p_offset_dst, count, flags);
+        Py_END_ALLOW_THREADS
+    } while (ret < 0 && errno == EINTR && !(async_err = PyErr_CheckSignals()));
+
+    if (ret < 0) {
+        return (!async_err) ? posix_error() : NULL;
+    }
+
+    return PyLong_FromSsize_t(ret);
+}
+#endif /* HAVE_COPY_FILE_RANGE*/
 
 #ifdef HAVE_MKFIFO
 /*[clinic input]
@@ -9531,6 +9739,10 @@ os_ftruncate_impl(PyObject *module, int fd, Py_off_t length)
     int result;
     int async_err = 0;
 
+    if (PySys_Audit("os.truncate", "in", fd, length) < 0) {
+        return NULL;
+    }
+
     do {
         Py_BEGIN_ALLOW_THREADS
         _Py_BEGIN_SUPPRESS_IPH
@@ -9573,6 +9785,10 @@ os_truncate_impl(PyObject *module, path_t *path, Py_off_t length)
 
     if (path->fd != -1)
         return os_ftruncate_impl(module, path->fd, length);
+
+    if (PySys_Audit("os.truncate", "On", path->object, length) < 0) {
+        return NULL;
+    }
 
     Py_BEGIN_ALLOW_THREADS
     _Py_BEGIN_SUPPRESS_IPH
@@ -11808,6 +12024,31 @@ os_urandom_impl(PyObject *module, Py_ssize_t size)
     return bytes;
 }
 
+#ifdef HAVE_MEMFD_CREATE
+/*[clinic input]
+os.memfd_create
+
+    name: FSConverter
+    flags: unsigned_int(bitwise=True, c_default="MFD_CLOEXEC") = MFD_CLOEXEC
+
+[clinic start generated code]*/
+
+static PyObject *
+os_memfd_create_impl(PyObject *module, PyObject *name, unsigned int flags)
+/*[clinic end generated code: output=6681ede983bdb9a6 input=a42cfc199bcd56e9]*/
+{
+    int fd;
+    const char *bytes = PyBytes_AS_STRING(name);
+    Py_BEGIN_ALLOW_THREADS
+    fd = memfd_create(bytes, flags);
+    Py_END_ALLOW_THREADS
+    if (fd == -1) {
+        return PyErr_SetFromErrno(PyExc_OSError);
+    }
+    return PyLong_FromLong(fd);
+}
+#endif
+
 /* Terminal size querying */
 
 static PyTypeObject* TerminalSizeType;
@@ -12453,10 +12694,10 @@ static PyTypeObject DirEntryType = {
     0,                                      /* tp_itemsize */
     /* methods */
     (destructor)DirEntry_dealloc,           /* tp_dealloc */
-    0,                                      /* tp_print */
+    0,                                      /* tp_vectorcall_offset */
     0,                                      /* tp_getattr */
     0,                                      /* tp_setattr */
-    0,                                      /* tp_compare */
+    0,                                      /* tp_as_async */
     (reprfunc)DirEntry_repr,                /* tp_repr */
     0,                                      /* tp_as_number */
     0,                                      /* tp_as_sequence */
@@ -12891,10 +13132,10 @@ static PyTypeObject ScandirIteratorType = {
     0,                                      /* tp_itemsize */
     /* methods */
     (destructor)ScandirIterator_dealloc,    /* tp_dealloc */
-    0,                                      /* tp_print */
+    0,                                      /* tp_vectorcall_offset */
     0,                                      /* tp_getattr */
     0,                                      /* tp_setattr */
-    0,                                      /* tp_compare */
+    0,                                      /* tp_as_async */
     0,                                      /* tp_repr */
     0,                                      /* tp_as_number */
     0,                                      /* tp_as_sequence */
@@ -12905,8 +13146,7 @@ static PyTypeObject ScandirIteratorType = {
     0,                                      /* tp_getattro */
     0,                                      /* tp_setattro */
     0,                                      /* tp_as_buffer */
-    Py_TPFLAGS_DEFAULT
-        | Py_TPFLAGS_HAVE_FINALIZE,         /* tp_flags */
+    Py_TPFLAGS_DEFAULT,                     /* tp_flags */
     0,                                      /* tp_doc */
     0,                                      /* tp_traverse */
     0,                                      /* tp_clear */
@@ -12964,6 +13204,11 @@ os_scandir_impl(PyObject *module, path_t *path)
     int fd = -1;
 #endif
 #endif
+
+    if (PySys_Audit("os.scandir", "O",
+                    path->object ? path->object : Py_None) < 0) {
+        return NULL;
+    }
 
     iterator = PyObject_New(ScandirIterator, &ScandirIteratorType);
     if (!iterator)
@@ -13306,6 +13551,7 @@ static PyMethodDef posix_methods[] = {
     OS_POSIX_SPAWN_METHODDEF
     OS_POSIX_SPAWNP_METHODDEF
     OS_READLINK_METHODDEF
+    OS_COPY_FILE_RANGE_METHODDEF
     OS_RENAME_METHODDEF
     OS_REPLACE_METHODDEF
     OS_RMDIR_METHODDEF
@@ -13434,7 +13680,6 @@ static PyMethodDef posix_methods[] = {
     OS_PATHCONF_METHODDEF
     OS_ABORT_METHODDEF
     OS__GETFULLPATHNAME_METHODDEF
-    OS__ISDIR_METHODDEF
     OS__GETDISKUSAGE_METHODDEF
     OS__GETFINALPATHNAME_METHODDEF
     OS__GETVOLUMEPATHNAME_METHODDEF
@@ -13465,6 +13710,7 @@ static PyMethodDef posix_methods[] = {
     OS_SCANDIR_METHODDEF
     OS_FSPATH_METHODDEF
     OS_GETRANDOM_METHODDEF
+    OS_MEMFD_CREATE_METHODDEF
 #ifdef MS_WINDOWS
     OS__ADD_DLL_DIRECTORY_METHODDEF
     OS__REMOVE_DLL_DIRECTORY_METHODDEF
@@ -13833,11 +14079,13 @@ all_ins(PyObject *m)
     if (PyModule_AddIntConstant(m, "POSIX_SPAWN_DUP2", POSIX_SPAWN_DUP2)) return -1;
 #endif
 
-#ifdef HAVE_SPAWNV
+#if defined(HAVE_SPAWNV) || defined (HAVE_RTPSPAWN)
     if (PyModule_AddIntConstant(m, "P_WAIT", _P_WAIT)) return -1;
     if (PyModule_AddIntConstant(m, "P_NOWAIT", _P_NOWAIT)) return -1;
-    if (PyModule_AddIntConstant(m, "P_OVERLAY", _OLD_P_OVERLAY)) return -1;
     if (PyModule_AddIntConstant(m, "P_NOWAITO", _P_NOWAITO)) return -1;
+#endif
+#ifdef HAVE_SPAWNV
+    if (PyModule_AddIntConstant(m, "P_OVERLAY", _OLD_P_OVERLAY)) return -1;
     if (PyModule_AddIntConstant(m, "P_DETACH", _P_DETACH)) return -1;
 #endif
 
@@ -13911,6 +14159,55 @@ all_ins(PyObject *m)
 #ifdef HAVE_GETRANDOM_SYSCALL
     if (PyModule_AddIntMacro(m, GRND_RANDOM)) return -1;
     if (PyModule_AddIntMacro(m, GRND_NONBLOCK)) return -1;
+#endif
+#ifdef HAVE_MEMFD_CREATE
+    if (PyModule_AddIntMacro(m, MFD_CLOEXEC)) return -1;
+    if (PyModule_AddIntMacro(m, MFD_ALLOW_SEALING)) return -1;
+#ifdef MFD_HUGETLB
+    if (PyModule_AddIntMacro(m, MFD_HUGETLB)) return -1;
+#endif
+#ifdef MFD_HUGE_SHIFT
+    if (PyModule_AddIntMacro(m, MFD_HUGE_SHIFT)) return -1;
+#endif
+#ifdef MFD_HUGE_MASK
+    if (PyModule_AddIntMacro(m, MFD_HUGE_MASK)) return -1;
+#endif
+#ifdef MFD_HUGE_64KB
+    if (PyModule_AddIntMacro(m, MFD_HUGE_64KB)) return -1;
+#endif
+#ifdef MFD_HUGE_512KB
+    if (PyModule_AddIntMacro(m, MFD_HUGE_512KB)) return -1;
+#endif
+#ifdef MFD_HUGE_1MB
+    if (PyModule_AddIntMacro(m, MFD_HUGE_1MB)) return -1;
+#endif
+#ifdef MFD_HUGE_2MB
+    if (PyModule_AddIntMacro(m, MFD_HUGE_2MB)) return -1;
+#endif
+#ifdef MFD_HUGE_8MB
+    if (PyModule_AddIntMacro(m, MFD_HUGE_8MB)) return -1;
+#endif
+#ifdef MFD_HUGE_16MB
+    if (PyModule_AddIntMacro(m, MFD_HUGE_16MB)) return -1;
+#endif
+#ifdef MFD_HUGE_32MB
+    if (PyModule_AddIntMacro(m, MFD_HUGE_32MB)) return -1;
+#endif
+#ifdef MFD_HUGE_256MB
+    if (PyModule_AddIntMacro(m, MFD_HUGE_256MB)) return -1;
+#endif
+#ifdef MFD_HUGE_512MB
+    if (PyModule_AddIntMacro(m, MFD_HUGE_512MB)) return -1;
+#endif
+#ifdef MFD_HUGE_1GB
+    if (PyModule_AddIntMacro(m, MFD_HUGE_1GB)) return -1;
+#endif
+#ifdef MFD_HUGE_2GB
+    if (PyModule_AddIntMacro(m, MFD_HUGE_2GB)) return -1;
+#endif
+#ifdef MFD_HUGE_16GB
+    if (PyModule_AddIntMacro(m, MFD_HUGE_16GB)) return -1;
+#endif
 #endif
 
 #if defined(__APPLE__)
@@ -14026,6 +14323,10 @@ static const char * const have_functions[] = {
 
 #ifdef HAVE_LUTIMES
     "HAVE_LUTIMES",
+#endif
+
+#ifdef HAVE_MEMFD_CREATE
+    "HAVE_MEMFD_CREATE",
 #endif
 
 #ifdef HAVE_MKDIRAT

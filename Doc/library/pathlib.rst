@@ -273,7 +273,7 @@ Methods and properties
 
 .. testsetup::
 
-   from pathlib import PurePosixPath, PureWindowsPath
+   from pathlib import PurePath, PurePosixPath, PureWindowsPath
 
 Pure paths provide the following methods and properties:
 
@@ -460,6 +460,19 @@ Pure paths provide the following methods and properties:
       False
       >>> PureWindowsPath('//some/share').is_absolute()
       True
+
+
+.. method:: PurePath.is_relative_to(*other)
+
+   Return whether or not this path is relative to the *other* path.
+
+      >>> p = PurePath('/etc/passwd')
+      >>> p.is_relative_to('/etc')
+      True
+      >>> p.is_relative_to('/usr')
+      False
+
+   .. versionadded:: 3.9
 
 
 .. method:: PurePath.is_reserved()
@@ -976,7 +989,7 @@ call fails (for example because the path doesn't exist).
    is raised.
 
    .. versionadded:: 3.6
-      The *strict* argument.
+      The *strict* argument (pre-3.6 behavior is strict).
 
 .. method:: Path.rglob(pattern)
 
@@ -1048,10 +1061,19 @@ call fails (for example because the path doesn't exist).
    otherwise :exc:`FileExistsError` is raised.
 
 
-.. method:: Path.unlink()
+.. method:: Path.unlink(missing_ok=False)
 
    Remove this file or symbolic link.  If the path points to a directory,
    use :func:`Path.rmdir` instead.
+
+   If *missing_ok* is false (the default), :exc:`FileNotFoundError` is
+   raised if the path does not exist.
+
+   If *missing_ok* is true, :exc:`FileNotFoundError` exceptions will be
+   ignored (same behavior as the POSIX ``rm -f`` command).
+
+   .. versionchanged:: 3.8
+      The *missing_ok* parameter was added.
 
 
 .. method:: Path.link_to(target)

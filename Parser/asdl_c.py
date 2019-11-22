@@ -734,10 +734,10 @@ static PyTypeObject AST_type = {
     sizeof(AST_object),
     0,
     (destructor)ast_dealloc, /* tp_dealloc */
-    0,                       /* tp_print */
+    0,                       /* tp_vectorcall_offset */
     0,                       /* tp_getattr */
     0,                       /* tp_setattr */
-    0,                       /* tp_reserved */
+    0,                       /* tp_as_async */
     0,                       /* tp_repr */
     0,                       /* tp_as_number */
     0,                       /* tp_as_sequence */
@@ -1000,6 +1000,8 @@ class ASTModuleVisitor(PickleVisitor):
         self.emit("if (!m) return NULL;", 1)
         self.emit("d = PyModule_GetDict(m);", 1)
         self.emit('if (PyDict_SetItemString(d, "AST", (PyObject*)&AST_type) < 0) return NULL;', 1)
+        self.emit('if (PyModule_AddIntMacro(m, PyCF_ALLOW_TOP_LEVEL_AWAIT) < 0)', 1)
+        self.emit("return NULL;", 2)
         self.emit('if (PyModule_AddIntMacro(m, PyCF_ONLY_AST) < 0)', 1)
         self.emit("return NULL;", 2)
         self.emit('if (PyModule_AddIntMacro(m, PyCF_TYPE_COMMENTS) < 0)', 1)
@@ -1189,15 +1191,14 @@ PyObject* PyAST_mod2obj(mod_ty t)
 /* mode is 0 for "exec", 1 for "eval" and 2 for "single" input */
 mod_ty PyAST_obj2mod(PyObject* ast, PyArena* arena, int mode)
 {
-    return PyAST_obj2mod_ex(ast, arena, mode, PY_MINOR_VERSION);
-}
-
-mod_ty PyAST_obj2mod_ex(PyObject* ast, PyArena* arena, int mode, int feature_version)
-{
     mod_ty res;
     PyObject *req_type[3];
     char *req_name[] = {"Module", "Expression", "Interactive"};
     int isinstance;
+
+    if (PySys_Audit("compile", "OO", ast, Py_None) < 0) {
+        return NULL;
+    }
 
     req_type[0] = (PyObject*)Module_type;
     req_type[1] = (PyObject*)Expression_type;
@@ -1274,7 +1275,6 @@ def main(srcfile, dump_module=False):
             f.write("\n")
             f.write("PyObject* PyAST_mod2obj(mod_ty t);\n")
             f.write("mod_ty PyAST_obj2mod(PyObject* ast, PyArena* arena, int mode);\n")
-            f.write("mod_ty PyAST_obj2mod_ex(PyObject* ast, PyArena* arena, int mode, int feature_version);\n")
             f.write("int PyAST_Check(PyObject* obj);\n")
             f.write('\n')
             f.write('#ifdef __cplusplus\n')

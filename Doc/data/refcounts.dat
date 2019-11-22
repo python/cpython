@@ -234,6 +234,24 @@ PyCode_Check:PyObject*:co:0:
 PyCode_GetNumFree:int:::
 PyCode_GetNumFree:PyCodeObject*:co:0:
 
+PyCode_NewWithPosOnlyArgs:PyCodeObject*::+1:
+PyCode_NewWithPosOnlyArgs:int:argcount::
+PyCode_NewWithPosOnlyArgs:int:posonlyargcount::
+PyCode_NewWithPosOnlyArgs:int:kwonlyargcount::
+PyCode_NewWithPosOnlyArgs:int:nlocals::
+PyCode_NewWithPosOnlyArgs:int:stacksize::
+PyCode_NewWithPosOnlyArgs:int:flags::
+PyCode_NewWithPosOnlyArgs:PyObject*:code:0:
+PyCode_NewWithPosOnlyArgs:PyObject*:consts:0:
+PyCode_NewWithPosOnlyArgs:PyObject*:names:0:
+PyCode_NewWithPosOnlyArgs:PyObject*:varnames:0:
+PyCode_NewWithPosOnlyArgs:PyObject*:freevars:0:
+PyCode_NewWithPosOnlyArgs:PyObject*:cellvars:0:
+PyCode_NewWithPosOnlyArgs:PyObject*:filename:0:
+PyCode_NewWithPosOnlyArgs:PyObject*:name:0:
+PyCode_NewWithPosOnlyArgs:int:firstlineno::
+PyCode_NewWithPosOnlyArgs:PyObject*:lnotab:0:
+
 PyCode_New:PyCodeObject*::+1:
 PyCode_New:int:argcount::
 PyCode_New:int:kwonlyargcount::
@@ -412,6 +430,16 @@ PyDateTime_FromDateAndTime:int:hour::
 PyDateTime_FromDateAndTime:int:minute::
 PyDateTime_FromDateAndTime:int:second::
 PyDateTime_FromDateAndTime:int:usecond::
+
+PyDateTime_FromDateAndTimeAndFold:PyObject*::+1:
+PyDateTime_FromDateAndTimeAndFold:int:year::
+PyDateTime_FromDateAndTimeAndFold:int:month::
+PyDateTime_FromDateAndTimeAndFold:int:day::
+PyDateTime_FromDateAndTimeAndFold:int:hour::
+PyDateTime_FromDateAndTimeAndFold:int:minute::
+PyDateTime_FromDateAndTimeAndFold:int:second::
+PyDateTime_FromDateAndTimeAndFold:int:usecond::
+PyDateTime_FromDateAndTimeAndFold:int:fold::
 
 PyDateTime_FromTimestamp:PyObject*::+1:
 PyDateTime_FromTimestamp:PyObject*:args:0:
@@ -2210,6 +2238,13 @@ PyTime_FromTime:int:minute::
 PyTime_FromTime:int:second::
 PyTime_FromTime:int:usecond::
 
+PyTime_FromTimeAndFold:PyObject*::+1:
+PyTime_FromTimeAndFold:int:hour::
+PyTime_FromTimeAndFold:int:minute::
+PyTime_FromTimeAndFold:int:second::
+PyTime_FromTimeAndFold:int:usecond::
+PyTime_FromTimeAndFold:int:fold::
+
 PyTraceMalloc_Track:int:::
 PyTraceMalloc_Track:unsigned int:domain::
 PyTraceMalloc_Track:uintptr_t:ptr::
@@ -2427,7 +2462,7 @@ PyUnicode_FromWideChar:Py_ssize_t:size::
 PyUnicode_AsWideChar:Py_ssize_t:::
 PyUnicode_AsWideChar:PyObject*:*unicode:0:
 PyUnicode_AsWideChar:wchar_t*:w::
-PyUnicode_AsWideChar:Pyssize_t:size::
+PyUnicode_AsWideChar:Py_ssize_t:size::
 
 PyUnicode_AsWideCharString:wchar_t*:::
 PyUnicode_AsWideCharString:PyObject*:unicode:0:

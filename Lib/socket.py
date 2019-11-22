@@ -104,8 +104,6 @@ def _intenum_converter(value, enum_klass):
     except ValueError:
         return value
 
-_realsocket = socket
-
 # WSA error codes
 if sys.platform.lower().startswith("win"):
     errorTab = {}

@@ -3,12 +3,13 @@
 __all__ = ('Lock', 'Event', 'Condition', 'Semaphore', 'BoundedSemaphore')
 
 import collections
+import types
 import warnings
 
 from . import events
 from . import futures
 from . import exceptions
-from .coroutines import coroutine
+from .import coroutines
 
 
 class _ContextManager:
@@ -55,7 +56,7 @@ class _ContextManagerMixin:
         # always raises; that's how the with-statement works.
         pass
 
-    @coroutine
+    @types.coroutine
     def __iter__(self):
         # This is not a coroutine.  It is meant to enable the idiom:
         #
@@ -77,6 +78,9 @@ class _ContextManagerMixin:
                       DeprecationWarning, stacklevel=2)
         yield from self.acquire()
         return _ContextManager(self)
+
+    # The flag is needed for legacy asyncio.iscoroutine()
+    __iter__._is_coroutine = coroutines._is_coroutine
 
     async def __acquire_ctx(self):
         await self.acquire()
@@ -154,7 +158,7 @@ class Lock(_ContextManagerMixin):
     """
 
     def __init__(self, *, loop=None):
-        self._waiters = collections.deque()
+        self._waiters = None
         self._locked = False
         if loop is not None:
             self._loop = loop
@@ -178,10 +182,13 @@ class Lock(_ContextManagerMixin):
         This method blocks until the lock is unlocked, then sets it to
         locked and returns True.
         """
-        if not self._locked and all(w.cancelled() for w in self._waiters):
+        if (not self._locked and (self._waiters is None or
+                all(w.cancelled() for w in self._waiters))):
             self._locked = True
             return True
 
+        if self._waiters is None:
+            self._waiters = collections.deque()
         fut = self._loop.create_future()
         self._waiters.append(fut)
 
@@ -220,6 +227,8 @@ class Lock(_ContextManagerMixin):
 
     def _wake_up_first(self):
         """Wake up the first waiter if it isn't done."""
+        if not self._waiters:
+            return
         try:
             fut = next(iter(self._waiters))
         except StopIteration:

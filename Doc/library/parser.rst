@@ -25,11 +25,11 @@ from this.  This is better than trying to parse and modify an arbitrary Python
 code fragment as a string because parsing is performed in a manner identical to
 the code forming the application.  It is also faster.
 
-.. note::
+.. warning::
 
-   From Python 2.5 onward, it's much more convenient to cut in at the Abstract
-   Syntax Tree (AST) generation and compilation stage, using the :mod:`ast`
-   module.
+   The parser module is deprecated and will be removed in future versions of
+   Python. For the majority of use cases you can leverage the Abstract Syntax
+   Tree (AST) generation and compilation stage, using the :mod:`ast` module.
 
 There are a few things to note about this module which are important to making
 use of the data structures created.  This is not a tutorial on editing the parse

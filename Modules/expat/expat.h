@@ -265,7 +265,7 @@ XML_ParserCreate_MM(const XML_Char *encoding,
 
 /* Prepare a parser object to be re-used.  This is particularly
    valuable when memory allocation overhead is disproportionately high,
-   such as when a large number of small documnents need to be parsed.
+   such as when a large number of small documents need to be parsed.
    All handlers are cleared from the parser, except for the
    unknownEncodingHandler. The parser's external state is re-initialized
    except for the values of ns and ns_triplets.
@@ -1076,7 +1076,7 @@ XML_GetFeatureList(void);
 */
 #define XML_MAJOR_VERSION 2
 #define XML_MINOR_VERSION 2
-#define XML_MICRO_VERSION 6
+#define XML_MICRO_VERSION 7
 
 #ifdef __cplusplus
 }

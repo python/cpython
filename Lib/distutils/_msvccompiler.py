@@ -93,6 +93,7 @@ PLAT_SPEC_TO_RUNTIME = {
     'x86' : 'x86',
     'x86_amd64' : 'x64',
     'x86_arm' : 'arm',
+    'x86_arm64' : 'arm64'
 }
 
 def _find_vcvarsall(plat_spec):
@@ -190,6 +191,7 @@ PLAT_TO_VCVARS = {
     'win32' : 'x86',
     'win-amd64' : 'x86_amd64',
     'win-arm32' : 'x86_arm',
+    'win-arm64' : 'x86_arm64'
 }
 
 # A set containing the DLLs that are guaranteed to be available for

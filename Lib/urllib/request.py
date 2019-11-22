@@ -101,7 +101,7 @@ import warnings
 
 from urllib.error import URLError, HTTPError, ContentTooShortError
 from urllib.parse import (
-    urlparse, urlsplit, urljoin, _unwrap, quote, unquote,
+    urlparse, urlsplit, urljoin, unwrap, quote, unquote,
     _splittype, _splithost, _splitport, _splituser, _splitpasswd,
     _splitattr, _splitquery, _splitvalue, _splittag, _to_bytes,
     unquote_to_bytes, urlunparse)
@@ -349,7 +349,7 @@ class Request:
     @full_url.setter
     def full_url(self, url):
         # unwrap('<URL:type://host/path>') --> 'type://host/path'
-        self._full_url = _unwrap(url)
+        self._full_url = unwrap(url)
         self._full_url, self.fragment = _splittag(self._full_url)
         self._parse()
 
@@ -521,6 +521,7 @@ class OpenerDirector:
             meth = getattr(processor, meth_name)
             req = meth(req)
 
+        sys.audit('urllib.Request', req.full_url, req.data, req.headers, req.get_method())
         response = self._open(req, data)
 
         # post-process response
@@ -1726,7 +1727,7 @@ class URLopener:
     # External interface
     def open(self, fullurl, data=None):
         """Use URLopener().open(file) instead of open(file, 'r')."""
-        fullurl = _unwrap(_to_bytes(fullurl))
+        fullurl = unwrap(_to_bytes(fullurl))
         fullurl = quote(fullurl, safe="%/:=&?~#+!$,;'@()*[]|")
         if self.tempcache and fullurl in self.tempcache:
             filename, headers = self.tempcache[fullurl]
@@ -1745,7 +1746,7 @@ class URLopener:
         name = 'open_' + urltype
         self.type = urltype
         name = name.replace('-', '_')
-        if not hasattr(self, name):
+        if not hasattr(self, name) or name == 'open_local_file':
             if proxy:
                 return self.open_unknown_proxy(proxy, fullurl, data)
             else:
@@ -1774,7 +1775,7 @@ class URLopener:
     def retrieve(self, url, filename=None, reporthook=None, data=None):
         """retrieve(url) returns (filename, headers) for a local object
         or (tempfilename, headers) for a remote object."""
-        url = _unwrap(_to_bytes(url))
+        url = unwrap(_to_bytes(url))
         if self.tempcache and url in self.tempcache:
             return self.tempcache[url]
         type, url1 = _splittype(url)
@@ -1783,7 +1784,7 @@ class URLopener:
                 fp = self.open_local_file(url1)
                 hdrs = fp.info()
                 fp.close()
-                return url2pathname(splithost(url1)[1]), hdrs
+                return url2pathname(_splithost(url1)[1]), hdrs
             except OSError as msg:
                 pass
         fp = self.open(url, data)
@@ -1792,10 +1793,10 @@ class URLopener:
             if filename:
                 tfp = open(filename, 'wb')
             else:
-                garbage, path = splittype(url)
-                garbage, path = splithost(path or "")
-                path, garbage = splitquery(path or "")
-                path, garbage = splitattr(path or "")
+                garbage, path = _splittype(url)
+                garbage, path = _splithost(path or "")
+                path, garbage = _splitquery(path or "")
+                path, garbage = _splitattr(path or "")
                 suffix = os.path.splitext(path)[1]
                 (fd, filename) = tempfile.mkstemp(suffix)
                 self.__tempfiles.append(filename)

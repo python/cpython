@@ -174,9 +174,9 @@ PyAPI_FUNC(Py_ssize_t) PyUnicode_GetLength(
 /* Get the number of Py_UNICODE units in the
    string representation. */
 
-PyAPI_FUNC(Py_ssize_t) PyUnicode_GetSize(
+Py_DEPRECATED(3.3) PyAPI_FUNC(Py_ssize_t) PyUnicode_GetSize(
     PyObject *unicode           /* Unicode object */
-    ) Py_DEPRECATED(3.3);
+    );
 
 #if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= 0x03030000
 /* Read a character from the string. */
@@ -381,11 +381,11 @@ PyAPI_FUNC(PyObject*) PyUnicode_Decode(
    Use PyCodec_Decode() to decode with rot13 and non-standard codecs
    that decode from str. */
 
-PyAPI_FUNC(PyObject*) PyUnicode_AsDecodedObject(
+Py_DEPRECATED(3.6) PyAPI_FUNC(PyObject*) PyUnicode_AsDecodedObject(
     PyObject *unicode,          /* Unicode object */
     const char *encoding,       /* encoding */
     const char *errors          /* error handling */
-    ) Py_DEPRECATED(3.6);
+    );
 
 /* Decode a Unicode object unicode and return the result as Unicode
    object.
@@ -394,11 +394,11 @@ PyAPI_FUNC(PyObject*) PyUnicode_AsDecodedObject(
    Use PyCodec_Decode() to decode with rot13 and non-standard codecs
    that decode from str to str. */
 
-PyAPI_FUNC(PyObject*) PyUnicode_AsDecodedUnicode(
+Py_DEPRECATED(3.6) PyAPI_FUNC(PyObject*) PyUnicode_AsDecodedUnicode(
     PyObject *unicode,          /* Unicode object */
     const char *encoding,       /* encoding */
     const char *errors          /* error handling */
-    ) Py_DEPRECATED(3.6);
+    );
 
 /* Encodes a Unicode object and returns the result as Python
    object.
@@ -408,11 +408,11 @@ PyAPI_FUNC(PyObject*) PyUnicode_AsDecodedUnicode(
    Use PyCodec_Encode() for encoding with rot13 and non-standard codecs
    that encode form str to non-bytes. */
 
-PyAPI_FUNC(PyObject*) PyUnicode_AsEncodedObject(
+Py_DEPRECATED(3.6) PyAPI_FUNC(PyObject*) PyUnicode_AsEncodedObject(
     PyObject *unicode,          /* Unicode object */
     const char *encoding,       /* encoding */
     const char *errors          /* error handling */
-    ) Py_DEPRECATED(3.6);
+    );
 
 /* Encodes a Unicode object and returns the result as Python string
    object. */
@@ -430,11 +430,11 @@ PyAPI_FUNC(PyObject*) PyUnicode_AsEncodedString(
    Use PyCodec_Encode() to encode with rot13 and non-standard codecs
    that encode from str to str. */
 
-PyAPI_FUNC(PyObject*) PyUnicode_AsEncodedUnicode(
+Py_DEPRECATED(3.6) PyAPI_FUNC(PyObject*) PyUnicode_AsEncodedUnicode(
     PyObject *unicode,          /* Unicode object */
     const char *encoding,       /* encoding */
     const char *errors          /* error handling */
-    ) Py_DEPRECATED(3.6);
+    );
 
 /* Build an encoding map. */
 

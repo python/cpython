@@ -9,7 +9,6 @@ import sysconfig
 from test import support
 from test.support import script_helper, is_android
 import tempfile
-import threading
 import unittest
 from textwrap import dedent
 
@@ -817,6 +816,17 @@ class FaultHandlerTests(unittest.TestCase):
         output, exitcode = self.get_output(code)
         self.assertEqual(output, [])
         self.assertEqual(exitcode, 0xC0000005)
+
+    def test_cancel_later_without_dump_traceback_later(self):
+        # bpo-37933: Calling cancel_dump_traceback_later()
+        # without dump_traceback_later() must not segfault.
+        code = dedent("""
+            import faulthandler
+            faulthandler.cancel_dump_traceback_later()
+        """)
+        output, exitcode = self.get_output(code)
+        self.assertEqual(output, [])
+        self.assertEqual(exitcode, 0)
 
 
 if __name__ == "__main__":

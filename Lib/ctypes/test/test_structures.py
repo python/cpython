@@ -3,7 +3,7 @@ from ctypes import *
 from ctypes.test import need_symbol
 from struct import calcsize
 import _ctypes_test
-import test.support
+from test import support
 
 class SubclassesTest(unittest.TestCase):
     def test_subclass(self):
@@ -202,7 +202,7 @@ class StructureTestCase(unittest.TestCase):
              "_pack_": -1}
         self.assertRaises(ValueError, type(Structure), "X", (Structure,), d)
 
-    @test.support.cpython_only
+    @support.cpython_only
     def test_packed_c_limits(self):
         # Issue 15989
         import _testcapi
@@ -396,26 +396,65 @@ class StructureTestCase(unittest.TestCase):
         self.assertRaises(TypeError, lambda: Z(1, 2, 3, 4, 5, 6, 7))
 
     def test_pass_by_value(self):
-        # This should mirror the structure in Modules/_ctypes/_ctypes_test.c
-        class X(Structure):
+        # This should mirror the Test structure
+        # in Modules/_ctypes/_ctypes_test.c
+        class Test(Structure):
             _fields_ = [
                 ('first', c_ulong),
                 ('second', c_ulong),
                 ('third', c_ulong),
             ]
 
-        s = X()
+        s = Test()
         s.first = 0xdeadbeef
         s.second = 0xcafebabe
         s.third = 0x0bad1dea
         dll = CDLL(_ctypes_test.__file__)
         func = dll._testfunc_large_struct_update_value
-        func.argtypes = (X,)
+        func.argtypes = (Test,)
         func.restype = None
         func(s)
         self.assertEqual(s.first, 0xdeadbeef)
         self.assertEqual(s.second, 0xcafebabe)
         self.assertEqual(s.third, 0x0bad1dea)
+
+    def test_pass_by_value_finalizer(self):
+        # bpo-37140: Similar to test_pass_by_value(), but the Python structure
+        # has a finalizer (__del__() method): the finalizer must only be called
+        # once.
+
+        finalizer_calls = []
+
+        class Test(Structure):
+            _fields_ = [
+                ('first', c_ulong),
+                ('second', c_ulong),
+                ('third', c_ulong),
+            ]
+            def __del__(self):
+                finalizer_calls.append("called")
+
+        s = Test(1, 2, 3)
+        # Test the StructUnionType_paramfunc() code path which copies the
+        # structure: if the stucture is larger than sizeof(void*).
+        self.assertGreater(sizeof(s), sizeof(c_void_p))
+
+        dll = CDLL(_ctypes_test.__file__)
+        func = dll._testfunc_large_struct_update_value
+        func.argtypes = (Test,)
+        func.restype = None
+        func(s)
+        # bpo-37140: Passing the structure by refrence must not call
+        # its finalizer!
+        self.assertEqual(finalizer_calls, [])
+        self.assertEqual(s.first, 1)
+        self.assertEqual(s.second, 2)
+        self.assertEqual(s.third, 3)
+
+        # The finalizer must be called exactly once
+        s = None
+        support.gc_collect()
+        self.assertEqual(finalizer_calls, ["called"])
 
     def test_pass_by_value_in_register(self):
         class X(Structure):

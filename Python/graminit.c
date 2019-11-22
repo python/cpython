@@ -742,7 +742,7 @@ static const arc arcs_17_2[2] = {
     {0, 2},
 };
 static const arc arcs_17_3[2] = {
-    {47, 4},
+    {81, 4},
     {84, 4},
 };
 static const arc arcs_17_4[1] = {

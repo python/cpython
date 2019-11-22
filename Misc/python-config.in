@@ -9,7 +9,8 @@ import sys
 import sysconfig
 
 valid_opts = ['prefix', 'exec-prefix', 'includes', 'libs', 'cflags',
-              'ldflags', 'extension-suffix', 'help', 'abiflags', 'configdir']
+              'ldflags', 'extension-suffix', 'help', 'abiflags', 'configdir',
+              'embed']
 
 def exit_with_usage(code=1):
     print("Usage: {0} [{1}]".format(
@@ -47,8 +48,13 @@ for opt in opt_flags:
         print(' '.join(flags))
 
     elif opt in ('--libs', '--ldflags'):
-        libpython = getvar('LIBPYTHON')
-        libs = [libpython] if libpython else []
+        libs = []
+        if '--embed' in opt_flags:
+            libs.append('-lpython' + pyver + sys.abiflags)
+        else:
+            libpython = getvar('LIBPYTHON')
+            if libpython:
+                libs.append(libpython)
         libs.extend(getvar('LIBS').split() + getvar('SYSLIBS').split())
 
         # add the prefix/lib/pythonX.Y/config dir, but only if there is no

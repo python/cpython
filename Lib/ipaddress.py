@@ -1108,6 +1108,8 @@ class _BaseV4:
         if arg not in cls._netmask_cache:
             if isinstance(arg, int):
                 prefixlen = arg
+                if not (0 <= prefixlen <= cls._max_prefixlen):
+                    cls._report_invalid_netmask(prefixlen)
             else:
                 try:
                     # Check for a netmask in prefix length form
@@ -1538,6 +1540,8 @@ class _BaseV6:
         if arg not in cls._netmask_cache:
             if isinstance(arg, int):
                 prefixlen = arg
+                if not (0 <= prefixlen <= cls._max_prefixlen):
+                    cls._report_invalid_netmask(prefixlen)
             else:
                 prefixlen = cls._prefix_from_prefix_string(arg)
             netmask = IPv6Address(cls._ip_int_from_prefix(prefixlen))

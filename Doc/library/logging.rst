@@ -50,8 +50,8 @@ listed below.
 Logger Objects
 --------------
 
-Loggers have the following attributes and methods.  Note that Loggers are never
-instantiated directly, but always through the module-level function
+Loggers have the following attributes and methods.  Note that Loggers should
+*NEVER* be instantiated directly, but always through the module-level function
 ``logging.getLogger(name)``.  Multiple calls to :func:`getLogger` with the same
 name will always return a reference to the same Logger object.
 
@@ -1196,6 +1196,21 @@ functions.
    |              | carrying out the configuration as specified |
    |              | by the other arguments.                     |
    +--------------+---------------------------------------------+
+   | *encoding*   | If this keyword argument is specified along |
+   |              | with *filename*, its value is used when the |
+   |              | FileHandler is created, and thus used when  |
+   |              | opening the output file.                    |
+   +--------------+---------------------------------------------+
+   | *errors*     | If this keyword argument is specified along |
+   |              | with *filename*, its value is used when the |
+   |              | FileHandler is created, and thus used when  |
+   |              | opening the output file. If not specified,  |
+   |              | the value 'backslashreplace' is used. Note  |
+   |              | that if ``None`` is specified, it will be   |
+   |              | passed as such to func:`open`, which means  |
+   |              | that it will be treated the same as passing |
+   |              | 'errors'.                                   |
+   +--------------+---------------------------------------------+
 
    .. versionchanged:: 3.2
       The *style* argument was added.
@@ -1208,6 +1223,9 @@ functions.
 
    .. versionchanged:: 3.8
       The *force* argument was added.
+
+   .. versionchanged:: 3.9
+      The *encoding* and *errors* arguments were added.
 
 .. function:: shutdown()
 
@@ -1226,7 +1244,9 @@ functions.
    The class should define :meth:`__init__` such that only a name argument is
    required, and the :meth:`__init__` should call :meth:`Logger.__init__`. This
    function is typically called before any loggers are instantiated by applications
-   which need to use custom logger behavior.
+   which need to use custom logger behavior. After this call, as at any other
+   time, do not instantiate loggers directly using the subclass: continue to use
+   the :func:`logging.getLogger` API to get your loggers.
 
 
 .. function:: setLogRecordFactory(factory)

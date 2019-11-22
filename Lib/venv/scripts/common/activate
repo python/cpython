@@ -54,17 +54,7 @@ fi
 
 if [ -z "${VIRTUAL_ENV_DISABLE_PROMPT:-}" ] ; then
     _OLD_VIRTUAL_PS1="${PS1:-}"
-    if [ "x__VENV_PROMPT__" != x ] ; then
-	PS1="__VENV_PROMPT__${PS1:-}"
-    else
-    if [ "`basename \"$VIRTUAL_ENV\"`" = "__" ] ; then
-        # special case for Aspen magic directories
-        # see http://www.zetadev.com/software/aspen/
-        PS1="[`basename \`dirname \"$VIRTUAL_ENV\"\``] $PS1"
-    else
-        PS1="(`basename \"$VIRTUAL_ENV\"`)$PS1"
-    fi
-    fi
+    PS1="__VENV_PROMPT__${PS1:-}"
     export PS1
 fi
 

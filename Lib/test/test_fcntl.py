@@ -144,6 +144,12 @@ class TestFcntl(unittest.TestCase):
         self.assertRaises(OverflowError, fcntl.flock, _testcapi.INT_MAX+1,
                           fcntl.LOCK_SH)
 
+    @unittest.skipIf(sys.platform != 'darwin', "F_GETPATH is only available on macos")
+    def test_fcntl_f_getpath(self):
+        self.f = open(TESTFN, 'wb')
+        expected = os.path.abspath(TESTFN).encode('utf-8')
+        res = fcntl.fcntl(self.f.fileno(), fcntl.F_GETPATH, bytes(len(expected)))
+        self.assertEqual(expected, res)
 
 def test_main():
     run_unittest(TestFcntl)

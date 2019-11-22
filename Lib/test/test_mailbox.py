@@ -1420,7 +1420,7 @@ class TestMessage(TestBase, unittest.TestCase):
         # Initialize with invalid argument
         self.assertRaises(TypeError, lambda: self._factory(object()))
 
-    def test_all_eMM_attribues_exist(self):
+    def test_all_eMM_attributes_exist(self):
         # Issue 12537
         eMM = email.message_from_string(_sample_message)
         msg = self._factory(_sample_message)

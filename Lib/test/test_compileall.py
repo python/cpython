@@ -575,17 +575,17 @@ class CommandLineTestsBase:
                         new=[sys.executable, self.directory, "-j0"]):
             compileall.main()
             self.assertTrue(compile_dir.called)
-            self.assertEqual(compile_dir.call_args[-1]['workers'], None)
+            self.assertEqual(compile_dir.call_args[-1]['workers'], 0)
 
 
-class CommmandLineTestsWithSourceEpoch(CommandLineTestsBase,
+class CommandLineTestsWithSourceEpoch(CommandLineTestsBase,
                                        unittest.TestCase,
                                        metaclass=SourceDateEpochTestMeta,
                                        source_date_epoch=True):
     pass
 
 
-class CommmandLineTestsNoSourceEpoch(CommandLineTestsBase,
+class CommandLineTestsNoSourceEpoch(CommandLineTestsBase,
                                      unittest.TestCase,
                                      metaclass=SourceDateEpochTestMeta,
                                      source_date_epoch=False):

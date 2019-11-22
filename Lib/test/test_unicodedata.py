@@ -1,4 +1,4 @@
-""" Test script for the unicodedata module.
+""" Tests for the unicodedata module.
 
     Written by Marc-Andre Lemburg (mal@lemburg.com).
 
@@ -6,16 +6,12 @@
 
 """
 
-import sys
-import unittest
 import hashlib
+import sys
+import unicodedata
+import unittest
 from test.support import script_helper
 
-encoding = 'utf-8'
-errors = 'surrogatepass'
-
-
-### Run tests
 
 class UnicodeMethodsTest(unittest.TestCase):
 
@@ -61,26 +57,18 @@ class UnicodeMethodsTest(unittest.TestCase):
                 (char + 'ABC').title(),
 
                 ]
-            h.update(''.join(data).encode(encoding, errors))
+            h.update(''.join(data).encode('utf-8', 'surrogatepass'))
         result = h.hexdigest()
         self.assertEqual(result, self.expectedchecksum)
 
 class UnicodeDatabaseTest(unittest.TestCase):
-
-    def setUp(self):
-        # In case unicodedata is not available, this will raise an ImportError,
-        # but the other test cases will still be run
-        import unicodedata
-        self.db = unicodedata
-
-    def tearDown(self):
-        del self.db
+    db = unicodedata
 
 class UnicodeFunctionsTest(UnicodeDatabaseTest):
 
     # Update this if the database changes. Make sure to do a full rebuild
     # (e.g. 'make distclean && make') to get the correct checksum.
-    expectedchecksum = '4cb02a243aed7c251067386dd738189146fddf94'
+    expectedchecksum = 'c44a49ca7c5cb6441640fe174ede604b45028652'
     def test_function_checksum(self):
         data = []
         h = hashlib.sha1()
@@ -220,6 +208,8 @@ class UnicodeFunctionsTest(UnicodeDatabaseTest):
         self.assertEqual(self.db.normalize('NFC', u11a7_str_a), u11a7_str_b)
         self.assertEqual(self.db.normalize('NFC', u11c3_str_a), u11c3_str_b)
 
+    # For tests of unicodedata.is_normalized / self.db.is_normalized ,
+    # see test_normalization.py .
 
     def test_east_asian_width(self):
         eaw = self.db.east_asian_width

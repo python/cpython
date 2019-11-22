@@ -246,6 +246,15 @@ PyFloat_AsDouble(PyObject *op)
 
     nb = Py_TYPE(op)->tp_as_number;
     if (nb == NULL || nb->nb_float == NULL) {
+        if (nb && nb->nb_index) {
+            PyObject *res = PyNumber_Index(op);
+            if (!res) {
+                return -1;
+            }
+            double val = PyLong_AsDouble(res);
+            Py_DECREF(res);
+            return val;
+        }
         PyErr_Format(PyExc_TypeError, "must be real number, not %.50s",
                      op->ob_type->tp_name);
         return -1;
@@ -463,13 +472,13 @@ float_richcompare(PyObject *v, PyObject *w, int op)
                  */
                 PyObject *temp;
 
-                temp = PyNumber_Lshift(ww, _PyLong_One);
+                temp = _PyLong_Lshift(ww, 1);
                 if (temp == NULL)
                     goto Error;
                 Py_DECREF(ww);
                 ww = temp;
 
-                temp = PyNumber_Lshift(vv, _PyLong_One);
+                temp = _PyLong_Lshift(vv, 1);
                 if (temp == NULL)
                     goto Error;
                 Py_DECREF(vv);
@@ -1492,7 +1501,7 @@ float_fromhex(PyTypeObject *type, PyObject *string)
         goto parse_error;
     result = PyFloat_FromDouble(negate ? -x : x);
     if (type != &PyFloat_Type && result != NULL) {
-        Py_SETREF(result, PyObject_CallFunctionObjArgs((PyObject *)type, result, NULL));
+        Py_SETREF(result, _PyObject_CallOneArg((PyObject *)type, result));
     }
     return result;
 
@@ -1913,10 +1922,10 @@ PyTypeObject PyFloat_Type = {
     sizeof(PyFloatObject),
     0,
     (destructor)float_dealloc,                  /* tp_dealloc */
-    0,                                          /* tp_print */
+    0,                                          /* tp_vectorcall_offset */
     0,                                          /* tp_getattr */
     0,                                          /* tp_setattr */
-    0,                                          /* tp_reserved */
+    0,                                          /* tp_as_async */
     (reprfunc)float_repr,                       /* tp_repr */
     &float_as_number,                           /* tp_as_number */
     0,                                          /* tp_as_sequence */
@@ -2022,7 +2031,7 @@ PyFloat_ClearFreeList(void)
 }
 
 void
-PyFloat_Fini(void)
+_PyFloat_Fini(void)
 {
     (void)PyFloat_ClearFreeList();
 }

@@ -14,6 +14,7 @@ try:
 except ImportError:
     _testcapi = None
 
+from test.support import skip_if_buggy_ucrt_strfptime
 
 # Max year is only limited by the size of C int.
 SIZEOF_INT = sysconfig.get_config_var('SIZEOF_INT') or 4
@@ -87,17 +88,6 @@ class TimeTestCase(unittest.TestCase):
         if hasattr(time, 'clock_gettime'):
             check_ns(time.clock_gettime(time.CLOCK_REALTIME),
                      time.clock_gettime_ns(time.CLOCK_REALTIME))
-
-    @unittest.skipUnless(hasattr(time, 'clock'),
-                         'need time.clock()')
-    def test_clock(self):
-        with self.assertWarns(DeprecationWarning):
-            time.clock()
-
-        with self.assertWarns(DeprecationWarning):
-            info = time.get_clock_info('clock')
-        self.assertTrue(info.monotonic)
-        self.assertFalse(info.adjustable)
 
     @unittest.skipUnless(hasattr(time, 'clock_gettime'),
                          'need time.clock_gettime()')
@@ -261,6 +251,7 @@ class TimeTestCase(unittest.TestCase):
             result = time.strftime("%Y %m %d %H %M %S %w %j", (2000,)+(0,)*8)
         self.assertEqual(expected, result)
 
+    @skip_if_buggy_ucrt_strfptime
     def test_strptime(self):
         # Should be able to go round-trip from strftime to strptime without
         # raising an exception.
@@ -553,15 +544,9 @@ class TimeTestCase(unittest.TestCase):
 
     def test_get_clock_info(self):
         clocks = ['monotonic', 'perf_counter', 'process_time', 'time']
-        if hasattr(time, 'clock'):
-            clocks.append('clock')
 
         for name in clocks:
-            if name == 'clock':
-                with self.assertWarns(DeprecationWarning):
-                    info = time.get_clock_info('clock')
-            else:
-                info = time.get_clock_info(name)
+            info = time.get_clock_info(name)
 
             #self.assertIsInstance(info, dict)
             self.assertIsInstance(info.implementation, str)
@@ -689,6 +674,7 @@ class TestStrftime4dyear(_TestStrftimeYear, _Test4dYear, unittest.TestCase):
 
 
 class TestPytime(unittest.TestCase):
+    @skip_if_buggy_ucrt_strfptime
     @unittest.skipUnless(time._STRUCT_TM_ITEMS == 11, "needs tm_zone support")
     def test_localtime_timezone(self):
 

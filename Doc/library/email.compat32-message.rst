@@ -6,6 +6,7 @@
 .. module:: email.message
    :synopsis: The base class representing email messages in a fashion
               backward compatible with Python 3.2
+   :noindex:
 
 
 The :class:`Message` class is very similar to the

@@ -1,4 +1,4 @@
-.. highlightlang:: c
+.. highlight:: c
 
 
 .. _api-intro:
@@ -156,9 +156,21 @@ complete listing.
 .. c:macro:: Py_UNUSED(arg)
 
    Use this for unused arguments in a function definition to silence compiler
-   warnings, e.g. ``PyObject* func(PyObject *Py_UNUSED(ignored))``.
+   warnings. Example: ``int func(int a, int Py_UNUSED(b)) { return a; }``.
 
    .. versionadded:: 3.4
+
+.. c:macro:: Py_DEPRECATED(version)
+
+   Use this for deprecated declarations.  The macro must be placed before the
+   symbol name.
+
+   Example::
+
+      Py_DEPRECATED(3.8) PyAPI_FUNC(int) Py_OldFunction(void);
+
+   .. versionchanged:: 3.8
+      MSVC support was added.
 
 
 .. _api-objects:

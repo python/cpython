@@ -28,6 +28,14 @@ descriptor.
    Operations in this module used to raise an :exc:`IOError` where they now
    raise an :exc:`OSError`.
 
+.. versionchanged:: 3.8
+   The fcntl module now contains ``F_ADD_SEALS``, ``F_GET_SEALS``, and
+   ``F_SEAL_*`` constants for sealing of :func:`os.memfd_create` file
+   descriptors.
+
+.. versionchanged:: 3.9
+   On macOS, the fcntl module exposes the ``F_GETPATH`` constant, which obtains
+   the path of a file from a file descriptor.
 
 The module defines the following functions:
 

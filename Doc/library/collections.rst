@@ -33,10 +33,10 @@ Python's general purpose built-in containers, :class:`dict`, :class:`list`,
 :class:`UserString`     wrapper around string objects for easier string subclassing
 =====================   ====================================================================
 
-.. versionchanged:: 3.3
+.. deprecated-removed:: 3.3 3.9
     Moved :ref:`collections-abstract-base-classes` to the :mod:`collections.abc` module.
     For backwards compatibility, they continue to be visible in this module through
-    Python 3.7.  Subsequently, they will be removed entirely.
+    Python 3.8.
 
 
 :class:`ChainMap` objects
@@ -1017,15 +1017,6 @@ fields:
 .. versionchanged:: 3.5
    Property docstrings became writeable.
 
-Default values can be implemented by using :meth:`~somenamedtuple._replace` to
-customize a prototype instance:
-
-    >>> Account = namedtuple('Account', 'owner balance transaction_count')
-    >>> default_account = Account('<owner name>', 0.0, 0)
-    >>> johns_account = default_account._replace(owner='John')
-    >>> janes_account = default_account._replace(owner='Jane')
-
-
 .. seealso::
 
     * See :class:`typing.NamedTuple` for a way to add type hints for named
@@ -1141,7 +1132,7 @@ original insertion position is changed and moved to the end::
 
         def __setitem__(self, key, value):
             super().__setitem__(key, value)
-            super().move_to_end(key)
+            self.move_to_end(key)
 
 An :class:`OrderedDict` would also be useful for implementing
 variants of :func:`functools.lru_cache`::
@@ -1149,7 +1140,7 @@ variants of :func:`functools.lru_cache`::
     class LRU(OrderedDict):
         'Limit size, evicting the least recently looked-up key when full'
 
-        def __init__(self, maxsize=128, *args, **kwds):
+        def __init__(self, maxsize=128, /, *args, **kwds):
             self.maxsize = maxsize
             super().__init__(*args, **kwds)
 

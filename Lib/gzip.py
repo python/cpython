@@ -11,7 +11,7 @@ import builtins
 import io
 import _compression
 
-__all__ = ["GzipFile", "open", "compress", "decompress"]
+__all__ = ["BadGzipFile", "GzipFile", "open", "compress", "decompress"]
 
 FTEXT, FHCRC, FEXTRA, FNAME, FCOMMENT = 1, 2, 4, 8, 16
 
@@ -111,6 +111,11 @@ class _PaddedFile:
 
     def seekable(self):
         return True  # Allows fast-forwarding even in unseekable streams
+
+
+class BadGzipFile(OSError):
+    """Exception raised in some cases for invalid gzip files."""
+
 
 class GzipFile(_compression.BaseStream):
     """The GzipFile class simulates most of the methods of a file object with
@@ -413,12 +418,12 @@ class _GzipReader(_compression.DecompressReader):
             return False
 
         if magic != b'\037\213':
-            raise OSError('Not a gzipped file (%r)' % magic)
+            raise BadGzipFile('Not a gzipped file (%r)' % magic)
 
         (method, flag,
          self._last_mtime) = struct.unpack("<BBIxx", self._read_exact(8))
         if method != 8:
-            raise OSError('Unknown compression method')
+            raise BadGzipFile('Unknown compression method')
 
         if flag & FEXTRA:
             # Read & discard the extra field, if present
@@ -502,10 +507,10 @@ class _GzipReader(_compression.DecompressReader):
         # stored is the true file size mod 2**32.
         crc32, isize = struct.unpack("<II", self._read_exact(8))
         if crc32 != self._crc:
-            raise OSError("CRC check failed %s != %s" % (hex(crc32),
-                                                         hex(self._crc)))
+            raise BadGzipFile("CRC check failed %s != %s" % (hex(crc32),
+                                                             hex(self._crc)))
         elif isize != (self._stream_size & 0xffffffff):
-            raise OSError("Incorrect length of data produced")
+            raise BadGzipFile("Incorrect length of data produced")
 
         # Gzip files can be padded with zeroes and still have archives.
         # Consume all zero bytes and set the file position to the first

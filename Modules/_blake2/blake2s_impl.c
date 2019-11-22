@@ -401,10 +401,10 @@ PyTypeObject PyBlake2_BLAKE2sType = {
     sizeof(BLAKE2sObject),    /* tp_basicsize       */
     0,                        /* tp_itemsize        */
     py_blake2s_dealloc,       /* tp_dealloc         */
-    0,                        /* tp_print           */
+    0,                        /*tp_vectorcall_offset*/
     0,                        /* tp_getattr         */
     0,                        /* tp_setattr         */
-    0,                        /* tp_compare         */
+    0,                        /* tp_as_async        */
     0,                        /* tp_repr            */
     0,                        /* tp_as_number       */
     0,                        /* tp_as_sequence     */

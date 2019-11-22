@@ -190,6 +190,8 @@ followed by ``lines`` for the text version or ``binary`` for the binary version.
    *source_address* is a 2-tuple ``(host, port)`` for the socket to bind to as
    its source address before connecting.
 
+   .. audit-event:: ftplib.connect self,host,port ftplib.FTP.connect
+
    .. versionchanged:: 3.3
       *source_address* parameter was added.
 
@@ -223,12 +225,16 @@ followed by ``lines`` for the text version or ``binary`` for the binary version.
 
    Send a simple command string to the server and return the response string.
 
+   .. audit-event:: ftplib.sendcmd self,cmd ftplib.FTP.sendcmd
+
 
 .. method:: FTP.voidcmd(cmd)
 
    Send a simple command string to the server and handle the response.  Return
    nothing if a response code corresponding to success (codes in the range
    200--299) is received.  Raise :exc:`error_reply` otherwise.
+
+   .. audit-event:: ftplib.sendcmd self,cmd ftplib.FTP.voidcmd
 
 
 .. method:: FTP.retrbinary(cmd, callback, blocksize=8192, rest=None)

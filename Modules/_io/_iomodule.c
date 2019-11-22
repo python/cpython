@@ -9,6 +9,7 @@
 
 #define PY_SSIZE_T_CLEAN
 #include "Python.h"
+#include "pycore_pystate.h"   /* _PyInterpreterState_GET_UNSAFE() */
 #include "structmember.h"
 #include "_iomodule.h"
 
@@ -376,13 +377,16 @@ _io_open_impl(PyObject *module, PyObject *file, const char *mode,
     {
         PyObject *RawIO_class = (PyObject *)&PyFileIO_Type;
 #ifdef MS_WINDOWS
-        if (!Py_LegacyWindowsStdioFlag && _PyIO_get_console_type(path_or_fd) != '\0') {
+        PyConfig *config = &_PyInterpreterState_GET_UNSAFE()->config;
+        if (!config->legacy_windows_stdio && _PyIO_get_console_type(path_or_fd) != '\0') {
             RawIO_class = (PyObject *)&PyWindowsConsoleIO_Type;
             encoding = "utf-8";
         }
 #endif
-        raw = PyObject_CallFunction(RawIO_class,
-                                    "OsiO", path_or_fd, rawmode, closefd, opener);
+        raw = PyObject_CallFunction(RawIO_class, "OsOO",
+                                    path_or_fd, rawmode,
+                                    closefd ? Py_True : Py_False,
+                                    opener);
     }
 
     if (raw == NULL)
@@ -398,7 +402,7 @@ _io_open_impl(PyObject *module, PyObject *file, const char *mode,
 
     /* buffering */
     if (buffering < 0) {
-        PyObject *res = _PyObject_CallMethodId(raw, &PyId_isatty, NULL);
+        PyObject *res = _PyObject_CallMethodIdNoArgs(raw, &PyId_isatty);
         if (res == NULL)
             goto error;
         isatty = PyLong_AsLong(res);
@@ -474,10 +478,10 @@ _io_open_impl(PyObject *module, PyObject *file, const char *mode,
 
     /* wraps into a TextIOWrapper */
     wrapper = PyObject_CallFunction((PyObject *)&PyTextIOWrapper_Type,
-                                    "Osssi",
+                                    "OsssO",
                                     buffer,
                                     encoding, errors, newline,
-                                    line_buffering);
+                                    line_buffering ? Py_True : Py_False);
     if (wrapper == NULL)
         goto error;
     result = wrapper;
@@ -492,7 +496,7 @@ _io_open_impl(PyObject *module, PyObject *file, const char *mode,
     if (result != NULL) {
         PyObject *exc, *val, *tb, *close_result;
         PyErr_Fetch(&exc, &val, &tb);
-        close_result = _PyObject_CallMethodId(result, &PyId_close, NULL);
+        close_result = _PyObject_CallMethodIdNoArgs(result, &PyId_close);
         _PyErr_ChainExceptions(exc, val, tb);
         Py_XDECREF(close_result);
         Py_DECREF(result);
@@ -500,6 +504,25 @@ _io_open_impl(PyObject *module, PyObject *file, const char *mode,
     Py_XDECREF(path_or_fd);
     Py_XDECREF(modeobj);
     return NULL;
+}
+
+/*[clinic input]
+_io.open_code
+
+    path : unicode
+
+Opens the provided file with the intent to import the contents.
+
+This may perform extra validation beyond open(), but is otherwise interchangeable
+with calling open(path, 'rb').
+
+[clinic start generated code]*/
+
+static PyObject *
+_io_open_code_impl(PyObject *module, PyObject *path)
+/*[clinic end generated code: output=2fe4ecbd6f3d6844 input=f5c18e23f4b2ed9f]*/
+{
+    return PyFile_OpenCodeObject(path);
 }
 
 /*
@@ -628,6 +651,7 @@ iomodule_free(PyObject *mod) {
 
 static PyMethodDef module_methods[] = {
     _IO_OPEN_METHODDEF
+    _IO_OPEN_CODE_METHODDEF
     {NULL, NULL}
 };
 

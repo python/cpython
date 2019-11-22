@@ -45,6 +45,7 @@ from . import sslproto
 from . import staggered
 from . import tasks
 from . import transports
+from . import trsock
 from .log import logger
 
 
@@ -59,13 +60,6 @@ _MIN_SCHEDULED_TIMER_HANDLES = 100
 # before cleanup of cancelled handles is performed.
 _MIN_CANCELLED_TIMER_HANDLES_FRACTION = 0.5
 
-# Exceptions which must not call the exception handler in fatal error
-# methods (_fatal_error())
-_FATAL_ERROR_IGNORE = (BrokenPipeError,
-                       ConnectionResetError, ConnectionAbortedError)
-
-if ssl is not None:
-    _FATAL_ERROR_IGNORE = _FATAL_ERROR_IGNORE + (ssl.SSLCertVerificationError,)
 
 _HAS_IPv6 = hasattr(socket, 'AF_INET6')
 
@@ -102,7 +96,7 @@ def _set_reuseport(sock):
                              'SO_REUSEPORT defined but not implemented.')
 
 
-def _ipaddr_info(host, port, family, type, proto):
+def _ipaddr_info(host, port, family, type, proto, flowinfo=0, scopeid=0):
     # Try to skip getaddrinfo if "host" is already an IP. Users might have
     # handled name resolution in their own code and pass in resolved IPs.
     if not hasattr(socket, 'inet_pton'):
@@ -151,7 +145,7 @@ def _ipaddr_info(host, port, family, type, proto):
             socket.inet_pton(af, host)
             # The host has already been resolved.
             if _HAS_IPv6 and af == socket.AF_INET6:
-                return af, type, proto, '', (host, port, 0, 0)
+                return af, type, proto, '', (host, port, flowinfo, scopeid)
             else:
                 return af, type, proto, '', (host, port)
         except OSError:
@@ -186,7 +180,7 @@ def _interleave_addrinfos(addrinfos, first_address_family_count=1):
 def _run_until_complete_cb(fut):
     if not fut.cancelled():
         exc = fut.exception()
-        if isinstance(exc, BaseException) and not isinstance(exc, Exception):
+        if isinstance(exc, (SystemExit, KeyboardInterrupt)):
             # Issue #22429: run_forever() already finished, no need to
             # stop it.
             return
@@ -326,8 +320,8 @@ class Server(events.AbstractServer):
     @property
     def sockets(self):
         if self._sockets is None:
-            return []
-        return list(self._sockets)
+            return ()
+        return tuple(trsock.TransportSocket(s) for s in self._sockets)
 
     def close(self):
         sockets = self._sockets
@@ -867,7 +861,7 @@ class BaseEventLoop(events.AbstractEventLoop):
                 read = await self.run_in_executor(None, file.readinto, view)
                 if not read:
                     break  # EOF
-                await self.sock_sendall(sock, view)
+                await self.sock_sendall(sock, view[:read])
                 total_sent += read
             return total_sent
         finally:
@@ -1147,11 +1141,11 @@ class BaseEventLoop(events.AbstractEventLoop):
                     if blocksize <= 0:
                         return total_sent
                 view = memoryview(buf)[:blocksize]
-                read = file.readinto(view)
+                read = await self.run_in_executor(None, file.readinto, view)
                 if not read:
                     return total_sent  # EOF
                 await proto.drain()
-                transp.write(view)
+                transp.write(view[:read])
                 total_sent += read
         finally:
             if total_sent > 0 and hasattr(file, 'seek'):
@@ -1196,7 +1190,7 @@ class BaseEventLoop(events.AbstractEventLoop):
 
         try:
             await waiter
-        except Exception:
+        except BaseException:
             transport.close()
             conmade_cb.cancel()
             resume_cb.cancel()
@@ -1348,7 +1342,7 @@ class BaseEventLoop(events.AbstractEventLoop):
                                family=0, type=socket.SOCK_STREAM,
                                proto=0, flags=0, loop):
         host, port = address[:2]
-        info = _ipaddr_info(host, port, family, type, proto)
+        info = _ipaddr_info(host, port, family, type, proto, *address[2:])
         if info is not None:
             # "host" is already a resolved IP.
             return [info]
@@ -1561,6 +1555,7 @@ class BaseEventLoop(events.AbstractEventLoop):
                                stderr=subprocess.PIPE,
                                universal_newlines=False,
                                shell=True, bufsize=0,
+                               encoding=None, errors=None, text=None,
                                **kwargs):
         if not isinstance(cmd, (bytes, str)):
             raise ValueError("cmd must be a string")
@@ -1570,6 +1565,13 @@ class BaseEventLoop(events.AbstractEventLoop):
             raise ValueError("shell must be True")
         if bufsize != 0:
             raise ValueError("bufsize must be 0")
+        if text:
+            raise ValueError("text must be False")
+        if encoding is not None:
+            raise ValueError("encoding must be None")
+        if errors is not None:
+            raise ValueError("errors must be None")
+
         protocol = protocol_factory()
         debug_log = None
         if self._debug:
@@ -1586,19 +1588,23 @@ class BaseEventLoop(events.AbstractEventLoop):
     async def subprocess_exec(self, protocol_factory, program, *args,
                               stdin=subprocess.PIPE, stdout=subprocess.PIPE,
                               stderr=subprocess.PIPE, universal_newlines=False,
-                              shell=False, bufsize=0, **kwargs):
+                              shell=False, bufsize=0,
+                              encoding=None, errors=None, text=None,
+                              **kwargs):
         if universal_newlines:
             raise ValueError("universal_newlines must be False")
         if shell:
             raise ValueError("shell must be False")
         if bufsize != 0:
             raise ValueError("bufsize must be 0")
+        if text:
+            raise ValueError("text must be False")
+        if encoding is not None:
+            raise ValueError("encoding must be None")
+        if errors is not None:
+            raise ValueError("errors must be None")
+
         popen_args = (program,) + args
-        for arg in popen_args:
-            if not isinstance(arg, (str, bytes)):
-                raise TypeError(
-                    f"program arguments must be a bytes or text string, "
-                    f"not {type(arg).__name__}")
         protocol = protocol_factory()
         debug_log = None
         if self._debug:
@@ -1710,7 +1716,9 @@ class BaseEventLoop(events.AbstractEventLoop):
         if self._exception_handler is None:
             try:
                 self.default_exception_handler(context)
-            except Exception:
+            except (SystemExit, KeyboardInterrupt):
+                raise
+            except BaseException:
                 # Second protection layer for unexpected errors
                 # in the default implementation, as well as for subclassed
                 # event loops with overloaded "default_exception_handler".
@@ -1719,7 +1727,9 @@ class BaseEventLoop(events.AbstractEventLoop):
         else:
             try:
                 self._exception_handler(self, context)
-            except Exception as exc:
+            except (SystemExit, KeyboardInterrupt):
+                raise
+            except BaseException as exc:
                 # Exception in the user set custom exception handler.
                 try:
                     # Let's try default handler.
@@ -1728,7 +1738,9 @@ class BaseEventLoop(events.AbstractEventLoop):
                         'exception': exc,
                         'context': context,
                     })
-                except Exception:
+                except (SystemExit, KeyboardInterrupt):
+                    raise
+                except BaseException:
                     # Guard 'default_exception_handler' in case it is
                     # overloaded.
                     logger.error('Exception in default exception handler '

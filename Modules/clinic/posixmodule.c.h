@@ -616,7 +616,7 @@ os_chflags(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *
         goto exit;
     }
     if (!PyLong_Check(args[1])) {
-        _PyArg_BadArgument("chflags", 2, "int", args[1]);
+        _PyArg_BadArgument("chflags", "argument 'flags'", "int", args[1]);
         goto exit;
     }
     flags = PyLong_AsUnsignedLongMask(args[1]);
@@ -674,7 +674,7 @@ os_lchflags(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject 
         goto exit;
     }
     if (!PyLong_Check(args[1])) {
-        _PyArg_BadArgument("lchflags", 2, "int", args[1]);
+        _PyArg_BadArgument("lchflags", "argument 'flags'", "int", args[1]);
         goto exit;
     }
     flags = PyLong_AsUnsignedLongMask(args[1]);
@@ -1267,19 +1267,6 @@ exit:
 
     return return_value;
 }
-
-#endif /* defined(MS_WINDOWS) */
-
-#if defined(MS_WINDOWS)
-
-PyDoc_STRVAR(os__isdir__doc__,
-"_isdir($module, path, /)\n"
-"--\n"
-"\n"
-"Return true if the pathname refers to an existing directory.");
-
-#define OS__ISDIR_METHODDEF    \
-    {"_isdir", (PyCFunction)os__isdir, METH_O, os__isdir__doc__},
 
 #endif /* defined(MS_WINDOWS) */
 
@@ -2491,7 +2478,7 @@ exit:
 
 #endif /* defined(HAVE_POSIX_SPAWNP) */
 
-#if (defined(HAVE_SPAWNV) || defined(HAVE_WSPAWNV))
+#if (defined(HAVE_SPAWNV) || defined(HAVE_WSPAWNV) || defined(HAVE_RTPSPAWN))
 
 PyDoc_STRVAR(os_spawnv__doc__,
 "spawnv($module, mode, path, argv, /)\n"
@@ -2545,9 +2532,9 @@ exit:
     return return_value;
 }
 
-#endif /* (defined(HAVE_SPAWNV) || defined(HAVE_WSPAWNV)) */
+#endif /* (defined(HAVE_SPAWNV) || defined(HAVE_WSPAWNV) || defined(HAVE_RTPSPAWN)) */
 
-#if (defined(HAVE_SPAWNV) || defined(HAVE_WSPAWNV))
+#if (defined(HAVE_SPAWNV) || defined(HAVE_WSPAWNV) || defined(HAVE_RTPSPAWN))
 
 PyDoc_STRVAR(os_spawnve__doc__,
 "spawnve($module, mode, path, argv, env, /)\n"
@@ -2606,7 +2593,7 @@ exit:
     return return_value;
 }
 
-#endif /* (defined(HAVE_SPAWNV) || defined(HAVE_WSPAWNV)) */
+#endif /* (defined(HAVE_SPAWNV) || defined(HAVE_WSPAWNV) || defined(HAVE_RTPSPAWN)) */
 
 #if defined(HAVE_FORK)
 
@@ -2817,7 +2804,7 @@ PyDoc_STRVAR(os_sched_getscheduler__doc__,
 "sched_getscheduler($module, pid, /)\n"
 "--\n"
 "\n"
-"Get the scheduling policy for the process identifiedy by pid.\n"
+"Get the scheduling policy for the process identified by pid.\n"
 "\n"
 "Passing 0 for pid returns the scheduling policy for the calling process.");
 
@@ -4969,7 +4956,7 @@ os_write(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
         goto exit;
     }
     if (!PyBuffer_IsContiguous(&data, 'C')) {
-        _PyArg_BadArgument("write", 2, "contiguous buffer", args[1]);
+        _PyArg_BadArgument("write", "argument 2", "contiguous buffer", args[1]);
         goto exit;
     }
     _return_value = os_write_impl(module, fd, &data);
@@ -5292,7 +5279,7 @@ os_pwrite(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
         goto exit;
     }
     if (!PyBuffer_IsContiguous(&buffer, 'C')) {
-        _PyArg_BadArgument("pwrite", 2, "contiguous buffer", args[1]);
+        _PyArg_BadArgument("pwrite", "argument 2", "contiguous buffer", args[1]);
         goto exit;
     }
     if (!Py_off_t_converter(args[2], &offset)) {
@@ -5394,6 +5381,108 @@ exit:
 }
 
 #endif /* (defined(HAVE_PWRITEV) || defined (HAVE_PWRITEV2)) */
+
+#if defined(HAVE_COPY_FILE_RANGE)
+
+PyDoc_STRVAR(os_copy_file_range__doc__,
+"copy_file_range($module, /, src, dst, count, offset_src=None,\n"
+"                offset_dst=None)\n"
+"--\n"
+"\n"
+"Copy count bytes from one file descriptor to another.\n"
+"\n"
+"  src\n"
+"    Source file descriptor.\n"
+"  dst\n"
+"    Destination file descriptor.\n"
+"  count\n"
+"    Number of bytes to copy.\n"
+"  offset_src\n"
+"    Starting offset in src.\n"
+"  offset_dst\n"
+"    Starting offset in dst.\n"
+"\n"
+"If offset_src is None, then src is read from the current position;\n"
+"respectively for offset_dst.");
+
+#define OS_COPY_FILE_RANGE_METHODDEF    \
+    {"copy_file_range", (PyCFunction)(void(*)(void))os_copy_file_range, METH_FASTCALL|METH_KEYWORDS, os_copy_file_range__doc__},
+
+static PyObject *
+os_copy_file_range_impl(PyObject *module, int src, int dst, Py_ssize_t count,
+                        PyObject *offset_src, PyObject *offset_dst);
+
+static PyObject *
+os_copy_file_range(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+{
+    PyObject *return_value = NULL;
+    static const char * const _keywords[] = {"src", "dst", "count", "offset_src", "offset_dst", NULL};
+    static _PyArg_Parser _parser = {NULL, _keywords, "copy_file_range", 0};
+    PyObject *argsbuf[5];
+    Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 3;
+    int src;
+    int dst;
+    Py_ssize_t count;
+    PyObject *offset_src = Py_None;
+    PyObject *offset_dst = Py_None;
+
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 3, 5, 0, argsbuf);
+    if (!args) {
+        goto exit;
+    }
+    if (PyFloat_Check(args[0])) {
+        PyErr_SetString(PyExc_TypeError,
+                        "integer argument expected, got float" );
+        goto exit;
+    }
+    src = _PyLong_AsInt(args[0]);
+    if (src == -1 && PyErr_Occurred()) {
+        goto exit;
+    }
+    if (PyFloat_Check(args[1])) {
+        PyErr_SetString(PyExc_TypeError,
+                        "integer argument expected, got float" );
+        goto exit;
+    }
+    dst = _PyLong_AsInt(args[1]);
+    if (dst == -1 && PyErr_Occurred()) {
+        goto exit;
+    }
+    if (PyFloat_Check(args[2])) {
+        PyErr_SetString(PyExc_TypeError,
+                        "integer argument expected, got float" );
+        goto exit;
+    }
+    {
+        Py_ssize_t ival = -1;
+        PyObject *iobj = PyNumber_Index(args[2]);
+        if (iobj != NULL) {
+            ival = PyLong_AsSsize_t(iobj);
+            Py_DECREF(iobj);
+        }
+        if (ival == -1 && PyErr_Occurred()) {
+            goto exit;
+        }
+        count = ival;
+    }
+    if (!noptargs) {
+        goto skip_optional_pos;
+    }
+    if (args[3]) {
+        offset_src = args[3];
+        if (!--noptargs) {
+            goto skip_optional_pos;
+        }
+    }
+    offset_dst = args[4];
+skip_optional_pos:
+    return_value = os_copy_file_range_impl(module, src, dst, count, offset_src, offset_dst);
+
+exit:
+    return return_value;
+}
+
+#endif /* defined(HAVE_COPY_FILE_RANGE) */
 
 #if defined(HAVE_MKFIFO)
 
@@ -5923,7 +6012,7 @@ os_putenv(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
         goto exit;
     }
     if (!PyUnicode_Check(args[0])) {
-        _PyArg_BadArgument("putenv", 1, "str", args[0]);
+        _PyArg_BadArgument("putenv", "argument 1", "str", args[0]);
         goto exit;
     }
     if (PyUnicode_READY(args[0]) == -1) {
@@ -5931,7 +6020,7 @@ os_putenv(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     }
     name = args[0];
     if (!PyUnicode_Check(args[1])) {
-        _PyArg_BadArgument("putenv", 2, "str", args[1]);
+        _PyArg_BadArgument("putenv", "argument 2", "str", args[1]);
         goto exit;
     }
     if (PyUnicode_READY(args[1]) == -1) {
@@ -7127,7 +7216,7 @@ os_setxattr(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject 
         goto exit;
     }
     if (!PyBuffer_IsContiguous(&value, 'C')) {
-        _PyArg_BadArgument("setxattr", 3, "contiguous buffer", args[2]);
+        _PyArg_BadArgument("setxattr", "argument 'value'", "contiguous buffer", args[2]);
         goto exit;
     }
     if (!noptargs) {
@@ -7342,6 +7431,61 @@ os_urandom(PyObject *module, PyObject *arg)
 exit:
     return return_value;
 }
+
+#if defined(HAVE_MEMFD_CREATE)
+
+PyDoc_STRVAR(os_memfd_create__doc__,
+"memfd_create($module, /, name, flags=MFD_CLOEXEC)\n"
+"--\n"
+"\n");
+
+#define OS_MEMFD_CREATE_METHODDEF    \
+    {"memfd_create", (PyCFunction)(void(*)(void))os_memfd_create, METH_FASTCALL|METH_KEYWORDS, os_memfd_create__doc__},
+
+static PyObject *
+os_memfd_create_impl(PyObject *module, PyObject *name, unsigned int flags);
+
+static PyObject *
+os_memfd_create(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+{
+    PyObject *return_value = NULL;
+    static const char * const _keywords[] = {"name", "flags", NULL};
+    static _PyArg_Parser _parser = {NULL, _keywords, "memfd_create", 0};
+    PyObject *argsbuf[2];
+    Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 1;
+    PyObject *name = NULL;
+    unsigned int flags = MFD_CLOEXEC;
+
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 2, 0, argsbuf);
+    if (!args) {
+        goto exit;
+    }
+    if (!PyUnicode_FSConverter(args[0], &name)) {
+        goto exit;
+    }
+    if (!noptargs) {
+        goto skip_optional_pos;
+    }
+    if (PyFloat_Check(args[1])) {
+        PyErr_SetString(PyExc_TypeError,
+                        "integer argument expected, got float" );
+        goto exit;
+    }
+    flags = (unsigned int)PyLong_AsUnsignedLongMask(args[1]);
+    if (flags == (unsigned int)-1 && PyErr_Occurred()) {
+        goto exit;
+    }
+skip_optional_pos:
+    return_value = os_memfd_create_impl(module, name, flags);
+
+exit:
+    /* Cleanup for name */
+    Py_XDECREF(name);
+
+    return return_value;
+}
+
+#endif /* defined(HAVE_MEMFD_CREATE) */
 
 PyDoc_STRVAR(os_cpu_count__doc__,
 "cpu_count($module, /)\n"
@@ -8117,10 +8261,6 @@ exit:
     #define OS__GETFINALPATHNAME_METHODDEF
 #endif /* !defined(OS__GETFINALPATHNAME_METHODDEF) */
 
-#ifndef OS__ISDIR_METHODDEF
-    #define OS__ISDIR_METHODDEF
-#endif /* !defined(OS__ISDIR_METHODDEF) */
-
 #ifndef OS__GETVOLUMEPATHNAME_METHODDEF
     #define OS__GETVOLUMEPATHNAME_METHODDEF
 #endif /* !defined(OS__GETVOLUMEPATHNAME_METHODDEF) */
@@ -8405,6 +8545,10 @@ exit:
     #define OS_PWRITEV_METHODDEF
 #endif /* !defined(OS_PWRITEV_METHODDEF) */
 
+#ifndef OS_COPY_FILE_RANGE_METHODDEF
+    #define OS_COPY_FILE_RANGE_METHODDEF
+#endif /* !defined(OS_COPY_FILE_RANGE_METHODDEF) */
+
 #ifndef OS_MKFIFO_METHODDEF
     #define OS_MKFIFO_METHODDEF
 #endif /* !defined(OS_MKFIFO_METHODDEF) */
@@ -8549,6 +8693,10 @@ exit:
     #define OS_LISTXATTR_METHODDEF
 #endif /* !defined(OS_LISTXATTR_METHODDEF) */
 
+#ifndef OS_MEMFD_CREATE_METHODDEF
+    #define OS_MEMFD_CREATE_METHODDEF
+#endif /* !defined(OS_MEMFD_CREATE_METHODDEF) */
+
 #ifndef OS_GET_HANDLE_INHERITABLE_METHODDEF
     #define OS_GET_HANDLE_INHERITABLE_METHODDEF
 #endif /* !defined(OS_GET_HANDLE_INHERITABLE_METHODDEF) */
@@ -8576,4 +8724,4 @@ exit:
 #ifndef OS__REMOVE_DLL_DIRECTORY_METHODDEF
     #define OS__REMOVE_DLL_DIRECTORY_METHODDEF
 #endif /* !defined(OS__REMOVE_DLL_DIRECTORY_METHODDEF) */
-/*[clinic end generated code: output=ab36ec0376a422ae input=a9049054013a1b77]*/
+/*[clinic end generated code: output=3c5cb675b0d09145 input=a9049054013a1b77]*/
