@@ -725,9 +725,7 @@ PyEval_EvalCode(PyObject *co, PyObject *globals, PyObject *locals)
 PyObject *
 PyEval_EvalFrame(PyFrameObject *f)
 {
-    /* This is for backward compatibility with extension modules that
-       used this API; core interpreter code should call
-       PyEval_EvalFrameEx() */
+    /* Function kept for backward compatibility */
     PyThreadState *tstate = _PyThreadState_GET();
     return _PyEval_EvalFrame(tstate, f, 0);
 }
@@ -740,8 +738,10 @@ PyEval_EvalFrameEx(PyFrameObject *f, int throwflag)
 }
 
 PyObject* _Py_HOT_FUNCTION
-_PyEval_EvalFrameDefault(PyFrameObject *f, int throwflag)
+_PyEval_EvalFrameDefault(PyThreadState *tstate, PyFrameObject *f, int throwflag)
 {
+    ensure_tstate_not_null(__func__, tstate);
+
 #ifdef DXPAIRS
     int lastopcode = 0;
 #endif
@@ -755,9 +755,6 @@ _PyEval_EvalFrameDefault(PyFrameObject *f, int throwflag)
     struct _ceval_runtime_state * const ceval = &runtime->ceval;
     _Py_atomic_int * const eval_breaker = &ceval->eval_breaker;
     PyCodeObject *co;
-
-    PyThreadState * const tstate = _PyRuntimeState_GetThreadState(runtime);
-    ensure_tstate_not_null(__func__, tstate);
 
     /* when tracing we set things up so that
 
@@ -1181,7 +1178,7 @@ _PyEval_EvalFrameDefault(PyFrameObject *f, int throwflag)
         goto error;
 
 #ifdef Py_DEBUG
-    /* PyEval_EvalFrameEx() must not be called with an exception set,
+    /* _PyEval_EvalFrameDefault() must not be called with an exception set,
        because it can clear it (directly or indirectly) and so the
        caller loses its exception */
     assert(!_PyErr_Occurred(tstate));
@@ -3702,7 +3699,7 @@ exit_eval_frame:
     f->f_executing = 0;
     tstate->frame = f->f_back;
 
-    return _Py_CheckFunctionResult(tstate, NULL, retval, "PyEval_EvalFrameEx");
+    return _Py_CheckFunctionResult(tstate, NULL, retval, __func__);
 }
 
 static void
