@@ -260,6 +260,7 @@ _Py_LegacyLocaleDetected(int warn)
 #endif
 }
 
+#ifndef MS_WINDOWS
 static const char *_C_LOCALE_WARNING =
     "Python runtime initialized with LC_CTYPE=C (a locale with default ASCII "
     "encoding), which may cause Unicode compatibility problems. Using C.UTF-8, "
@@ -274,6 +275,7 @@ emit_stderr_warning_for_legacy_locale(_PyRuntimeState *runtime)
         PySys_FormatStderr("%s", _C_LOCALE_WARNING);
     }
 }
+#endif   /* !defined(MS_WINDOWS) */
 
 typedef struct _CandidateLocale {
     const char *locale_name; /* The locale to try as a coercion target */
@@ -896,22 +898,132 @@ done:
    configuration. Example of bpo-34008: Py_Main() called after
    Py_Initialize(). */
 static PyStatus
-_Py_ReconfigureMainInterpreter(PyInterpreterState *interp)
+_Py_ReconfigureMainInterpreter(PyThreadState *tstate)
 {
-    PyConfig *config = &interp->config;
+    PyConfig *config = &tstate->interp->config;
 
     PyObject *argv = _PyWideStringList_AsList(&config->argv);
     if (argv == NULL) {
         return _PyStatus_NO_MEMORY(); \
     }
 
-    int res = PyDict_SetItemString(interp->sysdict, "argv", argv);
+    int res = PyDict_SetItemString(tstate->interp->sysdict, "argv", argv);
     Py_DECREF(argv);
     if (res < 0) {
         return _PyStatus_ERR("fail to set sys.argv");
     }
     return _PyStatus_OK();
 }
+
+
+static PyStatus
+init_interp_main(PyThreadState *tstate)
+{
+    PyStatus status;
+    int is_main_interp = _Py_IsMainInterpreter(tstate);
+    PyInterpreterState *interp = tstate->interp;
+    PyConfig *config = &interp->config;
+
+    if (!config->_install_importlib) {
+        /* Special mode for freeze_importlib: run with no import system
+         *
+         * This means anything which needs support from extension modules
+         * or pure Python code in the standard library won't work.
+         */
+        if (is_main_interp) {
+            interp->runtime->initialized = 1;
+        }
+        return _PyStatus_OK();
+    }
+
+    if (is_main_interp) {
+        if (_PyTime_Init() < 0) {
+            return _PyStatus_ERR("can't initialize time");
+        }
+
+        if (_PySys_InitMain(tstate) < 0) {
+            return _PyStatus_ERR("can't finish initializing sys");
+        }
+    }
+
+    status = init_importlib_external(tstate);
+    if (_PyStatus_EXCEPTION(status)) {
+        return status;
+    }
+
+    if (is_main_interp) {
+        /* initialize the faulthandler module */
+        status = _PyFaulthandler_Init(config->faulthandler);
+        if (_PyStatus_EXCEPTION(status)) {
+            return status;
+        }
+    }
+
+    status = _PyUnicode_InitEncodings(tstate);
+    if (_PyStatus_EXCEPTION(status)) {
+        return status;
+    }
+
+    if (is_main_interp) {
+        if (config->install_signal_handlers) {
+            status = init_signals(tstate);
+            if (_PyStatus_EXCEPTION(status)) {
+                return status;
+            }
+        }
+
+        if (_PyTraceMalloc_Init(config->tracemalloc) < 0) {
+            return _PyStatus_ERR("can't initialize tracemalloc");
+        }
+    }
+
+    status = init_sys_streams(tstate);
+    if (_PyStatus_EXCEPTION(status)) {
+        return status;
+    }
+
+    status = init_set_builtins_open(tstate);
+    if (_PyStatus_EXCEPTION(status)) {
+        return status;
+    }
+
+    status = add_main_module(interp);
+    if (_PyStatus_EXCEPTION(status)) {
+        return status;
+    }
+
+    if (is_main_interp) {
+        /* Initialize warnings. */
+        PyObject *warnoptions = PySys_GetObject("warnoptions");
+        if (warnoptions != NULL && PyList_Size(warnoptions) > 0)
+        {
+            PyObject *warnings_module = PyImport_ImportModule("warnings");
+            if (warnings_module == NULL) {
+                fprintf(stderr, "'import warnings' failed; traceback:\n");
+                _PyErr_Print(tstate);
+            }
+            Py_XDECREF(warnings_module);
+        }
+
+        interp->runtime->initialized = 1;
+    }
+
+    if (config->site_import) {
+        status = init_import_site();
+        if (_PyStatus_EXCEPTION(status)) {
+            return status;
+        }
+    }
+
+    if (is_main_interp) {
+#ifndef MS_WINDOWS
+        emit_stderr_warning_for_legacy_locale(interp->runtime);
+#endif
+    }
+
+    return _PyStatus_OK();
+}
+
 
 /* Update interpreter state based on supplied configuration settings
  *
@@ -927,104 +1039,19 @@ _Py_ReconfigureMainInterpreter(PyInterpreterState *interp)
 static PyStatus
 pyinit_main(PyThreadState *tstate)
 {
-    _PyRuntimeState *runtime = tstate->interp->runtime;
-    if (!runtime->core_initialized) {
+    PyInterpreterState *interp = tstate->interp;
+    if (!interp->runtime->core_initialized) {
         return _PyStatus_ERR("runtime core not initialized");
     }
 
-    /* Configure the main interpreter */
-    PyInterpreterState *interp = tstate->interp;
-    PyConfig *config = &interp->config;
-
-    if (runtime->initialized) {
-        return _Py_ReconfigureMainInterpreter(interp);
+    if (interp->runtime->initialized) {
+        return _Py_ReconfigureMainInterpreter(tstate);
     }
 
-    if (!config->_install_importlib) {
-        /* Special mode for freeze_importlib: run with no import system
-         *
-         * This means anything which needs support from extension modules
-         * or pure Python code in the standard library won't work.
-         */
-        runtime->initialized = 1;
-        return _PyStatus_OK();
-    }
-
-    if (_PyTime_Init() < 0) {
-        return _PyStatus_ERR("can't initialize time");
-    }
-
-    if (_PySys_InitMain(tstate) < 0) {
-        return _PyStatus_ERR("can't finish initializing sys");
-    }
-
-    PyStatus status = init_importlib_external(tstate);
+    PyStatus status = init_interp_main(tstate);
     if (_PyStatus_EXCEPTION(status)) {
         return status;
     }
-
-    /* initialize the faulthandler module */
-    status = _PyFaulthandler_Init(config->faulthandler);
-    if (_PyStatus_EXCEPTION(status)) {
-        return status;
-    }
-
-    status = _PyUnicode_InitEncodings(tstate);
-    if (_PyStatus_EXCEPTION(status)) {
-        return status;
-    }
-
-    if (config->install_signal_handlers) {
-        status = init_signals(tstate);
-        if (_PyStatus_EXCEPTION(status)) {
-            return status;
-        }
-    }
-
-    if (_PyTraceMalloc_Init(config->tracemalloc) < 0) {
-        return _PyStatus_ERR("can't initialize tracemalloc");
-    }
-
-    status = add_main_module(interp);
-    if (_PyStatus_EXCEPTION(status)) {
-        return status;
-    }
-
-    status = init_sys_streams(tstate);
-    if (_PyStatus_EXCEPTION(status)) {
-        return status;
-    }
-
-    status = init_set_builtins_open(tstate);
-    if (_PyStatus_EXCEPTION(status)) {
-        return status;
-    }
-
-    /* Initialize warnings. */
-    PyObject *warnoptions = PySys_GetObject("warnoptions");
-    if (warnoptions != NULL && PyList_Size(warnoptions) > 0)
-    {
-        PyObject *warnings_module = PyImport_ImportModule("warnings");
-        if (warnings_module == NULL) {
-            fprintf(stderr, "'import warnings' failed; traceback:\n");
-            _PyErr_Print(tstate);
-        }
-        Py_XDECREF(warnings_module);
-    }
-
-    runtime->initialized = 1;
-
-    if (config->site_import) {
-        status = init_import_site();
-        if (_PyStatus_EXCEPTION(status)) {
-            return status;
-        }
-    }
-
-#ifndef MS_WINDOWS
-    emit_stderr_warning_for_legacy_locale(runtime);
-#endif
-
     return _PyStatus_OK();
 }
 
@@ -1440,6 +1467,7 @@ Py_Finalize(void)
     Py_FinalizeEx();
 }
 
+
 /* Create and initialize a new interpreter and thread, and return the
    new thread.  This requires that Py_Initialize() has been called
    first.
@@ -1499,7 +1527,7 @@ new_interpreter(PyThreadState **tstate_p)
 
     status = _PyConfig_Copy(&interp->config, config);
     if (_PyStatus_EXCEPTION(status)) {
-        return status;
+        goto done;
     }
     config = &interp->config;
 
@@ -1508,7 +1536,8 @@ new_interpreter(PyThreadState **tstate_p)
     /* XXX The following is lax in error checking */
     PyObject *modules = PyDict_New();
     if (modules == NULL) {
-        return _PyStatus_ERR("can't make modules dictionary");
+        status = _PyStatus_ERR("can't make modules dictionary");
+        goto done;
     }
     interp->modules = modules;
 
@@ -1516,101 +1545,78 @@ new_interpreter(PyThreadState **tstate_p)
     if (sysmod != NULL) {
         interp->sysdict = PyModule_GetDict(sysmod);
         if (interp->sysdict == NULL) {
-            goto handle_error;
+            goto handle_exc;
         }
         Py_INCREF(interp->sysdict);
         PyDict_SetItemString(interp->sysdict, "modules", modules);
         if (_PySys_InitMain(tstate) < 0) {
-            return _PyStatus_ERR("can't finish initializing sys");
+            status = _PyStatus_ERR("can't finish initializing sys");
+            goto done;
         }
     }
     else if (_PyErr_Occurred(tstate)) {
-        goto handle_error;
+        goto handle_exc;
     }
 
     PyObject *bimod = _PyImport_FindBuiltin(tstate, "builtins");
     if (bimod != NULL) {
         interp->builtins = PyModule_GetDict(bimod);
         if (interp->builtins == NULL)
-            goto handle_error;
+            goto handle_exc;
         Py_INCREF(interp->builtins);
     }
     else if (_PyErr_Occurred(tstate)) {
-        goto handle_error;
+        goto handle_exc;
     }
 
     if (bimod != NULL && sysmod != NULL) {
         status = _PyBuiltins_AddExceptions(bimod);
         if (_PyStatus_EXCEPTION(status)) {
-            return status;
+            goto done;
         }
 
         status = _PySys_SetPreliminaryStderr(interp->sysdict);
         if (_PyStatus_EXCEPTION(status)) {
-            return status;
+            goto done;
         }
 
         status = _PyImportHooks_Init(tstate);
         if (_PyStatus_EXCEPTION(status)) {
-            return status;
+            goto done;
         }
 
         status = init_importlib(tstate, sysmod);
         if (_PyStatus_EXCEPTION(status)) {
-            return status;
+            goto done;
         }
 
-        status = init_importlib_external(tstate);
+        status = init_interp_main(tstate);
         if (_PyStatus_EXCEPTION(status)) {
-            return status;
-        }
-
-        status = _PyUnicode_InitEncodings(tstate);
-        if (_PyStatus_EXCEPTION(status)) {
-            return status;
-        }
-
-        status = init_sys_streams(tstate);
-        if (_PyStatus_EXCEPTION(status)) {
-            return status;
-        }
-
-        status = init_set_builtins_open(tstate);
-        if (_PyStatus_EXCEPTION(status)) {
-            return status;
-        }
-
-        status = add_main_module(interp);
-        if (_PyStatus_EXCEPTION(status)) {
-            return status;
-        }
-
-        if (config->site_import) {
-            status = init_import_site();
-            if (_PyStatus_EXCEPTION(status)) {
-                return status;
-            }
+            goto done;
         }
     }
 
     if (_PyErr_Occurred(tstate)) {
-        goto handle_error;
+        goto handle_exc;
     }
 
     *tstate_p = tstate;
     return _PyStatus_OK();
 
-handle_error:
-    /* Oops, it didn't work.  Undo it all. */
+handle_exc:
+    status = _PyStatus_OK();
 
+done:
+    *tstate_p = NULL;
+
+    /* Oops, it didn't work.  Undo it all. */
     PyErr_PrintEx(0);
     PyThreadState_Clear(tstate);
     PyThreadState_Delete(tstate);
     PyInterpreterState_Delete(interp);
     PyThreadState_Swap(save_tstate);
 
-    *tstate_p = NULL;
-    return _PyStatus_OK();
+    return status;
 }
 
 PyThreadState *
