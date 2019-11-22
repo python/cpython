@@ -114,10 +114,10 @@ class ASTTestCase(unittest.TestCase):
     def assertASTEqual(self, ast1, ast2):
         self.assertEqual(ast.dump(ast1), ast.dump(ast2))
 
-    def check_roundtrip(self, code1, filename="internal"):
-        ast1 = compile(code1, filename, "exec", ast.PyCF_ONLY_AST)
+    def check_roundtrip(self, code1):
+        ast1 = ast.parse(code1)
         code2 = ast.unparse(ast1)
-        ast2 = compile(code2, filename, "exec", ast.PyCF_ONLY_AST)
+        ast2 = ast.parse(code2)
         self.assertASTEqual(ast1, ast2)
 
     def check_invalid(self, node, raises=ValueError):
