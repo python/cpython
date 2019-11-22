@@ -1142,6 +1142,23 @@ other utility module.
 
    * ``macosx-10.6-intel``
 
+   For AIX, the tag returns a value that reflects the architecture of the
+   current processor. Starting the Python 3.9 and Python 3.8.1 the tag includes
+   sufficient information to be useable for AIX build distributions. The new tag
+   starts with "AIX" to distinguish it from the old tag that starts with "aix".
+   The additional fields (seperated by ``'-'``) represent the combined values of
+   the AIX Version, Release andi Technology Level, BuildDate, and the bit-size.
+
+   Examples of returned values on AIX:
+
+   * ``aix-6.1``
+
+   * ``aix-7.1``
+
+   * ``AIX-5307-0747-32`` # 32-bit build on AIX ``oslevel -s``: 5300-07-00-0000
+
+   * ``AIX-7105-1731-64`` # 64-bit build on AIX ``oslevel -s``: 7100-05-01-1731
+
 
 .. function:: convert_path(pathname)
 

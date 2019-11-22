@@ -20,9 +20,9 @@ values of the build system then the bdist modules are binary compatible
 with the AIX kernel.
 
 For pep425 purposes the AIX platform tag becomes:
-"AIX.{}.{:04d}.{}".format(vmtl, builddate, bitsize)
-e.g., "AIX.6107.1415.32" for AIX 6.1 TL7 bd 1415, 32-bit
-and, "AIX.6107.1415.64" for AIX 6.1 TL7 bd 1415, 64-bit
+"AIX-{}-{:04d}-{}".format(vmtl, builddate, bitsize)
+e.g., "AIX-6107-1415-32" for AIX 6.1 TL7 bd 1415, 32-bit
+and, "AIX-6107-1415-64" for AIX 6.1 TL7 bd 1415, 64-bit
 """
 
 # _bd - set to impossible setting year98-week98 if None
@@ -35,7 +35,7 @@ _is_32bit = sys.maxsize == 2147483647
 def _aix_tag(vrtl, bd):
     # type: (int, int) -> str
     sz = 32 if _is_32bit else 64
-    return "AIX.{}.{:04d}.{}".format(vrtl, bd, sz)
+    return "AIX-{}-{:04d}-{}".format(vrtl, bd, sz)
 
 
 # compute vrtl from the VRMF string

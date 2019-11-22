@@ -1,2 +1,2 @@
-Provide an adequately detailed PEP425 platform tag for AIX.
+Provide a platform tag for AIX sufficient PEP425 binary distribution identification
 Patch by Michael Felt
