@@ -1182,9 +1182,6 @@ finalize_interp_types(PyThreadState *tstate, int is_main_interp)
         _PySet_Fini();
         _PyBytes_Fini();
         _PyLong_Fini();
-    }
-
-    if (is_main_interp) {
         _PyFloat_Fini();
         _PyDict_Fini();
         _PySlice_Fini();
@@ -1197,9 +1194,12 @@ finalize_interp_types(PyThreadState *tstate, int is_main_interp)
         _PyArg_Fini();
         _PyAsyncGen_Fini();
         _PyContext_Fini();
+    }
 
-        /* Cleanup Unicode implementation */
-        _PyUnicode_Fini();
+    /* Cleanup Unicode implementation */
+    _PyUnicode_Fini(tstate);
+
+    if (is_main_interp) {
         _Py_ClearFileSystemEncoding();
     }
 }
