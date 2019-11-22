@@ -1069,7 +1069,9 @@ class PathLike(abc.ABC):
 
     @classmethod
     def __subclasshook__(cls, subclass):
-        return hasattr(subclass, '__fspath__')
+        if cls is PathLike and hasattr(subclass, '__fspath__'):
+            return True
+        return NotImplemented
 
 
 if name == 'nt':
