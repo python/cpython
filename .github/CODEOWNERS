@@ -114,6 +114,9 @@ Include/pytime.h              @pganssle @abalkin
 **/*ftplib                    @giampaolo
 **/*shutil                    @giampaolo
 
+**/*enum*                     @ethanfurman
+**/*cgi*                      @ethanfurman
+
 # macOS
 /Mac/                         @python/macos-team
 **/*osx_support*              @python/macos-team
