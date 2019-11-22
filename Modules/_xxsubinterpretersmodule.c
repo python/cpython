@@ -2387,7 +2387,7 @@ channel_list_interpreters(PyObject *self, PyObject *args, PyObject *kwds)
     if (ids == NULL) {
         goto except;
     }
-    
+
     ret = PyList_New((Py_ssize_t)count);
     if (ret == NULL) {
         goto except;
