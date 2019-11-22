@@ -3136,6 +3136,18 @@ class AbstractPickleModuleTests(unittest.TestCase):
         self.assertRaises(pickle.PicklingError, BadPickler().dump, 0)
         self.assertRaises(pickle.UnpicklingError, BadUnpickler().load)
 
+    def test_load_read_exception(self):
+        class F:
+            @property
+            def read(self):
+                1/0
+            def readinto(self):
+                1/0
+            def readline(self):
+                1/0
+
+        self.assertRaises(ZeroDivisionError, pickle.load, F())
+
     def check_dumps_loads_oob_buffers(self, dumps, loads):
         # No need to do the full gamut of tests here, just enough to
         # check that dumps() and loads() redirect their arguments
