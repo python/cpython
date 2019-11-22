@@ -33,6 +33,7 @@ static PyObject *asyncio_task_repr_info_func;
 static PyObject *asyncio_InvalidStateError;
 static PyObject *asyncio_CancelledError;
 static PyObject *context_kwname;
+static int module_initialized;
 
 static PyObject *cached_running_holder;
 static volatile uint64_t cached_running_holder_tsid;
@@ -1090,6 +1091,7 @@ static PyObject *
 _asyncio_Future_get_loop_impl(FutureObj *self)
 /*[clinic end generated code: output=119b6ea0c9816c3f input=cba48c2136c79d1f]*/
 {
+    ENSURE_FUTURE_ALIVE(self)
     Py_INCREF(self->fut_loop);
     return self->fut_loop;
 }
@@ -3247,6 +3249,12 @@ module_init(void)
     if (asyncio_mod == NULL) {
         goto fail;
     }
+    if (module_initialized != 0) {
+        return 0;
+    } 
+    else {
+        module_initialized = 1;
+    }
 
     current_tasks = PyDict_New();
     if (current_tasks == NULL) {
@@ -3379,24 +3387,28 @@ PyInit__asyncio(void)
     Py_INCREF(&FutureType);
     if (PyModule_AddObject(m, "Future", (PyObject *)&FutureType) < 0) {
         Py_DECREF(&FutureType);
+        Py_DECREF(m);
         return NULL;
     }
 
     Py_INCREF(&TaskType);
     if (PyModule_AddObject(m, "Task", (PyObject *)&TaskType) < 0) {
         Py_DECREF(&TaskType);
+        Py_DECREF(m);
         return NULL;
     }
 
     Py_INCREF(all_tasks);
     if (PyModule_AddObject(m, "_all_tasks", all_tasks) < 0) {
         Py_DECREF(all_tasks);
+        Py_DECREF(m);
         return NULL;
     }
 
     Py_INCREF(current_tasks);
     if (PyModule_AddObject(m, "_current_tasks", current_tasks) < 0) {
         Py_DECREF(current_tasks);
+        Py_DECREF(m);
         return NULL;
     }
 

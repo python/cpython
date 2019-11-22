@@ -257,6 +257,18 @@ implementation used by the asyncio event loop:
    This solution requires a running event loop in the main thread to work, as
    :class:`SafeChildWatcher`.
 
+.. class:: PidfdChildWatcher
+
+   This implementation polls process file descriptors (pidfds) to await child
+   process termination. In some respects, :class:`PidfdChildWatcher` is a
+   "Goldilocks" child watcher implementation. It doesn't require signals or
+   threads, doesn't interfere with any processes launched outside the event
+   loop, and scales linearly with the number of subprocesses launched by the
+   event loop. The main disadvantage is that pidfds are specific to Linux, and
+   only work on recent (5.3+) kernels.
+
+   .. versionadded:: 3.9
+
 
 Custom Policies
 ===============

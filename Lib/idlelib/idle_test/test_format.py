@@ -417,7 +417,7 @@ class FormatRegionTest(unittest.TestCase):
         self.text.delete('1.0', 'end')
 
     code_sample = """\
-
+# WS line needed for test.
 class C1():
     # Class comment.
     def __init__(self, a, b):
@@ -574,7 +574,42 @@ class C1():
         self.assertEqual(ask(), 10)
 
 
-class rstripTest(unittest.TestCase):
+class IndentsTest(unittest.TestCase):
+
+    @mock.patch.object(ft, "askyesno")
+    def test_toggle_tabs(self, askyesno):
+        editor = DummyEditwin(None, None)  # usetabs == False.
+        indents = ft.Indents(editor)
+        askyesno.return_value = True
+
+        indents.toggle_tabs_event(None)
+        self.assertEqual(editor.usetabs, True)
+        self.assertEqual(editor.indentwidth, 8)
+
+        indents.toggle_tabs_event(None)
+        self.assertEqual(editor.usetabs, False)
+        self.assertEqual(editor.indentwidth, 8)
+
+    @mock.patch.object(ft, "askinteger")
+    def test_change_indentwidth(self, askinteger):
+        editor = DummyEditwin(None, None)  # indentwidth == 4.
+        indents = ft.Indents(editor)
+
+        askinteger.return_value = None
+        indents.change_indentwidth_event(None)
+        self.assertEqual(editor.indentwidth, 4)
+
+        askinteger.return_value = 3
+        indents.change_indentwidth_event(None)
+        self.assertEqual(editor.indentwidth, 3)
+
+        askinteger.return_value = 5
+        editor.usetabs = True
+        indents.change_indentwidth_event(None)
+        self.assertEqual(editor.indentwidth, 3)
+
+
+class RstripTest(unittest.TestCase):
 
     def test_rstrip_line(self):
         editor = MockEditor()

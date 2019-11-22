@@ -1,2 +1,0 @@
-In :mod:`typing`, improved the ``__hash__`` and ``__eq__`` methods for
-:class:`ForwardReferences`.

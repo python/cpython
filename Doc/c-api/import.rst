@@ -14,7 +14,7 @@ Importing Modules
       single: modules (in module sys)
 
    This is a simplified interface to :c:func:`PyImport_ImportModuleEx` below,
-   leaving the *globals* and *locals* arguments set to *NULL* and *level* set
+   leaving the *globals* and *locals* arguments set to ``NULL`` and *level* set
    to 0.  When the *name*
    argument contains a dot (when it specifies a submodule of a package), the
    *fromlist* argument is set to the list ``['*']`` so that the return value is the
@@ -22,7 +22,7 @@ Importing Modules
    be the case.  (Unfortunately, this has an additional side effect when *name* in
    fact specifies a subpackage instead of a submodule: the submodules specified in
    the package's ``__all__`` variable are  loaded.)  Return a new reference to the
-   imported module, or *NULL* with an exception set on failure.  A failing
+   imported module, or ``NULL`` with an exception set on failure.  A failing
    import of a module doesn't leave the module in :data:`sys.modules`.
 
    This function always uses absolute imports.
@@ -47,7 +47,7 @@ Importing Modules
    function :func:`__import__`.
 
    The return value is a new reference to the imported module or top-level
-   package, or *NULL* with an exception set on failure.  Like for
+   package, or ``NULL`` with an exception set on failure.  Like for
    :func:`__import__`, the return value when a submodule of a package was
    requested is normally the top-level package, unless a non-empty *fromlist*
    was given.
@@ -63,7 +63,7 @@ Importing Modules
    this function directly.
 
    The return value is a new reference to the imported module or top-level package,
-   or *NULL* with an exception set on failure.  Like for :func:`__import__`,
+   or ``NULL`` with an exception set on failure.  Like for :func:`__import__`,
    the return value when a submodule of a package was requested is normally the
    top-level package, unless a non-empty *fromlist* was given.
 
@@ -91,7 +91,7 @@ Importing Modules
 
 .. c:function:: PyObject* PyImport_ReloadModule(PyObject *m)
 
-   Reload a module.  Return a new reference to the reloaded module, or *NULL* with
+   Reload a module.  Return a new reference to the reloaded module, or ``NULL`` with
    an exception set on failure (the module still exists in this case).
 
 
@@ -100,7 +100,7 @@ Importing Modules
    Return the module object corresponding to a module name.  The *name* argument
    may be of the form ``package.module``. First check the modules dictionary if
    there's one there, and if not, create a new one and insert it in the modules
-   dictionary. Return *NULL* with an exception set on failure.
+   dictionary. Return ``NULL`` with an exception set on failure.
 
    .. note::
 
@@ -125,7 +125,7 @@ Importing Modules
    Given a module name (possibly of the form ``package.module``) and a code object
    read from a Python bytecode file or obtained from the built-in function
    :func:`compile`, load the module.  Return a new reference to the module object,
-   or *NULL* with an exception set if an error occurred.  *name*
+   or ``NULL`` with an exception set if an error occurred.  *name*
    is removed from :attr:`sys.modules` in error cases, even if *name* was already
    in :attr:`sys.modules` on entry to :c:func:`PyImport_ExecCodeModule`.  Leaving
    incompletely initialized modules in :attr:`sys.modules` is dangerous, as imports of
@@ -207,8 +207,8 @@ Importing Modules
 .. c:function:: PyObject* PyImport_GetModule(PyObject *name)
 
    Return the already imported module with the given name.  If the
-   module has not been imported yet then returns NULL but does not set
-   an error.  Returns NULL and sets an error if the lookup failed.
+   module has not been imported yet then returns ``NULL`` but does not set
+   an error.  Returns ``NULL`` and sets an error if the lookup failed.
 
    .. versionadded:: 3.7
 
@@ -262,7 +262,7 @@ Importing Modules
 .. c:var:: const struct _frozen* PyImport_FrozenModules
 
    This pointer is initialized to point to an array of :c:type:`struct _frozen`
-   records, terminated by one whose members are all *NULL* or zero.  When a frozen
+   records, terminated by one whose members are all ``NULL`` or zero.  When a frozen
    module is imported, it is searched in this table.  Third-party code could play
    tricks with this to provide a dynamically created collection of frozen modules.
 
@@ -295,7 +295,7 @@ Importing Modules
 .. c:function:: int PyImport_ExtendInittab(struct _inittab *newtab)
 
    Add a collection of modules to the table of built-in modules.  The *newtab*
-   array must end with a sentinel entry which contains *NULL* for the :attr:`name`
+   array must end with a sentinel entry which contains ``NULL`` for the :attr:`name`
    field; failure to provide the sentinel value can result in a memory fault.
    Returns ``0`` on success or ``-1`` if insufficient memory could be allocated to
    extend the internal table.  In the event of failure, no modules are added to the

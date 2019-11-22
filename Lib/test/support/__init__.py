@@ -119,8 +119,52 @@ __all__ = [
     "run_with_locale", "swap_item",
     "swap_attr", "Matcher", "set_memlimit", "SuppressCrashReport", "sortdict",
     "run_with_tz", "PGO", "missing_compiler_executable", "fd_count",
-    "ALWAYS_EQ", "NEVER_EQ", "LARGEST", "SMALLEST"
+    "ALWAYS_EQ", "NEVER_EQ", "LARGEST", "SMALLEST",
+    "LOOPBACK_TIMEOUT", "INTERNET_TIMEOUT", "SHORT_TIMEOUT", "LONG_TIMEOUT",
     ]
+
+
+# Timeout in seconds for tests using a network server listening on the network
+# local loopback interface like 127.0.0.1.
+#
+# The timeout is long enough to prevent test failure: it takes into account
+# that the client and the server can run in different threads or even different
+# processes.
+#
+# The timeout should be long enough for connect(), recv() and send() methods
+# of socket.socket.
+LOOPBACK_TIMEOUT = 5.0
+if sys.platform == 'win32' and platform.machine() == 'ARM':
+    # bpo-37553: test_socket.SendfileUsingSendTest is taking longer than 2
+    # seconds on Windows ARM32 buildbot
+    LOOPBACK_TIMEOUT = 10
+
+# Timeout in seconds for network requests going to the Internet. The timeout is
+# short enough to prevent a test to wait for too long if the Internet request
+# is blocked for whatever reason.
+#
+# Usually, a timeout using INTERNET_TIMEOUT should not mark a test as failed,
+# but skip the test instead: see transient_internet().
+INTERNET_TIMEOUT = 60.0
+
+# Timeout in seconds to mark a test as failed if the test takes "too long".
+#
+# The timeout value depends on the regrtest --timeout command line option.
+#
+# If a test using SHORT_TIMEOUT starts to fail randomly on slow buildbots, use
+# LONG_TIMEOUT instead.
+SHORT_TIMEOUT = 30.0
+
+# Timeout in seconds to detect when a test hangs.
+#
+# It is long enough to reduce the risk of test failure on the slowest Python
+# buildbots. It should not be used to mark a test as failed if the test takes
+# "too long". The timeout value depends on the regrtest --timeout command line
+# option.
+LONG_TIMEOUT = 5 * 60.0
+
+_NOT_SET = object()
+
 
 class Error(Exception):
     """Base class for regression test exceptions."""
@@ -1068,7 +1112,7 @@ def change_cwd(path, quiet=False):
     """
     saved_dir = os.getcwd()
     try:
-        os.chdir(path)
+        os.chdir(os.path.realpath(path))
     except OSError as exc:
         if not quiet:
             raise
@@ -1231,7 +1275,7 @@ def open_urlresource(url, *args, **kw):
     opener = urllib.request.build_opener()
     if gzip:
         opener.addheaders.append(('Accept-Encoding', 'gzip'))
-    f = opener.open(url, timeout=15)
+    f = opener.open(url, timeout=INTERNET_TIMEOUT)
     if gzip and f.headers.get('Content-Encoding') == 'gzip':
         f = gzip.GzipFile(fileobj=f)
     try:
@@ -1542,9 +1586,12 @@ def get_socket_conn_refused_errs():
 
 
 @contextlib.contextmanager
-def transient_internet(resource_name, *, timeout=30.0, errnos=()):
+def transient_internet(resource_name, *, timeout=_NOT_SET, errnos=()):
     """Return a context manager that raises ResourceDenied when various issues
     with the Internet connection manifest themselves as exceptions."""
+    if timeout is _NOT_SET:
+        timeout = INTERNET_TIMEOUT
+
     default_errnos = [
         ('ECONNREFUSED', 111),
         ('ECONNRESET', 104),
@@ -2049,7 +2096,9 @@ def _run_suite(suite):
 
 # By default, don't filter tests
 _match_test_func = None
-_match_test_patterns = None
+
+_accept_test_patterns = None
+_ignore_test_patterns = None
 
 
 def match_test(test):
@@ -2065,18 +2114,45 @@ def _is_full_match_test(pattern):
     # as a full test identifier.
     # Example: 'test.test_os.FileTests.test_access'.
     #
-    # Reject patterns which contain fnmatch patterns: '*', '?', '[...]'
-    # or '[!...]'. For example, reject 'test_access*'.
+    # ignore patterns which contain fnmatch patterns: '*', '?', '[...]'
+    # or '[!...]'. For example, ignore 'test_access*'.
     return ('.' in pattern) and (not re.search(r'[?*\[\]]', pattern))
 
 
-def set_match_tests(patterns):
-    global _match_test_func, _match_test_patterns
+def set_match_tests(accept_patterns=None, ignore_patterns=None):
+    global _match_test_func, _accept_test_patterns, _ignore_test_patterns
 
-    if patterns == _match_test_patterns:
-        # No change: no need to recompile patterns.
-        return
 
+    if accept_patterns is None:
+        accept_patterns = ()
+    if ignore_patterns is None:
+        ignore_patterns = ()
+
+    accept_func = ignore_func = None
+
+    if accept_patterns != _accept_test_patterns:
+        accept_patterns, accept_func = _compile_match_function(accept_patterns)
+    if ignore_patterns != _ignore_test_patterns:
+        ignore_patterns, ignore_func = _compile_match_function(ignore_patterns)
+
+    # Create a copy since patterns can be mutable and so modified later
+    _accept_test_patterns = tuple(accept_patterns)
+    _ignore_test_patterns = tuple(ignore_patterns)
+
+    if accept_func is not None or ignore_func is not None:
+        def match_function(test_id):
+            accept = True
+            ignore = False
+            if accept_func:
+                accept = accept_func(test_id)
+            if ignore_func:
+                ignore = ignore_func(test_id)
+            return accept and not ignore
+
+        _match_test_func = match_function
+
+
+def _compile_match_function(patterns):
     if not patterns:
         func = None
         # set_match_tests(None) behaves as set_match_tests(())
@@ -2104,10 +2180,7 @@ def set_match_tests(patterns):
 
         func = match_test_regex
 
-    # Create a copy since patterns can be mutable and so modified later
-    _match_test_patterns = tuple(patterns)
-    _match_test_func = func
-
+    return patterns, func
 
 
 def run_unittest(*classes):
@@ -2264,7 +2337,7 @@ def reap_threads(func):
 
 
 @contextlib.contextmanager
-def wait_threads_exit(timeout=60.0):
+def wait_threads_exit(timeout=None):
     """
     bpo-31234: Context manager to wait until all threads created in the with
     statement exit.
@@ -2278,6 +2351,8 @@ def wait_threads_exit(timeout=60.0):
     which doesn't allow to wait for thread exit, whereas thread.Thread has a
     join() method.
     """
+    if timeout is None:
+        timeout = SHORT_TIMEOUT
     old_count = _thread._count()
     try:
         yield
@@ -2298,10 +2373,12 @@ def wait_threads_exit(timeout=60.0):
             gc_collect()
 
 
-def join_thread(thread, timeout=30.0):
+def join_thread(thread, timeout=None):
     """Join a thread. Raise an AssertionError if the thread is still alive
     after timeout seconds.
     """
+    if timeout is None:
+        timeout = SHORT_TIMEOUT
     thread.join(timeout)
     if thread.is_alive():
         msg = f"failed to join the thread in {timeout:.1f} seconds"

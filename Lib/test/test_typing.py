@@ -2778,6 +2778,16 @@ except StopIteration as e:
 
 gth = get_type_hints
 
+class ForRefExample:
+    @ann_module.dec
+    def func(self: 'ForRefExample'):
+        pass
+
+    @ann_module.dec
+    @ann_module.dec
+    def nested(self: 'ForRefExample'):
+        pass
+
 
 class GetTypeHintTests(BaseTestCase):
     def test_get_type_hints_from_various_objects(self):
@@ -2875,6 +2885,11 @@ class GetTypeHintTests(BaseTestCase):
                          {'z': ClassVar[CSub], 'y': int, 'b': int,
                           'x': ClassVar[Optional[B]]})
         self.assertEqual(gth(G), {'lst': ClassVar[List[T]]})
+
+    def test_get_type_hints_wrapped_decoratored_func(self):
+        expects = {'self': ForRefExample}
+        self.assertEqual(gth(ForRefExample.func), expects)
+        self.assertEqual(gth(ForRefExample.nested), expects)
 
 
 class GetUtilitiesTestCase(TestCase):
@@ -3468,6 +3483,9 @@ class NewTypeTests(BaseTestCase):
 
 
 class NamedTupleTests(BaseTestCase):
+    class NestedEmployee(NamedTuple):
+        name: str
+        cool: int
 
     def test_basics(self):
         Emp = NamedTuple('Emp', [('name', str), ('id', int)])
@@ -3587,14 +3605,25 @@ class XMethBad2(NamedTuple):
         with self.assertRaises(TypeError):
             NamedTuple('Emp', fields=[('name', str), ('id', int)])
 
-    def test_pickle(self):
+    def test_copy_and_pickle(self):
         global Emp  # pickle wants to reference the class by name
-        Emp = NamedTuple('Emp', [('name', str), ('id', int)])
-        jane = Emp('jane', 37)
-        for proto in range(pickle.HIGHEST_PROTOCOL + 1):
-            z = pickle.dumps(jane, proto)
-            jane2 = pickle.loads(z)
-            self.assertEqual(jane2, jane)
+        Emp = NamedTuple('Emp', [('name', str), ('cool', int)])
+        for cls in Emp, CoolEmployee, self.NestedEmployee:
+            with self.subTest(cls=cls):
+                jane = cls('jane', 37)
+                for proto in range(pickle.HIGHEST_PROTOCOL + 1):
+                    z = pickle.dumps(jane, proto)
+                    jane2 = pickle.loads(z)
+                    self.assertEqual(jane2, jane)
+                    self.assertIsInstance(jane2, cls)
+
+                jane2 = copy(jane)
+                self.assertEqual(jane2, jane)
+                self.assertIsInstance(jane2, cls)
+
+                jane2 = deepcopy(jane)
+                self.assertEqual(jane2, jane)
+                self.assertIsInstance(jane2, cls)
 
 
 class TypedDictTests(BaseTestCase):

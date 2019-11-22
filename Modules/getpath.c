@@ -657,11 +657,6 @@ calculate_pybuilddir(const wchar_t *argv0_path,
         return _PyStatus_NO_MEMORY();
     }
 
-    if (!isfile(filename)) {
-        PyMem_RawFree(filename);
-        return _PyStatus_OK();
-    }
-
     FILE *fp = _Py_wfopen(filename, L"rb");
     PyMem_RawFree(filename);
     if (fp == NULL) {
@@ -1131,7 +1126,7 @@ calculate_argv0_path_framework(PyCalculatePath *calculate, _PyPathConfig *pathco
     }
 
     reduce(parent);
-    wchar_t *lib_python = joinpath2(path, calculate->lib_python);
+    wchar_t *lib_python = joinpath2(parent, calculate->lib_python);
     PyMem_RawFree(parent);
 
     if (lib_python == NULL) {
@@ -1149,7 +1144,7 @@ calculate_argv0_path_framework(PyCalculatePath *calculate, _PyPathConfig *pathco
     if (!module) {
         /* We are in the build directory so use the name of the
            executable - we know that the absolute path is passed */
-        PyMem_RawFree(*calculate->argv0_path);
+        PyMem_RawFree(calculate->argv0_path);
         calculate->argv0_path = _PyMem_RawWcsdup(pathconfig->program_full_path);
         if (calculate->argv0_path == NULL) {
             status = _PyStatus_NO_MEMORY();
@@ -1161,8 +1156,8 @@ calculate_argv0_path_framework(PyCalculatePath *calculate, _PyPathConfig *pathco
     }
 
     /* Use the location of the library as argv0_path */
-    PyMem_RawFree(*calculate->argv0_path);
-    calculate->argv0_path = wbuf
+    PyMem_RawFree(calculate->argv0_path);
+    calculate->argv0_path = wbuf;
     return _PyStatus_OK();
 
 done:

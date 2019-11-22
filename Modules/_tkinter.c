@@ -2166,11 +2166,9 @@ _tkinter_tkapp_exprdouble_impl(TkappObject *self, const char *s)
 
     CHECK_STRING_LENGTH(s);
     CHECK_TCL_APPARTMENT;
-    PyFPE_START_PROTECT("Tkapp_ExprDouble", return 0)
     ENTER_TCL
     retval = Tcl_ExprDouble(Tkapp_Interp(self), s, &v);
     ENTER_OVERLAP
-    PyFPE_END_PROTECT(retval)
     if (retval == TCL_ERROR)
         res = Tkinter_Error(self);
     else
@@ -2303,6 +2301,12 @@ _tkinter_tkapp_split(TkappObject *self, PyObject *arg)
 {
     PyObject *v;
     char *list;
+
+    if (PyErr_WarnEx(PyExc_DeprecationWarning,
+            "split() is deprecated; consider using splitlist() instead", 1))
+    {
+        return NULL;
+    }
 
     if (PyTclObject_Check(arg)) {
         Tcl_Obj *value = ((PyTclObject*)arg)->value;
@@ -3549,11 +3553,13 @@ PyInit__tkinter(void)
             if (!ret && GetLastError() == ERROR_ENVVAR_NOT_FOUND) {
                 str_path = _get_tcl_lib_path();
                 if (str_path == NULL && PyErr_Occurred()) {
+                    Py_DECREF(m);
                     return NULL;
                 }
                 if (str_path != NULL) {
                     wcs_path = PyUnicode_AsWideCharString(str_path, NULL);
                     if (wcs_path == NULL) {
+                        Py_DECREF(m);
                         return NULL;
                     }
                     SetEnvironmentVariableW(L"TCL_LIBRARY", wcs_path);

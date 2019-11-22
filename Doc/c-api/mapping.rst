@@ -14,8 +14,7 @@ See also :c:func:`PyObject_GetItem`, :c:func:`PyObject_SetItem` and
    Return ``1`` if the object provides mapping protocol or supports slicing,
    and ``0`` otherwise.  Note that it returns ``1`` for Python classes with
    a :meth:`__getitem__` method since in general case it is impossible to
-   determine what the type of keys it supports.  This function always
-   succeeds.
+   determine what type of keys it supports. This function always succeeds.
 
 
 .. c:function:: Py_ssize_t PyMapping_Size(PyObject *o)
@@ -29,7 +28,7 @@ See also :c:func:`PyObject_GetItem`, :c:func:`PyObject_SetItem` and
 
 .. c:function:: PyObject* PyMapping_GetItemString(PyObject *o, const char *key)
 
-   Return element of *o* corresponding to the string *key* or *NULL* on failure.
+   Return element of *o* corresponding to the string *key* or ``NULL`` on failure.
    This is the equivalent of the Python expression ``o[key]``.
    See also :c:func:`PyObject_GetItem`.
 
@@ -79,7 +78,7 @@ See also :c:func:`PyObject_GetItem`, :c:func:`PyObject_SetItem` and
 .. c:function:: PyObject* PyMapping_Keys(PyObject *o)
 
    On success, return a list of the keys in object *o*.  On failure, return
-   *NULL*.
+   ``NULL``.
 
    .. versionchanged:: 3.7
       Previously, the function returned a list or a tuple.
@@ -88,7 +87,7 @@ See also :c:func:`PyObject_GetItem`, :c:func:`PyObject_SetItem` and
 .. c:function:: PyObject* PyMapping_Values(PyObject *o)
 
    On success, return a list of the values in object *o*.  On failure, return
-   *NULL*.
+   ``NULL``.
 
    .. versionchanged:: 3.7
       Previously, the function returned a list or a tuple.
@@ -97,7 +96,7 @@ See also :c:func:`PyObject_GetItem`, :c:func:`PyObject_SetItem` and
 .. c:function:: PyObject* PyMapping_Items(PyObject *o)
 
    On success, return a list of the items in object *o*, where each item is a
-   tuple containing a key-value pair.  On failure, return *NULL*.
+   tuple containing a key-value pair.  On failure, return ``NULL``.
 
    .. versionchanged:: 3.7
       Previously, the function returned a list or a tuple.

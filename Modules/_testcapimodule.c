@@ -4612,6 +4612,14 @@ test_pyobject_is_freed(const char *test_name, PyObject *op)
 
 
 static PyObject*
+check_pyobject_null_is_freed(PyObject *self, PyObject *Py_UNUSED(args))
+{
+    PyObject *op = NULL;
+    return test_pyobject_is_freed("check_pyobject_null_is_freed", op);
+}
+
+
+static PyObject*
 check_pyobject_uninitialized_is_freed(PyObject *self, PyObject *Py_UNUSED(args))
 {
     PyObject *op = (PyObject *)PyObject_Malloc(sizeof(PyObject));
@@ -4755,8 +4763,8 @@ dict_get_version(PyObject *self, PyObject *args)
 
     version = dict->ma_version_tag;
 
-    Py_BUILD_ASSERT(sizeof(unsigned PY_LONG_LONG) >= sizeof(version));
-    return PyLong_FromUnsignedLongLong((unsigned PY_LONG_LONG)version);
+    Py_BUILD_ASSERT(sizeof(unsigned long long) >= sizeof(version));
+    return PyLong_FromUnsignedLongLong((unsigned long long)version);
 }
 
 
@@ -5475,6 +5483,7 @@ static PyMethodDef TestMethods[] = {
     {"pymem_api_misuse", pymem_api_misuse, METH_NOARGS},
     {"pymem_malloc_without_gil", pymem_malloc_without_gil, METH_NOARGS},
     {"pymem_getallocatorsname", test_pymem_getallocatorsname, METH_NOARGS},
+    {"check_pyobject_null_is_freed", check_pyobject_null_is_freed, METH_NOARGS},
     {"check_pyobject_uninitialized_is_freed", check_pyobject_uninitialized_is_freed, METH_NOARGS},
     {"check_pyobject_forbidden_bytes_is_freed", check_pyobject_forbidden_bytes_is_freed, METH_NOARGS},
     {"check_pyobject_freed_is_freed", check_pyobject_freed_is_freed, METH_NOARGS},
@@ -6529,6 +6538,53 @@ static PyTypeObject MethStatic_Type = {
         "Class with static methods to test calling conventions"),
 };
 
+/* ContainerNoGC -- a simple container without GC methods */
+
+typedef struct {
+    PyObject_HEAD
+    PyObject *value;
+} ContainerNoGCobject;
+
+static PyObject *
+ContainerNoGC_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
+{
+    PyObject *value;
+    char *names[] = {"value", NULL};
+    if (!PyArg_ParseTupleAndKeywords(args, kwargs, "O", names, &value)) {
+        return NULL;
+    }
+    PyObject *self = type->tp_alloc(type, 0);
+    if (self == NULL) {
+        return NULL;
+    }
+    Py_INCREF(value);
+    ((ContainerNoGCobject *)self)->value = value;
+    return self;
+}
+
+static void
+ContainerNoGC_dealloc(ContainerNoGCobject *self)
+{
+    Py_DECREF(self->value);
+    Py_TYPE(self)->tp_free((PyObject *)self);
+}
+
+static PyMemberDef ContainerNoGC_members[] = {
+    {"value", T_OBJECT, offsetof(ContainerNoGCobject, value), READONLY,
+     PyDoc_STR("a container value for test purposes")},
+    {0}
+};
+
+static PyTypeObject ContainerNoGC_type = {
+    PyVarObject_HEAD_INIT(NULL, 0)
+    "_testcapi.ContainerNoGC",
+    sizeof(ContainerNoGCobject),
+    .tp_dealloc = (destructor)ContainerNoGC_dealloc,
+    .tp_flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE,
+    .tp_members = ContainerNoGC_members,
+    .tp_new = ContainerNoGC_new,
+};
+
 
 static struct PyModuleDef _testcapimodule = {
     PyModuleDef_HEAD_INIT,
@@ -6665,11 +6721,14 @@ PyInit__testcapi(void)
     PyModule_AddObject(m, "instancemethod", (PyObject *)&PyInstanceMethod_Type);
 
     PyModule_AddIntConstant(m, "the_number_three", 3);
+    PyObject *v;
 #ifdef WITH_PYMALLOC
-    PyModule_AddObject(m, "WITH_PYMALLOC", Py_True);
+    v = Py_True;
 #else
-    PyModule_AddObject(m, "WITH_PYMALLOC", Py_False);
+    v = Py_False;
 #endif
+    Py_INCREF(v);
+    PyModule_AddObject(m, "WITH_PYMALLOC", v);
 
     TestError = PyErr_NewException("_testcapi.error", NULL, NULL);
     Py_INCREF(TestError);
@@ -6725,6 +6784,14 @@ PyInit__testcapi(void)
     }
     Py_DECREF(subclass_with_finalizer_bases);
     PyModule_AddObject(m, "HeapCTypeSubclassWithFinalizer", HeapCTypeSubclassWithFinalizer);
+
+    if (PyType_Ready(&ContainerNoGC_type) < 0) {
+        return NULL;
+    }
+    Py_INCREF(&ContainerNoGC_type);
+    if (PyModule_AddObject(m, "ContainerNoGC",
+                           (PyObject *) &ContainerNoGC_type) < 0)
+        return NULL;
 
     PyState_AddModule(m, &_testcapimodule);
     return m;

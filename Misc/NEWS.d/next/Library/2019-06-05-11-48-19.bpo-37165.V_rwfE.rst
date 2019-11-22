@@ -1,1 +1,0 @@
-Converted _collections._count_elements to use the Argument Clinic.

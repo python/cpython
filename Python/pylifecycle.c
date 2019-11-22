@@ -64,6 +64,7 @@ extern grammar _PyParser_Grammar; /* From graminit.c */
 /* Forward declarations */
 static PyStatus add_main_module(PyInterpreterState *interp);
 static PyStatus init_import_site(void);
+static PyStatus init_set_builtins_open(PyThreadState *tstate);
 static PyStatus init_sys_streams(PyThreadState *tstate);
 static PyStatus init_signals(PyThreadState *tstate);
 static void call_py_exitfuncs(PyThreadState *tstate);
@@ -547,7 +548,7 @@ pycore_create_interpreter(_PyRuntimeState *runtime,
     _PyEval_FiniThreads(&runtime->ceval);
 
     /* Auto-thread-state API */
-    _PyGILState_Init(runtime, tstate);
+    _PyGILState_Init(tstate);
 
     /* Create the GIL */
     PyEval_InitThreads();
@@ -558,24 +559,32 @@ pycore_create_interpreter(_PyRuntimeState *runtime,
 
 
 static PyStatus
-pycore_init_types(void)
+pycore_init_types(PyThreadState *tstate)
 {
-    PyStatus status = _PyTypes_Init();
+    PyStatus status;
+    int is_main_interp = _Py_IsMainInterpreter(tstate);
+
+    status = _PyGC_Init(tstate);
     if (_PyStatus_EXCEPTION(status)) {
         return status;
     }
 
-    status = _PyUnicode_Init();
-    if (_PyStatus_EXCEPTION(status)) {
-        return status;
+    if (is_main_interp) {
+        status = _PyTypes_Init();
+        if (_PyStatus_EXCEPTION(status)) {
+            return status;
+        }
+
+        if (!_PyLong_Init()) {
+            return _PyStatus_ERR("can't init longs");
+        }
     }
 
-    if (_PyStructSequence_Init() < 0) {
-        return _PyStatus_ERR("can't initialize structseq");
-    }
-
-    if (!_PyLong_Init()) {
-        return _PyStatus_ERR("can't init longs");
+    if (is_main_interp) {
+        status = _PyUnicode_Init();
+        if (_PyStatus_EXCEPTION(status)) {
+            return status;
+        }
     }
 
     status = _PyExc_Init();
@@ -583,17 +592,25 @@ pycore_init_types(void)
         return status;
     }
 
-    if (!_PyFloat_Init()) {
-        return _PyStatus_ERR("can't init float");
-    }
+    if (is_main_interp) {
+        if (!_PyFloat_Init()) {
+            return _PyStatus_ERR("can't init float");
+        }
 
-    if (!_PyContext_Init()) {
-        return _PyStatus_ERR("can't init context");
+        if (_PyStructSequence_Init() < 0) {
+            return _PyStatus_ERR("can't initialize structseq");
+        }
     }
 
     status = _PyErr_Init();
     if (_PyStatus_EXCEPTION(status)) {
         return status;
+    }
+
+    if (is_main_interp) {
+        if (!_PyContext_Init()) {
+            return _PyStatus_ERR("can't init context");
+        }
     }
 
     return _PyStatus_OK();
@@ -683,13 +700,13 @@ pyinit_config(_PyRuntimeState *runtime,
     config = &tstate->interp->config;
     *tstate_p = tstate;
 
-    status = pycore_init_types();
+    status = pycore_init_types(tstate);
     if (_PyStatus_EXCEPTION(status)) {
         return status;
     }
 
     PyObject *sysmod;
-    status = _PySys_Create(runtime, tstate, &sysmod);
+    status = _PySys_Create(tstate, &sysmod);
     if (_PyStatus_EXCEPTION(status)) {
         return status;
     }
@@ -908,8 +925,9 @@ _Py_ReconfigureMainInterpreter(PyInterpreterState *interp)
  * non-zero return code.
  */
 static PyStatus
-pyinit_main(_PyRuntimeState *runtime, PyThreadState *tstate)
+pyinit_main(PyThreadState *tstate)
 {
+    _PyRuntimeState *runtime = tstate->interp->runtime;
     if (!runtime->core_initialized) {
         return _PyStatus_ERR("runtime core not initialized");
     }
@@ -936,7 +954,7 @@ pyinit_main(_PyRuntimeState *runtime, PyThreadState *tstate)
         return _PyStatus_ERR("can't initialize time");
     }
 
-    if (_PySys_InitMain(runtime, tstate) < 0) {
+    if (_PySys_InitMain(tstate) < 0) {
         return _PyStatus_ERR("can't finish initializing sys");
     }
 
@@ -973,6 +991,11 @@ pyinit_main(_PyRuntimeState *runtime, PyThreadState *tstate)
     }
 
     status = init_sys_streams(tstate);
+    if (_PyStatus_EXCEPTION(status)) {
+        return status;
+    }
+
+    status = init_set_builtins_open(tstate);
     if (_PyStatus_EXCEPTION(status)) {
         return status;
     }
@@ -1015,7 +1038,7 @@ _Py_InitializeMain(void)
     }
     _PyRuntimeState *runtime = &_PyRuntime;
     PyThreadState *tstate = _PyRuntimeState_GetThreadState(runtime);
-    return pyinit_main(runtime, tstate);
+    return pyinit_main(tstate);
 }
 
 
@@ -1042,7 +1065,7 @@ Py_InitializeFromConfig(const PyConfig *config)
     config = &tstate->interp->config;
 
     if (config->_init_main) {
-        status = pyinit_main(runtime, tstate);
+        status = pyinit_main(tstate);
         if (_PyStatus_EXCEPTION(status)) {
             return status;
         }
@@ -1152,6 +1175,87 @@ flush_std_files(void)
    Locking: as above.
 
 */
+
+
+static void
+finalize_interp_types(PyThreadState *tstate, int is_main_interp)
+{
+    if (is_main_interp) {
+        /* Sundry finalizers */
+        _PyFrame_Fini();
+        _PyTuple_Fini();
+        _PyList_Fini();
+        _PySet_Fini();
+        _PyBytes_Fini();
+        _PyLong_Fini();
+        _PyFloat_Fini();
+        _PyDict_Fini();
+        _PySlice_Fini();
+    }
+
+    _PyWarnings_Fini(tstate->interp);
+
+    if (is_main_interp) {
+        _Py_HashRandomization_Fini();
+        _PyArg_Fini();
+        _PyAsyncGen_Fini();
+        _PyContext_Fini();
+    }
+
+    /* Cleanup Unicode implementation */
+    _PyUnicode_Fini(tstate);
+
+    if (is_main_interp) {
+        _Py_ClearFileSystemEncoding();
+    }
+}
+
+
+static void
+finalize_interp_clear(PyThreadState *tstate)
+{
+    int is_main_interp = _Py_IsMainInterpreter(tstate);
+
+    /* bpo-36854: Explicitly clear the codec registry
+       and trigger a GC collection */
+    PyInterpreterState *interp = tstate->interp;
+    Py_CLEAR(interp->codec_search_path);
+    Py_CLEAR(interp->codec_search_cache);
+    Py_CLEAR(interp->codec_error_registry);
+    _PyGC_CollectNoFail();
+
+    /* Clear interpreter state and all thread states */
+    PyInterpreterState_Clear(tstate->interp);
+
+    finalize_interp_types(tstate, is_main_interp);
+
+    if (is_main_interp) {
+        /* XXX Still allocated:
+           - various static ad-hoc pointers to interned strings
+           - int and float free list blocks
+           - whatever various modules and libraries allocate
+        */
+
+        PyGrammar_RemoveAccelerators(&_PyParser_Grammar);
+
+        _PyExc_Fini();
+    }
+
+    _PyGC_Fini(tstate);
+}
+
+
+static void
+finalize_interp_delete(PyThreadState *tstate)
+{
+    if (_Py_IsMainInterpreter(tstate)) {
+        /* Cleanup auto-thread-state */
+        _PyGILState_Fini(tstate);
+    }
+
+    PyInterpreterState_Delete(tstate->interp);
+}
+
 
 int
 Py_FinalizeEx(void)
@@ -1306,56 +1410,8 @@ Py_FinalizeEx(void)
     }
 #endif /* Py_TRACE_REFS */
 
-    /* Clear interpreter state and all thread states. */
-    PyInterpreterState_Clear(interp);
-
-    /* Now we decref the exception classes.  After this point nothing
-       can raise an exception.  That's okay, because each Fini() method
-       below has been checked to make sure no exceptions are ever
-       raised.
-    */
-
-    _PyExc_Fini();
-
-    /* Sundry finalizers */
-    _PyMethod_Fini();
-    _PyFrame_Fini();
-    _PyCFunction_Fini();
-    _PyTuple_Fini();
-    _PyList_Fini();
-    _PySet_Fini();
-    _PyBytes_Fini();
-    _PyLong_Fini();
-    _PyFloat_Fini();
-    _PyDict_Fini();
-    _PySlice_Fini();
-    _PyGC_Fini(runtime);
-    _PyWarnings_Fini(interp);
-    _Py_HashRandomization_Fini();
-    _PyArg_Fini();
-    _PyAsyncGen_Fini();
-    _PyContext_Fini();
-
-    /* Cleanup Unicode implementation */
-    _PyUnicode_Fini();
-
-    _Py_ClearFileSystemEncoding();
-
-    /* XXX Still allocated:
-       - various static ad-hoc pointers to interned strings
-       - int and float free list blocks
-       - whatever various modules and libraries allocate
-    */
-
-    PyGrammar_RemoveAccelerators(&_PyParser_Grammar);
-
-    /* Cleanup auto-thread-state */
-    _PyGILState_Fini(runtime);
-
-    /* Delete current thread. After this, many C API calls become crashy. */
-    PyThreadState_Swap(NULL);
-
-    PyInterpreterState_Delete(interp);
+    finalize_interp_clear(tstate);
+    finalize_interp_delete(tstate);
 
 #ifdef Py_TRACE_REFS
     /* Display addresses (& refcnts) of all objects still alive.
@@ -1447,16 +1503,7 @@ new_interpreter(PyThreadState **tstate_p)
     }
     config = &interp->config;
 
-    status = _PyExc_Init();
-    if (_PyStatus_EXCEPTION(status)) {
-        return status;
-    }
-
-    status = _PyErr_Init();
-    if (_PyStatus_EXCEPTION(status)) {
-        return status;
-    }
-
+    status = pycore_init_types(tstate);
 
     /* XXX The following is lax in error checking */
     PyObject *modules = PyDict_New();
@@ -1473,7 +1520,7 @@ new_interpreter(PyThreadState **tstate_p)
         }
         Py_INCREF(interp->sysdict);
         PyDict_SetItemString(interp->sysdict, "modules", modules);
-        if (_PySys_InitMain(runtime, tstate) < 0) {
+        if (_PySys_InitMain(tstate) < 0) {
             return _PyStatus_ERR("can't finish initializing sys");
         }
     }
@@ -1528,6 +1575,11 @@ new_interpreter(PyThreadState **tstate_p)
             return status;
         }
 
+        status = init_set_builtins_open(tstate);
+        if (_PyStatus_EXCEPTION(status)) {
+            return status;
+        }
+
         status = add_main_module(interp);
         if (_PyStatus_EXCEPTION(status)) {
             return status;
@@ -1553,9 +1605,9 @@ handle_error:
 
     PyErr_PrintEx(0);
     PyThreadState_Clear(tstate);
-    PyThreadState_Swap(save_tstate);
     PyThreadState_Delete(tstate);
     PyInterpreterState_Delete(interp);
+    PyThreadState_Swap(save_tstate);
 
     *tstate_p = NULL;
     return _PyStatus_OK();
@@ -1608,9 +1660,8 @@ Py_EndInterpreter(PyThreadState *tstate)
     }
 
     _PyImport_Cleanup(tstate);
-    PyInterpreterState_Clear(interp);
-    PyThreadState_Swap(NULL);
-    PyInterpreterState_Delete(interp);
+    finalize_interp_clear(tstate);
+    finalize_interp_delete(tstate);
 }
 
 /* Add the __main__ module */
@@ -1851,12 +1902,49 @@ error:
     return NULL;
 }
 
+/* Set builtins.open to io.OpenWrapper */
+static PyStatus
+init_set_builtins_open(PyThreadState *tstate)
+{
+    PyObject *iomod = NULL, *wrapper;
+    PyObject *bimod = NULL;
+    PyStatus res = _PyStatus_OK();
+
+    if (!(iomod = PyImport_ImportModule("io"))) {
+        goto error;
+    }
+
+    if (!(bimod = PyImport_ImportModule("builtins"))) {
+        goto error;
+    }
+
+    if (!(wrapper = PyObject_GetAttrString(iomod, "OpenWrapper"))) {
+        goto error;
+    }
+
+    /* Set builtins.open */
+    if (PyObject_SetAttrString(bimod, "open", wrapper) == -1) {
+        Py_DECREF(wrapper);
+        goto error;
+    }
+    Py_DECREF(wrapper);
+    goto done;
+
+error:
+    res = _PyStatus_ERR("can't initialize io.open");
+
+done:
+    Py_XDECREF(bimod);
+    Py_XDECREF(iomod);
+    return res;
+}
+
+
 /* Initialize sys.stdin, stdout, stderr and builtins.open */
 static PyStatus
 init_sys_streams(PyThreadState *tstate)
 {
-    PyObject *iomod = NULL, *wrapper;
-    PyObject *bimod = NULL;
+    PyObject *iomod = NULL;
     PyObject *m;
     PyObject *std = NULL;
     int fd;
@@ -1889,23 +1977,9 @@ init_sys_streams(PyThreadState *tstate)
     }
     Py_DECREF(m);
 
-    if (!(bimod = PyImport_ImportModule("builtins"))) {
-        goto error;
-    }
-
     if (!(iomod = PyImport_ImportModule("io"))) {
         goto error;
     }
-    if (!(wrapper = PyObject_GetAttrString(iomod, "OpenWrapper"))) {
-        goto error;
-    }
-
-    /* Set builtins.open */
-    if (PyObject_SetAttrString(bimod, "open", wrapper) == -1) {
-        Py_DECREF(wrapper);
-        goto error;
-    }
-    Py_DECREF(wrapper);
 
     /* Set sys.stdin */
     fd = fileno(stdin);
@@ -1973,8 +2047,6 @@ error:
 
 done:
     _Py_ClearStandardStreamEncoding();
-
-    Py_XDECREF(bimod);
     Py_XDECREF(iomod);
     return res;
 }

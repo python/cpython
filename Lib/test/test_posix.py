@@ -1226,6 +1226,16 @@ class PosixTester(unittest.TestCase):
         finally:
             posix.close(f)
 
+    @unittest.skipUnless(hasattr(signal, 'SIGCHLD'), 'CLD_XXXX be placed in si_code for a SIGCHLD signal')
+    @unittest.skipUnless(hasattr(os, 'waitid_result'), "test needs os.waitid_result")
+    def test_cld_xxxx_constants(self):
+        os.CLD_EXITED
+        os.CLD_KILLED
+        os.CLD_DUMPED
+        os.CLD_TRAPPED
+        os.CLD_STOPPED
+        os.CLD_CONTINUED
+
     @unittest.skipUnless(os.symlink in os.supports_dir_fd, "test needs dir_fd support in os.symlink()")
     def test_symlink_dir_fd(self):
         f = posix.open(posix.getcwd(), posix.O_RDONLY)
@@ -1459,6 +1469,17 @@ class PosixTester(unittest.TestCase):
         self.assertFalse(os.path.exists(fn))
         open(fn, 'wb').close()
         self.assertRaises(ValueError, os.stat, fn_with_NUL)
+
+    @unittest.skipUnless(hasattr(os, "pidfd_open"), "pidfd_open unavailable")
+    def test_pidfd_open(self):
+        with self.assertRaises(OSError) as cm:
+            os.pidfd_open(-1)
+        if cm.exception.errno == errno.ENOSYS:
+            self.skipTest("system does not support pidfd_open")
+        if isinstance(cm.exception, PermissionError):
+            self.skipTest(f"pidfd_open syscall blocked: {cm.exception!r}")
+        self.assertEqual(cm.exception.errno, errno.EINVAL)
+        os.close(os.pidfd_open(os.getpid(), 0))
 
 class PosixGroupsTester(unittest.TestCase):
 

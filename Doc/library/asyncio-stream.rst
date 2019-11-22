@@ -6,6 +6,10 @@
 Streams
 =======
 
+**Source code:** :source:`Lib/asyncio/streams.py`
+
+-------------------------------------------------
+
 Streams are high-level async/await-ready primitives to work with
 network connections.  Streams allow sending and receiving data without
 using callbacks or low-level protocols and transports.
@@ -259,8 +263,8 @@ StreamWriter
 
    .. method:: can_write_eof()
 
-      Return *True* if the underlying transport supports
-      the :meth:`write_eof` method, *False* otherwise.
+      Return ``True`` if the underlying transport supports
+      the :meth:`write_eof` method, ``False`` otherwise.
 
    .. method:: write_eof()
 

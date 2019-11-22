@@ -62,12 +62,19 @@ struct _is {
     struct _is *next;
     struct _ts *tstate_head;
 
+    /* Reference to the _PyRuntime global variable. This field exists
+       to not have to pass runtime in addition to tstate to a function.
+       Get runtime from tstate: tstate->interp->runtime. */
+    struct pyruntimestate *runtime;
+
     int64_t id;
     int64_t id_refcount;
     int requires_idref;
     PyThread_type_lock id_mutex;
 
     int finalizing;
+
+    struct _gc_runtime_state gc;
 
     PyObject *modules;
     PyObject *modules_by_index;
@@ -125,6 +132,13 @@ struct _is {
     struct _warnings_runtime_state warnings;
 
     PyObject *audit_hooks;
+
+    struct {
+        struct {
+            int level;
+            int atbol;
+        } listnode;
+    } parser;
 };
 
 PyAPI_FUNC(struct _is*) _PyInterpreterState_LookUpID(PY_INT64_T);
@@ -225,7 +239,6 @@ typedef struct pyruntimestate {
     void (*exitfuncs[NEXITFUNCS])(void);
     int nexitfuncs;
 
-    struct _gc_runtime_state gc;
     struct _ceval_runtime_state ceval;
     struct _gilstate_runtime_state gilstate;
 
@@ -255,6 +268,8 @@ PyAPI_FUNC(void) _PyRuntime_Finalize(void);
 
 #define _Py_CURRENTLY_FINALIZING(runtime, tstate) \
     (runtime->finalizing == tstate)
+
+PyAPI_FUNC(int) _Py_IsMainInterpreter(PyThreadState* tstate);
 
 
 /* Variable and macro for in-line access to current thread
@@ -292,7 +307,6 @@ PyAPI_FUNC(void) _PyRuntime_Finalize(void);
 /* Other */
 
 PyAPI_FUNC(void) _PyThreadState_Init(
-    _PyRuntimeState *runtime,
     PyThreadState *tstate);
 PyAPI_FUNC(void) _PyThreadState_DeleteExcept(
     _PyRuntimeState *runtime,

@@ -938,7 +938,6 @@ pyexpat_xmlparser_ExternalEntityParserCreate_impl(xmlparseobject *self,
     new_parser->handlers = 0;
     new_parser->intern = self->intern;
     Py_XINCREF(new_parser->intern);
-    PyObject_GC_Track(new_parser);
 
     if (self->buffer != NULL) {
         new_parser->buffer = PyMem_Malloc(new_parser->buffer_size);
@@ -975,6 +974,8 @@ pyexpat_xmlparser_ExternalEntityParserCreate_impl(xmlparseobject *self,
                                    handler_info[i].handler);
         }
     }
+
+    PyObject_GC_Track(new_parser);
     return (PyObject *)new_parser;
 }
 
@@ -1122,7 +1123,6 @@ newxmlparseobject(const char *encoding, const char *namespace_separator, PyObjec
     self->handlers = NULL;
     self->intern = intern;
     Py_XINCREF(self->intern);
-    PyObject_GC_Track(self);
 
     /* namespace_separator is either NULL or contains one char + \0 */
     self->itself = XML_ParserCreate_MM(encoding, &ExpatMemoryHandler,
@@ -1152,6 +1152,7 @@ newxmlparseobject(const char *encoding, const char *namespace_separator, PyObjec
     }
     clear_handlers(self, 1);
 
+    PyObject_GC_Track(self);
     return (PyObject*)self;
 }
 
