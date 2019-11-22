@@ -51,6 +51,12 @@
 #undef  THREAD_STACK_SIZE
 #define THREAD_STACK_SIZE       0x200000
 #endif
+#if defined(__ANDROID__) && defined(THREAD_STACK_SIZE) && THREAD_STACK_SIZE == 0
+#   ifdef Py_DEBUG
+#   undef  THREAD_STACK_SIZE
+#   define THREAD_STACK_SIZE    0x800000
+#   endif
+#endif
 /* for safety, ensure a viable minimum stacksize */
 #define THREAD_STACK_MIN        0x8000  /* 32 KiB */
 #else  /* !_POSIX_THREAD_ATTR_STACKSIZE */
