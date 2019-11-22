@@ -15929,34 +15929,37 @@ _PyUnicode_EnableLegacyWindowsFSEncoding(void)
 
 
 void
-_PyUnicode_Fini(void)
+_PyUnicode_Fini(PyThreadState *tstate)
 {
+    if (_Py_IsMainInterpreter(tstate)) {
 #if defined(WITH_VALGRIND) || defined(__INSURE__)
-    /* Insure++ is a memory analysis tool that aids in discovering
-     * memory leaks and other memory problems.  On Python exit, the
-     * interned string dictionaries are flagged as being in use at exit
-     * (which it is).  Under normal circumstances, this is fine because
-     * the memory will be automatically reclaimed by the system.  Under
-     * memory debugging, it's a huge source of useless noise, so we
-     * trade off slower shutdown for less distraction in the memory
-     * reports.  -baw
-     */
-    unicode_release_interned();
+        /* Insure++ is a memory analysis tool that aids in discovering
+         * memory leaks and other memory problems.  On Python exit, the
+         * interned string dictionaries are flagged as being in use at exit
+         * (which it is).  Under normal circumstances, this is fine because
+         * the memory will be automatically reclaimed by the system.  Under
+         * memory debugging, it's a huge source of useless noise, so we
+         * trade off slower shutdown for less distraction in the memory
+         * reports.  -baw
+         */
+        unicode_release_interned();
 #endif /* __INSURE__ */
 
-    Py_CLEAR(unicode_empty);
+        Py_CLEAR(unicode_empty);
 
-    for (Py_ssize_t i = 0; i < 256; i++) {
-        Py_CLEAR(unicode_latin1[i]);
+        for (Py_ssize_t i = 0; i < 256; i++) {
+            Py_CLEAR(unicode_latin1[i]);
+        }
+        _PyUnicode_ClearStaticStrings();
+        (void)PyUnicode_ClearFreeList();
     }
-    _PyUnicode_ClearStaticStrings();
-    (void)PyUnicode_ClearFreeList();
 
     PyInterpreterState *interp = _PyInterpreterState_GET_UNSAFE();
     PyMem_RawFree(interp->fs_codec.encoding);
     interp->fs_codec.encoding = NULL;
     PyMem_RawFree(interp->fs_codec.errors);
     interp->fs_codec.errors = NULL;
+    interp->config.filesystem_errors = _Py_ERROR_UNKNOWN;
 }
 
 
