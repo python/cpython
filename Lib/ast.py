@@ -610,7 +610,7 @@ class _Unparser(NodeVisitor):
     def traverse(self, node):
         if isinstance(node, list):
             for item in node:
-                super().visit(item)
+                self.traverse(item)
         else:
             super().visit(node)
 
