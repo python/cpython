@@ -601,13 +601,20 @@ class CGIHTTPServerTestCase(BaseTestCase):
         self.parent_dir = tempfile.mkdtemp()
         self.cgi_dir = os.path.join(self.parent_dir, 'cgi-bin')
         self.cgi_child_dir = os.path.join(self.cgi_dir, 'child-dir')
+        self.sub_dir_1 = os.path.join(self.parent_dir, 'sub')
+        self.sub_dir_2 = os.path.join(self.sub_dir_1, 'dir')
+        self.cgi_dir_in_sub_dir = os.path.join(self.sub_dir_2, 'cgi-bin')
         os.mkdir(self.cgi_dir)
         os.mkdir(self.cgi_child_dir)
+        os.mkdir(self.sub_dir_1)
+        os.mkdir(self.sub_dir_2)
+        os.mkdir(self.cgi_dir_in_sub_dir)
         self.nocgi_path = None
         self.file1_path = None
         self.file2_path = None
         self.file3_path = None
         self.file4_path = None
+        self.file5_path = None
 
         # The shebang line should be pure ASCII: use symlink if possible.
         # See issue #7668.
@@ -652,6 +659,11 @@ class CGIHTTPServerTestCase(BaseTestCase):
             file4.write(cgi_file4 % (self.pythonexe, 'QUERY_STRING'))
         os.chmod(self.file4_path, 0o777)
 
+        self.file5_path = os.path.join(self.cgi_dir_in_sub_dir, 'file5.py')
+        with open(self.file5_path, 'w', encoding='utf-8') as file5:
+            file5.write(cgi_file1 % self.pythonexe)
+        os.chmod(self.file5_path, 0o777)
+
         os.chdir(self.parent_dir)
 
     def tearDown(self):
@@ -669,8 +681,13 @@ class CGIHTTPServerTestCase(BaseTestCase):
                 os.remove(self.file3_path)
             if self.file4_path:
                 os.remove(self.file4_path)
+            if self.file5_path:
+                os.remove(self.file5_path)
             os.rmdir(self.cgi_child_dir)
             os.rmdir(self.cgi_dir)
+            os.rmdir(self.cgi_dir_in_sub_dir)
+            os.rmdir(self.sub_dir_2)
+            os.rmdir(self.sub_dir_1)
             os.rmdir(self.parent_dir)
         finally:
             BaseTestCase.tearDown(self)
@@ -787,6 +804,13 @@ class CGIHTTPServerTestCase(BaseTestCase):
         self.assertEqual(
             (b'k=aa%2F%2Fbb&//q//p//=//a//b//' + self.linesep,
              'text/html', HTTPStatus.OK),
+            (res.read(), res.getheader('Content-type'), res.status))
+
+    def test_cgi_path_in_sub_directories(self):
+        CGIHTTPRequestHandler.cgi_directories.append('/sub/dir/cgi-bin')
+        res = self.request('/sub/dir/cgi-bin/file5.py')
+        self.assertEqual(
+            (b'Hello World' + self.linesep, 'text/html', HTTPStatus.OK),
             (res.read(), res.getheader('Content-type'), res.status))
 
 
