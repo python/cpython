@@ -87,7 +87,6 @@ __all__ = [
 
 import os as _os
 import re as _re
-import shutil as _shutil
 import sys as _sys
 
 from gettext import gettext as _, ngettext
@@ -167,7 +166,8 @@ class HelpFormatter(object):
 
         # default setting for width
         if width is None:
-            width = _shutil.get_terminal_size().columns
+            import shutil
+            width = shutil.get_terminal_size().columns
             width -= 2
 
         self._prog = prog
@@ -264,7 +264,7 @@ class HelpFormatter(object):
                 invocations.append(get_invocation(subaction))
 
             # update the maximum item length
-            invocation_length = max([len(s) for s in invocations])
+            invocation_length = max(map(len, invocations))
             action_length = invocation_length + self._current_indent
             self._action_max_length = max(self._action_max_length,
                                           action_length)
