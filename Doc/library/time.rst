@@ -42,9 +42,7 @@ An explanation of some terminology and conventions is in order.
   library; for 32-bit systems, it is typically in 2038.
 
 .. index::
-   single: Year 2000
    single: 2-digit years
-   single: Y2K
 
 * Function :func:`strptime` can parse 2-digit years when given ``%y`` format
   code. When 2-digit years are parsed, they are converted according to the POSIX
