@@ -1721,6 +1721,20 @@ _register_builtins_for_crossinterpreter_data(struct _xidregistry *xidregistry)
 }
 
 
+PyFrameEvalFunction
+PyInterpreterState_GetEvalFrameFunc(PyInterpreterState *interp)
+{
+    return interp->eval_frame;
+}
+
+
+void
+PyInterpreterState_SetEvalFrameFunc(PyInterpreterState *interp,
+                                    PyFrameEvalFunction eval_frame)
+{
+    interp->eval_frame = eval_frame;
+}
+
 #ifdef __cplusplus
 }
 #endif

@@ -54,8 +54,6 @@ struct _ceval_runtime_state {
 
 /* interpreter state */
 
-typedef PyObject* (*_PyFrameEvalFunction)(struct _frame *, int);
-
 // The PyInterpreterState typedef is in Include/pystate.h.
 struct _is {
 
@@ -113,7 +111,7 @@ struct _is {
     PyObject *builtins_copy;
     PyObject *import_func;
     /* Initialized to PyEval_EvalFrameDefault(). */
-    _PyFrameEvalFunction eval_frame;
+    PyFrameEvalFunction eval_frame;
 
     Py_ssize_t co_extra_user_count;
     freefunc co_extra_freefuncs[MAX_CO_EXTRA_USERS];

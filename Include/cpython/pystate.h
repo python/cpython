@@ -186,6 +186,16 @@ PyAPI_FUNC(void) PyThreadState_DeleteCurrent(void);
 
 typedef struct _frame *(*PyThreadFrameGetter)(PyThreadState *self_);
 
+/* Frame evaluation API */
+
+typedef PyObject* (*PyFrameEvalFunction)(struct _frame *, int);
+
+PyAPI_FUNC(PyFrameEvalFunction) PyInterpreterState_GetEvalFrameFunc(
+    PyInterpreterState *interp);
+PyAPI_FUNC(void) PyInterpreterState_SetEvalFrameFunc(
+    PyInterpreterState *interp,
+    PyFrameEvalFunction eval_frame);
+
 /* cross-interpreter data */
 
 struct _xid;
