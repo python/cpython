@@ -649,7 +649,6 @@ EXPORTS
   PyUnicode_AsWideChar=python39.PyUnicode_AsWideChar
   PyUnicode_AsWideCharString=python39.PyUnicode_AsWideCharString
   PyUnicode_BuildEncodingMap=python39.PyUnicode_BuildEncodingMap
-  PyUnicode_ClearFreeList=python39.PyUnicode_ClearFreeList
   PyUnicode_Compare=python39.PyUnicode_Compare
   PyUnicode_CompareWithASCIIString=python39.PyUnicode_CompareWithASCIIString
   PyUnicode_Concat=python39.PyUnicode_Concat
