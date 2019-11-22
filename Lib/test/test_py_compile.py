@@ -221,12 +221,26 @@ class PyCompileTestsBase:
                 [self.source_path, bad_syntax]), 1)
             self.assertNotEqual(stderr.getvalue(), '')
 
+    def test_main_quiet_bad_syntax(self):
+        bad_syntax = os.path.join(os.path.dirname(__file__), 'badsyntax_3131.py')
+        with support.captured_stderr() as stderr:
+            self.assertEqual(py_compile.main(
+                ['-q', self.source_path, bad_syntax]), 1)
+            self.assertEqual(stderr.getvalue(), '')
+
     def test_main_file_not_exists(self):
         should_not_exists = os.path.join(os.path.dirname(__file__), 'should_not_exists.py')
         with support.captured_stderr() as stderr:
             self.assertEqual(py_compile.main(
                 [self.source_path, should_not_exists]), 1)
             self.assertNotEqual(stderr.getvalue(), '')
+
+    def test_main_quiet_file_not_exists(self):
+        should_not_exists = os.path.join(os.path.dirname(__file__), 'should_not_exists.py')
+        with support.captured_stderr() as stderr:
+            self.assertEqual(py_compile.main(
+                ['--quiet', self.source_path, should_not_exists]), 1)
+            self.assertEqual(stderr.getvalue(), '')
 
 
 class PyCompileTestsWithSourceEpoch(PyCompileTestsBase,

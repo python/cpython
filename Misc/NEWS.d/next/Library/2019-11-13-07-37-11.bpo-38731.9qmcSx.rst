@@ -1,1 +1,1 @@
-Fix unhandled exceptions during error handling in :meth:`py_compile.main`.
+Add missed '-q/--quiet' flag in :meth:`py_compile.main`.

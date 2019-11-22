@@ -3,6 +3,7 @@
 This module has intimate knowledge of the format of .pyc files.
 """
 
+import argparse
 import enum
 import importlib._bootstrap_external
 import importlib.machinery
@@ -181,32 +182,47 @@ def main(args=None):
     in the normal manner.  This function does not search a directory
     structure to locate source files; it only compiles files named
     explicitly.  If '-' is the only parameter in args, the list of
-    files is taken from standard input.
+    files is taken from standard input. If flag '-q/--quiet' is set
+    errors output would be suppressed.
 
     """
     if args is None:
         args = sys.argv[1:]
+    parser = argparse.ArgumentParser(
+        prog=__name__,
+        description=(
+            "Compiles several source files. The files named "
+            "in 'filenames' are compiled and the resulting "
+            "bytecode is cached in the normal manner. This "
+            "function does not search a directory structure "
+            "to locate source files; it only compiles files "
+            "named explicitly. If '-' is the only file name "
+            "in 'filenames', the list of files taken from "
+            "standard input. If flag '-q/--quiet' is set "
+            "errors output would be suppressed."))
+    parser.add_argument(
+        '-q', '--quiet', default=False,
+        action='store_true', help='suppress errors output')
+    parser.add_argument(
+        'filenames', nargs='+', help='files to compile')
+    args = parser.parse_args(args)
     rv = 0
-    filenames = []
-    if args == ['-']:
-        while True:
-            filename = sys.stdin.readline()
-            if not filename:
-                break
-            filename = filename.rstrip('\n')
-            filenames.append(filename)
+    if args.filenames == ['-']:
+        filenames = (line.rstrip('\n') for line in sys.stdin)
     else:
-        filenames = args
+        filenames = args.filenames
     for filename in filenames:
         try:
             compile(filename, doraise=True)
         except PyCompileError as error:
             # return value to indicate at least one failure
             rv = 1
-            sys.stderr.write("%s\n" % error.msg)
+            if not args.quiet:
+                sys.stderr.write("%s\n" % error.msg)
         except OSError as error:
             rv = 1
-            sys.stderr.write("%s\n" % error)
+            if not args.quiet:
+                sys.stderr.write("%s\n" % error)
     return rv
 
 if __name__ == "__main__":
