@@ -324,6 +324,12 @@ extern void _PyInterpreterState_ClearModules(PyInterpreterState *interp);
 
 PyAPI_FUNC(void) _PyGILState_Reinit(_PyRuntimeState *runtime);
 
+
+PyAPI_FUNC(int) _PyState_AddModule(
+    PyThreadState *tstate,
+    PyObject* module,
+    struct PyModuleDef* def);
+
 #ifdef __cplusplus
 }
 #endif

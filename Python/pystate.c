@@ -661,9 +661,8 @@ PyState_FindModule(struct PyModuleDef* module)
 }
 
 int
-_PyState_AddModule(PyObject* module, struct PyModuleDef* def)
+_PyState_AddModule(PyThreadState *tstate, PyObject* module, struct PyModuleDef* def)
 {
-    PyInterpreterState *state;
     if (!def) {
         assert(PyErr_Occurred());
         return -1;
@@ -673,37 +672,45 @@ _PyState_AddModule(PyObject* module, struct PyModuleDef* def)
                         "PyState_AddModule called on module with slots");
         return -1;
     }
-    state = _PyInterpreterState_GET_UNSAFE();
-    if (!state->modules_by_index) {
-        state->modules_by_index = PyList_New(0);
-        if (!state->modules_by_index)
+
+    PyInterpreterState *interp = tstate->interp;
+    if (!interp->modules_by_index) {
+        interp->modules_by_index = PyList_New(0);
+        if (!interp->modules_by_index) {
             return -1;
+        }
     }
-    while (PyList_GET_SIZE(state->modules_by_index) <= def->m_base.m_index)
-        if (PyList_Append(state->modules_by_index, Py_None) < 0)
+
+    while (PyList_GET_SIZE(interp->modules_by_index) <= def->m_base.m_index) {
+        if (PyList_Append(interp->modules_by_index, Py_None) < 0) {
             return -1;
+        }
+    }
+
     Py_INCREF(module);
-    return PyList_SetItem(state->modules_by_index,
+    return PyList_SetItem(interp->modules_by_index,
                           def->m_base.m_index, module);
 }
 
 int
 PyState_AddModule(PyObject* module, struct PyModuleDef* def)
 {
-    Py_ssize_t index;
-    PyInterpreterState *state = _PyInterpreterState_GET_UNSAFE();
     if (!def) {
         Py_FatalError("PyState_AddModule: Module Definition is NULL");
         return -1;
     }
-    index = def->m_base.m_index;
-    if (state->modules_by_index &&
-        index < PyList_GET_SIZE(state->modules_by_index) &&
-        module == PyList_GET_ITEM(state->modules_by_index, index)) {
+
+    PyThreadState *tstate = _PyThreadState_GET();
+    PyInterpreterState *interp = tstate->interp;
+    Py_ssize_t index = def->m_base.m_index;
+    if (interp->modules_by_index &&
+        index < PyList_GET_SIZE(interp->modules_by_index) &&
+        module == PyList_GET_ITEM(interp->modules_by_index, index))
+    {
         Py_FatalError("PyState_AddModule: Module already added!");
         return -1;
     }
-    return _PyState_AddModule(module, def);
+    return _PyState_AddModule(tstate, module, def);
 }
 
 int
