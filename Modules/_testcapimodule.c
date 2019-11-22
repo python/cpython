@@ -5444,11 +5444,14 @@ PyInit__testcapi(void)
     PyModule_AddObject(m, "instancemethod", (PyObject *)&PyInstanceMethod_Type);
 
     PyModule_AddIntConstant(m, "the_number_three", 3);
+    PyObject *v;
 #ifdef WITH_PYMALLOC
-    PyModule_AddObject(m, "WITH_PYMALLOC", Py_True);
+    v = Py_True;
 #else
-    PyModule_AddObject(m, "WITH_PYMALLOC", Py_False);
+    v = Py_False;
 #endif
+    Py_INCREF(v);
+    PyModule_AddObject(m, "WITH_PYMALLOC", v);
 
     TestError = PyErr_NewException("_testcapi.error", NULL, NULL);
     Py_INCREF(TestError);
