@@ -1144,7 +1144,9 @@ class AbstractDigestAuthHandler:
         A2 = "%s:%s" % (req.get_method(),
                         # XXX selector: what about proxies and full urls
                         req.selector)
-        if qop == 'auth':
+        # NOTE: As per  RFC 2617, when server sends "auth,auth-int", the client could use either `auth`
+        #     or `auth-int` to the response back. we use `auth` to send the response back.
+        if 'auth' in qop.split(','):
             if nonce == self.last_nonce:
                 self.nonce_count += 1
             else:
@@ -1152,7 +1154,7 @@ class AbstractDigestAuthHandler:
                 self.last_nonce = nonce
             ncvalue = '%08x' % self.nonce_count
             cnonce = self.get_cnonce(nonce)
-            noncebit = "%s:%s:%s:%s:%s" % (nonce, ncvalue, cnonce, qop, H(A2))
+            noncebit = "%s:%s:%s:%s:%s" % (nonce, ncvalue, cnonce, 'auth', H(A2))
             respdig = KD(H(A1), noncebit)
         elif qop is None:
             respdig = KD(H(A1), "%s:%s" % (nonce, H(A2)))
