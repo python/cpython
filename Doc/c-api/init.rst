@@ -1092,6 +1092,10 @@ All of the following functions must be called after :c:func:`Py_Initialize`.
 
    .. versionadded:: 3.8.1
 
+   .. versionchanged:: 3.8.1
+      Add *tstate* parameter.
+
+
 .. c:function:: PyFrameEvalFunction PyInterpreterState_GetEvalFrameFunc(PyInterpreterState *interp)
 
    Get the frame evaluation function.
