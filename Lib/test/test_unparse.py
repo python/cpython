@@ -278,7 +278,8 @@ class DirectoryTestCase(ASTTestCase):
     """Test roundtrip behaviour on all files in Lib and Lib/test."""
     ITEMS = None
 
-    test_directory = pathlib.Path(__file__).parent / ".."
+    start_dir = pathlib.Path(__file__).parent / ".."
+    test_directories = (start_dir, start_dir / "test")
     skip = {'test_fstring.py'}
 
     @classmethod
@@ -287,9 +288,10 @@ class DirectoryTestCase(ASTTestCase):
             return cls.ITEMS
 
         items = []
-        for item in cls.test_directory.glob("**/*.py"):
-            if not item.name.startswith('bad'):
-                items.append(item)
+        for directory in cls.test_directories:
+            for item in directory.glob("*.py"):
+                if not item.name.startswith('bad'):
+                    items.append(item)
 
         # Test limited subset of files unless the 'cpu' resource is specified.
         if not test.support.is_resource_enabled("cpu"):
