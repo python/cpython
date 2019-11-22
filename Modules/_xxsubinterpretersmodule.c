@@ -637,7 +637,7 @@ _channelends_list_interpreters(_channelends *ends, int64_t *count, int send)
     assert(count != NULL);
     numopen = send ? ends->numsendopen : ends->numrecvopen;
 
-    if (numopen >= PY_INT64_T_MAX) {
+    if (numopen >= INT64_MAX) {
         PyErr_SetString(PyExc_RuntimeError,
                         "too many interpreters using the channel");
         goto done;
@@ -1208,7 +1208,7 @@ _channels_list_all(_channels *channels, int64_t *count)
     int64_t *cids = NULL;
     PyThread_acquire_lock(channels->mutex, WAIT_LOCK);
     int64_t numopen = channels->numopen;
-    if (numopen >= PY_INT64_T_MAX) {
+    if (numopen >= INT64_MAX) {
         PyErr_SetString(PyExc_RuntimeError, "too many channels open");
         goto done;
     }
