@@ -665,15 +665,17 @@ pycore_init_import_warnings(PyThreadState *tstate, PyObject *sysmod)
         return status;
     }
 
-    /* Initialize _warnings. */
-    if (_PyWarnings_Init() == NULL) {
-        return _PyStatus_ERR("can't initialize warnings");
-    }
+    if (_Py_IsMainInterpreter(tstate)) {
+        /* Initialize _warnings. */
+        if (_PyWarnings_Init() == NULL) {
+            return _PyStatus_ERR("can't initialize warnings");
+        }
 
-    if (config->_install_importlib) {
-        status = _PyConfig_WritePathConfig(config);
-        if (_PyStatus_EXCEPTION(status)) {
-            return status;
+        if (config->_install_importlib) {
+            status = _PyConfig_WritePathConfig(config);
+            if (_PyStatus_EXCEPTION(status)) {
+                return status;
+            }
         }
     }
 
@@ -1575,12 +1577,7 @@ new_interpreter(PyThreadState **tstate_p)
             goto done;
         }
 
-        status = _PyImportHooks_Init(tstate);
-        if (_PyStatus_EXCEPTION(status)) {
-            goto done;
-        }
-
-        status = init_importlib(tstate, sysmod);
+        status = pycore_init_import_warnings(tstate, sysmod);
         if (_PyStatus_EXCEPTION(status)) {
             goto done;
         }
