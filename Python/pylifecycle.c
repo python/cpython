@@ -622,25 +622,36 @@ pycore_init_types(PyThreadState *tstate)
 static PyStatus
 pycore_init_builtins(PyThreadState *tstate)
 {
-    PyInterpreterState *interp = tstate->interp;
-
     PyObject *bimod = _PyBuiltin_Init(tstate);
     if (bimod == NULL) {
-        return _PyStatus_ERR("can't initialize builtins modules");
+        goto error;
     }
-    _PyImport_FixupBuiltin(bimod, "builtins", interp->modules);
 
-    interp->builtins = PyModule_GetDict(bimod);
-    if (interp->builtins == NULL) {
-        return _PyStatus_ERR("can't initialize builtins dict");
+    PyInterpreterState *interp = tstate->interp;
+    if (_PyImport_FixupBuiltin(bimod, "builtins", interp->modules) < 0) {
+        goto error;
     }
-    Py_INCREF(interp->builtins);
+
+    PyObject *builtins_dict = PyModule_GetDict(bimod);
+    if (builtins_dict == NULL) {
+        goto error;
+    }
+    Py_INCREF(builtins_dict);
+    interp->builtins = builtins_dict;
 
     PyStatus status = _PyBuiltins_AddExceptions(bimod);
     if (_PyStatus_EXCEPTION(status)) {
         return status;
     }
+
+    interp->builtins_copy = PyDict_Copy(interp->builtins);
+    if (interp->builtins_copy == NULL) {
+        goto error;
+    }
     return _PyStatus_OK();
+
+error:
+    return _PyStatus_ERR("can't initialize builtins module");
 }
 
 
@@ -649,12 +660,7 @@ pycore_init_import_warnings(PyThreadState *tstate, PyObject *sysmod)
 {
     const PyConfig *config = &tstate->interp->config;
 
-    PyStatus status = _PyImport_Init(tstate);
-    if (_PyStatus_EXCEPTION(status)) {
-        return status;
-    }
-
-    status = _PyImportHooks_Init(tstate);
+    PyStatus status = _PyImportHooks_Init(tstate);
     if (_PyStatus_EXCEPTION(status)) {
         return status;
     }
@@ -1558,23 +1564,12 @@ new_interpreter(PyThreadState **tstate_p)
         goto handle_exc;
     }
 
-    PyObject *bimod = _PyImport_FindBuiltin(tstate, "builtins");
-    if (bimod != NULL) {
-        interp->builtins = PyModule_GetDict(bimod);
-        if (interp->builtins == NULL)
-            goto handle_exc;
-        Py_INCREF(interp->builtins);
-    }
-    else if (_PyErr_Occurred(tstate)) {
-        goto handle_exc;
+    status = pycore_init_builtins(tstate);
+    if (_PyStatus_EXCEPTION(status)) {
+        goto done;
     }
 
-    if (bimod != NULL && sysmod != NULL) {
-        status = _PyBuiltins_AddExceptions(bimod);
-        if (_PyStatus_EXCEPTION(status)) {
-            goto done;
-        }
-
+    if (sysmod != NULL) {
         status = _PySys_SetPreliminaryStderr(interp->sysdict);
         if (_PyStatus_EXCEPTION(status)) {
             goto done;
