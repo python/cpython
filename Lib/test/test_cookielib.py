@@ -6,7 +6,7 @@ import os
 import re
 import time
 
-from cookielib import http2time, time2isoz, time2netscape
+from cookielib import http2time, time2isoz, iso2time, time2netscape
 from unittest import TestCase
 
 from test import test_support
@@ -116,6 +116,19 @@ class DateTimeTests(TestCase):
                          "http2time(%s) is not None\n"
                          "http2time(test) %s" % (test, http2time(test))
                          )
+
+    def test_http2time_redos_regression_actually_completes(self):
+        # LOOSE_HTTP_DATE_RE was vulnerable to malicious input which caused catastrophic backtracking (REDoS).
+        # If we regress to cubic complexity, this test will take a very long time to succeed.
+        # If fixed, it should complete within a fraction of a second.
+        http2time("01 Jan 1970{}00:00:00 GMT!".format(" " * 10 ** 5))
+        http2time("01 Jan 1970 00:00:00{}GMT!".format(" " * 10 ** 5))
+
+    def test_iso2time_performance_regression(self):
+        # If ISO_DATE_RE regresses to quadratic complexity, this test will take a very long time to succeed.
+        # If fixed, it should complete within a fraction of a second.
+        iso2time('1994-02-03{}14:15:29 -0100!'.format(' '*10**6))
+        iso2time('1994-02-03 14:15:29{}-0100!'.format(' '*10**6))
 
 
 class HeaderTests(TestCase):
