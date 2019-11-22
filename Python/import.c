@@ -49,17 +49,6 @@ module _imp
 /* Initialize things */
 
 PyStatus
-_PyImport_Init(PyThreadState *tstate)
-{
-    PyInterpreterState *interp = tstate->interp;
-    interp->builtins_copy = PyDict_Copy(interp->builtins);
-    if (interp->builtins_copy == NULL) {
-        return _PyStatus_ERR("Can't backup builtins dict");
-    }
-    return _PyStatus_OK();
-}
-
-PyStatus
 _PyImportHooks_Init(PyThreadState *tstate)
 {
     PyObject *v, *path_hooks = NULL;
