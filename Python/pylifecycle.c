@@ -64,6 +64,7 @@ extern grammar _PyParser_Grammar; /* From graminit.c */
 /* Forward declarations */
 static PyStatus add_main_module(PyInterpreterState *interp);
 static PyStatus init_import_site(void);
+static PyStatus init_set_builtins_open(PyThreadState *tstate);
 static PyStatus init_sys_streams(PyThreadState *tstate);
 static PyStatus init_signals(PyThreadState *tstate);
 static void call_py_exitfuncs(PyThreadState *tstate);
@@ -994,6 +995,11 @@ pyinit_main(PyThreadState *tstate)
         return status;
     }
 
+    status = init_set_builtins_open(tstate);
+    if (_PyStatus_EXCEPTION(status)) {
+        return status;
+    }
+
     /* Initialize warnings. */
     PyObject *warnoptions = PySys_GetObject("warnoptions");
     if (warnoptions != NULL && PyList_Size(warnoptions) > 0)
@@ -1569,6 +1575,11 @@ new_interpreter(PyThreadState **tstate_p)
             return status;
         }
 
+        status = init_set_builtins_open(tstate);
+        if (_PyStatus_EXCEPTION(status)) {
+            return status;
+        }
+
         status = add_main_module(interp);
         if (_PyStatus_EXCEPTION(status)) {
             return status;
@@ -1891,12 +1902,49 @@ error:
     return NULL;
 }
 
+/* Set builtins.open to io.OpenWrapper */
+static PyStatus
+init_set_builtins_open(PyThreadState *tstate)
+{
+    PyObject *iomod = NULL, *wrapper;
+    PyObject *bimod = NULL;
+    PyStatus res = _PyStatus_OK();
+
+    if (!(iomod = PyImport_ImportModule("io"))) {
+        goto error;
+    }
+
+    if (!(bimod = PyImport_ImportModule("builtins"))) {
+        goto error;
+    }
+
+    if (!(wrapper = PyObject_GetAttrString(iomod, "OpenWrapper"))) {
+        goto error;
+    }
+
+    /* Set builtins.open */
+    if (PyObject_SetAttrString(bimod, "open", wrapper) == -1) {
+        Py_DECREF(wrapper);
+        goto error;
+    }
+    Py_DECREF(wrapper);
+    goto done;
+
+error:
+    res = _PyStatus_ERR("can't initialize io.open");
+
+done:
+    Py_XDECREF(bimod);
+    Py_XDECREF(iomod);
+    return res;
+}
+
+
 /* Initialize sys.stdin, stdout, stderr and builtins.open */
 static PyStatus
 init_sys_streams(PyThreadState *tstate)
 {
-    PyObject *iomod = NULL, *wrapper;
-    PyObject *bimod = NULL;
+    PyObject *iomod = NULL;
     PyObject *m;
     PyObject *std = NULL;
     int fd;
@@ -1929,23 +1977,9 @@ init_sys_streams(PyThreadState *tstate)
     }
     Py_DECREF(m);
 
-    if (!(bimod = PyImport_ImportModule("builtins"))) {
-        goto error;
-    }
-
     if (!(iomod = PyImport_ImportModule("io"))) {
         goto error;
     }
-    if (!(wrapper = PyObject_GetAttrString(iomod, "OpenWrapper"))) {
-        goto error;
-    }
-
-    /* Set builtins.open */
-    if (PyObject_SetAttrString(bimod, "open", wrapper) == -1) {
-        Py_DECREF(wrapper);
-        goto error;
-    }
-    Py_DECREF(wrapper);
 
     /* Set sys.stdin */
     fd = fileno(stdin);
@@ -2013,8 +2047,6 @@ error:
 
 done:
     _Py_ClearStandardStreamEncoding();
-
-    Py_XDECREF(bimod);
     Py_XDECREF(iomod);
     return res;
 }
