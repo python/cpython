@@ -1016,6 +1016,21 @@ class TestSpooledTemporaryFile(BaseTestCase):
         finally:
             os.rmdir(dir)
 
+    def test_del_rolled_file(self):
+        # The rolled file should be deleted when the
+        # SpooledTemporaryFile object is deleted. This should raise a
+        # ResourceWarning since the file was not explicitly closed.
+        f = self.do_create(max_size=2)
+        f.write(b'foo')
+        filename = f.name
+        self.assertTrue(os.path.exists(filename))
+        with self.assertWarns(ResourceWarning):
+            f.__del__()
+        self.assertFalse(
+            os.path.exists(filename),
+            "Rolled SpooledTemporaryFile not deleted after __del__"
+        )
+
     def test_rewrite_small(self):
         # A SpooledTemporaryFile can be written to multiple within the max_size
         f = self.do_create(max_size=30)
