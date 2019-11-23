@@ -166,7 +166,8 @@ Functions for sequences
    The *weights* or *cum_weights* can use any numeric type that interoperates
    with the :class:`float` values returned by :func:`random` (that includes
    integers, floats, and fractions but excludes decimals).  Weights are
-   assumed to be non-negative.
+   assumed to be non-negative.  A :exc:`ValueError` is raised if the
+   total of all weights isn't positive.
 
    For a given seed, the :func:`choices` function with equal weighting
    typically produces a different sequence than repeated calls to
@@ -176,6 +177,9 @@ Functions for sequences
    to avoid small biases from round-off error.
 
    .. versionadded:: 3.6
+
+   .. versionchanged:: 3.9
+      Raises a :exc:`ValueError` if the total weights aren't more than zero.
 
 
 .. function:: shuffle(x[, random])
