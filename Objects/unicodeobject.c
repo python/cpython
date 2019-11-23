@@ -15332,14 +15332,6 @@ _PyUnicode_Init(void)
     return _PyStatus_OK();
 }
 
-/* Finalize the Unicode implementation */
-
-int
-PyUnicode_ClearFreeList(void)
-{
-    return 0;
-}
-
 
 void
 PyUnicode_InternInPlace(PyObject **p)
@@ -15951,7 +15943,6 @@ _PyUnicode_Fini(PyThreadState *tstate)
             Py_CLEAR(unicode_latin1[i]);
         }
         _PyUnicode_ClearStaticStrings();
-        (void)PyUnicode_ClearFreeList();
     }
 
     PyInterpreterState *interp = _PyInterpreterState_GET_UNSAFE();

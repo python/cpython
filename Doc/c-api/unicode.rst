@@ -197,11 +197,6 @@ access internal read-only data of Unicode objects:
    .. versionadded:: 3.3
 
 
-.. c:function:: int PyUnicode_ClearFreeList()
-
-   Clear the free list. Return the total number of freed items.
-
-
 .. c:function:: Py_ssize_t PyUnicode_GET_SIZE(PyObject *o)
 
    Return the size of the deprecated :c:type:`Py_UNICODE` representation, in
