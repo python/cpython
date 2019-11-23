@@ -2002,6 +2002,16 @@ invoked after creating the class object:
 * finally, the :meth:`~object.__init_subclass__` hook is called on the
   immediate parent of the new class in its method resolution order.
 
+.. note::
+
+   ``__set_name__`` is only called implicitly as part of the ``type`` constructor, so
+   it will need to be called explicitly with the appropriate parameters when a
+   descriptor is added to a class after initial creation::
+
+      descr = custom_descriptor()
+      cls.attr = descr
+      descr.__set_name__(cls, 'attr')
+
 After the class object is created, it is passed to the class decorators
 included in the class definition (if any) and the resulting object is bound
 in the local namespace as the defined class.
