@@ -2376,8 +2376,7 @@ channel_list_interpreters(PyObject *self, PyObject *args, PyObject *kwds)
     }
 
     for (int64_t i=0; i < count; i++) {
-        PyInterpreterState *interp = _PyInterpreterState_LookUpID(ids[i]);
-        PyObject *id_obj = _PyInterpreterState_GetIDObject(interp);
+        PyObject *id_obj = _PyInterpreterID_New(ids[i]);
         if (id_obj == NULL) {
             goto except;
         }
