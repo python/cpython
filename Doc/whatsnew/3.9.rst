@@ -235,6 +235,10 @@ Build and C API Changes
   functions: the free lists of bound method objects have been removed.
   (Contributed by Inada Naoki and Victor Stinner in :issue:`37340`.)
 
+* Remove ``PyUnicode_ClearFreeList()`` function: the Unicode free list has been
+  removed in Python 3.3.
+  (Contributed by Victor Stinner in :issue:`38896`.)
+
 
 Deprecated
 ==========
