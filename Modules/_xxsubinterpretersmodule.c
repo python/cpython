@@ -630,28 +630,21 @@ _channelends_associate(_channelends *ends, int64_t interp, int send)
 static int64_t *
 _channelends_list_interpreters(_channelends *ends, int64_t *count, int send)
 {
-    int64_t *ids = NULL;
-    int64_t numopen;
+    int64_t numopen = send ? ends->numsendopen : ends->numrecvopen;
 
-    numopen = send ? ends->numsendopen : ends->numrecvopen;
-
-    if (numopen >= INT64_MAX) {
-        PyErr_SetString(PyExc_RuntimeError,
-                        "too many interpreters using the channel");
-        goto done;
-    }
-    ids = PyMem_NEW(int64_t, (Py_ssize_t)numopen);
+    int64_t *ids = PyMem_NEW(int64_t, (Py_ssize_t)numopen);
     if (ids == NULL) {
-        PyErr_SetNone(PyExc_MemoryError);
-        goto done;
+        PyErr_NoMemory();
+        return NULL;
     }
+
     _channelend *ref = send ? ends->send : ends->recv;
     for (int64_t i=0; ref != NULL; ref = ref->next, i++) {
         ids[i] = ref->interp;
     }
+
     *count = numopen;
 
-done:
     return ids;
 }
 
