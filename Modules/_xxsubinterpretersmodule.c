@@ -2349,12 +2349,9 @@ static PyObject *
 channel_list_interpreters(PyObject *self, PyObject *args, PyObject *kwds)
 {
     static char *kwlist[] = {"cid", "send", NULL};
-    int64_t cid;
-    _PyChannelState *chan;
+    int64_t cid;            /* Channel ID */
     int send = 0;           /* Send or receive end? */
-    int64_t *ids = NULL;    /* Array of interpreter IDs */
-    int64_t count = 0;      /* Number of interpreters to return */
-    PyObject *ret = NULL;   /* Python list of interpreter IDs */
+    PyObject *ret = NULL;
 
     if (!PyArg_ParseTupleAndKeywords(
             args, kwds, "O&$p:channel_list_interpreters",
@@ -2362,12 +2359,13 @@ channel_list_interpreters(PyObject *self, PyObject *args, PyObject *kwds)
         return NULL;
     }
 
-    chan = _channels_lookup(&_globals.channels, cid, NULL);
+    _PyChannelState *chan = _channels_lookup(&_globals.channels, cid, NULL);
     if (chan == NULL) {
-        goto except;
+        return NULL;
     }
 
-    ids = _channelends_list_interpreters(chan->ends, &count, send);
+    int64_t count = 0;  /* Number of interpreters */
+    int64_t *ids = _channelends_list_interpreters(chan->ends, &count, send);
     if (ids == NULL) {
         goto except;
     }
