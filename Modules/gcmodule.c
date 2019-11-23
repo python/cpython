@@ -1031,7 +1031,6 @@ clear_freelists(void)
 {
     (void)PyFrame_ClearFreeList();
     (void)PyTuple_ClearFreeList();
-    (void)PyUnicode_ClearFreeList();
     (void)PyFloat_ClearFreeList();
     (void)PyList_ClearFreeList();
     (void)PyDict_ClearFreeList();
