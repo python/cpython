@@ -633,8 +633,6 @@ _channelends_list_interpreters(_channelends *ends, int64_t *count, int send)
     int64_t *ids = NULL;
     int64_t numopen;
 
-    assert(ends != NULL);
-    assert(count != NULL);
     numopen = send ? ends->numsendopen : ends->numrecvopen;
 
     if (numopen >= INT64_MAX) {
