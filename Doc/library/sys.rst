@@ -74,7 +74,7 @@ always available.
 
    .. index:: single: auditing
 
-   Raises an auditing event with any active hooks. The event name is a string
+   Raise an auditing event with any active hooks. The event name is a string
    identifying the event and its associated schema, which is the number and
    types of arguments. The schema for a given event is considered public and
    stable API and should not be modified between releases.
