@@ -2355,25 +2355,18 @@ Return the list of all IDs for active channels.");
 static PyObject *
 channel_list_interpreters(PyObject *self, PyObject *args, PyObject *kwds)
 {
-    static char *kwlist[] = {"cid", "send", "recv", NULL};
+    static char *kwlist[] = {"cid", "send", NULL};
     int64_t cid;
     _PyChannelState *chan;
-    int send = 0;           /* Send end? */
-    int recv = 0;           /* Receive end? */
+    int send = 0;           /* Send or receive end? */
     int64_t *ids = NULL;    /* Array of interpreter IDs */
     int64_t count = 0;      /* Number of interpreters to return */
     PyObject *ret = NULL;   /* Python list of interpreter IDs */
 
     if (!PyArg_ParseTupleAndKeywords(
-            args, kwds, "O&|$pp:channel_list_interpreters",
-            kwlist, channel_id_converter, &cid, &send, &recv)) {
+            args, kwds, "O&$p:channel_list_interpreters",
+            kwlist, channel_id_converter, &cid, &send)) {
         return NULL;
-    }
-
-    if ((send && recv) || (!send && !recv)) {
-        PyErr_SetString(PyExc_ValueError,
-                        "Specify exactly one of send or recv");
-        goto except;
     }
 
     chan = _channels_lookup(&_globals.channels, cid, NULL);
@@ -2412,11 +2405,12 @@ finally:
 }
 
 PyDoc_STRVAR(channel_list_interpreters_doc,
-"channel_list_interpreters(cid, *, send=False, recv=False) -> [id]\n\
+"channel_list_interpreters(cid, *, send) -> [id]\n\
 \n\
-Return the list of all interpreter IDs associated with the channel\n\
-Exactly one of 'send' or 'recv' should be True, corresponding to the end of\n\
-the channel to list interpreters for.");
+Return the list of all interpreter IDs associated with an end of the channel.\n\
+\n\
+The 'send' argument should be a boolean indicating whether to use the send or\n\
+receive end.");
 
 
 static PyObject *

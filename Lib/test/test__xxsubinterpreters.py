@@ -1206,7 +1206,7 @@ class ChannelTests(TestBase):
     def _assert_interpreters_returned(self, cid, send, recv):
         actual = set(interpreters.channel_list_interpreters(cid, send=True))
         self.assertEqual(actual, set(send))
-        actual = set(interpreters.channel_list_interpreters(cid, recv=True))
+        actual = set(interpreters.channel_list_interpreters(cid, send=False))
         self.assertEqual(actual, set(recv))
 
     def test_channel_list_interpreters_empty(self):
@@ -1581,12 +1581,8 @@ class ChannelTests(TestBase):
     def test_channel_list_interpreters_invalid_args(self):
         # Tests for invalid arguments passed to the API.
         cid = interpreters.channel_create()
-
-        with self.assertRaises(ValueError):
+        with self.assertRaises(TypeError):
             interpreters.channel_list_interpreters(cid)
-
-        with self.assertRaises(ValueError):
-            interpreters.channel_list_interpreters(cid, send=True, recv=True)
 
 
 class ChannelReleaseTests(TestBase):
