@@ -557,7 +557,6 @@ _const_node_type_names = {
 # We unparse those infinities to INFSTR.
 _INFSTR = "1e" + repr(sys.float_info.max_10_exp + 1)
 
-
 class _Unparser(NodeVisitor):
     """Methods in this class recursively traverse an AST and
     output source code for the abstract syntax; original formatting
@@ -580,10 +579,10 @@ class _Unparser(NodeVisitor):
                 inter()
                 f(x)
 
-    def fill(self, text = ""):
+    def fill(self, text=""):
         """Indent a piece of text and append it, according to the current
         indentation level"""
-        self.write("\n"+"    "*self._indent + text)
+        self.write("\n" + "    " * self._indent + text)
 
     def write(self, text):
         """Append a piece of text"""
@@ -615,8 +614,8 @@ class _Unparser(NodeVisitor):
             super().visit(node)
 
     def visit(self, node):
-        """Outputs a source code that can be converted again and generate
-        the same AST with given tree."""
+        """Outputs a source code string that if converted back to an ast
+        (using ast.parse) will generate an AST equivalent to *node*"""
         self._source = []
         self.traverse(node)
         return "".join(self._source)
@@ -658,16 +657,16 @@ class _Unparser(NodeVisitor):
     def visit_AugAssign(self, node):
         self.fill()
         self.traverse(node.target)
-        self.write(" "+self.binop[node.op.__class__.__name__]+"= ")
+        self.write(" " + self.binop[node.op.__class__.__name__] + "= ")
         self.traverse(node.value)
 
     def visit_AnnAssign(self, node):
         self.fill()
         if not node.simple and isinstance(node.target, Name):
-            self.write('(')
+            self.write("(")
         self.traverse(node.target)
         if not node.simple and isinstance(node.target, Name):
-            self.write(')')
+            self.write(")")
         self.write(": ")
         self.traverse(node.annotation)
         if node.value:
@@ -775,7 +774,7 @@ class _Unparser(NodeVisitor):
         for deco in node.decorator_list:
             self.fill("@")
             self.traverse(deco)
-        self.fill("class "+node.name)
+        self.fill("class " + node.name)
         self.write("(")
         comma = False
         for e in node.bases:
@@ -806,7 +805,7 @@ class _Unparser(NodeVisitor):
         for deco in node.decorator_list:
             self.fill("@")
             self.traverse(deco)
-        def_str = fill_suffix+" "+node.name + "("
+        def_str = fill_suffix + " " + node.name + "("
         self.fill(def_str)
         self.traverse(node.args)
         self.write(")")
@@ -840,8 +839,7 @@ class _Unparser(NodeVisitor):
         with self.enter():
             self.traverse(node.body)
         # collapse nested ifs into equivalent elifs.
-        while (node.orelse and len(node.orelse) == 1 and
-               isinstance(node.orelse[0], If)):
+        while node.orelse and len(node.orelse) == 1 and isinstance(node.orelse[0], If):
             node = node.orelse[0]
             self.fill("elif ")
             self.traverse(node.test)
@@ -1005,6 +1003,7 @@ class _Unparser(NodeVisitor):
 
     def visit_Dict(self, node):
         self.write("{")
+
         def write_key_value_pair(k, v):
             self.traverse(k)
             self.write(": ")
@@ -1019,7 +1018,10 @@ class _Unparser(NodeVisitor):
                 self.traverse(v)
             else:
                 write_key_value_pair(k, v)
-        self.interleave(lambda: self.write(", "), write_item, zip(node.keys, node.values))
+
+        self.interleave(
+            lambda: self.write(", "), write_item, zip(node.keys, node.values)
+        )
         self.write("}")
 
     def visit_Tuple(self, node):
@@ -1032,7 +1034,8 @@ class _Unparser(NodeVisitor):
             self.interleave(lambda: self.write(", "), self.traverse, node.elts)
         self.write(")")
 
-    unop = {"Invert":"~", "Not": "not", "UAdd":"+", "USub":"-"}
+    unop = {"Invert": "~", "Not": "not", "UAdd": "+", "USub": "-"}
+
     def visit_UnaryOp(self, node):
         self.write("(")
         self.write(self.unop[node.op.__class__.__name__])
@@ -1040,9 +1043,22 @@ class _Unparser(NodeVisitor):
         self.traverse(node.operand)
         self.write(")")
 
-    binop = { "Add":"+", "Sub":"-", "Mult":"*", "MatMult":"@", "Div":"/", "Mod":"%",
-                    "LShift":"<<", "RShift":">>", "BitOr":"|", "BitXor":"^", "BitAnd":"&",
-                    "FloorDiv":"//", "Pow": "**"}
+    binop = {
+        "Add": "+",
+        "Sub": "-",
+        "Mult": "*",
+        "MatMult": "@",
+        "Div": "/",
+        "Mod": "%",
+        "LShift": "<<",
+        "RShift": ">>",
+        "BitOr": "|",
+        "BitXor": "^",
+        "BitAnd": "&",
+        "FloorDiv": "//",
+        "Pow": "**",
+    }
+
     def visit_BinOp(self, node):
         self.write("(")
         self.traverse(node.left)
@@ -1050,8 +1066,19 @@ class _Unparser(NodeVisitor):
         self.traverse(node.right)
         self.write(")")
 
-    cmpops = {"Eq":"==", "NotEq":"!=", "Lt":"<", "LtE":"<=", "Gt":">", "GtE":">=",
-                        "Is":"is", "IsNot":"is not", "In":"in", "NotIn":"not in"}
+    cmpops = {
+        "Eq": "==",
+        "NotEq": "!=",
+        "Lt": "<",
+        "LtE": "<=",
+        "Gt": ">",
+        "GtE": ">=",
+        "Is": "is",
+        "IsNot": "is not",
+        "In": "in",
+        "NotIn": "not in",
+    }
+
     def visit_Compare(self, node):
         self.write("(")
         self.traverse(node.left)
@@ -1060,14 +1087,15 @@ class _Unparser(NodeVisitor):
             self.traverse(e)
         self.write(")")
 
-    boolops = {And: 'and', Or: 'or'}
+    boolops = {And: "and", Or: "or"}
+
     def visit_BoolOp(self, node):
         self.write("(")
         s = " %s " % self.boolops[node.op.__class__]
         self.interleave(lambda: self.write(s), self.traverse, node.values)
         self.write(")")
 
-    def visit_Attribute(self,node):
+    def visit_Attribute(self, node):
         self.traverse(node.value)
         # Special case: 3.__abs__() is a syntax error, so if node.value
         # is an integer literal then we need to either parenthesize
@@ -1082,12 +1110,16 @@ class _Unparser(NodeVisitor):
         self.write("(")
         comma = False
         for e in node.args:
-            if comma: self.write(", ")
-            else: comma = True
+            if comma:
+                self.write(", ")
+            else:
+                comma = True
             self.traverse(e)
         for e in node.keywords:
-            if comma: self.write(", ")
-            else: comma = True
+            if comma:
+                self.write(", ")
+            else:
+                comma = True
             self.traverse(e)
         self.write(")")
 
@@ -1118,7 +1150,7 @@ class _Unparser(NodeVisitor):
             self.traverse(node.step)
 
     def visit_ExtSlice(self, node):
-        self.interleave(lambda: self.write(', '), self.traverse, node.dims)
+        self.interleave(lambda: self.write(", "), self.traverse, node.dims)
 
     def visit_arg(self, node):
         self.write(node.arg)
@@ -1175,7 +1207,7 @@ class _Unparser(NodeVisitor):
                 first = False
             else:
                 self.write(", ")
-            self.write("**"+node.kwarg.arg)
+            self.write("**" + node.kwarg.arg)
             if node.kwarg.annotation:
                 self.write(": ")
                 self.traverse(node.kwarg.annotation)
@@ -1199,14 +1231,13 @@ class _Unparser(NodeVisitor):
     def visit_alias(self, node):
         self.write(node.name)
         if node.asname:
-            self.write(" as "+node.asname)
+            self.write(" as " + node.asname)
 
     def visit_withitem(self, node):
         self.traverse(node.context_expr)
         if node.optional_vars:
             self.write(" as ")
             self.traverse(node.optional_vars)
-
 
 def unparse(ast_obj):
     unparser = _Unparser()

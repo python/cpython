@@ -7,6 +7,8 @@ import pathlib
 import random
 import tokenize
 import ast
+import functools
+
 
 def read_pyfile(filename):
     """Read and return the contents of a Python source file (as a
@@ -16,6 +18,7 @@ def read_pyfile(filename):
     with open(filename, "r", encoding=encoding) as pyfile:
         source = pyfile.read()
     return source
+
 
 for_else = """\
 def f():
@@ -110,6 +113,7 @@ with f() as x, g() as y:
     suite1
 """
 
+
 class ASTTestCase(unittest.TestCase):
     def assertASTEqual(self, ast1, ast2):
         self.assertEqual(ast.dump(ast1), ast.dump(ast2))
@@ -122,6 +126,7 @@ class ASTTestCase(unittest.TestCase):
 
     def check_invalid(self, node, raises=ValueError):
         self.assertRaises(raises, ast.unparse, node)
+
 
 class UnparseTestCase(ASTTestCase):
     # Tests for specific bugs found in earlier versions of unparse
@@ -166,8 +171,8 @@ class UnparseTestCase(ASTTestCase):
         self.check_roundtrip("-1e1000j")
 
     def test_min_int(self):
-        self.check_roundtrip(str(-2**31))
-        self.check_roundtrip(str(-2**63))
+        self.check_roundtrip(str(-(2 ** 31)))
+        self.check_roundtrip(str(-(2 ** 63)))
 
     def test_imaginary_literals(self):
         self.check_roundtrip("7j")
@@ -264,11 +269,13 @@ class UnparseTestCase(ASTTestCase):
         self.check_invalid(ast.JoinedStr(values=[ast.Constant(value=100)]))
 
     def test_invalid_fstring_conversion(self):
-        self.check_invalid(ast.FormattedValue(
-            value=ast.Constant(value='a', kind=None),
-            conversion=ord("Y"), # random character
-            format_spec=None
-        ))
+        self.check_invalid(
+            ast.FormattedValue(
+                value=ast.Constant(value="a", kind=None),
+                conversion=ord("Y"),  # random character
+                format_spec=None,
+            )
+        )
 
     def test_invalid_set(self):
         self.check_invalid(ast.Set(elts=[]))
@@ -276,51 +283,46 @@ class UnparseTestCase(ASTTestCase):
 
 class DirectoryTestCase(ASTTestCase):
     """Test roundtrip behaviour on all files in Lib and Lib/test."""
-    ITEMS = None
 
-    start_dir = pathlib.Path(__file__).parent / ".."
-    test_directories = (start_dir, start_dir / "test")
-    skip = {'test_fstring.py'}
+    lib_dir = pathlib.Path(__file__).parent / ".."
+    test_directories = (lib_dir, lib_dir / "test")
+    skip_files = {"test_fstring.py"}
 
-    @classmethod
-    def get_names(cls):
-        if cls.ITEMS is not None:
-            return cls.ITEMS
+    @functools.cached_property
+    def files_to_test(self):
+        # bpo-31174: Use cached_property to store the names sample
+        # to always test the same files. It prevents false alarms
+        # when hunting reference leaks.
 
-        items = []
-        for directory in cls.test_directories:
-            for item in directory.glob("*.py"):
-                if not item.name.startswith('bad'):
-                    items.append(item)
+        items = [
+            item.resolve()
+            for directory in self.test_directories
+            for item in directory.glob("*.py")
+            if not item.name.startswith("bad")
+        ]
 
         # Test limited subset of files unless the 'cpu' resource is specified.
         if not test.support.is_resource_enabled("cpu"):
             items = random.sample(items, 10)
-        # bpo-31174: Store the names sample to always test the same files.
-        # It prevents false alarms when hunting reference leaks.
-        cls.ITEMS = items
         return items
 
     def test_files(self):
-        # get names of files to test
-        items = self.get_names()
-
-        for item in items:
+        for item in self.files_to_test:
             if test.support.verbose:
-                print(f'Testing {item.name}')
+                print(f"Testing {item.absolute()}")
 
-            #  Some f-strings are not correctly round-tripped by
-            #  Tools/parser/unparse.py.  See issue 28002 for details.
-            #  We need to skip files that contain such f-strings.
-            if item.name in self.skip:
+            # Some f-strings are not correctly round-tripped by
+            # Tools/parser/unparse.py.  See issue 28002 for details.
+            # We need to skip files that contain such f-strings.
+            if item.name in self.skip_files:
                 if test.support.verbose:
-                    print(f'Skipping {item.name}: see issue 28002')
+                    print(f"Skipping {item.absolute()}: see issue 28002")
                 continue
 
-            with self.subTest(filename=item.name):
+            with self.subTest(filename=item):
                 source = read_pyfile(item)
                 self.check_roundtrip(source)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     unittest.main()
