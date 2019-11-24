@@ -2168,8 +2168,11 @@ with the :class:`Pool` class.
 
    .. method:: map(func, iterable[, chunksize])
 
-      A parallel equivalent of the :func:`map` built-in function (it supports only
-      one *iterable* argument though).  It blocks until the result is ready.
+      A parallel equivalent of the built-in function :func:`map`. It blocks
+      until the result is ready.
+
+      Unlike :func:`map`, this method supports only one *iterable* argument.
+      For functions that require multiple arguments, see :meth:`starmap`.
 
       This method chops the iterable into a number of chunks which it submits to
       the process pool as separate tasks.  The (approximate) size of these
