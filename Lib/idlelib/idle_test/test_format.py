@@ -651,15 +651,15 @@ class RstripTest(unittest.TestCase):
 
     def test_rstrip_end(self):
         text = self.text
-        for t in ('', '\n', '\n\n\n'):
-            with self.subTest(t=t):
-                text.insert('1.0', t)
+        for code in ('', '\n', '\n\n\n'):
+            with self.subTest(code=code):
+                text.insert('1.0', code)
                 self.do_rstrip()
                 self.assertEqual(text.get('1.0','end-1c'), '')
-        for t in ('a', 'a\n', 'a\n\n', 'a\n\n\n'):
-            with self.subTest(t=t):
-                text.delete('1.0', 'end')
-                text.insert('1.0', t)
+        for code in ('a\n', 'a\n\n', 'a\n\n\n'):
+            with self.subTest(code=code):
+                text.delete('1.0', 'end-1c')
+                text.insert('1.0', code)
                 self.do_rstrip()
                 self.assertEqual(text.get('1.0','end-1c'), 'a\n')
 
