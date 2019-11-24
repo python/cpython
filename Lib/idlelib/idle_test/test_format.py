@@ -628,7 +628,7 @@ class RstripTest(unittest.TestCase):
         del cls.root
 
     def tearDown(self):
-        self.text.delete('1.0', 'end')
+        self.text.delete('1.0', 'end-1c')
 
     def test_rstrip_lines(self):
         original = (
