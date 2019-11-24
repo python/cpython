@@ -2660,11 +2660,12 @@ Test the verbose output:
 """
 
 def test_lineendings(): r"""
-*nix systems use \n line endings, while Windows systems use \r\n.  Python
+*nix systems use \n line endings, while Windows systems use \r\n, and
+old Mac systems used \r, which Python still recognizes as a line ending.  Python
 handles this using universal newline mode for reading files.  Let's make
 sure doctest does so (issue 8473) by creating temporary test files using each
-of the two line disciplines.  One of the two will be the "wrong" one for the
-platform the test is run on.
+of the three line disciplines.  At least one will not match either the universal
+newline \n or os.linesep for the platform the test is run on.
 
 Windows line endings first:
 
@@ -2682,6 +2683,16 @@ And now *nix line endings:
     >>> fn = tempfile.mktemp()
     >>> with open(fn, 'wb') as f:
     ...     f.write(b'Test:\n\n  >>> x = 1 + 1\n\nDone.\n')
+    30
+    >>> doctest.testfile(fn, module_relative=False, verbose=False)
+    TestResults(failed=0, attempted=1)
+    >>> os.remove(fn)
+
+And finally old Mac line endings:
+
+    >>> fn = tempfile.mktemp()
+    >>> with open(fn, 'wb') as f:
+    ...     f.write(b'Test:\r\r  >>> x = 1 + 1\r\rDone.\r')
     30
     >>> doctest.testfile(fn, module_relative=False, verbose=False)
     TestResults(failed=0, attempted=1)
