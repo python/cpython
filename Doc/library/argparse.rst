@@ -1915,9 +1915,13 @@ Mutual exclusion
      usage: PROG [-h] (--foo | --bar)
      PROG: error: one of the arguments --foo --bar is required
 
-   Note that currently mutually exclusive argument groups do not support the
+   Note that mutually exclusive argument groups do not support the
    *title* and *description* arguments of
-   :meth:`~ArgumentParser.add_argument_group`.
+   :meth:`~ArgumentParser.add_argument_group`. If you want a mutually exclusive group
+   to be formatted separately, wrap it via an argument group:
+
+     >>> parser = argparse.ArgumentParser(prog='PROG')
+     >>> group = parser.add_argument_group('group').add_mutually_exclusive_group()
 
 
 Parser defaults
