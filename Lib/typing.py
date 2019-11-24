@@ -1715,9 +1715,20 @@ class _TypedDictMeta(type):
         anns = ns.get('__annotations__', {})
         msg = "TypedDict('Name', {f0: t0, f1: t1, ...}); each t must be a type"
         anns = {n: _type_check(tp, msg) for n, tp in anns.items()}
+        required = set(anns if total else ())
+        optional = set(() if total else anns)
+
         for base in bases:
-            anns.update(base.__dict__.get('__annotations__', {}))
+            base_anns = base.__dict__.get('__annotations__', {})
+            anns.update(base_anns)
+            if getattr(base, '__total__', True):
+                required.update(base_anns)
+            else:
+                optional.update(base_anns)
+
         tp_dict.__annotations__ = anns
+        tp_dict.__required_keys__ = frozenset(required)
+        tp_dict.__optional_keys__ = frozenset(optional)
         if not hasattr(tp_dict, '__total__'):
             tp_dict.__total__ = total
         return tp_dict
@@ -1744,8 +1755,9 @@ class TypedDict(dict, metaclass=_TypedDictMeta):
 
         assert Point2D(x=1, y=2, label='first') == dict(x=1, y=2, label='first')
 
-    The type info can be accessed via Point2D.__annotations__. TypedDict
-    supports two additional equivalent forms::
+    The type info can be accessed via the Point2D.__annotations__ dict, and
+    the Point2D.__required_keys__ and Point2D.__optional_keys__ frozensets.
+    TypedDict supports two additional equivalent forms::
 
         Point2D = TypedDict('Point2D', x=int, y=int, label=str)
         Point2D = TypedDict('Point2D', {'x': int, 'y': int, 'label': str})
