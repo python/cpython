@@ -6174,8 +6174,10 @@ load_get(UnpicklerObject *self)
 
     value = _Unpickler_MemoGet(self, idx);
     if (value == NULL) {
-        if (!PyErr_Occurred())
-            PyErr_SetObject(PyExc_KeyError, key);
+        if (!PyErr_Occurred()) {
+           PickleState *st = _Pickle_GetGlobalState();
+           PyErr_Format(st->UnpicklingError, "Memo value not found at index %ld", idx);
+        }
         Py_DECREF(key);
         return -1;
     }
@@ -6201,7 +6203,8 @@ load_binget(UnpicklerObject *self)
     if (value == NULL) {
         PyObject *key = PyLong_FromSsize_t(idx);
         if (key != NULL) {
-            PyErr_SetObject(PyExc_KeyError, key);
+            PickleState *st = _Pickle_GetGlobalState();
+            PyErr_Format(st->UnpicklingError, "Memo value not found at index %ld", idx);
             Py_DECREF(key);
         }
         return -1;
@@ -6227,7 +6230,8 @@ load_long_binget(UnpicklerObject *self)
     if (value == NULL) {
         PyObject *key = PyLong_FromSsize_t(idx);
         if (key != NULL) {
-            PyErr_SetObject(PyExc_KeyError, key);
+            PickleState *st = _Pickle_GetGlobalState();
+            PyErr_Format(st->UnpicklingError, "Memo value not found at index %ld", idx);
             Py_DECREF(key);
         }
         return -1;
