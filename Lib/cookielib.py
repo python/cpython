@@ -205,10 +205,14 @@ LOOSE_HTTP_DATE_RE = re.compile(
        (?::(\d\d))?    # optional seconds
     )?                 # optional clock
        \s*
-    ([-+]?\d{2,4}|(?![APap][Mm]\b)[A-Za-z]+)? # timezone
+    (?:
+       ([-+]?\d{2,4}|(?![APap][Mm]\b)[A-Za-z]+) # timezone
        \s*
-    (?:\(\w+\))?       # ASCII representation of timezone in parens.
-       \s*$""", re.X)
+    )?
+    (?:
+       \(\w+\)         # ASCII representation of timezone in parens.
+       \s*
+    )?$""", re.X)
 def http2time(text):
     """Returns time in seconds since epoch of time represented by a string.
 
@@ -266,7 +270,7 @@ def http2time(text):
     return _str2time(day, mon, yr, hr, min, sec, tz)
 
 ISO_DATE_RE = re.compile(
-    """^
+    r"""^
     (\d{4})              # year
        [-\/]?
     (\d\d?)              # numerical month
@@ -278,9 +282,11 @@ ISO_DATE_RE = re.compile(
       (?::?(\d\d(?:\.\d*)?))?  # optional seconds (and fractional)
    )?                    # optional clock
       \s*
-   ([-+]?\d\d?:?(:?\d\d)?
-    |Z|z)?               # timezone  (Z is "zero meridian", i.e. GMT)
-      \s*$""", re.X)
+   (?:
+      ([-+]?\d\d?:?(:?\d\d)?
+       |Z|z)             # timezone  (Z is "zero meridian", i.e. GMT)
+      \s*
+   )?$""", re.X)
 def iso2time(text):
     """
     As for http2time, but parses the ISO 8601 formats:
