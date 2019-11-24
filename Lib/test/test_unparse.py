@@ -3,19 +3,12 @@
 import unittest
 import test.support
 import io
-import os
+import pathlib
 import random
 import tokenize
 import ast
+import functools
 
-from test.test_tools import basepath, toolsdir, skip_if_missing
-
-skip_if_missing()
-
-parser_path = os.path.join(toolsdir, "parser")
-
-with test.support.DirsOnSysPath(parser_path):
-    import unparse
 
 def read_pyfile(filename):
     """Read and return the contents of a Python source file (as a
@@ -25,6 +18,7 @@ def read_pyfile(filename):
     with open(filename, "r", encoding=encoding) as pyfile:
         source = pyfile.read()
     return source
+
 
 for_else = """\
 def f():
@@ -119,17 +113,20 @@ with f() as x, g() as y:
     suite1
 """
 
+
 class ASTTestCase(unittest.TestCase):
     def assertASTEqual(self, ast1, ast2):
         self.assertEqual(ast.dump(ast1), ast.dump(ast2))
 
-    def check_roundtrip(self, code1, filename="internal"):
-        ast1 = compile(code1, filename, "exec", ast.PyCF_ONLY_AST)
-        unparse_buffer = io.StringIO()
-        unparse.Unparser(ast1, unparse_buffer)
-        code2 = unparse_buffer.getvalue()
-        ast2 = compile(code2, filename, "exec", ast.PyCF_ONLY_AST)
+    def check_roundtrip(self, code1):
+        ast1 = ast.parse(code1)
+        code2 = ast.unparse(ast1)
+        ast2 = ast.parse(code2)
         self.assertASTEqual(ast1, ast2)
+
+    def check_invalid(self, node, raises=ValueError):
+        self.assertRaises(raises, ast.unparse, node)
+
 
 class UnparseTestCase(ASTTestCase):
     # Tests for specific bugs found in earlier versions of unparse
@@ -174,8 +171,8 @@ class UnparseTestCase(ASTTestCase):
         self.check_roundtrip("-1e1000j")
 
     def test_min_int(self):
-        self.check_roundtrip(str(-2**31))
-        self.check_roundtrip(str(-2**63))
+        self.check_roundtrip(str(-(2 ** 31)))
+        self.check_roundtrip(str(-(2 ** 63)))
 
     def test_imaginary_literals(self):
         self.check_roundtrip("7j")
@@ -265,54 +262,67 @@ class UnparseTestCase(ASTTestCase):
         self.check_roundtrip(r"""{**{'y': 2}, 'x': 1}""")
         self.check_roundtrip(r"""{**{'y': 2}, **{'x': 1}}""")
 
+    def test_invalid_raise(self):
+        self.check_invalid(ast.Raise(exc=None, cause=ast.Name(id="X")))
+
+    def test_invalid_fstring_constant(self):
+        self.check_invalid(ast.JoinedStr(values=[ast.Constant(value=100)]))
+
+    def test_invalid_fstring_conversion(self):
+        self.check_invalid(
+            ast.FormattedValue(
+                value=ast.Constant(value="a", kind=None),
+                conversion=ord("Y"),  # random character
+                format_spec=None,
+            )
+        )
+
+    def test_invalid_set(self):
+        self.check_invalid(ast.Set(elts=[]))
+
 
 class DirectoryTestCase(ASTTestCase):
     """Test roundtrip behaviour on all files in Lib and Lib/test."""
-    NAMES = None
 
-    # test directories, relative to the root of the distribution
-    test_directories = 'Lib', os.path.join('Lib', 'test')
+    lib_dir = pathlib.Path(__file__).parent / ".."
+    test_directories = (lib_dir, lib_dir / "test")
+    skip_files = {"test_fstring.py"}
 
-    @classmethod
-    def get_names(cls):
-        if cls.NAMES is not None:
-            return cls.NAMES
+    @functools.cached_property
+    def files_to_test(self):
+        # bpo-31174: Use cached_property to store the names sample
+        # to always test the same files. It prevents false alarms
+        # when hunting reference leaks.
 
-        names = []
-        for d in cls.test_directories:
-            test_dir = os.path.join(basepath, d)
-            for n in os.listdir(test_dir):
-                if n.endswith('.py') and not n.startswith('bad'):
-                    names.append(os.path.join(test_dir, n))
+        items = [
+            item.resolve()
+            for directory in self.test_directories
+            for item in directory.glob("*.py")
+            if not item.name.startswith("bad")
+        ]
 
         # Test limited subset of files unless the 'cpu' resource is specified.
         if not test.support.is_resource_enabled("cpu"):
-            names = random.sample(names, 10)
-        # bpo-31174: Store the names sample to always test the same files.
-        # It prevents false alarms when hunting reference leaks.
-        cls.NAMES = names
-        return names
+            items = random.sample(items, 10)
+        return items
 
     def test_files(self):
-        # get names of files to test
-        names = self.get_names()
-
-        for filename in names:
+        for item in self.files_to_test:
             if test.support.verbose:
-                print('Testing %s' % filename)
+                print(f"Testing {item.absolute()}")
 
             # Some f-strings are not correctly round-tripped by
-            #  Tools/parser/unparse.py.  See issue 28002 for details.
-            #  We need to skip files that contain such f-strings.
-            if os.path.basename(filename) in ('test_fstring.py', ):
+            # Tools/parser/unparse.py.  See issue 28002 for details.
+            # We need to skip files that contain such f-strings.
+            if item.name in self.skip_files:
                 if test.support.verbose:
-                    print(f'Skipping {filename}: see issue 28002')
+                    print(f"Skipping {item.absolute()}: see issue 28002")
                 continue
 
-            with self.subTest(filename=filename):
-                source = read_pyfile(filename)
+            with self.subTest(filename=item):
+                source = read_pyfile(item)
                 self.check_roundtrip(source)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     unittest.main()
