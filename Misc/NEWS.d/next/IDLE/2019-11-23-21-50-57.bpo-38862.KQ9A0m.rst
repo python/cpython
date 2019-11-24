@@ -1,0 +1,4 @@
+Format menu Strip Trailing Whitespace adjusts ending newlines of non shell
+windows so that the file is either blank or ends with one newline after
+something other than space, tab, or newline.  The result should be ready to
+commit to the CPython repository.
