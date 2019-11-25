@@ -131,9 +131,15 @@ DEFAULT_ERROR_CONTENT_TYPE = "text/html;charset=utf-8"
 class HTTPServer(socketserver.TCPServer):
 
     allow_reuse_address = 1    # Seems to make sense in testing environment
+    no_dual_stack = 0
 
     def server_bind(self):
-        """Override server_bind to store the server name."""
+        """Override server_bind to store the server name and
+           deal with Dual Stack."""
+        if self.address_family == socket.AF_INET6 and socket.has_dualstack_ipv6():
+            self.socket.setsockopt(socket.IPPROTO_IPV6,
+                                   socket.IPV6_V6ONLY,
+                                   self.no_dual_stack)
         socketserver.TCPServer.server_bind(self)
         host, port = self.server_address[:2]
         self.server_name = socket.getfqdn(host)
@@ -1238,13 +1244,14 @@ def _get_best_family(*address):
 
 def test(HandlerClass=BaseHTTPRequestHandler,
          ServerClass=ThreadingHTTPServer,
-         protocol="HTTP/1.0", port=8000, bind=None):
+         protocol="HTTP/1.0", port=8000, bind=None, no_dual_stack=False):
     """Test the HTTP request handler class.
 
     This runs an HTTP server on port 8000 (or the port argument).
 
     """
     ServerClass.address_family, addr = _get_best_family(bind, port)
+    ServerClass.no_dual_stack = int(no_dual_stack)
 
     HandlerClass.protocol_version = protocol
     with ServerClass(addr, HandlerClass) as httpd:
@@ -1269,6 +1276,8 @@ if __name__ == '__main__':
     parser.add_argument('--bind', '-b', metavar='ADDRESS',
                         help='Specify alternate bind address '
                              '[default: all interfaces]')
+    parser.add_argument('--no-dual-stack', action='store_true',
+                        help='Do not use IPv4/IPv6 Dual Stack')
     parser.add_argument('--directory', '-d', default=os.getcwd(),
                         help='Specify alternative directory '
                         '[default:current directory]')
@@ -1282,4 +1291,5 @@ if __name__ == '__main__':
     else:
         handler_class = partial(SimpleHTTPRequestHandler,
                                 directory=args.directory)
-    test(HandlerClass=handler_class, port=args.port, bind=args.bind)
+    test(HandlerClass=handler_class, port=args.port, bind=args.bind,
+         no_dual_stack=args.no_dual_stack)
