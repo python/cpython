@@ -121,7 +121,7 @@ Added the *indent* option to :func:`~ast.dump` which allows it to produce a
 multiline indented output.
 (Contributed by Serhiy Storchaka in :issue:`37995`.)
 
-Added the :func:`ast.unparse` as a function in the :mod:`ast` module that can
+Added :func:`ast.unparse` as a function in the :mod:`ast` module that can
 be used to unparse an :class:`ast.AST` object and produce a string with code
 that would produce an equivalent :class:`ast.AST` object when parsed.
 (Contributed by Pablo Galindo and Batuhan Taskaya in :issue:`38870`.)
