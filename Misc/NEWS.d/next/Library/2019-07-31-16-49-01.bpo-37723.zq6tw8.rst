@@ -1,2 +1,0 @@
-Fix performance regression on regular expression parsing with huge
-character sets. Patch by Yann Vaginay.

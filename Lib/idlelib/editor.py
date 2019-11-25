@@ -186,8 +186,9 @@ class EditorWindow(object):
         text.bind("<<uncomment-region>>", fregion.uncomment_region_event)
         text.bind("<<tabify-region>>", fregion.tabify_region_event)
         text.bind("<<untabify-region>>", fregion.untabify_region_event)
-        text.bind("<<toggle-tabs>>", self.Indents.toggle_tabs_event)
-        text.bind("<<change-indentwidth>>", self.Indents.change_indentwidth_event)
+        indents = self.Indents(self)
+        text.bind("<<toggle-tabs>>", indents.toggle_tabs_event)
+        text.bind("<<change-indentwidth>>", indents.change_indentwidth_event)
         text.bind("<Left>", self.move_at_edge_if_selection(0))
         text.bind("<Right>", self.move_at_edge_if_selection(1))
         text.bind("<<del-word-left>>", self.del_word_left)
@@ -240,6 +241,12 @@ class EditorWindow(object):
         # The recommended Python indentation is four spaces.
         self.indentwidth = self.tabwidth
         self.set_notabs_indentwidth()
+
+        # Store the current value of the insertofftime now so we can restore
+        # it if needed.
+        if not hasattr(idleConf, 'blink_off_time'):
+            idleConf.blink_off_time = self.text['insertofftime']
+        self.update_cursor_blink()
 
         # When searching backwards for a reliable place to begin parsing,
         # first start num_context_lines[0] lines back, then
@@ -802,6 +809,16 @@ class EditorWindow(object):
         else:
             text.mark_set("insert", pos + "+1c")
         text.see(pos)
+
+    def update_cursor_blink(self):
+        "Update the cursor blink configuration."
+        cursorblink = idleConf.GetOption(
+                'main', 'EditorWindow', 'cursor-blink', type='bool')
+        if not cursorblink:
+            self.text['insertofftime'] = 0
+        else:
+            # Restore the original value
+            self.text['insertofftime'] = idleConf.blink_off_time
 
     def ResetFont(self):
         "Update the text widgets' font if it is changed"

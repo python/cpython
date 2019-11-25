@@ -155,6 +155,24 @@ class ParseArgsTestCase(unittest.TestCase):
                 self.assertTrue(ns.single)
                 self.checkError([opt, '-f', 'foo'], "don't go together")
 
+    def test_ignore(self):
+        for opt in '-i', '--ignore':
+            with self.subTest(opt=opt):
+                ns = libregrtest._parse_args([opt, 'pattern'])
+                self.assertEqual(ns.ignore_tests, ['pattern'])
+                self.checkError([opt], 'expected one argument')
+
+        self.addCleanup(support.unlink, support.TESTFN)
+        with open(support.TESTFN, "w") as fp:
+            print('matchfile1', file=fp)
+            print('matchfile2', file=fp)
+
+        filename = os.path.abspath(support.TESTFN)
+        ns = libregrtest._parse_args(['-m', 'match',
+                                      '--ignorefile', filename])
+        self.assertEqual(ns.ignore_tests,
+                         ['matchfile1', 'matchfile2'])
+
     def test_match(self):
         for opt in '-m', '--match':
             with self.subTest(opt=opt):
@@ -960,6 +978,42 @@ class ArgsTestCase(BaseTestCase):
     def parse_methods(self, output):
         regex = re.compile("^(test[^ ]+).*ok$", flags=re.MULTILINE)
         return [match.group(1) for match in regex.finditer(output)]
+
+    def test_ignorefile(self):
+        code = textwrap.dedent("""
+            import unittest
+
+            class Tests(unittest.TestCase):
+                def test_method1(self):
+                    pass
+                def test_method2(self):
+                    pass
+                def test_method3(self):
+                    pass
+                def test_method4(self):
+                    pass
+        """)
+        all_methods = ['test_method1', 'test_method2',
+                       'test_method3', 'test_method4']
+        testname = self.create_test(code=code)
+
+        # only run a subset
+        filename = support.TESTFN
+        self.addCleanup(support.unlink, filename)
+
+        subset = [
+            # only ignore the method name
+            'test_method1',
+            # ignore the full identifier
+            '%s.Tests.test_method3' % testname]
+        with open(filename, "w") as fp:
+            for name in subset:
+                print(name, file=fp)
+
+        output = self.run_tests("-v", "--ignorefile", filename, testname)
+        methods = self.parse_methods(output)
+        subset = ['test_method2', 'test_method4']
+        self.assertEqual(methods, subset)
 
     def test_matchfile(self):
         code = textwrap.dedent("""

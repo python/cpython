@@ -1,5 +1,5 @@
-# This file must be used with ". bin/activate.fish" *from fish* (http://fishshell.org);
-# you cannot run it directly.
+# This file must be used with "source <venv>/bin/activate.fish" *from fish*
+# (http://fishshell.org); you cannot run it directly.
 
 function deactivate  -d "Exit virtualenv and return to normal shell environment"
     # reset old environment variables

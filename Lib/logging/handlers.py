@@ -1254,7 +1254,7 @@ class BufferingHandler(logging.Handler):
         """
         self.acquire()
         try:
-            self.buffer = []
+            self.buffer.clear()
         finally:
             self.release()
 
@@ -1321,7 +1321,7 @@ class MemoryHandler(BufferingHandler):
             if self.target:
                 for record in self.buffer:
                     self.target.handle(record)
-                self.buffer = []
+                self.buffer.clear()
         finally:
             self.release()
 

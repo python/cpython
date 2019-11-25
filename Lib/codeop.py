@@ -80,7 +80,7 @@ def _maybe_compile(compiler, source, filename, symbol):
 
     try:
         code = compiler(source, filename, symbol)
-    except SyntaxError as err:
+    except SyntaxError:
         pass
 
     try:

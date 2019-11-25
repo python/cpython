@@ -26,9 +26,8 @@ cmath_acos(PyObject *module, PyObject *arg)
         goto exit;
     }
     /* modifications for z */
-    errno = 0; PyFPE_START_PROTECT("complex function", goto exit);
+    errno = 0;
     _return_value = cmath_acos_impl(module, z);
-    PyFPE_END_PROTECT(_return_value);
     if (errno == EDOM) {
         PyErr_SetString(PyExc_ValueError, "math domain error");
         goto exit;
@@ -69,9 +68,8 @@ cmath_acosh(PyObject *module, PyObject *arg)
         goto exit;
     }
     /* modifications for z */
-    errno = 0; PyFPE_START_PROTECT("complex function", goto exit);
+    errno = 0;
     _return_value = cmath_acosh_impl(module, z);
-    PyFPE_END_PROTECT(_return_value);
     if (errno == EDOM) {
         PyErr_SetString(PyExc_ValueError, "math domain error");
         goto exit;
@@ -112,9 +110,8 @@ cmath_asin(PyObject *module, PyObject *arg)
         goto exit;
     }
     /* modifications for z */
-    errno = 0; PyFPE_START_PROTECT("complex function", goto exit);
+    errno = 0;
     _return_value = cmath_asin_impl(module, z);
-    PyFPE_END_PROTECT(_return_value);
     if (errno == EDOM) {
         PyErr_SetString(PyExc_ValueError, "math domain error");
         goto exit;
@@ -155,9 +152,8 @@ cmath_asinh(PyObject *module, PyObject *arg)
         goto exit;
     }
     /* modifications for z */
-    errno = 0; PyFPE_START_PROTECT("complex function", goto exit);
+    errno = 0;
     _return_value = cmath_asinh_impl(module, z);
-    PyFPE_END_PROTECT(_return_value);
     if (errno == EDOM) {
         PyErr_SetString(PyExc_ValueError, "math domain error");
         goto exit;
@@ -198,9 +194,8 @@ cmath_atan(PyObject *module, PyObject *arg)
         goto exit;
     }
     /* modifications for z */
-    errno = 0; PyFPE_START_PROTECT("complex function", goto exit);
+    errno = 0;
     _return_value = cmath_atan_impl(module, z);
-    PyFPE_END_PROTECT(_return_value);
     if (errno == EDOM) {
         PyErr_SetString(PyExc_ValueError, "math domain error");
         goto exit;
@@ -241,9 +236,8 @@ cmath_atanh(PyObject *module, PyObject *arg)
         goto exit;
     }
     /* modifications for z */
-    errno = 0; PyFPE_START_PROTECT("complex function", goto exit);
+    errno = 0;
     _return_value = cmath_atanh_impl(module, z);
-    PyFPE_END_PROTECT(_return_value);
     if (errno == EDOM) {
         PyErr_SetString(PyExc_ValueError, "math domain error");
         goto exit;
@@ -284,9 +278,8 @@ cmath_cos(PyObject *module, PyObject *arg)
         goto exit;
     }
     /* modifications for z */
-    errno = 0; PyFPE_START_PROTECT("complex function", goto exit);
+    errno = 0;
     _return_value = cmath_cos_impl(module, z);
-    PyFPE_END_PROTECT(_return_value);
     if (errno == EDOM) {
         PyErr_SetString(PyExc_ValueError, "math domain error");
         goto exit;
@@ -327,9 +320,8 @@ cmath_cosh(PyObject *module, PyObject *arg)
         goto exit;
     }
     /* modifications for z */
-    errno = 0; PyFPE_START_PROTECT("complex function", goto exit);
+    errno = 0;
     _return_value = cmath_cosh_impl(module, z);
-    PyFPE_END_PROTECT(_return_value);
     if (errno == EDOM) {
         PyErr_SetString(PyExc_ValueError, "math domain error");
         goto exit;
@@ -370,9 +362,8 @@ cmath_exp(PyObject *module, PyObject *arg)
         goto exit;
     }
     /* modifications for z */
-    errno = 0; PyFPE_START_PROTECT("complex function", goto exit);
+    errno = 0;
     _return_value = cmath_exp_impl(module, z);
-    PyFPE_END_PROTECT(_return_value);
     if (errno == EDOM) {
         PyErr_SetString(PyExc_ValueError, "math domain error");
         goto exit;
@@ -413,9 +404,8 @@ cmath_log10(PyObject *module, PyObject *arg)
         goto exit;
     }
     /* modifications for z */
-    errno = 0; PyFPE_START_PROTECT("complex function", goto exit);
+    errno = 0;
     _return_value = cmath_log10_impl(module, z);
-    PyFPE_END_PROTECT(_return_value);
     if (errno == EDOM) {
         PyErr_SetString(PyExc_ValueError, "math domain error");
         goto exit;
@@ -456,9 +446,8 @@ cmath_sin(PyObject *module, PyObject *arg)
         goto exit;
     }
     /* modifications for z */
-    errno = 0; PyFPE_START_PROTECT("complex function", goto exit);
+    errno = 0;
     _return_value = cmath_sin_impl(module, z);
-    PyFPE_END_PROTECT(_return_value);
     if (errno == EDOM) {
         PyErr_SetString(PyExc_ValueError, "math domain error");
         goto exit;
@@ -499,9 +488,8 @@ cmath_sinh(PyObject *module, PyObject *arg)
         goto exit;
     }
     /* modifications for z */
-    errno = 0; PyFPE_START_PROTECT("complex function", goto exit);
+    errno = 0;
     _return_value = cmath_sinh_impl(module, z);
-    PyFPE_END_PROTECT(_return_value);
     if (errno == EDOM) {
         PyErr_SetString(PyExc_ValueError, "math domain error");
         goto exit;
@@ -542,9 +530,8 @@ cmath_sqrt(PyObject *module, PyObject *arg)
         goto exit;
     }
     /* modifications for z */
-    errno = 0; PyFPE_START_PROTECT("complex function", goto exit);
+    errno = 0;
     _return_value = cmath_sqrt_impl(module, z);
-    PyFPE_END_PROTECT(_return_value);
     if (errno == EDOM) {
         PyErr_SetString(PyExc_ValueError, "math domain error");
         goto exit;
@@ -585,9 +572,8 @@ cmath_tan(PyObject *module, PyObject *arg)
         goto exit;
     }
     /* modifications for z */
-    errno = 0; PyFPE_START_PROTECT("complex function", goto exit);
+    errno = 0;
     _return_value = cmath_tan_impl(module, z);
-    PyFPE_END_PROTECT(_return_value);
     if (errno == EDOM) {
         PyErr_SetString(PyExc_ValueError, "math domain error");
         goto exit;
@@ -628,9 +614,8 @@ cmath_tanh(PyObject *module, PyObject *arg)
         goto exit;
     }
     /* modifications for z */
-    errno = 0; PyFPE_START_PROTECT("complex function", goto exit);
+    errno = 0;
     _return_value = cmath_tanh_impl(module, z);
-    PyFPE_END_PROTECT(_return_value);
     if (errno == EDOM) {
         PyErr_SetString(PyExc_ValueError, "math domain error");
         goto exit;
@@ -968,4 +953,4 @@ skip_optional_kwonly:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=3edc4484b10ae752 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=353347db2e808e0d input=a9049054013a1b77]*/
