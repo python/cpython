@@ -477,8 +477,16 @@ Opening network connections
       The parameter *reuse_address* is no longer supported, as using
       :py:data:`~sockets.SO_REUSEADDR` poses a significant security concern for
       UDP. Explicitly passing ``reuse_address=True`` will raise an exception.
-      For supported platforms, *reuse_port* can be used instead for similar
-      functionality.
+
+      When multiple processes with differing UIDs assign sockets to an
+      indentical UDP socket address with ``SO_REUSEADDR``, incoming packets can
+      become randomly distributed among the sockets.
+
+      For supported platforms, *reuse_port* can be used as a replacement for
+      similar functionality. With *reuse_port*,
+      :py:data:`~sockets.SO_REUSEPORT` is used instead, which specifically
+      prevents processes with differing UIDs from assigning sockets to the same
+      socket address.
 
    Create a datagram connection.
 
