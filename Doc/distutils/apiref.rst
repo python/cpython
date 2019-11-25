@@ -1699,7 +1699,7 @@ lines, and joining lines with backslashes.
 ===================================================================
 
 .. module:: distutils.cmd
-   :synopsis: Provides the abstract base class Command. This class
+   :synopsis: Provides the abstract base class :class:`~distutils.cmd.Command`. This class
               is subclassed by the modules in the distutils.command subpackage.
 
 
