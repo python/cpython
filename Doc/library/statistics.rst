@@ -2,7 +2,7 @@
 =======================================================
 
 .. module:: statistics
-   :synopsis: mathematical statistics functions
+   :synopsis: Mathematical statistics functions
 
 .. moduleauthor:: Steven D'Aprano <steve+python@pearwood.info>
 .. sectionauthor:: Steven D'Aprano <steve+python@pearwood.info>
