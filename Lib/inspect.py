@@ -899,6 +899,7 @@ class BlockFinder:
         self.indecorator = False
         self.decoratorhasargs = False
         self.last = 1
+        self.decoratorparens = []
 
     def tokeneater(self, type, token, srowcol, erowcol, line):
         if not self.started and not self.indecorator:
@@ -913,11 +914,18 @@ class BlockFinder:
             self.passline = True    # skip to the end of the line
         elif token == "(":
             if self.indecorator:
+                self.decoratorparens.append(token)
                 self.decoratorhasargs = True
         elif token == ")":
             if self.indecorator:
-                self.indecorator = False
-                self.decoratorhasargs = False
+                if self.decoratorparens:
+                    if self.decoratorparens[-1] == "(":
+                        self.decoratorparens = self.decoratorparens[:-1]
+                    if not self.decoratorparens:
+                        self.indecorator = False
+                        self.decoratorhasargs = False
+                else:
+                    self.decoratorparens.append(token)
         elif type == tokenize.NEWLINE:
             self.passline = False   # stop skipping when a NEWLINE is seen
             self.last = srowcol[0]

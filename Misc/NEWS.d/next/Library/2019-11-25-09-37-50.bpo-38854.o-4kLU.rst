@@ -1,0 +1,3 @@
+Properly extract source with ``inspect.getsource`` for decorated functions.
+
+Patch by Claudiu Popa

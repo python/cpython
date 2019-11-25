@@ -1,7 +1,7 @@
 # line 1
 'A module docstring.'
 
-import sys, inspect
+import sys, collections, functools, inspect
 # line 5
 
 # line 7
@@ -91,3 +91,32 @@ class Callable:
 
 custom_method = Callable().as_method_of(42)
 del Callable
+
+
+def decorator(*args):
+    def inner(func):
+        @functools.wraps(func)
+        def wrapper():
+            pass
+        return wrapper
+    return inner
+
+
+@decorator(dict(), 24)
+@decorator(dict(), 1)
+@decorator(dict(), collections.defaultdict(lambda: 1))
+@decorator("string containing )", "other string ()")
+@decorator(
+    (()),
+    collections.defaultdict(lambda: 1),
+    [(i, j) for i, j in enumerate(range(5))],
+)
+def decorated():
+    local_var = 2
+    return local_var + 42
+
+
+@decorator()
+def other_decorated():
+    local_var = 2
+    return local_var + 42
