@@ -3998,6 +3998,7 @@ class TestPEP519(unittest.TestCase):
         class A(os.PathLike):
             pass
         self.assertFalse(issubclass(FakePath, A))
+        self.assertTrue(issubclass(FakePath, os.PathLike))
 
 
 class TimesTests(unittest.TestCase):
