@@ -3656,7 +3656,7 @@ starunpack_helper(struct compiler *c, asdl_seq *elts,
 {
     Py_ssize_t n = asdl_seq_LEN(elts);
     Py_ssize_t i, nsubitems = 0, nseen = 0;
-    if (n > 1 && are_all_items_const(elts, 0, n)) {
+    if (n > 2 && are_all_items_const(elts, 0, n)) {
         PyObject *folded = PyTuple_New(n);
         if (folded == NULL) {
             return 0;
