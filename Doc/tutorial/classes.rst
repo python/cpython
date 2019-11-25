@@ -143,10 +143,10 @@ language definition is evolving towards static name resolution, at "compile"
 time, so don't rely on dynamic name resolution!  (In fact, local variables are
 already determined statically.)
 
-A special quirk of Python is that -- if no :keyword:`global` statement is in
-effect -- assignments to names always go into the innermost scope.  Assignments
-do not copy data --- they just bind names to objects.  The same is true for
-deletions: the statement ``del x`` removes the binding of ``x`` from the
+A special quirk of Python is that -- if no :keyword:`global` or :keyword:`nonlocal`
+statement is in effect -- assignments to names always go into the innermost scope.
+Assignments do not copy data --- they just bind names to objects.  The same is true
+for deletions: the statement ``del x`` removes the binding of ``x`` from the
 namespace referenced by the local scope.  In fact, all operations that introduce
 new names use the local scope: in particular, :keyword:`import` statements and
 function definitions bind the module or function name in the local scope.
