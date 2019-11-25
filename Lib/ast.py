@@ -26,7 +26,6 @@
 """
 import sys
 from _ast import *
-from contextlib import contextmanager
 
 
 def parse(source, filename='<unknown>', mode='exec', *,
@@ -597,15 +596,22 @@ class _Unparser(NodeVisitor):
         self._buffer.clear()
         return value
 
-    @contextmanager
-    def block(self):
+    class _Block:
         """A context manager for preparing the source for blocks. It adds
         the character':', increases the indentation on enter and decreases
         the indentation on exit."""
-        self.write(":")
-        self._indent += 1
-        yield
-        self._indent -= 1
+        def __init__(self, unparser):
+            self.unparser = unparser
+
+        def __enter__(self):
+            self.unparser.write(":")
+            self.unparser._indent += 1
+
+        def __exit__(self, exc_type, exc_value, traceback):
+            self.unparser._indent -= 1
+
+    def block(self):
+        return self._Block(self)
 
     def traverse(self, node):
         if isinstance(node, list):
