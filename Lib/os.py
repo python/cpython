@@ -26,7 +26,7 @@ import abc
 import sys
 import stat as st
 
-from collections.abc import _check_methods
+from _collections_abc import _check_methods
 
 _names = sys.builtin_module_names
 
