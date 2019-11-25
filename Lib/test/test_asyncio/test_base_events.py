@@ -1806,7 +1806,7 @@ class BaseEventLoopWithSelectorTests(test_utils.TestCase):
             local_addr=('127.0.0.1', 0),
             reuse_address=True)
 
-        with self.assertRaises(RuntimeError):
+        with self.assertRaises(ValueError):
             self.loop.run_until_complete(coro)
 
     @patch_socket
