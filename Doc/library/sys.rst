@@ -25,7 +25,7 @@ always available.
 
 .. function:: addaudithook(hook)
 
-   Adds the callable *hook* to the collection of active auditing hooks for the
+   Append the callable *hook* to the list of active auditing hooks for the
    current interpreter.
 
    When an auditing event is raised through the :func:`sys.audit` function, each
@@ -35,7 +35,7 @@ always available.
 
    .. audit-event:: sys.addaudithook "" sys.addaudithook
 
-      Raises a auditing event ``sys.addaudithook`` with no arguments. If any
+      Raise an auditing event ``sys.addaudithook`` with no arguments. If any
       existing hooks raise an exception derived from :class:`Exception`, the
       new hook will not be added and the exception suppressed. As a result,
       callers cannot assume that their hook has been added unless they control
@@ -74,7 +74,7 @@ always available.
 
    .. index:: single: auditing
 
-   Raises an auditing event with any active hooks. The event name is a string
+   Raise an auditing event with any active hooks. The event name is a string
    identifying the event and its associated schema, which is the number and
    types of arguments. The schema for a given event is considered public and
    stable API and should not be modified between releases.
