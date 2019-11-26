@@ -316,6 +316,9 @@ class Generator(Iterator):
         """
         return self.send(None)
 
+    def __del__(self):
+        self.close()
+
     @abstractmethod
     def send(self, value):
         """Send a value into the generator.
@@ -349,7 +352,7 @@ class Generator(Iterator):
     @classmethod
     def __subclasshook__(cls, C):
         if cls is Generator:
-            return _check_methods(C, '__iter__', '__next__',
+            return _check_methods(C, '__iter__', '__next__', '__del__',
                                   'send', 'throw', 'close')
         return NotImplemented
 
