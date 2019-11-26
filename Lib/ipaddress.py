@@ -1863,6 +1863,15 @@ class IPv6Address(_BaseV6, _BaseAddress):
         ip_str = super().__str__()
         return ip_str + '%' + self._scope_id if self._scope_id else ip_str
 
+    def __hash__(self):
+        return super().__hash__() ^ hash(self._scope_id)
+
+    def __eq__(self, other):
+        address_equal = _BaseAddress.__eq__(self, other)
+        if not address_equal or address_equal is NotImplemented:
+            return address_equal
+        return self._scope_id == other._scope_id
+
     @property
     def scope_id(self):
         """Identifier of a particular zone of the address's scope.
