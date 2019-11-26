@@ -3206,7 +3206,7 @@ x_sub(PyLongObject *a, PyLongObject *b)
     if (sign < 0) {
         Py_SIZE(z) = -Py_SIZE(z);
     }
-    return long_normalize(z);
+    return maybe_small_long(long_normalize(z));
 }
 
 static PyObject *
@@ -3254,13 +3254,15 @@ long_sub(PyLongObject *a, PyLongObject *b)
         return PyLong_FromLong(MEDIUM_VALUE(a) - MEDIUM_VALUE(b));
     }
     if (Py_SIZE(a) < 0) {
-        if (Py_SIZE(b) < 0)
-            z = x_sub(a, b);
-        else
+        if (Py_SIZE(b) < 0) {
+            z = x_sub(b, a);
+        }
+        else {
             z = x_add(a, b);
-        if (z != NULL) {
-            assert(Py_SIZE(z) == 0 || Py_REFCNT(z) == 1);
-            Py_SIZE(z) = -(Py_SIZE(z));
+            if (z != NULL) {
+                assert(Py_SIZE(z) == 0 || Py_REFCNT(z) == 1);
+                Py_SIZE(z) = -(Py_SIZE(z));
+            }
         }
     }
     else {
