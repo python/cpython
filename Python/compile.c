@@ -197,6 +197,7 @@ static int compiler_visit_slice(struct compiler *, slice_ty,
                                 expr_context_ty);
 
 static int inplace_binop(struct compiler *, operator_ty);
+static int are_all_items_const(asdl_seq *, Py_ssize_t, Py_ssize_t);
 static int expr_constant(expr_ty);
 
 static int compiler_with(struct compiler *, stmt_ty, int);
@@ -3655,6 +3656,27 @@ starunpack_helper(struct compiler *c, asdl_seq *elts,
 {
     Py_ssize_t n = asdl_seq_LEN(elts);
     Py_ssize_t i, nsubitems = 0, nseen = 0;
+    if (n > 2 && are_all_items_const(elts, 0, n)) {
+        PyObject *folded = PyTuple_New(n);
+        if (folded == NULL) {
+            return 0;
+        }
+        PyObject *val;
+        for (i = 0; i < n; i++) {
+            val = ((expr_ty)asdl_seq_GET(elts, i))->v.Constant.value;
+            Py_INCREF(val);
+            PyTuple_SET_ITEM(folded, i, val);
+        }
+        if (outer_op == BUILD_SET_UNPACK) {
+            Py_SETREF(folded, PyFrozenSet_New(folded));
+            if (folded == NULL) {
+                return 0;
+            }
+        }
+        ADDOP_LOAD_CONST_NEW(c, folded);
+        ADDOP_I(c, outer_op, 1);
+        return 1;
+    }
     for (i = 0; i < n; i++) {
         expr_ty elt = asdl_seq_GET(elts, i);
         if (elt->kind == Starred_kind) {
