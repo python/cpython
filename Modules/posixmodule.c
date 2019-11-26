@@ -7589,6 +7589,7 @@ wait_helper(pid_t pid, int status, struct rusage *ru)
 
     /* XXX(nnorwitz): Copied (w/mods) from resource.c, there should be only one. */
     result = PyStructSequence_New((PyTypeObject*) struct_rusage);
+    Py_DECREF(struct_rusage);
     if (!result)
         return NULL;
 
