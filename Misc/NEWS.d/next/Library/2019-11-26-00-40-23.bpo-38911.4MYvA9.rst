@@ -1,0 +1,1 @@
+Adds a __del__ to collections.abc.Generator to ensure that user defined generators are correctly garbage collected
