@@ -1174,13 +1174,7 @@ and :c:type:`PyType_Type` effectively act as defaults.)
       :c:member:`~PyTypeObject.tp_call` is also inherited.
       `Heap types`_ do not inherit ``Py_TPFLAGS_HAVE_VECTORCALL``.
 
-      .. note::
-
-         This flag is provisional and expected to become public in Python 3.9,
-         with a different name and, possibly, changed semantics.
-         If you use vectorcall, plan for updating your code for Python 3.9.
-
-      .. versionadded:: 3.8
+      .. versionadded:: 3.9
 
 
 .. c:member:: const char* PyTypeObject.tp_doc

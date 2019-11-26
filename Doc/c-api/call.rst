@@ -35,16 +35,10 @@ To call an object, use :c:func:`PyObject_Call` or other
 The Vectorcall Protocol
 -----------------------
 
-.. versionadded:: 3.8
+.. versionadded:: 3.9
 
 The vectorcall protocol was introduced in :pep:`590` as an additional protocol
 for making calls more efficient.
-
-.. warning::
-
-   The vectorcall API is provisional and expected to become public in
-   Python 3.9, with a different names and, possibly, changed semantics.
-   If you use the it, plan for updating your code for Python 3.9.
 
 As rule of thumb, CPython will prefer the vectorcall for internal calls
 if the callable supports it. However, this is not a hard rule.
@@ -110,6 +104,17 @@ function as with any other callable.
 :c:func:`PyObject_Vectorcall` will usually be most efficient.
 
 
+.. note::
+
+   In CPython 3.8, the vectorcall API and related functions were available
+   provisionally under names with a leading underscore:
+   ``_PyObject_Vectorcall``, ``_Py_TPFLAGS_HAVE_VECTORCALL``,
+   ``_PyObject_VectorcallMethod``, ``_PyObject_FastCallDict``,
+   ``_PyVectorcall_Function``, ``_PyObject_CallOneArg``,
+   ``_PyObject_CallMethodNoArgs``, ``_PyObject_CallMethodOneArg``.
+   These are still defined as aliases of the non-underscored names.
+
+
 Recursion Control
 .................
 
@@ -137,6 +142,8 @@ Vectorcall Support API
    However, the function ``PyVectorcall_NARGS`` should be used to allow
    for future extensions.
 
+   This function is not part of the `limited API <stable>`_.
+
    .. versionadded:: 3.8
 
 .. c:function:: vectorcallfunc PyVectorcall_Function(PyObject *op)
@@ -149,6 +156,8 @@ Vectorcall Support API
    This is mostly useful to check whether or not *op* supports vectorcall,
    which can be done by checking ``PyVectorcall_Function(op) != NULL``.
 
+   This function is not part of the `limited API <stable>`_.
+
    .. versionadded:: 3.8
 
 .. c:function:: PyObject* PyVectorcall_Call(PyObject *callable, PyObject *tuple, PyObject *dict)
@@ -160,6 +169,8 @@ Vectorcall Support API
    :c:member:`~PyTypeObject.tp_call` slot or be used in an implementation of ``tp_call``.
    It does not check the :const:`Py_TPFLAGS_HAVE_VECTORCALL` flag
    and it does not fall back to ``tp_call``.
+
+   This function is not part of the `limited API <stable>`_.
 
    .. versionadded:: 3.8
 
@@ -232,6 +243,8 @@ please see individual documentation for details.
    Return the result of the call on success, or raise an exception and return
    *NULL* on failure.
 
+   This function is not part of the `limited API <stable>`_.
+
    .. versionadded:: 3.9
 
 
@@ -242,6 +255,8 @@ please see individual documentation for details.
 
    Return the result of the call on success, or raise an exception and return
    *NULL* on failure.
+
+   This function is not part of the `limited API <stable>`_.
 
    .. versionadded:: 3.9
 
@@ -328,6 +343,8 @@ please see individual documentation for details.
    Return the result of the call on success, or raise an exception and return
    *NULL* on failure.
 
+   This function is not part of the `limited API <stable>`_.
+
    .. versionadded:: 3.9
 
 
@@ -339,6 +356,8 @@ please see individual documentation for details.
 
    Return the result of the call on success, or raise an exception and return
    *NULL* on failure.
+
+   This function is not part of the `limited API <stable>`_.
 
    .. versionadded:: 3.9
 
@@ -353,13 +372,9 @@ please see individual documentation for details.
    Return the result of the call on success, or raise an exception and return
    *NULL* on failure.
 
-   .. note::
+   This function is not part of the `limited API <stable>`_.
 
-      This function is provisional and expected to become public in Python 3.9,
-      with a different name and, possibly, changed semantics.
-      If you use the function, plan for updating your code for Python 3.9.
-
-   .. versionadded:: 3.8
+   .. versionadded:: 3.9
 
 .. c:function:: PyObject* PyObject_FastCallDict(PyObject *callable, PyObject *const *args, size_t nargsf, PyObject *kwdict)
 
@@ -373,13 +388,9 @@ please see individual documentation for details.
    already has a dictionary ready to use for the keyword arguments,
    but not a tuple for the positional arguments.
 
-   .. note::
+   This function is not part of the `limited API <stable>`_.
 
-      This function is provisional and expected to become public in Python 3.9,
-      with a different name and, possibly, changed semantics.
-      If you use the function, plan for updating your code for Python 3.9.
-
-   .. versionadded:: 3.8
+   .. versionadded:: 3.9
 
 .. c:function:: PyObject* PyObject_VectorcallMethod(PyObject *name, PyObject *const *args, size_t nargsf, PyObject *kwnames)
 
@@ -398,6 +409,8 @@ please see individual documentation for details.
 
    Return the result of the call on success, or raise an exception and return
    *NULL* on failure.
+
+   This function is not part of the `limited API <stable>`_.
 
    .. versionadded:: 3.9
 
