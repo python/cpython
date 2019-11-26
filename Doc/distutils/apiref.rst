@@ -1530,7 +1530,7 @@ Python's own build procedures.
 =================================================
 
 .. module:: distutils.text_file
-   :synopsis: provides the TextFile class, a simple interface to text files
+   :synopsis: Provides the TextFile class, a simple interface to text files
 
 
 This module provides the :class:`TextFile` class, which gives an interface  to
@@ -1669,7 +1669,7 @@ lines, and joining lines with backslashes.
 ===================================================
 
 .. module:: distutils.version
-   :synopsis: implements classes that represent module version numbers.
+   :synopsis: Implements classes that represent module version numbers.
 
 
 .. % todo
@@ -1684,7 +1684,7 @@ lines, and joining lines with backslashes.
 ===================================================================
 
 .. module:: distutils.cmd
-   :synopsis: This module provides the abstract base class Command. This class
+   :synopsis: Provides the abstract base class :class:`~distutils.cmd.Command`. This class
               is subclassed by the modules in the distutils.command subpackage.
 
 
@@ -1777,7 +1777,7 @@ Subclasses of :class:`Command` must define the following methods.
 ==========================================================
 
 .. module:: distutils.command
-   :synopsis: This subpackage contains one module for each standard Distutils command.
+   :synopsis: Contains one module for each standard Distutils command.
 
 
 .. % \subsubsection{Individual Distutils commands}
@@ -2021,7 +2021,7 @@ This is described in more detail in :pep:`301`.
 ===================================================================
 
 .. module:: distutils.command.check
-   :synopsis: Check the metadata of a package
+   :synopsis: Check the meta-data of a package
 
 
 The ``check`` command performs some tests on the meta-data of a package.
