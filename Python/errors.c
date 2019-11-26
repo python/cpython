@@ -1404,15 +1404,12 @@ _PyErr_WriteUnraisableMsg(const char *err_msg_str, PyObject *obj)
 
     /* sys.unraisablehook failed: log its error using default hook */
     obj = hook;
+    err_msg_str = NULL;
 
 error:
     /* err_msg_str and obj have been updated and we have a new exception */
-    Py_XSETREF(err_msg, PyUnicode_FromString(err_msg_str));
-    if (err_msg == NULL) {
-        /* we have *another* new exception... */
-        err_msg = Py_None;
-        Py_INCREF(err_msg);
-    }
+    Py_XSETREF(err_msg, PyUnicode_FromString(err_msg_str ?
+        err_msg_str : "Exception ignored in sys.unraisablehook"));
     Py_XDECREF(exc_type);
     Py_XDECREF(exc_value);
     Py_XDECREF(exc_tb);
