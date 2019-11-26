@@ -693,15 +693,15 @@ and :c:type:`PyType_Type` effectively act as defaults.)
    a more efficient alternative
    of the simpler :c:member:`~PyTypeObject.tp_call`.
 
-   This field is only used if the flag :const:`_Py_TPFLAGS_HAVE_VECTORCALL`
+   This field is only used if the flag :const:`Py_TPFLAGS_HAVE_VECTORCALL`
    is set. If so, this must be a positive integer containing the offset in the
    instance of a :c:type:`vectorcallfunc` pointer.
 
    The *vectorcallfunc* pointer may be ``NULL``, in which case the instance behaves
-   as if :const:`_Py_TPFLAGS_HAVE_VECTORCALL` was not set: calling the instance
+   as if :const:`Py_TPFLAGS_HAVE_VECTORCALL` was not set: calling the instance
    falls back to :c:member:`~PyTypeObject.tp_call`.
 
-   Any class that sets ``_Py_TPFLAGS_HAVE_VECTORCALL`` must also set
+   Any class that sets ``Py_TPFLAGS_HAVE_VECTORCALL`` must also set
    :c:member:`~PyTypeObject.tp_call` and make sure its behaviour is consistent
    with the *vectorcallfunc* function.
    This can be done by setting *tp_call* to :c:func:`PyVectorcall_Call`.
@@ -728,7 +728,7 @@ and :c:type:`PyType_Type` effectively act as defaults.)
    **Inheritance:**
 
    This field is always inherited.
-   However, the :const:`_Py_TPFLAGS_HAVE_VECTORCALL` flag is not
+   However, the :const:`Py_TPFLAGS_HAVE_VECTORCALL` flag is not
    always inherited. If it's not, then the subclass won't use
    :ref:`vectorcall <vectorcall>`, except when
    :c:func:`PyVectorcall_Call` is explicitly called.
@@ -1162,7 +1162,7 @@ and :c:type:`PyType_Type` effectively act as defaults.)
          type structure.
 
 
-   .. data:: _Py_TPFLAGS_HAVE_VECTORCALL
+   .. data:: Py_TPFLAGS_HAVE_VECTORCALL
 
       This bit is set when the class implements
       the :ref:`vectorcall protocol <vectorcall>`.
@@ -1172,7 +1172,7 @@ and :c:type:`PyType_Type` effectively act as defaults.)
 
       This bit is inherited for *static* subtypes if
       :c:member:`~PyTypeObject.tp_call` is also inherited.
-      `Heap types`_ do not inherit ``_Py_TPFLAGS_HAVE_VECTORCALL``.
+      `Heap types`_ do not inherit ``Py_TPFLAGS_HAVE_VECTORCALL``.
 
       .. note::
 

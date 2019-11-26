@@ -29,7 +29,7 @@ PyAPI_FUNC(PyObject *) _PyStack_AsDict(
 /* Suggested size (number of positional arguments) for arrays of PyObject*
    allocated on a C stack to avoid allocating memory on the heap memory. Such
    array is used to pass positional arguments to call functions of the
-   _PyObject_Vectorcall() family.
+   PyObject_Vectorcall() family.
 
    The size is chosen to not abuse the C stack and so limit the risk of stack
    overflow. The size is also chosen to allow using the small stack for most
@@ -45,8 +45,8 @@ PyAPI_FUNC(PyObject *) _Py_CheckFunctionResult(
 
 /* === Vectorcall protocol (PEP 590) ============================= */
 
-/* Call callable using tp_call. Arguments are like _PyObject_Vectorcall()
-   or _PyObject_FastCallDict() (both forms are supported),
+/* Call callable using tp_call. Arguments are like PyObject_Vectorcall()
+   or PyObject_FastCallDict() (both forms are supported),
    except that nargs is plainly the number of arguments without flags. */
 PyAPI_FUNC(PyObject *) _PyObject_MakeTpCall(
     PyThreadState *tstate,
@@ -63,11 +63,11 @@ PyVectorcall_NARGS(size_t n)
 }
 
 static inline vectorcallfunc
-_PyVectorcall_Function(PyObject *callable)
+PyVectorcall_Function(PyObject *callable)
 {
     assert(callable != NULL);
     PyTypeObject *tp = Py_TYPE(callable);
-    if (!PyType_HasFeature(tp, _Py_TPFLAGS_HAVE_VECTORCALL)) {
+    if (!PyType_HasFeature(tp, Py_TPFLAGS_HAVE_VECTORCALL)) {
         return NULL;
     }
     assert(PyCallable_Check(callable));
@@ -103,7 +103,7 @@ _PyObject_VectorcallTstate(PyThreadState *tstate, PyObject *callable,
     assert(kwnames == NULL || PyTuple_Check(kwnames));
     assert(args != NULL || PyVectorcall_NARGS(nargsf) == 0);
 
-    vectorcallfunc func = _PyVectorcall_Function(callable);
+    vectorcallfunc func = PyVectorcall_Function(callable);
     if (func == NULL) {
         Py_ssize_t nargs = PyVectorcall_NARGS(nargsf);
         return _PyObject_MakeTpCall(tstate, callable, args, nargs, kwnames);
@@ -113,7 +113,7 @@ _PyObject_VectorcallTstate(PyThreadState *tstate, PyObject *callable,
 }
 
 static inline PyObject *
-_PyObject_Vectorcall(PyObject *callable, PyObject *const *args,
+PyObject_Vectorcall(PyObject *callable, PyObject *const *args,
                      size_t nargsf, PyObject *kwnames)
 {
     PyThreadState *tstate = PyThreadState_GET();
@@ -121,9 +121,9 @@ _PyObject_Vectorcall(PyObject *callable, PyObject *const *args,
                                       args, nargsf, kwnames);
 }
 
-/* Same as _PyObject_Vectorcall except that keyword arguments are passed as
+/* Same as PyObject_Vectorcall except that keyword arguments are passed as
    dict, which may be NULL if there are no keyword arguments. */
-PyAPI_FUNC(PyObject *) _PyObject_FastCallDict(
+PyAPI_FUNC(PyObject *) PyObject_FastCallDict(
     PyObject *callable,
     PyObject *const *args,
     size_t nargsf,
@@ -133,7 +133,7 @@ PyAPI_FUNC(PyObject *) _PyObject_FastCallDict(
    "tuple" and keyword arguments "dict". "dict" may also be NULL */
 PyAPI_FUNC(PyObject *) PyVectorcall_Call(PyObject *callable, PyObject *tuple, PyObject *dict);
 
-/* Same as _PyObject_Vectorcall except without keyword arguments */
+/* Same as PyObject_Vectorcall except without keyword arguments */
 static inline PyObject *
 _PyObject_FastCall(PyObject *func, PyObject *const *args, Py_ssize_t nargs)
 {
@@ -151,7 +151,7 @@ _PyObject_CallNoArg(PyObject *func) {
 }
 
 static inline PyObject *
-_PyObject_CallOneArg(PyObject *func, PyObject *arg)
+PyObject_CallOneArg(PyObject *func, PyObject *arg)
 {
     assert(arg != NULL);
     PyObject *_args[2];
@@ -162,23 +162,23 @@ _PyObject_CallOneArg(PyObject *func, PyObject *arg)
     return _PyObject_VectorcallTstate(tstate, func, args, nargsf, NULL);
 }
 
-PyAPI_FUNC(PyObject *) _PyObject_VectorcallMethod(
+PyAPI_FUNC(PyObject *) PyObject_VectorcallMethod(
     PyObject *name, PyObject *const *args,
     size_t nargsf, PyObject *kwnames);
 
 static inline PyObject *
-_PyObject_CallMethodNoArgs(PyObject *self, PyObject *name)
+PyObject_CallMethodNoArgs(PyObject *self, PyObject *name)
 {
-    return _PyObject_VectorcallMethod(name, &self,
+    return PyObject_VectorcallMethod(name, &self,
            1 | PY_VECTORCALL_ARGUMENTS_OFFSET, NULL);
 }
 
 static inline PyObject *
-_PyObject_CallMethodOneArg(PyObject *self, PyObject *name, PyObject *arg)
+PyObject_CallMethodOneArg(PyObject *self, PyObject *name, PyObject *arg)
 {
     assert(arg != NULL);
     PyObject *args[2] = {self, arg};
-    return _PyObject_VectorcallMethod(name, args,
+    return PyObject_VectorcallMethod(name, args,
            2 | PY_VECTORCALL_ARGUMENTS_OFFSET, NULL);
 }
 
@@ -207,7 +207,7 @@ _PyObject_VectorcallMethodId(
     if (!oname) {
         return NULL;
     }
-    return _PyObject_VectorcallMethod(oname, args, nargsf, kwnames);
+    return PyObject_VectorcallMethod(oname, args, nargsf, kwnames);
 }
 
 static inline PyObject *

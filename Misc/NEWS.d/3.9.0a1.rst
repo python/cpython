@@ -678,7 +678,7 @@ The :keyword:`assert` statement now works properly if the
 
 Removed object cache (``free_list``) for bound method objects.  Temporary
 bound method objects are less used than before thanks to the ``LOAD_METHOD``
-opcode and the ``_PyObject_VectorcallMethod`` C API.
+opcode and the ``PyObject_VectorcallMethod`` C API.
 
 ..
 
@@ -5676,7 +5676,7 @@ Exclude Python-ast.h, ast.h and asdl.h from the limited API.
 .. nonce: vftT4f
 .. section: C API
 
-Add new function ``_PyObject_CallOneArg`` for calling an object with one
+Add new function ``PyObject_CallOneArg`` for calling an object with one
 positional argument.
 
 ..
@@ -5696,8 +5696,8 @@ Add :func:`PyConfig_SetWideStringList` function.
 .. section: C API
 
 Add fast functions for calling methods:
-:c:func:`_PyObject_VectorcallMethod`, :c:func:`_PyObject_CallMethodNoArgs`
-and :c:func:`_PyObject_CallMethodOneArg`.
+:c:func:`PyObject_VectorcallMethod`, :c:func:`PyObject_CallMethodNoArgs`
+and :c:func:`PyObject_CallMethodOneArg`.
 
 ..
 
