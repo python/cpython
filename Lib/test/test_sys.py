@@ -1222,7 +1222,7 @@ class SizeofTest(unittest.TestCase):
         # list
         samples = [[], [1,2,3], ['1', '2', '3']]
         for sample in samples:
-            check(sample, vsize('Pn') + len(sample)*self.P)
+            check(list(sample), vsize('Pn') + len(sample)*self.P)
         # sortwrapper (list)
         # XXX
         # cmpwrapper (list)
