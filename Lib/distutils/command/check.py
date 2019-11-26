@@ -80,11 +80,11 @@ class check(Command):
     def check_metadata(self):
         """Ensures that all required elements of meta-data are supplied.
 
-        required fields:
-        name, version, URL.
+        Required fields:
+            name, version, URL
 
-        recommended fields:
-        (author and author_email) or (maintainer and maintainer_email)).
+        Recommended fields:
+            (author and author_email) or (maintainer and maintainer_email))
 
         Warns if any are missing.
         """
