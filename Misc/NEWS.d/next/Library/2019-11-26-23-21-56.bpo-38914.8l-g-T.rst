@@ -1,0 +1,3 @@
+distutils' ``check`` command no longer strictly requires an author_email
+(maintainer_email) field when author (maintainer) is provided (Juergen
+Gmach).
