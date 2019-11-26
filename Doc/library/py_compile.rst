@@ -21,6 +21,29 @@ Though not often needed, this function can be useful when installing modules for
 shared use, especially if some of the users may not have permission to write the
 byte-code cache files in the directory containing the source code.
 
+Command-line use
+----------------
+
+This module can work as a script (using :program:`python -m
+py_compile`) to compile several source files. The files named in
+'filenames' are compiled and the resulting bytecode is cached in the
+normal manner. This program does not search a directory structure to
+locate source files; it only compiles files named explicitly.
+
+.. program:: py_compile
+
+.. cmdoption:: file ...
+               -
+
+   Positional arguments are files to compile or ``-`` to read files
+   list from standard input (one file per line).
+
+.. cmdoption:: -q, --quiet
+
+   Suppress errors output.
+
+Public functions
+----------------
 
 .. exception:: PyCompileError
 
@@ -123,19 +146,6 @@ byte-code cache files in the directory containing the source code.
 
       This option is useful when the ``.pycs`` are kept up to date by some
       system external to Python like a build system.
-
-
-.. function:: main(args=None)
-
-   Compile several source files.  The files named in *args* (or on the command
-   line, if *args* is ``None``) are compiled and the resulting byte-code is
-   cached in the normal manner.  This function does not search a directory
-   structure to locate source files; it only compiles files named explicitly.
-   If ``'-'`` is the only parameter in args, the list of files is taken from
-   standard input.
-
-   .. versionchanged:: 3.2
-      Added support for ``'-'``.
 
 When this module is run as a script, the :func:`main` is used to compile all the
 files named on the command line.  The exit status is nonzero if one of the files

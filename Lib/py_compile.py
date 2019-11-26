@@ -175,17 +175,7 @@ def compile(file, cfile=None, dfile=None, doraise=False, optimize=-1,
 
 
 def main(args=None):
-    """Compile several source files.
-
-    The files named in 'args' (or on the command line, if 'args' is
-    not specified) are compiled and the resulting bytecode is cached
-    in the normal manner.  This function does not search a directory
-    structure to locate source files; it only compiles files named
-    explicitly.  If '-' is the only parameter in args, the list of
-    files is taken from standard input. If flag '-q/--quiet' is set
-    errors output would be suppressed.
-
-    """
+    """Script main program."""
     if args is None:
         args = sys.argv[1:]
     parser = argparse.ArgumentParser(
@@ -194,7 +184,7 @@ def main(args=None):
             "Compiles several source files. The files named "
             "in 'filenames' are compiled and the resulting "
             "bytecode is cached in the normal manner. This "
-            "function does not search a directory structure "
+            "program does not search a directory structure "
             "to locate source files; it only compiles files "
             "named explicitly. If '-' is the only file name "
             "in 'filenames', the list of files taken from "
