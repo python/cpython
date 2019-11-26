@@ -154,6 +154,8 @@ library/ipaddress,,:db8,>>> IPv6Address('fe80::1234') != IPv6Address('fe80::1234
 library/ipaddress,,::,>>> IPv6Address('fe80::1234') != IPv6Address('fe80::1234%1')
 library/ipaddress,,:db8,>>> IPv6Address('fe80::1234%1') != IPv6Address('fe80::1234%2')
 library/ipaddress,,::,>>> IPv6Address('fe80::1234%1') != IPv6Address('fe80::1234%2')
+library/ipaddress,,:db8,For example, ``fe80::1234%1`` might identify address ``fe80::1234`` on the first link of the node.
+library/ipaddress,,::,For example, ``fe80::1234%1`` might identify address ``fe80::1234`` on the first link of the node.
 library/ipaddress,,:db8,">>> ipaddress.ip_address(""2001:db8::1"").reverse_pointer"
 library/ipaddress,,::,">>> ipaddress.ip_address(""2001:db8::1"").reverse_pointer"
 library/ipaddress,,::,"""::abc:7:def"""

@@ -326,8 +326,9 @@ IPv6).
 Comparison operators
 """"""""""""""""""""
 
-Address objects can be compared with the usual set of comparison operators. Scope id
-is not considered while comparing IPv6 address objects. Some examples::
+Address objects can be compared with the usual set of comparison operators.
+Same IPv6 addresses with different scope zone IDs are not equal.
+Some examples::
 
    >>> IPv4Address('127.0.0.2') > IPv4Address('127.0.0.1')
    True
@@ -336,6 +337,8 @@ is not considered while comparing IPv6 address objects. Some examples::
    >>> IPv4Address('127.0.0.2') != IPv4Address('127.0.0.1')
    True
    >>> IPv6Address('fe80::1234') == IPv6Address('fe80::1234%1')
+   False
+   >>> IPv6Address('fe80::1234%1') != IPv6Address('fe80::1234%2')
    True
 
 
