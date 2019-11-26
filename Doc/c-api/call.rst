@@ -185,7 +185,7 @@ please see individual documentation for details.
 +------------------------------------------+------------------+--------------------+---------------+
 | :c:func:`PyObject_CallNoArgs`            | ``PyObject *``   | ---                | ---           |
 +------------------------------------------+------------------+--------------------+---------------+
-| :c:func:`PyObject_CallOneArg`           | ``PyObject *``   | 1 object           | ---           |
+| :c:func:`PyObject_CallOneArg`            | ``PyObject *``   | 1 object           | ---           |
 +------------------------------------------+------------------+--------------------+---------------+
 | :c:func:`PyObject_CallObject`            | ``PyObject *``   | tuple/``NULL``     | ---           |
 +------------------------------------------+------------------+--------------------+---------------+
@@ -197,15 +197,15 @@ please see individual documentation for details.
 +------------------------------------------+------------------+--------------------+---------------+
 | :c:func:`PyObject_CallMethodObjArgs`     | obj + name       | variadic           | ---           |
 +------------------------------------------+------------------+--------------------+---------------+
-| :c:func:`PyObject_CallMethodNoArgs`     | obj + name       | ---                | ---           |
+| :c:func:`PyObject_CallMethodNoArgs`      | obj + name       | ---                | ---           |
 +------------------------------------------+------------------+--------------------+---------------+
-| :c:func:`PyObject_CallMethodOneArg`     | obj + name       | 1 object           | ---           |
+| :c:func:`PyObject_CallMethodOneArg`      | obj + name       | 1 object           | ---           |
 +------------------------------------------+------------------+--------------------+---------------+
-| :c:func:`PyObject_Vectorcall`           | ``PyObject *``   | vectorcall         | vectorcall    |
+| :c:func:`PyObject_Vectorcall`            | ``PyObject *``   | vectorcall         | vectorcall    |
 +------------------------------------------+------------------+--------------------+---------------+
-| :c:func:`PyObject_FastCallDict`         | ``PyObject *``   | vectorcall         | dict/``NULL`` |
+| :c:func:`PyObject_FastCallDict`          | ``PyObject *``   | vectorcall         | dict/``NULL`` |
 +------------------------------------------+------------------+--------------------+---------------+
-| :c:func:`PyObject_VectorcallMethod`     | arg + name       | vectorcall         | vectorcall    |
+| :c:func:`PyObject_VectorcallMethod`      | arg + name       | vectorcall         | vectorcall    |
 +------------------------------------------+------------------+--------------------+---------------+
 
 
