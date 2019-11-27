@@ -93,7 +93,7 @@ The module defines the following user-callable items:
       Added *errors* parameter.
 
 
-.. function:: SpooledTemporaryFile(max_size=0, mode='w+b', buffering=None, encoding=None, newline=None, suffix=None, prefix=None, dir=None, *, errors=None)
+.. class:: SpooledTemporaryFile(max_size=0, mode='w+b', buffering=None, encoding=None, newline=None, suffix=None, prefix=None, dir=None, *, errors=None)
 
    This function operates exactly as :func:`TemporaryFile` does, except that
    data is spooled in memory until the file size exceeds *max_size*, or
@@ -105,8 +105,8 @@ The module defines the following user-callable items:
    causes the file to roll over to an on-disk file regardless of its size.
 
    The returned object is a file-like object whose :attr:`_file` attribute
-   is either an :class:`io.BytesIO` or :class:`io.StringIO` object (depending on
-   whether binary or text *mode* was specified) or a true file
+   is either an :class:`io.BytesIO` or :class:`io.TextIOWrapper` object
+   (depending on whether binary or text *mode* was specified) or a true file
    object, depending on whether :func:`rollover` has been called.  This
    file-like object can be used in a :keyword:`with` statement, just like
    a normal file.
