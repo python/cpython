@@ -1635,11 +1635,17 @@ class MockTest(unittest.TestCase):
         self.assertIsInstance(m.return_value, Mock)
         self.assertNotEqual(m.side_effect, None)
 
-    def test_reset_sideeffect(self):
-        m = Mock(return_value=10, side_effect=[2,3])
+    def test_reset_return_with_children(self):
+        m = MagicMock(f=MagicMock(return_value=1))
+        self.assertEqual(m.f(), 1)
+        m.reset_mock(return_value=True)
+        self.assertNotEqual(m.f(), 1)
+
+    def test_reset_return_with_children_side_effect(self):
+        m = MagicMock(f=MagicMock(side_effect=[2, 3]))
+        self.assertNotEqual(m.f.side_effect, None)
         m.reset_mock(side_effect=True)
-        self.assertEqual(m.return_value, 10)
-        self.assertEqual(m.side_effect, None)
+        self.assertEqual(m.f.side_effect, None)
 
     def test_mock_add_spec(self):
         class _One(object):
