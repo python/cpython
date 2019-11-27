@@ -314,6 +314,8 @@ the :func:`str` and :func:`int` builtin functions::
    >>> int(ipaddress.IPv6Address('::1'))
    1
 
+Note that IPv6 scoped addresses are converted to integers without scope zone ID.
+
 
 Operators
 ^^^^^^^^^
