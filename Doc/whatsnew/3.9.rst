@@ -184,7 +184,7 @@ case), and one used ``__VENV_NAME__`` instead.
 pathlib
 -------
 
-Added :meth:`pathlib.Path.readlink()` which acts similar to
+Added :meth:`pathlib.Path.readlink()` which acts similarly to
 :func:`os.readlink`.
 (Contributed by Girts Folkmanis in :issue:`30618`)
 
