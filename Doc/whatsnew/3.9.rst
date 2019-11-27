@@ -132,6 +132,22 @@ now raises :exc:`ImportError` instead of :exc:`ValueError` for invalid relative
 import attempts.
 (Contributed by Ngalim Siregar in :issue:`37444`.)
 
+ipaddress
+---------
+
+:mod:`ipaddress` now supports IPv6 Scoped Addresses (IPv6 address with suffix ``%<scope_id>``).
+
+Scoped IPv6 could be parsed to :class:`ipaddress.IPv6Address` constructor:
+
+
+>>> ipaddress.IPv6Address('ff02::5678%1')
+IPv6Address('ff02::5678%1')
+
+
+If present, scope zone ID is avalaible through :attr:`scope_id` attribute.
+
+(Contributed by Oleksand Pavliuk in :issue:`34788`.)
+
 Optimizations
 =============
 
