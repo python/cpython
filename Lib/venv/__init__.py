@@ -393,10 +393,10 @@ class EnvBuilder:
             f'Upgrading {CORE_VENV_DEPS} packages in {context.bin_path}'
         )
         if sys.platform == 'win32':
-            pip_exe = os.path.join(context.bin_path, 'pip.exe')
+            python_exe = os.path.join(context.bin_path, 'python.exe')
         else:
-            pip_exe = os.path.join(context.bin_path, 'pip')
-        cmd = [pip_exe, 'install', '-U']
+            python_exe = os.path.join(context.bin_path, 'python')
+        cmd = [python_exe, '-m', 'pip', 'install', '--upgrade']
         cmd.extend(CORE_VENV_DEPS)
         subprocess.check_call(cmd)
 
