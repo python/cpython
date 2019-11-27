@@ -86,6 +86,11 @@ Bookkeeping functions
    .. versionchanged:: 3.2
       Moved to the version 2 scheme which uses all of the bits in a string seed.
 
+   .. deprecated:: 3.9
+      In the future, the *seed* must be one of the following types:
+      *NoneType*, :class:`int`, :class:`float`, :class:`str`,
+      :class:`bytes`, or :class:`bytearray`.
+
 .. function:: getstate()
 
    Return an object capturing the current internal state of the generator.  This
@@ -160,8 +165,9 @@ Functions for sequences
 
    The *weights* or *cum_weights* can use any numeric type that interoperates
    with the :class:`float` values returned by :func:`random` (that includes
-   integers, floats, and fractions but excludes decimals).  Weights are
-   assumed to be non-negative.
+   integers, floats, and fractions but excludes decimals).  Behavior is
+   undefined if any weight is negative.  A :exc:`ValueError` is raised if all
+   weights are zero.
 
    For a given seed, the :func:`choices` function with equal weighting
    typically produces a different sequence than repeated calls to
@@ -171,6 +177,9 @@ Functions for sequences
    to avoid small biases from round-off error.
 
    .. versionadded:: 3.6
+
+   .. versionchanged:: 3.9
+      Raises a :exc:`ValueError` if all weights are zero.
 
 
 .. function:: shuffle(x[, random])
@@ -315,6 +324,11 @@ Alternative Generator
 
    Class that implements the default pseudo-random number generator used by the
    :mod:`random` module.
+
+   .. deprecated:: 3.9
+      In the future, the *seed* must be one of the following types:
+      :class:`NoneType`, :class:`int`, :class:`float`, :class:`str`,
+      :class:`bytes`, or :class:`bytearray`.
 
 .. class:: SystemRandom([seed])
 

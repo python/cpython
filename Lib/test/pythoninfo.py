@@ -470,10 +470,15 @@ def collect_sysconfig(info_add):
 
 
 def collect_ssl(info_add):
+    import os
     try:
         import ssl
     except ImportError:
         return
+    try:
+        import _ssl
+    except ImportError:
+        _ssl = None
 
     def format_attr(attr, value):
         if attr.startswith('OP_'):
@@ -489,6 +494,32 @@ def collect_ssl(info_add):
         'OP_NO_TLSv1_1',
     )
     copy_attributes(info_add, ssl, 'ssl.%s', attributes, formatter=format_attr)
+
+    for name, ctx in (
+        ('SSLContext', ssl.SSLContext()),
+        ('default_https_context', ssl._create_default_https_context()),
+        ('stdlib_context', ssl._create_stdlib_context()),
+    ):
+        attributes = (
+            'minimum_version',
+            'maximum_version',
+            'protocol',
+            'options',
+            'verify_mode',
+        )
+        copy_attributes(info_add, ctx, f'ssl.{name}.%s', attributes)
+
+    env_names = ["OPENSSL_CONF", "SSLKEYLOGFILE"]
+    if _ssl is not None and hasattr(_ssl, 'get_default_verify_paths'):
+        parts = _ssl.get_default_verify_paths()
+        env_names.extend((parts[0], parts[2]))
+
+    for name in env_names:
+        try:
+            value = os.environ[name]
+        except KeyError:
+            continue
+        info_add('ssl.environ[%s]' % name, value)
 
 
 def collect_socket(info_add):
@@ -673,6 +704,13 @@ def collect_windows(info_add):
         res = bool(RtlAreLongPathsEnabled())
     info_add('windows.RtlAreLongPathsEnabled', res)
 
+    try:
+        import _winapi
+        dll_path = _winapi.GetModuleFileName(sys.dllhandle)
+        info_add('windows.dll_path', dll_path)
+    except (ImportError, AttributeError):
+        pass
+
 
 def collect_info(info):
     error = False
@@ -716,7 +754,7 @@ def collect_info(info):
     ):
         try:
             collect_func(info_add)
-        except Exception as exc:
+        except Exception:
             error = True
             print("ERROR: %s() failed" % (collect_func.__name__),
                   file=sys.stderr)

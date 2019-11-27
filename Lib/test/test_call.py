@@ -27,125 +27,6 @@ class FunctionCalls(unittest.TestCase):
         self.assertEqual(list(res.items()), expected)
 
 
-# The test cases here cover several paths through the function calling
-# code.  They depend on the METH_XXX flag that is used to define a C
-# function, which can't be verified from Python.  If the METH_XXX decl
-# for a C function changes, these tests may not cover the right paths.
-
-class CFunctionCalls(unittest.TestCase):
-
-    def test_varargs0(self):
-        self.assertRaises(TypeError, {}.__contains__)
-
-    def test_varargs1(self):
-        {}.__contains__(0)
-
-    def test_varargs2(self):
-        self.assertRaises(TypeError, {}.__contains__, 0, 1)
-
-    def test_varargs0_ext(self):
-        try:
-            {}.__contains__(*())
-        except TypeError:
-            pass
-
-    def test_varargs1_ext(self):
-        {}.__contains__(*(0,))
-
-    def test_varargs2_ext(self):
-        try:
-            {}.__contains__(*(1, 2))
-        except TypeError:
-            pass
-        else:
-            raise RuntimeError
-
-    def test_varargs1_kw(self):
-        self.assertRaises(TypeError, {}.__contains__, x=2)
-
-    def test_varargs2_kw(self):
-        self.assertRaises(TypeError, {}.__contains__, x=2, y=2)
-
-    def test_oldargs0_0(self):
-        {}.keys()
-
-    def test_oldargs0_1(self):
-        self.assertRaises(TypeError, {}.keys, 0)
-
-    def test_oldargs0_2(self):
-        self.assertRaises(TypeError, {}.keys, 0, 1)
-
-    def test_oldargs0_0_ext(self):
-        {}.keys(*())
-
-    def test_oldargs0_1_ext(self):
-        try:
-            {}.keys(*(0,))
-        except TypeError:
-            pass
-        else:
-            raise RuntimeError
-
-    def test_oldargs0_2_ext(self):
-        try:
-            {}.keys(*(1, 2))
-        except TypeError:
-            pass
-        else:
-            raise RuntimeError
-
-    def test_oldargs0_0_kw(self):
-        try:
-            {}.keys(x=2)
-        except TypeError:
-            pass
-        else:
-            raise RuntimeError
-
-    def test_oldargs0_1_kw(self):
-        self.assertRaises(TypeError, {}.keys, x=2)
-
-    def test_oldargs0_2_kw(self):
-        self.assertRaises(TypeError, {}.keys, x=2, y=2)
-
-    def test_oldargs1_0(self):
-        self.assertRaises(TypeError, [].count)
-
-    def test_oldargs1_1(self):
-        [].count(1)
-
-    def test_oldargs1_2(self):
-        self.assertRaises(TypeError, [].count, 1, 2)
-
-    def test_oldargs1_0_ext(self):
-        try:
-            [].count(*())
-        except TypeError:
-            pass
-        else:
-            raise RuntimeError
-
-    def test_oldargs1_1_ext(self):
-        [].count(*(1,))
-
-    def test_oldargs1_2_ext(self):
-        try:
-            [].count(*(1, 2))
-        except TypeError:
-            pass
-        else:
-            raise RuntimeError
-
-    def test_oldargs1_0_kw(self):
-        self.assertRaises(TypeError, [].count, x=2)
-
-    def test_oldargs1_1_kw(self):
-        self.assertRaises(TypeError, [].count, {}, x=2)
-
-    def test_oldargs1_2_kw(self):
-        self.assertRaises(TypeError, [].count, x=2, y=2)
-
-
 @cpython_only
 class CFunctionCallsErrorMessages(unittest.TestCase):
 
@@ -193,7 +74,7 @@ class CFunctionCallsErrorMessages(unittest.TestCase):
         self.assertRaisesRegex(TypeError, msg, bool, x=2)
 
     def test_varargs4_kw(self):
-        msg = r"^index\(\) takes no keyword arguments$"
+        msg = r"^list[.]index\(\) takes no keyword arguments$"
         self.assertRaisesRegex(TypeError, msg, [].index, x=2)
 
     def test_varargs5_kw(self):
@@ -209,19 +90,19 @@ class CFunctionCallsErrorMessages(unittest.TestCase):
         self.assertRaisesRegex(TypeError, msg, next, x=2)
 
     def test_varargs8_kw(self):
-        msg = r"^pack\(\) takes no keyword arguments$"
+        msg = r"^_struct[.]pack\(\) takes no keyword arguments$"
         self.assertRaisesRegex(TypeError, msg, struct.pack, x=2)
 
     def test_varargs9_kw(self):
-        msg = r"^pack_into\(\) takes no keyword arguments$"
+        msg = r"^_struct[.]pack_into\(\) takes no keyword arguments$"
         self.assertRaisesRegex(TypeError, msg, struct.pack_into, x=2)
 
     def test_varargs10_kw(self):
-        msg = r"^index\(\) takes no keyword arguments$"
+        msg = r"^deque[.]index\(\) takes no keyword arguments$"
         self.assertRaisesRegex(TypeError, msg, collections.deque().index, x=2)
 
     def test_varargs11_kw(self):
-        msg = r"^pack\(\) takes no keyword arguments$"
+        msg = r"^Struct[.]pack\(\) takes no keyword arguments$"
         self.assertRaisesRegex(TypeError, msg, struct.Struct.pack, struct.Struct(""), x=2)
 
     def test_varargs12_kw(self):
@@ -289,6 +170,176 @@ class CFunctionCallsErrorMessages(unittest.TestCase):
         self.assertRaisesRegex(TypeError, msg, [].count, x=2, y=2)
 
 
+
+class TestCallingConventions(unittest.TestCase):
+    """Test calling using various C calling conventions (METH_*) from Python
+
+    Subclasses test several kinds of functions (module-level, methods,
+    class methods static methods) using these attributes:
+      obj: the object that contains tested functions (as attributes)
+      expected_self: expected "self" argument to the C function
+
+    The base class tests module-level functions.
+    """
+
+    def setUp(self):
+        self.obj = self.expected_self = _testcapi
+
+    def test_varargs(self):
+        self.assertEqual(
+            self.obj.meth_varargs(1, 2, 3),
+            (self.expected_self, (1, 2, 3)),
+        )
+
+    def test_varargs_ext(self):
+        self.assertEqual(
+            self.obj.meth_varargs(*(1, 2, 3)),
+            (self.expected_self, (1, 2, 3)),
+        )
+
+    def test_varargs_error_kw(self):
+        msg = r"meth_varargs\(\) takes no keyword arguments"
+        self.assertRaisesRegex(
+            TypeError, msg, lambda: self.obj.meth_varargs(k=1),
+        )
+
+    def test_varargs_keywords(self):
+        self.assertEqual(
+            self.obj.meth_varargs_keywords(1, 2, a=3, b=4),
+            (self.expected_self, (1, 2), {'a': 3, 'b': 4})
+        )
+
+    def test_varargs_keywords_ext(self):
+        self.assertEqual(
+            self.obj.meth_varargs_keywords(*[1, 2], **{'a': 3, 'b': 4}),
+            (self.expected_self, (1, 2), {'a': 3, 'b': 4})
+        )
+
+    def test_o(self):
+        self.assertEqual(self.obj.meth_o(1), (self.expected_self, 1))
+
+    def test_o_ext(self):
+        self.assertEqual(self.obj.meth_o(*[1]), (self.expected_self, 1))
+
+    def test_o_error_no_arg(self):
+        msg = r"meth_o\(\) takes exactly one argument \(0 given\)"
+        self.assertRaisesRegex(TypeError, msg, self.obj.meth_o)
+
+    def test_o_error_two_args(self):
+        msg = r"meth_o\(\) takes exactly one argument \(2 given\)"
+        self.assertRaisesRegex(
+            TypeError, msg, lambda: self.obj.meth_o(1, 2),
+        )
+
+    def test_o_error_ext(self):
+        msg = r"meth_o\(\) takes exactly one argument \(3 given\)"
+        self.assertRaisesRegex(
+            TypeError, msg, lambda: self.obj.meth_o(*(1, 2, 3)),
+        )
+
+    def test_o_error_kw(self):
+        msg = r"meth_o\(\) takes no keyword arguments"
+        self.assertRaisesRegex(
+            TypeError, msg, lambda: self.obj.meth_o(k=1),
+        )
+
+    def test_o_error_arg_kw(self):
+        msg = r"meth_o\(\) takes no keyword arguments"
+        self.assertRaisesRegex(
+            TypeError, msg, lambda: self.obj.meth_o(k=1),
+        )
+
+    def test_noargs(self):
+        self.assertEqual(self.obj.meth_noargs(), self.expected_self)
+
+    def test_noargs_ext(self):
+        self.assertEqual(self.obj.meth_noargs(*[]), self.expected_self)
+
+    def test_noargs_error_arg(self):
+        msg = r"meth_noargs\(\) takes no arguments \(1 given\)"
+        self.assertRaisesRegex(
+            TypeError, msg, lambda: self.obj.meth_noargs(1),
+        )
+
+    def test_noargs_error_arg2(self):
+        msg = r"meth_noargs\(\) takes no arguments \(2 given\)"
+        self.assertRaisesRegex(
+            TypeError, msg, lambda: self.obj.meth_noargs(1, 2),
+        )
+
+    def test_noargs_error_ext(self):
+        msg = r"meth_noargs\(\) takes no arguments \(3 given\)"
+        self.assertRaisesRegex(
+            TypeError, msg, lambda: self.obj.meth_noargs(*(1, 2, 3)),
+        )
+
+    def test_noargs_error_kw(self):
+        msg = r"meth_noargs\(\) takes no keyword arguments"
+        self.assertRaisesRegex(
+            TypeError, msg, lambda: self.obj.meth_noargs(k=1),
+        )
+
+    def test_fastcall(self):
+        self.assertEqual(
+            self.obj.meth_fastcall(1, 2, 3),
+            (self.expected_self, (1, 2, 3)),
+        )
+
+    def test_fastcall_ext(self):
+        self.assertEqual(
+            self.obj.meth_fastcall(*(1, 2, 3)),
+            (self.expected_self, (1, 2, 3)),
+        )
+
+    def test_fastcall_error_kw(self):
+        msg = r"meth_fastcall\(\) takes no keyword arguments"
+        self.assertRaisesRegex(
+            TypeError, msg, lambda: self.obj.meth_fastcall(k=1),
+        )
+
+    def test_fastcall_keywords(self):
+        self.assertEqual(
+            self.obj.meth_fastcall_keywords(1, 2, a=3, b=4),
+            (self.expected_self, (1, 2), {'a': 3, 'b': 4})
+        )
+
+    def test_fastcall_keywords_ext(self):
+        self.assertEqual(
+            self.obj.meth_fastcall_keywords(*(1, 2), **{'a': 3, 'b': 4}),
+            (self.expected_self, (1, 2), {'a': 3, 'b': 4})
+        )
+
+
+class TestCallingConventionsInstance(TestCallingConventions):
+    """Test calling instance methods using various calling conventions"""
+
+    def setUp(self):
+        self.obj = self.expected_self = _testcapi.MethInstance()
+
+
+class TestCallingConventionsClass(TestCallingConventions):
+    """Test calling class methods using various calling conventions"""
+
+    def setUp(self):
+        self.obj = self.expected_self = _testcapi.MethClass
+
+
+class TestCallingConventionsClassInstance(TestCallingConventions):
+    """Test calling class methods on instance"""
+
+    def setUp(self):
+        self.obj = _testcapi.MethClass()
+        self.expected_self = _testcapi.MethClass
+
+
+class TestCallingConventionsStatic(TestCallingConventions):
+    """Test calling static methods using various calling conventions"""
+
+    def setUp(self):
+        self.obj = _testcapi.MethStatic()
+        self.expected_self = None
+
+
 def pyfunc(arg1, arg2):
     return [arg1, arg2]
 
@@ -315,14 +366,14 @@ class PythonClass:
 
 PYTHON_INSTANCE = PythonClass()
 
+NULL_OR_EMPTY = object()
 
-IGNORE_RESULT = object()
-
-
-@cpython_only
 class FastCallTests(unittest.TestCase):
+    """Test calling using various callables from C
+    """
+
     # Test calls with positional arguments
-    CALLS_POSARGS = (
+    CALLS_POSARGS = [
         # (func, args: tuple, result)
 
         # Python function with 2 arguments
@@ -341,31 +392,11 @@ class FastCallTests(unittest.TestCase):
         (PYTHON_INSTANCE.class_method, (), "classmethod"),
         (PYTHON_INSTANCE.static_method, (), "staticmethod"),
 
-        # C function: METH_NOARGS
-        (globals, (), IGNORE_RESULT),
-
-        # C function: METH_O
-        (id, ("hello",), IGNORE_RESULT),
-
-        # C function: METH_VARARGS
-        (dir, (1,), IGNORE_RESULT),
-
-        # C function: METH_VARARGS | METH_KEYWORDS
-        (min, (5, 9), 5),
-
-        # C function: METH_FASTCALL
-        (divmod, (1000, 33), (30, 10)),
-
-        # C type static method: METH_FASTCALL | METH_CLASS
-        (int.from_bytes, (b'\x01\x00', 'little'), 1),
-
-        # bpo-30524: Test that calling a C type static method with no argument
-        # doesn't crash (ignore the result): METH_FASTCALL | METH_CLASS
-        (datetime.datetime.now, (), IGNORE_RESULT),
-    )
+        # C callables are added later
+    ]
 
     # Test calls with positional and keyword arguments
-    CALLS_KWARGS = (
+    CALLS_KWARGS = [
         # (func, args: tuple, kwargs: dict, result)
 
         # Python function with 2 arguments
@@ -376,17 +407,51 @@ class FastCallTests(unittest.TestCase):
         (PYTHON_INSTANCE.method, (1,), {'arg2': 2}, [1, 2]),
         (PYTHON_INSTANCE.method, (), {'arg1': 1, 'arg2': 2}, [1, 2]),
 
-        # C function: METH_VARARGS | METH_KEYWORDS
-        (max, ([],), {'default': 9}, 9),
+        # C callables are added later
+    ]
 
-        # C type static method: METH_FASTCALL | METH_CLASS
-        (int.from_bytes, (b'\x01\x00',), {'byteorder': 'little'}, 1),
-        (int.from_bytes, (), {'bytes': b'\x01\x00', 'byteorder': 'little'}, 1),
-    )
+    # Add all the calling conventions and variants of C callables
+    _instance = _testcapi.MethInstance()
+    for obj, expected_self in (
+        (_testcapi, _testcapi),  # module-level function
+        (_instance, _instance),  # bound method
+        (_testcapi.MethClass, _testcapi.MethClass),  # class method on class
+        (_testcapi.MethClass(), _testcapi.MethClass),  # class method on inst.
+        (_testcapi.MethStatic, None),  # static method
+    ):
+        CALLS_POSARGS.extend([
+            (obj.meth_varargs, (1, 2), (expected_self, (1, 2))),
+            (obj.meth_varargs_keywords,
+                (1, 2), (expected_self, (1, 2), NULL_OR_EMPTY)),
+            (obj.meth_fastcall, (1, 2), (expected_self, (1, 2))),
+            (obj.meth_fastcall, (), (expected_self, ())),
+            (obj.meth_fastcall_keywords,
+                (1, 2), (expected_self, (1, 2), NULL_OR_EMPTY)),
+            (obj.meth_fastcall_keywords,
+                (), (expected_self, (), NULL_OR_EMPTY)),
+            (obj.meth_noargs, (), expected_self),
+            (obj.meth_o, (123, ), (expected_self, 123)),
+        ])
+
+        CALLS_KWARGS.extend([
+            (obj.meth_varargs_keywords,
+                (1, 2), {'x': 'y'}, (expected_self, (1, 2), {'x': 'y'})),
+            (obj.meth_varargs_keywords,
+                (), {'x': 'y'}, (expected_self, (), {'x': 'y'})),
+            (obj.meth_varargs_keywords,
+                (1, 2), {}, (expected_self, (1, 2), NULL_OR_EMPTY)),
+            (obj.meth_fastcall_keywords,
+                (1, 2), {'x': 'y'}, (expected_self, (1, 2), {'x': 'y'})),
+            (obj.meth_fastcall_keywords,
+                (), {'x': 'y'}, (expected_self, (), {'x': 'y'})),
+            (obj.meth_fastcall_keywords,
+                (1, 2), {}, (expected_self, (1, 2), NULL_OR_EMPTY)),
+        ])
 
     def check_result(self, result, expected):
-        if expected is IGNORE_RESULT:
-            return
+        if isinstance(expected, tuple) and expected[-1] is NULL_OR_EMPTY:
+            if result[-1] in ({}, None):
+                expected = (*expected[:-1], result[-1])
         self.assertEqual(result, expected)
 
     def test_fastcall(self):
@@ -411,17 +476,9 @@ class FastCallTests(unittest.TestCase):
                 result = _testcapi.pyobject_fastcalldict(func, args, None)
                 self.check_result(result, expected)
 
-                # kwargs={}
-                result = _testcapi.pyobject_fastcalldict(func, args, {})
-                self.check_result(result, expected)
-
                 if not args:
                     # args=NULL, nargs=0, kwargs=NULL
                     result = _testcapi.pyobject_fastcalldict(func, None, None)
-                    self.check_result(result, expected)
-
-                    # args=NULL, nargs=0, kwargs={}
-                    result = _testcapi.pyobject_fastcalldict(func, None, {})
                     self.check_result(result, expected)
 
         for func, args, kwargs, expected in self.CALLS_KWARGS:

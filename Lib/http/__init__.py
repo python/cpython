@@ -15,6 +15,7 @@ class HTTPStatus(IntEnum):
         * RFC 7238: Permanent Redirect
         * RFC 2295: Transparent Content Negotiation in HTTP
         * RFC 2774: An HTTP Extension Framework
+        * RFC 7725: An HTTP Status Code to Report Legal Obstacles
         * RFC 7540: Hypertext Transfer Protocol Version 2 (HTTP/2)
     """
     def __new__(cls, value, phrase, description=''):
@@ -114,6 +115,10 @@ class HTTPStatus(IntEnum):
         'Request Header Fields Too Large',
         'The server is unwilling to process the request because its header '
         'fields are too large')
+    UNAVAILABLE_FOR_LEGAL_REASONS = (451,
+        'Unavailable For Legal Reasons',
+        'The server is denying access to the '
+        'resource as a consequence of a legal demand')
 
     # server errors
     INTERNAL_SERVER_ERROR = (500, 'Internal Server Error',

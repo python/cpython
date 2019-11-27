@@ -59,6 +59,12 @@ _DARWIN  = platform.system() == 'Darwin'
 _LINUX   = platform.system() == 'Linux'
 _WINDOWS = platform.system() == 'Windows'
 
+_MAC_DELIM = b':'
+_MAC_OMITS_LEADING_ZEROES = False
+if _AIX:
+    _MAC_DELIM = b'.'
+    _MAC_OMITS_LEADING_ZEROES = True
+
 RESERVED_NCS, RFC_4122, RESERVED_MICROSOFT, RESERVED_FUTURE = [
     'reserved for NCS compatibility', 'specified in RFC 4122',
     'reserved for Microsoft compatibility', 'reserved for future definition']
@@ -347,24 +353,32 @@ class UUID:
         if self.variant == RFC_4122:
             return int((self.int >> 76) & 0xf)
 
-def _popen(command, *args):
-    import os, shutil, subprocess
-    executable = shutil.which(command)
-    if executable is None:
-        path = os.pathsep.join(('/sbin', '/usr/sbin'))
-        executable = shutil.which(command, path=path)
+
+def _get_command_stdout(command, *args):
+    import io, os, shutil, subprocess
+
+    try:
+        path_dirs = os.environ.get('PATH', os.defpath).split(os.pathsep)
+        path_dirs.extend(['/sbin', '/usr/sbin'])
+        executable = shutil.which(command, path=os.pathsep.join(path_dirs))
         if executable is None:
             return None
-    # LC_ALL=C to ensure English output, stderr=DEVNULL to prevent output
-    # on stderr (Note: we don't have an example where the words we search
-    # for are actually localized, but in theory some system could do so.)
-    env = dict(os.environ)
-    env['LC_ALL'] = 'C'
-    proc = subprocess.Popen((executable,) + args,
-                            stdout=subprocess.PIPE,
-                            stderr=subprocess.DEVNULL,
-                            env=env)
-    return proc
+        # LC_ALL=C to ensure English output, stderr=DEVNULL to prevent output
+        # on stderr (Note: we don't have an example where the words we search
+        # for are actually localized, but in theory some system could do so.)
+        env = dict(os.environ)
+        env['LC_ALL'] = 'C'
+        proc = subprocess.Popen((executable,) + args,
+                                stdout=subprocess.PIPE,
+                                stderr=subprocess.DEVNULL,
+                                env=env)
+        if not proc:
+            return None
+        stdout, stderr = proc.communicate()
+        return io.BytesIO(stdout)
+    except (OSError, subprocess.SubprocessError):
+        return None
+
 
 # For MAC (a.k.a. IEEE 802, or EUI-48) addresses, the second least significant
 # bit of the first octet signifies whether the MAC address is universally (0)
@@ -384,40 +398,101 @@ def _popen(command, *args):
 def _is_universal(mac):
     return not (mac & (1 << 41))
 
-def _find_mac(command, args, hw_identifiers, get_index):
+
+def _find_mac_near_keyword(command, args, keywords, get_word_index):
+    """Searches a command's output for a MAC address near a keyword.
+
+    Each line of words in the output is case-insensitively searched for
+    any of the given keywords.  Upon a match, get_word_index is invoked
+    to pick a word from the line, given the index of the match.  For
+    example, lambda i: 0 would get the first word on the line, while
+    lambda i: i - 1 would get the word preceding the keyword.
+    """
+    stdout = _get_command_stdout(command, args)
+    if stdout is None:
+        return None
+
     first_local_mac = None
-    try:
-        proc = _popen(command, *args.split())
-        if not proc:
-            return None
-        with proc:
-            for line in proc.stdout:
-                words = line.lower().rstrip().split()
-                for i in range(len(words)):
-                    if words[i] in hw_identifiers:
-                        try:
-                            word = words[get_index(i)]
-                            mac = int(word.replace(b':', b''), 16)
-                            if _is_universal(mac):
-                                return mac
-                            first_local_mac = first_local_mac or mac
-                        except (ValueError, IndexError):
-                            # Virtual interfaces, such as those provided by
-                            # VPNs, do not have a colon-delimited MAC address
-                            # as expected, but a 16-byte HWAddr separated by
-                            # dashes. These should be ignored in favor of a
-                            # real MAC address
-                            pass
-    except OSError:
-        pass
+    for line in stdout:
+        words = line.lower().rstrip().split()
+        for i in range(len(words)):
+            if words[i] in keywords:
+                try:
+                    word = words[get_word_index(i)]
+                    mac = int(word.replace(_MAC_DELIM, b''), 16)
+                except (ValueError, IndexError):
+                    # Virtual interfaces, such as those provided by
+                    # VPNs, do not have a colon-delimited MAC address
+                    # as expected, but a 16-byte HWAddr separated by
+                    # dashes. These should be ignored in favor of a
+                    # real MAC address
+                    pass
+                else:
+                    if _is_universal(mac):
+                        return mac
+                    first_local_mac = first_local_mac or mac
     return first_local_mac or None
 
+
+def _find_mac_under_heading(command, args, heading):
+    """Looks for a MAC address under a heading in a command's output.
+
+    The first line of words in the output is searched for the given
+    heading. Words at the same word index as the heading in subsequent
+    lines are then examined to see if they look like MAC addresses.
+    """
+    stdout = _get_command_stdout(command, args)
+    if stdout is None:
+        return None
+
+    keywords = stdout.readline().rstrip().split()
+    try:
+        column_index = keywords.index(heading)
+    except ValueError:
+        return None
+
+    first_local_mac = None
+    for line in stdout:
+        try:
+            words = line.rstrip().split()
+            word = words[column_index]
+            if len(word) == 17:
+                mac = int(word.replace(_MAC_DELIM, b''), 16)
+            elif _MAC_OMITS_LEADING_ZEROES:
+                # (Only) on AIX the macaddr value given is not prefixed by 0, e.g.
+                # en0   1500  link#2      fa.bc.de.f7.62.4 110854824     0 160133733     0     0
+                # not
+                # en0   1500  link#2      fa.bc.de.f7.62.04 110854824     0 160133733     0     0
+                parts = word.split(_MAC_DELIM)
+                if len(parts) == 6 and all(0 < len(p) <= 2 for p in parts):
+                    hexstr = b''.join(p.rjust(2, b'0') for p in parts)
+                    mac = int(hexstr, 16)
+                else:
+                    continue
+            else:
+                continue
+        except (ValueError, IndexError):
+            # Virtual interfaces, such as those provided by
+            # VPNs, do not have a colon-delimited MAC address
+            # as expected, but a 16-byte HWAddr separated by
+            # dashes. These should be ignored in favor of a
+            # real MAC address
+            pass
+        else:
+            if _is_universal(mac):
+                return mac
+            first_local_mac = first_local_mac or mac
+    return first_local_mac or None
+
+
+# The following functions call external programs to 'get' a macaddr value to
+# be used as basis for an uuid
 def _ifconfig_getnode():
     """Get the hardware address on Unix by running ifconfig."""
     # This works on Linux ('' or '-a'), Tru64 ('-av'), but not all Unixes.
     keywords = (b'hwaddr', b'ether', b'address:', b'lladdr')
     for args in ('', '-a', '-av'):
-        mac = _find_mac('ifconfig', args, keywords, lambda i: i+1)
+        mac = _find_mac_near_keyword('ifconfig', args, keywords, lambda i: i+1)
         if mac:
             return mac
         return None
@@ -425,7 +500,7 @@ def _ifconfig_getnode():
 def _ip_getnode():
     """Get the hardware address on Unix by running ip."""
     # This works on Linux with iproute2.
-    mac = _find_mac('ip', 'link', [b'link/ether'], lambda i: i+1)
+    mac = _find_mac_near_keyword('ip', 'link', [b'link/ether'], lambda i: i+1)
     if mac:
         return mac
     return None
@@ -439,17 +514,17 @@ def _arp_getnode():
         return None
 
     # Try getting the MAC addr from arp based on our IP address (Solaris).
-    mac = _find_mac('arp', '-an', [os.fsencode(ip_addr)], lambda i: -1)
+    mac = _find_mac_near_keyword('arp', '-an', [os.fsencode(ip_addr)], lambda i: -1)
     if mac:
         return mac
 
     # This works on OpenBSD
-    mac = _find_mac('arp', '-an', [os.fsencode(ip_addr)], lambda i: i+1)
+    mac = _find_mac_near_keyword('arp', '-an', [os.fsencode(ip_addr)], lambda i: i+1)
     if mac:
         return mac
 
     # This works on Linux, FreeBSD and NetBSD
-    mac = _find_mac('arp', '-an', [os.fsencode('(%s)' % ip_addr)],
+    mac = _find_mac_near_keyword('arp', '-an', [os.fsencode('(%s)' % ip_addr)],
                     lambda i: i+2)
     # Return None instead of 0.
     if mac:
@@ -459,36 +534,12 @@ def _arp_getnode():
 def _lanscan_getnode():
     """Get the hardware address on Unix by running lanscan."""
     # This might work on HP-UX.
-    return _find_mac('lanscan', '-ai', [b'lan0'], lambda i: 0)
+    return _find_mac_near_keyword('lanscan', '-ai', [b'lan0'], lambda i: 0)
 
 def _netstat_getnode():
     """Get the hardware address on Unix by running netstat."""
-    # This might work on AIX, Tru64 UNIX.
-    first_local_mac = None
-    try:
-        proc = _popen('netstat', '-ia')
-        if not proc:
-            return None
-        with proc:
-            words = proc.stdout.readline().rstrip().split()
-            try:
-                i = words.index(b'Address')
-            except ValueError:
-                return None
-            for line in proc.stdout:
-                try:
-                    words = line.rstrip().split()
-                    word = words[i]
-                    if len(word) == 17 and word.count(b':') == 5:
-                        mac = int(word.replace(b':', b''), 16)
-                        if _is_universal(mac):
-                            return mac
-                        first_local_mac = first_local_mac or mac
-                except (ValueError, IndexError):
-                    pass
-    except OSError:
-        pass
-    return first_local_mac or None
+    # This works on AIX and might work on Tru64 UNIX.
+    return _find_mac_under_heading('netstat', '-ian', b'Address')
 
 def _ipconfig_getnode():
     """Get the hardware address on Windows by running ipconfig.exe."""
@@ -680,7 +731,7 @@ def _random_getnode():
     return random.getrandbits(48) | (1 << 40)
 
 
-# _OS_GETTERS, when known, are targetted for a specific OS or platform.
+# _OS_GETTERS, when known, are targeted for a specific OS or platform.
 # The order is by 'common practice' on the specified platform.
 # Note: 'posix' and 'windows' _OS_GETTERS are prefixed by a dll/dlload() method
 # which, when successful, means none of these "external" methods are called.
@@ -772,8 +823,11 @@ def uuid1(node=None, clock_seq=None):
 def uuid3(namespace, name):
     """Generate a UUID from the MD5 hash of a namespace UUID and a name."""
     from hashlib import md5
-    hash = md5(namespace.bytes + bytes(name, "utf-8")).digest()
-    return UUID(bytes=hash[:16], version=3)
+    digest = md5(
+        namespace.bytes + bytes(name, "utf-8"),
+        usedforsecurity=False
+    ).digest()
+    return UUID(bytes=digest[:16], version=3)
 
 def uuid4():
     """Generate a random UUID."""

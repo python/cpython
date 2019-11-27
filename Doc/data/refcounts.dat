@@ -2462,7 +2462,7 @@ PyUnicode_FromWideChar:Py_ssize_t:size::
 PyUnicode_AsWideChar:Py_ssize_t:::
 PyUnicode_AsWideChar:PyObject*:*unicode:0:
 PyUnicode_AsWideChar:wchar_t*:w::
-PyUnicode_AsWideChar:Pyssize_t:size::
+PyUnicode_AsWideChar:Py_ssize_t:size::
 
 PyUnicode_AsWideCharString:wchar_t*:::
 PyUnicode_AsWideCharString:PyObject*:unicode:0:
@@ -3044,8 +3044,6 @@ Py_XINCREF:void:::
 Py_XINCREF:PyObject*:o:+1:if o is not NULL
 
 _PyImport_Fini:void:::
-
-_PyImport_Init:void:::
 
 _PyObject_New:PyObject*::+1:
 _PyObject_New:PyTypeObject*:type:0:

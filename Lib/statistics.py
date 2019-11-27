@@ -322,7 +322,6 @@ def fmean(data):
     """Convert data to floats and compute the arithmetic mean.
 
     This runs faster than the mean() function and it always returns a float.
-    The result is highly accurate but not as perfect as mean().
     If the input dataset is empty, it raises a StatisticsError.
 
     >>> fmean([3.5, 4.0, 5.25])
@@ -538,15 +537,16 @@ def mode(data):
     ``mode`` assumes discrete data, and returns a single value. This is the
     standard treatment of the mode as commonly taught in schools:
 
-    >>> mode([1, 1, 2, 3, 3, 3, 3, 4])
-    3
+        >>> mode([1, 1, 2, 3, 3, 3, 3, 4])
+        3
 
     This also works with nominal (non-numeric) data:
 
-    >>> mode(["red", "blue", "blue", "red", "green", "red", "red"])
-    'red'
+        >>> mode(["red", "blue", "blue", "red", "green", "red", "red"])
+        'red'
 
-    If there are multiple modes, return the first one encountered.
+    If there are multiple modes with same frequency, return the first one
+    encountered:
 
         >>> mode(['red', 'red', 'green', 'blue', 'blue'])
         'red'
@@ -555,8 +555,9 @@ def mode(data):
 
     """
     data = iter(data)
+    pairs = Counter(data).most_common(1)
     try:
-        return Counter(data).most_common(1)[0][0]
+        return pairs[0][0]
     except IndexError:
         raise StatisticsError('no mode for empty data') from None
 
@@ -602,6 +603,7 @@ def multimode(data):
 # mean=0.300.  Only the latter (which corresponds with R6) gives the
 # desired cut point with 30% of the population falling below that
 # value, making it comparable to a result from an inv_cdf() function.
+# The R6 exclusive method is also idempotent.
 
 # For describing population data where the end points are known to
 # be included in the data, the R7 inclusive method is a reasonable
@@ -615,28 +617,25 @@ def multimode(data):
 # position is that fewer options make for easier choices and that
 # external packages can be used for anything more advanced.
 
-def quantiles(dist, /, *, n=4, method='exclusive'):
-    """Divide *dist* into *n* continuous intervals with equal probability.
+def quantiles(data, *, n=4, method='exclusive'):
+    """Divide *data* into *n* continuous intervals with equal probability.
 
     Returns a list of (n - 1) cut points separating the intervals.
 
     Set *n* to 4 for quartiles (the default).  Set *n* to 10 for deciles.
     Set *n* to 100 for percentiles which gives the 99 cuts points that
-    separate *dist* in to 100 equal sized groups.
+    separate *data* in to 100 equal sized groups.
 
-    The *dist* can be any iterable containing sample data or it can be
-    an instance of a class that defines an inv_cdf() method.  For sample
-    data, the cut points are linearly interpolated between data points.
+    The *data* can be any iterable containing sample.
+    The cut points are linearly interpolated between data points.
 
-    If *method* is set to *inclusive*, *dist* is treated as population
+    If *method* is set to *inclusive*, *data* is treated as population
     data.  The minimum value is treated as the 0th percentile and the
     maximum value is treated as the 100th percentile.
     """
     if n < 1:
         raise StatisticsError('n must be at least 1')
-    if hasattr(dist, 'inv_cdf'):
-        return [dist.inv_cdf(i / n) for i in range(1, n)]
-    data = sorted(dist)
+    data = sorted(data)
     ld = len(data)
     if ld < 2:
         raise StatisticsError('must have at least two data points')
@@ -745,7 +744,7 @@ def variance(data, xbar=None):
 def pvariance(data, mu=None):
     """Return the population variance of ``data``.
 
-    data should be an iterable of Real-valued numbers, with at least one
+    data should be a sequence or iterable of Real-valued numbers, with at least one
     value. The optional argument mu, if given, should be the mean of
     the data. If it is missing or None, the mean is automatically calculated.
 
@@ -765,10 +764,6 @@ def pvariance(data, mu=None):
     >>> mu = mean(data)
     >>> pvariance(data, mu)
     1.25
-
-    This function does not check that ``mu`` is actually the mean of ``data``.
-    Giving arbitrary values for ``mu`` may lead to invalid or impossible
-    results.
 
     Decimals and Fractions are supported:
 
@@ -824,6 +819,81 @@ def pstdev(data, mu=None):
 
 ## Normal Distribution #####################################################
 
+
+def _normal_dist_inv_cdf(p, mu, sigma):
+    # There is no closed-form solution to the inverse CDF for the normal
+    # distribution, so we use a rational approximation instead:
+    # Wichura, M.J. (1988). "Algorithm AS241: The Percentage Points of the
+    # Normal Distribution".  Applied Statistics. Blackwell Publishing. 37
+    # (3): 477–484. doi:10.2307/2347330. JSTOR 2347330.
+    q = p - 0.5
+    if fabs(q) <= 0.425:
+        r = 0.180625 - q * q
+        # Hash sum: 55.88319_28806_14901_4439
+        num = (((((((2.50908_09287_30122_6727e+3 * r +
+                     3.34305_75583_58812_8105e+4) * r +
+                     6.72657_70927_00870_0853e+4) * r +
+                     4.59219_53931_54987_1457e+4) * r +
+                     1.37316_93765_50946_1125e+4) * r +
+                     1.97159_09503_06551_4427e+3) * r +
+                     1.33141_66789_17843_7745e+2) * r +
+                     3.38713_28727_96366_6080e+0) * q
+        den = (((((((5.22649_52788_52854_5610e+3 * r +
+                     2.87290_85735_72194_2674e+4) * r +
+                     3.93078_95800_09271_0610e+4) * r +
+                     2.12137_94301_58659_5867e+4) * r +
+                     5.39419_60214_24751_1077e+3) * r +
+                     6.87187_00749_20579_0830e+2) * r +
+                     4.23133_30701_60091_1252e+1) * r +
+                     1.0)
+        x = num / den
+        return mu + (x * sigma)
+    r = p if q <= 0.0 else 1.0 - p
+    r = sqrt(-log(r))
+    if r <= 5.0:
+        r = r - 1.6
+        # Hash sum: 49.33206_50330_16102_89036
+        num = (((((((7.74545_01427_83414_07640e-4 * r +
+                     2.27238_44989_26918_45833e-2) * r +
+                     2.41780_72517_74506_11770e-1) * r +
+                     1.27045_82524_52368_38258e+0) * r +
+                     3.64784_83247_63204_60504e+0) * r +
+                     5.76949_72214_60691_40550e+0) * r +
+                     4.63033_78461_56545_29590e+0) * r +
+                     1.42343_71107_49683_57734e+0)
+        den = (((((((1.05075_00716_44416_84324e-9 * r +
+                     5.47593_80849_95344_94600e-4) * r +
+                     1.51986_66563_61645_71966e-2) * r +
+                     1.48103_97642_74800_74590e-1) * r +
+                     6.89767_33498_51000_04550e-1) * r +
+                     1.67638_48301_83803_84940e+0) * r +
+                     2.05319_16266_37758_82187e+0) * r +
+                     1.0)
+    else:
+        r = r - 5.0
+        # Hash sum: 47.52583_31754_92896_71629
+        num = (((((((2.01033_43992_92288_13265e-7 * r +
+                     2.71155_55687_43487_57815e-5) * r +
+                     1.24266_09473_88078_43860e-3) * r +
+                     2.65321_89526_57612_30930e-2) * r +
+                     2.96560_57182_85048_91230e-1) * r +
+                     1.78482_65399_17291_33580e+0) * r +
+                     5.46378_49111_64114_36990e+0) * r +
+                     6.65790_46435_01103_77720e+0)
+        den = (((((((2.04426_31033_89939_78564e-15 * r +
+                     1.42151_17583_16445_88870e-7) * r +
+                     1.84631_83175_10054_68180e-5) * r +
+                     7.86869_13114_56132_59100e-4) * r +
+                     1.48753_61290_85061_48525e-2) * r +
+                     1.36929_88092_27358_05310e-1) * r +
+                     5.99832_20655_58879_37690e-1) * r +
+                     1.0)
+    x = num / den
+    if q < 0.0:
+        x = -x
+    return mu + (x * sigma)
+
+
 class NormalDist:
     "Normal distribution of a random variable"
     # https://en.wikipedia.org/wiki/Normal_distribution
@@ -838,8 +908,8 @@ class NormalDist:
         "NormalDist where mu is the mean and sigma is the standard deviation."
         if sigma < 0.0:
             raise StatisticsError('sigma must be non-negative')
-        self._mu = mu
-        self._sigma = sigma
+        self._mu = float(mu)
+        self._sigma = float(sigma)
 
     @classmethod
     def from_samples(cls, data):
@@ -882,79 +952,18 @@ class NormalDist:
             raise StatisticsError('p must be in the range 0.0 < p < 1.0')
         if self._sigma <= 0.0:
             raise StatisticsError('cdf() not defined when sigma at or below zero')
+        return _normal_dist_inv_cdf(p, self._mu, self._sigma)
 
-        # There is no closed-form solution to the inverse CDF for the normal
-        # distribution, so we use a rational approximation instead:
-        # Wichura, M.J. (1988). "Algorithm AS241: The Percentage Points of the
-        # Normal Distribution".  Applied Statistics. Blackwell Publishing. 37
-        # (3): 477–484. doi:10.2307/2347330. JSTOR 2347330.
+    def quantiles(self, n=4):
+        """Divide into *n* continuous intervals with equal probability.
 
-        q = p - 0.5
-        if fabs(q) <= 0.425:
-            r = 0.180625 - q * q
-            # Hash sum: 55.88319_28806_14901_4439
-            num = (((((((2.50908_09287_30122_6727e+3 * r +
-                         3.34305_75583_58812_8105e+4) * r +
-                         6.72657_70927_00870_0853e+4) * r +
-                         4.59219_53931_54987_1457e+4) * r +
-                         1.37316_93765_50946_1125e+4) * r +
-                         1.97159_09503_06551_4427e+3) * r +
-                         1.33141_66789_17843_7745e+2) * r +
-                         3.38713_28727_96366_6080e+0) * q
-            den = (((((((5.22649_52788_52854_5610e+3 * r +
-                         2.87290_85735_72194_2674e+4) * r +
-                         3.93078_95800_09271_0610e+4) * r +
-                         2.12137_94301_58659_5867e+4) * r +
-                         5.39419_60214_24751_1077e+3) * r +
-                         6.87187_00749_20579_0830e+2) * r +
-                         4.23133_30701_60091_1252e+1) * r +
-                         1.0)
-            x = num / den
-            return self._mu + (x * self._sigma)
-        r = p if q <= 0.0 else 1.0 - p
-        r = sqrt(-log(r))
-        if r <= 5.0:
-            r = r - 1.6
-            # Hash sum: 49.33206_50330_16102_89036
-            num = (((((((7.74545_01427_83414_07640e-4 * r +
-                         2.27238_44989_26918_45833e-2) * r +
-                         2.41780_72517_74506_11770e-1) * r +
-                         1.27045_82524_52368_38258e+0) * r +
-                         3.64784_83247_63204_60504e+0) * r +
-                         5.76949_72214_60691_40550e+0) * r +
-                         4.63033_78461_56545_29590e+0) * r +
-                         1.42343_71107_49683_57734e+0)
-            den = (((((((1.05075_00716_44416_84324e-9 * r +
-                         5.47593_80849_95344_94600e-4) * r +
-                         1.51986_66563_61645_71966e-2) * r +
-                         1.48103_97642_74800_74590e-1) * r +
-                         6.89767_33498_51000_04550e-1) * r +
-                         1.67638_48301_83803_84940e+0) * r +
-                         2.05319_16266_37758_82187e+0) * r +
-                         1.0)
-        else:
-            r = r - 5.0
-            # Hash sum: 47.52583_31754_92896_71629
-            num = (((((((2.01033_43992_92288_13265e-7 * r +
-                         2.71155_55687_43487_57815e-5) * r +
-                         1.24266_09473_88078_43860e-3) * r +
-                         2.65321_89526_57612_30930e-2) * r +
-                         2.96560_57182_85048_91230e-1) * r +
-                         1.78482_65399_17291_33580e+0) * r +
-                         5.46378_49111_64114_36990e+0) * r +
-                         6.65790_46435_01103_77720e+0)
-            den = (((((((2.04426_31033_89939_78564e-15 * r +
-                         1.42151_17583_16445_88870e-7) * r +
-                         1.84631_83175_10054_68180e-5) * r +
-                         7.86869_13114_56132_59100e-4) * r +
-                         1.48753_61290_85061_48525e-2) * r +
-                         1.36929_88092_27358_05310e-1) * r +
-                         5.99832_20655_58879_37690e-1) * r +
-                         1.0)
-        x = num / den
-        if q < 0.0:
-            x = -x
-        return self._mu + (x * self._sigma)
+        Returns a list of (n - 1) cut points separating the intervals.
+
+        Set *n* to 4 for quartiles (the default).  Set *n* to 10 for deciles.
+        Set *n* to 100 for percentiles which gives the 99 cuts points that
+        separate the normal distribution in to 100 equal sized groups.
+        """
+        return [self.inv_cdf(i / n) for i in range(1, n)]
 
     def overlap(self, other):
         """Compute the overlapping coefficient (OVL) between two normal distributions.
@@ -993,6 +1002,20 @@ class NormalDist:
     @property
     def mean(self):
         "Arithmetic mean of the normal distribution."
+        return self._mu
+
+    @property
+    def median(self):
+        "Return the median of the normal distribution"
+        return self._mu
+
+    @property
+    def mode(self):
+        """Return the mode of the normal distribution
+
+        The mode is the value x where which the probability density
+        function (pdf) takes its maximum value.
+        """
         return self._mu
 
     @property
@@ -1069,7 +1092,7 @@ class NormalDist:
         "Two NormalDist objects are equal if their mu and sigma are both equal."
         if not isinstance(x2, NormalDist):
             return NotImplemented
-        return (x1._mu, x2._sigma) == (x2._mu, x2._sigma)
+        return x1._mu == x2._mu and x1._sigma == x2._sigma
 
     def __hash__(self):
         "NormalDist objects hash equal if their mu and sigma are both equal."
@@ -1077,6 +1100,12 @@ class NormalDist:
 
     def __repr__(self):
         return f'{type(self).__name__}(mu={self._mu!r}, sigma={self._sigma!r})'
+
+# If available, use C implementation
+try:
+    from _statistics import _normal_dist_inv_cdf
+except ImportError:
+    pass
 
 
 if __name__ == '__main__':

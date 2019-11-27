@@ -161,6 +161,19 @@ and classes for traversing abstract syntax trees:
       Added ``type_comments``, ``mode='func_type'`` and ``feature_version``.
 
 
+.. function:: unparse(ast_obj)
+
+   Unparse an :class:`ast.AST` object and generate a string with code
+   that would produce an equivalent :class:`ast.AST` object if parsed
+   back with :func:`ast.parse`.
+
+   .. warning::
+      The produced code string will not necesarily be equal to the original
+      code that generated the :class:`ast.AST` object.
+
+   .. versionadded:: 3.9
+
+
 .. function:: literal_eval(node_or_string)
 
    Safely evaluate an expression node or a string containing a Python literal or
@@ -275,6 +288,13 @@ and classes for traversing abstract syntax trees:
    during traversal.  For this a special visitor exists
    (:class:`NodeTransformer`) that allows modifications.
 
+   .. deprecated:: 3.8
+
+      Methods :meth:`visit_Num`, :meth:`visit_Str`, :meth:`visit_Bytes`,
+      :meth:`visit_NameConstant` and :meth:`visit_Ellipsis` are deprecated
+      now and will not be called in future Python versions.  Add the
+      :meth:`visit_Constant` method to handle all constant nodes.
+
 
 .. class:: NodeTransformer()
 
@@ -312,14 +332,62 @@ and classes for traversing abstract syntax trees:
       node = YourTransformer().visit(node)
 
 
-.. function:: dump(node, annotate_fields=True, include_attributes=False)
+.. function:: dump(node, annotate_fields=True, include_attributes=False, *, indent=None)
 
    Return a formatted dump of the tree in *node*.  This is mainly useful for
-   debugging purposes.  The returned string will show the names and the values
-   for fields.  This makes the code impossible to evaluate, so if evaluation is
-   wanted *annotate_fields* must be set to ``False``.  Attributes such as line
+   debugging purposes.  If *annotate_fields* is true (by default),
+   the returned string will show the names and the values for fields.
+   If *annotate_fields* is false, the result string will be more compact by
+   omitting unambiguous field names.  Attributes such as line
    numbers and column offsets are not dumped by default.  If this is wanted,
-   *include_attributes* can be set to ``True``.
+   *include_attributes* can be set to true.
+
+   If *indent* is a non-negative integer or string, then the tree will be
+   pretty-printed with that indent level.  An indent level
+   of 0, negative, or ``""`` will only insert newlines.  ``None`` (the default)
+   selects the single line representation. Using a positive integer indent
+   indents that many spaces per level.  If *indent* is a string (such as ``"\t"``),
+   that string is used to indent each level.
+
+   .. versionchanged:: 3.9
+      Added the *indent* option.
+
+
+.. _ast-cli:
+
+Command-Line Usage
+------------------
+
+.. versionadded:: 3.9
+
+The :mod:`ast` module can be executed as a script from the command line.
+It is as simple as:
+
+.. code-block:: sh
+
+   python -m ast [-m <mode>] [-a] [infile]
+
+The following options are accepted:
+
+.. program:: ast
+
+.. cmdoption:: -h, --help
+
+   Show the help message and exit.
+
+.. cmdoption:: -m <mode>
+               --mode <mode>
+
+   Specify what kind of code must be compiled, like the *mode* argument
+   in :func:`parse`.
+
+.. cmdoption:: -a, --include-attributes
+
+   Include attributes such as line numbers and column offsets.
+
+If :file:`infile` is specified its contents are parsed to AST and dumped
+to stdout.  Otherwise, the content is read from stdin.
+
 
 .. seealso::
 

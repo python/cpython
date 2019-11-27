@@ -147,7 +147,7 @@ PyThread_tss_is_created(Py_tss_t *key)
 PyDoc_STRVAR(threadinfo__doc__,
 "sys.thread_info\n\
 \n\
-A struct sequence holding information about the thread implementation.");
+A named tuple holding information about the thread implementation.");
 
 static PyStructSequence_Field threadinfo_fields[] = {
     {"name",    "name of the thread implementation"},

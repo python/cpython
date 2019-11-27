@@ -2,6 +2,7 @@ c-api/arg,,:ref,"PyArg_ParseTuple(args, ""O|O:ref"", &object, &callback)"
 c-api/list,,:high,list[low:high]
 c-api/sequence,,:i2,del o[i1:i2]
 c-api/sequence,,:i2,o[i1:i2]
+c-api/tuple,,:high,p[low:high]
 c-api/unicode,,:end,str[start:end]
 c-api/unicode,,:start,unicode[start:start+length]
 distutils/examples,267,`,This is the description of the ``foobar`` package.
@@ -200,7 +201,7 @@ library/readline,,:bind,"python:bind ^I rl_complete"
 library/smtplib,,:port,method must support that as well as a regular host:port
 library/socket,,::,'5aef:2b::8'
 library/socket,,:can,"return (can_id, can_dlc, data[:can_dlc])"
-library/socket,,:len,fds.fromstring(cmsg_data[:len(cmsg_data) - (len(cmsg_data) % fds.itemsize)])
+library/socket,,:len,fds.frombytes(cmsg_data[:len(cmsg_data) - (len(cmsg_data) % fds.itemsize)])
 library/sqlite3,,:age,"cur.execute(""select * from people where name_last=:who and age=:age"", {""who"": who, ""age"": age})"
 library/sqlite3,,:memory,
 library/sqlite3,,:who,"cur.execute(""select * from people where name_last=:who and age=:age"", {""who"": who, ""age"": age})"
@@ -239,9 +240,9 @@ library/urllib.request,,:password,"""joe:password@python.org"""
 library/urllib.parse,,:scheme,<URL:scheme://host/path>
 library/urllib.parse,,:scheme,URL:scheme://host/path
 library/uuid,,:uuid,urn:uuid:12345678-1234-5678-1234-567812345678
-library/venv,,:param,":param nodist: If True, setuptools and pip are not installed into the"
+library/venv,,:param,":param nodist: If true, setuptools and pip are not installed into the"
 library/venv,,:param,":param progress: If setuptools or pip are installed, the progress of the"
-library/venv,,:param,":param nopip: If True, pip is not installed into the created"
+library/venv,,:param,":param nopip: If true, pip is not installed into the created"
 library/venv,,:param,:param context: The information for the virtual environment
 library/xmlrpc.client,,:nil,ex:nil
 library/xmlrpc.client,,:pass,http://user:pass@host:port/path
@@ -333,6 +334,9 @@ library/xml.etree.elementtree,,:character,<fictional:character>Commander Clement
 library/xml.etree.elementtree,,:actor,"for actor in root.findall('real_person:actor', ns):"
 library/xml.etree.elementtree,,:name,"name = actor.find('real_person:name', ns)"
 library/xml.etree.elementtree,,:character,"for char in actor.findall('role:character', ns):"
+library/xml.etree.elementtree,,:xi,<document xmlns:xi="http://www.w3.org/2001/XInclude">
+library/xml.etree.elementtree,,:include,  <xi:include href="source.xml" parse="xml" />
+library/xml.etree.elementtree,,:include,  Copyright (c) <xi:include href="year.txt" parse="text" />.
 library/zipapp,,:main,"$ python -m zipapp myapp -m ""myapp:main"""
 library/zipapp,,:fn,"pkg.mod:fn"
 library/zipapp,,:callable,"pkg.module:callable"
@@ -352,4 +356,5 @@ whatsnew/changelog,,::,error::BytesWarning
 whatsnew/changelog,,::,default::BytesWarning
 whatsnew/changelog,,::,default::DeprecationWarning
 library/importlib.metadata,,:main,"EntryPoint(name='wheel', value='wheel.cli:main', group='console_scripts')"
-library/importlib.metadata,,`,of directories ``path`` (defaults to sys.path).
+library/importlib.metadata,,`,loading the metadata for packages for the indicated ``context``.
+library/re,,`,"`"

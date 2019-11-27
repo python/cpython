@@ -328,7 +328,7 @@ found is still high in the memory hierarchy.  We also can't delay merging
 unmerged, and the stack has a fixed size.
 
 What turned out to be a good compromise maintains two invariants on the
-stack entries, where A, B and C are the lengths of the three righmost not-yet
+stack entries, where A, B and C are the lengths of the three rightmost not-yet
 merged slices:
 
 1.  A > B+C

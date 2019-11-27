@@ -138,8 +138,8 @@ arglist: argument (',' argument)* [',']
 # that precede iterable unpackings are blocked; etc.
 argument: ( test [comp_for] |
             test '=' test |
-	    '**' expr |
-	    star_expr )
+            '**' test |
+	        '*' test )
 
 comp_iter: comp_for | comp_if
 comp_for: [ASYNC] 'for' exprlist 'in' testlist_safe [comp_iter]
