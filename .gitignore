@@ -6,7 +6,8 @@
 *.iml
 *.o
 *.a
-*.so*
+*.so
+*.so.*
 *.dylib
 *.dll
 *.orig
