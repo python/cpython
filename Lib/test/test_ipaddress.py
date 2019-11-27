@@ -170,10 +170,6 @@ class CommonTestMixin_v6(CommonTestMixin):
         assertBadLength(15)
         assertBadLength(17)
 
-    def test_valid_scope_id(self):
-        self.assertInstancesEqual('ff02::5678%scope', 'ff02::5678')
-        self.assertInstancesEqual('ff02::5678%1', 'ff02::5678')
-
     def test_blank_scope_id(self):
         address = ('::1%')
         with self.assertAddressError('Invalid IPv6 address: "%r"', address):
@@ -469,7 +465,6 @@ class AddressTestCase_v6(BaseTestCase, CommonTestMixin_v6):
 
     def test_pickle(self):
         self.pickle_test('2001:db8::')
-        self.pickle_test('2001:db8::%scope')
 
     def test_weakref(self):
         weakref.ref(self.factory('2001:db8::'))
@@ -807,7 +802,7 @@ class ComparisonTests(unittest.TestCase):
     v6_addresses = [v6addr, v6intf]
     v6_objects = v6_addresses + [v6net]
     v6_scoped_addresses = [v6addr_scoped, v6intf_scoped]
-    v6_scoped_objects = v6_addresses + [v6net_scoped]
+    v6_scoped_objects = v6_scoped_addresses + [v6net_scoped]
 
     objects = v4_objects + v6_objects
     objects_with_scoped = objects + v6_scoped_objects
@@ -840,9 +835,9 @@ class ComparisonTests(unittest.TestCase):
                     continue
                 self.assertNotEqual(lhs, rhs)
 
-    def test_ipv6_equality_despite_scope(self):
+    def test_scoped_ipv6_equality(self):
         for lhs, rhs in zip(self.v6_objects, self.v6_scoped_objects):
-            self.assertEqual(lhs, rhs)
+            self.assertNotEqual(lhs, rhs)
 
     def test_v4_with_v6_scoped_equality(self):
         for lhs in self.v4_objects:
@@ -1083,14 +1078,6 @@ class IpaddrUnitTest(unittest.TestCase):
                          net)
 
         ip_scoped = ipaddress.IPv6Address('2001:db8::%scope')
-        net_scoped = ipaddress.IPv6Network('2001:db8::%scope/128')
-        self.assertEqual(ipaddress.IPv6Network(('2001:db8::%scope', '128')),
-                         net_scoped)
-        self.assertEqual(ipaddress.IPv6Network(
-                (42540766411282592856903984951653826560, 128)),
-                         net_scoped)
-        self.assertEqual(ipaddress.IPv6Network((ip_scoped, '128')),
-                         net_scoped)
 
         # strict=True and host bits set
         ip = ipaddress.IPv6Address('2001:db8::1')
@@ -1126,16 +1113,6 @@ class IpaddrUnitTest(unittest.TestCase):
         with self.assertRaises(ValueError):
             ipaddress.IPv6Network((ip_scoped, 96))
         # strict=False and host bits set
-        net_scoped = ipaddress.IPv6Network('2001:db8::/96')
-        self.assertEqual(ipaddress.IPv6Network(('2001:db8::1%scope', 96),
-                                               strict=False),
-                         net_scoped)
-        self.assertEqual(ipaddress.IPv6Network(
-                             (42540766411282592856903984951653826561, 96),
-                             strict=False),
-                         net_scoped)
-        self.assertEqual(ipaddress.IPv6Network((ip_scoped, 96), strict=False),
-                         net_scoped)
 
     # issue57
     def testAddressIntMath(self):
@@ -1147,10 +1124,10 @@ class IpaddrUnitTest(unittest.TestCase):
                          ipaddress.IPv6Address('::ffff'))
         self.assertEqual(ipaddress.IPv6Address('::ffff') - (2**16 - 2),
                          ipaddress.IPv6Address('::1'))
-        self.assertEqual(ipaddress.IPv6Address('::1%scope') + (2**16 - 2),
-                         ipaddress.IPv6Address('::ffff%scope'))
-        self.assertEqual(ipaddress.IPv6Address('::ffff%scope') - (2**16 - 2),
-                         ipaddress.IPv6Address('::1%scope'))
+        self.assertNotEqual(ipaddress.IPv6Address('::1%scope') + (2**16 - 2),
+                            ipaddress.IPv6Address('::ffff%scope'))
+        self.assertNotEqual(ipaddress.IPv6Address('::ffff%scope') - (2**16 - 2),
+                            ipaddress.IPv6Address('::1%scope'))
 
     def testInvalidIntToBytes(self):
         self.assertRaises(ValueError, ipaddress.v4_int_to_packed, -1)
@@ -1199,7 +1176,7 @@ class IpaddrUnitTest(unittest.TestCase):
         ipv6_scoped = ipaddress.ip_network('2001:658:22a:cafe:200:0:0:1%scope')
         self.assertEqual(ipv4, ipaddress.ip_network(int(ipv4.network_address)))
         self.assertEqual(ipv6, ipaddress.ip_network(int(ipv6.network_address)))
-        self.assertEqual(ipv6_scoped, ipaddress.ip_network(int(ipv6_scoped.network_address)))
+        self.assertNotEqual(ipv6_scoped, ipaddress.ip_network(int(ipv6_scoped.network_address)))
 
         v6_int = 42540616829182469433547762482097946625
         self.assertEqual(self.ipv6_interface._ip,
@@ -1389,24 +1366,8 @@ class IpaddrUnitTest(unittest.TestCase):
         self.assertEqual(addrs, list(ipaddress.ip_network(tpl_args).hosts()))
         self.assertEqual(list(ipaddress.ip_network(str_args).hosts()),
                          list(ipaddress.ip_network(tpl_args).hosts()))
-        addrs = [ipaddress.IPv6Address('2001:658:22a:cafe::%scope'),
-                 ipaddress.IPv6Address('2001:658:22a:cafe::1%scope')]
-        str_args = '2001:658:22a:cafe::%scope/127'
-        tpl_args = ('2001:658:22a:cafe::%scope', 127)
-        self.assertEqual(addrs, list(ipaddress.ip_network(str_args).hosts()))
-        self.assertEqual(addrs, list(ipaddress.ip_network(tpl_args).hosts()))
-        self.assertEqual(list(ipaddress.ip_network(str_args).hosts()),
-                         list(ipaddress.ip_network(tpl_args).hosts()))
         addrs = [ipaddress.IPv6Address('2001:658:22a:cafe::'),
                  ipaddress.IPv6Address('2001:658:22a:cafe::1')]
-        str_args = '2001:658:22a:cafe::%scope/127'
-        tpl_args = ('2001:658:22a:cafe::%scope', 127)
-        self.assertEqual(addrs, list(ipaddress.ip_network(str_args).hosts()))
-        self.assertEqual(addrs, list(ipaddress.ip_network(tpl_args).hosts()))
-        self.assertEqual(list(ipaddress.ip_network(str_args).hosts()),
-                         list(ipaddress.ip_network(tpl_args).hosts()))
-        addrs = [ipaddress.IPv6Address('2001:658:22a:cafe::%scope'),
-                 ipaddress.IPv6Address('2001:658:22a:cafe::1%scope')]
         str_args = '2001:658:22a:cafe::/127'
         tpl_args = ('2001:658:22a:cafe::', 127)
         self.assertEqual(addrs, list(ipaddress.ip_network(str_args).hosts()))
@@ -1618,7 +1579,7 @@ class IpaddrUnitTest(unittest.TestCase):
             ipaddress.IPv6Interface('2001:658:22a:cafe:200::1%scope/64'))
         self.assertFalse(self.ipv6_scoped_interface ==
             ipaddress.IPv6Interface('2001:658:22a:cafe:200::1%scope/63'))
-        self.assertTrue(self.ipv6_scoped_interface ==
+        self.assertFalse(self.ipv6_scoped_interface ==
             ipaddress.IPv6Interface('2001:658:22a:cafe:200::1/64'))
         self.assertFalse(self.ipv6_scoped_interface ==
             ipaddress.IPv6Interface('2001:658:22a:cafe:200::1/63'))
@@ -1667,7 +1628,7 @@ class IpaddrUnitTest(unittest.TestCase):
             ipaddress.IPv6Interface('2001:658:22a:cafe:200::1%scope/64'))
         self.assertTrue(self.ipv6_scoped_interface !=
             ipaddress.IPv6Interface('2001:658:22a:cafe:200::1%scope/63'))
-        self.assertFalse(self.ipv6_scoped_interface !=
+        self.assertTrue(self.ipv6_scoped_interface !=
             ipaddress.IPv6Interface('2001:658:22a:cafe:200::1/64'))
         self.assertTrue(self.ipv6_scoped_interface !=
             ipaddress.IPv6Interface('2001:658:22a:cafe:200::1/63'))
@@ -1881,14 +1842,6 @@ class IpaddrUnitTest(unittest.TestCase):
                         ipaddress.ip_address('::1%scope'))
         self.assertTrue(ipaddress.ip_address('::1%scope') <=
                         ipaddress.ip_address('::2%scope'))
-        self.assertTrue(ipaddress.ip_address('::1') <=
-                        ipaddress.ip_address('::1%scope'))
-        self.assertTrue(ipaddress.ip_address('::1') <=
-                        ipaddress.ip_address('::2%scope'))
-        self.assertTrue(ipaddress.ip_address('::1%scope') <=
-                        ipaddress.ip_address('::1'))
-        self.assertTrue(ipaddress.ip_address('::1%scope') <=
-                        ipaddress.ip_address('::2'))
 
     def testInterfaceComparison(self):
         self.assertTrue(ipaddress.ip_interface('1.1.1.1/24') ==
@@ -1937,7 +1890,7 @@ class IpaddrUnitTest(unittest.TestCase):
                         ipaddress.ip_interface('::2%scope/48'))
 
 
-        self.assertTrue(ipaddress.ip_interface('::1%scope/64') ==
+        self.assertFalse(ipaddress.ip_interface('::1%scope/64') ==
                         ipaddress.ip_interface('::1/64'))
         self.assertTrue(ipaddress.ip_interface('::1%scope/64') <
                         ipaddress.ip_interface('::1/80'))
@@ -1952,7 +1905,7 @@ class IpaddrUnitTest(unittest.TestCase):
         self.assertTrue(ipaddress.ip_interface('::1%scope/64') >
                         ipaddress.ip_interface('::2/48'))
 
-        self.assertTrue(ipaddress.ip_interface('::1/64') ==
+        self.assertFalse(ipaddress.ip_interface('::1/64') ==
                         ipaddress.ip_interface('::1%scope/64'))
         self.assertTrue(ipaddress.ip_interface('::1/64') <
                         ipaddress.ip_interface('::1%scope/80'))
@@ -2054,27 +2007,6 @@ class IpaddrUnitTest(unittest.TestCase):
         self.assertFalse(ipaddress.ip_network('::2') <=
                          ipaddress.ip_network('::1'))
 
-        self.assertTrue(ipaddress.ip_network('::1%scope') <=
-                        ipaddress.ip_network('::1%scope'))
-        self.assertTrue(ipaddress.ip_network('::1%scope') <=
-                        ipaddress.ip_network('::2%scope'))
-        self.assertFalse(ipaddress.ip_network('::2%scope') <=
-                         ipaddress.ip_network('::1%scope'))
-
-        self.assertTrue(ipaddress.ip_network('::1%scope') <=
-                        ipaddress.ip_network('::1'))
-        self.assertTrue(ipaddress.ip_network('::1%scope') <=
-                        ipaddress.ip_network('::2'))
-        self.assertFalse(ipaddress.ip_network('::2%scope') <=
-                         ipaddress.ip_network('::1'))
-
-        self.assertTrue(ipaddress.ip_network('::1') <=
-                        ipaddress.ip_network('::1%scope'))
-        self.assertTrue(ipaddress.ip_network('::1') <=
-                        ipaddress.ip_network('::2%scope'))
-        self.assertFalse(ipaddress.ip_network('::2') <=
-                         ipaddress.ip_network('::1%scope'))
-
     def testStrictNetworks(self):
         self.assertRaises(ValueError, ipaddress.ip_network, '192.168.1.1/24')
         self.assertRaises(ValueError, ipaddress.ip_network, '::1/120')
@@ -2111,13 +2043,13 @@ class IpaddrUnitTest(unittest.TestCase):
                           ipaddress.ip_address('::FFFF:c000:201%scope'))
         self.assertEqual(ipaddress.ip_address('FFFF::192.0.2.1%scope'),
                           ipaddress.ip_address('FFFF::c000:201%scope'))
-        self.assertEqual(ipaddress.ip_address('::FFFF:192.0.2.1%scope'),
-                          ipaddress.ip_address('::FFFF:c000:201'))
-        self.assertEqual(ipaddress.ip_address('FFFF::192.0.2.1%scope'),
-                          ipaddress.ip_address('FFFF::c000:201'))
-        self.assertEqual(ipaddress.ip_address('::FFFF:192.0.2.1'),
+        self.assertNotEqual(ipaddress.ip_address('::FFFF:192.0.2.1%scope'),
+                            ipaddress.ip_address('::FFFF:c000:201'))
+        self.assertNotEqual(ipaddress.ip_address('FFFF::192.0.2.1%scope'),
+                            ipaddress.ip_address('FFFF::c000:201'))
+        self.assertNotEqual(ipaddress.ip_address('::FFFF:192.0.2.1'),
                           ipaddress.ip_address('::FFFF:c000:201%scope'))
-        self.assertEqual(ipaddress.ip_address('FFFF::192.0.2.1'),
+        self.assertNotEqual(ipaddress.ip_address('FFFF::192.0.2.1'),
                           ipaddress.ip_address('FFFF::c000:201%scope'))
 
     def testIPVersion(self):
