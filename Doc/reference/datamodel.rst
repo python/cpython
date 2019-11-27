@@ -1641,8 +1641,19 @@ class' :attr:`~object.__dict__`.
    Called at the time the owning class *owner* is created. The
    descriptor has been assigned to *name*.
 
-   .. versionadded:: 3.6
+   .. note::
 
+      ``__set_name__`` is only called implicitly as part of the ``type`` constructor, so
+      it will need to be called explicitly with the appropriate parameters when a
+      descriptor is added to a class after initial creation::
+
+         descr = custom_descriptor()
+         cls.attr = descr
+         descr.__set_name__(cls, 'attr')
+
+      See :ref:`class-object-creation` for more details.
+
+   .. versionadded:: 3.6
 
 The attribute :attr:`__objclass__` is interpreted by the :mod:`inspect` module
 as specifying the class where this object was defined (setting this
