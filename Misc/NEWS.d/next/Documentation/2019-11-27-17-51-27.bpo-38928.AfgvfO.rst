@@ -1,0 +1,2 @@
+Correct when venv's ``upgrade_dependencies()`` and ``--upgrade-deps`` are
+added.
