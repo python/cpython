@@ -641,6 +641,13 @@ code_replace_impl(PyCodeObject *self, int co_argcount,
 
 #undef CHECK_INT_ARG
 
+    if (PySys_Audit("code.__new__", "OOOiiiiii",
+                    co_code, co_filename, co_name, co_argcount,
+                    co_posonlyargcount, co_kwonlyargcount, co_nlocals,
+                    co_stacksize, co_flags) < 0) {
+        return NULL;
+    }
+
     return (PyObject *)PyCode_NewWithPosOnlyArgs(
         co_argcount, co_posonlyargcount, co_kwonlyargcount, co_nlocals,
         co_stacksize, co_flags, (PyObject*)co_code, co_consts, co_names,

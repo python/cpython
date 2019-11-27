@@ -1,0 +1,2 @@
+Calling ``replace`` on a code object now raises the ``code.__new__`` audit
+event.
