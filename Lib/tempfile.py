@@ -634,8 +634,8 @@ class SpooledTemporaryFile:
             self._file = _io.BytesIO()
         else:
             self._file = _io.TextIOWrapper(_io.BytesIO(),
-                            encoding=encoding, newline=newline,
-                            write_through=True)
+                            encoding=encoding, errors=errors,
+                            newline=newline, write_through=True)
         self._max_size = max_size
         self._rolled = False
         self._TemporaryFileArgs = {'mode': mode, 'buffering': buffering,
