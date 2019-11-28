@@ -1119,7 +1119,8 @@ class TestSpooledTemporaryFile(BaseTestCase):
     def test_text_mode(self):
         # Creating a SpooledTemporaryFile with a text mode should produce
         # a file object reading and writing (Unicode) text strings.
-        f = tempfile.SpooledTemporaryFile(mode='w+', max_size=10)
+        f = tempfile.SpooledTemporaryFile(mode='w+', max_size=10,
+                                          encoding="utf-8")
         f.write("abc\n")
         f.seek(0)
         self.assertEqual(f.read(), "abc\n")
@@ -1129,8 +1130,8 @@ class TestSpooledTemporaryFile(BaseTestCase):
         self.assertFalse(f._rolled)
         self.assertEqual(f.mode, 'w+')
         self.assertIsNone(f.name)
-        self.assertIsNone(f.newlines)
-        self.assertIsNone(f.encoding)
+        self.assertEqual(f.newlines, os.linesep)
+        self.assertEqual(f.encoding, "utf-8")
 
         f.write("xyzzy\n")
         f.seek(0)
@@ -1143,7 +1144,7 @@ class TestSpooledTemporaryFile(BaseTestCase):
         self.assertEqual(f.mode, 'w+')
         self.assertIsNotNone(f.name)
         self.assertEqual(f.newlines, os.linesep)
-        self.assertIsNotNone(f.encoding)
+        self.assertEqual(f.encoding, "utf-8")
 
     def test_text_newline_and_encoding(self):
         f = tempfile.SpooledTemporaryFile(mode='w+', max_size=10,
@@ -1154,12 +1155,14 @@ class TestSpooledTemporaryFile(BaseTestCase):
         self.assertFalse(f._rolled)
         self.assertEqual(f.mode, 'w+')
         self.assertIsNone(f.name)
-        self.assertIsNone(f.newlines)
-        self.assertIsNone(f.encoding)
+        self.assertIsNotNone(f.newlines)
+        self.assertEqual(f.encoding, "utf-8")
 
-        f.write("\u039B" * 20 + "\r\n")
+        f.write("\u039C" * 10 + "\r\n")
+        f.write("\u039D" * 20)
         f.seek(0)
-        self.assertEqual(f.read(), "\u039B\r\n" + ("\u039B" * 20) + "\r\n")
+        self.assertEqual(f.read(),
+                "\u039B\r\n" + ("\u039C" * 10) + "\r\n" + ("\u039D" * 20))
         self.assertTrue(f._rolled)
         self.assertEqual(f.mode, 'w+')
         self.assertIsNotNone(f.name)
