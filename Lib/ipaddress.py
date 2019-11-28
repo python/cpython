@@ -1864,7 +1864,7 @@ class IPv6Address(_BaseV6, _BaseAddress):
         return ip_str + '%' + self._scope_id if self._scope_id else ip_str
 
     def __hash__(self):
-        return super().__hash__() ^ hash(self._scope_id)
+        return hash((self._ip, self._scope_id))
 
     def __eq__(self, other):
         address_equal = _BaseAddress.__eq__(self, other)
