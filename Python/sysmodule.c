@@ -323,8 +323,8 @@ PySys_AddAuditHook(Py_AuditHookFunction hook, void *userData)
     /* Cannot invoke hooks until we are initialized */
     if (runtime->initialized) {
         if (PySys_Audit("sys.addaudithook", NULL) < 0) {
-            if (_PyErr_ExceptionMatches(tstate, PyExc_Exception)) {
-                /* We do not report errors derived from Exception */
+            if (_PyErr_ExceptionMatches(tstate, PyExc_RuntimeError)) {
+                /* We do not report errors derived from RuntimeError */
                 _PyErr_Clear(tstate);
                 return 0;
             }
