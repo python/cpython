@@ -1367,43 +1367,53 @@ _PyErr_WriteUnraisableMsg(const char *err_msg_str, PyObject *obj)
         }
     }
 
+    PyObject *hook_args = make_unraisable_hook_args(
+        tstate, exc_type, exc_value, exc_tb, err_msg, obj);
+    if (hook_args == NULL) {
+        err_msg_str = ("Exception ignored on building "
+                       "sys.unraisablehook arguments");
+        goto error;
+    }
+
     _Py_IDENTIFIER(unraisablehook);
     PyObject *hook = _PySys_GetObjectId(&PyId_unraisablehook);
-    if (hook != NULL && hook != Py_None) {
-        PyObject *hook_args;
-
-        hook_args = make_unraisable_hook_args(tstate, exc_type, exc_value,
-                                              exc_tb, err_msg, obj);
-        if (hook_args != NULL) {
-            PyObject *args[1] = {hook_args};
-            PyObject *res = _PyObject_FastCall(hook, args, 1);
-            Py_DECREF(hook_args);
-            if (res != NULL) {
-                Py_DECREF(res);
-                goto done;
-            }
-
-            err_msg_str = "Exception ignored in sys.unraisablehook";
-        }
-        else {
-            err_msg_str = ("Exception ignored on building "
-                           "sys.unraisablehook arguments");
-        }
-
-        Py_XDECREF(err_msg);
-        err_msg = PyUnicode_FromString(err_msg_str);
-        if (err_msg == NULL) {
-            PyErr_Clear();
-        }
-
-        /* sys.unraisablehook failed: log its error using default hook */
-        Py_XDECREF(exc_type);
-        Py_XDECREF(exc_value);
-        Py_XDECREF(exc_tb);
-        _PyErr_Fetch(tstate, &exc_type, &exc_value, &exc_tb);
-
-        obj = hook;
+    if (hook == NULL) {
+        Py_DECREF(hook_args);
+        goto default_hook;
     }
+
+    if (PySys_Audit("sys.unraisablehook", "OO", hook, hook_args) < 0) {
+        Py_DECREF(hook_args);
+        err_msg_str = "Exception ignored in audit hook";
+        obj = NULL;
+        goto error;
+    }
+
+    if (hook == Py_None) {
+        Py_DECREF(hook_args);
+        goto default_hook;
+    }
+
+    PyObject *args[1] = {hook_args};
+    PyObject *res = _PyObject_FastCall(hook, args, 1);
+    Py_DECREF(hook_args);
+    if (res != NULL) {
+        Py_DECREF(res);
+        goto done;
+    }
+
+    /* sys.unraisablehook failed: log its error using default hook */
+    obj = hook;
+    err_msg_str = NULL;
+
+error:
+    /* err_msg_str and obj have been updated and we have a new exception */
+    Py_XSETREF(err_msg, PyUnicode_FromString(err_msg_str ?
+        err_msg_str : "Exception ignored in sys.unraisablehook"));
+    Py_XDECREF(exc_type);
+    Py_XDECREF(exc_value);
+    Py_XDECREF(exc_tb);
+    _PyErr_Fetch(tstate, &exc_type, &exc_value, &exc_tb);
 
 default_hook:
     /* Call the default unraisable hook (ignore failure) */
