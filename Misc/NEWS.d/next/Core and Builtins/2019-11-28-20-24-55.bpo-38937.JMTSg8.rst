@@ -1,0 +1,1 @@
+exec lines from ``.pth`` files in a copy of the :mod:`site` module's globals
