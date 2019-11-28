@@ -2,7 +2,6 @@ import sqlite3 as sqlite
 import unittest
 
 
-@unittest.skipIf(sqlite.sqlite_version_info < (3, 6, 11), "Backup API not supported")
 class BackupTests(unittest.TestCase):
     def setUp(self):
         cx = self.cx = sqlite.connect(":memory:")

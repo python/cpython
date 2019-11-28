@@ -6,6 +6,10 @@
 
 .. sectionauthor:: Gerhard Häring <gh@ghaering.de>
 
+.. note::
+
+   This module requires SQLite 3.7.3+.
+
 **Source code:** :source:`Lib/sqlite3/`
 
 --------------
@@ -590,8 +594,6 @@ Connection Objects
          dest = sqlite3.connect(':memory:')
          source.backup(dest)
 
-      Availability: SQLite 3.6.11 or higher
-
       .. versionadded:: 3.7
 
 
@@ -699,9 +701,6 @@ Cursor Objects
       last operation is not determinable by the interface". This includes ``SELECT``
       statements because we cannot determine the number of rows a query produced
       until all rows were fetched.
-
-      With SQLite versions before 3.6.5, :attr:`rowcount` is set to 0 if
-      you make a ``DELETE FROM table`` without any condition.
 
    .. attribute:: lastrowid
 
