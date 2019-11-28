@@ -263,13 +263,50 @@ def test_cantrace():
 
 def test_mmap():
     import mmap
+
     with TestHook() as hook:
         mmap.mmap(-1, 8)
         assertEqual(hook.seen[0][1][:2], (-1, 8))
 
 
+def test_excepthook():
+    def excepthook(exc_type, exc_value, exc_tb):
+        if exc_type is not RuntimeError:
+            sys.__excepthook__(exc_type, exc_value, exc_tb)
+
+    def hook(event, args):
+        if event == "sys.excepthook":
+            if not isinstance(args[2], args[1]):
+                raise TypeError(f"Expected isinstance({args[2]!r}, " f"{args[1]!r})")
+            if args[0] != excepthook:
+                raise ValueError(f"Expected {args[0]} == {excepthook}")
+            print(event, repr(args[2]))
+
+    sys.addaudithook(hook)
+    sys.excepthook = excepthook
+    raise RuntimeError("fatal-error")
+
+
+def test_unraisablehook():
+    from _testcapi import write_unraisable_exc
+
+    def unraisablehook(hookargs):
+        pass
+
+    def hook(event, args):
+        if event == "sys.unraisablehook":
+            if args[0] != unraisablehook:
+                raise ValueError(f"Expected {args[0]} == {unraisablehook}")
+            print(event, repr(args[1].exc_value), args[1].err_msg)
+
+    sys.addaudithook(hook)
+    sys.unraisablehook = unraisablehook
+    write_unraisable_exc(RuntimeError("nonfatal-error"), "for audit hook test", None)
+
+
 if __name__ == "__main__":
     from test.libregrtest.setup import suppress_msvcrt_asserts
+
     suppress_msvcrt_asserts(False)
 
     test = sys.argv[1]
