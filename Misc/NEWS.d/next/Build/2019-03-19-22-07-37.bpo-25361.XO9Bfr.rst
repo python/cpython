@@ -1,1 +1,0 @@
-Enables use of SSE2 instructions in Windows 32-bit build.

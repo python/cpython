@@ -199,7 +199,8 @@ Format Paragraph
 Strip trailing whitespace
    Remove trailing space and other whitespace characters after the last
    non-whitespace character of a line by applying str.rstrip to each line,
-   including lines within multiline strings.
+   including lines within multiline strings.  Except for Shell windows,
+   remove extra newlines at the end of the file.
 
 .. index::
    single: Run script

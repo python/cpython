@@ -198,7 +198,6 @@ markblocks(_Py_CODEUNIT *code, Py_ssize_t len)
             case SETUP_FINALLY:
             case SETUP_WITH:
             case SETUP_ASYNC_WITH:
-            case CALL_FINALLY:
                 j = GETJUMPTGT(code, i);
                 assert(j < len);
                 blocks[j] = 1;
@@ -255,8 +254,8 @@ PyCode_Optimize(PyObject *code, PyObject* consts, PyObject *names,
        than +255 (encoded as multiple bytes), just to keep the peephole optimizer
        simple. The optimizer leaves line number deltas unchanged. */
 
-    for (j = 0; j < tabsiz; j += 2) {
-        if (lnotab[j] == 255) {
+    for (i = 0; i < tabsiz; i += 2) {
+        if (lnotab[i] == 255) {
             goto exitUnchanged;
         }
     }
@@ -432,14 +431,10 @@ PyCode_Optimize(PyObject *code, PyObject* consts, PyObject *names,
                 /* Remove unreachable ops after RETURN */
             case RETURN_VALUE:
                 h = i + 1;
-                /* END_FINALLY should be kept since it denotes the end of
-                   the 'finally' block in frame_setlineno() in frameobject.c.
-                   SETUP_FINALLY should be kept for balancing.
-                 */
-                while (h < codelen && ISBASICBLOCK(blocks, i, h) &&
-                       _Py_OPCODE(codestr[h]) != END_FINALLY)
+                while (h < codelen && ISBASICBLOCK(blocks, i, h))
                 {
-                    if (_Py_OPCODE(codestr[h]) == SETUP_FINALLY) {
+                    /* Leave SETUP_FINALLY and RERAISE in place to help find block limits. */
+                    if (_Py_OPCODE(codestr[h]) == SETUP_FINALLY || _Py_OPCODE(codestr[h]) == RERAISE) {
                         while (h > i + 1 &&
                                _Py_OPCODE(codestr[h - 1]) == EXTENDED_ARG)
                         {
@@ -506,7 +501,6 @@ PyCode_Optimize(PyObject *code, PyObject* consts, PyObject *names,
             case SETUP_FINALLY:
             case SETUP_WITH:
             case SETUP_ASYNC_WITH:
-            case CALL_FINALLY:
                 j = blocks[j / sizeof(_Py_CODEUNIT) + i + 1] - blocks[i] - 1;
                 j *= sizeof(_Py_CODEUNIT);
                 break;

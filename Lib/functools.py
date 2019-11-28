@@ -383,7 +383,7 @@ class partialmethod(object):
         _method._partialmethod = self
         return _method
 
-    def __get__(self, obj, cls):
+    def __get__(self, obj, cls=None):
         get = getattr(self.func, "__get__", None)
         result = None
         if get is not None:
@@ -482,7 +482,7 @@ def lru_cache(maxsize=128, typed=False):
     with f.cache_info().  Clear the cache and statistics with f.cache_clear().
     Access the underlying function with f.__wrapped__.
 
-    See:  http://en.wikipedia.org/wiki/Cache_algorithms#Least_Recently_Used
+    See:  http://en.wikipedia.org/wiki/Cache_replacement_policies#Least_recently_used_(LRU)
 
     """
 
@@ -499,6 +499,7 @@ def lru_cache(maxsize=128, typed=False):
         # The user_function was passed in directly via the maxsize argument
         user_function, maxsize = maxsize, 128
         wrapper = _lru_cache_wrapper(user_function, maxsize, typed, _CacheInfo)
+        wrapper.cache_parameters = lambda : {'maxsize': maxsize, 'typed': typed}
         return update_wrapper(wrapper, user_function)
     elif maxsize is not None:
         raise TypeError(
@@ -506,6 +507,7 @@ def lru_cache(maxsize=128, typed=False):
 
     def decorating_function(user_function):
         wrapper = _lru_cache_wrapper(user_function, maxsize, typed, _CacheInfo)
+        wrapper.cache_parameters = lambda : {'maxsize': maxsize, 'typed': typed}
         return update_wrapper(wrapper, user_function)
 
     return decorating_function
@@ -888,7 +890,7 @@ class singledispatchmethod:
         """
         return self.dispatcher.register(cls, func=method)
 
-    def __get__(self, obj, cls):
+    def __get__(self, obj, cls=None):
         def _method(*args, **kwargs):
             method = self.dispatcher.dispatch(args[0].__class__)
             return method.__get__(obj, cls)(*args, **kwargs)
@@ -926,7 +928,7 @@ class cached_property:
                 f"({self.attrname!r} and {name!r})."
             )
 
-    def __get__(self, instance, owner):
+    def __get__(self, instance, owner=None):
         if instance is None:
             return self
         if self.attrname is None:

@@ -540,8 +540,8 @@ character ``'$'``.
    Matches any character which is not a word character. This is
    the opposite of ``\w``. If the :const:`ASCII` flag is used this
    becomes the equivalent of ``[^a-zA-Z0-9_]``.  If the :const:`LOCALE` flag is
-   used, matches characters considered alphanumeric in the current locale
-   and the underscore.
+   used, matches characters which are neither alphanumeric in the current locale
+   nor the underscore.
 
 .. index:: single: \Z; in regular expressions
 
@@ -931,8 +931,8 @@ form.
    This is useful if you want to match an arbitrary literal string that may
    have regular expression metacharacters in it.  For example::
 
-      >>> print(re.escape('python.exe'))
-      python\.exe
+      >>> print(re.escape('http://www.python.org'))
+      http://www\.python\.org
 
       >>> legal_chars = string.ascii_lowercase + string.digits + "!#$%&'*+-.^_`|~:"
       >>> print('[%s]+' % re.escape(legal_chars))
@@ -955,7 +955,9 @@ form.
 
    .. versionchanged:: 3.7
       Only characters that can have special meaning in a regular expression
-      are escaped.
+      are escaped. As a result, ``'!'``, ``'"'``, ``'%'``, ``"'"``, ``','``,
+      ``'/'``, ``':'``, ``';'``, ``'<'``, ``'='``, ``'>'``, ``'@'``, and
+      ``"`"`` are no longer escaped.
 
 
 .. function:: purge()

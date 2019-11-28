@@ -642,7 +642,7 @@ class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
     def __init__(self, *args, directory=None, **kwargs):
         if directory is None:
             directory = os.getcwd()
-        self.directory = directory
+        self.directory = os.fspath(directory)
         super().__init__(*args, **kwargs)
 
     def do_GET(self):
@@ -1014,8 +1014,10 @@ class CGIHTTPRequestHandler(SimpleHTTPRequestHandler):
         """
         collapsed_path = _url_collapse_path(self.path)
         dir_sep = collapsed_path.find('/', 1)
-        head, tail = collapsed_path[:dir_sep], collapsed_path[dir_sep+1:]
-        if head in self.cgi_directories:
+        while dir_sep > 0 and not collapsed_path[:dir_sep] in self.cgi_directories:
+            dir_sep = collapsed_path.find('/', dir_sep+1)
+        if dir_sep > 0:
+            head, tail = collapsed_path[:dir_sep], collapsed_path[dir_sep+1:]
             self.cgi_info = head, tail
             return True
         return False

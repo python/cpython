@@ -19,6 +19,7 @@ from idlelib.config import idleConf
 from idlelib import macosx
 from idlelib import pyshell
 from idlelib.query import CustomRun
+from idlelib import outwin
 
 indent_message = """Error: Inconsistent indentation detected!
 
@@ -46,6 +47,9 @@ class ScriptBinding:
             self.editwin.text_frame.bind('<<run-module-event-2>>', self._run_module_event)
 
     def check_module_event(self, event):
+        if isinstance(self.editwin, outwin.OutputWindow):
+            self.editwin.text.bell()
+            return 'break'
         filename = self.getfilename()
         if not filename:
             return 'break'
@@ -129,6 +133,9 @@ class ScriptBinding:
         module being executed and also add that directory to its
         sys.path if not already included.
         """
+        if isinstance(self.editwin, outwin.OutputWindow):
+            self.editwin.text.bell()
+            return 'break'
         filename = self.getfilename()
         if not filename:
             return 'break'
@@ -147,8 +154,7 @@ class ScriptBinding:
         interp = self.shell.interp
         if pyshell.use_subprocess and restart:
             interp.restart_subprocess(
-                    with_cwd=False, filename=
-                    self.editwin._filename_to_unicode(filename))
+                    with_cwd=False, filename=filename)
         dirname = os.path.dirname(filename)
         argv = [filename]
         if self.cli_args:
@@ -164,7 +170,7 @@ class ScriptBinding:
                 _sys.argv = argv
             import os as _os
             _os.chdir({dirname!r})
-            del _sys, _basename, _os
+            del _sys, argv, _basename, _os
             \n""")
         interp.prepend_syspath(filename)
         # XXX KBK 03Jul04 When run w/o subprocess, runtime warnings still

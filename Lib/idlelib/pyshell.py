@@ -54,7 +54,7 @@ from idlelib.editor import EditorWindow, fixwordbreaks
 from idlelib.filelist import FileList
 from idlelib.outwin import OutputWindow
 from idlelib import rpc
-from idlelib.run import idle_formatwarning, PseudoInputFile, PseudoOutputFile
+from idlelib.run import idle_formatwarning, StdInputFile, StdOutputFile
 from idlelib.undo import UndoDelegator
 
 HOST = '127.0.0.1' # python execution server on localhost loopback
@@ -133,6 +133,7 @@ class PyShellEditorWindow(EditorWindow):
         self.text.bind("<<clear-breakpoint-here>>", self.clear_breakpoint_here)
         self.text.bind("<<open-python-shell>>", self.flist.open_shell)
 
+        #TODO: don't read/write this from/to .idlerc when testing
         self.breakpointPath = os.path.join(
                 idleConf.userdir, 'breakpoints.lst')
         # whenever a file is changed, restore breakpoints
@@ -387,6 +388,19 @@ class MyRPCClient(rpc.RPCClient):
         "Override the base class - just re-raise EOFError"
         raise EOFError
 
+def restart_line(width, filename):  # See bpo-38141.
+    """Return width long restart line formatted with filename.
+
+    Fill line with balanced '='s, with any extras and at least one at
+    the beginning.  Do not end with a trailing space.
+    """
+    tag = f"= RESTART: {filename or 'Shell'} ="
+    if width >= len(tag):
+        div, mod = divmod((width -len(tag)), 2)
+        return f"{(div+mod)*'='}{tag}{div*'='}"
+    else:
+        return tag[:-2]  # Remove ' ='.
+
 
 class ModifiedInterpreter(InteractiveInterpreter):
 
@@ -394,7 +408,6 @@ class ModifiedInterpreter(InteractiveInterpreter):
         self.tkconsole = tkconsole
         locals = sys.modules['__main__'].__dict__
         InteractiveInterpreter.__init__(self, locals=locals)
-        self.save_warnings_filters = None
         self.restarting = False
         self.subprocess_arglist = None
         self.port = PORT
@@ -492,9 +505,8 @@ class ModifiedInterpreter(InteractiveInterpreter):
         console.stop_readline()
         # annotate restart in shell window and mark it
         console.text.delete("iomark", "end-1c")
-        tag = 'RESTART: ' + (filename if filename else 'Shell')
-        halfbar = ((int(console.width) -len(tag) - 4) // 2) * '='
-        console.write("\n{0} {1} {0}".format(halfbar, tag))
+        console.write('\n')
+        console.write(restart_line(console.width, filename))
         console.text.mark_set("restart", "end-1c")
         console.text.mark_gravity("restart", "left")
         if not filename:
@@ -665,26 +677,11 @@ class ModifiedInterpreter(InteractiveInterpreter):
         "Extend base class method: Stuff the source in the line cache first"
         filename = self.stuffsource(source)
         self.more = 0
-        self.save_warnings_filters = warnings.filters[:]
-        warnings.filterwarnings(action="error", category=SyntaxWarning)
         # at the moment, InteractiveInterpreter expects str
         assert isinstance(source, str)
-        #if isinstance(source, str):
-        #    from idlelib import iomenu
-        #    try:
-        #        source = source.encode(iomenu.encoding)
-        #    except UnicodeError:
-        #        self.tkconsole.resetoutput()
-        #        self.write("Unsupported characters in input\n")
-        #        return
-        try:
-            # InteractiveInterpreter.runsource() calls its runcode() method,
-            # which is overridden (see below)
-            return InteractiveInterpreter.runsource(self, source, filename)
-        finally:
-            if self.save_warnings_filters is not None:
-                warnings.filters[:] = self.save_warnings_filters
-                self.save_warnings_filters = None
+        # InteractiveInterpreter.runsource() calls its runcode() method,
+        # which is overridden (see below)
+        return InteractiveInterpreter.runsource(self, source, filename)
 
     def stuffsource(self, source):
         "Stuff source in the filename cache"
@@ -763,9 +760,6 @@ class ModifiedInterpreter(InteractiveInterpreter):
         if self.tkconsole.executing:
             self.interp.restart_subprocess()
         self.checklinecache()
-        if self.save_warnings_filters is not None:
-            warnings.filters[:] = self.save_warnings_filters
-            self.save_warnings_filters = None
         debugger = self.debugger
         try:
             self.tkconsole.beginexecuting()
@@ -908,10 +902,14 @@ class PyShell(OutputWindow):
         self.save_stderr = sys.stderr
         self.save_stdin = sys.stdin
         from idlelib import iomenu
-        self.stdin = PseudoInputFile(self, "stdin", iomenu.encoding)
-        self.stdout = PseudoOutputFile(self, "stdout", iomenu.encoding)
-        self.stderr = PseudoOutputFile(self, "stderr", iomenu.encoding)
-        self.console = PseudoOutputFile(self, "console", iomenu.encoding)
+        self.stdin = StdInputFile(self, "stdin",
+                                  iomenu.encoding, iomenu.errors)
+        self.stdout = StdOutputFile(self, "stdout",
+                                    iomenu.encoding, iomenu.errors)
+        self.stderr = StdOutputFile(self, "stderr",
+                                    iomenu.encoding, "backslashreplace")
+        self.console = StdOutputFile(self, "console",
+                                     iomenu.encoding, iomenu.errors)
         if not use_subprocess:
             sys.stdout = self.stdout
             sys.stderr = self.stderr
@@ -1296,16 +1294,6 @@ class PyShell(OutputWindow):
         self.set_line_and_column()
 
     def write(self, s, tags=()):
-        if isinstance(s, str) and len(s) and max(s) > '\uffff':
-            # Tk doesn't support outputting non-BMP characters
-            # Let's assume what printed string is not very long,
-            # find first non-BMP character and construct informative
-            # UnicodeEncodeError exception.
-            for start, char in enumerate(s):
-                if char > '\uffff':
-                    break
-            raise UnicodeEncodeError("UCS-2", char, start, start+1,
-                                     'Non-BMP character not supported in Tk')
         try:
             self.text.mark_gravity("iomark", "right")
             count = OutputWindow.write(self, s, tags, "iomark")

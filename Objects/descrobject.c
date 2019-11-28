@@ -231,49 +231,42 @@ getset_set(PyGetSetDescrObject *descr, PyObject *obj, PyObject *value)
  *
  * First, common helpers
  */
-static const char *
-get_name(PyObject *func) {
-    assert(PyObject_TypeCheck(func, &PyMethodDescr_Type));
-    return ((PyMethodDescrObject *)func)->d_method->ml_name;
-}
-
-typedef void (*funcptr)(void);
-
 static inline int
 method_check_args(PyObject *func, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     assert(!PyErr_Occurred());
-    assert(PyObject_TypeCheck(func, &PyMethodDescr_Type));
     if (nargs < 1) {
-        PyErr_Format(PyExc_TypeError,
-                     "descriptor '%.200s' of '%.100s' "
-                     "object needs an argument",
-                     get_name(func), PyDescr_TYPE(func)->tp_name);
+        PyObject *funcstr = _PyObject_FunctionStr(func);
+        if (funcstr != NULL) {
+            PyErr_Format(PyExc_TypeError,
+                         "unbound method %U needs an argument", funcstr);
+            Py_DECREF(funcstr);
+        }
         return -1;
     }
     PyObject *self = args[0];
-    if (!_PyObject_RealIsSubclass((PyObject *)Py_TYPE(self),
-                                  (PyObject *)PyDescr_TYPE(func)))
-    {
-        PyErr_Format(PyExc_TypeError,
-                     "descriptor '%.200s' for '%.100s' objects "
-                     "doesn't apply to a '%.100s' object",
-                     get_name(func), PyDescr_TYPE(func)->tp_name,
-                     Py_TYPE(self)->tp_name);
+    PyObject *dummy;
+    if (descr_check((PyDescrObject *)func, self, &dummy)) {
         return -1;
     }
     if (kwnames && PyTuple_GET_SIZE(kwnames)) {
-        PyErr_Format(PyExc_TypeError,
-                     "%.200s() takes no keyword arguments", get_name(func));
+        PyObject *funcstr = _PyObject_FunctionStr(func);
+        if (funcstr != NULL) {
+            PyErr_Format(PyExc_TypeError,
+                         "%U takes no keyword arguments", funcstr);
+            Py_DECREF(funcstr);
+        }
         return -1;
     }
     return 0;
 }
 
+typedef void (*funcptr)(void);
+
 static inline funcptr
-method_enter_call(PyObject *func)
+method_enter_call(PyThreadState *tstate, PyObject *func)
 {
-    if (Py_EnterRecursiveCall(" while calling a Python object")) {
+    if (_Py_EnterRecursiveCall(tstate, " while calling a Python object")) {
         return NULL;
     }
     return (funcptr)((PyMethodDescrObject *)func)->d_method->ml_meth;
@@ -284,6 +277,7 @@ static PyObject *
 method_vectorcall_VARARGS(
     PyObject *func, PyObject *const *args, size_t nargsf, PyObject *kwnames)
 {
+    PyThreadState *tstate = _PyThreadState_GET();
     Py_ssize_t nargs = PyVectorcall_NARGS(nargsf);
     if (method_check_args(func, args, nargs, kwnames)) {
         return NULL;
@@ -292,14 +286,14 @@ method_vectorcall_VARARGS(
     if (argstuple == NULL) {
         return NULL;
     }
-    PyCFunction meth = (PyCFunction)method_enter_call(func);
+    PyCFunction meth = (PyCFunction)method_enter_call(tstate, func);
     if (meth == NULL) {
         Py_DECREF(argstuple);
         return NULL;
     }
     PyObject *result = meth(args[0], argstuple);
     Py_DECREF(argstuple);
-    Py_LeaveRecursiveCall();
+    _Py_LeaveRecursiveCall(tstate);
     return result;
 }
 
@@ -307,6 +301,7 @@ static PyObject *
 method_vectorcall_VARARGS_KEYWORDS(
     PyObject *func, PyObject *const *args, size_t nargsf, PyObject *kwnames)
 {
+    PyThreadState *tstate = _PyThreadState_GET();
     Py_ssize_t nargs = PyVectorcall_NARGS(nargsf);
     if (method_check_args(func, args, nargs, NULL)) {
         return NULL;
@@ -325,12 +320,12 @@ method_vectorcall_VARARGS_KEYWORDS(
         }
     }
     PyCFunctionWithKeywords meth = (PyCFunctionWithKeywords)
-                                   method_enter_call(func);
+                                   method_enter_call(tstate, func);
     if (meth == NULL) {
         goto exit;
     }
     result = meth(args[0], argstuple, kwdict);
-    Py_LeaveRecursiveCall();
+    _Py_LeaveRecursiveCall(tstate);
 exit:
     Py_DECREF(argstuple);
     Py_XDECREF(kwdict);
@@ -341,17 +336,18 @@ static PyObject *
 method_vectorcall_FASTCALL(
     PyObject *func, PyObject *const *args, size_t nargsf, PyObject *kwnames)
 {
+    PyThreadState *tstate = _PyThreadState_GET();
     Py_ssize_t nargs = PyVectorcall_NARGS(nargsf);
     if (method_check_args(func, args, nargs, kwnames)) {
         return NULL;
     }
     _PyCFunctionFast meth = (_PyCFunctionFast)
-                            method_enter_call(func);
+                            method_enter_call(tstate, func);
     if (meth == NULL) {
         return NULL;
     }
     PyObject *result = meth(args[0], args+1, nargs-1);
-    Py_LeaveRecursiveCall();
+    _Py_LeaveRecursiveCall(tstate);
     return result;
 }
 
@@ -359,17 +355,18 @@ static PyObject *
 method_vectorcall_FASTCALL_KEYWORDS(
     PyObject *func, PyObject *const *args, size_t nargsf, PyObject *kwnames)
 {
+    PyThreadState *tstate = _PyThreadState_GET();
     Py_ssize_t nargs = PyVectorcall_NARGS(nargsf);
     if (method_check_args(func, args, nargs, NULL)) {
         return NULL;
     }
     _PyCFunctionFastWithKeywords meth = (_PyCFunctionFastWithKeywords)
-                                        method_enter_call(func);
+                                        method_enter_call(tstate, func);
     if (meth == NULL) {
         return NULL;
     }
     PyObject *result = meth(args[0], args+1, nargs-1, kwnames);
-    Py_LeaveRecursiveCall();
+    _Py_LeaveRecursiveCall(tstate);
     return result;
 }
 
@@ -377,21 +374,26 @@ static PyObject *
 method_vectorcall_NOARGS(
     PyObject *func, PyObject *const *args, size_t nargsf, PyObject *kwnames)
 {
+    PyThreadState *tstate = _PyThreadState_GET();
     Py_ssize_t nargs = PyVectorcall_NARGS(nargsf);
     if (method_check_args(func, args, nargs, kwnames)) {
         return NULL;
     }
     if (nargs != 1) {
-        PyErr_Format(PyExc_TypeError,
-            "%.200s() takes no arguments (%zd given)", get_name(func), nargs-1);
+        PyObject *funcstr = _PyObject_FunctionStr(func);
+        if (funcstr != NULL) {
+            PyErr_Format(PyExc_TypeError,
+                "%U takes no arguments (%zd given)", funcstr, nargs-1);
+            Py_DECREF(funcstr);
+        }
         return NULL;
     }
-    PyCFunction meth = (PyCFunction)method_enter_call(func);
+    PyCFunction meth = (PyCFunction)method_enter_call(tstate, func);
     if (meth == NULL) {
         return NULL;
     }
     PyObject *result = meth(args[0], NULL);
-    Py_LeaveRecursiveCall();
+    _Py_LeaveRecursiveCall(tstate);
     return result;
 }
 
@@ -399,22 +401,27 @@ static PyObject *
 method_vectorcall_O(
     PyObject *func, PyObject *const *args, size_t nargsf, PyObject *kwnames)
 {
+    PyThreadState *tstate = _PyThreadState_GET();
     Py_ssize_t nargs = PyVectorcall_NARGS(nargsf);
     if (method_check_args(func, args, nargs, kwnames)) {
         return NULL;
     }
     if (nargs != 2) {
-        PyErr_Format(PyExc_TypeError,
-            "%.200s() takes exactly one argument (%zd given)",
-            get_name(func), nargs-1);
+        PyObject *funcstr = _PyObject_FunctionStr(func);
+        if (funcstr != NULL) {
+            PyErr_Format(PyExc_TypeError,
+                "%U takes exactly one argument (%zd given)",
+                funcstr, nargs-1);
+            Py_DECREF(funcstr);
+        }
         return NULL;
     }
-    PyCFunction meth = (PyCFunction)method_enter_call(func);
+    PyCFunction meth = (PyCFunction)method_enter_call(tstate, func);
     if (meth == NULL) {
         return NULL;
     }
     PyObject *result = meth(args[0], args[1]);
-    Py_LeaveRecursiveCall();
+    _Py_LeaveRecursiveCall(tstate);
     return result;
 }
 
@@ -1047,7 +1054,7 @@ mappingproxy_copy(mappingproxyobject *pp, PyObject *Py_UNUSED(ignored))
             to the underlying mapping */
 
 static PyMethodDef mappingproxy_methods[] = {
-    {"get",       (PyCFunction)mappingproxy_get,        METH_FASTCALL,
+    {"get",       (PyCFunction)(void(*)(void))mappingproxy_get, METH_FASTCALL,
      PyDoc_STR("D.get(k[,d]) -> D[k] if k in D, else d."
                "  d defaults to None.")},
     {"keys",      (PyCFunction)mappingproxy_keys,       METH_NOARGS,
@@ -1616,29 +1623,25 @@ property_init_impl(propertyobject *self, PyObject *fget, PyObject *fset,
     /* if no docstring given and the getter has one, use that one */
     if ((doc == NULL || doc == Py_None) && fget != NULL) {
         _Py_IDENTIFIER(__doc__);
-        PyObject *get_doc = _PyObject_GetAttrId(fget, &PyId___doc__);
-        if (get_doc) {
-            if (Py_TYPE(self) == &PyProperty_Type) {
-                Py_XSETREF(self->prop_doc, get_doc);
-            }
-            else {
-                /* If this is a property subclass, put __doc__
-                in dict of the subclass instance instead,
-                otherwise it gets shadowed by __doc__ in the
-                class's dict. */
-                int err = _PyObject_SetAttrId((PyObject *)self, &PyId___doc__, get_doc);
-                Py_DECREF(get_doc);
-                if (err < 0)
-                    return -1;
-            }
-            self->getter_doc = 1;
+        PyObject *get_doc;
+        int rc = _PyObject_LookupAttrId(fget, &PyId___doc__, &get_doc);
+        if (rc <= 0) {
+            return rc;
         }
-        else if (PyErr_ExceptionMatches(PyExc_Exception)) {
-            PyErr_Clear();
+        if (Py_TYPE(self) == &PyProperty_Type) {
+            Py_XSETREF(self->prop_doc, get_doc);
         }
         else {
-            return -1;
+            /* If this is a property subclass, put __doc__
+               in dict of the subclass instance instead,
+               otherwise it gets shadowed by __doc__ in the
+               class's dict. */
+            int err = _PyObject_SetAttrId((PyObject *)self, &PyId___doc__, get_doc);
+            Py_DECREF(get_doc);
+            if (err < 0)
+                return -1;
         }
+        self->getter_doc = 1;
     }
 
     return 0;

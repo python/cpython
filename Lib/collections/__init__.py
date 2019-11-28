@@ -39,21 +39,6 @@ except ImportError:
     pass
 
 
-def __getattr__(name):
-    # For backwards compatibility, continue to make the collections ABCs
-    # through Python 3.6 available through the collections module.
-    # Note, no new collections ABCs were added in Python 3.7
-    if name in _collections_abc.__all__:
-        obj = getattr(_collections_abc, name)
-        import warnings
-        warnings.warn("Using or importing the ABCs from 'collections' instead "
-                      "of from 'collections.abc' is deprecated since Python 3.3,"
-                      "and in 3.9 it will stop working",
-                      DeprecationWarning, stacklevel=2)
-        globals()[name] = obj
-        return obj
-    raise AttributeError(f'module {__name__!r} has no attribute {name!r}')
-
 ################################################################################
 ### OrderedDict
 ################################################################################
@@ -440,8 +425,6 @@ def namedtuple(typename, field_names, *, rename=False, defaults=None, module=Non
         '__slots__': (),
         '_fields': field_names,
         '_field_defaults': field_defaults,
-        # alternate spelling for backward compatibility
-        '_fields_defaults': field_defaults,
         '__new__': __new__,
         '_make': _make,
         '_replace': _replace,
@@ -1184,12 +1167,10 @@ class UserString(_collections_abc.Sequence):
         if isinstance(sub, UserString):
             sub = sub.data
         return self.data.count(sub, start, end)
-    def encode(self, encoding=None, errors=None): # XXX improve this?
-        if encoding:
-            if errors:
-                return self.__class__(self.data.encode(encoding, errors))
-            return self.__class__(self.data.encode(encoding))
-        return self.__class__(self.data.encode())
+    def encode(self, encoding='utf-8', errors='strict'):
+        encoding = 'utf-8' if encoding is None else encoding
+        errors = 'strict' if errors is None else errors
+        return self.data.encode(encoding, errors)
     def endswith(self, suffix, start=0, end=_sys.maxsize):
         return self.data.endswith(suffix, start, end)
     def expandtabs(self, tabsize=8):
