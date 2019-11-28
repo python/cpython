@@ -16,7 +16,7 @@ static PyObject *
 _contextvars_copy_context_impl(PyObject *module)
 /*[clinic end generated code: output=1fcd5da7225c4fa9 input=89bb9ae485888440]*/
 {
-    return (PyObject *)PyContext_CopyCurrent();
+    return PyContext_CopyCurrent();
 }
 
 
@@ -52,6 +52,7 @@ PyInit__contextvars(void)
                            (PyObject *)&PyContext_Type) < 0)
     {
         Py_DECREF(&PyContext_Type);
+        Py_DECREF(m);
         return NULL;
     }
 
@@ -60,6 +61,7 @@ PyInit__contextvars(void)
                            (PyObject *)&PyContextVar_Type) < 0)
     {
         Py_DECREF(&PyContextVar_Type);
+        Py_DECREF(m);
         return NULL;
     }
 
@@ -68,6 +70,7 @@ PyInit__contextvars(void)
                            (PyObject *)&PyContextToken_Type) < 0)
     {
         Py_DECREF(&PyContextToken_Type);
+        Py_DECREF(m);
         return NULL;
     }
 

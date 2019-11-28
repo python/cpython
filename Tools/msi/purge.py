@@ -50,6 +50,7 @@ FILES = [
     "test_d.msi",
     "test_pdb.msi",
     "tools.msi",
+    "ucrt.msi",
     "Windows6.0-KB2999226-x64.msu",
     "Windows6.0-KB2999226-x86.msu",
     "Windows6.1-KB2999226-x64.msu",

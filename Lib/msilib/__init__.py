@@ -8,6 +8,8 @@ import string
 import sys
 
 AMD64 = "AMD64" in sys.version
+# Keep msilib.Win64 around to preserve backwards compatibility.
+Win64 = AMD64
 
 # Partially taken from Wine
 datasizemask=      0x00ff
@@ -114,7 +116,7 @@ def add_data(db, table, values):
                 raise TypeError("Unsupported type %s" % field.__class__.__name__)
         try:
             v.Modify(MSIMODIFY_INSERT, r)
-        except Exception as e:
+        except Exception:
             raise MSIError("Could not insert "+repr(values)+" into "+table)
 
         r.ClearData()
@@ -271,7 +273,7 @@ class Directory:
         if AMD64:
             flags |= 256
         if keyfile:
-            keyid = self.cab.gen_id(self.absolute, keyfile)
+            keyid = self.cab.gen_id(keyfile)
             self.keyfiles[keyfile] = keyid
         else:
             keyid = None

@@ -1,6 +1,9 @@
+import asyncio
+import math
 import unittest
+import os
 import sys
-from unittest.mock import Mock, MagicMock, _magics
+from unittest.mock import AsyncMock, Mock, MagicMock, _magics
 
 
 
@@ -268,6 +271,31 @@ class TestMockingMagicMethods(unittest.TestCase):
         self.assertEqual(mock == mock, True)
         self.assertEqual(mock != mock, False)
 
+    def test_asyncmock_defaults(self):
+        mock = AsyncMock()
+        self.assertEqual(int(mock), 1)
+        self.assertEqual(complex(mock), 1j)
+        self.assertEqual(float(mock), 1.0)
+        self.assertNotIn(object(), mock)
+        self.assertEqual(len(mock), 0)
+        self.assertEqual(list(mock), [])
+        self.assertEqual(hash(mock), object.__hash__(mock))
+        self.assertEqual(str(mock), object.__str__(mock))
+        self.assertTrue(bool(mock))
+        self.assertEqual(round(mock), mock.__round__())
+        self.assertEqual(math.trunc(mock), mock.__trunc__())
+        self.assertEqual(math.floor(mock), mock.__floor__())
+        self.assertEqual(math.ceil(mock), mock.__ceil__())
+        self.assertTrue(asyncio.iscoroutinefunction(mock.__aexit__))
+        self.assertTrue(asyncio.iscoroutinefunction(mock.__aenter__))
+        self.assertIsInstance(mock.__aenter__, AsyncMock)
+        self.assertIsInstance(mock.__aexit__, AsyncMock)
+
+        # in Python 3 oct and hex use __index__
+        # so these tests are for __index__ in py3k
+        self.assertEqual(oct(mock), '0o1')
+        self.assertEqual(hex(mock), '0x1')
+        # how to test __sizeof__ ?
 
     def test_magicmock_defaults(self):
         mock = MagicMock()
@@ -280,6 +308,14 @@ class TestMockingMagicMethods(unittest.TestCase):
         self.assertEqual(hash(mock), object.__hash__(mock))
         self.assertEqual(str(mock), object.__str__(mock))
         self.assertTrue(bool(mock))
+        self.assertEqual(round(mock), mock.__round__())
+        self.assertEqual(math.trunc(mock), mock.__trunc__())
+        self.assertEqual(math.floor(mock), mock.__floor__())
+        self.assertEqual(math.ceil(mock), mock.__ceil__())
+        self.assertTrue(asyncio.iscoroutinefunction(mock.__aexit__))
+        self.assertTrue(asyncio.iscoroutinefunction(mock.__aenter__))
+        self.assertIsInstance(mock.__aenter__, AsyncMock)
+        self.assertIsInstance(mock.__aexit__, AsyncMock)
 
         # in Python 3 oct and hex use __index__
         # so these tests are for __index__ in py3k
@@ -288,10 +324,18 @@ class TestMockingMagicMethods(unittest.TestCase):
         # how to test __sizeof__ ?
 
 
+    def test_magic_methods_fspath(self):
+        mock = MagicMock()
+        expected_path = mock.__fspath__()
+        mock.reset_mock()
+
+        self.assertEqual(os.fspath(mock), expected_path)
+        mock.__fspath__.assert_called_once()
+
+
     def test_magic_methods_and_spec(self):
         class Iterable(object):
-            def __iter__(self):
-                pass
+            def __iter__(self): pass
 
         mock = Mock(spec=Iterable)
         self.assertRaises(AttributeError, lambda: mock.__iter__)
@@ -315,8 +359,7 @@ class TestMockingMagicMethods(unittest.TestCase):
 
     def test_magic_methods_and_spec_set(self):
         class Iterable(object):
-            def __iter__(self):
-                pass
+            def __iter__(self): pass
 
         mock = Mock(spec_set=Iterable)
         self.assertRaises(AttributeError, lambda: mock.__iter__)

@@ -2,8 +2,10 @@
 
 #define PY_SSIZE_T_CLEAN
 #include "Python.h"
+#include "pycore_pystate.h"
 
-#ifdef HAVE_GETC_UNLOCKED
+#if defined(HAVE_GETC_UNLOCKED) && !defined(_Py_MEMORY_SANITIZER)
+/* clang MemorySanitizer doesn't yet understand getc_unlocked. */
 #define GETC(f) getc_unlocked(f)
 #define FLOCKFILE(f) flockfile(f)
 #define FUNLOCKFILE(f) funlockfile(f)
@@ -32,12 +34,13 @@ PyFile_FromFd(int fd, const char *name, const char *mode, int buffering, const c
     PyObject *io, *stream;
     _Py_IDENTIFIER(open);
 
-    io = PyImport_ImportModule("io");
+    /* import _io in case we are being used to open io.py */
+    io = PyImport_ImportModule("_io");
     if (io == NULL)
         return NULL;
-    stream = _PyObject_CallMethodId(io, &PyId_open, "isisssi", fd, mode,
+    stream = _PyObject_CallMethodId(io, &PyId_open, "isisssO", fd, mode,
                                  buffering, encoding, errors,
-                                 newline, closefd);
+                                 newline, closefd ? Py_True : Py_False);
     Py_DECREF(io);
     if (stream == NULL)
         return NULL;
@@ -58,7 +61,7 @@ PyFile_GetLine(PyObject *f, int n)
     }
 
     if (n <= 0) {
-        result = _PyObject_CallMethodIdObjArgs(f, &PyId_readline, NULL);
+        result = _PyObject_CallMethodIdNoArgs(f, &PyId_readline);
     }
     else {
         result = _PyObject_CallMethodId(f, &PyId_readline, "i", n);
@@ -133,7 +136,7 @@ PyFile_WriteObject(PyObject *v, PyObject *f, int flags)
         Py_DECREF(writer);
         return -1;
     }
-    result = PyObject_CallFunctionObjArgs(writer, value, NULL);
+    result = _PyObject_CallOneArg(writer, value);
     Py_DECREF(value);
     Py_DECREF(writer);
     if (result == NULL)
@@ -182,8 +185,10 @@ PyObject_AsFileDescriptor(PyObject *o)
     if (PyLong_Check(o)) {
         fd = _PyLong_AsInt(o);
     }
-    else if ((meth = _PyObject_GetAttrId(o, &PyId_fileno)) != NULL)
-    {
+    else if (_PyObject_LookupAttrId(o, &PyId_fileno, &meth) < 0) {
+        return -1;
+    }
+    else if (meth != NULL) {
         PyObject *fno = _PyObject_CallNoArg(meth);
         Py_DECREF(meth);
         if (fno == NULL)
@@ -358,6 +363,9 @@ stdprinter_write(PyStdPrinter_Object *self, PyObject *args)
     Py_ssize_t n;
     int err;
 
+    /* The function can clear the current exception */
+    assert(!PyErr_Occurred());
+
     if (self->fd < 0) {
         /* fd might be invalid on Windows
          * I can't raise an exception here. It may lead to an
@@ -366,10 +374,11 @@ stdprinter_write(PyStdPrinter_Object *self, PyObject *args)
         Py_RETURN_NONE;
     }
 
-    if (!PyArg_ParseTuple(args, "U", &unicode))
+    if (!PyArg_ParseTuple(args, "U", &unicode)) {
         return NULL;
+    }
 
-    /* encode Unicode to UTF-8 */
+    /* Encode Unicode to UTF-8/surrogateescape */
     str = PyUnicode_AsUTF8AndSize(unicode, &n);
     if (str == NULL) {
         PyErr_Clear();
@@ -398,7 +407,7 @@ stdprinter_write(PyStdPrinter_Object *self, PyObject *args)
 }
 
 static PyObject *
-stdprinter_fileno(PyStdPrinter_Object *self)
+stdprinter_fileno(PyStdPrinter_Object *self, PyObject *Py_UNUSED(ignored))
 {
     return PyLong_FromLong((long) self->fd);
 }
@@ -406,18 +415,18 @@ stdprinter_fileno(PyStdPrinter_Object *self)
 static PyObject *
 stdprinter_repr(PyStdPrinter_Object *self)
 {
-    return PyUnicode_FromFormat("<stdprinter(fd=%d) object at 0x%x>",
+    return PyUnicode_FromFormat("<stdprinter(fd=%d) object at %p>",
                                 self->fd, self);
 }
 
 static PyObject *
-stdprinter_noop(PyStdPrinter_Object *self)
+stdprinter_noop(PyStdPrinter_Object *self, PyObject *Py_UNUSED(ignored))
 {
     Py_RETURN_NONE;
 }
 
 static PyObject *
-stdprinter_isatty(PyStdPrinter_Object *self)
+stdprinter_isatty(PyStdPrinter_Object *self, PyObject *Py_UNUSED(ignored))
 {
     long res;
     if (self->fd < 0) {
@@ -472,10 +481,10 @@ PyTypeObject PyStdPrinter_Type = {
     0,                                          /* tp_itemsize */
     /* methods */
     0,                                          /* tp_dealloc */
-    0,                                          /* tp_print */
+    0,                                          /* tp_vectorcall_offset */
     0,                                          /* tp_getattr */
     0,                                          /* tp_setattr */
-    0,                                          /* tp_reserved */
+    0,                                          /* tp_as_async */
     (reprfunc)stdprinter_repr,                  /* tp_repr */
     0,                                          /* tp_as_number */
     0,                                          /* tp_as_sequence */
@@ -507,6 +516,72 @@ PyTypeObject PyStdPrinter_Type = {
     stdprinter_new,                             /* tp_new */
     PyObject_Del,                               /* tp_free */
 };
+
+
+/* ************************** open_code hook ***************************
+ * The open_code hook allows embedders to override the method used to
+ * open files that are going to be used by the runtime to execute code
+ */
+
+int
+PyFile_SetOpenCodeHook(Py_OpenCodeHookFunction hook, void *userData) {
+    if (Py_IsInitialized() &&
+        PySys_Audit("setopencodehook", NULL) < 0) {
+        return -1;
+    }
+
+    if (_PyRuntime.open_code_hook) {
+        if (Py_IsInitialized()) {
+            PyErr_SetString(PyExc_SystemError,
+                "failed to change existing open_code hook");
+        }
+        return -1;
+    }
+
+    _PyRuntime.open_code_hook = hook;
+    _PyRuntime.open_code_userdata = userData;
+    return 0;
+}
+
+PyObject *
+PyFile_OpenCodeObject(PyObject *path)
+{
+    PyObject *iomod, *f = NULL;
+    _Py_IDENTIFIER(open);
+
+    if (!PyUnicode_Check(path)) {
+        PyErr_Format(PyExc_TypeError, "'path' must be 'str', not '%.200s'",
+                     Py_TYPE(path)->tp_name);
+        return NULL;
+    }
+
+    Py_OpenCodeHookFunction hook = _PyRuntime.open_code_hook;
+    if (hook) {
+        f = hook(path, _PyRuntime.open_code_userdata);
+    } else {
+        iomod = PyImport_ImportModule("_io");
+        if (iomod) {
+            f = _PyObject_CallMethodId(iomod, &PyId_open, "Os",
+                                       path, "rb");
+            Py_DECREF(iomod);
+        }
+    }
+
+    return f;
+}
+
+PyObject *
+PyFile_OpenCode(const char *utf8path)
+{
+    PyObject *pathobj = PyUnicode_FromString(utf8path);
+    PyObject *f;
+    if (!pathobj) {
+        return NULL;
+    }
+    f = PyFile_OpenCodeObject(pathobj);
+    Py_DECREF(pathobj);
+    return f;
+}
 
 
 #ifdef __cplusplus

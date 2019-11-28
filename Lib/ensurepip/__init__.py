@@ -1,16 +1,19 @@
 import os
 import os.path
-import pkgutil
 import sys
 import tempfile
+from importlib import resources
+
+from . import _bundled
+
 
 
 __all__ = ["version", "bootstrap"]
 
 
-_SETUPTOOLS_VERSION = "28.8.0"
+_SETUPTOOLS_VERSION = "41.2.0"
 
-_PIP_VERSION = "9.0.1"
+_PIP_VERSION = "19.2.3"
 
 _PROJECTS = [
     ("setuptools", _SETUPTOOLS_VERSION),
@@ -24,8 +27,8 @@ def _run_pip(args, additional_paths=None):
         sys.path = additional_paths + sys.path
 
     # Install the bundled software
-    import pip
-    return pip.main(args)
+    import pip._internal
+    return pip._internal.main(args)
 
 
 def version():
@@ -73,6 +76,8 @@ def _bootstrap(*, root=None, upgrade=False, user=False,
     if altinstall and default_pip:
         raise ValueError("Cannot use altinstall and default_pip together")
 
+    sys.audit("ensurepip.bootstrap", root)
+
     _disable_pip_configuration_settings()
 
     # By default, installing pip and setuptools installs all of the
@@ -94,9 +99,9 @@ def _bootstrap(*, root=None, upgrade=False, user=False,
         additional_paths = []
         for project, version in _PROJECTS:
             wheel_name = "{}-{}-py2.py3-none-any.whl".format(project, version)
-            whl = pkgutil.get_data(
-                "ensurepip",
-                "_bundled/{}".format(wheel_name),
+            whl = resources.read_binary(
+                _bundled,
+                wheel_name,
             )
             with open(os.path.join(tmpdir, wheel_name), "wb") as fp:
                 fp.write(whl)
@@ -182,15 +187,15 @@ def _main(argv=None):
         "--altinstall",
         action="store_true",
         default=False,
-        help=("Make an alternate install, installing only the X.Y versioned"
-              "scripts (Default: pipX, pipX.Y, easy_install-X.Y)"),
+        help=("Make an alternate install, installing only the X.Y versioned "
+              "scripts (Default: pipX, pipX.Y, easy_install-X.Y)."),
     )
     parser.add_argument(
         "--default-pip",
         action="store_true",
         default=False,
         help=("Make a default pip install, installing the unqualified pip "
-              "and easy_install in addition to the versioned scripts"),
+              "and easy_install in addition to the versioned scripts."),
     )
 
     args = parser.parse_args(argv)

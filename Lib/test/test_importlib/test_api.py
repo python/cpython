@@ -363,7 +363,7 @@ class ReloadTests:
 
     def test_module_missing_spec(self):
         #Test that reload() throws ModuleNotFounderror when reloading
-        # a module who's missing a spec. (bpo-29851)
+        # a module whose missing a spec. (bpo-29851)
         name = 'spam'
         with test_util.uncache(name):
             module = sys.modules[name] = types.ModuleType(name)
@@ -406,7 +406,7 @@ class InvalidateCacheTests:
         # There should be no issues if the method is not defined.
         key = 'gobbledeegook'
         sys.path_importer_cache[key] = None
-        self.addCleanup(lambda: sys.path_importer_cache.__delitem__(key))
+        self.addCleanup(lambda: sys.path_importer_cache.pop(key, None))
         self.init.invalidate_caches()  # Shouldn't trigger an exception.
 
 

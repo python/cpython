@@ -86,7 +86,7 @@ def open_new_tab(url):
     return open(url, 2)
 
 
-def _synthesize(browser, update_tryorder=1):
+def _synthesize(browser, *, preferred=False):
     """Attempt to synthesize a controller base on existing controllers.
 
     This is useful to create a controller when a user specifies a path to
@@ -113,7 +113,7 @@ def _synthesize(browser, update_tryorder=1):
         controller = copy.copy(controller)
         controller.name = browser
         controller.basename = os.path.basename(browser)
-        register(browser, None, controller, update_tryorder)
+        register(browser, None, instance=controller, preferred=preferred)
         return [None, controller]
     return [None, None]
 
@@ -154,6 +154,7 @@ class GenericBrowser(BaseBrowser):
         self.basename = os.path.basename(self.name)
 
     def open(self, url, new=0, autoraise=True):
+        sys.audit("webbrowser.open", url)
         cmdline = [self.name] + [arg.replace("%s", url)
                                  for arg in self.args]
         try:
@@ -173,6 +174,7 @@ class BackgroundBrowser(GenericBrowser):
     def open(self, url, new=0, autoraise=True):
         cmdline = [self.name] + [arg.replace("%s", url)
                                  for arg in self.args]
+        sys.audit("webbrowser.open", url)
         try:
             if sys.platform[:3] == 'win':
                 p = subprocess.Popen(cmdline)
@@ -201,7 +203,7 @@ class UnixBrowser(BaseBrowser):
     remote_action_newwin = None
     remote_action_newtab = None
 
-    def _invoke(self, args, remote, autoraise):
+    def _invoke(self, args, remote, autoraise, url=None):
         raise_opt = []
         if remote and self.raise_opts:
             # use autoraise argument only for remote invocation
@@ -237,6 +239,7 @@ class UnixBrowser(BaseBrowser):
             return not p.wait()
 
     def open(self, url, new=0, autoraise=True):
+        sys.audit("webbrowser.open", url)
         if new == 0:
             action = self.remote_action
         elif new == 1:
@@ -253,7 +256,7 @@ class UnixBrowser(BaseBrowser):
         args = [arg.replace("%s", url).replace("%action", action)
                 for arg in self.remote_args]
         args = [arg for arg in args if arg]
-        success = self._invoke(args, True, autoraise)
+        success = self._invoke(args, True, autoraise, url)
         if not success:
             # remote invocation failed, try straight way
             args = [arg.replace("%s", url) for arg in self.args]
@@ -308,11 +311,10 @@ Chromium = Chrome
 class Opera(UnixBrowser):
     "Launcher class for Opera browser."
 
-    raise_opts = ["-noraise", ""]
-    remote_args = ['-remote', 'openURL(%s%action)']
+    remote_args = ['%action', '%s']
     remote_action = ""
-    remote_action_newwin = ",new-window"
-    remote_action_newtab = ",new-page"
+    remote_action_newwin = "--new-window"
+    remote_action_newtab = ""
     background = True
 
 
@@ -338,6 +340,7 @@ class Konqueror(BaseBrowser):
     """
 
     def open(self, url, new=0, autoraise=True):
+        sys.audit("webbrowser.open", url)
         # XXX Currently I know no way to prevent KFM from opening a new win.
         if new == 2:
             action = "newTab"
@@ -421,6 +424,7 @@ class Grail(BaseBrowser):
         return 1
 
     def open(self, url, new=0, autoraise=True):
+        sys.audit("webbrowser.open", url)
         if new:
             ok = self._remote("LOADNEW " + url)
         else:
@@ -564,7 +568,7 @@ def register_standard_browsers():
         # and prepend to _tryorder
         for cmdline in userchoices:
             if cmdline != '':
-                cmd = _synthesize(cmdline, -1)
+                cmd = _synthesize(cmdline, preferred=True)
                 if cmd[1] is None:
                     register(cmdline, None, GenericBrowser(cmdline), preferred=True)
 
@@ -578,6 +582,7 @@ def register_standard_browsers():
 if sys.platform[:3] == "win":
     class WindowsDefault(BaseBrowser):
         def open(self, url, new=0, autoraise=True):
+            sys.audit("webbrowser.open", url)
             try:
                 os.startfile(url)
             except OSError:
@@ -607,6 +612,7 @@ if sys.platform == 'darwin':
             self.name = name
 
         def open(self, url, new=0, autoraise=True):
+            sys.audit("webbrowser.open", url)
             assert "'" not in url
             # hack for local urls
             if not ':' in url:

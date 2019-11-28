@@ -1,81 +1,102 @@
-import unittest, test.support
+from test import support
 from test.support.script_helper import assert_python_ok, assert_python_failure
-import sys, io, os
-import struct
-import subprocess
-import textwrap
-import warnings
-import operator
+import builtins
 import codecs
 import gc
-import sysconfig
 import locale
-import threading
+import operator
+import os
+import struct
+import subprocess
+import sys
+import sysconfig
+import test.support
+import textwrap
+import unittest
+import warnings
+
 
 # count the number of test runs, used to create unique
 # strings to intern in test_intern()
-numruns = 0
+INTERN_NUMRUNS = 0
 
 
-class SysModuleTest(unittest.TestCase):
-
-    def setUp(self):
-        self.orig_stdout = sys.stdout
-        self.orig_stderr = sys.stderr
-        self.orig_displayhook = sys.displayhook
-
-    def tearDown(self):
-        sys.stdout = self.orig_stdout
-        sys.stderr = self.orig_stderr
-        sys.displayhook = self.orig_displayhook
-        test.support.reap_children()
+class DisplayHookTest(unittest.TestCase):
 
     def test_original_displayhook(self):
-        import builtins
-        out = io.StringIO()
-        sys.stdout = out
-
         dh = sys.__displayhook__
 
-        self.assertRaises(TypeError, dh)
-        if hasattr(builtins, "_"):
-            del builtins._
+        with support.captured_stdout() as out:
+            dh(42)
 
-        dh(None)
-        self.assertEqual(out.getvalue(), "")
-        self.assertTrue(not hasattr(builtins, "_"))
-        dh(42)
         self.assertEqual(out.getvalue(), "42\n")
         self.assertEqual(builtins._, 42)
 
-        del sys.stdout
-        self.assertRaises(RuntimeError, dh, 42)
+        del builtins._
+
+        with support.captured_stdout() as out:
+            dh(None)
+
+        self.assertEqual(out.getvalue(), "")
+        self.assertTrue(not hasattr(builtins, "_"))
+
+        # sys.displayhook() requires arguments
+        self.assertRaises(TypeError, dh)
+
+        stdout = sys.stdout
+        try:
+            del sys.stdout
+            self.assertRaises(RuntimeError, dh, 42)
+        finally:
+            sys.stdout = stdout
 
     def test_lost_displayhook(self):
-        del sys.displayhook
-        code = compile("42", "<string>", "single")
-        self.assertRaises(RuntimeError, eval, code)
+        displayhook = sys.displayhook
+        try:
+            del sys.displayhook
+            code = compile("42", "<string>", "single")
+            self.assertRaises(RuntimeError, eval, code)
+        finally:
+            sys.displayhook = displayhook
 
     def test_custom_displayhook(self):
         def baddisplayhook(obj):
             raise ValueError
-        sys.displayhook = baddisplayhook
-        code = compile("42", "<string>", "single")
-        self.assertRaises(ValueError, eval, code)
+
+        with support.swap_attr(sys, 'displayhook', baddisplayhook):
+            code = compile("42", "<string>", "single")
+            self.assertRaises(ValueError, eval, code)
+
+
+class ExceptHookTest(unittest.TestCase):
 
     def test_original_excepthook(self):
-        err = io.StringIO()
-        sys.stderr = err
-
-        eh = sys.__excepthook__
-
-        self.assertRaises(TypeError, eh)
         try:
             raise ValueError(42)
         except ValueError as exc:
-            eh(*sys.exc_info())
+            with support.captured_stderr() as err:
+                sys.__excepthook__(*sys.exc_info())
 
         self.assertTrue(err.getvalue().endswith("ValueError: 42\n"))
+
+        self.assertRaises(TypeError, sys.__excepthook__)
+
+    def test_excepthook_bytes_filename(self):
+        # bpo-37467: sys.excepthook() must not crash if a filename
+        # is a bytes string
+        with warnings.catch_warnings():
+            warnings.simplefilter('ignore', BytesWarning)
+
+            try:
+                raise SyntaxError("msg", (b"bytes_filename", 123, 0, "text"))
+            except SyntaxError as exc:
+                with support.captured_stderr() as err:
+                    sys.__excepthook__(*sys.exc_info())
+
+        err = err.getvalue()
+        self.assertIn("""  File "b'bytes_filename'", line 123\n""", err)
+        self.assertIn("""    text\n""", err)
+        self.assertTrue(err.endswith("SyntaxError: msg\n"))
 
     def test_excepthook(self):
         with test.support.captured_output("stderr") as stderr:
@@ -85,6 +106,12 @@ class SysModuleTest(unittest.TestCase):
 
     # FIXME: testing the code for a lost or replaced excepthook in
     # Python/pythonrun.c::PyErr_PrintEx() is tricky.
+
+
+class SysModuleTest(unittest.TestCase):
+
+    def tearDown(self):
+        test.support.reap_children()
 
     def test_exit(self):
         # call with two arguments
@@ -159,15 +186,6 @@ class SysModuleTest(unittest.TestCase):
 
     # testing sys.settrace() is done in test_sys_settrace.py
     # testing sys.setprofile() is done in test_sys_setprofile.py
-
-    def test_setcheckinterval(self):
-        with warnings.catch_warnings():
-            warnings.simplefilter("ignore")
-            self.assertRaises(TypeError, sys.setcheckinterval)
-            orig = sys.getcheckinterval()
-            for n in 0, 100, 120, orig: # orig last to restore starting state
-                sys.setcheckinterval(n)
-                self.assertEqual(sys.getcheckinterval(), n)
 
     def test_switchinterval(self):
         self.assertRaises(TypeError, sys.setswitchinterval)
@@ -502,10 +520,10 @@ class SysModuleTest(unittest.TestCase):
         self.assertEqual(sys.__stdout__.encoding, sys.__stderr__.encoding)
 
     def test_intern(self):
-        global numruns
-        numruns += 1
+        global INTERN_NUMRUNS
+        INTERN_NUMRUNS += 1
         self.assertRaises(TypeError, sys.intern)
-        s = "never interned before" + str(numruns)
+        s = "never interned before" + str(INTERN_NUMRUNS)
         self.assertTrue(sys.intern(s) is s)
         s2 = s.swapcase().swapcase()
         self.assertTrue(sys.intern(s2) is s)
@@ -654,10 +672,10 @@ class SysModuleTest(unittest.TestCase):
             expected = None
         self.check_fsencoding(fs_encoding, expected)
 
-    def c_locale_get_error_handler(self, isolated=False, encoding=None):
+    def c_locale_get_error_handler(self, locale, isolated=False, encoding=None):
         # Force the POSIX locale
         env = os.environ.copy()
-        env["LC_ALL"] = "C"
+        env["LC_ALL"] = locale
         env["PYTHONCOERCECLOCALE"] = "0"
         code = '\n'.join((
             'import sys',
@@ -668,7 +686,7 @@ class SysModuleTest(unittest.TestCase):
             'dump("stdout")',
             'dump("stderr")',
         ))
-        args = [sys.executable, "-c", code]
+        args = [sys.executable, "-X", "utf8=0", "-c", code]
         if isolated:
             args.append("-I")
         if encoding is not None:
@@ -683,43 +701,49 @@ class SysModuleTest(unittest.TestCase):
         stdout, stderr = p.communicate()
         return stdout
 
-    def test_c_locale_surrogateescape(self):
-        out = self.c_locale_get_error_handler(isolated=True)
+    def check_locale_surrogateescape(self, locale):
+        out = self.c_locale_get_error_handler(locale, isolated=True)
         self.assertEqual(out,
                          'stdin: surrogateescape\n'
                          'stdout: surrogateescape\n'
                          'stderr: backslashreplace\n')
 
         # replace the default error handler
-        out = self.c_locale_get_error_handler(encoding=':ignore')
+        out = self.c_locale_get_error_handler(locale, encoding=':ignore')
         self.assertEqual(out,
                          'stdin: ignore\n'
                          'stdout: ignore\n'
                          'stderr: backslashreplace\n')
 
         # force the encoding
-        out = self.c_locale_get_error_handler(encoding='iso8859-1')
+        out = self.c_locale_get_error_handler(locale, encoding='iso8859-1')
         self.assertEqual(out,
                          'stdin: strict\n'
                          'stdout: strict\n'
                          'stderr: backslashreplace\n')
-        out = self.c_locale_get_error_handler(encoding='iso8859-1:')
+        out = self.c_locale_get_error_handler(locale, encoding='iso8859-1:')
         self.assertEqual(out,
                          'stdin: strict\n'
                          'stdout: strict\n'
                          'stderr: backslashreplace\n')
 
         # have no any effect
-        out = self.c_locale_get_error_handler(encoding=':')
-        self.assertEqual(out,
-                         'stdin: strict\n'
-                         'stdout: strict\n'
-                         'stderr: backslashreplace\n')
-        out = self.c_locale_get_error_handler(encoding='')
+        out = self.c_locale_get_error_handler(locale, encoding=':')
         self.assertEqual(out,
                          'stdin: surrogateescape\n'
                          'stdout: surrogateescape\n'
                          'stderr: backslashreplace\n')
+        out = self.c_locale_get_error_handler(locale, encoding='')
+        self.assertEqual(out,
+                         'stdin: surrogateescape\n'
+                         'stdout: surrogateescape\n'
+                         'stderr: backslashreplace\n')
+
+    def test_c_locale_surrogateescape(self):
+        self.check_locale_surrogateescape('C')
+
+    def test_posix_locale_surrogateescape(self):
+        self.check_locale_surrogateescape('POSIX')
 
     def test_implementation(self):
         # This test applies to all implementations equally.
@@ -762,8 +786,13 @@ class SysModuleTest(unittest.TestCase):
         except ImportError:
             with_pymalloc = support.with_pymalloc()
         else:
-            alloc_name = _testcapi.pymem_getallocatorsname()
-            with_pymalloc = (alloc_name in ('pymalloc', 'pymalloc_debug'))
+            try:
+                alloc_name = _testcapi.pymem_getallocatorsname()
+            except RuntimeError as exc:
+                # "cannot get allocators name" (ex: tracemalloc is used)
+                with_pymalloc = True
+            else:
+                with_pymalloc = (alloc_name in ('pymalloc', 'pymalloc_debug'))
 
         # Some sanity checks
         a = sys.getallocatedblocks()
@@ -812,6 +841,22 @@ class SysModuleTest(unittest.TestCase):
         rc, stdout, stderr = assert_python_ok('-c', code)
         self.assertEqual(stdout.rstrip(), b'True')
 
+    @test.support.requires_type_collecting
+    def test_issue20602(self):
+        # sys.flags and sys.float_info were wiped during shutdown.
+        code = """if 1:
+            import sys
+            class A:
+                def __del__(self, sys=sys):
+                    print(sys.flags)
+                    print(sys.float_info)
+            a = A()
+            """
+        rc, out, err = assert_python_ok('-c', code)
+        out = out.splitlines()
+        self.assertIn(b'sys.flags', out[0])
+        self.assertIn(b'sys.float_info', out[1])
+
     @unittest.skipUnless(hasattr(sys, 'getandroidapilevel'),
                          'need sys.getandroidapilevel()')
     def test_getandroidapilevel(self):
@@ -851,6 +896,140 @@ class SysModuleTest(unittest.TestCase):
         check(1<<1000, traceback)
         check(-1<<1000, [traceback[-1]])
         check(None, traceback)
+
+    def test_no_duplicates_in_meta_path(self):
+        self.assertEqual(len(sys.meta_path), len(set(sys.meta_path)))
+
+    @unittest.skipUnless(hasattr(sys, "_enablelegacywindowsfsencoding"),
+                         'needs sys._enablelegacywindowsfsencoding()')
+    def test__enablelegacywindowsfsencoding(self):
+        code = ('import sys',
+                'sys._enablelegacywindowsfsencoding()',
+                'print(sys.getfilesystemencoding(), sys.getfilesystemencodeerrors())')
+        rc, out, err = assert_python_ok('-c', '; '.join(code))
+        out = out.decode('ascii', 'replace').rstrip()
+        self.assertEqual(out, 'mbcs replace')
+
+
+@test.support.cpython_only
+class UnraisableHookTest(unittest.TestCase):
+    def write_unraisable_exc(self, exc, err_msg, obj):
+        import _testcapi
+        import types
+        err_msg2 = f"Exception ignored {err_msg}"
+        try:
+            _testcapi.write_unraisable_exc(exc, err_msg, obj)
+            return types.SimpleNamespace(exc_type=type(exc),
+                                         exc_value=exc,
+                                         exc_traceback=exc.__traceback__,
+                                         err_msg=err_msg2,
+                                         object=obj)
+        finally:
+            # Explicitly break any reference cycle
+            exc = None
+
+    def test_original_unraisablehook(self):
+        for err_msg in (None, "original hook"):
+            with self.subTest(err_msg=err_msg):
+                obj = "an object"
+
+                with test.support.captured_output("stderr") as stderr:
+                    with test.support.swap_attr(sys, 'unraisablehook',
+                                                sys.__unraisablehook__):
+                        self.write_unraisable_exc(ValueError(42), err_msg, obj)
+
+                err = stderr.getvalue()
+                if err_msg is not None:
+                    self.assertIn(f'Exception ignored {err_msg}: {obj!r}\n', err)
+                else:
+                    self.assertIn(f'Exception ignored in: {obj!r}\n', err)
+                self.assertIn('Traceback (most recent call last):\n', err)
+                self.assertIn('ValueError: 42\n', err)
+
+    def test_original_unraisablehook_err(self):
+        # bpo-22836: PyErr_WriteUnraisable() should give sensible reports
+        class BrokenDel:
+            def __del__(self):
+                exc = ValueError("del is broken")
+                # The following line is included in the traceback report:
+                raise exc
+
+        class BrokenStrException(Exception):
+            def __str__(self):
+                raise Exception("str() is broken")
+
+        class BrokenExceptionDel:
+            def __del__(self):
+                exc = BrokenStrException()
+                # The following line is included in the traceback report:
+                raise exc
+
+        for test_class in (BrokenDel, BrokenExceptionDel):
+            with self.subTest(test_class):
+                obj = test_class()
+                with test.support.captured_stderr() as stderr, \
+                     test.support.swap_attr(sys, 'unraisablehook',
+                                            sys.__unraisablehook__):
+                    # Trigger obj.__del__()
+                    del obj
+
+                report = stderr.getvalue()
+                self.assertIn("Exception ignored", report)
+                self.assertIn(test_class.__del__.__qualname__, report)
+                self.assertIn("test_sys.py", report)
+                self.assertIn("raise exc", report)
+                if test_class is BrokenExceptionDel:
+                    self.assertIn("BrokenStrException", report)
+                    self.assertIn("<exception str() failed>", report)
+                else:
+                    self.assertIn("ValueError", report)
+                    self.assertIn("del is broken", report)
+                self.assertTrue(report.endswith("\n"))
+
+
+    def test_original_unraisablehook_wrong_type(self):
+        exc = ValueError(42)
+        with test.support.swap_attr(sys, 'unraisablehook',
+                                    sys.__unraisablehook__):
+            with self.assertRaises(TypeError):
+                sys.unraisablehook(exc)
+
+    def test_custom_unraisablehook(self):
+        hook_args = None
+
+        def hook_func(args):
+            nonlocal hook_args
+            hook_args = args
+
+        obj = object()
+        try:
+            with test.support.swap_attr(sys, 'unraisablehook', hook_func):
+                expected = self.write_unraisable_exc(ValueError(42),
+                                                     "custom hook", obj)
+                for attr in "exc_type exc_value exc_traceback err_msg object".split():
+                    self.assertEqual(getattr(hook_args, attr),
+                                     getattr(expected, attr),
+                                     (hook_args, expected))
+        finally:
+            # expected and hook_args contain an exception: break reference cycle
+            expected = None
+            hook_args = None
+
+    def test_custom_unraisablehook_fail(self):
+        def hook_func(*args):
+            raise Exception("hook_func failed")
+
+        with test.support.captured_output("stderr") as stderr:
+            with test.support.swap_attr(sys, 'unraisablehook', hook_func):
+                self.write_unraisable_exc(ValueError(42),
+                                          "custom hook fail", None)
+
+        err = stderr.getvalue()
+        self.assertIn(f'Exception ignored in sys.unraisablehook: '
+                      f'{hook_func!r}\n',
+                      err)
+        self.assertIn('Traceback (most recent call last):\n', err)
+        self.assertIn('Exception: hook_func failed\n', err)
 
 
 @test.support.cpython_only
@@ -920,7 +1099,7 @@ class SizeofTest(unittest.TestCase):
         # buffer
         # XXX
         # builtin_function_or_method
-        check(len, size('4P')) # XXX check layout
+        check(len, size('5P'))
         # bytearray
         samples = [b'', b'u'*100000]
         for sample in samples:
@@ -951,7 +1130,7 @@ class SizeofTest(unittest.TestCase):
         # complex
         check(complex(0,1), size('2d'))
         # method_descriptor (descriptor object)
-        check(str.lower, size('3PP'))
+        check(str.lower, size('3PPP'))
         # classmethod_descriptor (descriptor object)
         # XXX
         # member_descriptor (descriptor object)
@@ -964,8 +1143,10 @@ class SizeofTest(unittest.TestCase):
         check(int.__add__, size('3P2P'))
         # method-wrapper (descriptor object)
         check({}.__iter__, size('2P'))
+        # empty dict
+        check({}, size('nQ2P'))
         # dict
-        check({}, size('nQ2P') + calcsize('2nP2n') + 8 + (8*2//3)*calcsize('n2P'))
+        check({"a": 1}, size('nQ2P') + calcsize('2nP2n') + 8 + (8*2//3)*calcsize('n2P'))
         longdict = {1:1, 2:2, 3:3, 4:4, 5:5, 6:6, 7:7, 8:8}
         check(longdict, size('nQ2P') + calcsize('2nP2n') + 16 + (16*2//3)*calcsize('n2P'))
         # dictionary-keyview
@@ -1018,7 +1199,7 @@ class SizeofTest(unittest.TestCase):
         check(x, vsize('5P2c4P3ic' + CO_MAXBLOCKS*'3i' + 'P' + extras*'P'))
         # function
         def func(): pass
-        check(func, size('12P'))
+        check(func, size('13P'))
         class c():
             @staticmethod
             def foo():
@@ -1041,7 +1222,7 @@ class SizeofTest(unittest.TestCase):
         # list
         samples = [[], [1,2,3], ['1', '2', '3']]
         for sample in samples:
-            check(sample, vsize('Pn') + len(sample)*self.P)
+            check(list(sample), vsize('Pn') + len(sample)*self.P)
         # sortwrapper (list)
         # XXX
         # cmpwrapper (list)
@@ -1113,7 +1294,7 @@ class SizeofTest(unittest.TestCase):
         check((1,2,3), vsize('') + 3*self.P)
         # type
         # static type: PyTypeObject
-        fmt = 'P2n15Pl4Pn9Pn11PIP'
+        fmt = 'P2nPI13Pl4Pn9Pn11PIPP'
         if hasattr(sys, 'getcounts'):
             fmt += '3n2P'
         s = vsize(fmt)
@@ -1252,8 +1433,5 @@ class SizeofTest(unittest.TestCase):
         self.assertIsNone(cur.finalizer)
 
 
-def test_main():
-    test.support.run_unittest(SysModuleTest, SizeofTest)
-
 if __name__ == "__main__":
-    test_main()
+    unittest.main()

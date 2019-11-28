@@ -1,4 +1,4 @@
-# Copyright 2001-2017 by Vinay Sajip. All Rights Reserved.
+# Copyright 2001-2019 by Vinay Sajip. All Rights Reserved.
 #
 # Permission to use, copy, modify, and distribute this software and its
 # documentation for any purpose and without fee is hereby granted,
@@ -18,14 +18,16 @@
 Logging package for Python. Based on PEP 282 and comments thereto in
 comp.lang.python.
 
-Copyright (C) 2001-2017 Vinay Sajip. All Rights Reserved.
+Copyright (C) 2001-2019 Vinay Sajip. All Rights Reserved.
 
 To use, simply 'import logging' and log away!
 """
 
-import sys, os, time, io, traceback, warnings, weakref, collections.abc
+import sys, os, time, io, re, traceback, warnings, weakref, collections.abc
 
 from string import Template
+from string import Formatter as StrFormatter
+
 
 __all__ = ['BASIC_FORMAT', 'BufferingFormatter', 'CRITICAL', 'DEBUG', 'ERROR',
            'FATAL', 'FileHandler', 'Filter', 'Formatter', 'Handler', 'INFO',
@@ -225,6 +227,44 @@ def _releaseLock():
     if _lock:
         _lock.release()
 
+
+# Prevent a held logging lock from blocking a child from logging.
+
+if not hasattr(os, 'register_at_fork'):  # Windows and friends.
+    def _register_at_fork_reinit_lock(instance):
+        pass  # no-op when os.register_at_fork does not exist.
+else:
+    # A collection of instances with a createLock method (logging.Handler)
+    # to be called in the child after forking.  The weakref avoids us keeping
+    # discarded Handler instances alive.  A set is used to avoid accumulating
+    # duplicate registrations as createLock() is responsible for registering
+    # a new Handler instance with this set in the first place.
+    _at_fork_reinit_lock_weakset = weakref.WeakSet()
+
+    def _register_at_fork_reinit_lock(instance):
+        _acquireLock()
+        try:
+            _at_fork_reinit_lock_weakset.add(instance)
+        finally:
+            _releaseLock()
+
+    def _after_at_fork_child_reinit_locks():
+        # _acquireLock() was called in the parent before forking.
+        for handler in _at_fork_reinit_lock_weakset:
+            try:
+                handler.createLock()
+            except Exception as err:
+                # Similar to what PyErr_WriteUnraisable does.
+                print("Ignoring exception from logging atfork", instance,
+                      "._reinit_lock() method:", err, file=sys.stderr)
+        _releaseLock()  # Acquired by os.register_at_fork(before=.
+
+
+    os.register_at_fork(before=_acquireLock,
+                        after_in_child=_after_at_fork_child_reinit_locks,
+                        after_in_parent=_releaseLock)
+
+
 #---------------------------------------------------------------------------
 #   The logging record
 #---------------------------------------------------------------------------
@@ -313,11 +353,9 @@ class LogRecord(object):
         else:
             self.process = None
 
-    def __str__(self):
+    def __repr__(self):
         return '<LogRecord: %s, %s, %s, %s, "%s">'%(self.name, self.levelno,
             self.pathname, self.lineno, self.msg)
-
-    __repr__ = __str__
 
     def getMessage(self):
         """
@@ -364,15 +402,20 @@ def makeLogRecord(dict):
     rv.__dict__.update(dict)
     return rv
 
+
 #---------------------------------------------------------------------------
 #   Formatter classes and functions
 #---------------------------------------------------------------------------
+_str_formatter = StrFormatter()
+del StrFormatter
+
 
 class PercentStyle(object):
 
     default_format = '%(message)s'
     asctime_format = '%(asctime)s'
     asctime_search = '%(asctime)'
+    validation_pattern = re.compile(r'%\(\w+\)[#0+ -]*(\*|\d+)?(\.(\*|\d+))?[diouxefgcrsa%]', re.I)
 
     def __init__(self, fmt):
         self._fmt = fmt or self.default_format
@@ -380,16 +423,49 @@ class PercentStyle(object):
     def usesTime(self):
         return self._fmt.find(self.asctime_search) >= 0
 
-    def format(self, record):
+    def validate(self):
+        """Validate the input format, ensure it matches the correct style"""
+        if not self.validation_pattern.search(self._fmt):
+            raise ValueError("Invalid format '%s' for '%s' style" % (self._fmt, self.default_format[0]))
+
+    def _format(self, record):
         return self._fmt % record.__dict__
+
+    def format(self, record):
+        try:
+            return self._format(record)
+        except KeyError as e:
+            raise ValueError('Formatting field not found in record: %s' % e)
+
 
 class StrFormatStyle(PercentStyle):
     default_format = '{message}'
     asctime_format = '{asctime}'
     asctime_search = '{asctime'
 
-    def format(self, record):
+    fmt_spec = re.compile(r'^(.?[<>=^])?[+ -]?#?0?(\d+|{\w+})?[,_]?(\.(\d+|{\w+}))?[bcdefgnosx%]?$', re.I)
+    field_spec = re.compile(r'^(\d+|\w+)(\.\w+|\[[^]]+\])*$')
+
+    def _format(self, record):
         return self._fmt.format(**record.__dict__)
+
+    def validate(self):
+        """Validate the input format, ensure it is the correct string formatting style"""
+        fields = set()
+        try:
+            for _, fieldname, spec, conversion in _str_formatter.parse(self._fmt):
+                if fieldname:
+                    if not self.field_spec.match(fieldname):
+                        raise ValueError('invalid field name/expression: %r' % fieldname)
+                    fields.add(fieldname)
+                if conversion and conversion not in 'rsa':
+                    raise ValueError('invalid conversion: %r' % conversion)
+                if spec and not self.fmt_spec.match(spec):
+                    raise ValueError('bad specifier: %r' % spec)
+        except ValueError as e:
+            raise ValueError('invalid format: %s' % e)
+        if not fields:
+            raise ValueError('invalid format: no fields')
 
 
 class StringTemplateStyle(PercentStyle):
@@ -405,8 +481,23 @@ class StringTemplateStyle(PercentStyle):
         fmt = self._fmt
         return fmt.find('$asctime') >= 0 or fmt.find(self.asctime_format) >= 0
 
-    def format(self, record):
+    def validate(self):
+        pattern = Template.pattern
+        fields = set()
+        for m in pattern.finditer(self._fmt):
+            d = m.groupdict()
+            if d['named']:
+                fields.add(d['named'])
+            elif d['braced']:
+                fields.add(d['braced'])
+            elif m.group(0) == '$':
+                raise ValueError('invalid format: bare \'$\' not allowed')
+        if not fields:
+            raise ValueError('invalid format: no fields')
+
+    def _format(self, record):
         return self._tpl.substitute(**record.__dict__)
+
 
 BASIC_FORMAT = "%(levelname)s:%(name)s:%(message)s"
 
@@ -424,7 +515,8 @@ class Formatter(object):
     responsible for converting a LogRecord to (usually) a string which can
     be interpreted by either a human or an external system. The base Formatter
     allows a formatting string to be specified. If none is supplied, the
-    default value of "%s(message)" is used.
+    the style-dependent default value, "%(message)s", "{message}", or
+    "${message}", is used.
 
     The Formatter can be initialized with a format string which makes use of
     knowledge of the LogRecord attributes - e.g. the default value mentioned
@@ -460,13 +552,14 @@ class Formatter(object):
 
     converter = time.localtime
 
-    def __init__(self, fmt=None, datefmt=None, style='%'):
+    def __init__(self, fmt=None, datefmt=None, style='%', validate=True):
         """
         Initialize the formatter with specified format strings.
 
         Initialize the formatter either with the specified format string, or a
         default as described above. Allow for specialized date formatting with
-        the optional datefmt argument (if omitted, you get the ISO8601 format).
+        the optional datefmt argument. If datefmt is omitted, you get an
+        ISO8601-like (or RFC 3339-like) format.
 
         Use a style parameter of '%', '{' or '$' to specify that you want to
         use one of %-formatting, :meth:`str.format` (``{}``) formatting or
@@ -479,6 +572,9 @@ class Formatter(object):
             raise ValueError('Style must be one of: %s' % ','.join(
                              _STYLES.keys()))
         self._style = _STYLES[style][0](fmt)
+        if validate:
+            self._style.validate()
+
         self._fmt = self._style._fmt
         self.datefmt = datefmt
 
@@ -494,13 +590,13 @@ class Formatter(object):
         in formatters to provide for any specific requirement, but the
         basic behaviour is as follows: if datefmt (a string) is specified,
         it is used with time.strftime() to format the creation time of the
-        record. Otherwise, the ISO8601 format is used. The resulting
-        string is returned. This function uses a user-configurable function
-        to convert the creation time to a tuple. By default, time.localtime()
-        is used; to change this for a particular formatter instance, set the
-        'converter' attribute to a function with the same signature as
-        time.localtime() or time.gmtime(). To change it for all formatters,
-        for example if you want all logging times to be shown in GMT,
+        record. Otherwise, an ISO8601-like (or RFC 3339-like) format is used.
+        The resulting string is returned. This function uses a user-configurable
+        function to convert the creation time to a tuple. By default,
+        time.localtime() is used; to change this for a particular formatter
+        instance, set the 'converter' attribute to a function with the same
+        signature as time.localtime() or time.gmtime(). To change it for all
+        formatters, for example if you want all logging times to be shown in GMT,
         set the 'converter' attribute in the Formatter class.
         """
         ct = self.converter(record.created)
@@ -793,6 +889,7 @@ class Handler(Filterer):
         Acquire a thread lock for serializing access to the underlying I/O.
         """
         self.lock = threading.RLock()
+        _register_at_fork_reinit_lock(self)
 
     def acquire(self):
         """
@@ -922,6 +1019,8 @@ class Handler(Filterer):
                     sys.stderr.write('Message: %r\n'
                                      'Arguments: %s\n' % (record.msg,
                                                           record.args))
+                except RecursionError:  # See issue 36272
+                    raise
                 except Exception:
                     sys.stderr.write('Unable to print the message and arguments'
                                      ' - possible formatting error.\nUse the'
@@ -981,9 +1080,11 @@ class StreamHandler(Handler):
         try:
             msg = self.format(record)
             stream = self.stream
-            stream.write(msg)
-            stream.write(self.terminator)
+            # issue 35046: merged two stream.writes into one.
+            stream.write(msg + self.terminator)
             self.flush()
+        except RecursionError:  # See issue 36272
+            raise
         except Exception:
             self.handleError(record)
 
@@ -1010,6 +1111,8 @@ class StreamHandler(Handler):
     def __repr__(self):
         level = getLevelName(self.level)
         name = getattr(self.stream, 'name', '')
+        #  bpo-36015: name can be an int
+        name = str(name)
         if name:
             name += ' '
         return '<%s %s(%s)>' % (self.__class__.__name__, name, level)
@@ -1019,7 +1122,7 @@ class FileHandler(StreamHandler):
     """
     A handler class which writes formatted logging records to disk files.
     """
-    def __init__(self, filename, mode='a', encoding=None, delay=False):
+    def __init__(self, filename, mode='a', encoding=None, delay=False, errors=None):
         """
         Open the specified file and use it as the stream for logging.
         """
@@ -1030,6 +1133,7 @@ class FileHandler(StreamHandler):
         self.baseFilename = os.path.abspath(filename)
         self.mode = mode
         self.encoding = encoding
+        self.errors = errors
         self.delay = delay
         if delay:
             #We don't open the stream, but we still need to call the
@@ -1066,7 +1170,8 @@ class FileHandler(StreamHandler):
         Open the current base file with the (original) mode and encoding.
         Return the resulting stream.
         """
-        return open(self.baseFilename, self.mode, encoding=self.encoding)
+        return open(self.baseFilename, self.mode, encoding=self.encoding,
+                    errors=self.errors)
 
     def emit(self, record):
         """
@@ -1396,7 +1501,7 @@ class Logger(Filterer):
         if self.isEnabledFor(level):
             self._log(level, msg, args, **kwargs)
 
-    def findCaller(self, stack_info=False):
+    def findCaller(self, stack_info=False, stacklevel=1):
         """
         Find the stack frame of the caller so that we can note the source
         file name, line number and function name.
@@ -1406,6 +1511,12 @@ class Logger(Filterer):
         #IronPython isn't run with -X:Frames.
         if f is not None:
             f = f.f_back
+        orig_f = f
+        while f and stacklevel > 1:
+            f = f.f_back
+            stacklevel -= 1
+        if not f:
+            f = orig_f
         rv = "(unknown file)", 0, "(unknown function)", None
         while hasattr(f, "f_code"):
             co = f.f_code
@@ -1441,7 +1552,8 @@ class Logger(Filterer):
                 rv.__dict__[key] = extra[key]
         return rv
 
-    def _log(self, level, msg, args, exc_info=None, extra=None, stack_info=False):
+    def _log(self, level, msg, args, exc_info=None, extra=None, stack_info=False,
+             stacklevel=1):
         """
         Low-level logging routine which creates a LogRecord and then calls
         all the handlers of this logger to handle the record.
@@ -1452,7 +1564,7 @@ class Logger(Filterer):
             #exception on some versions of IronPython. We trap it here so that
             #IronPython can use logging.
             try:
-                fn, lno, func, sinfo = self.findCaller(stack_info)
+                fn, lno, func, sinfo = self.findCaller(stack_info, stacklevel)
             except ValueError: # pragma: no cover
                 fn, lno, func = "(unknown file)", 0, "(unknown function)"
         else: # pragma: no cover
@@ -1568,6 +1680,9 @@ class Logger(Filterer):
         """
         Is this logger enabled for level 'level'?
         """
+        if self.disabled:
+            return False
+
         try:
             return self._cache[level]
         except KeyError:
@@ -1782,7 +1897,8 @@ def basicConfig(**kwargs):
     Do basic configuration for the logging system.
 
     This function does nothing if the root logger already has handlers
-    configured. It is a convenience method intended for use by simple scripts
+    configured, unless the keyword argument *force* is set to ``True``.
+    It is a convenience method intended for use by simple scripts
     to do one-shot configuration of the logging package.
 
     The default behaviour is to create a StreamHandler which writes to
@@ -1810,6 +1926,17 @@ def basicConfig(**kwargs):
               handlers, which will be added to the root handler. Any handler
               in the list which does not have a formatter assigned will be
               assigned the formatter created in this function.
+    force     If this keyword  is specified as true, any existing handlers
+              attached to the root logger are removed and closed, before
+              carrying out the configuration as specified by the other
+              arguments.
+    encoding  If specified together with a filename, this encoding is passed to
+              the created FileHandler, causing it to be used when the file is
+              opened.
+    errors    If specified together with a filename, this value is passed to the
+              created FileHandler, causing it to be used when the file is
+              opened in text mode. If not specified, the default value is
+              `backslashreplace`.
 
     Note that you could specify a stream created using open(filename, mode)
     rather than passing the filename and mode in. However, it should be
@@ -1826,11 +1953,24 @@ def basicConfig(**kwargs):
        ``filename``/``filemode``, or ``filename``/``filemode`` specified
        together with ``stream``, or ``handlers`` specified together with
        ``stream``.
+
+    .. versionchanged:: 3.8
+       Added the ``force`` parameter.
+
+    .. versionchanged:: 3.9
+       Added the ``encoding`` and ``errors`` parameters.
     """
     # Add thread safety in case someone mistakenly calls
     # basicConfig() from multiple threads
     _acquireLock()
     try:
+        force = kwargs.pop('force', False)
+        encoding = kwargs.pop('encoding', None)
+        errors = kwargs.pop('errors', 'backslashreplace')
+        if force:
+            for h in root.handlers[:]:
+                root.removeHandler(h)
+                h.close()
         if len(root.handlers) == 0:
             handlers = kwargs.pop("handlers", None)
             if handlers is None:
@@ -1845,7 +1985,10 @@ def basicConfig(**kwargs):
                 filename = kwargs.pop("filename", None)
                 mode = kwargs.pop("filemode", 'a')
                 if filename:
-                    h = FileHandler(filename, mode)
+                    if 'b'in mode:
+                        errors = None
+                    h = FileHandler(filename, mode,
+                                    encoding=encoding, errors=errors)
                 else:
                     stream = kwargs.pop("stream", None)
                     h = StreamHandler(stream)
@@ -1881,10 +2024,9 @@ def getLogger(name=None):
 
     If no name is specified, return the root logger.
     """
-    if name:
-        return Logger.manager.getLogger(name)
-    else:
+    if not name or isinstance(name, str) and name == root.name:
         return root
+    return Logger.manager.getLogger(name)
 
 def critical(msg, *args, **kwargs):
     """

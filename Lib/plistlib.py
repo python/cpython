@@ -46,9 +46,7 @@ Parse Plist example:
     print(pl["aKey"])
 """
 __all__ = [
-    "readPlist", "writePlist", "readPlistFromBytes", "writePlistToBytes",
-    "Data", "InvalidFileException", "FMT_XML", "FMT_BINARY",
-    "load", "dump", "loads", "dumps"
+    "InvalidFileException", "FMT_XML", "FMT_BINARY", "load", "dump", "loads", "dumps", "UID"
 ]
 
 import binascii
@@ -69,111 +67,32 @@ PlistFormat = enum.Enum('PlistFormat', 'FMT_XML FMT_BINARY', module=__name__)
 globals().update(PlistFormat.__members__)
 
 
-#
-#
-# Deprecated functionality
-#
-#
-
-
-@contextlib.contextmanager
-def _maybe_open(pathOrFile, mode):
-    if isinstance(pathOrFile, str):
-        with open(pathOrFile, mode) as fp:
-            yield fp
-
-    else:
-        yield pathOrFile
-
-
-def readPlist(pathOrFile):
-    """
-    Read a .plist from a path or file. pathOrFile should either
-    be a file name, or a readable binary file object.
-
-    This function is deprecated, use load instead.
-    """
-    warn("The readPlist function is deprecated, use load() instead",
-        DeprecationWarning, 2)
-
-    with _maybe_open(pathOrFile, 'rb') as fp:
-        return load(fp, fmt=None, use_builtin_types=False)
-
-def writePlist(value, pathOrFile):
-    """
-    Write 'value' to a .plist file. 'pathOrFile' may either be a
-    file name or a (writable) file object.
-
-    This function is deprecated, use dump instead.
-    """
-    warn("The writePlist function is deprecated, use dump() instead",
-        DeprecationWarning, 2)
-    with _maybe_open(pathOrFile, 'wb') as fp:
-        dump(value, fp, fmt=FMT_XML, sort_keys=True, skipkeys=False)
-
-
-def readPlistFromBytes(data):
-    """
-    Read a plist data from a bytes object. Return the root object.
-
-    This function is deprecated, use loads instead.
-    """
-    warn("The readPlistFromBytes function is deprecated, use loads() instead",
-        DeprecationWarning, 2)
-    return load(BytesIO(data), fmt=None, use_builtin_types=False)
-
-
-def writePlistToBytes(value):
-    """
-    Return 'value' as a plist-formatted bytes object.
-
-    This function is deprecated, use dumps instead.
-    """
-    warn("The writePlistToBytes function is deprecated, use dumps() instead",
-        DeprecationWarning, 2)
-    f = BytesIO()
-    dump(value, f, fmt=FMT_XML, sort_keys=True, skipkeys=False)
-    return f.getvalue()
-
-
-class Data:
-    """
-    Wrapper for binary data.
-
-    This class is deprecated, use a bytes object instead.
-    """
-
+class UID:
     def __init__(self, data):
-        if not isinstance(data, bytes):
-            raise TypeError("data must be as bytes")
+        if not isinstance(data, int):
+            raise TypeError("data must be an int")
+        if data >= 1 << 64:
+            raise ValueError("UIDs cannot be >= 2**64")
+        if data < 0:
+            raise ValueError("UIDs must be positive")
         self.data = data
 
-    @classmethod
-    def fromBase64(cls, data):
-        # base64.decodebytes just calls binascii.a2b_base64;
-        # it seems overkill to use both base64 and binascii.
-        return cls(_decode_base64(data))
-
-    def asBase64(self, maxlinelength=76):
-        return _encode_base64(self.data, maxlinelength)
-
-    def __eq__(self, other):
-        if isinstance(other, self.__class__):
-            return self.data == other.data
-        elif isinstance(other, bytes):
-            return self.data == other
-        else:
-            return NotImplemented
+    def __index__(self):
+        return self.data
 
     def __repr__(self):
         return "%s(%s)" % (self.__class__.__name__, repr(self.data))
 
-#
-#
-# End of deprecated functionality
-#
-#
+    def __reduce__(self):
+        return self.__class__, (self.data,)
 
+    def __eq__(self, other):
+        if not isinstance(other, UID):
+            return NotImplemented
+        return self.data == other.data
+
+    def __hash__(self):
+        return hash(self.data)
 
 #
 # XML support
@@ -245,11 +164,10 @@ def _escape(text):
     return text
 
 class _PlistParser:
-    def __init__(self, use_builtin_types, dict_type):
+    def __init__(self, dict_type):
         self.stack = []
         self.current_key = None
         self.root = None
-        self._use_builtin_types = use_builtin_types
         self._dict_type = dict_type
 
     def parse(self, fileobj):
@@ -338,11 +256,7 @@ class _PlistParser:
         self.add_object(self.get_data())
 
     def end_data(self):
-        if self._use_builtin_types:
-            self.add_object(_decode_base64(self.get_data()))
-
-        else:
-            self.add_object(Data.fromBase64(self.get_data()))
+        self.add_object(_decode_base64(self.get_data()))
 
     def end_date(self):
         self.add_object(_date_from_string(self.get_data()))
@@ -424,9 +338,6 @@ class _PlistWriter(_DumbXMLWriter):
         elif isinstance(value, dict):
             self.write_dict(value)
 
-        elif isinstance(value, Data):
-            self.write_data(value)
-
         elif isinstance(value, (bytes, bytearray)):
             self.write_bytes(value)
 
@@ -438,9 +349,6 @@ class _PlistWriter(_DumbXMLWriter):
 
         else:
             raise TypeError("unsupported type: %s" % type(value))
-
-    def write_data(self, data):
-        self.write_bytes(data.data)
 
     def write_bytes(self, data):
         self.begin_element("data")
@@ -535,8 +443,7 @@ class _BinaryPlistParser:
 
     see also: http://opensource.apple.com/source/CF/CF-744.18/CFBinaryPList.c
     """
-    def __init__(self, use_builtin_types, dict_type):
-        self._use_builtin_types = use_builtin_types
+    def __init__(self, dict_type):
         self._dict_type = dict_type
 
     def parse(self, fp):
@@ -636,22 +543,19 @@ class _BinaryPlistParser:
 
         elif tokenH == 0x40:  # data
             s = self._get_size(tokenL)
-            if self._use_builtin_types:
-                result = self._fp.read(s)
-            else:
-                result = Data(self._fp.read(s))
+            result = self._fp.read(s)
 
         elif tokenH == 0x50:  # ascii string
             s = self._get_size(tokenL)
             result =  self._fp.read(s).decode('ascii')
-            result = result
 
         elif tokenH == 0x60:  # unicode string
             s = self._get_size(tokenL)
             result = self._fp.read(s * 2).decode('utf-16be')
 
-        # tokenH == 0x80 is documented as 'UID' and appears to be used for
-        # keyed-archiving, not in plists.
+        elif tokenH == 0x80:  # UID
+            # used by Key-Archiver plist files
+            result = UID(int.from_bytes(self._fp.read(1 + tokenL), 'big'))
 
         elif tokenH == 0xA0:  # array
             s = self._get_size(tokenL)
@@ -755,10 +659,6 @@ class _BinaryPlistWriter (object):
             if (type(value), value) in self._objtable:
                 return
 
-        elif isinstance(value, Data):
-            if (type(value.data), value.data) in self._objtable:
-                return
-
         elif id(value) in self._objidtable:
             return
 
@@ -767,8 +667,6 @@ class _BinaryPlistWriter (object):
         self._objlist.append(value)
         if isinstance(value, _scalars):
             self._objtable[(type(value), value)] = refnum
-        elif isinstance(value, Data):
-            self._objtable[(type(value.data), value.data)] = refnum
         else:
             self._objidtable[id(value)] = refnum
 
@@ -798,8 +696,6 @@ class _BinaryPlistWriter (object):
     def _getrefnum(self, value):
         if isinstance(value, _scalars):
             return self._objtable[(type(value), value)]
-        elif isinstance(value, Data):
-            return self._objtable[(type(value.data), value.data)]
         else:
             return self._objidtable[id(value)]
 
@@ -857,10 +753,6 @@ class _BinaryPlistWriter (object):
             f = (value - datetime.datetime(2001, 1, 1)).total_seconds()
             self._fp.write(struct.pack('>Bd', 0x33, f))
 
-        elif isinstance(value, Data):
-            self._write_size(0x40, len(value.data))
-            self._fp.write(value.data)
-
         elif isinstance(value, (bytes, bytearray)):
             self._write_size(0x40, len(value))
             self._fp.write(value)
@@ -874,6 +766,20 @@ class _BinaryPlistWriter (object):
                 self._write_size(0x60, len(t) // 2)
 
             self._fp.write(t)
+
+        elif isinstance(value, UID):
+            if value.data < 0:
+                raise ValueError("UIDs must be positive")
+            elif value.data < 1 << 8:
+                self._fp.write(struct.pack('>BB', 0x80, value))
+            elif value.data < 1 << 16:
+                self._fp.write(struct.pack('>BH', 0x81, value))
+            elif value.data < 1 << 32:
+                self._fp.write(struct.pack('>BL', 0x83, value))
+            elif value.data < 1 << 64:
+                self._fp.write(struct.pack('>BQ', 0x87, value))
+            else:
+                raise OverflowError(value)
 
         elif isinstance(value, (list, tuple)):
             refs = [self._getrefnum(o) for o in value]
@@ -928,8 +834,8 @@ _FORMATS={
 }
 
 
-def load(fp, *, fmt=None, use_builtin_types=True, dict_type=dict):
-    """Read a .plist file. 'fp' should be (readable) file object.
+def load(fp, *, fmt=None, dict_type=dict):
+    """Read a .plist file. 'fp' should be a readable and binary file object.
     Return the unpacked root object (which usually is a dictionary).
     """
     if fmt is None:
@@ -946,22 +852,21 @@ def load(fp, *, fmt=None, use_builtin_types=True, dict_type=dict):
     else:
         P = _FORMATS[fmt]['parser']
 
-    p = P(use_builtin_types=use_builtin_types, dict_type=dict_type)
+    p = P(dict_type=dict_type)
     return p.parse(fp)
 
 
-def loads(value, *, fmt=None, use_builtin_types=True, dict_type=dict):
+def loads(value, *, fmt=None, dict_type=dict):
     """Read a .plist file from a bytes object.
     Return the unpacked root object (which usually is a dictionary).
     """
     fp = BytesIO(value)
-    return load(
-        fp, fmt=fmt, use_builtin_types=use_builtin_types, dict_type=dict_type)
+    return load(fp, fmt=fmt, dict_type=dict_type)
 
 
 def dump(value, fp, *, fmt=FMT_XML, sort_keys=True, skipkeys=False):
-    """Write 'value' to a .plist file. 'fp' should be a (writable)
-    file object.
+    """Write 'value' to a .plist file. 'fp' should be a writable,
+    binary file object.
     """
     if fmt not in _FORMATS:
         raise ValueError("Unsupported format: %r"%(fmt,))

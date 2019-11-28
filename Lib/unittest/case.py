@@ -10,6 +10,7 @@ import warnings
 import collections
 import contextlib
 import traceback
+import types
 
 from . import result
 from .util import (strclass, safe_repr, _count_diff_all_purpose,
@@ -84,6 +85,30 @@ class _Outcome(object):
 def _id(obj):
     return obj
 
+
+_module_cleanups = []
+def addModuleCleanup(function, /, *args, **kwargs):
+    """Same as addCleanup, except the cleanup items are called even if
+    setUpModule fails (unlike tearDownModule)."""
+    _module_cleanups.append((function, args, kwargs))
+
+
+def doModuleCleanups():
+    """Execute all module cleanup functions. Normally called for you after
+    tearDownModule."""
+    exceptions = []
+    while _module_cleanups:
+        function, args, kwargs = _module_cleanups.pop()
+        try:
+            function(*args, **kwargs)
+        except Exception as exc:
+            exceptions.append(exc)
+    if exceptions:
+        # Swallows all but first exception. If a multi-exception handler
+        # gets written we should use that here instead.
+        raise exceptions[0]
+
+
 def skip(reason):
     """
     Unconditionally skip a test.
@@ -98,6 +123,10 @@ def skip(reason):
         test_item.__unittest_skip__ = True
         test_item.__unittest_skip_why__ = reason
         return test_item
+    if isinstance(reason, types.FunctionType):
+        test_item = reason
+        reason = ''
+        return decorator(test_item)
     return decorator
 
 def skipIf(condition, reason):
@@ -157,16 +186,11 @@ class _AssertRaisesBaseContext(_BaseTestCaseContext):
             if not _is_subtype(self.expected, self._base_type):
                 raise TypeError('%s() arg 1 must be %s' %
                                 (name, self._base_type_str))
-            if args and args[0] is None:
-                warnings.warn("callable is None",
-                              DeprecationWarning, 3)
-                args = ()
             if not args:
                 self.msg = kwargs.pop('msg', None)
                 if kwargs:
-                    warnings.warn('%r is an invalid keyword argument for '
-                                  'this function' % next(iter(kwargs)),
-                                  DeprecationWarning, 3)
+                    raise TypeError('%r is an invalid keyword argument for '
+                                    'this function' % (next(iter(kwargs)),))
                 return self
 
             callable_obj, *args = args
@@ -395,6 +419,8 @@ class TestCase(object):
 
     _classSetupFailed = False
 
+    _class_cleanups = []
+
     def __init__(self, methodName='runTest'):
         """Create an instance of the class that will use the named test
            method when executed. Raises a ValueError if the instance does
@@ -442,13 +468,19 @@ class TestCase(object):
         """
         self._type_equality_funcs[typeobj] = function
 
-    def addCleanup(self, function, *args, **kwargs):
+    def addCleanup(self, function, /, *args, **kwargs):
         """Add a function, with arguments, to be called when the test is
         completed. Functions added are called on a LIFO basis and are
         called after tearDown on test failure or success.
 
         Cleanup items are called even if setUp fails (unlike tearDown)."""
         self._cleanups.append((function, args, kwargs))
+
+    @classmethod
+    def addClassCleanup(cls, function, /, *args, **kwargs):
+        """Same as addCleanup, except the cleanup items are called even if
+        setUpClass fails (unlike tearDownClass)."""
+        cls._class_cleanups.append((function, args, kwargs))
 
     def setUp(self):
         "Hook method for setting up the test fixture before exercising it."
@@ -519,7 +551,7 @@ class TestCase(object):
         case as failed but resumes execution at the end of the enclosed
         block, allowing further test code to be executed.
         """
-        if not self._outcome.result_supports_subtests:
+        if self._outcome is None or not self._outcome.result_supports_subtests:
             yield
             return
         parent = self._subtest
@@ -577,6 +609,18 @@ class TestCase(object):
         else:
             addUnexpectedSuccess(self)
 
+    def _callSetUp(self):
+        self.setUp()
+
+    def _callTestMethod(self, method):
+        method()
+
+    def _callTearDown(self):
+        self.tearDown()
+
+    def _callCleanup(self, function, /, *args, **kwargs):
+        function(*args, **kwargs)
+
     def run(self, result=None):
         orig_result = result
         if result is None:
@@ -608,14 +652,14 @@ class TestCase(object):
             self._outcome = outcome
 
             with outcome.testPartExecutor(self):
-                self.setUp()
+                self._callSetUp()
             if outcome.success:
                 outcome.expecting_failure = expecting_failure
                 with outcome.testPartExecutor(self, isTest=True):
-                    testMethod()
+                    self._callTestMethod(testMethod)
                 outcome.expecting_failure = False
                 with outcome.testPartExecutor(self):
-                    self.tearDown()
+                    self._callTearDown()
 
             self.doCleanups()
             for test, reason in outcome.skipped:
@@ -653,11 +697,23 @@ class TestCase(object):
         while self._cleanups:
             function, args, kwargs = self._cleanups.pop()
             with outcome.testPartExecutor(self):
-                function(*args, **kwargs)
+                self._callCleanup(function, *args, **kwargs)
 
         # return this for backwards compatibility
-        # even though we no longer us it internally
+        # even though we no longer use it internally
         return outcome.success
+
+    @classmethod
+    def doClassCleanups(cls):
+        """Execute all class cleanup functions. Normally called for you after
+        tearDownClass."""
+        cls.tearDown_exceptions = []
+        while cls._class_cleanups:
+            function, args, kwargs = cls._class_cleanups.pop()
+            try:
+                function(*args, **kwargs)
+            except Exception:
+                cls.tearDown_exceptions.append(sys.exc_info())
 
     def __call__(self, *args, **kwds):
         return self.run(*args, **kwds)
@@ -1167,9 +1223,8 @@ class TestCase(object):
 
 
     def assertCountEqual(self, first, second, msg=None):
-        """An unordered sequence comparison asserting that the same elements,
-        regardless of order.  If the same element occurs more than once,
-        it verifies that the elements occur the same number of times.
+        """Asserts that two iterables have the same elements, the same number of
+        times, without regard to order.
 
             self.assertEqual(Counter(list(first)),
                              Counter(list(second)))

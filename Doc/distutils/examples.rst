@@ -1,8 +1,10 @@
-.. _examples:
+.. _distutils_examples:
 
-********
-Examples
-********
+******************
+Distutils Examples
+******************
+
+.. include:: ./_setuptools_disclaimer.rst
 
 This chapter provides a number of basic examples to help get started with
 distutils.  Additional information about using distutils can be found in the

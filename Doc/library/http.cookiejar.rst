@@ -71,6 +71,10 @@ The following classes are provided:
    :meth:`load` or :meth:`revert` method is called.  Subclasses of this class are
    documented in section :ref:`file-cookie-jar-classes`.
 
+   .. versionchanged:: 3.8
+
+      The filename parameter supports a :term:`path-like object`.
+
 
 .. class:: CookiePolicy()
 
@@ -78,17 +82,19 @@ The following classes are provided:
    from / returned to the server.
 
 
-.. class:: DefaultCookiePolicy( blocked_domains=None, allowed_domains=None, netscape=True, rfc2965=False, rfc2109_as_netscape=None, hide_cookie2=False, strict_domain=False, strict_rfc2965_unverifiable=True, strict_ns_unverifiable=False, strict_ns_domain=DefaultCookiePolicy.DomainLiberal, strict_ns_set_initial_dollar=False, strict_ns_set_path=False )
+.. class:: DefaultCookiePolicy( blocked_domains=None, allowed_domains=None, netscape=True, rfc2965=False, rfc2109_as_netscape=None, hide_cookie2=False, strict_domain=False, strict_rfc2965_unverifiable=True, strict_ns_unverifiable=False, strict_ns_domain=DefaultCookiePolicy.DomainLiberal, strict_ns_set_initial_dollar=False, strict_ns_set_path=False, secure_protocols=("https", "wss") )
 
    Constructor arguments should be passed as keyword arguments only.
    *blocked_domains* is a sequence of domain names that we never accept cookies
    from, nor return cookies to. *allowed_domains* if not :const:`None`, this is a
-   sequence of the only domains for which we accept and return cookies.  For all
-   other arguments, see the documentation for :class:`CookiePolicy` and
-   :class:`DefaultCookiePolicy` objects.
+   sequence of the only domains for which we accept and return cookies.
+   *secure_protocols* is a sequence of protocols for which secure cookies can be
+   added to. By default *https* and *wss* (secure websocket) are considered
+   secure protocols. For all other arguments, see the documentation for
+   :class:`CookiePolicy` and :class:`DefaultCookiePolicy` objects.
 
    :class:`DefaultCookiePolicy` implements the standard accept / reject rules for
-   Netscape and RFC 2965 cookies.  By default, RFC 2109 cookies (ie. cookies
+   Netscape and :rfc:`2965` cookies.  By default, :rfc:`2109` cookies (ie. cookies
    received in a :mailheader:`Set-Cookie` header with a version cookie-attribute of
    1) are treated according to the RFC 2965 rules.  However, if RFC 2965 handling
    is turned off or :attr:`rfc2109_as_netscape` is ``True``, RFC 2109 cookies are
@@ -100,7 +106,7 @@ The following classes are provided:
 
 .. class:: Cookie()
 
-   This class represents Netscape, RFC 2109 and RFC 2965 cookies.  It is not
+   This class represents Netscape, :rfc:`2109` and :rfc:`2965` cookies.  It is not
    expected that users of :mod:`http.cookiejar` construct their own :class:`Cookie`
    instances.  Instead, if necessary, call :meth:`make_cookies` on a
    :class:`CookieJar` instance.
@@ -123,14 +129,14 @@ The following classes are provided:
       the one sketched out in ``cookie_spec.html``.
 
    :rfc:`2109` - HTTP State Management Mechanism
-      Obsoleted by RFC 2965. Uses :mailheader:`Set-Cookie` with version=1.
+      Obsoleted by :rfc:`2965`. Uses :mailheader:`Set-Cookie` with version=1.
 
    :rfc:`2965` - HTTP State Management Mechanism
       The Netscape protocol with the bugs fixed.  Uses :mailheader:`Set-Cookie2` in
       place of :mailheader:`Set-Cookie`.  Not widely used.
 
    http://kristol.org/cookie/errata.html
-      Unfinished errata to RFC 2965.
+      Unfinished errata to :rfc:`2965`.
 
    :rfc:`2964` - Use of HTTP State Management
 
@@ -153,7 +159,7 @@ contained :class:`Cookie` objects.
    the :class:`CookieJar`'s :class:`CookiePolicy` instance are true and false
    respectively), the :mailheader:`Cookie2` header is also added when appropriate.
 
-   The *request* object (usually a :class:`urllib.request..Request` instance)
+   The *request* object (usually a :class:`urllib.request.Request` instance)
    must support the methods :meth:`get_full_url`, :meth:`get_host`,
    :meth:`get_type`, :meth:`unverifiable`, :meth:`has_header`,
    :meth:`get_header`, :meth:`header_items`, :meth:`add_unredirected_header`
@@ -320,7 +326,7 @@ writing.
 
    .. note::
 
-      This loses information about RFC 2965 cookies, and also about newer or
+      This loses information about :rfc:`2965` cookies, and also about newer or
       non-standard cookie-attributes such as ``port``.
 
    .. warning::
@@ -339,6 +345,9 @@ writing.
    compatible with the libwww-perl library's ``Set-Cookie3`` file format.  This is
    convenient if you want to store cookies in a human-readable file.
 
+   .. versionchanged:: 3.8
+
+      The filename parameter supports a :term:`path-like object`.
 
 .. _cookie-policy-objects:
 
@@ -369,7 +378,7 @@ methods:
 
 .. method:: CookiePolicy.domain_return_ok(domain, request)
 
-   Return false if cookies should not be returned, given cookie domain.
+   Return ``False`` if cookies should not be returned, given cookie domain.
 
    This method is an optimization.  It removes the need for checking every cookie
    with a particular domain (which might involve reading many files).  Returning
@@ -393,7 +402,7 @@ methods:
 
 .. method:: CookiePolicy.path_return_ok(path, request)
 
-   Return false if cookies should not be returned, given cookie path.
+   Return ``False`` if cookies should not be returned, given cookie path.
 
    See the documentation for :meth:`domain_return_ok`.
 
@@ -410,13 +419,13 @@ be assigned to.
 
 .. attribute:: CookiePolicy.rfc2965
 
-   Implement RFC 2965 protocol.
+   Implement :rfc:`2965` protocol.
 
 
 .. attribute:: CookiePolicy.hide_cookie2
 
    Don't add :mailheader:`Cookie2` header to requests (the presence of this header
-   indicates to the server that we understand RFC 2965 cookies).
+   indicates to the server that we understand :rfc:`2965` cookies).
 
 The most useful way to define a :class:`CookiePolicy` class is by subclassing
 from :class:`DefaultCookiePolicy` and overriding some or all of the methods
@@ -431,7 +440,7 @@ DefaultCookiePolicy Objects
 
 Implements the standard rules for accepting and returning cookies.
 
-Both RFC 2965 and Netscape cookies are covered.  RFC 2965 handling is switched
+Both :rfc:`2965` and Netscape cookies are covered.  RFC 2965 handling is switched
 off by default.
 
 The easiest way to provide your own policy is to override this class and call
@@ -510,11 +519,11 @@ all be assigned to.
 
 .. attribute:: DefaultCookiePolicy.rfc2109_as_netscape
 
-   If true, request that the :class:`CookieJar` instance downgrade RFC 2109 cookies
+   If true, request that the :class:`CookieJar` instance downgrade :rfc:`2109` cookies
    (ie. cookies received in a :mailheader:`Set-Cookie` header with a version
    cookie-attribute of 1) to Netscape cookies by setting the version attribute of
    the :class:`Cookie` instance to 0.  The default value is :const:`None`, in which
-   case RFC 2109 cookies are downgraded if and only if RFC 2965 handling is turned
+   case RFC 2109 cookies are downgraded if and only if :rfc:`2965` handling is turned
    off.  Therefore, RFC 2109 cookies are downgraded by default.
 
 
@@ -527,11 +536,11 @@ General strictness switches:
    and isn't guaranteed to work!
 
 
-RFC 2965 protocol strictness switches:
+:rfc:`2965` protocol strictness switches:
 
 .. attribute:: DefaultCookiePolicy.strict_rfc2965_unverifiable
 
-   Follow RFC 2965 rules on unverifiable transactions (usually, an unverifiable
+   Follow :rfc:`2965` rules on unverifiable transactions (usually, an unverifiable
    transaction is one resulting from a redirect or a request for an image hosted on
    another site).  If this is false, cookies are *never* blocked on the basis of
    verifiability
@@ -541,7 +550,7 @@ Netscape protocol strictness switches:
 
 .. attribute:: DefaultCookiePolicy.strict_ns_unverifiable
 
-   Apply RFC 2965 rules on unverifiable transactions even to Netscape cookies.
+   Apply :rfc:`2965` rules on unverifiable transactions even to Netscape cookies.
 
 
 .. attribute:: DefaultCookiePolicy.strict_ns_domain
@@ -581,7 +590,7 @@ both flags are set).
 
 .. attribute:: DefaultCookiePolicy.DomainRFC2965Match
 
-   When setting cookies, require a full RFC 2965 domain-match.
+   When setting cookies, require a full :rfc:`2965` domain-match.
 
 The following attributes are provided for convenience, and are the most useful
 combinations of the above flags:
@@ -605,7 +614,7 @@ Cookie Objects
 standard cookie-attributes specified in the various cookie standards.  The
 correspondence is not one-to-one, because there are complicated rules for
 assigning default values, because the ``max-age`` and ``expires``
-cookie-attributes contain equivalent information, and because RFC 2109 cookies
+cookie-attributes contain equivalent information, and because :rfc:`2109` cookies
 may be 'downgraded' by :mod:`http.cookiejar` from version 1 to version 0 (Netscape)
 cookies.
 
@@ -616,8 +625,8 @@ internal consistency, so you should know what you're doing if you do that.
 
 .. attribute:: Cookie.version
 
-   Integer or :const:`None`.  Netscape cookies have :attr:`version` 0. RFC 2965 and
-   RFC 2109 cookies have a ``version`` cookie-attribute of 1.  However, note that
+   Integer or :const:`None`.  Netscape cookies have :attr:`version` 0. :rfc:`2965` and
+   :rfc:`2109` cookies have a ``version`` cookie-attribute of 1.  However, note that
    :mod:`http.cookiejar` may 'downgrade' RFC 2109 cookies to Netscape cookies, in which
    case :attr:`version` is 0.
 
@@ -673,7 +682,7 @@ internal consistency, so you should know what you're doing if you do that.
 
 .. attribute:: Cookie.rfc2109
 
-   ``True`` if this cookie was received as an RFC 2109 cookie (ie. the cookie
+   ``True`` if this cookie was received as an :rfc:`2109` cookie (ie. the cookie
    arrived in a :mailheader:`Set-Cookie` header, and the value of the Version
    cookie-attribute in that header was 1).  This attribute is provided because
    :mod:`http.cookiejar` may 'downgrade' RFC 2109 cookies to Netscape cookies, in
@@ -702,7 +711,7 @@ accessed using the following methods:
 
 .. method:: Cookie.has_nonstandard_attr(name)
 
-   Return true if cookie has the named cookie-attribute.
+   Return ``True`` if cookie has the named cookie-attribute.
 
 
 .. method:: Cookie.get_nonstandard_attr(name, default=None)
@@ -745,7 +754,7 @@ cookies (assumes Unix/Netscape convention for location of the cookies file)::
    r = opener.open("http://example.com/")
 
 The next example illustrates the use of :class:`DefaultCookiePolicy`. Turn on
-RFC 2965 cookies, be more strict about domains when setting and returning
+:rfc:`2965` cookies, be more strict about domains when setting and returning
 Netscape cookies, and block some domains from setting cookies or having them
 returned::
 

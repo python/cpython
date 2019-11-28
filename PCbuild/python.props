@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
-<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+<Project ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <PropertyGroup>
+    <__Python_Props_Imported>true</__Python_Props_Imported>
     <Platform Condition="'$(Platform)' == ''">Win32</Platform>
     <Configuration Condition="'$(Configuration)' == ''">Release</Configuration>
     <!--
@@ -10,6 +11,7 @@
 
     We set BasePlatformToolset for ICC's benefit, it's otherwise ignored.
     -->
+    <BasePlatformToolset Condition="'$(BasePlatformToolset)' == '' and ('$(MSBuildToolsVersion)' == '16.0' or '$(VisualStudioVersion)' == '16.0')">v142</BasePlatformToolset>
     <BasePlatformToolset Condition="'$(BasePlatformToolset)' == '' and ('$(MSBuildToolsVersion)' == '15.0' or '$(VisualStudioVersion)' == '15.0')">v141</BasePlatformToolset>
     <BasePlatformToolset Condition="'$(BasePlatformToolset)' == '' and '$(VCTargetsPath14)' != ''">v140</BasePlatformToolset>
     <BasePlatformToolset Condition="'$(BasePlatformToolset)' == '' and '$(VCTargetsPath12)' != ''">v120</BasePlatformToolset>
@@ -25,6 +27,8 @@
     so we define our own constant ArchName and use wherever we need it.
     -->
     <ArchName Condition="'$(ArchName)' == '' and $(Platform) == 'x64'">amd64</ArchName>
+    <ArchName Condition="'$(ArchName)' == '' and $(Platform) == 'ARM'">arm32</ArchName>
+    <ArchName Condition="'$(ArchName)' == '' and $(Platform) == 'ARM64'">arm64</ArchName>
     <ArchName Condition="'$(ArchName)' == ''">win32</ArchName>
     
     <!-- Root directory of the repository -->
@@ -36,19 +40,30 @@
     <BuildPath32 Condition="'$(Py_OutDir)' != ''">$(Py_OutDir)\win32\</BuildPath32>
     <BuildPath64 Condition="'$(Py_OutDir)' == ''">$(PySourcePath)PCbuild\amd64\</BuildPath64>
     <BuildPath64 Condition="'$(Py_OutDir)' != ''">$(Py_OutDir)\amd64\</BuildPath64>
+    <BuildPathArm32 Condition="'$(Py_OutDir)' == ''">$(PySourcePath)PCbuild\arm32\</BuildPathArm32>
+    <BuildPathArm32 Condition="'$(Py_OutDir)' != ''">$(Py_OutDir)\arm32\</BuildPathArm32>
+    <BuildPathArm64 Condition="'$(Py_OutDir)' == ''">$(PySourcePath)PCbuild\arm64\</BuildPathArm64>
+    <BuildPathArm64 Condition="'$(Py_OutDir)' != ''">$(Py_OutDir)\arm64\</BuildPathArm64>
     <BuildPath Condition="'$(ArchName)' == 'win32'">$(BuildPath32)</BuildPath>
     <BuildPath Condition="'$(ArchName)' == 'amd64'">$(BuildPath64)</BuildPath>
+    <BuildPath Condition="'$(ArchName)' == 'arm32'">$(BuildPathArm32)</BuildPath>
+    <BuildPath Condition="'$(ArchName)' == 'arm64'">$(BuildPathArm64)</BuildPath>
     <BuildPath Condition="'$(BuildPath)' == ''">$(PySourcePath)PCbuild\$(ArchName)\</BuildPath>
     <BuildPath Condition="!HasTrailingSlash($(BuildPath))">$(BuildPath)\</BuildPath>
     <BuildPath Condition="$(Configuration) == 'PGInstrument'">$(BuildPath)instrumented\</BuildPath>
     
     <!-- Directories of external projects. tcltk is handled in tcltk.props -->
-    <ExternalsDir>$([System.IO.Path]::GetFullPath(`$(PySourcePath)externals\`))</ExternalsDir>
-    <sqlite3Dir>$(ExternalsDir)sqlite-3.21.0.0\</sqlite3Dir>
+    <ExternalsDir>$(EXTERNALS_DIR)</ExternalsDir>
+    <ExternalsDir Condition="$(ExternalsDir) == ''">$([System.IO.Path]::GetFullPath(`$(PySourcePath)externals`))</ExternalsDir>
+    <ExternalsDir Condition="!HasTrailingSlash($(ExternalsDir))">$(ExternalsDir)\</ExternalsDir>
+    <sqlite3Dir>$(ExternalsDir)sqlite-3.28.0.0\</sqlite3Dir>
     <bz2Dir>$(ExternalsDir)bzip2-1.0.6\</bz2Dir>
     <lzmaDir>$(ExternalsDir)xz-5.2.2\</lzmaDir>
-    <opensslDir>$(ExternalsDir)openssl-1.1.0f\</opensslDir>
-    <opensslOutDir>$(ExternalsDir)openssl-bin-1.1.0f\$(ArchName)\</opensslOutDir>
+    <libffiDir>$(ExternalsDir)libffi\</libffiDir>
+    <libffiOutDir>$(ExternalsDir)libffi\$(ArchName)\</libffiOutDir>
+    <libffiIncludeDir>$(libffiOutDir)include</libffiIncludeDir>
+    <opensslDir>$(ExternalsDir)openssl-1.1.1d\</opensslDir>
+    <opensslOutDir>$(ExternalsDir)openssl-bin-1.1.1d\$(ArchName)\</opensslOutDir>
     <opensslIncludeDir>$(opensslOutDir)include</opensslIncludeDir>
     <nasmDir>$(ExternalsDir)\nasm-2.11.06\</nasmDir>
     <zlibDir>$(ExternalsDir)\zlib-1.2.11\</zlibDir>
@@ -61,11 +76,24 @@
     
     <!-- Suffix for versions/keys when building for particular platforms -->
     <PyArchExt Condition="'$(ArchName)' == 'win32'">-32</PyArchExt>
+    <PyArchExt Condition="'$(ArchName)' == 'arm32'">-arm32</PyArchExt>
+    <PyArchExt Condition="'$(ArchName)' == 'arm64'">-arm64</PyArchExt>
     
     <!-- Full path of the resulting python.exe binary -->
     <PythonExe Condition="'$(PythonExe)' == ''">$(BuildPath)python$(PyDebugExt).exe</PythonExe>
+
+    <!-- Include Tkinter by default -->
+    <IncludeTkinter Condition="'$(IncludeTkinter)' == ''">true</IncludeTkinter>
   </PropertyGroup>
   
+  <PropertyGroup Condition="'$(Platform)'=='ARM'" Label="ArmConfiguration">
+    <WindowsSDKDesktopARMSupport>true</WindowsSDKDesktopARMSupport>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(Platform)'=='ARM64'" Label="Arm64Configuration">
+    <WindowsSDKDesktopARMSupport>true</WindowsSDKDesktopARMSupport>
+  </PropertyGroup>
+
   <PropertyGroup Condition="$(DefaultWindowsSDKVersion) == ''">
     <!--
     Attempt to select the latest installed WinSDK. If we don't find any, then we will
@@ -74,14 +102,19 @@
     matter which WinSDK version we use.
     -->
     <_RegistryVersion>$(Registry:HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Microsoft SDKs\Windows\v10.0@ProductVersion)</_RegistryVersion>
-    <_RegistryVersion Condition="$(_RegistryVersion) == ''">$(Registry:HKEY_LOCAL_MACHINE\WOW6432Node\SOFTWARE\Microsoft\Microsoft SDKs\Windows\v10.0@ProductVersion)</_RegistryVersion>
-    <DefaultWindowsSDKVersion>10.0.16299.0</DefaultWindowsSDKVersion>
-    <DefaultWindowsSDKVersion Condition="$(_RegistryVersion) == '10.0.15063'">10.0.15063.0</DefaultWindowsSDKVersion>
-    <DefaultWindowsSDKVersion Condition="$(_RegistryVersion) == '10.0.14393'">10.0.14393.0</DefaultWindowsSDKVersion>
-    <DefaultWindowsSDKVersion Condition="$(_RegistryVersion) == '10.0.10586'">10.0.10586.0</DefaultWindowsSDKVersion>
-    <DefaultWindowsSDKVersion Condition="$(_RegistryVersion) == '10.0.10240'">10.0.10240.0</DefaultWindowsSDKVersion>
+    <_RegistryVersion Condition="$(_RegistryVersion) == ''">$(Registry:HKEY_LOCAL_MACHINE\SOFTWARE\WOW6432Node\Microsoft\Microsoft SDKs\Windows\v10.0@ProductVersion)</_RegistryVersion>
+    <!-- Sometimes the version in the registry has to .0 suffix, and sometimes it doesn't. Check and add it -->
+    <_RegistryVersion Condition="$(_RegistryVersion) != '' and !$(_RegistryVersion.EndsWith('.0'))">$(_RegistryVersion).0</_RegistryVersion>
+
+    <!-- The minimum allowed SDK version to use for building -->
+    <DefaultWindowsSDKVersion>10.0.10586.0</DefaultWindowsSDKVersion>
+    <DefaultWindowsSDKVersion Condition="$([System.Version]::Parse($(_RegistryVersion))) > $([System.Version]::Parse($(DefaultWindowsSDKVersion)))">$(_RegistryVersion)</DefaultWindowsSDKVersion>
   </PropertyGroup>
   
+  <PropertyGroup Condition="$(WindowsTargetPlatformVersion) == ''">
+    <WindowsTargetPlatformVersion>$(DefaultWindowsSDKVersion)</WindowsTargetPlatformVersion>
+  </PropertyGroup>
+
   <PropertyGroup Condition="'$(OverrideVersion)' == ''">
     <!--
     Read version information from Include\patchlevel.h. The following properties are set:
@@ -173,6 +206,8 @@
 
     <!-- The version and platform tag to include in .pyd filenames -->
     <PydTag Condition="$(ArchName) == 'win32'">.cp$(MajorVersionNumber)$(MinorVersionNumber)-win32</PydTag>
+    <PydTag Condition="$(ArchName) == 'arm32'">.cp$(MajorVersionNumber)$(MinorVersionNumber)-win_arm32</PydTag>
+    <PydTag Condition="$(ArchName) == 'arm64'">.cp$(MajorVersionNumber)$(MinorVersionNumber)-win_arm64</PydTag>
     <PydTag Condition="$(ArchName) == 'amd64'">.cp$(MajorVersionNumber)$(MinorVersionNumber)-win_amd64</PydTag>
     
     <!-- The version number for sys.winver -->
@@ -184,8 +219,10 @@
     <Message Importance="high" Text="PythonVersionNumber: $(PythonVersionNumber)" />
     <Message Importance="high" Text="PythonVersion:       $(PythonVersion)" />
     <Message Importance="high" Text="PythonVersionHex:    0x$([System.UInt32]::Parse($(PythonVersionHex)).ToString(`X08`))" />
+    <Message Importance="high" Text="PythonVersionUnique: $(MajorVersionNumber).$(MinorVersionNumber).$(Field3Value)" />
     <Message Importance="high" Text="Field3Value:         $(Field3Value)" />
     <Message Importance="high" Text="SysWinVer:           $(SysWinVer)" />
     <Message Importance="high" Text="PyDllName:           $(PyDllName)" />
+    <Message Importance="high" Text="WindowsSdkVersion:   $(TargetPlatformVersion)" />
   </Target>
 </Project>

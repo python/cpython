@@ -49,7 +49,7 @@ struct _arena {
      */
     block *a_head;
 
-    /* Pointer to the block currently used for allocation.  It's
+    /* Pointer to the block currently used for allocation.  Its
        ab_next field should be NULL.  If it is not-null after a
        call to block_alloc(), it means a new block has been allocated
        and a_cur should be reset to point it.
@@ -57,7 +57,7 @@ struct _arena {
     block *a_cur;
 
     /* A Python list object containing references to all the PyObject
-       pointers associated with this area.  They will be DECREFed
+       pointers associated with this arena.  They will be DECREFed
        when the arena is freed.
     */
     PyObject *a_objects;
@@ -160,7 +160,7 @@ PyArena_Free(PyArena *arena)
 #if defined(Py_DEBUG)
     /*
     fprintf(stderr,
-        "alloc=%d size=%d blocks=%d block_size=%d big=%d objects=%d\n",
+        "alloc=%zu size=%zu blocks=%zu block_size=%zu big=%zu objects=%zu\n",
         arena->total_allocs, arena->total_size, arena->total_blocks,
         arena->total_block_size, arena->total_big_blocks,
         PyList_Size(arena->a_objects));

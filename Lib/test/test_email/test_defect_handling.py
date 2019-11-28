@@ -254,6 +254,23 @@ class TestDefectsBase:
         self.assertDefectsEqual(self.get_defects(msg),
                                 [errors.InvalidBase64CharactersDefect])
 
+    def test_invalid_length_of_base64_payload(self):
+        source = textwrap.dedent("""\
+            Subject: test
+            MIME-Version: 1.0
+            Content-Type: text/plain; charset="utf-8"
+            Content-Transfer-Encoding: base64
+
+            abcde
+            """)
+        msg = self._str_msg(source)
+        with self._raise_point(errors.InvalidBase64LengthDefect):
+            payload = msg.get_payload(decode=True)
+        if self.raise_expected: return
+        self.assertEqual(payload, b'abcde')
+        self.assertDefectsEqual(self.get_defects(msg),
+                                [errors.InvalidBase64LengthDefect])
+
     def test_missing_ending_boundary(self):
         source = textwrap.dedent("""\
             To: 1@harrydomain4.com

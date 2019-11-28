@@ -70,8 +70,8 @@ def capture_server(evt, buf, serv):
         pass
     else:
         n = 200
-        start = time.time()
-        while n > 0 and time.time() - start < 3.0:
+        start = time.monotonic()
+        while n > 0 and time.monotonic() - start < 3.0:
             r, w, e = select.select([conn], [], [], 0.1)
             if r:
                 n -= 1

@@ -96,9 +96,8 @@ def _percolator(parent):  # htest #
     cb2.pack()
 
 if __name__ == "__main__":
-    import unittest
-    unittest.main('idlelib.idle_test.test_percolator', verbosity=2,
-                  exit=False)
+    from unittest import main
+    main('idlelib.idle_test.test_percolator', verbosity=2, exit=False)
 
     from idlelib.idle_test.htest import run
     run(_percolator)

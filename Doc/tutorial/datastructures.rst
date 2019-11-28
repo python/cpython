@@ -40,8 +40,8 @@ objects:
 .. method:: list.remove(x)
    :noindex:
 
-   Remove the first item from the list whose value is equal to *x*.  It is an error if
-   there is no such item.
+   Remove the first item from the list whose value is equal to *x*.  It raises a
+   :exc:`ValueError` if there is no such item.
 
 
 .. method:: list.pop([i])
@@ -124,6 +124,13 @@ You might have noticed that methods like ``insert``, ``remove`` or ``sort`` that
 only modify the list have no return value printed -- they return the default
 ``None``. [1]_  This is a design principle for all mutable data structures in
 Python.
+
+Another thing you might notice is that not all data can be sorted or
+compared.  For instance, ``[None, 'hello', 10]`` doesn't sort because
+integers can't be compared to strings and *None* can't be compared to
+other types.  Also, there are some types that don't have a defined
+ordering relation.  For example, ``3+4j < 5+7j`` isn't a valid
+comparison.
 
 
 .. _tut-lists-as-stacks:
@@ -216,9 +223,9 @@ or, equivalently::
 which is more concise and readable.
 
 A list comprehension consists of brackets containing an expression followed
-by a :keyword:`for` clause, then zero or more :keyword:`for` or :keyword:`if`
+by a :keyword:`!for` clause, then zero or more :keyword:`!for` or :keyword:`!if`
 clauses.  The result will be a new list resulting from evaluating the expression
-in the context of the :keyword:`for` and :keyword:`if` clauses which follow it.
+in the context of the :keyword:`!for` and :keyword:`!if` clauses which follow it.
 For example, this listcomp combines the elements of two lists if they are not
 equal::
 
@@ -330,12 +337,12 @@ See :ref:`tut-unpacking-arguments` for details on the asterisk in this line.
 
 .. _tut-del:
 
-The :keyword:`del` statement
-============================
+The :keyword:`!del` statement
+=============================
 
 There is a way to remove an item from a list given its index instead of its
 value: the :keyword:`del` statement.  This differs from the :meth:`pop` method
-which returns a value.  The :keyword:`del` statement can also be used to remove
+which returns a value.  The :keyword:`!del` statement can also be used to remove
 slices from a list or clear the entire list (which we did earlier by assignment
 of an empty list to the slice).  For example::
 
@@ -497,7 +504,7 @@ You can't use lists as keys, since lists can be modified in place using index
 assignments, slice assignments, or methods like :meth:`append` and
 :meth:`extend`.
 
-It is best to think of a dictionary as an unordered set of *key: value* pairs,
+It is best to think of a dictionary as a set of *key: value* pairs,
 with the requirement that the keys are unique (within one dictionary). A pair of
 braces creates an empty dictionary: ``{}``. Placing a comma-separated list of
 key:value pairs within the braces adds initial key:value pairs to the
@@ -509,9 +516,9 @@ pair with ``del``. If you store using a key that is already in use, the old
 value associated with that key is forgotten.  It is an error to extract a value
 using a non-existent key.
 
-Performing ``list(d.keys())`` on a dictionary returns a list of all the keys
-used in the dictionary, in arbitrary order (if you want it sorted, just use
-``sorted(d.keys())`` instead). [2]_  To check whether a single key is in the
+Performing ``list(d)`` on a dictionary returns a list of all the keys
+used in the dictionary, in insertion order (if you want it sorted, just use
+``sorted(d)`` instead). To check whether a single key is in the
 dictionary, use the :keyword:`in` keyword.
 
 Here is a small example using a dictionary::
@@ -519,16 +526,16 @@ Here is a small example using a dictionary::
    >>> tel = {'jack': 4098, 'sape': 4139}
    >>> tel['guido'] = 4127
    >>> tel
-   {'sape': 4139, 'guido': 4127, 'jack': 4098}
+   {'jack': 4098, 'sape': 4139, 'guido': 4127}
    >>> tel['jack']
    4098
    >>> del tel['sape']
    >>> tel['irv'] = 4127
    >>> tel
-   {'guido': 4127, 'irv': 4127, 'jack': 4098}
-   >>> list(tel.keys())
-   ['irv', 'guido', 'jack']
-   >>> sorted(tel.keys())
+   {'jack': 4098, 'guido': 4127, 'irv': 4127}
+   >>> list(tel)
+   ['jack', 'guido', 'irv']
+   >>> sorted(tel)
    ['guido', 'irv', 'jack']
    >>> 'guido' in tel
    True
@@ -539,7 +546,7 @@ The :func:`dict` constructor builds dictionaries directly from sequences of
 key-value pairs::
 
    >>> dict([('sape', 4139), ('guido', 4127), ('jack', 4098)])
-   {'sape': 4139, 'jack': 4098, 'guido': 4127}
+   {'sape': 4139, 'guido': 4127, 'jack': 4098}
 
 In addition, dict comprehensions can be used to create dictionaries from
 arbitrary key and value expressions::
@@ -551,7 +558,7 @@ When the keys are simple strings, it is sometimes easier to specify pairs using
 keyword arguments::
 
    >>> dict(sape=4139, guido=4127, jack=4098)
-   {'sape': 4139, 'jack': 4098, 'guido': 4127}
+   {'sape': 4139, 'guido': 4127, 'jack': 4098}
 
 
 .. _tut-loopidioms:
@@ -668,28 +675,27 @@ to a variable.  For example, ::
    >>> non_null
    'Trondheim'
 
-Note that in Python, unlike C, assignment cannot occur inside expressions. C
-programmers may grumble about this, but it avoids a common class of problems
-encountered in C programs: typing ``=`` in an expression when ``==`` was
-intended.
+Note that in Python, unlike C, assignment inside expressions must be done
+explicitly with the walrus operator ``:=``. This avoids a common class of
+problems encountered in C programs: typing ``=`` in an expression when ``==``
+was intended.
 
 
 .. _tut-comparing:
 
 Comparing Sequences and Other Types
 ===================================
-
-Sequence objects may be compared to other objects with the same sequence type.
-The comparison uses *lexicographical* ordering: first the first two items are
-compared, and if they differ this determines the outcome of the comparison; if
-they are equal, the next two items are compared, and so on, until either
-sequence is exhausted. If two items to be compared are themselves sequences of
-the same type, the lexicographical comparison is carried out recursively.  If
-all items of two sequences compare equal, the sequences are considered equal.
-If one sequence is an initial sub-sequence of the other, the shorter sequence is
-the smaller (lesser) one.  Lexicographical ordering for strings uses the Unicode
-code point number to order individual characters.  Some examples of comparisons
-between sequences of the same type::
+Sequence objects typically may be compared to other objects with the same sequence
+type. The comparison uses *lexicographical* ordering: first the first two
+items are compared, and if they differ this determines the outcome of the
+comparison; if they are equal, the next two items are compared, and so on, until
+either sequence is exhausted. If two items to be compared are themselves
+sequences of the same type, the lexicographical comparison is carried out
+recursively.  If all items of two sequences compare equal, the sequences are
+considered equal. If one sequence is an initial sub-sequence of the other, the
+shorter sequence is the smaller (lesser) one.  Lexicographical ordering for
+strings uses the Unicode code point number to order individual characters.
+Some examples of comparisons between sequences of the same type::
 
    (1, 2, 3)              < (1, 2, 4)
    [1, 2, 3]              < [1, 2, 4]
@@ -710,7 +716,3 @@ interpreter will raise a :exc:`TypeError` exception.
 
 .. [1] Other languages may return the mutated object, which allows method
        chaining, such as ``d->insert("a")->remove("b")->sort();``.
-
-.. [2] Calling ``d.keys()`` will return a :dfn:`dictionary view` object.  It
-       supports operations like membership test and iteration, but its contents
-       are not independent of the original dictionary -- it is only a *view*.

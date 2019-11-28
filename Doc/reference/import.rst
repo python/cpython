@@ -15,11 +15,11 @@ way.  Functions such as :func:`importlib.import_module` and built-in
 
 The :keyword:`import` statement combines two operations; it searches for the
 named module, then it binds the results of that search to a name in the local
-scope.  The search operation of the :keyword:`import` statement is defined as
+scope.  The search operation of the :keyword:`!import` statement is defined as
 a call to the :func:`__import__` function, with the appropriate arguments.
 The return value of :func:`__import__` is used to perform the name
-binding operation of the :keyword:`import` statement.  See the
-:keyword:`import` statement for the exact details of that name binding
+binding operation of the :keyword:`!import` statement.  See the
+:keyword:`!import` statement for the exact details of that name binding
 operation.
 
 A direct call to :func:`__import__` performs only the module search and, if
@@ -83,7 +83,7 @@ module.  Specifically, any module that contains a ``__path__`` attribute is
 considered a package.
 
 All modules have a name.  Subpackage names are separated from their parent
-package name by dots, akin to Python's standard attribute access syntax.  Thus
+package name by a dot, akin to Python's standard attribute access syntax.  Thus
 you might have a module called :mod:`sys` and a package called :mod:`email`,
 which in turn has a subpackage called :mod:`email.mime` and a module within
 that subpackage called :mod:`email.mime.text`.
@@ -127,8 +127,8 @@ Namespace packages
 ------------------
 
 .. index::
-    pair:: package; namespace
-    pair:: package; portion
+    pair: package; namespace
+    pair: package; portion
 
 A namespace package is a composite of various :term:`portions <portion>`,
 where each portion contributes a subpackage to the parent package.  Portions
@@ -345,12 +345,11 @@ of what happens during the loading portion of import::
     _init_module_attrs(spec, module)
 
     if spec.loader is None:
-        if spec.submodule_search_locations is not None:
-            # namespace package
-            sys.modules[spec.name] = module
-        else:
-            # unsupported
-            raise ImportError
+        # unsupported
+        raise ImportError
+    if spec.origin is None and spec.submodule_search_locations is not None:
+        # namespace package
+        sys.modules[spec.name] = module
     elif not hasattr(spec.loader, 'exec_module'):
         module = spec.loader.load_module(spec.name)
         # Set __loader__ and __package__ if missing.
@@ -616,8 +615,7 @@ the module.
 module.__path__
 ---------------
 
-By definition, if a module has a ``__path__`` attribute, it is a package,
-regardless of its value.
+By definition, if a module has a ``__path__`` attribute, it is a package.
 
 A package's ``__path__`` attribute is used during imports of its subpackages.
 Within the import machinery, it functions much the same as :data:`sys.path`,
@@ -684,7 +682,7 @@ Before Python loads cached bytecode from ``.pyc`` file, it checks whether the
 cache is up-to-date with the source ``.py`` file. By default, Python does this
 by storing the source's last-modified timestamp and size in the cache file when
 writing it. At runtime, the import system then validates the cache file by
-checking the stored metadata in the cache file against at source's
+checking the stored metadata in the cache file against the source's
 metadata.
 
 Python also supports "hash-based" cache files, which store a hash of the source
@@ -851,7 +849,7 @@ In order to support imports of modules and initialized packages and also to
 contribute portions to namespace packages, path entry finders must implement
 the :meth:`~importlib.abc.PathEntryFinder.find_spec` method.
 
-:meth:`~importlib.abc.PathEntryFinder.find_spec` takes two argument, the
+:meth:`~importlib.abc.PathEntryFinder.find_spec` takes two arguments: the
 fully qualified name of the module being imported, and the (optional) target
 module.  ``find_spec()`` returns a fully populated spec for the module.
 This spec will always have "loader" set (with one exception).
@@ -915,12 +913,52 @@ the builtin :func:`__import__` function may be sufficient. This technique
 may also be employed at the module level to only alter the behaviour of
 import statements within that module.
 
-To selectively prevent import of some modules from a hook early on the
+To selectively prevent the import of some modules from a hook early on the
 meta path (rather than disabling the standard import system entirely),
 it is sufficient to raise :exc:`ModuleNotFoundError` directly from
 :meth:`~importlib.abc.MetaPathFinder.find_spec` instead of returning
 ``None``. The latter indicates that the meta path search should continue,
 while raising an exception terminates it immediately.
+
+.. _relativeimports:
+
+Package Relative Imports
+========================
+
+Relative imports use leading dots. A single leading dot indicates a relative
+import, starting with the current package. Two or more leading dots indicate a
+relative import to the parent(s) of the current package, one level per dot
+after the first. For example, given the following package layout::
+
+    package/
+        __init__.py
+        subpackage1/
+            __init__.py
+            moduleX.py
+            moduleY.py
+        subpackage2/
+            __init__.py
+            moduleZ.py
+        moduleA.py
+
+In either ``subpackage1/moduleX.py`` or ``subpackage1/__init__.py``,
+the following are valid relative imports::
+
+    from .moduleY import spam
+    from .moduleY import spam as ham
+    from . import moduleY
+    from ..subpackage1 import moduleY
+    from ..subpackage2.moduleZ import eggs
+    from ..moduleA import foo
+
+Absolute imports may use either the ``import <>`` or ``from <> import <>``
+syntax, but relative imports may only use the second form; the reason
+for this is that::
+
+    import XXX.YYY.ZZZ
+
+should expose ``XXX.YYY.ZZZ`` as a usable expression, but .moduleY is
+not a valid expression.
 
 
 Special considerations for __main__
@@ -952,7 +990,7 @@ In :ref:`the remaining cases <using-on-interface-options>`
 :mod:`__main__` does not correspond directly with an importable module:
 
 - interactive prompt
-- -c switch
+- :option:`-c` option
 - running from stdin
 - running directly from a source or bytecode file
 

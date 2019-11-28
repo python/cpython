@@ -65,8 +65,8 @@ kind                       sax              etree             minidom          p
 =========================  ==============   ===============   ==============   ==============   ==============
 billion laughs             **Vulnerable**   **Vulnerable**    **Vulnerable**   **Vulnerable**   **Vulnerable**
 quadratic blowup           **Vulnerable**   **Vulnerable**    **Vulnerable**   **Vulnerable**   **Vulnerable**
-external entity expansion  **Vulnerable**   Safe    (1)       Safe    (2)      **Vulnerable**   Safe    (3)
-`DTD`_ retrieval           **Vulnerable**   Safe              Safe             **Vulnerable**   Safe
+external entity expansion  Safe (4)         Safe    (1)       Safe    (2)      Safe (4)         Safe    (3)
+`DTD`_ retrieval           Safe (4)         Safe              Safe             Safe (4)         Safe
 decompression bomb         Safe             Safe              Safe             Safe             **Vulnerable**
 =========================  ==============   ===============   ==============   ==============   ==============
 
@@ -75,6 +75,8 @@ decompression bomb         Safe             Safe              Safe             S
 2. :mod:`xml.dom.minidom` doesn't expand external entities and simply returns
    the unexpanded entity verbatim.
 3. :mod:`xmlrpclib` doesn't expand external entities and omits them.
+4. Since Python 3.7.1, external general entities are no longer processed by
+   default.
 
 
 billion laughs / exponential entity expansion
@@ -130,8 +132,8 @@ but will not be included in any bugfix releases of
 Python because they break backward compatibility.
 
 
-.. _defusedxml: https://pypi.python.org/pypi/defusedxml/
-.. _defusedexpat: https://pypi.python.org/pypi/defusedexpat/
+.. _defusedxml: https://pypi.org/project/defusedxml/
+.. _defusedexpat: https://pypi.org/project/defusedexpat/
 .. _Billion Laughs: https://en.wikipedia.org/wiki/Billion_laughs
 .. _ZIP bomb: https://en.wikipedia.org/wiki/Zip_bomb
 .. _DTD: https://en.wikipedia.org/wiki/Document_type_definition
