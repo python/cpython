@@ -1,7 +1,7 @@
 """Shared AIX support functions."""
 
-import sys
 import subprocess
+import sys
 from sysconfig import get_config_var
 
 """
@@ -32,10 +32,12 @@ _bgt = get_config_var("BUILD_GNU_TYPE")
 _is_32bit = sys.maxsize == 2147483647
 
 
-def _aix_tag(vrtl, bd):
+def _aix_tag(v, bd):
     # type: (List[int], int) -> str
+    # v is used as variable name so line below passes pep8 length test
+    # v[version, release, technology_level]
     sz = 32 if _is_32bit else 64
-    return "AIX-{:1x}{:1d}{:02d}-{:04d}-{}".format(vrtl[0], vrtl[1], vrtl[2], bd, sz)
+    return "AIX-{:1x}{:1d}{:02d}-{:04d}-{}".format(v[0], v[1], v[2], bd, sz)
 
 
 # compute vrtl from the VRMF string
@@ -46,23 +48,23 @@ def _aix_vrtl(vrmf):
 
 
 def _aix_bosmp64():
-    # type: () -> List[str]
+    # type: () -> Tuple[str, int]
     """
     The fileset bos.mp64 is the AIX kernel. It's VRMF and builddate
     reflect the current levels of the runtime environment.
     """
-    tmp = subprocess.check_output(["/usr/bin/lslpp", "-Lqc", "bos.mp64"])
-    tmp = tmp.decode("utf-8").strip().split(":")  # type: ignore
-    # lpp, vrmf, bd = list(tmp[index] for index in [0, 2, -1])  # type: ignore
-    # e.g., ['bos.mp64', '7.1.4.34', '1806']
-    return list(tmp[index] for index in [0, 2, -1])
+    out = subprocess.check_output(["/usr/bin/lslpp", "-Lqc", "bos.mp64"])
+    out = out.decode("utf-8").strip().split(":")  # type: ignore
+    # vrmf, bd = list(out[index] for index in [2, -1])  # type: ignore
+    # e.g., ['7.1.4.34', '1806']
+    # Use str() and int() to help mypy see types
+    return str(out[2]), int(out[-1])
 
 
 def aix_platform():
     # type: () -> str
-    lpp, vrmf, bd = _aix_bosmp64()
-    assert lpp == "bos.mp64", "%s != %s" % (lpp, "bos.mp64")
-    return _aix_tag(_aix_vrtl(vrmf), int(bd))
+    vrmf, bd = _aix_bosmp64()
+    return _aix_tag(_aix_vrtl(vrmf), bd)
 
 
 # extract vrtl from the BUILD_GNU_TYPE as an int
