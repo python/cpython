@@ -1643,13 +1643,16 @@ class' :attr:`~object.__dict__`.
 
    .. note::
 
-      ``__set_name__`` is only called implicitly as part of the ``type`` constructor, so
-      it will need to be called explicitly with the appropriate parameters when a
-      descriptor is added to a class after initial creation::
+      :meth:`__set_name__` is only called implicitly as part of the
+      :class:`type` constructor, so it will need to be called explicitly with
+      the appropriate parameters when a descriptor is added to a class after
+      initial creation::
 
+         class A:
+            pass
          descr = custom_descriptor()
-         cls.attr = descr
-         descr.__set_name__(cls, 'attr')
+         A.attr = descr
+         descr.__set_name__(A, 'attr')
 
       See :ref:`class-object-creation` for more details.
 
