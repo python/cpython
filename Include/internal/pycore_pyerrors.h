@@ -10,7 +10,8 @@ extern "C" {
 
 static inline PyObject* _PyErr_Occurred(PyThreadState *tstate)
 {
-    return tstate == NULL ? NULL : tstate->curexc_type;
+    assert(tstate != NULL);
+    return tstate->curexc_type;
 }
 
 
@@ -57,6 +58,12 @@ PyAPI_FUNC(void) _PyErr_NormalizeException(
     PyObject **exc,
     PyObject **val,
     PyObject **tb);
+
+PyAPI_FUNC(PyObject *) _PyErr_FormatFromCauseTstate(
+    PyThreadState *tstate,
+    PyObject *exception,
+    const char *format,
+    ...);
 
 #ifdef __cplusplus
 }

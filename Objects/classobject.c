@@ -2,6 +2,7 @@
 
 #include "Python.h"
 #include "pycore_object.h"
+#include "pycore_pyerrors.h"
 #include "pycore_pymem.h"
 #include "pycore_pystate.h"
 #include "structmember.h"
@@ -37,25 +38,28 @@ method_vectorcall(PyObject *method, PyObject *const *args,
                   size_t nargsf, PyObject *kwnames)
 {
     assert(Py_TYPE(method) == &PyMethod_Type);
-    PyObject *self, *func, *result;
-    self = PyMethod_GET_SELF(method);
-    func = PyMethod_GET_FUNCTION(method);
+
+    PyThreadState *tstate = _PyThreadState_GET();
+    PyObject *self = PyMethod_GET_SELF(method);
+    PyObject *func = PyMethod_GET_FUNCTION(method);
     Py_ssize_t nargs = PyVectorcall_NARGS(nargsf);
 
+    PyObject *result;
     if (nargsf & PY_VECTORCALL_ARGUMENTS_OFFSET) {
         /* PY_VECTORCALL_ARGUMENTS_OFFSET is set, so we are allowed to mutate the vector */
         PyObject **newargs = (PyObject**)args - 1;
         nargs += 1;
         PyObject *tmp = newargs[0];
         newargs[0] = self;
-        result = _PyObject_Vectorcall(func, newargs, nargs, kwnames);
+        result = _PyObject_VectorcallTstate(tstate, func, newargs,
+                                            nargs, kwnames);
         newargs[0] = tmp;
     }
     else {
         Py_ssize_t nkwargs = (kwnames == NULL) ? 0 : PyTuple_GET_SIZE(kwnames);
         Py_ssize_t totalargs = nargs + nkwargs;
         if (totalargs == 0) {
-            return _PyObject_Vectorcall(func, &self, 1, NULL);
+            return _PyObject_VectorcallTstate(tstate, func, &self, 1, NULL);
         }
 
         PyObject *newargs_stack[_PY_FASTCALL_SMALL_STACK];
@@ -66,7 +70,7 @@ method_vectorcall(PyObject *method, PyObject *const *args,
         else {
             newargs = PyMem_Malloc((totalargs+1) * sizeof(PyObject *));
             if (newargs == NULL) {
-                PyErr_NoMemory();
+                _PyErr_NoMemory(tstate);
                 return NULL;
             }
         }
@@ -77,7 +81,8 @@ method_vectorcall(PyObject *method, PyObject *const *args,
          * undefined behaviour. */
         assert(args != NULL);
         memcpy(newargs + 1, args, totalargs * sizeof(PyObject *));
-        result = _PyObject_Vectorcall(func, newargs, nargs+1, kwnames);
+        result = _PyObject_VectorcallTstate(tstate, func,
+                                            newargs, nargs+1, kwnames);
         if (newargs != newargs_stack) {
             PyMem_Free(newargs);
         }
@@ -365,20 +370,6 @@ PyTypeObject PyMethod_Type = {
     0,                                          /* tp_alloc */
     method_new,                                 /* tp_new */
 };
-
-/* Clear out the free list */
-
-int
-PyMethod_ClearFreeList(void)
-{
-    return 0;
-}
-
-void
-PyMethod_Fini(void)
-{
-    (void)PyMethod_ClearFreeList();
-}
 
 /* ------------------------------------------------------------------------
  * instance method

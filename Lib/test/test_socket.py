@@ -37,7 +37,6 @@ except ImportError:
 HOST = support.HOST
 # test unicode string and carriage return
 MSG = 'Michael Gilfix was here\u1234\r\n'.encode('utf-8')
-MAIN_TIMEOUT = 60.0
 
 VSOCKPORT = 1234
 AIX = platform.system() == "AIX"
@@ -1948,7 +1947,9 @@ class BasicCANTest(unittest.TestCase):
 
     def testBindAny(self):
         with socket.socket(socket.PF_CAN, socket.SOCK_RAW, socket.CAN_RAW) as s:
-            s.bind(('', ))
+            address = ('', )
+            s.bind(address)
+            self.assertEqual(s.getsockname(), address)
 
     def testTooLongInterfaceName(self):
         # most systems limit IFNAMSIZ to 16, take 1024 to be sure
@@ -2525,7 +2526,7 @@ class SendrecvmsgBase(ThreadSafeCleanupTestCase):
 
     # Time in seconds to wait before considering a test failed, or
     # None for no timeout.  Not all tests actually set a timeout.
-    fail_timeout = 3.0
+    fail_timeout = support.LOOPBACK_TIMEOUT
 
     def setUp(self):
         self.misc_event = threading.Event()
@@ -4318,7 +4319,7 @@ class InterruptedTimeoutBase(unittest.TestCase):
         self.addCleanup(signal.signal, signal.SIGALRM, orig_alrm_handler)
 
     # Timeout for socket operations
-    timeout = 4.0
+    timeout = support.LOOPBACK_TIMEOUT
 
     # Provide setAlarm() method to schedule delivery of SIGALRM after
     # given number of seconds, or cancel it if zero, and an
@@ -4597,7 +4598,7 @@ class NonBlockingTCPTests(ThreadedTCPSocketTest):
 
     def testAccept(self):
         # Testing non-blocking accept
-        self.serv.setblocking(0)
+        self.serv.setblocking(False)
 
         # connect() didn't start: non-blocking accept() fails
         start_time = time.monotonic()
@@ -4608,7 +4609,7 @@ class NonBlockingTCPTests(ThreadedTCPSocketTest):
 
         self.event.set()
 
-        read, write, err = select.select([self.serv], [], [], MAIN_TIMEOUT)
+        read, write, err = select.select([self.serv], [], [], support.LONG_TIMEOUT)
         if self.serv not in read:
             self.fail("Error trying to do accept after select.")
 
@@ -4628,7 +4629,7 @@ class NonBlockingTCPTests(ThreadedTCPSocketTest):
         # Testing non-blocking recv
         conn, addr = self.serv.accept()
         self.addCleanup(conn.close)
-        conn.setblocking(0)
+        conn.setblocking(False)
 
         # the server didn't send data yet: non-blocking recv() fails
         with self.assertRaises(BlockingIOError):
@@ -4636,7 +4637,7 @@ class NonBlockingTCPTests(ThreadedTCPSocketTest):
 
         self.event.set()
 
-        read, write, err = select.select([conn], [], [], MAIN_TIMEOUT)
+        read, write, err = select.select([conn], [], [], support.LONG_TIMEOUT)
         if conn not in read:
             self.fail("Error during select call to non-blocking socket.")
 
@@ -5698,15 +5699,15 @@ class NonblockConstantTest(unittest.TestCase):
         with socket.socket(socket.AF_INET,
                            socket.SOCK_STREAM | socket.SOCK_NONBLOCK) as s:
             self.checkNonblock(s)
-            s.setblocking(1)
+            s.setblocking(True)
             self.checkNonblock(s, nonblock=False)
-            s.setblocking(0)
+            s.setblocking(False)
             self.checkNonblock(s)
             s.settimeout(None)
             self.checkNonblock(s, nonblock=False)
             s.settimeout(2.0)
             self.checkNonblock(s, timeout=2.0)
-            s.setblocking(1)
+            s.setblocking(True)
             self.checkNonblock(s, nonblock=False)
         # defaulttimeout
         t = socket.getdefaulttimeout()
@@ -5836,8 +5837,7 @@ class SendfileUsingSendTest(ThreadedTCPSocketTest):
     FILESIZE = (10 * 1024 * 1024)  # 10 MiB
     BUFSIZE = 8192
     FILEDATA = b""
-    # bpo-37553: This is taking longer than 2 seconds on Windows ARM32 buildbot
-    TIMEOUT = 10 if sys.platform == 'win32' and platform.machine() == 'ARM' else 2
+    TIMEOUT = support.LOOPBACK_TIMEOUT
 
     @classmethod
     def setUpClass(cls):
@@ -5863,7 +5863,7 @@ class SendfileUsingSendTest(ThreadedTCPSocketTest):
         support.unlink(support.TESTFN)
 
     def accept_conn(self):
-        self.serv.settimeout(MAIN_TIMEOUT)
+        self.serv.settimeout(support.LONG_TIMEOUT)
         conn, addr = self.serv.accept()
         conn.settimeout(self.TIMEOUT)
         self.addCleanup(conn.close)
@@ -6367,7 +6367,7 @@ class CreateServerTest(unittest.TestCase):
 
 
 class CreateServerFunctionalTest(unittest.TestCase):
-    timeout = 3
+    timeout = support.LOOPBACK_TIMEOUT
 
     def setUp(self):
         self.thread = None
@@ -6436,11 +6436,53 @@ class CreateServerFunctionalTest(unittest.TestCase):
             self.echo_server(sock)
             self.echo_client(("::1", port), socket.AF_INET6)
 
+@requireAttrs(socket, "send_fds")
+@requireAttrs(socket, "recv_fds")
+@requireAttrs(socket, "AF_UNIX")
+class SendRecvFdsTests(unittest.TestCase):
+    def testSendAndRecvFds(self):
+        def close_pipes(pipes):
+            for fd1, fd2 in pipes:
+                os.close(fd1)
+                os.close(fd2)
+
+        def close_fds(fds):
+            for fd in fds:
+                os.close(fd)
+
+        # send 10 file descriptors
+        pipes = [os.pipe() for _ in range(10)]
+        self.addCleanup(close_pipes, pipes)
+        fds = [rfd for rfd, wfd in pipes]
+
+        # use a UNIX socket pair to exchange file descriptors locally
+        sock1, sock2 = socket.socketpair(socket.AF_UNIX, socket.SOCK_STREAM)
+        with sock1, sock2:
+            socket.send_fds(sock1, [MSG], fds)
+            # request more data and file descriptors than expected
+            msg, fds2, flags, addr = socket.recv_fds(sock2, len(MSG) * 2, len(fds) * 2)
+            self.addCleanup(close_fds, fds2)
+
+        self.assertEqual(msg, MSG)
+        self.assertEqual(len(fds2), len(fds))
+        self.assertEqual(flags, 0)
+        # don't test addr
+
+        # test that file descriptors are connected
+        for index, fds in enumerate(pipes):
+            rfd, wfd = fds
+            os.write(wfd, str(index).encode())
+
+        for index, rfd in enumerate(fds2):
+            data = os.read(rfd, 100)
+            self.assertEqual(data,  str(index).encode())
+
 
 def test_main():
     tests = [GeneralModuleTests, BasicTCPTest, TCPCloserTest, TCPTimeoutTest,
              TestExceptions, BufferIOTest, BasicTCPTest2, BasicUDPTest,
-             UDPTimeoutTest, CreateServerTest, CreateServerFunctionalTest]
+             UDPTimeoutTest, CreateServerTest, CreateServerFunctionalTest,
+             SendRecvFdsTests]
 
     tests.extend([
         NonBlockingTCPTests,
@@ -6512,6 +6554,7 @@ def test_main():
     thread_info = support.threading_setup()
     support.run_unittest(*tests)
     support.threading_cleanup(*thread_info)
+
 
 if __name__ == "__main__":
     test_main()

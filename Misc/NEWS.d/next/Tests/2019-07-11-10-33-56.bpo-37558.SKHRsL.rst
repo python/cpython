@@ -1,1 +1,0 @@
-Fix test_shared_memory_cleaned_after_process_termination name handling

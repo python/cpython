@@ -33,6 +33,9 @@ __all__ = ["ref", "proxy", "getweakrefcount", "getweakrefs",
            "WeakSet", "WeakMethod", "finalize"]
 
 
+_collections_abc.Set.register(WeakSet)
+_collections_abc.MutableSet.register(WeakSet)
+
 class WeakMethod(ref):
     """
     A custom `weakref.ref` subclass which simulates a weak reference to
@@ -108,12 +111,12 @@ class WeakValueDictionary(_collections_abc.MutableMapping):
                 else:
                     # Atomic removal is necessary since this function
                     # can be called asynchronously by the GC
-                    _atomic_removal(d, wr.key)
+                    _atomic_removal(self.data, wr.key)
         self._remove = remove
         # A list of keys to be removed
         self._pending_removals = []
         self._iterating = set()
-        self.data = d = {}
+        self.data = {}
         self.update(other, **kw)
 
     def _commit_removals(self):

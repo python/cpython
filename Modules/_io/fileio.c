@@ -4,6 +4,7 @@
 #include "Python.h"
 #include "pycore_object.h"
 #include "structmember.h"
+#include <stdbool.h>
 #ifdef HAVE_SYS_TYPES_H
 #include <sys/types.h>
 #endif
@@ -75,7 +76,7 @@ _Py_IDENTIFIER(name);
 #define PyFileIO_Check(op) (PyObject_TypeCheck((op), &PyFileIO_Type))
 
 /* Forward declarations */
-static PyObject* portable_lseek(fileio *self, PyObject *posobj, int whence);
+static PyObject* portable_lseek(fileio *self, PyObject *posobj, int whence, bool suppress_pipe_error);
 
 int
 _PyFileIO_closed(PyObject *self)
@@ -480,7 +481,7 @@ _io_FileIO___init___impl(fileio *self, PyObject *nameobj, const char *mode,
         /* For consistent behaviour, we explicitly seek to the
            end of file (otherwise, it might be done only on the
            first write()). */
-        PyObject *pos = portable_lseek(self, NULL, 2);
+        PyObject *pos = portable_lseek(self, NULL, 2, true);
         if (pos == NULL)
             goto error;
         Py_DECREF(pos);
@@ -603,7 +604,7 @@ _io_FileIO_seekable_impl(fileio *self)
         return err_closed();
     if (self->seekable < 0) {
         /* portable_lseek() sets the seekable attribute */
-        PyObject *pos = portable_lseek(self, NULL, SEEK_CUR);
+        PyObject *pos = portable_lseek(self, NULL, SEEK_CUR, false);
         assert(self->seekable >= 0);
         if (pos == NULL) {
             PyErr_Clear();
@@ -870,7 +871,7 @@ _io_FileIO_write_impl(fileio *self, Py_buffer *b)
 
 /* Cribbed from posix_lseek() */
 static PyObject *
-portable_lseek(fileio *self, PyObject *posobj, int whence)
+portable_lseek(fileio *self, PyObject *posobj, int whence, bool suppress_pipe_error)
 {
     Py_off_t pos, res;
     int fd = self->fd;
@@ -921,8 +922,13 @@ portable_lseek(fileio *self, PyObject *posobj, int whence)
         self->seekable = (res >= 0);
     }
 
-    if (res < 0)
-        return PyErr_SetFromErrno(PyExc_OSError);
+    if (res < 0) {
+        if (suppress_pipe_error && errno == ESPIPE) {
+            res = 0;
+        } else {
+            return PyErr_SetFromErrno(PyExc_OSError);
+        }
+    }
 
 #if defined(HAVE_LARGEFILE_SUPPORT)
     return PyLong_FromLongLong(res);
@@ -955,7 +961,7 @@ _io_FileIO_seek_impl(fileio *self, PyObject *pos, int whence)
     if (self->fd < 0)
         return err_closed();
 
-    return portable_lseek(self, pos, whence);
+    return portable_lseek(self, pos, whence, false);
 }
 
 /*[clinic input]
@@ -973,13 +979,13 @@ _io_FileIO_tell_impl(fileio *self)
     if (self->fd < 0)
         return err_closed();
 
-    return portable_lseek(self, NULL, 1);
+    return portable_lseek(self, NULL, 1, false);
 }
 
 #ifdef HAVE_FTRUNCATE
 /*[clinic input]
 _io.FileIO.truncate
-    size as posobj: object = NULL
+    size as posobj: object = None
     /
 
 Truncate the file to at most size bytes and return the truncated size.
@@ -990,7 +996,7 @@ The current file position is changed to the value of size.
 
 static PyObject *
 _io_FileIO_truncate_impl(fileio *self, PyObject *posobj)
-/*[clinic end generated code: output=e49ca7a916c176fa input=9026af44686b7318]*/
+/*[clinic end generated code: output=e49ca7a916c176fa input=b0ac133939823875]*/
 {
     Py_off_t pos;
     int ret;
@@ -1002,9 +1008,9 @@ _io_FileIO_truncate_impl(fileio *self, PyObject *posobj)
     if (!self->writable)
         return err_mode("writing");
 
-    if (posobj == Py_None || posobj == NULL) {
+    if (posobj == Py_None) {
         /* Get the current position. */
-        posobj = portable_lseek(self, NULL, 1);
+        posobj = portable_lseek(self, NULL, 1, false);
         if (posobj == NULL)
             return NULL;
     }

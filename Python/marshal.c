@@ -1829,6 +1829,9 @@ PyMarshal_Init(void)
     PyObject *mod = PyModule_Create(&marshalmodule);
     if (mod == NULL)
         return NULL;
-    PyModule_AddIntConstant(mod, "version", Py_MARSHAL_VERSION);
+    if (PyModule_AddIntConstant(mod, "version", Py_MARSHAL_VERSION) < 0) {
+        Py_DECREF(mod);
+        return NULL;
+    }
     return mod;
 }

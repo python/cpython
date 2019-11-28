@@ -199,18 +199,22 @@ _POST_INIT_NAME = '__post_init__'
 # https://bugs.python.org/issue33453 for details.
 _MODULE_IDENTIFIER_RE = re.compile(r'^(?:\s*(\w+)\s*\.)?\s*(\w+)')
 
-class _InitVarMeta(type):
-    def __getitem__(self, params):
-        return InitVar(params)
-
-class InitVar(metaclass=_InitVarMeta):
+class InitVar:
     __slots__ = ('type', )
 
     def __init__(self, type):
         self.type = type
 
     def __repr__(self):
-        return f'dataclasses.InitVar[{self.type.__name__}]'
+        if isinstance(self.type, type):
+            type_name = self.type.__name__
+        else:
+            # typing objects, e.g. List[int]
+            type_name = repr(self.type)
+        return f'dataclasses.InitVar[{type_name}]'
+
+    def __class_getitem__(cls, type):
+        return InitVar(type)
 
 
 # Instances of Field are only ever created from within this module,
@@ -1015,13 +1019,14 @@ def fields(class_or_instance):
 
 def _is_dataclass_instance(obj):
     """Returns True if obj is an instance of a dataclass."""
-    return not isinstance(obj, type) and hasattr(obj, _FIELDS)
+    return hasattr(type(obj), _FIELDS)
 
 
 def is_dataclass(obj):
     """Returns True if obj is a dataclass or an instance of a
     dataclass."""
-    return hasattr(obj, _FIELDS)
+    cls = obj if isinstance(obj, type) else type(obj)
+    return hasattr(cls, _FIELDS)
 
 
 def asdict(obj, *, dict_factory=dict):

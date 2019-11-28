@@ -30,7 +30,7 @@ audioop_getsample(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
         goto exit;
     }
     if (!PyBuffer_IsContiguous(&fragment, 'C')) {
-        _PyArg_BadArgument("getsample", 1, "contiguous buffer", args[0]);
+        _PyArg_BadArgument("getsample", "argument 1", "contiguous buffer", args[0]);
         goto exit;
     }
     if (PyFloat_Check(args[1])) {
@@ -96,7 +96,7 @@ audioop_max(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
         goto exit;
     }
     if (!PyBuffer_IsContiguous(&fragment, 'C')) {
-        _PyArg_BadArgument("max", 1, "contiguous buffer", args[0]);
+        _PyArg_BadArgument("max", "argument 1", "contiguous buffer", args[0]);
         goto exit;
     }
     if (PyFloat_Check(args[1])) {
@@ -145,7 +145,7 @@ audioop_minmax(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
         goto exit;
     }
     if (!PyBuffer_IsContiguous(&fragment, 'C')) {
-        _PyArg_BadArgument("minmax", 1, "contiguous buffer", args[0]);
+        _PyArg_BadArgument("minmax", "argument 1", "contiguous buffer", args[0]);
         goto exit;
     }
     if (PyFloat_Check(args[1])) {
@@ -194,7 +194,7 @@ audioop_avg(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
         goto exit;
     }
     if (!PyBuffer_IsContiguous(&fragment, 'C')) {
-        _PyArg_BadArgument("avg", 1, "contiguous buffer", args[0]);
+        _PyArg_BadArgument("avg", "argument 1", "contiguous buffer", args[0]);
         goto exit;
     }
     if (PyFloat_Check(args[1])) {
@@ -243,7 +243,7 @@ audioop_rms(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
         goto exit;
     }
     if (!PyBuffer_IsContiguous(&fragment, 'C')) {
-        _PyArg_BadArgument("rms", 1, "contiguous buffer", args[0]);
+        _PyArg_BadArgument("rms", "argument 1", "contiguous buffer", args[0]);
         goto exit;
     }
     if (PyFloat_Check(args[1])) {
@@ -293,14 +293,14 @@ audioop_findfit(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
         goto exit;
     }
     if (!PyBuffer_IsContiguous(&fragment, 'C')) {
-        _PyArg_BadArgument("findfit", 1, "contiguous buffer", args[0]);
+        _PyArg_BadArgument("findfit", "argument 1", "contiguous buffer", args[0]);
         goto exit;
     }
     if (PyObject_GetBuffer(args[1], &reference, PyBUF_SIMPLE) != 0) {
         goto exit;
     }
     if (!PyBuffer_IsContiguous(&reference, 'C')) {
-        _PyArg_BadArgument("findfit", 2, "contiguous buffer", args[1]);
+        _PyArg_BadArgument("findfit", "argument 2", "contiguous buffer", args[1]);
         goto exit;
     }
     return_value = audioop_findfit_impl(module, &fragment, &reference);
@@ -345,14 +345,14 @@ audioop_findfactor(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
         goto exit;
     }
     if (!PyBuffer_IsContiguous(&fragment, 'C')) {
-        _PyArg_BadArgument("findfactor", 1, "contiguous buffer", args[0]);
+        _PyArg_BadArgument("findfactor", "argument 1", "contiguous buffer", args[0]);
         goto exit;
     }
     if (PyObject_GetBuffer(args[1], &reference, PyBUF_SIMPLE) != 0) {
         goto exit;
     }
     if (!PyBuffer_IsContiguous(&reference, 'C')) {
-        _PyArg_BadArgument("findfactor", 2, "contiguous buffer", args[1]);
+        _PyArg_BadArgument("findfactor", "argument 2", "contiguous buffer", args[1]);
         goto exit;
     }
     return_value = audioop_findfactor_impl(module, &fragment, &reference);
@@ -397,7 +397,7 @@ audioop_findmax(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
         goto exit;
     }
     if (!PyBuffer_IsContiguous(&fragment, 'C')) {
-        _PyArg_BadArgument("findmax", 1, "contiguous buffer", args[0]);
+        _PyArg_BadArgument("findmax", "argument 1", "contiguous buffer", args[0]);
         goto exit;
     }
     if (PyFloat_Check(args[1])) {
@@ -454,7 +454,7 @@ audioop_avgpp(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
         goto exit;
     }
     if (!PyBuffer_IsContiguous(&fragment, 'C')) {
-        _PyArg_BadArgument("avgpp", 1, "contiguous buffer", args[0]);
+        _PyArg_BadArgument("avgpp", "argument 1", "contiguous buffer", args[0]);
         goto exit;
     }
     if (PyFloat_Check(args[1])) {
@@ -503,7 +503,7 @@ audioop_maxpp(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
         goto exit;
     }
     if (!PyBuffer_IsContiguous(&fragment, 'C')) {
-        _PyArg_BadArgument("maxpp", 1, "contiguous buffer", args[0]);
+        _PyArg_BadArgument("maxpp", "argument 1", "contiguous buffer", args[0]);
         goto exit;
     }
     if (PyFloat_Check(args[1])) {
@@ -552,7 +552,7 @@ audioop_cross(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
         goto exit;
     }
     if (!PyBuffer_IsContiguous(&fragment, 'C')) {
-        _PyArg_BadArgument("cross", 1, "contiguous buffer", args[0]);
+        _PyArg_BadArgument("cross", "argument 1", "contiguous buffer", args[0]);
         goto exit;
     }
     if (PyFloat_Check(args[1])) {
@@ -603,7 +603,7 @@ audioop_mul(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
         goto exit;
     }
     if (!PyBuffer_IsContiguous(&fragment, 'C')) {
-        _PyArg_BadArgument("mul", 1, "contiguous buffer", args[0]);
+        _PyArg_BadArgument("mul", "argument 1", "contiguous buffer", args[0]);
         goto exit;
     }
     if (PyFloat_Check(args[1])) {
@@ -615,9 +615,15 @@ audioop_mul(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     if (width == -1 && PyErr_Occurred()) {
         goto exit;
     }
-    factor = PyFloat_AsDouble(args[2]);
-    if (PyErr_Occurred()) {
-        goto exit;
+    if (PyFloat_CheckExact(args[2])) {
+        factor = PyFloat_AS_DOUBLE(args[2]);
+    }
+    else
+    {
+        factor = PyFloat_AsDouble(args[2]);
+        if (factor == -1.0 && PyErr_Occurred()) {
+            goto exit;
+        }
     }
     return_value = audioop_mul_impl(module, &fragment, width, factor);
 
@@ -659,7 +665,7 @@ audioop_tomono(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
         goto exit;
     }
     if (!PyBuffer_IsContiguous(&fragment, 'C')) {
-        _PyArg_BadArgument("tomono", 1, "contiguous buffer", args[0]);
+        _PyArg_BadArgument("tomono", "argument 1", "contiguous buffer", args[0]);
         goto exit;
     }
     if (PyFloat_Check(args[1])) {
@@ -671,13 +677,25 @@ audioop_tomono(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     if (width == -1 && PyErr_Occurred()) {
         goto exit;
     }
-    lfactor = PyFloat_AsDouble(args[2]);
-    if (PyErr_Occurred()) {
-        goto exit;
+    if (PyFloat_CheckExact(args[2])) {
+        lfactor = PyFloat_AS_DOUBLE(args[2]);
     }
-    rfactor = PyFloat_AsDouble(args[3]);
-    if (PyErr_Occurred()) {
-        goto exit;
+    else
+    {
+        lfactor = PyFloat_AsDouble(args[2]);
+        if (lfactor == -1.0 && PyErr_Occurred()) {
+            goto exit;
+        }
+    }
+    if (PyFloat_CheckExact(args[3])) {
+        rfactor = PyFloat_AS_DOUBLE(args[3]);
+    }
+    else
+    {
+        rfactor = PyFloat_AsDouble(args[3]);
+        if (rfactor == -1.0 && PyErr_Occurred()) {
+            goto exit;
+        }
     }
     return_value = audioop_tomono_impl(module, &fragment, width, lfactor, rfactor);
 
@@ -719,7 +737,7 @@ audioop_tostereo(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
         goto exit;
     }
     if (!PyBuffer_IsContiguous(&fragment, 'C')) {
-        _PyArg_BadArgument("tostereo", 1, "contiguous buffer", args[0]);
+        _PyArg_BadArgument("tostereo", "argument 1", "contiguous buffer", args[0]);
         goto exit;
     }
     if (PyFloat_Check(args[1])) {
@@ -731,13 +749,25 @@ audioop_tostereo(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     if (width == -1 && PyErr_Occurred()) {
         goto exit;
     }
-    lfactor = PyFloat_AsDouble(args[2]);
-    if (PyErr_Occurred()) {
-        goto exit;
+    if (PyFloat_CheckExact(args[2])) {
+        lfactor = PyFloat_AS_DOUBLE(args[2]);
     }
-    rfactor = PyFloat_AsDouble(args[3]);
-    if (PyErr_Occurred()) {
-        goto exit;
+    else
+    {
+        lfactor = PyFloat_AsDouble(args[2]);
+        if (lfactor == -1.0 && PyErr_Occurred()) {
+            goto exit;
+        }
+    }
+    if (PyFloat_CheckExact(args[3])) {
+        rfactor = PyFloat_AS_DOUBLE(args[3]);
+    }
+    else
+    {
+        rfactor = PyFloat_AsDouble(args[3]);
+        if (rfactor == -1.0 && PyErr_Occurred()) {
+            goto exit;
+        }
     }
     return_value = audioop_tostereo_impl(module, &fragment, width, lfactor, rfactor);
 
@@ -778,14 +808,14 @@ audioop_add(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
         goto exit;
     }
     if (!PyBuffer_IsContiguous(&fragment1, 'C')) {
-        _PyArg_BadArgument("add", 1, "contiguous buffer", args[0]);
+        _PyArg_BadArgument("add", "argument 1", "contiguous buffer", args[0]);
         goto exit;
     }
     if (PyObject_GetBuffer(args[1], &fragment2, PyBUF_SIMPLE) != 0) {
         goto exit;
     }
     if (!PyBuffer_IsContiguous(&fragment2, 'C')) {
-        _PyArg_BadArgument("add", 2, "contiguous buffer", args[1]);
+        _PyArg_BadArgument("add", "argument 2", "contiguous buffer", args[1]);
         goto exit;
     }
     if (PyFloat_Check(args[2])) {
@@ -839,7 +869,7 @@ audioop_bias(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
         goto exit;
     }
     if (!PyBuffer_IsContiguous(&fragment, 'C')) {
-        _PyArg_BadArgument("bias", 1, "contiguous buffer", args[0]);
+        _PyArg_BadArgument("bias", "argument 1", "contiguous buffer", args[0]);
         goto exit;
     }
     if (PyFloat_Check(args[1])) {
@@ -897,7 +927,7 @@ audioop_reverse(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
         goto exit;
     }
     if (!PyBuffer_IsContiguous(&fragment, 'C')) {
-        _PyArg_BadArgument("reverse", 1, "contiguous buffer", args[0]);
+        _PyArg_BadArgument("reverse", "argument 1", "contiguous buffer", args[0]);
         goto exit;
     }
     if (PyFloat_Check(args[1])) {
@@ -946,7 +976,7 @@ audioop_byteswap(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
         goto exit;
     }
     if (!PyBuffer_IsContiguous(&fragment, 'C')) {
-        _PyArg_BadArgument("byteswap", 1, "contiguous buffer", args[0]);
+        _PyArg_BadArgument("byteswap", "argument 1", "contiguous buffer", args[0]);
         goto exit;
     }
     if (PyFloat_Check(args[1])) {
@@ -997,7 +1027,7 @@ audioop_lin2lin(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
         goto exit;
     }
     if (!PyBuffer_IsContiguous(&fragment, 'C')) {
-        _PyArg_BadArgument("lin2lin", 1, "contiguous buffer", args[0]);
+        _PyArg_BadArgument("lin2lin", "argument 1", "contiguous buffer", args[0]);
         goto exit;
     }
     if (PyFloat_Check(args[1])) {
@@ -1064,7 +1094,7 @@ audioop_ratecv(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
         goto exit;
     }
     if (!PyBuffer_IsContiguous(&fragment, 'C')) {
-        _PyArg_BadArgument("ratecv", 1, "contiguous buffer", args[0]);
+        _PyArg_BadArgument("ratecv", "argument 1", "contiguous buffer", args[0]);
         goto exit;
     }
     if (PyFloat_Check(args[1])) {
@@ -1166,7 +1196,7 @@ audioop_lin2ulaw(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
         goto exit;
     }
     if (!PyBuffer_IsContiguous(&fragment, 'C')) {
-        _PyArg_BadArgument("lin2ulaw", 1, "contiguous buffer", args[0]);
+        _PyArg_BadArgument("lin2ulaw", "argument 1", "contiguous buffer", args[0]);
         goto exit;
     }
     if (PyFloat_Check(args[1])) {
@@ -1215,7 +1245,7 @@ audioop_ulaw2lin(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
         goto exit;
     }
     if (!PyBuffer_IsContiguous(&fragment, 'C')) {
-        _PyArg_BadArgument("ulaw2lin", 1, "contiguous buffer", args[0]);
+        _PyArg_BadArgument("ulaw2lin", "argument 1", "contiguous buffer", args[0]);
         goto exit;
     }
     if (PyFloat_Check(args[1])) {
@@ -1264,7 +1294,7 @@ audioop_lin2alaw(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
         goto exit;
     }
     if (!PyBuffer_IsContiguous(&fragment, 'C')) {
-        _PyArg_BadArgument("lin2alaw", 1, "contiguous buffer", args[0]);
+        _PyArg_BadArgument("lin2alaw", "argument 1", "contiguous buffer", args[0]);
         goto exit;
     }
     if (PyFloat_Check(args[1])) {
@@ -1313,7 +1343,7 @@ audioop_alaw2lin(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
         goto exit;
     }
     if (!PyBuffer_IsContiguous(&fragment, 'C')) {
-        _PyArg_BadArgument("alaw2lin", 1, "contiguous buffer", args[0]);
+        _PyArg_BadArgument("alaw2lin", "argument 1", "contiguous buffer", args[0]);
         goto exit;
     }
     if (PyFloat_Check(args[1])) {
@@ -1364,7 +1394,7 @@ audioop_lin2adpcm(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
         goto exit;
     }
     if (!PyBuffer_IsContiguous(&fragment, 'C')) {
-        _PyArg_BadArgument("lin2adpcm", 1, "contiguous buffer", args[0]);
+        _PyArg_BadArgument("lin2adpcm", "argument 1", "contiguous buffer", args[0]);
         goto exit;
     }
     if (PyFloat_Check(args[1])) {
@@ -1416,7 +1446,7 @@ audioop_adpcm2lin(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
         goto exit;
     }
     if (!PyBuffer_IsContiguous(&fragment, 'C')) {
-        _PyArg_BadArgument("adpcm2lin", 1, "contiguous buffer", args[0]);
+        _PyArg_BadArgument("adpcm2lin", "argument 1", "contiguous buffer", args[0]);
         goto exit;
     }
     if (PyFloat_Check(args[1])) {
@@ -1439,4 +1469,4 @@ exit:
 
     return return_value;
 }
-/*[clinic end generated code: output=2b173a25726252e9 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=6b4f2c597f295abc input=a9049054013a1b77]*/

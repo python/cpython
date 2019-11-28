@@ -12,6 +12,7 @@ import operator
 import struct
 import sys
 import textwrap
+import unicodedata
 import unittest
 import warnings
 from test import support, string_tests
@@ -617,10 +618,20 @@ class UnicodeTest(string_tests.CommonTest,
         self.checkequalnofix(True, '\u2000', 'isspace')
         self.checkequalnofix(True, '\u200a', 'isspace')
         self.checkequalnofix(False, '\u2014', 'isspace')
-        # apparently there are no non-BMP spaces chars in Unicode 6
+        # There are no non-BMP whitespace chars as of Unicode 12.
         for ch in ['\U00010401', '\U00010427', '\U00010429', '\U0001044E',
                    '\U0001F40D', '\U0001F46F']:
             self.assertFalse(ch.isspace(), '{!a} is not space.'.format(ch))
+
+    @support.requires_resource('cpu')
+    def test_isspace_invariant(self):
+        for codepoint in range(sys.maxunicode + 1):
+            char = chr(codepoint)
+            bidirectional = unicodedata.bidirectional(char)
+            category = unicodedata.category(char)
+            self.assertEqual(char.isspace(),
+                             (bidirectional in ('WS', 'B', 'S')
+                              or category == 'Zs'))
 
     def test_isalnum(self):
         super().test_isalnum()
@@ -2809,15 +2820,15 @@ class CAPITest(unittest.TestCase):
         for s in ['abc', '\xa1\xa2', '\u4f60\u597d', 'a\U0001f600',
                   'a\ud800b\udfffc', '\ud834\udd1e']:
             l = len(s)
-            self.assertEqual(unicode_asucs4(s, l, 1), s+'\0')
-            self.assertEqual(unicode_asucs4(s, l, 0), s+'\uffff')
-            self.assertEqual(unicode_asucs4(s, l+1, 1), s+'\0\uffff')
-            self.assertEqual(unicode_asucs4(s, l+1, 0), s+'\0\uffff')
-            self.assertRaises(SystemError, unicode_asucs4, s, l-1, 1)
-            self.assertRaises(SystemError, unicode_asucs4, s, l-2, 0)
+            self.assertEqual(unicode_asucs4(s, l, True), s+'\0')
+            self.assertEqual(unicode_asucs4(s, l, False), s+'\uffff')
+            self.assertEqual(unicode_asucs4(s, l+1, True), s+'\0\uffff')
+            self.assertEqual(unicode_asucs4(s, l+1, False), s+'\0\uffff')
+            self.assertRaises(SystemError, unicode_asucs4, s, l-1, True)
+            self.assertRaises(SystemError, unicode_asucs4, s, l-2, False)
             s = '\0'.join([s, s])
-            self.assertEqual(unicode_asucs4(s, len(s), 1), s+'\0')
-            self.assertEqual(unicode_asucs4(s, len(s), 0), s+'\uffff')
+            self.assertEqual(unicode_asucs4(s, len(s), True), s+'\0')
+            self.assertEqual(unicode_asucs4(s, len(s), False), s+'\uffff')
 
     # Test PyUnicode_AsUTF8()
     @support.cpython_only

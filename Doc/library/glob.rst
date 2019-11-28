@@ -49,8 +49,9 @@ For example, ``'[?]'`` matches the character ``'?'``.
       single: **; in glob-style wildcards
 
    If *recursive* is true, the pattern "``**``" will match any files and zero or
-   more directories and subdirectories.  If the pattern is followed by an
-   ``os.sep``, only directories and subdirectories match.
+   more directories, subdirectories and symbolic links to directories. If the
+   pattern is followed by an :data:`os.sep` or :data:`os.altsep` then files will not
+   match.
 
    .. audit-event:: glob.glob pathname,recursive glob.glob
 

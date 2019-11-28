@@ -1,4 +1,5 @@
 # Author: Steven J. Bethard <steven.bethard@gmail.com>.
+# New maintainer as of 29 August 2019:  Raymond Hettinger <raymond.hettinger@gmail.com>
 
 """Command-line parsing library
 
@@ -66,6 +67,7 @@ __all__ = [
     'ArgumentParser',
     'ArgumentError',
     'ArgumentTypeError',
+    'BooleanOptionalAction',
     'FileType',
     'HelpFormatter',
     'ArgumentDefaultsHelpFormatter',
@@ -85,7 +87,6 @@ __all__ = [
 
 import os as _os
 import re as _re
-import shutil as _shutil
 import sys as _sys
 
 from gettext import gettext as _, ngettext
@@ -165,7 +166,8 @@ class HelpFormatter(object):
 
         # default setting for width
         if width is None:
-            width = _shutil.get_terminal_size().columns
+            import shutil
+            width = shutil.get_terminal_size().columns
             width -= 2
 
         self._prog = prog
@@ -262,7 +264,7 @@ class HelpFormatter(object):
                 invocations.append(get_invocation(subaction))
 
             # update the maximum item length
-            invocation_length = max([len(s) for s in invocations])
+            invocation_length = max(map(len, invocations))
             action_length = invocation_length + self._current_indent
             self._action_max_length = max(self._action_max_length,
                                           action_length)
@@ -404,13 +406,19 @@ class HelpFormatter(object):
                             inserts[start] += ' ['
                         else:
                             inserts[start] = '['
-                        inserts[end] = ']'
+                        if end in inserts:
+                            inserts[end] += ']'
+                        else:
+                            inserts[end] = ']'
                     else:
                         if start in inserts:
                             inserts[start] += ' ('
                         else:
                             inserts[start] = '('
-                        inserts[end] = ')'
+                        if end in inserts:
+                            inserts[end] += ')'
+                        else:
+                            inserts[end] = ')'
                     for i in range(start + 1, end):
                         inserts[i] = '|'
 
@@ -447,7 +455,7 @@ class HelpFormatter(object):
                 # if the Optional doesn't take a value, format is:
                 #    -s or --long
                 if action.nargs == 0:
-                    part = '%s' % option_string
+                    part = action.format_usage()
 
                 # if the Optional takes a value, format is:
                 #    -s ARGS or --long ARGS
@@ -583,7 +591,11 @@ class HelpFormatter(object):
         elif action.nargs == OPTIONAL:
             result = '[%s]' % get_metavar(1)
         elif action.nargs == ZERO_OR_MORE:
-            result = '[%s [%s ...]]' % get_metavar(2)
+            metavar = get_metavar(1)
+            if len(metavar) == 2:
+                result = '[%s [%s ...]]' % metavar
+            else:
+                result = '[%s ...]' % metavar
         elif action.nargs == ONE_OR_MORE:
             result = '%s [%s ...]' % get_metavar(2)
         elif action.nargs == REMAINDER:
@@ -835,8 +847,52 @@ class Action(_AttributeHolder):
         ]
         return [(name, getattr(self, name)) for name in names]
 
+    def format_usage(self):
+        return self.option_strings[0]
+
     def __call__(self, parser, namespace, values, option_string=None):
         raise NotImplementedError(_('.__call__() not defined'))
+
+class BooleanOptionalAction(Action):
+    def __init__(self,
+                 option_strings,
+                 dest,
+                 const=None,
+                 default=None,
+                 type=None,
+                 choices=None,
+                 required=False,
+                 help=None,
+                 metavar=None):
+
+        _option_strings = []
+        for option_string in option_strings:
+            _option_strings.append(option_string)
+
+            if option_string.startswith('--'):
+                option_string = '--no-' + option_string[2:]
+                _option_strings.append(option_string)
+
+        if help is not None and default is not None:
+            help += f" (default: {default})"
+
+        super().__init__(
+            option_strings=_option_strings,
+            dest=dest,
+            nargs=0,
+            default=default,
+            type=type,
+            choices=choices,
+            required=required,
+            help=help,
+            metavar=metavar)
+
+    def __call__(self, parser, namespace, values, option_string=None):
+        if option_string in self.option_strings:
+            setattr(namespace, self.dest, not option_string.startswith('--no-'))
+
+    def format_usage(self):
+        return ' | '.join(self.option_strings)
 
 
 class _StoreAction(Action):
@@ -1207,8 +1263,9 @@ class FileType(object):
             return open(string, self._mode, self._bufsize, self._encoding,
                         self._errors)
         except OSError as e:
-            message = _("can't open '%s': %s")
-            raise ArgumentTypeError(message % (string, e))
+            args = {'filename': string, 'error': e}
+            message = _("can't open '%(filename)s': %(error)s")
+            raise ArgumentTypeError(message % args)
 
     def __repr__(self):
         args = self._mode, self._bufsize
@@ -1623,6 +1680,8 @@ class ArgumentParser(_AttributeHolder, _ActionsContainer):
         - conflict_handler -- String indicating how to handle conflicts
         - add_help -- Add a -h/-help option
         - allow_abbrev -- Allow long options to be abbreviated unambiguously
+        - exit_on_error -- Determines whether or not ArgumentParser exits with
+            error info when an error occurs
     """
 
     def __init__(self,
@@ -1637,7 +1696,8 @@ class ArgumentParser(_AttributeHolder, _ActionsContainer):
                  argument_default=None,
                  conflict_handler='error',
                  add_help=True,
-                 allow_abbrev=True):
+                 allow_abbrev=True,
+                 exit_on_error=True):
 
         superinit = super(ArgumentParser, self).__init__
         superinit(description=description,
@@ -1656,6 +1716,7 @@ class ArgumentParser(_AttributeHolder, _ActionsContainer):
         self.fromfile_prefix_chars = fromfile_prefix_chars
         self.add_help = add_help
         self.allow_abbrev = allow_abbrev
+        self.exit_on_error = exit_on_error
 
         add_group = self.add_argument_group
         self._positionals = add_group(_('positional arguments'))
@@ -1786,15 +1847,19 @@ class ArgumentParser(_AttributeHolder, _ActionsContainer):
                 setattr(namespace, dest, self._defaults[dest])
 
         # parse the arguments and exit if there are any errors
-        try:
+        if self.exit_on_error:
+            try:
+                namespace, args = self._parse_known_args(args, namespace)
+            except ArgumentError:
+                err = _sys.exc_info()[1]
+                self.error(str(err))
+        else:
             namespace, args = self._parse_known_args(args, namespace)
-            if hasattr(namespace, _UNRECOGNIZED_ARGS_ATTR):
-                args.extend(getattr(namespace, _UNRECOGNIZED_ARGS_ATTR))
-                delattr(namespace, _UNRECOGNIZED_ARGS_ATTR)
-            return namespace, args
-        except ArgumentError:
-            err = _sys.exc_info()[1]
-            self.error(str(err))
+
+        if hasattr(namespace, _UNRECOGNIZED_ARGS_ATTR):
+            args.extend(getattr(namespace, _UNRECOGNIZED_ARGS_ATTR))
+            delattr(namespace, _UNRECOGNIZED_ARGS_ATTR)
+        return namespace, args
 
     def _parse_known_args(self, arg_strings, namespace):
         # replace arg strings that are file references
@@ -2083,10 +2148,11 @@ class ArgumentParser(_AttributeHolder, _ActionsContainer):
                 OPTIONAL: _('expected at most one argument'),
                 ONE_OR_MORE: _('expected at least one argument'),
             }
-            default = ngettext('expected %s argument',
+            msg = nargs_errors.get(action.nargs)
+            if msg is None:
+                msg = ngettext('expected %s argument',
                                'expected %s arguments',
                                action.nargs) % action.nargs
-            msg = nargs_errors.get(action.nargs, default)
             raise ArgumentError(action, msg)
 
         # return the number of arguments matched
