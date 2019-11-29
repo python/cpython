@@ -1847,6 +1847,7 @@ class _BaseV6:
 
         Returns:
             (addr, scope_id) tuple.
+
         """
         addr, sep, scope_id = ip_str.partition('%')
         if not sep:
@@ -1933,6 +1934,7 @@ class IPv6Address(_BaseV6, _BaseAddress):
 
         Returns:
             A string identifying the zone of the address if specified, else None.
+
         """
         return self._scope_id
 
