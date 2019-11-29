@@ -208,7 +208,7 @@ ipaddress
 :mod:`ipaddress` now supports IPv6 Scoped Addresses (IPv6 address with suffix ``%<scope_id>``).
 
 Scoped IPv6 addresses can be parsed using :class:`ipaddress.IPv6Address`.
-If present, scope zone ID is available through the :attr:`scope_id` attribute.
+If present, scope zone ID is available through the :attr:`~ipaddress.IPv6Address.scope_id` attribute.
 
 (Contributed by Oleksand Pavliuk in :issue:`34788`.)
 
