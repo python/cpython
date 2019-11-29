@@ -596,7 +596,7 @@ functions.
 
       Popen and the other functions in this module that use it raise an
       :ref:`auditing event <auditing>` ``subprocess.Popen`` with arguments
-      ``executable``, ``args``, ``cwd``, ``env``. The value for ``args``
+      ``executable``, ``args``, ``cwd``, and ``env``. The value for ``args``
       may be a single string or a list of strings, depending on platform.
 
    .. versionchanged:: 3.2
