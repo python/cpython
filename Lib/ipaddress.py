@@ -1919,7 +1919,10 @@ class IPv6Address(_BaseV6, _BaseAddress):
 
     def __eq__(self, other):
         address_equal = _BaseAddress.__eq__(self, other)
-        if not address_equal or address_equal is NotImplemented:
+        if address_equal is NotImplemented:
+            return NotImplemented
+        if not address_equal:
+            return False
             return address_equal
         return self._scope_id == other._scope_id
 
