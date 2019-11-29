@@ -394,8 +394,14 @@ dialect_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
     Py_XINCREF(strict);
     if (dialect != NULL) {
 #define DIALECT_GETATTR(v, n) \
-        if (v == NULL) \
-            v = PyObject_GetAttrString(dialect, n)
+        if (v == NULL) { \
+            if ((v = PyObject_GetAttrString(dialect, n)) == NULL) { \
+                if (!PyErr_ExceptionMatches(PyExc_AttributeError)) { \
+                    goto err; \
+                } \
+                PyErr_Clear(); \
+            } \
+        }
         DIALECT_GETATTR(delimiter, "delimiter");
         DIALECT_GETATTR(doublequote, "doublequote");
         DIALECT_GETATTR(escapechar, "escapechar");
@@ -404,7 +410,6 @@ dialect_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
         DIALECT_GETATTR(quoting, "quoting");
         DIALECT_GETATTR(skipinitialspace, "skipinitialspace");
         DIALECT_GETATTR(strict, "strict");
-        PyErr_Clear();
     }
 
     /* check types and convert to C values */

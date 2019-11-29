@@ -1,0 +1,1 @@
+Fix possible assertion failures when creating a :class:`csv.Dialect` object.
