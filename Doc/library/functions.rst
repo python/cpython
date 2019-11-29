@@ -1775,6 +1775,8 @@ are always available.  They are listed here in alphabetical order.
    goals and does not cause issues with code which assumes the default import
    implementation is in use.  Direct use of :func:`__import__` is also
    discouraged in favor of :func:`importlib.import_module`.
+   Usually function returns :class:`types.ModuleType` object, but no guarantees
+   for that. If nothing found :exc:`ModuleNotFoundError` will be raised.
 
    The function imports the module *name*, potentially using the given *globals*
    and *locals* to determine how to interpret the name in a package context.
