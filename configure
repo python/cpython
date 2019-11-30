@@ -782,7 +782,6 @@ infodir
 docdir
 oldincludedir
 includedir
-runstatedir
 localstatedir
 sharedstatedir
 sysconfdir
@@ -896,7 +895,6 @@ datadir='${datarootdir}'
 sysconfdir='${prefix}/etc'
 sharedstatedir='${prefix}/com'
 localstatedir='${prefix}/var'
-runstatedir='${localstatedir}/run'
 includedir='${prefix}/include'
 oldincludedir='/usr/include'
 docdir='${datarootdir}/doc/${PACKAGE_TARNAME}'
@@ -1149,15 +1147,6 @@ do
   | -silent | --silent | --silen | --sile | --sil)
     silent=yes ;;
 
-  -runstatedir | --runstatedir | --runstatedi | --runstated \
-  | --runstate | --runstat | --runsta | --runst | --runs \
-  | --run | --ru | --r)
-    ac_prev=runstatedir ;;
-  -runstatedir=* | --runstatedir=* | --runstatedi=* | --runstated=* \
-  | --runstate=* | --runstat=* | --runsta=* | --runst=* | --runs=* \
-  | --run=* | --ru=* | --r=*)
-    runstatedir=$ac_optarg ;;
-
   -sbindir | --sbindir | --sbindi | --sbind | --sbin | --sbi | --sb)
     ac_prev=sbindir ;;
   -sbindir=* | --sbindir=* | --sbindi=* | --sbind=* | --sbin=* \
@@ -1295,7 +1284,7 @@ fi
 for ac_var in	exec_prefix prefix bindir sbindir libexecdir datarootdir \
 		datadir sysconfdir sharedstatedir localstatedir includedir \
 		oldincludedir docdir infodir htmldir dvidir pdfdir psdir \
-		libdir localedir mandir runstatedir
+		libdir localedir mandir
 do
   eval ac_val=\$$ac_var
   # Remove trailing slashes.
@@ -1448,7 +1437,6 @@ Fine tuning of the installation directories:
   --sysconfdir=DIR        read-only single-machine data [PREFIX/etc]
   --sharedstatedir=DIR    modifiable architecture-independent data [PREFIX/com]
   --localstatedir=DIR     modifiable single-machine data [PREFIX/var]
-  --runstatedir=DIR       modifiable per-process data [LOCALSTATEDIR/run]
   --libdir=DIR            object code libraries [EPREFIX/lib]
   --includedir=DIR        C header files [PREFIX/include]
   --oldincludedir=DIR     C header files for non-gcc [/usr/include]
@@ -9996,8 +9984,8 @@ $as_echo "#define WITH_LIBINTL 1" >>confdefs.h
 fi
 
 
-case "$ac_sys_system" in
 # checks for system dependent C++ extensions support
+case "$ac_sys_system" in
 	AIX*)	{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for genuine AIX C++ extensions support" >&5
 $as_echo_n "checking for genuine AIX C++ extensions support... " >&6; }
 		cat confdefs.h - <<_ACEOF >conftest.$ac_ext
@@ -10029,8 +10017,9 @@ $as_echo "no" >&6; }
 fi
 rm -f core conftest.err conftest.$ac_objext \
     conftest$ac_exeext conftest.$ac_ext
-# AIX_BUILDDATE + BUILD_GNU_TYPE are utilized in pypa tools
-# to set a deployment baseline for compatible wheel tags
+# BUILD_GNU_TYPE + AIX_BUILDDATE are used to construct the platform_tag
+# of the AIX system used to build/package Python executable. This tag serves
+# as a baseline for bdist module packages
                { $as_echo "$as_me:${as_lineno-$LINENO}: checking for the system builddate" >&5
 $as_echo_n "checking for the system builddate... " >&6; }
                AIX_BUILDDATE=$(lslpp -Lcq bos.mp64 | awk -F:  '{ print $NF }')
