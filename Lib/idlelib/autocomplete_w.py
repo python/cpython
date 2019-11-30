@@ -267,9 +267,6 @@ class AutoCompleteWindow:
 
         self.is_configuring = False
 
-    def _update_geometry(self, acw, x, y):
-        acw.wm_geometry("+%d+%d" % (x, y))
-
     def _hide_event_check(self):
         if not self.autocompletewindow:
             return
