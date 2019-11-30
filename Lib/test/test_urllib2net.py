@@ -199,7 +199,7 @@ class OtherNetworkTests(unittest.TestCase):
             try:
                 with urllib.request.urlopen(URL) as res:
                     pass
-            except ValueError as e:
+            except ValueError:
                 self.fail("urlopen failed for site not sending \
                            Connection:close")
             else:

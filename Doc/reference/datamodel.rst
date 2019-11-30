@@ -1566,7 +1566,7 @@ not found on a module object through the normal lookup, i.e.
 the module ``__dict__`` before raising an :exc:`AttributeError`. If found,
 it is called with the attribute name and the result is returned.
 
-The ``__dir__`` function should accept no arguments, and return a list of
+The ``__dir__`` function should accept no arguments, and return a sequence of
 strings that represents the names accessible on module. If present, this
 function overrides the standard :func:`dir` search on a module.
 
@@ -1655,8 +1655,22 @@ class' :attr:`~object.__dict__`.
    Called at the time the owning class *owner* is created. The
    descriptor has been assigned to *name*.
 
-   .. versionadded:: 3.6
+   .. note::
 
+      :meth:`__set_name__` is only called implicitly as part of the
+      :class:`type` constructor, so it will need to be called explicitly with
+      the appropriate parameters when a descriptor is added to a class after
+      initial creation::
+
+         class A:
+            pass
+         descr = custom_descriptor()
+         A.attr = descr
+         descr.__set_name__(A, 'attr')
+
+      See :ref:`class-object-creation` for more details.
+
+   .. versionadded:: 3.6
 
 The attribute :attr:`__objclass__` is interpreted by the :mod:`inspect` module
 as specifying the class where this object was defined (setting this
@@ -1796,6 +1810,10 @@ Notes on using *__slots__*
   but only one parent is allowed to have attributes created by slots
   (the other bases must have empty slot layouts) - violations raise
   :exc:`TypeError`.
+
+* If an iterator is used for *__slots__* then a descriptor is created for each
+  of the iterator's values. However, the *__slots__* attribute will be an empty
+  iterator.
 
 .. _class-customization:
 
@@ -2128,8 +2146,8 @@ operators.  It is recommended that both mappings and sequences implement the
 mappings, ``in`` should search the mapping's keys; for sequences, it should
 search through the values.  It is further recommended that both mappings and
 sequences implement the :meth:`__iter__` method to allow efficient iteration
-through the container; for mappings, :meth:`__iter__` should be the same as
-:meth:`keys`; for sequences, it should iterate through the values.
+through the container; for mappings, :meth:`__iter__` should iterate
+through the object's keys; for sequences, it should iterate through the values.
 
 .. method:: object.__len__(self)
 
@@ -2243,9 +2261,9 @@ through the container; for mappings, :meth:`__iter__` should be the same as
 
 
 The membership test operators (:keyword:`in` and :keyword:`not in`) are normally
-implemented as an iteration through a sequence.  However, container objects can
+implemented as an iteration through a container. However, container objects can
 supply the following special method with a more efficient implementation, which
-also does not require the object be a sequence.
+also does not require the object be iterable.
 
 .. method:: object.__contains__(self, item)
 

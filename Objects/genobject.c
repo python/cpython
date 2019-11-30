@@ -1,6 +1,7 @@
 /* Generator object implementation */
 
 #include "Python.h"
+#include "pycore_ceval.h"   /* _PyEval_EvalFrame() */
 #include "pycore_object.h"
 #include "pycore_pystate.h"
 #include "frameobject.h"
@@ -219,7 +220,7 @@ gen_send_ex(PyGenObject *gen, PyObject *arg, int exc, int closing)
     gen->gi_running = 1;
     gen->gi_exc_state.previous_item = tstate->exc_info;
     tstate->exc_info = &gen->gi_exc_state;
-    result = PyEval_EvalFrameEx(f, exc);
+    result = _PyEval_EvalFrame(tstate, f, exc);
     tstate->exc_info = gen->gi_exc_state.previous_item;
     gen->gi_exc_state.previous_item = NULL;
     gen->gi_running = 0;
@@ -1930,6 +1931,17 @@ async_gen_athrow_throw(PyAsyncGenAThrow *o, PyObject *args)
             Py_DECREF(retval);
             PyErr_SetString(PyExc_RuntimeError, ASYNC_GEN_IGNORED_EXIT_MSG);
             return NULL;
+        }
+        if (PyErr_ExceptionMatches(PyExc_StopAsyncIteration) ||
+            PyErr_ExceptionMatches(PyExc_GeneratorExit))
+        {
+            /* when aclose() is called we don't want to propagate
+               StopAsyncIteration or GeneratorExit; just raise
+               StopIteration, signalling that this 'aclose()' await
+               is done.
+            */
+            PyErr_Clear();
+            PyErr_SetNone(PyExc_StopIteration);
         }
         return retval;
     }

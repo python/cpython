@@ -1,3 +1,0 @@
-In debug mode, :c:func:`PyObject_GC_Track` now calls ``tp_traverse()`` of
-the object type to ensure that the object is valid: test that objects
-visited by ``tp_traverse()`` are valid.

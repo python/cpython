@@ -1,3 +1,0 @@
-test_gdb no longer fails if it gets an "unexpected" message on stderr: it now
-ignores stderr. The purpose of test_gdb is to test that python-gdb.py commands
-work as expected, not to test gdb.

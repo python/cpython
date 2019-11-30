@@ -25,6 +25,9 @@
 #ifdef HAVE_SIGNAL_H
 #include <signal.h>
 #endif
+#ifdef HAVE_SYS_SYSCALL_H
+#include <sys/syscall.h>
+#endif
 #ifdef HAVE_SYS_STAT_H
 #include <sys/stat.h>
 #endif
@@ -1250,6 +1253,38 @@ signal_pthread_kill_impl(PyObject *module, unsigned long thread_id,
 #endif   /* #if defined(HAVE_PTHREAD_KILL) */
 
 
+#if defined(__linux__) && defined(__NR_pidfd_send_signal)
+/*[clinic input]
+signal.pidfd_send_signal
+
+    pidfd: int
+    signalnum: int
+    siginfo: object = None
+    flags: int = 0
+    /
+
+Send a signal to a process referred to by a pid file descriptor.
+[clinic start generated code]*/
+
+static PyObject *
+signal_pidfd_send_signal_impl(PyObject *module, int pidfd, int signalnum,
+                              PyObject *siginfo, int flags)
+/*[clinic end generated code: output=2d59f04a75d9cbdf input=2a6543a1f4ac2000]*/
+
+{
+    if (siginfo != Py_None) {
+        PyErr_SetString(PyExc_TypeError, "siginfo must be None");
+        return NULL;
+    }
+    if (syscall(__NR_pidfd_send_signal, pidfd, signalnum, NULL, flags) < 0) {
+        PyErr_SetFromErrno(PyExc_OSError);
+        return NULL;
+    }
+    Py_RETURN_NONE;
+}
+#endif
+
+
 
 /* List of functions defined in the module -- some of the methoddefs are
    defined to nothing if the corresponding C function is not available. */
@@ -1265,6 +1300,7 @@ static PyMethodDef signal_methods[] = {
     {"set_wakeup_fd", (PyCFunction)(void(*)(void))signal_set_wakeup_fd, METH_VARARGS | METH_KEYWORDS, set_wakeup_fd_doc},
     SIGNAL_SIGINTERRUPT_METHODDEF
     SIGNAL_PAUSE_METHODDEF
+    SIGNAL_PIDFD_SEND_SIGNAL_METHODDEF
     SIGNAL_PTHREAD_KILL_METHODDEF
     SIGNAL_PTHREAD_SIGMASK_METHODDEF
     SIGNAL_SIGPENDING_METHODDEF

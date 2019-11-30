@@ -2085,7 +2085,6 @@ PyInit__multibytecodec(void)
     }
 
     if (PyErr_Occurred()) {
-        Py_FatalError("can't initialize the _multibytecodec module");
         Py_DECREF(m);
         m = NULL;
     }
