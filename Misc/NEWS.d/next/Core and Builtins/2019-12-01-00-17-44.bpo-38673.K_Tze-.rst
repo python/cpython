@@ -1,0 +1,1 @@
+In REPL, dont switch to PS2 if the line starts with comment or whitespace.

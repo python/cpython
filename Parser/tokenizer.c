@@ -874,8 +874,12 @@ tok_nextc(struct tok_state *tok)
                 strcpy(newtok, buf);
                 Py_DECREF(u);
             }
-            if (tok->nextprompt != NULL)
-                tok->prompt = tok->nextprompt;
+            if (tok->nextprompt != NULL) {
+                if (newtok != NULL && (*newtok == '#' || *newtok == ' ' || *newtok == '\t'))
+                    tok->nextprompt = NULL;
+                else
+                    tok->prompt = tok->nextprompt;
+            }
             if (newtok == NULL)
                 tok->done = E_INTR;
             else if (*newtok == '\0') {
@@ -1399,7 +1403,8 @@ tok_get(struct tok_state *tok, char **p_start, char **p_end)
     /* Newline */
     if (c == '\n') {
         tok->atbol = 1;
-        if (blankline || tok->level > 0) {
+        if ((blankline || tok->level > 0) &&
+            !(tok->prompt != NULL && tok->nextprompt == NULL)) {
             goto nextline;
         }
         *p_start = tok->start;
