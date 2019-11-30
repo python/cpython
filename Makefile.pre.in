@@ -246,7 +246,9 @@ BUILDPYTHON=	python$(BUILDEXE)
 PYTHON_FOR_REGEN=@PYTHON_FOR_REGEN@
 UPDATE_FILE=@PYTHON_FOR_REGEN@ $(srcdir)/Tools/scripts/update_file.py
 PYTHON_FOR_BUILD=@PYTHON_FOR_BUILD@
+# To enable setup.py and sysconfig to pick up this AC_SUBST() var.
 PYTHON_HOST_PLATFORM=@_PYTHON_HOST_PLATFORM@
+
 BUILD_GNU_TYPE=	@build@
 HOST_GNU_TYPE=	@host@
 

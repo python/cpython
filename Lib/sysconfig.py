@@ -193,6 +193,8 @@ if _PYTHON_BUILD:
     for scheme in ('posix_prefix', 'posix_home'):
         _INSTALL_SCHEMES[scheme]['include'] = '{srcdir}/Include'
         _INSTALL_SCHEMES[scheme]['platinclude'] = '{projectbase}/.'
+elif cross_compiling:
+    raise RuntimeError('PYTHON_PROJECT_BASE is not a build directory')
 
 
 def _subst_vars(s, local_vars):
@@ -382,7 +384,6 @@ def get_makefile_filename():
     if _PYTHON_BUILD:
         return os.path.join(_sys_home or _PROJECT_BASE, "Makefile")
 
-    assert not cross_compiling
     if hasattr(sys, 'abiflags'):
         config_dir_name = 'config-%s%s' % (_PY_VERSION_SHORT, sys.abiflags)
     else:
