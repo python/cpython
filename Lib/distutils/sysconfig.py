@@ -13,7 +13,6 @@ import _imp
 import os
 import re
 import sys
-import pathlib
 
 from sysconfig import cross_compiling, get_project_base, get_build_time_vars
 from .errors import DistutilsPlatformError
@@ -24,33 +23,15 @@ EXEC_PREFIX = os.path.normpath(sys.exec_prefix)
 BASE_PREFIX = os.path.normpath(sys.base_prefix)
 BASE_EXEC_PREFIX = os.path.normpath(sys.base_exec_prefix)
 
-def fix_cross_build_paths(project_base):
-    build_time_vars = get_build_time_vars()
-    pbase = pathlib.Path(project_base)
-    prefix = build_time_vars['prefix']
-    pfx = pathlib.Path(prefix)
-    try:
-        # A staged install that is the result of 'make install'
-        # with DESTDIR set.
-        destdir = pbase.parents[len(pfx.parts) - 2]
-        staged_install = (destdir.joinpath(pfx.relative_to('/')) == pbase)
-    except (ValueError, IndexError):
-        staged_install = False
-
-    exec_prefix = build_time_vars['exec_prefix']
-    if staged_install:
-        prefix = project_base
-        epfx = pathlib.Path(exec_prefix)
-        exec_prefix = str(destdir.joinpath(epfx.relative_to('/')))
-    return prefix, exec_prefix
-
 # Path to the base directory of the project. On Windows the binary may
 # live in project/PCbuild/win32 or project/PCbuild/amd64.
 # set for cross builds
 if cross_compiling:
     project_base = get_project_base()
-    PREFIX, EXEC_PREFIX = fix_cross_build_paths(project_base)
+    build_time_vars = get_build_time_vars()
+    PREFIX = build_time_vars['prefix']
     BASE_PREFIX = PREFIX
+    EXEC_PREFIX = build_time_vars['exec_prefix']
     BASE_EXEC_PREFIX = EXEC_PREFIX
 else:
     if sys.executable:
@@ -88,21 +69,21 @@ def _python_build():
 
 python_build = _python_build()
 
+if cross_compiling and not python_build:
+    raise RuntimeError('PYTHON_PROJECT_BASE is not a build directory')
+
 
 # Calculate the build qualifier flags if they are defined.  Adding the flags
 # to the include and lib directories only makes sense for an installation, not
 # an in-source build.
 build_flags = ''
-if not python_build:
-    if cross_compiling:
-        build_flags = get_build_time_vars()['ABIFLAGS']
-    else:
-        try:
-            build_flags = sys.abiflags
-        except AttributeError:
-            # It's not a configure-based build, so the sys module doesn't have
-            # this attribute, which is fine.
-            pass
+try:
+    if not python_build:
+        build_flags = sys.abiflags
+except AttributeError:
+    # It's not a configure-based build, so the sys module doesn't have
+    # this attribute, which is fine.
+    pass
 
 def get_python_version():
     """Return a string containing the major and minor Python version,
@@ -508,8 +489,6 @@ def get_config_vars(*args):
         # Distutils.
         _config_vars['prefix'] = PREFIX
         _config_vars['exec_prefix'] = EXEC_PREFIX
-        if cross_compiling:
-            _config_vars['LIBDIR'] = os.path.join(EXEC_PREFIX, 'lib')
 
         # For backward compatibility, see issue19555
         SO = _config_vars.get('EXT_SUFFIX')
