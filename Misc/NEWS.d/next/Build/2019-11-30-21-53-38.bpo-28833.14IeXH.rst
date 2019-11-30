@@ -1,0 +1,9 @@
+Fix cross-compilation of third-party extension modules. The
+``PYTHON_PROJECT_BASE`` environment variable is the path to the directory
+where Python has been cross-compiled. It is used by the native python
+interpreter to find the target ``sysconfigdata`` module. For example the
+following command builds a wheel file to be transfered and installed with
+pip on the target platform, provided the native python interpreter and the
+cross-compiled one both have the wheel package installed::
+
+  $ PYTHON_PROJECT_BASE=/path/to/builddir python setup.py bdist_wheel
