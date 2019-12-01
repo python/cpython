@@ -728,7 +728,7 @@ class _SelectorTransport(transports._FlowControlMixin,
         return len(self._buffer)
 
     def _add_reader(self, fd, callback, *args):
-        if not self.is_reading():
+        if self._closing:
             return
         self._loop._add_reader(fd, callback, *args)
 
@@ -787,6 +787,11 @@ class _SelectorSocketTransport(_SelectorTransport):
         self._add_reader(self._sock_fd, self._read_ready)
         if self._loop.get_debug():
             logger.debug("%r resumes reading", self)
+
+    def _add_reader(self, fd, callback, *args):
+        if not self.is_reading():
+            return
+        self._loop._add_reader(fd, callback, *args)
 
     def _read_ready(self):
         self._read_ready_cb()
