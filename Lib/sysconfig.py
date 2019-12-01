@@ -149,12 +149,7 @@ def _get_python_config(name):
         # native interpreter being used is a full-fledged interpreter.
         import subprocess
 
-        if _is_python_source_dir(_PROJECT_BASE):
-            python_config = os.path.join(_PROJECT_BASE, 'python-config')
-        else:
-            python_config = os.path.join(_PROJECT_BASE, 'bin',
-                                         'python3-config')
-
+        python_config = os.path.join(_PROJECT_BASE, 'python-config')
         vars_ = ['version', 'abiflags', 'machdep', 'multiarch']
         args = ['/bin/sh', python_config]
         args.extend('--' + v for v in vars_)
