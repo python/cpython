@@ -1,0 +1,1 @@
+Added type checks for type SSLSocket in Lib/asyncio/selector_events.py
