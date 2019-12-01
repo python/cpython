@@ -329,14 +329,8 @@ def merge(*iterables, key=None, reverse=False):
 
     '''
 
-    n = len(iterables)
-    if n == 0:
-        return
-    if n == 1:
-        yield from iterables[0]
-        return
-    if n == 2:
-        # special case for two iterables
+    if len(iterables) == 2:
+        # special case for performance
 
         a_iter = iter(iterables[0])
         b_iter = iter(iterables[1])
