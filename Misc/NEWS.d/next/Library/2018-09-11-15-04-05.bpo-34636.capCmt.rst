@@ -1,2 +1,0 @@
-Speed up re scanning of many non-matching characters for \s \w and \d within
-bytes objects. (microoptimization)

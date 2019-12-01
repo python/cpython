@@ -1,4 +1,3 @@
-from test.support import check_warnings
 import cgi
 import os
 import sys
@@ -364,6 +363,23 @@ Larry
 
         form = cgi.FieldStorage(fp=env['wsgi.input'], environ=env)
         self.assertEqual(form.file.read(), body.decode(form.encoding))
+
+    def test_field_storage_multipart_no_content_length(self):
+        fp = BytesIO(b"""--MyBoundary
+Content-Disposition: form-data; name="my-arg"; filename="foo"
+
+Test
+
+--MyBoundary--
+""")
+        env = {
+            "REQUEST_METHOD": "POST",
+            "CONTENT_TYPE": "multipart/form-data; boundary=MyBoundary",
+            "wsgi.input": fp,
+        }
+        fields = cgi.FieldStorage(fp, environ=env)
+
+        self.assertEqual(len(fields["my-arg"].file.read()), 5)
 
     def test_fieldstorage_as_context_manager(self):
         fp = BytesIO(b'x' * 10)

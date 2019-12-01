@@ -71,19 +71,12 @@ copy_grouping(const char* s)
     do {
         i++;
         val = PyLong_FromLong(s[i]);
-        if (!val)
-            break;
-        if (PyList_SetItem(result, i, val)) {
-            Py_DECREF(val);
-            val = NULL;
-            break;
+        if (val == NULL) {
+            Py_DECREF(result);
+            return NULL;
         }
+        PyList_SET_ITEM(result, i, val);
     } while (s[i] != '\0' && s[i] != CHAR_MAX);
-
-    if (!val) {
-        Py_DECREF(result);
-        return NULL;
-    }
 
     return result;
 }
@@ -399,7 +392,7 @@ PyLocale_getdefaultlocale(PyObject* self, PyObject *Py_UNUSED(ignored))
     char encoding[20];
     char locale[100];
 
-    PyOS_snprintf(encoding, sizeof(encoding), "cp%d", GetACP());
+    PyOS_snprintf(encoding, sizeof(encoding), "cp%u", GetACP());
 
     if (GetLocaleInfo(LOCALE_USER_DEFAULT,
                       LOCALE_SISO639LANGNAME,

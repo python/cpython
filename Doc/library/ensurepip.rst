@@ -119,6 +119,8 @@ Module API
    *verbosity* controls the level of output to :data:`sys.stdout` from the
    bootstrapping operation.
 
+   .. audit-event:: ensurepip.bootstrap root ensurepip.bootstrap
+
    .. note::
 
       The bootstrapping process has side effects on both ``sys.path`` and

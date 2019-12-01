@@ -21,11 +21,11 @@ _heapq_heappush(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     PyObject *heap;
     PyObject *item;
 
-    if (!_PyArg_UnpackStack(args, nargs, "heappush",
-        2, 2,
-        &heap, &item)) {
+    if (!_PyArg_CheckPositional("heappush", nargs, 2, 2)) {
         goto exit;
     }
+    heap = args[0];
+    item = args[1];
     return_value = _heapq_heappush_impl(module, heap, item);
 
 exit:
@@ -68,11 +68,11 @@ _heapq_heapreplace(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     PyObject *heap;
     PyObject *item;
 
-    if (!_PyArg_UnpackStack(args, nargs, "heapreplace",
-        2, 2,
-        &heap, &item)) {
+    if (!_PyArg_CheckPositional("heapreplace", nargs, 2, 2)) {
         goto exit;
     }
+    heap = args[0];
+    item = args[1];
     return_value = _heapq_heapreplace_impl(module, heap, item);
 
 exit:
@@ -101,11 +101,11 @@ _heapq_heappushpop(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     PyObject *heap;
     PyObject *item;
 
-    if (!_PyArg_UnpackStack(args, nargs, "heappushpop",
-        2, 2,
-        &heap, &item)) {
+    if (!_PyArg_CheckPositional("heappushpop", nargs, 2, 2)) {
         goto exit;
     }
+    heap = args[0];
+    item = args[1];
     return_value = _heapq_heappushpop_impl(module, heap, item);
 
 exit:
@@ -150,11 +150,11 @@ _heapq__heapreplace_max(PyObject *module, PyObject *const *args, Py_ssize_t narg
     PyObject *heap;
     PyObject *item;
 
-    if (!_PyArg_UnpackStack(args, nargs, "_heapreplace_max",
-        2, 2,
-        &heap, &item)) {
+    if (!_PyArg_CheckPositional("_heapreplace_max", nargs, 2, 2)) {
         goto exit;
     }
+    heap = args[0];
+    item = args[1];
     return_value = _heapq__heapreplace_max_impl(module, heap, item);
 
 exit:
@@ -169,4 +169,4 @@ PyDoc_STRVAR(_heapq__heapify_max__doc__,
 
 #define _HEAPQ__HEAPIFY_MAX_METHODDEF    \
     {"_heapify_max", (PyCFunction)_heapq__heapify_max, METH_O, _heapq__heapify_max__doc__},
-/*[clinic end generated code: output=b73e874eeb9977b6 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=37ef2a3319971c8d input=a9049054013a1b77]*/

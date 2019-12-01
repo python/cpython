@@ -1,18 +1,16 @@
 # Tests the attempted automatic coercion of the C locale to a UTF-8 locale
 
-import unittest
 import locale
 import os
+import subprocess
 import sys
 import sysconfig
-import shutil
+import unittest
 from collections import namedtuple
 
 from test import support
-from test.support.script_helper import (
-    run_python_until_end,
-    interpreter_requires_environment,
-)
+from test.support.script_helper import run_python_until_end
+
 
 # Set the list of ways we expect to be able to ask for the "C" locale
 EXPECTED_C_LOCALE_EQUIVALENTS = ["C", "invalid.ascii"]
@@ -24,6 +22,8 @@ EXPECTED_C_LOCALE_FS_ENCODING = "ascii"
 
 # Set our expectation for the default locale used when none is specified
 EXPECT_COERCION_IN_DEFAULT_LOCALE = True
+
+TARGET_LOCALES = ["C.UTF-8", "C.utf8", "UTF-8"]
 
 # Apply some platform dependent overrides
 if sys.platform.startswith("linux"):
@@ -116,27 +116,14 @@ class EncodingDetails(_EncodingDetails):
         stream_info = 2*[_stream.format("surrogateescape")]
         # stderr should always use backslashreplace
         stream_info.append(_stream.format("backslashreplace"))
-        expected_lang = env_vars.get("LANG", "not set").lower()
+        expected_lang = env_vars.get("LANG", "not set")
         if coercion_expected:
-            expected_lc_ctype = CLI_COERCION_TARGET.lower()
+            expected_lc_ctype = CLI_COERCION_TARGET
         else:
-            expected_lc_ctype = env_vars.get("LC_CTYPE", "not set").lower()
-        expected_lc_all = env_vars.get("LC_ALL", "not set").lower()
+            expected_lc_ctype = env_vars.get("LC_CTYPE", "not set")
+        expected_lc_all = env_vars.get("LC_ALL", "not set")
         env_info = expected_lang, expected_lc_ctype, expected_lc_all
         return dict(cls(fs_encoding, *stream_info, *env_info)._asdict())
-
-    @staticmethod
-    def _handle_output_variations(data):
-        """Adjust the output to handle platform specific idiosyncrasies
-
-        * Some platforms report ASCII as ANSI_X3.4-1968
-        * Some platforms report ASCII as US-ASCII
-        * Some platforms report UTF-8 instead of utf-8
-        """
-        data = data.replace(b"ANSI_X3.4-1968", b"ascii")
-        data = data.replace(b"US-ASCII", b"ascii")
-        data = data.lower()
-        return data
 
     @classmethod
     def get_child_details(cls, env_vars):
@@ -157,8 +144,7 @@ class EncodingDetails(_EncodingDetails):
         if not result.rc == 0:
             result.fail(py_cmd)
         # All subprocess outputs in this test case should be pure ASCII
-        adjusted_output = cls._handle_output_variations(result.out)
-        stdout_lines = adjusted_output.decode("ascii").splitlines()
+        stdout_lines = result.out.decode("ascii").splitlines()
         child_encoding_details = dict(cls(*stdout_lines)._asdict())
         stderr_lines = result.err.decode("ascii").rstrip().splitlines()
         return child_encoding_details, stderr_lines
@@ -412,6 +398,27 @@ class LocaleCoercionTests(_LocaleHandlingTestCase):
                                       LC_ALL="C",
                                       expected_warnings=[LEGACY_LOCALE_WARNING],
                                       coercion_expected=False)
+
+    def test_PYTHONCOERCECLOCALE_set_to_one(self):
+        # skip the test if the LC_CTYPE locale is C or coerced
+        old_loc = locale.setlocale(locale.LC_CTYPE, None)
+        self.addCleanup(locale.setlocale, locale.LC_CTYPE, old_loc)
+        loc = locale.setlocale(locale.LC_CTYPE, "")
+        if loc == "C":
+            self.skipTest("test requires LC_CTYPE locale different than C")
+        if loc in TARGET_LOCALES :
+            self.skipTest("coerced LC_CTYPE locale: %s" % loc)
+
+        # bpo-35336: PYTHONCOERCECLOCALE=1 must not coerce the LC_CTYPE locale
+        # if it's not equal to "C"
+        code = 'import locale; print(locale.setlocale(locale.LC_CTYPE, None))'
+        env = dict(os.environ, PYTHONCOERCECLOCALE='1')
+        cmd = subprocess.run([sys.executable, '-c', code],
+                             stdout=subprocess.PIPE,
+                             env=env,
+                             text=True)
+        self.assertEqual(cmd.stdout.rstrip(), loc)
+
 
 def test_main():
     support.run_unittest(

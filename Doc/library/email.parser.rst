@@ -164,7 +164,7 @@ message body, instead setting the payload to the raw body.
       envelope header.  The header block is terminated either by the end of the
       data or by a blank line.  Following the header block is the body of the
       message (which may contain MIME-encoded subparts, including subparts
-      with a :mailheader:`Content-Transfer-Encoding` of ``8bit``.
+      with a :mailheader:`Content-Transfer-Encoding` of ``8bit``).
 
       Optional *headersonly* is a flag specifying whether to stop parsing after
       reading the headers or not.  The default is ``False``, meaning it parses

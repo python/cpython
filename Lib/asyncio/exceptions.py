@@ -5,19 +5,16 @@ __all__ = ('CancelledError', 'InvalidStateError', 'TimeoutError',
            'IncompleteReadError', 'LimitOverrunError',
            'SendfileNotAvailableError')
 
-import concurrent.futures
-from . import base_futures
 
-
-class CancelledError(concurrent.futures.CancelledError):
+class CancelledError(BaseException):
     """The Future or Task was cancelled."""
 
 
-class TimeoutError(concurrent.futures.TimeoutError):
+class TimeoutError(Exception):
     """The operation exceeded the given deadline."""
 
 
-class InvalidStateError(concurrent.futures.InvalidStateError):
+class InvalidStateError(Exception):
     """The operation is not allowed in this state."""
 
 

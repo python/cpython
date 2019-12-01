@@ -1017,6 +1017,22 @@ by right-clicking the button.  (Contributed by Tal Einat in :issue:`1529353`.)
 
 The changes above have been backported to 3.6 maintenance releases.
 
+NEW in 3.7.4:
+
+Add "Run Customized" to the Run menu to run a module with customized
+settings. Any command line arguments entered are added to sys.argv.
+They re-appear in the box for the next customized run.  One can also
+suppress the normal Shell main module restart.  (Contributed by Cheryl
+Sabella, Terry Jan Reedy, and others in :issue:`5680` and :issue:`37627`.)
+
+New in 3.7.5:
+
+Add optional line numbers for IDLE editor windows. Windows
+open without line numbers unless set otherwise in the General
+tab of the configuration dialog.  Line numbers for an existing
+window are shown and hidden in the Options menu.
+(Contributed by Tal Einat and Saimadhav Heblikar in :issue:`17535`.)
+
 
 importlib
 ---------
@@ -1307,7 +1323,7 @@ including failing the host name check now raises
 :exc:`~ssl.SSLCertVerificationError` and aborts the handshake with a proper
 TLS Alert message.  The new exception contains additional information.
 Host name validation can be customized with
-:attr:`SSLContext.host_flags <ssl.SSLContext.host_flags>`.
+:attr:`SSLContext.hostname_checks_common_name <ssl.SSLContext.hostname_checks_common_name>`.
 (Contributed by Christian Heimes in :issue:`31399`.)
 
 .. note::
@@ -1320,8 +1336,7 @@ The ``ssl`` module no longer sends IP addresses in SNI TLS extension.
 (Contributed by Christian Heimes in :issue:`32185`.)
 
 :func:`~ssl.match_hostname` no longer supports partial wildcards like
-``www*.example.org``. :attr:`SSLContext.host_flags <ssl.SSLContext.host_flags>`
-has partial wildcard matching disabled by default.
+``www*.example.org``.
 (Contributed by Mandeep Singh in :issue:`23033` and Christian Heimes in
 :issue:`31399`.)
 
@@ -1692,7 +1707,7 @@ The type of results of :c:func:`PyThread_start_new_thread` and
 (Contributed by Serhiy Storchaka in :issue:`6532`.)
 
 :c:func:`PyUnicode_AsWideCharString` now raises a :exc:`ValueError` if the
-second argument is *NULL* and the :c:type:`wchar_t*` string contains null
+second argument is ``NULL`` and the :c:type:`wchar_t*` string contains null
 characters.  (Contributed by Serhiy Storchaka in :issue:`30708`.)
 
 Changes to the startup sequence and the management of dynamic memory
@@ -1896,7 +1911,7 @@ Deprecated Python Behavior
 
 Yield expressions (both ``yield`` and ``yield from`` clauses) are now deprecated
 in comprehensions and generator expressions (aside from the iterable expression
-in the leftmost :keyword:`for` clause). This ensures that comprehensions
+in the leftmost :keyword:`!for` clause). This ensures that comprehensions
 always immediately return a container of the appropriate type (rather than
 potentially returning a :term:`generator iterator` object), while generator
 expressions won't attempt to interleave their implicit output with the output
@@ -2386,6 +2401,10 @@ Changes in the Python API
   instead of a :class:`bytes` instance.
   (Contributed by Victor Stinner in :issue:`21071`.)
 
+* :mod:`argparse` subparsers can now be made mandatory by passing ``required=True``
+  to :meth:`ArgumentParser.add_subparsers() <argparse.ArgumentParser.add_subparsers>`.
+  (Contributed by Anthony Sottile in :issue:`26510`.)
+
 * :meth:`ast.literal_eval()` is now stricter.  Addition and subtraction of
   arbitrary numbers are no longer allowed.
   (Contributed by Serhiy Storchaka in :issue:`31778`.)
@@ -2512,3 +2531,13 @@ In 3.7.1 the :mod:`tokenize` module now implicitly emits a ``NEWLINE`` token
 when provided with input that does not have a trailing new line.  This behavior
 now matches what the C tokenizer does internally.
 (Contributed by Ammar Askar in :issue:`33899`.)
+
+Notable changes in Python 3.7.2
+===============================
+
+In 3.7.2, :mod:`venv` on Windows no longer copies the original binaries, but
+creates redirector scripts named ``python.exe`` and ``pythonw.exe`` instead.
+This resolves a long standing issue where all virtual environments would have
+to be upgraded or recreated with each Python update. However, note that this
+release will still require recreation of virtual environments in order to get
+the new scripts.

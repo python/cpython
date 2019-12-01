@@ -867,7 +867,7 @@ on_hook(PyObject *func)
     int result = 0;
     if (func != NULL) {
         PyObject *r;
-        r = _PyObject_CallNoArg(func);
+        r = PyObject_CallNoArgs(func);
         if (r == NULL)
             goto error;
         if (r == Py_None)
@@ -936,8 +936,7 @@ on_completion_display_matches_hook(char **matches,
         s = decode(matches[i+1]);
         if (s == NULL)
             goto error;
-        if (PyList_SetItem(m, i, s) == -1)
-            goto error;
+        PyList_SET_ITEM(m, i, s);
     }
     sub = decode(matches[0]);
     r = PyObject_CallFunction(readlinestate_global->completion_display_matches_hook,
@@ -1067,15 +1066,16 @@ done:
 }
 
 
-/* Helper to initialize GNU readline properly. */
-
-static void
+/* Helper to initialize GNU readline properly.
+   Return -1 on memory allocation failure, return 0 on success. */
+static int
 setup_readline(readlinestate *mod_state)
 {
 #ifdef SAVE_LOCALE
     char *saved_locale = strdup(setlocale(LC_CTYPE, NULL));
-    if (!saved_locale)
-        Py_FatalError("not enough memory to save locale");
+    if (!saved_locale) {
+        return -1;
+    }
 #endif
 
     /* The name must be defined before initialization */
@@ -1157,6 +1157,7 @@ setup_readline(readlinestate *mod_state)
         rl_initialize();
 
     RESTORE_LOCALE(saved_locale)
+    return 0;
 }
 
 /* Wrapper around GNU readline that handles signals differently. */
@@ -1240,7 +1241,7 @@ static char *
 call_readline(FILE *sys_stdin, FILE *sys_stdout, const char *prompt)
 {
     size_t n;
-    char *p, *q;
+    char *p;
     int signal;
 
 #ifdef SAVE_LOCALE
@@ -1297,10 +1298,10 @@ call_readline(FILE *sys_stdin, FILE *sys_stdout, const char *prompt)
     }
     /* Copy the malloc'ed buffer into a PyMem_Malloc'ed one and
        release the original. */
-    q = p;
+    char *q = p;
     p = PyMem_RawMalloc(n+2);
     if (p != NULL) {
-        strncpy(p, q, n);
+        memcpy(p, q, n);
         p[n] = '\n';
         p[n+1] = '\0';
     }
@@ -1370,7 +1371,10 @@ PyInit_readline(void)
 
     mod_state = (readlinestate *) PyModule_GetState(m);
     PyOS_ReadlineFunctionPointer = call_readline;
-    setup_readline(mod_state);
+    if (setup_readline(mod_state) < 0) {
+        PyErr_NoMemory();
+        goto error;
+    }
 
     return m;
 

@@ -36,7 +36,7 @@ something that contains only ASCII characters, using the standard email RFC
 Content Transfer Encoding techniques for encoding email messages for transport
 over channels that are not "8 bit clean".
 
-To accomodate reproducible processing of SMIME-signed messages
+To accommodate reproducible processing of SMIME-signed messages
 :class:`Generator` disables header folding for message parts of type
 ``multipart/signed`` and all subparts.
 
@@ -188,7 +188,7 @@ to be using :class:`BytesGenerator`, and not :class:`Generator`.
       (This is required because strings cannot represent non-ASCII bytes.)
       Convert any bytes with the high bit set as needed using an
       ASCII-compatible :mailheader:`Content-Transfer-Encoding`.  That is,
-      transform parts with non-ASCII :mailheader:`Cotnent-Transfer-Encoding`
+      transform parts with non-ASCII :mailheader:`Content-Transfer-Encoding`
       (:mailheader:`Content-Transfer-Encoding: 8bit`) to an ASCII compatible
       :mailheader:`Content-Transfer-Encoding`, and encode RFC-invalid non-ASCII
       bytes in headers using the MIME ``unknown-8bit`` character set, thus

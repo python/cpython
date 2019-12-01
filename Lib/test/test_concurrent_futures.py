@@ -27,6 +27,9 @@ from concurrent.futures._base import (
 from concurrent.futures.process import BrokenProcessPool
 from multiprocessing import get_context
 
+import multiprocessing.process
+import multiprocessing.util
+
 
 def create_future(state=PENDING, exception=None, result=None):
     f = Future()
@@ -48,6 +51,9 @@ INITIALIZER_STATUS = 'uninitialized'
 
 def mul(x, y):
     return x * y
+
+def capture(*args, **kwargs):
+    return args, kwargs
 
 def sleep_and_raise(t):
     time.sleep(t)
@@ -343,10 +349,15 @@ class ThreadPoolShutdownTest(ThreadPoolMixin, ExecutorShutdownTest, BaseTestCase
         pass
 
     def test_threads_terminate(self):
-        self.executor.submit(mul, 21, 2)
-        self.executor.submit(mul, 6, 7)
-        self.executor.submit(mul, 3, 14)
+        def acquire_lock(lock):
+            lock.acquire()
+
+        sem = threading.Semaphore(0)
+        for i in range(3):
+            self.executor.submit(acquire_lock, sem)
         self.assertEqual(len(self.executor._threads), 3)
+        for i in range(3):
+            sem.release()
         self.executor.shutdown()
         for t in self.executor._threads:
             t.join()
@@ -658,6 +669,12 @@ class ExecutorTest:
     def test_submit_keyword(self):
         future = self.executor.submit(mul, 2, y=8)
         self.assertEqual(16, future.result())
+        future = self.executor.submit(capture, 1, self=2, fn=3)
+        self.assertEqual(future.result(), ((1,), {'self': 2, 'fn': 3}))
+        with self.assertRaises(TypeError):
+            self.executor.submit(fn=capture, arg=1)
+        with self.assertRaises(TypeError):
+            self.executor.submit(arg=1)
 
     def test_map(self):
         self.assertEqual(
@@ -740,11 +757,39 @@ class ThreadPoolExecutorTest(ThreadPoolMixin, ExecutorTest, BaseTestCase):
 
     def test_default_workers(self):
         executor = self.executor_type()
-        self.assertEqual(executor._max_workers,
-                         (os.cpu_count() or 1) * 5)
+        expected = min(32, (os.cpu_count() or 1) + 4)
+        self.assertEqual(executor._max_workers, expected)
+
+    def test_saturation(self):
+        executor = self.executor_type(4)
+        def acquire_lock(lock):
+            lock.acquire()
+
+        sem = threading.Semaphore(0)
+        for i in range(15 * executor._max_workers):
+            executor.submit(acquire_lock, sem)
+        self.assertEqual(len(executor._threads), executor._max_workers)
+        for i in range(15 * executor._max_workers):
+            sem.release()
+        executor.shutdown(wait=True)
+
+    def test_idle_thread_reuse(self):
+        executor = self.executor_type()
+        executor.submit(mul, 21, 2).result()
+        executor.submit(mul, 6, 7).result()
+        executor.submit(mul, 3, 14).result()
+        self.assertEqual(len(executor._threads), 1)
+        executor.shutdown(wait=True)
 
 
 class ProcessPoolExecutorTest(ExecutorTest):
+
+    @unittest.skipUnless(sys.platform=='win32', 'Windows-only process limit')
+    def test_max_workers_too_large(self):
+        with self.assertRaisesRegex(ValueError,
+                                    "max_workers must be <= 61"):
+            futures.ProcessPoolExecutor(max_workers=62)
+
     def test_killed_child(self):
         # When a child process is abruptly terminated, the whole pool gets
         # "broken".
@@ -1070,6 +1115,22 @@ class FutureTests(BaseTestCase):
         f.add_done_callback(fn)
         self.assertTrue(was_cancelled)
 
+    def test_done_callback_raises_already_succeeded(self):
+        with test.support.captured_stderr() as stderr:
+            def raising_fn(callback_future):
+                raise Exception('doh!')
+
+            f = Future()
+
+            # Set the result first to simulate a future that runs instantly,
+            # effectively allowing the callback to be run immediately.
+            f.set_result(5)
+            f.add_done_callback(raising_fn)
+
+            self.assertIn('exception calling callback for', stderr.getvalue())
+            self.assertIn('doh!', stderr.getvalue())
+
+
     def test_repr(self):
         self.assertRegex(repr(PENDING_FUTURE),
                          '<Future at 0x[0-9a-f]+ state=pending>')
@@ -1235,12 +1296,27 @@ class FutureTests(BaseTestCase):
         self.assertEqual(f.exception(), e)
 
 
-@test.support.reap_threads
-def test_main():
-    try:
-        test.support.run_unittest(__name__)
-    finally:
-        test.support.reap_children()
+_threads_key = None
+
+def setUpModule():
+    global _threads_key
+    _threads_key = test.support.threading_setup()
+
+
+def tearDownModule():
+    test.support.threading_cleanup(*_threads_key)
+    test.support.reap_children()
+
+    # cleanup multiprocessing
+    multiprocessing.process._cleanup()
+    # Stop the ForkServer process if it's running
+    from multiprocessing import forkserver
+    forkserver._forkserver._stop()
+    # bpo-37421: Explicitly call _run_finalizers() to remove immediately
+    # temporary directories created by multiprocessing.util.get_temp_dir().
+    multiprocessing.util._run_finalizers()
+    test.support.gc_collect()
+
 
 if __name__ == "__main__":
-    test_main()
+    unittest.main()

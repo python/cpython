@@ -12,7 +12,9 @@ extern "C" {
 PyAPI_FUNC(void) Py_Initialize(void);
 PyAPI_FUNC(void) Py_InitializeEx(int);
 PyAPI_FUNC(void) Py_Finalize(void);
+#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= 0x03060000
 PyAPI_FUNC(int) Py_FinalizeEx(void);
+#endif
 PyAPI_FUNC(int) Py_IsInitialized(void);
 
 /* Subinterpreter support */
@@ -29,6 +31,8 @@ PyAPI_FUNC(void) _Py_NO_RETURN Py_Exit(int);
 
 /* Bootstrap __main__ (defined in Modules/main.c) */
 PyAPI_FUNC(int) Py_Main(int argc, wchar_t **argv);
+
+PyAPI_FUNC(int) Py_BytesMain(int argc, char **argv);
 
 /* In pathconfig.c */
 PyAPI_FUNC(void) Py_SetProgramName(const wchar_t *);

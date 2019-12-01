@@ -169,12 +169,12 @@ Assignment of an object to a single target is recursively defined as follows.
   .. _attr-target-note:
 
   Note: If the object is a class instance and the attribute reference occurs on
-  both sides of the assignment operator, the RHS expression, ``a.x`` can access
+  both sides of the assignment operator, the right-hand side expression, ``a.x`` can access
   either an instance attribute or (if no instance attribute exists) a class
-  attribute.  The LHS target ``a.x`` is always set as an instance attribute,
+  attribute.  The left-hand side target ``a.x`` is always set as an instance attribute,
   creating it if necessary.  Thus, the two occurrences of ``a.x`` do not
-  necessarily refer to the same attribute: if the RHS expression refers to a
-  class attribute, the LHS creates a new instance attribute as the target of the
+  necessarily refer to the same attribute: if the right-hand side expression refers to a
+  class attribute, the left-hand side creates a new instance attribute as the target of the
   assignment::
 
      class Cls:
@@ -325,14 +325,14 @@ Annotated assignment statements
    single: statement; assignment, annotated
    single: : (colon); annotated variable
 
-Annotation assignment is the combination, in a single statement,
-of a variable or attribute annotation and an optional assignment statement:
+:term:`Annotation <variable annotation>` assignment is the combination, in a single
+statement, of a variable or attribute annotation and an optional assignment statement:
 
 .. productionlist::
-   annotated_assignment_stmt: `augtarget` ":" `expression` ["=" `expression`]
+   annotated_assignment_stmt: `augtarget` ":" `expression`
+                            : ["=" (`starred_expression` | `yield_expression`)]
 
-The difference from normal :ref:`assignment` is that only single target and
-only single right hand side value is allowed.
+The difference from normal :ref:`assignment` is that only single target is allowed.
 
 For simple names as assignment targets, if in class or module scope,
 the annotations are evaluated and stored in a special class or module
@@ -366,14 +366,19 @@ target, then the interpreter evaluates the target except for the last
       syntax for type annotations that can be used in static analysis tools and
       IDEs.
 
+.. versionchanged:: 3.8
+   Now annotated assignments allow same expressions in the right hand side as
+   the regular assignments. Previously, some expressions (like un-parenthesized
+   tuple expressions) caused a syntax error.
+
 
 .. _assert:
 
-The :keyword:`assert` statement
-===============================
+The :keyword:`!assert` statement
+================================
 
 .. index::
-   statement: assert
+   ! statement: assert
    pair: debugging; assertions
    single: , (comma); expression list
 
@@ -412,8 +417,8 @@ is determined when the interpreter starts.
 
 .. _pass:
 
-The :keyword:`pass` statement
-=============================
+The :keyword:`!pass` statement
+==============================
 
 .. index::
    statement: pass
@@ -434,11 +439,11 @@ code needs to be executed, for example::
 
 .. _del:
 
-The :keyword:`del` statement
-============================
+The :keyword:`!del` statement
+=============================
 
 .. index::
-   statement: del
+   ! statement: del
    pair: deletion; target
    triple: deletion; target; list
 
@@ -473,11 +478,11 @@ the sliced object).
 
 .. _return:
 
-The :keyword:`return` statement
-===============================
+The :keyword:`!return` statement
+================================
 
 .. index::
-   statement: return
+   ! statement: return
    pair: function; definition
    pair: class; definition
 
@@ -495,7 +500,7 @@ If an expression list is present, it is evaluated, else ``None`` is substituted.
 .. index:: keyword: finally
 
 When :keyword:`return` passes control out of a :keyword:`try` statement with a
-:keyword:`finally` clause, that :keyword:`finally` clause is executed before
+:keyword:`finally` clause, that :keyword:`!finally` clause is executed before
 really leaving the function.
 
 In a generator function, the :keyword:`return` statement indicates that the
@@ -505,13 +510,13 @@ becomes the :attr:`StopIteration.value` attribute.
 
 In an asynchronous generator function, an empty :keyword:`return` statement
 indicates that the asynchronous generator is done and will cause
-:exc:`StopAsyncIteration` to be raised.  A non-empty :keyword:`return`
+:exc:`StopAsyncIteration` to be raised.  A non-empty :keyword:`!return`
 statement is a syntax error in an asynchronous generator function.
 
 .. _yield:
 
-The :keyword:`yield` statement
-==============================
+The :keyword:`!yield` statement
+===============================
 
 .. index::
    statement: yield
@@ -546,11 +551,11 @@ For full details of :keyword:`yield` semantics, refer to the
 
 .. _raise:
 
-The :keyword:`raise` statement
-==============================
+The :keyword:`!raise` statement
+===============================
 
 .. index::
-   statement: raise
+   ! statement: raise
    single: exception
    pair: raising; exception
    single: __traceback__ (exception attribute)
@@ -649,11 +654,11 @@ and information about handling exceptions is in section :ref:`try`.
 
 .. _break:
 
-The :keyword:`break` statement
-==============================
+The :keyword:`!break` statement
+===============================
 
 .. index::
-   statement: break
+   ! statement: break
    statement: for
    statement: while
    pair: loop; statement
@@ -668,7 +673,7 @@ that loop.
 .. index:: keyword: else
            pair: loop control; target
 
-It terminates the nearest enclosing loop, skipping the optional :keyword:`else`
+It terminates the nearest enclosing loop, skipping the optional :keyword:`!else`
 clause if the loop has one.
 
 If a :keyword:`for` loop is terminated by :keyword:`break`, the loop control
@@ -677,17 +682,17 @@ target keeps its current value.
 .. index:: keyword: finally
 
 When :keyword:`break` passes control out of a :keyword:`try` statement with a
-:keyword:`finally` clause, that :keyword:`finally` clause is executed before
+:keyword:`finally` clause, that :keyword:`!finally` clause is executed before
 really leaving the loop.
 
 
 .. _continue:
 
-The :keyword:`continue` statement
-=================================
+The :keyword:`!continue` statement
+==================================
 
 .. index::
-   statement: continue
+   ! statement: continue
    statement: for
    statement: while
    pair: loop; statement
@@ -701,18 +706,18 @@ The :keyword:`continue` statement
 that loop.  It continues with the next cycle of the nearest enclosing loop.
 
 When :keyword:`continue` passes control out of a :keyword:`try` statement with a
-:keyword:`finally` clause, that :keyword:`finally` clause is executed before
+:keyword:`finally` clause, that :keyword:`!finally` clause is executed before
 really starting the next loop cycle.
 
 
 .. _import:
 .. _from:
 
-The :keyword:`import` statement
-===============================
+The :keyword:`!import` statement
+================================
 
 .. index::
-   statement: import
+   ! statement: import
    single: module; importing
    pair: name; binding
    keyword: from
@@ -755,8 +760,8 @@ available in the local namespace in one of three ways:
 
 .. index:: single: as; import statement
 
-* If the module name is followed by :keyword:`as`, then the name
-  following :keyword:`as` is bound directly to the imported module.
+* If the module name is followed by :keyword:`!as`, then the name
+  following :keyword:`!as` is bound directly to the imported module.
 * If no other name is specified, and the module being imported is a top
   level module, the module's name is bound in the local namespace as a
   reference to the imported module
@@ -781,7 +786,7 @@ The :keyword:`from` form uses a slightly more complex process:
       check the imported module again for that attribute
    #. if the attribute is not found, :exc:`ImportError` is raised.
    #. otherwise, a reference to that value is stored in the local namespace,
-      using the name in the :keyword:`as` clause if it is present,
+      using the name in the :keyword:`!as` clause if it is present,
       otherwise using the attribute name
 
 Examples::
@@ -828,11 +833,13 @@ exists. Two dots means up one package level. Three dots is up two levels, etc.
 So if you execute ``from . import mod`` from a module in the ``pkg`` package
 then you will end up importing ``pkg.mod``. If you execute ``from ..subpkg2
 import mod`` from within ``pkg.subpkg1`` you will import ``pkg.subpkg2.mod``.
-The specification for relative imports is contained within :pep:`328`.
+The specification for relative imports is contained in
+the :ref:`relativeimports` section.
 
 :func:`importlib.import_module` is provided to support applications that
 determine dynamically the modules to be loaded.
 
+.. audit-event:: import module,filename,sys.path,sys.meta_path,sys.path_hooks import
 
 .. _future:
 
@@ -922,11 +929,11 @@ after the script is executed.
 
 .. _global:
 
-The :keyword:`global` statement
-===============================
+The :keyword:`!global` statement
+================================
 
 .. index::
-   statement: global
+   ! statement: global
    triple: global; name; binding
    single: , (comma); identifier list
 
@@ -936,11 +943,11 @@ The :keyword:`global` statement
 The :keyword:`global` statement is a declaration which holds for the entire
 current code block.  It means that the listed identifiers are to be interpreted
 as globals.  It would be impossible to assign to a global variable without
-:keyword:`global`, although free variables may refer to globals without being
+:keyword:`!global`, although free variables may refer to globals without being
 declared global.
 
 Names listed in a :keyword:`global` statement must not be used in the same code
-block textually preceding that :keyword:`global` statement.
+block textually preceding that :keyword:`!global` statement.
 
 Names listed in a :keyword:`global` statement must not be defined as formal
 parameters or in a :keyword:`for` loop control target, :keyword:`class`
@@ -959,18 +966,18 @@ annotation.
    builtin: compile
 
 **Programmer's note:** :keyword:`global` is a directive to the parser.  It
-applies only to code parsed at the same time as the :keyword:`global` statement.
-In particular, a :keyword:`global` statement contained in a string or code
+applies only to code parsed at the same time as the :keyword:`!global` statement.
+In particular, a :keyword:`!global` statement contained in a string or code
 object supplied to the built-in :func:`exec` function does not affect the code
 block *containing* the function call, and code contained in such a string is
-unaffected by :keyword:`global` statements in the code containing the function
+unaffected by :keyword:`!global` statements in the code containing the function
 call.  The same applies to the :func:`eval` and :func:`compile` functions.
 
 
 .. _nonlocal:
 
-The :keyword:`nonlocal` statement
-=================================
+The :keyword:`!nonlocal` statement
+==================================
 
 .. index:: statement: nonlocal
    single: , (comma); identifier list

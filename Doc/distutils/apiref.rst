@@ -4,6 +4,16 @@
 API Reference
 *************
 
+.. seealso::
+
+   `New and changed setup.py arguments in setuptools`_
+      The ``setuptools`` project adds new capabilities to the ``setup`` function
+      and other APIs, makes the API consistent across different Python versions,
+      and is hence recommended over using ``distutils`` directly.
+
+.. _New and changed setup.py arguments in setuptools: https://setuptools.readthedocs.io/en/latest/setuptools.html#new-and-changed-setup-keywords
+
+.. include:: ./_setuptools_disclaimer.rst
 
 :mod:`distutils.core` --- Core Distutils functionality
 ======================================================
@@ -276,6 +286,11 @@ the full reference.
    |                        | abort the build process, but   |                           |
    |                        | simply skip the extension.     |                           |
    +------------------------+--------------------------------+---------------------------+
+
+   .. versionchanged:: 3.8
+
+      On Unix, C extensions are no longer linked to libpython except on
+      Android and Cygwin.
 
 
 .. class:: Distribution
@@ -941,7 +956,7 @@ timestamp dependency analysis.
 .. function:: newer_group(sources, target[, missing='error'])
 
    Return true if *target* is out-of-date with respect to any file listed in
-   *sources*  In other words, if *target* exists and is newer than every file in
+   *sources*.  In other words, if *target* exists and is newer than every file in
    *sources*, return false; otherwise return true. *missing* controls what we do
    when a source file is missing; the default (``'error'``) is to blow up with an
    :exc:`OSError` from  inside :func:`os.stat`; if it is ``'ignore'``, we silently
@@ -1530,7 +1545,7 @@ Python's own build procedures.
 =================================================
 
 .. module:: distutils.text_file
-   :synopsis: provides the TextFile class, a simple interface to text files
+   :synopsis: Provides the TextFile class, a simple interface to text files
 
 
 This module provides the :class:`TextFile` class, which gives an interface  to
@@ -1669,7 +1684,7 @@ lines, and joining lines with backslashes.
 ===================================================
 
 .. module:: distutils.version
-   :synopsis: implements classes that represent module version numbers.
+   :synopsis: Implements classes that represent module version numbers.
 
 
 .. % todo
@@ -1684,7 +1699,7 @@ lines, and joining lines with backslashes.
 ===================================================================
 
 .. module:: distutils.cmd
-   :synopsis: This module provides the abstract base class Command. This class
+   :synopsis: Provides the abstract base class :class:`~distutils.cmd.Command`. This class
               is subclassed by the modules in the distutils.command subpackage.
 
 
@@ -1777,7 +1792,7 @@ Subclasses of :class:`Command` must define the following methods.
 ==========================================================
 
 .. module:: distutils.command
-   :synopsis: This subpackage contains one module for each standard Distutils command.
+   :synopsis: Contains one module for each standard Distutils command.
 
 
 .. % \subsubsection{Individual Distutils commands}
@@ -1847,6 +1862,9 @@ Subclasses of :class:`Command` must define the following methods.
 
 .. module:: distutils.command.bdist_wininst
    :synopsis: Build a Windows installer
+
+.. deprecated:: 3.8
+   Use bdist_wheel (wheel packages) instead.
 
 
 .. % todo
@@ -2021,7 +2039,7 @@ This is described in more detail in :pep:`301`.
 ===================================================================
 
 .. module:: distutils.command.check
-   :synopsis: Check the metadata of a package
+   :synopsis: Check the meta-data of a package
 
 
 The ``check`` command performs some tests on the meta-data of a package.

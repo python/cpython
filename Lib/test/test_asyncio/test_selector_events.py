@@ -14,7 +14,6 @@ from asyncio.selector_events import BaseSelectorEventLoop
 from asyncio.selector_events import _SelectorTransport
 from asyncio.selector_events import _SelectorSocketTransport
 from asyncio.selector_events import _SelectorDatagramTransport
-from asyncio.selector_events import _set_nodelay
 from test.test_asyncio import utils as test_utils
 
 
@@ -79,7 +78,7 @@ class BaseSelectorEventLoopTests(test_utils.TestCase):
         self.loop._add_writer = mock.Mock()
         self.loop._remove_reader = mock.Mock()
         self.loop._remove_writer = mock.Mock()
-        waiter = asyncio.Future(loop=self.loop)
+        waiter = self.loop.create_future()
         with test_utils.disable_logger():
             transport = self.loop._make_ssl_transport(
                 m, asyncio.Protocol(), m, waiter)
@@ -155,7 +154,7 @@ class BaseSelectorEventLoopTests(test_utils.TestCase):
         self.loop.close()
 
         # operation blocked when the loop is closed
-        f = asyncio.Future(loop=self.loop)
+        f = self.loop.create_future()
         self.assertRaises(RuntimeError, self.loop.run_forever)
         self.assertRaises(RuntimeError, self.loop.run_until_complete, f)
         fd = 0
@@ -364,14 +363,16 @@ class BaseSelectorEventLoopTests(test_utils.TestCase):
         sock.accept.return_value = (mock.Mock(), mock.Mock())
         backlog = 100
         # Mock the coroutine generation for a connection to prevent
-        # warnings related to un-awaited coroutines.
+        # warnings related to un-awaited coroutines. _accept_connection2
+        # is an async function that is patched with AsyncMock. create_task
+        # creates a task out of coroutine returned by AsyncMock, so use
+        # asyncio.sleep(0) to ensure created tasks are complete to avoid
+        # task pending warnings.
         mock_obj = mock.patch.object
         with mock_obj(self.loop, '_accept_connection2') as accept2_mock:
-            accept2_mock.return_value = None
-            with mock_obj(self.loop, 'create_task') as task_mock:
-                task_mock.return_value = None
-                self.loop._accept_connection(
-                    mock.Mock(), sock, backlog=backlog)
+            self.loop._accept_connection(
+                mock.Mock(), sock, backlog=backlog)
+        self.loop.run_until_complete(asyncio.sleep(0))
         self.assertEqual(sock.accept.call_count, backlog)
 
 
@@ -449,10 +450,23 @@ class SelectorTransportTests(test_utils.TestCase):
         tr._force_close = mock.Mock()
         tr._fatal_error(exc)
 
+        m_exc.assert_not_called()
+
+        tr._force_close.assert_called_with(exc)
+
+    @mock.patch('asyncio.log.logger.error')
+    def test_fatal_error_custom_exception(self, m_exc):
+        class MyError(Exception):
+            pass
+        exc = MyError()
+        tr = self.create_transport()
+        tr._force_close = mock.Mock()
+        tr._fatal_error(exc)
+
         m_exc.assert_called_with(
             test_utils.MockPattern(
                 'Fatal error on transport\nprotocol:.*\ntransport:.*'),
-            exc_info=(OSError, MOCK_ANY, MOCK_ANY))
+            exc_info=(MyError, MOCK_ANY, MOCK_ANY))
 
         tr._force_close.assert_called_with(exc)
 
@@ -502,7 +516,7 @@ class SelectorSocketTransportTests(test_utils.TestCase):
         return transport
 
     def test_ctor(self):
-        waiter = asyncio.Future(loop=self.loop)
+        waiter = self.loop.create_future()
         tr = self.socket_transport(waiter=waiter)
         self.loop.run_until_complete(waiter)
 
@@ -511,7 +525,7 @@ class SelectorSocketTransportTests(test_utils.TestCase):
         self.protocol.connection_made.assert_called_with(tr)
 
     def test_ctor_with_waiter(self):
-        waiter = asyncio.Future(loop=self.loop)
+        waiter = self.loop.create_future()
         self.socket_transport(waiter=waiter)
         self.loop.run_until_complete(waiter)
 
@@ -897,7 +911,7 @@ class SelectorSocketTransportBufferedProtocolTests(test_utils.TestCase):
         return transport
 
     def test_ctor(self):
-        waiter = asyncio.Future(loop=self.loop)
+        waiter = self.loop.create_future()
         tr = self.socket_transport(waiter=waiter)
         self.loop.run_until_complete(waiter)
 
@@ -1066,6 +1080,7 @@ class SelectorDatagramTransportTests(test_utils.TestCase):
         self.sock.fileno.return_value = 7
 
     def datagram_transport(self, address=None):
+        self.sock.getpeername.side_effect = None if address else OSError
         transport = _SelectorDatagramTransport(self.loop, self.sock,
                                                self.protocol,
                                                address=address)
@@ -1338,35 +1353,20 @@ class SelectorDatagramTransportTests(test_utils.TestCase):
         err = ConnectionRefusedError()
         transport._fatal_error(err)
         self.assertFalse(self.protocol.error_received.called)
+        m_exc.assert_not_called()
+
+    @mock.patch('asyncio.base_events.logger.error')
+    def test_fatal_error_connected_custom_error(self, m_exc):
+        class MyException(Exception):
+            pass
+        transport = self.datagram_transport(address=('0.0.0.0', 1))
+        err = MyException()
+        transport._fatal_error(err)
+        self.assertFalse(self.protocol.error_received.called)
         m_exc.assert_called_with(
             test_utils.MockPattern(
                 'Fatal error on transport\nprotocol:.*\ntransport:.*'),
-            exc_info=(ConnectionRefusedError, MOCK_ANY, MOCK_ANY))
-
-
-class TestSelectorUtils(test_utils.TestCase):
-    def check_set_nodelay(self, sock):
-        opt = sock.getsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY)
-        self.assertFalse(opt)
-
-        _set_nodelay(sock)
-
-        opt = sock.getsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY)
-        self.assertTrue(opt)
-
-    @unittest.skipUnless(hasattr(socket, 'TCP_NODELAY'),
-                         'need socket.TCP_NODELAY')
-    def test_set_nodelay(self):
-        sock = socket.socket(family=socket.AF_INET, type=socket.SOCK_STREAM,
-                             proto=socket.IPPROTO_TCP)
-        with sock:
-            self.check_set_nodelay(sock)
-
-        sock = socket.socket(family=socket.AF_INET, type=socket.SOCK_STREAM,
-                             proto=socket.IPPROTO_TCP)
-        with sock:
-            sock.setblocking(False)
-            self.check_set_nodelay(sock)
+            exc_info=(MyException, MOCK_ANY, MOCK_ANY))
 
 
 if __name__ == '__main__':
