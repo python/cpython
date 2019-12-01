@@ -367,3 +367,21 @@ CPython bytecode changes
   :keyword:`assert` statement. Previously, the assert statement would not work
   correctly if the :exc:`AssertionError` exception was being shadowed.
   (Contributed by Zackery Spytz in :issue:`34880`.)
+
+Build Changes
+-------------
+
+* Cross compilation of third-party extension modules is done with the
+  ``PYTHON_PROJECT_BASE`` environment variable set to the path of the
+  directory where Python has been cross-compiled. The private environment
+  variables ``_PYTHON_HOST_PLATFORM``, ``_PYTHON_SYSCONFIGDATA_NAME`` and
+  ``_PYTHON_PROJECT_BASE`` are not used anymore.
+
+  For example the following command builds a wheel file to be transfered and
+  installed with pip on the target platform, provided the native python
+  interpreter and the cross-compiled one both have the wheel package
+  installed:
+
+  .. code-block:: shell
+
+        $ PYTHON_PROJECT_BASE=/path/to/builddir python setup.py bdist_wheel
