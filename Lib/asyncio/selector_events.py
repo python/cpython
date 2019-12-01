@@ -349,7 +349,7 @@ class BaseSelectorEventLoop(base_events.BaseEventLoop):
         nbytes.
         """
         if isinstance(sock, ssl.SSLSocket):
-            raise TypeError("Socket cannot be of type SSLSocket instance")
+            raise TypeError("Socket cannot be of type SSLSocket")
         if self._debug and sock.gettimeout() != 0:
             raise ValueError("the socket must be non-blocking")
         try:
@@ -389,7 +389,7 @@ class BaseSelectorEventLoop(base_events.BaseEventLoop):
         The return value is the number of bytes written.
         """
         if isinstance(sock, ssl.SSLSocket):
-            raise TypeError("Socket cannot be of type SSLSocket instance")
+            raise TypeError("Socket cannot be of type SSLSocket")
         if self._debug and sock.gettimeout() != 0:
             raise ValueError("the socket must be non-blocking")
         try:
@@ -430,7 +430,7 @@ class BaseSelectorEventLoop(base_events.BaseEventLoop):
         successfully processed by the receiving end of the connection.
         """
         if isinstance(sock, ssl.SSLSocket):
-            raise TypeError("Socket cannot be of type SSLSocket instance")
+            raise TypeError("Socket cannot be of type SSLSocket")
         if self._debug and sock.gettimeout() != 0:
             raise ValueError("the socket must be non-blocking")
         try:
@@ -479,7 +479,7 @@ class BaseSelectorEventLoop(base_events.BaseEventLoop):
         This method is a coroutine.
         """
         if isinstance(sock, ssl.SSLSocket):
-            raise TypeError("Socket cannot be of type SSLSocket instance")
+            raise TypeError("Socket cannot be of type SSLSocket")
         if self._debug and sock.gettimeout() != 0:
             raise ValueError("the socket must be non-blocking")
 
@@ -542,7 +542,7 @@ class BaseSelectorEventLoop(base_events.BaseEventLoop):
         is the address bound to the socket on the other end of the connection.
         """
         if isinstance(sock, ssl.SSLSocket):
-            raise TypeError("Socket cannot be of type SSLSocket instance")
+            raise TypeError("Socket cannot be of type SSLSocket")
         if self._debug and sock.gettimeout() != 0:
             raise ValueError("the socket must be non-blocking")
         fut = self.create_future()
