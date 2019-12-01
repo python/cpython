@@ -1,0 +1,1 @@
+For performance, added a special case to heapq.merge for two iterables.
