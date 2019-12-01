@@ -328,122 +328,7 @@ def merge(*iterables, key=None, reverse=False):
     ['dog', 'cat', 'fish', 'horse', 'kangaroo']
 
     '''
-    n = len(iterables)
-    if n == 0:
-        return
-    if n == 1:
-        yield from iterables[0]
-        return
-    if n == 2:
-        # special case for two iterables
-        a_iter = iter(iterables[0])
-        b_iter = iter(iterables[1])
 
-        try:
-            a = next(a_iter)
-        except StopIteration:
-            yield from b_iter
-            return
-        try:
-            b = next(b_iter)
-        except StopIteration:
-            yield a
-            yield from a_iter
-            return
-
-        if key is None:
-            if not reverse:
-                # no key, forward
-                while True:
-                    if a <= b:
-                        yield a
-                        try:
-                            a = next(a_iter)
-                        except StopIteration:
-                            yield b
-                            yield from b_iter
-                            return
-                    else:
-                        yield b
-                        try:
-                            b = next(b_iter)
-                        except StopIteration:
-                            yield a
-                            yield from a_iter
-                            return
-            else:
-                # no key, reverse
-                while True:
-                    if a >= b:
-                        yield a
-                        try:
-                            a = next(a_iter)
-                        except StopIteration:
-                            yield b
-                            yield from b_iter
-                            return
-                    else:
-                        yield b
-                        try:
-                            b = next(b_iter)
-                        except StopIteration:
-                            yield a
-                            yield from a_iter
-                            return
-        else:
-            ka = key(a)
-            kb = key(b)
-            if not reverse:
-                # using a key, forward
-                while True:
-                    if ka <= kb:
-                        yield a
-                        try:
-                            a = next(a_iter)
-                        except StopIteration:
-                            yield b
-                            yield from b_iter
-                            return
-                        ka = key(a)
-                    else:
-                        yield b
-                        try:
-                            b = next(b_iter)
-                        except StopIteration:
-                            yield a
-                            yield from a_iter
-                            return
-                        kb = key(b)
-            else:
-                # using a key, reverse
-                while True:
-                    if ka >= kb:
-                        yield a
-                        try:
-                            a = next(a_iter)
-                        except StopIteration:
-                            yield b
-                            yield from b_iter
-                            return
-                        ka = key(a)
-                    else:
-                        yield b
-                        try:
-                            b = next(b_iter)
-                        except StopIteration:
-                            yield a
-                            yield from a_iter
-                            return
-                        kb = key(b)
-    if n <= 6:
-        # Use the 2-case recursively for small numbers of iterables
-        n_2 = n // 2
-        result_1 = merge(*iterables[:n_2], key=key, reverse=reverse)
-        result_2 = merge(*iterables[n_2:], key=key, reverse=reverse)
-        yield from merge(result_1, result_2, key=key, reverse=reverse)
-        return
-
-    # For larger numbers, store the front of each iterable in a heap.
     h = []
     h_append = h.append
 
@@ -461,50 +346,50 @@ def merge(*iterables, key=None, reverse=False):
     if key is None:
         for order, it in enumerate(map(iter, iterables)):
             try:
-                next_func = it.__next__
-                h_append([next_func(), order * direction, next_func])
+                next = it.__next__
+                h_append([next(), order * direction, next])
             except StopIteration:
                 pass
         _heapify(h)
         while len(h) > 1:
             try:
                 while True:
-                    value, order, next_func = s = h[0]
+                    value, order, next = s = h[0]
                     yield value
-                    s[0] = next_func()           # raises StopIteration when exhausted
+                    s[0] = next()           # raises StopIteration when exhausted
                     _heapreplace(h, s)      # restore heap condition
             except StopIteration:
                 _heappop(h)                 # remove empty iterator
         if h:
             # fast case when only a single iterator remains
-            value, order, next_func = h[0]
+            value, order, next = h[0]
             yield value
-            yield from next_func.__self__
+            yield from next.__self__
         return
 
     for order, it in enumerate(map(iter, iterables)):
         try:
-            next_func = it.__next__
-            value = next_func()
-            h_append([key(value), order * direction, value, next_func])
+            next = it.__next__
+            value = next()
+            h_append([key(value), order * direction, value, next])
         except StopIteration:
             pass
     _heapify(h)
     while len(h) > 1:
         try:
             while True:
-                key_value, order, value, next_func = s = h[0]
+                key_value, order, value, next = s = h[0]
                 yield value
-                value = next_func()
+                value = next()
                 s[0] = key(value)
                 s[2] = value
                 _heapreplace(h, s)
         except StopIteration:
             _heappop(h)
     if h:
-        key_value, order, value, next_func = h[0]
+        key_value, order, value, next = h[0]
         yield value
-        yield from next_func.__self__
+        yield from next.__self__
 
 
 # Algorithm notes for nlargest() and nsmallest()
