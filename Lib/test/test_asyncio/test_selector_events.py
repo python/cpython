@@ -559,11 +559,15 @@ class SelectorSocketTransportTests(test_utils.TestCase):
         tr.pause_reading()
         test_utils.run_briefly(self.loop)
         self.assertFalse(tr.is_reading())
-        self.loop.assert_no_reader(7, tr._read_ready)
+        self.loop.assert_no_reader(7)
 
         tr.resume_reading()
         self.assertTrue(tr.is_reading())
         self.loop.assert_reader(7, tr._read_ready)
+
+        tr.close()
+        self.assertFalse(tr.is_reading())
+        self.loop.assert_no_reader(7)
 
 
     def test_read_eof_received_error(self):
