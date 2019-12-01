@@ -460,12 +460,17 @@ class _UnixReadPipeTransport(transports.ReadTransport):
 
         self._loop.call_soon(self._protocol.connection_made, self)
         # only start reading when connection_made() has been called
-        self._loop.call_soon(self._loop._add_reader,
+        self._loop.call_soon(self._add_reader,
                              self._fileno, self._read_ready)
         if waiter is not None:
             # only wake up the waiter when connection_made() has been called
             self._loop.call_soon(futures._set_result_unless_cancelled,
                                  waiter, None)
+
+    def _add_reader(self, fd, callback, *args):
+        if not self.is_reading():
+            return
+        self._loop._add_reader(fd, callback, *args)
 
     def __repr__(self):
         info = [self.__class__.__name__]
@@ -530,6 +535,9 @@ class _UnixReadPipeTransport(transports.ReadTransport):
 
     def is_closing(self):
         return self._closing
+
+    def is_reading(self):
+        return not self._paused and not self._closing
 
     def close(self):
         if not self._closing:
@@ -601,13 +609,18 @@ class _UnixWritePipeTransport(transports._FlowControlMixin,
         # works for pipes and sockets. (Exception: OS X 10.4?  Issue #19294.)
         if is_socket or (is_fifo and not sys.platform.startswith("aix")):
             # only start reading when connection_made() has been called
-            self._loop.call_soon(self._loop._add_reader,
+            self._loop.call_soon(self._add_reader,
                                  self._fileno, self._read_ready)
 
         if waiter is not None:
             # only wake up the waiter when connection_made() has been called
             self._loop.call_soon(futures._set_result_unless_cancelled,
                                  waiter, None)
+
+    def _add_reader(self, fd, callback, *args):
+        if not self.is_reading():
+            return
+        self._loop._add_reader(fd, callback, *args)
 
     def __repr__(self):
         info = [self.__class__.__name__]
@@ -728,6 +741,9 @@ class _UnixWritePipeTransport(transports._FlowControlMixin,
 
     def is_closing(self):
         return self._closing
+
+    def is_reading(self):
+        return not self._paused and not self._closing
 
     def close(self):
         if self._pipe is not None and not self._closing:

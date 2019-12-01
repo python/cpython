@@ -728,9 +728,8 @@ class _SelectorTransport(transports._FlowControlMixin,
         return len(self._buffer)
 
     def _add_reader(self, fd, callback, *args):
-        if self._closing:
+        if not self.is_reading():
             return
-
         self._loop._add_reader(fd, callback, *args)
 
 
