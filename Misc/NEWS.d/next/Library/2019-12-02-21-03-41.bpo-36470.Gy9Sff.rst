@@ -1,0 +1,1 @@
+Fix dataclasses with InitVars and replace(). Patch by Claudiu Popa.
