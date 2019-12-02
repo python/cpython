@@ -176,22 +176,23 @@ class TestHeap:
             self.assertEqual(heap_sorted, sorted(data))
 
     def test_merge(self):
-        inputs = []
-        for i in range(random.randrange(25)):
-            row = []
-            for j in range(random.randrange(100)):
-                tup = random.choice('ABC'), random.randrange(-500, 500)
-                row.append(tup)
-            inputs.append(row)
+        for n in range(26):
+            inputs = []
+            for i in range(n):
+                row = []
+                for j in range(random.randrange(100)):
+                    tup = random.choice('ABC'), random.randrange(-500, 500)
+                    row.append(tup)
+                inputs.append(row)
 
-        for key in [None, itemgetter(0), itemgetter(1), itemgetter(1, 0)]:
-            for reverse in [False, True]:
-                seqs = []
-                for seq in inputs:
-                    seqs.append(sorted(seq, key=key, reverse=reverse))
-                self.assertEqual(sorted(chain(*inputs), key=key, reverse=reverse),
-                                 list(self.module.merge(*seqs, key=key, reverse=reverse)))
-                self.assertEqual(list(self.module.merge()), [])
+            for key in [None, itemgetter(0), itemgetter(1), itemgetter(1, 0)]:
+                for reverse in [False, True]:
+                    seqs = []
+                    for seq in inputs:
+                        seqs.append(sorted(seq, key=key, reverse=reverse))
+                    self.assertEqual(sorted(chain(*inputs), key=key, reverse=reverse),
+                                     list(self.module.merge(*seqs, key=key, reverse=reverse)))
+                    self.assertEqual(list(self.module.merge()), [])
 
     def test_empty_merges(self):
         # Merging two empty lists (with or without a key) should produce
