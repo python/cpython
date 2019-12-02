@@ -1369,8 +1369,8 @@ patch
     "as"; very useful if :func:`patch` is creating a mock object for you.
 
     :func:`patch` takes arbitrary keyword arguments. These will be passed to
-    to construct a :class:`AsyncMock` if the patched object is an async function,
-    to :class:`MagicMock` otherwise or to *new_callable* if specified.
+    :class:`AsyncMock` if the patched object is an async function, to 
+    :class:`MagicMock` otherwise or to *new_callable* if specified.
 
     ``patch.dict(...)``, ``patch.multiple(...)`` and ``patch.object(...)`` are
     available for alternate use-cases.

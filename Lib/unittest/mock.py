@@ -1651,8 +1651,8 @@ def patch(
     "as"; very useful if `patch` is creating a mock object for you.
 
     `patch` takes arbitrary keyword arguments. These will be passed to
-    to construct a `AsyncMock` if the patched object is an async function,
-    to `MagicMock` otherwise or to `new_callable` if specified.
+    `AsyncMock` if the patched object is an async function, to `MagicMock`
+    otherwise or to `new_callable` if specified.
 
     `patch.dict(...)`, `patch.multiple(...)` and `patch.object(...)` are
     available for alternate use-cases.
