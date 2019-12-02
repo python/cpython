@@ -392,8 +392,8 @@ def merge(*iterables, key=None, reverse=False):
             ka = key(a)
             kb = key(b)
             if reverse:
+                # using a key, reverse
                 while True:
-                    # using a key, reverse
                     if ka < kb:
                         yield b
                         try:
