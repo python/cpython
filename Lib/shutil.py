@@ -1027,7 +1027,8 @@ def make_archive(base_name, format, root_dir=None, base_dir=None, verbose=0,
     if root_dir is not None:
         if logger is not None:
             logger.debug("changing into '%s'", root_dir)
-        base_name = os.path.abspath(base_name)
+        base_dir, base_file = os.path.split(base_name)
+        base_name = os.path.join(os.path.abspath(base_dir), base_file)
         if not dry_run:
             os.chdir(root_dir)
 
