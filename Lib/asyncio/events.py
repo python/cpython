@@ -636,7 +636,7 @@ class BaseDefaultEventLoopPolicy(AbstractEventLoopPolicy):
         """
         if (self._local._loop is None and
                 not self._local._set_called and
-                isinstance(threading.current_thread(), threading._MainThread)):
+                threading.current_thread() is threading.main_thread()):
             self.set_event_loop(self.new_event_loop())
 
         if self._local._loop is None:
