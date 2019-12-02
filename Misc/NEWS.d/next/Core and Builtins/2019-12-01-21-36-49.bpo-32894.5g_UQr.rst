@@ -1,0 +1,1 @@
+Support unparsing of infinity numbers in postponed annotations

@@ -1,6 +1,7 @@
 #include <stdbool.h>
 #include "Python.h"
 #include "Python-ast.h"
+#include "float.h"
 
 static PyObject *_str_open_br;
 static PyObject *_str_dbl_open_br;
@@ -58,6 +59,18 @@ append_charp(_PyUnicodeWriter *writer, const char *charp)
         } \
     } while (0)
 
+static PyObject *
+replace_inf_value(PyObject *repr)
+{
+    PyObject *inf_str = PyUnicode_InternFromString("inf");
+    PyObject *inf_value = PyUnicode_FromFormat("1e%d", 1 + DBL_MAX_10_EXP);
+    PyObject *result = PyUnicode_Replace(repr, inf_str, inf_value, -1);
+    Py_DECREF(repr);
+    Py_DECREF(inf_str);
+    Py_DECREF(inf_value);
+    return result;
+}
+
 static int
 append_repr(_PyUnicodeWriter *writer, PyObject *obj)
 {
@@ -66,6 +79,12 @@ append_repr(_PyUnicodeWriter *writer, PyObject *obj)
     repr = PyObject_Repr(obj);
     if (!repr) {
         return -1;
+    }
+    if (PyFloat_CheckExact(obj) || PyComplex_CheckExact(obj)){
+        repr = replace_inf_value(repr);
+        if (!repr) {
+            return -1;
+        }
     }
     ret = _PyUnicodeWriter_WriteStr(writer, repr);
     Py_DECREF(repr);
@@ -698,6 +717,30 @@ append_formattedvalue(_PyUnicodeWriter *writer, expr_ty e)
 }
 
 static int
+append_ast_constant(_PyUnicodeWriter *writer, PyObject *constant)
+{
+    if (PyTuple_CheckExact(constant)){
+        int ret = 0;
+        Py_ssize_t i, elem_count;
+
+        elem_count = PySequence_Length(constant);
+        if (elem_count == -1) {
+            return -1;
+        }
+        APPEND_STR("(");
+        for (i = 0; i < elem_count; i++) {
+            APPEND_STR_IF(i > 0, ", ");
+            ret |= append_repr(writer, PyTuple_GET_ITEM(constant, i));
+        }
+
+        APPEND_STR_IF(elem_count == 1, ",");
+        APPEND_STR(")");
+        return ret;
+    }
+    return append_repr(writer, constant);
+}
+
+static int
 append_ast_attribute(_PyUnicodeWriter *writer, expr_ty e)
 {
     const char *period;
@@ -835,7 +878,7 @@ append_ast_expr(_PyUnicodeWriter *writer, expr_ty e, int level)
         if (e->v.Constant.value == Py_Ellipsis) {
             APPEND_STR_FINISH("...");
         }
-        return append_repr(writer, e->v.Constant.value);
+        return append_ast_constant(writer, e->v.Constant.value);
     case JoinedStr_kind:
         return append_joinedstr(writer, e, false);
     case FormattedValue_kind:
