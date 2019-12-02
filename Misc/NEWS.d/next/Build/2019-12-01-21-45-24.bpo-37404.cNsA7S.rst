@@ -1,1 +1,2 @@
-Added type checks for type SSLSocket in Lib/asyncio/selector_events.py
+:mod:`asyncio` now raises :exc:`TyperError` when calling incompatible methods
+with an :class:`ssl.SSLSocket` socket.  Patch by Ido Michael.
