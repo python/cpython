@@ -350,26 +350,7 @@ def merge(*iterables, key=None, reverse=False):
             return
 
         if key is None:
-            if not reverse:
-                # no key, forward
-                while True:
-                    if b < a:
-                        yield b
-                        try:
-                            b = next_b()
-                        except StopIteration:
-                            yield a
-                            yield from a_iter
-                            return
-                    else:
-                        yield a
-                        try:
-                            a = next_a()
-                        except StopIteration:
-                            yield b
-                            yield from b_iter
-                            return
-            else:
+            if reverse:
                 # no key, reverse
                 while True:
                     if a < b:
@@ -388,13 +369,32 @@ def merge(*iterables, key=None, reverse=False):
                             yield b
                             yield from b_iter
                             return
+            else:
+                # no key, forward
+                while True:
+                    if b < a:
+                        yield b
+                        try:
+                            b = next_b()
+                        except StopIteration:
+                            yield a
+                            yield from a_iter
+                            return
+                    else:
+                        yield a
+                        try:
+                            a = next_a()
+                        except StopIteration:
+                            yield b
+                            yield from b_iter
+                            return
         else:
             ka = key(a)
             kb = key(b)
-            if not reverse:
+            if reverse:
                 while True:
-                    # using a key, forward
-                    if kb < ka:
+                    # using a key, reverse
+                    if ka < kb:
                         yield b
                         try:
                             b = next_b()
@@ -413,9 +413,9 @@ def merge(*iterables, key=None, reverse=False):
                             return
                         ka = key(a)
             else:
-                # using a key, reverse
+                # using a key, forward
                 while True:
-                    if ka < kb:
+                    if kb < ka:
                         yield b
                         try:
                             b = next_b()
