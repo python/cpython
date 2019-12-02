@@ -353,40 +353,40 @@ def merge(*iterables, key=None, reverse=False):
             if not reverse:
                 # no key, forward
                 while True:
-                    if a <= b:
-                        yield a
-                        try:
-                            a = next_a()
-                        except StopIteration:
-                            yield b
-                            yield from b_iter
-                            return
-                    else:
+                    if b < a:
                         yield b
                         try:
                             b = next_b()
                         except StopIteration:
                             yield a
                             yield from a_iter
+                            return
+                    else:
+                        yield a
+                        try:
+                            a = next_a()
+                        except StopIteration:
+                            yield b
+                            yield from b_iter
                             return
             else:
                 # no key, reverse
                 while True:
-                    if a >= b:
-                        yield a
-                        try:
-                            a = next_a()
-                        except StopIteration:
-                            yield b
-                            yield from b_iter
-                            return
-                    else:
+                    if a < b:
                         yield b
                         try:
                             b = next_b()
                         except StopIteration:
                             yield a
                             yield from a_iter
+                            return
+                    else:
+                        yield a
+                        try:
+                            a = next_a()
+                        except StopIteration:
+                            yield b
+                            yield from b_iter
                             return
         else:
             ka = key(a)
@@ -394,16 +394,7 @@ def merge(*iterables, key=None, reverse=False):
             if not reverse:
                 while True:
                     # using a key, forward
-                    if ka <= kb:
-                        yield a
-                        try:
-                            a = next_a()
-                        except StopIteration:
-                            yield b
-                            yield from b_iter
-                            return
-                        ka = key(a)
-                    else:
+                    if kb < ka:
                         yield b
                         try:
                             b = next_b()
@@ -412,10 +403,7 @@ def merge(*iterables, key=None, reverse=False):
                             yield from a_iter
                             return
                         kb = key(b)
-            else:
-                # using a key, reverse
-                while True:
-                    if ka <= kb:
+                    else:
                         yield a
                         try:
                             a = next_a()
@@ -424,7 +412,10 @@ def merge(*iterables, key=None, reverse=False):
                             yield from b_iter
                             return
                         ka = key(a)
-                    else:
+            else:
+                # using a key, reverse
+                while True:
+                    if ka < kb:
                         yield b
                         try:
                             b = next_b()
@@ -432,6 +423,16 @@ def merge(*iterables, key=None, reverse=False):
                             yield a
                             yield from a_iter
                             return
+                        kb = key(b)
+                    else:
+                        yield a
+                        try:
+                            a = next_a()
+                        except StopIteration:
+                            yield b
+                            yield from b_iter
+                            return
+                        ka = key(a)
 
     h = []
     h_append = h.append
