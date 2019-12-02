@@ -1924,7 +1924,7 @@ class IPv6Address(_BaseV6, _BaseAddress):
             return NotImplemented
         if not address_equal:
             return False
-        return self._scope_id == getattr(other, '._scope_id', None)
+        return self._scope_id == getattr(other, '_scope_id', None)
 
     @property
     def scope_id(self):
