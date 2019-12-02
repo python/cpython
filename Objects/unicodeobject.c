@@ -15950,7 +15950,7 @@ _PyUnicode_Fini(PyThreadState *tstate)
     interp->fs_codec.encoding = NULL;
     PyMem_RawFree(interp->fs_codec.errors);
     interp->fs_codec.errors = NULL;
-    interp->config.filesystem_errors = _Py_ERROR_UNKNOWN;
+    interp->config.filesystem_errors = (wchar_t *)_Py_ERROR_UNKNOWN;
 }
 
 
