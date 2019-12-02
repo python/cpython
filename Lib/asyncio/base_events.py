@@ -139,6 +139,7 @@ def _ipaddr_info(host, port, family, type, proto, flowinfo=0, scopeid=0):
 
     if isinstance(host, bytes):
         host = host.decode('idna')
+    host = str(host)
     if '%' in host:
         # Linux's inet_pton doesn't accept an IPv6 zone index after host,
         # like '::1%lo0'.
