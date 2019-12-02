@@ -73,6 +73,13 @@ def encode(in_file, out_file, name=None, mode=None):
             name = '-'
         if mode is None:
             mode = 0666
+
+        #
+        # Remove newline chars from name
+        #
+        name = name.replace('\n','\\n')
+        name = name.replace('\r','\\r')
+
         #
         # Write the data
         #

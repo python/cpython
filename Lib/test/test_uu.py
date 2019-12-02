@@ -9,6 +9,7 @@ from test import test_support as support
 import cStringIO
 import sys
 import uu
+import io
 
 plaintext = "The smooth-scaled python crept over the sleeping dog\n"
 
@@ -81,6 +82,15 @@ class UUTest(unittest.TestCase):
         import codecs
         decoded = codecs.decode(encodedtext, "uu_codec")
         self.assertEqual(decoded, plaintext)
+
+    def test_newlines_escaped(self):
+        # Test newlines are escaped with uu.encode
+        inp = io.BytesIO(plaintext)
+        out = io.BytesIO()
+        filename = "test.txt\n\roverflow.txt"
+        safefilename = b"test.txt\\n\\roverflow.txt"
+        uu.encode(inp, out, filename)
+        self.assertIn(safefilename, out.getvalue())
 
 class UUStdIOTest(unittest.TestCase):
 
