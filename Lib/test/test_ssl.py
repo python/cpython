@@ -1203,12 +1203,18 @@ class ContextTests(unittest.TestCase):
             # RHEL 8 uses TLS 1.2 by default
             ssl.TLSVersion.TLSv1_2
         }
+        maximum_range = {
+            # stock OpenSSL
+            ssl.TLSVersion.MAXIMUM_SUPPORTED,
+            # Fedora 32 uses TLS 1.3 by default
+            ssl.TLSVersion.TLSv1_3
+        }
 
         self.assertIn(
             ctx.minimum_version, minimum_range
         )
-        self.assertEqual(
-            ctx.maximum_version, ssl.TLSVersion.MAXIMUM_SUPPORTED
+        self.assertIn(
+            ctx.maximum_version, maximum_range
         )
 
         ctx.minimum_version = ssl.TLSVersion.TLSv1_1
