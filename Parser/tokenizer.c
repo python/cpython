@@ -875,10 +875,12 @@ tok_nextc(struct tok_state *tok)
                 Py_DECREF(u);
             }
             if (tok->nextprompt != NULL) {
-                if (newtok != NULL && (*newtok == '#' || *newtok == ' ' || *newtok == '\t'))
+                if (newtok != NULL && strchr("# \t", *newtok)) {
                     tok->nextprompt = NULL;
-                else
+                }
+                else {
                     tok->prompt = tok->nextprompt;
+                }
             }
             if (newtok == NULL)
                 tok->done = E_INTR;
