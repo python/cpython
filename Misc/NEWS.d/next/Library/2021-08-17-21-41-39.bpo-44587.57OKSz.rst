@@ -1,4 +1,2 @@
-Fix BooleanOptionalAction to not automatically add a default string when the
-default was manually specified using ``%(default)s`` or the default was set to
-SUPPRESS.  Add a default string for ``default: None`` to differentiate when
-the unset state has a different meaning.
+Fix BooleanOptionalAction to not automatically add a default string.  If a
+default string is desired, use a formatter to add it.

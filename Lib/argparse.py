@@ -153,26 +153,6 @@ def _copy_items(items):
 # Formatting Help
 # ===============
 
-def _add_default_to_help_string(action):
-    """
-    Add the default value to the option help message.
-
-    ArgumentDefaultsHelpFormatter and BooleanOptionalAction both want to add
-    the default value to the help message when it isn't already present.  This
-    code will do that, detecting cornercases to prevent duplicates or cases
-    where it wouldn't make sense to the end user.
-    """
-    help = action.help
-    if help is None:
-        help = ''
-
-    if '%(default)' not in help:
-        if action.default is not SUPPRESS:
-            defaulting_nargs = [OPTIONAL, ZERO_OR_MORE]
-            if action.option_strings or action.nargs in defaulting_nargs:
-                help += ' (default: %(default)s)'
-    return help
-
 
 class HelpFormatter(object):
     """Formatter for generating usage messages and argument help strings.
@@ -716,7 +696,25 @@ class ArgumentDefaultsHelpFormatter(HelpFormatter):
     """
 
     def _get_help_string(self, action):
-        return _add_default_to_help_string(action)
+        """
+        Add the default value to the option help message.
+
+        ArgumentDefaultsHelpFormatter and BooleanOptionalAction when it isn't
+        already present. This code will do that, detecting cornercases to
+        prevent duplicates or cases where it wouldn't make sense to the end
+        user.
+        """
+        help = action.help
+        if help is None:
+            help = ''
+
+        if '%(default)' not in help:
+            if action.default is not SUPPRESS:
+                defaulting_nargs = [OPTIONAL, ZERO_OR_MORE]
+                if action.option_strings or action.nargs in defaulting_nargs:
+                    help += ' (default: %(default)s)'
+        return help
+
 
 
 class MetavarTypeHelpFormatter(HelpFormatter):
@@ -906,8 +904,6 @@ class BooleanOptionalAction(Action):
             required=required,
             help=help,
             metavar=metavar)
-
-        self.help = _add_default_to_help_string(self)
 
 
     def __call__(self, parser, namespace, values, option_string=None):

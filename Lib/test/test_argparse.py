@@ -3743,10 +3743,9 @@ class TestHelpUsage(HelpTestCase):
           -h, --help            show this help message and exit
           -w W [W ...]          w
           -x [X ...]            x
-          --foo, --no-foo       Whether to foo (default: None)
-          --bar, --no-bar       Whether to bar (default: True)
+          --foo, --no-foo       Whether to foo
+          --bar, --no-bar       Whether to bar
           -f, --foobar, --no-foobar, --barfoo, --no-barfoo
-                                (default: None)
           --bazz, --no-bazz     Bazz!
 
         group:
