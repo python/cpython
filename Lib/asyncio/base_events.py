@@ -1309,9 +1309,9 @@ class BaseEventLoop(events.AbstractEventLoop):
             if reuse_address:
                 # bpo-37228
                 raise ValueError("Passing `reuse_address=True` is no "
-                                   "longer supported, as the usage of "
-                                   "SO_REUSEPORT in UDP poses a significant "
-                                   "security concern.")
+                                 "longer supported, as the usage of "
+                                 "SO_REUSEPORT in UDP poses a significant "
+                                 "security concern.")
 
             for ((family, proto),
                  (local_address, remote_address)) in addr_pairs_info:
