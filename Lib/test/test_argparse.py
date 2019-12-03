@@ -3512,7 +3512,7 @@ class TestHelpUsage(HelpTestCase):
           -w W [W ...]          w
           -x [X ...]            x
           --foo, --no-foo       Whether to foo
-          --bar, --no-bar       Whether to bar (default: True)
+          --bar, --no-bar       Whether to bar
           -f, --foobar, --no-foobar, --barfoo, --no-barfoo
 
         group:
