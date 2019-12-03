@@ -66,6 +66,10 @@ _HAS_IPv6 = hasattr(socket, 'AF_INET6')
 # Maximum timeout passed to select to avoid OS limitations
 MAXIMUM_SELECT_TIMEOUT = 24 * 3600
 
+# Used for deprecation and removal of `loop.create_datagram_endpoint()`'s
+# *reuse_address* parameter
+_unset = object()
+
 
 def _format_handle(handle):
     cb = handle._callback
@@ -1230,7 +1234,7 @@ class BaseEventLoop(events.AbstractEventLoop):
     async def create_datagram_endpoint(self, protocol_factory,
                                        local_addr=None, remote_addr=None, *,
                                        family=0, proto=0, flags=0,
-                                       reuse_address=None, reuse_port=None,
+                                       reuse_address=_unset, reuse_port=None,
                                        allow_broadcast=None, sock=None):
         """Create datagram connection."""
         if sock is not None:
@@ -1306,12 +1310,18 @@ class BaseEventLoop(events.AbstractEventLoop):
 
             exceptions = []
 
-            if reuse_address:
-                # bpo-37228
-                raise ValueError("Passing `reuse_address=True` is no "
-                                 "longer supported, as the usage of "
-                                 "SO_REUSEPORT in UDP poses a significant "
-                                 "security concern.")
+            # bpo-37228
+            if reuse_address is not _unset:
+                if reuse_address:
+                    raise ValueError("Passing `reuse_address=True` is no "
+                                     "longer supported, as the usage of "
+                                     "SO_REUSEPORT in UDP poses a significant "
+                                     "security concern.")
+                else:
+                    warnings.warn("The *reuse_address* parameter has been "
+                                  "deprecated as of 3.5.10 and is scheduled "
+                                  "for removal in 3.11.", DeprecationWarning,
+                                  stacklevel=2)
 
             for ((family, proto),
                  (local_address, remote_address)) in addr_pairs_info:
