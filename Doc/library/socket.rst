@@ -736,7 +736,7 @@ The :mod:`socket` module also offers various network-related services:
    :const:`AI_CANONNAME` is part of the *flags* argument; else *canonname*
    will be empty.  *sockaddr* is a tuple describing a socket address, whose
    format depends on the returned *family* (a ``(address, port)`` 2-tuple for
-   :const:`AF_INET`, a ``(address, port, flow info, scope id)`` 4-tuple for
+   :const:`AF_INET`, a ``(address, port, flowinfo, scope_id)`` 4-tuple for
    :const:`AF_INET6`), and is meant to be passed to the :meth:`socket.connect`
    method.
 
