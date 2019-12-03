@@ -1,7 +1,6 @@
 """A Future class similar to the one in PEP 3148."""
 
 __all__ = (
-    'CancelledError', 'TimeoutError', 'InvalidStateError',
     'Future', 'wrap_future', 'isfuture',
 )
 
@@ -12,12 +11,10 @@ import sys
 
 from . import base_futures
 from . import events
+from . import exceptions
 from . import format_helpers
 
 
-CancelledError = base_futures.CancelledError
-InvalidStateError = base_futures.InvalidStateError
-TimeoutError = base_futures.TimeoutError
 isfuture = base_futures.isfuture
 
 
@@ -118,7 +115,10 @@ class Future:
 
     def get_loop(self):
         """Return the event loop the Future is bound to."""
-        return self._loop
+        loop = self._loop
+        if loop is None:
+            raise RuntimeError("Future object is not initialized.")
+        return loop
 
     def cancel(self):
         """Cancel the future and schedule callbacks.
@@ -170,9 +170,9 @@ class Future:
         the future is done and has an exception set, this exception is raised.
         """
         if self._state == _CANCELLED:
-            raise CancelledError
+            raise exceptions.CancelledError
         if self._state != _FINISHED:
-            raise InvalidStateError('Result is not ready.')
+            raise exceptions.InvalidStateError('Result is not ready.')
         self.__log_traceback = False
         if self._exception is not None:
             raise self._exception
@@ -187,9 +187,9 @@ class Future:
         InvalidStateError.
         """
         if self._state == _CANCELLED:
-            raise CancelledError
+            raise exceptions.CancelledError
         if self._state != _FINISHED:
-            raise InvalidStateError('Exception is not set.')
+            raise exceptions.InvalidStateError('Exception is not set.')
         self.__log_traceback = False
         return self._exception
 
@@ -231,7 +231,7 @@ class Future:
         InvalidStateError.
         """
         if self._state != _PENDING:
-            raise InvalidStateError('{}: {!r}'.format(self._state, self))
+            raise exceptions.InvalidStateError(f'{self._state}: {self!r}')
         self._result = result
         self._state = _FINISHED
         self.__schedule_callbacks()
@@ -243,7 +243,7 @@ class Future:
         InvalidStateError.
         """
         if self._state != _PENDING:
-            raise InvalidStateError('{}: {!r}'.format(self._state, self))
+            raise exceptions.InvalidStateError(f'{self._state}: {self!r}')
         if isinstance(exception, type):
             exception = exception()
         if type(exception) is StopIteration:
@@ -288,6 +288,18 @@ def _set_result_unless_cancelled(fut, result):
     fut.set_result(result)
 
 
+def _convert_future_exc(exc):
+    exc_class = type(exc)
+    if exc_class is concurrent.futures.CancelledError:
+        return exceptions.CancelledError(*exc.args)
+    elif exc_class is concurrent.futures.TimeoutError:
+        return exceptions.TimeoutError(*exc.args)
+    elif exc_class is concurrent.futures.InvalidStateError:
+        return exceptions.InvalidStateError(*exc.args)
+    else:
+        return exc
+
+
 def _set_concurrent_future_state(concurrent, source):
     """Copy state from a future to a concurrent.futures.Future."""
     assert source.done()
@@ -297,7 +309,7 @@ def _set_concurrent_future_state(concurrent, source):
         return
     exception = source.exception()
     if exception is not None:
-        concurrent.set_exception(exception)
+        concurrent.set_exception(_convert_future_exc(exception))
     else:
         result = source.result()
         concurrent.set_result(result)
@@ -317,7 +329,7 @@ def _copy_future_state(source, dest):
     else:
         exception = source.exception()
         if exception is not None:
-            dest.set_exception(exception)
+            dest.set_exception(_convert_future_exc(exception))
         else:
             result = source.result()
             dest.set_result(result)
@@ -353,6 +365,9 @@ def _chain_future(source, destination):
                 source_loop.call_soon_threadsafe(source.cancel)
 
     def _call_set_state(source):
+        if (destination.cancelled() and
+                dest_loop is not None and dest_loop.is_closed()):
+            return
         if dest_loop is None or dest_loop is source_loop:
             _set_state(destination, source)
         else:

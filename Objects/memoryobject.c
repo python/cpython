@@ -1,11 +1,18 @@
 /* Memoryview object implementation */
 
 #include "Python.h"
-#include "internal/mem.h"
-#include "internal/pystate.h"
+#include "pycore_object.h"
+#include "pycore_pymem.h"
+#include "pycore_pystate.h"
 #include "pystrhex.h"
 #include <stddef.h>
 
+/*[clinic input]
+class memoryview "PyMemoryViewObject *" "&PyMemoryView_Type"
+[clinic start generated code]*/
+/*[clinic end generated code: output=da39a3ee5e6b4b0d input=e2e49d2192835219]*/
+
+#include "clinic/memoryobject.c.h"
 
 /****************************************************************************/
 /*                           ManagedBuffer Object                           */
@@ -140,10 +147,10 @@ PyTypeObject _PyManagedBuffer_Type = {
     sizeof(_PyManagedBufferObject),
     0,
     (destructor)mbuf_dealloc,                /* tp_dealloc */
-    0,                                       /* tp_print */
+    0,                                       /* tp_vectorcall_offset */
     0,                                       /* tp_getattr */
     0,                                       /* tp_setattr */
-    0,                                       /* tp_reserved */
+    0,                                       /* tp_as_async */
     0,                                       /* tp_repr */
     0,                                       /* tp_as_number */
     0,                                       /* tp_as_sequence */
@@ -1398,6 +1405,20 @@ error:
     return NULL;
 }
 
+static PyObject *
+memory_toreadonly(PyMemoryViewObject *self, PyObject *noargs)
+{
+    CHECK_RELEASED(self);
+    /* Even if self is already readonly, we still need to create a new
+     * object for .release() to work correctly.
+     */
+    self = (PyMemoryViewObject *) mbuf_add_view(self->mbuf, &self->view);
+    if (self != NULL) {
+        self->view.readonly = 1;
+    };
+    return (PyObject *) self;
+}
+
 
 /**************************************************************************/
 /*                               getbuffer                                */
@@ -1941,7 +1962,7 @@ struct_get_unpacker(const char *fmt, Py_ssize_t itemsize)
     if (format == NULL)
         goto error;
 
-    structobj = PyObject_CallFunctionObjArgs(Struct, format, NULL);
+    structobj = _PyObject_CallOneArg(Struct, format);
     if (structobj == NULL)
         goto error;
 
@@ -1980,7 +2001,7 @@ struct_unpack_single(const char *ptr, struct unpacker *x)
     PyObject *v;
 
     memcpy(x->item, ptr, x->itemsize);
-    v = PyObject_CallFunctionObjArgs(x->unpack_from, x->mview, NULL);
+    v = _PyObject_CallOneArg(x->unpack_from, x->mview);
     if (v == NULL)
         return NULL;
 
@@ -2105,22 +2126,39 @@ memory_tolist(PyMemoryViewObject *mv, PyObject *noargs)
 }
 
 static PyObject *
-memory_tobytes(PyMemoryViewObject *self, PyObject *dummy)
+memory_tobytes(PyMemoryViewObject *self, PyObject *args, PyObject *kwds)
 {
+    static char *kwlist[] = {"order", NULL};
     Py_buffer *src = VIEW_ADDR(self);
-    PyObject *bytes = NULL;
+    char *order = NULL;
+    char ord = 'C';
+    PyObject *bytes;
 
     CHECK_RELEASED(self);
 
-    if (MV_C_CONTIGUOUS(self->flags)) {
-        return PyBytes_FromStringAndSize(src->buf, src->len);
+    if (!PyArg_ParseTupleAndKeywords(args, kwds, "|z", kwlist, &order)) {
+        return NULL;
+    }
+
+    if (order) {
+        if (strcmp(order, "F") == 0) {
+            ord = 'F';
+        }
+        else if (strcmp(order, "A") == 0) {
+            ord = 'A';
+        }
+        else if (strcmp(order, "C") != 0) {
+            PyErr_SetString(PyExc_ValueError,
+                "order must be 'C', 'F' or 'A'");
+            return NULL;
+        }
     }
 
     bytes = PyBytes_FromStringAndSize(NULL, src->len);
     if (bytes == NULL)
         return NULL;
 
-    if (buffer_to_contiguous(PyBytes_AS_STRING(bytes), src, 'C') < 0) {
+    if (PyBuffer_ToContiguous(PyBytes_AS_STRING(bytes), src, src->len, ord) < 0) {
         Py_DECREF(bytes);
         return NULL;
     }
@@ -2128,8 +2166,33 @@ memory_tobytes(PyMemoryViewObject *self, PyObject *dummy)
     return bytes;
 }
 
+/*[clinic input]
+memoryview.hex
+
+    sep: object = NULL
+        An optional single character or byte to separate hex bytes.
+    bytes_per_sep: int = 1
+        How many bytes between separators.  Positive values count from the
+        right, negative values count from the left.
+
+Return the data in the buffer as a str of hexadecimal numbers.
+
+Example:
+>>> value = memoryview(b'\xb9\x01\xef')
+>>> value.hex()
+'b901ef'
+>>> value.hex(':')
+'b9:01:ef'
+>>> value.hex(':', 2)
+'b9:01ef'
+>>> value.hex(':', -2)
+'b901:ef'
+[clinic start generated code]*/
+
 static PyObject *
-memory_hex(PyMemoryViewObject *self, PyObject *dummy)
+memoryview_hex_impl(PyMemoryViewObject *self, PyObject *sep,
+                    int bytes_per_sep)
+/*[clinic end generated code: output=430ca760f94f3ca7 input=539f6a3a5fb56946]*/
 {
     Py_buffer *src = VIEW_ADDR(self);
     PyObject *bytes;
@@ -2138,14 +2201,21 @@ memory_hex(PyMemoryViewObject *self, PyObject *dummy)
     CHECK_RELEASED(self);
 
     if (MV_C_CONTIGUOUS(self->flags)) {
-        return _Py_strhex(src->buf, src->len);
+        return _Py_strhex_with_sep(src->buf, src->len, sep, bytes_per_sep);
     }
 
-    bytes = memory_tobytes(self, dummy);
+    bytes = PyBytes_FromStringAndSize(NULL, src->len);
     if (bytes == NULL)
         return NULL;
 
-    ret = _Py_strhex(PyBytes_AS_STRING(bytes), PyBytes_GET_SIZE(bytes));
+    if (PyBuffer_ToContiguous(PyBytes_AS_STRING(bytes), src, src->len, 'C') < 0) {
+        Py_DECREF(bytes);
+        return NULL;
+    }
+
+    ret = _Py_strhex_with_sep(
+            PyBytes_AS_STRING(bytes), PyBytes_GET_SIZE(bytes),
+            sep, bytes_per_sep);
     Py_DECREF(bytes);
 
     return ret;
@@ -2905,7 +2975,7 @@ _IntTupleFromSsizet(int len, Py_ssize_t *vals)
 }
 
 static PyObject *
-memory_obj_get(PyMemoryViewObject *self)
+memory_obj_get(PyMemoryViewObject *self, void *Py_UNUSED(ignored))
 {
     Py_buffer *view = &self->view;
 
@@ -2918,56 +2988,56 @@ memory_obj_get(PyMemoryViewObject *self)
 }
 
 static PyObject *
-memory_nbytes_get(PyMemoryViewObject *self)
+memory_nbytes_get(PyMemoryViewObject *self, void *Py_UNUSED(ignored))
 {
     CHECK_RELEASED(self);
     return PyLong_FromSsize_t(self->view.len);
 }
 
 static PyObject *
-memory_format_get(PyMemoryViewObject *self)
+memory_format_get(PyMemoryViewObject *self, void *Py_UNUSED(ignored))
 {
     CHECK_RELEASED(self);
     return PyUnicode_FromString(self->view.format);
 }
 
 static PyObject *
-memory_itemsize_get(PyMemoryViewObject *self)
+memory_itemsize_get(PyMemoryViewObject *self, void *Py_UNUSED(ignored))
 {
     CHECK_RELEASED(self);
     return PyLong_FromSsize_t(self->view.itemsize);
 }
 
 static PyObject *
-memory_shape_get(PyMemoryViewObject *self)
+memory_shape_get(PyMemoryViewObject *self, void *Py_UNUSED(ignored))
 {
     CHECK_RELEASED(self);
     return _IntTupleFromSsizet(self->view.ndim, self->view.shape);
 }
 
 static PyObject *
-memory_strides_get(PyMemoryViewObject *self)
+memory_strides_get(PyMemoryViewObject *self, void *Py_UNUSED(ignored))
 {
     CHECK_RELEASED(self);
     return _IntTupleFromSsizet(self->view.ndim, self->view.strides);
 }
 
 static PyObject *
-memory_suboffsets_get(PyMemoryViewObject *self)
+memory_suboffsets_get(PyMemoryViewObject *self, void *Py_UNUSED(ignored))
 {
     CHECK_RELEASED(self);
     return _IntTupleFromSsizet(self->view.ndim, self->view.suboffsets);
 }
 
 static PyObject *
-memory_readonly_get(PyMemoryViewObject *self)
+memory_readonly_get(PyMemoryViewObject *self, void *Py_UNUSED(ignored))
 {
     CHECK_RELEASED(self);
     return PyBool_FromLong(self->view.readonly);
 }
 
 static PyObject *
-memory_ndim_get(PyMemoryViewObject *self)
+memory_ndim_get(PyMemoryViewObject *self, void *Py_UNUSED(ignored))
 {
     CHECK_RELEASED(self);
     return PyLong_FromLong(self->view.ndim);
@@ -3046,13 +3116,13 @@ PyDoc_STRVAR(memory_release_doc,
 \n\
 Release the underlying buffer exposed by the memoryview object.");
 PyDoc_STRVAR(memory_tobytes_doc,
-"tobytes($self, /)\n--\n\
+"tobytes($self, /, order=None)\n--\n\
 \n\
-Return the data in the buffer as a byte string.");
-PyDoc_STRVAR(memory_hex_doc,
-"hex($self, /)\n--\n\
-\n\
-Return the data in the buffer as a string of hexadecimal numbers.");
+Return the data in the buffer as a byte string. Order can be {'C', 'F', 'A'}.\n\
+When order is 'C' or 'F', the data of the original array is converted to C or\n\
+Fortran order. For contiguous views, 'A' returns an exact copy of the physical\n\
+memory. In particular, in-memory Fortran order is preserved. For non-contiguous\n\
+views, the data is converted to C first. order=None is the same as order='C'.");
 PyDoc_STRVAR(memory_tolist_doc,
 "tolist($self, /)\n--\n\
 \n\
@@ -3061,13 +3131,18 @@ PyDoc_STRVAR(memory_cast_doc,
 "cast($self, /, format, *, shape)\n--\n\
 \n\
 Cast a memoryview to a new format or shape.");
+PyDoc_STRVAR(memory_toreadonly_doc,
+"toreadonly($self, /)\n--\n\
+\n\
+Return a readonly version of the memoryview.");
 
 static PyMethodDef memory_methods[] = {
     {"release",     (PyCFunction)memory_release, METH_NOARGS, memory_release_doc},
-    {"tobytes",     (PyCFunction)memory_tobytes, METH_NOARGS, memory_tobytes_doc},
-    {"hex",         (PyCFunction)memory_hex, METH_NOARGS, memory_hex_doc},
+    {"tobytes",     (PyCFunction)(void(*)(void))memory_tobytes, METH_VARARGS|METH_KEYWORDS, memory_tobytes_doc},
+    MEMORYVIEW_HEX_METHODDEF
     {"tolist",      (PyCFunction)memory_tolist, METH_NOARGS, memory_tolist_doc},
-    {"cast",        (PyCFunction)memory_cast, METH_VARARGS|METH_KEYWORDS, memory_cast_doc},
+    {"cast",        (PyCFunction)(void(*)(void))memory_cast, METH_VARARGS|METH_KEYWORDS, memory_cast_doc},
+    {"toreadonly",  (PyCFunction)memory_toreadonly, METH_NOARGS, memory_toreadonly_doc},
     {"__enter__",   memory_enter, METH_NOARGS, NULL},
     {"__exit__",    memory_exit, METH_VARARGS, NULL},
     {NULL,          NULL}
@@ -3080,10 +3155,10 @@ PyTypeObject PyMemoryView_Type = {
     offsetof(PyMemoryViewObject, ob_array),   /* tp_basicsize */
     sizeof(Py_ssize_t),                       /* tp_itemsize */
     (destructor)memory_dealloc,               /* tp_dealloc */
-    0,                                        /* tp_print */
+    0,                                        /* tp_vectorcall_offset */
     0,                                        /* tp_getattr */
     0,                                        /* tp_setattr */
-    0,                                        /* tp_reserved */
+    0,                                        /* tp_as_async */
     (reprfunc)memory_repr,                    /* tp_repr */
     0,                                        /* tp_as_number */
     &memory_as_sequence,                      /* tp_as_sequence */

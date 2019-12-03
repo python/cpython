@@ -1,19 +1,16 @@
+/* JSON accelerator C extensor: _json module.
+ *
+ * It is built as a built-in module (Py_BUILD_CORE_BUILTIN define) on Windows
+ * and as an extension module (Py_BUILD_CORE_MODULE define) on other
+ * platforms. */
 
-/* Core extension modules are built-in on some platforms (e.g. Windows). */
-#ifdef Py_BUILD_CORE
-#define Py_BUILD_CORE_BUILTIN
-#undef Py_BUILD_CORE
+#if !defined(Py_BUILD_CORE_BUILTIN) && !defined(Py_BUILD_CORE_MODULE)
+#  error "Py_BUILD_CORE_BUILTIN or Py_BUILD_CORE_MODULE must be defined"
 #endif
 
 #include "Python.h"
 #include "structmember.h"
-#include "accu.h"
-
-#ifdef __GNUC__
-#define UNUSED __attribute__((__unused__))
-#else
-#define UNUSED
-#endif
+#include "pycore_accu.h"
 
 #define PyScanner_Check(op) PyObject_TypeCheck(op, &PyScannerType)
 #define PyScanner_CheckExact(op) (Py_TYPE(op) == &PyScannerType)
@@ -70,25 +67,12 @@ static PyMemberDef encoder_members[] = {
     {NULL}
 };
 
-static PyObject *
-join_list_unicode(PyObject *lst)
-{
-    /* return u''.join(lst) */
-    static PyObject *sep = NULL;
-    if (sep == NULL) {
-        sep = PyUnicode_FromStringAndSize("", 0);
-        if (sep == NULL)
-            return NULL;
-    }
-    return PyUnicode_Join(sep, lst);
-}
-
 /* Forward decls */
 
 static PyObject *
 ascii_escape_unicode(PyObject *pystr);
 static PyObject *
-py_encode_basestring_ascii(PyObject* self UNUSED, PyObject *pystr);
+py_encode_basestring_ascii(PyObject* Py_UNUSED(self), PyObject *pystr);
 void init_json(void);
 static PyObject *
 scan_once_unicode(PyScannerObject *s, PyObject *pystr, Py_ssize_t idx, Py_ssize_t *next_idx_ptr);
@@ -382,21 +366,6 @@ _build_rval_index_tuple(PyObject *rval, Py_ssize_t idx) {
     return tpl;
 }
 
-#define APPEND_OLD_CHUNK \
-    if (chunk != NULL) { \
-        if (chunks == NULL) { \
-            chunks = PyList_New(0); \
-            if (chunks == NULL) { \
-                goto bail; \
-            } \
-        } \
-        if (PyList_Append(chunks, chunk)) { \
-            Py_CLEAR(chunk); \
-            goto bail; \
-        } \
-        Py_CLEAR(chunk); \
-    }
-
 static PyObject *
 scanstring_unicode(PyObject *pystr, Py_ssize_t end, int strict, Py_ssize_t *next_end_ptr)
 {
@@ -414,11 +383,13 @@ scanstring_unicode(PyObject *pystr, Py_ssize_t end, int strict, Py_ssize_t *next
     Py_ssize_t next /* = begin */;
     const void *buf;
     int kind;
-    PyObject *chunks = NULL;
-    PyObject *chunk = NULL;
 
     if (PyUnicode_READY(pystr) == -1)
         return 0;
+
+    _PyUnicodeWriter writer;
+    _PyUnicodeWriter_Init(&writer);
+    writer.overallocate = 1;
 
     len = PyUnicode_GET_LENGTH(pystr);
     buf = PyUnicode_DATA(pystr);
@@ -430,29 +401,42 @@ scanstring_unicode(PyObject *pystr, Py_ssize_t end, int strict, Py_ssize_t *next
     }
     while (1) {
         /* Find the end of the string or the next escape */
-        Py_UCS4 c = 0;
-        for (next = end; next < len; next++) {
-            c = PyUnicode_READ(kind, buf, next);
-            if (c == '"' || c == '\\') {
-                break;
+        Py_UCS4 c;
+        {
+            // Use tight scope variable to help register allocation.
+            Py_UCS4 d = 0;
+            for (next = end; next < len; next++) {
+                d = PyUnicode_READ(kind, buf, next);
+                if (d == '"' || d == '\\') {
+                    break;
+                }
+                if (d <= 0x1f && strict) {
+                    raise_errmsg("Invalid control character at", pystr, next);
+                    goto bail;
+                }
             }
-            else if (strict && c <= 0x1f) {
-                raise_errmsg("Invalid control character at", pystr, next);
-                goto bail;
+            c = d;
+        }
+
+        if (c == '"') {
+            // Fast path for simple case.
+            if (writer.buffer == NULL) {
+                PyObject *ret = PyUnicode_Substring(pystr, end, next);
+                if (ret == NULL) {
+                    goto bail;
+                }
+                *next_end_ptr = next + 1;;
+                return ret;
             }
         }
-        if (!(c == '"' || c == '\\')) {
+        else if (c != '\\') {
             raise_errmsg("Unterminated string starting at", pystr, begin);
             goto bail;
         }
+
         /* Pick up this chunk if it's not zero length */
         if (next != end) {
-            APPEND_OLD_CHUNK
-                chunk = PyUnicode_FromKindAndData(
-                    kind,
-                    (char*)buf + kind * end,
-                    next - end);
-            if (chunk == NULL) {
+            if (_PyUnicodeWriter_WriteSubstring(&writer, pystr, end, next) < 0) {
                 goto bail;
             }
         }
@@ -543,34 +527,18 @@ scanstring_unicode(PyObject *pystr, Py_ssize_t end, int strict, Py_ssize_t *next
                     end -= 6;
             }
         }
-        APPEND_OLD_CHUNK
-        chunk = PyUnicode_FromKindAndData(PyUnicode_4BYTE_KIND, &c, 1);
-        if (chunk == NULL) {
+        if (_PyUnicodeWriter_WriteChar(&writer, c) < 0) {
             goto bail;
         }
     }
 
-    if (chunks == NULL) {
-        if (chunk != NULL)
-            rval = chunk;
-        else
-            rval = PyUnicode_FromStringAndSize("", 0);
-    }
-    else {
-        APPEND_OLD_CHUNK
-        rval = join_list_unicode(chunks);
-        if (rval == NULL) {
-            goto bail;
-        }
-        Py_CLEAR(chunks);
-    }
-
+    rval = _PyUnicodeWriter_Finish(&writer);
     *next_end_ptr = end;
     return rval;
+
 bail:
     *next_end_ptr = -1;
-    Py_XDECREF(chunks);
-    Py_XDECREF(chunk);
+    _PyUnicodeWriter_Dealloc(&writer);
     return NULL;
 }
 
@@ -588,7 +556,7 @@ PyDoc_STRVAR(pydoc_scanstring,
 );
 
 static PyObject *
-py_scanstring(PyObject* self UNUSED, PyObject *args)
+py_scanstring(PyObject* Py_UNUSED(self), PyObject *args)
 {
     PyObject *pystr;
     PyObject *rval;
@@ -617,7 +585,7 @@ PyDoc_STRVAR(pydoc_encode_basestring_ascii,
 );
 
 static PyObject *
-py_encode_basestring_ascii(PyObject* self UNUSED, PyObject *pystr)
+py_encode_basestring_ascii(PyObject* Py_UNUSED(self), PyObject *pystr)
 {
     PyObject *rval;
     /* Return an ASCII-only JSON representation of a Python string */
@@ -642,7 +610,7 @@ PyDoc_STRVAR(pydoc_encode_basestring,
 );
 
 static PyObject *
-py_encode_basestring(PyObject* self UNUSED, PyObject *pystr)
+py_encode_basestring(PyObject* Py_UNUSED(self), PyObject *pystr)
 {
     PyObject *rval;
     /* Return a JSON representation of a Python string */
@@ -746,16 +714,13 @@ _parse_object_unicode(PyScannerObject *s, PyObject *pystr, Py_ssize_t idx, Py_ss
             key = scanstring_unicode(pystr, idx + 1, s->strict, &next_idx);
             if (key == NULL)
                 goto bail;
-            memokey = PyDict_GetItem(s->memo, key);
-            if (memokey != NULL) {
-                Py_INCREF(memokey);
-                Py_DECREF(key);
-                key = memokey;
+            memokey = PyDict_SetDefault(s->memo, key, key);
+            if (memokey == NULL) {
+                goto bail;
             }
-            else {
-                if (PyDict_SetItem(s->memo, key, key) < 0)
-                    goto bail;
-            }
+            Py_INCREF(memokey);
+            Py_DECREF(key);
+            key = memokey;
             idx = next_idx;
 
             /* skip whitespace between key and : delimiter, read :, skip whitespace */
@@ -812,14 +777,14 @@ _parse_object_unicode(PyScannerObject *s, PyObject *pystr, Py_ssize_t idx, Py_ss
     *next_idx_ptr = idx + 1;
 
     if (has_pairs_hook) {
-        val = PyObject_CallFunctionObjArgs(s->object_pairs_hook, rval, NULL);
+        val = _PyObject_CallOneArg(s->object_pairs_hook, rval);
         Py_DECREF(rval);
         return val;
     }
 
     /* if object_hook is not None: rval = object_hook(rval) */
     if (s->object_hook != Py_None) {
-        val = PyObject_CallFunctionObjArgs(s->object_hook, rval, NULL);
+        val = _PyObject_CallOneArg(s->object_hook, rval);
         Py_DECREF(rval);
         return val;
     }
@@ -925,7 +890,7 @@ _parse_constant(PyScannerObject *s, const char *constant, Py_ssize_t idx, Py_ssi
         return NULL;
 
     /* rval = parse_constant(constant) */
-    rval = PyObject_CallFunctionObjArgs(s->parse_constant, cstr, NULL);
+    rval = _PyObject_CallOneArg(s->parse_constant, cstr);
     idx += PyUnicode_GET_LENGTH(cstr);
     Py_DECREF(cstr);
     *next_idx_ptr = idx;
@@ -1024,7 +989,7 @@ _match_number_unicode(PyScannerObject *s, PyObject *pystr, Py_ssize_t start, Py_
                                            idx - start);
         if (numstr == NULL)
             return NULL;
-        rval = PyObject_CallFunctionObjArgs(custom_func, numstr, NULL);
+        rval = _PyObject_CallOneArg(custom_func, numstr);
     }
     else {
         Py_ssize_t i, n;
@@ -1251,10 +1216,10 @@ PyTypeObject PyScannerType = {
     sizeof(PyScannerObject), /* tp_basicsize */
     0,                    /* tp_itemsize */
     scanner_dealloc, /* tp_dealloc */
-    0,                    /* tp_print */
+    0,                    /* tp_vectorcall_offset */
     0,                    /* tp_getattr */
     0,                    /* tp_setattr */
-    0,                    /* tp_compare */
+    0,                    /* tp_as_async */
     0,                    /* tp_repr */
     0,                    /* tp_as_number */
     0,                    /* tp_as_sequence */
@@ -1374,7 +1339,7 @@ _encoded_const(PyObject *obj)
         if (s_null == NULL) {
             s_null = PyUnicode_InternFromString("null");
         }
-        Py_INCREF(s_null);
+        Py_XINCREF(s_null);
         return s_null;
     }
     else if (obj == Py_True) {
@@ -1382,7 +1347,7 @@ _encoded_const(PyObject *obj)
         if (s_true == NULL) {
             s_true = PyUnicode_InternFromString("true");
         }
-        Py_INCREF(s_true);
+        Py_XINCREF(s_true);
         return s_true;
     }
     else if (obj == Py_False) {
@@ -1390,7 +1355,7 @@ _encoded_const(PyObject *obj)
         if (s_false == NULL) {
             s_false = PyUnicode_InternFromString("false");
         }
-        Py_INCREF(s_false);
+        Py_XINCREF(s_false);
         return s_false;
     }
     else {
@@ -1434,7 +1399,7 @@ encoder_encode_string(PyEncoderObject *s, PyObject *obj)
     if (s->fast_encode) {
         return s->fast_encode(NULL, obj);
     }
-    encoded = PyObject_CallFunctionObjArgs(s->encoder, obj, NULL);
+    encoded = _PyObject_CallOneArg(s->encoder, obj);
     if (encoded != NULL && !PyUnicode_Check(encoded)) {
         PyErr_Format(PyExc_TypeError,
                      "encoder() must return a string, not %.80s",
@@ -1476,7 +1441,7 @@ encoder_listencode_obj(PyEncoderObject *s, _PyAccu *acc,
         return _steal_accumulate(acc, encoded);
     }
     else if (PyLong_Check(obj)) {
-        PyObject *encoded = PyLong_Type.tp_str(obj);
+        PyObject *encoded = PyLong_Type.tp_repr(obj);
         if (encoded == NULL)
             return -1;
         return _steal_accumulate(acc, encoded);
@@ -1520,7 +1485,7 @@ encoder_listencode_obj(PyEncoderObject *s, _PyAccu *acc,
                 return -1;
             }
         }
-        newobj = PyObject_CallFunctionObjArgs(s->defaultfn, obj, NULL);
+        newobj = _PyObject_CallOneArg(s->defaultfn, obj);
         if (newobj == NULL) {
             Py_XDECREF(ident);
             return -1;
@@ -1640,7 +1605,7 @@ encoder_listencode_dict(PyEncoderObject *s, _PyAccu *acc,
                 goto bail;
         }
         else if (PyLong_Check(key)) {
-            kstr = PyLong_Type.tp_str(key);
+            kstr = PyLong_Type.tp_repr(key);
             if (kstr == NULL) {
                 goto bail;
             }
@@ -1843,10 +1808,10 @@ PyTypeObject PyEncoderType = {
     sizeof(PyEncoderObject), /* tp_basicsize */
     0,                    /* tp_itemsize */
     encoder_dealloc, /* tp_dealloc */
-    0,                    /* tp_print */
+    0,                    /* tp_vectorcall_offset */
     0,                    /* tp_getattr */
     0,                    /* tp_setattr */
-    0,                    /* tp_compare */
+    0,                    /* tp_as_async */
     0,                    /* tp_repr */
     0,                    /* tp_as_number */
     0,                    /* tp_as_sequence */

@@ -33,35 +33,63 @@ SyntaxError: invalid syntax
 
 >>> None = 1
 Traceback (most recent call last):
-SyntaxError: can't assign to keyword
+SyntaxError: cannot assign to None
+
+>>> obj.True = 1
+Traceback (most recent call last):
+SyntaxError: invalid syntax
+
+>>> True = 1
+Traceback (most recent call last):
+SyntaxError: cannot assign to True
+
+>>> (True := 1)
+Traceback (most recent call last):
+SyntaxError: cannot use named assignment with True
+
+>>> obj.__debug__ = 1
+Traceback (most recent call last):
+SyntaxError: cannot assign to __debug__
+
+>>> __debug__ = 1
+Traceback (most recent call last):
+SyntaxError: cannot assign to __debug__
+
+>>> (__debug__ := 1)
+Traceback (most recent call last):
+SyntaxError: cannot assign to __debug__
 
 >>> f() = 1
 Traceback (most recent call last):
-SyntaxError: can't assign to function call
+SyntaxError: cannot assign to function call
 
 >>> del f()
 Traceback (most recent call last):
-SyntaxError: can't delete function call
+SyntaxError: cannot delete function call
 
 >>> a + 1 = 2
 Traceback (most recent call last):
-SyntaxError: can't assign to operator
+SyntaxError: cannot assign to operator
 
 >>> (x for x in x) = 1
 Traceback (most recent call last):
-SyntaxError: can't assign to generator expression
+SyntaxError: cannot assign to generator expression
 
 >>> 1 = 1
 Traceback (most recent call last):
-SyntaxError: can't assign to literal
+SyntaxError: cannot assign to literal
 
 >>> "abc" = 1
 Traceback (most recent call last):
-SyntaxError: can't assign to literal
+SyntaxError: cannot assign to literal
 
 >>> b"" = 1
 Traceback (most recent call last):
-SyntaxError: can't assign to literal
+SyntaxError: cannot assign to literal
+
+>>> ... = 1
+Traceback (most recent call last):
+SyntaxError: cannot assign to Ellipsis
 
 >>> `1` = 1
 Traceback (most recent call last):
@@ -74,15 +102,31 @@ them.
 
 >>> (a, "b", c) = (1, 2, 3)
 Traceback (most recent call last):
-SyntaxError: can't assign to literal
+SyntaxError: cannot assign to literal
+
+>>> (a, True, c) = (1, 2, 3)
+Traceback (most recent call last):
+SyntaxError: cannot assign to True
+
+>>> (a, __debug__, c) = (1, 2, 3)
+Traceback (most recent call last):
+SyntaxError: cannot assign to __debug__
+
+>>> (a, *True, c) = (1, 2, 3)
+Traceback (most recent call last):
+SyntaxError: cannot assign to True
+
+>>> (a, *__debug__, c) = (1, 2, 3)
+Traceback (most recent call last):
+SyntaxError: cannot assign to __debug__
 
 >>> [a, b, c + 1] = [1, 2, 3]
 Traceback (most recent call last):
-SyntaxError: can't assign to operator
+SyntaxError: cannot assign to operator
 
 >>> a if 1 else b = 1
 Traceback (most recent call last):
-SyntaxError: can't assign to conditional expression
+SyntaxError: cannot assign to conditional expression
 
 From compiler_complex_args():
 
@@ -255,33 +299,45 @@ SyntaxError: invalid syntax
 
 >>> f(lambda x: x[0] = 3)
 Traceback (most recent call last):
-SyntaxError: lambda cannot contain assignment
+SyntaxError: expression cannot contain assignment, perhaps you meant "=="?
 
 The grammar accepts any test (basically, any expression) in the
 keyword slot of a call site.  Test a few different options.
 
 >>> f(x()=2)
 Traceback (most recent call last):
-SyntaxError: keyword can't be an expression
+SyntaxError: expression cannot contain assignment, perhaps you meant "=="?
 >>> f(a or b=1)
 Traceback (most recent call last):
-SyntaxError: keyword can't be an expression
+SyntaxError: expression cannot contain assignment, perhaps you meant "=="?
 >>> f(x.y=1)
 Traceback (most recent call last):
-SyntaxError: keyword can't be an expression
+SyntaxError: expression cannot contain assignment, perhaps you meant "=="?
+>>> f((x)=2)
+Traceback (most recent call last):
+SyntaxError: expression cannot contain assignment, perhaps you meant "=="?
+>>> f(True=2)
+Traceback (most recent call last):
+SyntaxError: cannot assign to True
+>>> f(__debug__=1)
+Traceback (most recent call last):
+SyntaxError: cannot assign to __debug__
 
 
 More set_context():
 
 >>> (x for x in x) += 1
 Traceback (most recent call last):
-SyntaxError: can't assign to generator expression
+SyntaxError: cannot assign to generator expression
 >>> None += 1
 Traceback (most recent call last):
-SyntaxError: can't assign to keyword
+SyntaxError: cannot assign to None
+>>> __debug__ += 1
+Traceback (most recent call last):
+SyntaxError: cannot assign to __debug__
 >>> f() += 1
 Traceback (most recent call last):
-SyntaxError: can't assign to function call
+SyntaxError: cannot assign to function call
 
 
 Test continue in finally in weird combinations.
@@ -298,7 +354,7 @@ continue in for loop under finally should be ok.
     >>> test()
     9
 
-Start simple, a continue in a finally should not be allowed.
+continue in a finally should be ok.
 
     >>> def test():
     ...    for abc in range(10):
@@ -306,11 +362,9 @@ Start simple, a continue in a finally should not be allowed.
     ...            pass
     ...        finally:
     ...            continue
-    Traceback (most recent call last):
-      ...
-    SyntaxError: 'continue' not supported inside 'finally' clause
-
-This is essentially a continue in a finally which should not be allowed.
+    ...    print(abc)
+    >>> test()
+    9
 
     >>> def test():
     ...    for abc in range(10):
@@ -321,9 +375,24 @@ This is essentially a continue in a finally which should not be allowed.
     ...                continue
     ...            except:
     ...                pass
-    Traceback (most recent call last):
-      ...
-    SyntaxError: 'continue' not supported inside 'finally' clause
+    ...    print(abc)
+    >>> test()
+    9
+
+    >>> def test():
+    ...    for abc in range(10):
+    ...        try:
+    ...            pass
+    ...        finally:
+    ...            try:
+    ...                pass
+    ...            except:
+    ...                continue
+    ...    print(abc)
+    >>> test()
+    9
+
+A continue outside loop should not be allowed.
 
     >>> def foo():
     ...     try:
@@ -332,42 +401,7 @@ This is essentially a continue in a finally which should not be allowed.
     ...         continue
     Traceback (most recent call last):
       ...
-    SyntaxError: 'continue' not supported inside 'finally' clause
-
-    >>> def foo():
-    ...     for a in ():
-    ...       try:
-    ...           pass
-    ...       finally:
-    ...           continue
-    Traceback (most recent call last):
-      ...
-    SyntaxError: 'continue' not supported inside 'finally' clause
-
-    >>> def foo():
-    ...     for a in ():
-    ...         try:
-    ...             pass
-    ...         finally:
-    ...             try:
-    ...                 continue
-    ...             finally:
-    ...                 pass
-    Traceback (most recent call last):
-      ...
-    SyntaxError: 'continue' not supported inside 'finally' clause
-
-    >>> def foo():
-    ...  for a in ():
-    ...   try: pass
-    ...   finally:
-    ...    try:
-    ...     pass
-    ...    except:
-    ...     continue
-    Traceback (most recent call last):
-      ...
-    SyntaxError: 'continue' not supported inside 'finally' clause
+    SyntaxError: 'continue' not properly in loop
 
 There is one test for a break that is not in a loop.  The compiler
 uses a single data structure to keep track of try-finally and loops,
@@ -500,7 +534,7 @@ leading to spurious errors.
    ...   pass
    Traceback (most recent call last):
      ...
-   SyntaxError: can't assign to function call
+   SyntaxError: cannot assign to function call
 
    >>> if 1:
    ...   pass
@@ -508,27 +542,27 @@ leading to spurious errors.
    ...   x() = 1
    Traceback (most recent call last):
      ...
-   SyntaxError: can't assign to function call
+   SyntaxError: cannot assign to function call
 
    >>> if 1:
    ...   x() = 1
    ... elif 1:
    ...   pass
+   ... else:
+   ...   pass
+   Traceback (most recent call last):
+     ...
+   SyntaxError: cannot assign to function call
+
+   >>> if 1:
+   ...   pass
+   ... elif 1:
+   ...   x() = 1
    ... else:
    ...   pass
    Traceback (most recent call last):
      ...
-   SyntaxError: can't assign to function call
-
-   >>> if 1:
-   ...   pass
-   ... elif 1:
-   ...   x() = 1
-   ... else:
-   ...   pass
-   Traceback (most recent call last):
-     ...
-   SyntaxError: can't assign to function call
+   SyntaxError: cannot assign to function call
 
    >>> if 1:
    ...   pass
@@ -538,7 +572,7 @@ leading to spurious errors.
    ...   x() = 1
    Traceback (most recent call last):
      ...
-   SyntaxError: can't assign to function call
+   SyntaxError: cannot assign to function call
 
 Make sure that the old "raise X, Y[, Z]" form is gone:
    >>> raise X, Y
@@ -558,21 +592,33 @@ SyntaxError: keyword argument repeated
 
 >>> {1, 2, 3} = 42
 Traceback (most recent call last):
-SyntaxError: can't assign to literal
+SyntaxError: cannot assign to set display
+
+>>> {1: 2, 3: 4} = 42
+Traceback (most recent call last):
+SyntaxError: cannot assign to dict display
+
+>>> f'{x}' = 42
+Traceback (most recent call last):
+SyntaxError: cannot assign to f-string expression
+
+>>> f'{x}-{y}' = 42
+Traceback (most recent call last):
+SyntaxError: cannot assign to f-string expression
 
 Corner-cases that used to fail to raise the correct error:
 
     >>> def f(*, x=lambda __debug__:0): pass
     Traceback (most recent call last):
-    SyntaxError: assignment to keyword
+    SyntaxError: cannot assign to __debug__
 
     >>> def f(*args:(lambda __debug__:0)): pass
     Traceback (most recent call last):
-    SyntaxError: assignment to keyword
+    SyntaxError: cannot assign to __debug__
 
     >>> def f(**kwargs:(lambda __debug__:0)): pass
     Traceback (most recent call last):
-    SyntaxError: assignment to keyword
+    SyntaxError: cannot assign to __debug__
 
     >>> with (lambda *:0): pass
     Traceback (most recent call last):
@@ -582,11 +628,11 @@ Corner-cases that used to crash:
 
     >>> def f(**__debug__): pass
     Traceback (most recent call last):
-    SyntaxError: assignment to keyword
+    SyntaxError: cannot assign to __debug__
 
     >>> def f(*xx, __debug__): pass
     Traceback (most recent call last):
-    SyntaxError: assignment to keyword
+    SyntaxError: cannot assign to __debug__
 
 """
 
@@ -649,6 +695,49 @@ class SyntaxTestCase(unittest.TestCase):
 
     def test_break_outside_loop(self):
         self._check_error("break", "outside loop")
+
+    def test_yield_outside_function(self):
+        self._check_error("if 0: yield",                "outside function")
+        self._check_error("if 0: yield\nelse:  x=1",    "outside function")
+        self._check_error("if 1: pass\nelse: yield",    "outside function")
+        self._check_error("while 0: yield",             "outside function")
+        self._check_error("while 0: yield\nelse:  x=1", "outside function")
+        self._check_error("class C:\n  if 0: yield",    "outside function")
+        self._check_error("class C:\n  if 1: pass\n  else: yield",
+                          "outside function")
+        self._check_error("class C:\n  while 0: yield", "outside function")
+        self._check_error("class C:\n  while 0: yield\n  else:  x = 1",
+                          "outside function")
+
+    def test_return_outside_function(self):
+        self._check_error("if 0: return",                "outside function")
+        self._check_error("if 0: return\nelse:  x=1",    "outside function")
+        self._check_error("if 1: pass\nelse: return",    "outside function")
+        self._check_error("while 0: return",             "outside function")
+        self._check_error("class C:\n  if 0: return",    "outside function")
+        self._check_error("class C:\n  while 0: return", "outside function")
+        self._check_error("class C:\n  while 0: return\n  else:  x=1",
+                          "outside function")
+        self._check_error("class C:\n  if 0: return\n  else: x= 1",
+                          "outside function")
+        self._check_error("class C:\n  if 1: pass\n  else: return",
+                          "outside function")
+
+    def test_break_outside_loop(self):
+        self._check_error("if 0: break",             "outside loop")
+        self._check_error("if 0: break\nelse:  x=1",  "outside loop")
+        self._check_error("if 1: pass\nelse: break", "outside loop")
+        self._check_error("class C:\n  if 0: break", "outside loop")
+        self._check_error("class C:\n  if 1: pass\n  else: break",
+                          "outside loop")
+
+    def test_continue_outside_loop(self):
+        self._check_error("if 0: continue",             "not properly in loop")
+        self._check_error("if 0: continue\nelse:  x=1", "not properly in loop")
+        self._check_error("if 1: pass\nelse: continue", "not properly in loop")
+        self._check_error("class C:\n  if 0: continue", "not properly in loop")
+        self._check_error("class C:\n  if 1: pass\n  else: continue",
+                          "not properly in loop")
 
     def test_unexpected_indent(self):
         self._check_error("foo()\n bar()\n", "unexpected indent",

@@ -87,6 +87,7 @@ class _PythonRunResult(collections.namedtuple("_PythonRunResult",
 # Executing the interpreter in a subprocess
 def run_python_until_end(*args, **env_vars):
     env_required = interpreter_requires_environment()
+    cwd = env_vars.pop('__cwd', None)
     if '__isolated' in env_vars:
         isolated = env_vars.pop('__isolated')
     else:
@@ -125,7 +126,7 @@ def run_python_until_end(*args, **env_vars):
     cmd_line.extend(args)
     proc = subprocess.Popen(cmd_line, stdin=subprocess.PIPE,
                          stdout=subprocess.PIPE, stderr=subprocess.PIPE,
-                         env=env)
+                         env=env, cwd=cwd)
     with proc:
         try:
             out, err = proc.communicate()
@@ -136,7 +137,7 @@ def run_python_until_end(*args, **env_vars):
     err = strip_python_stderr(err)
     return _PythonRunResult(rc, out, err), cmd_line
 
-def _assert_python(expected_success, *args, **env_vars):
+def _assert_python(expected_success, /, *args, **env_vars):
     res, cmd_line = run_python_until_end(*args, **env_vars)
     if (res.rc and expected_success) or (not res.rc and not expected_success):
         res.fail(cmd_line)
@@ -204,31 +205,28 @@ def make_script(script_dir, script_basename, source, omit_suffix=False):
         script_filename += os.extsep + 'py'
     script_name = os.path.join(script_dir, script_filename)
     # The script should be encoded to UTF-8, the default string encoding
-    script_file = open(script_name, 'w', encoding='utf-8')
-    script_file.write(source)
-    script_file.close()
+    with open(script_name, 'w', encoding='utf-8') as script_file:
+        script_file.write(source)
     importlib.invalidate_caches()
     return script_name
 
 def make_zip_script(zip_dir, zip_basename, script_name, name_in_zip=None):
     zip_filename = zip_basename+os.extsep+'zip'
     zip_name = os.path.join(zip_dir, zip_filename)
-    zip_file = zipfile.ZipFile(zip_name, 'w')
-    if name_in_zip is None:
-        parts = script_name.split(os.sep)
-        if len(parts) >= 2 and parts[-2] == '__pycache__':
-            legacy_pyc = make_legacy_pyc(source_from_cache(script_name))
-            name_in_zip = os.path.basename(legacy_pyc)
-            script_name = legacy_pyc
-        else:
-            name_in_zip = os.path.basename(script_name)
-    zip_file.write(script_name, name_in_zip)
-    zip_file.close()
+    with zipfile.ZipFile(zip_name, 'w') as zip_file:
+        if name_in_zip is None:
+            parts = script_name.split(os.sep)
+            if len(parts) >= 2 and parts[-2] == '__pycache__':
+                legacy_pyc = make_legacy_pyc(source_from_cache(script_name))
+                name_in_zip = os.path.basename(legacy_pyc)
+                script_name = legacy_pyc
+            else:
+                name_in_zip = os.path.basename(script_name)
+        zip_file.write(script_name, name_in_zip)
     #if test.support.verbose:
-    #    zip_file = zipfile.ZipFile(zip_name, 'r')
-    #    print 'Contents of %r:' % zip_name
-    #    zip_file.printdir()
-    #    zip_file.close()
+    #    with zipfile.ZipFile(zip_name, 'r') as zip_file:
+    #        print 'Contents of %r:' % zip_name
+    #        zip_file.printdir()
     return zip_name, os.path.join(zip_name, name_in_zip)
 
 def make_pkg(pkg_dir, init_source=''):
@@ -251,17 +249,15 @@ def make_zip_pkg(zip_dir, zip_basename, pkg_name, script_basename,
     script_name_in_zip = os.path.join(pkg_names[-1], os.path.basename(script_name))
     zip_filename = zip_basename+os.extsep+'zip'
     zip_name = os.path.join(zip_dir, zip_filename)
-    zip_file = zipfile.ZipFile(zip_name, 'w')
-    for name in pkg_names:
-        init_name_in_zip = os.path.join(name, init_basename)
-        zip_file.write(init_name, init_name_in_zip)
-    zip_file.write(script_name, script_name_in_zip)
-    zip_file.close()
+    with zipfile.ZipFile(zip_name, 'w') as zip_file:
+        for name in pkg_names:
+            init_name_in_zip = os.path.join(name, init_basename)
+            zip_file.write(init_name, init_name_in_zip)
+        zip_file.write(script_name, script_name_in_zip)
     for name in unlink:
         os.unlink(name)
     #if test.support.verbose:
-    #    zip_file = zipfile.ZipFile(zip_name, 'r')
-    #    print 'Contents of %r:' % zip_name
-    #    zip_file.printdir()
-    #    zip_file.close()
+    #    with zipfile.ZipFile(zip_name, 'r') as zip_file:
+    #        print 'Contents of %r:' % zip_name
+    #        zip_file.printdir()
     return zip_name, os.path.join(zip_name, script_name_in_zip)

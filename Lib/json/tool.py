@@ -21,13 +21,15 @@ def main():
                    'to validate and pretty-print JSON objects.')
     parser = argparse.ArgumentParser(prog=prog, description=description)
     parser.add_argument('infile', nargs='?', type=argparse.FileType(),
-                        default=sys.stdin,
-                        help='a JSON file to be validated or pretty-printed')
+                        help='a JSON file to be validated or pretty-printed',
+                        default=sys.stdin)
     parser.add_argument('outfile', nargs='?', type=argparse.FileType('w'),
-                        default=sys.stdout,
-                        help='write the output of infile to outfile')
-    parser.add_argument('--sort-keys', action='store_true',
-                        help='sort the output of dictionaries by key')
+                        help='write the output of infile to outfile',
+                        default=sys.stdout)
+    parser.add_argument('--sort-keys', action='store_true', default=False,
+                        help='sort the output of dictionaries alphabetically by key')
+    parser.add_argument('--json-lines', action='store_true', default=False,
+                        help='parse input using the jsonlines format')
     group = parser.add_mutually_exclusive_group()
     group.add_argument('--indent', default=4, type=int,
                        help='separate items with newlines and use this number '
@@ -42,22 +44,25 @@ def main():
                        help='suppress all whitespace separation (most compact)')
     options = parser.parse_args()
 
-    with options.infile as infile:
-        try:
-            obj = json.load(infile)
-        except ValueError as e:
-            raise SystemExit(e)
-
-    kwargs = {
-        'indent': options.indent,
+    dump_args = {
         'sort_keys': options.sort_keys,
+        'indent': options.indent,
     }
     if options.compact:
-        kwargs['indent'] = None
-        kwargs['separators'] = ',', ':'
-    with options.outfile as outfile:
-        json.dump(obj, outfile, **kwargs)
-        outfile.write('\n')
+        dump_args['indent'] = None
+        dump_args['separators'] = ',', ':'
+
+    with options.infile as infile, options.outfile as outfile:
+        try:
+            if options.json_lines:
+                objs = (json.loads(line) for line in infile)
+            else:
+                objs = (json.load(infile), )
+            for obj in objs:
+                json.dump(obj, outfile, **dump_args)
+                outfile.write('\n')
+        except ValueError as e:
+            raise SystemExit(e)
 
 
 if __name__ == '__main__':

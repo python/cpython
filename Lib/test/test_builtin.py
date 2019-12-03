@@ -1,6 +1,7 @@
 # Python test set -- built-in functions
 
 import ast
+import asyncio
 import builtins
 import collections
 import decimal
@@ -18,9 +19,15 @@ import types
 import unittest
 import warnings
 from contextlib import ExitStack
+from functools import partial
+from inspect import CO_COROUTINE
+from itertools import product
+from textwrap import dedent
+from types import AsyncGeneratorType, FunctionType
 from operator import neg
 from test.support import (
-    EnvironmentVarGuard, TESTFN, check_warnings, swap_attr, unlink)
+    EnvironmentVarGuard, TESTFN, check_warnings, swap_attr, unlink,
+    maybe_get_event_loop_policy)
 from test.support.script_helper import assert_python_ok
 from unittest.mock import MagicMock, patch
 try:
@@ -154,6 +161,11 @@ class BuiltinTest(unittest.TestCase):
         self.assertRaises(TypeError, __import__, 1, 2, 3, 4)
         self.assertRaises(ValueError, __import__, '')
         self.assertRaises(TypeError, __import__, 'sys', name='sys')
+        # Relative import outside of a package with no __package__ or __spec__ (bpo-37409).
+        with self.assertWarns(ImportWarning):
+            self.assertRaises(ImportError, __import__, '',
+                              {'__package__': None, '__spec__': None, '__name__': '__main__'},
+                              locals={}, fromlist=('foo',), level=1)
         # embedded null character
         self.assertRaises(ModuleNotFoundError, __import__, 'string\x00')
 
@@ -314,8 +326,8 @@ class BuiltinTest(unittest.TestCase):
         bom = b'\xef\xbb\xbf'
         compile(bom + b'print(1)\n', '', 'exec')
         compile(source='pass', filename='?', mode='exec')
-        compile(dont_inherit=0, filename='tmp', source='0', mode='eval')
-        compile('pass', '?', dont_inherit=1, mode='exec')
+        compile(dont_inherit=False, filename='tmp', source='0', mode='eval')
+        compile('pass', '?', dont_inherit=True, mode='exec')
         compile(memoryview(b"text"), "name", "exec")
         self.assertRaises(TypeError, compile)
         self.assertRaises(ValueError, compile, 'print(42)\n', '<string>', 'badmode')
@@ -357,6 +369,73 @@ class BuiltinTest(unittest.TestCase):
                 exec(code, ns)
                 rv = ns['f']()
                 self.assertEqual(rv, tuple(expected))
+
+    def test_compile_top_level_await(self):
+        """Test whether code some top level await can be compiled.
+
+        Make sure it compiles only with the PyCF_ALLOW_TOP_LEVEL_AWAIT flag
+        set, and make sure the generated code object has the CO_COROUTINE flag
+        set in order to execute it with  `await eval(.....)` instead of exec,
+        or via a FunctionType.
+        """
+
+        # helper function just to check we can run top=level async-for
+        async def arange(n):
+            for i in range(n):
+                yield i
+
+        modes = ('single', 'exec')
+        code_samples = [
+            '''a = await asyncio.sleep(0, result=1)''',
+            '''async for i in arange(1):
+                   a = 1''',
+            '''async with asyncio.Lock() as l:
+                   a = 1'''
+        ]
+        policy = maybe_get_event_loop_policy()
+        try:
+            for mode, code_sample in product(modes, code_samples):
+                source = dedent(code_sample)
+                with self.assertRaises(
+                        SyntaxError, msg=f"source={source} mode={mode}"):
+                    compile(source, '?', mode)
+
+                co = compile(source,
+                             '?',
+                             mode,
+                             flags=ast.PyCF_ALLOW_TOP_LEVEL_AWAIT)
+
+                self.assertEqual(co.co_flags & CO_COROUTINE, CO_COROUTINE,
+                                 msg=f"source={source} mode={mode}")
+
+                # test we can create and  advance a function type
+                globals_ = {'asyncio': asyncio, 'a': 0, 'arange': arange}
+                async_f = FunctionType(co, globals_)
+                asyncio.run(async_f())
+                self.assertEqual(globals_['a'], 1)
+
+                # test we can await-eval,
+                globals_ = {'asyncio': asyncio, 'a': 0, 'arange': arange}
+                asyncio.run(eval(co, globals_))
+                self.assertEqual(globals_['a'], 1)
+        finally:
+            asyncio.set_event_loop_policy(policy)
+
+    def test_compile_async_generator(self):
+        """
+        With the PyCF_ALLOW_TOP_LEVEL_AWAIT flag added in 3.8, we want to
+        make sure AsyncGenerators are still properly not marked with the
+        CO_COROUTINE flag.
+        """
+        code = dedent("""async def ticker():
+                for i in range(10):
+                    yield i
+                    await asyncio.sleep(0)""")
+
+        co = compile(code, '?', 'exec', flags=ast.PyCF_ALLOW_TOP_LEVEL_AWAIT)
+        glob = {}
+        exec(co, glob)
+        self.assertEqual(type(glob['ticker']()), AsyncGeneratorType)
 
     def test_delattr(self):
         sys.spam = 1
@@ -686,6 +765,7 @@ class BuiltinTest(unittest.TestCase):
         self.assertEqual(hash('spam'), hash(b'spam'))
         hash((0,1,2,3))
         def f(): pass
+        hash(f)
         self.assertRaises(TypeError, hash, [])
         self.assertRaises(TypeError, hash, {})
         # Bug 1536021: Allow hash to return long objects
@@ -905,6 +985,8 @@ class BuiltinTest(unittest.TestCase):
         self.assertEqual(max((), default=1, key=neg), 1)
         self.assertEqual(max((1, 2), default=3, key=neg), 1)
 
+        self.assertEqual(max((1, 2), key=None), 2)
+
         data = [random.randrange(200) for i in range(100)]
         keys = dict((elem, random.randrange(50)) for elem in data)
         f = keys.__getitem__
@@ -956,6 +1038,8 @@ class BuiltinTest(unittest.TestCase):
 
         self.assertEqual(min((), default=1, key=neg), 1)
         self.assertEqual(min((1, 2), default=1, key=neg), 2)
+
+        self.assertEqual(min((1, 2), key=None), 1)
 
         data = [random.randrange(200) for i in range(100)]
         keys = dict((elem, random.randrange(50)) for elem in data)
@@ -1118,10 +1202,23 @@ class BuiltinTest(unittest.TestCase):
         self.assertAlmostEqual(pow(-1, 0.5), 1j)
         self.assertAlmostEqual(pow(-1, 1/3), 0.5 + 0.8660254037844386j)
 
-        self.assertRaises(ValueError, pow, -1, -2, 3)
+        # See test_pow for additional tests for three-argument pow.
+        self.assertEqual(pow(-1, -2, 3), 1)
         self.assertRaises(ValueError, pow, 1, 2, 0)
 
         self.assertRaises(TypeError, pow)
+
+        # Test passing in arguments as keywords.
+        self.assertEqual(pow(0, exp=0), 1)
+        self.assertEqual(pow(base=2, exp=4), 16)
+        self.assertEqual(pow(base=5, exp=2, mod=14), 11)
+        twopow = partial(pow, base=2)
+        self.assertEqual(twopow(exp=5), 32)
+        fifth_power = partial(pow, exp=5)
+        self.assertEqual(fifth_power(2), 32)
+        mod10 = partial(pow, mod=10)
+        self.assertEqual(mod10(2, 6), 4)
+        self.assertEqual(mod10(exp=6, base=2), 4)
 
     def test_input(self):
         self.write_testfile()
@@ -1293,6 +1390,27 @@ class BuiltinTest(unittest.TestCase):
         self.assertEqual(sum(iter(Squares(10))), 285)
         self.assertEqual(sum([[1], [2], [3]], []), [1, 2, 3])
 
+        self.assertEqual(sum(range(10), 1000), 1045)
+        self.assertEqual(sum(range(10), start=1000), 1045)
+        self.assertEqual(sum(range(10), 2**31-5), 2**31+40)
+        self.assertEqual(sum(range(10), 2**63-5), 2**63+40)
+
+        self.assertEqual(sum(i % 2 != 0 for i in range(10)), 5)
+        self.assertEqual(sum((i % 2 != 0 for i in range(10)), 2**31-3),
+                         2**31+2)
+        self.assertEqual(sum((i % 2 != 0 for i in range(10)), 2**63-3),
+                         2**63+2)
+        self.assertIs(sum([], False), False)
+
+        self.assertEqual(sum(i / 2 for i in range(10)), 22.5)
+        self.assertEqual(sum((i / 2 for i in range(10)), 1000), 1022.5)
+        self.assertEqual(sum((i / 2 for i in range(10)), 1000.25), 1022.75)
+        self.assertEqual(sum([0.5, 1]), 1.5)
+        self.assertEqual(sum([1, 0.5]), 1.5)
+        self.assertEqual(repr(sum([-0.0])), '0.0')
+        self.assertEqual(repr(sum([-0.0], -0.0)), '-0.0')
+        self.assertEqual(repr(sum([], -0.0)), '-0.0')
+
         self.assertRaises(TypeError, sum)
         self.assertRaises(TypeError, sum, 42)
         self.assertRaises(TypeError, sum, ['a', 'b', 'c'])
@@ -1303,6 +1421,9 @@ class BuiltinTest(unittest.TestCase):
         self.assertRaises(TypeError, sum, [[1], [2], [3]])
         self.assertRaises(TypeError, sum, [{2:3}])
         self.assertRaises(TypeError, sum, [{2:3}]*2, {2:3})
+        self.assertRaises(TypeError, sum, [], '')
+        self.assertRaises(TypeError, sum, [], b'')
+        self.assertRaises(TypeError, sum, [], bytearray())
 
         class BadSeq:
             def __getitem__(self, index):
@@ -1395,6 +1516,18 @@ class BuiltinTest(unittest.TestCase):
         for proto in range(pickle.HIGHEST_PROTOCOL + 1):
             z1 = zip(a, b)
             self.check_iter_pickle(z1, t, proto)
+
+    def test_zip_bad_iterable(self):
+        exception = TypeError()
+
+        class BadIterable:
+            def __iter__(self):
+                raise exception
+
+        with self.assertRaises(TypeError) as cm:
+            zip(BadIterable())
+
+        self.assertIs(cm.exception, exception)
 
     def test_format(self):
         # Test the basic machinery of the format() builtin.  Don't test
@@ -1511,6 +1644,11 @@ class BuiltinTest(unittest.TestCase):
         self.assertRaises(ValueError, x.translate, b"1", 1)
         self.assertRaises(TypeError, x.translate, b"1"*256, 1)
 
+    def test_bytearray_extend_error(self):
+        array = bytearray()
+        bad_iter = map(int, "X")
+        self.assertRaises(ValueError, array.extend, bad_iter)
+
     def test_construct_singletons(self):
         for const in None, Ellipsis, NotImplemented:
             tp = type(const)
@@ -1600,7 +1738,8 @@ class TestBreakpoint(unittest.TestCase):
     @unittest.skipIf(sys.flags.ignore_environment, '-E was given')
     def test_envar_unimportable(self):
         for envar in (
-                '.', '..', '.foo', 'foo.', '.int', 'int.'
+                '.', '..', '.foo', 'foo.', '.int', 'int.',
+                '.foo.bar', '..foo.bar', '/./',
                 'nosuchbuiltin',
                 'nosuchmodule.nosuchcallable',
                 ):
@@ -1754,7 +1893,7 @@ class TestSorted(unittest.TestCase):
         self.assertEqual(data, sorted(copy, key=lambda x: -x))
         self.assertNotEqual(data, copy)
         random.shuffle(copy)
-        self.assertEqual(data, sorted(copy, reverse=1))
+        self.assertEqual(data, sorted(copy, reverse=True))
         self.assertNotEqual(data, copy)
 
     def test_bad_arguments(self):
@@ -1960,6 +2099,15 @@ class TestType(unittest.TestCase):
             type('A', (B,), {'__slots__': '__dict__'})
         with self.assertRaises(TypeError):
             type('A', (B,), {'__slots__': '__weakref__'})
+
+    def test_namespace_order(self):
+        # bpo-34320: namespace should preserve order
+        od = collections.OrderedDict([('a', 1), ('b', 2)])
+        od.move_to_end('a')
+        expected = list(od.items())
+
+        C = type('C', (), od)
+        self.assertEqual(list(C.__dict__.items())[:2], [('b', 2), ('a', 1)])
 
 
 def load_tests(loader, tests, pattern):

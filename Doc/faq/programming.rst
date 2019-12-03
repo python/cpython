@@ -16,6 +16,9 @@ Is there a source code level debugger with breakpoints, single-stepping, etc.?
 
 Yes.
 
+Several debuggers for Python are described below, and the built-in function
+:func:`breakpoint` allows you to drop into any of them.
+
 The pdb module is a simple but adequate console-mode debugger for Python. It is
 part of the standard Python library, and is :mod:`documented in the Library
 Reference Manual <pdb>`. You can also write your own debugger by using the code
@@ -70,6 +73,11 @@ PyChecker performs, Pylint offers some additional features such as checking line
 length, whether variable names are well-formed according to your coding
 standard, whether declared interfaces are fully implemented, and more.
 https://docs.pylint.org/ provides a full list of Pylint's features.
+
+Static type checkers such as `Mypy <http://mypy-lang.org/>`_,
+`Pyre <https://pyre-check.org/>`_, and
+`Pytype <https://github.com/google/pytype>`_ can check type hints in Python
+source code.
 
 
 How can I create a stand-alone binary from a Python script?
@@ -371,8 +379,8 @@ compute, a common technique is to cache the parameters and the resulting value
 of each call to the function, and return the cached value if the same value is
 requested again.  This is called "memoizing", and can be implemented like this::
 
-   # Callers will never provide a third parameter for this function.
-   def expensive(arg1, arg2, _cache={}):
+   # Callers can only provide two parameters and optionally pass _cache by keyword
+   def expensive(arg1, arg2, *, _cache={}):
        if (arg1, arg2) in _cache:
            return _cache[(arg1, arg2)]
 
@@ -546,8 +554,8 @@ desired effect in a number of ways.
 5) Or bundle up values in a class instance::
 
       class callByRef:
-          def __init__(self, **args):
-              for (key, value) in args.items():
+          def __init__(self, /, **args):
+              for key, value in args.items():
                   setattr(self, key, value)
 
       def func4(args):
@@ -651,7 +659,7 @@ How can my code discover the name of an object?
 -----------------------------------------------
 
 Generally speaking, it can't, because objects don't really have names.
-Essentially, assignment always binds a name to a value; The same is true of
+Essentially, assignment always binds a name to a value; the same is true of
 ``def`` and ``class`` statements, but in that case the value is a
 callable. Consider the following code::
 
@@ -733,7 +741,7 @@ Is it possible to write obfuscated one-liners in Python?
 --------------------------------------------------------
 
 Yes.  Usually this is done by nesting :keyword:`lambda` within
-:keyword:`lambda`.  See the following three examples, due to Ulf Bartelt::
+:keyword:`!lambda`.  See the following three examples, due to Ulf Bartelt::
 
    from functools import reduce
 
@@ -760,6 +768,34 @@ Yes.  Usually this is done by nesting :keyword:`lambda` within
    #        |____________________________ range on x axis
 
 Don't try this at home, kids!
+
+
+.. _faq-positional-only-arguments:
+
+What does the slash(/) in the parameter list of a function mean?
+----------------------------------------------------------------
+
+A slash in the argument list of a function denotes that the parameters prior to
+it are positional-only.  Positional-only parameters are the ones without an
+externally-usable name.  Upon calling a function that accepts positional-only
+parameters, arguments are mapped to parameters based solely on their position.
+For example, :func:`divmod` is a function that accepts positional-only
+parameters. Its documentation looks like this::
+
+   >>> help(divmod)
+   Help on built-in function divmod in module builtins:
+
+   divmod(x, y, /)
+       Return the tuple (x//y, x%y).  Invariant: div*y + mod == x.
+
+The slash at the end of the parameter list means that both parameters are
+positional-only. Thus, calling :func:`divmod` with keyword arguments would lead
+to an error::
+
+   >>> divmod(x=3, y=4)
+   Traceback (most recent call last):
+     File "<stdin>", line 1, in <module>
+   TypeError: divmod() takes no keyword arguments
 
 
 Numbers and strings
@@ -1311,14 +1347,6 @@ The ``__iadd__`` succeeds, and thus the list is extended, but even though
 ``result`` points to the same object that ``a_tuple[0]`` already points to,
 that final assignment still results in an error, because tuples are immutable.
 
-
-Dictionaries
-============
-
-How can I get a dictionary to store and display its keys in a consistent order?
--------------------------------------------------------------------------------
-
-Use :class:`collections.OrderedDict`.
 
 I want to do a complicated sort: can you do a Schwartzian Transform in Python?
 ------------------------------------------------------------------------------

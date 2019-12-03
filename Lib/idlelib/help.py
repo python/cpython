@@ -2,7 +2,7 @@
 Contents are subject to revision at any time, without notice.
 
 
-Help => About IDLE: diplay About Idle dialog
+Help => About IDLE: display About Idle dialog
 
 <to be moved here from help_about.py>
 
@@ -50,20 +50,22 @@ class HelpParser(HTMLParser):
     """
     def __init__(self, text):
         HTMLParser.__init__(self, convert_charrefs=True)
-        self.text = text         # text widget we're rendering into
-        self.tags = ''           # current block level text tags to apply
-        self.chartags = ''       # current character level text tags
-        self.show = False        # used so we exclude page navigation
-        self.hdrlink = False     # used so we don't show header links
-        self.level = 0           # indentation level
-        self.pre = False         # displaying preformatted text
-        self.hprefix = ''        # prefix such as '25.5' to strip from headings
-        self.nested_dl = False   # if we're in a nested <dl>
-        self.simplelist = False  # simple list (no double spacing)
-        self.toc = []            # pair headers with text indexes for toc
-        self.header = ''         # text within header tags for toc
+        self.text = text         # Text widget we're rendering into.
+        self.tags = ''           # Current block level text tags to apply.
+        self.chartags = ''       # Current character level text tags.
+        self.show = False        # Exclude html page navigation.
+        self.hdrlink = False     # Exclude html header links.
+        self.level = 0           # Track indentation level.
+        self.pre = False         # Displaying preformatted text?
+        self.hprefix = ''        # Heading prefix (like '25.5'?) to remove.
+        self.nested_dl = False   # In a nested <dl>?
+        self.simplelist = False  # In a simple list (no double spacing)?
+        self.toc = []            # Pair headers with text indexes for toc.
+        self.header = ''         # Text within header tags for toc.
+        self.prevtag = None      # Previous tag info (opener?, tag).
 
     def indent(self, amt=1):
+        "Change indent (+1, 0, -1) and tags."
         self.level += amt
         self.tags = '' if self.level == 0 else 'l'+str(self.level)
 
@@ -75,11 +77,14 @@ class HelpParser(HTMLParser):
                 class_ = v
         s = ''
         if tag == 'div' and class_ == 'section':
-            self.show = True    # start of main content
+            self.show = True    # Start main content.
         elif tag == 'div' and class_ == 'sphinxsidebar':
-            self.show = False   # end of main content
-        elif tag == 'p' and class_ != 'first':
-            s = '\n\n'
+            self.show = False   # End main content.
+        elif tag == 'p' and self.prevtag and not self.prevtag[0]:
+            # Begin a new block for <p> tags after a closed tag.
+            # Avoid extra lines, e.g. after <pre> tags.
+            lastline = self.text.get('end-1c linestart', 'end-1c')
+            s = '\n\n' if lastline and not lastline.isspace() else '\n'
         elif tag == 'span' and class_ == 'pre':
             self.chartags = 'pre'
         elif tag == 'span' and class_ == 'versionmodified':
@@ -99,7 +104,7 @@ class HelpParser(HTMLParser):
         elif tag == 'li':
             s = '\n* ' if self.simplelist else '\n\n* '
         elif tag == 'dt':
-            s = '\n\n' if not self.nested_dl else '\n'  # avoid extra line
+            s = '\n\n' if not self.nested_dl else '\n'  # Avoid extra line.
             self.nested_dl = False
         elif tag == 'dd':
             self.indent()
@@ -120,13 +125,18 @@ class HelpParser(HTMLParser):
             self.tags = tag
         if self.show:
             self.text.insert('end', s, (self.tags, self.chartags))
+        self.prevtag = (True, tag)
 
     def handle_endtag(self, tag):
         "Handle endtags in help.html."
         if tag in ['h1', 'h2', 'h3']:
-            self.indent(0)  # clear tag, reset indent
+            assert self.level == 0
             if self.show:
-                self.toc.append((self.header, self.text.index('insert')))
+                indent = ('        ' if tag == 'h3' else
+                          '    ' if tag == 'h2' else
+                          '')
+                self.toc.append((indent+self.header, self.text.index('insert')))
+            self.tags = ''
         elif tag in ['span', 'em']:
             self.chartags = ''
         elif tag == 'a':
@@ -135,18 +145,23 @@ class HelpParser(HTMLParser):
             self.pre = False
             self.tags = ''
         elif tag in ['ul', 'dd', 'ol']:
-            self.indent(amt=-1)
+            self.indent(-1)
+        self.prevtag = (False, tag)
 
     def handle_data(self, data):
         "Handle date segments in help.html."
         if self.show and not self.hdrlink:
             d = data if self.pre else data.replace('\n', ' ')
             if self.tags == 'h1':
-                self.hprefix = d[0:d.index(' ')]
-            if self.tags in ['h1', 'h2', 'h3'] and self.hprefix != '':
-                if d[0:len(self.hprefix)] == self.hprefix:
-                    d = d[len(self.hprefix):].strip()
-                self.header += d
+                try:
+                    self.hprefix = d[0:d.index(' ')]
+                except ValueError:
+                    self.hprefix = ''
+            if self.tags in ['h1', 'h2', 'h3']:
+                if (self.hprefix != '' and
+                    d[0:len(self.hprefix)] == self.hprefix):
+                    d = d[len(self.hprefix):]
+                self.header += d.strip()
             self.text.insert('end', d, (self.tags, self.chartags))
 
 
@@ -156,7 +171,7 @@ class HelpText(Text):
         "Configure tags and feed file to parser."
         uwide = idleConf.GetOption('main', 'EditorWindow', 'width', type='int')
         uhigh = idleConf.GetOption('main', 'EditorWindow', 'height', type='int')
-        uhigh = 3 * uhigh // 4  # lines average 4/3 of editor line height
+        uhigh = 3 * uhigh // 4  # Lines average 4/3 of editor line height.
         Text.__init__(self, parent, wrap='word', highlightthickness=0,
                       padx=5, borderwidth=0, width=uwide, height=uhigh)
 
@@ -196,7 +211,6 @@ class HelpFrame(Frame):
     "Display html text, scrollbar, and toc."
     def __init__(self, parent, filename):
         Frame.__init__(self, parent)
-        # keep references to widgets for test access.
         self.text = text = HelpText(self, filename)
         self['background'] = text['background']
         self.toc = toc = self.toc_menu(text)
@@ -204,7 +218,7 @@ class HelpFrame(Frame):
         text['yscrollcommand'] = scroll.set
 
         self.rowconfigure(0, weight=1)
-        self.columnconfigure(1, weight=1)  # text
+        self.columnconfigure(1, weight=1)  # Only expand the text widget.
         toc.grid(row=0, column=0, sticky='nw')
         text.grid(row=0, column=1, sticky='nsew')
         scroll.grid(row=0, column=2, sticky='ns')
@@ -233,28 +247,28 @@ class HelpWindow(Toplevel):
 def copy_strip():
     """Copy idle.html to idlelib/help.html, stripping trailing whitespace.
 
-    Files with trailing whitespace cannot be pushed to the hg cpython
+    Files with trailing whitespace cannot be pushed to the git cpython
     repository.  For 3.x (on Windows), help.html is generated, after
-    editing idle.rst in the earliest maintenance version, with
+    editing idle.rst on the master branch, with
       sphinx-build -bhtml . build/html
       python_d.exe -c "from idlelib.help import copy_strip; copy_strip()"
-    After refreshing TortoiseHG workshop to generate a diff,
-    check  both the diff and displayed text.  Push the diff along with
-    the idle.rst change and merge both into default (or an intermediate
-    maintenance version).
+    Check build/html/library/idle.html, the help.html diff, and the text
+    displayed by Help => IDLE Help.  Add a blurb and create a PR.
 
-    When the 'earlist' version gets its final maintenance release,
-    do an update as described above, without editing idle.rst, to
-    rebase help.html on the next version of idle.rst.  Do not worry
-    about version changes as version is not displayed.  Examine other
-    changes and the result of Help -> IDLE Help.
+    It can be worthwhile to occasionally generate help.html without
+    touching idle.rst.  Changes to the master version and to the doc
+    build system may result in changes that should not changed
+    the displayed text, but might break HelpParser.
 
-    If maintenance and default versions of idle.rst diverge, and
-    merging does not go smoothly, then consider generating
-    separate help.html files from separate idle.htmls.
+    As long as master and maintenance versions of idle.rst remain the
+    same, help.html can be backported.  The internal Python version
+    number is not displayed.  If maintenance idle.rst diverges from
+    the master version, then instead of backporting help.html from
+    master, repeat the procedure above to generate a maintenance
+    version.
     """
     src = join(abspath(dirname(dirname(dirname(__file__)))),
-               'Doc', 'build', 'html', 'library', 'idle.html')
+            'Doc', 'build', 'html', 'library', 'idle.html')
     dst = join(abspath(dirname(__file__)), 'help.html')
     with open(src, 'rb') as inn,\
          open(dst, 'wb') as out:
@@ -266,10 +280,13 @@ def show_idlehelp(parent):
     "Create HelpWindow; called from Idle Help event handler."
     filename = join(abspath(dirname(__file__)), 'help.html')
     if not isfile(filename):
-        # try copy_strip, present message
+        # Try copy_strip, present message.
         return
     HelpWindow(parent, filename, 'IDLE Help (%s)' % python_version())
 
 if __name__ == '__main__':
+    from unittest import main
+    main('idlelib.idle_test.test_help', verbosity=2, exit=False)
+
     from idlelib.idle_test.htest import run
     run(show_idlehelp)

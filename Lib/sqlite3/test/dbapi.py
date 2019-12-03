@@ -161,7 +161,7 @@ class ConnectionTests(unittest.TestCase):
             self.cx.in_transaction = True
 
     def CheckOpenWithPathLikeObject(self):
-        """ Checks that we can succesfully connect to a database using an object that
+        """ Checks that we can successfully connect to a database using an object that
             is PathLike, i.e. has __fspath__(). """
         self.addCleanup(unlink, TESTFN)
         class Path:
@@ -230,7 +230,7 @@ class CursorTests(unittest.TestCase):
             """)
 
     def CheckExecuteWrongSqlArg(self):
-        with self.assertRaises(ValueError):
+        with self.assertRaises(TypeError):
             self.cu.execute(42)
 
     def CheckExecuteArgInt(self):
@@ -377,7 +377,7 @@ class CursorTests(unittest.TestCase):
         self.cu.executemany("insert into test(income) values (?)", mygen())
 
     def CheckExecuteManyWrongSqlArg(self):
-        with self.assertRaises(ValueError):
+        with self.assertRaises(TypeError):
             self.cu.executemany(42, [(3,)])
 
     def CheckExecuteManySelect(self):

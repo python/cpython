@@ -4,7 +4,7 @@ This script is used to build "official" universal installers on macOS.
 
 NEW for 3.7.0:
 - support Intel 64-bit-only () and 32-bit-only installer builds
-- use external Tcl/Tk 8.6 for 10.9+ builds
+- build and use internal Tcl/Tk 8.6 for 10.6+ builds
 - deprecate use of explicit SDK (--sdk-path=) since all but the oldest
   versions of Xcode support implicit setting of an SDK via environment
   variables (SDKROOT and friends, see the xcrun man page for more info).
@@ -24,7 +24,9 @@ Sphinx and dependencies are installed into a venv using the python3's pip
 so will fetch them from PyPI if necessary.  Since python3 is now used for
 Sphinx, build-installer.py should also be converted to use python3!
 
-build-installer currently requires an installed third-party version of
+For 3.7.0, when building for a 10.6 or higher deployment target,
+build-installer builds and links with its own copy of Tcl/Tk 8.6.
+Otherwise, it requires an installed third-party version of
 Tcl/Tk 8.4 (for OS X 10.4 and 10.5 deployment targets), Tcl/TK 8.5
 (for 10.6 or later), or Tcl/TK 8.6 (for 10.9 or later)
 installed in /Library/Frameworks.  When installed,
@@ -161,7 +163,7 @@ def getTargetCompilers():
         '10.5': ('gcc', 'g++'),
         '10.6': ('gcc', 'g++'),
     }
-    return target_cc_map.get(DEPTARGET, ('gcc', 'gcc++') )
+    return target_cc_map.get(DEPTARGET, ('gcc', 'g++') )
 
 CC, CXX = getTargetCompilers()
 
@@ -190,9 +192,9 @@ USAGE = textwrap.dedent("""\
 EXPECTED_SHARED_LIBS = {}
 
 # Are we building and linking with our own copy of Tcl/TK?
-#   For now, do so if deployment target is 10.9+.
+#   For now, do so if deployment target is 10.6+.
 def internalTk():
-    return getDeptargetTuple() >= (10, 9)
+    return getDeptargetTuple() >= (10, 6)
 
 # List of names of third party software built with this installer.
 # The names will be inserted into the rtf version of the License.
@@ -213,9 +215,9 @@ def library_recipes():
 
     result.extend([
           dict(
-              name="OpenSSL 1.1.0g",
-              url="https://www.openssl.org/source/openssl-1.1.0g.tar.gz",
-              checksum='ba5f1b8b835b88cadbce9b35ed9531a6',
+              name="OpenSSL 1.1.1d",
+              url="https://www.openssl.org/source/openssl-1.1.1d.tar.gz",
+              checksum='3be209000dbc7e1b95bcdf47980a3baa',
               buildrecipe=build_universal_openssl,
               configure=None,
               install=None,
@@ -225,9 +227,9 @@ def library_recipes():
     if internalTk():
         result.extend([
           dict(
-              name="Tcl 8.6.7",
-              url="ftp://ftp.tcl.tk/pub/tcl//tcl8_6/tcl8.6.7-src.tar.gz",
-              checksum='5673aaf45b5de5d8dd80bb3daaeb8838',
+              name="Tcl 8.6.8",
+              url="ftp://ftp.tcl.tk/pub/tcl//tcl8_6/tcl8.6.8-src.tar.gz",
+              checksum='81656d3367af032e0ae6157eff134f89',
               buildDir="unix",
               configure_pre=[
                     '--enable-shared',
@@ -241,9 +243,12 @@ def library_recipes():
                   },
               ),
           dict(
-              name="Tk 8.6.7",
-              url="ftp://ftp.tcl.tk/pub/tcl//tcl8_6/tk8.6.7-src.tar.gz",
-              checksum='46ea9c0165c515d87393700f4891ab6f',
+              name="Tk 8.6.8",
+              url="ftp://ftp.tcl.tk/pub/tcl//tcl8_6/tk8.6.8-src.tar.gz",
+              checksum='5e0faecba458ee1386078fb228d008ba',
+              patches=[
+                  "tk868_on_10_8_10_9.patch",
+                   ],
               buildDir="unix",
               configure_pre=[
                     '--enable-aqua',
@@ -308,9 +313,9 @@ def library_recipes():
                   ),
           ),
           dict(
-              name="SQLite 3.22.0",
-              url="https://www.sqlite.org/2018/sqlite-autoconf-3220000.tar.gz",
-              checksum='96b5648d542e8afa6ab7ffb8db8ddc3d',
+              name="SQLite 3.28.0",
+              url="https://www.sqlite.org/2019/sqlite-autoconf-3280000.tar.gz",
+              checksum='3c68eb400f8354605736cd55400e1572',
               extra_cflags=('-Os '
                             '-DSQLITE_ENABLE_FTS5 '
                             '-DSQLITE_ENABLE_FTS4 '
@@ -805,6 +810,16 @@ def build_universal_openssl(basedir, archList):
             "ppc": ["darwin-ppc-cc"],
             "ppc64": ["darwin64-ppc-cc"],
         }
+
+        # Somewhere between OpenSSL 1.1.0j and 1.1.1c, changes cause the
+        # "enable-ec_nistp_64_gcc_128" option to get compile errors when
+        # building on our 10.6 gcc-4.2 environment.  There have been other
+        # reports of projects running into this when using older compilers.
+        # So, for now, do not try to use "enable-ec_nistp_64_gcc_128" when
+        # building for 10.6.
+        if getDeptargetTuple() == (10, 6):
+            arch_opts['x86_64'].remove('enable-ec_nistp_64_gcc_128')
+
         configure_opts = [
             "no-idea",
             "no-mdc2",
@@ -1053,6 +1068,7 @@ def buildPythonDocs():
     runCommand('make clean')
     # Create virtual environment for docs builds with blurb and sphinx
     runCommand('make venv')
+    runCommand('venv/bin/python3 -m pip install -U Sphinx==2.2.0')
     runCommand('make html PYTHON=venv/bin/python')
     os.chdir(curDir)
     if not os.path.exists(docdir):
@@ -1202,7 +1218,8 @@ def buildPython():
             if ln.startswith('VERSION='):
                 VERSION=ln.split()[1]
             if ln.startswith('ABIFLAGS='):
-                ABIFLAGS=ln.split()[1]
+                ABIFLAGS=ln.split()
+                ABIFLAGS=ABIFLAGS[1] if len(ABIFLAGS) > 1 else ''
             if ln.startswith('LDVERSION='):
                 LDVERSION=ln.split()[1]
         fp.close()
@@ -1253,7 +1270,8 @@ def buildPython():
     import pprint
     if getVersionMajorMinor() >= (3, 6):
         # XXX this is extra-fragile
-        path = os.path.join(path_to_lib, '_sysconfigdata_m_darwin_darwin.py')
+        path = os.path.join(path_to_lib,
+            '_sysconfigdata_%s_darwin_darwin.py' % (ABIFLAGS,))
     else:
         path = os.path.join(path_to_lib, '_sysconfigdata.py')
     fp = open(path, 'r')
@@ -1513,12 +1531,27 @@ def buildDMG():
     imagepath = imagepath + '.dmg'
 
     os.mkdir(outdir)
+
+    # Try to mitigate race condition in certain versions of macOS, e.g. 10.9,
+    # when hdiutil create fails with  "Resource busy".  For now, just retry
+    # the create a few times and hope that it eventually works.
+
     volname='Python %s'%(getFullVersion())
-    runCommand("hdiutil create -format UDRW -volname %s -srcfolder %s %s"%(
+    cmd = ("hdiutil create -format UDRW -volname %s -srcfolder %s -size 100m %s"%(
             shellQuote(volname),
             shellQuote(os.path.join(WORKDIR, 'installer')),
             shellQuote(imagepath + ".tmp.dmg" )))
-
+    for i in range(5):
+        fd = os.popen(cmd, 'r')
+        data = fd.read()
+        xit = fd.close()
+        if not xit:
+            break
+        sys.stdout.write(data)
+        print(" -- retrying hdiutil create")
+        time.sleep(5)
+    else:
+        raise RuntimeError("command failed: %s"%(cmd,))
 
     if not os.path.exists(os.path.join(WORKDIR, "mnt")):
         os.mkdir(os.path.join(WORKDIR, "mnt"))

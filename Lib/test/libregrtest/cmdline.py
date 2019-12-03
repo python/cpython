@@ -68,7 +68,7 @@ typically try to ascertain containers keep working when containing more than
 2 billion objects, which only works on 64-bit systems. There are also some
 tests that try to exhaust the address space of the process, which only makes
 sense on 32-bit systems with at least 2Gb of memory. The passed-in memlimit,
-which is a string in the form of '2.5Gb', determines howmuch memory the
+which is a string in the form of '2.5Gb', determines how much memory the
 tests will limit themselves to (but they may go slightly over.) The number
 shouldn't be more memory than the machine has (including swap memory). You
 should also keep in mind that swap memory is generally much, much slower
@@ -170,7 +170,7 @@ def _create_parser():
     group.add_argument('--wait', action='store_true',
                        help='wait for user input, e.g., allow a debugger '
                             'to be attached')
-    group.add_argument('--slaveargs', metavar='ARGS')
+    group.add_argument('--worker-args', metavar='ARGS')
     group.add_argument('-S', '--start', metavar='START',
                        help='the name of the test at which to start.' +
                             more_details)
@@ -207,10 +207,17 @@ def _create_parser():
     group.add_argument('-m', '--match', metavar='PAT',
                        dest='match_tests', action='append',
                        help='match test cases and methods with glob pattern PAT')
+    group.add_argument('-i', '--ignore', metavar='PAT',
+                       dest='ignore_tests', action='append',
+                       help='ignore test cases and methods with glob pattern PAT')
     group.add_argument('--matchfile', metavar='FILENAME',
                        dest='match_filename',
                        help='similar to --match but get patterns from a '
                             'text file, one pattern per line')
+    group.add_argument('--ignorefile', metavar='FILENAME',
+                       dest='ignore_filename',
+                       help='similar to --matchfile but it receives patterns '
+                            'from text file to ignore')
     group.add_argument('-G', '--failfast', action='store_true',
                        help='fail as soon as a test fails (only with -v or -W)')
     group.add_argument('-u', '--use', metavar='RES1,RES2,...',
@@ -226,8 +233,9 @@ def _create_parser():
                             '(instead of the Python stdlib test suite)')
 
     group = parser.add_argument_group('Special runs')
-    group.add_argument('-l', '--findleaks', action='store_true',
-                       help='if GC is available detect tests that leak memory')
+    group.add_argument('-l', '--findleaks', action='store_const', const=2,
+                       default=1,
+                       help='deprecated alias to --fail-env-changed')
     group.add_argument('-L', '--runleaks', action='store_true',
                        help='run the leaks(1) command just before exit.' +
                             more_details)
@@ -255,7 +263,7 @@ def _create_parser():
                        help='suppress error message boxes on Windows')
     group.add_argument('-F', '--forever', action='store_true',
                        help='run the specified tests in a loop, until an '
-                            'error happens')
+                            'error happens; imply --failfast')
     group.add_argument('--list-tests', action='store_true',
                        help="only write the name of tests that will be run, "
                             "don't execute them")
@@ -263,11 +271,20 @@ def _create_parser():
                        help='only write the name of test cases that will be run'
                             ' , don\'t execute them')
     group.add_argument('-P', '--pgo', dest='pgo', action='store_true',
-                       help='enable Profile Guided Optimization training')
+                       help='enable Profile Guided Optimization (PGO) training')
+    group.add_argument('--pgo-extended', action='store_true',
+                       help='enable extended PGO training (slower training)')
     group.add_argument('--fail-env-changed', action='store_true',
                        help='if a test file alters the environment, mark '
                             'the test as failed')
 
+    group.add_argument('--junit-xml', dest='xmlpath', metavar='FILENAME',
+                       help='writes JUnit-style XML results to the specified '
+                            'file')
+    group.add_argument('--tempdir', metavar='PATH',
+                       help='override the working directory for the test run')
+    group.add_argument('--cleanup', action='store_true',
+                       help='remove old test_python_* directories')
     return parser
 
 
@@ -304,10 +321,11 @@ def _parse_args(args, **kwargs):
     # Defaults
     ns = argparse.Namespace(testdir=None, verbose=0, quiet=False,
          exclude=False, single=False, randomize=False, fromfile=None,
-         findleaks=False, use_resources=None, trace=False, coverdir='coverage',
+         findleaks=1, use_resources=None, trace=False, coverdir='coverage',
          runleaks=False, huntrleaks=False, verbose2=False, print_slow=False,
          random_seed=None, use_mp=None, verbose3=False, forever=False,
-         header=False, failfast=False, match_tests=None, pgo=False)
+         header=False, failfast=False, match_tests=None, ignore_tests=None,
+         pgo=False)
     for k, v in kwargs.items():
         if not hasattr(ns, k):
             raise TypeError('%r is an invalid keyword argument '
@@ -325,16 +343,19 @@ def _parse_args(args, **kwargs):
             parser.error("unrecognized arguments: %s" % arg)
             sys.exit(1)
 
+    if ns.findleaks > 1:
+        # --findleaks implies --fail-env-changed
+        ns.fail_env_changed = True
     if ns.single and ns.fromfile:
         parser.error("-s and -f don't go together!")
     if ns.use_mp is not None and ns.trace:
         parser.error("-T and -j don't go together!")
-    if ns.use_mp is not None and ns.findleaks:
-        parser.error("-l and -j don't go together!")
     if ns.failfast and not (ns.verbose or ns.verbose3):
         parser.error("-G/--failfast needs either -v or -W")
     if ns.pgo and (ns.verbose or ns.verbose2 or ns.verbose3):
         parser.error("--pgo/-v don't go together!")
+    if ns.pgo_extended:
+        ns.pgo = True  # pgo_extended implies pgo
 
     if ns.nowindows:
         print("Warning: the --nowindows (-n) option is deprecated. "
@@ -379,9 +400,17 @@ def _parse_args(args, **kwargs):
     if ns.match_filename:
         if ns.match_tests is None:
             ns.match_tests = []
-        filename = os.path.join(support.SAVEDCWD, ns.match_filename)
-        with open(filename) as fp:
+        with open(ns.match_filename) as fp:
             for line in fp:
                 ns.match_tests.append(line.strip())
+    if ns.ignore_filename:
+        if ns.ignore_tests is None:
+            ns.ignore_tests = []
+        with open(ns.ignore_filename) as fp:
+            for line in fp:
+                ns.ignore_tests.append(line.strip())
+    if ns.forever:
+        # --forever implies --failfast
+        ns.failfast = True
 
     return ns

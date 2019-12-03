@@ -19,6 +19,9 @@ import warnings
 
 from test.support import make_legacy_pyc, unload
 
+from test.test_py_compile import without_source_date_epoch
+from test.test_py_compile import SourceDateEpochTestMeta
+
 
 class SimpleTest(abc.LoaderTests):
 
@@ -322,7 +325,7 @@ class SimpleTest(abc.LoaderTests):
             )
 
     @util.writes_bytecode_files
-    def test_overiden_unchecked_hash_based_pyc(self):
+    def test_overridden_unchecked_hash_based_pyc(self):
         with util.create_modules('_temp') as mapping, \
              unittest.mock.patch('_imp.check_hash_based_pycs', 'always'):
             source = mapping['_temp']
@@ -357,6 +360,17 @@ class SimpleTest(abc.LoaderTests):
  Source_SimpleTest
  ) = util.test_both(SimpleTest, importlib=importlib, machinery=machinery,
                     abc=importlib_abc, util=importlib_util)
+
+
+class SourceDateEpochTestMeta(SourceDateEpochTestMeta,
+                              type(Source_SimpleTest)):
+    pass
+
+
+class SourceDateEpoch_SimpleTest(Source_SimpleTest,
+                                 metaclass=SourceDateEpochTestMeta,
+                                 source_date_epoch=True):
+    pass
 
 
 class BadBytecodeTest:
@@ -617,6 +631,7 @@ class SourceLoaderBadBytecodeTest:
 
     # [bad timestamp]
     @util.writes_bytecode_files
+    @without_source_date_epoch
     def test_old_timestamp(self):
         # When the timestamp is older than the source, bytecode should be
         # regenerated.
@@ -629,7 +644,7 @@ class SourceLoaderBadBytecodeTest:
                 bytecode_file.write(zeros)
             self.import_(mapping['_temp'], '_temp')
             source_mtime = os.path.getmtime(mapping['_temp'])
-            source_timestamp = self.importlib._w_long(source_mtime)
+            source_timestamp = self.importlib._pack_uint32(source_mtime)
             with open(bytecode_path, 'rb') as bytecode_file:
                 bytecode_file.seek(8)
                 self.assertEqual(bytecode_file.read(4), source_timestamp)

@@ -287,6 +287,67 @@ The :mod:`test.support` module defines the following constants:
    Set to a filename containing the :data:`FS_NONASCII` character.
 
 
+.. data:: LOOPBACK_TIMEOUT
+
+   Timeout in seconds for tests using a network server listening on the network
+   local loopback interface like ``127.0.0.1``.
+
+   The timeout is long enough to prevent test failure: it takes into account
+   that the client and the server can run in different threads or even
+   different processes.
+
+   The timeout should be long enough for :meth:`~socket.socket.connect`,
+   :meth:`~socket.socket.recv` and :meth:`~socket.socket.send` methods of
+   :class:`socket.socket`.
+
+   Its default value is 5 seconds.
+
+   See also :data:`INTERNET_TIMEOUT`.
+
+
+.. data:: INTERNET_TIMEOUT
+
+   Timeout in seconds for network requests going to the Internet.
+
+   The timeout is short enough to prevent a test to wait for too long if the
+   Internet request is blocked for whatever reason.
+
+   Usually, a timeout using :data:`INTERNET_TIMEOUT` should not mark a test as
+   failed, but skip the test instead: see
+   :func:`~test.support.transient_internet`.
+
+   Its default value is 1 minute.
+
+   See also :data:`LOOPBACK_TIMEOUT`.
+
+
+.. data:: SHORT_TIMEOUT
+
+   Timeout in seconds to mark a test as failed if the test takes "too long".
+
+   The timeout value depends on the regrtest ``--timeout`` command line option.
+
+   If a test using :data:`SHORT_TIMEOUT` starts to fail randomly on slow
+   buildbots, use :data:`LONG_TIMEOUT` instead.
+
+   Its default value is 30 seconds.
+
+
+.. data:: LONG_TIMEOUT
+
+   Timeout in seconds to detect when a test hangs.
+
+   It is long enough to reduce the risk of test failure on the slowest Python
+   buildbots. It should not be used to mark a test as failed if the test takes
+   "too long".  The timeout value depends on the regrtest ``--timeout`` command
+   line option.
+
+   Its default value is 5 minutes.
+
+   See also :data:`LOOPBACK_TIMEOUT`, :data:`INTERNET_TIMEOUT` and
+   :data:`SHORT_TIMEOUT`.
+
+
 .. data:: IPV6_ENABLED
 
     Set to ``True`` if IPV6 is enabled on this host, ``False`` otherwise.
@@ -357,6 +418,33 @@ The :mod:`test.support` module defines the following constants:
    Check for presence of docstrings.
 
 
+.. data:: TEST_HTTP_URL
+
+   Define the URL of a dedicated HTTP server for the network tests.
+
+
+.. data:: ALWAYS_EQ
+
+   Object that is equal to anything.  Used to test mixed type comparison.
+
+
+.. data:: NEVER_EQ
+
+   Object that is not equal to anything (even to :data:`ALWAYS_EQ`).
+   Used to test mixed type comparison.
+
+
+.. data:: LARGEST
+
+   Object that is greater than anything (except itself).
+   Used to test mixed type comparison.
+
+
+.. data:: SMALLEST
+
+   Object that is less than anything (except itself).
+   Used to test mixed type comparison.
+
 
 The :mod:`test.support` module defines the following functions:
 
@@ -392,7 +480,7 @@ The :mod:`test.support` module defines the following functions:
 
 .. function:: make_legacy_pyc(source)
 
-   Move a PEP 3147/488 pyc file to its legacy pyc location and return the file
+   Move a :pep:`3147`/:pep:`488` pyc file to its legacy pyc location and return the file
    system path to the legacy pyc file.  The *source* value is the file system
    path to the source file.  It does not need to exist, however the PEP
    3147/488 pyc file must exist.
@@ -746,7 +834,7 @@ The :mod:`test.support` module defines the following functions:
 
 .. function:: wait_threads_exit(timeout=60.0)
 
-   Context manager to wait until all threads created in the ``with`` statment
+   Context manager to wait until all threads created in the ``with`` statement
    exit.
 
 
@@ -936,9 +1024,24 @@ The :mod:`test.support` module defines the following functions:
 
    Test for syntax errors in *statement* by attempting to compile *statement*.
    *testcase* is the :mod:`unittest` instance for the test.  *errtext* is the
-   text of the error raised by :exc:`SyntaxError`.  If *lineno* is not None,
-   compares to the line of the :exc:`SyntaxError`.  If *offset* is not None,
-   compares to the offset of the :exc:`SyntaxError`.
+   regular expression which should match the string representation of the
+   raised :exc:`SyntaxError`.  If *lineno* is not ``None``, compares to
+   the line of the exception.  If *offset* is not ``None``, compares to
+   the offset of the exception.
+
+
+.. function:: check_syntax_warning(testcase, statement, errtext='', *, lineno=1, offset=None)
+
+   Test for syntax warning in *statement* by attempting to compile *statement*.
+   Test also that the :exc:`SyntaxWarning` is emitted only once, and that it
+   will be converted to a :exc:`SyntaxError` when turned into error.
+   *testcase* is the :mod:`unittest` instance for the test.  *errtext* is the
+   regular expression which should match the string representation of the
+   emitted :exc:`SyntaxWarning` and raised :exc:`SyntaxError`.  If *lineno*
+   is not ``None``, compares to the line of the warning and exception.
+   If *offset* is not ``None``, compares to the offset of the exception.
+
+   .. versionadded:: 3.8
 
 
 .. function:: open_urlresource(url, *args, **kw)
@@ -1062,6 +1165,67 @@ The :mod:`test.support` module defines the following functions:
    :exc:`PermissionError` is raised.
 
 
+.. function:: catch_threading_exception()
+
+   Context manager catching :class:`threading.Thread` exception using
+   :func:`threading.excepthook`.
+
+   Attributes set when an exception is catched:
+
+   * ``exc_type``
+   * ``exc_value``
+   * ``exc_traceback``
+   * ``thread``
+
+   See :func:`threading.excepthook` documentation.
+
+   These attributes are deleted at the context manager exit.
+
+   Usage::
+
+       with support.catch_threading_exception() as cm:
+           # code spawning a thread which raises an exception
+           ...
+
+           # check the thread exception, use cm attributes:
+           # exc_type, exc_value, exc_traceback, thread
+           ...
+
+       # exc_type, exc_value, exc_traceback, thread attributes of cm no longer
+       # exists at this point
+       # (to avoid reference cycles)
+
+   .. versionadded:: 3.8
+
+
+.. function:: catch_unraisable_exception()
+
+   Context manager catching unraisable exception using
+   :func:`sys.unraisablehook`.
+
+   Storing the exception value (``cm.unraisable.exc_value``) creates a
+   reference cycle. The reference cycle is broken explicitly when the context
+   manager exits.
+
+   Storing the object (``cm.unraisable.object``) can resurrect it if it is set
+   to an object which is being finalized. Exiting the context manager clears
+   the stored object.
+
+   Usage::
+
+       with support.catch_unraisable_exception() as cm:
+           # code creating an "unraisable exception"
+           ...
+
+           # check the unraisable exception: use cm.unraisable
+           ...
+
+       # cm.unraisable attribute no longer exists at this point
+       # (to break a reference cycle)
+
+   .. versionadded:: 3.8
+
+
 .. function:: find_unused_port(family=socket.AF_INET, socktype=socket.SOCK_STREAM)
 
    Returns an unused port that should be suitable for binding.  This is
@@ -1076,7 +1240,7 @@ The :mod:`test.support` module defines the following functions:
    Either this method or :func:`bind_port` should be used for any tests
    where a server socket needs to be bound to a particular port for the
    duration of the test.
-   Which one to use depends on whether the calling code is creating a python
+   Which one to use depends on whether the calling code is creating a Python
    socket, or if an unused port needs to be provided in a constructor
    or passed to an external program (i.e. the ``-accept`` argument to
    openssl's s_server mode).  Always prefer :func:`bind_port` over
@@ -1153,7 +1317,7 @@ The :mod:`test.support` module defines the following functions:
    *module*.
 
    The *name_of_module* argument can specify (as a string or tuple thereof) what
-   module(s) an API could be defined in in order to be detected as a public
+   module(s) an API could be defined in order to be detected as a public
    API. One case for this is when *module* imports part of its public API from
    other modules, possibly a C backend (like ``csv`` and its ``_csv``).
 
@@ -1293,6 +1457,13 @@ The :mod:`test.support` module defines the following classes:
    Class for logging support.
 
 
+.. class:: FakePath(path)
+
+   Simple :term:`path-like object`.  It implements the :meth:`__fspath__`
+   method which just returns the *path* argument.  If *path* is an exception,
+   it will be raised in :meth:`!__fspath__`.
+
+
 :mod:`test.support.script_helper` --- Utilities for the Python execution tests
 ==============================================================================
 
@@ -1325,8 +1496,8 @@ script execution tests.
 .. function:: run_python_until_end(*args, **env_vars)
 
    Set up the environment based on *env_vars* for running the interpreter
-   in a subprocess.  The values can include ``__isolated``, ``__cleavenv``,
-   and ``TERM``.
+   in a subprocess.  The values can include ``__isolated``, ``__cleanenv``,
+   ``__cwd``, and ``TERM``.
 
 
 .. function:: assert_python_ok(*args, **env_vars)
@@ -1393,3 +1564,33 @@ script execution tests.
    containing the *source*.  If *compiled* is ``True``, both source files will
    be compiled and added to the zip package.  Return a tuple of the full zip
    path and the archive name for the zip file.
+
+
+:mod:`test.support.bytecode_helper` --- Support tools for testing correct bytecode generation
+=============================================================================================
+
+.. module:: test.support.bytecode_helper
+   :synopsis: Support tools for testing correct bytecode generation.
+
+The :mod:`test.support.bytecode_helper` module provides support for testing
+and inspecting bytecode generation.
+
+The module defines the follwing class:
+
+.. class:: BytecodeTestCase(unittest.TestCase)
+
+   This class has custom assertion methods for inspecting bytecode.
+
+.. method:: BytecodeTestCase.get_disassembly_as_string(co)
+
+   Return the disassembly of *co* as string.
+
+
+.. method:: BytecodeTestCase.assertInBytecode(x, opname, argval=_UNSPECIFIED)
+
+   Return instr if *opname* is found, otherwise throws :exc:`AssertionError`.
+
+
+.. method:: BytecodeTestCase.assertNotInBytecode(x, opname, argval=_UNSPECIFIED)
+
+   Throws :exc:`AssertionError` if *opname* is found.

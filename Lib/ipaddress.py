@@ -488,7 +488,7 @@ class _IPAddressBase:
         """
         # int allows a leading +/- as well as surrounding whitespace,
         # so we ensure that isn't the case
-        if not _BaseV4._DECIMAL_DIGITS.issuperset(prefixlen_str):
+        if not (prefixlen_str.isascii() and prefixlen_str.isdigit()):
             cls._report_invalid_netmask(prefixlen_str)
         try:
             prefixlen = int(prefixlen_str)
@@ -532,9 +532,35 @@ class _IPAddressBase:
         except ValueError:
             cls._report_invalid_netmask(ip_str)
 
+    @classmethod
+    def _split_addr_prefix(cls, address):
+        """Helper function to parse address of Network/Interface.
+
+        Arg:
+            address: Argument of Network/Interface.
+
+        Returns:
+            (addr, prefix) tuple.
+        """
+        # a packed address or integer
+        if isinstance(address, (bytes, int)):
+            return address, cls._max_prefixlen
+
+        if not isinstance(address, tuple):
+            # Assume input argument to be string or any object representation
+            # which converts into a formatted IP prefix string.
+            address = _split_optional_netmask(address)
+
+        # Constructing from a tuple (addr, [mask])
+        if len(address) > 1:
+            return address
+        return address[0], cls._max_prefixlen
+
     def __reduce__(self):
         return self.__class__, (str(self),)
 
+
+_address_fmt_re = None
 
 @functools.total_ordering
 class _BaseAddress(_IPAddressBase):
@@ -594,18 +620,63 @@ class _BaseAddress(_IPAddressBase):
     def __reduce__(self):
         return self.__class__, (self._ip,)
 
+    def __format__(self, fmt):
+        """Returns an IP address as a formatted string.
+
+        Supported presentation types are:
+        's': returns the IP address as a string (default)
+        'b': converts to binary and returns a zero-padded string
+        'X' or 'x': converts to upper- or lower-case hex and returns a zero-padded string
+        'n': the same as 'b' for IPv4 and 'x' for IPv6
+
+        For binary and hex presentation types, the alternate form specifier
+        '#' and the grouping option '_' are supported.
+        """
+
+        # Support string formatting
+        if not fmt or fmt[-1] == 's':
+            return format(str(self), fmt)
+
+        # From here on down, support for 'bnXx'
+        global _address_fmt_re
+        if _address_fmt_re is None:
+            import re
+            _address_fmt_re = re.compile('(#?)(_?)([xbnX])')
+
+        m = _address_fmt_re.fullmatch(fmt)
+        if not m:
+            return super().__format__(fmt)
+
+        alternate, grouping, fmt_base = m.groups()
+
+        # Set some defaults
+        if fmt_base == 'n':
+            if self._version == 4:
+                fmt_base = 'b'  # Binary is default for ipv4
+            else:
+                fmt_base = 'x'  # Hex is default for ipv6
+
+        if fmt_base == 'b':
+            padlen = self._max_prefixlen
+        else:
+            padlen = self._max_prefixlen // 4
+
+        if grouping:
+            padlen += padlen // 4 - 1
+
+        if alternate:
+            padlen += 2  # 0b or 0x
+
+        return format(int(self), f'{alternate}0{padlen}{grouping}{fmt_base}')
+
 
 @functools.total_ordering
 class _BaseNetwork(_IPAddressBase):
-
     """A generic IP network object.
 
     This IP class contains the version independent methods which are
     used by networks.
-
     """
-    def __init__(self, address):
-        self._cache = {}
 
     def __repr__(self):
         return '%s(%r)' % (self.__class__.__name__, str(self))
@@ -677,8 +748,7 @@ class _BaseNetwork(_IPAddressBase):
         # dealing with another address
         else:
             # address
-            return (int(self.network_address) <= int(other._ip) <=
-                    int(self.broadcast_address))
+            return other._ip & self.netmask._ip == self.network_address._ip
 
     def overlaps(self, other):
         """Tell if self is partly contained in other."""
@@ -687,22 +757,14 @@ class _BaseNetwork(_IPAddressBase):
                 other.network_address in self or (
                     other.broadcast_address in self)))
 
-    @property
+    @functools.cached_property
     def broadcast_address(self):
-        x = self._cache.get('broadcast_address')
-        if x is None:
-            x = self._address_class(int(self.network_address) |
-                                    int(self.hostmask))
-            self._cache['broadcast_address'] = x
-        return x
+        return self._address_class(int(self.network_address) |
+                                   int(self.hostmask))
 
-    @property
+    @functools.cached_property
     def hostmask(self):
-        x = self._cache.get('hostmask')
-        if x is None:
-            x = self._address_class(int(self.netmask) ^ self._ALL_ONES)
-            self._cache['hostmask'] = x
-        return x
+        return self._address_class(int(self.netmask) ^ self._ALL_ONES)
 
     @property
     def with_prefixlen(self):
@@ -1076,10 +1138,6 @@ class _BaseV4:
     _version = 4
     # Equivalent to 255.255.255.255 or 32 bits of 1's.
     _ALL_ONES = (2**IPV4LENGTH) - 1
-    _DECIMAL_DIGITS = frozenset('0123456789')
-
-    # the valid octets for host and netmasks. only useful for IPv4.
-    _valid_mask_octets = frozenset({255, 254, 252, 248, 240, 224, 192, 128, 0})
 
     _max_prefixlen = IPV4LENGTH
     # There are only a handful of valid v4 netmasks, so we cache them all
@@ -1101,6 +1159,8 @@ class _BaseV4:
         if arg not in cls._netmask_cache:
             if isinstance(arg, int):
                 prefixlen = arg
+                if not (0 <= prefixlen <= cls._max_prefixlen):
+                    cls._report_invalid_netmask(prefixlen)
             else:
                 try:
                     # Check for a netmask in prefix length form
@@ -1156,7 +1216,7 @@ class _BaseV4:
         if not octet_str:
             raise ValueError("Empty octet not permitted")
         # Whitelist the characters, since int() allows a lot of bizarre stuff.
-        if not cls._DECIMAL_DIGITS.issuperset(octet_str):
+        if not (octet_str.isascii() and octet_str.isdigit()):
             msg = "Only decimal digits permitted in %r"
             raise ValueError(msg % octet_str)
         # We do the length check second, since the invalid character error
@@ -1166,12 +1226,6 @@ class _BaseV4:
             raise ValueError(msg % octet_str)
         # Convert to integer (we know digits are legal)
         octet_int = int(octet_str, 10)
-        # Any octets that look like they *might* be written in octal,
-        # and which don't look exactly the same in both octal and
-        # decimal are rejected as ambiguous
-        if octet_int > 7 and octet_str[0] == '0':
-            msg = "Ambiguous (octal/decimal) value in %r not permitted"
-            raise ValueError(msg % octet_str)
         if octet_int > 255:
             raise ValueError("Octet %d (> 255) not permitted" % octet_int)
         return octet_int
@@ -1188,58 +1242,6 @@ class _BaseV4:
 
         """
         return '.'.join(map(str, ip_int.to_bytes(4, 'big')))
-
-    def _is_valid_netmask(self, netmask):
-        """Verify that the netmask is valid.
-
-        Args:
-            netmask: A string, either a prefix or dotted decimal
-              netmask.
-
-        Returns:
-            A boolean, True if the prefix represents a valid IPv4
-            netmask.
-
-        """
-        mask = netmask.split('.')
-        if len(mask) == 4:
-            try:
-                for x in mask:
-                    if int(x) not in self._valid_mask_octets:
-                        return False
-            except ValueError:
-                # Found something that isn't an integer or isn't valid
-                return False
-            for idx, y in enumerate(mask):
-                if idx > 0 and y > mask[idx - 1]:
-                    return False
-            return True
-        try:
-            netmask = int(netmask)
-        except ValueError:
-            return False
-        return 0 <= netmask <= self._max_prefixlen
-
-    def _is_hostmask(self, ip_str):
-        """Test if the IP string is a hostmask (rather than a netmask).
-
-        Args:
-            ip_str: A string, the potential hostmask.
-
-        Returns:
-            A boolean, True if the IP string is a hostmask.
-
-        """
-        bits = ip_str.split('.')
-        try:
-            parts = [x for x in map(int, bits) if x in self._valid_mask_octets]
-        except ValueError:
-            return False
-        if len(parts) != len(bits):
-            return False
-        if parts[0] < parts[-1]:
-            return True
-        return False
 
     def _reverse_pointer(self):
         """Return the reverse DNS pointer name for the IPv4 address.
@@ -1379,36 +1381,20 @@ class IPv4Address(_BaseV4, _BaseAddress):
 class IPv4Interface(IPv4Address):
 
     def __init__(self, address):
-        if isinstance(address, (bytes, int)):
-            IPv4Address.__init__(self, address)
-            self.network = IPv4Network(self._ip)
-            self._prefixlen = self._max_prefixlen
-            return
+        addr, mask = self._split_addr_prefix(address)
 
-        if isinstance(address, tuple):
-            IPv4Address.__init__(self, address[0])
-            if len(address) > 1:
-                self._prefixlen = int(address[1])
-            else:
-                self._prefixlen = self._max_prefixlen
-
-            self.network = IPv4Network(address, strict=False)
-            self.netmask = self.network.netmask
-            self.hostmask = self.network.hostmask
-            return
-
-        addr = _split_optional_netmask(address)
-        IPv4Address.__init__(self, addr[0])
-
-        self.network = IPv4Network(address, strict=False)
+        IPv4Address.__init__(self, addr)
+        self.network = IPv4Network((addr, mask), strict=False)
+        self.netmask = self.network.netmask
         self._prefixlen = self.network._prefixlen
 
-        self.netmask = self.network.netmask
-        self.hostmask = self.network.hostmask
+    @functools.cached_property
+    def hostmask(self):
+        return self.network.hostmask
 
     def __str__(self):
         return '%s/%d' % (self._string_from_ip_int(self._ip),
-                          self.network.prefixlen)
+                          self._prefixlen)
 
     def __eq__(self, other):
         address_equal = IPv4Address.__eq__(self, other)
@@ -1475,7 +1461,6 @@ class IPv4Network(_BaseV4, _BaseNetwork):
     _address_class = IPv4Address
 
     def __init__(self, address, strict=True):
-
         """Instantiate a new IPv4 network object.
 
         Args:
@@ -1509,51 +1494,18 @@ class IPv4Network(_BaseV4, _BaseNetwork):
               an IPv4 address.
             ValueError: If strict is True and a network address is not
               supplied.
-
         """
-        _BaseNetwork.__init__(self, address)
+        addr, mask = self._split_addr_prefix(address)
 
-        # Constructing from a packed address or integer
-        if isinstance(address, (int, bytes)):
-            self.network_address = IPv4Address(address)
-            self.netmask, self._prefixlen = self._make_netmask(self._max_prefixlen)
-            #fixme: address/network test here.
-            return
-
-        if isinstance(address, tuple):
-            if len(address) > 1:
-                arg = address[1]
-            else:
-                # We weren't given an address[1]
-                arg = self._max_prefixlen
-            self.network_address = IPv4Address(address[0])
-            self.netmask, self._prefixlen = self._make_netmask(arg)
-            packed = int(self.network_address)
-            if packed & int(self.netmask) != packed:
-                if strict:
-                    raise ValueError('%s has host bits set' % self)
-                else:
-                    self.network_address = IPv4Address(packed &
-                                                       int(self.netmask))
-            return
-
-        # Assume input argument to be string or any object representation
-        # which converts into a formatted IP prefix string.
-        addr = _split_optional_netmask(address)
-        self.network_address = IPv4Address(self._ip_int_from_string(addr[0]))
-
-        if len(addr) == 2:
-            arg = addr[1]
-        else:
-            arg = self._max_prefixlen
-        self.netmask, self._prefixlen = self._make_netmask(arg)
-
-        if strict:
-            if (IPv4Address(int(self.network_address) & int(self.netmask)) !=
-                self.network_address):
+        self.network_address = IPv4Address(addr)
+        self.netmask, self._prefixlen = self._make_netmask(mask)
+        packed = int(self.network_address)
+        if packed & int(self.netmask) != packed:
+            if strict:
                 raise ValueError('%s has host bits set' % self)
-        self.network_address = IPv4Address(int(self.network_address) &
-                                           int(self.netmask))
+            else:
+                self.network_address = IPv4Address(packed &
+                                                   int(self.netmask))
 
         if self._prefixlen == (self._max_prefixlen - 1):
             self.hosts = self.__iter__
@@ -1639,6 +1591,8 @@ class _BaseV6:
         if arg not in cls._netmask_cache:
             if isinstance(arg, int):
                 prefixlen = arg
+                if not (0 <= prefixlen <= cls._max_prefixlen):
+                    cls._report_invalid_netmask(prefixlen)
             else:
                 prefixlen = cls._prefix_from_prefix_string(arg)
             netmask = IPv6Address(cls._ip_int_from_prefix(prefixlen))
@@ -2074,32 +2028,20 @@ class IPv6Address(_BaseV6, _BaseAddress):
 class IPv6Interface(IPv6Address):
 
     def __init__(self, address):
-        if isinstance(address, (bytes, int)):
-            IPv6Address.__init__(self, address)
-            self.network = IPv6Network(self._ip)
-            self._prefixlen = self._max_prefixlen
-            return
-        if isinstance(address, tuple):
-            IPv6Address.__init__(self, address[0])
-            if len(address) > 1:
-                self._prefixlen = int(address[1])
-            else:
-                self._prefixlen = self._max_prefixlen
-            self.network = IPv6Network(address, strict=False)
-            self.netmask = self.network.netmask
-            self.hostmask = self.network.hostmask
-            return
+        addr, mask = self._split_addr_prefix(address)
 
-        addr = _split_optional_netmask(address)
-        IPv6Address.__init__(self, addr[0])
-        self.network = IPv6Network(address, strict=False)
+        IPv6Address.__init__(self, addr)
+        self.network = IPv6Network((addr, mask), strict=False)
         self.netmask = self.network.netmask
         self._prefixlen = self.network._prefixlen
-        self.hostmask = self.network.hostmask
+
+    @functools.cached_property
+    def hostmask(self):
+        return self.network.hostmask
 
     def __str__(self):
         return '%s/%d' % (self._string_from_ip_int(self._ip),
-                          self.network.prefixlen)
+                          self._prefixlen)
 
     def __eq__(self, other):
         address_equal = IPv6Address.__eq__(self, other)
@@ -2204,50 +2146,18 @@ class IPv6Network(_BaseV6, _BaseNetwork):
               an IPv6 address.
             ValueError: If strict was True and a network address was not
               supplied.
-
         """
-        _BaseNetwork.__init__(self, address)
+        addr, mask = self._split_addr_prefix(address)
 
-        # Efficient constructor from integer or packed address
-        if isinstance(address, (bytes, int)):
-            self.network_address = IPv6Address(address)
-            self.netmask, self._prefixlen = self._make_netmask(self._max_prefixlen)
-            return
-
-        if isinstance(address, tuple):
-            if len(address) > 1:
-                arg = address[1]
-            else:
-                arg = self._max_prefixlen
-            self.netmask, self._prefixlen = self._make_netmask(arg)
-            self.network_address = IPv6Address(address[0])
-            packed = int(self.network_address)
-            if packed & int(self.netmask) != packed:
-                if strict:
-                    raise ValueError('%s has host bits set' % self)
-                else:
-                    self.network_address = IPv6Address(packed &
-                                                       int(self.netmask))
-            return
-
-        # Assume input argument to be string or any object representation
-        # which converts into a formatted IP prefix string.
-        addr = _split_optional_netmask(address)
-
-        self.network_address = IPv6Address(self._ip_int_from_string(addr[0]))
-
-        if len(addr) == 2:
-            arg = addr[1]
-        else:
-            arg = self._max_prefixlen
-        self.netmask, self._prefixlen = self._make_netmask(arg)
-
-        if strict:
-            if (IPv6Address(int(self.network_address) & int(self.netmask)) !=
-                self.network_address):
+        self.network_address = IPv6Address(addr)
+        self.netmask, self._prefixlen = self._make_netmask(mask)
+        packed = int(self.network_address)
+        if packed & int(self.netmask) != packed:
+            if strict:
                 raise ValueError('%s has host bits set' % self)
-        self.network_address = IPv6Address(int(self.network_address) &
-                                           int(self.netmask))
+            else:
+                self.network_address = IPv6Address(packed &
+                                                   int(self.netmask))
 
         if self._prefixlen == (self._max_prefixlen - 1):
             self.hosts = self.__iter__

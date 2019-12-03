@@ -169,18 +169,20 @@ newSHA3object(PyTypeObject *type)
     return newobj;
 }
 
-
 /*[clinic input]
 @classmethod
 _sha3.sha3_224.__new__ as py_sha3_new
-    string as data: object = NULL
+    data: object(c_default="NULL") = b''
+    /
+    *
+    usedforsecurity: bool = True
 
-Return a new SHA3 hash object with a hashbit length of 28 bytes.
+Return a new BLAKE2b hash object.
 [clinic start generated code]*/
 
 static PyObject *
-py_sha3_new_impl(PyTypeObject *type, PyObject *data)
-/*[clinic end generated code: output=8d5c34279e69bf09 input=d7c582b950a858b6]*/
+py_sha3_new_impl(PyTypeObject *type, PyObject *data, int usedforsecurity)
+/*[clinic end generated code: output=90409addc5d5e8b0 input=bcfcdf2e4368347a]*/
 {
     SHA3object *self = NULL;
     Py_buffer buf = {NULL, NULL};
@@ -292,12 +294,12 @@ _sha3_sha3_224_copy_impl(SHA3object *self)
 /*[clinic input]
 _sha3.sha3_224.digest
 
-Return the digest value as a string of binary data.
+Return the digest value as a bytes object.
 [clinic start generated code]*/
 
 static PyObject *
 _sha3_sha3_224_digest_impl(SHA3object *self)
-/*[clinic end generated code: output=fd531842e20b2d5b input=a5807917d219b30e]*/
+/*[clinic end generated code: output=fd531842e20b2d5b input=5b2a659536bbd248]*/
 {
     unsigned char digest[SHA3_MAX_DIGESTSIZE + SHA3_LANESIZE];
     SHA3_state temp;
@@ -347,20 +349,20 @@ _sha3_sha3_224_hexdigest_impl(SHA3object *self)
 /*[clinic input]
 _sha3.sha3_224.update
 
-    obj: object
+    data: object
     /
 
-Update this hash object's state with the provided string.
+Update this hash object's state with the provided bytes-like object.
 [clinic start generated code]*/
 
 static PyObject *
-_sha3_sha3_224_update(SHA3object *self, PyObject *obj)
-/*[clinic end generated code: output=06721d55b483e0af input=be44bf0d1c279791]*/
+_sha3_sha3_224_update(SHA3object *self, PyObject *data)
+/*[clinic end generated code: output=d3223352286ed357 input=a887f54dcc4ae227]*/
 {
     Py_buffer buf;
     HashReturn res;
 
-    GET_BUFFER_VIEW_OR_ERROUT(obj, &buf);
+    GET_BUFFER_VIEW_OR_ERROUT(data, &buf);
 
     /* add new data, the function takes the length in bits not bytes */
     if (self->lock == NULL && buf.len >= HASHLIB_GIL_MINSIZE) {
@@ -490,14 +492,14 @@ static PyGetSetDef SHA3_getseters[] = {
     static PyTypeObject type_obj = { \
         PyVarObject_HEAD_INIT(NULL, 0) \
         type_name,          /* tp_name */ \
-        sizeof(SHA3object), /* tp_size */ \
+        sizeof(SHA3object), /* tp_basicsize */ \
         0,                  /* tp_itemsize */ \
         /*  methods  */ \
         (destructor)SHA3_dealloc, /* tp_dealloc */ \
-        0,                  /* tp_print */ \
+        0,                  /* tp_vectorcall_offset */ \
         0,                  /* tp_getattr */ \
         0,                  /* tp_setattr */ \
-        0,                  /* tp_reserved */ \
+        0,                  /* tp_as_async */ \
         0,                  /* tp_repr */ \
         0,                  /* tp_as_number */ \
         0,                  /* tp_as_sequence */ \
@@ -529,44 +531,49 @@ static PyGetSetDef SHA3_getseters[] = {
         py_sha3_new,        /* tp_new */ \
     }
 
+PyDoc_STRVAR(sha3_224__doc__,
+"sha3_224([data], *, usedforsecurity=True) -> SHA3 object\n\
+\n\
+Return a new SHA3 hash object with a hashbit length of 28 bytes.");
+
 PyDoc_STRVAR(sha3_256__doc__,
-"sha3_256([string]) -> SHA3 object\n\
+"sha3_256([data], *, usedforsecurity=True) -> SHA3 object\n\
 \n\
 Return a new SHA3 hash object with a hashbit length of 32 bytes.");
 
 PyDoc_STRVAR(sha3_384__doc__,
-"sha3_384([string]) -> SHA3 object\n\
+"sha3_384([data], *, usedforsecurity=True) -> SHA3 object\n\
 \n\
 Return a new SHA3 hash object with a hashbit length of 48 bytes.");
 
 PyDoc_STRVAR(sha3_512__doc__,
-"sha3_512([string]) -> SHA3 object\n\
+"sha3_512([data], *, usedforsecurity=True) -> SHA3 object\n\
 \n\
 Return a new SHA3 hash object with a hashbit length of 64 bytes.");
 
-SHA3_TYPE(SHA3_224type, "_sha3.sha3_224", py_sha3_new__doc__, SHA3_methods);
+SHA3_TYPE(SHA3_224type, "_sha3.sha3_224", sha3_224__doc__, SHA3_methods);
 SHA3_TYPE(SHA3_256type, "_sha3.sha3_256", sha3_256__doc__, SHA3_methods);
 SHA3_TYPE(SHA3_384type, "_sha3.sha3_384", sha3_384__doc__, SHA3_methods);
 SHA3_TYPE(SHA3_512type, "_sha3.sha3_512", sha3_512__doc__, SHA3_methods);
 
 #ifdef PY_WITH_KECCAK
 PyDoc_STRVAR(keccak_224__doc__,
-"keccak_224([string]) -> Keccak object\n\
+"keccak_224([data], *, usedforsecurity=True) -> Keccak object\n\
 \n\
 Return a new Keccak hash object with a hashbit length of 28 bytes.");
 
 PyDoc_STRVAR(keccak_256__doc__,
-"keccak_256([string]) -> Keccak object\n\
+"keccak_256([data], *, usedforsecurity=True) -> Keccak object\n\
 \n\
 Return a new Keccak hash object with a hashbit length of 32 bytes.");
 
 PyDoc_STRVAR(keccak_384__doc__,
-"keccak_384([string]) -> Keccak object\n\
+"keccak_384([data], *, usedforsecurity=True) -> Keccak object\n\
 \n\
 Return a new Keccak hash object with a hashbit length of 48 bytes.");
 
 PyDoc_STRVAR(keccak_512__doc__,
-"keccak_512([string]) -> Keccak object\n\
+"keccak_512([data], *, usedforsecurity=True) -> Keccak object\n\
 \n\
 Return a new Keccak hash object with a hashbit length of 64 bytes.");
 
@@ -585,6 +592,10 @@ _SHAKE_digest(SHA3object *self, unsigned long digestlen, int hex)
     int res;
     PyObject *result = NULL;
 
+    if (digestlen >= (1 << 29)) {
+        PyErr_SetString(PyExc_ValueError, "length is too large");
+        return NULL;
+    }
     /* ExtractLane needs at least SHA3_MAX_DIGESTSIZE + SHA3_LANESIZE and
      * SHA3_LANESIZE extra space.
      */
@@ -624,15 +635,15 @@ _SHAKE_digest(SHA3object *self, unsigned long digestlen, int hex)
 /*[clinic input]
 _sha3.shake_128.digest
 
-    length: unsigned_long(bitwise=True)
-    \
+    length: unsigned_long
+    /
 
-Return the digest value as a string of binary data.
+Return the digest value as a bytes object.
 [clinic start generated code]*/
 
 static PyObject *
 _sha3_shake_128_digest_impl(SHA3object *self, unsigned long length)
-/*[clinic end generated code: output=2313605e2f87bb8f input=608c8ca80ae9d115]*/
+/*[clinic end generated code: output=2313605e2f87bb8f input=418ef6a36d2e6082]*/
 {
     return _SHAKE_digest(self, length, 0);
 }
@@ -641,15 +652,15 @@ _sha3_shake_128_digest_impl(SHA3object *self, unsigned long length)
 /*[clinic input]
 _sha3.shake_128.hexdigest
 
-    length: unsigned_long(bitwise=True)
-    \
+    length: unsigned_long
+    /
 
 Return the digest value as a string of hexadecimal digits.
 [clinic start generated code]*/
 
 static PyObject *
 _sha3_shake_128_hexdigest_impl(SHA3object *self, unsigned long length)
-/*[clinic end generated code: output=bf8e2f1e490944a8 input=64e56b4760db4573]*/
+/*[clinic end generated code: output=bf8e2f1e490944a8 input=69fb29b0926ae321]*/
 {
     return _SHAKE_digest(self, length, 1);
 }
@@ -664,12 +675,12 @@ static PyMethodDef SHAKE_methods[] = {
 };
 
 PyDoc_STRVAR(shake_128__doc__,
-"shake_128([string]) -> SHAKE object\n\
+"shake_128([data], *, usedforsecurity=True) -> SHAKE object\n\
 \n\
 Return a new SHAKE hash object.");
 
 PyDoc_STRVAR(shake_256__doc__,
-"shake_256([string]) -> SHAKE object\n\
+"shake_256([data], *, usedforsecurity=True) -> SHAKE object\n\
 \n\
 Return a new SHAKE hash object.");
 

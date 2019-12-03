@@ -1,6 +1,6 @@
 """Fixer for __metaclass__ = X -> (metaclass=X) methods.
 
-   The various forms of classef (inherits nothing, inherits once, inherints
+   The various forms of classef (inherits nothing, inherits once, inherits
    many) don't parse the same in the CST so we look at ALL classes for
    a __metaclass__ and if we find one normalize the inherits to all be
    an arglist.

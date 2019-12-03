@@ -1,4 +1,4 @@
-.. highlightlang:: c
+.. highlight:: c
 
 
 .. _concrete:
@@ -17,8 +17,8 @@ dictionary, use :c:func:`PyDict_Check`.  The chapter is structured like the
 .. warning::
 
    While the functions described in this chapter carefully check the type of the
-   objects which are passed in, many of them do not check for *NULL* being passed
-   instead of a valid object.  Allowing *NULL* to be passed in can cause memory
+   objects which are passed in, many of them do not check for ``NULL`` being passed
+   instead of a valid object.  Allowing ``NULL`` to be passed in can cause memory
    access violations and immediate termination of the interpreter.
 
 
@@ -113,5 +113,5 @@ Other Objects
    capsule.rst
    gen.rst
    coro.rst
+   contextvars.rst
    datetime.rst
-

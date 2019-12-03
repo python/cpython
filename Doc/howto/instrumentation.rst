@@ -254,11 +254,15 @@ and the remainder indicates the call/return hierarchy as the script executes.
 
 For a `--enable-shared` build of CPython, the markers are contained within the
 libpython shared library, and the probe's dotted path needs to reflect this. For
-example, this line from the above example::
+example, this line from the above example:
+
+.. code-block:: none
 
    probe process("python").mark("function__entry") {
 
-should instead read::
+should instead read:
+
+.. code-block:: none
 
    probe process("python").library("libpython3.6dm.so.1.0").mark("function__entry") {
 
@@ -328,6 +332,15 @@ Available static markers
    .. versionadded:: 3.7
 
 
+.. c:function:: audit(str event, void *tuple)
+
+   Fires when :func:`sys.audit` or :c:func:`PySys_Audit` is called.
+   ``arg0`` is the event name as C string, ``arg1`` is a :c:type:`PyObject`
+   pointer to a tuple object.
+
+   .. versionadded:: 3.8
+
+
 SystemTap Tapsets
 -----------------
 
@@ -365,13 +378,13 @@ available:
 .. c:function:: python.function.entry(str filename, str funcname, int lineno, frameptr)
 
    This probe point indicates that execution of a Python function has begun.
-   It is only triggered for pure-python (bytecode) functions.
+   It is only triggered for pure-Python (bytecode) functions.
 
 .. c:function:: python.function.return(str filename, str funcname, int lineno, frameptr)
 
    This probe point is the converse of :c:func:`python.function.return`, and
    indicates that execution of a Python function has ended (either via
-   ``return``, or via an exception).  It is only triggered for pure-python
+   ``return``, or via an exception).  It is only triggered for pure-Python
    (bytecode) functions.
 
 

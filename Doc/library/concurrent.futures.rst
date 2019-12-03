@@ -28,7 +28,7 @@ Executor Objects
    An abstract class that provides methods to execute calls asynchronously.  It
    should not be used directly, but through its concrete subclasses.
 
-    .. method:: submit(fn, *args, **kwargs)
+    .. method:: submit(fn, /, *args, **kwargs)
 
        Schedules the callable, *fn*, to be executed as ``fn(*args **kwargs)``
        and returns a :class:`Future` object representing the execution of the
@@ -141,7 +141,7 @@ And::
    each worker thread; *initargs* is a tuple of arguments passed to the
    initializer.  Should *initializer* raise an exception, all currently
    pending jobs will raise a :exc:`~concurrent.futures.thread.BrokenThreadPool`,
-   as well any attempt to submit more jobs to the pool.
+   as well as any attempt to submit more jobs to the pool.
 
    .. versionchanged:: 3.5
       If *max_workers* is ``None`` or
@@ -153,11 +153,20 @@ And::
 
    .. versionadded:: 3.6
       The *thread_name_prefix* argument was added to allow users to
-      control the threading.Thread names for worker threads created by
+      control the :class:`threading.Thread` names for worker threads created by
       the pool for easier debugging.
 
    .. versionchanged:: 3.7
       Added the *initializer* and *initargs* arguments.
+
+   .. versionchanged:: 3.8
+      Default value of *max_workers* is changed to ``min(32, os.cpu_count() + 4)``.
+      This default value preserves at least 5 workers for I/O bound tasks.
+      It utilizes at most 32 CPU cores for CPU bound tasks which release the GIL.
+      And it avoids using very large resources implicitly on many-core machines.
+
+      ThreadPoolExecutor now reuses idle worker threads before starting
+      *max_workers* worker threads too.
 
 
 .. _threadpoolexecutor-example:
@@ -216,6 +225,10 @@ to a :class:`ProcessPoolExecutor` will result in deadlock.
    given, it will default to the number of processors on the machine.
    If *max_workers* is lower or equal to ``0``, then a :exc:`ValueError`
    will be raised.
+   On Windows, *max_workers* must be equal or lower than ``61``. If it is not
+   then :exc:`ValueError` will be raised. If *max_workers* is ``None``, then
+   the default chosen will be at most ``61``, even if more processors are
+   available.
    *mp_context* can be a multiprocessing context or None. It will be used to
    launch the workers. If *mp_context* is ``None`` or not given, the default
    multiprocessing context is used.
@@ -223,7 +236,7 @@ to a :class:`ProcessPoolExecutor` will result in deadlock.
    *initializer* is an optional callable that is called at the start of
    each worker process; *initargs* is a tuple of arguments passed to the
    initializer.  Should *initializer* raise an exception, all currently
-   pending jobs will raise a :exc:`~concurrent.futures.thread.BrokenThreadPool`,
+   pending jobs will raise a :exc:`~concurrent.futures.process.BrokenProcessPool`,
    as well any attempt to submit more jobs to the pool.
 
    .. versionchanged:: 3.3
@@ -257,6 +270,10 @@ ProcessPoolExecutor Example
        1099726899285419]
 
    def is_prime(n):
+       if n < 2:
+           return False
+       if n == 2:
+           return True
        if n % 2 == 0:
            return False
 
@@ -289,9 +306,10 @@ The :class:`Future` class encapsulates the asynchronous execution of a callable.
 
     .. method:: cancel()
 
-       Attempt to cancel the call.  If the call is currently being executed and
-       cannot be cancelled then the method will return ``False``, otherwise the
-       call will be cancelled and the method will return ``True``.
+       Attempt to cancel the call.  If the call is currently being executed or
+       finished running and cannot be cancelled then the method will return
+       ``False``, otherwise the call will be cancelled and the method will
+       return ``True``.
 
     .. method:: cancelled()
 
@@ -380,6 +398,11 @@ The :class:`Future` class encapsulates the asynchronous execution of a callable.
        This method should only be used by :class:`Executor` implementations and
        unit tests.
 
+       .. versionchanged:: 3.8
+          This method raises
+          :exc:`concurrent.futures.InvalidStateError` if the :class:`Future` is
+          already done.
+
     .. method:: set_exception(exception)
 
        Sets the result of the work associated with the :class:`Future` to the
@@ -388,6 +411,10 @@ The :class:`Future` class encapsulates the asynchronous execution of a callable.
        This method should only be used by :class:`Executor` implementations and
        unit tests.
 
+       .. versionchanged:: 3.8
+          This method raises
+          :exc:`concurrent.futures.InvalidStateError` if the :class:`Future` is
+          already done.
 
 Module Functions
 ----------------
@@ -397,8 +424,9 @@ Module Functions
    Wait for the :class:`Future` instances (possibly created by different
    :class:`Executor` instances) given by *fs* to complete.  Returns a named
    2-tuple of sets.  The first set, named ``done``, contains the futures that
-   completed (finished or were cancelled) before the wait completed.  The second
-   set, named ``not_done``, contains uncompleted futures.
+   completed (finished or cancelled futures) before the wait completed.  The
+   second set, named ``not_done``, contains the futures that did not complete
+   (pending or running futures).
 
    *timeout* can be used to control the maximum number of seconds to wait before
    returning.  *timeout* can be an int or float.  If *timeout* is not specified
@@ -429,7 +457,7 @@ Module Functions
 
    Returns an iterator over the :class:`Future` instances (possibly created by
    different :class:`Executor` instances) given by *fs* that yields futures as
-   they complete (finished or were cancelled). Any futures given by *fs* that
+   they complete (finished or cancelled futures). Any futures given by *fs* that
    are duplicated will be returned once. Any futures that completed before
    :func:`as_completed` is called will be yielded first.  The returned iterator
    raises a :exc:`concurrent.futures.TimeoutError` if :meth:`~iterator.__next__`
@@ -465,6 +493,13 @@ Exception classes
    to submit or execute new tasks.
 
    .. versionadded:: 3.7
+
+.. exception:: InvalidStateError
+
+   Raised when an operation is performed on a future that is not allowed
+   in the current state.
+
+   .. versionadded:: 3.8
 
 .. currentmodule:: concurrent.futures.thread
 

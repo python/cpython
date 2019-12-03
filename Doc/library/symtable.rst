@@ -105,6 +105,10 @@ Examining Symbol Tables
 
       Return a tuple containing names of globals in this function.
 
+   .. method:: get_nonlocals()
+
+      Return a tuple containing names of nonlocals in this function.
+
    .. method:: get_frees()
 
       Return a tuple containing names of free variables in this function.
@@ -143,6 +147,10 @@ Examining Symbol Tables
    .. method:: is_global()
 
       Return ``True`` if the symbol is global.
+
+   .. method:: is_nonlocal()
+
+      Return ``True`` if the symbol is nonlocal.
 
    .. method:: is_declared_global()
 

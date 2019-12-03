@@ -589,6 +589,13 @@ PyInit__stat(void)
     if (PyModule_AddIntMacro(m, FILE_ATTRIBUTE_SYSTEM)) return NULL;
     if (PyModule_AddIntMacro(m, FILE_ATTRIBUTE_TEMPORARY)) return NULL;
     if (PyModule_AddIntMacro(m, FILE_ATTRIBUTE_VIRTUAL)) return NULL;
+
+    if (PyModule_AddObject(m, "IO_REPARSE_TAG_SYMLINK",
+        PyLong_FromUnsignedLong(IO_REPARSE_TAG_SYMLINK))) return NULL;
+    if (PyModule_AddObject(m, "IO_REPARSE_TAG_MOUNT_POINT",
+        PyLong_FromUnsignedLong(IO_REPARSE_TAG_MOUNT_POINT))) return NULL;
+    if (PyModule_AddObject(m, "IO_REPARSE_TAG_APPEXECLINK",
+        PyLong_FromUnsignedLong(IO_REPARSE_TAG_APPEXECLINK))) return NULL;
 #endif
 
     return m;

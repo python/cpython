@@ -86,6 +86,11 @@ Bookkeeping functions
    .. versionchanged:: 3.2
       Moved to the version 2 scheme which uses all of the bits in a string seed.
 
+   .. deprecated:: 3.9
+      In the future, the *seed* must be one of the following types:
+      *NoneType*, :class:`int`, :class:`float`, :class:`str`,
+      :class:`bytes`, or :class:`bytearray`.
+
 .. function:: getstate()
 
    Return an object capturing the current internal state of the generator.  This
@@ -160,9 +165,21 @@ Functions for sequences
 
    The *weights* or *cum_weights* can use any numeric type that interoperates
    with the :class:`float` values returned by :func:`random` (that includes
-   integers, floats, and fractions but excludes decimals).
+   integers, floats, and fractions but excludes decimals).  Behavior is
+   undefined if any weight is negative.  A :exc:`ValueError` is raised if all
+   weights are zero.
+
+   For a given seed, the :func:`choices` function with equal weighting
+   typically produces a different sequence than repeated calls to
+   :func:`choice`.  The algorithm used by :func:`choices` uses floating
+   point arithmetic for internal consistency and speed.  The algorithm used
+   by :func:`choice` defaults to integer arithmetic with repeated selections
+   to avoid small biases from round-off error.
 
    .. versionadded:: 3.6
+
+   .. versionchanged:: 3.9
+      Raises a :exc:`ValueError` if all weights are zero.
 
 
 .. function:: shuffle(x[, random])
@@ -303,6 +320,16 @@ be found in any statistics text.
 Alternative Generator
 ---------------------
 
+.. class:: Random([seed])
+
+   Class that implements the default pseudo-random number generator used by the
+   :mod:`random` module.
+
+   .. deprecated:: 3.9
+      In the future, the *seed* must be one of the following types:
+      :class:`NoneType`, :class:`int`, :class:`float`, :class:`str`,
+      :class:`bytes`, or :class:`bytearray`.
+
 .. class:: SystemRandom([seed])
 
    Class that uses the :func:`os.urandom` function for generating random numbers
@@ -378,12 +405,16 @@ Simulations::
 
    >>> # Estimate the probability of getting 5 or more heads from 7 spins
    >>> # of a biased coin that settles on heads 60% of the time.
-   >>> trial = lambda: choices('HT', cum_weights=(0.60, 1.00), k=7).count('H') >= 5
+   >>> def trial():
+   ...     return choices('HT', cum_weights=(0.60, 1.00), k=7).count('H') >= 5
+   ...
    >>> sum(trial() for i in range(10000)) / 10000
    0.4169
 
    >>> # Probability of the median of 5 samples being in middle two quartiles
-   >>> trial = lambda : 2500 <= sorted(choices(range(10000), k=5))[2]  < 7500
+   >>> def trial():
+   ...     return 2500 <= sorted(choices(range(10000), k=5))[2] < 7500
+   ...
    >>> sum(trial() for i in range(10000)) / 10000
    0.7958
 
@@ -393,7 +424,7 @@ with replacement to estimate a confidence interval for the mean of a sample of
 size five::
 
    # http://statistics.about.com/od/Applications/a/Example-Of-Bootstrapping.htm
-   from statistics import mean
+   from statistics import fmean as mean
    from random import choices
 
    data = 1, 2, 4, 4, 10
@@ -408,7 +439,7 @@ to determine the statistical significance or `p-value
 between the effects of a drug versus a placebo::
 
     # Example from "Statistics is Easy" by Dennis Shasha and Manda Wilson
-    from statistics import mean
+    from statistics import fmean as mean
     from random import shuffle
 
     drug = [54, 73, 53, 70, 73, 68, 52, 65, 65]

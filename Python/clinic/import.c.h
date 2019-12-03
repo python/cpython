@@ -75,7 +75,7 @@ PyDoc_STRVAR(_imp__fix_co_filename__doc__,
 "    File path to use.");
 
 #define _IMP__FIX_CO_FILENAME_METHODDEF    \
-    {"_fix_co_filename", (PyCFunction)_imp__fix_co_filename, METH_FASTCALL, _imp__fix_co_filename__doc__},
+    {"_fix_co_filename", (PyCFunction)(void(*)(void))_imp__fix_co_filename, METH_FASTCALL, _imp__fix_co_filename__doc__},
 
 static PyObject *
 _imp__fix_co_filename_impl(PyObject *module, PyCodeObject *code,
@@ -88,10 +88,22 @@ _imp__fix_co_filename(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     PyCodeObject *code;
     PyObject *path;
 
-    if (!_PyArg_ParseStack(args, nargs, "O!U:_fix_co_filename",
-        &PyCode_Type, &code, &path)) {
+    if (!_PyArg_CheckPositional("_fix_co_filename", nargs, 2, 2)) {
         goto exit;
     }
+    if (!PyObject_TypeCheck(args[0], &PyCode_Type)) {
+        _PyArg_BadArgument("_fix_co_filename", "argument 1", (&PyCode_Type)->tp_name, args[0]);
+        goto exit;
+    }
+    code = (PyCodeObject *)args[0];
+    if (!PyUnicode_Check(args[1])) {
+        _PyArg_BadArgument("_fix_co_filename", "argument 2", "str", args[1]);
+        goto exit;
+    }
+    if (PyUnicode_READY(args[1]) == -1) {
+        goto exit;
+    }
+    path = args[1];
     return_value = _imp__fix_co_filename_impl(module, code, path);
 
 exit:
@@ -143,9 +155,14 @@ _imp_init_frozen(PyObject *module, PyObject *arg)
     PyObject *return_value = NULL;
     PyObject *name;
 
-    if (!PyArg_Parse(arg, "U:init_frozen", &name)) {
+    if (!PyUnicode_Check(arg)) {
+        _PyArg_BadArgument("init_frozen", "argument", "str", arg);
         goto exit;
     }
+    if (PyUnicode_READY(arg) == -1) {
+        goto exit;
+    }
+    name = arg;
     return_value = _imp_init_frozen_impl(module, name);
 
 exit:
@@ -170,9 +187,14 @@ _imp_get_frozen_object(PyObject *module, PyObject *arg)
     PyObject *return_value = NULL;
     PyObject *name;
 
-    if (!PyArg_Parse(arg, "U:get_frozen_object", &name)) {
+    if (!PyUnicode_Check(arg)) {
+        _PyArg_BadArgument("get_frozen_object", "argument", "str", arg);
         goto exit;
     }
+    if (PyUnicode_READY(arg) == -1) {
+        goto exit;
+    }
+    name = arg;
     return_value = _imp_get_frozen_object_impl(module, name);
 
 exit:
@@ -197,9 +219,14 @@ _imp_is_frozen_package(PyObject *module, PyObject *arg)
     PyObject *return_value = NULL;
     PyObject *name;
 
-    if (!PyArg_Parse(arg, "U:is_frozen_package", &name)) {
+    if (!PyUnicode_Check(arg)) {
+        _PyArg_BadArgument("is_frozen_package", "argument", "str", arg);
         goto exit;
     }
+    if (PyUnicode_READY(arg) == -1) {
+        goto exit;
+    }
+    name = arg;
     return_value = _imp_is_frozen_package_impl(module, name);
 
 exit:
@@ -224,9 +251,14 @@ _imp_is_builtin(PyObject *module, PyObject *arg)
     PyObject *return_value = NULL;
     PyObject *name;
 
-    if (!PyArg_Parse(arg, "U:is_builtin", &name)) {
+    if (!PyUnicode_Check(arg)) {
+        _PyArg_BadArgument("is_builtin", "argument", "str", arg);
         goto exit;
     }
+    if (PyUnicode_READY(arg) == -1) {
+        goto exit;
+    }
+    name = arg;
     return_value = _imp_is_builtin_impl(module, name);
 
 exit:
@@ -251,9 +283,14 @@ _imp_is_frozen(PyObject *module, PyObject *arg)
     PyObject *return_value = NULL;
     PyObject *name;
 
-    if (!PyArg_Parse(arg, "U:is_frozen", &name)) {
+    if (!PyUnicode_Check(arg)) {
+        _PyArg_BadArgument("is_frozen", "argument", "str", arg);
         goto exit;
     }
+    if (PyUnicode_READY(arg) == -1) {
+        goto exit;
+    }
+    name = arg;
     return_value = _imp_is_frozen_impl(module, name);
 
 exit:
@@ -263,13 +300,13 @@ exit:
 #if defined(HAVE_DYNAMIC_LOADING)
 
 PyDoc_STRVAR(_imp_create_dynamic__doc__,
-"create_dynamic($module, spec, file=None, /)\n"
+"create_dynamic($module, spec, file=<unrepresentable>, /)\n"
 "--\n"
 "\n"
 "Create an extension module.");
 
 #define _IMP_CREATE_DYNAMIC_METHODDEF    \
-    {"create_dynamic", (PyCFunction)_imp_create_dynamic, METH_FASTCALL, _imp_create_dynamic__doc__},
+    {"create_dynamic", (PyCFunction)(void(*)(void))_imp_create_dynamic, METH_FASTCALL, _imp_create_dynamic__doc__},
 
 static PyObject *
 _imp_create_dynamic_impl(PyObject *module, PyObject *spec, PyObject *file);
@@ -281,11 +318,15 @@ _imp_create_dynamic(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     PyObject *spec;
     PyObject *file = NULL;
 
-    if (!_PyArg_UnpackStack(args, nargs, "create_dynamic",
-        1, 2,
-        &spec, &file)) {
+    if (!_PyArg_CheckPositional("create_dynamic", nargs, 1, 2)) {
         goto exit;
     }
+    spec = args[0];
+    if (nargs < 2) {
+        goto skip_optional;
+    }
+    file = args[1];
+skip_optional:
     return_value = _imp_create_dynamic_impl(module, spec, file);
 
 exit:
@@ -360,7 +401,7 @@ PyDoc_STRVAR(_imp_source_hash__doc__,
 "\n");
 
 #define _IMP_SOURCE_HASH_METHODDEF    \
-    {"source_hash", (PyCFunction)_imp_source_hash, METH_FASTCALL|METH_KEYWORDS, _imp_source_hash__doc__},
+    {"source_hash", (PyCFunction)(void(*)(void))_imp_source_hash, METH_FASTCALL|METH_KEYWORDS, _imp_source_hash__doc__},
 
 static PyObject *
 _imp_source_hash_impl(PyObject *module, long key, Py_buffer *source);
@@ -370,12 +411,29 @@ _imp_source_hash(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyOb
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"key", "source", NULL};
-    static _PyArg_Parser _parser = {"ly*:source_hash", _keywords, 0};
+    static _PyArg_Parser _parser = {NULL, _keywords, "source_hash", 0};
+    PyObject *argsbuf[2];
     long key;
     Py_buffer source = {NULL, NULL};
 
-    if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser,
-        &key, &source)) {
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 2, 2, 0, argsbuf);
+    if (!args) {
+        goto exit;
+    }
+    if (PyFloat_Check(args[0])) {
+        PyErr_SetString(PyExc_TypeError,
+                        "integer argument expected, got float" );
+        goto exit;
+    }
+    key = PyLong_AsLong(args[0]);
+    if (key == -1 && PyErr_Occurred()) {
+        goto exit;
+    }
+    if (PyObject_GetBuffer(args[1], &source, PyBUF_SIMPLE) != 0) {
+        goto exit;
+    }
+    if (!PyBuffer_IsContiguous(&source, 'C')) {
+        _PyArg_BadArgument("source_hash", "argument 'source'", "contiguous buffer", args[1]);
         goto exit;
     }
     return_value = _imp_source_hash_impl(module, key, &source);
@@ -396,4 +454,4 @@ exit:
 #ifndef _IMP_EXEC_DYNAMIC_METHODDEF
     #define _IMP_EXEC_DYNAMIC_METHODDEF
 #endif /* !defined(_IMP_EXEC_DYNAMIC_METHODDEF) */
-/*[clinic end generated code: output=f0660cd1de6b3a73 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=3dc495e9c64d944e input=a9049054013a1b77]*/

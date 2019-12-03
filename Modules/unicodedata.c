@@ -19,6 +19,13 @@
 #include "ucnhash.h"
 #include "structmember.h"
 
+#include <stdbool.h>
+
+_Py_IDENTIFIER(NFC);
+_Py_IDENTIFIER(NFD);
+_Py_IDENTIFIER(NFKC);
+_Py_IDENTIFIER(NFKD);
+
 /*[clinic input]
 module unicodedata
 class unicodedata.UCD 'PreviousDBVersion *' '&UCD_Type'
@@ -681,15 +688,19 @@ nfc_nfkc(PyObject *self, PyObject *input, int k)
       if (LBase <= code && code < (LBase+LCount) &&
           i + 1 < len &&
           VBase <= PyUnicode_READ(kind, data, i+1) &&
-          PyUnicode_READ(kind, data, i+1) <= (VBase+VCount)) {
+          PyUnicode_READ(kind, data, i+1) < (VBase+VCount)) {
+          /* check L character is a modern leading consonant (0x1100 ~ 0x1112)
+             and V character is a modern vowel (0x1161 ~ 0x1175). */
           int LIndex, VIndex;
           LIndex = code - LBase;
           VIndex = PyUnicode_READ(kind, data, i+1) - VBase;
           code = SBase + (LIndex*VCount+VIndex)*TCount;
           i+=2;
           if (i < len &&
-              TBase <= PyUnicode_READ(kind, data, i) &&
-              PyUnicode_READ(kind, data, i) <= (TBase+TCount)) {
+              TBase < PyUnicode_READ(kind, data, i) &&
+              PyUnicode_READ(kind, data, i) < (TBase+TCount)) {
+              /* check T character is a modern trailing consonant
+                 (0x11A8 ~ 0x11C2). */
               code += PyUnicode_READ(kind, data, i)-TBase;
               i++;
           }
@@ -766,23 +777,40 @@ nfc_nfkc(PyObject *self, PyObject *input, int k)
     return result;
 }
 
-/* Return 1 if the input is certainly normalized, 0 if it might not be. */
-static int
-is_normalized(PyObject *self, PyObject *input, int nfc, int k)
-{
-    Py_ssize_t i, len;
-    int kind;
-    void *data;
-    unsigned char prev_combining = 0, quickcheck_mask;
+// This needs to match the logic in makeunicodedata.py
+// which constructs the quickcheck data.
+typedef enum {YES = 0, MAYBE = 1, NO = 2} QuickcheckResult;
 
+/* Run the Unicode normalization "quickcheck" algorithm.
+ *
+ * Return YES or NO if quickcheck determines the input is certainly
+ * normalized or certainly not, and MAYBE if quickcheck is unable to
+ * tell.
+ *
+ * If `yes_only` is true, then return MAYBE as soon as we determine
+ * the answer is not YES.
+ *
+ * For background and details on the algorithm, see UAX #15:
+ *   https://www.unicode.org/reports/tr15/#Detecting_Normalization_Forms
+ */
+static QuickcheckResult
+is_normalized_quickcheck(PyObject *self, PyObject *input,
+                         bool nfc, bool k, bool yes_only)
+{
     /* An older version of the database is requested, quickchecks must be
        disabled. */
     if (self && UCD_Check(self))
-        return 0;
+        return NO;
 
-    /* The two quickcheck bits at this shift mean 0=Yes, 1=Maybe, 2=No,
-       as described in http://unicode.org/reports/tr15/#Annex8. */
-    quickcheck_mask = 3 << ((nfc ? 4 : 0) + (k ? 2 : 0));
+    Py_ssize_t i, len;
+    int kind;
+    void *data;
+    unsigned char prev_combining = 0;
+
+    /* The two quickcheck bits at this shift have type QuickcheckResult. */
+    int quickcheck_shift = (nfc ? 4 : 0) + (k ? 2 : 0);
+
+    QuickcheckResult result = YES; /* certainly normalized, unless we find something */
 
     i = 0;
     kind = PyUnicode_KIND(input);
@@ -791,23 +819,106 @@ is_normalized(PyObject *self, PyObject *input, int nfc, int k)
     while (i < len) {
         Py_UCS4 ch = PyUnicode_READ(kind, data, i++);
         const _PyUnicode_DatabaseRecord *record = _getrecord_ex(ch);
-        unsigned char combining = record->combining;
-        unsigned char quickcheck = record->normalization_quick_check;
 
-        if (quickcheck & quickcheck_mask)
-            return 0; /* this string might need normalization */
+        unsigned char combining = record->combining;
         if (combining && prev_combining > combining)
-            return 0; /* non-canonical sort order, not normalized */
+            return NO; /* non-canonical sort order, not normalized */
         prev_combining = combining;
+
+        unsigned char quickcheck_whole = record->normalization_quick_check;
+        if (yes_only) {
+            if (quickcheck_whole & (3 << quickcheck_shift))
+                return MAYBE;
+        } else {
+            switch ((quickcheck_whole >> quickcheck_shift) & 3) {
+            case NO:
+              return NO;
+            case MAYBE:
+              result = MAYBE; /* this string might need normalization */
+            }
+        }
     }
-    return 1; /* certainly normalized */
+    return result;
 }
+
+/*[clinic input]
+unicodedata.UCD.is_normalized
+
+    self: self
+    form: unicode
+    unistr as input: unicode
+    /
+
+Return whether the Unicode string unistr is in the normal form 'form'.
+
+Valid values for form are 'NFC', 'NFKC', 'NFD', and 'NFKD'.
+[clinic start generated code]*/
+
+static PyObject *
+unicodedata_UCD_is_normalized_impl(PyObject *self, PyObject *form,
+                                   PyObject *input)
+/*[clinic end generated code: output=11e5a3694e723ca5 input=a544f14cea79e508]*/
+{
+    if (PyUnicode_READY(input) == -1) {
+        return NULL;
+    }
+
+    if (PyUnicode_GET_LENGTH(input) == 0) {
+        /* special case empty input strings. */
+        Py_RETURN_TRUE;
+    }
+
+    PyObject *result;
+    bool nfc = false;
+    bool k = false;
+    QuickcheckResult m;
+
+    PyObject *cmp;
+    int match = 0;
+
+    if (_PyUnicode_EqualToASCIIId(form, &PyId_NFC)) {
+        nfc = true;
+    }
+    else if (_PyUnicode_EqualToASCIIId(form, &PyId_NFKC)) {
+        nfc = true;
+        k = true;
+    }
+    else if (_PyUnicode_EqualToASCIIId(form, &PyId_NFD)) {
+        /* matches default values for `nfc` and `k` */
+    }
+    else if (_PyUnicode_EqualToASCIIId(form, &PyId_NFKD)) {
+        k = true;
+    }
+    else {
+        PyErr_SetString(PyExc_ValueError, "invalid normalization form");
+        return NULL;
+    }
+
+    m = is_normalized_quickcheck(self, input, nfc, k, false);
+
+    if (m == MAYBE) {
+        cmp = (nfc ? nfc_nfkc : nfd_nfkd)(self, input, k);
+        if (cmp == NULL) {
+            return NULL;
+        }
+        match = PyUnicode_Compare(input, cmp);
+        Py_DECREF(cmp);
+        result = (match == 0) ? Py_True : Py_False;
+    }
+    else {
+        result = (m == YES) ? Py_True : Py_False;
+    }
+
+    Py_INCREF(result);
+    return result;
+}
+
 
 /*[clinic input]
 unicodedata.UCD.normalize
 
     self: self
-    form: str
+    form: unicode
     unistr as input: unicode
     /
 
@@ -817,9 +928,9 @@ Valid values for form are 'NFC', 'NFKC', 'NFD', and 'NFKD'.
 [clinic start generated code]*/
 
 static PyObject *
-unicodedata_UCD_normalize_impl(PyObject *self, const char *form,
+unicodedata_UCD_normalize_impl(PyObject *self, PyObject *form,
                                PyObject *input)
-/*[clinic end generated code: output=62d1f8870027efdc input=1744c55f4ab79bf0]*/
+/*[clinic end generated code: output=05ca4385a2ad6983 input=3a5206c0ad2833fb]*/
 {
     if (PyUnicode_GET_LENGTH(input) == 0) {
         /* Special case empty input strings, since resizing
@@ -828,29 +939,29 @@ unicodedata_UCD_normalize_impl(PyObject *self, const char *form,
         return input;
     }
 
-    if (strcmp(form, "NFC") == 0) {
-        if (is_normalized(self, input, 1, 0)) {
+    if (_PyUnicode_EqualToASCIIId(form, &PyId_NFC)) {
+        if (is_normalized_quickcheck(self, input, true,  false, true) == YES) {
             Py_INCREF(input);
             return input;
         }
         return nfc_nfkc(self, input, 0);
     }
-    if (strcmp(form, "NFKC") == 0) {
-        if (is_normalized(self, input, 1, 1)) {
+    if (_PyUnicode_EqualToASCIIId(form, &PyId_NFKC)) {
+        if (is_normalized_quickcheck(self, input, true,  true,  true) == YES) {
             Py_INCREF(input);
             return input;
         }
         return nfc_nfkc(self, input, 1);
     }
-    if (strcmp(form, "NFD") == 0) {
-        if (is_normalized(self, input, 0, 0)) {
+    if (_PyUnicode_EqualToASCIIId(form, &PyId_NFD)) {
+        if (is_normalized_quickcheck(self, input, false, false, true) == YES) {
             Py_INCREF(input);
             return input;
         }
         return nfd_nfkd(self, input, 0);
     }
-    if (strcmp(form, "NFKD") == 0) {
-        if (is_normalized(self, input, 0, 1)) {
+    if (_PyUnicode_EqualToASCIIId(form, &PyId_NFKD)) {
+        if (is_normalized_quickcheck(self, input, false, true,  true) == YES) {
             Py_INCREF(input);
             return input;
         }
@@ -876,7 +987,7 @@ _gethash(const char *s, int len, int scale)
     unsigned long h = 0;
     unsigned long ix;
     for (i = 0; i < len; i++) {
-        h = (h * scale) + (unsigned char) Py_TOUPPER(Py_CHARMASK(s[i]));
+        h = (h * scale) + (unsigned char) Py_TOUPPER(s[i]);
         ix = h & 0xff000000;
         if (ix)
             h = (h ^ ((ix>>24) & 0xff)) & 0x00ffffff;
@@ -921,7 +1032,7 @@ is_unified_ideograph(Py_UCS4 code)
 {
     return
         (0x3400 <= code && code <= 0x4DB5)   || /* CJK Ideograph Extension A */
-        (0x4E00 <= code && code <= 0x9FEA)   || /* CJK Ideograph */
+        (0x4E00 <= code && code <= 0x9FEF)   || /* CJK Ideograph */
         (0x20000 <= code && code <= 0x2A6D6) || /* CJK Ideograph Extension B */
         (0x2A700 <= code && code <= 0x2B734) || /* CJK Ideograph Extension C */
         (0x2B740 <= code && code <= 0x2B81D) || /* CJK Ideograph Extension D */
@@ -945,7 +1056,7 @@ _getucname(PyObject *self, Py_UCS4 code, char* buffer, int buflen,
     int offset;
     int i;
     int word;
-    unsigned char* w;
+    const unsigned char* w;
 
     if (code >= 0x110000)
         return 0;
@@ -1046,7 +1157,7 @@ _cmpname(PyObject *self, int code, const char* name, int namelen)
     if (!_getucname(self, code, buffer, NAME_MAXLEN, 1))
         return 0;
     for (i = 0; i < namelen; i++) {
-        if (Py_TOUPPER(Py_CHARMASK(name[i])) != buffer[i])
+        if (Py_TOUPPER(name[i]) != buffer[i])
             return 0;
     }
     return buffer[namelen] == '\0';
@@ -1267,6 +1378,7 @@ static PyMethodDef unicodedata_functions[] = {
     UNICODEDATA_UCD_DECOMPOSITION_METHODDEF
     UNICODEDATA_UCD_NAME_METHODDEF
     UNICODEDATA_UCD_LOOKUP_METHODDEF
+    UNICODEDATA_UCD_IS_NORMALIZED_METHODDEF
     UNICODEDATA_UCD_NORMALIZE_METHODDEF
     {NULL, NULL}                /* sentinel */
 };
@@ -1280,10 +1392,10 @@ static PyTypeObject UCD_Type = {
         0,                      /*tp_itemsize*/
         /* methods */
         (destructor)PyObject_Del, /*tp_dealloc*/
-        0,                      /*tp_print*/
+        0,                      /*tp_vectorcall_offset*/
         0,                      /*tp_getattr*/
         0,                      /*tp_setattr*/
-        0,                      /*tp_reserved*/
+        0,                      /*tp_as_async*/
         0,                      /*tp_repr*/
         0,                      /*tp_as_number*/
         0,                      /*tp_as_sequence*/

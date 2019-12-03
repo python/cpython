@@ -1,143 +1,305 @@
 .. currentmodule:: asyncio
 
-Tasks and coroutines
+
+====================
+Coroutines and Tasks
 ====================
 
-**Source code:** :source:`Lib/asyncio/tasks.py`
+This section outlines high-level asyncio APIs to work with coroutines
+and Tasks.
 
-**Source code:** :source:`Lib/asyncio/coroutines.py`
+.. contents::
+   :depth: 1
+   :local:
+
 
 .. _coroutine:
 
 Coroutines
-----------
+==========
 
-Coroutines used with :mod:`asyncio` may be implemented using the
-:keyword:`async def` statement, or by using :term:`generators <generator>`.
-The :keyword:`async def` type of coroutine was added in Python 3.5, and
-is recommended if there is no need to support older Python versions.
+:term:`Coroutines <coroutine>` declared with the async/await syntax is the
+preferred way of writing asyncio applications.  For example, the following
+snippet of code (requires Python 3.7+) prints "hello", waits 1 second,
+and then prints "world"::
 
-Generator-based coroutines should be decorated with :func:`@asyncio.coroutine
-<asyncio.coroutine>`, although this is not strictly enforced.
-The decorator enables compatibility with :keyword:`async def` coroutines,
-and also serves as documentation.  Generator-based
-coroutines use the ``yield from`` syntax introduced in :pep:`380`,
-instead of the original ``yield`` syntax.
+    >>> import asyncio
 
-The word "coroutine", like the word "generator", is used for two
-different (though related) concepts:
+    >>> async def main():
+    ...     print('hello')
+    ...     await asyncio.sleep(1)
+    ...     print('world')
 
-- The function that defines a coroutine
-  (a function definition using :keyword:`async def` or
-  decorated with ``@asyncio.coroutine``).  If disambiguation is needed
-  we will call this a *coroutine function* (:func:`iscoroutinefunction`
-  returns ``True``).
+    >>> asyncio.run(main())
+    hello
+    world
 
-- The object obtained by calling a coroutine function.  This object
-  represents a computation or an I/O operation (usually a combination)
-  that will complete eventually.  If disambiguation is needed we will
-  call it a *coroutine object* (:func:`iscoroutine` returns ``True``).
+Note that simply calling a coroutine will not schedule it to
+be executed::
 
-Things a coroutine can do:
+    >>> main()
+    <coroutine object main at 0x1053bb7c8>
 
-- ``result = await future`` or ``result = yield from future`` --
-  suspends the coroutine until the
-  future is done, then returns the future's result, or raises an
-  exception, which will be propagated.  (If the future is cancelled,
-  it will raise a ``CancelledError`` exception.)  Note that tasks are
-  futures, and everything said about futures also applies to tasks.
+To actually run a coroutine, asyncio provides three main mechanisms:
 
-- ``result = await coroutine`` or ``result = yield from coroutine`` --
-  wait for another coroutine to
-  produce a result (or raise an exception, which will be propagated).
-  The ``coroutine`` expression must be a *call* to another coroutine.
+* The :func:`asyncio.run` function to run the top-level
+  entry point "main()" function (see the above example.)
 
-- ``return expression`` -- produce a result to the coroutine that is
-  waiting for this one using :keyword:`await` or ``yield from``.
+* Awaiting on a coroutine.  The following snippet of code will
+  print "hello" after waiting for 1 second, and then print "world"
+  after waiting for *another* 2 seconds::
 
-- ``raise exception`` -- raise an exception in the coroutine that is
-  waiting for this one using :keyword:`await` or ``yield from``.
+      import asyncio
+      import time
 
-Calling a coroutine does not start its code running --
-the coroutine object returned by the call doesn't do anything until you
-schedule its execution.  There are two basic ways to start it running:
-call ``await coroutine`` or ``yield from coroutine`` from another coroutine
-(assuming the other coroutine is already running!), or schedule its execution
-using the :func:`ensure_future` function or the :meth:`AbstractEventLoop.create_task`
-method.
+      async def say_after(delay, what):
+          await asyncio.sleep(delay)
+          print(what)
+
+      async def main():
+          print(f"started at {time.strftime('%X')}")
+
+          await say_after(1, 'hello')
+          await say_after(2, 'world')
+
+          print(f"finished at {time.strftime('%X')}")
+
+      asyncio.run(main())
+
+  Expected output::
+
+      started at 17:13:52
+      hello
+      world
+      finished at 17:13:55
+
+* The :func:`asyncio.create_task` function to run coroutines
+  concurrently as asyncio :class:`Tasks <Task>`.
+
+  Let's modify the above example and run two ``say_after`` coroutines
+  *concurrently*::
+
+      async def main():
+          task1 = asyncio.create_task(
+              say_after(1, 'hello'))
+
+          task2 = asyncio.create_task(
+              say_after(2, 'world'))
+
+          print(f"started at {time.strftime('%X')}")
+
+          # Wait until both tasks are completed (should take
+          # around 2 seconds.)
+          await task1
+          await task2
+
+          print(f"finished at {time.strftime('%X')}")
+
+  Note that expected output now shows that the snippet runs
+  1 second faster than before::
+
+      started at 17:14:32
+      hello
+      world
+      finished at 17:14:34
 
 
-Coroutines (and tasks) can only run when the event loop is running.
+.. _asyncio-awaitables:
 
-.. decorator:: coroutine
+Awaitables
+==========
 
-    Decorator to mark generator-based coroutines.  This enables
-    the generator use :keyword:`!yield from` to call :keyword:`async
-    def` coroutines, and also enables the generator to be called by
-    :keyword:`async def` coroutines, for instance using an
-    :keyword:`await` expression.
+We say that an object is an **awaitable** object if it can be used
+in an :keyword:`await` expression.  Many asyncio APIs are designed to
+accept awaitables.
 
-    There is no need to decorate :keyword:`async def` coroutines themselves.
-
-    If the generator is not yielded from before it is destroyed, an error
-    message is logged. See :ref:`Detect coroutines never scheduled
-    <asyncio-coroutine-not-scheduled>`.
-
-.. note::
-
-    In this documentation, some methods are documented as coroutines,
-    even if they are plain Python functions returning a :class:`Future`.
-    This is intentional to have a freedom of tweaking the implementation
-    of these functions in the future. If such a function is needed to be
-    used in a callback-style code, wrap its result with :func:`ensure_future`.
+There are three main types of *awaitable* objects:
+**coroutines**, **Tasks**, and **Futures**.
 
 
-.. function:: asyncio.run(coro, \*, debug=False)
+.. rubric:: Coroutines
+
+Python coroutines are *awaitables* and therefore can be awaited from
+other coroutines::
+
+    import asyncio
+
+    async def nested():
+        return 42
+
+    async def main():
+        # Nothing happens if we just call "nested()".
+        # A coroutine object is created but not awaited,
+        # so it *won't run at all*.
+        nested()
+
+        # Let's do it differently now and await it:
+        print(await nested())  # will print "42".
+
+    asyncio.run(main())
+
+.. important::
+
+   In this documentation the term "coroutine" can be used for
+   two closely related concepts:
+
+   * a *coroutine function*: an :keyword:`async def` function;
+
+   * a *coroutine object*: an object returned by calling a
+     *coroutine function*.
+
+asyncio also supports legacy :ref:`generator-based
+<asyncio_generator_based_coro>` coroutines.
+
+
+.. rubric:: Tasks
+
+*Tasks* are used to schedule coroutines *concurrently*.
+
+When a coroutine is wrapped into a *Task* with functions like
+:func:`asyncio.create_task` the coroutine is automatically
+scheduled to run soon::
+
+    import asyncio
+
+    async def nested():
+        return 42
+
+    async def main():
+        # Schedule nested() to run soon concurrently
+        # with "main()".
+        task = asyncio.create_task(nested())
+
+        # "task" can now be used to cancel "nested()", or
+        # can simply be awaited to wait until it is complete:
+        await task
+
+    asyncio.run(main())
+
+
+.. rubric:: Futures
+
+A :class:`Future` is a special **low-level** awaitable object that
+represents an **eventual result** of an asynchronous operation.
+
+When a Future object is *awaited* it means that the coroutine will
+wait until the Future is resolved in some other place.
+
+Future objects in asyncio are needed to allow callback-based code
+to be used with async/await.
+
+Normally **there is no need** to create Future objects at the
+application level code.
+
+Future objects, sometimes exposed by libraries and some asyncio
+APIs, can be awaited::
+
+    async def main():
+        await function_that_returns_a_future_object()
+
+        # this is also valid:
+        await asyncio.gather(
+            function_that_returns_a_future_object(),
+            some_python_coroutine()
+        )
+
+A good example of a low-level function that returns a Future object
+is :meth:`loop.run_in_executor`.
+
+
+Running an asyncio Program
+==========================
+
+.. function:: run(coro, \*, debug=False)
+
+    Execute the :term:`coroutine` *coro* and return the result.
 
     This function runs the passed coroutine, taking care of
-    managing the asyncio event loop and finalizing asynchronous
-    generators.
+    managing the asyncio event loop, *finalizing asynchronous
+    generators*, and closing the threadpool.
 
     This function cannot be called when another asyncio event loop is
     running in the same thread.
 
-    If debug is True, the event loop will be run in debug mode.
+    If *debug* is ``True``, the event loop will be run in debug mode.
 
     This function always creates a new event loop and closes it at
     the end.  It should be used as a main entry point for asyncio
     programs, and should ideally only be called once.
 
+    Example::
+
+        async def main():
+            await asyncio.sleep(1)
+            print('hello')
+
+        asyncio.run(main())
+
     .. versionadded:: 3.7
 
+    .. versionchanged:: 3.9
+       Updated to use :meth:`loop.shutdown_default_executor`.
 
-.. _asyncio-hello-world-coroutine:
+    .. note::
+       The source code for ``asyncio.run()`` can be found in
+       :source:`Lib/asyncio/runners.py`.
 
-Example: Hello World coroutine
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Creating Tasks
+==============
 
-Example of coroutine displaying ``"Hello World"``::
+.. function:: create_task(coro, \*, name=None)
 
-    import asyncio
+   Wrap the *coro* :ref:`coroutine <coroutine>` into a :class:`Task`
+   and schedule its execution.  Return the Task object.
 
-    async def hello_world():
-        print("Hello World!")
+   If *name* is not ``None``, it is set as the name of the task using
+   :meth:`Task.set_name`.
 
-    asyncio.run(hello_world())
+   The task is executed in the loop returned by :func:`get_running_loop`,
+   :exc:`RuntimeError` is raised if there is no running loop in
+   current thread.
 
-.. seealso::
+   This function has been **added in Python 3.7**.  Prior to
+   Python 3.7, the low-level :func:`asyncio.ensure_future` function
+   can be used instead::
 
-   The :ref:`Hello World with call_soon() <asyncio-hello-world-callback>`
-   example uses the :meth:`AbstractEventLoop.call_soon` method to schedule a
-   callback.
+       async def coro():
+           ...
+
+       # In Python 3.7+
+       task = asyncio.create_task(coro())
+       ...
+
+       # This works in all Python versions but is less readable
+       task = asyncio.ensure_future(coro())
+       ...
+
+   .. versionadded:: 3.7
+
+   .. versionchanged:: 3.8
+      Added the ``name`` parameter.
 
 
-.. _asyncio-date-coroutine:
+Sleeping
+========
 
-Example: Coroutine displaying the current date
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.. coroutinefunction:: sleep(delay, result=None, \*, loop=None)
 
-Example of coroutine displaying the current date every second during 5 seconds
-using the :meth:`sleep` function::
+   Block for *delay* seconds.
+
+   If *result* is provided, it is returned to the caller
+   when the coroutine completes.
+
+   ``sleep()`` always suspends the current task, allowing other tasks
+   to run.
+
+   .. deprecated-removed:: 3.8 3.10
+      The *loop* parameter.
+
+   .. _asyncio_example_sleep:
+
+   Example of coroutine displaying the current date every second
+   for 5 seconds::
 
     import asyncio
     import datetime
@@ -153,578 +315,204 @@ using the :meth:`sleep` function::
 
     asyncio.run(display_date())
 
-.. seealso::
 
-   The :ref:`display the current date with call_later()
-   <asyncio-date-callback>` example uses a callback with the
-   :meth:`AbstractEventLoop.call_later` method.
+Running Tasks Concurrently
+==========================
 
+.. awaitablefunction:: gather(\*aws, loop=None, return_exceptions=False)
 
-Example: Chain coroutines
-^^^^^^^^^^^^^^^^^^^^^^^^^
+   Run :ref:`awaitable objects <asyncio-awaitables>` in the *aws*
+   sequence *concurrently*.
 
-Example chaining coroutines::
+   If any awaitable in *aws* is a coroutine, it is automatically
+   scheduled as a Task.
 
-    import asyncio
+   If all awaitables are completed successfully, the result is an
+   aggregate list of returned values.  The order of result values
+   corresponds to the order of awaitables in *aws*.
 
-    async def compute(x, y):
-        print("Compute %s + %s ..." % (x, y))
-        await asyncio.sleep(1.0)
-        return x + y
+   If *return_exceptions* is ``False`` (default), the first
+   raised exception is immediately propagated to the task that
+   awaits on ``gather()``.  Other awaitables in the *aws* sequence
+   **won't be cancelled** and will continue to run.
 
-    async def print_sum(x, y):
-        result = await compute(x, y)
-        print("%s + %s = %s" % (x, y, result))
+   If *return_exceptions* is ``True``, exceptions are treated the
+   same as successful results, and aggregated in the result list.
 
-    loop = asyncio.get_event_loop()
-    loop.run_until_complete(print_sum(1, 2))
-    loop.close()
+   If ``gather()`` is *cancelled*, all submitted awaitables
+   (that have not completed yet) are also *cancelled*.
 
-``compute()`` is chained to ``print_sum()``: ``print_sum()`` coroutine waits
-until ``compute()`` is completed before returning its result.
+   If any Task or Future from the *aws* sequence is *cancelled*, it is
+   treated as if it raised :exc:`CancelledError` -- the ``gather()``
+   call is **not** cancelled in this case.  This is to prevent the
+   cancellation of one submitted Task/Future to cause other
+   Tasks/Futures to be cancelled.
 
-Sequence diagram of the example:
+   .. deprecated-removed:: 3.8 3.10
+      The *loop* parameter.
 
-.. image:: tulip_coro.png
-   :align: center
-
-The "Task" is created by the :meth:`AbstractEventLoop.run_until_complete` method
-when it gets a coroutine object instead of a task.
-
-The diagram shows the control flow, it does not describe exactly how things
-work internally. For example, the sleep coroutine creates an internal future
-which uses :meth:`AbstractEventLoop.call_later` to wake up the task in 1 second.
-
-
-InvalidStateError
------------------
-
-.. exception:: InvalidStateError
-
-   The operation is not allowed in this state.
-
-
-TimeoutError
-------------
-
-.. exception:: TimeoutError
-
-   The operation exceeded the given deadline.
-
-.. note::
-
-   This exception is different from the builtin :exc:`TimeoutError` exception!
-
-
-Future
-------
-
-.. class:: Future(\*, loop=None)
-
-   This class is *almost* compatible with :class:`concurrent.futures.Future`.
-
-   Differences:
-
-   - :meth:`result` and :meth:`exception` do not take a timeout argument and
-     raise an exception when the future isn't done yet.
-
-   - Callbacks registered with :meth:`add_done_callback` are always called
-     via the event loop's :meth:`~AbstractEventLoop.call_soon`.
-
-   - This class is not compatible with the :func:`~concurrent.futures.wait` and
-     :func:`~concurrent.futures.as_completed` functions in the
-     :mod:`concurrent.futures` package.
-
-   This class is :ref:`not thread safe <asyncio-multithreading>`.
-
-   .. method:: cancel()
-
-      Cancel the future and schedule callbacks.
-
-      If the future is already done or cancelled, return ``False``. Otherwise,
-      change the future's state to cancelled, schedule the callbacks and return
-      ``True``.
-
-   .. method:: cancelled()
-
-      Return ``True`` if the future was cancelled.
-
-   .. method:: done()
-
-      Return ``True`` if the future is done.
-
-      Done means either that a result / exception are available, or that the
-      future was cancelled.
-
-   .. method:: result()
-
-      Return the result this future represents.
-
-      If the future has been cancelled, raises :exc:`CancelledError`. If the
-      future's result isn't yet available, raises :exc:`InvalidStateError`. If
-      the future is done and has an exception set, this exception is raised.
-
-   .. method:: exception()
-
-      Return the exception that was set on this future.
-
-      The exception (or ``None`` if no exception was set) is returned only if
-      the future is done. If the future has been cancelled, raises
-      :exc:`CancelledError`. If the future isn't done yet, raises
-      :exc:`InvalidStateError`.
-
-   .. method:: add_done_callback(fn)
-
-      Add a callback to be run when the future becomes done.
-
-      The callback is called with a single argument - the future object. If the
-      future is already done when this is called, the callback is scheduled
-      with :meth:`~AbstractEventLoop.call_soon`.
-
-      :ref:`Use functools.partial to pass parameters to the callback
-      <asyncio-pass-keywords>`. For example,
-      ``fut.add_done_callback(functools.partial(print, "Future:",
-      flush=True))`` will call ``print("Future:", fut, flush=True)``.
-
-   .. method:: remove_done_callback(fn)
-
-      Remove all instances of a callback from the "call when done" list.
-
-      Returns the number of callbacks removed.
-
-   .. method:: set_result(result)
-
-      Mark the future done and set its result.
-
-      If the future is already done when this method is called, raises
-      :exc:`InvalidStateError`.
-
-   .. method:: set_exception(exception)
-
-      Mark the future done and set an exception.
-
-      If the future is already done when this method is called, raises
-      :exc:`InvalidStateError`.
-
-   .. method:: get_loop()
-
-      Return the event loop the future object is bound to.
-
-      .. versionadded:: 3.7
-
-
-Example: Future with run_until_complete()
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-Example combining a :class:`Future` and a :ref:`coroutine function
-<coroutine>`::
-
-    import asyncio
-
-    async def slow_operation(future):
-        await asyncio.sleep(1)
-        future.set_result('Future is done!')
-
-    loop = asyncio.get_event_loop()
-    future = asyncio.Future()
-    asyncio.ensure_future(slow_operation(future))
-    loop.run_until_complete(future)
-    print(future.result())
-    loop.close()
-
-The coroutine function is responsible for the computation (which takes 1 second)
-and it stores the result into the future. The
-:meth:`~AbstractEventLoop.run_until_complete` method waits for the completion of
-the future.
-
-.. note::
-   The :meth:`~AbstractEventLoop.run_until_complete` method uses internally the
-   :meth:`~Future.add_done_callback` method to be notified when the future is
-   done.
-
-
-Example: Future with run_forever()
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-The previous example can be written differently using the
-:meth:`Future.add_done_callback` method to describe explicitly the control
-flow::
-
-    import asyncio
-
-    async def slow_operation(future):
-        await asyncio.sleep(1)
-        future.set_result('Future is done!')
-
-    def got_result(future):
-        print(future.result())
-        loop.stop()
-
-    loop = asyncio.get_event_loop()
-    future = asyncio.Future()
-    asyncio.ensure_future(slow_operation(future))
-    future.add_done_callback(got_result)
-    try:
-        loop.run_forever()
-    finally:
-        loop.close()
-
-In this example, the future is used to link ``slow_operation()`` to
-``got_result()``: when ``slow_operation()`` is done, ``got_result()`` is called
-with the result.
-
-
-Task
-----
-
-.. function:: create_task(coro)
-
-   Wrap a :ref:`coroutine <coroutine>` *coro* into a task and schedule
-   its execution.  Return the task object.
-
-   The task is executed in :func:`get_running_loop` context,
-   :exc:`RuntimeError` is raised if there is no running loop in
-   current thread.
-
-   .. versionadded:: 3.7
-
-.. class:: Task(coro, \*, loop=None)
-
-   A unit for concurrent running of :ref:`coroutines <coroutine>`,
-   subclass of :class:`Future`.
-
-   A task is responsible for executing a coroutine object in an event loop.  If
-   the wrapped coroutine yields from a future, the task suspends the execution
-   of the wrapped coroutine and waits for the completion of the future. When
-   the future is done, the execution of the wrapped coroutine restarts with the
-   result or the exception of the future.
-
-   Event loops use cooperative scheduling: an event loop only runs one task at
-   a time. Other tasks may run in parallel if other event loops are
-   running in different threads. While a task waits for the completion of a
-   future, the event loop executes a new task.
-
-   The cancellation of a task is different from the cancellation of a
-   future. Calling :meth:`cancel` will throw a
-   :exc:`~concurrent.futures.CancelledError` to the wrapped
-   coroutine. :meth:`~Future.cancelled` only returns ``True`` if the
-   wrapped coroutine did not catch the
-   :exc:`~concurrent.futures.CancelledError` exception, or raised a
-   :exc:`~concurrent.futures.CancelledError` exception.
-
-   If a pending task is destroyed, the execution of its wrapped :ref:`coroutine
-   <coroutine>` did not complete. It is probably a bug and a warning is
-   logged: see :ref:`Pending task destroyed <asyncio-pending-task-destroyed>`.
-
-   Don't directly create :class:`Task` instances: use the :func:`create_task`
-   function or the :meth:`AbstractEventLoop.create_task` method.
-
-   This class is :ref:`not thread safe <asyncio-multithreading>`.
-
-   .. classmethod:: all_tasks(loop=None)
-
-      Return a set of all tasks for an event loop.
-
-      By default all tasks for the current event loop are returned.
-
-   .. classmethod:: current_task(loop=None)
-
-      Return the currently running task in an event loop or ``None``.
-
-      By default the current task for the current event loop is returned.
-
-      ``None`` is returned when called not in the context of a :class:`Task`.
-
-   .. method:: cancel()
-
-      Request that this task cancel itself.
-
-      This arranges for a :exc:`~concurrent.futures.CancelledError` to be
-      thrown into the wrapped coroutine on the next cycle through the event
-      loop. The coroutine then has a chance to clean up or even deny the
-      request using try/except/finally.
-
-      Unlike :meth:`Future.cancel`, this does not guarantee that the task
-      will be cancelled: the exception might be caught and acted upon, delaying
-      cancellation of the task or preventing cancellation completely. The task
-      may also return a value or raise a different exception.
-
-      Immediately after this method is called, :meth:`~Future.cancelled` will
-      not return ``True`` (unless the task was already cancelled). A task will
-      be marked as cancelled when the wrapped coroutine terminates with a
-      :exc:`~concurrent.futures.CancelledError` exception (even if
-      :meth:`cancel` was not called).
-
-   .. method:: get_stack(\*, limit=None)
-
-      Return the list of stack frames for this task's coroutine.
-
-      If the coroutine is not done, this returns the stack where it is
-      suspended.  If the coroutine has completed successfully or was
-      cancelled, this returns an empty list.  If the coroutine was
-      terminated by an exception, this returns the list of traceback
-      frames.
-
-      The frames are always ordered from oldest to newest.
-
-      The optional limit gives the maximum number of frames to return; by
-      default all available frames are returned.  Its meaning differs depending
-      on whether a stack or a traceback is returned: the newest frames of a
-      stack are returned, but the oldest frames of a traceback are returned.
-      (This matches the behavior of the traceback module.)
-
-      For reasons beyond our control, only one stack frame is returned for a
-      suspended coroutine.
-
-   .. method:: print_stack(\*, limit=None, file=None)
-
-      Print the stack or traceback for this task's coroutine.
-
-      This produces output similar to that of the traceback module, for the
-      frames retrieved by get_stack().  The limit argument is passed to
-      get_stack().  The file argument is an I/O stream to which the output
-      is written; by default output is written to sys.stderr.
-
-
-Example: Parallel execution of tasks
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-Example executing 3 tasks (A, B, C) in parallel::
-
-    import asyncio
-
-    async def factorial(name, number):
-        f = 1
-        for i in range(2, number+1):
-            print("Task %s: Compute factorial(%s)..." % (name, i))
-            await asyncio.sleep(1)
-            f *= i
-        print("Task %s: factorial(%s) = %s" % (name, number, f))
-
-    loop = asyncio.get_event_loop()
-    loop.run_until_complete(asyncio.gather(
-        factorial("A", 2),
-        factorial("B", 3),
-        factorial("C", 4),
-    ))
-    loop.close()
-
-Output::
-
-    Task A: Compute factorial(2)...
-    Task B: Compute factorial(2)...
-    Task C: Compute factorial(2)...
-    Task A: factorial(2) = 2
-    Task B: Compute factorial(3)...
-    Task C: Compute factorial(3)...
-    Task B: factorial(3) = 6
-    Task C: Compute factorial(4)...
-    Task C: factorial(4) = 24
-
-A task is automatically scheduled for execution when it is created. The event
-loop stops when all tasks are done.
-
-
-Task functions
---------------
-
-.. note::
-
-   In the functions below, the optional *loop* argument allows explicitly setting
-   the event loop object used by the underlying task or coroutine.  If it's
-   not provided, the default event loop is used.
-
-
-.. function:: current_task(loop=None):
-
-   Return the current running :class:`Task` instance or ``None``, if
-   no task is running.
-
-   If *loop* is ``None`` :func:`get_running_loop` is used to get
-   the current loop.
-
-   .. versionadded:: 3.7
-
-
-.. function:: all_tasks(loop=None):
-
-   Return a set of :class:`Task` objects created for the loop.
-
-   If *loop* is ``None`` :func:`get_event_loop` is used for getting
-   current loop.
-
-   .. versionadded:: 3.7
-
-
-.. function:: as_completed(fs, \*, loop=None, timeout=None)
-
-   Return an iterator whose values, when waited for, are :class:`Future`
-   instances.
-
-   Raises :exc:`asyncio.TimeoutError` if the timeout occurs before all Futures
-   are done.
+   .. _asyncio_example_gather:
 
    Example::
 
-       for f in as_completed(fs):
-           result = await f  # The 'await' may raise
-           # Use result
+      import asyncio
 
-   .. note::
+      async def factorial(name, number):
+          f = 1
+          for i in range(2, number + 1):
+              print(f"Task {name}: Compute factorial({i})...")
+              await asyncio.sleep(1)
+              f *= i
+          print(f"Task {name}: factorial({number}) = {f}")
 
-      The futures ``f`` are not necessarily members of fs.
+      async def main():
+          # Schedule three calls *concurrently*:
+          await asyncio.gather(
+              factorial("A", 2),
+              factorial("B", 3),
+              factorial("C", 4),
+          )
 
-.. function:: ensure_future(coro_or_future, \*, loop=None)
+      asyncio.run(main())
 
-   Schedule the execution of a :ref:`coroutine object <coroutine>`: wrap it in
-   a future. Return a :class:`Task` object.
+      # Expected output:
+      #
+      #     Task A: Compute factorial(2)...
+      #     Task B: Compute factorial(2)...
+      #     Task C: Compute factorial(2)...
+      #     Task A: factorial(2) = 2
+      #     Task B: Compute factorial(3)...
+      #     Task C: Compute factorial(3)...
+      #     Task B: factorial(3) = 6
+      #     Task C: Compute factorial(4)...
+      #     Task C: factorial(4) = 24
 
-   If the argument is a :class:`Future`, it is returned directly.
+   .. versionchanged:: 3.7
+      If the *gather* itself is cancelled, the cancellation is
+      propagated regardless of *return_exceptions*.
 
-   .. versionadded:: 3.4.4
 
-   .. versionchanged:: 3.5.1
-      The function accepts any :term:`awaitable` object.
+Shielding From Cancellation
+===========================
 
-   .. note::
+.. awaitablefunction:: shield(aw, \*, loop=None)
 
-      :func:`create_task` (added in Python 3.7) is the preferable way
-      for spawning new tasks.
+   Protect an :ref:`awaitable object <asyncio-awaitables>`
+   from being :meth:`cancelled <Task.cancel>`.
 
-   .. seealso::
-
-      The :func:`create_task` function and
-      :meth:`AbstractEventLoop.create_task` method.
-
-.. function:: wrap_future(future, \*, loop=None)
-
-   Wrap a :class:`concurrent.futures.Future` object in a :class:`Future`
-   object.
-
-.. function:: gather(\*coros_or_futures, loop=None, return_exceptions=False)
-
-   Return a future aggregating results from the given coroutine objects or
-   futures.
-
-   All futures must share the same event loop.  If all the tasks are done
-   successfully, the returned future's result is the list of results (in the
-   order of the original sequence, not necessarily the order of results
-   arrival).  If *return_exceptions* is true, exceptions in the tasks are
-   treated the same as successful results, and gathered in the result list;
-   otherwise, the first raised exception will be immediately propagated to the
-   returned future.
-
-   Cancellation: if the outer Future is cancelled, all children (that have not
-   completed yet) are also cancelled.  If any child is cancelled, this is
-   treated as if it raised :exc:`~concurrent.futures.CancelledError` -- the
-   outer Future is *not* cancelled in this case.  (This is to prevent the
-   cancellation of one child to cause other children to be cancelled.)
-
-.. function:: iscoroutine(obj)
-
-   Return ``True`` if *obj* is a :ref:`coroutine object <coroutine>`,
-   which may be based on a generator or an :keyword:`async def` coroutine.
-
-.. function:: iscoroutinefunction(func)
-
-   Return ``True`` if *func* is determined to be a :ref:`coroutine function
-   <coroutine>`, which may be a decorated generator function or an
-   :keyword:`async def` function.
-
-.. function:: run_coroutine_threadsafe(coro, loop)
-
-   Submit a :ref:`coroutine object <coroutine>` to a given event loop.
-
-   Return a :class:`concurrent.futures.Future` to access the result.
-
-   This function is meant to be called from a different thread than the one
-   where the event loop is running. Usage::
-
-     # Create a coroutine
-     coro = asyncio.sleep(1, result=3)
-     # Submit the coroutine to a given loop
-     future = asyncio.run_coroutine_threadsafe(coro, loop)
-     # Wait for the result with an optional timeout argument
-     assert future.result(timeout) == 3
-
-   If an exception is raised in the coroutine, the returned future will be
-   notified. It can also be used to cancel the task in the event loop::
-
-     try:
-         result = future.result(timeout)
-     except asyncio.TimeoutError:
-         print('The coroutine took too long, cancelling the task...')
-         future.cancel()
-     except Exception as exc:
-         print('The coroutine raised an exception: {!r}'.format(exc))
-     else:
-         print('The coroutine returned: {!r}'.format(result))
-
-   See the :ref:`concurrency and multithreading <asyncio-multithreading>`
-   section of the documentation.
-
-   .. note::
-
-      Unlike other functions from the module,
-      :func:`run_coroutine_threadsafe` requires the *loop* argument to
-      be passed explicitly.
-
-   .. versionadded:: 3.5.1
-
-.. coroutinefunction:: sleep(delay, result=None, \*, loop=None)
-
-   Create a :ref:`coroutine <coroutine>` that completes after a given
-   time (in seconds).  If *result* is provided, it is produced to the caller
-   when the coroutine completes.
-
-   The resolution of the sleep depends on the :ref:`granularity of the event
-   loop <asyncio-delayed-calls>`.
-
-   This function is a :ref:`coroutine <coroutine>`.
-
-.. function:: shield(arg, \*, loop=None)
-
-   Wait for a future, shielding it from cancellation.
+   If *aw* is a coroutine it is automatically scheduled as a Task.
 
    The statement::
 
        res = await shield(something())
 
-   is exactly equivalent to the statement::
+   is equivalent to::
 
        res = await something()
 
-   *except* that if the coroutine containing it is cancelled, the task running
-   in ``something()`` is not cancelled.  From the point of view of
-   ``something()``, the cancellation did not happen.  But its caller is still
-   cancelled, so the yield-from expression still raises
-   :exc:`~concurrent.futures.CancelledError`.  Note: If ``something()`` is
-   cancelled by other means this will still cancel ``shield()``.
+   *except* that if the coroutine containing it is cancelled, the
+   Task running in ``something()`` is not cancelled.  From the point
+   of view of ``something()``, the cancellation did not happen.
+   Although its caller is still cancelled, so the "await" expression
+   still raises a :exc:`CancelledError`.
 
-   If you want to completely ignore cancellation (not recommended) you can
-   combine ``shield()`` with a try/except clause, as follows::
+   If ``something()`` is cancelled by other means (i.e. from within
+   itself) that would also cancel ``shield()``.
+
+   If it is desired to completely ignore cancellation (not recommended)
+   the ``shield()`` function should be combined with a try/except
+   clause, as follows::
 
        try:
            res = await shield(something())
        except CancelledError:
            res = None
 
+   .. deprecated-removed:: 3.8 3.10
+      The *loop* parameter.
 
-.. coroutinefunction:: wait(futures, \*, loop=None, timeout=None,\
+
+Timeouts
+========
+
+.. coroutinefunction:: wait_for(aw, timeout, \*, loop=None)
+
+   Wait for the *aw* :ref:`awaitable <asyncio-awaitables>`
+   to complete with a timeout.
+
+   If *aw* is a coroutine it is automatically scheduled as a Task.
+
+   *timeout* can either be ``None`` or a float or int number of seconds
+   to wait for.  If *timeout* is ``None``, block until the future
+   completes.
+
+   If a timeout occurs, it cancels the task and raises
+   :exc:`asyncio.TimeoutError`.
+
+   To avoid the task :meth:`cancellation <Task.cancel>`,
+   wrap it in :func:`shield`.
+
+   The function will wait until the future is actually cancelled,
+   so the total wait time may exceed the *timeout*.
+
+   If the wait is cancelled, the future *aw* is also cancelled.
+
+   .. deprecated-removed:: 3.8 3.10
+      The *loop* parameter.
+
+   .. _asyncio_example_waitfor:
+
+   Example::
+
+       async def eternity():
+           # Sleep for one hour
+           await asyncio.sleep(3600)
+           print('yay!')
+
+       async def main():
+           # Wait for at most 1 second
+           try:
+               await asyncio.wait_for(eternity(), timeout=1.0)
+           except asyncio.TimeoutError:
+               print('timeout!')
+
+       asyncio.run(main())
+
+       # Expected output:
+       #
+       #     timeout!
+
+   .. versionchanged:: 3.7
+      When *aw* is cancelled due to a timeout, ``wait_for`` waits
+      for *aw* to be cancelled.  Previously, it raised
+      :exc:`asyncio.TimeoutError` immediately.
+
+
+Waiting Primitives
+==================
+
+.. coroutinefunction:: wait(aws, \*, loop=None, timeout=None,\
                             return_when=ALL_COMPLETED)
 
-   Wait for the Futures and coroutine objects given by the sequence *futures*
-   to complete.  Coroutines will be wrapped in Tasks. Returns two sets of
-   :class:`Future`: (done, pending).
+   Run :ref:`awaitable objects <asyncio-awaitables>` in the *aws*
+   set concurrently and block until the condition specified
+   by *return_when*.
 
-   The sequence *futures* must not be empty.
+   Returns two sets of Tasks/Futures: ``(done, pending)``.
 
-   *timeout* can be used to control the maximum number of seconds to wait before
-   returning.  *timeout* can be an int or float.  If *timeout* is not specified
-   or ``None``, there is no limit to the wait time.
+   Usage::
 
-   *return_when* indicates when this function should return.  It must be one of
-   the following constants of the :mod:`concurrent.futures` module:
+        done, pending = await asyncio.wait(aws)
+
+   *timeout* (a float or int), if specified, can be used to control
+   the maximum number of seconds to wait before returning.
+
+   Note that this function does not raise :exc:`asyncio.TimeoutError`.
+   Futures or Tasks that aren't done when the timeout occurs are simply
+   returned in the second set.
+
+   *return_when* indicates when this function should return.  It must
+   be one of the following constants:
 
    .. tabularcolumns:: |l|L|
 
@@ -744,35 +532,449 @@ Task functions
    |                             | futures finish or are cancelled.       |
    +-----------------------------+----------------------------------------+
 
-   This function is a :ref:`coroutine <coroutine>`.
+   Unlike :func:`~asyncio.wait_for`, ``wait()`` does not cancel the
+   futures when a timeout occurs.
 
-   Usage::
+   .. deprecated:: 3.8
 
-        done, pending = await asyncio.wait(fs)
+      If any awaitable in *aws* is a coroutine, it is automatically
+      scheduled as a Task.  Passing coroutines objects to
+      ``wait()`` directly is deprecated as it leads to
+      :ref:`confusing behavior <asyncio_example_wait_coroutine>`.
 
+   .. deprecated-removed:: 3.8 3.10
+
+      The *loop* parameter.
+
+   .. _asyncio_example_wait_coroutine:
    .. note::
 
-      This does not raise :exc:`asyncio.TimeoutError`! Futures that aren't done
-      when the timeout occurs are returned in the second set.
+      ``wait()`` schedules coroutines as Tasks automatically and later
+      returns those implicitly created Task objects in ``(done, pending)``
+      sets.  Therefore the following code won't work as expected::
+
+          async def foo():
+              return 42
+
+          coro = foo()
+          done, pending = await asyncio.wait({coro})
+
+          if coro in done:
+              # This branch will never be run!
+
+      Here is how the above snippet can be fixed::
+
+          async def foo():
+              return 42
+
+          task = asyncio.create_task(foo())
+          done, pending = await asyncio.wait({task})
+
+          if task in done:
+              # Everything will work as expected now.
+
+   .. deprecated:: 3.8
+
+      Passing coroutine objects to ``wait()`` directly is
+      deprecated.
 
 
-.. coroutinefunction:: wait_for(fut, timeout, \*, loop=None)
+.. function:: as_completed(aws, \*, loop=None, timeout=None)
 
-   Wait for the single :class:`Future` or :ref:`coroutine object <coroutine>`
-   to complete with timeout. If *timeout* is ``None``, block until the future
-   completes.
+   Run :ref:`awaitable objects <asyncio-awaitables>` in the *aws*
+   set concurrently.  Return an iterator of :class:`Future` objects.
+   Each Future object returned represents the earliest result
+   from the set of the remaining awaitables.
 
-   Coroutine will be wrapped in :class:`Task`.
+   Raises :exc:`asyncio.TimeoutError` if the timeout occurs before
+   all Futures are done.
 
-   Returns result of the Future or coroutine.  When a timeout occurs, it
-   cancels the task and raises :exc:`asyncio.TimeoutError`. To avoid the task
-   cancellation, wrap it in :func:`shield`.
+   .. deprecated-removed:: 3.8 3.10
+      The *loop* parameter.
 
-   If the wait is cancelled, the future *fut* is also cancelled.
+   Example::
 
-   This function is a :ref:`coroutine <coroutine>`, usage::
+       for f in as_completed(aws):
+           earliest_result = await f
+           # ...
 
-       result = await asyncio.wait_for(fut, 60.0)
 
-   .. versionchanged:: 3.4.3
-      If the wait is cancelled, the future *fut* is now also cancelled.
+Scheduling From Other Threads
+=============================
+
+.. function:: run_coroutine_threadsafe(coro, loop)
+
+   Submit a coroutine to the given event loop.  Thread-safe.
+
+   Return a :class:`concurrent.futures.Future` to wait for the result
+   from another OS thread.
+
+   This function is meant to be called from a different OS thread
+   than the one where the event loop is running.  Example::
+
+     # Create a coroutine
+     coro = asyncio.sleep(1, result=3)
+
+     # Submit the coroutine to a given loop
+     future = asyncio.run_coroutine_threadsafe(coro, loop)
+
+     # Wait for the result with an optional timeout argument
+     assert future.result(timeout) == 3
+
+   If an exception is raised in the coroutine, the returned Future
+   will be notified.  It can also be used to cancel the task in
+   the event loop::
+
+     try:
+         result = future.result(timeout)
+     except asyncio.TimeoutError:
+         print('The coroutine took too long, cancelling the task...')
+         future.cancel()
+     except Exception as exc:
+         print(f'The coroutine raised an exception: {exc!r}')
+     else:
+         print(f'The coroutine returned: {result!r}')
+
+   See the :ref:`concurrency and multithreading <asyncio-multithreading>`
+   section of the documentation.
+
+   Unlike other asyncio functions this function requires the *loop*
+   argument to be passed explicitly.
+
+   .. versionadded:: 3.5.1
+
+
+Introspection
+=============
+
+
+.. function:: current_task(loop=None)
+
+   Return the currently running :class:`Task` instance, or ``None`` if
+   no task is running.
+
+   If *loop* is ``None`` :func:`get_running_loop` is used to get
+   the current loop.
+
+   .. versionadded:: 3.7
+
+
+.. function:: all_tasks(loop=None)
+
+   Return a set of not yet finished :class:`Task` objects run by
+   the loop.
+
+   If *loop* is ``None``, :func:`get_running_loop` is used for getting
+   current loop.
+
+   .. versionadded:: 3.7
+
+
+Task Object
+===========
+
+.. class:: Task(coro, \*, loop=None, name=None)
+
+   A :class:`Future-like <Future>` object that runs a Python
+   :ref:`coroutine <coroutine>`.  Not thread-safe.
+
+   Tasks are used to run coroutines in event loops.
+   If a coroutine awaits on a Future, the Task suspends
+   the execution of the coroutine and waits for the completion
+   of the Future.  When the Future is *done*, the execution of
+   the wrapped coroutine resumes.
+
+   Event loops use cooperative scheduling: an event loop runs
+   one Task at a time.  While a Task awaits for the completion of a
+   Future, the event loop runs other Tasks, callbacks, or performs
+   IO operations.
+
+   Use the high-level :func:`asyncio.create_task` function to create
+   Tasks, or the low-level :meth:`loop.create_task` or
+   :func:`ensure_future` functions.  Manual instantiation of Tasks
+   is discouraged.
+
+   To cancel a running Task use the :meth:`cancel` method.  Calling it
+   will cause the Task to throw a :exc:`CancelledError` exception into
+   the wrapped coroutine.  If a coroutine is awaiting on a Future
+   object during cancellation, the Future object will be cancelled.
+
+   :meth:`cancelled` can be used to check if the Task was cancelled.
+   The method returns ``True`` if the wrapped coroutine did not
+   suppress the :exc:`CancelledError` exception and was actually
+   cancelled.
+
+   :class:`asyncio.Task` inherits from :class:`Future` all of its
+   APIs except :meth:`Future.set_result` and
+   :meth:`Future.set_exception`.
+
+   Tasks support the :mod:`contextvars` module.  When a Task
+   is created it copies the current context and later runs its
+   coroutine in the copied context.
+
+   .. versionchanged:: 3.7
+      Added support for the :mod:`contextvars` module.
+
+   .. versionchanged:: 3.8
+      Added the ``name`` parameter.
+
+   .. deprecated-removed:: 3.8 3.10
+      The *loop* parameter.
+
+   .. method:: cancel()
+
+      Request the Task to be cancelled.
+
+      This arranges for a :exc:`CancelledError` exception to be thrown
+      into the wrapped coroutine on the next cycle of the event loop.
+
+      The coroutine then has a chance to clean up or even deny the
+      request by suppressing the exception with a :keyword:`try` ...
+      ... ``except CancelledError`` ... :keyword:`finally` block.
+      Therefore, unlike :meth:`Future.cancel`, :meth:`Task.cancel` does
+      not guarantee that the Task will be cancelled, although
+      suppressing cancellation completely is not common and is actively
+      discouraged.
+
+      .. _asyncio_example_task_cancel:
+
+      The following example illustrates how coroutines can intercept
+      the cancellation request::
+
+          async def cancel_me():
+              print('cancel_me(): before sleep')
+
+              try:
+                  # Wait for 1 hour
+                  await asyncio.sleep(3600)
+              except asyncio.CancelledError:
+                  print('cancel_me(): cancel sleep')
+                  raise
+              finally:
+                  print('cancel_me(): after sleep')
+
+          async def main():
+              # Create a "cancel_me" Task
+              task = asyncio.create_task(cancel_me())
+
+              # Wait for 1 second
+              await asyncio.sleep(1)
+
+              task.cancel()
+              try:
+                  await task
+              except asyncio.CancelledError:
+                  print("main(): cancel_me is cancelled now")
+
+          asyncio.run(main())
+
+          # Expected output:
+          #
+          #     cancel_me(): before sleep
+          #     cancel_me(): cancel sleep
+          #     cancel_me(): after sleep
+          #     main(): cancel_me is cancelled now
+
+   .. method:: cancelled()
+
+      Return ``True`` if the Task is *cancelled*.
+
+      The Task is *cancelled* when the cancellation was requested with
+      :meth:`cancel` and the wrapped coroutine propagated the
+      :exc:`CancelledError` exception thrown into it.
+
+   .. method:: done()
+
+      Return ``True`` if the Task is *done*.
+
+      A Task is *done* when the wrapped coroutine either returned
+      a value, raised an exception, or the Task was cancelled.
+
+   .. method:: result()
+
+      Return the result of the Task.
+
+      If the Task is *done*, the result of the wrapped coroutine
+      is returned (or if the coroutine raised an exception, that
+      exception is re-raised.)
+
+      If the Task has been *cancelled*, this method raises
+      a :exc:`CancelledError` exception.
+
+      If the Task's result isn't yet available, this method raises
+      a :exc:`InvalidStateError` exception.
+
+   .. method:: exception()
+
+      Return the exception of the Task.
+
+      If the wrapped coroutine raised an exception that exception
+      is returned.  If the wrapped coroutine returned normally
+      this method returns ``None``.
+
+      If the Task has been *cancelled*, this method raises a
+      :exc:`CancelledError` exception.
+
+      If the Task isn't *done* yet, this method raises an
+      :exc:`InvalidStateError` exception.
+
+   .. method:: add_done_callback(callback, *, context=None)
+
+      Add a callback to be run when the Task is *done*.
+
+      This method should only be used in low-level callback-based code.
+
+      See the documentation of :meth:`Future.add_done_callback`
+      for more details.
+
+   .. method:: remove_done_callback(callback)
+
+      Remove *callback* from the callbacks list.
+
+      This method should only be used in low-level callback-based code.
+
+      See the documentation of :meth:`Future.remove_done_callback`
+      for more details.
+
+   .. method:: get_stack(\*, limit=None)
+
+      Return the list of stack frames for this Task.
+
+      If the wrapped coroutine is not done, this returns the stack
+      where it is suspended.  If the coroutine has completed
+      successfully or was cancelled, this returns an empty list.
+      If the coroutine was terminated by an exception, this returns
+      the list of traceback frames.
+
+      The frames are always ordered from oldest to newest.
+
+      Only one stack frame is returned for a suspended coroutine.
+
+      The optional *limit* argument sets the maximum number of frames
+      to return; by default all available frames are returned.
+      The ordering of the returned list differs depending on whether
+      a stack or a traceback is returned: the newest frames of a
+      stack are returned, but the oldest frames of a traceback are
+      returned.  (This matches the behavior of the traceback module.)
+
+   .. method:: print_stack(\*, limit=None, file=None)
+
+      Print the stack or traceback for this Task.
+
+      This produces output similar to that of the traceback module
+      for the frames retrieved by :meth:`get_stack`.
+
+      The *limit* argument is passed to :meth:`get_stack` directly.
+
+      The *file* argument is an I/O stream to which the output
+      is written; by default output is written to :data:`sys.stderr`.
+
+   .. method:: get_coro()
+
+      Return the coroutine object wrapped by the :class:`Task`.
+
+      .. versionadded:: 3.8
+
+   .. method:: get_name()
+
+      Return the name of the Task.
+
+      If no name has been explicitly assigned to the Task, the default
+      asyncio Task implementation generates a default name during
+      instantiation.
+
+      .. versionadded:: 3.8
+
+   .. method:: set_name(value)
+
+      Set the name of the Task.
+
+      The *value* argument can be any object, which is then
+      converted to a string.
+
+      In the default Task implementation, the name will be visible
+      in the :func:`repr` output of a task object.
+
+      .. versionadded:: 3.8
+
+   .. classmethod:: all_tasks(loop=None)
+
+      Return a set of all tasks for an event loop.
+
+      By default all tasks for the current event loop are returned.
+      If *loop* is ``None``, the :func:`get_event_loop` function
+      is used to get the current loop.
+
+      .. deprecated-removed:: 3.7 3.9
+
+         Do not call this as a task method. Use the :func:`asyncio.all_tasks`
+         function instead.
+
+   .. classmethod:: current_task(loop=None)
+
+      Return the currently running task or ``None``.
+
+      If *loop* is ``None``, the :func:`get_event_loop` function
+      is used to get the current loop.
+
+      .. deprecated-removed:: 3.7 3.9
+
+         Do not call this as a task method.  Use the
+         :func:`asyncio.current_task` function instead.
+
+
+.. _asyncio_generator_based_coro:
+
+Generator-based Coroutines
+==========================
+
+.. note::
+
+   Support for generator-based coroutines is **deprecated** and
+   is scheduled for removal in Python 3.10.
+
+Generator-based coroutines predate async/await syntax.  They are
+Python generators that use ``yield from`` expressions to await
+on Futures and other coroutines.
+
+Generator-based coroutines should be decorated with
+:func:`@asyncio.coroutine <asyncio.coroutine>`, although this is not
+enforced.
+
+
+.. decorator:: coroutine
+
+    Decorator to mark generator-based coroutines.
+
+    This decorator enables legacy generator-based coroutines to be
+    compatible with async/await code::
+
+        @asyncio.coroutine
+        def old_style_coroutine():
+            yield from asyncio.sleep(1)
+
+        async def main():
+            await old_style_coroutine()
+
+    This decorator should not be used for :keyword:`async def`
+    coroutines.
+
+    .. deprecated-removed:: 3.8 3.10
+
+       Use :keyword:`async def` instead.
+
+.. function:: iscoroutine(obj)
+
+   Return ``True`` if *obj* is a :ref:`coroutine object <coroutine>`.
+
+   This method is different from :func:`inspect.iscoroutine` because
+   it returns ``True`` for generator-based coroutines.
+
+.. function:: iscoroutinefunction(func)
+
+   Return ``True`` if *func* is a :ref:`coroutine function
+   <coroutine>`.
+
+   This method is different from :func:`inspect.iscoroutinefunction`
+   because it returns ``True`` for generator-based coroutine functions
+   decorated with :func:`@coroutine <coroutine>`.

@@ -6,7 +6,7 @@ from . import tasks
 
 
 def run(main, *, debug=False):
-    """Run a coroutine.
+    """Execute the coroutine and return the result.
 
     This function runs the passed coroutine, taking care of
     managing the asyncio event loop and finalizing asynchronous
@@ -45,14 +45,14 @@ def run(main, *, debug=False):
         try:
             _cancel_all_tasks(loop)
             loop.run_until_complete(loop.shutdown_asyncgens())
+            loop.run_until_complete(loop.shutdown_default_executor())
         finally:
             events.set_event_loop(None)
             loop.close()
 
 
 def _cancel_all_tasks(loop):
-    to_cancel = [task for task in tasks.all_tasks(loop)
-                 if not task.done()]
+    to_cancel = tasks.all_tasks(loop)
     if not to_cancel:
         return
 

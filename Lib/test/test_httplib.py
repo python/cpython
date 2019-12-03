@@ -4,8 +4,10 @@ import io
 import itertools
 import os
 import array
+import re
 import socket
 import threading
+import warnings
 
 import unittest
 TestCase = unittest.TestCase
@@ -343,6 +345,23 @@ class HeaderTests(TestCase):
             with self.subTest((name, value)):
                 with self.assertRaisesRegex(ValueError, 'Invalid header'):
                     conn.putheader(name, value)
+
+    def test_headers_debuglevel(self):
+        body = (
+            b'HTTP/1.1 200 OK\r\n'
+            b'First: val\r\n'
+            b'Second: val1\r\n'
+            b'Second: val2\r\n'
+        )
+        sock = FakeSocket(body)
+        resp = client.HTTPResponse(sock, debuglevel=1)
+        with support.captured_stdout() as output:
+            resp.begin()
+        lines = output.getvalue().splitlines()
+        self.assertEqual(lines[0], "reply: 'HTTP/1.1 200 OK\\r\\n'")
+        self.assertEqual(lines[1], "header: First: val")
+        self.assertEqual(lines[2], "header: Second: val1")
+        self.assertEqual(lines[3], "header: Second: val2")
 
 
 class TransferEncodingTest(TestCase):
@@ -1101,11 +1120,8 @@ class BasicTest(TestCase):
 
     def test_response_fileno(self):
         # Make sure fd returned by fileno is valid.
-        serv = socket.socket(
-            socket.AF_INET, socket.SOCK_STREAM, socket.IPPROTO_TCP)
+        serv = socket.create_server((HOST, 0))
         self.addCleanup(serv.close)
-        serv.bind((HOST, 0))
-        serv.listen()
 
         result = None
         def run_server():
@@ -1138,6 +1154,34 @@ class BasicTest(TestCase):
             conn.close()
         thread.join()
         self.assertEqual(result, b"proxied data\n")
+
+    def test_putrequest_override_validation(self):
+        """
+        It should be possible to override the default validation
+        behavior in putrequest (bpo-38216).
+        """
+        class UnsafeHTTPConnection(client.HTTPConnection):
+            def _validate_path(self, url):
+                pass
+
+        conn = UnsafeHTTPConnection('example.com')
+        conn.sock = FakeSocket('')
+        conn.putrequest('GET', '/\x00')
+
+    def test_putrequest_override_encoding(self):
+        """
+        It should be possible to override the default encoding
+        to transmit bytes in another encoding even if invalid
+        (bpo-36274).
+        """
+        class UnsafeHTTPConnection(client.HTTPConnection):
+            def _encode_request(self, str_url):
+                return str_url.encode('utf-8')
+
+        conn = UnsafeHTTPConnection('example.com')
+        conn.sock = FakeSocket('')
+        conn.putrequest('GET', '/☃')
+
 
 class ExtendedReadTest(TestCase):
     """
@@ -1263,6 +1307,7 @@ class ExtendedReadTest(TestCase):
         p = self.resp.peek(0)
         self.assertLessEqual(0, len(p))
 
+
 class ExtendedReadTestChunked(ExtendedReadTest):
     """
     Test peek(), read1(), readline() in chunked mode
@@ -1385,6 +1430,7 @@ class OfflineTest(TestCase):
             'PRECONDITION_REQUIRED',
             'TOO_MANY_REQUESTS',
             'REQUEST_HEADER_FIELDS_TOO_LARGE',
+            'UNAVAILABLE_FOR_LEGAL_REASONS',
             'INTERNAL_SERVER_ERROR',
             'NOT_IMPLEMENTED',
             'BAD_GATEWAY',
@@ -1605,14 +1651,30 @@ class HTTPSTest(TestCase):
         # We feed the server's cert as a validating cert
         import ssl
         support.requires('network')
-        with support.transient_internet('self-signed.pythontest.net'):
+        selfsigned_pythontestdotnet = 'self-signed.pythontest.net'
+        with support.transient_internet(selfsigned_pythontestdotnet):
             context = ssl.SSLContext(ssl.PROTOCOL_TLS_CLIENT)
             self.assertEqual(context.verify_mode, ssl.CERT_REQUIRED)
             self.assertEqual(context.check_hostname, True)
             context.load_verify_locations(CERT_selfsigned_pythontestdotnet)
-            h = client.HTTPSConnection('self-signed.pythontest.net', 443, context=context)
-            h.request('GET', '/')
-            resp = h.getresponse()
+            try:
+                h = client.HTTPSConnection(selfsigned_pythontestdotnet, 443,
+                                           context=context)
+                h.request('GET', '/')
+                resp = h.getresponse()
+            except ssl.SSLError as ssl_err:
+                ssl_err_str = str(ssl_err)
+                # In the error message of [SSL: CERTIFICATE_VERIFY_FAILED] on
+                # modern Linux distros (Debian Buster, etc) default OpenSSL
+                # configurations it'll fail saying "key too weak" until we
+                # address https://bugs.python.org/issue36816 to use a proper
+                # key size on self-signed.pythontest.net.
+                if re.search(r'(?i)key.too.weak', ssl_err_str):
+                    raise unittest.SkipTest(
+                        f'Got {ssl_err_str} trying to connect '
+                        f'to {selfsigned_pythontestdotnet}. '
+                        'See https://bugs.python.org/issue36816.')
+                raise
             server_string = resp.getheader('server')
             resp.close()
             h.close()
@@ -1713,6 +1775,27 @@ class HTTPSTest(TestCase):
             c = client.HTTPSConnection(hp)
             self.assertEqual(h, c.host)
             self.assertEqual(p, c.port)
+
+    def test_tls13_pha(self):
+        import ssl
+        if not ssl.HAS_TLSv1_3:
+            self.skipTest('TLS 1.3 support required')
+        # just check status of PHA flag
+        h = client.HTTPSConnection('localhost', 443)
+        self.assertTrue(h._context.post_handshake_auth)
+
+        context = ssl.SSLContext(ssl.PROTOCOL_TLS_CLIENT)
+        self.assertFalse(context.post_handshake_auth)
+        h = client.HTTPSConnection('localhost', 443, context=context)
+        self.assertIs(h._context, context)
+        self.assertFalse(h._context.post_handshake_auth)
+
+        with warnings.catch_warnings():
+            warnings.filterwarnings('ignore', 'key_file, cert_file and check_hostname are deprecated',
+                                    DeprecationWarning)
+            h = client.HTTPSConnection('localhost', 443, context=context,
+                                       cert_file=CERT_localhost)
+        self.assertTrue(h._context.post_handshake_auth)
 
 
 class RequestBodyTest(TestCase):
