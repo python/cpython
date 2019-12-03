@@ -1739,10 +1739,6 @@ class BaseEventLoopWithSelectorTests(test_utils.TestCase):
         self.assertRaises(ValueError, self.loop.run_until_complete, fut)
 
         fut = self.loop.create_datagram_endpoint(
-            MyDatagramProto, reuse_address=True, sock=FakeSock())
-        self.assertRaises(ValueError, self.loop.run_until_complete, fut)
-
-        fut = self.loop.create_datagram_endpoint(
             MyDatagramProto, reuse_port=True, sock=FakeSock())
         self.assertRaises(ValueError, self.loop.run_until_complete, fut)
 
@@ -1807,6 +1803,17 @@ class BaseEventLoopWithSelectorTests(test_utils.TestCase):
             reuse_address=True)
 
         with self.assertRaises(ValueError):
+            self.loop.run_until_complete(coro)
+
+    def test_create_datagram_endpoint_reuse_address_warning(self):
+        # bpo-37228: Deprecate *reuse_address* parameter
+
+        coro = self.loop.create_datagram_endpoint(
+            lambda: MyDatagramProto(create_future=True, loop=self.loop),
+            local_addr=('127.0.0.1', 0),
+            reuse_address=False)
+
+        with self.assertWarns(DeprecationWarning):
             self.loop.run_until_complete(coro)
 
     @patch_socket
