@@ -208,11 +208,11 @@ def main(args=None):
             # return value to indicate at least one failure
             rv = 1
             if not args.quiet:
-                sys.stderr.write("%s\n" % error.msg)
+                print(error.msg, file=sys.stderr)
         except OSError as error:
             rv = 1
             if not args.quiet:
-                sys.stderr.write("%s\n" % error)
+                print(error, file=sys.stderr)
     return rv
 
 if __name__ == "__main__":
