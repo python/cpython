@@ -1243,7 +1243,7 @@ class BaseEventLoop(events.AbstractEventLoop):
                     f'A UDP Socket was expected, got {sock!r}')
             if (local_addr or remote_addr or
                     family or proto or flags or
-                    reuse_address or reuse_port or allow_broadcast):
+                    reuse_port or allow_broadcast):
                 # show the problematic kwargs in exception msg
                 opts = dict(local_addr=local_addr, remote_addr=remote_addr,
                             family=family, proto=proto, flags=flags,
