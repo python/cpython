@@ -26,7 +26,7 @@ Command-line use
 
 This module can work as a script (using :program:`python -m
 py_compile`) to compile several source files. The files named in
-'filenames' are compiled and the resulting bytecode is cached in the
+*filenames* are compiled and the resulting bytecode is cached in the
 normal manner. This program does not search a directory structure to
 locate source files; it only compiles files named explicitly.
 
@@ -35,12 +35,18 @@ locate source files; it only compiles files named explicitly.
 .. cmdoption:: file ...
                -
 
-   Positional arguments are files to compile or ``-`` to read files
-   list from standard input (one file per line).
+   Positional arguments are files to compile. If ``'-'`` is the only
+   parameter, the list of files is taken from standard input.
 
 .. cmdoption:: -q, --quiet
 
    Suppress errors output.
+
+.. versionchanged:: 3.2
+   Added support for ``'-'``.
+
+.. versionchanged:: 3.9
+   Added support for ``'-q/--quiet'``.
 
 Public functions
 ----------------
