@@ -256,7 +256,7 @@ class AutoCompleteWindow:
         else:
             # place acw above current line
             new_y -= acw_height
-        self.widget.after(1, acw.wm_geometry, "+%d+%d" % (x, y))
+        self.widget.after(1, acw.wm_geometry, "+%d+%d" % (new_x, new_y))
 
         if platform.system().startswith('Windows'):
             # See issue 15786. When on Windows platform, Tk will misbehave
