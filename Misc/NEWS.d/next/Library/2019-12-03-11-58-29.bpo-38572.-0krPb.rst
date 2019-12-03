@@ -1,0 +1,12 @@
+Raise an unsupported error when an underlying stream does not support
+fileno()
+
+Buffered readers and writers wrap an underlying `raw` stream, with most
+requests being passed to that stream. Unfortunately, the wrappers offer a
+`fileno` API, implemented as `raw.fileno`, but if the underlying stream does
+not support this operation, the exposed `fileno` API will raise an
+`AttributeError` instead of specifying that the wrapped stream does not
+support the operation via `UnsupportedOperation` error. Buffered readers and
+writers now check that the underlying stream has a `fileno` attribute,
+raising `UnsupportedOperation` if that is not the case. Patch by Claudiu
+Popa.

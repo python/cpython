@@ -863,7 +863,9 @@ class _BufferedIOMixin(BufferedIOBase):
     ### Lower-level APIs ###
 
     def fileno(self):
-        return self.raw.fileno()
+        if hasattr(self.raw, 'fileno'):
+            return self.raw.fileno()
+        self._unsupported('fileno')
 
     def isatty(self):
         return self.raw.isatty()
