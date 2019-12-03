@@ -1276,6 +1276,7 @@ finalize_interp_clear(PyThreadState *tstate)
         _PyExc_Fini();
     }
 
+    PyGC_Collect();
     _PyGC_Fini(tstate);
 }
 
