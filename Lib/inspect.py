@@ -694,6 +694,7 @@ def getsourcefile(object):
     Return None if no way can be identified to get the source.
     """
     filename = getfile(object)
+    orig_filename = filename
     all_bytecode_suffixes = importlib.machinery.DEBUG_BYTECODE_SUFFIXES[:]
     all_bytecode_suffixes += importlib.machinery.OPTIMIZED_BYTECODE_SUFFIXES[:]
     if any(filename.endswith(s) for s in all_bytecode_suffixes):
@@ -704,6 +705,10 @@ def getsourcefile(object):
         return None
     if os.path.exists(filename):
         return filename
+    # If py file does not exit, check if the original file name exists
+    if any(orig_filename.endswith(s) for s in all_bytecode_suffixes):
+        if os.path.exists(orig_filename):
+            return None
     # only return a non-existent filename if the module has a PEP 302 loader
     if getattr(getmodule(object, filename), '__loader__', None) is not None:
         return filename

@@ -618,7 +618,8 @@ class CommandLineTestsBase:
         os.rename(pyc, os.path.join(self.pkgdir, 'baz.pyc'))
         os.remove(bazfn)
         rc, out, err = script_helper.assert_python_failure(fn, __isolated=False)
-        self.assertRegex(err, b'File "dinsdale')
+        self.assertRegex(err, b'Traceback')
+        self.assertRegex(err, b'baz.pyc')
 
     def test_include_bad_file(self):
         rc, out, err = self.assertRunNotOK(

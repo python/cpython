@@ -659,8 +659,8 @@ func_filename = func.__code__.co_filename
         importlib.invalidate_caches()
         mod = self.import_module()
         self.assertEqual(mod.module_filename, pyc_file)
-        self.assertEqual(mod.code_filename, target)
-        self.assertEqual(mod.func_filename, target)
+        self.assertEqual(mod.code_filename, pyc_file)
+        self.assertEqual(mod.func_filename, pyc_file)
 
     def test_foreign_code(self):
         py_compile.compile(self.file_name)
