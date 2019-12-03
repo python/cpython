@@ -189,10 +189,10 @@ def main(args=None):
             "named explicitly. If '-' is the only file name "
             "in 'filenames', the list of files taken from "
             "standard input. If flag '-q/--quiet' is set "
-            "errors output would be suppressed."))
+            "error output will be suppressed."))
     parser.add_argument(
         '-q', '--quiet', default=False,
-        action='store_true', help='suppress errors output')
+        action='store_true', help='suppress error output')
     parser.add_argument(
         'filenames', nargs='+', help='files to compile')
     args = parser.parse_args(args)
