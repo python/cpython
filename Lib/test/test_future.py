@@ -314,6 +314,7 @@ class AnnotationsFutureTestCase(unittest.TestCase):
         infj = f"{inf}j"
         self.assertAnnotationEqual("1e1000", expected=inf)
         self.assertAnnotationEqual("1e1000j", expected=infj)
+        self.assertAnnotationEqual("3+1e1000j", expected=f"(3+{infj})")
         self.assertAnnotationEqual("(1e1000, 1e1000j)", expected=f"({inf}, {infj})")
         self.assertAnnotationEqual("'inf'")
         self.assertAnnotationEqual("('inf', 1e1000, 'infxxx', 1e1000j)", expected=f"('inf', {inf}, 'infxxx', {infj})")

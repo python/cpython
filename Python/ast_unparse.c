@@ -63,7 +63,13 @@ static PyObject *
 replace_inf_value(PyObject *repr)
 {
     PyObject *inf_str = PyUnicode_InternFromString("inf");
+    if (!inf_str) {
+        return NULL;
+    }
     PyObject *inf_value = PyUnicode_FromFormat("1e%d", 1 + DBL_MAX_10_EXP);
+    if (!inf_value) {
+        return NULL;
+    }
     PyObject *result = PyUnicode_Replace(repr, inf_str, inf_value, -1);
     Py_DECREF(repr);
     Py_DECREF(inf_str);
@@ -80,11 +86,8 @@ append_repr(_PyUnicodeWriter *writer, PyObject *obj)
     if (!repr) {
         return -1;
     }
-    if (PyFloat_CheckExact(obj) || PyComplex_CheckExact(obj)){
-        repr = replace_inf_value(repr);
-        if (!repr) {
-            return -1;
-        }
+    if ((PyFloat_CheckExact(obj) || PyComplex_CheckExact(obj)) && !(repr = replace_inf_value(repr))) {
+        return -1;
     }
     ret = _PyUnicodeWriter_WriteStr(writer, repr);
     Py_DECREF(repr);
@@ -719,8 +722,8 @@ append_formattedvalue(_PyUnicodeWriter *writer, expr_ty e)
 static int
 append_ast_constant(_PyUnicodeWriter *writer, PyObject *constant)
 {
-    if (PyTuple_CheckExact(constant)){
-        int ret = 0;
+    if (PyTuple_CheckExact(constant)) {
+        int ret;
         Py_ssize_t i, elem_count;
 
         elem_count = PySequence_Length(constant);
@@ -730,12 +733,14 @@ append_ast_constant(_PyUnicodeWriter *writer, PyObject *constant)
         APPEND_STR("(");
         for (i = 0; i < elem_count; i++) {
             APPEND_STR_IF(i > 0, ", ");
-            ret |= append_repr(writer, PyTuple_GET_ITEM(constant, i));
+            if ((ret = append_repr(writer, PyTuple_GET_ITEM(constant, i))) != 0) {
+                return ret;
+            }
         }
 
         APPEND_STR_IF(elem_count == 1, ",");
         APPEND_STR(")");
-        return ret;
+        return 0;
     }
     return append_repr(writer, constant);
 }
