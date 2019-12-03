@@ -807,11 +807,15 @@ class CGIHTTPServerTestCase(BaseTestCase):
             (res.read(), res.getheader('Content-type'), res.status))
 
     def test_cgi_path_in_sub_directories(self):
-        CGIHTTPRequestHandler.cgi_directories.append('/sub/dir/cgi-bin')
-        res = self.request('/sub/dir/cgi-bin/file5.py')
-        self.assertEqual(
-            (b'Hello World' + self.linesep, 'text/html', HTTPStatus.OK),
-            (res.read(), res.getheader('Content-type'), res.status))
+        try:
+            CGIHTTPRequestHandler.cgi_directories.append('/sub/dir/cgi-bin')
+            res = self.request('/sub/dir/cgi-bin/file5.py')
+            self.assertEqual(
+                (b'Hello World' + self.linesep, 'text/html', HTTPStatus.OK),
+                (res.read(), res.getheader('Content-type'), res.status))
+        finally:
+            CGIHTTPRequestHandler.cgi_directories.remove('/sub/dir/cgi-bin')
+
 
 
 class SocketlessRequestHandler(SimpleHTTPRequestHandler):
