@@ -89,11 +89,11 @@ class TestTool(unittest.TestCase):
         self.assertEqual(out.splitlines(), self.expect.encode().splitlines())
         self.assertEqual(err, b'')
 
-    def _create_infile(self):
+    def _create_infile(self, data=None):
         infile = support.TESTFN
-        with open(infile, "w") as fp:
+        with open(infile, "w", encoding="utf-8") as fp:
             self.addCleanup(os.remove, infile)
-            fp.write(self.data)
+            fp.write(data or self.data)
         return infile
 
     def test_infile_stdout(self):
@@ -101,6 +101,21 @@ class TestTool(unittest.TestCase):
         rc, out, err = assert_python_ok('-m', 'json.tool', infile)
         self.assertEqual(rc, 0)
         self.assertEqual(out.splitlines(), self.expect.encode().splitlines())
+        self.assertEqual(err, b'')
+
+    def test_non_ascii_infile(self):
+        data = '{"msg": "\u3053\u3093\u306b\u3061\u306f"}'
+        expect = textwrap.dedent('''\
+        {
+            "msg": "\\u3053\\u3093\\u306b\\u3061\\u306f"
+        }
+        ''').encode()
+
+        infile = self._create_infile(data)
+        rc, out, err = assert_python_ok('-m', 'json.tool', infile)
+
+        self.assertEqual(rc, 0)
+        self.assertEqual(out.splitlines(), expect.splitlines())
         self.assertEqual(err, b'')
 
     def test_infile_outfile(self):
