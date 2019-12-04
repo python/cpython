@@ -134,3 +134,44 @@ class TestTool(unittest.TestCase):
         self.assertEqual(out.splitlines(),
                          self.expect_without_sort_keys.encode().splitlines())
         self.assertEqual(err, b'')
+
+    def test_indent(self):
+        json_stdin = b'[1, 2]'
+        expect = textwrap.dedent('''\
+        [
+          1,
+          2
+        ]
+        ''').encode()
+        args = sys.executable, '-m', 'json.tool', '--indent', '2'
+        with Popen(args, stdin=PIPE, stdout=PIPE, stderr=PIPE) as proc:
+            json_stdout, err = proc.communicate(json_stdin)
+        self.assertEqual(expect.splitlines(), json_stdout.splitlines())
+        self.assertEqual(err, b'')
+
+    def test_no_indent(self):
+        json_stdin = b'[1,\n2]'
+        expect = b'[1, 2]'
+        args = sys.executable, '-m', 'json.tool', '--no-indent'
+        with Popen(args, stdin=PIPE, stdout=PIPE, stderr=PIPE) as proc:
+            json_stdout, err = proc.communicate(json_stdin)
+        self.assertEqual(expect.splitlines(), json_stdout.splitlines())
+        self.assertEqual(err, b'')
+
+    def test_tab(self):
+        json_stdin = b'[1, 2]'
+        expect = b'[\n\t1,\n\t2\n]\n'
+        args = sys.executable, '-m', 'json.tool', '--tab'
+        with Popen(args, stdin=PIPE, stdout=PIPE, stderr=PIPE) as proc:
+            json_stdout, err = proc.communicate(json_stdin)
+        self.assertEqual(expect.splitlines(), json_stdout.splitlines())
+        self.assertEqual(err, b'')
+
+    def test_compact(self):
+        json_stdin = b'[ 1 ,\n 2]'
+        expect = b'[1,2]'
+        args = sys.executable, '-m', 'json.tool', '--compact'
+        with Popen(args, stdin=PIPE, stdout=PIPE, stderr=PIPE) as proc:
+            json_stdout, err = proc.communicate(json_stdin)
+        self.assertEqual(expect.splitlines(), json_stdout.splitlines())
+        self.assertEqual(err, b'')
