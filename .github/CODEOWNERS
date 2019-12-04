@@ -11,6 +11,7 @@
 **/*context*                  @1st1
 **/*genobject*                @1st1
 **/*hamt*                     @1st1
+Objects/set*                  @rhettinger
 Objects/dict*                 @methane
 
 # Hashing
