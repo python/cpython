@@ -1253,16 +1253,15 @@ finalize_interp_clear(PyThreadState *tstate)
 {
     int is_main_interp = _Py_IsMainInterpreter(tstate);
 
-    /* bpo-36854: Explicitly clear the codec registry
-       and trigger a GC collection */
     PyInterpreterState *interp = tstate->interp;
-    Py_CLEAR(interp->codec_search_path);
-    Py_CLEAR(interp->codec_search_cache);
-    Py_CLEAR(interp->codec_error_registry);
-    _PyGC_CollectNoFail();
 
     /* Clear interpreter state and all thread states */
     PyInterpreterState_Clear(tstate->interp);
+
+    /* Trigger a GC collection on subinterpreters*/
+    if (!is_main_interp) {
+        _PyGC_CollectNoFail();
+    }
 
     finalize_interp_types(tstate, is_main_interp);
 
