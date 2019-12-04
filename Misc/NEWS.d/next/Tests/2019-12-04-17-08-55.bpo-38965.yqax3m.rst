@@ -1,0 +1,3 @@
+Fix test_faulthandler on GCC 10. Use the "volatile" keyword in
+``faulthandler._stack_overflow()`` to prevent tail call optimization on any
+compiler, rather than relying on compiler specific pragma.
