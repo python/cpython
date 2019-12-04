@@ -96,6 +96,7 @@ the expression ``(?:a{6})*`` matches any multiple of six ``'a'`` characters.
 
 The special characters are:
 
+.. _syntax-dot:
 .. index:: single: . (dot); in regular expressions
 
 ``.``
@@ -103,12 +104,14 @@ The special characters are:
    the :const:`DOTALL` flag has been specified, this matches any character
    including a newline.
 
+.. _syntax-caret:
 .. index:: single: ^ (caret); in regular expressions
 
 ``^``
    (Caret.)  Matches the start of the string, and in :const:`MULTILINE` mode also
    matches immediately after each newline.
 
+.. _syntax-dollar:
 .. index:: single: $ (dollar); in regular expressions
 
 ``$``
@@ -120,6 +123,7 @@ The special characters are:
    a single ``$`` in ``'foo\n'`` will find two (empty) matches: one just before
    the newline, and one at the end of the string.
 
+.. _syntax-asterisk:
 .. index:: single: * (asterisk); in regular expressions
 
 ``*``
@@ -127,6 +131,7 @@ The special characters are:
    many repetitions as are possible.  ``ab*`` will match 'a', 'ab', or 'a' followed
    by any number of 'b's.
 
+.. _syntax-plus:
 .. index:: single: + (plus); in regular expressions
 
 ``+``
@@ -134,12 +139,14 @@ The special characters are:
    ``ab+`` will match 'a' followed by any non-zero number of 'b's; it will not
    match just 'a'.
 
+.. _syntax-question-mark:
 .. index:: single: ? (question mark); in regular expressions
 
 ``?``
    Causes the resulting RE to match 0 or 1 repetitions of the preceding RE.
    ``ab?`` will match either 'a' or 'ab'.
 
+.. _syntax-non-greedy:
 .. index::
    single: *?; in regular expressions
    single: +?; in regular expressions
@@ -154,6 +161,7 @@ The special characters are:
    characters as possible will be matched.  Using the RE ``<.*?>`` will match
    only ``'<a>'``.
 
+.. _syntax-curly-brackets:
 .. index::
    single: {} (curly brackets); in regular expressions
 
@@ -178,6 +186,7 @@ The special characters are:
    6-character string ``'aaaaaa'``, ``a{3,5}`` will match 5 ``'a'`` characters,
    while ``a{3,5}?`` will only match 3 characters.
 
+.. _syntax-backslash:
 .. index:: single: \ (backslash); in regular expressions
 
 ``\``
@@ -193,6 +202,7 @@ The special characters are:
    is complicated and hard to understand, so it's highly recommended that you use
    raw strings for all but the simplest expressions.
 
+.. _syntax-square-brackets:
 .. index::
    single: [] (square brackets); in regular expressions
 
@@ -253,6 +263,7 @@ The special characters are:
       :exc:`FutureWarning` is raised if a character set contains constructs
       that will change semantically in the future.
 
+.. _syntax-vertical-bar:
 .. index:: single: | (vertical bar); in regular expressions
 
 ``|``
@@ -266,6 +277,7 @@ The special characters are:
    greedy.  To match a literal ``'|'``, use ``\|``, or enclose it inside a
    character class, as in ``[|]``.
 
+.. _syntax-parentheses:
 .. index::
    single: () (parentheses); in regular expressions
 
@@ -276,6 +288,7 @@ The special characters are:
    special sequence, described below.  To match the literals ``'('`` or ``')'``,
    use ``\(`` or ``\)``, or enclose them inside a character class: ``[(]``, ``[)]``.
 
+.. _syntax-extension:
 .. index:: single: (?; in regular expressions
 
 ``(?...)``
@@ -284,6 +297,8 @@ The special characters are:
    and further syntax of the construct is. Extensions usually do not create a new
    group; ``(?P<name>...)`` is the only exception to this rule. Following are the
    currently supported extensions.
+
+.. _syntax-inline-flags:
 
 ``(?aiLmsux)``
    (One or more letters from the set ``'a'``, ``'i'``, ``'L'``, ``'m'``,
@@ -299,6 +314,7 @@ The special characters are:
    :func:`re.compile` function.  Flags should be used first in the
    expression string.
 
+.. _syntax-non-capturing:
 .. index:: single: (?:; in regular expressions
 
 ``(?:...)``
@@ -306,6 +322,8 @@ The special characters are:
    expression is inside the parentheses, but the substring matched by the group
    *cannot* be retrieved after performing a match or referenced later in the
    pattern.
+
+.. _syntax-inline-flags-group:
 
 ``(?aiLmsux-imsx:...)``
    (Zero or more letters from the set ``'a'``, ``'i'``, ``'L'``, ``'m'``,
@@ -333,6 +351,7 @@ The special characters are:
    .. versionchanged:: 3.7
       The letters ``'a'``, ``'L'`` and ``'u'`` also can be used in a group.
 
+.. _syntax-named-capture:
 .. index:: single: (?P<; in regular expressions
 
 ``(?P<name>...)``
@@ -360,17 +379,20 @@ The special characters are:
    |                                       | * ``\1``                         |
    +---------------------------------------+----------------------------------+
 
+.. _syntax-named-backreference:
 .. index:: single: (?P=; in regular expressions
 
 ``(?P=name)``
    A backreference to a named group; it matches whatever text was matched by the
    earlier group named *name*.
 
+.. _syntax-comment:
 .. index:: single: (?#; in regular expressions
 
 ``(?#...)``
    A comment; the contents of the parentheses are simply ignored.
 
+.. _syntax-lookahead:
 .. index:: single: (?=; in regular expressions
 
 ``(?=...)``
@@ -378,6 +400,7 @@ The special characters are:
    called a :dfn:`lookahead assertion`.  For example, ``Isaac (?=Asimov)`` will match
    ``'Isaac '`` only if it's followed by ``'Asimov'``.
 
+.. _syntax-negative-lookahead:
 .. index:: single: (?!; in regular expressions
 
 ``(?!...)``
@@ -385,6 +408,7 @@ The special characters are:
    For example, ``Isaac (?!Asimov)`` will match ``'Isaac '`` only if it's *not*
    followed by ``'Asimov'``.
 
+.. _syntax-lookbehind:
 .. index:: single: (?<=; in regular expressions
 
 ``(?<=...)``
@@ -412,6 +436,7 @@ The special characters are:
    .. versionchanged:: 3.5
       Added support for group references of fixed length.
 
+.. _syntax-negative-lookbehind:
 .. index:: single: (?<!; in regular expressions
 
 ``(?<!...)``
@@ -420,6 +445,8 @@ The special characters are:
    positive lookbehind assertions, the contained pattern must only match strings of
    some fixed length.  Patterns which start with negative lookbehind assertions may
    match at the beginning of the string being searched.
+
+.. _syntax-yes-no-pattern:
 
 ``(?(id/name)yes-pattern|no-pattern)``
    Will try to match with ``yes-pattern`` if the group with given *id* or
@@ -435,6 +462,7 @@ If the ordinary character is not an ASCII digit or an ASCII letter, then the
 resulting RE will match the second character.  For example, ``\$`` matches the
 character ``'$'``.
 
+.. _syntax-special-number:
 .. index:: single: \ (backslash); in regular expressions
 
 ``\number``
@@ -447,11 +475,13 @@ character ``'$'``.
    ``'['`` and ``']'`` of a character class, all numeric escapes are treated as
    characters.
 
+.. _syntax-special-uppercase-A:
 .. index:: single: \A; in regular expressions
 
 ``\A``
    Matches only at the start of the string.
 
+.. _syntax-special-b:
 .. index:: single: \b; in regular expressions
 
 ``\b``
@@ -468,6 +498,7 @@ character ``'$'``.
    Inside a character range, ``\b`` represents the backspace character, for
    compatibility with Python's string literals.
 
+.. _syntax-special-uppercase-B:
 .. index:: single: \B; in regular expressions
 
 ``\B``
@@ -479,6 +510,7 @@ character ``'$'``.
    be changed by using the :const:`ASCII` flag.  Word boundaries are
    determined by the current locale if the :const:`LOCALE` flag is used.
 
+.. _syntax-special-d:
 .. index:: single: \d; in regular expressions
 
 ``\d``
@@ -491,6 +523,7 @@ character ``'$'``.
    For 8-bit (bytes) patterns:
       Matches any decimal digit; this is equivalent to ``[0-9]``.
 
+.. _syntax-special-uppercase-D:
 .. index:: single: \D; in regular expressions
 
 ``\D``
@@ -498,6 +531,7 @@ character ``'$'``.
    the opposite of ``\d``. If the :const:`ASCII` flag is used this
    becomes the equivalent of ``[^0-9]``.
 
+.. _syntax-special-s:
 .. index:: single: \s; in regular expressions
 
 ``\s``
@@ -512,6 +546,7 @@ character ``'$'``.
       Matches characters considered whitespace in the ASCII character set;
       this is equivalent to ``[ \t\n\r\f\v]``.
 
+.. _syntax-special-uppercase-S:
 .. index:: single: \S; in regular expressions
 
 ``\S``
@@ -519,6 +554,7 @@ character ``'$'``.
    the opposite of ``\s``. If the :const:`ASCII` flag is used this
    becomes the equivalent of ``[^ \t\n\r\f\v]``.
 
+.. _syntax-special-w:
 .. index:: single: \w; in regular expressions
 
 ``\w``
@@ -534,6 +570,7 @@ character ``'$'``.
       used, matches characters considered alphanumeric in the current locale
       and the underscore.
 
+.. _syntax-special-uppercase-W:
 .. index:: single: \W; in regular expressions
 
 ``\W``
@@ -543,11 +580,13 @@ character ``'$'``.
    used, matches characters which are neither alphanumeric in the current locale
    nor the underscore.
 
+.. _syntax-special-uppercase-Z:
 .. index:: single: \Z; in regular expressions
 
 ``\Z``
    Matches only at the end of the string.
 
+.. _syntax-special-py:
 .. index::
    single: \a; in regular expressions
    single: \b; in regular expressions
