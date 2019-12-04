@@ -107,7 +107,7 @@ class TestTool(unittest.TestCase):
         data = '{"msg": "\u3053\u3093\u306b\u3061\u306f"}'
         expect = textwrap.dedent('''\
         {
-            "msg": "\u3053\u3093\u306b\u3061\u306f"
+            "msg": "\\u3053\\u3093\\u306b\\u3061\\u306f"
         }
         ''').encode()
 
@@ -115,7 +115,7 @@ class TestTool(unittest.TestCase):
         rc, out, err = assert_python_ok('-m', 'json.tool', infile)
 
         self.assertEqual(rc, 0)
-        self.assertEqual(out.splitlines(), expect.encode().splitlines())
+        self.assertEqual(out.splitlines(), expect.splitlines())
         self.assertEqual(err, b'')
 
     def test_infile_outfile(self):
