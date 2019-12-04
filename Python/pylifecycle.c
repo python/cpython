@@ -648,9 +648,11 @@ pycore_init_builtins(PyThreadState *tstate)
     if (interp->builtins_copy == NULL) {
         goto error;
     }
+    Py_DECREF(bimod);
     return _PyStatus_OK();
 
 error:
+    Py_XDECREF(bimod);
     return _PyStatus_ERR("can't initialize builtins module");
 }
 
