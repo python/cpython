@@ -652,7 +652,7 @@ pycore_init_builtins(PyThreadState *tstate)
     return _PyStatus_OK();
 
 error:
-    Py_DECREF(bimod);
+    Py_XDECREF(bimod);
     return _PyStatus_ERR("can't initialize builtins module");
 }
 
