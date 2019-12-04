@@ -1169,6 +1169,11 @@ faulthandler_fatal_error_py(PyObject *self, PyObject *args)
 #endif
 static
 uintptr_t
+#ifdef __GNUC__
+  /* For the very same reason, the GCC compiler can turn the tail
+   * call into a loop.  */
+__attribute__((optimize("-O0")))
+#endif
 stack_overflow(uintptr_t min_sp, uintptr_t max_sp, size_t *depth)
 {
     /* allocate 4096 bytes on the stack at each call */

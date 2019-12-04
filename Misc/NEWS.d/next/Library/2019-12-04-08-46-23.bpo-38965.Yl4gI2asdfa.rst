@@ -1,0 +1,2 @@
+After update to GCC10, the testcase is stuck and
+a pragma needs to be added.
