@@ -369,13 +369,13 @@ following:
    +---------+----------------------------------------------------------+
    | Option  | Meaning                                                  |
    +=========+==========================================================+
-   | ``'+'`` | indicates that a sign should be used for both            |
-   |         | positive as well as negative numbers.                    |
+   | ``'+'`` | Indicates that a sign should be used for both positive   |
+   |         | as well as negative numbers.                             |
    +---------+----------------------------------------------------------+
-   | ``'-'`` | indicates that a sign should be used only for negative   |
+   | ``'-'`` | Indicates that a sign should be used only for negative   |
    |         | numbers (this is the default behavior).                  |
    +---------+----------------------------------------------------------+
-   | space   | indicates that a leading space should be used on         |
+   | space   | Indicates that a leading space should be used on         |
    |         | positive numbers, and a minus sign on negative numbers.  |
    +---------+----------------------------------------------------------+
 
