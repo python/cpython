@@ -1,0 +1,4 @@
+The :mod:`http.cookiejar` module now supports the parsing of cookies in CURL-style cookiejar files through MozillaCookieJar 
+on all platforms.  Previously, such cookie entries would be silently ignored when loading a cookiejar with such entries.
+
+Additionally, the HTTP Only attribute is persisted in the object, and will be correctly written to file if the MozillaCookieJar object is subsequently dumped.
