@@ -930,9 +930,20 @@ class PidfdChildWatcher(AbstractChildWatcher):
     def _do_wait(self, pid):
         pidfd, callback, args = self._callbacks.pop(pid)
         self._loop._remove_reader(pidfd)
-        _, status = os.waitpid(pid, 0)
+        try:
+            _, status = os.waitpid(pid, 0)
+        except ChildProcessError:
+            # The child process is already reaped
+            # (may happen if waitpid() is called elsewhere).
+            returncode = 255
+            logger.warning(
+                "child process pid %d exit status already read: "
+                " will report returncode 255",
+                pid)
+        else:
+            returncode = _compute_returncode(status)
+
         os.close(pidfd)
-        returncode = _compute_returncode(status)
         callback(pid, returncode, *args)
 
     def remove_child_handler(self, pid):
