@@ -105,7 +105,7 @@ which disallows mutable objects such as :class:`bytearray`.
    Like ``s*``, but the Python object may also be ``None``, in which case the
    ``buf`` member of the :c:type:`Py_buffer` structure is set to ``NULL``.
 
-``z#`` (:class:`str`, read-only :term:`bytes-like object` or ``None``) [const char \*, int]
+``z#`` (:class:`str`, read-only :term:`bytes-like object` or ``None``) [const char \*, int or :c:type:`Py_ssize_t`]
    Like ``s#``, but the Python object may also be ``None``, in which case the C
    pointer is set to ``NULL``.
 
@@ -124,7 +124,7 @@ which disallows mutable objects such as :class:`bytearray`.
    bytes-like objects.  **This is the recommended way to accept
    binary data.**
 
-``y#`` (read-only :term:`bytes-like object`) [const char \*, int]
+``y#`` (read-only :term:`bytes-like object`) [const char \*, int or :c:type:`Py_ssize_t`]
    This variant on ``s#`` doesn't accept Unicode objects, only bytes-like
    objects.
 
