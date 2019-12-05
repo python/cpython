@@ -311,12 +311,6 @@ def _siftup_max(heap, pos):
     heap[pos] = newitem
     _siftdown_max(heap, startpos, pos)
 
-def _key_from_key_val(key_val):
-    return key_val[0]
-
-def _val_from_key_val(key_val):
-    return key_val[1]
-
 def merge(*iterables, key=None, reverse=False):
     '''Merge multiple sorted inputs into a single sorted output.
 
@@ -334,13 +328,8 @@ def merge(*iterables, key=None, reverse=False):
     ['dog', 'cat', 'fish', 'horse', 'kangaroo']
 
     '''
-    n = len(iterables)
-    if n == 0:
-        return
-    if n == 1:
-        yield from iterables[0]
-        return
-    if n == 2:
+
+    if len(iterables) == 2:
         # special case for performance
 
         a_iter = iter(iterables[0])
@@ -445,26 +434,67 @@ def merge(*iterables, key=None, reverse=False):
                             return
                         ka = key(a)
 
-    # For more iterables, reduce recursively using the 2-iterable case.
-    n2 = n // 2
-    if key is None or key is _key_from_key_val:
-        # If there is no key, make the recursive calls not have keys.
-        # OTOH, If the key is _key_from_key_val, then this is a recursive call,
-        #   so the keys are already computed and so we should continue to use
-        #   _key_from_key_val as the key for the deeper recursive calls.
-        left_half = merge(*iterables[:n2], key=key, reverse=reverse)
-        right_half = merge(*iterables[n2:], key=key, reverse=reverse)
-        yield from merge(left_half, right_half, key=key, reverse=reverse)
+    h = []
+    h_append = h.append
+
+    if reverse:
+        _heapify = _heapify_max
+        _heappop = _heappop_max
+        _heapreplace = _heapreplace_max
+        direction = -1
     else:
-        # We are using a key and this is a top-level call.
-        # To prevent re-computation of keys, we can feed into our algorithm precomputed
-        # (key, value) pairs, and make the recursive calls keyed by only the
-        # first entry of these pairs.
-        key_iterables = [zip(map(key, it), it) for it in iterables]
-        left_half = merge(*key_iterables[:n2], key=_key_from_key_val, reverse=reverse)
-        right_half = merge(*key_iterables[n2:], key=_key_from_key_val, reverse=reverse)
-        result = merge(left_half, right_half, key=_key_from_key_val, reverse=reverse)
-        yield from map(_val_from_key_val, result)
+        _heapify = heapify
+        _heappop = heappop
+        _heapreplace = heapreplace
+        direction = 1
+
+    if key is None:
+        for order, it in enumerate(map(iter, iterables)):
+            try:
+                next = it.__next__
+                h_append([next(), order * direction, next])
+            except StopIteration:
+                pass
+        _heapify(h)
+        while len(h) > 1:
+            try:
+                while True:
+                    value, order, next = s = h[0]
+                    yield value
+                    s[0] = next()           # raises StopIteration when exhausted
+                    _heapreplace(h, s)      # restore heap condition
+            except StopIteration:
+                _heappop(h)                 # remove empty iterator
+        if h:
+            # fast case when only a single iterator remains
+            value, order, next = h[0]
+            yield value
+            yield from next.__self__
+        return
+
+    for order, it in enumerate(map(iter, iterables)):
+        try:
+            next = it.__next__
+            value = next()
+            h_append([key(value), order * direction, value, next])
+        except StopIteration:
+            pass
+    _heapify(h)
+    while len(h) > 1:
+        try:
+            while True:
+                key_value, order, value, next = s = h[0]
+                yield value
+                value = next()
+                s[0] = key(value)
+                s[2] = value
+                _heapreplace(h, s)
+        except StopIteration:
+            _heappop(h)
+    if h:
+        key_value, order, value, next = h[0]
+        yield value
+        yield from next.__self__
 
 
 # Algorithm notes for nlargest() and nsmallest()
