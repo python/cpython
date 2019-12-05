@@ -2113,7 +2113,8 @@ def parse_message_id(value):
     except errors.HeaderParseError:
         message_id.defects.append(errors.InvalidHeaderDefect(
             "Expected msg-id but found {!r}".format(value)))
-    message_id.append(token)
+    else:
+        message_id.append(token)
     return message_id
 
 #
