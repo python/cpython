@@ -1,0 +1,3 @@
+Break cycle generated when saving an exception in socket.py, codeop.py and
+dyld.py as they keep alive not only the exception but user objects through
+the ``__traceback__`` attribute. Patch by Mario Corchero.
