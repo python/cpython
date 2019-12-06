@@ -31,8 +31,8 @@ def main():
     parser.add_argument('--sort-keys', action='store_true', default=False,
                         help='sort the output of dictionaries alphabetically by key')
     parser.add_argument('--json-lines', action='store_true', default=False,
-                        help='parse input using the jsonlines format. '
-                        'Use with --no-indent or --compact to produce valid jsonlines output.')
+                        help='parse input using the JSON Lines format. '
+                        'Use with --no-indent or --compact to produce valid JSON Lines output.')
     group = parser.add_mutually_exclusive_group()
     group.add_argument('--indent', default=4, type=int,
                        help='separate items with newlines and use this number '
