@@ -30,6 +30,8 @@ def main():
                         default=sys.stdout)
     parser.add_argument('--sort-keys', action='store_true', default=False,
                         help='sort the output of dictionaries alphabetically by key')
+    parser.add_argument('--no-ensure-ascii', dest='ensure_ascii', action='store_false',
+                        help='disable escaping of non-ASCII characters')
     parser.add_argument('--json-lines', action='store_true', default=False,
                         help='parse input using the jsonlines format')
     group = parser.add_mutually_exclusive_group()
@@ -49,6 +51,7 @@ def main():
     dump_args = {
         'sort_keys': options.sort_keys,
         'indent': options.indent,
+        'ensure_ascii': options.ensure_ascii,
     }
     if options.compact:
         dump_args['indent'] = None
