@@ -2,7 +2,7 @@ import os
 import sys
 import textwrap
 import unittest
-from subprocess import check_call
+import subprocess
 from test import support
 from test.support.script_helper import assert_python_ok
 
@@ -84,7 +84,7 @@ class TestTool(unittest.TestCase):
 
     def test_stdin_stdout(self):
         args = sys.executable, '-m', 'json.tool'
-        process = check_call(args, input=self.data, capture_output=True, text=True)
+        process = subprocess.run(args, input=self.data, capture_output=True, text=True, check=True)
         self.assertEqual(process.stdout, self.expect)
         self.assertEqual(process.stderr, '')
 
@@ -130,7 +130,7 @@ class TestTool(unittest.TestCase):
 
     def test_jsonlines(self):
         args = sys.executable, '-m', 'json.tool', '--json-lines'
-        process = check_call(args, input=self.jsonlines_raw, capture_output=True, text=True)
+        process = subprocess.run(args, input=self.jsonlines_raw, capture_output=True, text=True, check=True)
         self.assertEqual(process.stdout, self.jsonlines_expect)
         self.assertEqual(process.stderr, '')
 
@@ -157,7 +157,7 @@ class TestTool(unittest.TestCase):
         ]
         ''')
         args = sys.executable, '-m', 'json.tool', '--indent', '2'
-        process = check_call(args, input=input_, capture_output=True, text=True)
+        process = subprocess.run(args, input=input_, capture_output=True, text=True, check=True)
         self.assertEqual(process.stdout, expect)
         self.assertEqual(process.stderr, '')
 
@@ -165,7 +165,7 @@ class TestTool(unittest.TestCase):
         input_ = '[1,\n2]'
         expect = '[1, 2]'
         args = sys.executable, '-m', 'json.tool', '--no-indent'
-        process = check_call(args, input=input_, capture_output=True, text=True)
+        process = subprocess.run(args, input=input_, capture_output=True, text=True, check=True)
         self.assertEqual(process.stdout, expect)
         self.assertEqual(process.stderr, '')
 
@@ -173,7 +173,7 @@ class TestTool(unittest.TestCase):
         input_ = '[1, 2]'
         expect = '[\n\t1,\n\t2\n]\n'
         args = sys.executable, '-m', 'json.tool', '--tab'
-        process = check_call(args, input=input_, capture_output=True, text=True)
+        process = subprocess.run(args, input=input_, capture_output=True, text=True, check=True)
         self.assertEqual(process.stdout, expect)
         self.assertEqual(process.stderr, '')
 
@@ -181,6 +181,6 @@ class TestTool(unittest.TestCase):
         input_ = '[ 1 ,\n 2]'
         expect = '[1,2]'
         args = sys.executable, '-m', 'json.tool', '--compact'
-        process = check_call(args, input=input_, capture_output=True, text=True)
+        process = subprocess.run(args, input=input_, capture_output=True, text=True, check=True)
         self.assertEqual(process.stdout, expect)
         self.assertEqual(process.stderr, '')
