@@ -163,7 +163,7 @@ class TestTool(unittest.TestCase):
 
     def test_no_indent(self):
         input_ = '[1,\n2]'
-        expect = '[1, 2]'
+        expect = '[1, 2]\n'
         args = sys.executable, '-m', 'json.tool', '--no-indent'
         process = subprocess.run(args, input=input_, capture_output=True, text=True, check=True)
         self.assertEqual(process.stdout, expect)
@@ -179,7 +179,7 @@ class TestTool(unittest.TestCase):
 
     def test_compact(self):
         input_ = '[ 1 ,\n 2]'
-        expect = '[1,2]'
+        expect = '[1,2]\n'
         args = sys.executable, '-m', 'json.tool', '--compact'
         process = subprocess.run(args, input=input_, capture_output=True, text=True, check=True)
         self.assertEqual(process.stdout, expect)
