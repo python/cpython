@@ -702,6 +702,31 @@ pycore_init_import_warnings(PyThreadState *tstate, PyObject *sysmod)
 
 
 static PyStatus
+pycore_interp_init(PyThreadState *tstate)
+{
+    PyStatus status;
+
+    status = pycore_init_types(tstate);
+    if (_PyStatus_EXCEPTION(status)) {
+        return status;
+    }
+
+    PyObject *sysmod;
+    status = _PySys_Create(tstate, &sysmod);
+    if (_PyStatus_EXCEPTION(status)) {
+        return status;
+    }
+
+    status = pycore_init_builtins(tstate);
+    if (_PyStatus_EXCEPTION(status)) {
+        return status;
+    }
+
+    return pycore_init_import_warnings(tstate, sysmod);
+}
+
+
+static PyStatus
 pyinit_config(_PyRuntimeState *runtime,
               PyThreadState **tstate_p,
               const PyConfig *config)
@@ -721,23 +746,7 @@ pyinit_config(_PyRuntimeState *runtime,
     config = &tstate->interp->config;
     *tstate_p = tstate;
 
-    status = pycore_init_types(tstate);
-    if (_PyStatus_EXCEPTION(status)) {
-        return status;
-    }
-
-    PyObject *sysmod;
-    status = _PySys_Create(tstate, &sysmod);
-    if (_PyStatus_EXCEPTION(status)) {
-        return status;
-    }
-
-    status = pycore_init_builtins(tstate);
-    if (_PyStatus_EXCEPTION(status)) {
-        return status;
-    }
-
-    status = pycore_init_import_warnings(tstate, sysmod);
+    status = pycore_interp_init(tstate);
     if (_PyStatus_EXCEPTION(status)) {
         return status;
     }
@@ -1549,25 +1558,8 @@ new_interpreter(PyThreadState **tstate_p)
     if (_PyStatus_EXCEPTION(status)) {
         goto error;
     }
-    config = &interp->config;
 
-    status = pycore_init_types(tstate);
-    if (_PyStatus_EXCEPTION(status)) {
-        goto error;
-    }
-
-    PyObject *sysmod;
-    status = _PySys_Create(tstate, &sysmod);
-    if (_PyStatus_EXCEPTION(status)) {
-        return status;
-    }
-
-    status = pycore_init_builtins(tstate);
-    if (_PyStatus_EXCEPTION(status)) {
-        goto error;
-    }
-
-    status = pycore_init_import_warnings(tstate, sysmod);
+    status = pycore_interp_init(tstate);
     if (_PyStatus_EXCEPTION(status)) {
         goto error;
     }
