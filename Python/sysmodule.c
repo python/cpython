@@ -2919,7 +2919,7 @@ err_occurred:
    infrastructure for the io module in place.
 
    Use UTF-8/surrogateescape and ignore EAGAIN errors. */
-PyStatus
+static PyStatus
 _PySys_SetPreliminaryStderr(PyObject *sysdict)
 {
     PyObject *pstderr = PyFile_NewStdPrinter(fileno(stderr));
@@ -2946,11 +2946,13 @@ error:
 PyStatus
 _PySys_Create(PyThreadState *tstate, PyObject **sysmod_p)
 {
+    assert(!_PyErr_Occurred(tstate));
+
     PyInterpreterState *interp = tstate->interp;
 
     PyObject *modules = PyDict_New();
     if (modules == NULL) {
-        return _PyStatus_ERR("can't make modules dictionary");
+        goto error;
     }
     interp->modules = modules;
 
@@ -2961,13 +2963,13 @@ _PySys_Create(PyThreadState *tstate, PyObject **sysmod_p)
 
     PyObject *sysdict = PyModule_GetDict(sysmod);
     if (sysdict == NULL) {
-        return _PyStatus_ERR("can't initialize sys dict");
+        goto error;
     }
     Py_INCREF(sysdict);
     interp->sysdict = sysdict;
 
     if (PyDict_SetItemString(sysdict, "modules", interp->modules) < 0) {
-        return _PyStatus_ERR("can't initialize sys module");
+        goto error;
     }
 
     PyStatus status = _PySys_SetPreliminaryStderr(sysdict);
@@ -2980,10 +2982,17 @@ _PySys_Create(PyThreadState *tstate, PyObject **sysmod_p)
         return status;
     }
 
-    _PyImport_FixupBuiltin(sysmod, "sys", interp->modules);
+    if (_PyImport_FixupBuiltin(sysmod, "sys", interp->modules) < 0) {
+        goto error;
+    }
+
+    assert(!_PyErr_Occurred(tstate));
 
     *sysmod_p = sysmod;
     return _PyStatus_OK();
+
+error:
+    return _PyStatus_ERR("can't initialize sys module");
 }
 
 
