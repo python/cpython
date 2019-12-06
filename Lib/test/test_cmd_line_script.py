@@ -535,7 +535,7 @@ class CmdLineTest(unittest.TestCase):
             script_name = _make_test_script(script_dir, 'script', script)
             exitcode, stdout, stderr = assert_python_failure(script_name)
             text = stderr.decode('ascii').split('\n')
-            self.assertEqual(len(text), 4)
+            self.assertEqual(len(text), 5)
             self.assertTrue(text[0].startswith('Traceback'))
             self.assertTrue(text[1].startswith('  File '))
             self.assertTrue(text[3].startswith('NameError'))
@@ -579,7 +579,7 @@ class CmdLineTest(unittest.TestCase):
             script_name = _make_test_script(script_dir, 'script', script)
             exitcode, stdout, stderr = assert_python_failure(script_name)
             text = stderr.decode('ascii')
-            self.assertEqual(text, "some text")
+            self.assertEqual(text.rstrip(), "some text")
 
     def test_syntaxerror_unindented_caret_position(self):
         script = "1 + 1 = 2\n"
