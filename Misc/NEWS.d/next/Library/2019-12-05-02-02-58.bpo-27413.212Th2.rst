@@ -1,0 +1,2 @@
+Added ability to pass through ``ensure_ascii`` options to json.dumps in the
+``json.tool`` command-line interface.
