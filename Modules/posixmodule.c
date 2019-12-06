@@ -1402,7 +1402,6 @@ win32_get_reparse_tag(HANDLE reparse_point_handle, ULONG *reparse_tag)
 ** man environ(7).
 */
 #include <crt_externs.h>
-static char **environ;
 #elif !defined(_MSC_VER) && (!defined(__WATCOMC__) || defined(__QNX__) || defined(__VXWORKS__))
 extern char **environ;
 #endif /* !_MSC_VER */
@@ -1420,15 +1419,16 @@ convertenviron(void)
     d = PyDict_New();
     if (d == NULL)
         return NULL;
-#if defined(WITH_NEXT_FRAMEWORK) || (defined(__APPLE__) && defined(Py_ENABLE_SHARED))
-    if (environ == NULL)
-        environ = *_NSGetEnviron();
-#endif
 #ifdef MS_WINDOWS
     /* _wenviron must be initialized in this way if the program is started
        through main() instead of wmain(). */
     _wgetenv(L"");
     e = _wenviron;
+#elif defined(WITH_NEXT_FRAMEWORK) || (defined(__APPLE__) && defined(Py_ENABLE_SHARED))
+    /* environ is not accessible as an extern in a shared object on OSX; use
+       _NSGetEnviron to resolve it. The value changes if you add environment
+       variables between calls to Py_Initialize, so don't cache the value. */
+    e = *_NSGetEnviron();
 #else
     e = environ;
 #endif
