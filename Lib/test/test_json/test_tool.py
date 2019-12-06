@@ -184,3 +184,25 @@ class TestTool(unittest.TestCase):
         process = subprocess.run(args, input=input_, capture_output=True, text=True, check=True)
         self.assertEqual(process.stdout, expect)
         self.assertEqual(process.stderr, '')
+
+    def test_no_ensure_ascii_flag(self):
+        infile = self._create_infile('{"key":"💩"}')
+        outfile = support.TESTFN + '.out'
+        self.addCleanup(os.remove, outfile)
+        assert_python_ok('-m', 'json.tool', '--no-ensure-ascii', infile, outfile)
+        with open(outfile, "rb") as f:
+            lines = f.read().splitlines()
+        # asserting utf-8 encoded output file
+        expected = [b'{', b'    "key": "\xf0\x9f\x92\xa9"', b"}"]
+        self.assertEqual(lines, expected)
+
+    def test_ensure_ascii_default(self):
+        infile = self._create_infile('{"key":"💩"}')
+        outfile = support.TESTFN + '.out'
+        self.addCleanup(os.remove, outfile)
+        assert_python_ok('-m', 'json.tool', infile, outfile)
+        with open(outfile, "rb") as f:
+            lines = f.read().splitlines()
+        # asserting an ascii encoded output file
+        expected = [b'{', rb'    "key": "\ud83d\udca9"', b"}"]
+        self.assertEqual(lines, expected)

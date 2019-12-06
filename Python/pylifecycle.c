@@ -622,6 +622,8 @@ pycore_init_types(PyThreadState *tstate)
 static PyStatus
 pycore_init_builtins(PyThreadState *tstate)
 {
+    assert(!_PyErr_Occurred(tstate));
+
     PyObject *bimod = _PyBuiltin_Init(tstate);
     if (bimod == NULL) {
         goto error;
@@ -649,6 +651,9 @@ pycore_init_builtins(PyThreadState *tstate)
         goto error;
     }
     Py_DECREF(bimod);
+
+    assert(!_PyErr_Occurred(tstate));
+
     return _PyStatus_OK();
 
 error:
@@ -660,13 +665,14 @@ error:
 static PyStatus
 pycore_init_import_warnings(PyThreadState *tstate, PyObject *sysmod)
 {
-    const PyConfig *config = &tstate->interp->config;
+    assert(!_PyErr_Occurred(tstate));
 
     PyStatus status = _PyImportHooks_Init(tstate);
     if (_PyStatus_EXCEPTION(status)) {
         return status;
     }
 
+    const PyConfig *config = &tstate->interp->config;
     if (_Py_IsMainInterpreter(tstate)) {
         /* Initialize _warnings. */
         if (_PyWarnings_Init() == NULL) {
@@ -688,7 +694,35 @@ pycore_init_import_warnings(PyThreadState *tstate, PyObject *sysmod)
             return status;
         }
     }
+
+    assert(!_PyErr_Occurred(tstate));
+
     return _PyStatus_OK();
+}
+
+
+static PyStatus
+pycore_interp_init(PyThreadState *tstate)
+{
+    PyStatus status;
+
+    status = pycore_init_types(tstate);
+    if (_PyStatus_EXCEPTION(status)) {
+        return status;
+    }
+
+    PyObject *sysmod;
+    status = _PySys_Create(tstate, &sysmod);
+    if (_PyStatus_EXCEPTION(status)) {
+        return status;
+    }
+
+    status = pycore_init_builtins(tstate);
+    if (_PyStatus_EXCEPTION(status)) {
+        return status;
+    }
+
+    return pycore_init_import_warnings(tstate, sysmod);
 }
 
 
@@ -712,23 +746,7 @@ pyinit_config(_PyRuntimeState *runtime,
     config = &tstate->interp->config;
     *tstate_p = tstate;
 
-    status = pycore_init_types(tstate);
-    if (_PyStatus_EXCEPTION(status)) {
-        return status;
-    }
-
-    PyObject *sysmod;
-    status = _PySys_Create(tstate, &sysmod);
-    if (_PyStatus_EXCEPTION(status)) {
-        return status;
-    }
-
-    status = pycore_init_builtins(tstate);
-    if (_PyStatus_EXCEPTION(status)) {
-        return status;
-    }
-
-    status = pycore_init_import_warnings(tstate, sysmod);
+    status = pycore_interp_init(tstate);
     if (_PyStatus_EXCEPTION(status)) {
         return status;
     }
@@ -929,6 +947,8 @@ _Py_ReconfigureMainInterpreter(PyThreadState *tstate)
 static PyStatus
 init_interp_main(PyThreadState *tstate)
 {
+    assert(!_PyErr_Occurred(tstate));
+
     PyStatus status;
     int is_main_interp = _Py_IsMainInterpreter(tstate);
     PyInterpreterState *interp = tstate->interp;
@@ -950,10 +970,10 @@ init_interp_main(PyThreadState *tstate)
         if (_PyTime_Init() < 0) {
             return _PyStatus_ERR("can't initialize time");
         }
+    }
 
-        if (_PySys_InitMain(tstate) < 0) {
-            return _PyStatus_ERR("can't finish initializing sys");
-        }
+    if (_PySys_InitMain(tstate) < 0) {
+        return _PyStatus_ERR("can't finish initializing sys");
     }
 
     status = init_importlib_external(tstate);
@@ -1030,6 +1050,8 @@ init_interp_main(PyThreadState *tstate)
         emit_stderr_warning_for_legacy_locale(interp->runtime);
 #endif
     }
+
+    assert(!_PyErr_Occurred(tstate));
 
     return _PyStatus_OK();
 }
@@ -1252,8 +1274,6 @@ static void
 finalize_interp_clear(PyThreadState *tstate)
 {
     int is_main_interp = _Py_IsMainInterpreter(tstate);
-
-    PyInterpreterState *interp = tstate->interp;
 
     /* Clear interpreter state and all thread states */
     PyInterpreterState_Clear(tstate->interp);
@@ -1536,70 +1556,23 @@ new_interpreter(PyThreadState **tstate_p)
 
     status = _PyConfig_Copy(&interp->config, config);
     if (_PyStatus_EXCEPTION(status)) {
-        goto done;
-    }
-    config = &interp->config;
-
-    status = pycore_init_types(tstate);
-
-    /* XXX The following is lax in error checking */
-    PyObject *modules = PyDict_New();
-    if (modules == NULL) {
-        status = _PyStatus_ERR("can't make modules dictionary");
-        goto done;
-    }
-    interp->modules = modules;
-
-    PyObject *sysmod = _PyImport_FindBuiltin(tstate, "sys");
-    if (sysmod != NULL) {
-        interp->sysdict = PyModule_GetDict(sysmod);
-        if (interp->sysdict == NULL) {
-            goto handle_exc;
-        }
-        Py_INCREF(interp->sysdict);
-        PyDict_SetItemString(interp->sysdict, "modules", modules);
-        if (_PySys_InitMain(tstate) < 0) {
-            status = _PyStatus_ERR("can't finish initializing sys");
-            goto done;
-        }
-    }
-    else if (_PyErr_Occurred(tstate)) {
-        goto handle_exc;
+        goto error;
     }
 
-    status = pycore_init_builtins(tstate);
+    status = pycore_interp_init(tstate);
     if (_PyStatus_EXCEPTION(status)) {
-        goto done;
+        goto error;
     }
 
-    if (sysmod != NULL) {
-        status = _PySys_SetPreliminaryStderr(interp->sysdict);
-        if (_PyStatus_EXCEPTION(status)) {
-            goto done;
-        }
-
-        status = pycore_init_import_warnings(tstate, sysmod);
-        if (_PyStatus_EXCEPTION(status)) {
-            goto done;
-        }
-
-        status = init_interp_main(tstate);
-        if (_PyStatus_EXCEPTION(status)) {
-            goto done;
-        }
-    }
-
-    if (_PyErr_Occurred(tstate)) {
-        goto handle_exc;
+    status = init_interp_main(tstate);
+    if (_PyStatus_EXCEPTION(status)) {
+        goto error;
     }
 
     *tstate_p = tstate;
     return _PyStatus_OK();
 
-handle_exc:
-    status = _PyStatus_OK();
-
-done:
+error:
     *tstate_p = NULL;
 
     /* Oops, it didn't work.  Undo it all. */
