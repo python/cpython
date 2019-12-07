@@ -14,7 +14,7 @@
 
    :ref:`string-methods`
 
-String constants
+String Constants
 ----------------
 
 The constants defined in this module are:
@@ -252,14 +252,14 @@ Some simple format string examples::
    "Weight in tons {0.weight}"       # 'weight' attribute of first positional arg
    "Units destroyed: {players[0]}"   # First element of keyword argument 'players'.
 
-The *conversion* field causes a type coercion before formatting.  Normally, the
+The *conversion* option causes a type coercion before formatting.  Normally, the
 job of formatting a value is done by the :meth:`__format__` method of the value
 itself.  However, in some cases it is desirable to force a type to be formatted
 as a string, overriding its own definition of formatting.  By converting the
 value to a string before calling :meth:`__format__`, the normal formatting logic
 is bypassed.
 
-Three conversion flags are currently supported: ``'!s'`` which calls :func:`str`
+Three conversion values are currently supported: ``'!s'`` which calls :func:`str`
 on the value, ``'!r'`` which calls :func:`repr` and ``'!a'`` which calls
 :func:`ascii`.
 
@@ -269,7 +269,7 @@ Some examples::
    "Bring out the holy {name!r}"    # Calls repr() on the argument first
    "More {!a}"                      # Calls ascii() on the argument first
 
-The *format_spec* field contains a specification of how the value should be
+The *format_spec* option contains a specification of how the value should be
 presented, including such details as field width, alignment, padding, decimal
 precision and so on.  Each value type can define its own "formatting
 mini-language" or interpretation of the *format_spec*.
@@ -327,7 +327,7 @@ method.  However, it is possible to insert a curly brace
 with a nested replacement field.  This limitation doesn't
 affect the :func:`format` function.
 
-The meaning of the various alignment options is as follows:
+The *align* option can have one of the following values:
 
    .. index::
       single: < (less); in string formatting
@@ -336,7 +336,7 @@ The meaning of the various alignment options is as follows:
       single: ^ (caret); in string formatting
 
    +---------+----------------------------------------------------------+
-   | Option  | Meaning                                                  |
+   | Value   | Meaning                                                  |
    +=========+==========================================================+
    | ``'<'`` | Forces the field to be left-aligned within the available |
    |         | space (this is the default for most objects).            |
@@ -346,7 +346,7 @@ The meaning of the various alignment options is as follows:
    +---------+----------------------------------------------------------+
    | ``'='`` | Forces the padding to be placed after the sign (if any)  |
    |         | but before the digits.  This is used for printing fields |
-   |         | in the form '+000000120'. This alignment option is only  |
+   |         | in the form '+000000120'. This alignment value is only   |
    |         | valid for numeric types.  It becomes the default when '0'|
    |         | immediately precedes the field width.                    |
    +---------+----------------------------------------------------------+
@@ -355,11 +355,11 @@ The meaning of the various alignment options is as follows:
    +---------+----------------------------------------------------------+
 
 Note that unless a minimum field width is defined, the field width will always
-be the same size as the data to fill it, so that the alignment option has no
+be the same size as the data to fill it, so that the alignment value has no
 meaning in this case.
 
-The *sign* option is only valid for number types, and can be one of the
-following:
+The *sign* option is only valid for number values and can have one of the
+following values:
 
    .. index::
       single: + (plus); in string formatting
@@ -367,7 +367,7 @@ following:
       single: space; in string formatting
 
    +---------+----------------------------------------------------------+
-   | Option  | Meaning                                                  |
+   | Value   | Meaning                                                  |
    +=========+==========================================================+
    | ``'+'`` | Indicates that a sign should be used for both positive   |
    |         | as well as negative numbers.                             |
@@ -415,7 +415,7 @@ error.
 .. versionchanged:: 3.6
    Added the ``'_'`` option (see also :pep:`515`).
 
-*width* is a decimal integer defining the minimum field width.  If not
+The *width* option is a decimal integer defining the minimum field width.  If not
 specified, then the field width will be determined by the content.
 
 When no explicit alignment is given, preceding the *width* field by a zero
@@ -430,12 +430,12 @@ value formatted with ``'g'`` or ``'G'``.  For non-number types the field
 indicates the maximum field size - in other words, how many characters will be
 used from the field content. The *precision* is not allowed for integer values.
 
-Finally, the *type* determines how the data should be presented.
+Finally, the *type* option determines how the data should be presented.
 
-The available string presentation types are:
+The *type* option can have one of the following values for string values:
 
    +---------+----------------------------------------------------------+
-   | Type    | Meaning                                                  |
+   | Value   | Meaning                                                  |
    +=========+==========================================================+
    | ``'s'`` | String format. This is the default type for strings and  |
    |         | may be omitted.                                          |
@@ -443,25 +443,25 @@ The available string presentation types are:
    | None    | The same as ``'s'``.                                     |
    +---------+----------------------------------------------------------+
 
-The available integer presentation types are:
+The *type* option can have one of the following values for integer values:
 
    +---------+----------------------------------------------------------+
-   | Type    | Meaning                                                  |
+   | Value   | Meaning                                                  |
    +=========+==========================================================+
    | ``'b'`` | Binary format. Outputs the number in base 2.             |
    +---------+----------------------------------------------------------+
    | ``'c'`` | Character. Converts the integer to the corresponding     |
    |         | unicode character before printing.                       |
    +---------+----------------------------------------------------------+
-   | ``'d'`` | Decimal Integer. Outputs the number in base 10.          |
+   | ``'d'`` | Decimal format. Outputs the number in base 10.           |
    +---------+----------------------------------------------------------+
    | ``'o'`` | Octal format. Outputs the number in base 8.              |
    +---------+----------------------------------------------------------+
    | ``'x'`` | Hex format. Outputs the number in base 16, using         |
-   |         | lower-case letters for the digits above 9.               |
+   |         | lowercase letters for the digits above 9.                |
    +---------+----------------------------------------------------------+
    | ``'X'`` | Hex format. Outputs the number in base 16, using         |
-   |         | upper-case letters for the digits above 9.               |
+   |         | uppercase letters for the digits above 9.                |
    +---------+----------------------------------------------------------+
    | ``'n'`` | Number. This is the same as ``'d'``, except that it uses |
    |         | the current locale setting to insert the appropriate     |
@@ -470,22 +470,23 @@ The available integer presentation types are:
    | None    | The same as ``'d'``.                                     |
    +---------+----------------------------------------------------------+
 
-In addition to the above presentation types, integers can be formatted
-with the floating point presentation types listed below (except
+In addition to the above values, integer values can be formatted
+with the values for floating point values listed below (except
 ``'n'`` and ``None``). When doing so, :func:`float` is used to convert the
 integer to a floating point number before formatting.
 
-The available presentation types for floating point and decimal values are:
+The *type* option can have one of the following values for floating point
+and decimal values:
 
    +---------+----------------------------------------------------------+
-   | Type    | Meaning                                                  |
+   | Value   | Meaning                                                  |
    +=========+==========================================================+
    | ``'e'`` | Exponent notation. Prints the number in scientific       |
    |         | notation using the letter 'e' to indicate the exponent.  |
    |         | The default precision is ``6``.                          |
    +---------+----------------------------------------------------------+
    | ``'E'`` | Exponent notation. Same as ``'e'`` except it uses an     |
-   |         | upper case 'E' as the separator character.               |
+   |         | uppercase 'E' to indicate the exponent.                  |
    +---------+----------------------------------------------------------+
    | ``'f'`` | Fixed-point notation. Displays the number as a           |
    |         | fixed-point number.  The default precision is ``6``.     |
@@ -541,7 +542,7 @@ The available presentation types for floating point and decimal values are:
 
 .. _formatexamples:
 
-Format examples
+Format Examples
 ^^^^^^^^^^^^^^^
 
 This section contains examples of the :meth:`str.format` syntax and
@@ -665,7 +666,7 @@ Nesting arguments and more complex examples::
    3232235521
    >>>
    >>> width = 5
-   >>> for num in range(5,12): #doctest: +NORMALIZE_WHITESPACE
+   >>> for num in range(5, 12): #doctest: +NORMALIZE_WHITESPACE
    ...     for base in 'dXob':
    ...         print('{0:{width}{base}}'.format(num, base=base, width=width), end=' ')
    ...     print()
@@ -682,7 +683,7 @@ Nesting arguments and more complex examples::
 
 .. _template-strings:
 
-Template strings
+Template Strings
 ----------------
 
 Template strings provide simpler string substitutions as described in
@@ -833,7 +834,7 @@ rule:
   delimiter), and it should appear last in the regular expression.
 
 
-Helper functions
+Helper Functions
 ----------------
 
 .. function:: capwords(s, sep=None)
