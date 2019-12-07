@@ -537,7 +537,7 @@ Opening network connections
       The *family*, *proto*, *flags*, *reuse_address*, *reuse_port,
       *allow_broadcast*, and *sock* parameters were added.
 
-   .. versionchanged:: 3.5.10
+   .. versionchanged:: 3.8.1
       The *reuse_address* parameter is no longer supported due to security
       concerns.
 
