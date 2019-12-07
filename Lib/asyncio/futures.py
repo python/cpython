@@ -103,6 +103,9 @@ class Future:
             context['source_traceback'] = self._source_traceback
         self._loop.call_exception_handler(context)
 
+    def __class_getitem__(cls, type):
+        return cls
+
     @property
     def _log_traceback(self):
         return self.__log_traceback
