@@ -1,3 +1,1 @@
-return class from __class_getitem__ to simplify subclassing. E.g. `clss =
-contextvars.ContextVar[str]` returned `None` instead of `<class
-'ContextVar'>`
+return class from ``__class_getitem__`` to simplify subclassing.
