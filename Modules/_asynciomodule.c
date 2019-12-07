@@ -1821,6 +1821,21 @@ TaskWakeupMethWrapper_dealloc(TaskWakeupMethWrapper *o)
     Py_TYPE(o)->tp_free(o);
 }
 
+static PyObject *
+TaskWakeupMethWrapper_get___self__(TaskWakeupMethWrapper *o, void *Py_UNUSED(ignored))
+{
+    if (o->ww_task) {
+        Py_INCREF(o->ww_task);
+        return (PyObject*)o->ww_task;
+    }
+    Py_RETURN_NONE;
+}
+
+static PyGetSetDef TaskWakeupMethWrapper_getsetlist[] = {
+    {"__self__", (getter)TaskWakeupMethWrapper_get___self__, NULL, NULL},
+    {NULL} /* Sentinel */
+};
+
 static PyTypeObject TaskWakeupMethWrapper_Type = {
     PyVarObject_HEAD_INIT(NULL, 0)
     "TaskWakeupMethWrapper",
@@ -1832,6 +1847,7 @@ static PyTypeObject TaskWakeupMethWrapper_Type = {
     .tp_flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC,
     .tp_traverse = (traverseproc)TaskWakeupMethWrapper_traverse,
     .tp_clear = (inquiry)TaskWakeupMethWrapper_clear,
+    .tp_getset = TaskWakeupMethWrapper_getsetlist,
 };
 
 static PyObject *
