@@ -1,0 +1,2 @@
+Drop too noisy asyncio warning about deletion of a stream without explicit
+``.close()`` call.
