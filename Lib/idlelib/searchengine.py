@@ -84,7 +84,7 @@ class SearchEngine:
             flags = flags | re.IGNORECASE
         try:
             prog = re.compile(pat, flags)
-        except re.error as what:
+        except re.ReCompileError as what:
             args = what.args
             msg = args[0]
             col = args[1] if len(args) >= 2 else -1

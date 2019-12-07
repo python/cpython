@@ -115,7 +115,8 @@ Some of the functions in this module takes flags as optional parameters:
     U  UNICODE     For compatibility only. Ignored for string patterns (it
                    is the default), and forbidden for bytes patterns.
 
-This module also defines an exception 'error'.
+This module also defines an exception 'ReCompileError' aliased to 'error' for
+backward compatibility..
 
 """
 
@@ -135,7 +136,7 @@ __all__ = [
     "findall", "finditer", "compile", "purge", "template", "escape",
     "error", "Pattern", "Match", "A", "I", "L", "M", "S", "X", "U",
     "ASCII", "IGNORECASE", "LOCALE", "MULTILINE", "DOTALL", "VERBOSE",
-    "UNICODE",
+    "UNICODE", "ReCompileError"
 ]
 
 __version__ = "2.2.1"
@@ -178,7 +179,8 @@ class RegexFlag(enum.IntFlag):
 globals().update(RegexFlag.__members__)
 
 # sre exception
-error = sre_compile.error
+error = sre_compile.ReCompileError
+ReCompileError = sre_compile.ReCompileError
 
 # --------------------------------------------------------------------
 # public interface

@@ -24,7 +24,7 @@ def main():
     pattern, filename = args
     try:
         prog = re.compile(pattern, reflags)
-    except re.error as msg:
+    except re.ReCompileError as msg:
         usage("error in regular expression: %s" % msg)
     try:
         f = open(filename)

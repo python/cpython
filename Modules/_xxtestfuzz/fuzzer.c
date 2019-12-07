@@ -130,7 +130,7 @@ PyObject* sre_error_exception = NULL;
 int SRE_FLAG_DEBUG = 0;
 /* Called by LLVMFuzzerTestOneInput for initialization */
 static int init_sre_compile() {
-    /* Import sre_compile.compile and sre.error */
+    /* Import sre_compile.compile and sre.ReCompileError */
     PyObject* sre_compile_module = PyImport_ImportModule("sre_compile");
     if (sre_compile_module == NULL) {
         return 0;
@@ -144,7 +144,7 @@ static int init_sre_compile() {
     if (sre_constants == NULL) {
         return 0;
     }
-    sre_error_exception = PyObject_GetAttrString(sre_constants, "error");
+    sre_error_exception = PyObject_GetAttrString(sre_constants, "ReCompileError");
     if (sre_error_exception == NULL) {
         return 0;
     }
@@ -197,7 +197,7 @@ static int fuzz_sre_compile(const char* data, size_t size) {
     ) {
         PyErr_Clear();
     }
-    /* Ignore re.error */
+    /* Ignore re.ReCompileError */
     if (compiled == NULL && PyErr_ExceptionMatches(sre_error_exception)) {
         PyErr_Clear();
     }
