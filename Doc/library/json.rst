@@ -744,6 +744,12 @@ Command line options
 
    .. versionadded:: 3.8
 
+.. cmdoption:: --indent, --tab, --no-indent, --compact
+
+   Mutually exclusive options for whitespace control
+
+   .. versionadded:: 3.9
+
 .. cmdoption:: -h, --help
 
    Show the help message.
