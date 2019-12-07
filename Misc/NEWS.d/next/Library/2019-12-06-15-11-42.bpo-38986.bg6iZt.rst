@@ -1,0 +1,2 @@
+Make repr of C accelerated TaskWakeupMethWrapper the same as of pure Python
+version.
