@@ -214,8 +214,7 @@ class StreamReaderProtocol(FlowControlMixin, protocols.Protocol):
     def __init__(self, stream_reader, client_connected_cb=None, loop=None):
         super().__init__(loop=loop)
         if stream_reader is not None:
-            self._stream_reader_wr = weakref.ref(stream_reader,
-                                                 self._on_reader_gc)
+            self._stream_reader_wr = weakref.ref(stream_reader)
             self._source_traceback = stream_reader._source_traceback
         else:
             self._stream_reader_wr = None
@@ -230,22 +229,6 @@ class StreamReaderProtocol(FlowControlMixin, protocols.Protocol):
         self._client_connected_cb = client_connected_cb
         self._over_ssl = False
         self._closed = self._loop.create_future()
-
-    def _on_reader_gc(self, wr):
-        transport = self._transport
-        if transport is not None:
-            # connection_made was called
-            context = {
-                'message': ('An open stream object is being garbage '
-                            'collected; call "stream.close()" explicitly.')
-            }
-            if self._source_traceback:
-                context['source_traceback'] = self._source_traceback
-            self._loop.call_exception_handler(context)
-            transport.abort()
-        else:
-            self._reject_connection = True
-        self._stream_reader_wr = None
 
     @property
     def _stream_reader(self):
