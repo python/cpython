@@ -1,0 +1,2 @@
+Make Python compatible with OpenSSL 3.0.0. :func:`ssl.SSLSocket.getpeercert`
+no longer returns IPv6 addresses with a trailing new line.
