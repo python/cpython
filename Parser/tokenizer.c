@@ -1406,7 +1406,8 @@ tok_get(struct tok_state *tok, char **p_start, char **p_end)
     if (c == '\n') {
         tok->atbol = 1;
         if ((blankline || tok->level > 0) &&
-            !(tok->prompt != NULL && tok->nextprompt == NULL)) {
+            !(tok->prompt != NULL && tok->nextprompt == NULL &&
+              tok->lineno == 1)) {
             goto nextline;
         }
         *p_start = tok->start;
