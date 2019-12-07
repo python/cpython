@@ -33,7 +33,8 @@ def main():
     parser.add_argument('--no-ensure-ascii', dest='ensure_ascii', action='store_false',
                         help='disable escaping of non-ASCII characters')
     parser.add_argument('--json-lines', action='store_true', default=False,
-                        help='parse input using the jsonlines format')
+                        help='parse input using the JSON Lines format. '
+                        'Use with --no-indent or --compact to produce valid JSON Lines output.')
     group = parser.add_mutually_exclusive_group()
     group.add_argument('--indent', default=4, type=int,
                        help='separate items with newlines and use this number '
