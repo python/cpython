@@ -4048,6 +4048,9 @@ class TestPEP519(unittest.TestCase):
         self.assertRaises(ZeroDivisionError, self.fspath,
                           FakePath(ZeroDivisionError()))
 
+    def test_pathlike_class_getitem(self):
+        self.assertIs(os.PathLike[bytes], os.PathLike)
+
 
 class TimesTests(unittest.TestCase):
     def test_times(self):
