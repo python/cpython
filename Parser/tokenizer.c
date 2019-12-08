@@ -1150,7 +1150,7 @@ tok_get(struct tok_state *tok, char **p_start, char **p_end)
             }
             else if (tok->prompt != NULL && tok->lineno == 1) {
                 /* In interactive mode, if the first line contains
-                   only spaces and a comment, let it through. */
+                   only spaces and/or a comment, let it through. */
                 blankline = 0;
                 col = altcol = 0;
             }
