@@ -1158,8 +1158,8 @@ other utility module.
    * ``aix-7.2``          # Legacy form reported in Python 3.8 and earlier
 
    .. versionchanged:: 3.9
-      The AIX platform string format updated to also include the technology
-      level, build date, and ABI bit-size.
+      The AIX platform string format now also includes the technology level,
+      build date, and ABI bit-size.
 
 
 .. function:: convert_path(pathname)
