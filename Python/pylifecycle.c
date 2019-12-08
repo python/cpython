@@ -705,24 +705,29 @@ static PyStatus
 pycore_interp_init(PyThreadState *tstate)
 {
     PyStatus status;
+    PyObject *sysmod = NULL;
 
     status = pycore_init_types(tstate);
     if (_PyStatus_EXCEPTION(status)) {
-        return status;
+        goto done;
     }
 
-    PyObject *sysmod;
     status = _PySys_Create(tstate, &sysmod);
     if (_PyStatus_EXCEPTION(status)) {
-        return status;
+        goto done;
     }
 
     status = pycore_init_builtins(tstate);
     if (_PyStatus_EXCEPTION(status)) {
-        return status;
+        goto done;
     }
 
-    return pycore_init_import_warnings(tstate, sysmod);
+    status = pycore_init_import_warnings(tstate, sysmod);
+
+done:
+    /* sys.modules['sys'] contains a strong reference to the module */
+    Py_XDECREF(sysmod);
+    return status;
 }
 
 
