@@ -777,6 +777,9 @@ class PurePath(object):
             return NotImplemented
         return self._cparts >= other._cparts
 
+    def __class_getitem__(cls, type):
+        return cls
+
     drive = property(attrgetter('_drv'),
                      doc="""The drive prefix (letter or UNC path), if any.""")
 

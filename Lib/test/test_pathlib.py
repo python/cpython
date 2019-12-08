@@ -2217,6 +2217,9 @@ class _BasePathTest(object):
 class PathTest(_BasePathTest, unittest.TestCase):
     cls = pathlib.Path
 
+    def test_class_getitem(self):
+        self.assertIs(self.cls[str], self.cls)
+
     def test_concrete_class(self):
         p = self.cls('a')
         self.assertIs(type(p),
