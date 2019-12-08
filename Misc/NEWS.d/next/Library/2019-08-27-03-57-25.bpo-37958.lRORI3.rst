@@ -1,4 +1,2 @@
-Added the pstats.Stats.get_profile_dict() method to get retrieve the profile data as a dictionary.
-
-
-# Reply to comments here: https://github.com/python/cpython/pull/15495/files
+Added the pstats.Stats.get_profile_dict() method to get retrieve the profile
+data as a StatsProfile object.
