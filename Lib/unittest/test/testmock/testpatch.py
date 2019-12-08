@@ -105,6 +105,10 @@ class PatchTest(unittest.TestCase):
         self.assertEqual(Something.attribute, sentinel.Original,
                          "patch not restored")
 
+    def test_patchobject_with_string_as_target(self):
+        msg = "'Something' must be the actual object to be patched, not a str"
+        with self.assertRaisesRegex(TypeError, msg):
+            patch.object('Something', 'do_something')
 
     def test_patchobject_with_none(self):
         class Something(object):

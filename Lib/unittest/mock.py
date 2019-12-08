@@ -1601,6 +1601,10 @@ def _patch_object(
     When used as a class decorator `patch.object` honours `patch.TEST_PREFIX`
     for choosing which methods to wrap.
     """
+    if type(target) is str:
+        raise TypeError(
+            f"{target!r} must be the actual object to be patched, not a str"
+        )
     getter = lambda: target
     return _patch(
         getter, attribute, new, spec, create,
