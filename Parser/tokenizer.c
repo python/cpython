@@ -874,14 +874,8 @@ tok_nextc(struct tok_state *tok)
                 strcpy(newtok, buf);
                 Py_DECREF(u);
             }
-            if (tok->nextprompt != NULL) {
-                if (newtok != NULL && strchr("# \t", *newtok)) {
-                    tok->nextprompt = NULL;
-                }
-                else {
-                    tok->prompt = tok->nextprompt;
-                }
-            }
+            if (tok->nextprompt != NULL)
+                tok->prompt = tok->nextprompt;
             if (newtok == NULL)
                 tok->done = E_INTR;
             else if (*newtok == '\0') {
@@ -1154,6 +1148,12 @@ tok_get(struct tok_state *tok, char **p_start, char **p_end)
             if (col == 0 && c == '\n' && tok->prompt != NULL) {
                 blankline = 0; /* Let it through */
             }
+            else if (tok->prompt != NULL && tok->lineno == 1) {
+                /* In interactive mode, if the first line contains
+                   only spaces and a comment, let it through. */
+                blankline = 0;
+                col = altcol = 0;
+            }
             else {
                 blankline = 1; /* Ignore completely */
             }
@@ -1405,9 +1405,7 @@ tok_get(struct tok_state *tok, char **p_start, char **p_end)
     /* Newline */
     if (c == '\n') {
         tok->atbol = 1;
-        if ((blankline || tok->level > 0) &&
-            !(tok->prompt != NULL && tok->nextprompt == NULL &&
-              tok->lineno == 1)) {
+        if (blankline || tok->level > 0) {
             goto nextline;
         }
         *p_start = tok->start;
