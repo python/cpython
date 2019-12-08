@@ -1,0 +1,1 @@
+Set the thread stack size to 8 Mb for debug builds on android platforms.
