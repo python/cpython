@@ -1072,6 +1072,9 @@ class PathLike(abc.ABC):
     def __subclasshook__(cls, subclass):
         return hasattr(subclass, '__fspath__')
 
+    def __class_getitem__(cls, type):
+        return cls
+
 
 if name == 'nt':
     class _AddedDllDirectory:
