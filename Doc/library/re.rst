@@ -997,7 +997,7 @@ form.
       Added additional attributes.
 
    .. versionchanged:: 3.9
-      ReCompileError was previsouly named 'error', the alias has been kept for
+      ReCompileError was originally named 'error'; the latter is kept as an alias for
       backward compatibility.
 
 .. _re-objects:

@@ -115,7 +115,7 @@ Some of the functions in this module takes flags as optional parameters:
     U  UNICODE     For compatibility only. Ignored for string patterns (it
                    is the default), and forbidden for bytes patterns.
 
-This module also defines an exception 'ReCompileError' aliased to 'error' for
+This module also defines exception 'ReCompileError', aliased to 'error' for
 backward compatibility..
 
 """
@@ -180,7 +180,7 @@ globals().update(RegexFlag.__members__)
 
 # sre exception
 error = sre_compile.ReCompileError
-ReCompileError = sre_compile.ReCompileError
+ReCompileError = error = sre_compile.ReCompileError
 
 # --------------------------------------------------------------------
 # public interface
