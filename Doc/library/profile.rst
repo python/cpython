@@ -525,6 +525,15 @@ Analysis of the profiler data is done using the :class:`~pstats.Stats` class.
       ordering are identical to the :meth:`~pstats.Stats.print_callers` method.
 
 
+    .. method:: get_profile_dict(*keys)
+
+      This method returns an instance of StatsProfile, which contains all the
+      a dictionary of function names to FunctionProfile objects.
+
+       .. versionadded:: 3.9
+          Added the following dataclasses: StatsProfile, FunctionProfile.
+          Added the following function: get_profile_dict.
+
 .. _deterministic-profiling:
 
 What Is Deterministic Profiling?

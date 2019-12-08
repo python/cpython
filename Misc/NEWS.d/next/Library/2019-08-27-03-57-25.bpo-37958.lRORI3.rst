@@ -1,7 +1,4 @@
-pstats is really useful or profiling and printing the output of the execution of some block of code, but I've found on multiple occasions when I'd like to access this output directly in an easily usable dictionary on which I can further analyze or manipulate.
+Added the pstats.Stats.get_profile_dict() method to get retrieve the profile data as a dictionary.
 
-The proposal is to add a function called get_profile_dict inside of pstats that'll automatically return this data the data in an easily accessible dict.
 
-The output of get_profile_dict is a dict pointing from function names to a dict with the following keys: ncalls, tottime, percall_tottime, cumtime, percall_cumtime, file_name, line_number.
-
-A specific use case of this is to generate a stacked column chart using various visualization tools which will assist in easily identifying program bottlenecks.
+# Reply to comments here: https://github.com/python/cpython/pull/15495/files
