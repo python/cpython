@@ -686,13 +686,6 @@ The :mod:`test.support` module defines the following functions:
    ``sys.stdout`` if it's not set.
 
 
-.. function:: strip_python_strerr(stderr)
-
-   Strip the *stderr* of a Python process from potential debug output
-   emitted by the interpreter.  This will typically be run on the result of
-   :meth:`subprocess.Popen.communicate`.
-
-
 .. function:: args_from_interpreter_flags()
 
    Return a list of command line arguments reproducing the current settings
@@ -1499,6 +1492,9 @@ script execution tests.
    in a subprocess.  The values can include ``__isolated``, ``__cleanenv``,
    ``__cwd``, and ``TERM``.
 
+   .. versionchanged:: 3.9
+      The function no longer strips whitespaces from *stderr*.
+
 
 .. function:: assert_python_ok(*args, **env_vars)
 
@@ -1512,6 +1508,9 @@ script execution tests.
    Python is started in isolated mode (command line option ``-I``),
    except if the ``__isolated`` keyword is set to ``False``.
 
+   .. versionchanged:: 3.9
+      The function no longer strips whitespaces from *stderr*.
+
 
 .. function:: assert_python_failure(*args, **env_vars)
 
@@ -1520,6 +1519,9 @@ script execution tests.
    stdout, stderr)`` tuple.
 
    See :func:`assert_python_ok` for more options.
+
+   .. versionchanged:: 3.9
+      The function no longer strips whitespaces from *stderr*.
 
 
 .. function:: spawn_python(*args, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, **kw)

@@ -332,10 +332,10 @@ class CmdLineTest(unittest.TestCase):
 
         if sys.platform == 'win32':
             self.assertEqual(b'1\r\n2\r\n', out)
-            self.assertEqual(b'3\r\n4', err)
+            self.assertEqual(b'3\r\n4\r\n', err)
         else:
             self.assertEqual(b'1\n2\n', out)
-            self.assertEqual(b'3\n4', err)
+            self.assertEqual(b'3\n4\n', err)
 
     def test_unmached_quote(self):
         # Issue #10206: python program starting with unmatched quote
@@ -391,7 +391,7 @@ class CmdLineTest(unittest.TestCase):
             stderr=subprocess.PIPE,
             preexec_fn=preexec)
         out, err = p.communicate()
-        self.assertEqual(support.strip_python_stderr(err), b'')
+        self.assertEqual(err, b'')
         self.assertEqual(p.returncode, 42)
 
     def test_no_stdin(self):
