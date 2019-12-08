@@ -27,7 +27,7 @@ _sz = 32 if sys.maxsize == 2147483647 else 64
 def _aix_tag(vrtl, bd):
     # type: (List[int], int) -> str
     # vrtl[version, release, technology_level]
-    return "AIX-{:1x}{:1d}{:02d}-{:04d}-{}".format(vrtl[0], vrtl[1], vrtl[2], bd, _sz)
+    return "aix-{:1x}{:1d}{:02d}-{:04d}-{}".format(vrtl[0], vrtl[1], vrtl[2], bd, _sz)
 
 
 # extract version, release and technology level from a VRMF string
@@ -71,9 +71,9 @@ def aix_platform():
     support/knowledgecenter/en/ssw_aix_72/install/binary_compatability.html
 
     For pep425 purposes the AIX platform tag becomes:
-    "AIX-{:1x}{:1d}{:02d}-{:04d}-{}".format(v, r, tl, builddate, bitsize)
-    e.g., "AIX-6107-1415-32" for AIX 6.1 TL7 bd 1415, 32-bit
-    and, "AIX-6107-1415-64" for AIX 6.1 TL7 bd 1415, 64-bit
+    "aix-{:1x}{:1d}{:02d}-{:04d}-{}".format(v, r, tl, builddate, bitsize)
+    e.g., "aix-6107-1415-32" for AIX 6.1 TL7 bd 1415, 32-bit
+    and, "aix-6107-1415-64" for AIX 6.1 TL7 bd 1415, 64-bit
     """
     vrmf, bd = _aix_bosmp64()
     return _aix_tag(_aix_vrtl(vrmf), bd)
