@@ -974,9 +974,10 @@ _contextvars_ContextVar_reset(PyContextVar *self, PyObject *token)
 
 
 static PyObject *
-contextvar_cls_getitem(PyObject *self, PyObject *args)
+contextvar_cls_getitem(PyObject *self, PyObject *arg)
 {
-    Py_RETURN_NONE;
+    Py_INCREF(self);
+    return self;
 }
 
 static PyMemberDef PyContextVar_members[] = {
@@ -989,7 +990,7 @@ static PyMethodDef PyContextVar_methods[] = {
     _CONTEXTVARS_CONTEXTVAR_SET_METHODDEF
     _CONTEXTVARS_CONTEXTVAR_RESET_METHODDEF
     {"__class_getitem__", contextvar_cls_getitem,
-        METH_VARARGS | METH_STATIC, NULL},
+        METH_O | METH_CLASS, NULL},
     {NULL, NULL}
 };
 
