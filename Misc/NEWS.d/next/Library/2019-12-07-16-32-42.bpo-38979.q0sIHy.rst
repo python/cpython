@@ -1,0 +1,1 @@
+Return class from ``ContextVar.__class_getitem__`` to simplify subclassing.
