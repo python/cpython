@@ -172,6 +172,8 @@ The following data items and methods are also supported:
 
    Deprecated alias for :meth:`frombytes`.
 
+   .. deprecated-removed:: 3.2 3.9
+
 
 .. method:: array.fromunicode(s)
 
@@ -233,6 +235,8 @@ The following data items and methods are also supported:
 .. method:: array.tostring()
 
    Deprecated alias for :meth:`tobytes`.
+
+   .. deprecated-removed:: 3.2 3.9
 
 
 .. method:: array.tounicode()
