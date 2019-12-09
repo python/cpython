@@ -181,7 +181,7 @@ PySys_Audit(const char *event, const char *argFormat, ...)
     if (argFormat && argFormat[0]) {
         va_list args;
         va_start(args, argFormat);
-        eventArgs = Py_VaBuildValue(argFormat, args);
+        eventArgs = _Py_VaBuildValue_SizeT(argFormat, args);
         va_end(args);
         if (eventArgs && !PyTuple_Check(eventArgs)) {
             PyObject *argTuple = PyTuple_Pack(1, eventArgs);

@@ -1,0 +1,3 @@
+:c:func:`PySys_Audit` now requires ``Py_ssize_t`` to be used for size
+arguments in the format string, regardless of whethen ``PY_SSIZE_T_CLEAN``
+was defined at include time.
