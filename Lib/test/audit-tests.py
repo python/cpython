@@ -304,6 +304,29 @@ def test_unraisablehook():
     write_unraisable_exc(RuntimeError("nonfatal-error"), "for audit hook test", None)
 
 
+def test_winreg():
+    from winreg import OpenKey, EnumKey, CloseKey, HKEY_LOCAL_MACHINE
+
+    def hook(event, args):
+        if not event.startswith("winreg."):
+            return
+        print(event, *args)
+
+    sys.addaudithook(hook)
+
+    k = OpenKey(HKEY_LOCAL_MACHINE, "Software")
+    EnumKey(k, 0)
+    try:
+        EnumKey(k, 10000)
+    except OSError:
+        pass
+    else:
+        raise RuntimeError("Expected EnumKey(HKLM, 10000) to fail")
+
+    kv = k.Detach()
+    CloseKey(kv)
+
+
 if __name__ == "__main__":
     from test.libregrtest.setup import suppress_msvcrt_asserts
 
