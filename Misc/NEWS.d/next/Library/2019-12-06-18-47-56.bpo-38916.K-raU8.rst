@@ -1,0 +1,3 @@
+:class:`array.array`: Remove ``tostring()`` and ``fromstring()`` methods.
+They were aliases to ``tobytes()`` and ``frombytes()``, deprecated since
+Python 3.2.
