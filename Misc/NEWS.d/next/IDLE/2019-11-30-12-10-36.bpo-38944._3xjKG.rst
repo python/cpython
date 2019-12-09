@@ -1,0 +1,1 @@
+Excape key now closes IDLE completion windows.  Patch by Johnny Najera.
