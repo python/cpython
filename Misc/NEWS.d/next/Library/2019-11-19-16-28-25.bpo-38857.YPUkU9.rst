@@ -1,4 +1,0 @@
-AsyncMock fix for return values that are awaitable types.  This also covers
-side_effect iterable values that happend to be awaitable, and wraps
-callables that return an awaitable type. Before these awaitables were being
-awaited instead of being returned as is.
