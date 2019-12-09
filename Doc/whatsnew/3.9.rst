@@ -279,6 +279,11 @@ Deprecated
 Removed
 =======
 
+* :class:`array.array`: ``tostring()`` and ``fromstring()`` methods have been
+  removed. They were aliases to ``tobytes()`` and ``frombytes()``, deprecated
+  since Python 3.2.
+  (Contributed by Victor Stinner in :issue:`38916`.)
+
 * The abstract base classes in :mod:`collections.abc` no longer are
   exposed in the regular :mod:`collections` module.  This will help
   create a clearer distinction between the concrete classes and the abstract
