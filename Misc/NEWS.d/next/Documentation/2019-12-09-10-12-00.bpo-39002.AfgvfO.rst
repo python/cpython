@@ -1,0 +1,1 @@
+Fix simple typo in Lib/test/test_statistics.py.
