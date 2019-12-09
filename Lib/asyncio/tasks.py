@@ -175,6 +175,9 @@ class Task(futures._PyFuture):  # Inherit Python Task implementation
             self._loop.call_exception_handler(context)
         super().__del__()
 
+    def __class_getitem__(cls, type):
+        return cls
+
     def _repr_info(self):
         return base_tasks._task_repr_info(self)
 

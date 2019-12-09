@@ -288,15 +288,17 @@ class DirectoryTestCase(ASTTestCase):
     test_directories = (lib_dir, lib_dir / "test")
     skip_files = {"test_fstring.py"}
 
-    @functools.cached_property
-    def files_to_test(self):
-        # bpo-31174: Use cached_property to store the names sample
-        # to always test the same files. It prevents false alarms
-        # when hunting reference leaks.
+    _files_to_test = None
+
+    @classmethod
+    def files_to_test(cls):
+
+        if cls._files_to_test is not None:
+            return cls._files_to_test
 
         items = [
             item.resolve()
-            for directory in self.test_directories
+            for directory in cls.test_directories
             for item in directory.glob("*.py")
             if not item.name.startswith("bad")
         ]
@@ -304,10 +306,15 @@ class DirectoryTestCase(ASTTestCase):
         # Test limited subset of files unless the 'cpu' resource is specified.
         if not test.support.is_resource_enabled("cpu"):
             items = random.sample(items, 10)
+
+        # bpo-31174: Store the names sample to always test the same files.
+        # It prevents false alarms when hunting reference leaks.
+        cls._files_to_test = items
+
         return items
 
     def test_files(self):
-        for item in self.files_to_test:
+        for item in self.files_to_test():
             if test.support.verbose:
                 print(f"Testing {item.absolute()}")
 

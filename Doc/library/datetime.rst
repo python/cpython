@@ -881,7 +881,7 @@ Other constructors, all class methods:
       Because naive ``datetime`` objects are treated by many ``datetime`` methods
       as local times, it is preferred to use aware datetimes to represent times
       in UTC. As such, the recommended way to create an object representing the
-      current time in UTC  by calling ``datetime.now(timezone.utc)``.
+      current time in UTC is by calling ``datetime.now(timezone.utc)``.
 
 
 .. classmethod:: datetime.fromtimestamp(timestamp, tz=None)
@@ -942,7 +942,7 @@ Other constructors, all class methods:
       Because naive ``datetime`` objects are treated by many ``datetime`` methods
       as local times, it is preferred to use aware datetimes to represent times
       in UTC. As such, the recommended way to create an object representing a
-      specific timestamp in UTC  by calling
+      specific timestamp in UTC is by calling
       ``datetime.fromtimestamp(timestamp, tz=timezone.utc)``.
 
    .. versionchanged:: 3.3

@@ -1,0 +1,3 @@
+Fix test_pty: if the process is the session leader, closing the master file
+descriptor raises a SIGHUP signal: simply ignore SIGHUP when running the
+tests.
