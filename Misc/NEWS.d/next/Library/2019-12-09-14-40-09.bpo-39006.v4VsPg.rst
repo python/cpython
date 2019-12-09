@@ -1,0 +1,2 @@
+Fix asyncio when the ssl module is missing: only check for ssl.SSLSocket
+instance if the ssl module is available.
