@@ -341,6 +341,14 @@ class BaseSelectorEventLoop(base_events.BaseEventLoop):
         self._ensure_fd_no_transport(fd)
         return self._remove_writer(fd)
 
+    def _check_socket(self, sock):
+        """Check socket type and configuration in debug mode
+        """
+        if ssl is not None and isinstance(sock, ssl.SSLSocket):
+            raise TypeError("Socket cannot be of type SSLSocket")
+        if sock.gettimeout() != 0:
+            raise ValueError("the socket must be non-blocking")
+
     async def sock_recv(self, sock, n):
         """Receive data from the socket.
 
@@ -348,10 +356,8 @@ class BaseSelectorEventLoop(base_events.BaseEventLoop):
         The maximum amount of data to be received at once is specified by
         nbytes.
         """
-        if isinstance(sock, ssl.SSLSocket):
-            raise TypeError("Socket cannot be of type SSLSocket")
-        if self._debug and sock.gettimeout() != 0:
-            raise ValueError("the socket must be non-blocking")
+        if self._debug:
+            self._check_socket(sock)
         try:
             return sock.recv(n)
         except (BlockingIOError, InterruptedError):
@@ -388,10 +394,8 @@ class BaseSelectorEventLoop(base_events.BaseEventLoop):
         The received data is written into *buf* (a writable buffer).
         The return value is the number of bytes written.
         """
-        if isinstance(sock, ssl.SSLSocket):
-            raise TypeError("Socket cannot be of type SSLSocket")
-        if self._debug and sock.gettimeout() != 0:
-            raise ValueError("the socket must be non-blocking")
+        if self._debug:
+            self._check_socket(sock)
         try:
             return sock.recv_into(buf)
         except (BlockingIOError, InterruptedError):
@@ -429,10 +433,8 @@ class BaseSelectorEventLoop(base_events.BaseEventLoop):
         raised, and there is no way to determine how much data, if any, was
         successfully processed by the receiving end of the connection.
         """
-        if isinstance(sock, ssl.SSLSocket):
-            raise TypeError("Socket cannot be of type SSLSocket")
-        if self._debug and sock.gettimeout() != 0:
-            raise ValueError("the socket must be non-blocking")
+        if self._debug:
+            self._check_socket(sock)
         try:
             n = sock.send(data)
         except (BlockingIOError, InterruptedError):
@@ -478,10 +480,8 @@ class BaseSelectorEventLoop(base_events.BaseEventLoop):
 
         This method is a coroutine.
         """
-        if isinstance(sock, ssl.SSLSocket):
-            raise TypeError("Socket cannot be of type SSLSocket")
-        if self._debug and sock.gettimeout() != 0:
-            raise ValueError("the socket must be non-blocking")
+        if self._debug:
+            self._check_socket(sock)
 
         if not hasattr(socket, 'AF_UNIX') or sock.family != socket.AF_UNIX:
             resolved = await self._ensure_resolved(
@@ -541,10 +541,9 @@ class BaseSelectorEventLoop(base_events.BaseEventLoop):
         object usable to send and receive data on the connection, and address
         is the address bound to the socket on the other end of the connection.
         """
-        if isinstance(sock, ssl.SSLSocket):
-            raise TypeError("Socket cannot be of type SSLSocket")
-        if self._debug and sock.gettimeout() != 0:
-            raise ValueError("the socket must be non-blocking")
+        if self._debug:
+            self._check_socket(sock)
+
         fut = self.create_future()
         self._sock_accept(fut, False, sock)
         return await fut
