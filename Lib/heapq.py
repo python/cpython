@@ -351,82 +351,88 @@ def merge(*iterables, key=None, reverse=False):
 
         if key is None:
             if reverse:
-                # no key, biggest first
-                try:
-                    while True:
-                        if a < b:
-                            yield b
-                            b = next_b()
-                        else:
-                            yield a
-                            a = next_a()
-                except StopIteration:
+                # no key, reverse
+                while True:
                     if a < b:
-                        yield a
-                        yield from a_iter
-                    else:
                         yield b
-                        yield from b_iter
-            else:
-                # no key, smallest first
-                try:
-                    while True:
-                        if b < a:
-                            yield b
+                        try:
                             b = next_b()
-                        else:
+                        except StopIteration:
                             yield a
-                            a = next_a()
-                except StopIteration:
-                    if b < a:
-                        yield a
-                        yield from a_iter
+                            yield from a_iter
+                            return
                     else:
+                        yield a
+                        try:
+                            a = next_a()
+                        except StopIteration:
+                            yield b
+                            yield from b_iter
+                            return
+            else:
+                # no key, forward
+                while True:
+                    if b < a:
                         yield b
-                        yield from b_iter
+                        try:
+                            b = next_b()
+                        except StopIteration:
+                            yield a
+                            yield from a_iter
+                            return
+                    else:
+                        yield a
+                        try:
+                            a = next_a()
+                        except StopIteration:
+                            yield b
+                            yield from b_iter
+                            return
         else:
             ka = key(a)
             kb = key(b)
             if reverse:
-                # using a key, biggest first
-                try:
-                    while True:
-                        if ka < kb:
-                            yield b
-                            b = next_b()
-                            kb = key(b)
-                        else:
-                            yield a
-                            a = next_a()
-                            ka = key(a)
-                except StopIteration:
+                # using a key, reverse
+                while True:
                     if ka < kb:
-                        yield a
-                        yield from a_iter
-                    else:
                         yield b
-                        yield from b_iter
-            else:
-                # using a key, smallest first
-                try:
-                    while True:
-                        if kb < ka:
-                            yield b
+                        try:
                             b = next_b()
-                            kb = key(b)
-                        else:
+                        except StopIteration:
                             yield a
-                            a = next_a()
-                            ka = key(a)
-                except StopIteration:
-                    if kb < ka:
-                        yield a
-                        yield from a_iter
+                            yield from a_iter
+                            return
+                        kb = key(b)
                     else:
+                        yield a
+                        try:
+                            a = next_a()
+                        except StopIteration:
+                            yield b
+                            yield from b_iter
+                            return
+                        ka = key(a)
+            else:
+                # using a key, forward
+                while True:
+                    if kb < ka:
                         yield b
-                        yield from b_iter
-        # here ends the 2-iterable case
-        return
+                        try:
+                            b = next_b()
+                        except StopIteration:
+                            yield a
+                            yield from a_iter
+                            return
+                        kb = key(b)
+                    else:
+                        yield a
+                        try:
+                            a = next_a()
+                        except StopIteration:
+                            yield b
+                            yield from b_iter
+                            return
+                        ka = key(a)
 
     h = []
     h_append = h.append
