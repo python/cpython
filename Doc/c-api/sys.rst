@@ -320,9 +320,17 @@ accessible to C code.  They all work with the current interpreter thread's
    arguments to this function will be consumed, using it may cause reference
    leaks.)
 
+   Note that ``#`` format characters should always be treated as
+   ``Py_ssize_t``, regardless of whether ``PY_SSIZE_T_CLEAN`` was defined.
+
    :func:`sys.audit` performs the same function from Python code.
 
    .. versionadded:: 3.8
+
+   .. versionchanged:: 3.8.2
+
+      Require ``Py_ssize_t`` for ``#`` format characters. Previously, an
+      unavoidable deprecation warning was raised.
 
 
 .. c:function:: int PySys_AddAuditHook(Py_AuditHookFunction hook, void *userData)
