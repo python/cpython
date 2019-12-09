@@ -66,6 +66,10 @@ _HAS_IPv6 = hasattr(socket, 'AF_INET6')
 # Maximum timeout passed to select to avoid OS limitations
 MAXIMUM_SELECT_TIMEOUT = 24 * 3600
 
+# Used for deprecation and removal of `loop.create_datagram_endpoint()`'s
+# *reuse_address* parameter
+_unset = object()
+
 
 def _format_handle(handle):
     cb = handle._callback
@@ -1201,7 +1205,7 @@ class BaseEventLoop(events.AbstractEventLoop):
     async def create_datagram_endpoint(self, protocol_factory,
                                        local_addr=None, remote_addr=None, *,
                                        family=0, proto=0, flags=0,
-                                       reuse_address=None, reuse_port=None,
+                                       reuse_address=_unset, reuse_port=None,
                                        allow_broadcast=None, sock=None):
         """Create datagram connection."""
         if sock is not None:
@@ -1210,7 +1214,7 @@ class BaseEventLoop(events.AbstractEventLoop):
                     f'A UDP Socket was expected, got {sock!r}')
             if (local_addr or remote_addr or
                     family or proto or flags or
-                    reuse_address or reuse_port or allow_broadcast):
+                    reuse_port or allow_broadcast):
                 # show the problematic kwargs in exception msg
                 opts = dict(local_addr=local_addr, remote_addr=remote_addr,
                             family=family, proto=proto, flags=flags,
@@ -1277,8 +1281,18 @@ class BaseEventLoop(events.AbstractEventLoop):
 
             exceptions = []
 
-            if reuse_address is None:
-                reuse_address = os.name == 'posix' and sys.platform != 'cygwin'
+            # bpo-37228
+            if reuse_address is not _unset:
+                if reuse_address:
+                    raise ValueError("Passing `reuse_address=True` is no "
+                                     "longer supported, as the usage of "
+                                     "SO_REUSEPORT in UDP poses a significant "
+                                     "security concern.")
+                else:
+                    warnings.warn("The *reuse_address* parameter has been "
+                                  "deprecated as of 3.5.10 and is scheduled "
+                                  "for removal in 3.11.", DeprecationWarning,
+                                  stacklevel=2)
 
             for ((family, proto),
                  (local_address, remote_address)) in addr_pairs_info:
@@ -1287,9 +1301,6 @@ class BaseEventLoop(events.AbstractEventLoop):
                 try:
                     sock = socket.socket(
                         family=family, type=socket.SOCK_DGRAM, proto=proto)
-                    if reuse_address:
-                        sock.setsockopt(
-                            socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
                     if reuse_port:
                         _set_reuseport(sock)
                     if allow_broadcast:
