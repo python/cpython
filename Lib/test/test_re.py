@@ -53,6 +53,9 @@ class ReTests(unittest.TestCase):
             if pos is not None:
                 self.assertEqual(err.pos, pos)
 
+    def test_error_is_ReCompileError_alias():
+        assert re.error is re.ReCompileError
+
     def test_keep_buffer(self):
         # See bug 14212
         b = bytearray(b'x')
