@@ -1,0 +1,3 @@
+In Python 3.9.0a1, sys.argv[0] was made an asolute path if a filename was
+specified on the command line. Revert this change, since most users expect
+sys.argv to be unmodified.

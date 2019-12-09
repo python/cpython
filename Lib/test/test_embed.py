@@ -858,10 +858,9 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
         preconfig = {
             'allocator': PYMEM_ALLOCATOR_DEBUG,
         }
-        script_abspath = os.path.abspath('script.py')
         config = {
-            'argv': [script_abspath],
-            'run_filename': script_abspath,
+            'argv': ['script.py'],
+            'run_filename': os.path.abspath('script.py'),
             'dev_mode': 1,
             'faulthandler': 1,
             'warnoptions': ['default'],

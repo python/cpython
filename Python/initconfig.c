@@ -2198,10 +2198,6 @@ config_update_argv(PyConfig *config, Py_ssize_t opt_index)
         /* Force sys.argv[0] = '-m'*/
         arg0 = L"-m";
     }
-    else if (config->run_filename != NULL) {
-        /* run_filename is converted to an absolute path: update argv */
-        arg0 = config->run_filename;
-    }
 
     if (arg0 != NULL) {
         arg0 = _PyMem_RawWcsdup(arg0);
