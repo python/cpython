@@ -1,1 +1,1 @@
-Fixing Idle autocomplete window doesn't close on Escape key.
+Excape key now closes IDLE completion windows.  Patch by Johnny Najera.
