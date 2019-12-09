@@ -3085,7 +3085,7 @@ _curses_has_key_impl(PyObject *module, int key)
 
 #define _CURSES_INIT_COLOR_FUNC_NAME    _CURSES_FUNC_NAME_STR(_CURSES_INIT_COLOR_FUNC)
 
-/*
+/*[clinic input]
 _curses.init_color
 
     color_number: int
