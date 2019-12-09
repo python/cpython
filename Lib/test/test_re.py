@@ -53,7 +53,7 @@ class ReTests(unittest.TestCase):
             if pos is not None:
                 self.assertEqual(err.pos, pos)
 
-    def test_error_is_ReCompileError_alias():
+    def test_error_is_ReCompileError_alias(self):
         assert re.error is re.ReCompileError
 
     def test_keep_buffer(self):
