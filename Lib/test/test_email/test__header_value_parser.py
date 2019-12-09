@@ -2583,6 +2583,11 @@ class TestParser(TestParserMixin, TestEmailBase):
 
     # get_msg_id
 
+    def test_get_msg_id_empty(self):
+        # bpo-38708: Test that HeaderParseError is raised and not IndexError.
+        with self.assertRaises(errors.HeaderParseError):
+            parser.get_msg_id('')
+
     def test_get_msg_id_valid(self):
         msg_id = self._test_get_x(
             parser.get_msg_id,
@@ -2692,6 +2697,7 @@ class TestParser(TestParserMixin, TestEmailBase):
             ""
         )
         self.assertEqual(msg_id.token_type, 'msg-id')
+
 
 
 @parameterize

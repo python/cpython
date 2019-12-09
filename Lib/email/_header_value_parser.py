@@ -2047,7 +2047,7 @@ def get_msg_id(value):
        no-fold-literal = "[" *dtext "]"
     """
     msg_id = MsgID()
-    if value[0] in CFWS_LEADER:
+    if value and value[0] in CFWS_LEADER:
         token, value = get_cfws(value)
         msg_id.append(token)
     if not value or value[0] != '<':

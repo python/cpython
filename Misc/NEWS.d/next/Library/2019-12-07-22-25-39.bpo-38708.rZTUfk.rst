@@ -1,0 +1,1 @@
+Fix a potential IndexError in email parser when parsing an empty msg-id.
