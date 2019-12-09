@@ -1,0 +1,1 @@
+Fix a test for :func:`math.fsum` that was failing due to constant folding.
