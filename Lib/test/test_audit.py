@@ -104,6 +104,20 @@ class AuditTest(unittest.TestCase):
             "RuntimeError('nonfatal-error') Exception ignored for audit hook test",
         )
 
+    def test_winreg(self):
+        support.import_module("winreg")
+        returncode, events, stderr = self.run_python("test_winreg")
+        if returncode:
+            self.fail(stderr)
+
+        self.assertEqual(events[0][0], "winreg.OpenKey")
+        self.assertEqual(events[1][0], "winreg.OpenKey/result")
+        expected = events[1][2]
+        self.assertTrue(expected)
+        self.assertSequenceEqual(["winreg.EnumKey", " ", f"{expected} 0"], events[2])
+        self.assertSequenceEqual(["winreg.EnumKey", " ", f"{expected} 10000"], events[3])
+        self.assertSequenceEqual(["winreg.PyHKEY.Detach", " ", expected], events[4])
+
 
 if __name__ == "__main__":
     unittest.main()
