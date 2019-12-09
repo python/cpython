@@ -116,7 +116,7 @@ Some of the functions in this module takes flags as optional parameters:
                    is the default), and forbidden for bytes patterns.
 
 This module also defines exception 'ReCompileError', aliased to 'error' for
-backward compatibility..
+backward compatibility.
 
 """
 
@@ -179,7 +179,6 @@ class RegexFlag(enum.IntFlag):
 globals().update(RegexFlag.__members__)
 
 # sre exception
-error = sre_compile.ReCompileError
 ReCompileError = error = sre_compile.ReCompileError
 
 # --------------------------------------------------------------------
