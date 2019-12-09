@@ -1,0 +1,1 @@
+Fix dataclasses to support forward references in type annotations
