@@ -2639,10 +2639,44 @@ class TestParser(TestParserMixin, TestEmailBase):
         self.assertEqual(msg_id.token_type, 'msg-id')
 
     def test_get_msg_id_invalid_expected_msg_id_not_found(self):
-        text = "Message-Id: 935-XPB-567:0:86089:180874:0:45327:9:90305:17843586-40@example.com"
+        text = "935-XPB-567:0:45327:9:90305:17843586-40@example.com"
         msg_id = parser.parse_message_id(text)
-        self.assertDefectsEqual(msg_id.all_defects,
-                                [errors.InvalidHeaderDefect])
+        self.assertDefectsEqual(
+            msg_id.all_defects,
+            [errors.InvalidHeaderDefect])
+
+    def test_parse_invalid_message_id(self):
+        message_id = self._test_parse_x(
+            parser.parse_message_id,
+            "935-XPB-567:0:45327:9:90305:17843586-40@example.com",
+            "935-XPB-567:0:45327:9:90305:17843586-40@example.com",
+            "935-XPB-567:0:45327:9:90305:17843586-40@example.com",
+            [errors.InvalidHeaderDefect],
+            )
+        self.assertEqual(message_id.token_type, 'invalid-message-id')
+
+    def test_parse_valid_message_id(self):
+        message_id = self._test_parse_x(
+            parser.parse_message_id,
+            "<aperson@somedomain>",
+            "<aperson@somedomain>",
+            "<aperson@somedomain>",
+            [],
+            )
+        self.assertEqual(message_id.token_type, 'message-id')
+
+    def test_parse_message_id_with_remaining(self):
+        message_id = self._test_parse_x(
+            parser.parse_message_id,
+            "<validmessageid@example>thensomething",
+            "<validmessageid@example>",
+            "<validmessageid@example>",
+            [errors.InvalidHeaderDefect],
+            [],
+            )
+        self.assertEqual(message_id.token_type, 'message-id')
+        self.assertEqual(str(message_id.all_defects[0]),
+                         "Unexpected 'thensomething'")
 
     def test_get_msg_id_no_angle_start(self):
         with self.assertRaises(errors.HeaderParseError):
