@@ -1,1 +1,1 @@
-Fix dataclasses to support __future__ "annotations" mode
+Fix dataclasses to support forward references in type annotations
