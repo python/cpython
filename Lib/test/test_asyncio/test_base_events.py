@@ -1739,10 +1739,6 @@ class BaseEventLoopWithSelectorTests(test_utils.TestCase):
         self.assertRaises(ValueError, self.loop.run_until_complete, fut)
 
         fut = self.loop.create_datagram_endpoint(
-            MyDatagramProto, reuse_address=True, sock=FakeSock())
-        self.assertRaises(ValueError, self.loop.run_until_complete, fut)
-
-        fut = self.loop.create_datagram_endpoint(
             MyDatagramProto, reuse_port=True, sock=FakeSock())
         self.assertRaises(ValueError, self.loop.run_until_complete, fut)
 
@@ -1752,7 +1748,6 @@ class BaseEventLoopWithSelectorTests(test_utils.TestCase):
 
     def test_create_datagram_endpoint_sockopts(self):
         # Socket options should not be applied unless asked for.
-        # SO_REUSEADDR defaults to on for UNIX.
         # SO_REUSEPORT is not available on all platforms.
 
         coro = self.loop.create_datagram_endpoint(
@@ -1761,18 +1756,8 @@ class BaseEventLoopWithSelectorTests(test_utils.TestCase):
         transport, protocol = self.loop.run_until_complete(coro)
         sock = transport.get_extra_info('socket')
 
-        reuse_address_default_on = (
-            os.name == 'posix' and sys.platform != 'cygwin')
         reuseport_supported = hasattr(socket, 'SO_REUSEPORT')
 
-        if reuse_address_default_on:
-            self.assertTrue(
-                sock.getsockopt(
-                    socket.SOL_SOCKET, socket.SO_REUSEADDR))
-        else:
-            self.assertFalse(
-                sock.getsockopt(
-                    socket.SOL_SOCKET, socket.SO_REUSEADDR))
         if reuseport_supported:
             self.assertFalse(
                 sock.getsockopt(
@@ -1788,13 +1773,12 @@ class BaseEventLoopWithSelectorTests(test_utils.TestCase):
         coro = self.loop.create_datagram_endpoint(
             lambda: MyDatagramProto(create_future=True, loop=self.loop),
             local_addr=('127.0.0.1', 0),
-            reuse_address=True,
             reuse_port=reuseport_supported,
             allow_broadcast=True)
         transport, protocol = self.loop.run_until_complete(coro)
         sock = transport.get_extra_info('socket')
 
-        self.assertTrue(
+        self.assertFalse(
             sock.getsockopt(
                 socket.SOL_SOCKET, socket.SO_REUSEADDR))
         if reuseport_supported:
@@ -1808,6 +1792,29 @@ class BaseEventLoopWithSelectorTests(test_utils.TestCase):
         transport.close()
         self.loop.run_until_complete(protocol.done)
         self.assertEqual('CLOSED', protocol.state)
+
+    def test_create_datagram_endpoint_reuse_address_error(self):
+        # bpo-37228: Ensure that explicit passing of `reuse_address=True`
+        # raises an error, as it is not safe to use SO_REUSEADDR when using UDP
+
+        coro = self.loop.create_datagram_endpoint(
+            lambda: MyDatagramProto(create_future=True, loop=self.loop),
+            local_addr=('127.0.0.1', 0),
+            reuse_address=True)
+
+        with self.assertRaises(ValueError):
+            self.loop.run_until_complete(coro)
+
+    def test_create_datagram_endpoint_reuse_address_warning(self):
+        # bpo-37228: Deprecate *reuse_address* parameter
+
+        coro = self.loop.create_datagram_endpoint(
+            lambda: MyDatagramProto(create_future=True, loop=self.loop),
+            local_addr=('127.0.0.1', 0),
+            reuse_address=False)
+
+        with self.assertWarns(DeprecationWarning):
+            self.loop.run_until_complete(coro)
 
     @patch_socket
     def test_create_datagram_endpoint_nosoreuseport(self, m_socket):
