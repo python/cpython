@@ -1097,6 +1097,14 @@ class DocTestFinder:
         if inspect.iscode(obj):
             lineno = getattr(obj, 'co_firstlineno', None)-1
 
+        # Find the line number for triple quoted __test__ strings.
+        if isinstance(obj, str):
+            # find a line in the string that is unique in source lines
+            # and start counting from there
+            for offset, line in enumerate(obj.splitlines(True)):
+                if source_lines.count(line) == 1:
+                    return source_lines.index(line) - offset
+
         # Find the line number where the docstring starts.  Assume
         # that it's the first line that begins with a quote mark.
         # Note: this could be fooled by a multiline function
