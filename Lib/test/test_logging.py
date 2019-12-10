@@ -1059,8 +1059,8 @@ if hasattr(socket, "AF_UNIX"):
 # - end of server_helper section
 
 class SMTPHandlerTest(BaseTest):
-    # bpo-14314, bpo-19665, bpo-34092: don't wait forever, timeout of 1 minute
-    TIMEOUT = 60.0
+    # bpo-14314, bpo-19665, bpo-34092: don't wait forever
+    TIMEOUT = support.LONG_TIMEOUT
 
     def test_basic(self):
         sockmap = {}
