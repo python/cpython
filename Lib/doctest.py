@@ -1098,7 +1098,7 @@ class DocTestFinder:
             lineno = getattr(obj, 'co_firstlineno', None)-1
 
         # Find the line number for triple quoted __test__ strings.
-        if isinstance(obj, str):
+        if isinstance(obj, str) and source_lines is not None:
             # find a line in the string that is unique in source lines
             # and start counting from there
             for offset, line in enumerate(obj.splitlines(True)):
