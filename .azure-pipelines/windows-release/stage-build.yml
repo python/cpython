@@ -57,26 +57,31 @@ jobs:
         Arch: win32
         Platform: x86
         Configuration: Release
+        _HostPython: .\python
       win32_d:
         Name: win32_d
         Arch: win32
         Platform: x86
         Configuration: Debug
+        _HostPython: .\python
       amd64_d:
         Name: amd64_d
         Arch: amd64
         Platform: x64
         Configuration: Debug
+        _HostPython: .\python
       arm64:
         Name: arm64
         Arch: arm64
         Platform: ARM64
         Configuration: Release
+        _HostPython: python
       arm64_d:
         Name: arm64_d
         Arch: arm64
         Platform: ARM64
         Configuration: Debug
+        _HostPython: python
 
   steps:
     - template: ./build-steps.yml
@@ -98,6 +103,7 @@ jobs:
         Arch: amd64
         Platform: x64
         Configuration: Release
+        _HostPython: .\python
 
   steps:
     - template: ./build-steps.yml
@@ -123,6 +129,7 @@ jobs:
         Arch: amd64
         Platform: x64
         Configuration: Release
+        _HostPython: .\python
 
   steps:
     - template: ./build-steps.yml
