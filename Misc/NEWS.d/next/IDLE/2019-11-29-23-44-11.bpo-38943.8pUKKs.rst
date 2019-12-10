@@ -1,1 +1,2 @@
-Fix autocomplete window not showing on some systems because of the context in which wm_geometry is called.
+Fix IDLE autocomplete windows not always appearing on some systems.
+Patch by Johnny Najera.
