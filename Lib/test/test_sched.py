@@ -82,7 +82,7 @@ class TestCase(unittest.TestCase):
         self.assertEqual(q.get(timeout=TIMEOUT), 5)
         self.assertTrue(q.empty())
         timer.advance(1000)
-        support.join_thread(t, timeout=TIMEOUT)
+        support.join_thread(t)
         self.assertTrue(q.empty())
         self.assertEqual(timer.time(), 5)
 
@@ -137,7 +137,7 @@ class TestCase(unittest.TestCase):
         self.assertEqual(q.get(timeout=TIMEOUT), 4)
         self.assertTrue(q.empty())
         timer.advance(1000)
-        support.join_thread(t, timeout=TIMEOUT)
+        support.join_thread(t)
         self.assertTrue(q.empty())
         self.assertEqual(timer.time(), 4)
 
