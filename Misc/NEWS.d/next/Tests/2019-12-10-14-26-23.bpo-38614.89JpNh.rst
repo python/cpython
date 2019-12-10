@@ -1,0 +1,3 @@
+Replace hardcoded timeout constants in tests with
+:data:`~test.support.LOOPBACK_TIMEOUT` of :mod:`test.support`, so it's easier
+to ajdust this timeout for all tests at once.

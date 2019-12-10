@@ -3,6 +3,7 @@
 import logging
 import socket
 import sys
+from test import support
 import unittest
 import weakref
 from unittest import mock
@@ -699,7 +700,7 @@ class BaseStartTLS(func_tests.FunctionalTestCaseMixin):
                     ssl=client_sslctx,
                     server_hostname='',
                     loop=self.loop,
-                    ssl_handshake_timeout=1.0)
+                    ssl_handshake_timeout=support.LOOPBACK_TIMEOUT)
 
         with self.tcp_server(server,
                              max_clients=1,

@@ -724,7 +724,7 @@ class EventLoopTestsMixin:
         sock = socket.socket()
         self.addCleanup(sock.close)
         coro = self.loop.connect_accepted_socket(
-            MyProto, sock, ssl_handshake_timeout=1)
+            MyProto, sock, ssl_handshake_timeout=support.LOOPBACK_TIMEOUT)
         with self.assertRaisesRegex(
                 ValueError,
                 'ssl_handshake_timeout is only meaningful with ssl'):
