@@ -139,7 +139,7 @@ class SilentWSGIRequestHandler(WSGIRequestHandler):
 
 class SilentWSGIServer(WSGIServer):
 
-    request_timeout = 2
+    request_timeout = support.LOOPBACK_TIMEOUT
 
     def get_request(self):
         request, client_addr = super().get_request()
@@ -220,7 +220,7 @@ if hasattr(socket, 'AF_UNIX'):
 
     class UnixWSGIServer(UnixHTTPServer, WSGIServer):
 
-        request_timeout = 2
+        request_timeout = support.LOOPBACK_TIMEOUT
 
         def server_bind(self):
             UnixHTTPServer.server_bind(self)

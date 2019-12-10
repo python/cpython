@@ -21,7 +21,7 @@ from unittest import TestCase, skipUnless
 from test import support
 from test.support import HOST, HOSTv6
 
-TIMEOUT = 3
+TIMEOUT = support.LOOPBACK_TIMEOUT
 # the dummy data returned by server over the data channel when
 # RETR, LIST, NLST, MLSD commands are issued
 RETR_DATA = 'abcde12345\r\n' * 1000
