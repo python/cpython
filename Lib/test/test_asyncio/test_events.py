@@ -699,7 +699,7 @@ class EventLoopTestsMixin:
         proto.transport.close()
         lsock.close()
 
-        support.join_thread(thread, timeout=1)
+        support.join_thread(thread)
         self.assertFalse(thread.is_alive())
         self.assertEqual(proto.state, 'CLOSED')
         self.assertEqual(proto.nbytes, len(message))
