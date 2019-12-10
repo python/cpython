@@ -20,7 +20,7 @@ def _unpack_hexversion():
 
 
 def _get_suffix(field4):
-    name = {0xA0: "a", 0xB0: "b", 0xC0: "c"}.get(field4 & 0xF0, "")
+    name = {0xA0: "a", 0xB0: "b", 0xC0: "rc"}.get(field4 & 0xF0, "")
     if name:
         serial = field4 & 0x0F
         return f"{name}{serial}"
