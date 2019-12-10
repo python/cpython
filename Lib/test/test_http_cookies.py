@@ -479,6 +479,9 @@ class MorselTests(unittest.TestCase):
                 r'Set-Cookie: key=coded_val; '
                 r'expires=\w+, \d+ \w+ \d+ \d+:\d+:\d+ \w+')
 
+    def test_class_getitem(self):
+        self.assertIs(cookies.Morsel[str], cookies.Morsel)
+
 def test_main():
     run_unittest(CookieTests, MorselTests)
     run_doctest(cookies)

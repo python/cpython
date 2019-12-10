@@ -293,6 +293,9 @@ class Morsel(dict):
         for key in self._reserved:
             dict.__setitem__(self, key, "")
 
+    def __class_getitem__(cls, type):
+        return cls
+
     @property
     def key(self):
         return self._key
