@@ -1,0 +1,2 @@
+Add audit hooks for when :func:`sys.excepthook` and
+:func:`sys.unraisablehook` are invoked

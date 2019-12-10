@@ -121,6 +121,11 @@ Added the *indent* option to :func:`~ast.dump` which allows it to produce a
 multiline indented output.
 (Contributed by Serhiy Storchaka in :issue:`37995`.)
 
+Added :func:`ast.unparse` as a function in the :mod:`ast` module that can
+be used to unparse an :class:`ast.AST` object and produce a string with code
+that would produce an equivalent :class:`ast.AST` object when parsed.
+(Contributed by Pablo Galindo and Batuhan Taskaya in :issue:`38870`.)
+
 asyncio
 -------
 
@@ -179,8 +184,8 @@ case), and one used ``__VENV_NAME__`` instead.
 pathlib
 -------
 
-Added :meth:`~pathlib.Path.readlink()` which acts similar to
-:func:`~os.readlink`.
+Added :meth:`pathlib.Path.readlink()` which acts similarly to
+:func:`os.readlink`.
 (Contributed by Girts Folkmanis in :issue:`30618`)
 
 pprint
@@ -235,6 +240,10 @@ Build and C API Changes
   functions: the free lists of bound method objects have been removed.
   (Contributed by Inada Naoki and Victor Stinner in :issue:`37340`.)
 
+* Remove ``PyUnicode_ClearFreeList()`` function: the Unicode free list has been
+  removed in Python 3.3.
+  (Contributed by Victor Stinner in :issue:`38896`.)
+
 
 Deprecated
 ==========
@@ -269,6 +278,11 @@ Deprecated
 
 Removed
 =======
+
+* :class:`array.array`: ``tostring()`` and ``fromstring()`` methods have been
+  removed. They were aliases to ``tobytes()`` and ``frombytes()``, deprecated
+  since Python 3.2.
+  (Contributed by Victor Stinner in :issue:`38916`.)
 
 * The abstract base classes in :mod:`collections.abc` no longer are
   exposed in the regular :mod:`collections` module.  This will help

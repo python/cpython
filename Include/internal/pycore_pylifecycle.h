@@ -40,11 +40,9 @@ extern PyObject * _PyBuiltin_Init(PyThreadState *tstate);
 extern PyStatus _PySys_Create(
     PyThreadState *tstate,
     PyObject **sysmod_p);
-extern PyStatus _PySys_SetPreliminaryStderr(PyObject *sysdict);
 extern PyStatus _PySys_ReadPreinitWarnOptions(PyWideStringList *options);
 extern PyStatus _PySys_ReadPreinitXOptions(PyConfig *config);
 extern int _PySys_InitMain(PyThreadState *tstate);
-extern PyStatus _PyImport_Init(PyThreadState *tstate);
 extern PyStatus _PyExc_Init(void);
 extern PyStatus _PyErr_Init(void);
 extern PyStatus _PyBuiltins_AddExceptions(PyObject * bltinmod);
@@ -77,7 +75,7 @@ extern void _PyImport_Fini2(void);
 extern void _PyGC_Fini(PyThreadState *tstate);
 extern void _PyType_Fini(void);
 extern void _Py_HashRandomization_Fini(void);
-extern void _PyUnicode_Fini(void);
+extern void _PyUnicode_Fini(PyThreadState *tstate);
 extern void _PyLong_Fini(void);
 extern void _PyFaulthandler_Fini(void);
 extern void _PyHash_Fini(void);

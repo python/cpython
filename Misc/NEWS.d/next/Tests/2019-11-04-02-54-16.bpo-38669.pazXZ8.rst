@@ -1,0 +1,1 @@
+Raise :exc:`TypeError` when passing target as a string with :meth:`unittest.mock.patch.object`.

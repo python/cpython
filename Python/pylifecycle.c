@@ -64,6 +64,7 @@ extern grammar _PyParser_Grammar; /* From graminit.c */
 /* Forward declarations */
 static PyStatus add_main_module(PyInterpreterState *interp);
 static PyStatus init_import_site(void);
+static PyStatus init_set_builtins_open(PyThreadState *tstate);
 static PyStatus init_sys_streams(PyThreadState *tstate);
 static PyStatus init_signals(PyThreadState *tstate);
 static void call_py_exitfuncs(PyThreadState *tstate);
@@ -259,6 +260,7 @@ _Py_LegacyLocaleDetected(int warn)
 #endif
 }
 
+#ifndef MS_WINDOWS
 static const char *_C_LOCALE_WARNING =
     "Python runtime initialized with LC_CTYPE=C (a locale with default ASCII "
     "encoding), which may cause Unicode compatibility problems. Using C.UTF-8, "
@@ -273,6 +275,7 @@ emit_stderr_warning_for_legacy_locale(_PyRuntimeState *runtime)
         PySys_FormatStderr("%s", _C_LOCALE_WARNING);
     }
 }
+#endif   /* !defined(MS_WINDOWS) */
 
 typedef struct _CandidateLocale {
     const char *locale_name; /* The locale to try as a coercion target */
@@ -619,52 +622,68 @@ pycore_init_types(PyThreadState *tstate)
 static PyStatus
 pycore_init_builtins(PyThreadState *tstate)
 {
-    PyInterpreterState *interp = tstate->interp;
+    assert(!_PyErr_Occurred(tstate));
 
     PyObject *bimod = _PyBuiltin_Init(tstate);
     if (bimod == NULL) {
-        return _PyStatus_ERR("can't initialize builtins modules");
+        goto error;
     }
-    _PyImport_FixupBuiltin(bimod, "builtins", interp->modules);
 
-    interp->builtins = PyModule_GetDict(bimod);
-    if (interp->builtins == NULL) {
-        return _PyStatus_ERR("can't initialize builtins dict");
+    PyInterpreterState *interp = tstate->interp;
+    if (_PyImport_FixupBuiltin(bimod, "builtins", interp->modules) < 0) {
+        goto error;
     }
-    Py_INCREF(interp->builtins);
+
+    PyObject *builtins_dict = PyModule_GetDict(bimod);
+    if (builtins_dict == NULL) {
+        goto error;
+    }
+    Py_INCREF(builtins_dict);
+    interp->builtins = builtins_dict;
 
     PyStatus status = _PyBuiltins_AddExceptions(bimod);
     if (_PyStatus_EXCEPTION(status)) {
         return status;
     }
+
+    interp->builtins_copy = PyDict_Copy(interp->builtins);
+    if (interp->builtins_copy == NULL) {
+        goto error;
+    }
+    Py_DECREF(bimod);
+
+    assert(!_PyErr_Occurred(tstate));
+
     return _PyStatus_OK();
+
+error:
+    Py_XDECREF(bimod);
+    return _PyStatus_ERR("can't initialize builtins module");
 }
 
 
 static PyStatus
 pycore_init_import_warnings(PyThreadState *tstate, PyObject *sysmod)
 {
+    assert(!_PyErr_Occurred(tstate));
+
+    PyStatus status = _PyImportHooks_Init(tstate);
+    if (_PyStatus_EXCEPTION(status)) {
+        return status;
+    }
+
     const PyConfig *config = &tstate->interp->config;
+    if (_Py_IsMainInterpreter(tstate)) {
+        /* Initialize _warnings. */
+        if (_PyWarnings_Init() == NULL) {
+            return _PyStatus_ERR("can't initialize warnings");
+        }
 
-    PyStatus status = _PyImport_Init(tstate);
-    if (_PyStatus_EXCEPTION(status)) {
-        return status;
-    }
-
-    status = _PyImportHooks_Init(tstate);
-    if (_PyStatus_EXCEPTION(status)) {
-        return status;
-    }
-
-    /* Initialize _warnings. */
-    if (_PyWarnings_Init() == NULL) {
-        return _PyStatus_ERR("can't initialize warnings");
-    }
-
-    if (config->_install_importlib) {
-        status = _PyConfig_WritePathConfig(config);
-        if (_PyStatus_EXCEPTION(status)) {
-            return status;
+        if (config->_install_importlib) {
+            status = _PyConfig_WritePathConfig(config);
+            if (_PyStatus_EXCEPTION(status)) {
+                return status;
+            }
         }
     }
 
@@ -675,7 +694,40 @@ pycore_init_import_warnings(PyThreadState *tstate, PyObject *sysmod)
             return status;
         }
     }
+
+    assert(!_PyErr_Occurred(tstate));
+
     return _PyStatus_OK();
+}
+
+
+static PyStatus
+pycore_interp_init(PyThreadState *tstate)
+{
+    PyStatus status;
+    PyObject *sysmod = NULL;
+
+    status = pycore_init_types(tstate);
+    if (_PyStatus_EXCEPTION(status)) {
+        goto done;
+    }
+
+    status = _PySys_Create(tstate, &sysmod);
+    if (_PyStatus_EXCEPTION(status)) {
+        goto done;
+    }
+
+    status = pycore_init_builtins(tstate);
+    if (_PyStatus_EXCEPTION(status)) {
+        goto done;
+    }
+
+    status = pycore_init_import_warnings(tstate, sysmod);
+
+done:
+    /* sys.modules['sys'] contains a strong reference to the module */
+    Py_XDECREF(sysmod);
+    return status;
 }
 
 
@@ -699,23 +751,7 @@ pyinit_config(_PyRuntimeState *runtime,
     config = &tstate->interp->config;
     *tstate_p = tstate;
 
-    status = pycore_init_types(tstate);
-    if (_PyStatus_EXCEPTION(status)) {
-        return status;
-    }
-
-    PyObject *sysmod;
-    status = _PySys_Create(tstate, &sysmod);
-    if (_PyStatus_EXCEPTION(status)) {
-        return status;
-    }
-
-    status = pycore_init_builtins(tstate);
-    if (_PyStatus_EXCEPTION(status)) {
-        return status;
-    }
-
-    status = pycore_init_import_warnings(tstate, sysmod);
+    status = pycore_interp_init(tstate);
     if (_PyStatus_EXCEPTION(status)) {
         return status;
     }
@@ -895,22 +931,136 @@ done:
    configuration. Example of bpo-34008: Py_Main() called after
    Py_Initialize(). */
 static PyStatus
-_Py_ReconfigureMainInterpreter(PyInterpreterState *interp)
+_Py_ReconfigureMainInterpreter(PyThreadState *tstate)
 {
-    PyConfig *config = &interp->config;
+    PyConfig *config = &tstate->interp->config;
 
     PyObject *argv = _PyWideStringList_AsList(&config->argv);
     if (argv == NULL) {
         return _PyStatus_NO_MEMORY(); \
     }
 
-    int res = PyDict_SetItemString(interp->sysdict, "argv", argv);
+    int res = PyDict_SetItemString(tstate->interp->sysdict, "argv", argv);
     Py_DECREF(argv);
     if (res < 0) {
         return _PyStatus_ERR("fail to set sys.argv");
     }
     return _PyStatus_OK();
 }
+
+
+static PyStatus
+init_interp_main(PyThreadState *tstate)
+{
+    assert(!_PyErr_Occurred(tstate));
+
+    PyStatus status;
+    int is_main_interp = _Py_IsMainInterpreter(tstate);
+    PyInterpreterState *interp = tstate->interp;
+    PyConfig *config = &interp->config;
+
+    if (!config->_install_importlib) {
+        /* Special mode for freeze_importlib: run with no import system
+         *
+         * This means anything which needs support from extension modules
+         * or pure Python code in the standard library won't work.
+         */
+        if (is_main_interp) {
+            interp->runtime->initialized = 1;
+        }
+        return _PyStatus_OK();
+    }
+
+    if (is_main_interp) {
+        if (_PyTime_Init() < 0) {
+            return _PyStatus_ERR("can't initialize time");
+        }
+    }
+
+    if (_PySys_InitMain(tstate) < 0) {
+        return _PyStatus_ERR("can't finish initializing sys");
+    }
+
+    status = init_importlib_external(tstate);
+    if (_PyStatus_EXCEPTION(status)) {
+        return status;
+    }
+
+    if (is_main_interp) {
+        /* initialize the faulthandler module */
+        status = _PyFaulthandler_Init(config->faulthandler);
+        if (_PyStatus_EXCEPTION(status)) {
+            return status;
+        }
+    }
+
+    status = _PyUnicode_InitEncodings(tstate);
+    if (_PyStatus_EXCEPTION(status)) {
+        return status;
+    }
+
+    if (is_main_interp) {
+        if (config->install_signal_handlers) {
+            status = init_signals(tstate);
+            if (_PyStatus_EXCEPTION(status)) {
+                return status;
+            }
+        }
+
+        if (_PyTraceMalloc_Init(config->tracemalloc) < 0) {
+            return _PyStatus_ERR("can't initialize tracemalloc");
+        }
+    }
+
+    status = init_sys_streams(tstate);
+    if (_PyStatus_EXCEPTION(status)) {
+        return status;
+    }
+
+    status = init_set_builtins_open(tstate);
+    if (_PyStatus_EXCEPTION(status)) {
+        return status;
+    }
+
+    status = add_main_module(interp);
+    if (_PyStatus_EXCEPTION(status)) {
+        return status;
+    }
+
+    if (is_main_interp) {
+        /* Initialize warnings. */
+        PyObject *warnoptions = PySys_GetObject("warnoptions");
+        if (warnoptions != NULL && PyList_Size(warnoptions) > 0)
+        {
+            PyObject *warnings_module = PyImport_ImportModule("warnings");
+            if (warnings_module == NULL) {
+                fprintf(stderr, "'import warnings' failed; traceback:\n");
+                _PyErr_Print(tstate);
+            }
+            Py_XDECREF(warnings_module);
+        }
+
+        interp->runtime->initialized = 1;
+    }
+
+    if (config->site_import) {
+        status = init_import_site();
+        if (_PyStatus_EXCEPTION(status)) {
+            return status;
+        }
+    }
+
+    if (is_main_interp) {
+#ifndef MS_WINDOWS
+        emit_stderr_warning_for_legacy_locale(interp->runtime);
+#endif
+    }
+
+    assert(!_PyErr_Occurred(tstate));
+
+    return _PyStatus_OK();
+}
+
 
 /* Update interpreter state based on supplied configuration settings
  *
@@ -926,99 +1076,19 @@ _Py_ReconfigureMainInterpreter(PyInterpreterState *interp)
 static PyStatus
 pyinit_main(PyThreadState *tstate)
 {
-    _PyRuntimeState *runtime = tstate->interp->runtime;
-    if (!runtime->core_initialized) {
+    PyInterpreterState *interp = tstate->interp;
+    if (!interp->runtime->core_initialized) {
         return _PyStatus_ERR("runtime core not initialized");
     }
 
-    /* Configure the main interpreter */
-    PyInterpreterState *interp = tstate->interp;
-    PyConfig *config = &interp->config;
-
-    if (runtime->initialized) {
-        return _Py_ReconfigureMainInterpreter(interp);
+    if (interp->runtime->initialized) {
+        return _Py_ReconfigureMainInterpreter(tstate);
     }
 
-    if (!config->_install_importlib) {
-        /* Special mode for freeze_importlib: run with no import system
-         *
-         * This means anything which needs support from extension modules
-         * or pure Python code in the standard library won't work.
-         */
-        runtime->initialized = 1;
-        return _PyStatus_OK();
-    }
-
-    if (_PyTime_Init() < 0) {
-        return _PyStatus_ERR("can't initialize time");
-    }
-
-    if (_PySys_InitMain(tstate) < 0) {
-        return _PyStatus_ERR("can't finish initializing sys");
-    }
-
-    PyStatus status = init_importlib_external(tstate);
+    PyStatus status = init_interp_main(tstate);
     if (_PyStatus_EXCEPTION(status)) {
         return status;
     }
-
-    /* initialize the faulthandler module */
-    status = _PyFaulthandler_Init(config->faulthandler);
-    if (_PyStatus_EXCEPTION(status)) {
-        return status;
-    }
-
-    status = _PyUnicode_InitEncodings(tstate);
-    if (_PyStatus_EXCEPTION(status)) {
-        return status;
-    }
-
-    if (config->install_signal_handlers) {
-        status = init_signals(tstate);
-        if (_PyStatus_EXCEPTION(status)) {
-            return status;
-        }
-    }
-
-    if (_PyTraceMalloc_Init(config->tracemalloc) < 0) {
-        return _PyStatus_ERR("can't initialize tracemalloc");
-    }
-
-    status = add_main_module(interp);
-    if (_PyStatus_EXCEPTION(status)) {
-        return status;
-    }
-
-    status = init_sys_streams(tstate);
-    if (_PyStatus_EXCEPTION(status)) {
-        return status;
-    }
-
-    /* Initialize warnings. */
-    PyObject *warnoptions = PySys_GetObject("warnoptions");
-    if (warnoptions != NULL && PyList_Size(warnoptions) > 0)
-    {
-        PyObject *warnings_module = PyImport_ImportModule("warnings");
-        if (warnings_module == NULL) {
-            fprintf(stderr, "'import warnings' failed; traceback:\n");
-            _PyErr_Print(tstate);
-        }
-        Py_XDECREF(warnings_module);
-    }
-
-    runtime->initialized = 1;
-
-    if (config->site_import) {
-        status = init_import_site();
-        if (_PyStatus_EXCEPTION(status)) {
-            return status;
-        }
-    }
-
-#ifndef MS_WINDOWS
-    emit_stderr_warning_for_legacy_locale(runtime);
-#endif
-
     return _PyStatus_OK();
 }
 
@@ -1182,9 +1252,6 @@ finalize_interp_types(PyThreadState *tstate, int is_main_interp)
         _PySet_Fini();
         _PyBytes_Fini();
         _PyLong_Fini();
-    }
-
-    if (is_main_interp) {
         _PyFloat_Fini();
         _PyDict_Fini();
         _PySlice_Fini();
@@ -1197,9 +1264,12 @@ finalize_interp_types(PyThreadState *tstate, int is_main_interp)
         _PyArg_Fini();
         _PyAsyncGen_Fini();
         _PyContext_Fini();
+    }
 
-        /* Cleanup Unicode implementation */
-        _PyUnicode_Fini();
+    /* Cleanup Unicode implementation */
+    _PyUnicode_Fini(tstate);
+
+    if (is_main_interp) {
         _Py_ClearFileSystemEncoding();
     }
 }
@@ -1212,6 +1282,11 @@ finalize_interp_clear(PyThreadState *tstate)
 
     /* Clear interpreter state and all thread states */
     PyInterpreterState_Clear(tstate->interp);
+
+    /* Trigger a GC collection on subinterpreters*/
+    if (!is_main_interp) {
+        _PyGC_CollectNoFail();
+    }
 
     finalize_interp_types(tstate, is_main_interp);
 
@@ -1426,6 +1501,7 @@ Py_Finalize(void)
     Py_FinalizeEx();
 }
 
+
 /* Create and initialize a new interpreter and thread, and return the
    new thread.  This requires that Py_Initialize() has been called
    first.
@@ -1485,113 +1561,33 @@ new_interpreter(PyThreadState **tstate_p)
 
     status = _PyConfig_Copy(&interp->config, config);
     if (_PyStatus_EXCEPTION(status)) {
-        return status;
-    }
-    config = &interp->config;
-
-    status = pycore_init_types(tstate);
-
-    /* XXX The following is lax in error checking */
-    PyObject *modules = PyDict_New();
-    if (modules == NULL) {
-        return _PyStatus_ERR("can't make modules dictionary");
-    }
-    interp->modules = modules;
-
-    PyObject *sysmod = _PyImport_FindBuiltin(tstate, "sys");
-    if (sysmod != NULL) {
-        interp->sysdict = PyModule_GetDict(sysmod);
-        if (interp->sysdict == NULL) {
-            goto handle_error;
-        }
-        Py_INCREF(interp->sysdict);
-        PyDict_SetItemString(interp->sysdict, "modules", modules);
-        if (_PySys_InitMain(tstate) < 0) {
-            return _PyStatus_ERR("can't finish initializing sys");
-        }
-    }
-    else if (_PyErr_Occurred(tstate)) {
-        goto handle_error;
+        goto error;
     }
 
-    PyObject *bimod = _PyImport_FindBuiltin(tstate, "builtins");
-    if (bimod != NULL) {
-        interp->builtins = PyModule_GetDict(bimod);
-        if (interp->builtins == NULL)
-            goto handle_error;
-        Py_INCREF(interp->builtins);
-    }
-    else if (_PyErr_Occurred(tstate)) {
-        goto handle_error;
+    status = pycore_interp_init(tstate);
+    if (_PyStatus_EXCEPTION(status)) {
+        goto error;
     }
 
-    if (bimod != NULL && sysmod != NULL) {
-        status = _PyBuiltins_AddExceptions(bimod);
-        if (_PyStatus_EXCEPTION(status)) {
-            return status;
-        }
-
-        status = _PySys_SetPreliminaryStderr(interp->sysdict);
-        if (_PyStatus_EXCEPTION(status)) {
-            return status;
-        }
-
-        status = _PyImportHooks_Init(tstate);
-        if (_PyStatus_EXCEPTION(status)) {
-            return status;
-        }
-
-        status = init_importlib(tstate, sysmod);
-        if (_PyStatus_EXCEPTION(status)) {
-            return status;
-        }
-
-        status = init_importlib_external(tstate);
-        if (_PyStatus_EXCEPTION(status)) {
-            return status;
-        }
-
-        status = _PyUnicode_InitEncodings(tstate);
-        if (_PyStatus_EXCEPTION(status)) {
-            return status;
-        }
-
-        status = init_sys_streams(tstate);
-        if (_PyStatus_EXCEPTION(status)) {
-            return status;
-        }
-
-        status = add_main_module(interp);
-        if (_PyStatus_EXCEPTION(status)) {
-            return status;
-        }
-
-        if (config->site_import) {
-            status = init_import_site();
-            if (_PyStatus_EXCEPTION(status)) {
-                return status;
-            }
-        }
-    }
-
-    if (_PyErr_Occurred(tstate)) {
-        goto handle_error;
+    status = init_interp_main(tstate);
+    if (_PyStatus_EXCEPTION(status)) {
+        goto error;
     }
 
     *tstate_p = tstate;
     return _PyStatus_OK();
 
-handle_error:
-    /* Oops, it didn't work.  Undo it all. */
+error:
+    *tstate_p = NULL;
 
+    /* Oops, it didn't work.  Undo it all. */
     PyErr_PrintEx(0);
     PyThreadState_Clear(tstate);
     PyThreadState_Delete(tstate);
     PyInterpreterState_Delete(interp);
     PyThreadState_Swap(save_tstate);
 
-    *tstate_p = NULL;
-    return _PyStatus_OK();
+    return status;
 }
 
 PyThreadState *
@@ -1883,12 +1879,49 @@ error:
     return NULL;
 }
 
+/* Set builtins.open to io.OpenWrapper */
+static PyStatus
+init_set_builtins_open(PyThreadState *tstate)
+{
+    PyObject *iomod = NULL, *wrapper;
+    PyObject *bimod = NULL;
+    PyStatus res = _PyStatus_OK();
+
+    if (!(iomod = PyImport_ImportModule("io"))) {
+        goto error;
+    }
+
+    if (!(bimod = PyImport_ImportModule("builtins"))) {
+        goto error;
+    }
+
+    if (!(wrapper = PyObject_GetAttrString(iomod, "OpenWrapper"))) {
+        goto error;
+    }
+
+    /* Set builtins.open */
+    if (PyObject_SetAttrString(bimod, "open", wrapper) == -1) {
+        Py_DECREF(wrapper);
+        goto error;
+    }
+    Py_DECREF(wrapper);
+    goto done;
+
+error:
+    res = _PyStatus_ERR("can't initialize io.open");
+
+done:
+    Py_XDECREF(bimod);
+    Py_XDECREF(iomod);
+    return res;
+}
+
+
 /* Initialize sys.stdin, stdout, stderr and builtins.open */
 static PyStatus
 init_sys_streams(PyThreadState *tstate)
 {
-    PyObject *iomod = NULL, *wrapper;
-    PyObject *bimod = NULL;
+    PyObject *iomod = NULL;
     PyObject *m;
     PyObject *std = NULL;
     int fd;
@@ -1921,23 +1954,9 @@ init_sys_streams(PyThreadState *tstate)
     }
     Py_DECREF(m);
 
-    if (!(bimod = PyImport_ImportModule("builtins"))) {
-        goto error;
-    }
-
     if (!(iomod = PyImport_ImportModule("io"))) {
         goto error;
     }
-    if (!(wrapper = PyObject_GetAttrString(iomod, "OpenWrapper"))) {
-        goto error;
-    }
-
-    /* Set builtins.open */
-    if (PyObject_SetAttrString(bimod, "open", wrapper) == -1) {
-        Py_DECREF(wrapper);
-        goto error;
-    }
-    Py_DECREF(wrapper);
 
     /* Set sys.stdin */
     fd = fileno(stdin);
@@ -2005,8 +2024,6 @@ error:
 
 done:
     _Py_ClearStandardStreamEncoding();
-
-    Py_XDECREF(bimod);
     Py_XDECREF(iomod);
     return res;
 }

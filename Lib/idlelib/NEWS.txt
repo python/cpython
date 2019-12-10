@@ -3,6 +3,15 @@ Released on 2020-10-05?
 ======================================
 
 
+bpo-38943: Fix autocomplete windows not always appearing on some
+systems.  Patch by Johnny Najera.
+
+bpo-38944: Excape key now closes IDLE completion windows.  Patch by
+Johnny Najera.
+
+bpo-38862: 'Strip Trailing Whitespace' on the Format menu removes extra
+newlines at the end of non-shell files.
+
 bpo-38636: Fix IDLE Format menu tab toggle and file indent width. These
 functions (default shortcuts Alt-T and Alt-U) were mistakenly disabled
 in 3.7.5 and 3.8.0.

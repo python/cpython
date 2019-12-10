@@ -955,7 +955,7 @@ and :c:type:`PyType_Type` effectively act as defaults.)
 
    The signature is the same as for :c:func:`PyObject_SetAttr`::
 
-      PyObject *tp_setattro(PyObject *self, PyObject *attr, PyObject *value);
+      int tp_setattro(PyObject *self, PyObject *attr, PyObject *value);
 
    In addition, setting *value* to ``NULL`` to delete an attribute must be
    supported.  It is usually convenient to set this field to
