@@ -2,12 +2,10 @@
 
 import unittest
 import test.support
-import io
 import pathlib
 import random
 import tokenize
 import ast
-import functools
 
 
 def read_pyfile(filename):
