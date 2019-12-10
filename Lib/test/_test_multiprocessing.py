@@ -295,7 +295,7 @@ class _TestProcess(BaseTestCase):
             target=self._test_create_grandchild_process, args=(wconn, ))
         p.start()
 
-        if not rconn.poll(timeout=60):
+        if not rconn.poll(timeout=support.LONG_TIMEOUT):
             raise AssertionError("Could not communicate with child process")
         parent_process_status = rconn.recv()
         self.assertEqual(parent_process_status, "alive")
@@ -303,7 +303,7 @@ class _TestProcess(BaseTestCase):
         p.terminate()
         p.join()
 
-        if not rconn.poll(timeout=60):
+        if not rconn.poll(timeout=support.LONG_TIMEOUT):
             raise AssertionError("Could not communicate with child process")
         parent_process_status = rconn.recv()
         self.assertEqual(parent_process_status, "not alive")
