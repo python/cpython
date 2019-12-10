@@ -1,0 +1,2 @@
+Fix IDLE autocomplete windows not always appearing on some systems.
+Patch by Johnny Najera.
