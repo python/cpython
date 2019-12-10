@@ -1,0 +1,25 @@
+This patch allows to use doctest strings in a __test__ dictionary to fail with an error that included the line number
+It is meant to be used in files that look like:
+
+[lots of code]
+
+__test__ = {
+'example': '''
+    >>> print("Hello world"
+}
+
+if __name__ == '__main__':
+    import doctest
+    doctest.testmod()
+    
+
+And when the test fails, you get an error like:
+File "bpo-24925.py", line 8, in __main__.__test__.example
+Failed example:
+    print("Hello world"
+Exception raised:
+    Traceback (most recent call last):
+      File "C:\Program Files\Python38\lib\doctest.py", line 1336, in __run
+        exec(compile(example.source, filename, "single",
+      File "<doctest __main__.__test__.example[0]>", line 1
+    SyntaxError: unmatched ')'
