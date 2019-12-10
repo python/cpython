@@ -168,7 +168,7 @@ class TestCopyfile(LargeFileTest, unittest.TestCase):
 @unittest.skipIf(not hasattr(os, 'sendfile'), 'sendfile not supported')
 class TestSocketSendfile(LargeFileTest, unittest.TestCase):
     open = staticmethod(io.open)
-    timeout = 3
+    timeout = 20
 
     def setUp(self):
         super().setUp()
@@ -184,6 +184,7 @@ class TestSocketSendfile(LargeFileTest, unittest.TestCase):
         def run(sock):
             with sock:
                 conn, _ = sock.accept()
+                conn.settimeout(self.timeout)
                 with conn, open(TESTFN2, 'wb') as f:
                     event.wait(self.timeout)
                     while True:
