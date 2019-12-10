@@ -3655,6 +3655,9 @@ class TestDirEntry(unittest.TestCase):
         import pickle
         self.assertRaises(TypeError, pickle.dumps, entry, filename)
 
+    def test_class_getitem(self):
+        self.assertIs(os.DirEntry[str], os.DirEntry)
+
 
 class TestScandir(unittest.TestCase):
     check_no_resource_warning = support.check_no_resource_warning

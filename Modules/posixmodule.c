@@ -12791,6 +12791,13 @@ os_DirEntry___fspath___impl(DirEntry *self)
     return self->path;
 }
 
+static PyObject *
+DirEntry_cls_getitem(PyObject *cls, PyObject *type)
+{
+    Py_INCREF(cls);
+    return cls;
+}
+
 static PyMemberDef DirEntry_members[] = {
     {"name", T_OBJECT_EX, offsetof(DirEntry, name), READONLY,
      "the entry's base filename, relative to scandir() \"path\" argument"},
@@ -12808,6 +12815,7 @@ static PyMethodDef DirEntry_methods[] = {
     OS_DIRENTRY_STAT_METHODDEF
     OS_DIRENTRY_INODE_METHODDEF
     OS_DIRENTRY___FSPATH___METHODDEF
+    {"__class_getitem__", DirEntry_cls_getitem, METH_O|METH_CLASS, NULL},
     {NULL}
 };
 
