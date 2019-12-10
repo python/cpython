@@ -643,6 +643,9 @@ class SpooledTemporaryFile:
                                    'encoding': encoding, 'newline': newline,
                                    'dir': dir, 'errors': errors}
 
+    def __class_getitem__(cls, type):
+        return cls
+
     def _check(self, file):
         if self._rolled: return
         max_size = self._max_size
