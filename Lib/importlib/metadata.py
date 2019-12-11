@@ -37,7 +37,8 @@ class PackageNotFoundError(ModuleNotFoundError):
     """The package was not found."""
 
 
-class EntryPoint(collections.namedtuple('EntryPointBase', 'name value group')):
+class EntryPoint(
+        collections.namedtuple('EntryPointBase', 'name value group')):
     """An entry point as defined by Python packaging conventions.
 
     See `the packaging docs on entry points
@@ -106,6 +107,12 @@ class EntryPoint(collections.namedtuple('EntryPointBase', 'name value group')):
         Supply iter so one may construct dicts of EntryPoints easily.
         """
         return iter((self.name, self))
+
+    def __reduce__(self):
+        return (
+            self.__class__,
+            (self.name, self.value, self.group),
+            )
 
 
 class PackagePath(pathlib.PurePosixPath):
@@ -334,10 +341,21 @@ class DistributionFinder(MetaPathFinder):
     """
 
     class Context:
+        """
+        Keyword arguments presented by the caller to
+        ``distributions()`` or ``Distribution.discover()``
+        to narrow the scope of a search for distributions
+        in all DistributionFinders.
+
+        Each DistributionFinder may expect any parameters
+        and should attempt to honor the canonical
+        parameters defined below when appropriate.
+        """
 
         name = None
         """
         Specific name for which a distribution finder should match.
+        A name of ``None`` matches all distributions.
         """
 
         def __init__(self, **kwargs):
@@ -347,6 +365,9 @@ class DistributionFinder(MetaPathFinder):
         def path(self):
             """
             The path that a distribution finder should search.
+
+            Typically refers to Python package paths and defaults
+            to ``sys.path``.
             """
             return vars(self).get('path', sys.path)
 
