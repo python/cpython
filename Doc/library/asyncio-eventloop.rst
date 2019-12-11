@@ -405,6 +405,11 @@ Creating connections
       The *family*, *proto*, *flags*, *reuse_address*, *reuse_port,
       *allow_broadcast*, and *sock* parameters were added.
 
+   .. versionchanged:: 3.6.10
+      The *reuse_address* parameter is no longer supporter due to security
+      concerns
+
+
 .. coroutinemethod:: AbstractEventLoop.create_unix_connection(protocol_factory, path, \*, ssl=None, sock=None, server_hostname=None)
 
    Create UNIX connection: socket family :py:data:`~socket.AF_UNIX`, socket

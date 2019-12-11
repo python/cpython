@@ -925,7 +925,7 @@ class BaseEventLoop(events.AbstractEventLoop):
                                      "security concern.")
                 else:
                     warnings.warn("The *reuse_address* parameter has been "
-                                  "deprecated as of 3.5.10 and is scheduled "
+                                  "deprecated as of 3.6.10 and is scheduled "
                                   "for removal in 3.11.", DeprecationWarning,
                                   stacklevel=2)
 
