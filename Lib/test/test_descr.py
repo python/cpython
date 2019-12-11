@@ -5637,6 +5637,30 @@ class MroTest(unittest.TestCase):
         class A(metaclass=M):
             pass
 
+    def test_custom_mro_doesnt_cache(self):
+        """Regression test for https://bugs.python.org/issue28866 """
+
+        class Foo:
+            pass
+
+        class Meta(type):
+            def mro(cls):
+                return (cls, Foo, object)
+
+            def __setattr__(cls, name, value):
+                setattr(Foo, name, value)
+
+        proxy = Meta('FooProxy', (), {})
+
+        proxy.x = 300
+        proxy.x  # try to populate the cache
+        proxy.x = 0
+
+        # Before the fix, this retreived the old value (300) from the cache
+        # (That value could even be garbage-collected, if there are no other
+        # references to it.)
+        self.assertEqual(proxy.x, 0)
+
 
 def test_main():
     # Run all local test cases, with PTypesLongInitTest first.
