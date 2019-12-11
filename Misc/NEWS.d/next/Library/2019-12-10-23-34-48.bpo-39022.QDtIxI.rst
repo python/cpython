@@ -1,0 +1,1 @@
+Update importliib.metadata to include improvements from importlib_metadata 1.3 including better serialization of EntryPoints and improved documentation for custom finders.
