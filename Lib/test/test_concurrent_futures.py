@@ -1,9 +1,9 @@
-import test.support
+from test import support
 
 # Skip tests if _multiprocessing wasn't built.
-test.support.import_module('_multiprocessing')
+support.import_module('_multiprocessing')
 # Skip tests if sem_open implementation is broken.
-test.support.import_module('multiprocessing.synchronize')
+support.import_module('multiprocessing.synchronize')
 
 from test.support.script_helper import assert_python_ok
 
@@ -101,11 +101,11 @@ def make_dummy_object(_):
 
 class BaseTestCase(unittest.TestCase):
     def setUp(self):
-        self._thread_key = test.support.threading_setup()
+        self._thread_key = support.threading_setup()
 
     def tearDown(self):
-        test.support.reap_children()
-        test.support.threading_cleanup(*self._thread_key)
+        support.reap_children()
+        support.threading_cleanup(*self._thread_key)
 
 
 class ExecutorMixin:
@@ -132,7 +132,7 @@ class ExecutorMixin:
         self.executor = None
 
         dt = time.monotonic() - self.t1
-        if test.support.verbose:
+        if support.verbose:
             print("%.2fs" % dt, end=' ')
         self.assertLess(dt, 300, "synchronization issue: test lasted too long")
 
@@ -712,7 +712,7 @@ class ExecutorTest:
         self.executor.map(str, [2] * (self.worker_count + 1))
         self.executor.shutdown()
 
-    @test.support.cpython_only
+    @support.cpython_only
     def test_no_stale_references(self):
         # Issue #16284: check that the executors don't unnecessarily hang onto
         # references.
@@ -724,7 +724,7 @@ class ExecutorTest:
         self.executor.submit(my_object.my_method)
         del my_object
 
-        collected = my_object_collected.wait(timeout=5.0)
+        collected = my_object_collected.wait(timeout=support.SHORT_TIMEOUT)
         self.assertTrue(collected,
                         "Stale reference not collected within timeout.")
 
@@ -836,7 +836,7 @@ class ProcessPoolExecutorTest(ExecutorTest):
         self.assertIs(type(cause), futures.process._RemoteTraceback)
         self.assertIn('raise RuntimeError(123) # some comment', cause.tb)
 
-        with test.support.captured_stderr() as f1:
+        with support.captured_stderr() as f1:
             try:
                 raise exc
             except RuntimeError:
@@ -929,7 +929,7 @@ class ErrorAtUnpickle(object):
 
 
 class ExecutorDeadlockTest:
-    TIMEOUT = 15
+    TIMEOUT = support.SHORT_TIMEOUT
 
     @classmethod
     def _sleep_id(cls, x, delay):
@@ -994,7 +994,7 @@ class ExecutorDeadlockTest:
         for func, args, error, name in crash_cases:
             with self.subTest(name):
                 # The captured_stderr reduces the noise in the test report
-                with test.support.captured_stderr():
+                with support.captured_stderr():
                     executor = self.executor_type(
                         max_workers=2, mp_context=get_context(self.ctx))
                     res = executor.submit(func, *args)
@@ -1061,7 +1061,7 @@ class FutureTests(BaseTestCase):
         self.assertTrue(was_cancelled)
 
     def test_done_callback_raises(self):
-        with test.support.captured_stderr() as stderr:
+        with support.captured_stderr() as stderr:
             raising_was_called = False
             fn_was_called = False
 
@@ -1116,7 +1116,7 @@ class FutureTests(BaseTestCase):
         self.assertTrue(was_cancelled)
 
     def test_done_callback_raises_already_succeeded(self):
-        with test.support.captured_stderr() as stderr:
+        with support.captured_stderr() as stderr:
             def raising_fn(callback_future):
                 raise Exception('doh!')
 
@@ -1235,7 +1235,8 @@ class FutureTests(BaseTestCase):
         t = threading.Thread(target=notification)
         t.start()
 
-        self.assertRaises(futures.CancelledError, f1.result, timeout=5)
+        self.assertRaises(futures.CancelledError,
+                          f1.result, timeout=support.SHORT_TIMEOUT)
         t.join()
 
     def test_exception_with_timeout(self):
@@ -1264,7 +1265,7 @@ class FutureTests(BaseTestCase):
         t = threading.Thread(target=notification)
         t.start()
 
-        self.assertTrue(isinstance(f1.exception(timeout=5), OSError))
+        self.assertTrue(isinstance(f1.exception(timeout=support.SHORT_TIMEOUT), OSError))
         t.join()
 
     def test_multiple_set_result(self):
@@ -1300,12 +1301,12 @@ _threads_key = None
 
 def setUpModule():
     global _threads_key
-    _threads_key = test.support.threading_setup()
+    _threads_key = support.threading_setup()
 
 
 def tearDownModule():
-    test.support.threading_cleanup(*_threads_key)
-    test.support.reap_children()
+    support.threading_cleanup(*_threads_key)
+    support.reap_children()
 
     # cleanup multiprocessing
     multiprocessing.process._cleanup()
@@ -1315,7 +1316,7 @@ def tearDownModule():
     # bpo-37421: Explicitly call _run_finalizers() to remove immediately
     # temporary directories created by multiprocessing.util.get_temp_dir().
     multiprocessing.util._run_finalizers()
-    test.support.gc_collect()
+    support.gc_collect()
 
 
 if __name__ == "__main__":

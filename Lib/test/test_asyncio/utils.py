@@ -107,7 +107,7 @@ def run_briefly(loop):
         gen.close()
 
 
-def run_until(loop, pred, timeout=30):
+def run_until(loop, pred, timeout=support.SHORT_TIMEOUT):
     deadline = time.monotonic() + timeout
     while not pred():
         if timeout is not None:

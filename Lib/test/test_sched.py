@@ -6,7 +6,7 @@ import unittest
 from test import support
 
 
-TIMEOUT = 10
+TIMEOUT = support.SHORT_TIMEOUT
 
 
 class Timer:
