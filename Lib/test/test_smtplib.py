@@ -964,11 +964,13 @@ class SMTPSimTests(unittest.TestCase):
 
     def testBasic(self):
         # smoke test
-        smtp = smtplib.SMTP(HOST, self.port, local_hostname='localhost', timeout=15)
+        smtp = smtplib.SMTP(HOST, self.port, local_hostname='localhost',
+                            timeout=support.LOOPBACK_TIMEOUT)
         smtp.quit()
 
     def testEHLO(self):
-        smtp = smtplib.SMTP(HOST, self.port, local_hostname='localhost', timeout=15)
+        smtp = smtplib.SMTP(HOST, self.port, local_hostname='localhost',
+                            timeout=support.LOOPBACK_TIMEOUT)
 
         # no features should be present before the EHLO
         self.assertEqual(smtp.esmtp_features, {})
@@ -989,7 +991,8 @@ class SMTPSimTests(unittest.TestCase):
         smtp.quit()
 
     def testVRFY(self):
-        smtp = smtplib.SMTP(HOST, self.port, local_hostname='localhost', timeout=15)
+        smtp = smtplib.SMTP(HOST, self.port, local_hostname='localhost',
+                            timeout=support.LOOPBACK_TIMEOUT)
 
         for addr_spec, name in sim_users.items():
             expected_known = (250, bytes('%s %s' %
@@ -1003,7 +1006,8 @@ class SMTPSimTests(unittest.TestCase):
         smtp.quit()
 
     def testEXPN(self):
-        smtp = smtplib.SMTP(HOST, self.port, local_hostname='localhost', timeout=15)
+        smtp = smtplib.SMTP(HOST, self.port, local_hostname='localhost',
+                            timeout=support.LOOPBACK_TIMEOUT)
 
         for listname, members in sim_lists.items():
             users = []
@@ -1019,14 +1023,16 @@ class SMTPSimTests(unittest.TestCase):
 
     def testAUTH_PLAIN(self):
         self.serv.add_feature("AUTH PLAIN")
-        smtp = smtplib.SMTP(HOST, self.port, local_hostname='localhost', timeout=15)
+        smtp = smtplib.SMTP(HOST, self.port, local_hostname='localhost',
+                            timeout=support.LOOPBACK_TIMEOUT)
         resp = smtp.login(sim_auth[0], sim_auth[1])
         self.assertEqual(resp, (235, b'Authentication Succeeded'))
         smtp.close()
 
     def testAUTH_LOGIN(self):
         self.serv.add_feature("AUTH LOGIN")
-        smtp = smtplib.SMTP(HOST, self.port, local_hostname='localhost', timeout=15)
+        smtp = smtplib.SMTP(HOST, self.port, local_hostname='localhost',
+                            timeout=support.LOOPBACK_TIMEOUT)
         resp = smtp.login(sim_auth[0], sim_auth[1])
         self.assertEqual(resp, (235, b'Authentication Succeeded'))
         smtp.close()
@@ -1034,7 +1040,8 @@ class SMTPSimTests(unittest.TestCase):
     @requires_hashdigest('md5')
     def testAUTH_CRAM_MD5(self):
         self.serv.add_feature("AUTH CRAM-MD5")
-        smtp = smtplib.SMTP(HOST, self.port, local_hostname='localhost', timeout=15)
+        smtp = smtplib.SMTP(HOST, self.port, local_hostname='localhost',
+                            timeout=support.LOOPBACK_TIMEOUT)
         resp = smtp.login(sim_auth[0], sim_auth[1])
         self.assertEqual(resp, (235, b'Authentication Succeeded'))
         smtp.close()
@@ -1042,7 +1049,8 @@ class SMTPSimTests(unittest.TestCase):
     def testAUTH_multiple(self):
         # Test that multiple authentication methods are tried.
         self.serv.add_feature("AUTH BOGUS PLAIN LOGIN CRAM-MD5")
-        smtp = smtplib.SMTP(HOST, self.port, local_hostname='localhost', timeout=15)
+        smtp = smtplib.SMTP(HOST, self.port, local_hostname='localhost',
+                            timeout=support.LOOPBACK_TIMEOUT)
         resp = smtp.login(sim_auth[0], sim_auth[1])
         self.assertEqual(resp, (235, b'Authentication Succeeded'))
         smtp.close()
@@ -1060,7 +1068,8 @@ class SMTPSimTests(unittest.TestCase):
         for mechanism in supported:
             with self.subTest(mechanism=mechanism):
                 smtp = smtplib.SMTP(HOST, self.port,
-                                    local_hostname='localhost', timeout=15)
+                                    local_hostname='localhost',
+                                    timeout=support.LOOPBACK_TIMEOUT)
                 smtp.ehlo('foo')
                 smtp.user, smtp.password = sim_auth[0], sim_auth[1]
                 method = 'auth_' + mechanism.lower().replace('-', '_')
@@ -1071,7 +1080,7 @@ class SMTPSimTests(unittest.TestCase):
     def test_quit_resets_greeting(self):
         smtp = smtplib.SMTP(HOST, self.port,
                             local_hostname='localhost',
-                            timeout=15)
+                            timeout=support.LOOPBACK_TIMEOUT)
         code, message = smtp.ehlo()
         self.assertEqual(code, 250)
         self.assertIn('size', smtp.esmtp_features)
@@ -1105,7 +1114,8 @@ class SMTPSimTests(unittest.TestCase):
 
     # Issue 17498: make sure _rset does not raise SMTPServerDisconnected exception
     def test__rest_from_mail_cmd(self):
-        smtp = smtplib.SMTP(HOST, self.port, local_hostname='localhost', timeout=15)
+        smtp = smtplib.SMTP(HOST, self.port, local_hostname='localhost',
+                            timeout=support.LOOPBACK_TIMEOUT)
         smtp.noop()
         self.serv._SMTPchannel.mail_response = '451 Requested action aborted'
         self.serv._SMTPchannel.disconnect = True
@@ -1115,7 +1125,8 @@ class SMTPSimTests(unittest.TestCase):
 
     # Issue 5713: make sure close, not rset, is called if we get a 421 error
     def test_421_from_mail_cmd(self):
-        smtp = smtplib.SMTP(HOST, self.port, local_hostname='localhost', timeout=15)
+        smtp = smtplib.SMTP(HOST, self.port, local_hostname='localhost',
+                            timeout=support.LOOPBACK_TIMEOUT)
         smtp.noop()
         self.serv._SMTPchannel.mail_response = '421 closing connection'
         with self.assertRaises(smtplib.SMTPSenderRefused):
@@ -1124,7 +1135,8 @@ class SMTPSimTests(unittest.TestCase):
         self.assertEqual(self.serv._SMTPchannel.rset_count, 0)
 
     def test_421_from_rcpt_cmd(self):
-        smtp = smtplib.SMTP(HOST, self.port, local_hostname='localhost', timeout=15)
+        smtp = smtplib.SMTP(HOST, self.port, local_hostname='localhost',
+                            timeout=support.LOOPBACK_TIMEOUT)
         smtp.noop()
         self.serv._SMTPchannel.rcpt_response = ['250 accepted', '421 closing']
         with self.assertRaises(smtplib.SMTPRecipientsRefused) as r:
@@ -1141,7 +1153,8 @@ class SMTPSimTests(unittest.TestCase):
                 else:
                     super().found_terminator()
         self.serv.channel_class = MySimSMTPChannel
-        smtp = smtplib.SMTP(HOST, self.port, local_hostname='localhost', timeout=15)
+        smtp = smtplib.SMTP(HOST, self.port, local_hostname='localhost',
+                            timeout=support.LOOPBACK_TIMEOUT)
         smtp.noop()
         with self.assertRaises(smtplib.SMTPDataError):
             smtp.sendmail('John@foo.org', ['Sally@foo.org'], 'test message')
@@ -1393,15 +1406,15 @@ class SMTPAUTHInitialResponseSimTests(unittest.TestCase):
 
     def testAUTH_PLAIN_initial_response_login(self):
         self.serv.add_feature('AUTH PLAIN')
-        smtp = smtplib.SMTP(HOST, self.port,
-                            local_hostname='localhost', timeout=15)
+        smtp = smtplib.SMTP(HOST, self.port, local_hostname='localhost',
+                            timeout=support.LOOPBACK_TIMEOUT)
         smtp.login('psu', 'doesnotexist')
         smtp.close()
 
     def testAUTH_PLAIN_initial_response_auth(self):
         self.serv.add_feature('AUTH PLAIN')
-        smtp = smtplib.SMTP(HOST, self.port,
-                            local_hostname='localhost', timeout=15)
+        smtp = smtplib.SMTP(HOST, self.port, local_hostname='localhost',
+                            timeout=support.LOOPBACK_TIMEOUT)
         smtp.user = 'psu'
         smtp.password = 'doesnotexist'
         code, response = smtp.auth('plain', smtp.auth_plain)
