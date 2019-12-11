@@ -341,6 +341,23 @@ Creating connections
 
 .. coroutinemethod:: AbstractEventLoop.create_datagram_endpoint(protocol_factory, local_addr=None, remote_addr=None, \*, family=0, proto=0, flags=0, reuse_address=None, reuse_port=None, allow_broadcast=None, sock=None)
 
+   .. note::
+      The parameter *reuse_address* is no longer supported, as using
+      :py:data:`~sockets.SO_REUSEADDR` poses a significant security concern for
+      UDP. Explicitly passing ``reuse_address=True`` will raise an exception.
+
+      When multiple processes with differing UIDs assign sockets to an
+      indentical UDP socket address with ``SO_REUSEADDR``, incoming packets can
+      become randomly distributed among the sockets.
+
+      For supported platforms, *reuse_port* can be used as a replacement for
+      similar functionality. With *reuse_port*,
+      :py:data:`~sockets.SO_REUSEPORT` is used instead, which specifically
+      prevents processes with differing UIDs from assigning sockets to the same
+      socket address.
+
+   Create a datagram connection.
+
    Create datagram connection: socket family :py:data:`~socket.AF_INET` or
    :py:data:`~socket.AF_INET6` depending on *host* (or *family* if specified),
    socket type :py:data:`~socket.SOCK_DGRAM`. *protocol_factory* must be a
@@ -365,11 +382,6 @@ Creating connections
      resolution. If given, these should all be integers from the
      corresponding :mod:`socket` module constants.
 
-   * *reuse_address* tells the kernel to reuse a local socket in
-     TIME_WAIT state, without waiting for its natural timeout to
-     expire. If not specified will automatically be set to ``True`` on
-     UNIX.
-
    * *reuse_port* tells the kernel to allow this endpoint to be bound to the
      same port as other existing endpoints are bound to, so long as they all
      set this flag when being created. This option is not supported on Windows
@@ -392,6 +404,11 @@ Creating connections
    .. versionchanged:: 3.4.4
       The *family*, *proto*, *flags*, *reuse_address*, *reuse_port,
       *allow_broadcast*, and *sock* parameters were added.
+
+   .. versionchanged:: 3.6.10
+      The *reuse_address* parameter is no longer supporter due to security
+      concerns
+
 
 .. coroutinemethod:: AbstractEventLoop.create_unix_connection(protocol_factory, path, \*, ssl=None, sock=None, server_hostname=None)
 
