@@ -1121,9 +1121,7 @@ class ProcessTestCase(BaseTestCase):
         with self.assertRaises(subprocess.TimeoutExpired) as c:
             p.wait(timeout=0.0001)
         self.assertIn("0.0001", str(c.exception))  # For coverage of __str__.
-        # Some heavily loaded buildbots (sparc Debian 3.x) require this much
-        # time to start.
-        self.assertEqual(p.wait(timeout=3), 0)
+        self.assertEqual(p.wait(timeout=support.SHORT_TIMEOUT), 0)
 
     def test_invalid_bufsize(self):
         # an invalid type of the bufsize argument should raise
@@ -1289,7 +1287,7 @@ class ProcessTestCase(BaseTestCase):
         # Wait for the process to finish; the thread should kill it
         # long before it finishes on its own.  Supplying a timeout
         # triggers a different code path for better coverage.
-        proc.wait(timeout=20)
+        proc.wait(timeout=support.SHORT_TIMEOUT)
         self.assertEqual(proc.returncode, expected_errorcode,
                          msg="unexpected result in wait from main thread")
 

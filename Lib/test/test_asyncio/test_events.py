@@ -1475,12 +1475,12 @@ class EventLoopTestsMixin:
             return len(data)
 
         test_utils.run_until(self.loop, lambda: reader(data) >= 1,
-                             timeout=10)
+                             timeout=support.SHORT_TIMEOUT)
         self.assertEqual(b'1', data)
 
         transport.write(b'2345')
         test_utils.run_until(self.loop, lambda: reader(data) >= 5,
-                             timeout=10)
+                             timeout=support.SHORT_TIMEOUT)
         self.assertEqual(b'12345', data)
         self.assertEqual('CONNECTED', proto.state)
 
@@ -1531,27 +1531,29 @@ class EventLoopTestsMixin:
             return len(data)
 
         write_transport.write(b'1')
-        test_utils.run_until(self.loop, lambda: reader(data) >= 1, timeout=10)
+        test_utils.run_until(self.loop, lambda: reader(data) >= 1,
+                             timeout=support.SHORT_TIMEOUT)
         self.assertEqual(b'1', data)
         self.assertEqual(['INITIAL', 'CONNECTED'], read_proto.state)
         self.assertEqual('CONNECTED', write_proto.state)
 
         os.write(master, b'a')
         test_utils.run_until(self.loop, lambda: read_proto.nbytes >= 1,
-                             timeout=10)
+                             timeout=support.SHORT_TIMEOUT)
         self.assertEqual(['INITIAL', 'CONNECTED'], read_proto.state)
         self.assertEqual(1, read_proto.nbytes)
         self.assertEqual('CONNECTED', write_proto.state)
 
         write_transport.write(b'2345')
-        test_utils.run_until(self.loop, lambda: reader(data) >= 5, timeout=10)
+        test_utils.run_until(self.loop, lambda: reader(data) >= 5,
+                             timeout=support.SHORT_TIMEOUT)
         self.assertEqual(b'12345', data)
         self.assertEqual(['INITIAL', 'CONNECTED'], read_proto.state)
         self.assertEqual('CONNECTED', write_proto.state)
 
         os.write(master, b'bcde')
         test_utils.run_until(self.loop, lambda: read_proto.nbytes >= 5,
-                             timeout=10)
+                             timeout=support.SHORT_TIMEOUT)
         self.assertEqual(['INITIAL', 'CONNECTED'], read_proto.state)
         self.assertEqual(5, read_proto.nbytes)
         self.assertEqual('CONNECTED', write_proto.state)

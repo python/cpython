@@ -422,7 +422,7 @@ class TestSupport(unittest.TestCase):
             os._exit(0)
 
         t0 = time.monotonic()
-        deadline = time.monotonic() + 60.0
+        deadline = time.monotonic() + support.SHORT_TIMEOUT
 
         was_altered = support.environment_altered
         try:

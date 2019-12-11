@@ -274,7 +274,8 @@ class BaseStartTLS(func_tests.FunctionalTestCaseMixin):
 
         with self.tcp_server(serve, timeout=self.TIMEOUT) as srv:
             self.loop.run_until_complete(
-                asyncio.wait_for(client(srv.addr), timeout=10))
+                asyncio.wait_for(client(srv.addr),
+                                 timeout=support.SHORT_TIMEOUT))
 
         # No garbage is left if SSL is closed uncleanly
         client_context = weakref.ref(client_context)
@@ -335,7 +336,8 @@ class BaseStartTLS(func_tests.FunctionalTestCaseMixin):
 
         with self.tcp_server(serve, timeout=self.TIMEOUT) as srv:
             self.loop.run_until_complete(
-                asyncio.wait_for(client(srv.addr), timeout=10))
+                asyncio.wait_for(client(srv.addr),
+                                 timeout=support.SHORT_TIMEOUT))
 
         # No garbage is left for SSL client from loop.create_connection, even
         # if user stores the SSLTransport in corresponding protocol instance
@@ -491,7 +493,8 @@ class BaseStartTLS(func_tests.FunctionalTestCaseMixin):
 
         with self.tcp_server(serve, timeout=self.TIMEOUT) as srv:
             self.loop.run_until_complete(
-                asyncio.wait_for(client(srv.addr), timeout=10))
+                asyncio.wait_for(client(srv.addr),
+                                 timeout=support.SHORT_TIMEOUT))
 
     def test_start_tls_server_1(self):
         HELLO_MSG = b'1' * self.PAYLOAD_SIZE
@@ -619,7 +622,7 @@ class BaseStartTLS(func_tests.FunctionalTestCaseMixin):
                     *addr,
                     ssl=client_sslctx,
                     server_hostname='',
-                    ssl_handshake_timeout=10.0),
+                    ssl_handshake_timeout=support.SHORT_TIMEOUT),
                 0.5)
 
         with self.tcp_server(server,

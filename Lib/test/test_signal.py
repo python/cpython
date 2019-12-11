@@ -644,7 +644,7 @@ class SiginterruptTest(unittest.TestCase):
                 # wait until the child process is loaded and has started
                 first_line = process.stdout.readline()
 
-                stdout, stderr = process.communicate(timeout=5.0)
+                stdout, stderr = process.communicate(timeout=support.SHORT_TIMEOUT)
             except subprocess.TimeoutExpired:
                 process.kill()
                 return False
@@ -1192,7 +1192,7 @@ class StressTest(unittest.TestCase):
         self.setsig(signal.SIGALRM, second_handler)  # for ITIMER_REAL
 
         expected_sigs = 0
-        deadline = time.monotonic() + 15.0
+        deadline = time.monotonic() + support.SHORT_TIMEOUT
 
         while expected_sigs < N:
             os.kill(os.getpid(), signal.SIGPROF)
@@ -1226,7 +1226,7 @@ class StressTest(unittest.TestCase):
         self.setsig(signal.SIGALRM, handler)  # for ITIMER_REAL
 
         expected_sigs = 0
-        deadline = time.monotonic() + 15.0
+        deadline = time.monotonic() + support.SHORT_TIMEOUT
 
         while expected_sigs < N:
             # Hopefully the SIGALRM will be received somewhere during
