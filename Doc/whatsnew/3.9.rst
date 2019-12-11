@@ -209,7 +209,6 @@ ipaddress
 
 Scoped IPv6 addresses can be parsed using :class:`ipaddress.IPv6Address`.
 If present, scope zone ID is available through the :attr:`~ipaddress.IPv6Address.scope_id` attribute.
-
 (Contributed by Oleksand Pavliuk in :issue:`34788`.)
 
 signal
