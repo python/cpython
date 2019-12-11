@@ -188,7 +188,7 @@ class DirectoryTest(fixtures.OnSysPath, fixtures.SiteDir, unittest.TestCase):
 class TestEntryPoints(unittest.TestCase):
     def __init__(self, *args):
         super(TestEntryPoints, self).__init__(*args)
-        self.ep = importlib_metadata.EntryPoint('name', 'value', 'group')
+        self.ep = importlib.metadata.EntryPoint('name', 'value', 'group')
 
     def test_entry_point_pickleable(self):
         revived = pickle.loads(pickle.dumps(self.ep))
