@@ -1257,6 +1257,20 @@ Py_FinalizeEx(void)
     PyThreadState *tstate = _PyRuntimeState_GetThreadState(runtime);
     PyInterpreterState *interp = tstate->interp;
 
+    // Finalize sub-interpreters.
+    runtime->interpreters.finalizing = 1;
+    PyInterpreterState *subinterp = PyInterpreterState_Head();
+    PyInterpreterState *next_interp;
+    while (subinterp != NULL) {
+        next_interp = PyInterpreterState_Next(subinterp);
+        if (subinterp != PyInterpreterState_Main()) {
+            PyThreadState_Swap(subinterp->tstate_head);
+            Py_EndInterpreter(subinterp->tstate_head);
+        }
+        subinterp = next_interp;
+    }
+    PyThreadState_Swap(tstate);
+
     // Wrap up existing "threading"-module-created, non-daemon threads.
     wait_for_thread_shutdown(tstate);
 
@@ -1452,6 +1466,10 @@ new_interpreter(PyThreadState **tstate_p)
 
     if (!runtime->initialized) {
         return _PyStatus_ERR("Py_Initialize must be called first");
+    }
+
+    if (runtime->interpreters.finalizing) {
+        return _PyStatus_ERR("Interpreters are being finalized");
     }
 
     /* Issue #10915, #15751: The GIL API doesn't work with multiple
