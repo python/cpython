@@ -1,0 +1,577 @@
+.. bpo: 38945
+.. date: 2019-12-01-22-44-40
+.. nonce: ztmNXc
+.. release date: 2019-12-11
+.. section: Security
+
+Newline characters have been escaped when performing uu encoding to prevent
+them from overflowing into to content section of the encoded file. This
+prevents malicious or accidental modification of data during the decoding
+process.
+
+..
+
+.. bpo: 37228
+.. date: 2019-11-21-21-36-54
+.. nonce: yBZnFG
+.. section: Security
+
+Due to significant security concerns, the *reuse_address* parameter of
+:meth:`asyncio.loop.create_datagram_endpoint` is no longer supported. This
+is because of the behavior of ``SO_REUSEADDR`` in UDP. For more details, see
+the documentation for ``loop.create_datagram_endpoint()``. (Contributed by
+Kyle Stanley, Antoine Pitrou, and Yury Selivanov in :issue:`37228`.)
+
+..
+
+.. bpo: 38804
+.. date: 2019-11-15-00-54-42
+.. nonce: vjbM8V
+.. section: Security
+
+Fixes a ReDoS vulnerability in :mod:`http.cookiejar`. Patch by Ben Caller.
+
+..
+
+.. bpo: 38673
+.. date: 2019-12-01-00-17-44
+.. nonce: K_Tze-
+.. section: Core and Builtins
+
+In REPL mode, don't switch to PS2 if the line starts with comment or
+whitespace. Based on work by Batuhan Taşkaya.
+
+..
+
+.. bpo: 38535
+.. date: 2019-10-20-12-43-48
+.. nonce: ESMkVN
+.. section: Core and Builtins
+
+Fixed line numbers and column offsets for AST nodes for calls without
+arguments in decorators.
+
+..
+
+.. bpo: 38379
+.. date: 2019-10-09-16-50-52
+.. nonce: oz5qZx
+.. section: Core and Builtins
+
+When cyclic garbage collection (gc) runs finalizers that resurrect
+unreachable objects, the current gc run ends, without collecting any cyclic
+trash.  However, the statistics reported by ``collect()`` and
+``get_stats()`` claimed that all cyclic trash found was collected, and that
+the resurrected objects were collected.   Changed the stats to report that
+none were collected.
+
+..
+
+.. bpo: 35409
+.. date: 2019-07-13-18-01-13
+.. nonce: ozbcsR
+.. section: Core and Builtins
+
+Ignore GeneratorExit exceptions when throwing an exception into the aclose
+coroutine of an asynchronous generator.
+
+..
+
+.. bpo: 39006
+.. date: 2019-12-09-14-40-09
+.. nonce: v4VsPg
+.. section: Library
+
+Fix asyncio when the ssl module is missing: only check for ssl.SSLSocket
+instance if the ssl module is available.
+
+..
+
+.. bpo: 38979
+.. date: 2019-12-07-16-32-42
+.. nonce: q0sIHy
+.. section: Library
+
+Return class from ``ContextVar.__class_getitem__`` to simplify subclassing.
+
+..
+
+.. bpo: 38986
+.. date: 2019-12-06-15-11-42
+.. nonce: bg6iZt
+.. section: Library
+
+Make repr of C accelerated TaskWakeupMethWrapper the same as of pure Python
+version.
+
+..
+
+.. bpo: 33684
+.. date: 2019-12-04-15-28-40
+.. nonce: QeSmQP
+.. section: Library
+
+Fix ``json.tool`` failed to read a JSON file with non-ASCII characters when
+locale encoding is not UTF-8.
+
+..
+
+.. bpo: 26730
+.. date: 2019-11-27-16-30-02
+.. nonce: 56cdBn
+.. section: Library
+
+Fix ``SpooledTemporaryFile.rollover()`` might corrupt the file when it is in
+text mode. Patch by Serhiy Storchaka.
+
+..
+
+.. bpo: 37838
+.. date: 2019-11-21-11-39-17
+.. nonce: lRFcEC
+.. section: Library
+
+:meth:`typing.get_type_hints` properly handles functions decorated with
+:meth:`functools.wraps`.
+
+..
+
+.. bpo: 38821
+.. date: 2019-11-16-23-26-25
+.. nonce: -albNN
+.. section: Library
+
+Fix unhandled exceptions in :mod:`argparse` when internationalizing error
+messages for arguments with ``nargs`` set to special (non-integer) values.
+Patch by Federico Bond.
+
+..
+
+.. bpo: 38820
+.. date: 2019-11-16-16-09-07
+.. nonce: ivhUSV
+.. section: Library
+
+Make Python compatible with OpenSSL 3.0.0. :func:`ssl.SSLSocket.getpeercert`
+no longer returns IPv6 addresses with a trailing new line.
+
+..
+
+.. bpo: 38785
+.. date: 2019-11-13-16-17-43
+.. nonce: NEOEfk
+.. section: Library
+
+Prevent asyncio from crashing if parent ``__init__`` is not called from a
+constructor of object derived from ``asyncio.Future``.
+
+..
+
+.. bpo: 27805
+.. date: 2019-11-11-21-43-06
+.. nonce: D3zl1_
+.. section: Library
+
+Allow opening pipes and other non-seekable files in append mode with
+:func:`open`.
+
+..
+
+.. bpo: 38686
+.. date: 2019-11-06-15-26-15
+.. nonce: HNFBce
+.. section: Library
+
+Added support for multiple ``qop`` values in
+:class:`urllib.request.AbstractDigestAuthHandler`.
+
+..
+
+.. bpo: 38334
+.. date: 2019-10-27-00-08-49
+.. nonce: pfLLmc
+.. section: Library
+
+Fixed seeking backward on an encrypted :class:`zipfile.ZipExtFile`.
+
+..
+
+.. bpo: 31202
+.. date: 2019-10-20-12-04-48
+.. nonce: NfdIus
+.. section: Library
+
+The case the result of :func:`pathlib.WindowsPath.glob` matches now the case
+of the pattern for literal parts.
+
+..
+
+.. bpo: 38109
+.. date: 2019-10-10-00-25-28
+.. nonce: 9w-IGF
+.. section: Library
+
+Add missing :data:`stat.S_IFDOOR`, :data:`stat.S_IFPORT`,
+:data:`stat.S_IFWHT`, :func:`stat.S_ISDOOR`, :func:`stat.S_ISPORT`, and
+:func:`stat.S_ISWHT` values to the Python implementation of :mod:`stat`.
+
+..
+
+.. bpo: 38422
+.. date: 2019-10-09-18-16-51
+.. nonce: aiM5bq
+.. section: Library
+
+Clarify docstrings of pathlib suffix(es)
+
+..
+
+.. bpo: 38405
+.. date: 2019-10-08-11-18-40
+.. nonce: 0-7e7s
+.. section: Library
+
+Nested subclasses of :class:`typing.NamedTuple` are now pickleable.
+
+..
+
+.. bpo: 38332
+.. date: 2019-10-05-02-07-52
+.. nonce: hwrPN7
+.. section: Library
+
+Prevent :exc:`KeyError` thrown by :func:`_encoded_words.decode` when given
+an encoded-word with invalid content-type encoding from propagating all the
+way to :func:`email.message.get`.
+
+..
+
+.. bpo: 38341
+.. date: 2019-10-01-21-06-18
+.. nonce: uqwgU_
+.. section: Library
+
+Add :exc:`smtplib.SMTPNotSupportedError` to the :mod:`smtplib` exported
+names.
+
+..
+
+.. bpo: 13153
+.. date: 2019-09-29-22-47-37
+.. nonce: 0mO9qR
+.. section: Library
+
+OS native encoding is now used for converting between Python strings and Tcl
+objects.  This allows to display, copy and paste to clipboard emoji and
+other non-BMP characters.  Converting strings from Tcl to Python and back
+now never fails (except MemoryError).
+
+..
+
+.. bpo: 36993
+.. date: 2019-07-09-05-44-39
+.. nonce: 4javqu
+.. section: Library
+
+Improve error reporting for corrupt zip files with bad zip64 extra data.
+Patch by Daniel Hillier.
+
+..
+
+.. bpo: 36952
+.. date: 2019-05-20-08-54-41
+.. nonce: I_glok
+.. section: Library
+
+Starting with Python 3.3, importing ABCs from :mod:`collections` is
+deprecated, and import should be done from :mod:`collections.abc`. Still
+being able to import from :mod:`collections` was marked for removal in 3.8,
+but has been delayed to 3.9; documentation and ``DeprecationWarning``
+clarified.
+
+..
+
+.. bpo: 36820
+.. date: 2019-05-06-15-34-17
+.. nonce: Eh5mIB
+.. section: Library
+
+Break cycle generated when saving an exception in socket.py, codeop.py and
+dyld.py as they keep alive not only the exception but user objects through
+the ``__traceback__`` attribute. Patch by Mario Corchero.
+
+..
+
+.. bpo: 34776
+.. date: 2018-09-23-14-24-37
+.. nonce: 1SrQe3
+.. section: Library
+
+Fix dataclasses to support forward references in type annotations
+
+..
+
+.. bpo: 33348
+.. date: 2018-04-24-13-18-48
+.. nonce: XaJDei
+.. section: Library
+
+lib2to3 now recognizes expressions after ``*`` and `**` like in ``f(*[] or
+[])``.
+
+..
+
+.. bpo: 27657
+.. date: 2017-12-26-14-32-23
+.. nonce: 6BhyVK
+.. section: Library
+
+Fix urllib.parse.urlparse() with numeric paths. A string like "path:80" is
+no longer parsed as a path but as a scheme ("path") and a path ("80").
+
+..
+
+.. bpo: 38351
+.. date: 2019-11-15-09-22-28
+.. nonce: xwhlse
+.. section: Documentation
+
+Modernize :mod:`email` examples from %-formatting to f-strings.
+
+..
+
+.. bpo: 38592
+.. date: 2019-10-26-13-19-07
+.. nonce: Y96BYO
+.. section: Documentation
+
+Add Brazilian Portuguese to the language switcher at Python Documentation
+website.
+
+..
+
+.. bpo: 38294
+.. date: 2019-09-27-23-37-41
+.. nonce: go_jFf
+.. section: Documentation
+
+Add list of no-longer-escaped chars to re.escape documentation
+
+..
+
+.. bpo: 38547
+.. date: 2019-12-09-11-32-34
+.. nonce: Juw54e
+.. section: Tests
+
+Fix test_pty: if the process is the session leader, closing the master file
+descriptor raises a SIGHUP signal: simply ignore SIGHUP when running the
+tests.
+
+..
+
+.. bpo: 38965
+.. date: 2019-12-04-17-08-55
+.. nonce: yqax3m
+.. section: Tests
+
+Fix test_faulthandler on GCC 10. Use the "volatile" keyword in
+``faulthandler._stack_overflow()`` to prevent tail call optimization on any
+compiler, rather than relying on compiler specific pragma.
+
+..
+
+.. bpo: 38669
+.. date: 2019-11-04-02-54-16
+.. nonce: pazXZ8
+.. section: Tests
+
+Raise :exc:`TypeError` when passing target as a string with
+:meth:`unittest.mock.patch.object`.
+
+..
+
+.. bpo: 35998
+.. date: 2019-10-16-01-36-15
+.. nonce: G305Bf
+.. section: Tests
+
+Fix a race condition in test_asyncio.test_start_tls_server_1(). Previously,
+there was a race condition between the test main() function which replaces
+the protocol and the test ServerProto protocol which sends ANSWER once it
+gets HELLO. Now, only the test main() function is responsible to send data,
+ServerProto no longer sends data.
+
+..
+
+.. bpo: 37531
+.. date: 2019-10-08-16-42-05
+.. nonce: 7v-_Ca
+.. section: Tests
+
+On timeout, regrtest no longer attempts to call ``popen.communicate()``
+again: it can hang until all child processes using stdout and stderr pipes
+completes. Kill the worker process and ignores its output. Change also the
+faulthandler timeout of the main process from 1 minute to 5 minutes, for
+Python slowest buildbots.
+
+..
+
+.. bpo: 37404
+.. date: 2019-12-01-21-45-24
+.. nonce: cNsA7S
+.. section: Build
+
+:mod:`asyncio` now raises :exc:`TyperError` when calling incompatible
+methods with an :class:`ssl.SSLSocket` socket.  Patch by Ido Michael.
+
+..
+
+.. bpo: 38809
+.. date: 2019-11-15-09-25-44
+.. nonce: 9jwta6
+.. section: Build
+
+On Windows, build scripts will now recognize and use python.exe from an
+active virtual env.
+
+..
+
+.. bpo: 37415
+.. date: 2019-10-11-15-32-58
+.. nonce: D9RXrq
+.. section: Build
+
+Fix stdatomic.h header check for ICC compiler: the ICC implementation lacks
+atomic_uintptr_t type which is needed by Python.
+
+..
+
+.. bpo: 38589
+.. date: 2019-10-28-10-48-16
+.. nonce: V69Q1a
+.. section: Windows
+
+Fixes HTML Help shortcut when Windows is not installed to C drive
+
+..
+
+.. bpo: 38944
+.. date: 2019-11-30-12-10-36
+.. nonce: _3xjKG
+.. section: IDLE
+
+Excape key now closes IDLE completion windows.  Patch by Johnny Najera.
+
+..
+
+.. bpo: 38943
+.. date: 2019-11-29-23-44-11
+.. nonce: 8pUKKs
+.. section: IDLE
+
+Fix IDLE autocomplete windows not always appearing on some systems. Patch by
+Johnny Najera.
+
+..
+
+.. bpo: 38862
+.. date: 2019-11-23-21-50-57
+.. nonce: KQ9A0m
+.. section: IDLE
+
+'Strip Trailing Whitespace' on the Format menu removes extra newlines at the
+end of non-shell files.
+
+..
+
+.. bpo: 26353
+.. date: 2019-11-09-23-55-59
+.. nonce: duYZiF
+.. section: IDLE
+
+Stop adding newline when saving an IDLE shell window.
+
+..
+
+.. bpo: 38636
+.. date: 2019-10-30-22-11-16
+.. nonce: hUhDeB
+.. section: IDLE
+
+Fix IDLE Format menu tab toggle and file indent width. These functions
+(default shortcuts Alt-T and Alt-U) were mistakenly disabled in 3.7.5 and
+3.8.0.
+
+..
+
+.. bpo: 4630
+.. date: 2019-10-28-04-48-03
+.. nonce: upgjiV
+.. section: IDLE
+
+Add an option to toggle IDLE's cursor blink for shell, editor, and output
+windows.  See Settings, General, Window Preferences, Cursor Blink. Patch by
+Zachary Spytz.
+
+..
+
+.. bpo: 38598
+.. date: 2019-10-26-18-16-24
+.. nonce: 6kH9FY
+.. section: IDLE
+
+Do not try to compile IDLE shell or output windows
+
+..
+
+.. bpo: 36698
+.. date: 2019-10-04-18-03-09
+.. nonce: BKcmom
+.. section: IDLE
+
+IDLE no longer fails when write non-encodable characters to stderr.  It now
+escapes them with a backslash, as the regular Python interpreter. Added the
+``errors`` field to the standard streams.
+
+..
+
+.. bpo: 38118
+.. date: 2019-10-08-15-07-52
+.. nonce: pIZD6H
+.. section: Tools/Demos
+
+Update Valgrind suppression file to ignore a false alarm in
+:c:func:`PyUnicode_Decode` when using GCC builtin strcmp().
+
+..
+
+.. bpo: 38347
+.. date: 2019-10-02-09-48-42
+.. nonce: 2Tq5D1
+.. section: Tools/Demos
+
+pathfix.py: Assume all files that end on '.py' are Python scripts when
+working recursively.
+
+..
+
+.. bpo: 38540
+.. date: 2019-10-21-09-24-03
+.. nonce: 314N_T
+.. section: C API
+
+Fixed possible leak in :c:func:`PyArg_Parse` and similar functions for
+format units ``"es#"`` and ``"et#"`` when the macro
+:c:macro:`PY_SSIZE_T_CLEAN` is not defined.
+
+..
+
+.. bpo: 38395
+.. date: 2019-10-08-01-23-24
+.. nonce: MJ6Ey9
+.. section: C API
+
+Fix a crash in :class:`weakref.proxy` objects due to incorrect lifetime
+management when calling some associated methods that may delete the last
+reference to object being referenced by the proxy. Patch by Pablo Galindo.
