@@ -216,9 +216,9 @@ system `finders`_.  To find a distribution package's metadata,
 ``importlib.metadata`` queries the list of `meta path finders`_ on
 `sys.meta_path`_.
 
-By default ``importlib.metadata`` installs a finder for distribution packages
-found on the file system.  This finder doesn't actually find any *packages*,
-but it can find the packages' metadata.
+The default ``PathFinder`` for Python includes a hook that calls into
+``importlib.metadata.MetadataPathFinder`` for finding distributions
+loaded from typical file-system-based paths.
 
 The abstract class :py:class:`importlib.abc.MetaPathFinder` defines the
 interface expected of finders by Python's import system.
@@ -239,9 +239,9 @@ properties indicating the path to search and names to match and may
 supply other relevant context.
 
 What this means in practice is that to support finding distribution package
-metadata in locations other than the file system, you should derive from
-``Distribution`` and implement the ``load_metadata()`` method. Then from
-your finder, return instances of this derived ``Distribution`` in the
+metadata in locations other than the file system, subclass
+``Distribution`` and implement the abstract methods. Then from
+a custom finder, return instances of this derived ``Distribution`` in the
 ``find_distributions()`` method.
 
 
