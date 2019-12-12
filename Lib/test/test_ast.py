@@ -861,6 +861,12 @@ Module(
         self.assertEqual(node.body[2].col_offset, 0)
         self.assertEqual(node.body[2].lineno, 13)
 
+    def test_elif_stmt_start_position(self):
+        node = ast.parse('if a:\n    pass\nelif b:\n    pass\n')
+        elif_stmt = node.body[0].orelse[0]
+        self.assertEqual(elif_stmt.lineno, 3)
+        self.assertEqual(elif_stmt.col_offset, 0)
+
     def test_literal_eval(self):
         self.assertEqual(ast.literal_eval('[1, 2, 3]'), [1, 2, 3])
         self.assertEqual(ast.literal_eval('{"foo": 42}'), {"foo": 42})
