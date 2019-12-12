@@ -1,0 +1,2 @@
+When parsing an "elif" node, lineno and col_offset of the node now point to the "elif" keyword and not to its condition, making it consistent with the "if" node.
+Patch by Lysandros Nikolaou.
