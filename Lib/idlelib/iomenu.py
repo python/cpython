@@ -148,14 +148,20 @@ class IOBinding:
         self.filename_change_hook = hook
 
     filename = None
+    file_timestamp = None
     dirname = None
 
     def set_filename(self, filename):
         if filename and os.path.isdir(filename):
             self.filename = None
+            self.file_timestamp = None
             self.dirname = filename
         else:
             self.filename = filename
+            if filename is not None:
+                self.file_timestamp = os.stat(filename).st_mtime
+            else:
+                self.file_timestamp = None
             self.dirname = None
             self.set_saved(1)
             if self.filename_change_hook:
@@ -339,7 +345,21 @@ class IOBinding:
         if not self.filename:
             self.save_as(event)
         else:
+            # Check the time of most recent content modification so the
+            # user doesn't accidentally overwrite a newer version of the file.
+            if self.file_timestamp != os.stat(self.filename).st_mtime:
+                confirm = tkMessageBox.askokcancel(
+                    title="File has changed",
+                    message=(
+                        "The file has changed on disk since reading it!\n\n"
+                        "Do you really want to overwrite it?"),
+                    default=tkMessageBox.CANCEL,
+                    parent=self.text)
+                if not confirm:
+                    return
+
             if self.writefile(self.filename):
+                self.file_timestamp = os.stat(self.filename).st_mtime
                 self.set_saved(True)
                 try:
                     self.editwin.store_file_breaks()
