@@ -68,6 +68,8 @@ exec_tests = [
     "while v:pass",
     # If
     "if v:pass",
+    # If-Elif
+    "if a:\n  pass\nelif b:\n  pass",
     # With
     "with x as y: pass",
     "with x as y, z as q: pass",
@@ -1849,6 +1851,7 @@ exec_results = [
 ('Module', [('For', (1, 0), ('Name', (1, 4), 'v', ('Store',)), ('Name', (1, 9), 'v', ('Load',)), [('Pass', (1, 11))], [], None)], []),
 ('Module', [('While', (1, 0), ('Name', (1, 6), 'v', ('Load',)), [('Pass', (1, 8))], [])], []),
 ('Module', [('If', (1, 0), ('Name', (1, 3), 'v', ('Load',)), [('Pass', (1, 5))], [])], []),
+('Module', [('If', (1, 0), ('Name', (1, 3), 'a', ('Load',)), [('Pass', (2, 2))], [('If', (3, 0), ('Name', (3, 5), 'b', ('Load',)), [('Pass', (4, 2))], [])])], []),
 ('Module', [('With', (1, 0), [('withitem', ('Name', (1, 5), 'x', ('Load',)), ('Name', (1, 10), 'y', ('Store',)))], [('Pass', (1, 13))], None)], []),
 ('Module', [('With', (1, 0), [('withitem', ('Name', (1, 5), 'x', ('Load',)), ('Name', (1, 10), 'y', ('Store',))), ('withitem', ('Name', (1, 13), 'z', ('Load',)), ('Name', (1, 18), 'q', ('Store',)))], [('Pass', (1, 21))], None)], []),
 ('Module', [('Raise', (1, 0), ('Call', (1, 6), ('Name', (1, 6), 'Exception', ('Load',)), [('Constant', (1, 16), 'string', None)], []), None)], []),
