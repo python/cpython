@@ -20,7 +20,7 @@ on:
 
 jobs:
   build_win32:
-    name: '${runs-on} (x86)'
+    name: '${{runs-on}} (x86)'
     runs-on: windows-latest
     steps:
     - uses: actions/checkout@v1
@@ -32,7 +32,7 @@ jobs:
       run: .\PCbuild\rt.bat -q -uall -u-cpu -rwW --slowest --timeout=1200 -j0
 
   build_win_amd64:
-    name: '${runs-on} (x64)'
+    name: '${{runs-on}} (x64)'
     runs-on: windows-latest
     steps:
     - uses: actions/checkout@v1
@@ -44,7 +44,7 @@ jobs:
       run: .\PCbuild\rt.bat -x64 -q -uall -u-cpu -rwW --slowest --timeout=1200 -j0
 
   build_ubuntu:
-    name: '${runs-on}'
+    name: '${{runs-on}}'
     runs-on: ubuntu-latest
     env:
       OPENSSL_VER: 1.1.1d
@@ -98,7 +98,7 @@ jobs:
         CODECOV_TOKEN: ${{ secrets.codecov_token }}
 
   build_macos:
-    name: '${runs-on}'
+    name: '${{runs-on}}'
     runs-on: macos-latest
     steps:
     - uses: actions/checkout@v1
