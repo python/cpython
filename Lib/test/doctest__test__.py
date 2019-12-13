@@ -5,6 +5,7 @@ This test will be located properly because it in on module level.
 '''
 
 __test__ = {
+# this test will not get a line number because none of its lines are unique
 'q': '''
 >>> # not unique
 >>> x = 7
