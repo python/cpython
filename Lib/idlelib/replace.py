@@ -25,7 +25,7 @@ def replace(text):
     if not hasattr(engine, "_replacedialog"):
         engine._replacedialog = ReplaceDialog(root, engine)
     dialog = engine._replacedialog
-    dialog.open(text)
+    dialog.open(text, text.get("sel.first", "sel.last"))
 
 
 class ReplaceDialog(SearchDialogBase):
@@ -50,27 +50,20 @@ class ReplaceDialog(SearchDialogBase):
         super().__init__(root, engine)
         self.replvar = StringVar(root)
 
-    def open(self, text):
+    def open(self, text, selected=None):
         """Make dialog visible on top of others and ready to use.
 
-        Also, highlight the currently selected text and set the
-        search to include the current selection (self.ok).
+        Also, set the search to include the current selection
+        (self.ok).
 
         Args:
             text: Text widget being searched.
+            selected: The selected text.
         """
         SearchDialogBase.open(self, text)
-        try:
-            first = text.index("sel.first")
-        except TclError:
-            first = None
-        try:
-            last = text.index("sel.last")
-        except TclError:
-            last = None
-        first = first or text.index("insert")
-        last = last or first
-        self.show_hit(first, last)
+        if selected:
+            self.ent.delete(0, "end")
+            self.ent.insert("end", selected)
         self.ok = True
 
     def create_entries(self):
