@@ -1,4 +1,4 @@
-name: Doc_Build
+name: Docs
 
 on:
   #push:

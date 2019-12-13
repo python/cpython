@@ -1,4 +1,4 @@
-name: CPython_Build_Test
+name: Tests
 
 on:
   #push:
