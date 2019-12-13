@@ -648,6 +648,16 @@ DocTestFinder finds the line number of each example:
     >>> test = doctest.DocTestFinder().find(f)[0]
     >>> [e.lineno for e in test.examples]
     [1, 9, 12]
+
+Finding line numbers in __test__ triple quoted strings
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Because Python object do not have line numbers, there is no trivial way to find
+out the line number of a string that occurs in __test__:
+    >>> from test import doctest__test__
+    >>> tests = doctest.DocTestFinder().find(doctest__test__)
+    >>> [e.lineno for e in tests]
+    [0, None, 11]
+
 """
 
     if int.__doc__: # simple check for --without-doc-strings, skip if lacking
