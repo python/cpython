@@ -85,7 +85,8 @@ static int test_repeated_init_and_subinterpreters(void)
     return 0;
 }
 
-static int test_bpo36225(void)
+/* bpo-36225: Implicitly tear down subinterpreters with Py_Finalize() */
+static int test_finalize_subinterps(void)
 {
     PyThreadState *mainstate;
     PyGILState_STATE gilstate;
@@ -1643,7 +1644,7 @@ struct TestCase
 static struct TestCase TestCases[] = {
     {"test_forced_io_encoding", test_forced_io_encoding},
     {"test_repeated_init_and_subinterpreters", test_repeated_init_and_subinterpreters},
-    {"test_bpo36225", test_bpo36225},
+    {"test_finalize_subinterps", test_finalize_subinterps},
     {"test_pre_initialization_api", test_pre_initialization_api},
     {"test_pre_initialization_sys_options", test_pre_initialization_sys_options},
     {"test_bpo20891", test_bpo20891},
