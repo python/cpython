@@ -70,8 +70,8 @@ jobs:
       id: cache-openssl
       uses: actions/cache@v1
       with:
-        path: ./multissl/${{ env.OPENSSL_VER }}
-        key: ${{ runner.os }}-multissl-${{ env.OPENSSL_VER }}
+        path: ./multissl/openssl/${{ env.OPENSSL_VER }}
+        key: ${{ runner.os }}-multissl-openssl-${{ env.OPENSSL_VER }}
     - name: Install OpenSSL
       if: steps.cache-openssl.outputs.cache-hit != 'true'
       run: python3 Tools/ssl/multissltests.py --steps=library --base-directory $PWD/multissl --openssl $OPENSSL_VER --system Linux
@@ -97,8 +97,8 @@ jobs:
       id: cache-openssl
       uses: actions/cache@v1
       with:
-        path: ./multissl/${{ env.OPENSSL_VER }}
-        key: ${{ runner.os }}-multissl-${{ env.OPENSSL_VER }}
+        path: ./multissl/openssl/${{ env.OPENSSL_VER }}
+        key: ${{ runner.os }}-multissl-openssl-${{ env.OPENSSL_VER }}
     - name: Install OpenSSL
       if: steps.cache-openssl.outputs.cache-hit != 'true'
       run: python3 Tools/ssl/multissltests.py --steps=library --base-directory $PWD/multissl --openssl $OPENSSL_VER --system Linux
