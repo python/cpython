@@ -1,0 +1,1 @@
+Errors found by doctest in a triple quoted string that occurs in a __test__ dictionary now give a message with the correct line number.
