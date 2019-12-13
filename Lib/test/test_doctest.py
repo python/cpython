@@ -656,7 +656,7 @@ out the line number of a string that occurs in __test__:
     >>> from test import doctest__test__
     >>> tests = doctest.DocTestFinder().find(doctest__test__)
     >>> [e.lineno for e in tests]
-    [0, None, 11]
+    [0, None, 13]
 
 """
 
