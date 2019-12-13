@@ -1222,10 +1222,14 @@ static int test_audit_subinterpreter(void)
     PySys_AddAuditHook(_audit_subinterpreter_hook, NULL);
     _testembed_Py_Initialize();
 
+    PyThreadState *mainstate = PyThreadState_Get();
+
     Py_NewInterpreter();
     Py_NewInterpreter();
     Py_NewInterpreter();
 
+    // Currently unable to call Py_Finalize from subinterpreter thread, see bpo-37776.
+    PyThreadState_Swap(mainstate);
     Py_Finalize();
 
     switch (_audit_subinterpreter_interpreter_count) {
