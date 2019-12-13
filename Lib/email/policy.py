@@ -21,7 +21,7 @@ __all__ = [
     'HTTP',
     ]
 
-linesep_splitter = re.compile(r'\n|\r')
+linesep_splitter = re.compile(r'\n\s+|\r\s+')
 
 @_extend_docstrings
 class EmailPolicy(Policy):
