@@ -70,6 +70,8 @@ exec_tests = [
     "if v:pass",
     # If-Elif
     "if a:\n  pass\nelif b:\n  pass",
+    # If-Elif-Else
+    "if a:\n  pass\nelif b:\n  pass\nelse:\n  pass",
     # With
     "with x as y: pass",
     "with x as y, z as q: pass",
@@ -865,6 +867,12 @@ Module(
 
     def test_elif_stmt_start_position(self):
         node = ast.parse('if a:\n    pass\nelif b:\n    pass\n')
+        elif_stmt = node.body[0].orelse[0]
+        self.assertEqual(elif_stmt.lineno, 3)
+        self.assertEqual(elif_stmt.col_offset, 0)
+
+    def test_elif_stmt_start_position_with_else(self):
+        node = ast.parse('if a:\n    pass\nelif b:\n    pass\nelse:\n    pass\n')
         elif_stmt = node.body[0].orelse[0]
         self.assertEqual(elif_stmt.lineno, 3)
         self.assertEqual(elif_stmt.col_offset, 0)
@@ -1852,6 +1860,7 @@ exec_results = [
 ('Module', [('While', (1, 0), ('Name', (1, 6), 'v', ('Load',)), [('Pass', (1, 8))], [])], []),
 ('Module', [('If', (1, 0), ('Name', (1, 3), 'v', ('Load',)), [('Pass', (1, 5))], [])], []),
 ('Module', [('If', (1, 0), ('Name', (1, 3), 'a', ('Load',)), [('Pass', (2, 2))], [('If', (3, 0), ('Name', (3, 5), 'b', ('Load',)), [('Pass', (4, 2))], [])])], []),
+('Module', [('If', (1, 0), ('Name', (1, 3), 'a', ('Load',)), [('Pass', (2, 2))], [('If', (3, 0), ('Name', (3, 5), 'b', ('Load',)), [('Pass', (4, 2))], [('Pass', (6, 2))])])], []),
 ('Module', [('With', (1, 0), [('withitem', ('Name', (1, 5), 'x', ('Load',)), ('Name', (1, 10), 'y', ('Store',)))], [('Pass', (1, 13))], None)], []),
 ('Module', [('With', (1, 0), [('withitem', ('Name', (1, 5), 'x', ('Load',)), ('Name', (1, 10), 'y', ('Store',))), ('withitem', ('Name', (1, 13), 'z', ('Load',)), ('Name', (1, 18), 'q', ('Store',)))], [('Pass', (1, 21))], None)], []),
 ('Module', [('Raise', (1, 0), ('Call', (1, 6), ('Name', (1, 6), 'Exception', ('Load',)), [('Constant', (1, 16), 'string', None)], []), None)], []),
