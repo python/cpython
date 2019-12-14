@@ -811,23 +811,26 @@ able to suspend execution in its *enter* and *exit* methods.
 
 The following code::
 
-    async with EXPR as VAR:
-        BLOCK
+    async with expression as target:
+        suite
 
-Is semantically equivalent to::
+is semantically equivalent to::
 
-    mgr = (EXPR)
-    aexit = type(mgr).__aexit__
-    aenter = type(mgr).__aenter__(mgr)
+    manager = (expression)
+    aexit = type(manager).__aexit__
+    value = type(manager).__aenter__(manager)
+    target = await value
+    exception = False
 
-    VAR = await aenter
     try:
-        BLOCK
+        suite
     except:
-        if not await aexit(mgr, *sys.exc_info()):
+        exception = True
+        if not await aexit(manager, *sys.exc_info()):
             raise
-    else:
-        await aexit(mgr, None, None, None)
+    finally:
+        if not exception:
+            await aexit(manager, None, None, None)
 
 See also :meth:`__aenter__` and :meth:`__aexit__` for details.
 
