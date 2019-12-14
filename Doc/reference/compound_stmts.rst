@@ -398,10 +398,12 @@ The execution of the :keyword:`with` statement with one "item" proceeds as follo
 
 #. The context expression (the expression given in the :token:`with_item`) is
    evaluated to obtain a context manager.
-
-#. The context manager's :meth:`__enter__` method is invoked.
+   
+#. The context manager's :meth:`__enter__` is loaded for later use.
 
 #. The context manager's :meth:`__exit__` is loaded for later use.
+
+#. The context manager's :meth:`__enter__` method is invoked.
 
 #. If a target was included in the :keyword:`with` statement, the return value
    from :meth:`__enter__` is assigned to it.
@@ -438,9 +440,10 @@ The following code::
 is semantically equivalent to::
 
     manager = (expression)
-    value = type(manager).__enter__(manager)
+    enter = type(manager).__enter__
     exit = type(manager).__exit__
-    target = value
+    value = enter(manager)
+    target = value  # only if `as target` is present in the with statement
     exception = False
 
     try:
@@ -841,8 +844,9 @@ is semantically equivalent to::
 
     manager = (expression)
     aexit = type(manager).__aexit__
-    value = type(manager).__aenter__(manager)
-    target = await value
+    aenter = type(manager).__aenter__
+    value = await aenter(manager)
+    target = value  # only if `as target` is present in the with statement  
     exception = False
 
     try:
