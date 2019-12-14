@@ -1224,17 +1224,13 @@ class CoroutineTest(unittest.TestCase):
 
     def test_with_4(self):
         class CM:
-            def __enter__(self):
-                pass
-
-            def __exit__(self):
-                pass
+            pass
 
         async def foo():
             async with CM():
                 pass
 
-        with self.assertRaisesRegex(AttributeError, '__aexit__'):
+        with self.assertRaisesRegex(AttributeError, '__aenter__'):
             run_async(foo())
 
     def test_with_5(self):

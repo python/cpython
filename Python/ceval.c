@@ -3156,18 +3156,19 @@ main_loop:
         case TARGET(BEFORE_ASYNC_WITH): {
             _Py_IDENTIFIER(__aexit__);
             _Py_IDENTIFIER(__aenter__);
-
             PyObject *mgr = TOP();
-            PyObject *exit = special_lookup(tstate, mgr, &PyId___aexit__),
-                     *enter;
+            PyObject *enter = special_lookup(tstate, mgr, &PyId___aenter__);
             PyObject *res;
-            if (exit == NULL)
+            if (enter == NULL) {
                 goto error;
+            }
+            PyObject *exit = special_lookup(tstate, mgr, &PyId___aexit__);
+            if (exit == NULL) {
+                Py_DECREF(enter);
+                goto error;
+            }
             SET_TOP(exit);
-            enter = special_lookup(tstate, mgr, &PyId___aenter__);
             Py_DECREF(mgr);
-            if (enter == NULL)
-                goto error;
             res = _PyObject_CallNoArg(enter);
             Py_DECREF(enter);
             if (res == NULL)
