@@ -30,7 +30,7 @@ Three classes are provided by the :mod:`imaplib` module, :class:`IMAP4` is the
 base class:
 
 
-.. class:: IMAP4(host='', port=IMAP4_PORT[, timeout=None])
+.. class:: IMAP4(host='', port=IMAP4_PORT, timeout=None)
 
    This class implements the actual IMAP4 protocol.  The connection is created and
    protocol version (IMAP4 or IMAP4rev1) is determined when the instance is
@@ -366,14 +366,13 @@ An :class:`IMAP4` instance has the following methods:
 
 .. method:: IMAP4.open(host, port, timeout=None)
 
-   Opens socket to *port* at *host*.  This method is implicitly called by
-   the :class:`IMAP4` constructor.  The connection objects established by this
-   method will be used in the :meth:`IMAP4.read`, :meth:`IMAP4.readline`,
-   :meth:`IMAP4.send`, and :meth:`IMAP4.shutdown` methods.
-   The optional *timeout* parameter specifies a timeout in seconds
-   for the connection attempt. If timeout is not given or is None,
-   the global default socket timeout is used.
-   You may override this method.
+   Opens socket to *port* at *host*. The optional *timeout* parameter
+   specifies a timeout in seconds for the connection attempt.
+   If timeout is not given or is None, the global default socket timeout
+   is used. This method is implicitly called by the :class:`IMAP4` constructor.
+   The connection objects established by this method will be used in
+   the :meth:`IMAP4.read`, :meth:`IMAP4.readline`, :meth:`IMAP4.send`,
+   and :meth:`IMAP4.shutdown` methods. You may override this method.
 
    .. audit-event:: imaplib.open self,host,port imaplib.IMAP4.open
 
