@@ -1,0 +1,2 @@
+Fix :func:`mock.patch.stopall` to stop active patches that were created with
+:func:`mock.patch.dict`.
