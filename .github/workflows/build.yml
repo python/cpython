@@ -103,7 +103,7 @@ jobs:
       if: steps.cache-openssl.outputs.cache-hit != 'true'
       run: python3 Tools/ssl/multissltests.py --steps=library --base-directory $PWD/multissl --openssl $OPENSSL_VER --system Linux
     - name: Configure CPython
-      run: ./configure --with-pydebug --with-openssl=$PWD/multissl/openssl/$OPENSSL_VER
+      run: ./configure --with-openssl=$PWD/multissl/openssl/$OPENSSL_VER
     - name: Build CPython
       run: make -s -j4
     - name: Display build info
@@ -117,7 +117,8 @@ jobs:
     - name: 'Tests with coverage'
       run: >
         source ./venv/bin/activate &&
-        xvfb-run ./venv/bin/python -m coverage run --pylib
+        xvfb-run ./venv/bin/python -m
+        coverage run --branch --pylib
         -m test
         --fail-env-changed
         -uall,-cpu
@@ -125,10 +126,31 @@ jobs:
         -x test_multiprocessing_forkserver
         -x test_multiprocessing_spawn
         -x test_concurrent_futures
+        || true
     - name: 'Publish code coverage results'
+      if: always()
       run: |
         source ./venv/bin/activate
         python -m coverage xml
+        bash <(curl -s https://codecov.io/bash)
+      env:
+        CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
+
+  build_ubuntu_c_coverage:
+    name: 'Ubuntu (C Coverage)'
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v1
+    - name: Install Dependencies
+      run: sudo ./.github/workflows/posix-deps-apt.sh
+    - name: Configure CPython
+      run: ./configure
+    - name: 'Build CPython and measure coverage'
+      run: xvfb-run make -j4 coverage-report
+    - name: 'Publish code coverage results'
+      if: always()
+      run: |
+        make pythoninfo
         bash <(curl -s https://codecov.io/bash)
       env:
         CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}

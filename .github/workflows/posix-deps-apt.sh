@@ -17,4 +17,5 @@ apt-get -yq install \
     liblzma-dev \
     libffi-dev \
     uuid-dev \
-    xvfb
+    xvfb \
+    lcov
