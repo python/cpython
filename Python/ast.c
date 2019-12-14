@@ -3967,7 +3967,7 @@ get_last_end_pos(asdl_seq *s, int *end_lineno, int *end_col_offset)
 }
 
 asdl_seq *
-ast_for_orelse_stmt(struct compiling *c, const node *n, const char* stmt_name, int orelse_idx, int *end_lineno, int *end_col_offset)
+ast_for_orelse(struct compiling *c, const node *n, const char* stmt_name, int orelse_idx, int *end_lineno, int *end_col_offset)
 {
     char *s;
     s = STR(CHILD(n, orelse_idx));
@@ -4082,7 +4082,7 @@ ast_for_if_stmt(struct compiling *c, const node *n)
         get_last_end_pos(suite_seq, &end_lineno, &end_col_offset);
         orelse = NULL;
     } else {
-        orelse = ast_for_orelse_stmt(c, n, "if", 4, &end_lineno, &end_col_offset);
+        orelse = ast_for_orelse(c, n, "if", 4, &end_lineno, &end_col_offset);
     }
     return If(expression, suite_seq, orelse, LINENO(n), n->n_col_offset,
               end_lineno, end_col_offset, c->c_arena);
@@ -4092,7 +4092,6 @@ ast_for_if_stmt(struct compiling *c, const node *n)
 static stmt_ty
 ast_for_while_stmt(struct compiling *c, const node *n)
 {
-    /* while_stmt: 'while' test ':' suite ['else' ':' suite] */
     /* while_stmt: 'while' namedexpr_test ':' suite ('elif' namedexpr_test ':' suite)* ['else' ':' suite] */
     REQ(n, while_stmt);
     int end_lineno, end_col_offset;
@@ -4121,7 +4120,7 @@ ast_for_while_stmt(struct compiling *c, const node *n)
         if (!seq1)
             return NULL;
         // seq2 = ast_for_suite(c, CHILD(n, 6));
-        seq2 = ast_for_orelse_stmt(c, n, "while", 4, &end_lineno, &end_col_offset);
+        seq2 = ast_for_orelse(c, n, "while", 4, &end_lineno, &end_col_offset);
         if (!seq2)
             return NULL;
         get_last_end_pos(seq2, &end_lineno, &end_col_offset);
@@ -4154,14 +4153,16 @@ ast_for_for_stmt(struct compiling *c, const node *n0, bool is_async)
         return NULL;
     }
 
-    /* for_stmt: 'for' exprlist 'in' testlist ':' [TYPE_COMMENT] suite ['else' ':' suite] */
-    /* for_stmt: 'for' exprlist 'in' testlist ':' [TYPE_COMMENT] suite ('elif' namedexpr_test ':' suite)* ['else' ':' suite] */
+    /* for_stmt: 'for' exprlist 'in' testlist ':' [TYPE_COMMENT] suite
+        ('elif' namedexpr_test ':' suite)*
+        ['else' ':' suite]
+    */
     REQ(n, for_stmt);
 
     has_type_comment = TYPE(CHILD(n, 5)) == TYPE_COMMENT;
 
     if (NCH(n) >= 9 + has_type_comment) {
-        seq = ast_for_orelse_stmt(c, n, "for", 6 + has_type_comment, &end_lineno, &end_col_offset);
+        seq = ast_for_orelse(c, n, "for", 6 + has_type_comment, &end_lineno, &end_col_offset);
         // seq = ast_for_suite(c, CHILD(n, 8 + has_type_comment));
         if (!seq)
             return NULL;
