@@ -399,9 +399,9 @@ The execution of the :keyword:`with` statement with one "item" proceeds as follo
 #. The context expression (the expression given in the :token:`with_item`) is
    evaluated to obtain a context manager.
 
-#. The context manager's :meth:`__exit__` is loaded for later use.
-
 #. The context manager's :meth:`__enter__` method is invoked.
+
+#. The context manager's :meth:`__exit__` is loaded for later use.
 
 #. If a target was included in the :keyword:`with` statement, the return value
    from :meth:`__enter__` is assigned to it.
