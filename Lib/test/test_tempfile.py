@@ -1493,10 +1493,19 @@ class TestTemporaryDirectory(BaseTestCase):
         d = self.do_create(recurse=3, dirs=2, files=2)
         with d:
             # Change files and directories flags recursively.
-            for root, dirs, files in os.walk(d.name, topdown=False):
-                for name in files:
-                    os.chflags(os.path.join(root, name), flags)
-                os.chflags(root, flags)
+            # ZFS returns EOPNOTSUPP when attempting to set flag
+            # UF_IMMUTABLE or UF_NOUNLINK.
+            try:
+                for root, dirs, files in os.walk(d.name, topdown=False):
+                    for name in files:
+                        os.chflags(os.path.join(root, name), flags)
+                    os.chflags(root, flags)
+            except OSError as err:
+                if err.errno != errno.EOPNOTSUPP:
+                    raise
+                msg = 'chflag UF_IMMUTABLE | UF_NONUNLINK not ' \
+                      'supported by underlying fs'
+                self.skipTest(msg)
             d.cleanup()
         self.assertFalse(os.path.exists(d.name))
 
