@@ -1203,24 +1203,25 @@ class ChannelTests(TestBase):
 
         self.assertEqual(cid2, int(cid1) + 1)
 
-    def _assert_interpreters_returned(self, cid, send, recv):
-        actual = set(interpreters.channel_list_interpreters(cid, send=True))
-        self.assertEqual(actual, set(send))
-        actual = set(interpreters.channel_list_interpreters(cid, send=False))
-        self.assertEqual(actual, set(recv))
-
-    def test_channel_list_interpreters_empty(self):
+    def test_channel_list_interpreters_none(self):
+        """Test listing interpreters for a channel with no associations."""
         # Test for channel with no associated interpreters.
         cid = interpreters.channel_create()
-        self._assert_interpreters_returned(cid, [], [])
+        send_interps = interpreters.channel_list_interpreters(cid, send=True)
+        recv_interps = interpreters.channel_list_interpreters(cid, send=False)
+        self.assertEqual(send_interps, [])
+        self.assertEqual(recv_interps, [])
 
-    def test_channel_list_interpreters_mainline(self):
+    def test_channel_list_interpreters_basic(self):
+        """Test basic listing channel interpreters."""
         interp0 = interpreters.get_main()
         cid = interpreters.channel_create()
         interpreters.channel_send(cid, "send")
         # Test for a channel that has one end associated to an interpreter.
-        self._assert_interpreters_returned(
-            cid, [interp0], [])
+        send_interps = interpreters.channel_list_interpreters(cid, send=True)
+        recv_interps = interpreters.channel_list_interpreters(cid, send=False)
+        self.assertEqual(send_interps, [interp0])
+        self.assertEqual(recv_interps, [])
 
         interp1 = interpreters.create()
         _run_output(interp1, dedent(f"""
@@ -1228,11 +1229,13 @@ class ChannelTests(TestBase):
             obj = _interpreters.channel_recv({cid})
             """))
         # Test for channel that has boths ends associated to an interpreter.
-        self._assert_interpreters_returned(
-            cid, [interp0], [interp1])
+        send_interps = interpreters.channel_list_interpreters(cid, send=True)
+        recv_interps = interpreters.channel_list_interpreters(cid, send=False)
+        self.assertEqual(send_interps, [interp0])
+        self.assertEqual(recv_interps, [interp1])
 
     def test_channel_list_interpreters_multiple(self):
-        # Test for channel with both ends associated to many interpreters.
+        """Test listing interpreters for a channel with many associations."""
         interp0 = interpreters.get_main()
         interp1 = interpreters.create()
         interp2 = interpreters.create()
@@ -1252,8 +1255,10 @@ class ChannelTests(TestBase):
             import _xxsubinterpreters as _interpreters
             obj = _interpreters.channel_recv({cid})
             """))
-        self._assert_interpreters_returned(
-            cid, [interp0, interp1], [interp3, interp2])
+        send_interps = interpreters.channel_list_interpreters(cid, send=True)
+        recv_interps = interpreters.channel_list_interpreters(cid, send=False)
+        self.assertEqual(set(send_interps), {interp0, interp1})
+        self.assertEqual(set(recv_interps), {interp2, interp3})
 
     ####################
 
