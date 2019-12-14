@@ -1,0 +1,11 @@
+Add an ability to use "elif" in for statement and while statement besides "else"
+
+Example
+```python
+for i in range(j):
+    ...
+elif i > 5:
+    ...
+else:
+    ...
+```
