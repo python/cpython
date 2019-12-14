@@ -430,13 +430,36 @@ The execution of the :keyword:`with` statement with one "item" proceeds as follo
    value from :meth:`__exit__` is ignored, and execution proceeds at the normal
    location for the kind of exit that was taken.
 
+The following code::
+
+    with expression as target:
+        suite
+
+is semantically equivalent to::
+
+    manager = (expression)
+    value = type(manager).__enter__(manager)
+    exit = type(manager).__exit__
+    target = value
+    exception = False
+
+    try:
+        suite
+    except:
+        exception = True
+        if not exit(manager, *sys.exc_info()):
+            raise
+    finally:
+        if not exception:
+            exit(manager, None, None, None)
+
 With more than one item, the context managers are processed as if multiple
 :keyword:`with` statements were nested::
 
    with A() as a, B() as b:
        suite
 
-is equivalent to ::
+is semantically equivalent to::
 
    with A() as a:
        with B() as b:
