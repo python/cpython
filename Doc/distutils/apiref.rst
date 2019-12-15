@@ -1142,11 +1142,11 @@ other utility module.
 
    * ``macosx-10.6-intel``
 
-   For AIX, Python 3.9 and later return a platform_tag with additional fields
-   (separated by ``'-'``) that represent the combined values of AIX Version,
-   Release and Technology Level (first field), Build Date (second field),
-   and bit-size (third field). Python 3.8 and earlier return a value starting
-   with "aix" that only reports the AIX Version and Release.
+   For AIX, Python 3.9 and later return a string starting with "aix", followed
+   by additional fields (separated by ``'-'``) that represent the combined
+   values of AIX Version, Release and Technology Level (first field), Build Date
+   (second field), and bit-size (third field). Python 3.8 and earlier returned
+   only a single additional field with the AIX Version and Release.
 
    Examples of returned values on AIX:
 
