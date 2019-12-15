@@ -43,6 +43,7 @@ import os as _os
 import shutil as _shutil
 import errno as _errno
 from random import Random as _Random
+import sys as _sys
 import weakref as _weakref
 import _thread
 _allocate_lock = _thread.allocate_lock
@@ -70,20 +71,10 @@ template = "tmp"
 
 _once_lock = _allocate_lock()
 
-if hasattr(_os, "lstat"):
-    _stat = _os.lstat
-elif hasattr(_os, "stat"):
-    _stat = _os.stat
-else:
-    # Fallback.  All we need is something that raises OSError if the
-    # file doesn't exist.
-    def _stat(fn):
-        fd = _os.open(fn, _os.O_RDONLY)
-        _os.close(fd)
 
 def _exists(fn):
     try:
-        _stat(fn)
+        _os.lstat(fn)
     except OSError:
         return False
     else:
@@ -254,6 +245,7 @@ def _mkstemp_inner(dir, pre, suf, flags, output_type):
     for seq in range(TMP_MAX):
         name = next(names)
         file = _os.path.join(dir, pre + name + suf)
+        _sys.audit("tempfile.mkstemp", file)
         try:
             fd = _os.open(file, flags, 0o600)
         except FileExistsError:
@@ -362,6 +354,7 @@ def mkdtemp(suffix=None, prefix=None, dir=None):
     for seq in range(TMP_MAX):
         name = next(names)
         file = _os.path.join(dir, prefix + name + suffix)
+        _sys.audit("tempfile.mkdtemp", file)
         try:
             _os.mkdir(file, 0o700)
         except FileExistsError:
@@ -556,7 +549,7 @@ def NamedTemporaryFile(mode='w+b', buffering=-1, encoding=None,
         _os.close(fd)
         raise
 
-if _os.name != 'posix' or _os.sys.platform == 'cygwin':
+if _os.name != 'posix' or _sys.platform == 'cygwin':
     # On non-POSIX and Cygwin systems, assume that we cannot unlink a file
     # while it is open.
     TemporaryFile = NamedTemporaryFile
@@ -640,10 +633,9 @@ class SpooledTemporaryFile:
         if 'b' in mode:
             self._file = _io.BytesIO()
         else:
-            # Setting newline="\n" avoids newline translation;
-            # this is important because otherwise on Windows we'd
-            # get double newline translation upon rollover().
-            self._file = _io.StringIO(newline="\n")
+            self._file = _io.TextIOWrapper(_io.BytesIO(),
+                            encoding=encoding, errors=errors,
+                            newline=newline)
         self._max_size = max_size
         self._rolled = False
         self._TemporaryFileArgs = {'mode': mode, 'buffering': buffering,
@@ -663,8 +655,12 @@ class SpooledTemporaryFile:
         newfile = self._file = TemporaryFile(**self._TemporaryFileArgs)
         del self._TemporaryFileArgs
 
-        newfile.write(file.getvalue())
-        newfile.seek(file.tell(), 0)
+        pos = file.tell()
+        if hasattr(newfile, 'buffer'):
+            newfile.buffer.write(file.detach().getvalue())
+        else:
+            newfile.write(file.getvalue())
+        newfile.seek(pos, 0)
 
         self._rolled = True
 
@@ -788,8 +784,38 @@ class TemporaryDirectory(object):
             warn_message="Implicitly cleaning up {!r}".format(self))
 
     @classmethod
+    def _rmtree(cls, name):
+        def onerror(func, path, exc_info):
+            if issubclass(exc_info[0], PermissionError):
+                def resetperms(path):
+                    try:
+                        _os.chflags(path, 0)
+                    except AttributeError:
+                        pass
+                    _os.chmod(path, 0o700)
+
+                try:
+                    if path != name:
+                        resetperms(_os.path.dirname(path))
+                    resetperms(path)
+
+                    try:
+                        _os.unlink(path)
+                    # PermissionError is raised on FreeBSD for directories
+                    except (IsADirectoryError, PermissionError):
+                        cls._rmtree(path)
+                except FileNotFoundError:
+                    pass
+            elif issubclass(exc_info[0], FileNotFoundError):
+                pass
+            else:
+                raise
+
+        _shutil.rmtree(name, onerror=onerror)
+
+    @classmethod
     def _cleanup(cls, name, warn_message):
-        _shutil.rmtree(name)
+        cls._rmtree(name)
         _warnings.warn(warn_message, ResourceWarning)
 
     def __repr__(self):
@@ -803,4 +829,4 @@ class TemporaryDirectory(object):
 
     def cleanup(self):
         if self._finalizer.detach():
-            _shutil.rmtree(self.name)
+            self._rmtree(self.name)

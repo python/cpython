@@ -1,0 +1,2 @@
+Fix ``json.tool`` failed to read a JSON file with non-ASCII characters when
+locale encoding is not UTF-8.

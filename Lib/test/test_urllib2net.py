@@ -10,8 +10,6 @@ import sys
 
 support.requires("network")
 
-TIMEOUT = 60  # seconds
-
 
 def _retry_thrice(func, exc, *args, **kwargs):
     for i in range(3):
@@ -82,9 +80,12 @@ class AuthTests(unittest.TestCase):
 class CloseSocketTest(unittest.TestCase):
 
     def test_close(self):
+        # clear _opener global variable
+        self.addCleanup(urllib.request.urlcleanup)
+
         # calling .close() on urllib2's response objects should close the
         # underlying socket
-        url = "http://www.example.com/"
+        url = support.TEST_HTTP_URL
         with support.transient_internet(url):
             response = _urlopen_with_retry(url)
             sock = response.fp
@@ -173,7 +174,7 @@ class OtherNetworkTests(unittest.TestCase):
                     "http://www.pythontest.net/elsewhere/#frag")
 
     def test_custom_headers(self):
-        url = "http://www.example.com"
+        url = support.TEST_HTTP_URL
         with support.transient_internet(url):
             opener = urllib.request.build_opener()
             request = urllib.request.Request(url)
@@ -196,7 +197,7 @@ class OtherNetworkTests(unittest.TestCase):
             try:
                 with urllib.request.urlopen(URL) as res:
                     pass
-            except ValueError as e:
+            except ValueError:
                 self.fail("urlopen failed for site not sending \
                            Connection:close")
             else:
@@ -224,7 +225,7 @@ class OtherNetworkTests(unittest.TestCase):
 
                 with support.transient_internet(url):
                     try:
-                        f = urlopen(url, req, TIMEOUT)
+                        f = urlopen(url, req, support.INTERNET_TIMEOUT)
                     # urllib.error.URLError is a subclass of OSError
                     except OSError as err:
                         if expected_err:
@@ -257,9 +258,13 @@ class OtherNetworkTests(unittest.TestCase):
 
 
 class TimeoutTest(unittest.TestCase):
+    def setUp(self):
+        # clear _opener global variable
+        self.addCleanup(urllib.request.urlcleanup)
+
     def test_http_basic(self):
         self.assertIsNone(socket.getdefaulttimeout())
-        url = "http://www.example.com"
+        url = support.TEST_HTTP_URL
         with support.transient_internet(url, timeout=None):
             u = _urlopen_with_retry(url)
             self.addCleanup(u.close)
@@ -267,7 +272,7 @@ class TimeoutTest(unittest.TestCase):
 
     def test_http_default_timeout(self):
         self.assertIsNone(socket.getdefaulttimeout())
-        url = "http://www.example.com"
+        url = support.TEST_HTTP_URL
         with support.transient_internet(url):
             socket.setdefaulttimeout(60)
             try:
@@ -279,7 +284,7 @@ class TimeoutTest(unittest.TestCase):
 
     def test_http_no_timeout(self):
         self.assertIsNone(socket.getdefaulttimeout())
-        url = "http://www.example.com"
+        url = support.TEST_HTTP_URL
         with support.transient_internet(url):
             socket.setdefaulttimeout(60)
             try:
@@ -290,7 +295,7 @@ class TimeoutTest(unittest.TestCase):
             self.assertIsNone(u.fp.raw._sock.gettimeout())
 
     def test_http_timeout(self):
-        url = "http://www.example.com"
+        url = support.TEST_HTTP_URL
         with support.transient_internet(url):
             u = _urlopen_with_retry(url, timeout=120)
             self.addCleanup(u.close)

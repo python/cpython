@@ -343,7 +343,6 @@ AssertionError.
 
 Optimize asyncio.iscoroutine() and loop.create_task() for non-native
 coroutines (e.g. async/await compiled with Cython).
-
 'loop.create_task(python_coroutine)' used to be 20% faster than
 'loop.create_task(cython_coroutine)'.  Now, the latter is as fast.
 

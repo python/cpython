@@ -391,6 +391,15 @@ class TestGzip(BaseTest):
             d = f.read()
             self.assertEqual(d, data1 * 50, "Incorrect data in file")
 
+    def test_gzip_BadGzipFile_exception(self):
+        self.assertTrue(issubclass(gzip.BadGzipFile, OSError))
+
+    def test_bad_gzip_file(self):
+        with open(self.filename, 'wb') as file:
+            file.write(data1 * 50)
+        with gzip.GzipFile(self.filename, 'r') as file:
+            self.assertRaises(gzip.BadGzipFile, file.readlines)
+
     def test_non_seekable_file(self):
         uncompressed = data1 * 50
         buf = UnseekableIO()
@@ -460,7 +469,9 @@ class TestGzip(BaseTest):
             if "x" in mode:
                 support.unlink(self.filename)
             with open(self.filename, mode) as f:
-                with gzip.GzipFile(fileobj=f) as g:
+                with self.assertWarns(FutureWarning):
+                    g = gzip.GzipFile(fileobj=f)
+                with g:
                     self.assertEqual(g.mode, gzip.WRITE)
 
     def test_bytes_filename(self):
@@ -746,7 +757,7 @@ class TestCommandLine(unittest.TestCase):
         self.assertEqual(out[:2], b"\x1f\x8b")
 
     @create_and_remove_directory(TEMPDIR)
-    def test_compress_infile_outfile(self):
+    def test_compress_infile_outfile_default(self):
         local_testgzip = os.path.join(TEMPDIR, 'testgzip')
         gzipname = local_testgzip + '.gz'
         self.assertFalse(os.path.exists(gzipname))

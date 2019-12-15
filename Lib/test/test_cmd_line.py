@@ -5,7 +5,6 @@
 import os
 import subprocess
 import sys
-import sysconfig
 import tempfile
 import unittest
 from test import support
@@ -333,10 +332,10 @@ class CmdLineTest(unittest.TestCase):
 
         if sys.platform == 'win32':
             self.assertEqual(b'1\r\n2\r\n', out)
-            self.assertEqual(b'3\r\n4', err)
+            self.assertEqual(b'3\r\n4\r\n', err)
         else:
             self.assertEqual(b'1\n2\n', out)
-            self.assertEqual(b'3\n4', err)
+            self.assertEqual(b'3\n4\n', err)
 
     def test_unmached_quote(self):
         # Issue #10206: python program starting with unmatched quote
@@ -369,6 +368,8 @@ class CmdLineTest(unittest.TestCase):
     # Issue #7111: Python should work without standard streams
 
     @unittest.skipIf(os.name != 'posix', "test needs POSIX semantics")
+    @unittest.skipIf(sys.platform == "vxworks",
+                         "test needs preexec support in subprocess.Popen")
     def _test_no_stdio(self, streams):
         code = """if 1:
             import os, sys
@@ -390,7 +391,7 @@ class CmdLineTest(unittest.TestCase):
             stderr=subprocess.PIPE,
             preexec_fn=preexec)
         out, err = p.communicate()
-        self.assertEqual(support.strip_python_stderr(err), b'')
+        self.assertEqual(err, b'')
         self.assertEqual(p.returncode, 42)
 
     def test_no_stdin(self):

@@ -13,18 +13,21 @@ quickly. Guido reports needing to boost FILES_PER_THREAD to 500 before
 provoking a 2.0 failure under Linux.
 """
 
-NUM_THREADS = 20
-FILES_PER_THREAD = 50
-
 import tempfile
 
-from test.support import start_threads, import_module
+from test.support import start_threads
 import unittest
 import io
 import threading
 from traceback import print_exc
 
+
+NUM_THREADS = 20
+FILES_PER_THREAD = 50
+
+
 startEvent = threading.Event()
+
 
 class TempFileGreedy(threading.Thread):
     error_count = 0

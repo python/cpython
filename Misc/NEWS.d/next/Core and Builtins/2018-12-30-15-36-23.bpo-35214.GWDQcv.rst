@@ -1,2 +1,0 @@
-clang Memory Sanitizer build instrumentation was added to work around false
-positives from posix, socket, time, test_io, and test_faulthandler.

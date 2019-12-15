@@ -1,2 +1,0 @@
-Use app.add_object_type() instead of the deprecated Sphinx function
-app.description_unit()

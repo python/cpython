@@ -56,13 +56,16 @@ static PyObject *
 float___round__(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
-    PyObject *o_ndigits = NULL;
+    PyObject *o_ndigits = Py_None;
 
-    if (!_PyArg_UnpackStack(args, nargs, "__round__",
-        0, 1,
-        &o_ndigits)) {
+    if (!_PyArg_CheckPositional("__round__", nargs, 0, 1)) {
         goto exit;
     }
+    if (nargs < 1) {
+        goto skip_optional;
+    }
+    o_ndigits = args[0];
+skip_optional:
     return_value = float___round___impl(self, o_ndigits);
 
 exit:
@@ -173,11 +176,14 @@ float_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
         !_PyArg_NoKeywords("float", kwargs)) {
         goto exit;
     }
-    if (!PyArg_UnpackTuple(args, "float",
-        0, 1,
-        &x)) {
+    if (!_PyArg_CheckPositional("float", PyTuple_GET_SIZE(args), 0, 1)) {
         goto exit;
     }
+    if (PyTuple_GET_SIZE(args) < 1) {
+        goto skip_optional;
+    }
+    x = PyTuple_GET_ITEM(args, 0);
+skip_optional:
     return_value = float_new_impl(type, x);
 
 exit:
@@ -229,7 +235,7 @@ float___getformat__(PyTypeObject *type, PyObject *arg)
     const char *typestr;
 
     if (!PyUnicode_Check(arg)) {
-        _PyArg_BadArgument("__getformat__", "str", arg);
+        _PyArg_BadArgument("__getformat__", "argument", "str", arg);
         goto exit;
     }
     Py_ssize_t typestr_length;
@@ -279,8 +285,33 @@ float___set_format__(PyTypeObject *type, PyObject *const *args, Py_ssize_t nargs
     const char *typestr;
     const char *fmt;
 
-    if (!_PyArg_ParseStack(args, nargs, "ss:__set_format__",
-        &typestr, &fmt)) {
+    if (!_PyArg_CheckPositional("__set_format__", nargs, 2, 2)) {
+        goto exit;
+    }
+    if (!PyUnicode_Check(args[0])) {
+        _PyArg_BadArgument("__set_format__", "argument 1", "str", args[0]);
+        goto exit;
+    }
+    Py_ssize_t typestr_length;
+    typestr = PyUnicode_AsUTF8AndSize(args[0], &typestr_length);
+    if (typestr == NULL) {
+        goto exit;
+    }
+    if (strlen(typestr) != (size_t)typestr_length) {
+        PyErr_SetString(PyExc_ValueError, "embedded null character");
+        goto exit;
+    }
+    if (!PyUnicode_Check(args[1])) {
+        _PyArg_BadArgument("__set_format__", "argument 2", "str", args[1]);
+        goto exit;
+    }
+    Py_ssize_t fmt_length;
+    fmt = PyUnicode_AsUTF8AndSize(args[1], &fmt_length);
+    if (fmt == NULL) {
+        goto exit;
+    }
+    if (strlen(fmt) != (size_t)fmt_length) {
+        PyErr_SetString(PyExc_ValueError, "embedded null character");
         goto exit;
     }
     return_value = float___set_format___impl(type, typestr, fmt);
@@ -308,7 +339,7 @@ float___format__(PyObject *self, PyObject *arg)
     PyObject *format_spec;
 
     if (!PyUnicode_Check(arg)) {
-        _PyArg_BadArgument("__format__", "str", arg);
+        _PyArg_BadArgument("__format__", "argument", "str", arg);
         goto exit;
     }
     if (PyUnicode_READY(arg) == -1) {
@@ -320,4 +351,4 @@ float___format__(PyObject *self, PyObject *arg)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=e8f8be828462d58b input=a9049054013a1b77]*/
+/*[clinic end generated code: output=1676433b9f04fbc9 input=a9049054013a1b77]*/

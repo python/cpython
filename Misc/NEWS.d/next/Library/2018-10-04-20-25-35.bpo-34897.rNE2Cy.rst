@@ -1,2 +1,0 @@
-Adjust test.support.missing_compiler_executable check so that a nominal
-command name of "" is ignored. Patch by Michael Felt.

@@ -1,0 +1,5 @@
+# Requirements for docs build on netlify
+# Pin sphinx to version specified in .travis.yml
+sphinx==2.2.0
+blurb
+python-docs-theme

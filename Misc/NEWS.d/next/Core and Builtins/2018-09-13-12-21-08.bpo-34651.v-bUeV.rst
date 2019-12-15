@@ -1,3 +1,0 @@
-Only allow the main interpreter to fork.  The avoids the possibility of
-affecting the main interpreter, which is critical to operation of the
-runtime.

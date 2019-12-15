@@ -1,2 +1,0 @@
-Add ``moveto()`` method to the ``tkinter.Canvas`` widget. Patch by Juliette
-Monsel.

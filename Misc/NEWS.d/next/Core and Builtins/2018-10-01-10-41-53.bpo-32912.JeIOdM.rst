@@ -1,2 +1,0 @@
-A :exc:`SyntaxWarning` is now emitted instead of a :exc:`DeprecationWarning`
-for invalid escape sequences in string and bytes literals.

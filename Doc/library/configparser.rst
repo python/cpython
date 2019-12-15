@@ -313,6 +313,8 @@ from ``get()`` calls.
       my_dir: %(home_dir)s/lumberjack
       my_pictures: %(my_dir)s/Pictures
 
+      [Escape]
+      gain: 80%%  # use a %% to escape the % sign (% is the only character that needs to be escaped)
 
    In the example above, :class:`ConfigParser` with *interpolation* set to
    ``BasicInterpolation()`` would resolve ``%(home_dir)s`` to the value of
@@ -345,6 +347,9 @@ from ``get()`` calls.
       home_dir: /Users
       my_dir: ${home_dir}/lumberjack
       my_pictures: ${my_dir}/Pictures
+
+      [Escape]
+      cost: $$80  # use a $$ to escape the $ sign ($ is the only character that needs to be escaped)
 
    Values from other sections can be fetched as well:
 
@@ -476,9 +481,9 @@ the :meth:`__init__` options:
      ...                                'bar': 'y',
      ...                                'baz': 'z'}
      ... })
-     >>> parser.sections()  # doctest: +SKIP
+     >>> parser.sections()
      ['section1', 'section2', 'section3']
-     >>> [option for option in parser['section3']]  # doctest: +SKIP
+     >>> [option for option in parser['section3']]
      ['foo', 'bar', 'baz']
 
 * *allow_no_value*, default value: ``False``
@@ -721,6 +726,12 @@ be overridden by subclasses or by attribute assignment.
      >>> list(custom['Section2'].keys())
      ['AnotherKey']
 
+  .. note::
+     The optionxform function transforms option names to a canonical form.
+     This should be an idempotent function: if the name is already in
+     canonical form, it should be returned unchanged.
+
+
 .. attribute:: ConfigParser.SECTCRE
 
   A compiled regular expression used to parse section headers.  The default
@@ -921,7 +932,7 @@ ConfigParser Objects
       providing consistent behavior across the parser: non-string
       keys and values are implicitly converted to strings.
 
-   .. versionchanged:: 3.7
+   .. versionchanged:: 3.8
       The default *dict_type* is :class:`dict`, since it now preserves
       insertion order.
 
@@ -1199,7 +1210,7 @@ RawConfigParser Objects
    names, and values via its unsafe ``add_section`` and ``set`` methods,
    as well as the legacy ``defaults=`` keyword argument handling.
 
-   .. versionchanged:: 3.7
+   .. versionchanged:: 3.8
       The default *dict_type* is :class:`dict`, since it now preserves
       insertion order.
 

@@ -1,2 +1,0 @@
-Fix various issues with memory allocation error handling.  Patch by Zackery
-Spytz.

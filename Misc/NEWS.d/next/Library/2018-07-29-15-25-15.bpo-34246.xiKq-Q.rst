@@ -1,2 +1,0 @@
-:meth:`smtplib.SMTP.send_message` no longer modifies the content of the
-*mail_options* argument. Patch by Pablo S. Blum de Aguiar.

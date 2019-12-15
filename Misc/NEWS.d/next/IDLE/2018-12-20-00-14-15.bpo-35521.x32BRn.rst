@@ -1,2 +1,0 @@
-Document the IDLE editor code context feature. Add some internal references
-within the IDLE doc.

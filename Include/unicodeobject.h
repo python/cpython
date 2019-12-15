@@ -174,9 +174,9 @@ PyAPI_FUNC(Py_ssize_t) PyUnicode_GetLength(
 /* Get the number of Py_UNICODE units in the
    string representation. */
 
-PyAPI_FUNC(Py_ssize_t) PyUnicode_GetSize(
+Py_DEPRECATED(3.3) PyAPI_FUNC(Py_ssize_t) PyUnicode_GetSize(
     PyObject *unicode           /* Unicode object */
-    ) Py_DEPRECATED(3.3);
+    );
 
 #if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= 0x03030000
 /* Read a character from the string. */
@@ -328,17 +328,6 @@ PyAPI_FUNC(wchar_t*) PyUnicode_AsWideCharString(
 
 PyAPI_FUNC(PyObject*) PyUnicode_FromOrdinal(int ordinal);
 
-/* --- Free-list management ----------------------------------------------- */
-
-/* Clear the free list used by the Unicode implementation.
-
-   This can be used to release memory used for objects on the free
-   list back to the Python memory allocator.
-
-*/
-
-PyAPI_FUNC(int) PyUnicode_ClearFreeList(void);
-
 /* === Builtin Codecs =====================================================
 
    Many of these APIs take two arguments encoding and errors. These
@@ -381,11 +370,11 @@ PyAPI_FUNC(PyObject*) PyUnicode_Decode(
    Use PyCodec_Decode() to decode with rot13 and non-standard codecs
    that decode from str. */
 
-PyAPI_FUNC(PyObject*) PyUnicode_AsDecodedObject(
+Py_DEPRECATED(3.6) PyAPI_FUNC(PyObject*) PyUnicode_AsDecodedObject(
     PyObject *unicode,          /* Unicode object */
     const char *encoding,       /* encoding */
     const char *errors          /* error handling */
-    ) Py_DEPRECATED(3.6);
+    );
 
 /* Decode a Unicode object unicode and return the result as Unicode
    object.
@@ -394,11 +383,11 @@ PyAPI_FUNC(PyObject*) PyUnicode_AsDecodedObject(
    Use PyCodec_Decode() to decode with rot13 and non-standard codecs
    that decode from str to str. */
 
-PyAPI_FUNC(PyObject*) PyUnicode_AsDecodedUnicode(
+Py_DEPRECATED(3.6) PyAPI_FUNC(PyObject*) PyUnicode_AsDecodedUnicode(
     PyObject *unicode,          /* Unicode object */
     const char *encoding,       /* encoding */
     const char *errors          /* error handling */
-    ) Py_DEPRECATED(3.6);
+    );
 
 /* Encodes a Unicode object and returns the result as Python
    object.
@@ -408,11 +397,11 @@ PyAPI_FUNC(PyObject*) PyUnicode_AsDecodedUnicode(
    Use PyCodec_Encode() for encoding with rot13 and non-standard codecs
    that encode form str to non-bytes. */
 
-PyAPI_FUNC(PyObject*) PyUnicode_AsEncodedObject(
+Py_DEPRECATED(3.6) PyAPI_FUNC(PyObject*) PyUnicode_AsEncodedObject(
     PyObject *unicode,          /* Unicode object */
     const char *encoding,       /* encoding */
     const char *errors          /* error handling */
-    ) Py_DEPRECATED(3.6);
+    );
 
 /* Encodes a Unicode object and returns the result as Python string
    object. */
@@ -430,11 +419,11 @@ PyAPI_FUNC(PyObject*) PyUnicode_AsEncodedString(
    Use PyCodec_Encode() to encode with rot13 and non-standard codecs
    that encode from str to str. */
 
-PyAPI_FUNC(PyObject*) PyUnicode_AsEncodedUnicode(
+Py_DEPRECATED(3.6) PyAPI_FUNC(PyObject*) PyUnicode_AsEncodedUnicode(
     PyObject *unicode,          /* Unicode object */
     const char *encoding,       /* encoding */
     const char *errors          /* error handling */
-    ) Py_DEPRECATED(3.6);
+    );
 
 /* Build an encoding map. */
 
@@ -1031,16 +1020,6 @@ PyAPI_FUNC(int) PyUnicode_Contains(
 PyAPI_FUNC(int) PyUnicode_IsIdentifier(PyObject *s);
 
 /* === Characters Type APIs =============================================== */
-
-#if defined(Py_DEBUG) && !defined(Py_LIMITED_API)
-PyAPI_FUNC(int) _PyUnicode_CheckConsistency(
-    PyObject *op,
-    int check_content);
-#elif !defined(NDEBUG)
-/* For asserts that call _PyUnicode_CheckConsistency(), which would
- * otherwise be a problem when building with asserts but without Py_DEBUG. */
-#define _PyUnicode_CheckConsistency(op, check_content) PyUnicode_Check(op)
-#endif
 
 #ifndef Py_LIMITED_API
 #  define Py_CPYTHON_UNICODEOBJECT_H
