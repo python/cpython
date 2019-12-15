@@ -1935,9 +1935,7 @@ ast_for_decorated(struct compiling *c, const node *n)
 static expr_ty
 ast_for_namedexpr(struct compiling *c, const node *n)
 {
-    /* if_stmt: 'if' namedexpr_test ':' suite ('elif' namedexpr_test ':' suite)*
-         ['else' ':' suite]
-       namedexpr_test: test [':=' test]
+    /* namedexpr_test: test [':=' test]
        argument: ( test [comp_for] |
             test ':=' test |
             test '=' test |
