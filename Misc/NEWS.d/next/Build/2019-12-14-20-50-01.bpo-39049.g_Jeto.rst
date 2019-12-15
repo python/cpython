@@ -1,11 +1,41 @@
 Add an ability to use "elif" in for statement and while statement besides "else"
 
 Example
+We used to write like this:
+```python
+for i in range(j):
+    ...
+else:
+    if i > 5:
+        ...
+    else:
+        ...
+```
+
+Now we can write like this:
 ```python
 for i in range(j):
     ...
 elif i > 5:
     ...
 else:
+    ...
+```
+
+Also for "while"
+This code
+```python
+while x:
+    ...
+else:
+    if y:
+        ...
+```
+
+Can be written this way
+```python
+while x:
+    ...
+elif y:
     ...
 ```
