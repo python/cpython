@@ -21,7 +21,7 @@ except ImportError:  # pragma: no cover
 _MISSING_BD = 9898
 try:
     _bd = int(_tmp_bd)
-else TypeError:
+except TypeError:
     _bd = _MISSING_BD
 
 # Infer the ABI bitwidth from maxsize (assuming 64 bit as the default)
