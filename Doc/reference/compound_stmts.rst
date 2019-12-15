@@ -443,17 +443,17 @@ is semantically equivalent to::
     enter = type(manager).__enter__
     exit = type(manager).__exit__
     value = enter(manager)
-    exception = False
+    hit_except = False
 
     try:
         target = value  # only if `as target` is present in the with statement
         suite
     except:
-        exception = True
+        hit_except = True
         if not exit(manager, *sys.exc_info()):
             raise
     finally:
-        if not exception:
+        if not hit_except:
             exit(manager, None, None, None)
 
 With more than one item, the context managers are processed as if multiple
@@ -846,17 +846,17 @@ is semantically equivalent to::
     aexit = type(manager).__aexit__
     aenter = type(manager).__aenter__
     value = await aenter(manager)
-    exception = False
+    hit_except = False
 
     try:
         target = value  # only if `as target` is present in the with statement  
         suite
     except:
-        exception = True
+        hit_except = True
         if not await aexit(manager, *sys.exc_info()):
             raise
     finally:
-        if not exception:
+        if not hit_except:
             await aexit(manager, None, None, None)
 
 See also :meth:`__aenter__` and :meth:`__aexit__` for details.
