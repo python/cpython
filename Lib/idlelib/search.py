@@ -32,7 +32,10 @@ def find(text):
     used as the search phrase; otherwise, the previous entry
     is used.  No search is done with this command.
     """
-    pat = text.get("sel.first", "sel.last")
+    try:
+        pat = text.get("sel.first", "sel.last")
+    except TclError:
+        pat = ""
     return _setup(text).open(text, pat)  # Open is inherited from SDBase.
 
 def find_again(text):

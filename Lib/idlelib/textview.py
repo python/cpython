@@ -7,6 +7,7 @@ from tkinter.ttk import Frame, Scrollbar, Button
 from tkinter.messagebox import showerror
 
 from functools import update_wrapper
+from idlelib import search
 from idlelib.colorizer import color_config
 
 
@@ -71,15 +72,16 @@ class ScrollableTextFrame(Frame):
 
 
 class ViewFrame(Frame):
-    "Display TextFrame and Close button."
+    """Display a TextFrame and "Close" and "Search" buttons."""
     def __init__(self, parent, contents, wrap='word'):
-        """Create a frame for viewing text with a "Close" button.
+        """Create a frame for viewing text.
 
         parent - parent widget for this frame
         contents - text to display
         wrap - type of text wrapping to use ('word', 'char' or 'none')
 
         The Text widget is accessible via the 'text' attribute.
+        The frame has "Close" and "Search" buttons.
         """
         super().__init__(parent)
         self.parent = parent
@@ -93,14 +95,27 @@ class ViewFrame(Frame):
         color_config(text)
         text.focus_set()
 
+        buttons = Frame(self, padding=2)
         self.button_ok = button_ok = Button(
-                self, text='Close', command=self.ok, takefocus=False)
+                buttons, text='Close', command=self.ok, takefocus=False)
         self.textframe.pack(side='top', expand=True, fill='both')
-        button_ok.pack(side='bottom')
+        button_ok.pack(side='left', padx=5)
+
+        self.button_search = button_search = Button(
+                buttons, text='Search', command=self.find, takefocus=False)
+        button_search.pack(side='left', padx=5)
+
+        text.event_add('<<find>>', '<Control-f>')
+        text.bind('<<find>>', self.find)
+        buttons.pack(side='bottom')
 
     def ok(self, event=None):
         """Dismiss text viewer dialog."""
         self.parent.destroy()
+
+    def find(self, event=None):
+        """Open the search dialog."""
+        search.find(self.text)
 
 
 class ViewWindow(Toplevel):
@@ -108,7 +123,7 @@ class ViewWindow(Toplevel):
 
     def __init__(self, parent, title, contents, modal=True, wrap=WORD,
                  *, _htest=False, _utest=False):
-        """Show the given text in a scrollable window with a 'close' button.
+        """Show the given text in a scrollable window.
 
         If modal is left True, users cannot interact with other windows
         until the textview window is closed.
@@ -130,8 +145,6 @@ class ViewWindow(Toplevel):
         self.title(title)
         self.viewframe = ViewFrame(self, contents, wrap=wrap)
         self.protocol("WM_DELETE_WINDOW", self.ok)
-        self.button_ok = button_ok = Button(self, text='Close',
-                                            command=self.ok, takefocus=False)
         self.viewframe.pack(side='top', expand=True, fill='both')
 
         self.is_modal = modal
