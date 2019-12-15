@@ -122,6 +122,7 @@ class ThreadPoolExecutor(_base.Executor):
     _counter = itertools.count().__next__
 
     def __init__(self, max_workers=None, thread_name_prefix='',
+                 shrink_on_exception=False,
                  initializer=None, initargs=()):
         """Initializes a new ThreadPoolExecutor instance.
 
@@ -129,6 +130,8 @@ class ThreadPoolExecutor(_base.Executor):
             max_workers: The maximum number of threads that can be used to
                 execute the given calls.
             thread_name_prefix: An optional name prefix to give our threads.
+            shrink_on_exception: If no more threads can be created shrink the
+                pool decreasing max_workers instead of throwing exception
             initializer: A callable used to initialize worker threads.
             initargs: A tuple of arguments to pass to the initializer.
         """
@@ -149,6 +152,7 @@ class ThreadPoolExecutor(_base.Executor):
 
         self._max_workers = max_workers
         self._work_queue = queue.SimpleQueue()
+        self._shrink_on_exception = shrink_on_exception
         self._idle_semaphore = threading.Semaphore(0)
         self._threads = set()
         self._broken = False
@@ -198,9 +202,16 @@ class ThreadPoolExecutor(_base.Executor):
                                        self._initializer,
                                        self._initargs))
             t.daemon = True
-            t.start()
-            self._threads.add(t)
-            _threads_queues[t] = self._work_queue
+            try:
+                t.start()
+            except RuntimeError:
+                if self._shrink_on_exception:
+                    self._max_workers = num_threads
+                else:
+                    raise
+            else:
+                self._threads.add(t)
+                _threads_queues[t] = self._work_queue
 
     def _initializer_failed(self):
         with self._shutdown_lock:
@@ -215,6 +226,11 @@ class ThreadPoolExecutor(_base.Executor):
                 if work_item is not None:
                     work_item.future.set_exception(BrokenThreadPool(self._broken))
 
+    def set_size(self, new_max_workers:int)->int:
+        if new_max_workers > 0:
+            self._max_workers = new_max_workers
+        return self._max_workers
+                    
     def shutdown(self, wait=True):
         with self._shutdown_lock:
             self._shutdown = True
