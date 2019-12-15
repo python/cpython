@@ -270,13 +270,35 @@ class ProxyTests(unittest.TestCase):
         self.assertTrue(bypass('localhost'))
         self.assertTrue(bypass('LocalHost'))                 # MixedCase
         self.assertTrue(bypass('LOCALHOST'))                 # UPPERCASE
+        self.assertTrue(bypass('.localhost'))
         self.assertTrue(bypass('newdomain.com:1234'))
+        self.assertTrue(bypass('.newdomain.com:1234'))
         self.assertTrue(bypass('foo.d.o.t'))                 # issue 29142
+        self.assertTrue(bypass('d.o.t'))
         self.assertTrue(bypass('anotherdomain.com:8888'))
+        self.assertTrue(bypass('.anotherdomain.com:8888'))
         self.assertTrue(bypass('www.newdomain.com:1234'))
         self.assertFalse(bypass('prelocalhost'))
         self.assertFalse(bypass('newdomain.com'))            # no port
         self.assertFalse(bypass('newdomain.com:1235'))       # wrong port
+
+    def test_proxy_bypass_environment_always_match(self):
+        bypass = urllib.request.proxy_bypass_environment
+        self.env.set('NO_PROXY', '*')
+        self.assertTrue(bypass('newdomain.com'))
+        self.assertTrue(bypass('newdomain.com:1234'))
+        self.env.set('NO_PROXY', '*, anotherdomain.com')
+        self.assertTrue(bypass('anotherdomain.com'))
+        self.assertFalse(bypass('newdomain.com'))
+        self.assertFalse(bypass('newdomain.com:1234'))
+
+    def test_proxy_bypass_environment_newline(self):
+        bypass = urllib.request.proxy_bypass_environment
+        self.env.set('NO_PROXY',
+                     'localhost, anotherdomain.com, newdomain.com:1234')
+        self.assertFalse(bypass('localhost\n'))
+        self.assertFalse(bypass('anotherdomain.com:8888\n'))
+        self.assertFalse(bypass('newdomain.com:1234\n'))
 
 
 class ProxyTests_withOrderedEnv(unittest.TestCase):

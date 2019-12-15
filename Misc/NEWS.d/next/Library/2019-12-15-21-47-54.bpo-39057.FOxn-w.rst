@@ -1,0 +1,2 @@
+:func:`urllib.request.proxy_bypass_environment` now ignores leading dots and
+no longer ignores a trailing newline.
