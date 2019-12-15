@@ -925,8 +925,8 @@ Internal types
       the first line number of the function; :attr:`co_lnotab` is a string
       encoding the mapping from bytecode offsets to line numbers (for details
       see the source code of the interpreter); :attr:`co_stacksize` is the
-      required stack size (including local variables); :attr:`co_flags` is an
-      integer encoding a number of flags for the interpreter.
+      required stack size; :attr:`co_flags` is an integer encoding a number
+      of flags for the interpreter.
 
       .. index:: object: generator
 
