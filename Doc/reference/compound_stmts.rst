@@ -443,10 +443,10 @@ is semantically equivalent to::
     enter = type(manager).__enter__
     exit = type(manager).__exit__
     value = enter(manager)
-    target = value  # only if `as target` is present in the with statement
     exception = False
 
     try:
+        target = value  # only if `as target` is present in the with statement
         suite
     except:
         exception = True
@@ -846,10 +846,10 @@ is semantically equivalent to::
     aexit = type(manager).__aexit__
     aenter = type(manager).__aenter__
     value = await aenter(manager)
-    target = value  # only if `as target` is present in the with statement  
     exception = False
 
     try:
+        target = value  # only if `as target` is present in the with statement  
         suite
     except:
         exception = True
