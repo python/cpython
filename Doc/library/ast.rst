@@ -379,7 +379,7 @@ The following options are accepted:
 .. cmdoption:: -i <indent>
                --indent <indent>
 
-   Indentation of nodes in AST.
+   Indentation of nodes in AST (number of spaces).
 
 If :file:`infile` is specified its contents are parsed to AST and dumped
 to stdout.  Otherwise, the content is read from stdin.

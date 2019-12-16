@@ -568,7 +568,7 @@ def main():
                         help='include attributes such as line numbers and '
                              'column offsets')
     parser.add_argument('-i', '--indent', type=int, default=3,
-                        help='indent level')
+                        help='indentation of nodes (number of spaces)')
     args = parser.parse_args()
 
     with args.infile as infile:

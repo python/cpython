@@ -1,1 +1,2 @@
-Add indent level and type comments parsing options to ast tool.
+Add ``-i`` and ``--indent`` (indent level), and ``--no-type-comments``
+(type comments) command line options to ast parsing tool.
