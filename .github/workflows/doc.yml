@@ -33,3 +33,8 @@ jobs:
       run: |
         cd Doc
         make check suspicious html PYTHON=python
+    - name: Upload
+        uses: actions/upload-artifact@v1
+        with:
+          name: python-doc-html
+          path: Doc/build/html.tar.gz
