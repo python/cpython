@@ -291,12 +291,16 @@ class IMAP4:
         # Default value of IMAP4.host is '', but socket.getaddrinfo()
         # (which is used by socket.create_connection()) expects None
         # as a default value for host.
+        if timeout is not None and not timeout:
+            raise ValueError('A non-blocking socket is not supported')
         host = None if not self.host else self.host
         sys.audit("imaplib.open", self, self.host, self.port)
-        timeout = socket._GLOBAL_DEFAULT_TIMEOUT if timeout is None else timeout
-        return socket.create_connection((host, self.port), timeout)
+        address = (host, self.port)
+        if timeout is not None:
+            return socket.create_connection(address, timeout)
+        return socket.create_connection(address)
 
-    def open(self, host = '', port = IMAP4_PORT, timeout = None):
+    def open(self, host='', port=IMAP4_PORT, timeout=None):
         """Setup connection to remote server on "host:port"
             (default: localhost:standard IMAP4 port).
         This connection will be used by the routines:
@@ -1335,7 +1339,7 @@ class IMAP4_stream(IMAP4):
         IMAP4.__init__(self)
 
 
-    def open(self, host = None, port = None):
+    def open(self, host=None, port=None, timeout=None):
         """Setup a stream connection.
         This connection will be used by the routines:
             read, readline, send, shutdown.

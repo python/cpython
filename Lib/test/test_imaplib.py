@@ -443,15 +443,14 @@ class NewIMAPTestsMixin():
     def test_imaplib_timeout_test(self):
         _, server = self._setup(SimpleIMAPHandler)
         addr = server.server_address[1]
-        client = self.imap_class("localhost", addr, timeout=10.0)
-        self.assertEqual(client.sock.timeout, 10.0)
+        client = self.imap_class("localhost", addr, timeout=support.LOOPBACK_TIMEOUT)
+        self.assertEqual(client.sock.timeout, support.LOOPBACK_TIMEOUT)
         client.shutdown()
         client = self.imap_class("localhost", addr, timeout=None)
         self.assertEqual(client.sock.timeout, None)
         client.shutdown()
-        client = self.imap_class("localhost", addr, timeout=socket._GLOBAL_DEFAULT_TIMEOUT)
-        self.assertEqual(client.sock.timeout, None)
-        client.shutdown()
+        with self.assertRaises(ValueError):
+            client = self.imap_class("localhost", addr, timeout=0)
 
     def test_imaplib_timeout_functionality_test(self):
         class TimeoutHandler(SimpleIMAPHandler):
@@ -462,7 +461,7 @@ class NewIMAPTestsMixin():
         _, server = self._setup(TimeoutHandler)
         addr = server.server_address[1]
         with self.assertRaises(socket.timeout):
-            client = self.imap_class("localhost", addr, timeout=0.1)
+            client = self.imap_class("localhost", addr, timeout=0.001)
 
     def test_with_statement(self):
         _, server = self._setup(SimpleIMAPHandler, connect=False)

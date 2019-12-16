@@ -369,7 +369,9 @@ An :class:`IMAP4` instance has the following methods:
    Opens socket to *port* at *host*. The optional *timeout* parameter
    specifies a timeout in seconds for the connection attempt.
    If timeout is not given or is None, the global default socket timeout
-   is used. This method is implicitly called by the :class:`IMAP4` constructor.
+   is used. Also note that if the *timeout* parameter is set to be zero,
+   it will raise a :class:`ValueError` to reject creating a non-blocking socket.
+   This method is implicitly called by the :class:`IMAP4` constructor.
    The connection objects established by this method will be used in
    the :meth:`IMAP4.read`, :meth:`IMAP4.readline`, :meth:`IMAP4.send`,
    and :meth:`IMAP4.shutdown` methods. You may override this method.
