@@ -1,14 +1,16 @@
 name: Tests
 
 on:
-  #push:
-  #  branches:
-  #  - master
-  #  - 3.8
-  #  - 3.7
-  #  paths-ignore:
-  #  - 'Doc/**'
-  #  - 'Misc/**'
+  push:
+    branches:
+    - master
+    - 3.8
+    - 3.7
+    paths-ignore:
+    - 'Doc/**'
+    - 'Misc/**'
+    - '**/*.md'
+    - '**/*.rst'
   pull_request:
     branches:
     - master
@@ -17,6 +19,8 @@ on:
     paths-ignore:
     - 'Doc/**'
     - 'Misc/**'
+    - '**/*.md'
+    - '**/*.rst'
 
 jobs:
   build_win32:
