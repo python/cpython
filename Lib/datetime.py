@@ -1229,11 +1229,13 @@ class IsoCalendarDate(tuple):
         return self[2]
 
     def __reduce__(self):
+        # This code is intended to pickle the object without making the
+        # class public. See https://bugs.python.org/msg352381
         return (tuple, (tuple(self),))
 
     def __repr__(self):
         return (f'{self.__class__.__name__}'
-            f'(year={self[0]}, week={self[1]}, weekday={self[2]})')
+                f'(year={self[0]}, week={self[1]}, weekday={self[2]})')
 
 
 _IsoCalendarDate = IsoCalendarDate

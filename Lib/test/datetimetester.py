@@ -1389,11 +1389,9 @@ class TestDate(HarmlessMixedComparison, unittest.TestCase):
         The result of a round trip should be a plain tuple.
         """
         d = self.theclass(2019, 1, 1)
-        f = io.BytesIO()
-        pickle.dump(d.isocalendar(), f)
-        f.seek(0)
-        res = pickle.load(f)
-
+        p = pickle.dumps(d.isocalendar())
+        res = pickle.loads(p)
+        self.assertEqual(type(res), tuple)
         self.assertEqual(res, (2019, 1, 2))
 
     def test_iso_long_years(self):
