@@ -1199,11 +1199,8 @@ class _Unparser(NodeVisitor):
         # keyword-only arguments
         if node.kwonlyargs:
             for a, d in zip(node.kwonlyargs, node.kw_defaults):
-                if first:
-                    first = False
-                else:
-                    self.write(", ")
-                self.traverse(a),
+                self.write(", ")
+                self.traverse(a)
                 if d:
                     self.write("=")
                     self.traverse(d)
