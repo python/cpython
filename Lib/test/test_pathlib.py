@@ -1672,6 +1672,7 @@ class _BasePathTest(object):
         self.assertFileNotFound(p.stat)
         self.assertFileNotFound(p.unlink)
 
+    @unittest.skipUnless(hasattr(os, "link"), "os.link() is not present")
     def test_link_to(self):
         P = self.cls(BASE)
         p = P / 'fileA'
@@ -1690,6 +1691,15 @@ class _BasePathTest(object):
         q.link_to(r)
         self.assertEqual(os.stat(r).st_size, size)
         self.assertTrue(q.stat)
+
+    @unittest.skipIf(hasattr(os, "link"), "os.link() is present")
+    def test_link_to_not_implemented(self):
+        P = self.cls(BASE)
+        p = P / 'fileA'
+        # linking to another path.
+        q = P / 'dirA' / 'fileAA'
+        with self.assertRaises(NotImplementedError):
+            p.link_to(q)
 
     def test_rename(self):
         P = self.cls(BASE)
