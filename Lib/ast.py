@@ -563,7 +563,7 @@ def main():
                         choices=('exec', 'single', 'eval', 'func_type'),
                         help='specify what kind of code must be parsed')
     parser.add_argument('--no-type-comments', default=True, action='store_false',
-                        help='dont add information about type comments')
+                        help="don't add information about type comments")
     parser.add_argument('-a', '--include-attributes', action='store_true',
                         help='include attributes such as line numbers and '
                              'column offsets')
