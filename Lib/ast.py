@@ -628,13 +628,13 @@ class _Unparser(NodeVisitor):
         def __exit__(self, exc_type, exc_value, traceback):
             self.unparser.write(self.delimiter[-1])
 
-    def delimit_if(self, condition, delimiter = "()"):
+    def delimit_if(self, condition, delimiter):
         if condition:
             return self._Delimit(self, delimiter)
         else:
             return self._NoDelimit()
 
-    def delimit(self, delimiter = "()"):
+    def delimit(self, delimiter):
         return self._Delimit(self, delimiter)
 
     def traverse(self, node):
@@ -660,7 +660,7 @@ class _Unparser(NodeVisitor):
         self.traverse(node.value)
 
     def visit_NamedExpr(self, node):
-        with self.delimit():
+        with self.delimit("()"):
             self.traverse(node.target)
             self.write(" := ")
             self.traverse(node.value)
@@ -735,21 +735,21 @@ class _Unparser(NodeVisitor):
         self.interleave(lambda: self.write(", "), self.write, node.names)
 
     def visit_Await(self, node):
-        with self.delimit():
+        with self.delimit("()"):
             self.write("await")
             if node.value:
                 self.write(" ")
                 self.traverse(node.value)
 
     def visit_Yield(self, node):
-        with self.delimit():
+        with self.delimit("()"):
             self.write("yield")
             if node.value:
                 self.write(" ")
                 self.traverse(node.value)
 
     def visit_YieldFrom(self, node):
-        with self.delimit():
+        with self.delimit("()"):
             self.write("yield from")
             if node.value:
                 self.write(" ")
@@ -799,7 +799,7 @@ class _Unparser(NodeVisitor):
             self.fill("@")
             self.traverse(deco)
         self.fill("class " + node.name)
-        with self.delimit():
+        with self.delimit("()"):
             comma = False
             for e in node.bases:
                 if comma:
@@ -830,7 +830,7 @@ class _Unparser(NodeVisitor):
             self.traverse(deco)
         def_str = fill_suffix + " " + node.name
         self.fill(def_str)
-        with self.delimit():
+        with self.delimit("()"):
             self.traverse(node.args)
         if node.returns:
             self.write(" -> ")
@@ -947,7 +947,7 @@ class _Unparser(NodeVisitor):
     def visit_Constant(self, node):
         value = node.value
         if isinstance(value, tuple):
-            with self.delimit():
+            with self.delimit("()"):
                 if len(value) == 1:
                     self._write_constant(value[0])
                     self.write(",")
@@ -971,7 +971,7 @@ class _Unparser(NodeVisitor):
                 self.traverse(gen)
 
     def visit_GeneratorExp(self, node):
-        with self.delimit():
+        with self.delimit("()"):
             self.traverse(node.elt)
             for gen in node.generators:
                 self.traverse(gen)
@@ -1003,7 +1003,7 @@ class _Unparser(NodeVisitor):
             self.traverse(if_clause)
 
     def visit_IfExp(self, node):
-        with self.delimit():
+        with self.delimit("()"):
             self.traverse(node.body)
             self.write(" if ")
             self.traverse(node.test)
@@ -1038,7 +1038,7 @@ class _Unparser(NodeVisitor):
             )
 
     def visit_Tuple(self, node):
-        with self.delimit():
+        with self.delimit("()"):
             if len(node.elts) == 1:
                 elt = node.elts[0]
                 self.traverse(elt)
@@ -1049,7 +1049,7 @@ class _Unparser(NodeVisitor):
     unop = {"Invert": "~", "Not": "not", "UAdd": "+", "USub": "-"}
 
     def visit_UnaryOp(self, node):
-        with self.delimit():
+        with self.delimit("()"):
             self.write(self.unop[node.op.__class__.__name__])
             self.write(" ")
             self.traverse(node.operand)
@@ -1071,7 +1071,7 @@ class _Unparser(NodeVisitor):
     }
 
     def visit_BinOp(self, node):
-        with self.delimit():
+        with self.delimit("()"):
             self.traverse(node.left)
             self.write(" " + self.binop[node.op.__class__.__name__] + " ")
             self.traverse(node.right)
@@ -1090,7 +1090,7 @@ class _Unparser(NodeVisitor):
     }
 
     def visit_Compare(self, node):
-        with self.delimit():
+        with self.delimit("()"):
             self.traverse(node.left)
             for o, e in zip(node.ops, node.comparators):
                 self.write(" " + self.cmpops[o.__class__.__name__] + " ")
@@ -1099,7 +1099,7 @@ class _Unparser(NodeVisitor):
     boolops = {"And": "and", "Or": "or"}
 
     def visit_BoolOp(self, node):
-        with self.delimit():
+        with self.delimit("()"):
             s = " %s " % self.boolops[node.op.__class__.__name__]
             self.interleave(lambda: self.write(s), self.traverse, node.values)
 
@@ -1115,7 +1115,7 @@ class _Unparser(NodeVisitor):
 
     def visit_Call(self, node):
         self.traverse(node.func)
-        with self.delimit():
+        with self.delimit("()"):
             comma = False
             for e in node.args:
                 if comma:
@@ -1227,7 +1227,7 @@ class _Unparser(NodeVisitor):
         self.traverse(node.value)
 
     def visit_Lambda(self, node):
-        with self.delimit():
+        with self.delimit("()"):
             self.write("lambda ")
             self.traverse(node.args)
             self.write(": ")
