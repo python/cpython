@@ -398,7 +398,7 @@ The execution of the :keyword:`with` statement with one "item" proceeds as follo
 
 #. The context expression (the expression given in the :token:`with_item`) is
    evaluated to obtain a context manager.
-   
+
 #. The context manager's :meth:`__enter__` is loaded for later use.
 
 #. The context manager's :meth:`__exit__` is loaded for later use.
@@ -446,7 +446,7 @@ is semantically equivalent to::
     hit_except = False
 
     try:
-        target = value  # only if `as target` is present in the with statement
+        target = value
         suite
     except:
         hit_except = True
@@ -849,7 +849,7 @@ is semantically equivalent to::
     hit_except = False
 
     try:
-        target = value  # only if `as target` is present in the with statement  
+        target = value
         suite
     except:
         hit_except = True
