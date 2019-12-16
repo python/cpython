@@ -873,6 +873,16 @@ class TestContentDisposition(TestHeaderBase):
             {'filename': 'foo'},
             [errors.InvalidHeaderDefect]),
 
+        'invalid_value_with_fws_bw_ew': (
+            'attachment; filename="=?UTF-8?Q?Schulbesuchsbest=C3=A4ttigung=2E?='
+            '               =?UTF-8?Q?pdf?="',
+            'attachment',
+            {'filename': 'Schulbesuchsbestättigung.pdf'},
+            [errors.InvalidHeaderDefect]*3,
+            ('attachment; filename="Schulbesuchsbestättigung.pdf"'),
+            ('Content-Disposition: attachment;\n'
+             ' filename*=utf-8\'\'Schulbesuchsbest%C3%A4ttigung.pdf\n'),
+            )
     }
 
 

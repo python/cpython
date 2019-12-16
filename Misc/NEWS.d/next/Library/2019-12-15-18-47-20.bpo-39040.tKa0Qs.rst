@@ -1,0 +1,2 @@
+Fix parsing of invalid Content-Disposition email headers by collapsing
+whitespace between encoded words in a bare-quote-string.
