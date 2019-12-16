@@ -26,6 +26,7 @@
 """
 import sys
 from _ast import *
+from contextlib import contextmanager, nullcontext
 
 
 def parse(source, filename='<unknown>', mode='exec', *,
@@ -613,29 +614,20 @@ class _Unparser(NodeVisitor):
     def block(self):
         return self._Block(self)
 
-    class _NoDelimit:
-        def __enter__(self): pass
-        def __exit__(self, *args): pass
-
-    class _Delimit:
+    @contextmanager
+    def delimit(self, delimiter):
         """A context manager for preparing the source for expressions. It adds
         start of the delimiter  and enters, after exit it adds delimiter end."""
-        def __init__(self, unparser, delimiter):
-            self.unparser = unparser
-            self.delimiter = delimiter
-        def __enter__(self):
-            self.unparser.write(self.delimiter[0])
-        def __exit__(self, exc_type, exc_value, traceback):
-            self.unparser.write(self.delimiter[-1])
+
+        self.write(delimiter[0])
+        yield
+        self.write(delimiter[-1])
 
     def delimit_if(self, condition, delimiter):
         if condition:
-            return self._Delimit(self, delimiter)
+            return self.delimit(delimiter)
         else:
-            return self._NoDelimit()
-
-    def delimit(self, delimiter):
-        return self._Delimit(self, delimiter)
+            return nullcontext()
 
     def traverse(self, node):
         if isinstance(node, list):
