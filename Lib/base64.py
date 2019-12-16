@@ -430,6 +430,7 @@ def b85encode(b, pad=False):
     # if the function is never called
     if _b85chars is None:
         _b85chars = [bytes((i,)) for i in _b85alphabet]
+    if _b85chars2 is None:
         _b85chars2 = [(a + b) for a in _b85chars for b in _b85chars]
     return _85encode(b, _b85chars, _b85chars2, pad)
 
