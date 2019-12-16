@@ -2433,3 +2433,13 @@ In 3.6.7 the :mod:`tokenize` module now implicitly emits a ``NEWLINE`` token
 when provided with input that does not have a trailing new line.  This behavior
 now matches what the C tokenizer does internally.
 (Contributed by Ammar Askar in :issue:`33899`.)
+
+Notable changes in Python 3.6.10
+================================
+
+Due to significant security concerns, the *reuse_address* parameter of
+:meth:`asyncio.loop.create_datagram_endpoint` is no longer supported. This is
+because of the behavior of the socket option ``SO_REUSEADDR`` in UDP. For more
+details, see the documentation for ``loop.create_datagram_endpoint()``.
+(Contributed by Kyle Stanley, Antoine Pitrou, and Yury Selivanov in
+:issue:`37228`.)
