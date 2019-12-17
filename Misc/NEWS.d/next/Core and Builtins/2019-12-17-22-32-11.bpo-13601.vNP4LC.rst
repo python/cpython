@@ -1,0 +1,2 @@
+``sys.stderr`` is always line-buffered now, even if ``stderr`` is
+redirected to a file.
