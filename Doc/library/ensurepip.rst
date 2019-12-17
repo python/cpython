@@ -61,7 +61,11 @@ is at least as recent as the one available in ``ensurepip``, pass the
 By default, ``pip`` is installed into the current virtual environment
 (if one is active) or into the system site packages (if there is no
 active virtual environment). The installation location can be controlled
-through two additional command line options:
+through some additional command line options:
+
+.. option:: --prefix <dir>
+
+   Installs ``pip`` using the given directory prefix.
 
 .. option:: --root <dir>
 
@@ -104,7 +108,7 @@ Module API
 
 .. function:: bootstrap(root=None, upgrade=False, user=False, \
                         altinstall=False, default_pip=False, \
-                        verbosity=0)
+                        verbosity=0, prefix=None)
 
    Bootstraps ``pip`` into the current or designated environment.
 
@@ -131,6 +135,12 @@ Module API
 
    *verbosity* controls the level of output to :data:`sys.stdout` from the
    bootstrapping operation.
+
+   *prefix* specifies the directory prefix to use when installing.
+
+   .. versionadded:: 3.14
+
+      The *prefix* parameter.
 
    .. audit-event:: ensurepip.bootstrap root ensurepip.bootstrap
 
