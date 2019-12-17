@@ -226,6 +226,9 @@ def _runtest_inner2(ns, test_name):
     if test_runner is None:
         test_runner = functools.partial(_test_module, the_module)
 
+    pid = os.getpid()
+    nchild_before = support.get_child_processes(pid)
+
     try:
         if ns.huntrleaks:
             # Return True if the test leaked references
@@ -249,6 +252,16 @@ def _runtest_inner2(ns, test_name):
         gc.garbage.clear()
 
     support.reap_children()
+    if nchild_before is not None:
+        nchild_after = support.get_child_processes(pid)
+        diff = len(nchild_after) - len(nchild_before)
+        if diff:
+            print(f"Warning -- {test_name} leaked "
+                  f"{diff} child processes: "
+                  f"created={nchild_after - nchild_before}, "
+                  f"completed={nchild_before - nchild_after}",
+                  file=sys.stderr)
+            support.environment_altered = True
 
     return refleak
 

@@ -3403,3 +3403,38 @@ class catch_threading_exception:
         del self.exc_value
         del self.exc_traceback
         del self.thread
+
+
+def get_child_processes(ppid):
+    """
+    Get directly child processes of parent process identifier 'pid'.
+    """
+    proc_dir = '/proc'
+    try:
+        names = os.listdir(proc_dir)
+    except FileNotFoundError:
+        return None
+
+    children = []
+    for name in names:
+        if not name.isdigit():
+            continue
+        pid = int(name)
+
+        filename = os.path.join(proc_dir, str(pid), 'status')
+        try:
+            fp = open(filename, encoding="utf-8")
+        except FileNotFoundError:
+            # process completed: ignore it
+            continue
+
+        proc_ppid = None
+        with fp:
+            for line in fp:
+                if line.startswith('PPid:'):
+                    proc_ppid = int(line[5:].strip())
+                    break
+        if proc_ppid == ppid:
+            children.append(pid)
+
+    return set(children)
