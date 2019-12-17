@@ -1306,17 +1306,7 @@ def setUpModule():
 
 def tearDownModule():
     support.threading_cleanup(*_threads_key)
-    support.reap_children()
-
-    # cleanup multiprocessing
-    multiprocessing.process._cleanup()
-    # Stop the ForkServer process if it's running
-    from multiprocessing import forkserver
-    forkserver._forkserver._stop()
-    # bpo-37421: Explicitly call _run_finalizers() to remove immediately
-    # temporary directories created by multiprocessing.util.get_temp_dir().
-    multiprocessing.util._run_finalizers()
-    support.gc_collect()
+    multiprocessing.util._cleanup_tests()
 
 
 if __name__ == "__main__":
