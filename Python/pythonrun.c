@@ -1660,8 +1660,8 @@ PyOS_CheckStack(void)
 size_t
 Get_Stack_Check_Size(const pthread_t *thread_self)
 {
-     size_t stack_space = 0;
-     if (pthread_main_np() == 1) {
+    size_t stack_space = 0;
+    if (pthread_main_np() == 1) {
         // On macOS 10.09 - 10.11 pthread_get_stacksize_np
         // returns wrong stack size on main thread.
         // ref: https://github.com/rust-lang/rust/issues/43347#issuecomment-316783599
