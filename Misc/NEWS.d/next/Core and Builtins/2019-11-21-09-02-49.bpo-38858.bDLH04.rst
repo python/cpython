@@ -1,0 +1,5 @@
+Each Python subinterpreter now has its own "small integer singletons":
+numbers in [-5; 257] range. It is no longer possible to change the number of
+small integers at build time by overriding ``NSMALLNEGINTS`` and
+``NSMALLPOSINTS`` macros: macros should now be modified manually in
+``pycore_pystate.h`` header file.
