@@ -1226,13 +1226,11 @@ def get_bare_quoted_string(value):
                 valid_ew = True
             except errors.HeaderParseError:
                 token, value = get_qcontent(value)
-
             # Collapse the whitespace between two encoded words that occur in a
             # bare-quoted-string.
             if valid_ew and len(bare_quoted_string) > 1:
                 if (bare_quoted_string[-1].token_type == 'fws' and
                         bare_quoted_string[-2].token_type == 'encoded-word'):
-
                     bare_quoted_string[-1] = EWWhiteSpaceTerminal(
                         bare_quoted_string[-1], 'fws')
         else:
