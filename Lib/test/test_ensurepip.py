@@ -61,6 +61,17 @@ class TestBootstrap(EnsurepipMixin, unittest.TestCase):
             unittest.mock.ANY,
         )
 
+    def test_bootstrapping_with_prefix(self):
+        ensurepip.bootstrap(prefix="/foo/bar/")
+        self.run_pip.assert_called_once_with(
+            [
+                "install", "--no-index", "--find-links",
+                unittest.mock.ANY, "--prefix", "/foo/bar/",
+                "setuptools", "pip",
+            ],
+            unittest.mock.ANY,
+        )
+
     def test_bootstrapping_with_user(self):
         ensurepip.bootstrap(user=True)
 

@@ -56,8 +56,9 @@ is at least as recent as the one bundled with ``ensurepip``, pass the
 By default, ``pip`` is installed into the current virtual environment
 (if one is active) or into the system site packages (if there is no
 active virtual environment). The installation location can be controlled
-through two additional command line options:
+through some additional command line options:
 
+* ``--prefix <dir>``: Installs ``pip`` using the given directory prefix.
 * ``--root <dir>``: Installs ``pip`` relative to the given root directory
   rather than the root of the currently active virtual environment (if any)
   or the default root for the current Python installation.
@@ -89,7 +90,7 @@ Module API
    Returns a string specifying the bundled version of pip that will be
    installed when bootstrapping an environment.
 
-.. function:: bootstrap(root=None, upgrade=False, user=False, \
+.. function:: bootstrap(root=None, prefix=None, upgrade=False, user=False, \
                         altinstall=False, default_pip=False, \
                         verbosity=0)
 
@@ -98,6 +99,8 @@ Module API
    *root* specifies an alternative root directory to install relative to.
    If *root* is ``None``, then installation uses the default install location
    for the current environment.
+
+   *prefix* specifies the directory prefix to use when installing.
 
    *upgrade* indicates whether or not to upgrade an existing installation
    of an earlier version of ``pip`` to the bundled version.
@@ -118,6 +121,8 @@ Module API
 
    *verbosity* controls the level of output to :data:`sys.stdout` from the
    bootstrapping operation.
+
+   .. versionchanged:: 3.9 the *prefix* parameter was added.
 
    .. audit-event:: ensurepip.bootstrap root ensurepip.bootstrap
 
