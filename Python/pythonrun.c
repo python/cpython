@@ -1657,43 +1657,67 @@ PyOS_CheckStack(void)
 
 #include <sys/utsname.h>
 
+size_t
+Get_Stack_Check_Size(pthread_t *thread_self)
+{
+     size_t stack_space = 0;
+     if (pthread_main_np() == 1) {
+        // On macOS 10.09 - 10.11 pthread_get_stacksize_np
+        // returns wrong stack size on main thread.
+        // ref: https://github.com/rust-lang/rust/issues/43347#issuecomment-316783599
+        // ref: https://bugs.java.com/bugdatabase/view_bug.do?bug_id=8020753
+        struct utsname sysinfo;
+        uname(&sysinfo);
+        const int major_version = atoi(sysinfo.release);
+        if (major_version == MAC_OS_10_9  ||
+            major_version == MAC_OS_10_10 ||
+            major_version == MAC_OS_10_11) {
+            struct rlimit limit;
+            getrlimit(RLIMIT_STACK, &limit);
+            stack_space = limit.rlim_cur;
+        } else {
+            stack_space = pthread_get_stacksize_np(*thread_self);
+        }
+    } else {
+        stack_space = pthread_get_stacksize_np(*thread_self);
+    }
+    return stack_space;
+}
+
+void
+Init_Stack_Status(void) {
+    PyThreadState *tstate = _PyThreadState_GET();
+    if (tstate->interp->stack_check_size == 0) {
+        const pthread_t thread_self = pthread_self();
+        tstate->interp->stack_check_size = Get_Stack_Check_Size(&thread_self);
+    }
+}
+
 /*
  * Return non-zero when we run out of memory on the stack; zero otherwise.
  */
-
 int
 PyOS_CheckStack(void)
 {
-    const pthread_t p_thread = pthread_self();
-    const uintptr_t end = (uintptr_t)pthread_get_stackaddr_np(p_thread);
+    Init_Stack_Status();
+    PyThreadState *tstate = _PyThreadState_GET();
+    const uintptr_t end = (uintptr_t)pthread_get_stackaddr_np(pthread_self());
     const uintptr_t frame = (uintptr_t)__builtin_frame_address(0);
-    size_t stack_space = 0;
-
-    if (stack_space == 0) {
-        if (pthread_main_np() == 1) {
-            // On macOS 10.09 - 10.11 pthread_get_stacksize_np 
-            // returns wrong stack size on main thread.
-            // ref: https://github.com/rust-lang/rust/issues/43347#issuecomment-316783599
-            // ref: https://bugs.java.com/bugdatabase/view_bug.do?bug_id=8020753
-            struct utsname sysinfo;
-            uname(&sysinfo);
-            const int major_version = atoi(sysinfo.release);
-            if (major_version == MAC_OS_10_9  ||
-                major_version == MAC_OS_10_10 ||
-                major_version == MAC_OS_10_11) {
-                struct rlimit limit;
-                getrlimit(RLIMIT_STACK, &limit);
-                stack_space = limit.rlim_cur;
-            } else {
-                stack_space = pthread_get_stacksize_np(p_thread);
-            }
-        } else {
-            stack_space = pthread_get_stacksize_np(p_thread);
-        }
-    }
+    const size_t stack_space = tstate->interp->stack_check_size;
     const size_t remains = stack_space - (end - frame);
-    const size_t required_stack_space = PYOS_STACK_MARGIN * sizeof(void*);
-    return remains < PTHREAD_STACK_MIN;
+
+    size_t required_stack_space = 0;
+    if (remains > tstate->interp->last_stack_remain) {
+        required_stack_space = remains - tstate->interp->last_stack_remain;
+    } else {
+        required_stack_space = tstate->interp->last_stack_remain - remains;
+    }
+
+    tstate->interp->last_stack_remain = remains;
+    if (remains >= required_stack_space) {
+        return 0;
+    }
+    return 1;
 }
 
 #endif /* __APPLE__ */

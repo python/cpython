@@ -211,6 +211,18 @@ class SysModuleTest(unittest.TestCase):
         self.assertEqual(sys.getrecursionlimit(), 10000)
         sys.setrecursionlimit(oldlimit)
 
+    @unittest.skipUnless(sys.platform == 'darwin', 'macOS only')
+    def test_setrecursion_with_memory_error(self):
+        oldlimit = sys.getrecursionlimit()
+        def f():
+            f()
+        try:
+            sys.setrecursionlimit(1 << 30)
+            with self.assertRaisesRegex(MemoryError, r'Stack overflow'):
+                f()
+        finally:
+            sys.setrecursionlimit(oldlimit)
+
     def test_recursionlimit_recovery(self):
         if hasattr(sys, 'gettrace') and sys.gettrace():
             self.skipTest('fatal error if run with a trace function')
