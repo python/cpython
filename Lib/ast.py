@@ -617,7 +617,7 @@ class _Unparser(NodeVisitor):
     @contextmanager
     def delimit(self, delimiter):
         """A context manager for preparing the source for expressions. It adds
-        start of the delimiter  and enters, after exit it adds delimiter end."""
+        the first *delimiter* character at enters, adds the last *delimiter* character at exit."""
 
         self.write(delimiter[0])
         yield
