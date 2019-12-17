@@ -1,0 +1,1 @@
+Prevent failure of test_relative_path in test_py_compile on macOS Catalina.
