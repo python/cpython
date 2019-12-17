@@ -156,21 +156,16 @@ echo on
  /p:UseTestMarker=%UseTestMarker% %GITProperty%^
  %1 %2 %3 %4 %5 %6 %7 %8 %9
 
-if "%Regen%"=="true" call :Regen
+@if not ERRORLEVEL 1 @if "%Regen%"=="true" (
+    %MSBUILD% "%dir%regen.vcxproj" /t:%target% %parallel% %verbose%^
+     /p:IncludeExternals=%IncludeExternals%^
+     /p:Configuration=%conf% /p:Platform=%platf%^
+     /p:UseTestMarker=%UseTestMarker% %GITProperty%^
+     %1 %2 %3 %4 %5 %6 %7 %8 %9
+)
+
 @echo off
 exit /b %ERRORLEVEL%
-
-:Regen
-echo on
-call "%dir%find_msbuild.bat" %MSBUILD%
-if not ERRORLEVEL 1 %MSBUILD% "%dir%regen.vcxproj" /t:%target% %parallel% %verbose%^
- /p:IncludeExternals=%IncludeExternals%^
- /p:Configuration=%conf% /p:Platform=%platf%^
- /p:UseTestMarker=%UseTestMarker% %GITProperty%^
- %1 %2 %3 %4 %5 %6 %7 %8 %9
-
-@echo off
-goto :eof
 
 :Version
 rem Display the current build version information
