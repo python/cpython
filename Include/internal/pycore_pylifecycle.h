@@ -33,7 +33,7 @@ PyAPI_FUNC(int) _Py_IsLocaleCoercionTarget(const char *ctype_loc);
 
 extern PyStatus _PyUnicode_Init(void);
 extern int _PyStructSequence_Init(void);
-extern int _PyLong_Init(void);
+extern int _PyLong_Init(PyThreadState *tstate);
 extern PyStatus _PyFaulthandler_Init(int enable);
 extern int _PyTraceMalloc_Init(int enable);
 extern PyObject * _PyBuiltin_Init(PyThreadState *tstate);
@@ -76,7 +76,7 @@ extern void _PyGC_Fini(PyThreadState *tstate);
 extern void _PyType_Fini(void);
 extern void _Py_HashRandomization_Fini(void);
 extern void _PyUnicode_Fini(PyThreadState *tstate);
-extern void _PyLong_Fini(void);
+extern void _PyLong_Fini(PyThreadState *tstate);
 extern void _PyFaulthandler_Fini(void);
 extern void _PyHash_Fini(void);
 extern void _PyTraceMalloc_Fini(void);
