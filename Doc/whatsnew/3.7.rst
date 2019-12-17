@@ -2557,3 +2557,13 @@ This resolves a long standing issue where all virtual environments would have
 to be upgraded or recreated with each Python update. However, note that this
 release will still require recreation of virtual environments in order to get
 the new scripts.
+
+Notable changes in Python 3.7.6
+===============================
+
+Due to significant security concerns, the *reuse_address* parameter of
+:meth:`asyncio.loop.create_datagram_endpoint` is no longer supported. This is
+because of the behavior of the socket option ``SO_REUSEADDR`` in UDP. For more
+details, see the documentation for ``loop.create_datagram_endpoint()``.
+(Contributed by Kyle Stanley, Antoine Pitrou, and Yury Selivanov in
+:issue:`37228`.)
