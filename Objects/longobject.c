@@ -3,6 +3,7 @@
 /* XXX The functional organization of this file is terrible */
 
 #include "Python.h"
+#include "pycore_pystate.h"   /* _Py_IsMainInterpreter() */
 #include "longintrepr.h"
 
 #include <float.h>
@@ -15,12 +16,8 @@ class int "PyObject *" "&PyLong_Type"
 [clinic start generated code]*/
 /*[clinic end generated code: output=da39a3ee5e6b4b0d input=ec0275e3422a36e3]*/
 
-#ifndef NSMALLPOSINTS
-#define NSMALLPOSINTS           257
-#endif
-#ifndef NSMALLNEGINTS
-#define NSMALLNEGINTS           5
-#endif
+#define NSMALLPOSINTS           _PY_NSMALLPOSINTS
+#define NSMALLNEGINTS           _PY_NSMALLNEGINTS
 
 _Py_IDENTIFIER(little);
 _Py_IDENTIFIER(big);
@@ -35,13 +32,6 @@ PyObject *_PyLong_Zero = NULL;
 PyObject *_PyLong_One = NULL;
 
 #if NSMALLNEGINTS + NSMALLPOSINTS > 0
-/* Small integers are preallocated in this array so that they
-   can be shared.
-   The integers that are preallocated are those in the range
-   -NSMALLNEGINTS (inclusive) to NSMALLPOSINTS (not inclusive).
-*/
-static PyLongObject* small_ints[NSMALLNEGINTS + NSMALLPOSINTS] = {0};
-
 #define IS_SMALL_INT(ival) (-NSMALLNEGINTS <= (ival) && (ival) < NSMALLPOSINTS)
 #define IS_SMALL_UINT(ival) ((ival) < NSMALLPOSINTS)
 
@@ -53,7 +43,8 @@ static PyObject *
 get_small_int(sdigit ival)
 {
     assert(IS_SMALL_INT(ival));
-    PyObject *v = (PyObject*)small_ints[ival + NSMALLNEGINTS];
+    PyThreadState *tstate = _PyThreadState_GET();
+    PyObject *v = (PyObject*)tstate->interp->small_ints[ival + NSMALLNEGINTS];
     Py_INCREF(v);
 #ifdef COUNT_ALLOCS
     if (ival >= 0)
@@ -5782,7 +5773,7 @@ PyLong_GetInfo(void)
 }
 
 int
-_PyLong_Init(void)
+_PyLong_Init(PyThreadState *tstate)
 {
 #if NSMALLNEGINTS + NSMALLPOSINTS > 0
     for (Py_ssize_t i=0; i < NSMALLNEGINTS + NSMALLPOSINTS; i++) {
@@ -5797,23 +5788,26 @@ _PyLong_Init(void)
         Py_SIZE(v) = size;
         v->ob_digit[0] = (digit)abs(ival);
 
-        small_ints[i] = v;
+        tstate->interp->small_ints[i] = v;
     }
 #endif
-    _PyLong_Zero = PyLong_FromLong(0);
-    if (_PyLong_Zero == NULL) {
-        return 0;
-    }
 
-    _PyLong_One = PyLong_FromLong(1);
-    if (_PyLong_One == NULL) {
-        return 0;
-    }
-
-    /* initialize int_info */
-    if (Int_InfoType.tp_name == NULL) {
-        if (PyStructSequence_InitType2(&Int_InfoType, &int_info_desc) < 0) {
+    if (_Py_IsMainInterpreter(tstate)) {
+        _PyLong_Zero = PyLong_FromLong(0);
+        if (_PyLong_Zero == NULL) {
             return 0;
+        }
+
+        _PyLong_One = PyLong_FromLong(1);
+        if (_PyLong_One == NULL) {
+            return 0;
+        }
+
+        /* initialize int_info */
+        if (Int_InfoType.tp_name == NULL) {
+            if (PyStructSequence_InitType2(&Int_InfoType, &int_info_desc) < 0) {
+                return 0;
+            }
         }
     }
 
@@ -5821,13 +5815,16 @@ _PyLong_Init(void)
 }
 
 void
-_PyLong_Fini(void)
+_PyLong_Fini(PyThreadState *tstate)
 {
-    Py_CLEAR(_PyLong_One);
-    Py_CLEAR(_PyLong_Zero);
+    if (_Py_IsMainInterpreter(tstate)) {
+        Py_CLEAR(_PyLong_One);
+        Py_CLEAR(_PyLong_Zero);
+    }
+
 #if NSMALLNEGINTS + NSMALLPOSINTS > 0
     for (Py_ssize_t i = 0; i < NSMALLNEGINTS + NSMALLPOSINTS; i++) {
-        Py_CLEAR(small_ints[i]);
+        Py_CLEAR(tstate->interp->small_ints[i]);
     }
 #endif
 }
