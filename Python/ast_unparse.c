@@ -71,7 +71,6 @@ replace_inf_value(PyObject *repr)
         return NULL;
     }
     PyObject *result = PyUnicode_Replace(repr, inf_str, inf_value, -1);
-    Py_DECREF(repr);
     Py_DECREF(inf_str);
     Py_DECREF(inf_value);
     return result;
@@ -86,8 +85,13 @@ append_repr(_PyUnicodeWriter *writer, PyObject *obj)
     if (!repr) {
         return -1;
     }
-    if ((PyFloat_CheckExact(obj) || PyComplex_CheckExact(obj)) && !(repr = replace_inf_value(repr))) {
-        return -1;
+    if ((PyFloat_CheckExact(obj) || PyComplex_CheckExact(obj))) {
+        PyObject *new_repr = replace_inf_value(repr);
+        Py_DECREF(repr);
+        if (!new_repr) {
+            return -1;
+        }
+        repr = new_repr;
     }
     ret = _PyUnicodeWriter_WriteStr(writer, repr);
     Py_DECREF(repr);
