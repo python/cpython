@@ -10,7 +10,7 @@ from test import test_support as support
 class PyCompileTests(unittest.TestCase):
 
     def setUp(self):
-        self.directory = tempfile.mkdtemp()
+        self.directory = tempfile.mkdtemp(dir=os.getcwd())
         self.source_path = os.path.join(self.directory, '_test.py')
         self.pyc_path = self.source_path + 'c'
         self.cwd_drive = os.path.splitdrive(os.getcwd())[0]
