@@ -1,0 +1,2 @@
+Added an optional "regen" project to the Visual Studio solution that will
+regenerate all grammar, tokens, and opcodes.

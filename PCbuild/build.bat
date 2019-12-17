@@ -32,6 +32,7 @@ echo.      automatically by the pythoncore project)
 echo.  --pgo          Build with Profile-Guided Optimization.  This flag
 echo.                 overrides -c and -d
 echo.  --test-marker  Enable the test marker within the build.
+echo.  --regen        Regenerate all opcodes, grammar and tokens
 echo.
 echo.Available flags to avoid building certain modules.
 echo.These flags have no effect if '-e' is not given:
@@ -76,7 +77,8 @@ if "%~1"=="-k" (set kill=true) & shift & goto CheckOpts
 if "%~1"=="--pgo" (set do_pgo=true) & shift & goto CheckOpts
 if "%~1"=="--pgo-job" (set do_pgo=true) & (set pgo_job=%~2) & shift & shift & goto CheckOpts
 if "%~1"=="--test-marker" (set UseTestMarker=true) & shift & goto CheckOpts
-if "%~1"=="-V" shift & goto :Version
+if "%~1"=="-V" shift & goto Version
+if "%~1"=="--regen" (set Regen=true) & shift & goto CheckOpts
 rem These use the actual property names used by MSBuild.  We could just let
 rem them in through the environment, but we specify them on the command line
 rem anyway for visibility so set defaults after this
@@ -154,8 +156,21 @@ echo on
  /p:UseTestMarker=%UseTestMarker% %GITProperty%^
  %1 %2 %3 %4 %5 %6 %7 %8 %9
 
+if "%Regen%"=="true" call :Regen
 @echo off
 exit /b %ERRORLEVEL%
+
+:Regen
+echo on
+call "%dir%find_msbuild.bat" %MSBUILD%
+if not ERRORLEVEL 1 %MSBUILD% "%dir%regen.vcxproj" /t:%target% %parallel% %verbose%^
+ /p:IncludeExternals=%IncludeExternals%^
+ /p:Configuration=%conf% /p:Platform=%platf%^
+ /p:UseTestMarker=%UseTestMarker% %GITProperty%^
+ %1 %2 %3 %4 %5 %6 %7 %8 %9
+
+@echo off
+goto :eof
 
 :Version
 rem Display the current build version information
