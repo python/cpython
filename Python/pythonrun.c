@@ -1686,9 +1686,11 @@ Get_Stack_Check_Size(const pthread_t *thread_self)
 
 void
 Init_Stack_Status(PyThreadState *tstate) {
-    if (tstate->interp->stack_check_size == 0) {
+    if (tstate->stack_space == 0) {
         const pthread_t thread_self = pthread_self();
-        tstate->interp->stack_check_size = Get_Stack_Check_Size(&thread_self);
+        size_t stack_space = Get_Stack_Check_Size(&thread_self);
+        tstate->stack_space = stack_space;
+        tstate->last_stack_remain = stack_space;
     }
 }
 
@@ -1702,17 +1704,17 @@ PyOS_CheckStack(void)
     Init_Stack_Status(tstate);
     const uintptr_t end = (uintptr_t)pthread_get_stackaddr_np(pthread_self());
     const uintptr_t frame = (uintptr_t)__builtin_frame_address(0);
-    const size_t stack_space = tstate->interp->stack_check_size;
+    const size_t stack_space = tstate->stack_space;
     const size_t remains = stack_space - (end - frame);
 
     size_t required_stack_space = 0;
-    if (remains > tstate->interp->last_stack_remain) {
-        required_stack_space = remains - tstate->interp->last_stack_remain;
+    if (remains > tstate->last_stack_remain) {
+        required_stack_space = remains - tstate->last_stack_remain;
     } else {
-        required_stack_space = tstate->interp->last_stack_remain - remains;
+        required_stack_space = tstate->last_stack_remain - remains;
     }
 
-    tstate->interp->last_stack_remain = remains;
+    tstate->last_stack_remain = remains;
     if (remains >= required_stack_space) {
         return 0;
     }

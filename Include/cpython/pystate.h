@@ -134,7 +134,8 @@ struct _ts {
 
     /* Unique thread state id. */
     uint64_t id;
-
+    size_t stack_space;
+    size_t last_stack_remain;
     /* XXX signal handlers should also be here */
 
 };

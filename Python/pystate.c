@@ -607,7 +607,7 @@ new_threadstate(PyInterpreterState *interp, int init)
     tstate->context_ver = 1;
 
     tstate->id = ++interp->tstate_next_unique_id;
-
+    tstate->stack_space = 0;
     if (init) {
         _PyThreadState_Init(tstate);
     }

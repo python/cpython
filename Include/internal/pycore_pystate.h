@@ -92,10 +92,6 @@ struct _is {
        or the size specified by the THREAD_STACK_SIZE macro. */
     /* Used in Python/thread.c. */
     size_t pythread_stacksize;
-#if defined(USE_STACKCHECK) && defined(__APPLE__)
-    size_t stack_check_size;
-    size_t last_stack_remain;
-#endif
 
     PyObject *codec_search_path;
     PyObject *codec_search_cache;
