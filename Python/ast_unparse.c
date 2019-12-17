@@ -68,11 +68,12 @@ replace_inf_value(PyObject *repr)
     }
     PyObject *inf_value = PyUnicode_FromFormat("1e%d", 1 + DBL_MAX_10_EXP);
     if (!inf_value) {
+        Py_DECREF(inf_str);
         return NULL;
     }
     PyObject *result = PyUnicode_Replace(repr, inf_str, inf_value, -1);
-    Py_DECREF(inf_str);
     Py_DECREF(inf_value);
+    Py_DECREF(inf_str);
     return result;
 }
 
@@ -727,7 +728,6 @@ static int
 append_ast_constant(_PyUnicodeWriter *writer, PyObject *constant)
 {
     if (PyTuple_CheckExact(constant)) {
-        int ret;
         Py_ssize_t i, elem_count;
 
         elem_count = PySequence_Length(constant);
@@ -737,8 +737,8 @@ append_ast_constant(_PyUnicodeWriter *writer, PyObject *constant)
         APPEND_STR("(");
         for (i = 0; i < elem_count; i++) {
             APPEND_STR_IF(i > 0, ", ");
-            if ((ret = append_repr(writer, PyTuple_GET_ITEM(constant, i))) != 0) {
-                return ret;
+            if (append_repr(writer, PyTuple_GET_ITEM(constant, i)) < 0) {
+                return -1;
             }
         }
 
