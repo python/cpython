@@ -877,6 +877,12 @@ Module(
         self.assertEqual(elif_stmt.lineno, 3)
         self.assertEqual(elif_stmt.col_offset, 0)
 
+    def test_starred_expr_end_position_within_call(self):
+        node = ast.parse('f(*[0, 1])')
+        starred_expr = node.body[0].value.args[0]
+        self.assertEqual(starred_expr.end_lineno, 1)
+        self.assertEqual(starred_expr.end_col_offset, 9)
+
     def test_literal_eval(self):
         self.assertEqual(ast.literal_eval('[1, 2, 3]'), [1, 2, 3])
         self.assertEqual(ast.literal_eval('{"foo": 42}'), {"foo": 42})
