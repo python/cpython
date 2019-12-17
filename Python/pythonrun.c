@@ -1658,7 +1658,7 @@ PyOS_CheckStack(void)
 #include <sys/utsname.h>
 
 size_t
-Get_Stack_Check_Size(pthread_t *thread_self)
+Get_Stack_Check_Size(const pthread_t *thread_self)
 {
      size_t stack_space = 0;
      if (pthread_main_np() == 1) {
@@ -1685,8 +1685,7 @@ Get_Stack_Check_Size(pthread_t *thread_self)
 }
 
 void
-Init_Stack_Status(void) {
-    PyThreadState *tstate = _PyThreadState_GET();
+Init_Stack_Status(PyThreadState *tstate) {
     if (tstate->interp->stack_check_size == 0) {
         const pthread_t thread_self = pthread_self();
         tstate->interp->stack_check_size = Get_Stack_Check_Size(&thread_self);
@@ -1699,8 +1698,8 @@ Init_Stack_Status(void) {
 int
 PyOS_CheckStack(void)
 {
-    Init_Stack_Status();
     PyThreadState *tstate = _PyThreadState_GET();
+    Init_Stack_Status(tstate);
     const uintptr_t end = (uintptr_t)pthread_get_stackaddr_np(pthread_self());
     const uintptr_t frame = (uintptr_t)__builtin_frame_address(0);
     const size_t stack_space = tstate->interp->stack_check_size;
