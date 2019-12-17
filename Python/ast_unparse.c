@@ -730,10 +730,7 @@ append_ast_constant(_PyUnicodeWriter *writer, PyObject *constant)
     if (PyTuple_CheckExact(constant)) {
         Py_ssize_t i, elem_count;
 
-        elem_count = PySequence_Length(constant);
-        if (elem_count == -1) {
-            return -1;
-        }
+        elem_count = PyTuple_GET_SIZE(constant);
         APPEND_STR("(");
         for (i = 0; i < elem_count; i++) {
             APPEND_STR_IF(i > 0, ", ");
