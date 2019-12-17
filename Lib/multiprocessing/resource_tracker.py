@@ -52,6 +52,10 @@ class ResourceTracker(object):
 
     def _stop(self):
         with self._lock:
+            if self._fd is None:
+                # not running
+                return
+
             # closing the "alive" file descriptor stops main()
             os.close(self._fd)
             self._fd = None
