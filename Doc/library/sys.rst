@@ -1451,6 +1451,9 @@ always available.
      is line-buffered in both cases.  You can override this behaviour with
      the :option:`-u` command-line option.
 
+   .. versionchanged:: 3.9
+      Use line-buffering for non-interactive ``stderr``.
+
    .. note::
 
       To write or read binary data from/to the standard streams, use the
