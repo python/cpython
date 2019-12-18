@@ -1,0 +1,3 @@
+Fix test_ressources_gced_in_workers() of test_concurrent_futures: explicitly
+stop the manager to prevent leaking a child process running in the background
+after the test completes.
