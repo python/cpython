@@ -26,6 +26,7 @@ from concurrent.futures._base import (
     BrokenExecutor)
 from concurrent.futures.process import BrokenProcessPool
 from multiprocessing import get_context
+import multiprocessing.util
 
 
 def create_future(state=PENDING, exception=None, result=None):
@@ -1253,6 +1254,7 @@ def test_main():
         test.support.run_unittest(__name__)
     finally:
         test.support.reap_children()
+        multiprocessing.util._cleanup_tests()
 
 if __name__ == "__main__":
     test_main()
