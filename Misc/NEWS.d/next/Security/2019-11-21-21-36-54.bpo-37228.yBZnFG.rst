@@ -1,6 +1,0 @@
-Due to significant security concerns, the *reuse_address* parameter of
-:meth:`asyncio.loop.create_datagram_endpoint` is no longer supported. This is
-because of the behavior of ``SO_REUSEADDR`` in UDP. For more details, see the
-documentation for ``loop.create_datagram_endpoint()``.
-(Contributed by Kyle Stanley, Antoine Pitrou, and Yury Selivanov in
-:issue:`37228`.)

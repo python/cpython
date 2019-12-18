@@ -1,2 +1,0 @@
-:mod:`asyncio` now raises :exc:`TyperError` when calling incompatible methods
-with an :class:`ssl.SSLSocket` socket.  Patch by Ido Michael.

@@ -1,1 +1,0 @@
-Improve the performance of :func:`enum._decompose` in :mod:`enum`. Patch by hongweipeng.
