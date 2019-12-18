@@ -209,6 +209,8 @@ eval_tests = [
   "1 < 2 < 3",
   # Call
   "f(1,2,c=3,*d,**e)",
+  # Call with multi-character starred
+  "f(*[0, 1])",
   # Call with a generator argument
   "f(a for a in b)",
   # Num
@@ -876,6 +878,12 @@ Module(
         elif_stmt = node.body[0].orelse[0]
         self.assertEqual(elif_stmt.lineno, 3)
         self.assertEqual(elif_stmt.col_offset, 0)
+
+    def test_starred_expr_end_position_within_call(self):
+        node = ast.parse('f(*[0, 1])')
+        starred_expr = node.body[0].value.args[0]
+        self.assertEqual(starred_expr.end_lineno, 1)
+        self.assertEqual(starred_expr.end_col_offset, 9)
 
     def test_literal_eval(self):
         self.assertEqual(ast.literal_eval('[1, 2, 3]'), [1, 2, 3])
@@ -1930,6 +1938,7 @@ eval_results = [
 ('Expression', ('GeneratorExp', (1, 0), ('Tuple', (1, 1), [('Name', (1, 2), 'a', ('Load',)), ('Name', (1, 4), 'b', ('Load',))], ('Load',)), [('comprehension', ('List', (1, 11), [('Name', (1, 12), 'a', ('Store',)), ('Name', (1, 14), 'b', ('Store',))], ('Store',)), ('Name', (1, 20), 'c', ('Load',)), [], 0)])),
 ('Expression', ('Compare', (1, 0), ('Constant', (1, 0), 1, None), [('Lt',), ('Lt',)], [('Constant', (1, 4), 2, None), ('Constant', (1, 8), 3, None)])),
 ('Expression', ('Call', (1, 0), ('Name', (1, 0), 'f', ('Load',)), [('Constant', (1, 2), 1, None), ('Constant', (1, 4), 2, None), ('Starred', (1, 10), ('Name', (1, 11), 'd', ('Load',)), ('Load',))], [('keyword', 'c', ('Constant', (1, 8), 3, None)), ('keyword', None, ('Name', (1, 15), 'e', ('Load',)))])),
+('Expression', ('Call', (1, 0), ('Name', (1, 0), 'f', ('Load',)), [('Starred', (1, 2), ('List', (1, 3), [('Constant', (1, 4), 0, None), ('Constant', (1, 7), 1, None)], ('Load',)), ('Load',))], [])),
 ('Expression', ('Call', (1, 0), ('Name', (1, 0), 'f', ('Load',)), [('GeneratorExp', (1, 1), ('Name', (1, 2), 'a', ('Load',)), [('comprehension', ('Name', (1, 8), 'a', ('Store',)), ('Name', (1, 13), 'b', ('Load',)), [], 0)])], [])),
 ('Expression', ('Constant', (1, 0), 10, None)),
 ('Expression', ('Constant', (1, 0), 'string', None)),
