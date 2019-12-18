@@ -88,7 +88,7 @@ fixup_ulcase(void)
 {
     PyObject *mods, *strop, *string, *ulo;
     unsigned char ul[256];
-    int n, c;
+    int n, c, lower_start;
 
     /* find the string and strop modules */
     mods = PyImport_GetModuleDict();
@@ -102,21 +102,6 @@ fixup_ulcase(void)
         strop = PyModule_GetDict(strop);
     if (!string && !strop)
         return;
-
-    /* create uppercase map string */
-    n = 0;
-    for (c = 0; c < 256; c++) {
-        if (isupper(c))
-            ul[n++] = c;
-    }
-    ulo = PyString_FromStringAndSize((const char *)ul, n);
-    if (!ulo)
-        return;
-    if (string)
-        PyDict_SetItemString(string, "uppercase", ulo);
-    if (strop)
-        PyDict_SetItemString(strop, "uppercase", ulo);
-    Py_DECREF(ulo);
 
     /* create lowercase string */
     n = 0;
@@ -133,12 +118,22 @@ fixup_ulcase(void)
         PyDict_SetItemString(strop, "lowercase", ulo);
     Py_DECREF(ulo);
 
-    /* create letters string */
-    n = 0;
+    /* create uppercase map string */
+    lower_start = n;
     for (c = 0; c < 256; c++) {
-        if (isalpha(c))
+        if (isupper(c))
             ul[n++] = c;
     }
+    ulo = PyString_FromStringAndSize((const char *)&ul[lower_start], n - lower_start);
+    if (!ulo)
+        return;
+    if (string)
+        PyDict_SetItemString(string, "uppercase", ulo);
+    if (strop)
+        PyDict_SetItemString(strop, "uppercase", ulo);
+    Py_DECREF(ulo);
+
+    /* create letters string */
     ulo = PyString_FromStringAndSize((const char *)ul, n);
     if (!ulo)
         return;
