@@ -1,3 +1,0 @@
-Skip the test_posix.test_pidfd_open() test if ``os.pidfd_open()`` fails with a
-:exc:`PermissionError`. This situation can happen in a Linux sandbox using a
-syscall whitelist which doesn't allow the ``pidfd_open()`` syscall yet.

@@ -1,4 +1,0 @@
-Provide a platform tag for AIX that is sufficient for PEP425 binary
-distribution identification.
-
-Patch by Michael Felt
