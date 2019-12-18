@@ -434,20 +434,20 @@ The execution of the :keyword:`with` statement with one "item" proceeds as follo
 
 The following code::
 
-    with expression as target:
-        suite
+    with EXPRESSION as TARGET:
+        SUITE
 
 is semantically equivalent to::
 
-    manager = (expression)
+    manager = (EXPRESSION)
     enter = type(manager).__enter__
     exit = type(manager).__exit__
     value = enter(manager)
     hit_except = False
 
     try:
-        target = value
-        suite
+        TARGET = value
+        SUITE
     except:
         hit_except = True
         if not exit(manager, *sys.exc_info()):
@@ -460,13 +460,13 @@ With more than one item, the context managers are processed as if multiple
 :keyword:`with` statements were nested::
 
    with A() as a, B() as b:
-       suite
+       SUITE
 
 is semantically equivalent to::
 
    with A() as a:
        with B() as b:
-           suite
+           SUITE
 
 .. versionchanged:: 3.1
    Support for multiple context expressions.
@@ -798,24 +798,25 @@ iterators.
 The following code::
 
     async for TARGET in ITER:
-        BLOCK
+        SUITE
     else:
-        BLOCK2
+        SUITE2
 
 Is semantically equivalent to::
 
     iter = (ITER)
     iter = type(iter).__aiter__(iter)
     running = True
+
     while running:
         try:
             TARGET = await type(iter).__anext__(iter)
         except StopAsyncIteration:
             running = False
         else:
-            BLOCK
+            SUITE
     else:
-        BLOCK2
+        SUITE2
 
 See also :meth:`__aiter__` and :meth:`__anext__` for details.
 
@@ -837,20 +838,20 @@ able to suspend execution in its *enter* and *exit* methods.
 
 The following code::
 
-    async with expression as target:
-        suite
+    async with EXPRESSION as TARGET:
+        SUITE
 
 is semantically equivalent to::
 
-    manager = (expression)
+    manager = (EXPRESSION)
     aexit = type(manager).__aexit__
     aenter = type(manager).__aenter__
     value = await aenter(manager)
     hit_except = False
 
     try:
-        target = value
-        suite
+        TARGET = value
+        SUITE
     except:
         hit_except = True
         if not await aexit(manager, *sys.exc_info()):
