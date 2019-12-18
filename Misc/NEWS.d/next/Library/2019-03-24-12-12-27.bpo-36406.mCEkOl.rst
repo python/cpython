@@ -1,1 +1,0 @@
-Handle namespace packages in :mod:`doctest`. Patch by Karthikeyan Singaravelan.

@@ -1,1 +1,0 @@
-Fix unhandled exceptions in :mod:`argparse` when internationalizing error messages for arguments with ``nargs`` set to special (non-integer) values.  Patch by Federico Bond.
