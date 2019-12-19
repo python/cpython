@@ -1,0 +1,7 @@
+.. bpo: 38295
+.. date: 2019-12-17-03-43-04
+.. nonce: hgDvlB
+.. release date: 2019-12-18
+.. section: macOS
+
+Prevent failure of test_relative_path in test_py_compile on macOS Catalina.
