@@ -1154,6 +1154,19 @@ class UTF8SigTest(UTF8Test, unittest.TestCase):
             got = ostream.getvalue()
             self.assertEqual(got, unistring)
 
+class FileClosesOnRaiseTest(unittest.TestCase):
+    def test_file_closes_if_exception_raised(self):
+        mock_open = mock.mock_open()
+        mock_lookup = mock.Mock(side_effect=Exception)
+
+        with mock.patch('codecs.lookup', mock_lookup):
+            with mock.patch('builtins.open', mock_open) as file:
+                with self.assertRaises(Exception):
+                    codecs.open(support.TESTFN, mode = 'wt', encoding='utf-8')
+
+                file().close.assert_called()
+
+
 class EscapeDecodeTest(unittest.TestCase):
     def test_empty(self):
         self.assertEqual(codecs.escape_decode(b""), (b"", 0))
