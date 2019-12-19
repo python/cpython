@@ -219,6 +219,24 @@ class CmdLineTest(unittest.TestCase):
         )
         check_output(text)
 
+    def test_non_interactive_output_buffering(self):
+        # Test buffering for stdout and stderr.
+        cases = [
+            # Binary stdout is unbuffered.
+            ('sys.stdout.buffer', b'x\n', b'y', b'', b''),
+            # Binary stderr is unbuffered (can't be line-buffered).
+            ('sys.stderr.buffer', b'x\n', b'y', b'', b''),
+            # Text stdout is unbuffered.
+            ('sys.stdout', 'x\n', 'y', b'', b''),
+            # Text stderr is line-buffered.
+            ('sys.stderr', 'x\n', 'y', b'', b'x\n'),
+        ]
+        for buf, txt1, txt2, out_ok, err_ok in cases:
+            code = f'import os, sys; {buf}.write({txt1!r}); {buf}.write({txt2!r}); os._exit(0)'
+            rc, out, err = assert_python_ok('-c', code)
+            self.assertEqual(out, out_ok)
+            self.assertEqual(err, err_ok)
+
     def test_unbuffered_output(self):
         # Test expected operation of the '-u' switch
         for stream in ('stdout', 'stderr'):
