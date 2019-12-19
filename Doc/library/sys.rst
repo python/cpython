@@ -1448,8 +1448,9 @@ always available.
 
    * When interactive, the ``stdout`` stream is line-buffered. Otherwise,
      it is block-buffered like regular text files.  The ``stderr`` stream
-     is line-buffered in both cases.  You can override this behaviour with
-     the :option:`-u` command-line option.
+     is line-buffered in both cases.  You can make both streams unbuffered
+     by passing the :option:`-u` command-line option or setting the
+     :envvar:`PYTHONUNBUFFERED` environment variable.
 
    .. versionchanged:: 3.9
       Use line-buffering for non-interactive ``stderr``.
