@@ -1453,7 +1453,7 @@ always available.
      :envvar:`PYTHONUNBUFFERED` environment variable.
 
    .. versionchanged:: 3.9
-      Use line-buffering for non-interactive ``stderr``.
+      Make non-interactive ``stderr`` line-buffered instead of fully buffered.
 
    .. note::
 
