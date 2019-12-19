@@ -1,0 +1,108 @@
+.. bpo: 39080
+.. date: 2019-12-17-21-45-36
+.. nonce: OrxEVS
+.. release date: 2019-12-18
+.. section: Core and Builtins
+
+Fix the value of *end_col_offset* for Starred Expression AST nodes when they
+are among the elements in the *args* attribute of Call AST nodes.
+
+..
+
+.. bpo: 39031
+.. date: 2019-12-12-21-05-43
+.. nonce: imlCYZ
+.. section: Core and Builtins
+
+When parsing an "elif" node, lineno and col_offset of the node now point to
+the "elif" keyword and not to its condition, making it consistent with the
+"if" node. Patch by Lysandros Nikolaou.
+
+..
+
+.. bpo: 39008
+.. date: 2019-12-09-10-38-51
+.. nonce: Rrp6f1
+.. section: Core and Builtins
+
+:c:func:`PySys_Audit` now requires ``Py_ssize_t`` to be used for size
+arguments in the format string, regardless of whethen ``PY_SSIZE_T_CLEAN``
+was defined at include time.
+
+..
+
+.. bpo: 39022
+.. date: 2019-12-10-23-34-48
+.. nonce: QDtIxI
+.. section: Library
+
+Update importliib.metadata to include improvements from importlib_metadata
+1.3 including better serialization of EntryPoints and improved documentation
+for custom finders.
+
+..
+
+.. bpo: 38811
+.. date: 2019-11-15-18-06-04
+.. nonce: AmdQ6M
+.. section: Library
+
+Fix an unhandled exception in :mod:`pathlib` when :meth:`os.link` is
+missing. Patch by Toke Høiland-Jørgensen.
+
+..
+
+.. bpo: 36406
+.. date: 2019-03-24-12-12-27
+.. nonce: mCEkOl
+.. section: Library
+
+Handle namespace packages in :mod:`doctest`. Patch by Karthikeyan
+Singaravelan.
+
+..
+
+.. bpo: 38546
+.. date: 2019-12-17-15-27-07
+.. nonce: 82JwN2
+.. section: Tests
+
+Multiprocessing and concurrent.futures tests now stop the resource tracker
+process when tests complete.
+
+..
+
+.. bpo: 39007
+.. date: 2019-12-09-10-40-34
+.. nonce: vtarxo
+.. section: Windows
+
+Add auditing events to functions in :mod:`winreg`.
+
+..
+
+.. bpo: 38295
+.. date: 2019-12-17-03-43-04
+.. nonce: hgDvlB
+.. section: macOS
+
+Prevent failure of test_relative_path in test_py_compile on macOS Catalina.
+
+..
+
+.. bpo: 38944
+.. date: 2019-11-30-12-10-36
+.. nonce: _3xjKG
+.. section: IDLE
+
+Excape key now closes IDLE completion windows.  Patch by Johnny Najera.
+
+..
+
+.. bpo: 38943
+.. date: 2019-11-29-23-44-11
+.. nonce: 8pUKKs
+.. section: IDLE
+
+Fix IDLE autocomplete windows not always appearing on some systems. Patch by
+Johnny Najera.
