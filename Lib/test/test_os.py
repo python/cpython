@@ -4001,6 +4001,16 @@ class TestScandir(unittest.TestCase):
         with self.check_no_resource_warning():
             del iterator
 
+    def test_dirfd(self):
+        itr = os.scandir('.')
+        if not hasattr(itr, 'dirfd'):
+            self.skipTest("not supported")
+        fd = itr.dirfd()
+        self.assertIsInstance(fd, int)
+        self.assertGreater(fd, 0)
+        itr.close()
+        self.assertRaises(ValueError, itr.dirfd)
+
 
 class TestPEP519(unittest.TestCase):
 
