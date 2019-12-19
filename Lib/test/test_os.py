@@ -4002,13 +4002,10 @@ class TestScandir(unittest.TestCase):
             del iterator
 
     def test_dirfd(self):
-        itr = os.scandir('.')
-        if not hasattr(itr, 'dirfd'):
-            self.skipTest("not supported")
-        fd = itr.dirfd()
-        self.assertIsInstance(fd, int)
-        self.assertGreater(fd, 0)
-        itr.close()
+        with os.scandir('.') as itr:
+            if not hasattr(itr, 'dirfd'):
+                self.skipTest("not supported")
+            self.assertGreater(itr.dirfd(), 0)
         self.assertRaises(ValueError, itr.dirfd)
 
 

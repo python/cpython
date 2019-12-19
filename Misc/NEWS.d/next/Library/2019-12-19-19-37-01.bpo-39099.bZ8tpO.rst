@@ -1,0 +1,2 @@
+os.scandir() object has a new dirfd() method.  (patch contributed by
+Giampaolo Rodola)
