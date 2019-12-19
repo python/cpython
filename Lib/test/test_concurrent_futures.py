@@ -379,6 +379,14 @@ class ThreadPoolShutdownTest(ThreadPoolMixin, ExecutorShutdownTest, BaseTestCase
         for t in threads:
             t.join()
 
+    def test_shutdown_no_wait(self):
+        executor = futures.ThreadPoolExecutor(max_workers=5)
+        executor.map(abs, range(-5, 5))
+        threads = executor._threads
+        executor.shutdown(wait=False)
+        for t in threads:
+            t.join()
+
     def test_thread_names_assigned(self):
         executor = futures.ThreadPoolExecutor(
             max_workers=5, thread_name_prefix='SpecialPool')
@@ -435,6 +443,21 @@ class ProcessPoolShutdownTest(ExecutorShutdownTest):
         call_queue = executor._call_queue
         queue_management_thread = executor._queue_management_thread
         del executor
+
+        # Make sure that all the executor resources were properly cleaned by
+        # the shutdown process
+        queue_management_thread.join()
+        for p in processes.values():
+            p.join()
+        call_queue.join_thread()
+
+    def test_shutdown_no_wait(self):
+        executor = futures.ProcessPoolExecutor(max_workers=5)
+        list(executor.map(abs, range(-5, 5)))
+        processes = executor._processes
+        call_queue = executor._call_queue
+        queue_management_thread = executor._queue_management_thread
+        executor.shutdown(wait=False)
 
         # Make sure that all the executor resources were properly cleaned by
         # the shutdown process
