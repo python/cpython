@@ -234,8 +234,8 @@ class CmdLineTest(unittest.TestCase):
         for buf, txt1, txt2, out_ok, err_ok in cases:
             code = f'import os, sys; {buf}.write({txt1!r}); {buf}.write({txt2!r}); os._exit(0)'
             rc, out, err = assert_python_ok('-c', code)
-            self.assertEqual(out, out_ok)
-            self.assertEqual(err, err_ok)
+            self.assertEqual(out.replace(b'\r\n', b'\n'), out_ok)
+            self.assertEqual(err.replace(b'\r\n', b'\n'), err_ok)
 
     def test_unbuffered_output(self):
         # Test expected operation of the '-u' switch
