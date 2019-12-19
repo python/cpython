@@ -2218,6 +2218,14 @@ features:
    The :func:`scandir` iterator supports the :term:`context manager` protocol
    and has the following method:
 
+   .. method:: scandir.dirfd()
+
+      Return directory file descriptor.
+
+      .. versionadded:: 3.9
+
+      .. availability:: POSIX
+
    .. method:: scandir.close()
 
       Close the iterator and free acquired resources.
