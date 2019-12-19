@@ -285,6 +285,8 @@ class ExceptionTest(unittest.TestCase):
                 'should have returned an instance of BaseException'):
             gen.throw(E)
 
+        self.assertRaises(StopIteration, next, gen)
+
     def test_stopiteration_error(self):
         # See also PEP 479.
 
