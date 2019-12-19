@@ -2053,14 +2053,18 @@ find_keyword(PyObject *kwnames, PyObject *const *kwstack, PyObject *key)
     Py_ssize_t i, nkwargs;
 
     nkwargs = PyTuple_GET_SIZE(kwnames);
-    for (i=0; i < nkwargs; i++) {
+    for (i = 0; i < nkwargs; i++) {
         PyObject *kwname = PyTuple_GET_ITEM(kwnames, i);
 
-        /* ptr==ptr should match in most cases since keyword keys
-           should be interned strings */
+        /* kwname == key will normally find a match in since keyword keys
+           should be interned strings; if not retry below in a new loop. */
         if (kwname == key) {
             return kwstack[i];
         }
+    }
+
+    for (i = 0; i < nkwargs; i++) {
+        PyObject *kwname = PyTuple_GET_ITEM(kwnames, i);
         assert(PyUnicode_Check(kwname));
         if (_PyUnicode_EQ(kwname, key)) {
             return kwstack[i];

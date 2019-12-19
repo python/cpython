@@ -9,6 +9,7 @@ import socket
 import shutil
 import threading
 from test.support import TESTFN, requires, unlink, bigmemtest, find_unused_port
+from test.support import SHORT_TIMEOUT
 import io  # C implementation of io
 import _pyio as pyio # Python implementation of io
 
@@ -168,7 +169,7 @@ class TestCopyfile(LargeFileTest, unittest.TestCase):
 @unittest.skipIf(not hasattr(os, 'sendfile'), 'sendfile not supported')
 class TestSocketSendfile(LargeFileTest, unittest.TestCase):
     open = staticmethod(io.open)
-    timeout = 3
+    timeout = SHORT_TIMEOUT
 
     def setUp(self):
         super().setUp()
@@ -184,6 +185,7 @@ class TestSocketSendfile(LargeFileTest, unittest.TestCase):
         def run(sock):
             with sock:
                 conn, _ = sock.accept()
+                conn.settimeout(self.timeout)
                 with conn, open(TESTFN2, 'wb') as f:
                     event.wait(self.timeout)
                     while True:
