@@ -129,6 +129,13 @@ that would produce an equivalent :class:`ast.AST` object when parsed.
 asyncio
 -------
 
+Due to significant security concerns, the *reuse_address* parameter of
+:meth:`asyncio.loop.create_datagram_endpoint` is no longer supported. This is
+because of the behavior of the socket option ``SO_REUSEADDR`` in UDP. For more
+details, see the documentation for ``loop.create_datagram_endpoint()``.
+(Contributed by Kyle Stanley, Antoine Pitrou, and Yury Selivanov in
+:issue:`37228`.)
+
 Added a new :term:`coroutine` :meth:`~asyncio.loop.shutdown_default_executor`
 that schedules a shutdown for the default executor that waits on the
 :class:`~concurrent.futures.ThreadPoolExecutor` to finish closing. Also,
