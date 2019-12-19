@@ -292,7 +292,7 @@ def _fail_neg(values, errmsg='negative value'):
 
 # === Measures of central tendency (averages) ===
 
-def mean(data):
+def mean(data, *, default=None):
     """Return the sample arithmetic mean of data.
 
     >>> mean([1, 2, 3, 4, 4])
@@ -306,26 +306,36 @@ def mean(data):
     >>> mean([D("0.5"), D("0.75"), D("0.625"), D("0.375")])
     Decimal('0.5625')
 
-    If ``data`` is empty, StatisticsError will be raised.
+    >>> mean([], default=0)
+    0
+
+    If ``data`` is empty and no (non-None) default is provided,
+    then StatisticsError will be raised.
     """
     if iter(data) is data:
         data = list(data)
     n = len(data)
     if n < 1:
+        if default is not None:
+            return default
         raise StatisticsError('mean requires at least one data point')
     T, total, count = _sum(data)
     assert count == n
     return _convert(total/n, T)
 
 
-def fmean(data):
+def fmean(data, *, default=None):
     """Convert data to floats and compute the arithmetic mean.
 
     This runs faster than the mean() function and it always returns a float.
-    If the input dataset is empty, it raises a StatisticsError.
+    If the input dataset is empty, and a default is not provided,
+    it raises a StatisticsError.
 
     >>> fmean([3.5, 4.0, 5.25])
     4.25
+
+    >>> fmean([], default=0)
+    0
     """
     try:
         n = len(data)
@@ -342,10 +352,13 @@ def fmean(data):
     try:
         return total / n
     except ZeroDivisionError:
-        raise StatisticsError('fmean requires at least one data point') from None
+        if default is not None:
+            return default
+        raise StatisticsError('fmean requires at least one '
+                              'data point') from None
 
 
-def geometric_mean(data):
+def geometric_mean(data, *, default=None):
     """Convert data to floats and compute the geometric mean.
 
     Raises a StatisticsError if the input dataset is empty,
@@ -354,17 +367,21 @@ def geometric_mean(data):
     No special efforts are made to achieve exact results.
     (However, this may change in the future.)
 
-    >>> round(geometric_mean([54, 24, 36]), 9)
+    >>> round(geometric_mean([54, 24, 36]), 1)
     36.0
+
+    >>> round(geometric_mean([], default=1.0), 1)
+    1.0
     """
     try:
-        return exp(fmean(map(log, data)))
+        logdefault = log(default) if default else None
+        return exp(fmean(map(log, data), default=logdefault))
     except ValueError:
         raise StatisticsError('geometric mean requires a non-empty dataset '
-                              ' containing positive numbers') from None
+                              'containing positive numbers') from None
 
 
-def harmonic_mean(data):
+def harmonic_mean(data, *, default=None):
     """Return the harmonic mean of data.
 
     The harmonic mean, sometimes called the subcontrary mean, is the
@@ -382,8 +399,11 @@ def harmonic_mean(data):
     Using the arithmetic mean would give an average of about 5.167, which
     is too high.
 
-    If ``data`` is empty, or any element is less than zero,
-    ``harmonic_mean`` will raise ``StatisticsError``.
+    >>> harmonic_mean([], default=1.0)
+    1.0
+
+    Raises StatisticsError if ``data`` is empty (and a non-None default was
+    not provided), or any element is less than zero.
     """
     # For a justification for using harmonic mean for P/E ratios, see
     # http://fixthepitch.pellucid.com/comps-analysis-the-missing-harmony-of-summary-statistics/
@@ -393,6 +413,8 @@ def harmonic_mean(data):
     errmsg = 'harmonic mean does not support negative values'
     n = len(data)
     if n < 1:
+        if default is not None:
+            return default
         raise StatisticsError('harmonic_mean requires at least one data point')
     elif n == 1:
         x = data[0]
