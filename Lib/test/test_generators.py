@@ -270,6 +270,21 @@ class ExceptionTest(unittest.TestCase):
         self.assertEqual(next(g), "done")
         self.assertEqual(sys.exc_info(), (None, None, None))
 
+    def test_except_throw_bad_exception(self):
+        class E(Exception):
+            def __new__(cls, *args, **kwargs):
+                return cls
+
+        def boring_generator():
+            yield
+
+        gen = boring_generator()
+
+        with self.assertRaisesRegex(
+                TypeError,
+                'should have returned an instance of BaseException'):
+            gen.throw(E)
+
     def test_stopiteration_error(self):
         # See also PEP 479.
 
