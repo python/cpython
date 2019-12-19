@@ -144,7 +144,5 @@ static struct PyModuleDef statisticsmodule = {
 PyMODINIT_FUNC
 PyInit__statistics(void)
 {
-    PyObject *m = PyModule_Create(&statisticsmodule);
-    if (!m) return NULL;
-    return m;
+    return PyModule_Create(&statisticsmodule);
 }

@@ -858,10 +858,9 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
         preconfig = {
             'allocator': PYMEM_ALLOCATOR_DEBUG,
         }
-        script_abspath = os.path.abspath('script.py')
         config = {
-            'argv': [script_abspath],
-            'run_filename': script_abspath,
+            'argv': ['script.py'],
+            'run_filename': os.path.abspath('script.py'),
             'dev_mode': 1,
             'faulthandler': 1,
             'warnoptions': ['default'],
@@ -1304,10 +1303,14 @@ class AuditingTests(EmbeddingTestsMixin, unittest.TestCase):
         self.run_embedded_interpreter("test_audit_subinterpreter")
 
     def test_audit_run_command(self):
-        self.run_embedded_interpreter("test_audit_run_command", timeout=3, returncode=1)
+        self.run_embedded_interpreter("test_audit_run_command",
+                                      timeout=support.SHORT_TIMEOUT,
+                                      returncode=1)
 
     def test_audit_run_file(self):
-        self.run_embedded_interpreter("test_audit_run_file", timeout=3, returncode=1)
+        self.run_embedded_interpreter("test_audit_run_file",
+                                      timeout=support.SHORT_TIMEOUT,
+                                      returncode=1)
 
     def test_audit_run_interactivehook(self):
         startup = os.path.join(self.oldcwd, support.TESTFN) + ".py"
@@ -1316,7 +1319,8 @@ class AuditingTests(EmbeddingTestsMixin, unittest.TestCase):
             print("sys.__interactivehook__ = lambda: None", file=f)
         try:
             env = {**remove_python_envvars(), "PYTHONSTARTUP": startup}
-            self.run_embedded_interpreter("test_audit_run_interactivehook", timeout=5,
+            self.run_embedded_interpreter("test_audit_run_interactivehook",
+                                          timeout=support.SHORT_TIMEOUT,
                                           returncode=10, env=env)
         finally:
             os.unlink(startup)
@@ -1327,13 +1331,16 @@ class AuditingTests(EmbeddingTestsMixin, unittest.TestCase):
             print("pass", file=f)
         try:
             env = {**remove_python_envvars(), "PYTHONSTARTUP": startup}
-            self.run_embedded_interpreter("test_audit_run_startup", timeout=5,
+            self.run_embedded_interpreter("test_audit_run_startup",
+                                          timeout=support.SHORT_TIMEOUT,
                                           returncode=10, env=env)
         finally:
             os.unlink(startup)
 
     def test_audit_run_stdin(self):
-        self.run_embedded_interpreter("test_audit_run_stdin", timeout=3, returncode=1)
+        self.run_embedded_interpreter("test_audit_run_stdin",
+                                      timeout=support.SHORT_TIMEOUT,
+                                      returncode=1)
 
 if __name__ == "__main__":
     unittest.main()

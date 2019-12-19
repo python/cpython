@@ -2192,7 +2192,7 @@ class TestQuantiles(unittest.TestCase):
                 quantiles(padded_data, n=n, method='inclusive'),
                 (n, data),
             )
-            # Invariant under tranlation and scaling
+            # Invariant under translation and scaling
             def f(x):
                 return 3.5 * x - 1234.675
             exp = list(map(f, expected))
@@ -2232,7 +2232,7 @@ class TestQuantiles(unittest.TestCase):
                 result = quantiles(map(datatype, data), n=n, method="inclusive")
                 self.assertTrue(all(type(x) == datatype) for x in result)
                 self.assertEqual(result, list(map(datatype, expected)))
-            # Invariant under tranlation and scaling
+            # Invariant under translation and scaling
             def f(x):
                 return 3.5 * x - 1234.675
             exp = list(map(f, expected))

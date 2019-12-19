@@ -18,7 +18,7 @@ static const char unnamed_fields_key[] = "n_unnamed_fields";
 
 /* Fields with this name have only a field index, not a field name.
    They are only allowed for indices < n_visible_fields. */
-char *PyStructSequence_UnnamedField = "unnamed field";
+const char * const PyStructSequence_UnnamedField = "unnamed field";
 _Py_IDENTIFIER(n_sequence_fields);
 _Py_IDENTIFIER(n_fields);
 _Py_IDENTIFIER(n_unnamed_fields);

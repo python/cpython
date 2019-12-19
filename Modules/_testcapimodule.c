@@ -639,7 +639,7 @@ test_long_long_and_overflow(PyObject *self, PyObject *Py_UNUSED(ignored))
     int overflow;
 
     /* Test that overflow is set properly for a large value. */
-    /* num is a number larger than PY_LLONG_MAX on a typical machine. */
+    /* num is a number larger than LLONG_MAX on a typical machine. */
     num = PyLong_FromString("FFFFFFFFFFFFFFFFFFFFFFFF", NULL, 16);
     if (num == NULL)
         return NULL;
@@ -655,8 +655,8 @@ test_long_long_and_overflow(PyObject *self, PyObject *Py_UNUSED(ignored))
         return raiseTestError("test_long_long_and_overflow",
             "overflow was not set to 1");
 
-    /* Same again, with num = PY_LLONG_MAX + 1 */
-    num = PyLong_FromLongLong(PY_LLONG_MAX);
+    /* Same again, with num = LLONG_MAX + 1 */
+    num = PyLong_FromLongLong(LLONG_MAX);
     if (num == NULL)
         return NULL;
     one = PyLong_FromLong(1L);
@@ -683,7 +683,7 @@ test_long_long_and_overflow(PyObject *self, PyObject *Py_UNUSED(ignored))
             "overflow was not set to 1");
 
     /* Test that overflow is set properly for a large negative value. */
-    /* num is a number smaller than PY_LLONG_MIN on a typical platform */
+    /* num is a number smaller than LLONG_MIN on a typical platform */
     num = PyLong_FromString("-FFFFFFFFFFFFFFFFFFFFFFFF", NULL, 16);
     if (num == NULL)
         return NULL;
@@ -699,8 +699,8 @@ test_long_long_and_overflow(PyObject *self, PyObject *Py_UNUSED(ignored))
         return raiseTestError("test_long_long_and_overflow",
             "overflow was not set to -1");
 
-    /* Same again, with num = PY_LLONG_MIN - 1 */
-    num = PyLong_FromLongLong(PY_LLONG_MIN);
+    /* Same again, with num = LLONG_MIN - 1 */
+    num = PyLong_FromLongLong(LLONG_MIN);
     if (num == NULL)
         return NULL;
     one = PyLong_FromLong(1L);
@@ -757,7 +757,7 @@ test_long_long_and_overflow(PyObject *self, PyObject *Py_UNUSED(ignored))
         return raiseTestError("test_long_long_and_overflow",
             "overflow was set incorrectly");
 
-    num = PyLong_FromLongLong(PY_LLONG_MAX);
+    num = PyLong_FromLongLong(LLONG_MAX);
     if (num == NULL)
         return NULL;
     overflow = 1234;
@@ -765,14 +765,14 @@ test_long_long_and_overflow(PyObject *self, PyObject *Py_UNUSED(ignored))
     Py_DECREF(num);
     if (value == -1 && PyErr_Occurred())
         return NULL;
-    if (value != PY_LLONG_MAX)
+    if (value != LLONG_MAX)
         return raiseTestError("test_long_long_and_overflow",
-            "expected return value PY_LLONG_MAX");
+            "expected return value LLONG_MAX");
     if (overflow != 0)
         return raiseTestError("test_long_long_and_overflow",
             "overflow was not cleared");
 
-    num = PyLong_FromLongLong(PY_LLONG_MIN);
+    num = PyLong_FromLongLong(LLONG_MIN);
     if (num == NULL)
         return NULL;
     overflow = 0;
@@ -780,9 +780,9 @@ test_long_long_and_overflow(PyObject *self, PyObject *Py_UNUSED(ignored))
     Py_DECREF(num);
     if (value == -1 && PyErr_Occurred())
         return NULL;
-    if (value != PY_LLONG_MIN)
+    if (value != LLONG_MIN)
         return raiseTestError("test_long_long_and_overflow",
-            "expected return value PY_LLONG_MIN");
+            "expected return value LLONG_MIN");
     if (overflow != 0)
         return raiseTestError("test_long_long_and_overflow",
             "overflow was not cleared");
@@ -6710,9 +6710,9 @@ PyInit__testcapi(void)
     PyModule_AddObject(m, "FLT_MIN", PyFloat_FromDouble(FLT_MIN));
     PyModule_AddObject(m, "DBL_MAX", PyFloat_FromDouble(DBL_MAX));
     PyModule_AddObject(m, "DBL_MIN", PyFloat_FromDouble(DBL_MIN));
-    PyModule_AddObject(m, "LLONG_MAX", PyLong_FromLongLong(PY_LLONG_MAX));
-    PyModule_AddObject(m, "LLONG_MIN", PyLong_FromLongLong(PY_LLONG_MIN));
-    PyModule_AddObject(m, "ULLONG_MAX", PyLong_FromUnsignedLongLong(PY_ULLONG_MAX));
+    PyModule_AddObject(m, "LLONG_MAX", PyLong_FromLongLong(LLONG_MAX));
+    PyModule_AddObject(m, "LLONG_MIN", PyLong_FromLongLong(LLONG_MIN));
+    PyModule_AddObject(m, "ULLONG_MAX", PyLong_FromUnsignedLongLong(ULLONG_MAX));
     PyModule_AddObject(m, "PY_SSIZE_T_MAX", PyLong_FromSsize_t(PY_SSIZE_T_MAX));
     PyModule_AddObject(m, "PY_SSIZE_T_MIN", PyLong_FromSsize_t(PY_SSIZE_T_MIN));
     PyModule_AddObject(m, "SIZEOF_PYGC_HEAD", PyLong_FromSsize_t(sizeof(PyGC_Head)));
@@ -6721,11 +6721,14 @@ PyInit__testcapi(void)
     PyModule_AddObject(m, "instancemethod", (PyObject *)&PyInstanceMethod_Type);
 
     PyModule_AddIntConstant(m, "the_number_three", 3);
+    PyObject *v;
 #ifdef WITH_PYMALLOC
-    PyModule_AddObject(m, "WITH_PYMALLOC", Py_True);
+    v = Py_True;
 #else
-    PyModule_AddObject(m, "WITH_PYMALLOC", Py_False);
+    v = Py_False;
 #endif
+    Py_INCREF(v);
+    PyModule_AddObject(m, "WITH_PYMALLOC", v);
 
     TestError = PyErr_NewException("_testcapi.error", NULL, NULL);
     Py_INCREF(TestError);
