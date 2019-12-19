@@ -1966,6 +1966,34 @@ unicode_asutf8andsize(PyObject *self, PyObject *args)
 }
 
 static PyObject *
+unicode_getutf8buffer(PyObject *self, PyObject *args)
+{
+    PyObject *unicode;
+    const char *errors = NULL;
+    if(!PyArg_ParseTuple(args, "U|s", &unicode, &errors)) {
+        return NULL;
+    }
+
+    Py_buffer buffer;
+    if (PyUnicode_GetUTF8Buffer(unicode, errors, &buffer) < 0) {
+        return NULL;
+    }
+
+    assert(buffer.obj != NULL);
+    assert(buffer.obj == unicode || PyBytes_CheckExact(buffer.obj));
+
+    PyObject *result = PyMemoryView_FromBuffer(&buffer);
+    if (result == NULL) {
+        PyBuffer_Release(&buffer);
+        return NULL;
+    }
+    // Instead of calling PyBuffer_Release(), move the ownership of the obj
+    // to the memoryview object.
+    ((PyMemoryViewObject*)result)->mbuf->master.obj = buffer.obj;
+    return result;
+}
+
+static PyObject *
 unicode_findchar(PyObject *self, PyObject *args)
 {
     PyObject *str;
@@ -5391,6 +5419,7 @@ static PyMethodDef TestMethods[] = {
     {"unicode_asucs4",          unicode_asucs4,                  METH_VARARGS},
     {"unicode_asutf8",          unicode_asutf8,                  METH_VARARGS},
     {"unicode_asutf8andsize",   unicode_asutf8andsize,           METH_VARARGS},
+    {"unicode_getutf8buffer",   unicode_getutf8buffer,           METH_VARARGS},
     {"unicode_findchar",        unicode_findchar,                METH_VARARGS},
     {"unicode_copycharacters",  unicode_copycharacters,          METH_VARARGS},
     {"unicode_encodedecimal",   unicode_encodedecimal,           METH_VARARGS},

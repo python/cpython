@@ -694,6 +694,7 @@ EXPORTS
   PyUnicode_GetDefaultEncoding=python39.PyUnicode_GetDefaultEncoding
   PyUnicode_GetLength=python39.PyUnicode_GetLength
   PyUnicode_GetSize=python39.PyUnicode_GetSize
+  PyUnicode_GetUTF8Buffer=python39.PyUnicode_GetUTF8Buffer
   PyUnicode_InternFromString=python39.PyUnicode_InternFromString
   PyUnicode_InternImmortal=python39.PyUnicode_InternImmortal
   PyUnicode_InternInPlace=python39.PyUnicode_InternInPlace

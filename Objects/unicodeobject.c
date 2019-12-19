@@ -3996,6 +3996,38 @@ PyUnicode_FSDecoder(PyObject* arg, void* addr)
 }
 
 
+int
+PyUnicode_GetUTF8Buffer(PyObject *unicode, const char *errors,
+                        Py_buffer *view)
+{
+    if (!PyUnicode_Check(unicode)) {
+        PyErr_BadArgument();
+        return -1;
+    }
+    if (PyUnicode_READY(unicode) == -1) {
+        return -1;
+    }
+
+    if (PyUnicode_UTF8(unicode) != NULL) {
+        return PyBuffer_FillInfo(view, unicode,
+                PyUnicode_UTF8(unicode),
+                PyUnicode_UTF8_LENGTH(unicode),
+                1, PyBUF_SIMPLE);
+    }
+
+    PyObject *bytes = _PyUnicode_AsUTF8String(unicode, errors);
+    if (bytes == NULL) {
+        return -1;
+    }
+    assert(PyBytes_CheckExact(bytes));
+    if (PyObject_GetBuffer(bytes, view, PyBUF_SIMPLE) < 0) {
+        Py_DECREF(bytes);
+        return -1;
+    }
+    return 0;
+}
+
+
 const char *
 PyUnicode_AsUTF8AndSize(PyObject *unicode, Py_ssize_t *psize)
 {
