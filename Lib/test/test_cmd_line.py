@@ -2,11 +2,11 @@
 # Most tests are executed with environment variables ignored
 # See test_cmd_line_script.py for testing of script execution
 
-import ast
 import os
 import subprocess
 import sys
 import tempfile
+import textwrap
 import unittest
 from test import support
 from test.support.script_helper import (
@@ -221,21 +221,19 @@ class CmdLineTest(unittest.TestCase):
         check_output(text)
 
     def test_non_interactive_output_buffering(self):
-        def get_value(attr):
-            code = f'import sys; print({attr})'
-            rc, out, err = assert_python_ok('-c', code)
-            return ast.literal_eval(out.rstrip().decode())
-
-        cases = [
-            ('sys.stdout.isatty()', False),
-            ('sys.stdout.write_through', False),
-            ('sys.stdout.line_buffering', False),
-            ('sys.stderr.isatty()', False),
-            ('sys.stderr.write_through', False),
-            ('sys.stderr.line_buffering', True),
-        ]
-        for attr, value in cases:
-            self.assertEqual(get_value(attr), value, f'{attr} is not {value}')
+        code = textwrap.dedent("""
+            import sys
+            out = sys.stdout
+            print(out.isatty(), out.write_through, out.line_buffering)
+            err = sys.stderr
+            print(err.isatty(), err.write_through, err.line_buffering)
+        """)
+        args = [sys.executable, '-c', code]
+        proc = subprocess.run(args, stdout=subprocess.PIPE,
+                              stderr=subprocess.PIPE, text=True, check=True)
+        self.assertEqual(proc.stdout,
+                         'False False False\n'
+                         'False False True\n')
 
     def test_unbuffered_output(self):
         # Test expected operation of the '-u' switch
