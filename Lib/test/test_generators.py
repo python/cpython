@@ -280,12 +280,21 @@ class ExceptionTest(unittest.TestCase):
 
         gen = boring_generator()
 
-        with self.assertRaisesRegex(
-                TypeError,
-                'should have returned an instance of BaseException'):
+        err_msg = 'should have returned an instance of BaseException'
+
+        with self.assertRaisesRegex(TypeError, err_msg):
             gen.throw(E)
 
         self.assertRaises(StopIteration, next, gen)
+
+        def generator():
+            with self.assertRaisesRegex(TypeError, err_msg):
+                yield
+
+        gen = generator()
+        next(gen)
+        with self.assertRaises(StopIteration):
+            gen.throw(E)
 
     def test_stopiteration_error(self):
         # See also PEP 479.
