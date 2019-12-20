@@ -2833,10 +2833,7 @@ class CAPITest(unittest.TestCase):
     # Test PyUnicode_GetUTF8Buffer()
     @support.cpython_only
     def test_getutf8buffer(self):
-        from _testcapi import unicode_getutf8buffer, test_unicode_getutf8buffer
-
-        # Run tests wrtten in C.  Raise an error when test failed.
-        test_unicode_getutf8buffer()
+        from _testcapi import unicode_getutf8buffer
 
         ascii_ = "foo"
         bmp = '\u0100'
