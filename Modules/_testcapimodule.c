@@ -1982,15 +1982,208 @@ unicode_getutf8buffer(PyObject *self, PyObject *args)
     assert(buffer.obj != NULL);
     assert(buffer.obj == unicode || PyBytes_CheckExact(buffer.obj));
 
-    PyObject *result = PyMemoryView_FromBuffer(&buffer);
-    if (result == NULL) {
-        PyBuffer_Release(&buffer);
+    PyObject *result = PyBytes_FromStringAndSize(buffer.buf, buffer.len);
+    PyBuffer_Release(&buffer);
+    return result;
+}
+
+static PyObject *
+test_unicode_getutf8buffer(PyObject *self, PyObject *Py_UNUSED(ignored))
+{
+    Py_buffer buf;
+
+    // Test 1: ASCII string
+    PyObject *str = PyUnicode_FromString("hello");
+    if (str == NULL) {
         return NULL;
     }
-    // Instead of calling PyBuffer_Release(), move the ownership of the obj
-    // to the memoryview object.
-    ((PyMemoryViewObject*)result)->mbuf->master.obj = buffer.obj;
-    return result;
+    Py_ssize_t refcnt = Py_REFCNT(str);
+
+    if (PyUnicode_GetUTF8Buffer(str, NULL,  &buf) < 0) {
+        Py_DECREF(str);
+        if (!PyErr_Occurred()) {
+            PyErr_Format(TestError,
+                         "PyUnicode_GetUTF8Buffer() returned nonzero "
+                         "without exception set. (%s:%d)",
+                         __FILE__, __LINE__);
+        }
+        return NULL;
+    }
+
+    if (buf.obj != str) {
+        PyErr_Format(TestError,
+                     "buf.obj must be equal to str. (%s:%d)",
+                     __FILE__, __LINE__);
+        PyBuffer_Release(&buf);
+        Py_DECREF(str);
+        return NULL;
+    }
+
+    if (buf.len != PyUnicode_GET_LENGTH(str)) {
+        PyErr_Format(TestError,
+                     "buf.len must be equal to len(str). (%s:%d)",
+                     __FILE__, __LINE__);
+        PyBuffer_Release(&buf);
+        Py_DECREF(str);
+        return NULL;
+    }
+    assert(((const char*)buf.buf)[5] == '\0');
+
+    if ((Py_UCS1*)buf.buf != PyUnicode_1BYTE_DATA(str)) {
+        PyErr_Format(TestError,
+                     "buf.buf must be equal to PyUnicode_1BYTE_DATA(str). (%s:%d)",
+                     __FILE__, __LINE__);
+        PyBuffer_Release(&buf);
+        Py_DECREF(str);
+        return NULL;
+    }
+
+    if (refcnt + 1 != Py_REFCNT(str)) {
+        PyErr_Format(TestError,
+                     "Py_REFCNT(str); expected %zd, got %zd. (%s:%d)",
+                     refcnt + 1, Py_REFCNT(str),
+                     __FILE__, __LINE__);
+        PyBuffer_Release(&buf);
+        Py_DECREF(str);
+        return NULL;
+    }
+
+    PyBuffer_Release(&buf);
+
+    if (refcnt != Py_REFCNT(str)) {
+        PyErr_Format(TestError,
+                     "Py_REFCNT(str); expected %zd, got %zd. (%s:%d)",
+                     refcnt, Py_REFCNT(str),
+                     __FILE__, __LINE__);
+        Py_DECREF(str);
+        return NULL;
+    }
+
+    Py_DECREF(str);
+
+    // Test 2: non-ASCII string
+
+    // "hello" in Japanese.  len(str)==5, len(str.encode()) == 15.
+    str = PyUnicode_FromString("\xe3\x81\x93\xe3\x82\x93\xe3\x81\xab\xe3\x81\xa1\xe3\x81\xaf");
+    if (str == NULL) {
+        return NULL;
+    }
+    refcnt = Py_REFCNT(str);
+    assert(PyUnicode_GET_LENGTH(str) == 5);
+
+    if (PyUnicode_GetUTF8Buffer(str, NULL,  &buf) < 0) {
+        Py_DECREF(str);
+        if (!PyErr_Occurred()) {
+            PyErr_Format(TestError,
+                         "PyUnicode_GetUTF8Buffer() returned nonzero "
+                         "without exception set. (%s:%d)",
+                         __FILE__, __LINE__);
+        }
+        Py_DECREF(str);
+        return NULL;
+    }
+
+    if (buf.obj == str || !PyBytes_CheckExact(buf.obj)) {
+        PyErr_Format(TestError,
+                     "buf.obj must be a bytes object, got %R (%s:%d)",
+                     buf.obj, __FILE__, __LINE__);
+        PyBuffer_Release(&buf);
+        Py_DECREF(str);
+        return NULL;
+    }
+
+    if (buf.len != 15) {
+        PyErr_Format(TestError,
+                     "Expected buf.len == 15, actual %zd (%s:%d)",
+                     buf.len, __FILE__, __LINE__);
+        PyBuffer_Release(&buf);
+        Py_DECREF(str);
+        return NULL;
+    }
+    assert(((const char*)buf.buf)[15] == '\0');
+
+    if (refcnt != Py_REFCNT(str)) {
+        PyErr_Format(TestError,
+                     "Py_REFCNT(str) must not be changed. (%s:%d)",
+                     __FILE__, __LINE__);
+        PyBuffer_Release(&buf);
+        Py_DECREF(str);
+        return NULL;
+    }
+
+    PyBuffer_Release(&buf);
+
+    // Test 3: There is a UTF-8 cache
+    // Reuse str of the previoss test.
+
+    const char *cache = PyUnicode_AsUTF8(str);
+    if (cache == NULL) {
+        return NULL;
+    }
+
+    if (PyUnicode_GetUTF8Buffer(str, NULL,  &buf) < 0) {
+        Py_DECREF(str);
+        if (!PyErr_Occurred()) {
+            PyErr_Format(TestError,
+                         "PyUnicode_GetUTF8Buffer() returned nonzero "
+                         "without exception set. (%s:%d)",
+                         __FILE__, __LINE__);
+        }
+        Py_DECREF(str);
+        return NULL;
+    }
+
+    if (buf.obj != str) {
+        PyErr_Format(TestError,
+                     "buf.obj must be equal to str. (%s:%d)",
+                     __FILE__, __LINE__);
+        PyBuffer_Release(&buf);
+        Py_DECREF(str);
+        return NULL;
+    }
+
+    if (buf.buf != cache) {
+        PyErr_Format(TestError,
+                     "buf.buf must be equal to the UTF-8 cache (%s:%d)",
+                     __FILE__, __LINE__);
+        PyBuffer_Release(&buf);
+        Py_DECREF(str);
+        return NULL;
+    }
+
+    if (buf.len != 15) {
+        PyErr_Format(TestError,
+                     "Expected buf.len == 15, actual %zd (%s:%d)",
+                     buf.len, __FILE__, __LINE__);
+        PyBuffer_Release(&buf);
+        Py_DECREF(str);
+        return NULL;
+    }
+    assert(((const char*)buf.buf)[15] == '\0');
+
+    if (refcnt + 1 != Py_REFCNT(str)) {
+        PyErr_Format(TestError,
+                     "Py_REFCNT(str); expected %zd, got %zd. (%s:%d)",
+                     refcnt + 1, Py_REFCNT(str),
+                     __FILE__, __LINE__);
+        PyBuffer_Release(&buf);
+        Py_DECREF(str);
+        return NULL;
+    }
+
+    PyBuffer_Release(&buf);
+
+    if (refcnt != Py_REFCNT(str)) {
+        PyErr_Format(TestError,
+                     "Py_REFCNT(str); expected %zd, got %zd. (%s:%d)",
+                     refcnt, Py_REFCNT(str),
+                     __FILE__, __LINE__);
+        Py_DECREF(str);
+        return NULL;
+    }
+
+    Py_DECREF(str);
+    Py_RETURN_NONE;
 }
 
 static PyObject *
@@ -5420,6 +5613,7 @@ static PyMethodDef TestMethods[] = {
     {"unicode_asutf8",          unicode_asutf8,                  METH_VARARGS},
     {"unicode_asutf8andsize",   unicode_asutf8andsize,           METH_VARARGS},
     {"unicode_getutf8buffer",   unicode_getutf8buffer,           METH_VARARGS},
+    {"test_unicode_getutf8buffer", test_unicode_getutf8buffer,   METH_NOARGS},
     {"unicode_findchar",        unicode_findchar,                METH_VARARGS},
     {"unicode_copycharacters",  unicode_copycharacters,          METH_VARARGS},
     {"unicode_encodedecimal",   unicode_encodedecimal,           METH_VARARGS},
