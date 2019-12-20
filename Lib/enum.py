@@ -542,7 +542,9 @@ class Enum(metaclass=EnumMeta):
         # all enum instances are actually created during class construction
         # without calling this method; this method is called by the metaclass'
         # __call__ (i.e. Color(3) ), and by pickle
-        if type(value) is cls:
+
+        # using .__class__ instead of type() as it 2x faster
+        if value.__class__ is cls:
             # For lookups like Color(Color.RED)
             return value
         # by-value search for a matching enum member
@@ -558,23 +560,29 @@ class Enum(metaclass=EnumMeta):
                 if member._value_ == value:
                     return member
         # still not found -- try _missing_ hook
+
+        # TODO: Maybe remove try/except block and setting __context__ in this case?
         try:
-            exc = None
             result = cls._missing_(value)
         except Exception as e:
-            exc = e
-            result = None
+            # Huge boost for standard enum
+            if cls._missing_ is Enum._missing_:
+                raise
+            else:
+                e.__context__ = ValueError("%r is not a valid %s" % (value, cls.__qualname__))
+                raise
+
         if isinstance(result, cls):
             return result
+
+        ve_exc = ValueError("%r is not a valid %s" % (value, cls.__qualname__))
+        if result is None:
+            raise ve_exc
         else:
-            ve_exc = ValueError("%r is not a valid %s" % (value, cls.__qualname__))
-            if result is None and exc is None:
-                raise ve_exc
-            elif exc is None:
-                exc = TypeError(
-                        'error in %s._missing_: returned %r instead of None or a valid member'
-                        % (cls.__name__, result)
-                        )
+            exc = TypeError(
+                'error in %s._missing_: returned %r instead of None or a valid member'
+                % (cls.__name__, result)
+            )
             exc.__context__ = ve_exc
             raise exc
 
