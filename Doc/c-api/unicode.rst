@@ -1069,6 +1069,17 @@ These are the UTF-8 codec APIs:
    Successful calls to :c:func:`PyUnicode_GetUTF8Buffer` must be paired with
    calls to :c:func:`PyBuffer_Release`, similar to :c:func:`PyObject_GetBuffer`.
 
+   .. note::
+      When compared to :c:function:`PyUnicode_AsUTF8String`, this function
+      does not create a bytes object when the *unicode* is ASCII string or
+      has UTF-8 cache.
+
+      When compared to :c:function:`PyUnicode_AsUTF8` or
+      :c:function:`PyUnicode_AsUTF8AndSize`, this function does not cache the
+      UTF-8 representation of the string in the *unicode* object.
+      So this API is faster and more efficient when the *unicode* object is
+      not ASCII string and it is encoded into UTF-8 only once.
+
    .. versionadded:: 3.9
 
 
