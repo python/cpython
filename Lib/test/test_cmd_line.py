@@ -249,23 +249,6 @@ class CmdLineTest(unittest.TestCase):
         for attr, value in cases:
             self.assertEqual(get_value(attr), value, f'{attr} is not {value}')
 
-    def test_non_interactive_output_buffering_functional(self):
-        cases = [
-            # Binary stdout is unbuffered.
-            ('sys.stdout.buffer', b'x\n', b'y', b'', b''),
-            # Binary stderr is unbuffered (can't be line-buffered).
-            ('sys.stderr.buffer', b'x\n', b'y', b'', b''),
-            # Text stdout is unbuffered.
-            ('sys.stdout', 'x\n', 'y', b'', b''),
-            # Text stderr is line-buffered.
-            ('sys.stderr', 'x\n', 'y', b'', b'x\n'),
-        ]
-        for buf, txt1, txt2, out_ok, err_ok in cases:
-            code = f'import os, sys; {buf}.write({txt1!r}); {buf}.write({txt2!r}); os._exit(0)'
-            rc, out, err = assert_python_ok('-c', code)
-            self.assertEqual(out.replace(b'\r\n', b'\n'), out_ok)
-            self.assertEqual(err.replace(b'\r\n', b'\n'), err_ok)
-
     def test_unbuffered_output(self):
         # Test expected operation of the '-u' switch
         for stream in ('stdout', 'stderr'):
