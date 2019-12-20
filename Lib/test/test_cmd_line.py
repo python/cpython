@@ -2,6 +2,7 @@
 # Most tests are executed with environment variables ignored
 # See test_cmd_line_script.py for testing of script execution
 
+import ast
 import os
 import subprocess
 import sys
@@ -219,8 +220,36 @@ class CmdLineTest(unittest.TestCase):
         )
         check_output(text)
 
+    def test_interactive_output_buffering(self):
+        cases = [
+            ('sys.stdout.isatty()', True),
+            ('sys.stdout.write_through', False),
+            ('sys.stdout.line_buffering', True),
+            ('sys.stderr.isatty()', True),
+            ('sys.stderr.write_through', False),
+            ('sys.stderr.line_buffering', True),
+        ]
+        for attr, value in cases:
+            self.assertEqual(eval(attr), value, f'{attr} is not {value}')
+
     def test_non_interactive_output_buffering(self):
-        # Test buffering for stdout and stderr.
+        def get_value(attr):
+            code = f'import sys; print({attr})'
+            rc, out, err = assert_python_ok('-c', code)
+            return ast.literal_eval(out.rstrip().decode())
+
+        cases = [
+            ('sys.stdout.isatty()', False),
+            ('sys.stdout.write_through', False),
+            ('sys.stdout.line_buffering', False),
+            ('sys.stderr.isatty()', False),
+            ('sys.stderr.write_through', False),
+            ('sys.stderr.line_buffering', True),
+        ]
+        for attr, value in cases:
+            self.assertEqual(get_value(attr), value, f'{attr} is not {value}')
+
+    def test_non_interactive_output_buffering_functional(self):
         cases = [
             # Binary stdout is unbuffered.
             ('sys.stdout.buffer', b'x\n', b'y', b'', b''),
