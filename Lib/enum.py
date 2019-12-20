@@ -745,27 +745,31 @@ class Flag(Enum):
         return bool(self._value_)
 
     def __or__(self, other):
-        if not isinstance(other, self.__class__):
+        cls = self.__class__
+        if not isinstance(other, cls):
             return NotImplemented
-        return self.__class__(self._value_ | other._value_)
+        return cls(self._value_ | other._value_)
 
     def __and__(self, other):
-        if not isinstance(other, self.__class__):
+        cls = self.__class__
+        if not isinstance(other, cls):
             return NotImplemented
-        return self.__class__(self._value_ & other._value_)
+        return cls(self._value_ & other._value_)
 
     def __xor__(self, other):
-        if not isinstance(other, self.__class__):
+        cls = self.__class__
+        if not isinstance(other, cls):
             return NotImplemented
-        return self.__class__(self._value_ ^ other._value_)
+        return cls(self._value_ ^ other._value_)
 
     def __invert__(self):
-        members, uncovered = _decompose(self.__class__, self._value_)
-        inverted = self.__class__(0)
-        for m in self.__class__:
+        cls = self.__class__
+        members, uncovered = _decompose(cls, self._value_)
+        inverted = cls(0)
+        for m in cls:
             if m not in members and not (m._value_ & self._value_):
                 inverted = inverted | m
-        return self.__class__(inverted)
+        return cls(inverted)
 
 
 class IntFlag(int, Flag):
@@ -811,20 +815,23 @@ class IntFlag(int, Flag):
         return pseudo_member
 
     def __or__(self, other):
-        if not isinstance(other, (self.__class__, int)):
+        cls = self.__class__
+        if not isinstance(other, (cls, int)):
             return NotImplemented
-        result = self.__class__(self._value_ | self.__class__(other)._value_)
+        result = cls(self._value_ | cls(other)._value_)
         return result
 
     def __and__(self, other):
-        if not isinstance(other, (self.__class__, int)):
+        cls = self.__class__
+        if not isinstance(other, (cls, int)):
             return NotImplemented
-        return self.__class__(self._value_ & self.__class__(other)._value_)
+        return cls(self._value_ & cls(other)._value_)
 
     def __xor__(self, other):
-        if not isinstance(other, (self.__class__, int)):
+        cls = self.__class__
+        if not isinstance(other, (cls, int)):
             return NotImplemented
-        return self.__class__(self._value_ ^ self.__class__(other)._value_)
+        return cls(self._value_ ^ cls(other)._value_)
 
     __ror__ = __or__
     __rand__ = __and__
