@@ -185,7 +185,7 @@ class TestEnum(unittest.TestCase):
         Season = self.Season
         self.assertEqual(
             set(dir(Season.WINTER)),
-            set(['__class__', '__doc__', '__module__', 'name', 'value']),
+            set(['__class__', '__doc__', '__module__']),
             )
 
     def test_dir_with_added_behavior(self):
@@ -200,7 +200,7 @@ class TestEnum(unittest.TestCase):
                 )
         self.assertEqual(
                 set(dir(Test.this)),
-                set(['__class__', '__doc__', '__module__', 'name', 'value', 'wowser']),
+                set(['__class__', '__doc__', '__module__', 'wowser']),
                 )
 
     def test_dir_on_sub_with_behavior_on_super(self):
@@ -212,7 +212,7 @@ class TestEnum(unittest.TestCase):
             sample = 5
         self.assertEqual(
                 set(dir(SubEnum.sample)),
-                set(['__class__', '__doc__', '__module__', 'name', 'value', 'invisible']),
+                set(['__class__', '__doc__', '__module__', 'invisible']),
                 )
 
     def test_enum_in_enum_out(self):
@@ -2866,15 +2866,6 @@ class Color(enum.Enum)
  |  red = <Color.red: 1>
  |\x20\x20
  |  ----------------------------------------------------------------------
- |  Data descriptors inherited from enum.Enum:
- |\x20\x20
- |  name
- |      The name of the Enum member.
- |\x20\x20
- |  value
- |      The value of the Enum member.
- |\x20\x20
- |  ----------------------------------------------------------------------
  |  Readonly properties inherited from enum.EnumMeta:
  |\x20\x20
  |  __members__
@@ -2943,9 +2934,7 @@ class TestStdLib(unittest.TestCase):
                 ('__module__', __name__),
                 ('blue', self.Color.blue),
                 ('green', self.Color.green),
-                ('name', Enum.__dict__['name']),
                 ('red', self.Color.red),
-                ('value', Enum.__dict__['value']),
                 ))
         result = dict(inspect.getmembers(self.Color))
         self.assertEqual(values.keys(), result.keys())
@@ -2977,10 +2966,6 @@ class TestStdLib(unittest.TestCase):
                     defining_class=self.Color, object=self.Color.green),
                 Attribute(name='red', kind='data',
                     defining_class=self.Color, object=self.Color.red),
-                Attribute(name='name', kind='data',
-                    defining_class=Enum, object=Enum.__dict__['name']),
-                Attribute(name='value', kind='data',
-                    defining_class=Enum, object=Enum.__dict__['value']),
                 ]
         values.sort(key=lambda item: item.name)
         result = list(inspect.classify_class_attrs(self.Color))

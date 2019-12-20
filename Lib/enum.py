@@ -215,6 +215,9 @@ class EnumMeta(type):
                         enum_member._value_ = member_type(*args)
             value = enum_member._value_
             enum_member._name_ = member_name
+            # setting protected attributes
+            object.__setattr__(enum_member, 'name', member_name)
+            object.__setattr__(enum_member, 'value', value)
             enum_member.__objclass__ = enum_class
             enum_member.__init__(*args)
             # If another member with the same value was already defined, the
@@ -227,7 +230,8 @@ class EnumMeta(type):
                 # Aliases don't appear in member names (only in __members__).
                 enum_class._member_names_.append(member_name)
 
-            if dynamic_attr := dynamic_attributes.get(member_name, False):
+            dynamic_attr = dynamic_attributes.get(member_name)
+            if dynamic_attr is not None:
                 # Setting attrs respectively to dynamic attribute so access member_name
                 # through a class will be routed to enum_member
                 # setattr(enum_class, dynamic_attr.class_attr_name, enum_member)
@@ -625,22 +629,15 @@ class Enum(metaclass=EnumMeta):
     def __reduce_ex__(self, proto):
         return self.__class__, (self._value_, )
 
-    # DynamicClassAttribute is used to provide access to the `name` and
-    # `value` properties of enum members while keeping some measure of
-    # protection from modification, while still allowing for an enumeration
-    # to have members named `name` and `value`.  This works because enumeration
-    # members are not set directly on the enum class -- __getattr__ is
-    # used to look them up.
+    def __setattr__(self, key, value):
+        if key in {'name', 'value'}:
+            raise AttributeError("Can't set attribute")
+        object.__setattr__(self, key, value)
 
-    @DynamicClassAttribute
-    def name(self):
-        """The name of the Enum member."""
-        return self._name_
-
-    @DynamicClassAttribute
-    def value(self):
-        """The value of the Enum member."""
-        return self._value_
+    def __delattr__(self, key):
+        if key in {'name', 'value'}:
+            raise AttributeError("Can't del attribute")
+        object.__delattr__(self, key)
 
 
 class IntEnum(int, Enum):
@@ -697,6 +694,8 @@ class Flag(Enum):
             pseudo_member = object.__new__(cls)
             pseudo_member._name_ = None
             pseudo_member._value_ = value
+            object.__setattr__(pseudo_member, 'name', None)
+            object.__setattr__(pseudo_member, 'value', value)
             # use setdefault in case another thread already created a composite
             # with this value
             pseudo_member = cls._value2member_map_.setdefault(value, pseudo_member)
@@ -795,6 +794,8 @@ class IntFlag(int, Flag):
                 pseudo_member = int.__new__(cls, value)
                 pseudo_member._name_ = None
                 pseudo_member._value_ = value
+                object.__setattr__(pseudo_member, 'name', None)
+                object.__setattr__(pseudo_member, 'value', value)
                 # use setdefault in case another thread already created a composite
                 # with this value
                 pseudo_member = cls._value2member_map_.setdefault(value, pseudo_member)
