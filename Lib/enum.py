@@ -71,10 +71,10 @@ class _EnumDict(dict):
 
         """
         if _is_sunder(key):
-            if key not in (
+            if key not in {
                     '_order_', '_create_pseudo_member_',
                     '_generate_next_value_', '_missing_', '_ignore_',
-                    ):
+                    }:
                 raise ValueError('_names_ are reserved for future Enum use')
             if key == '_generate_next_value_':
                 setattr(self, '_generate_next_value', value)
@@ -151,7 +151,7 @@ class EnumMeta(type):
         _order_ = classdict.pop('_order_', None)
 
         # check for illegal enum names (any others?)
-        invalid_names = set(enum_members) & {'mro', ''}
+        invalid_names = enum_members.keys() & {'mro', ''}
         if invalid_names:
             raise ValueError('Invalid enum member name: {0}'.format(
                 ','.join(invalid_names)))
@@ -185,8 +185,8 @@ class EnumMeta(type):
         # pickle over __reduce__, and it handles all pickle protocols.
         if '__reduce_ex__' not in classdict:
             if member_type is not object:
-                methods = ('__getnewargs_ex__', '__getnewargs__',
-                        '__reduce_ex__', '__reduce__')
+                methods = {'__getnewargs_ex__', '__getnewargs__',
+                        '__reduce_ex__', '__reduce__'}
                 if not any(m in member_type.__dict__ for m in methods):
                     _make_class_unpicklable(enum_class)
 
@@ -251,7 +251,7 @@ class EnumMeta(type):
 
         # double check that repr and friends are not the mixin's or various
         # things break (such as pickle)
-        for name in ('__repr__', '__str__', '__format__', '__reduce_ex__'):
+        for name in {'__repr__', '__str__', '__format__', '__reduce_ex__'}:
             class_method = getattr(enum_class, name)
             obj_method = getattr(member_type, name, None)
             enum_method = getattr(first_enum, name, None)
@@ -506,15 +506,16 @@ class EnumMeta(type):
         if __new__ is None:
             # check all possibles for __new_member__ before falling back to
             # __new__
+            ignore_targets = {
+                None,
+                None.__new__,
+                object.__new__,
+                Enum.__new__,
+            }
             for method in ('__new_member__', '__new__'):
                 for possible in (member_type, first_enum):
                     target = getattr(possible, method, None)
-                    if target not in {
-                            None,
-                            None.__new__,
-                            object.__new__,
-                            Enum.__new__,
-                            }:
+                    if target not in ignore_targets:
                         __new__ = target
                         break
                 if __new__ is not None:
