@@ -220,16 +220,6 @@ class CmdLineTest(unittest.TestCase):
         )
         check_output(text)
 
-    def test_interactive_output_buffering(self):
-        cases = [
-            ('sys.stdout.write_through', False),
-            ('sys.stdout.line_buffering', True),
-            ('sys.stderr.write_through', False),
-            ('sys.stderr.line_buffering', True),
-        ]
-        for attr, value in cases:
-            self.assertEqual(eval(attr), value, f'{attr} is not {value}')
-
     def test_non_interactive_output_buffering(self):
         def get_value(attr):
             code = f'import sys; print({attr})'
