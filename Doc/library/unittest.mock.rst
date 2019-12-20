@@ -106,8 +106,8 @@ mock (or other object) during the test and restored when the test ends:
    are looked up. This is normally straightforward, but for a quick guide
    read :ref:`where to patch <where-to-patch>`.
 
-As well as a decorator :func:`patch` can be used as a context manager in a with
-statement:
+In addition to its usage as a decorator, :func:`patch` can be used as a context
+manager in a with statement:
 
     >>> with patch.object(ProductionClass, 'method', return_value=None) as mock_method:
     ...     thing = ProductionClass()
