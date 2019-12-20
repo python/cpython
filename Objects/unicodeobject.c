@@ -4015,6 +4015,8 @@ PyUnicode_GetUTF8Buffer(PyObject *unicode, const char *errors,
                 1, PyBUF_SIMPLE);
     }
 
+    // Unlike PyUnicode_AsUTF8AndSize(), this function doesn't
+    // create a UTF-8 cache for speed and efficiency.
     PyObject *bytes = _PyUnicode_AsUTF8String(unicode, errors);
     if (bytes == NULL) {
         return -1;
