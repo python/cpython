@@ -1027,6 +1027,32 @@ class ExecutorDeadlockTest:
             with self.assertRaises(BrokenProcessPool):
                 f.result()
 
+    def test_shutdown_deadlock_pickle(self):
+        # Test that the pool calling shutdown with wait=False does not cause
+        # a deadlock if a task fails at pickle after the shutdown call.
+        # Reported in GH#6034.
+        self.executor.shutdown(wait=True)
+        with self.executor_type(max_workers=2,
+                                mp_context=get_context(self.ctx)) as executor:
+            self.executor = executor  # Allow clean up in fail_on_deadlock
+
+            # Start the executor and get the queue_management_thread to collect
+            # the threads and avoid dangling thread that should be cleaned up
+            # asynchronously.
+            executor.submit(id, 42).result()
+            queue_manager = executor._queue_management_thread
+
+            # Submit a task that fails at pickle and shutdown the executor
+            # without waiting
+            f = executor.submit(id, ErrorAtPickle())
+            executor.shutdown(wait=False)
+            with self.assertRaises(PicklingError):
+                f.result()
+
+        # Make sure the executor is eventually shutdown and do not leave
+        # dangling threads
+        queue_manager.join()
+
 
 create_executor_tests(ExecutorDeadlockTest,
                       executor_mixins=(ProcessPoolForkMixin,
