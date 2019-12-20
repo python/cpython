@@ -1,0 +1,2 @@
+Significantly improve speed of accessing ``Enum`` attributes and slightly improve speed of trying values. 
+Remove ``EnumMeta.__getattr__``, remove ``Enum.name`` and ``Enum.value`` ``DynamicAttributes`` (they set as enum members attributes on its creation), fasten ``Enum.__new__`` a bit. Fasten ``DynamicClassAttribute`` by adding ability to preset class attributes with ``DynamicClassAttribute.set_class_attr``
