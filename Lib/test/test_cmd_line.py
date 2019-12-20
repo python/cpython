@@ -222,10 +222,8 @@ class CmdLineTest(unittest.TestCase):
 
     def test_interactive_output_buffering(self):
         cases = [
-            ('sys.stdout.isatty()', True),
             ('sys.stdout.write_through', False),
             ('sys.stdout.line_buffering', True),
-            ('sys.stderr.isatty()', True),
             ('sys.stderr.write_through', False),
             ('sys.stderr.line_buffering', True),
         ]
