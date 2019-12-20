@@ -196,7 +196,7 @@ class DynamicClassAttribute:
 
     def set_class_attr(self, cls, value):
         setattr(cls, self.class_attr_name, value)
-    
+
     def getter(self, fget):
         fdoc = fget.__doc__ if self.overwrite_doc else None
         result = type(self)(fget, self.fset, self.fdel, fdoc or self.__doc__)
