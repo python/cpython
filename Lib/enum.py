@@ -213,11 +213,11 @@ class EnumMeta(type):
         # auto-numbering ;)
         for member_name, value in enum_members.items():
             if not isinstance(value, tuple):
-                args = (value,)
+                args = (value, )
             else:
                 args = value
-            if member_type is tuple:  # special case for tuple enums
-                args = (args,)  # wrap it one more time
+            if member_type is tuple:   # special case for tuple enums
+                args = (args, )     # wrap it one more time
             if not use_args:
                 enum_member = __new__(enum_class)
                 if not hasattr(enum_member, '_value_'):
