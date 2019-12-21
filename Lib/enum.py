@@ -104,7 +104,7 @@ class _EnumDict(dict):
                 value = value.value
             self.members[key] = value
         super().__setitem__(key, value)
-        
+
     @property
     def _member_names(self):
         import warnings
