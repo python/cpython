@@ -1079,9 +1079,9 @@ class TestEnum(unittest.TestCase):
         class auto_enum(type(Enum)):
             def __new__(metacls, cls, bases, classdict):
                 temp = type(classdict)()
-                names = set(classdict._member_names)
+                names = classdict.members.keys()
                 i = 0
-                for k in classdict._member_names:
+                for k in classdict.members:
                     v = classdict[k]
                     if v is Ellipsis:
                         v = i
@@ -3051,6 +3051,26 @@ class TestEnumNamesDeprecation(unittest.TestCase):
     def test_convert_raise(self):
         with self.assertRaises(AttributeError):
             _ = enum.IntEnum._member_names_
+
+
+class TestEnumDictAttrsDeprecation(unittest.TestCase):
+    @unittest.skipUnless(sys.version_info[:2] == (3, 9),
+                         '_convert was deprecated in 3.9')
+    def test_convert_warn(self):
+        with self.assertWarns(DeprecationWarning):
+            _ = enum._EnumDict()._member_names
+
+        with self.assertWarns(DeprecationWarning):
+            _ = enum._EnumDict()._last_values
+
+    @unittest.skipUnless(sys.version_info >= (3, 10), '_convert was removed in 3.10')
+    def test_convert_raise(self):
+        with self.assertRaises(AttributeError):
+            _ = enum._EnumDict()._member_names
+
+        with self.assertRaises(AttributeError):
+            _ = enum._EnumDict()._last_values
+
 
 if __name__ == '__main__':
     unittest.main()

@@ -51,14 +51,13 @@ class auto:
 class _EnumDict(dict):
     """Track enum member order and ensure member names are not reused.
 
-    EnumMeta will use the names found in self._member_names as the
+    EnumMeta will use the names found in self.members as the
     enumeration member names.
 
     """
     def __init__(self):
         super().__init__()
-        self._member_names = []
-        self._last_values = []
+        self.members = {}
         self._ignore = []
 
     def __setitem__(self, key, value):
@@ -84,13 +83,13 @@ class _EnumDict(dict):
                 else:
                     value = list(value)
                 self._ignore = value
-                already = set(value) & set(self._member_names)
+                already = set(value) & self.members.keys()
                 if already:
                     raise ValueError('_ignore_ cannot specify already set names: %r' % (already, ))
         elif _is_dunder(key):
             if key == '__order__':
                 key = '_order_'
-        elif key in self._member_names:
+        elif key in self.members:
             # descriptor overwriting an enum?
             raise TypeError('Attempted to reuse key: %r' % key)
         elif key in self._ignore:
@@ -101,11 +100,28 @@ class _EnumDict(dict):
                 raise TypeError('%r already defined as: %r' % (key, self[key]))
             if isinstance(value, auto):
                 if value.value == _auto_null:
-                    value.value = self._generate_next_value(key, 1, len(self._member_names), self._last_values[:])
+                    value.value = self._generate_next_value(key, 1, len(self.members), list(self.members.values()))
                 value = value.value
-            self._member_names.append(key)
-            self._last_values.append(value)
+            self.members[key] = value
         super().__setitem__(key, value)
+        
+    @property
+    def _member_names(self):
+        import warnings
+        warnings.warn(
+            '_member_names is deprecated and will be removed in 3.10, use '
+            '_members instead.', DeprecationWarning, stacklevel=2
+        )
+        return list(self.members)
+
+    @property
+    def _last_values(self):
+        import warnings
+        warnings.warn(
+            '_last_values is deprecated and will be removed in 3.10, use '
+            '_members instead.', DeprecationWarning, stacklevel=2
+        )
+        return list(self.members.values())
 
 
 # Dummy value for Enum as EnumMeta explicitly checks for it, but of course
@@ -143,8 +159,8 @@ class EnumMeta(type):
 
         # save enum items into separate mapping so they don't get baked into
         # the new class
-        enum_members = {k: classdict[k] for k in classdict._member_names}
-        for name in classdict._member_names:
+        enum_members = classdict.members
+        for name in enum_members:
             del classdict[name]
 
         # adjust the sunders
@@ -195,8 +211,7 @@ class EnumMeta(type):
         # we instantiate first instead of checking for duplicates first in case
         # a custom __new__ is doing something funky with the values -- such as
         # auto-numbering ;)
-        for member_name in classdict._member_names:
-            value = enum_members[member_name]
+        for member_name, value in enum_members.items():
             if not isinstance(value, tuple):
                 args = (value,)
             else:
