@@ -295,6 +295,36 @@ class PropertySubclassTests(unittest.TestCase):
         self.assertEqual(Foo.__dict__['spam'].__doc__, "a new docstring")
 
 
+class TestSetClassAttr(unittest.TestCase):
+    def test_set_class_attr(self):
+        class Foo:
+            def __init__(self, value):
+                self._value = value
+                self._spam = 'spam'
+
+            @DynamicClassAttribute
+            def value(self):
+                return self._value
+
+            spam = DynamicClassAttribute(
+                lambda s: s._spam,
+                alias='my_shiny_spam'
+            )
+
+        self.assertFalse(hasattr(Foo, 'value'))
+        self.assertFalse(hasattr(Foo, 'name'))
+
+        foo_bar = Foo('bar')
+        value_desc = Foo.__dict__['value']
+        value_desc.set_class_attr(Foo, foo_bar)
+        self.assertIs(Foo.value, foo_bar)
+        self.assertEqual(Foo.value.value, 'bar')
+
+        foo_baz = Foo('baz')
+        Foo.my_shiny_spam = foo_baz
+        self.assertIs(Foo.spam, foo_baz)
+        self.assertEqual(Foo.spam.spam, 'spam')
+
 
 if __name__ == '__main__':
     unittest.main()

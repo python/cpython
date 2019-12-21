@@ -152,16 +152,16 @@ class DynamicClassAttribute:
     This is a descriptor, used to define attributes that act differently when
     accessed through an instance and through a class.
 
-    Instance access remains normal, but access to an attribute through a class
-    will be routed  to the same arg but with the _cls_attr prefix
-    (if this attr is not present, AttributeError will be raised,
+    Access on instance behaves like a @property, but access on class
+    will be routed to the given alias ('_cls_attr_' + attr_name) by default
+    If such attr not present in class, AttributeError will be raised,
     routing to __getattr__ method of class type)
 
     This allows one to have properties active on an instance, and have virtual
     attributes on the class with the same name (see Enum for an example).
 
     """
-    def __init__(self, fget=None, fset=None, fdel=None, doc=None, name=None):
+    def __init__(self, fget=None, fset=None, fdel=None, doc=None, alias=None):
         self.fget = fget
         self.fset = fset
         self.fdel = fdel
@@ -172,8 +172,7 @@ class DynamicClassAttribute:
         # support for abstract methods
         self.__isabstractmethod__ = bool(getattr(fget, '__isabstractmethod__', False))
         # define name for class attributes
-        self.instance_attr_name = name or fget.__name__
-        self.class_attr_name = f'_cls_attr{self.instance_attr_name}'
+        self.class_attr_name = alias
 
     def __get__(self, instance, ownerclass):
         if instance is None:
@@ -193,6 +192,10 @@ class DynamicClassAttribute:
         if self.fdel is None:
             raise AttributeError("can't delete attribute")
         self.fdel(instance)
+
+    def __set_name__(self, ownerclass, name):
+        if self.class_attr_name is None:
+            self.class_attr_name = f'_cls_attr_{name}'
 
     def set_class_attr(self, cls, value):
         setattr(cls, self.class_attr_name, value)
