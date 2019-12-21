@@ -101,9 +101,9 @@ _PyErr_CreateException(PyObject *exception_type, PyObject *value)
     if (exc != NULL && !PyExceptionInstance_Check(exc)) {
         PyErr_Format(PyExc_TypeError,
                      "calling %R should have returned an instance of "
-                     "BaseException, not %R",
-                     exception_type, Py_TYPE(exc));
-        exc = NULL;
+                     "BaseException, not %s",
+                     exception_type, Py_TYPE(exc)->tp_name);
+        Py_CLEAR(exc);
     }
 
     return exc;
