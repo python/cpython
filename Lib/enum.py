@@ -813,7 +813,9 @@ class IntFlag(int, Flag):
     def _create_pseudo_member_(cls, value):
         pseudo_member = cls._value2member_map_.get(value, None)
         if pseudo_member is None:
-            need_to_create = [value]
+            # using dict with flag values as keys for faster lookups
+            # can't use set() because it is not a sequence
+            need_to_create = {value: ...}
             # get unaccounted for bits
             _, extra_flags = _decompose(cls, value)
             # timer = 10
@@ -824,7 +826,7 @@ class IntFlag(int, Flag):
                 if (flag_value not in cls._value2member_map_ and
                         flag_value not in need_to_create
                         ):
-                    need_to_create.append(flag_value)
+                    need_to_create[flag_value] = ...
                 if extra_flags == -flag_value:
                     extra_flags = 0
                 else:
