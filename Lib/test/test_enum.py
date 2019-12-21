@@ -3040,5 +3040,17 @@ class TestIntEnumConvert(unittest.TestCase):
                 filter=lambda x: x.startswith('CONVERT_TEST_'))
 
 
+class TestEnumNamesDeprecation(unittest.TestCase):
+    @unittest.skipUnless(sys.version_info[:2] == (3, 9),
+                         '_convert was deprecated in 3.9')
+    def test_convert_warn(self):
+        with self.assertWarns(DeprecationWarning):
+            _ = enum.IntEnum._member_names_
+
+    @unittest.skipUnless(sys.version_info >= (3, 10), '_convert was removed in 3.10')
+    def test_convert_raise(self):
+        with self.assertRaises(AttributeError):
+            _ = enum.IntEnum._member_names_
+
 if __name__ == '__main__':
     unittest.main()

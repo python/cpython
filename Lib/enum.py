@@ -162,8 +162,9 @@ class EnumMeta(type):
 
         # create our new Enum type
         enum_class = super().__new__(metacls, cls, bases, classdict)
-        enum_class._member_names_ = []               # names in definition order
+        enum_class._member_names = []               # names in definition order
         enum_class._member_map_ = {}                 # name->value map
+        enum_class._unique_member_map_ = {}
         enum_class._member_type_ = member_type
 
         dynamic_attributes = {k: v for c in enum_class.mro()
@@ -228,7 +229,8 @@ class EnumMeta(type):
                     break
             else:
                 # Aliases don't appear in member names (only in __members__).
-                enum_class._member_names_.append(member_name)
+                enum_class._unique_member_map_[member_name] = enum_member
+                enum_class._member_names.append(member_name)
 
             dynamic_attr = dynamic_attributes.get(member_name)
             if dynamic_attr is not None:
@@ -271,7 +273,7 @@ class EnumMeta(type):
         if _order_ is not None:
             if isinstance(_order_, str):
                 _order_ = _order_.replace(',', ' ').split()
-            if _order_ != enum_class._member_names_:
+            if _order_ != list(enum_class._unique_member_map_):
                 raise TypeError('member order does not match _order_')
 
         return enum_class
@@ -328,17 +330,18 @@ class EnumMeta(type):
         super().__delattr__(attr)
 
     def __dir__(self):
-        return (['__class__', '__doc__', '__members__', '__module__'] +
-                self._member_names_)
+        attrs = ['__class__', '__doc__', '__members__', '__module__']
+        attrs.extend(self._unique_member_map_)
+        return attrs
 
     def __getitem__(cls, name):
         return cls._member_map_[name]
 
     def __iter__(cls):
-        return (cls._member_map_[name] for name in cls._member_names_)
+        return iter(cls._unique_member_map_.values())
 
     def __len__(cls):
-        return len(cls._member_names_)
+        return len(cls._unique_member_map_)
 
     @property
     def __members__(cls):
@@ -354,7 +357,7 @@ class EnumMeta(type):
         return "<enum %r>" % cls.__name__
 
     def __reversed__(cls):
-        return (cls._member_map_[name] for name in reversed(cls._member_names_))
+        return reversed(cls._unique_member_map_.values())
 
     def __setattr__(cls, name, value):
         """Block attempts to reassign Enum members.
@@ -454,6 +457,15 @@ class EnumMeta(type):
         module_globals[name] = cls
         return cls
 
+    @property
+    def _member_names_(cls):
+        import warnings
+        warnings.warn(
+            '_member_names_ is deprecated and will be removed in 3.10, use '
+            '_unique_members_map_ instead.', DeprecationWarning, stacklevel=2
+        )
+        return cls._member_names
+
     @staticmethod
     def _get_mixins_(bases):
         """Returns the type for creating enum members, and the first inherited
@@ -482,7 +494,7 @@ class EnumMeta(type):
             raise TypeError("new enumerations should be created as "
                     "`EnumName([mixin_type, ...] [data_type,] enum_type)`")
         member_type = _find_data_type(bases) or object
-        if first_enum._member_names_:
+        if first_enum._unique_member_map_:
             raise TypeError("Cannot extend enumerations")
         return member_type, first_enum
 
@@ -557,7 +569,7 @@ class Enum(metaclass=EnumMeta):
             pass
         except TypeError:
             # not there, now do long search -- O(n) behavior
-            for member in cls._member_map_.values():
+            for member in cls._unique_member_map_.values():
                 if member._value_ == value:
                     return member
         # still not found -- try _missing_ hook
