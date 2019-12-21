@@ -153,9 +153,9 @@ class DynamicClassAttribute:
     accessed through an instance and through a class.
 
     Access on instance behaves like a @property, but access on class
-    will be routed to the given alias ('_cls_attr_' + attr_name) by default
-    If such attr not present in class, AttributeError will be raised,
-    routing to __getattr__ method of class type)
+    will be routed to the given alias ('_cls_attr_' + attr_name by default)
+    You can set class attribute through descriptor using set_class_attr or directly using alias
+    If class attr is not set, AttributeError will be raised, routing to __getattr__ method of class type)
 
     This allows one to have properties active on an instance, and have virtual
     attributes on the class with the same name (see Enum for an example).
@@ -172,13 +172,13 @@ class DynamicClassAttribute:
         # support for abstract methods
         self.__isabstractmethod__ = bool(getattr(fget, '__isabstractmethod__', False))
         # define name for class attributes
-        self.class_attr_name = alias
+        self.alias = alias
 
     def __get__(self, instance, ownerclass):
         if instance is None:
             if self.__isabstractmethod__:
                 return self
-            return getattr(ownerclass, self.class_attr_name)
+            return getattr(ownerclass, self.alias)
         elif self.fget is None:
             raise AttributeError("unreadable attribute")
         return self.fget(instance)
@@ -193,12 +193,12 @@ class DynamicClassAttribute:
             raise AttributeError("can't delete attribute")
         self.fdel(instance)
 
-    def __set_name__(self, ownerclass, name):
-        if self.class_attr_name is None:
-            self.class_attr_name = f'_cls_attr_{name}'
+    def __set_name__(self, ownerclass, alias):
+        if self.alias is None:
+            self.alias = f'_cls_attr_{alias}'
 
     def set_class_attr(self, cls, value):
-        setattr(cls, self.class_attr_name, value)
+        setattr(cls, self.alias, value)
 
     def getter(self, fget):
         fdoc = fget.__doc__ if self.overwrite_doc else None
