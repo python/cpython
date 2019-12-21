@@ -293,6 +293,9 @@ winreg_HKEYType_Detach_impl(PyHKEYObject *self)
 /*[clinic end generated code: output=dda5a9e1a01ae78f input=dd2cc09e6c6ba833]*/
 {
     void* ret;
+    if (PySys_Audit("winreg.PyHKEY.Detach", "n", (Py_ssize_t)self->hkey) < 0) {
+        return NULL;
+    }
     ret = (void*)self->hkey;
     self->hkey = 0;
     return PyLong_FromVoidPtr(ret);
@@ -397,15 +400,15 @@ BOOL
 PyHKEY_Close(PyObject *ob_handle)
 {
     LONG rc;
-    PyHKEYObject *key;
+    HKEY key;
 
-    if (!PyHKEY_Check(ob_handle)) {
-        PyErr_SetString(PyExc_TypeError, "bad operand type");
+    if (!PyHKEY_AsHKEY(ob_handle, &key, TRUE)) {
         return FALSE;
     }
-    key = (PyHKEYObject *)ob_handle;
-    rc = key->hkey ? RegCloseKey((HKEY)key->hkey) : ERROR_SUCCESS;
-    key->hkey = 0;
+    if (PyHKEY_Check(ob_handle)) {
+        ((PyHKEYObject*)ob_handle)->hkey = 0;
+    }
+    rc = key ? RegCloseKey(key) : ERROR_SUCCESS;
     if (rc != ERROR_SUCCESS)
         PyErr_SetFromWindowsErrWithFunction(rc, "RegCloseKey");
     return rc == ERROR_SUCCESS;
@@ -518,11 +521,18 @@ fixupMultiSZ(wchar_t **str, wchar_t *data, int len)
     int i;
     wchar_t *Q;
 
-    Q = data + len;
-    for (P = data, i = 0; P < Q && *P != '\0'; P++, i++) {
+    if (len > 0 && data[len - 1] == '\0') {
+        Q = data + len - 1;
+    }
+    else {
+        Q = data + len;
+    }
+
+    for (P = data, i = 0; P < Q; P++, i++) {
         str[i] = P;
-        for (; P < Q && *P != '\0'; P++)
+        for (; P < Q && *P != '\0'; P++) {
             ;
+        }
     }
 }
 
@@ -530,12 +540,20 @@ static int
 countStrings(wchar_t *data, int len)
 {
     int strings;
-    wchar_t *P;
-    wchar_t *Q = data + len;
+    wchar_t *P, *Q;
 
-    for (P = data, strings = 0; P < Q && *P != '\0'; P++, strings++)
-        for (; P < Q && *P != '\0'; P++)
+    if (len > 0 && data[len - 1] == '\0') {
+        Q = data + len - 1;
+    }
+    else {
+        Q = data + len;
+    }
+
+    for (P = data, strings = 0; P < Q; P++, strings++) {
+        for (; P < Q && *P != '\0'; P++) {
             ;
+        }
+    }
     return strings;
 }
 
@@ -749,21 +767,15 @@ Reg2Py(BYTE *retDataBuf, DWORD retDataSize, DWORD typ)
                 }
                 for (index = 0; index < s; index++)
                 {
-                    size_t len = wcslen(str[index]);
-                    if (len > INT_MAX) {
-                        PyErr_SetString(PyExc_OverflowError,
-                            "registry string is too long for a Python string");
-                        Py_DECREF(obData);
-                        PyMem_Free(str);
-                        return NULL;
-                    }
-                    PyObject *uni = PyUnicode_FromWideChar(str[index], len);
+                    size_t slen = wcsnlen(str[index], len);
+                    PyObject *uni = PyUnicode_FromWideChar(str[index], slen);
                     if (uni == NULL) {
                         Py_DECREF(obData);
                         PyMem_Free(str);
                         return NULL;
                     }
                     PyList_SET_ITEM(obData, index, uni);
+                    len -= Py_SAFE_DOWNCAST(slen + 1, size_t, int);
                 }
                 PyMem_Free(str);
 
@@ -832,6 +844,10 @@ winreg_ConnectRegistry_impl(PyObject *module,
 {
     HKEY retKey;
     long rc;
+    if (PySys_Audit("winreg.ConnectRegistry", "un",
+                    computer_name, (Py_ssize_t)key) < 0) {
+        return NULL;
+    }
     Py_BEGIN_ALLOW_THREADS
     rc = RegConnectRegistryW(computer_name, key, &retKey);
     Py_END_ALLOW_THREADS
@@ -869,9 +885,18 @@ winreg_CreateKey_impl(PyObject *module, HKEY key, const Py_UNICODE *sub_key)
     HKEY retKey;
     long rc;
 
+    if (PySys_Audit("winreg.CreateKey", "nun",
+                    (Py_ssize_t)key, sub_key,
+                    (Py_ssize_t)KEY_WRITE) < 0) {
+        return NULL;
+    }
     rc = RegCreateKeyW(key, sub_key, &retKey);
     if (rc != ERROR_SUCCESS) {
         PyErr_SetFromWindowsErrWithFunction(rc, "CreateKey");
+        return NULL;
+    }
+    if (PySys_Audit("winreg.OpenKey/result", "n",
+                    (Py_ssize_t)retKey) < 0) {
         return NULL;
     }
     return retKey;
@@ -910,10 +935,19 @@ winreg_CreateKeyEx_impl(PyObject *module, HKEY key,
     HKEY retKey;
     long rc;
 
+    if (PySys_Audit("winreg.CreateKey", "nun",
+                    (Py_ssize_t)key, sub_key,
+                    (Py_ssize_t)access) < 0) {
+        return NULL;
+    }
     rc = RegCreateKeyExW(key, sub_key, reserved, NULL, 0,
                          access, NULL, &retKey, NULL);
     if (rc != ERROR_SUCCESS) {
         PyErr_SetFromWindowsErrWithFunction(rc, "CreateKeyEx");
+        return NULL;
+    }
+    if (PySys_Audit("winreg.OpenKey/result", "n",
+                    (Py_ssize_t)retKey) < 0) {
         return NULL;
     }
     return retKey;
@@ -942,6 +976,11 @@ winreg_DeleteKey_impl(PyObject *module, HKEY key, const Py_UNICODE *sub_key)
 /*[clinic end generated code: output=d2652a84f70e0862 input=b31d225b935e4211]*/
 {
     long rc;
+    if (PySys_Audit("winreg.DeleteKey", "nun",
+                    (Py_ssize_t)key, sub_key,
+                    (Py_ssize_t)0) < 0) {
+        return NULL;
+    }
     rc = RegDeleteKeyW(key, sub_key );
     if (rc != ERROR_SUCCESS)
         return PyErr_SetFromWindowsErrWithFunction(rc, "RegDeleteKey");
@@ -983,13 +1022,17 @@ winreg_DeleteKeyEx_impl(PyObject *module, HKEY key,
     RDKEFunc pfn = NULL;
     long rc;
 
+    if (PySys_Audit("winreg.DeleteKey", "nun",
+                    (Py_ssize_t)key, sub_key,
+                    (Py_ssize_t)access) < 0) {
+        return NULL;
+    }
     /* Only available on 64bit platforms, so we must load it
        dynamically. */
     Py_BEGIN_ALLOW_THREADS
     hMod = GetModuleHandleW(L"advapi32.dll");
     if (hMod)
-        pfn = (RDKEFunc)GetProcAddress(hMod,
-                                                                   "RegDeleteKeyExW");
+        pfn = (RDKEFunc)GetProcAddress(hMod, "RegDeleteKeyExW");
     Py_END_ALLOW_THREADS
     if (!pfn) {
         PyErr_SetString(PyExc_NotImplementedError,
@@ -1022,6 +1065,10 @@ winreg_DeleteValue_impl(PyObject *module, HKEY key, const Py_UNICODE *value)
 /*[clinic end generated code: output=56fa9d21f3a54371 input=a78d3407a4197b21]*/
 {
     long rc;
+    if (PySys_Audit("winreg.DeleteValue", "nu",
+                    (Py_ssize_t)key, value) < 0) {
+        return NULL;
+    }
     Py_BEGIN_ALLOW_THREADS
     rc = RegDeleteValueW(key, value);
     Py_END_ALLOW_THREADS
@@ -1054,6 +1101,10 @@ winreg_EnumKey_impl(PyObject *module, HKEY key, int index)
     long rc;
     PyObject *retStr;
 
+    if (PySys_Audit("winreg.EnumKey", "ni",
+                    (Py_ssize_t)key, index) < 0) {
+        return NULL;
+    }
     /* The Windows docs claim that the max key name length is 255
      * characters, plus a terminating nul character.  However,
      * empirical testing demonstrates that it is possible to
@@ -1112,6 +1163,10 @@ winreg_EnumValue_impl(PyObject *module, HKEY key, int index)
     PyObject *obData;
     PyObject *retVal;
 
+    if (PySys_Audit("winreg.EnumValue", "ni",
+                    (Py_ssize_t)key, index) < 0) {
+        return NULL;
+    }
     if ((rc = RegQueryInfoKeyW(key, NULL, NULL, NULL, NULL, NULL, NULL,
                               NULL,
                               &retValueSize, &retDataSize, NULL, NULL))
@@ -1194,6 +1249,11 @@ winreg_ExpandEnvironmentStrings_impl(PyObject *module,
     DWORD retValueSize;
     DWORD rc;
     PyObject *o;
+
+    if (PySys_Audit("winreg.ExpandEnvironmentStrings", "u",
+                    string) < 0) {
+        return NULL;
+    }
 
     retValueSize = ExpandEnvironmentStringsW(string, retValue, 0);
     if (retValueSize == 0) {
@@ -1286,6 +1346,10 @@ winreg_LoadKey_impl(PyObject *module, HKEY key, const Py_UNICODE *sub_key,
 {
     long rc;
 
+    if (PySys_Audit("winreg.LoadKey", "nuu",
+                    (Py_ssize_t)key, sub_key, file_name) < 0) {
+        return NULL;
+    }
     Py_BEGIN_ALLOW_THREADS
     rc = RegLoadKeyW(key, sub_key, file_name );
     Py_END_ALLOW_THREADS
@@ -1321,11 +1385,20 @@ winreg_OpenKey_impl(PyObject *module, HKEY key, const Py_UNICODE *sub_key,
     HKEY retKey;
     long rc;
 
+    if (PySys_Audit("winreg.OpenKey", "nun",
+                    (Py_ssize_t)key, sub_key,
+                    (Py_ssize_t)access) < 0) {
+        return NULL;
+    }
     Py_BEGIN_ALLOW_THREADS
     rc = RegOpenKeyExW(key, sub_key, reserved, access, &retKey);
     Py_END_ALLOW_THREADS
     if (rc != ERROR_SUCCESS) {
         PyErr_SetFromWindowsErrWithFunction(rc, "RegOpenKeyEx");
+        return NULL;
+    }
+    if (PySys_Audit("winreg.OpenKey/result", "n",
+                    (Py_ssize_t)retKey) < 0) {
         return NULL;
     }
     return retKey;
@@ -1368,25 +1441,30 @@ static PyObject *
 winreg_QueryInfoKey_impl(PyObject *module, HKEY key)
 /*[clinic end generated code: output=dc657b8356a4f438 input=c3593802390cde1f]*/
 {
-  long rc;
-  DWORD nSubKeys, nValues;
-  FILETIME ft;
-  LARGE_INTEGER li;
-  PyObject *l;
-  PyObject *ret;
+    long rc;
+    DWORD nSubKeys, nValues;
+    FILETIME ft;
+    LARGE_INTEGER li;
+    PyObject *l;
+    PyObject *ret;
 
-  if ((rc = RegQueryInfoKey(key, NULL, NULL, 0, &nSubKeys, NULL, NULL,
-                            &nValues,  NULL,  NULL, NULL, &ft))
-      != ERROR_SUCCESS)
-    return PyErr_SetFromWindowsErrWithFunction(rc, "RegQueryInfoKey");
-  li.LowPart = ft.dwLowDateTime;
-  li.HighPart = ft.dwHighDateTime;
-  l = PyLong_FromLongLong(li.QuadPart);
-  if (l == NULL)
-    return NULL;
-  ret = Py_BuildValue("iiO", nSubKeys, nValues, l);
-  Py_DECREF(l);
-  return ret;
+    if (PySys_Audit("winreg.QueryInfoKey", "n", (Py_ssize_t)key) < 0) {
+        return NULL;
+    }
+    if ((rc = RegQueryInfoKey(key, NULL, NULL, 0, &nSubKeys, NULL, NULL,
+                              &nValues,  NULL,  NULL, NULL, &ft))
+                              != ERROR_SUCCESS) {
+        return PyErr_SetFromWindowsErrWithFunction(rc, "RegQueryInfoKey");
+    }
+    li.LowPart = ft.dwLowDateTime;
+    li.HighPart = ft.dwHighDateTime;
+    l = PyLong_FromLongLong(li.QuadPart);
+    if (l == NULL) {
+        return NULL;
+    }
+    ret = Py_BuildValue("iiO", nSubKeys, nValues, l);
+    Py_DECREF(l);
+    return ret;
 }
 
 /*[clinic input]
@@ -1421,6 +1499,10 @@ winreg_QueryValue_impl(PyObject *module, HKEY key, const Py_UNICODE *sub_key)
     DWORD retSize = 0;
     wchar_t *tmp;
 
+    if (PySys_Audit("winreg.QueryValue", "nuu",
+                    (Py_ssize_t)key, sub_key, NULL) < 0) {
+        return NULL;
+    }
     rc = RegQueryValueW(key, sub_key, NULL, &retSize);
     if (rc == ERROR_MORE_DATA)
         retSize = 256;
@@ -1488,6 +1570,10 @@ winreg_QueryValueEx_impl(PyObject *module, HKEY key, const Py_UNICODE *name)
     PyObject *obData;
     PyObject *result;
 
+    if (PySys_Audit("winreg.QueryValue", "nuu",
+                    (Py_ssize_t)key, NULL, name) < 0) {
+        return NULL;
+    }
     rc = RegQueryValueExW(key, name, NULL, NULL, NULL, &bufSize);
     if (rc == ERROR_MORE_DATA)
         bufSize = 256;
@@ -1561,6 +1647,10 @@ winreg_SaveKey_impl(PyObject *module, HKEY key, const Py_UNICODE *file_name)
     if (!PyWinObject_AsSECURITY_ATTRIBUTES(obSA, &pSA, TRUE))
         return NULL;
 */
+    if (PySys_Audit("winreg.SaveKey", "nu",
+                    (Py_ssize_t)key, file_name) < 0) {
+        return NULL;
+    }
     Py_BEGIN_ALLOW_THREADS
     rc = RegSaveKeyW(key, file_name, pSA );
     Py_END_ALLOW_THREADS
@@ -1610,6 +1700,12 @@ winreg_SetValue_impl(PyObject *module, HKEY key, const Py_UNICODE *sub_key,
     }
     if ((size_t)value_length >= PY_DWORD_MAX) {
         PyErr_SetString(PyExc_OverflowError, "value is too long");
+        return NULL;
+    }
+
+    if (PySys_Audit("winreg.SetValue", "nunu#",
+                    (Py_ssize_t)key, sub_key, (Py_ssize_t)type,
+                    value, value_length) < 0) {
         return NULL;
     }
 
@@ -1683,6 +1779,11 @@ winreg_SetValueEx_impl(PyObject *module, HKEY key,
                      "Could not convert the data to the specified type.");
         return NULL;
     }
+    if (PySys_Audit("winreg.SetValue", "nunO",
+                    (Py_ssize_t)key, value_name, (Py_ssize_t)type,
+                    value) < 0) {
+        return NULL;
+    }
     Py_BEGIN_ALLOW_THREADS
     rc = RegSetValueExW(key, value_name, 0, type, data, len);
     Py_END_ALLOW_THREADS
@@ -1717,6 +1818,10 @@ winreg_DisableReflectionKey_impl(PyObject *module, HKEY key)
     typedef LONG (WINAPI *RDRKFunc)(HKEY);
     RDRKFunc pfn = NULL;
     LONG rc;
+
+    if (PySys_Audit("winreg.DisableReflectionKey", "n", (Py_ssize_t)key) < 0) {
+        return NULL;
+    }
 
     /* Only available on 64bit platforms, so we must load it
        dynamically.*/
@@ -1763,6 +1868,10 @@ winreg_EnableReflectionKey_impl(PyObject *module, HKEY key)
     RERKFunc pfn = NULL;
     LONG rc;
 
+    if (PySys_Audit("winreg.EnableReflectionKey", "n", (Py_ssize_t)key) < 0) {
+        return NULL;
+    }
+
     /* Only available on 64bit platforms, so we must load it
        dynamically.*/
     Py_BEGIN_ALLOW_THREADS
@@ -1806,6 +1915,10 @@ winreg_QueryReflectionKey_impl(PyObject *module, HKEY key)
     RQRKFunc pfn = NULL;
     BOOL result;
     LONG rc;
+
+    if (PySys_Audit("winreg.QueryReflectionKey", "n", (Py_ssize_t)key) < 0) {
+        return NULL;
+    }
 
     /* Only available on 64bit platforms, so we must load it
        dynamically.*/

@@ -1333,6 +1333,35 @@ class PdbTestCase(unittest.TestCase):
         self.assertNotIn('Error', stdout.decode(),
                          "Got an error running test script under PDB")
 
+    def test_issue36250(self):
+
+        with open(support.TESTFN, 'wb') as f:
+            f.write(textwrap.dedent("""
+                import threading
+                import pdb
+
+                evt = threading.Event()
+
+                def start_pdb():
+                    evt.wait()
+                    pdb.Pdb(readrc=False).set_trace()
+
+                t = threading.Thread(target=start_pdb)
+                t.start()
+                pdb.Pdb(readrc=False).set_trace()
+                evt.set()
+                t.join()""").encode('ascii'))
+        cmd = [sys.executable, '-u', support.TESTFN]
+        proc = subprocess.Popen(cmd,
+            stdout=subprocess.PIPE,
+            stdin=subprocess.PIPE,
+            stderr=subprocess.STDOUT,
+            )
+        self.addCleanup(proc.stdout.close)
+        stdout, stderr = proc.communicate(b'cont\ncont\n')
+        self.assertNotIn('Error', stdout.decode(),
+                         "Got an error running test script under PDB")
+
     def test_issue16180(self):
         # A syntax error in the debuggee.
         script = "def f: pass\n"

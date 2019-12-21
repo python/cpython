@@ -132,7 +132,7 @@ creation according to their needs, the :class:`EnvBuilder` class.
     .. versionadded:: 3.6
        Added the ``prompt`` parameter
 
-    .. versionadded:: 3.8
+    .. versionadded:: 3.9
        Added the ``upgrade_deps`` parameter
 
     Creators of third-party virtual environment tools will be free to use the
@@ -190,6 +190,14 @@ creation according to their needs, the :class:`EnvBuilder` class.
 
         Installs activation scripts appropriate to the platform into the virtual
         environment.
+
+    .. method:: upgrade_dependencies(context)
+
+       Upgrades the core venv dependency packages (currently ``pip`` and
+       ``setuptools``) in the environment. This is done by shelling out to the
+       ``pip`` executable in the environment.
+
+       .. versionadded:: 3.9
 
     .. method:: post_setup(context)
 
@@ -273,9 +281,9 @@ subclass which installs setuptools and pip into a created virtual environment::
         This builder installs setuptools and pip so that you can pip or
         easy_install other packages into the created virtual environment.
 
-        :param nodist: If True, setuptools and pip are not installed into the
+        :param nodist: If true, setuptools and pip are not installed into the
                        created virtual environment.
-        :param nopip: If True, pip is not installed into the created
+        :param nopip: If true, pip is not installed into the created
                       virtual environment.
         :param progress: If setuptools or pip are installed, the progress of the
                          installation can be monitored by passing a progress

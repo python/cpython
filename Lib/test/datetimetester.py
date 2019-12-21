@@ -62,6 +62,12 @@ class TestModule(unittest.TestCase):
         self.assertEqual(datetime.MINYEAR, 1)
         self.assertEqual(datetime.MAXYEAR, 9999)
 
+    def test_all(self):
+        """Test that __all__ only points to valid attributes."""
+        all_attrs = dir(datetime_module)
+        for attr in datetime_module.__all__:
+            self.assertIn(attr, all_attrs)
+
     def test_name_cleanup(self):
         if '_Pure' in self.__class__.__name__:
             self.skipTest('Only run for Fast C implementation')
@@ -1449,15 +1455,20 @@ class TestDate(HarmlessMixedComparison, unittest.TestCase):
         t.strftime("%f")
 
     def test_strftime_trailing_percent(self):
-        # bpo-35066: make sure trailing '%' doesn't cause
-        # datetime's strftime to complain
+        # bpo-35066: Make sure trailing '%' doesn't cause datetime's strftime to
+        # complain. Different libcs have different handling of trailing
+        # percents, so we simply check datetime's strftime acts the same as
+        # time.strftime.
         t = self.theclass(2005, 3, 2)
         try:
             _time.strftime('%')
         except ValueError:
             self.skipTest('time module does not support trailing %')
-        self.assertEqual(t.strftime('%'), '%')
-        self.assertEqual(t.strftime("m:%m d:%d y:%y %"), "m:03 d:02 y:05 %")
+        self.assertEqual(t.strftime('%'), _time.strftime('%', t.timetuple()))
+        self.assertEqual(
+            t.strftime("m:%m d:%d y:%y %"),
+            _time.strftime("m:03 d:02 y:05 %", t.timetuple()),
+        )
 
     def test_format(self):
         dt = self.theclass(2007, 9, 10)
@@ -5780,6 +5791,8 @@ class ZoneInfoTest(unittest.TestCase):
     zonename = 'America/New_York'
 
     def setUp(self):
+        if sys.platform == "vxworks":
+            self.skipTest("Skipping zoneinfo tests on VxWorks")
         if sys.platform == "win32":
             self.skipTest("Skipping zoneinfo tests on Windows")
         try:

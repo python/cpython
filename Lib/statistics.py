@@ -555,8 +555,9 @@ def mode(data):
 
     """
     data = iter(data)
+    pairs = Counter(data).most_common(1)
     try:
-        return Counter(data).most_common(1)[0][0]
+        return pairs[0][0]
     except IndexError:
         raise StatisticsError('no mode for empty data') from None
 
@@ -602,6 +603,7 @@ def multimode(data):
 # mean=0.300.  Only the latter (which corresponds with R6) gives the
 # desired cut point with 30% of the population falling below that
 # value, making it comparable to a result from an inv_cdf() function.
+# The R6 exclusive method is also idempotent.
 
 # For describing population data where the end points are known to
 # be included in the data, the R7 inclusive method is a reasonable
@@ -615,7 +617,7 @@ def multimode(data):
 # position is that fewer options make for easier choices and that
 # external packages can be used for anything more advanced.
 
-def quantiles(data, /, *, n=4, method='exclusive'):
+def quantiles(data, *, n=4, method='exclusive'):
     """Divide *data* into *n* continuous intervals with equal probability.
 
     Returns a list of (n - 1) cut points separating the intervals.
@@ -624,9 +626,8 @@ def quantiles(data, /, *, n=4, method='exclusive'):
     Set *n* to 100 for percentiles which gives the 99 cuts points that
     separate *data* in to 100 equal sized groups.
 
-    The *data* can be any iterable containing sample data or it can be
-    an instance of a class that defines an inv_cdf() method.  For sample
-    data, the cut points are linearly interpolated between data points.
+    The *data* can be any iterable containing sample.
+    The cut points are linearly interpolated between data points.
 
     If *method* is set to *inclusive*, *data* is treated as population
     data.  The minimum value is treated as the 0th percentile and the
@@ -634,8 +635,6 @@ def quantiles(data, /, *, n=4, method='exclusive'):
     """
     if n < 1:
         raise StatisticsError('n must be at least 1')
-    if hasattr(data, 'inv_cdf'):
-        return [data.inv_cdf(i / n) for i in range(1, n)]
     data = sorted(data)
     ld = len(data)
     if ld < 2:
@@ -745,7 +744,7 @@ def variance(data, xbar=None):
 def pvariance(data, mu=None):
     """Return the population variance of ``data``.
 
-    data should be a sequence or iterator of Real-valued numbers, with at least one
+    data should be a sequence or iterable of Real-valued numbers, with at least one
     value. The optional argument mu, if given, should be the mean of
     the data. If it is missing or None, the mean is automatically calculated.
 
@@ -955,6 +954,17 @@ class NormalDist:
             raise StatisticsError('cdf() not defined when sigma at or below zero')
         return _normal_dist_inv_cdf(p, self._mu, self._sigma)
 
+    def quantiles(self, n=4):
+        """Divide into *n* continuous intervals with equal probability.
+
+        Returns a list of (n - 1) cut points separating the intervals.
+
+        Set *n* to 4 for quartiles (the default).  Set *n* to 10 for deciles.
+        Set *n* to 100 for percentiles which gives the 99 cuts points that
+        separate the normal distribution in to 100 equal sized groups.
+        """
+        return [self.inv_cdf(i / n) for i in range(1, n)]
+
     def overlap(self, other):
         """Compute the overlapping coefficient (OVL) between two normal distributions.
 
@@ -992,6 +1002,20 @@ class NormalDist:
     @property
     def mean(self):
         "Arithmetic mean of the normal distribution."
+        return self._mu
+
+    @property
+    def median(self):
+        "Return the median of the normal distribution"
+        return self._mu
+
+    @property
+    def mode(self):
+        """Return the mode of the normal distribution
+
+        The mode is the value x where which the probability density
+        function (pdf) takes its maximum value.
+        """
         return self._mu
 
     @property
@@ -1068,7 +1092,7 @@ class NormalDist:
         "Two NormalDist objects are equal if their mu and sigma are both equal."
         if not isinstance(x2, NormalDist):
             return NotImplemented
-        return (x1._mu, x2._sigma) == (x2._mu, x2._sigma)
+        return x1._mu == x2._mu and x1._sigma == x2._sigma
 
     def __hash__(self):
         "NormalDist objects hash equal if their mu and sigma are both equal."

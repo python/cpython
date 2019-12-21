@@ -38,7 +38,7 @@ distinguished from a number.  Use :c:func:`PyErr_Occurred` to disambiguate.
 
 .. c:function:: PyObject* PyLong_FromLong(long v)
 
-   Return a new :c:type:`PyLongObject` object from *v*, or *NULL* on failure.
+   Return a new :c:type:`PyLongObject` object from *v*, or ``NULL`` on failure.
 
    The current implementation keeps an array of integer objects for all integers
    between ``-5`` and ``256``, when you create an int in that range you actually
@@ -48,43 +48,43 @@ distinguished from a number.  Use :c:func:`PyErr_Occurred` to disambiguate.
 .. c:function:: PyObject* PyLong_FromUnsignedLong(unsigned long v)
 
    Return a new :c:type:`PyLongObject` object from a C :c:type:`unsigned long`, or
-   *NULL* on failure.
+   ``NULL`` on failure.
 
 
 .. c:function:: PyObject* PyLong_FromSsize_t(Py_ssize_t v)
 
    Return a new :c:type:`PyLongObject` object from a C :c:type:`Py_ssize_t`, or
-   *NULL* on failure.
+   ``NULL`` on failure.
 
 
 .. c:function:: PyObject* PyLong_FromSize_t(size_t v)
 
    Return a new :c:type:`PyLongObject` object from a C :c:type:`size_t`, or
-   *NULL* on failure.
+   ``NULL`` on failure.
 
 
 .. c:function:: PyObject* PyLong_FromLongLong(long long v)
 
-   Return a new :c:type:`PyLongObject` object from a C :c:type:`long long`, or *NULL*
+   Return a new :c:type:`PyLongObject` object from a C :c:type:`long long`, or ``NULL``
    on failure.
 
 
 .. c:function:: PyObject* PyLong_FromUnsignedLongLong(unsigned long long v)
 
    Return a new :c:type:`PyLongObject` object from a C :c:type:`unsigned long long`,
-   or *NULL* on failure.
+   or ``NULL`` on failure.
 
 
 .. c:function:: PyObject* PyLong_FromDouble(double v)
 
    Return a new :c:type:`PyLongObject` object from the integer part of *v*, or
-   *NULL* on failure.
+   ``NULL`` on failure.
 
 
 .. c:function:: PyObject* PyLong_FromString(const char *str, char **pend, int base)
 
    Return a new :c:type:`PyLongObject` based on the string value in *str*, which
-   is interpreted according to the radix in *base*.  If *pend* is non-*NULL*,
+   is interpreted according to the radix in *base*.  If *pend* is non-``NULL``,
    *\*pend* will point to the first character in *str* which follows the
    representation of the number.  If *base* is ``0``, *str* is interpreted using
    the :ref:`integers` definition; in this case, leading zeros in a
@@ -195,8 +195,8 @@ distinguished from a number.  Use :c:func:`PyErr_Occurred` to disambiguate.
    :meth:`__int__` method (if present) to convert it to a
    :c:type:`PyLongObject`.
 
-   If the value of *obj* is greater than :const:`PY_LLONG_MAX` or less than
-   :const:`PY_LLONG_MIN`, set *\*overflow* to ``1`` or ``-1``, respectively,
+   If the value of *obj* is greater than :const:`LLONG_MAX` or less than
+   :const:`LLONG_MIN`, set *\*overflow* to ``1`` or ``-1``, respectively,
    and return ``-1``; otherwise, set *\*overflow* to ``0``.  If any other
    exception occurs set *\*overflow* to ``0`` and return ``-1`` as usual.
 
@@ -304,7 +304,7 @@ distinguished from a number.  Use :c:func:`PyErr_Occurred` to disambiguate.
    it to a :c:type:`PyLongObject`.
 
    If the value of *obj* is out of range for an :c:type:`unsigned long long`,
-   return the reduction of that value modulo ``PY_ULLONG_MAX + 1``.
+   return the reduction of that value modulo ``ULLONG_MAX + 1``.
 
    Returns ``(unsigned long long)-1`` on error.  Use :c:func:`PyErr_Occurred`
    to disambiguate.
@@ -334,4 +334,4 @@ distinguished from a number.  Use :c:func:`PyErr_Occurred` to disambiguate.
    is only assured to produce a usable :c:type:`void` pointer for values created
    with :c:func:`PyLong_FromVoidPtr`.
 
-   Returns *NULL* on error.  Use :c:func:`PyErr_Occurred` to disambiguate.
+   Returns ``NULL`` on error.  Use :c:func:`PyErr_Occurred` to disambiguate.

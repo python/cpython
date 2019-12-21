@@ -4,8 +4,8 @@
 More Control Flow Tools
 ***********************
 
-Besides the :keyword:`while` statement just introduced, Python knows the usual
-control flow statements known from other languages, with some twists.
+Besides the :keyword:`while` statement just introduced, Python uses the usual
+flow control statements known from other languages, with some twists.
 
 
 .. _tut-if:
@@ -695,7 +695,7 @@ As guidance:
 * Use keyword-only when names have meaning and the function definition is
   more understandable by being explicit with names or you want to prevent
   users relying on the position of the argument being passed.
-* For an API, use positional-only to prevent prevent breaking API changes
+* For an API, use positional-only to prevent breaking API changes
   if the parameter's name is modified in the future.
 
 .. _tut-arbitraryargs:

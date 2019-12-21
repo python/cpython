@@ -1,8 +1,11 @@
 import os
 import os.path
-import pkgutil
 import sys
 import tempfile
+from importlib import resources
+
+from . import _bundled
+
 
 
 __all__ = ["version", "bootstrap"]
@@ -96,9 +99,9 @@ def _bootstrap(*, root=None, upgrade=False, user=False,
         additional_paths = []
         for project, version in _PROJECTS:
             wheel_name = "{}-{}-py2.py3-none-any.whl".format(project, version)
-            whl = pkgutil.get_data(
-                "ensurepip",
-                "_bundled/{}".format(wheel_name),
+            whl = resources.read_binary(
+                _bundled,
+                wheel_name,
             )
             with open(os.path.join(tmpdir, wheel_name), "wb") as fp:
                 fp.write(whl)

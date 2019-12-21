@@ -1707,7 +1707,7 @@ The type of results of :c:func:`PyThread_start_new_thread` and
 (Contributed by Serhiy Storchaka in :issue:`6532`.)
 
 :c:func:`PyUnicode_AsWideCharString` now raises a :exc:`ValueError` if the
-second argument is *NULL* and the :c:type:`wchar_t*` string contains null
+second argument is ``NULL`` and the :c:type:`wchar_t*` string contains null
 characters.  (Contributed by Serhiy Storchaka in :issue:`30708`.)
 
 Changes to the startup sequence and the management of dynamic memory
@@ -2401,6 +2401,10 @@ Changes in the Python API
   instead of a :class:`bytes` instance.
   (Contributed by Victor Stinner in :issue:`21071`.)
 
+* :mod:`argparse` subparsers can now be made mandatory by passing ``required=True``
+  to :meth:`ArgumentParser.add_subparsers() <argparse.ArgumentParser.add_subparsers>`.
+  (Contributed by Anthony Sottile in :issue:`26510`.)
+
 * :meth:`ast.literal_eval()` is now stricter.  Addition and subtraction of
   arbitrary numbers are no longer allowed.
   (Contributed by Serhiy Storchaka in :issue:`31778`.)
@@ -2537,3 +2541,13 @@ This resolves a long standing issue where all virtual environments would have
 to be upgraded or recreated with each Python update. However, note that this
 release will still require recreation of virtual environments in order to get
 the new scripts.
+
+Notable changes in Python 3.7.6
+===============================
+
+Due to significant security concerns, the *reuse_address* parameter of
+:meth:`asyncio.loop.create_datagram_endpoint` is no longer supported. This is
+because of the behavior of the socket option ``SO_REUSEADDR`` in UDP. For more
+details, see the documentation for ``loop.create_datagram_endpoint()``.
+(Contributed by Kyle Stanley, Antoine Pitrou, and Yury Selivanov in
+:issue:`37228`.)

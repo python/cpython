@@ -1,8 +1,8 @@
 .. _distutils_examples:
 
-********
-Examples
-********
+******************
+Distutils Examples
+******************
 
 .. include:: ./_setuptools_disclaimer.rst
 

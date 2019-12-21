@@ -706,50 +706,21 @@ iterations of the loop.
    popped values are used to restore the exception state.
 
 
-.. opcode:: POP_FINALLY (preserve_tos)
+.. opcode:: RERAISE
 
-   Cleans up the value stack and the block stack.  If *preserve_tos* is not
-   ``0`` TOS first is popped from the stack and pushed on the stack after
-   performing other stack operations:
+    Re-raises the exception currently on top of the stack.
 
-   * If TOS is ``NULL`` or an integer (pushed by :opcode:`BEGIN_FINALLY`
-     or :opcode:`CALL_FINALLY`) it is popped from the stack.
-   * If TOS is an exception type (pushed when an exception has been raised)
-     6 values are popped from the stack, the last three popped values are
-     used to restore the exception state.  An exception handler block is
-     removed from the block stack.
-
-   It is similar to :opcode:`END_FINALLY`, but doesn't change the bytecode
-   counter nor raise an exception.  Used for implementing :keyword:`break`,
-   :keyword:`continue` and :keyword:`return` in the :keyword:`finally` block.
-
-   .. versionadded:: 3.8
+    .. versionadded:: 3.9
 
 
-.. opcode:: BEGIN_FINALLY
+.. opcode:: WITH_EXCEPT_START
 
-   Pushes ``NULL`` onto the stack for using it in :opcode:`END_FINALLY`,
-   :opcode:`POP_FINALLY`, :opcode:`WITH_CLEANUP_START` and
-   :opcode:`WITH_CLEANUP_FINISH`.  Starts the :keyword:`finally` block.
+    Calls the function in position 7 on the stack with the top three
+    items on the stack as arguments.
+    Used to implement the call ``context_manager.__exit__(*exc_info())`` when an exception
+    has occurred in a :keyword:`with` statement.
 
-   .. versionadded:: 3.8
-
-
-.. opcode:: END_FINALLY
-
-   Terminates a :keyword:`finally` clause.  The interpreter recalls whether the
-   exception has to be re-raised or execution has to be continued depending on
-   the value of TOS.
-
-   * If TOS is ``NULL`` (pushed by :opcode:`BEGIN_FINALLY`) continue from
-     the next instruction. TOS is popped.
-   * If TOS is an integer (pushed by :opcode:`CALL_FINALLY`), sets the
-     bytecode counter to TOS.  TOS is popped.
-   * If TOS is an exception type (pushed when an exception has been raised)
-     6 values are popped from the stack, the first three popped values are
-     used to re-raise the exception and the last three popped values are used
-     to restore the exception state.  An exception handler block is removed
-     from the block stack.
+    .. versionadded:: 3.9
 
 
 .. opcode:: LOAD_ASSERTION_ERROR
@@ -778,35 +749,6 @@ iterations of the loop.
    :opcode:`UNPACK_SEQUENCE`).
 
    .. versionadded:: 3.2
-
-
-.. opcode:: WITH_CLEANUP_START
-
-   Starts cleaning up the stack when a :keyword:`with` statement block exits.
-
-   At the top of the stack are either ``NULL`` (pushed by
-   :opcode:`BEGIN_FINALLY`) or 6 values pushed if an exception has been
-   raised in the with block.  Below is the context manager's
-   :meth:`~object.__exit__` or :meth:`~object.__aexit__` bound method.
-
-   If TOS is ``NULL``, calls ``SECOND(None, None, None)``,
-   removes the function from the stack, leaving TOS, and pushes ``None``
-   to the stack.  Otherwise calls ``SEVENTH(TOP, SECOND, THIRD)``,
-   shifts the bottom 3 values of the stack down, replaces the empty spot
-   with ``NULL`` and pushes TOS.  Finally pushes the result of the call.
-
-
-.. opcode:: WITH_CLEANUP_FINISH
-
-   Finishes cleaning up the stack when a :keyword:`with` statement block exits.
-
-   TOS is result of ``__exit__()`` or ``__aexit__()`` function call pushed
-   by :opcode:`WITH_CLEANUP_START`.  SECOND is ``None`` or an exception type
-   (pushed when an exception has been raised).
-
-   Pops two values from the stack.  If SECOND is not None and TOS is true
-   unwinds the EXCEPT_HANDLER block which was created when the exception
-   was caught and pushes ``NULL`` to the stack.
 
 
 All of the following opcodes use their arguments.
@@ -1058,15 +1000,6 @@ All of the following opcodes use their arguments.
 
    Pushes a try block from a try-finally or try-except clause onto the block
    stack.  *delta* points to the finally block or the first except block.
-
-
-.. opcode:: CALL_FINALLY (delta)
-
-   Pushes the address of the next instruction onto the stack and increments
-   bytecode counter by *delta*.  Used for calling the finally block as a
-   "subroutine".
-
-   .. versionadded:: 3.8
 
 
 .. opcode:: LOAD_FAST (var_num)

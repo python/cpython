@@ -294,7 +294,7 @@ validate_expr(expr_ty exp, expr_context_ty ctx)
         if (!validate_constant(exp->v.Constant.value)) {
             PyErr_Format(PyExc_TypeError,
                          "got an invalid type in Constant: %s",
-                         Py_TYPE(exp->v.Constant.value)->tp_name);
+                         _PyType_Name(Py_TYPE(exp->v.Constant.value)));
             return 0;
         }
         return 1;
@@ -618,12 +618,11 @@ new_identifier(const char *n, struct compiling *c)
        identifier; if so, normalize to NFKC. */
     if (!PyUnicode_IS_ASCII(id)) {
         PyObject *id2;
-        _Py_IDENTIFIER(NFKC);
         if (!c->c_normalize && !init_normalization(c)) {
             Py_DECREF(id);
             return NULL;
         }
-        PyObject *form = _PyUnicode_FromId(&PyId_NFKC);
+        PyObject *form = PyUnicode_InternFromString("NFKC");
         if (form == NULL) {
             Py_DECREF(id);
             return NULL;
@@ -631,13 +630,14 @@ new_identifier(const char *n, struct compiling *c)
         PyObject *args[2] = {form, id};
         id2 = _PyObject_FastCall(c->c_normalize, args, 2);
         Py_DECREF(id);
+        Py_DECREF(form);
         if (!id2)
             return NULL;
         if (!PyUnicode_Check(id2)) {
             PyErr_Format(PyExc_TypeError,
                          "unicodedata.normalize() must return a string, not "
                          "%.200s",
-                         Py_TYPE(id2)->tp_name);
+                         _PyType_Name(Py_TYPE(id2)));
             Py_DECREF(id2);
             return NULL;
         }
@@ -1747,8 +1747,10 @@ ast_for_decorator(struct compiling *c, const node *n)
         name_expr = NULL;
     }
     else if (NCH(n) == 5) { /* Call with no arguments */
-        d = Call(name_expr, NULL, NULL, LINENO(n),
-                 n->n_col_offset, n->n_end_lineno, n->n_end_col_offset, c->c_arena);
+        d = Call(name_expr, NULL, NULL,
+                 name_expr->lineno, name_expr->col_offset,
+                 CHILD(n, 3)->n_end_lineno, CHILD(n, 3)->n_end_col_offset,
+                 c->c_arena);
         if (!d)
             return NULL;
         name_expr = NULL;
@@ -1933,9 +1935,7 @@ ast_for_decorated(struct compiling *c, const node *n)
 static expr_ty
 ast_for_namedexpr(struct compiling *c, const node *n)
 {
-    /* if_stmt: 'if' namedexpr_test ':' suite ('elif' namedexpr_test ':' suite)*
-         ['else' ':' suite]
-       namedexpr_test: test [':=' test]
+    /* namedexpr_test: test [':=' test]
        argument: ( test [comp_for] |
             test ':=' test |
             test '=' test |
@@ -3126,7 +3126,7 @@ ast_for_call(struct compiling *c, const node *n, expr_ty func,
                     return NULL;
                 starred = Starred(e, Load, LINENO(chch),
                         chch->n_col_offset,
-                        chch->n_end_lineno, chch->n_end_col_offset,
+                        e->end_lineno, e->end_col_offset,
                         c->c_arena);
                 if (!starred)
                     return NULL;
@@ -4048,8 +4048,8 @@ ast_for_if_stmt(struct compiling *c, const node *n)
 
             asdl_seq_SET(orelse, 0,
                          If(expression, suite_seq, suite_seq2,
-                            LINENO(CHILD(n, NCH(n) - 6)),
-                            CHILD(n, NCH(n) - 6)->n_col_offset,
+                            LINENO(CHILD(n, NCH(n) - 7)),
+                            CHILD(n, NCH(n) - 7)->n_col_offset,
                             end_lineno, end_col_offset, c->c_arena));
             /* the just-created orelse handled the last elif */
             n_elif--;
@@ -4074,8 +4074,8 @@ ast_for_if_stmt(struct compiling *c, const node *n)
             }
             asdl_seq_SET(newobj, 0,
                          If(expression, suite_seq, orelse,
-                            LINENO(CHILD(n, off)),
-                            CHILD(n, off)->n_col_offset,
+                            LINENO(CHILD(n, off - 1)),
+                            CHILD(n, off - 1)->n_col_offset,
                             end_lineno, end_col_offset, c->c_arena));
             orelse = newobj;
         }
@@ -4766,7 +4766,7 @@ decode_bytes_with_escapes(struct compiling *c, const node *n, const char *s,
                           size_t len)
 {
     const char *first_invalid_escape;
-    PyObject *result = _PyBytes_DecodeEscape(s, len, NULL, 0, NULL,
+    PyObject *result = _PyBytes_DecodeEscape(s, len, NULL,
                                              &first_invalid_escape);
     if (result == NULL)
         return NULL;
