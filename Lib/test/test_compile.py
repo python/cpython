@@ -731,6 +731,24 @@ if 1:
             self.assertEqual(None, opcodes[0].argval)
             self.assertEqual('RETURN_VALUE', opcodes[1].opname)
 
+    def test_false_while_loop(self):
+        def break_in_while():
+            while False:
+                break
+
+        def continue_in_while():
+            while False:
+                continue
+
+        funcs = [break_in_while, continue_in_while]
+
+        # Check that we did not raise but we also don't generate bytecode
+        for func in funcs:
+            opcodes = list(dis.get_instructions(func))
+            self.assertEqual(2, len(opcodes))
+            self.assertEqual('LOAD_CONST', opcodes[0].opname)
+            self.assertEqual(None, opcodes[0].argval)
+            self.assertEqual('RETURN_VALUE', opcodes[1].opname)
 
 class TestExpressionStackSize(unittest.TestCase):
     # These tests check that the computed stack size for a code object

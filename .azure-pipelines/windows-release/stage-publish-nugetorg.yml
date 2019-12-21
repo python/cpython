@@ -31,6 +31,11 @@ jobs:
       buildVersionToDownload: specific
       buildId: $(BuildToPublish)
 
+  - powershell: 'gci pythonarm*.nupkg | %{ Write-Host "Not publishing: $($_.Name)"; gi $_ } | del'
+    displayName: 'Prevent publishing ARM/ARM64 packages'
+    workingDirectory: '$(Build.BinariesDirectory)\nuget'
+    condition: and(succeeded(), not(variables['PublishArmPackages']))
+
   - task: NuGetCommand@2
     displayName: Push packages
     condition: and(succeeded(), eq(variables['SigningCertificate'], variables['__RealSigningCertificate']))

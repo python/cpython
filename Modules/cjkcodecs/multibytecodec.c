@@ -538,7 +538,7 @@ errorexit:
 _multibytecodec.MultibyteCodec.encode
 
   input: object
-  errors: str(accept={str, NoneType}) = NULL
+  errors: str(accept={str, NoneType}) = None
 
 Return an encoded string version of `input'.
 
@@ -552,7 +552,7 @@ static PyObject *
 _multibytecodec_MultibyteCodec_encode_impl(MultibyteCodecObject *self,
                                            PyObject *input,
                                            const char *errors)
-/*[clinic end generated code: output=7b26652045ba56a9 input=05f6ced3c8dd0582]*/
+/*[clinic end generated code: output=7b26652045ba56a9 input=606d0e128a577bae]*/
 {
     MultibyteCodec_State state;
     PyObject *errorcb, *r, *ucvt;
@@ -607,7 +607,7 @@ errorexit:
 _multibytecodec.MultibyteCodec.decode
 
   input: Py_buffer
-  errors: str(accept={str, NoneType}) = NULL
+  errors: str(accept={str, NoneType}) = None
 
 Decodes 'input'.
 
@@ -621,7 +621,7 @@ static PyObject *
 _multibytecodec_MultibyteCodec_decode_impl(MultibyteCodecObject *self,
                                            Py_buffer *input,
                                            const char *errors)
-/*[clinic end generated code: output=ff419f65bad6cc77 input=a7d45f87f75e5e02]*/
+/*[clinic end generated code: output=ff419f65bad6cc77 input=e0c78fc7ab190def]*/
 {
     MultibyteCodec_State state;
     MultibyteDecodeBuffer buf;
@@ -2085,7 +2085,6 @@ PyInit__multibytecodec(void)
     }
 
     if (PyErr_Occurred()) {
-        Py_FatalError("can't initialize the _multibytecodec module");
         Py_DECREF(m);
         m = NULL;
     }

@@ -17,7 +17,7 @@ KEYPRESS_VIRTUAL_EVENT_NAME = "<<autocompletewindow-keypress>>"
 # before the default specific IDLE function
 KEYPRESS_SEQUENCES = ("<Key>", "<Key-BackSpace>", "<Key-Return>", "<Key-Tab>",
                       "<Key-Up>", "<Key-Down>", "<Key-Home>", "<Key-End>",
-                      "<Key-Prior>", "<Key-Next>")
+                      "<Key-Prior>", "<Key-Next>", "<Key-Escape>")
 KEYRELEASE_VIRTUAL_EVENT_NAME = "<<autocompletewindow-keyrelease>>"
 KEYRELEASE_SEQUENCE = "<KeyRelease>"
 LISTUPDATE_SEQUENCE = "<B1-ButtonRelease>"
@@ -257,6 +257,7 @@ class AutoCompleteWindow:
             # place acw above current line
             new_y -= acw_height
         acw.wm_geometry("+%d+%d" % (new_x, new_y))
+        acw.update_idletasks()
 
         if platform.system().startswith('Windows'):
             # See issue 15786. When on Windows platform, Tk will misbehave

@@ -106,7 +106,7 @@ PyArg_Parse(PyObject *args, const char *format, ...)
     return retval;
 }
 
-int
+PyAPI_FUNC(int)
 _PyArg_Parse_SizeT(PyObject *args, const char *format, ...)
 {
     int retval;
@@ -131,7 +131,7 @@ PyArg_ParseTuple(PyObject *args, const char *format, ...)
     return retval;
 }
 
-int
+PyAPI_FUNC(int)
 _PyArg_ParseTuple_SizeT(PyObject *args, const char *format, ...)
 {
     int retval;
@@ -156,7 +156,7 @@ _PyArg_ParseStack(PyObject *const *args, Py_ssize_t nargs, const char *format, .
     return retval;
 }
 
-int
+PyAPI_FUNC(int)
 _PyArg_ParseStack_SizeT(PyObject *const *args, Py_ssize_t nargs, const char *format, ...)
 {
     int retval;
@@ -182,7 +182,7 @@ PyArg_VaParse(PyObject *args, const char *format, va_list va)
     return retval;
 }
 
-int
+PyAPI_FUNC(int)
 _PyArg_VaParse_SizeT(PyObject *args, const char *format, va_list va)
 {
     va_list lva;
@@ -312,7 +312,7 @@ vgetargs1_impl(PyObject *compat_args, PyObject *const *stack, Py_ssize_t nargs, 
             break;
         default:
             if (level == 0) {
-                if (Py_ISALPHA(Py_CHARMASK(c)))
+                if (Py_ISALPHA(c))
                     if (c != 'e') /* skip encoded */
                         max++;
             }
@@ -397,7 +397,7 @@ vgetargs1_impl(PyObject *compat_args, PyObject *const *stack, Py_ssize_t nargs, 
         }
     }
 
-    if (*format != '\0' && !Py_ISALPHA(Py_CHARMASK(*format)) &&
+    if (*format != '\0' && !Py_ISALPHA(*format) &&
         *format != '(' &&
         *format != '|' && *format != ':' && *format != ';') {
         PyErr_Format(PyExc_SystemError,
@@ -521,7 +521,7 @@ converttuple(PyObject *arg, const char **p_format, va_list *p_va, int flags,
         }
         else if (c == ':' || c == ';' || c == '\0')
             break;
-        else if (level == 0 && Py_ISALPHA(Py_CHARMASK(c)))
+        else if (level == 0 && Py_ISALPHA(c))
             n++;
     }
 
@@ -1199,7 +1199,19 @@ convertsimple(PyObject *arg, const char **p_format, va_list *p_va, int flags,
                trailing 0-byte
 
             */
-            FETCH_SIZE;
+            int *q = NULL; Py_ssize_t *q2 = NULL;
+            if (flags & FLAG_SIZE_T) {
+                q2 = va_arg(*p_va, Py_ssize_t*);
+            }
+            else {
+                if (PyErr_WarnEx(PyExc_DeprecationWarning,
+                            "PY_SSIZE_T_CLEAN will be required for '#' formats", 1))
+                {
+                    Py_DECREF(s);
+                    return NULL;
+                }
+                q = va_arg(*p_va, int*);
+            }
 
             format++;
             if (q == NULL && q2 == NULL) {
@@ -1232,7 +1244,19 @@ convertsimple(PyObject *arg, const char **p_format, va_list *p_va, int flags,
                 }
             }
             memcpy(*buffer, ptr, size+1);
-            STORE_SIZE(size);
+
+            if (flags & FLAG_SIZE_T) {
+                *q2 = size;
+            }
+            else {
+                if (INT_MAX < size) {
+                    Py_DECREF(s);
+                    PyErr_SetString(PyExc_OverflowError,
+                                    "size does not fit in an int");
+                    return converterr("", arg, msgbuf, bufsize);
+                }
+                *q = (int)size;
+            }
         } else {
             /* Using a 0-terminated buffer:
 
@@ -1442,7 +1466,7 @@ PyArg_ParseTupleAndKeywords(PyObject *args,
     return retval;
 }
 
-int
+PyAPI_FUNC(int)
 _PyArg_ParseTupleAndKeywords_SizeT(PyObject *args,
                                   PyObject *keywords,
                                   const char *format,
@@ -1493,7 +1517,7 @@ PyArg_VaParseTupleAndKeywords(PyObject *args,
     return retval;
 }
 
-int
+PyAPI_FUNC(int)
 _PyArg_VaParseTupleAndKeywords_SizeT(PyObject *args,
                                     PyObject *keywords,
                                     const char *format,
@@ -1519,7 +1543,7 @@ _PyArg_VaParseTupleAndKeywords_SizeT(PyObject *args,
     return retval;
 }
 
-int
+PyAPI_FUNC(int)
 _PyArg_ParseTupleAndKeywordsFast(PyObject *args, PyObject *keywords,
                             struct _PyArg_Parser *parser, ...)
 {
@@ -1532,7 +1556,7 @@ _PyArg_ParseTupleAndKeywordsFast(PyObject *args, PyObject *keywords,
     return retval;
 }
 
-int
+PyAPI_FUNC(int)
 _PyArg_ParseTupleAndKeywordsFast_SizeT(PyObject *args, PyObject *keywords,
                             struct _PyArg_Parser *parser, ...)
 {
@@ -1545,7 +1569,7 @@ _PyArg_ParseTupleAndKeywordsFast_SizeT(PyObject *args, PyObject *keywords,
     return retval;
 }
 
-int
+PyAPI_FUNC(int)
 _PyArg_ParseStackAndKeywords(PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames,
                   struct _PyArg_Parser *parser, ...)
 {
@@ -1558,7 +1582,7 @@ _PyArg_ParseStackAndKeywords(PyObject *const *args, Py_ssize_t nargs, PyObject *
     return retval;
 }
 
-int
+PyAPI_FUNC(int)
 _PyArg_ParseStackAndKeywords_SizeT(PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames,
                         struct _PyArg_Parser *parser, ...)
 {
@@ -1572,7 +1596,7 @@ _PyArg_ParseStackAndKeywords_SizeT(PyObject *const *args, Py_ssize_t nargs, PyOb
 }
 
 
-int
+PyAPI_FUNC(int)
 _PyArg_VaParseTupleAndKeywordsFast(PyObject *args, PyObject *keywords,
                             struct _PyArg_Parser *parser, va_list va)
 {
@@ -1586,7 +1610,7 @@ _PyArg_VaParseTupleAndKeywordsFast(PyObject *args, PyObject *keywords,
     return retval;
 }
 
-int
+PyAPI_FUNC(int)
 _PyArg_VaParseTupleAndKeywordsFast_SizeT(PyObject *args, PyObject *keywords,
                             struct _PyArg_Parser *parser, va_list va)
 {
@@ -2029,14 +2053,18 @@ find_keyword(PyObject *kwnames, PyObject *const *kwstack, PyObject *key)
     Py_ssize_t i, nkwargs;
 
     nkwargs = PyTuple_GET_SIZE(kwnames);
-    for (i=0; i < nkwargs; i++) {
+    for (i = 0; i < nkwargs; i++) {
         PyObject *kwname = PyTuple_GET_ITEM(kwnames, i);
 
-        /* ptr==ptr should match in most cases since keyword keys
-           should be interned strings */
+        /* kwname == key will normally find a match in since keyword keys
+           should be interned strings; if not retry below in a new loop. */
         if (kwname == key) {
             return kwstack[i];
         }
+    }
+
+    for (i = 0; i < nkwargs; i++) {
+        PyObject *kwname = PyTuple_GET_ITEM(kwnames, i);
         assert(PyUnicode_Check(kwname));
         if (_PyUnicode_EQ(kwname, key)) {
             return kwstack[i];

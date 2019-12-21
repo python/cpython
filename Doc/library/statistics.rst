@@ -2,7 +2,7 @@
 =======================================================
 
 .. module:: statistics
-   :synopsis: mathematical statistics functions
+   :synopsis: Mathematical statistics functions
 
 .. moduleauthor:: Steven D'Aprano <steve+python@pearwood.info>
 .. sectionauthor:: Steven D'Aprano <steve+python@pearwood.info>
@@ -77,7 +77,7 @@ However, for reading convenience, most of the examples show sorted sequences.
 
 .. function:: mean(data)
 
-   Return the sample arithmetic mean of *data* which can be a sequence or iterator.
+   Return the sample arithmetic mean of *data* which can be a sequence or iterable.
 
    The arithmetic mean is the sum of the data divided by the number of data
    points.  It is commonly called "the average", although it is only one of many
@@ -122,7 +122,7 @@ However, for reading convenience, most of the examples show sorted sequences.
    Convert *data* to floats and compute the arithmetic mean.
 
    This runs faster than the :func:`mean` function and it always returns a
-   :class:`float`.  The *data* may be a sequence or iterator.  If the input
+   :class:`float`.  The *data* may be a sequence or iterable.  If the input
    dataset is empty, raises a :exc:`StatisticsError`.
 
    .. doctest::
@@ -143,7 +143,7 @@ However, for reading convenience, most of the examples show sorted sequences.
 
    Raises a :exc:`StatisticsError` if the input dataset is empty,
    if it contains a zero, or if it contains a negative value.
-   The *data* may be a sequence or iterator.
+   The *data* may be a sequence or iterable.
 
    No special efforts are made to achieve exact results.
    (However, this may change in the future.)
@@ -158,13 +158,14 @@ However, for reading convenience, most of the examples show sorted sequences.
 
 .. function:: harmonic_mean(data)
 
-   Return the harmonic mean of *data*, a sequence or iterator of
+   Return the harmonic mean of *data*, a sequence or iterable of
    real-valued numbers.
 
    The harmonic mean, sometimes called the subcontrary mean, is the
    reciprocal of the arithmetic :func:`mean` of the reciprocals of the
    data. For example, the harmonic mean of three values *a*, *b* and *c*
-   will be equivalent to ``3/(1/a + 1/b + 1/c)``.
+   will be equivalent to ``3/(1/a + 1/b + 1/c)``.  If one of the values
+   is zero, the result will be zero.
 
    The harmonic mean is a type of average, a measure of the central
    location of the data.  It is often appropriate when averaging
@@ -190,6 +191,10 @@ However, for reading convenience, most of the examples show sorted sequences.
    :exc:`StatisticsError` is raised if *data* is empty, or any element
    is less than zero.
 
+   The current algorithm has an early-out when it encounters a zero
+   in the input.  This means that the subsequent inputs are not tested
+   for validity.  (This behavior may change in the future.)
+
    .. versionadded:: 3.6
 
 
@@ -197,7 +202,7 @@ However, for reading convenience, most of the examples show sorted sequences.
 
    Return the median (middle value) of numeric data, using the common "mean of
    middle two" method.  If *data* is empty, :exc:`StatisticsError` is raised.
-   *data* can be a sequence or iterator.
+   *data* can be a sequence or iterable.
 
    The median is a robust measure of central location and is less affected by
    the presence of outliers.  When the number of data points is odd, the
@@ -226,7 +231,7 @@ However, for reading convenience, most of the examples show sorted sequences.
 .. function:: median_low(data)
 
    Return the low median of numeric data.  If *data* is empty,
-   :exc:`StatisticsError` is raised.  *data* can be a sequence or iterator.
+   :exc:`StatisticsError` is raised.  *data* can be a sequence or iterable.
 
    The low median is always a member of the data set.  When the number of data
    points is odd, the middle value is returned.  When it is even, the smaller of
@@ -246,7 +251,7 @@ However, for reading convenience, most of the examples show sorted sequences.
 .. function:: median_high(data)
 
    Return the high median of data.  If *data* is empty, :exc:`StatisticsError`
-   is raised.  *data* can be a sequence or iterator.
+   is raised.  *data* can be a sequence or iterable.
 
    The high median is always a member of the data set.  When the number of data
    points is odd, the middle value is returned.  When it is even, the larger of
@@ -267,7 +272,7 @@ However, for reading convenience, most of the examples show sorted sequences.
 
    Return the median of grouped continuous data, calculated as the 50th
    percentile, using interpolation.  If *data* is empty, :exc:`StatisticsError`
-   is raised.  *data* can be a sequence or iterator.
+   is raised.  *data* can be a sequence or iterable.
 
    .. doctest::
 
@@ -376,7 +381,7 @@ However, for reading convenience, most of the examples show sorted sequences.
 
 .. function:: pvariance(data, mu=None)
 
-   Return the population variance of *data*, a non-empty sequence or iterator
+   Return the population variance of *data*, a non-empty sequence or iterable
    of real-valued numbers.  Variance, or second moment about the mean, is a
    measure of the variability (spread or dispersion) of data.  A large
    variance indicates that the data is spread out; a small variance indicates
@@ -514,15 +519,14 @@ However, for reading convenience, most of the examples show sorted sequences.
 
    Set *n* to 4 for quartiles (the default).  Set *n* to 10 for deciles.  Set
    *n* to 100 for percentiles which gives the 99 cuts points that separate
-   *data* in to 100 equal sized groups.  Raises :exc:`StatisticsError` if *n*
+   *data* into 100 equal sized groups.  Raises :exc:`StatisticsError` if *n*
    is not least 1.
 
-   The *data* can be any iterable containing sample data or it can be an
-   instance of a class that defines an :meth:`~inv_cdf` method.  For meaningful
+   The *data* can be any iterable containing sample data.  For meaningful
    results, the number of data points in *data* should be larger than *n*.
    Raises :exc:`StatisticsError` if there are not at least two data points.
 
-   For sample data, the cut points are linearly interpolated from the
+   The cut points are linearly interpolated from the
    two nearest data points.  For example, if a cut point falls one-third
    of the distance between two sample values, ``100`` and ``112``, the
    cut-point will evaluate to ``104``.
@@ -547,9 +551,6 @@ However, for reading convenience, most of the examples show sorted sequences.
    values, the method sorts them and assigns the following percentiles:
    0%, 10%, 20%, 30%, 40%, 50%, 60%, 70%, 80%, 90%, 100%.
 
-   If *data* is an instance of a class that defines an
-   :meth:`~inv_cdf` method, setting *method* has no effect.
-
    .. doctest::
 
         # Decile cut points for empirically sampled data
@@ -560,11 +561,6 @@ However, for reading convenience, most of the examples show sorted sequences.
         ...         103, 107, 101, 81, 109, 104]
         >>> [round(q, 1) for q in quantiles(data, n=10)]
         [81.0, 86.2, 89.0, 99.4, 102.5, 103.6, 106.0, 109.8, 111.0]
-
-        >>> # Quartile cut points for the standard normal distribution
-        >>> Z = NormalDist()
-        >>> [round(q, 4) for q in quantiles(Z, n=4)]
-        [-0.6745, 0.0, 0.6745]
 
    .. versionadded:: 3.8
 
@@ -605,6 +601,18 @@ of applications in statistics.
 
        A read-only property for the `arithmetic mean
        <https://en.wikipedia.org/wiki/Arithmetic_mean>`_ of a normal
+       distribution.
+
+    .. attribute:: median
+
+       A read-only property for the `median
+       <https://en.wikipedia.org/wiki/Median>`_ of a normal
+       distribution.
+
+    .. attribute:: mode
+
+       A read-only property for the `mode
+       <https://en.wikipedia.org/wiki/Mode_(statistics)>`_ of a normal
        distribution.
 
     .. attribute:: stdev
@@ -678,6 +686,16 @@ of applications in statistics.
        the two probability density functions
        <https://www.rasch.org/rmt/rmt101r.htm>`_.
 
+    .. method:: NormalDist.quantiles(n=4)
+
+        Divide the normal distribution into *n* continuous intervals with
+        equal probability.  Returns a list of (n - 1) cut points separating
+        the intervals.
+
+        Set *n* to 4 for quartiles (the default).  Set *n* to 10 for deciles.
+        Set *n* to 100 for percentiles which gives the 99 cuts points that
+        separate the normal distribution into 100 equal sized groups.
+
     Instances of :class:`NormalDist` support addition, subtraction,
     multiplication and division by a constant.  These operations
     are used for translation and scaling.  For example:
@@ -733,9 +751,9 @@ Find the `quartiles <https://en.wikipedia.org/wiki/Quartile>`_ and `deciles
 
 .. doctest::
 
-    >>> list(map(round, quantiles(sat)))
+    >>> list(map(round, sat.quantiles()))
     [928, 1060, 1192]
-    >>> list(map(round, quantiles(sat, n=10)))
+    >>> list(map(round, sat.quantiles(n=10)))
     [810, 896, 958, 1011, 1060, 1109, 1162, 1224, 1310]
 
 To estimate the distribution for a model than isn't easy to solve

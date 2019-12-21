@@ -1967,7 +1967,7 @@ order (MRO) for bases """
         # different error messages.
         set_add = set.add
 
-        expected_errmsg = "descriptor 'add' of 'set' object needs an argument"
+        expected_errmsg = "unbound method set.add() needs an argument"
 
         with self.assertRaises(TypeError) as cm:
             set_add()
@@ -4648,6 +4648,18 @@ order (MRO) for bases """
         x.y = 42
         self.assertEqual(x["y"], 42)
         self.assertEqual(x, -x)
+
+    def test_wrong_class_slot_wrapper(self):
+        # Check bpo-37619: a wrapper descriptor taken from the wrong class
+        # should raise an exception instead of silently being ignored
+        class A(int):
+            __eq__ = str.__eq__
+            __add__ = str.__add__
+        a = A()
+        with self.assertRaises(TypeError):
+            a == a
+        with self.assertRaises(TypeError):
+            a + a
 
     def test_slot_shadows_class_variable(self):
         with self.assertRaises(ValueError) as cm:

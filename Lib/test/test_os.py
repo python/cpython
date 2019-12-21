@@ -1178,6 +1178,27 @@ class WalkTests(unittest.TestCase):
         finally:
             os.rename(path1new, path1)
 
+    def test_walk_many_open_files(self):
+        depth = 30
+        base = os.path.join(support.TESTFN, 'deep')
+        p = os.path.join(base, *(['d']*depth))
+        os.makedirs(p)
+
+        iters = [self.walk(base, topdown=False) for j in range(100)]
+        for i in range(depth + 1):
+            expected = (p, ['d'] if i else [], [])
+            for it in iters:
+                self.assertEqual(next(it), expected)
+            p = os.path.dirname(p)
+
+        iters = [self.walk(base, topdown=True) for j in range(100)]
+        p = base
+        for i in range(depth + 1):
+            expected = (p, ['d'] if i < depth else [], [])
+            for it in iters:
+                self.assertEqual(next(it), expected)
+            p = os.path.join(p, 'd')
+
 
 @unittest.skipUnless(hasattr(os, 'fwalk'), "Test needs os.fwalk()")
 class FwalkTests(WalkTests):
@@ -1246,6 +1267,10 @@ class FwalkTests(WalkTests):
         newfd = os.dup(1)
         self.addCleanup(os.close, newfd)
         self.assertEqual(newfd, minfd)
+
+    # fwalk() keeps file descriptors open
+    test_walk_many_open_files = None
+
 
 class BytesWalkTests(WalkTests):
     """Tests for os.walk() with bytes."""
@@ -3085,11 +3110,12 @@ class TestSendfile(unittest.TestCase):
 
     def test_keywords(self):
         # Keyword arguments should be supported
-        os.sendfile(out=self.sockno, offset=0, count=4096,
-            **{'in': self.fileno})
+        os.sendfile(out_fd=self.sockno, in_fd=self.fileno,
+                    offset=0, count=4096)
         if self.SUPPORT_HEADERS_TRAILERS:
-            os.sendfile(self.sockno, self.fileno, offset=0, count=4096,
-                headers=(), trailers=(), flags=0)
+            os.sendfile(out_fd=self.sockno, in_fd=self.fileno,
+                        offset=0, count=4096,
+                        headers=(), trailers=(), flags=0)
 
     # --- headers / trailers tests
 
@@ -3612,6 +3638,24 @@ class ExportsTests(unittest.TestCase):
         self.assertIn('walk', os.__all__)
 
 
+class TestDirEntry(unittest.TestCase):
+    def setUp(self):
+        self.path = os.path.realpath(support.TESTFN)
+        self.addCleanup(support.rmtree, self.path)
+        os.mkdir(self.path)
+
+    def test_uninstantiable(self):
+        self.assertRaises(TypeError, os.DirEntry)
+
+    def test_unpickable(self):
+        filename = create_file(os.path.join(self.path, "file.txt"), b'python')
+        entry = [entry for entry in os.scandir(self.path)].pop()
+        self.assertIsInstance(entry, os.DirEntry)
+        self.assertEqual(entry.name, "file.txt")
+        import pickle
+        self.assertRaises(TypeError, pickle.dumps, entry, filename)
+
+
 class TestScandir(unittest.TestCase):
     check_no_resource_warning = support.check_no_resource_warning
 
@@ -3645,6 +3689,18 @@ class TestScandir(unittest.TestCase):
                                  (stat1, stat2, attr))
         else:
             self.assertEqual(stat1, stat2)
+
+    def test_uninstantiable(self):
+        scandir_iter = os.scandir(self.path)
+        self.assertRaises(TypeError, type(scandir_iter))
+        scandir_iter.close()
+
+    def test_unpickable(self):
+        filename = self.create_file("file.txt")
+        scandir_iter = os.scandir(self.path)
+        import pickle
+        self.assertRaises(TypeError, pickle.dumps, scandir_iter, filename)
+        scandir_iter.close()
 
     def check_entry(self, entry, name, is_dir, is_file, is_symlink):
         self.assertIsInstance(entry, os.DirEntry)
@@ -3999,6 +4055,9 @@ class TestPEP519(unittest.TestCase):
             pass
         self.assertFalse(issubclass(FakePath, A))
         self.assertTrue(issubclass(FakePath, os.PathLike))
+
+    def test_pathlike_class_getitem(self):
+        self.assertIs(os.PathLike[bytes], os.PathLike)
 
 
 class TimesTests(unittest.TestCase):

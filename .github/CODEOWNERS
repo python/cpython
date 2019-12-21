@@ -11,6 +11,7 @@
 **/*context*                  @1st1
 **/*genobject*                @1st1
 **/*hamt*                     @1st1
+Objects/set*                  @rhettinger
 Objects/dict*                 @methane
 
 # Hashing
@@ -22,6 +23,14 @@ Objects/dict*                 @methane
 /Modules/_blake2/**           @python/crypto-team @tiran
 /Modules/_sha3/**             @python/crypto-team @tiran
 
+# logging
+**/*logging*                  @vsajip
+
+# venv
+**/*venv*                     @vsajip
+
+# Launcher
+/PC/launcher.c                @vsajip
 
 # HTML
 /Lib/html/                    @ezio-melotti
@@ -59,6 +68,10 @@ Include/pytime.h              @pganssle @abalkin
 **/*imap*                     @python/email-team
 **/*poplib*                   @python/email-team
 
+# Garbage collector
+/Modules/gcmodule.c           @pablogsal
+/Doc/library/gc.rst           @pablogsal
+
 # Parser/Pgen
 /Parser/pgen/                 @pablogsal
 
@@ -66,7 +79,9 @@ Include/pytime.h              @pganssle @abalkin
 **/*sqlite*                   @berkerpeksag
 
 # subprocess
-**/*subprocess*               @gpshead
+/Lib/subprocess.py            @gpshead
+/Lib/test/test_subprocess.py  @gpshead
+/Modules/*subprocess*         @gpshead
 
 # Windows
 /PC/                          @python/windows-team
@@ -79,6 +94,7 @@ Include/pytime.h              @pganssle @abalkin
 /Tools/msi/                   @python/windows-team
 /Tools/nuget/                 @python/windows-team
 
+# Misc
 **/*itertools*                @rhettinger
 **/*collections*              @rhettinger
 **/*random*                   @rhettinger
@@ -93,6 +109,15 @@ Include/pytime.h              @pganssle @abalkin
 **/*idlelib*                  @terryjreedy
 
 **/*typing*                   @gvanrossum @ilevkivskyi
+
+**/*asyncore                  @giampaolo
+**/*asynchat                  @giampaolo
+**/*ftplib                    @giampaolo
+**/*shutil                    @giampaolo
+
+**/*enum*                     @ethanfurman
+**/*cgi*                      @ethanfurman
+**/*tarfile*                  @ethanfurman
 
 # macOS
 /Mac/                         @python/macos-team
