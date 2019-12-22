@@ -153,17 +153,17 @@ class RegexFlag(enum.IntFlag):
     DEBUG = sre_compile.SRE_FLAG_DEBUG # dump pattern after compilation
 
     def __repr__(self):
-        if self._name_ is not None:
-            return f're.{self._name_}'
-        value = self._value_
+        if self.name is not None:
+            return f're.{self.name}'
+        value = self.value
         members = []
         negative = value < 0
         if negative:
             value = ~value
         for m in self.__class__:
-            if value & m._value_:
-                value &= ~m._value_
-                members.append(f're.{m._name_}')
+            if value & m.value:
+                value &= ~m.value
+                members.append(f're.{m.name}')
         if value:
             members.append(hex(value))
         res = '|'.join(members)

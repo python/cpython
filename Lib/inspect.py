@@ -2420,7 +2420,7 @@ class _ParameterKind(enum.IntEnum):
     VAR_KEYWORD = 4
 
     def __str__(self):
-        return self._name_
+        return self.name
 
     @property
     def description(self):

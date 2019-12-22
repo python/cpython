@@ -70,9 +70,10 @@ class _EnumDict(dict):
 
         """
         if _is_sunder(key):
-            if key not in {
+            if (key in {'_name_', '_value_'} and Enum is not None) or key not in {
                     '_order_', '_create_pseudo_member_',
                     '_generate_next_value_', '_missing_', '_ignore_',
+                    '_name_', '_value_',
                     }:
                 raise ValueError('_names_ are reserved for future Enum use')
             if key == '_generate_next_value_':
@@ -220,26 +221,25 @@ class EnumMeta(type):
                 args = (args, )     # wrap it one more time
             if not use_args:
                 enum_member = __new__(enum_class)
-                if not hasattr(enum_member, '_value_'):
+                if not hasattr(enum_member, 'value'):
                     enum_member._value_ = value
             else:
                 enum_member = __new__(enum_class, *args)
-                if not hasattr(enum_member, '_value_'):
+                if not hasattr(enum_member, 'value'):
                     if member_type is object:
                         enum_member._value_ = value
                     else:
                         enum_member._value_ = member_type(*args)
-            value = enum_member._value_
+
+            value = enum_member.value
             enum_member._name_ = member_name
             # setting protected attributes
-            object.__setattr__(enum_member, 'name', member_name)
-            object.__setattr__(enum_member, 'value', value)
             enum_member.__objclass__ = enum_class
             enum_member.__init__(*args)
             # If another member with the same value was already defined, the
             # new member becomes an alias to the existing one.
             for name, canonical_member in enum_class._member_map_.items():
-                if canonical_member._value_ == enum_member._value_:
+                if canonical_member.value == enum_member.value:
                     enum_member = canonical_member
                     break
             else:
@@ -334,7 +334,7 @@ class EnumMeta(type):
             raise TypeError(
                 "unsupported operand type(s) for 'in': '%s' and '%s'" % (
                     type(member).__qualname__, cls.__class__.__qualname__))
-        return isinstance(member, cls) and member._name_ in cls._member_map_
+        return isinstance(member, cls) and member.name in cls._member_map_
 
     def __delattr__(cls, attr):
         # nicer error message when someone tries to delete an attribute
@@ -585,7 +585,7 @@ class Enum(metaclass=EnumMeta):
         except TypeError:
             # not there, now do long search -- O(n) behavior
             for member in cls._unique_member_map_.values():
-                if member._value_ == value:
+                if member.value == value:
                     return member
         # still not found -- try _missing_ hook
 
@@ -614,6 +614,32 @@ class Enum(metaclass=EnumMeta):
             exc.__context__ = ve_exc
             raise exc
 
+    @property
+    def _name_(self):
+        import warnings
+        warnings.warn(
+            'getting name through _name_ attr is deprecated and will be removed in 3.10 '
+            'use name attr instead.', DeprecationWarning, stacklevel=2
+        )
+        return self.name
+
+    @property
+    def _value_(self):
+        import warnings
+        warnings.warn(
+            'getting value through _value_ attr is deprecated and will be removed in 3.10 '
+            'use value attr instead.', DeprecationWarning, stacklevel=2
+        )
+        return self.value
+
+    @_value_.setter
+    def _value_(self, value):
+        object.__setattr__(self, 'value', value)
+
+    @_name_.setter
+    def _name_(self, name):
+        object.__setattr__(self, 'name', name)
+
     def _generate_next_value_(name, start, count, last_values):
         for last_value in reversed(last_values):
             try:
@@ -629,10 +655,10 @@ class Enum(metaclass=EnumMeta):
 
     def __repr__(self):
         return "<%s.%s: %r>" % (
-                self.__class__.__name__, self._name_, self._value_)
+                self.__class__.__name__, self.name, self.value)
 
     def __str__(self):
-        return "%s.%s" % (self.__class__.__name__, self._name_)
+        return "%s.%s" % (self.__class__.__name__, self.name)
 
     def __dir__(self):
         added_behavior = [
@@ -656,14 +682,14 @@ class Enum(metaclass=EnumMeta):
         # mix-in branch
         else:
             cls = self._member_type_
-            val = self._value_
+            val = self.value
         return cls.__format__(val, format_spec)
 
     def __hash__(self):
-        return hash(self._name_)
+        return hash(self.name)
 
     def __reduce_ex__(self, proto):
-        return self.__class__, (self._value_, )
+        return self.__class__, (self.value, )
 
     def __setattr__(self, key, value):
         if key in {'name', 'value'}:
@@ -742,59 +768,59 @@ class Flag(Enum):
             raise TypeError(
                 "unsupported operand type(s) for 'in': '%s' and '%s'" % (
                     type(other).__qualname__, self.__class__.__qualname__))
-        return other._value_ & self._value_ == other._value_
+        return other.value & self.value == other.value
 
     def __repr__(self):
         cls = self.__class__
-        if self._name_ is not None:
-            return '<%s.%s: %r>' % (cls.__name__, self._name_, self._value_)
-        members, uncovered = _decompose(cls, self._value_)
+        if self.name is not None:
+            return '<%s.%s: %r>' % (cls.__name__, self.name, self.value)
+        members, uncovered = _decompose(cls, self.value)
         return '<%s.%s: %r>' % (
                 cls.__name__,
-                '|'.join([str(m._name_ or m._value_) for m in members]),
-                self._value_,
+                '|'.join([str(m.name or m.value) for m in members]),
+                self.value,
                 )
 
     def __str__(self):
         cls = self.__class__
-        if self._name_ is not None:
-            return '%s.%s' % (cls.__name__, self._name_)
-        members, uncovered = _decompose(cls, self._value_)
-        if len(members) == 1 and members[0]._name_ is None:
-            return '%s.%r' % (cls.__name__, members[0]._value_)
+        if self.name is not None:
+            return '%s.%s' % (cls.__name__, self.name)
+        members, uncovered = _decompose(cls, self.value)
+        if len(members) == 1 and members[0].name is None:
+            return '%s.%r' % (cls.__name__, members[0].value)
         else:
             return '%s.%s' % (
                     cls.__name__,
-                    '|'.join([str(m._name_ or m._value_) for m in members]),
+                    '|'.join([str(m.name or m.value) for m in members]),
                     )
 
     def __bool__(self):
-        return bool(self._value_)
+        return bool(self.value)
 
     def __or__(self, other):
         cls = self.__class__
         if not isinstance(other, cls):
             return NotImplemented
-        return cls(self._value_ | other._value_)
+        return cls(self.value | other.value)
 
     def __and__(self, other):
         cls = self.__class__
         if not isinstance(other, cls):
             return NotImplemented
-        return cls(self._value_ & other._value_)
+        return cls(self.value & other.value)
 
     def __xor__(self, other):
         cls = self.__class__
         if not isinstance(other, cls):
             return NotImplemented
-        return cls(self._value_ ^ other._value_)
+        return cls(self.value ^ other.value)
 
     def __invert__(self):
         cls = self.__class__
-        members, uncovered = _decompose(cls, self._value_)
+        members, uncovered = _decompose(cls, self.value)
         inverted = cls(0)
         for m in cls:
-            if m not in members and not (m._value_ & self._value_):
+            if m not in members and not (m.value & self.value):
                 inverted = inverted | m
         return cls(inverted)
 
@@ -847,27 +873,27 @@ class IntFlag(int, Flag):
         cls = self.__class__
         if not isinstance(other, (cls, int)):
             return NotImplemented
-        result = cls(self._value_ | cls(other)._value_)
+        result = cls(self.value | cls(other).value)
         return result
 
     def __and__(self, other):
         cls = self.__class__
         if not isinstance(other, (cls, int)):
             return NotImplemented
-        return cls(self._value_ & cls(other)._value_)
+        return cls(self.value & cls(other).value)
 
     def __xor__(self, other):
         cls = self.__class__
         if not isinstance(other, (cls, int)):
             return NotImplemented
-        return cls(self._value_ ^ cls(other)._value_)
+        return cls(self.value ^ cls(other).value)
 
     __ror__ = __or__
     __rand__ = __and__
     __rxor__ = __xor__
 
     def __invert__(self):
-        result = self.__class__(~self._value_)
+        result = self.__class__(~self.value)
         return result
 
 
@@ -909,7 +935,7 @@ def _decompose(flag, value):
             tmp &= ~flag_value
     if not members and value in flag._value2member_map_:
         members.append(flag._value2member_map_[value])
-    members.sort(key=lambda m: m._value_, reverse=True)
+    members.sort(key=lambda m: m.value, reverse=True)
     if len(members) > 1 and members[0].value == value:
         # we have the breakdown, don't need the value member itself
         members.pop(0)

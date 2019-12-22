@@ -1,6 +1,8 @@
 import enum
 import inspect
 import pydoc
+import warnings
+
 import sys
 import unittest
 import threading
@@ -326,7 +328,7 @@ class TestEnum(unittest.TestCase):
             true = True
             false = False
             def __bool__(self):
-                return bool(self._value_)
+                return bool(self.value)
         self.assertTrue(RealLogic.true)
         self.assertFalse(RealLogic.false)
         # mixed Enums depend on mixed-in type
@@ -1435,7 +1437,7 @@ class TestEnum(unittest.TestCase):
             x = ('the-x', 1)
             y = ('the-y', 2)
             def __reduce_ex__(self, proto):
-                return getattr, (self.__class__, self._name_)
+                return getattr, (self.__class__, self.name)
 
         self.assertIs(NEI.__new__, Enum.__new__)
         self.assertEqual(repr(NEI.x + NEI.y), "NamedInt('(the-x + the-y)', 3)")
@@ -1470,7 +1472,7 @@ class TestEnum(unittest.TestCase):
                 obj._value_ = value
                 return obj
             def __int__(self):
-                return int(self._value_)
+                return int(self.value)
         self.assertEqual(
                 list(AutoNumber),
                 [AutoNumber.first, AutoNumber.second, AutoNumber.third],
@@ -1487,7 +1489,7 @@ class TestEnum(unittest.TestCase):
                 obj._value_ = value
                 return obj
             def __int__(self):
-                return int(self._value_)
+                return int(self.value)
         class Color(AutoNumber):
             red = ()
             green = ()
@@ -1519,19 +1521,19 @@ class TestEnum(unittest.TestCase):
         class OrderedEnum(Enum):
             def __ge__(self, other):
                 if self.__class__ is other.__class__:
-                    return self._value_ >= other._value_
+                    return self.value >= other.value
                 return NotImplemented
             def __gt__(self, other):
                 if self.__class__ is other.__class__:
-                    return self._value_ > other._value_
+                    return self.value > other.value
                 return NotImplemented
             def __le__(self, other):
                 if self.__class__ is other.__class__:
-                    return self._value_ <= other._value_
+                    return self.value <= other.value
                 return NotImplemented
             def __lt__(self, other):
                 if self.__class__ is other.__class__:
-                    return self._value_ < other._value_
+                    return self.value < other.value
                 return NotImplemented
         class Grade(OrderedEnum):
             A = 5
@@ -1799,7 +1801,7 @@ class TestEnum(unittest.TestCase):
                 return max
         class StrMixin:
             def __str__(self):
-                return self._name_.lower()
+                return self.name.lower()
         class SomeEnum(Enum):
             def behavior(self):
                 return 'booyah'
@@ -2294,7 +2296,7 @@ class TestFlag(unittest.TestCase):
                 return all_value
         class StrMixin:
             def __str__(self):
-                return self._name_.lower()
+                return self.name.lower()
         class Color(AllMixin, Flag):
             RED = auto()
             GREEN = auto()
@@ -2338,7 +2340,7 @@ class TestFlag(unittest.TestCase):
             def __eq__(self, other):
                 return self is other
             def __hash__(self):
-                return hash(self._value_)
+                return hash(self.value)
         # have multiple threads competing to complete the composite members
         seen = set()
         failed = False
@@ -2712,7 +2714,7 @@ class TestIntFlag(unittest.TestCase):
                 return all_value
         class StrMixin:
             def __str__(self):
-                return self._name_.lower()
+                return self.name.lower()
         class Color(AllMixin, IntFlag):
             RED = auto()
             GREEN = auto()
@@ -2756,7 +2758,7 @@ class TestIntFlag(unittest.TestCase):
             def __eq__(self, other):
                 return self is other
             def __hash__(self):
-                return hash(self._value_)
+                return hash(self.value)
         # have multiple threads competing to complete the composite members
         seen = set()
         failed = False
@@ -2997,7 +2999,7 @@ class TestIntEnumConvert(unittest.TestCase):
     def test_convert_value_lookup_priority(self):
         test_type = enum.IntEnum._convert_(
                 'UnittestConvert',
-                ('test.test_enum', '__main__')[__name__=='__main__'],
+                __name__,
                 filter=lambda x: x.startswith('CONVERT_TEST_'))
         # We don't want the reverse lookup value to vary when there are
         # multiple possible names for a given value.  It should always
@@ -3007,7 +3009,7 @@ class TestIntEnumConvert(unittest.TestCase):
     def test_convert(self):
         test_type = enum.IntEnum._convert_(
                 'UnittestConvert',
-                ('test.test_enum', '__main__')[__name__=='__main__'],
+                __name__,
                 filter=lambda x: x.startswith('CONVERT_TEST_'))
         # Ensure that test_type has all of the desired names and values.
         self.assertEqual(test_type.CONVERT_TEST_NAME_F,
@@ -3027,7 +3029,7 @@ class TestIntEnumConvert(unittest.TestCase):
         with self.assertWarns(DeprecationWarning):
             enum.IntEnum._convert(
                 'UnittestConvert',
-                ('test.test_enum', '__main__')[__name__=='__main__'],
+                __name__,
                 filter=lambda x: x.startswith('CONVERT_TEST_'))
 
     @unittest.skipUnless(sys.version_info >= (3, 9),
@@ -3036,40 +3038,77 @@ class TestIntEnumConvert(unittest.TestCase):
         with self.assertRaises(AttributeError):
             enum.IntEnum._convert(
                 'UnittestConvert',
-                ('test.test_enum', '__main__')[__name__=='__main__'],
+                __name__,
                 filter=lambda x: x.startswith('CONVERT_TEST_'))
 
 
 class TestEnumNamesDeprecation(unittest.TestCase):
     @unittest.skipUnless(sys.version_info[:2] == (3, 9),
-                         '_convert was deprecated in 3.9')
-    def test_convert_warn(self):
+                         '_member_names_ was deprecated in 3.9')
+    def test_member_names_warn(self):
         with self.assertWarns(DeprecationWarning):
             _ = enum.IntEnum._member_names_
 
-    @unittest.skipUnless(sys.version_info >= (3, 10), '_convert was removed in 3.10')
-    def test_convert_raise(self):
+    @unittest.skipUnless(sys.version_info >= (3, 10), '_member_names_ was removed in 3.10')
+    def test_member_names_raise(self):
         with self.assertRaises(AttributeError):
             _ = enum.IntEnum._member_names_
 
 
 class TestEnumDictAttrsDeprecation(unittest.TestCase):
     @unittest.skipUnless(sys.version_info[:2] == (3, 9),
-                         '_convert was deprecated in 3.9')
-    def test_convert_warn(self):
+                         '_member_names was deprecated in 3.9')
+    def test_member_names_warn(self):
         with self.assertWarns(DeprecationWarning):
             _ = enum._EnumDict()._member_names
 
         with self.assertWarns(DeprecationWarning):
             _ = enum._EnumDict()._last_values
 
-    @unittest.skipUnless(sys.version_info >= (3, 10), '_convert was removed in 3.10')
-    def test_convert_raise(self):
+    @unittest.skipUnless(sys.version_info >= (3, 10), '_member_names was removed in 3.10')
+    def test_member_names_raise(self):
         with self.assertRaises(AttributeError):
             _ = enum._EnumDict()._member_names
 
         with self.assertRaises(AttributeError):
             _ = enum._EnumDict()._last_values
+
+
+class TestNameValueAttrsDeprecation(unittest.TestCase):
+
+    class SquareFoo(Enum):
+        a = 1
+        b = 2
+
+        def __new__(cls, value):
+            member = object.__new__(cls)
+            member._value_ = value ** 2
+            return member
+
+    @unittest.skipUnless(sys.version_info[:2] == (3, 9),
+                         '_name_ and _value_ attr access was deprecated in 3.9')
+    def test_get_warns(self):
+        with self.assertWarns(DeprecationWarning):
+            self.assertEqual(self.SquareFoo.b._value_, 4)
+
+    @unittest.skipUnless(sys.version_info >= (3, 9),
+                         '_name_ and _value_ attr access was deprecated in 3.9')
+    def test_set_not_warns(self):
+        for sunder_attr, public_attr in ('_name_', 'name'), ('_value_', 'value'):
+            with warnings.catch_warnings(record=True) as caught_warnings:
+                setattr(self.SquareFoo.b, sunder_attr, 'foo')
+
+            self.assertEqual(caught_warnings, [],
+                             msg=f'Unexpected warnings while setting {sunder_attr}')
+            self.assertEqual(getattr(self.SquareFoo.b, public_attr), 'foo',
+                             msg=f'{public_attr} and {sunder_attr} mismatch')
+
+    @unittest.skipUnless(sys.version_info >= (3, 10),
+                         '_name_ and _value_ attr access  was removed in 3.10')
+    def test_get_raise(self):
+        for attr in ('_name_', '_value_'):
+            with self.assertRaises(AttributeError):
+                getattr(self.SquareFoo.b, attr)
 
 
 if __name__ == '__main__':
