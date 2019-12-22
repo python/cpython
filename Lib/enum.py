@@ -667,7 +667,7 @@ class Enum(metaclass=EnumMeta):
                 for m in cls.__dict__
                 if m[0] != '_' and m not in self._member_map_
                 ]
-        return (['__class__', '__doc__', '__module__'] + added_behavior)
+        return (['__class__', '__doc__', '__module__', 'name', 'value'] + added_behavior)
 
     def __format__(self, format_spec):
         # mixed-in Enums should use the mixed-in type's __format__, otherwise

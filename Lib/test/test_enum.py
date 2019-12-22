@@ -187,7 +187,7 @@ class TestEnum(unittest.TestCase):
         Season = self.Season
         self.assertEqual(
             set(dir(Season.WINTER)),
-            set(['__class__', '__doc__', '__module__']),
+            set(['__class__', '__doc__', '__module__', 'name', 'value']),
             )
 
     def test_dir_with_added_behavior(self):
@@ -202,7 +202,7 @@ class TestEnum(unittest.TestCase):
                 )
         self.assertEqual(
                 set(dir(Test.this)),
-                set(['__class__', '__doc__', '__module__', 'wowser']),
+                set(['__class__', '__doc__', '__module__', 'wowser', 'name', 'value']),
                 )
 
     def test_dir_on_sub_with_behavior_on_super(self):
@@ -214,7 +214,7 @@ class TestEnum(unittest.TestCase):
             sample = 5
         self.assertEqual(
                 set(dir(SubEnum.sample)),
-                set(['__class__', '__doc__', '__module__', 'invisible']),
+                set(['__class__', '__doc__', '__module__', 'invisible', 'name', 'value']),
                 )
 
     def test_enum_in_enum_out(self):
