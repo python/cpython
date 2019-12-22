@@ -26,6 +26,8 @@ import abc
 import sys
 import stat as st
 
+from _collections_abc import _check_methods
+
 _names = sys.builtin_module_names
 
 # Note:  more names are added to __all__ later.
@@ -1070,7 +1072,9 @@ class PathLike(abc.ABC):
 
     @classmethod
     def __subclasshook__(cls, subclass):
-        return hasattr(subclass, '__fspath__')
+        if cls is PathLike:
+            return _check_methods(subclass, '__fspath__')
+        return NotImplemented
 
     def __class_getitem__(cls, type):
         return cls
