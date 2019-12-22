@@ -61,7 +61,7 @@ from plistlib import Plist
 try:
     from plistlib import writePlist
 except ImportError:
-    # We're run using python2.3
+    # Run from python2.3
     def writePlist(plist, path):
         plist.write(path)
 
