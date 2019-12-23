@@ -54,6 +54,8 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #include <windows.h>
 #endif
 
+#include <stddef.h>
+
 /* Uncomment to display statistics on interned strings at exit when
    using Valgrind or Insecure++. */
 /* #define INTERNED_STATS 1 */
@@ -1003,6 +1005,31 @@ unicode_fill_invalid(PyObject *unicode, Py_ssize_t old_length)
 }
 #endif
 
+/* Get a bytes object from the UTF-8 cache of the *unicode*.
+ * unicode->utf8 must be allocated.
+ */
+static PyObject *
+get_utf8_bytes(PyObject *unicode)
+{
+    assert(_PyUnicode_HAS_UTF8_MEMORY(unicode));
+    const char *utf8 = _PyUnicode_UTF8(unicode);
+    PyObject *bytes = (PyObject*)(utf8 - offsetof(PyBytesObject, ob_sval));
+    assert(PyBytes_CheckExact(bytes));
+    return bytes;
+}
+
+/* Deallocates UTF-8 cache.
+ * unicode->utf8 must be allocated.
+ */
+static void
+deallocate_utf8(PyObject *unicode)
+{
+    PyObject *bytes = get_utf8_bytes(unicode);
+    Py_DECREF(bytes);
+    _PyUnicode_UTF8(unicode) = NULL;
+    _PyUnicode_UTF8_LENGTH(unicode) = 0;
+}
+
 static PyObject*
 resize_compact(PyObject *unicode, Py_ssize_t length)
 {
@@ -1033,9 +1060,7 @@ resize_compact(PyObject *unicode, Py_ssize_t length)
     new_size = (struct_size + (length + 1) * char_size);
 
     if (_PyUnicode_HAS_UTF8_MEMORY(unicode)) {
-        PyObject_DEL(_PyUnicode_UTF8(unicode));
-        _PyUnicode_UTF8(unicode) = NULL;
-        _PyUnicode_UTF8_LENGTH(unicode) = 0;
+        deallocate_utf8(unicode);
     }
     _Py_DEC_REFTOTAL;
     _Py_ForgetReference(unicode);
@@ -1099,9 +1124,7 @@ resize_inplace(PyObject *unicode, Py_ssize_t length)
 
         if (!share_utf8 && _PyUnicode_HAS_UTF8_MEMORY(unicode))
         {
-            PyObject_DEL(_PyUnicode_UTF8(unicode));
-            _PyUnicode_UTF8(unicode) = NULL;
-            _PyUnicode_UTF8_LENGTH(unicode) = 0;
+            deallocate_utf8(unicode);
         }
 
         data = (PyObject *)PyObject_REALLOC(data, new_size);
@@ -1915,8 +1938,9 @@ unicode_dealloc(PyObject *unicode)
 
     if (_PyUnicode_HAS_WSTR_MEMORY(unicode))
         PyObject_DEL(_PyUnicode_WSTR(unicode));
-    if (_PyUnicode_HAS_UTF8_MEMORY(unicode))
-        PyObject_DEL(_PyUnicode_UTF8(unicode));
+    if (_PyUnicode_HAS_UTF8_MEMORY(unicode)) {
+        deallocate_utf8(unicode);
+    }
     if (!PyUnicode_IS_COMPACT(unicode) && _PyUnicode_DATA_ANY(unicode))
         PyObject_DEL(_PyUnicode_DATA_ANY(unicode));
 
@@ -4013,17 +4037,9 @@ PyUnicode_AsUTF8AndSize(PyObject *unicode, Py_ssize_t *psize)
         bytes = _PyUnicode_AsUTF8String(unicode, NULL);
         if (bytes == NULL)
             return NULL;
-        _PyUnicode_UTF8(unicode) = PyObject_MALLOC(PyBytes_GET_SIZE(bytes) + 1);
-        if (_PyUnicode_UTF8(unicode) == NULL) {
-            PyErr_NoMemory();
-            Py_DECREF(bytes);
-            return NULL;
-        }
+        // unicode owns the rerefence of the bytes through the UTF-8 cache.
+        _PyUnicode_UTF8(unicode) = PyBytes_AS_STRING(bytes);
         _PyUnicode_UTF8_LENGTH(unicode) = PyBytes_GET_SIZE(bytes);
-        memcpy(_PyUnicode_UTF8(unicode),
-                  PyBytes_AS_STRING(bytes),
-                  _PyUnicode_UTF8_LENGTH(unicode) + 1);
-        Py_DECREF(bytes);
     }
 
     if (psize)
@@ -5398,9 +5414,15 @@ unicode_encode_utf8(PyObject *unicode, _Py_error_handler error_handler,
     if (PyUnicode_READY(unicode) == -1)
         return NULL;
 
-    if (PyUnicode_UTF8(unicode))
+    if (PyUnicode_UTF8(unicode)) {
+        if (_PyUnicode_HAS_UTF8_MEMORY(unicode)) {
+            PyObject *bytes = get_utf8_bytes(unicode);
+            Py_INCREF(bytes);
+            return bytes;
+        }
         return PyBytes_FromStringAndSize(PyUnicode_UTF8(unicode),
                                          PyUnicode_UTF8_LENGTH(unicode));
+    }
 
     kind = PyUnicode_KIND(unicode);
     data = PyUnicode_DATA(unicode);
