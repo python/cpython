@@ -8,7 +8,7 @@ extern "C" {
 /* Helpers for hash functions */
 #ifndef Py_LIMITED_API
 PyAPI_FUNC(Py_hash_t) _Py_HashDouble(double);
-PyAPI_FUNC(Py_hash_t) _Py_HashPointer(void*);
+PyAPI_FUNC(Py_hash_t) _Py_HashPointer(const void*);
 PyAPI_FUNC(Py_hash_t) _Py_HashBytes(const void*, Py_ssize_t);
 #endif
 
