@@ -177,6 +177,8 @@ class EnumMeta(type):
         if '__doc__' not in classdict:
             classdict['__doc__'] = 'An enumeration.'
 
+        # convert _EnumDict() to dict() as it not used anymore and builtin dict() is faster
+        classdict = {**classdict}
         # create our new Enum type
         enum_class = super().__new__(metacls, cls, bases, classdict)
         enum_class._member_map_ = {}                 # name->value map
