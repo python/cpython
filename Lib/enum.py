@@ -36,7 +36,7 @@ def _is_sunder(name):
 def _make_class_unpicklable(cls):
     """Make the given class un-picklable."""
     def _break_on_call_reduce(self, proto):
-        raise TypeError('%r cannot be pickled' % self)
+        raise TypeError(f'{self!r} cannot be pickled')
     cls.__reduce_ex__ = _break_on_call_reduce
     cls.__module__ = '<unknown>'
 
@@ -86,19 +86,19 @@ class _EnumDict(dict):
                 self._ignore = value
                 already = set(value) & self.members.keys()
                 if already:
-                    raise ValueError('_ignore_ cannot specify already set names: %r' % (already, ))
+                    raise ValueError(f'_ignore_ cannot specify already set names: {already!r}')
         elif _is_dunder(key):
             if key == '__order__':
                 key = '_order_'
         elif key in self.members:
             # descriptor overwriting an enum?
-            raise TypeError('Attempted to reuse key: %r' % key)
+            raise TypeError(f'Attempted to reuse key: {key!r}')
         elif key in self._ignore:
             pass
         elif not _is_descriptor(value):
             if key in self:
                 # enum overwriting a descriptor?
-                raise TypeError('%r already defined as: %r' % (key, self[key]))
+                raise TypeError(f'{key!r} already defined as: {self[key]!r}')
             if isinstance(value, auto):
                 if value.value == _auto_null:
                     value.value = self._generate_next_value(key, 1, len(self.members), list(self.members.values()))
@@ -170,8 +170,7 @@ class EnumMeta(type):
         # check for illegal enum names (any others?)
         invalid_names = enum_members.keys() & {'mro', ''}
         if invalid_names:
-            raise ValueError('Invalid enum member name: {0}'.format(
-                ','.join(invalid_names)))
+            raise ValueError(f"Invalid enum member name: {','.join(invalid_names)}")
 
         # create a default docstring if one has not been provided
         if '__doc__' not in classdict:
@@ -331,17 +330,15 @@ class EnumMeta(type):
 
     def __contains__(cls, member):
         if not isinstance(member, Enum):
-            raise TypeError(
-                "unsupported operand type(s) for 'in': '%s' and '%s'" % (
-                    type(member).__qualname__, cls.__class__.__qualname__))
+            raise TypeError(f"unsupported operand type(s) for 'in': "
+                            f"{type(member).__qualname__!r} and {cls.__class__.__qualname__!r}")
         return isinstance(member, cls) and member.name in cls._member_map_
 
     def __delattr__(cls, attr):
         # nicer error message when someone tries to delete an attribute
         # (see issue19025).
         if attr in cls._member_map_:
-            raise AttributeError(
-                    "%s: cannot delete Enum member." % cls.__name__)
+            raise AttributeError(f'{cls.__name__}: cannot delete Enum member.')
         super().__delattr__(attr)
 
     def __dir__(self):
@@ -369,7 +366,7 @@ class EnumMeta(type):
         return MappingProxyType(cls._member_map_)
 
     def __repr__(cls):
-        return "<enum %r>" % cls.__name__
+        return f'<enum {cls.__name__!r}'
 
     def __reversed__(cls):
         return reversed(cls._unique_member_map_.values())
@@ -597,19 +594,18 @@ class Enum(metaclass=EnumMeta):
             if cls._missing_ is Enum._missing_:
                 raise
             else:
-                e.__context__ = ValueError("%r is not a valid %s" % (value, cls.__qualname__))
+                e.__context__ = ValueError(f'{value!r} is not a valid {cls.__qualname__}')
                 raise
 
         if isinstance(result, cls):
             return result
 
-        ve_exc = ValueError("%r is not a valid %s" % (value, cls.__qualname__))
+        ve_exc = ValueError(f'{value!r} is not a valid {cls.__qualname__}')
         if result is None:
             raise ve_exc
         else:
             exc = TypeError(
-                'error in %s._missing_: returned %r instead of None or a valid member'
-                % (cls.__name__, result)
+                f'error in {cls.__name__}._missing_: returned {result!r} instead of None or a valid member'
             )
             exc.__context__ = ve_exc
             raise exc
@@ -651,14 +647,13 @@ class Enum(metaclass=EnumMeta):
 
     @classmethod
     def _missing_(cls, value):
-        raise ValueError("%r is not a valid %s" % (value, cls.__qualname__))
+        raise ValueError(f'{value!r} is not a valid {cls.__qualname__}')
 
     def __repr__(self):
-        return "<%s.%s: %r>" % (
-                self.__class__.__name__, self.name, self.value)
+        return f'<{self.__class__.__name__}.{self.name}: {self.value!r}>'
 
     def __str__(self):
-        return "%s.%s" % (self.__class__.__name__, self.name)
+        return f'{self.__class__.__name__}.{self.name}'
 
     def __dir__(self):
         added_behavior = [
@@ -728,7 +723,7 @@ class Flag(Enum):
                 high_bit = _high_bit(last_value)
                 break
             except Exception:
-                raise TypeError('Invalid Flag value: %r' % last_value) from None
+                raise TypeError(f'Invalid Flag value: {last_value!r}') from None
         return 2 ** (high_bit+1)
 
     @classmethod
@@ -751,7 +746,7 @@ class Flag(Enum):
             # verify all bits are accounted for
             _, extra_flags = _decompose(cls, value)
             if extra_flags:
-                raise ValueError("%r is not a valid %s" % (value, cls.__qualname__))
+                raise ValueError(f'{value!r} is not a valid {cls.__qualname__}')
             # construct a singleton enum pseudo-member
             pseudo_member = object.__new__(cls)
             pseudo_member._name_ = None
@@ -765,34 +760,26 @@ class Flag(Enum):
 
     def __contains__(self, other):
         if not isinstance(other, self.__class__):
-            raise TypeError(
-                "unsupported operand type(s) for 'in': '%s' and '%s'" % (
-                    type(other).__qualname__, self.__class__.__qualname__))
+            raise TypeError(f"unsupported operand type(s) for 'in': "
+                            f"{type(other).__qualname__!r} and {self.__class__.__qualname__!r}")
         return other.value & self.value == other.value
 
     def __repr__(self):
         cls = self.__class__
         if self.name is not None:
-            return '<%s.%s: %r>' % (cls.__name__, self.name, self.value)
+            return f'<{cls.__name__}.{self.name}: {self.value!r}>'
         members, uncovered = _decompose(cls, self.value)
-        return '<%s.%s: %r>' % (
-                cls.__name__,
-                '|'.join([str(m.name or m.value) for m in members]),
-                self.value,
-                )
+        return f"<{cls.__name__}.{'|'.join([str(m.name or m.value) for m in members])}: {self.value!r}>"
 
     def __str__(self):
         cls = self.__class__
         if self.name is not None:
-            return '%s.%s' % (cls.__name__, self.name)
+            return f'{cls.__name__}.{self.name}'
         members, uncovered = _decompose(cls, self.value)
         if len(members) == 1 and members[0].name is None:
-            return '%s.%r' % (cls.__name__, members[0].value)
+            return f'{cls.__name__}.{members[0].value!r}'
         else:
-            return '%s.%s' % (
-                    cls.__name__,
-                    '|'.join([str(m.name or m.value) for m in members]),
-                    )
+            return f"{cls.__name__}.{'|'.join([str(m.name or m.value) for m in members])}"
 
     def __bool__(self):
         return bool(self.value)
@@ -831,7 +818,7 @@ class IntFlag(int, Flag):
     @classmethod
     def _missing_(cls, value):
         if not isinstance(value, int):
-            raise ValueError("%r is not a valid %s" % (value, cls.__qualname__))
+            raise ValueError(f'{value!r} is not a valid {cls.__qualname__}')
         new_member = cls._create_pseudo_member_(value)
         return new_member
 
@@ -908,10 +895,8 @@ def unique(enumeration):
         if name != member.name:
             duplicates.append((name, member.name))
     if duplicates:
-        alias_details = ', '.join(
-                ["%s -> %s" % (alias, name) for (alias, name) in duplicates])
-        raise ValueError('duplicate values found in %r: %s' %
-                (enumeration, alias_details))
+        alias_details = ', '.join([f'{alias} -> {name}' for alias, name in duplicates])
+        raise ValueError(f'duplicate values found in {enumeration!r}: {alias_details}')
     return enumeration
 
 def _decompose(flag, value):
