@@ -617,7 +617,7 @@ class _Unparser(NodeVisitor):
     @contextmanager
     def delimit(self, start, end):
         """A context manager for preparing the source for expressions. It adds
-        ``start`` to the buffer and enters, after exit it adds ``end``."""
+        *start* to the buffer and enters, after exit it adds *end*."""
 
         self.write(start)
         yield
