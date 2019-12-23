@@ -179,9 +179,8 @@ class EnumMeta(type):
 
         # create our new Enum type
         enum_class = super().__new__(metacls, cls, bases, classdict)
-        enum_class._member_names = []               # names in definition order
         enum_class._member_map_ = {}                 # name->value map
-        enum_class._unique_member_map_ = {}
+        enum_class._unique_member_map_ = {}          # name->unique value map
         enum_class._member_type_ = member_type
 
         dynamic_attributes = {k: v for c in enum_class.mro()
@@ -245,7 +244,6 @@ class EnumMeta(type):
             else:
                 # Aliases don't appear in member names (only in __members__).
                 enum_class._unique_member_map_[member_name] = enum_member
-                enum_class._member_names.append(member_name)
 
             dynamic_attr = dynamic_attributes.get(member_name)
             if dynamic_attr is not None:
@@ -479,7 +477,7 @@ class EnumMeta(type):
             '_member_names_ is deprecated and will be removed in 3.10, use '
             '_unique_members_map_ instead.', DeprecationWarning, stacklevel=2
         )
-        return cls._member_names
+        return list(cls._unique_member_map_)
 
     @staticmethod
     def _get_mixins_(bases):
