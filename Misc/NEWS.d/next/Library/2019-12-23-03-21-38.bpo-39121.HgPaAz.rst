@@ -1,0 +1,2 @@
+Writing gzip files sets 10th byte of the gzip header (the OS information)
+based on :attr:`sys.platform` Patch by Robert Mandic.

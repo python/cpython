@@ -315,7 +315,12 @@ class TestGzip(BaseTest):
 
     def test_metadata(self):
         mtime = 123456789
-
+        if sys.platform.startswith(gzip._OS_UNIX):
+            os_code = gzip._OS_CODES['unix']
+        elif sys.platform.startswith(gzip._OS_NTFS):
+            os_code = gzip._OS_CODES['ntfs']
+        else:
+            os_code = gzip._OS_CODES['unknown']
         with gzip.GzipFile(self.filename, 'w', mtime = mtime) as fWrite:
             fWrite.write(data1)
 
@@ -338,7 +343,7 @@ class TestGzip(BaseTest):
             self.assertEqual(xflByte, b'\x02') # maximum compression
 
             osByte = fRead.read(1)
-            self.assertEqual(osByte, b'\xff') # OS "unknown" (OS-independent)
+            self.assertEqual(osByte, os_code) # gzip OS code
 
             # Since the FNAME flag is set, the zero-terminated filename follows.
             # RFC 1952 specifies that this is the name of the input file, if any.

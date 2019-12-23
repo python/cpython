@@ -17,6 +17,15 @@ FTEXT, FHCRC, FEXTRA, FNAME, FCOMMENT = 1, 2, 4, 8, 16
 
 READ, WRITE = 1, 2
 
+# OS field values as specified in RFC 1952
+_OS_CODES = {
+    'unix': b'\x03',
+    'ntfs': b'\x0b',
+    'unknown': b'\xff'
+}
+_OS_UNIX = ('linux', 'freebsd', 'netbsd', 'openbsd', 'darwin', 'sunos', 'aix')
+_OS_NTFS = ('win32')
+
 _COMPRESS_LEVEL_FAST = 1
 _COMPRESS_LEVEL_TRADEOFF = 6
 _COMPRESS_LEVEL_BEST = 9
@@ -264,7 +273,12 @@ class GzipFile(_compression.BaseStream):
         else:
             xfl = b'\000'
         self.fileobj.write(xfl)
-        self.fileobj.write(b'\377')
+        if sys.platform.startswith(_OS_UNIX):
+            self.fileobj.write(_OS_CODES['unix'])
+        elif sys.platform.startswith(_OS_NTFS):
+            self.fileobj.write(_OS_CODES['ntfs'])
+        else:
+            self.fileobj.write(_OS_CODES['unknown'])
         if fname:
             self.fileobj.write(fname + b'\000')
 
