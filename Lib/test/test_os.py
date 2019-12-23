@@ -4017,6 +4017,14 @@ class TestPEP519(unittest.TestCase):
         self.assertRaises(ZeroDivisionError, self.fspath,
                           FakePath(ZeroDivisionError()))
 
+    def test_pathlike_subclasshook(self):
+        # bpo-38878: subclasshook causes subclass checks
+        # true on abstract implementation.
+        class A(os.PathLike):
+            pass
+        self.assertFalse(issubclass(FakePath, A))
+        self.assertTrue(issubclass(FakePath, os.PathLike))
+
 
 class TimesTests(unittest.TestCase):
     def test_times(self):
