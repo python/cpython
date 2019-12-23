@@ -1241,23 +1241,25 @@ class Path(PurePath):
         with self.open(mode='r', encoding=encoding, errors=errors) as f:
             return f.read()
 
-    def write_bytes(self, data):
+    def write_bytes(self, data, exist_ok=True):
         """
         Open the file in bytes mode, write to it, and close the file.
         """
         # type-check for the buffer interface before truncating the file
         view = memoryview(data)
-        with self.open(mode='wb') as f:
+        open_mode = 'wb' if exist_ok else 'xb'
+        with self.open(mode=open_mode) as f:
             return f.write(view)
 
-    def write_text(self, data, encoding=None, errors=None):
+    def write_text(self, data, encoding=None, errors=None, exist_ok=True):
         """
         Open the file in text mode, write to it, and close the file.
         """
         if not isinstance(data, str):
             raise TypeError('data must be str, not %s' %
                             data.__class__.__name__)
-        with self.open(mode='w', encoding=encoding, errors=errors) as f:
+        open_mode = 'w' if exist_ok else 'x'
+        with self.open(mode=open_mode, encoding=encoding, errors=errors) as f:
             return f.write(data)
 
     def readlink(self):
