@@ -4025,9 +4025,6 @@ class TestPEP519(unittest.TestCase):
         self.assertFalse(issubclass(FakePath, A))
         self.assertTrue(issubclass(FakePath, os.PathLike))
 
-    def test_pathlike_class_getitem(self):
-        self.assertIs(os.PathLike[bytes], os.PathLike)
-
 
 class TimesTests(unittest.TestCase):
     def test_times(self):
