@@ -16,6 +16,8 @@ from datetime import timedelta
 
 
 # for pickle tests
+from unittest import mock
+
 try:
     class Stooges(Enum):
         LARRY = 1
@@ -3110,6 +3112,56 @@ class TestNameValueAttrsDeprecation(unittest.TestCase):
         for attr in ('_name_', '_value_'):
             with self.assertRaises(AttributeError):
                 getattr(self.SquareFoo.b, attr)
+
+
+class TestStaticAttrs(unittest.TestCase):
+
+    def test_invert_cache(self):
+        class Foo(Flag):
+            a = 1
+            b = 2
+            c = 3
+
+        with mock.patch('enum._decompose') as decompose_mock:
+            self.assertIs(Foo.a._invert_, Foo.b)
+            self.assertIs(Foo.b._invert_, Foo.a)
+            self.assertIsNotNone(Foo.c._invert_)
+            self.assertIs(~(~Foo.a), Foo.a)
+        self.assertFalse(decompose_mock.called)
+
+    def test_repr_str_cache(self):
+        class Foo(Flag):
+            a = 1
+            b = 2
+            c = 3
+
+        with mock.patch('enum._decompose') as decompose_mock:
+            no_name = ~Foo.c
+        self.assertFalse(decompose_mock.called)
+        no_name_repr = repr(no_name)
+        no_name_str = str(no_name)
+        self.assertEqual(no_name_repr, '<Foo.0: 0>')
+        self.assertEqual(no_name_str, 'Foo.0')
+
+        with mock.patch('enum._decompose') as decompose_mock:
+            self.assertIs(repr(no_name), no_name_repr)
+            self.assertIs(str(no_name), no_name_str)
+        self.assertFalse(decompose_mock.called)
+
+    def test_cache_invalidate(self):
+        class Foo(Flag):
+            a = 1
+            b = 2
+            c = 3
+
+        self.assertIs(Foo.a._invert_, Foo.b)
+        Foo.a._value_ = 3
+        self.assertIsNone(Foo.a._invert_)
+        self.assertIsNone(Foo.a._str_)
+        self.assertIsNone(Foo.a._repr_)
+        self.assertIs(~Foo.a, ~Foo.c)
+        self.assertEqual(repr(Foo.a), '<Foo.a: 3>')
+        self.assertEqual(str(Foo.a), 'Foo.a')
 
 
 if __name__ == '__main__':

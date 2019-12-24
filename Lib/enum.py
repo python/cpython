@@ -191,6 +191,11 @@ class EnumMeta(type):
         # Reverse value->name map for hashable values.
         enum_class._value2member_map_ = {}
 
+        # used to speedup __str__, __repr__ and __invert__ calls when applicable
+        enum_class._repr_ = None
+        enum_class._str_ = None
+        enum_class._invert_ = None
+
         # If a custom type is mixed into the Enum, and it does not know how
         # to pickle itself, pickle.dumps will succeed but pickle.loads will
         # fail.  Rather than have the error show up later and possibly far
@@ -264,6 +269,15 @@ class EnumMeta(type):
                 enum_class._value2member_map_[value] = enum_member
             except TypeError:
                 pass
+
+        # after all members created, cache result of this
+        # methods for immutable values
+        for member in enum_class._value2member_map_.copy().values():
+            for static_attr in ('__repr__', '__str__', '__invert__'):
+                method = getattr(member, static_attr, None)
+                if method is None:
+                    continue
+                setattr(member, static_attr[1:-1], method())
 
         # double check that repr and friends are not the mixin's or various
         # things break (such as pickle)
@@ -630,10 +644,16 @@ class Enum(metaclass=EnumMeta):
 
     @_value_.setter
     def _value_(self, value):
+        self._repr_ = self._str_ = None
+        if '_invert_' in self.__dict__:
+            self._invert_ = None
         object.__setattr__(self, 'value', value)
 
     @_name_.setter
     def _name_(self, name):
+        self._repr_ = self._str_ = None
+        if '_invert_' in self.__dict__:
+            self._invert_ = None
         object.__setattr__(self, 'name', name)
 
     def _generate_next_value_(name, start, count, last_values):
@@ -768,18 +788,27 @@ class Flag(Enum):
         cls = self.__class__
         if self.name is not None:
             return f'<{cls.__name__}.{self.name}: {self.value!r}>'
+        cached = self._repr_
+        if cached is not None:
+            return cached
         members, uncovered = _decompose(cls, self.value)
-        return f"<{cls.__name__}.{'|'.join([str(m.name or m.value) for m in members])}: {self.value!r}>"
+        members = '|'.join([str(m.name or m.value) for m in members])
+        self._repr_ = result = f"<{cls.__name__}.{members}: {self.value!r}>"
+        return result
 
     def __str__(self):
         cls = self.__class__
         if self.name is not None:
             return f'{cls.__name__}.{self.name}'
+        cached = self._str_
+        if cached is not None:
+            return cached
         members, uncovered = _decompose(cls, self.value)
         if len(members) == 1 and members[0].name is None:
-            return f'{cls.__name__}.{members[0].value!r}'
+            self._str_ = result = f'{cls.__name__}.{members[0].value!r}'
         else:
-            return f"{cls.__name__}.{'|'.join([str(m.name or m.value) for m in members])}"
+            self._str_ = result = f"{cls.__name__}.{'|'.join([str(m.name or m.value) for m in members])}"
+        return result
 
     def __bool__(self):
         return bool(self.value)
@@ -803,13 +832,18 @@ class Flag(Enum):
         return cls(self.value ^ other.value)
 
     def __invert__(self):
+        cached = self._invert_
+        if cached is not None:
+            return cached
         cls = self.__class__
         members, uncovered = _decompose(cls, self.value)
         inverted = cls(0)
         for m in cls:
             if m not in members and not (m.value & self.value):
                 inverted = inverted | m
-        return cls(inverted)
+        self._invert_ = result = cls(inverted)
+        result._invert_ = self
+        return result
 
 
 class IntFlag(int, Flag):
@@ -880,7 +914,10 @@ class IntFlag(int, Flag):
     __rxor__ = __xor__
 
     def __invert__(self):
-        result = self.__class__(~self.value)
+        cached = self._invert_
+        if cached is not None:
+            return cached
+        self._invert_ = result = self.__class__(~self.value)
         return result
 
 
