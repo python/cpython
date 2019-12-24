@@ -4351,6 +4351,8 @@ pairs within braces, for example: ``{'jack': 4098, 'sjoerd': 4127}`` or ``{4098:
       Return a reverse iterator over the keys of the dictionary. This is a
       shortcut for ``reversed(d.keys())``.
 
+      .. versionadded:: 3.8
+
    .. method:: setdefault(key[, default])
 
       If *key* is in the dictionary, return its value.  If not, insert *key*
