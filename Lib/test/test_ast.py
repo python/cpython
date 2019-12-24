@@ -331,7 +331,7 @@ class AST_Tests(unittest.TestCase):
 
     def test_field_attr_existence(self):
         for name, item in ast.__dict__.items():
-            if isinstance(item, type) and name != 'AST' and name[0].isupper():
+            if isinstance(item, type) and name != 'AST' and "ast" in item.__module__ and name[0].isupper():
                 x = item()
                 if isinstance(x, ast.AST):
                     self.assertEqual(type(x._fields), tuple)
