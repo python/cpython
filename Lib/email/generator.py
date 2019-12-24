@@ -251,7 +251,7 @@ class Generator:
     # Default body handler
     _writeBody = _handle_text
 
-    def _handle_multipart(self, msg):
+    def _handle_multipart(self, msg, _sign_fun=None):
         # The trick here is to write out each part separately, merge them all
         # together, and then make sure that the boundary we've chosen isn't
         # present in the payload.
@@ -271,6 +271,8 @@ class Generator:
             g = self.clone(s)
             g.flatten(part, unixfrom=False, linesep=self._NL)
             msgtexts.append(s.getvalue())
+        if _sign_fun:
+            _sign_fun(msg, msgtexts)
         # BAW: What about boundaries that are wrapped in double-quotes?
         boundary = msg.get_boundary()
         if not boundary:
@@ -315,8 +317,9 @@ class Generator:
         # RDM: This isn't enough to completely preserve the part, but it helps.
         p = self.policy
         self.policy = p.clone(max_line_length=0)
+        sign_fun = getattr(msg, 'sign_fun', None)
         try:
-            self._handle_multipart(msg)
+            self._handle_multipart(msg, _sign_fun=sign_fun)
         finally:
             self.policy = p
 
