@@ -236,6 +236,7 @@ class TestEnum(unittest.TestCase):
         self.assertEqual(
             [Season.SPRING, Season.SUMMER, Season.AUTUMN, Season.WINTER], lst)
 
+        self.assertEqual(repr(Season), "<enum 'Season'>")
         for i, season in enumerate('SPRING SUMMER AUTUMN WINTER'.split(), 1):
             e = Season(i)
             self.assertEqual(e, getattr(Season, season))

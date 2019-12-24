@@ -366,7 +366,7 @@ class EnumMeta(type):
         return MappingProxyType(cls._member_map_)
 
     def __repr__(cls):
-        return f'<enum {cls.__name__!r}'
+        return f'<enum {cls.__name__!r}>'
 
     def __reversed__(cls):
         return reversed(cls._unique_member_map_.values())
