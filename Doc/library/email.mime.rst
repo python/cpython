@@ -104,6 +104,60 @@ Here are the classes:
    .. versionchanged:: 3.6
       Added *policy* keyword-only parameter.
 
+.. currentmodule:: email.mime.signed
+
+.. class:: MIMEMultipartSigned(_subtype='signed',  boundary=None, \
+                               _subparts=None,  *, policy=compat32, \
+                               sign_fun=None, **_params)
+
+   Module: :mod:`email.mime.signed`
+
+   A subclass of :class:`~email.mime.base.MIMEMultipart`, this class
+   can be used for constructing multipart/signed messages conforming to
+   :RFC:`1847`, and its more specific sucessors :RFC:`3156` (OpenPGP)
+   and :RFC:`8551` (S/MIME).
+
+   The main difference with a regular MIMEMultipart instance is that
+   the constructor for this class accepts a *sign_fun* argument, which
+   should be a callable that does the actual signing after the message
+   components have been serialized, but before the complete message is
+   rendered.
+
+   This callable gets called with two arguments: the
+   MIMEMultipartSigned object, and a list of serialized
+   messages. Depending on the chosen generator, these will be `string`
+   or `bytes`.  Note that the caller should take care of setting all
+   the MIME parameters that are defined in the relevant RFCs.
+
+   The remainder of the parameters are passed to
+   :class:`~email.mime.base.MIMEMultipart` untouched.
+
+   Example usage::
+
+     from email.mime.signed import MIMEMultipartSigned
+     from email.mime.text import MIMEText
+     from email.mime.application import MIMEApplication
+     from email.encoders import encode_7or8bit
+     from email.policy import SMTP
+     import hashlib
+     
+     def bogus_signer(msg, msgtexts):
+       if len(msgtexts) != 2:
+         raise ValueError("msgtexts should contain 2 items, got %d", len(msgtexts))
+       if not isinstance(msgtexts[0], bytes):
+         log.warning("sign_fun probably called from msg.as_string")
+         return
+       digest = hashlib.sha256(msgtexts[0]).hexdigest().encode('ascii')
+       msgtexts[1] = msgtexts[1].replace(b'DIGEST_PLACEHOLDER', digest)
+     
+     main = MIMEMultipartSigned(sign_fun=bogus_signer, policy=SMTP, protocol="bogus")
+     main.attach(MIMEText('Hello audience. Please sign below the fold.\n---\u2702---'))
+     main.attach(MIMEApplication("Bogus hash: DIGEST_PLACEHOLDER",
+                                 "bogus-signature",
+                                 encode_7or8bit))
+     print(main.as_bytes())
+          
+     
 .. currentmodule:: email.mime.application
 
 .. class:: MIMEApplication(_data, _subtype='octet-stream', \
