@@ -883,8 +883,6 @@ class IntFlag(int, Flag):
                 pseudo_member = int.__new__(cls, value)
                 pseudo_member._name_ = None
                 pseudo_member._value_ = value
-                object.__setattr__(pseudo_member, 'name', None)
-                object.__setattr__(pseudo_member, 'value', value)
                 # use setdefault in case another thread already created a composite
                 # with this value
                 pseudo_member = cls._value2member_map_.setdefault(value, pseudo_member)
