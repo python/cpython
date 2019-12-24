@@ -1,0 +1,39 @@
+#!/bin/sh
+
+CFLAGS=$(
+echo \
+    -Warray-bounds-pointer-arithmetic \
+    -Wassign-enum \
+    -Wbad-function-cast \
+    -Wcast-qual \
+    -Wcomma \
+    -Wconditional-uninitialized \
+    -Wconversion \
+    -Wfor-loop-analysis \
+    -Wformat-pedantic \
+    -Wgnu \
+    -Winfinite-recursion \
+    -Wloop-analysis \
+    -Wmost \
+    -Wmove \
+    -Wnull-pointer-arithmetic \
+    -Wold-style-cast \
+    -Wparentheses \
+    -Wparentheses \
+    -Wpedantic \
+    -Wrange-loop-analysis \
+    -Wsometimes-uninitialized \
+    -Wstring-conversion \
+    -Wundef \
+    -Wuninitialized \
+    -Wunneeded-internal-declaration \
+    -Wunreachable-code \
+    -Wunreachable-code-aggressive \
+    -Wunused-const-variable \
+    -Wunused-function \
+    -Wunused-variable \
+    -Wzero-as-null-pointer-constant \
+    -Wzero-length-array \
+)
+
+CFLAGS="$CFLAGS" ./configure --with-pydebug
