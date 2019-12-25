@@ -81,7 +81,7 @@ sys.argv to be unmodified.
 .. section: Core and Builtins
 
 :c:func:`PySys_Audit` now requires ``Py_ssize_t`` to be used for size
-arguments in the format string, regardless of whethen ``PY_SSIZE_T_CLEAN``
+arguments in the format string, regardless of whether ``PY_SSIZE_T_CLEAN``
 was defined at include time.
 
 ..
@@ -112,7 +112,7 @@ event.
 .. section: Core and Builtins
 
 Add audit hooks for when :func:`sys.excepthook` and
-:func:`sys.unraisablehook` are invoked
+:func:`sys.unraisablehook` are invoked.
 
 ..
 
@@ -215,9 +215,7 @@ Patch by hongweipeng.
 .. section: Core and Builtins
 
 Provide a platform tag for AIX that is sufficient for PEP425 binary
-distribution identification.
-
-Patch by Michael Felt
+distribution identification. Patch by Michael Felt.
 
 ..
 
@@ -300,7 +298,7 @@ parsing the header.
 .. nonce: IJYhz_
 .. section: Library
 
-Implement ``__class_getitem__`` for ``os.PathLike``, ``pathlib.Path``
+Implement ``__class_getitem__`` for ``os.PathLike``, ``pathlib.Path``.
 
 ..
 
@@ -402,7 +400,7 @@ locale encoding is not UTF-8.
 .. nonce: WZnAPQ
 .. section: Library
 
-Prevent UnboundLocalError to pop up in parse_message_id
+Prevent UnboundLocalError to pop up in parse_message_id.
 
 parse_message_id() was improperly using a token defined inside an exception
 handler, which was raising `UnboundLocalError` on parsing an invalid value.
@@ -444,7 +442,7 @@ random.choices() now raises a ValueError when all the weights are zero.
 .. section: Library
 
 Raise pickle.UnpicklingError when loading an item from memo for invalid
-input
+input.
 
 The previous code was raising a `KeyError` for both the Python and C
 implementation. This was caused by the specified index of an invalid input
@@ -506,7 +504,7 @@ by Pablo Galindo and Batuhan Taskaya.
 .. nonce: AZUzL8
 .. section: Library
 
-AsyncMock now returns StopAsyncIteration on the exaustion of a side_effects
+AsyncMock now returns StopAsyncIteration on the exhaustion of a side_effects
 iterable. Since PEP-479 its Impossible to raise a StopIteration exception
 from a coroutine.
 
