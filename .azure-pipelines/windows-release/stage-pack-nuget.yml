@@ -15,6 +15,8 @@ jobs:
         Name: amd64
       win32:
         Name: win32
+      arm64:
+        Name: arm64
 
   steps:
   - checkout: none

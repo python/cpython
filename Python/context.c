@@ -3,6 +3,7 @@
 #include "pycore_context.h"
 #include "pycore_hamt.h"
 #include "pycore_object.h"
+#include "pycore_pyerrors.h"
 #include "pycore_pystate.h"
 #include "structmember.h"
 
@@ -101,20 +102,17 @@ PyContext_CopyCurrent(void)
 }
 
 
-int
-PyContext_Enter(PyObject *octx)
+static int
+_PyContext_Enter(PyThreadState *ts, PyObject *octx)
 {
     ENSURE_Context(octx, -1)
     PyContext *ctx = (PyContext *)octx;
 
     if (ctx->ctx_entered) {
-        PyErr_Format(PyExc_RuntimeError,
-                     "cannot enter context: %R is already entered", ctx);
+        _PyErr_Format(ts, PyExc_RuntimeError,
+                      "cannot enter context: %R is already entered", ctx);
         return -1;
     }
-
-    PyThreadState *ts = _PyThreadState_GET();
-    assert(ts != NULL);
 
     ctx->ctx_prev = (PyContext *)ts->context;  /* borrow */
     ctx->ctx_entered = 1;
@@ -128,7 +126,16 @@ PyContext_Enter(PyObject *octx)
 
 
 int
-PyContext_Exit(PyObject *octx)
+PyContext_Enter(PyObject *octx)
+{
+    PyThreadState *ts = _PyThreadState_GET();
+    assert(ts != NULL);
+    return _PyContext_Enter(ts, octx);
+}
+
+
+static int
+_PyContext_Exit(PyThreadState *ts, PyObject *octx)
 {
     ENSURE_Context(octx, -1)
     PyContext *ctx = (PyContext *)octx;
@@ -138,9 +145,6 @@ PyContext_Exit(PyObject *octx)
                      "cannot exit context: %R has not been entered", ctx);
         return -1;
     }
-
-    PyThreadState *ts = _PyThreadState_GET();
-    assert(ts != NULL);
 
     if (ts->context != (PyObject *)ctx) {
         /* Can only happen if someone misuses the C API */
@@ -157,6 +161,14 @@ PyContext_Exit(PyObject *octx)
     ctx->ctx_entered = 0;
 
     return 0;
+}
+
+int
+PyContext_Exit(PyObject *octx)
+{
+    PyThreadState *ts = _PyThreadState_GET();
+    assert(ts != NULL);
+    return _PyContext_Exit(ts, octx);
 }
 
 
@@ -621,20 +633,22 @@ static PyObject *
 context_run(PyContext *self, PyObject *const *args,
             Py_ssize_t nargs, PyObject *kwnames)
 {
+    PyThreadState *ts = _PyThreadState_GET();
+
     if (nargs < 1) {
-        PyErr_SetString(PyExc_TypeError,
-                        "run() missing 1 required positional argument");
+        _PyErr_SetString(ts, PyExc_TypeError,
+                         "run() missing 1 required positional argument");
         return NULL;
     }
 
-    if (PyContext_Enter((PyObject *)self)) {
+    if (_PyContext_Enter(ts, (PyObject *)self)) {
         return NULL;
     }
 
-    PyObject *call_result = _PyObject_Vectorcall(
-        args[0], args + 1, nargs - 1, kwnames);
+    PyObject *call_result = _PyObject_VectorcallTstate(
+        ts, args[0], args + 1, nargs - 1, kwnames);
 
-    if (PyContext_Exit((PyObject *)self)) {
+    if (_PyContext_Exit(ts, (PyObject *)self)) {
         return NULL;
     }
 
@@ -1010,9 +1024,10 @@ _contextvars_ContextVar_reset(PyContextVar *self, PyObject *token)
 
 
 static PyObject *
-contextvar_cls_getitem(PyObject *self, PyObject *args)
+contextvar_cls_getitem(PyObject *self, PyObject *arg)
 {
-    Py_RETURN_NONE;
+    Py_INCREF(self);
+    return self;
 }
 
 static PyMemberDef PyContextVar_members[] = {
@@ -1025,7 +1040,7 @@ static PyMethodDef PyContextVar_methods[] = {
     _CONTEXTVARS_CONTEXTVAR_SET_METHODDEF
     _CONTEXTVARS_CONTEXTVAR_RESET_METHODDEF
     {"__class_getitem__", contextvar_cls_getitem,
-        METH_VARARGS | METH_STATIC, NULL},
+        METH_O | METH_CLASS, NULL},
     {NULL, NULL}
 };
 

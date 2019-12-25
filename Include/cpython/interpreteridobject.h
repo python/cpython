@@ -14,8 +14,6 @@ PyAPI_FUNC(PyObject *) _PyInterpreterID_New(int64_t);
 PyAPI_FUNC(PyObject *) _PyInterpreterState_GetIDObject(PyInterpreterState *);
 PyAPI_FUNC(PyInterpreterState *) _PyInterpreterID_LookUp(PyObject *);
 
-PyAPI_FUNC(int64_t) _Py_CoerceID(PyObject *);
-
 #ifdef __cplusplus
 }
 #endif

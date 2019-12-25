@@ -32,7 +32,7 @@
 @rem VS 2017 and later provide vswhere.exe, which can be used
 @if not exist "%ProgramFiles(x86)%\Microsoft Visual Studio\Installer\vswhere.exe" goto :skip_vswhere
 @set _Py_MSBuild_Root=
-@for /F "tokens=*" %%i in ('"%ProgramFiles(x86)%\Microsoft Visual Studio\Installer\vswhere.exe" -property installationPath -latest') DO @(set _Py_MSBuild_Root=%%i\MSBuild)
+@for /F "tokens=*" %%i in ('"%ProgramFiles(x86)%\Microsoft Visual Studio\Installer\vswhere.exe" -property installationPath -latest -prerelease') DO @(set _Py_MSBuild_Root=%%i\MSBuild)
 @if not defined _Py_MSBuild_Root goto :skip_vswhere
 @for %%j in (Current 15.0) DO @if exist "%_Py_MSBuild_Root%\%%j\Bin\msbuild.exe" (set MSBUILD="%_Py_MSBuild_Root%\%%j\Bin\msbuild.exe")
 @set _Py_MSBuild_Root=

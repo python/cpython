@@ -1136,7 +1136,6 @@ def getfullargspec(func):
     varkw = None
     posonlyargs = []
     kwonlyargs = []
-    defaults = ()
     annotations = {}
     defaults = ()
     kwdefaults = {}
@@ -1558,7 +1557,7 @@ def _shadowed_dict(klass):
         except KeyError:
             pass
         else:
-            if not (isinstance(class_dict, types.GetSetDescriptorType) and
+            if not (type(class_dict) is types.GetSetDescriptorType and
                     class_dict.__name__ == "__dict__" and
                     class_dict.__objclass__ is entry):
                 return class_dict
@@ -1580,7 +1579,7 @@ def getattr_static(obj, attr, default=_sentinel):
         klass = type(obj)
         dict_attr = _shadowed_dict(klass)
         if (dict_attr is _sentinel or
-            isinstance(dict_attr, types.MemberDescriptorType)):
+            type(dict_attr) is types.MemberDescriptorType):
             instance_result = _check_instance(obj, attr)
     else:
         klass = obj
@@ -2367,7 +2366,7 @@ def _signature_from_callable(obj, *,
                 if (obj.__init__ is object.__init__ and
                     obj.__new__ is object.__new__):
                     # Return a signature of 'object' builtin.
-                    return signature(object)
+                    return sigcls.from_callable(object)
                 else:
                     raise ValueError(
                         'no signature found for builtin type {!r}'.format(obj))
@@ -2960,7 +2959,7 @@ class Signature:
                         arguments[param.name] = tuple(values)
                         break
 
-                    if param.name in kwargs:
+                    if param.name in kwargs and param.kind != _POSITIONAL_ONLY:
                         raise TypeError(
                             'multiple values for argument {arg!r}'.format(
                                 arg=param.name)) from None
@@ -3118,7 +3117,7 @@ def _main():
                                                     type(exc).__name__,
                                                     exc)
         print(msg, file=sys.stderr)
-        exit(2)
+        sys.exit(2)
 
     if has_attrs:
         parts = attrs.split(".")
@@ -3128,7 +3127,7 @@ def _main():
 
     if module.__name__ in sys.builtin_module_names:
         print("Can't get info for builtin modules.", file=sys.stderr)
-        exit(1)
+        sys.exit(1)
 
     if args.details:
         print('Target: {}'.format(target))

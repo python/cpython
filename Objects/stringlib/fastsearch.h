@@ -52,7 +52,7 @@ STRINGLIB(find_char)(const STRINGLIB_CHAR* s, Py_ssize_t n, STRINGLIB_CHAR ch)
             return (p - s);
         return -1;
 #else
-        /* use memchr if we can choose a needle without two many likely
+        /* use memchr if we can choose a needle without too many likely
            false positives */
         const STRINGLIB_CHAR *s1, *e1;
         unsigned char needle = ch & 0xff;
@@ -111,7 +111,7 @@ STRINGLIB(rfind_char)(const STRINGLIB_CHAR* s, Py_ssize_t n, STRINGLIB_CHAR ch)
             return (p - s);
         return -1;
 #else
-        /* use memrchr if we can choose a needle without two many likely
+        /* use memrchr if we can choose a needle without too many likely
            false positives */
         const STRINGLIB_CHAR *s1;
         Py_ssize_t n1;

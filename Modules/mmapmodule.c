@@ -97,7 +97,7 @@ typedef struct {
 #else
     off_t       offset;
 #endif
-    int     exports;
+    Py_ssize_t  exports;
 
 #ifdef MS_WINDOWS
     HANDLE      map_handle;
@@ -695,6 +695,51 @@ mmap__exit__method(PyObject *self, PyObject *args)
     return _PyObject_CallMethodIdNoArgs(self, &PyId_close);
 }
 
+static PyObject *
+mmap__repr__method(PyObject *self)
+{
+    mmap_object *mobj = (mmap_object *)self;
+
+#ifdef MS_WINDOWS
+#define _Py_FORMAT_OFFSET "lld"
+    if (mobj->map_handle == NULL)
+#elif defined(UNIX)
+# ifdef HAVE_LARGEFILE_SUPPORT
+# define _Py_FORMAT_OFFSET "lld"
+# else
+# define _Py_FORMAT_OFFSET "ld"
+# endif
+    if (mobj->data == NULL)
+#endif
+    {
+        return PyUnicode_FromFormat("<%s closed=True>", Py_TYPE(self)->tp_name);
+    } else {
+        const char *access_str;
+
+        switch (mobj->access) {
+            case ACCESS_DEFAULT:
+                access_str = "ACCESS_DEFAULT";
+                break;
+            case ACCESS_READ:
+                access_str = "ACCESS_READ";
+                break;
+            case ACCESS_WRITE:
+                access_str = "ACCESS_WRITE";
+                break;
+            case ACCESS_COPY:
+                access_str = "ACCESS_COPY";
+                break;
+            default:
+                Py_UNREACHABLE();
+        }
+
+        return PyUnicode_FromFormat("<%s closed=False, access=%s, length=%zd, "
+                                    "pos=%zd, offset=%" _Py_FORMAT_OFFSET ">",
+                                    Py_TYPE(self)->tp_name, access_str,
+                                    mobj->size, mobj->pos, mobj->offset);
+    }
+}
+
 #ifdef MS_WINDOWS
 static PyObject *
 mmap__sizeof__method(mmap_object *self, void *unused)
@@ -1044,23 +1089,23 @@ static PyTypeObject mmap_object_type = {
     sizeof(mmap_object),                        /* tp_basicsize */
     0,                                          /* tp_itemsize */
     /* methods */
-    (destructor) mmap_object_dealloc,           /* tp_dealloc */
+    (destructor)mmap_object_dealloc,            /* tp_dealloc */
     0,                                          /* tp_vectorcall_offset */
     0,                                          /* tp_getattr */
     0,                                          /* tp_setattr */
     0,                                          /* tp_as_async */
-    0,                                          /* tp_repr */
+    (reprfunc)mmap__repr__method,               /* tp_repr */
     0,                                          /* tp_as_number */
-    &mmap_as_sequence,                          /*tp_as_sequence*/
-    &mmap_as_mapping,                           /*tp_as_mapping*/
-    0,                                          /*tp_hash*/
-    0,                                          /*tp_call*/
-    0,                                          /*tp_str*/
-    PyObject_GenericGetAttr,                    /*tp_getattro*/
-    0,                                          /*tp_setattro*/
-    &mmap_as_buffer,                            /*tp_as_buffer*/
-    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE,   /*tp_flags*/
-    mmap_doc,                                   /*tp_doc*/
+    &mmap_as_sequence,                          /* tp_as_sequence */
+    &mmap_as_mapping,                           /* tp_as_mapping */
+    0,                                          /* tp_hash */
+    0,                                          /* tp_call */
+    0,                                          /* tp_str */
+    PyObject_GenericGetAttr,                    /* tp_getattro */
+    0,                                          /* tp_setattro */
+    &mmap_as_buffer,                            /* tp_as_buffer */
+    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE,   /* tp_flags */
+    mmap_doc,                                   /* tp_doc */
     0,                                          /* tp_traverse */
     0,                                          /* tp_clear */
     0,                                          /* tp_richcompare */
@@ -1468,7 +1513,8 @@ static void
 setint(PyObject *d, const char *name, long value)
 {
     PyObject *o = PyLong_FromLong(value);
-    if (o && PyDict_SetItemString(d, name, o) == 0) {
+    if (o) {
+        PyDict_SetItemString(d, name, o);
         Py_DECREF(o);
     }
 }

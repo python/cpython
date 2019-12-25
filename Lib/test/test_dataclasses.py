@@ -10,6 +10,7 @@ import builtins
 import unittest
 from unittest.mock import Mock
 from typing import ClassVar, Any, List, Union, Tuple, Dict, Generic, TypeVar, Optional
+from typing import get_type_hints
 from collections import deque, OrderedDict, namedtuple
 from functools import total_ordering
 
@@ -1102,6 +1103,8 @@ class TestCase(unittest.TestCase):
 
         # Make sure the repr is correct.
         self.assertEqual(repr(InitVar[int]), 'dataclasses.InitVar[int]')
+        self.assertEqual(repr(InitVar[List[int]]),
+                         'dataclasses.InitVar[typing.List[int]]')
 
     def test_init_var_inheritance(self):
         # Note that this deliberately tests that a dataclass need not
@@ -2923,6 +2926,17 @@ class TestStringAnnotations(unittest.TestCase):
                     # iv4 is interpreted as an InitVar, so it
                     # won't exist on the instance.
                     self.assertNotIn('not_iv4', c.__dict__)
+
+    def test_text_annotations(self):
+        from test import dataclass_textanno
+
+        self.assertEqual(
+            get_type_hints(dataclass_textanno.Bar),
+            {'foo': dataclass_textanno.Foo})
+        self.assertEqual(
+            get_type_hints(dataclass_textanno.Bar.__init__),
+            {'foo': dataclass_textanno.Foo,
+             'return': type(None)})
 
 
 class TestMakeDataclass(unittest.TestCase):

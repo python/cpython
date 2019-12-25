@@ -107,7 +107,7 @@ def run_briefly(loop):
         gen.close()
 
 
-def run_until(loop, pred, timeout=30):
+def run_until(loop, pred, timeout=support.SHORT_TIMEOUT):
     deadline = time.monotonic() + timeout
     while not pred():
         if timeout is not None:
@@ -139,7 +139,7 @@ class SilentWSGIRequestHandler(WSGIRequestHandler):
 
 class SilentWSGIServer(WSGIServer):
 
-    request_timeout = 2
+    request_timeout = support.LOOPBACK_TIMEOUT
 
     def get_request(self):
         request, client_addr = super().get_request()
@@ -220,7 +220,7 @@ if hasattr(socket, 'AF_UNIX'):
 
     class UnixWSGIServer(UnixHTTPServer, WSGIServer):
 
-        request_timeout = 2
+        request_timeout = support.LOOPBACK_TIMEOUT
 
         def server_bind(self):
             UnixHTTPServer.server_bind(self)
@@ -509,9 +509,11 @@ def get_function_source(func):
 class TestCase(unittest.TestCase):
     @staticmethod
     def close_loop(loop):
-        executor = loop._default_executor
-        if executor is not None:
-            executor.shutdown(wait=True)
+        if loop._default_executor is not None:
+            if not loop.is_closed():
+                loop.run_until_complete(loop.shutdown_default_executor())
+            else:
+                loop._default_executor.shutdown(wait=True)
         loop.close()
         policy = support.maybe_get_event_loop_policy()
         if policy is not None:

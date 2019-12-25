@@ -681,10 +681,6 @@ LLVM_PROF_MERGER
 PGO_PROF_USE_FLAG
 PGO_PROF_GEN_FLAG
 LLVM_AR_FOUND
-target_os
-target_vendor
-target_cpu
-target
 LLVM_AR
 PROFILE_TASK
 DEF_MAKE_RULE
@@ -786,6 +782,7 @@ infodir
 docdir
 oldincludedir
 includedir
+runstatedir
 localstatedir
 sharedstatedir
 sysconfdir
@@ -899,6 +896,7 @@ datadir='${datarootdir}'
 sysconfdir='${prefix}/etc'
 sharedstatedir='${prefix}/com'
 localstatedir='${prefix}/var'
+runstatedir='${localstatedir}/run'
 includedir='${prefix}/include'
 oldincludedir='/usr/include'
 docdir='${datarootdir}/doc/${PACKAGE_TARNAME}'
@@ -1151,6 +1149,15 @@ do
   | -silent | --silent | --silen | --sile | --sil)
     silent=yes ;;
 
+  -runstatedir | --runstatedir | --runstatedi | --runstated \
+  | --runstate | --runstat | --runsta | --runst | --runs \
+  | --run | --ru | --r)
+    ac_prev=runstatedir ;;
+  -runstatedir=* | --runstatedir=* | --runstatedi=* | --runstated=* \
+  | --runstate=* | --runstat=* | --runsta=* | --runst=* | --runs=* \
+  | --run=* | --ru=* | --r=*)
+    runstatedir=$ac_optarg ;;
+
   -sbindir | --sbindir | --sbindi | --sbind | --sbin | --sbi | --sb)
     ac_prev=sbindir ;;
   -sbindir=* | --sbindir=* | --sbindi=* | --sbind=* | --sbin=* \
@@ -1288,7 +1295,7 @@ fi
 for ac_var in	exec_prefix prefix bindir sbindir libexecdir datarootdir \
 		datadir sysconfdir sharedstatedir localstatedir includedir \
 		oldincludedir docdir infodir htmldir dvidir pdfdir psdir \
-		libdir localedir mandir
+		libdir localedir mandir runstatedir
 do
   eval ac_val=\$$ac_var
   # Remove trailing slashes.
@@ -1441,6 +1448,7 @@ Fine tuning of the installation directories:
   --sysconfdir=DIR        read-only single-machine data [PREFIX/etc]
   --sharedstatedir=DIR    modifiable architecture-independent data [PREFIX/com]
   --localstatedir=DIR     modifiable single-machine data [PREFIX/var]
+  --runstatedir=DIR       modifiable per-process data [LOCALSTATEDIR/run]
   --libdir=DIR            object code libraries [EPREFIX/lib]
   --includedir=DIR        C header files [PREFIX/include]
   --oldincludedir=DIR     C header files for non-gcc [/usr/include]
@@ -1461,7 +1469,6 @@ _ACEOF
 System types:
   --build=BUILD     configure for building on BUILD [guessed]
   --host=HOST       cross-compile to build programs to run on HOST [BUILD]
-  --target=TARGET   configure for building compilers for TARGET [HOST]
 _ACEOF
 fi
 
@@ -6486,47 +6493,9 @@ if test "$Py_LTO" = 'true' ; then
   case $CC in
     *clang*)
 
-      { $as_echo "$as_me:${as_lineno-$LINENO}: checking target system type" >&5
-$as_echo_n "checking target system type... " >&6; }
-if ${ac_cv_target+:} false; then :
-  $as_echo_n "(cached) " >&6
-else
-  if test "x$target_alias" = x; then
-  ac_cv_target=$ac_cv_host
-else
-  ac_cv_target=`$SHELL "$ac_aux_dir/config.sub" $target_alias` ||
-    as_fn_error $? "$SHELL $ac_aux_dir/config.sub $target_alias failed" "$LINENO" 5
-fi
-
-fi
-{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_target" >&5
-$as_echo "$ac_cv_target" >&6; }
-case $ac_cv_target in
-*-*-*) ;;
-*) as_fn_error $? "invalid value of canonical target" "$LINENO" 5;;
-esac
-target=$ac_cv_target
-ac_save_IFS=$IFS; IFS='-'
-set x $ac_cv_target
-shift
-target_cpu=$1
-target_vendor=$2
-shift; shift
-# Remember, the first character of IFS is used to create $*,
-# except with old shells:
-target_os=$*
-IFS=$ac_save_IFS
-case $target_os in *\ *) target_os=`echo "$target_os" | sed 's/ /-/g'`;; esac
-
-
-# The aliases save the names the user supplied, while $host etc.
-# will get canonicalized.
-test -n "$target_alias" &&
-  test "$program_prefix$program_suffix$program_transform_name" = \
-    NONENONEs,x,x, &&
-  program_prefix=${target_alias}-
-# Extract the first word of "$target_alias-llvm-ar", so it can be a program name with args.
-set dummy $target_alias-llvm-ar; ac_word=$2
+      if test -n "$ac_tool_prefix"; then
+  # Extract the first word of "${ac_tool_prefix}llvm-ar", so it can be a program name with args.
+set dummy ${ac_tool_prefix}llvm-ar; ac_word=$2
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
 $as_echo_n "checking for $ac_word... " >&6; }
 if ${ac_cv_path_LLVM_AR+:} false; then :
@@ -6565,10 +6534,10 @@ $as_echo "no" >&6; }
 fi
 
 
+fi
 if test -z "$ac_cv_path_LLVM_AR"; then
-  if test "$build" = "$target"; then
-    ac_pt_LLVM_AR=$LLVM_AR
-    # Extract the first word of "llvm-ar", so it can be a program name with args.
+  ac_pt_LLVM_AR=$LLVM_AR
+  # Extract the first word of "llvm-ar", so it can be a program name with args.
 set dummy llvm-ar; ac_word=$2
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
 $as_echo_n "checking for $ac_word... " >&6; }
@@ -6595,7 +6564,6 @@ done
   done
 IFS=$as_save_IFS
 
-  test -z "$ac_cv_path_ac_pt_LLVM_AR" && ac_cv_path_ac_pt_LLVM_AR="''"
   ;;
 esac
 fi
@@ -6608,9 +6576,16 @@ else
 $as_echo "no" >&6; }
 fi
 
-    LLVM_AR=$ac_pt_LLVM_AR
-  else
+  if test "x$ac_pt_LLVM_AR" = x; then
     LLVM_AR="''"
+  else
+    case $cross_compiling:$ac_tool_warned in
+yes:)
+{ $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: using cross tools not prefixed with host triplet" >&5
+$as_echo "$as_me: WARNING: using cross tools not prefixed with host triplet" >&2;}
+ac_tool_warned=yes ;;
+esac
+    LLVM_AR=$ac_pt_LLVM_AR
   fi
 else
   LLVM_AR="$ac_cv_path_LLVM_AR"
@@ -6682,8 +6657,9 @@ fi
 
 
 
-# Extract the first word of "$target_alias-llvm-profdata", so it can be a program name with args.
-set dummy $target_alias-llvm-profdata; ac_word=$2
+if test -n "$ac_tool_prefix"; then
+  # Extract the first word of "${ac_tool_prefix}llvm-profdata", so it can be a program name with args.
+set dummy ${ac_tool_prefix}llvm-profdata; ac_word=$2
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
 $as_echo_n "checking for $ac_word... " >&6; }
 if ${ac_cv_path_LLVM_PROFDATA+:} false; then :
@@ -6722,10 +6698,10 @@ $as_echo "no" >&6; }
 fi
 
 
+fi
 if test -z "$ac_cv_path_LLVM_PROFDATA"; then
-  if test "$build" = "$target"; then
-    ac_pt_LLVM_PROFDATA=$LLVM_PROFDATA
-    # Extract the first word of "llvm-profdata", so it can be a program name with args.
+  ac_pt_LLVM_PROFDATA=$LLVM_PROFDATA
+  # Extract the first word of "llvm-profdata", so it can be a program name with args.
 set dummy llvm-profdata; ac_word=$2
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
 $as_echo_n "checking for $ac_word... " >&6; }
@@ -6752,7 +6728,6 @@ done
   done
 IFS=$as_save_IFS
 
-  test -z "$ac_cv_path_ac_pt_LLVM_PROFDATA" && ac_cv_path_ac_pt_LLVM_PROFDATA="''"
   ;;
 esac
 fi
@@ -6765,9 +6740,16 @@ else
 $as_echo "no" >&6; }
 fi
 
-    LLVM_PROFDATA=$ac_pt_LLVM_PROFDATA
-  else
+  if test "x$ac_pt_LLVM_PROFDATA" = x; then
     LLVM_PROFDATA="''"
+  else
+    case $cross_compiling:$ac_tool_warned in
+yes:)
+{ $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: using cross tools not prefixed with host triplet" >&5
+$as_echo "$as_me: WARNING: using cross tools not prefixed with host triplet" >&2;}
+ac_tool_warned=yes ;;
+esac
+    LLVM_PROFDATA=$ac_pt_LLVM_PROFDATA
   fi
 else
   LLVM_PROFDATA="$ac_cv_path_LLVM_PROFDATA"
@@ -7359,6 +7341,47 @@ $as_echo "$ac_cv_enable_implicit_function_declaration_error" >&6; }
       CFLAGS_NODIST="$CFLAGS_NODIST -Werror=implicit-function-declaration"
     fi
 
+    { $as_echo "$as_me:${as_lineno-$LINENO}: checking if we can use visibility in $CC" >&5
+$as_echo_n "checking if we can use visibility in $CC... " >&6; }
+     ac_save_cc="$CC"
+     CC="$CC -fvisibility=hidden"
+     if ${ac_cv_enable_visibility+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+
+int
+main ()
+{
+
+  ;
+  return 0;
+}
+
+_ACEOF
+if ac_fn_c_try_compile "$LINENO"; then :
+
+           ac_cv_enable_visibility=yes
+
+else
+
+           ac_cv_enable_visibility=no
+
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
+fi
+
+     CC="$ac_save_cc"
+    { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_enable_visibility" >&5
+$as_echo "$ac_cv_enable_visibility" >&6; }
+
+    if test $ac_cv_enable_visibility = yes
+    then
+      CFLAGS_NODIST="$CFLAGS_NODIST -fvisibility=hidden"
+    fi
+
     # if using gcc on alpha, use -mieee to get (near) full IEEE 754
     # support.  Without this, treatment of subnormals doesn't follow
     # the standard.
@@ -7906,7 +7929,7 @@ sys/stat.h sys/syscall.h sys/sys_domain.h sys/termio.h sys/time.h \
 sys/times.h sys/types.h sys/uio.h sys/un.h sys/utsname.h sys/wait.h pty.h \
 libutil.h sys/resource.h netpacket/packet.h sysexits.h bluetooth.h \
 linux/tipc.h linux/random.h spawn.h util.h alloca.h endian.h \
-sys/endian.h sys/sysmacros.h linux/memfd.h sys/memfd.h sys/mman.h
+sys/endian.h sys/sysmacros.h linux/memfd.h linux/wait.h sys/memfd.h sys/mman.h
 do :
   as_ac_Header=`$as_echo "ac_cv_header_$ac_header" | $as_tr_sh`
 ac_fn_c_check_header_mongrel "$LINENO" "$ac_header" "$as_ac_Header" "$ac_includes_default"
@@ -10005,7 +10028,21 @@ $as_echo "no" >&6; }
 
 fi
 rm -f core conftest.err conftest.$ac_objext \
-    conftest$ac_exeext conftest.$ac_ext;;
+    conftest$ac_exeext conftest.$ac_ext
+# BUILD_GNU_TYPE + AIX_BUILDDATE are used to construct the platform_tag
+# of the AIX system used to build/package Python executable. This tag serves
+# as a baseline for bdist module packages
+               { $as_echo "$as_me:${as_lineno-$LINENO}: checking for the system builddate" >&5
+$as_echo_n "checking for the system builddate... " >&6; }
+               AIX_BUILDDATE=$(lslpp -Lcq bos.mp64 | awk -F:  '{ print $NF }')
+
+cat >>confdefs.h <<_ACEOF
+#define AIX_BUILDDATE $AIX_BUILDDATE
+_ACEOF
+
+               { $as_echo "$as_me:${as_lineno-$LINENO}: result: $AIX_BUILDDATE" >&5
+$as_echo "$AIX_BUILDDATE" >&6; }
+               ;;
 	*) ;;
 esac
 
@@ -10236,7 +10273,6 @@ else
   { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
 $as_echo "no" >&6; }
 fi
-
 
 
 
@@ -10518,6 +10554,9 @@ then
     $as_echo "#define _REENTRANT 1" >>confdefs.h
 
     posix_threads=yes
+    if test "$ac_sys_system" = "SunOS"; then
+        CFLAGS="$CFLAGS -D_REENTRANT"
+    fi
 elif test "$ac_cv_kpthread" = "yes"
 then
     CC="$CC -Kpthread"
@@ -11488,13 +11527,13 @@ fi
 for ac_func in alarm accept4 setitimer getitimer bind_textdomain_codeset chown \
  clock confstr copy_file_range ctermid dup3 execv explicit_bzero explicit_memset \
  faccessat fchmod fchmodat fchown fchownat \
- fexecve fdopendir fork fpathconf fstatat ftime ftruncate futimesat \
+ fdwalk fexecve fdopendir fork fpathconf fstatat ftime ftruncate futimesat \
  futimens futimes gai_strerror getentropy \
  getgrgid_r getgrnam_r \
  getgrouplist getgroups getlogin getloadavg getpeername getpgid getpid \
  getpriority getresuid getresgid getpwent getpwnam_r getpwuid_r getspnam getspent getsid getwd \
  if_nameindex \
- initgroups kill killpg lchmod lchown lockf linkat lstat lutimes mmap \
+ initgroups kill killpg lchown lockf linkat lstat lutimes mmap \
  memrchr mbrtowc mkdirat mkfifo \
  madvise mkfifoat mknod mknodat mktime mremap nice openat pathconf pause pipe2 plock poll \
  posix_fallocate posix_fadvise posix_spawn posix_spawnp pread preadv preadv2 \
@@ -12722,37 +12761,6 @@ _ACEOF
 if ac_fn_c_try_compile "$LINENO"; then :
 
 $as_echo "#define SETPGRP_HAVE_ARG 1" >>confdefs.h
-
-fi
-rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
-
-fi
-done
-
-for ac_func in gettimeofday
-do :
-  ac_fn_c_check_func "$LINENO" "gettimeofday" "ac_cv_func_gettimeofday"
-if test "x$ac_cv_func_gettimeofday" = xyes; then :
-  cat >>confdefs.h <<_ACEOF
-#define HAVE_GETTIMEOFDAY 1
-_ACEOF
- cat confdefs.h - <<_ACEOF >conftest.$ac_ext
-/* end confdefs.h.  */
-#include <sys/time.h>
-int
-main ()
-{
-gettimeofday((struct timeval*)0,(struct timezone*)0);
-  ;
-  return 0;
-}
-_ACEOF
-if ac_fn_c_try_compile "$LINENO"; then :
-
-else
-
-$as_echo "#define GETTIMEOFDAY_NO_TZ 1" >>confdefs.h
-
 
 fi
 rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
@@ -16780,9 +16788,12 @@ cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 
 
     #include <stdatomic.h>
-    atomic_int value = ATOMIC_VAR_INIT(1);
+    atomic_int int_var;
+    atomic_uintptr_t uintptr_var;
     int main() {
-      int loaded_value = atomic_load(&value);
+      atomic_store_explicit(&int_var, 5, memory_order_relaxed);
+      atomic_store_explicit(&uintptr_var, 0, memory_order_relaxed);
+      int loaded_value = atomic_load_explicit(&int_var, memory_order_seq_cst);
       return 0;
     }
 

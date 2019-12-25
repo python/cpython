@@ -869,16 +869,13 @@ class TestSMTPServer(smtpd.SMTPServer):
         """
         asyncore.loop(poll_interval, map=self._map)
 
-    def stop(self, timeout=None):
+    def stop(self):
         """
         Stop the thread by closing the server instance.
         Wait for the server thread to terminate.
-
-        :param timeout: How long to wait for the server thread
-                        to terminate.
         """
         self.close()
-        support.join_thread(self._thread, timeout)
+        support.join_thread(self._thread)
         self._thread = None
         asyncore.close_all(map=self._map, ignore_all=True)
 
@@ -922,16 +919,13 @@ class ControlMixin(object):
         self.ready.set()
         super(ControlMixin, self).serve_forever(poll_interval)
 
-    def stop(self, timeout=None):
+    def stop(self):
         """
         Tell the server thread to stop, and wait for it to do so.
-
-        :param timeout: How long to wait for the server thread
-                        to terminate.
         """
         self.shutdown()
         if self._thread is not None:
-            support.join_thread(self._thread, timeout)
+            support.join_thread(self._thread)
             self._thread = None
         self.server_close()
         self.ready.clear()
@@ -1065,8 +1059,8 @@ if hasattr(socket, "AF_UNIX"):
 # - end of server_helper section
 
 class SMTPHandlerTest(BaseTest):
-    # bpo-14314, bpo-19665, bpo-34092: don't wait forever, timeout of 1 minute
-    TIMEOUT = 60.0
+    # bpo-14314, bpo-19665, bpo-34092: don't wait forever
+    TIMEOUT = support.LONG_TIMEOUT
 
     def test_basic(self):
         sockmap = {}
@@ -1591,6 +1585,30 @@ class ConfigFileTest(BaseTest):
         self.apply_config(self.disable_test, disable_existing_loggers=False)
         self.assertFalse(logger.disabled)
 
+    def test_config_set_handler_names(self):
+        test_config = """
+            [loggers]
+            keys=root
+
+            [handlers]
+            keys=hand1
+
+            [formatters]
+            keys=form1
+
+            [logger_root]
+            handlers=hand1
+
+            [handler_hand1]
+            class=StreamHandler
+            formatter=form1
+
+            [formatter_form1]
+            format=%(levelname)s ++ %(message)s
+            """
+        self.apply_config(test_config)
+        self.assertEqual(logging.getLogger().handlers[0].name, 'hand1')
+
     def test_defaults_do_no_interpolation(self):
         """bpo-33802 defaults should not get interpolated"""
         ini = textwrap.dedent("""
@@ -1675,7 +1693,7 @@ class SocketHandlerTest(BaseTest):
                 self.root_logger.removeHandler(self.sock_hdlr)
                 self.sock_hdlr.close()
             if self.server:
-                self.server.stop(2.0)
+                self.server.stop()
         finally:
             BaseTest.tearDown(self)
 
@@ -1712,7 +1730,7 @@ class SocketHandlerTest(BaseTest):
         # one-second timeout on socket.create_connection() (issue #16264).
         self.sock_hdlr.retryStart = 2.5
         # Kill the server
-        self.server.stop(2.0)
+        self.server.stop()
         # The logging call should try to connect, which should fail
         try:
             raise RuntimeError('Deliberate mistake')
@@ -1786,7 +1804,7 @@ class DatagramHandlerTest(BaseTest):
         """Shutdown the UDP server."""
         try:
             if self.server:
-                self.server.stop(2.0)
+                self.server.stop()
             if self.sock_hdlr:
                 self.root_logger.removeHandler(self.sock_hdlr)
                 self.sock_hdlr.close()
@@ -1867,7 +1885,7 @@ class SysLogHandlerTest(BaseTest):
         """Shutdown the server."""
         try:
             if self.server:
-                self.server.stop(2.0)
+                self.server.stop()
             if self.sl_hdlr:
                 self.root_logger.removeHandler(self.sl_hdlr)
                 self.sl_hdlr.close()
@@ -2004,7 +2022,7 @@ class HTTPHandlerTest(BaseTest):
                 self.assertEqual(d['funcName'], ['test_output'])
                 self.assertEqual(d['msg'], [msg])
 
-            self.server.stop(2.0)
+            self.server.stop()
             self.root_logger.removeHandler(self.h_hdlr)
             self.h_hdlr.close()
 
@@ -3204,7 +3222,7 @@ class ConfigDictTest(BaseTest):
         finally:
             t.ready.wait(2.0)
             logging.config.stopListening()
-            support.join_thread(t, 2.0)
+            support.join_thread(t)
 
     def test_listen_config_10_ok(self):
         with support.captured_stdout() as output:
@@ -4315,7 +4333,7 @@ class BasicConfigTest(unittest.TestCase):
         logging._handlers.clear()
         logging._handlers.update(self.saved_handlers)
         logging._handlerList[:] = self.saved_handler_list
-        logging.root.level = self.original_logging_level
+        logging.root.setLevel(self.original_logging_level)
 
     def test_no_kwargs(self):
         logging.basicConfig()
@@ -5004,6 +5022,25 @@ class RotatingFileHandlerTest(BaseFileTest):
         rh.emit(self.next_rec())
         self.assertLogFile(namer(self.fn + ".2"))
         self.assertFalse(os.path.exists(namer(self.fn + ".3")))
+        rh.close()
+
+    def test_namer_rotator_inheritance(self):
+        class HandlerWithNamerAndRotator(logging.handlers.RotatingFileHandler):
+            def namer(self, name):
+                return name + ".test"
+
+            def rotator(self, source, dest):
+                if os.path.exists(source):
+                    os.rename(source, dest + ".rotated")
+
+        rh = HandlerWithNamerAndRotator(
+            self.fn, backupCount=2, maxBytes=1)
+        self.assertEqual(rh.namer(self.fn), self.fn + ".test")
+        rh.emit(self.next_rec())
+        self.assertLogFile(self.fn)
+        rh.emit(self.next_rec())
+        self.assertLogFile(rh.namer(self.fn + ".1") + ".rotated")
+        self.assertFalse(os.path.exists(rh.namer(self.fn + ".1")))
         rh.close()
 
     @support.requires_zlib

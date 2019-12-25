@@ -12,6 +12,7 @@ PS: In the standard Python distribution, this file is encoded in UTF-8
 and the list is in rough alphabetical order by last names.
 
 Aahz
+Edison Abahurire
 Michael Abbott
 Rajiv Abraham
 David Abrahams
@@ -22,6 +23,7 @@ Eitan Adler
 Anton Afanasyev
 Ali Afshar
 Nitika Agarwal
+Anjani Agrawal
 Pablo S. Blum de Aguiar
 Jim Ahlstrom
 Farhan Ahmad
@@ -58,6 +60,7 @@ Jon Anglin
 Michele Angrisano
 Ankur Ankan
 Heidi Annexstad
+David Antonini
 Ramchandra Apte
 Éric Araujo
 Alexandru Ardelean
@@ -81,6 +84,7 @@ Marcin Bachry
 Alfonso Baciero
 Dwayne Bailey
 Stig Bakken
+Aleksandr Balezin
 Greg Ball
 Luigi Ballabio
 Thomas Ballinger
@@ -249,6 +253,7 @@ Zach Byrne
 Vedran Čačić
 Nicolas Cadou
 Jp Calderone
+Ben Caller
 Arnaud Calmettes
 Daniel Calvelo
 Tony Campbell
@@ -320,6 +325,7 @@ Benjamin Collar
 Jeffery Collins
 Robert Collins
 Paul Colomiets
+Samuel Colvin
 Christophe Combelles
 Geremy Condra
 Denver Coneybeare
@@ -416,6 +422,7 @@ Dima Dorfman
 Yves Dorfsman
 Michael Dorman
 Steve Dower
+Allen Downey
 Cesar Douady
 Dean Draayer
 Fred L. Drake, Jr.
@@ -501,6 +508,7 @@ Tomer Filiba
 Segev Finer
 Jeffrey Finkelstein
 Russell Finn
+Neal Finne
 Dan Finnie
 Nils Fischbeck
 Frederik Fix
@@ -552,6 +560,7 @@ Paul Ganssle
 Lars Marius Garshol
 Jake Garver
 Dan Gass
+Tim Gates
 Andrew Gaul
 Matthieu Gautier
 Stephen M. Gava
@@ -715,6 +724,7 @@ Rob Hooft
 Michiel de Hoon
 Brian Hooper
 Randall Hopper
+Tim Hopper
 Nadav Horesh
 Alon Horev
 Jan Hosang
@@ -728,6 +738,7 @@ Miro Hrončok
 Chiu-Hsiang Hsu
 Chih-Hao Huang
 Christian Hudon
+Benoît Hudson
 Lawrence Hudson
 Michael Hudson
 Jim Hugunin
@@ -843,6 +854,7 @@ Dhiru Kholia
 Artem Khramov
 Akshit Khurana
 Sanyam Khurana
+Tyler Kieft
 Mads Kiilerich
 Jason Killen
 Jan Kim
@@ -858,6 +870,7 @@ Kamil Kisiel
 Akira Kitada
 Ron Klatchko
 Reid Kleckner
+Carsten Klein
 Bastian Kleineidam
 Bob Kline
 Matthias Klose
@@ -905,6 +918,7 @@ Steven Kryskalla
 Andrew Kuchling
 Dave Kuhlman
 Jon Kuhn
+Ilya Kulakov
 Upendra Kumar
 Toshio Kuratomi
 Ilia Kurenkov
@@ -949,6 +963,7 @@ Inyeol Lee
 James Lee
 John J. Lee
 Thomas Lee
+Robert Leenders
 Cooper Ry Lees
 Yaron de Leeuw
 Tennessee Leeuwenburg
@@ -974,11 +989,14 @@ Alain Leufroy
 Mark Levinson
 Mark Levitt
 Ivan Levkivskyi
+Ben Lewis
 William Lewis
 Akira Li
 Robert Li
 Xuanji Li
 Zekun Li
+Zheao Li
+Dan Lidral-Porter
 Robert van Liere
 Ross Light
 Shawn Ligocki
@@ -1397,6 +1415,7 @@ Giampaolo Rodola
 Mauro S. M. Rodrigues
 Elson Rodriguez
 Adi Roiban
+Diego Rojas
 Luis Rojas
 Mike Romberg
 Armin Ronacher
@@ -1506,6 +1525,7 @@ Dmitry Shachnev
 Anish Shah
 Daniel Shahaf
 Hui Shang
+Geoff Shannon
 Mark Shannon
 Ha Shao
 Richard Shapiro
@@ -1537,8 +1557,9 @@ Kirill Simonov
 Nathan Paul Simons
 Guilherme Simões
 Adam Simpkins
-Ravi Sinha
+Karthikeyan Singaravelan
 Mandeep Singh
+Ravi Sinha
 Janne Sinkkonen
 Ng Pheng Siong
 Yann Sionneau
@@ -1642,6 +1663,7 @@ Musashi Tamura
 William Tanksley
 Christian Tanzer
 Steven Taschuk
+Batuhan Taskaya
 Amy Taylor
 Julian Taylor
 Monty Taylor
@@ -1711,6 +1733,7 @@ Roger Upole
 Daniel Urban
 Michael Urman
 Hector Urtubia
+Elizabeth Uselton
 Lukas Vacek
 Ville Vainio
 Yann Vaginay
@@ -1871,20 +1894,12 @@ Nickolai Zeldovich
 Yuxiao Zeng
 Uwe Zessin
 Cheng Zhang
+George Zhang
 Kai Zhu
 Tarek Ziadé
 Jelle Zijlstra
 Gennadiy Zlobin
 Doug Zongker
 Peter Åstrand
-Zheao Li
-Carsten Klein
-Diego Rojas
-Edison Abahurire
-Geoff Shannon
-Batuhan Taskaya
-Aleksandr Balezin
-Robert Leenders
-Tim Hopper
-Dan Lidral-Porter
-Ngalim Siregar
+
+(Entries should be added in rough alphabetical order by last names)

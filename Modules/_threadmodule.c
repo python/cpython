@@ -993,6 +993,7 @@ struct bootstate {
     PyObject *args;
     PyObject *keyw;
     PyThreadState *tstate;
+    _PyRuntimeState *runtime;
 };
 
 static void
@@ -1000,11 +1001,13 @@ t_bootstrap(void *boot_raw)
 {
     struct bootstate *boot = (struct bootstate *) boot_raw;
     PyThreadState *tstate;
+    _PyRuntimeState *runtime;
     PyObject *res;
 
+    runtime = boot->runtime;
     tstate = boot->tstate;
     tstate->thread_id = PyThread_get_thread_ident();
-    _PyThreadState_Init(&_PyRuntime, tstate);
+    _PyThreadState_Init(tstate);
     PyEval_AcquireThread(tstate);
     tstate->interp->num_threads++;
     res = PyObject_Call(boot->func, boot->args, boot->keyw);
@@ -1025,13 +1028,14 @@ t_bootstrap(void *boot_raw)
     PyMem_DEL(boot_raw);
     tstate->interp->num_threads--;
     PyThreadState_Clear(tstate);
-    PyThreadState_DeleteCurrent();
+    _PyThreadState_DeleteCurrent(runtime);
     PyThread_exit_thread();
 }
 
 static PyObject *
 thread_PyThread_start_new_thread(PyObject *self, PyObject *fargs)
 {
+    _PyRuntimeState *runtime = &_PyRuntime;
     PyObject *func, *args, *keyw = NULL;
     struct bootstate *boot;
     unsigned long ident;
@@ -1062,6 +1066,7 @@ thread_PyThread_start_new_thread(PyObject *self, PyObject *fargs)
     boot->args = args;
     boot->keyw = keyw;
     boot->tstate = _PyThreadState_Prealloc(boot->interp);
+    boot->runtime = runtime;
     if (boot->tstate == NULL) {
         PyMem_DEL(boot);
         return PyErr_NoMemory();
@@ -1461,9 +1466,9 @@ static PyObject *
 _thread__is_main_interpreter_impl(PyObject *module)
 /*[clinic end generated code: output=7dd82e1728339adc input=cc1eb00fd4598915]*/
 {
-    _PyRuntimeState *runtime = &_PyRuntime;
-    PyInterpreterState *interp = _PyRuntimeState_GetThreadState(runtime)->interp;
-    return PyBool_FromLong(interp == runtime->interpreters.main);
+    PyThreadState *tstate = _PyThreadState_GET();
+    int is_main = _Py_IsMainInterpreter(tstate);
+    return PyBool_FromLong(is_main);
 }
 
 static PyMethodDef thread_methods[] = {

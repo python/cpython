@@ -148,7 +148,7 @@ process and user.
    versa).
 
    :data:`environb` is only available if :data:`supports_bytes_environ` is
-   True.
+   ``True``.
 
    .. versionadded:: 3.2
 
@@ -236,7 +236,7 @@ process and user.
    *default* if it doesn't. *key*, *default* and the result are bytes.
 
    :func:`getenvb` is only available if :data:`supports_bytes_environ`
-   is True.
+   is ``True``.
 
    .. availability:: most flavors of Unix.
 
@@ -1251,27 +1251,27 @@ or `the MSDN <https://msdn.microsoft.com/en-us/library/z0kc8e3z.aspx>`_ on Windo
       :exc:`InterruptedError` exception (see :pep:`475` for the rationale).
 
 
-.. function:: sendfile(out, in, offset, count)
-              sendfile(out, in, offset, count, [headers], [trailers], flags=0)
+.. function:: sendfile(out_fd, in_fd, offset, count)
+              sendfile(out_fd, in_fd, offset, count, [headers], [trailers], flags=0)
 
-   Copy *count* bytes from file descriptor *in* to file descriptor *out*
+   Copy *count* bytes from file descriptor *in_fd* to file descriptor *out_fd*
    starting at *offset*.
-   Return the number of bytes sent. When EOF is reached return 0.
+   Return the number of bytes sent. When EOF is reached return ``0``.
 
    The first function notation is supported by all platforms that define
    :func:`sendfile`.
 
    On Linux, if *offset* is given as ``None``, the bytes are read from the
-   current position of *in* and the position of *in* is updated.
+   current position of *in_fd* and the position of *in_fd* is updated.
 
    The second case may be used on Mac OS X and FreeBSD where *headers* and
    *trailers* are arbitrary sequences of buffers that are written before and
-   after the data from *in* is written. It returns the same as the first case.
+   after the data from *in_fd* is written. It returns the same as the first case.
 
-   On Mac OS X and FreeBSD, a value of 0 for *count* specifies to send until
-   the end of *in* is reached.
+   On Mac OS X and FreeBSD, a value of ``0`` for *count* specifies to send until
+   the end of *in_fd* is reached.
 
-   All platforms support sockets as *out* file descriptor, and some platforms
+   All platforms support sockets as *out_fd* file descriptor, and some platforms
    allow other types (e.g. regular file, pipe) as well.
 
    Cross-platform applications should not use *headers*, *trailers* and *flags*
@@ -1285,6 +1285,9 @@ or `the MSDN <https://msdn.microsoft.com/en-us/library/z0kc8e3z.aspx>`_ on Windo
       :meth:`socket.socket.sendfile`.
 
    .. versionadded:: 3.3
+
+   .. versionchanged:: 3.9
+      Parameters *out* and *in* was renamed to *out_fd* and *in_fd*.
 
 
 .. function:: set_blocking(fd, blocking)
@@ -3475,7 +3478,11 @@ written in Python, such as a mail server's external command delivery program.
    parent.  If an error occurs :exc:`OSError` is raised.
 
    Note that some platforms including FreeBSD <= 6.3 and Cygwin have
-   known issues when using fork() from a thread.
+   known issues when using ``fork()`` from a thread.
+
+   .. versionchanged:: 3.8
+      Calling ``fork()`` in a subinterpreter is no longer supported
+      (:exc:`RuntimeError` is raised).
 
    .. warning::
 
@@ -3491,6 +3498,10 @@ written in Python, such as a mail server's external command delivery program.
    new child's process id in the parent, and *fd* is the file descriptor of the
    master end of the pseudo-terminal.  For a more portable approach, use the
    :mod:`pty` module.  If an error occurs :exc:`OSError` is raised.
+
+   .. versionchanged:: 3.8
+      Calling ``forkpty()`` in a subinterpreter is no longer supported
+      (:exc:`RuntimeError` is raised).
 
    .. availability:: some flavors of Unix.
 
@@ -3534,6 +3545,19 @@ written in Python, such as a mail server's external command delivery program.
    Add *increment* to the process's "niceness".  Return the new niceness.
 
    .. availability:: Unix.
+
+
+.. function:: pidfd_open(pid, flags=0)
+
+   Return a file descriptor referring to the process *pid*.  This descriptor can
+   be used to perform process management without races and signals.  The *flags*
+   argument is provided for future extensions; no flag values are currently
+   defined.
+
+   See the :manpage:`pidfd_open(2)` man page for more details.
+
+   .. availability:: Linux 5.3+
+   .. versionadded:: 3.9
 
 
 .. function:: plock(op)
@@ -3879,7 +3903,9 @@ written in Python, such as a mail server's external command delivery program.
    :attr:`children_system`, and :attr:`elapsed` in that order.
 
    See the Unix manual page
-   :manpage:`times(2)` or the corresponding Windows Platform API documentation.
+   :manpage:`times(2)` and :manpage:`times(3)` manual page on Unix or `the GetProcessTimes MSDN
+   <https://docs.microsoft.com/windows/win32/api/processthreadsapi/nf-processthreadsapi-getprocesstimes>`
+   _ on Windows.
    On Windows, only :attr:`user` and :attr:`system` are known; the other
    attributes are zero.
 
@@ -3903,7 +3929,8 @@ written in Python, such as a mail server's external command delivery program.
 .. function:: waitid(idtype, id, options)
 
    Wait for the completion of one or more child processes.
-   *idtype* can be :data:`P_PID`, :data:`P_PGID` or :data:`P_ALL`.
+   *idtype* can be :data:`P_PID`, :data:`P_PGID`, :data:`P_ALL`, or
+   :data:`P_PIDFD` on Linux.
    *id* specifies the pid to wait on.
    *options* is constructed from the ORing of one or more of :data:`WEXITED`,
    :data:`WSTOPPED` or :data:`WCONTINUED` and additionally may be ORed with
@@ -3928,6 +3955,15 @@ written in Python, such as a mail server's external command delivery program.
 
    .. versionadded:: 3.3
 
+.. data:: P_PIDFD
+
+   This is a Linux-specific *idtype* that indicates that *id* is a file
+   descriptor that refers to a process.
+
+   .. availability:: Linux 5.4+
+
+   .. versionadded:: 3.9
+
 .. data:: WEXITED
           WSTOPPED
           WNOWAIT
@@ -3941,8 +3977,10 @@ written in Python, such as a mail server's external command delivery program.
 
 
 .. data:: CLD_EXITED
+          CLD_KILLED
           CLD_DUMPED
           CLD_TRAPPED
+          CLD_STOPPED
           CLD_CONTINUED
 
    These are the possible values for :attr:`si_code` in the result returned by
@@ -3951,6 +3989,9 @@ written in Python, such as a mail server's external command delivery program.
    .. availability:: Unix.
 
    .. versionadded:: 3.3
+
+   .. versionchanged:: 3.9
+      Added :data:`CLD_KILLED` and :data:`CLD_STOPPED` values.
 
 
 .. function:: waitpid(pid, options)

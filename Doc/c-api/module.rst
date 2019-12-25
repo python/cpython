@@ -61,7 +61,7 @@ Module Objects
    Return the dictionary object that implements *module*'s namespace; this object
    is the same as the :attr:`~object.__dict__` attribute of the module object.
    If *module* is not a module object (or a subtype of a module object),
-   :exc:`SystemError` is raised and *NULL* is returned.
+   :exc:`SystemError` is raised and ``NULL`` is returned.
 
    It is recommended extensions use other :c:func:`PyModule_\*` and
    :c:func:`PyObject_\*` functions rather than directly manipulate a module's
@@ -75,7 +75,7 @@ Module Objects
       single: SystemError (built-in exception)
 
    Return *module*'s :attr:`__name__` value.  If the module does not provide one,
-   or if it is not a string, :exc:`SystemError` is raised and *NULL* is returned.
+   or if it is not a string, :exc:`SystemError` is raised and ``NULL`` is returned.
 
    .. versionadded:: 3.3
 
@@ -88,14 +88,14 @@ Module Objects
 .. c:function:: void* PyModule_GetState(PyObject *module)
 
    Return the "state" of the module, that is, a pointer to the block of memory
-   allocated at module creation time, or *NULL*.  See
+   allocated at module creation time, or ``NULL``.  See
    :c:member:`PyModuleDef.m_size`.
 
 
 .. c:function:: PyModuleDef* PyModule_GetDef(PyObject *module)
 
    Return a pointer to the :c:type:`PyModuleDef` struct from which the module was
-   created, or *NULL* if the module wasn't created from a definition.
+   created, or ``NULL`` if the module wasn't created from a definition.
 
 
 .. c:function:: PyObject* PyModule_GetFilenameObject(PyObject *module)
@@ -106,7 +106,7 @@ Module Objects
 
    Return the name of the file from which *module* was loaded using *module*'s
    :attr:`__file__` attribute.  If this is not defined, or if it is not a
-   unicode string, raise :exc:`SystemError` and return *NULL*; otherwise return
+   unicode string, raise :exc:`SystemError` and return ``NULL``; otherwise return
    a reference to a Unicode object.
 
    .. versionadded:: 3.2
@@ -178,17 +178,17 @@ or request "multi-phase initialization" by returning the definition struct itsel
    .. c:member:: PyMethodDef* m_methods
 
       A pointer to a table of module-level functions, described by
-      :c:type:`PyMethodDef` values.  Can be *NULL* if no functions are present.
+      :c:type:`PyMethodDef` values.  Can be ``NULL`` if no functions are present.
 
    .. c:member:: PyModuleDef_Slot* m_slots
 
       An array of slot definitions for multi-phase initialization, terminated by
       a ``{0, NULL}`` entry.
-      When using single-phase initialization, *m_slots* must be *NULL*.
+      When using single-phase initialization, *m_slots* must be ``NULL``.
 
       .. versionchanged:: 3.5
 
-         Prior to version 3.5, this member was always set to *NULL*,
+         Prior to version 3.5, this member was always set to ``NULL``,
          and was defined as:
 
            .. c:member:: inquiry m_reload
@@ -196,20 +196,20 @@ or request "multi-phase initialization" by returning the definition struct itsel
    .. c:member:: traverseproc m_traverse
 
       A traversal function to call during GC traversal of the module object, or
-      *NULL* if not needed. This function may be called before module state
+      ``NULL`` if not needed. This function may be called before module state
       is allocated (:c:func:`PyModule_GetState()` may return `NULL`),
       and before the :c:member:`Py_mod_exec` function is executed.
 
    .. c:member:: inquiry m_clear
 
       A clear function to call during GC clearing of the module object, or
-      *NULL* if not needed. This function may be called before module state
+      ``NULL`` if not needed. This function may be called before module state
       is allocated (:c:func:`PyModule_GetState()` may return `NULL`),
       and before the :c:member:`Py_mod_exec` function is executed.
 
    .. c:member:: freefunc m_free
 
-      A function to call during deallocation of the module object, or *NULL* if
+      A function to call during deallocation of the module object, or ``NULL`` if
       not needed. This function may be called before module state
       is allocated (:c:func:`PyModule_GetState()` may return `NULL`),
       and before the :c:member:`Py_mod_exec` function is executed.
@@ -278,7 +278,7 @@ instance must be initialized with the following function:
    Ensures a module definition is a properly initialized Python object that
    correctly reports its type and reference count.
 
-   Returns *def* cast to ``PyObject*``, or *NULL* if an error occurred.
+   Returns *def* cast to ``PyObject*``, or ``NULL`` if an error occurred.
 
    .. versionadded:: 3.5
 
@@ -311,7 +311,7 @@ The available slot types are:
    The function receives a :py:class:`~importlib.machinery.ModuleSpec`
    instance, as defined in :PEP:`451`, and the module definition.
    It should return a new module object, or set an error
-   and return *NULL*.
+   and return ``NULL``.
 
    This function should be kept minimal. In particular, it should not
    call arbitrary Python code, as trying to import the same module again may
@@ -330,7 +330,7 @@ The available slot types are:
    :c:type:`PyModule_Type`. Any type can be used, as long as it supports
    setting and getting import-related attributes.
    However, only ``PyModule_Type`` instances may be returned if the
-   ``PyModuleDef`` has non-*NULL* ``m_traverse``, ``m_clear``,
+   ``PyModuleDef`` has non-``NULL`` ``m_traverse``, ``m_clear``,
    ``m_free``; non-zero ``m_size``; or slots other than ``Py_mod_create``.
 
 .. c:var:: Py_mod_exec
@@ -394,7 +394,7 @@ objects dynamically. Note that both ``PyModule_FromDefAndSpec`` and
 
 .. c:function:: int PyModule_AddFunctions(PyObject *module, PyMethodDef *functions)
 
-   Add the functions from the *NULL* terminated *functions* array to *module*.
+   Add the functions from the ``NULL`` terminated *functions* array to *module*.
    Refer to the :c:type:`PyMethodDef` documentation for details on individual
    entries (due to the lack of a shared module namespace, module level
    "functions" implemented in C typically receive the module as their first
@@ -417,7 +417,22 @@ state:
 
    Add an object to *module* as *name*.  This is a convenience function which can
    be used from the module's initialization function.  This steals a reference to
-   *value*.  Return ``-1`` on error, ``0`` on success.
+   *value* on success.  Return ``-1`` on error, ``0`` on success.
+
+   .. note::
+
+      Unlike other functions that steal references, ``PyModule_AddObject()`` only
+      decrements the reference count of *value* **on success**.
+
+      This means that its return value must be checked, and calling code must
+      :c:func:`Py_DECREF` *value* manually on error. Example usage::
+
+         Py_INCREF(spam);
+         if (PyModule_AddObject(module, "spam", spam) < 0) {
+             Py_DECREF(module);
+             Py_DECREF(spam);
+             return NULL;
+         }
 
 .. c:function:: int PyModule_AddIntConstant(PyObject *module, const char *name, long value)
 
@@ -430,7 +445,7 @@ state:
 
    Add a string constant to *module* as *name*.  This convenience function can be
    used from the module's initialization function.  The string *value* must be
-   *NULL*-terminated.  Return ``-1`` on error, ``0`` on success.
+   ``NULL``-terminated.  Return ``-1`` on error, ``0`` on success.
 
 
 .. c:function:: int PyModule_AddIntMacro(PyObject *module, macro)
@@ -461,7 +476,7 @@ since multiple such modules can be created from a single definition.
    Returns the module object that was created from *def* for the current interpreter.
    This method requires that the module object has been attached to the interpreter state with
    :c:func:`PyState_AddModule` beforehand. In case the corresponding module object is not
-   found or has not been attached to the interpreter state yet, it returns *NULL*.
+   found or has not been attached to the interpreter state yet, it returns ``NULL``.
 
 .. c:function:: int PyState_AddModule(PyObject *module, PyModuleDef *def)
 
@@ -470,10 +485,21 @@ since multiple such modules can be created from a single definition.
 
    Only effective on modules created using single-phase initialization.
 
+   Python calls ``PyState_AddModule`` automatically after importing a module,
+   so it is unnecessary (but harmless) to call it from module initialization
+   code. An explicit call is needed only if the module's own init code
+   subsequently calls ``PyState_FindModule``.
+   The function is mainly intended for implementing alternative import
+   mechanisms (either by calling it directly, or by referring to its
+   implementation for details of the required state updates).
+
+   Return 0 on success or -1 on failure.
+
    .. versionadded:: 3.3
 
 .. c:function:: int PyState_RemoveModule(PyModuleDef *def)
 
    Removes the module object created from *def* from the interpreter state.
+   Return 0 on success or -1 on failure.
 
    .. versionadded:: 3.3

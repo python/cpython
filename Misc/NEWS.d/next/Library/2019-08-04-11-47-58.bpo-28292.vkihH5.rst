@@ -1,3 +1,0 @@
-Mark calendar.py helper functions as being private.  The follows PEP 8
-guidance to maintain the style conventions in the module and it addresses a
-known case of user confusion.

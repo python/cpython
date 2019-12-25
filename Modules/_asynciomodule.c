@@ -33,6 +33,7 @@ static PyObject *asyncio_task_repr_info_func;
 static PyObject *asyncio_InvalidStateError;
 static PyObject *asyncio_CancelledError;
 static PyObject *context_kwname;
+static int module_initialized;
 
 static PyObject *cached_running_holder;
 static volatile uint64_t cached_running_holder_tsid;
@@ -1090,6 +1091,7 @@ static PyObject *
 _asyncio_Future_get_loop_impl(FutureObj *self)
 /*[clinic end generated code: output=119b6ea0c9816c3f input=cba48c2136c79d1f]*/
 {
+    ENSURE_FUTURE_ALIVE(self)
     Py_INCREF(self->fut_loop);
     return self->fut_loop;
 }
@@ -1379,6 +1381,12 @@ finally:
     PyErr_Restore(error_type, error_value, error_traceback);
 }
 
+static PyObject *
+future_cls_getitem(PyObject *cls, PyObject *type)
+{
+    Py_INCREF(cls);
+    return cls;
+}
 
 static PyAsyncMethods FutureType_as_async = {
     (unaryfunc)future_new_iter,         /* am_await */
@@ -1398,6 +1406,7 @@ static PyMethodDef FutureType_methods[] = {
     _ASYNCIO_FUTURE_DONE_METHODDEF
     _ASYNCIO_FUTURE_GET_LOOP_METHODDEF
     _ASYNCIO_FUTURE__REPR_INFO_METHODDEF
+    {"__class_getitem__", future_cls_getitem, METH_O|METH_CLASS, NULL},
     {NULL, NULL}        /* Sentinel */
 };
 
@@ -1806,6 +1815,21 @@ TaskWakeupMethWrapper_dealloc(TaskWakeupMethWrapper *o)
     Py_TYPE(o)->tp_free(o);
 }
 
+static PyObject *
+TaskWakeupMethWrapper_get___self__(TaskWakeupMethWrapper *o, void *Py_UNUSED(ignored))
+{
+    if (o->ww_task) {
+        Py_INCREF(o->ww_task);
+        return (PyObject*)o->ww_task;
+    }
+    Py_RETURN_NONE;
+}
+
+static PyGetSetDef TaskWakeupMethWrapper_getsetlist[] = {
+    {"__self__", (getter)TaskWakeupMethWrapper_get___self__, NULL, NULL},
+    {NULL} /* Sentinel */
+};
+
 static PyTypeObject TaskWakeupMethWrapper_Type = {
     PyVarObject_HEAD_INIT(NULL, 0)
     "TaskWakeupMethWrapper",
@@ -1817,6 +1841,7 @@ static PyTypeObject TaskWakeupMethWrapper_Type = {
     .tp_flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC,
     .tp_traverse = (traverseproc)TaskWakeupMethWrapper_traverse,
     .tp_clear = (inquiry)TaskWakeupMethWrapper_clear,
+    .tp_getset = TaskWakeupMethWrapper_getsetlist,
 };
 
 static PyObject *
@@ -2427,6 +2452,13 @@ done:
     FutureObj_finalize((FutureObj*)task);
 }
 
+static PyObject *
+task_cls_getitem(PyObject *cls, PyObject *type)
+{
+    Py_INCREF(cls);
+    return cls;
+}
+
 static void TaskObj_dealloc(PyObject *);  /* Needs Task_CheckExact */
 
 static PyMethodDef TaskType_methods[] = {
@@ -2447,6 +2479,7 @@ static PyMethodDef TaskType_methods[] = {
     _ASYNCIO_TASK_GET_NAME_METHODDEF
     _ASYNCIO_TASK_SET_NAME_METHODDEF
     _ASYNCIO_TASK_GET_CORO_METHODDEF
+    {"__class_getitem__", task_cls_getitem, METH_O|METH_CLASS, NULL},
     {NULL, NULL}        /* Sentinel */
 };
 
@@ -2628,18 +2661,19 @@ task_step_impl(TaskObj *task, PyObject *exc)
         if (_PyGen_FetchStopIterationValue(&o) == 0) {
             /* The error is StopIteration and that means that
                the underlying coroutine has resolved */
+
+            PyObject *res;
             if (task->task_must_cancel) {
                 // Task is cancelled right before coro stops.
-                Py_DECREF(o);
                 task->task_must_cancel = 0;
-                et = asyncio_CancelledError;
-                Py_INCREF(et);
-                ev = NULL;
-                tb = NULL;
-                goto set_exception;
+                res = future_cancel((FutureObj*)task);
             }
-            PyObject *res = future_set_result((FutureObj*)task, o);
+            else {
+                res = future_set_result((FutureObj*)task, o);
+            }
+
             Py_DECREF(o);
+
             if (res == NULL) {
                 return NULL;
             }
@@ -2656,7 +2690,6 @@ task_step_impl(TaskObj *task, PyObject *exc)
         /* Some other exception; pop it and call Task.set_exception() */
         PyErr_Fetch(&et, &ev, &tb);
 
-set_exception:
         assert(et);
         if (!ev || !PyObject_TypeCheck(ev, (PyTypeObject *) et)) {
             PyErr_NormalizeException(&et, &ev, &tb);
@@ -3247,6 +3280,12 @@ module_init(void)
     if (asyncio_mod == NULL) {
         goto fail;
     }
+    if (module_initialized != 0) {
+        return 0;
+    }
+    else {
+        module_initialized = 1;
+    }
 
     current_tasks = PyDict_New();
     if (current_tasks == NULL) {
@@ -3379,24 +3418,28 @@ PyInit__asyncio(void)
     Py_INCREF(&FutureType);
     if (PyModule_AddObject(m, "Future", (PyObject *)&FutureType) < 0) {
         Py_DECREF(&FutureType);
+        Py_DECREF(m);
         return NULL;
     }
 
     Py_INCREF(&TaskType);
     if (PyModule_AddObject(m, "Task", (PyObject *)&TaskType) < 0) {
         Py_DECREF(&TaskType);
+        Py_DECREF(m);
         return NULL;
     }
 
     Py_INCREF(all_tasks);
     if (PyModule_AddObject(m, "_all_tasks", all_tasks) < 0) {
         Py_DECREF(all_tasks);
+        Py_DECREF(m);
         return NULL;
     }
 
     Py_INCREF(current_tasks);
     if (PyModule_AddObject(m, "_current_tasks", current_tasks) < 0) {
         Py_DECREF(current_tasks);
+        Py_DECREF(m);
         return NULL;
     }
 
