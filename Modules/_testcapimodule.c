@@ -1970,7 +1970,7 @@ unicode_getutf8buffer(PyObject *self, PyObject *args)
 {
     PyObject *unicode;
     const char *errors = NULL;
-    if(!PyArg_ParseTuple(args, "U|s", &unicode, &errors)) {
+    if(!PyArg_ParseTuple(args, "O|s", &unicode, &errors)) {
         return NULL;
     }
 
@@ -2072,11 +2072,10 @@ unicode_test_getutf8buffer(PyObject *self, PyObject *Py_UNUSED(ignored))
                          "without exception set. (%s:%d)",
                          __FILE__, __LINE__);
         }
-        Py_DECREF(str);
         return NULL;
     }
 
-    if (buf.obj == str || !PyBytes_CheckExact(buf.obj)) {
+    if (!PyBytes_CheckExact(buf.obj)) {
         PyErr_Format(TestError,
                      "buf.obj must be a bytes object, got %R (%s:%d)",
                      buf.obj, __FILE__, __LINE__);
@@ -2099,8 +2098,7 @@ unicode_test_getutf8buffer(PyObject *self, PyObject *Py_UNUSED(ignored))
         PyErr_Format(TestError,
                      "Py_REFCNT(str) must not be changed. (%s:%d)",
                      __FILE__, __LINE__);
-        PyBuffer_Release(&buf);
-        Py_DECREF(str);
+        // Do not DECREF here because refcnt is broken.
         return NULL;
     }
 
@@ -2122,7 +2120,6 @@ unicode_test_getutf8buffer(PyObject *self, PyObject *Py_UNUSED(ignored))
                          "without exception set. (%s:%d)",
                          __FILE__, __LINE__);
         }
-        Py_DECREF(str);
         return NULL;
     }
 
@@ -2159,8 +2156,7 @@ unicode_test_getutf8buffer(PyObject *self, PyObject *Py_UNUSED(ignored))
                      "Py_REFCNT(str); expected %zd, got %zd. (%s:%d)",
                      refcnt + 1, Py_REFCNT(str),
                      __FILE__, __LINE__);
-        PyBuffer_Release(&buf);
-        Py_DECREF(str);
+        // Do not DECREF here because refcnt is broken.
         return NULL;
     }
 
@@ -2171,7 +2167,7 @@ unicode_test_getutf8buffer(PyObject *self, PyObject *Py_UNUSED(ignored))
                      "Py_REFCNT(str); expected %zd, got %zd. (%s:%d)",
                      refcnt, Py_REFCNT(str),
                      __FILE__, __LINE__);
-        Py_DECREF(str);
+        // Do not DECREF here because refcnt is broken.
         return NULL;
     }
 
