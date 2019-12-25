@@ -915,6 +915,7 @@ object::
   >>> mock.async_foo
   <AsyncMock name='mock.async_foo' id='...'>
 
+  .. versionadded:: 3.8
 
   .. method:: assert_awaited()
 
