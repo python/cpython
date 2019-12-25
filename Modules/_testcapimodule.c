@@ -1988,7 +1988,7 @@ unicode_getutf8buffer(PyObject *self, PyObject *args)
 }
 
 static PyObject *
-test_unicode_getutf8buffer(PyObject *self, PyObject *Py_UNUSED(ignored))
+unicode_test_getutf8buffer(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
     Py_buffer buf;
 
@@ -1999,16 +1999,9 @@ test_unicode_getutf8buffer(PyObject *self, PyObject *Py_UNUSED(ignored))
     }
     Py_ssize_t refcnt = Py_REFCNT(str);
 
-    if (PyUnicode_GetUTF8Buffer(str, NULL,  &buf) < 0) {
-        Py_DECREF(str);
-        if (!PyErr_Occurred()) {
-            PyErr_Format(TestError,
-                         "PyUnicode_GetUTF8Buffer() returned nonzero "
-                         "without exception set. (%s:%d)",
-                         __FILE__, __LINE__);
-        }
-        return NULL;
-    }
+    // PyUnicode_GetUTF8Buffer() must not fail for ASCII string.
+    int ret = PyUnicode_GetUTF8Buffer(str, NULL,  &buf);
+    assert(ret == 0);
 
     if (buf.obj != str) {
         PyErr_Format(TestError,
@@ -5613,7 +5606,7 @@ static PyMethodDef TestMethods[] = {
     {"unicode_asutf8",          unicode_asutf8,                  METH_VARARGS},
     {"unicode_asutf8andsize",   unicode_asutf8andsize,           METH_VARARGS},
     {"unicode_getutf8buffer",   unicode_getutf8buffer,           METH_VARARGS},
-    {"test_unicode_getutf8buffer", test_unicode_getutf8buffer,   METH_NOARGS},
+    {"unicode_test_getutf8buffer", unicode_test_getutf8buffer,   METH_NOARGS},
     {"unicode_findchar",        unicode_findchar,                METH_VARARGS},
     {"unicode_copycharacters",  unicode_copycharacters,          METH_VARARGS},
     {"unicode_encodedecimal",   unicode_encodedecimal,           METH_VARARGS},

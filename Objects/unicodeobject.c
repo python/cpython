@@ -4008,11 +4008,12 @@ PyUnicode_GetUTF8Buffer(PyObject *unicode, const char *errors,
         return -1;
     }
 
-    if (PyUnicode_UTF8(unicode) != NULL) {
+    if (PyUnicode_UTF8(unicode) != NULL
+            && Py_TYPE(unicode)->tp_as_buffer == NULL) {
         return PyBuffer_FillInfo(view, unicode,
                 PyUnicode_UTF8(unicode),
                 PyUnicode_UTF8_LENGTH(unicode),
-                1, PyBUF_SIMPLE);
+                /* readonly */ 1, PyBUF_SIMPLE);
     }
 
     // Unlike PyUnicode_AsUTF8AndSize(), this function doesn't
