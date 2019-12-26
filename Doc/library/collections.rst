@@ -37,7 +37,7 @@ Collections Abstract Base Classes
 ---------------------------------
 
 .. deprecated-removed:: 3.3 3.9
-    
+
 Moved :ref:`collections-abstract-base-classes` to the :mod:`collections.abc` module.
 For backwards compatibility, they continue to be visible in this module through Python 3.8.
 
