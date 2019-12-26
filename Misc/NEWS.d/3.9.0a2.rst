@@ -257,7 +257,7 @@ Fix :exc:`NameError` in :mod:`zipimport`. Patch by Karthikeyan Singaravelan.
 .. nonce: QDtIxI
 .. section: Library
 
-Update importliib.metadata to include improvements from importlib_metadata
+Update importlib.metadata to include improvements from importlib_metadata
 1.3 including better serialization of EntryPoints and improved documentation
 for custom finders.
 
