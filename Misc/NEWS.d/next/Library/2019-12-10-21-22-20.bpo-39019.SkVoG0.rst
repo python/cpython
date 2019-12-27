@@ -1,1 +1,1 @@
-Implement ``__class_getitem__`` for ``os.DirEntry``.
+Implement dummy ``__class_getitem__`` for ``os.DirEntry``.
