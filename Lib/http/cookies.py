@@ -294,6 +294,14 @@ class Morsel(dict):
             dict.__setitem__(self, key, "")
 
     def __class_getitem__(cls, type):
+        """Provide minimal support for using this class as generic
+        (for example in type annotations).
+
+        See PEP 484 and PEP 560 for more details. For example, `Morsel[T]`
+        is a valid expression at runtime (type argument `T` indicates the
+        type used for mode). Note, no type checking happens at runtime, but
+        a static type checker can be used.
+        """
         return cls
 
     @property
