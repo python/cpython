@@ -649,8 +649,9 @@ class SpooledTemporaryFile:
 
         See PEP 484 and PEP 560 for more details. For example,
         `SpooledTemporaryFile[str]` is a valid expression at runtime (type
-        argument `str` indicates the type used for mode). Note, no type
-        checking happens at runtime, but a static type checker can be used.
+        argument `str` indicates whether the file is open in bytes or text
+        mode). Note, no type checking happens at runtime, but a static type
+        checker can be used.
         """
         return cls
 
