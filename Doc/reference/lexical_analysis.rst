@@ -929,4 +929,4 @@ occurrence outside string literals and comments is an unconditional error:
 
 .. rubric:: Footnotes
 
-.. [#] http://www.unicode.org/Public/11.0.0/ucd/NameAliases.txt
+.. [#] http://www.unicode.org/Public/12.1.0/ucd/NameAliases.txt
