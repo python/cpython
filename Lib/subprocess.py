@@ -446,6 +446,9 @@ class CompletedProcess(object):
             args.append('stderr={!r}'.format(self.stderr))
         return "{}({})".format(type(self).__name__, ', '.join(args))
 
+    def __class_getitem__(cls, type):
+        return cls
+
     def check_returncode(self):
         """Raise CalledProcessError if the exit code is non-zero."""
         if self.returncode:
@@ -986,6 +989,9 @@ class Popen(object):
         if len(obj_repr) > 80:
             obj_repr = obj_repr[:76] + "...>"
         return obj_repr
+
+    def __class_getitem__(cls, type):
+        return cls
 
     @property
     def universal_newlines(self):
