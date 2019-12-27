@@ -299,7 +299,7 @@ class Morsel(dict):
 
         See PEP 484 and PEP 560 for more details. For example, `Morsel[T]`
         is a valid expression at runtime (type argument `T` indicates the
-        type used for mode). Note, no type checking happens at runtime, but
+        type of pair). Note, no type checking happens at runtime, but
         a static type checker can be used.
         """
         return cls
