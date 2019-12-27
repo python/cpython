@@ -153,14 +153,14 @@ def addLevelName(level, levelName):
         _releaseLock()
 
 if hasattr(sys, '_getframe'):
-    currentframe = lambda: sys._getframe(3)
+    currentframe = lambda level: sys._getframe(level)
 else: #pragma: no cover
-    def currentframe():
+    def currentframe(level):
         """Return the frame object for the caller's stack frame."""
         try:
             raise Exception
         except Exception:
-            return sys.exc_info()[2].tb_frame.f_back
+            return sys.exc_info()[level-1].tb_frame.f_back
 
 #
 # _srcfile is used when walking the stack to check when we've got the first
@@ -1506,17 +1506,11 @@ class Logger(Filterer):
         Find the stack frame of the caller so that we can note the source
         file name, line number and function name.
         """
-        f = currentframe()
+        f = currentframe(2 + stacklevel)
         #On some versions of IronPython, currentframe() returns None if
         #IronPython isn't run with -X:Frames.
         if f is not None:
             f = f.f_back
-        orig_f = f
-        while f and stacklevel > 1:
-            f = f.f_back
-            stacklevel -= 1
-        if not f:
-            f = orig_f
         rv = "(unknown file)", 0, "(unknown function)", None
         while hasattr(f, "f_code"):
             co = f.f_code
