@@ -202,9 +202,9 @@ class _WindowsFlavour(_Flavour):
                     except FileNotFoundError:
                         previous_s = s
                         s, tail = os.path.split(s)
-                        tail_parts.append(tail)
                         if previous_s == s:
-                            return path
+                            return os.path.join(s or os.getcwd(), *reversed(tail_parts))
+                        tail_parts.append(tail)
                     else:
                         return os.path.join(s, *reversed(tail_parts))
         # Means fallback on absolute

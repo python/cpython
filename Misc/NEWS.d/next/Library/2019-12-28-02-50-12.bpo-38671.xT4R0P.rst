@@ -1,0 +1,2 @@
+Ensure pathlib.Path.resolve(strict=False) returns an absolute path on
+Windows when the path is relative and does not exist.
