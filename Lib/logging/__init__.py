@@ -1403,6 +1403,7 @@ class Logger(Filterer):
         self.handlers = []
         self.disabled = False
         self._cache = {}
+        self.default_stack_level = 2
 
     def setLevel(self, level):
         """
@@ -1506,7 +1507,7 @@ class Logger(Filterer):
         Find the stack frame of the caller so that we can note the source
         file name, line number and function name.
         """
-        f = currentframe(2 + stacklevel)
+        f = currentframe(self.default_stack_level + stacklevel)
         #On some versions of IronPython, currentframe() returns None if
         #IronPython isn't run with -X:Frames.
         if f is not None:
