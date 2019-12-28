@@ -1,0 +1,1 @@
+`heapq.merge` is now implemented in C with a slightly different algorithm, speeding it up significantly. It also now a class rather than a generator function.
