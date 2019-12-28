@@ -69,7 +69,7 @@ the "elif" keyword and not to its condition, making it consistent with the
 .. nonce: 8OyT5P
 .. section: Core and Builtins
 
-In Python 3.9.0a1, sys.argv[0] was made an asolute path if a filename was
+In Python 3.9.0a1, sys.argv[0] was made an absolute path if a filename was
 specified on the command line. Revert this change, since most users expect
 sys.argv to be unmodified.
 
@@ -516,7 +516,7 @@ from a coroutine.
 .. section: Library
 
 AsyncMock fix for return values that are awaitable types.  This also covers
-side_effect iterable values that happend to be awaitable, and wraps
+side_effect iterable values that happened to be awaitable, and wraps
 callables that return an awaitable type. Before these awaitables were being
 awaited instead of being returned as is.
 
@@ -893,7 +893,7 @@ previous `import posix`. Patch by Benoît Hudson.
 .. nonce: _3xjKG
 .. section: IDLE
 
-Excape key now closes IDLE completion windows.  Patch by Johnny Najera.
+Escape key now closes IDLE completion windows.  Patch by Johnny Najera.
 
 ..
 
