@@ -538,6 +538,438 @@ _heapq__heapify_max(PyObject *module, PyObject *heap)
     return heapify_internal(heap, siftup_max);
 }
 
+/* merge object *************************************************************/
+
+typedef struct mergeobject{
+    PyObject_HEAD
+    PyObject *iterators;
+    PyObject *keyfunc;  /* called to compare items */
+    PyObject *tree;     /* tree of compared items stored as a list */
+    int reverse;
+} mergeobject;
+
+static PyTypeObject merge_type;
+
+
+/* Siftup, except replace the leaves using the iterators, not the root. */
+static int
+_tree_sift(mergeobject *mo, Py_ssize_t pos) {
+    PyObject *tree = mo->tree;
+    Py_ssize_t n;
+    Py_ssize_t childpos;
+    PyObject *child, *otherchild, **arr, *it;
+    int cmp;
+
+    n = PyList_GET_SIZE(mo->iterators);
+    assert(0 <= pos);
+    assert(pos < 2 * n - 1);
+
+    arr = _PyList_ITEMS(mo->tree);
+    if (mo->reverse) {
+        while (pos < n - 1) {
+            childpos = 2 * pos + 1;
+            child = arr[childpos];
+            otherchild = arr[childpos + 1];
+            if (otherchild != NULL) {
+                if (child == NULL) {
+                    child = otherchild;
+                    childpos++;
+                }
+                else {
+                    cmp = PyObject_RichCompareBool(
+                        child, otherchild, Py_LT);
+                    if (cmp < 0) {
+                        arr[pos] = NULL;
+                        return -1;
+                    }
+                    if (cmp > 0) {
+                        child = otherchild;
+                        childpos++;
+                    }
+                }
+            }
+            arr[pos] = child;
+            pos = childpos;
+        }
+    }
+    else {
+        while (pos < n - 1) {
+            childpos = 2 * pos + 1;
+            child = arr[childpos];
+            otherchild = arr[childpos + 1];
+            if (otherchild != NULL) {
+                if (child == NULL) {
+                    child = otherchild;
+                    childpos++;
+                }
+                else {
+                    cmp = PyObject_RichCompareBool(
+                        otherchild, child, Py_LT);
+                    if (cmp < 0) {
+                        arr[pos] = NULL;
+                        return -1;
+                    }
+                    if (cmp > 0) {
+                        child = otherchild;
+                        childpos++;
+                    }
+                }
+            }
+            arr[pos] = child;
+            pos = childpos;
+        }
+    }
+    arr[pos] = NULL;
+    it = PyList_GET_ITEM(mo->iterators, pos - (n - 1));
+    if (it == NULL)
+        return 0;
+    child = PyIter_Next(it);
+    if (child == NULL) {
+        PyList_SET_ITEM(mo->iterators, pos - (n - 1), NULL);
+        Py_DECREF(it);
+        if (PyErr_Occurred())
+            return -1;
+    }
+    else
+        arr[pos] = child;
+    return 0;
+}
+
+static int
+_tree_sift_key(mergeobject *mo, Py_ssize_t pos) {
+    PyObject *tree = mo->tree;
+    PyObject **arr, *it;
+    PyObject *childkey, *childvalue, *otherchildkey, *otherchildvalue;
+    Py_ssize_t n, childpos;
+    int cmp;
+
+    n = PyList_GET_SIZE(mo->iterators);
+    assert(0 <= pos);
+    assert(pos < 2*(2*n-1));
+    assert(pos % 2 == 0);
+
+    arr = _PyList_ITEMS(mo->tree);
+    if (mo->reverse)
+    {
+        while (pos < 2 * (n - 1)) {
+            /* Use an array-based tree, except key/val pairs are
+               stored as adjacent 2-elements long array elements. */
+            childpos = 2 * pos + 2;
+            childkey = arr[childpos];
+            childvalue = arr[childpos + 1];
+            otherchildkey = arr[childpos + 2];
+            otherchildvalue = arr[childpos + 3];
+            if (otherchildkey != NULL) {
+                if (childkey == NULL) {
+                    childpos += 2;
+                    childkey = otherchildkey;
+                    childvalue = otherchildvalue;
+                }
+                else {
+                    cmp = PyObject_RichCompareBool(
+                        childkey, otherchildkey, Py_LT);
+                    if (cmp < 0) {
+                        arr[pos] = NULL;
+                        arr[pos + 1] = NULL;
+                        return -1;
+                    }
+                    if (cmp > 0) {
+                        childpos += 2;
+                        childkey = otherchildkey;
+                        childvalue = otherchildvalue;
+                    }
+                }
+            }
+            arr[pos] = childkey;
+            arr[pos + 1] = childvalue;
+            pos = childpos;
+        }
+    }
+    else {
+        while (pos < 2 * (n - 1)) {
+            childpos = 2 * pos + 2;
+            childkey = arr[childpos];
+            childvalue = arr[childpos + 1];
+            otherchildkey = arr[childpos + 2];
+            otherchildvalue = arr[childpos + 3];
+            if (otherchildkey != NULL) {
+                if (childkey == NULL) {
+                    childpos += 2;
+                    childkey = otherchildkey;
+                    childvalue = otherchildvalue;
+                }
+                else {
+                    cmp = PyObject_RichCompareBool(
+                        otherchildkey, childkey, Py_LT);
+                    if (cmp < 0) {
+                        arr[pos] = NULL;
+                        arr[pos + 1] = NULL;
+                        return -1;
+                    }
+                    if (cmp > 0) {
+                        childpos += 2;
+                        childkey = otherchildkey;
+                        childvalue = otherchildvalue;
+                    }
+                }
+            }
+            arr[pos] = childkey;
+            arr[pos + 1] = childvalue;
+            pos = childpos;
+        }
+    }
+    arr[pos] = NULL;
+    arr[pos + 1] = NULL;
+
+    it = PyList_GET_ITEM(mo->iterators, pos/2 - (n - 1));
+    if (it == NULL)
+        return 0;
+    childvalue = PyIter_Next(it);
+    if (childvalue == NULL) {
+        Py_DECREF(it);
+        PyList_SET_ITEM(mo->iterators, pos/2 - (n - 1), NULL);
+        if (PyErr_Occurred())
+            return -1;
+    }
+    else {
+        childkey = _PyObject_CallOneArg(mo->keyfunc, childvalue);
+        if (childkey == NULL)
+            return -1;
+        arr[pos] = childkey;
+        arr[pos+1] = childvalue;
+    }
+    return 0;
+}
+
+/* shift = 2 * n - (1 << n.bit_length()) */
+static Py_ssize_t
+get_iter_shift(Py_ssize_t n) {
+    int n0 = n;
+    int m = 1;
+    while (n > 0) {
+        n >>= 1;
+        m <<= 1;
+    }
+    return (2 * n0) - m;
+}
+
+static PyObject *
+merge_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
+{
+    PyObject *keyfunc = NULL;
+    int reverse = 0;
+    mergeobject *mo;
+    PyObject *iterators = NULL, *tree = NULL;
+    Py_ssize_t num_iters, shift, i;
+
+    if (kwds != NULL) {
+        char *kwlist[] = {"key", "reverse", 0};
+        PyObject *tmpargs = PyTuple_New(0);
+        if (tmpargs == NULL)
+            return NULL;
+        if (!PyArg_ParseTupleAndKeywords(tmpargs, kwds, "|Op:merge",
+                                         kwlist, &keyfunc, &reverse)) {
+            Py_DECREF(tmpargs);
+            return NULL;
+        }
+        Py_DECREF(tmpargs);
+    }
+
+    if (keyfunc == Py_None)
+        keyfunc = NULL;
+    Py_XINCREF(keyfunc);
+
+    assert(PyTuple_CheckExact(args));
+    num_iters = PyTuple_GET_SIZE(args);
+
+    if (num_iters == 0) {
+        mo = (mergeobject *)type->tp_alloc(type, 0);
+        if (mo == NULL)
+            return NULL;
+        mo->iterators = NULL;
+        mo->tree = NULL;
+        mo->keyfunc = NULL;
+        mo->reverse = 0;
+        return (PyObject *) mo;
+    }
+
+    iterators = PyList_New(num_iters);
+    if (iterators == NULL)
+        goto error;
+
+    /* Store the tree as a list with n-1 internal nodes and n leaves.
+       If a key is being used, store keys next to original items. */
+    tree = PyList_New(keyfunc? num_iters * 4 - 2: num_iters * 2 - 1);
+    if (tree == NULL)
+        goto error;
+
+    /* To ensure stability, we need to order the iterators so that the
+     * iterator derived from the first iterable passed is exactly the iterator
+     * that supplies the leftmost leaf node in the tree. If we shift the array
+     * accordingly, then we can always supply tree[i] with elements from
+     * iterators[i-(n-1)].
+     */
+    shift = get_iter_shift(num_iters);
+    assert(shift >= 0);
+
+    /* Now make the shifted list of iterators. */
+    for (i = 0; i < num_iters; i++) {
+        PyObject *iterable = PyTuple_GET_ITEM(args, (i + shift) % num_iters);
+        PyObject *iterator = PyObject_GetIter(iterable);
+        if (iterator == NULL)
+            goto error;
+        PyList_SET_ITEM(iterators, i, iterator);
+    }
+
+    mo = (mergeobject *)type->tp_alloc(type, 0);
+    if (mo == NULL)
+        goto error;
+    mo->iterators = iterators;
+    mo->tree = tree;
+    mo->keyfunc = keyfunc;
+    mo->reverse = reverse;
+
+    /* Heapify, except leaves are supplied by iterators.
+       Skip the root node--it will be loaded on the first call of next.
+       */
+    if (keyfunc == NULL) {
+        for (i = 2 * num_iters - 2; i > 0; i--) {
+            if (_tree_sift(mo, i) < 0)
+                goto error;
+        }
+    }
+    else {
+        for (i = 4 * num_iters - 4; i > 0; i -= 2) {
+            if (_tree_sift_key(mo, i) < 0)
+                goto error;
+        }
+    }
+    return (PyObject *) mo;
+
+error:
+    Py_XDECREF(keyfunc);
+    Py_XDECREF(iterators);
+    Py_XDECREF(tree);
+    return NULL;
+}
+
+static void
+merge_dealloc(mergeobject *mo)
+{
+    PyObject_GC_UnTrack(mo);
+    Py_XDECREF(mo->tree);
+    Py_XDECREF(mo->iterators);
+    Py_XDECREF(mo->keyfunc);
+    Py_TYPE(mo)->tp_free(mo);
+}
+
+static PyObject *
+merge_sizeof(mergeobject *mo, void *unused)
+{
+    Py_ssize_t res = _PyObject_SIZE(Py_TYPE(mo));
+    res += PyList_GET_SIZE(mo->iterators) * sizeof(PyObject *);
+    res += PyList_GET_SIZE(mo->tree) * sizeof(PyObject *);
+    return PyLong_FromSsize_t(res);
+}
+
+static int
+merge_traverse(mergeobject *mo, visitproc visit, void *arg)
+{
+    Py_VISIT(mo->tree);
+    Py_VISIT(mo->iterators);
+    Py_VISIT(mo->keyfunc);
+    return 0;
+}
+
+static PyObject *
+merge_next(mergeobject *mo) {
+    PyObject *result;
+    if (mo->tree == NULL)
+        return NULL;
+    if (mo->keyfunc == NULL) {
+        if (_tree_sift(mo, 0) < 0)
+            return NULL;
+        result = PyList_GET_ITEM(mo->tree, 0);
+        PyList_SET_ITEM(mo->tree, 0, NULL);
+    }
+    else {
+        if (_tree_sift_key(mo, 0) < 0)
+            return NULL;
+        Py_XDECREF(PyList_GET_ITEM(mo->tree, 0));
+        PyList_SET_ITEM(mo->tree, 0, NULL);
+        result = PyList_GET_ITEM(mo->tree, 1);
+        PyList_SET_ITEM(mo->tree, 1, NULL);
+    }
+    return result;
+}
+
+
+PyDoc_STRVAR(sizeof_doc, "Returns size in memory, in bytes.");
+
+static PyMethodDef merge_methods[] = {
+    {"__sizeof__", (PyCFunction)merge_sizeof, METH_NOARGS, sizeof_doc},
+    {NULL, NULL}
+};
+
+PyDoc_STRVAR(merge_doc,
+"Merge multiple sorted inputs into a single sorted output.\n\
+\n\
+Similar to sorted(itertools.chain(*iterables)) but returns a generator,\n\
+does not pull the data into memory all at once, and assumes that each of\n\
+the input streams is already sorted (smallest to largest).\n\
+\n\
+>>> list(merge([1,3,5,7], [0,2,4,8], [5,10,15,20], [], [25]))\n\
+[0, 1, 2, 3, 4, 5, 5, 7, 8, 10, 15, 20, 25]\n\
+\n\
+If *key* is not None, applies a key function to each element to determine\n\
+its sort order.\n\
+\n\
+>>> list(merge(['dog', 'horse'], ['cat', 'fish', 'kangaroo'], key=len))\n\
+['dog', 'cat', 'fish', 'horse', 'kangaroo']");
+
+static PyTypeObject merge_type = {
+    PyVarObject_HEAD_INIT(NULL, 0)
+   "heapq.merge",                       /* tp_name */
+    sizeof(mergeobject),                /* tp_basicsize */
+    0,                                  /* tp_itemsize */
+    /* methods */
+    (destructor)merge_dealloc,          /* tp_dealloc */
+    0,                                  /* tp_vectorcall_offset */
+    0,                                  /* tp_getattr */
+    0,                                  /* tp_setattr */
+    0,                                  /* tp_as_async */
+    0,                                  /* tp_repr */
+    0,                                  /* tp_as_number */
+    0,                                  /* tp_as_sequence */
+    0,                                  /* tp_as_mapping */
+    0,                                  /* tp_hash */
+    0,                                  /* tp_call */
+    0,                                  /* tp_str */
+    PyObject_GenericGetAttr,            /* tp_getattro */
+    0,                                  /* tp_setattro */
+    0,                                  /* tp_as_buffer */
+    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC |
+        Py_TPFLAGS_BASETYPE,            /* tp_flags */
+    merge_doc,                          /* tp_doc */
+    (traverseproc)merge_traverse,       /* tp_traverse */
+    0,                                  /* tp_clear */
+    0,                                  /* tp_richcompare */
+    0,                                  /* tp_weaklistoffset */
+    PyObject_SelfIter,                  /* tp_iter */
+    (iternextfunc)merge_next,           /* tp_iternext */
+    merge_methods,                      /* tp_methods */
+    0,                                  /* tp_members */
+    0,                                  /* tp_getset */
+    0,                                  /* tp_base */
+    0,                                  /* tp_dict */
+    0,                                  /* tp_descr_get */
+    0,                                  /* tp_descr_set */
+    0,                                  /* tp_dictoffset */
+    0,                                  /* tp_init */
+    0,                                  /* tp_alloc */
+    merge_new,                          /* tp_new */
+    PyObject_GC_Del,                    /* tp_free */
+};
 
 static PyMethodDef heapq_methods[] = {
     _HEAPQ_HEAPPUSH_METHODDEF
@@ -697,6 +1129,12 @@ PyInit__heapq(void)
     m = PyModule_Create(&_heapqmodule);
     if (m == NULL)
         return NULL;
+
+    if (PyType_Ready(&merge_type) < 0)
+        return NULL;
+    Py_INCREF(&merge_type);
+    PyModule_AddObject(m, _PyType_Name(&merge_type), (PyObject *)&merge_type);
+
     about = PyUnicode_DecodeUTF8(__about__, strlen(__about__), NULL);
     PyModule_AddObject(m, "__about__", about);
     return m;
