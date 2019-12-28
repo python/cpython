@@ -1864,7 +1864,7 @@ hamt_node_array_without(PyHamtNode_Array *self,
                     continue;
                 }
 
-                bitmap |= 1 << i;
+                bitmap |= UINT32_C(1) << i;
 
                 if (IS_BITMAP_NODE(node)) {
                     PyHamtNode_Bitmap *child = (PyHamtNode_Bitmap *)node;
