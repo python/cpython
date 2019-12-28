@@ -860,8 +860,10 @@ static PyObject *
 merge_sizeof(mergeobject *mo, void *unused)
 {
     Py_ssize_t res = _PyObject_SIZE(Py_TYPE(mo));
-    res += PyList_GET_SIZE(mo->iterators) * sizeof(PyObject *);
-    res += PyList_GET_SIZE(mo->tree) * sizeof(PyObject *);
+    if (mo->iterators)
+        res += PyList_GET_SIZE(mo->iterators) * sizeof(PyObject *);
+    if (mo->tree)
+        res += PyList_GET_SIZE(mo->tree) * sizeof(PyObject *);
     return PyLong_FromSsize_t(res);
 }
 

@@ -312,9 +312,7 @@ def _siftup_max(heap, pos):
     _siftdown_max(heap, startpos, pos)
 
 class merge:
-    '''merge(*iterables, key=None, reverse=False) --> merge object
-
-    Merge multiple sorted inputs into a single sorted output.
+    '''Merge multiple sorted inputs into a single sorted output.
 
     Similar to sorted(itertools.chain(*iterables)) but returns an iterator,
     does not pull the data into memory all at once, and assumes that each of
