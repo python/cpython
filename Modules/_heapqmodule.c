@@ -923,7 +923,9 @@ static PyMethodDef merge_methods[] = {
 };
 
 PyDoc_STRVAR(merge_doc,
-"Merge multiple sorted inputs into a single sorted output.\n\
+"merge(*iterables, key=None, reverse=False) --> merge object\n\
+\n\
+Merge multiple sorted inputs into a single sorted output.\n\
 \n\
 Similar to sorted(itertools.chain(*iterables)) but returns an iterator,\n\
 does not pull the data into memory all at once, and assumes that each of\n\
