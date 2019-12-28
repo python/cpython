@@ -37,31 +37,35 @@ class DictTest(unittest.TestCase):
             dictliteral = '{' + ', '.join(formatted_items) + '}'
             self.assertEqual(eval(dictliteral), dict(items))
 
-    def test_addition(self):
+    def test_pep_584(self):
+
         a = {0: 0, 1: 1, 2: 1}
         b = {1: 1, 2: 2, 3: 3}
 
         c = a.copy()
-        c += b
-        self.assertEqual(a + b, {0: 0, 1: 1, 2: 2, 3: 3})
+        c |= b
+
+        self.assertEqual(a | b, {0: 0, 1: 1, 2: 2, 3: 3})
         self.assertEqual(c, {0: 0, 1: 1, 2: 2, 3: 3})
 
         c = b.copy()
-        c += a
-        self.assertEqual(b + a, {1: 1, 2: 1, 3: 3, 0: 0})
+        c |= a
+
+        self.assertEqual(b | a, {1: 1, 2: 1, 3: 3, 0: 0})
         self.assertEqual(c, {1: 1, 2: 1, 3: 3, 0: 0})
 
         c = a.copy()
-        c += [(1, 1), (2, 2), (3, 3)]
+        c |= [(1, 1), (2, 2), (3, 3)]
+
         self.assertEqual(c, {0: 0, 1: 1, 2: 2, 3: 3})
 
-        self.assertIs(a.__add__(None), NotImplemented)
-        self.assertIs(a.__add__(()), NotImplemented)
-        self.assertIs(a.__add__("BAD"), NotImplemented)
+        self.assertIs(a.__or__(None), NotImplemented)
+        self.assertIs(a.__or__(()), NotImplemented)
+        self.assertIs(a.__or__("BAD"), NotImplemented)
 
-        self.assertRaises(TypeError, a.__iadd__, None)
-        self.assertEqual(a.__iadd__(()), {0: 0, 1: 1, 2: 1})
-        self.assertRaises(ValueError, a.__iadd__, "BAD")
+        self.assertRaises(TypeError, a.__ior__, None)
+        self.assertEqual(a.__ior__(()), {0: 0, 1: 1, 2: 1})
+        self.assertRaises(ValueError, a.__ior__, "BAD")
 
     def test_bool(self):
         self.assertIs(not {}, True)

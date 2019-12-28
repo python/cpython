@@ -2310,7 +2310,7 @@ dict_fromkeys_impl(PyTypeObject *type, PyObject *iterable, PyObject *value)
     return _PyDict_FromKeys((PyObject *)type, iterable, value);
 }
 
-/* Single-arg dict update; used by dict_update_common and addition ops. */
+/* Single-arg dict update; used by dict_update_common and operators. */
 static int
 dict_update_arg(PyObject *self, PyObject *arg)
 {
@@ -3161,24 +3161,16 @@ dict_sizeof(PyDictObject *mp, PyObject *Py_UNUSED(ignored))
 }
 
 static PyObject *
-dict_concat(PyDictObject *self, PyObject *other)
+dict_or(PyObject *self, PyObject *other)
 {
-    PyObject *new;
-
-    if (!PyDict_Check(other)) {
+    if (!PyDict_Check(self) || !PyDict_Check(other)) {
         Py_RETURN_NOTIMPLEMENTED;
     }
-    if (PyDict_CheckExact(self)) {
-        new = PyDict_Copy((PyObject*)self);
-    }
-    else {
-        _Py_IDENTIFIER(copy);
-        new = _PyObject_CallMethodIdNoArgs((PyObject*)self, &PyId_copy);
-    }
+    PyObject *new = PyDict_Copy(self);
     if (new == NULL) {
         return NULL;
     }
-    if (dict_update_arg(new, other) < 0) {
+    if (dict_update_arg(new, other)) {
         Py_DECREF(new);
         return NULL;
     }
@@ -3186,19 +3178,13 @@ dict_concat(PyDictObject *self, PyObject *other)
 }
 
 static PyObject *
-dict_inplace_concat(PyDictObject *self, PyObject *other)
+dict_ior(PyObject *self, PyObject *other)
 {
-    // XXX: PEP 584
-    // Don't fall back to __add__ here? Could be confusing for subclasses...
-    // https://mail.python.org/pipermail/python-ideas/2019-March/055581.html
-    // if (!PyMapping_Check(other)) {
-    //     Py_RETURN_NOTIMPLEMENTED;
-    // }
-    if (dict_update_arg((PyObject *)self, other) < 0) {
+    if (dict_update_arg(self, other)) {
         return NULL;
     }
-    Py_INCREF((PyObject *)self);
-    return (PyObject *)self;
+    Py_INCREF(self);
+    return self;
 }
 
 PyDoc_STRVAR(getitem__doc__, "x.__getitem__(y) <==> x[y]");
@@ -3292,17 +3278,23 @@ _PyDict_Contains(PyObject *op, PyObject *key, Py_hash_t hash)
     return (ix != DKIX_EMPTY && value != NULL);
 }
 
+/* Hack to implement "key in dict" */
 static PySequenceMethods dict_as_sequence = {
-    0,                               /* sq_length */
-    (binaryfunc)dict_concat,         /* sq_concat */
-    0,                               /* sq_repeat */
-    0,                               /* sq_item */
-    0,                               /* sq_slice */
-    0,                               /* sq_ass_item */
-    0,                               /* sq_ass_slice */
-    PyDict_Contains,                 /* sq_contains */
-    (binaryfunc)dict_inplace_concat, /* sq_inplace_concat */
-    0,                               /* sq_inplace_repeat */
+    0,                          /* sq_length */
+    0,                          /* sq_concat */
+    0,                          /* sq_repeat */
+    0,                          /* sq_item */
+    0,                          /* sq_slice */
+    0,                          /* sq_ass_item */
+    0,                          /* sq_ass_slice */
+    PyDict_Contains,            /* sq_contains */
+    0,                          /* sq_inplace_concat */
+    0,                          /* sq_inplace_repeat */
+};
+
+static PyNumberMethods dict_as_number = {
+    .nb_or = dict_or,
+    .nb_inplace_or = dict_ior,
 };
 
 static PyObject *
@@ -3366,7 +3358,7 @@ PyTypeObject PyDict_Type = {
     0,                                          /* tp_setattr */
     0,                                          /* tp_as_async */
     (reprfunc)dict_repr,                        /* tp_repr */
-    0,                                          /* tp_as_number */
+    &dict_as_number,                            /* tp_as_number */
     &dict_as_sequence,                          /* tp_as_sequence */
     &dict_as_mapping,                           /* tp_as_mapping */
     PyObject_HashNotImplemented,                /* tp_hash */

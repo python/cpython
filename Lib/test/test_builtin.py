@@ -1388,7 +1388,6 @@ class BuiltinTest(unittest.TestCase):
         self.assertEqual(sum(Squares(10)), 285)
         self.assertEqual(sum(iter(Squares(10))), 285)
         self.assertEqual(sum([[1], [2], [3]], []), [1, 2, 3])
-        self.assertEqual(sum([{3:4}, {5:6}], {1:2}), {1:2, 3:4, 5:6})
 
         self.assertEqual(sum(range(10), 1000), 1045)
         self.assertEqual(sum(range(10), start=1000), 1045)
@@ -1420,6 +1419,7 @@ class BuiltinTest(unittest.TestCase):
         self.assertRaises(TypeError, sum, values, bytearray(b''))
         self.assertRaises(TypeError, sum, [[1], [2], [3]])
         self.assertRaises(TypeError, sum, [{2:3}])
+        self.assertRaises(TypeError, sum, [{2:3}]*2, {2:3})
         self.assertRaises(TypeError, sum, [], '')
         self.assertRaises(TypeError, sum, [], b'')
         self.assertRaises(TypeError, sum, [], bytearray())
