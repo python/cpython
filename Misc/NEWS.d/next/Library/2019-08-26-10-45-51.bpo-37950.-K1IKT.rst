@@ -1,1 +1,0 @@
-Fix :func:`ast.dump` when call with incompletely initialized node.

@@ -1136,7 +1136,6 @@ def getfullargspec(func):
     varkw = None
     posonlyargs = []
     kwonlyargs = []
-    defaults = ()
     annotations = {}
     defaults = ()
     kwdefaults = {}
@@ -2960,7 +2959,7 @@ class Signature:
                         arguments[param.name] = tuple(values)
                         break
 
-                    if param.name in kwargs:
+                    if param.name in kwargs and param.kind != _POSITIONAL_ONLY:
                         raise TypeError(
                             'multiple values for argument {arg!r}'.format(
                                 arg=param.name)) from None

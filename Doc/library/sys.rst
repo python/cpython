@@ -25,7 +25,7 @@ always available.
 
 .. function:: addaudithook(hook)
 
-   Adds the callable *hook* to the collection of active auditing hooks for the
+   Append the callable *hook* to the list of active auditing hooks for the
    current interpreter.
 
    When an auditing event is raised through the :func:`sys.audit` function, each
@@ -33,18 +33,26 @@ always available.
    tuple of arguments. Native hooks added by :c:func:`PySys_AddAuditHook` are
    called first, followed by hooks added in the current interpreter.
 
-   Calling this function will trigger an event for all existing hooks, and if
-   any raise an exception derived from :class:`Exception`, the add will be
-   silently ignored. As a result, callers cannot assume that their hook has been
-   added unless they control all existing hooks.
+   .. audit-event:: sys.addaudithook "" sys.addaudithook
+
+      Raise an auditing event ``sys.addaudithook`` with no arguments. If any
+      existing hooks raise an exception derived from :class:`RuntimeError`, the
+      new hook will not be added and the exception suppressed. As a result,
+      callers cannot assume that their hook has been added unless they control
+      all existing hooks.
 
    .. versionadded:: 3.8
 
+   .. versionchanged:: 3.8.1
+
+      Exceptions derived from :class:`Exception` but not :class:`RuntimeError`
+      are no longer suppressed.
+
    .. impl-detail::
 
-      When tracing is enabled, Python hooks are only traced if the callable has
-      a ``__cantrace__`` member that is set to a true value. Otherwise, trace
-      functions will not see the hook.
+      When tracing is enabled (see :func:`settrace`), Python hooks are only
+      traced if the callable has a ``__cantrace__`` member that is set to a
+      true value. Otherwise, trace functions will skip the hook.
 
 
 .. data:: argv
@@ -71,7 +79,7 @@ always available.
 
    .. index:: single: auditing
 
-   Raises an auditing event with any active hooks. The event name is a string
+   Raise an auditing event with any active hooks. The event name is a string
    identifying the event and its associated schema, which is the number and
    types of arguments. The schema for a given event is considered public and
    stable API and should not be modified between releases.
@@ -87,7 +95,7 @@ always available.
    native function is preferred when possible.
 
    See the :ref:`audit events table <audit-events>` for all events raised by
-   ``CPython``.
+   CPython.
 
    .. versionadded:: 3.8
 
@@ -304,6 +312,15 @@ always available.
    before control is returned to the prompt; in a Python program this happens just
    before the program exits.  The handling of such top-level exceptions can be
    customized by assigning another three-argument function to ``sys.excepthook``.
+
+   .. audit-event:: sys.excepthook hook,type,value,traceback sys.excepthook
+
+      Raise an auditing event ``sys.excepthook`` with arguments ``hook``,
+      ``type``, ``value``, ``traceback`` when an uncaught exception occurs.
+      If no hook has been set, ``hook`` may be ``None``. If any hook raises
+      an exception derived from :class:`RuntimeError` the call to the hook will
+      be suppressed. Otherwise, the audit hook exception will be reported as
+      unraisable and ``sys.excepthook`` will be called.
 
    .. seealso::
 
@@ -1411,7 +1428,7 @@ always available.
      On Windows, UTF-8 is used for the console device.  Non-character
      devices such as disk files and pipes use the system locale
      encoding (i.e. the ANSI codepage).  Non-console character
-     devices such as NUL (i.e. where isatty() returns True) use the
+     devices such as NUL (i.e. where ``isatty()`` returns ``True``) use the
      value of the console input and output codepages at startup,
      respectively for stdin and stdout/stderr. This defaults to the
      system locale encoding if the process is not initially attached
@@ -1536,6 +1553,13 @@ always available.
    hook completes to avoid resurrecting objects.
 
    See also :func:`excepthook` which handles uncaught exceptions.
+
+   .. audit-event:: sys.unraisablehook hook,unraisable sys.unraisablehook
+
+      Raise an auditing event ``sys.unraisablehook`` with arguments
+      ``hook``, ``unraisable`` when an exception that cannot be handled occurs.
+      The ``unraisable`` object is the same as what will be passed to the hook.
+      If no hook has been set, ``hook`` may be ``None``.
 
    .. versionadded:: 3.8
 

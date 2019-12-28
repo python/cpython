@@ -3487,10 +3487,15 @@ dictiter_new(PyDictObject *dict, PyTypeObject *itertype)
     di->di_dict = dict;
     di->di_used = dict->ma_used;
     di->len = dict->ma_used;
-    if ((itertype == &PyDictRevIterKey_Type ||
+    if (itertype == &PyDictRevIterKey_Type ||
          itertype == &PyDictRevIterItem_Type ||
-         itertype == &PyDictRevIterValue_Type) && dict->ma_used) {
+         itertype == &PyDictRevIterValue_Type) {
+        if (dict->ma_values) {
+            di->di_pos = dict->ma_used - 1;
+        }
+        else {
             di->di_pos = dict->ma_keys->dk_nentries - 1;
+        }
     }
     else {
         di->di_pos = 0;
@@ -3860,22 +3865,21 @@ dictreviter_iternext(dictiterobject *di)
     PyDictKeysObject *k = d->ma_keys;
     PyObject *key, *value, *result;
 
+    if (i < 0) {
+        goto fail;
+    }
     if (d->ma_values) {
-        if (i < 0) {
-            goto fail;
-        }
         key = DK_ENTRIES(k)[i].me_key;
         value = d->ma_values[i];
         assert (value != NULL);
     }
     else {
         PyDictKeyEntry *entry_ptr = &DK_ENTRIES(k)[i];
-        while (i >= 0 && entry_ptr->me_value == NULL) {
+        while (entry_ptr->me_value == NULL) {
+            if (--i < 0) {
+                goto fail;
+            }
             entry_ptr--;
-            i--;
-        }
-        if (i < 0) {
-            goto fail;
         }
         key = entry_ptr->me_key;
         value = entry_ptr->me_value;
@@ -4193,17 +4197,34 @@ static PySequenceMethods dictkeys_as_sequence = {
     (objobjproc)dictkeys_contains,      /* sq_contains */
 };
 
+// Create an set object from dictviews object.
+// Returns a new reference.
+// This utility function is used by set operations.
 static PyObject*
-dictviews_sub(PyObject* self, PyObject *other)
+dictviews_to_set(PyObject *self)
 {
-    PyObject *result = PySet_New(self);
-    PyObject *tmp;
-    _Py_IDENTIFIER(difference_update);
+    PyObject *left = self;
+    if (PyDictKeys_Check(self)) {
+        // PySet_New() has fast path for the dict object.
+        PyObject *dict = (PyObject *)((_PyDictViewObject *)self)->dv_dict;
+        if (PyDict_CheckExact(dict)) {
+            left = dict;
+        }
+    }
+    return PySet_New(left);
+}
 
-    if (result == NULL)
+static PyObject*
+dictviews_sub(PyObject *self, PyObject *other)
+{
+    PyObject *result = dictviews_to_set(self);
+    if (result == NULL) {
         return NULL;
+    }
 
-    tmp = _PyObject_CallMethodIdOneArg(result, &PyId_difference_update, other);
+    _Py_IDENTIFIER(difference_update);
+    PyObject *tmp = _PyObject_CallMethodIdOneArg(
+            result, &PyId_difference_update, other);
     if (tmp == NULL) {
         Py_DECREF(result);
         return NULL;
@@ -4262,6 +4283,10 @@ _PyDictView_Intersect(PyObject* self, PyObject *other)
         return NULL;
 
     it = PyObject_GetIter(other);
+    if (it == NULL) {
+        Py_DECREF(result);
+        return NULL;
+    }
 
     if (PyDictKeys_Check(self)) {
         dict_contains = dictkeys_contains;
@@ -4300,34 +4325,29 @@ error:
 static PyObject*
 dictviews_or(PyObject* self, PyObject *other)
 {
-    PyObject *result = PySet_New(self);
-    PyObject *tmp;
-    _Py_IDENTIFIER(update);
-
-    if (result == NULL)
-        return NULL;
-
-    tmp = _PyObject_CallMethodIdOneArg(result, &PyId_update, other);
-    if (tmp == NULL) {
-        Py_DECREF(result);
+    PyObject *result = dictviews_to_set(self);
+    if (result == NULL) {
         return NULL;
     }
 
-    Py_DECREF(tmp);
+    if (_PySet_Update(result, other) < 0) {
+        Py_DECREF(result);
+        return NULL;
+    }
     return result;
 }
 
 static PyObject*
 dictviews_xor(PyObject* self, PyObject *other)
 {
-    PyObject *result = PySet_New(self);
-    PyObject *tmp;
-    _Py_IDENTIFIER(symmetric_difference_update);
-
-    if (result == NULL)
+    PyObject *result = dictviews_to_set(self);
+    if (result == NULL) {
         return NULL;
+    }
 
-    tmp = _PyObject_CallMethodIdOneArg(result, &PyId_symmetric_difference_update, other);
+    _Py_IDENTIFIER(symmetric_difference_update);
+    PyObject *tmp = _PyObject_CallMethodIdOneArg(
+            result, &PyId_symmetric_difference_update, other);
     if (tmp == NULL) {
         Py_DECREF(result);
         return NULL;

@@ -231,8 +231,8 @@ A user-defined class can be defined as a generic class.
 single type parameter ``T`` . This also makes ``T`` valid as a type within the
 class body.
 
-The :class:`Generic` base class uses a metaclass that defines
-:meth:`__getitem__` so that ``LoggedVar[t]`` is valid as a type::
+The :class:`Generic` base class defines :meth:`__class_getitem__` so that
+``LoggedVar[t]`` is valid as a type::
 
    from typing import Iterable
 
@@ -1041,8 +1041,8 @@ The module defines the following classes, functions and decorators:
    a dictionary constructed by merging all the ``__annotations__`` along
    ``C.__mro__`` in reverse order.
 
-.. function:: get_origin(typ)
-.. function:: get_args(typ)
+.. function:: get_origin(tp)
+.. function:: get_args(tp)
 
    Provide basic introspection for generic types and special typing forms.
 

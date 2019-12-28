@@ -6,7 +6,8 @@
 *.iml
 *.o
 *.a
-*.so*
+*.so
+*.so.*
 *.dylib
 *.dll
 *.orig
@@ -33,6 +34,7 @@ TAGS
 gmon.out
 .coverage
 .mypy_cache/
+.pytest_cache/
 
 *.exe
 !Lib/distutils/command/*.exe

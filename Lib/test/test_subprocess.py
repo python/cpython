@@ -54,6 +54,18 @@ NONEXISTING_CMD = ('nonexisting_i_hope',)
 # Ignore errors that indicate the command was not found
 NONEXISTING_ERRORS = (FileNotFoundError, NotADirectoryError, PermissionError)
 
+ZERO_RETURN_CMD = (sys.executable, '-c', 'pass')
+
+
+def setUpModule():
+    shell_true = shutil.which('true')
+    if shell_true is None:
+        return
+    if (os.access(shell_true, os.X_OK) and
+        subprocess.run([shell_true]).returncode == 0):
+        global ZERO_RETURN_CMD
+        ZERO_RETURN_CMD = (shell_true,)  # Faster than Python startup.
+
 
 class BaseTestCase(unittest.TestCase):
     def setUp(self):
@@ -73,15 +85,6 @@ class BaseTestCase(unittest.TestCase):
         self.doCleanups()
         support.reap_children()
 
-    def assertStderrEqual(self, stderr, expected, msg=None):
-        # In a debug build, stuff like "[6580 refs]" is printed to stderr at
-        # shutdown time.  That frustrates tests trying to check stderr produced
-        # from a spawned Python process.
-        actual = support.strip_python_stderr(stderr)
-        # strip_python_stderr also strips whitespace, so we do too.
-        expected = expected.strip()
-        self.assertEqual(actual, expected, msg)
-
 
 class PopenTestException(Exception):
     pass
@@ -98,7 +101,7 @@ class PopenExecuteChildRaises(subprocess.Popen):
 class ProcessTestCase(BaseTestCase):
 
     def test_io_buffered_by_default(self):
-        p = subprocess.Popen([sys.executable, "-c", "import sys; sys.exit(0)"],
+        p = subprocess.Popen(ZERO_RETURN_CMD,
                              stdin=subprocess.PIPE, stdout=subprocess.PIPE,
                              stderr=subprocess.PIPE)
         try:
@@ -112,7 +115,7 @@ class ProcessTestCase(BaseTestCase):
             p.wait()
 
     def test_io_unbuffered_works(self):
-        p = subprocess.Popen([sys.executable, "-c", "import sys; sys.exit(0)"],
+        p = subprocess.Popen(ZERO_RETURN_CMD,
                              stdin=subprocess.PIPE, stdout=subprocess.PIPE,
                              stderr=subprocess.PIPE, bufsize=0)
         try:
@@ -142,8 +145,7 @@ class ProcessTestCase(BaseTestCase):
 
     def test_check_call_zero(self):
         # check_call() function with zero return code
-        rc = subprocess.check_call([sys.executable, "-c",
-                                    "import sys; sys.exit(0)"])
+        rc = subprocess.check_call(ZERO_RETURN_CMD)
         self.assertEqual(rc, 0)
 
     def test_check_call_nonzero(self):
@@ -536,7 +538,7 @@ class ProcessTestCase(BaseTestCase):
                           'import sys; sys.stderr.write("strawberry")'],
                          stderr=subprocess.PIPE)
         with p:
-            self.assertStderrEqual(p.stderr.read(), b"strawberry")
+            self.assertEqual(p.stderr.read(), b"strawberry")
 
     def test_stderr_filedes(self):
         # stderr is set to open file descriptor
@@ -548,7 +550,7 @@ class ProcessTestCase(BaseTestCase):
                          stderr=d)
         p.wait()
         os.lseek(d, 0, 0)
-        self.assertStderrEqual(os.read(d, 1024), b"strawberry")
+        self.assertEqual(os.read(d, 1024), b"strawberry")
 
     def test_stderr_fileobj(self):
         # stderr is set to open file object
@@ -559,7 +561,7 @@ class ProcessTestCase(BaseTestCase):
                          stderr=tf)
         p.wait()
         tf.seek(0)
-        self.assertStderrEqual(tf.read(), b"strawberry")
+        self.assertEqual(tf.read(), b"strawberry")
 
     def test_stderr_redirect_with_no_stdout_redirect(self):
         # test stderr=STDOUT while stdout=None (not set)
@@ -578,8 +580,8 @@ class ProcessTestCase(BaseTestCase):
                              stderr=subprocess.PIPE)
         stdout, stderr = p.communicate()
         #NOTE: stdout should get stderr from grandchild
-        self.assertStderrEqual(stdout, b'42')
-        self.assertStderrEqual(stderr, b'') # should be empty
+        self.assertEqual(stdout, b'42')
+        self.assertEqual(stderr, b'') # should be empty
         self.assertEqual(p.returncode, 0)
 
     def test_stdout_stderr_pipe(self):
@@ -592,7 +594,7 @@ class ProcessTestCase(BaseTestCase):
                              stdout=subprocess.PIPE,
                              stderr=subprocess.STDOUT)
         with p:
-            self.assertStderrEqual(p.stdout.read(), b"appleorange")
+            self.assertEqual(p.stdout.read(), b"appleorange")
 
     def test_stdout_stderr_file(self):
         # capture stdout and stderr to the same open file
@@ -607,7 +609,7 @@ class ProcessTestCase(BaseTestCase):
                              stderr=tf)
         p.wait()
         tf.seek(0)
-        self.assertStderrEqual(tf.read(), b"appleorange")
+        self.assertEqual(tf.read(), b"appleorange")
 
     def test_stdout_filedes_of_stdout(self):
         # stdout is set to 1 (#1531862).
@@ -709,19 +711,19 @@ class ProcessTestCase(BaseTestCase):
         newenv = os.environ.copy()
         newenv["FRUIT\0VEGETABLE"] = "cabbage"
         with self.assertRaises(ValueError):
-            subprocess.Popen([sys.executable, "-c", "pass"], env=newenv)
+            subprocess.Popen(ZERO_RETURN_CMD, env=newenv)
 
         # null character in the environment variable value
         newenv = os.environ.copy()
         newenv["FRUIT"] = "orange\0VEGETABLE=cabbage"
         with self.assertRaises(ValueError):
-            subprocess.Popen([sys.executable, "-c", "pass"], env=newenv)
+            subprocess.Popen(ZERO_RETURN_CMD, env=newenv)
 
         # equal character in the environment variable name
         newenv = os.environ.copy()
         newenv["FRUIT=ORANGE"] = "lemon"
         with self.assertRaises(ValueError):
-            subprocess.Popen([sys.executable, "-c", "pass"], env=newenv)
+            subprocess.Popen(ZERO_RETURN_CMD, env=newenv)
 
         # equal character in the environment variable value
         newenv = os.environ.copy()
@@ -756,7 +758,7 @@ class ProcessTestCase(BaseTestCase):
                              stderr=subprocess.PIPE)
         (stdout, stderr) = p.communicate()
         self.assertEqual(stdout, None)
-        self.assertStderrEqual(stderr, b"pineapple")
+        self.assertEqual(stderr, b"pineapple")
 
     def test_communicate(self):
         p = subprocess.Popen([sys.executable, "-c",
@@ -771,7 +773,7 @@ class ProcessTestCase(BaseTestCase):
         self.addCleanup(p.stdin.close)
         (stdout, stderr) = p.communicate(b"banana")
         self.assertEqual(stdout, b"banana")
-        self.assertStderrEqual(stderr, b"pineapple")
+        self.assertEqual(stderr, b"pineapple")
 
     def test_communicate_timeout(self):
         p = subprocess.Popen([sys.executable, "-c",
@@ -790,7 +792,7 @@ class ProcessTestCase(BaseTestCase):
         # after it completes.
         (stdout, stderr) = p.communicate()
         self.assertEqual(stdout, "banana")
-        self.assertStderrEqual(stderr.encode(), b"pineapple\npear\n")
+        self.assertEqual(stderr.encode(), b"pineapple\npear\n")
 
     def test_communicate_timeout_large_output(self):
         # Test an expiring timeout while the child is outputting lots of data.
@@ -822,7 +824,7 @@ class ProcessTestCase(BaseTestCase):
                         options['stderr'] = subprocess.PIPE
                     if not options:
                         continue
-                    p = subprocess.Popen((sys.executable, "-c", "pass"), **options)
+                    p = subprocess.Popen(ZERO_RETURN_CMD, **options)
                     p.communicate()
                     if p.stdin is not None:
                         self.assertTrue(p.stdin.closed)
@@ -876,7 +878,7 @@ class ProcessTestCase(BaseTestCase):
         p.stdin.write(b"banana")
         (stdout, stderr) = p.communicate(b"split")
         self.assertEqual(stdout, b"bananasplit")
-        self.assertStderrEqual(stderr, b"")
+        self.assertEqual(stderr, b"")
 
     def test_universal_newlines_and_text(self):
         args = [
@@ -961,7 +963,7 @@ class ProcessTestCase(BaseTestCase):
         #
         # We set stdout to PIPE because, as of this writing, a different
         # code path is tested when the number of pipes is zero or one.
-        p = subprocess.Popen([sys.executable, "-c", "pass"],
+        p = subprocess.Popen(ZERO_RETURN_CMD,
                              stdin=subprocess.PIPE,
                              stdout=subprocess.PIPE,
                              universal_newlines=True)
@@ -994,7 +996,6 @@ class ProcessTestCase(BaseTestCase):
         self.assertEqual("line1\nline2\nline3\nline4\nline5\n", stdout)
         # Python debug build push something like "[42442 refs]\n"
         # to stderr at exit of subprocess.
-        # Don't use assertStderrEqual because it strips CR and LF from output.
         self.assertTrue(stderr.startswith("eline2\neline6\neline7\n"))
 
     def test_universal_newlines_communicate_encodings(self):
@@ -1109,7 +1110,7 @@ class ProcessTestCase(BaseTestCase):
         self.assertEqual(p.poll(), 0)
 
     def test_wait(self):
-        p = subprocess.Popen([sys.executable, "-c", "pass"])
+        p = subprocess.Popen(ZERO_RETURN_CMD)
         self.assertEqual(p.wait(), 0)
         # Subsequent invocations should just return the returncode
         self.assertEqual(p.wait(), 0)
@@ -1120,22 +1121,20 @@ class ProcessTestCase(BaseTestCase):
         with self.assertRaises(subprocess.TimeoutExpired) as c:
             p.wait(timeout=0.0001)
         self.assertIn("0.0001", str(c.exception))  # For coverage of __str__.
-        # Some heavily loaded buildbots (sparc Debian 3.x) require this much
-        # time to start.
-        self.assertEqual(p.wait(timeout=3), 0)
+        self.assertEqual(p.wait(timeout=support.SHORT_TIMEOUT), 0)
 
     def test_invalid_bufsize(self):
         # an invalid type of the bufsize argument should raise
         # TypeError.
         with self.assertRaises(TypeError):
-            subprocess.Popen([sys.executable, "-c", "pass"], "orange")
+            subprocess.Popen(ZERO_RETURN_CMD, "orange")
 
     def test_bufsize_is_none(self):
         # bufsize=None should be the same as bufsize=0.
-        p = subprocess.Popen([sys.executable, "-c", "pass"], None)
+        p = subprocess.Popen(ZERO_RETURN_CMD, None)
         self.assertEqual(p.wait(), 0)
         # Again with keyword arg
-        p = subprocess.Popen([sys.executable, "-c", "pass"], bufsize=None)
+        p = subprocess.Popen(ZERO_RETURN_CMD, bufsize=None)
         self.assertEqual(p.wait(), 0)
 
     def _test_bufsize_equal_one(self, line, expected, universal_newlines):
@@ -1288,7 +1287,7 @@ class ProcessTestCase(BaseTestCase):
         # Wait for the process to finish; the thread should kill it
         # long before it finishes on its own.  Supplying a timeout
         # triggers a different code path for better coverage.
-        proc.wait(timeout=20)
+        proc.wait(timeout=support.SHORT_TIMEOUT)
         self.assertEqual(proc.returncode, expected_errorcode,
                          msg="unexpected result in wait from main thread")
 
@@ -1340,7 +1339,7 @@ class ProcessTestCase(BaseTestCase):
 
     def test_communicate_epipe(self):
         # Issue 10963: communicate() should hide EPIPE
-        p = subprocess.Popen([sys.executable, "-c", 'pass'],
+        p = subprocess.Popen(ZERO_RETURN_CMD,
                              stdin=subprocess.PIPE,
                              stdout=subprocess.PIPE,
                              stderr=subprocess.PIPE)
@@ -1349,9 +1348,33 @@ class ProcessTestCase(BaseTestCase):
         self.addCleanup(p.stdin.close)
         p.communicate(b"x" * 2**20)
 
+    def test_repr(self):
+        # Run a command that waits for user input, to check the repr() of
+        # a Proc object while and after the sub-process runs.
+        code = 'import sys; input(); sys.exit(57)'
+        cmd = [sys.executable, '-c', code]
+        result = "<Popen: returncode: {}"
+
+        with subprocess.Popen(
+                cmd, stdin=subprocess.PIPE, universal_newlines=True) as proc:
+            self.assertIsNone(proc.returncode)
+            self.assertTrue(
+                repr(proc).startswith(result.format(proc.returncode)) and
+                repr(proc).endswith('>')
+            )
+
+            proc.communicate(input='exit...\n')
+            proc.wait()
+
+            self.assertIsNotNone(proc.returncode)
+            self.assertTrue(
+                repr(proc).startswith(result.format(proc.returncode)) and
+                repr(proc).endswith('>')
+            )
+
     def test_communicate_epipe_only_stdin(self):
         # Issue 10963: communicate() should hide EPIPE
-        p = subprocess.Popen([sys.executable, "-c", 'pass'],
+        p = subprocess.Popen(ZERO_RETURN_CMD,
                              stdin=subprocess.PIPE)
         self.addCleanup(p.stdin.close)
         p.wait()
@@ -1390,7 +1413,7 @@ class ProcessTestCase(BaseTestCase):
         fds_before_popen = os.listdir(fd_directory)
         with self.assertRaises(PopenTestException):
             PopenExecuteChildRaises(
-                    [sys.executable, '-c', 'pass'], stdin=subprocess.PIPE,
+                    ZERO_RETURN_CMD, stdin=subprocess.PIPE,
                     stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 
         # NOTE: This test doesn't verify that the real _execute_child
@@ -1433,7 +1456,7 @@ class RunFuncTestCase(BaseTestCase):
 
     def test_check_zero(self):
         # check_returncode shouldn't raise when returncode is zero
-        cp = self.run_python("import sys; sys.exit(0)", check=True)
+        cp = subprocess.run(ZERO_RETURN_CMD, check=True)
         self.assertEqual(cp.returncode, 0)
 
     def test_timeout(self):
@@ -1791,16 +1814,16 @@ class POSIXProcessTestCase(BaseTestCase):
                         self.assertEqual(child_user, user_uid)
 
         with self.assertRaises(ValueError):
-            subprocess.check_call([sys.executable, "-c", "pass"], user=-1)
+            subprocess.check_call(ZERO_RETURN_CMD, user=-1)
 
         if pwd is None:
             with self.assertRaises(ValueError):
-                subprocess.check_call([sys.executable, "-c", "pass"], user=name_uid)
+                subprocess.check_call(ZERO_RETURN_CMD, user=name_uid)
 
     @unittest.skipIf(hasattr(os, 'setreuid'), 'setreuid() available on platform')
     def test_user_error(self):
         with self.assertRaises(ValueError):
-            subprocess.check_call([sys.executable, "-c", "pass"], user=65535)
+            subprocess.check_call(ZERO_RETURN_CMD, user=65535)
 
     @unittest.skipUnless(hasattr(os, 'setregid'), 'no setregid() on platform')
     def test_group(self):
@@ -1834,16 +1857,16 @@ class POSIXProcessTestCase(BaseTestCase):
 
         # make sure we bomb on negative values
         with self.assertRaises(ValueError):
-            subprocess.check_call([sys.executable, "-c", "pass"], group=-1)
+            subprocess.check_call(ZERO_RETURN_CMD, group=-1)
 
         if grp is None:
             with self.assertRaises(ValueError):
-                subprocess.check_call([sys.executable, "-c", "pass"], group=name_group)
+                subprocess.check_call(ZERO_RETURN_CMD, group=name_group)
 
     @unittest.skipIf(hasattr(os, 'setregid'), 'setregid() available on platform')
     def test_group_error(self):
         with self.assertRaises(ValueError):
-            subprocess.check_call([sys.executable, "-c", "pass"], group=65535)
+            subprocess.check_call(ZERO_RETURN_CMD, group=65535)
 
     @unittest.skipUnless(hasattr(os, 'setgroups'), 'no setgroups() on platform')
     def test_extra_groups(self):
@@ -1882,17 +1905,39 @@ class POSIXProcessTestCase(BaseTestCase):
 
         # make sure we bomb on negative values
         with self.assertRaises(ValueError):
-            subprocess.check_call([sys.executable, "-c", "pass"], extra_groups=[-1])
+            subprocess.check_call(ZERO_RETURN_CMD, extra_groups=[-1])
 
         if grp is None:
             with self.assertRaises(ValueError):
-                subprocess.check_call([sys.executable, "-c", "pass"],
+                subprocess.check_call(ZERO_RETURN_CMD,
                                       extra_groups=[name_group])
 
     @unittest.skipIf(hasattr(os, 'setgroups'), 'setgroups() available on platform')
     def test_extra_groups_error(self):
         with self.assertRaises(ValueError):
-            subprocess.check_call([sys.executable, "-c", "pass"], extra_groups=[])
+            subprocess.check_call(ZERO_RETURN_CMD, extra_groups=[])
+
+    @unittest.skipIf(mswindows or not hasattr(os, 'umask'),
+                     'POSIX umask() is not available.')
+    def test_umask(self):
+        tmpdir = None
+        try:
+            tmpdir = tempfile.mkdtemp()
+            name = os.path.join(tmpdir, "beans")
+            # We set an unusual umask in the child so as a unique mode
+            # for us to test the child's touched file for.
+            subprocess.check_call(
+                    [sys.executable, "-c", f"open({name!r}, 'w').close()"],
+                    umask=0o053)
+            # Ignore execute permissions entirely in our test,
+            # filesystems could be mounted to ignore or force that.
+            st_mode = os.stat(name).st_mode & 0o666
+            expected_mode = 0o624
+            self.assertEqual(expected_mode, st_mode,
+                             msg=f'{oct(expected_mode)} != {oct(st_mode)}')
+        finally:
+            if tmpdir is not None:
+                shutil.rmtree(tmpdir)
 
     def test_run_abort(self):
         # returncode handles signal termination
@@ -1985,7 +2030,7 @@ class POSIXProcessTestCase(BaseTestCase):
 
         with self.assertRaises(subprocess.SubprocessError):
             self._TestExecuteChildPopen(
-                        self, [sys.executable, "-c", "pass"],
+                        self, ZERO_RETURN_CMD,
                         stdin=subprocess.PIPE, stdout=subprocess.PIPE,
                         stderr=subprocess.PIPE, preexec_fn=raise_it)
 
@@ -2183,13 +2228,13 @@ class POSIXProcessTestCase(BaseTestCase):
     def test_kill(self):
         p = self._kill_process('kill')
         _, stderr = p.communicate()
-        self.assertStderrEqual(stderr, b'')
+        self.assertEqual(stderr, b'')
         self.assertEqual(p.wait(), -signal.SIGKILL)
 
     def test_terminate(self):
         p = self._kill_process('terminate')
         _, stderr = p.communicate()
-        self.assertStderrEqual(stderr, b'')
+        self.assertEqual(stderr, b'')
         self.assertEqual(p.wait(), -signal.SIGTERM)
 
     def test_send_signal_dead(self):
@@ -2237,8 +2282,8 @@ class POSIXProcessTestCase(BaseTestCase):
                        stdin=stdin,
                        stdout=subprocess.PIPE,
                        stderr=subprocess.PIPE).communicate()
-            err = support.strip_python_stderr(err)
-            self.assertEqual((out, err), (b'apple', b'orange'))
+            self.assertEqual(out, b'apple')
+            self.assertEqual(err, b'orange')
         finally:
             self._restore_fds(saved_fds)
 
@@ -2323,7 +2368,7 @@ class POSIXProcessTestCase(BaseTestCase):
                 os.lseek(fd, 0, 0)
 
             out = os.read(temp_fds[2], 1024)
-            err = support.strip_python_stderr(os.read(temp_fds[0], 1024))
+            err = os.read(temp_fds[0], 1024).strip()
             self.assertEqual(out, b"got STDIN")
             self.assertEqual(err, b"err")
 
@@ -2365,7 +2410,7 @@ class POSIXProcessTestCase(BaseTestCase):
                     os.lseek(fd, 0, 0)
 
                 out = os.read(stdout_no, 1024)
-                err = support.strip_python_stderr(os.read(stderr_no, 1024))
+                err = os.read(stderr_no, 1024).strip()
             finally:
                 self._restore_fds(saved_fds)
 
@@ -2442,7 +2487,7 @@ class POSIXProcessTestCase(BaseTestCase):
 
         try:
             subprocess.call(
-                [sys.executable, "-c", "pass"],
+                ZERO_RETURN_CMD,
                 preexec_fn=prepare)
         except ValueError as err:
             # Pure Python implementations keeps the message
@@ -2485,29 +2530,30 @@ class POSIXProcessTestCase(BaseTestCase):
             self.assertEqual(stdout.decode('ascii'), ascii(encoded_value))
 
     def test_bytes_program(self):
-        abs_program = os.fsencode(sys.executable)
-        path, program = os.path.split(sys.executable)
+        abs_program = os.fsencode(ZERO_RETURN_CMD[0])
+        args = list(ZERO_RETURN_CMD[1:])
+        path, program = os.path.split(ZERO_RETURN_CMD[0])
         program = os.fsencode(program)
 
         # absolute bytes path
-        exitcode = subprocess.call([abs_program, "-c", "pass"])
+        exitcode = subprocess.call([abs_program]+args)
         self.assertEqual(exitcode, 0)
 
         # absolute bytes path as a string
-        cmd = b"'" + abs_program + b"' -c pass"
+        cmd = b"'%s' %s" % (abs_program, " ".join(args).encode("utf-8"))
         exitcode = subprocess.call(cmd, shell=True)
         self.assertEqual(exitcode, 0)
 
         # bytes program, unicode PATH
         env = os.environ.copy()
         env["PATH"] = path
-        exitcode = subprocess.call([program, "-c", "pass"], env=env)
+        exitcode = subprocess.call([program]+args, env=env)
         self.assertEqual(exitcode, 0)
 
         # bytes program, bytes PATH
         envb = os.environb.copy()
         envb[b"PATH"] = os.fsencode(path)
-        exitcode = subprocess.call([program, "-c", "pass"], env=envb)
+        exitcode = subprocess.call([program]+args, env=envb)
         self.assertEqual(exitcode, 0)
 
     def test_pipe_cloexec(self):
@@ -2735,7 +2781,7 @@ class POSIXProcessTestCase(BaseTestCase):
             # pass_fds overrides close_fds with a warning.
             with self.assertWarns(RuntimeWarning) as context:
                 self.assertFalse(subprocess.call(
-                        [sys.executable, "-c", "import sys; sys.exit(0)"],
+                        ZERO_RETURN_CMD,
                         close_fds=False, pass_fds=(fd, )))
             self.assertIn('overriding close_fds', str(context.warning))
 
@@ -2797,19 +2843,19 @@ class POSIXProcessTestCase(BaseTestCase):
 
     def test_stdout_stdin_are_single_inout_fd(self):
         with io.open(os.devnull, "r+") as inout:
-            p = subprocess.Popen([sys.executable, "-c", "import sys; sys.exit(0)"],
+            p = subprocess.Popen(ZERO_RETURN_CMD,
                                  stdout=inout, stdin=inout)
             p.wait()
 
     def test_stdout_stderr_are_single_inout_fd(self):
         with io.open(os.devnull, "r+") as inout:
-            p = subprocess.Popen([sys.executable, "-c", "import sys; sys.exit(0)"],
+            p = subprocess.Popen(ZERO_RETURN_CMD,
                                  stdout=inout, stderr=inout)
             p.wait()
 
     def test_stderr_stdin_are_single_inout_fd(self):
         with io.open(os.devnull, "r+") as inout:
-            p = subprocess.Popen([sys.executable, "-c", "import sys; sys.exit(0)"],
+            p = subprocess.Popen(ZERO_RETURN_CMD,
                                  stderr=inout, stdin=inout)
             p.wait()
 
@@ -2950,7 +2996,7 @@ class POSIXProcessTestCase(BaseTestCase):
                         -1, -1, -1, -1,
                         1, 2, 3, 4,
                         True, True,
-                        False, [], 0,
+                        False, [], 0, -1,
                         func)
                 # Attempt to prevent
                 # "TypeError: fork_exec() takes exactly N arguments (M given)"
@@ -2999,7 +3045,7 @@ class POSIXProcessTestCase(BaseTestCase):
                         -1, -1, -1, -1,
                         1, 2, 3, 4,
                         True, True,
-                        None, None, None,
+                        None, None, None, -1,
                         None)
                 self.assertIn('fds_to_keep', str(c.exception))
         finally:
@@ -3009,7 +3055,7 @@ class POSIXProcessTestCase(BaseTestCase):
     def test_communicate_BrokenPipeError_stdin_close(self):
         # By not setting stdout or stderr or a timeout we force the fast path
         # that just calls _stdin_write() internally due to our mock.
-        proc = subprocess.Popen([sys.executable, '-c', 'pass'])
+        proc = subprocess.Popen(ZERO_RETURN_CMD)
         with proc, mock.patch.object(proc, 'stdin') as mock_proc_stdin:
             mock_proc_stdin.close.side_effect = BrokenPipeError
             proc.communicate()  # Should swallow BrokenPipeError from close.
@@ -3018,7 +3064,7 @@ class POSIXProcessTestCase(BaseTestCase):
     def test_communicate_BrokenPipeError_stdin_write(self):
         # By not setting stdout or stderr or a timeout we force the fast path
         # that just calls _stdin_write() internally due to our mock.
-        proc = subprocess.Popen([sys.executable, '-c', 'pass'])
+        proc = subprocess.Popen(ZERO_RETURN_CMD)
         with proc, mock.patch.object(proc, 'stdin') as mock_proc_stdin:
             mock_proc_stdin.write.side_effect = BrokenPipeError
             proc.communicate(b'stuff')  # Should swallow the BrokenPipeError.
@@ -3057,7 +3103,7 @@ class POSIXProcessTestCase(BaseTestCase):
                          'need _testcapi.W_STOPCODE')
     def test_stopped(self):
         """Test wait() behavior when waitpid returns WIFSTOPPED; issue29335."""
-        args = [sys.executable, '-c', 'pass']
+        args = ZERO_RETURN_CMD
         proc = subprocess.Popen(args)
 
         # Wait until the real process completes to avoid zombie process
@@ -3087,7 +3133,7 @@ class Win32ProcessTestCase(BaseTestCase):
         # Since Python is a console process, it won't be affected
         # by wShowWindow, but the argument should be silently
         # ignored
-        subprocess.call([sys.executable, "-c", "import sys; sys.exit(0)"],
+        subprocess.call(ZERO_RETURN_CMD,
                         startupinfo=startupinfo)
 
     def test_startupinfo_keywords(self):
@@ -3103,7 +3149,7 @@ class Win32ProcessTestCase(BaseTestCase):
         # Since Python is a console process, it won't be affected
         # by wShowWindow, but the argument should be silently
         # ignored
-        subprocess.call([sys.executable, "-c", "import sys; sys.exit(0)"],
+        subprocess.call(ZERO_RETURN_CMD,
                         startupinfo=startupinfo)
 
     def test_startupinfo_copy(self):
@@ -3115,7 +3161,7 @@ class Win32ProcessTestCase(BaseTestCase):
         # Call Popen() twice with the same startupinfo object to make sure
         # that it's not modified
         for _ in range(2):
-            cmd = [sys.executable, "-c", "pass"]
+            cmd = ZERO_RETURN_CMD
             with open(os.devnull, 'w') as null:
                 proc = subprocess.Popen(cmd,
                                         stdout=null,
@@ -3155,7 +3201,7 @@ class Win32ProcessTestCase(BaseTestCase):
         class BadEnv(dict):
             keys = None
         with self.assertRaises(TypeError):
-            subprocess.Popen([sys.executable, "-c", "pass"], env=BadEnv())
+            subprocess.Popen(ZERO_RETURN_CMD, env=BadEnv())
 
     def test_close_fds(self):
         # close file descriptors
@@ -3216,13 +3262,13 @@ class Win32ProcessTestCase(BaseTestCase):
     def test_empty_attribute_list(self):
         startupinfo = subprocess.STARTUPINFO()
         startupinfo.lpAttributeList = {}
-        subprocess.call([sys.executable, "-c", "import sys; sys.exit(0)"],
+        subprocess.call(ZERO_RETURN_CMD,
                         startupinfo=startupinfo)
 
     def test_empty_handle_list(self):
         startupinfo = subprocess.STARTUPINFO()
         startupinfo.lpAttributeList = {"handle_list": []}
-        subprocess.call([sys.executable, "-c", "import sys; sys.exit(0)"],
+        subprocess.call(ZERO_RETURN_CMD,
                         startupinfo=startupinfo)
 
     def test_shell_sequence(self):
@@ -3280,7 +3326,7 @@ class Win32ProcessTestCase(BaseTestCase):
             p.stdout.read(1)
             getattr(p, method)(*args)
             _, stderr = p.communicate()
-            self.assertStderrEqual(stderr, b'')
+            self.assertEqual(stderr, b'')
             returncode = p.wait()
         self.assertNotEqual(returncode, 0)
 
@@ -3303,7 +3349,7 @@ class Win32ProcessTestCase(BaseTestCase):
             # This shouldn't raise even though the child is now dead
             getattr(p, method)(*args)
             _, stderr = p.communicate()
-            self.assertStderrEqual(stderr, b'')
+            self.assertEqual(stderr, b'')
             rc = p.wait()
         self.assertEqual(rc, 42)
 
@@ -3492,7 +3538,7 @@ class ContextManagerTests(BaseTestCase):
                               stdout=subprocess.PIPE,
                               stderr=subprocess.PIPE) as proc:
             self.assertEqual(proc.stdout.read(), b"stdout")
-            self.assertStderrEqual(proc.stderr.read(), b"stderr")
+            self.assertEqual(proc.stderr.read(), b"stderr")
 
         self.assertTrue(proc.stdout.closed)
         self.assertTrue(proc.stderr.closed)
@@ -3521,7 +3567,7 @@ class ContextManagerTests(BaseTestCase):
 
     def test_broken_pipe_cleanup(self):
         """Broken pipe error should not prevent wait() (Issue 21619)"""
-        proc = subprocess.Popen([sys.executable, '-c', 'pass'],
+        proc = subprocess.Popen(ZERO_RETURN_CMD,
                                 stdin=subprocess.PIPE,
                                 bufsize=support.PIPE_MAX_SIZE*2)
         proc = proc.__enter__()

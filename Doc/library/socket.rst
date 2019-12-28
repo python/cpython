@@ -1411,9 +1411,9 @@ to sockets.
           fds = array.array("i")   # Array of ints
           msg, ancdata, flags, addr = sock.recvmsg(msglen, socket.CMSG_LEN(maxfds * fds.itemsize))
           for cmsg_level, cmsg_type, cmsg_data in ancdata:
-              if (cmsg_level == socket.SOL_SOCKET and cmsg_type == socket.SCM_RIGHTS):
+              if cmsg_level == socket.SOL_SOCKET and cmsg_type == socket.SCM_RIGHTS:
                   # Append data, ignoring any truncated integers at the end.
-                  fds.fromstring(cmsg_data[:len(cmsg_data) - (len(cmsg_data) % fds.itemsize)])
+                  fds.frombytes(cmsg_data[:len(cmsg_data) - (len(cmsg_data) % fds.itemsize)])
           return msg, list(fds)
 
    .. availability:: most Unix platforms, possibly others.
@@ -1675,9 +1675,9 @@ to sockets.
    ``None`` or a :term:`bytes-like object` representing a buffer. In the later
    case it is up to the caller to ensure that the bytestring contains the
    proper bits (see the optional built-in module :mod:`struct` for a way to
-   encode C structures as bytestrings). When value is set to ``None``,
-   optlen argument is required. It's equivalent to call setsockopt C
-   function with optval=NULL and optlen=optlen.
+   encode C structures as bytestrings). When *value* is set to ``None``,
+   *optlen* argument is required. It's equivalent to call :c:func:`setsockopt` C
+   function with ``optval=NULL`` and ``optlen=optlen``.
 
 
    .. versionchanged:: 3.5

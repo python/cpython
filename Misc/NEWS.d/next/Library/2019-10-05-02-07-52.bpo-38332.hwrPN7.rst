@@ -1,3 +1,0 @@
-Prevent :exc:`KeyError` thrown by :func:`_encoded_words.decode` when given
-an encoded-word with invalid content-type encoding from propagating all the
-way to :func:`email.message.get`.

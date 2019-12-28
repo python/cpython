@@ -2192,7 +2192,7 @@ class TestQuantiles(unittest.TestCase):
                 quantiles(padded_data, n=n, method='inclusive'),
                 (n, data),
             )
-            # Invariant under tranlation and scaling
+            # Invariant under translation and scaling
             def f(x):
                 return 3.5 * x - 1234.675
             exp = list(map(f, expected))
@@ -2232,7 +2232,7 @@ class TestQuantiles(unittest.TestCase):
                 result = quantiles(map(datatype, data), n=n, method="inclusive")
                 self.assertTrue(all(type(x) == datatype) for x in result)
                 self.assertEqual(result, list(map(datatype, expected)))
-            # Invariant under tranlation and scaling
+            # Invariant under translation and scaling
             def f(x):
                 return 3.5 * x - 1234.675
             exp = list(map(f, expected))
@@ -2651,9 +2651,13 @@ class TestNormalDist:
         nd2 = NormalDist(2, 4)
         nd3 = NormalDist()
         nd4 = NormalDist(2, 4)
+        nd5 = NormalDist(2, 8)
+        nd6 = NormalDist(8, 4)
         self.assertNotEqual(nd1, nd2)
         self.assertEqual(nd1, nd3)
         self.assertEqual(nd2, nd4)
+        self.assertNotEqual(nd2, nd5)
+        self.assertNotEqual(nd2, nd6)
 
         # Test NotImplemented when types are different
         class A:

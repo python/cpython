@@ -181,7 +181,7 @@ PySys_Audit(const char *event, const char *argFormat, ...)
     if (argFormat && argFormat[0]) {
         va_list args;
         va_start(args, argFormat);
-        eventArgs = Py_VaBuildValue(argFormat, args);
+        eventArgs = _Py_VaBuildValue_SizeT(argFormat, args);
         va_end(args);
         if (eventArgs && !PyTuple_Check(eventArgs)) {
             PyObject *argTuple = PyTuple_Pack(1, eventArgs);
@@ -323,8 +323,8 @@ PySys_AddAuditHook(Py_AuditHookFunction hook, void *userData)
     /* Cannot invoke hooks until we are initialized */
     if (runtime->initialized) {
         if (PySys_Audit("sys.addaudithook", NULL) < 0) {
-            if (_PyErr_ExceptionMatches(tstate, PyExc_Exception)) {
-                /* We do not report errors derived from Exception */
+            if (_PyErr_ExceptionMatches(tstate, PyExc_RuntimeError)) {
+                /* We do not report errors derived from RuntimeError */
                 _PyErr_Clear(tstate);
                 return 0;
             }
@@ -2387,17 +2387,18 @@ static PyStructSequence_Desc flags_desc = {
 };
 
 static PyObject*
-make_flags(_PyRuntimeState *runtime, PyThreadState *tstate)
+make_flags(PyThreadState *tstate)
 {
-    int pos = 0;
-    PyObject *seq;
-    const PyPreConfig *preconfig = &runtime->preconfig;
-    const PyConfig *config = &tstate->interp->config;
+    PyInterpreterState *interp = tstate->interp;
+    const PyPreConfig *preconfig = &interp->runtime->preconfig;
+    const PyConfig *config = &interp->config;
 
-    seq = PyStructSequence_New(&FlagsType);
-    if (seq == NULL)
+    PyObject *seq = PyStructSequence_New(&FlagsType);
+    if (seq == NULL) {
         return NULL;
+    }
 
+    int pos = 0;
 #define SetFlag(flag) \
     PyStructSequence_SET_ITEM(seq, pos++, PyLong_FromLong(flag))
 
@@ -2607,8 +2608,7 @@ static struct PyModuleDef sysmodule = {
     } while (0)
 
 static PyStatus
-_PySys_InitCore(_PyRuntimeState *runtime, PyThreadState *tstate,
-                PyObject *sysdict)
+_PySys_InitCore(PyThreadState *tstate, PyObject *sysdict)
 {
     PyObject *version_info;
     int res;
@@ -2703,7 +2703,7 @@ _PySys_InitCore(_PyRuntimeState *runtime, PyThreadState *tstate,
         }
     }
     /* Set flags to their default values (updated by _PySys_InitMain()) */
-    SET_SYS_FROM_STRING("flags", make_flags(runtime, tstate));
+    SET_SYS_FROM_STRING("flags", make_flags(tstate));
 
 #if defined(MS_WINDOWS)
     /* getwindowsversion */
@@ -2824,7 +2824,7 @@ sys_create_xoptions_dict(const PyConfig *config)
 
 
 int
-_PySys_InitMain(_PyRuntimeState *runtime, PyThreadState *tstate)
+_PySys_InitMain(PyThreadState *tstate)
 {
     PyObject *sysdict = tstate->interp->sysdict;
     const PyConfig *config = &tstate->interp->config;
@@ -2879,7 +2879,7 @@ _PySys_InitMain(_PyRuntimeState *runtime, PyThreadState *tstate)
 #undef SET_SYS_FROM_WSTR
 
     /* Set flags to their final values */
-    SET_SYS_FROM_STRING_INT_RESULT("flags", make_flags(runtime, tstate));
+    SET_SYS_FROM_STRING_INT_RESULT("flags", make_flags(tstate));
     /* prevent user from creating new instances */
     FlagsType.tp_init = NULL;
     FlagsType.tp_new = NULL;
@@ -2919,7 +2919,7 @@ err_occurred:
    infrastructure for the io module in place.
 
    Use UTF-8/surrogateescape and ignore EAGAIN errors. */
-PyStatus
+static PyStatus
 _PySys_SetPreliminaryStderr(PyObject *sysdict)
 {
     PyObject *pstderr = PyFile_NewStdPrinter(fileno(stderr));
@@ -2944,14 +2944,15 @@ error:
 /* Create sys module without all attributes: _PySys_InitMain() should be called
    later to add remaining attributes. */
 PyStatus
-_PySys_Create(_PyRuntimeState *runtime, PyThreadState *tstate,
-              PyObject **sysmod_p)
+_PySys_Create(PyThreadState *tstate, PyObject **sysmod_p)
 {
+    assert(!_PyErr_Occurred(tstate));
+
     PyInterpreterState *interp = tstate->interp;
 
     PyObject *modules = PyDict_New();
     if (modules == NULL) {
-        return _PyStatus_ERR("can't make modules dictionary");
+        goto error;
     }
     interp->modules = modules;
 
@@ -2962,13 +2963,13 @@ _PySys_Create(_PyRuntimeState *runtime, PyThreadState *tstate,
 
     PyObject *sysdict = PyModule_GetDict(sysmod);
     if (sysdict == NULL) {
-        return _PyStatus_ERR("can't initialize sys dict");
+        goto error;
     }
     Py_INCREF(sysdict);
     interp->sysdict = sysdict;
 
     if (PyDict_SetItemString(sysdict, "modules", interp->modules) < 0) {
-        return _PyStatus_ERR("can't initialize sys module");
+        goto error;
     }
 
     PyStatus status = _PySys_SetPreliminaryStderr(sysdict);
@@ -2976,15 +2977,22 @@ _PySys_Create(_PyRuntimeState *runtime, PyThreadState *tstate,
         return status;
     }
 
-    status = _PySys_InitCore(runtime, tstate, sysdict);
+    status = _PySys_InitCore(tstate, sysdict);
     if (_PyStatus_EXCEPTION(status)) {
         return status;
     }
 
-    _PyImport_FixupBuiltin(sysmod, "sys", interp->modules);
+    if (_PyImport_FixupBuiltin(sysmod, "sys", interp->modules) < 0) {
+        goto error;
+    }
+
+    assert(!_PyErr_Occurred(tstate));
 
     *sysmod_p = sysmod;
     return _PyStatus_OK();
+
+error:
+    return _PyStatus_ERR("can't initialize sys module");
 }
 
 

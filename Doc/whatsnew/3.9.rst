@@ -99,6 +99,11 @@ Other Language Changes
   ignored for empty strings.
   (Contributed by Victor Stinner in :issue:`37388`.)
 
+* ``"".replace("", s, n)`` now returns ``s`` instead of an empty string for
+  all non-zero ``n``.  It is now consistent with ``"".replace("", s)``.
+  There are similar changes for :class:`bytes` and :class:`bytearray` objects.
+  (Contributed by Serhiy Storchaka in :issue:`28029`.)
+
 
 New Modules
 ===========
@@ -116,14 +121,61 @@ Added the *indent* option to :func:`~ast.dump` which allows it to produce a
 multiline indented output.
 (Contributed by Serhiy Storchaka in :issue:`37995`.)
 
+Added :func:`ast.unparse` as a function in the :mod:`ast` module that can
+be used to unparse an :class:`ast.AST` object and produce a string with code
+that would produce an equivalent :class:`ast.AST` object when parsed.
+(Contributed by Pablo Galindo and Batuhan Taskaya in :issue:`38870`.)
+
 asyncio
 -------
+
+Due to significant security concerns, the *reuse_address* parameter of
+:meth:`asyncio.loop.create_datagram_endpoint` is no longer supported. This is
+because of the behavior of the socket option ``SO_REUSEADDR`` in UDP. For more
+details, see the documentation for ``loop.create_datagram_endpoint()``.
+(Contributed by Kyle Stanley, Antoine Pitrou, and Yury Selivanov in
+:issue:`37228`.)
 
 Added a new :term:`coroutine` :meth:`~asyncio.loop.shutdown_default_executor`
 that schedules a shutdown for the default executor that waits on the
 :class:`~concurrent.futures.ThreadPoolExecutor` to finish closing. Also,
 :func:`asyncio.run` has been updated to use the new :term:`coroutine`.
 (Contributed by Kyle Stanley in :issue:`34037`.)
+
+Added :class:`asyncio.PidfdChildWatcher`, a Linux-specific child watcher
+implementation that polls process file descriptors. (:issue:`38692`)
+
+curses
+------
+
+Add :func:`curses.get_escdelay`, :func:`curses.set_escdelay`,
+:func:`curses.get_tabsize`, and :func:`curses.set_tabsize` functions.
+(Contributed by Anthony Sottile in :issue:`38312`.)
+
+fcntl
+-----
+
+Added constants :data:`~fcntl.F_OFD_GETLK`, :data:`~fcntl.F_OFD_SETLK`
+and :data:`~fcntl.F_OFD_SETLKW`.
+(Contributed by Dong-hee Na in :issue:`38602`.)
+
+gc
+--
+
+When the garbage collector makes a collection in which some objects resurrect
+(they are reachable from outside the isolated cycles after the finalizers have
+been executed), do not block the collection of all objects that are still
+unreachable. (Contributed by Pablo Galindo and Tim Peters in :issue:`38379`.)
+
+os
+--
+
+Added :data:`~os.CLD_KILLED` and :data:`~os.CLD_STOPPED` for :attr:`si_code`.
+(Contributed by Dong-hee Na in :issue:`38493`.)
+
+Exposed the Linux-specific :func:`os.pidfd_open` (:issue:`38692`) and
+:data:`os.P_PIDFD` (:issue:`38713`) for process management with file
+descriptors.
 
 threading
 ---------
@@ -144,6 +196,13 @@ customization consistently by always using the value specified by
 case), and one used ``__VENV_NAME__`` instead.
 (Contributed by Brett Cannon in :issue:`37663`.)
 
+pathlib
+-------
+
+Added :meth:`pathlib.Path.readlink()` which acts similarly to
+:func:`os.readlink`.
+(Contributed by Girts Folkmanis in :issue:`30618`)
+
 pprint
 ------
 
@@ -158,6 +217,13 @@ now raises :exc:`ImportError` instead of :exc:`ValueError` for invalid relative
 import attempts.
 (Contributed by Ngalim Siregar in :issue:`37444`.)
 
+signal
+------
+
+Exposed the Linux-specific :func:`signal.pidfd_send_signal` for sending to
+signals to a process using a file descriptor instead of a pid. (:issue:`38712`)
+
+
 Optimizations
 =============
 
@@ -165,11 +231,33 @@ Optimizations
 Build and C API Changes
 =======================
 
+* Provide :c:func:`Py_EnterRecursiveCall` and :c:func:`Py_LeaveRecursiveCall`
+  as regular functions for the limited API. Previously, there were defined as
+  macros, but these macros didn't work with the limited API which cannot access
+  ``PyThreadState.recursion_depth`` field. Remove ``_Py_CheckRecursionLimit``
+  from the stable ABI.
+  (Contributed by Victor Stinner in :issue:`38644`.)
+
 * Add a new public :c:func:`PyObject_CallNoArgs` function to the C API, which
   calls a callable Python object without any arguments. It is the most efficient
   way to call a callable Python object without any argument.
   (Contributed by Victor Stinner in :issue:`37194`.)
 
+* The global variable :c:data:`PyStructSequence_UnnamedField` is now a constant
+  and refers to a constant string.
+  (Contributed by Serhiy Storchaka in :issue:`38650`.)
+
+* Exclude ``PyFPE_START_PROTECT()`` and ``PyFPE_END_PROTECT()`` macros of
+  ``pyfpe.h`` from ``Py_LIMITED_API`` (stable API).
+  (Contributed by Victor Stinner in :issue:`38835`.)
+
+* Remove ``PyMethod_ClearFreeList()`` and ``PyCFunction_ClearFreeList()``
+  functions: the free lists of bound method objects have been removed.
+  (Contributed by Inada Naoki and Victor Stinner in :issue:`37340`.)
+
+* Remove ``PyUnicode_ClearFreeList()`` function: the Unicode free list has been
+  removed in Python 3.3.
+  (Contributed by Victor Stinner in :issue:`38896`.)
 
 
 Deprecated
@@ -191,6 +279,12 @@ Deprecated
   the module will restrict its seeds to :const:`None`, :class:`int`,
   :class:`float`, :class:`str`, :class:`bytes`, and :class:`bytearray`.
 
+* Opening the :class:`~gzip.GzipFile` file for writing without specifying
+  the *mode* argument is deprecated.  In future Python versions it will always
+  be opened for reading by default.  Specify the *mode* argument for opening
+  it for writing and silencing a warning.
+  (Contributed by Serhiy Storchaka in :issue:`28286`.)
+
 * Deprecated the ``split()`` method of :class:`_tkinter.TkappType` in
   favour of the ``splitlist()`` method which has more consistent and
   predicable behavior.
@@ -199,6 +293,11 @@ Deprecated
 
 Removed
 =======
+
+* :class:`array.array`: ``tostring()`` and ``fromstring()`` methods have been
+  removed. They were aliases to ``tobytes()`` and ``frombytes()``, deprecated
+  since Python 3.2.
+  (Contributed by Victor Stinner in :issue:`38916`.)
 
 * The abstract base classes in :mod:`collections.abc` no longer are
   exposed in the regular :mod:`collections` module.  This will help
@@ -263,6 +362,14 @@ that may require changes to your code.
 
 Changes in the Python API
 -------------------------
+
+* :func:`open`, :func:`io.open`, :func:`codecs.open` and
+  :class:`fileinput.FileInput` no longer accept ``'U'`` ("universal newline")
+  in the file mode. This flag was deprecated since Python 3.3. In Python 3, the
+  "universal newline" is used by default when a file is open in text mode.  The
+  :ref:`newline parameter <open-newline-parameter>` of :func:`open` controls
+  how universal newlines works.
+  (Contributed by Victor Stinner in :issue:`37330`.)
 
 * :func:`__import__` and :func:`importlib.util.resolve_name` now raise
   :exc:`ImportError` where it previously raised :exc:`ValueError`. Callers

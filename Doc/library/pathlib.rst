@@ -944,6 +944,19 @@ call fails (for example because the path doesn't exist).
    .. versionadded:: 3.5
 
 
+.. method:: Path.readlink()
+
+   Return the path to which the symbolic link points (as returned by
+   :func:`os.readlink`)::
+
+      >>> p = Path('mylink')
+      >>> p.symlink_to('setup.py')
+      >>> p.readlink()
+      PosixPath('setup.py')
+
+   .. versionadded:: 3.9
+
+
 .. method:: Path.rename(target)
 
    Rename this file or directory to the given *target*, and return a new Path
@@ -1153,6 +1166,7 @@ os and os.path                         pathlib
 :func:`os.path.isdir`                  :meth:`Path.is_dir`
 :func:`os.path.isfile`                 :meth:`Path.is_file`
 :func:`os.path.islink`                 :meth:`Path.is_symlink`
+:func:`os.readlink`                    :meth:`Path.readlink`
 :func:`os.stat`                        :meth:`Path.stat`,
                                        :meth:`Path.owner`,
                                        :meth:`Path.group`

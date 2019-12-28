@@ -1747,8 +1747,10 @@ ast_for_decorator(struct compiling *c, const node *n)
         name_expr = NULL;
     }
     else if (NCH(n) == 5) { /* Call with no arguments */
-        d = Call(name_expr, NULL, NULL, LINENO(n),
-                 n->n_col_offset, n->n_end_lineno, n->n_end_col_offset, c->c_arena);
+        d = Call(name_expr, NULL, NULL,
+                 name_expr->lineno, name_expr->col_offset,
+                 CHILD(n, 3)->n_end_lineno, CHILD(n, 3)->n_end_col_offset,
+                 c->c_arena);
         if (!d)
             return NULL;
         name_expr = NULL;
@@ -1933,9 +1935,7 @@ ast_for_decorated(struct compiling *c, const node *n)
 static expr_ty
 ast_for_namedexpr(struct compiling *c, const node *n)
 {
-    /* if_stmt: 'if' namedexpr_test ':' suite ('elif' namedexpr_test ':' suite)*
-         ['else' ':' suite]
-       namedexpr_test: test [':=' test]
+    /* namedexpr_test: test [':=' test]
        argument: ( test [comp_for] |
             test ':=' test |
             test '=' test |
@@ -3126,7 +3126,7 @@ ast_for_call(struct compiling *c, const node *n, expr_ty func,
                     return NULL;
                 starred = Starred(e, Load, LINENO(chch),
                         chch->n_col_offset,
-                        chch->n_end_lineno, chch->n_end_col_offset,
+                        e->end_lineno, e->end_col_offset,
                         c->c_arena);
                 if (!starred)
                     return NULL;
@@ -4048,8 +4048,8 @@ ast_for_if_stmt(struct compiling *c, const node *n)
 
             asdl_seq_SET(orelse, 0,
                          If(expression, suite_seq, suite_seq2,
-                            LINENO(CHILD(n, NCH(n) - 6)),
-                            CHILD(n, NCH(n) - 6)->n_col_offset,
+                            LINENO(CHILD(n, NCH(n) - 7)),
+                            CHILD(n, NCH(n) - 7)->n_col_offset,
                             end_lineno, end_col_offset, c->c_arena));
             /* the just-created orelse handled the last elif */
             n_elif--;
@@ -4074,8 +4074,8 @@ ast_for_if_stmt(struct compiling *c, const node *n)
             }
             asdl_seq_SET(newobj, 0,
                          If(expression, suite_seq, orelse,
-                            LINENO(CHILD(n, off)),
-                            CHILD(n, off)->n_col_offset,
+                            LINENO(CHILD(n, off - 1)),
+                            CHILD(n, off - 1)->n_col_offset,
                             end_lineno, end_col_offset, c->c_arena));
             orelse = newobj;
         }
