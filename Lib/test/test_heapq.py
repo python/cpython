@@ -416,6 +416,35 @@ class TestErrorHandling:
                 self.assertRaises(TypeError, f, 2, N(s))
                 self.assertRaises(ZeroDivisionError, f, 2, E(s))
 
+    def test_merge_err(self):
+        nexterr_immediate = E
+        def nexterr_delayed():
+            yield from range(10)
+            raise ZeroDivisionError
+        merge = self.module.merge
+        for key in [None, lambda x:x]:
+            for reverse in [False, True]:
+                # test comparison failure during heapification
+                args = [[CmpErr()]] + [range(100)]*10
+                mo = merge(*args, key=key, reverse=reverse)
+                self.assertRaises(ZeroDivisionError, list, mo)
+
+                for n in range(2,10):
+                    # test comparison failure during intermediate steps
+                    args = [[0, 1, 2, 3, 4, 5, 6, 7, 8, 9, CmpErr(), 11, 12, 13]]*n
+                    mo = merge(*args, key=key, reverse=reverse)
+                    self.assertRaises(ZeroDivisionError, list, mo)
+                for n in range(1, 10):
+                    # test __next__ error during heapification
+                    args = [nexterr_immediate(range(10)) for _ in range(n)]
+                    mo = merge(*args, key=key, reverse=reverse)
+                    self.assertRaises(ZeroDivisionError, list, mo)
+                for n in range(1, 10):
+                    # test __next__ error during intermediate steps
+                    args = [nexterr_delayed() for _ in range(n)]
+                    mo = merge(*args, key=key, reverse=reverse)
+                    self.assertRaises(ZeroDivisionError, list, mo)
+
     # Issue #17278: the heap may change size while it's being walked.
 
     def test_heappush_mutating_heap(self):

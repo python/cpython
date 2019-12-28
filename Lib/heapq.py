@@ -311,10 +311,10 @@ def _siftup_max(heap, pos):
     heap[pos] = newitem
     _siftdown_max(heap, startpos, pos)
 
-def merge(*iterables, key=None, reverse=False):
+class merge:
     '''Merge multiple sorted inputs into a single sorted output.
 
-    Similar to sorted(itertools.chain(*iterables)) but returns a generator,
+    Similar to sorted(itertools.chain(*iterables)) but returns an iterator,
     does not pull the data into memory all at once, and assumes that each of
     the input streams is already sorted (smallest to largest).
 
@@ -326,71 +326,75 @@ def merge(*iterables, key=None, reverse=False):
 
     >>> list(merge(['dog', 'horse'], ['cat', 'fish', 'kangaroo'], key=len))
     ['dog', 'cat', 'fish', 'horse', 'kangaroo']
-
     '''
+    def _treesift(self, pos):
+        # like siftup, except the new leaf comes from one of our iters
+        iters = self._iters
+        n = len(iters)
+        tree = self._tree
+        sentinel = self._sentinel
+        compare = self._compare
+        while pos < n - 1:
+            childpos = 2 * pos + 1
+            otherchildpos = childpos + 1
+            child = tree[childpos]
+            otherchild = tree[otherchildpos]
+            if otherchild is not sentinel \
+                and (child is sentinel
+                     or compare(otherchild, child)):
+                childpos = otherchildpos
+            tree[pos] = tree[childpos]
+            pos = childpos
+        # this is the payoff of the initial shift:
+        tree[pos] = next(self._iters[pos - (n-1)], sentinel)
 
-    h = []
-    h_append = h.append
+    def __init__(self, *iterables, key=None, reverse=False):
+        n = len(iterables)
+        # shift the iterators so that the first iterable passed
+        # will correspond to the leftmost node
+        shift = n - (1 << n.bit_length())
+        self._iters = [iter(iterables[i+shift]) for i in range(n)]
+        self._tree = [None] * (n+n-1)
+        self._sentinel = object()
+        self._started = False
 
-    if reverse:
-        _heapify = _heapify_max
-        _heappop = _heappop_max
-        _heapreplace = _heapreplace_max
-        direction = -1
-    else:
-        _heapify = heapify
-        _heappop = heappop
-        _heapreplace = heapreplace
-        direction = 1
+        if key is None:
+            def get_value(x): return x
+            if reverse:
+                def compare(x, y): return y < x
+            else:
+                def compare(x, y): return x < y
+        else:
+            if not callable(key):
+                raise TypeError("Key must be callable or None.")
+            def get_value(x): return x[1]
+            self._iters = [((key(x), x) for x in it)
+                          for it in self._iters]
+            if reverse:
+                def compare(x, y): return y[0] < x[0]
+            else:
+                def compare(x, y): return x[0] < y[0]
+        self._get_value = get_value
+        self._compare = compare
 
-    if key is None:
-        for order, it in enumerate(map(iter, iterables)):
-            try:
-                next = it.__next__
-                h_append([next(), order * direction, next])
-            except StopIteration:
-                pass
-        _heapify(h)
-        while len(h) > 1:
-            try:
-                while True:
-                    value, order, next = s = h[0]
-                    yield value
-                    s[0] = next()           # raises StopIteration when exhausted
-                    _heapreplace(h, s)      # restore heap condition
-            except StopIteration:
-                _heappop(h)                 # remove empty iterator
-        if h:
-            # fast case when only a single iterator remains
-            value, order, next = h[0]
-            yield value
-            yield from next.__self__
-        return
+    def __iter__(self):
+        return self
 
-    for order, it in enumerate(map(iter, iterables)):
-        try:
-            next = it.__next__
-            value = next()
-            h_append([key(value), order * direction, value, next])
-        except StopIteration:
-            pass
-    _heapify(h)
-    while len(h) > 1:
-        try:
-            while True:
-                key_value, order, value, next = s = h[0]
-                yield value
-                value = next()
-                s[0] = key(value)
-                s[2] = value
-                _heapreplace(h, s)
-        except StopIteration:
-            _heappop(h)
-    if h:
-        key_value, order, value, next = h[0]
-        yield value
-        yield from next.__self__
-
+    def __next__(self):
+        if not self._iters:
+            raise StopIteration
+        if not self._started:
+            for i in reversed(range(1, len(self._tree))):
+                self._treesift(i)
+            self._started = True
+        self._treesift(0)
+        tree = self._tree
+        result = tree[0]
+        # free this merge object's reference to the result
+        tree[0] = None
+        if result is self._sentinel:
+            raise StopIteration
+        return self._get_value(result)
 
 # Algorithm notes for nlargest() and nsmallest()
 # ==============================================

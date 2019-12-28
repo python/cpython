@@ -546,6 +546,7 @@ typedef struct mergeobject{
     PyObject *keyfunc;  /* called to compare items */
     PyObject *tree;     /* tree of compared items stored as a list */
     int reverse;
+    int started;
 } mergeobject;
 
 static PyTypeObject merge_type;
@@ -777,6 +778,11 @@ merge_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 
     if (keyfunc == Py_None)
         keyfunc = NULL;
+    if (keyfunc != NULL && !PyCallable_Check(keyfunc)) {
+        PyErr_SetString(PyExc_TypeError, "Key must be callable or None.");
+        return NULL;
+    }
+
     Py_XINCREF(keyfunc);
 
     assert(PyTuple_CheckExact(args));
@@ -790,6 +796,7 @@ merge_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
         mo->tree = NULL;
         mo->keyfunc = NULL;
         mo->reverse = 0;
+        mo->started = 1;
         return (PyObject *) mo;
     }
 
@@ -828,22 +835,8 @@ merge_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
     mo->tree = tree;
     mo->keyfunc = keyfunc;
     mo->reverse = reverse;
+    mo->started = 0;
 
-    /* Heapify, except leaves are supplied by iterators.
-       Skip the root node--it will be loaded on the first call of next.
-       */
-    if (keyfunc == NULL) {
-        for (i = 2 * num_iters - 2; i > 0; i--) {
-            if (_tree_sift(mo, i) < 0)
-                goto error;
-        }
-    }
-    else {
-        for (i = 4 * num_iters - 4; i > 0; i -= 2) {
-            if (_tree_sift_key(mo, i) < 0)
-                goto error;
-        }
-    }
     return (PyObject *) mo;
 
 error:
@@ -884,6 +877,24 @@ merge_traverse(mergeobject *mo, visitproc visit, void *arg)
 static PyObject *
 merge_next(mergeobject *mo) {
     PyObject *result;
+    if (!mo->started) {
+        int i;
+        int n = PyList_GET_SIZE(mo->iterators);
+        /* Heapify, except leaves are supplied by iterators. */
+        if (mo->keyfunc == NULL) {
+            for (i = 2 * n - 2; i > 0; i--) {
+                if (_tree_sift(mo, i) < 0)
+                    return NULL;
+            }
+        }
+        else {
+            for (i = 4 * n - 4; i > 0; i -= 2) {
+                if (_tree_sift_key(mo, i) < 0)
+                    return NULL;
+            }
+        }
+        mo->started = 1;
+    }
     if (mo->tree == NULL)
         return NULL;
     if (mo->keyfunc == NULL) {
@@ -914,7 +925,7 @@ static PyMethodDef merge_methods[] = {
 PyDoc_STRVAR(merge_doc,
 "Merge multiple sorted inputs into a single sorted output.\n\
 \n\
-Similar to sorted(itertools.chain(*iterables)) but returns a generator,\n\
+Similar to sorted(itertools.chain(*iterables)) but returns an iterator,\n\
 does not pull the data into memory all at once, and assumes that each of\n\
 the input streams is already sorted (smallest to largest).\n\
 \n\
