@@ -734,8 +734,10 @@ _tree_sift_key(mergeobject *mo, Py_ssize_t pos) {
     }
     else {
         childkey = _PyObject_CallOneArg(mo->keyfunc, childvalue);
-        if (childkey == NULL)
+        if (childkey == NULL) {
+            Py_DECREF(childvalue);
             return -1;
+        }
         arr[pos] = childkey;
         arr[pos+1] = childvalue;
     }

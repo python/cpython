@@ -431,7 +431,7 @@ class TestErrorHandling:
 
                 for n in range(2,10):
                     # test comparison failure during intermediate steps
-                    args = [[0, 1, 2, 3, 4, 5, 6, 7, 8, 9, CmpErr(), 11, 12, 13]]*n
+                    args = [[0, 1, 2, 3, 4, 5, 6, 7, 8, 9, CmpErr()]]*n
                     mo = merge(*args, key=key, reverse=reverse)
                     self.assertRaises(ZeroDivisionError, list, mo)
                 for n in range(1, 10):
@@ -444,6 +444,9 @@ class TestErrorHandling:
                     args = [nexterr_delayed() for _ in range(n)]
                     mo = merge(*args, key=key, reverse=reverse)
                     self.assertRaises(ZeroDivisionError, list, mo)
+        for reverse in [False, True]:
+            mo = merge(range(10), range(10), key=lambda x: x // 0, reverse=reverse)
+            self.assertRaises(ZeroDivisionError, list, mo)
 
     # Issue #17278: the heap may change size while it's being walked.
 
