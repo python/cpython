@@ -271,7 +271,7 @@ def _optimize_charset(charset, fixup, fixes, isunicode):
                     else:
                         charmap[av] = 1
                 elif op is RANGE:
-                    r = range(av[0], av[1]+1)
+                    r = xrange(av[0], av[1]+1)
                     if fixup:
                         r = map(fixup, r)
                     if fixup and fixes:
