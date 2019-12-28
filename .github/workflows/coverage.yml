@@ -64,8 +64,8 @@ jobs:
         || true
     - name: 'Publish code coverage results'
       run: |
-        ./.venv/bin/python -m coverage xml
-        bash <(curl -s https://codecov.io/bash)
+        ./.venv/bin/python -m coverage xml || true
+        bash <(curl -s https://codecov.io/bash) || true
       env:
         CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
 
