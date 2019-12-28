@@ -566,6 +566,8 @@ _tree_sift(mergeobject *mo, Py_ssize_t pos) {
     assert(pos < 2 * n - 1);
 
     arr = _PyList_ITEMS(mo->tree);
+    assert(arr[pos] == NULL);
+
     if (mo->reverse) {
         while (pos < n - 1) {
             childpos = 2 * pos + 1;
@@ -650,6 +652,8 @@ _tree_sift_key(mergeobject *mo, Py_ssize_t pos) {
     assert(pos % 2 == 0);
 
     arr = _PyList_ITEMS(mo->tree);
+    assert(arr[pos] == NULL);
+
     if (mo->reverse)
     {
         while (pos < 2 * (n - 1)) {
@@ -780,12 +784,12 @@ merge_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 
     if (keyfunc == Py_None)
         keyfunc = NULL;
+    Py_XINCREF(keyfunc);
+
     if (keyfunc != NULL && !PyCallable_Check(keyfunc)) {
         PyErr_SetString(PyExc_TypeError, "Key must be callable or None.");
-        return NULL;
+        goto error;
     }
-
-    Py_XINCREF(keyfunc);
 
     assert(PyTuple_CheckExact(args));
     num_iters = PyTuple_GET_SIZE(args);
@@ -862,6 +866,7 @@ static PyObject *
 merge_sizeof(mergeobject *mo, void *unused)
 {
     Py_ssize_t res = _PyObject_SIZE(Py_TYPE(mo));
+
     if (mo->iterators)
         res += PyList_GET_SIZE(mo->iterators) * sizeof(PyObject *);
     if (mo->tree)

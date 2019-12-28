@@ -447,6 +447,7 @@ class TestErrorHandling:
         for reverse in [False, True]:
             mo = merge(range(10), range(10), key=lambda x: x // 0, reverse=reverse)
             self.assertRaises(ZeroDivisionError, list, mo)
+            self.assertRaises(TypeError, merge, key=object(), reverse=reverse)
 
     # Issue #17278: the heap may change size while it's being walked.
 
