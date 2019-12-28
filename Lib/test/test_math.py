@@ -676,7 +676,6 @@ class MathTests(unittest.TestCase):
              float.fromhex('0x1.df11f45f4e61ap+2')),
             ([(-1.)**n/n for n in range(1, 1001)],
              float.fromhex('-0x1.62a2af1bd3624p-1')),
-            ([1.7**(i+1)-1.7**i for i in range(1000)] + [-1.7**1000], -1.0),
             ([1e16, 1., 1e-16], 10000000000000002.0),
             ([1e16-2., 1.-2.**-53, -(1e16-2.), -(1.-2.**-53)], 0.0),
             # exercise code for resizing partials array
@@ -684,6 +683,13 @@ class MathTests(unittest.TestCase):
              [-2.**1022],
              float.fromhex('0x1.5555555555555p+970')),
             ]
+
+        # Telescoping sum, with exact differences (due to Sterbenz)
+        terms = [1.7**i for i in range(1001)]
+        test_values.append((
+            [terms[i+1] - terms[i] for i in range(1000)] + [-terms[1000]],
+            -terms[0]
+        ))
 
         for i, (vals, expected) in enumerate(test_values):
             try:

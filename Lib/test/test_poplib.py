@@ -255,7 +255,8 @@ class TestPOP3Class(TestCase):
     def setUp(self):
         self.server = DummyPOP3Server((HOST, PORT))
         self.server.start()
-        self.client = poplib.POP3(self.server.host, self.server.port, timeout=3)
+        self.client = poplib.POP3(self.server.host, self.server.port,
+                                  timeout=test_support.LOOPBACK_TIMEOUT)
 
     def tearDown(self):
         self.client.close()
@@ -376,7 +377,8 @@ class TestPOP3Class(TestCase):
         self.assertEqual(ctx.check_hostname, True)
         with self.assertRaises(ssl.CertificateError):
             resp = self.client.stls(context=ctx)
-        self.client = poplib.POP3("localhost", self.server.port, timeout=3)
+        self.client = poplib.POP3("localhost", self.server.port,
+                                  timeout=test_support.LOOPBACK_TIMEOUT)
         resp = self.client.stls(context=ctx)
         self.assertEqual(resp, expected)
 
@@ -445,7 +447,8 @@ class TestPOP3_TLSClass(TestPOP3Class):
     def setUp(self):
         self.server = DummyPOP3Server((HOST, PORT))
         self.server.start()
-        self.client = poplib.POP3(self.server.host, self.server.port, timeout=3)
+        self.client = poplib.POP3(self.server.host, self.server.port,
+                                  timeout=test_support.LOOPBACK_TIMEOUT)
         self.client.stls()
 
     def tearDown(self):

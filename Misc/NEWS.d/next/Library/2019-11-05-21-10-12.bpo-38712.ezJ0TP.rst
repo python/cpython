@@ -1,3 +1,0 @@
-Add the Linux-specific :func:`signal.pidfd_send_signal` function, which
-allows sending a signal to a process identified by a file descriptor rather
-than a pid.

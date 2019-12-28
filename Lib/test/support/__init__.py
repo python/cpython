@@ -2512,16 +2512,6 @@ def swap_item(obj, item, new_val):
             if item in obj:
                 del obj[item]
 
-def strip_python_stderr(stderr):
-    """Strip the stderr of a Python process from potential debug output
-    emitted by the interpreter.
-
-    This will typically be run on the result of the communicate() method
-    of a subprocess.Popen object.
-    """
-    stderr = re.sub(br"\[\d+ refs, \d+ blocks\]\r?\n?", b"", stderr).strip()
-    return stderr
-
 requires_type_collecting = unittest.skipIf(hasattr(sys, 'getcounts'),
                         'types are immortal if COUNT_ALLOCS is defined')
 
