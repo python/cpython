@@ -982,25 +982,25 @@ class UserDict(_collections_abc.MutableMapping):
     # Now, add the methods in dicts but not in MutableMapping
     def __repr__(self): return repr(self.data)
 
-    def __add__(self, other):
+    def __or__(self, other):
         if isinstance(other, UserDict):
-            return self.__class__(self.data + other.data)
+            return self.__class__(self.data | other.data)
         if isinstance(other, type(self.data)):
-            return self.__class__(self.data + other)
-        return self.__class__(self.data + dict(other))
-    def __radd__(self, other):
+            return self.__class__(self.data | other)
+        return self.__class__(self.data | dict(other))
+    def __ror__(self, other):
         if isinstance(other, UserDict):
-            return self.__class__(other.data + self.data)
+            return self.__class__(other.data | self.data)
         if isinstance(other, type(self.data)):
-            return self.__class__(other + self.data)
-        return self.__class__(dict(other) + self.data)
-    def __iadd__(self, other):
+            return self.__class__(other | self.data)
+        return self.__class__(dict(other) | self.data)
+    def __ior__(self, other):
         if isinstance(other, UserDict):
-            self.data += other.data
+            self.data |= other.data
         elif isinstance(other, type(self.data)):
-            self.data += other
+            self.data |= other
         else:
-            self.data += dict(other)
+            self.data |= dict(other)
         return self
 
     def __copy__(self):
