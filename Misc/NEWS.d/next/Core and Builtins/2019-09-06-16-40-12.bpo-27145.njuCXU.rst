@@ -1,0 +1,1 @@
+int + int and int - int operators can now return small integer singletons. Patch by hongweipeng.

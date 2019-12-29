@@ -1059,7 +1059,8 @@ class DocTestFinder:
         if module is None:
             filename = None
         else:
-            filename = getattr(module, '__file__', module.__name__)
+            # __file__ can be None for namespace packages.
+            filename = getattr(module, '__file__', None) or module.__name__
             if filename[-4:] == ".pyc":
                 filename = filename[:-1]
         return self._parser.get_doctest(docstring, globs, name,
@@ -1326,7 +1327,7 @@ class DocTestRunner:
             try:
                 # Don't blink!  This is where the user's code gets run.
                 exec(compile(example.source, filename, "single",
-                             compileflags, 1), test.globs)
+                             compileflags, True), test.globs)
                 self.debugger.set_continue() # ==== Example Finished ====
                 exception = None
             except KeyboardInterrupt:

@@ -152,8 +152,8 @@ the ``time()`` function, which returns system time in seconds since the Unix
 epoch, and the ``GetModuleHandleA()`` function, which returns a win32 module
 handle.
 
-This example calls both functions with a NULL pointer (``None`` should be used
-as the NULL pointer)::
+This example calls both functions with a ``NULL`` pointer (``None`` should be used
+as the ``NULL`` pointer)::
 
    >>> print(libc.time(None))  # doctest: +SKIP
    1150640792
@@ -576,7 +576,7 @@ Here is a simple example of a POINT structure, which contains two integers named
    >>> POINT(1, 2, 3)
    Traceback (most recent call last):
      File "<stdin>", line 1, in <module>
-   ValueError: too many initializers
+   TypeError: too many initializers
    >>>
 
 You can, however, build much more complicated structures.  A structure can
@@ -1083,7 +1083,7 @@ An extended example which also demonstrates the use of pointers accesses the
 Quoting the docs for that value:
 
    This pointer is initialized to point to an array of :c:type:`struct _frozen`
-   records, terminated by one whose members are all *NULL* or zero.  When a frozen
+   records, terminated by one whose members are all ``NULL`` or zero.  When a frozen
    module is imported, it is searched in this table.  Third-party code could play
    tricks with this to provide a dynamically created collection of frozen modules.
 
@@ -1110,7 +1110,7 @@ Since ``table`` is a ``pointer`` to the array of ``struct_frozen`` records, we
 can iterate over it, but we just have to make sure that our loop terminates,
 because pointers have no size. Sooner or later it would probably crash with an
 access violation or whatever, so it's better to break out of the loop when we
-hit the NULL entry::
+hit the ``NULL`` entry::
 
    >>> for item in table:
    ...     if item.name is None:
@@ -1175,15 +1175,20 @@ Keep in mind that retrieving sub-objects from Structure, Unions, and Arrays
 doesn't *copy* the sub-object, instead it retrieves a wrapper object accessing
 the root-object's underlying buffer.
 
-Another example that may behave different from what one would expect is this::
+Another example that may behave differently from what one would expect is this::
 
    >>> s = c_char_p()
-   >>> s.value = "abc def ghi"
+   >>> s.value = b"abc def ghi"
    >>> s.value
-   'abc def ghi'
+   b'abc def ghi'
    >>> s.value is s.value
    False
    >>>
+
+.. note::
+
+   Objects instantiated from :class:`c_char_p` can only have their value set to bytes
+   or integers.
 
 Why is it printing ``False``?  ctypes instances are objects containing a memory
 block plus some :term:`descriptor`\s accessing the contents of the memory.
@@ -1509,17 +1514,23 @@ object is available:
    :c:type:`int`, which is of course not always the truth, so you have to assign
    the correct :attr:`restype` attribute to use these functions.
 
-.. audit-event:: ctypes.dlopen name
+.. audit-event:: ctypes.dlopen name ctypes.LibraryLoader
 
    Loading a library through any of these objects raises an
    :ref:`auditing event <auditing>` ``ctypes.dlopen`` with string argument
    ``name``, the name used to load the library.
 
-.. audit-event:: ctypes.dlsym "library name"
+.. audit-event:: ctypes.dlsym library,name ctypes.LibraryLoader
 
    Accessing a function on a loaded library raises an auditing event
    ``ctypes.dlsym`` with arguments ``library`` (the library object) and ``name``
    (the symbol's name as a string or integer).
+
+.. audit-event:: ctypes.dlsym/handle handle,name ctypes.LibraryLoader
+
+   In cases when only the library handle is available rather than the object,
+   accessing a function raises an auditing event ``ctypes.dlsym/handle`` with
+   arguments ``handle`` (the raw library handle) and ``name``.
 
 .. _ctypes-foreign-functions:
 
@@ -1605,6 +1616,19 @@ They are instances of a private class:
    This exception is raised when a foreign function call cannot convert one of the
    passed arguments.
 
+
+.. audit-event:: ctypes.seh_exception code foreign-functions
+
+   On Windows, when a foreign function call raises a system exception (for
+   example, due to an access violation), it will be captured and replaced with
+   a suitable Python exception. Further, an auditing event
+   ``ctypes.seh_exception`` with argument ``code`` will be raised, allowing an
+   audit hook to replace the exception with its own.
+
+.. audit-event:: ctypes.call_function func_pointer,arguments ctype-foreign-functions
+
+   Some ways to invoke foreign function calls may raise an auditing event
+   ``ctypes.call_function`` with arguments ``function pointer`` and ``arguments``.
 
 .. _ctypes-function-prototypes:
 
@@ -1797,6 +1821,8 @@ Utility functions
    Returns the address of the memory buffer as integer.  *obj* must be an
    instance of a ctypes type.
 
+   .. audit-event:: ctypes.addressof obj ctypes.addressof
+
 
 .. function:: alignment(obj_or_type)
 
@@ -1839,6 +1865,7 @@ Utility functions
    termination character. An integer can be passed as second argument which allows
    specifying the size of the array if the length of the bytes should not be used.
 
+   .. audit-event:: ctypes.create_string_buffer init,size ctypes.create_string_buffer
 
 
 .. function:: create_unicode_buffer(init_or_size, size=None)
@@ -1855,6 +1882,7 @@ Utility functions
    allows specifying the size of the array if the length of the string should not
    be used.
 
+   .. audit-event:: ctypes.create_unicode_buffer init,size ctypes.create_unicode_buffer
 
 
 .. function:: DllCanUnloadNow()
@@ -1912,10 +1940,14 @@ Utility functions
    Returns the current value of the ctypes-private copy of the system
    :data:`errno` variable in the calling thread.
 
+   .. audit-event:: ctypes.get_errno "" ctypes.get_errno
+
 .. function:: get_last_error()
 
    Windows only: returns the current value of the ctypes-private copy of the system
    :data:`LastError` variable in the calling thread.
+
+   .. audit-event:: ctypes.get_last_error "" ctypes.get_last_error
 
 .. function:: memmove(dst, src, count)
 
@@ -1960,6 +1992,7 @@ Utility functions
    Set the current value of the ctypes-private copy of the system :data:`errno`
    variable in the calling thread to *value* and return the previous value.
 
+   .. audit-event:: ctypes.set_errno errno ctypes.set_errno
 
 
 .. function:: set_last_error(value)
@@ -1968,6 +2001,7 @@ Utility functions
    :data:`LastError` variable in the calling thread to *value* and return the
    previous value.
 
+   .. audit-event:: ctypes.set_last_error error ctypes.set_last_error
 
 
 .. function:: sizeof(obj_or_type)
@@ -1981,6 +2015,8 @@ Utility functions
    This function returns the C string starting at memory address *address* as a bytes
    object. If size is specified, it is used as size, otherwise the string is assumed
    to be zero-terminated.
+
+   .. audit-event:: ctypes.string_at address,size ctypes.string_at
 
 
 .. function:: WinError(code=None, descr=None)
@@ -2001,6 +2037,8 @@ Utility functions
    *address* as a string.  If *size* is specified, it is used as the number of
    characters of the string, otherwise the string is assumed to be
    zero-terminated.
+
+   .. audit-event:: ctypes.wstring_at address,size ctypes.wstring_at
 
 
 .. _ctypes-data-types:
@@ -2029,6 +2067,7 @@ Data types
       source buffer in bytes; the default is zero.  If the source buffer is not
       large enough a :exc:`ValueError` is raised.
 
+      .. audit-event:: ctypes.cdata/buffer pointer,size,offset ctypes._CData.from_buffer
 
    .. method:: _CData.from_buffer_copy(source[, offset])
 
@@ -2038,15 +2077,17 @@ Data types
       is zero.  If the source buffer is not large enough a :exc:`ValueError` is
       raised.
 
+      .. audit-event:: ctypes.cdata/buffer pointer,size,offset ctypes._CData.from_buffer_copy
+
    .. method:: from_address(address)
 
       This method returns a ctypes type instance using the memory specified by
       *address* which must be an integer.
 
-      .. audit-event:: ctypes.cdata address
+      .. audit-event:: ctypes.cdata address ctypes._CData.from_address
 
          This method, and others that indirectly call this method, raises an
-         :func:`auditing event <sys.audit>` ``ctypes.cdata`` with argument
+         :ref:`auditing event <auditing>` ``ctypes.cdata`` with argument
          ``address``.
 
    .. method:: from_param(obj)

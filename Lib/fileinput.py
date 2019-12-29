@@ -8,9 +8,9 @@ Typical use is:
 
 This iterates over the lines of all files listed in sys.argv[1:],
 defaulting to sys.stdin if the list is empty.  If a filename is '-' it
-is also replaced by sys.stdin.  To specify an alternative list of
-filenames, pass it as the argument to input().  A single file name is
-also allowed.
+is also replaced by sys.stdin and the optional arguments mode and
+openhook are ignored.  To specify an alternative list of filenames,
+pass it as the argument to input().  A single file name is also allowed.
 
 Functions filename(), lineno() return the filename and cumulative line
 number of the line that has just been read; filelineno() returns its
@@ -209,15 +209,10 @@ class FileInput:
         self._isstdin = False
         self._backupfilename = None
         # restrict mode argument to reading modes
-        if mode not in ('r', 'rU', 'U', 'rb'):
-            raise ValueError("FileInput opening mode must be one of "
-                             "'r', 'rU', 'U' and 'rb'")
-        if 'U' in mode:
-            import warnings
-            warnings.warn("'U' mode is deprecated",
-                          DeprecationWarning, 2)
+        if mode not in ('r', 'rb'):
+            raise ValueError("FileInput opening mode must be 'r' or 'rb'")
         self._mode = mode
-        self._write_mode = mode.replace('r', 'w') if 'U' not in mode else 'w'
+        self._write_mode = mode.replace('r', 'w')
         if openhook:
             if inplace:
                 raise ValueError("FileInput cannot use an opening hook in inplace mode")

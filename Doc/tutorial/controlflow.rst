@@ -4,8 +4,8 @@
 More Control Flow Tools
 ***********************
 
-Besides the :keyword:`while` statement just introduced, Python knows the usual
-control flow statements known from other languages, with some twists.
+Besides the :keyword:`while` statement just introduced, Python uses the usual
+flow control statements known from other languages, with some twists.
 
 
 .. _tut-if:
@@ -66,20 +66,20 @@ they appear in the sequence.  For example (no pun intended):
    window 6
    defenestrate 12
 
-If you need to modify the sequence you are iterating over while inside the loop
-(for example to duplicate selected items), it is recommended that you first
-make a copy.  Iterating over a sequence does not implicitly make a copy.  The
-slice notation makes this especially convenient::
+Code that modifies a collection while iterating over that same collection can
+be tricky to get right.  Instead, it is usually more straight-forward to loop
+over a copy of the collection or to create a new collection::
 
-   >>> for w in words[:]:  # Loop over a slice copy of the entire list.
-   ...     if len(w) > 6:
-   ...         words.insert(0, w)
-   ...
-   >>> words
-   ['defenestrate', 'cat', 'window', 'defenestrate']
+    # Strategy:  Iterate over a copy
+    for user, status in users.copy().items():
+        if status == 'inactive':
+            del users[user]
 
-With ``for w in words:``, the example would attempt to create an infinite list,
-inserting ``defenestrate`` over and over again.
+    # Strategy:  Create a new collection
+    active_users = {}
+    for user, status in users.items():
+        if status == 'active':
+            active_users[user] = status
 
 
 .. _tut-range:
@@ -139,18 +139,24 @@ but in fact it isn't. It is an object which returns the successive items of
 the desired sequence when you iterate over it, but it doesn't really make
 the list, thus saving space.
 
-We say such an object is *iterable*, that is, suitable as a target for
+We say such an object is :term:`iterable`, that is, suitable as a target for
 functions and constructs that expect something from which they can
-obtain successive items until the supply is exhausted. We have seen that
-the :keyword:`for` statement is such an *iterator*. The function :func:`list`
-is another; it creates lists from iterables::
+obtain successive items until the supply is exhausted.  We have seen that
+the :keyword:`for` statement is such a construct, while an example of function
+that takes an iterable is :func:`sum`::
 
+    >>> sum(range(4))  # 0 + 1 + 2 + 3
+    6
 
-   >>> list(range(5))
-   [0, 1, 2, 3, 4]
+Later we will see more functions that return iterables and take iterables as
+arguments.  Lastly, maybe you are curious about how to get a list from a range.
+Here is the solution::
 
-Later we will see more functions that return iterables and take iterables as argument.
+   >>> list(range(4))
+   [0, 1, 2, 3]
 
+In chapter :ref:`tut-structures`, we will discuss in more detail about
+:func:`list`.
 
 .. _tut-break:
 
@@ -161,7 +167,7 @@ The :keyword:`break` statement, like in C, breaks out of the innermost enclosing
 :keyword:`for` or :keyword:`while` loop.
 
 Loop statements may have an :keyword:`!else` clause; it is executed when the loop
-terminates through exhaustion of the list (with :keyword:`for`) or when the
+terminates through exhaustion of the iterable (with :keyword:`for`) or when the
 condition becomes false (with :keyword:`while`), but not when the loop is
 terminated by a :keyword:`break` statement.  This is exemplified by the
 following loop, which searches for prime numbers::
@@ -188,8 +194,8 @@ following loop, which searches for prime numbers::
 the :keyword:`for` loop, **not** the :keyword:`if` statement.)
 
 When used with a loop, the ``else`` clause has more in common with the
-``else`` clause of a :keyword:`try` statement than it does that of
-:keyword:`if` statements: a :keyword:`!try` statement's ``else`` clause runs
+``else`` clause of a :keyword:`try` statement than it does with that of
+:keyword:`if` statements: a :keyword:`try` statement's ``else`` clause runs
 when no exception occurs, and a loop's ``else`` clause runs when no ``break``
 occurs. For more on the :keyword:`!try` statement and exceptions, see
 :ref:`tut-handling`.
@@ -689,7 +695,7 @@ As guidance:
 * Use keyword-only when names have meaning and the function definition is
   more understandable by being explicit with names or you want to prevent
   users relying on the position of the argument being passed.
-* For an API, use positional-only to prevent prevent breaking API changes
+* For an API, use positional-only to prevent breaking API changes
   if the parameter's name is modified in the future.
 
 .. _tut-arbitraryargs:
@@ -914,7 +920,7 @@ extracted for you:
   bracketing constructs: ``a = f(1, 2) + g(3, 4)``.
 
 * Name your classes and functions consistently; the convention is to use
-  ``CamelCase`` for classes and ``lower_case_with_underscores`` for functions
+  ``UpperCamelCase`` for classes and ``lowercase_with_underscores`` for functions
   and methods.  Always use ``self`` as the name for the first method argument
   (see :ref:`tut-firstclasses` for more on classes and methods).
 

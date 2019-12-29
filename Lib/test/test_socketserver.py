@@ -36,7 +36,7 @@ def signal_alarm(n):
 # Remember real select() to avoid interferences with mocking
 _real_select = select.select
 
-def receive(sock, n, timeout=20):
+def receive(sock, n, timeout=test.support.SHORT_TIMEOUT):
     r, w, x = _real_select([sock], [], [], timeout)
     if sock in r:
         return sock.recv(n)

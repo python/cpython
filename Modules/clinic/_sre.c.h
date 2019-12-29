@@ -894,7 +894,7 @@ _sre_compile(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject
         goto exit;
     }
     if (!PyList_Check(args[2])) {
-        _PyArg_BadArgument("compile", 3, "list", args[2]);
+        _PyArg_BadArgument("compile", "argument 'code'", "list", args[2]);
         goto exit;
     }
     code = args[2];
@@ -916,12 +916,12 @@ _sre_compile(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject
         groups = ival;
     }
     if (!PyDict_Check(args[4])) {
-        _PyArg_BadArgument("compile", 5, "dict", args[4]);
+        _PyArg_BadArgument("compile", "argument 'groupindex'", "dict", args[4]);
         goto exit;
     }
     groupindex = args[4];
     if (!PyTuple_Check(args[5])) {
-        _PyArg_BadArgument("compile", 6, "tuple", args[5]);
+        _PyArg_BadArgument("compile", "argument 'indexgroup'", "tuple", args[5]);
         goto exit;
     }
     indexgroup = args[5];
@@ -1207,4 +1207,4 @@ _sre_SRE_Scanner_search(ScannerObject *self, PyObject *Py_UNUSED(ignored))
 {
     return _sre_SRE_Scanner_search_impl(self);
 }
-/*[clinic end generated code: output=67b702da5bdc9cac input=a9049054013a1b77]*/
+/*[clinic end generated code: output=1adeddce58ae284c input=a9049054013a1b77]*/

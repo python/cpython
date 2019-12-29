@@ -20,6 +20,7 @@ import codecs
 import os.path
 import shutil
 from urllib.error import URLError
+import urllib.request
 from test import support
 from test.support import findfile, run_unittest, FakePath, TESTFN
 
@@ -979,6 +980,9 @@ class ExpatReaderTest(XmlTestBase):
         self.assertEqual(handler._entities, [("img", None, "expat.gif", "GIF")])
 
     def test_expat_external_dtd_enabled(self):
+        # clear _opener global variable
+        self.addCleanup(urllib.request.urlcleanup)
+
         parser = create_parser()
         parser.setFeature(feature_external_ges, True)
         resolver = self.TestEntityRecorder()

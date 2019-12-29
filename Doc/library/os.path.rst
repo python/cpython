@@ -87,9 +87,10 @@ the :mod:`glob` module.)
 .. function:: commonpath(paths)
 
    Return the longest common sub-path of each pathname in the sequence
-   *paths*.  Raise :exc:`ValueError` if *paths* contains both absolute and relative
-   pathnames, or if *paths* is empty.  Unlike :func:`commonprefix`, this
-   returns a valid path.
+   *paths*.  Raise :exc:`ValueError` if *paths* contain both absolute
+   and relative pathnames, the *paths* are on the different drives or
+   if *paths* is empty.  Unlike :func:`commonprefix`, this returns a
+   valid path.
 
    .. availability:: Unix, Windows.
 
@@ -327,8 +328,6 @@ the :mod:`glob` module.)
    Normalize the case of a pathname.  On Windows, convert all characters in the
    pathname to lowercase, and also convert forward slashes to backward slashes.
    On other operating systems, return the path unchanged.
-   Raise a :exc:`TypeError` if the type of *path* is not ``str`` or ``bytes`` (directly
-   or indirectly through the :class:`os.PathLike` interface).
 
    .. versionchanged:: 3.6
       Accepts a :term:`path-like object`.
@@ -349,10 +348,18 @@ the :mod:`glob` module.)
 .. function:: realpath(path)
 
    Return the canonical path of the specified filename, eliminating any symbolic
-   links encountered in the path (if they are supported by the operating system).
+   links encountered in the path (if they are supported by the operating
+   system).
+
+   .. note::
+      When symbolic link cycles occur, the returned path will be one member of
+      the cycle, but no guarantee is made about which member that will be.
 
    .. versionchanged:: 3.6
       Accepts a :term:`path-like object`.
+
+   .. versionchanged:: 3.8
+      Symbolic links and junctions are now resolved on Windows.
 
 
 .. function:: relpath(path, start=os.curdir)

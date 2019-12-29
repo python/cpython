@@ -1085,18 +1085,15 @@ class HTTPConnection:
         else:
             raise CannotSendRequest(self.__state)
 
-        # Save the method we use, we need it later in the response phase
+        # Save the method for use later in the response phase
         self._method = method
-        if not url:
-            url = '/'
-        # Prevent CVE-2019-9740.
-        if match := _contains_disallowed_url_pchar_re.search(url):
-            raise InvalidURL(f"URL can't contain control characters. {url!r} "
-                             f"(found at least {match.group()!r})")
+
+        url = url or '/'
+        self._validate_path(url)
+
         request = '%s %s %s' % (method, url, self._http_vsn_str)
 
-        # Non-ASCII characters should have been eliminated earlier
-        self._output(request.encode('ascii'))
+        self._output(self._encode_request(request))
 
         if self._http_vsn == 11:
             # Issue some standard headers for better HTTP/1.1 compliance
@@ -1173,6 +1170,18 @@ class HTTPConnection:
         else:
             # For HTTP/1.0, the server will assume "not chunked"
             pass
+
+    def _encode_request(self, request):
+        # ASCII also helps prevent CVE-2019-9740.
+        return request.encode('ascii')
+
+    def _validate_path(self, url):
+        """Validate a url for putrequest."""
+        # Prevent CVE-2019-9740.
+        match = _contains_disallowed_url_pchar_re.search(url)
+        if match:
+            raise InvalidURL(f"URL can't contain control characters. {url!r} "
+                             f"(found at least {match.group()!r})")
 
     def putheader(self, header, *values):
         """Send a request header line to the server.
@@ -1358,6 +1367,9 @@ else:
             self.cert_file = cert_file
             if context is None:
                 context = ssl._create_default_https_context()
+                # enable PHA for TLS 1.3 connections if available
+                if context.post_handshake_auth is not None:
+                    context.post_handshake_auth = True
             will_verify = context.verify_mode != ssl.CERT_NONE
             if check_hostname is None:
                 check_hostname = context.check_hostname
@@ -1366,6 +1378,10 @@ else:
                                  "either CERT_OPTIONAL or CERT_REQUIRED")
             if key_file or cert_file:
                 context.load_cert_chain(cert_file, key_file)
+                # cert and key file means the user wants to authenticate.
+                # enable TLS 1.3 PHA implicitly even for custom contexts.
+                if context.post_handshake_auth is not None:
+                    context.post_handshake_auth = True
             self._context = context
             if check_hostname is not None:
                 self._context.check_hostname = check_hostname

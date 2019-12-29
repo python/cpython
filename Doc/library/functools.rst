@@ -108,6 +108,11 @@ The :mod:`functools` module defines the following functions:
    cached separately.  For example, ``f(3)`` and ``f(3.0)`` will be treated
    as distinct calls with distinct results.
 
+   The wrapped function is instrumented with a :func:`cache_parameters`
+   function that returns a new :class:`dict` showing the values for *maxsize*
+   and *typed*.  This is for information purposes only.  Mutating the values
+   has no effect.
+
    To help measure the effectiveness of the cache and tune the *maxsize*
    parameter, the wrapped function is instrumented with a :func:`cache_info`
    function that returns a :term:`named tuple` showing *hits*, *misses*,
@@ -178,6 +183,9 @@ The :mod:`functools` module defines the following functions:
    .. versionchanged:: 3.8
       Added the *user_function* option.
 
+   .. versionadded:: 3.9
+      Added the function :func:`cache_parameters`
+
 .. decorator:: total_ordering
 
    Given a class defining one or more rich comparison ordering methods, this
@@ -221,7 +229,7 @@ The :mod:`functools` module defines the following functions:
       Returning NotImplemented from the underlying comparison function for
       unrecognised types is now supported.
 
-.. function:: partial(func, *args, **keywords)
+.. function:: partial(func, /, *args, **keywords)
 
    Return a new :ref:`partial object<partial-objects>` which when called
    will behave like *func* called with the positional arguments *args*
@@ -230,7 +238,7 @@ The :mod:`functools` module defines the following functions:
    supplied, they extend and override *keywords*.
    Roughly equivalent to::
 
-      def partial(func, *args, **keywords):
+      def partial(func, /, *args, **keywords):
           def newfunc(*fargs, **fkeywords):
               newkeywords = {**keywords, **fkeywords}
               return func(*args, *fargs, **newkeywords)
@@ -252,7 +260,7 @@ The :mod:`functools` module defines the following functions:
       18
 
 
-.. class:: partialmethod(func, *args, **keywords)
+.. class:: partialmethod(func, /, *args, **keywords)
 
    Return a new :class:`partialmethod` descriptor which behaves
    like :class:`partial` except that it is designed to be used as a method
@@ -275,7 +283,7 @@ The :mod:`functools` module defines the following functions:
 
    Example::
 
-      >>> class Cell(object):
+      >>> class Cell:
       ...     def __init__(self):
       ...         self._alive = False
       ...     @property
@@ -414,6 +422,20 @@ The :mod:`functools` module defines the following functions:
    The original function decorated with ``@singledispatch`` is registered
    for the base ``object`` type, which means it is used if no better
    implementation is found.
+
+   If an implementation registered to :term:`abstract base class`, virtual
+   subclasses will be dispatched to that implementation::
+
+     >>> from collections.abc import Mapping
+     >>> @fun.register
+     ... def _(arg: Mapping, verbose=False):
+     ...     if verbose:
+     ...         print("Keys & Values")
+     ...     for key, value in arg.items():
+     ...         print(key, "=>", value)
+     ...
+     >>> fun({"a": "b"})
+     a => b
 
    To check which implementation will the generic function choose for
    a given type, use the ``dispatch()`` attribute::

@@ -126,8 +126,9 @@ to start a process.  These *start methods* are
 
 .. versionchanged:: 3.8
 
-   On macOS, *spawn* start method is now the default: *fork* start method is no
-   longer reliable on macOS, see :issue:`33725`.
+   On macOS, the *spawn* start method is now the default.  The *fork* start
+   method should be considered unsafe as it can lead to crashes of the
+   subprocess. See :issue:`33725`.
 
 .. versionchanged:: 3.4
    *spawn* added on all unix platforms, and *forkserver* added for
@@ -2168,7 +2169,8 @@ with the :class:`Pool` class.
    .. method:: map(func, iterable[, chunksize])
 
       A parallel equivalent of the :func:`map` built-in function (it supports only
-      one *iterable* argument though).  It blocks until the result is ready.
+      one *iterable* argument though, for multiple iterables see :meth:`starmap`).
+      It blocks until the result is ready.
 
       This method chops the iterable into a number of chunks which it submits to
       the process pool as separate tasks.  The (approximate) size of these
@@ -2278,6 +2280,10 @@ with the :class:`Pool` class.
 
       Return whether the call completed without raising an exception.  Will
       raise :exc:`AssertionError` if the result is not ready.
+
+      .. versionchanged:: 3.7
+         If the result is not ready, :exc:`ValueError` is raised instead of
+         :exc:`AssertionError`.
 
 The following example demonstrates the use of a pool::
 

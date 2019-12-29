@@ -1,5 +1,7 @@
 /* Frame object interface */
 
+// TODO: Rearrange this to follow the new include header layout
+
 #ifndef Py_LIMITED_API
 #ifndef Py_FRAMEOBJECT_H
 #define Py_FRAMEOBJECT_H
@@ -96,7 +98,7 @@ PyAPI_FUNC(PyObject *) PyFrame_GetLocalsAttr(PyFrameObject *);  // = frame.f_loc
 
 #ifdef Py_BUILD_CORE
 PyObject *_PyFrame_BorrowPyLocals(PyFrameObject *f); /* For PyEval_GetLocals() */
-void _PyFrame_PostEvalCleanup(PyFrameObject *f);     /* For PyEval_EvalFrameEx() */
+void _PyFrame_PostEvalCleanup(PyFrameObject *f);     /* For _PyEval_EvalFrame() */
 #endif
 
 

@@ -1,0 +1,3 @@
+Fix IDLE Format menu tab toggle and file indent width. These functions
+(default shortcuts Alt-T and Alt-U) were mistakenly disabled in 3.7.5
+and 3.8.0.

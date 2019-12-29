@@ -556,11 +556,9 @@ class TestPartialMethod(unittest.TestCase):
         with self.assertRaises(TypeError):
             class B:
                 method = functools.partialmethod()
-        with self.assertWarns(DeprecationWarning):
+        with self.assertRaises(TypeError):
             class B:
                 method = functools.partialmethod(func=capture, a=1)
-        b = B()
-        self.assertEqual(b.method(2, x=3), ((b, 2), {'a': 1, 'x': 3}))
 
     def test_repr(self):
         self.assertEqual(repr(vars(self.A)['both']),
@@ -1656,6 +1654,17 @@ class TestLRU:
             with self.subTest(func=f):
                 f_copy = copy.deepcopy(f)
                 self.assertIs(f_copy, f)
+
+    def test_lru_cache_parameters(self):
+        @self.module.lru_cache(maxsize=2)
+        def f():
+            return 1
+        self.assertEqual(f.cache_parameters(), {'maxsize': 2, "typed": False})
+
+        @self.module.lru_cache(maxsize=1000, typed=True)
+        def f():
+            return 1
+        self.assertEqual(f.cache_parameters(), {'maxsize': 1000, "typed": True})
 
 
 @py_functools.lru_cache()

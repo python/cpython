@@ -10,6 +10,8 @@ try:
 except ImportError:
     gc = None
 
+from test.libregrtest.utils import setup_unraisable_hook
+
 
 def setup_tests(ns):
     try:
@@ -58,22 +60,6 @@ def setup_tests(ns):
         if getattr(module, '__file__', None):
             module.__file__ = os.path.abspath(module.__file__)
 
-    # MacOSX (a.k.a. Darwin) has a default stack size that is too small
-    # for deeply recursive regular expressions.  We see this as crashes in
-    # the Python test suite when running test_re.py and test_sre.py.  The
-    # fix is to set the stack limit to 2048.
-    # This approach may also be useful for other Unixy platforms that
-    # suffer from small default stack limits.
-    if sys.platform == 'darwin':
-        try:
-            import resource
-        except ImportError:
-            pass
-        else:
-            soft, hard = resource.getrlimit(resource.RLIMIT_STACK)
-            newsoft = min(hard, max(soft, 1024*2048))
-            resource.setrlimit(resource.RLIMIT_STACK, (newsoft, hard))
-
     if ns.huntrleaks:
         unittest.BaseTestSuite._cleanup = False
 
@@ -92,6 +78,19 @@ def setup_tests(ns):
         def _test_audit_hook(name, args):
             pass
         sys.addaudithook(_test_audit_hook)
+
+    setup_unraisable_hook()
+
+    if ns.timeout is not None:
+        # For a slow buildbot worker, increase SHORT_TIMEOUT and LONG_TIMEOUT
+        support.SHORT_TIMEOUT = max(support.SHORT_TIMEOUT, ns.timeout / 40)
+        support.LONG_TIMEOUT = max(support.LONG_TIMEOUT, ns.timeout / 4)
+
+        # If --timeout is short: reduce timeouts
+        support.LOOPBACK_TIMEOUT = min(support.LOOPBACK_TIMEOUT, ns.timeout)
+        support.INTERNET_TIMEOUT = min(support.INTERNET_TIMEOUT, ns.timeout)
+        support.SHORT_TIMEOUT = min(support.SHORT_TIMEOUT, ns.timeout)
+        support.LONG_TIMEOUT = min(support.LONG_TIMEOUT, ns.timeout)
 
 
 def suppress_msvcrt_asserts(verbose):

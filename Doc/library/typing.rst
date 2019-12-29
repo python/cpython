@@ -10,10 +10,9 @@
 
 .. note::
 
-   The typing module has been included in the standard library on a
-   :term:`provisional basis <provisional api>`. New features might
-   be added and API may change even between minor releases if deemed
-   necessary by the core developers.
+   The Python runtime does not enforce function and variable type annotations.
+   They can be used by third party tools such as type checkers, IDEs, linters,
+   etc.
 
 --------------
 
@@ -232,8 +231,8 @@ A user-defined class can be defined as a generic class.
 single type parameter ``T`` . This also makes ``T`` valid as a type within the
 class body.
 
-The :class:`Generic` base class uses a metaclass that defines
-:meth:`__getitem__` so that ``LoggedVar[t]`` is valid as a type::
+The :class:`Generic` base class defines :meth:`__class_getitem__` so that
+``LoggedVar[t]`` is valid as a type::
 
    from typing import Iterable
 
@@ -308,9 +307,10 @@ User defined generic type aliases are also supported. Examples::
    def inproduct(v: Vec[T]) -> T: # Same as Iterable[Tuple[T, T]]
        return sum(x*y for x, y in v)
 
-The metaclass used by :class:`Generic` is a subclass of :class:`abc.ABCMeta`.
-A generic class can be an ABC by including abstract methods or properties,
-and generic classes can also have ABCs as base classes without a metaclass
+.. versionchanged:: 3.7
+    :class:`Generic` no longer has a custom metaclass.
+
+A user-defined generic class can have ABCs as base classes without a metaclass
 conflict. Generic metaclasses are not supported. The outcome of parameterizing
 generics is cached, and most types in the typing module are hashable and
 comparable for equality.
@@ -637,7 +637,7 @@ The module defines the following classes, functions and decorators:
 
    A generic version of :class:`collections.abc.Collection`
 
-   .. versionadded:: 3.6
+   .. versionadded:: 3.6.0
 
 .. class:: AbstractSet(Sized, Collection[T_co])
 
@@ -681,6 +681,7 @@ The module defines the following classes, functions and decorators:
 
    A generic version of :class:`collections.deque`.
 
+   .. versionadded:: 3.5.4
    .. versionadded:: 3.6.1
 
 .. class:: List(list, MutableSequence[T])
@@ -730,6 +731,8 @@ The module defines the following classes, functions and decorators:
 
    A generic version of :class:`collections.abc.Awaitable`.
 
+   .. versionadded:: 3.5.2
+
 .. class:: Coroutine(Awaitable[V_co], Generic[T_co T_contra, V_co])
 
    A generic version of :class:`collections.abc.Coroutine`.
@@ -743,25 +746,33 @@ The module defines the following classes, functions and decorators:
       async def bar() -> None:
           x = await c # type: int
 
+   .. versionadded:: 3.5.3
+
 .. class:: AsyncIterable(Generic[T_co])
 
    A generic version of :class:`collections.abc.AsyncIterable`.
+
+   .. versionadded:: 3.5.2
 
 .. class:: AsyncIterator(AsyncIterable[T_co])
 
    A generic version of :class:`collections.abc.AsyncIterator`.
 
+   .. versionadded:: 3.5.2
+
 .. class:: ContextManager(Generic[T_co])
 
    A generic version of :class:`contextlib.AbstractContextManager`.
 
-   .. versionadded:: 3.6
+   .. versionadded:: 3.5.4
+   .. versionadded:: 3.6.0
 
 .. class:: AsyncContextManager(Generic[T_co])
 
    A generic version of :class:`contextlib.AbstractAsyncContextManager`.
 
-   .. versionadded:: 3.6
+   .. versionadded:: 3.5.4
+   .. versionadded:: 3.6.2
 
 .. class:: Dict(dict, MutableMapping[KT, VT])
 
@@ -790,12 +801,14 @@ The module defines the following classes, functions and decorators:
 
    A generic version of :class:`collections.Counter`.
 
+   .. versionadded:: 3.5.4
    .. versionadded:: 3.6.1
 
 .. class:: ChainMap(collections.ChainMap, MutableMapping[KT, VT])
 
    A generic version of :class:`collections.ChainMap`.
 
+   .. versionadded:: 3.5.4
    .. versionadded:: 3.6.1
 
 .. class:: Generator(Iterator[T_co], Generic[T_co, T_contra, V_co])
@@ -860,7 +873,7 @@ The module defines the following classes, functions and decorators:
               yield start
               start = await increment(start)
 
-   .. versionadded:: 3.5.4
+   .. versionadded:: 3.6.1
 
 .. class:: Text
 
@@ -988,6 +1001,13 @@ The module defines the following classes, functions and decorators:
 
    .. versionadded:: 3.8
 
+.. class:: ForwardRef
+
+   A class used for internal typing representation of string forward references.
+   For example, ``List["SomeClass"]`` is implicitly transformed into
+   ``List[ForwardRef("SomeClass")]``.  This class should not be instantiated by
+   a user, but may be used by introspection tools.
+
 .. function:: NewType(typ)
 
    A helper function to indicate a distinct types to a typechecker,
@@ -1020,6 +1040,25 @@ The module defines the following classes, functions and decorators:
    value equal to ``None`` is set. For a class ``C``, return
    a dictionary constructed by merging all the ``__annotations__`` along
    ``C.__mro__`` in reverse order.
+
+.. function:: get_origin(tp)
+.. function:: get_args(tp)
+
+   Provide basic introspection for generic types and special typing forms.
+
+   For a typing object of the form ``X[Y, Z, ...]`` these functions return
+   ``X`` and ``(Y, Z, ...)``. If ``X`` is a generic alias for a builtin or
+   :mod:`collections` class, it gets normalized to the original class.
+   For unsupported objects return ``None`` and ``()`` correspondingly.
+   Examples::
+
+      assert get_origin(Dict[str, int]) is dict
+      assert get_args(Dict[int, str]) == (int, str)
+
+      assert get_origin(Union[int, str]) is Union
+      assert get_args(Union[int, str]) == (int, str)
+
+   .. versionadded:: 3.8
 
 .. decorator:: overload
 
@@ -1147,6 +1186,7 @@ The module defines the following classes, functions and decorators:
           raise RuntimeError('no way')
 
    .. versionadded:: 3.5.4
+   .. versionadded:: 3.6.2
 
 .. data:: Union
 
@@ -1205,7 +1245,8 @@ The module defines the following classes, functions and decorators:
 .. data:: Tuple
 
    Tuple type; ``Tuple[X, Y]`` is the type of a tuple of two items
-   with the first item of type X and the second of type Y.
+   with the first item of type X and the second of type Y. The type of
+   the empty tuple can be written as ``Tuple[()]``.
 
    Example: ``Tuple[T1, T2]`` is a tuple of two elements corresponding
    to type variables T1 and T2.  ``Tuple[int, float, str]`` is a tuple

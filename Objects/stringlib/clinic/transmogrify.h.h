@@ -100,7 +100,7 @@ stringlib_ljust(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
         fillchar = PyByteArray_AS_STRING(args[1])[0];
     }
     else {
-        _PyArg_BadArgument("ljust", 2, "a byte string of length 1", args[1]);
+        _PyArg_BadArgument("ljust", "argument 2", "a byte string of length 1", args[1]);
         goto exit;
     }
 skip_optional:
@@ -161,7 +161,7 @@ stringlib_rjust(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
         fillchar = PyByteArray_AS_STRING(args[1])[0];
     }
     else {
-        _PyArg_BadArgument("rjust", 2, "a byte string of length 1", args[1]);
+        _PyArg_BadArgument("rjust", "argument 2", "a byte string of length 1", args[1]);
         goto exit;
     }
 skip_optional:
@@ -222,7 +222,7 @@ stringlib_center(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
         fillchar = PyByteArray_AS_STRING(args[1])[0];
     }
     else {
-        _PyArg_BadArgument("center", 2, "a byte string of length 1", args[1]);
+        _PyArg_BadArgument("center", "argument 2", "a byte string of length 1", args[1]);
         goto exit;
     }
 skip_optional:
@@ -274,4 +274,4 @@ stringlib_zfill(PyObject *self, PyObject *arg)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=96cbb19b238d0e84 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=15be047aef999b4e input=a9049054013a1b77]*/

@@ -89,8 +89,7 @@ _canresize(PyByteArrayObject *self)
 PyObject *
 PyByteArray_FromObject(PyObject *input)
 {
-    return PyObject_CallFunctionObjArgs((PyObject *)&PyByteArray_Type,
-                                        input, NULL);
+    return _PyObject_CallOneArg((PyObject *)&PyByteArray_Type, input);
 }
 
 static PyObject *
@@ -382,8 +381,6 @@ bytearray_irepeat(PyByteArrayObject *self, Py_ssize_t count)
 static PyObject *
 bytearray_getitem(PyByteArrayObject *self, Py_ssize_t i)
 {
-    if (i < 0)
-        i += Py_SIZE(self);
     if (i < 0 || i >= Py_SIZE(self)) {
         PyErr_SetString(PyExc_IndexError, "bytearray index out of range");
         return NULL;
@@ -1698,6 +1695,10 @@ bytearray_extend(PyByteArrayObject *self, PyObject *iterable_of_ints)
     }
     Py_DECREF(bytearray_obj);
 
+    if (PyErr_Occurred()) {
+        return NULL;
+    }
+
     Py_RETURN_NONE;
 }
 
@@ -2014,8 +2015,7 @@ bytearray_fromhex_impl(PyTypeObject *type, PyObject *string)
 {
     PyObject *result = _PyBytes_FromHex(string, type == &PyByteArray_Type);
     if (type != &PyByteArray_Type && result != NULL) {
-        Py_SETREF(result, PyObject_CallFunctionObjArgs((PyObject *)type,
-                                                       result, NULL));
+        Py_SETREF(result, _PyObject_CallOneArg((PyObject *)type, result));
     }
     return result;
 }
@@ -2059,9 +2059,10 @@ _common_reduce(PyByteArrayObject *self, int proto)
     _Py_IDENTIFIER(__dict__);
     char *buf;
 
-    dict = _PyObject_GetAttrId((PyObject *)self, &PyId___dict__);
+    if (_PyObject_LookupAttrId((PyObject *)self, &PyId___dict__, &dict) < 0) {
+        return NULL;
+    }
     if (dict == NULL) {
-        PyErr_Clear();
         dict = Py_None;
         Py_INCREF(dict);
     }
@@ -2265,10 +2266,10 @@ PyTypeObject PyByteArray_Type = {
     sizeof(PyByteArrayObject),
     0,
     (destructor)bytearray_dealloc,       /* tp_dealloc */
-    0,                                  /* tp_print */
+    0,                                  /* tp_vectorcall_offset */
     0,                                  /* tp_getattr */
     0,                                  /* tp_setattr */
-    0,                                  /* tp_reserved */
+    0,                                  /* tp_as_async */
     (reprfunc)bytearray_repr,           /* tp_repr */
     &bytearray_as_number,               /* tp_as_number */
     &bytearray_as_sequence,             /* tp_as_sequence */
@@ -2412,10 +2413,10 @@ PyTypeObject PyByteArrayIter_Type = {
     0,                                 /* tp_itemsize */
     /* methods */
     (destructor)bytearrayiter_dealloc, /* tp_dealloc */
-    0,                                 /* tp_print */
+    0,                                 /* tp_vectorcall_offset */
     0,                                 /* tp_getattr */
     0,                                 /* tp_setattr */
-    0,                                 /* tp_reserved */
+    0,                                 /* tp_as_async */
     0,                                 /* tp_repr */
     0,                                 /* tp_as_number */
     0,                                 /* tp_as_sequence */

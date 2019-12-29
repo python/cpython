@@ -112,7 +112,7 @@ consts: ('None',)
 
 >>> dump(posonly_args.__code__)
 name: posonly_args
-argcount: 1
+argcount: 3
 posonlyargcount: 2
 kwonlyargcount: 0
 names: ()
@@ -241,7 +241,7 @@ class CodeTest(unittest.TestCase):
         def func2():
             y = 2
             return y
-        code2 = func.__code__
+        code2 = func2.__code__
 
         for attr, value in (
             ("co_argcount", 0),

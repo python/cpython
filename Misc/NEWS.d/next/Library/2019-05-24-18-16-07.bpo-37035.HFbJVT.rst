@@ -1,5 +1,0 @@
-Don't log OSError based exceptions if a fatal error has occurred in asyncio
-transport. Peer can generate almost any OSError, user cannot avoid these exceptions
-by fixing own code. 
-Errors are still propagated to user code, it's just logging them
-is pointless and pollute asyncio logs.

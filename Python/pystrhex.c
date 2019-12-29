@@ -11,11 +11,11 @@ static PyObject *_Py_strhex_impl(const char* argbuf, const Py_ssize_t arglen,
     PyObject *retval;
     Py_UCS1* retbuf;
     Py_ssize_t i, j, resultlen = 0;
-    Py_UCS1 sep_char;
+    Py_UCS1 sep_char = 0;
     unsigned int abs_bytes_per_sep;
 
     if (sep) {
-        Py_ssize_t seplen = PyObject_Length(sep);
+        Py_ssize_t seplen = PyObject_Length((PyObject*)sep);
         if (seplen < 0) {
             return NULL;
         }
@@ -57,7 +57,7 @@ static PyObject *_Py_strhex_impl(const char* argbuf, const Py_ssize_t arglen,
     }
     resultlen += arglen * 2;
 
-    if (abs_bytes_per_sep >= arglen) {
+    if ((size_t)abs_bytes_per_sep >= (size_t)arglen) {
         bytes_per_sep_group = 0;
         abs_bytes_per_sep = 0;
     }

@@ -30,6 +30,9 @@ typedef struct {
     int cf_flags;  /* bitmask of CO_xxx flags relevant to future */
     int cf_feature_version;  /* minor Python version (PyCF_ONLY_AST) */
 } PyCompilerFlags;
+
+#define _PyCompilerFlags_INIT \
+    (PyCompilerFlags){.cf_flags = 0, .cf_feature_version = PY_MINOR_VERSION}
 #endif
 
 /* Future feature support */

@@ -36,10 +36,16 @@ import io
 import codecs
 import _compat_pickle
 
-from _pickle import PickleBuffer
-
 __all__ = ["PickleError", "PicklingError", "UnpicklingError", "Pickler",
-           "Unpickler", "dump", "dumps", "load", "loads", "PickleBuffer"]
+           "Unpickler", "dump", "dumps", "load", "loads"]
+
+try:
+    from _pickle import PickleBuffer
+    __all__.append("PickleBuffer")
+    _HAVE_PICKLE_BUFFER = True
+except ImportError:
+    _HAVE_PICKLE_BUFFER = False
+
 
 # Shortcut for use in isinstance testing
 bytes_types = (bytes, bytearray)
@@ -812,31 +818,32 @@ class _Pickler:
             self.write(BYTEARRAY8 + pack("<Q", n) + obj)
     dispatch[bytearray] = save_bytearray
 
-    def save_picklebuffer(self, obj):
-        if self.proto < 5:
-            raise PicklingError("PickleBuffer can only pickled with "
-                                "protocol >= 5")
-        with obj.raw() as m:
-            if not m.contiguous:
-                raise PicklingError("PickleBuffer can not be pickled when "
-                                    "pointing to a non-contiguous buffer")
-            in_band = True
-            if self._buffer_callback is not None:
-                in_band = bool(self._buffer_callback(obj))
-            if in_band:
-                # Write data in-band
-                # XXX The C implementation avoids a copy here
-                if m.readonly:
-                    self.save_bytes(m.tobytes())
+    if _HAVE_PICKLE_BUFFER:
+        def save_picklebuffer(self, obj):
+            if self.proto < 5:
+                raise PicklingError("PickleBuffer can only pickled with "
+                                    "protocol >= 5")
+            with obj.raw() as m:
+                if not m.contiguous:
+                    raise PicklingError("PickleBuffer can not be pickled when "
+                                        "pointing to a non-contiguous buffer")
+                in_band = True
+                if self._buffer_callback is not None:
+                    in_band = bool(self._buffer_callback(obj))
+                if in_band:
+                    # Write data in-band
+                    # XXX The C implementation avoids a copy here
+                    if m.readonly:
+                        self.save_bytes(m.tobytes())
+                    else:
+                        self.save_bytearray(m.tobytes())
                 else:
-                    self.save_bytearray(m.tobytes())
-            else:
-                # Write data out-of-band
-                self.write(NEXT_BUFFER)
-                if m.readonly:
-                    self.write(READONLY_BUFFER)
+                    # Write data out-of-band
+                    self.write(NEXT_BUFFER)
+                    if m.readonly:
+                        self.write(READONLY_BUFFER)
 
-    dispatch[PickleBuffer] = save_picklebuffer
+        dispatch[PickleBuffer] = save_picklebuffer
 
     def save_str(self, obj):
         if self.bin:
@@ -852,7 +859,10 @@ class _Pickler:
                 self.write(BINUNICODE + pack("<I", n) + encoded)
         else:
             obj = obj.replace("\\", "\\u005c")
+            obj = obj.replace("\0", "\\u0000")
             obj = obj.replace("\n", "\\u000a")
+            obj = obj.replace("\r", "\\u000d")
+            obj = obj.replace("\x1a", "\\u001a")  # EOF on DOS
             self.write(UNICODE + obj.encode('raw-unicode-escape') +
                        b'\n')
         self.memoize(obj)
@@ -1594,17 +1604,29 @@ class _Unpickler:
 
     def load_get(self):
         i = int(self.readline()[:-1])
-        self.append(self.memo[i])
+        try:
+            self.append(self.memo[i])
+        except KeyError:
+            msg = f'Memo value not found at index {i}'
+            raise UnpicklingError(msg) from None
     dispatch[GET[0]] = load_get
 
     def load_binget(self):
         i = self.read(1)[0]
-        self.append(self.memo[i])
+        try:
+            self.append(self.memo[i])
+        except KeyError as exc:
+            msg = f'Memo value not found at index {i}'
+            raise UnpicklingError(msg) from None
     dispatch[BINGET[0]] = load_binget
 
     def load_long_binget(self):
         i, = unpack('<I', self.read(4))
-        self.append(self.memo[i])
+        try:
+            self.append(self.memo[i])
+        except KeyError as exc:
+            msg = f'Memo value not found at index {i}'
+            raise UnpicklingError(msg) from None
     dispatch[LONG_BINGET[0]] = load_long_binget
 
     def load_put(self):

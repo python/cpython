@@ -1,1 +1,0 @@
-include of STATUS_CONTROL_C_EXIT without depending on MSC compiler

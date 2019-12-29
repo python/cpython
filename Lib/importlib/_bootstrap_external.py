@@ -261,11 +261,19 @@ _code_type = type(_write_atomic.__code__)
 #     Python 3.7a2  3391 (update GET_AITER #31709)
 #     Python 3.7a4  3392 (PEP 552: Deterministic pycs #31650)
 #     Python 3.7b1  3393 (remove STORE_ANNOTATION opcode #32550)
-#     Python 3.7b5  3394 (restored docstring as the firts stmt in the body;
+#     Python 3.7b5  3394 (restored docstring as the first stmt in the body;
 #                         this might affected the first line number #32911)
 #     Python 3.8a1  3400 (move frame block handling to compiler #17611)
 #     Python 3.8a1  3401 (add END_ASYNC_FOR #33041)
 #     Python 3.8a1  3410 (PEP570 Python Positional-Only Parameters #36540)
+#     Python 3.8b2  3411 (Reverse evaluation order of key: value in dict
+#                         comprehensions #35224)
+#     Python 3.8b2  3412 (Swap the position of positional args and positional
+#                         only args in ast.arguments #37593)
+#     Python 3.8b4  3413 (Fix "break" and "continue" in "finally" #37830)
+#     Python 3.9a0  3420 (add LOAD_ASSERTION_ERROR #34880)
+#     Python 3.9a0  3421 (simplified bytecode for with blocks #32949)
+#     Python 3.9a0  3422 (remove BEGIN_FINALLY, END_FINALLY, CALL_FINALLY, POP_FINALLY bytecodes #33387)
 #
 # MAGIC must change whenever the bytecode emitted by the compiler may no
 # longer be understood by older implementations of the eval loop (usually
@@ -274,7 +282,7 @@ _code_type = type(_write_atomic.__code__)
 # Whenever MAGIC_NUMBER is changed, the ranges in the magic_values array
 # in PC/launcher.c must also be updated.
 
-MAGIC_NUMBER = (3410).to_bytes(2, 'little') + b'\r\n'
+MAGIC_NUMBER = (3422).to_bytes(2, 'little') + b'\r\n'
 _RAW_MAGIC_NUMBER = int.from_bytes(MAGIC_NUMBER, 'little')  # For import.c
 
 _PYCACHE = '__pycache__'
@@ -1363,57 +1371,18 @@ class PathFinder:
             return None
         return spec.loader
 
-    search_template = r'(?:{pattern}(-.*)?\.(dist|egg)-info|EGG-INFO)'
-
     @classmethod
-    def find_distributions(cls, name=None, path=None):
+    def find_distributions(cls, *args, **kwargs):
         """
         Find distributions.
 
         Return an iterable of all Distribution instances capable of
-        loading the metadata for packages matching the ``name``
-        (or all names if not supplied) along the paths in the list
-        of directories ``path`` (defaults to sys.path).
+        loading the metadata for packages matching ``context.name``
+        (or all names if ``None`` indicated) along the paths in the list
+        of directories ``context.path``.
         """
-        import re
-        from importlib.metadata import PathDistribution
-        if path is None:
-            path = sys.path
-        pattern = '.*' if name is None else re.escape(name)
-        found = cls._search_paths(pattern, path)
-        return map(PathDistribution, found)
-
-    @classmethod
-    def _search_paths(cls, pattern, paths):
-        """Find metadata directories in paths heuristically."""
-        import itertools
-        return itertools.chain.from_iterable(
-            cls._search_path(path, pattern)
-            for path in map(cls._switch_path, paths)
-            )
-
-    @staticmethod
-    def _switch_path(path):
-        from contextlib import suppress
-        import zipfile
-        from pathlib import Path
-        with suppress(Exception):
-            return zipfile.Path(path)
-        return Path(path)
-
-    @classmethod
-    def _predicate(cls, pattern, root, item):
-        import re
-        return re.match(pattern, str(item.name), flags=re.IGNORECASE)
-
-    @classmethod
-    def _search_path(cls, root, pattern):
-        if not root.is_dir():
-            return ()
-        normalized = pattern.replace('-', '_')
-        matcher = cls.search_template.format(pattern=normalized)
-        return (item for item in root.iterdir()
-                if cls._predicate(matcher, root, item))
+        from importlib.metadata import MetadataPathFinder
+        return MetadataPathFinder.find_distributions(*args, **kwargs)
 
 
 class FileFinder:

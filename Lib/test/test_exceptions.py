@@ -9,7 +9,7 @@ import weakref
 import errno
 
 from test.support import (TESTFN, captured_stderr, check_impl_detail,
-                          check_warnings, cpython_only, gc_collect, run_unittest,
+                          check_warnings, cpython_only, gc_collect,
                           no_tracing, unlink, import_module, script_helper,
                           SuppressCrashReport)
 from test import support
@@ -1284,6 +1284,22 @@ class ExceptionTests(unittest.TestCase):
             except:
                 next(i)
                 next(i)
+
+    @unittest.skipUnless(__debug__, "Won't work if __debug__ is False")
+    def test_assert_shadowing(self):
+        # Shadowing AssertionError would cause the assert statement to
+        # misbehave.
+        global AssertionError
+        AssertionError = TypeError
+        try:
+            assert False, 'hello'
+        except BaseException as e:
+            del AssertionError
+            self.assertIsInstance(e, AssertionError)
+            self.assertEqual(str(e), 'hello')
+        else:
+            del AssertionError
+            self.fail('Expected exception')
 
 
 class ImportErrorTests(unittest.TestCase):

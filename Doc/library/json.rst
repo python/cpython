@@ -120,6 +120,18 @@ See :ref:`json-commandline` for detailed documentation.
    value) is also a subset of YAML 1.0 and 1.1.  This module can thus also be
    used as a YAML serializer.
 
+.. note::
+
+   This module's encoders and decoders preserve input and output order by
+   default.  Order is only lost if the underlying containers are unordered.
+
+   Prior to Python 3.7, :class:`dict` was not guaranteed to be ordered, so
+   inputs and outputs were typically scrambled unless
+   :class:`collections.OrderedDict` was specifically requested.  Starting
+   with Python 3.7, the regular :class:`dict` became order preserving, so
+   it is no longer necessary to specify :class:`collections.OrderedDict` for
+   JSON generation and parsing.
+
 
 Basic Usage
 -----------
@@ -720,11 +732,23 @@ Command line options
 
    .. versionadded:: 3.5
 
+.. cmdoption:: --no-ensure-ascii
+
+   Disable escaping of non-ascii characters, see :func:`json.dumps` for more information.
+
+   .. versionadded:: 3.9
+
 .. cmdoption:: --json-lines
 
    Parse every input line as separate JSON object.
 
    .. versionadded:: 3.8
+
+.. cmdoption:: --indent, --tab, --no-indent, --compact
+
+   Mutually exclusive options for whitespace control
+
+   .. versionadded:: 3.9
 
 .. cmdoption:: -h, --help
 
