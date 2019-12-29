@@ -85,7 +85,7 @@ PyAPI_FUNC(int) PyFrame_GetLineNumber(PyFrameObject *);
 PyAPI_FUNC(int) PyFrame_FastToLocalsWithError(PyFrameObject *f);
 PyAPI_FUNC(void) PyFrame_FastToLocals(PyFrameObject *);
 
-#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= 0x03080000
+#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= 0x03090000
 /* Fast locals proxy for reliable write-through from trace functions */
 PyTypeObject PyFastLocalsProxy_Type;
 #define _PyFastLocalsProxy_CheckExact(self) \

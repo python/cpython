@@ -907,6 +907,7 @@ builtin_eval_impl(PyObject *module, PyObject *source, PyObject *globals,
     if (globals == Py_None) {
         globals = PyEval_GetGlobals();
         if (locals == Py_None) {
+            // TODO: Consider if this should use PyEval_GetPyLocals() instead
             locals = PyEval_GetLocals();
             if (locals == NULL)
                 return NULL;
@@ -986,6 +987,7 @@ builtin_exec_impl(PyObject *module, PyObject *source, PyObject *globals,
     if (globals == Py_None) {
         globals = PyEval_GetGlobals();
         if (locals == Py_None) {
+            // TODO: Consider if this should use PyEval_GetPyLocals() instead
             locals = PyEval_GetLocals();
             if (locals == NULL)
                 return NULL;
@@ -1562,20 +1564,14 @@ locals as builtin_locals
 
 Return a dictionary containing the current scope's local variables.
 
-NOTE: Whether or not updates to this dictionary will affect name lookups in
-the local scope and vice-versa is *implementation dependent* and not
-covered by any backwards compatibility guarantees.
+TODO: Update the docstring with the gist of PEP 558 semantics.
 [clinic start generated code]*/
 
 static PyObject *
 builtin_locals_impl(PyObject *module)
 /*[clinic end generated code: output=b46c94015ce11448 input=7874018d478d5c4b]*/
 {
-    PyObject *d;
-
-    d = PyEval_GetLocals();
-    Py_XINCREF(d);
-    return d;
+    return PyEval_GetPyLocals();
 }
 
 
@@ -2249,8 +2245,7 @@ builtin_vars(PyObject *self, PyObject *args)
     if (!PyArg_UnpackTuple(args, "vars", 0, 1, &v))
         return NULL;
     if (v == NULL) {
-        d = PyEval_GetLocals();
-        Py_XINCREF(d);
+        d = PyEval_GetPyLocals();
     }
     else {
         if (_PyObject_LookupAttrId(v, &PyId___dict__, &d) == 0) {

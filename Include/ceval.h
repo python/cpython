@@ -38,6 +38,10 @@ PyAPI_FUNC(struct _frame *) PyEval_GetFrame(void);
 PyAPI_FUNC(int) Py_AddPendingCall(int (*func)(void *), void *arg);
 PyAPI_FUNC(int) Py_MakePendingCalls(void);
 
+#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= 0x03090000
+PyAPI_FUNC(PyObject *) PyEval_GetPyLocals(void);
+#endif
+
 /* Protection against deeply nested recursive calls
 
    In Python 3.0, this protection has two levels:

@@ -35,26 +35,6 @@ _frame_get_updated_locals(PyFrameObject *f)
     return f->f_locals;
 }
 
-PyObject *
-PyFrame_GetLocalsAttribute(PyFrameObject *f)
-{
-    PyObject *updated_locals =_frame_get_updated_locals(f);
-    Py_INCREF(updated_locals);
-    return updated_locals;
-}
-
-PyObject *
-_PyFrame_BorrowPyLocals(PyFrameObject *f)
-{
-    // This is called by PyEval_GetLocals(), which has historically returned
-    // a borrowed reference, so this does the same
-    PyObject *updated_locals =_frame_get_updated_locals(f);
-    if (_PyFastLocalsProxy_CheckExact(updated_locals)) {
-        updated_locals = _PyFastLocalsProxy_BorrowLocals(updated_locals);
-    }
-    return updated_locals;
-}
-
 void _PyFrame_PostEvalCleanup(PyFrameObject *f)
 {
     // Don't clean up still running coroutines and generators
@@ -69,12 +49,39 @@ void _PyFrame_PostEvalCleanup(PyFrameObject *f)
     }
 }
 
+PyObject *
+PyFrame_GetLocalsAttribute(PyFrameObject *f)
+{
+    PyObject *updated_locals = _frame_get_updated_locals(f);
+    Py_INCREF(updated_locals);
+    return updated_locals;
+}
+
+PyObject *
+_PyFrame_BorrowPyLocals(PyFrameObject *f)
+{
+    // This is called by PyEval_GetLocals(), which has historically returned
+    // a borrowed reference, so this does the same
+    PyObject *updated_locals = _frame_get_updated_locals(f);
+    if (_PyFastLocalsProxy_CheckExact(updated_locals)) {
+        updated_locals = _PyFastLocalsProxy_BorrowLocals(updated_locals);
+    }
+    return updated_locals;
+}
 
 PyObject *
 PyFrame_GetPyLocals(PyFrameObject *f)
 {
-    PyObject *updated_locals =_PyFrame_BorrowPyLocals(f);
-    Py_INCREF(updated_locals);
+    PyObject *updated_locals = _frame_get_updated_locals(f);
+    if (_PyFastLocalsProxy_CheckExact(updated_locals)) {
+        // Take a snapshot of optimised scopes to avoid quirky side effects
+        PyObject *d = _PyFastLocalsProxy_BorrowLocals(updated_locals);
+        updated_locals = PyDict_Copy(d);
+    } else {
+        // Share a direct locals reference for class and module scopes
+        Py_INCREF(updated_locals);
+    }
+
     return updated_locals;
 }
 

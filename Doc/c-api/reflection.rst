@@ -11,12 +11,19 @@ Reflection
    or the interpreter of the thread state if no frame is currently executing.
 
 
+.. c:function:: PyObject* PyEval_GetPyLocals()
+
+   Return a dictionary of the local variables in the current execution frame,
+   or ``NULL`` if no frame is currently executing.
+
+   Equivalent to calling the Python level ``locals()`` builtin.
+
 .. c:function:: PyObject* PyEval_GetLocals()
 
    Return a dictionary of the local variables in the current execution frame,
    or ``NULL`` if no frame is currently executing.
 
-   TODO: Clarify just how this relates to the Python level locals() builtin.
+   TODO: Clarify just how this relates to PyEval_GetPyLocals().
 
 .. c:function:: PyObject* PyEval_GetGlobals()
 
