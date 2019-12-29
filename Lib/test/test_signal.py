@@ -1284,6 +1284,8 @@ class PidfdSignalTest(unittest.TestCase):
             signal.pidfd_send_signal(0, signal.SIGINT)
         if cm.exception.errno == errno.ENOSYS:
             self.skipTest("kernel does not support pidfds")
+        elif cm.exception.errno == errno.EPERM:
+            self.skipTest("Not enough privileges to use pidfs")
         self.assertEqual(cm.exception.errno, errno.EBADF)
         my_pidfd = os.open(f'/proc/{os.getpid()}', os.O_DIRECTORY)
         self.addCleanup(os.close, my_pidfd)
