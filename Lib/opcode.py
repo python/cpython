@@ -21,8 +21,7 @@ try:
 except ImportError:
     pass
 
-cmp_op = ('<', '<=', '==', '!=', '>', '>=', 'in', 'not in', 'is',
-        'is not', 'exception match', 'BAD')
+cmp_op = ('<', '<=', '==', '!=', '>', '>=')
 
 hasconst = []
 hasname = []
@@ -159,6 +158,10 @@ jabs_op('POP_JUMP_IF_TRUE', 115)     # ""
 
 name_op('LOAD_GLOBAL', 116)     # Index in name list
 
+def_op('IS_OP', 117)
+def_op('CONTAINS_OP', 118)
+
+jabs_op('JUMP_IF_NOT_EXC_MATCH', 121)
 jrel_op('SETUP_FINALLY', 122)   # Distance to target address
 
 def_op('LOAD_FAST', 124)        # Local variable number
