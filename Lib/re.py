@@ -91,7 +91,9 @@ This module exports the following functions:
     sub       Substitute occurrences of a pattern found in a string.
     subn      Same as sub, but also return the number of substitutions made.
     split     Split a string by the occurrences of a pattern.
-    findall   Find all occurrences of a pattern in a string.
+    findall    Find all occurrences of a pattern in a string.
+    findfirst   Find first occurrence of a pattern in a string.
+    findalliter Find all occurrences of a pattern in a string, as iterator.
     finditer  Return an iterator yielding a Match object for each match.
     compile   Compile a pattern into a Pattern object.
     purge     Clear the regular expression cache.
@@ -236,7 +238,42 @@ def findall(pattern, string, flags=0):
     has more than one group.
 
     Empty matches are included in the result."""
-    return _compile(pattern, flags).findall(string)
+    return list(findalliter(pattern, string, flags=flags))
+
+def findalliter(pattern, string, flags=0):
+    '''
+        like finditer(), but with return values like findall()
+
+        implementation taken from cpython/Modules/_sre.c/findall()
+    '''
+    for m in finditer(pattern, string, flags=flags):
+        g = m.groups(default=string[0:0])
+        if len(g) == 1:
+            yield g[0]
+        elif g:
+            yield g
+        else:
+            yield m.group()
+
+
+_undefined = object()
+
+def findfirst(pattern, string, flags=0, default=_undefined):
+    """
+    Avoids using the inefficient findall(...)[0], or first(findall(...))
+    """
+    def first(iterable, default=_undefined):
+        # NOTE: https://more-itertools.readthedocs.io/en/stable/_modules/more_itertools/more.html#first
+        try:
+            return next(iter(iterable))
+        except StopIteration:
+            if default is _undefined:
+                raise ValueError(
+                    'first() was called on an empty iterable, and no '
+                    'default value was provided.')
+            return default
+
+    return first(findalliter(pattern, string, flags=flags), default=default)
 
 def finditer(pattern, string, flags=0):
     """Return an iterator over all non-overlapping matches in the
