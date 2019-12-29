@@ -1510,10 +1510,10 @@ class FrameLocalsTestCase(unittest.TestCase):
         inner_snapshot["local_var"] = "modified_again"
         self.assertEqual(local_var, "modified")
         self.assertEqual(inner_snapshot["local_var"], "modified_again")
-        self.assertEqual(inner_proxy["local_var"], "modified_again") # Q: Is this desirable?
+        self.assertEqual(inner_proxy["local_var"], "modified")
         inner_proxy["local_var"] = "modified_yet_again"
         self.assertEqual(local_var, "modified_yet_again")
-        self.assertEqual(inner_snapshot["local_var"], "modified_yet_again")
+        self.assertEqual(inner_snapshot["local_var"], "modified_again")
         self.assertEqual(inner_proxy["local_var"], "modified_yet_again")
 
     def test_locals_writeback_complex_scenario(self):
@@ -1543,8 +1543,8 @@ class FrameLocalsTestCase(unittest.TestCase):
                     a_local = 'original7'          # We expect this to be retained
                     another_local = 'original8'    # Trace func will modify this
                     ns = locals()
-                    ns['a_local'] = 'modified7'    # We expect this to be reverted
-                    ns['a_nonlocal'] = 'modified5' # We expect this to be reverted
+                    ns['a_local'] = 'modified7'    # We expect this to be retained
+                    ns['a_nonlocal'] = 'modified5' # We expect this to be retained
                     ns['a_new_local'] = 'created9' # We expect this to be retained
                     return a_local, another_local, ns
                 outer_local = 'original10' # Trace func will modify this
@@ -1607,12 +1607,12 @@ class FrameLocalsTestCase(unittest.TestCase):
             "another_class_attribute": "modified4",
             "a_nonlocal": "original5",
             "a_nonlocal_via_ns": "original5",
-            "a_nonlocal_via_inner_ns": "original5",
+            "a_nonlocal_via_inner_ns": "modified5",
             "another_nonlocal": "modified6",
             "another_nonlocal_via_ns": "modified6",
-            "another_nonlocal_via_inner_ns": "modified6",
+            "another_nonlocal_via_inner_ns": "original6",
             "a_local": "original7",
-            "a_local_via_ns": "original7",
+            "a_local_via_ns": "modified7",
             "another_local": "modified8",
             "another_local_via_ns": "modified8",
             "a_new_local_via_ns": "created9",
