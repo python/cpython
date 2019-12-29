@@ -891,6 +891,7 @@ Module(
         self.assertEqual(ast.literal_eval('(True, False, None)'), (True, False, None))
         self.assertEqual(ast.literal_eval('{1, 2, 3}'), {1, 2, 3})
         self.assertEqual(ast.literal_eval('b"hi"'), b"hi")
+        self.assertEqual(ast.literal_eval('set()'), set())
         self.assertRaises(ValueError, ast.literal_eval, 'foo()')
         self.assertEqual(ast.literal_eval('6'), 6)
         self.assertEqual(ast.literal_eval('+6'), 6)
