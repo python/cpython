@@ -202,6 +202,8 @@ named module, the two module objects will *not* be the same. By contrast,
 reinitialise the module contents by rerunning the module's code.
 
 
+.. _finders-and-loaders:
+
 Finders and loaders
 -------------------
 
