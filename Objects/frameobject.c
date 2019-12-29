@@ -1177,6 +1177,21 @@ PyFrame_LocalsToFast(PyFrameObject *f, int clear)
 }
 
 static int
+set_fast_ref(PyObject *fast_refs, PyObject *key, PyObject *value)
+{
+    // NOTE: Steals the "value" reference, so borrowed values need an INCREF
+    assert(PyUnicode_Check(key));
+    // Don't rely on borrowed key reference while potentially running arbitrary code
+    // This shouldn't be necessary since all the keys are checked to be strings,
+    // but currently being paranoid while hunting an apparent refcounting bug
+    Py_INCREF(key);
+    int status = PyDict_SetItem(fast_refs, key, value);
+    Py_DECREF(key);
+    Py_DECREF(value);
+    return status;
+}
+
+static int
 add_local_refs(PyObject *map, Py_ssize_t nmap, PyObject *fast_refs)
 {
     /* Populate a lookup table from variable names to fast locals array indices */
@@ -1187,11 +1202,10 @@ add_local_refs(PyObject *map, Py_ssize_t nmap, PyObject *fast_refs)
     for (j = nmap; --j >= 0; ) {
         PyObject *key = PyTuple_GET_ITEM(map, j);
         PyObject *value = PyLong_FromSsize_t(j);
-        assert(PyUnicode_Check(key));
         /* Values may be missing if the frame has been cleared */
         if (value != NULL) {
-            if (PyDict_SetItem(fast_refs, key, value) != 0) {
-                    return -1;
+            if (set_fast_ref(fast_refs, key, value) != 0) {
+                return -1;
             }
         }
     }
@@ -1209,13 +1223,12 @@ add_nonlocal_refs(PyObject *map, Py_ssize_t nmap, PyObject *fast_refs, PyObject 
     for (j = nmap; --j >= 0; ) {
         PyObject *key = PyTuple_GET_ITEM(map, j);
         PyObject *value = cells[j];
-        assert(PyUnicode_Check(key));
         /* Values may be missing if the frame has been cleared */
         if (value != NULL) {
             assert(PyCell_Check(value));
-            assert(PyUnicode_Check(key));
-            if (PyDict_SetItem(fast_refs, key, value) != 0) {
-                    return -1;
+            Py_INCREF(value); // set_fast_ref steals the value reference
+            if (set_fast_ref(fast_refs, key, value) != 0) {
+                return -1;
             }
         }
     }
