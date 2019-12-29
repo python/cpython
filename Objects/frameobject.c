@@ -1386,7 +1386,7 @@ fastlocalsproxy_write_to_frame(fastlocalsproxyobject *flp, PyObject *key, PyObje
                 result = -1;
             }
             if (result == 0) {
-                Py_INCREF(value);
+                Py_XINCREF(value);
                 Py_XSETREF(flp->frame->f_localsplus[offset], value);
             }
         }
