@@ -878,7 +878,6 @@ static PyObject *
 call_trampoline(PyObject* callback,
                 PyFrameObject *frame, int what, PyObject *arg)
 {
-    PyObject *result;
     PyObject *stack[3];
 
     stack[0] = (PyObject *)frame;

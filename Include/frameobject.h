@@ -96,11 +96,6 @@ PyAPI_FUNC(PyObject *) PyFrame_GetPyLocals(PyFrameObject *); // = locals()
 PyAPI_FUNC(PyObject *) PyFrame_GetLocalsAttr(PyFrameObject *);  // = frame.f_locals
 #endif
 
-#ifdef Py_BUILD_CORE
-PyObject *_PyFrame_BorrowPyLocals(PyFrameObject *f); /* For PyEval_GetLocals() */
-void _PyFrame_PostEvalCleanup(PyFrameObject *f);     /* For _PyEval_EvalFrame() */
-#endif
-
 
 /* This always raises RuntimeError now (use PyFrame_GetLocalsAttr() instead) */
 PyAPI_FUNC(void) PyFrame_LocalsToFast(PyFrameObject *, int);
