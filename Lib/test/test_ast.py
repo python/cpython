@@ -244,10 +244,11 @@ eval_tests = [
 class AST_Tests(unittest.TestCase):
 
     def _is_ast_node(self, name, node):
-        if not (name[0].isupper() and isinstance(node, type)):
+        if not isinstance(node, type):
             return False
-        if node is not ast.AST and issubclass(node, ast.AST):
-            return True
+        if "ast" not in node.__module__:
+            return False
+        return isinstance(node, type) and name != 'AST' and name[0].isupper()
 
     def _assertTrueorder(self, ast_node, parent_pos):
         if not isinstance(ast_node, ast.AST) or ast_node._fields is None:
