@@ -168,7 +168,7 @@ and classes for traversing abstract syntax trees:
    back with :func:`ast.parse`.
 
    .. warning::
-      The produced code string will not necesarily be equal to the original
+      The produced code string will not necessarily be equal to the original
       code that generated the :class:`ast.AST` object.
 
    .. versionadded:: 3.9
@@ -381,9 +381,18 @@ The following options are accepted:
    Specify what kind of code must be compiled, like the *mode* argument
    in :func:`parse`.
 
+.. cmdoption:: --no-type-comments
+
+   Don't parse type comments.
+
 .. cmdoption:: -a, --include-attributes
 
    Include attributes such as line numbers and column offsets.
+
+.. cmdoption:: -i <indent>
+               --indent <indent>
+
+   Indentation of nodes in AST (number of spaces).
 
 If :file:`infile` is specified its contents are parsed to AST and dumped
 to stdout.  Otherwise, the content is read from stdin.

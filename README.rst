@@ -1,9 +1,13 @@
-This is Python version 3.9.0 alpha 1
+This is Python version 3.9.0 alpha 2
 ====================================
 
 .. image:: https://travis-ci.org/python/cpython.svg?branch=master
    :alt: CPython build status on Travis CI
    :target: https://travis-ci.org/python/cpython
+
+.. image:: https://github.com/python/cpython/workflows/Tests/badge.svg
+   :alt: CPython build status on GitHub Actions
+   :target: https://github.com/python/cpython/actions
 
 .. image:: https://dev.azure.com/python/cpython/_apis/build/status/Azure%20Pipelines%20CI?branchName=master
    :alt: CPython build status on Azure DevOps

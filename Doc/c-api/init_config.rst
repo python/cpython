@@ -757,7 +757,7 @@ configuration, and then override some parameters::
         PyConfig config;
         PyConfig_InitPythonConfig(&config);
 
-        /* Set the program name before reading the configuraton
+        /* Set the program name before reading the configuration
            (decode byte string from the locale encoding).
 
            Implicitly preinitialize Python. */

@@ -1935,9 +1935,7 @@ ast_for_decorated(struct compiling *c, const node *n)
 static expr_ty
 ast_for_namedexpr(struct compiling *c, const node *n)
 {
-    /* if_stmt: 'if' namedexpr_test ':' suite ('elif' namedexpr_test ':' suite)*
-         ['else' ':' suite]
-       namedexpr_test: test [':=' test]
+    /* namedexpr_test: test [':=' test]
        argument: ( test [comp_for] |
             test ':=' test |
             test '=' test |
@@ -3128,7 +3126,7 @@ ast_for_call(struct compiling *c, const node *n, expr_ty func,
                     return NULL;
                 starred = Starred(e, Load, LINENO(chch),
                         chch->n_col_offset,
-                        chch->n_end_lineno, chch->n_end_col_offset,
+                        e->end_lineno, e->end_col_offset,
                         c->c_arena);
                 if (!starred)
                     return NULL;
