@@ -12,12 +12,12 @@ Functions:
 
 import os
 import stat
+from io import DEFAULT_BUFFER_SIZE
 from itertools import filterfalse
 
 __all__ = ['clear_cache', 'cmp', 'dircmp', 'cmpfiles', 'DEFAULT_IGNORES']
 
 _cache = {}
-BUFSIZE = 8*1024
 
 DEFAULT_IGNORES = [
     'RCS', 'CVS', 'tags', '.git', '.hg', '.bzr', '_darcs', '__pycache__']
@@ -71,7 +71,7 @@ def _sig(st):
             st.st_mtime)
 
 def _do_cmp(f1, f2):
-    bufsize = BUFSIZE
+    bufsize = DEFAULT_BUFFER_SIZE
     with open(f1, 'rb') as fp1, open(f2, 'rb') as fp2:
         while True:
             b1 = fp1.read(bufsize)
