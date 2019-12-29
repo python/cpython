@@ -581,12 +581,12 @@ class _Precedence(IntEnum):
     AWAIT = auto()           # 'await'
     ATOM = auto()
 
-    def next(self, by=1):
+    def next(self):
         values = tuple(self.__class__.__members__.values())
         if values[-1] == self:
             return self # max precedence
         else:
-            return self.__class__(self + by)
+            return self.__class__(self + 1)
 
 class _Unparser(NodeVisitor):
     """Methods in this class recursively traverse an AST and
