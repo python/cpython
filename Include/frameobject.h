@@ -93,11 +93,11 @@ PyTypeObject PyFastLocalsProxy_Type;
 
 /* Access the frame locals mapping */
 PyAPI_FUNC(PyObject *) PyFrame_GetPyLocals(PyFrameObject *); // = locals()
-PyAPI_FUNC(PyObject *) PyFrame_GetLocalsAttr(PyFrameObject *);  // = frame.f_locals
+PyAPI_FUNC(PyObject *) PyFrame_GetLocalsAttribute(PyFrameObject *);  // = frame.f_locals
 #endif
 
 
-/* This always raises RuntimeError now (use PyFrame_GetLocalsAttr() instead) */
+/* This always raises RuntimeError now (use PyFrame_GetLocalsAttribute() instead) */
 PyAPI_FUNC(void) PyFrame_LocalsToFast(PyFrameObject *, int);
 
 #ifdef __cplusplus

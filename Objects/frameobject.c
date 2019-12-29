@@ -36,7 +36,7 @@ _frame_get_updated_locals(PyFrameObject *f)
 }
 
 PyObject *
-PyFrame_GetLocalsAttr(PyFrameObject *f)
+PyFrame_GetLocalsAttribute(PyFrameObject *f)
 {
     PyObject *updated_locals =_frame_get_updated_locals(f);
     Py_INCREF(updated_locals);
@@ -81,7 +81,7 @@ PyFrame_GetPyLocals(PyFrameObject *f)
 static PyObject *
 frame_getlocals(PyFrameObject *f, void *__unused)
 {
-    return PyFrame_GetLocalsAttr(f);
+    return PyFrame_GetLocalsAttribute(f);
 }
 
 int
@@ -1172,7 +1172,7 @@ PyFrame_LocalsToFast(PyFrameObject *f, int clear)
     PyErr_SetString(
         PyExc_RuntimeError,
         "PyFrame_LocalsToFast is no longer supported. "
-        "Use PyFrame_GetPyLocals() instead."
+        "Use PyFrame_GetPyLocals() or PyFrame_GetLocalsAttribute() instead."
     );
 }
 
