@@ -794,23 +794,43 @@ class TestLocalsSemantics(unittest.TestCase):
         self.assertEqual(local_ns["known_var"], "set_via_locals")
         self.assertEqual(local_ns["unknown_var"], "set_via_locals")
 
-    def test_locals_update_semantics_at_function_scope(self):
+    def test_locals_snapshot_semantics_at_function_scope(self):
         def function_local_semantics():
             global_ns = globals()
             known_var = "original"
-            local_ns = locals()
-            local_ns["known_var"] = "set_via_locals"
-            local_ns["unknown_var"] = "set_via_locals"
-            return locals()
+            to_be_deleted = "not_yet_deleted"
+            local_ns1 = locals()
+            local_ns1["known_var"] = "set_via_ns1"
+            local_ns1["unknown_var"] = "set_via_ns1"
+            del to_be_deleted
+            local_ns2 = locals()
+            local_ns2["known_var"] = "set_via_ns2"
+            local_ns2["unknown_var"] = "set_via_ns2"
+            return dict(ns1=local_ns1, ns2=local_ns2)
 
         global_ns = globals()
         self.assertIsInstance(global_ns, dict)
-        local_ns = function_local_semantics()
-        self.assertIsInstance(local_ns, dict)
-        self.assertIs(local_ns["global_ns"], global_ns)
-        self.assertIs(local_ns["local_ns"], local_ns)
-        self.assertEqual(local_ns["known_var"], "original")
-        self.assertEqual(local_ns["unknown_var"], "set_via_locals")
+        local_namespaces = function_local_semantics()
+        # Check internal consistency of each snapshot
+        for name, local_ns in local_namespaces.items():
+            with self.subTest(namespace=name):
+                self.assertIsInstance(local_ns, dict)
+                self.assertIs(local_ns["global_ns"], global_ns)
+                expected_text = "set_via_" + name
+                self.assertEqual(local_ns["known_var"], expected_text)
+                self.assertEqual(local_ns["unknown_var"], expected_text)
+        # Check independence of the snapshots
+        local_ns1 = local_namespaces["ns1"]
+        local_ns2 = local_namespaces["ns2"]
+        self.assertIsNot(local_ns1, local_ns2)
+        # Check that not yet set local variables are excluded from snapshot
+        self.assertNotIn("local_ns1", local_ns1)
+        self.assertNotIn("local_ns2", local_ns1)
+        self.assertIs(local_ns2["local_ns1"], local_ns1)
+        self.assertNotIn("local_ns2", local_ns2)
+        # Check that deleted variables are excluded from snapshot
+        self.assertEqual(local_ns1["to_be_deleted"], "not_yet_deleted")
+        self.assertNotIn("to_be_deleted", local_ns2)
 
 
 if __name__ == '__main__':
