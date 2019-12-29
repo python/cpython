@@ -5,35 +5,20 @@
  * This software is provided 'as-is', without any express or implied
  * warranty.  In no event will the authors be held liable for any damages
  * arising from the use of this software.
- *
- * Permission is granted to anyone to use this software for any purpose,
- * including commercial applications, and to alter it and redistribute it
- * freely, subject to the following restrictions:
- *
- * 1. The origin of this software must not be misrepresented; you must not
- *    claim that you wrote the original software. If you use this software
- *    in a product, an acknowledgment in the product documentation would be
- *    appreciated but is not required.
- * 2. Altered source versions must be plainly marked as such, and must not be
- *    misrepresented as being the original software.
- * 3. This notice may not be removed or altered from any source distribution.
  */
 
 #include "named_row.h"
 #include "cursor.h"
 
 PyDoc_STRVAR(named_row__doc__,
-"NamedRow an optimized row_factory with column name access to row fields\n\n\
-NamedRow extends Row to support mapping access by attribute, column name, and \
-index. Column names access is case insensitive.\n\
-row.field == row.FIELD\n\
-For attribute names that would be illegal due to dashes or spaces, an \
-underscore is an acceptable replacement.\n\
-row['dash-name'] == row.dash_name \n\
-For functions in SQL remember to use the 'AS' statement to name the output \
-field.\n\
-connection.execute('SELECT count(*) AS count').fetchone()\n\n\
-Iteration gives field/value pairs similar to dict.items().");
+    "NamedRow is an optimized row_factory for column name access.\n"
+    "\n"
+    "NamedRow supports mapping by attribute, column name, and index.\n"
+    "Iteration gives field/value pairs similar to dict.items().\n"
+    "For attribute names that would be illegal, either alter the SQL\n"
+    "using the 'AS' statement (SELECT count(*) AS count FROM ...) \n"
+    "or index by name as in `row['count(*)']`.\n"
+    );
 
 static void
 named_row_dealloc(pysqlite_NamedRow* self)
@@ -51,10 +36,12 @@ named_row_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
 
     assert(type != NULL && type->tp_alloc != NULL);
 
-    if (!_PyArg_NoKeywords("NamedRow", kwargs))
+    if (!_PyArg_NoKeywords("NamedRow", kwargs)) {
         return NULL;
-    if (!PyArg_ParseTuple(args, "OO", &cursor, &data))
+    }
+    if (!PyArg_ParseTuple(args, "OO", &cursor, &data)) {
         return NULL;
+    }
 
     if (!PyObject_TypeCheck((PyObject*)cursor, &pysqlite_CursorType)) {
         PyErr_SetString(PyExc_TypeError,
@@ -68,8 +55,9 @@ named_row_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
     }
 
     pysqlite_NamedRow *self = (pysqlite_NamedRow *) type->tp_alloc(type, 0);
-    if (self == NULL)
+    if (self == NULL) {
         return NULL;
+    }
 
     Py_INCREF(data);
     self->data = data;
@@ -91,40 +79,25 @@ named_row_item(pysqlite_NamedRow* self, Py_ssize_t idx)
 
 // Find index from field name
 static Py_ssize_t
-named_row_find_index(pysqlite_NamedRow* self, const char* name)
+named_row_find_index(pysqlite_NamedRow* self, PyObject* name)
 {
+    Py_ssize_t name_len = PyUnicode_GET_LENGTH(name);
     Py_ssize_t nitems = PyTuple_Size(self->fields);
 
     for (Py_ssize_t i = 0; i < nitems; i++) {
         PyObject* obj = PyTuple_GET_ITEM(PyTuple_GET_ITEM(self->fields, i), 0);
-        const char *cursor_field = PyUnicode_AsUTF8(obj);
 
-        if (!cursor_field) {
+        if (name_len != PyUnicode_GET_LENGTH(obj)) {
             continue;
         }
 
-        const char* p1 = name;
-        const char* p2 = cursor_field;
-
-        while (1) {
-            // Done checking if at the end of either string
-            if ((*p1 == (char)0) || (*p2 == (char)0)) {
-                break;
+        Py_ssize_t len = name_len;
+        const Py_UCS1 *p1 = PyUnicode_1BYTE_DATA(name);
+        const Py_UCS1 *p2 = PyUnicode_1BYTE_DATA(obj);
+        for (; len; len--, p1++, p2++) {
+            if (*p1 == *p2) {
+                return i;
             }
-
-            // case insensitive comparison
-            if ((*p1 | 0x20) != (*p2 | 0x20) &&
-                // accept '_' instead of space or dash
-                *p1 != '_' && *p2 !=' ' && *p2 !='-')
-            {
-                break;
-            }
-            p1++;
-            p2++;
-        }
-        // Found it if at the end of both strings
-        if ((*p1 == (char)0) && (*p2 == (char)0)) {
-            return i;
         }
     }
     return -1;
@@ -135,17 +108,16 @@ named_row_getattro(pysqlite_NamedRow* self, PyObject* attr_obj)
 {
     // Calling function checked `name` is PyUnicode, no need to check here.
     Py_INCREF(attr_obj);
-    const char* attr_name = PyUnicode_AsUTF8(attr_obj);
-    Py_ssize_t idx = named_row_find_index(self, attr_name);
+    Py_ssize_t idx = named_row_find_index(self, attr_obj);
     Py_DECREF(attr_obj);
 
-    if (idx >= 0) {
-        PyObject* value = PyTuple_GET_ITEM(self->data, idx);
-        Py_INCREF(value);
-        return value;
+    if (idx < 0) {
+        return PyObject_GenericGetAttr((PyObject *)self, attr_obj);
     }
 
-    return PyObject_GenericGetAttr((PyObject *)self, attr_obj);
+    PyObject* value = PyTuple_GET_ITEM(self->data, idx);
+    Py_INCREF(value);
+    return value;
 }
 
 static int
@@ -178,14 +150,7 @@ named_row_index(pysqlite_NamedRow* self, PyObject* index)
     }
     else if (PyUnicode_Check(index)) {
         // Process string index, dict like
-        Py_ssize_t idx = 0;
-        const char* key = PyUnicode_AsUTF8(index);
-
-        if (key == NULL) {
-            return NULL;
-        }
-
-        idx = named_row_find_index(self, key);
+        Py_ssize_t idx = named_row_find_index(self, index);
 
         if (idx < 0) {
             PyErr_SetString(PyExc_IndexError, "No item with that key");
@@ -215,12 +180,7 @@ static int
 named_row_contains(pysqlite_NamedRow* self, PyObject* name)
 {
     if (PyUnicode_Check(name)) {
-        const char* key = PyUnicode_AsUTF8(name);
-        if (key == NULL)
-            return -1;
-
-        Py_ssize_t idx = named_row_find_index(self, key);
-        return idx >= 0 ? 1 : 0;
+        return named_row_find_index(self, name) < 0 ? 0 : 1;
     }
     return -1;
 }
