@@ -568,7 +568,7 @@ class _Precedence(IntEnum):
     AND = auto()             # 'and'
     NOT = auto()             # 'not'
     CMP = auto()             # '<', '>', '==', '>=', '<=', '!=',
-                                # 'in', 'not in', 'is', 'is not'
+                             # 'in', 'not in', 'is', 'is not'
     EXPR = auto()
     BOR = EXPR               # '|'
     BXOR = auto()            # '^'
