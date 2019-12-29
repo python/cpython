@@ -1189,7 +1189,7 @@ It is usually the only Python interpreter in a process.  Unlike sub-interpreters
 the main interpreter has unique process-global responsibilities like signal
 handling.  It is also responsible for execution during runtime initialization and
 is usually the active interpreter during runtime finalization.  The
-:c:func:`PyInterpreterState_Main` funtion returns a pointer to its state.
+:c:func:`PyInterpreterState_Main` function returns a pointer to its state.
 
 You can switch between sub-interpreters using the :c:func:`PyThreadState_Swap`
 function. You can create and destroy them using the following functions:
