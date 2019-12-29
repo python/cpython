@@ -1468,24 +1468,40 @@ fastlocalsproxy_pop(PyObject *flp, PyObject *args, PyObject *kwargs)
 }
 
 static PyObject *
-_fastlocalsproxy_popkey_hash(PyObject *flp, PyObject *key, PyObject *failobj,
-                   Py_hash_t hash)
-{
-    PyObject *value = NULL;
-
-    PyErr_Format(PyExc_NotImplementedError,
-                 "FastLocalsProxy does not yet implement pop()");
-    return value;
-}
-
-static PyObject *
 _fastlocalsproxy_popkey(PyObject *flp, PyObject *key, PyObject *failobj)
 {
-    Py_hash_t hash = PyObject_Hash(key);
-    if (hash == -1)
-        return NULL;
+    // TODO: Similar to the odict implementation, the fast locals proxy
+    // could benefit from an internal API that accepts already calculated
+    // hashes, rather than recalculating the hash multiple times for the
+    // same key in a single operation (see _odict_popkey_hash)
 
-    return _fastlocalsproxy_popkey_hash(flp, key, failobj, hash);
+    PyObject *value = NULL;
+
+    // Just implement naive lookup through the abstract C API for now
+    int exists = PySequence_Contains(flp, key);
+    if (exists < 0)
+        return NULL;
+    if (exists) {
+        value = PyObject_GetItem(flp, key);
+        if (value != NULL) {
+            if (PyObject_DelItem(flp, key) == -1) {
+                Py_CLEAR(value);
+            }
+        }
+    }
+
+    /* Apply the fallback value, if necessary. */
+    if (value == NULL && !PyErr_Occurred()) {
+        if (failobj) {
+            value = failobj;
+            Py_INCREF(failobj);
+        }
+        else {
+            PyErr_SetObject(PyExc_KeyError, key);
+        }
+    }
+
+    return value;
 }
 
 /* popitem() */
