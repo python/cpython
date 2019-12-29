@@ -16,6 +16,7 @@ Reflection
    Return a dictionary of the local variables in the current execution frame,
    or ``NULL`` if no frame is currently executing.
 
+   TODO: Clarify just how this relates to the Python level locals() builtin.
 
 .. c:function:: PyObject* PyEval_GetGlobals()
 

@@ -57,14 +57,14 @@ _PyFrame_BorrowPyLocals(PyFrameObject *f)
 
 void _PyFrame_PostEvalCleanup(PyFrameObject *f)
 {
-    // This is called by PyEval_EvalFrameEx() to ensure that any reference
-    // cycle between the frame and f_locals gets broken when the frame finishes
-    // execution.
-    if (!f->f_locals) {
+    // Don't clean up still running coroutines and generators
+    if (f->f_executing) {
         return;
     }
 
-    if (_PyFastLocalsProxy_CheckExact(f->f_locals)) {
+    // Ensure that any reference cycle between the frame and f_locals gets
+    // broken when the frame finishes execution.
+    if (f->f_locals && _PyFastLocalsProxy_CheckExact(f->f_locals)) {
         _PyFastLocalsProxy_BreakReferenceCycle(f->f_locals);
     }
 }
