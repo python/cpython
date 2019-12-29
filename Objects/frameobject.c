@@ -1355,16 +1355,17 @@ static int
 fastlocalsproxy_write_to_frame(fastlocalsproxyobject *flp, PyObject *key, PyObject *value)
 {
     int result = 0;
-    if (flp->frame == NULL) {
-        // This indicates the frame has finished executing and the proxy's link
-        // back to the frame has been cleared to break the reference cycle
-        return 0;
-    }
+    assert(PyDict_Check(flp->fast_refs));
     PyObject *fast_ref = PyDict_GetItem(flp->fast_refs, key);
     if (fast_ref != NULL) {
-        /* Key is also stored on the frame, so update that reference */
+        /* Key is an actual Python variable, so update that reference */
         if (PyCell_Check(fast_ref)) {
+            // Closure cells can be updated even after the frame terminates
             result = PyCell_Set(fast_ref, value);
+        } else if (flp->frame == NULL) {
+            // This indicates the frame has finished executing and the link
+            // back to the frame has been cleared to break the reference cycle
+            return 0;
         } else {
             /* Fast ref is a Python int mapping into the fast locals array */
             Py_ssize_t offset = PyLong_AsSsize_t(fast_ref);
@@ -1665,7 +1666,7 @@ _PyFastLocalsProxy_BreakReferenceCycle(PyObject *self)
     assert(_PyFastLocalsProxy_CheckExact(self));
     fastlocalsproxyobject *flp = (fastlocalsproxyobject *) self;
     Py_CLEAR(flp->frame);
-    Py_CLEAR(flp->fast_refs);
+    // We keep flp->fast_refs alive to allow updating of closure variables
 }
 
 
