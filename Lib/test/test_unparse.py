@@ -288,6 +288,16 @@ class UnparseTestCase(ASTTestCase):
     def test_invalid_yield_from(self):
         self.check_invalid(ast.YieldFrom(value=None))
 
+    def test_docstrings(self):
+        docstrings = (
+            'this ends with double quote"',
+            'this includes a """triple quote"""'
+        )
+        for docstring in docstrings:
+            # check as Module docstrings for easy testing
+            self.check_roundtrip(f"'{docstring}'")
+
+
 class CosmeticTestCase(ASTTestCase):
     """Test if there are cosmetic issues caused by unnecesary additions"""
 
@@ -321,6 +331,22 @@ class CosmeticTestCase(ASTTestCase):
         self.check_src_roundtrip("call((yield x))")
         self.check_src_roundtrip("return x + (yield x)")
 
+    def test_docstrings(self):
+        docstrings = (
+            '"""simple doc string"""',
+            '''"""A more complex one
+            with some newlines"""''',
+            '''"""Foo bar baz
+
+            empty newline"""''',
+            '"""With some \t"""',
+            '"""Foo "bar" baz """',
+        )
+
+        keywords = ("class", "def", "async def")
+
+        for docstring in docstrings:
+            self.check_src_roundtrip(f"{random.choice(keywords)} foo():\n    {docstring}")
 
 class DirectoryTestCase(ASTTestCase):
     """Test roundtrip behaviour on all files in Lib and Lib/test."""
