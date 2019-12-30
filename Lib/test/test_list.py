@@ -164,6 +164,7 @@ class ListTest(list_tests.CommonTest):
             (3,) + L([1,2])
 
     def test_equal_operator_modifying_operand(self):
+        # test fix for seg fault reported in issue 38588 part 2.
         class X:
             def __eq__(self,other) :
                 list2.clear()
