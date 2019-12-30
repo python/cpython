@@ -1,0 +1,1 @@
+Fix memory consumption in re.compile unicode
