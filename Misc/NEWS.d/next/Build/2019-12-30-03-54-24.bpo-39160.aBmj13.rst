@@ -1,0 +1,1 @@
+Updated the documentation in `./configure --help` to show default values, reference documentation where required and add additional explanation where needed.
