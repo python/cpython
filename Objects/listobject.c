@@ -2164,7 +2164,10 @@ listindex(PyListObject *self, PyObject *args)
             stop = 0;
     }
     for (i = start; i < stop && i < Py_SIZE(self); i++) {
-        int cmp = PyObject_RichCompareBool(self->ob_item[i], v, Py_EQ);
+        PyObject *obj = self->ob_item[i];
+        Py_INCREF(obj);
+        int cmp = PyObject_RichCompareBool(obj, v, Py_EQ);
+        Py_DECREF(obj);
         if (cmp > 0)
             return PyLong_FromSsize_t(i);
         else if (cmp < 0)
@@ -2181,7 +2184,10 @@ listcount(PyListObject *self, PyObject *v)
     Py_ssize_t i;
 
     for (i = 0; i < Py_SIZE(self); i++) {
-        int cmp = PyObject_RichCompareBool(self->ob_item[i], v, Py_EQ);
+        PyObject *obj = self->ob_item[i];
+        Py_INCREF(obj);
+        int cmp = PyObject_RichCompareBool(obj, v, Py_EQ);
+        Py_DECREF(obj);
         if (cmp > 0)
             count++;
         else if (cmp < 0)
@@ -2196,7 +2202,10 @@ listremove(PyListObject *self, PyObject *v)
     Py_ssize_t i;
 
     for (i = 0; i < Py_SIZE(self); i++) {
-        int cmp = PyObject_RichCompareBool(self->ob_item[i], v, Py_EQ);
+        PyObject *obj = self->ob_item[i];
+        Py_INCREF(obj);
+        int cmp = PyObject_RichCompareBool(obj, v, Py_EQ);
+        Py_DECREF(obj);
         if (cmp > 0) {
             if (list_ass_slice(self, i, i+1,
                                (PyObject *)NULL) == 0)
