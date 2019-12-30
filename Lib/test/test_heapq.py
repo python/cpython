@@ -445,6 +445,7 @@ class TestErrorHandling:
                     mo = merge(*args, key=key, reverse=reverse)
                     self.assertRaises(ZeroDivisionError, list, mo)
         for reverse in [False, True]:
+            # test error during key computation
             mo = merge(range(10), range(10), key=lambda x: x // 0, reverse=reverse)
             self.assertRaises(ZeroDivisionError, list, mo)
             self.assertRaises(TypeError, merge, key=object(), reverse=reverse)
