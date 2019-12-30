@@ -1,2 +1,2 @@
-:func:`shutil.copyfile` always raises a :exc:`shutil.SpecialFileError`
+:func:`shutil.copyfile` always raises :exc:`shutil.SpecialFileError`
 when trying to copy a Unix socket.

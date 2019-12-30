@@ -668,6 +668,7 @@ class TestCopyTree(BaseTest, unittest.TestCase):
     def test_copytree_socket(self):
         os.mkdir(TESTFN)
         self.addCleanup(shutil.rmtree, TESTFN, ignore_errors=True)
+        self.addCleanup(shutil.rmtree, TESTFN2, ignore_errors=True)
         sock_path = tempfile.mktemp(dir=TESTFN)
 
         sock = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
@@ -684,8 +685,6 @@ class TestCopyTree(BaseTest, unittest.TestCase):
             self.assertEqual("`%s` is a socket" % sock_path, error_msg)
         else:
             self.fail("shutil.Error should have been raised")
-        finally:
-            shutil.rmtree(TESTFN2, ignore_errors=True)
 
     def test_copytree_special_func(self):
         src_dir = self.mkdtemp()

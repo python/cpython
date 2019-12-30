@@ -54,7 +54,7 @@ Directory and files operations
    *dst* and return *dst* in the most efficient way possible.
    *src* and *dst* are path-like objects or path names given as strings.
 
-   When *src* is a named pipe or a Unix socket, a :exc:`SpecialFileError`
+   When *src* is a named pipe or a Unix socket, :exc:`SpecialFileError`
    is raised.
 
    *dst* must be the complete target file name; look at :func:`~shutil.copy`
