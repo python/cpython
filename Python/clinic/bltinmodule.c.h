@@ -570,9 +570,7 @@ PyDoc_STRVAR(builtin_locals__doc__,
 "\n"
 "Return a dictionary containing the current scope\'s local variables.\n"
 "\n"
-"NOTE: Whether or not updates to this dictionary will affect name lookups in\n"
-"the local scope and vice-versa is *implementation dependent* and not\n"
-"covered by any backwards compatibility guarantees.");
+"TODO: Update the docstring with the gist of PEP 558 semantics.");
 
 #define BUILTIN_LOCALS_METHODDEF    \
     {"locals", (PyCFunction)builtin_locals, METH_NOARGS, builtin_locals__doc__},
@@ -855,4 +853,4 @@ builtin_issubclass(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=29686a89b739d600 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=fb6a24964077c99b input=a9049054013a1b77]*/

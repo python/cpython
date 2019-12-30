@@ -1569,7 +1569,7 @@ TODO: Update the docstring with the gist of PEP 558 semantics.
 
 static PyObject *
 builtin_locals_impl(PyObject *module)
-/*[clinic end generated code: output=b46c94015ce11448 input=7874018d478d5c4b]*/
+/*[clinic end generated code: output=b46c94015ce11448 input=9869b08c278df34f]*/
 {
     return PyEval_GetPyLocals();
 }
