@@ -1771,10 +1771,10 @@ class PyBuildExt(build_ext):
 
             for fw in 'Tcl', 'Tk':
                 if is_macosx_sdk_path(F):
-                    framework_path = join(sysroot, F[1:], fw + '.framework')
+                    framework_path = join(sysroot, F[1:])
                 else:
-                    framework_path = join(F, fw + '.framework')
-                if not exists(framework_path):
+                    framework_path = F
+                if not exists(join(framework_path, fw + '.framework')):
                     break
             else:
                 # ok, framework_path is now directory with both frameworks. Continue
@@ -1794,7 +1794,6 @@ class PyBuildExt(build_ext):
             for fw in ('Tcl', 'Tk')
             for H in ('Headers', 'Versions/Current/PrivateHeaders')
         ]
-
         # For 8.4a2, the X11 headers are not included. Rather than include a
         # complicated search, this is a hard-coded path. It could bail out
         # if X11 libs are not found...
