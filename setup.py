@@ -1769,16 +1769,15 @@ class PyBuildExt(build_ext):
         for F in framework_dirs:
             # both Tcl.framework and Tk.framework should be present
 
-
             for fw in 'Tcl', 'Tk':
                 if is_macosx_sdk_path(F):
-                    if not exists(join(sysroot, F[1:], fw + '.framework')):
-                        break
+                    framework_path = join(sysroot, F[1:], fw + '.framework')
                 else:
-                    if not exists(join(F, fw + '.framework')):
-                        break
+                    framework_path = join(F, fw + '.framework')
+                if not exists(framework_path):
+                    break
             else:
-                # ok, F is now directory with both frameworks. Continure
+                # ok, framework_path is now directory with both frameworks. Continue
                 # building
                 break
         else:
@@ -1791,7 +1790,7 @@ class PyBuildExt(build_ext):
         # the -F option to gcc, which specifies a framework lookup path.
         #
         include_dirs = [
-            join(F, fw + '.framework', H)
+            join(framework_path, fw + '.framework', H)
             for fw in ('Tcl', 'Tk')
             for H in ('Headers', 'Versions/Current/PrivateHeaders')
         ]
