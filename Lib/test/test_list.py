@@ -171,5 +171,31 @@ class ListTest(list_tests.CommonTest):
         self.assertEqual(iter_size, sys.getsizeof(list([0] * 10)))
         self.assertEqual(iter_size, sys.getsizeof(list(range(10))))
 
+    def test_count_index_remove_crashes(self):
+        # bpo-38610: The count(), index(), and remove() methods were not
+        # holding strong references to list elements while calling
+        # PyObject_RichCompareBool().
+        class X:
+            def __eq__(self, other):
+                lst.clear()
+                return NotImplemented
+
+        lst = [X()]
+        with self.assertRaises(ValueError):
+            lst.index(lst)
+
+        class L(list):
+            def __eq__(self, other):
+                str(other)
+                return NotImplemented
+
+        lst = L([X()])
+        lst.count(lst)
+
+        lst = L([X()])
+        with self.assertRaises(ValueError):
+            lst.remove(lst)
+
+
 if __name__ == "__main__":
     unittest.main()
