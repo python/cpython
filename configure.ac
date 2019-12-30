@@ -2943,7 +2943,7 @@ esac
 AC_MSG_CHECKING(for --with-address-sanitizer)
 AC_ARG_WITH(address_sanitizer,
             AS_HELP_STRING([--with-address-sanitizer],
-                           [enable AddressSanitizer memory allocation controller, 'asan' (default is no)]),
+                           [enable AddressSanitizer memory error detector, 'asan' (default is no)]),
 [
 AC_MSG_RESULT($withval)
 BASECFLAGS="-fsanitize=address -fno-omit-frame-pointer $BASECFLAGS"
@@ -2956,7 +2956,7 @@ with_pymalloc="no"
 AC_MSG_CHECKING(for --with-memory-sanitizer)
 AC_ARG_WITH(memory_sanitizer,
             AS_HELP_STRING([--with-memory-sanitizer],
-                           [enable MemorySanitizer memory allocation controller, 'msan' (default is no)]),
+                           [enable MemorySanitizer allocation error detector, 'msan' (default is no)]),
 [
 AC_MSG_RESULT($withval)
 BASECFLAGS="-fsanitize=memory -fsanitize-memory-track-origins=2 -fno-omit-frame-pointer $BASECFLAGS"
@@ -2969,7 +2969,7 @@ with_pymalloc="no"
 AC_MSG_CHECKING(for --with-undefined-behavior-sanitizer)
 AC_ARG_WITH(undefined_behavior_sanitizer,
             AS_HELP_STRING([--with-undefined-behavior-sanitizer],
-                           [enable UndefinedBehaviorSanitizer memory allocation controller, 'ubsan' (default is no)]),
+                           [enable UndefinedBehaviorSanitizer undefined behaviour detector, 'ubsan' (default is no)]),
 [
 AC_MSG_RESULT($withval)
 BASECFLAGS="-fsanitize=undefined $BASECFLAGS"
@@ -2995,7 +2995,7 @@ PKG_PROG_PKG_CONFIG
 # Check for use of the system expat library
 AC_MSG_CHECKING(for --with-system-expat)
 AC_ARG_WITH(system_expat,
-            AS_HELP_STRING([--with-system-expat], [build pyexpat module using an installed system expat library, see Doc/library/pyexpat.rst (default is no)]),
+            AS_HELP_STRING([--with-system-expat], [build pyexpat module using an installed expat library, see Doc/library/pyexpat.rst (default is no)]),
             [],
             [with_system_expat="no"])
 
@@ -3004,7 +3004,7 @@ AC_MSG_RESULT($with_system_expat)
 # Check for use of the system libffi library
 AC_MSG_CHECKING(for --with-system-ffi)
 AC_ARG_WITH(system_ffi,
-            AS_HELP_STRING([--with-system-ffi], [build _ctypes module using an installed ffi library, see Doc/library/ctypes.rst (default is system dependant)]),,,)
+            AS_HELP_STRING([--with-system-ffi], [build _ctypes module using an installed ffi library, see Doc/library/ctypes.rst (default is system-dependent)]),,,)
 
 if test "$ac_sys_system" = "Darwin"
 then
@@ -3085,7 +3085,7 @@ fi
 # Check for --with-dbmliborder
 AC_MSG_CHECKING(for --with-dbmliborder)
 AC_ARG_WITH(dbmliborder,
-            AS_HELP_STRING([--with-dbmliborder=db1:db2:...], [override order to check db backends for dbm. valid value is a colon separated string with the backend names `ndbm', `gdbm' and `bdb'.]),
+            AS_HELP_STRING([--with-dbmliborder=db1:db2:...], [override order to check db backends for dbm; a valid value is a colon separated string with the backend names `ndbm', `gdbm' and `bdb'.]),
 [
 if test x$with_dbmliborder = xyes
 then
@@ -4338,7 +4338,7 @@ Darwin) ;;
 esac
 AC_MSG_CHECKING(for --with-libm=STRING)
 AC_ARG_WITH(libm,
-            AS_HELP_STRING([--with-libm=STRING], [override libm math library to STRING (default is system dependant)]),
+            AS_HELP_STRING([--with-libm=STRING], [override libm math library to STRING (default is system-dependent)]),
 [
 if test "$withval" = no
 then LIBM=
@@ -4354,7 +4354,7 @@ fi],
 AC_SUBST(LIBC)
 AC_MSG_CHECKING(for --with-libc=STRING)
 AC_ARG_WITH(libc,
-            AS_HELP_STRING([--with-libc=STRING], [override libc C library to STRING (default is system dependant)]),
+            AS_HELP_STRING([--with-libc=STRING], [override libc C library to STRING (default is system-dependent)]),
 [
 if test "$withval" = no
 then LIBC=
@@ -4572,7 +4572,7 @@ AC_CHECK_DECLS([RTLD_LAZY, RTLD_NOW, RTLD_GLOBAL, RTLD_LOCAL, RTLD_NODELETE, RTL
 # determine what size digit to use for Python's longs
 AC_MSG_CHECKING([digit size for Python's longs])
 AC_ARG_ENABLE(big-digits,
-AS_HELP_STRING([--enable-big-digits@<:@=15|30@:>@],[use big digits (30 or 15 bits) for Python longs (default is no)]]),
+AS_HELP_STRING([--enable-big-digits@<:@=15|30@:>@],[use big digits (30 or 15 bits) for Python longs (default is system-dependent)]]),
 [case $enable_big_digits in
 yes)
   enable_big_digits=30 ;;
