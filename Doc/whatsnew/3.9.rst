@@ -290,6 +290,9 @@ Deprecated
   predicable behavior.
   (Contributed by Serhiy Storchaka in :issue:`38371`.)
 
+* The explicit passing of coroutine objects to :func:`asyncio.wait` has been
+  deprecated and will be removed in version 3.11.
+  (Contributed by Yury Selivanov and Kyle Stanley in :issue:`34790`.)
 
 Removed
 =======
