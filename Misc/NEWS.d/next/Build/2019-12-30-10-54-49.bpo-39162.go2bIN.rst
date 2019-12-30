@@ -1,0 +1,1 @@
+Fixed an issue where the macOS SDK path wouldn't be discovered by setup.py, meaning _tkinter failed to build on macOS 10.15.
