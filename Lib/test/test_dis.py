@@ -333,6 +333,68 @@ dis_fstring = """\
              28 RETURN_VALUE
 """ % (_fstring.__code__.co_firstlineno + 1,)
 
+def _tryfinally(a, b):
+    try:
+        return a
+    finally:
+        b()
+
+def _tryfinallyconst(b):
+    try:
+        return 1
+    finally:
+        b()
+
+dis_tryfinally = """\
+%3d           0 SETUP_FINALLY           12 (to 14)
+
+%3d           2 LOAD_FAST                0 (a)
+              4 POP_BLOCK
+
+%3d           6 LOAD_FAST                1 (b)
+              8 CALL_FUNCTION            0
+             10 POP_TOP
+
+%3d          12 RETURN_VALUE
+
+%3d     >>   14 LOAD_FAST                1 (b)
+             16 CALL_FUNCTION            0
+             18 POP_TOP
+             20 RERAISE
+             22 LOAD_CONST               0 (None)
+             24 RETURN_VALUE
+""" % (_tryfinally.__code__.co_firstlineno + 1,
+       _tryfinally.__code__.co_firstlineno + 2,
+       _tryfinally.__code__.co_firstlineno + 4,
+       _tryfinally.__code__.co_firstlineno + 2,
+       _tryfinally.__code__.co_firstlineno + 4,
+       )
+
+dis_tryfinallyconst = """\
+%3d           0 SETUP_FINALLY           12 (to 14)
+
+%3d           2 POP_BLOCK
+
+%3d           4 LOAD_FAST                0 (b)
+              6 CALL_FUNCTION            0
+              8 POP_TOP
+
+%3d          10 LOAD_CONST               1 (1)
+             12 RETURN_VALUE
+
+%3d     >>   14 LOAD_FAST                0 (b)
+             16 CALL_FUNCTION            0
+             18 POP_TOP
+             20 RERAISE
+             22 LOAD_CONST               0 (None)
+             24 RETURN_VALUE
+""" % (_tryfinallyconst.__code__.co_firstlineno + 1,
+       _tryfinallyconst.__code__.co_firstlineno + 2,
+       _tryfinallyconst.__code__.co_firstlineno + 4,
+       _tryfinallyconst.__code__.co_firstlineno + 2,
+       _tryfinallyconst.__code__.co_firstlineno + 4,
+       )
+
 def _g(x):
     yield x
 
@@ -562,6 +624,10 @@ class DisTests(unittest.TestCase):
 
     def test_disassemble_fstring(self):
         self.do_disassembly_test(_fstring, dis_fstring)
+
+    def test_disassemble_try_finally(self):
+        self.do_disassembly_test(_tryfinally, dis_tryfinally)
+        self.do_disassembly_test(_tryfinallyconst, dis_tryfinallyconst)
 
     def test_dis_none(self):
         try:
