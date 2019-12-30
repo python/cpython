@@ -322,6 +322,7 @@ class Random(_random.Random):
                 # pick an element in x[:i+1] with which to exchange x[i]
                 j = _int(random() * (i+1))
                 x[i], x[j] = x[j], x[i]
+        return x
 
     def sample(self, population, k):
         """Chooses k unique random elements from a population sequence or set.
