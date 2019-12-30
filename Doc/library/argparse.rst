@@ -449,7 +449,7 @@ default values to each of the argument help messages::
    >>> parser.add_argument('--foo', type=int, default=42, help='FOO!')
    >>> parser.add_argument('bar', nargs='*', default=[1, 2, 3], help='BAR!')
    >>> parser.print_help()
-   usage: PROG [-h] [--foo FOO] [bar [bar ...]]
+   usage: PROG [-h] [--foo FOO] [bar ...]
 
    positional arguments:
     bar         BAR! (default: [1, 2, 3])
@@ -810,9 +810,11 @@ how the command-line arguments should be handled. The supplied actions are:
   example, this is useful for increasing verbosity levels::
 
     >>> parser = argparse.ArgumentParser()
-    >>> parser.add_argument('--verbose', '-v', action='count')
+    >>> parser.add_argument('--verbose', '-v', action='count', default=0)
     >>> parser.parse_args(['-vvv'])
     Namespace(verbose=3)
+
+  Note, the *default* will be ``None`` unless explicitly set to *0*.
 
 * ``'help'`` - This prints a complete help message for all the options in the
   current parser and then exits. By default a help action is automatically

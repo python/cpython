@@ -471,7 +471,7 @@ class BaseTestUUID:
         # the value from too_large_getter above.
         try:
             self.uuid.uuid1(node=node)
-        except ValueError as e:
+        except ValueError:
             self.fail('uuid1 was given an invalid node ID')
 
     def test_uuid1(self):

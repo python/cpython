@@ -374,6 +374,8 @@ Querying the error indicator
    own a reference to the return value, so you do not need to :c:func:`Py_DECREF`
    it.
 
+   The caller must hold the GIL.
+
    .. note::
 
       Do not compare the return value to a specific exception; use
@@ -695,6 +697,8 @@ The following functions are used to create and modify Unicode exceptions from C.
    ``0`` on success, ``-1`` on failure.
 
 
+.. _recursion:
+
 Recursion Control
 =================
 
@@ -702,6 +706,8 @@ These two functions provide a way to perform safe recursive calls at the C
 level, both in the core and in extension modules.  They are needed if the
 recursive code does not necessarily invoke Python code (which tracks its
 recursion depth automatically).
+They are also not needed for *tp_call* implementations
+because the :ref:`call protocol <call>` takes care of recursion handling.
 
 .. c:function:: int Py_EnterRecursiveCall(const char *where)
 
@@ -715,14 +721,20 @@ recursion depth automatically).
    case, a :exc:`RecursionError` is set and a nonzero value is returned.
    Otherwise, zero is returned.
 
-   *where* should be a string such as ``" in instance check"`` to be
-   concatenated to the :exc:`RecursionError` message caused by the recursion
+   *where* should be a UTF-8 encoded string such as ``" in instance check"`` to
+   be concatenated to the :exc:`RecursionError` message caused by the recursion
    depth limit.
 
-.. c:function:: void Py_LeaveRecursiveCall()
+   .. versionchanged:: 3.9
+      This function is now also available in the limited API.
+
+.. c:function:: void Py_LeaveRecursiveCall(void)
 
    Ends a :c:func:`Py_EnterRecursiveCall`.  Must be called once for each
    *successful* invocation of :c:func:`Py_EnterRecursiveCall`.
+
+   .. versionchanged:: 3.9
+      This function is now also available in the limited API.
 
 Properly implementing :c:member:`~PyTypeObject.tp_repr` for container types requires
 special recursion handling.  In addition to protecting the stack,

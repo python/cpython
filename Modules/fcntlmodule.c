@@ -668,8 +668,10 @@ PyInit_fcntl(void)
         return NULL;
 
     /* Add some symbolic constants to the module */
-    if (all_ins(m) < 0)
+    if (all_ins(m) < 0) {
+        Py_DECREF(m);
         return NULL;
+    }
 
     return m;
 }

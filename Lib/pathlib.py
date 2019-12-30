@@ -418,7 +418,12 @@ class _NormalAccessor(_Accessor):
 
     unlink = os.unlink
 
-    link_to = os.link
+    if hasattr(os, "link"):
+        link_to = os.link
+    else:
+        @staticmethod
+        def link_to(self, target):
+            raise NotImplementedError("os.link() not available on this system")
 
     rmdir = os.rmdir
 
@@ -777,6 +782,9 @@ class PurePath(object):
             return NotImplemented
         return self._cparts >= other._cparts
 
+    def __class_getitem__(cls, type):
+        return cls
+
     drive = property(attrgetter('_drv'),
                      doc="""The drive prefix (letter or UNC path), if any.""")
 
@@ -799,7 +807,11 @@ class PurePath(object):
 
     @property
     def suffix(self):
-        """The final component's last suffix, if any."""
+        """
+        The final component's last suffix, if any.
+
+        This includes the leading period. For example: '.txt'
+        """
         name = self.name
         i = name.rfind('.')
         if 0 < i < len(name) - 1:
@@ -809,7 +821,11 @@ class PurePath(object):
 
     @property
     def suffixes(self):
-        """A list of the final component's suffixes, if any."""
+        """
+        A list of the final component's suffixes, if any.
+
+        These include the leading periods. For example: ['.tar', '.gz']
+        """
         name = self.name
         if name.endswith('.'):
             return []

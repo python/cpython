@@ -1,2 +1,0 @@
-``_json.scanstring`` is now up to 3x faster when there are many backslash
-escaped characters in the JSON string.

@@ -1,1 +1,0 @@
-The :const:`METH_FASTCALL` calling convention has been documented.

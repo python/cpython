@@ -295,7 +295,7 @@ class _TestProcess(BaseTestCase):
             target=self._test_create_grandchild_process, args=(wconn, ))
         p.start()
 
-        if not rconn.poll(timeout=60):
+        if not rconn.poll(timeout=support.LONG_TIMEOUT):
             raise AssertionError("Could not communicate with child process")
         parent_process_status = rconn.recv()
         self.assertEqual(parent_process_status, "alive")
@@ -303,7 +303,7 @@ class _TestProcess(BaseTestCase):
         p.terminate()
         p.join()
 
-        if not rconn.poll(timeout=60):
+        if not rconn.poll(timeout=support.LONG_TIMEOUT):
             raise AssertionError("Could not communicate with child process")
         parent_process_status = rconn.recv()
         self.assertEqual(parent_process_status, "not alive")
@@ -318,7 +318,7 @@ class _TestProcess(BaseTestCase):
     def _test_report_parent_status(cls, wconn):
         from multiprocessing.process import parent_process
         wconn.send("alive" if parent_process().is_alive() else "not alive")
-        parent_process().join(timeout=5)
+        parent_process().join(timeout=support.SHORT_TIMEOUT)
         wconn.send("alive" if parent_process().is_alive() else "not alive")
 
     def test_process(self):
@@ -360,6 +360,28 @@ class _TestProcess(BaseTestCase):
         self.assertEqual(p.is_alive(), False)
         self.assertNotIn(p, self.active_children())
         close_queue(q)
+
+    @unittest.skipUnless(threading._HAVE_THREAD_NATIVE_ID, "needs native_id")
+    def test_process_mainthread_native_id(self):
+        if self.TYPE == 'threads':
+            self.skipTest('test not appropriate for {}'.format(self.TYPE))
+
+        current_mainthread_native_id = threading.main_thread().native_id
+
+        q = self.Queue(1)
+        p = self.Process(target=self._test_process_mainthread_native_id, args=(q,))
+        p.start()
+
+        child_mainthread_native_id = q.get()
+        p.join()
+        close_queue(q)
+
+        self.assertNotEqual(current_mainthread_native_id, child_mainthread_native_id)
+
+    @classmethod
+    def _test_process_mainthread_native_id(cls, q):
+        mainthread_native_id = threading.main_thread().native_id
+        q.put(mainthread_native_id)
 
     @classmethod
     def _sleep_some(cls):
@@ -1122,7 +1144,7 @@ class _TestQueue(BaseTestCase):
             q = self.Queue()
             q.put(NotSerializable())
             q.put(True)
-            self.assertTrue(q.get(timeout=support.LONG_TIMEOUT))
+            self.assertTrue(q.get(timeout=support.SHORT_TIMEOUT))
             close_queue(q)
 
         with test.support.captured_stderr():
@@ -1137,8 +1159,7 @@ class _TestQueue(BaseTestCase):
                 # qsize is not available on all platform as it
                 # relies on sem_getvalue
                 pass
-            # bpo-30595: use a timeout of 1 second for slow buildbots
-            self.assertTrue(q.get(timeout=1.0))
+            self.assertTrue(q.get(timeout=support.SHORT_TIMEOUT))
             # Check that the size of the queue is correct
             self.assertTrue(q.empty())
             close_queue(q)
@@ -1175,7 +1196,7 @@ class _TestQueue(BaseTestCase):
 
             # Verify that q is still functioning correctly
             q.put(True)
-            self.assertTrue(q.get(timeout=1.0))
+            self.assertTrue(q.get(timeout=support.SHORT_TIMEOUT))
 
         # Assert that the serialization and the hook have been called correctly
         self.assertTrue(not_serializable_obj.reduce_was_called)
@@ -5674,16 +5695,7 @@ def install_tests_in_module_dict(remote_globs, start_method):
         if need_sleep:
             time.sleep(0.5)
 
-        multiprocessing.process._cleanup()
-
-        # Stop the ForkServer process if it's running
-        from multiprocessing import forkserver
-        forkserver._forkserver._stop()
-
-        # bpo-37421: Explicitly call _run_finalizers() to remove immediately
-        # temporary directories created by multiprocessing.util.get_temp_dir().
-        multiprocessing.util._run_finalizers()
-        test.support.gc_collect()
+        multiprocessing.util._cleanup_tests()
 
     remote_globs['setUpModule'] = setUpModule
     remote_globs['tearDownModule'] = tearDownModule

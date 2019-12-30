@@ -208,7 +208,8 @@ also keyword arguments.  So there are a total of 6 calling conventions:
 
    Extension of :const:`METH_FASTCALL` supporting also keyword arguments,
    with methods of type :c:type:`_PyCFunctionFastWithKeywords`.
-   Keyword arguments are passed the same way as in the vectorcall protocol:
+   Keyword arguments are passed the same way as in the
+   :ref:`vectorcall protocol <vectorcall>`:
    there is an additional fourth :c:type:`PyObject\*` parameter
    which is a tuple representing the names of the keyword arguments
    (which are guaranteed to be strings)
@@ -349,7 +350,7 @@ Accessing attributes of extension types
    .. _pymemberdef-offsets:
 
    Heap allocated types (created using :c:func:`PyType_FromSpec` or similar),
-   ``PyMemberDef`` may contain defintitions for the special members
+   ``PyMemberDef`` may contain definitions for the special members
    ``__dictoffset__`` and ``__weaklistoffset__``, corresponding to
    :c:member:`~PyTypeObject.tp_dictoffset` and
    :c:member:`~PyTypeObject.tp_weaklistoffset` in type objects.

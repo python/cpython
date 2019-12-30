@@ -644,7 +644,7 @@ class SiginterruptTest(unittest.TestCase):
                 # wait until the child process is loaded and has started
                 first_line = process.stdout.readline()
 
-                stdout, stderr = process.communicate(timeout=5.0)
+                stdout, stderr = process.communicate(timeout=support.SHORT_TIMEOUT)
             except subprocess.TimeoutExpired:
                 process.kill()
                 return False
@@ -1192,7 +1192,7 @@ class StressTest(unittest.TestCase):
         self.setsig(signal.SIGALRM, second_handler)  # for ITIMER_REAL
 
         expected_sigs = 0
-        deadline = time.monotonic() + 15.0
+        deadline = time.monotonic() + support.SHORT_TIMEOUT
 
         while expected_sigs < N:
             os.kill(os.getpid(), signal.SIGPROF)
@@ -1226,7 +1226,7 @@ class StressTest(unittest.TestCase):
         self.setsig(signal.SIGALRM, handler)  # for ITIMER_REAL
 
         expected_sigs = 0
-        deadline = time.monotonic() + 15.0
+        deadline = time.monotonic() + support.SHORT_TIMEOUT
 
         while expected_sigs < N:
             # Hopefully the SIGALRM will be received somewhere during
@@ -1272,6 +1272,27 @@ class RaiseSignalTest(unittest.TestCase):
         signal.raise_signal(signal.SIGINT)
         self.assertTrue(is_ok)
 
+
+class PidfdSignalTest(unittest.TestCase):
+
+    @unittest.skipUnless(
+        hasattr(signal, "pidfd_send_signal"),
+        "pidfd support not built in",
+    )
+    def test_pidfd_send_signal(self):
+        with self.assertRaises(OSError) as cm:
+            signal.pidfd_send_signal(0, signal.SIGINT)
+        if cm.exception.errno == errno.ENOSYS:
+            self.skipTest("kernel does not support pidfds")
+        elif cm.exception.errno == errno.EPERM:
+            self.skipTest("Not enough privileges to use pidfs")
+        self.assertEqual(cm.exception.errno, errno.EBADF)
+        my_pidfd = os.open(f'/proc/{os.getpid()}', os.O_DIRECTORY)
+        self.addCleanup(os.close, my_pidfd)
+        with self.assertRaisesRegexp(TypeError, "^siginfo must be None$"):
+            signal.pidfd_send_signal(my_pidfd, signal.SIGINT, object(), 0)
+        with self.assertRaises(KeyboardInterrupt):
+            signal.pidfd_send_signal(my_pidfd, signal.SIGINT)
 
 def tearDownModule():
     support.reap_children()

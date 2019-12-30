@@ -1,1 +1,0 @@
-When cyclic garbage collection (gc) runs finalizers that resurrect unreachable objects, the current gc run ends, without collecting any cyclic trash.  However, the statistics reported by ``collect()`` and ``get_stats()`` claimed that all cyclic trash found was collected, and that the resurrected objects were collected.   Changed the stats to report that none were collected.

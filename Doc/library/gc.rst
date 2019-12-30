@@ -35,7 +35,7 @@ The :mod:`gc` module provides the following functions:
 
 .. function:: isenabled()
 
-   Returns true if automatic collection is enabled.
+   Return ``True`` if automatic collection is enabled.
 
 
 .. function:: collect(generation=2)

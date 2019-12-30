@@ -1,2 +1,0 @@
-Fix test_os.test_chown(): use os.getgroups() rather than grp.getgrall()
-to get groups. Rename also the test to test_chown_gid().

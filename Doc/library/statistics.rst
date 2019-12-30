@@ -2,7 +2,7 @@
 =======================================================
 
 .. module:: statistics
-   :synopsis: mathematical statistics functions
+   :synopsis: Mathematical statistics functions
 
 .. moduleauthor:: Steven D'Aprano <steve+python@pearwood.info>
 .. sectionauthor:: Steven D'Aprano <steve+python@pearwood.info>
@@ -77,7 +77,7 @@ However, for reading convenience, most of the examples show sorted sequences.
 
 .. function:: mean(data)
 
-   Return the sample arithmetic mean of *data* which can be a sequence or iterator.
+   Return the sample arithmetic mean of *data* which can be a sequence or iterable.
 
    The arithmetic mean is the sum of the data divided by the number of data
    points.  It is commonly called "the average", although it is only one of many
@@ -122,7 +122,7 @@ However, for reading convenience, most of the examples show sorted sequences.
    Convert *data* to floats and compute the arithmetic mean.
 
    This runs faster than the :func:`mean` function and it always returns a
-   :class:`float`.  The *data* may be a sequence or iterator.  If the input
+   :class:`float`.  The *data* may be a sequence or iterable.  If the input
    dataset is empty, raises a :exc:`StatisticsError`.
 
    .. doctest::
@@ -143,7 +143,7 @@ However, for reading convenience, most of the examples show sorted sequences.
 
    Raises a :exc:`StatisticsError` if the input dataset is empty,
    if it contains a zero, or if it contains a negative value.
-   The *data* may be a sequence or iterator.
+   The *data* may be a sequence or iterable.
 
    No special efforts are made to achieve exact results.
    (However, this may change in the future.)
@@ -158,13 +158,14 @@ However, for reading convenience, most of the examples show sorted sequences.
 
 .. function:: harmonic_mean(data)
 
-   Return the harmonic mean of *data*, a sequence or iterator of
+   Return the harmonic mean of *data*, a sequence or iterable of
    real-valued numbers.
 
    The harmonic mean, sometimes called the subcontrary mean, is the
    reciprocal of the arithmetic :func:`mean` of the reciprocals of the
    data. For example, the harmonic mean of three values *a*, *b* and *c*
-   will be equivalent to ``3/(1/a + 1/b + 1/c)``.
+   will be equivalent to ``3/(1/a + 1/b + 1/c)``.  If one of the values
+   is zero, the result will be zero.
 
    The harmonic mean is a type of average, a measure of the central
    location of the data.  It is often appropriate when averaging
@@ -190,6 +191,10 @@ However, for reading convenience, most of the examples show sorted sequences.
    :exc:`StatisticsError` is raised if *data* is empty, or any element
    is less than zero.
 
+   The current algorithm has an early-out when it encounters a zero
+   in the input.  This means that the subsequent inputs are not tested
+   for validity.  (This behavior may change in the future.)
+
    .. versionadded:: 3.6
 
 
@@ -197,7 +202,7 @@ However, for reading convenience, most of the examples show sorted sequences.
 
    Return the median (middle value) of numeric data, using the common "mean of
    middle two" method.  If *data* is empty, :exc:`StatisticsError` is raised.
-   *data* can be a sequence or iterator.
+   *data* can be a sequence or iterable.
 
    The median is a robust measure of central location and is less affected by
    the presence of outliers.  When the number of data points is odd, the
@@ -226,7 +231,7 @@ However, for reading convenience, most of the examples show sorted sequences.
 .. function:: median_low(data)
 
    Return the low median of numeric data.  If *data* is empty,
-   :exc:`StatisticsError` is raised.  *data* can be a sequence or iterator.
+   :exc:`StatisticsError` is raised.  *data* can be a sequence or iterable.
 
    The low median is always a member of the data set.  When the number of data
    points is odd, the middle value is returned.  When it is even, the smaller of
@@ -246,7 +251,7 @@ However, for reading convenience, most of the examples show sorted sequences.
 .. function:: median_high(data)
 
    Return the high median of data.  If *data* is empty, :exc:`StatisticsError`
-   is raised.  *data* can be a sequence or iterator.
+   is raised.  *data* can be a sequence or iterable.
 
    The high median is always a member of the data set.  When the number of data
    points is odd, the middle value is returned.  When it is even, the larger of
@@ -267,7 +272,7 @@ However, for reading convenience, most of the examples show sorted sequences.
 
    Return the median of grouped continuous data, calculated as the 50th
    percentile, using interpolation.  If *data* is empty, :exc:`StatisticsError`
-   is raised.  *data* can be a sequence or iterator.
+   is raised.  *data* can be a sequence or iterable.
 
    .. doctest::
 
@@ -376,7 +381,7 @@ However, for reading convenience, most of the examples show sorted sequences.
 
 .. function:: pvariance(data, mu=None)
 
-   Return the population variance of *data*, a non-empty sequence or iterator
+   Return the population variance of *data*, a non-empty sequence or iterable
    of real-valued numbers.  Variance, or second moment about the mean, is a
    measure of the variability (spread or dispersion) of data.  A large
    variance indicates that the data is spread out; a small variance indicates

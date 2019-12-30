@@ -2778,6 +2778,16 @@ except StopIteration as e:
 
 gth = get_type_hints
 
+class ForRefExample:
+    @ann_module.dec
+    def func(self: 'ForRefExample'):
+        pass
+
+    @ann_module.dec
+    @ann_module.dec
+    def nested(self: 'ForRefExample'):
+        pass
+
 
 class GetTypeHintTests(BaseTestCase):
     def test_get_type_hints_from_various_objects(self):
@@ -2875,6 +2885,11 @@ class GetTypeHintTests(BaseTestCase):
                          {'z': ClassVar[CSub], 'y': int, 'b': int,
                           'x': ClassVar[Optional[B]]})
         self.assertEqual(gth(G), {'lst': ClassVar[List[T]]})
+
+    def test_get_type_hints_wrapped_decoratored_func(self):
+        expects = {'self': ForRefExample}
+        self.assertEqual(gth(ForRefExample.func), expects)
+        self.assertEqual(gth(ForRefExample.nested), expects)
 
 
 class GetUtilitiesTestCase(TestCase):
@@ -3725,6 +3740,13 @@ class TypedDictTests(BaseTestCase):
         self.assertEqual(Options(), {})
         self.assertEqual(Options(log_level=2), {'log_level': 2})
         self.assertEqual(Options.__total__, False)
+
+    def test_optional_keys(self):
+        class Point2Dor3D(Point2D, total=False):
+            z: int
+
+        assert Point2Dor3D.__required_keys__ == frozenset(['x', 'y'])
+        assert Point2Dor3D.__optional_keys__ == frozenset(['z'])
 
 
 class IOTests(BaseTestCase):
