@@ -1,0 +1,1 @@
+Drop the GIL during large ``b''.join`` operations.

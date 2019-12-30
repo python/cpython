@@ -103,13 +103,19 @@ STRINGLIB(bytes_join)(PyObject *sep, PyObject *iterable)
     /* Catenate everything. */
     p = STRINGLIB_STR(res);
     if (!seplen) {
-        /* fast path */
+        /* fast path (drop GIL for large copies) */
+        PyThreadState *save;
+#define GIL_THRESHOLD 65536
+        if (sz >= GIL_THRESHOLD)
+            save = PyEval_SaveThread();
         for (i = 0; i < nbufs; i++) {
             Py_ssize_t n = buffers[i].len;
             char *q = buffers[i].buf;
             memcpy(p, q, n);
             p += n;
         }
+        if (sz >= GIL_THRESHOLD)
+            PyEval_RestoreThread(save);
         goto done;
     }
     for (i = 0; i < nbufs; i++) {
@@ -138,3 +144,4 @@ done:
 }
 
 #undef NB_STATIC_BUFFERS
+#undef GIL_THRESHOLD
