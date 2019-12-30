@@ -1686,7 +1686,11 @@ compiler_unwind_fblock(struct compiler *c, struct fblockinfo *info,
                     return 0;
                 }
             }
+            /* Emit the finally block, restoring the line number when done */
+            int saved_lineno = c->u->u_lineno;
             VISIT_SEQ(c, stmt, info->fb_datum);
+            c->u->u_lineno = saved_lineno;
+            c->u->u_lineno_set = 0;
             if (preserve_tos) {
                 compiler_pop_fblock(c, POP_VALUE, NULL);
             }
