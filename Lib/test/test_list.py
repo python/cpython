@@ -172,8 +172,9 @@ class ListTest(list_tests.CommonTest):
         self.assertEqual(iter_size, sys.getsizeof(list(range(10))))
 
     def test_count_index_remove_crashes(self):
-        # The count(), index(), and remove() methods were not holding strong
-        # references to list elements while calling PyObject_RichCompareBool().
+        # bpo-38610: The count(), index(), and remove() methods were not
+        # holding strong references to list elements while calling
+        # PyObject_RichCompareBool().
         class X:
             def __eq__(self, other):
                 lst.clear()
