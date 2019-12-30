@@ -1,0 +1,6 @@
+Added ``findalliter(pattern, string, flags=0)`` which returns an iterator
+over values like those returned by ``findall(pattern, string, flags=0)``.
+
+Added ``findfirst(pattern, string, flags=0, default=_undefined)`` which
+returns the first value from ``findalliter()``, and returns ``default`` when
+supplied, or raises ``ValueError`` when there are no matches.
