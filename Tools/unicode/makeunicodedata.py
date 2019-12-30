@@ -134,7 +134,7 @@ def maketables(trace=0):
     # Write the unicode version for inclusion in documentation.
     print("--- Writing", UNIDATA_VERSION, "to Doc/includes/UCD_VERSION.txt ...")
     with open('Doc/includes/UCD_VERSION.txt', 'w') as f:
-        f.write(UNIDATA_VERSION) 
+        f.write(UNIDATA_VERSION)
 
 
 # --------------------------------------------------------------------
