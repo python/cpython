@@ -1,6 +1,7 @@
 import tempfile
 import unittest
 from test import test_support
+from test.test_urllib2net import skip_ftp_test_on_travis
 
 import socket
 import urllib
@@ -218,6 +219,7 @@ class urlopen_FTPTest(unittest.TestCase):
     FTP_TEST_FILE = 'ftp://www.pythontest.net/README'
     NUM_FTP_RETRIEVES = 3
 
+    @skip_ftp_test_on_travis
     def test_multiple_ftp_retrieves(self):
 
         with test_support.transient_internet(self.FTP_TEST_FILE):
@@ -229,6 +231,7 @@ class urlopen_FTPTest(unittest.TestCase):
                 self.fail("Failed FTP retrieve while accessing ftp url "
                           "multiple times.\n Error message was : %s" % e)
 
+    @skip_ftp_test_on_travis
     def test_multiple_ftp_urlopen_same_host(self):
         with test_support.transient_internet(self.FTP_TEST_FILE):
             ftp_fds_to_close = []
