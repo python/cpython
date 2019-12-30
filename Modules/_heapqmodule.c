@@ -583,7 +583,12 @@ _tree_sift(mergeobject* mo, Py_ssize_t pos) {
                 else {
                     cmp = PyObject_RichCompareBool(
                         child, otherchild, Py_LT);
-                    arr = _PyList_ITEMS(mo->tree);
+                    if (arr != _PyList_ITEMS(mo->tree)) {
+                        PyErr_SetString(PyExc_RuntimeError,
+                                        "heapq.merge internal list "
+                                        "changed during iteration.");
+                        return -1;
+                    }
                     if (cmp < 0) {
                         return -1;
                     }
@@ -611,7 +616,12 @@ _tree_sift(mergeobject* mo, Py_ssize_t pos) {
                 else {
                     cmp = PyObject_RichCompareBool(
                         otherchild, child, Py_LT);
-                    arr = _PyList_ITEMS(mo->tree);
+                    if (arr != _PyList_ITEMS(mo->tree)) {
+                        PyErr_SetString(PyExc_RuntimeError,
+                                        "heapq.merge internal list "
+                                        "changed during iteration.");
+                        return -1;
+                    }
                     if (cmp < 0) {
                         return -1;
                     }
@@ -693,6 +703,12 @@ _tree_sift_key(mergeobject *mo, Py_ssize_t pos) {
                 else {
                     cmp = PyObject_RichCompareBool(
                         childkey, otherchildkey, Py_LT);
+                    if (arr != _PyList_ITEMS(mo->tree)) {
+                        PyErr_SetString(PyExc_RuntimeError,
+                                        "heapq.merge internal list "
+                                        "changed during iteration.");
+                        return -1;
+                    }
                     if (cmp < 0) {
                         return -1;
                     }
@@ -727,7 +743,12 @@ _tree_sift_key(mergeobject *mo, Py_ssize_t pos) {
                 else {
                     cmp = PyObject_RichCompareBool(
                         otherchildkey, childkey, Py_LT);
-                    arr = _PyList_ITEMS(mo->tree);
+                    if (arr != _PyList_ITEMS(mo->tree)) {
+                        PyErr_SetString(PyExc_RuntimeError,
+                                        "heapq.merge internal list "
+                                        "changed during iteration.");
+                        return -1;
+                    }
                     if (cmp < 0) {
                         return -1;
                     }
@@ -877,7 +898,6 @@ merge_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
         PyList_SET_ITEM(tree, i, Py_None);
     }
 
-
     /* To ensure stability, we need to order the iterators so that the
      * iterator derived from the first iterable passed is exactly the iterator
      * that supplies the leftmost leaf node in the tree. If we shift the array
@@ -918,14 +938,21 @@ error:
     return NULL;
 }
 
+static int
+merge_clear(mergeobject* mo)
+{
+    Py_CLEAR(mo->tree);
+    Py_CLEAR(mo->iterators);
+    Py_CLEAR(mo->keyfunc);
+    Py_CLEAR(mo->sentinel);
+    return 0;
+}
+
 static void
 merge_dealloc(mergeobject *mo)
 {
     PyObject_GC_UnTrack(mo);
-    Py_XDECREF(mo->tree);
-    Py_XDECREF(mo->iterators);
-    Py_XDECREF(mo->keyfunc);
-    Py_XDECREF(mo->sentinel);
+    merge_clear(mo);
     Py_TYPE(mo)->tp_free(mo);
 }
 
@@ -950,16 +977,6 @@ merge_traverse(mergeobject *mo, visitproc visit, void *arg)
     Py_VISIT(mo->iterators);
     Py_VISIT(mo->keyfunc);
     Py_VISIT(mo->sentinel);
-    return 0;
-}
-
-static int
-merge_clear(mergeobject* mo)
-{
-    Py_CLEAR(mo->tree);
-    Py_CLEAR(mo->iterators);
-    Py_CLEAR(mo->keyfunc);
-    Py_CLEAR(mo->sentinel);
     return 0;
 }
 
