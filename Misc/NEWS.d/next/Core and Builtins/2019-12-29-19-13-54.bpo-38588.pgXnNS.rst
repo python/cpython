@@ -1,1 +1,2 @@
-Fix the segfault when dict comparision with modifying operand.
+Fix possible crashes in dict and list when calling
+:c:func:`PyObject_RichCompareBool`.
