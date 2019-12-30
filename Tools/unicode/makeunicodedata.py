@@ -22,6 +22,7 @@
 # 2008-06-11 gb   add PRINTABLE_MASK for Atsuo Ishimoto's ascii() patch
 # 2011-10-21 ezio add support for name aliases and named sequences
 # 2012-01    benjamin add full case mappings
+# 2019-12-29 nmassman address bpo-22593 to automate doc updates
 #
 # written by Fredrik Lundh (fredrik@pythonware.com)
 #
@@ -40,7 +41,9 @@ VERSION = "3.3"
 
 # The Unicode Database
 # --------------------
-# When changing UCD version please update
+# References in documentation to '|ucd_version|' will be set
+#   to the version below.
+# Current references:
 #   * Doc/library/stdtypes.rst, and
 #   * Doc/library/unicodedata.rst
 #   * Doc/reference/lexical_analysis.rst (two occurrences)
@@ -127,6 +130,11 @@ def maketables(trace=0):
     makeunicodename(unicode, trace)
     makeunicodedata(unicode, trace)
     makeunicodetype(unicode, trace)
+
+    # Write the unicode version for inclusion in documentation.
+    print("--- Writing", UNIDATA_VERSION, "to Doc/includes/UCD_VERSION.txt ...")
+    with open('Doc/includes/UCD_VERSION.txt', 'w') as f:
+        f.write(UNIDATA_VERSION) 
 
 
 # --------------------------------------------------------------------

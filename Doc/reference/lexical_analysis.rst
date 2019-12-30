@@ -316,7 +316,7 @@ The Unicode category codes mentioned above stand for:
 * *Nd* - decimal numbers
 * *Pc* - connector punctuations
 * *Other_ID_Start* - explicit list of characters in `PropList.txt
-  <http://www.unicode.org/Public/12.1.0/ucd/PropList.txt>`_ to support backwards
+  <http://www.unicode.org/Public/|ucd_version|/ucd/PropList.txt>`_ to support backwards
   compatibility
 * *Other_ID_Continue* - likewise
 
@@ -929,4 +929,4 @@ occurrence outside string literals and comments is an unconditional error:
 
 .. rubric:: Footnotes
 
-.. [#] http://www.unicode.org/Public/11.0.0/ucd/NameAliases.txt
+.. [#] http://www.unicode.org/Public/|ucd_version|/ucd/NameAliases.txt

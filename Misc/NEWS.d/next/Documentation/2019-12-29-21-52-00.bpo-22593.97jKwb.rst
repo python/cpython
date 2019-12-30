@@ -1,0 +1,2 @@
+Automate updating of Unicode version in documentation. Any reference in docs
+to ``|ucd_version|`` will be replaced with the current Unicode data version.

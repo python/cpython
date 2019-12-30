@@ -14,7 +14,7 @@ sys.path.append(os.path.abspath('includes'))
 # ---------------------
 
 extensions = ['sphinx.ext.coverage', 'sphinx.ext.doctest',
-              'pyspecific', 'c_annotations', 'escape4chm']
+              'pyspecific', 'c_annotations', 'escape4chm', 'ucdversion']
 
 
 doctest_global_setup = '''
@@ -226,3 +226,7 @@ linkcheck_ignore = [r'https://bugs.python.org/(issue)?\d+',
 
 # Relative filename of the reference count data file.
 refcount_file = 'data/refcounts.dat'
+
+# Import UCD_VERSION for ucdversion extension.
+with open('includes/UCD_VERSION.txt', 'r') as f:
+    UCD_VERSION = f.read().strip()
