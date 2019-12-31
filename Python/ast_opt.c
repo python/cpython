@@ -1,48 +1,8 @@
 /* AST Optimizer */
 #include "Python.h"
 #include "Python-ast.h"
+#include "ast.h"
 
-
-/* TODO: is_const and get_const_value are copied from Python/compile.c.
-   It should be deduped in the future.  Maybe, we can include this file
-   from compile.c?
-*/
-static int
-is_const(expr_ty e)
-{
-    switch (e->kind) {
-    case Constant_kind:
-    case Num_kind:
-    case Str_kind:
-    case Bytes_kind:
-    case Ellipsis_kind:
-    case NameConstant_kind:
-        return 1;
-    default:
-        return 0;
-    }
-}
-
-static PyObject *
-get_const_value(expr_ty e)
-{
-    switch (e->kind) {
-    case Constant_kind:
-        return e->v.Constant.value;
-    case Num_kind:
-        return e->v.Num.n;
-    case Str_kind:
-        return e->v.Str.s;
-    case Bytes_kind:
-        return e->v.Bytes.s;
-    case Ellipsis_kind:
-        return Py_Ellipsis;
-    case NameConstant_kind:
-        return e->v.NameConstant.value;
-    default:
-        Py_UNREACHABLE();
-    }
-}
 
 static int
 make_const(expr_ty node, PyObject *val, PyArena *arena)
@@ -79,7 +39,7 @@ fold_unaryop(expr_ty node, PyArena *arena, int optimize)
 {
     expr_ty arg = node->v.UnaryOp.operand;
 
-    if (!is_const(arg)) {
+    if (arg->kind != Constant_kind) {
         /* Fold not into comparison */
         if (node->v.UnaryOp.op == Not && arg->kind == Compare_kind &&
                 asdl_seq_LEN(arg->v.Compare.ops) == 1) {
@@ -121,7 +81,7 @@ fold_unaryop(expr_ty node, PyArena *arena, int optimize)
         [UAdd] = PyNumber_Positive,
         [USub] = PyNumber_Negative,
     };
-    PyObject *newval = ops[node->v.UnaryOp.op](get_const_value(arg));
+    PyObject *newval = ops[node->v.UnaryOp.op](arg->v.Constant.value);
     return make_const(node, newval, arena);
 }
 
@@ -257,12 +217,12 @@ fold_binop(expr_ty node, PyArena *arena, int optimize)
     expr_ty lhs, rhs;
     lhs = node->v.BinOp.left;
     rhs = node->v.BinOp.right;
-    if (!is_const(lhs) || !is_const(rhs)) {
+    if (lhs->kind != Constant_kind || rhs->kind != Constant_kind) {
         return 1;
     }
 
-    PyObject *lv = get_const_value(lhs);
-    PyObject *rv = get_const_value(rhs);
+    PyObject *lv = lhs->v.Constant.value;
+    PyObject *rv = rhs->v.Constant.value;
     PyObject *newval;
 
     switch (node->v.BinOp.op) {
@@ -314,7 +274,7 @@ make_const_tuple(asdl_seq *elts)
 {
     for (int i = 0; i < asdl_seq_LEN(elts); i++) {
         expr_ty e = (expr_ty)asdl_seq_GET(elts, i);
-        if (!is_const(e)) {
+        if (e->kind != Constant_kind) {
             return NULL;
         }
     }
@@ -326,7 +286,7 @@ make_const_tuple(asdl_seq *elts)
 
     for (int i = 0; i < asdl_seq_LEN(elts); i++) {
         expr_ty e = (expr_ty)asdl_seq_GET(elts, i);
-        PyObject *v = get_const_value(e);
+        PyObject *v = e->v.Constant.value;
         Py_INCREF(v);
         PyTuple_SET_ITEM(newval, i, v);
     }
@@ -355,21 +315,22 @@ fold_subscr(expr_ty node, PyArena *arena, int optimize)
     arg = node->v.Subscript.value;
     slice = node->v.Subscript.slice;
     if (node->v.Subscript.ctx != Load ||
-            !is_const(arg) ||
+            arg->kind != Constant_kind ||
             /* TODO: handle other types of slices */
             slice->kind != Index_kind ||
-            !is_const(slice->v.Index.value))
+            slice->v.Index.value->kind != Constant_kind)
     {
         return 1;
     }
 
     idx = slice->v.Index.value;
-    newval = PyObject_GetItem(get_const_value(arg), get_const_value(idx));
+    newval = PyObject_GetItem(arg->v.Constant.value, idx->v.Constant.value);
     return make_const(node, newval, arena);
 }
 
 /* Change literal list or set of constants into constant
-   tuple or frozenset respectively.
+   tuple or frozenset respectively.  Change literal list of
+   non-constants into tuple.
    Used for right operand of "in" and "not in" tests and for iterable
    in "for" loop and comprehensions.
 */
@@ -378,7 +339,21 @@ fold_iter(expr_ty arg, PyArena *arena, int optimize)
 {
     PyObject *newval;
     if (arg->kind == List_kind) {
-        newval = make_const_tuple(arg->v.List.elts);
+        /* First change a list into tuple. */
+        asdl_seq *elts = arg->v.List.elts;
+        Py_ssize_t n = asdl_seq_LEN(elts);
+        for (Py_ssize_t i = 0; i < n; i++) {
+            expr_ty e = (expr_ty)asdl_seq_GET(elts, i);
+            if (e->kind == Starred_kind) {
+                return 1;
+            }
+        }
+        expr_context_ty ctx = arg->v.List.ctx;
+        arg->kind = Tuple_kind;
+        arg->v.Tuple.elts = elts;
+        arg->v.Tuple.ctx = ctx;
+        /* Try to create a constant tuple. */
+        newval = make_const_tuple(elts);
     }
     else if (arg->kind == Set_kind) {
         newval = make_const_tuple(arg->v.Set.elts);
@@ -453,11 +428,33 @@ static int astfold_excepthandler(excepthandler_ty node_, PyArena *ctx_, int opti
 }
 
 static int
+astfold_body(asdl_seq *stmts, PyArena *ctx_, int optimize_)
+{
+    int docstring = _PyAST_GetDocString(stmts) != NULL;
+    CALL_SEQ(astfold_stmt, stmt_ty, stmts);
+    if (!docstring && _PyAST_GetDocString(stmts) != NULL) {
+        stmt_ty st = (stmt_ty)asdl_seq_GET(stmts, 0);
+        asdl_seq *values = _Py_asdl_seq_new(1, ctx_);
+        if (!values) {
+            return 0;
+        }
+        asdl_seq_SET(values, 0, st->v.Expr.value);
+        expr_ty expr = JoinedStr(values, st->lineno, st->col_offset,
+                                 st->end_lineno, st->end_col_offset, ctx_);
+        if (!expr) {
+            return 0;
+        }
+        st->v.Expr.value = expr;
+    }
+    return 1;
+}
+
+static int
 astfold_mod(mod_ty node_, PyArena *ctx_, int optimize_)
 {
     switch (node_->kind) {
     case Module_kind:
-        CALL_SEQ(astfold_stmt, stmt_ty, node_->v.Module.body);
+        CALL(astfold_body, asdl_seq, node_->v.Module.body);
         break;
     case Interactive_kind:
         CALL_SEQ(astfold_stmt, stmt_ty, node_->v.Interactive.body);
@@ -642,20 +639,20 @@ astfold_stmt(stmt_ty node_, PyArena *ctx_, int optimize_)
     switch (node_->kind) {
     case FunctionDef_kind:
         CALL(astfold_arguments, arguments_ty, node_->v.FunctionDef.args);
-        CALL_SEQ(astfold_stmt, stmt_ty, node_->v.FunctionDef.body);
+        CALL(astfold_body, asdl_seq, node_->v.FunctionDef.body);
         CALL_SEQ(astfold_expr, expr_ty, node_->v.FunctionDef.decorator_list);
         CALL_OPT(astfold_expr, expr_ty, node_->v.FunctionDef.returns);
         break;
     case AsyncFunctionDef_kind:
         CALL(astfold_arguments, arguments_ty, node_->v.AsyncFunctionDef.args);
-        CALL_SEQ(astfold_stmt, stmt_ty, node_->v.AsyncFunctionDef.body);
+        CALL(astfold_body, asdl_seq, node_->v.AsyncFunctionDef.body);
         CALL_SEQ(astfold_expr, expr_ty, node_->v.AsyncFunctionDef.decorator_list);
         CALL_OPT(astfold_expr, expr_ty, node_->v.AsyncFunctionDef.returns);
         break;
     case ClassDef_kind:
         CALL_SEQ(astfold_expr, expr_ty, node_->v.ClassDef.bases);
         CALL_SEQ(astfold_keyword, keyword_ty, node_->v.ClassDef.keywords);
-        CALL_SEQ(astfold_stmt, stmt_ty, node_->v.ClassDef.body);
+        CALL(astfold_body, asdl_seq, node_->v.ClassDef.body);
         CALL_SEQ(astfold_expr, expr_ty, node_->v.ClassDef.decorator_list);
         break;
     case Return_kind:

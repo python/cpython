@@ -5,7 +5,6 @@
 import os
 import subprocess
 import sys
-import sysconfig
 import tempfile
 import unittest
 from test import support
@@ -333,10 +332,10 @@ class CmdLineTest(unittest.TestCase):
 
         if sys.platform == 'win32':
             self.assertEqual(b'1\r\n2\r\n', out)
-            self.assertEqual(b'3\r\n4', err)
+            self.assertEqual(b'3\r\n4\r\n', err)
         else:
             self.assertEqual(b'1\n2\n', out)
-            self.assertEqual(b'3\n4', err)
+            self.assertEqual(b'3\n4\n', err)
 
     def test_unmached_quote(self):
         # Issue #10206: python program starting with unmatched quote
@@ -369,6 +368,8 @@ class CmdLineTest(unittest.TestCase):
     # Issue #7111: Python should work without standard streams
 
     @unittest.skipIf(os.name != 'posix', "test needs POSIX semantics")
+    @unittest.skipIf(sys.platform == "vxworks",
+                         "test needs preexec support in subprocess.Popen")
     def _test_no_stdio(self, streams):
         code = """if 1:
             import os, sys
@@ -390,7 +391,7 @@ class CmdLineTest(unittest.TestCase):
             stderr=subprocess.PIPE,
             preexec_fn=preexec)
         out, err = p.communicate()
-        self.assertEqual(support.strip_python_stderr(err), b'')
+        self.assertEqual(err, b'')
         self.assertEqual(p.returncode, 42)
 
     def test_no_stdin(self):
@@ -507,25 +508,51 @@ class CmdLineTest(unittest.TestCase):
                 PYTHONDONTWRITEBYTECODE=value,
                 PYTHONVERBOSE=value,
             )
+            dont_write_bytecode = int(bool(value))
             code = (
                 "import sys; "
                 "sys.stderr.write(str(sys.flags)); "
                 f"""sys.exit(not (
                     sys.flags.debug == sys.flags.optimize ==
-                    sys.flags.dont_write_bytecode == sys.flags.verbose ==
+                    sys.flags.verbose ==
                     {expected}
+                    and sys.flags.dont_write_bytecode == {dont_write_bytecode}
                 ))"""
             )
             with self.subTest(envar_value=value):
                 assert_python_ok('-c', code, **env_vars)
 
+    def test_set_pycache_prefix(self):
+        # sys.pycache_prefix can be set from either -X pycache_prefix or
+        # PYTHONPYCACHEPREFIX env var, with the former taking precedence.
+        NO_VALUE = object()  # `-X pycache_prefix` with no `=PATH`
+        cases = [
+            # (PYTHONPYCACHEPREFIX, -X pycache_prefix, sys.pycache_prefix)
+            (None, None, None),
+            ('foo', None, 'foo'),
+            (None, 'bar', 'bar'),
+            ('foo', 'bar', 'bar'),
+            ('foo', '', None),
+            ('foo', NO_VALUE, None),
+        ]
+        for envval, opt, expected in cases:
+            exp_clause = "is None" if expected is None else f'== "{expected}"'
+            code = f"import sys; sys.exit(not sys.pycache_prefix {exp_clause})"
+            args = ['-c', code]
+            env = {} if envval is None else {'PYTHONPYCACHEPREFIX': envval}
+            if opt is NO_VALUE:
+                args[:0] = ['-X', 'pycache_prefix']
+            elif opt is not None:
+                args[:0] = ['-X', f'pycache_prefix={opt}']
+            with self.subTest(envval=envval, opt=opt):
+                with support.temp_cwd():
+                    assert_python_ok(*args, **env)
+
     def run_xdev(self, *args, check_exitcode=True, xdev=True):
         env = dict(os.environ)
         env.pop('PYTHONWARNINGS', None)
         env.pop('PYTHONDEVMODE', None)
-        # Force malloc() to disable the debug hooks which are enabled
-        # by default for Python compiled in debug mode
-        env['PYTHONMALLOC'] = 'malloc'
+        env.pop('PYTHONMALLOC', None)
 
         if xdev:
             args = (sys.executable, '-X', 'dev', *args)

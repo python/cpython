@@ -2,7 +2,7 @@
 ========================================
 
 .. module:: typing
-   :synopsis: Support for type hints (see PEP 484).
+   :synopsis: Support for type hints (see :pep:`484`).
 
 .. versionadded:: 3.5
 
@@ -10,14 +10,14 @@
 
 .. note::
 
-   The typing module has been included in the standard library on a
-   :term:`provisional basis <provisional api>`. New features might
-   be added and API may change even between minor releases if deemed
-   necessary by the core developers.
+   The Python runtime does not enforce function and variable type annotations.
+   They can be used by third party tools such as type checkers, IDEs, linters,
+   etc.
 
 --------------
 
-This module supports type hints as specified by :pep:`484` and :pep:`526`.
+This module provides runtime support for type hints as specified by
+:pep:`484`, :pep:`526`, :pep:`544`, :pep:`586`, :pep:`589`, and :pep:`591`.
 The most fundamental support consists of the types :data:`Any`, :data:`Union`,
 :data:`Tuple`, :data:`Callable`, :class:`TypeVar`, and
 :class:`Generic`.  For full specification please see :pep:`484`.  For
@@ -50,20 +50,20 @@ A type alias is defined by assigning the type to the alias. In this example,
 
 Type aliases are useful for simplifying complex type signatures. For example::
 
-   from typing import Dict, Tuple, List
+   from typing import Dict, Tuple, Sequence
 
    ConnectionOptions = Dict[str, str]
    Address = Tuple[str, int]
    Server = Tuple[Address, ConnectionOptions]
 
-   def broadcast_message(message: str, servers: List[Server]) -> None:
+   def broadcast_message(message: str, servers: Sequence[Server]) -> None:
        ...
 
    # The static type checker will treat the previous type signature as
    # being exactly equivalent to this one.
    def broadcast_message(
            message: str,
-           servers: List[Tuple[Tuple[str, int], Dict[str, str]]]) -> None:
+           servers: Sequence[Tuple[Tuple[str, int], Dict[str, str]]]) -> None:
        ...
 
 Note that ``None`` as a type hint is a special case and is replaced by
@@ -101,7 +101,7 @@ accidentally creating a ``UserId`` in an invalid way::
    # 'output' is of type 'int', not 'UserId'
    output = UserId(23413) + UserId(54341)
 
-Note that these checks are enforced only by the static type checker. At runtime
+Note that these checks are enforced only by the static type checker. At runtime,
 the statement ``Derived = NewType('Derived', Base)`` will make ``Derived`` a
 function that immediately returns whatever parameter you pass it. That means
 the expression ``Derived(some_value)`` does not create a new class or introduce
@@ -169,6 +169,8 @@ It is possible to declare the return type of a callable without specifying
 the call signature by substituting a literal ellipsis
 for the list of arguments in the type hint: ``Callable[..., ReturnType]``.
 
+.. _generics:
+
 Generics
 --------
 
@@ -183,7 +185,7 @@ subscription to denote expected types for container elements.
    def notify_by_email(employees: Sequence[Employee],
                        overrides: Mapping[str, str]) -> None: ...
 
-Generics can be parametrized by using a new factory available in typing
+Generics can be parameterized by using a new factory available in typing
 called :class:`TypeVar`.
 
 ::
@@ -229,8 +231,8 @@ A user-defined class can be defined as a generic class.
 single type parameter ``T`` . This also makes ``T`` valid as a type within the
 class body.
 
-The :class:`Generic` base class uses a metaclass that defines
-:meth:`__getitem__` so that ``LoggedVar[t]`` is valid as a type::
+The :class:`Generic` base class defines :meth:`__class_getitem__` so that
+``LoggedVar[t]`` is valid as a type::
 
    from typing import Iterable
 
@@ -305,9 +307,10 @@ User defined generic type aliases are also supported. Examples::
    def inproduct(v: Vec[T]) -> T: # Same as Iterable[Tuple[T, T]]
        return sum(x*y for x, y in v)
 
-The metaclass used by :class:`Generic` is a subclass of :class:`abc.ABCMeta`.
-A generic class can be an ABC by including abstract methods or properties,
-and generic classes can also have ABCs as base classes without a metaclass
+.. versionchanged:: 3.7
+    :class:`Generic` no longer has a custom metaclass.
+
+A user-defined generic class can have ABCs as base classes without a metaclass
 conflict. Generic metaclasses are not supported. The outcome of parameterizing
 generics is cached, and most types in the typing module are hashable and
 comparable for equality.
@@ -390,6 +393,48 @@ it as a return value) of a more specialized type is a type error. For example::
 Use :class:`object` to indicate that a value could be any type in a typesafe
 manner. Use :data:`Any` to indicate that a value is dynamically typed.
 
+
+Nominal vs structural subtyping
+-------------------------------
+
+Initially :pep:`484` defined Python static type system as using
+*nominal subtyping*. This means that a class ``A`` is allowed where
+a class ``B`` is expected if and only if ``A`` is a subclass of ``B``.
+
+This requirement previously also applied to abstract base classes, such as
+:class:`Iterable`. The problem with this approach is that a class had
+to be explicitly marked to support them, which is unpythonic and unlike
+what one would normally do in idiomatic dynamically typed Python code.
+For example, this conforms to the :pep:`484`::
+
+   from typing import Sized, Iterable, Iterator
+
+   class Bucket(Sized, Iterable[int]):
+       ...
+       def __len__(self) -> int: ...
+       def __iter__(self) -> Iterator[int]: ...
+
+:pep:`544` allows to solve this problem by allowing users to write
+the above code without explicit base classes in the class definition,
+allowing ``Bucket`` to be implicitly considered a subtype of both ``Sized``
+and ``Iterable[int]`` by static type checkers. This is known as
+*structural subtyping* (or static duck-typing)::
+
+   from typing import Iterator, Iterable
+
+   class Bucket:  # Note: no base classes
+       ...
+       def __len__(self) -> int: ...
+       def __iter__(self) -> Iterator[int]: ...
+
+   def collect(items: Iterable[int]) -> int: ...
+   result = collect(Bucket())  # Passes type check
+
+Moreover, by subclassing a special class :class:`Protocol`, a user
+can define new custom protocols to fully enjoy structural subtyping
+(see examples below).
+
+
 Classes, functions, and decorators
 ----------------------------------
 
@@ -457,6 +502,39 @@ The module defines the following classes, functions and decorators:
           except KeyError:
               return default
 
+.. class:: Protocol(Generic)
+
+   Base class for protocol classes. Protocol classes are defined like this::
+
+      class Proto(Protocol):
+          def meth(self) -> int:
+              ...
+
+   Such classes are primarily used with static type checkers that recognize
+   structural subtyping (static duck-typing), for example::
+
+      class C:
+          def meth(self) -> int:
+              return 0
+
+      def func(x: Proto) -> int:
+          return x.meth()
+
+      func(C())  # Passes static type check
+
+   See :pep:`544` for details. Protocol classes decorated with
+   :func:`runtime_checkable` (described later) act as simple-minded runtime
+   protocols that check only the presence of given attributes, ignoring their
+   type signatures.
+
+   Protocol classes can be generic, for example::
+
+      class GenProto(Protocol[T]):
+          def meth(self) -> T:
+              ...
+
+   .. versionadded:: 3.8
+
 .. class:: Type(Generic[CT_co])
 
    A variable annotated with ``C`` may accept a value of type ``C``. In
@@ -488,8 +566,9 @@ The module defines the following classes, functions and decorators:
    required to handle this particular case may change in future revisions of
    :pep:`484`.
 
-   The only legal parameters for :class:`Type` are classes, unions of classes, and
-   :data:`Any`. For example::
+   The only legal parameters for :class:`Type` are classes, :data:`Any`,
+   :ref:`type variables <generics>`, and unions of any of these types.
+   For example::
 
       def new_non_team_user(user_class: Type[Union[BaseUser, ProUser]]): ...
 
@@ -526,6 +605,12 @@ The module defines the following classes, functions and decorators:
 
     An ABC with one abstract method ``__bytes__``.
 
+.. class:: SupportsIndex
+
+    An ABC with one abstract method ``__index__``.
+
+    .. versionadded:: 3.8
+
 .. class:: SupportsAbs
 
     An ABC with one abstract method ``__abs__`` that is covariant
@@ -552,7 +637,7 @@ The module defines the following classes, functions and decorators:
 
    A generic version of :class:`collections.abc.Collection`
 
-   .. versionadded:: 3.6
+   .. versionadded:: 3.6.0
 
 .. class:: AbstractSet(Sized, Collection[T_co])
 
@@ -565,6 +650,10 @@ The module defines the following classes, functions and decorators:
 .. class:: Mapping(Sized, Collection[KT], Generic[VT_co])
 
     A generic version of :class:`collections.abc.Mapping`.
+    This type can be used as follows::
+
+      def get_position_in_index(word_list: Mapping[str, int], word: str) -> int:
+          return word_list[word]
 
 .. class:: MutableMapping(Mapping[KT, VT])
 
@@ -592,14 +681,15 @@ The module defines the following classes, functions and decorators:
 
    A generic version of :class:`collections.deque`.
 
+   .. versionadded:: 3.5.4
    .. versionadded:: 3.6.1
 
 .. class:: List(list, MutableSequence[T])
 
    Generic version of :class:`list`.
    Useful for annotating return types. To annotate arguments it is preferred
-   to use abstract collection types such as :class:`Mapping`, :class:`Sequence`,
-   or :class:`AbstractSet`.
+   to use an abstract collection type such as :class:`Sequence` or
+   :class:`Iterable`.
 
    This type may be used as follows::
 
@@ -614,6 +704,8 @@ The module defines the following classes, functions and decorators:
 .. class:: Set(set, MutableSet[T])
 
    A generic version of :class:`builtins.set <set>`.
+   Useful for annotating return types. To annotate arguments it is preferred
+   to use an abstract collection type such as :class:`AbstractSet`.
 
 .. class:: FrozenSet(frozenset, AbstractSet[T_co])
 
@@ -639,6 +731,8 @@ The module defines the following classes, functions and decorators:
 
    A generic version of :class:`collections.abc.Awaitable`.
 
+   .. versionadded:: 3.5.2
+
 .. class:: Coroutine(Awaitable[V_co], Generic[T_co T_contra, V_co])
 
    A generic version of :class:`collections.abc.Coroutine`.
@@ -652,27 +746,44 @@ The module defines the following classes, functions and decorators:
       async def bar() -> None:
           x = await c # type: int
 
+   .. versionadded:: 3.5.3
+
 .. class:: AsyncIterable(Generic[T_co])
 
    A generic version of :class:`collections.abc.AsyncIterable`.
+
+   .. versionadded:: 3.5.2
 
 .. class:: AsyncIterator(AsyncIterable[T_co])
 
    A generic version of :class:`collections.abc.AsyncIterator`.
 
+   .. versionadded:: 3.5.2
+
 .. class:: ContextManager(Generic[T_co])
 
    A generic version of :class:`contextlib.AbstractContextManager`.
 
-   .. versionadded:: 3.6
+   .. versionadded:: 3.5.4
+   .. versionadded:: 3.6.0
+
+.. class:: AsyncContextManager(Generic[T_co])
+
+   A generic version of :class:`contextlib.AbstractAsyncContextManager`.
+
+   .. versionadded:: 3.5.4
+   .. versionadded:: 3.6.2
 
 .. class:: Dict(dict, MutableMapping[KT, VT])
 
    A generic version of :class:`dict`.
-   The usage of this type is as follows::
+   Useful for annotating return types. To annotate arguments it is preferred
+   to use an abstract collection type such as :class:`Mapping`.
 
-      def get_position_in_index(word_list: Dict[str, int], word: str) -> int:
-          return word_list[word]
+   This type can be used as follows::
+
+      def count_words(text: str) -> Dict[str, int]:
+          ...
 
 .. class:: DefaultDict(collections.defaultdict, MutableMapping[KT, VT])
 
@@ -680,16 +791,24 @@ The module defines the following classes, functions and decorators:
 
    .. versionadded:: 3.5.2
 
+.. class:: OrderedDict(collections.OrderedDict, MutableMapping[KT, VT])
+
+   A generic version of :class:`collections.OrderedDict`.
+
+   .. versionadded:: 3.7.2
+
 .. class:: Counter(collections.Counter, Dict[T, int])
 
    A generic version of :class:`collections.Counter`.
 
+   .. versionadded:: 3.5.4
    .. versionadded:: 3.6.1
 
 .. class:: ChainMap(collections.ChainMap, MutableMapping[KT, VT])
 
    A generic version of :class:`collections.ChainMap`.
 
+   .. versionadded:: 3.5.4
    .. versionadded:: 3.6.1
 
 .. class:: Generator(Iterator[T_co], Generic[T_co, T_contra, V_co])
@@ -754,7 +873,7 @@ The module defines the following classes, functions and decorators:
               yield start
               start = await increment(start)
 
-   .. versionadded:: 3.5.4
+   .. versionadded:: 3.6.1
 
 .. class:: Text
 
@@ -770,35 +889,28 @@ The module defines the following classes, functions and decorators:
 
    .. versionadded:: 3.5.2
 
-.. class:: io
+.. class:: IO
+           TextIO
+           BinaryIO
 
-   Wrapper namespace for I/O stream types.
-
-   This defines the generic type ``IO[AnyStr]`` and subclasses ``TextIO``
-   and ``BinaryIO``, deriving from ``IO[str]`` and ``IO[bytes]``,
-   respectively. These represent the types of I/O streams such as returned by
+   Generic type ``IO[AnyStr]`` and its subclasses ``TextIO(IO[str])``
+   and ``BinaryIO(IO[bytes])``
+   represent the types of I/O streams such as returned by
    :func:`open`.
 
-   These types are also accessible directly as ``typing.IO``,
-   ``typing.TextIO``, and ``typing.BinaryIO``.
+.. class:: Pattern
+           Match
 
-.. class:: re
-
-   Wrapper namespace for regular expression matching types.
-
-   This defines the type aliases ``Pattern`` and ``Match`` which
+   These type aliases
    correspond to the return types from :func:`re.compile` and
    :func:`re.match`.  These types (and the corresponding functions)
    are generic in ``AnyStr`` and can be made specific by writing
    ``Pattern[str]``, ``Pattern[bytes]``, ``Match[str]``, or
    ``Match[bytes]``.
 
-   These types are also accessible directly as ``typing.Pattern``
-   and ``typing.Match``.
-
 .. class:: NamedTuple
 
-   Typed version of namedtuple.
+   Typed version of :func:`collections.namedtuple`.
 
    Usage::
 
@@ -821,10 +933,11 @@ The module defines the following classes, functions and decorators:
 
    Fields with a default value must come after any fields without a default.
 
-   The resulting class has two extra attributes: ``_field_types``,
-   giving a dict mapping field names to types, and ``_field_defaults``, a dict
-   mapping field names to default values.  (The field names are in the
-   ``_fields`` attribute, which is part of the namedtuple API.)
+   The resulting class has an extra attribute ``__annotations__`` giving a
+   dict that maps the field names to the field types.  (The field names are in
+   the ``_fields`` attribute and the default values are in the
+   ``_field_defaults`` attribute both of which are part of the namedtuple
+   API.)
 
    ``NamedTuple`` subclasses can also have docstrings and methods::
 
@@ -845,6 +958,55 @@ The module defines the following classes, functions and decorators:
 
    .. versionchanged:: 3.6.1
       Added support for default values, methods, and docstrings.
+
+   .. versionchanged:: 3.8
+      Deprecated the ``_field_types`` attribute in favor of the more
+      standard ``__annotations__`` attribute which has the same information.
+
+   .. versionchanged:: 3.8
+      The ``_field_types`` and ``__annotations__`` attributes are
+      now regular dictionaries instead of instances of ``OrderedDict``.
+
+.. class:: TypedDict(dict)
+
+   A simple typed namespace. At runtime it is equivalent to
+   a plain :class:`dict`.
+
+   ``TypedDict`` creates a dictionary type that expects all of its
+   instances to have a certain set of keys, where each key is
+   associated with a value of a consistent type. This expectation
+   is not checked at runtime but is only enforced by type checkers.
+   Usage::
+
+      class Point2D(TypedDict):
+          x: int
+          y: int
+          label: str
+
+      a: Point2D = {'x': 1, 'y': 2, 'label': 'good'}  # OK
+      b: Point2D = {'z': 3, 'label': 'bad'}           # Fails type check
+
+      assert Point2D(x=1, y=2, label='first') == dict(x=1, y=2, label='first')
+
+   The type info for introspection can be accessed via ``Point2D.__annotations__``
+   and ``Point2D.__total__``.  To allow using this feature with older versions
+   of Python that do not support :pep:`526`, ``TypedDict`` supports two additional
+   equivalent syntactic forms::
+
+      Point2D = TypedDict('Point2D', x=int, y=int, label=str)
+      Point2D = TypedDict('Point2D', {'x': int, 'y': int, 'label': str})
+
+   See :pep:`589` for more examples and detailed rules of using ``TypedDict``
+   with type checkers.
+
+   .. versionadded:: 3.8
+
+.. class:: ForwardRef
+
+   A class used for internal typing representation of string forward references.
+   For example, ``List["SomeClass"]`` is implicitly transformed into
+   ``List[ForwardRef("SomeClass")]``.  This class should not be instantiated by
+   a user, but may be used by introspection tools.
 
 .. function:: NewType(typ)
 
@@ -879,6 +1041,25 @@ The module defines the following classes, functions and decorators:
    a dictionary constructed by merging all the ``__annotations__`` along
    ``C.__mro__`` in reverse order.
 
+.. function:: get_origin(tp)
+.. function:: get_args(tp)
+
+   Provide basic introspection for generic types and special typing forms.
+
+   For a typing object of the form ``X[Y, Z, ...]`` these functions return
+   ``X`` and ``(Y, Z, ...)``. If ``X`` is a generic alias for a builtin or
+   :mod:`collections` class, it gets normalized to the original class.
+   For unsupported objects return ``None`` and ``()`` correspondingly.
+   Examples::
+
+      assert get_origin(Dict[str, int]) is dict
+      assert get_args(Dict[int, str]) == (int, str)
+
+      assert get_origin(Union[int, str]) is Union
+      assert get_args(Union[int, str]) == (int, str)
+
+   .. versionadded:: 3.8
+
 .. decorator:: overload
 
    The ``@overload`` decorator allows describing functions and methods
@@ -890,7 +1071,7 @@ The module defines the following classes, functions and decorators:
    non-``@overload``-decorated definition, while the latter is used at
    runtime but should be ignored by a type checker.  At runtime, calling
    a ``@overload``-decorated function directly will raise
-   ``NotImplementedError``. An example of overload that gives a more
+   :exc:`NotImplementedError`. An example of overload that gives a more
    precise type than can be expressed using a union or a type variable::
 
       @overload
@@ -906,6 +1087,31 @@ The module defines the following classes, functions and decorators:
           <actual implementation>
 
    See :pep:`484` for details and comparison with other typing semantics.
+
+.. decorator:: final
+
+   A decorator to indicate to type checkers that the decorated method
+   cannot be overridden, and the decorated class cannot be subclassed.
+   For example::
+
+      class Base:
+          @final
+          def done(self) -> None:
+              ...
+      class Sub(Base):
+          def done(self) -> None:  # Error reported by type checker
+                ...
+
+      @final
+      class Leaf:
+          ...
+      class Other(Leaf):  # Error reported by type checker
+          ...
+
+   There is no runtime checking of these properties. See :pep:`591` for
+   more details.
+
+   .. versionadded:: 3.8
 
 .. decorator:: no_type_check
 
@@ -924,12 +1130,63 @@ The module defines the following classes, functions and decorators:
    This wraps the decorator with something that wraps the decorated
    function in :func:`no_type_check`.
 
+.. decorator:: type_check_only
+
+   Decorator to mark a class or function to be unavailable at runtime.
+
+   This decorator is itself not available at runtime. It is mainly
+   intended to mark classes that are defined in type stub files if
+   an implementation returns an instance of a private class::
+
+      @type_check_only
+      class Response:  # private or not available at runtime
+          code: int
+          def get_header(self, name: str) -> str: ...
+
+      def fetch_response() -> Response: ...
+
+   Note that returning instances of private classes is not recommended.
+   It is usually preferable to make such classes public.
+
+.. decorator:: runtime_checkable
+
+   Mark a protocol class as a runtime protocol.
+
+   Such a protocol can be used with :func:`isinstance` and :func:`issubclass`.
+   This raises :exc:`TypeError` when applied to a non-protocol class.  This
+   allows a simple-minded structural check, very similar to "one trick ponies"
+   in :mod:`collections.abc` such as :class:`Iterable`.  For example::
+
+      @runtime_checkable
+      class Closable(Protocol):
+          def close(self): ...
+
+      assert isinstance(open('/some/file'), Closable)
+
+   **Warning:** this will check only the presence of the required methods,
+   not their type signatures!
+
+   .. versionadded:: 3.8
+
 .. data:: Any
 
    Special type indicating an unconstrained type.
 
    * Every type is compatible with :data:`Any`.
    * :data:`Any` is compatible with every type.
+
+.. data:: NoReturn
+
+   Special type indicating that a function never returns.
+   For example::
+
+      from typing import NoReturn
+
+      def stop() -> NoReturn:
+          raise RuntimeError('no way')
+
+   .. versionadded:: 3.5.4
+   .. versionadded:: 3.6.2
 
 .. data:: Union
 
@@ -955,15 +1212,14 @@ The module defines the following classes, functions and decorators:
 
        Union[int, str] == Union[str, int]
 
-   * When a class and its subclass are present, the latter is skipped, e.g.::
-
-       Union[int, object] == object
-
    * You cannot subclass or instantiate a union.
 
    * You cannot write ``Union[X][Y]``.
 
    * You can use ``Optional[X]`` as a shorthand for ``Union[X, None]``.
+
+   .. versionchanged:: 3.7
+      Don't remove explicit subclasses from unions at runtime.
 
 .. data:: Optional
 
@@ -973,15 +1229,24 @@ The module defines the following classes, functions and decorators:
 
    Note that this is not the same concept as an optional argument,
    which is one that has a default.  An optional argument with a
-   default needn't use the ``Optional`` qualifier on its type
-   annotation (although it is inferred if the default is ``None``).
-   A mandatory argument may still have an ``Optional`` type if an
-   explicit value of ``None`` is allowed.
+   default does not require the ``Optional`` qualifier on its type
+   annotation just because it is optional. For example::
+
+      def foo(arg: int = 0) -> None:
+          ...
+
+   On the other hand, if an explicit value of ``None`` is allowed, the
+   use of ``Optional`` is appropriate, whether the argument is optional
+   or not. For example::
+
+      def foo(arg: Optional[int] = None) -> None:
+          ...
 
 .. data:: Tuple
 
    Tuple type; ``Tuple[X, Y]`` is the type of a tuple of two items
-   with the first item of type X and the second of type Y.
+   with the first item of type X and the second of type Y. The type of
+   the empty tuple can be written as ``Tuple[()]``.
 
    Example: ``Tuple[T1, T2]`` is a tuple of two elements corresponding
    to type variables T1 and T2.  ``Tuple[int, float, str]`` is a tuple
@@ -1008,6 +1273,28 @@ The module defines the following classes, functions and decorators:
    ``Callable[..., Any]``, and in turn to
    :class:`collections.abc.Callable`.
 
+.. data:: Literal
+
+   A type that can be used to indicate to type checkers that the
+   corresponding variable or function parameter has a value equivalent to
+   the provided literal (or one of several literals). For example::
+
+      def validate_simple(data: Any) -> Literal[True]:  # always returns True
+          ...
+
+      MODE = Literal['r', 'rb', 'w', 'wb']
+      def open_helper(file: str, mode: MODE) -> str:
+          ...
+
+      open_helper('/some/path', 'r')  # Passes type check
+      open_helper('/other/path', 'typo')  # Error in type checker
+
+   ``Literal[...]`` cannot be subclassed. At runtime, an arbitrary value
+   is allowed as type argument to ``Literal[...]``, but type checkers may
+   impose restrictions. See :pep:`586` for more details about literal types.
+
+   .. versionadded:: 3.8
+
 .. data:: ClassVar
 
    Special type construct to mark class variables.
@@ -1033,6 +1320,25 @@ The module defines the following classes, functions and decorators:
       Starship.stats = {}     # This is OK
 
    .. versionadded:: 3.5.3
+
+.. data:: Final
+
+   A special typing construct to indicate to type checkers that a name
+   cannot be re-assigned or overridden in a subclass. For example::
+
+      MAX_SIZE: Final = 9000
+      MAX_SIZE += 1  # Error reported by type checker
+
+      class Connection:
+          TIMEOUT: Final[int] = 10
+
+      class FastConnector(Connection):
+          TIMEOUT = 1  # Error reported by type checker
+
+   There is no runtime checking of these properties. See :pep:`591` for
+   more details.
+
+   .. versionadded:: 3.8
 
 .. data:: AnyStr
 

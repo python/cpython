@@ -100,8 +100,10 @@ Dumping the tracebacks after a timeout
    :func:`cancel_dump_traceback_later` is called: see :ref:`issue with file
    descriptors <faulthandler-fd>`.
 
-   This function is implemented using a watchdog thread and therefore is not
-   available if Python is compiled with threads disabled.
+   This function is implemented using a watchdog thread.
+
+   .. versionchanged:: 3.7
+      This function is now always available.
 
    .. versionchanged:: 3.5
       Added support for passing file descriptor to this function.
@@ -152,10 +154,10 @@ these functions again each time that the file is replaced.
 Example
 -------
 
-.. highlight:: sh
-
 Example of a segmentation fault on Linux with and without enabling the fault
-handler::
+handler:
+
+.. code-block:: shell-session
 
     $ python3 -c "import ctypes; ctypes.string_at(0)"
     Segmentation fault

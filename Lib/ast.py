@@ -24,15 +24,30 @@
     :copyright: Copyright 2008 by Armin Ronacher.
     :license: Python License.
 """
+import sys
 from _ast import *
+from contextlib import contextmanager, nullcontext
 
 
-def parse(source, filename='<unknown>', mode='exec'):
+def parse(source, filename='<unknown>', mode='exec', *,
+          type_comments=False, feature_version=None):
     """
     Parse the source into an AST node.
     Equivalent to compile(source, filename, mode, PyCF_ONLY_AST).
+    Pass type_comments=True to get back type comments where the syntax allows.
     """
-    return compile(source, filename, mode, PyCF_ONLY_AST)
+    flags = PyCF_ONLY_AST
+    if type_comments:
+        flags |= PyCF_TYPE_COMMENTS
+    if isinstance(feature_version, tuple):
+        major, minor = feature_version  # Should be a 2-tuple.
+        assert major == 3
+        feature_version = minor
+    elif feature_version is None:
+        feature_version = -1
+    # Else it should be an int giving the minor version for 3.x.
+    return compile(source, filename, mode, flags,
+                   _feature_version=feature_version)
 
 
 def literal_eval(node_or_string):
@@ -48,10 +63,8 @@ def literal_eval(node_or_string):
         node_or_string = node_or_string.body
     def _convert_num(node):
         if isinstance(node, Constant):
-            if isinstance(node.value, (int, float, complex)):
+            if type(node.value) in (int, float, complex):
                 return node.value
-        elif isinstance(node, Num):
-            return node.n
         raise ValueError('malformed node or string: ' + repr(node))
     def _convert_signed_num(node):
         if isinstance(node, UnaryOp) and isinstance(node.op, (UAdd, USub)):
@@ -64,10 +77,6 @@ def literal_eval(node_or_string):
     def _convert(node):
         if isinstance(node, Constant):
             return node.value
-        elif isinstance(node, (Str, Bytes)):
-            return node.s
-        elif isinstance(node, Num):
-            return node.n
         elif isinstance(node, Tuple):
             return tuple(map(_convert, node.elts))
         elif isinstance(node, List):
@@ -77,8 +86,6 @@ def literal_eval(node_or_string):
         elif isinstance(node, Dict):
             return dict(zip(map(_convert, node.keys),
                             map(_convert, node.values)))
-        elif isinstance(node, NameConstant):
-            return node.value
         elif isinstance(node, BinOp) and isinstance(node.op, (Add, Sub)):
             left = _convert_signed_num(node.left)
             right = _convert_num(node.right)
@@ -91,42 +98,74 @@ def literal_eval(node_or_string):
     return _convert(node_or_string)
 
 
-def dump(node, annotate_fields=True, include_attributes=False):
+def dump(node, annotate_fields=True, include_attributes=False, *, indent=None):
     """
-    Return a formatted dump of the tree in *node*.  This is mainly useful for
-    debugging purposes.  The returned string will show the names and the values
-    for fields.  This makes the code impossible to evaluate, so if evaluation is
-    wanted *annotate_fields* must be set to False.  Attributes such as line
+    Return a formatted dump of the tree in node.  This is mainly useful for
+    debugging purposes.  If annotate_fields is true (by default),
+    the returned string will show the names and the values for fields.
+    If annotate_fields is false, the result string will be more compact by
+    omitting unambiguous field names.  Attributes such as line
     numbers and column offsets are not dumped by default.  If this is wanted,
-    *include_attributes* can be set to True.
+    include_attributes can be set to true.  If indent is a non-negative
+    integer or string, then the tree will be pretty-printed with that indent
+    level. None (the default) selects the single line representation.
     """
-    def _format(node):
+    def _format(node, level=0):
+        if indent is not None:
+            level += 1
+            prefix = '\n' + indent * level
+            sep = ',\n' + indent * level
+        else:
+            prefix = ''
+            sep = ', '
         if isinstance(node, AST):
-            fields = [(a, _format(b)) for a, b in iter_fields(node)]
-            rv = '%s(%s' % (node.__class__.__name__, ', '.join(
-                ('%s=%s' % field for field in fields)
-                if annotate_fields else
-                (b for a, b in fields)
-            ))
+            args = []
+            allsimple = True
+            keywords = annotate_fields
+            for field in node._fields:
+                try:
+                    value = getattr(node, field)
+                except AttributeError:
+                    keywords = True
+                else:
+                    value, simple = _format(value, level)
+                    allsimple = allsimple and simple
+                    if keywords:
+                        args.append('%s=%s' % (field, value))
+                    else:
+                        args.append(value)
             if include_attributes and node._attributes:
-                rv += fields and ', ' or ' '
-                rv += ', '.join('%s=%s' % (a, _format(getattr(node, a)))
-                                for a in node._attributes)
-            return rv + ')'
+                for attr in node._attributes:
+                    try:
+                        value = getattr(node, attr)
+                    except AttributeError:
+                        pass
+                    else:
+                        value, simple = _format(value, level)
+                        allsimple = allsimple and simple
+                        args.append('%s=%s' % (attr, value))
+            if allsimple and len(args) <= 3:
+                return '%s(%s)' % (node.__class__.__name__, ', '.join(args)), not args
+            return '%s(%s%s)' % (node.__class__.__name__, prefix, sep.join(args)), False
         elif isinstance(node, list):
-            return '[%s]' % ', '.join(_format(x) for x in node)
-        return repr(node)
+            if not node:
+                return '[]', True
+            return '[%s%s]' % (prefix, sep.join(_format(x, level)[0] for x in node)), False
+        return repr(node), True
+
     if not isinstance(node, AST):
         raise TypeError('expected AST, got %r' % node.__class__.__name__)
-    return _format(node)
+    if indent is not None and not isinstance(indent, str):
+        indent = ' ' * indent
+    return _format(node)[0]
 
 
 def copy_location(new_node, old_node):
     """
-    Copy source location (`lineno` and `col_offset` attributes) from
-    *old_node* to *new_node* if possible, and return *new_node*.
+    Copy source location (`lineno`, `col_offset`, `end_lineno`, and `end_col_offset`
+    attributes) from *old_node* to *new_node* if possible, and return *new_node*.
     """
-    for attr in 'lineno', 'col_offset':
+    for attr in 'lineno', 'col_offset', 'end_lineno', 'end_col_offset':
         if attr in old_node._attributes and attr in new_node._attributes \
            and hasattr(old_node, attr):
             setattr(new_node, attr, getattr(old_node, attr))
@@ -141,31 +180,44 @@ def fix_missing_locations(node):
     recursively where not already set, by setting them to the values of the
     parent node.  It works recursively starting at *node*.
     """
-    def _fix(node, lineno, col_offset):
+    def _fix(node, lineno, col_offset, end_lineno, end_col_offset):
         if 'lineno' in node._attributes:
             if not hasattr(node, 'lineno'):
                 node.lineno = lineno
             else:
                 lineno = node.lineno
+        if 'end_lineno' in node._attributes:
+            if not hasattr(node, 'end_lineno'):
+                node.end_lineno = end_lineno
+            else:
+                end_lineno = node.end_lineno
         if 'col_offset' in node._attributes:
             if not hasattr(node, 'col_offset'):
                 node.col_offset = col_offset
             else:
                 col_offset = node.col_offset
+        if 'end_col_offset' in node._attributes:
+            if not hasattr(node, 'end_col_offset'):
+                node.end_col_offset = end_col_offset
+            else:
+                end_col_offset = node.end_col_offset
         for child in iter_child_nodes(node):
-            _fix(child, lineno, col_offset)
-    _fix(node, 1, 0)
+            _fix(child, lineno, col_offset, end_lineno, end_col_offset)
+    _fix(node, 1, 0, 1, 0)
     return node
 
 
 def increment_lineno(node, n=1):
     """
-    Increment the line number of each node in the tree starting at *node* by *n*.
-    This is useful to "move code" to a different location in a file.
+    Increment the line number and end line number of each node in the tree
+    starting at *node* by *n*. This is useful to "move code" to a different
+    location in a file.
     """
     for child in walk(node):
         if 'lineno' in child._attributes:
             child.lineno = getattr(child, 'lineno', 0) + n
+        if 'end_lineno' in child._attributes:
+            child.end_lineno = getattr(child, 'end_lineno', 0) + n
     return node
 
 
@@ -206,11 +258,90 @@ def get_docstring(node, clean=True):
     """
     if not isinstance(node, (AsyncFunctionDef, FunctionDef, ClassDef, Module)):
         raise TypeError("%r can't have docstrings" % node.__class__.__name__)
-    text = node.docstring
-    if clean and text:
+    if not(node.body and isinstance(node.body[0], Expr)):
+        return None
+    node = node.body[0].value
+    if isinstance(node, Str):
+        text = node.s
+    elif isinstance(node, Constant) and isinstance(node.value, str):
+        text = node.value
+    else:
+        return None
+    if clean:
         import inspect
         text = inspect.cleandoc(text)
     return text
+
+
+def _splitlines_no_ff(source):
+    """Split a string into lines ignoring form feed and other chars.
+
+    This mimics how the Python parser splits source code.
+    """
+    idx = 0
+    lines = []
+    next_line = ''
+    while idx < len(source):
+        c = source[idx]
+        next_line += c
+        idx += 1
+        # Keep \r\n together
+        if c == '\r' and idx < len(source) and source[idx] == '\n':
+            next_line += '\n'
+            idx += 1
+        if c in '\r\n':
+            lines.append(next_line)
+            next_line = ''
+
+    if next_line:
+        lines.append(next_line)
+    return lines
+
+
+def _pad_whitespace(source):
+    """Replace all chars except '\f\t' in a line with spaces."""
+    result = ''
+    for c in source:
+        if c in '\f\t':
+            result += c
+        else:
+            result += ' '
+    return result
+
+
+def get_source_segment(source, node, *, padded=False):
+    """Get source code segment of the *source* that generated *node*.
+
+    If some location information (`lineno`, `end_lineno`, `col_offset`,
+    or `end_col_offset`) is missing, return None.
+
+    If *padded* is `True`, the first line of a multi-line statement will
+    be padded with spaces to match its original position.
+    """
+    try:
+        lineno = node.lineno - 1
+        end_lineno = node.end_lineno - 1
+        col_offset = node.col_offset
+        end_col_offset = node.end_col_offset
+    except AttributeError:
+        return None
+
+    lines = _splitlines_no_ff(source)
+    if end_lineno == lineno:
+        return lines[lineno].encode()[col_offset:end_col_offset].decode()
+
+    if padded:
+        padding = _pad_whitespace(lines[lineno].encode()[:col_offset].decode())
+    else:
+        padding = ''
+
+    first = padding + lines[lineno].encode()[col_offset:].decode()
+    last = lines[end_lineno].encode()[:end_col_offset].decode()
+    lines = lines[lineno+1:end_lineno]
+
+    lines.insert(0, first)
+    lines.append(last)
+    return ''.join(lines)
 
 
 def walk(node):
@@ -262,6 +393,27 @@ class NodeVisitor(object):
                         self.visit(item)
             elif isinstance(value, AST):
                 self.visit(value)
+
+    def visit_Constant(self, node):
+        value = node.value
+        type_name = _const_node_type_names.get(type(value))
+        if type_name is None:
+            for cls, name in _const_node_type_names.items():
+                if isinstance(value, cls):
+                    type_name = name
+                    break
+        if type_name is not None:
+            method = 'visit_' + type_name
+            try:
+                visitor = getattr(self, method)
+            except AttributeError:
+                pass
+            else:
+                import warnings
+                warnings.warn(f"{method} is deprecated; add visit_Constant",
+                              DeprecationWarning, 2)
+                return visitor(node)
+        return self.generic_visit(node)
 
 
 class NodeTransformer(NodeVisitor):
@@ -321,3 +473,787 @@ class NodeTransformer(NodeVisitor):
                 else:
                     setattr(node, field, new_node)
         return node
+
+
+# The following code is for backward compatibility.
+# It will be removed in future.
+
+def _getter(self):
+    return self.value
+
+def _setter(self, value):
+    self.value = value
+
+Constant.n = property(_getter, _setter)
+Constant.s = property(_getter, _setter)
+
+class _ABC(type):
+
+    def __instancecheck__(cls, inst):
+        if not isinstance(inst, Constant):
+            return False
+        if cls in _const_types:
+            try:
+                value = inst.value
+            except AttributeError:
+                return False
+            else:
+                return (
+                    isinstance(value, _const_types[cls]) and
+                    not isinstance(value, _const_types_not.get(cls, ()))
+                )
+        return type.__instancecheck__(cls, inst)
+
+def _new(cls, *args, **kwargs):
+    if cls in _const_types:
+        return Constant(*args, **kwargs)
+    return Constant.__new__(cls, *args, **kwargs)
+
+class Num(Constant, metaclass=_ABC):
+    _fields = ('n',)
+    __new__ = _new
+
+class Str(Constant, metaclass=_ABC):
+    _fields = ('s',)
+    __new__ = _new
+
+class Bytes(Constant, metaclass=_ABC):
+    _fields = ('s',)
+    __new__ = _new
+
+class NameConstant(Constant, metaclass=_ABC):
+    __new__ = _new
+
+class Ellipsis(Constant, metaclass=_ABC):
+    _fields = ()
+
+    def __new__(cls, *args, **kwargs):
+        if cls is Ellipsis:
+            return Constant(..., *args, **kwargs)
+        return Constant.__new__(cls, *args, **kwargs)
+
+_const_types = {
+    Num: (int, float, complex),
+    Str: (str,),
+    Bytes: (bytes,),
+    NameConstant: (type(None), bool),
+    Ellipsis: (type(...),),
+}
+_const_types_not = {
+    Num: (bool,),
+}
+_const_node_type_names = {
+    bool: 'NameConstant',  # should be before int
+    type(None): 'NameConstant',
+    int: 'Num',
+    float: 'Num',
+    complex: 'Num',
+    str: 'Str',
+    bytes: 'Bytes',
+    type(...): 'Ellipsis',
+}
+
+# Large float and imaginary literals get turned into infinities in the AST.
+# We unparse those infinities to INFSTR.
+_INFSTR = "1e" + repr(sys.float_info.max_10_exp + 1)
+
+class _Unparser(NodeVisitor):
+    """Methods in this class recursively traverse an AST and
+    output source code for the abstract syntax; original formatting
+    is disregarded."""
+
+    def __init__(self):
+        self._source = []
+        self._buffer = []
+        self._indent = 0
+
+    def interleave(self, inter, f, seq):
+        """Call f on each item in seq, calling inter() in between."""
+        seq = iter(seq)
+        try:
+            f(next(seq))
+        except StopIteration:
+            pass
+        else:
+            for x in seq:
+                inter()
+                f(x)
+
+    def fill(self, text=""):
+        """Indent a piece of text and append it, according to the current
+        indentation level"""
+        self.write("\n" + "    " * self._indent + text)
+
+    def write(self, text):
+        """Append a piece of text"""
+        self._source.append(text)
+
+    def buffer_writer(self, text):
+        self._buffer.append(text)
+
+    @property
+    def buffer(self):
+        value = "".join(self._buffer)
+        self._buffer.clear()
+        return value
+
+    @contextmanager
+    def block(self):
+        """A context manager for preparing the source for blocks. It adds
+        the character':', increases the indentation on enter and decreases
+        the indentation on exit."""
+        self.write(":")
+        self._indent += 1
+        yield
+        self._indent -= 1
+
+    @contextmanager
+    def delimit(self, start, end):
+        """A context manager for preparing the source for expressions. It adds
+        *start* to the buffer and enters, after exit it adds *end*."""
+
+        self.write(start)
+        yield
+        self.write(end)
+
+    def delimit_if(self, start, end, condition):
+        if condition:
+            return self.delimit(start, end)
+        else:
+            return nullcontext()
+
+    def traverse(self, node):
+        if isinstance(node, list):
+            for item in node:
+                self.traverse(item)
+        else:
+            super().visit(node)
+
+    def visit(self, node):
+        """Outputs a source code string that, if converted back to an ast
+        (using ast.parse) will generate an AST equivalent to *node*"""
+        self._source = []
+        self.traverse(node)
+        return "".join(self._source)
+
+    def visit_Module(self, node):
+        for subnode in node.body:
+            self.traverse(subnode)
+
+    def visit_Expr(self, node):
+        self.fill()
+        self.traverse(node.value)
+
+    def visit_NamedExpr(self, node):
+        with self.delimit("(", ")"):
+            self.traverse(node.target)
+            self.write(" := ")
+            self.traverse(node.value)
+
+    def visit_Import(self, node):
+        self.fill("import ")
+        self.interleave(lambda: self.write(", "), self.traverse, node.names)
+
+    def visit_ImportFrom(self, node):
+        self.fill("from ")
+        self.write("." * node.level)
+        if node.module:
+            self.write(node.module)
+        self.write(" import ")
+        self.interleave(lambda: self.write(", "), self.traverse, node.names)
+
+    def visit_Assign(self, node):
+        self.fill()
+        for target in node.targets:
+            self.traverse(target)
+            self.write(" = ")
+        self.traverse(node.value)
+
+    def visit_AugAssign(self, node):
+        self.fill()
+        self.traverse(node.target)
+        self.write(" " + self.binop[node.op.__class__.__name__] + "= ")
+        self.traverse(node.value)
+
+    def visit_AnnAssign(self, node):
+        self.fill()
+        with self.delimit_if("(", ")", not node.simple and isinstance(node.target, Name)):
+            self.traverse(node.target)
+        self.write(": ")
+        self.traverse(node.annotation)
+        if node.value:
+            self.write(" = ")
+            self.traverse(node.value)
+
+    def visit_Return(self, node):
+        self.fill("return")
+        if node.value:
+            self.write(" ")
+            self.traverse(node.value)
+
+    def visit_Pass(self, node):
+        self.fill("pass")
+
+    def visit_Break(self, node):
+        self.fill("break")
+
+    def visit_Continue(self, node):
+        self.fill("continue")
+
+    def visit_Delete(self, node):
+        self.fill("del ")
+        self.interleave(lambda: self.write(", "), self.traverse, node.targets)
+
+    def visit_Assert(self, node):
+        self.fill("assert ")
+        self.traverse(node.test)
+        if node.msg:
+            self.write(", ")
+            self.traverse(node.msg)
+
+    def visit_Global(self, node):
+        self.fill("global ")
+        self.interleave(lambda: self.write(", "), self.write, node.names)
+
+    def visit_Nonlocal(self, node):
+        self.fill("nonlocal ")
+        self.interleave(lambda: self.write(", "), self.write, node.names)
+
+    def visit_Await(self, node):
+        with self.delimit("(", ")"):
+            self.write("await")
+            if node.value:
+                self.write(" ")
+                self.traverse(node.value)
+
+    def visit_Yield(self, node):
+        with self.delimit("(", ")"):
+            self.write("yield")
+            if node.value:
+                self.write(" ")
+                self.traverse(node.value)
+
+    def visit_YieldFrom(self, node):
+        with self.delimit("(", ")"):
+            self.write("yield from")
+            if node.value:
+                self.write(" ")
+                self.traverse(node.value)
+
+    def visit_Raise(self, node):
+        self.fill("raise")
+        if not node.exc:
+            if node.cause:
+                raise ValueError(f"Node can't use cause without an exception.")
+            return
+        self.write(" ")
+        self.traverse(node.exc)
+        if node.cause:
+            self.write(" from ")
+            self.traverse(node.cause)
+
+    def visit_Try(self, node):
+        self.fill("try")
+        with self.block():
+            self.traverse(node.body)
+        for ex in node.handlers:
+            self.traverse(ex)
+        if node.orelse:
+            self.fill("else")
+            with self.block():
+                self.traverse(node.orelse)
+        if node.finalbody:
+            self.fill("finally")
+            with self.block():
+                self.traverse(node.finalbody)
+
+    def visit_ExceptHandler(self, node):
+        self.fill("except")
+        if node.type:
+            self.write(" ")
+            self.traverse(node.type)
+        if node.name:
+            self.write(" as ")
+            self.write(node.name)
+        with self.block():
+            self.traverse(node.body)
+
+    def visit_ClassDef(self, node):
+        self.write("\n")
+        for deco in node.decorator_list:
+            self.fill("@")
+            self.traverse(deco)
+        self.fill("class " + node.name)
+        with self.delimit("(", ")"):
+            comma = False
+            for e in node.bases:
+                if comma:
+                    self.write(", ")
+                else:
+                    comma = True
+                self.traverse(e)
+            for e in node.keywords:
+                if comma:
+                    self.write(", ")
+                else:
+                    comma = True
+                self.traverse(e)
+
+        with self.block():
+            self.traverse(node.body)
+
+    def visit_FunctionDef(self, node):
+        self.__FunctionDef_helper(node, "def")
+
+    def visit_AsyncFunctionDef(self, node):
+        self.__FunctionDef_helper(node, "async def")
+
+    def __FunctionDef_helper(self, node, fill_suffix):
+        self.write("\n")
+        for deco in node.decorator_list:
+            self.fill("@")
+            self.traverse(deco)
+        def_str = fill_suffix + " " + node.name
+        self.fill(def_str)
+        with self.delimit("(", ")"):
+            self.traverse(node.args)
+        if node.returns:
+            self.write(" -> ")
+            self.traverse(node.returns)
+        with self.block():
+            self.traverse(node.body)
+
+    def visit_For(self, node):
+        self.__For_helper("for ", node)
+
+    def visit_AsyncFor(self, node):
+        self.__For_helper("async for ", node)
+
+    def __For_helper(self, fill, node):
+        self.fill(fill)
+        self.traverse(node.target)
+        self.write(" in ")
+        self.traverse(node.iter)
+        with self.block():
+            self.traverse(node.body)
+        if node.orelse:
+            self.fill("else")
+            with self.block():
+                self.traverse(node.orelse)
+
+    def visit_If(self, node):
+        self.fill("if ")
+        self.traverse(node.test)
+        with self.block():
+            self.traverse(node.body)
+        # collapse nested ifs into equivalent elifs.
+        while node.orelse and len(node.orelse) == 1 and isinstance(node.orelse[0], If):
+            node = node.orelse[0]
+            self.fill("elif ")
+            self.traverse(node.test)
+            with self.block():
+                self.traverse(node.body)
+        # final else
+        if node.orelse:
+            self.fill("else")
+            with self.block():
+                self.traverse(node.orelse)
+
+    def visit_While(self, node):
+        self.fill("while ")
+        self.traverse(node.test)
+        with self.block():
+            self.traverse(node.body)
+        if node.orelse:
+            self.fill("else")
+            with self.block():
+                self.traverse(node.orelse)
+
+    def visit_With(self, node):
+        self.fill("with ")
+        self.interleave(lambda: self.write(", "), self.traverse, node.items)
+        with self.block():
+            self.traverse(node.body)
+
+    def visit_AsyncWith(self, node):
+        self.fill("async with ")
+        self.interleave(lambda: self.write(", "), self.traverse, node.items)
+        with self.block():
+            self.traverse(node.body)
+
+    def visit_JoinedStr(self, node):
+        self.write("f")
+        self._fstring_JoinedStr(node, self.buffer_writer)
+        self.write(repr(self.buffer))
+
+    def visit_FormattedValue(self, node):
+        self.write("f")
+        self._fstring_FormattedValue(node, self.buffer_writer)
+        self.write(repr(self.buffer))
+
+    def _fstring_JoinedStr(self, node, write):
+        for value in node.values:
+            meth = getattr(self, "_fstring_" + type(value).__name__)
+            meth(value, write)
+
+    def _fstring_Constant(self, node, write):
+        if not isinstance(node.value, str):
+            raise ValueError("Constants inside JoinedStr should be a string.")
+        value = node.value.replace("{", "{{").replace("}", "}}")
+        write(value)
+
+    def _fstring_FormattedValue(self, node, write):
+        write("{")
+        expr = type(self)().visit(node.value).rstrip("\n")
+        if expr.startswith("{"):
+            write(" ")  # Separate pair of opening brackets as "{ {"
+        write(expr)
+        if node.conversion != -1:
+            conversion = chr(node.conversion)
+            if conversion not in "sra":
+                raise ValueError("Unknown f-string conversion.")
+            write(f"!{conversion}")
+        if node.format_spec:
+            write(":")
+            meth = getattr(self, "_fstring_" + type(node.format_spec).__name__)
+            meth(node.format_spec, write)
+        write("}")
+
+    def visit_Name(self, node):
+        self.write(node.id)
+
+    def _write_constant(self, value):
+        if isinstance(value, (float, complex)):
+            # Substitute overflowing decimal literal for AST infinities.
+            self.write(repr(value).replace("inf", _INFSTR))
+        else:
+            self.write(repr(value))
+
+    def visit_Constant(self, node):
+        value = node.value
+        if isinstance(value, tuple):
+            with self.delimit("(", ")"):
+                if len(value) == 1:
+                    self._write_constant(value[0])
+                    self.write(",")
+                else:
+                    self.interleave(lambda: self.write(", "), self._write_constant, value)
+        elif value is ...:
+            self.write("...")
+        else:
+            if node.kind == "u":
+                self.write("u")
+            self._write_constant(node.value)
+
+    def visit_List(self, node):
+        with self.delimit("[", "]"):
+            self.interleave(lambda: self.write(", "), self.traverse, node.elts)
+
+    def visit_ListComp(self, node):
+        with self.delimit("[", "]"):
+            self.traverse(node.elt)
+            for gen in node.generators:
+                self.traverse(gen)
+
+    def visit_GeneratorExp(self, node):
+        with self.delimit("(", ")"):
+            self.traverse(node.elt)
+            for gen in node.generators:
+                self.traverse(gen)
+
+    def visit_SetComp(self, node):
+        with self.delimit("{", "}"):
+            self.traverse(node.elt)
+            for gen in node.generators:
+                self.traverse(gen)
+
+    def visit_DictComp(self, node):
+        with self.delimit("{", "}"):
+            self.traverse(node.key)
+            self.write(": ")
+            self.traverse(node.value)
+            for gen in node.generators:
+                self.traverse(gen)
+
+    def visit_comprehension(self, node):
+        if node.is_async:
+            self.write(" async for ")
+        else:
+            self.write(" for ")
+        self.traverse(node.target)
+        self.write(" in ")
+        self.traverse(node.iter)
+        for if_clause in node.ifs:
+            self.write(" if ")
+            self.traverse(if_clause)
+
+    def visit_IfExp(self, node):
+        with self.delimit("(", ")"):
+            self.traverse(node.body)
+            self.write(" if ")
+            self.traverse(node.test)
+            self.write(" else ")
+            self.traverse(node.orelse)
+
+    def visit_Set(self, node):
+        if not node.elts:
+            raise ValueError("Set node should has at least one item")
+        with self.delimit("{", "}"):
+            self.interleave(lambda: self.write(", "), self.traverse, node.elts)
+
+    def visit_Dict(self, node):
+        def write_key_value_pair(k, v):
+            self.traverse(k)
+            self.write(": ")
+            self.traverse(v)
+
+        def write_item(item):
+            k, v = item
+            if k is None:
+                # for dictionary unpacking operator in dicts {**{'y': 2}}
+                # see PEP 448 for details
+                self.write("**")
+                self.traverse(v)
+            else:
+                write_key_value_pair(k, v)
+
+        with self.delimit("{", "}"):
+            self.interleave(
+                lambda: self.write(", "), write_item, zip(node.keys, node.values)
+            )
+
+    def visit_Tuple(self, node):
+        with self.delimit("(", ")"):
+            if len(node.elts) == 1:
+                elt = node.elts[0]
+                self.traverse(elt)
+                self.write(",")
+            else:
+                self.interleave(lambda: self.write(", "), self.traverse, node.elts)
+
+    unop = {"Invert": "~", "Not": "not", "UAdd": "+", "USub": "-"}
+
+    def visit_UnaryOp(self, node):
+        with self.delimit("(", ")"):
+            self.write(self.unop[node.op.__class__.__name__])
+            self.write(" ")
+            self.traverse(node.operand)
+
+    binop = {
+        "Add": "+",
+        "Sub": "-",
+        "Mult": "*",
+        "MatMult": "@",
+        "Div": "/",
+        "Mod": "%",
+        "LShift": "<<",
+        "RShift": ">>",
+        "BitOr": "|",
+        "BitXor": "^",
+        "BitAnd": "&",
+        "FloorDiv": "//",
+        "Pow": "**",
+    }
+
+    def visit_BinOp(self, node):
+        with self.delimit("(", ")"):
+            self.traverse(node.left)
+            self.write(" " + self.binop[node.op.__class__.__name__] + " ")
+            self.traverse(node.right)
+
+    cmpops = {
+        "Eq": "==",
+        "NotEq": "!=",
+        "Lt": "<",
+        "LtE": "<=",
+        "Gt": ">",
+        "GtE": ">=",
+        "Is": "is",
+        "IsNot": "is not",
+        "In": "in",
+        "NotIn": "not in",
+    }
+
+    def visit_Compare(self, node):
+        with self.delimit("(", ")"):
+            self.traverse(node.left)
+            for o, e in zip(node.ops, node.comparators):
+                self.write(" " + self.cmpops[o.__class__.__name__] + " ")
+                self.traverse(e)
+
+    boolops = {"And": "and", "Or": "or"}
+
+    def visit_BoolOp(self, node):
+        with self.delimit("(", ")"):
+            s = " %s " % self.boolops[node.op.__class__.__name__]
+            self.interleave(lambda: self.write(s), self.traverse, node.values)
+
+    def visit_Attribute(self, node):
+        self.traverse(node.value)
+        # Special case: 3.__abs__() is a syntax error, so if node.value
+        # is an integer literal then we need to either parenthesize
+        # it or add an extra space to get 3 .__abs__().
+        if isinstance(node.value, Constant) and isinstance(node.value.value, int):
+            self.write(" ")
+        self.write(".")
+        self.write(node.attr)
+
+    def visit_Call(self, node):
+        self.traverse(node.func)
+        with self.delimit("(", ")"):
+            comma = False
+            for e in node.args:
+                if comma:
+                    self.write(", ")
+                else:
+                    comma = True
+                self.traverse(e)
+            for e in node.keywords:
+                if comma:
+                    self.write(", ")
+                else:
+                    comma = True
+                self.traverse(e)
+
+    def visit_Subscript(self, node):
+        self.traverse(node.value)
+        with self.delimit("[", "]"):
+            self.traverse(node.slice)
+
+    def visit_Starred(self, node):
+        self.write("*")
+        self.traverse(node.value)
+
+    def visit_Ellipsis(self, node):
+        self.write("...")
+
+    def visit_Index(self, node):
+        self.traverse(node.value)
+
+    def visit_Slice(self, node):
+        if node.lower:
+            self.traverse(node.lower)
+        self.write(":")
+        if node.upper:
+            self.traverse(node.upper)
+        if node.step:
+            self.write(":")
+            self.traverse(node.step)
+
+    def visit_ExtSlice(self, node):
+        self.interleave(lambda: self.write(", "), self.traverse, node.dims)
+
+    def visit_arg(self, node):
+        self.write(node.arg)
+        if node.annotation:
+            self.write(": ")
+            self.traverse(node.annotation)
+
+    def visit_arguments(self, node):
+        first = True
+        # normal arguments
+        all_args = node.posonlyargs + node.args
+        defaults = [None] * (len(all_args) - len(node.defaults)) + node.defaults
+        for index, elements in enumerate(zip(all_args, defaults), 1):
+            a, d = elements
+            if first:
+                first = False
+            else:
+                self.write(", ")
+            self.traverse(a)
+            if d:
+                self.write("=")
+                self.traverse(d)
+            if index == len(node.posonlyargs):
+                self.write(", /")
+
+        # varargs, or bare '*' if no varargs but keyword-only arguments present
+        if node.vararg or node.kwonlyargs:
+            if first:
+                first = False
+            else:
+                self.write(", ")
+            self.write("*")
+            if node.vararg:
+                self.write(node.vararg.arg)
+                if node.vararg.annotation:
+                    self.write(": ")
+                    self.traverse(node.vararg.annotation)
+
+        # keyword-only arguments
+        if node.kwonlyargs:
+            for a, d in zip(node.kwonlyargs, node.kw_defaults):
+                self.write(", ")
+                self.traverse(a)
+                if d:
+                    self.write("=")
+                    self.traverse(d)
+
+        # kwargs
+        if node.kwarg:
+            if first:
+                first = False
+            else:
+                self.write(", ")
+            self.write("**" + node.kwarg.arg)
+            if node.kwarg.annotation:
+                self.write(": ")
+                self.traverse(node.kwarg.annotation)
+
+    def visit_keyword(self, node):
+        if node.arg is None:
+            self.write("**")
+        else:
+            self.write(node.arg)
+            self.write("=")
+        self.traverse(node.value)
+
+    def visit_Lambda(self, node):
+        with self.delimit("(", ")"):
+            self.write("lambda ")
+            self.traverse(node.args)
+            self.write(": ")
+            self.traverse(node.body)
+
+    def visit_alias(self, node):
+        self.write(node.name)
+        if node.asname:
+            self.write(" as " + node.asname)
+
+    def visit_withitem(self, node):
+        self.traverse(node.context_expr)
+        if node.optional_vars:
+            self.write(" as ")
+            self.traverse(node.optional_vars)
+
+def unparse(ast_obj):
+    unparser = _Unparser()
+    return unparser.visit(ast_obj)
+
+
+def main():
+    import argparse
+
+    parser = argparse.ArgumentParser(prog='python -m ast')
+    parser.add_argument('infile', type=argparse.FileType(mode='rb'), nargs='?',
+                        default='-',
+                        help='the file to parse; defaults to stdin')
+    parser.add_argument('-m', '--mode', default='exec',
+                        choices=('exec', 'single', 'eval', 'func_type'),
+                        help='specify what kind of code must be parsed')
+    parser.add_argument('--no-type-comments', default=True, action='store_false',
+                        help="don't add information about type comments")
+    parser.add_argument('-a', '--include-attributes', action='store_true',
+                        help='include attributes such as line numbers and '
+                             'column offsets')
+    parser.add_argument('-i', '--indent', type=int, default=3,
+                        help='indentation of nodes (number of spaces)')
+    args = parser.parse_args()
+
+    with args.infile as infile:
+        source = infile.read()
+    tree = parse(source, args.infile.name, args.mode, type_comments=args.no_type_comments)
+    print(dump(tree, include_attributes=args.include_attributes, indent=args.indent))
+
+if __name__ == '__main__':
+    main()

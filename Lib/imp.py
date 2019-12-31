@@ -142,17 +142,16 @@ class _HackedGetData:
     def get_data(self, path):
         """Gross hack to contort loader to deal w/ load_*()'s bad API."""
         if self.file and path == self.path:
+            # The contract of get_data() requires us to return bytes. Reopen the
+            # file in binary mode if needed.
             if not self.file.closed:
                 file = self.file
-            else:
-                self.file = file = open(self.path, 'r')
+                if 'b' not in file.mode:
+                    file.close()
+            if self.file.closed:
+                self.file = file = open(self.path, 'rb')
 
             with file:
-                # Technically should be returning bytes, but
-                # SourceLoader.get_code() just passed what is returned to
-                # compile() which can handle str. And converting to bytes would
-                # require figuring out the encoding to decode to and
-                # tokenize.detect_encoding() only accepts bytes.
                 return file.read()
         else:
             return super().get_data(path)
@@ -226,7 +225,7 @@ def load_module(name, file, filename, details):
 
     """
     suffix, mode, type_ = details
-    if mode and (not mode.startswith(('r', 'U')) or '+' in mode):
+    if mode and (not mode.startswith('r') or '+' in mode):
         raise ValueError('invalid file open mode {!r}'.format(mode))
     elif file is None and type_ in {PY_SOURCE, PY_COMPILED}:
         msg = 'file object required for import (type code {})'.format(type_)

@@ -35,7 +35,7 @@ The :mod:`gc` module provides the following functions:
 
 .. function:: isenabled()
 
-   Returns true if automatic collection is enabled.
+   Return ``True`` if automatic collection is enabled.
 
 
 .. function:: collect(generation=2)
@@ -63,11 +63,14 @@ The :mod:`gc` module provides the following functions:
    Return the debugging flags currently set.
 
 
-.. function:: get_objects()
+.. function:: get_objects(generation=None)
 
    Returns a list of all objects tracked by the collector, excluding the list
-   returned.
+   returned. If *generation* is not None, return only the objects tracked by
+   the collector that are in that generation.
 
+   .. versionchanged:: 3.8
+      New *generation* parameter.
 
 .. function:: get_stats()
 
@@ -181,7 +184,7 @@ The :mod:`gc` module provides the following functions:
    fork() call to make the gc copy-on-write friendly or to speed up collection.
    Also collection before a POSIX fork() call may free pages for future
    allocation which can cause copy-on-write too so it's advised to disable gc
-   in master process and freeze before fork and enable gc in child process.
+   in parent process and freeze before fork and enable gc in child process.
 
    .. versionadded:: 3.7
 
@@ -209,7 +212,7 @@ values but should not rebind them):
    A list of objects which the collector found to be unreachable but could
    not be freed (uncollectable objects).  Starting with Python 3.4, this
    list should be empty most of the time, except when using instances of
-   C extension types with a non-NULL ``tp_del`` slot.
+   C extension types with a non-``NULL`` ``tp_del`` slot.
 
    If :const:`DEBUG_SAVEALL` is set, then all unreachable objects will be
    added to this list rather than freed.

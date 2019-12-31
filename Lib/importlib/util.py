@@ -29,8 +29,8 @@ def resolve_name(name, package):
     if not name.startswith('.'):
         return name
     elif not package:
-        raise ValueError(f'no package specified for {repr(name)} '
-                         '(required for relative module names)')
+        raise ImportError(f'no package specified for {repr(name)} '
+                          '(required for relative module names)')
     level = 0
     for character in name:
         if character != '.':
@@ -96,7 +96,7 @@ def find_spec(name, package=None):
                 parent_path = parent.__path__
             except AttributeError as e:
                 raise ModuleNotFoundError(
-                    f"__path__ attribute not found on {parent_name!r}"
+                    f"__path__ attribute not found on {parent_name!r} "
                     f"while trying to find {fullname!r}", name=fullname) from e
         else:
             parent_path = None

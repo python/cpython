@@ -55,6 +55,10 @@ _Py_c_prod(Py_complex a, Py_complex b)
     return r;
 }
 
+/* Avoid bad optimization on Windows ARM64 until the compiler is fixed */
+#ifdef _M_ARM64
+#pragma optimize("", off)
+#endif
 Py_complex
 _Py_c_quot(Py_complex a, Py_complex b)
 {
@@ -112,6 +116,9 @@ _Py_c_quot(Py_complex a, Py_complex b)
     }
     return r;
 }
+#ifdef _M_ARM64
+#pragma optimize("", on)
+#endif
 
 Py_complex
 _Py_c_pow(Py_complex a, Py_complex b)
@@ -343,12 +350,6 @@ PyComplex_AsCComplex(PyObject *op)
     }
 }
 
-static void
-complex_dealloc(PyObject *op)
-{
-    op->ob_type->tp_free(op);
-}
-
 static PyObject *
 complex_repr(PyComplexObject *v)
 {
@@ -465,9 +466,7 @@ complex_add(PyObject *v, PyObject *w)
     Py_complex a, b;
     TO_COMPLEX(v, a);
     TO_COMPLEX(w, b);
-    PyFPE_START_PROTECT("complex_add", return 0)
     result = _Py_c_sum(a, b);
-    PyFPE_END_PROTECT(result)
     return PyComplex_FromCComplex(result);
 }
 
@@ -478,9 +477,7 @@ complex_sub(PyObject *v, PyObject *w)
     Py_complex a, b;
     TO_COMPLEX(v, a);
     TO_COMPLEX(w, b);
-    PyFPE_START_PROTECT("complex_sub", return 0)
     result = _Py_c_diff(a, b);
-    PyFPE_END_PROTECT(result)
     return PyComplex_FromCComplex(result);
 }
 
@@ -491,9 +488,7 @@ complex_mul(PyObject *v, PyObject *w)
     Py_complex a, b;
     TO_COMPLEX(v, a);
     TO_COMPLEX(w, b);
-    PyFPE_START_PROTECT("complex_mul", return 0)
     result = _Py_c_prod(a, b);
-    PyFPE_END_PROTECT(result)
     return PyComplex_FromCComplex(result);
 }
 
@@ -504,10 +499,8 @@ complex_div(PyObject *v, PyObject *w)
     Py_complex a, b;
     TO_COMPLEX(v, a);
     TO_COMPLEX(w, b);
-    PyFPE_START_PROTECT("complex_div", return 0)
     errno = 0;
     quot = _Py_c_quot(a, b);
-    PyFPE_END_PROTECT(quot)
     if (errno == EDOM) {
         PyErr_SetString(PyExc_ZeroDivisionError, "complex division by zero");
         return NULL;
@@ -546,7 +539,6 @@ complex_pow(PyObject *v, PyObject *w, PyObject *z)
         PyErr_SetString(PyExc_ValueError, "complex modulo");
         return NULL;
     }
-    PyFPE_START_PROTECT("complex_pow", return 0)
     errno = 0;
     exponent = b;
     int_exponent = (long)exponent.real;
@@ -555,7 +547,6 @@ complex_pow(PyObject *v, PyObject *w, PyObject *z)
     else
         p = _Py_c_pow(a, exponent);
 
-    PyFPE_END_PROTECT(p)
     Py_ADJUST_ERANGE2(p.real, p.imag);
     if (errno == EDOM) {
         PyErr_SetString(PyExc_ZeroDivisionError,
@@ -603,9 +594,7 @@ complex_abs(PyComplexObject *v)
 {
     double result;
 
-    PyFPE_START_PROTECT("complex_abs", return 0)
     result = _Py_c_abs(v->cval);
-    PyFPE_END_PROTECT(result)
 
     if (errno == ERANGE) {
         PyErr_SetString(PyExc_OverflowError,
@@ -695,7 +684,7 @@ complex_float(PyObject *v)
 }
 
 static PyObject *
-complex_conjugate(PyObject *self)
+complex_conjugate(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
     Py_complex c;
     c = ((PyComplexObject *)self)->cval;
@@ -709,7 +698,7 @@ PyDoc_STRVAR(complex_conjugate_doc,
 "Return the complex conjugate of its argument. (3-4j).conjugate() == 3+4j.");
 
 static PyObject *
-complex_getnewargs(PyComplexObject *v)
+complex_getnewargs(PyComplexObject *v, PyObject *Py_UNUSED(ignored))
 {
     Py_complex c = v->cval;
     return Py_BuildValue("(dd)", c.real, c.imag);
@@ -990,7 +979,7 @@ complex_new_impl(PyTypeObject *type, PyObject *r, PyObject *i)
     }
 
     nbr = r->ob_type->tp_as_number;
-    if (nbr == NULL || nbr->nb_float == NULL) {
+    if (nbr == NULL || (nbr->nb_float == NULL && nbr->nb_index == NULL)) {
         PyErr_Format(PyExc_TypeError,
                      "complex() first argument must be a string or a number, "
                      "not '%.200s'",
@@ -1002,7 +991,7 @@ complex_new_impl(PyTypeObject *type, PyObject *r, PyObject *i)
     }
     if (i != NULL) {
         nbi = i->ob_type->tp_as_number;
-        if (nbi == NULL || nbi->nb_float == NULL) {
+        if (nbi == NULL || (nbi->nb_float == NULL && nbi->nb_index == NULL)) {
             PyErr_Format(PyExc_TypeError,
                          "complex() second argument must be a number, "
                          "not '%.200s'",
@@ -1058,7 +1047,7 @@ complex_new_impl(PyTypeObject *type, PyObject *r, PyObject *i)
         /* The "imag" part really is entirely imaginary, and
            contributes nothing in the real direction.
            Just treat it as a double. */
-        tmp = (*nbi->nb_float)(i);
+        tmp = PyNumber_Float(i);
         if (tmp == NULL)
             return NULL;
         ci.real = PyFloat_AsDouble(tmp);
@@ -1118,18 +1107,18 @@ PyTypeObject PyComplex_Type = {
     "complex",
     sizeof(PyComplexObject),
     0,
-    complex_dealloc,                            /* tp_dealloc */
-    0,                                          /* tp_print */
+    0,                                          /* tp_dealloc */
+    0,                                          /* tp_vectorcall_offset */
     0,                                          /* tp_getattr */
     0,                                          /* tp_setattr */
-    0,                                          /* tp_reserved */
+    0,                                          /* tp_as_async */
     (reprfunc)complex_repr,                     /* tp_repr */
     &complex_as_number,                         /* tp_as_number */
     0,                                          /* tp_as_sequence */
     0,                                          /* tp_as_mapping */
     (hashfunc)complex_hash,                     /* tp_hash */
     0,                                          /* tp_call */
-    (reprfunc)complex_repr,                     /* tp_str */
+    0,                                          /* tp_str */
     PyObject_GenericGetAttr,                    /* tp_getattro */
     0,                                          /* tp_setattro */
     0,                                          /* tp_as_buffer */

@@ -80,7 +80,7 @@ class StdoutRefactoringTool(refactor.MultiprocessRefactoringTool):
             filename += self._append_suffix
         if orig_filename != filename:
             output_dir = os.path.dirname(filename)
-            if not os.path.isdir(output_dir):
+            if not os.path.isdir(output_dir) and output_dir:
                 os.makedirs(output_dir)
             self.log_message('Writing converted %s to %s.', orig_filename,
                              filename)
@@ -90,11 +90,11 @@ class StdoutRefactoringTool(refactor.MultiprocessRefactoringTool):
             if os.path.lexists(backup):
                 try:
                     os.remove(backup)
-                except OSError as err:
+                except OSError:
                     self.log_message("Can't remove backup %s", backup)
             try:
                 os.rename(filename, backup)
-            except OSError as err:
+            except OSError:
                 self.log_message("Can't rename %s to %s", filename, backup)
         # Actually write the new file
         write = super(StdoutRefactoringTool, self).write_file

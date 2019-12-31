@@ -81,9 +81,9 @@ mode:
 
 .. function:: S_IMODE(mode)
 
-   Return the portion of the file's mode that can be set by :func:`os.chmod`\
-   ---that is, the file's permission bits, plus the sticky bit, set-group-id, and
-   set-user-id bits (on systems that support them).
+   Return the portion of the file's mode that can be set by
+   :func:`os.chmod`\ ---that is, the file's permission bits, plus the sticky
+   bit, set-group-id, and set-user-id bits (on systems that support them).
 
 
 .. function:: S_IFMT(mode)
@@ -425,3 +425,13 @@ for more detail on the meaning of these constants.
           FILE_ATTRIBUTE_VIRTUAL
 
    .. versionadded:: 3.5
+
+On Windows, the following constants are available for comparing against the
+``st_reparse_tag`` member returned by :func:`os.lstat`. These are well-known
+constants, but are not an exhaustive list.
+
+.. data:: IO_REPARSE_TAG_SYMLINK
+          IO_REPARSE_TAG_MOUNT_POINT
+          IO_REPARSE_TAG_APPEXECLINK
+
+   .. versionadded:: 3.8

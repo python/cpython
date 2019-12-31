@@ -217,6 +217,13 @@ class DOMEventStream:
         self.parser.setContentHandler(self.pulldom)
 
     def __getitem__(self, pos):
+        import warnings
+        warnings.warn(
+            "DOMEventStream's __getitem__ method ignores 'pos' parameter. "
+            "Use iterator protocol instead.",
+            DeprecationWarning,
+            stacklevel=2
+        )
         rc = self.getEvent()
         if rc:
             return rc

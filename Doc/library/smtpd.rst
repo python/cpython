@@ -148,6 +148,12 @@ MailmanProxy Objects
 
 .. class:: MailmanProxy(localaddr, remoteaddr)
 
+   .. deprecated-removed:: 3.9 3.11
+
+      :class:`MailmanProxy` is deprecated, it depends on a ``Mailman``
+      module which no longer exists and therefore is already broken.
+
+
    Create a new pure proxy server. Arguments are as per :class:`SMTPServer`.
    Everything will be relayed to *remoteaddr*, unless local mailman configurations
    knows about an address, in which case it will be handled via mailman.  Note that

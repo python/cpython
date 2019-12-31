@@ -78,7 +78,8 @@ class Queue(object):
         self._poll = self._reader.poll
 
     def put(self, obj, block=True, timeout=None):
-        assert not self._closed, "Queue {0!r} has been closed".format(self)
+        if self._closed:
+            raise ValueError(f"Queue {self!r} is closed")
         if not self._sem.acquire(block, timeout):
             raise Full
 
@@ -89,18 +90,20 @@ class Queue(object):
             self._notempty.notify()
 
     def get(self, block=True, timeout=None):
+        if self._closed:
+            raise ValueError(f"Queue {self!r} is closed")
         if block and timeout is None:
             with self._rlock:
                 res = self._recv_bytes()
             self._sem.release()
         else:
             if block:
-                deadline = time.time() + timeout
+                deadline = time.monotonic() + timeout
             if not self._rlock.acquire(block, timeout):
                 raise Empty
             try:
                 if block:
-                    timeout = deadline - time.time()
+                    timeout = deadline - time.monotonic()
                     if not self._poll(timeout):
                         raise Empty
                 elif not self._poll():
@@ -161,7 +164,7 @@ class Queue(object):
             target=Queue._feed,
             args=(self._buffer, self._notempty, self._send_bytes,
                   self._wlock, self._writer.close, self._ignore_epipe,
-                  self._on_queue_feeder_error),
+                  self._on_queue_feeder_error, self._sem),
             name='QueueFeederThread'
         )
         self._thread.daemon = True
@@ -203,7 +206,7 @@ class Queue(object):
 
     @staticmethod
     def _feed(buffer, notempty, send_bytes, writelock, close, ignore_epipe,
-              onerror):
+              onerror, queue_sem):
         debug('starting thread to feed data to pipe')
         nacquire = notempty.acquire
         nrelease = notempty.release
@@ -255,6 +258,12 @@ class Queue(object):
                     info('error in queue thread: %s', e)
                     return
                 else:
+                    # Since the object has not been sent in the queue, we need
+                    # to decrease the size of the queue. The error acts as
+                    # if the object had been silently removed from the queue
+                    # and this step is necessary to have a properly working
+                    # queue.
+                    queue_sem.release()
                     onerror(e, obj)
 
     @staticmethod
@@ -292,7 +301,8 @@ class JoinableQueue(Queue):
         self._cond, self._unfinished_tasks = state[-2:]
 
     def put(self, obj, block=True, timeout=None):
-        assert not self._closed, "Queue {0!r} is closed".format(self)
+        if self._closed:
+            raise ValueError(f"Queue {self!r} is closed")
         if not self._sem.acquire(block, timeout):
             raise Full
 

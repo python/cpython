@@ -32,10 +32,16 @@
 /* Initial buffer size. */
 #define DEF_BUF_SIZE (16*1024)
 
-static PyTypeObject Comptype;
-static PyTypeObject Decomptype;
+static PyModuleDef zlibmodule;
 
-static PyObject *ZlibError;
+typedef struct {
+    PyTypeObject *Comptype;
+    PyTypeObject *Decomptype;
+    PyObject *ZlibError;
+} _zlibstate;
+
+#define _zlibstate(o) ((_zlibstate *)PyModule_GetState(o))
+#define _zlibstate_global ((_zlibstate *)PyModule_GetState(PyState_FindModule(&zlibmodule)))
 
 typedef struct
 {
@@ -73,9 +79,9 @@ zlib_error(z_stream zst, int err, const char *msg)
         }
     }
     if (zmsg == Z_NULL)
-        PyErr_Format(ZlibError, "Error %d %s", err, msg);
+        PyErr_Format(_zlibstate_global->ZlibError, "Error %d %s", err, msg);
     else
-        PyErr_Format(ZlibError, "Error %d %s: %.200s", err, msg, zmsg);
+        PyErr_Format(_zlibstate_global->ZlibError, "Error %d %s: %.200s", err, msg, zmsg);
 }
 
 /*[clinic input]
@@ -117,11 +123,11 @@ newcompobject(PyTypeObject *type)
 static void*
 PyZlib_Malloc(voidpf ctx, uInt items, uInt size)
 {
-    if (items > (size_t)PY_SSIZE_T_MAX / size)
+    if (size != 0 && items > (size_t)PY_SSIZE_T_MAX / size)
         return NULL;
     /* PyMem_Malloc() cannot be used: the GIL is not held when
        inflate() and deflate() are called */
-    return PyMem_RawMalloc(items * size);
+    return PyMem_RawMalloc((size_t)items * (size_t)size);
 }
 
 static void
@@ -226,7 +232,7 @@ zlib_compress_impl(PyObject *module, Py_buffer *data, int level)
                         "Out of memory while compressing data");
         goto error;
     case Z_STREAM_ERROR:
-        PyErr_SetString(ZlibError, "Bad compression level");
+        PyErr_SetString(_zlibstate_global->ZlibError, "Bad compression level");
         goto error;
     default:
         deflateEnd(&zst);
@@ -291,7 +297,9 @@ ssize_t_converter(PyObject *obj, void *ptr)
     PyObject *long_obj;
     Py_ssize_t val;
 
-    long_obj = (PyObject *)_PyLong_FromNbInt(obj);
+    /* XXX Should be replaced with PyNumber_AsSsize_t after the end of the
+       deprecation period. */
+    long_obj = _PyLong_FromNbIndexOrNbInt(obj);
     if (long_obj == NULL) {
         return 0;
     }
@@ -460,7 +468,7 @@ zlib_compressobj_impl(PyObject *module, int level, int method, int wbits,
         goto error;
     }
 
-    self = newcompobject(&Comptype);
+    self = newcompobject(_zlibstate_global->Comptype);
     if (self == NULL)
         goto error;
     self->zst.opaque = NULL;
@@ -556,7 +564,7 @@ zlib_decompressobj_impl(PyObject *module, int wbits, PyObject *zdict)
         return NULL;
     }
 
-    self = newcompobject(&Decomptype);
+    self = newcompobject(_zlibstate_global->Decomptype);
     if (self == NULL)
         return NULL;
     self->zst.opaque = NULL;
@@ -579,7 +587,7 @@ zlib_decompressobj_impl(PyObject *module, int wbits, PyObject *zdict)
                 return NULL;
             }
 #else
-            PyErr_Format(ZlibError,
+            PyErr_Format(_zlibstate_global->ZlibError,
                          "zlib version %s does not allow raw inflate with dictionary",
                          ZLIB_VERSION);
             Py_DECREF(self);
@@ -606,11 +614,13 @@ zlib_decompressobj_impl(PyObject *module, int wbits, PyObject *zdict)
 static void
 Dealloc(compobject *self)
 {
+    PyObject *type = (PyObject *)Py_TYPE(self);
     PyThread_free_lock(self->lock);
     Py_XDECREF(self->unused_data);
     Py_XDECREF(self->unconsumed_tail);
     Py_XDECREF(self->zdict);
     PyObject_Del(self);
+    Py_DECREF(type);
 }
 
 static void
@@ -942,7 +952,7 @@ zlib_Compress_copy_impl(compobject *self)
     compobject *retval = NULL;
     int err;
 
-    retval = newcompobject(&Comptype);
+    retval = newcompobject(_zlibstate_global->Comptype);
     if (!retval) return NULL;
 
     /* Copy the zstream state
@@ -985,6 +995,32 @@ error:
 }
 
 /*[clinic input]
+zlib.Compress.__copy__
+[clinic start generated code]*/
+
+static PyObject *
+zlib_Compress___copy___impl(compobject *self)
+/*[clinic end generated code: output=1875e6791975442e input=be97a05a788dfd83]*/
+{
+    return zlib_Compress_copy_impl(self);
+}
+
+/*[clinic input]
+zlib.Compress.__deepcopy__
+
+    memo: object
+    /
+
+[clinic start generated code]*/
+
+static PyObject *
+zlib_Compress___deepcopy__(compobject *self, PyObject *memo)
+/*[clinic end generated code: output=f47a2213282c9eb0 input=a9a8b0b40d83388e]*/
+{
+    return zlib_Compress_copy_impl(self);
+}
+
+/*[clinic input]
 zlib.Decompress.copy
 
 Return a copy of the decompression object.
@@ -997,7 +1033,7 @@ zlib_Decompress_copy_impl(compobject *self)
     compobject *retval = NULL;
     int err;
 
-    retval = newcompobject(&Decomptype);
+    retval = newcompobject(_zlibstate_global->Decomptype);
     if (!retval) return NULL;
 
     /* Copy the zstream state
@@ -1039,6 +1075,33 @@ error:
     Py_XDECREF(retval);
     return NULL;
 }
+
+/*[clinic input]
+zlib.Decompress.__copy__
+[clinic start generated code]*/
+
+static PyObject *
+zlib_Decompress___copy___impl(compobject *self)
+/*[clinic end generated code: output=80bae8bc43498ad4 input=efcb98b5472c13d2]*/
+{
+    return zlib_Decompress_copy_impl(self);
+}
+
+/*[clinic input]
+zlib.Decompress.__deepcopy__
+
+    memo: object
+    /
+
+[clinic start generated code]*/
+
+static PyObject *
+zlib_Decompress___deepcopy__(compobject *self, PyObject *memo)
+/*[clinic end generated code: output=1f77286ab490124b input=6e99bd0ac4b9cd8b]*/
+{
+    return zlib_Decompress_copy_impl(self);
+}
+
 #endif
 
 /*[clinic input]
@@ -1139,6 +1202,8 @@ static PyMethodDef comp_methods[] =
     ZLIB_COMPRESS_COMPRESS_METHODDEF
     ZLIB_COMPRESS_FLUSH_METHODDEF
     ZLIB_COMPRESS_COPY_METHODDEF
+    ZLIB_COMPRESS___COPY___METHODDEF
+    ZLIB_COMPRESS___DEEPCOPY___METHODDEF
     {NULL, NULL}
 };
 
@@ -1147,6 +1212,8 @@ static PyMethodDef Decomp_methods[] =
     ZLIB_DECOMPRESS_DECOMPRESS_METHODDEF
     ZLIB_DECOMPRESS_FLUSH_METHODDEF
     ZLIB_DECOMPRESS_COPY_METHODDEF
+    ZLIB_DECOMPRESS___COPY___METHODDEF
+    ZLIB_DECOMPRESS___DEEPCOPY___METHODDEF
     {NULL, NULL}
 };
 
@@ -1250,67 +1317,33 @@ static PyMethodDef zlib_methods[] =
     {NULL, NULL}
 };
 
-static PyTypeObject Comptype = {
-    PyVarObject_HEAD_INIT(0, 0)
+static PyType_Slot Comptype_slots[] = {
+    {Py_tp_dealloc, Comp_dealloc},
+    {Py_tp_methods, comp_methods},
+    {0, 0},
+};
+
+static PyType_Spec Comptype_spec = {
     "zlib.Compress",
     sizeof(compobject),
     0,
-    (destructor)Comp_dealloc,       /*tp_dealloc*/
-    0,                              /*tp_print*/
-    0,                              /*tp_getattr*/
-    0,                              /*tp_setattr*/
-    0,                              /*tp_reserved*/
-    0,                              /*tp_repr*/
-    0,                              /*tp_as_number*/
-    0,                              /*tp_as_sequence*/
-    0,                              /*tp_as_mapping*/
-    0,                              /*tp_hash*/
-    0,                              /*tp_call*/
-    0,                              /*tp_str*/
-    0,                              /*tp_getattro*/
-    0,                              /*tp_setattro*/
-    0,                              /*tp_as_buffer*/
-    Py_TPFLAGS_DEFAULT,             /*tp_flags*/
-    0,                              /*tp_doc*/
-    0,                              /*tp_traverse*/
-    0,                              /*tp_clear*/
-    0,                              /*tp_richcompare*/
-    0,                              /*tp_weaklistoffset*/
-    0,                              /*tp_iter*/
-    0,                              /*tp_iternext*/
-    comp_methods,                   /*tp_methods*/
+    Py_TPFLAGS_DEFAULT,
+    Comptype_slots
 };
 
-static PyTypeObject Decomptype = {
-    PyVarObject_HEAD_INIT(0, 0)
+static PyType_Slot Decomptype_slots[] = {
+    {Py_tp_dealloc, Decomp_dealloc},
+    {Py_tp_methods, Decomp_methods},
+    {Py_tp_members, Decomp_members},
+    {0, 0},
+};
+
+static PyType_Spec Decomptype_spec = {
     "zlib.Decompress",
     sizeof(compobject),
     0,
-    (destructor)Decomp_dealloc,     /*tp_dealloc*/
-    0,                              /*tp_print*/
-    0,                              /*tp_getattr*/
-    0,                              /*tp_setattr*/
-    0,                              /*tp_reserved*/
-    0,                              /*tp_repr*/
-    0,                              /*tp_as_number*/
-    0,                              /*tp_as_sequence*/
-    0,                              /*tp_as_mapping*/
-    0,                              /*tp_hash*/
-    0,                              /*tp_call*/
-    0,                              /*tp_str*/
-    0,                              /*tp_getattro*/
-    0,                              /*tp_setattro*/
-    0,                              /*tp_as_buffer*/
-    Py_TPFLAGS_DEFAULT,             /*tp_flags*/
-    0,                              /*tp_doc*/
-    0,                              /*tp_traverse*/
-    0,                              /*tp_clear*/
-    0,                              /*tp_richcompare*/
-    0,                              /*tp_weaklistoffset*/
-    0,                              /*tp_iter*/
-    0,                              /*tp_iternext*/
-    Decomp_methods,                 /*tp_methods*/
-    Decomp_members,                 /*tp_members*/
+    Py_TPFLAGS_DEFAULT,
+    Decomptype_slots
 };
 
 PyDoc_STRVAR(zlib_module_documentation,
@@ -1328,51 +1361,104 @@ PyDoc_STRVAR(zlib_module_documentation,
 "Compressor objects support compress() and flush() methods; decompressor\n"
 "objects support decompress() and flush().");
 
+static int
+zlib_clear(PyObject *m)
+{
+    _zlibstate *state = _zlibstate(m);
+    Py_CLEAR(state->Comptype);
+    Py_CLEAR(state->Decomptype);
+    Py_CLEAR(state->ZlibError);
+    return 0;
+}
+
+static int
+zlib_traverse(PyObject *m, visitproc visit, void *arg)
+{
+    _zlibstate *state = _zlibstate(m);
+    Py_VISIT(state->Comptype);
+    Py_VISIT(state->Decomptype);
+    Py_VISIT(state->ZlibError);
+    return 0;
+}
+
+static void
+zlib_free(void *m)
+{
+    zlib_clear((PyObject *)m);
+}
+
 static struct PyModuleDef zlibmodule = {
         PyModuleDef_HEAD_INIT,
         "zlib",
         zlib_module_documentation,
-        -1,
+        sizeof(_zlibstate),
         zlib_methods,
         NULL,
-        NULL,
-        NULL,
-        NULL
+        zlib_traverse,
+        zlib_clear,
+        zlib_free,
 };
 
 PyMODINIT_FUNC
 PyInit_zlib(void)
 {
     PyObject *m, *ver;
-    if (PyType_Ready(&Comptype) < 0)
-            return NULL;
-    if (PyType_Ready(&Decomptype) < 0)
-            return NULL;
+    m = PyState_FindModule(&zlibmodule);
+    if (m != NULL) {
+        Py_INCREF(m);
+        return m;
+    }
     m = PyModule_Create(&zlibmodule);
     if (m == NULL)
         return NULL;
 
-    ZlibError = PyErr_NewException("zlib.error", NULL, NULL);
+    PyTypeObject *Comptype = (PyTypeObject *)PyType_FromSpec(&Comptype_spec);
+    if (Comptype == NULL)
+        return NULL;
+    _zlibstate(m)->Comptype = Comptype;
+
+    PyTypeObject *Decomptype = (PyTypeObject *)PyType_FromSpec(&Decomptype_spec);
+    if (Decomptype == NULL)
+        return NULL;
+    _zlibstate(m)->Decomptype = Decomptype;
+
+    PyObject *ZlibError = PyErr_NewException("zlib.error", NULL, NULL);
     if (ZlibError != NULL) {
         Py_INCREF(ZlibError);
         PyModule_AddObject(m, "error", ZlibError);
+        _zlibstate(m)->ZlibError = ZlibError;
     }
     PyModule_AddIntMacro(m, MAX_WBITS);
     PyModule_AddIntMacro(m, DEFLATED);
     PyModule_AddIntMacro(m, DEF_MEM_LEVEL);
     PyModule_AddIntMacro(m, DEF_BUF_SIZE);
+    // compression levels
+    PyModule_AddIntMacro(m, Z_NO_COMPRESSION);
     PyModule_AddIntMacro(m, Z_BEST_SPEED);
     PyModule_AddIntMacro(m, Z_BEST_COMPRESSION);
     PyModule_AddIntMacro(m, Z_DEFAULT_COMPRESSION);
+    // compression strategies
     PyModule_AddIntMacro(m, Z_FILTERED);
     PyModule_AddIntMacro(m, Z_HUFFMAN_ONLY);
+#ifdef Z_RLE // 1.2.0.1
+    PyModule_AddIntMacro(m, Z_RLE);
+#endif
+#ifdef Z_FIXED // 1.2.2.2
+    PyModule_AddIntMacro(m, Z_FIXED);
+#endif
     PyModule_AddIntMacro(m, Z_DEFAULT_STRATEGY);
-
-    PyModule_AddIntMacro(m, Z_FINISH);
+    // allowed flush values
     PyModule_AddIntMacro(m, Z_NO_FLUSH);
+    PyModule_AddIntMacro(m, Z_PARTIAL_FLUSH);
     PyModule_AddIntMacro(m, Z_SYNC_FLUSH);
     PyModule_AddIntMacro(m, Z_FULL_FLUSH);
-
+    PyModule_AddIntMacro(m, Z_FINISH);
+#ifdef Z_BLOCK // 1.2.0.5 for inflate, 1.2.3.4 for deflate
+    PyModule_AddIntMacro(m, Z_BLOCK);
+#endif
+#ifdef Z_TREES // 1.2.3.4, only for inflate
+    PyModule_AddIntMacro(m, Z_TREES);
+#endif
     ver = PyUnicode_FromString(ZLIB_VERSION);
     if (ver != NULL)
         PyModule_AddObject(m, "ZLIB_VERSION", ver);
@@ -1383,5 +1469,6 @@ PyInit_zlib(void)
 
     PyModule_AddStringConstant(m, "__version__", "1.0");
 
+    PyState_AddModule(m, &zlibmodule);
     return m;
 }

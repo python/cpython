@@ -7,7 +7,7 @@ import unittest
 import sqlite3
 from sqlite3.test import (dbapi, types, userfunctions,
                                 factory, transactions, hooks, regression,
-                                dump)
+                                dump, backup)
 
 def load_tests(*args):
     if test.support.verbose:
@@ -18,7 +18,8 @@ def load_tests(*args):
                                userfunctions.suite(),
                                factory.suite(), transactions.suite(),
                                hooks.suite(), regression.suite(),
-                               dump.suite()])
+                               dump.suite(),
+                               backup.suite()])
 
 if __name__ == "__main__":
     unittest.main()

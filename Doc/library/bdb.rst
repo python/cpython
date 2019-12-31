@@ -343,7 +343,7 @@ The :mod:`bdb` module also defines two classes:
 
       For backwards compatibility.  Calls the :meth:`run` method.
 
-   .. method:: runcall(func, *args, **kwds)
+   .. method:: runcall(func, /, *args, **kwds)
 
       Debug a single function call, and return its result.
 

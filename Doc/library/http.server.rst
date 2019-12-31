@@ -16,6 +16,12 @@
 
 This module defines classes for implementing HTTP servers (Web servers).
 
+
+.. warning::
+
+    :mod:`http.server` is not recommended for production. It only implements
+    basic security checks.
+
 One class, :class:`HTTPServer`, is a :class:`socketserver.TCPServer` subclass.
 It creates and listens at the HTTP socket, dispatching the requests to a
 handler.  Code to create and run the server looks like this::
@@ -33,9 +39,19 @@ handler.  Code to create and run the server looks like this::
    :attr:`server_port`. The server is accessible by the handler, typically
    through the handler's :attr:`server` instance variable.
 
+.. class:: ThreadingHTTPServer(server_address, RequestHandlerClass)
 
-The :class:`HTTPServer` must be given a *RequestHandlerClass* on instantiation,
-of which this module provides three different variants:
+   This class is identical to HTTPServer but uses threads to handle
+   requests by using the :class:`~socketserver.ThreadingMixIn`. This
+   is useful to handle web browsers pre-opening sockets, on which
+   :class:`HTTPServer` would wait indefinitely.
+
+   .. versionadded:: 3.7
+
+
+The :class:`HTTPServer` and :class:`ThreadingHTTPServer` must be given
+a *RequestHandlerClass* on instantiation, of which this module
+provides three different variants:
 
 .. class:: BaseHTTPRequestHandler(request, client_address, server)
 
@@ -328,6 +344,9 @@ of which this module provides three different variants:
 
       If not specified, the directory to serve is the current working directory.
 
+      .. versionchanged:: 3.9
+         Accepts a :term:`path-like object`.
+
    The :class:`SimpleHTTPRequestHandler` class defines the following methods:
 
    .. method:: do_HEAD()
@@ -394,13 +413,17 @@ the previous example, this serves files relative to the current directory::
         python -m http.server 8000
 
 By default, server binds itself to all interfaces.  The option ``-b/--bind``
-specifies a specific address to which it should bind.  For example, the
-following command causes the server to bind to localhost only::
+specifies a specific address to which it should bind. Both IPv4 and IPv6
+addresses are supported. For example, the following command causes the server
+to bind to localhost only::
 
         python -m http.server 8000 --bind 127.0.0.1
 
 .. versionadded:: 3.4
     ``--bind`` argument was introduced.
+
+.. versionadded:: 3.8
+    ``--bind`` argument enhanced to support IPv6
 
 By default, server uses the current directory. The option ``-d/--directory``
 specifies a directory to which it should serve the files. For example,

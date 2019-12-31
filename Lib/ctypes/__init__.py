@@ -52,11 +52,13 @@ def create_string_buffer(init, size=None):
     if isinstance(init, bytes):
         if size is None:
             size = len(init)+1
+        _sys.audit("ctypes.create_string_buffer", init, size)
         buftype = c_char * size
         buf = buftype()
         buf.value = init
         return buf
     elif isinstance(init, int):
+        _sys.audit("ctypes.create_string_buffer", None, init)
         buftype = c_char * init
         buf = buftype()
         return buf
@@ -266,11 +268,6 @@ def _reset_cache():
     # _SimpleCData.c_char_p_from_param
     POINTER(c_char).from_param = c_char_p.from_param
     _pointer_type_cache[None] = c_void_p
-    # XXX for whatever reasons, creating the first instance of a callback
-    # function is needed for the unittests on Win64 to succeed.  This MAY
-    # be a compiler bug, since the problem occurs only when _ctypes is
-    # compiled with the MS SDK compiler.  Or an uninitialized variable?
-    CFUNCTYPE(c_int)(lambda: None)
 
 def create_unicode_buffer(init, size=None):
     """create_unicode_buffer(aString) -> character array
@@ -279,12 +276,22 @@ def create_unicode_buffer(init, size=None):
     """
     if isinstance(init, str):
         if size is None:
-            size = len(init)+1
+            if sizeof(c_wchar) == 2:
+                # UTF-16 requires a surrogate pair (2 wchar_t) for non-BMP
+                # characters (outside [U+0000; U+FFFF] range). +1 for trailing
+                # NUL character.
+                size = sum(2 if ord(c) > 0xFFFF else 1 for c in init) + 1
+            else:
+                # 32-bit wchar_t (1 wchar_t per Unicode character). +1 for
+                # trailing NUL character.
+                size = len(init) + 1
+        _sys.audit("ctypes.create_unicode_buffer", init, size)
         buftype = c_wchar * size
         buf = buftype()
         buf.value = init
         return buf
     elif isinstance(init, int):
+        _sys.audit("ctypes.create_unicode_buffer", None, init)
         buftype = c_wchar * init
         buf = buftype()
         return buf
@@ -331,7 +338,8 @@ class CDLL(object):
 
     def __init__(self, name, mode=DEFAULT_MODE, handle=None,
                  use_errno=False,
-                 use_last_error=False):
+                 use_last_error=False,
+                 winmode=None):
         self._name = name
         flags = self._func_flags_
         if use_errno:
@@ -346,6 +354,15 @@ class CDLL(object):
             """
             if name and name.endswith(")") and ".a(" in name:
                 mode |= ( _os.RTLD_MEMBER | _os.RTLD_NOW )
+        if _os.name == "nt":
+            if winmode is not None:
+                mode = winmode
+            else:
+                import nt
+                mode = nt._LOAD_LIBRARY_SEARCH_DEFAULT_DIRS
+                if '/' in name or '\\' in name:
+                    self._name = nt._getfullpathname(self._name)
+                    mode |= nt._LOAD_LIBRARY_SEARCH_DLL_LOAD_DIR
 
         class _FuncPtr(_CFuncPtr):
             _flags_ = flags

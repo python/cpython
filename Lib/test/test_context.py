@@ -30,11 +30,13 @@ class ContextTest(unittest.TestCase):
         with self.assertRaisesRegex(TypeError, 'must be a str'):
             contextvars.ContextVar(1)
 
-        c = contextvars.ContextVar('a')
-        self.assertNotEqual(hash(c), hash('a'))
+        c = contextvars.ContextVar('aaa')
+        self.assertEqual(c.name, 'aaa')
 
-    def test_context_var_new_2(self):
-        self.assertIsNone(contextvars.ContextVar[int])
+        with self.assertRaises(AttributeError):
+            c.name = 'bbb'
+
+        self.assertNotEqual(hash(c), hash('aaa'))
 
     @isolated_context
     def test_context_var_repr_1(self):
@@ -355,6 +357,10 @@ class ContextTest(unittest.TestCase):
         finally:
             tp.shutdown()
         self.assertEqual(results, list(range(10)))
+
+    def test_contextvar_getitem(self):
+        clss = contextvars.ContextVar
+        self.assertEqual(clss[str], clss)
 
 
 # HAMT Tests

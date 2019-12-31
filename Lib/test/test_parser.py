@@ -1,11 +1,16 @@
 import copy
-import parser
+import warnings
+with warnings.catch_warnings():
+    warnings.filterwarnings('ignore', 'The parser module is deprecated',
+                            DeprecationWarning)
+    import parser
 import pickle
 import unittest
 import operator
 import struct
 from test import support
 from test.support.script_helper import assert_python_failure
+from test.support.script_helper import assert_python_ok
 
 #
 #  First, we test that we can generate trees from valid source fragments,
@@ -115,6 +120,7 @@ class RoundtripLegalSyntaxTestCase(unittest.TestCase):
         self.check_expr("foo * bar")
         self.check_expr("foo / bar")
         self.check_expr("foo // bar")
+        self.check_expr("(foo := 1)")
         self.check_expr("lambda: 0")
         self.check_expr("lambda x: 0")
         self.check_expr("lambda *y: 0")
@@ -165,7 +171,7 @@ class RoundtripLegalSyntaxTestCase(unittest.TestCase):
         with self.assertRaises(SyntaxError):
             exec("x, *y, z: int = range(5)", {}, {})
         with self.assertRaises(SyntaxError):
-            exec("t: tuple = 1, 2", {}, {})
+            exec("x: int = 1, y = 2", {}, {})
         with self.assertRaises(SyntaxError):
             exec("u = v: int", {}, {})
         with self.assertRaises(SyntaxError):
@@ -231,6 +237,18 @@ class RoundtripLegalSyntaxTestCase(unittest.TestCase):
         self.check_suite("def f(*args, a = 5, b): pass")
         self.check_suite("def f(*args, a, b = 5): pass")
         self.check_suite("def f(*args, a, b = 5, **kwds): pass")
+
+        # positional-only arguments
+        self.check_suite("def f(a, /): pass")
+        self.check_suite("def f(a, /,): pass")
+        self.check_suite("def f(a, b, /): pass")
+        self.check_suite("def f(a, b, /, c): pass")
+        self.check_suite("def f(a, b, /, c = 6): pass")
+        self.check_suite("def f(a, b, /, c, *, d): pass")
+        self.check_suite("def f(a, b, /, c = 1, *, d): pass")
+        self.check_suite("def f(a, b, /, c, *, d = 1): pass")
+        self.check_suite("def f(a, b=1, /, c=2, *, d = 3): pass")
+        self.check_suite("def f(a=0, b=1, /, c=2, *, d = 3): pass")
 
         # function annotations
         self.check_suite("def f(a: int): pass")
@@ -318,25 +336,27 @@ class RoundtripLegalSyntaxTestCase(unittest.TestCase):
         self.check_suite("try: pass\nexcept: pass\nelse: pass\n"
                          "finally: pass\n")
 
+    def test_if_stmt(self):
+        self.check_suite("if True:\n  pass\nelse:\n  pass\n")
+        self.check_suite("if True:\n  pass\nelif True:\n  pass\nelse:\n  pass\n")
+
     def test_position(self):
         # An absolutely minimal test of position information.  Better
         # tests would be a big project.
         code = "def f(x):\n    return x + 1"
-        st1 = parser.suite(code)
-        st2 = st1.totuple(line_info=1, col_info=1)
+        st = parser.suite(code)
 
         def walk(tree):
             node_type = tree[0]
             next = tree[1]
-            if isinstance(next, tuple):
+            if isinstance(next, (tuple, list)):
                 for elt in tree[1:]:
                     for x in walk(elt):
                         yield x
             else:
                 yield tree
 
-        terminals = list(walk(st2))
-        self.assertEqual([
+        expected = [
             (1, 'def', 1, 0),
             (1, 'f', 1, 4),
             (7, '(', 1, 5),
@@ -352,8 +372,25 @@ class RoundtripLegalSyntaxTestCase(unittest.TestCase):
             (4, '', 2, 16),
             (6, '', 2, -1),
             (4, '', 2, -1),
-            (0, '', 2, -1)],
-                         terminals)
+            (0, '', 2, -1),
+        ]
+
+        self.assertEqual(list(walk(st.totuple(line_info=True, col_info=True))),
+                         expected)
+        self.assertEqual(list(walk(st.totuple())),
+                         [(t, n) for t, n, l, c in expected])
+        self.assertEqual(list(walk(st.totuple(line_info=True))),
+                         [(t, n, l) for t, n, l, c in expected])
+        self.assertEqual(list(walk(st.totuple(col_info=True))),
+                         [(t, n, c) for t, n, l, c in expected])
+        self.assertEqual(list(walk(st.tolist(line_info=True, col_info=True))),
+                         [list(x) for x in expected])
+        self.assertEqual(list(walk(parser.st2tuple(st, line_info=True,
+                                                   col_info=True))),
+                         expected)
+        self.assertEqual(list(walk(parser.st2list(st, line_info=True,
+                                                  col_info=True))),
+                         [list(x) for x in expected])
 
     def test_extended_unpacking(self):
         self.check_suite("*a = y")
@@ -405,6 +442,43 @@ class RoundtripLegalSyntaxTestCase(unittest.TestCase):
         self.check_expr('{x:x for x in seq}')
         self.check_expr('{x**2:x[3] for x in seq if condition(x)}')
         self.check_expr('{x:x for x in seq1 for y in seq2 if condition(x, y)}')
+
+    def test_named_expressions(self):
+        self.check_suite("(a := 1)")
+        self.check_suite("(a := a)")
+        self.check_suite("if (match := pattern.search(data)) is None: pass")
+        self.check_suite("while match := pattern.search(f.read()): pass")
+        self.check_suite("[y := f(x), y**2, y**3]")
+        self.check_suite("filtered_data = [y for x in data if (y := f(x)) is None]")
+        self.check_suite("(y := f(x))")
+        self.check_suite("y0 = (y1 := f(x))")
+        self.check_suite("foo(x=(y := f(x)))")
+        self.check_suite("def foo(answer=(p := 42)): pass")
+        self.check_suite("def foo(answer: (p := 42) = 5): pass")
+        self.check_suite("lambda: (x := 1)")
+        self.check_suite("(x := lambda: 1)")
+        self.check_suite("(x := lambda: (y := 1))")  # not in PEP
+        self.check_suite("lambda line: (m := re.match(pattern, line)) and m.group(1)")
+        self.check_suite("x = (y := 0)")
+        self.check_suite("(z:=(y:=(x:=0)))")
+        self.check_suite("(info := (name, phone, *rest))")
+        self.check_suite("(x:=1,2)")
+        self.check_suite("(total := total + tax)")
+        self.check_suite("len(lines := f.readlines())")
+        self.check_suite("foo(x := 3, cat='vector')")
+        self.check_suite("foo(cat=(category := 'vector'))")
+        self.check_suite("if any(len(longline := l) >= 100 for l in lines): print(longline)")
+        self.check_suite(
+            "if env_base := os.environ.get('PYTHONUSERBASE', None): return env_base"
+        )
+        self.check_suite(
+            "if self._is_special and (ans := self._check_nans(context=context)): return ans"
+        )
+        self.check_suite("foo(b := 2, a=1)")
+        self.check_suite("foo(b := 2, a=1)")
+        self.check_suite("foo((b := 2), a=1)")
+        self.check_suite("foo(c=(b := 2), a=1)")
+        self.check_suite("{(x := C(i)).q: x for i in y}")
 
 
 #
@@ -679,20 +753,36 @@ class IllegalSyntaxTestCase(unittest.TestCase):
     def test_illegal_encoding(self):
         # Illegal encoding declaration
         tree = \
-            (340,
+            (341,
              (257, (0, '')))
         self.check_bad_tree(tree, "missed encoding")
         tree = \
-            (340,
+            (341,
              (257, (0, '')),
               b'iso-8859-1')
         self.check_bad_tree(tree, "non-string encoding")
         tree = \
-            (340,
+            (341,
              (257, (0, '')),
               '\udcff')
         with self.assertRaises(UnicodeEncodeError):
             parser.sequence2st(tree)
+
+    def test_invalid_node_id(self):
+        tree = (257, (269, (-7, '')))
+        self.check_bad_tree(tree, "negative node id")
+        tree = (257, (269, (99, '')))
+        self.check_bad_tree(tree, "invalid token id")
+        tree = (257, (269, (9999, (0, ''))))
+        self.check_bad_tree(tree, "invalid symbol id")
+
+    def test_ParserError_message(self):
+        try:
+            parser.sequence2st((257,(269,(257,(0,'')))))
+        except parser.ParserError as why:
+            self.assertIn("compound_stmt", str(why))  # Expected
+            self.assertIn("file_input", str(why))     # Got
+
 
 
 class CompileTestCase(unittest.TestCase):
@@ -761,8 +851,9 @@ class ParserStackLimitTestCase(unittest.TestCase):
         return "["*level+"]"*level
 
     def test_deeply_nested_list(self):
-        # XXX used to be 99 levels in 2.x
-        e = self._nested_expression(93)
+        # This has fluctuated between 99 levels in 2.x, down to 93 levels in
+        # 3.7.X and back up to 99 in 3.8.X. Related to MAXSTACK size in Parser.h
+        e = self._nested_expression(99)
         st = parser.expr(e)
         st.compile()
 
@@ -864,8 +955,8 @@ class STObjectTestCase(unittest.TestCase):
                 return (n + 3) & ~3
             return 1 << (n - 1).bit_length()
 
-        basesize = support.calcobjsize('Pii')
-        nodesize = struct.calcsize('hP3iP0h')
+        basesize = support.calcobjsize('Piii')
+        nodesize = struct.calcsize('hP3iP0h2i')
         def sizeofchildren(node):
             if node is None:
                 return 0
@@ -900,6 +991,14 @@ class OtherParserCase(unittest.TestCase):
         # See bug #12264
         with self.assertRaises(TypeError):
             parser.expr("a", "b")
+
+
+class TestDeprecation(unittest.TestCase):
+    def test_deprecation_message(self):
+        code = "def f():\n  import parser\n\nf()"
+        rc, out, err = assert_python_ok('-c', code)
+        self.assertIn(b'<string>:2: DeprecationWarning', err)
+
 
 if __name__ == "__main__":
     unittest.main()

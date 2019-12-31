@@ -27,6 +27,7 @@ import logging, socket, os, pickle, struct, time, re
 from stat import ST_DEV, ST_INO, ST_MTIME
 import queue
 import threading
+import copy
 
 #
 # Some constants...
@@ -47,15 +48,19 @@ class BaseRotatingHandler(logging.FileHandler):
     Not meant to be instantiated directly.  Instead, use RotatingFileHandler
     or TimedRotatingFileHandler.
     """
-    def __init__(self, filename, mode, encoding=None, delay=False):
+    namer = None
+    rotator = None
+
+    def __init__(self, filename, mode, encoding=None, delay=False, errors=None):
         """
         Use the specified filename for streamed logging
         """
-        logging.FileHandler.__init__(self, filename, mode, encoding, delay)
+        logging.FileHandler.__init__(self, filename, mode=mode,
+                                     encoding=encoding, delay=delay,
+                                     errors=errors)
         self.mode = mode
         self.encoding = encoding
-        self.namer = None
-        self.rotator = None
+        self.errors = errors
 
     def emit(self, record):
         """
@@ -116,7 +121,8 @@ class RotatingFileHandler(BaseRotatingHandler):
     Handler for logging to a set of files, which switches from one file
     to the next when the current file reaches a certain size.
     """
-    def __init__(self, filename, mode='a', maxBytes=0, backupCount=0, encoding=None, delay=False):
+    def __init__(self, filename, mode='a', maxBytes=0, backupCount=0,
+                 encoding=None, delay=False, errors=None):
         """
         Open the specified file and use it as the stream for logging.
 
@@ -144,7 +150,8 @@ class RotatingFileHandler(BaseRotatingHandler):
         # on each run.
         if maxBytes > 0:
             mode = 'a'
-        BaseRotatingHandler.__init__(self, filename, mode, encoding, delay)
+        BaseRotatingHandler.__init__(self, filename, mode, encoding=encoding,
+                                     delay=delay, errors=errors)
         self.maxBytes = maxBytes
         self.backupCount = backupCount
 
@@ -195,8 +202,11 @@ class TimedRotatingFileHandler(BaseRotatingHandler):
     If backupCount is > 0, when rollover is done, no more than backupCount
     files are kept - the oldest ones are deleted.
     """
-    def __init__(self, filename, when='h', interval=1, backupCount=0, encoding=None, delay=False, utc=False, atTime=None):
-        BaseRotatingHandler.__init__(self, filename, 'a', encoding, delay)
+    def __init__(self, filename, when='h', interval=1, backupCount=0,
+                 encoding=None, delay=False, utc=False, atTime=None,
+                 errors=None):
+        BaseRotatingHandler.__init__(self, filename, 'a', encoding=encoding,
+                                     delay=delay, errors=errors)
         self.when = when.upper()
         self.backupCount = backupCount
         self.utc = utc
@@ -430,8 +440,11 @@ class WatchedFileHandler(logging.FileHandler):
     This handler is based on a suggestion and patch by Chad J.
     Schroeder.
     """
-    def __init__(self, filename, mode='a', encoding=None, delay=False):
-        logging.FileHandler.__init__(self, filename, mode, encoding, delay)
+    def __init__(self, filename, mode='a', encoding=None, delay=False,
+                 errors=None):
+        logging.FileHandler.__init__(self, filename, mode=mode,
+                                     encoding=encoding, delay=delay,
+                                     errors=errors)
         self.dev, self.ino = -1, -1
         self._statstream()
 
@@ -1241,7 +1254,7 @@ class BufferingHandler(logging.Handler):
         """
         self.acquire()
         try:
-            self.buffer = []
+            self.buffer.clear()
         finally:
             self.release()
 
@@ -1308,7 +1321,7 @@ class MemoryHandler(BufferingHandler):
             if self.target:
                 for record in self.buffer:
                     self.target.handle(record)
-                self.buffer = []
+                self.buffer.clear()
         finally:
             self.release()
 
@@ -1374,13 +1387,16 @@ class QueueHandler(logging.Handler):
         # (if there's exception data), and also returns the formatted
         # message. We can then use this to replace the original
         # msg + args, as these might be unpickleable. We also zap the
-        # exc_info attribute, as it's no longer needed and, if not None,
-        # will typically not be pickleable.
+        # exc_info and exc_text attributes, as they are no longer
+        # needed and, if not None, will typically not be pickleable.
         msg = self.format(record)
+        # bpo-35726: make copy of record to avoid affecting other handlers in the chain.
+        record = copy.copy(record)
         record.message = msg
         record.msg = msg
         record.args = None
         record.exc_info = None
+        record.exc_text = None
         return record
 
     def emit(self, record):
@@ -1433,7 +1449,7 @@ class QueueListener(object):
         t.daemon = True
         t.start()
 
-    def prepare(self , record):
+    def prepare(self, record):
         """
         Prepare a record for handling.
 
@@ -1473,6 +1489,8 @@ class QueueListener(object):
             try:
                 record = self.dequeue(True)
                 if record is self._sentinel:
+                    if has_task_done:
+                        q.task_done()
                     break
                 self.handle(record)
                 if has_task_done:

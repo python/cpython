@@ -77,7 +77,7 @@ PyDoc_STRVAR(winreg_HKEYType___exit____doc__,
 "\n");
 
 #define WINREG_HKEYTYPE___EXIT___METHODDEF    \
-    {"__exit__", (PyCFunction)winreg_HKEYType___exit__, METH_FASTCALL|METH_KEYWORDS, winreg_HKEYType___exit____doc__},
+    {"__exit__", (PyCFunction)(void(*)(void))winreg_HKEYType___exit__, METH_FASTCALL|METH_KEYWORDS, winreg_HKEYType___exit____doc__},
 
 static PyObject *
 winreg_HKEYType___exit___impl(PyHKEYObject *self, PyObject *exc_type,
@@ -88,15 +88,19 @@ winreg_HKEYType___exit__(PyHKEYObject *self, PyObject *const *args, Py_ssize_t n
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"exc_type", "exc_value", "traceback", NULL};
-    static _PyArg_Parser _parser = {"OOO:__exit__", _keywords, 0};
+    static _PyArg_Parser _parser = {NULL, _keywords, "__exit__", 0};
+    PyObject *argsbuf[3];
     PyObject *exc_type;
     PyObject *exc_value;
     PyObject *traceback;
 
-    if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser,
-        &exc_type, &exc_value, &traceback)) {
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 3, 3, 0, argsbuf);
+    if (!args) {
         goto exit;
     }
+    exc_type = args[0];
+    exc_value = args[1];
+    traceback = args[2];
     return_value = winreg_HKEYType___exit___impl(self, exc_type, exc_value, traceback);
 
 exit:
@@ -134,17 +138,17 @@ PyDoc_STRVAR(winreg_ConnectRegistry__doc__,
 "If the function fails, an OSError exception is raised.");
 
 #define WINREG_CONNECTREGISTRY_METHODDEF    \
-    {"ConnectRegistry", (PyCFunction)winreg_ConnectRegistry, METH_FASTCALL, winreg_ConnectRegistry__doc__},
+    {"ConnectRegistry", (PyCFunction)(void(*)(void))winreg_ConnectRegistry, METH_FASTCALL, winreg_ConnectRegistry__doc__},
 
 static HKEY
-winreg_ConnectRegistry_impl(PyObject *module, Py_UNICODE *computer_name,
-                            HKEY key);
+winreg_ConnectRegistry_impl(PyObject *module,
+                            const Py_UNICODE *computer_name, HKEY key);
 
 static PyObject *
 winreg_ConnectRegistry(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
-    Py_UNICODE *computer_name;
+    const Py_UNICODE *computer_name;
     HKEY key;
     HKEY _return_value;
 
@@ -182,17 +186,17 @@ PyDoc_STRVAR(winreg_CreateKey__doc__,
 "If the function fails, an OSError exception is raised.");
 
 #define WINREG_CREATEKEY_METHODDEF    \
-    {"CreateKey", (PyCFunction)winreg_CreateKey, METH_FASTCALL, winreg_CreateKey__doc__},
+    {"CreateKey", (PyCFunction)(void(*)(void))winreg_CreateKey, METH_FASTCALL, winreg_CreateKey__doc__},
 
 static HKEY
-winreg_CreateKey_impl(PyObject *module, HKEY key, Py_UNICODE *sub_key);
+winreg_CreateKey_impl(PyObject *module, HKEY key, const Py_UNICODE *sub_key);
 
 static PyObject *
 winreg_CreateKey(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     HKEY key;
-    Py_UNICODE *sub_key;
+    const Py_UNICODE *sub_key;
     HKEY _return_value;
 
     if (!_PyArg_ParseStack(args, nargs, "O&Z:CreateKey",
@@ -235,11 +239,12 @@ PyDoc_STRVAR(winreg_CreateKeyEx__doc__,
 "If the function fails, an OSError exception is raised.");
 
 #define WINREG_CREATEKEYEX_METHODDEF    \
-    {"CreateKeyEx", (PyCFunction)winreg_CreateKeyEx, METH_FASTCALL|METH_KEYWORDS, winreg_CreateKeyEx__doc__},
+    {"CreateKeyEx", (PyCFunction)(void(*)(void))winreg_CreateKeyEx, METH_FASTCALL|METH_KEYWORDS, winreg_CreateKeyEx__doc__},
 
 static HKEY
-winreg_CreateKeyEx_impl(PyObject *module, HKEY key, Py_UNICODE *sub_key,
-                        int reserved, REGSAM access);
+winreg_CreateKeyEx_impl(PyObject *module, HKEY key,
+                        const Py_UNICODE *sub_key, int reserved,
+                        REGSAM access);
 
 static PyObject *
 winreg_CreateKeyEx(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
@@ -248,7 +253,7 @@ winreg_CreateKeyEx(PyObject *module, PyObject *const *args, Py_ssize_t nargs, Py
     static const char * const _keywords[] = {"key", "sub_key", "reserved", "access", NULL};
     static _PyArg_Parser _parser = {"O&Z|ii:CreateKeyEx", _keywords, 0};
     HKEY key;
-    Py_UNICODE *sub_key;
+    const Py_UNICODE *sub_key;
     int reserved = 0;
     REGSAM access = KEY_WRITE;
     HKEY _return_value;
@@ -286,17 +291,17 @@ PyDoc_STRVAR(winreg_DeleteKey__doc__,
 "is removed.  If the function fails, an OSError exception is raised.");
 
 #define WINREG_DELETEKEY_METHODDEF    \
-    {"DeleteKey", (PyCFunction)winreg_DeleteKey, METH_FASTCALL, winreg_DeleteKey__doc__},
+    {"DeleteKey", (PyCFunction)(void(*)(void))winreg_DeleteKey, METH_FASTCALL, winreg_DeleteKey__doc__},
 
 static PyObject *
-winreg_DeleteKey_impl(PyObject *module, HKEY key, Py_UNICODE *sub_key);
+winreg_DeleteKey_impl(PyObject *module, HKEY key, const Py_UNICODE *sub_key);
 
 static PyObject *
 winreg_DeleteKey(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     HKEY key;
-    Py_UNICODE *sub_key;
+    const Py_UNICODE *sub_key;
 
     if (!_PyArg_ParseStack(args, nargs, "O&u:DeleteKey",
         clinic_HKEY_converter, &key, &sub_key)) {
@@ -334,11 +339,12 @@ PyDoc_STRVAR(winreg_DeleteKeyEx__doc__,
 "On unsupported Windows versions, NotImplementedError is raised.");
 
 #define WINREG_DELETEKEYEX_METHODDEF    \
-    {"DeleteKeyEx", (PyCFunction)winreg_DeleteKeyEx, METH_FASTCALL|METH_KEYWORDS, winreg_DeleteKeyEx__doc__},
+    {"DeleteKeyEx", (PyCFunction)(void(*)(void))winreg_DeleteKeyEx, METH_FASTCALL|METH_KEYWORDS, winreg_DeleteKeyEx__doc__},
 
 static PyObject *
-winreg_DeleteKeyEx_impl(PyObject *module, HKEY key, Py_UNICODE *sub_key,
-                        REGSAM access, int reserved);
+winreg_DeleteKeyEx_impl(PyObject *module, HKEY key,
+                        const Py_UNICODE *sub_key, REGSAM access,
+                        int reserved);
 
 static PyObject *
 winreg_DeleteKeyEx(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
@@ -347,7 +353,7 @@ winreg_DeleteKeyEx(PyObject *module, PyObject *const *args, Py_ssize_t nargs, Py
     static const char * const _keywords[] = {"key", "sub_key", "access", "reserved", NULL};
     static _PyArg_Parser _parser = {"O&u|ii:DeleteKeyEx", _keywords, 0};
     HKEY key;
-    Py_UNICODE *sub_key;
+    const Py_UNICODE *sub_key;
     REGSAM access = KEY_WOW64_64KEY;
     int reserved = 0;
 
@@ -373,17 +379,17 @@ PyDoc_STRVAR(winreg_DeleteValue__doc__,
 "    A string that identifies the value to remove.");
 
 #define WINREG_DELETEVALUE_METHODDEF    \
-    {"DeleteValue", (PyCFunction)winreg_DeleteValue, METH_FASTCALL, winreg_DeleteValue__doc__},
+    {"DeleteValue", (PyCFunction)(void(*)(void))winreg_DeleteValue, METH_FASTCALL, winreg_DeleteValue__doc__},
 
 static PyObject *
-winreg_DeleteValue_impl(PyObject *module, HKEY key, Py_UNICODE *value);
+winreg_DeleteValue_impl(PyObject *module, HKEY key, const Py_UNICODE *value);
 
 static PyObject *
 winreg_DeleteValue(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     HKEY key;
-    Py_UNICODE *value;
+    const Py_UNICODE *value;
 
     if (!_PyArg_ParseStack(args, nargs, "O&Z:DeleteValue",
         clinic_HKEY_converter, &key, &value)) {
@@ -411,7 +417,7 @@ PyDoc_STRVAR(winreg_EnumKey__doc__,
 "raised, indicating no more values are available.");
 
 #define WINREG_ENUMKEY_METHODDEF    \
-    {"EnumKey", (PyCFunction)winreg_EnumKey, METH_FASTCALL, winreg_EnumKey__doc__},
+    {"EnumKey", (PyCFunction)(void(*)(void))winreg_EnumKey, METH_FASTCALL, winreg_EnumKey__doc__},
 
 static PyObject *
 winreg_EnumKey_impl(PyObject *module, HKEY key, int index);
@@ -423,8 +429,19 @@ winreg_EnumKey(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     HKEY key;
     int index;
 
-    if (!_PyArg_ParseStack(args, nargs, "O&i:EnumKey",
-        clinic_HKEY_converter, &key, &index)) {
+    if (!_PyArg_CheckPositional("EnumKey", nargs, 2, 2)) {
+        goto exit;
+    }
+    if (!clinic_HKEY_converter(args[0], &key)) {
+        goto exit;
+    }
+    if (PyFloat_Check(args[1])) {
+        PyErr_SetString(PyExc_TypeError,
+                        "integer argument expected, got float" );
+        goto exit;
+    }
+    index = _PyLong_AsInt(args[1]);
+    if (index == -1 && PyErr_Occurred()) {
         goto exit;
     }
     return_value = winreg_EnumKey_impl(module, key, index);
@@ -458,7 +475,7 @@ PyDoc_STRVAR(winreg_EnumValue__doc__,
 "    An integer that identifies the type of the value data.");
 
 #define WINREG_ENUMVALUE_METHODDEF    \
-    {"EnumValue", (PyCFunction)winreg_EnumValue, METH_FASTCALL, winreg_EnumValue__doc__},
+    {"EnumValue", (PyCFunction)(void(*)(void))winreg_EnumValue, METH_FASTCALL, winreg_EnumValue__doc__},
 
 static PyObject *
 winreg_EnumValue_impl(PyObject *module, HKEY key, int index);
@@ -470,8 +487,19 @@ winreg_EnumValue(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     HKEY key;
     int index;
 
-    if (!_PyArg_ParseStack(args, nargs, "O&i:EnumValue",
-        clinic_HKEY_converter, &key, &index)) {
+    if (!_PyArg_CheckPositional("EnumValue", nargs, 2, 2)) {
+        goto exit;
+    }
+    if (!clinic_HKEY_converter(args[0], &key)) {
+        goto exit;
+    }
+    if (PyFloat_Check(args[1])) {
+        PyErr_SetString(PyExc_TypeError,
+                        "integer argument expected, got float" );
+        goto exit;
+    }
+    index = _PyLong_AsInt(args[1]);
+    if (index == -1 && PyErr_Occurred()) {
         goto exit;
     }
     return_value = winreg_EnumValue_impl(module, key, index);
@@ -490,13 +518,14 @@ PyDoc_STRVAR(winreg_ExpandEnvironmentStrings__doc__,
     {"ExpandEnvironmentStrings", (PyCFunction)winreg_ExpandEnvironmentStrings, METH_O, winreg_ExpandEnvironmentStrings__doc__},
 
 static PyObject *
-winreg_ExpandEnvironmentStrings_impl(PyObject *module, Py_UNICODE *string);
+winreg_ExpandEnvironmentStrings_impl(PyObject *module,
+                                     const Py_UNICODE *string);
 
 static PyObject *
 winreg_ExpandEnvironmentStrings(PyObject *module, PyObject *arg)
 {
     PyObject *return_value = NULL;
-    Py_UNICODE *string;
+    const Py_UNICODE *string;
 
     if (!PyArg_Parse(arg, "u:ExpandEnvironmentStrings", &string)) {
         goto exit;
@@ -538,7 +567,7 @@ winreg_FlushKey(PyObject *module, PyObject *arg)
     PyObject *return_value = NULL;
     HKEY key;
 
-    if (!PyArg_Parse(arg, "O&:FlushKey", clinic_HKEY_converter, &key)) {
+    if (!clinic_HKEY_converter(arg, &key)) {
         goto exit;
     }
     return_value = winreg_FlushKey_impl(module, key);
@@ -576,19 +605,19 @@ PyDoc_STRVAR(winreg_LoadKey__doc__,
 "tree.");
 
 #define WINREG_LOADKEY_METHODDEF    \
-    {"LoadKey", (PyCFunction)winreg_LoadKey, METH_FASTCALL, winreg_LoadKey__doc__},
+    {"LoadKey", (PyCFunction)(void(*)(void))winreg_LoadKey, METH_FASTCALL, winreg_LoadKey__doc__},
 
 static PyObject *
-winreg_LoadKey_impl(PyObject *module, HKEY key, Py_UNICODE *sub_key,
-                    Py_UNICODE *file_name);
+winreg_LoadKey_impl(PyObject *module, HKEY key, const Py_UNICODE *sub_key,
+                    const Py_UNICODE *file_name);
 
 static PyObject *
 winreg_LoadKey(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     HKEY key;
-    Py_UNICODE *sub_key;
-    Py_UNICODE *file_name;
+    const Py_UNICODE *sub_key;
+    const Py_UNICODE *file_name;
 
     if (!_PyArg_ParseStack(args, nargs, "O&uu:LoadKey",
         clinic_HKEY_converter, &key, &sub_key, &file_name)) {
@@ -620,10 +649,10 @@ PyDoc_STRVAR(winreg_OpenKey__doc__,
 "If the function fails, an OSError exception is raised.");
 
 #define WINREG_OPENKEY_METHODDEF    \
-    {"OpenKey", (PyCFunction)winreg_OpenKey, METH_FASTCALL|METH_KEYWORDS, winreg_OpenKey__doc__},
+    {"OpenKey", (PyCFunction)(void(*)(void))winreg_OpenKey, METH_FASTCALL|METH_KEYWORDS, winreg_OpenKey__doc__},
 
 static HKEY
-winreg_OpenKey_impl(PyObject *module, HKEY key, Py_UNICODE *sub_key,
+winreg_OpenKey_impl(PyObject *module, HKEY key, const Py_UNICODE *sub_key,
                     int reserved, REGSAM access);
 
 static PyObject *
@@ -633,7 +662,7 @@ winreg_OpenKey(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObje
     static const char * const _keywords[] = {"key", "sub_key", "reserved", "access", NULL};
     static _PyArg_Parser _parser = {"O&Z|ii:OpenKey", _keywords, 0};
     HKEY key;
-    Py_UNICODE *sub_key;
+    const Py_UNICODE *sub_key;
     int reserved = 0;
     REGSAM access = KEY_READ;
     HKEY _return_value;
@@ -672,10 +701,10 @@ PyDoc_STRVAR(winreg_OpenKeyEx__doc__,
 "If the function fails, an OSError exception is raised.");
 
 #define WINREG_OPENKEYEX_METHODDEF    \
-    {"OpenKeyEx", (PyCFunction)winreg_OpenKeyEx, METH_FASTCALL|METH_KEYWORDS, winreg_OpenKeyEx__doc__},
+    {"OpenKeyEx", (PyCFunction)(void(*)(void))winreg_OpenKeyEx, METH_FASTCALL|METH_KEYWORDS, winreg_OpenKeyEx__doc__},
 
 static HKEY
-winreg_OpenKeyEx_impl(PyObject *module, HKEY key, Py_UNICODE *sub_key,
+winreg_OpenKeyEx_impl(PyObject *module, HKEY key, const Py_UNICODE *sub_key,
                       int reserved, REGSAM access);
 
 static PyObject *
@@ -685,7 +714,7 @@ winreg_OpenKeyEx(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyOb
     static const char * const _keywords[] = {"key", "sub_key", "reserved", "access", NULL};
     static _PyArg_Parser _parser = {"O&Z|ii:OpenKeyEx", _keywords, 0};
     HKEY key;
-    Py_UNICODE *sub_key;
+    const Py_UNICODE *sub_key;
     int reserved = 0;
     REGSAM access = KEY_READ;
     HKEY _return_value;
@@ -731,7 +760,7 @@ winreg_QueryInfoKey(PyObject *module, PyObject *arg)
     PyObject *return_value = NULL;
     HKEY key;
 
-    if (!PyArg_Parse(arg, "O&:QueryInfoKey", clinic_HKEY_converter, &key)) {
+    if (!clinic_HKEY_converter(arg, &key)) {
         goto exit;
     }
     return_value = winreg_QueryInfoKey_impl(module, key);
@@ -761,17 +790,17 @@ PyDoc_STRVAR(winreg_QueryValue__doc__,
 "completeness.");
 
 #define WINREG_QUERYVALUE_METHODDEF    \
-    {"QueryValue", (PyCFunction)winreg_QueryValue, METH_FASTCALL, winreg_QueryValue__doc__},
+    {"QueryValue", (PyCFunction)(void(*)(void))winreg_QueryValue, METH_FASTCALL, winreg_QueryValue__doc__},
 
 static PyObject *
-winreg_QueryValue_impl(PyObject *module, HKEY key, Py_UNICODE *sub_key);
+winreg_QueryValue_impl(PyObject *module, HKEY key, const Py_UNICODE *sub_key);
 
 static PyObject *
 winreg_QueryValue(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     HKEY key;
-    Py_UNICODE *sub_key;
+    const Py_UNICODE *sub_key;
 
     if (!_PyArg_ParseStack(args, nargs, "O&Z:QueryValue",
         clinic_HKEY_converter, &key, &sub_key)) {
@@ -800,17 +829,17 @@ PyDoc_STRVAR(winreg_QueryValueEx__doc__,
 "The return value is a tuple of the value and the type_id.");
 
 #define WINREG_QUERYVALUEEX_METHODDEF    \
-    {"QueryValueEx", (PyCFunction)winreg_QueryValueEx, METH_FASTCALL, winreg_QueryValueEx__doc__},
+    {"QueryValueEx", (PyCFunction)(void(*)(void))winreg_QueryValueEx, METH_FASTCALL, winreg_QueryValueEx__doc__},
 
 static PyObject *
-winreg_QueryValueEx_impl(PyObject *module, HKEY key, Py_UNICODE *name);
+winreg_QueryValueEx_impl(PyObject *module, HKEY key, const Py_UNICODE *name);
 
 static PyObject *
 winreg_QueryValueEx(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     HKEY key;
-    Py_UNICODE *name;
+    const Py_UNICODE *name;
 
     if (!_PyArg_ParseStack(args, nargs, "O&Z:QueryValueEx",
         clinic_HKEY_converter, &key, &name)) {
@@ -844,17 +873,17 @@ PyDoc_STRVAR(winreg_SaveKey__doc__,
 "to the API.");
 
 #define WINREG_SAVEKEY_METHODDEF    \
-    {"SaveKey", (PyCFunction)winreg_SaveKey, METH_FASTCALL, winreg_SaveKey__doc__},
+    {"SaveKey", (PyCFunction)(void(*)(void))winreg_SaveKey, METH_FASTCALL, winreg_SaveKey__doc__},
 
 static PyObject *
-winreg_SaveKey_impl(PyObject *module, HKEY key, Py_UNICODE *file_name);
+winreg_SaveKey_impl(PyObject *module, HKEY key, const Py_UNICODE *file_name);
 
 static PyObject *
 winreg_SaveKey(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     HKEY key;
-    Py_UNICODE *file_name;
+    const Py_UNICODE *file_name;
 
     if (!_PyArg_ParseStack(args, nargs, "O&u:SaveKey",
         clinic_HKEY_converter, &key, &file_name)) {
@@ -893,11 +922,11 @@ PyDoc_STRVAR(winreg_SetValue__doc__,
 "KEY_SET_VALUE access.");
 
 #define WINREG_SETVALUE_METHODDEF    \
-    {"SetValue", (PyCFunction)winreg_SetValue, METH_FASTCALL, winreg_SetValue__doc__},
+    {"SetValue", (PyCFunction)(void(*)(void))winreg_SetValue, METH_FASTCALL, winreg_SetValue__doc__},
 
 static PyObject *
-winreg_SetValue_impl(PyObject *module, HKEY key, Py_UNICODE *sub_key,
-                     DWORD type, Py_UNICODE *value,
+winreg_SetValue_impl(PyObject *module, HKEY key, const Py_UNICODE *sub_key,
+                     DWORD type, const Py_UNICODE *value,
                      Py_ssize_clean_t value_length);
 
 static PyObject *
@@ -905,9 +934,9 @@ winreg_SetValue(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     HKEY key;
-    Py_UNICODE *sub_key;
+    const Py_UNICODE *sub_key;
     DWORD type;
-    Py_UNICODE *value;
+    const Py_UNICODE *value;
     Py_ssize_clean_t value_length;
 
     if (!_PyArg_ParseStack(args, nargs, "O&Zku#:SetValue",
@@ -964,18 +993,19 @@ PyDoc_STRVAR(winreg_SetValueEx__doc__,
 "the configuration registry to help the registry perform efficiently.");
 
 #define WINREG_SETVALUEEX_METHODDEF    \
-    {"SetValueEx", (PyCFunction)winreg_SetValueEx, METH_FASTCALL, winreg_SetValueEx__doc__},
+    {"SetValueEx", (PyCFunction)(void(*)(void))winreg_SetValueEx, METH_FASTCALL, winreg_SetValueEx__doc__},
 
 static PyObject *
-winreg_SetValueEx_impl(PyObject *module, HKEY key, Py_UNICODE *value_name,
-                       PyObject *reserved, DWORD type, PyObject *value);
+winreg_SetValueEx_impl(PyObject *module, HKEY key,
+                       const Py_UNICODE *value_name, PyObject *reserved,
+                       DWORD type, PyObject *value);
 
 static PyObject *
 winreg_SetValueEx(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     HKEY key;
-    Py_UNICODE *value_name;
+    const Py_UNICODE *value_name;
     PyObject *reserved;
     DWORD type;
     PyObject *value;
@@ -999,7 +1029,7 @@ PyDoc_STRVAR(winreg_DisableReflectionKey__doc__,
 "  key\n"
 "    An already open key, or any one of the predefined HKEY_* constants.\n"
 "\n"
-"Will generally raise NotImplemented if executed on a 32bit OS.\n"
+"Will generally raise NotImplementedError if executed on a 32bit OS.\n"
 "\n"
 "If the key is not on the reflection list, the function succeeds but has\n"
 "no effect.  Disabling reflection for a key does not affect reflection\n"
@@ -1017,7 +1047,7 @@ winreg_DisableReflectionKey(PyObject *module, PyObject *arg)
     PyObject *return_value = NULL;
     HKEY key;
 
-    if (!PyArg_Parse(arg, "O&:DisableReflectionKey", clinic_HKEY_converter, &key)) {
+    if (!clinic_HKEY_converter(arg, &key)) {
         goto exit;
     }
     return_value = winreg_DisableReflectionKey_impl(module, key);
@@ -1035,7 +1065,7 @@ PyDoc_STRVAR(winreg_EnableReflectionKey__doc__,
 "  key\n"
 "    An already open key, or any one of the predefined HKEY_* constants.\n"
 "\n"
-"Will generally raise NotImplemented if executed on a 32bit OS.\n"
+"Will generally raise NotImplementedError if executed on a 32bit OS.\n"
 "Restoring reflection for a key does not affect reflection of any\n"
 "subkeys.");
 
@@ -1051,7 +1081,7 @@ winreg_EnableReflectionKey(PyObject *module, PyObject *arg)
     PyObject *return_value = NULL;
     HKEY key;
 
-    if (!PyArg_Parse(arg, "O&:EnableReflectionKey", clinic_HKEY_converter, &key)) {
+    if (!clinic_HKEY_converter(arg, &key)) {
         goto exit;
     }
     return_value = winreg_EnableReflectionKey_impl(module, key);
@@ -1069,7 +1099,7 @@ PyDoc_STRVAR(winreg_QueryReflectionKey__doc__,
 "  key\n"
 "    An already open key, or any one of the predefined HKEY_* constants.\n"
 "\n"
-"Will generally raise NotImplemented if executed on a 32bit OS.");
+"Will generally raise NotImplementedError if executed on a 32bit OS.");
 
 #define WINREG_QUERYREFLECTIONKEY_METHODDEF    \
     {"QueryReflectionKey", (PyCFunction)winreg_QueryReflectionKey, METH_O, winreg_QueryReflectionKey__doc__},
@@ -1083,7 +1113,7 @@ winreg_QueryReflectionKey(PyObject *module, PyObject *arg)
     PyObject *return_value = NULL;
     HKEY key;
 
-    if (!PyArg_Parse(arg, "O&:QueryReflectionKey", clinic_HKEY_converter, &key)) {
+    if (!clinic_HKEY_converter(arg, &key)) {
         goto exit;
     }
     return_value = winreg_QueryReflectionKey_impl(module, key);
@@ -1091,4 +1121,4 @@ winreg_QueryReflectionKey(PyObject *module, PyObject *arg)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=d1c8e2678015dd7d input=a9049054013a1b77]*/
+/*[clinic end generated code: output=015afbbd690eb59d input=a9049054013a1b77]*/

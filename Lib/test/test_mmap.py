@@ -1,4 +1,4 @@
-from test.support import (TESTFN, run_unittest, import_module, unlink,
+from test.support import (TESTFN, import_module, unlink,
                           requires, _2G, _4G, gc_collect, cpython_only)
 import unittest
 import os
@@ -12,6 +12,7 @@ import weakref
 mmap = import_module('mmap')
 
 PAGESIZE = mmap.PAGESIZE
+
 
 class MmapTests(unittest.TestCase):
 
@@ -268,13 +269,12 @@ class MmapTests(unittest.TestCase):
 
     def test_find_end(self):
         # test the new 'end' parameter works as expected
-        f = open(TESTFN, 'wb+')
-        data = b'one two ones'
-        n = len(data)
-        f.write(data)
-        f.flush()
-        m = mmap.mmap(f.fileno(), n)
-        f.close()
+        with open(TESTFN, 'wb+') as f:
+            data = b'one two ones'
+            n = len(data)
+            f.write(data)
+            f.flush()
+            m = mmap.mmap(f.fileno(), n)
 
         self.assertEqual(m.find(b'one'), 0)
         self.assertEqual(m.find(b'ones'), 8)
@@ -287,13 +287,12 @@ class MmapTests(unittest.TestCase):
 
     def test_rfind(self):
         # test the new 'end' parameter works as expected
-        f = open(TESTFN, 'wb+')
-        data = b'one two ones'
-        n = len(data)
-        f.write(data)
-        f.flush()
-        m = mmap.mmap(f.fileno(), n)
-        f.close()
+        with open(TESTFN, 'wb+') as f:
+            data = b'one two ones'
+            n = len(data)
+            f.write(data)
+            f.flush()
+            m = mmap.mmap(f.fileno(), n)
 
         self.assertEqual(m.rfind(b'one'), 8)
         self.assertEqual(m.rfind(b'one '), 0)
@@ -306,33 +305,24 @@ class MmapTests(unittest.TestCase):
 
     def test_double_close(self):
         # make sure a double close doesn't crash on Solaris (Bug# 665913)
-        f = open(TESTFN, 'wb+')
+        with open(TESTFN, 'wb+') as f:
+            f.write(2**16 * b'a') # Arbitrary character
 
-        f.write(2**16 * b'a') # Arbitrary character
-        f.close()
+        with open(TESTFN, 'rb') as f:
+            mf = mmap.mmap(f.fileno(), 2**16, access=mmap.ACCESS_READ)
+            mf.close()
+            mf.close()
 
-        f = open(TESTFN, 'rb')
-        mf = mmap.mmap(f.fileno(), 2**16, access=mmap.ACCESS_READ)
-        mf.close()
-        mf.close()
-        f.close()
-
-    @unittest.skipUnless(hasattr(os, "stat"), "needs os.stat()")
     def test_entire_file(self):
         # test mapping of entire file by passing 0 for map length
-        f = open(TESTFN, "wb+")
+        with open(TESTFN, "wb+") as f:
+            f.write(2**16 * b'm') # Arbitrary character
 
-        f.write(2**16 * b'm') # Arbitrary character
-        f.close()
+        with open(TESTFN, "rb+") as f, \
+             mmap.mmap(f.fileno(), 0) as mf:
+            self.assertEqual(len(mf), 2**16, "Map size should equal file size.")
+            self.assertEqual(mf.read(2**16), 2**16 * b"m")
 
-        f = open(TESTFN, "rb+")
-        mf = mmap.mmap(f.fileno(), 0)
-        self.assertEqual(len(mf), 2**16, "Map size should equal file size.")
-        self.assertEqual(mf.read(2**16), 2**16 * b"m")
-        mf.close()
-        f.close()
-
-    @unittest.skipUnless(hasattr(os, "stat"), "needs os.stat()")
     def test_length_0_offset(self):
         # Issue #10916: test mapping of remainder of file by passing 0 for
         # map length with an offset doesn't cause a segfault.
@@ -345,7 +335,6 @@ class MmapTests(unittest.TestCase):
             with mmap.mmap(f.fileno(), 0, offset=65536, access=mmap.ACCESS_READ) as mf:
                 self.assertRaises(IndexError, mf.__getitem__, 80000)
 
-    @unittest.skipUnless(hasattr(os, "stat"), "needs os.stat()")
     def test_length_0_large_offset(self):
         # Issue #10959: test mapping of a file by passing 0 for
         # map length with a large offset doesn't cause a segfault.
@@ -358,16 +347,15 @@ class MmapTests(unittest.TestCase):
 
     def test_move(self):
         # make move works everywhere (64-bit format problem earlier)
-        f = open(TESTFN, 'wb+')
+        with open(TESTFN, 'wb+') as f:
 
-        f.write(b"ABCDEabcde") # Arbitrary character
-        f.flush()
+            f.write(b"ABCDEabcde") # Arbitrary character
+            f.flush()
 
-        mf = mmap.mmap(f.fileno(), 10)
-        mf.move(5, 0, 5)
-        self.assertEqual(mf[:], b"ABCDEABCDE", "Map move should have duplicated front 5")
-        mf.close()
-        f.close()
+            mf = mmap.mmap(f.fileno(), 10)
+            mf.move(5, 0, 5)
+            self.assertEqual(mf[:], b"ABCDEABCDE", "Map move should have duplicated front 5")
+            mf.close()
 
         # more excessive test
         data = b"0123456789"
@@ -452,7 +440,7 @@ class MmapTests(unittest.TestCase):
         m = mmap.mmap(-1, len(s))
         m[:] = s
         self.assertEqual(m[:], s)
-        indices = (0, None, 1, 3, 19, 300, -1, -2, -31, -300)
+        indices = (0, None, 1, 3, 19, 300, sys.maxsize, -1, -2, -31, -300)
         for start in indices:
             for stop in indices:
                 # Skip step 0 (invalid)
@@ -464,7 +452,7 @@ class MmapTests(unittest.TestCase):
         # Test extended slicing by comparing with list slicing.
         s = bytes(reversed(range(256)))
         m = mmap.mmap(-1, len(s))
-        indices = (0, None, 1, 3, 19, 300, -1, -2, -31, -300)
+        indices = (0, None, 1, 3, 19, 300, sys.maxsize, -1, -2, -31, -300)
         for start in indices:
             for stop in indices:
                 # Skip invalid step 0
@@ -565,10 +553,9 @@ class MmapTests(unittest.TestCase):
         mapsize = 10
         with open(TESTFN, "wb") as fp:
             fp.write(b"a"*mapsize)
-        f = open(TESTFN, "rb")
-        m = mmap.mmap(f.fileno(), mapsize, prot=mmap.PROT_READ)
-        self.assertRaises(TypeError, m.write, "foo")
-        f.close()
+        with open(TESTFN, "rb") as f:
+            m = mmap.mmap(f.fileno(), mapsize, prot=mmap.PROT_READ)
+            self.assertRaises(TypeError, m.write, "foo")
 
     def test_error(self):
         self.assertIs(mmap.error, OSError)
@@ -577,9 +564,8 @@ class MmapTests(unittest.TestCase):
         data = b"0123456789"
         with open(TESTFN, "wb") as fp:
             fp.write(b"x"*len(data))
-        f = open(TESTFN, "r+b")
-        m = mmap.mmap(f.fileno(), len(data))
-        f.close()
+        with open(TESTFN, "r+b") as f:
+            m = mmap.mmap(f.fileno(), len(data))
         # Test write_byte()
         for i in range(len(data)):
             self.assertEqual(m.tell(), i)
@@ -734,6 +720,81 @@ class MmapTests(unittest.TestCase):
         self.assertRaises(ValueError, m.write_byte, 42)
         self.assertRaises(ValueError, m.write, b'abc')
 
+    def test_concat_repeat_exception(self):
+        m = mmap.mmap(-1, 16)
+        with self.assertRaises(TypeError):
+            m + m
+        with self.assertRaises(TypeError):
+            m * 2
+
+    def test_flush_return_value(self):
+        # mm.flush() should return None on success, raise an
+        # exception on error under all platforms.
+        mm = mmap.mmap(-1, 16)
+        self.addCleanup(mm.close)
+        mm.write(b'python')
+        result = mm.flush()
+        self.assertIsNone(result)
+        if sys.platform.startswith('linux'):
+            # 'offset' must be a multiple of mmap.PAGESIZE on Linux.
+            # See bpo-34754 for details.
+            self.assertRaises(OSError, mm.flush, 1, len(b'python'))
+
+    def test_repr(self):
+        open_mmap_repr_pat = re.compile(
+            r"<mmap.mmap closed=False, "
+            r"access=(?P<access>\S+), "
+            r"length=(?P<length>\d+), "
+            r"pos=(?P<pos>\d+), "
+            r"offset=(?P<offset>\d+)>")
+        closed_mmap_repr_pat = re.compile(r"<mmap.mmap closed=True>")
+        mapsizes = (50, 100, 1_000, 1_000_000, 10_000_000)
+        offsets = tuple((mapsize // 2 // mmap.ALLOCATIONGRANULARITY)
+                        * mmap.ALLOCATIONGRANULARITY for mapsize in mapsizes)
+        for offset, mapsize in zip(offsets, mapsizes):
+            data = b'a' * mapsize
+            length = mapsize - offset
+            accesses = ('ACCESS_DEFAULT', 'ACCESS_READ',
+                        'ACCESS_COPY', 'ACCESS_WRITE')
+            positions = (0, length//10, length//5, length//4)
+            with open(TESTFN, "wb+") as fp:
+                fp.write(data)
+                fp.flush()
+                for access, pos in itertools.product(accesses, positions):
+                    accint = getattr(mmap, access)
+                    with mmap.mmap(fp.fileno(),
+                                   length,
+                                   access=accint,
+                                   offset=offset) as mm:
+                        mm.seek(pos)
+                        match = open_mmap_repr_pat.match(repr(mm))
+                        self.assertIsNotNone(match)
+                        self.assertEqual(match.group('access'), access)
+                        self.assertEqual(match.group('length'), str(length))
+                        self.assertEqual(match.group('pos'), str(pos))
+                        self.assertEqual(match.group('offset'), str(offset))
+                    match = closed_mmap_repr_pat.match(repr(mm))
+                    self.assertIsNotNone(match)
+
+    @unittest.skipUnless(hasattr(mmap.mmap, 'madvise'), 'needs madvise')
+    def test_madvise(self):
+        size = 2 * PAGESIZE
+        m = mmap.mmap(-1, size)
+
+        with self.assertRaisesRegex(ValueError, "madvise start out of bounds"):
+            m.madvise(mmap.MADV_NORMAL, size)
+        with self.assertRaisesRegex(ValueError, "madvise start out of bounds"):
+            m.madvise(mmap.MADV_NORMAL, -1)
+        with self.assertRaisesRegex(ValueError, "madvise length invalid"):
+            m.madvise(mmap.MADV_NORMAL, 0, -1)
+        with self.assertRaisesRegex(OverflowError, "madvise length too large"):
+            m.madvise(mmap.MADV_NORMAL, PAGESIZE, sys.maxsize)
+        self.assertEqual(m.madvise(mmap.MADV_NORMAL), None)
+        self.assertEqual(m.madvise(mmap.MADV_NORMAL, PAGESIZE), None)
+        self.assertEqual(m.madvise(mmap.MADV_NORMAL, PAGESIZE, size), None)
+        self.assertEqual(m.madvise(mmap.MADV_NORMAL, 0, 2), None)
+        self.assertEqual(m.madvise(mmap.MADV_NORMAL, 0, size), None)
+
 
 class LargeMmapTests(unittest.TestCase):
 
@@ -796,8 +857,5 @@ class LargeMmapTests(unittest.TestCase):
         self._test_around_boundary(_4G)
 
 
-def test_main():
-    run_unittest(MmapTests, LargeMmapTests)
-
 if __name__ == '__main__':
-    test_main()
+    unittest.main()

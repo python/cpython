@@ -6,7 +6,7 @@
    Stuff shared by all thread_*.h files is collected here. */
 
 #include "Python.h"
-#include "internal/pystate.h"
+#include "pycore_pystate.h"
 
 #ifndef _POSIX_THREADS
 /* This means pthreads are not implemented in libc headers, hence the macro
@@ -92,7 +92,7 @@ PyThread_init_thread(void)
 size_t
 PyThread_get_stacksize(void)
 {
-    return PyThreadState_GET()->interp->pythread_stacksize;
+    return _PyInterpreterState_Get()->pythread_stacksize;
 }
 
 /* Only platforms defining a THREAD_SET_STACKSIZE() macro
@@ -147,7 +147,7 @@ PyThread_tss_is_created(Py_tss_t *key)
 PyDoc_STRVAR(threadinfo__doc__,
 "sys.thread_info\n\
 \n\
-A struct sequence holding information about the thread implementation.");
+A named tuple holding information about the thread implementation.");
 
 static PyStructSequence_Field threadinfo_fields[] = {
     {"name",    "name of the thread implementation"},

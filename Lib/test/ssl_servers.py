@@ -49,7 +49,7 @@ class RootedHTTPRequestHandler(SimpleHTTPRequestHandler):
     server_version = "TestHTTPS/1.0"
     root = here
     # Avoid hanging when a request gets interrupted by the client
-    timeout = 5
+    timeout = support.LOOPBACK_TIMEOUT
 
     def translate_path(self, path):
         """Translate a /-separated PATH to the local filename syntax.

@@ -631,19 +631,18 @@ static PyObject *PyMessageBox(PyObject *self, PyObject *args)
     return g_Py_BuildValue("i", rc);
 }
 
-static PyObject *GetRootHKey(PyObject *self)
+static PyObject *GetRootHKey(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
     return g_PyLong_FromVoidPtr(hkey_root);
 }
 
 #define METH_VARARGS 0x0001
 #define METH_NOARGS   0x0004
-typedef PyObject *(*PyCFunction)(PyObject *, PyObject *);
 
 PyMethodDef meth[] = {
     {"create_shortcut", CreateShortcut, METH_VARARGS, NULL},
     {"get_special_folder_path", GetSpecialFolderPath, METH_VARARGS, NULL},
-    {"get_root_hkey", (PyCFunction)GetRootHKey, METH_NOARGS, NULL},
+    {"get_root_hkey", GetRootHKey, METH_NOARGS, NULL},
     {"file_created", FileCreated, METH_VARARGS, NULL},
     {"directory_created", DirectoryCreated, METH_VARARGS, NULL},
     {"message_box", PyMessageBox, METH_VARARGS, NULL},
@@ -939,7 +938,8 @@ static BOOL SystemError(int error, char *msg)
         LPVOID lpMsgBuf;
         FormatMessage(
             FORMAT_MESSAGE_ALLOCATE_BUFFER |
-            FORMAT_MESSAGE_FROM_SYSTEM,
+            FORMAT_MESSAGE_FROM_SYSTEM |
+            FORMAT_MESSAGE_IGNORE_INSERTS,
             NULL,
             error,
             MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
@@ -2541,7 +2541,7 @@ int DoUninstall(int argc, char **argv)
     if (!lines)
         return SystemError(0, "Out of memory");
 
-    /* Read the whole logfile, realloacting the buffer */
+    /* Read the whole logfile, reallocating the buffer */
     while (fgets(buffer, sizeof(buffer), logfile)) {
         int len = strlen(buffer);
         /* remove trailing white space */

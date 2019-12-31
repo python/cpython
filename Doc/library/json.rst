@@ -100,9 +100,9 @@ Extending :class:`JSONEncoder`::
     ['[2.0', ', 1.0', ']']
 
 
-.. highlight:: bash
+Using :mod:`json.tool` from the shell to validate and pretty-print:
 
-Using :mod:`json.tool` from the shell to validate and pretty-print::
+.. code-block:: shell-session
 
     $ echo '{"json":"obj"}' | python -m json.tool
     {
@@ -113,14 +113,24 @@ Using :mod:`json.tool` from the shell to validate and pretty-print::
 
 See :ref:`json-commandline` for detailed documentation.
 
-.. highlight:: python3
-
 .. note::
 
    JSON is a subset of `YAML <http://yaml.org/>`_ 1.2.  The JSON produced by
    this module's default settings (in particular, the default *separators*
    value) is also a subset of YAML 1.0 and 1.1.  This module can thus also be
    used as a YAML serializer.
+
+.. note::
+
+   This module's encoders and decoders preserve input and output order by
+   default.  Order is only lost if the underlying containers are unordered.
+
+   Prior to Python 3.7, :class:`dict` was not guaranteed to be ordered, so
+   inputs and outputs were typically scrambled unless
+   :class:`collections.OrderedDict` was specifically requested.  Starting
+   with Python 3.7, the regular :class:`dict` became order preserving, so
+   it is no longer necessary to specify :class:`collections.OrderedDict` for
+   JSON generation and parsing.
 
 
 Basic Usage
@@ -190,6 +200,11 @@ Basic Usage
    .. versionchanged:: 3.6
       All optional parameters are now :ref:`keyword-only <keyword-only_parameter>`.
 
+   .. note::
+
+      Unlike :mod:`pickle` and :mod:`marshal`, JSON is not a framed protocol,
+      so trying to serialize multiple objects with repeated calls to
+      :func:`dump` using the same *fp* will result in an invalid JSON file.
 
 .. function:: dumps(obj, *, skipkeys=False, ensure_ascii=True, \
                     check_circular=True, allow_nan=True, cls=None, \
@@ -202,12 +217,6 @@ Basic Usage
 
    .. note::
 
-      Unlike :mod:`pickle` and :mod:`marshal`, JSON is not a framed protocol,
-      so trying to serialize multiple objects with repeated calls to
-      :func:`dump` using the same *fp* will result in an invalid JSON file.
-
-   .. note::
-
       Keys in key/value pairs of JSON are always of the type :class:`str`. When
       a dictionary is converted into JSON, all the keys of the dictionary are
       coerced to strings. As a result of this, if a dictionary is converted
@@ -217,9 +226,9 @@ Basic Usage
 
 .. function:: load(fp, *, cls=None, object_hook=None, parse_float=None, parse_int=None, parse_constant=None, object_pairs_hook=None, **kw)
 
-   Deserialize *fp* (a ``.read()``-supporting :term:`file-like object`
-   containing a JSON document) to a Python object using this :ref:`conversion
-   table <json-to-py-table>`.
+   Deserialize *fp* (a ``.read()``-supporting :term:`text file` or
+   :term:`binary file` containing a JSON document) to a Python object using
+   this :ref:`conversion table <json-to-py-table>`.
 
    *object_hook* is an optional function that will be called with the result of
    any object literal decoded (a :class:`dict`).  The return value of
@@ -230,10 +239,8 @@ Basic Usage
    *object_pairs_hook* is an optional function that will be called with the
    result of any object literal decoded with an ordered list of pairs.  The
    return value of *object_pairs_hook* will be used instead of the
-   :class:`dict`.  This feature can be used to implement custom decoders that
-   rely on the order that the key and value pairs are decoded (for example,
-   :func:`collections.OrderedDict` will remember the order of insertion). If
-   *object_hook* is also defined, the *object_pairs_hook* takes priority.
+   :class:`dict`.  This feature can be used to implement custom decoders.
+   If *object_hook* is also defined, the *object_pairs_hook* takes priority.
 
    .. versionchanged:: 3.1
       Added support for *object_pairs_hook*.
@@ -266,17 +273,24 @@ Basic Usage
    .. versionchanged:: 3.6
       All optional parameters are now :ref:`keyword-only <keyword-only_parameter>`.
 
-.. function:: loads(s, *, encoding=None, cls=None, object_hook=None, parse_float=None, parse_int=None, parse_constant=None, object_pairs_hook=None, **kw)
+   .. versionchanged:: 3.6
+      *fp* can now be a :term:`binary file`. The input encoding should be
+      UTF-8, UTF-16 or UTF-32.
+
+.. function:: loads(s, *, cls=None, object_hook=None, parse_float=None, parse_int=None, parse_constant=None, object_pairs_hook=None, **kw)
 
    Deserialize *s* (a :class:`str`, :class:`bytes` or :class:`bytearray`
    instance containing a JSON document) to a Python object using this
    :ref:`conversion table <json-to-py-table>`.
 
    The other arguments have the same meaning as in :func:`load`, except
-   *encoding* which is ignored and deprecated.
+   *encoding* which is ignored and deprecated since Python 3.1.
 
    If the data being deserialized is not a valid JSON document, a
    :exc:`JSONDecodeError` will be raised.
+
+   .. deprecated-removed:: 3.1 3.9
+      *encoding* keyword argument.
 
    .. versionchanged:: 3.6
       *s* can now be of type :class:`bytes` or :class:`bytearray`. The
@@ -325,10 +339,8 @@ Encoders and Decoders
    *object_pairs_hook*, if specified will be called with the result of every
    JSON object decoded with an ordered list of pairs.  The return value of
    *object_pairs_hook* will be used instead of the :class:`dict`.  This
-   feature can be used to implement custom decoders that rely on the order
-   that the key and value pairs are decoded (for example,
-   :func:`collections.OrderedDict` will remember the order of insertion). If
-   *object_hook* is also defined, the *object_pairs_hook* takes priority.
+   feature can be used to implement custom decoders.  If *object_hook* is also
+   defined, the *object_pairs_hook* takes priority.
 
    .. versionchanged:: 3.1
       Added support for *object_pairs_hook*.
@@ -651,9 +663,9 @@ when serializing Python :class:`int` values of extremely large magnitude, or
 when serializing instances of "exotic" numerical types such as
 :class:`decimal.Decimal`.
 
-.. highlight:: bash
 
 .. _json-commandline:
+.. program:: json.tool
 
 Command Line Interface
 ----------------------
@@ -669,7 +681,9 @@ The :mod:`json.tool` module provides a simple command line interface to validate
 and pretty-print JSON objects.
 
 If the optional ``infile`` and ``outfile`` arguments are not
-specified, :attr:`sys.stdin` and :attr:`sys.stdout` will be used respectively::
+specified, :attr:`sys.stdin` and :attr:`sys.stdout` will be used respectively:
+
+.. code-block:: shell-session
 
     $ echo '{"json": "obj"}' | python -m json.tool
     {
@@ -683,12 +697,15 @@ specified, :attr:`sys.stdin` and :attr:`sys.stdout` will be used respectively::
    :option:`--sort-keys` option to sort the output of dictionaries
    alphabetically by key.
 
+
 Command line options
 ^^^^^^^^^^^^^^^^^^^^
 
 .. cmdoption:: infile
 
-   The JSON file to be validated or pretty-printed::
+   The JSON file to be validated or pretty-printed:
+
+   .. code-block:: shell-session
 
       $ python -m json.tool mp_films.json
       [
@@ -714,6 +731,24 @@ Command line options
    Sort the output of dictionaries alphabetically by key.
 
    .. versionadded:: 3.5
+
+.. cmdoption:: --no-ensure-ascii
+
+   Disable escaping of non-ascii characters, see :func:`json.dumps` for more information.
+
+   .. versionadded:: 3.9
+
+.. cmdoption:: --json-lines
+
+   Parse every input line as separate JSON object.
+
+   .. versionadded:: 3.8
+
+.. cmdoption:: --indent, --tab, --no-indent, --compact
+
+   Mutually exclusive options for whitespace control
+
+   .. versionadded:: 3.9
 
 .. cmdoption:: -h, --help
 

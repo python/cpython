@@ -63,7 +63,7 @@ support.
 
    .. deprecated:: 3.3
       This emulation is no longer needed, as the standard import mechanism
-      is now fully PEP 302 compliant and available in :mod:`importlib`.
+      is now fully :pep:`302` compliant and available in :mod:`importlib`.
 
 
 .. class:: ImpLoader(fullname, file, filename, etc)
@@ -72,7 +72,7 @@ support.
 
    .. deprecated:: 3.3
       This emulation is no longer needed, as the standard import mechanism
-      is now fully PEP 302 compliant and available in :mod:`importlib`.
+      is now fully :pep:`302` compliant and available in :mod:`importlib`.
 
 
 .. function:: find_loader(fullname)
@@ -86,7 +86,7 @@ support.
 
    .. versionchanged:: 3.3
       Updated to be based directly on :mod:`importlib` rather than relying
-      on the package internal PEP 302 import emulation.
+      on the package internal :pep:`302` import emulation.
 
    .. versionchanged:: 3.4
       Updated to be based on :pep:`451`
@@ -103,7 +103,7 @@ support.
 
    .. versionchanged:: 3.3
       Updated to be based directly on :mod:`importlib` rather than relying
-      on the package internal PEP 302 import emulation.
+      on the package internal :pep:`302` import emulation.
 
 
 .. function:: get_loader(module_or_name)
@@ -118,7 +118,7 @@ support.
 
    .. versionchanged:: 3.3
       Updated to be based directly on :mod:`importlib` rather than relying
-      on the package internal PEP 302 import emulation.
+      on the package internal :pep:`302` import emulation.
 
    .. versionchanged:: 3.4
       Updated to be based on :pep:`451`
@@ -139,7 +139,7 @@ support.
 
    .. versionchanged:: 3.3
       Updated to be based directly on :mod:`importlib` rather than relying
-      on the package internal PEP 302 import emulation.
+      on the package internal :pep:`302` import emulation.
 
 
 .. function:: iter_modules(path=None, prefix='')
@@ -160,7 +160,7 @@ support.
 
    .. versionchanged:: 3.3
       Updated to be based directly on :mod:`importlib` rather than relying
-      on the package internal PEP 302 import emulation.
+      on the package internal :pep:`302` import emulation.
 
 
 .. function:: walk_packages(path=None, prefix='', onerror=None)
@@ -199,7 +199,7 @@ support.
 
    .. versionchanged:: 3.3
       Updated to be based directly on :mod:`importlib` rather than relying
-      on the package internal PEP 302 import emulation.
+      on the package internal :pep:`302` import emulation.
 
 
 .. function:: get_data(package, resource)

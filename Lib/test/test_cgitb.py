@@ -31,7 +31,7 @@ class TestCgitb(unittest.TestCase):
     def test_text(self):
         try:
             raise ValueError("Hello World")
-        except ValueError as err:
+        except ValueError:
             text = cgitb.text(sys.exc_info())
             self.assertIn("ValueError", text)
             self.assertIn("Hello World", text)
@@ -45,6 +45,7 @@ class TestCgitb(unittest.TestCase):
         out = out.decode(sys.getfilesystemencoding())
         self.assertIn("ValueError", out)
         self.assertIn("Hello World", out)
+        self.assertIn("<strong>&lt;module&gt;</strong>", out)
         # By default we emit HTML markup.
         self.assertIn('<p>', out)
         self.assertIn('</p>', out)

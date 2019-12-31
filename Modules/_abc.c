@@ -66,9 +66,9 @@ PyDoc_STRVAR(abc_data_doc,
 "Internal state held by ABC machinery.");
 
 static PyTypeObject _abc_data_type = {
-    PyVarObject_HEAD_INIT(&PyType_Type, 0)
+    PyVarObject_HEAD_INIT(NULL, 0)
     "_abc_data",                        /*tp_name*/
-    sizeof(_abc_data),                  /*tp_size*/
+    sizeof(_abc_data),                  /*tp_basicsize*/
     .tp_dealloc = (destructor)abc_data_dealloc,
     .tp_flags = Py_TPFLAGS_DEFAULT,
     .tp_alloc = PyType_GenericAlloc,
@@ -514,12 +514,12 @@ _abc__abc_instancecheck_impl(PyObject *module, PyObject *self,
             }
         }
         /* Fall back to the subclass check. */
-        result = _PyObject_CallMethodIdObjArgs(self, &PyId___subclasscheck__,
-                                               subclass, NULL);
+        result = _PyObject_CallMethodIdOneArg(self, &PyId___subclasscheck__,
+                                              subclass);
         goto end;
     }
-    result = _PyObject_CallMethodIdObjArgs(self, &PyId___subclasscheck__,
-                                           subclass, NULL);
+    result = _PyObject_CallMethodIdOneArg(self, &PyId___subclasscheck__,
+                                          subclass);
     if (result == NULL) {
         goto end;
     }
@@ -531,8 +531,8 @@ _abc__abc_instancecheck_impl(PyObject *module, PyObject *self,
         break;
     case 0:
         Py_DECREF(result);
-        result = _PyObject_CallMethodIdObjArgs(self, &PyId___subclasscheck__,
-                                               subtype, NULL);
+        result = _PyObject_CallMethodIdOneArg(self, &PyId___subclasscheck__,
+                                              subtype);
         break;
     case 1:  // Nothing to do.
         break;
@@ -547,7 +547,7 @@ end:
 }
 
 
-// Return -1 when exception occured.
+// Return -1 when exception occurred.
 // Return 1 when result is set.
 // Return 0 otherwise.
 static int subclasscheck_check_registry(_abc_data *impl, PyObject *subclass,
@@ -568,7 +568,12 @@ _abc__abc_subclasscheck_impl(PyObject *module, PyObject *self,
                              PyObject *subclass)
 /*[clinic end generated code: output=b56c9e4a530e3894 input=1d947243409d10b8]*/
 {
-    PyObject *ok, *mro, *subclasses = NULL, *result = NULL;
+    if (!PyType_Check(subclass)) {
+        PyErr_SetString(PyExc_TypeError, "issubclass() arg 1 must be a class");
+        return NULL;
+    }
+
+    PyObject *ok, *subclasses = NULL, *result = NULL;
     Py_ssize_t pos;
     int incache;
     _abc_data *impl = _get_impl(self);
@@ -608,8 +613,8 @@ _abc__abc_subclasscheck_impl(PyObject *module, PyObject *self,
     }
 
     /* 3. Check the subclass hook. */
-    ok = _PyObject_CallMethodIdObjArgs((PyObject *)self, &PyId___subclasshook__,
-                                       subclass, NULL);
+    ok = _PyObject_CallMethodIdOneArg((PyObject *)self, &PyId___subclasshook__,
+                                      subclass);
     if (ok == NULL) {
         goto end;
     }
@@ -638,13 +643,11 @@ _abc__abc_subclasscheck_impl(PyObject *module, PyObject *self,
     Py_DECREF(ok);
 
     /* 4. Check if it's a direct subclass. */
-    mro = ((PyTypeObject *)subclass)->tp_mro;
+    PyObject *mro = ((PyTypeObject *)subclass)->tp_mro;
     assert(PyTuple_Check(mro));
     for (pos = 0; pos < PyTuple_GET_SIZE(mro); pos++) {
         PyObject *mro_item = PyTuple_GET_ITEM(mro, pos);
-        if (mro_item == NULL) {
-            goto end;
-        }
+        assert(mro_item != NULL);
         if ((PyObject *)self == mro_item) {
             if (_add_to_weak_set(&impl->_abc_cache, subclass) < 0) {
                 goto end;
@@ -656,12 +659,15 @@ _abc__abc_subclasscheck_impl(PyObject *module, PyObject *self,
 
     /* 5. Check if it's a subclass of a registered class (recursive). */
     if (subclasscheck_check_registry(impl, subclass, &result)) {
-        // Exception occured or result is set.
+        // Exception occurred or result is set.
         goto end;
     }
 
     /* 6. Check if it's a subclass of a subclass (recursive). */
     subclasses = PyObject_CallMethod(self, "__subclasses__", NULL);
+    if (subclasses == NULL) {
+        goto end;
+    }
     if (!PyList_Check(subclasses)) {
         PyErr_SetString(PyExc_TypeError, "__subclasses__() must return a list");
         goto end;
@@ -690,7 +696,7 @@ _abc__abc_subclasscheck_impl(PyObject *module, PyObject *self,
     result = Py_False;
 
 end:
-    Py_XDECREF(impl);
+    Py_DECREF(impl);
     Py_XDECREF(subclasses);
     Py_XINCREF(result);
     return result;
@@ -722,6 +728,10 @@ subclasscheck_check_registry(_abc_data *impl, PyObject *subclass,
     // Weakref callback may remove entry from set.
     // So we take snapshot of registry first.
     PyObject **copy = PyMem_Malloc(sizeof(PyObject*) * registry_size);
+    if (copy == NULL) {
+        PyErr_NoMemory();
+        return -1;
+    }
     PyObject *key;
     Py_ssize_t pos = 0;
     Py_hash_t hash;

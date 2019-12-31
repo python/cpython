@@ -7,6 +7,7 @@ import select
 import socket
 import tempfile
 import threading
+from test import support
 
 
 class FunctionalTestCaseMixin:
@@ -15,7 +16,7 @@ class FunctionalTestCaseMixin:
         return asyncio.new_event_loop()
 
     def run_loop_briefly(self, *, delay=0.01):
-        self.loop.run_until_complete(asyncio.sleep(delay, loop=self.loop))
+        self.loop.run_until_complete(asyncio.sleep(delay))
 
     def loop_exception_handler(self, loop, context):
         self.__unhandled_exceptions.append(context)
@@ -49,7 +50,7 @@ class FunctionalTestCaseMixin:
     def tcp_server(self, server_prog, *,
                    family=socket.AF_INET,
                    addr=None,
-                   timeout=5,
+                   timeout=support.LOOPBACK_TIMEOUT,
                    backlog=1,
                    max_clients=10):
 
@@ -60,27 +61,19 @@ class FunctionalTestCaseMixin:
             else:
                 addr = ('127.0.0.1', 0)
 
-        sock = socket.socket(family, socket.SOCK_STREAM)
-
+        sock = socket.create_server(addr, family=family, backlog=backlog)
         if timeout is None:
             raise RuntimeError('timeout is required')
         if timeout <= 0:
             raise RuntimeError('only blocking sockets are supported')
         sock.settimeout(timeout)
 
-        try:
-            sock.bind(addr)
-            sock.listen(backlog)
-        except OSError as ex:
-            sock.close()
-            raise ex
-
         return TestThreadedServer(
             self, sock, server_prog, timeout, max_clients)
 
     def tcp_client(self, client_prog,
                    family=socket.AF_INET,
-                   timeout=10):
+                   timeout=support.LOOPBACK_TIMEOUT):
 
         sock = socket.socket(family, socket.SOCK_STREAM)
 
@@ -150,9 +143,14 @@ class TestSocketWrapper:
             server_hostname=server_hostname,
             do_handshake_on_connect=False)
 
-        ssl_sock.do_handshake()
+        try:
+            ssl_sock.do_handshake()
+        except:
+            ssl_sock.close()
+            raise
+        finally:
+            self.__sock.close()
 
-        self.__sock.close()
         self.__sock = ssl_sock
 
     def __getattr__(self, name):
@@ -228,7 +226,7 @@ class TestThreadedServer(SocketThread):
     def run(self):
         try:
             with self._sock:
-                self._sock.setblocking(0)
+                self._sock.setblocking(False)
                 self._run()
         finally:
             self._s1.close()

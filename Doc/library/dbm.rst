@@ -73,6 +73,10 @@ available, as well as :meth:`get` and :meth:`setdefault`.
 .. versionchanged:: 3.2
    :meth:`get` and :meth:`setdefault` are now available in all database modules.
 
+.. versionchanged:: 3.8
+   Deleting a key from a read-only database raises database module specific error
+   instead of :exc:`KeyError`.
+
 Key and values are always stored as bytes. This means that when
 strings are used they are implicitly converted to the default encoding before
 being stored.
@@ -360,6 +364,11 @@ The module defines the following:
    The optional *mode* argument is the Unix mode of the file, used only when the
    database has to be created.  It defaults to octal ``0o666`` (and will be modified
    by the prevailing umask).
+
+   .. warning::
+      It is possible to crash the Python interpreter when loading a database
+      with a sufficiently large/complex entry due to stack depth limitations in
+      Python's AST compiler.
 
    .. versionchanged:: 3.5
       :func:`.open` always creates a new database when the flag has the value

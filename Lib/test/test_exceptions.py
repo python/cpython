@@ -9,9 +9,12 @@ import weakref
 import errno
 
 from test.support import (TESTFN, captured_stderr, check_impl_detail,
-                          check_warnings, cpython_only, gc_collect, run_unittest,
+                          check_warnings, cpython_only, gc_collect,
                           no_tracing, unlink, import_module, script_helper,
                           SuppressCrashReport)
+from test import support
+
+
 class NaiveException(Exception):
     def __init__(self, x):
         self.x = x
@@ -138,15 +141,6 @@ class ExceptionTests(unittest.TestCase):
             else:
                 self.fail("failed to get expected SyntaxError")
 
-        s = '''while 1:
-            try:
-                pass
-            finally:
-                continue'''
-
-        if not sys.platform.startswith('java'):
-            ckmsg(s, "'continue' not supported inside 'finally' clause")
-
         s = '''if 1:
         try:
             continue
@@ -196,6 +190,45 @@ class ExceptionTests(unittest.TestCase):
         check('def spam():\n  print(1)\n print(2)', 3, 10)
         check('Python = "Python" +', 1, 20)
         check('Python = "\u1e54\xfd\u0163\u0125\xf2\xf1" +', 1, 20)
+        check('x = "a', 1, 7)
+        check('lambda x: x = 2', 1, 1)
+
+        # Errors thrown by compile.c
+        check('class foo:return 1', 1, 11)
+        check('def f():\n  continue', 2, 3)
+        check('def f():\n  break', 2, 3)
+        check('try:\n  pass\nexcept:\n  pass\nexcept ValueError:\n  pass', 2, 3)
+
+        # Errors thrown by tokenizer.c
+        check('(0x+1)', 1, 3)
+        check('x = 0xI', 1, 6)
+        check('0010 + 2', 1, 4)
+        check('x = 32e-+4', 1, 8)
+        check('x = 0o9', 1, 6)
+
+        # Errors thrown by symtable.c
+        check('x = [(yield i) for i in range(3)]', 1, 5)
+        check('def f():\n  from _ import *', 1, 1)
+        check('def f(x, x):\n  pass', 1, 1)
+        check('def f(x):\n  nonlocal x', 2, 3)
+        check('def f(x):\n  x = 1\n  global x', 3, 3)
+        check('nonlocal x', 1, 1)
+        check('def f():\n  global x\n  nonlocal x', 2, 3)
+
+        # Errors thrown by ast.c
+        check('for 1 in []: pass', 1, 5)
+        check('def f(*):\n  pass', 1, 7)
+        check('[*x for x in xs]', 1, 2)
+        check('def f():\n  x, y: int', 2, 3)
+        check('(yield i) = 2', 1, 1)
+        check('foo(x for x in range(10), 100)', 1, 5)
+        check('foo(1=2)', 1, 5)
+
+        # Errors thrown by future.c
+        check('from __future__ import doesnt_exist', 1, 1)
+        check('from __future__ import braces', 1, 1)
+        check('x=1\nfrom __future__ import division', 2, 1)
+
 
     @cpython_only
     def testSettingException(self):
@@ -1151,29 +1184,12 @@ class ExceptionTests(unittest.TestCase):
                 # The following line is included in the traceback report:
                 raise exc
 
-        class BrokenExceptionDel:
-            def __del__(self):
-                exc = BrokenStrException()
-                # The following line is included in the traceback report:
-                raise exc
+        obj = BrokenDel()
+        with support.catch_unraisable_exception() as cm:
+            del obj
 
-        for test_class in (BrokenDel, BrokenExceptionDel):
-            with self.subTest(test_class):
-                obj = test_class()
-                with captured_stderr() as stderr:
-                    del obj
-                report = stderr.getvalue()
-                self.assertIn("Exception ignored", report)
-                self.assertIn(test_class.__del__.__qualname__, report)
-                self.assertIn("test_exceptions.py", report)
-                self.assertIn("raise exc", report)
-                if test_class is BrokenExceptionDel:
-                    self.assertIn("BrokenStrException", report)
-                    self.assertIn("<exception str() failed>", report)
-                else:
-                    self.assertIn("ValueError", report)
-                    self.assertIn("del is broken", report)
-                self.assertTrue(report.endswith("\n"))
+            self.assertEqual(cm.unraisable.object, BrokenDel.__del__)
+            self.assertIsNotNone(cm.unraisable.exc_traceback)
 
     def test_unhandled(self):
         # Check for sensible reporting of unhandled exceptions
@@ -1268,6 +1284,22 @@ class ExceptionTests(unittest.TestCase):
             except:
                 next(i)
                 next(i)
+
+    @unittest.skipUnless(__debug__, "Won't work if __debug__ is False")
+    def test_assert_shadowing(self):
+        # Shadowing AssertionError would cause the assert statement to
+        # misbehave.
+        global AssertionError
+        AssertionError = TypeError
+        try:
+            assert False, 'hello'
+        except BaseException as e:
+            del AssertionError
+            self.assertIsInstance(e, AssertionError)
+            self.assertEqual(str(e), 'hello')
+        else:
+            del AssertionError
+            self.fail('Expected exception')
 
 
 class ImportErrorTests(unittest.TestCase):

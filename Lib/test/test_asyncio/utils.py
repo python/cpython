@@ -1,5 +1,6 @@
 """Utilities shared by tests."""
 
+import asyncio
 import collections
 import contextlib
 import io
@@ -40,7 +41,7 @@ def data_file(filename):
         fullname = os.path.join(support.TEST_HOME_DIR, filename)
         if os.path.isfile(fullname):
             return fullname
-    fullname = os.path.join(os.path.dirname(__file__), filename)
+    fullname = os.path.join(os.path.dirname(__file__), '..', filename)
     if os.path.isfile(fullname):
         return fullname
     raise FileNotFoundError(filename)
@@ -57,9 +58,9 @@ PEERCERT = {
     'issuer': ((('countryName', 'XY'),),
             (('organizationName', 'Python Software Foundation CA'),),
             (('commonName', 'our-ca-server'),)),
-    'notAfter': 'Nov 28 19:09:06 2027 GMT',
-    'notBefore': 'Jan 19 19:09:06 2018 GMT',
-    'serialNumber': '82EDBF41C880919C',
+    'notAfter': 'Jul  7 14:23:16 2028 GMT',
+    'notBefore': 'Aug 29 14:23:16 2018 GMT',
+    'serialNumber': 'CB2D80995A69525C',
     'subject': ((('countryName', 'XY'),),
              (('localityName', 'Castle Anthrax'),),
              (('organizationName', 'Python Software Foundation'),),
@@ -74,15 +75,14 @@ def simple_server_sslcontext():
     server_context.load_cert_chain(ONLYCERT, ONLYKEY)
     server_context.check_hostname = False
     server_context.verify_mode = ssl.CERT_NONE
-    # TODO: fix TLSv1.3 support
-    server_context.options |= ssl.OP_NO_TLSv1_3
     return server_context
 
 
-def simple_client_sslcontext():
+def simple_client_sslcontext(*, disable_verify=True):
     client_context = ssl.SSLContext(ssl.PROTOCOL_TLS_CLIENT)
     client_context.check_hostname = False
-    client_context.verify_mode = ssl.CERT_NONE
+    if disable_verify:
+        client_context.verify_mode = ssl.CERT_NONE
     return client_context
 
 
@@ -107,14 +107,14 @@ def run_briefly(loop):
         gen.close()
 
 
-def run_until(loop, pred, timeout=30):
-    deadline = time.time() + timeout
+def run_until(loop, pred, timeout=support.SHORT_TIMEOUT):
+    deadline = time.monotonic() + timeout
     while not pred():
         if timeout is not None:
-            timeout = deadline - time.time()
+            timeout = deadline - time.monotonic()
             if timeout <= 0:
                 raise futures.TimeoutError()
-        loop.run_until_complete(tasks.sleep(0.001, loop=loop))
+        loop.run_until_complete(tasks.sleep(0.001))
 
 
 def run_once(loop):
@@ -139,7 +139,7 @@ class SilentWSGIRequestHandler(WSGIRequestHandler):
 
 class SilentWSGIServer(WSGIServer):
 
-    request_timeout = 2
+    request_timeout = support.LOOPBACK_TIMEOUT
 
     def get_request(self):
         request, client_addr = super().get_request()
@@ -157,14 +157,8 @@ class SSLWSGIServerMixin:
         # contains the ssl key and certificate files) differs
         # between the stdlib and stand-alone asyncio.
         # Prefer our own if we can find it.
-        here = os.path.join(os.path.dirname(__file__), '..', 'tests')
-        if not os.path.isdir(here):
-            here = os.path.join(os.path.dirname(os.__file__),
-                                'test', 'test_asyncio')
-        keyfile = os.path.join(here, 'ssl_key.pem')
-        certfile = os.path.join(here, 'ssl_cert.pem')
         context = ssl.SSLContext()
-        context.load_cert_chain(certfile, keyfile)
+        context.load_cert_chain(ONLYCERT, ONLYKEY)
 
         ssock = context.wrap_socket(request, server_side=True)
         try:
@@ -181,11 +175,21 @@ class SSLWSGIServer(SSLWSGIServerMixin, SilentWSGIServer):
 
 def _run_test_server(*, address, use_ssl=False, server_cls, server_ssl_cls):
 
+    def loop(environ):
+        size = int(environ['CONTENT_LENGTH'])
+        while size:
+            data = environ['wsgi.input'].read(min(size, 0x10000))
+            yield data
+            size -= len(data)
+
     def app(environ, start_response):
         status = '200 OK'
         headers = [('Content-type', 'text/plain')]
         start_response(status, headers)
-        return [b'Test message']
+        if environ['PATH_INFO'] == '/loop':
+            return loop(environ)
+        else:
+            return [b'Test message']
 
     # Run the test WSGI server in a separate thread in order not to
     # interfere with event handling in the main thread
@@ -216,7 +220,7 @@ if hasattr(socket, 'AF_UNIX'):
 
     class UnixWSGIServer(UnixHTTPServer, WSGIServer):
 
-        request_timeout = 2
+        request_timeout = support.LOOPBACK_TIMEOUT
 
         def server_bind(self):
             UnixHTTPServer.server_bind(self)
@@ -505,10 +509,24 @@ def get_function_source(func):
 class TestCase(unittest.TestCase):
     @staticmethod
     def close_loop(loop):
-        executor = loop._default_executor
-        if executor is not None:
-            executor.shutdown(wait=True)
+        if loop._default_executor is not None:
+            if not loop.is_closed():
+                loop.run_until_complete(loop.shutdown_default_executor())
+            else:
+                loop._default_executor.shutdown(wait=True)
         loop.close()
+        policy = support.maybe_get_event_loop_policy()
+        if policy is not None:
+            try:
+                watcher = policy.get_child_watcher()
+            except NotImplementedError:
+                # watcher is not implemented by EventLoopPolicy, e.g. Windows
+                pass
+            else:
+                if isinstance(watcher, asyncio.ThreadedChildWatcher):
+                    threads = list(watcher._threads.values())
+                    for thread in threads:
+                        thread.join()
 
     def set_event_loop(self, loop, *, cleanup=True):
         assert loop is not None

@@ -140,7 +140,7 @@ aix_loaderror(const char *pathname)
             if (nerr == load_errtab[j].errNo && load_errtab[j].errstr)
             ERRBUF_APPEND(load_errtab[j].errstr);
         }
-        while (Py_ISDIGIT(Py_CHARMASK(*message[i]))) message[i]++ ;
+        while (Py_ISDIGIT(*message[i])) message[i]++ ;
         ERRBUF_APPEND(message[i]);
         ERRBUF_APPEND("\n");
     }
