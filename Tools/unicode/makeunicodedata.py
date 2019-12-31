@@ -31,6 +31,7 @@ import dataclasses
 import os
 import sys
 import zipfile
+import re
 
 from functools import partial
 from textwrap import dedent
@@ -41,7 +42,7 @@ VERSION = "3.3"
 
 # The Unicode Database
 # --------------------
-# References in documentation to '|ucd_version|' will be set
+# References in documentation to '|UNIDATA_VERSION|' will be set
 #   to the version below.
 # Current references:
 #   * Doc/library/stdtypes.rst, and
@@ -132,9 +133,14 @@ def maketables(trace=0):
     makeunicodetype(unicode, trace)
 
     # Write the unicode version for inclusion in documentation.
-    print("--- Writing", UNIDATA_VERSION, "to Doc/includes/UCD_VERSION.txt ...")
-    with open('Doc/includes/UCD_VERSION.txt', 'w') as f:
-        f.write(UNIDATA_VERSION)
+    print("--- Writing UNIDATA_VERSION", UNIDATA_VERSION, "to Doc/conf.py ...")
+    with open('Doc/conf.py', 'r') as fin:
+        newconf = re.sub(r'(?<=UNIDATA_VERSION = )".*?"',
+                         f'"{UNIDATA_VERSION}"',
+                         fin.read())
+    with open('Doc/conf.py', 'w') as fout:
+        fout.write(newconf)
+
 
 
 # --------------------------------------------------------------------

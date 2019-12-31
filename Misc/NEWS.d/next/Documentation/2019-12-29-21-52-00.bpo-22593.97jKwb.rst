@@ -1,2 +1,3 @@
-Automate updating of Unicode version in documentation. Any reference in docs
-to ``|ucd_version|`` will be replaced with the current Unicode data version.
+Automated updating of Unicode data version in documentation. Any reference in docs
+to ``|UNIDATA_VERSION|`` will be replaced with the current Unicode data version.
+Contributed by Noah Massman-Hall

@@ -350,7 +350,7 @@ Notes:
    The numeric literals accepted include the digits ``0`` to ``9`` or any
    Unicode equivalent (code points with the ``Nd`` property).
 
-   See http://www.unicode.org/Public/|ucd_version|/ucd/extracted/DerivedNumericType.txt
+   See http://www.unicode.org/Public/|UNIDATA_VERSION|/ucd/extracted/DerivedNumericType.txt
    for a complete list of code points with the ``Nd`` property.
 
 
