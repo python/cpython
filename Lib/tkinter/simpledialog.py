@@ -260,7 +260,15 @@ class _QueryDialog(Dialog):
                  parent = None):
 
         if not parent:
-            parent = tkinter._default_root
+            if tkinter._default_root:
+                parent = tkinter._default_root
+            elif tkinter._support_default_root:
+                parent = tkinter.Tk()
+                parent.withdraw()
+            else:
+                raise RuntimeError(
+                    "No parent specified and tkinter is "
+                    "configured to not support default root")
 
         self.prompt   = prompt
         self.minvalue = minvalue

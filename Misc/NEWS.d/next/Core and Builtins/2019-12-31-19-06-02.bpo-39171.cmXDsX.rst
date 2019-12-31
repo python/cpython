@@ -1,0 +1,1 @@
+Creating missing parent in tkinter simpledialog when possible.
