@@ -2662,8 +2662,15 @@ list_richcompare(PyObject *v, PyObject *w, int op)
 
     /* Search for the first index where items are different */
     for (i = 0; i < Py_SIZE(vl) && i < Py_SIZE(wl); i++) {
+        PyObject *vitem = vl->ob_item[i];
+        PyObject *witem = wl->ob_item[i];
+
+        Py_INCREF(vitem);
+        Py_INCREF(witem);
         int k = PyObject_RichCompareBool(vl->ob_item[i],
                                          wl->ob_item[i], Py_EQ);
+        Py_DECREF(vitem);
+        Py_DECREF(witem);
         if (k < 0)
             return NULL;
         if (!k)
