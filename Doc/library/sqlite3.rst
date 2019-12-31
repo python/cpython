@@ -493,13 +493,20 @@ Connection Objects
       .. literalinclude:: ../includes/sqlite3/row_factory.py
 
       If returning a tuple doesn't suffice and you want name-based access to
-      columns, you should consider setting :attr:`row_factory` to the
-      highly-optimized :class:`sqlite3.Row` type. :class:`Row` provides both
-      index-based and case-insensitive name-based access to columns with almost no
-      memory overhead. It will probably be better than your own custom
-      dictionary-based approach or even a db_row based solution.
+      columns, you should consider setting :attr:`row_factory` one of the
+      highly optimized row_factory types :class:`sqlite3.Row` or
+      :class:`sqlite3.NamedRow`.
+
+      :class:`Row` provides both index-based and case-insensitive name-based
+      access to columns with almost no memory overhead. It will probably be
+      better than your own custom dictionary-based approach or even a db_row
+      based solution.
 
       .. XXX what's a db_row-based solution?
+
+      :class:`NamedRow` provides both attribute and index by column name or number
+      to columns with the same low memory requirements of :class:`sqlite3.Row`.
+      As a compiled class, it will out perform a custom python row_factory solution.
 
 
    .. attribute:: text_factory
@@ -806,6 +813,72 @@ Now we plug :class:`Row` in::
    RHAT
    100.0
    35.14
+
+.. class:: NamedRow
+
+   A :class:`NamedRow` instance is an optimized :attr:`~Connection.row_factory`
+   for :class:`Connection` objects.
+   It tries to mimic a namedtuple in most of its features.
+
+   It supports mapping access by attribute, column name, and index.
+   It also supports iteration, slicing, equality testing, :func:`contains`,
+   and :func:`len`.
+
+Here is a simple example, with a Japanese column name::
+
+    >>> db_connection = sqlite3.connect(":memory:")
+    >>> cursor = db_connection.cursor()
+    >>> cursor.row_factory = sqlite3.NamedRow
+    >>> row = cursor.execute("SELECT 'seven' AS english, '七' as 日本").fetchone()
+    >>> type(row)
+    <class 'sqlite3.NamedRow'>
+    >>> len(row)
+    2
+    >>> '日本' in row
+    True
+    >>> row.english, row.日本
+    ('seven', '七')
+    >>> row[0], row['english']
+    ('seven', 'seven')
+    >>> tuple(row)
+    (('english', 'seven'), ('日本', '七'))
+    >>> dict(row)
+    {'english': 'seven', '日本': '七'}
+    >>> [x[0] for x in row]  # Get column names
+    ['english', '日本']
+    >>> [x[1] for x in row]  # Get column values
+    ['seven', '七']
+
+For columns names that are invalid attribute names, such as "count(*)"
+or python reserved words, create a valid attribute name using the SQL
+"AS" keyword.
+For example, assume we have an address table and want the number of rows
+where the city is Kahlotus.::
+
+    >>> cursor = db_connection.cursor()
+    >>> cursor.row_factory = sqlite3.NamedRow
+    >>> row = cursor.execute("SELECT city, count(*) FROM address WHERE city=?",
+    ...  ('Kahlotus')).fetchone()
+    >>> row.count
+    Traceback (most recent call last):
+      File "<stdin>", line 1, in <module>
+      AttributeError: 'sqlite3.NamedRow' object has no attribute 'count'
+    >>> tuple(row)
+    (('city', 'Kahlotus'), ('count(*)', 2))
+    >>> row = cursor.execute("SELECT city, count(*) AS cnt FROM address WHERE city=?",
+    ...   ('Kahlotus')).fetchone()
+    (('city', 'Kahlotus'), ('count', 2))
+    >>> row.count
+    2
+
+If you are unable to change the query, index by name or number.::
+
+    >>> tuple(row)
+    (('city', 'Kahlotus'), ('count(*)', 2))
+    >>> row['count(*)']
+    2
+    >>> row[1]
+    2
 
 
 .. _sqlite3-exceptions:
