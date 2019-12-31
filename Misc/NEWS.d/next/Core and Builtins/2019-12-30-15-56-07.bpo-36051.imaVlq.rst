@@ -1,1 +1,1 @@
-Drop the GIL during large ``b''.join`` operations.
+Drop the GIL during large ``bytes.join`` operations.
