@@ -1,0 +1,1 @@
++ Add sqlite3 row_factory for attribute access with the same memory requirements and speed of sqlite3.Row
