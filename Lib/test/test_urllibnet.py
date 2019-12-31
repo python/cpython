@@ -1,5 +1,7 @@
+import tempfile
 import unittest
 from test import test_support
+from test.test_urllib2net import skip_ftp_test_on_travis
 
 import socket
 import urllib
@@ -213,6 +215,40 @@ class urlopen_HttpsTests(unittest.TestCase):
         self.assertIn("Python", response.read())
 
 
+class urlopen_FTPTest(unittest.TestCase):
+    FTP_TEST_FILE = 'ftp://www.pythontest.net/README'
+    NUM_FTP_RETRIEVES = 3
+
+    @skip_ftp_test_on_travis
+    def test_multiple_ftp_retrieves(self):
+
+        with test_support.transient_internet(self.FTP_TEST_FILE):
+            try:
+                for _ in range(self.NUM_FTP_RETRIEVES):
+                    with tempfile.NamedTemporaryFile() as fp:
+                        urllib.FancyURLopener().retrieve(self.FTP_TEST_FILE, fp.name)
+            except IOError as e:
+                self.fail("Failed FTP retrieve while accessing ftp url "
+                          "multiple times.\n Error message was : %s" % e)
+
+    @skip_ftp_test_on_travis
+    def test_multiple_ftp_urlopen_same_host(self):
+        with test_support.transient_internet(self.FTP_TEST_FILE):
+            ftp_fds_to_close = []
+            try:
+                for _ in range(self.NUM_FTP_RETRIEVES):
+                    fd = urllib.urlopen(self.FTP_TEST_FILE)
+                    # test ftp open without closing fd as a supported scenario.
+                    ftp_fds_to_close.append(fd)
+            except IOError as e:
+                self.fail("Failed FTP binary file open. "
+                          "Error message was: %s" % e)
+            finally:
+                # close the open fds
+                for fd in ftp_fds_to_close:
+                    fd.close()
+
+
 def test_main():
     test_support.requires('network')
     with test_support.check_py3k_warnings(
@@ -220,7 +256,8 @@ def test_main():
         test_support.run_unittest(URLTimeoutTest,
                                   urlopenNetworkTests,
                                   urlretrieveNetworkTests,
-                                  urlopen_HttpsTests)
+                                  urlopen_HttpsTests,
+                                  urlopen_FTPTest)
 
 if __name__ == "__main__":
     test_main()

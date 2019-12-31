@@ -934,7 +934,13 @@ class ftpwrapper:
         return (ftpobj, retrlen)
 
     def endtransfer(self):
+        if not self.busy:
+            return
         self.busy = 0
+        try:
+            self.ftp.voidresp()
+        except ftperrors():
+            pass
 
     def close(self):
         self.keepalive = False
