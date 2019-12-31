@@ -3611,7 +3611,8 @@ exception_unwind:
                 PUSH(exc);
                 JUMPTO(handler);
                 if (_Py_TracingPossible(ceval) &&
-                    (f->f_lasti < instr_lb || f->f_lasti >= instr_ub)) {
+                    ((f->f_lasti < instr_lb || f->f_lasti >= instr_ub) ||
+                    !(f->f_lasti == instr_lb || f->f_lasti < instr_prev))) {
                     /* Make sure that we trace line after exception */
                     instr_prev = INT_MAX;
                 }
