@@ -1677,14 +1677,24 @@ class ZipFile:
         if upperdirs and not os.path.exists(upperdirs):
             os.makedirs(upperdirs)
 
+        # Extract the member
         if member.is_dir():
             if not os.path.isdir(targetpath):
                 os.mkdir(targetpath)
-            return targetpath
+        else:
+            with self.open(member, pwd=pwd) as source, \
+                 open(targetpath, "wb") as target:
+                shutil.copyfileobj(source, target)
 
-        with self.open(member, pwd=pwd) as source, \
-             open(targetpath, "wb") as target:
-            shutil.copyfileobj(source, target)
+        # Preserve the permissions if we're on a posix system and the create_system was UNIX
+        # In the zip specification create_system 3 is UNIX
+        # See https://pkware.cachefly.net/webdocs/casestudies/APPNOTE.TXT CHAPTER 4.4.2.2
+        zip_create_system_unix = 3
+        if member.create_system == zip_create_system_unix and os.name == "posix":
+            # The first 16 bits contain the UNIX permission attributes
+            # See https://stackoverflow.com/a/46837272
+            attr = member.external_attr >> 16
+            os.chmod(targetpath, attr)
 
         return targetpath
 
