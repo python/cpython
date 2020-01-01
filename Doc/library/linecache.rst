@@ -41,9 +41,10 @@ The :mod:`linecache` module defines the following functions:
 
 .. function:: getlines(filename, module_globals=None)
 
-   Get all lines from file named *filename*. If the file was previously cached then return from cache
-   else cache first and then return all lines. *filename* and *module_globals* behaves similar to
-   explanation in :func:`getline` sister function.
+   Get all lines from file named *filename*. If the file was previously cached
+   then return from cache else cache first and then return all lines. *filename*
+   and *module_globals* behaves similar to explanation in :func:`getline` sister
+   function.
 
 
 .. function:: clearcache()
