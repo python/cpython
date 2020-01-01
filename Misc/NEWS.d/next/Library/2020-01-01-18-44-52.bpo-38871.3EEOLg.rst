@@ -1,0 +1,1 @@
+Fix :mod:`lib2to3` to be able to use in edge cases when handling filter
