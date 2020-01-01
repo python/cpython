@@ -1426,7 +1426,7 @@ select_epoll_fromfd_impl(PyTypeObject *type, int fd)
 static PyObject *
 pyepoll_internal_ctl(int epfd, int op, int fd, unsigned int events)
 {
-    struct epoll_event ev;
+    struct epoll_event ev = {0};
     int result;
 
     if (epfd < 0)
