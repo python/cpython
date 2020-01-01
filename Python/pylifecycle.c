@@ -1817,7 +1817,7 @@ create_stdio(const PyConfig *config, PyObject* io,
         write_through = Py_True;
     else
         write_through = Py_False;
-    if (isatty && buffered_stdio)
+    if (buffered_stdio && (isatty || fd == fileno(stderr)))
         line_buffering = Py_True;
     else
         line_buffering = Py_False;
