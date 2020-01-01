@@ -944,9 +944,7 @@ itertools_tee_impl(PyObject *module, PyObject *iterable, Py_ssize_t n)
 typedef struct {
     PyObject_HEAD
     PyObject *it;
-    PyObject *saved;
-    Py_ssize_t index;
-    int firstpass;
+    PyObject *iterable;
 } cycleobject;
 
 static PyTypeObject cycle_type;
@@ -964,7 +962,6 @@ itertools_cycle_impl(PyTypeObject *type, PyObject *iterable)
 /*[clinic end generated code: output=f60e5ec17a45b35c input=9d1d84bcf66e908b]*/
 {
     PyObject *it;
-    PyObject *saved;
     cycleobject *lz;
 
     /* Get iterator. */
@@ -972,23 +969,15 @@ itertools_cycle_impl(PyTypeObject *type, PyObject *iterable)
     if (it == NULL)
         return NULL;
 
-    saved = PyList_New(0);
-    if (saved == NULL) {
-        Py_DECREF(it);
-        return NULL;
-    }
-
     /* create cycleobject structure */
     lz = (cycleobject *)type->tp_alloc(type, 0);
     if (lz == NULL) {
         Py_DECREF(it);
-        Py_DECREF(saved);
         return NULL;
     }
     lz->it = it;
-    lz->saved = saved;
-    lz->index = 0;
-    lz->firstpass = 0;
+    lz->iterable = iterable;
+    Py_INCREF(iterable);
 
     return (PyObject *)lz;
 }
@@ -998,7 +987,7 @@ cycle_dealloc(cycleobject *lz)
 {
     PyObject_GC_UnTrack(lz);
     Py_XDECREF(lz->it);
-    Py_XDECREF(lz->saved);
+    Py_XDECREF(lz->iterable);
     Py_TYPE(lz)->tp_free(lz);
 }
 
@@ -1007,7 +996,7 @@ cycle_traverse(cycleobject *lz, visitproc visit, void *arg)
 {
     if (lz->it)
         Py_VISIT(lz->it);
-    Py_VISIT(lz->saved);
+    Py_VISIT(lz->iterable);
     return 0;
 }
 
@@ -1019,12 +1008,6 @@ cycle_next(cycleobject *lz)
     if (lz->it != NULL) {
         item = PyIter_Next(lz->it);
         if (item != NULL) {
-            if (lz->firstpass)
-                return item;
-            if (PyList_Append(lz->saved, item)) {
-                Py_DECREF(item);
-                return NULL;
-            }
             return item;
         }
         /* Note:  StopIteration is already cleared by PyIter_Next() */
@@ -1032,56 +1015,34 @@ cycle_next(cycleobject *lz)
             return NULL;
         Py_CLEAR(lz->it);
     }
-    if (PyList_GET_SIZE(lz->saved) == 0)
-        return NULL;
-    item = PyList_GET_ITEM(lz->saved, lz->index);
-    lz->index++;
-    if (lz->index >= PyList_GET_SIZE(lz->saved))
-        lz->index = 0;
-    Py_INCREF(item);
-    return item;
+    if (lz->iterable != NULL){
+        lz->it = PyObject_GetIter(lz->iterable);
+        /* Note: if item is NULL, it means len(lz->iterable) == 0, NULL should be returned  */
+        item = PyIter_Next(lz->it);
+        return item;
+    }
+    return NULL;
 }
 
 static PyObject *
 cycle_reduce(cycleobject *lz, PyObject *Py_UNUSED(ignored))
 {
-    /* Create a new cycle with the iterator tuple, then set the saved state */
-    if (lz->it == NULL) {
-        PyObject *it = PyObject_GetIter(lz->saved);
-        if (it == NULL)
-            return NULL;
-        if (lz->index != 0) {
-            _Py_IDENTIFIER(__setstate__);
-            PyObject *res = _PyObject_CallMethodId(it, &PyId___setstate__,
-                                                   "n", lz->index);
-            if (res == NULL) {
-                Py_DECREF(it);
-                return NULL;
-            }
-            Py_DECREF(res);
-        }
-        return Py_BuildValue("O(N)(OO)", Py_TYPE(lz), it, lz->saved, Py_True);
-    }
-    return Py_BuildValue("O(O)(OO)", Py_TYPE(lz), lz->it, lz->saved,
-                         lz->firstpass ? Py_True : Py_False);
+    return Py_BuildValue("O(O)(O)", Py_TYPE(lz), lz->it, lz->iterable);
 }
 
 static PyObject *
 cycle_setstate(cycleobject *lz, PyObject *state)
 {
-    PyObject *saved=NULL;
-    int firstpass;
+    PyObject *iterable=NULL;
     if (!PyTuple_Check(state)) {
         PyErr_SetString(PyExc_TypeError, "state is not a tuple");
         return NULL;
     }
-    if (!PyArg_ParseTuple(state, "O!i", &PyList_Type, &saved, &firstpass)) {
+    if (!PyArg_ParseTuple(state, "O", &iterable)) {
         return NULL;
     }
-    Py_INCREF(saved);
-    Py_XSETREF(lz->saved, saved);
-    lz->firstpass = firstpass != 0;
-    lz->index = 0;
+    Py_INCREF(iterable);
+    Py_XSETREF(lz->iterable, iterable);
     Py_RETURN_NONE;
 }
 
