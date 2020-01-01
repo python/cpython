@@ -132,7 +132,7 @@ Standard names are defined for the following types:
    .. versionadded:: 3.6
 
 
-.. data:: CodeType
+.. class:: CodeType(**kwargs)
 
    .. index:: builtin: compile
 
@@ -142,6 +142,12 @@ Standard names are defined for the following types:
 
    Note that the audited arguments may not match the names or positions
    required by the initializer.
+
+   .. method:: CodeType.replace(**kwargs)
+
+     Return a copy of the code object with new values for the specified fields.
+
+     .. versionadded:: 3.8
 
 .. data:: CellType
 
