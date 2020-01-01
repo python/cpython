@@ -1,0 +1,5 @@
+A change was made to logging.config.dictConfig to avoid converting instances
+of named tuples to ConvertingTuple. It's assumed that named tuples are too
+specialised to be treated like ordinary tuples; if a user of named tuples
+requires ConvertingTuple functionality, they will have to implement that
+themselves in their named tuple class.
