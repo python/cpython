@@ -1,0 +1,2 @@
+Fix incorrent line execution reporting in trace functions when tracing
+exception handlers with name binding. Patch by Pablo Galindo.
