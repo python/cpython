@@ -1435,6 +1435,9 @@ class ProcessTestCase(BaseTestCase):
             subprocess.Popen(['exit', '0'], cwd='/some/nonexistent/directory')
         self.assertEqual(c.exception.filename, '/some/nonexistent/directory')
 
+    def test_class_getitems(self):
+        self.assertIs(subprocess.Popen[bytes], subprocess.Popen)
+        self.assertIs(subprocess.CompletedProcess[str], subprocess.CompletedProcess)
 
 class RunFuncTestCase(BaseTestCase):
     def run_python(self, code, **kwargs):

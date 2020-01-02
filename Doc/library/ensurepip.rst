@@ -74,7 +74,7 @@ options:
   script will *not* be installed.
 
 * ``--default-pip``: if a "default pip" installation is requested, the
-   ``pip`` script will be installed in addition to the two regular scripts.
+  ``pip`` script will be installed in addition to the two regular scripts.
 
 Providing both of the script selection options will trigger an exception.
 

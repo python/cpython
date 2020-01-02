@@ -479,7 +479,7 @@ Opening network connections
       UDP. Explicitly passing ``reuse_address=True`` will raise an exception.
 
       When multiple processes with differing UIDs assign sockets to an
-      indentical UDP socket address with ``SO_REUSEADDR``, incoming packets can
+      identical UDP socket address with ``SO_REUSEADDR``, incoming packets can
       become randomly distributed among the sockets.
 
       For supported platforms, *reuse_port* can be used as a replacement for

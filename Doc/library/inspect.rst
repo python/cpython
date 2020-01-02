@@ -70,6 +70,9 @@ attributes:
 |           |                   | method is bound, or       |
 |           |                   | ``None``                  |
 +-----------+-------------------+---------------------------+
+|           | __module__        | name of module in which   |
+|           |                   | this method was defined   |
++-----------+-------------------+---------------------------+
 | function  | __doc__           | documentation string      |
 +-----------+-------------------+---------------------------+
 |           | __name__          | name with which this      |
@@ -97,6 +100,9 @@ attributes:
 |           |                   | ``"return"`` key is       |
 |           |                   | reserved for return       |
 |           |                   | annotations.              |
++-----------+-------------------+---------------------------+
+|           | __module__        | name of module in which   |
+|           |                   | this function was defined |
 +-----------+-------------------+---------------------------+
 | traceback | tb_frame          | frame object at this      |
 |           |                   | level                     |
