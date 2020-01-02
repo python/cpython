@@ -345,8 +345,9 @@ class CosmeticTestCase(ASTTestCase):
 
         keywords = ("class", "def", "async def")
 
-        for docstring in docstrings:
-            self.check_src_roundtrip(f"{random.choice(keywords)} foo():\n    {docstring}")
+        for keyword in keywords:
+            for docstring in docstrings:
+                self.check_src_roundtrip(f"{keyword} foo():\n    {docstring}")
 
 class DirectoryTestCase(ASTTestCase):
     """Test roundtrip behaviour on all files in Lib and Lib/test."""
