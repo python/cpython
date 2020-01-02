@@ -735,10 +735,10 @@ class _Unparser(NodeVisitor):
 
     def visit_YieldFrom(self, node):
         with self.delimit("(", ")"):
-            self.write("yield from")
-            if node.value:
-                self.write(" ")
-                self.traverse(node.value)
+            self.write("yield from ")
+            if not node.value:
+                raise ValueError("Node can't be used without a value attribute.")
+            self.traverse(node.value)
 
     def visit_Raise(self, node):
         self.fill("raise")
