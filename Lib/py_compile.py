@@ -175,21 +175,18 @@ def compile(file, cfile=None, dfile=None, doraise=False, optimize=-1,
 
 
 def main(args=None):
-    """Script main program."""
+    """Compiles several source files. The files named in 'filenames' are
+    compiled and the resulting bytecode is cached in the normal
+    manner. This program does not search a directory structure to locate
+    source files; it only compiles files named explicitly. If '-' is the
+    only file name in 'filenames', the list of files taken from standard
+    input. If flag '-q/--quiet' is set error output will be suppressed.
+    """
     if args is None:
         args = sys.argv[1:]
     parser = argparse.ArgumentParser(
         prog=__name__,
-        description=(
-            "Compiles several source files. The files named "
-            "in 'filenames' are compiled and the resulting "
-            "bytecode is cached in the normal manner. This "
-            "program does not search a directory structure "
-            "to locate source files; it only compiles files "
-            "named explicitly. If '-' is the only file name "
-            "in 'filenames', the list of files taken from "
-            "standard input. If flag '-q/--quiet' is set "
-            "error output will be suppressed."))
+        description="Compiles several source files.")
     parser.add_argument(
         '-q', '--quiet', default=False,
         action='store_true', help='suppress error output')

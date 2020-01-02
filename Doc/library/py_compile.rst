@@ -22,36 +22,6 @@ shared use, especially if some of the users may not have permission to write the
 byte-code cache files in the directory containing the source code.
 
 
-Command-line usage
-------------------
-
-This module can be invoked as a script to compile several source files.
-The files named in *filenames* are compiled and the resulting bytecode
-is cached in the normal manner.  This program does not search a directory
-structure to locate source files; it only compiles files named explicitly.
-
-.. program:: python -m py_compile
-
-.. cmdoption:: file ...
-               -
-
-   Positional arguments are files to compile. If ``-`` is the only
-   parameter, the list of files is taken from standard input.
-
-.. cmdoption:: -q, --quiet
-
-   Suppress errors output.
-
-.. versionchanged:: 3.2
-   Added support for ``-``.
-
-.. versionchanged:: 3.9
-   Added support for ``-q/--quiet``.
-
-
-Public functions
-----------------
-
 .. exception:: PyCompileError
 
    Exception raised when an error occurs while attempting to compile the file.
@@ -154,12 +124,37 @@ Public functions
       This option is useful when the ``.pycs`` are kept up to date by some
       system external to Python like a build system.
 
-When this module is run as a script, the :func:`main` is used to compile all the
-files named on the command line.  The exit status is nonzero if one of the files
-could not be compiled.
-
 
 .. seealso::
 
    Module :mod:`compileall`
       Utilities to compile all Python source files in a directory tree.
+
+
+Command-Line Interface
+----------------------
+
+This module can be invoked as a script to compile several source
+files.  The files named in *filenames* are compiled and the resulting
+bytecode is cached in the normal manner.  This program does not search
+a directory structure to locate source files; it only compiles files
+named explicitly. The exit status is nonzero if one of the files could
+not be compiled.
+
+.. program:: python -m py_compile
+
+.. cmdoption:: file ...
+               -
+
+   Positional arguments are files to compile. If ``-`` is the only
+   parameter, the list of files is taken from standard input.
+
+.. cmdoption:: -q, --quiet
+
+   Suppress errors output.
+
+.. versionchanged:: 3.2
+   Added support for ``-``.
+
+.. versionchanged:: 3.9
+   Added support for ``-q/--quiet``.
