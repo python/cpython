@@ -446,6 +446,19 @@ class CompletedProcess(object):
             args.append('stderr={!r}'.format(self.stderr))
         return "{}({})".format(type(self).__name__, ', '.join(args))
 
+    def __class_getitem__(cls, type):
+        """Provide minimal support for using this class as generic
+        (for example in type annotations).
+
+        See PEP 484 and PEP 560 for more details. For example,
+        `CompletedProcess[bytes]` is a valid expression at runtime
+        (type argument `bytes` indicates the type used for stdout).
+        Note, no type checking happens at runtime, but a static type
+        checker can be used.
+        """
+        return cls
+
+
     def check_returncode(self):
         """Raise CalledProcessError if the exit code is non-zero."""
         if self.returncode:
@@ -986,6 +999,17 @@ class Popen(object):
         if len(obj_repr) > 80:
             obj_repr = obj_repr[:76] + "...>"
         return obj_repr
+
+    def __class_getitem__(cls, type):
+        """Provide minimal support for using this class as generic
+        (for example in type annotations).
+
+        See PEP 484 and PEP 560 for more details. For example, `Popen[bytes]`
+        is a valid expression at runtime (type argument `bytes` indicates the
+        type used for stdout). Note, no type checking happens at runtime, but
+        a static type checker can be used.
+        """
+        return cls
 
     @property
     def universal_newlines(self):
