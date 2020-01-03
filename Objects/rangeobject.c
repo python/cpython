@@ -78,8 +78,12 @@ range_new(PyTypeObject *type, PyObject *args, PyObject *kw)
         return NULL;
 
     if (PyTuple_Size(args) <= 1) {
-        if (!PyArg_UnpackTuple(args, "range", 1, 1, &stop))
+        if (!PyArg_UnpackTuple(args, "range", 1, 1, &stop)) {
+            if (PyExceptionClass_Check(PyExc_TypeError)) {
+                PyErr_SetString(PyExc_TypeError, "range expected at least 1 argument, got 0");
+            }
             return NULL;
+        }
         stop = PyNumber_Index(stop);
         if (!stop)
             return NULL;
