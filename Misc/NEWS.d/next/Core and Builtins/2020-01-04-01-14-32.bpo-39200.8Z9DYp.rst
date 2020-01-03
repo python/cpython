@@ -1,0 +1,2 @@
+Correct the error message when calling to min/max builtin function with no
+arguments. Patch by Dong-hee Na.
