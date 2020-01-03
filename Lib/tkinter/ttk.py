@@ -1086,9 +1086,10 @@ class Scale(Widget, tkinter.Scale):
         generates a <<RangeChanged>> event."""
         if cnf:
             kw.update(cnf)
-        Widget.configure(self, **kw)
+        retval = Widget.configure(self, **kw)
         if any(['from' in kw, 'from_' in kw, 'to' in kw]):
             self.event_generate('<<RangeChanged>>')
+        return retval
 
 
     def get(self, x=None, y=None):

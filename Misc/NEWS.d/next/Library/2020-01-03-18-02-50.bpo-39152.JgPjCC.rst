@@ -1,0 +1,2 @@
+Add missing ttk.Scale.configure return value.  ttk.Scale().configure() now
+returns a configuration.  Change posted by Giovanni Lombardo.
