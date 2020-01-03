@@ -83,6 +83,9 @@ def literal_eval(node_or_string):
             return list(map(_convert, node.elts))
         elif isinstance(node, Set):
             return set(map(_convert, node.elts))
+        elif (isinstance(node, Call) and isinstance(node.func, Name) and
+              node.func.id == 'set' and node.args == node.keywords == []):
+            return set()
         elif isinstance(node, Dict):
             return dict(zip(map(_convert, node.keys),
                             map(_convert, node.values)))

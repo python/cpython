@@ -194,6 +194,9 @@ and classes for traversing abstract syntax trees:
    .. versionchanged:: 3.2
       Now allows bytes and set literals.
 
+   .. versionchanged:: 3.9
+      Now supports creating empty sets with ``'set()'``.
+
 
 .. function:: get_docstring(node, clean=True)
 
