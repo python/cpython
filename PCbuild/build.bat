@@ -75,8 +75,8 @@ if "%~1"=="-d" (set conf=Debug) & shift & goto CheckOpts
 if "%~1"=="-m" (set parallel=/m) & shift & goto CheckOpts
 if "%~1"=="-M" (set parallel=) & shift & goto CheckOpts
 if "%~1"=="-v" (set verbose=/v:n) & shift & goto CheckOpts
-if "%~1"=="-vv" (set verbose=/v:d) & shift & goto CheckOpts
-if "%~1"=="-q" (set verbose=/v:q) & shift & goto CheckOpts
+if "%~1"=="-vv" (set verbose=/v:d /ds) & shift & goto CheckOpts
+if "%~1"=="-q" (set verbose=/v:q /nologo /clp:summary) & shift & goto CheckOpts
 if "%~1"=="-k" (set kill=true) & shift & goto CheckOpts
 if "%~1"=="--pgo" (set do_pgo=true) & shift & goto CheckOpts
 if "%~1"=="--pgo-job" (set do_pgo=true) & (set pgo_job=%~2) & shift & shift & goto CheckOpts
