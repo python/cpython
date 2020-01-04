@@ -949,7 +949,10 @@ class BuiltinTest(unittest.TestCase):
         self.assertEqual(max(1, 2.0, 3), 3)
         self.assertEqual(max(1.0, 2, 3), 3)
 
-        with self.assertRaisesRegex(TypeError, r'max expected at least 1 argument, got 0'):
+        with self.assertRaisesRegex(
+            TypeError,
+            'max expected at least 1 argument, got 0'
+        ):
             max()
 
         self.assertRaises(TypeError, max, 42)
@@ -1005,7 +1008,10 @@ class BuiltinTest(unittest.TestCase):
         self.assertEqual(min(1, 2.0, 3), 1)
         self.assertEqual(min(1.0, 2, 3), 1.0)
 
-        with self.assertRaisesRegex(TypeError, r'min expected at least 1 argument, got 0'):
+        with self.assertRaisesRegex(
+            TypeError,
+            'min expected at least 1 argument, got 0'
+        ):
             min()
 
         self.assertRaises(TypeError, min, 42)
