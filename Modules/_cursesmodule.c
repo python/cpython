@@ -1736,6 +1736,54 @@ _curses_window_inch_impl(PyCursesWindowObject *self, int group_right_1,
     return rtn;
 }
 
+#ifdef HAVE_NCURSESW
+/*[clinic input]
+_curses.window.in_wch
+
+    [
+    y: int
+        Starting Y-coordinate.
+    x: int
+        Starting X-coordinate.
+    ]
+    /
+
+Retrieve the wide character at the gven position in the window.
+
+The return value is a 3-tuple of (character, attributes, color_pair).
+[clinic start generated code]*/
+
+static PyObject *
+_curses_window_in_wch_impl(PyCursesWindowObject *self, int group_right_1,
+                           int y, int x)
+/*[clinic end generated code: output=846ca8a82f2ecab4 input=5c20d96b592b0e0b]*/
+{
+    int ret;
+
+    cchar_t wcval;
+
+    wchar_t wstr[CCHARW_MAX + 1];
+    attr_t attr;
+    short color_pair;
+
+    if (group_right_1) {
+        ret = mvwin_wch(self->win, y, x, &wcval);
+    } else {
+        ret = win_wch(self->win, &wcval);
+    }
+    if (PyCursesCheckERR(ret, "in_wch") == NULL) {
+        return NULL;
+    }
+
+    ret = getcchar(&wcval, wstr, &attr, &color_pair, NULL);
+    if (PyCursesCheckERR(ret, "getcchar") == NULL) {
+        return NULL;
+    }
+
+    return Py_BuildValue("ukh", wstr, attr, color_pair);
+}
+#endif
+
 /*[-clinic input]
 _curses.window.instr
 
@@ -2530,6 +2578,7 @@ static PyMethodDef PyCursesWindow_Methods[] = {
     {"immedok",         (PyCFunction)PyCursesWindow_immedok, METH_VARARGS},
 #endif
     _CURSES_WINDOW_INCH_METHODDEF
+    _CURSES_WINDOW_IN_WCH_METHODDEF
     _CURSES_WINDOW_INSCH_METHODDEF
     {"insdelln",        (PyCFunction)PyCursesWindow_winsdelln, METH_VARARGS},
     {"insertln",        (PyCFunction)PyCursesWindow_winsertln, METH_NOARGS},

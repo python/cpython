@@ -1017,6 +1017,18 @@ the following methods and attributes:
    Return the character at the given position in the window. The bottom 8 bits are
    the character proper, and upper bits are the attributes.
 
+   .. note::
+
+      ``inch`` only works for ASCII characters.  Use :meth:`in_wch` instead
+      for unicode support.
+
+.. method:: window.in_wch([x, y])
+
+   Return the wide character at the given position in the window.  The return
+   value is a 3-tuple ``(character, attributes, color_pair)``.
+
+   .. versionadded:: 3.14
+
 
 .. method:: window.insch(ch[, attr])
             window.insch(y, x, ch[, attr])

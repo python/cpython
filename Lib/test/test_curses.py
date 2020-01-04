@@ -1107,6 +1107,39 @@ class TestCurses(unittest.TestCase):
         curses.ungetch(1025)
         self.stdscr.getkey()
 
+    def test_in_wch(self):
+        stdscr = self.stdscr
+
+        if not hasattr(stdscr, 'in_wch'):
+            raise unittest.SkipTest('requires curses.window.in_wch')
+
+        if curses.has_colors():
+            curses.init_pair(1, curses.COLOR_RED, 0)
+            expected_pair = 1
+            color_attr = curses.color_pair(expected_pair)
+        else:
+            expected_pair = 0
+            color_attr = 0
+
+        def _norm(ch, attr, color):
+            # for some reason, curses returns some color bits here?
+            return ch, attr & ~curses.A_COLOR, color
+
+        for ch in ('a', '\xe9', '\u20ac', '\U0001f643'):
+            expected = (ch, curses.A_BOLD, expected_pair)
+
+            stdscr.insstr(0, 0, ch, color_attr | curses.A_BOLD)
+            self.assertEqual(_norm(*stdscr.in_wch()), expected)
+
+            stdscr.addstr(0, 0, ch, color_attr | curses.A_BOLD)
+            self.assertEqual(_norm(*stdscr.in_wch(0, 0)), expected)
+
+        # in_wch can return multiple characters in the case of zero width
+        # curses at max returns 5 characters in a cchar_t
+        stdscr.addstr(0, 0, 'a' + '\u200b' * 10)
+        expected = ('a\u200b\u200b\u200b\u200b', 0, 0)
+        self.assertEqual(stdscr.in_wch(0, 0), expected)
+
     @requires_curses_func('unget_wch')
     @unittest.skipIf(getattr(curses, 'ncurses_version', (99,)) < (5, 8),
                      "unget_wch is broken in ncurses 5.7 and earlier")

@@ -1091,6 +1091,55 @@ exit:
     return return_value;
 }
 
+#if defined(HAVE_NCURSESW)
+
+PyDoc_STRVAR(_curses_window_in_wch__doc__,
+"in_wch([y, x])\n"
+"Retrieve the wide character at the gven position in the window.\n"
+"\n"
+"  y\n"
+"    Starting Y-coordinate.\n"
+"  x\n"
+"    Starting X-coordinate.\n"
+"\n"
+"The return value is a 3-tuple of (character, attributes, color_pair).");
+
+#define _CURSES_WINDOW_IN_WCH_METHODDEF    \
+    {"in_wch", (PyCFunction)_curses_window_in_wch, METH_VARARGS, _curses_window_in_wch__doc__},
+
+static PyObject *
+_curses_window_in_wch_impl(PyCursesWindowObject *self, int group_right_1,
+                           int y, int x);
+
+static PyObject *
+_curses_window_in_wch(PyCursesWindowObject *self, PyObject *args)
+{
+    PyObject *return_value = NULL;
+    int group_right_1 = 0;
+    int y = 0;
+    int x = 0;
+
+    switch (PyTuple_GET_SIZE(args)) {
+        case 0:
+            break;
+        case 2:
+            if (!PyArg_ParseTuple(args, "ii:in_wch", &y, &x)) {
+                goto exit;
+            }
+            group_right_1 = 1;
+            break;
+        default:
+            PyErr_SetString(PyExc_TypeError, "_curses.window.in_wch requires 0 to 2 arguments");
+            goto exit;
+    }
+    return_value = _curses_window_in_wch_impl(self, group_right_1, y, x);
+
+exit:
+    return return_value;
+}
+
+#endif /* defined(HAVE_NCURSESW) */
+
 PyDoc_STRVAR(_curses_window_insstr__doc__,
 "insstr([y, x,] str, [attr])\n"
 "Insert the string before the current or specified position.\n"
@@ -4235,6 +4284,10 @@ _curses_has_extended_color_support(PyObject *module, PyObject *Py_UNUSED(ignored
     #define _CURSES_WINDOW_GET_WCH_METHODDEF
 #endif /* !defined(_CURSES_WINDOW_GET_WCH_METHODDEF) */
 
+#ifndef _CURSES_WINDOW_IN_WCH_METHODDEF
+    #define _CURSES_WINDOW_IN_WCH_METHODDEF
+#endif /* !defined(_CURSES_WINDOW_IN_WCH_METHODDEF) */
+
 #ifndef _CURSES_WINDOW_NOUTREFRESH_METHODDEF
     #define _CURSES_WINDOW_NOUTREFRESH_METHODDEF
 #endif /* !defined(_CURSES_WINDOW_NOUTREFRESH_METHODDEF) */
@@ -4318,4 +4371,4 @@ _curses_has_extended_color_support(PyObject *module, PyObject *Py_UNUSED(ignored
 #ifndef _CURSES_USE_DEFAULT_COLORS_METHODDEF
     #define _CURSES_USE_DEFAULT_COLORS_METHODDEF
 #endif /* !defined(_CURSES_USE_DEFAULT_COLORS_METHODDEF) */
-/*[clinic end generated code: output=96887782374f070a input=a9049054013a1b77]*/
+/*[clinic end generated code: output=88098e997b5b33d9 input=a9049054013a1b77]*/

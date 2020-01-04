@@ -1,0 +1,1 @@
+Add :func:`curses.window.in_wch` function - by Anthony Sottile.
