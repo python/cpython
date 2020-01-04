@@ -312,6 +312,8 @@ class CosmeticTestCase(ASTTestCase):
         self.check_src_roundtrip("P * V if P and V else n * R * T")
         self.check_src_roundtrip("lambda P, V, n: P * V == n * R * T")
         self.check_src_roundtrip("flag & (other | foo)")
+        self.check_src_roundtrip("not x == y")
+        self.check_src_roundtrip("x == (not y)")
 
 
 class DirectoryTestCase(ASTTestCase):
