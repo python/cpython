@@ -1955,7 +1955,7 @@ ast_for_namedexpr(struct compiling *c, const node *n)
     if (target->kind != Name_kind) {
         const char *expr_name = get_expr_name(target);
         if (expr_name != NULL) {
-            ast_error(c, n, "cannot use named assignment with %s", expr_name);
+            ast_error(c, n, "cannot use assignment expressions with %s", expr_name);
         }
         return NULL;
     }
