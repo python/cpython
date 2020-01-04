@@ -210,8 +210,7 @@ class AbstractWidgetTest(AbstractTkTest):
         widget = self.create()
         keys = widget.keys()
         # XXX
-        if not isinstance(widget, Scale):
-            self.assertEqual(sorted(keys), sorted(widget.configure()))
+        self.assertEqual(sorted(keys), sorted(widget.configure()))
         for k in keys:
             widget[k]
         # Test if OPTIONS contains all keys
