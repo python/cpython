@@ -573,14 +573,17 @@ class BaseEventLoop(events.AbstractEventLoop):
         except Exception as ex:
             self.call_soon_threadsafe(future.set_exception, ex)
 
-    def run_forever(self):
-        """Run until stop() is called."""
-        self._check_closed()
+    def _check_runnung(self):
         if self.is_running():
             raise RuntimeError('This event loop is already running')
         if events._get_running_loop() is not None:
             raise RuntimeError(
                 'Cannot run the event loop while another loop is running')
+
+    def run_forever(self):
+        """Run until stop() is called."""
+        self._check_closed()
+        self._check_runnung()
         self._set_coroutine_origin_tracking(self._debug)
         self._thread_id = threading.get_ident()
 
@@ -612,6 +615,7 @@ class BaseEventLoop(events.AbstractEventLoop):
         Return the Future's result, or raise its exception.
         """
         self._check_closed()
+        self._check_runnung()
 
         new_task = not futures.isfuture(future)
         future = tasks.ensure_future(future, loop=self)
