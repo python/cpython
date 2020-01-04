@@ -81,7 +81,7 @@ range_new(PyTypeObject *type, PyObject *args, PyObject *kw)
     switch (num_args) {
         case 3:
             step = PyTuple_GET_ITEM(args, 2);
-            /* FALLTHRU */
+            /* fallthrough */
         case 2:
             start = PyTuple_GET_ITEM(args, 0);
             start = PyNumber_Index(start);
@@ -115,10 +115,13 @@ range_new(PyTypeObject *type, PyObject *args, PyObject *kw)
             step = _PyLong_One;
             break;
         case 0:
-            PyErr_SetString(PyExc_TypeError, "range expected at least 1 argument, got 0");
+            PyErr_SetString(PyExc_TypeError,
+                            "range expected at least 1 argument, got 0");
             return NULL;
         default:
-            PyErr_Format(PyExc_TypeError, "range expected at most 3 arguments, got %zd", num_args);
+            PyErr_Format(PyExc_TypeError, 
+                         "range expected at most 3 arguments, got %zd",
+                         num_args);
             return NULL;
     }
 
