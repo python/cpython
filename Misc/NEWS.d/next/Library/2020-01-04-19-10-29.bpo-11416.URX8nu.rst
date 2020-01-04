@@ -1,0 +1,1 @@
+Class :class:`~netrc.netrc` supports multiple entries for the same machine, lookup by login name and configurable lookup order.
