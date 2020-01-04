@@ -5237,6 +5237,12 @@ os_execv_impl(PyObject *module, path_t *path, PyObject *argv)
         return NULL;
     }
 
+    if (PySys_Audit("os.exec", "OOO", path->object ? path->object : Py_None,
+                    argv, Py_None) < 0) {
+        free_string_array(argvlist, argc);
+        return NULL;
+    }
+
     _Py_BEGIN_SUPPRESS_IPH
 #ifdef HAVE_WEXECV
     _wexecv(path->wide, argvlist);
@@ -5280,7 +5286,7 @@ os_execve_impl(PyObject *module, path_t *path, PyObject *argv, PyObject *env)
     if (!PyList_Check(argv) && !PyTuple_Check(argv)) {
         PyErr_SetString(PyExc_TypeError,
                         "execve: argv must be a tuple or list");
-        goto fail;
+        goto fail_0;
     }
     argc = PySequence_Size(argv);
     if (argc < 1) {
@@ -5291,22 +5297,27 @@ os_execve_impl(PyObject *module, path_t *path, PyObject *argv, PyObject *env)
     if (!PyMapping_Check(env)) {
         PyErr_SetString(PyExc_TypeError,
                         "execve: environment must be a mapping object");
-        goto fail;
+        goto fail_0;
     }
 
     argvlist = parse_arglist(argv, &argc);
     if (argvlist == NULL) {
-        goto fail;
+        goto fail_0;
     }
     if (!argvlist[0][0]) {
         PyErr_SetString(PyExc_ValueError,
             "execve: argv first element cannot be empty");
-        goto fail;
+        goto fail_0;
     }
 
     envlist = parse_envlist(env, &envc);
     if (envlist == NULL)
-        goto fail;
+        goto fail_0;
+
+    if (PySys_Audit("os.exec", "OOO", path->object ? path->object : Py_None,
+                    argv, env) < 0) {
+        goto fail_1;
+    }
 
     _Py_BEGIN_SUPPRESS_IPH
 #ifdef HAVE_FEXECVE
@@ -5324,9 +5335,9 @@ os_execve_impl(PyObject *module, path_t *path, PyObject *argv, PyObject *env)
     /* If we get here it's definitely an error */
 
     posix_path_error(path);
-
+  fail_1:
     free_string_array(envlist, envc);
-  fail:
+  fail_0:
     if (argvlist)
         free_string_array(argvlist, argc);
     return NULL;
@@ -5657,6 +5668,11 @@ py_posix_spawn(int use_posix_spawnp, PyObject *module, path_t *path, PyObject *a
     }
     attrp = &attr;
 
+    if (PySys_Audit("os.posix_spawn", "OOO",
+                    path->object ? path->object : Py_None, argv, env) < 0) {
+        goto exit;
+    }
+
     _Py_BEGIN_SUPPRESS_IPH
 #ifdef HAVE_POSIX_SPAWNP
     if (use_posix_spawnp) {
@@ -5897,6 +5913,13 @@ os_spawnv_impl(PyObject *module, int mode, path_t *path, PyObject *argv)
         mode = _P_OVERLAY;
 #endif
 
+    if (PySys_Audit("os.spawn", "iOOO", mode,
+                    path->object ? path->object : Py_None, argv,
+                    Py_None) < 0) {
+        free_string_array(argvlist, argc);
+        return NULL;
+    }
+
     Py_BEGIN_ALLOW_THREADS
     _Py_BEGIN_SUPPRESS_IPH
 #ifdef HAVE_WSPAWNV
@@ -6006,6 +6029,11 @@ os_spawnve_impl(PyObject *module, int mode, path_t *path, PyObject *argv,
         mode = _P_OVERLAY;
 #endif
 
+    if (PySys_Audit("os.spawn", "iOOO", mode,
+                    path->object ? path->object : Py_None, argv, env) < 0) {
+        goto fail_2;
+    }
+
     Py_BEGIN_ALLOW_THREADS
     _Py_BEGIN_SUPPRESS_IPH
 #ifdef HAVE_WSPAWNV
@@ -6024,6 +6052,7 @@ os_spawnve_impl(PyObject *module, int mode, path_t *path, PyObject *argv,
     else
         res = Py_BuildValue(_Py_PARSE_INTPTR, spawnval);
 
+  fail_2:
     while (--envc >= 0)
         PyMem_DEL(envlist[envc]);
     PyMem_DEL(envlist);
@@ -11711,6 +11740,12 @@ os_startfile_impl(PyObject *module, path_t *filepath,
            NotImplementedError. */
         return PyErr_Format(PyExc_NotImplementedError,
             "startfile not available on this platform");
+    }
+
+    if (PySys_Audit("os.startfile", "Ou",
+                    filepath->object ? filepath->object : Py_None,
+                    operation) < 0) {
+        return NULL;
     }
 
     Py_BEGIN_ALLOW_THREADS
