@@ -118,7 +118,7 @@ range_new(PyTypeObject *type, PyObject *args, PyObject *kw)
             PyErr_SetString(PyExc_TypeError, "range expected at least 1 argument, got 0");
             return NULL;
         default:
-            PyErr_Format(PyExc_TypeError, "range expected at most 3 arguments, got %i", num_args);
+            PyErr_Format(PyExc_TypeError, "range expected at most 3 arguments, got %zd", num_args);
             return NULL;
     }
 
