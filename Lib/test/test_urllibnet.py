@@ -1,4 +1,3 @@
-import tempfile
 import unittest
 from test import test_support
 from test.test_urllib2net import skip_ftp_test_on_travis
@@ -224,9 +223,10 @@ class urlopen_FTPTest(unittest.TestCase):
 
         with test_support.transient_internet(self.FTP_TEST_FILE):
             try:
-                for _ in range(self.NUM_FTP_RETRIEVES):
-                    with tempfile.NamedTemporaryFile() as fp:
-                        urllib.FancyURLopener().retrieve(self.FTP_TEST_FILE, fp.name)
+                for file_num in range(self.NUM_FTP_RETRIEVES):
+                    with test_support.temp_dir() as td:
+                        urllib.FancyURLopener().retrieve(self.FTP_TEST_FILE,
+                                                         os.path.join(td, str(file_num)))
             except IOError as e:
                 self.fail("Failed FTP retrieve while accessing ftp url "
                           "multiple times.\n Error message was : %s" % e)
