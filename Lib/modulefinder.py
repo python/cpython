@@ -8,6 +8,7 @@ import os
 import sys
 import types
 import warnings
+import tokenize
 
 
 LOAD_CONST = dis.opmap['LOAD_CONST']
@@ -93,7 +94,11 @@ def _find_module(name, path=None):
     else:  # Should never happen.
         return None, None, ("", "", _SEARCH_ERROR)
 
-    file = open(file_path, mode)
+    if mode == 'r':
+        file = open(file_path)
+    else:
+        file = open(file_path, mode)
+
     suffix = os.path.splitext(file_path)[-1]
 
     return file, file_path, (suffix, mode, kind)
