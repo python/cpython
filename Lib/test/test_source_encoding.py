@@ -204,9 +204,9 @@ class AbstractSourceEncodingTest:
 class BytesSourceEncodingTest(AbstractSourceEncodingTest, unittest.TestCase):
 
     def check_script_output(self, src, expected):
-        with captured_stdout() as stdout:
+        with captured_stdout(encoding='latin1') as stdout:
             exec(src)
-        out = stdout.getvalue().encode('latin1')
+        out = stdout.getvalue()
         self.assertEqual(out.rstrip(), expected)
 
 

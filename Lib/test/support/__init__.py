@@ -1586,6 +1586,12 @@ class StringIOWrapper(io.StringIO):
         self.stream = stream
         self._encoding = encoding
 
+    def write(self, s):
+        self.stream.write(s)
+
+    def seek(self, s):
+        return self.stream.seek(s)
+
     def getvalue(self):
         if self._encoding is not None:
             return self.stream.getvalue().encode(self._encoding)
@@ -1596,10 +1602,10 @@ def captured_output(stream_name, *, encoding=None):
     """Return a context manager used by captured_stdout/stdin/stderr
     that temporarily replaces the sys stream *stream_name* with a StringIO."""
     orig_stdout = getattr(sys, stream_name)
-    wrapper = StringIOWrapper(io.StringIO, encoding)
-    setattr(sys, stream_name,  wrapper)
+
+    setattr(sys, stream_name, io.StringIO())
     try:
-        yield getattr(sys, stream_name)
+        yield StringIOWrapper(getattr(sys, stream_name), encoding)
     finally:
         setattr(sys, stream_name, orig_stdout)
 

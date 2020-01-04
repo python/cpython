@@ -306,17 +306,21 @@ class TestSupport(unittest.TestCase):
         self.assertEqual(stdout.getvalue(), "hello\n")
 
     def test_capture_stdout_encoding(self):
-        with support.captured_stdout(encoding='cp1252') as stdout:
-            print("Montr\xe9al\n")
-        self.assertEqual(stdout.getvalue(), "Montr\xe9al\n")
-     
+        with support.captured_stdout(encoding="cp1252") as stdout:
+            print("Montréal")
+        self.assertEqual(stdout.getvalue(), b'Montr\xe9al\n')
+
+        with support.captured_stdout(encoding="utf-8") as stdout:
+            print("Montréal")
+        self.assertEqual(stdout.getvalue(), b'Montr\xc3\xa9al\n')
+
     def test_captured_stderr(self):
         with support.captured_stderr() as stderr:
             print("hello", file=sys.stderr)
         self.assertEqual(stderr.getvalue(), "hello\n")
 
     def test_captured_stdin(self):
-        with support.captured_stdin() as stdin: 
+        with support.captured_stdin() as stdin:
             stdin.write('hello\n')
             stdin.seek(0)
             # call test code that consumes from sys.stdin
