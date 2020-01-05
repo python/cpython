@@ -51,16 +51,16 @@ PyAPI_FUNC(int) PyThread_acquire_lock(PyThread_type_lock, int);
 #if defined(_POSIX_THREADS)
    /* PyThread_acquire_lock_timed() uses _PyTime_FromNanoseconds(us * 1000),
       convert microseconds to nanoseconds. */
-#  define PY_TIMEOUT_MAX (PY_LLONG_MAX / 1000)
+#  define PY_TIMEOUT_MAX (LLONG_MAX / 1000)
 #elif defined (NT_THREADS)
    /* In the NT API, the timeout is a DWORD and is expressed in milliseconds */
-#  if 0xFFFFFFFFLL * 1000 < PY_LLONG_MAX
+#  if 0xFFFFFFFFLL * 1000 < LLONG_MAX
 #    define PY_TIMEOUT_MAX (0xFFFFFFFFLL * 1000)
 #  else
-#    define PY_TIMEOUT_MAX PY_LLONG_MAX
+#    define PY_TIMEOUT_MAX LLONG_MAX
 #  endif
 #else
-#  define PY_TIMEOUT_MAX PY_LLONG_MAX
+#  define PY_TIMEOUT_MAX LLONG_MAX
 #endif
 
 

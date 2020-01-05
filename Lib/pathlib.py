@@ -418,7 +418,12 @@ class _NormalAccessor(_Accessor):
 
     unlink = os.unlink
 
-    link_to = os.link
+    if hasattr(os, "link"):
+        link_to = os.link
+    else:
+        @staticmethod
+        def link_to(self, target):
+            raise NotImplementedError("os.link() not available on this system")
 
     rmdir = os.rmdir
 
@@ -776,6 +781,9 @@ class PurePath(object):
         if not isinstance(other, PurePath) or self._flavour is not other._flavour:
             return NotImplemented
         return self._cparts >= other._cparts
+
+    def __class_getitem__(cls, type):
+        return cls
 
     drive = property(attrgetter('_drv'),
                      doc="""The drive prefix (letter or UNC path), if any.""")

@@ -19,7 +19,6 @@ except ImportError:
     ssl = None
 
 
-TIMEOUT = 30
 certfile = os.path.join(os.path.dirname(__file__), 'keycert3.pem')
 
 if ssl is not None:
@@ -270,12 +269,18 @@ class NetworkedNNTPTestsMixin:
             return True
 
         try:
-            with self.NNTP_CLASS(self.NNTP_HOST, timeout=TIMEOUT, usenetrc=False) as server:
+            server = self.NNTP_CLASS(self.NNTP_HOST,
+                                     timeout=support.INTERNET_TIMEOUT,
+                                     usenetrc=False)
+            with server:
                 self.assertTrue(is_connected())
                 self.assertTrue(server.help())
             self.assertFalse(is_connected())
 
-            with self.NNTP_CLASS(self.NNTP_HOST, timeout=TIMEOUT, usenetrc=False) as server:
+            server = self.NNTP_CLASS(self.NNTP_HOST,
+                                     timeout=support.INTERNET_TIMEOUT,
+                                     usenetrc=False)
+            with server:
                 server.quit()
             self.assertFalse(is_connected())
         except SSLError as ssl_err:
@@ -307,7 +312,8 @@ class NetworkedNNTPTests(NetworkedNNTPTestsMixin, unittest.TestCase):
         support.requires("network")
         with support.transient_internet(cls.NNTP_HOST):
             try:
-                cls.server = cls.NNTP_CLASS(cls.NNTP_HOST, timeout=TIMEOUT,
+                cls.server = cls.NNTP_CLASS(cls.NNTP_HOST,
+                                            timeout=support.INTERNET_TIMEOUT,
                                             usenetrc=False)
             except SSLError as ssl_err:
                 # matches "[SSL: DH_KEY_TOO_SMALL] dh key too small"

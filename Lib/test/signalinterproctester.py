@@ -4,6 +4,7 @@ import subprocess
 import sys
 import time
 import unittest
+from test import support
 
 
 class SIGUSR1Exception(Exception):
@@ -27,7 +28,7 @@ class InterProcessSignalTests(unittest.TestCase):
             # (if set)
             child.wait()
 
-        timeout = 10.0
+        timeout = support.SHORT_TIMEOUT
         deadline = time.monotonic() + timeout
 
         while time.monotonic() < deadline:

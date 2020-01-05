@@ -21,7 +21,7 @@ from unittest import TestCase, skipUnless
 from test import support
 from test.support import HOST, HOSTv6
 
-TIMEOUT = 3
+TIMEOUT = support.LOOPBACK_TIMEOUT
 # the dummy data returned by server over the data channel when
 # RETR, LIST, NLST, MLSD commands are issued
 RETR_DATA = 'abcde12345\r\n' * 1000
@@ -346,7 +346,7 @@ if ssl is not None:
                 if err.args[0] in (ssl.SSL_ERROR_WANT_READ,
                                    ssl.SSL_ERROR_WANT_WRITE):
                     return
-            except OSError as err:
+            except OSError:
                 # Any "socket error" corresponds to a SSL_ERROR_SYSCALL return
                 # from OpenSSL's SSL_shutdown(), corresponding to a
                 # closed socket condition. See also:

@@ -97,8 +97,6 @@ typedef struct {
 } PyCFunctionObject;
 #endif
 
-PyAPI_FUNC(int) PyCFunction_ClearFreeList(void);
-
 #ifdef __cplusplus
 }
 #endif

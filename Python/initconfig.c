@@ -80,6 +80,7 @@ static const char usage_5[] =
 "PYTHONHOME   : alternate <prefix> directory (or <prefix>%lc<exec_prefix>).\n"
 "               The default module search path uses %s.\n"
 "PYTHONCASEOK : ignore case in 'import' statements (Windows).\n"
+"PYTHONUTF8: if set to 1, enable the UTF-8 mode.\n"
 "PYTHONIOENCODING: Encoding[:errors] used for stdin/stdout/stderr.\n"
 "PYTHONFAULTHANDLER: dump the Python traceback on fatal errors.\n";
 static const char usage_6[] =
@@ -2197,10 +2198,6 @@ config_update_argv(PyConfig *config, Py_ssize_t opt_index)
     else if (config->run_module != NULL) {
         /* Force sys.argv[0] = '-m'*/
         arg0 = L"-m";
-    }
-    else if (config->run_filename != NULL) {
-        /* run_filename is converted to an absolute path: update argv */
-        arg0 = config->run_filename;
     }
 
     if (arg0 != NULL) {

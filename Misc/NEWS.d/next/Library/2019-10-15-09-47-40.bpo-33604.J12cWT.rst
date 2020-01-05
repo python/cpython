@@ -1,3 +1,0 @@
-Fixed `hmac.new` and `hmac.HMAC` to raise TypeError instead of ValueError
-when the digestmod parameter, now required in 3.8, is omitted.  Also
-clarified the hmac module documentation and docstrings.

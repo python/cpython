@@ -695,6 +695,14 @@ _PyErr_PrintEx(PyThreadState *tstate, int set_sys_last_vars)
         }
     }
     hook = _PySys_GetObjectId(&PyId_excepthook);
+    if (PySys_Audit("sys.excepthook", "OOOO", hook ? hook : Py_None,
+                    exception, v, tb) < 0) {
+        if (PyErr_ExceptionMatches(PyExc_RuntimeError)) {
+            PyErr_Clear();
+            goto done;
+        }
+        _PyErr_WriteUnraisableMsg("in audit hook", NULL);
+    }
     if (hook) {
         PyObject* stack[3];
         PyObject *result;

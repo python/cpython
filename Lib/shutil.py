@@ -442,7 +442,7 @@ def ignore_patterns(*patterns):
 def _copytree(entries, src, dst, symlinks, ignore, copy_function,
               ignore_dangling_symlinks, dirs_exist_ok=False):
     if ignore is not None:
-        ignored_names = ignore(src, set(os.listdir(src)))
+        ignored_names = ignore(src, {x.name for x in entries})
     else:
         ignored_names = set()
 
@@ -543,11 +543,12 @@ def copytree(src, dst, symlinks=False, ignore=None, copy_function=copy2,
 
     """
     sys.audit("shutil.copytree", src, dst)
-    with os.scandir(src) as entries:
-        return _copytree(entries=entries, src=src, dst=dst, symlinks=symlinks,
-                         ignore=ignore, copy_function=copy_function,
-                         ignore_dangling_symlinks=ignore_dangling_symlinks,
-                         dirs_exist_ok=dirs_exist_ok)
+    with os.scandir(src) as itr:
+        entries = list(itr)
+    return _copytree(entries=entries, src=src, dst=dst, symlinks=symlinks,
+                     ignore=ignore, copy_function=copy_function,
+                     ignore_dangling_symlinks=ignore_dangling_symlinks,
+                     dirs_exist_ok=dirs_exist_ok)
 
 if hasattr(os.stat_result, 'st_file_attributes'):
     # Special handling for directory junctions to make them behave like

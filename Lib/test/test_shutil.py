@@ -727,6 +727,17 @@ class TestCopyTree(BaseTest, unittest.TestCase):
         rv = shutil.copytree(src_dir, dst_dir)
         self.assertEqual(['foo'], os.listdir(rv))
 
+    def test_copytree_subdirectory(self):
+        # copytree where dst is a subdirectory of src, see Issue 38688
+        base_dir = self.mkdtemp()
+        self.addCleanup(shutil.rmtree, base_dir, ignore_errors=True)
+        src_dir = os.path.join(base_dir, "t", "pg")
+        dst_dir = os.path.join(src_dir, "somevendor", "1.0")
+        os.makedirs(src_dir)
+        src = os.path.join(src_dir, 'pol')
+        write_file(src, 'pol')
+        rv = shutil.copytree(src_dir, dst_dir)
+        self.assertEqual(['pol'], os.listdir(rv))
 
 class TestCopy(BaseTest, unittest.TestCase):
 

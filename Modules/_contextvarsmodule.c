@@ -52,6 +52,7 @@ PyInit__contextvars(void)
                            (PyObject *)&PyContext_Type) < 0)
     {
         Py_DECREF(&PyContext_Type);
+        Py_DECREF(m);
         return NULL;
     }
 
@@ -60,6 +61,7 @@ PyInit__contextvars(void)
                            (PyObject *)&PyContextVar_Type) < 0)
     {
         Py_DECREF(&PyContextVar_Type);
+        Py_DECREF(m);
         return NULL;
     }
 
@@ -68,6 +70,7 @@ PyInit__contextvars(void)
                            (PyObject *)&PyContextToken_Type) < 0)
     {
         Py_DECREF(&PyContextToken_Type);
+        Py_DECREF(m);
         return NULL;
     }
 

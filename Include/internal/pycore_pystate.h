@@ -56,11 +56,19 @@ struct _ceval_runtime_state {
 
 typedef PyObject* (*_PyFrameEvalFunction)(struct _frame *, int);
 
+#define _PY_NSMALLPOSINTS           257
+#define _PY_NSMALLNEGINTS           5
+
 // The PyInterpreterState typedef is in Include/pystate.h.
 struct _is {
 
     struct _is *next;
     struct _ts *tstate_head;
+
+    /* Reference to the _PyRuntime global variable. This field exists
+       to not have to pass runtime in addition to tstate to a function.
+       Get runtime from tstate: tstate->interp->runtime. */
+    struct pyruntimestate *runtime;
 
     int64_t id;
     int64_t id_refcount;
@@ -68,6 +76,8 @@ struct _is {
     PyThread_type_lock id_mutex;
 
     int finalizing;
+
+    struct _gc_runtime_state gc;
 
     PyObject *modules;
     PyObject *modules_by_index;
@@ -125,15 +135,22 @@ struct _is {
     struct _warnings_runtime_state warnings;
 
     PyObject *audit_hooks;
-/*
- * See bpo-36876: miscellaneous ad hoc statics have been moved here.
- */
+
     struct {
         struct {
             int level;
             int atbol;
         } listnode;
     } parser;
+
+#if _PY_NSMALLNEGINTS + _PY_NSMALLPOSINTS > 0
+    /* Small integers are preallocated in this array so that they
+       can be shared.
+       The integers that are preallocated are those in the range
+       -_PY_NSMALLNEGINTS (inclusive) to _PY_NSMALLPOSINTS (not inclusive).
+    */
+    PyLongObject* small_ints[_PY_NSMALLNEGINTS + _PY_NSMALLPOSINTS];
+#endif
 };
 
 PyAPI_FUNC(struct _is*) _PyInterpreterState_LookUpID(PY_INT64_T);
@@ -234,7 +251,6 @@ typedef struct pyruntimestate {
     void (*exitfuncs[NEXITFUNCS])(void);
     int nexitfuncs;
 
-    struct _gc_runtime_state gc;
     struct _ceval_runtime_state ceval;
     struct _gilstate_runtime_state gilstate;
 
@@ -264,6 +280,8 @@ PyAPI_FUNC(void) _PyRuntime_Finalize(void);
 
 #define _Py_CURRENTLY_FINALIZING(runtime, tstate) \
     (runtime->finalizing == tstate)
+
+PyAPI_FUNC(int) _Py_IsMainInterpreter(PyThreadState* tstate);
 
 
 /* Variable and macro for in-line access to current thread
@@ -301,7 +319,6 @@ PyAPI_FUNC(void) _PyRuntime_Finalize(void);
 /* Other */
 
 PyAPI_FUNC(void) _PyThreadState_Init(
-    _PyRuntimeState *runtime,
     PyThreadState *tstate);
 PyAPI_FUNC(void) _PyThreadState_DeleteExcept(
     _PyRuntimeState *runtime,
@@ -318,6 +335,12 @@ PyAPI_FUNC(void) _PyInterpreterState_DeleteExceptMain(_PyRuntimeState *runtime);
 extern void _PyInterpreterState_ClearModules(PyInterpreterState *interp);
 
 PyAPI_FUNC(void) _PyGILState_Reinit(_PyRuntimeState *runtime);
+
+
+PyAPI_FUNC(int) _PyState_AddModule(
+    PyThreadState *tstate,
+    PyObject* module,
+    struct PyModuleDef* def);
 
 #ifdef __cplusplus
 }

@@ -456,7 +456,7 @@ and off individually.  They are described here in more detail.
 -------------------------------
 
 .. module:: lib2to3
-   :synopsis: the 2to3 library
+   :synopsis: The 2to3 library
 
 .. moduleauthor:: Guido van Rossum
 .. moduleauthor:: Collin Winter

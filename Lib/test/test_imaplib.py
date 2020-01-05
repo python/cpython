@@ -109,7 +109,7 @@ else:
 
 
 class SimpleIMAPHandler(socketserver.StreamRequestHandler):
-    timeout = 1
+    timeout = support.LOOPBACK_TIMEOUT
     continuation = None
     capabilities = ''
 
@@ -238,7 +238,7 @@ class NewIMAPTestsMixin():
         # cleanup the server
         self.server.shutdown()
         self.server.server_close()
-        support.join_thread(self.thread, 3.0)
+        support.join_thread(self.thread)
         # Explicitly clear the attribute to prevent dangling thread
         self.thread = None
 

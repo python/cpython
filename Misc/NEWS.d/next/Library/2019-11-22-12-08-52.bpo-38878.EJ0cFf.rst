@@ -1,0 +1,2 @@
+Fixed __subclasshook__ of :class:`os.PathLike` to return a correct result
+upon inheritence. Patch by Bar Harel.

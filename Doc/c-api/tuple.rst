@@ -182,9 +182,12 @@ type.
    +-----------+------------------+-----------------------------------------+
 
 
-.. c:var:: char* PyStructSequence_UnnamedField
+.. c:var:: const char * const PyStructSequence_UnnamedField
 
    Special value for a field name to leave it unnamed.
+
+   .. versionchanged:: 3.9
+      The type was changed from ``char *``.
 
 
 .. c:function:: PyObject* PyStructSequence_New(PyTypeObject *type)

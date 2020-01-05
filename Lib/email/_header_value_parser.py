@@ -850,8 +850,13 @@ class MsgID(TokenList):
         # message-id tokens may not be folded.
         return str(self) + policy.linesep
 
+
 class MessageID(MsgID):
     token_type = 'message-id'
+
+
+class InvalidMessageID(MessageID):
+    token_type = 'invalid-message-id'
 
 
 class Header(TokenList):
@@ -2042,7 +2047,7 @@ def get_msg_id(value):
        no-fold-literal = "[" *dtext "]"
     """
     msg_id = MsgID()
-    if value[0] in CFWS_LEADER:
+    if value and value[0] in CFWS_LEADER:
         token, value = get_cfws(value)
         msg_id.append(token)
     if not value or value[0] != '<':
@@ -2110,10 +2115,18 @@ def parse_message_id(value):
     message_id = MessageID()
     try:
         token, value = get_msg_id(value)
-    except errors.HeaderParseError:
-        message_id.defects.append(errors.InvalidHeaderDefect(
-            "Expected msg-id but found {!r}".format(value)))
-    message_id.append(token)
+        message_id.append(token)
+    except errors.HeaderParseError as ex:
+        token = get_unstructured(value)
+        message_id = InvalidMessageID(token)
+        message_id.defects.append(
+            errors.InvalidHeaderDefect("Invalid msg-id: {!r}".format(ex)))
+    else:
+        # Value after parsing a valid msg_id should be None.
+        if value:
+            message_id.defects.append(errors.InvalidHeaderDefect(
+                "Unexpected {!r}".format(value)))
+
     return message_id
 
 #

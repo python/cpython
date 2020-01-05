@@ -241,7 +241,7 @@ class CodeTest(unittest.TestCase):
         def func2():
             y = 2
             return y
-        code2 = func.__code__
+        code2 = func2.__code__
 
         for attr, value in (
             ("co_argcount", 0),

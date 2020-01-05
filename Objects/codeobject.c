@@ -610,7 +610,7 @@ code.replace
     co_name: unicode(c_default="self->co_name") = None
     co_lnotab: PyBytesObject(c_default="(PyBytesObject *)self->co_lnotab") = None
 
-Return a new code object with new specified fields.
+Return a copy of the code object with new values for the specified fields.
 [clinic start generated code]*/
 
 static PyObject *
@@ -622,7 +622,7 @@ code_replace_impl(PyCodeObject *self, int co_argcount,
                   PyObject *co_varnames, PyObject *co_freevars,
                   PyObject *co_cellvars, PyObject *co_filename,
                   PyObject *co_name, PyBytesObject *co_lnotab)
-/*[clinic end generated code: output=25c8e303913bcace input=77189e46579ec426]*/
+/*[clinic end generated code: output=25c8e303913bcace input=d9051bc8f24e6b28]*/
 {
 #define CHECK_INT_ARG(ARG) \
         if (ARG < 0) { \
@@ -640,6 +640,13 @@ code_replace_impl(PyCodeObject *self, int co_argcount,
     CHECK_INT_ARG(co_firstlineno);
 
 #undef CHECK_INT_ARG
+
+    if (PySys_Audit("code.__new__", "OOOiiiiii",
+                    co_code, co_filename, co_name, co_argcount,
+                    co_posonlyargcount, co_kwonlyargcount, co_nlocals,
+                    co_stacksize, co_flags) < 0) {
+        return NULL;
+    }
 
     return (PyObject *)PyCode_NewWithPosOnlyArgs(
         co_argcount, co_posonlyargcount, co_kwonlyargcount, co_nlocals,

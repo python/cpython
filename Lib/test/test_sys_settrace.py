@@ -161,8 +161,8 @@ def raises():
 def test_raise():
     try:
         raises()
-    except Exception as exc:
-        x = 1
+    except Exception:
+        pass
 
 test_raise.events = [(0, 'call'),
                      (1, 'line'),
@@ -191,7 +191,7 @@ def _settrace_and_raise(tracefunc):
 def settrace_and_raise(tracefunc):
     try:
         _settrace_and_raise(tracefunc)
-    except RuntimeError as exc:
+    except RuntimeError:
         pass
 
 settrace_and_raise.events = [(2, 'exception'),
@@ -480,6 +480,51 @@ class TraceTestCase(unittest.TestCase):
         self.run_and_compare(func,
             [(0, 'call'),
              (1, 'line')])
+
+    def test_18_except_with_name(self):
+        def func():
+            try:
+                try:
+                    raise Exception
+                except Exception as e:
+                    raise
+                    x = "Something"
+                    y = "Something"
+            except Exception:
+                pass
+
+        self.run_and_compare(func,
+            [(0, 'call'),
+             (1, 'line'),
+             (2, 'line'),
+             (3, 'line'),
+             (3, 'exception'),
+             (4, 'line'),
+             (5, 'line'),
+             (8, 'line'),
+             (9, 'line'),
+             (9, 'return')])
+
+    def test_19_except_with_finally(self):
+        def func():
+            try:
+                try:
+                    raise Exception
+                finally:
+                    y = "Something"
+            except Exception:
+                b = 23
+
+        self.run_and_compare(func,
+            [(0, 'call'),
+             (1, 'line'),
+             (2, 'line'),
+             (3, 'line'),
+             (3, 'exception'),
+             (5, 'line'),
+             (6, 'line'),
+             (7, 'line'),
+             (7, 'return')])
 
 
 class SkipLineEventsTraceTestCase(TraceTestCase):
@@ -1431,7 +1476,7 @@ output.append(4)
         1 / 0
 
     @jump_test(3, 2, [2], event='return', error=(ValueError,
-               "can't jump from a yield statement"))
+               "can't jump from a 'yield' statement"))
     def test_no_jump_from_yield(output):
         def gen():
             output.append(2)

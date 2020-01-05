@@ -1,3 +1,0 @@
-Division handling of PurePath now returns NotImplemented instead of raising
-a TypeError when passed something other than an instance of str or PurePath.
-Patch by Roger Aiudi.

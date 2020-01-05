@@ -1,3 +1,0 @@
-Fixed minor inconsistency in :meth:`list.__contains__`,
-:meth:`tuple.__contains__` and a few other places. The collection's item is
-now always at the left and the needle is on the right of ``==``.

@@ -1,4 +1,0 @@
-Fixed ``__eq__``, ``__lt__`` etc implementations in some classes. They now
-return :data:`NotImplemented` for unsupported type of the other operand.
-This allows the other operand to play role (for example the equality
-comparison with :data:`~unittest.mock.ANY` will return ``True``).

@@ -1,2 +1,0 @@
-Any synchronous magic methods on an AsyncMock now return a MagicMock. Any
-asynchronous magic methods on a MagicMock now return an AsyncMock.

@@ -385,7 +385,7 @@ class POP3:
             for capline in rawcaps:
                 capnm, capargs = _parsecap(capline)
                 caps[capnm] = capargs
-        except error_proto as _err:
+        except error_proto:
             raise error_proto('-ERR CAPA not supported by server')
         return caps
 
