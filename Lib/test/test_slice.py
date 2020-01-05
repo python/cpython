@@ -1,5 +1,6 @@
 # tests for slice objects; in particular the indices method.
 
+import dis
 import itertools
 import operator
 import sys
@@ -250,6 +251,16 @@ class SliceTest(unittest.TestCase):
         o = None
         support.gc_collect()
         self.assertIsNone(w())
+
+    def test_slice_folding(self):
+        def g():
+            "abcde"[2:4]
+        gc = g.__code__.co_consts
+
+        self.assertIn("cd", gc)
+        self.assertNotIn("abcde", gc)
+        self.assertNotIn(2, gc)
+        self.assertNotIn(4, gc)
 
 if __name__ == "__main__":
     unittest.main()

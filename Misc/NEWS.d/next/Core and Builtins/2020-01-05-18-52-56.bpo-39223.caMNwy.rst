@@ -1,0 +1,2 @@
+Support slices (e.g: ``"abcde"[2:4]``) in constant folding. Patch by
+Batuhan Taskaya.

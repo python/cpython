@@ -305,26 +305,44 @@ fold_tuple(expr_ty node, PyArena *arena, int optimize)
     return make_const(node, newval, arena);
 }
 
+#define ENSURE_CONSTANT(NODE) \
+    if ((NODE) != NULL && (NODE)->kind != Constant_kind) \
+        return 1;
+
+#define GET_CONSTANT(NODE) (((NODE) != NULL) ? (NODE)->v.Constant.value : NULL)
+
 static int
 fold_subscr(expr_ty node, PyArena *arena, int optimize)
 {
-    PyObject *newval;
-    expr_ty arg, idx;
+    PyObject *newval, *key;
+    expr_ty arg;
     slice_ty slice;
 
     arg = node->v.Subscript.value;
     slice = node->v.Subscript.slice;
-    if (node->v.Subscript.ctx != Load ||
-            arg->kind != Constant_kind ||
-            /* TODO: handle other types of slices */
-            slice->kind != Index_kind ||
-            slice->v.Index.value->kind != Constant_kind)
+    if (node->v.Subscript.ctx != Load)
     {
         return 1;
     }
+    ENSURE_CONSTANT(arg)
+    switch (slice->kind) {
+    case Index_kind:
+        ENSURE_CONSTANT(slice->v.Index.value)
+        key = GET_CONSTANT(slice->v.Index.value);
+        break;
+    case Slice_kind:
+        ENSURE_CONSTANT(slice->v.Slice.lower)
+        ENSURE_CONSTANT(slice->v.Slice.upper)
+        ENSURE_CONSTANT(slice->v.Slice.step)
+        key = PySlice_New(GET_CONSTANT(slice->v.Slice.lower),
+                          GET_CONSTANT(slice->v.Slice.upper),
+                          GET_CONSTANT(slice->v.Slice.step));
+        break;
+    default:
+        return 1;
+    }
 
-    idx = slice->v.Index.value;
-    newval = PyObject_GetItem(arg->v.Constant.value, idx->v.Constant.value);
+    newval = PyObject_GetItem(GET_CONSTANT(arg), key);
     return make_const(node, newval, arena);
 }
 
