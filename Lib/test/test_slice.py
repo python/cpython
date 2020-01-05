@@ -1,6 +1,5 @@
 # tests for slice objects; in particular the indices method.
 
-import dis
 import itertools
 import operator
 import sys
