@@ -18,7 +18,7 @@ STRINGLIB(bytes_join)(PyObject *sep, PyObject *iterable)
     Py_buffer *buffers = NULL;
 #define NB_STATIC_BUFFERS 10
     Py_buffer static_buffers[NB_STATIC_BUFFERS];
-#define GIL_THRESHOLD 65536
+#define GIL_THRESHOLD 1048576
     int drop_gil = 1;
     PyThreadState *save;
 
