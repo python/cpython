@@ -1,5 +1,6 @@
 """Unit tests for the positional only argument syntax specified in PEP 570."""
 
+import dis
 import pickle
 import unittest
 
@@ -418,6 +419,17 @@ class PositionalOnlyTestCase(unittest.TestCase):
 
     def test_annotations(self):
         assert global_inner_has_pos_only().__annotations__ == {'x': int}
+
+    def test_annotations_constant_fold(self):
+        def g():
+            def f(x: not (int is int), /): ...
+
+        # without constant folding we end up with
+        # COMPARE_OP(is), UNARY_NOT
+        # with constant folding we should expect a COMPARE_OP(is not)
+        codes = [(i.opname, i.argval) for i in dis.get_instructions(g)]
+        self.assertNotIn(('UNARY_NOT', None), codes)
+        self.assertIn(('COMPARE_OP', 'is not'), codes)
 
 
 if __name__ == "__main__":
