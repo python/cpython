@@ -19,6 +19,8 @@ jobs:
         Name: win32
       amd64:
         Name: amd64
+      arm64:
+        Name: arm64
 
   steps:
   - template: ./checkout.yml

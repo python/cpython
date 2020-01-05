@@ -1,2 +1,0 @@
-Fix `NonCallableMock._call_matcher` returning tuple instead of `_Call` object
-when `self._spec_signature` exists. Patch by Elizabeth Uselton

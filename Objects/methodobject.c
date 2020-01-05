@@ -313,21 +313,6 @@ PyTypeObject PyCFunction_Type = {
     0,                                          /* tp_dict */
 };
 
-/* Clear out the free list */
-
-int
-PyCFunction_ClearFreeList(void)
-{
-    return 0;
-}
-
-void
-_PyCFunction_Fini(void)
-{
-    (void)PyCFunction_ClearFreeList();
-}
-
-
 /* Vectorcall functions for each of the PyCFunction calling conventions,
  * except for METH_VARARGS (possibly combined with METH_KEYWORDS) which
  * doesn't use vectorcall.

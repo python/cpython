@@ -121,8 +121,20 @@ Added the *indent* option to :func:`~ast.dump` which allows it to produce a
 multiline indented output.
 (Contributed by Serhiy Storchaka in :issue:`37995`.)
 
+Added :func:`ast.unparse` as a function in the :mod:`ast` module that can
+be used to unparse an :class:`ast.AST` object and produce a string with code
+that would produce an equivalent :class:`ast.AST` object when parsed.
+(Contributed by Pablo Galindo and Batuhan Taskaya in :issue:`38870`.)
+
 asyncio
 -------
+
+Due to significant security concerns, the *reuse_address* parameter of
+:meth:`asyncio.loop.create_datagram_endpoint` is no longer supported. This is
+because of the behavior of the socket option ``SO_REUSEADDR`` in UDP. For more
+details, see the documentation for ``loop.create_datagram_endpoint()``.
+(Contributed by Kyle Stanley, Antoine Pitrou, and Yury Selivanov in
+:issue:`37228`.)
 
 Added a new :term:`coroutine` :meth:`~asyncio.loop.shutdown_default_executor`
 that schedules a shutdown for the default executor that waits on the
@@ -146,6 +158,14 @@ fcntl
 Added constants :data:`~fcntl.F_OFD_GETLK`, :data:`~fcntl.F_OFD_SETLK`
 and :data:`~fcntl.F_OFD_SETLKW`.
 (Contributed by Dong-hee Na in :issue:`38602`.)
+
+gc
+--
+
+When the garbage collector makes a collection in which some objects resurrect
+(they are reachable from outside the isolated cycles after the finalizers have
+been executed), do not block the collection of all objects that are still
+unreachable. (Contributed by Pablo Galindo and Tim Peters in :issue:`38379`.)
 
 os
 --
@@ -179,8 +199,8 @@ case), and one used ``__VENV_NAME__`` instead.
 pathlib
 -------
 
-Added :meth:`~pathlib.Path.readlink()` which acts similar to
-:func:`~os.readlink`.
+Added :meth:`pathlib.Path.readlink()` which acts similarly to
+:func:`os.readlink`.
 (Contributed by Girts Folkmanis in :issue:`30618`)
 
 pprint
@@ -197,6 +217,13 @@ now raises :exc:`ImportError` instead of :exc:`ValueError` for invalid relative
 import attempts.
 (Contributed by Ngalim Siregar in :issue:`37444`.)
 
+signal
+------
+
+Exposed the Linux-specific :func:`signal.pidfd_send_signal` for sending to
+signals to a process using a file descriptor instead of a pid. (:issue:`38712`)
+
+
 Optimizations
 =============
 
@@ -210,11 +237,27 @@ Build and C API Changes
   ``PyThreadState.recursion_depth`` field. Remove ``_Py_CheckRecursionLimit``
   from the stable ABI.
   (Contributed by Victor Stinner in :issue:`38644`.)
+
 * Add a new public :c:func:`PyObject_CallNoArgs` function to the C API, which
   calls a callable Python object without any arguments. It is the most efficient
   way to call a callable Python object without any argument.
   (Contributed by Victor Stinner in :issue:`37194`.)
 
+* The global variable :c:data:`PyStructSequence_UnnamedField` is now a constant
+  and refers to a constant string.
+  (Contributed by Serhiy Storchaka in :issue:`38650`.)
+
+* Exclude ``PyFPE_START_PROTECT()`` and ``PyFPE_END_PROTECT()`` macros of
+  ``pyfpe.h`` from ``Py_LIMITED_API`` (stable API).
+  (Contributed by Victor Stinner in :issue:`38835`.)
+
+* Remove ``PyMethod_ClearFreeList()`` and ``PyCFunction_ClearFreeList()``
+  functions: the free lists of bound method objects have been removed.
+  (Contributed by Inada Naoki and Victor Stinner in :issue:`37340`.)
+
+* Remove ``PyUnicode_ClearFreeList()`` function: the Unicode free list has been
+  removed in Python 3.3.
+  (Contributed by Victor Stinner in :issue:`38896`.)
 
 
 Deprecated
@@ -236,14 +279,28 @@ Deprecated
   the module will restrict its seeds to :const:`None`, :class:`int`,
   :class:`float`, :class:`str`, :class:`bytes`, and :class:`bytearray`.
 
+* Opening the :class:`~gzip.GzipFile` file for writing without specifying
+  the *mode* argument is deprecated.  In future Python versions it will always
+  be opened for reading by default.  Specify the *mode* argument for opening
+  it for writing and silencing a warning.
+  (Contributed by Serhiy Storchaka in :issue:`28286`.)
+
 * Deprecated the ``split()`` method of :class:`_tkinter.TkappType` in
   favour of the ``splitlist()`` method which has more consistent and
   predicable behavior.
   (Contributed by Serhiy Storchaka in :issue:`38371`.)
 
+* The explicit passing of coroutine objects to :func:`asyncio.wait` has been
+  deprecated and will be removed in version 3.11.
+  (Contributed by Yury Selivanov and Kyle Stanley in :issue:`34790`.)
 
 Removed
 =======
+
+* :class:`array.array`: ``tostring()`` and ``fromstring()`` methods have been
+  removed. They were aliases to ``tobytes()`` and ``frombytes()``, deprecated
+  since Python 3.2.
+  (Contributed by Victor Stinner in :issue:`38916`.)
 
 * The abstract base classes in :mod:`collections.abc` no longer are
   exposed in the regular :mod:`collections` module.  This will help

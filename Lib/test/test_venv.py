@@ -141,16 +141,18 @@ class BasicTest(BaseTest):
     def test_upgrade_dependencies(self):
         builder = venv.EnvBuilder()
         bin_path = 'Scripts' if sys.platform == 'win32' else 'bin'
-        pip_exe = 'pip.exe' if sys.platform == 'win32' else 'pip'
+        python_exe = 'python.exe' if sys.platform == 'win32' else 'python'
         with tempfile.TemporaryDirectory() as fake_env_dir:
 
             def pip_cmd_checker(cmd):
                 self.assertEqual(
                     cmd,
                     [
-                        os.path.join(fake_env_dir, bin_path, pip_exe),
+                        os.path.join(fake_env_dir, bin_path, python_exe),
+                        '-m',
+                        'pip',
                         'install',
-                        '-U',
+                        '--upgrade',
                         'pip',
                         'setuptools'
                     ]

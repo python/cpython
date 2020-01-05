@@ -104,7 +104,7 @@ directory containing the virtual environment):
 +=============+=================+=========================================+
 | POSIX       | bash/zsh        | $ source <venv>/bin/activate            |
 +-------------+-----------------+-----------------------------------------+
-|             | fish            | $ . <venv>/bin/activate.fish            |
+|             | fish            | $ source <venv>/bin/activate.fish       |
 +-------------+-----------------+-----------------------------------------+
 |             | csh/tcsh        | $ source <venv>/bin/activate.csh        |
 +-------------+-----------------+-----------------------------------------+

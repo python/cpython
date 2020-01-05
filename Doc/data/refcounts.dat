@@ -3045,8 +3045,6 @@ Py_XINCREF:PyObject*:o:+1:if o is not NULL
 
 _PyImport_Fini:void:::
 
-_PyImport_Init:void:::
-
 _PyObject_New:PyObject*::+1:
 _PyObject_New:PyTypeObject*:type:0:
 

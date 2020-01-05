@@ -132,7 +132,7 @@ creation according to their needs, the :class:`EnvBuilder` class.
     .. versionadded:: 3.6
        Added the ``prompt`` parameter
 
-    .. versionadded:: 3.8
+    .. versionadded:: 3.9
        Added the ``upgrade_deps`` parameter
 
     Creators of third-party virtual environment tools will be free to use the
@@ -197,7 +197,7 @@ creation according to their needs, the :class:`EnvBuilder` class.
        ``setuptools``) in the environment. This is done by shelling out to the
        ``pip`` executable in the environment.
 
-       .. versionadded:: 3.8
+       .. versionadded:: 3.9
 
     .. method:: post_setup(context)
 

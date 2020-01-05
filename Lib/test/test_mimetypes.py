@@ -51,6 +51,21 @@ class MimeTypesTestCase(unittest.TestCase):
         eq(self.db.guess_type('foo.xul', strict=False), ('text/xul', None))
         eq(self.db.guess_extension('image/jpg', strict=False), '.jpg')
 
+    def test_filename_with_url_delimiters(self):
+        # bpo-38449: URL delimiters cases should be handled also.
+        # They would have different mime types if interpreted as URL as
+        # compared to when interpreted as filename because of the semicolon.
+        eq = self.assertEqual
+        gzip_expected = ('application/x-tar', 'gzip')
+        eq(self.db.guess_type(";1.tar.gz"), gzip_expected)
+        eq(self.db.guess_type("?1.tar.gz"), gzip_expected)
+        eq(self.db.guess_type("#1.tar.gz"), gzip_expected)
+        eq(self.db.guess_type("#1#.tar.gz"), gzip_expected)
+        eq(self.db.guess_type(";1#.tar.gz"), gzip_expected)
+        eq(self.db.guess_type(";&1=123;?.tar.gz"), gzip_expected)
+        eq(self.db.guess_type("?k1=v1&k2=v2.tar.gz"), gzip_expected)
+        eq(self.db.guess_type(r" \"\`;b&b&c |.tar.gz"), gzip_expected)
+
     def test_guess_all_types(self):
         eq = self.assertEqual
         unless = self.assertTrue

@@ -16,10 +16,8 @@ support.requires('network')
 class URLTimeoutTest(unittest.TestCase):
     # XXX this test doesn't seem to test anything useful.
 
-    TIMEOUT = 30.0
-
     def setUp(self):
-        socket.setdefaulttimeout(self.TIMEOUT)
+        socket.setdefaulttimeout(support.INTERNET_TIMEOUT)
 
     def tearDown(self):
         socket.setdefaulttimeout(None)

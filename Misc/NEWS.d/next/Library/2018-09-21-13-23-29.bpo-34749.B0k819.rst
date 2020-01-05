@@ -1,2 +1,0 @@
-:func:`binascii.a2b_base64` is now up to 2 times faster. Patch by Sergey
-Fedoseev.

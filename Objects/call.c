@@ -302,13 +302,12 @@ PyCFunction_Call(PyObject *callable, PyObject *args, PyObject *kwargs)
 /* --- PyFunction call functions ---------------------------------- */
 
 static PyObject* _Py_HOT_FUNCTION
-function_code_fastcall(PyCodeObject *co, PyObject *const *args, Py_ssize_t nargs,
+function_code_fastcall(PyThreadState *tstate, PyCodeObject *co,
+                       PyObject *const *args, Py_ssize_t nargs,
                        PyObject *globals)
 {
-    assert(globals != NULL);
-
-    PyThreadState *tstate = _PyThreadState_GET();
     assert(tstate != NULL);
+    assert(globals != NULL);
 
     /* XXX Perhaps we should create a specialized
        _PyFrame_New_NoTrack() that doesn't take locals, but does
@@ -344,57 +343,61 @@ PyObject *
 _PyFunction_Vectorcall(PyObject *func, PyObject* const* stack,
                        size_t nargsf, PyObject *kwnames)
 {
+    assert(PyFunction_Check(func));
+    assert(kwnames == NULL || PyTuple_CheckExact(kwnames));
+
+    Py_ssize_t nargs = PyVectorcall_NARGS(nargsf);
+    assert(nargs >= 0);
+    Py_ssize_t nkwargs = (kwnames == NULL) ? 0 : PyTuple_GET_SIZE(kwnames);
+    assert((nargs == 0 && nkwargs == 0) || stack != NULL);
+    /* kwnames must only contain strings and all keys must be unique */
+
+    PyThreadState *tstate = _PyThreadState_GET();
     PyCodeObject *co = (PyCodeObject *)PyFunction_GET_CODE(func);
     PyObject *globals = PyFunction_GET_GLOBALS(func);
     PyObject *argdefs = PyFunction_GET_DEFAULTS(func);
-    PyObject *kwdefs, *closure, *name, *qualname;
-    PyObject **d;
-    Py_ssize_t nkwargs = (kwnames == NULL) ? 0 : PyTuple_GET_SIZE(kwnames);
-    Py_ssize_t nd;
-
-    assert(PyFunction_Check(func));
-    Py_ssize_t nargs = PyVectorcall_NARGS(nargsf);
-    assert(nargs >= 0);
-    assert(kwnames == NULL || PyTuple_CheckExact(kwnames));
-    assert((nargs == 0 && nkwargs == 0) || stack != NULL);
-    /* kwnames must only contain strings and all keys must be unique */
 
     if (co->co_kwonlyargcount == 0 && nkwargs == 0 &&
         (co->co_flags & ~PyCF_MASK) == (CO_OPTIMIZED | CO_NEWLOCALS | CO_NOFREE))
     {
         if (argdefs == NULL && co->co_argcount == nargs) {
-            return function_code_fastcall(co, stack, nargs, globals);
+            return function_code_fastcall(tstate, co, stack, nargs, globals);
         }
         else if (nargs == 0 && argdefs != NULL
                  && co->co_argcount == PyTuple_GET_SIZE(argdefs)) {
             /* function called with no arguments, but all parameters have
                a default value: use default values as arguments .*/
             stack = _PyTuple_ITEMS(argdefs);
-            return function_code_fastcall(co, stack, PyTuple_GET_SIZE(argdefs),
+            return function_code_fastcall(tstate, co,
+                                          stack, PyTuple_GET_SIZE(argdefs),
                                           globals);
         }
     }
 
-    kwdefs = PyFunction_GET_KW_DEFAULTS(func);
-    closure = PyFunction_GET_CLOSURE(func);
-    name = ((PyFunctionObject *)func) -> func_name;
-    qualname = ((PyFunctionObject *)func) -> func_qualname;
+    PyObject *kwdefs = PyFunction_GET_KW_DEFAULTS(func);
+    PyObject *closure = PyFunction_GET_CLOSURE(func);
+    PyObject *name = ((PyFunctionObject *)func) -> func_name;
+    PyObject *qualname = ((PyFunctionObject *)func) -> func_qualname;
 
+    PyObject **d;
+    Py_ssize_t nd;
     if (argdefs != NULL) {
         d = _PyTuple_ITEMS(argdefs);
         nd = PyTuple_GET_SIZE(argdefs);
+        assert(nd <= INT_MAX);
     }
     else {
         d = NULL;
         nd = 0;
     }
-    return _PyEval_EvalCodeWithName((PyObject*)co, globals, (PyObject *)NULL,
-                                    stack, nargs,
-                                    nkwargs ? _PyTuple_ITEMS(kwnames) : NULL,
-                                    stack + nargs,
-                                    nkwargs, 1,
-                                    d, (int)nd, kwdefs,
-                                    closure, name, qualname);
+    return _PyEval_EvalCode(tstate,
+                (PyObject*)co, globals, (PyObject *)NULL,
+                stack, nargs,
+                nkwargs ? _PyTuple_ITEMS(kwnames) : NULL,
+                stack + nargs,
+                nkwargs, 1,
+                d, (int)nd, kwdefs,
+                closure, name, qualname);
 }
 
 

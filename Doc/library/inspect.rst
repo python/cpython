@@ -70,6 +70,9 @@ attributes:
 |           |                   | method is bound, or       |
 |           |                   | ``None``                  |
 +-----------+-------------------+---------------------------+
+|           | __module__        | name of module in which   |
+|           |                   | this method was defined   |
++-----------+-------------------+---------------------------+
 | function  | __doc__           | documentation string      |
 +-----------+-------------------+---------------------------+
 |           | __name__          | name with which this      |
@@ -97,6 +100,9 @@ attributes:
 |           |                   | ``"return"`` key is       |
 |           |                   | reserved for return       |
 |           |                   | annotations.              |
++-----------+-------------------+---------------------------+
+|           | __module__        | name of module in which   |
+|           |                   | this function was defined |
 +-----------+-------------------+---------------------------+
 | traceback | tb_frame          | frame object at this      |
 |           |                   | level                     |
@@ -427,7 +433,7 @@ attributes:
 
    Return ``True`` if the object is a data descriptor.
 
-   Data descriptors have both a :attr:`~object.__get__` and a :attr:`~object.__set__` method.
+   Data descriptors have a :attr:`~object.__set__` or a :attr:`~object.__delete__` method.
    Examples are properties (defined in Python), getsets, and members.  The
    latter two are defined in C and there are more specific tests available for
    those types, which is robust across Python implementations.  Typically, data

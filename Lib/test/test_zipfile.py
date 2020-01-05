@@ -571,6 +571,20 @@ class StoredTestsWithSourceFile(AbstractTestsWithSourceFile,
             with open(TESTFN, "rb") as f:
                 self.assertEqual(zipfp.read(TESTFN), f.read())
 
+    def test_io_on_closed_zipextfile(self):
+        fname = "somefile.txt"
+        with zipfile.ZipFile(TESTFN2, mode="w") as zipfp:
+            zipfp.writestr(fname, "bogus")
+
+        with zipfile.ZipFile(TESTFN2, mode="r") as zipfp:
+            with zipfp.open(fname) as fid:
+                fid.close()
+                self.assertRaises(ValueError, fid.read)
+                self.assertRaises(ValueError, fid.seek, 0)
+                self.assertRaises(ValueError, fid.tell)
+                self.assertRaises(ValueError, fid.readable)
+                self.assertRaises(ValueError, fid.seekable)
+
     def test_write_to_readonly(self):
         """Check that trying to call write() on a readonly ZipFile object
         raises a ValueError."""

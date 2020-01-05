@@ -330,7 +330,7 @@ class _UnixSelectorEventLoop(selector_events.BaseSelectorEventLoop):
     async def _sock_sendfile_native(self, sock, file, offset, count):
         try:
             os.sendfile
-        except AttributeError as exc:
+        except AttributeError:
             raise exceptions.SendfileNotAvailableError(
                 "os.sendfile() is not available")
         try:
@@ -339,7 +339,7 @@ class _UnixSelectorEventLoop(selector_events.BaseSelectorEventLoop):
             raise exceptions.SendfileNotAvailableError("not a regular file")
         try:
             fsize = os.fstat(fileno).st_size
-        except OSError as err:
+        except OSError:
             raise exceptions.SendfileNotAvailableError("not a regular file")
         blocksize = count if count else fsize
         if not blocksize:
@@ -930,9 +930,20 @@ class PidfdChildWatcher(AbstractChildWatcher):
     def _do_wait(self, pid):
         pidfd, callback, args = self._callbacks.pop(pid)
         self._loop._remove_reader(pidfd)
-        _, status = os.waitpid(pid, 0)
+        try:
+            _, status = os.waitpid(pid, 0)
+        except ChildProcessError:
+            # The child process is already reaped
+            # (may happen if waitpid() is called elsewhere).
+            returncode = 255
+            logger.warning(
+                "child process pid %d exit status already read: "
+                " will report returncode 255",
+                pid)
+        else:
+            returncode = _compute_returncode(status)
+
         os.close(pidfd)
-        returncode = _compute_returncode(status)
         callback(pid, returncode, *args)
 
     def remove_child_handler(self, pid):
@@ -1406,8 +1417,7 @@ class _UnixDefaultEventLoopPolicy(events.BaseDefaultEventLoopPolicy):
         with events._lock:
             if self._watcher is None:  # pragma: no branch
                 self._watcher = ThreadedChildWatcher()
-                if isinstance(threading.current_thread(),
-                              threading._MainThread):
+                if threading.current_thread() is threading.main_thread():
                     self._watcher.attach_loop(self._local._loop)
 
     def set_event_loop(self, loop):
@@ -1421,7 +1431,7 @@ class _UnixDefaultEventLoopPolicy(events.BaseDefaultEventLoopPolicy):
         super().set_event_loop(loop)
 
         if (self._watcher is not None and
-                isinstance(threading.current_thread(), threading._MainThread)):
+                threading.current_thread() is threading.main_thread()):
             self._watcher.attach_loop(loop)
 
     def get_child_watcher(self):
