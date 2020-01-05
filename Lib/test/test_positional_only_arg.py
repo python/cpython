@@ -16,11 +16,6 @@ def global_pos_only_and_normal(a, /, b):
 def global_pos_only_defaults(a=1, /, b=2):
     return a, b
 
-def global_inner_has_pos_only():
-    def f(x: int, /): ...
-    return f
-
-
 class PositionalOnlyTestCase(unittest.TestCase):
 
     def assertRaisesSyntaxError(self, codestr, regex="invalid syntax"):
@@ -266,12 +261,6 @@ class PositionalOnlyTestCase(unittest.TestCase):
         with self.assertRaisesRegex(TypeError, expected):
             Example().f(1, b=2)
 
-    def test_mangling(self):
-        class X:
-            def f(self, *, __a=42):
-                return __a
-        self.assertEqual(X().f(), 42)
-
     def test_module_function(self):
         with self.assertRaisesRegex(TypeError, r"f\(\) missing 2 required positional arguments: 'a' and 'b'"):
             global_pos_only_f()
@@ -306,6 +295,29 @@ class PositionalOnlyTestCase(unittest.TestCase):
             f(1,2)(3)
         with self.assertRaisesRegex(TypeError, r"g\(\) takes 2 positional arguments but 3 were given"):
             f(1,2)(3,4,5)
+
+    def test_annotations_in_closures(self):
+
+        def inner_has_pos_only():
+            def f(x: int, /): ...
+            return f
+
+        assert inner_has_pos_only().__annotations__ == {'x': int}
+
+        class Something:
+            def method(self):
+                def f(x: int, /): ...
+                return f
+
+        assert Something().method().__annotations__ == {'x': int}
+
+        def multiple_levels():
+            def inner_has_pos_only():
+                def f(x: int, /): ...
+                return f
+            return inner_has_pos_only()
+
+        assert multiple_levels().__annotations__ == {'x': int}
 
     def test_same_keyword_as_positional_with_kwargs(self):
         def f(something,/,**kwargs):
@@ -416,9 +428,6 @@ class PositionalOnlyTestCase(unittest.TestCase):
                 return super().method()
 
         self.assertEqual(C().method(), sentinel)
-
-    def test_annotations(self):
-        assert global_inner_has_pos_only().__annotations__ == {'x': int}
 
     def test_annotations_constant_fold(self):
         def g():
