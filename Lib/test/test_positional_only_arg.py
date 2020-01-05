@@ -15,6 +15,10 @@ def global_pos_only_and_normal(a, /, b):
 def global_pos_only_defaults(a=1, /, b=2):
     return a, b
 
+def global_inner_has_pos_only():
+    def f(x: int, /): ...
+    return f
+
 
 class PositionalOnlyTestCase(unittest.TestCase):
 
@@ -411,6 +415,9 @@ class PositionalOnlyTestCase(unittest.TestCase):
                 return super().method()
 
         self.assertEqual(C().method(), sentinel)
+
+    def test_annotations(self):
+        assert global_inner_has_pos_only().__annotations__ == {'x': int}
 
 
 if __name__ == "__main__":
