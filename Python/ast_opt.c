@@ -324,25 +324,27 @@ fold_subscr(expr_ty node, PyArena *arena, int optimize)
     {
         return 1;
     }
-    ENSURE_CONSTANT(arg)
+    ENSURE_CONSTANT(arg);
     switch (slice->kind) {
     case Index_kind:
-        ENSURE_CONSTANT(slice->v.Index.value)
+        ENSURE_CONSTANT(slice->v.Index.value);
         key = GET_CONSTANT(slice->v.Index.value);
+        newval = PyObject_GetItem(GET_CONSTANT(arg), key);
         break;
     case Slice_kind:
-        ENSURE_CONSTANT(slice->v.Slice.lower)
-        ENSURE_CONSTANT(slice->v.Slice.upper)
-        ENSURE_CONSTANT(slice->v.Slice.step)
+        ENSURE_CONSTANT(slice->v.Slice.lower);
+        ENSURE_CONSTANT(slice->v.Slice.upper);
+        ENSURE_CONSTANT(slice->v.Slice.step);
         key = PySlice_New(GET_CONSTANT(slice->v.Slice.lower),
                           GET_CONSTANT(slice->v.Slice.upper),
                           GET_CONSTANT(slice->v.Slice.step));
+        newval = PyObject_GetItem(GET_CONSTANT(arg), key);
+        Py_DECREF(key);
         break;
     default:
         return 1;
     }
 
-    newval = PyObject_GetItem(GET_CONSTANT(arg), key);
     return make_const(node, newval, arena);
 }
 
