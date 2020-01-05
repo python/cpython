@@ -1718,7 +1718,7 @@ class CodecsModuleTest(unittest.TestCase):
         mock_open = mock.mock_open()
         with mock.patch('builtins.open', mock_open) as file:
             with self.assertRaises(LookupError):
-                codecs.open(support.TESTFN, mode = 'wt', encoding='invalid-format')
+                codecs.open(support.TESTFN, 'wt', 'invalid-encoding')
 
             file().close.assert_called()
 
