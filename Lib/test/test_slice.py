@@ -251,6 +251,7 @@ class SliceTest(unittest.TestCase):
         support.gc_collect()
         self.assertIsNone(w())
 
+    @support.cpython_only
     def test_slice_folding(self):
         def g():
             "abcde"[2:4]
