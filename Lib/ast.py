@@ -84,6 +84,9 @@ def literal_eval(node_or_string):
             return list(map(_convert, node.elts))
         elif isinstance(node, Set):
             return set(map(_convert, node.elts))
+        elif (isinstance(node, Call) and isinstance(node.func, Name) and
+              node.func.id == 'set' and node.args == node.keywords == []):
+            return set()
         elif isinstance(node, Dict):
             return dict(zip(map(_convert, node.keys),
                             map(_convert, node.values)))
@@ -782,11 +785,11 @@ class _Unparser(NodeVisitor):
 
     def visit_YieldFrom(self, node):
         with self.require_parens(_Precedence.YIELD, node):
-            self.write("yield from")
-            if node.value:
-                self.write(" ")
-                self.set_precedence(_Precedence.ATOM, node.value)
-                self.traverse(node.value)
+            self.write("yield from ")
+            if not node.value:
+                raise ValueError("Node can't be used without a value attribute.")
+            self.set_precedence(_Precedence.ATOM, node.value)
+            self.traverse(node.value)
 
     def visit_Raise(self, node):
         self.fill("raise")

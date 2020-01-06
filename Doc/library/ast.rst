@@ -168,7 +168,7 @@ and classes for traversing abstract syntax trees:
    back with :func:`ast.parse`.
 
    .. warning::
-      The produced code string will not necesarily be equal to the original
+      The produced code string will not necessarily be equal to the original
       code that generated the :class:`ast.AST` object.
 
    .. versionadded:: 3.9
@@ -193,6 +193,9 @@ and classes for traversing abstract syntax trees:
 
    .. versionchanged:: 3.2
       Now allows bytes and set literals.
+
+   .. versionchanged:: 3.9
+      Now supports creating empty sets with ``'set()'``.
 
 
 .. function:: get_docstring(node, clean=True)

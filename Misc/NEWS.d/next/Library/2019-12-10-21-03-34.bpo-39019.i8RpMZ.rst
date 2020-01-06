@@ -1,0 +1,2 @@
+Implement dummy ``__class_getitem__`` for ``subprocess.Popen``,
+``subprocess.CompletedProcess``

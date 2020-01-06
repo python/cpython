@@ -150,7 +150,7 @@ _PyWideStringList_Join(const PyWideStringList *list, wchar_t sep)
 static PyStatus
 _PyPathConfig_InitDLLPath(void)
 {
-    if (_Py_dll_path == NULL) {
+    if (_Py_dll_path != NULL) {
         /* Already set: nothing to do */
         return _PyStatus_OK();
     }
