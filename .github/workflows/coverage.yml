@@ -9,9 +9,9 @@ on:
     paths-ignore:
     - 'Doc/**'
     - 'Misc/**'
-  pull_request:
-    branches:
-    - master
+  #pull_request:
+  #  branches:
+  #  - master
   #  - 3.8
   #  - 3.7
   #  paths-ignore:
