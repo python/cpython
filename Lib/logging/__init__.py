@@ -1676,16 +1676,6 @@ class Logger(Filterer):
             logger = logger.parent
         return NOTSET
 
-    def _isEnabledForNoCache(self, level):
-        _acquireLock()
-        try:
-            if self.manager.disable >= level:
-                return False
-            else:
-                return level >= self.getEffectiveLevel()
-        finally:
-            _releaseLock()
-
     def isEnabledFor(self, level):
         """
         Is this logger enabled for level 'level'?
@@ -1696,8 +1686,17 @@ class Logger(Filterer):
         try:
             return self._cache[level]
         except KeyError:
-            self._cache[level] = self._isEnabledForNoCache(level)
-            return self._cache[level]
+            _acquireLock()
+            try:
+                if self.manager.disable >= level:
+                    is_enabled = self._cache[level] = False
+                else:
+                    is_enabled = self._cache[level] = (
+                        level >= self.getEffectiveLevel()
+                    )
+            finally:
+                _releaseLock()
+            return is_enabled
 
     def getChild(self, suffix):
         """
