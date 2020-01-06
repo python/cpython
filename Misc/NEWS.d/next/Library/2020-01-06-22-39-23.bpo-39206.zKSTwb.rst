@@ -1,0 +1,1 @@
+Add encoding detecting to _find_module() in modulefinder
