@@ -292,7 +292,7 @@ class IMAP4:
         # (which is used by socket.create_connection()) expects None
         # as a default value for host.
         if timeout is not None and not timeout:
-            raise ValueError('A non-blocking socket is not supported')
+            raise ValueError('Non-blocking socket (timeout=0) is not supported')
         host = None if not self.host else self.host
         sys.audit("imaplib.open", self, self.host, self.port)
         address = (host, self.port)
