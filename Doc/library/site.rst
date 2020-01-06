@@ -236,6 +236,8 @@ Module contents
    .. versionadded:: 3.2
 
 
+.. _site-commandline:
+
 Command Line Interface
 ----------------------
 
