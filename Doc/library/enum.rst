@@ -56,6 +56,7 @@ helper, :class:`auto`.
 .. class:: auto
 
     Instances are replaced with an appropriate value for Enum members.
+    Increment starts at 1 not 0.
 
 .. versionadded:: 3.6  ``Flag``, ``IntFlag``, ``auto``
 
