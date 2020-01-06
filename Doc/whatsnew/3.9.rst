@@ -382,6 +382,10 @@ Changes in the Python API
 * The :mod:`venv` activation scripts no longer special-case when
   ``__VENV_PROMPT__`` is set to ``""``.
 
+* The :meth:`select.epoll.unregister` method no longer ignores the
+  :data:`~errno.EBADF` error.
+  (Contributed by Victor Stinner in :issue:`39239`.)
+
 
 CPython bytecode changes
 ------------------------
