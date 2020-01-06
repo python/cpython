@@ -257,7 +257,17 @@ class FrameSummary:
         self._line = line
         if lookup_line:
             self.line
-        self.locals = {k: repr(v) for k, v in locals.items()} if locals else None
+        if locals:
+            self.locals = {}
+            for k, v in locals.items():
+                try:
+                    self.locals[k] = repr(v)
+                except (KeyboardInterrupt, SystemExit):
+                    raise
+                except BaseException as exc:
+                    self.locals[k] = f"<unrepresentable repr ({exc})>"
+        else:
+            self.locals = None
 
     def __eq__(self, other):
         if isinstance(other, FrameSummary):
