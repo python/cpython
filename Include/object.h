@@ -467,8 +467,6 @@ static inline void _Py_DECREF(
 #endif
     PyObject *op)
 {
-    (void)filename; /* may be unused, shut up -Wunused-parameter */
-    (void)lineno; /* may be unused, shut up -Wunused-parameter */
     _Py_DEC_REFTOTAL;
     if (--op->ob_refcnt != 0) {
 #ifdef Py_REF_DEBUG
