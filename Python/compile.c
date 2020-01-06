@@ -5449,7 +5449,7 @@ dfs(struct compiler *c, basicblock *b, struct assembler *a, int end)
     /* There is no real depth-first-search to do here because all the
      * blocks are emmited in topological order already so we just need to
      * follow the b_next pointers and place them in a->a_reverse_postorder in
-     * reverse order making sure that the first one starts at 0 */
+     * reverse order and make sure that the first one starts at 0. */
 
     for (a->a_nblocks = 0; b != NULL; b = b->b_next) {
         a->a_reverse_postorder[a->a_nblocks++] = b;
