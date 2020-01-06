@@ -1,0 +1,2 @@
+Correctly handle multi-line tokens in interactive mode. Patch by Pablo
+Galindo.
