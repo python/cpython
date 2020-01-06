@@ -886,6 +886,7 @@ tok_nextc(struct tok_state *tok)
                 size_t start = tok->start - tok->buf;
                 size_t oldlen = tok->cur - tok->buf;
                 size_t newlen = oldlen + strlen(newtok);
+                Py_ssize_t cur_multi_line_start = tok->multi_line_start - tok->buf;
                 char *buf = tok->buf;
                 buf = (char *)PyMem_REALLOC(buf, newlen+1);
                 tok->lineno++;
@@ -898,6 +899,7 @@ tok_nextc(struct tok_state *tok)
                 }
                 tok->buf = buf;
                 tok->cur = tok->buf + oldlen;
+                tok->multi_line_start = tok->buf + cur_multi_line_start;
                 tok->line_start = tok->cur;
                 strcpy(tok->buf + oldlen, newtok);
                 PyMem_FREE(newtok);
