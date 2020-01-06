@@ -5,7 +5,6 @@ from test import support
 from test.support import script_helper
 import unittest
 
-
 class EOFTestCase(unittest.TestCase):
     def test_EOFC(self):
         expect = "EOL while scanning string literal (<string>, line 1)"
@@ -48,7 +47,6 @@ class EOFTestCase(unittest.TestCase):
             file_name = script_helper.make_script(temp_dir, 'foo', 'y = 6\\')
             rc, out, err = script_helper.assert_python_failure(file_name)
             self.assertIn(b'unexpected EOF while parsing', err)
-
 
 if __name__ == "__main__":
     unittest.main()
