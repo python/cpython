@@ -103,6 +103,7 @@ import socketserver
 import sys
 import time
 import urllib.parse
+import contextlib
 from functools import partial
 
 from http import HTTPStatus
@@ -1286,7 +1287,10 @@ if __name__ == '__main__':
     # ensure dual-stack is not disabled; ref #38907
     class DualStackServer(ThreadingHTTPServer):
         def server_bind(self):
-            self.socket.setsockopt(socket.IPPROTO_IPV6, socket.IPV6_V6ONLY, 0)
+            # suppress exception when protocol is IPv4
+            with contextlib.suppress(Exception):
+                self.socket.setsockopt(
+                    socket.IPPROTO_IPV6, socket.IPV6_V6ONLY, 0)
             return super().server_bind()
 
     test(
