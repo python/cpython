@@ -7,6 +7,8 @@ static PyObject *_str_open_br;
 static PyObject *_str_dbl_open_br;
 static PyObject *_str_close_br;
 static PyObject *_str_dbl_close_br;
+static PyObject *_str_inf;
+static PyObject *_str_replace_inf;
 
 /* Forward declarations for recursion via helper functions. */
 static PyObject *
@@ -62,18 +64,7 @@ append_charp(_PyUnicodeWriter *writer, const char *charp)
 static PyObject *
 replace_inf_value(PyObject *repr)
 {
-    PyObject *inf_str = PyUnicode_InternFromString("inf");
-    if (!inf_str) {
-        return NULL;
-    }
-    PyObject *inf_value = PyUnicode_FromFormat("1e%d", 1 + DBL_MAX_10_EXP);
-    if (!inf_value) {
-        Py_DECREF(inf_str);
-        return NULL;
-    }
-    PyObject *result = PyUnicode_Replace(repr, inf_str, inf_value, -1);
-    Py_DECREF(inf_value);
-    Py_DECREF(inf_str);
+    PyObject *result = PyUnicode_Replace(repr, _str_inf, _str_replace_inf, -1);
     return result;
 }
 
@@ -86,7 +77,9 @@ append_repr(_PyUnicodeWriter *writer, PyObject *obj)
     if (!repr) {
         return -1;
     }
-    if ((PyFloat_CheckExact(obj) || PyComplex_CheckExact(obj))) {
+    if ((PyFloat_CheckExact(obj) && Py_IS_INFINITY(PyFloat_AS_DOUBLE(obj))) ||
+       PyComplex_CheckExact(obj))
+    {
         PyObject *new_repr = replace_inf_value(repr);
         Py_DECREF(repr);
         if (!new_repr) {
@@ -932,6 +925,15 @@ maybe_init_static_strings(void)
         !(_str_dbl_close_br = PyUnicode_InternFromString("}}"))) {
         return -1;
     }
+    if (!_str_inf &&
+        !(_str_inf = PyUnicode_InternFromString("inf"))) {
+        return -1;
+    }
+    if (!_str_replace_inf &&
+        !(_str_replace_inf = PyUnicode_FromFormat("1e%d", 1 + DBL_MAX_10_EXP))) {
+        return -1;
+    }
+    PyUnicode_InternInPlace(&_str_replace_inf);
     return 0;
 }
 
