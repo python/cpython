@@ -191,17 +191,13 @@ named :file:`spam.py` in a list of directories given by the variable
   file is specified).
 * :envvar:`PYTHONPATH` (a list of directory names, with the same syntax as the
   shell variable :envvar:`PATH`).
-* The installation-dependent default.
+* The installation-dependent default (by convention including a
+  ``site-packages`` directory, handled by the :mod:`site` module).
 
 .. note::
    On file systems which support symlinks, the directory containing the input
    script is calculated after the symlink is followed. In other words the
    directory containing the symlink is **not** added to the module search path.
-
-.. note::
-   The :mod:`site` module is responsible for appending site-specific paths to
-   the module search path. It also provides a command line interface to print
-   a list of all module search paths (e.g. ``python -m site``).
 
 After initialization, Python programs can modify :data:`sys.path`.  The
 directory containing the script being run is placed at the beginning of the
