@@ -443,11 +443,11 @@ class NewIMAPTestsMixin():
     def test_imaplib_timeout_test(self):
         _, server = self._setup(SimpleIMAPHandler)
         addr = server.server_address[1]
-        client = self.imap_class("localhost", addr, timeout=support.LOOPBACK_TIMEOUT)
-        self.assertEqual(client.sock.timeout, support.LOOPBACK_TIMEOUT)
-        client.shutdown()
         client = self.imap_class("localhost", addr, timeout=None)
         self.assertEqual(client.sock.timeout, None)
+        client.shutdown()
+        client = self.imap_class("localhost", addr, timeout=support.LOOPBACK_TIMEOUT)
+        self.assertEqual(client.sock.timeout, support.LOOPBACK_TIMEOUT)
         client.shutdown()
         with self.assertRaises(ValueError):
             client = self.imap_class("localhost", addr, timeout=0)
