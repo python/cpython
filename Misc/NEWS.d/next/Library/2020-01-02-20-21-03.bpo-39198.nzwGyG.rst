@@ -1,0 +1,1 @@
+If an exception were to be thrown in `Logger.isEnabledFor` (say, by asyncio timeouts or stopit) , the `logging` global lock may not be released appropriately, resulting in deadlock.  This change wraps that block of code with `try...finally` to ensure the lock is released.
