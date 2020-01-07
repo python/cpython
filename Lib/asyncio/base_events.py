@@ -518,7 +518,7 @@ class BaseEventLoop(events.AbstractEventLoop):
                     'asyncgen': agen
                 })
 
-    def _check_runnung(self):
+    def _check_running(self):
         if self.is_running():
             raise RuntimeError('This event loop is already running')
         if events._get_running_loop() is not None:
@@ -528,7 +528,7 @@ class BaseEventLoop(events.AbstractEventLoop):
     def run_forever(self):
         """Run until stop() is called."""
         self._check_closed()
-        self._check_runnung()
+        self._check_running()
         self._set_coroutine_origin_tracking(self._debug)
         self._thread_id = threading.get_ident()
 
@@ -560,7 +560,7 @@ class BaseEventLoop(events.AbstractEventLoop):
         Return the Future's result, or raise its exception.
         """
         self._check_closed()
-        self._check_runnung()
+        self._check_running()
 
         new_task = not futures.isfuture(future)
         future = tasks.ensure_future(future, loop=self)

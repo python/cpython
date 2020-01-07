@@ -259,8 +259,12 @@ class EventLoopTestsMixin:
             self.assertTrue(self.loop.is_running())
             self.loop.run_until_complete(coro1())
 
-        self.assertRaises(
-            RuntimeError, self.loop.run_until_complete, coro2())
+        with self.assertWarnsRegex(
+            RuntimeWarning,
+            r"coroutine \S+ was never awaited"
+        ):
+            self.assertRaises(
+                RuntimeError, self.loop.run_until_complete, coro2())
 
     # Note: because of the default Windows timing granularity of
     # 15.6 msec, we use fairly long sleep times here (~100 msec).
