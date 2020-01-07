@@ -167,6 +167,16 @@ When the garbage collector makes a collection in which some objects resurrect
 been executed), do not block the collection of all objects that are still
 unreachable. (Contributed by Pablo Galindo and Tim Peters in :issue:`38379`.)
 
+imaplib
+-------
+
+:class:`~imaplib.IMAP4` and :class:`~imaplib.IMAP4_SSL` now have
+an optional *timeout* parameter for their constructors.
+Also, the :meth:`~imaplib.IMAP4.open` method now has an optional *timeout* parameter
+with this change. The overridden methods of :class:`~imaplib.IMAP4_SSL` and
+:class:`~imaplib.IMAP4_stream` were applied to this change.
+(Contributed by Dong-hee Na in :issue:`38615`.)
+
 os
 --
 
