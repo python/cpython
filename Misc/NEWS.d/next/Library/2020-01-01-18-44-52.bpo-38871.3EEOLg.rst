@@ -1,3 +1,2 @@
-Updated the logic of :mod:`lib2to3` when handling filter based statement
-with lambda expression is needed to be parenthesized.
-Patch by Dong-hee Na.
+Correctly parenthesize filter-based statements that contain lambda
+expressions in mod:`lib2to3`. Patch by Dong-hee Na.
