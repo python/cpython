@@ -95,7 +95,7 @@ def _find_module(name, path=None):
         return None, None, ("", "", _SEARCH_ERROR)
 
     if mode == 'r':
-        file = open(file_path)
+        file = tokenize.open(file_path)
     else:
         file = open(file_path, mode)
 

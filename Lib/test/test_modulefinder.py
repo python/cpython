@@ -5,6 +5,7 @@ import py_compile
 import shutil
 import unittest
 import tempfile
+import tokenize
 
 from test import support
 
@@ -272,7 +273,7 @@ def create_package(source):
 
 
 class ModuleFinderTest(unittest.TestCase):
-    def _do_test(self, info, report=False, debug=0, replace_paths=[]):
+    def _do_test(self, info, report=False, debug=0, replace_paths=[], encoding=False):
         import_this, modules, missing, maybe_missing, source = info
         create_package(source)
         try:
@@ -299,6 +300,16 @@ class ModuleFinderTest(unittest.TestCase):
             bad, maybe = mf.any_missing_maybe()
             self.assertEqual(bad, missing)
             self.assertEqual(maybe, maybe_missing)
+
+            # check for modules encoding
+            if encoding:
+                for module in mf.modules.items():
+                    module_name, module_object = module
+                    file = open(module_object.__file__, 'rb')
+                    encoding = tokenize.detect_encoding(file.readline)[0]
+                    self.assertEqual(encoding, 'iso-8859-1')
+                    file.close()
+
         finally:
             shutil.rmtree(TEST_DIR)
 
@@ -352,6 +363,20 @@ class ModuleFinderTest(unittest.TestCase):
         expected = "co_filename %r changed to %r" % (old_path, new_path)
         self.assertIn(expected, output)
 
+    def test_encoding(self):
+        encoding_test = [
+            "a",
+            ["a", "b"],
+            [], [],
+            """\
+a.py
+                                # coding=latin-1
+                                import b
+b.py
+                                # coding=latin-1
+"""]
+        self._do_test(encoding_test, encoding=True)
+
     def test_extended_opargs(self):
         extended_opargs_test = [
             "a",
@@ -364,7 +389,6 @@ a.py
 b.py
 """ % list(range(2**16))]  # 2**16 constants
         self._do_test(extended_opargs_test)
-
 
 if __name__ == "__main__":
     unittest.main()
