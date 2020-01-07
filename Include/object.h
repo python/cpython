@@ -439,7 +439,6 @@ static inline void _Py_NewReference(PyObject *op)
         _PyTraceMalloc_NewReference(op);
     }
     _Py_INC_TPALLOCS(op);
-    _Py_INC_REFTOTAL;
     Py_REFCNT(op) = 1;
 }
 
