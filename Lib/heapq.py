@@ -327,55 +327,134 @@ class merge:
     >>> list(merge(['dog', 'horse'], ['cat', 'fish', 'kangaroo'], key=len))
     ['dog', 'cat', 'fish', 'horse', 'kangaroo']
     '''
+
     def _treesift(self, pos):
-        # like siftup, except the new leaf comes from one of our iters
         iters = self._iters
         n = len(iters)
         tree = self._tree
         sentinel = self._sentinel
-        compare = self._compare
+
         while pos < n - 1:
             childpos = 2 * pos + 1
-            otherchildpos = childpos + 1
             child = tree[childpos]
-            otherchild = tree[otherchildpos]
+            otherchild = tree[childpos + 1]
             if otherchild is not sentinel \
-                and (child is sentinel
-                     or compare(otherchild, child)):
-                childpos = otherchildpos
+                and (child is sentinel or otherchild < child):
+                childpos += 1
+                child = otherchild
+            tree[pos] = child
+            pos = childpos
+
+        tree[pos] = next(iters[pos - (n-1)], sentinel)
+
+    def _treesift_reverse(self, pos):
+        iters = self._iters
+        n = len(iters)
+        tree = self._tree
+        sentinel = self._sentinel
+
+        while pos < n - 1:
+            childpos = 2 * pos + 1
+            child = tree[childpos]
+            otherchild = tree[childpos + 1]
+            if otherchild is not sentinel \
+                and (child is sentinel or child < otherchild):
+                childpos += 1
+                child = otherchild
+            tree[pos] = child
+            pos = childpos
+
+        tree[pos] = next(iters[pos - (n-1)], sentinel)
+
+    def _treesift_key(self, pos):
+        iters = self._iters
+        n = len(iters)
+        tree = self._tree
+        sentinel = self._sentinel
+        key=self._key
+
+        while (pos >> 1) < n - 1:
+            childpos = 2 * pos + 2
+            childkey = tree[childpos+1]
+            otherchildkey = tree[childpos+3]
+            if otherchildkey is not sentinel \
+                and (childkey is sentinel
+                        or otherchildkey < childkey):
+                childpos += 2
+                childkey = otherchildkey
+            tree[pos+1] = childkey
             tree[pos] = tree[childpos]
             pos = childpos
-        # this is the payoff of the initial shift:
-        tree[pos] = next(self._iters[pos - (n-1)], sentinel)
+
+        try:
+            child = next(iters[(pos >> 1) - (n - 1)])
+        except StopIteration:
+            child = sentinel
+            childkey = sentinel
+        else:
+            childkey = key(child)
+
+        tree[pos] = child
+        tree[pos+1] = childkey
+
+    def _treesift_key_reverse(self, pos):
+        iters = self._iters
+        n = len(iters)
+        tree = self._tree
+        sentinel = self._sentinel
+        key=self._key
+
+        while (pos >> 1) < n - 1:
+            childpos = 2 * pos + 2
+            childkey = tree[childpos+1]
+            otherchildkey = tree[childpos+3]
+            if otherchildkey is not sentinel \
+                and (childkey is sentinel
+                        or childkey < otherchildkey):
+                childpos += 2
+                childkey = otherchildkey
+            tree[pos+1] = childkey
+            tree[pos] = tree[childpos]
+            pos = childpos
+
+        try:
+            child = next(iters[(pos >> 1) - (n - 1)])
+        except StopIteration:
+            child = sentinel
+            childkey = sentinel
+        else:
+            childkey = key(child)
+
+        tree[pos] = child
+        tree[pos+1] = childkey
 
     def __init__(self, *iterables, key=None, reverse=False):
         n = len(iterables)
         # shift the iterators so that the first iterable passed
         # will correspond to the leftmost node
-        shift = n - (1 << n.bit_length())
-        self._iters = [iter(iterables[i+shift]) for i in range(n)]
+        if iterables:
+            shift = n - (1 << n.bit_length())
+            self._iters = [iter(iterables[i+shift]) for i in range(n)]
+        else:
+            self._iters = None
         self._tree = [None] * (n+n-1)
         self._sentinel = object()
         self._started = False
-
+        self._reverse = reverse
+        self._key = key
         if key is None:
-            def get_value(x): return x
             if reverse:
-                def compare(x, y): return y < x
+                self._treesift_func = self._treesift_reverse
             else:
-                def compare(x, y): return x < y
+                self._treesift_func = self._treesift
+        elif not callable(key):
+            raise TypeError("Key must be callable or None.")
         else:
-            if not callable(key):
-                raise TypeError("Key must be callable or None.")
-            def get_value(x): return x[1]
-            self._iters = [((key(x), x) for x in it)
-                          for it in self._iters]
+            self._tree *= 2
             if reverse:
-                def compare(x, y): return y[0] < x[0]
+                self._treesift_func = self._treesift_key_reverse
             else:
-                def compare(x, y): return x[0] < y[0]
-        self._get_value = get_value
-        self._compare = compare
+                self._treesift_func = self._treesift_key
 
     def __iter__(self):
         return self
@@ -384,17 +463,17 @@ class merge:
         if not self._iters:
             raise StopIteration
         if not self._started:
-            for i in reversed(range(1, len(self._tree))):
-                self._treesift(i)
+            nodesize = 1 if self._key is None else 2
+            for i in reversed(range(nodesize,
+                                    len(self._tree),
+                                    nodesize)):
+                self._treesift_func(i)
             self._started = True
-        self._treesift(0)
-        tree = self._tree
-        result = tree[0]
-        # free this merge object's reference to the result
-        tree[0] = None
+        self._treesift_func(0)
+        result = self._tree[0]
         if result is self._sentinel:
             raise StopIteration
-        return self._get_value(result)
+        return result
 
 # Algorithm notes for nlargest() and nsmallest()
 # ==============================================
