@@ -1,6 +1,7 @@
 import sys
 import unittest
 
+
 try:
     import crypt
     IMPORT_ERROR = None
@@ -12,7 +13,7 @@ except ImportError as ex:
 
 
 @unittest.skipUnless(sys.platform == 'win32', 'This should only run on windows')
-@unittest.skipUnless(IMPORT_ERROR, 'import succeeded')
+@unittest.skipIf(crypt, 'import succeeded')
 class TestWhyCryptDidNotImport(unittest.TestCase):
 
     def test_import_failure_message(self):
