@@ -824,9 +824,11 @@ Glossary
       .. _positional-only_parameter:
 
       * :dfn:`positional-only`: specifies an argument that can be supplied only
-        by position.  Python has no syntax for defining positional-only
-        parameters.  However, some built-in functions have positional-only
-        parameters (e.g. :func:`abs`).
+        by position. Positional-only parameters can be defined by including a
+        ``/`` character in the parameter list of the function definition after
+        them, for example *posonly1* and *posonly2* in the following::
+
+           def func(posonly1, posonly2, /, positional_or_keyword): ...
 
       .. _keyword-only_parameter:
 
