@@ -1,0 +1,2 @@
+Updated the Gmane domain which is used for the :class:`~nntplib.NNTP`'s example
+news reader server
