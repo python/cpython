@@ -1,0 +1,2 @@
+Fix ``SystemError`` when nested function has annotation on positional-only
+argument - by Anthony Sottile.

@@ -159,6 +159,24 @@ Added constants :data:`~fcntl.F_OFD_GETLK`, :data:`~fcntl.F_OFD_SETLK`
 and :data:`~fcntl.F_OFD_SETLKW`.
 (Contributed by Dong-hee Na in :issue:`38602`.)
 
+gc
+--
+
+When the garbage collector makes a collection in which some objects resurrect
+(they are reachable from outside the isolated cycles after the finalizers have
+been executed), do not block the collection of all objects that are still
+unreachable. (Contributed by Pablo Galindo and Tim Peters in :issue:`38379`.)
+
+imaplib
+-------
+
+:class:`~imaplib.IMAP4` and :class:`~imaplib.IMAP4_SSL` now have
+an optional *timeout* parameter for their constructors.
+Also, the :meth:`~imaplib.IMAP4.open` method now has an optional *timeout* parameter
+with this change. The overridden methods of :class:`~imaplib.IMAP4_SSL` and
+:class:`~imaplib.IMAP4_stream` were applied to this change.
+(Contributed by Dong-hee Na in :issue:`38615`.)
+
 os
 --
 
@@ -282,6 +300,9 @@ Deprecated
   predicable behavior.
   (Contributed by Serhiy Storchaka in :issue:`38371`.)
 
+* The explicit passing of coroutine objects to :func:`asyncio.wait` has been
+  deprecated and will be removed in version 3.11.
+  (Contributed by Yury Selivanov and Kyle Stanley in :issue:`34790`.)
 
 Removed
 =======
@@ -370,6 +391,10 @@ Changes in the Python API
 
 * The :mod:`venv` activation scripts no longer special-case when
   ``__VENV_PROMPT__`` is set to ``""``.
+
+* The :meth:`select.epoll.unregister` method no longer ignores the
+  :data:`~errno.EBADF` error.
+  (Contributed by Victor Stinner in :issue:`39239`.)
 
 
 CPython bytecode changes
