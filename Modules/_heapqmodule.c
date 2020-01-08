@@ -637,8 +637,8 @@ _tree_sift(mergeobject *mo, Py_ssize_t pos) {
     assert(PyIter_Check(it));
     child = PyIter_Next(it);
     if (child == NULL) {
-        Py_DECREF(it);
         mo->iterators[pos - (n - 1)] = NULL;
+        Py_DECREF(it);
         if (PyErr_Occurred()) {
             return -1;
         }
@@ -750,8 +750,8 @@ _tree_sift_key(mergeobject *mo, Py_ssize_t pos) {
             return -1;
         }
         /* Newly exhausted iterator */
-        Py_DECREF(it);
         mo->iterators[pos/2 - (n - 1)] = NULL;
+        Py_DECREF(it);
         return 0;
     }
 
@@ -1006,8 +1006,7 @@ merge_next(mergeobject *mo) {
         if (_tree_sift_key(mo, 0) < 0) {
             goto stop;
         }
-        Py_XDECREF(tree[0]);
-        tree[0] = NULL;
+        Py_CLEAR(tree[0]);
         result = tree[1];
         tree[1] = NULL;
     }
