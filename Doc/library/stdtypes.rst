@@ -4315,7 +4315,8 @@ pairs within braces, for example: ``{'jack': 4098, 'sjoerd': 4127}`` or ``{4098:
 
       Return the value for *key* if *key* is in the dictionary, else *default*.
       If *default* is not given, it defaults to ``None``, so that this method
-      never raises a :exc:`KeyError`.
+      never raises a :exc:`KeyError`. Note that :meth:`get` does not call
+      :meth:`__missing__` if value does not exist.
 
    .. method:: items()
 
@@ -4381,6 +4382,12 @@ pairs within braces, for example: ``{'jack': 4098, 'sjoerd': 4127}`` or ``{4098:
          >>> d = {'a': 1}
          >>> d.values() == d.values()
          False
+
+   .. method:: __missing__(key)
+
+      Not implemented by default. Called by :class:`dict`\ .\ :meth:`__getitem__`
+      to implement ``self[key]`` for dict subclasses when key is not in the
+      dictionary. See ``d[key]`` above.
 
    Dictionaries compare equal if and only if they have the same ``(key,
    value)`` pairs (regardless of ordering). Order comparisons ('<', '<=', '>=', '>') raise
