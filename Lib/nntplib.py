@@ -1107,7 +1107,7 @@ if __name__ == '__main__':
         nntplib built-in demo - display the latest articles in a newsgroup""")
     parser.add_argument('-g', '--group', default='gmane.comp.python.general',
                         help='group to fetch messages from (default: %(default)s)')
-    parser.add_argument('-s', '--server', default='news.gmane.org',
+    parser.add_argument('-s', '--server', default='news.gmane.io',
                         help='NNTP server hostname (default: %(default)s)')
     parser.add_argument('-p', '--port', default=-1, type=int,
                         help='NNTP port number (default: %s / %s)' % (NNTP_PORT, NNTP_SSL_PORT))
