@@ -1,0 +1,2 @@
+Replaced incorrect Esperanto locales with the only existent glibc locale for
+Esperanto (eo.UTF-8) in the mappings in locale.py.
