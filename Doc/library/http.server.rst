@@ -335,10 +335,13 @@ provides three different variants:
 
    .. attribute:: extensions_map
 
-      A dictionary mapping suffixes into MIME types. The default is
-      signified by an empty string, and is considered to be
-      ``application/octet-stream``. The mapping is used case-insensitively,
+      A dictionary mapping suffixes into MIME types, contains custom overrides
+      for the default system mappings. The mapping is used case-insensitively,
       and so should contain only lower-cased keys.
+
+      .. versionchanged:: 3.9
+         This dictionary is no longer filled with the default system mappings,
+         but only contains overrides.
 
    .. attribute:: directory
 
