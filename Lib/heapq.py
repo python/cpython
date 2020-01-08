@@ -327,8 +327,11 @@ class merge:
     >>> list(merge(['dog', 'horse'], ['cat', 'fish', 'kangaroo'], key=len))
     ['dog', 'cat', 'fish', 'horse', 'kangaroo']
     '''
+    __slots__ = ("_iters", "_tree", "_sentinel",
+                 "_started", "_key", "_treesift_func")
 
     def _treesift(self, pos):
+        # repeatedly replace parents with their smaller child
         iters = self._iters
         n = len(iters)
         tree = self._tree
@@ -345,9 +348,12 @@ class merge:
             tree[pos] = child
             pos = childpos
 
+        # Use the iterables to replace the leaf.
+        # This is where the shift pays off.
         tree[pos] = next(iters[pos - (n-1)], sentinel)
 
     def _treesift_reverse(self, pos):
+        # maxheap varaiant of _treesift
         iters = self._iters
         n = len(iters)
         tree = self._tree
@@ -367,6 +373,7 @@ class merge:
         tree[pos] = next(iters[pos - (n-1)], sentinel)
 
     def _treesift_key(self, pos):
+        # variant of _treesift where a key is used
         iters = self._iters
         n = len(iters)
         tree = self._tree
@@ -398,6 +405,7 @@ class merge:
         tree[pos+1] = childkey
 
     def _treesift_key_reverse(self, pos):
+        # maxheap variant of _treesift_key
         iters = self._iters
         n = len(iters)
         tree = self._tree
@@ -430,17 +438,21 @@ class merge:
 
     def __init__(self, *iterables, key=None, reverse=False):
         n = len(iterables)
-        # shift the iterators so that the first iterable passed
-        # will correspond to the leftmost node
+        # shift the iterators so that the first iterable passed will
+        # correspond to the leftmost node
         if iterables:
             shift = n - (1 << n.bit_length())
             self._iters = [iter(iterables[i+shift]) for i in range(n)]
         else:
             self._iters = None
+        # _tree will be a binary heap structure, but we won't do the usual
+        # heap operations. Instead, only do _treesift_func: items will only
+        # ever move toward the root, and the leaves are supplied by the
+        # iterators. This a non-recursive implementation of recursively
+        # applying a 2-iterator merge.
         self._tree = [None] * (n+n-1)
         self._sentinel = object()
         self._started = False
-        self._reverse = reverse
         self._key = key
         if key is None:
             if reverse:
@@ -450,6 +462,7 @@ class merge:
         elif not callable(key):
             raise TypeError("Key must be callable or None.")
         else:
+            # Store keys flatly next to values
             self._tree *= 2
             if reverse:
                 self._treesift_func = self._treesift_key_reverse
@@ -463,6 +476,7 @@ class merge:
         if not self._iters:
             raise StopIteration
         if not self._started:
+            # Heapify, except new leaves are supplied by iterables.
             nodesize = 1 if self._key is None else 2
             for i in reversed(range(nodesize,
                                     len(self._tree),
