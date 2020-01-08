@@ -243,8 +243,6 @@ please see individual documentation for details.
    Return the result of the call on success, or raise an exception and return
    *NULL* on failure.
 
-   This function is not part of the `limited API <stable>`_.
-
    .. versionadded:: 3.9
 
 
