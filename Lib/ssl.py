@@ -894,10 +894,10 @@ class SSLObject:
 
         The 'data' argument must support the buffer interface.
         """
-        if data != b'':
+        if data:
             return self._sslobj.write(data)
         else:
-            return ""
+            return 0
 
     def getpeercert(self, binary_form=False):
         """Returns a formatted version of the data in the certificate provided
