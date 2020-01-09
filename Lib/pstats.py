@@ -359,7 +359,7 @@ class Stats:
         """
         func_list = self.fcn_list[:] if self.fcn_list else list(self.stats.keys())
         if not func_list:
-            return pstats_dict
+            return StatsProfile(0, {})
 
         total_tt = float(f8(self.total_tt))
         func_profiles = {}

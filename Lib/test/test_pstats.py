@@ -91,11 +91,10 @@ class StatsTestCase(unittest.TestCase):
         ps = pstats.Stats(pr)
 
         stats_profile = ps.get_stats_profile()
-        funcs_called = stats_profile.func_profiles.keys()
-        self.assertTrue(
-            all(pass_func in funcs_called for pass_func in ['pass1', 'pass2', 'pass3']),
-            "stats profile did not contain the expected function calls"
-        )
+        funcs_called = set(stats_profile.func_profiles.keys())
+        self.assertIn('pass1', funcs_called)
+        self.assertIn('pass2', funcs_called)
+        self.assertIn('pass3', funcs_called)
 
 if __name__ == "__main__":
     unittest.main()
