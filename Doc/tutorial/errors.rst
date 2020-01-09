@@ -408,16 +408,16 @@ For example::
    ...
    >>> bool_return()
    False
-   
+
    >>> def bool_return():
    ...    try:
    ...        return print('try return statement evaluated')
    ...    finally:
    ...        return False
-   ...    
+   ...
    >>> bool_return()
    try return statement evaluated  # None from print() not returned.
-   False 
+   False
 
 A more complicated example::
 
