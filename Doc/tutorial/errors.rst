@@ -396,7 +396,7 @@ If a :keyword:`finally` clause is present, the :keyword:`finally` clause will ex
 
 * If the :keyword:`!try` statement reaches a :keyword:`break`, :keyword:`continue` or :keyword:`return` statement, the :keyword:`finally` clause will execute just prior to the :keyword:`break`, :keyword:`continue` or :keyword:`return` statement's execution.
 
-* If a :keyword:`finally` clause includes a :keyword:`return` statement, the :keyword:`finally` clause's :keyword:`return` statement will execute before, and instead of, the :keyword:`return` statement in a :keyword:`try` clause.
+* If a :keyword:`finally` clause includes a :keyword:`return` statement, the :keyword:`finally` clause's :keyword:`return` statement will execute instead of, the :keyword:`return` statement in a :keyword:`try` clause (but after the *value* of the :keyword:`try` clause's  :keyword: `return` statement is evaluated).
 
 For example::
 
@@ -408,6 +408,16 @@ For example::
    ...
    >>> bool_return()
    False
+   
+   >>> def bool_return():
+   ...    try:
+   ...        return print('try return statement evaluated')
+   ...    finally:
+   ...        return False
+   ...    
+   >>> bool_return()
+   try return statement evaluated  # None from print() not returned.
+   False 
 
 A more complicated example::
 
