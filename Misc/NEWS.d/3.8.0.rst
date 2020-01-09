@@ -18,7 +18,7 @@ When cyclic garbage collection (gc) runs finalizers that resurrect
 unreachable objects, the current gc run ends, without collecting any cyclic
 trash.  However, the statistics reported by ``collect()`` and
 ``get_stats()`` claimed that all cyclic trash found was collected, and that
-the resurrected objects were collected.   Changed the stats to report that
+the resurrected objects were collected. Changed the stats to report that
 none were collected.
 
 ..
@@ -101,7 +101,7 @@ now never fails (except MemoryError).
 .. nonce: go_jFf
 .. section: Documentation
 
-Add list of no-longer-escaped chars to re.escape documentation
+Add list of no-longer-escaped chars to re.escape documentation.
 
 ..
 
@@ -123,7 +123,7 @@ Python slowest buildbots.
 .. nonce: scr2LO
 .. section: Windows
 
-Fix error message in activate.bat
+Fix error message in activate.bat.
 
 ..
 
