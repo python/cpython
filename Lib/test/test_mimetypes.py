@@ -6,6 +6,7 @@ import sys
 import unittest
 
 from test import support
+from test.support import script_helper
 from platform import win32_edition
 
 # Tell it we don't know about external files:
@@ -21,6 +22,7 @@ class MimeTypesTestCase(unittest.TestCase):
     def test_default_data(self):
         eq = self.assertEqual
         eq(self.db.guess_type("foo.html"), ("text/html", None))
+        eq(self.db.guess_type("foo.HTML"), ("text/html", None))
         eq(self.db.guess_type("foo.tgz"), ("application/x-tar", "gzip"))
         eq(self.db.guess_type("foo.tar.gz"), ("application/x-tar", "gzip"))
         eq(self.db.guess_type("foo.tar.Z"), ("application/x-tar", "compress"))
@@ -30,6 +32,7 @@ class MimeTypesTestCase(unittest.TestCase):
     def test_data_urls(self):
         eq = self.assertEqual
         guess_type = self.db.guess_type
+        eq(guess_type("data:invalidDataWithoutComma"), (None, None))
         eq(guess_type("data:,thisIsTextPlain"), ("text/plain", None))
         eq(guess_type("data:;base64,thisIsTextPlain"), ("text/plain", None))
         eq(guess_type("data:text/x-foo,thisIsTextXFoo"), ("text/x-foo", None))
@@ -42,6 +45,19 @@ class MimeTypesTestCase(unittest.TestCase):
            ("x-application/x-unittest", None))
         eq(self.db.guess_extension("x-application/x-unittest"), ".pyunit")
 
+    def test_read_mime_types(self):
+        eq = self.assertEqual
+
+        # Unreadable file returns None
+        self.assertIsNone(mimetypes.read_mime_types("non-existent"))
+
+        with support.temp_dir() as directory:
+            data = "x-application/x-unittest pyunit\n"
+            file = pathlib.Path(directory, "sample.mimetype")
+            file.write_text(data)
+            mime_dict = mimetypes.read_mime_types(file)
+            eq(mime_dict[".pyunit"], "x-application/x-unittest")
+
     def test_non_standard_types(self):
         eq = self.assertEqual
         # First try strict
@@ -49,7 +65,10 @@ class MimeTypesTestCase(unittest.TestCase):
         eq(self.db.guess_extension('image/jpg', strict=True), None)
         # And then non-strict
         eq(self.db.guess_type('foo.xul', strict=False), ('text/xul', None))
+        eq(self.db.guess_type('foo.XUL', strict=False), ('text/xul', None))
+        eq(self.db.guess_type('foo.invalid', strict=False), (None, None))
         eq(self.db.guess_extension('image/jpg', strict=False), '.jpg')
+        eq(self.db.guess_extension('image/JPG', strict=False), '.jpg')
 
     def test_filename_with_url_delimiters(self):
         # bpo-38449: URL delimiters cases should be handled also.
@@ -199,6 +218,34 @@ class MiscTestCase(unittest.TestCase):
     def test__all__(self):
         support.check__all__(self, mimetypes)
 
+
+class MimetypesCliTestCase(unittest.TestCase):
+
+    def mimetypes_cmd(self, *args, **kwargs):
+        rc, out, err = script_helper.assert_python_ok('-m', 'mimetypes', *args,
+                                                      **kwargs)
+        return out.decode().strip()
+
+    def test_guess_extension(self):
+        eq = self.assertEqual
+
+        extension = self.mimetypes_cmd("-l", "-e", "image/jpg")
+        eq(extension, ".jpg")
+
+        extension = self.mimetypes_cmd("-e", "image/jpg")
+        eq(extension, "I don't know anything about type image/jpg")
+
+        extension = self.mimetypes_cmd("-e", "image/jpeg")
+        eq(extension, ".jpg")
+
+    def test_guess_type(self):
+        eq = self.assertEqual
+
+        type_info = self.mimetypes_cmd("-l", "foo.pic")
+        eq(type_info, "type: image/pict encoding: None")
+
+        type_info = self.mimetypes_cmd("foo.pic")
+        eq(type_info, "I don't know anything about type foo.pic")
 
 if __name__ == "__main__":
     unittest.main()
