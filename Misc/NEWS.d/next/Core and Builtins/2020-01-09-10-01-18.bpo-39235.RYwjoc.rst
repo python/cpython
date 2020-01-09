@@ -1,0 +1,2 @@
+Fix AST end location for lone generator expression in function call, e.g.
+f(i for i in a).
