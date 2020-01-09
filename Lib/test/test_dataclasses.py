@@ -498,18 +498,6 @@ class TestCase(unittest.TestCase):
         self.assertNotEqual(C(3), C(4, 10))
         self.assertNotEqual(C(3, 10), C(4, 10))
 
-    def test_dataclass_params_repr(self):
-        @dataclass(init=True, repr=True)
-        class C:
-            pass
-
-        repr_output = repr(C.__dataclass_params__)
-        expected_output = "_DataclassParams(init=True,repr=True," \
-                          "eq=True,order=False,unsafe_hash=False," \
-                          "frozen=False)"
-
-        self.assertEqual(repr_output, expected_output)
-
     def test_hash_field_rules(self):
         # Test all 6 cases of:
         #  hash=True/False/None
