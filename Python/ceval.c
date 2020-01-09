@@ -2948,8 +2948,8 @@ main_loop:
             PyObject *left = POP();
             if (PyTuple_Check(right)) {
                 Py_ssize_t i, length;
-                length = PyTuple_Size(right);
-                for (i = 0; i < length; i += 1) {
+                length = PyTuple_GET_SIZE(right);
+                for (i = 0; i < length; i++) {
                     PyObject *exc = PyTuple_GET_ITEM(right, i);
                     if (!PyExceptionClass_Check(exc)) {
                         _PyErr_SetString(tstate, PyExc_TypeError,
