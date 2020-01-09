@@ -773,7 +773,7 @@ class _SelectorSocketTransport(_SelectorTransport):
         return not self._paused and not self._closing
 
     def pause_reading(self):
-        if self._closing or self._paused:
+        if not self.is_reading():
             return
         self._paused = True
         self._loop._remove_reader(self._sock_fd)
