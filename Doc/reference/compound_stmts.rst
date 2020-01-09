@@ -352,7 +352,7 @@ statement, the :keyword:`finally` clause is also executed 'on the way out.'
 The return value of a function is determined by the last :keyword:`return`
 statement executed.  Since the :keyword:`finally` clause always executes, a
 :keyword:`!return` statement executed in the :keyword:`!finally` clause will
-always be the last one executed::
+always be the last one executed (and the only one to return a value)::
 
    >>> def foo():
    ...     try:
