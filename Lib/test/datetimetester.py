@@ -2617,6 +2617,39 @@ class TestDateTime(TestDate):
                 newdate = strptime(string, format)
                 self.assertEqual(newdate, target, msg=reason)
 
+    def test_rejecting_non_ascii_digits(self):
+        # bpo-39280: Don't allow datetime parsing to accept non-Ascii digits
+        eastern_arabic_digits = [chr(1632 + i) for i in range(10)]
+        full_width_digits = [chr(65296 + i) for i in range(10)]
+
+        # Making sure we're using legit Unicode digits:
+        for i, eastern_arabic_digit, full_width_digit in zip(
+            itertools.count(), eastern_arabic_digits, full_width_digits):
+            assert i == int(eastern_arabic_digit) == int(full_width_digit)
+
+        formats = ['%Y %m %d %H %M %S %f',
+                   '%y %m %d %I %M %p',
+                   '%Y %j',
+                   '%G %V %u',
+                   '%Y %U %w',
+                   '%Y %W %w']
+
+        my_datetime = datetime.fromisoformat('2020-01-09T23:41:45.973450')
+        for format in formats:
+            datetime_string = my_datetime.strftime(format)
+            self.assertEqual(my_datetime, datetime.strptime(datetime_string, format))
+            digit_indices = [i for i, c in enumerate(datetime_string) if c.isdigit()]
+            assert len(digit_indices) >= 6
+            for alternate_digits in (eastern_arabic_digits, full_width_digits):
+                for i in digit_indices:
+                    tainted_datetime_string = (
+                        datetime_string[:i] +
+                        alternate_digits[int(datetime_string[i])] +
+                        datetime_string[i + 1]
+                    )
+                    with self.assertRaises(ValueError):
+                        datetime.strptime(tainted_datetime_string, format)
+
     def test_more_timetuple(self):
         # This tests fields beyond those tested by the TestDate.test_timetuple.
         t = self.theclass(2004, 12, 31, 6, 22, 33)
