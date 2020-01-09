@@ -147,7 +147,7 @@ Literals
      * 114: ``!r`` repr formatting
      * 97: ``!a`` ascii formatting
 
-   * ``format_spec`` is a :class:`JoinedStr` node reprensenting the formatting
+   * ``format_spec`` is a :class:`JoinedStr` node representing the formatting
      of the value, or ``None`` if no format was specified. Both
      ``conversion`` and ``format_spec`` can be set at the same time.
 
