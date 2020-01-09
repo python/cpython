@@ -353,5 +353,22 @@ class PlatformTest(unittest.TestCase):
                     self.assertEqual(platform.platform(), expected)
 
 
+    def test_non_ascii_digits_windows_version(self):
+        # Non-ASCII digits must be rejected in version numbers.
+        version_strings = {
+            'Microsoft Windows [Version 6.1.7601]': ('Microsoft', 'Windows', '6.1.7601'),
+            'Microsoft Windows [Version ٦.1.7601]': None, # East-arabic numerals
+            'Microsoft Windows [Version 6.１.7601]': None, # Full-width numerals
+            'Microsoft Windows [Version 6.1.760１]': None, # Full-width numerals
+        }
+        for version_string, expected_groups in version_strings.items():
+            if match := platform._ver_output.match(version_string):
+                self.assertIsNotNone(expected_groups)
+                self.assertEqual(expected_groups, match.groups())
+            else:
+                self.assertIsNone(expected_groups)
+
+
+
 if __name__ == '__main__':
     unittest.main()

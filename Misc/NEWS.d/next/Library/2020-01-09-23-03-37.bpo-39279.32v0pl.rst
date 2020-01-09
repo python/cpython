@@ -1,0 +1,1 @@
+Don't allow non-ASCII digits in version numbers specified in platform.py.

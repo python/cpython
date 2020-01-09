@@ -246,7 +246,7 @@ def _norm_version(version, build=''):
 
 _ver_output = re.compile(r'(?:([\w ]+) ([\w.]+) '
                          r'.*'
-                         r'\[.* ([\d.]+)\])')
+                         r'\[.* ([0-9.]+)\])')
 
 # Examples of VER command output:
 #
@@ -956,10 +956,10 @@ _ironpython_sys_version_parser = re.compile(
 
 # IronPython covering 2.6 and 2.7
 _ironpython26_sys_version_parser = re.compile(
-    r'([\d.]+)\s*'
+    r'([0-9.]+)\s*'
     r'\(IronPython\s*'
-    r'[\d.]+\s*'
-    r'\(([\d.]+)\) on ([\w.]+ [\d.]+(?: \(\d+-bit\))?)\)'
+    r'[0-9.]+\s*'
+    r'\(([0-9.]+)\) on ([\w.]+ [0-9.]+(?: \([0-9]+-bit\))?)\)'
 )
 
 _pypy_sys_version_parser = re.compile(
