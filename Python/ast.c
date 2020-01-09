@@ -1028,13 +1028,13 @@ forbidden_name(struct compiling *c, identifier name, const node *n,
 }
 
 static expr_ty
-copy_location(expr_ty e, const node *n)
+copy_location(expr_ty e, const node *n, const node *end)
 {
     if (e) {
         e->lineno = LINENO(n);
         e->col_offset = n->n_col_offset;
-        e->end_lineno = n->n_end_lineno;
-        e->end_col_offset = n->n_end_col_offset;
+        e->end_lineno = end->n_end_lineno;
+        e->end_col_offset = end->n_end_col_offset;
     }
     return e;
 }
@@ -2464,10 +2464,10 @@ ast_for_atom(struct compiling *c, const node *n)
         }
 
         if (TYPE(CHILD(ch, 1)) == comp_for) {
-            return copy_location(ast_for_genexp(c, ch), n);
+            return copy_location(ast_for_genexp(c, ch), n, n);
         }
         else {
-            return copy_location(ast_for_testlist(c, ch), n);
+            return copy_location(ast_for_testlist(c, ch), n, n);
         }
     case LSQB: /* list (or list comprehension) */
         ch = CHILD(n, 1);
@@ -2486,7 +2486,7 @@ ast_for_atom(struct compiling *c, const node *n)
                         n->n_end_lineno, n->n_end_col_offset, c->c_arena);
         }
         else {
-            return copy_location(ast_for_listcomp(c, ch), n);
+            return copy_location(ast_for_listcomp(c, ch), n, n);
         }
     case LBRACE: {
         /* dictorsetmaker: ( ((test ':' test | '**' test)
@@ -2527,7 +2527,7 @@ ast_for_atom(struct compiling *c, const node *n)
                 /* It's a dictionary display. */
                 res = ast_for_dictdisplay(c, ch);
             }
-            return copy_location(res, n);
+            return copy_location(res, n, n);
         }
     }
     default:
@@ -3146,7 +3146,7 @@ ast_for_call(struct compiling *c, const node *n, expr_ty func,
             }
             else if (TYPE(CHILD(ch, 1)) == comp_for) {
                 /* the lone generator expression */
-                e = copy_location(ast_for_genexp(c, ch), maybegenbeg);
+                e = copy_location(ast_for_genexp(c, ch), maybegenbeg, closepar);
                 if (!e)
                     return NULL;
                 asdl_seq_SET(args, nargs++, e);
