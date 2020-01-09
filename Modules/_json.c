@@ -1866,24 +1866,23 @@ PyDoc_STRVAR(module_doc,
 static int
 _json_exec(PyObject *module)
 {
-    if (PyType_Ready(&PyScannerType) < 0)
-        goto fail;
-    if (PyType_Ready(&PyEncoderType) < 0)
-        goto fail;
+    if (PyType_Ready(&PyScannerType) < 0) {
+        return -1;
+    }
+    if (PyType_Ready(&PyEncoderType) < 0) {
+        return -1;
+    }
     Py_INCREF((PyObject*)&PyScannerType);
     if (PyModule_AddObject(module, "make_scanner", (PyObject*)&PyScannerType) < 0) {
         Py_DECREF((PyObject*)&PyScannerType);
-        goto fail;
+        return -1;
     }
     Py_INCREF((PyObject*)&PyEncoderType);
     if (PyModule_AddObject(module, "make_encoder", (PyObject*)&PyEncoderType) < 0) {
         Py_DECREF((PyObject*)&PyEncoderType);
-        goto fail;
+        return -1;
     }
     return 0;
-  fail:
-    Py_DECREF(module);
-    return -1;
 }
 
 static PyModuleDef_Slot _json_slots[] = {
