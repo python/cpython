@@ -23,12 +23,19 @@ Test nesting with the inner expression dependent on the outer
 
 Test the idiom for temporary variable assignment in comprehensions.
 
-    >>> list(sorted({j*j for i in range(4) for j in [i+1]}))
+    >>> sorted({j*j for i in range(4) for j in [i+1]})
     [1, 4, 9, 16]
-    >>> list(sorted({j*k for i in range(4) for j in [i+1] for k in [j+1]}))
+    >>> sorted({j*k for i in range(4) for j in [i+1] for k in [j+1]})
     [2, 6, 12, 20]
-    >>> list(sorted({j*k for i in range(4) for j, k in [(i+1, i+2)]}))
+    >>> sorted({j*k for i in range(4) for j, k in [(i+1, i+2)]})
     [2, 6, 12, 20]
+
+Not assignment
+
+    >>> sorted({i*i for i in [*range(4)]})
+    [0, 1, 4, 9]
+    >>> sorted({i*i for i in (*range(4),)})
+    [0, 1, 4, 9]
 
 Make sure the induction variable is not exposed
 

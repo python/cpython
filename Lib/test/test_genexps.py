@@ -24,6 +24,13 @@ Test the idiom for temporary variable assignment in comprehensions.
     >>> list((j*k for i in range(4) for j, k in [(i+1, i+2)]))
     [2, 6, 12, 20]
 
+Not assignment
+
+    >>> list((i*i for i in [*range(4)]))
+    [0, 1, 4, 9]
+    >>> list((i*i for i in (*range(4),)))
+    [0, 1, 4, 9]
+
 Make sure the induction variable is not exposed
 
     >>> i = 20
