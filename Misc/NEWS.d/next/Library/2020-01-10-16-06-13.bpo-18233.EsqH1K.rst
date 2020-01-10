@@ -1,0 +1,1 @@
+Add :meth:`ssl.SSLSocket.getpeercertchain` for accessing the certificate chain of SSL connections.
