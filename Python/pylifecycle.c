@@ -749,7 +749,6 @@ pyinit_config(_PyRuntimeState *runtime,
     if (_PyStatus_EXCEPTION(status)) {
         return status;
     }
-    config = &tstate->interp->config;
     *tstate_p = tstate;
 
     status = pycore_interp_init(tstate);
