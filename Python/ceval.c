@@ -2662,10 +2662,7 @@ main_loop:
             DISPATCH();
         }
 
-        case TARGET(BUILD_TUPLE_UNPACK_WITH_CALL):
-        case TARGET(BUILD_TUPLE_UNPACK):
-        case TARGET(BUILD_LIST_UNPACK): {
-            int convert_to_tuple = opcode != BUILD_LIST_UNPACK;
+        case TARGET(BUILD_TUPLE_UNPACK_WITH_CALL): {
             Py_ssize_t i;
             PyObject *sum = PyList_New(0);
             PyObject *return_value;
@@ -2689,14 +2686,10 @@ main_loop:
                 Py_DECREF(none_val);
             }
 
-            if (convert_to_tuple) {
-                return_value = PyList_AsTuple(sum);
-                Py_DECREF(sum);
-                if (return_value == NULL)
-                    goto error;
-            }
-            else {
-                return_value = sum;
+            return_value = PyList_AsTuple(sum);
+            Py_DECREF(sum);
+            if (return_value == NULL) {
+                goto error;
             }
 
             while (oparg--)
@@ -2723,25 +2716,6 @@ main_loop:
                 goto error;
             }
             PUSH(set);
-            DISPATCH();
-        }
-
-        case TARGET(BUILD_SET_UNPACK): {
-            Py_ssize_t i;
-            PyObject *sum = PySet_New(NULL);
-            if (sum == NULL)
-                goto error;
-
-            for (i = oparg; i > 0; i--) {
-                if (_PySet_Update(sum, PEEK(i)) < 0) {
-                    Py_DECREF(sum);
-                    goto error;
-                }
-            }
-
-            while (oparg--)
-                Py_DECREF(POP());
-            PUSH(sum);
             DISPATCH();
         }
 
