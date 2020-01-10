@@ -1579,10 +1579,9 @@ def transient_internet(resource_name, *, timeout=30.0, errnos=()):
     finally:
         socket.setdefaulttimeout(old_timeout)
 
-import io
-class StringIOWrapper(io.StringIO):
+class StringIOWrapper:
+    # also allows for TextIOWrapper-like functions
     def __init__(self, stream, encoding):
-        super().__init__()
         self.stream = stream
         self._encoding = encoding
 
@@ -1592,11 +1591,24 @@ class StringIOWrapper(io.StringIO):
     def seek(self, s):
         return self.stream.seek(s)
 
+    def read(self):
+        return self.stream.read()
+
+    def readlines(self):
+        return self.stream.readlines()
+
+    def readline(self, size=None):
+        return self.stream.readline(size)
+
+    def detach(self):
+        return self.stream.detatch
+
     def getvalue(self):
         if self._encoding is not None:
             return self.stream.getvalue().encode(self._encoding)
         return self.stream.getvalue()
 
+import io
 @contextlib.contextmanager
 def captured_output(stream_name, *, encoding=None):
     """Return a context manager used by captured_stdout/stdin/stderr
