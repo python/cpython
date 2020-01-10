@@ -187,6 +187,13 @@ Exposed the Linux-specific :func:`os.pidfd_open` (:issue:`38692`) and
 :data:`os.P_PIDFD` (:issue:`38713`) for process management with file
 descriptors.
 
+poplib
+------
+
+:class:`~poplib.POP3` and :class:`~poplib.POP3_SSL` now raise a :class:`ValueError`
+if the given timeout for their constructor is zero to prevent the creation of
+a non-blocking socket. (Contributed by Dong-hee Na in :issue:`39259`.)
+
 threading
 ---------
 
