@@ -3610,11 +3610,15 @@ exception_unwind:
                 PUSH(val);
                 PUSH(exc);
                 JUMPTO(handler);
-                if (_Py_TracingPossible(ceval) &&
-                    ((f->f_lasti < instr_lb || f->f_lasti >= instr_ub) ||
-                    !(f->f_lasti == instr_lb || f->f_lasti < instr_prev))) {
-                    /* Make sure that we trace line after exception */
-                    instr_prev = INT_MAX;
+                if (_Py_TracingPossible(ceval)) {
+                    int needs_new_execution_window = (f->f_lasti < instr_lb || f->f_lasti >= instr_ub);
+                    int needs_line_update = (f->f_lasti == instr_lb || f->f_lasti < instr_prev);
+                    /* Make sure that we trace line after exception if we are in a new execution
+                     * window or we don't need a line update and we are not in the first instruction
+                     * of the line. */
+                    if (needs_new_execution_window || (!needs_line_update && instr_lb > 0)) {
+                        instr_prev = INT_MAX;
+                    }
                 }
                 /* Resume normal execution */
                 goto main_loop;
