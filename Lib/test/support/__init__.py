@@ -1603,6 +1603,9 @@ class StringIOWrapper:
     def detach(self):
         return self.stream.detatch
 
+    def __iter__(self):
+        return self.stream
+
     def getvalue(self):
         if self._encoding is not None:
             return self.stream.getvalue().encode(self._encoding)
