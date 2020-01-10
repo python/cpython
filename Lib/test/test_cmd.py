@@ -218,6 +218,53 @@ class TestAlternateInput(unittest.TestCase):
              "(Cmd) \n"
              "(Cmd) *** Unknown syntax: EOF\n"))
 
+    def test_intro_is_printed(self):
+        input = io.StringIO()
+        output = io.StringIO()
+        cmd = self.simplecmd(stdin=input, stdout=output)
+        cmd.use_rawinput = False
+        cmd.cmdloop(intro="INTRO")
+        self.assertMultiLineEqual(output.getvalue(),
+            ("INTRO\n"
+             "(Cmd) "))
+
+    def test_try_setting_readline_as_completer(self):
+        c = cmd.Cmd()
+        c.try_setting_readline_as_completer()
+        try:
+            assert readline.get_completer() == c.complete
+        except NameError:
+            pass
+
+    def test_set_intro_and_print_it(self):
+        input = io.StringIO()
+        output = io.StringIO()
+        c = cmd.Cmd(stdin=input, stdout=output)
+        c.set_intro_and_print_it(None)
+        assert c.intro == None
+        assert output.getvalue() == ""
+        c.set_intro_and_print_it("INTRO")
+        assert c.intro == "INTRO"
+        assert output.getvalue() == "INTRO\n"
+
+    def test_get_line_from_cmdqueue(self):
+        c = cmd.Cmd()
+        cmds = ['a', 'gibberish', 'cmd arg1 arg2', '']
+        c.cmdqueue = list(cmds)
+        for item in cmds:
+            line = c.get_line()
+            assert line == item
+
+    def test_get_line_from_stdin(self):
+        cmds = ['a', 'gibberish', 'cmd arg1 arg2', '']
+        input = io.StringIO('\n'.join(cmds) + '\n')
+        output = io.StringIO()
+        c = cmd.Cmd(stdin=input, stdout=output)
+        c.use_rawinput = False
+        for item in cmds:
+            line = c.get_line().strip()
+            assert line == item
+
 
 def test_main(verbose=None):
     from test import test_cmd
