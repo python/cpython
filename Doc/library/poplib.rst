@@ -48,7 +48,7 @@ The :mod:`poplib` module provides two classes:
       where ``line`` is the bytes about to be sent to the remote host.
 
    .. versionchanged:: 3.9
-      if the *timeout* parameter is set to be zero, it will raise a
+      If the *timeout* parameter is set to be zero, it will raise a
       :class:`ValueError` to prevent the creation of a non-blocking socket.
 
 .. class:: POP3_SSL(host, port=POP3_SSL_PORT, keyfile=None, certfile=None, timeout=None, context=None)
@@ -275,4 +275,3 @@ retrieves and prints all messages::
 
 At the end of the module, there is a test section that contains a more extensive
 example of usage.
-
