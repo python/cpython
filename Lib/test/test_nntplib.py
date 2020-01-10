@@ -639,7 +639,7 @@ class NNTPv1Handler:
                     "\tSat, 19 Jun 2010 18:04:08 -0400"
                     "\t<4FD05F05-F98B-44DC-8111-C6009C925F0C@gmail.com>"
                     "\t<hvalf7$ort$1@dough.gmane.org>\t7103\t16"
-                    "\tXref: news.gmane.org gmane.comp.python.authors:57"
+                    "\tXref: news.gmane.io gmane.comp.python.authors:57"
                     "\n"
                 "58\tLooking for a few good bloggers"
                     "\tDoug Hellmann <doug.hellmann-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>"
@@ -1125,7 +1125,7 @@ class NNTPv1v2TestsMixin:
             "references": "<hvalf7$ort$1@dough.gmane.org>",
             ":bytes": "7103",
             ":lines": "16",
-            "xref": "news.gmane.org gmane.comp.python.authors:57"
+            "xref": "news.gmane.io gmane.comp.python.authors:57"
             })
         art_num, over = overviews[1]
         self.assertEqual(over["xref"], None)
