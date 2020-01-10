@@ -1,0 +1,2 @@
+Fix :func:`time.sleep` to properly detect integer overflow when converting a
+floating-point number of seconds to an integer.

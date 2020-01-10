@@ -221,10 +221,27 @@ PyAPI_FUNC(void) _Py_set_387controlword(unsigned short);
 #define _Py_IntegralTypeMax(type) ((_Py_IntegralTypeSigned(type)) ? (((((type)1 << (sizeof(type)*CHAR_BIT - 2)) - 1) << 1) + 1) : ~(type)0)
 /* Return the minimum value of integral type *type*. */
 #define _Py_IntegralTypeMin(type) ((_Py_IntegralTypeSigned(type)) ? -_Py_IntegralTypeMax(type) - 1 : 0)
-/* Check whether *v* is in the range of integral type *type*. This is most
- * useful if *v* is floating-point, since demoting a floating-point *v* to an
- * integral type that cannot represent *v*'s integral part is undefined
- * behavior. */
-#define _Py_InIntegralTypeRange(type, v) (_Py_IntegralTypeMin(type) <= v && v <= _Py_IntegralTypeMax(type))
+
+/* Check if the floating-point number v (double) would overflow when casted to
+ * the integral type 'type'.
+ *
+ * Test (double)type_min(type) <= v <= (double)type_max(type) where v is a
+ * double, and type_min() and type_max() integers are rounded towards zero when
+ * casted to a double.
+ *
+ * (double)int cast rounds to nearest with ties going to nearest even integer
+ * (ROUND_HALF_EVEN). Use nextafter() to round towards zeros (ROUND_DOWN).
+ *
+ * For example, _Py_IntegralTypeMax(int64_t)=2**63-1 casted to double gives
+ * 2**63 which is greater than 2**63-1. The problem is that "v <= 2**63" fails
+ * to detect that v will overflow when casted to int64_t.
+ * nextafter((double)(2**63-1), 0.0) gives the floating-point number 2**63-1024
+ * which is less than or equal to the integer 2**63-1 and so can be used to
+ * test that v would overflow.
+ *
+ * In short, nextafter((double)x, 0.0) rounds the integer x towards zero. */
+#define _Py_DoubleInIntegralTypeRange(type, v) \
+    (nextafter((double)_Py_IntegralTypeMin(type), 0.0) <= v \
+     && v <= nextafter((double)_Py_IntegralTypeMax(type), 0.0))
 
 #endif /* Py_PYMATH_H */

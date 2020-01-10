@@ -151,7 +151,7 @@ _PyTime_DoubleToDenominator(double d, time_t *sec, long *numerator,
     }
     assert(0.0 <= floatpart && floatpart < denominator);
 
-    if (!_Py_InIntegralTypeRange(time_t, intpart)) {
+    if (!_Py_DoubleInIntegralTypeRange(time_t, intpart)) {
         error_time_t_overflow();
         return -1;
     }
@@ -204,7 +204,7 @@ _PyTime_ObjectToTime_t(PyObject *obj, time_t *sec, _PyTime_round_t round)
         d = _PyTime_Round(d, round);
         (void)modf(d, &intpart);
 
-        if (!_Py_InIntegralTypeRange(time_t, intpart)) {
+        if (!_Py_DoubleInIntegralTypeRange(time_t, intpart)) {
             error_time_t_overflow();
             return -1;
         }
@@ -389,7 +389,7 @@ _PyTime_FromDouble(_PyTime_t *t, double value, _PyTime_round_t round,
     d *= (double)unit_to_ns;
     d = _PyTime_Round(d, round);
 
-    if (!_Py_InIntegralTypeRange(_PyTime_t, d)) {
+    if (!_Py_DoubleInIntegralTypeRange(_PyTime_t, d)) {
         _PyTime_overflow();
         return -1;
     }
