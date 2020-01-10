@@ -123,7 +123,6 @@ extern "C" {
 #define FORMAT_VALUE            155
 #define BUILD_CONST_KEY_MAP     156
 #define BUILD_STRING            157
-#define BUILD_TUPLE_UNPACK_WITH_CALL 158
 #define LOAD_METHOD             160
 #define CALL_METHOD             161
 #define LIST_EXTEND             162

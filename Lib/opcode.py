@@ -208,7 +208,6 @@ jrel_op('SETUP_ASYNC_WITH', 154)
 def_op('FORMAT_VALUE', 155)
 def_op('BUILD_CONST_KEY_MAP', 156)
 def_op('BUILD_STRING', 157)
-def_op('BUILD_TUPLE_UNPACK_WITH_CALL', 158)
 
 name_op('LOAD_METHOD', 160)
 def_op('CALL_METHOD', 161)

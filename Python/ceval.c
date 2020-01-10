@@ -2637,16 +2637,18 @@ main_loop:
             PyObject *list = PEEK(oparg);
             PyObject *none_val = _PyList_Extend((PyListObject *)list, iterable);
             if (none_val == NULL) {
-                if (_PyErr_ExceptionMatches(tstate, PyExc_TypeError))
+                if (_PyErr_ExceptionMatches(tstate, PyExc_TypeError) &&
+                   (iterable->ob_type->tp_iter == NULL && !PySequence_Check(iterable)))
                 {
                     PyErr_Clear();
                     _PyErr_Format(tstate, PyExc_TypeError,
-                          "Value must be an iterable, not %.200s",
+                          "Value after * must be an iterable, not %.200s",
                           Py_TYPE(iterable)->tp_name);
                 }
                 Py_DECREF(iterable);
                 goto error;
             }
+            Py_DECREF(none_val);
             Py_DECREF(iterable);
             DISPATCH();
         }
@@ -2659,42 +2661,6 @@ main_loop:
             if (err < 0) {
                 goto error;
             }
-            DISPATCH();
-        }
-
-        case TARGET(BUILD_TUPLE_UNPACK_WITH_CALL): {
-            Py_ssize_t i;
-            PyObject *sum = PyList_New(0);
-            PyObject *return_value;
-
-            if (sum == NULL)
-                goto error;
-
-            for (i = oparg; i > 0; i--) {
-                PyObject *none_val;
-
-                none_val = _PyList_Extend((PyListObject *)sum, PEEK(i));
-                if (none_val == NULL) {
-                    if (opcode == BUILD_TUPLE_UNPACK_WITH_CALL &&
-                        _PyErr_ExceptionMatches(tstate, PyExc_TypeError))
-                    {
-                        check_args_iterable(tstate, PEEK(1 + oparg), PEEK(i));
-                    }
-                    Py_DECREF(sum);
-                    goto error;
-                }
-                Py_DECREF(none_val);
-            }
-
-            return_value = PyList_AsTuple(sum);
-            Py_DECREF(sum);
-            if (return_value == NULL) {
-                goto error;
-            }
-
-            while (oparg--)
-                Py_DECREF(POP());
-            PUSH(return_value);
             DISPATCH();
         }
 
