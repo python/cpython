@@ -1,0 +1,2 @@
+Add :func:`math.nextafter`: return the next floating-point value after *x*
+towards *y*.
