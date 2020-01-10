@@ -84,14 +84,8 @@ class Cmd:
         sys.stdin and sys.stdout are used.
 
         """
-        if stdin is not None:
-            self.stdin = stdin
-        else:
-            self.stdin = sys.stdin
-        if stdout is not None:
-            self.stdout = stdout
-        else:
-            self.stdout = sys.stdout
+        self.stdin = stdin if stdin is not None else sys.stdin
+        self.stdout = stdout if stdout is not None else sys.stdout
         self.cmdqueue = []
         self.completekey = completekey
 
