@@ -602,6 +602,27 @@ existed)::
 
     C:\WINDOWS\system32;C:\WINDOWS;C:\Program Files\Python 3.9
 
+.. _win-utf8-mode:
+
+Using UTF-8 mode
+================
+
+.. versionadded:: 3.7
+
+Windows doesn't use UTF-8 for the system encoding (the ANSI Code Page).
+And Python uses the system encoding for the default encoding of text files.
+
+It may cause trouble because UTF-8 is very widely used on the internet
+and most Unix systems, including WSL (Windows Subsystem for Linux).
+
+You can use the UTF-8 mode to change the default text encoding to UTF-8.
+You can enable the UTF-8 mode via ``-X utf8`` command option, or
+``PYTHONUTF8=1`` environement variable.  See :envvar:`PYTHONUTF8` for
+the UTF-8 mode, and :ref:`setting-envvars` for how to modify
+environment variables.
+
+You can use the "mbcs" codec to use the system encoding in UTF-8 mode.
+
 .. _launcher:
 
 Python Launcher for Windows
