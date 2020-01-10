@@ -1125,6 +1125,11 @@ stack_effect(int opcode, int oparg, int jump)
             return 1;
         case LOAD_ASSERTION_ERROR:
             return 1;
+        case LIST_TO_TUPLE:
+            return 0;
+        case LIST_EXTEND:
+        case SET_UPDATE:
+            return -1;
         default:
             return PY_INVALID_STACK_EFFECT;
     }
@@ -1705,7 +1710,7 @@ compiler_unwind_fblock(struct compiler *c, struct fblockinfo *info,
                 compiler_pop_fblock(c, POP_VALUE, NULL);
             }
             return 1;
-            
+
         case FINALLY_END:
             if (preserve_tos) {
                 ADDOP(c, ROT_FOUR);
@@ -3676,10 +3681,10 @@ compiler_boolop(struct compiler *c, expr_ty e)
 
 static int
 starunpack_helper(struct compiler *c, asdl_seq *elts,
-                  int single_op, int inner_op, int outer_op)
+                  int build, int add, int extend, int tuple)
 {
     Py_ssize_t n = asdl_seq_LEN(elts);
-    Py_ssize_t i, nsubitems = 0, nseen = 0;
+    Py_ssize_t i, seen_star = 0;
     if (n > 2 && are_all_items_const(elts, 0, n)) {
         PyObject *folded = PyTuple_New(n);
         if (folded == NULL) {
@@ -3691,41 +3696,63 @@ starunpack_helper(struct compiler *c, asdl_seq *elts,
             Py_INCREF(val);
             PyTuple_SET_ITEM(folded, i, val);
         }
-        if (outer_op == BUILD_SET_UNPACK) {
-            Py_SETREF(folded, PyFrozenSet_New(folded));
-            if (folded == NULL) {
-                return 0;
+        if (tuple) {
+            ADDOP_LOAD_CONST_NEW(c, folded);
+        } else {
+            if (add == SET_ADD) {
+                Py_SETREF(folded, PyFrozenSet_New(folded));
+                if (folded == NULL) {
+                    return 0;
+                }
             }
+            ADDOP_I(c, build, 0);
+            ADDOP_LOAD_CONST_NEW(c, folded);
+            ADDOP_I(c, extend, 1);
         }
-        ADDOP_LOAD_CONST_NEW(c, folded);
-        ADDOP_I(c, outer_op, 1);
         return 1;
     }
+
     for (i = 0; i < n; i++) {
         expr_ty elt = asdl_seq_GET(elts, i);
         if (elt->kind == Starred_kind) {
-            if (nseen) {
-                ADDOP_I(c, inner_op, nseen);
-                nseen = 0;
-                nsubitems++;
+            seen_star = 1;
+        }
+    }
+    if (seen_star) {
+        seen_star = 0;
+        for (i = 0; i < n; i++) {
+            expr_ty elt = asdl_seq_GET(elts, i);
+            if (elt->kind == Starred_kind) {
+                if (seen_star == 0) {
+                    ADDOP_I(c, build, i);
+                    seen_star = 1;
+                }
+                VISIT(c, expr, elt->v.Starred.value);
+                ADDOP_I(c, extend, 1);
             }
-            VISIT(c, expr, elt->v.Starred.value);
-            nsubitems++;
+            else {
+                VISIT(c, expr, elt);
+                if (seen_star) {
+                    ADDOP_I(c, add, 1);
+                }
+            }
         }
-        else {
+        assert(seen_star);
+        if (tuple) {
+            ADDOP(c, LIST_TO_TUPLE);
+        }
+    }
+    else {
+        for (i = 0; i < n; i++) {
+            expr_ty elt = asdl_seq_GET(elts, i);
             VISIT(c, expr, elt);
-            nseen++;
+        }
+        if (tuple) {
+            ADDOP_I(c, BUILD_TUPLE, n);
+        } else {
+            ADDOP_I(c, build, n);
         }
     }
-    if (nsubitems) {
-        if (nseen) {
-            ADDOP_I(c, inner_op, nseen);
-            nsubitems++;
-        }
-        ADDOP_I(c, outer_op, nsubitems);
-    }
-    else
-        ADDOP_I(c, single_op, nseen);
     return 1;
 }
 
@@ -3767,8 +3794,8 @@ compiler_list(struct compiler *c, expr_ty e)
         return assignment_helper(c, elts);
     }
     else if (e->v.List.ctx == Load) {
-        return starunpack_helper(c, elts,
-                                 BUILD_LIST, BUILD_TUPLE, BUILD_LIST_UNPACK);
+        return starunpack_helper(c, elts, BUILD_LIST,
+                                 LIST_APPEND, LIST_EXTEND, 0);
     }
     else
         VISIT_SEQ(c, expr, elts);
@@ -3783,8 +3810,8 @@ compiler_tuple(struct compiler *c, expr_ty e)
         return assignment_helper(c, elts);
     }
     else if (e->v.Tuple.ctx == Load) {
-        return starunpack_helper(c, elts,
-                                 BUILD_TUPLE, BUILD_TUPLE, BUILD_TUPLE_UNPACK);
+        return starunpack_helper(c, elts, BUILD_LIST,
+                                 LIST_APPEND, LIST_EXTEND, 1);
     }
     else
         VISIT_SEQ(c, expr, elts);
@@ -3795,7 +3822,7 @@ static int
 compiler_set(struct compiler *c, expr_ty e)
 {
     return starunpack_helper(c, e->v.Set.elts, BUILD_SET,
-                             BUILD_SET, BUILD_SET_UNPACK);
+                             SET_ADD, SET_UPDATE, 0);
 }
 
 static int
@@ -4860,9 +4887,9 @@ compiler_with(struct compiler *c, stmt_ty s, int pos)
 
     ADDOP(c, POP_BLOCK);
     compiler_pop_fblock(c, WITH, block);
-    
+
     /* End of body; start the cleanup. */
-    
+
     /* For successful outcome:
      * call __exit__(None, None, None)
      */
@@ -5984,7 +6011,7 @@ makecode(struct compiler *c, struct assembler *a)
         goto error;
     }
     co = PyCode_NewWithPosOnlyArgs(posonlyargcount+posorkeywordargcount,
-                                   posonlyargcount, kwonlyargcount, nlocals_int, 
+                                   posonlyargcount, kwonlyargcount, nlocals_int,
                                    maxdepth, flags, bytecode, consts, names,
                                    varnames, freevars, cellvars, c->c_filename,
                                    c->u->u_name, c->u->u_firstlineno, a->a_lnotab);

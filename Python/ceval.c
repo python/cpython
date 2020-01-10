@@ -2621,6 +2621,47 @@ main_loop:
             DISPATCH();
         }
 
+        case TARGET(LIST_TO_TUPLE): {
+            PyObject *list = POP();
+            PyObject *tuple = PyList_AsTuple(list);
+            Py_DECREF(list);
+            if (tuple == NULL) {
+                goto error;
+            }
+            PUSH(tuple);
+            DISPATCH();
+        }
+
+        case TARGET(LIST_EXTEND): {
+            PyObject *iterable = POP();
+            PyObject *list = PEEK(oparg);
+            PyObject *none_val = _PyList_Extend((PyListObject *)list, iterable);
+            if (none_val == NULL) {
+                if (_PyErr_ExceptionMatches(tstate, PyExc_TypeError))
+                {
+                    PyErr_Clear();
+                    _PyErr_Format(tstate, PyExc_TypeError,
+                          "Value must be an iterable, not %.200s",
+                          Py_TYPE(iterable)->tp_name);
+                }
+                Py_DECREF(iterable);
+                goto error;
+            }
+            Py_DECREF(iterable);
+            DISPATCH();
+        }
+
+        case TARGET(SET_UPDATE): {
+            PyObject *iterable = POP();
+            PyObject *set = PEEK(oparg);
+            int err = _PySet_Update(set, iterable);
+            Py_DECREF(iterable);
+            if (err < 0) {
+                goto error;
+            }
+            DISPATCH();
+        }
+
         case TARGET(BUILD_TUPLE_UNPACK_WITH_CALL):
         case TARGET(BUILD_TUPLE_UNPACK):
         case TARGET(BUILD_LIST_UNPACK): {
