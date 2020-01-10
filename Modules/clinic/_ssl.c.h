@@ -122,6 +122,56 @@ _ssl__SSLSocket_cipher(PySSLSocket *self, PyObject *Py_UNUSED(ignored))
     return _ssl__SSLSocket_cipher_impl(self);
 }
 
+PyDoc_STRVAR(_ssl__SSLSocket_getpeercertchain__doc__,
+"getpeercertchain($self, /, der=False, validate=True)\n"
+"--\n"
+"\n");
+
+#define _SSL__SSLSOCKET_GETPEERCERTCHAIN_METHODDEF    \
+    {"getpeercertchain", (PyCFunction)(void(*)(void))_ssl__SSLSocket_getpeercertchain, METH_FASTCALL|METH_KEYWORDS, _ssl__SSLSocket_getpeercertchain__doc__},
+
+static PyObject *
+_ssl__SSLSocket_getpeercertchain_impl(PySSLSocket *self, int binary_mode,
+                                      int validate);
+
+static PyObject *
+_ssl__SSLSocket_getpeercertchain(PySSLSocket *self, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+{
+    PyObject *return_value = NULL;
+    static const char * const _keywords[] = {"der", "validate", NULL};
+    static _PyArg_Parser _parser = {NULL, _keywords, "getpeercertchain", 0};
+    PyObject *argsbuf[2];
+    Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 0;
+    int binary_mode = 0;
+    int validate = 1;
+
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 0, 2, 0, argsbuf);
+    if (!args) {
+        goto exit;
+    }
+    if (!noptargs) {
+        goto skip_optional_pos;
+    }
+    if (args[0]) {
+        binary_mode = PyObject_IsTrue(args[0]);
+        if (binary_mode < 0) {
+            goto exit;
+        }
+        if (!--noptargs) {
+            goto skip_optional_pos;
+        }
+    }
+    validate = PyObject_IsTrue(args[1]);
+    if (validate < 0) {
+        goto exit;
+    }
+skip_optional_pos:
+    return_value = _ssl__SSLSocket_getpeercertchain_impl(self, binary_mode, validate);
+
+exit:
+    return return_value;
+}
+
 PyDoc_STRVAR(_ssl__SSLSocket_version__doc__,
 "version($self, /)\n"
 "--\n"
@@ -1447,4 +1497,4 @@ exit:
 #ifndef _SSL_ENUM_CRLS_METHODDEF
     #define _SSL_ENUM_CRLS_METHODDEF
 #endif /* !defined(_SSL_ENUM_CRLS_METHODDEF) */
-/*[clinic end generated code: output=2bb53a80040c9b35 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=7898c106854115f2 input=a9049054013a1b77]*/

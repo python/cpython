@@ -2097,6 +2097,133 @@ _ssl__SSLSocket_cipher_impl(PySSLSocket *self)
 }
 
 /*[clinic input]
+_ssl._SSLSocket.getpeercertchain
+    der as binary_mode: bool = False
+    validate: bool = True
+[clinic start generated code]*/
+
+static PyObject *
+_ssl__SSLSocket_getpeercertchain_impl(PySSLSocket *self, int binary_mode,
+                                      int validate)
+/*[clinic end generated code: output=8094e6d78d27eb9a input=f4dcd181d0d163eb]*/
+{
+    int len, i;
+    PyObject *retval = NULL, *ci=NULL;
+    STACK_OF(X509) *peer_chain; /* reference */
+
+    assert((self->ctx != NULL) && (self->ctx->ctx != NULL));
+    if (self->ssl == NULL) {
+        Py_RETURN_NONE;
+    }
+
+    /* The peer just transmits the intermediate cert chain EXCLUDING the root
+     * CA certificate as this side is suppose to have a copy of the root
+     * certificate for verification. */
+    if (validate) {
+#ifdef OPENSSL_VERSION_1_1
+        peer_chain = SSL_get0_verified_chain(self->ssl);
+        long ret = SSL_get_verify_result(self->ssl);
+        if (ret != X509_V_OK) {
+#ifdef SSL_R_CERTIFICATE_VERIFY_FAILED
+            long e = ERR_PACK(ERR_LIB_SSL, 0, SSL_R_CERTIFICATE_VERIFY_FAILED);
+#else
+            long e = ERR_PACK(ERR_LIB_SSL, 0, 134);
+#endif
+            fill_and_set_sslerror(self, PySSLCertVerificationErrorObject, PY_SSL_ERROR_SSL, NULL, __LINE__, e);
+            return NULL;
+        }
+#else
+        X509 *peer_cert = SSL_get_peer_certificate(self->ssl);
+        if (peer_cert == NULL)
+            Py_RETURN_NONE;
+
+        STACK_OF(X509) *chain = SSL_get_peer_cert_chain(self->ssl);
+        if (chain == NULL) {
+            X509_free(peer_cert);
+            Py_RETURN_NONE;
+        }
+        X509_STORE_CTX *store_ctx;
+
+        /* Initialize a store context with store (for root CA certs), the
+         * peer's cert and the peer's chain with intermediate CA certs. */
+        if ((store_ctx = X509_STORE_CTX_new()) == NULL) {
+            X509_free(peer_cert);
+            _setSSLError(NULL, 0, __FILE__, __LINE__);
+            return NULL;
+        }
+
+        if (!X509_STORE_CTX_init(store_ctx,
+                                 SSL_CTX_get_cert_store(self->ctx->ctx),
+                                 peer_cert, chain)) {
+#ifdef SSL_R_CERTIFICATE_VERIFY_FAILED
+            long e = ERR_PACK(ERR_LIB_SSL, 0, SSL_R_CERTIFICATE_VERIFY_FAILED);
+#else
+            long e = ERR_PACK(ERR_LIB_SSL, 0, 134);
+#endif
+            fill_and_set_sslerror(self, PySSLCertVerificationErrorObject, PY_SSL_ERROR_SSL, NULL, __LINE__, e);
+            X509_free(peer_cert);
+            X509_STORE_CTX_free(store_ctx);
+            goto end;
+        }
+        X509_free(peer_cert);
+
+        /* Validate peer cert using its intermediate CA certs and the
+        * context's root CA certs. */
+        if (X509_verify_cert(store_ctx) <= 0) {
+            // _setX509StoreContextError(self, store_ctx, __FILE__, __LINE__);
+#ifdef SSL_R_CERTIFICATE_VERIFY_FAILED
+            long e = ERR_PACK(ERR_LIB_SSL, 0, SSL_R_CERTIFICATE_VERIFY_FAILED);
+#else
+            long e = ERR_PACK(ERR_LIB_SSL, 0, 134);
+#endif
+            fill_and_set_sslerror(self, PySSLCertVerificationErrorObject, PY_SSL_ERROR_SSL, NULL, __LINE__, e);
+            X509_STORE_CTX_free(store_ctx);
+            goto end;
+        }
+
+        /* Get chain from store context */
+        peer_chain = X509_STORE_CTX_get1_chain(store_ctx);
+        X509_STORE_CTX_free(store_ctx);
+#endif
+    } else {
+        peer_chain = SSL_get_peer_cert_chain(self->ssl);
+    }
+
+    if (peer_chain == NULL) {
+        Py_RETURN_NONE;
+    }
+
+    len = sk_X509_num(peer_chain);
+
+    if ((retval = PyTuple_New(len)) == NULL) {
+        return NULL;
+    }
+
+    for (i = 0; i < len; i++){
+        X509 *cert = sk_X509_value(peer_chain, i);
+        if (binary_mode) {
+            ci = _certificate_to_der(cert);
+        } else {
+            ci = _decode_certificate(cert);
+        }
+
+        if (ci == NULL) {
+            Py_CLEAR(retval);
+            goto end;
+        }
+        PyTuple_SET_ITEM(retval, i, ci);
+    }
+
+  end:
+#ifndef OPENSSL_VERSION_1_1
+    if (validate && (peer_chain != NULL)) {
+        sk_X509_pop_free(peer_chain, X509_free);
+    }
+#endif
+    return retval;
+}
+
+/*[clinic input]
 _ssl._SSLSocket.version
 [clinic start generated code]*/
 
@@ -3000,6 +3127,7 @@ static PyMethodDef PySSLMethods[] = {
     _SSL__SSLSOCKET_GET_CHANNEL_BINDING_METHODDEF
     _SSL__SSLSOCKET_CIPHER_METHODDEF
     _SSL__SSLSOCKET_SHARED_CIPHERS_METHODDEF
+    _SSL__SSLSOCKET_GETPEERCERTCHAIN_METHODDEF
     _SSL__SSLSOCKET_VERSION_METHODDEF
     _SSL__SSLSOCKET_SELECTED_NPN_PROTOCOL_METHODDEF
     _SSL__SSLSOCKET_SELECTED_ALPN_PROTOCOL_METHODDEF

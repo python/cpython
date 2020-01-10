@@ -2160,6 +2160,36 @@ class SimpleBackgroundTests(unittest.TestCase):
             self.assertTrue(cert)
         self.assertEqual(len(ctx.get_ca_certs()), 1)
 
+    def test_getpeercertchain(self):
+        ctx = ssl.SSLContext(ssl.PROTOCOL_SSLv23)
+        ctx.verify_mode = ssl.CERT_REQUIRED
+        ctx.load_verify_locations(capath=CAPATH)
+        with ctx.wrap_socket(socket.socket(socket.AF_INET)) as s:
+            s.connect(self.server_addr)
+            try:
+                peer_cert = s.getpeercert()
+                peer_cert_bin = s.getpeercert(True)
+                chain = s.getpeercertchain()
+                chain_bin = s.getpeercertchain(True)
+                chain_no_validate = s.getpeercertchain(validate=False)
+                chain_bin_no_validate = s.getpeercertchain(True, False)
+            finally:
+                self.assertTrue(peer_cert)
+                self.assertEqual(len(chain), 2)
+                self.assertTrue(peer_cert_bin)
+                self.assertEqual(len(chain_bin), 2)
+
+                # ca cert
+                ca_certs = ctx.get_ca_certs()
+                self.assertEqual(len(ca_certs), 1)
+                test_get_ca_certsert = ca_certs[0]
+                ca_cert_bin = ctx.get_ca_certs(True)[0]
+
+                self.assertEqual(chain, (peer_cert, test_get_ca_certsert))
+                self.assertEqual(chain_bin, (peer_cert_bin, ca_cert_bin))
+                self.assertEqual(chain_no_validate, (peer_cert,))
+                self.assertEqual(chain_bin_no_validate, (peer_cert_bin,))
+
     @needs_sni
     def test_context_setget(self):
         # Check that the context of a connected socket can be replaced.

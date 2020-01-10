@@ -1259,6 +1259,21 @@ SSL sockets also have the following additional methods and attributes:
    .. versionchanged:: 3.9
       IPv6 address strings no longer have a trailing new line.
 
+.. method:: SSLSocket.getpeercertchain(binary_form=False, validate=True)
+
+   Returns certificate chain for the peer. If no chain is provided, returns
+   None. Otherwise returns a tuple of dicts containing information about the
+   certificates. The chain starts with the leaf certificate and ends with the
+   root certificate. If called on the client side, the leaf certificate is the
+   peer's certificate.
+
+   If the optional argument *binary_form* is True, return a list of *binary_form*-encoded copies
+   of the certificates.
+   If the optional argument *validate* is False, return the peer's cert chain
+   without any validation and without the root CA cert.");
+
+    .. versionadded:: 3.9
+
 .. method:: SSLSocket.cipher()
 
    Returns a three-value tuple containing the name of the cipher being used, the

@@ -905,6 +905,13 @@ class SSLObject:
         """
         return self._sslobj.getpeercert(binary_form)
 
+    def getpeercertchain(self, binary_form=False, validate=True):
+        """"Returns the certificate chain of the SSL connection
+        as tuple of dicts.
+
+        Return None if no chain is provieded."""
+        return self._sslobj.getpeercertchain(binary_form, validate)
+
     def selected_npn_protocol(self):
         """Return the currently selected NPN protocol as a string, or ``None``
         if a next protocol was not negotiated or if NPN is not supported by one
@@ -1122,6 +1129,12 @@ class SSLSocket(socket):
         self._checkClosed()
         self._check_connected()
         return self._sslobj.getpeercert(binary_form)
+
+    @_sslcopydoc
+    def getpeercertchain(self, binary_form=False, validate=True):
+        self._checkClosed()
+        self._check_connected()
+        return self._sslobj.getpeercertchain(binary_form, validate)
 
     @_sslcopydoc
     def selected_npn_protocol(self):
