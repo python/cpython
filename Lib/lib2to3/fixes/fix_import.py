@@ -27,9 +27,9 @@ def traverse_imports(names):
             yield node.value
         elif node.type == syms.dotted_name:
             yield "".join([ch.value for ch in node.children])
-        elif node.type == syms.dotted_as_name:
+        elif node.type in {syms.dotted_as_name, syms.import_as_name}:
             pending.append(node.children[0])
-        elif node.type == syms.dotted_as_names:
+        elif node.type in {syms.dotted_as_names, syms.import_as_names}:
             pending.extend(node.children[::-2])
         else:
             raise AssertionError("unknown node type")

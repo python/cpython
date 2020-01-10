@@ -1,0 +1,2 @@
+Add imports_as_name support to ``traverse_imports`` in
+``lib2to3.fixes.fix_import``.
