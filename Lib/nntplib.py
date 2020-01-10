@@ -1056,6 +1056,8 @@ class NNTP(_NNTPBase):
             raise
 
     def _create_socket(self, timeout):
+        if timeout is not None and not timeout:
+            raise ValueError('Non-blocking socket (timeout=0) is not supported')
         sys.audit("nntplib.connect", self, self.host, self.port)
         return socket.create_connection((self.host, self.port), timeout)
 
@@ -1081,6 +1083,7 @@ if _have_ssl:
                              usenetrc, timeout)
 
         def _create_socket(self, timeout):
+<<<<<<< HEAD
             sock = super()._create_socket(timeout)
             try:
                 sock = _encrypt_on(sock, self.ssl_context, self.host)
@@ -1089,6 +1092,16 @@ if _have_ssl:
                 raise
             else:
                 return sock
+=======
+            self.sock = super()._create_socket(timeout)
+            try:
+                self.sock = _encrypt_on(self.sock, self.ssl_context, self.host)
+            except:
+                self.sock.close()
+                raise
+            else:
+                return self.sock
+>>>>>>> nntplib.NNTP/NNTP_SSL refactoring
 
     __all__.append("NNTP_SSL")
 
