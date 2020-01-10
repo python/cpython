@@ -89,7 +89,7 @@ The :mod:`poplib` module provides two classes:
        certificates for you.
 
    .. versionchanged:: 3.9
-      if the *timeout* parameter is set to be zero, it will raise a
+      If the *timeout* parameter is set to be zero, it will raise a
       :class:`ValueError` to prevent the creation of a non-blocking socket.
 
 One exception is defined as an attribute of the :mod:`poplib` module:
