@@ -187,19 +187,29 @@ class Cmd:
         'command' and 'args' may be None if the line couldn't be parsed.
         """
         line = line.strip()
-        if not line:
+
+        if len(line) == 0 or self.is_shell_alias_without_shell(line):
             return None, None, line
-        elif line[0] == '?':
-            line = 'help ' + line[1:]
-        elif line[0] == '!':
-            if hasattr(self, 'do_shell'):
-                line = 'shell ' + line[1:]
-            else:
-                return None, None, line
-        i, n = 0, len(line)
-        while i < n and line[i] in self.identchars: i = i+1
-        cmd, arg = line[:i], line[i:].strip()
+
+        line = self.expand_alias(line, '?', 'help')
+        line = self.expand_alias(line, '!', 'shell')
+
+        cmd, arg = self.split_cmd_from_args(line)
         return cmd, arg, line
+
+    def is_shell_alias_without_shell(self, line):
+        return line[0] == '!' and not hasattr(self, 'do_shell')
+
+    def expand_alias(self, line, alias, command):
+        if line[0] == alias:
+            return command + ' ' + line[1:]
+        return line
+
+    def split_cmd_from_args(self, line):
+        for i in range(len(line)):
+            if line[i] not in self.identchars:
+                return line[:i], line[i:].strip()
+        return line, ''
 
     def onecmd(self, line):
         """Interpret the argument as though it had been typed in response
