@@ -17,7 +17,6 @@ class MimeTypesTestMixin(unittest.TestCase):
         # Tell it we don't know about external files:
         support.patch(self, mimetypes, 'knownfiles', [])
         support.patch(self, mimetypes, 'inited', False)
-        support.patch(self, mimetypes, '_db', None)
         mimetypes._default_mime_types()
 
 
