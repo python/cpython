@@ -258,6 +258,10 @@ class NetworkedNNTPTestsMixin:
             # value
             setattr(cls, name, wrap_meth(meth))
 
+    def test_timeout(self):
+        with self.assertRaises(ValueError):
+            self.NNTP_CLASS(self.NNTP_HOST, timeout=0, usenetrc=False)
+
     def test_with_statement(self):
         def is_connected():
             if not hasattr(server, 'file'):
