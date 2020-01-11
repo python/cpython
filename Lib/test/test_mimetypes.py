@@ -9,15 +9,19 @@ from test import support
 from test.support import script_helper
 from platform import win32_edition
 
-# Tell it we don't know about external files:
-mimetypes.knownfiles = []
-mimetypes.inited = False
-mimetypes._default_mime_types()
 
+class MimeTypesTestMixin(unittest.TestCase):
 
-class MimeTypesTestCase(unittest.TestCase):
     def setUp(self):
         self.db = mimetypes.MimeTypes()
+
+        # Tell it we don't know about external files:
+        support.patch(self, mimetypes, 'knownfiles', [])
+        support.patch(self, mimetypes, 'inited', False)
+        mimetypes._default_mime_types()
+
+
+class MimeTypesTestCase(MimeTypesTestMixin):
 
     def test_default_data(self):
         eq = self.assertEqual
@@ -222,9 +226,28 @@ class MiscTestCase(unittest.TestCase):
 class MimetypesCliTestCase(unittest.TestCase):
 
     def mimetypes_cmd(self, *args, **kwargs):
-        rc, out, err = script_helper.assert_python_ok('-m', 'mimetypes', *args,
-                                                      **kwargs)
-        return out.decode().strip()
+        support.patch(self, sys, "argv", [sys.executable, *args])
+        with support.captured_stdout() as output:
+            mimetypes._main()
+            return output.getvalue().strip()
+
+    def test_help_option(self):
+        support.patch(self, sys, "argv", [sys.executable, "-h"])
+        with support.captured_stdout() as output:
+            with self.assertRaises(SystemExit) as cm:
+                mimetypes._main()
+
+        self.assertIn("Usage: mimetypes.py", output.getvalue())
+        self.assertEqual(cm.exception.code, 0)
+
+    def test_invalid_option(self):
+        support.patch(self, sys, "argv", [sys.executable, "--invalid"])
+        with support.captured_stdout() as output:
+            with self.assertRaises(SystemExit) as cm:
+                mimetypes._main()
+
+        self.assertIn("Usage: mimetypes.py", output.getvalue())
+        self.assertEqual(cm.exception.code, 1)
 
     def test_guess_extension(self):
         eq = self.assertEqual
