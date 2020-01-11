@@ -1042,13 +1042,11 @@ class NNTP(_NNTPBase):
         """
         self.host = host
         self.port = port
-        sys.audit("nntplib.connect", self, host, port)
-        self.sock = socket.create_connection((host, port), timeout)
+        self.sock = self._create_socket(timeout)
         file = None
         try:
             file = self.sock.makefile("rwb")
-            _NNTPBase.__init__(self, file, host,
-                               readermode, timeout)
+            super().__init__(file, host, readermode, timeout)
             if user or usenetrc:
                 self.login(user, password, usenetrc)
         except:
@@ -1057,15 +1055,19 @@ class NNTP(_NNTPBase):
             self.sock.close()
             raise
 
+    def _create_socket(self, timeout):
+        sys.audit("nntplib.connect", self, self.host, self.port)
+        return socket.create_connection((self.host, self.port), timeout)
+
     def _close(self):
         try:
-            _NNTPBase._close(self)
+            super()._close()
         finally:
             self.sock.close()
 
 
 if _have_ssl:
-    class NNTP_SSL(_NNTPBase):
+    class NNTP_SSL(NNTP):
 
         def __init__(self, host, port=NNTP_SSL_PORT,
                     user=None, password=None, ssl_context=None,
@@ -1074,27 +1076,19 @@ if _have_ssl:
             """This works identically to NNTP.__init__, except for the change
             in default port and the `ssl_context` argument for SSL connections.
             """
-            sys.audit("nntplib.connect", self, host, port)
-            self.sock = socket.create_connection((host, port), timeout)
-            file = None
-            try:
-                self.sock = _encrypt_on(self.sock, ssl_context, host)
-                file = self.sock.makefile("rwb")
-                _NNTPBase.__init__(self, file, host,
-                                   readermode=readermode, timeout=timeout)
-                if user or usenetrc:
-                    self.login(user, password, usenetrc)
-            except:
-                if file:
-                    file.close()
-                self.sock.close()
-                raise
+            self.ssl_context = ssl_context
+            super().__init__(host, port, user, password, readermode,
+                             usenetrc, timeout)
 
-        def _close(self):
+        def _create_socket(self, timeout):
+            sock = super()._create_socket(timeout)
             try:
-                _NNTPBase._close(self)
-            finally:
-                self.sock.close()
+                sock = _encrypt_on(sock, self.ssl_context, self.host)
+            except:
+                sock.close()
+                raise
+            else:
+                return sock
 
     __all__.append("NNTP_SSL")
 
