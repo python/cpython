@@ -1081,14 +1081,14 @@ if _have_ssl:
                              usenetrc, timeout)
 
         def _create_socket(self, timeout):
-            self.sock = super()._create_socket(timeout)
+            sock = super()._create_socket(timeout)
             try:
-                self.sock = _encrypt_on(self.sock, self.ssl_context, self.host)
+                sock = _encrypt_on(sock, self.ssl_context, self.host)
             except:
-                self.sock.close()
+                sock.close()
                 raise
             else:
-                return self.sock
+                return sock
 
     __all__.append("NNTP_SSL")
 
