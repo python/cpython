@@ -133,7 +133,7 @@ Here are the basic steps needed to get `set up`_ and contribute a patch. This is
     git clone https://github.com/<your_username>/cpython
     cd cpython
 
-3. Build Python, on UNIX and Mac OS use::
+3. Build Python, on UNIX and macOS use::
 
     ./configure --with-pydebug && make -j
 
@@ -141,19 +141,19 @@ Here are the basic steps needed to get `set up`_ and contribute a patch. This is
 
     PCbuild\build.bat -e -d
 
-   See also `more detailed instructions`_, `how to install and build dependencies`_, and the platform-specific pages for `UNIX`_, `Mac OS`_, and `Windows`_.
+   See also `more detailed instructions`_, `how to install and build dependencies`_, and the platform-specific pages for `UNIX`_, `macOS`_, and `Windows`_.
 
 .. _more detailed instructions: https://devguide.python.org/setup/#compiling
 .. _how to install and build dependencies: https://devguide.python.org/setup/#build-dependencies
 .. _UNIX: https://devguide.python.org/setup/#unix-compiling
-.. _Mac OS: https://devguide.python.org/setup/#macos
+.. _macOS: https://devguide.python.org/setup/#macos
 .. _Windows: https://devguide.python.org/setup/#windows-compiling
 
 4. `Run the tests`_::
 
     ./python -m test -j3
 
-   On `most`_ Mac OS X systems, replace ``./python`` with ``./python.exe``. On Windows, use ``python.bat``. With Python 2.7, replace test with ``test.regrtest``.
+   On `most`_ macOS systems, replace ``./python`` with ``./python.exe``. On Windows, use ``python.bat``. With Python 2.7, replace test with ``test.regrtest``.
 
 .. _Run the tests: https://devguide.python.org/runtests/
 .. _most: https://devguide.python.org/setup/#mac-python-exe
@@ -205,11 +205,11 @@ Key Resources
 - Source code
     - `Browse online`_
     - `Snapshot of the *master* branch`_
-    - `Daily OS X installer`_
+    - `Daily macOS installer`_
 
 .. _Browse online: https://github.com/python/cpython/
 .. _Snapshot of the *master* branch: https://github.com/python/cpython/archive/master.zip
-.. _Daily OS X installer: https://buildbot.python.org/daily-dmg/
+.. _Daily macOS installer: https://buildbot.python.org/daily-dmg/
 
 - `PEPs`_ (Python Enhancement Proposals)
 
