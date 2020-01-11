@@ -8,10 +8,20 @@ import unittest
 from test import support
 from platform import win32_edition
 
-# Tell it we don't know about external files:
-mimetypes.knownfiles = []
-mimetypes.inited = False
-mimetypes._default_mime_types()
+
+def setUpModule():
+    global knownfiles
+    knownfiles = mimetypes.knownfiles
+
+    # Tell it we don't know about external files:
+    mimetypes.knownfiles = []
+    mimetypes.inited = False
+    mimetypes._default_mime_types()
+
+
+def tearDownModule():
+    # Restore knownfiles to its initial state
+    mimetypes.knownfiles = knownfiles
 
 
 class MimeTypesTestCase(unittest.TestCase):
