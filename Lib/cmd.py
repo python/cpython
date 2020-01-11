@@ -222,21 +222,18 @@ class Cmd:
 
         """
         cmd, arg, line = self.parseline(line)
-        if not line:
+        if len(line) == 0:
             return self.emptyline()
-        if cmd is None:
+
+        if self.tried_invoking_shell_without_implementation(cmd):
             return self.default(line)
-        self.lastcmd = line
-        if line == 'EOF' :
-            self.lastcmd = ''
+
+        self.save_lastcmd(line)
+
         if cmd == '':
             return self.default(line)
-        else:
-            try:
-                func = getattr(self, 'do_' + cmd)
-            except AttributeError:
-                return self.default(line)
-            return func(arg)
+
+        return self.try_invoking_command(cmd, arg, line)
 
     def emptyline(self):
         """Called when an empty line is entered in response to the prompt.
@@ -256,6 +253,19 @@ class Cmd:
 
         """
         self.stdout.write('*** Unknown syntax: %s\n'%line)
+
+    def tried_invoking_shell_without_implementation(self, cmd):
+        return cmd is None
+
+    def try_invoking_command(self, cmd, arg, line):
+        try:
+            func = getattr(self, 'do_' + cmd)
+        except AttributeError:
+            return self.default(line)
+        return func(arg)
+
+    def save_lastcmd(self, line):
+        self.lastcmd = line if line != 'EOF' else ''
 
     def completedefault(self, *ignored):
         """Method called to complete an input line when no command-specific
