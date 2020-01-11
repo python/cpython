@@ -177,6 +177,13 @@ with this change. The overridden methods of :class:`~imaplib.IMAP4_SSL` and
 :class:`~imaplib.IMAP4_stream` were applied to this change.
 (Contributed by Dong-hee Na in :issue:`38615`.)
 
+nntplib
+-------
+
+:class:`~nntplib.NNTP` and :class:`~nntplib.NNTP_SSL` now raise a :class:`ValueError`
+if the given timeout for their constructor is zero to prevent the creation of
+a non-blocking socket. (Contributed by Dong-hee Na in :issue:`39259`.)
+
 os
 --
 
