@@ -8,17 +8,15 @@ import unittest
 from test import support
 from platform import win32_edition
 
+# Tell it we don't know about external files:
+mimetypes.knownfiles = []
+mimetypes.inited = False
+mimetypes._default_mime_types()
 
-class MimeTypesTestMixin(unittest.TestCase):
 
+class MimeTypesTestCase(unittest.TestCase):
     def setUp(self):
         self.db = mimetypes.MimeTypes()
-
-        # Tell it we don't know about external files:
-        support.patch(self, mimetypes, 'knownfiles', [])
-
-
-class MimeTypesTestCase(MimeTypesTestMixin):
 
     def test_default_data(self):
         eq = self.assertEqual
@@ -190,10 +188,8 @@ class MimeTypesTestCase(MimeTypesTestMixin):
 
 
 @unittest.skipUnless(sys.platform.startswith("win"), "Windows only")
-class Win32MimeTypesTestCase(MimeTypesTestMixin):
+class Win32MimeTypesTestCase(unittest.TestCase):
     def setUp(self):
-        super().setUp()
-
         # ensure all entries actually come from the Windows registry
         self.original_types_map = mimetypes.types_map.copy()
         mimetypes.types_map.clear()
@@ -222,7 +218,7 @@ class MiscTestCase(unittest.TestCase):
         support.check__all__(self, mimetypes)
 
 
-class MimetypesCliTestCase(MimeTypesTestMixin):
+class MimetypesCliTestCase(unittest.TestCase):
 
     def mimetypes_cmd(self, *args, **kwargs):
         support.patch(self, sys, "argv", [sys.executable, *args])
@@ -268,6 +264,7 @@ class MimetypesCliTestCase(MimeTypesTestMixin):
 
         type_info = self.mimetypes_cmd("foo.pic")
         eq(type_info, "I don't know anything about type foo.pic")
+
 
 if __name__ == "__main__":
     unittest.main()
