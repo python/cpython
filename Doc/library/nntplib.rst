@@ -93,6 +93,10 @@ The module itself defines the following classes:
    .. versionchanged:: 3.3
       Support for the :keyword:`with` statement was added.
 
+   .. versionchanged:: 3.9
+      If the *timeout* parameter is set to be zero, it will raise a
+      :class:`ValueError` to prevent the creation of a non-blocking socket.
+
 .. class:: NNTP_SSL(host, port=563, user=None, password=None, ssl_context=None, readermode=None, usenetrc=False, [timeout])
 
    Return a new :class:`NNTP_SSL` object, representing an encrypted
@@ -121,6 +125,10 @@ The module itself defines the following classes:
       The class now supports hostname check with
       :attr:`ssl.SSLContext.check_hostname` and *Server Name Indication* (see
       :data:`ssl.HAS_SNI`).
+
+   .. versionchanged:: 3.9
+      If the *timeout* parameter is set to be zero, it will raise a
+      :class:`ValueError` to prevent the creation of a non-blocking socket.
 
 .. exception:: NNTPError
 

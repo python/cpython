@@ -1056,6 +1056,8 @@ class NNTP(_NNTPBase):
             raise
 
     def _create_socket(self, timeout):
+        if timeout is not None and not timeout:
+            raise ValueError('Non-blocking socket (timeout=0) is not supported')
         sys.audit("nntplib.connect", self, self.host, self.port)
         return socket.create_connection((self.host, self.port), timeout)
 
