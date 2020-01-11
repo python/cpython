@@ -192,8 +192,10 @@ class MimeTypesTestCase(MimeTypesTestMixin):
 
 
 @unittest.skipUnless(sys.platform.startswith("win"), "Windows only")
-class Win32MimeTypesTestCase(unittest.TestCase):
+class Win32MimeTypesTestCase(MimeTypesTestMixin):
     def setUp(self):
+        super().setUp()
+
         # ensure all entries actually come from the Windows registry
         self.original_types_map = mimetypes.types_map.copy()
         mimetypes.types_map.clear()
