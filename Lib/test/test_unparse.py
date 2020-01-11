@@ -316,6 +316,10 @@ class CosmeticTestCase(ASTTestCase):
         self.check_src_roundtrip("flag & (other | foo)")
         self.check_src_roundtrip("not x == y")
         self.check_src_roundtrip("x == (not y)")
+        self.check_src_roundtrip("yield x")
+        self.check_src_roundtrip("yield from x")
+        self.check_src_roundtrip("call((yield x))")
+        self.check_src_roundtrip("return x + (yield x)")
 
 
 class DirectoryTestCase(ASTTestCase):

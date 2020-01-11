@@ -687,7 +687,7 @@ class _Unparser(NodeVisitor):
 
     def visit_Expr(self, node):
         self.fill()
-        self.set_precedence(_Precedence.TEST, node.value)
+        self.set_precedence(_Precedence.YIELD, node.value)
         self.traverse(node.value)
 
     def visit_NamedExpr(self, node):
