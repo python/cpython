@@ -242,7 +242,7 @@ class Cmd:
         command entered.
 
         """
-        if self.lastcmd:
+        if len(self.lastcmd) > 0:
             return self.onecmd(self.lastcmd)
 
     def default(self, line):
@@ -252,7 +252,7 @@ class Cmd:
         returns.
 
         """
-        self.stdout.write('*** Unknown syntax: %s\n'%line)
+        self.stdout.write('*** Unknown syntax: %s\n' % line)
 
     def tried_invoking_shell_without_implementation(self, cmd):
         return cmd is None
@@ -316,9 +316,10 @@ class Cmd:
         return dir(self.__class__)
 
     def complete_help(self, *args):
-        commands = set(self.completenames(*args))
-        topics = set(a[5:] for a in self.get_names()
-                     if a.startswith('help_' + args[0]))
+        text = args[0]
+        commands = set(self.completenames(text))
+        topics = set(name[len('help_'):] for name in self.get_names()
+                     if name.startswith('help_' + args[0]))
         return list(commands | topics)
 
     def do_help(self, arg):
