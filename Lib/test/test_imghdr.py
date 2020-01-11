@@ -2,9 +2,10 @@ import imghdr
 import io
 import os
 import pathlib
+import tempfile
 import unittest
 import warnings
-from test.support import findfile, TESTFN, unlink
+from test.support import findfile, TESTFN, rmtree, script_helper, unlink
 
 TEST_FILES = (
     ('python.png', 'png'),
@@ -135,6 +136,54 @@ class TestImghdr(unittest.TestCase):
             stream.seek(0)
             with self.assertRaises(OSError) as cm:
                 imghdr.what(stream)
+
+
+class TestImghdrCli(unittest.TestCase):
+
+    def setUp(self):
+        png_file = findfile('python.png', subdir='imghdrdata')
+        bmp_file = findfile('python.bmp', subdir='imghdrdata')
+        self.tempdir = tempfile.mkdtemp()
+        toplevel_dir = pathlib.Path(self.tempdir)
+        self.child_dir = toplevel_dir / 'child'
+        self.child_dir.mkdir()
+
+        with open(png_file, 'rb') as stream:
+            self.png_path = toplevel_dir / 'python.png'
+            self.png_path.write_bytes(stream.read())
+
+        with open(bmp_file, 'rb') as stream:
+            self.bmp_path = self.child_dir / 'python.bmp'
+            self.bmp_path.write_bytes(stream.read())
+
+    def tearDown(self):
+        rmtree(self.tempdir)
+
+    def imghdr_cmd(self, *args, **kwargs):
+        rc, out, err = script_helper.assert_python_ok('-m', 'imghdr', *args,
+                                                      **kwargs)
+        out = out.decode()
+        return out
+
+    def test_only_filename(self):
+        out = self.imghdr_cmd(self.png_path)
+        self.assertIn(f'{self.png_path}: png', out)
+
+    def test_file_not_found(self):
+        out = self.imghdr_cmd(f"{self.png_path}.invalid")
+        self.assertIn('*** not found ***', out)
+
+    def test_toplevel_only(self):
+        out = self.imghdr_cmd(self.tempdir)
+        self.assertIn(f'{self.png_path}: png', out)
+        self.assertIn(f'{self.child_dir}{os.sep}: *** directory (use -r)', out)
+        self.assertNotIn(f'{self.bmp_path}: bmp', out)
+
+    def test_recursive(self):
+        out = self.imghdr_cmd('-r', self.tempdir)
+        self.assertIn(f'{self.png_path}: png', out)
+        self.assertIn(f'{self.bmp_path}: bmp', out)
+
 
 if __name__ == '__main__':
     unittest.main()

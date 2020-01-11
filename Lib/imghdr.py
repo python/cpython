@@ -148,7 +148,7 @@ def testall(list, recursive, toplevel):
     import os
     for filename in list:
         if os.path.isdir(filename):
-            print(filename + '/:', end=' ')
+            print(filename + os.sep +':', end=' ')
             if recursive or toplevel:
                 print('recursing down:')
                 import glob
