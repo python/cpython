@@ -166,7 +166,7 @@ Here are the basic steps needed to get `set up`_ and contribute a patch. This is
 
 .. _create it: https://bugs.python.org/
 
-6. Once you fixed the issue, run the tests, run ``make patchcheck``, and if everything is ok, commit.
+6. Once you fixed the issue, run the tests, run ``make patchcheck``, and if everything is OK, commit.
 
 7. Push the branch on your fork on GitHub and `create a pull request`_. Include the issue number using ``bpo-NNNN`` in the pull request description. For example::
 
