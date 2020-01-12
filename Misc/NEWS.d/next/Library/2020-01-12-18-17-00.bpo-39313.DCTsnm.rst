@@ -1,2 +1,2 @@
-Add an option to ``RefactoringTool`` for making both ``print`` and ``exec``
-function.
+Add ``exec_function`` option to ``RefactoringTool`` for making ``exec`` a
+function. Patch by Batuhan Taskaya.
