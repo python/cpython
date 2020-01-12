@@ -1,2 +1,2 @@
-In :mod:`ast` doc, fix misleading ``NodeTransformer`` example and add
-``fix_missing_locations`` advice.
+in the :mod:`ast` module documentation, fix a misleading ``NodeTransformer`` example and add
+advice on when to use the ``fix_missing_locations`` function.
