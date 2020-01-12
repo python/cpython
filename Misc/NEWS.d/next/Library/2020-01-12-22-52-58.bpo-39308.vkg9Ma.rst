@@ -1,0 +1,3 @@
+Make `_tp_cache` function cache type aware by adding `typed=True`. Fixes a
+case for `typing.Literal` when `Literal` is created with values being
+subclass to each other i.e. `int` and `bool`. Patch by Tomasz Trębski.
