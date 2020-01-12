@@ -155,6 +155,7 @@ class FixerError(Exception):
 class RefactoringTool(object):
 
     _default_options = {"print_function" : False,
+                        "print_and_exec_function": False,
                         "write_unchanged_files" : False}
 
     CLASS_PREFIX = "Fix" # The prefix for fixer classes
@@ -175,6 +176,8 @@ class RefactoringTool(object):
             self.options.update(options)
         if self.options["print_function"]:
             self.grammar = pygram.python_grammar_no_print_statement
+        elif self.options["print_and_exec_function"]:
+            self.grammar = pygram.python_grammar_no_print_and_exec_statement
         else:
             self.grammar = pygram.python_grammar
         # When this is True, the refactor*() methods will call write_file() for

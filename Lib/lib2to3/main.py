@@ -154,6 +154,9 @@ def main(fixer_pkg, args=None):
                       help="List available transformations")
     parser.add_option("-p", "--print-function", action="store_true",
                       help="Modify the grammar so that print() is a function")
+    parser.add_option("--print-and-exec-function", action="store_true",
+                      help="Modify the grammar so that print() and exec() are"
+                      " functions")
     parser.add_option("-v", "--verbose", action="store_true",
                       help="More verbose logging")
     parser.add_option("--no-diffs", action="store_true",
@@ -210,6 +213,8 @@ def main(fixer_pkg, args=None):
             return 2
     if options.print_function:
         flags["print_function"] = True
+    elif options.print_and_exec_function:
+        flags["print_and_exec_function"] = True
 
     # Set up logging handler
     level = logging.DEBUG if options.verbose else logging.INFO
