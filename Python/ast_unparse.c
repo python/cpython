@@ -61,13 +61,6 @@ append_charp(_PyUnicodeWriter *writer, const char *charp)
         } \
     } while (0)
 
-static PyObject *
-replace_inf_value(PyObject *repr)
-{
-    PyObject *result = PyUnicode_Replace(repr, _str_inf, _str_replace_inf, -1);
-    return result;
-}
-
 static int
 append_repr(_PyUnicodeWriter *writer, PyObject *obj)
 {
@@ -80,7 +73,12 @@ append_repr(_PyUnicodeWriter *writer, PyObject *obj)
     if ((PyFloat_CheckExact(obj) && Py_IS_INFINITY(PyFloat_AS_DOUBLE(obj))) ||
        PyComplex_CheckExact(obj))
     {
-        PyObject *new_repr = replace_inf_value(repr);
+        PyObject *new_repr = PyUnicode_Replace(
+            repr,
+            _str_inf,
+            _str_replace_inf,
+            -1
+        );
         Py_DECREF(repr);
         if (!new_repr) {
             return -1;
