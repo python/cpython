@@ -1285,7 +1285,7 @@ loops.
    ``r[i] < stop``.
 
    For a negative *step*, the contents of the range are still determined by
-   the formula ``r[i] = start + step*i``, but the constraints are ``i >= 0``
+   the formula ``r[i] = start + step*i``, but the constraints are ``i <= 0``
    and ``r[i] > stop``.
 
    A range object will be empty if ``r[0]`` does not meet the value
