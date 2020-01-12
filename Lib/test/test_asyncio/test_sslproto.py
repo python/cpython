@@ -71,7 +71,10 @@ class SslProtoHandshakeTests(test_utils.TestCase):
     def test_eof_received_waiter(self):
         waiter = self.loop.create_future()
         ssl_proto = self.ssl_protocol(waiter=waiter)
-        self.connection_made(ssl_proto)
+        self.connection_made(
+            ssl_proto,
+            do_handshake=mock.Mock(side_effect=ssl.SSLWantReadError)
+        )
         ssl_proto.eof_received()
         test_utils.run_briefly(self.loop)
         self.assertIsInstance(waiter.exception(), ConnectionResetError)
@@ -96,7 +99,10 @@ class SslProtoHandshakeTests(test_utils.TestCase):
         # yield from waiter hang if lost_connection was called.
         waiter = self.loop.create_future()
         ssl_proto = self.ssl_protocol(waiter=waiter)
-        self.connection_made(ssl_proto)
+        self.connection_made(
+            ssl_proto,
+            do_handshake=mock.Mock(side_effect=ssl.SSLWantReadError)
+        )
         ssl_proto.connection_lost(ConnectionAbortedError)
         test_utils.run_briefly(self.loop)
         self.assertIsInstance(waiter.exception(), ConnectionAbortedError)
@@ -142,7 +148,7 @@ class SslProtoHandshakeTests(test_utils.TestCase):
         transp.close()
 
         # should not raise
-        self.assertIsNone(ssl_proto.data_received(b'data'))
+        self.assertIsNone(ssl_proto.buffer_updated(5))
 
     def test_write_after_closing(self):
         ssl_proto = self.ssl_protocol()
