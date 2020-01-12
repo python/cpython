@@ -213,6 +213,14 @@ Number-theoretic and representation functions
    of *x* and are floats.
 
 
+.. function:: nextafter(x, y)
+
+   Return the next floating-point value after *x* towards *y*.
+
+   If *x* is equal to *y*, return *y*.
+
+   .. versionadded:: 3.9
+
 .. function:: perm(n, k=None)
 
    Return the number of ways to choose *k* items from *n* items
