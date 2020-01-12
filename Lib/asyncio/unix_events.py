@@ -1266,7 +1266,14 @@ class ThreadedChildWatcher(AbstractChildWatcher):
         return True
 
     def close(self):
-        pass
+        self._join_threads()
+
+    def _join_threads(self):
+        """Internal: Join all non-daemon threads"""
+        threads = [thread for thread in list(self._threads.values())
+                   if thread.is_alive() and not thread.daemon]
+        for thread in threads:
+            thread.join()
 
     def __enter__(self):
         return self
