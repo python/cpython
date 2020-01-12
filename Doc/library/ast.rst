@@ -317,7 +317,10 @@ and classes for traversing abstract syntax trees:
    If :class:`NodeTransformer` introduces new nodes (that weren't part of
    original tree) without giving them location information (such as
    :attr:`lineno`), :func:`fix_missing_locations` should be called with
-   the new sub-tree to recalculate the location information.
+   the new sub-tree to recalculate the location information::
+
+      tree = ast.parse('foo', mode='eval')
+      new_tree = fix_missing_locations(RewriteName().visit(tree))
 
    Usually you use the transformer like this::
 
