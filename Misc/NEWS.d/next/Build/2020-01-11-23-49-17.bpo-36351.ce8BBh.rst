@@ -1,0 +1,1 @@
+Do not set ipv6type when cross-compiling.
