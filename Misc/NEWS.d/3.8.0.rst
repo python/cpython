@@ -101,7 +101,7 @@ now never fails (except MemoryError).
 .. nonce: go_jFf
 .. section: Documentation
 
-Add list of no-longer-escaped chars to re.escape documentation
+Add list of no-longer-escaped chars to re.escape documentation.
 
 ..
 
@@ -123,7 +123,7 @@ Python slowest buildbots.
 .. nonce: scr2LO
 .. section: Windows
 
-Fix error message in activate.bat
+Fix error message in activate.bat.
 
 ..
 
