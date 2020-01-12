@@ -401,6 +401,7 @@ def _default_mime_types():
         '.Z': 'compress',
         '.bz2': 'bzip2',
         '.xz': 'xz',
+        '.br': 'br',
         }
 
     # Before adding new types, make sure they are either registered with IANA,
