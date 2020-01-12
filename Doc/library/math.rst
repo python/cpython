@@ -219,6 +219,13 @@ Number-theoretic and representation functions
 
    If *x* is equal to *y*, return *y*.
 
+   Examples:
+
+   * ``math.nextafter(x, math.inf)`` goes up: towards positive infinity.
+   * ``math.nextafter(x, -math.inf)`` goes down: towards minus infinity.
+   * ``math.nextafter(x, 0.0)`` goes towards zero.
+   * ``math.nextafter(x, math.copysign(math.inf, x))`` goes away from zero.
+
    .. versionadded:: 3.9
 
 .. function:: perm(n, k=None)
