@@ -494,11 +494,13 @@ class CallableTests(BaseTestCase):
 class LiteralTests(BaseTestCase):
     def test_basics(self):
         # All of these are allowed.
+        Literal[True]
         Literal[1]
+        Literal[False]
+        Literal[0]
         Literal[1, 2, 3]
         Literal["x", "y", "z"]
         Literal[None]
-        Literal[True]
         Literal[1, "2", False]
         Literal[Literal[1, 2], Literal[4, 5]]
         Literal[b"foo", u"bar"]
@@ -517,6 +519,9 @@ class LiteralTests(BaseTestCase):
 
     def test_repr(self):
         self.assertEqual(repr(Literal[1]), "typing.Literal[1]")
+        self.assertEqual(repr(Literal[True]), "typing.Literal[True]")
+        self.assertEqual(repr(Literal[0]), "typing.Literal[0]")
+        self.assertEqual(repr(Literal[False]), "typing.Literal[False]")
         self.assertEqual(repr(Literal[1, True, "foo"]), "typing.Literal[1, True, 'foo']")
         self.assertEqual(repr(Literal[int]), "typing.Literal[int]")
         self.assertEqual(repr(Literal), "typing.Literal")
@@ -2916,6 +2921,8 @@ class GetUtilitiesTestCase(TestCase):
         self.assertEqual(get_args(ClassVar[int]), (int,))
         self.assertEqual(get_args(Union[int, str]), (int, str))
         self.assertEqual(get_args(Literal[42, 43]), (42, 43))
+        self.assertEqual(get_args(Literal[True, False]), (True, False))
+        self.assertEqual(get_args(Literal[1, 0]), (1, 0))
         self.assertEqual(get_args(Final[List[int]]), (List[int],))
         self.assertEqual(get_args(Union[int, Tuple[T, int]][str]),
                          (int, Tuple[str, int]))

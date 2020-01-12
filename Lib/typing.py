@@ -249,7 +249,7 @@ def _tp_cache(func):
     """Internal wrapper caching __getitem__ of generic types with a fallback to
     original function for non-hashable arguments.
     """
-    cached = functools.lru_cache()(func)
+    cached = functools.lru_cache(typed=True)(func)
     _cleanups.append(cached.cache_clear)
 
     @functools.wraps(func)
