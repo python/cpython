@@ -3295,6 +3295,25 @@ error:
 }
 
 
+/*[clinic input]
+math.nextafter
+
+    x: double
+    y: double
+    /
+
+Return the next floating-point value after x towards y.
+[clinic start generated code]*/
+
+static PyObject *
+math_nextafter_impl(PyObject *module, double x, double y)
+/*[clinic end generated code: output=750c8266c1c540ce input=02b2d50cd1d9f9b6]*/
+{
+    double f = nextafter(x, y);
+    return PyFloat_FromDouble(f);
+}
+
+
 static PyMethodDef math_methods[] = {
     {"acos",            math_acos,      METH_O,         math_acos_doc},
     {"acosh",           math_acosh,     METH_O,         math_acosh_doc},
@@ -3346,6 +3365,7 @@ static PyMethodDef math_methods[] = {
     MATH_PROD_METHODDEF
     MATH_PERM_METHODDEF
     MATH_COMB_METHODDEF
+    MATH_NEXTAFTER_METHODDEF
     {NULL,              NULL}           /* sentinel */
 };
 
