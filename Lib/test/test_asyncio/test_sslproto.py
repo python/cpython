@@ -2,7 +2,6 @@
 
 import logging
 import socket
-import sys
 from test import support
 import unittest
 import weakref
@@ -16,7 +15,6 @@ import asyncio
 from asyncio import log
 from asyncio import protocols
 from asyncio import sslproto
-from test import support
 from test.test_asyncio import utils as test_utils
 from test.test_asyncio import functional as func_tests
 
@@ -45,16 +43,13 @@ class SslProtoHandshakeTests(test_utils.TestCase):
 
     def connection_made(self, ssl_proto, *, do_handshake=None):
         transport = mock.Mock()
-        sslpipe = mock.Mock()
-        sslpipe.shutdown.return_value = b''
-        if do_handshake:
-            sslpipe.do_handshake.side_effect = do_handshake
-        else:
-            def mock_handshake(callback):
-                return []
-            sslpipe.do_handshake.side_effect = mock_handshake
-        with mock.patch('asyncio.sslproto._SSLPipe', return_value=sslpipe):
-            ssl_proto.connection_made(transport)
+        sslobj = mock.Mock()
+        # emulate reading decompressed data
+        sslobj.read.side_effect = ssl.SSLWantReadError
+        if do_handshake is not None:
+            sslobj.do_handshake = do_handshake
+        ssl_proto._sslobj = sslobj
+        ssl_proto.connection_made(transport)
         return transport
 
     def test_handshake_timeout_zero(self):
@@ -111,7 +106,10 @@ class SslProtoHandshakeTests(test_utils.TestCase):
         waiter = self.loop.create_future()
         ssl_proto = self.ssl_protocol(waiter=waiter)
 
-        transport = self.connection_made(ssl_proto)
+        transport = self.connection_made(
+            ssl_proto,
+            do_handshake=mock.Mock(side_effect=ssl.SSLWantReadError)
+        )
         test_utils.run_briefly(self.loop)
 
         ssl_proto._app_transport.close()
