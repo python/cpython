@@ -200,9 +200,6 @@ hasfree.append(148)
 def_op('EXTENDED_ARG', 144)
 EXTENDED_ARG = 144
 
-def_op('BUILD_MAP_UNPACK', 150)
-def_op('BUILD_MAP_UNPACK_WITH_CALL', 151)
-
 jrel_op('SETUP_ASYNC_WITH', 154)
 
 def_op('FORMAT_VALUE', 155)

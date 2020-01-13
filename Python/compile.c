@@ -1007,9 +1007,6 @@ stack_effect(int opcode, int oparg, int jump)
         case BUILD_SET:
         case BUILD_STRING:
             return 1-oparg;
-        case BUILD_MAP_UNPACK:
-        case BUILD_MAP_UNPACK_WITH_CALL:
-            return 1 - oparg;
         case BUILD_MAP:
             return 1 - 2*oparg;
         case BUILD_CONST_KEY_MAP:

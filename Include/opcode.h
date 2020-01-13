@@ -117,8 +117,6 @@ extern "C" {
 #define SET_ADD                 146
 #define MAP_ADD                 147
 #define LOAD_CLASSDEREF         148
-#define BUILD_MAP_UNPACK        150
-#define BUILD_MAP_UNPACK_WITH_CALL 151
 #define SETUP_ASYNC_WITH        154
 #define FORMAT_VALUE            155
 #define BUILD_CONST_KEY_MAP     156

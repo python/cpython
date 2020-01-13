@@ -2801,31 +2801,6 @@ main_loop:
             DISPATCH();
         }
 
-        case TARGET(BUILD_MAP_UNPACK): {
-            Py_ssize_t i;
-            PyObject *sum = PyDict_New();
-            if (sum == NULL)
-                goto error;
-
-            for (i = oparg; i > 0; i--) {
-                PyObject *arg = PEEK(i);
-                if (PyDict_Update(sum, arg) < 0) {
-                    if (_PyErr_ExceptionMatches(tstate, PyExc_AttributeError)) {
-                        _PyErr_Format(tstate, PyExc_TypeError,
-                                      "'%.200s' object is not a mapping",
-                                      arg->ob_type->tp_name);
-                    }
-                    Py_DECREF(sum);
-                    goto error;
-                }
-            }
-
-            while (oparg--)
-                Py_DECREF(POP());
-            PUSH(sum);
-            DISPATCH();
-        }
-
         case TARGET(DICT_UPDATE): {
             PyObject *update = POP();
             PyObject *dict = PEEK(oparg);
@@ -2852,28 +2827,6 @@ main_loop:
                 goto error;
             }
             Py_DECREF(update);
-            DISPATCH();
-        }
-
-        case TARGET(BUILD_MAP_UNPACK_WITH_CALL): {
-            Py_ssize_t i;
-            PyObject *sum = PyDict_New();
-            if (sum == NULL)
-                goto error;
-
-            for (i = oparg; i > 0; i--) {
-                PyObject *arg = PEEK(i);
-                if (_PyDict_MergeEx(sum, arg, 2) < 0) {
-                    Py_DECREF(sum);
-                    format_kwargs_error(tstate, PEEK(2 + oparg), arg);
-                    goto error;
-                }
-            }
-
-            while (oparg--)
-                Py_DECREF(POP());
-            PUSH(sum);
-            PREDICT(CALL_FUNCTION_EX);
             DISPATCH();
         }
 
