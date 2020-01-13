@@ -1,0 +1,2 @@
+Change the lookup order of the :meth:`__aenter__` and :meth:`__aexit__` methods
+for the ``async with`` statement. Patch by Géry Ogam.
