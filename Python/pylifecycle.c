@@ -1340,7 +1340,7 @@ Py_FinalizeEx(void)
     wait_for_thread_shutdown(tstate);
 
     // Make any remaining pending calls.
-    _Py_FinishPendingCalls(runtime);
+    _Py_FinishPendingCalls(tstate);
 
     /* The interpreter is still entirely intact at this point, and the
      * exit funcs may be relying on that.  In particular, if some thread
