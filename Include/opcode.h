@@ -127,6 +127,8 @@ extern "C" {
 #define CALL_METHOD             161
 #define LIST_EXTEND             162
 #define SET_UPDATE              163
+#define DICT_MERGE              164
+#define DICT_UPDATE             165
 
 /* EXCEPT_HANDLER is a special, implicit block type which is created when
    entering an except handler. It is not an opcode but we define it here

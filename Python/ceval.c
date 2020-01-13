@@ -2826,6 +2826,35 @@ main_loop:
             DISPATCH();
         }
 
+        case TARGET(DICT_UPDATE): {
+            PyObject *update = POP();
+            PyObject *dict = PEEK(oparg);
+            if (PyDict_Update(dict, update) < 0) {
+                if (_PyErr_ExceptionMatches(tstate, PyExc_AttributeError)) {
+                    _PyErr_Format(tstate, PyExc_TypeError,
+                                    "'%.200s' object is not a mapping",
+                                    update->ob_type->tp_name);
+                }
+                Py_DECREF(update);
+                goto error;
+            }
+            Py_DECREF(update);
+            DISPATCH();
+        }
+
+        case TARGET(DICT_MERGE): {
+            PyObject *update = POP();
+            PyObject *dict = PEEK(oparg);
+
+            if (_PyDict_MergeEx(dict, update, 2) < 0) {
+                format_kwargs_error(tstate, PEEK(2 + oparg), update);
+                Py_DECREF(update);
+                goto error;
+            }
+            Py_DECREF(update);
+            DISPATCH();
+        }
+
         case TARGET(BUILD_MAP_UNPACK_WITH_CALL): {
             Py_ssize_t i;
             PyObject *sum = PyDict_New();
