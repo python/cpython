@@ -1,7 +1,7 @@
+#include <float.h>   /* DBL_MAX_10_EXP */
 #include <stdbool.h>
 #include "Python.h"
 #include "Python-ast.h"
-#include "float.h"
 
 static PyObject *_str_open_br;
 static PyObject *_str_dbl_open_br;
@@ -65,7 +65,7 @@ static int
 append_repr(_PyUnicodeWriter *writer, PyObject *obj)
 {
     if (PyFloat_CheckExact(obj) && Py_IS_INFINITY(PyFloat_AS_DOUBLE(obj))) {
-        return _PyUnicodeWriter_WriteStr(writer, _str_inf);
+        return _PyUnicodeWriter_WriteStr(writer, _str_replace_inf);
     }
     PyObject *repr = PyObject_Repr(obj);
 
@@ -926,14 +926,13 @@ maybe_init_static_strings(void)
         return -1;
     }
     if (!_str_inf &&
-        !(_str_inf = PyUnicode_InternFromString("inf"))) {
+        !(_str_inf = PyUnicode_FromString("inf"))) {
         return -1;
     }
     if (!_str_replace_inf &&
         !(_str_replace_inf = PyUnicode_FromFormat("1e%d", 1 + DBL_MAX_10_EXP))) {
         return -1;
     }
-    PyUnicode_InternInPlace(&_str_replace_inf);
     return 0;
 }
 
