@@ -2187,6 +2187,11 @@ _ssl__SSLSocket_getpeercertchain_impl(PySSLSocket *self, int binary_mode,
 #endif
     } else {
         peer_chain = SSL_get_peer_cert_chain(self->ssl);
+        if (self->socket_type == PY_SSL_SERVER) {
+            X509 *peer_cert = SSL_get_peer_certificate(self->ssl);
+            if (peer_cert != NULL)
+                sk_X509_insert(peer_chain, peer_cert, 0);
+        }
     }
 
     if (peer_chain == NULL) {
