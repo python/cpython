@@ -2169,15 +2169,24 @@ class SimpleBackgroundTests(unittest.TestCase):
             try:
                 peer_cert = s.getpeercert()
                 peer_cert_bin = s.getpeercert(True)
-                chain = s.getpeercertchain()
-                chain_bin = s.getpeercertchain(True)
+                if IS_OPENSSL_1_1_0:
+                    chain = s.getpeercertchain()
+                    chain_bin = s.getpeercertchain(True)
+                else:
+                    self.assertRaisesRegex(
+                        Exception, r'only supported by OpenSSL 1\.1\.0',
+                        s.getpeercertchain)
+                    self.assertRaisesRegex(
+                        Exception, r'only supported by OpenSSL 1\.1\.0',
+                        s.getpeercertchain, True)
                 chain_no_validate = s.getpeercertchain(validate=False)
                 chain_bin_no_validate = s.getpeercertchain(True, False)
             finally:
                 self.assertTrue(peer_cert)
-                self.assertEqual(len(chain), 2)
                 self.assertTrue(peer_cert_bin)
-                self.assertEqual(len(chain_bin), 2)
+                if IS_OPENSSL_1_1_0:
+                    self.assertEqual(len(chain), 2)
+                    self.assertEqual(len(chain_bin), 2)
 
                 # ca cert
                 ca_certs = ctx.get_ca_certs()
@@ -2185,8 +2194,9 @@ class SimpleBackgroundTests(unittest.TestCase):
                 test_get_ca_certsert = ca_certs[0]
                 ca_cert_bin = ctx.get_ca_certs(True)[0]
 
-                self.assertEqual(chain, (peer_cert, test_get_ca_certsert))
-                self.assertEqual(chain_bin, (peer_cert_bin, ca_cert_bin))
+                if IS_OPENSSL_1_1_0:
+                    self.assertEqual(chain, (peer_cert, test_get_ca_certsert))
+                    self.assertEqual(chain_bin, (peer_cert_bin, ca_cert_bin))
                 self.assertEqual(chain_no_validate, (peer_cert,))
                 self.assertEqual(chain_bin_no_validate, (peer_cert_bin,))
 

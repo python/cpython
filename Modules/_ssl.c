@@ -2133,57 +2133,11 @@ _ssl__SSLSocket_getpeercertchain_impl(PySSLSocket *self, int binary_mode,
             return NULL;
         }
 #else
-        X509 *peer_cert = SSL_get_peer_certificate(self->ssl);
-        if (peer_cert == NULL)
-            Py_RETURN_NONE;
-
-        STACK_OF(X509) *chain = SSL_get_peer_cert_chain(self->ssl);
-        if (chain == NULL) {
-            X509_free(peer_cert);
-            Py_RETURN_NONE;
-        }
-        X509_STORE_CTX *store_ctx;
-
-        /* Initialize a store context with store (for root CA certs), the
-         * peer's cert and the peer's chain with intermediate CA certs. */
-        if ((store_ctx = X509_STORE_CTX_new()) == NULL) {
-            X509_free(peer_cert);
-            _setSSLError(NULL, 0, __FILE__, __LINE__);
-            return NULL;
-        }
-
-        if (!X509_STORE_CTX_init(store_ctx,
-                                 SSL_CTX_get_cert_store(self->ctx->ctx),
-                                 peer_cert, chain)) {
-#ifdef SSL_R_CERTIFICATE_VERIFY_FAILED
-            long e = ERR_PACK(ERR_LIB_SSL, 0, SSL_R_CERTIFICATE_VERIFY_FAILED);
-#else
-            long e = ERR_PACK(ERR_LIB_SSL, 0, 134);
-#endif
-            fill_and_set_sslerror(self, PySSLCertVerificationErrorObject, PY_SSL_ERROR_SSL, NULL, __LINE__, e);
-            X509_free(peer_cert);
-            X509_STORE_CTX_free(store_ctx);
-            goto end;
-        }
-        X509_free(peer_cert);
-
-        /* Validate peer cert using its intermediate CA certs and the
-        * context's root CA certs. */
-        if (X509_verify_cert(store_ctx) <= 0) {
-            // _setX509StoreContextError(self, store_ctx, __FILE__, __LINE__);
-#ifdef SSL_R_CERTIFICATE_VERIFY_FAILED
-            long e = ERR_PACK(ERR_LIB_SSL, 0, SSL_R_CERTIFICATE_VERIFY_FAILED);
-#else
-            long e = ERR_PACK(ERR_LIB_SSL, 0, 134);
-#endif
-            fill_and_set_sslerror(self, PySSLCertVerificationErrorObject, PY_SSL_ERROR_SSL, NULL, __LINE__, e);
-            X509_STORE_CTX_free(store_ctx);
-            goto end;
-        }
-
-        /* Get chain from store context */
-        peer_chain = X509_STORE_CTX_get1_chain(store_ctx);
-        X509_STORE_CTX_free(store_ctx);
+        PyErr_SetString(
+            PyExc_Exception,
+            "Getting verified certificate chains with SSL_get0_verified_chain"
+            " is only supported by OpenSSL 1.1.0 and later");
+        return NULL;
 #endif
     } else {
         peer_chain = SSL_get_peer_cert_chain(self->ssl);
@@ -2220,11 +2174,6 @@ _ssl__SSLSocket_getpeercertchain_impl(PySSLSocket *self, int binary_mode,
     }
 
   end:
-#ifndef OPENSSL_VERSION_1_1
-    if (validate && (peer_chain != NULL)) {
-        sk_X509_pop_free(peer_chain, X509_free);
-    }
-#endif
     return retval;
 }
 
