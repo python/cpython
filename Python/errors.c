@@ -433,19 +433,25 @@ PyErr_Clear(void)
 
 
 void
-PyErr_GetExcInfo(PyObject **p_type, PyObject **p_value, PyObject **p_traceback)
+_PyErr_GetExcInfo(PyThreadState *tstate,
+                  PyObject **p_type, PyObject **p_value, PyObject **p_traceback)
 {
-    PyThreadState *tstate = _PyThreadState_GET();
-
     _PyErr_StackItem *exc_info = _PyErr_GetTopmostException(tstate);
     *p_type = exc_info->exc_type;
     *p_value = exc_info->exc_value;
     *p_traceback = exc_info->exc_traceback;
 
-
     Py_XINCREF(*p_type);
     Py_XINCREF(*p_value);
     Py_XINCREF(*p_traceback);
+}
+
+
+void
+PyErr_GetExcInfo(PyObject **p_type, PyObject **p_value, PyObject **p_traceback)
+{
+    PyThreadState *tstate = _PyThreadState_GET();
+    return _PyErr_GetExcInfo(tstate, p_type, p_value, p_traceback);
 }
 
 void
