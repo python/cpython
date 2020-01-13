@@ -480,7 +480,6 @@ remove_unusable_flags(PyObject *m)
 #ifdef MS_WIN32
 #undef EAFNOSUPPORT
 #define EAFNOSUPPORT WSAEAFNOSUPPORT
-#define snprintf _snprintf
 #endif
 
 #ifndef SOCKETCLOSE

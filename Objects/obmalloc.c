@@ -2377,7 +2377,7 @@ _PyMem_DebugCheckAddress(char api, const void *p)
     id = (char)q[-SST];
     if (id != api) {
         msg = msgbuf;
-        snprintf(msgbuf, sizeof(msgbuf), "bad ID: Allocated using API '%c', verified using API '%c'", id, api);
+        PyOS_snprintf(msgbuf, sizeof(msgbuf), "bad ID: Allocated using API '%c', verified using API '%c'", id, api);
         msgbuf[sizeof(msgbuf)-1] = 0;
         goto error;
     }
