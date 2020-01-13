@@ -1,0 +1,2 @@
+Use :data:`os.sep` instead of '/' in imghdr command line output to indicate
+directory. Patch by Karthikeyan Singaravelan.
