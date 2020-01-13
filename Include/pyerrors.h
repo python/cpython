@@ -311,7 +311,7 @@ PyAPI_FUNC(int) PyUnicodeTranslateError_SetReason(
    not rely on any particular behavior; eventually the C99 defn may
    be reliable.
 */
-#if defined(MS_WIN32) && !defined(HAVE_SNPRINTF)
+#if defined(_MSC_VER) && !defined(HAVE_SNPRINTF)
 # define HAVE_SNPRINTF
 # define snprintf _snprintf
 # define vsnprintf _vsnprintf
