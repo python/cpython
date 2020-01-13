@@ -585,11 +585,11 @@ error:
 }
 
 void
-_Py_FinishPendingCalls(_PyRuntimeState *runtime)
+_Py_FinishPendingCalls(PyThreadState *tstate)
 {
     assert(PyGILState_Check());
 
-    PyThreadState *tstate = _PyRuntimeState_GetThreadState(runtime);
+    _PyRuntimeState *runtime = tstate->interp->runtime;
     struct _pending_calls *pending = &runtime->ceval.pending;
 
     PyThread_acquire_lock(pending->lock, WAIT_LOCK);
