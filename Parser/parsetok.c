@@ -246,6 +246,7 @@ parsetok(struct tok_state *tok, grammar *g, int start, perrdetail *err_ret,
 
     if ((ps = PyParser_New(g, start)) == NULL) {
         err_ret->error = E_NOMEM;
+        growable_comment_array_deallocate(&type_ignores);
         PyTokenizer_Free(tok);
         return NULL;
     }
