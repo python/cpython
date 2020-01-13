@@ -474,6 +474,30 @@ class OperatorTestCase:
         self.assertEqual(operator.ixor     (c, 5), "ixor")
         self.assertEqual(operator.iconcat  (c, c), "iadd")
 
+    def test_iconcat_without_getitem(self):
+        operator = self.module
+        class X: pass
+
+        msg = "'X' object can't be concatenated"
+        with self.assertRaisesRegex(TypeError, msg):
+            operator.iconcat(X(), X())
+
+    def test_index(self):
+        operator = self.module
+        class X:
+            def __index__(self):
+                return 1
+
+        self.assertEqual(operator.index(X()), 1)
+
+    def test_not_(self):
+        operator = self.module
+        class X:
+            def __bool__(self):
+                return False
+
+        self.assertEqual(operator.not_(X()), True)
+
     def test_length_hint(self):
         operator = self.module
         class X(object):
@@ -498,6 +522,13 @@ class OperatorTestCase:
             operator.length_hint(X(-2))
         with self.assertRaises(LookupError):
             operator.length_hint(X(LookupError))
+
+        class Y: pass
+
+        msg = "'str' object cannot be interpreted as an integer"
+        with self.assertRaisesRegex(TypeError, msg):
+            operator.length_hint(X(2), "abc")
+        self.assertEqual(operator.length_hint(Y(), 10), 10)
 
     def test_dunder_is_original(self):
         operator = self.module
