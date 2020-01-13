@@ -184,6 +184,10 @@ Add :func:`math.nextafter`: return the next floating-point value after *x*
 towards *y*.
 (Contributed by Victor Stinner in :issue:`39288`.)
 
+Add :func:`math.ulp`: return the value of the least significant bit
+of a float.
+(Contributed by Victor Stinner in :issue:`39310`.)
+
 nntplib
 -------
 
