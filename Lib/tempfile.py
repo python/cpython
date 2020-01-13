@@ -543,10 +543,16 @@ def NamedTemporaryFile(mode='w+b', buffering=-1, encoding=None,
         file = _io.open(fd, mode, buffering=buffering,
                         newline=newline, encoding=encoding, errors=errors)
 
-        return _TemporaryFileWrapper(file, name, delete)
     except BaseException:
         _os.unlink(name)
         _os.close(fd)
+        raise
+
+    try:
+        return _TemporaryFileWrapper(file, name, delete)
+    except BaseException:
+        _os.unlink(name)
+        file.close()
         raise
 
 if _os.name != 'posix' or _sys.platform == 'cygwin':
