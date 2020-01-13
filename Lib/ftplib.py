@@ -146,6 +146,8 @@ class FTP:
             self.port = port
         if timeout != -999:
             self.timeout = timeout
+        if self.timeout is not None and not self.timeout:
+            raise ValueError('Non-blocking socket (timeout=0) is not supported')
         if source_address is not None:
             self.source_address = source_address
         sys.audit("ftplib.connect", self, self.host, self.port)
@@ -725,12 +727,12 @@ else:
                                                      keyfile=keyfile)
             self.context = context
             self._prot_p = False
-            FTP.__init__(self, host, user, passwd, acct, timeout, source_address)
+            super().__init__(host, user, passwd, acct, timeout, source_address)
 
         def login(self, user='', passwd='', acct='', secure=True):
             if secure and not isinstance(self.sock, ssl.SSLSocket):
                 self.auth()
-            return FTP.login(self, user, passwd, acct)
+            return super().login(user, passwd, acct)
 
         def auth(self):
             '''Set up secure control connection by using TLS/SSL.'''
@@ -740,8 +742,7 @@ else:
                 resp = self.voidcmd('AUTH TLS')
             else:
                 resp = self.voidcmd('AUTH SSL')
-            self.sock = self.context.wrap_socket(self.sock,
-                                                 server_hostname=self.host)
+            self.sock = self.context.wrap_socket(self.sock, server_hostname=self.host)
             self.file = self.sock.makefile(mode='r', encoding=self.encoding)
             return resp
 
@@ -778,7 +779,7 @@ else:
         # --- Overridden FTP methods
 
         def ntransfercmd(self, cmd, rest=None):
-            conn, size = FTP.ntransfercmd(self, cmd, rest)
+            conn, size = super().ntransfercmd(cmd, rest)
             if self._prot_p:
                 conn = self.context.wrap_socket(conn,
                                                 server_hostname=self.host)
