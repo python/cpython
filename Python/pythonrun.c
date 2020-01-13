@@ -1657,10 +1657,10 @@ PyOS_CheckStack(void)
 
 #include <sys/utsname.h>
 
-size_t
+static size_t
 Get_Stack_Check_Size(const pthread_t *thread_self)
 {
-    size_t stack_space = 0;
+    size_t stack_space;
     if (pthread_main_np() == 1) {
         // On macOS 10.09 - 10.11 pthread_get_stacksize_np
         // returns wrong stack size on main thread.
@@ -1675,23 +1675,15 @@ Get_Stack_Check_Size(const pthread_t *thread_self)
             struct rlimit limit;
             getrlimit(RLIMIT_STACK, &limit);
             stack_space = limit.rlim_cur;
-        } else {
+        }
+        else {
             stack_space = pthread_get_stacksize_np(*thread_self);
         }
-    } else {
+    }
+    else {
         stack_space = pthread_get_stacksize_np(*thread_self);
     }
     return stack_space;
-}
-
-void
-Init_Stack_Status(PyThreadState *tstate) {
-    if (tstate->stack_space == 0) {
-        const pthread_t thread_self = pthread_self();
-        size_t stack_space = Get_Stack_Check_Size(&thread_self);
-        tstate->stack_space = stack_space;
-        tstate->last_stack_remain = stack_space;
-    }
 }
 
 /*
@@ -1701,16 +1693,21 @@ int
 PyOS_CheckStack(void)
 {
     PyThreadState *tstate = _PyThreadState_GET();
-    Init_Stack_Status(tstate);
+    if (tstate->stack_space == 0) {
+        const pthread_t thread_self = pthread_self();
+        size_t stack_space = Get_Stack_Check_Size(&thread_self);
+        tstate->stack_space = stack_space;
+        tstate->last_stack_remain = stack_space;
+    }
     const uintptr_t end = (uintptr_t)pthread_get_stackaddr_np(pthread_self());
     const uintptr_t frame = (uintptr_t)__builtin_frame_address(0);
-    const size_t stack_space = tstate->stack_space;
-    const size_t remains = stack_space - (end - frame);
+    const size_t remains = tstate->stack_space - (end - frame);
+    size_t required_stack_space;
 
-    size_t required_stack_space = 0;
     if (remains > tstate->last_stack_remain) {
         required_stack_space = remains - tstate->last_stack_remain;
-    } else {
+    }
+    else {
         required_stack_space = tstate->last_stack_remain - remains;
     }
 
@@ -1720,7 +1717,6 @@ PyOS_CheckStack(void)
     }
     return 1;
 }
-
 #endif /* __APPLE__ */
 
 /* Alternate implementations can be added here... */

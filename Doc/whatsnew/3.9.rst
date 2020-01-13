@@ -69,6 +69,7 @@ Summary -- Release highlights
 
 New Features
 ============
+
 * An interpreter on macOS system now supports ``USE_STACKCHECK``. The interpreter
   detects running out of stack space and raise :class:`MemoryError`.
   (Contributed by Dong-hee Na in :issue:`33955`.)

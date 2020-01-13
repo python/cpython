@@ -134,8 +134,11 @@ struct _ts {
 
     /* Unique thread state id. */
     uint64_t id;
+
+#if defined(__APPLE__)
     size_t stack_space;
     size_t last_stack_remain;
+#endif
     /* XXX signal handlers should also be here */
 
 };

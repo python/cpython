@@ -607,7 +607,10 @@ new_threadstate(PyInterpreterState *interp, int init)
     tstate->context_ver = 1;
 
     tstate->id = ++interp->tstate_next_unique_id;
+#if defined(__APPLE__)
     tstate->stack_space = 0;
+    tstate->last_stack_remain = 0;
+#endif
     if (init) {
         _PyThreadState_Init(tstate);
     }
