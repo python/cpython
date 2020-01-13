@@ -53,30 +53,6 @@ def to_ulps(x):
     return n
 
 
-def ulp(x):
-    """Return the value of the least significant bit of a
-    float x, such that the first float bigger than x is x+ulp(x).
-    Then, given an expected result x and a tolerance of n ulps,
-    the result y should be such that abs(y-x) <= n * ulp(x).
-    The results from this function will only make sense on platforms
-    where native doubles are represented in IEEE 754 binary64 format.
-    """
-    x = abs(float(x))
-    if math.isnan(x) or math.isinf(x):
-        return x
-
-    # Find next float up from x.
-    n = struct.unpack('<q', struct.pack('<d', x))[0]
-    x_next = struct.unpack('<d', struct.pack('<q', n + 1))[0]
-    if math.isinf(x_next):
-        # Corner case: x was the largest finite float. Then it's
-        # not an exact power of two, so we can take the difference
-        # between x and the previous float.
-        x_prev = struct.unpack('<d', struct.pack('<q', n - 1))[0]
-        return x - x_prev
-    else:
-        return x_next - x
-
 # Here's a pure Python version of the math.factorial algorithm, for
 # documentation and comparison purposes.
 #
@@ -470,9 +446,9 @@ class MathTests(unittest.TestCase):
 
     def testCos(self):
         self.assertRaises(TypeError, math.cos)
-        self.ftest('cos(-pi/2)', math.cos(-math.pi/2), 0, abs_tol=ulp(1))
+        self.ftest('cos(-pi/2)', math.cos(-math.pi/2), 0, abs_tol=math.ulp(1))
         self.ftest('cos(0)', math.cos(0), 1)
-        self.ftest('cos(pi/2)', math.cos(math.pi/2), 0, abs_tol=ulp(1))
+        self.ftest('cos(pi/2)', math.cos(math.pi/2), 0, abs_tol=math.ulp(1))
         self.ftest('cos(pi)', math.cos(math.pi), -1)
         try:
             self.assertTrue(math.isnan(math.cos(INF)))
@@ -1445,7 +1421,7 @@ class MathTests(unittest.TestCase):
         self.assertRaises(TypeError, math.tanh)
         self.ftest('tanh(0)', math.tanh(0), 0)
         self.ftest('tanh(1)+tanh(-1)', math.tanh(1)+math.tanh(-1), 0,
-                   abs_tol=ulp(1))
+                   abs_tol=math.ulp(1))
         self.ftest('tanh(inf)', math.tanh(INF), 1)
         self.ftest('tanh(-inf)', math.tanh(NINF), -1)
         self.assertTrue(math.isnan(math.tanh(NAN)))
@@ -2036,7 +2012,7 @@ class IsCloseTests(unittest.TestCase):
     def assertEqualSign(self, x, y):
         """Similar to assertEqual(), but compare also the sign.
 
-        Function useful to check to signed zero.
+        Function useful to compare signed zeros.
         """
         self.assertEqual(x, y)
         self.assertEqual(math.copysign(1.0, x), math.copysign(1.0, y))
@@ -2086,6 +2062,29 @@ class IsCloseTests(unittest.TestCase):
         self.assertTrue(math.isnan(math.nextafter(NAN, 1.0)))
         self.assertTrue(math.isnan(math.nextafter(1.0, NAN)))
         self.assertTrue(math.isnan(math.nextafter(NAN, NAN)))
+
+    @requires_IEEE_754
+    def test_ulp(self):
+        self.assertEqual(math.ulp(1.0), sys.float_info.epsilon)
+        # use int ** int rather than float ** int to not rely on pow() accuracy
+        self.assertEqual(math.ulp(2 ** 52), 1.0)
+        self.assertEqual(math.ulp(2 ** 53), 2.0)
+        self.assertEqual(math.ulp(2 ** 64), 4096.0)
+
+        # min and max
+        self.assertEqual(math.ulp(0.0),
+                         sys.float_info.min * sys.float_info.epsilon)
+        self.assertEqual(math.ulp(FLOAT_MAX),
+                         FLOAT_MAX - math.nextafter(FLOAT_MAX, -INF))
+
+        # special cases
+        self.assertEqual(math.ulp(INF), INF)
+        self.assertTrue(math.isnan(math.ulp(math.nan)))
+
+        # negative number: ulp(-x) == ulp(x)
+        for x in (0.0, 1.0, 2 ** 52, 2 ** 64, INF):
+            with self.subTest(x=x):
+                self.assertEqual(math.ulp(-x), math.ulp(x))
 
 
 def test_main():
