@@ -351,35 +351,57 @@ class Cmd:
         self.stdout.write("%s\n"%str(self.nohelp % (cmd,)))
 
     def print_general_help(self):
-        names = self.get_names()
-        cmds_doc = []
-        cmds_undoc = []
-        help = {}
-        for name in names:
-            if name[:5] == 'help_':
-                help[name[5:]]=1
-        names.sort()
-        # There can be duplicates if routines overridden
-        prevname = ''
-        for name in names:
-            if name[:3] == 'do_':
-                if name == prevname:
-                    continue
-                prevname = name
-                cmd=name[3:]
-                if cmd in help:
-                    cmds_doc.append(cmd)
-                    del help[cmd]
-                elif getattr(self, name).__doc__:
-                    cmds_doc.append(cmd)
-                else:
-                    cmds_undoc.append(cmd)
+        misc_topics, documented_commands, undocumented_commands = \
+            self.split_by_documentation_type()
         self.stdout.write("%s\n"%str(self.doc_leader))
-        self.print_topics(self.doc_header,   cmds_doc,   15,80)
-        self.print_topics(self.misc_header,  list(help.keys()),15,80)
-        self.print_topics(self.undoc_header, cmds_undoc, 15,80)
+        self.print_topics(self.doc_header, documented_commands)
+        self.print_topics(self.misc_header, misc_topics)
+        self.print_topics(self.undoc_header, undocumented_commands)
 
-    def print_topics(self, header, cmds, cmdlen, maxcol):
+    def split_by_documentation_type(self):
+        misc_topics = self.get_misc_topics()
+        documented_commands, undocumented_commands = \
+            self.split_commands_by_documentation()
+        return misc_topics, documented_commands, undocumented_commands
+
+    def get_misc_topics(self):
+        do_functions = set(self.get_do_functions())
+        help_functions = set(self.get_do_functions())
+        return help_functions - do_functions
+
+    def split_commands_by_documentation(self):
+        documented_commands = []
+        undocumented_commands = []
+        for function in self.get_do_functions():
+            if self.has_documentation(function):
+                documented_commands.append(function)
+            else:
+                undocumented_commands.append(function)
+        return documented_commands, undocumented_commands
+
+    def has_documentation(self, function):
+        docstring = getattr(self, 'do_' + function).__doc__
+        return function in self.get_help_functions() or docstring is not None
+
+    def get_do_functions(self):
+        return self.get_functions_with_prefix('do_')
+
+    def has_help_function(self, function):
+        return function in self.get_help_functions()
+
+    def get_help_functions(self):
+        return self.get_functions_with_prefix('help_')
+
+    def get_functions_with_prefix(self, prefix):
+        functions_with_prefix = []
+        for name in set(self.get_names()):
+            if name.startswith(prefix):
+                name_without_prefix = name[len(prefix):]
+                functions_with_prefix.append(name_without_prefix)
+        functions_with_prefix.sort()
+        return functions_with_prefix
+
+    def print_topics(self, header, cmds, cmdlen=15, maxcol=80):
         if cmds:
             self.stdout.write("%s\n"%str(header))
             if self.ruler:
