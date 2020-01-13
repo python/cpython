@@ -188,6 +188,13 @@ Add :func:`math.ulp`: return the value of the least significant bit
 of a float.
 (Contributed by Victor Stinner in :issue:`39310`.)
 
+A new function :func:`~math.fma` for fused multiply-add operations has been
+added. This function computes ``x * y + z`` with only a single round, and so
+avoids any intermediate loss of precision. It wraps the ``fma`` function
+provided by C99, and follows the specification of the IEEE 754-2008
+"fusedMultiplyAdd" operation for special cases.
+(Contributed by Mark Dickinson in :issue:`29282`.)
+
 nntplib
 -------
 
