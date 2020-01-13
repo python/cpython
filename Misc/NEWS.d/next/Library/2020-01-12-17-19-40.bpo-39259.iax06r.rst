@@ -1,0 +1,3 @@
+:class:`~ftplib.FTP_TLS` and :class:`~ftplib.FTP_TLS` now raise a
+:class:`ValueError` if the given timeout for their constructor is zero to
+prevent the creation of a non-blocking socket. Patch by Dong-hee Na.
