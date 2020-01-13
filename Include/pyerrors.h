@@ -311,11 +311,6 @@ PyAPI_FUNC(int) PyUnicodeTranslateError_SetReason(
    not rely on any particular behavior; eventually the C99 defn may
    be reliable.
 */
-#if defined(MS_WIN32) && !defined(HAVE_SNPRINTF)
-# define HAVE_SNPRINTF
-# define snprintf _snprintf
-# define vsnprintf _vsnprintf
-#endif
 
 #include <stdarg.h>
 PyAPI_FUNC(int) PyOS_snprintf(char *str, size_t size, const char  *format, ...)
