@@ -23,8 +23,6 @@ __all__ = (
 )
 
 
-__version__ = '1.0'
-
 import asyncio
 import contextlib
 import io
