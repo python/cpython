@@ -983,7 +983,7 @@ def test_pdb_return_command_for_coroutine():
 
 def test_pdb_until_command_for_generator():
     """Testing no unwindng stack on yield for generators
-       for "until" command if target breakpoing is not reached
+       for "until" command if target breakpoint is not reached
 
     >>> def test_gen():
     ...     yield 0
@@ -1027,7 +1027,7 @@ def test_pdb_until_command_for_generator():
 
 def test_pdb_until_command_for_coroutine():
     """Testing no unwindng stack for coroutines
-       for "until" command if target breakpoing is not reached
+       for "until" command if target breakpoint is not reached
 
     >>> import asyncio
 
@@ -1333,6 +1333,35 @@ class PdbTestCase(unittest.TestCase):
         self.assertNotIn('Error', stdout.decode(),
                          "Got an error running test script under PDB")
 
+    def test_issue36250(self):
+
+        with open(support.TESTFN, 'wb') as f:
+            f.write(textwrap.dedent("""
+                import threading
+                import pdb
+
+                evt = threading.Event()
+
+                def start_pdb():
+                    evt.wait()
+                    pdb.Pdb(readrc=False).set_trace()
+
+                t = threading.Thread(target=start_pdb)
+                t.start()
+                pdb.Pdb(readrc=False).set_trace()
+                evt.set()
+                t.join()""").encode('ascii'))
+        cmd = [sys.executable, '-u', support.TESTFN]
+        proc = subprocess.Popen(cmd,
+            stdout=subprocess.PIPE,
+            stdin=subprocess.PIPE,
+            stderr=subprocess.STDOUT,
+            )
+        self.addCleanup(proc.stdout.close)
+        stdout, stderr = proc.communicate(b'cont\ncont\n')
+        self.assertNotIn('Error', stdout.decode(),
+                         "Got an error running test script under PDB")
+
     def test_issue16180(self):
         # A syntax error in the debuggee.
         script = "def f: pass\n"
@@ -1376,6 +1405,19 @@ class PdbTestCase(unittest.TestCase):
         finally:
             if save_home is not None:
                 os.environ['HOME'] = save_home
+
+    def test_readrc_homedir(self):
+        save_home = os.environ.pop("HOME", None)
+        with support.temp_dir() as temp_dir, patch("os.path.expanduser"):
+            rc_path = os.path.join(temp_dir, ".pdbrc")
+            os.path.expanduser.return_value = rc_path
+            try:
+                with open(rc_path, "w") as f:
+                    f.write("invalid")
+                self.assertEqual(pdb.Pdb().rcLines[0], "invalid")
+            finally:
+                if save_home is not None:
+                    os.environ["HOME"] = save_home
 
     def test_header(self):
         stdout = StringIO()

@@ -12,7 +12,7 @@ steps:
   inputs:
     versionSpec: '>=3.6'
 
-- script: python -m pip install sphinx==2.0.1 blurb python-docs-theme
+- script: python -m pip install sphinx==2.2.0 blurb python-docs-theme
   displayName: 'Install build dependencies'
 
 - ${{ if ne(parameters.latex, 'true') }}:
@@ -21,7 +21,7 @@ steps:
     displayName: 'Build documentation'
 
 - ${{ if eq(parameters.latex, 'true') }}:
-  - script: sudo apt-get update && sudo apt-get install -qy --force-yes texlive-full 
+  - script: sudo apt-get update && sudo apt-get install -qy --force-yes texlive-full
     displayName: 'Install LaTeX'
 
   - script: make dist PYTHON=python SPHINXBUILD='python -m sphinx' BLURB='python -m blurb'

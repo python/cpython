@@ -6,6 +6,11 @@
 Subprocesses
 ============
 
+**Source code:** :source:`Lib/asyncio/subprocess.py`,
+:source:`Lib/asyncio/base_subprocess.py`
+
+----------------------------------------
+
 This section describes high-level async/await asyncio APIs to
 create and manage subprocesses.
 
@@ -71,6 +76,10 @@ Creating Subprocesses
    See the documentation of :meth:`loop.subprocess_exec` for other
    parameters.
 
+   .. deprecated-removed:: 3.8 3.10
+
+      The *loop* parameter.
+
 .. coroutinefunction:: create_subprocess_shell(cmd, stdin=None, \
                           stdout=None, stderr=None, loop=None, \
                           limit=None, \*\*kwds)
@@ -94,6 +103,10 @@ Creating Subprocesses
    vulnerabilities. The :func:`shlex.quote` function can be used to properly
    escape whitespace and special shell characters in strings that are going
    to be used to construct shell commands.
+
+   .. deprecated-removed:: 3.8 3.10
+
+      The *loop* parameter.
 
 .. note::
 

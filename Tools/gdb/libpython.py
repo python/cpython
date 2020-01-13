@@ -1392,7 +1392,7 @@ class wrapperobject(PyObjectPtr):
 
 
 def int_from_int(gdbval):
-    return int(str(gdbval))
+    return int(gdbval)
 
 
 def stringify(val):
@@ -1564,7 +1564,7 @@ class Frame(object):
             return False
 
         if (caller.startswith('cfunction_vectorcall_') or
-            caller == 'cfunction_call_varargs'):
+            caller == 'cfunction_call'):
             arg_name = 'func'
             # Within that frame:
             #   "func" is the local containing the PyObject* of the

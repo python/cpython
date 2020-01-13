@@ -3,7 +3,7 @@ preserve
 [clinic start generated code]*/
 
 PyDoc_STRVAR(memoryview_hex__doc__,
-"hex($self, /, sep=None, bytes_per_sep=1)\n"
+"hex($self, /, sep=<unrepresentable>, bytes_per_sep=1)\n"
 "--\n"
 "\n"
 "Return the data in the buffer as a str of hexadecimal numbers.\n"
@@ -71,4 +71,4 @@ skip_optional_pos:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=5e44e2bcf01057b5 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=ee265a73f68b0077 input=a9049054013a1b77]*/

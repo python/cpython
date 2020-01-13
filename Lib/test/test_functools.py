@@ -1655,6 +1655,17 @@ class TestLRU:
                 f_copy = copy.deepcopy(f)
                 self.assertIs(f_copy, f)
 
+    def test_lru_cache_parameters(self):
+        @self.module.lru_cache(maxsize=2)
+        def f():
+            return 1
+        self.assertEqual(f.cache_parameters(), {'maxsize': 2, "typed": False})
+
+        @self.module.lru_cache(maxsize=1000, typed=True)
+        def f():
+            return 1
+        self.assertEqual(f.cache_parameters(), {'maxsize': 1000, "typed": True})
+
 
 @py_functools.lru_cache()
 def py_cached_func(x, y):

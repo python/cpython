@@ -35,7 +35,7 @@ The :mod:`gc` module provides the following functions:
 
 .. function:: isenabled()
 
-   Returns true if automatic collection is enabled.
+   Return ``True`` if automatic collection is enabled.
 
 
 .. function:: collect(generation=2)
@@ -212,7 +212,7 @@ values but should not rebind them):
    A list of objects which the collector found to be unreachable but could
    not be freed (uncollectable objects).  Starting with Python 3.4, this
    list should be empty most of the time, except when using instances of
-   C extension types with a non-NULL ``tp_del`` slot.
+   C extension types with a non-``NULL`` ``tp_del`` slot.
 
    If :const:`DEBUG_SAVEALL` is set, then all unreachable objects will be
    added to this list rather than freed.

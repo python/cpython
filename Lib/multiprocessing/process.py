@@ -301,6 +301,8 @@ class BaseProcess(object):
             _current_process = self
             _parent_process = _ParentProcess(
                 self._parent_name, self._parent_pid, parent_sentinel)
+            if threading._HAVE_THREAD_NATIVE_ID:
+                threading.main_thread()._set_native_id()
             try:
                 util._finalizer_registry.clear()
                 util._run_after_forkers()

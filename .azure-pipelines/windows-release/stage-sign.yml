@@ -1,3 +1,7 @@
+parameters:
+  Include: '*.exe, *.dll, *.pyd, *.cat, *.ps1'
+  Exclude: 'vcruntime*, libffi*, libcrypto*, libssl*'
+
 jobs:
 - job: Sign_Python
   displayName: Sign Python binaries
@@ -15,9 +19,11 @@ jobs:
         Name: win32
       amd64:
         Name: amd64
+      arm64:
+        Name: arm64
 
   steps:
-  - checkout: none
+  - template: ./checkout.yml
   - template: ./find-sdk.yml
 
   - powershell: |
@@ -31,13 +37,18 @@ jobs:
       targetPath: $(Build.BinariesDirectory)\bin
 
   - powershell: |
-      $files = (gi *.exe, *.dll, *.pyd, *.cat -Exclude vcruntime*, libffi*, libcrypto*, libssl*)
+      copy "$(Build.SourcesDirectory)\Lib\venv\scripts\common\Activate.ps1" .
+    displayName: 'Copy files from source'
+    workingDirectory: $(Build.BinariesDirectory)\bin
+
+  - powershell: |
+      $files = (gi ${{ parameters.Include }} -Exclude ${{ parameters.Exclude }})
       signtool sign /a /n "$(SigningCertificate)" /fd sha256 /d "$(SigningDescription)" $files
     displayName: 'Sign binaries'
     workingDirectory: $(Build.BinariesDirectory)\bin
 
   - powershell: |
-      $files = (gi *.exe, *.dll, *.pyd, *.cat -Exclude vcruntime*, libffi*, libcrypto*, libssl*)
+      $files = (gi ${{ parameters.Include }} -Exclude ${{ parameters.Exclude }})
       $failed = $true
       foreach ($retry in 1..10) {
           signtool timestamp /t http://timestamp.verisign.com/scripts/timestamp.dll $files

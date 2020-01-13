@@ -43,6 +43,10 @@ def warnings_state(module):
         module.filters = original_filters
 
 
+class TestWarning(Warning):
+    pass
+
+
 class BaseTest:
 
     """Basic bookkeeping required for testing."""
@@ -566,8 +570,27 @@ class WCmdLineTests(BaseTest):
                               self.module._setoption, 'bogus::Warning')
             self.assertRaises(self.module._OptionError,
                               self.module._setoption, 'ignore:2::4:-5')
+            with self.assertRaises(self.module._OptionError):
+                self.module._setoption('ignore::123')
+            with self.assertRaises(self.module._OptionError):
+                self.module._setoption('ignore::123abc')
+            with self.assertRaises(self.module._OptionError):
+                self.module._setoption('ignore::===')
+            with self.assertRaisesRegex(self.module._OptionError, 'Wärning'):
+                self.module._setoption('ignore::Wärning')
             self.module._setoption('error::Warning::0')
             self.assertRaises(UserWarning, self.module.warn, 'convert to error')
+
+    def test_import_from_module(self):
+        with original_warnings.catch_warnings(module=self.module):
+            self.module._setoption('ignore::Warning')
+            with self.assertRaises(self.module._OptionError):
+                self.module._setoption('ignore::TestWarning')
+            with self.assertRaises(self.module._OptionError):
+                self.module._setoption('ignore::test.test_warnings.bogus')
+            self.module._setoption('error::test.test_warnings.TestWarning')
+            with self.assertRaises(TestWarning):
+                self.module.warn('test warning', TestWarning)
 
 
 class CWCmdLineTests(WCmdLineTests, unittest.TestCase):
@@ -714,7 +737,7 @@ class _WarningsTests(BaseTest, unittest.TestCase):
             self.assertRaises(TypeError, self.module.warn, "Warning!")
 
     def test_show_warning_output(self):
-        # With showarning() missing, make sure that output is okay.
+        # With showwarning() missing, make sure that output is okay.
         text = 'test show_warning'
         with original_warnings.catch_warnings(module=self.module):
             self.module.filterwarnings("always", category=UserWarning)
@@ -1219,7 +1242,8 @@ class A:
 a=A()
         """
         rc, out, err = assert_python_ok("-c", code)
-        self.assertEqual(err.decode(), '<string>:7: UserWarning: test')
+        self.assertEqual(err.decode().rstrip(),
+                         '<string>:7: UserWarning: test')
 
     def test_late_resource_warning(self):
         # Issue #21925: Emitting a ResourceWarning late during the Python

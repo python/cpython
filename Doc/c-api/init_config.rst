@@ -48,6 +48,8 @@ The preconfiguration (``PyPreConfig`` type) is stored in
 ``_PyRuntime.preconfig`` and the configuration (``PyConfig`` type) is stored in
 ``PyInterpreterState.config``.
 
+See also :ref:`Initialization, Finalization, and Threads <initialization>`.
+
 .. seealso::
    :pep:`587` "Python Initialization Configuration".
 
@@ -59,8 +61,8 @@ PyWideStringList
 
    List of ``wchar_t*`` strings.
 
-   If *length* is non-zero, *items* must be non-NULL and all strings must be
-   non-NULL.
+   If *length* is non-zero, *items* must be non-``NULL`` and all strings must be
+   non-``NULL``.
 
    Methods:
 
@@ -72,8 +74,12 @@ PyWideStringList
 
    .. c:function:: PyStatus PyWideStringList_Insert(PyWideStringList *list, Py_ssize_t index, const wchar_t *item)
 
-      Insert *item* into *list* at *index*. If *index* is greater than *list*
-      length, just append *item* to *list*.
+      Insert *item* into *list* at *index*.
+
+      If *index* is greater than or equal to *list* length, append *item* to
+      *list*.
+
+      *index* must be greater than or equal to 0.
 
       Python must be preinitialized to call this function.
 
@@ -235,6 +241,7 @@ PyPreConfig
       locale to decide if it should be coerced.
 
    .. c:member:: int coerce_c_locale_warn
+
       If non-zero, emit a warning if the C locale is coerced.
 
    .. c:member:: int dev_mode
@@ -294,7 +301,7 @@ For :ref:`Python Configuration <init-python-config>`
 (:c:func:`PyPreConfig_InitPythonConfig`), if Python is initialized with
 command line arguments, the command line arguments must also be passed to
 preinitialize Python, since they have an effect on the pre-configuration
-like encodings. For example, the :option:`-X` ``utf8`` command line option
+like encodings. For example, the :option:`-X utf8 <-X>` command line option
 enables the UTF-8 Mode.
 
 ``PyMem_SetAllocator()`` can be called after :c:func:`Py_PreInitialize` and
@@ -309,12 +316,13 @@ the preinitialization.
 
 Example using the preinitialization to enable the UTF-8 Mode::
 
+    PyStatus status;
     PyPreConfig preconfig;
     PyPreConfig_InitPythonConfig(&preconfig);
 
     preconfig.utf8_mode = 1;
 
-    PyStatus status = Py_PreInitialize(&preconfig);
+    status = Py_PreInitialize(&preconfig);
     if (PyStatus_Exception(status)) {
         Py_ExitStatusException(status);
     }
@@ -335,12 +343,12 @@ PyConfig
 
    Structure methods:
 
-   .. c:function:: PyStatus PyConfig_InitPythonConfig(PyConfig *config)
+   .. c:function:: void PyConfig_InitPythonConfig(PyConfig *config)
 
       Initialize configuration with :ref:`Python Configuration
       <init-python-config>`.
 
-   .. c:function:: PyStatus PyConfig_InitIsolatedConfig(PyConfig *config)
+   .. c:function:: void PyConfig_InitIsolatedConfig(PyConfig *config)
 
       Initialize configuration with :ref:`Isolated Configuration
       <init-isolated-conf>`.
@@ -419,6 +427,11 @@ PyConfig
 
       :data:`sys.base_exec_prefix`.
 
+   .. c:member:: wchar_t* base_executable
+
+      :data:`sys._base_executable`: ``__PYVENV_LAUNCHER__`` environment
+      variable value, or copy of :c:member:`PyConfig.executable`.
+
    .. c:member:: wchar_t* base_prefix
 
       :data:`sys.base_prefix`.
@@ -453,7 +466,7 @@ PyConfig
 
    .. c:member:: int dev_mode
 
-      Development mode: see :option:`-X` ``dev``.
+      Development mode: see :option:`-X dev <-X>`.
 
    .. c:member:: int dump_refs
 
@@ -471,7 +484,7 @@ PyConfig
 
    .. c:member:: int faulthandler
 
-      If non-zero, call :func:`faulthandler.enable`.
+      If non-zero, call :func:`faulthandler.enable` at startup.
 
    .. c:member:: wchar_t* filesystem_encoding
 
@@ -492,6 +505,9 @@ PyConfig
    .. c:member:: wchar_t* home
 
       Python home directory.
+
+      Initialized from :envvar:`PYTHONHOME` environment variable value by
+      default.
 
    .. c:member:: int import_time
 
@@ -550,7 +566,7 @@ PyConfig
 
       :data:`sys.path`. If :c:member:`~PyConfig.module_search_paths_set` is
       equal to 0, the :c:member:`~PyConfig.module_search_paths` is overridden
-      by the function computing the :ref:`Path Configuration
+      by the function calculating the :ref:`Path Configuration
       <init-path-config>`.
 
    .. c:member:: int optimization_level
@@ -575,9 +591,9 @@ PyConfig
 
    .. c:member:: int pathconfig_warnings
 
-      If equal to 0, suppress warnings when computing the path configuration
-      (Unix only, Windows does not log any warning). Otherwise, warnings are
-      written into ``stderr``.
+      If equal to 0, suppress warnings when calculating the :ref:`Path
+      Configuration <init-path-config>` (Unix only, Windows does not log any
+      warning). Otherwise, warnings are written into ``stderr``.
 
    .. c:member:: wchar_t* prefix
 
@@ -585,38 +601,45 @@ PyConfig
 
    .. c:member:: wchar_t* program_name
 
-      Program name.
+      Program name. Used to initialize :c:member:`~PyConfig.executable`, and in
+      early error messages.
 
    .. c:member:: wchar_t* pycache_prefix
 
-      ``.pyc`` cache prefix.
+      :data:`sys.pycache_prefix`: ``.pyc`` cache prefix.
+
+      If ``NULL``, :data:`sys.pycache_prefix` is set to ``None``.
 
    .. c:member:: int quiet
 
       Quiet mode. For example, don't display the copyright and version messages
-      even in interactive mode.
+      in interactive mode.
 
    .. c:member:: wchar_t* run_command
 
-      ``python3 -c COMMAND`` argument.
+      ``python3 -c COMMAND`` argument. Used by :c:func:`Py_RunMain`.
 
    .. c:member:: wchar_t* run_filename
 
-      ``python3 FILENAME`` argument.
+      ``python3 FILENAME`` argument. Used by :c:func:`Py_RunMain`.
 
    .. c:member:: wchar_t* run_module
 
-      ``python3 -m MODULE`` argument.
+      ``python3 -m MODULE`` argument. Used by :c:func:`Py_RunMain`.
 
    .. c:member:: int show_alloc_count
 
       Show allocation counts at exit?
+
+      Set to 1 by :option:`-X showalloccount <-X>` command line option.
 
       Need a special Python build with ``COUNT_ALLOCS`` macro defined.
 
    .. c:member:: int show_ref_count
 
       Show total reference count at exit?
+
+      Set to 1 by :option:`-X showrefcount <-X>` command line option.
 
       Need a debug build of Python (``Py_REF_DEBUG`` macro must be defined).
 
@@ -636,7 +659,7 @@ PyConfig
 
    .. c:member:: int tracemalloc
 
-      If non-zero, call :func:`tracemalloc.start`.
+      If non-zero, call :func:`tracemalloc.start` at startup.
 
    .. c:member:: int use_environment
 
@@ -652,11 +675,20 @@ PyConfig
 
    .. c:member:: PyWideStringList warnoptions
 
-      Options of the :mod:`warnings` module to build warnings filters.
+      :data:`sys.warnoptions`: options of the :mod:`warnings` module to build
+      warnings filters: lowest to highest priority.
+
+      The :mod:`warnings` module adds :data:`sys.warnoptions` in the reverse
+      order: the last :c:member:`PyConfig.warnoptions` item becomes the first
+      item of :data:`warnings.filters` which is checked first (highest
+      priority).
 
    .. c:member:: int write_bytecode
 
       If non-zero, write ``.pyc`` files.
+
+      :data:`sys.dont_write_bytecode` is initialized to the inverted value of
+      :c:member:`~PyConfig.write_bytecode`.
 
    .. c:member:: PyWideStringList xoptions
 
@@ -683,8 +715,8 @@ Function to initialize Python:
 The caller is responsible to handle exceptions (error or exit) using
 :c:func:`PyStatus_Exception` and :c:func:`Py_ExitStatusException`.
 
-``PyImport_FrozenModules``, ``PyImport_AppendInittab()`` or
-``PyImport_ExtendInittab()`` is used: they must be set or called after Python
+If ``PyImport_FrozenModules``, ``PyImport_AppendInittab()`` or
+``PyImport_ExtendInittab()`` are used, they must be set or called after Python
 preinitialization and before the Python initialization.
 
 Example setting the program name::
@@ -692,12 +724,9 @@ Example setting the program name::
     void init_python(void)
     {
         PyStatus status;
-        PyConfig config;
 
-        status = PyConfig_InitPythonConfig(&config);
-        if (PyStatus_Exception(status)) {
-            goto fail;
-        }
+        PyConfig config;
+        PyConfig_InitPythonConfig(&config);
 
         /* Set the program name. Implicitly preinitialize Python. */
         status = PyConfig_SetString(&config, &config.program_name,
@@ -724,14 +753,11 @@ configuration, and then override some parameters::
     PyStatus init_python(const char *program_name)
     {
         PyStatus status;
+
         PyConfig config;
+        PyConfig_InitPythonConfig(&config);
 
-        status = PyConfig_InitPythonConfig(&config);
-        if (PyStatus_Exception(status)) {
-            goto done;
-        }
-
-        /* Set the program name before reading the configuraton
+        /* Set the program name before reading the configuration
            (decode byte string from the locale encoding).
 
            Implicitly preinitialize Python. */
@@ -749,7 +775,7 @@ configuration, and then override some parameters::
 
         /* Append our custom search path to sys.path */
         status = PyWideStringList_Append(&config.module_search_paths,
-                                      L"/path/to/more/modules");
+                                         L"/path/to/more/modules");
         if (PyStatus_Exception(status)) {
             goto done;
         }
@@ -780,9 +806,9 @@ isolate Python from the system. For example, to embed Python into an
 application.
 
 This configuration ignores global configuration variables, environments
-variables and command line arguments (:c:member:`PyConfig.argv` is not parsed).
-The C standard streams (ex: ``stdout``) and the LC_CTYPE locale are left
-unchanged by default.
+variables, command line arguments (:c:member:`PyConfig.argv` is not parsed)
+and user site directory. The C standard streams (ex: ``stdout``) and the
+LC_CTYPE locale are left unchanged. Signal handlers are not installed.
 
 Configuration files are still used with this configuration. Set the
 :ref:`Path Configuration <init-path-config>` ("output fields") to ignore these
@@ -810,14 +836,10 @@ Example of customized Python always running in isolated mode::
 
     int main(int argc, char **argv)
     {
-        PyConfig config;
         PyStatus status;
 
-        status = PyConfig_InitPythonConfig(&config);
-        if (PyStatus_Exception(status)) {
-            goto fail;
-        }
-
+        PyConfig config;
+        PyConfig_InitPythonConfig(&config);
         config.isolated = 1;
 
         /* Decode command line arguments.
@@ -853,27 +875,38 @@ Path Configuration
 
 :c:type:`PyConfig` contains multiple fields for the path configuration:
 
-* Path configuration input fields:
+* Path configuration inputs:
 
   * :c:member:`PyConfig.home`
-  * :c:member:`PyConfig.pythonpath_env`
   * :c:member:`PyConfig.pathconfig_warnings`
+  * :c:member:`PyConfig.program_name`
+  * :c:member:`PyConfig.pythonpath_env`
+  * current working directory: to get absolute paths
+  * ``PATH`` environment variable to get the program full path
+    (from :c:member:`PyConfig.program_name`)
+  * ``__PYVENV_LAUNCHER__`` environment variable
+  * (Windows only) Application paths in the registry under
+    "Software\Python\PythonCore\X.Y\PythonPath" of HKEY_CURRENT_USER and
+    HKEY_LOCAL_MACHINE (where X.Y is the Python version).
 
 * Path configuration output fields:
 
+  * :c:member:`PyConfig.base_exec_prefix`
+  * :c:member:`PyConfig.base_executable`
+  * :c:member:`PyConfig.base_prefix`
   * :c:member:`PyConfig.exec_prefix`
   * :c:member:`PyConfig.executable`
-  * :c:member:`PyConfig.prefix`
   * :c:member:`PyConfig.module_search_paths_set`,
     :c:member:`PyConfig.module_search_paths`
+  * :c:member:`PyConfig.prefix`
 
-If at least one "output field" is not set, Python computes the path
+If at least one "output field" is not set, Python calculates the path
 configuration to fill unset fields. If
 :c:member:`~PyConfig.module_search_paths_set` is equal to 0,
-:c:member:`~PyConfig.module_search_paths` is overriden and
+:c:member:`~PyConfig.module_search_paths` is overridden and
 :c:member:`~PyConfig.module_search_paths_set` is set to 1.
 
-It is possible to completely ignore the function computing the default
+It is possible to completely ignore the function calculating the default
 path configuration by setting explicitly all path configuration output
 fields listed above. A string is considered as set even if it is non-empty.
 ``module_search_paths`` is considered as set if
@@ -881,7 +914,7 @@ fields listed above. A string is considered as set even if it is non-empty.
 configuration input fields are ignored as well.
 
 Set :c:member:`~PyConfig.pathconfig_warnings` to 0 to suppress warnings when
-computing the path configuration (Unix only, Windows does not log any warning).
+calculating the path configuration (Unix only, Windows does not log any warning).
 
 If :c:member:`~PyConfig.base_prefix` or :c:member:`~PyConfig.base_exec_prefix`
 fields are not set, they inherit their value from :c:member:`~PyConfig.prefix`
@@ -911,6 +944,9 @@ The following configuration files are used by the path configuration:
 * ``pyvenv.cfg``
 * ``python._pth`` (Windows only)
 * ``pybuilddir.txt`` (Unix only)
+
+The ``__PYVENV_LAUNCHER__`` environment variable is used to set
+:c:member:`PyConfig.base_executable`
 
 
 Py_RunMain()
@@ -945,7 +981,7 @@ initialization, the core feature of the :pep:`432`:
   * Builtin exceptions;
   * Builtin and frozen modules;
   * The :mod:`sys` module is only partially initialized
-    (ex: :data:`sys.path` doesn't exist yet);
+    (ex: :data:`sys.path` doesn't exist yet).
 
 * "Main" initialization phase, Python is fully initialized:
 
@@ -971,9 +1007,9 @@ No module is imported during the "Core" phase and the ``importlib`` module is
 not configured: the :ref:`Path Configuration <init-path-config>` is only
 applied during the "Main" phase. It may allow to customize Python in Python to
 override or tune the :ref:`Path Configuration <init-path-config>`, maybe
-install a custom sys.meta_path importer or an import hook, etc.
+install a custom :data:`sys.meta_path` importer or an import hook, etc.
 
-It may become possible to compute the :ref:`Path Configuration
+It may become possible to calculatin the :ref:`Path Configuration
 <init-path-config>` in Python, after the Core phase and before the Main phase,
 which is one of the :pep:`432` motivation.
 
@@ -988,14 +1024,9 @@ phases::
     void init_python(void)
     {
         PyStatus status;
+
         PyConfig config;
-
-        status = PyConfig_InitPythonConfig(&config);
-        if (PyStatus_Exception(status)) {
-            PyConfig_Clear(&config);
-            Py_ExitStatusException(status);
-        }
-
+        PyConfig_InitPythonConfig(&config);
         config._init_main = 0;
 
         /* ... customize 'config' configuration ... */

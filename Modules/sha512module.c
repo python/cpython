@@ -666,13 +666,15 @@ static PyTypeObject SHA512type = {
 _sha512.sha512
 
     string: object(c_default="NULL") = b''
+    *
+    usedforsecurity: bool = True
 
 Return a new SHA-512 hash object; optionally initialized with a string.
 [clinic start generated code]*/
 
 static PyObject *
-_sha512_sha512_impl(PyObject *module, PyObject *string)
-/*[clinic end generated code: output=8b865a2df73bd387 input=e69bad9ae9b6a308]*/
+_sha512_sha512_impl(PyObject *module, PyObject *string, int usedforsecurity)
+/*[clinic end generated code: output=a8d9e5f9e6a0831c input=23b4daebc2ebb9c9]*/
 {
     SHAobject *new;
     Py_buffer buf;
@@ -706,13 +708,15 @@ _sha512_sha512_impl(PyObject *module, PyObject *string)
 _sha512.sha384
 
     string: object(c_default="NULL") = b''
+    *
+    usedforsecurity: bool = True
 
 Return a new SHA-384 hash object; optionally initialized with a string.
 [clinic start generated code]*/
 
 static PyObject *
-_sha512_sha384_impl(PyObject *module, PyObject *string)
-/*[clinic end generated code: output=ae4b2e26decf81e8 input=c9327788d4ea4545]*/
+_sha512_sha384_impl(PyObject *module, PyObject *string, int usedforsecurity)
+/*[clinic end generated code: output=da7d594a08027ac3 input=59ef72f039a6b431]*/
 {
     SHAobject *new;
     Py_buffer buf;

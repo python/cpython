@@ -1191,7 +1191,6 @@
     <Compile Include="test\test_netrc.py" />
     <Compile Include="test\test_nis.py" />
     <Compile Include="test\test_nntplib.py" />
-    <Compile Include="test\test_normalization.py" />
     <Compile Include="test\test_ntpath.py" />
     <Compile Include="test\test_numeric_tower.py" />
     <Compile Include="test\test_opcodes.py" />

@@ -797,12 +797,15 @@ dump_traceback(int fd, PyThreadState *tstate, int write_header)
     PyFrameObject *frame;
     unsigned int depth;
 
-    if (write_header)
+    if (write_header) {
         PUTS(fd, "Stack (most recent call first):\n");
+    }
 
     frame = _PyThreadState_GetFrame(tstate);
-    if (frame == NULL)
+    if (frame == NULL) {
+        PUTS(fd, "<no Python frame>\n");
         return;
+    }
 
     depth = 0;
     while (frame != NULL) {
@@ -870,9 +873,9 @@ _Py_DumpTracebackThreads(int fd, PyInterpreterState *interp,
            Python thread state of the current thread.
 
            PyThreadState_Get() doesn't give the state of the thread that caused
-           the fault if the thread released the GIL, and so this function
-           cannot be used. Read the thread specific storage (TSS) instead: call
-           PyGILState_GetThisThreadState(). */
+           the fault if the thread released the GIL, and so
+           _PyThreadState_GET() cannot be used. Read the thread specific
+           storage (TSS) instead: call PyGILState_GetThisThreadState(). */
         current_tstate = PyGILState_GetThisThreadState();
     }
 

@@ -1,0 +1,2 @@
+In the :mod:`ast` module documentation, fix a misleading ``NodeTransformer`` example and add
+advice on when to use the ``fix_missing_locations`` function.

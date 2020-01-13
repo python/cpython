@@ -1,6 +1,5 @@
 language: c
 dist: xenial
-group: beta
 
 # To cache doc-building dependencies and C compiler output.
 cache:
@@ -11,7 +10,7 @@ cache:
 
 env:
   global:
-    - OPENSSL=1.1.1c
+    - OPENSSL=1.1.1d
     - OPENSSL_DIR="$HOME/multissl/openssl/${OPENSSL}"
     - PATH="${OPENSSL_DIR}/bin:$PATH"
     - CFLAGS="-I${OPENSSL_DIR}/include"
@@ -23,7 +22,7 @@ env:
 branches:
   only:
     - master
-    - /^\d\.\d$/
+    - /^\d\.\d+$/
     - buildbot-custom
 
 matrix:
@@ -55,7 +54,7 @@ matrix:
         # Sphinx is pinned so that new versions that introduce new warnings won't suddenly cause build failures.
         # (Updating the version is fine as long as no warnings are raised by doing so.)
         # The theme used by the docs is stored separately, so we need to install that as well.
-        - python -m pip install sphinx==2.0.1 blurb python-docs-theme
+        - python -m pip install sphinx==2.2.0 blurb python-docs-theme
       script:
         - make check suspicious html SPHINXOPTS="-q -W -j4"
     - name: "Documentation tests"
@@ -73,16 +72,6 @@ matrix:
         - make -C Doc/ PYTHON=../python venv
       script:
         xvfb-run make -C Doc/ PYTHON=../python SPHINXOPTS="-q -W -j4" doctest
-    - name: "Mac OS X tests"
-      os: osx
-      language: c
-      compiler: clang
-      # Testing under macOS is optional until testing stability has been demonstrated.
-      env: OPTIONAL=true
-      before_install:
-        # Python 3 is needed for Argument Clinic and multissl
-        - HOMEBREW_NO_AUTO_UPDATE=1 brew install xz python3
-        - export PATH=$(brew --prefix)/bin:$(brew --prefix)/sbin:$PATH
     - name: "Test code coverage (Python)"
       os: linux
       language: c

@@ -1,4 +1,5 @@
 #include "Python.h"
+#include "pycore_pyerrors.h"
 #include "pycore_pystate.h"
 #include "frameobject.h"
 #include "clinic/_warnings.c.h"
@@ -27,10 +28,11 @@ static struct PyModuleDef warningsmodule;
 static WarningsState *
 _Warnings_GetState()
 {
-    PyThreadState *tstate = PyThreadState_GET();
+    PyThreadState *tstate = _PyThreadState_GET();
     if (tstate == NULL) {
-        PyErr_SetString(PyExc_RuntimeError,
-                        "_Warnings_GetState: could not identify current interpreter");
+        _PyErr_SetString(tstate, PyExc_RuntimeError,
+                          "_Warnings_GetState: could not identify "
+                          "current interpreter");
         return NULL;
     }
     return &tstate->interp->warnings;
@@ -164,7 +166,7 @@ check_matched(PyObject *obj, PyObject *arg)
     }
 
     /* Otherwise assume a regex filter and call its match() method */
-    result = _PyObject_CallMethodIdObjArgs(obj, &PyId_match, arg, NULL);
+    result = _PyObject_CallMethodIdOneArg(obj, &PyId_match, arg);
     if (result == NULL)
         return -1;
 
@@ -1305,7 +1307,7 @@ _PyErr_WarnUnawaitedCoroutine(PyObject *coro)
 }
 
 PyDoc_STRVAR(warn_explicit_doc,
-"Low-level inferface to warnings functionality.");
+"Low-level interface to warnings functionality.");
 
 static PyMethodDef warnings_functions[] = {
     WARNINGS_WARN_METHODDEF

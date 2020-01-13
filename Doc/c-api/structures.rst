@@ -9,6 +9,10 @@ There are a large number of structures which are used in the definition of
 object types for Python.  This section describes these structures and how they
 are used.
 
+
+Base object types and macros
+----------------------------
+
 All Python objects ultimately share a small number of fields at the beginning
 of the object's representation in memory.  These are represented by the
 :c:type:`PyObject` and :c:type:`PyVarObject` types, which are defined, in turn,
@@ -102,12 +106,15 @@ the definition of all other Python objects.
       1, type, size,
 
 
+Implementing functions and methods
+----------------------------------
+
 .. c:type:: PyCFunction
 
    Type of the functions used to implement most Python callables in C.
    Functions of this type take two :c:type:`PyObject\*` parameters and return
-   one such value.  If the return value is *NULL*, an exception shall have
-   been set.  If not *NULL*, the return value is interpreted as the return
+   one such value.  If the return value is ``NULL``, an exception shall have
+   been set.  If not ``NULL``, the return value is interpreted as the return
    value of the function as exposed in Python.  The function must return a new
    reference.
 
@@ -179,7 +186,7 @@ also keyword arguments.  So there are a total of 6 calling conventions:
 
    Methods with these flags must be of type :c:type:`PyCFunctionWithKeywords`.
    The function expects three parameters: *self*, *args*, *kwargs* where
-   *kwargs* is a dictionary of all the keyword arguments or possibly *NULL*
+   *kwargs* is a dictionary of all the keyword arguments or possibly ``NULL``
    if there are no keyword arguments.  The parameters are typically processed
    using :c:func:`PyArg_ParseTupleAndKeywords`.
 
@@ -201,10 +208,12 @@ also keyword arguments.  So there are a total of 6 calling conventions:
 
    Extension of :const:`METH_FASTCALL` supporting also keyword arguments,
    with methods of type :c:type:`_PyCFunctionFastWithKeywords`.
-   Keyword arguments are passed the same way as in the vectorcall protocol:
+   Keyword arguments are passed the same way as in the
+   :ref:`vectorcall protocol <vectorcall>`:
    there is an additional fourth :c:type:`PyObject\*` parameter
    which is a tuple representing the names of the keyword arguments
-   or possibly *NULL* if there are no keywords.  The values of the keyword
+   (which are guaranteed to be strings)
+   or possibly ``NULL`` if there are no keywords.  The values of the keyword
    arguments are stored in the *args* array, after the positional arguments.
 
    This is not part of the :ref:`limited API <stable>`.
@@ -218,7 +227,7 @@ also keyword arguments.  So there are a total of 6 calling conventions:
    they are listed with the :const:`METH_NOARGS` flag.  They need to be of type
    :c:type:`PyCFunction`.  The first parameter is typically named *self* and will
    hold a reference to the module or object instance.  In all cases the second
-   parameter will be *NULL*.
+   parameter will be ``NULL``.
 
 
 .. data:: METH_O
@@ -249,7 +258,7 @@ method.
 
    .. index:: builtin: staticmethod
 
-   The method will be passed *NULL* as the first parameter rather than an
+   The method will be passed ``NULL`` as the first parameter rather than an
    instance of the type.  This is used to create *static methods*, similar to
    what is created when using the :func:`staticmethod` built-in function.
 
@@ -269,6 +278,9 @@ definition with the same method name.
    slot.  This is helpful because calls to PyCFunctions are optimized more
    than wrapper object calls.
 
+
+Accessing attributes of extension types
+---------------------------------------
 
 .. c:type:: PyMemberDef
 
@@ -323,7 +335,7 @@ definition with the same method name.
    =============== ==================
 
    :c:macro:`T_OBJECT` and :c:macro:`T_OBJECT_EX` differ in that
-   :c:macro:`T_OBJECT` returns ``None`` if the member is *NULL* and
+   :c:macro:`T_OBJECT` returns ``None`` if the member is ``NULL`` and
    :c:macro:`T_OBJECT_EX` raises an :exc:`AttributeError`.  Try to use
    :c:macro:`T_OBJECT_EX` over :c:macro:`T_OBJECT` because :c:macro:`T_OBJECT_EX`
    handles use of the :keyword:`del` statement on that attribute more correctly
@@ -333,8 +345,21 @@ definition with the same method name.
    read-only access.  Using :c:macro:`T_STRING` for :attr:`type` implies
    :c:macro:`READONLY`.  :c:macro:`T_STRING` data is interpreted as UTF-8.
    Only :c:macro:`T_OBJECT` and :c:macro:`T_OBJECT_EX`
-   members can be deleted.  (They are set to *NULL*).
+   members can be deleted.  (They are set to ``NULL``).
 
+   .. _pymemberdef-offsets:
+
+   Heap allocated types (created using :c:func:`PyType_FromSpec` or similar),
+   ``PyMemberDef`` may contain definitions for the special members
+   ``__dictoffset__`` and ``__weaklistoffset__``, corresponding to
+   :c:member:`~PyTypeObject.tp_dictoffset` and
+   :c:member:`~PyTypeObject.tp_weaklistoffset` in type objects.
+   These must be defined with ``T_PYSSIZET`` and ``READONLY``, for example::
+
+      static PyMemberDef spam_type_members[] = {
+          {"__dictoffset__", T_PYSSIZET, offsetof(Spam_object, dict), READONLY},
+          {NULL}  /* Sentinel */
+      };
 
 .. c:type:: PyGetSetDef
 
@@ -364,7 +389,7 @@ definition with the same method name.
 
       typedef PyObject *(*getter)(PyObject *, void *);
 
-   It should return a new reference on success or *NULL* with a set exception
+   It should return a new reference on success or ``NULL`` with a set exception
    on failure.
 
    ``set`` functions take two :c:type:`PyObject\*` parameters (the instance and
@@ -372,5 +397,5 @@ definition with the same method name.
 
       typedef int (*setter)(PyObject *, PyObject *, void *);
 
-   In case the attribute should be deleted the second parameter is *NULL*.
+   In case the attribute should be deleted the second parameter is ``NULL``.
    Should return ``0`` on success or ``-1`` with a set exception on failure.

@@ -3,6 +3,7 @@
 /* XXX The functional organization of this file is terrible */
 
 #include "Python.h"
+#include "pycore_pystate.h"   /* _Py_IsMainInterpreter() */
 #include "longintrepr.h"
 
 #include <float.h>
@@ -15,12 +16,8 @@ class int "PyObject *" "&PyLong_Type"
 [clinic start generated code]*/
 /*[clinic end generated code: output=da39a3ee5e6b4b0d input=ec0275e3422a36e3]*/
 
-#ifndef NSMALLPOSINTS
-#define NSMALLPOSINTS           257
-#endif
-#ifndef NSMALLNEGINTS
-#define NSMALLNEGINTS           5
-#endif
+#define NSMALLPOSINTS           _PY_NSMALLPOSINTS
+#define NSMALLNEGINTS           _PY_NSMALLNEGINTS
 
 _Py_IDENTIFIER(little);
 _Py_IDENTIFIER(big);
@@ -35,12 +32,9 @@ PyObject *_PyLong_Zero = NULL;
 PyObject *_PyLong_One = NULL;
 
 #if NSMALLNEGINTS + NSMALLPOSINTS > 0
-/* Small integers are preallocated in this array so that they
-   can be shared.
-   The integers that are preallocated are those in the range
-   -NSMALLNEGINTS (inclusive) to NSMALLPOSINTS (not inclusive).
-*/
-static PyLongObject small_ints[NSMALLNEGINTS + NSMALLPOSINTS];
+#define IS_SMALL_INT(ival) (-NSMALLNEGINTS <= (ival) && (ival) < NSMALLPOSINTS)
+#define IS_SMALL_UINT(ival) ((ival) < NSMALLPOSINTS)
+
 #ifdef COUNT_ALLOCS
 Py_ssize_t _Py_quick_int_allocs, _Py_quick_neg_int_allocs;
 #endif
@@ -48,9 +42,9 @@ Py_ssize_t _Py_quick_int_allocs, _Py_quick_neg_int_allocs;
 static PyObject *
 get_small_int(sdigit ival)
 {
-    PyObject *v;
-    assert(-NSMALLNEGINTS <= ival && ival < NSMALLPOSINTS);
-    v = (PyObject *)&small_ints[ival + NSMALLNEGINTS];
+    assert(IS_SMALL_INT(ival));
+    PyThreadState *tstate = _PyThreadState_GET();
+    PyObject *v = (PyObject*)tstate->interp->small_ints[ival + NSMALLNEGINTS];
     Py_INCREF(v);
 #ifdef COUNT_ALLOCS
     if (ival >= 0)
@@ -60,17 +54,13 @@ get_small_int(sdigit ival)
 #endif
     return v;
 }
-#define CHECK_SMALL_INT(ival) \
-    do if (-NSMALLNEGINTS <= ival && ival < NSMALLPOSINTS) { \
-        return get_small_int((sdigit)ival); \
-    } while(0)
 
 static PyLongObject *
 maybe_small_long(PyLongObject *v)
 {
     if (v && Py_ABS(Py_SIZE(v)) <= 1) {
         sdigit ival = MEDIUM_VALUE(v);
-        if (-NSMALLNEGINTS <= ival && ival < NSMALLPOSINTS) {
+        if (IS_SMALL_INT(ival)) {
             Py_DECREF(v);
             return (PyLongObject *)get_small_int(ival);
         }
@@ -78,7 +68,9 @@ maybe_small_long(PyLongObject *v)
     return v;
 }
 #else
-#define CHECK_SMALL_INT(ival)
+#define IS_SMALL_INT(ival) 0
+#define IS_SMALL_UINT(ival) 0
+#define get_small_int(ival) (Py_UNREACHABLE(), NULL)
 #define maybe_small_long(val) (val)
 #endif
 
@@ -293,7 +285,9 @@ _PyLong_Copy(PyLongObject *src)
         i = -(i);
     if (i < 2) {
         sdigit ival = MEDIUM_VALUE(src);
-        CHECK_SMALL_INT(ival);
+        if (IS_SMALL_INT(ival)) {
+            return get_small_int(ival);
+        }
     }
     result = _PyLong_New(i);
     if (result != NULL) {
@@ -315,7 +309,9 @@ PyLong_FromLong(long ival)
     int ndigits = 0;
     int sign;
 
-    CHECK_SMALL_INT(ival);
+    if (IS_SMALL_INT(ival)) {
+        return get_small_int((sdigit)ival);
+    }
 
     if (ival < 0) {
         /* negate: can't write this as abs_ival = -ival since that
@@ -374,32 +370,52 @@ PyLong_FromLong(long ival)
     return (PyObject *)v;
 }
 
+#define PYLONG_FROM_UINT(INT_TYPE, ival) \
+    do { \
+        if (IS_SMALL_UINT(ival)) { \
+            return get_small_int((sdigit)(ival)); \
+        } \
+        /* Count the number of Python digits. */ \
+        Py_ssize_t ndigits = 0; \
+        INT_TYPE t = (ival); \
+        while (t) { \
+            ++ndigits; \
+            t >>= PyLong_SHIFT; \
+        } \
+        PyLongObject *v = _PyLong_New(ndigits); \
+        if (v == NULL) { \
+            return NULL; \
+        } \
+        digit *p = v->ob_digit; \
+        while ((ival)) { \
+            *p++ = (digit)((ival) & PyLong_MASK); \
+            (ival) >>= PyLong_SHIFT; \
+        } \
+        return (PyObject *)v; \
+    } while(0)
+
 /* Create a new int object from a C unsigned long int */
 
 PyObject *
 PyLong_FromUnsignedLong(unsigned long ival)
 {
-    PyLongObject *v;
-    unsigned long t;
-    int ndigits = 0;
+    PYLONG_FROM_UINT(unsigned long, ival);
+}
 
-    if (ival < PyLong_BASE)
-        return PyLong_FromLong(ival);
-    /* Count the number of Python digits. */
-    t = ival;
-    while (t) {
-        ++ndigits;
-        t >>= PyLong_SHIFT;
-    }
-    v = _PyLong_New(ndigits);
-    if (v != NULL) {
-        digit *p = v->ob_digit;
-        while (ival) {
-            *p++ = (digit)(ival & PyLong_MASK);
-            ival >>= PyLong_SHIFT;
-        }
-    }
-    return (PyObject *)v;
+/* Create a new int object from a C unsigned long long int. */
+
+PyObject *
+PyLong_FromUnsignedLongLong(unsigned long long ival)
+{
+    PYLONG_FROM_UINT(unsigned long long, ival);
+}
+
+/* Create a new int object from a C size_t. */
+
+PyObject *
+PyLong_FromSize_t(size_t ival)
+{
+    PYLONG_FROM_UINT(size_t, ival);
 }
 
 /* Create a new int object from a C double */
@@ -1133,7 +1149,7 @@ PyLong_AsVoidPtr(PyObject *vv)
  * rewritten to use the newer PyLong_{As,From}ByteArray API.
  */
 
-#define PY_ABS_LLONG_MIN (0-(unsigned long long)PY_LLONG_MIN)
+#define PY_ABS_LLONG_MIN (0-(unsigned long long)LLONG_MIN)
 
 /* Create a new int object from a C long long int. */
 
@@ -1146,7 +1162,10 @@ PyLong_FromLongLong(long long ival)
     int ndigits = 0;
     int negative = 0;
 
-    CHECK_SMALL_INT(ival);
+    if (IS_SMALL_INT(ival)) {
+        return get_small_int((sdigit)ival);
+    }
+
     if (ival < 0) {
         /* avoid signed overflow on negation;  see comments
            in PyLong_FromLong above. */
@@ -1179,34 +1198,6 @@ PyLong_FromLongLong(long long ival)
     return (PyObject *)v;
 }
 
-/* Create a new int object from a C unsigned long long int. */
-
-PyObject *
-PyLong_FromUnsignedLongLong(unsigned long long ival)
-{
-    PyLongObject *v;
-    unsigned long long t;
-    int ndigits = 0;
-
-    if (ival < PyLong_BASE)
-        return PyLong_FromLong((long)ival);
-    /* Count the number of Python digits. */
-    t = ival;
-    while (t) {
-        ++ndigits;
-        t >>= PyLong_SHIFT;
-    }
-    v = _PyLong_New(ndigits);
-    if (v != NULL) {
-        digit *p = v->ob_digit;
-        while (ival) {
-            *p++ = (digit)(ival & PyLong_MASK);
-            ival >>= PyLong_SHIFT;
-        }
-    }
-    return (PyObject *)v;
-}
-
 /* Create a new int object from a C Py_ssize_t. */
 
 PyObject *
@@ -1218,7 +1209,10 @@ PyLong_FromSsize_t(Py_ssize_t ival)
     int ndigits = 0;
     int negative = 0;
 
-    CHECK_SMALL_INT(ival);
+    if (IS_SMALL_INT(ival)) {
+        return get_small_int((sdigit)ival);
+    }
+
     if (ival < 0) {
         /* avoid signed overflow when ival = SIZE_T_MIN */
         abs_ival = (size_t)(-1-ival)+1;
@@ -1242,35 +1236,6 @@ PyLong_FromSsize_t(Py_ssize_t ival)
         while (t) {
             *p++ = (digit)(t & PyLong_MASK);
             t >>= PyLong_SHIFT;
-        }
-    }
-    return (PyObject *)v;
-}
-
-/* Create a new int object from a C size_t. */
-
-PyObject *
-PyLong_FromSize_t(size_t ival)
-{
-    PyLongObject *v;
-    size_t t;
-    int ndigits = 0;
-
-    if (ival < PyLong_BASE)
-        return PyLong_FromLong((long)ival);
-    /* Count the number of Python digits. */
-    t = ival;
-    while (t) {
-        ++ndigits;
-        t >>= PyLong_SHIFT;
-    }
-    v = _PyLong_New(ndigits);
-    if (v != NULL) {
-        digit *p = v->ob_digit;
-        Py_SIZE(v) = ndigits;
-        while (ival) {
-            *p++ = (digit)(ival & PyLong_MASK);
-            ival >>= PyLong_SHIFT;
         }
     }
     return (PyObject *)v;
@@ -1488,11 +1453,11 @@ PyLong_AsLongLongAndOverflow(PyObject *vv, int *overflow)
         /* Haven't lost any bits, but casting to long requires extra
          * care (see comment above).
          */
-        if (x <= (unsigned long long)PY_LLONG_MAX) {
+        if (x <= (unsigned long long)LLONG_MAX) {
             res = (long long)x * sign;
         }
         else if (sign < 0 && x == PY_ABS_LLONG_MIN) {
-            res = PY_LLONG_MIN;
+            res = LLONG_MIN;
         }
         else {
             *overflow = sign;
@@ -2290,7 +2255,7 @@ PyLong_FromString(const char *str, char **pend, int base)
                         "int() arg 2 must be >= 2 and <= 36");
         return NULL;
     }
-    while (*str != '\0' && Py_ISSPACE(Py_CHARMASK(*str))) {
+    while (*str != '\0' && Py_ISSPACE(*str)) {
         str++;
     }
     if (*str == '+') {
@@ -2599,7 +2564,7 @@ digit beyond the first.
     if (sign < 0) {
         Py_SIZE(z) = -(Py_SIZE(z));
     }
-    while (*str && Py_ISSPACE(Py_CHARMASK(*str))) {
+    while (*str && Py_ISSPACE(*str)) {
         str++;
     }
     if (*str != '\0') {
@@ -3053,33 +3018,32 @@ PyLong_AsDouble(PyObject *v)
 
 /* Methods */
 
-static int
+/* if a < b, return a negative number
+   if a == b, return 0
+   if a > b, return a positive number */
+
+static Py_ssize_t
 long_compare(PyLongObject *a, PyLongObject *b)
 {
-    Py_ssize_t sign;
-
-    if (Py_SIZE(a) != Py_SIZE(b)) {
-        sign = Py_SIZE(a) - Py_SIZE(b);
-    }
-    else {
+    Py_ssize_t sign = Py_SIZE(a) - Py_SIZE(b);
+    if (sign == 0) {
         Py_ssize_t i = Py_ABS(Py_SIZE(a));
-        while (--i >= 0 && a->ob_digit[i] == b->ob_digit[i])
-            ;
-        if (i < 0)
-            sign = 0;
-        else {
-            sign = (sdigit)a->ob_digit[i] - (sdigit)b->ob_digit[i];
-            if (Py_SIZE(a) < 0)
-                sign = -sign;
+        sdigit diff = 0;
+        while (--i >= 0) {
+            diff = (sdigit) a->ob_digit[i] - (sdigit) b->ob_digit[i];
+            if (diff) {
+                break;
+            }
         }
+        sign = Py_SIZE(a) < 0 ? -diff : diff;
     }
-    return sign < 0 ? -1 : sign > 0 ? 1 : 0;
+    return sign;
 }
 
 static PyObject *
 long_richcompare(PyObject *self, PyObject *other, int op)
 {
-    int result;
+    Py_ssize_t result;
     CHECK_BINOP(self, other);
     if (self == other)
         result = 0;
@@ -3233,7 +3197,7 @@ x_sub(PyLongObject *a, PyLongObject *b)
     if (sign < 0) {
         Py_SIZE(z) = -Py_SIZE(z);
     }
-    return long_normalize(z);
+    return maybe_small_long(long_normalize(z));
 }
 
 static PyObject *
@@ -3281,13 +3245,15 @@ long_sub(PyLongObject *a, PyLongObject *b)
         return PyLong_FromLong(MEDIUM_VALUE(a) - MEDIUM_VALUE(b));
     }
     if (Py_SIZE(a) < 0) {
-        if (Py_SIZE(b) < 0)
-            z = x_sub(a, b);
-        else
+        if (Py_SIZE(b) < 0) {
+            z = x_sub(b, a);
+        }
+        else {
             z = x_add(a, b);
-        if (z != NULL) {
-            assert(Py_SIZE(z) == 0 || Py_REFCNT(z) == 1);
-            Py_SIZE(z) = -(Py_SIZE(z));
+            if (z != NULL) {
+                assert(Py_SIZE(z) == 0 || Py_REFCNT(z) == 1);
+                Py_SIZE(z) = -(Py_SIZE(z));
+            }
         }
     }
     else {
@@ -5045,7 +5011,7 @@ simple:
     /* a fits into a long, so b must too */
     x = PyLong_AsLong((PyObject *)a);
     y = PyLong_AsLong((PyObject *)b);
-#elif PY_LLONG_MAX >> PyLong_SHIFT >> PyLong_SHIFT
+#elif LLONG_MAX >> PyLong_SHIFT >> PyLong_SHIFT
     x = PyLong_AsLongLong((PyObject *)a);
     y = PyLong_AsLongLong((PyObject *)b);
 #else
@@ -5064,7 +5030,7 @@ simple:
     }
 #if LONG_MAX >> PyLong_SHIFT >> PyLong_SHIFT
     return PyLong_FromLong(x);
-#elif PY_LLONG_MAX >> PyLong_SHIFT >> PyLong_SHIFT
+#elif LLONG_MAX >> PyLong_SHIFT >> PyLong_SHIFT
     return PyLong_FromLongLong(x);
 #else
 # error "_PyLong_GCD"
@@ -5235,7 +5201,8 @@ _PyLong_DivmodNear(PyObject *a, PyObject *b)
 {
     PyLongObject *quo = NULL, *rem = NULL;
     PyObject *twice_rem, *result, *temp;
-    int cmp, quo_is_odd, quo_is_neg;
+    int quo_is_odd, quo_is_neg;
+    Py_ssize_t cmp;
 
     /* Equivalent Python code:
 
@@ -5770,7 +5737,7 @@ static PyTypeObject Int_InfoType;
 PyDoc_STRVAR(int_info__doc__,
 "sys.int_info\n\
 \n\
-A struct sequence that holds information about Python's\n\
+A named tuple that holds information about Python's\n\
 internal representation of integers.  The attributes are read only.");
 
 static PyStructSequence_Field int_info_fields[] = {
@@ -5806,48 +5773,41 @@ PyLong_GetInfo(void)
 }
 
 int
-_PyLong_Init(void)
+_PyLong_Init(PyThreadState *tstate)
 {
 #if NSMALLNEGINTS + NSMALLPOSINTS > 0
-    int ival, size;
-    PyLongObject *v = small_ints;
+    for (Py_ssize_t i=0; i < NSMALLNEGINTS + NSMALLPOSINTS; i++) {
+        sdigit ival = (sdigit)i - NSMALLNEGINTS;
+        int size = (ival < 0) ? -1 : ((ival == 0) ? 0 : 1);
 
-    for (ival = -NSMALLNEGINTS; ival <  NSMALLPOSINTS; ival++, v++) {
-        size = (ival < 0) ? -1 : ((ival == 0) ? 0 : 1);
-        if (Py_TYPE(v) == &PyLong_Type) {
-            /* The element is already initialized, most likely
-             * the Python interpreter was initialized before.
-             */
-            Py_ssize_t refcnt;
-            PyObject* op = (PyObject*)v;
+        PyLongObject *v = _PyLong_New(1);
+        if (!v) {
+            return -1;
+        }
 
-            refcnt = Py_REFCNT(op) < 0 ? 0 : Py_REFCNT(op);
-            _Py_NewReference(op);
-            /* _Py_NewReference sets the ref count to 1 but
-             * the ref count might be larger. Set the refcnt
-             * to the original refcnt + 1 */
-            Py_REFCNT(op) = refcnt + 1;
-            assert(Py_SIZE(op) == size);
-            assert(v->ob_digit[0] == (digit)abs(ival));
-        }
-        else {
-            (void)PyObject_INIT(v, &PyLong_Type);
-        }
         Py_SIZE(v) = size;
         v->ob_digit[0] = (digit)abs(ival);
+
+        tstate->interp->small_ints[i] = v;
     }
 #endif
-    _PyLong_Zero = PyLong_FromLong(0);
-    if (_PyLong_Zero == NULL)
-        return 0;
-    _PyLong_One = PyLong_FromLong(1);
-    if (_PyLong_One == NULL)
-        return 0;
 
-    /* initialize int_info */
-    if (Int_InfoType.tp_name == NULL) {
-        if (PyStructSequence_InitType2(&Int_InfoType, &int_info_desc) < 0) {
+    if (_Py_IsMainInterpreter(tstate)) {
+        _PyLong_Zero = PyLong_FromLong(0);
+        if (_PyLong_Zero == NULL) {
             return 0;
+        }
+
+        _PyLong_One = PyLong_FromLong(1);
+        if (_PyLong_One == NULL) {
+            return 0;
+        }
+
+        /* initialize int_info */
+        if (Int_InfoType.tp_name == NULL) {
+            if (PyStructSequence_InitType2(&Int_InfoType, &int_info_desc) < 0) {
+                return 0;
+            }
         }
     }
 
@@ -5855,19 +5815,16 @@ _PyLong_Init(void)
 }
 
 void
-PyLong_Fini(void)
+_PyLong_Fini(PyThreadState *tstate)
 {
-    /* Integers are currently statically allocated. Py_DECREF is not
-       needed, but Python must forget about the reference or multiple
-       reinitializations will fail. */
-    Py_CLEAR(_PyLong_One);
-    Py_CLEAR(_PyLong_Zero);
+    if (_Py_IsMainInterpreter(tstate)) {
+        Py_CLEAR(_PyLong_One);
+        Py_CLEAR(_PyLong_Zero);
+    }
+
 #if NSMALLNEGINTS + NSMALLPOSINTS > 0
-    int i;
-    PyLongObject *v = small_ints;
-    for (i = 0; i < NSMALLNEGINTS + NSMALLPOSINTS; i++, v++) {
-        _Py_DEC_REFTOTAL;
-        _Py_ForgetReference((PyObject*)v);
+    for (Py_ssize_t i = 0; i < NSMALLNEGINTS + NSMALLPOSINTS; i++) {
+        Py_CLEAR(tstate->interp->small_ints[i]);
     }
 #endif
 }

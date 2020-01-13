@@ -659,7 +659,7 @@ How can my code discover the name of an object?
 -----------------------------------------------
 
 Generally speaking, it can't, because objects don't really have names.
-Essentially, assignment always binds a name to a value; The same is true of
+Essentially, assignment always binds a name to a value; the same is true of
 ``def`` and ``class`` statements, but in that case the value is a
 callable. Consider the following code::
 
@@ -779,26 +779,23 @@ A slash in the argument list of a function denotes that the parameters prior to
 it are positional-only.  Positional-only parameters are the ones without an
 externally-usable name.  Upon calling a function that accepts positional-only
 parameters, arguments are mapped to parameters based solely on their position.
-For example, :func:`pow` is a function that accepts positional-only parameters.
-Its documentation looks like this::
+For example, :func:`divmod` is a function that accepts positional-only
+parameters. Its documentation looks like this::
 
-   >>> help(pow)
-   Help on built-in function pow in module builtins:
+   >>> help(divmod)
+   Help on built-in function divmod in module builtins:
 
-   pow(x, y, z=None, /)
-      Equivalent to x**y (with two arguments) or x**y % z (with three arguments)
+   divmod(x, y, /)
+       Return the tuple (x//y, x%y).  Invariant: div*y + mod == x.
 
-      Some types, such as ints, are able to use a more efficient algorithm when
-      invoked using the three argument form.
+The slash at the end of the parameter list means that both parameters are
+positional-only. Thus, calling :func:`divmod` with keyword arguments would lead
+to an error::
 
-The slash at the end of the parameter list means that all three parameters are
-positional-only. Thus, calling :func:`pow` with keyword arguments would lead to
-an error::
-
-   >>> pow(x=3, y=4)
+   >>> divmod(x=3, y=4)
    Traceback (most recent call last):
      File "<stdin>", line 1, in <module>
-   TypeError: pow() takes no keyword arguments
+   TypeError: divmod() takes no keyword arguments
 
 
 Numbers and strings
@@ -1022,7 +1019,7 @@ That's a tough one, in general.  First, here are a list of things to
 remember before diving further:
 
 * Performance characteristics vary across Python implementations.  This FAQ
-  focusses on :term:`CPython`.
+  focuses on :term:`CPython`.
 * Behaviour can vary across operating systems, especially when talking about
   I/O or multi-threading.
 * You should always find the hot spots in your program *before* attempting to

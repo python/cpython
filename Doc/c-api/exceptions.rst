@@ -13,15 +13,15 @@ exception handling.  It works somewhat like the POSIX :c:data:`errno` variable:
 there is a global indicator (per thread) of the last error that occurred.  Most
 C API functions don't clear this on success, but will set it to indicate the
 cause of the error on failure.  Most C API functions also return an error
-indicator, usually *NULL* if they are supposed to return a pointer, or ``-1``
+indicator, usually ``NULL`` if they are supposed to return a pointer, or ``-1``
 if they return an integer (exception: the :c:func:`PyArg_\*` functions
 return ``1`` for success and ``0`` for failure).
 
 Concretely, the error indicator consists of three object pointers: the
 exception's type, the exception's value, and the traceback object.  Any
-of those pointers can be NULL if non-set (although some combinations are
-forbidden, for example you can't have a non-NULL traceback if the exception
-type is NULL).
+of those pointers can be ``NULL`` if non-set (although some combinations are
+forbidden, for example you can't have a non-``NULL`` traceback if the exception
+type is ``NULL``).
 
 When a function must fail because some function it called failed, it generally
 doesn't set the error indicator; the function it called already set it.  It is
@@ -92,7 +92,7 @@ Raising exceptions
 
 These functions help you set the current thread's error indicator.
 For convenience, some of these functions will always return a
-NULL pointer for use in a ``return`` statement.
+``NULL`` pointer for use in a ``return`` statement.
 
 
 .. c:function:: void PyErr_SetString(PyObject *type, const char *message)
@@ -111,7 +111,7 @@ NULL pointer for use in a ``return`` statement.
 
 .. c:function:: PyObject* PyErr_Format(PyObject *exception, const char *format, ...)
 
-   This function sets the error indicator and returns *NULL*.  *exception*
+   This function sets the error indicator and returns ``NULL``.  *exception*
    should be a Python exception class.  The *format* and subsequent
    parameters help format the error message; they have the same meaning and
    values as in :c:func:`PyUnicode_FromFormat`. *format* is an ASCII-encoded
@@ -140,7 +140,7 @@ NULL pointer for use in a ``return`` statement.
 
 .. c:function:: PyObject* PyErr_NoMemory()
 
-   This is a shorthand for ``PyErr_SetNone(PyExc_MemoryError)``; it returns *NULL*
+   This is a shorthand for ``PyErr_SetNone(PyExc_MemoryError)``; it returns ``NULL``
    so an object allocation function can write ``return PyErr_NoMemory();`` when it
    runs out of memory.
 
@@ -156,7 +156,7 @@ NULL pointer for use in a ``return`` statement.
    and then calls ``PyErr_SetObject(type, object)``.  On Unix, when the
    :c:data:`errno` value is :const:`EINTR`, indicating an interrupted system call,
    this calls :c:func:`PyErr_CheckSignals`, and if that set the error indicator,
-   leaves it set to that.  The function always returns *NULL*, so a wrapper
+   leaves it set to that.  The function always returns ``NULL``, so a wrapper
    function around a system call can write ``return PyErr_SetFromErrno(type);``
    when the system call returns an error.
 
@@ -164,7 +164,7 @@ NULL pointer for use in a ``return`` statement.
 .. c:function:: PyObject* PyErr_SetFromErrnoWithFilenameObject(PyObject *type, PyObject *filenameObject)
 
    Similar to :c:func:`PyErr_SetFromErrno`, with the additional behavior that if
-   *filenameObject* is not *NULL*, it is passed to the constructor of *type* as
+   *filenameObject* is not ``NULL``, it is passed to the constructor of *type* as
    a third parameter.  In the case of :exc:`OSError` exception,
    this is used to define the :attr:`filename` attribute of the
    exception instance.
@@ -195,7 +195,7 @@ NULL pointer for use in a ``return`` statement.
    then it constructs a tuple object whose first item is the *ierr* value and whose
    second item is the corresponding error message (gotten from
    :c:func:`FormatMessage`), and then calls ``PyErr_SetObject(PyExc_WindowsError,
-   object)``. This function always returns *NULL*.
+   object)``. This function always returns ``NULL``.
 
    .. availability:: Windows.
 
@@ -304,7 +304,7 @@ an error value).
 .. c:function:: int PyErr_WarnEx(PyObject *category, const char *message, Py_ssize_t stack_level)
 
    Issue a warning message.  The *category* argument is a warning category (see
-   below) or *NULL*; the *message* argument is a UTF-8 encoded string.  *stack_level* is a
+   below) or ``NULL``; the *message* argument is a UTF-8 encoded string.  *stack_level* is a
    positive number giving a number of stack frames; the warning will be issued from
    the  currently executing line of code in that stack frame.  A *stack_level* of 1
    is the function calling :c:func:`PyErr_WarnEx`, 2 is  the function above that,
@@ -333,7 +333,7 @@ an error value).
    Issue a warning message with explicit control over all warning attributes.  This
    is a straightforward wrapper around the Python function
    :func:`warnings.warn_explicit`, see there for more information.  The *module*
-   and *registry* arguments may be set to *NULL* to get the default effect
+   and *registry* arguments may be set to ``NULL`` to get the default effect
    described there.
 
    .. versionadded:: 3.4
@@ -370,9 +370,11 @@ Querying the error indicator
 
    Test whether the error indicator is set.  If set, return the exception *type*
    (the first argument to the last call to one of the :c:func:`PyErr_Set\*`
-   functions or to :c:func:`PyErr_Restore`).  If not set, return *NULL*.  You do not
+   functions or to :c:func:`PyErr_Restore`).  If not set, return ``NULL``.  You do not
    own a reference to the return value, so you do not need to :c:func:`Py_DECREF`
    it.
+
+   The caller must hold the GIL.
 
    .. note::
 
@@ -400,9 +402,9 @@ Querying the error indicator
 .. c:function:: void PyErr_Fetch(PyObject **ptype, PyObject **pvalue, PyObject **ptraceback)
 
    Retrieve the error indicator into three variables whose addresses are passed.
-   If the error indicator is not set, set all three variables to *NULL*.  If it is
+   If the error indicator is not set, set all three variables to ``NULL``.  If it is
    set, it will be cleared and you own a reference to each object retrieved.  The
-   value and traceback object may be *NULL* even when the type object is not.
+   value and traceback object may be ``NULL`` even when the type object is not.
 
    .. note::
 
@@ -422,8 +424,8 @@ Querying the error indicator
 .. c:function:: void PyErr_Restore(PyObject *type, PyObject *value, PyObject *traceback)
 
    Set  the error indicator from the three objects.  If the error indicator is
-   already set, it is cleared first.  If the objects are *NULL*, the error
-   indicator is cleared.  Do not pass a *NULL* type and non-*NULL* value or
+   already set, it is cleared first.  If the objects are ``NULL``, the error
+   indicator is cleared.  Do not pass a ``NULL`` type and non-``NULL`` value or
    traceback.  The exception type should be a class.  Do not pass an invalid
    exception type or value. (Violating these rules will cause subtle problems
    later.)  This call takes away a reference to each object: you must own a
@@ -462,7 +464,7 @@ Querying the error indicator
    Retrieve the exception info, as known from ``sys.exc_info()``.  This refers
    to an exception that was *already caught*, not to an exception that was
    freshly raised.  Returns new references for the three objects, any of which
-   may be *NULL*.  Does not modify the exception info state.
+   may be ``NULL``.  Does not modify the exception info state.
 
    .. note::
 
@@ -479,7 +481,7 @@ Querying the error indicator
    Set the exception info, as known from ``sys.exc_info()``.  This refers
    to an exception that was *already caught*, not to an exception that was
    freshly raised.  This function steals the references of the arguments.
-   To clear the exception state, pass *NULL* for all three arguments.
+   To clear the exception state, pass ``NULL`` for all three arguments.
    For general rules about the three arguments, see :c:func:`PyErr_Restore`.
 
    .. note::
@@ -549,7 +551,7 @@ Exception Classes
 
    This utility function creates and returns a new exception class. The *name*
    argument must be the name of the new exception, a C string of the form
-   ``module.classname``.  The *base* and *dict* arguments are normally *NULL*.
+   ``module.classname``.  The *base* and *dict* arguments are normally ``NULL``.
    This creates a class object derived from :exc:`Exception` (accessible in C as
    :c:data:`PyExc_Exception`).
 
@@ -563,7 +565,7 @@ Exception Classes
 .. c:function:: PyObject* PyErr_NewExceptionWithDoc(const char *name, const char *doc, PyObject *base, PyObject *dict)
 
    Same as :c:func:`PyErr_NewException`, except that the new exception class can
-   easily be given a docstring: If *doc* is non-*NULL*, it will be used as the
+   easily be given a docstring: If *doc* is non-``NULL``, it will be used as the
    docstring for the exception class.
 
    .. versionadded:: 3.2
@@ -576,7 +578,7 @@ Exception Objects
 
    Return the traceback associated with the exception as a new reference, as
    accessible from Python through :attr:`__traceback__`.  If there is no
-   traceback associated, this returns *NULL*.
+   traceback associated, this returns ``NULL``.
 
 
 .. c:function:: int PyException_SetTraceback(PyObject *ex, PyObject *tb)
@@ -590,12 +592,12 @@ Exception Objects
    Return the context (another exception instance during whose handling *ex* was
    raised) associated with the exception as a new reference, as accessible from
    Python through :attr:`__context__`.  If there is no context associated, this
-   returns *NULL*.
+   returns ``NULL``.
 
 
 .. c:function:: void PyException_SetContext(PyObject *ex, PyObject *ctx)
 
-   Set the context associated with the exception to *ctx*.  Use *NULL* to clear
+   Set the context associated with the exception to *ctx*.  Use ``NULL`` to clear
    it.  There is no type check to make sure that *ctx* is an exception instance.
    This steals a reference to *ctx*.
 
@@ -609,7 +611,7 @@ Exception Objects
 
 .. c:function:: void PyException_SetCause(PyObject *ex, PyObject *cause)
 
-   Set the cause associated with the exception to *cause*.  Use *NULL* to clear
+   Set the cause associated with the exception to *cause*.  Use ``NULL`` to clear
    it.  There is no type check to make sure that *cause* is either an exception
    instance or :const:`None`.  This steals a reference to *cause*.
 
@@ -656,7 +658,7 @@ The following functions are used to create and modify Unicode exceptions from C.
                 int PyUnicodeTranslateError_GetStart(PyObject *exc, Py_ssize_t *start)
 
    Get the *start* attribute of the given exception object and place it into
-   *\*start*.  *start* must not be *NULL*.  Return ``0`` on success, ``-1`` on
+   *\*start*.  *start* must not be ``NULL``.  Return ``0`` on success, ``-1`` on
    failure.
 
 .. c:function:: int PyUnicodeDecodeError_SetStart(PyObject *exc, Py_ssize_t start)
@@ -671,7 +673,7 @@ The following functions are used to create and modify Unicode exceptions from C.
                 int PyUnicodeTranslateError_GetEnd(PyObject *exc, Py_ssize_t *end)
 
    Get the *end* attribute of the given exception object and place it into
-   *\*end*.  *end* must not be *NULL*.  Return ``0`` on success, ``-1`` on
+   *\*end*.  *end* must not be ``NULL``.  Return ``0`` on success, ``-1`` on
    failure.
 
 .. c:function:: int PyUnicodeDecodeError_SetEnd(PyObject *exc, Py_ssize_t end)
@@ -695,6 +697,8 @@ The following functions are used to create and modify Unicode exceptions from C.
    ``0`` on success, ``-1`` on failure.
 
 
+.. _recursion:
+
 Recursion Control
 =================
 
@@ -702,6 +706,8 @@ These two functions provide a way to perform safe recursive calls at the C
 level, both in the core and in extension modules.  They are needed if the
 recursive code does not necessarily invoke Python code (which tracks its
 recursion depth automatically).
+They are also not needed for *tp_call* implementations
+because the :ref:`call protocol <call>` takes care of recursion handling.
 
 .. c:function:: int Py_EnterRecursiveCall(const char *where)
 
@@ -715,14 +721,20 @@ recursion depth automatically).
    case, a :exc:`RecursionError` is set and a nonzero value is returned.
    Otherwise, zero is returned.
 
-   *where* should be a string such as ``" in instance check"`` to be
-   concatenated to the :exc:`RecursionError` message caused by the recursion
+   *where* should be a UTF-8 encoded string such as ``" in instance check"`` to
+   be concatenated to the :exc:`RecursionError` message caused by the recursion
    depth limit.
 
-.. c:function:: void Py_LeaveRecursiveCall()
+   .. versionchanged:: 3.9
+      This function is now also available in the limited API.
+
+.. c:function:: void Py_LeaveRecursiveCall(void)
 
    Ends a :c:func:`Py_EnterRecursiveCall`.  Must be called once for each
    *successful* invocation of :c:func:`Py_EnterRecursiveCall`.
+
+   .. versionchanged:: 3.9
+      This function is now also available in the limited API.
 
 Properly implementing :c:member:`~PyTypeObject.tp_repr` for container types requires
 special recursion handling.  In addition to protecting the stack,
@@ -809,7 +821,6 @@ the variables:
    single: PyExc_SystemError
    single: PyExc_SystemExit
    single: PyExc_TabError
-   single: PyExc_TargetScopeError
    single: PyExc_TimeoutError
    single: PyExc_TypeError
    single: PyExc_UnboundLocalError
@@ -910,8 +921,6 @@ the variables:
 | :c:data:`PyExc_SystemExit`              | :exc:`SystemExit`               |          |
 +-----------------------------------------+---------------------------------+----------+
 | :c:data:`PyExc_TabError`                | :exc:`TabError`                 |          |
-+-----------------------------------------+---------------------------------+----------+
-| :c:data:`PyExc_TargetScopeError`        | :exc:`TargetScopeError`         |          |
 +-----------------------------------------+---------------------------------+----------+
 | :c:data:`PyExc_TimeoutError`            | :exc:`TimeoutError`             |          |
 +-----------------------------------------+---------------------------------+----------+

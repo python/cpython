@@ -76,7 +76,7 @@ __all__ = [
     "dump",
     "Element", "ElementTree",
     "fromstring", "fromstringlist",
-    "iselement", "iterparse",
+    "indent", "iselement", "iterparse",
     "parse", "ParseError",
     "PI", "ProcessingInstruction",
     "QName",
@@ -195,6 +195,13 @@ class Element:
         original tree.
 
         """
+        warnings.warn(
+            "elem.copy() is deprecated. Use copy.copy(elem) instead.",
+            DeprecationWarning
+            )
+        return self.__copy__()
+
+    def __copy__(self):
         elem = self.makeelement(self.tag, self.attrib)
         elem.text = self.text
         elem.tail = self.tail
@@ -272,19 +279,6 @@ class Element:
         """
         # assert iselement(element)
         self._children.remove(subelement)
-
-    def getchildren(self):
-        """(Deprecated) Return all subelements.
-
-        Elements are returned in document order.
-
-        """
-        warnings.warn(
-            "This method will be removed in future versions.  "
-            "Use 'list(elem)' or iteration over elem instead.",
-            DeprecationWarning, stacklevel=2
-            )
-        return self._children
 
     def find(self, path, namespaces=None):
         """Find first matching element by tag name or path.
@@ -408,15 +402,6 @@ class Element:
             yield self
         for e in self._children:
             yield from e.iter(tag)
-
-    # compatibility
-    def getiterator(self, tag=None):
-        warnings.warn(
-            "This method will be removed in future versions.  "
-            "Use 'elem.iter()' or 'list(elem.iter())' instead.",
-            DeprecationWarning, stacklevel=2
-        )
-        return list(self.iter(tag))
 
     def itertext(self):
         """Create text iterator.
@@ -616,15 +601,6 @@ class ElementTree:
         """
         # assert self._root is not None
         return self._root.iter(tag)
-
-    # compatibility
-    def getiterator(self, tag=None):
-        warnings.warn(
-            "This method will be removed in future versions.  "
-            "Use 'tree.iter()' or 'list(tree.iter())' instead.",
-            DeprecationWarning, stacklevel=2
-        )
-        return list(self.iter(tag))
 
     def find(self, path, namespaces=None):
         """Find first matching element by tag name or path.
@@ -1185,6 +1161,57 @@ def dump(elem):
     if not tail or tail[-1] != "\n":
         sys.stdout.write("\n")
 
+
+def indent(tree, space="  ", level=0):
+    """Indent an XML document by inserting newlines and indentation space
+    after elements.
+
+    *tree* is the ElementTree or Element to modify.  The (root) element
+    itself will not be changed, but the tail text of all elements in its
+    subtree will be adapted.
+
+    *space* is the whitespace to insert for each indentation level, two
+    space characters by default.
+
+    *level* is the initial indentation level. Setting this to a higher
+    value than 0 can be used for indenting subtrees that are more deeply
+    nested inside of a document.
+    """
+    if isinstance(tree, ElementTree):
+        tree = tree.getroot()
+    if level < 0:
+        raise ValueError(f"Initial indentation level must be >= 0, got {level}")
+    if not len(tree):
+        return
+
+    # Reduce the memory consumption by reusing indentation strings.
+    indentations = ["\n" + level * space]
+
+    def _indent_children(elem, level):
+        # Start a new indentation level for the first child.
+        child_level = level + 1
+        try:
+            child_indentation = indentations[child_level]
+        except IndexError:
+            child_indentation = indentations[level] + space
+            indentations.append(child_indentation)
+
+        if not elem.text or not elem.text.strip():
+            elem.text = child_indentation
+
+        for child in elem:
+            if len(child):
+                _indent_children(child, child_level)
+            if not child.tail or not child.tail.strip():
+                child.tail = child_indentation
+
+        # Dedent after the last child by overwriting the previous indentation.
+        if not child.tail.strip():
+            child.tail = indentations[level]
+
+    _indent_children(tree, 0)
+
+
 # --------------------------------------------------------------------
 # parsing
 
@@ -1690,14 +1717,14 @@ class XMLParser:
     def feed(self, data):
         """Feed encoded data to parser."""
         try:
-            self.parser.Parse(data, 0)
+            self.parser.Parse(data, False)
         except self._error as v:
             self._raiseerror(v)
 
     def close(self):
         """Finish feeding data to parser and return element structure."""
         try:
-            self.parser.Parse("", 1) # end of data
+            self.parser.Parse(b"", True) # end of data
         except self._error as v:
             self._raiseerror(v)
         try:

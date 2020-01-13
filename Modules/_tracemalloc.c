@@ -34,7 +34,7 @@ static struct {
 #if defined(TRACE_RAW_MALLOC)
 /* This lock is needed because tracemalloc_free() is called without
    the GIL held from PyMem_RawFree(). It cannot acquire the lock because it
-   would introduce a deadlock in PyThreadState_DeleteCurrent(). */
+   would introduce a deadlock in _PyThreadState_DeleteCurrent(). */
 static PyThread_type_lock tables_lock;
 #  define TABLES_LOCK() PyThread_acquire_lock(tables_lock, 1)
 #  define TABLES_UNLOCK() PyThread_release_lock(tables_lock)
@@ -78,15 +78,20 @@ __attribute__((packed))
 
 typedef struct {
     Py_uhash_t hash;
-    int nframe;
+    /* Number of frames stored */
+    uint16_t nframe;
+    /* Total number of frames the traceback had */
+    uint16_t total_nframe;
     frame_t frames[1];
 } traceback_t;
 
 #define TRACEBACK_SIZE(NFRAME) \
         (sizeof(traceback_t) + sizeof(frame_t) * (NFRAME - 1))
 
-#define MAX_NFRAME \
-        ((INT_MAX - (int)sizeof(traceback_t)) / (int)sizeof(frame_t) + 1)
+/* The maximum number of frames is either:
+ - The maximum number of frames we can store in `traceback_t.nframe`
+ - The maximum memory size_t we can allocate */
+static const unsigned long MAX_NFRAME = Py_MIN(UINT16_MAX, ((SIZE_MAX - sizeof(traceback_t)) / sizeof(frame_t) + 1));
 
 
 static PyObject *unknown_filename = NULL;
@@ -308,6 +313,9 @@ hashtable_compare_traceback(_Py_hashtable_t *ht, const void *pkey,
     if (traceback1->nframe != traceback2->nframe)
         return 0;
 
+    if (traceback1->total_nframe != traceback2->total_nframe)
+        return 0;
+
     for (i=0; i < traceback1->nframe; i++) {
         frame1 = &traceback1->frames[i];
         frame2 = &traceback2->frames[i];
@@ -416,6 +424,7 @@ traceback_hash(traceback_t *traceback)
         /* the cast might truncate len; that doesn't change hash stability */
         mult += (Py_uhash_t)(82520UL + len + len);
     }
+    x ^= traceback->total_nframe;
     x += 97531UL;
     return x;
 }
@@ -436,11 +445,13 @@ traceback_get_frames(traceback_t *traceback)
     }
 
     for (pyframe = tstate->frame; pyframe != NULL; pyframe = pyframe->f_back) {
-        tracemalloc_get_frame(pyframe, &traceback->frames[traceback->nframe]);
-        assert(traceback->frames[traceback->nframe].filename != NULL);
-        traceback->nframe++;
-        if (traceback->nframe == _Py_tracemalloc_config.max_nframe)
-            break;
+        if (traceback->nframe < _Py_tracemalloc_config.max_nframe) {
+            tracemalloc_get_frame(pyframe, &traceback->frames[traceback->nframe]);
+            assert(traceback->frames[traceback->nframe].filename != NULL);
+            traceback->nframe++;
+        }
+        if (traceback->total_nframe < UINT16_MAX)
+            traceback->total_nframe++;
     }
 }
 
@@ -456,6 +467,7 @@ traceback_new(void)
     /* get frames */
     traceback = tracemalloc_traceback;
     traceback->nframe = 0;
+    traceback->total_nframe = 0;
     traceback_get_frames(traceback);
     if (traceback->nframe == 0)
         return &tracemalloc_empty_traceback;
@@ -728,7 +740,7 @@ tracemalloc_free(void *ctx, void *ptr)
         return;
 
      /* GIL cannot be locked in PyMem_RawFree() because it would introduce
-        a deadlock in PyThreadState_DeleteCurrent(). */
+        a deadlock in _PyThreadState_DeleteCurrent(). */
 
     alloc->free(alloc->ctx, ptr);
 
@@ -1001,6 +1013,7 @@ tracemalloc_init(void)
     PyUnicode_InternInPlace(&unknown_filename);
 
     tracemalloc_empty_traceback.nframe = 1;
+    tracemalloc_empty_traceback.total_nframe = 1;
     /* borrowed reference */
     tracemalloc_empty_traceback.frames[0].filename = unknown_filename;
     tracemalloc_empty_traceback.frames[0].lineno = 0;
@@ -1046,10 +1059,10 @@ tracemalloc_start(int max_nframe)
     PyMemAllocatorEx alloc;
     size_t size;
 
-    if (max_nframe < 1 || max_nframe > MAX_NFRAME) {
+    if (max_nframe < 1 || (unsigned long) max_nframe > MAX_NFRAME) {
         PyErr_Format(PyExc_ValueError,
-                     "the number of frames must be in range [1; %i]",
-                     (int)MAX_NFRAME);
+                     "the number of frames must be in range [1; %lu]",
+                     MAX_NFRAME);
         return -1;
     }
 
@@ -1062,7 +1075,6 @@ tracemalloc_start(int max_nframe)
         return 0;
     }
 
-    assert(1 <= max_nframe && max_nframe <= MAX_NFRAME);
     _Py_tracemalloc_config.max_nframe = max_nframe;
 
     /* allocate a buffer to store a new traceback */
@@ -1234,7 +1246,7 @@ trace_to_pyobject(unsigned int domain, trace_t *trace,
     PyObject *trace_obj = NULL;
     PyObject *obj;
 
-    trace_obj = PyTuple_New(3);
+    trace_obj = PyTuple_New(4);
     if (trace_obj == NULL)
         return NULL;
 
@@ -1258,6 +1270,13 @@ trace_to_pyobject(unsigned int domain, trace_t *trace,
         return NULL;
     }
     PyTuple_SET_ITEM(trace_obj, 2, obj);
+
+    obj = PyLong_FromUnsignedLong(trace->traceback->total_nframe);
+    if (obj == NULL) {
+        Py_DECREF(trace_obj);
+        return NULL;
+    }
+    PyTuple_SET_ITEM(trace_obj, 3, obj);
 
     return trace_obj;
 }
@@ -1637,8 +1656,10 @@ PyInit__tracemalloc(void)
     if (m == NULL)
         return NULL;
 
-    if (tracemalloc_init() < 0)
+    if (tracemalloc_init() < 0) {
+        Py_DECREF(m);
         return NULL;
+    }
 
     return m;
 }

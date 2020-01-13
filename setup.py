@@ -785,6 +785,8 @@ class PyBuildExt(build_ext):
         self.add(Extension("_abc", ["_abc.c"]))
         # _queue module
         self.add(Extension("_queue", ["_queuemodule.c"]))
+        # _statistics module
+        self.add(Extension("_statistics", ["_statisticsmodule.c"]))
 
         # Modules with some UNIX dependencies -- on by default:
         # (If you have a really backward UNIX, select and socket may not be
@@ -1357,7 +1359,7 @@ class PyBuildExt(build_ext):
                              ]
         if CROSS_COMPILING:
             sqlite_inc_paths = []
-        MIN_SQLITE_VERSION_NUMBER = (3, 3, 9)
+        MIN_SQLITE_VERSION_NUMBER = (3, 7, 2)
         MIN_SQLITE_VERSION = ".".join([str(x)
                                     for x in MIN_SQLITE_VERSION_NUMBER])
 
@@ -2096,7 +2098,7 @@ class PyBuildExt(build_ext):
               '_decimal/libmpdec/fnt.c',
               '_decimal/libmpdec/fourstep.c',
               '_decimal/libmpdec/io.c',
-              '_decimal/libmpdec/memory.c',
+              '_decimal/libmpdec/mpalloc.c',
               '_decimal/libmpdec/mpdecimal.c',
               '_decimal/libmpdec/numbertheory.c',
               '_decimal/libmpdec/sixstep.c',

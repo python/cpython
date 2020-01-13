@@ -57,14 +57,14 @@ their corresponding code points:
    ...
    007B    '{'; LEFT CURLY BRACKET
    ...
-   2167    'Ⅶ': ROMAN NUMERAL EIGHT
-   2168    'Ⅸ': ROMAN NUMERAL NINE
+   2167    'Ⅷ'; ROMAN NUMERAL EIGHT
+   2168    'Ⅸ'; ROMAN NUMERAL NINE
    ...
-   265E    '♞': BLACK CHESS KNIGHT
-   265F    '♟': BLACK CHESS PAWN
+   265E    '♞'; BLACK CHESS KNIGHT
+   265F    '♟'; BLACK CHESS PAWN
    ...
-   1F600   '😀': GRINNING FACE
-   1F609   '😉': WINKING FACE
+   1F600   '😀'; GRINNING FACE
+   1F609   '😉'; WINKING FACE
    ...
 
 Strictly, these definitions imply that it's meaningless to say 'this is

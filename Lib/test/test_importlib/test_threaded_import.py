@@ -178,11 +178,11 @@ class ThreadedImportTests(unittest.TestCase):
         # In case this test is run again, make sure the helper module
         # gets loaded from scratch again.
         try:
-            del sys.modules['test.threaded_import_hangers']
+            del sys.modules['test.test_importlib.threaded_import_hangers']
         except KeyError:
             pass
-        import test.threaded_import_hangers
-        self.assertFalse(test.threaded_import_hangers.errors)
+        import test.test_importlib.threaded_import_hangers
+        self.assertFalse(test.test_importlib.threaded_import_hangers.errors)
 
     def test_circular_imports(self):
         # The goal of this test is to exercise implementations of the import

@@ -84,6 +84,7 @@ struct _Py_stat_struct {
     time_t st_ctime;
     int st_ctime_nsec;
     unsigned long st_file_attributes;
+    unsigned long st_reparse_tag;
 };
 #else
 #  define _Py_stat_struct stat

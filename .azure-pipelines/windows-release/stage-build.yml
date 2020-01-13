@@ -16,13 +16,15 @@ jobs:
     env:
       BUILDDIR: $(Build.BinariesDirectory)\Doc
 
-  #- powershell: iwr "https://www.python.org/ftp/python/3.7.3/python373.chm" -OutFile "$(Build.BinariesDirectory)\python390a0.chm"
-  #  displayName: 'Cheat at building CHM docs'
-
   - script: Doc\make.bat htmlhelp
     displayName: 'Build CHM docs'
     env:
       BUILDDIR: $(Build.BinariesDirectory)\Doc
+
+  #- powershell: |
+  #    mkdir -Force "$(Build.BinariesDirectory)\Doc\htmlhelp"
+  #    iwr "https://www.python.org/ftp/python/3.8.0/python380.chm" -OutFile "$(Build.BinariesDirectory)\Doc\htmlhelp\python390a0.chm"
+  #  displayName: 'Cheat at building CHM docs'
 
   - task: CopyFiles@2
     displayName: 'Assemble artifact: Doc'
@@ -55,16 +57,31 @@ jobs:
         Arch: win32
         Platform: x86
         Configuration: Release
+        _HostPython: .\python
       win32_d:
         Name: win32_d
         Arch: win32
         Platform: x86
         Configuration: Debug
+        _HostPython: .\python
       amd64_d:
         Name: amd64_d
         Arch: amd64
         Platform: x64
         Configuration: Debug
+        _HostPython: .\python
+      arm64:
+        Name: arm64
+        Arch: arm64
+        Platform: ARM64
+        Configuration: Release
+        _HostPython: python
+      arm64_d:
+        Name: arm64_d
+        Arch: arm64
+        Platform: ARM64
+        Configuration: Debug
+        _HostPython: python
 
   steps:
     - template: ./build-steps.yml
@@ -86,6 +103,7 @@ jobs:
         Arch: amd64
         Platform: x64
         Configuration: Release
+        _HostPython: .\python
 
   steps:
     - template: ./build-steps.yml
@@ -111,6 +129,7 @@ jobs:
         Arch: amd64
         Platform: x64
         Configuration: Release
+        _HostPython: .\python
 
   steps:
     - template: ./build-steps.yml
@@ -122,7 +141,7 @@ jobs:
   displayName: Publish Tcl/Tk Library
 
   pool:
-    vmName: win2016-vs2017
+    vmName: windows-latest
 
   workspace:
     clean: all

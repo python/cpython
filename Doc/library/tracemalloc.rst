@@ -313,6 +313,9 @@ Functions
    frames. By default, a trace of a memory block only stores the most recent
    frame: the limit is ``1``. *nframe* must be greater or equal to ``1``.
 
+   You can still read the original number of total frames that composed the
+   traceback by looking at the :attr:`Traceback.total_nframe` attribute.
+
    Storing more than ``1`` frame is only useful to compute statistics grouped
    by ``'traceback'`` or to compute cumulative statistics: see the
    :meth:`Snapshot.compare_to` and :meth:`Snapshot.statistics` methods.
@@ -659,12 +662,24 @@ Traceback
 
    When a snapshot is taken, tracebacks of traces are limited to
    :func:`get_traceback_limit` frames. See the :func:`take_snapshot` function.
+   The original number of frames of the traceback is stored in the
+   :attr:`Traceback.total_nframe` attribute. That allows to know if a traceback
+   has been truncated by the traceback limit.
 
    The :attr:`Trace.traceback` attribute is an instance of :class:`Traceback`
    instance.
 
    .. versionchanged:: 3.7
       Frames are now sorted from the oldest to the most recent, instead of most recent to oldest.
+
+   .. attribute:: total_nframe
+
+      Total number of frames that composed the traceback before truncation.
+      This attribute can be set to ``None`` if the information is not
+      available.
+
+   .. versionchanged:: 3.9
+      The :attr:`Traceback.total_nframe` attribute was added.
 
    .. method:: format(limit=None, most_recent_first=False)
 

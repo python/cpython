@@ -8,15 +8,17 @@
 # written by Fredrik Lundh, May 1997
 #
 
-from tkinter import *
+__all__ = ["Dialog"]
+
+from tkinter import Frame
 
 
 class Dialog:
 
-    command  = None
+    command = None
 
     def __init__(self, master=None, **options):
-        self.master  = master
+        self.master = master
         self.options = options
         if not master and options.get('parent'):
             self.master = options['parent']

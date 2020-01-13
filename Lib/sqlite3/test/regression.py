@@ -25,6 +25,7 @@ import datetime
 import unittest
 import sqlite3 as sqlite
 import weakref
+import functools
 from test import support
 
 class RegressionTests(unittest.TestCase):
@@ -383,72 +384,26 @@ class RegressionTests(unittest.TestCase):
         with self.assertRaises(AttributeError):
             del self.con.isolation_level
 
+    def CheckBpo37347(self):
+        class Printer:
+            def log(self, *args):
+                return sqlite.SQLITE_OK
 
-class UnhashableFunc:
-    __hash__ = None
+        for method in [self.con.set_trace_callback,
+                       functools.partial(self.con.set_progress_handler, n=1),
+                       self.con.set_authorizer]:
+            printer_instance = Printer()
+            method(printer_instance.log)
+            method(printer_instance.log)
+            self.con.execute("select 1")  # trigger seg fault
+            method(None)
 
-    def __init__(self, return_value=None):
-        self.calls = 0
-        self.return_value = return_value
-
-    def __call__(self, *args, **kwargs):
-        self.calls += 1
-        return self.return_value
-
-
-class UnhashableCallbacksTestCase(unittest.TestCase):
-    """
-    https://bugs.python.org/issue34052
-
-    Registering unhashable callbacks raises TypeError, callbacks are not
-    registered in SQLite after such registration attempt.
-    """
-    def setUp(self):
-        self.con = sqlite.connect(':memory:')
-
-    def tearDown(self):
-        self.con.close()
-
-    def test_progress_handler(self):
-        f = UnhashableFunc(return_value=0)
-        with self.assertRaisesRegex(TypeError, 'unhashable type'):
-            self.con.set_progress_handler(f, 1)
-        self.con.execute('SELECT 1')
-        self.assertFalse(f.calls)
-
-    def test_func(self):
-        func_name = 'func_name'
-        f = UnhashableFunc()
-        with self.assertRaisesRegex(TypeError, 'unhashable type'):
-            self.con.create_function(func_name, 0, f)
-        msg = 'no such function: %s' % func_name
-        with self.assertRaisesRegex(sqlite.OperationalError, msg):
-            self.con.execute('SELECT %s()' % func_name)
-        self.assertFalse(f.calls)
-
-    def test_authorizer(self):
-        f = UnhashableFunc(return_value=sqlite.SQLITE_DENY)
-        with self.assertRaisesRegex(TypeError, 'unhashable type'):
-            self.con.set_authorizer(f)
-        self.con.execute('SELECT 1')
-        self.assertFalse(f.calls)
-
-    def test_aggr(self):
-        class UnhashableType(type):
-            __hash__ = None
-        aggr_name = 'aggr_name'
-        with self.assertRaisesRegex(TypeError, 'unhashable type'):
-            self.con.create_aggregate(aggr_name, 0, UnhashableType('Aggr', (), {}))
-        msg = 'no such function: %s' % aggr_name
-        with self.assertRaisesRegex(sqlite.OperationalError, msg):
-            self.con.execute('SELECT %s()' % aggr_name)
 
 
 def suite():
     regression_suite = unittest.makeSuite(RegressionTests, "Check")
     return unittest.TestSuite((
         regression_suite,
-        unittest.makeSuite(UnhashableCallbacksTestCase),
     ))
 
 def test():

@@ -6,12 +6,12 @@ API Reference
 
 .. seealso::
 
-   `New and changed setup.py arguments in setuptools <setuptools-setup-py>`_
+   `New and changed setup.py arguments in setuptools`_
       The ``setuptools`` project adds new capabilities to the ``setup`` function
       and other APIs, makes the API consistent across different Python versions,
       and is hence recommended over using ``distutils`` directly.
 
-.. _setuptools-setup-py: https://setuptools.readthedocs.io/en/latest/setuptools.html#new-and-changed-setup-keywords
+.. _New and changed setup.py arguments in setuptools: https://setuptools.readthedocs.io/en/latest/setuptools.html#new-and-changed-setup-keywords
 
 .. include:: ./_setuptools_disclaimer.rst
 
@@ -1142,6 +1142,24 @@ other utility module.
 
    * ``macosx-10.6-intel``
 
+   For AIX, Python 3.9 and later return a string starting with "aix", followed
+   by additional fields (separated by ``'-'``) that represent the combined
+   values of AIX Version, Release and Technology Level (first field), Build Date
+   (second field), and bit-size (third field). Python 3.8 and earlier returned
+   only a single additional field with the AIX Version and Release.
+
+   Examples of returned values on AIX:
+
+   * ``aix-5307-0747-32`` # 32-bit build on AIX ``oslevel -s``: 5300-07-00-0000
+
+   * ``aix-7105-1731-64`` # 64-bit build on AIX ``oslevel -s``: 7100-05-01-1731
+
+   * ``aix-7.2``          # Legacy form reported in Python 3.8 and earlier
+
+   .. versionchanged:: 3.9
+      The AIX platform string format now also includes the technology level,
+      build date, and ABI bit-size.
+
 
 .. function:: convert_path(pathname)
 
@@ -1545,7 +1563,7 @@ Python's own build procedures.
 =================================================
 
 .. module:: distutils.text_file
-   :synopsis: provides the TextFile class, a simple interface to text files
+   :synopsis: Provides the TextFile class, a simple interface to text files
 
 
 This module provides the :class:`TextFile` class, which gives an interface  to
@@ -1684,7 +1702,7 @@ lines, and joining lines with backslashes.
 ===================================================
 
 .. module:: distutils.version
-   :synopsis: implements classes that represent module version numbers.
+   :synopsis: Implements classes that represent module version numbers.
 
 
 .. % todo
@@ -1699,7 +1717,7 @@ lines, and joining lines with backslashes.
 ===================================================================
 
 .. module:: distutils.cmd
-   :synopsis: This module provides the abstract base class Command. This class
+   :synopsis: Provides the abstract base class :class:`~distutils.cmd.Command`. This class
               is subclassed by the modules in the distutils.command subpackage.
 
 
@@ -1792,7 +1810,7 @@ Subclasses of :class:`Command` must define the following methods.
 ==========================================================
 
 .. module:: distutils.command
-   :synopsis: This subpackage contains one module for each standard Distutils command.
+   :synopsis: Contains one module for each standard Distutils command.
 
 
 .. % \subsubsection{Individual Distutils commands}
@@ -2039,7 +2057,7 @@ This is described in more detail in :pep:`301`.
 ===================================================================
 
 .. module:: distutils.command.check
-   :synopsis: Check the metadata of a package
+   :synopsis: Check the meta-data of a package
 
 
 The ``check`` command performs some tests on the meta-data of a package.

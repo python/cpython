@@ -481,7 +481,7 @@ frozenset2({0,
         # Consequently, this test is fragile and
         # implementation-dependent.  Small changes to Python's sort
         # algorithm cause the test to fail when it should pass.
-        # XXX Or changes to the dictionary implmentation...
+        # XXX Or changes to the dictionary implementation...
 
         cube_repr_tgt = """\
 {frozenset(): frozenset({frozenset({2}), frozenset({0}), frozenset({1})}),

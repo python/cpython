@@ -667,9 +667,6 @@ _PyBytes_FormatEx(const char *format, Py_ssize_t format_len,
             Py_ssize_t len = 0;
             char onechar; /* For byte_converter() */
             Py_ssize_t alloc;
-#ifdef Py_DEBUG
-            char *before;
-#endif
 
             fmt++;
             if (*fmt == '%') {
@@ -981,8 +978,8 @@ _PyBytes_FormatEx(const char *format, Py_ssize_t format_len,
                 if (res == NULL)
                     goto error;
             }
-#ifdef Py_DEBUG
-            before = res;
+#ifndef NDEBUG
+            char *before = res;
 #endif
 
             /* Write the sign if needed */
@@ -1047,7 +1044,7 @@ _PyBytes_FormatEx(const char *format, Py_ssize_t format_len,
             }
             Py_XDECREF(temp);
 
-#ifdef Py_DEBUG
+#ifndef NDEBUG
             /* check that we computed the exact size for this write */
             assert((res - before) == alloc);
 #endif
@@ -1077,52 +1074,10 @@ _PyBytes_FormatEx(const char *format, Py_ssize_t format_len,
     return NULL;
 }
 
-/* Unescape a backslash-escaped string. If unicode is non-zero,
-   the string is a u-literal. If recode_encoding is non-zero,
-   the string is UTF-8 encoded and should be re-encoded in the
-   specified encoding.  */
-
-static char *
-_PyBytes_DecodeEscapeRecode(const char **s, const char *end,
-                            const char *errors, const char *recode_encoding,
-                            _PyBytesWriter *writer, char *p)
-{
-    PyObject *u, *w;
-    const char* t;
-
-    t = *s;
-    /* Decode non-ASCII bytes as UTF-8. */
-    while (t < end && (*t & 0x80))
-        t++;
-    u = PyUnicode_DecodeUTF8(*s, t - *s, errors);
-    if (u == NULL)
-        return NULL;
-
-    /* Recode them in target encoding. */
-    w = PyUnicode_AsEncodedString(u, recode_encoding, errors);
-    Py_DECREF(u);
-    if  (w == NULL)
-        return NULL;
-    assert(PyBytes_Check(w));
-
-    /* Append bytes to output buffer. */
-    writer->min_size--;   /* subtract 1 preallocated byte */
-    p = _PyBytesWriter_WriteBytes(writer, p,
-                                  PyBytes_AS_STRING(w),
-                                  PyBytes_GET_SIZE(w));
-    Py_DECREF(w);
-    if (p == NULL)
-        return NULL;
-
-    *s = t;
-    return p;
-}
-
+/* Unescape a backslash-escaped string. */
 PyObject *_PyBytes_DecodeEscape(const char *s,
                                 Py_ssize_t len,
                                 const char *errors,
-                                Py_ssize_t unicode,
-                                const char *recode_encoding,
                                 const char **first_invalid_escape)
 {
     int c;
@@ -1142,18 +1097,7 @@ PyObject *_PyBytes_DecodeEscape(const char *s,
     end = s + len;
     while (s < end) {
         if (*s != '\\') {
-          non_esc:
-            if (!(recode_encoding && (*s & 0x80))) {
-                *p++ = *s++;
-            }
-            else {
-                /* non-ASCII character and need to recode */
-                p = _PyBytes_DecodeEscapeRecode(&s, end,
-                                                errors, recode_encoding,
-                                                &writer, p);
-                if (p == NULL)
-                    goto failed;
-            }
+            *p++ = *s++;
             continue;
         }
 
@@ -1229,8 +1173,6 @@ PyObject *_PyBytes_DecodeEscape(const char *s,
             }
             *p++ = '\\';
             s--;
-            goto non_esc; /* an arbitrary number of unescaped
-                             UTF-8 bytes may follow. */
         }
     }
 
@@ -1244,12 +1186,11 @@ PyObject *_PyBytes_DecodeEscape(const char *s,
 PyObject *PyBytes_DecodeEscape(const char *s,
                                 Py_ssize_t len,
                                 const char *errors,
-                                Py_ssize_t unicode,
-                                const char *recode_encoding)
+                                Py_ssize_t Py_UNUSED(unicode),
+                                const char *Py_UNUSED(recode_encoding))
 {
     const char* first_invalid_escape;
-    PyObject *result = _PyBytes_DecodeEscape(s, len, errors, unicode,
-                                             recode_encoding,
+    PyObject *result = _PyBytes_DecodeEscape(s, len, errors,
                                              &first_invalid_escape);
     if (result == NULL)
         return NULL;
@@ -2004,7 +1945,7 @@ do_strip(PyBytesObject *self, int striptype)
 Py_LOCAL_INLINE(PyObject *)
 do_argstrip(PyBytesObject *self, int striptype, PyObject *bytes)
 {
-    if (bytes != NULL && bytes != Py_None) {
+    if (bytes != Py_None) {
         return do_xstrip(self, striptype, bytes);
     }
     return do_strip(self, striptype);
@@ -2938,7 +2879,6 @@ PyBytes_Concat(PyObject **pv, PyObject *w)
         Py_ssize_t oldsize;
         Py_buffer wb;
 
-        wb.len = -1;
         if (PyObject_GetBuffer(w, &wb, PyBUF_SIMPLE) != 0) {
             PyErr_Format(PyExc_TypeError, "can't concat %.100s to %.100s",
                          Py_TYPE(w)->tp_name, Py_TYPE(*pv)->tp_name);
@@ -3047,7 +2987,7 @@ error:
 }
 
 void
-PyBytes_Fini(void)
+_PyBytes_Fini(void)
 {
     int i;
     for (i = 0; i < UCHAR_MAX + 1; i++)
@@ -3225,8 +3165,9 @@ _PyBytesWriter_Init(_PyBytesWriter *writer)
 {
     /* Set all attributes before small_buffer to 0 */
     memset(writer, 0, offsetof(_PyBytesWriter, small_buffer));
-#ifdef Py_DEBUG
-    memset(writer->small_buffer, 0xCB, sizeof(writer->small_buffer));
+#ifndef NDEBUG
+    memset(writer->small_buffer, PYMEM_CLEANBYTE,
+           sizeof(writer->small_buffer));
 #endif
 }
 
@@ -3263,10 +3204,10 @@ _PyBytesWriter_GetSize(_PyBytesWriter *writer, char *str)
     return str - start;
 }
 
-Py_LOCAL_INLINE(void)
+#ifndef NDEBUG
+Py_LOCAL_INLINE(int)
 _PyBytesWriter_CheckConsistency(_PyBytesWriter *writer, char *str)
 {
-#ifdef Py_DEBUG
     char *start, *end;
 
     if (writer->use_small_buffer) {
@@ -3296,15 +3237,16 @@ _PyBytesWriter_CheckConsistency(_PyBytesWriter *writer, char *str)
     end = start + writer->allocated;
     assert(str != NULL);
     assert(start <= str && str <= end);
-#endif
+    return 1;
 }
+#endif
 
 void*
 _PyBytesWriter_Resize(_PyBytesWriter *writer, void *str, Py_ssize_t size)
 {
     Py_ssize_t allocated, pos;
 
-    _PyBytesWriter_CheckConsistency(writer, str);
+    assert(_PyBytesWriter_CheckConsistency(writer, str));
     assert(writer->allocated < size);
 
     allocated = size;
@@ -3353,14 +3295,15 @@ _PyBytesWriter_Resize(_PyBytesWriter *writer, void *str, Py_ssize_t size)
         }
 
         writer->use_small_buffer = 0;
-#ifdef Py_DEBUG
-        memset(writer->small_buffer, 0xDB, sizeof(writer->small_buffer));
+#ifndef NDEBUG
+        memset(writer->small_buffer, PYMEM_CLEANBYTE,
+               sizeof(writer->small_buffer));
 #endif
     }
     writer->allocated = allocated;
 
     str = _PyBytesWriter_AsString(writer) + pos;
-    _PyBytesWriter_CheckConsistency(writer, str);
+    assert(_PyBytesWriter_CheckConsistency(writer, str));
     return str;
 
 error:
@@ -3373,7 +3316,7 @@ _PyBytesWriter_Prepare(_PyBytesWriter *writer, void *str, Py_ssize_t size)
 {
     Py_ssize_t new_min_size;
 
-    _PyBytesWriter_CheckConsistency(writer, str);
+    assert(_PyBytesWriter_CheckConsistency(writer, str));
     assert(size >= 0);
 
     if (size == 0) {
@@ -3406,7 +3349,7 @@ _PyBytesWriter_Alloc(_PyBytesWriter *writer, Py_ssize_t size)
     assert(size >= 0);
 
     writer->use_small_buffer = 1;
-#ifdef Py_DEBUG
+#ifndef NDEBUG
     writer->allocated = sizeof(writer->small_buffer) - 1;
     /* In debug mode, don't use the full small buffer because it is less
        efficient than bytes and bytearray objects to detect buffer underflow
@@ -3434,7 +3377,7 @@ _PyBytesWriter_Finish(_PyBytesWriter *writer, void *str)
     Py_ssize_t size;
     PyObject *result;
 
-    _PyBytesWriter_CheckConsistency(writer, str);
+    assert(_PyBytesWriter_CheckConsistency(writer, str));
 
     size = _PyBytesWriter_GetSize(writer, str);
     if (size == 0 && !writer->use_bytearray) {

@@ -12,7 +12,7 @@ HelpSource htests.  These are run by running query.py.
 from idlelib import query
 import unittest
 from test.support import requires
-from tkinter import Tk
+from tkinter import Tk, END
 
 import sys
 from unittest import mock
@@ -392,10 +392,12 @@ class CustomRunGuiTest(unittest.TestCase):
     def test_click_args(self):
         root = Tk()
         root.withdraw()
-        dialog =  query.CustomRun(root, 'Title', _utest=True)
-        dialog.entry.insert(0, 'okay')
+        dialog =  query.CustomRun(root, 'Title',
+                                  cli_args=['a', 'b=1'], _utest=True)
+        self.assertEqual(dialog.entry.get(), 'a b=1')
+        dialog.entry.insert(END, ' c')
         dialog.button_ok.invoke()
-        self.assertEqual(dialog.result, (['okay'], True))
+        self.assertEqual(dialog.result, (['a', 'b=1', 'c'], True))
         root.destroy()
 
 

@@ -669,7 +669,7 @@ class UnixReadPipeTransportTests(test_utils.TestCase):
         return transport
 
     def test_ctor(self):
-        waiter = asyncio.Future(loop=self.loop)
+        waiter = self.loop.create_future()
         tr = self.read_pipe_transport(waiter=waiter)
         self.loop.run_until_complete(waiter)
 
@@ -736,6 +736,7 @@ class UnixReadPipeTransportTests(test_utils.TestCase):
     @mock.patch('os.read')
     def test_resume_reading(self, m_read):
         tr = self.read_pipe_transport()
+        tr.pause_reading()
         tr.resume_reading()
         self.loop.assert_reader(5, tr._read_ready)
 
@@ -790,6 +791,32 @@ class UnixReadPipeTransportTests(test_utils.TestCase):
         self.assertIsNone(tr._protocol)
         self.assertIsNone(tr._loop)
 
+    def test_pause_reading_on_closed_pipe(self):
+        tr = self.read_pipe_transport()
+        tr.close()
+        test_utils.run_briefly(self.loop)
+        self.assertIsNone(tr._loop)
+        tr.pause_reading()
+
+    def test_pause_reading_on_paused_pipe(self):
+        tr = self.read_pipe_transport()
+        tr.pause_reading()
+        # the second call should do nothing
+        tr.pause_reading()
+
+    def test_resume_reading_on_closed_pipe(self):
+        tr = self.read_pipe_transport()
+        tr.close()
+        test_utils.run_briefly(self.loop)
+        self.assertIsNone(tr._loop)
+        tr.resume_reading()
+
+    def test_resume_reading_on_paused_pipe(self):
+        tr = self.read_pipe_transport()
+        # the pipe is not paused
+        # resuming should do nothing
+        tr.resume_reading()
+
 
 class UnixWritePipeTransportTests(test_utils.TestCase):
 
@@ -819,7 +846,7 @@ class UnixWritePipeTransportTests(test_utils.TestCase):
         return transport
 
     def test_ctor(self):
-        waiter = asyncio.Future(loop=self.loop)
+        waiter = self.loop.create_future()
         tr = self.write_pipe_transport(waiter=waiter)
         self.loop.run_until_complete(waiter)
 
