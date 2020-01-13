@@ -64,14 +64,16 @@ append_charp(_PyUnicodeWriter *writer, const char *charp)
 static int
 append_repr(_PyUnicodeWriter *writer, PyObject *obj)
 {
-    int ret;
-    PyObject *repr;
-    repr = PyObject_Repr(obj);
+    if (PyFloat_CheckExact(obj) && Py_IS_INFINITY(PyFloat_AS_DOUBLE(obj))) {
+        return _PyUnicodeWriter_WriteStr(writer, _str_inf);
+    }
+    PyObject *repr = PyObject_Repr(obj);
+
     if (!repr) {
         return -1;
     }
-    if ((PyFloat_CheckExact(obj) && Py_IS_INFINITY(PyFloat_AS_DOUBLE(obj))) ||
-       PyComplex_CheckExact(obj))
+
+    if (PyComplex_CheckExact(obj))
     {
         PyObject *new_repr = PyUnicode_Replace(
             repr,
@@ -85,7 +87,7 @@ append_repr(_PyUnicodeWriter *writer, PyObject *obj)
         }
         repr = new_repr;
     }
-    ret = _PyUnicodeWriter_WriteStr(writer, repr);
+    int ret = _PyUnicodeWriter_WriteStr(writer, repr);
     Py_DECREF(repr);
     return ret;
 }
