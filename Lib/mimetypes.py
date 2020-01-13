@@ -564,7 +564,7 @@ def _default_mime_types():
 _default_mime_types()
 
 
-if __name__ == '__main__':
+def _main():
     import getopt
 
     USAGE = """\
@@ -608,3 +608,7 @@ More than one type argument may be given.
             guess, encoding = guess_type(gtype, strict)
             if not guess: print("I don't know anything about type", gtype)
             else: print('type:', guess, 'encoding:', encoding)
+
+
+if __name__ == '__main__':
+    _main()
