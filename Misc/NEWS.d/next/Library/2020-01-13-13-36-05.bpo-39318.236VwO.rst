@@ -1,0 +1,1 @@
+Fix a file descriptor leak in NamedTemporaryFile under unusual circumstances.
