@@ -122,6 +122,11 @@ class GeneralTests(unittest.TestCase):
         self.assertIsNone(smtp.sock.gettimeout())
         smtp.close()
 
+    def testTimeoutZero(self):
+        mock_socket.reply_with(b"220 Hola mundo")
+        with self.assertRaises(ValueError):
+            smtplib.SMTP(HOST, self.port, timeout=0)
+
     def testTimeoutValue(self):
         mock_socket.reply_with(b"220 Hola mundo")
         smtp = smtplib.SMTP(HOST, self.port, timeout=30)
