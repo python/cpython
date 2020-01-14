@@ -164,7 +164,8 @@ class LMTPGeneralTests(GeneralTests, unittest.TestCase):
 
     client = smtplib.LMTP
 
-    def test_local_timeout_zero(self):
+    def testTimeoutZero(self):
+        super().testTimeoutZero()
         local_host = '/some/local/lmtp/delivery/program'
         with self.assertRaises(ValueError):
             self.client(local_host, timeout=0)

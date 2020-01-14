@@ -130,9 +130,7 @@ Protocol) and :rfc:`1869` (SMTP Service Extensions).
    your mileage might vary.
 
    .. versionchanged:: 3.9
-      The optional *timeout* parameter was added. If the *timeout* parameter is
-      set to be zero, it will raise a :class:`ValueError` to prevent the creation
-      of a non-blocking socket.
+      The optional *timeout* parameter was added.
 
 
 A nice selection of exceptions is defined as well:
