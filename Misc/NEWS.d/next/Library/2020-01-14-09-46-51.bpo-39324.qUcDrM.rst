@@ -1,0 +1,1 @@
+Add mime type mapping for .md <-> text/markdown
