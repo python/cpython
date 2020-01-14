@@ -270,6 +270,9 @@ smtplib
 if the given timeout for their constructor is zero to prevent the creation of
 a non-blocking socket. (Contributed by Dong-hee Na in :issue:`39259`.)
 
+:class:`~smtplib.LMTP` constructor  now has an optional *timeout* parameter.
+(Contributed by Dong-hee Na in :issue:`39329`.)
+
 signal
 ------
 
