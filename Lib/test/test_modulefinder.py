@@ -354,15 +354,10 @@ class ModuleFinderTest(unittest.TestCase):
         self.assertIn(expected, output)
 
     def test_encoding(self):
-        finder = modulefinder.ModuleFinder()
-        with open('f.py', 'w', encoding='cp1252') as f:
-            f.write('import b\nx = "€"\b')
-            finder.run_script(f.name)
-            for name, mod in finder.modules.items():
-                file = open(mod.__file__, 'rb')
-                encoding = tokenize.detect_encoding(file.readline)[0]
-                self.assertEqual(encoding, 'cp1252')
-                file.close()
+        os.makedirs(TEST_DIR, exist_ok=True)
+        with open(os.path.join(TEST_DIR,'a.py'), 'w', encoding='cp1252') as f:
+            f.write('# -*- coding: cp1252 -*-\nx = "€"\n')
+        self._do_test(["a", ["a"], [], [], ""])
 
     def test_extended_opargs(self):
         extended_opargs_test = [
