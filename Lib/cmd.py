@@ -415,49 +415,23 @@ class Cmd:
         Each column is only as wide as necessary.
         Columns are separated by two spaces (one was not legible enough).
         """
-        # Empty list
         if not list:
             self.stdout.write("<empty>\n")
             return
 
-        # List contains non-string
-        nonstrings = [i for i in range(len(list))
-                        if not isinstance(list[i], str)]
-        if nonstrings:
-            raise TypeError("list[i] not a string for i in %s"
-                            % ", ".join(map(str, nonstrings)))
+        self.raise_if_list_contains_non_strings(list)
 
-        # List of length 1
-        size = len(list)
-        if size == 1:
-            self.stdout.write('%s\n'%str(list[0]))
-            return
-
-        nrows, ncols, colwidths = \
+        row_num, col_num, col_widths = \
             self.calculate_min_row_and_col_num_and_col_widths(list, \
             displaywidth)
+        self.print_rows(list, row_num, col_num, col_widths)
 
-        for row in range(nrows):
-            texts = []
-            # Get all texts for a specific raw and pad with empty strings if needed
-            for col in range(ncols):
-                i = row + nrows*col
-                if i >= size:
-                    x = ""
-                else:
-                    x = list[i]
-                texts.append(x)
-            # Remove empty strings (?)
-            while texts and not texts[-1]:
-                del texts[-1]
-
-            # Pad each string to the column length
-            for col in range(len(texts)):
-                texts[col] = texts[col].ljust(colwidths[col])
-
-            # Join all texts in a row and print
-            self.stdout.write("%s\n"%str("  ".join(texts)))
-
+    def raise_if_list_contains_non_strings(self, list):
+        non_strings = [index for index in range(len(list)) if not \
+            isinstance(list[index], str)]
+        if len(non_strings) > 0:
+            raise TypeError("list[i] not a string for i in %s"
+                            % ", ".join(map(str, non_strings)))
 
     def calculate_min_row_and_col_num_and_col_widths(self, list, displaywidth=80):
         for row_num in range(1, len(list)):
@@ -490,6 +464,25 @@ class Cmd:
             item = list[item_index]
             min_col_width = max(min_col_width, len(item))
         return min_col_width
+
+    def print_rows(self, list, row_num, col_num, col_widths):
+        for row_index in range(row_num):
+            row = self.get_row(list, row_num, row_index, col_num)
+            self.justify_row(row, col_widths)
+            self.stdout.write("%s\n" % self.column_seperatpr().join(row))
+
+    def get_row(self, list, row_num, row_index, col_num):
+        row = []
+        for col in range(col_num):
+            item_index = self.get_item_index(row_num, row_index, col)
+            if item_index >= len(list):
+                return row
+            row.append(list[item_index])
+        return row
+
+    def justify_row(self, row, col_widths):
+        for col in range(len(row)):
+            row[col] = row[col].ljust(col_widths[col])
 
     def get_item_index(self, row_num, row, col):
         return row + row_num * col
