@@ -249,6 +249,23 @@ def _tp_cache(func):
     """Internal wrapper caching __getitem__ of generic types with a fallback to
     original function for non-hashable arguments.
     """
+    cached = functools.lru_cache()(func)
+    _cleanups.append(cached.cache_clear)
+
+    @functools.wraps(func)
+    def inner(*args, **kwds):
+        try:
+            return cached(*args, **kwds)
+        except TypeError:
+            pass  # All real errors (not unhashable args) are raised below.
+        return func(*args, **kwds)
+    return inner
+
+
+def _typed_tp_cache(func):
+    """Internal wrapper caching __getitem__ of generic types (type-aware)
+    with a fallback to original function for non-hashable arguments.
+    """
     cached = functools.lru_cache(typed=True)(func)
     _cleanups.append(cached.cache_clear)
 
@@ -363,11 +380,18 @@ class _SpecialForm(_Final, _Immutable, _root=True):
         if self._name == 'Optional':
             arg = _type_check(parameters, "Optional[t] requires a single type.")
             return Union[arg, type(None)]
+        raise TypeError(f"{self} is not subscriptable")
+
+
+class _TypedSpecialForm(_SpecialForm, _root=True):
+
+    @_typed_tp_cache
+    def __getitem__(self, parameters):
         if self._name == 'Literal':
             # There is no '_type_check' call because arguments to Literal[...] are
             # values, not types.
             return _GenericAlias(self, parameters)
-        raise TypeError(f"{self} is not subscriptable")
+        return super().__getitem__(parameters)
 
 
 Any = _SpecialForm('Any', doc=
@@ -463,7 +487,7 @@ Optional = _SpecialForm('Optional', doc=
     Optional[X] is equivalent to Union[X, None].
     """)
 
-Literal = _SpecialForm('Literal', doc=
+Literal = _TypedSpecialForm('Literal', doc=
     """Special typing form to define literal types (a.k.a. value types).
 
     This form can be used to indicate to type checkers that the corresponding
