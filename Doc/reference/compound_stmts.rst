@@ -82,9 +82,9 @@ The :keyword:`!if` statement
 ============================
 
 .. index::
-   ! statement: if
-   keyword: elif
-   keyword: else
+   pair: statement; ! if
+   pair: keyword; elif
+   pair: keyword; else
    single: : (colon); compound statement
 
 The :keyword:`if` statement is used for conditional execution:
@@ -107,8 +107,8 @@ The :keyword:`!while` statement
 ===============================
 
 .. index::
-   ! statement: while
-   keyword: else
+   pair: statement; ! while
+   pair: keyword; else
    pair: loop; statement
    single: : (colon); compound statement
 
@@ -125,8 +125,8 @@ suite of the :keyword:`!else` clause, if present, is executed and the loop
 terminates.
 
 .. index::
-   statement: break
-   statement: continue
+   pair: statement; break
+   pair: statement; continue
 
 A :keyword:`break` statement executed in the first suite terminates the loop
 without executing the :keyword:`!else` clause's suite.  A :keyword:`continue`
@@ -140,12 +140,12 @@ The :keyword:`!for` statement
 =============================
 
 .. index::
-   ! statement: for
-   keyword: in
-   keyword: else
+   pair: statement; ! for
+   pair: keyword; in
+   pair: keyword; else
    pair: target; list
    pair: loop; statement
-   object: sequence
+   pair: object; sequence
    single: : (colon); compound statement
 
 The :keyword:`for` statement is used to iterate over the elements of a sequence
@@ -165,8 +165,8 @@ is empty or an iterator raises a :exc:`StopIteration` exception), the suite in
 the :keyword:`!else` clause, if present, is executed, and the loop terminates.
 
 .. index::
-   statement: break
-   statement: continue
+   pair: statement; break
+   pair: statement; continue
 
 A :keyword:`break` statement executed in the first suite terminates the loop
 without executing the :keyword:`!else` clause's suite.  A :keyword:`continue`
@@ -186,7 +186,7 @@ those made in the suite of the for-loop::
 
 
 .. index::
-   builtin: range
+   pair: builtin; range
 
 Names in the target list are not deleted when the loop is finished, but if the
 sequence is empty, they will not have been assigned to at all by the loop.  Hint:
@@ -224,11 +224,11 @@ The :keyword:`!try` statement
 =============================
 
 .. index::
-   ! statement: try
-   keyword: except
-   keyword: finally
-   keyword: else
-   keyword: as
+   pair: statement; ! try
+   pair: keyword; except
+   pair: keyword; finally
+   pair: keyword; else
+   pair: keyword; as
    single: : (colon); compound statement
 
 The :keyword:`try` statement specifies exception handlers and/or cleanup code
@@ -293,8 +293,8 @@ traceback attached to them, they form a reference cycle with the stack frame,
 keeping all locals in that frame alive until the next garbage collection occurs.
 
 .. index::
-   module: sys
-   object: traceback
+   pair: module; sys
+   pair: object; traceback
 
 Before an except clause's suite is executed, details about the exception are
 stored in the :mod:`sys` module and can be accessed via :func:`sys.exc_info`.
@@ -305,10 +305,10 @@ values are restored to their previous values (before the call) when returning
 from a function that handled an exception.
 
 .. index::
-   keyword: else
-   statement: return
-   statement: break
-   statement: continue
+   pair: keyword; else
+   pair: statement; return
+   pair: statement; break
+   pair: statement; continue
 
 The optional :keyword:`!else` clause is executed if the control flow leaves the
 :keyword:`try` suite, no exception was raised, and no :keyword:`return`,
@@ -316,7 +316,7 @@ The optional :keyword:`!else` clause is executed if the control flow leaves the
 the :keyword:`!else` clause are not handled by the preceding :keyword:`except`
 clauses.
 
-.. index:: keyword: finally
+.. index:: pair: keyword; finally
 
 If :keyword:`finally` is present, it specifies a 'cleanup' handler.  The
 :keyword:`try` clause is executed, including any :keyword:`except` and
@@ -341,9 +341,9 @@ The exception information is not available to the program during execution of
 the :keyword:`finally` clause.
 
 .. index::
-   statement: return
-   statement: break
-   statement: continue
+   pair: statement; return
+   pair: statement; break
+   pair: statement; continue
 
 When a :keyword:`return`, :keyword:`break` or :keyword:`continue` statement is
 executed in the :keyword:`try` suite of a :keyword:`!try`...\ :keyword:`!finally`
@@ -379,8 +379,8 @@ The :keyword:`!with` statement
 ==============================
 
 .. index::
-   ! statement: with
-   keyword: as
+   pair: statement; ! with
+   pair: keyword; as
    single: as; with statement
    single: , (comma); with statement
    single: : (colon); compound statement
@@ -488,12 +488,12 @@ Function definitions
 ====================
 
 .. index::
-   statement: def
+   pair: statement; def
    pair: function; definition
    pair: function; name
    pair: name; binding
-   object: user-defined function
-   object: function
+   pair: object; user-defined function
+   pair: object; function
    pair: function; name
    pair: name; binding
    single: () (parentheses); function definition
@@ -651,8 +651,8 @@ Class definitions
 =================
 
 .. index::
-   object: class
-   statement: class
+   pair: object; class
+   pair: statement; class
    pair: class; definition
    pair: class; name
    pair: name; binding
@@ -746,7 +746,7 @@ Coroutines
 
 .. versionadded:: 3.5
 
-.. index:: statement: async def
+.. index:: pair: statement; async def
 .. _`async def`:
 
 Coroutine function definition
@@ -757,8 +757,8 @@ Coroutine function definition
                 : ["->" `expression`] ":" `suite`
 
 .. index::
-   keyword: async
-   keyword: await
+   pair: keyword; async
+   pair: keyword; await
 
 Execution of Python coroutines can be suspended and resumed at many points
 (see :term:`coroutine`).  Inside the body of a coroutine function, ``await`` and
@@ -779,7 +779,7 @@ An example of a coroutine function::
         await some_coroutine()
 
 
-.. index:: statement: async for
+.. index:: pair: statement; async for
 .. _`async for`:
 
 The :keyword:`!async for` statement
@@ -824,7 +824,7 @@ It is a :exc:`SyntaxError` to use an ``async for`` statement outside the
 body of a coroutine function.
 
 
-.. index:: statement: async with
+.. index:: pair: statement; async with
 .. _`async with`:
 
 The :keyword:`!async with` statement

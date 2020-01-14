@@ -199,8 +199,8 @@ numbering information.
 .. function:: compilest(st, filename='<syntax-tree>')
 
    .. index::
-      builtin: exec
-      builtin: eval
+      pair: builtin; exec
+      pair: builtin; eval
 
    The Python byte compiler can be invoked on an ST object to produce code objects
    which can be used as part of a call to the built-in :func:`exec` or :func:`eval`
@@ -232,7 +232,7 @@ determine if an ST was created from source code via :func:`expr` or
 
 .. function:: isexpr(st)
 
-   .. index:: builtin: compile
+   .. index:: pair: builtin; compile
 
    When *st* represents an ``'eval'`` form, this function returns ``True``, otherwise
    it returns ``False``.  This is useful, since code objects normally cannot be queried

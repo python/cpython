@@ -275,8 +275,8 @@ Reading and Writing Files
 =========================
 
 .. index::
-   builtin: open
-   object: file
+   pair: builtin; open
+   pair: object; file
 
 :func:`open` returns a :term:`file object`, and is most commonly used with
 two arguments: ``open(filename, mode)``.
@@ -447,7 +447,7 @@ Reference for a complete guide to file objects.
 Saving structured data with :mod:`json`
 ---------------------------------------
 
-.. index:: module: json
+.. index:: pair: module; json
 
 Strings can easily be written to and read from a file.  Numbers take a bit more
 effort, since the :meth:`read` method only returns strings, which will have to

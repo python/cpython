@@ -43,7 +43,7 @@ to avoid excessive indentation.  An  :keyword:`!if` ... :keyword:`!elif` ...
 ==========================
 
 .. index::
-   statement: for
+   pair: statement; for
 
 The :keyword:`for` statement in Python differs a bit from what you may be used
 to in C or Pascal.  Rather than always iterating over an arithmetic progression

@@ -6,9 +6,9 @@
               representations.
 
 .. index::
-   module: uu
-   module: base64
-   module: binhex
+   pair: module; uu
+   pair: module; base64
+   pair: module; binhex
 
 --------------
 

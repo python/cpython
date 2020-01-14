@@ -145,7 +145,7 @@ The :mod:`pprint` module also provides several shortcut functions:
 
 .. function:: isreadable(object)
 
-   .. index:: builtin: eval
+   .. index:: pair: builtin; eval
 
    Determine if the formatted representation of *object* is "readable," or can be
    used to reconstruct the value using :func:`eval`.  This always returns ``False``
@@ -200,7 +200,7 @@ created.
 
 .. method:: PrettyPrinter.isreadable(object)
 
-   .. index:: builtin: eval
+   .. index:: pair: builtin; eval
 
    Determine if the formatted representation of the object is "readable," or can be
    used to reconstruct the value using :func:`eval`.  Note that this returns

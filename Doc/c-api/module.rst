@@ -5,7 +5,7 @@
 Module Objects
 --------------
 
-.. index:: object: module
+.. index:: pair: object; module
 
 
 .. c:var:: PyTypeObject PyModule_Type

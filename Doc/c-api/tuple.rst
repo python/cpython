@@ -5,7 +5,7 @@
 Tuple Objects
 -------------
 
-.. index:: object: tuple
+.. index:: pair: object; tuple
 
 
 .. c:type:: PyTupleObject

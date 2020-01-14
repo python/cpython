@@ -16,7 +16,7 @@ all modern Unix systems, Windows, MacOS, and probably additional platforms.
    Some behavior may be platform dependent, since calls are made to the operating
    system socket APIs.
 
-.. index:: object: socket
+.. index:: pair: object; socket
 
 The Python interface is a straightforward transliteration of the Unix system
 call and library interface for sockets to Python's object-oriented style: the
@@ -1667,7 +1667,7 @@ to sockets.
 .. method:: socket.setsockopt(level, optname, value: buffer)
 .. method:: socket.setsockopt(level, optname, None, optlen: int)
 
-   .. index:: module: struct
+   .. index:: pair: module; struct
 
    Set the value of the given socket option (see the Unix manual page
    :manpage:`setsockopt(2)`).  The needed symbolic constants are defined in the

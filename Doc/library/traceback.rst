@@ -14,7 +14,7 @@ interpreter when it prints a stack trace.  This is useful when you want to print
 stack traces under program control, such as in a "wrapper" around the
 interpreter.
 
-.. index:: object: traceback
+.. index:: pair: object; traceback
 
 The module uses traceback objects --- this is the object type that is stored in
 the :data:`sys.last_traceback` variable and returned as the third item from

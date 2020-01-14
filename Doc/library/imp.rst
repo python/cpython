@@ -10,7 +10,7 @@
 .. deprecated:: 3.4
    The :mod:`imp` package is pending deprecation in favor of :mod:`importlib`.
 
-.. index:: statement: import
+.. index:: pair: statement; import
 
 --------------
 

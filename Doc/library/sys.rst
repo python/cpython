@@ -355,7 +355,7 @@ always available.
    an except clause."  For any stack frame, only information about the exception
    being currently handled is accessible.
 
-   .. index:: object: traceback
+   .. index:: pair: object; traceback
 
    If no exception is being handled anywhere on the stack, a tuple containing
    three ``None`` values is returned.  Otherwise, the values returned are
