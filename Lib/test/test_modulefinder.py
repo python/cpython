@@ -273,7 +273,7 @@ def create_package(source):
 
 
 class ModuleFinderTest(unittest.TestCase):
-    def _do_test(self, info, report=False, debug=0, replace_paths=[], encoding=False):
+    def _do_test(self, info, report=False, debug=0, replace_paths=[]):
         import_this, modules, missing, maybe_missing, source = info
         create_package(source)
         try:
@@ -300,15 +300,6 @@ class ModuleFinderTest(unittest.TestCase):
             bad, maybe = mf.any_missing_maybe()
             self.assertEqual(bad, missing)
             self.assertEqual(maybe, maybe_missing)
-
-            # check for modules encoding
-            if encoding:
-                for module in mf.modules.items():
-                    module_name, module_object = module
-                    file = open(module_object.__file__, 'rb')
-                    encoding = tokenize.detect_encoding(file.readline)[0]
-                    self.assertEqual(encoding, 'iso-8859-1')
-                    file.close()
 
         finally:
             shutil.rmtree(TEST_DIR)
@@ -364,18 +355,15 @@ class ModuleFinderTest(unittest.TestCase):
         self.assertIn(expected, output)
 
     def test_encoding(self):
-        encoding_test = [
-            "a",
-            ["a", "b"],
-            [], [],
-            """\
-a.py
-                                # coding=latin-1
-                                import b
-b.py
-                                # coding=latin-1
-"""]
-        self._do_test(encoding_test, encoding=True)
+        finder = modulefinder.ModuleFinder()
+        with open('f.py', 'w', encoding='cp1252') as f:
+            f.write('import b\nx = "€"\b')
+            finder.run_script(f.name)
+            for name, mod in finder.modules.items():
+                file = open(mod.__file__, 'rb')
+                encoding = tokenize.detect_encoding(file.readline)[0]
+                self.assertEqual(encoding, 'cp1252')
+                file.close()
 
     def test_extended_opargs(self):
         extended_opargs_test = [
