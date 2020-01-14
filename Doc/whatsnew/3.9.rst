@@ -439,6 +439,12 @@ Changes in the Python API
   :data:`~errno.EBADF` error.
   (Contributed by Victor Stinner in :issue:`39239`.)
 
+* :func:`codecs.lookup` now normalizes the encoding name the same way than
+  :func:`encodings.normalize_encoding`, except that :func:`codecs.lookup` also
+  converts the name to lower case. For example, ``"latex+latin1"`` encoding
+  name is now normalized to ``"latex_latin1"``.
+  (Contributed by Jordon Xu in :issue:`37751`.)
+
 
 CPython bytecode changes
 ------------------------
