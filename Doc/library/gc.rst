@@ -177,6 +177,27 @@ The :mod:`gc` module provides the following functions:
    .. versionadded:: 3.1
 
 
+.. function:: is_finalized(obj)
+
+   Returns ``True`` if the given object has been finalized by the
+   garbage collector, ``False`` otherwise. ::
+
+      >>> x = None
+      >>> class Lazarus:
+      ...     def __del__(self):
+      ...         global x
+      ...         x = self
+      ...
+      >>> lazarus = Lazarus()
+      >>> gc.is_finalized(lazarus)
+      False
+      >>> del lazarus
+      >>> gc.is_finalized(x)
+      True
+
+   .. versionadded:: 3.9
+
+
 .. function:: freeze()
 
    Freeze all the objects tracked by gc - move them to a permanent generation
