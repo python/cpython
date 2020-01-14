@@ -299,7 +299,6 @@ class ModuleFinderTest(unittest.TestCase):
             bad, maybe = mf.any_missing_maybe()
             self.assertEqual(bad, missing)
             self.assertEqual(maybe, maybe_missing)
-
         finally:
             shutil.rmtree(TEST_DIR)
 
@@ -371,6 +370,7 @@ a.py
 b.py
 """ % list(range(2**16))]  # 2**16 constants
         self._do_test(extended_opargs_test)
+
 
 if __name__ == "__main__":
     unittest.main()
