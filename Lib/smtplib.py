@@ -1066,19 +1066,23 @@ class LMTP(SMTP):
     ehlo_msg = "lhlo"
 
     def __init__(self, host='', port=LMTP_PORT, local_hostname=None,
-                 source_address=None):
+                 source_address=None, timeout=socket._GLOBAL_DEFAULT_TIMEOUT):
         """Initialize a new instance."""
         super().__init__(host, port, local_hostname=local_hostname,
-                         source_address=source_address)
+                         source_address=source_address, timeout=timeout)
 
     def connect(self, host='localhost', port=0, source_address=None):
         """Connect to the LMTP daemon, on either a Unix or a TCP socket."""
         if host[0] != '/':
             return super().connect(host, port, source_address=source_address)
 
+        if self.timeout is not None and not self.timeout:
+            raise ValueError('Non-blocking socket (timeout=0) is not supported')
+
         # Handle Unix-domain sockets.
         try:
             self.sock = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
+            self.sock.settimeout(self.timeout)
             self.file = None
             self.sock.connect(host)
         except OSError:
