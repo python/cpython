@@ -1,1 +1,1 @@
-Add encoding detecting to _find_module() in modulefinder
+Fix :mod:`modulefinder` to handle :pep:`263` encoding markers - by Luciana Marques
