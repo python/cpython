@@ -1381,6 +1381,12 @@ finally:
     PyErr_Restore(error_type, error_value, error_traceback);
 }
 
+static PyObject *
+future_cls_getitem(PyObject *cls, PyObject *type)
+{
+    Py_INCREF(cls);
+    return cls;
+}
 
 static PyAsyncMethods FutureType_as_async = {
     (unaryfunc)future_new_iter,         /* am_await */
@@ -1400,6 +1406,7 @@ static PyMethodDef FutureType_methods[] = {
     _ASYNCIO_FUTURE_DONE_METHODDEF
     _ASYNCIO_FUTURE_GET_LOOP_METHODDEF
     _ASYNCIO_FUTURE__REPR_INFO_METHODDEF
+    {"__class_getitem__", future_cls_getitem, METH_O|METH_CLASS, NULL},
     {NULL, NULL}        /* Sentinel */
 };
 
@@ -1808,6 +1815,21 @@ TaskWakeupMethWrapper_dealloc(TaskWakeupMethWrapper *o)
     Py_TYPE(o)->tp_free(o);
 }
 
+static PyObject *
+TaskWakeupMethWrapper_get___self__(TaskWakeupMethWrapper *o, void *Py_UNUSED(ignored))
+{
+    if (o->ww_task) {
+        Py_INCREF(o->ww_task);
+        return (PyObject*)o->ww_task;
+    }
+    Py_RETURN_NONE;
+}
+
+static PyGetSetDef TaskWakeupMethWrapper_getsetlist[] = {
+    {"__self__", (getter)TaskWakeupMethWrapper_get___self__, NULL, NULL},
+    {NULL} /* Sentinel */
+};
+
 static PyTypeObject TaskWakeupMethWrapper_Type = {
     PyVarObject_HEAD_INIT(NULL, 0)
     "TaskWakeupMethWrapper",
@@ -1819,6 +1841,7 @@ static PyTypeObject TaskWakeupMethWrapper_Type = {
     .tp_flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC,
     .tp_traverse = (traverseproc)TaskWakeupMethWrapper_traverse,
     .tp_clear = (inquiry)TaskWakeupMethWrapper_clear,
+    .tp_getset = TaskWakeupMethWrapper_getsetlist,
 };
 
 static PyObject *
@@ -2429,6 +2452,13 @@ done:
     FutureObj_finalize((FutureObj*)task);
 }
 
+static PyObject *
+task_cls_getitem(PyObject *cls, PyObject *type)
+{
+    Py_INCREF(cls);
+    return cls;
+}
+
 static void TaskObj_dealloc(PyObject *);  /* Needs Task_CheckExact */
 
 static PyMethodDef TaskType_methods[] = {
@@ -2449,6 +2479,7 @@ static PyMethodDef TaskType_methods[] = {
     _ASYNCIO_TASK_GET_NAME_METHODDEF
     _ASYNCIO_TASK_SET_NAME_METHODDEF
     _ASYNCIO_TASK_GET_CORO_METHODDEF
+    {"__class_getitem__", task_cls_getitem, METH_O|METH_CLASS, NULL},
     {NULL, NULL}        /* Sentinel */
 };
 
@@ -3251,7 +3282,7 @@ module_init(void)
     }
     if (module_initialized != 0) {
         return 0;
-    } 
+    }
     else {
         module_initialized = 1;
     }

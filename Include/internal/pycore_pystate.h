@@ -56,6 +56,9 @@ struct _ceval_runtime_state {
 
 typedef PyObject* (*_PyFrameEvalFunction)(struct _frame *, int);
 
+#define _PY_NSMALLPOSINTS           257
+#define _PY_NSMALLNEGINTS           5
+
 // The PyInterpreterState typedef is in Include/pystate.h.
 struct _is {
 
@@ -139,6 +142,15 @@ struct _is {
             int atbol;
         } listnode;
     } parser;
+
+#if _PY_NSMALLNEGINTS + _PY_NSMALLPOSINTS > 0
+    /* Small integers are preallocated in this array so that they
+       can be shared.
+       The integers that are preallocated are those in the range
+       -_PY_NSMALLNEGINTS (inclusive) to _PY_NSMALLPOSINTS (not inclusive).
+    */
+    PyLongObject* small_ints[_PY_NSMALLNEGINTS + _PY_NSMALLPOSINTS];
+#endif
 };
 
 PyAPI_FUNC(struct _is*) _PyInterpreterState_LookUpID(PY_INT64_T);

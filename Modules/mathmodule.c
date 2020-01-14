@@ -3295,6 +3295,56 @@ error:
 }
 
 
+/*[clinic input]
+math.nextafter
+
+    x: double
+    y: double
+    /
+
+Return the next floating-point value after x towards y.
+[clinic start generated code]*/
+
+static PyObject *
+math_nextafter_impl(PyObject *module, double x, double y)
+/*[clinic end generated code: output=750c8266c1c540ce input=02b2d50cd1d9f9b6]*/
+{
+    double f = nextafter(x, y);
+    return PyFloat_FromDouble(f);
+}
+
+
+/*[clinic input]
+math.ulp -> double
+
+    x: double
+    /
+
+Return the value of the least significant bit of the float x.
+[clinic start generated code]*/
+
+static double
+math_ulp_impl(PyObject *module, double x)
+/*[clinic end generated code: output=f5207867a9384dd4 input=31f9bfbbe373fcaa]*/
+{
+    if (Py_IS_NAN(x)) {
+        return x;
+    }
+    x = fabs(x);
+    if (Py_IS_INFINITY(x)) {
+        return x;
+    }
+    double inf = m_inf();
+    double x2 = nextafter(x, inf);
+    if (Py_IS_INFINITY(x2)) {
+        /* special case: x is the largest positive representable float */
+        x2 = nextafter(x, -inf);
+        return x - x2;
+    }
+    return x2 - x;
+}
+
+
 static PyMethodDef math_methods[] = {
     {"acos",            math_acos,      METH_O,         math_acos_doc},
     {"acosh",           math_acosh,     METH_O,         math_acosh_doc},
@@ -3346,6 +3396,8 @@ static PyMethodDef math_methods[] = {
     MATH_PROD_METHODDEF
     MATH_PERM_METHODDEF
     MATH_COMB_METHODDEF
+    MATH_NEXTAFTER_METHODDEF
+    MATH_ULP_METHODDEF
     {NULL,              NULL}           /* sentinel */
 };
 

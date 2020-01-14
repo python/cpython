@@ -1,2 +1,0 @@
-Remove ``PyMethod_ClearFreeList()`` and ``PyCFunction_ClearFreeList()``
-functions: the free lists of bound method objects have been removed.

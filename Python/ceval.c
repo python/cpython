@@ -585,11 +585,11 @@ error:
 }
 
 void
-_Py_FinishPendingCalls(_PyRuntimeState *runtime)
+_Py_FinishPendingCalls(PyThreadState *tstate)
 {
     assert(PyGILState_Check());
 
-    PyThreadState *tstate = _PyRuntimeState_GetThreadState(runtime);
+    _PyRuntimeState *runtime = tstate->interp->runtime;
     struct _pending_calls *pending = &runtime->ceval.pending;
 
     PyThread_acquire_lock(pending->lock, WAIT_LOCK);
@@ -1913,7 +1913,8 @@ main_loop:
         case TARGET(RETURN_VALUE): {
             retval = POP();
             assert(f->f_iblock == 0);
-            goto exit_returning;
+            assert(EMPTY());
+            goto exiting;
         }
 
         case TARGET(GET_AITER): {
@@ -2083,7 +2084,7 @@ main_loop:
             /* and repeat... */
             assert(f->f_lasti >= (int)sizeof(_Py_CODEUNIT));
             f->f_lasti -= sizeof(_Py_CODEUNIT);
-            goto exit_yielding;
+            goto exiting;
         }
 
         case TARGET(YIELD_VALUE): {
@@ -2100,7 +2101,7 @@ main_loop:
             }
 
             f->f_stacktop = stack_pointer;
-            goto exit_yielding;
+            goto exiting;
         }
 
         case TARGET(POP_EXCEPT): {
@@ -3611,8 +3612,14 @@ exception_unwind:
                 PUSH(exc);
                 JUMPTO(handler);
                 if (_Py_TracingPossible(ceval)) {
-                    /* Make sure that we trace line after exception */
-                    instr_prev = INT_MAX;
+                    int needs_new_execution_window = (f->f_lasti < instr_lb || f->f_lasti >= instr_ub);
+                    int needs_line_update = (f->f_lasti == instr_lb || f->f_lasti < instr_prev);
+                    /* Make sure that we trace line after exception if we are in a new execution
+                     * window or we don't need a line update and we are not in the first instruction
+                     * of the line. */
+                    if (needs_new_execution_window || (!needs_line_update && instr_lb > 0)) {
+                        instr_prev = INT_MAX;
+                    }
                 }
                 /* Resume normal execution */
                 goto main_loop;
@@ -3626,15 +3633,13 @@ exception_unwind:
     assert(retval == NULL);
     assert(_PyErr_Occurred(tstate));
 
-exit_returning:
-
     /* Pop remaining stack entries. */
     while (!EMPTY()) {
         PyObject *o = POP();
         Py_XDECREF(o);
     }
 
-exit_yielding:
+exiting:
     if (tstate->use_tracing) {
         if (tstate->c_tracefunc) {
             if (call_trace_protected(tstate->c_tracefunc, tstate->c_traceobj,

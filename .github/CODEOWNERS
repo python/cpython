@@ -11,6 +11,7 @@
 **/*context*                  @1st1
 **/*genobject*                @1st1
 **/*hamt*                     @1st1
+Objects/set*                  @rhettinger
 Objects/dict*                 @methane
 
 # Hashing
@@ -116,6 +117,7 @@ Include/pytime.h              @pganssle @abalkin
 
 **/*enum*                     @ethanfurman
 **/*cgi*                      @ethanfurman
+**/*tarfile*                  @ethanfurman
 
 # macOS
 /Mac/                         @python/macos-team

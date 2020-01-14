@@ -83,7 +83,7 @@ Other Language Changes
 
 * Python now gets the absolute path of the script filename specified on
   the command line (ex: ``python3 script.py``): the ``__file__`` attribute of
-  the :mod:`__main__` module, ``sys.argv[0]`` and ``sys.path[0]`` become an
+  the :mod:`__main__` module and ``sys.path[0]`` become an
   absolute path, rather than a relative path. These paths now remain valid
   after the current directory is changed by :func:`os.chdir`. As a side effect,
   a traceback also displays the absolute path for :mod:`__main__` module frames
@@ -129,6 +129,13 @@ that would produce an equivalent :class:`ast.AST` object when parsed.
 asyncio
 -------
 
+Due to significant security concerns, the *reuse_address* parameter of
+:meth:`asyncio.loop.create_datagram_endpoint` is no longer supported. This is
+because of the behavior of the socket option ``SO_REUSEADDR`` in UDP. For more
+details, see the documentation for ``loop.create_datagram_endpoint()``.
+(Contributed by Kyle Stanley, Antoine Pitrou, and Yury Selivanov in
+:issue:`37228`.)
+
 Added a new :term:`coroutine` :meth:`~asyncio.loop.shutdown_default_executor`
 that schedules a shutdown for the default executor that waits on the
 :class:`~concurrent.futures.ThreadPoolExecutor` to finish closing. Also,
@@ -152,6 +159,49 @@ Added constants :data:`~fcntl.F_OFD_GETLK`, :data:`~fcntl.F_OFD_SETLK`
 and :data:`~fcntl.F_OFD_SETLKW`.
 (Contributed by Dong-hee Na in :issue:`38602`.)
 
+ftplib
+-------
+
+:class:`~ftplib.FTP` and :class:`~ftplib.FTP_TLS` now raise a :class:`ValueError`
+if the given timeout for their constructor is zero to prevent the creation of
+a non-blocking socket. (Contributed by Dong-hee Na in :issue:`39259`.)
+
+gc
+--
+
+When the garbage collector makes a collection in which some objects resurrect
+(they are reachable from outside the isolated cycles after the finalizers have
+been executed), do not block the collection of all objects that are still
+unreachable. (Contributed by Pablo Galindo and Tim Peters in :issue:`38379`.)
+
+imaplib
+-------
+
+:class:`~imaplib.IMAP4` and :class:`~imaplib.IMAP4_SSL` now have
+an optional *timeout* parameter for their constructors.
+Also, the :meth:`~imaplib.IMAP4.open` method now has an optional *timeout* parameter
+with this change. The overridden methods of :class:`~imaplib.IMAP4_SSL` and
+:class:`~imaplib.IMAP4_stream` were applied to this change.
+(Contributed by Dong-hee Na in :issue:`38615`.)
+
+math
+----
+
+Add :func:`math.nextafter`: return the next floating-point value after *x*
+towards *y*.
+(Contributed by Victor Stinner in :issue:`39288`.)
+
+Add :func:`math.ulp`: return the value of the least significant bit
+of a float.
+(Contributed by Victor Stinner in :issue:`39310`.)
+
+nntplib
+-------
+
+:class:`~nntplib.NNTP` and :class:`~nntplib.NNTP_SSL` now raise a :class:`ValueError`
+if the given timeout for their constructor is zero to prevent the creation of
+a non-blocking socket. (Contributed by Dong-hee Na in :issue:`39259`.)
+
 os
 --
 
@@ -161,6 +211,13 @@ Added :data:`~os.CLD_KILLED` and :data:`~os.CLD_STOPPED` for :attr:`si_code`.
 Exposed the Linux-specific :func:`os.pidfd_open` (:issue:`38692`) and
 :data:`os.P_PIDFD` (:issue:`38713`) for process management with file
 descriptors.
+
+poplib
+------
+
+:class:`~poplib.POP3` and :class:`~poplib.POP3_SSL` now raise a :class:`ValueError`
+if the given timeout for their constructor is zero to prevent the creation of
+a non-blocking socket. (Contributed by Dong-hee Na in :issue:`39259`.)
 
 threading
 ---------
@@ -210,6 +267,13 @@ ipaddress
 Scoped IPv6 addresses can be parsed using :class:`ipaddress.IPv6Address`.
 If present, scope zone ID is available through the :attr:`~ipaddress.IPv6Address.scope_id` attribute.
 (Contributed by Oleksand Pavliuk in :issue:`34788`.)
+
+smtplib
+-------
+
+:class:`~smtplib.SMTP` and :class:`~smtplib.SMTP_SSL` now raise a :class:`ValueError`
+if the given timeout for their constructor is zero to prevent the creation of
+a non-blocking socket. (Contributed by Dong-hee Na in :issue:`39259`.)
 
 signal
 ------
@@ -284,9 +348,17 @@ Deprecated
   predicable behavior.
   (Contributed by Serhiy Storchaka in :issue:`38371`.)
 
+* The explicit passing of coroutine objects to :func:`asyncio.wait` has been
+  deprecated and will be removed in version 3.11.
+  (Contributed by Yury Selivanov and Kyle Stanley in :issue:`34790`.)
 
 Removed
 =======
+
+* :class:`array.array`: ``tostring()`` and ``fromstring()`` methods have been
+  removed. They were aliases to ``tobytes()`` and ``frombytes()``, deprecated
+  since Python 3.2.
+  (Contributed by Victor Stinner in :issue:`38916`.)
 
 * The abstract base classes in :mod:`collections.abc` no longer are
   exposed in the regular :mod:`collections` module.  This will help
@@ -367,6 +439,10 @@ Changes in the Python API
 
 * The :mod:`venv` activation scripts no longer special-case when
   ``__VENV_PROMPT__`` is set to ``""``.
+
+* The :meth:`select.epoll.unregister` method no longer ignores the
+  :data:`~errno.EBADF` error.
+  (Contributed by Victor Stinner in :issue:`39239`.)
 
 
 CPython bytecode changes

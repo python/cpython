@@ -15,7 +15,7 @@ struct _frame;
 
 #include "pycore_pystate.h"   /* PyInterpreterState.eval_frame */
 
-PyAPI_FUNC(void) _Py_FinishPendingCalls(struct pyruntimestate *runtime);
+PyAPI_FUNC(void) _Py_FinishPendingCalls(PyThreadState *tstate);
 PyAPI_FUNC(void) _PyEval_Initialize(struct _ceval_runtime_state *);
 PyAPI_FUNC(void) _PyEval_FiniThreads(
     struct _ceval_runtime_state *ceval);

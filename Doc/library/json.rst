@@ -732,11 +732,23 @@ Command line options
 
    .. versionadded:: 3.5
 
+.. cmdoption:: --no-ensure-ascii
+
+   Disable escaping of non-ascii characters, see :func:`json.dumps` for more information.
+
+   .. versionadded:: 3.9
+
 .. cmdoption:: --json-lines
 
    Parse every input line as separate JSON object.
 
    .. versionadded:: 3.8
+
+.. cmdoption:: --indent, --tab, --no-indent, --compact
+
+   Mutually exclusive options for whitespace control
+
+   .. versionadded:: 3.9
 
 .. cmdoption:: -h, --help
 

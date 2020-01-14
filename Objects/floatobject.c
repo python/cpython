@@ -905,6 +905,34 @@ float___trunc___impl(PyObject *self)
     return PyLong_FromDouble(wholepart);
 }
 
+/*[clinic input]
+float.__floor__
+
+Return the floor as an Integral.
+[clinic start generated code]*/
+
+static PyObject *
+float___floor___impl(PyObject *self)
+/*[clinic end generated code: output=e0551dbaea8c01d1 input=77bb13eb12e268df]*/
+{
+    double x = PyFloat_AS_DOUBLE(self);
+    return PyLong_FromDouble(floor(x));
+}
+
+/*[clinic input]
+float.__ceil__
+
+Return the ceiling as an Integral.
+[clinic start generated code]*/
+
+static PyObject *
+float___ceil___impl(PyObject *self)
+/*[clinic end generated code: output=a2fd8858f73736f9 input=79e41ae94aa0a516]*/
+{
+    double x = PyFloat_AS_DOUBLE(self);
+    return PyLong_FromDouble(ceil(x));
+}
+
 /* double_round: rounds a finite double to the closest multiple of
    10**-ndigits; here ndigits is within reasonable bounds (typically, -308 <=
    ndigits <= 323).  Returns a Python float, or sets a Python error and
@@ -1828,6 +1856,8 @@ float___format___impl(PyObject *self, PyObject *format_spec)
 static PyMethodDef float_methods[] = {
     FLOAT_CONJUGATE_METHODDEF
     FLOAT___TRUNC___METHODDEF
+    FLOAT___FLOOR___METHODDEF
+    FLOAT___CEIL___METHODDEF
     FLOAT___ROUND___METHODDEF
     FLOAT_AS_INTEGER_RATIO_METHODDEF
     FLOAT_FROMHEX_METHODDEF

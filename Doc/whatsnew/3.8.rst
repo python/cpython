@@ -2204,3 +2204,13 @@ Here's a summary of performance improvements since Python 3.3:
         loop_overhead                    0.3     0.5     0.6     0.4     0.3     0.3
 
     (Measured from the macOS 64-bit builds found at python.org)
+
+Notable changes in Python 3.8.1
+===============================
+
+Due to significant security concerns, the *reuse_address* parameter of
+:meth:`asyncio.loop.create_datagram_endpoint` is no longer supported. This is
+because of the behavior of the socket option ``SO_REUSEADDR`` in UDP. For more
+details, see the documentation for ``loop.create_datagram_endpoint()``.
+(Contributed by Kyle Stanley, Antoine Pitrou, and Yury Selivanov in
+:issue:`37228`.)

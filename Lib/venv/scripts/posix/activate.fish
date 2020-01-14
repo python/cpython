@@ -1,7 +1,7 @@
 # This file must be used with "source <venv>/bin/activate.fish" *from fish*
 # (http://fishshell.org); you cannot run it directly.
 
-function deactivate  -d "Exit virtualenv and return to normal shell environment"
+function deactivate  -d "Exit virtual environment and return to normal shell environment"
     # reset old environment variables
     if test -n "$_OLD_VIRTUAL_PATH"
         set -gx PATH $_OLD_VIRTUAL_PATH

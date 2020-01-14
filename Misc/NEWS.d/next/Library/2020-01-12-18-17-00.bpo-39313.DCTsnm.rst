@@ -1,0 +1,2 @@
+Add a new ``exec_function`` option (*--exec-function* in the CLI) to
+``RefactoringTool`` for making ``exec`` a function. Patch by Batuhan Taskaya.

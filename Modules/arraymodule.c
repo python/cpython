@@ -1624,27 +1624,6 @@ frombytes(arrayobject *self, Py_buffer *buffer)
 }
 
 /*[clinic input]
-array.array.fromstring
-
-    buffer: Py_buffer(accept={str, buffer})
-    /
-
-Appends items from the string, interpreting it as an array of machine values, as if it had been read from a file using the fromfile() method).
-
-This method is deprecated. Use frombytes instead.
-[clinic start generated code]*/
-
-static PyObject *
-array_array_fromstring_impl(arrayobject *self, Py_buffer *buffer)
-/*[clinic end generated code: output=31c4baa779df84ce input=a3341a512e11d773]*/
-{
-    if (PyErr_WarnEx(PyExc_DeprecationWarning,
-            "fromstring() is deprecated. Use frombytes() instead.", 2) != 0)
-        return NULL;
-    return frombytes(self, buffer);
-}
-
-/*[clinic input]
 array.array.frombytes
 
     buffer: Py_buffer
@@ -1676,24 +1655,6 @@ array_array_tobytes_impl(arrayobject *self)
     } else {
         return PyErr_NoMemory();
     }
-}
-
-/*[clinic input]
-array.array.tostring
-
-Convert the array to an array of machine values and return the bytes representation.
-
-This method is deprecated. Use tobytes instead.
-[clinic start generated code]*/
-
-static PyObject *
-array_array_tostring_impl(arrayobject *self)
-/*[clinic end generated code: output=7d6bd92745a2c8f3 input=b6c0ddee7b30457e]*/
-{
-    if (PyErr_WarnEx(PyExc_DeprecationWarning,
-            "tostring() is deprecated. Use tobytes() instead.", 2) != 0)
-        return NULL;
-    return array_array_tobytes_impl(self);
 }
 
 /*[clinic input]
@@ -2283,7 +2244,6 @@ static PyMethodDef array_methods[] = {
     ARRAY_ARRAY_EXTEND_METHODDEF
     ARRAY_ARRAY_FROMFILE_METHODDEF
     ARRAY_ARRAY_FROMLIST_METHODDEF
-    ARRAY_ARRAY_FROMSTRING_METHODDEF
     ARRAY_ARRAY_FROMBYTES_METHODDEF
     ARRAY_ARRAY_FROMUNICODE_METHODDEF
     ARRAY_ARRAY_INDEX_METHODDEF
@@ -2294,7 +2254,6 @@ static PyMethodDef array_methods[] = {
     ARRAY_ARRAY_REVERSE_METHODDEF
     ARRAY_ARRAY_TOFILE_METHODDEF
     ARRAY_ARRAY_TOLIST_METHODDEF
-    ARRAY_ARRAY_TOSTRING_METHODDEF
     ARRAY_ARRAY_TOBYTES_METHODDEF
     ARRAY_ARRAY_TOUNICODE_METHODDEF
     ARRAY_ARRAY___SIZEOF___METHODDEF
