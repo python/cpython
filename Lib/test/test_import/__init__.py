@@ -3,6 +3,7 @@ import contextlib
 import errno
 import glob
 import importlib.util
+import inspect
 from importlib._bootstrap_external import _get_sourcefile
 import marshal
 import os
@@ -26,7 +27,7 @@ from test.support import (
     temp_dir, DirsOnSysPath)
 from test.support import script_helper
 from test.test_importlib.util import uncache
-
+from types import ModuleType
 
 skip_if_dont_write_bytecode = unittest.skipIf(
         sys.dont_write_bytecode,
@@ -49,6 +50,8 @@ def _ready_to_import(name=None, source=""):
     # reverts or removes the module when cleaning up
     name = name or "spam"
     with temp_dir() as tempdir:
+        if os.sep in name:
+            os.makedirs(os.path.join(tempdir, name.rpartition(os.sep)[0]))
         path = script_helper.make_script(tempdir, name, source)
         old_module = sys.modules.pop(name, None)
         try:
@@ -1338,6 +1341,39 @@ class CircularImportTests(unittest.TestCase):
             "(most likely due to a circular import)",
             str(cm.exception),
         )
+
+    def test_unwritable_module(self):
+        package = inspect.cleandoc('''
+            import sys
+
+            class MyMod(object):
+               __slots__ = ['__builtins__', '__cached__', '__doc__',
+                            '__file__', '__loader__', '__name__',
+                            '__package__', '__path__', '__spec__']
+               def __init__(self):
+                   for attr in self.__slots__:
+                       setattr(self, attr, globals()[attr])
+
+
+            sys.modules['spam'] = MyMod()
+        ''')
+
+        init = os.path.join('spam', '__init__')
+        with _ready_to_import(init, package) as (name, path):
+            with open(os.path.join(os.path.dirname(path), 'x.py'), 'w+'):
+                pass
+
+            try:
+                import spam
+                with self.assertWarns(ImportWarning):
+                    from spam import x
+
+                self.assertNotEqual(type(spam), ModuleType)
+                self.assertEqual(type(x), ModuleType)
+                with self.assertRaises(AttributeError):
+                    spam.x = 42
+            finally:
+                del sys.modules['spam.x']
 
 
 if __name__ == '__main__':

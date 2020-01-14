@@ -978,7 +978,13 @@ def _find_and_load_unlocked(name, import_):
     if parent:
         # Set the module as an attribute on its parent.
         parent_module = sys.modules[parent]
-        setattr(parent_module, name.rpartition('.')[2], module)
+        child = name.rpartition('.')[2]
+        try:
+            setattr(parent_module, child, module)
+        except AttributeError:
+            msg = (f"Can't set child package '{child}' on "
+                   f"parent '{parent}'")
+            _warnings.warn(msg, ImportWarning)
     return module
 
 
