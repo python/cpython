@@ -115,7 +115,8 @@ Protocol) and :rfc:`1869` (SMTP Service Extensions).
       If the *timeout* parameter is set to be zero, it will raise a
       :class:`ValueError` to prevent the creation of a non-blocking socket
 
-.. class:: LMTP(host='', port=LMTP_PORT, local_hostname=None, source_address=None)
+.. class:: LMTP(host='', port=LMTP_PORT, local_hostname=None,
+                source_address=None[, timeout])
 
    The LMTP protocol, which is very similar to ESMTP, is heavily based on the
    standard SMTP client. It's common to use Unix sockets for LMTP, so our
@@ -127,6 +128,9 @@ Protocol) and :rfc:`1869` (SMTP Service Extensions).
    Authentication is supported, using the regular SMTP mechanism. When using a
    Unix socket, LMTP generally don't support or require any authentication, but
    your mileage might vary.
+
+   .. versionchanged:: 3.9
+      The optional *timeout* parameter was added.
 
 
 A nice selection of exceptions is defined as well:
