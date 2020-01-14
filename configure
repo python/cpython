@@ -1483,80 +1483,102 @@ Optional Features:
   --disable-FEATURE       do not include FEATURE (same as --enable-FEATURE=no)
   --enable-FEATURE[=ARG]  include FEATURE [ARG=yes]
   --enable-universalsdk[=SDKDIR]
-                          Build fat binary against Mac OS X SDK
+                          create a universal binary build. SDKDIR specifies
+                          which macOS SDK should be used to perform the build,
+                          see Mac/README.rst. (default is no)
   --enable-framework[=INSTALLDIR]
-                          Build (MacOSX|Darwin) framework
-  --enable-shared         disable/enable building shared python library
-  --enable-profiling      enable C-level code profiling
-  --enable-optimizations  Enable expensive, stable optimizations (PGO, etc).
-                          Disabled by default.
+                          create a Python.framework rather than a traditional
+                          Unix install. optional INSTALLDIR specifies the
+                          installation path. see Mac/README.rst (default is
+                          no)
+  --enable-shared         enable building a shared Python library (default is
+                          no)
+  --enable-profiling      enable C-level code profiling with gprof (default is
+                          no)
+  --enable-optimizations  enable expensive, stable optimizations (PGO, etc.)
+                          (default is no)
   --enable-loadable-sqlite-extensions
-                          support loadable extensions in _sqlite module
-  --enable-ipv6           Enable ipv6 (with ipv4) support
-  --disable-ipv6          Disable ipv6 support
-  --enable-big-digits[=BITS]
-                          use big digits for Python longs [[BITS=30]]
+                          support loadable extensions in _sqlite module, see
+                          Doc/library/sqlite3.rst (default is no)
+  --enable-ipv6           enable ipv6 (with ipv4) support, see
+                          Doc/library/socket.rst (default is yes if supported)
+  --enable-big-digits[=15|30]
+                          use big digits (30 or 15 bits) for Python longs
+                          (default is system-dependent)]
 
 Optional Packages:
   --with-PACKAGE[=ARG]    use PACKAGE [ARG=yes]
   --without-PACKAGE       do not use PACKAGE (same as --with-PACKAGE=no)
   --with-universal-archs=ARCH
-                          select architectures for universal build ("32-bit",
-                          "64-bit", "3-way", "intel", "intel-32", "intel-64",
-                          or "all")
+                          specify the kind of universal binary that should be
+                          created. this option is only valid when
+                          --enable-universalsdk is set; options are:
+                          ("32-bit", "64-bit", "3-way", "intel", "intel-32",
+                          "intel-64", or "all") see Mac/README.rst
   --with-framework-name=FRAMEWORK
-                          specify an alternate name of the framework built
-                          with --enable-framework
-  --with-cxx-main=<compiler>
-                          compile main() and link python executable with C++
-                          compiler
-  --with-suffix=.exe      set executable suffix
-  --with-pydebug          build with Py_DEBUG defined
+                          specify the name for the python framework on macOS
+                          only valid when --enable-framework is set. see
+                          Mac/README.rst (default is 'Python')
+  --with-cxx-main[=COMPILER]
+                          compile main() and link Python executable with C++
+                          compiler specified in COMPILER (default is $CXX)
+  --with-suffix=SUFFIX    set executable suffix to SUFFIX (default is '.exe')
+  --with-pydebug          build with Py_DEBUG defined (default is no)
   --with-trace-refs       enable tracing references for debugging purpose
-  --with-assertions       build with C assertions enabled
-  --with-lto              Enable Link Time Optimization in any build. Disabled
-                          by default.
+                          (default is no)
+  --with-assertions       build with C assertions enabled (default is no)
+  --with-lto              enable Link-Time-Optimization in any build (default
+                          is no)
   --with-hash-algorithm=[fnv|siphash24]
-                          select hash algorithm
+                          select hash algorithm for use in Python/pyhash.c
+                          (default is SipHash24)
   --with-address-sanitizer
-                          enable AddressSanitizer (asan)
-  --with-memory-sanitizer enable MemorySanitizer (msan)
+                          enable AddressSanitizer memory error detector,
+                          'asan' (default is no)
+  --with-memory-sanitizer enable MemorySanitizer allocation error detector,
+                          'msan' (default is no)
   --with-undefined-behavior-sanitizer
-                          enable UndefinedBehaviorSanitizer (ubsan)
-  --with-libs='lib1 ...'  link against additional libs
+                          enable UndefinedBehaviorSanitizer undefined
+                          behaviour detector, 'ubsan' (default is no)
+  --with-libs='lib1 ...'  link against additional libs (default is no)
   --with-system-expat     build pyexpat module using an installed expat
-                          library
-  --with-system-ffi       build _ctypes module using an installed ffi library
+                          library, see Doc/library/pyexpat.rst (default is no)
+  --with-system-ffi       build _ctypes module using an installed ffi library,
+                          see Doc/library/ctypes.rst (default is
+                          system-dependent)
   --with-system-libmpdec  build _decimal module using an installed libmpdec
-                          library
+                          library, see Doc/library/decimal.rst (default is no)
   --with-tcltk-includes='-I...'
                           override search for Tcl and Tk include files
   --with-tcltk-libs='-L...'
                           override search for Tcl and Tk libs
   --with-dbmliborder=db1:db2:...
-                          order to check db backends for dbm. Valid value is a
-                          colon separated string with the backend names
-                          `ndbm', `gdbm' and `bdb'.
-  --with(out)-doc-strings disable/enable documentation strings
-  --with(out)-pymalloc    disable/enable specialized mallocs
-  --with(out)-c-locale-coercion
-                          disable/enable C locale coercion to a UTF-8 based
-                          locale
-  --with-valgrind         Enable Valgrind support
-  --with(out)-dtrace      disable/enable DTrace support
-  --with-libm=STRING      math library
-  --with-libc=STRING      C library
-  --with(out)-computed-gotos
-                          Use computed gotos in evaluation loop (enabled by
+                          override order to check db backends for dbm; a valid
+                          value is a colon separated string with the backend
+                          names `ndbm', `gdbm' and `bdb'.
+  --with-doc-strings      enable documentation strings (default is yes)
+  --with-pymalloc         enable specialized mallocs (default is yes)
+  --with-c-locale-coercion
+                          enable C locale coercion to a UTF-8 based locale
+                          (default is yes)
+  --with-valgrind         enable Valgrind support (default is no)
+  --with-dtrace           enable DTrace support (default is no)
+  --with-libm=STRING      override libm math library to STRING (default is
+                          system-dependent)
+  --with-libc=STRING      override libc C library to STRING (default is
+                          system-dependent)
+  --with-computed-gotos   enable computed gotos in evaluation loop (enabled by
                           default on supported compilers)
-  --with(out)-ensurepip=[=upgrade]
-                          "install" or "upgrade" using bundled pip
-  --with-openssl=DIR      root of the OpenSSL directory
+  --with-ensurepip[=install|upgrade|no]
+                          "install" or "upgrade" using bundled pip (default is
+                          upgrade)
+  --with-openssl=DIR      override root of the OpenSSL directory to DIR
   --with-ssl-default-suites=[python|openssl|STRING]
-                          Override default cipher suites string, python: use
+                          override default cipher suites string, python: use
                           Python's preferred selection (default), openssl:
                           leave OpenSSL's defaults untouched, STRING: use a
-                          custom string, PROTOCOL_SSLv2 ignores the setting
+                          custom string, PROTOCOL_SSLv2 ignores the setting,
+                          see Doc/library/ssl.rst
 
 Some influential environment variables:
   MACHDEP     name for machine-dependent library files
@@ -3248,7 +3270,7 @@ _ACEOF
 
 ##AC_ARG_WITH(dyld,
 ##            AS_HELP_STRING([--with-dyld],
-##                           [Use (OpenStep|Rhapsody) dynamic linker]))
+##                           [use (OpenStep|Rhapsody) dynamic linker]))
 ##
 # Set name for machine-dependent library files
 
