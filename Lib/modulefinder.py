@@ -8,7 +8,6 @@ import os
 import sys
 import types
 import warnings
-import tokenize
 
 
 LOAD_CONST = dis.opmap['LOAD_CONST']
@@ -81,27 +80,21 @@ def _find_module(name, path=None):
 
     if isinstance(spec.loader, importlib.machinery.SourceFileLoader):
         kind = _PY_SOURCE
-        mode = "r"
 
     elif isinstance(spec.loader, importlib.machinery.ExtensionFileLoader):
         kind = _C_EXTENSION
-        mode = "rb"
 
     elif isinstance(spec.loader, importlib.machinery.SourcelessFileLoader):
         kind = _PY_COMPILED
-        mode = "rb"
 
     else:  # Should never happen.
         return None, None, ("", "", _SEARCH_ERROR)
 
-    if mode == 'r':
-        file = tokenize.open(file_path)
-    else:
-        file = open(file_path, mode)
+    file = open(file_path, 'rb')
 
     suffix = os.path.splitext(file_path)[-1]
 
-    return file, file_path, (suffix, mode, kind)
+    return file, file_path, (suffix, 'rb', kind)
 
 
 class Module:
