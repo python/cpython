@@ -5,7 +5,6 @@ import py_compile
 import shutil
 import unittest
 import tempfile
-import tokenize
 
 from test import support
 
