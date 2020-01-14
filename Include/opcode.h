@@ -93,6 +93,9 @@ extern "C" {
 #define POP_JUMP_IF_FALSE       114
 #define POP_JUMP_IF_TRUE        115
 #define LOAD_GLOBAL             116
+#define IS_OP                   117
+#define CONTAINS_OP             118
+#define JUMP_IF_NOT_EXC_MATCH   121
 #define SETUP_FINALLY           122
 #define LOAD_FAST               124
 #define STORE_FAST              125
@@ -131,11 +134,6 @@ extern "C" {
    as we want it to be available to both frameobject.c and ceval.c, while
    remaining private.*/
 #define EXCEPT_HANDLER 257
-
-
-enum cmp_op {PyCmp_LT=Py_LT, PyCmp_LE=Py_LE, PyCmp_EQ=Py_EQ, PyCmp_NE=Py_NE,
-                PyCmp_GT=Py_GT, PyCmp_GE=Py_GE, PyCmp_IN, PyCmp_NOT_IN,
-                PyCmp_IS, PyCmp_IS_NOT, PyCmp_EXC_MATCH, PyCmp_BAD};
 
 #define HAS_ARG(op) ((op) >= HAVE_ARGUMENT)
 
