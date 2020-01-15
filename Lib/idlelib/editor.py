@@ -1338,8 +1338,8 @@ class EditorWindow(object):
             # Insert new line.
             text.insert("insert", '\n')
 
-            # Adjust indentation for continuations and block
-            # open/close.  First need to find the last statement.
+            # Adjust indentation for continuations and block open/close.
+            # First need to find the last statement.
             lno = index2line(text.index('insert'))
             y = pyparse.Parser(self.indentwidth, self.tabwidth)
             if not self.context_use_ps1:
