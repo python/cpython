@@ -20,14 +20,14 @@ as well as the older :rfc:`977` and :rfc:`2980`.
 Here are two small examples of how it can be used.  To list some statistics
 about a newsgroup and print the subjects of the last 10 articles::
 
-   >>> s = nntplib.NNTP('news.gmane.io')
-   >>> resp, count, first, last, name = s.group('gmane.comp.python.committers')
-   >>> print('Group', name, 'has', count, 'articles, range', first, 'to', last)
+   >>> s = nntplib.NNTP('news.gmane.io')  # doctest: +SKIP
+   >>> resp, count, first, last, name = s.group('gmane.comp.python.committers')  # doctest: +SKIP
+   >>> print('Group', name, 'has', count, 'articles, range', first, 'to', last)  # doctest: +SKIP
    Group gmane.comp.python.committers has 1096 articles, range 1 to 1096
-   >>> resp, overviews = s.over((last - 9, last))
+   >>> resp, overviews = s.over((last - 9, last))  # doctest: +SKIP
    >>> for id, over in overviews:
    ...     print(id, nntplib.decode_header(over['subject']))
-   ...
+   ...     # doctest: +SKIP
    1087 Re: Commit privileges for Łukasz Langa
    1088 Re: 3.2 alpha 2 freeze
    1089 Re: 3.2 alpha 2 freeze
@@ -38,17 +38,17 @@ about a newsgroup and print the subjects of the last 10 articles::
    1094 Re: Updated ssh key
    1095 Hello fellow committers!
    1096 Re: Hello fellow committers!
-   >>> s.quit()
+   >>> s.quit()  # doctest: +SKIP
    '205 Bye!'
 
 To post an article from a binary file (this assumes that the article has valid
 headers, and that you have right to post on the particular newsgroup)::
 
-   >>> s = nntplib.NNTP('news.gmane.io')
-   >>> f = open('article.txt', 'rb')
-   >>> s.post(f)
+   >>> s = nntplib.NNTP('news.gmane.io')  # doctest: +SKIP
+   >>> f = open('article.txt', 'rb')  # doctest: +SKIP
+   >>> s.post(f)  # doctest: +SKIP
    '240 Article posted successfully.'
-   >>> s.quit()
+   >>> s.quit()  # doctest: +SKIP
    '205 Bye!'
 
 The module itself defines the following classes:
