@@ -451,7 +451,7 @@ void
 PyErr_GetExcInfo(PyObject **p_type, PyObject **p_value, PyObject **p_traceback)
 {
     PyThreadState *tstate = _PyThreadState_GET();
-    return _PyErr_GetExcInfo(tstate, p_type, p_value, p_traceback);
+    _PyErr_GetExcInfo(tstate, p_type, p_value, p_traceback);
 }
 
 void
