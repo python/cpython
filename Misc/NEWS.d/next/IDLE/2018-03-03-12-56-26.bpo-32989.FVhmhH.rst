@@ -1,2 +1,2 @@
-Correct signature in call from editor to
-:meth:`pyparse.find_good_parse_start` and add tests for indent function.
+Fix call from editor newline_and_indent_event method to pyparse
+find_good_parse_start method.  Add tests for indent function.
