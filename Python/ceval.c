@@ -2827,6 +2827,7 @@ main_loop:
                 goto error;
             }
             Py_DECREF(update);
+            PREDICT(CALL_FUNCTION_EX);
             DISPATCH();
         }
 
