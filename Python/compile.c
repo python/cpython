@@ -23,8 +23,8 @@
 
 #include "Python.h"
 
-#include "Python-ast.h"
 #include "pycore_pystate.h"   /* _PyInterpreterState_GET_UNSAFE() */
+#include "Python-ast.h"
 #include "ast.h"
 #include "code.h"
 #include "symtable.h"
