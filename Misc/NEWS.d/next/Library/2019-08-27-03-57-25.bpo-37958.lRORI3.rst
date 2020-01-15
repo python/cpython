@@ -1,2 +1,2 @@
-Added the pstats.Stats.get_profile_dict() method to get retrieve the profile
-data as a StatsProfile object.
+Added the pstats.Stats.get_profile_dict() method to reture the profile
+data as a StatsProfile instance.
