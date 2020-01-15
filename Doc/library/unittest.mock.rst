@@ -854,7 +854,7 @@ object::
 
 .. class:: AsyncMock(spec=None, side_effect=None, return_value=DEFAULT, wraps=None, name=None, spec_set=None, unsafe=False, **kwargs)
 
-  An asynchronous version of :class:`Mock`. The :class:`AsyncMock` object will
+  An asynchronous version of :class:`MagicMock`. The :class:`AsyncMock` object will
   behave so the object is recognized as an async function, and the result of a
   call is an awaitable.
 
