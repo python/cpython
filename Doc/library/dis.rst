@@ -873,32 +873,25 @@ All of the following opcodes use their arguments.
    .. versionadded:: 3.9
 
 
-.. opcode:: SET_UPDATE
+.. opcode:: SET_UPDATE (i)
 
    Calls ``set.update(TOS1[-i], TOS)``.  Used to build sets.
 
    .. versionadded:: 3.9
 
 
-.. opcode:: BUILD_MAP_UNPACK (count)
+.. opcode:: DICT_UPDATE (i)
 
-   Pops *count* mappings from the stack, merges them into a single dictionary,
-   and pushes the result.  Implements dictionary unpacking in dictionary
-   displays ``{**x, **y, **z}``.
+   Calls ``dict.update(TOS1[-i], TOS)``.  Used to build dicts.
 
-   .. versionadded:: 3.5
+   .. versionadded:: 3.9
 
 
-.. opcode:: BUILD_MAP_UNPACK_WITH_CALL (count)
+.. opcode:: DICT_MERGE
 
-   This is similar to :opcode:`BUILD_MAP_UNPACK`,
-   but is used for ``f(**x, **y, **z)`` call syntax.  The stack item at
-   position ``count + 2`` should be the corresponding callable ``f``.
+    Like :opcode:`DICT_UPDATE` but raises an exception for duplicate keys.
 
-   .. versionadded:: 3.5
-   .. versionchanged:: 3.6
-      The position of the callable is determined by adding 2 to the opcode
-      argument instead of encoding it in the second byte of the argument.
+   .. versionadded:: 3.9
 
 
 .. opcode:: LOAD_ATTR (namei)
