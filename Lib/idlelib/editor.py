@@ -1306,9 +1306,7 @@ class EditorWindow(object):
         text = self.text
         first, last = self.get_selection_indices()
         text.undo_block_start()
-        # This is wrapped in a try so that the finally clause is always
-        # run when returning.
-        try:
+        try:  # Close undo block and expose new line in finally clause.
             if first and last:
                 text.delete(first, last)
                 text.mark_set("insert", first)
