@@ -6181,6 +6181,8 @@ sslmodule_init_constants(PyObject *m)
                             X509_V_FLAG_CRL_CHECK|X509_V_FLAG_CRL_CHECK_ALL);
     PyModule_AddIntConstant(m, "VERIFY_X509_STRICT",
                             X509_V_FLAG_X509_STRICT);
+    PyModule_AddIntConstant(m, "VERIFY_ALLOW_PROXY_CERTS",
+                            X509_V_FLAG_ALLOW_PROXY_CERTS);
 #ifdef X509_V_FLAG_TRUSTED_FIRST
     PyModule_AddIntConstant(m, "VERIFY_X509_TRUSTED_FIRST",
                             X509_V_FLAG_TRUSTED_FIRST);
