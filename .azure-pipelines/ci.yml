@@ -11,7 +11,7 @@ jobs:
 - job: Prebuild
   displayName: Pre-build checks
 
-  pool:
+  pexool:
     vmImage: ubuntu-16.04
 
   steps:
