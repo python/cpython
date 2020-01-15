@@ -67,11 +67,9 @@ class PyParseTest(unittest.TestCase):
                 '        pass\n'
                 )
 
-        # No value sent for is_char_in_string().
+        # Passing no value or non-callable should fail (issue 32989).
         with self.assertRaises(TypeError):
-            start(None)
-
-        # False sent for is_char_in_string() (see issue 32989)
+            start()
         with self.assertRaises(TypeError):
             start(False)
 
