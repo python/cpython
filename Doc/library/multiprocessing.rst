@@ -2252,7 +2252,7 @@ with the :class:`Pool` class.
    .. method:: successful()
 
       Return whether the call completed without raising an exception.  Will
-      raise :exc:`AssertionError` if the result is not ready.
+      raise :exc:`ValueError` if the result is not ready.
 
 The following example demonstrates the use of a pool::
 
