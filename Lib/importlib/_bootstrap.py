@@ -982,8 +982,7 @@ def _find_and_load_unlocked(name, import_):
         try:
             setattr(parent_module, child, module)
         except AttributeError:
-            msg = (f"Can't set child package '{child}' on "
-                   f"parent '{parent}'")
+            msg = f"Cannot set an attribute on {parent!r} for child module {child!r}"
             _warnings.warn(msg, ImportWarning)
     return module
 

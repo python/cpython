@@ -1343,38 +1343,22 @@ class CircularImportTests(unittest.TestCase):
         )
 
     def test_unwritable_module(self):
-        package = inspect.cleandoc('''
-            import sys
-
-            class MyMod(object):
-               __slots__ = ['__builtins__', '__cached__', '__doc__',
-                            '__file__', '__loader__', '__name__',
-                            '__package__', '__path__', '__spec__']
-               def __init__(self):
-                   for attr in self.__slots__:
-                       setattr(self, attr, globals()[attr])
-
-
-            sys.modules['spam'] = MyMod()
-        ''')
-
-        init = os.path.join('spam', '__init__')
-        with _ready_to_import(init, package) as (name, path):
-            with open(os.path.join(os.path.dirname(path), 'x.py'), 'w+'):
-                pass
-
+        sys.path.insert(0, os.path.join(os.path.dirname(__file__), 'data'))
+        try:
             try:
-                import spam
+                import unwritable
                 with self.assertWarns(ImportWarning):
-                    from spam import x
+                    from unwritable import x
 
-                self.assertNotEqual(type(spam), ModuleType)
+                self.assertNotEqual(type(unwritable), ModuleType)
                 self.assertEqual(type(x), ModuleType)
                 with self.assertRaises(AttributeError):
-                    spam.x = 42
+                    unwritable.x = 42
             finally:
-                del sys.modules['spam.x']
-
+                sys.modules['unwritable.x']
+                sys.modules['unwritable']
+        finally:
+            del sys.path[0]
 
 if __name__ == '__main__':
     # Test needs to be a package, so we can do relative imports.
