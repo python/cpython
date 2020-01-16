@@ -416,6 +416,10 @@ Removed
   :func:`base64.decodebytes` instead.
   (Contributed by Victor Stinner in :issue:`39351`.)
 
+* ``fractions.gcd()`` function has been removed, it was deprecated since Python
+  3.5 (:issue:`22486`): use :func:`math.gcd` instead.
+  (Contributed by Victor Stinner in :issue:`39350`.)
+
 
 Porting to Python 3.9
 =====================
