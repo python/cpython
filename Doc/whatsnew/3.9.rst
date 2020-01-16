@@ -411,6 +411,11 @@ Removed
   of :pep:`442`. Patch by Joannah Nanjekye.
   (Contributed by Joannah Nanjekye in :issue:`15088`)
 
+* ``base64.encodestring()`` and ``base64.decodestring()``, aliases deprecated
+  since Python 3.1, have been removed: use :func:`base64.encodebytes` and
+  :func:`base64.decodebytes` instead.
+  (Contributed by Victor Stinner in :issue:`39351`.)
+
 
 Porting to Python 3.9
 =====================
