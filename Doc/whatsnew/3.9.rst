@@ -426,6 +426,10 @@ Removed
   is opened.
   (Contributed by Victor Stinner in :issue:`39357`.)
 
+* The ``formatter`` module has been removed. It was deprecated since Python 3.4
+  and was not tested.
+  (Contributed by Victor Stinner in :issue:`39352`.)
+
 
 Porting to Python 3.9
 =====================

@@ -1,0 +1,2 @@
+Remove the ``formatter`` module. It was deprecated since Python 3.4 and was not
+tested.
