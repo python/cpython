@@ -65,6 +65,19 @@ class UserStringTest(
         # Check that errors defaults to 'strict'
         self.checkraises(UnicodeError, '\ud800', 'encode', None, None)
 
+    def test_format_type(self):
+        class UserStringSubclass(UserString):
+            pass
+
+        self.assertIsInstance(
+            UserStringSubclass('Hello, {}!').format('World'),
+            UserStringSubclass
+        )
+        self.assertIsInstance(
+            UserStringSubclass('Hello, {name}!').format_map({'name': 'World'}),
+            UserStringSubclass
+        )
+
 
 if __name__ == "__main__":
     unittest.main()
