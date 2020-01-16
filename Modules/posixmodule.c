@@ -9193,6 +9193,9 @@ posix_sendfile(PyObject *self, PyObject *args, PyObject *kwdict)
 #else
         ret = sendfile(in, out, offset, len, &sf, &sbytes, flags);
 #endif
+        // On BSD and MACOS sendfile() can fail with EINTR, EAGAIN or EBUSY but
+        // *sbytes* can be non-zero in case some data was sent (partial send),
+        // so we consider this a success.
         if (sbytes > 0)
             break;
         Py_END_ALLOW_THREADS
