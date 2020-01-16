@@ -11,7 +11,7 @@ import time
 import random
 
 from test import support
-from test.support import script_helper
+from test.support import script_helper, ALWAYS_EQ
 
 # Used in ReferencesTestCase.test_ref_created_during_del() .
 ref_from_del = None
@@ -285,6 +285,21 @@ class ReferencesTestCase(TestBase):
         p //= 5
         self.assertEqual(p, 21)
 
+    def test_proxy_matmul(self):
+        class C:
+            def __matmul__(self, other):
+                return 1729
+            def __rmatmul__(self, other):
+                return -163
+            def __imatmul__(self, other):
+                return 561
+        o = C()
+        p = weakref.proxy(o)
+        self.assertEqual(p @ 5, 1729)
+        self.assertEqual(5 @ p, -163)
+        p @= 5
+        self.assertEqual(p, 561)
+
     # The PyWeakref_* C API is documented as allowing either NULL or
     # None as the value for the callback, where either means "no
     # callback".  The "no callback" ref and proxy objects are supposed
@@ -375,6 +390,26 @@ class ReferencesTestCase(TestBase):
         class List(list): pass
         lyst = List()
         self.assertEqual(bool(weakref.proxy(lyst)), bool(lyst))
+
+    def test_proxy_iter(self):
+        # Test fails with a debug build of the interpreter
+        # (see bpo-38395).
+
+        obj = None
+
+        class MyObj:
+            def __iter__(self):
+                nonlocal obj
+                del obj
+                return NotImplemented
+
+        obj = MyObj()
+        p = weakref.proxy(obj)
+        with self.assertRaises(TypeError):
+            # "blech" in p calls MyObj.__iter__ through the proxy,
+            # without keeping a reference to the real object, so it
+            # can be killed in the middle of the call
+            "blech" in p
 
     def test_getweakrefcount(self):
         o = C()
@@ -779,6 +814,10 @@ class ReferencesTestCase(TestBase):
         self.assertTrue(a != c)
         self.assertTrue(a == d)
         self.assertFalse(a != d)
+        self.assertFalse(a == x)
+        self.assertTrue(a != x)
+        self.assertTrue(a == ALWAYS_EQ)
+        self.assertFalse(a != ALWAYS_EQ)
         del x, y, z
         gc.collect()
         for r in a, b, c:
@@ -1087,6 +1126,9 @@ class WeakMethodTestCase(unittest.TestCase):
         _ne(a, f)
         _ne(b, e)
         _ne(b, f)
+        # Compare with different types
+        _ne(a, x.some_method)
+        _eq(a, ALWAYS_EQ)
         del x, y, z
         gc.collect()
         # Dead WeakMethods compare by identity
@@ -1770,6 +1812,11 @@ class MappingTestCase(TestBase):
         # copying should not result in a crash.
         self.check_threaded_weak_dict_copy(weakref.WeakValueDictionary, True)
 
+    @support.cpython_only
+    def test_remove_closure(self):
+        d = weakref.WeakValueDictionary()
+        self.assertIsNone(d._remove.__closure__)
+
 
 from test import mapping_tests
 
@@ -1851,20 +1898,10 @@ class FinalizeTestCase(unittest.TestCase):
         f()
         self.assertEqual(res, [((1, 2), {'func': 3, 'obj': 4})])
 
-        res = []
-        with self.assertWarns(DeprecationWarning):
-            f = weakref.finalize(a, func=fin, arg=1)
-        self.assertEqual(f.peek(), (a, fin, (), {'arg': 1}))
-        f()
-        self.assertEqual(res, [((), {'arg': 1})])
-
-        res = []
-        with self.assertWarns(DeprecationWarning):
-            f = weakref.finalize(obj=a, func=fin, arg=1)
-        self.assertEqual(f.peek(), (a, fin, (), {'arg': 1}))
-        f()
-        self.assertEqual(res, [((), {'arg': 1})])
-
+        with self.assertRaises(TypeError):
+            weakref.finalize(a, func=fin, arg=1)
+        with self.assertRaises(TypeError):
+            weakref.finalize(obj=a, func=fin, arg=1)
         self.assertRaises(TypeError, weakref.finalize, a)
         self.assertRaises(TypeError, weakref.finalize)
 

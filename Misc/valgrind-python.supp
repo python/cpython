@@ -283,6 +283,17 @@
    fun:rl_initialize
 }
 
+# Valgrind emits "Conditional jump or move depends on uninitialised value(s)"
+# false alarms on GCC builtin strcmp() function. The GCC code is correct.
+#
+# Valgrind bug: https://bugs.kde.org/show_bug.cgi?id=264936
+{
+   bpo-38118: Valgrind emits false alarm on GCC builtin strcmp()
+   Memcheck:Cond
+   fun:PyUnicode_Decode
+}
+
+
 ###
 ### These occur from somewhere within the SSL, when running
 ###  test_socket_sll.  They are too general to leave on by default.

@@ -1,2 +1,0 @@
-``make tags`` and ``make TAGS`` now also parse ``Modules/_io/*.c`` and
-``Modules/_io/*.h``.

@@ -34,8 +34,13 @@ static PyStructSequence_Desc struct_group_type_desc = {
 };
 
 
-static int initialized;
-static PyTypeObject StructGrpType;
+typedef struct {
+  PyTypeObject *StructGrpType;
+} grpmodulestate;
+#define modulestate(o) ((grpmodulestate *)PyModule_GetState(o))
+#define modulestate_global modulestate(PyState_FindModule(&grpmodule))
+
+static struct PyModuleDef grpmodule;
 
 #define DEFAULT_BUFFER_SIZE 1024
 
@@ -43,10 +48,10 @@ static PyObject *
 mkgrent(struct group *p)
 {
     int setIndex = 0;
-    PyObject *v = PyStructSequence_New(&StructGrpType), *w;
+    PyObject *v, *w;
     char **member;
 
-    if (v == NULL)
+    if ((v = PyStructSequence_New(modulestate_global->StructGrpType)) == NULL)
         return NULL;
 
     if ((w = PyList_New(0)) == NULL) {
@@ -314,36 +319,52 @@ users are not explicitly listed as members of the groups they are in\n\
 according to the password database.  Check both databases to get\n\
 complete membership information.)");
 
+static int grpmodule_traverse(PyObject *m, visitproc visit, void *arg) {
+    Py_VISIT(modulestate(m)->StructGrpType);
+    return 0;
+}
 
+static int grpmodule_clear(PyObject *m) {
+    Py_CLEAR(modulestate(m)->StructGrpType);
+    return 0;
+}
+
+static void grpmodule_free(void *m) {
+    grpmodule_clear((PyObject *)m);
+}
 
 static struct PyModuleDef grpmodule = {
         PyModuleDef_HEAD_INIT,
         "grp",
         grp__doc__,
-        -1,
+        sizeof(grpmodulestate),
         grp_methods,
         NULL,
-        NULL,
-        NULL,
-        NULL
+        grpmodule_traverse,
+        grpmodule_clear,
+        grpmodule_free,
 };
 
 PyMODINIT_FUNC
 PyInit_grp(void)
 {
-    PyObject *m, *d;
-    m = PyModule_Create(&grpmodule);
-    if (m == NULL)
-        return NULL;
-    d = PyModule_GetDict(m);
-    if (!initialized) {
-        if (PyStructSequence_InitType2(&StructGrpType,
-                                       &struct_group_type_desc) < 0)
-            return NULL;
+    PyObject *m;
+    if ((m = PyState_FindModule(&grpmodule)) != NULL) {
+        Py_INCREF(m);
+        return m;
     }
-    if (PyDict_SetItemString(d, "struct_group",
-                             (PyObject *)&StructGrpType) < 0)
+
+    if ((m = PyModule_Create(&grpmodule)) == NULL) {
         return NULL;
-    initialized = 1;
+    }
+
+    grpmodulestate *state = PyModule_GetState(m);
+    state->StructGrpType = PyStructSequence_NewType(&struct_group_type_desc);
+    if (state->StructGrpType == NULL) {
+        return NULL;
+    }
+
+    Py_INCREF(state->StructGrpType);
+    PyModule_AddObject(m, "struct_group", (PyObject *) state->StructGrpType);
     return m;
 }

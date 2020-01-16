@@ -22,11 +22,10 @@ extern "C" {
 #ifndef Py_LIMITED_API
 typedef struct {
     PyObject_VAR_HEAD
-    Py_ssize_t ob_alloc; /* How many bytes allocated in ob_bytes */
-    char *ob_bytes;      /* Physical backing buffer */
-    char *ob_start;      /* Logical start inside ob_bytes */
-    /* XXX(nnorwitz): should ob_exports be Py_ssize_t? */
-    int ob_exports;      /* How many buffer exports */
+    Py_ssize_t ob_alloc;   /* How many bytes allocated in ob_bytes */
+    char *ob_bytes;        /* Physical backing buffer */
+    char *ob_start;        /* Logical start inside ob_bytes */
+    Py_ssize_t ob_exports; /* How many buffer exports */
 } PyByteArrayObject;
 #endif
 

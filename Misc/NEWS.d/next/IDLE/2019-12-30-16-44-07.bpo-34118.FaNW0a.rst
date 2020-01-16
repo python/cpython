@@ -1,0 +1,2 @@
+Tag memoryview, range, and tuple as classes, the same as list, etcetera, in
+the library manual built-in functions list.

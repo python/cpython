@@ -469,10 +469,10 @@ static PyTypeObject MD5type = {
     0,                  /*tp_itemsize*/
     /* methods */
     MD5_dealloc,        /*tp_dealloc*/
-    0,                  /*tp_print*/
+    0,                  /*tp_vectorcall_offset*/
     0,                  /*tp_getattr*/
     0,                  /*tp_setattr*/
-    0,                  /*tp_reserved*/
+    0,                  /*tp_as_async*/
     0,                  /*tp_repr*/
     0,                  /*tp_as_number*/
     0,                  /*tp_as_sequence*/
@@ -503,13 +503,15 @@ static PyTypeObject MD5type = {
 _md5.md5
 
     string: object(c_default="NULL") = b''
+    *
+    usedforsecurity: bool = True
 
 Return a new MD5 hash object; optionally initialized with a string.
 [clinic start generated code]*/
 
 static PyObject *
-_md5_md5_impl(PyObject *module, PyObject *string)
-/*[clinic end generated code: output=2cfd0f8c091b97e6 input=d12ef8f72d684f7b]*/
+_md5_md5_impl(PyObject *module, PyObject *string, int usedforsecurity)
+/*[clinic end generated code: output=587071f76254a4ac input=7a144a1905636985]*/
 {
     MD5object *new;
     Py_buffer buf;

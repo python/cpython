@@ -672,10 +672,10 @@ static PyTypeObject PyDecSignalDictMixin_Type =
     sizeof(PyDecSignalDictObject),            /* tp_basicsize */
     0,                                        /* tp_itemsize */
     0,                                        /* tp_dealloc */
-    0,                                        /* tp_print */
+    0,                                        /* tp_vectorcall_offset */
     (getattrfunc) 0,                          /* tp_getattr */
     (setattrfunc) 0,                          /* tp_setattr */
-    0,                                        /* tp_reserved */
+    0,                                        /* tp_as_async */
     (reprfunc) signaldict_repr,               /* tp_repr */
     0,                                        /* tp_as_number */
     0,                                        /* tp_as_sequence */
@@ -1665,10 +1665,10 @@ static PyTypeObject PyDecContextManager_Type =
     sizeof(PyDecContextManagerObject),      /* tp_basicsize */
     0,                                      /* tp_itemsize */
     (destructor) ctxmanager_dealloc,        /* tp_dealloc */
-    0,                                      /* tp_print */
+    0,                                      /* tp_vectorcall_offset */
     (getattrfunc) 0,                        /* tp_getattr */
     (setattrfunc) 0,                        /* tp_setattr */
-    0,                                      /* tp_reserved */
+    0,                                      /* tp_as_async */
     (reprfunc) 0,                           /* tp_repr */
     0,                                      /* tp_as_number */
     0,                                      /* tp_as_sequence */
@@ -4694,10 +4694,10 @@ static PyTypeObject PyDec_Type =
     sizeof(PyDecObject),                    /* tp_basicsize */
     0,                                      /* tp_itemsize */
     (destructor) dec_dealloc,               /* tp_dealloc */
-    0,                                      /* tp_print */
+    0,                                      /* tp_vectorcall_offset */
     (getattrfunc) 0,                        /* tp_getattr */
     (setattrfunc) 0,                        /* tp_setattr */
-    0,                                      /* tp_reserved */
+    0,                                      /* tp_as_async */
     (reprfunc) dec_repr,                    /* tp_repr */
     &dec_number_methods,                    /* tp_as_number */
     0,                                      /* tp_as_sequence */
@@ -5380,17 +5380,17 @@ static PyTypeObject PyDecContext_Type =
     sizeof(PyDecContextObject),                /* tp_basicsize */
     0,                                         /* tp_itemsize */
     (destructor) context_dealloc,              /* tp_dealloc */
-    0,                                         /* tp_print */
+    0,                                         /* tp_vectorcall_offset */
     (getattrfunc) 0,                           /* tp_getattr */
     (setattrfunc) 0,                           /* tp_setattr */
-    0,                                         /* tp_reserved */
+    0,                                         /* tp_as_async */
     (reprfunc) context_repr,                   /* tp_repr */
     0,                                         /* tp_as_number */
     0,                                         /* tp_as_sequence */
     0,                                         /* tp_as_mapping */
     (hashfunc) 0,                              /* tp_hash */
     0,                                         /* tp_call */
-    (reprfunc) context_repr,                   /* tp_str */
+    0,                                         /* tp_str */
     (getattrofunc) context_getattr,            /* tp_getattro */
     (setattrofunc) context_setattr,            /* tp_setattro */
     (PyBufferProcs *) 0,                       /* tp_as_buffer */
