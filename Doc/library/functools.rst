@@ -512,6 +512,117 @@ The :mod:`functools` module defines the following functions:
    .. versionadded:: 3.8
 
 
+.. class:: TopologicalSorter(graph=None)
+
+   Provides functionality to topologically sort a graph of hashable nodes.
+
+   A topological order is a linear ordering of the vertices in a graph such that for
+   every directed edge u -> v from vertex u to vertex v, vertex u comes before vertex
+   v in the ordering. For instance, the vertices of the graph may represent tasks to
+   be performed, and the edges may represent constraints that one task must be
+   performed before another; in this example, a topological ordering is just a valid
+   sequence for the tasks. A complete topological ordering is possible if and only if
+   the graph has no directed cycles, that is, if it is a directed acyclic graph.
+
+   If the optional *graph* argument is provided it must be a dictionary representing
+   a direct acyclic graph where the keys are nodes and the values are iterables of
+   all predecessors of that node in the graph (the nodes that have edges that point
+   to the value in the key). Additional nodes can be added to the graph using the
+   :meth:`~TopologicalSorter.add` method.
+
+   Using the methods provided by this class, a stable topological order of the nodes in the
+   graph can be derived easily::
+
+       def stable_topological_order(graph):
+           ts = TopologicalSorter(graph)
+           ts.prepare()
+           while ts.is_active():
+               for node in ts.get_ready():
+                   yield node
+                   ts.done(node)
+
+   This function can be used to implement a simple version of the C3
+   linearization algorithm used by Python to calculate the Method Resolution
+   Order (MRO) of a derived class::
+
+       >>> class A: pass
+       >>> class B(A): pass
+       >>> class C(A): pass
+       >>> class D(B, C): pass
+
+       >>> D.__mro__
+       (__main__.D, __main__.B, __main__.C, __main__.A, object)
+
+       >>> topological_order = tuple(stable_topological_order(graph))
+       >>> tuple(reversed(topological_order))
+       (__main__.D, '__main__.B, __main__.C, __main__.A, object)
+
+   The class is designed to easily support parallel processing of the nodes as they
+   become ready. For example::
+
+       topological_sorter = TopologicalSorter()
+
+       # Add nodes to 'topological_sorter'...
+
+       topological_sorter.prepare()
+       while topological_sorter.is_active():
+           for node in topological_sorter.get_ready():
+               # Worker threads or processes take nodes to work on off the
+               # of 'task_queue' queue.
+               task_queue.put(node)
+
+           # When the work for a node is done, workers put the node in
+           # 'finalized_tasks_queue' so we can get more nodes to work on
+           node = finalized_tasks_queue.get()
+
+           topological_sorter.done(node)
+
+   .. method:: add(node, *predecessors)
+
+      Add a new node and its predecessors to the graph. Both the *node* and
+      all elements in *predecessors* must be hashable.
+
+      Raises :exc:`ValueError` if called after :meth:`~TopologicalSorter.prepare`.
+
+   .. method:: prepare()
+
+      Mark the graph as finished and check for cycles in the graph. If any cycle is detected,
+      :exc:`CycleError` will be raised, but :meth:`~TopologicalSorter.get_ready` can still be
+      used to obtain as many nodes as possible until cycles block more progress. After a call
+      to this function, the graph cannot be modified and therefore no more nodes can be added
+      using :meth:`~TopologicalSorter.add`.
+
+   .. method:: is_active()
+
+      Returns ``True`` if more progress can be made and ``False`` otherwise. Progress can be
+      made if cycles do not block the resolution and either there are still nodes ready that haven't
+      yet been returned by :meth:`TopologicalSorter.get_ready` or the number of nodes marked
+      :meth:`TopologicalSorter.done` is less than the number that have been returned by
+      :meth:`TopologicalSorter.get_ready`.
+
+      Raises :exc:`ValueError` if called without calling :meth:`~TopologicalSorter.prepare` previously.
+
+   .. method:: done(node)
+
+      Marks a node returned by :meth:`TopologicalSorter.get_ready` as processed, unblocking any
+      successor of *node* for being returned in the future by a call to :meth:`TopologicalSorter.get_ready`.
+
+      Raises :exc:`ValueError` if *node* has already been marked as processed by a previous call to this
+      method or if *node* was not added to the graph by using :meth:`TopologicalSorter.add` or if called without
+      calling :meth:`~TopologicalSorter.prepare` previously.
+
+   .. method:: get_ready()
+
+      Returns a ``tuple`` with all the nodes that are ready. Initially it returns all nodes with no
+      predecessors and once those are marked as processed by calling :meth:`TopologicalSorter.done`,
+      further calls will return all new nodes that have all their predecessors already processed until
+      no more progress can be made.
+
+      Raises :exc:`ValueError` if called without calling :meth:`~TopologicalSorter.prepare` previously.
+
+   .. versionadded:: 3.9
+
+
 .. function:: update_wrapper(wrapper, wrapped, assigned=WRAPPER_ASSIGNMENTS, updated=WRAPPER_UPDATES)
 
    Update a *wrapper* function to look like the *wrapped* function. The optional

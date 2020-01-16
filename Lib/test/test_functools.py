@@ -1158,6 +1158,146 @@ class Orderable_LT:
         return self.value == other.value
 
 
+class TestTopologicalSort(unittest.TestCase):
+
+    def _test_graph(self, graph, expected):
+
+        def static_order(ts):
+            ts.prepare()
+            while ts.is_active():
+                nodes = ts.get_ready()
+                for node in nodes:
+                    ts.done(node)
+                yield nodes
+
+        ts = functools.TopologicalSorter(graph)
+        self.assertEqual(list(static_order(ts)), expected)
+
+    def _assert_cycle(self, graph, cycle):
+        ts = functools.TopologicalSorter()
+        for node, dependson in graph.items():
+            ts.add(node, *dependson)
+        try:
+            ts.prepare()
+        except functools.CycleError as e:
+            msg, seq = e.args
+            self.assertIn(' '.join(map(str, cycle)),
+                          ' '.join(map(str, seq * 2)))
+        else:
+            raise
+
+    def test_simple_cases(self):
+        self._test_graph(
+            {2: {11},
+             9: {11, 8},
+             10: {11, 3},
+             11: {7, 5},
+             8: {7, 3}},
+            [(3, 5, 7), (11, 8), (2, 10, 9)]
+        )
+
+        self._test_graph({1: {}}, [(1,)])
+
+    def test_no_dependencies(self):
+        self._test_graph(
+            {1: {2},
+             3: {4},
+             5: {6}},
+            [(2, 4, 6), (1, 3, 5)]
+        )
+
+        self._test_graph(
+            {1: set(),
+             3: set(),
+             5: set()},
+            [(1, 3, 5)]
+        )
+
+    def test_empty(self):
+        self._test_graph({}, [])
+
+    def test_cycle(self):
+        # Self cycle
+        self._assert_cycle({1: {1}}, [1, 1])
+        # Simple cycle
+        self._assert_cycle({1: {2}, 2: {1}}, [1, 2, 1])
+        # Indirect cycle
+        self._assert_cycle({1: {2}, 2: {3}, 3: {1}}, [1, 3, 2, 1])
+        # not all elements involved in a cycle
+        self._assert_cycle({1: {2}, 2: {3}, 3: {1}, 5: {4}, 4: {6}}, [1, 3, 2, 1])
+
+    def test_calls_before_preapare(self):
+        ts = functools.TopologicalSorter()
+
+        with self.assertRaisesRegex(ValueError, r"prepare\(\) must be called first"):
+            ts.get_ready()
+        with self.assertRaisesRegex(ValueError, r"prepare\(\) must be called first"):
+            ts.done(3)
+        with self.assertRaisesRegex(ValueError, r"prepare\(\) must be called first"):
+            ts.is_active()
+
+    def test_prepare_multiple_times(self):
+        ts = functools.TopologicalSorter()
+        ts.prepare()
+        with self.assertRaisesRegex(ValueError, r"cannot prepare\(\) more than once"):
+            ts.prepare()
+
+    def test_invalid_nodes_in_done(self):
+        ts = functools.TopologicalSorter()
+        ts.add(1, 2, 3, 4)
+        ts.add(2, 3, 4)
+        ts.prepare()
+        ts.get_ready()
+
+        with self.assertRaisesRegex(ValueError, "node 2 was not passed out"):
+            ts.done(2)
+        with self.assertRaisesRegex(ValueError, r"node 24 was not added using add\(\)"):
+            ts.done(24)
+
+    def test_done(self):
+        ts = functools.TopologicalSorter()
+        ts.add(1, 2, 3, 4)
+        ts.add(2, 3)
+        ts.prepare()
+
+        self.assertEqual(ts.get_ready(), (3, 4))
+        # If we don't mark anything as done, get_ready() returns nothing
+        self.assertEqual(ts.get_ready(), ())
+        ts.done(3)
+        # Now 2 becomes available as 3 is done
+        self.assertEqual(ts.get_ready(), (2,))
+        self.assertEqual(ts.get_ready(), ())
+        ts.done(4)
+        ts.done(2)
+        # Only 1 is missing
+        self.assertEqual(ts.get_ready(), (1,))
+        self.assertEqual(ts.get_ready(), ())
+        ts.done(1)
+        self.assertEqual(ts.get_ready(), ())
+        self.assertFalse(ts.is_active())
+
+    def test_is_active(self):
+        ts = functools.TopologicalSorter()
+        ts.add(1, 2)
+        ts.prepare()
+
+        self.assertTrue(ts.is_active())
+        self.assertEqual(ts.get_ready(), (2,))
+        self.assertTrue(ts.is_active())
+        ts.done(2)
+        self.assertTrue(ts.is_active())
+        self.assertEqual(ts.get_ready(), (1,))
+        self.assertTrue(ts.is_active())
+        ts.done(1)
+        self.assertFalse(ts.is_active())
+
+    def test_not_hashable_nodes(self):
+        ts = functools.TopologicalSorter()
+        self.assertRaises(TypeError, ts.add, dict(), 1)
+        self.assertRaises(TypeError, ts.add, 1, dict())
+        self.assertRaises(TypeError, ts.add, dict(), dict())
+
+
 class TestLRU:
 
     def test_lru(self):
