@@ -1394,7 +1394,7 @@ class Misc:
             self.tk.call('bind', self._w, sequence, '')
         else:
             funcs = self.tk.call('bind', self._w, sequence, None).split('\n')
-            keep = '\n'.join(f for f in funcs.split('\n')
+            keep = '\n'.join(f for f in funcs
                              if not f.startswith(f'if {{"[{funcid}'))
             self.tk.call('bind', self._w, sequence, keep)
             self.deletecommand(funcid)
