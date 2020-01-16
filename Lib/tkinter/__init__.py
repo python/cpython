@@ -1391,7 +1391,7 @@ class Misc:
         and also delete that command.
         """
         if funcid is None:
-            self.tk.call('bind', self._w, sequence, None)
+            self.tk.call('bind', self._w, sequence, '')
         else:
             funcs = self.tk.call('bind', self._w, sequence, None).split('\n')
             keep = '\n'.join(f for f in funcs.split('\n')
