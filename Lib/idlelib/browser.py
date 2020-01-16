@@ -29,7 +29,7 @@ def transform_children(child_dict, modname=None):
     The dictionary maps names to pyclbr information objects.
     Filter out imported objects.
     Augment class names with bases.
-    The insertion order of the dictonary is assumed to have been in line
+    The insertion order of the dictionary is assumed to have been in line
     number order, so sorting is not necessary.
 
     The current tree only calls this once per child_dict as it saves

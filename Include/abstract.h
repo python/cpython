@@ -141,10 +141,16 @@ extern "C" {
 #endif
 
 
+#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= 0x03090000
+/* Call a callable Python object without any arguments */
+PyAPI_FUNC(PyObject *) PyObject_CallNoArgs(PyObject *func);
+#endif
+
+
 /* Call a callable Python object 'callable' with arguments given by the
    tuple 'args' and keywords arguments given by the dictionary 'kwargs'.
 
-   'args' must not be *NULL*, use an empty tuple if no arguments are
+   'args' must not be NULL, use an empty tuple if no arguments are
    needed. If no named arguments are needed, 'kwargs' can be NULL.
 
    This is the equivalent of the Python expression:
@@ -154,9 +160,9 @@ PyAPI_FUNC(PyObject *) PyObject_Call(PyObject *callable,
 
 
 /* Call a callable Python object 'callable', with arguments given by the
-   tuple 'args'.  If no arguments are needed, then 'args' can be *NULL*.
+   tuple 'args'.  If no arguments are needed, then 'args' can be NULL.
 
-   Returns the result of the call on success, or *NULL* on failure.
+   Returns the result of the call on success, or NULL on failure.
 
    This is the equivalent of the Python expression:
    callable(*args). */
@@ -696,7 +702,7 @@ PyAPI_FUNC(PyObject *) PySequence_Fast(PyObject *o, const char* m);
      (PyList_Check(o) ? PyList_GET_ITEM(o, i) : PyTuple_GET_ITEM(o, i))
 
 /* Return a pointer to the underlying item array for
-   an object retured by PySequence_Fast */
+   an object returned by PySequence_Fast */
 #define PySequence_Fast_ITEMS(sf) \
     (PyList_Check(sf) ? ((PyListObject *)(sf))->ob_item \
                       : ((PyTupleObject *)(sf))->ob_item)

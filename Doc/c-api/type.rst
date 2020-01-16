@@ -81,7 +81,7 @@ Type Objects
 
    Generic handler for the :c:member:`~PyTypeObject.tp_alloc` slot of a type object.  Use
    Python's default memory allocation mechanism to allocate a new instance and
-   initialize all its contents to *NULL*.
+   initialize all its contents to ``NULL``.
 
 .. c:function:: PyObject* PyType_GenericNew(PyTypeObject *type, PyObject *args, PyObject *kwds)
 
@@ -98,7 +98,7 @@ Type Objects
 .. c:function:: void* PyType_GetSlot(PyTypeObject *type, int slot)
 
    Return the function pointer stored in the given slot. If the
-   result is *NULL*, this indicates that either the slot is *NULL*,
+   result is ``NULL``, this indicates that either the slot is ``NULL``,
    or that the function was called with invalid parameters.
    Callers will typically cast the result pointer into the appropriate
    function type.
@@ -118,13 +118,14 @@ The following functions and structs are used to create
 
 .. c:function:: PyObject* PyType_FromSpecWithBases(PyType_Spec *spec, PyObject *bases)
 
-   Creates and returns a heap type object from the *spec*.
+   Creates and returns a heap type object from the *spec*
+   (:const:`Py_TPFLAGS_HEAPTYPE`).
 
    If *bases* is a tuple, the created heap type contains all types contained
    in it as base types.
 
-   If *bases* is *NULL*, the *Py_tp_base* slot is used instead.
-   If that also is *NULL*, the new type derives from :class:`object`.
+   If *bases* is ``NULL``, the *Py_tp_base* slot is used instead.
+   If that also is ``NULL``, the new type derives from :class:`object`.
 
    This function calls :c:func:`PyType_Ready` on the new type.
 
@@ -141,10 +142,6 @@ The following functions and structs are used to create
    .. c:member:: const char* PyType_Spec.name
 
       Name of the type, used to set :c:member:`PyTypeObject.tp_name`.
-
-   .. c:member:: const char* PyType_Spec.doc
-
-      Type docstring, used to set :c:member:`PyTypeObject.tp_doc`.
 
    .. c:member:: int PyType_Spec.basicsize
    .. c:member:: int PyType_Spec.itemsize
@@ -184,16 +181,19 @@ The following functions and structs are used to create
       * ``Py_nb_add`` to set :c:member:`PyNumberMethods.nb_add`
       * ``Py_sq_length`` to set :c:member:`PySequenceMethods.sq_length`
 
-      The following fields cannot be set using *PyType_Spec* and *PyType_Slot*:
+      The following fields cannot be set using :c:type:`PyType_Spec` and :c:type:`PyType_Slot`:
 
       * :c:member:`~PyTypeObject.tp_dict`
       * :c:member:`~PyTypeObject.tp_mro`
       * :c:member:`~PyTypeObject.tp_cache`
       * :c:member:`~PyTypeObject.tp_subclasses`
       * :c:member:`~PyTypeObject.tp_weaklist`
-      * :c:member:`~PyTypeObject.tp_print`
+      * :c:member:`~PyTypeObject.tp_vectorcall`
       * :c:member:`~PyTypeObject.tp_weaklistoffset`
+        (see :ref:`PyMemberDef <pymemberdef-offsets>`)
       * :c:member:`~PyTypeObject.tp_dictoffset`
+        (see :ref:`PyMemberDef <pymemberdef-offsets>`)
+      * :c:member:`~PyTypeObject.tp_vectorcall_offset`
       * :c:member:`~PyBufferProcs.bf_getbuffer`
       * :c:member:`~PyBufferProcs.bf_releasebuffer`
 
@@ -206,4 +206,4 @@ The following functions and structs are used to create
       The desired value of the slot. In most cases, this is a pointer
       to a function.
 
-      May not be *NULL*.
+      May not be ``NULL``.

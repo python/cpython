@@ -407,9 +407,9 @@ class OrderedDictTests:
         self.assertEqual(list(od), list('abcde'))
         od.move_to_end('c')
         self.assertEqual(list(od), list('abdec'))
-        od.move_to_end('c', 0)
+        od.move_to_end('c', False)
         self.assertEqual(list(od), list('cabde'))
-        od.move_to_end('c', 0)
+        od.move_to_end('c', False)
         self.assertEqual(list(od), list('cabde'))
         od.move_to_end('e')
         self.assertEqual(list(od), list('cabde'))
@@ -418,7 +418,7 @@ class OrderedDictTests:
         with self.assertRaises(KeyError):
             od.move_to_end('x')
         with self.assertRaises(KeyError):
-            od.move_to_end('x', 0)
+            od.move_to_end('x', False)
 
     def test_move_to_end_issue25406(self):
         OrderedDict = self.OrderedDict

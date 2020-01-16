@@ -412,7 +412,7 @@ def _generate_posix_vars():
         pprint.pprint(vars, stream=f)
 
     # Create file used for sys.path fixup -- see Modules/getpath.c
-    with open('pybuilddir.txt', 'w', encoding='ascii') as f:
+    with open('pybuilddir.txt', 'w', encoding='utf8') as f:
         f.write(pybuilddir)
 
 def _init_posix(vars):
@@ -665,7 +665,8 @@ def get_platform():
             machine += ".%s" % bitness[sys.maxsize]
         # fall through to standard osname-release-machine representation
     elif osname[:3] == "aix":
-        return "%s-%s.%s" % (osname, version, release)
+        from _aix_support import aix_platform
+        return aix_platform()
     elif osname[:6] == "cygwin":
         osname = "cygwin"
         import re

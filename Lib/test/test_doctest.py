@@ -701,8 +701,12 @@ class TestDocTestFinder(unittest.TestCase):
             finally:
                 support.forget(pkg_name)
                 sys.path.pop()
-            assert doctest.DocTestFinder().find(mod) == []
 
+            include_empty_finder = doctest.DocTestFinder(exclude_empty=False)
+            exclude_empty_finder = doctest.DocTestFinder(exclude_empty=True)
+
+            self.assertEqual(len(include_empty_finder.find(mod)), 1)
+            self.assertEqual(len(exclude_empty_finder.find(mod)), 0)
 
 def test_DocTestParser(): r"""
 Unit tests for the `DocTestParser` class.
@@ -2485,7 +2489,7 @@ def test_unittest_reportflags():
 
 def test_testfile(): r"""
 Tests for the `testfile()` function.  This function runs all the
-doctest examples in a given file.  In its simple invokation, it is
+doctest examples in a given file.  In its simple invocation, it is
 called with the name of a file, which is taken to be relative to the
 calling module.  The return value is (#failures, #tests).
 

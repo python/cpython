@@ -22,6 +22,10 @@ hit-foreground= #ffffff
 hit-background= #000000
 error-foreground= #000000
 error-background= #ff7777
+context-foreground= #000000
+context-background= lightgray
+linenumber-foreground= gray
+linenumber-background= #ffffff
 #cursor (only foreground can be set, restart IDLE)
 cursor-foreground= black
 #shell window
@@ -31,8 +35,6 @@ stderr-foreground= red
 stderr-background= #ffffff
 console-foreground= #770000
 console-background= #ffffff
-context-foreground= #000000
-context-background= lightgray
 
 [IDLE New]
 normal-foreground= #000000
@@ -55,6 +57,10 @@ hit-foreground= #ffffff
 hit-background= #000000
 error-foreground= #000000
 error-background= #ff7777
+context-foreground= #000000
+context-background= lightgray
+linenumber-foreground= gray
+linenumber-background= #ffffff
 #cursor (only foreground can be set, restart IDLE)
 cursor-foreground= black
 #shell window
@@ -64,8 +70,6 @@ stderr-foreground= red
 stderr-background= #ffffff
 console-foreground= #770000
 console-background= #ffffff
-context-foreground= #000000
-context-background= lightgray
 
 [IDLE Dark]
 comment-foreground = #dd0000
@@ -97,3 +101,5 @@ comment-background = #002240
 break-foreground = #FFFFFF
 context-foreground= #ffffff
 context-background= #454545
+linenumber-foreground= gray
+linenumber-background= #002240

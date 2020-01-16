@@ -1,5 +1,4 @@
 import asyncio
-import socket
 import time
 import threading
 import unittest

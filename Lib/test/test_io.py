@@ -29,6 +29,7 @@ import random
 import signal
 import sys
 import sysconfig
+import textwrap
 import threading
 import time
 import unittest
@@ -37,7 +38,8 @@ import weakref
 from collections import deque, UserList
 from itertools import cycle, count
 from test import support
-from test.support.script_helper import assert_python_ok, run_python_until_end
+from test.support.script_helper import (
+    assert_python_ok, assert_python_failure, run_python_until_end)
 from test.support import FakePath
 
 import codecs
@@ -2072,8 +2074,12 @@ class BufferedRWPairTest(unittest.TestCase):
         writer.close = lambda: None
         writer = None
 
+        # Ignore BufferedWriter (of the BufferedRWPair) unraisable exception
         with support.catch_unraisable_exception():
-            pair = None
+            # Ignore BufferedRWPair unraisable exception
+            with support.catch_unraisable_exception():
+                pair = None
+                support.gc_collect()
             support.gc_collect()
 
     def test_reader_writer_close_error_on_close(self):
@@ -3880,16 +3886,6 @@ class MiscIOTest(unittest.TestCase):
         self.assertEqual(f.mode, "wb")
         f.close()
 
-        with support.check_warnings(('', DeprecationWarning)):
-            f = self.open(support.TESTFN, "U")
-        self.assertEqual(f.name,            support.TESTFN)
-        self.assertEqual(f.buffer.name,     support.TESTFN)
-        self.assertEqual(f.buffer.raw.name, support.TESTFN)
-        self.assertEqual(f.mode,            "U")
-        self.assertEqual(f.buffer.mode,     "rb")
-        self.assertEqual(f.buffer.raw.mode, "rb")
-        f.close()
-
         f = self.open(support.TESTFN, "w+")
         self.assertEqual(f.mode,            "w+")
         self.assertEqual(f.buffer.mode,     "rb+") # Does it really matter?
@@ -3902,6 +3898,24 @@ class MiscIOTest(unittest.TestCase):
         self.assertEqual(g.raw.name, f.fileno())
         f.close()
         g.close()
+
+    def test_removed_u_mode(self):
+        # "U" mode has been removed in Python 3.9
+        for mode in ("U", "rU", "r+U"):
+            with self.assertRaises(ValueError) as cm:
+                self.open(support.TESTFN, mode)
+            self.assertIn('invalid mode', str(cm.exception))
+
+    def test_open_pipe_with_append(self):
+        # bpo-27805: Ignore ESPIPE from lseek() in open().
+        r, w = os.pipe()
+        self.addCleanup(os.close, r)
+        f = self.open(w, 'a')
+        self.addCleanup(f.close)
+        # Check that the file is marked non-seekable. On Windows, however, lseek
+        # somehow succeeds on pipes.
+        if sys.platform != 'win32':
+            self.assertFalse(f.seekable())
 
     def test_io_after_close(self):
         for kwargs in [
@@ -4125,6 +4139,51 @@ class MiscIOTest(unittest.TestCase):
     def test_open_allargs(self):
         # there used to be a buffer overflow in the parser for rawmode
         self.assertRaises(ValueError, self.open, support.TESTFN, 'rwax+')
+
+    def test_check_encoding_errors(self):
+        # bpo-37388: open() and TextIOWrapper must check encoding and errors
+        # arguments in dev mode
+        mod = self.io.__name__
+        filename = __file__
+        invalid = 'Boom, Shaka Laka, Boom!'
+        code = textwrap.dedent(f'''
+            import sys
+            from {mod} import open, TextIOWrapper
+
+            try:
+                open({filename!r}, encoding={invalid!r})
+            except LookupError:
+                pass
+            else:
+                sys.exit(21)
+
+            try:
+                open({filename!r}, errors={invalid!r})
+            except LookupError:
+                pass
+            else:
+                sys.exit(22)
+
+            fp = open({filename!r}, "rb")
+            with fp:
+                try:
+                    TextIOWrapper(fp, encoding={invalid!r})
+                except LookupError:
+                    pass
+                else:
+                    sys.exit(23)
+
+                try:
+                    TextIOWrapper(fp, errors={invalid!r})
+                except LookupError:
+                    pass
+                else:
+                    sys.exit(24)
+
+            sys.exit(10)
+        ''')
+        proc = assert_python_failure('-X', 'dev', '-c', code)
+        self.assertEqual(proc.rc, 10, proc)
 
 
 class CMiscIOTest(MiscIOTest):

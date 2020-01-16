@@ -557,7 +557,7 @@ dictionaries.
 
    .. method:: subnet_of(other)
 
-      Returns *True* if this network is a subnet of *other*.
+      Return ``True`` if this network is a subnet of *other*.
 
         >>> a = ip_network('192.168.1.0/24')
         >>> b = ip_network('192.168.1.128/30')
@@ -568,7 +568,7 @@ dictionaries.
 
    .. method:: supernet_of(other)
 
-      Returns *True* if this network is a supernet of *other*.
+      Return ``True`` if this network is a supernet of *other*.
 
         >>> a = ip_network('192.168.1.0/24')
         >>> b = ip_network('192.168.1.128/30')

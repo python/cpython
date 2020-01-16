@@ -133,24 +133,6 @@ class AsyncGenTest(unittest.TestCase):
                     break
             return res
 
-        def async_iterate(g):
-            res = []
-            while True:
-                try:
-                    g.__anext__().__next__()
-                except StopAsyncIteration:
-                    res.append('STOP')
-                    break
-                except StopIteration as ex:
-                    if ex.args:
-                        res.append(ex.args[0])
-                    else:
-                        res.append('EMPTY StopIteration')
-                        break
-                except Exception as ex:
-                    res.append(str(type(ex)))
-            return res
-
         sync_gen_result = sync_iterate(sync_gen)
         async_gen_result = async_iterate(async_gen)
         self.assertEqual(sync_gen_result, async_gen_result)
@@ -176,19 +158,22 @@ class AsyncGenTest(unittest.TestCase):
 
         g = gen()
         ai = g.__aiter__()
-        self.assertEqual(ai.__anext__().__next__(), ('result',))
+
+        an = ai.__anext__()
+        self.assertEqual(an.__next__(), ('result',))
 
         try:
-            ai.__anext__().__next__()
+            an.__next__()
         except StopIteration as ex:
             self.assertEqual(ex.args[0], 123)
         else:
             self.fail('StopIteration was not raised')
 
-        self.assertEqual(ai.__anext__().__next__(), ('result',))
+        an = ai.__anext__()
+        self.assertEqual(an.__next__(), ('result',))
 
         try:
-            ai.__anext__().__next__()
+            an.__next__()
         except StopAsyncIteration as ex:
             self.assertFalse(ex.args)
         else:
@@ -212,10 +197,11 @@ class AsyncGenTest(unittest.TestCase):
 
         g = gen()
         ai = g.__aiter__()
-        self.assertEqual(ai.__anext__().__next__(), ('result',))
+        an = ai.__anext__()
+        self.assertEqual(an.__next__(), ('result',))
 
         try:
-            ai.__anext__().__next__()
+            an.__next__()
         except StopIteration as ex:
             self.assertEqual(ex.args[0], 123)
         else:
@@ -646,17 +632,13 @@ class AsyncGenAsyncioTest(unittest.TestCase):
             gen = foo()
             it = gen.__aiter__()
             self.assertEqual(await it.__anext__(), 1)
-            t = self.loop.create_task(it.__anext__())
-            await asyncio.sleep(0.01)
             await gen.aclose()
-            return t
 
-        t = self.loop.run_until_complete(run())
+        self.loop.run_until_complete(run())
         self.assertEqual(DONE, 1)
 
         # Silence ResourceWarnings
         fut.cancel()
-        t.cancel()
         self.loop.run_until_complete(asyncio.sleep(0.01))
 
     def test_async_gen_asyncio_gc_aclose_09(self):
@@ -752,6 +734,33 @@ class AsyncGenAsyncioTest(unittest.TestCase):
 
         self.loop.run_until_complete(run())
         self.assertEqual(DONE, 10)
+
+    def test_async_gen_asyncio_aclose_12(self):
+        DONE = 0
+
+        async def target():
+            await asyncio.sleep(0.01)
+            1 / 0
+
+        async def foo():
+            nonlocal DONE
+            task = asyncio.create_task(target())
+            try:
+                yield 1
+            finally:
+                try:
+                    await task
+                except ZeroDivisionError:
+                    DONE = 1
+
+        async def run():
+            gen = foo()
+            it = gen.__aiter__()
+            await it.__anext__()
+            await gen.aclose()
+
+        self.loop.run_until_complete(run())
+        self.assertEqual(DONE, 1)
 
     def test_async_gen_asyncio_asend_01(self):
         DONE = 0
@@ -1053,46 +1062,18 @@ class AsyncGenAsyncioTest(unittest.TestCase):
 
         self.loop.run_until_complete(asyncio.sleep(0.1))
 
-        self.loop.run_until_complete(self.loop.shutdown_asyncgens())
-        self.assertEqual(finalized, 2)
-
         # Silence warnings
         t1.cancel()
         t2.cancel()
-        self.loop.run_until_complete(asyncio.sleep(0.1))
 
-    def test_async_gen_asyncio_shutdown_02(self):
-        logged = 0
+        with self.assertRaises(asyncio.CancelledError):
+            self.loop.run_until_complete(t1)
+        with self.assertRaises(asyncio.CancelledError):
+            self.loop.run_until_complete(t2)
 
-        def logger(loop, context):
-            nonlocal logged
-            self.assertIn('asyncgen', context)
-            expected = 'an error occurred during closing of asynchronous'
-            if expected in context['message']:
-                logged += 1
-
-        async def waiter(timeout):
-            try:
-                await asyncio.sleep(timeout)
-                yield 1
-            finally:
-                1 / 0
-
-        async def wait():
-            async for _ in waiter(1):
-                pass
-
-        t = self.loop.create_task(wait())
-        self.loop.run_until_complete(asyncio.sleep(0.1))
-
-        self.loop.set_exception_handler(logger)
         self.loop.run_until_complete(self.loop.shutdown_asyncgens())
 
-        self.assertEqual(logged, 1)
-
-        # Silence warnings
-        t.cancel()
-        self.loop.run_until_complete(asyncio.sleep(0.1))
+        self.assertEqual(finalized, 2)
 
     def test_async_gen_expression_01(self):
         async def arange(n):
@@ -1124,6 +1105,28 @@ class AsyncGenAsyncioTest(unittest.TestCase):
 
         res = self.loop.run_until_complete(run())
         self.assertEqual(res, [i * 2 for i in range(1, 10)])
+
+    def test_asyncgen_nonstarted_hooks_are_cancellable(self):
+        # See https://bugs.python.org/issue38013
+        messages = []
+
+        def exception_handler(loop, context):
+            messages.append(context)
+
+        async def async_iterate():
+            yield 1
+            yield 2
+
+        async def main():
+            loop = asyncio.get_running_loop()
+            loop.set_exception_handler(exception_handler)
+
+            async for i in async_iterate():
+                break
+
+        asyncio.run(main())
+
+        self.assertEqual([], messages)
 
 
 if __name__ == "__main__":

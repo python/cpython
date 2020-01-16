@@ -34,6 +34,7 @@ _start_new_thread = _thread.start_new_thread
 _allocate_lock = _thread.allocate_lock
 _set_sentinel = _thread._set_sentinel
 get_ident = _thread.get_ident
+_is_main_interpreter = _thread._is_main_interpreter
 try:
     get_native_id = _thread.get_native_id
     _HAVE_THREAD_NATIVE_ID = True
@@ -261,7 +262,7 @@ class Condition:
     def _is_owned(self):
         # Return True if lock is owned by current_thread.
         # This method is called only if _lock doesn't have _is_owned().
-        if self._lock.acquire(0):
+        if self._lock.acquire(False):
             self._lock.release()
             return False
         else:
@@ -438,16 +439,19 @@ class Semaphore:
 
     __enter__ = acquire
 
-    def release(self):
-        """Release a semaphore, incrementing the internal counter by one.
+    def release(self, n=1):
+        """Release a semaphore, incrementing the internal counter by one or more.
 
         When the counter is zero on entry and another thread is waiting for it
         to become larger than zero again, wake up that thread.
 
         """
+        if n < 1:
+            raise ValueError('n must be one or more')
         with self._cond:
-            self._value += 1
-            self._cond.notify()
+            self._value += n
+            for i in range(n):
+                self._cond.notify()
 
     def __exit__(self, t, v, tb):
         self.release()
@@ -474,8 +478,8 @@ class BoundedSemaphore(Semaphore):
         Semaphore.__init__(self, value)
         self._initial_value = value
 
-    def release(self):
-        """Release a semaphore, incrementing the internal counter by one.
+    def release(self, n=1):
+        """Release a semaphore, incrementing the internal counter by one or more.
 
         When the counter is zero on entry and another thread is waiting for it
         to become larger than zero again, wake up that thread.
@@ -484,11 +488,14 @@ class BoundedSemaphore(Semaphore):
         raise a ValueError.
 
         """
+        if n < 1:
+            raise ValueError('n must be one or more')
         with self._cond:
-            if self._value >= self._initial_value:
+            if self._value + n > self._initial_value:
                 raise ValueError("Semaphore released too many times")
-            self._value += 1
-            self._cond.notify()
+            self._value += n
+            for i in range(n):
+                self._cond.notify()
 
 
 class Event:
@@ -846,6 +853,11 @@ class Thread:
 
         if self._started.is_set():
             raise RuntimeError("threads can only be started once")
+
+        if self.daemon and not _is_main_interpreter():
+            raise RuntimeError("daemon thread are not supported "
+                               "in subinterpreters")
+
         with _active_limbo_lock:
             _limbo[self] = self
         try:
@@ -1082,16 +1094,6 @@ class Thread:
         self._wait_for_tstate_lock(False)
         return not self._is_stopped
 
-    def isAlive(self):
-        """Return whether the thread is alive.
-
-        This method is deprecated, use is_alive() instead.
-        """
-        import warnings
-        warnings.warn('isAlive() is deprecated, use is_alive() instead',
-                      DeprecationWarning, stacklevel=2)
-        return self.is_alive()
-
     @property
     def daemon(self):
         """A boolean value indicating whether this thread is a daemon thread.
@@ -1101,8 +1103,7 @@ class Thread:
         main thread is not a daemon thread and therefore all threads created in
         the main thread default to daemon = False.
 
-        The entire Python program exits when no alive non-daemon threads are
-        left.
+        The entire Python program exits when only daemon threads are left.
 
         """
         assert self._initialized, "Thread.__init__() not called"

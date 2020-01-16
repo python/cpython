@@ -17,6 +17,7 @@ import weakref
 import os
 import subprocess
 import signal
+import textwrap
 
 from test import lock_tests
 from test import support
@@ -264,7 +265,7 @@ class ThreadTests(BaseTestCase):
         self.assertEqual(result, 1) # one thread state modified
         if verbose:
             print("    waiting for worker to say it caught the exception")
-        worker_saw_exception.wait(timeout=10)
+        worker_saw_exception.wait(timeout=support.SHORT_TIMEOUT)
         self.assertTrue(t.finished)
         if verbose:
             print("    all OK -- joining worker")
@@ -287,7 +288,7 @@ class ThreadTests(BaseTestCase):
         finally:
             threading._start_new_thread = _start_new_thread
 
-    def test_finalize_runnning_thread(self):
+    def test_finalize_running_thread(self):
         # Issue 1402: the PyGILState_Ensure / _Release functions may be called
         # very late on python exit: on deallocation of a running thread for
         # example.
@@ -421,8 +422,6 @@ class ThreadTests(BaseTestCase):
         t.setDaemon(True)
         t.getName()
         t.setName("name")
-        with self.assertWarnsRegex(DeprecationWarning, 'use is_alive()'):
-            t.isAlive()
         e = threading.Event()
         e.isSet()
         threading.activeCount()
@@ -641,7 +640,7 @@ class ThreadTests(BaseTestCase):
         finish.release()
         # When the thread ends, the state_lock can be successfully
         # acquired.
-        self.assertTrue(tstate_lock.acquire(timeout=5), False)
+        self.assertTrue(tstate_lock.acquire(timeout=support.SHORT_TIMEOUT), False)
         # But is_alive() is still True:  we hold _tstate_lock now, which
         # prevents is_alive() from knowing the thread's end-of-life C code
         # is done.
@@ -928,14 +927,19 @@ class ThreadJoinOnShutdown(BaseTestCase):
 
 
 class SubinterpThreadingTests(BaseTestCase):
+    def pipe(self):
+        r, w = os.pipe()
+        self.addCleanup(os.close, r)
+        self.addCleanup(os.close, w)
+        if hasattr(os, 'set_blocking'):
+            os.set_blocking(r, False)
+        return (r, w)
 
     def test_threads_join(self):
         # Non-daemon threads should be joined at subinterpreter shutdown
         # (issue #18808)
-        r, w = os.pipe()
-        self.addCleanup(os.close, r)
-        self.addCleanup(os.close, w)
-        code = r"""if 1:
+        r, w = self.pipe()
+        code = textwrap.dedent(r"""
             import os
             import random
             import threading
@@ -953,7 +957,7 @@ class SubinterpThreadingTests(BaseTestCase):
 
             threading.Thread(target=f).start()
             random_sleep()
-            """ % (w,)
+        """ % (w,))
         ret = test.support.run_in_subinterp(code)
         self.assertEqual(ret, 0)
         # The thread was joined properly.
@@ -964,10 +968,8 @@ class SubinterpThreadingTests(BaseTestCase):
         # Python code returned but before the thread state is deleted.
         # To achieve this, we register a thread-local object which sleeps
         # a bit when deallocated.
-        r, w = os.pipe()
-        self.addCleanup(os.close, r)
-        self.addCleanup(os.close, w)
-        code = r"""if 1:
+        r, w = self.pipe()
+        code = textwrap.dedent(r"""
             import os
             import random
             import threading
@@ -992,34 +994,38 @@ class SubinterpThreadingTests(BaseTestCase):
 
             threading.Thread(target=f).start()
             random_sleep()
-            """ % (w,)
+        """ % (w,))
         ret = test.support.run_in_subinterp(code)
         self.assertEqual(ret, 0)
         # The thread was joined properly.
         self.assertEqual(os.read(r, 1), b"x")
 
-    @cpython_only
-    def test_daemon_threads_fatal_error(self):
-        subinterp_code = r"""if 1:
-            import os
+    def test_daemon_thread(self):
+        r, w = self.pipe()
+        code = textwrap.dedent(f"""
             import threading
-            import time
+            import sys
 
-            def f():
-                # Make sure the daemon thread is still running when
-                # Py_EndInterpreter is called.
-                time.sleep(10)
-            threading.Thread(target=f, daemon=True).start()
-            """
-        script = r"""if 1:
-            import _testcapi
+            channel = open({w}, "w", closefd=False)
 
-            _testcapi.run_in_subinterp(%r)
-            """ % (subinterp_code,)
-        with test.support.SuppressCrashReport():
-            rc, out, err = assert_python_failure("-c", script)
-        self.assertIn("Fatal Python error: Py_EndInterpreter: "
-                      "not the last thread", err.decode())
+            def func():
+                pass
+
+            thread = threading.Thread(target=func, daemon=True)
+            try:
+                thread.start()
+            except RuntimeError as exc:
+                print("ok: %s" % exc, file=channel, flush=True)
+            else:
+                thread.join()
+                print("fail: RuntimeError not raised", file=channel, flush=True)
+        """)
+        ret = test.support.run_in_subinterp(code)
+        self.assertEqual(ret, 0)
+
+        msg = os.read(r, 100).decode().rstrip()
+        self.assertEqual("ok: daemon thread are not supported "
+                         "in subinterpreters", msg)
 
 
 class ThreadingExceptionTests(BaseTestCase):
@@ -1049,8 +1055,6 @@ class ThreadingExceptionTests(BaseTestCase):
         lock = threading.Lock()
         self.assertRaises(RuntimeError, lock.release)
 
-    @unittest.skipUnless(sys.platform == 'darwin' and test.support.python_is_optimized(),
-                         'test macosx problem')
     def test_recursion_limit(self):
         # Issue 9670
         # test that excessive recursion within a non-main thread causes

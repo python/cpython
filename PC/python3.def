@@ -235,7 +235,6 @@ EXPORTS
   PyExc_SystemError=python39.PyExc_SystemError DATA
   PyExc_SystemExit=python39.PyExc_SystemExit DATA
   PyExc_TabError=python39.PyExc_TabError DATA
-  PyExc_TargetScopeError=python39.PyExc_TargetScopeError DATA
   PyExc_TimeoutError=python39.PyExc_TimeoutError DATA
   PyExc_TypeError=python39.PyExc_TypeError DATA
   PyExc_UnboundLocalError=python39.PyExc_UnboundLocalError DATA
@@ -650,7 +649,6 @@ EXPORTS
   PyUnicode_AsWideChar=python39.PyUnicode_AsWideChar
   PyUnicode_AsWideCharString=python39.PyUnicode_AsWideCharString
   PyUnicode_BuildEncodingMap=python39.PyUnicode_BuildEncodingMap
-  PyUnicode_ClearFreeList=python39.PyUnicode_ClearFreeList
   PyUnicode_Compare=python39.PyUnicode_Compare
   PyUnicode_CompareWithASCIIString=python39.PyUnicode_CompareWithASCIIString
   PyUnicode_Concat=python39.PyUnicode_Concat

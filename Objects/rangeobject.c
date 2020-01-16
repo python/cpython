@@ -77,37 +77,52 @@ range_new(PyTypeObject *type, PyObject *args, PyObject *kw)
     if (!_PyArg_NoKeywords("range", kw))
         return NULL;
 
-    if (PyTuple_Size(args) <= 1) {
-        if (!PyArg_UnpackTuple(args, "range", 1, 1, &stop))
-            return NULL;
-        stop = PyNumber_Index(stop);
-        if (!stop)
-            return NULL;
-        Py_INCREF(_PyLong_Zero);
-        start = _PyLong_Zero;
-        Py_INCREF(_PyLong_One);
-        step = _PyLong_One;
-    }
-    else {
-        if (!PyArg_UnpackTuple(args, "range", 2, 3,
-                               &start, &stop, &step))
-            return NULL;
+    Py_ssize_t num_args = PyTuple_GET_SIZE(args);
+    switch (num_args) {
+        case 3:
+            step = PyTuple_GET_ITEM(args, 2);
+            /* fallthrough */
+        case 2:
+            start = PyTuple_GET_ITEM(args, 0);
+            start = PyNumber_Index(start);
+            if (!start) {
+                return NULL;
+            }
 
-        /* Convert borrowed refs to owned refs */
-        start = PyNumber_Index(start);
-        if (!start)
+            stop = PyTuple_GET_ITEM(args, 1);
+            stop = PyNumber_Index(stop);
+            if (!stop) {
+                Py_DECREF(start);
+                return NULL;
+            }
+
+            step = validate_step(step);
+            if (!step) {
+                Py_DECREF(start);
+                Py_DECREF(stop);
+                return NULL;
+            }
+            break;
+        case 1:
+            stop = PyTuple_GET_ITEM(args, 0);
+            stop = PyNumber_Index(stop);
+            if (!stop) {
+                return NULL;
+            }
+            Py_INCREF(_PyLong_Zero);
+            start = _PyLong_Zero;
+            Py_INCREF(_PyLong_One);
+            step = _PyLong_One;
+            break;
+        case 0:
+            PyErr_SetString(PyExc_TypeError,
+                            "range expected at least 1 argument, got 0");
             return NULL;
-        stop = PyNumber_Index(stop);
-        if (!stop) {
-            Py_DECREF(start);
+        default:
+            PyErr_Format(PyExc_TypeError, 
+                         "range expected at most 3 arguments, got %zd",
+                         num_args);
             return NULL;
-        }
-        step = validate_step(step);    /* Caution, this can clear exceptions */
-        if (!step) {
-            Py_DECREF(start);
-            Py_DECREF(stop);
-            return NULL;
-        }
     }
 
     obj = make_range_object(type, start, stop, step);

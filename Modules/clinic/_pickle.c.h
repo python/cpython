@@ -112,9 +112,9 @@ _pickle_Pickler___init__(PyObject *self, PyObject *args, PyObject *kwargs)
     Py_ssize_t nargs = PyTuple_GET_SIZE(args);
     Py_ssize_t noptargs = nargs + (kwargs ? PyDict_GET_SIZE(kwargs) : 0) - 1;
     PyObject *file;
-    PyObject *protocol = NULL;
+    PyObject *protocol = Py_None;
     int fix_imports = 1;
-    PyObject *buffer_callback = NULL;
+    PyObject *buffer_callback = Py_None;
 
     fastargs = _PyArg_UnpackKeywords(_PyTuple_CAST(args)->ob_item, nargs, kwargs, NULL, &_parser, 1, 4, 0, argsbuf);
     if (!fastargs) {
@@ -292,7 +292,7 @@ exit:
 
 PyDoc_STRVAR(_pickle_Unpickler___init____doc__,
 "Unpickler(file, *, fix_imports=True, encoding=\'ASCII\', errors=\'strict\',\n"
-"          buffers=None)\n"
+"          buffers=())\n"
 "--\n"
 "\n"
 "This takes a binary file for reading a pickle data stream.\n"
@@ -356,7 +356,7 @@ _pickle_Unpickler___init__(PyObject *self, PyObject *args, PyObject *kwargs)
     }
     if (fastargs[2]) {
         if (!PyUnicode_Check(fastargs[2])) {
-            _PyArg_BadArgument("Unpickler", 3, "str", fastargs[2]);
+            _PyArg_BadArgument("Unpickler", "argument 'encoding'", "str", fastargs[2]);
             goto exit;
         }
         Py_ssize_t encoding_length;
@@ -374,7 +374,7 @@ _pickle_Unpickler___init__(PyObject *self, PyObject *args, PyObject *kwargs)
     }
     if (fastargs[3]) {
         if (!PyUnicode_Check(fastargs[3])) {
-            _PyArg_BadArgument("Unpickler", 4, "str", fastargs[3]);
+            _PyArg_BadArgument("Unpickler", "argument 'errors'", "str", fastargs[3]);
             goto exit;
         }
         Py_ssize_t errors_length;
@@ -502,9 +502,9 @@ _pickle_dump(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject
     Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 2;
     PyObject *obj;
     PyObject *file;
-    PyObject *protocol = NULL;
+    PyObject *protocol = Py_None;
     int fix_imports = 1;
-    PyObject *buffer_callback = NULL;
+    PyObject *buffer_callback = Py_None;
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 2, 3, 0, argsbuf);
     if (!args) {
@@ -582,9 +582,9 @@ _pickle_dumps(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObjec
     PyObject *argsbuf[4];
     Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 1;
     PyObject *obj;
-    PyObject *protocol = NULL;
+    PyObject *protocol = Py_None;
     int fix_imports = 1;
-    PyObject *buffer_callback = NULL;
+    PyObject *buffer_callback = Py_None;
 
     args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 2, 0, argsbuf);
     if (!args) {
@@ -623,7 +623,7 @@ exit:
 
 PyDoc_STRVAR(_pickle_load__doc__,
 "load($module, /, file, *, fix_imports=True, encoding=\'ASCII\',\n"
-"     errors=\'strict\', buffers=None)\n"
+"     errors=\'strict\', buffers=())\n"
 "--\n"
 "\n"
 "Read and return an object from the pickle data stored in a file.\n"
@@ -691,7 +691,7 @@ _pickle_load(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject
     }
     if (args[2]) {
         if (!PyUnicode_Check(args[2])) {
-            _PyArg_BadArgument("load", 3, "str", args[2]);
+            _PyArg_BadArgument("load", "argument 'encoding'", "str", args[2]);
             goto exit;
         }
         Py_ssize_t encoding_length;
@@ -709,7 +709,7 @@ _pickle_load(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject
     }
     if (args[3]) {
         if (!PyUnicode_Check(args[3])) {
-            _PyArg_BadArgument("load", 4, "str", args[3]);
+            _PyArg_BadArgument("load", "argument 'errors'", "str", args[3]);
             goto exit;
         }
         Py_ssize_t errors_length;
@@ -735,7 +735,7 @@ exit:
 
 PyDoc_STRVAR(_pickle_loads__doc__,
 "loads($module, /, data, *, fix_imports=True, encoding=\'ASCII\',\n"
-"      errors=\'strict\', buffers=None)\n"
+"      errors=\'strict\', buffers=())\n"
 "--\n"
 "\n"
 "Read and return an object from the given pickle data.\n"
@@ -794,7 +794,7 @@ _pickle_loads(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObjec
     }
     if (args[2]) {
         if (!PyUnicode_Check(args[2])) {
-            _PyArg_BadArgument("loads", 3, "str", args[2]);
+            _PyArg_BadArgument("loads", "argument 'encoding'", "str", args[2]);
             goto exit;
         }
         Py_ssize_t encoding_length;
@@ -812,7 +812,7 @@ _pickle_loads(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObjec
     }
     if (args[3]) {
         if (!PyUnicode_Check(args[3])) {
-            _PyArg_BadArgument("loads", 4, "str", args[3]);
+            _PyArg_BadArgument("loads", "argument 'errors'", "str", args[3]);
             goto exit;
         }
         Py_ssize_t errors_length;
@@ -835,4 +835,4 @@ skip_optional_kwonly:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=8dc0e862f96c4afe input=a9049054013a1b77]*/
+/*[clinic end generated code: output=de075ec48d4ee0e1 input=a9049054013a1b77]*/

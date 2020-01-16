@@ -14,15 +14,15 @@ Slice Objects
 
 .. c:function:: int PySlice_Check(PyObject *ob)
 
-   Return true if *ob* is a slice object; *ob* must not be *NULL*.
+   Return true if *ob* is a slice object; *ob* must not be ``NULL``.
 
 
 .. c:function:: PyObject* PySlice_New(PyObject *start, PyObject *stop, PyObject *step)
 
    Return a new slice object with the given values.  The *start*, *stop*, and
    *step* parameters are used as the values of the slice object attributes of
-   the same names.  Any of the values may be *NULL*, in which case the
-   ``None`` will be used for the corresponding attribute.  Return *NULL* if
+   the same names.  Any of the values may be ``NULL``, in which case the
+   ``None`` will be used for the corresponding attribute.  Return ``NULL`` if
    the new object could not be allocated.
 
 

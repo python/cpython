@@ -117,7 +117,7 @@ store the converted values.  More about this later.
 type and its components have been stored in the variables whose addresses are
 passed.  It returns false (zero) if an invalid argument list was passed.  In the
 latter case it also raises an appropriate exception so the calling function can
-return *NULL* immediately (as we saw in the example).
+return ``NULL`` immediately (as we saw in the example).
 
 
 .. _extending-errors:
@@ -127,8 +127,8 @@ Intermezzo: Errors and Exceptions
 
 An important convention throughout the Python interpreter is the following: when
 a function fails, it should set an exception condition and return an error value
-(usually a *NULL* pointer).  Exceptions are stored in a static global variable
-inside the interpreter; if this variable is *NULL* no exception has occurred.  A
+(usually a ``NULL`` pointer).  Exceptions are stored in a static global variable
+inside the interpreter; if this variable is ``NULL`` no exception has occurred.  A
 second global variable stores the "associated value" of the exception (the
 second argument to :keyword:`raise`).  A third variable contains the stack
 traceback in case the error originated in Python code.  These three variables
@@ -152,13 +152,13 @@ its associated value.  You don't need to :c:func:`Py_INCREF` the objects passed
 to any of these functions.
 
 You can test non-destructively whether an exception has been set with
-:c:func:`PyErr_Occurred`.  This returns the current exception object, or *NULL*
+:c:func:`PyErr_Occurred`.  This returns the current exception object, or ``NULL``
 if no exception has occurred.  You normally don't need to call
 :c:func:`PyErr_Occurred` to see whether an error occurred in a function call,
 since you should be able to tell from the return value.
 
 When a function *f* that calls another function *g* detects that the latter
-fails, *f* should itself return an error value (usually *NULL* or ``-1``).  It
+fails, *f* should itself return an error value (usually ``NULL`` or ``-1``).  It
 should *not* call one of the :c:func:`PyErr_\*` functions --- one has already
 been called by *g*. *f*'s caller is then supposed to also return an error
 indication to *its* caller, again *without* calling :c:func:`PyErr_\*`, and so on
@@ -209,7 +209,7 @@ usually declare a static object variable at the beginning of your file::
    static PyObject *SpamError;
 
 and initialize it in your module's initialization function (:c:func:`PyInit_spam`)
-with an exception object (leaving out the error checking for now)::
+with an exception object::
 
    PyMODINIT_FUNC
    PyInit_spam(void)
@@ -221,14 +221,20 @@ with an exception object (leaving out the error checking for now)::
            return NULL;
 
        SpamError = PyErr_NewException("spam.error", NULL, NULL);
-       Py_INCREF(SpamError);
-       PyModule_AddObject(m, "error", SpamError);
+       Py_XINCREF(SpamError);
+       if (PyModule_AddObject(m, "error", SpamError) < 0) {
+           Py_XDECREF(SpamError);
+           Py_CLEAR(SpamError);
+           Py_DECREF(m);
+           return NULL;
+       }
+
        return m;
    }
 
 Note that the Python name for the exception object is :exc:`spam.error`.  The
 :c:func:`PyErr_NewException` function may create a class with the base class
-being :exc:`Exception` (unless another class is passed in instead of *NULL*),
+being :exc:`Exception` (unless another class is passed in instead of ``NULL``),
 described in :ref:`bltin-exceptions`.
 
 Note also that the :c:data:`SpamError` variable retains a reference to the newly
@@ -272,7 +278,7 @@ statement::
    if (!PyArg_ParseTuple(args, "s", &command))
        return NULL;
 
-It returns *NULL* (the error indicator for functions returning object pointers)
+It returns ``NULL`` (the error indicator for functions returning object pointers)
 if an error is detected in the argument list, relying on the exception set by
 :c:func:`PyArg_ParseTuple`.  Otherwise the string value of the argument has been
 copied to the local variable :c:data:`command`.  This is a pointer assignment and
@@ -302,7 +308,7 @@ macro)::
    return Py_None;
 
 :c:data:`Py_None` is the C name for the special Python object ``None``.  It is a
-genuine Python object rather than a *NULL* pointer, which means "error" in most
+genuine Python object rather than a ``NULL`` pointer, which means "error" in most
 contexts, as we have seen.
 
 
@@ -370,7 +376,7 @@ inserts built-in function objects into the newly created module based upon the
 table (an array of :c:type:`PyMethodDef` structures) found in the module definition.
 :c:func:`PyModule_Create` returns a pointer to the module object
 that it creates.  It may abort with a fatal error for
-certain errors, or return *NULL* if the module could not be initialized
+certain errors, or return ``NULL`` if the module could not be initialized
 satisfactorily. The init function must return the module object to its caller,
 so that it then gets inserted into ``sys.modules``.
 
@@ -520,8 +526,8 @@ This function must be registered with the interpreter using the
 :ref:`parsetuple`.
 
 The macros :c:func:`Py_XINCREF` and :c:func:`Py_XDECREF` increment/decrement the
-reference count of an object and are safe in the presence of *NULL* pointers
-(but note that *temp* will not be  *NULL* in this context).  More info on them
+reference count of an object and are safe in the presence of ``NULL`` pointers
+(but note that *temp* will not be  ``NULL`` in this context).  More info on them
 in section :ref:`refcounts`.
 
 .. index:: single: PyObject_CallObject()
@@ -530,7 +536,7 @@ Later, when it is time to call the function, you call the C function
 :c:func:`PyObject_CallObject`.  This function has two arguments, both pointers to
 arbitrary Python objects: the Python function, and the argument list.  The
 argument list must always be a tuple object, whose length is the number of
-arguments.  To call the Python function with no arguments, pass in NULL, or
+arguments.  To call the Python function with no arguments, pass in ``NULL``, or
 an empty tuple; to call it with one argument, pass a singleton tuple.
 :c:func:`Py_BuildValue` returns a tuple when its format string consists of zero
 or more format codes between parentheses.  For example::
@@ -560,7 +566,7 @@ somehow :c:func:`Py_DECREF` the result, even (especially!) if you are not
 interested in its value.
 
 Before you do this, however, it is important to check that the return value
-isn't *NULL*.  If it is, the Python function terminated by raising an exception.
+isn't ``NULL``.  If it is, the Python function terminated by raising an exception.
 If the C code that called :c:func:`PyObject_CallObject` is called from Python, it
 should now return an error indication to its Python caller, so the interpreter
 can print a stack trace, or the calling Python code can handle the exception.
@@ -717,7 +723,7 @@ The :c:func:`PyArg_ParseTupleAndKeywords` function is declared as follows::
 The *arg* and *format* parameters are identical to those of the
 :c:func:`PyArg_ParseTuple` function.  The *kwdict* parameter is the dictionary of
 keywords received as the third parameter from the Python runtime.  The *kwlist*
-parameter is a *NULL*-terminated list of strings which identify the parameters;
+parameter is a ``NULL``-terminated list of strings which identify the parameters;
 the names are matched with the type information from *format* from left to
 right.  On success, :c:func:`PyArg_ParseTupleAndKeywords` returns true, otherwise
 it returns false and raises an appropriate exception.
@@ -1078,32 +1084,32 @@ NULL Pointers
 -------------
 
 In general, functions that take object references as arguments do not expect you
-to pass them *NULL* pointers, and will dump core (or cause later core dumps) if
-you do so.  Functions that return object references generally return *NULL* only
-to indicate that an exception occurred.  The reason for not testing for *NULL*
+to pass them ``NULL`` pointers, and will dump core (or cause later core dumps) if
+you do so.  Functions that return object references generally return ``NULL`` only
+to indicate that an exception occurred.  The reason for not testing for ``NULL``
 arguments is that functions often pass the objects they receive on to other
-function --- if each function were to test for *NULL*, there would be a lot of
+function --- if each function were to test for ``NULL``, there would be a lot of
 redundant tests and the code would run more slowly.
 
-It is better to test for *NULL* only at the "source:" when a pointer that may be
-*NULL* is received, for example, from :c:func:`malloc` or from a function that
+It is better to test for ``NULL`` only at the "source:" when a pointer that may be
+``NULL`` is received, for example, from :c:func:`malloc` or from a function that
 may raise an exception.
 
-The macros :c:func:`Py_INCREF` and :c:func:`Py_DECREF` do not check for *NULL*
+The macros :c:func:`Py_INCREF` and :c:func:`Py_DECREF` do not check for ``NULL``
 pointers --- however, their variants :c:func:`Py_XINCREF` and :c:func:`Py_XDECREF`
 do.
 
 The macros for checking for a particular object type (``Pytype_Check()``) don't
-check for *NULL* pointers --- again, there is much code that calls several of
+check for ``NULL`` pointers --- again, there is much code that calls several of
 these in a row to test an object against various different expected types, and
-this would generate redundant tests.  There are no variants with *NULL*
+this would generate redundant tests.  There are no variants with ``NULL``
 checking.
 
 The C function calling mechanism guarantees that the argument list passed to C
-functions (``args`` in the examples) is never *NULL* --- in fact it guarantees
+functions (``args`` in the examples) is never ``NULL`` --- in fact it guarantees
 that it is always a tuple [#]_.
 
-It is a severe error to ever let a *NULL* pointer "escape" to the Python user.
+It is a severe error to ever let a ``NULL`` pointer "escape" to the Python user.
 
 .. Frank Stajano:
    A pedagogically buggy example, along the lines of the previous listing, would
@@ -1178,7 +1184,7 @@ different ways between the module providing the code and the client modules.
 
 Whichever method you choose, it's important to name your Capsules properly.
 The function :c:func:`PyCapsule_New` takes a name parameter
-(:c:type:`const char \*`); you're permitted to pass in a *NULL* name, but
+(:c:type:`const char \*`); you're permitted to pass in a ``NULL`` name, but
 we strongly encourage you to specify a name.  Properly named Capsules provide
 a degree of runtime type-safety; there is no feasible way to tell one unnamed
 Capsule from another.
@@ -1261,8 +1267,12 @@ function must take care of initializing the C API pointer array::
        /* Create a Capsule containing the API pointer array's address */
        c_api_object = PyCapsule_New((void *)PySpam_API, "spam._C_API", NULL);
 
-       if (c_api_object != NULL)
-           PyModule_AddObject(m, "_C_API", c_api_object);
+       if (PyModule_AddObject(m, "_C_API", c_api_object) < 0) {
+           Py_XDECREF(c_api_object);
+           Py_DECREF(m);
+           return NULL;
+       }
+
        return m;
    }
 

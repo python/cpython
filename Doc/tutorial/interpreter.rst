@@ -23,12 +23,10 @@ is an installation option, other places are possible; check with your local
 Python guru or system administrator.  (E.g., :file:`/usr/local/python` is a
 popular alternative location.)
 
-On Windows machines, the Python installation is usually placed in
-:file:`C:\\Python38`, though you can change this when you're running the
-installer.  To add this directory to your path,  you can type the following
-command into :ref:`a command prompt window <faq-run-program-under-windows>`::
-
-   set path=%path%;C:\python38
+On Windows machines where you have installed Python from the :ref:`Microsoft Store
+<windows-store>`, the :file:`python3.9` command will be available. If you have
+the :ref:`py.exe launcher <launcher>` installed, you can use the :file:`py`
+command. See :ref:`setting-envvars` for other ways to launch Python.
 
 Typing an end-of-file character (:kbd:`Control-D` on Unix, :kbd:`Control-Z` on
 Windows) at the primary prompt causes the interpreter to exit with a zero exit
@@ -36,13 +34,14 @@ status.  If that doesn't work, you can exit the interpreter by typing the
 following command: ``quit()``.
 
 The interpreter's line-editing features include interactive editing, history
-substitution and code completion on systems that support readline.  Perhaps the
-quickest check to see whether command line editing is supported is typing
-:kbd:`Control-P` to the first Python prompt you get.  If it beeps, you have command
-line editing; see Appendix :ref:`tut-interacting` for an introduction to the
-keys.  If nothing appears to happen, or if ``^P`` is echoed, command line
-editing isn't available; you'll only be able to use backspace to remove
-characters from the current line.
+substitution and code completion on systems that support the `GNU Readline
+<https://tiswww.case.edu/php/chet/readline/rltop.html>`_ library.
+Perhaps the quickest check to see whether command line editing is supported is
+typing :kbd:`Control-P` to the first Python prompt you get.  If it beeps, you
+have command line editing; see Appendix :ref:`tut-interacting` for an
+introduction to the keys.  If nothing appears to happen, or if ``^P`` is
+echoed, command line editing isn't available; you'll only be able to use
+backspace to remove characters from the current line.
 
 The interpreter operates somewhat like the Unix shell: when called with standard
 input connected to a tty device, it reads and executes commands interactively;

@@ -1,0 +1,3 @@
+When you specify prompt='.' or equivalently python -m venv --prompt . ...
+the basename of the current directory is used to set the created venv's
+prompt when it's activated.

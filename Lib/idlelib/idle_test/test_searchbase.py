@@ -48,7 +48,6 @@ class SearchDialogBaseTest(unittest.TestCase):
         self.dialog.default_command = None
 
         toplevel = Toplevel(self.root)
-        self.addCleanup(toplevel.destroy)
         text = Text(toplevel)
         self.dialog.open(text)
         self.assertEqual(self.dialog.top.state(), 'normal')
@@ -57,7 +56,8 @@ class SearchDialogBaseTest(unittest.TestCase):
 
         self.dialog.open(text, searchphrase="hello")
         self.assertEqual(self.dialog.ent.get(), 'hello')
-        self.dialog.close()
+        toplevel.update_idletasks()
+        toplevel.destroy()
 
     def test_create_widgets(self):
         self.dialog.create_entries = Func()

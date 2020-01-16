@@ -359,7 +359,7 @@ _Pickle_FastCall(PyObject *func, PyObject *obj)
 {
     PyObject *result;
 
-    result = PyObject_CallFunctionObjArgs(func, obj, NULL);
+    result = _PyObject_CallOneArg(func, obj);
     Py_DECREF(obj);
     return result;
 }
@@ -420,7 +420,7 @@ call_method(PyObject *func, PyObject *self, PyObject *obj)
         return PyObject_CallFunctionObjArgs(func, self, obj, NULL);
     }
     else {
-        return PyObject_CallFunctionObjArgs(func, obj, NULL);
+        return _PyObject_CallOneArg(func, obj);
     }
 }
 
@@ -1142,7 +1142,7 @@ _Pickler_SetProtocol(PicklerObject *self, PyObject *protocol, int fix_imports)
 {
     long proto;
 
-    if (protocol == NULL || protocol == Py_None) {
+    if (protocol == Py_None) {
         proto = DEFAULT_PROTOCOL;
     }
     else {
@@ -1274,7 +1274,7 @@ _Unpickler_ReadFromFile(UnpicklerObject *self, Py_ssize_t n)
         return -1;
 
     if (n == READ_WHOLE_LINE) {
-        data = _PyObject_CallNoArg(self->readline);
+        data = PyObject_CallNoArgs(self->readline);
     }
     else {
         PyObject *len;
@@ -1653,7 +1653,7 @@ _Unpickler_SetInputEncoding(UnpicklerObject *self,
 static int
 _Unpickler_SetBuffers(UnpicklerObject *self, PyObject *buffers)
 {
-    if (buffers == NULL) {
+    if (buffers == NULL || buffers == Py_None) {
         self->buffers = NULL;
     }
     else {
@@ -2119,7 +2119,7 @@ save_long(PicklerObject *self, PyObject *obj)
         /* How many bytes do we need?  There are nbits >> 3 full
          * bytes of data, and nbits & 7 leftover bits.  If there
          * are any leftover bits, then we clearly need another
-         * byte.  Wnat's not so obvious is that we *probably*
+         * byte.  What's not so obvious is that we *probably*
          * need another byte even if there aren't any leftovers:
          * the most-significant bit of the most-significant byte
          * acts like a sign bit, and it's usually got a sense
@@ -2296,7 +2296,7 @@ _Pickler_write_bytes(PicklerObject *self,
                 return -1;
             }
         }
-        result = PyObject_CallFunctionObjArgs(self->write, payload, NULL);
+        result = _PyObject_CallOneArg(self->write, payload);
         Py_XDECREF(mem);
         if (result == NULL) {
             return -1;
@@ -2504,8 +2504,7 @@ save_picklebuffer(PicklerObject *self, PyObject *obj)
     }
     int in_band = 1;
     if (self->buffer_callback != NULL) {
-        PyObject *ret = PyObject_CallFunctionObjArgs(self->buffer_callback,
-                                                     obj, NULL);
+        PyObject *ret = _PyObject_CallOneArg(self->buffer_callback, obj);
         if (ret == NULL) {
             return -1;
         }
@@ -3306,7 +3305,7 @@ save_dict(PicklerObject *self, PyObject *obj)
         } else {
             _Py_IDENTIFIER(items);
 
-            items = _PyObject_CallMethodId(obj, &PyId_items, NULL);
+            items = _PyObject_CallMethodIdNoArgs(obj, &PyId_items);
             if (items == NULL)
                 goto error;
             iter = PyObject_GetIter(items);
@@ -4322,8 +4321,7 @@ save(PicklerObject *self, PyObject *obj, int pers_save)
      * regular reduction mechanism.
      */
     if (self->reducer_override != NULL) {
-        reduce_value = PyObject_CallFunctionObjArgs(self->reducer_override,
-                                                    obj, NULL);
+        reduce_value = _PyObject_CallOneArg(self->reducer_override, obj);
         if (reduce_value == NULL) {
             goto error;
         }
@@ -4385,7 +4383,6 @@ save(PicklerObject *self, PyObject *obj, int pers_save)
         _Py_IDENTIFIER(__reduce__);
         _Py_IDENTIFIER(__reduce_ex__);
 
-
         /* XXX: If the __reduce__ method is defined, __reduce_ex__ is
            automatically defined as __reduce__. While this is convenient, this
            make it impossible to know which method was actually called. Of
@@ -4406,14 +4403,15 @@ save(PicklerObject *self, PyObject *obj, int pers_save)
             }
         }
         else {
-            PickleState *st = _Pickle_GetGlobalState();
-
             /* Check for a __reduce__ method. */
-            reduce_func = _PyObject_GetAttrId(obj, &PyId___reduce__);
+            if (_PyObject_LookupAttrId(obj, &PyId___reduce__, &reduce_func) < 0) {
+                goto error;
+            }
             if (reduce_func != NULL) {
-                reduce_value = _PyObject_CallNoArg(reduce_func);
+                reduce_value = PyObject_CallNoArgs(reduce_func);
             }
             else {
+                PickleState *st = _Pickle_GetGlobalState();
                 PyErr_Format(st->PicklingError,
                              "can't pickle '%.200s' object: %R",
                              type->tp_name, obj);
@@ -4640,9 +4638,9 @@ Pickler_clear(PicklerObject *self)
 _pickle.Pickler.__init__
 
   file: object
-  protocol: object = NULL
+  protocol: object = None
   fix_imports: bool = True
-  buffer_callback: object = NULL
+  buffer_callback: object = None
 
 This takes a binary file for writing a pickle data stream.
 
@@ -4680,7 +4678,7 @@ static int
 _pickle_Pickler___init___impl(PicklerObject *self, PyObject *file,
                               PyObject *protocol, int fix_imports,
                               PyObject *buffer_callback)
-/*[clinic end generated code: output=0abedc50590d259b input=9a43a1c50ab91652]*/
+/*[clinic end generated code: output=0abedc50590d259b input=bb886e00443a7811]*/
 {
     _Py_IDENTIFIER(persistent_id);
     _Py_IDENTIFIER(dispatch_table);
@@ -5775,7 +5773,7 @@ instantiate(PyObject *cls, PyObject *args)
             return NULL;
         }
         if (func == NULL) {
-            return _PyObject_CallMethodIdObjArgs(cls, &PyId___new__, cls, NULL);
+            return _PyObject_CallMethodIdOneArg(cls, &PyId___new__, cls);
         }
         Py_DECREF(func);
     }
@@ -6176,8 +6174,10 @@ load_get(UnpicklerObject *self)
 
     value = _Unpickler_MemoGet(self, idx);
     if (value == NULL) {
-        if (!PyErr_Occurred())
-            PyErr_SetObject(PyExc_KeyError, key);
+        if (!PyErr_Occurred()) {
+           PickleState *st = _Pickle_GetGlobalState();
+           PyErr_Format(st->UnpicklingError, "Memo value not found at index %ld", idx);
+        }
         Py_DECREF(key);
         return -1;
     }
@@ -6203,7 +6203,8 @@ load_binget(UnpicklerObject *self)
     if (value == NULL) {
         PyObject *key = PyLong_FromSsize_t(idx);
         if (key != NULL) {
-            PyErr_SetObject(PyExc_KeyError, key);
+            PickleState *st = _Pickle_GetGlobalState();
+            PyErr_Format(st->UnpicklingError, "Memo value not found at index %ld", idx);
             Py_DECREF(key);
         }
         return -1;
@@ -6229,7 +6230,8 @@ load_long_binget(UnpicklerObject *self)
     if (value == NULL) {
         PyObject *key = PyLong_FromSsize_t(idx);
         if (key != NULL) {
-            PyErr_SetObject(PyExc_KeyError, key);
+            PickleState *st = _Pickle_GetGlobalState();
+            PyErr_Format(st->UnpicklingError, "Memo value not found at index %ld", idx);
             Py_DECREF(key);
         }
         return -1;
@@ -6448,7 +6450,9 @@ do_append(UnpicklerObject *self, Py_ssize_t x)
         PyObject *extend_func;
         _Py_IDENTIFIER(extend);
 
-        extend_func = _PyObject_GetAttrId(list, &PyId_extend);
+        if (_PyObject_LookupAttrId(list, &PyId_extend, &extend_func) < 0) {
+            return -1;
+        }
         if (extend_func != NULL) {
             slice = Pdata_poplist(self->stack, x);
             if (!slice) {
@@ -6468,7 +6472,6 @@ do_append(UnpicklerObject *self, Py_ssize_t x)
             /* Even if the PEP 307 requires extend() and append() methods,
                fall back on append() if the object has no extend() method
                for backward compatibility. */
-            PyErr_Clear();
             append_func = _PyObject_GetAttrId(list, &PyId_append);
             if (append_func == NULL)
                 return -1;
@@ -7201,7 +7204,7 @@ _pickle.Unpickler.__init__
   fix_imports: bool = True
   encoding: str = 'ASCII'
   errors: str = 'strict'
-  buffers: object = NULL
+  buffers: object(c_default="NULL") = ()
 
 This takes a binary file for reading a pickle data stream.
 
@@ -7229,7 +7232,7 @@ static int
 _pickle_Unpickler___init___impl(UnpicklerObject *self, PyObject *file,
                                 int fix_imports, const char *encoding,
                                 const char *errors, PyObject *buffers)
-/*[clinic end generated code: output=09f0192649ea3f85 input=da4b62d9edb68700]*/
+/*[clinic end generated code: output=09f0192649ea3f85 input=ca4c1faea9553121]*/
 {
     _Py_IDENTIFIER(persistent_load);
 
@@ -7621,10 +7624,10 @@ _pickle.dump
 
   obj: object
   file: object
-  protocol: object = NULL
+  protocol: object = None
   *
   fix_imports: bool = True
-  buffer_callback: object = NULL
+  buffer_callback: object = None
 
 Write a pickled representation of obj to the open file object file.
 
@@ -7659,7 +7662,7 @@ static PyObject *
 _pickle_dump_impl(PyObject *module, PyObject *obj, PyObject *file,
                   PyObject *protocol, int fix_imports,
                   PyObject *buffer_callback)
-/*[clinic end generated code: output=706186dba996490c input=2f035f02cc0f9547]*/
+/*[clinic end generated code: output=706186dba996490c input=cfdcaf573ed6e46c]*/
 {
     PicklerObject *pickler = _Pickler_New();
 
@@ -7694,10 +7697,10 @@ _pickle_dump_impl(PyObject *module, PyObject *obj, PyObject *file,
 _pickle.dumps
 
   obj: object
-  protocol: object = NULL
+  protocol: object = None
   *
   fix_imports: bool = True
-  buffer_callback: object = NULL
+  buffer_callback: object = None
 
 Return the pickled representation of the object as a bytes object.
 
@@ -7723,7 +7726,7 @@ into *file* as part of the pickle stream.  It is an error if
 static PyObject *
 _pickle_dumps_impl(PyObject *module, PyObject *obj, PyObject *protocol,
                    int fix_imports, PyObject *buffer_callback)
-/*[clinic end generated code: output=fbab0093a5580fdf input=001f167df711b9f1]*/
+/*[clinic end generated code: output=fbab0093a5580fdf input=9f334d535ff7194f]*/
 {
     PyObject *result;
     PicklerObject *pickler = _Pickler_New();
@@ -7758,7 +7761,7 @@ _pickle.load
   fix_imports: bool = True
   encoding: str = 'ASCII'
   errors: str = 'strict'
-  buffers: object = NULL
+  buffers: object(c_default="NULL") = ()
 
 Read and return an object from the pickle data stored in a file.
 
@@ -7789,7 +7792,7 @@ static PyObject *
 _pickle_load_impl(PyObject *module, PyObject *file, int fix_imports,
                   const char *encoding, const char *errors,
                   PyObject *buffers)
-/*[clinic end generated code: output=250452d141c23e76 input=29fae982fe778156]*/
+/*[clinic end generated code: output=250452d141c23e76 input=46c7c31c92f4f371]*/
 {
     PyObject *result;
     UnpicklerObject *unpickler = _Unpickler_New();
@@ -7826,7 +7829,7 @@ _pickle.loads
   fix_imports: bool = True
   encoding: str = 'ASCII'
   errors: str = 'strict'
-  buffers: object = NULL
+  buffers: object(c_default="NULL") = ()
 
 Read and return an object from the given pickle data.
 
@@ -7848,7 +7851,7 @@ static PyObject *
 _pickle_loads_impl(PyObject *module, PyObject *data, int fix_imports,
                    const char *encoding, const char *errors,
                    PyObject *buffers)
-/*[clinic end generated code: output=82ac1e6b588e6d02 input=c6004393f8276867]*/
+/*[clinic end generated code: output=82ac1e6b588e6d02 input=9c2ab6a0960185ea]*/
 {
     PyObject *result;
     UnpicklerObject *unpickler = _Unpickler_New();

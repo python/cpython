@@ -201,6 +201,9 @@ class _WindowsFlavour(_Flavour):
     def casefold_parts(self, parts):
         return [p.lower() for p in parts]
 
+    def compile_pattern(self, pattern):
+        return re.compile(fnmatch.translate(pattern), re.IGNORECASE).fullmatch
+
     def resolve(self, path, strict=False):
         s = str(path)
         if not s:
@@ -326,6 +329,9 @@ class _PosixFlavour(_Flavour):
     def casefold_parts(self, parts):
         return parts
 
+    def compile_pattern(self, pattern):
+        return re.compile(fnmatch.translate(pattern)).fullmatch
+
     def resolve(self, path, strict=False):
         sep = self.sep
         accessor = path._accessor
@@ -429,7 +435,12 @@ class _NormalAccessor(_Accessor):
 
     unlink = os.unlink
 
-    link_to = os.link
+    if hasattr(os, "link"):
+        link_to = os.link
+    else:
+        @staticmethod
+        def link_to(self, target):
+            raise NotImplementedError("os.link() not available on this system")
 
     rmdir = os.rmdir
 
@@ -463,7 +474,7 @@ _normal_accessor = _NormalAccessor()
 # Globbing helpers
 #
 
-def _make_selector(pattern_parts):
+def _make_selector(pattern_parts, flavour):
     pat = pattern_parts[0]
     child_parts = pattern_parts[1:]
     if pat == '**':
@@ -474,7 +485,7 @@ def _make_selector(pattern_parts):
         cls = _WildcardSelector
     else:
         cls = _PreciseSelector
-    return cls(pat, child_parts)
+    return cls(pat, child_parts, flavour)
 
 if hasattr(functools, "lru_cache"):
     _make_selector = functools.lru_cache()(_make_selector)
@@ -484,10 +495,10 @@ class _Selector:
     """A selector matches a specific glob pattern part against the children
     of a given path."""
 
-    def __init__(self, child_parts):
+    def __init__(self, child_parts, flavour):
         self.child_parts = child_parts
         if child_parts:
-            self.successor = _make_selector(child_parts)
+            self.successor = _make_selector(child_parts, flavour)
             self.dironly = True
         else:
             self.successor = _TerminatingSelector()
@@ -513,9 +524,9 @@ class _TerminatingSelector:
 
 class _PreciseSelector(_Selector):
 
-    def __init__(self, name, child_parts):
+    def __init__(self, name, child_parts, flavour):
         self.name = name
-        _Selector.__init__(self, child_parts)
+        _Selector.__init__(self, child_parts, flavour)
 
     def _select_from(self, parent_path, is_dir, exists, scandir):
         try:
@@ -529,13 +540,12 @@ class _PreciseSelector(_Selector):
 
 class _WildcardSelector(_Selector):
 
-    def __init__(self, pat, child_parts):
-        self.pat = re.compile(fnmatch.translate(pat))
-        _Selector.__init__(self, child_parts)
+    def __init__(self, pat, child_parts, flavour):
+        self.match = flavour.compile_pattern(pat)
+        _Selector.__init__(self, child_parts, flavour)
 
     def _select_from(self, parent_path, is_dir, exists, scandir):
         try:
-            cf = parent_path._flavour.casefold
             entries = list(scandir(parent_path))
             for entry in entries:
                 entry_is_dir = False
@@ -546,8 +556,7 @@ class _WildcardSelector(_Selector):
                         raise
                 if not self.dironly or entry_is_dir:
                     name = entry.name
-                    casefolded = cf(name)
-                    if self.pat.match(casefolded):
+                    if self.match(name):
                         path = parent_path._make_child_relpath(name)
                         for p in self.successor._select_from(path, is_dir, exists, scandir):
                             yield p
@@ -558,8 +567,8 @@ class _WildcardSelector(_Selector):
 
 class _RecursiveWildcardSelector(_Selector):
 
-    def __init__(self, pat, child_parts):
-        _Selector.__init__(self, child_parts)
+    def __init__(self, pat, child_parts, flavour):
+        _Selector.__init__(self, child_parts, flavour)
 
     def _iterate_directories(self, parent_path, is_dir, scandir):
         yield parent_path
@@ -797,6 +806,9 @@ class PurePath(object):
             return NotImplemented
         return self._cparts >= other._cparts
 
+    def __class_getitem__(cls, type):
+        return cls
+
     drive = property(attrgetter('_drv'),
                      doc="""The drive prefix (letter or UNC path), if any.""")
 
@@ -819,7 +831,11 @@ class PurePath(object):
 
     @property
     def suffix(self):
-        """The final component's last suffix, if any."""
+        """
+        The final component's last suffix, if any.
+
+        This includes the leading period. For example: '.txt'
+        """
         name = self.name
         i = name.rfind('.')
         if 0 < i < len(name) - 1:
@@ -829,7 +845,11 @@ class PurePath(object):
 
     @property
     def suffixes(self):
-        """A list of the final component's suffixes, if any."""
+        """
+        A list of the final component's suffixes, if any.
+
+        These include the leading periods. For example: ['.tar', '.gz']
+        """
         name = self.name
         if name.endswith('.'):
             return []
@@ -910,6 +930,15 @@ class PurePath(object):
         return self._from_parsed_parts('', root if n == 1 else '',
                                        abs_parts[n:])
 
+    def is_relative_to(self, *other):
+        """Return True if the path is relative to another path or False.
+        """
+        try:
+            self.relative_to(*other)
+            return True
+        except ValueError:
+            return False
+
     @property
     def parts(self):
         """An object providing sequence-like access to the
@@ -931,10 +960,16 @@ class PurePath(object):
         return self._make_child(args)
 
     def __truediv__(self, key):
-        return self._make_child((key,))
+        try:
+            return self._make_child((key,))
+        except TypeError:
+            return NotImplemented
 
     def __rtruediv__(self, key):
-        return self._from_parts([key, self])
+        try:
+            return self._from_parts([key, self])
+        except TypeError:
+            return NotImplemented
 
     @property
     def parent(self):
@@ -1127,11 +1162,10 @@ class Path(PurePath):
         """
         if not pattern:
             raise ValueError("Unacceptable pattern: {!r}".format(pattern))
-        pattern = self._flavour.casefold(pattern)
         drv, root, pattern_parts = self._flavour.parse_parts((pattern,))
         if drv or root:
             raise NotImplementedError("Non-relative patterns are unsupported")
-        selector = _make_selector(tuple(pattern_parts))
+        selector = _make_selector(tuple(pattern_parts), self._flavour)
         for p in selector.select_from(self):
             yield p
 
@@ -1140,11 +1174,10 @@ class Path(PurePath):
         directories) matching the given relative pattern, anywhere in
         this subtree.
         """
-        pattern = self._flavour.casefold(pattern)
         drv, root, pattern_parts = self._flavour.parse_parts((pattern,))
         if drv or root:
             raise NotImplementedError("Non-relative patterns are unsupported")
-        selector = _make_selector(("**",) + tuple(pattern_parts))
+        selector = _make_selector(("**",) + tuple(pattern_parts), self._flavour)
         for p in selector.select_from(self):
             yield p
 
@@ -1251,6 +1284,15 @@ class Path(PurePath):
         with self.open(mode='w', encoding=encoding, errors=errors) as f:
             return f.write(data)
 
+    def readlink(self):
+        """
+        Return the path to which the symbolic link points.
+        """
+        path = self._accessor.readlink(self)
+        obj = self._from_parts((path,), init=False)
+        obj._init(template=self)
+        return obj
+
     def touch(self, mode=0o666, exist_ok=True):
         """
         Create this file with the given access mode, if it doesn't exist.
@@ -1350,20 +1392,24 @@ class Path(PurePath):
 
     def rename(self, target):
         """
-        Rename this path to the given path.
+        Rename this path to the given path,
+        and return a new Path instance pointing to the given path.
         """
         if self._closed:
             self._raise_closed()
         self._accessor.rename(self, target)
+        return self.__class__(target)
 
     def replace(self, target):
         """
         Rename this path to the given path, clobbering the existing
-        destination if it exists.
+        destination if it exists, and return a new Path instance
+        pointing to the given path.
         """
         if self._closed:
             self._raise_closed()
         self._accessor.replace(self, target)
+        return self.__class__(target)
 
     def symlink_to(self, target, target_is_directory=False):
         """

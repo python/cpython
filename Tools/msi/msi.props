@@ -56,6 +56,7 @@
         <ReuseCabinetCache>true</ReuseCabinetCache>
         <CRTRedist Condition="'$(CRTRedist)' == ''">$(ExternalsDir)\windows-installer\redist-1\$(Platform)</CRTRedist>
         <CRTRedist>$([System.IO.Path]::GetFullPath($(CRTRedist)))</CRTRedist>
+        <TclTkLibraryDir Condition="$(TclTkLibraryDir) == ''">$(tcltkDir)lib</TclTkLibraryDir>
         <DocFilename>python$(MajorVersionNumber)$(MinorVersionNumber)$(MicroVersionNumber)$(ReleaseLevelName).chm</DocFilename>
 
         <InstallerVersion>$(MajorVersionNumber).$(MinorVersionNumber).$(Field3Value).0</InstallerVersion>
@@ -121,7 +122,7 @@
         <LinkerBindInputPaths Include="$(PySourcePath)">
             <BindName>src</BindName>
         </LinkerBindInputPaths>
-        <LinkerBindInputPaths Include="$(tcltkDir)">
+        <LinkerBindInputPaths Include="$(TclTkLibraryDir)">
             <BindName>tcltk</BindName>
         </LinkerBindInputPaths>
         <LinkerBindInputPaths Include="$(CRTRedist)">

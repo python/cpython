@@ -89,6 +89,10 @@ class TestParser(TestParserMixin, TestEmailBase):
         with self.assertRaises(errors.HeaderParseError):
             parser.get_encoded_word('=?abc?=')
 
+    def test_get_encoded_word_invalid_cte(self):
+        with self.assertRaises(errors.HeaderParseError):
+            parser.get_encoded_word('=?utf-8?X?somevalue?=')
+
     def test_get_encoded_word_valid_ew(self):
         self._test_get_x(parser.get_encoded_word,
                          '=?us-ascii?q?this_is_a_test?=  bird',
@@ -297,7 +301,7 @@ class TestParser(TestParserMixin, TestEmailBase):
             [],
             '')
 
-    def test_get_unstructured_invaild_ew(self):
+    def test_get_unstructured_invalid_ew(self):
         self._test_get_x(self._get_unst,
             '=?test val',
             '=?test val',
@@ -381,6 +385,30 @@ class TestParser(TestParserMixin, TestEmailBase):
             'somevaluenowhitespace',
             'somevaluenowhitespace',
             [errors.InvalidHeaderDefect],
+            '')
+
+    def test_get_unstructured_without_trailing_whitespace_hang_case(self):
+        self._test_get_x(self._get_unst,
+            '=?utf-8?q?somevalue?=aa',
+            'somevalueaa',
+            'somevalueaa',
+            [errors.InvalidHeaderDefect],
+            '')
+
+    def test_get_unstructured_invalid_ew(self):
+        self._test_get_x(self._get_unst,
+            '=?utf-8?q?=somevalue?=',
+            '=?utf-8?q?=somevalue?=',
+            '=?utf-8?q?=somevalue?=',
+            [],
+            '')
+
+    def test_get_unstructured_invalid_ew_cte(self):
+        self._test_get_x(self._get_unst,
+            '=?utf-8?X?=somevalue?=',
+            '=?utf-8?X?=somevalue?=',
+            '=?utf-8?X?=somevalue?=',
+            [],
             '')
 
     # get_qp_ctext
@@ -521,6 +549,10 @@ class TestParser(TestParserMixin, TestEmailBase):
     def test_get_bare_quoted_string_only_quotes(self):
         self._test_get_x(parser.get_bare_quoted_string,
                          '""', '""', '', [], '')
+
+    def test_get_bare_quoted_string_missing_endquotes(self):
+        self._test_get_x(parser.get_bare_quoted_string,
+                         '"', '""', '', [errors.InvalidHeaderDefect], '')
 
     def test_get_bare_quoted_string_following_wsp_preserved(self):
         self._test_get_x(parser.get_bare_quoted_string,
@@ -929,6 +961,12 @@ class TestParser(TestParserMixin, TestEmailBase):
             ' (foo) bar (bang) :ah', ' (foo) bar (bang) ', ' bar ', [], ':ah')
         self.assertEqual(word.token_type, 'atom')
         self.assertEqual(word[0].token_type, 'cfws')
+
+    def test_get_word_all_CFWS(self):
+        # bpo-29412: Test that we don't raise IndexError when parsing CFWS only
+        # token.
+        with self.assertRaises(errors.HeaderParseError):
+            parser.get_word('(Recipients list suppressed')
 
     def test_get_word_qs_yields_qs(self):
         word = self._test_get_x(parser.get_word,
@@ -1438,6 +1476,16 @@ class TestParser(TestParserMixin, TestEmailBase):
         self.assertEqual(addr_spec.domain, 'example.com')
         self.assertEqual(addr_spec.addr_spec, 'star.a.star@example.com')
 
+    def test_get_addr_spec_multiple_domains(self):
+        with self.assertRaises(errors.HeaderParseError):
+            parser.get_addr_spec('star@a.star@example.com')
+
+        with self.assertRaises(errors.HeaderParseError):
+            parser.get_addr_spec('star@a@example.com')
+
+        with self.assertRaises(errors.HeaderParseError):
+            parser.get_addr_spec('star@172.17.0.1@example.com')
+
     # get_obs_route
 
     def test_get_obs_route_simple(self):
@@ -1679,6 +1727,14 @@ class TestParser(TestParserMixin, TestEmailBase):
         self.assertEqual(len(display_name), 4)
         self.assertEqual(display_name[3].comments, ['with trailing comment'])
         self.assertEqual(display_name.display_name, 'simple phrase.')
+
+    def test_get_display_name_for_invalid_address_field(self):
+        # bpo-32178: Test that address fields starting with `:` don't cause
+        # IndexError when parsing the display name.
+        display_name = self._test_get_x(
+            parser.get_display_name,
+            ':Foo ', '', '', [errors.InvalidHeaderDefect], ':Foo ')
+        self.assertEqual(display_name.value, '')
 
     # get_name_addr
 
@@ -2343,6 +2399,17 @@ class TestParser(TestParserMixin, TestEmailBase):
 
     # get_address_list
 
+    def test_get_address_list_CFWS(self):
+        address_list = self._test_get_x(parser.get_address_list,
+                                        '(Recipient list suppressed)',
+                                        '(Recipient list suppressed)',
+                                        ' ',
+                                        [errors.ObsoleteHeaderDefect],  # no content in address list
+                                        '')
+        self.assertEqual(address_list.token_type, 'address-list')
+        self.assertEqual(len(address_list.mailboxes), 0)
+        self.assertEqual(address_list.mailboxes, address_list.all_mailboxes)
+
     def test_get_address_list_mailboxes_simple(self):
         address_list = self._test_get_x(parser.get_address_list,
             'dinsdale@example.com',
@@ -2516,6 +2583,11 @@ class TestParser(TestParserMixin, TestEmailBase):
 
     # get_msg_id
 
+    def test_get_msg_id_empty(self):
+        # bpo-38708: Test that HeaderParseError is raised and not IndexError.
+        with self.assertRaises(errors.HeaderParseError):
+            parser.get_msg_id('')
+
     def test_get_msg_id_valid(self):
         msg_id = self._test_get_x(
             parser.get_msg_id,
@@ -2571,6 +2643,46 @@ class TestParser(TestParserMixin, TestEmailBase):
         )
         self.assertEqual(msg_id.token_type, 'msg-id')
 
+    def test_get_msg_id_invalid_expected_msg_id_not_found(self):
+        text = "935-XPB-567:0:45327:9:90305:17843586-40@example.com"
+        msg_id = parser.parse_message_id(text)
+        self.assertDefectsEqual(
+            msg_id.all_defects,
+            [errors.InvalidHeaderDefect])
+
+    def test_parse_invalid_message_id(self):
+        message_id = self._test_parse_x(
+            parser.parse_message_id,
+            "935-XPB-567:0:45327:9:90305:17843586-40@example.com",
+            "935-XPB-567:0:45327:9:90305:17843586-40@example.com",
+            "935-XPB-567:0:45327:9:90305:17843586-40@example.com",
+            [errors.InvalidHeaderDefect],
+            )
+        self.assertEqual(message_id.token_type, 'invalid-message-id')
+
+    def test_parse_valid_message_id(self):
+        message_id = self._test_parse_x(
+            parser.parse_message_id,
+            "<aperson@somedomain>",
+            "<aperson@somedomain>",
+            "<aperson@somedomain>",
+            [],
+            )
+        self.assertEqual(message_id.token_type, 'message-id')
+
+    def test_parse_message_id_with_remaining(self):
+        message_id = self._test_parse_x(
+            parser.parse_message_id,
+            "<validmessageid@example>thensomething",
+            "<validmessageid@example>",
+            "<validmessageid@example>",
+            [errors.InvalidHeaderDefect],
+            [],
+            )
+        self.assertEqual(message_id.token_type, 'message-id')
+        self.assertEqual(str(message_id.all_defects[0]),
+                         "Unexpected 'thensomething'")
+
     def test_get_msg_id_no_angle_start(self):
         with self.assertRaises(errors.HeaderParseError):
             parser.get_msg_id("msgwithnoankle")
@@ -2585,6 +2697,7 @@ class TestParser(TestParserMixin, TestEmailBase):
             ""
         )
         self.assertEqual(msg_id.token_type, 'msg-id')
+
 
 
 @parameterize
@@ -2693,6 +2806,13 @@ class Test_parse_mime_parameters(TestParserMixin, TestEmailBase):
             # Defects are apparent missing *0*, and two 'out of sequence'.
             [errors.InvalidHeaderDefect]*3),
 
+        # bpo-37461: Check that we don't go into an infinite loop.
+        'extra_dquote': (
+            'r*="\'a\'\\"',
+            ' r="\\""',
+            'r*=\'a\'"',
+            [('r', '"')],
+            [errors.InvalidHeaderDefect]*2),
     }
 
 @parameterize

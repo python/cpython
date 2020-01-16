@@ -38,9 +38,9 @@ PyFile_FromFd(int fd, const char *name, const char *mode, int buffering, const c
     io = PyImport_ImportModule("_io");
     if (io == NULL)
         return NULL;
-    stream = _PyObject_CallMethodId(io, &PyId_open, "isisssi", fd, mode,
+    stream = _PyObject_CallMethodId(io, &PyId_open, "isisssO", fd, mode,
                                  buffering, encoding, errors,
-                                 newline, closefd);
+                                 newline, closefd ? Py_True : Py_False);
     Py_DECREF(io);
     if (stream == NULL)
         return NULL;
@@ -61,7 +61,7 @@ PyFile_GetLine(PyObject *f, int n)
     }
 
     if (n <= 0) {
-        result = _PyObject_CallMethodIdObjArgs(f, &PyId_readline, NULL);
+        result = _PyObject_CallMethodIdNoArgs(f, &PyId_readline);
     }
     else {
         result = _PyObject_CallMethodId(f, &PyId_readline, "i", n);
@@ -136,7 +136,7 @@ PyFile_WriteObject(PyObject *v, PyObject *f, int flags)
         Py_DECREF(writer);
         return -1;
     }
-    result = PyObject_CallFunctionObjArgs(writer, value, NULL);
+    result = _PyObject_CallOneArg(writer, value);
     Py_DECREF(value);
     Py_DECREF(writer);
     if (result == NULL)
@@ -185,8 +185,10 @@ PyObject_AsFileDescriptor(PyObject *o)
     if (PyLong_Check(o)) {
         fd = _PyLong_AsInt(o);
     }
-    else if ((meth = _PyObject_GetAttrId(o, &PyId_fileno)) != NULL)
-    {
+    else if (_PyObject_LookupAttrId(o, &PyId_fileno, &meth) < 0) {
+        return -1;
+    }
+    else if (meth != NULL) {
         PyObject *fno = _PyObject_CallNoArg(meth);
         Py_DECREF(meth);
         if (fno == NULL)
