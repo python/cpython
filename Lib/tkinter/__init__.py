@@ -1386,8 +1386,8 @@ class Misc:
 
     def unbind(self, sequence, funcid=None):
         """Unbind for this widget the event SEQUENCE.
-        
-        If FUNCID is given, only unbind the function identified with FUNCID.
+
+        If FUNCID is given, only unbind the function identified with FUNCID
         and also delete that command.
         """
         if funcid is None:
@@ -1398,7 +1398,6 @@ class Misc:
                              if not f.startswith(f'if {{"[{funcid}'))
             self.tk.call('bind', self._w, sequence, keep)
             self.deletecommand(funcid)
-         
 
     def bind_all(self, sequence=None, func=None, add=None):
         """Bind to all widgets at an event SEQUENCE a call to function FUNC.
