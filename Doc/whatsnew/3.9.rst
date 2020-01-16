@@ -420,6 +420,12 @@ Removed
   3.5 (:issue:`22486`): use :func:`math.gcd` instead.
   (Contributed by Victor Stinner in :issue:`39350`.)
 
+* The *buffering* parameter of :class:`bz2.BZ2File` has been removed. Since
+  Python 3.0, it was ignored and using it was emitting
+  :exc:`DeprecationWarning`. Pass an open file object to control how the file
+  is opened.
+  (Contributed by Victor Stinner in :issue:`39357`.)
+
 
 Porting to Python 3.9
 =====================
@@ -450,6 +456,10 @@ Changes in the Python API
 * The :meth:`select.epoll.unregister` method no longer ignores the
   :data:`~errno.EBADF` error.
   (Contributed by Victor Stinner in :issue:`39239`.)
+
+* The *compresslevel* parameter of :class:`bz2.BZ2File` became keyword-only,
+  since the *buffering* parameter has been removed.
+  (Contributed by Victor Stinner in :issue:`39357`.)
 
 
 CPython bytecode changes
