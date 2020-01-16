@@ -1,0 +1,2 @@
+Remove ``fractions.gcd()`` function, deprecated since Python 3.5
+(:issue:`22486`): use :func:`math.gcd` instead.
