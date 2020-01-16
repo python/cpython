@@ -12,7 +12,7 @@ import warnings
 from copy import copy, deepcopy
 from pickle import dumps, loads
 F = fractions.Fraction
-gcd = fractions.gcd
+
 
 class DummyFloat(object):
     """Dummy float class for testing comparisons with Fractions"""
@@ -80,30 +80,6 @@ class DummyRational(object):
 
 class DummyFraction(fractions.Fraction):
     """Dummy Fraction subclass for copy and deepcopy testing."""
-
-class GcdTest(unittest.TestCase):
-
-    def testMisc(self):
-        # fractions.gcd() is deprecated
-        with self.assertWarnsRegex(DeprecationWarning, r'fractions\.gcd'):
-            gcd(1, 1)
-        with warnings.catch_warnings():
-            warnings.filterwarnings('ignore', r'fractions\.gcd',
-                                    DeprecationWarning)
-            self.assertEqual(0, gcd(0, 0))
-            self.assertEqual(1, gcd(1, 0))
-            self.assertEqual(-1, gcd(-1, 0))
-            self.assertEqual(1, gcd(0, 1))
-            self.assertEqual(-1, gcd(0, -1))
-            self.assertEqual(1, gcd(7, 1))
-            self.assertEqual(-1, gcd(7, -1))
-            self.assertEqual(1, gcd(-23, 15))
-            self.assertEqual(12, gcd(120, 84))
-            self.assertEqual(-12, gcd(84, -120))
-            self.assertEqual(gcd(120.0, 84), 12.0)
-            self.assertEqual(gcd(120, 84.0), 12.0)
-            self.assertEqual(gcd(F(120), F(84)), F(12))
-            self.assertEqual(gcd(F(120, 77), F(84, 55)), F(12, 385))
 
 
 def _components(r):
@@ -689,6 +665,7 @@ class FractionTest(unittest.TestCase):
         # Issue 4998
         r = F(13, 7)
         self.assertRaises(AttributeError, setattr, r, 'a', 10)
+
 
 if __name__ == '__main__':
     unittest.main()
