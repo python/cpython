@@ -2314,8 +2314,12 @@ main_loop:
         case TARGET(STORE_GLOBAL): {
             PyObject *name = GETITEM(names, oparg);
             PyObject *v = POP();
+            PyObject *ns = f->f_globals;
             int err;
-            err = PyDict_SetItem(f->f_globals, name, v);
+            if (PyDict_CheckExact(ns))
+                err = PyDict_SetItem(ns, name, v);
+            else
+                err = PyObject_SetItem(ns, name, v);
             Py_DECREF(v);
             if (err != 0)
                 goto error;
