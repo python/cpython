@@ -88,7 +88,7 @@ def ToASCII(label):
         raise UnicodeError("label empty or too long")
 
     # Step 5: Check ACE prefix
-    if label.lower().startswith(sace_prefix):
+    if label[:4].lower() == sace_prefix:
         raise UnicodeError("Label starts with ACE prefix")
 
     # Step 6: Encode with PUNYCODE
@@ -121,7 +121,7 @@ def ToUnicode(label):
         except UnicodeError:
             raise UnicodeError("Invalid character in IDN label")
     # Step 3: Check for ACE prefix
-    if not label.lower().startswith(ace_prefix):
+    if not label[:4].lower() == ace_prefix:
         return str(label, "ascii")
 
     # Step 4: Remove ACE prefix
