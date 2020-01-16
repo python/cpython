@@ -3372,18 +3372,74 @@ static PyMethodDef asyncio_methods[] = {
     {NULL, NULL}
 };
 
+static int
+_asyncio_exec(PyObject *module)
+{
+    if (PyType_Ready(&FutureType) < 0) {
+        return -1;
+    }
+    if (PyType_Ready(&FutureIterType) < 0) {
+        return -1;
+    }
+    if (PyType_Ready(&TaskStepMethWrapper_Type) < 0) {
+        return -1;
+    }
+    if (PyType_Ready(&TaskWakeupMethWrapper_Type) < 0) {
+        return -1;
+    }
+    if (PyType_Ready(&TaskType) < 0) {
+        return -1;
+    }
+    if (PyType_Ready(&PyRunningLoopHolder_Type) < 0) {
+        return -1;
+    }
+
+    Py_INCREF(&FutureType);
+    if (PyModule_AddObject(module, "Future", (PyObject *)&FutureType) < 0) {
+        Py_DECREF(&FutureType);
+        Py_DECREF(module);
+        return -1;
+    }
+
+    Py_INCREF(&TaskType);
+    if (PyModule_AddObject(module, "Task", (PyObject *)&TaskType) < 0) {
+        Py_DECREF(&TaskType);
+        Py_DECREF(module);
+        return -1;
+    }
+
+    Py_INCREF(all_tasks);
+    if (PyModule_AddObject(module, "_all_tasks", all_tasks) < 0) {
+        Py_DECREF(all_tasks);
+        Py_DECREF(module);
+        return -1;
+    }
+
+    Py_INCREF(current_tasks);
+    if (PyModule_AddObject(module, "_current_tasks", current_tasks) < 0) {
+        Py_DECREF(current_tasks);
+        Py_DECREF(module);
+        return -1;
+    }
+    return 0;
+}
+
+static PyModuleDef_Slot _asyncio_slots[] = {
+    {Py_mod_exec, _asyncio_exec},
+    {0, NULL}
+};
+
 static struct PyModuleDef _asynciomodule = {
     PyModuleDef_HEAD_INIT,      /* m_base */
     "_asyncio",                 /* m_name */
     module_doc,                 /* m_doc */
-    -1,                         /* m_size */
+    0,                          /* m_size */
     asyncio_methods,            /* m_methods */
-    NULL,                       /* m_slots */
+    _asyncio_slots,             /* m_slots */
     NULL,                       /* m_traverse */
     NULL,                       /* m_clear */
     (freefunc)module_free       /* m_free */
 };
-
 
 PyMODINIT_FUNC
 PyInit__asyncio(void)
@@ -3391,57 +3447,5 @@ PyInit__asyncio(void)
     if (module_init() < 0) {
         return NULL;
     }
-    if (PyType_Ready(&FutureType) < 0) {
-        return NULL;
-    }
-    if (PyType_Ready(&FutureIterType) < 0) {
-        return NULL;
-    }
-    if (PyType_Ready(&TaskStepMethWrapper_Type) < 0) {
-        return NULL;
-    }
-    if (PyType_Ready(&TaskWakeupMethWrapper_Type) < 0) {
-        return NULL;
-    }
-    if (PyType_Ready(&TaskType) < 0) {
-        return NULL;
-    }
-    if (PyType_Ready(&PyRunningLoopHolder_Type) < 0) {
-        return NULL;
-    }
-
-    PyObject *m = PyModule_Create(&_asynciomodule);
-    if (m == NULL) {
-        return NULL;
-    }
-
-    Py_INCREF(&FutureType);
-    if (PyModule_AddObject(m, "Future", (PyObject *)&FutureType) < 0) {
-        Py_DECREF(&FutureType);
-        Py_DECREF(m);
-        return NULL;
-    }
-
-    Py_INCREF(&TaskType);
-    if (PyModule_AddObject(m, "Task", (PyObject *)&TaskType) < 0) {
-        Py_DECREF(&TaskType);
-        Py_DECREF(m);
-        return NULL;
-    }
-
-    Py_INCREF(all_tasks);
-    if (PyModule_AddObject(m, "_all_tasks", all_tasks) < 0) {
-        Py_DECREF(all_tasks);
-        Py_DECREF(m);
-        return NULL;
-    }
-
-    Py_INCREF(current_tasks);
-    if (PyModule_AddObject(m, "_current_tasks", current_tasks) < 0) {
-        Py_DECREF(current_tasks);
-        Py_DECREF(m);
-        return NULL;
-    }
-
-    return m;
+    return PyModuleDef_Init(&_asynciomodule);
 }
