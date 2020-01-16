@@ -905,12 +905,20 @@ class SSLObject:
         """
         return self._sslobj.getpeercert(binary_form)
 
-    def getpeercertchain(self, binary_form=False, validate=True):
-        """"Returns the certificate chain of the SSL connection
-        as tuple of dicts.
+    def get_peer_cert_chain(self, binary_form=False):
+        """"Returns the certificate chain of the SSL connection as a tuple of
+        dicts. It is *not* a verified chain.
 
-        Return None if no chain is provieded."""
-        return self._sslobj.getpeercertchain(binary_form, validate)
+        Return ``None`` if no chain is provided."""
+        return self._sslobj.get_peer_cert_chain(binary_form)
+
+    if hasattr(_ssl._SSLSocket, 'get_verified_chain'):
+        def get_verified_chain(self, binary_form=False):
+            """"Returns the verified certificate chain of the SSL connection as a
+            tuple of dicts.
+
+            Return ``None`` if no chain is provided."""
+            return self._sslobj.get_verified_chain(binary_form)
 
     def selected_npn_protocol(self):
         """Return the currently selected NPN protocol as a string, or ``None``
@@ -1131,10 +1139,17 @@ class SSLSocket(socket):
         return self._sslobj.getpeercert(binary_form)
 
     @_sslcopydoc
-    def getpeercertchain(self, binary_form=False, validate=True):
+    def get_peer_cert_chain(self, binary_form=False):
         self._checkClosed()
         self._check_connected()
-        return self._sslobj.getpeercertchain(binary_form, validate)
+        return self._sslobj.get_peer_cert_chain(binary_form)
+
+    if hasattr(_ssl._SSLSocket, 'get_verified_chain'):
+        @_sslcopydoc
+        def get_verified_chain(self, binary_form=False):
+            self._checkClosed()
+            self._check_connected()
+            return self._sslobj.get_verified_chain(binary_form)
 
     @_sslcopydoc
     def selected_npn_protocol(self):

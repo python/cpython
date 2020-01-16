@@ -2160,7 +2160,29 @@ class SimpleBackgroundTests(unittest.TestCase):
             self.assertTrue(cert)
         self.assertEqual(len(ctx.get_ca_certs()), 1)
 
-    def test_getpeercertchain(self):
+    def test_get_peer_cert_chain(self):
+        ctx = ssl.SSLContext(ssl.PROTOCOL_SSLv23)
+        ctx.verify_mode = ssl.CERT_REQUIRED
+        ctx.load_verify_locations(capath=CAPATH)
+        with ctx.wrap_socket(socket.socket(socket.AF_INET)) as s:
+            s.connect(self.server_addr)
+            try:
+                peer_cert = s.getpeercert()
+                peer_cert_bin = s.getpeercert(True)
+                chain_no_validate = s.get_peer_cert_chain()
+                chain_bin_no_validate = s.get_peer_cert_chain(True)
+            finally:
+                self.assertTrue(peer_cert)
+                self.assertTrue(peer_cert_bin)
+
+                # ca cert
+                ca_certs = ctx.get_ca_certs()
+                self.assertEqual(len(ca_certs), 1)
+
+                self.assertEqual(chain_no_validate, (peer_cert,))
+                self.assertEqual(chain_bin_no_validate, (peer_cert_bin,))
+
+    def test_get_verified_chain(self):
         ctx = ssl.SSLContext(ssl.PROTOCOL_SSLv23)
         ctx.verify_mode = ssl.CERT_REQUIRED
         ctx.load_verify_locations(capath=CAPATH)
@@ -2170,17 +2192,10 @@ class SimpleBackgroundTests(unittest.TestCase):
                 peer_cert = s.getpeercert()
                 peer_cert_bin = s.getpeercert(True)
                 if IS_OPENSSL_1_1_0:
-                    chain = s.getpeercertchain()
-                    chain_bin = s.getpeercertchain(True)
+                    chain = s.get_verified_chain()
+                    chain_bin = s.get_verified_chain(True)
                 else:
-                    self.assertRaisesRegex(
-                        Exception, r'only supported by OpenSSL 1\.1\.0',
-                        s.getpeercertchain)
-                    self.assertRaisesRegex(
-                        Exception, r'only supported by OpenSSL 1\.1\.0',
-                        s.getpeercertchain, True)
-                chain_no_validate = s.getpeercertchain(validate=False)
-                chain_bin_no_validate = s.getpeercertchain(True, False)
+                    self.assertFalse(hasattr(s, 'get_verified_chain'))
             finally:
                 self.assertTrue(peer_cert)
                 self.assertTrue(peer_cert_bin)
@@ -2197,8 +2212,6 @@ class SimpleBackgroundTests(unittest.TestCase):
                 if IS_OPENSSL_1_1_0:
                     self.assertEqual(chain, (peer_cert, test_get_ca_certsert))
                     self.assertEqual(chain_bin, (peer_cert_bin, ca_cert_bin))
-                self.assertEqual(chain_no_validate, (peer_cert,))
-                self.assertEqual(chain_bin_no_validate, (peer_cert_bin,))
 
     @needs_sni
     def test_context_setget(self):

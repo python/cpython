@@ -2096,64 +2096,17 @@ _ssl__SSLSocket_cipher_impl(PySSLSocket *self)
     return cipher_to_tuple(current);
 }
 
-/*[clinic input]
-_ssl._SSLSocket.getpeercertchain
-    der as binary_mode: bool = False
-    validate: bool = True
-[clinic start generated code]*/
-
 static PyObject *
-_ssl__SSLSocket_getpeercertchain_impl(PySSLSocket *self, int binary_mode,
-                                      int validate)
-/*[clinic end generated code: output=8094e6d78d27eb9a input=f4dcd181d0d163eb]*/
+chain_to_pyobject(STACK_OF(X509) *peer_chain, int binary_mode)
 {
     int len, i;
     PyObject *retval = NULL, *ci=NULL;
-    STACK_OF(X509) *peer_chain; /* reference */
-
-    assert((self->ctx != NULL) && (self->ctx->ctx != NULL));
-    if (self->ssl == NULL) {
-        Py_RETURN_NONE;
-    }
-
-    /* The peer just transmits the intermediate cert chain EXCLUDING the root
-     * CA certificate as this side is suppose to have a copy of the root
-     * certificate for verification. */
-    if (validate) {
-#ifdef OPENSSL_VERSION_1_1
-        peer_chain = SSL_get0_verified_chain(self->ssl);
-        long ret = SSL_get_verify_result(self->ssl);
-        if (ret != X509_V_OK) {
-#ifdef SSL_R_CERTIFICATE_VERIFY_FAILED
-            long e = ERR_PACK(ERR_LIB_SSL, 0, SSL_R_CERTIFICATE_VERIFY_FAILED);
-#else
-            long e = ERR_PACK(ERR_LIB_SSL, 0, 134);
-#endif
-            fill_and_set_sslerror(self, PySSLCertVerificationErrorObject, PY_SSL_ERROR_SSL, NULL, __LINE__, e);
-            return NULL;
-        }
-#else
-        PyErr_SetString(
-            PyExc_Exception,
-            "Getting verified certificate chains with SSL_get0_verified_chain"
-            " is only supported by OpenSSL 1.1.0 and later");
-        return NULL;
-#endif
-    } else {
-        peer_chain = SSL_get_peer_cert_chain(self->ssl);
-        if (self->socket_type == PY_SSL_SERVER) {
-            X509 *peer_cert = SSL_get_peer_certificate(self->ssl);
-            if (peer_cert != NULL)
-                sk_X509_insert(peer_chain, peer_cert, 0);
-        }
-    }
 
     if (peer_chain == NULL) {
         Py_RETURN_NONE;
     }
 
     len = sk_X509_num(peer_chain);
-
     if ((retval = PyTuple_New(len)) == NULL) {
         return NULL;
     }
@@ -2168,14 +2121,69 @@ _ssl__SSLSocket_getpeercertchain_impl(PySSLSocket *self, int binary_mode,
 
         if (ci == NULL) {
             Py_CLEAR(retval);
-            goto end;
+            break;
         }
         PyTuple_SET_ITEM(retval, i, ci);
     }
 
-  end:
     return retval;
 }
+
+/*[clinic input]
+_ssl._SSLSocket.get_peer_cert_chain
+    der as binary_mode: bool = False
+[clinic start generated code]*/
+
+static PyObject *
+_ssl__SSLSocket_get_peer_cert_chain_impl(PySSLSocket *self, int binary_mode)
+/*[clinic end generated code: output=2fc1e5dce85798ba input=3dd8f43730febaa9]*/
+{
+    STACK_OF(X509) *peer_chain; /* reference */
+
+    assert((self->ctx != NULL) && (self->ctx->ctx != NULL));
+    if (self->ssl == NULL)
+        Py_RETURN_NONE;
+
+    peer_chain = SSL_get_peer_cert_chain(self->ssl);
+    /* In OpenSSL only the client side includes the peer certificate.
+     * Manually add it if required it to be more consistent. */
+    if (self->socket_type == PY_SSL_SERVER) {
+        X509 *peer_cert = SSL_get_peer_certificate(self->ssl);
+        if (peer_cert != NULL) {
+            if (peer_chain == NULL)
+                peer_chain = sk_X509_new_null();
+            sk_X509_insert(peer_chain, peer_cert, 0);
+        }
+    }
+    return chain_to_pyobject(peer_chain, binary_mode);
+}
+
+#ifdef OPENSSL_VERSION_1_1
+/*[clinic input]
+_ssl._SSLSocket.get_verified_chain
+    der as binary_mode: bool = False
+[clinic start generated code]*/
+
+static PyObject *
+_ssl__SSLSocket_get_verified_chain_impl(PySSLSocket *self, int binary_mode)
+/*[clinic end generated code: output=6e07b709feaeb291 input=8f51efb220ed687f]*/
+{
+    STACK_OF(X509) *peer_chain; /* reference */
+
+    assert((self->ctx != NULL) && (self->ctx->ctx != NULL));
+    if (self->ssl == NULL)
+        Py_RETURN_NONE;
+
+    peer_chain = SSL_get0_verified_chain(self->ssl);
+    long ret = SSL_get_verify_result(self->ssl);
+    if (ret != X509_V_OK) {
+        long e = ERR_PACK(ERR_LIB_SSL, 0, SSL_R_CERTIFICATE_VERIFY_FAILED);
+        fill_and_set_sslerror(self, PySSLCertVerificationErrorObject, PY_SSL_ERROR_SSL, NULL, __LINE__, e);
+        return NULL;
+    }
+    return chain_to_pyobject(peer_chain, binary_mode);
+}
+#endif
 
 /*[clinic input]
 _ssl._SSLSocket.version
@@ -3081,7 +3089,10 @@ static PyMethodDef PySSLMethods[] = {
     _SSL__SSLSOCKET_GET_CHANNEL_BINDING_METHODDEF
     _SSL__SSLSOCKET_CIPHER_METHODDEF
     _SSL__SSLSOCKET_SHARED_CIPHERS_METHODDEF
-    _SSL__SSLSOCKET_GETPEERCERTCHAIN_METHODDEF
+    _SSL__SSLSOCKET_GET_PEER_CERT_CHAIN_METHODDEF
+#ifdef OPENSSL_VERSION_1_1
+    _SSL__SSLSOCKET_GET_VERIFIED_CHAIN_METHODDEF
+#endif
     _SSL__SSLSOCKET_VERSION_METHODDEF
     _SSL__SSLSOCKET_SELECTED_NPN_PROTOCOL_METHODDEF
     _SSL__SSLSOCKET_SELECTED_ALPN_PROTOCOL_METHODDEF
