@@ -566,8 +566,6 @@ _PyImport_Cleanup(PyThreadState *tstate)
         _PyErr_Clear(tstate);
     }
     Py_XDECREF(dict);
-    /* Clear module dict copies stored in the interpreter state */
-    _PyInterpreterState_ClearModules(interp);
     /* Collect references */
     _PyGC_CollectNoFail();
     /* Dump GC stats before it's too late, since it uses the warnings
@@ -608,6 +606,9 @@ _PyImport_Cleanup(PyThreadState *tstate)
         }
         Py_DECREF(weaklist);
     }
+
+    /* Clear module dict copies stored in the interpreter state */
+    _PyInterpreterState_ClearModules(interp);
 
     /* Next, delete sys and builtins (in that order) */
     if (verbose) {
