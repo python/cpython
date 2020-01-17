@@ -8,9 +8,15 @@
 .. moduleauthor:: Raymond Hettinger <python@rcn.com>
 .. moduleauthor:: Nick Coghlan <ncoghlan@gmail.com>
 .. moduleauthor:: Łukasz Langa <lukasz@langa.pl>
+.. moduleauthor:: Pablo Galindo <pablogsal@gmail.com>
 .. sectionauthor:: Peter Harris <scav@blueyonder.co.uk>
 
 **Source code:** :source:`Lib/functools.py`
+
+.. testsetup:: default
+
+   import functools
+   from functools import *
 
 --------------
 
@@ -546,7 +552,10 @@ The :mod:`functools` module defines the following functions:
    no paralellism is involved, the convencience method :meth:`TopologicalSorter.stable_oder`
    can be used directly. For example, using this method is possible to implement a simple
    version of the C3 linearization algorithm used by Python to calculate the Method
-   Resolution Order (MRO) of a derived class::
+   Resolution Order (MRO) of a derived class:
+
+   .. doctest::
+      :hide:
 
        >>> class A: pass
        >>> class B(A): pass
@@ -554,12 +563,13 @@ The :mod:`functools` module defines the following functions:
        >>> class D(B, C): pass
 
        >>> D.__mro__
-       (__main__.D, __main__.B, __main__.C, __main__.A, object)
+       (<class 'D'>, <class 'B'>, <class 'C'>, <class 'A'>, <class 'object'>)
 
+       >>> graph = {D: {B, C}, C: {A}, B: {A}, A:{object}}
        >>> ts = TopologicalSorter(graph)
-       >>> topological_order = tuple(ts.stable_order())
+       >>> topological_order = tuple(ts.static_order())
        >>> tuple(reversed(topological_order))
-       (__main__.D, '__main__.B, __main__.C, __main__.A, object)
+       (<class 'D'>, <class 'B'>, <class 'C'>, <class 'A'>, <class 'object'>)
 
    The class is designed to easily support parallel processing of the nodes as they
    become ready. For instance::
@@ -651,7 +661,7 @@ The :mod:`functools` module defines the following functions:
       Raises :exc:`ValueError` if called without calling
       :meth:`~TopologicalSorter.prepare` previously.
 
-   .. method:: stable_order()
+   .. method:: static_order()
 
       Returns an iterable of nodes in a stable topological order. Using this method
       does not require to call :meth:`TopologicalSorter.prepare` or
