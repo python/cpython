@@ -215,10 +215,20 @@ class ThreadPoolExecutor(_base.Executor):
                 if work_item is not None:
                     work_item.future.set_exception(BrokenThreadPool(self._broken))
 
-    def shutdown(self, wait=True):
+    def shutdown(self, wait=True, cancel_futures=False):
         with self._shutdown_lock:
             self._shutdown = True
             self._work_queue.put(None)
+            if cancel_futures:
+                while True:
+                    try:
+                        work_item = self._work_queue.get_nowait()
+                    except queue.Empty:
+                        self._work_queue.put(None)
+                        break
+                    if work_item is not None:
+                        work_item.future.cancel()
+
         if wait:
             for t in self._threads:
                 t.join()

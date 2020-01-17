@@ -435,6 +435,10 @@ def _queue_management_worker(executor_reference,
                 # is not gc-ed yet.
                 if executor is not None:
                     executor._shutdown_thread = True
+                    if executor._cancel_pending_work:
+                        for work_item in pending_work_items.values():
+                            work_item.future.cancel()
+
                 # Since no new work items can be added, it is safe to shutdown
                 # this thread if there are no pending work items.
                 if not pending_work_items:
@@ -546,6 +550,7 @@ class ProcessPoolExecutor(_base.Executor):
         self._broken = False
         self._queue_count = 0
         self._pending_work_items = {}
+        self._cancel_pending_work = False
 
         # Create communication channels for the executor
         # Make the call queue slightly larger than the number of processes to
@@ -660,9 +665,12 @@ class ProcessPoolExecutor(_base.Executor):
                               timeout=timeout)
         return _chain_from_iterable_of_lists(results)
 
-    def shutdown(self, wait=True):
+    def shutdown(self, wait=True, cancel_futures=False):
         with self._shutdown_lock:
             self._shutdown_thread = True
+            if cancel_futures:
+                self._cancel_pending_work = True
+
         if self._queue_management_thread:
             # Wake up queue management thread
             self._queue_management_thread_wakeup.wakeup()

@@ -342,6 +342,31 @@ class ExecutorShutdownTest:
         for f in fs:
             f.result()
 
+    def test_cancel_futures(self):
+        max_workers = 5
+        executor = self.executor_type(max_workers)
+        fs = [executor.submit(time.sleep, .1) for _ in range(50)]
+        # Wait for workers to complete first round of work
+        time.sleep(.1)
+        executor.shutdown(cancel_futures=True)
+
+        # We can't guarantee the exact number of cancellations, but we can
+        # guarantee that *some* were cancelled.
+        cancelled = [fut for fut in fs if fut.cancelled()]
+        self.assertTrue(len(cancelled) > 0)
+
+        # Ensure the other futures were able to finish (no InvalidStateError).
+        # Use "not fut.cancelled()" instead of "fut.done()" to include futures
+        # that may have been left in a pending state.
+        others = [fut for fut in fs if not fut.cancelled()]
+        for fut in others:
+            self.assertTrue(fut.done())
+            self.assertIsNone(fut.exception())
+
+        # The minimum number of finished futures should be max_workers, since
+        # we waited for the first round to complete.
+        self.assertTrue(len(others) >= max_workers)
+
 
 class ThreadPoolShutdownTest(ThreadPoolMixin, ExecutorShutdownTest, BaseTestCase):
     def _prime_executor(self):
