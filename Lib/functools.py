@@ -361,24 +361,27 @@ class TopologicalSorter:
         self.nfinished += 1
 
     def _find_cycle(self):
-        todo = set(node for node in self.node2info)
-        for info in self.node2info.values():
-            todo |= set(info.successors)
+        todo = set(self.node2info)
 
         while todo:
             node = todo.pop()
             stack = [node]
+            # This set helps avoiding cuadratic behaviour when checking
+            # if a node is in the stack.
+            in_stack = {node}
             while stack:
                 top = stack[-1]
                 for node in self.node2info[top].successors:
-                    if node in stack:
+                    if node in in_stack:
                         return stack[stack.index(node):] + [node]
                     if node in todo:
+                        in_stack.add(node)
                         stack.append(node)
                         todo.remove(node)
                         break
                 else:
                     node = stack.pop()
+                    in_stack.discard(node)
         return None
 
 
