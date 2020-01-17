@@ -56,10 +56,6 @@ typedef struct {
 } PyStructObject;
 
 
-#define PyStruct_Check(op) PyObject_TypeCheck(op, (PyTypeObject *)_structmodulestate_global->PyStructType)
-#define PyStruct_CheckExact(op) (Py_TYPE(op) == (PyTypeObject *)_structmodulestate_global->PyStructType)
-
-
 /* Define various structs to figure out the alignments of types */
 
 
@@ -98,10 +94,20 @@ class cache_struct_converter(CConverter):
 
     def cleanup(self):
         return "Py_XDECREF(%s);\n" % self.name
-[python start generated code]*/
-/*[python end generated code: output=da39a3ee5e6b4b0d input=49957cca130ffb63]*/
 
-static int cache_struct_converter(PyObject *, PyStructObject **);
+    def parse_arg(self, argname, displayname):
+        return """
+            if (!{converter}(module, {argname}, &{paramname})) {{{{
+                goto exit;
+            }}}}
+            """.format(argname=argname, paramname=self.name,
+                       converter=self.converter)
+
+
+[python start generated code]*/
+/*[python end generated code: output=da39a3ee5e6b4b0d input=01c289e614a57372]*/
+
+static int cache_struct_converter(PyObject *, PyObject *, PyStructObject **);
 
 #include "clinic/_struct.c.h"
 
@@ -1848,14 +1854,11 @@ to the format string S.format.  See help(struct) for more on format\n\
 strings.");
 
 static PyObject *
-s_pack(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
+s_pack(PyStructObject *soself, PyObject *const *args, Py_ssize_t nargs)
 {
     char *buf;
-    PyStructObject *soself;
 
     /* Validate arguments. */
-    soself = (PyStructObject *)self;
-    assert(PyStruct_Check(self));
     assert(soself->s_codes != NULL);
     if (nargs != soself->s_len)
     {
@@ -1891,15 +1894,12 @@ offset.  Note that the offset is a required argument.  See\n\
 help(struct) for more on format strings.");
 
 static PyObject *
-s_pack_into(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
+s_pack_into(PyStructObject *soself, PyObject *const *args, Py_ssize_t nargs)
 {
-    PyStructObject *soself;
     Py_buffer buffer;
     Py_ssize_t offset;
 
     /* Validate arguments.  +1 is for the first arg as buffer. */
-    soself = (PyStructObject *)self;
-    assert(PyStruct_Check(self));
     assert(soself->s_codes != NULL);
     if (nargs != (soself->s_len + 2))
     {
@@ -2071,7 +2071,7 @@ static PyType_Spec PyStructType_spec = {
 static PyObject *cache = NULL;
 
 static int
-cache_struct_converter(PyObject *fmt, PyStructObject **ptr)
+cache_struct_converter(PyObject *module, PyObject *fmt, PyStructObject **ptr)
 {
     PyObject * s_object;
 
@@ -2097,7 +2097,7 @@ cache_struct_converter(PyObject *fmt, PyStructObject **ptr)
         return 0;
     }
 
-    s_object = _PyObject_CallOneArg(_structmodulestate_global->PyStructType, fmt);
+    s_object = _PyObject_CallOneArg(_structmodulestate(module)->PyStructType, fmt);
     if (s_object != NULL) {
         if (PyDict_GET_SIZE(cache) >= MAXCACHE)
             PyDict_Clear(cache);
@@ -2150,7 +2150,7 @@ to the format string.  See help(struct) for more on format strings.");
 static PyObject *
 pack(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
 {
-    PyObject *s_object = NULL;
+    PyStructObject *s_object = NULL;
     PyObject *format, *result;
 
     if (nargs == 0) {
@@ -2159,7 +2159,7 @@ pack(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
     }
     format = args[0];
 
-    if (!cache_struct_converter(format, (PyStructObject **)&s_object)) {
+    if (!cache_struct_converter(self, format, &s_object)) {
         return NULL;
     }
     result = s_pack(s_object, args + 1, nargs - 1);
@@ -2178,7 +2178,7 @@ on format strings.");
 static PyObject *
 pack_into(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
 {
-    PyObject *s_object = NULL;
+    PyStructObject *s_object = NULL;
     PyObject *format, *result;
 
     if (nargs == 0) {
@@ -2187,7 +2187,7 @@ pack_into(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
     }
     format = args[0];
 
-    if (!cache_struct_converter(format, (PyStructObject **)&s_object)) {
+    if (!cache_struct_converter(self, format, &s_object)) {
         return NULL;
     }
     result = s_pack_into(s_object, args + 1, nargs - 1);
@@ -2347,7 +2347,6 @@ PyMODINIT_FUNC
 PyInit__struct(void)
 {
     PyObject *m;
-
     m = PyModule_Create(&_structmodule);
     if (m == NULL)
         return NULL;

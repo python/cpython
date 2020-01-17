@@ -204,7 +204,7 @@ calcsize(PyObject *module, PyObject *arg)
     PyStructObject *s_object = NULL;
     Py_ssize_t _return_value;
 
-    if (!cache_struct_converter(arg, &s_object)) {
+    if (!cache_struct_converter(module, arg, &s_object)) {
         goto exit;
     }
     _return_value = calcsize_impl(module, s_object);
@@ -246,7 +246,7 @@ unpack(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     if (!_PyArg_CheckPositional("unpack", nargs, 2, 2)) {
         goto exit;
     }
-    if (!cache_struct_converter(args[0], &s_object)) {
+    if (!cache_struct_converter(module, args[0], &s_object)) {
         goto exit;
     }
     if (PyObject_GetBuffer(args[1], &buffer, PyBUF_SIMPLE) != 0) {
@@ -302,7 +302,7 @@ unpack_from(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject 
     if (!args) {
         goto exit;
     }
-    if (!cache_struct_converter(args[0], &s_object)) {
+    if (!cache_struct_converter(module, args[0], &s_object)) {
         goto exit;
     }
     if (PyObject_GetBuffer(args[1], &buffer, PyBUF_SIMPLE) != 0) {
@@ -374,7 +374,7 @@ iter_unpack(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     if (!_PyArg_CheckPositional("iter_unpack", nargs, 2, 2)) {
         goto exit;
     }
-    if (!cache_struct_converter(args[0], &s_object)) {
+    if (!cache_struct_converter(module, args[0], &s_object)) {
         goto exit;
     }
     buffer = args[1];
@@ -386,4 +386,4 @@ exit:
 
     return return_value;
 }
-/*[clinic end generated code: output=6a6228cfc4b7099c input=a9049054013a1b77]*/
+/*[clinic end generated code: output=4c1d6ecf42615121 input=a9049054013a1b77]*/
