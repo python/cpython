@@ -10,8 +10,8 @@
 # See C source code for _functools credits/copyright
 
 __all__ = ['update_wrapper', 'wraps', 'WRAPPER_ASSIGNMENTS', 'WRAPPER_UPDATES',
-           'total_ordering', 'cmp_to_key', 'lru_cache', 'reduce', 'partial',
-           'partialmethod', 'singledispatch', 'singledispatchmethod']
+           'total_ordering', 'cmp_to_key', 'lru_cache', 'reduce', 'TopologicalSorter',
+           'partial', 'partialmethod', 'singledispatch', 'singledispatchmethod']
 
 from abc import get_cache_token
 from collections import namedtuple
@@ -199,6 +199,7 @@ def total_ordering(cls):
 _NODE_OUT = -1
 _NODE_DONE = -2
 
+
 class _NodeInfo:
     __slots__ = 'node', 'npredecessors', 'successors'
 
@@ -215,25 +216,27 @@ class _NodeInfo:
         # long as they're all reflected in the successor's npredecessors attribute).
         self.successors = []
 
+
 class CycleError(ValueError):
     pass
+
 
 class TopologicalSorter:
     """Provides functionality to topologically sort a graph of hashable nodes"""
 
     def __init__(self, graph=None):
-        self.node2info = {}
-        self.ready_nodes = None
-        self.npassedout = 0
-        self.nfinished = 0
+        self._node2info = {}
+        self._ready_nodes = None
+        self._npassedout = 0
+        self._nfinished = 0
 
         if graph is not None:
             for node, predecessors in graph.items():
                 self.add(node, *predecessors)
 
     def _get_nodeinfo(self, node):
-        if (result := self.node2info.get(node)) is None:
-            self.node2info[node] = result = _NodeInfo(node)
+        if (result := self._node2info.get(node)) is None:
+            self._node2info[node] = result = _NodeInfo(node)
         return result
 
     def add(self, node, *predecessors):
@@ -251,7 +254,7 @@ class TopologicalSorter:
 
         Raises ValueError if called after "prepare".
         """
-        if self.ready_nodes is not None:
+        if self._ready_nodes is not None:
             raise ValueError("Nodes cannot be added after a call to prepare()")
 
         # Create the node -> predecessor edges
@@ -271,11 +274,11 @@ class TopologicalSorter:
         progress. After a call to this function, the graph cannot be modified and
         therefore no more nodes can be added using "add".
         """
-        if self.ready_nodes is not None:
+        if self._ready_nodes is not None:
             raise ValueError("cannot prepare() more than once")
 
-        self.ready_nodes = [i.node for i in self.node2info.values()
-                            if i.npredecessors == 0]
+        self._ready_nodes = [i.node for i in self._node2info.values()
+                             if i.npredecessors == 0]
         # ready_nodes is set before we look for cycles on purpose:
         # if the user wants to catch the CycleError, that's fine,
         # they can continue using the instance to grab as many
@@ -294,19 +297,19 @@ class TopologicalSorter:
 
         Raises ValueError if called without calling "prepare" previously.
         """
-        if self.ready_nodes is None:
+        if self._ready_nodes is None:
             raise ValueError("prepare() must be called first")
 
         # Get the nodes that are ready and mark them
-        result = tuple(self.ready_nodes)
-        n2i = self.node2info
+        result = tuple(self._ready_nodes)
+        n2i = self._node2info
         for node in result:
             n2i[node].npredecessors = _NODE_OUT
 
         # Clean the list of nodes that are ready and update
         # the counter of nodes that we have returned.
-        self.ready_nodes.clear()
-        self.npassedout += len(result)
+        self._ready_nodes.clear()
+        self._npassedout += len(result)
 
         return result
 
@@ -320,9 +323,9 @@ class TopologicalSorter:
 
         Raises ValueError if called without calling "prepare" previously.
         """
-        if self.ready_nodes is None:
+        if self._ready_nodes is None:
             raise ValueError("prepare() must be called first")
-        return self.nfinished < self.npassedout or bool(self.ready_nodes)
+        return self._nfinished < self._npassedout or bool(self._ready_nodes)
 
     def __bool__(self):
         return self.is_active()
@@ -339,10 +342,10 @@ class TopologicalSorter:
         node has not yet been returned by "get_ready".
         """
 
-        if self.ready_nodes is None:
+        if self._ready_nodes is None:
             raise ValueError("prepare() must be called first")
 
-        n2i = self.node2info
+        n2i = self._node2info
 
         for node in nodes:
 
@@ -369,11 +372,11 @@ class TopologicalSorter:
                 successor_info = n2i[successor]
                 successor_info.npredecessors -= 1
                 if successor_info.npredecessors == 0:
-                    self.ready_nodes.append(successor)
-            self.nfinished += 1
+                    self._ready_nodes.append(successor)
+            self._nfinished += 1
 
     def _find_cycle(self):
-        n2i = self.node2info
+        n2i = self._node2info
         stack = []
         itstack = []
         seen = set()
@@ -408,6 +411,19 @@ class TopologicalSorter:
                 else:
                     break
         return None
+
+    def static_order(self):
+        """Returns an iterable of nodes in a stable topological order.
+
+        Using this method does not require to call "prepare" or "done". If any
+        cycle is detected, :exc:`CycleError` will be raised.
+        """
+        self.prepare()
+        while self.is_active():
+            node_group = self.get_ready()
+            yield from node_group
+            self.done(*node_group)
+
 
 ################################################################################
 ### cmp_to_key() function converter

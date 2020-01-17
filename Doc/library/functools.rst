@@ -530,7 +530,8 @@ The :mod:`functools` module defines the following functions:
    to the value in the key). Additional nodes can be added to the graph using the
    :meth:`~TopologicalSorter.add` method.
 
-   Normally, the steps required to perform the sorting of a given graph are as follows:
+   In the general case, the steps required to perform the sorting of a given graph
+   are as follows:
 
          * Create an instance of the :class:`TopologicalSorter` with an optional
             initial graph.
@@ -541,21 +542,11 @@ The :mod:`functools` module defines the following functions:
                and process them. Call :meth:`~TopologicalSorter.done` on each node as
                it finishes processing.
 
-
-   Using the methods provided by this class, a stable topological order of the nodes
-   in the graph can be derived easily::
-
-       def stable_topological_order(graph):
-           ts = TopologicalSorter(graph)
-           ts.prepare()
-           while ts:
-               for node in ts.get_ready():
-                   yield node
-                   ts.done(node)
-
-   This function can be used to implement a simple version of the C3
-   linearization algorithm used by Python to calculate the Method Resolution
-   Order (MRO) of a derived class::
+   In case that just an inmediate sorting of the nodes in the graph is required and
+   no paralellism is involved, the convencience method :meth:`TopologicalSorter.stable_oder`
+   can be used directly. For example, using this method is possible to implement a simple
+   version of the C3 linearization algorithm used by Python to calculate the Method
+   Resolution Order (MRO) of a derived class::
 
        >>> class A: pass
        >>> class B(A): pass
@@ -565,12 +556,13 @@ The :mod:`functools` module defines the following functions:
        >>> D.__mro__
        (__main__.D, __main__.B, __main__.C, __main__.A, object)
 
-       >>> topological_order = tuple(stable_topological_order(graph))
+       >>> ts = TopologicalSorter(graph)
+       >>> topological_order = tuple(ts.stable_order())
        >>> tuple(reversed(topological_order))
        (__main__.D, '__main__.B, __main__.C, __main__.A, object)
 
    The class is designed to easily support parallel processing of the nodes as they
-   become ready. For example::
+   become ready. For instance::
 
        topological_sorter = TopologicalSorter()
 
@@ -597,31 +589,33 @@ The :mod:`functools` module defines the following functions:
       If called multiple times with the same node argument, the set of dependencies
       will be the union of all dependencies passed in.
 
-      It is possible to add a node with no dependencies (*predecessors* is not provided)
-      as well as provide a dependency twice. If a node that has not been provided before
-      is included among *predecessors* it will be automatically added to the graph with
-      no predecessors of its own.
+      It is possible to add a node with no dependencies (*predecessors* is not
+      provided) as well as provide a dependency twice. If a node that has not been
+      provided before is included among *predecessors* it will be automatically added
+      to the graph with no predecessors of its own.
 
       Raises :exc:`ValueError` if called after :meth:`~TopologicalSorter.prepare`.
 
    .. method:: prepare()
 
-      Mark the graph as finished and check for cycles in the graph. If any cycle is detected,
-      :exc:`CycleError` will be raised, but :meth:`~TopologicalSorter.get_ready` can still be
-      used to obtain as many nodes as possible until cycles block more progress. After a call
-      to this function, the graph cannot be modified and therefore no more nodes can be added
-      using :meth:`~TopologicalSorter.add`.
+      Mark the graph as finished and check for cycles in the graph. If any cycle is
+      detected, :exc:`CycleError` will be raised, but
+      :meth:`~TopologicalSorter.get_ready` can still be used to obtain as many nodes
+      as possible until cycles block more progress. After a call to this function,
+      the graph cannot be modified and therefore no more nodes can be added using
+      :meth:`~TopologicalSorter.add`.
 
    .. method:: is_active()
 
-      Returns ``True`` if more progress can be made and ``False`` otherwise. Progress can be
-      made if cycles do not block the resolution and either there are still nodes ready that
-      haven't yet been returned by :meth:`TopologicalSorter.get_ready` or the number of nodes
-      marked :meth:`TopologicalSorter.done` is less than the number that have been returned by
-      :meth:`TopologicalSorter.get_ready`.
+      Returns ``True`` if more progress can be made and ``False`` otherwise. Progress
+      can be made if cycles do not block the resolution and either there are still
+      nodes ready that haven't yet been returned by
+      :meth:`TopologicalSorter.get_ready` or the number of nodes marked
+      :meth:`TopologicalSorter.done` is less than the number that have been returned
+      by :meth:`TopologicalSorter.get_ready`.
 
-      The :meth:`~TopologicalSorter.__bool__` method of this class defers to this function, so
-      instead of::
+      The :meth:`~TopologicalSorter.__bool__` method of this class defers to this
+      function, so instead of::
 
           if ts.is_active():
               ...
@@ -636,23 +630,41 @@ The :mod:`functools` module defines the following functions:
 
    .. method:: done(*nodes)
 
-      Marks a set of nodes returned by :meth:`TopologicalSorter.get_ready` as processed,
-      unblocking any successor of each node in *nodes* for being returned in the future by a
-      call to :meth:`TopologicalSorter.get_ready`.
+      Marks a set of nodes returned by :meth:`TopologicalSorter.get_ready` as
+      processed, unblocking any successor of each node in *nodes* for being returned
+      in the future by a call to :meth:`TopologicalSorter.get_ready`.
 
-      Raises :exc:`ValueError` if any node in *nodes* has already been marked as processed by a
-      previous call to this method or if a node was not added to the graph by using
-      :meth:`TopologicalSorter.add`, if called without calling :meth:`~TopologicalSorter.prepare`
-      or if node has not yet been returned by :meth:`~TopologicalSorter.get_ready`.
+      Raises :exc:`ValueError` if any node in *nodes* has already been marked as
+      processed by a previous call to this method or if a node was not added to the
+      graph by using :meth:`TopologicalSorter.add`, if called without calling
+      :meth:`~TopologicalSorter.prepare` or if node has not yet been returned by
+      :meth:`~TopologicalSorter.get_ready`.
 
    .. method:: get_ready()
 
-      Returns a ``tuple`` with all the nodes that are ready. Initially it returns all nodes with no
-      predecessors and once those are marked as processed by calling :meth:`TopologicalSorter.done`,
-      further calls will return all new nodes that have all their predecessors already processed until
-      no more progress can be made.
+      Returns a ``tuple`` with all the nodes that are ready. Initially it returns all
+      nodes with no predecessors and once those are marked as processed by calling
+      :meth:`TopologicalSorter.done`, further calls will return all new nodes that
+      have all their predecessors already processed until no more progress can be
+      made.
 
-      Raises :exc:`ValueError` if called without calling :meth:`~TopologicalSorter.prepare` previously.
+      Raises :exc:`ValueError` if called without calling
+      :meth:`~TopologicalSorter.prepare` previously.
+
+   .. method:: stable_order()
+
+      Returns an iterable of nodes in a stable topological order. Using this method
+      does not require to call :meth:`TopologicalSorter.prepare` or
+      :meth:`TopologicalSorter.done`. This method is equivalent to::
+
+          def static_order(self):
+              self.prepare()
+              while self.is_active():
+                  node_group = self.get_ready()
+                  yield from node_group
+                  self.done(*node_group)
+
+      If any cycle is detected, :exc:`CycleError` will be raised.
 
    .. versionadded:: 3.9
 

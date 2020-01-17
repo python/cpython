@@ -3,7 +3,7 @@ import builtins
 import collections
 import collections.abc
 import copy
-from itertools import permutations
+from itertools import permutations, chain
 import pickle
 from random import choice
 import sys
@@ -1162,7 +1162,7 @@ class TestTopologicalSort(unittest.TestCase):
 
     def _test_graph(self, graph, expected):
 
-        def static_order(ts):
+        def static_order_with_groups(ts):
             ts.prepare()
             while ts.is_active():
                 nodes = ts.get_ready()
@@ -1171,7 +1171,10 @@ class TestTopologicalSort(unittest.TestCase):
                 yield nodes
 
         ts = functools.TopologicalSorter(graph)
-        self.assertEqual(list(static_order(ts)), expected)
+        self.assertEqual(list(static_order_with_groups(ts)), list(expected))
+
+        ts = functools.TopologicalSorter(graph)
+        self.assertEqual(list(ts.static_order()), list(chain(*expected)))
 
     def _assert_cycle(self, graph, cycle):
         ts = functools.TopologicalSorter()
@@ -1197,6 +1200,9 @@ class TestTopologicalSort(unittest.TestCase):
         )
 
         self._test_graph({1: {}}, [(1,)])
+
+        self._test_graph({x: {x+1} for x in range(10)},
+                         [(x,) for x in range(10, -1, -1)])
 
     def test_no_dependencies(self):
         self._test_graph(
