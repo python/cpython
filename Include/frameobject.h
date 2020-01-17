@@ -67,10 +67,6 @@ PyFrameObject* _PyFrame_New_NoTrack(PyThreadState *, PyCodeObject *,
 PyAPI_FUNC(void) PyFrame_BlockSetup(PyFrameObject *, int, int, int);
 PyAPI_FUNC(PyTryBlock *) PyFrame_BlockPop(PyFrameObject *);
 
-/* Extend the value stack */
-
-PyAPI_FUNC(PyObject **) PyFrame_ExtendStack(PyFrameObject *, int, int);
-
 /* Conversions between "fast locals" and locals in dictionary */
 
 PyAPI_FUNC(void) PyFrame_LocalsToFast(PyFrameObject *, int);
