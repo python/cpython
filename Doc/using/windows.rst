@@ -631,12 +631,11 @@ When UTF-8 mode is enabled:
   all use UTF-8 as their text encoding.
 
 .. note::
-   Even when the UTF-8 mode is disabled, Python uses UTF-8 on Windows for:
+   Even when the UTF-8 mode is disabled, Python uses UTF-8 by default
+   on Windows for:
 
-   * :data:`sys.stdin`, :data:`sys.stdout`, and :data:`sys.stderr`
-     when they are console (see :pep:`528` for detail).
+   * Console I/O including standard I/O (see :pep:`528` for detail).
    * The filesystem encoding (see :pep:`529` for detail).
-
 
 You can use the "mbcs" codec for the system encoding in UTF-8 mode.
 
