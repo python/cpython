@@ -258,17 +258,17 @@ class TopologicalSorter:
     def prepare(self):
         """Mark the graph as finished and check for cycles in the graph.
 
-        If any cycle is detected, "CycleError" will be raised, but "get_ready" can still be
-        used to obtain as many nodes as possible until cycles block more progress. After a call
-        to this function, the graph cannot be modified and therefore no more nodes can be added
-        using "add".
+        If any cycle is detected, "CycleError" will be raised, but "get_ready" can
+        still be used to obtain as many nodes as possible until cycles block more
+        progress. After a call to this function, the graph cannot be modified and
+        therefore no more nodes can be added using "add".
         """
         if self.ready_nodes is not None:
             raise ValueError("cannot prepare() more than once")
 
         self.ready_nodes = [i.node for i in self.node2info.values()
                             if i.npredecessors == 0]
-        # readytodo is set before we look for cycles on purpose:
+        # ready_nodes is set before we look for cycles on purpose:
         # if the user wants to catch the CycleError, that's fine,
         # they can continue using the instance to grab as many
         # nodes as possible before cycles block more progress
@@ -279,9 +279,10 @@ class TopologicalSorter:
     def get_ready(self):
         """Return a tuple of all the nodes that are ready.
 
-        Initially it returns all nodes with no predecessors and once those are marked as processed by
-        calling "done", further calls will return all new nodes that have all their predecessors already
-        processed until no more progress can be made.
+        Initially it returns all nodes with no predecessors and once those are marked
+        as processed by calling "done", further calls will return all new nodes that
+        have all their predecessors already processed until no more progress can be
+        made.
 
         Raises ValueError if called without calling "prepare" previously.
         """
@@ -304,9 +305,10 @@ class TopologicalSorter:
     def is_active(self):
         """Return True if more progress can be made and ``False`` otherwise.
 
-        Progress can be made if cycles do not block the resolution and either there are still nodes ready
-        that haven't yet been returned by "get_ready" or the number of nodes marked "done" is less than the
-        number that have been returned by "get_ready".
+        Progress can be made if cycles do not block the resolution and either there
+        are still nodes ready that haven't yet been returned by "get_ready" or the
+        number of nodes marked "done" is less than the number that have been returned
+        by "get_ready".
 
         Raises ValueError if called without calling "prepare" previously.
         """
@@ -318,11 +320,13 @@ class TopologicalSorter:
     def done(self, node):
         """Marks a nodes returned by "get_ready" as processed.
 
-        This method unblocks any successor of *node* for being returned in the future by a call to "get_ready"
+        This method unblocks any successor of *node* for being returned in the future
+        by a call to "get_ready"
 
-        Raises :exec:`ValueError` if *node* has already been marked as processed by a previous call to this
-        method or if *node* was not added to the graph by using "add" or if called without calling "prepare"
-        previously.
+        Raises :exec:`ValueError` if *node* has already been marked as processed by a
+        previous call to this method, if *node* was not added to the graph by using
+        "add" or if called without calling "prepare" previously or if node has not
+        yet been returned by "get_ready".
         """
 
         if self.ready_nodes is None:
@@ -342,7 +346,7 @@ class TopologicalSorter:
             elif stat == _NODE_DONE:
                 raise ValueError(f"node {node!r} was already marked done")
             else:
-                raise ValueError(f"node {node!r}: unknown status {stat}")
+                assert False, f"node {node!r}: unknown status {stat}"
 
         # Mark the node as processed
         nodeinfo.npredecessors = _NODE_DONE

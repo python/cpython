@@ -568,7 +568,7 @@ The :mod:`functools` module defines the following functions:
        while topological_sorter.is_active():
            for node in topological_sorter.get_ready():
                # Worker threads or processes take nodes to work on off the
-               # of 'task_queue' queue.
+               # 'task_queue' queue.
                task_queue.put(node)
 
            # When the work for a node is done, workers put the node in
@@ -608,8 +608,9 @@ The :mod:`functools` module defines the following functions:
       successor of *node* for being returned in the future by a call to :meth:`TopologicalSorter.get_ready`.
 
       Raises :exc:`ValueError` if *node* has already been marked as processed by a previous call to this
-      method or if *node* was not added to the graph by using :meth:`TopologicalSorter.add` or if called without
-      calling :meth:`~TopologicalSorter.prepare` previously.
+      method or if *node* was not added to the graph by using :meth:`TopologicalSorter.add`, if called without
+      calling :meth:`~TopologicalSorter.prepare` or if node has not yet been returned by
+      :meth:`~TopologicalSorter.get_ready`.
 
    .. method:: get_ready()
 
