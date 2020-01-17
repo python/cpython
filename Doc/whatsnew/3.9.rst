@@ -352,6 +352,7 @@ Deprecated
 
 Removed
 =======
+
 * :class:`nntplib.NNTP`: ``xpath()`` and ``xgtitle()`` methods have been removed.
   These methods are deprecated since Python 3.3. These extensions are not supported
   or not enabled by NNTP server administrator. For ``xgtitle()``, please use
