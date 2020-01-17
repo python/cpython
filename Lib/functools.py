@@ -316,6 +316,8 @@ class TopologicalSorter:
             raise ValueError("prepare() must be called first")
         return self.nfinished < self.npassedout or bool(self.ready_nodes)
 
+    def __bool__(self):
+        return self.is_active()
 
     def done(self, node):
         """Marks a nodes returned by "get_ready" as processed.
