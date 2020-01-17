@@ -1225,6 +1225,9 @@ class TestTopologicalSort(unittest.TestCase):
         self._assert_cycle({1: {2}, 2: {3}, 3: {1}}, [1, 3, 2, 1])
         # not all elements involved in a cycle
         self._assert_cycle({1: {2}, 2: {3}, 3: {1}, 5: {4}, 4: {6}}, [1, 3, 2, 1])
+        # Multiple cycles
+        self._assert_cycle({1: {2}, 2: {1}, 3: {4}, 4: {5}, 6: {7}, 7: {6}},
+                           [1, 2, 1])
 
     def test_calls_before_preapare(self):
         ts = functools.TopologicalSorter()
