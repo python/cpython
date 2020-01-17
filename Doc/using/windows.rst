@@ -621,7 +621,29 @@ You can enable the UTF-8 mode via ``-X utf8`` command option, or
 the UTF-8 mode, and :ref:`setting-envvars` for how to modify
 environment variables.
 
-You can use the "mbcs" codec to use the system encoding in UTF-8 mode.
+When UTF-8 mode is enabled:
+
+* :func:`locale.getpreferredencoding` returns ``'UTF-8'`` instead of
+  the legacy system encoding.  This function is used for the default
+  text encoding in many places, including :func:`open`, :class:`Popen`,
+  :meth:`Path.read_text`, etc.
+* :data:`sys.stdin`, :data:`sys.stdout`, and :data:`sys.stderr`
+  all use UTF-8 as their text encoding.
+
+.. note::
+   Even when the UTF-8 mode is disabled, Python uses UTF-8 on Windows for:
+
+   * :data:`sys.stdin`, :data:`sys.stdout`, and :data:`sys.stderr`
+     when they are console (see :pep:`528` for detail).
+   * The filesystem encoding (see :pep:`529` for detail).
+
+
+You can use the "mbcs" codec for the system encoding in UTF-8 mode.
+
+And you can use the legacy encoding for filesystem encoding via
+:func:`sys._enablelegacywindowsfsencoding` or
+:envvar:`PYTHONLEGACYWINDOWSFSENCODING` in UTF-8 mode too.
+
 
 .. _launcher:
 

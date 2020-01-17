@@ -943,8 +943,6 @@ conflict.
 
    Also available as the :option:`-X` ``utf8`` option.
 
-   .. availability:: \*nix.
-
    .. versionadded:: 3.7
       See :pep:`540` for more details.
 
