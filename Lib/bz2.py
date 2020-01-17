@@ -47,8 +47,6 @@ class BZ2File(_compression.BaseStream):
         'x' for creating exclusively, or 'a' for appending. These can
         equivalently be given as 'rb', 'wb', 'xb', and 'ab'.
 
-        buffering is ignored since Python 3.0. Its use is deprecated.
-
         If mode is 'w', 'x' or 'a', compresslevel can be a number between 1
         and 9 specifying the level of compression: 1 produces the least
         compression, and 9 (default) produces the most compression.
