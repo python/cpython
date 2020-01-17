@@ -170,8 +170,8 @@ functools
 ---------
 
 Add the :class:`functools.TopologicalSorter` class to offer functionality to perform
-topological sorting of graphs. (Contributed by Pablo Galindo and Tim Peters in
-:issue:`17005`.)
+topological sorting of graphs. (Contributed by Pablo Galindo, Tim Peters and Larry
+Hastings in :issue:`17005`.)
 
 gc
 --

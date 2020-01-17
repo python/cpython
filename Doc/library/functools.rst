@@ -530,13 +530,25 @@ The :mod:`functools` module defines the following functions:
    to the value in the key). Additional nodes can be added to the graph using the
    :meth:`~TopologicalSorter.add` method.
 
-   Using the methods provided by this class, a stable topological order of the nodes in the
-   graph can be derived easily::
+   Normally, the steps required to perform the sorting of a given graph are as follows:
+
+         * Create an instance of the :class:`TopologicalSorter` with an optional
+            initial graph.
+         * Add additional nodes to the graph.
+         * Call "finalize()" on the graph.
+         * While :meth:`~TopologicalSorter.is_active` is ``True``:
+             * Iterate over the nodes returned by :meth:`~TopologicalSorter.get_ready`
+               and process them. Call :meth:`~TopologicalSorter.done` on each node as
+               it finishes processing.
+
+
+   Using the methods provided by this class, a stable topological order of the nodes
+   in the graph can be derived easily::
 
        def stable_topological_order(graph):
            ts = TopologicalSorter(graph)
            ts.prepare()
-           while ts.is_active():
+           while ts:
                for node in ts.get_ready():
                    yield node
                    ts.done(node)
@@ -582,6 +594,14 @@ The :mod:`functools` module defines the following functions:
       Add a new node and its predecessors to the graph. Both the *node* and
       all elements in *predecessors* must be hashable.
 
+      If called multiple times with the same node argument, the set of dependencies
+      will be the union of all dependencies passed in.
+
+      It is possible to add a node with no dependencies (*predecessors* is not provided)
+      as well as provide a dependency twice. If a node that has not been provided before
+      is included among *predecessors* it will be automatically added to the graph with
+      no predecessors of its own.
+
       Raises :exc:`ValueError` if called after :meth:`~TopologicalSorter.prepare`.
 
    .. method:: prepare()
@@ -595,22 +615,35 @@ The :mod:`functools` module defines the following functions:
    .. method:: is_active()
 
       Returns ``True`` if more progress can be made and ``False`` otherwise. Progress can be
-      made if cycles do not block the resolution and either there are still nodes ready that haven't
-      yet been returned by :meth:`TopologicalSorter.get_ready` or the number of nodes marked
-      :meth:`TopologicalSorter.done` is less than the number that have been returned by
+      made if cycles do not block the resolution and either there are still nodes ready that
+      haven't yet been returned by :meth:`TopologicalSorter.get_ready` or the number of nodes
+      marked :meth:`TopologicalSorter.done` is less than the number that have been returned by
       :meth:`TopologicalSorter.get_ready`.
 
-      Raises :exc:`ValueError` if called without calling :meth:`~TopologicalSorter.prepare` previously.
+      The :meth:`~TopologicalSorter.__bool__` method of this class defers to this function, so
+      instead of::
 
-   .. method:: done(node)
+          if ts.is_active():
+              ...
 
-      Marks a node returned by :meth:`TopologicalSorter.get_ready` as processed, unblocking any
-      successor of *node* for being returned in the future by a call to :meth:`TopologicalSorter.get_ready`.
+      if possible to simply do::
 
-      Raises :exc:`ValueError` if *node* has already been marked as processed by a previous call to this
-      method or if *node* was not added to the graph by using :meth:`TopologicalSorter.add`, if called without
-      calling :meth:`~TopologicalSorter.prepare` or if node has not yet been returned by
-      :meth:`~TopologicalSorter.get_ready`.
+          if ts:
+              ...
+
+      Raises :exc:`ValueError` if called without calling :meth:`~TopologicalSorter.prepare`
+      previously.
+
+   .. method:: done(*nodes)
+
+      Marks a set of nodes returned by :meth:`TopologicalSorter.get_ready` as processed,
+      unblocking any successor of each node in *nodes* for being returned in the future by a
+      call to :meth:`TopologicalSorter.get_ready`.
+
+      Raises :exc:`ValueError` if any node in *nodes* has already been marked as processed by a
+      previous call to this method or if a node was not added to the graph by using
+      :meth:`TopologicalSorter.add`, if called without calling :meth:`~TopologicalSorter.prepare`
+      or if node has not yet been returned by :meth:`~TopologicalSorter.get_ready`.
 
    .. method:: get_ready()
 

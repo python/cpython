@@ -241,6 +241,14 @@ class TopologicalSorter:
 
         Both the *node* and all elements in *predecessors* must be hashable.
 
+        If called multiple times with the same node argument, the set of dependencies
+        will be the union of all dependencies passed in.
+
+        It is possible to add a node with no dependencies (*predecessors* is not provided)
+        as well as provide a dependency twice. If a node that has not been provided before
+        is included among *predecessors* it will be automatically added to the graph with
+        no predecessors of its own.
+
         Raises ValueError if called after "prepare".
         """
         if self.ready_nodes is not None:
@@ -319,16 +327,16 @@ class TopologicalSorter:
     def __bool__(self):
         return self.is_active()
 
-    def done(self, node):
-        """Marks a nodes returned by "get_ready" as processed.
+    def done(self, *nodes):
+        """Marks a set of nodes returned by "get_ready" as processed.
 
-        This method unblocks any successor of *node* for being returned in the future
-        by a call to "get_ready"
+        This method unblocks any successor of each node in *nodes* for being returned
+        in the future by a a call to "get_ready"
 
-        Raises :exec:`ValueError` if *node* has already been marked as processed by a
-        previous call to this method, if *node* was not added to the graph by using
-        "add" or if called without calling "prepare" previously or if node has not
-        yet been returned by "get_ready".
+        Raises :exec:`ValueError` if any node in *nodes* has already been marked as
+        processed by a previous call to this method, if a node was not added to the
+        graph by using "add" or if called without calling "prepare" previously or if
+        node has not yet been returned by "get_ready".
         """
 
         if self.ready_nodes is None:
@@ -336,31 +344,33 @@ class TopologicalSorter:
 
         n2i = self.node2info
 
-        # Check if we know about this node (it was added previously using add()
-        if (nodeinfo := n2i.get(node)) is None:
-            raise ValueError(f"node {node!r} was not added using add()")
+        for node in nodes:
 
-        # If the node has not being returned (marked as ready) previously, inform the user.
-        stat = nodeinfo.npredecessors
-        if stat != _NODE_OUT:
-            if stat >= 0:
-                raise ValueError(f"node {node!r} was not passed out (still not ready)")
-            elif stat == _NODE_DONE:
-                raise ValueError(f"node {node!r} was already marked done")
-            else:
-                assert False, f"node {node!r}: unknown status {stat}"
+            # Check if we know about this node (it was added previously using add()
+            if (nodeinfo := n2i.get(node)) is None:
+                raise ValueError(f"node {node!r} was not added using add()")
 
-        # Mark the node as processed
-        nodeinfo.npredecessors = _NODE_DONE
+            # If the node has not being returned (marked as ready) previously, inform the user.
+            stat = nodeinfo.npredecessors
+            if stat != _NODE_OUT:
+                if stat >= 0:
+                    raise ValueError(f"node {node!r} was not passed out (still not ready)")
+                elif stat == _NODE_DONE:
+                    raise ValueError(f"node {node!r} was already marked done")
+                else:
+                    assert False, f"node {node!r}: unknown status {stat}"
 
-        # Go to all the successors and reduce the number of predecessors, collecting all the ones
-        # that are ready to be returned in the next get_ready() call.
-        for successor in nodeinfo.successors:
-            successor_info = n2i[successor]
-            successor_info.npredecessors -= 1
-            if successor_info.npredecessors == 0:
-                self.ready_nodes.append(successor)
-        self.nfinished += 1
+            # Mark the node as processed
+            nodeinfo.npredecessors = _NODE_DONE
+
+            # Go to all the successors and reduce the number of predecessors, collecting all the ones
+            # that are ready to be returned in the next get_ready() call.
+            for successor in nodeinfo.successors:
+                successor_info = n2i[successor]
+                successor_info.npredecessors -= 1
+                if successor_info.npredecessors == 0:
+                    self.ready_nodes.append(successor)
+            self.nfinished += 1
 
     def _find_cycle(self):
         n2i = self.node2info
