@@ -607,9 +607,6 @@ _PyImport_Cleanup(PyThreadState *tstate)
         Py_DECREF(weaklist);
     }
 
-    /* Clear module dict copies stored in the interpreter state */
-    _PyInterpreterState_ClearModules(interp);
-
     /* Next, delete sys and builtins (in that order) */
     if (verbose) {
         PySys_FormatStderr("# cleanup[3] wiping sys\n");
@@ -619,6 +616,9 @@ _PyImport_Cleanup(PyThreadState *tstate)
         PySys_FormatStderr("# cleanup[3] wiping builtins\n");
     }
     _PyModule_ClearDict(interp->builtins);
+
+    /* Clear module dict copies stored in the interpreter state */
+    _PyInterpreterState_ClearModules(interp);
 
     /* Clear and delete the modules directory.  Actual modules will
        still be there only if imported during the execution of some
