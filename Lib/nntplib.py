@@ -834,44 +834,6 @@ class _NNTPBase:
         fmt = self._getoverviewfmt()
         return resp, _parse_overview(lines, fmt)
 
-    def xgtitle(self, group, *, file=None):
-        """Process an XGTITLE command (optional server extension) Arguments:
-        - group: group name wildcard (i.e. news.*)
-        Returns:
-        - resp: server response if successful
-        - list: list of (name,title) strings"""
-        warnings.warn("The XGTITLE extension is not actively used, "
-                      "use descriptions() instead",
-                      DeprecationWarning, 2)
-        line_pat = re.compile('^([^ \t]+)[ \t]+(.*)$')
-        resp, raw_lines = self._longcmdstring('XGTITLE ' + group, file)
-        lines = []
-        for raw_line in raw_lines:
-            match = line_pat.search(raw_line.strip())
-            if match:
-                lines.append(match.group(1, 2))
-        return resp, lines
-
-    def xpath(self, id):
-        """Process an XPATH command (optional server extension) Arguments:
-        - id: Message id of article
-        Returns:
-        resp: server response if successful
-        path: directory path to article
-        """
-        warnings.warn("The XPATH extension is not actively used",
-                      DeprecationWarning, 2)
-
-        resp = self._shortcmd('XPATH {0}'.format(id))
-        if not resp.startswith('223'):
-            raise NNTPReplyError(resp)
-        try:
-            [resp_num, path] = resp.split()
-        except ValueError:
-            raise NNTPReplyError(resp) from None
-        else:
-            return resp, path
-
     def date(self):
         """Process the DATE command.
         Returns:
