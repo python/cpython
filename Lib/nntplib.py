@@ -293,8 +293,7 @@ if _have_ssl:
         return context.wrap_socket(sock, server_hostname=hostname)
 
 
-# The classes themselves
-class _NNTPBase:
+class NNTP:
     # UTF-8 is the character set for all NNTP commands and responses: they
     # are automatically encoded (when sending) and decoded (and receiving)
     # by this class.
@@ -310,8 +309,9 @@ class _NNTPBase:
     encoding = 'utf-8'
     errors = 'surrogateescape'
 
-    def __init__(self, file, host,
-                 readermode=None, timeout=_GLOBAL_DEFAULT_TIMEOUT):
+    def __init__(self, host, file=None,
+                 readermode=None, timeout=_GLOBAL_DEFAULT_TIMEOUT,
+                 port=NNTP_PORT, user=None, password=None, usenetrc=False):
         """Initialize an instance.  Arguments:
         - file: file-like object (open for read/write in binary mode)
         - host: hostname of the server
@@ -326,13 +326,32 @@ class _NNTPBase:
         readermode.
         """
         self.host = host
-        self.file = file
+        self.readermode = readermode
+
+        if file is not None:
+            self.file = file
+            self._initialize_instance()
+            return
+
+        self.port = port
+        self.sock = self._create_socket(timeout)
+        self.file = None
+        try:
+            self.file = self.sock.makefile("rwb")
+            self._initialize_instance()
+            if user or usenetrc:
+                self.login(user, password, usenetrc)
+        except:
+            if self.file:
+                self.file.close()
+            self.sock.close()
+            raise
+
+    def _initialize_instance(self):
         self.debugging = 0
         self.welcome = self._getresp()
 
-        # Inquire about capabilities (RFC 3977).
-        self._caps = None
-        self.getcapabilities()
+        self._inquire_capabilities()
 
         # 'MODE READER' is sometimes necessary to enable 'reader' mode.
         # However, the order in which 'MODE READER' and 'AUTHINFO' need to
@@ -342,12 +361,11 @@ class _NNTPBase:
         # after performing its normal function.
         # Enable only if we're not already in READER mode anyway.
         self.readermode_afterauth = False
-        if readermode and 'READER' not in self._caps:
+        if self.readermode and 'READER' not in self._caps:
             self._setreadermode()
             if not self.readermode_afterauth:
                 # Capabilities might have changed after MODE READER
-                self._caps = None
-                self.getcapabilities()
+                self._inquire_capabilities()
 
         # RFC 4642 2.2.2: Both the client and the server MUST know if there is
         # a TLS session active.  A client MUST NOT attempt to start a TLS
@@ -356,6 +374,23 @@ class _NNTPBase:
 
         # Log in and encryption setup order is left to subclasses.
         self.authenticated = False
+
+    def _inquire_capabilities(self):
+        # Inquire about capabilities (RFC 3977).
+        self._caps = None
+        self.getcapabilities()
+
+    def _create_socket(self, timeout):
+        if timeout is not None and not timeout:
+            raise ValueError('Non-blocking socket (timeout=0) is not supported')
+        sys.audit("nntplib.connect", self, self.host, self.port)
+        return socket.create_connection((self.host, self.port), timeout)
+
+    def _close(self):
+        try:
+            super()._close()
+        finally:
+            self.sock.close()
 
     def __enter__(self):
         return self
@@ -1016,56 +1051,6 @@ class _NNTPBase:
                 self.getcapabilities()
             else:
                 raise NNTPError("TLS failed to start.")
-
-
-class NNTP(_NNTPBase):
-
-    def __init__(self, host, port=NNTP_PORT, user=None, password=None,
-                 readermode=None, usenetrc=False,
-                 timeout=_GLOBAL_DEFAULT_TIMEOUT):
-        """Initialize an instance.  Arguments:
-        - host: hostname to connect to
-        - port: port to connect to (default the standard NNTP port)
-        - user: username to authenticate with
-        - password: password to use with username
-        - readermode: if true, send 'mode reader' command after
-                      connecting.
-        - usenetrc: allow loading username and password from ~/.netrc file
-                    if not specified explicitly
-        - timeout: timeout (in seconds) used for socket connections
-
-        readermode is sometimes necessary if you are connecting to an
-        NNTP server on the local machine and intend to call
-        reader-specific commands, such as `group'.  If you get
-        unexpected NNTPPermanentErrors, you might need to set
-        readermode.
-        """
-        self.host = host
-        self.port = port
-        self.sock = self._create_socket(timeout)
-        file = None
-        try:
-            file = self.sock.makefile("rwb")
-            super().__init__(file, host, readermode, timeout)
-            if user or usenetrc:
-                self.login(user, password, usenetrc)
-        except:
-            if file:
-                file.close()
-            self.sock.close()
-            raise
-
-    def _create_socket(self, timeout):
-        if timeout is not None and not timeout:
-            raise ValueError('Non-blocking socket (timeout=0) is not supported')
-        sys.audit("nntplib.connect", self, self.host, self.port)
-        return socket.create_connection((self.host, self.port), timeout)
-
-    def _close(self):
-        try:
-            super()._close()
-        finally:
-            self.sock.close()
 
 
 if _have_ssl:

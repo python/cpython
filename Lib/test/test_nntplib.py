@@ -425,7 +425,7 @@ class MockedNNTPTestsMixin:
     def make_server(self, *args, **kwargs):
         self.handler = self.handler_class()
         self.sio, file = make_mock_file(self.handler)
-        self.server = nntplib._NNTPBase(file, 'test.server', *args, **kwargs)
+        self.server = nntplib.NNTP('test.server', file=file, *args, **kwargs)
         return self.server
 
 
