@@ -372,15 +372,17 @@ class TopologicalSorter:
                 continue
 
             while True:
-                # If we have seen already the node and is in the
-                # current stack we have found a cycle.
-                if node in seen and node in node2stacki:
-                    return stack[node2stacki[node]:] + [node]
-
-                seen.add(node)
-                itstack.append(iter(n2i[node].successors).__next__)
-                node2stacki[node] = len(stack)
-                stack.append(node)
+                if node in seen:
+                    # If we have seen already the node and is in the
+                    # current stack we have found a cycle.
+                    if node in node2stacki:
+                        return stack[node2stacki[node]:] + [node]
+                    # else go on to get next successor
+                else:
+                    seen.add(node)
+                    itstack.append(iter(n2i[node].successors).__next__)
+                    node2stacki[node] = len(stack)
+                    stack.append(node)
 
                 # Backtrack to the topmost stack entry with
                 # at least another successor.
