@@ -260,14 +260,17 @@ having to sort the list after each insertion. For long lists of items with\n\
 expensive comparison operations, this can be an improvement over the more\n\
 common approach.\n");
 
+static PyModuleDef_Slot _bisect_slots[] = {
+    {0, NULL}
+};
 
 static struct PyModuleDef _bisectmodule = {
     PyModuleDef_HEAD_INIT,
     "_bisect",
     module_doc,
-    -1,
+    0,
     bisect_methods,
-    NULL,
+    _bisect_slots,
     NULL,
     NULL,
     NULL
@@ -276,5 +279,5 @@ static struct PyModuleDef _bisectmodule = {
 PyMODINIT_FUNC
 PyInit__bisect(void)
 {
-    return PyModule_Create(&_bisectmodule);
+    return PyModuleDef_Init(&_bisectmodule);
 }
