@@ -663,7 +663,7 @@ The :mod:`functools` module defines the following functions:
 
    .. method:: static_order()
 
-      Returns an iterable of nodes in a stable topological order. Using this method
+      Returns an iterable of nodes in a topological order. Using this method
       does not require to call :meth:`TopologicalSorter.prepare` or
       :meth:`TopologicalSorter.done`. This method is equivalent to::
 

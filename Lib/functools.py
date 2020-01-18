@@ -413,7 +413,7 @@ class TopologicalSorter:
         return None
 
     def static_order(self):
-        """Returns an iterable of nodes in a stable topological order.
+        """Returns an iterable of nodes in a topological order.
 
         Using this method does not require to call "prepare" or "done". If any
         cycle is detected, :exc:`CycleError` will be raised.
