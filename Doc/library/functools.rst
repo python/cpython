@@ -539,14 +539,12 @@ The :mod:`functools` module defines the following functions:
    In the general case, the steps required to perform the sorting of a given graph
    are as follows:
 
-         * Create an instance of the :class:`TopologicalSorter` with an optional
-            initial graph.
+         * Create an instance of the :class:`TopologicalSorter` with an optional initial graph.
          * Add additional nodes to the graph.
          * Call :meth:`~TopologicalSorter.prepare` on the graph.
-         * While :meth:`~TopologicalSorter.is_active` is ``True``:
-             * Iterate over the nodes returned by :meth:`~TopologicalSorter.get_ready`
-               and process them. Call :meth:`~TopologicalSorter.done` on each node as
-               it finishes processing.
+         * While :meth:`~TopologicalSorter.is_active` is ``True``, iterate over the
+           nodes returned by :meth:`~TopologicalSorter.get_ready` and process them.
+           Call :meth:`~TopologicalSorter.done` on each node as it finishes processing.
 
    In case that just an inmediate sorting of the nodes in the graph is required and
    no parallelism is involved, the convenience method :meth:`TopologicalSorter.static_order`
@@ -555,7 +553,6 @@ The :mod:`functools` module defines the following functions:
    Resolution Order (MRO) of a derived class:
 
    .. doctest::
-      :hide:
 
        >>> class A: pass
        >>> class B(A): pass
@@ -683,7 +680,6 @@ The :mod:`functools` module defines the following functions:
       which the items were inserted in the graph. For example:
 
       .. doctest::
-         :hide:
 
           >>> ts = TopologicalSorter()
           >>> ts.add(3, 2, 1)
