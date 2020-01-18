@@ -594,7 +594,6 @@ The :mod:`functools` module defines the following functions:
            # again, so put newly freed nodes on 'task_queue' as soon as
            # logically possible.
            node = finalized_tasks_queue.get()
-
            topological_sorter.done(node)
 
    .. method:: add(node, *predecessors)
