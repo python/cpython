@@ -1,0 +1,3 @@
+Perform a check for running loop before starting a new task in
+``loop.run_until_complete()`` to fail fast; it prevents the side effect of
+new task spawning before exception raising.

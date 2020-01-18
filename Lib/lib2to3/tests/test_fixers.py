@@ -2954,6 +2954,11 @@ class Test_filter(FixerTestCase):
         a = """x = [x for x in range(10) if x%2 == 0]"""
         self.check(b, a)
 
+        # bpo-38871
+        b = """filter(lambda x: True if x > 2 else False, [1, 2, 3])"""
+        a = """[x for x in [1, 2, 3] if (True if x > 2 else False)]"""
+        self.check(b, a)
+
     def test_filter_trailers(self):
         b = """x = filter(None, 'abc')[0]"""
         a = """x = [_f for _f in 'abc' if _f][0]"""

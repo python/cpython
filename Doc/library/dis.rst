@@ -927,6 +927,20 @@ All of the following opcodes use their arguments.
    ``cmp_op[opname]``.
 
 
+.. opcode:: IS_OP (invert)
+
+    Performs ``is`` comparison, or ``is not`` if ``invert`` is 1.
+
+   .. versionadded:: 3.9
+
+
+.. opcode:: CONTAINS_OP (invert)
+
+    Performs ``in`` comparison, or ``not in`` if ``invert`` is 1.
+
+   .. versionadded:: 3.9
+
+
 .. opcode:: IMPORT_NAME (namei)
 
    Imports the module ``co_names[namei]``.  TOS and TOS1 are popped and provide
@@ -960,6 +974,13 @@ All of the following opcodes use their arguments.
    If TOS is false, sets the bytecode counter to *target*.  TOS is popped.
 
    .. versionadded:: 3.1
+
+.. opcode:: JUMP_IF_NOT_EXC_MATCH (target)
+
+    Tests whether the second value on the stack is an exception matching TOS,
+    and jumps if it is not. Pops two values from the stack.
+
+   .. versionadded:: 3.9
 
 
 .. opcode:: JUMP_IF_TRUE_OR_POP (target)

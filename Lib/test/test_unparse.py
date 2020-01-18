@@ -278,6 +278,8 @@ class UnparseTestCase(ASTTestCase):
     def test_invalid_set(self):
         self.check_invalid(ast.Set(elts=[]))
 
+    def test_invalid_yield_from(self):
+        self.check_invalid(ast.YieldFrom(value=None))
 
 class DirectoryTestCase(ASTTestCase):
     """Test roundtrip behaviour on all files in Lib and Lib/test."""

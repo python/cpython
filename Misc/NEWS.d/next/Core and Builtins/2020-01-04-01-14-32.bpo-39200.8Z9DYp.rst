@@ -1,0 +1,2 @@
+Correct the error message when calling the :func:`min` or :func:`max` with
+no arguments. Patch by Dong-hee Na.

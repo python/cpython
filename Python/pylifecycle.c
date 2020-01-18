@@ -749,7 +749,6 @@ pyinit_config(_PyRuntimeState *runtime,
     if (_PyStatus_EXCEPTION(status)) {
         return status;
     }
-    config = &tstate->interp->config;
     *tstate_p = tstate;
 
     status = pycore_interp_init(tstate);
@@ -1341,7 +1340,7 @@ Py_FinalizeEx(void)
     wait_for_thread_shutdown(tstate);
 
     // Make any remaining pending calls.
-    _Py_FinishPendingCalls(runtime);
+    _Py_FinishPendingCalls(tstate);
 
     /* The interpreter is still entirely intact at this point, and the
      * exit funcs may be relying on that.  In particular, if some thread
@@ -1817,7 +1816,7 @@ create_stdio(const PyConfig *config, PyObject* io,
         write_through = Py_True;
     else
         write_through = Py_False;
-    if (isatty && buffered_stdio)
+    if (buffered_stdio && (isatty || fd == fileno(stderr)))
         line_buffering = Py_True;
     else
         line_buffering = Py_False;
