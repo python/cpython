@@ -587,10 +587,10 @@ The :mod:`functools` module defines the following functions:
 
            # When the work for a node is done, workers put the node in
            # 'finalized_tasks_queue' so we can get more nodes to work on.
-           # The definition of 'is_active()` guarantees that, at this point, at
+           # The definition of 'is_active()' guarantees that, at this point, at
            # least one node has been placed on 'task_queue' that hasn't yet
-           # been passed to `done()`, so this blocking `get()` must (eventually)
-           # succeed.  After calling `done()`, we loop back to call `get_ready()`
+           # been passed to 'done()', so this blocking 'get()' must (eventually)
+           # succeed.  After calling 'done()', we loop back to call 'get_ready()'
            # again, so put newly freed nodes on 'task_queue' as soon as
            # logically possible.
            node = finalized_tasks_queue.get()
