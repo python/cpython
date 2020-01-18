@@ -1,0 +1,2 @@
+Correct the error message when trying to construct :class:`range` objects
+with no arguments. Patch by Pablo Galindo.

@@ -3906,6 +3906,17 @@ class MiscIOTest(unittest.TestCase):
                 self.open(support.TESTFN, mode)
             self.assertIn('invalid mode', str(cm.exception))
 
+    def test_open_pipe_with_append(self):
+        # bpo-27805: Ignore ESPIPE from lseek() in open().
+        r, w = os.pipe()
+        self.addCleanup(os.close, r)
+        f = self.open(w, 'a')
+        self.addCleanup(f.close)
+        # Check that the file is marked non-seekable. On Windows, however, lseek
+        # somehow succeeds on pipes.
+        if sys.platform != 'win32':
+            self.assertFalse(f.seekable())
+
     def test_io_after_close(self):
         for kwargs in [
                 {"mode": "w"},

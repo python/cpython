@@ -1,7 +1,7 @@
 import unittest
 import unittest.mock
 from test.support import (verbose, refcount_test, run_unittest,
-                          strip_python_stderr, cpython_only, start_threads,
+                          cpython_only, start_threads,
                           temp_dir, requires_type_collecting, TESTFN, unlink,
                           import_module)
 from test.support.script_helper import assert_python_ok, make_script
@@ -586,6 +586,24 @@ class GCTests(unittest.TestCase):
         self.assertFalse(gc.is_tracked(UserFloatSlots()))
         self.assertFalse(gc.is_tracked(UserIntSlots()))
 
+    def test_is_finalized(self):
+        # Objects not tracked by the always gc return false
+        self.assertFalse(gc.is_finalized(3))
+
+        storage = []
+        class Lazarus:
+            def __del__(self):
+                storage.append(self)
+
+        lazarus = Lazarus()
+        self.assertFalse(gc.is_finalized(lazarus))
+
+        del lazarus
+        gc.collect()
+
+        lazarus = storage.pop()
+        self.assertTrue(gc.is_finalized(lazarus))
+
     def test_bug1055820b(self):
         # Corresponds to temp2b.py in the bug report.
 
@@ -671,8 +689,8 @@ class GCTests(unittest.TestCase):
             p.stdout.close()
             p.stderr.close()
             self.assertEqual(p.returncode, 0)
-            self.assertEqual(stdout.strip(), b"")
-            return strip_python_stderr(stderr)
+            self.assertEqual(stdout, b"")
+            return stderr
 
         stderr = run_command(code % "0")
         self.assertIn(b"ResourceWarning: gc: 2 uncollectable objects at "

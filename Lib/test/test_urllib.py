@@ -270,13 +270,35 @@ class ProxyTests(unittest.TestCase):
         self.assertTrue(bypass('localhost'))
         self.assertTrue(bypass('LocalHost'))                 # MixedCase
         self.assertTrue(bypass('LOCALHOST'))                 # UPPERCASE
+        self.assertTrue(bypass('.localhost'))
         self.assertTrue(bypass('newdomain.com:1234'))
+        self.assertTrue(bypass('.newdomain.com:1234'))
         self.assertTrue(bypass('foo.d.o.t'))                 # issue 29142
+        self.assertTrue(bypass('d.o.t'))
         self.assertTrue(bypass('anotherdomain.com:8888'))
+        self.assertTrue(bypass('.anotherdomain.com:8888'))
         self.assertTrue(bypass('www.newdomain.com:1234'))
         self.assertFalse(bypass('prelocalhost'))
         self.assertFalse(bypass('newdomain.com'))            # no port
         self.assertFalse(bypass('newdomain.com:1235'))       # wrong port
+
+    def test_proxy_bypass_environment_always_match(self):
+        bypass = urllib.request.proxy_bypass_environment
+        self.env.set('NO_PROXY', '*')
+        self.assertTrue(bypass('newdomain.com'))
+        self.assertTrue(bypass('newdomain.com:1234'))
+        self.env.set('NO_PROXY', '*, anotherdomain.com')
+        self.assertTrue(bypass('anotherdomain.com'))
+        self.assertFalse(bypass('newdomain.com'))
+        self.assertFalse(bypass('newdomain.com:1234'))
+
+    def test_proxy_bypass_environment_newline(self):
+        bypass = urllib.request.proxy_bypass_environment
+        self.env.set('NO_PROXY',
+                     'localhost, anotherdomain.com, newdomain.com:1234')
+        self.assertFalse(bypass('localhost\n'))
+        self.assertFalse(bypass('anotherdomain.com:8888\n'))
+        self.assertFalse(bypass('newdomain.com:1234\n'))
 
 
 class ProxyTests_withOrderedEnv(unittest.TestCase):
@@ -1542,85 +1564,6 @@ class URLopener_Tests(FakeHTTPMixin, unittest.TestCase):
             self.assertRaises(OSError, urllib.request.URLopener().retrieve, url)
             self.assertRaises(OSError, DummyURLopener().open, url)
             self.assertRaises(OSError, DummyURLopener().retrieve, url)
-
-
-# Just commented them out.
-# Can't really tell why keep failing in windows and sparc.
-# Everywhere else they work ok, but on those machines, sometimes
-# fail in one of the tests, sometimes in other. I have a linux, and
-# the tests go ok.
-# If anybody has one of the problematic environments, please help!
-# .   Facundo
-#
-# def server(evt):
-#     import socket, time
-#     serv = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-#     serv.settimeout(3)
-#     serv.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-#     serv.bind(("", 9093))
-#     serv.listen()
-#     try:
-#         conn, addr = serv.accept()
-#         conn.send("1 Hola mundo\n")
-#         cantdata = 0
-#         while cantdata < 13:
-#             data = conn.recv(13-cantdata)
-#             cantdata += len(data)
-#             time.sleep(.3)
-#         conn.send("2 No more lines\n")
-#         conn.close()
-#     except socket.timeout:
-#         pass
-#     finally:
-#         serv.close()
-#         evt.set()
-#
-# class FTPWrapperTests(unittest.TestCase):
-#
-#     def setUp(self):
-#         import ftplib, time, threading
-#         ftplib.FTP.port = 9093
-#         self.evt = threading.Event()
-#         threading.Thread(target=server, args=(self.evt,)).start()
-#         time.sleep(.1)
-#
-#     def tearDown(self):
-#         self.evt.wait()
-#
-#     def testBasic(self):
-#         # connects
-#         ftp = urllib.ftpwrapper("myuser", "mypass", "localhost", 9093, [])
-#         ftp.close()
-#
-#     def testTimeoutNone(self):
-#         # global default timeout is ignored
-#         import socket
-#         self.assertIsNone(socket.getdefaulttimeout())
-#         socket.setdefaulttimeout(30)
-#         try:
-#             ftp = urllib.ftpwrapper("myuser", "mypass", "localhost", 9093, [])
-#         finally:
-#             socket.setdefaulttimeout(None)
-#         self.assertEqual(ftp.ftp.sock.gettimeout(), 30)
-#         ftp.close()
-#
-#     def testTimeoutDefault(self):
-#         # global default timeout is used
-#         import socket
-#         self.assertIsNone(socket.getdefaulttimeout())
-#         socket.setdefaulttimeout(30)
-#         try:
-#             ftp = urllib.ftpwrapper("myuser", "mypass", "localhost", 9093, [])
-#         finally:
-#             socket.setdefaulttimeout(None)
-#         self.assertEqual(ftp.ftp.sock.gettimeout(), 30)
-#         ftp.close()
-#
-#     def testTimeoutValue(self):
-#         ftp = urllib.ftpwrapper("myuser", "mypass", "localhost", 9093, [],
-#                                 timeout=30)
-#         self.assertEqual(ftp.ftp.sock.gettimeout(), 30)
-#         ftp.close()
 
 
 class RequestTests(unittest.TestCase):

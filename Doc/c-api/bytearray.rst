@@ -48,7 +48,7 @@ Direct API functions
 .. c:function:: PyObject* PyByteArray_FromStringAndSize(const char *string, Py_ssize_t len)
 
    Create a new bytearray object from *string* and its length, *len*.  On
-   failure, *NULL* is returned.
+   failure, ``NULL`` is returned.
 
 
 .. c:function:: PyObject* PyByteArray_Concat(PyObject *a, PyObject *b)
@@ -58,13 +58,13 @@ Direct API functions
 
 .. c:function:: Py_ssize_t PyByteArray_Size(PyObject *bytearray)
 
-   Return the size of *bytearray* after checking for a *NULL* pointer.
+   Return the size of *bytearray* after checking for a ``NULL`` pointer.
 
 
 .. c:function:: char* PyByteArray_AsString(PyObject *bytearray)
 
    Return the contents of *bytearray* as a char array after checking for a
-   *NULL* pointer.  The returned array always has an extra
+   ``NULL`` pointer.  The returned array always has an extra
    null byte appended.
 
 

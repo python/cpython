@@ -22,8 +22,6 @@ typedef PyObject *(*PyCFunctionWithKeywords)(PyObject *, PyObject *,
 typedef PyObject *(*_PyCFunctionFastWithKeywords) (PyObject *,
                                                    PyObject *const *, Py_ssize_t,
                                                    PyObject *);
-typedef PyObject *(*PyNoArgsFunction)(PyObject *);
-
 PyAPI_FUNC(PyCFunction) PyCFunction_GetFunction(PyObject *);
 PyAPI_FUNC(PyObject *) PyCFunction_GetSelf(PyObject *);
 PyAPI_FUNC(int) PyCFunction_GetFlags(PyObject *);
@@ -96,8 +94,6 @@ typedef struct {
     vectorcallfunc vectorcall;
 } PyCFunctionObject;
 #endif
-
-PyAPI_FUNC(int) PyCFunction_ClearFreeList(void);
 
 #ifdef __cplusplus
 }

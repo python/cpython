@@ -72,21 +72,23 @@ three`` at the command line::
    >>> print(sys.argv)
    ['demo.py', 'one', 'two', 'three']
 
-The :mod:`argparse` module provides a mechanism to process command line arguments.
-It should always be preferred over directly processing ``sys.argv`` manually.
+The :mod:`argparse` module provides a more sophisticated mechanism to process
+command line arguments.  The following script extracts one or more filenames
+and an optional number of lines to be displayed::
 
-Take, for example, the below snippet of code::
+    import argparse
 
-   >>> import argparse
-   >>> from getpass import getuser
-   >>> parser = argparse.ArgumentParser(description='An argparse example.')
-   >>> parser.add_argument('name', nargs='?', default=getuser(), help='The name of someone to greet.')
-   >>> parser.add_argument('--verbose', '-v', action='count')
-   >>> args = parser.parse_args()
-   >>> greeting = ["Hi", "Hello", "Greetings! its very nice to meet you"][args.verbose % 3]
-   >>> print(f'{greeting}, {args.name}')
-   >>> if not args.verbose:
-   >>>     print('Try running this again with multiple "-v" flags!')
+    parser = argparse.ArgumentParser(prog = 'top',
+        description = 'Show top lines from each file')
+    parser.add_argument('filenames', nargs='+')
+    parser.add_argument('-l', '--lines', type=int, default=10)
+    args = parser.parse_args()
+    print(args)
+
+When run at the command line with ``python top.py --lines=5 alpha.txt
+beta.txt``, the script sets ``args.lines`` to ``5`` and ``args.filenames``
+to ``['alpha.txt', 'beta.txt']``.
+
 
 .. _tut-stderr:
 

@@ -61,8 +61,8 @@ PyWideStringList
 
    List of ``wchar_t*`` strings.
 
-   If *length* is non-zero, *items* must be non-NULL and all strings must be
-   non-NULL.
+   If *length* is non-zero, *items* must be non-``NULL`` and all strings must be
+   non-``NULL``.
 
    Methods:
 
@@ -608,7 +608,7 @@ PyConfig
 
       :data:`sys.pycache_prefix`: ``.pyc`` cache prefix.
 
-      If NULL, :data:`sys.pycache_prefix` is set to ``None``.
+      If ``NULL``, :data:`sys.pycache_prefix` is set to ``None``.
 
    .. c:member:: int quiet
 
@@ -757,7 +757,7 @@ configuration, and then override some parameters::
         PyConfig config;
         PyConfig_InitPythonConfig(&config);
 
-        /* Set the program name before reading the configuraton
+        /* Set the program name before reading the configuration
            (decode byte string from the locale encoding).
 
            Implicitly preinitialize Python. */

@@ -12,12 +12,6 @@
 #include "structmember.h"
 #include "pycore_accu.h"
 
-#ifdef __GNUC__
-#define UNUSED __attribute__((__unused__))
-#else
-#define UNUSED
-#endif
-
 #define PyScanner_Check(op) PyObject_TypeCheck(op, &PyScannerType)
 #define PyScanner_CheckExact(op) (Py_TYPE(op) == &PyScannerType)
 #define PyEncoder_Check(op) PyObject_TypeCheck(op, &PyEncoderType)
@@ -78,7 +72,7 @@ static PyMemberDef encoder_members[] = {
 static PyObject *
 ascii_escape_unicode(PyObject *pystr);
 static PyObject *
-py_encode_basestring_ascii(PyObject* self UNUSED, PyObject *pystr);
+py_encode_basestring_ascii(PyObject* Py_UNUSED(self), PyObject *pystr);
 void init_json(void);
 static PyObject *
 scan_once_unicode(PyScannerObject *s, PyObject *pystr, Py_ssize_t idx, Py_ssize_t *next_idx_ptr);
@@ -562,7 +556,7 @@ PyDoc_STRVAR(pydoc_scanstring,
 );
 
 static PyObject *
-py_scanstring(PyObject* self UNUSED, PyObject *args)
+py_scanstring(PyObject* Py_UNUSED(self), PyObject *args)
 {
     PyObject *pystr;
     PyObject *rval;
@@ -591,7 +585,7 @@ PyDoc_STRVAR(pydoc_encode_basestring_ascii,
 );
 
 static PyObject *
-py_encode_basestring_ascii(PyObject* self UNUSED, PyObject *pystr)
+py_encode_basestring_ascii(PyObject* Py_UNUSED(self), PyObject *pystr)
 {
     PyObject *rval;
     /* Return an ASCII-only JSON representation of a Python string */
@@ -616,7 +610,7 @@ PyDoc_STRVAR(pydoc_encode_basestring,
 );
 
 static PyObject *
-py_encode_basestring(PyObject* self UNUSED, PyObject *pystr)
+py_encode_basestring(PyObject* Py_UNUSED(self), PyObject *pystr)
 {
     PyObject *rval;
     /* Return a JSON representation of a Python string */
@@ -1869,13 +1863,40 @@ static PyMethodDef speedups_methods[] = {
 PyDoc_STRVAR(module_doc,
 "json speedups\n");
 
+static int
+_json_exec(PyObject *module)
+{
+    if (PyType_Ready(&PyScannerType) < 0) {
+        return -1;
+    }
+    if (PyType_Ready(&PyEncoderType) < 0) {
+        return -1;
+    }
+    Py_INCREF((PyObject*)&PyScannerType);
+    if (PyModule_AddObject(module, "make_scanner", (PyObject*)&PyScannerType) < 0) {
+        Py_DECREF((PyObject*)&PyScannerType);
+        return -1;
+    }
+    Py_INCREF((PyObject*)&PyEncoderType);
+    if (PyModule_AddObject(module, "make_encoder", (PyObject*)&PyEncoderType) < 0) {
+        Py_DECREF((PyObject*)&PyEncoderType);
+        return -1;
+    }
+    return 0;
+}
+
+static PyModuleDef_Slot _json_slots[] = {
+    {Py_mod_exec, _json_exec},
+    {0, NULL}
+};
+
 static struct PyModuleDef jsonmodule = {
         PyModuleDef_HEAD_INIT,
         "_json",
         module_doc,
-        -1,
+        0,
         speedups_methods,
-        NULL,
+        _json_slots,
         NULL,
         NULL,
         NULL
@@ -1884,25 +1905,5 @@ static struct PyModuleDef jsonmodule = {
 PyMODINIT_FUNC
 PyInit__json(void)
 {
-    PyObject *m = PyModule_Create(&jsonmodule);
-    if (!m)
-        return NULL;
-    if (PyType_Ready(&PyScannerType) < 0)
-        goto fail;
-    if (PyType_Ready(&PyEncoderType) < 0)
-        goto fail;
-    Py_INCREF((PyObject*)&PyScannerType);
-    if (PyModule_AddObject(m, "make_scanner", (PyObject*)&PyScannerType) < 0) {
-        Py_DECREF((PyObject*)&PyScannerType);
-        goto fail;
-    }
-    Py_INCREF((PyObject*)&PyEncoderType);
-    if (PyModule_AddObject(m, "make_encoder", (PyObject*)&PyEncoderType) < 0) {
-        Py_DECREF((PyObject*)&PyEncoderType);
-        goto fail;
-    }
-    return m;
-  fail:
-    Py_DECREF(m);
-    return NULL;
+    return PyModuleDef_Init(&jsonmodule);
 }

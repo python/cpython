@@ -1,0 +1,2 @@
+The :meth:`select.epoll.unregister` method no longer ignores the
+:data:`~errno.EBADF` error.

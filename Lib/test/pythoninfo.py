@@ -754,7 +754,7 @@ def collect_info(info):
     ):
         try:
             collect_func(info_add)
-        except Exception as exc:
+        except Exception:
             error = True
             print("ERROR: %s() failed" % (collect_func.__name__),
                   file=sys.stderr)

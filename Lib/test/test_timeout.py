@@ -199,10 +199,7 @@ class TCPTimeoutTestCase(TimeoutTestCase):
 
         skip = True
         sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        # Use a timeout of 3 seconds.  Why 3?  Because it's more than 1, and
-        # less than 5.  i.e. no particular reason.  Feel free to tweak it if
-        # you feel a different value would be more appropriate.
-        timeout = 3
+        timeout = support.LOOPBACK_TIMEOUT
         sock.settimeout(timeout)
         try:
             sock.connect((whitehole))

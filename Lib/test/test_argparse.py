@@ -2163,7 +2163,7 @@ class TestAddSubparsers(TestCase):
 
     def test_subparser2_help(self):
         self._test_subparser_help('5.0 2 -h', textwrap.dedent('''\
-            usage: PROG bar 2 [-h] [-y {1,2,3}] [z [z ...]]
+            usage: PROG bar 2 [-h] [-y {1,2,3}] [z ...]
 
             2 description
 
@@ -2697,10 +2697,10 @@ class TestMutuallyExclusiveOptionalAndPositional(MEMixin, TestCase):
     ]
 
     usage_when_not_required = '''\
-        usage: PROG [-h] [--foo | --spam SPAM | badger [badger ...]]
+        usage: PROG [-h] [--foo | --spam SPAM | badger ...]
         '''
     usage_when_required = '''\
-        usage: PROG [-h] (--foo | --spam SPAM | badger [badger ...])
+        usage: PROG [-h] (--foo | --spam SPAM | badger ...)
         '''
     help = '''\
 
@@ -3494,11 +3494,11 @@ class TestHelpUsage(HelpTestCase):
         ])
     ]
     usage = '''\
-        usage: PROG [-h] [-w W [W ...]] [-x [X [X ...]]] [--foo | --no-foo]
+        usage: PROG [-h] [-w W [W ...]] [-x [X ...]] [--foo | --no-foo]
                     [--bar | --no-bar]
                     [-f | --foobar | --no-foobar | --barfoo | --no-barfoo] [-y [Y]]
                     [-z Z Z Z]
-                    a b b [c] [d [d ...]] e [e ...]
+                    a b b [c] [d ...] e [e ...]
         '''
     help = usage + '''\
 
@@ -3510,7 +3510,7 @@ class TestHelpUsage(HelpTestCase):
         optional arguments:
           -h, --help            show this help message and exit
           -w W [W ...]          w
-          -x [X [X ...]]        x
+          -x [X ...]            x
           --foo, --no-foo       Whether to foo
           --bar, --no-bar       Whether to bar (default: True)
           -f, --foobar, --no-foobar, --barfoo, --no-barfoo
@@ -5113,7 +5113,7 @@ class TestAddArgumentMetavar(TestCase):
         self.do_test_exception(nargs="*", metavar=tuple())
 
     def test_nargs_zeroormore_metavar_length1(self):
-        self.do_test_exception(nargs="*", metavar=("1",))
+        self.do_test_no_exception(nargs="*", metavar=("1",))
 
     def test_nargs_zeroormore_metavar_length2(self):
         self.do_test_no_exception(nargs="*", metavar=("1", "2"))
