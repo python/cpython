@@ -859,7 +859,7 @@ class SysModuleTest(unittest.TestCase):
 
     def test_sys_ignores_cleaning_up_user_data(self):
         code = """if 1:
-            import _struct, sys
+            import struct, sys
 
             class C:
                 def __init__(self):
