@@ -1379,28 +1379,43 @@ class TestTopologicalSort(unittest.TestCase):
         self.assertRaises(TypeError, ts.add, 1, dict())
         self.assertRaises(TypeError, ts.add, dict(), dict())
 
-    def test_order_of_insertion_does_not_matter(self):
+    def test_order_of_insertion_does_not_matter_between_groups(self):
+        def get_groups(ts):
+            ts.prepare()
+            while ts.is_active():
+                nodes = ts.get_ready()
+                for node in nodes:
+                    ts.done(node)
+                yield nodes
+
         ts = functools.TopologicalSorter()
         ts.add(3, 2, 1)
-        ts.add(2, 1)
         ts.add(1, 0)
+        ts.add(4, 5)
+        ts.add(6, 7)
+        ts.add(4, 7)
 
         ts2 = functools.TopologicalSorter()
-        ts2.add(2, 1)
         ts2.add(1, 0)
         ts2.add(3, 2, 1)
+        ts2.add(4, 7)
+        ts2.add(6, 7)
+        ts2.add(4, 5)
 
-        self.assertEqual([*ts.static_order()], [*ts2.static_order()])
+        self.assertEqual(
+                list(map(set, get_groups(ts))),
+                list(map(set, get_groups(ts2)))
+        )
 
     def test_static_order_does_not_change_with_the_hash_seed(self):
         def check_order_with_hash_seed(seed):
             code = """if 1:
                 import functools
                 ts = functools.TopologicalSorter()
-                ts.add(1, 2, 3, 4, 5)
-                ts.add(2, 3, 4, 5, 6)
-                ts.add(4, 11, 45, 3)
-                ts.add(0, 11, 2, 3, 4)
+                ts.add('blech', 'bluch', 'hola')
+                ts.add('abcd', 'blech', 'bluch', 'a', 'b')
+                ts.add('a', 'a string', 'something', 'b')
+                ts.add('bluch', 'hola', 'abcde', 'a', 'b')
                 print(list(ts.static_order()))
                 """
             env = os.environ.copy()
