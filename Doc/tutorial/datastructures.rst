@@ -675,11 +675,10 @@ to a variable.  For example, ::
    >>> non_null
    'Trondheim'
 
-.. versionchanged:: 3.8
-   Note that in Python, unlike C, assignment inside expressions must be done
-   explicitly with the walrus operator ``:=``. This avoids a common class of
-   problems encountered in C programs: typing ``=`` in an expression when ``==``
-   was intended.
+Note that in Python, unlike C, assignment inside expressions must be done
+explicitly with the walrus operator ``:=``. This avoids a common class of
+problems encountered in C programs: typing ``=`` in an expression when ``==``
+was intended.
 
 
 .. _tut-comparing:
