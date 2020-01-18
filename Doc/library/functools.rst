@@ -679,6 +679,29 @@ The :mod:`functools` module defines the following functions:
                   yield from node_group
                   self.done(*node_group)
 
+      The particular order that is returned may depend on the particular order in
+      which the items were inserted in the graph. For example:
+
+      .. doctest::
+         :hide:
+
+          >>> ts = TopologicalSorter()
+          >>> ts.add(3, 2, 1)
+          >>> ts.add(1, 0)
+          >>> print([*ts.static_order()])
+          [2, 0, 1, 3]
+
+          >>> ts2 = TopologicalSorter()
+          >>> ts2.add(1, 0)
+          >>> ts2.add(3, 2, 1)
+          >>> print([*ts2.static_order()])
+          [0, 2, 1, 3]
+
+      This is due to the fact that "0" and "2" are in the same level in the graph (they
+      would have been returned in the same call to :meth:`~TopologicalSorter.get_ready`)
+      and the order between them is determined by the order of insertion.
+
+
       If any cycle is detected, :exc:`CycleError` will be raised.
 
    .. versionadded:: 3.9
