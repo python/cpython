@@ -549,8 +549,8 @@ The :mod:`functools` module defines the following functions:
                it finishes processing.
 
    In case that just an inmediate sorting of the nodes in the graph is required and
-   no paralellism is involved, the convencience method :meth:`TopologicalSorter.stable_oder`
-   can be used directly. For example, using this method is possible to implement a simple
+   no parallelism is involved, the convencience method :meth:`TopologicalSorter.stable_oder`
+   can be used directly. For example, this method can be used to implement a simple
    version of the C3 linearization algorithm used by Python to calculate the Method
    Resolution Order (MRO) of a derived class:
 
