@@ -679,7 +679,7 @@ The :mod:`functools` module defines the following functions:
                   yield from node_group
                   self.done(*node_group)
 
-      The particular order that is returned may depend on the particular order in
+      The particular order that is returned may depend on the specific order in
       which the items were inserted in the graph. For example:
 
       .. doctest::

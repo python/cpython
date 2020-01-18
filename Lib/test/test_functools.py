@@ -1384,9 +1384,8 @@ class TestTopologicalSort(unittest.TestCase):
             ts.prepare()
             while ts.is_active():
                 nodes = ts.get_ready()
-                for node in nodes:
-                    ts.done(node)
-                yield nodes
+                ts.done(*nodes)
+                yield set(nodes)
 
         ts = functools.TopologicalSorter()
         ts.add(3, 2, 1)
@@ -1402,10 +1401,7 @@ class TestTopologicalSort(unittest.TestCase):
         ts2.add(6, 7)
         ts2.add(4, 5)
 
-        self.assertEqual(
-                list(map(set, get_groups(ts))),
-                list(map(set, get_groups(ts2)))
-        )
+        self.assertEqual(list(get_groups(ts)), list(get_groups(ts2)))
 
     def test_static_order_does_not_change_with_the_hash_seed(self):
         def check_order_with_hash_seed(seed):
