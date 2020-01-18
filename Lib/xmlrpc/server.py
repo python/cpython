@@ -107,13 +107,14 @@ server.handle_request()
 from xmlrpc.client import Fault, dumps, loads, gzip_encode, gzip_decode
 from http.server import BaseHTTPRequestHandler
 from functools import partial
+from inspect import signature
+import html
 import http.server
 import socketserver
 import sys
 import os
 import re
 import pydoc
-import inspect
 import traceback
 try:
     import fcntl
@@ -731,7 +732,7 @@ class ServerHTMLDoc(pydoc.HTMLDoc):
         # hyperlinking of arbitrary strings being used as method
         # names. Only methods with names consisting of word characters
         # and '.'s are hyperlinked.
-        pattern = re.compile(r'\b((http|ftp)://\S+[\w/]|'
+        pattern = re.compile(r'\b((http|https|ftp)://\S+[\w/]|'
                                 r'RFC[- ]?(\d+)|'
                                 r'PEP[- ]?(\d+)|'
                                 r'(self\.)?((?:\w|\.)+))\b')
@@ -771,24 +772,8 @@ class ServerHTMLDoc(pydoc.HTMLDoc):
         title = '<a name="%s"><strong>%s</strong></a>' % (
             self.escape(anchor), self.escape(name))
 
-        if inspect.ismethod(object):
-            args = inspect.getfullargspec(object)
-            # exclude the argument bound to the instance, it will be
-            # confusing to the non-Python user
-            argspec = inspect.formatargspec (
-                    args.args[1:],
-                    args.varargs,
-                    args.varkw,
-                    args.defaults,
-                    annotations=args.annotations,
-                    formatvalue=self.formatvalue
-                )
-        elif inspect.isfunction(object):
-            args = inspect.getfullargspec(object)
-            argspec = inspect.formatargspec(
-                args.args, args.varargs, args.varkw, args.defaults,
-                annotations=args.annotations,
-                formatvalue=self.formatvalue)
+        if callable(object):
+            argspec = str(signature(object))
         else:
             argspec = '(...)'
 
@@ -910,7 +895,7 @@ class XMLRPCDocGenerator:
                                 methods
                             )
 
-        return documenter.page(self.server_title, documentation)
+        return documenter.page(html.escape(self.server_title), documentation)
 
 class DocXMLRPCRequestHandler(SimpleXMLRPCRequestHandler):
     """XML-RPC and documentation request handler class.

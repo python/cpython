@@ -7,7 +7,9 @@ import doctest
 import functools
 import os
 import sys
-
+import importlib
+import unittest
+import tempfile
 
 # NOTE: There are some additional tests relating to interaction with
 #       zipimport in the test_zipimport_support test module.
@@ -435,7 +437,7 @@ We'll simulate a __file__ attr that ends in pyc:
     >>> tests = finder.find(sample_func)
 
     >>> print(tests)  # doctest: +ELLIPSIS
-    [<DocTest sample_func from ...:19 (1 example)>]
+    [<DocTest sample_func from ...:21 (1 example)>]
 
 The exact name depends on how test_doctest was invoked, so allow for
 leading path components.
@@ -659,27 +661,52 @@ plain ol' Python and is guaranteed to be available.
 
     >>> import builtins
     >>> tests = doctest.DocTestFinder().find(builtins)
-    >>> 790 < len(tests) < 810 # approximate number of objects with docstrings
+    >>> 800 < len(tests) < 820 # approximate number of objects with docstrings
     True
     >>> real_tests = [t for t in tests if len(t.examples) > 0]
     >>> len(real_tests) # objects that actually have doctests
-    8
+    12
     >>> for t in real_tests:
     ...     print('{}  {}'.format(len(t.examples), t.name))
     ...
     1  builtins.bin
+    5  builtins.bytearray.hex
+    5  builtins.bytes.hex
     3  builtins.float.as_integer_ratio
     2  builtins.float.fromhex
     2  builtins.float.hex
     1  builtins.hex
     1  builtins.int
+    3  builtins.int.as_integer_ratio
     2  builtins.int.bit_length
+    5  builtins.memoryview.hex
     1  builtins.oct
 
 Note here that 'bin', 'oct', and 'hex' are functions; 'float.as_integer_ratio',
 'float.hex', and 'int.bit_length' are methods; 'float.fromhex' is a classmethod,
 and 'int' is a type.
 """
+
+
+class TestDocTestFinder(unittest.TestCase):
+
+    def test_empty_namespace_package(self):
+        pkg_name = 'doctest_empty_pkg'
+        with tempfile.TemporaryDirectory() as parent_dir:
+            pkg_dir = os.path.join(parent_dir, pkg_name)
+            os.mkdir(pkg_dir)
+            sys.path.append(parent_dir)
+            try:
+                mod = importlib.import_module(pkg_name)
+            finally:
+                support.forget(pkg_name)
+                sys.path.pop()
+
+            include_empty_finder = doctest.DocTestFinder(exclude_empty=False)
+            exclude_empty_finder = doctest.DocTestFinder(exclude_empty=True)
+
+            self.assertEqual(len(include_empty_finder.find(mod)), 1)
+            self.assertEqual(len(exclude_empty_finder.find(mod)), 0)
 
 def test_DocTestParser(): r"""
 Unit tests for the `DocTestParser` class.
@@ -2431,6 +2458,10 @@ def test_unittest_reportflags():
     Then the default eporting options are ignored:
 
       >>> result = suite.run(unittest.TestResult())
+
+    *NOTE*: These doctest are intentionally not placed in raw string to depict
+    the trailing whitespace using `\x20` in the diff below.
+
       >>> print(result.failures[0][1]) # doctest: +ELLIPSIS
       Traceback ...
       Failed example:
@@ -2444,7 +2475,7 @@ def test_unittest_reportflags():
       Differences (ndiff with -expected +actual):
             a
           - <BLANKLINE>
-          +
+          +\x20
             b
       <BLANKLINE>
       <BLANKLINE>
@@ -2458,7 +2489,7 @@ def test_unittest_reportflags():
 
 def test_testfile(): r"""
 Tests for the `testfile()` function.  This function runs all the
-doctest examples in a given file.  In its simple invokation, it is
+doctest examples in a given file.  In its simple invocation, it is
 called with the name of a file, which is taken to be relative to the
 calling module.  The return value is (#failures, #tests).
 
@@ -2699,7 +2730,7 @@ Check doctest with a non-ascii filename:
     Exception raised:
         Traceback (most recent call last):
           File ...
-            compileflags, 1), test.globs)
+            exec(compile(example.source, filename, "single",
           File "<doctest foo-bär@baz[0]>", line 1, in <module>
             raise Exception('clé')
         Exception: clé
@@ -2933,6 +2964,47 @@ Invalid doctest option:
 
 """
 
+def test_no_trailing_whitespace_stripping():
+    r"""
+    The fancy reports had a bug for a long time where any trailing whitespace on
+    the reported diff lines was stripped, making it impossible to see the
+    differences in line reported as different that differed only in the amount of
+    trailing whitespace.  The whitespace still isn't particularly visible unless
+    you use NDIFF, but at least it is now there to be found.
+
+    *NOTE*: This snippet was intentionally put inside a raw string to get rid of
+    leading whitespace error in executing the example below
+
+    >>> def f(x):
+    ...     r'''
+    ...     >>> print('\n'.join(['a    ', 'b']))
+    ...     a
+    ...     b
+    ...     '''
+    """
+    """
+    *NOTE*: These doctest are not placed in raw string to depict the trailing whitespace
+    using `\x20`
+
+    >>> test = doctest.DocTestFinder().find(f)[0]
+    >>> flags = doctest.REPORT_NDIFF
+    >>> doctest.DocTestRunner(verbose=False, optionflags=flags).run(test)
+    ... # doctest: +ELLIPSIS
+    **********************************************************************
+    File ..., line 3, in f
+    Failed example:
+        print('\n'.join(['a    ', 'b']))
+    Differences (ndiff with -expected +actual):
+        - a
+        + a
+          b
+    TestResults(failed=1, attempted=1)
+
+    *NOTE*: `\x20` is for checking the trailing whitespace on the +a line above.
+    We cannot use actual spaces there, as a commit hook prevents from committing
+    patches that contain trailing whitespace. More info on Issue 24746.
+    """
+
 ######################################################################
 ## Main
 ######################################################################
@@ -2944,6 +3016,10 @@ def test_main():
     # Check the doctest cases defined here:
     from test import test_doctest
     support.run_doctest(test_doctest, verbosity=True)
+
+    # Run unittests
+    support.run_unittest(__name__)
+
 
 def test_coverage(coverdir):
     trace = support.import_module('trace')

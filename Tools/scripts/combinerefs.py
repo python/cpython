@@ -85,9 +85,7 @@ def read(fileiter, pat, whilematch):
         else:
             break
 
-def combine(fname):
-    f = open(fname)
-
+def combinefile(f):
     fi = iter(f)
 
     for line in read(fi, re.compile(r'^Remaining objects:$'), False):
@@ -121,8 +119,11 @@ def combine(fname):
             print('[%s->%s]' % (addr2rc[addr], rc), end=' ')
         print(guts, addr2guts[addr])
 
-    f.close()
     print("%d objects before, %d after" % (before, after))
+
+def combine(fname):
+    with open(fname) as f:
+        combinefile(f)
 
 if __name__ == '__main__':
     combine(sys.argv[1])

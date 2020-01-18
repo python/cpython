@@ -13,7 +13,7 @@ Command line usage:
 
 Options:
   -n/--number N: how many times to execute 'statement' (default: see below)
-  -r/--repeat N: how many times to repeat the timer (default 3)
+  -r/--repeat N: how many times to repeat the timer (default 5)
   -s/--setup S: statement to be executed once initially (default 'pass').
                 Execution time of this setup statement is NOT timed.
   -p/--process: use time.process_time() (default is time.perf_counter())
@@ -184,7 +184,7 @@ class Timer:
 
         This is a convenience function that calls the timeit()
         repeatedly, returning a list of results.  The first argument
-        specifies how many times to call timeit(), defaulting to 3;
+        specifies how many times to call timeit(), defaulting to 5;
         the second argument specifies the timer argument, defaulting
         to one million.
 

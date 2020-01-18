@@ -1,1 +1,0 @@
-Avoid wholesale rebuild after `make regen-all` if nothing changed.

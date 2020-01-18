@@ -26,8 +26,8 @@ for implementing WSGI servers, a demo HTTP server that serves WSGI applications,
 and a validation tool that checks WSGI servers and applications for conformance
 to the WSGI specification (:pep:`3333`).
 
-See https://wsgi.readthedocs.org/ for more information about WSGI, and links to
-tutorials and other resources.
+See `wsgi.readthedocs.io <https://wsgi.readthedocs.io/>`_ for more information about WSGI, and links
+to tutorials and other resources.
 
 .. XXX If you're just trying to write a web application...
 
@@ -54,7 +54,7 @@ parameter expect a WSGI-compliant dictionary to be supplied; please see
 
    This function is useful when creating a gateway that wraps CGI or a CGI-like
    protocol such as FastCGI.  Typically, servers providing such protocols will
-   include a ``HTTPS`` variable with a value of "1" "yes", or "on" when a request
+   include a ``HTTPS`` variable with a value of "1", "yes", or "on" when a request
    is received via SSL.  So, this function returns "https" if such a value is
    found, and "http" otherwise.
 
@@ -144,7 +144,7 @@ also provides these miscellaneous utilities:
 
 .. function:: is_hop_by_hop(header_name)
 
-   Return true if 'header_name' is an HTTP/1.1 "Hop-by-Hop" header, as defined by
+   Return ``True`` if 'header_name' is an HTTP/1.1 "Hop-by-Hop" header, as defined by
    :rfc:`2616`.
 
 
@@ -173,6 +173,8 @@ also provides these miscellaneous utilities:
       for chunk in wrapper:
           print(chunk)
 
+   .. deprecated:: 3.8
+      Support for :meth:`sequence protocol <__getitem__>` is deprecated.
 
 
 :mod:`wsgiref.headers` -- WSGI response header tools
@@ -397,7 +399,7 @@ Paste" library.
    Wrap *application* and return a new WSGI application object.  The returned
    application will forward all requests to the original *application*, and will
    check that both the *application* and the server invoking it are conforming to
-   the WSGI specification and to RFC 2616.
+   the WSGI specification and to :rfc:`2616`.
 
    Any detected nonconformance results in an :exc:`AssertionError` being raised;
    note, however, that how these errors are handled is server-dependent.  For
@@ -737,7 +739,7 @@ input, output, and error streams.
 
 .. function:: read_environ()
 
-   Transcode CGI variables from ``os.environ`` to PEP 3333 "bytes in unicode"
+   Transcode CGI variables from ``os.environ`` to :pep:`3333` "bytes in unicode"
    strings, returning a new dictionary.  This function is used by
    :class:`CGIHandler` and :class:`IISCGIHandler` in place of directly using
    ``os.environ``, which is not necessarily WSGI-compliant on all platforms
@@ -765,7 +767,7 @@ This is a working "Hello World" WSGI application::
    # use a function (note that you're not limited to a function, you can
    # use a class for example). The first argument passed to the function
    # is a dictionary containing CGI-style environment variables and the
-   # second variable is the callable object (see PEP 333).
+   # second variable is the callable object.
    def hello_world_app(environ, start_response):
        status = '200 OK'  # HTTP Status
        headers = [('Content-type', 'text/plain; charset=utf-8')]  # HTTP Headers
@@ -779,3 +781,9 @@ This is a working "Hello World" WSGI application::
 
        # Serve until process is killed
        httpd.serve_forever()
+
+
+Example of a WSGI application serving the current directory, accept optional
+directory and port number (default: 8000) on the command line:
+
+.. literalinclude:: ../../Tools/scripts/serve.py

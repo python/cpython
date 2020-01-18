@@ -74,10 +74,11 @@ class OutputWindow(EditorWindow):
         ("Go to file/line", "<<goto-file-line>>", None),
     ]
 
+    allow_code_context = False
+
     def __init__(self, *args):
         EditorWindow.__init__(self, *args)
         self.text.bind("<<goto-file-line>>", self.goto_file_line)
-        self.text.unbind("<<toggle-code-context>>")
 
     # Customize EditorWindow
     def ispythonsource(self, filename):
@@ -109,7 +110,7 @@ class OutputWindow(EditorWindow):
         Return:
             Length of text inserted.
         """
-        if isinstance(s, (bytes, bytes)):
+        if isinstance(s, bytes):
             s = s.decode(iomenu.encoding, "replace")
         self.text.insert(mark, s, tags)
         self.text.see(mark)
@@ -184,5 +185,5 @@ class OnDemandOutputWindow:
         self.write = self.owin.write
 
 if __name__ == '__main__':
-    import unittest
-    unittest.main('idlelib.idle_test.test_outwin', verbosity=2, exit=False)
+    from unittest import main
+    main('idlelib.idle_test.test_outwin', verbosity=2, exit=False)

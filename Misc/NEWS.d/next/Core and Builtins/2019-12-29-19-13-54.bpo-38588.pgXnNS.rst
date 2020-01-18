@@ -1,0 +1,2 @@
+Fix possible crashes in dict and list when calling
+:c:func:`PyObject_RichCompareBool`.

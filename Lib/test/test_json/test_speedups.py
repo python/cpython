@@ -31,6 +31,8 @@ class TestDecode(CTest):
 
 class TestEncode(CTest):
     def test_make_encoder(self):
+        # bpo-6986: The interpreter shouldn't crash in case c_make_encoder()
+        # receives invalid arguments.
         self.assertRaises(TypeError, self.json.encoder.c_make_encoder,
             (True, False),
             b"\xCD\x7D\x3D\x4E\x12\x4C\xF9\x79\xD7\x52\xBA\x82\xF2\x27\x4A\x7D\xA0\xCA\x75",

@@ -306,7 +306,7 @@ class BasicAuthTests(unittest.TestCase):
         try:
             self.assertTrue(urllib.request.urlopen(self.server_url))
         except urllib.error.HTTPError:
-            self.fail("Basic auth failed for the url: %s", self.server_url)
+            self.fail("Basic auth failed for the url: %s" % self.server_url)
 
     def test_basic_auth_httperror(self):
         ah = urllib.request.HTTPBasicAuthHandler()
@@ -322,6 +322,7 @@ class ProxyAuthTests(unittest.TestCase):
     PASSWD = "test123"
     REALM = "TestRealm"
 
+    @support.requires_hashdigest("md5")
     def setUp(self):
         super(ProxyAuthTests, self).setUp()
         # Ignore proxy bypass settings in the environment.
@@ -371,10 +372,9 @@ class ProxyAuthTests(unittest.TestCase):
         self.proxy_digest_handler.add_password(self.REALM, self.URL,
                                                self.USER, self.PASSWD)
         self.digest_auth_handler.set_qop("auth")
-        result = self.opener.open(self.URL)
-        while result.read():
-            pass
-        result.close()
+        with self.opener.open(self.URL) as result:
+            while result.read():
+                pass
 
     def test_proxy_qop_auth_int_works_or_throws_urlerror(self):
         self.proxy_digest_handler.add_password(self.REALM, self.URL,
@@ -386,11 +386,11 @@ class ProxyAuthTests(unittest.TestCase):
             # It's okay if we don't support auth-int, but we certainly
             # shouldn't receive any kind of exception here other than
             # a URLError.
-            result = None
-        if result:
-            while result.read():
-                pass
-            result.close()
+            pass
+        else:
+            with result:
+                while result.read():
+                    pass
 
 
 def GetRequestHandler(responses):
@@ -447,6 +447,9 @@ class TestUrlopen(unittest.TestCase):
 
     def setUp(self):
         super(TestUrlopen, self).setUp()
+
+        # clear _opener global variable
+        self.addCleanup(urllib.request.urlcleanup)
 
         # Ignore proxies for localhost tests.
         def restore_environ(old_environ):
@@ -573,7 +576,7 @@ class TestUrlopen(unittest.TestCase):
                              cafile=CERT_fakehostname)
             # Good cert, but mismatching hostname
             handler = self.start_https_server(certfile=CERT_fakehostname)
-            with self.assertRaises(ssl.CertificateError) as cm:
+            with self.assertRaises(urllib.error.URLError) as cm:
                 self.urlopen("https://localhost:%s/bizarre" % handler.port,
                              cafile=CERT_fakehostname)
 
@@ -611,14 +614,11 @@ class TestUrlopen(unittest.TestCase):
 
     def test_basic(self):
         handler = self.start_server()
-        open_url = urllib.request.urlopen("http://localhost:%s" % handler.port)
-        for attr in ("read", "close", "info", "geturl"):
-            self.assertTrue(hasattr(open_url, attr), "object returned from "
-                         "urlopen lacks the %s attribute" % attr)
-        try:
+        with urllib.request.urlopen("http://localhost:%s" % handler.port) as open_url:
+            for attr in ("read", "close", "info", "geturl"):
+                self.assertTrue(hasattr(open_url, attr), "object returned from "
+                             "urlopen lacks the %s attribute" % attr)
             self.assertTrue(open_url.read(), "calling 'read' failed")
-        finally:
-            open_url.close()
 
     def test_info(self):
         handler = self.start_server()

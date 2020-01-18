@@ -1,7 +1,0 @@
-The purpose is to hack the libffi sources so that they can be compiled
-with MSVC, and to extend them so that they have the features I need
-for ctypes.
-
-I retrieved the libffi sources from the gcc cvs repository on
-2004-01-27.  Then I did 'configure' in a 'build' subdirectory on a x86
-linux system, and copied the files I found useful.

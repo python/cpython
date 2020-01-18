@@ -1,4 +1,3 @@
-
 /* Frame object interface */
 
 #ifndef Py_LIMITED_API
@@ -30,14 +29,6 @@ typedef struct _frame {
     char f_trace_lines;         /* Emit per-line trace events? */
     char f_trace_opcodes;       /* Emit per-opcode trace events? */
 
-    /* In a generator, we need to be able to swap between the exception
-       state inside the generator and the exception state of the calling
-       frame (which shouldn't be impacted when the generator "yields"
-       from an except handler).
-       These three fields exist exactly for that, and are unused for
-       non-generator frames. See the save_exc_state and swap_exc_state
-       functions in ceval.c for details of their use. */
-    PyObject *f_exc_type, *f_exc_value, *f_exc_traceback;
     /* Borrowed reference to a generator, or NULL */
     PyObject *f_gen;
 
@@ -75,10 +66,6 @@ PyFrameObject* _PyFrame_New_NoTrack(PyThreadState *, PyCodeObject *,
 
 PyAPI_FUNC(void) PyFrame_BlockSetup(PyFrameObject *, int, int, int);
 PyAPI_FUNC(PyTryBlock *) PyFrame_BlockPop(PyFrameObject *);
-
-/* Extend the value stack */
-
-PyAPI_FUNC(PyObject **) PyFrame_ExtendStack(PyFrameObject *, int, int);
 
 /* Conversions between "fast locals" and locals in dictionary */
 

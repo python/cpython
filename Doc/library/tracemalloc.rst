@@ -313,6 +313,9 @@ Functions
    frames. By default, a trace of a memory block only stores the most recent
    frame: the limit is ``1``. *nframe* must be greater or equal to ``1``.
 
+   You can still read the original number of total frames that composed the
+   traceback by looking at the :attr:`Traceback.total_nframe` attribute.
+
    Storing more than ``1`` frame is only useful to compute statistics grouped
    by ``'traceback'`` or to compute cumulative statistics: see the
    :meth:`Snapshot.compare_to` and :meth:`Snapshot.statistics` methods.
@@ -650,8 +653,8 @@ Traceback
 
 .. class:: Traceback
 
-   Sequence of :class:`Frame` instances sorted from the most recent frame to
-   the oldest frame.
+   Sequence of :class:`Frame` instances sorted from the oldest frame to the
+   most recent frame.
 
    A traceback contains at least ``1`` frame. If the ``tracemalloc`` module
    failed to get a frame, the filename ``"<unknown>"`` at line number ``0`` is
@@ -659,15 +662,33 @@ Traceback
 
    When a snapshot is taken, tracebacks of traces are limited to
    :func:`get_traceback_limit` frames. See the :func:`take_snapshot` function.
+   The original number of frames of the traceback is stored in the
+   :attr:`Traceback.total_nframe` attribute. That allows to know if a traceback
+   has been truncated by the traceback limit.
 
    The :attr:`Trace.traceback` attribute is an instance of :class:`Traceback`
    instance.
 
-   .. method:: format(limit=None)
+   .. versionchanged:: 3.7
+      Frames are now sorted from the oldest to the most recent, instead of most recent to oldest.
 
-      Format the traceback as a list of lines with newlines.  Use the
-      :mod:`linecache` module to retrieve lines from the source code.  If
-      *limit* is set, only format the *limit* most recent frames.
+   .. attribute:: total_nframe
+
+      Total number of frames that composed the traceback before truncation.
+      This attribute can be set to ``None`` if the information is not
+      available.
+
+   .. versionchanged:: 3.9
+      The :attr:`Traceback.total_nframe` attribute was added.
+
+   .. method:: format(limit=None, most_recent_first=False)
+
+      Format the traceback as a list of lines with newlines. Use the
+      :mod:`linecache` module to retrieve lines from the source code.
+      If *limit* is set, format the *limit* most recent frames if *limit*
+      is positive. Otherwise, format the ``abs(limit)`` oldest frames.
+      If *most_recent_first* is ``True``, the order of the formatted frames
+      is reversed, returning the most recent frame first instead of last.
 
       Similar to the :func:`traceback.format_tb` function, except that
       :meth:`.format` does not include newlines.

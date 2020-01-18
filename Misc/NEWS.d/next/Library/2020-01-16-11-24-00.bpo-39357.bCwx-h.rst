@@ -1,0 +1,4 @@
+Remove the *buffering* parameter of :class:`bz2.BZ2File`. Since Python 3.0, it
+was ignored and using it was emitting :exc:`DeprecationWarning`. Pass an open
+file object, to control how the file is opened. The *compresslevel* parameter
+becomes keyword-only.

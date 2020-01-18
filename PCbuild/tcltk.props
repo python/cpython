@@ -1,10 +1,10 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
-<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
-  <Import Project="pyproject.props" />
+<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <Import Project="pyproject.props" Condition="$(__PyProject_Props_Imported) != 'true'" />
   <PropertyGroup>
     <TclMajorVersion>8</TclMajorVersion>
     <TclMinorVersion>6</TclMinorVersion>
-    <TclPatchLevel>6</TclPatchLevel>
+    <TclPatchLevel>9</TclPatchLevel>
     <TclRevision>0</TclRevision>
     <TkMajorVersion>$(TclMajorVersion)</TkMajorVersion>
     <TkMinorVersion>$(TclMinorVersion)</TkMinorVersion>
@@ -42,4 +42,19 @@
     <BuildDirTop Condition="$(PlatformToolset) == 'v110'">$(BuildDirTop)_VC11</BuildDirTop>
     <BuildDirTop Condition="$(PlatformToolset) == 'v100'">$(BuildDirTop)_VC10</BuildDirTop>
   </PropertyGroup>
+
+  <!--
+  Helper target for copying the lib to a specific directory.
+
+  Using "msbuild tcltk.props /t:CopyTclTkLib /p:OutDir=..." is generally
+  easier than trying to extract the value of $(tcltkdir).
+   -->
+  <Target Name="CopyTclTkLib">
+    <ItemGroup>
+      <_TclTkLib Include="$(tcltkdir)\lib\**\*" />
+    </ItemGroup>
+    <Copy SourceFiles="@(_TclTkLib)"
+          DestinationFiles="$(OutDir)\%(RecursiveDir)\%(Filename)%(Extension)"
+          UseHardlinksIfPossible="true" />
+  </Target>
 </Project>

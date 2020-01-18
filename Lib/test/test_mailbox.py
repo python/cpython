@@ -864,7 +864,6 @@ class TestMaildir(TestMailbox, unittest.TestCase):
             pass
 
     @unittest.skipUnless(hasattr(os, 'umask'), 'test needs os.umask()')
-    @unittest.skipUnless(hasattr(os, 'stat'), 'test needs os.stat()')
     def test_file_permissions(self):
         # Verify that message files are created without execute permissions
         msg = mailbox.MaildirMessage(self._template % 0)
@@ -878,7 +877,6 @@ class TestMaildir(TestMailbox, unittest.TestCase):
         self.assertFalse(mode & 0o111)
 
     @unittest.skipUnless(hasattr(os, 'umask'), 'test needs os.umask()')
-    @unittest.skipUnless(hasattr(os, 'stat'), 'test needs os.stat()')
     def test_folder_file_perms(self):
         # From bug #3228, we want to verify that the file created inside a Maildir
         # subfolder isn't marked as executable.
@@ -988,6 +986,34 @@ class _TestMboxMMDF(_TestSingleFile):
         with open(self._path) as f:
             self.assertEqual(f.readlines(), [])
 
+    def test_get_bytes_from(self):
+        # Get bytes representations of messages with _unixfrom.
+        unixfrom = 'From foo@bar blah\n'
+        key0 = self._box.add(unixfrom + self._template % 0)
+        key1 = self._box.add(unixfrom + _sample_message)
+        self.assertEqual(self._box.get_bytes(key0, from_=False),
+            (self._template % 0).encode('ascii'))
+        self.assertEqual(self._box.get_bytes(key1, from_=False),
+            _bytes_sample_message)
+        self.assertEqual(self._box.get_bytes(key0, from_=True),
+            (unixfrom + self._template % 0).encode('ascii'))
+        self.assertEqual(self._box.get_bytes(key1, from_=True),
+            unixfrom.encode('ascii') + _bytes_sample_message)
+
+    def test_get_string_from(self):
+        # Get string representations of messages with _unixfrom.
+        unixfrom = 'From foo@bar blah\n'
+        key0 = self._box.add(unixfrom + self._template % 0)
+        key1 = self._box.add(unixfrom + _sample_message)
+        self.assertEqual(self._box.get_string(key0, from_=False),
+                         self._template % 0)
+        self.assertEqual(self._box.get_string(key1, from_=False).split('\n'),
+                         _sample_message.split('\n'))
+        self.assertEqual(self._box.get_string(key0, from_=True),
+                         unixfrom + self._template % 0)
+        self.assertEqual(self._box.get_string(key1, from_=True).split('\n'),
+                         (unixfrom + _sample_message).split('\n'))
+
     def test_add_from_string(self):
         # Add a string starting with 'From ' to the mailbox
         key = self._box.add('From foo@bar blah\nFrom: foo\n\n0\n')
@@ -1092,7 +1118,6 @@ class TestMbox(_TestMboxMMDF, unittest.TestCase):
     _factory = lambda self, path, factory=None: mailbox.mbox(path, factory)
 
     @unittest.skipUnless(hasattr(os, 'umask'), 'test needs os.umask()')
-    @unittest.skipUnless(hasattr(os, 'stat'), 'test needs os.stat()')
     def test_file_perms(self):
         # From bug #3228, we want to verify that the mailbox file isn't executable,
         # even if the umask is set to something that would leave executable bits set.
@@ -1395,7 +1420,7 @@ class TestMessage(TestBase, unittest.TestCase):
         # Initialize with invalid argument
         self.assertRaises(TypeError, lambda: self._factory(object()))
 
-    def test_all_eMM_attribues_exist(self):
+    def test_all_eMM_attributes_exist(self):
         # Issue 12537
         eMM = email.message_from_string(_sample_message)
         msg = self._factory(_sample_message)

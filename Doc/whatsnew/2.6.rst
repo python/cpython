@@ -172,7 +172,7 @@ this edition of "What's New in Python" links to the bug/patch
 item for each change.
 
 Hosting of the Python bug tracker is kindly provided by
-`Upfront Systems <http://www.upfrontsystems.co.za/>`__
+`Upfront Systems <http://www.upfrontsoftware.co.za>`__
 of Stellenbosch, South Africa.  Martin von Löwis put a
 lot of effort into importing existing bugs and patches from
 SourceForge; his scripts for this import operation are at
@@ -227,7 +227,7 @@ the Python community.
 
 Sphinx is a standalone package that can be used for writing, and
 almost two dozen other projects
-(`listed on the Sphinx web site <http://sphinx-doc.org/examples.html>`__)
+(`listed on the Sphinx web site <https://www.sphinx-doc.org/en/master/examples.html>`__)
 have adopted Sphinx as their documentation tool.
 
 .. seealso::
@@ -250,10 +250,10 @@ PEP 343: The 'with' statement
 The previous version, Python 2.5, added the ':keyword:`with`'
 statement as an optional feature, to be enabled by a ``from __future__
 import with_statement`` directive.  In 2.6 the statement no longer needs to
-be specially enabled; this means that :keyword:`with` is now always a
+be specially enabled; this means that :keyword:`!with` is now always a
 keyword.  The rest of this section is a copy of the corresponding
 section from the "What's New in Python 2.5" document; if you're
-familiar with the ':keyword:`with`' statement
+familiar with the ':keyword:`!with`' statement
 from Python 2.5, you can skip this section.
 
 The ':keyword:`with`' statement clarifies code that previously would use
@@ -331,7 +331,7 @@ Writing Context Managers
 ------------------------
 
 Under the hood, the ':keyword:`with`' statement is fairly complicated. Most
-people will only use ':keyword:`with`' in company with existing objects and
+people will only use ':keyword:`!with`' in company with existing objects and
 don't need to know these details, so you can skip the rest of this section if
 you like.  Authors of new objects will need to understand the details of the
 underlying implementation and should keep reading.
@@ -438,9 +438,9 @@ generator function instead of defining a new class.  The generator should yield
 exactly one value.  The code up to the :keyword:`yield` will be executed as the
 :meth:`__enter__` method, and the value yielded will be the method's return
 value that will get bound to the variable in the ':keyword:`with`' statement's
-:keyword:`as` clause, if any.  The code after the :keyword:`yield` will be
+:keyword:`!as` clause, if any.  The code after the :keyword:`!yield` will be
 executed in the :meth:`__exit__` method.  Any exception raised in the block will
-be raised by the :keyword:`yield` statement.
+be raised by the :keyword:`!yield` statement.
 
 Using this decorator, our database example from the previous section
 could be written as::
@@ -464,7 +464,7 @@ could be written as::
 
 The :mod:`contextlib` module also has a ``nested(mgr1, mgr2, ...)`` function
 that combines a number of context managers so you don't need to write nested
-':keyword:`with`' statements.  In this example, the single ':keyword:`with`'
+':keyword:`with`' statements.  In this example, the single ':keyword:`!with`'
 statement both starts a database transaction and acquires a thread lock::
 
    lock = threading.Lock()
@@ -1684,7 +1684,7 @@ Some smaller changes made to the core Python language are:
 * An obscure change: when you use the :func:`locals` function inside a
   :keyword:`class` statement, the resulting dictionary no longer returns free
   variables.  (Free variables, in this case, are variables referenced in the
-  :keyword:`class` statement  that aren't attributes of the class.)
+  :keyword:`!class` statement  that aren't attributes of the class.)
 
 .. ======================================================================
 
@@ -2611,7 +2611,7 @@ changes, or look through the Subversion logs for all the details.
 
 * The XML-RPC :class:`SimpleXMLRPCServer` and :class:`DocXMLRPCServer`
   classes can now be prevented from immediately opening and binding to
-  their socket by passing True as the ``bind_and_activate``
+  their socket by passing ``False`` as the *bind_and_activate*
   constructor parameter.  This can be used to modify the instance's
   :attr:`allow_reuse_address` attribute before calling the
   :meth:`server_bind` and :meth:`server_activate` methods to

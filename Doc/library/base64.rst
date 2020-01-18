@@ -218,14 +218,6 @@ The modern interface provides:
    .. versionadded:: 3.4
 
 
-.. note::
-   Both Base85 and Ascii85 have an expansion factor of 5 to 4 (5 Base85 or
-   Ascii85 characters can encode 4 binary bytes), while the better-known
-   Base64 has an expansion factor of 6 to 4.  They are therefore more
-   efficient when space expensive.  They differ by details such as the
-   character map used for encoding.
-
-
 The legacy interface:
 
 .. function:: decode(input, output)
@@ -242,12 +234,6 @@ The legacy interface:
    lines of base64 encoded data, and return the decoded :class:`bytes`.
 
    .. versionadded:: 3.1
-
-.. function:: decodestring(s)
-
-   Deprecated alias of :func:`decodebytes`.
-
-   .. deprecated:: 3.1
 
 
 .. function:: encode(input, output)
@@ -268,12 +254,6 @@ The legacy interface:
    there is a trailing newline, as per :rfc:`2045` (MIME).
 
    .. versionadded:: 3.1
-
-.. function:: encodestring(s)
-
-   Deprecated alias of :func:`encodebytes`.
-
-   .. deprecated:: 3.1
 
 
 An example usage of the module:

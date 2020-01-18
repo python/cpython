@@ -1,15 +1,22 @@
 #!/usr/bin/env python3
 
-# Change the #! line occurring in Python scripts.  The new interpreter
+# Change the #! line (shebang) occurring in Python scripts.  The new interpreter
 # pathname must be given with a -i option.
 #
 # Command line arguments are files or directories to be processed.
 # Directories are searched recursively for files whose name looks
 # like a python module.
 # Symbolic links are always ignored (except as explicit directory
-# arguments).  Of course, the original file is kept as a back-up
-# (with a "~" attached to its name).
-#
+# arguments).
+# The original file is kept as a back-up (with a "~" attached to its name),
+# -n flag can be used to disable this.
+
+# Sometimes you may find shebangs with flags such as `#! /usr/bin/env python -si`.
+# Normally, pathfix overwrites the entire line, including the flags.
+# To change interpreter and keep flags from the original shebang line, use -k.
+# If you want to keep flags and add to them one single literal flag, use option -a.
+
+
 # Undoubtedly you can do this using find and sed or perl, but this is
 # a nice example of Python code that recurses down a directory tree
 # and uses regular expressions.  Also note several subtleties like
@@ -31,14 +38,22 @@ rep = sys.stdout.write
 
 new_interpreter = None
 preserve_timestamps = False
+create_backup = True
+keep_flags = False
+add_flags = b''
+
 
 def main():
     global new_interpreter
     global preserve_timestamps
-    usage = ('usage: %s -i /interpreter -p file-or-directory ...\n' %
+    global create_backup
+    global keep_flags
+    global add_flags
+
+    usage = ('usage: %s -i /interpreter -p -n -k -a file-or-directory ...\n' %
              sys.argv[0])
     try:
-        opts, args = getopt.getopt(sys.argv[1:], 'i:p')
+        opts, args = getopt.getopt(sys.argv[1:], 'i:a:kpn')
     except getopt.error as msg:
         err(str(msg) + '\n')
         err(usage)
@@ -48,6 +63,15 @@ def main():
             new_interpreter = a.encode()
         if o == '-p':
             preserve_timestamps = True
+        if o == '-n':
+            create_backup = False
+        if o == '-k':
+            keep_flags = True
+        if o == '-a':
+            add_flags = a.encode()
+            if b' ' in add_flags:
+                err("-a option doesn't support whitespaces")
+                sys.exit(2)
     if not new_interpreter or not new_interpreter.startswith(b'/') or \
            not args:
         err('-i option or file-or-directory missing\n')
@@ -64,9 +88,10 @@ def main():
             if fix(arg): bad = 1
     sys.exit(bad)
 
-ispythonprog = re.compile(r'^[a-zA-Z0-9_]+\.py$')
+
 def ispython(name):
-    return bool(ispythonprog.match(name))
+    return name.endswith('.py')
+
 
 def recursedown(dirname):
     dbg('recursedown(%r)\n' % (dirname,))
@@ -90,6 +115,7 @@ def recursedown(dirname):
         if recursedown(fullname): bad = 1
     return bad
 
+
 def fix(filename):
 ##  dbg('fix(%r)\n' % (filename,))
     try:
@@ -97,29 +123,27 @@ def fix(filename):
     except IOError as msg:
         err('%s: cannot open: %r\n' % (filename, msg))
         return 1
-    line = f.readline()
-    fixed = fixline(line)
-    if line == fixed:
-        rep(filename+': no change\n')
-        f.close()
-        return
-    head, tail = os.path.split(filename)
-    tempname = os.path.join(head, '@' + tail)
-    try:
-        g = open(tempname, 'wb')
-    except IOError as msg:
-        f.close()
-        err('%s: cannot create: %r\n' % (tempname, msg))
-        return 1
-    rep(filename + ': updating\n')
-    g.write(fixed)
-    BUFSIZE = 8*1024
-    while 1:
-        buf = f.read(BUFSIZE)
-        if not buf: break
-        g.write(buf)
-    g.close()
-    f.close()
+    with f:
+        line = f.readline()
+        fixed = fixline(line)
+        if line == fixed:
+            rep(filename+': no change\n')
+            return
+        head, tail = os.path.split(filename)
+        tempname = os.path.join(head, '@' + tail)
+        try:
+            g = open(tempname, 'wb')
+        except IOError as msg:
+            err('%s: cannot create: %r\n' % (tempname, msg))
+            return 1
+        with g:
+            rep(filename + ': updating\n')
+            g.write(fixed)
+            BUFSIZE = 8*1024
+            while 1:
+                buf = f.read(BUFSIZE)
+                if not buf: break
+                g.write(buf)
 
     # Finishing touch -- move files
 
@@ -134,10 +158,16 @@ def fix(filename):
     except OSError as msg:
         err('%s: warning: chmod failed (%r)\n' % (tempname, msg))
     # Then make a backup of the original file as filename~
-    try:
-        os.rename(filename, filename + '~')
-    except OSError as msg:
-        err('%s: warning: backup failed (%r)\n' % (filename, msg))
+    if create_backup:
+        try:
+            os.rename(filename, filename + '~')
+        except OSError as msg:
+            err('%s: warning: backup failed (%r)\n' % (filename, msg))
+    else:
+        try:
+            os.remove(filename)
+        except OSError as msg:
+            err('%s: warning: removing failed (%r)\n' % (filename, msg))
     # Now move the temp file to the original file
     try:
         os.rename(tempname, filename)
@@ -154,12 +184,43 @@ def fix(filename):
     # Return success
     return 0
 
+
+def parse_shebang(shebangline):
+    shebangline = shebangline.rstrip(b'\n')
+    start = shebangline.find(b' -')
+    if start == -1:
+        return b''
+    return shebangline[start:]
+
+
+def populate_flags(shebangline):
+    old_flags = b''
+    if keep_flags:
+        old_flags = parse_shebang(shebangline)
+        if old_flags:
+            old_flags = old_flags[2:]
+    if not (old_flags or add_flags):
+        return b''
+    # On Linux, the entire string following the interpreter name
+    # is passed as a single argument to the interpreter.
+    # e.g. "#! /usr/bin/python3 -W Error -s" runs "/usr/bin/python3 "-W Error -s"
+    # so shebang should have single '-' where flags are given and
+    # flag might need argument for that reasons adding new flags is
+    # between '-' and original flags
+    # e.g. #! /usr/bin/python3 -sW Error
+    return b' -' + add_flags + old_flags
+
+
 def fixline(line):
     if not line.startswith(b'#!'):
         return line
+
     if b"python" not in line:
         return line
-    return b'#! ' + new_interpreter + b'\n'
+
+    flags = populate_flags(line)
+    return b'#! ' + new_interpreter + flags + b'\n'
+
 
 if __name__ == '__main__':
     main()

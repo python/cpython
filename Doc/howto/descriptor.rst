@@ -11,7 +11,7 @@ Abstract
 --------
 
 Defines descriptors, summarizes the protocol, and shows how descriptors are
-called.  Examines a custom descriptor and several built-in python descriptors
+called.  Examines a custom descriptor and several built-in Python descriptors
 including functions, properties, static methods, and class methods.  Shows how
 each works by giving a pure Python equivalent and a sample application.
 
@@ -48,17 +48,17 @@ a flexible set of new tools for everyday Python programs.
 Descriptor Protocol
 -------------------
 
-``descr.__get__(self, obj, type=None) --> value``
+``descr.__get__(self, obj, type=None) -> value``
 
-``descr.__set__(self, obj, value) --> None``
+``descr.__set__(self, obj, value) -> None``
 
-``descr.__delete__(self, obj) --> None``
+``descr.__delete__(self, obj) -> None``
 
 That is all there is to it.  Define any of these methods and an object is
 considered a descriptor and can override default behavior upon being looked up
 as an attribute.
 
-If an object defines both :meth:`__get__` and :meth:`__set__`, it is considered
+If an object defines :meth:`__set__` or :meth:`__delete__`, it is considered
 a data descriptor.  Descriptors that only define :meth:`__get__` are called
 non-data descriptors (they are typically used for methods but other uses are
 possible).
@@ -117,7 +117,7 @@ The important points to remember are:
 * non-data descriptors may be overridden by instance dictionaries.
 
 The object returned by ``super()`` also has a custom :meth:`__getattribute__`
-method for invoking descriptors.  The call ``super(B, obj).m()`` searches
+method for invoking descriptors.  The attribute lookup ``super(B, obj).m`` searches
 ``obj.__class__.__mro__`` for the base class ``A`` immediately following ``B``
 and then returns ``A.__dict__['m'].__get__(obj, B)``.  If not a descriptor,
 ``m`` is returned unchanged.  If not in the dictionary, ``m`` reverts to a
@@ -145,7 +145,7 @@ print a message for each get or set.  Overriding :meth:`__getattribute__` is
 alternate approach that could do this for every attribute.  However, this
 descriptor is useful for monitoring just a few chosen attributes::
 
-    class RevealAccess(object):
+    class RevealAccess:
         """A data descriptor that sets and returns values
            normally and prints a message logging their access.
         """
@@ -162,7 +162,7 @@ descriptor is useful for monitoring just a few chosen attributes::
             print('Updating', self.name)
             self.val = val
 
-    >>> class MyClass(object):
+    >>> class MyClass:
     ...     x = RevealAccess(10, 'var "x"')
     ...     y = 5
     ...
@@ -194,7 +194,7 @@ triggers function calls upon access to an attribute.  Its signature is::
 
 The documentation shows a typical use to define a managed attribute ``x``::
 
-    class C(object):
+    class C:
         def getx(self): return self.__x
         def setx(self, value): self.__x = value
         def delx(self): del self.__x
@@ -203,7 +203,7 @@ The documentation shows a typical use to define a managed attribute ``x``::
 To see how :func:`property` is implemented in terms of the descriptor protocol,
 here is a pure Python equivalent::
 
-    class Property(object):
+    class Property:
         "Emulate PyProperty_Type() in Objects/descrobject.c"
 
         def __init__(self, fget=None, fset=None, fdel=None, doc=None):
@@ -250,7 +250,7 @@ to be recalculated on every access; however, the programmer does not want to
 affect existing client code accessing the attribute directly.  The solution is
 to wrap access to the value attribute in a property data descriptor::
 
-    class Cell(object):
+    class Cell:
         . . .
         def getvalue(self):
             "Recalculate the cell before returning value"
@@ -275,9 +275,9 @@ variable name.
 To support method calls, functions include the :meth:`__get__` method for
 binding methods during attribute access.  This means that all functions are
 non-data descriptors which return bound methods when they are invoked from an
-object.  In pure python, it works like this::
+object.  In pure Python, it works like this::
 
-    class Function(object):
+    class Function:
         . . .
         def __get__(self, obj, objtype=None):
             "Simulate func_descr_get() in Objects/funcobject.c"
@@ -287,7 +287,7 @@ object.  In pure python, it works like this::
 
 Running the interpreter shows how the function descriptor works in practice::
 
-    >>> class D(object):
+    >>> class D:
     ...     def f(self, x):
     ...         return x
     ...
@@ -367,20 +367,20 @@ It can be called either from an object or the class:  ``s.erf(1.5) --> .9332`` o
 Since staticmethods return the underlying function with no changes, the example
 calls are unexciting::
 
-    >>> class E(object):
+    >>> class E:
     ...     def f(x):
     ...         print(x)
     ...     f = staticmethod(f)
     ...
-    >>> print(E.f(3))
+    >>> E.f(3)
     3
-    >>> print(E().f(3))
+    >>> E().f(3)
     3
 
 Using the non-data descriptor protocol, a pure Python version of
 :func:`staticmethod` would look like this::
 
-    class StaticMethod(object):
+    class StaticMethod:
         "Emulate PyStaticMethod_Type() in Objects/funcobject.c"
 
         def __init__(self, f):
@@ -393,7 +393,7 @@ Unlike static methods, class methods prepend the class reference to the
 argument list before calling the function.  This format is the same
 for whether the caller is an object or a class::
 
-    >>> class E(object):
+    >>> class E:
     ...     def f(klass, x):
     ...         return klass.__name__, x
     ...     f = classmethod(f)
@@ -410,7 +410,7 @@ is to create alternate class constructors.  In Python 2.3, the classmethod
 :func:`dict.fromkeys` creates a new dictionary from a list of keys.  The pure
 Python equivalent is::
 
-    class Dict(object):
+    class Dict:
         . . .
         def fromkeys(klass, iterable, value=None):
             "Emulate dict_fromkeys() in Objects/dictobject.c"
@@ -428,7 +428,7 @@ Now a new dictionary of unique keys can be constructed like this::
 Using the non-data descriptor protocol, a pure Python version of
 :func:`classmethod` would look like this::
 
-    class ClassMethod(object):
+    class ClassMethod:
         "Emulate PyClassMethod_Type() in Objects/funcobject.c"
 
         def __init__(self, f):

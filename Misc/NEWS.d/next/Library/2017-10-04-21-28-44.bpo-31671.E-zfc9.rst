@@ -1,2 +1,0 @@
-Now ``re.compile()`` converts passed RegexFlag to normal int object before
-compiling. bm_regex_compile benchmark shows 14% performance improvements.

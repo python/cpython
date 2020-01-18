@@ -746,7 +746,7 @@ class ItemsView(MappingView, Set):
 ItemsView.register(dict_items)
 
 
-class ValuesView(MappingView):
+class ValuesView(MappingView, Collection):
 
     __slots__ = ()
 
@@ -821,30 +821,21 @@ class MutableMapping(Mapping):
         except KeyError:
             pass
 
-    def update(*args, **kwds):
+    def update(self, other=(), /, **kwds):
         ''' D.update([E, ]**F) -> None.  Update D from mapping/iterable E and F.
             If E present and has a .keys() method, does:     for k in E: D[k] = E[k]
             If E present and lacks .keys() method, does:     for (k, v) in E: D[k] = v
             In either case, this is followed by: for k, v in F.items(): D[k] = v
         '''
-        if not args:
-            raise TypeError("descriptor 'update' of 'MutableMapping' object "
-                            "needs an argument")
-        self, *args = args
-        if len(args) > 1:
-            raise TypeError('update expected at most 1 arguments, got %d' %
-                            len(args))
-        if args:
-            other = args[0]
-            if isinstance(other, Mapping):
-                for key in other:
-                    self[key] = other[key]
-            elif hasattr(other, "keys"):
-                for key in other.keys():
-                    self[key] = other[key]
-            else:
-                for key, value in other:
-                    self[key] = value
+        if isinstance(other, Mapping):
+            for key in other:
+                self[key] = other[key]
+        elif hasattr(other, "keys"):
+            for key in other.keys():
+                self[key] = other[key]
+        else:
+            for key, value in other:
+                self[key] = value
         for key, value in kwds.items():
             self[key] = value
 
@@ -899,6 +890,9 @@ class Sequence(Reversible, Collection):
     def index(self, value, start=0, stop=None):
         '''S.index(value, [start, [stop]]) -> integer -- return first index of value.
            Raises ValueError if the value is not present.
+
+           Supporting start and stop arguments is optional, but
+           recommended.
         '''
         if start is not None and start < 0:
             start = max(len(self) + start, 0)
@@ -983,6 +977,8 @@ class MutableSequence(Sequence):
 
     def extend(self, values):
         'S.extend(iterable) -- extend sequence by appending elements from the iterable'
+        if values is self:
+            values = list(values)
         for v in values:
             self.append(v)
 

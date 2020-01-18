@@ -10,6 +10,8 @@ something  = sentinel.Something
 something_else  = sentinel.SomethingElse
 
 
+class SampleException(Exception): pass
+
 
 class WithTest(unittest.TestCase):
 
@@ -20,14 +22,10 @@ class WithTest(unittest.TestCase):
 
 
     def test_with_statement_exception(self):
-        try:
+        with self.assertRaises(SampleException):
             with patch('%s.something' % __name__, sentinel.Something2):
                 self.assertEqual(something, sentinel.Something2, "unpatched")
-                raise Exception('pow')
-        except Exception:
-            pass
-        else:
-            self.fail("patch swallowed exception")
+                raise SampleException()
         self.assertEqual(something, sentinel.Something)
 
 
@@ -126,6 +124,19 @@ class WithTest(unittest.TestCase):
 
         self.assertEqual(foo, {})
 
+    def test_double_patch_instance_method(self):
+        class C:
+            def f(self): pass
+
+        c = C()
+
+        with patch.object(c, 'f', autospec=True) as patch1:
+            with patch.object(c, 'f', autospec=True) as patch2:
+                c.f()
+            self.assertEqual(patch2.call_count, 1)
+            self.assertEqual(patch1.call_count, 0)
+            c.f()
+        self.assertEqual(patch1.call_count, 1)
 
 
 class TestMockOpen(unittest.TestCase):
@@ -188,6 +199,7 @@ class TestMockOpen(unittest.TestCase):
 
     def test_readline_data(self):
         # Check that readline will return all the lines from the fake file
+        # And that once fully consumed, readline will return an empty string.
         mock = mock_open(read_data='foo\nbar\nbaz\n')
         with patch('%s.open' % __name__, mock, create=True):
             h = open('bar')
@@ -197,6 +209,7 @@ class TestMockOpen(unittest.TestCase):
         self.assertEqual(line1, 'foo\n')
         self.assertEqual(line2, 'bar\n')
         self.assertEqual(line3, 'baz\n')
+        self.assertEqual(h.readline(), '')
 
         # Check that we properly emulate a file that doesn't end in a newline
         mock = mock_open(read_data='foo')
@@ -204,7 +217,35 @@ class TestMockOpen(unittest.TestCase):
             h = open('bar')
             result = h.readline()
         self.assertEqual(result, 'foo')
+        self.assertEqual(h.readline(), '')
 
+
+    def test_dunder_iter_data(self):
+        # Check that dunder_iter will return all the lines from the fake file.
+        mock = mock_open(read_data='foo\nbar\nbaz\n')
+        with patch('%s.open' % __name__, mock, create=True):
+            h = open('bar')
+            lines = [l for l in h]
+        self.assertEqual(lines[0], 'foo\n')
+        self.assertEqual(lines[1], 'bar\n')
+        self.assertEqual(lines[2], 'baz\n')
+        self.assertEqual(h.readline(), '')
+        with self.assertRaises(StopIteration):
+            next(h)
+
+    def test_next_data(self):
+        # Check that next will correctly return the next available
+        # line and plays well with the dunder_iter part.
+        mock = mock_open(read_data='foo\nbar\nbaz\n')
+        with patch('%s.open' % __name__, mock, create=True):
+            h = open('bar')
+            line1 = next(h)
+            line2 = next(h)
+            lines = [l for l in h]
+        self.assertEqual(line1, 'foo\n')
+        self.assertEqual(line2, 'bar\n')
+        self.assertEqual(lines[0], 'baz\n')
+        self.assertEqual(h.readline(), '')
 
     def test_readlines_data(self):
         # Test that emulating a file that ends in a newline character works
@@ -257,7 +298,12 @@ class TestMockOpen(unittest.TestCase):
         # for mocks returned by mock_open
         some_data = 'foo\nbar\nbaz'
         mock = mock_open(read_data=some_data)
-        self.assertEqual(mock().read(10), some_data)
+        self.assertEqual(mock().read(10), some_data[:10])
+        self.assertEqual(mock().read(10), some_data[:10])
+
+        f = mock()
+        self.assertEqual(f.read(10), some_data[:10])
+        self.assertEqual(f.read(10), some_data[10:])
 
 
     def test_interleaved_reads(self):

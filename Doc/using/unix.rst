@@ -1,4 +1,4 @@
-.. highlightlang:: sh
+.. highlight:: sh
 
 .. _using-on-unix:
 
@@ -30,7 +30,7 @@ following links:
       for Debian users
    https://en.opensuse.org/Portal:Packaging
       for OpenSuse users
-   https://docs.fedoraproject.org/en-US/Fedora_Draft_Documentation/0.1/html/RPM_Guide/ch-creating-rpms.html
+   https://docs-old.fedoraproject.org/en-US/Fedora_Draft_Documentation/0.1/html/RPM_Guide/ch-creating-rpms.html
       for Fedora users
    http://www.slackbook.org/html/package-management-making-packages.html
       for Slackware users
@@ -41,9 +41,11 @@ On FreeBSD and OpenBSD
 
 * FreeBSD users, to add the package use::
 
-     pkg_add -r python
+     pkg install python3
 
-* OpenBSD users use::
+* OpenBSD users, to add the package use::
+
+     pkg_add -r python
 
      pkg_add ftp://ftp.openbsd.org/pub/OpenBSD/4.2/packages/<insert your architecture here>/python-<version>.tgz
 
@@ -70,15 +72,15 @@ latest release's source or just grab a fresh `clone
 <https://devguide.python.org/setup/#getting-the-source-code>`_.  (If you want
 to contribute patches, you will need a clone.)
 
-The build process consists in the usual ::
+The build process consists of the usual commands::
 
    ./configure
    make
    make install
 
-invocations. Configuration options and caveats for specific Unix platforms are
-extensively documented in the :source:`README.rst` file in the root of the Python
-source tree.
+Configuration options and caveats for specific Unix platforms are extensively
+documented in the :source:`README.rst` file in the root of the Python source
+tree.
 
 .. warning::
 
@@ -116,7 +118,9 @@ Miscellaneous
 =============
 
 To easily use Python scripts on Unix, you need to make them executable,
-e.g. with ::
+e.g. with
+
+.. code-block:: shell-session
 
    $ chmod +x script
 
@@ -130,14 +134,3 @@ some Unices may not have the :program:`env` command, so you may need to hardcode
 ``/usr/bin/python3`` as the interpreter path.
 
 To use shell commands in your Python scripts, look at the :mod:`subprocess` module.
-
-
-Editors and IDEs
-================
-
-There are a number of IDEs that support Python programming language.
-Many editors and IDEs provide syntax highlighting, debugging tools, and PEP-8 checks.
-
-Please go to `Python Editors <https://wiki.python.org/moin/PythonEditors>`_ and
-`Integrated Development Environments <https://wiki.python.org/moin/IntegratedDevelopmentEnvironments>`_
-for a comprehensive list.

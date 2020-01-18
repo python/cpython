@@ -82,7 +82,7 @@ def b64decode(s, altchars=None, validate=False):
         altchars = _bytes_from_decode_data(altchars)
         assert len(altchars) == 2, repr(altchars)
         s = s.translate(bytes.maketrans(altchars, b'+/'))
-    if validate and not re.match(b'^[A-Za-z0-9+/]*={0,2}$', s):
+    if validate and not re.fullmatch(b'[A-Za-z0-9+/]*={0,2}', s):
         raise binascii.Error('Non-base64 digit found')
     return binascii.a2b_base64(s)
 
@@ -231,21 +231,14 @@ def b32decode(s, casefold=False, map01=None):
             raise binascii.Error('Non-base32 digit found') from None
         decoded += acc.to_bytes(5, 'big')
     # Process the last, partial quanta
-    if padchars:
+    if l % 8 or padchars not in {0, 1, 3, 4, 6}:
+        raise binascii.Error('Incorrect padding')
+    if padchars and decoded:
         acc <<= 5 * padchars
         last = acc.to_bytes(5, 'big')
-        if padchars == 1:
-            decoded[-5:] = last[:-1]
-        elif padchars == 3:
-            decoded[-5:] = last[:-2]
-        elif padchars == 4:
-            decoded[-5:] = last[:-3]
-        elif padchars == 6:
-            decoded[-5:] = last[:-4]
-        else:
-            raise binascii.Error('Incorrect padding')
+        leftover = (43 - 5 * padchars) // 8  # 1: 4, 3: 3, 4: 2, 6: 1
+        decoded[-5:] = last[:leftover]
     return bytes(decoded)
-
 
 
 # RFC 3548, Base 16 Alphabet specifies uppercase, but hexlify() returns
@@ -538,27 +531,11 @@ def encodebytes(s):
         pieces.append(binascii.b2a_base64(chunk))
     return b"".join(pieces)
 
-def encodestring(s):
-    """Legacy alias of encodebytes()."""
-    import warnings
-    warnings.warn("encodestring() is a deprecated alias since 3.1, "
-                  "use encodebytes()",
-                  DeprecationWarning, 2)
-    return encodebytes(s)
-
 
 def decodebytes(s):
     """Decode a bytestring of base-64 data into a bytes object."""
     _input_type_check(s)
     return binascii.a2b_base64(s)
-
-def decodestring(s):
-    """Legacy alias of decodebytes()."""
-    import warnings
-    warnings.warn("decodestring() is a deprecated alias since Python 3.1, "
-                  "use decodebytes()",
-                  DeprecationWarning, 2)
-    return decodebytes(s)
 
 
 # Usable as a script...

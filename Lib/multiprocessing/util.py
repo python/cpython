@@ -106,6 +106,15 @@ def log_to_stderr(level=None):
 # Function returning a temp directory which will be removed on exit
 #
 
+def _remove_temp_dir(rmtree, tempdir):
+    rmtree(tempdir)
+
+    current_process = process.current_process()
+    # current_process() can be None if the finalizer is called
+    # late during Python finalization
+    if current_process is not None:
+        current_process._config['tempdir'] = None
+
 def get_temp_dir():
     # get name of a temp directory which will be automatically cleaned up
     tempdir = process.current_process()._config.get('tempdir')
@@ -113,7 +122,10 @@ def get_temp_dir():
         import shutil, tempfile
         tempdir = tempfile.mkdtemp(prefix='pymp-')
         info('created temp directory %s', tempdir)
-        Finalize(None, shutil.rmtree, args=[tempdir], exitpriority=-100)
+        # keep a strong reference to shutil.rmtree(), since the finalizer
+        # can be called late during Python shutdown
+        Finalize(None, _remove_temp_dir, args=(shutil.rmtree, tempdir),
+                 exitpriority=-100)
         process.current_process()._config['tempdir'] = tempdir
     return tempdir
 
@@ -226,7 +238,7 @@ class Finalize(object):
         if self._kwargs:
             x += ', kwargs=' + str(self._kwargs)
         if self._key[0] is not None:
-            x += ', exitprority=' + str(self._key[0])
+            x += ', exitpriority=' + str(self._key[0])
         return x + '>'
 
 
@@ -392,6 +404,20 @@ def _close_stdin():
         pass
 
 #
+# Flush standard streams, if any
+#
+
+def _flush_std_streams():
+    try:
+        sys.stdout.flush()
+    except (AttributeError, ValueError):
+        pass
+    try:
+        sys.stderr.flush()
+    except (AttributeError, ValueError):
+        pass
+
+#
 # Start a program with only specified fds kept open
 #
 
@@ -403,7 +429,38 @@ def spawnv_passfds(path, args, passfds):
         return _posixsubprocess.fork_exec(
             args, [os.fsencode(path)], True, passfds, None, None,
             -1, -1, -1, -1, -1, -1, errpipe_read, errpipe_write,
-            False, False, None)
+            False, False, None, None, None, -1, None)
     finally:
         os.close(errpipe_read)
         os.close(errpipe_write)
+
+
+def close_fds(*fds):
+    """Close each file descriptor given as an argument"""
+    for fd in fds:
+        os.close(fd)
+
+
+def _cleanup_tests():
+    """Cleanup multiprocessing resources when multiprocessing tests
+    completed."""
+
+    from test import support
+
+    # cleanup multiprocessing
+    process._cleanup()
+
+    # Stop the ForkServer process if it's running
+    from multiprocessing import forkserver
+    forkserver._forkserver._stop()
+
+    # Stop the ResourceTracker process if it's running
+    from multiprocessing import resource_tracker
+    resource_tracker._resource_tracker._stop()
+
+    # bpo-37421: Explicitly call _run_finalizers() to remove immediately
+    # temporary directories created by multiprocessing.util.get_temp_dir().
+    _run_finalizers()
+    support.gc_collect()
+
+    support.reap_children()

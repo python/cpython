@@ -23,6 +23,7 @@
 # 3. This notice may not be removed or altered from any source distribution.
 
 import unittest
+import unittest.mock
 import sqlite3 as sqlite
 
 def func_returntext():
@@ -274,6 +275,28 @@ class FunctionTests(unittest.TestCase):
         cur.execute("select spam(?, ?)", (1, 2))
         val = cur.fetchone()[0]
         self.assertEqual(val, 2)
+
+    def CheckFuncNonDeterministic(self):
+        mock = unittest.mock.Mock(return_value=None)
+        self.con.create_function("deterministic", 0, mock, deterministic=False)
+        self.con.execute("select deterministic() = deterministic()")
+        self.assertEqual(mock.call_count, 2)
+
+    @unittest.skipIf(sqlite.sqlite_version_info < (3, 8, 3), "deterministic parameter not supported")
+    def CheckFuncDeterministic(self):
+        mock = unittest.mock.Mock(return_value=None)
+        self.con.create_function("deterministic", 0, mock, deterministic=True)
+        self.con.execute("select deterministic() = deterministic()")
+        self.assertEqual(mock.call_count, 1)
+
+    @unittest.skipIf(sqlite.sqlite_version_info >= (3, 8, 3), "SQLite < 3.8.3 needed")
+    def CheckFuncDeterministicNotSupported(self):
+        with self.assertRaises(sqlite.NotSupportedError):
+            self.con.create_function("deterministic", 0, int, deterministic=True)
+
+    def CheckFuncDeterministicKeywordOnly(self):
+        with self.assertRaises(TypeError):
+            self.con.create_function("deterministic", 0, int, True)
 
 
 class AggregateTests(unittest.TestCase):

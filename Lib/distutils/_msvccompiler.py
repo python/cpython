@@ -56,58 +56,71 @@ def _find_vc2015():
     return best_version, best_dir
 
 def _find_vc2017():
-    import _findvs
-    import threading
+    """Returns "15, path" based on the result of invoking vswhere.exe
+    If no install is found, returns "None, None"
 
-    best_version = 0,   # tuple for full version comparisons
-    best_dir = None
+    The version is returned to avoid unnecessarily changing the function
+    result. It may be ignored when the path is not None.
 
-    # We need to call findall() on its own thread because it will
-    # initialize COM.
-    all_packages = []
-    def _getall():
-        all_packages.extend(_findvs.findall())
-    t = threading.Thread(target=_getall)
-    t.start()
-    t.join()
+    If vswhere.exe is not available, by definition, VS 2017 is not
+    installed.
+    """
+    import json
 
-    for name, version_str, path, packages in all_packages:
-        if 'Microsoft.VisualStudio.Component.VC.Tools.x86.x64' in packages:
-            vc_dir = os.path.join(path, 'VC', 'Auxiliary', 'Build')
-            if not os.path.isdir(vc_dir):
-                continue
-            try:
-                version = tuple(int(i) for i in version_str.split('.'))
-            except (ValueError, TypeError):
-                continue
-            if version > best_version:
-                best_version, best_dir = version, vc_dir
+    root = os.environ.get("ProgramFiles(x86)") or os.environ.get("ProgramFiles")
+    if not root:
+        return None, None
+
     try:
-        best_version = best_version[0]
-    except IndexError:
-        best_version = None
-    return best_version, best_dir
+        path = subprocess.check_output([
+            os.path.join(root, "Microsoft Visual Studio", "Installer", "vswhere.exe"),
+            "-latest",
+            "-prerelease",
+            "-requires", "Microsoft.VisualStudio.Component.VC.Tools.x86.x64",
+            "-property", "installationPath",
+            "-products", "*",
+        ], encoding="mbcs", errors="strict").strip()
+    except (subprocess.CalledProcessError, OSError, UnicodeDecodeError):
+        return None, None
+
+    path = os.path.join(path, "VC", "Auxiliary", "Build")
+    if os.path.isdir(path):
+        return 15, path
+
+    return None, None
+
+PLAT_SPEC_TO_RUNTIME = {
+    'x86' : 'x86',
+    'x86_amd64' : 'x64',
+    'x86_arm' : 'arm',
+    'x86_arm64' : 'arm64'
+}
 
 def _find_vcvarsall(plat_spec):
-    best_version, best_dir = _find_vc2017()
+    _, best_dir = _find_vc2017()
     vcruntime = None
-    vcruntime_plat = 'x64' if 'amd64' in plat_spec else 'x86'
-    if best_version:
+
+    if plat_spec in PLAT_SPEC_TO_RUNTIME:
+        vcruntime_plat = PLAT_SPEC_TO_RUNTIME[plat_spec]
+    else:
+        vcruntime_plat = 'x64' if 'amd64' in plat_spec else 'x86'
+
+    if best_dir:
         vcredist = os.path.join(best_dir, "..", "..", "redist", "MSVC", "**",
-            "Microsoft.VC141.CRT", "vcruntime140.dll")
+            vcruntime_plat, "Microsoft.VC14*.CRT", "vcruntime140.dll")
         try:
             import glob
             vcruntime = glob.glob(vcredist, recursive=True)[-1]
         except (ImportError, OSError, LookupError):
             vcruntime = None
 
-    if not best_version:
+    if not best_dir:
         best_version, best_dir = _find_vc2015()
         if best_version:
             vcruntime = os.path.join(best_dir, 'redist', vcruntime_plat,
                 "Microsoft.VC140.CRT", "vcruntime140.dll")
 
-    if not best_version:
+    if not best_dir:
         log.debug("No suitable Visual C++ version found")
         return None, None
 
@@ -177,6 +190,8 @@ def _find_exe(exe, paths=None):
 PLAT_TO_VCVARS = {
     'win32' : 'x86',
     'win-amd64' : 'x86_amd64',
+    'win-arm32' : 'x86_arm',
+    'win-arm64' : 'x86_arm64'
 }
 
 # A set containing the DLLs that are guaranteed to be available for
@@ -252,11 +267,11 @@ class MSVCCompiler(CCompiler) :
 
         for dir in vc_env.get('include', '').split(os.pathsep):
             if dir:
-                self.add_include_dir(dir)
+                self.add_include_dir(dir.rstrip(os.sep))
 
         for dir in vc_env.get('lib', '').split(os.pathsep):
             if dir:
-                self.add_library_dir(dir)
+                self.add_library_dir(dir.rstrip(os.sep))
 
         self.preprocess_options = None
         # If vcruntime_redist is available, link against it dynamically. Otherwise,

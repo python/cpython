@@ -177,9 +177,7 @@ class ProgressTests(unittest.TestCase):
         Test that returning a non-zero value stops the operation in progress.
         """
         con = sqlite.connect(":memory:")
-        progress_calls = []
         def progress():
-            progress_calls.append(None)
             return 1
         con.set_progress_handler(progress, 1)
         curs = con.cursor()

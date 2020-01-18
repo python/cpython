@@ -505,6 +505,7 @@ class BaseTest:
         EQ("", "", "replace", "A", "")
         EQ("", "", "replace", "A", "A")
         EQ("", "", "replace", "", "", 100)
+        EQ("A", "", "replace", "", "A", 100)
         EQ("", "", "replace", "", "", sys.maxsize)
 
         # interleave (from=="", 'to' gets inserted everywhere)
@@ -909,6 +910,21 @@ class BaseTest:
         self.checkequal(False, 'abc\n', 'isalnum')
         self.checkraises(TypeError, 'abc', 'isalnum', 42)
 
+    def test_isascii(self):
+        self.checkequal(True, '', 'isascii')
+        self.checkequal(True, '\x00', 'isascii')
+        self.checkequal(True, '\x7f', 'isascii')
+        self.checkequal(True, '\x00\x7f', 'isascii')
+        self.checkequal(False, '\x80', 'isascii')
+        self.checkequal(False, '\xe9', 'isascii')
+        # bytes.isascii() and bytearray.isascii() has optimization which
+        # check 4 or 8 bytes at once.  So check some alignments.
+        for p in range(8):
+            self.checkequal(True, ' '*p + '\x7f', 'isascii')
+            self.checkequal(False, ' '*p + '\x80', 'isascii')
+            self.checkequal(True, ' '*p + '\x7f' + ' '*8, 'isascii')
+            self.checkequal(False, ' '*p + '\x80' + ' '*8, 'isascii')
+
     def test_isdigit(self):
         self.checkequal(False, '', 'isdigit')
         self.checkequal(False, 'a', 'isdigit')
@@ -962,7 +978,7 @@ class CommonTest(BaseTest):
     def test_capitalize_nonascii(self):
         # check that titlecased chars are lowered correctly
         # \u1ffc is the titlecased char
-        self.checkequal('\u03a9\u0399\u1ff3\u1ff3\u1ff3',
+        self.checkequal('\u1ffc\u1ff3\u1ff3\u1ff3',
                         '\u1ff3\u1ff3\u1ffc\u1ffc', 'capitalize')
         # check with cased non-letter chars
         self.checkequal('\u24c5\u24e8\u24e3\u24d7\u24de\u24dd',
@@ -1120,7 +1136,7 @@ class MixinStrUnicodeUserStringTest:
     def test_extended_getslice(self):
         # Test extended slicing by comparing with list slicing.
         s = string.ascii_letters + string.digits
-        indices = (0, None, 1, 3, 41, -1, -2, -37)
+        indices = (0, None, 1, 3, 41, sys.maxsize, -1, -2, -37)
         for start in indices:
             for stop in indices:
                 # Skip step 0 (invalid)

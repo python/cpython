@@ -293,7 +293,7 @@ md5_done(struct md5_state *md5, unsigned char *out)
         md5->curlen = 0;
     }
 
-    /* pad upto 56 bytes of zeroes */
+    /* pad up to 56 bytes of zeroes */
     while (md5->curlen < 56) {
         md5->buf[md5->curlen++] = (unsigned char)0;
     }
@@ -361,12 +361,12 @@ MD5Type_copy_impl(MD5object *self)
 /*[clinic input]
 MD5Type.digest
 
-Return the digest value as a string of binary data.
+Return the digest value as a bytes object.
 [clinic start generated code]*/
 
 static PyObject *
 MD5Type_digest_impl(MD5object *self)
-/*[clinic end generated code: output=eb691dc4190a07ec input=7b96e65389412a34]*/
+/*[clinic end generated code: output=eb691dc4190a07ec input=bc0c4397c2994be6]*/
 {
     unsigned char digest[MD5_DIGESTSIZE];
     struct md5_state temp;
@@ -465,14 +465,14 @@ static PyGetSetDef MD5_getseters[] = {
 static PyTypeObject MD5type = {
     PyVarObject_HEAD_INIT(NULL, 0)
     "_md5.md5",         /*tp_name*/
-    sizeof(MD5object),  /*tp_size*/
+    sizeof(MD5object),  /*tp_basicsize*/
     0,                  /*tp_itemsize*/
     /* methods */
     MD5_dealloc,        /*tp_dealloc*/
-    0,                  /*tp_print*/
+    0,                  /*tp_vectorcall_offset*/
     0,                  /*tp_getattr*/
     0,                  /*tp_setattr*/
-    0,                  /*tp_reserved*/
+    0,                  /*tp_as_async*/
     0,                  /*tp_repr*/
     0,                  /*tp_as_number*/
     0,                  /*tp_as_sequence*/
@@ -503,13 +503,15 @@ static PyTypeObject MD5type = {
 _md5.md5
 
     string: object(c_default="NULL") = b''
+    *
+    usedforsecurity: bool = True
 
 Return a new MD5 hash object; optionally initialized with a string.
 [clinic start generated code]*/
 
 static PyObject *
-_md5_md5_impl(PyObject *module, PyObject *string)
-/*[clinic end generated code: output=2cfd0f8c091b97e6 input=d12ef8f72d684f7b]*/
+_md5_md5_impl(PyObject *module, PyObject *string, int usedforsecurity)
+/*[clinic end generated code: output=587071f76254a4ac input=7a144a1905636985]*/
 {
     MD5object *new;
     Py_buffer buf;

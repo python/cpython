@@ -25,14 +25,12 @@ class WindowsConsoleIOTests(unittest.TestCase):
         self.assertRaisesRegex(ValueError,
             "negative file descriptor", ConIO, -1)
 
-        fd, _ = tempfile.mkstemp()
-        try:
+        with tempfile.TemporaryFile() as tmpfile:
+            fd = tmpfile.fileno()
             # Windows 10: "Cannot open non-console file"
             # Earlier: "Cannot open console output buffer for reading"
             self.assertRaisesRegex(ValueError,
                 "Cannot open (console|non-console file)", ConIO, fd)
-        finally:
-            os.close(fd)
 
         try:
             f = ConIO(0)
@@ -120,6 +118,10 @@ class WindowsConsoleIOTests(unittest.TestCase):
                 self.assertIsInstance(f, ConIO)
             else:
                 self.assertNotIsInstance(f, ConIO)
+
+    def test_write_empty_data(self):
+        with ConIO('CONOUT$', 'w') as f:
+            self.assertEqual(f.write(b''), 0)
 
     def assertStdinRoundTrip(self, text):
         stdin = open('CONIN$', 'r')

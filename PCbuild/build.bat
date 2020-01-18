@@ -32,16 +32,18 @@ echo.      automatically by the pythoncore project)
 echo.  --pgo          Build with Profile-Guided Optimization.  This flag
 echo.                 overrides -c and -d
 echo.  --test-marker  Enable the test marker within the build.
+echo.  --regen        Regenerate all opcodes, grammar and tokens
 echo.
 echo.Available flags to avoid building certain modules.
 echo.These flags have no effect if '-e' is not given:
+echo.  --no-ctypes   Do not attempt to build _ctypes
 echo.  --no-ssl      Do not attempt to build _ssl
 echo.  --no-tkinter  Do not attempt to build Tkinter
 echo.
 echo.Available arguments:
 echo.  -c Release ^| Debug ^| PGInstrument ^| PGUpdate
 echo.     Set the configuration (default: Release)
-echo.  -p x64 ^| Win32
+echo.  -p x64 ^| Win32 ^| ARM ^| ARM64
 echo.     Set the platform (default: Win32)
 echo.  -t Build ^| Rebuild ^| Clean ^| CleanAll
 echo.     Set the target manually
@@ -56,7 +58,7 @@ set conf=Release
 set target=Build
 set dir=%~dp0
 set parallel=/m
-set verbose=/nologo /v:m
+set verbose=/nologo /v:m /clp:summary
 set kill=
 set do_pgo=
 set pgo_job=-m test --pgo
@@ -76,15 +78,18 @@ if "%~1"=="--pgo" (set do_pgo=true) & shift & goto CheckOpts
 if "%~1"=="--pgo-job" (set do_pgo=true) & (set pgo_job=%~2) & shift & shift & goto CheckOpts
 if "%~1"=="--test-marker" (set UseTestMarker=true) & shift & goto CheckOpts
 if "%~1"=="-V" shift & goto Version
+if "%~1"=="--regen" (set Regen=true) & shift & goto CheckOpts
 rem These use the actual property names used by MSBuild.  We could just let
 rem them in through the environment, but we specify them on the command line
 rem anyway for visibility so set defaults after this
 if "%~1"=="-e" (set IncludeExternals=true) & shift & goto CheckOpts
 if "%~1"=="-E" (set IncludeExternals=false) & shift & goto CheckOpts
+if "%~1"=="--no-ctypes" (set IncludeCTypes=false) & shift & goto CheckOpts
 if "%~1"=="--no-ssl" (set IncludeSSL=false) & shift & goto CheckOpts
 if "%~1"=="--no-tkinter" (set IncludeTkinter=false) & shift & goto CheckOpts
 
 if "%IncludeExternals%"=="" set IncludeExternals=true
+if "%IncludeCTypes%"=="" set IncludeCTypes=true
 if "%IncludeSSL%"=="" set IncludeSSL=true
 if "%IncludeTkinter%"=="" set IncludeTkinter=true
 
@@ -108,10 +113,16 @@ call "%dir%find_msbuild.bat" %MSBUILD%
 if ERRORLEVEL 1 (echo Cannot locate MSBuild.exe on PATH or as MSBUILD variable & exit /b 2)
 
 if "%kill%"=="true" call :Kill
+if ERRORLEVEL 1 exit /B 3
 
 if "%do_pgo%"=="true" (
     set conf=PGInstrument
     call :Build %1 %2 %3 %4 %5 %6 %7 %8 %9
+)
+rem %VARS% are evaluated eagerly, which would lose the ERRORLEVEL
+rem value if we didn't split it out here.
+if "%do_pgo%"=="true" if ERRORLEVEL 1 exit /B %ERRORLEVEL%
+if "%do_pgo%"=="true" (
     del /s "%dir%\*.pgc"
     del /s "%dir%\..\Lib\*.pyc"
     echo on
@@ -121,7 +132,8 @@ if "%do_pgo%"=="true" (
     set conf=PGUpdate
     set target=Build
 )
-goto Build
+goto :Build
+
 :Kill
 echo on
 %MSBUILD% "%dir%\pythoncore.vcxproj" /t:KillPython %verbose%^
@@ -129,7 +141,7 @@ echo on
  /p:KillPython=true
 
 @echo off
-goto :eof
+exit /B %ERRORLEVEL%
 
 :Build
 rem Call on MSBuild to do the work, echo the command.
@@ -139,13 +151,25 @@ echo on
 %MSBUILD% "%dir%pcbuild.proj" /t:%target% %parallel% %verbose%^
  /p:Configuration=%conf% /p:Platform=%platf%^
  /p:IncludeExternals=%IncludeExternals%^
+ /p:IncludeCTypes=%IncludeCTypes%^
  /p:IncludeSSL=%IncludeSSL% /p:IncludeTkinter=%IncludeTkinter%^
  /p:UseTestMarker=%UseTestMarker% %GITProperty%^
  %1 %2 %3 %4 %5 %6 %7 %8 %9
 
+@if not ERRORLEVEL 1 @if "%Regen%"=="true" (
+    %MSBUILD% "%dir%regen.vcxproj" /t:%target% %parallel% %verbose%^
+     /p:IncludeExternals=%IncludeExternals%^
+     /p:Configuration=%conf% /p:Platform=%platf%^
+     /p:UseTestMarker=%UseTestMarker% %GITProperty%^
+     %1 %2 %3 %4 %5 %6 %7 %8 %9
+)
+
 @echo off
-goto :eof
+exit /b %ERRORLEVEL%
 
 :Version
 rem Display the current build version information
-%MSBUILD% "%dir%python.props" /t:ShowVersionInfo /v:m /nologo %1 %2 %3 %4 %5 %6 %7 %8 %9
+call "%dir%find_msbuild.bat" %MSBUILD%
+if ERRORLEVEL 1 (echo Cannot locate MSBuild.exe on PATH or as MSBUILD variable & exit /b 2)
+%MSBUILD% "%dir%pythoncore.vcxproj" /t:ShowVersionInfo /v:m /nologo %1 %2 %3 %4 %5 %6 %7 %8 %9
+if ERRORLEVEL 1 exit /b 3

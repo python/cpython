@@ -1,2 +1,0 @@
-Fix crashes in true division and multiplication of a timedelta object by a
-float with a bad as_integer_ratio() method. Patch by Oren Milman.
