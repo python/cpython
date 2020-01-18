@@ -1308,7 +1308,7 @@ class TestTopologicalSort(unittest.TestCase):
         # Cycle in the middle of the graph
         self._assert_cycle({1: {2}, 2: {3}, 3: {2, 4}, 4: {5}}, [3, 2])
 
-    def test_calls_before_preapare(self):
+    def test_calls_before_prepare(self):
         ts = functools.TopologicalSorter()
 
         with self.assertRaisesRegex(ValueError, r"prepare\(\) must be called first"):
