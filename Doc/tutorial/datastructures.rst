@@ -676,7 +676,7 @@ to a variable.  For example, ::
    'Trondheim'
 
 Note that in Python, unlike C, assignment inside expressions must be done
-explicitly with the walrus operator ``:=``. This avoids a common class of
+explicitly with the `walrus operator`_ ``:=``. This avoids a common class of
 problems encountered in C programs: typing ``=`` in an expression when ``==``
 was intended.
 
@@ -716,3 +716,4 @@ interpreter will raise a :exc:`TypeError` exception.
 
 .. [1] Other languages may return the mutated object, which allows method
        chaining, such as ``d->insert("a")->remove("b")->sort();``.
+.. _walrus operator: https://docs.python.org/3/faq/design.html#why-can-t-i-use-an-assignment-in-an-expression
