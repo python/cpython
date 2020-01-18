@@ -13,8 +13,11 @@ import time
 import typing
 import unittest
 import unittest.mock
+import os
 from weakref import proxy
 import contextlib
+
+from test.support.script_helper import assert_python_ok
 
 import functools
 
@@ -1204,6 +1207,46 @@ class TestTopologicalSort(unittest.TestCase):
         self._test_graph({x: {x+1} for x in range(10)},
                          [(x,) for x in range(10, -1, -1)])
 
+        self._test_graph({2: {3}, 3: {4}, 4: {5}, 5: {1},
+                          11: {12}, 12: {13}, 13: {14}, 14: {15}},
+                         [(1, 15), (5, 14), (4, 13), (3, 12), (2, 11)])
+
+        self._test_graph({
+                0: [1, 2],
+                1: [3],
+                2: [5, 6],
+                3: [4],
+                4: [9],
+                5: [3],
+                6: [7],
+                7: [8],
+                8: [4],
+                9: []
+            },
+            [(9,), (4,), (3, 8), (1, 5, 7), (6,), (2,), (0,)]
+        )
+
+        self._test_graph({
+                0: [1, 2],
+                1: [],
+                2: [3],
+                3: []
+            },
+            [(1, 3), (2,), (0,)]
+        )
+
+        self._test_graph({
+                0: [1, 2],
+                1: [],
+                2: [3],
+                3: [],
+                4: [5],
+                5: [6],
+                6: []
+            },
+            [(1, 3, 6), (2, 5), (0, 4)]
+        )
+
     def test_no_dependencies(self):
         self._test_graph(
             {1: {2},
@@ -1307,6 +1350,45 @@ class TestTopologicalSort(unittest.TestCase):
         self.assertRaises(TypeError, ts.add, dict(), 1)
         self.assertRaises(TypeError, ts.add, 1, dict())
         self.assertRaises(TypeError, ts.add, dict(), dict())
+
+    def test_order_of_insertion_does_not_matter(self):
+        ts = functools.TopologicalSorter()
+        ts.add(3, 2, 1)
+        ts.add(2, 1)
+        ts.add(1, 0)
+
+        ts2 = functools.TopologicalSorter()
+        ts2.add(2, 1)
+        ts2.add(1, 0)
+        ts2.add(3, 2, 1)
+
+        self.assertEqual([*ts.static_order()], [*ts2.static_order()])
+
+    def test_static_order_does_not_change_with_the_hash_seed(self):
+        def check_order_with_hash_seed(seed):
+            code = """if 1:
+                import functools
+                ts = functools.TopologicalSorter()
+                ts.add(1, 2, 3, 4, 5)
+                ts.add(2, 3, 4, 5, 6)
+                ts.add(4, 11, 45, 3)
+                ts.add(0, 11, 2, 3, 4)
+                print(list(ts.static_order()))
+                """
+            env = os.environ.copy()
+            # signal to assert_python not to do a copy
+            # of os.environ on its own
+            env['__cleanenv'] = True
+            env['PYTHONHASHSEED'] = str(seed)
+            out = assert_python_ok('-c', code, **env)
+            return out
+
+        run1 = check_order_with_hash_seed(1234)
+        run2 = check_order_with_hash_seed(31415)
+
+        self.assertNotEqual(run1, "")
+        self.assertNotEqual(run2, "")
+        self.assertEqual(run1, run2)
 
 
 class TestLRU:
