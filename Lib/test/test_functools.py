@@ -1262,6 +1262,34 @@ class TestTopologicalSort(unittest.TestCase):
             [(1, 3, 5)]
         )
 
+    def test_the_node_multiple_times(self):
+        # Test same node multiple times in dependencies
+        self._test_graph({1: {2}, 3: {4}, 0: [2, 4, 4, 4, 4, 4]},
+                         [(2, 4), (1, 3, 0)])
+
+        # Test adding the same dependency multiple times
+        ts = functools.TopologicalSorter()
+        ts.add(1, 2)
+        ts.add(1, 2)
+        ts.add(1, 2)
+        self.assertEqual([*ts.static_order()], [2, 1])
+
+    def test_graph_with_iterables(self):
+        dependson = (2*x + 1 for x in range(5))
+        ts = functools.TopologicalSorter({0: dependson})
+        self.assertEqual(list(ts.static_order()), [1, 3, 5, 7, 9, 0])
+
+    def test_add_dependencies_for_same_node_incrementally(self):
+        # Test same node multiple times
+        ts = functools.TopologicalSorter()
+        ts.add(1, 2)
+        ts.add(1, 3)
+        ts.add(1, 4)
+        ts.add(1, 5)
+
+        ts2 = functools.TopologicalSorter({1: {2, 3, 4, 5}})
+        self.assertEqual([*ts.static_order()], [*ts2.static_order()])
+
     def test_empty(self):
         self._test_graph({}, [])
 
