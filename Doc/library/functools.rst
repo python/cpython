@@ -542,7 +542,7 @@ The :mod:`functools` module defines the following functions:
          * Create an instance of the :class:`TopologicalSorter` with an optional
             initial graph.
          * Add additional nodes to the graph.
-         * Call "finalize()" on the graph.
+         * Call "prepare()" on the graph.
          * While :meth:`~TopologicalSorter.is_active` is ``True``:
              * Iterate over the nodes returned by :meth:`~TopologicalSorter.get_ready`
                and process them. Call :meth:`~TopologicalSorter.done` on each node as
