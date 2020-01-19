@@ -271,7 +271,7 @@ Directory and files operations
 
    .. versionadded:: 3.8
       The *dirs_exist_ok* parameter.
-      
+
    .. versionchanged:: 3.8
       The types of the arguments to the *ignore* callable have changed. The
       first argument (the directory being visited) can be a string, a
