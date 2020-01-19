@@ -916,6 +916,13 @@ class TestEmailMessage(TestEmailMessageBase, TestEmailBase):
                          b'123456789-123456789\n 123456789 Hello '
                          b'=?utf-8?q?W=C3=B6rld!?= 123456789 123456789\n\n')
 
+    def test_set_payload_replaces_invalid_character(self):
+        m = EmailMessage()
+        body = 'This string contains non-ascii �'
+        m.set_payload(body, 'ascii')
+        self.assertEqual(m.get_payload(decode=True),
+                         body.encode('ascii', 'replace'))
+
 class TestMIMEPart(TestEmailMessageBase, TestEmailBase):
     # Doing the full test run here may seem a bit redundant, since the two
     # classes are almost identical.  But what if they drift apart?  So we do
