@@ -9,6 +9,9 @@ on:
     paths-ignore:
     - 'Doc/**'
     - 'Misc/**'
+    ignore:
+    - 'test_*.py'
+
   #pull_request:
   #  branches:
   #  - master

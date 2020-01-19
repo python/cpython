@@ -11,6 +11,7 @@ ignore:
   - "PCbuild/**/*"
   - "Tools/**/*"
   - "Grammar/*"
+  - "test_*.py"
 coverage:
   precision: 2
   range: 70...90
