@@ -1,0 +1,2 @@
+Fixed an issue in email.generator.BytesGenerator.flatten() which would throw
+UnicodeEncodeError with a message with a non-ascii body .
