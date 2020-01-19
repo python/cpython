@@ -518,7 +518,7 @@ class HighPageTest(unittest.TestCase):
             hs.event_generate('<ButtonRelease-1>', x=0, y=0)
 
         eq(d.highlight_target.get(), 'test double')
-        eq(hs.get('sel.first', 'sel.last'), '\n')
+        eq(hs.get('sel.first', 'sel.last'), ' 1 # Click selects item.\n')
 
         # Remove selection and rebind.
         hs.tag_remove('sel', '0.0', 'end')
