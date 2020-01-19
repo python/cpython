@@ -403,7 +403,11 @@ class BytesGenerator(Generator):
     """
 
     def write(self, s):
-        self._fp.write(s.encode('ascii', 'surrogateescape'))
+        try:
+            s = s.encode('ascii', 'surrogateescape')
+        except UnicodeEncodeError:
+            s = s.encode('ascii', 'replace')
+        self._fp.write(s)
 
     def _new_buffer(self):
         return BytesIO()

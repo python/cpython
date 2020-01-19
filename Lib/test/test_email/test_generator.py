@@ -271,6 +271,21 @@ class TestBytesGenerator(TestGeneratorBase, TestEmailBase):
         g.flatten(msg)
         self.assertEqual(s.getvalue(), expected)
 
+    def test_flatten_charset_utf8_with_nonascii(self):
+        source = textwrap.dedent("""\
+            Subject: Defective email
+            Content-Type: text/plain; charset=utf-8
+            Content-Transfer-Encoding: 8bit
+
+            I think thatâ**s the way to go.
+            """)
+        expected = source.encode('ascii', 'replace')
+        msg = message_from_string(source)
+        s = io.BytesIO()
+        g = BytesGenerator(s)
+        g.flatten(msg)
+        self.assertEqual(s.getvalue(), expected)
+
     def test_smtputf8_policy(self):
         msg = EmailMessage()
         msg['From'] = "Páolo <főo@bar.com>"
