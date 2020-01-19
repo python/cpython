@@ -318,8 +318,8 @@ class _CapturingHandler(logging.Handler):
 
 
 
-class _AssertLogsContext(_BaseTestCaseContext):
-    """A context manager used to implement TestCase.assertLogs()."""
+class _AssertLogsBaseContext(_BaseTestCaseContext):
+    """Base class for assertLogs() and assertNoLogs() """
 
     LOGGING_FORMAT = "%(levelname)s:%(name)s:%(message)s"
 
@@ -353,13 +353,46 @@ class _AssertLogsContext(_BaseTestCaseContext):
         self.logger.handlers = self.old_handlers
         self.logger.propagate = self.old_propagate
         self.logger.setLevel(self.old_level)
+
+
+class _AssertLogsContext(_AssertLogsBaseContext):
+    """A context manager used to implement TestCase.assertLogs()."""
+
+    def __exit__(self, exc_type, exc_value, tb):
+        _AssertLogsBaseContext.__exit__(
+            self, exc_type, exc_value, tb)
+
         if exc_type is not None:
             # let unexpected exceptions pass through
             return False
+
         if len(self.watcher.records) == 0:
             self._raiseFailure(
                 "no logs of level {} or higher triggered on {}"
                 .format(logging.getLevelName(self.level), self.logger.name))
+
+
+class _AssertNoLogsContext(_AssertLogsBaseContext):
+    """A context manager used to implement TestCase.assertNoLogs()."""
+
+    def __enter__(self):
+        _AssertLogsBaseContext.__enter__(self)
+        return None
+
+    def __exit__(self, exc_type, exc_value, tb):
+        _AssertLogsBaseContext.__exit__(
+            self, exc_type, exc_value, tb)
+
+        if exc_type is not None:
+            # let unexpected exceptions pass through
+            return False
+
+        if len(self.watcher.records) > 0:
+            self._raiseFailure(
+                "Logs unexpected found: {!r}".format(
+                    self.watcher.output
+                )
+            )
 
 
 class _OrderedChainMap(collections.ChainMap):
@@ -853,6 +886,14 @@ class TestCase(object):
                                          'ERROR:foo.bar:second message'])
         """
         return _AssertLogsContext(self, logger, level)
+
+    def assertNoLogs(self, logger=None, level=None):
+        """ Fail unless no log messages of level *level* or higher are emitted
+        on *logger_name* or its children.
+
+        This method must be used as a context manager, and will yield nothing.
+        """
+        return _AssertNoLogsContext(self, logger, level)
 
     def _getAssertEqualityFunc(self, first, second):
         """Get a detailed comparison function for the types of the two args.
