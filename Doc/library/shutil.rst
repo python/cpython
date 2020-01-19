@@ -271,6 +271,12 @@ Directory and files operations
 
    .. versionadded:: 3.8
       The *dirs_exist_ok* parameter.
+      
+   .. versionchanged:: 3.8
+      The types of the arguments to the *ignore* callable have changed. The
+      first argument (the directory being visited) is a func:`os.DirEntry` or
+      a func:`pathlib.Path`; Previously it was a string. The second argument
+      is a set of strings; previously it was a list of strings.
 
 .. function:: rmtree(path, ignore_errors=False, onerror=None)
 
