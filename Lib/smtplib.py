@@ -46,13 +46,13 @@ import io
 import re
 import email.utils
 import email.message
-import email.generator
 import base64
 import hmac
 import copy
 import datetime
 import sys
 from email.base64mime import body_encode as encode_base64
+from email.policy import SMTP as SMTP_POLICY, SMTPUTF8 as SMTPUTF8_POLICY
 
 __all__ = ["SMTPException", "SMTPNotSupportedError", "SMTPServerDisconnected", "SMTPResponseException",
            "SMTPSenderRefused", "SMTPRecipientsRefused", "SMTPDataError",
@@ -958,15 +958,11 @@ class SMTP:
                     " internationalized email support, but the server"
                     " does not advertise the required SMTPUTF8 capability")
             international = True
-        with io.BytesIO() as bytesmsg:
-            if international:
-                g = email.generator.BytesGenerator(
-                    bytesmsg, policy=msg.policy.clone(utf8=True))
-                mail_options = (*mail_options, 'SMTPUTF8', 'BODY=8BITMIME')
-            else:
-                g = email.generator.BytesGenerator(bytesmsg)
-            g.flatten(msg_copy, linesep='\r\n')
-            flatmsg = bytesmsg.getvalue()
+        if international:
+            mail_options = (*mail_options, 'SMTPUTF8', 'BODY=8BITMIME')
+            flatmsg = msg_copy.as_bytes(policy=SMTPUTF8_POLICY)
+        else:
+            flatmsg = msg_copy.as_bytes(policy=SMTP_POLICY)
         return self.sendmail(from_addr, to_addrs, flatmsg, mail_options,
                              rcpt_options)
 
