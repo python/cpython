@@ -1,0 +1,2 @@
+Fixed email.message.set_payload() to replace characters which are invalid in
+the payload's charset rather than throwing UnicodeEncodeError.
