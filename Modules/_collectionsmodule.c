@@ -2518,13 +2518,53 @@ static struct PyMethodDef module_functions[] = {
     {NULL,       NULL}          /* sentinel */
 };
 
+static int
+_collections_exec(PyObject *module)
+{
+    if (PyType_Ready(&deque_type) < 0)
+        return -1;
+    Py_INCREF(&deque_type);
+    PyModule_AddObject(module, "deque", (PyObject *)&deque_type);
+
+    defdict_type.tp_base = &PyDict_Type;
+    if (PyType_Ready(&defdict_type) < 0)
+        return -1;
+    Py_INCREF(&defdict_type);
+    PyModule_AddObject(module, "defaultdict", (PyObject *)&defdict_type);
+
+    Py_INCREF(&PyODict_Type);
+    PyModule_AddObject(module, "OrderedDict", (PyObject *)&PyODict_Type);
+
+    if (PyType_Ready(&dequeiter_type) < 0)
+        return -1;
+    Py_INCREF(&dequeiter_type);
+    PyModule_AddObject(module, "_deque_iterator", (PyObject *)&dequeiter_type);
+
+    if (PyType_Ready(&dequereviter_type) < 0)
+        return -1;
+    Py_INCREF(&dequereviter_type);
+    PyModule_AddObject(module, "_deque_reverse_iterator", (PyObject *)&dequereviter_type);
+
+    if (PyType_Ready(&tuplegetter_type) < 0)
+        return -1;
+    Py_INCREF(&tuplegetter_type);
+    PyModule_AddObject(module, "_tuplegetter", (PyObject *)&tuplegetter_type);
+
+    return 0;
+}
+
+static PyModuleDef_Slot _collections_slots[] = {
+    {Py_mod_exec, _collections_exec},
+    {0, NULL}
+};
+
 static struct PyModuleDef _collectionsmodule = {
     PyModuleDef_HEAD_INIT,
     "_collections",
     module_doc,
-    -1,
+    0,
     module_functions,
-    NULL,
+    _collections_slots,
     NULL,
     NULL,
     NULL
@@ -2533,40 +2573,5 @@ static struct PyModuleDef _collectionsmodule = {
 PyMODINIT_FUNC
 PyInit__collections(void)
 {
-    PyObject *m;
-
-    m = PyModule_Create(&_collectionsmodule);
-    if (m == NULL)
-        return NULL;
-
-    if (PyType_Ready(&deque_type) < 0)
-        return NULL;
-    Py_INCREF(&deque_type);
-    PyModule_AddObject(m, "deque", (PyObject *)&deque_type);
-
-    defdict_type.tp_base = &PyDict_Type;
-    if (PyType_Ready(&defdict_type) < 0)
-        return NULL;
-    Py_INCREF(&defdict_type);
-    PyModule_AddObject(m, "defaultdict", (PyObject *)&defdict_type);
-
-    Py_INCREF(&PyODict_Type);
-    PyModule_AddObject(m, "OrderedDict", (PyObject *)&PyODict_Type);
-
-    if (PyType_Ready(&dequeiter_type) < 0)
-        return NULL;
-    Py_INCREF(&dequeiter_type);
-    PyModule_AddObject(m, "_deque_iterator", (PyObject *)&dequeiter_type);
-
-    if (PyType_Ready(&dequereviter_type) < 0)
-        return NULL;
-    Py_INCREF(&dequereviter_type);
-    PyModule_AddObject(m, "_deque_reverse_iterator", (PyObject *)&dequereviter_type);
-
-    if (PyType_Ready(&tuplegetter_type) < 0)
-        return NULL;
-    Py_INCREF(&tuplegetter_type);
-    PyModule_AddObject(m, "_tuplegetter", (PyObject *)&tuplegetter_type);
-
-    return m;
+    return PyModuleDef_Init(&_collectionsmodule);
 }
