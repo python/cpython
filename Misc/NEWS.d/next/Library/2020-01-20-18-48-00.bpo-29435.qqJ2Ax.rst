@@ -1,0 +1,2 @@
+Allow :func:`tarfile.is_tarfile` to be used with file and file-like
+objects, like :func:`zipfile.is_zipfile`. Patch by William Woodruff.
