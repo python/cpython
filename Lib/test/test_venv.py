@@ -366,7 +366,7 @@ class BasicTest(BaseTest):
         builder.create(self.env_dir)
         envact = os.path.join(self.env_dir, self.shelldir, "activate")
         self.assertGreater(os.path.getsize(envact), 0)
-            
+
     @requireVenvCreate
     def test_multiprocessing(self):
         """
