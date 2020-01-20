@@ -38,8 +38,10 @@ an event loop:
 
 .. function:: get_event_loop()
 
-   Get the current event loop.  If there is no current event loop set
-   in the current OS thread and :func:`set_event_loop` has not yet
+   Get the current event loop.
+
+   If there is no current event loop set in the current OS thread,
+   the OS thread is main, and :func:`set_event_loop` has not yet
    been called, asyncio will create a new event loop and set it as the
    current one.
 
