@@ -67,7 +67,6 @@ import re
 import socket
 import collections
 import datetime
-import warnings
 import sys
 
 try:
