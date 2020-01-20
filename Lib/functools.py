@@ -295,7 +295,6 @@ class TopologicalSorter:
         as processed by calling "done", further calls will return all new nodes that
         have all their predecessors already processed. Once no more progress can be made,
         empty tuples are returned.
-        made.
 
         Raises ValueError if called without calling "prepare" previously.
         """
