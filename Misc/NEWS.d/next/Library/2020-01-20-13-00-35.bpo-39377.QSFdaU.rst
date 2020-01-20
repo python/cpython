@@ -1,2 +1,2 @@
-Removed ``encodign`` option from :func:`json.loads`.  It was deprecated
+Removed ``encoding`` option from :func:`json.loads`.  It has been deprecated
 since Python 3.1.
