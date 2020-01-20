@@ -956,8 +956,7 @@ class RawConfigParser(MutableMapping):
         return existed
 
     def __getitem__(self, key):
-        key = str(key)
-        if not key in self:
+        if key != self.default_section and not self.has_section(key):
             raise KeyError(key)
         return self._proxies[key]
 
