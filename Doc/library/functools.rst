@@ -531,7 +531,7 @@ The :mod:`functools` module defines the following functions:
    the graph has no directed cycles, that is, if it is a directed acyclic graph.
 
    If the optional *graph* argument is provided it must be a dictionary representing
-   a direct acyclic graph where the keys are nodes and the values are iterables of
+   a directed acyclic graph where the keys are nodes and the values are iterables of
    all predecessors of that node in the graph (the nodes that have edges that point
    to the value in the key). Additional nodes can be added to the graph using the
    :meth:`~TopologicalSorter.add` method.
@@ -546,7 +546,7 @@ The :mod:`functools` module defines the following functions:
            nodes returned by :meth:`~TopologicalSorter.get_ready` and process them.
            Call :meth:`~TopologicalSorter.done` on each node as it finishes processing.
 
-   In case that just an inmediate sorting of the nodes in the graph is required and
+   In case just an immediate sorting of the nodes in the graph is required and
    no parallelism is involved, the convenience method :meth:`TopologicalSorter.static_order`
    can be used directly. For example, this method can be used to implement a simple
    version of the C3 linearization algorithm used by Python to calculate the Method
@@ -602,7 +602,7 @@ The :mod:`functools` module defines the following functions:
       will be the union of all dependencies passed in.
 
       It is possible to add a node with no dependencies (*predecessors* is not
-      provided) as well as provide a dependency twice. If a node that has not been
+      provided) or to provide a dependency twice. If a node that has not been
       provided before is included among *predecessors* it will be automatically added
       to the graph with no predecessors of its own.
 
@@ -614,7 +614,7 @@ The :mod:`functools` module defines the following functions:
       detected, :exc:`CycleError` will be raised, but
       :meth:`~TopologicalSorter.get_ready` can still be used to obtain as many nodes
       as possible until cycles block more progress. After a call to this function,
-      the graph cannot be modified and therefore no more nodes can be added using
+      the graph cannot be modified, and therefore no more nodes can be added using
       :meth:`~TopologicalSorter.add`.
 
    .. method:: is_active()
@@ -655,9 +655,10 @@ The :mod:`functools` module defines the following functions:
    .. method:: get_ready()
 
       Returns a ``tuple`` with all the nodes that are ready. Initially it returns all
-      nodes with no predecessors and once those are marked as processed by calling
+      nodes with no predecessors, and once those are marked as processed by calling
       :meth:`TopologicalSorter.done`, further calls will return all new nodes that
-      have all their predecessors already processed until no more progress can be
+      have all their predecessors already processed. Once no more progress can be
+      made, empty tuples are returned.
       made.
 
       Raises :exc:`ValueError` if called without calling

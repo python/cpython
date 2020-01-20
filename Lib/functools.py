@@ -291,9 +291,10 @@ class TopologicalSorter:
     def get_ready(self):
         """Return a tuple of all the nodes that are ready.
 
-        Initially it returns all nodes with no predecessors and once those are marked
+        Initially it returns all nodes with no predecessors; once those are marked
         as processed by calling "done", further calls will return all new nodes that
-        have all their predecessors already processed until no more progress can be
+        have all their predecessors already processed. Once no more progress can be made,
+        empty tuples are returned.
         made.
 
         Raises ValueError if called without calling "prepare" previously.
