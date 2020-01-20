@@ -676,7 +676,7 @@ to a variable.  For example, ::
    'Trondheim'
 
 Note that in Python, unlike C, assignment inside expressions must be done
-explicitly with the `walrus operator`_ ``:=``. This avoids a common class of
+explicitly with the :ref:`walrus operator <why-can-t-i-use-an-assignment-in-an-expression>` ``:=``. This avoids a common class of
 problems encountered in C programs: typing ``=`` in an expression when ``==``
 was intended.
 
