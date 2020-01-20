@@ -313,6 +313,7 @@ class TestMessageAPI(TestEmailBase):
 
     def test_nonascii_as_string_without_cte(self):
         m = textwrap.dedent("""\
+            MIME-Version: 1.0
             Content-type: text/plain; charset="iso-8859-1"
 
             Test if non-ascii messages with no Content-Transfer-Encoding set
@@ -321,6 +322,7 @@ class TestMessageAPI(TestEmailBase):
             """)
         source = m.encode('iso-8859-1')
         expected = textwrap.dedent("""\
+            MIME-Version: 1.0
             Content-type: text/plain; charset="iso-8859-1"
             Content-Transfer-Encoding: quoted-printable
 
