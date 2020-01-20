@@ -54,10 +54,12 @@ class BaseTest(unittest.TestCase):
             self.bindir = 'Scripts'
             self.lib = ('Lib',)
             self.include = 'Include'
+            self.shelldir = 'bin'
         else:
             self.bindir = 'bin'
             self.lib = ('lib', 'python%d.%d' % sys.version_info[:2])
             self.include = 'include'
+            self.shelldir = 'bin'
         executable = sys._base_executable
         self.exe = os.path.split(executable)[-1]
         if (sys.platform == 'win32'
@@ -98,6 +100,7 @@ class BasicTest(BaseTest):
         rmtree(self.env_dir)
         self.run_with_capture(venv.create, self.env_dir)
         self.isdir(self.bindir)
+        self.isdir(self.shelldir)
         self.isdir(self.include)
         self.isdir(*self.lib)
         # Issue 21197
@@ -192,6 +195,7 @@ class BasicTest(BaseTest):
 
     if sys.platform == 'win32':
         ENV_SUBDIRS = (
+            ('bin',),
             ('Scripts',),
             ('Include',),
             ('Lib',),
@@ -264,6 +268,7 @@ class BasicTest(BaseTest):
             builder = venv.EnvBuilder(upgrade=upgrade)
             self.run_with_capture(builder.create, self.env_dir)
             self.isdir(self.bindir)
+            self.isdir(self.shelldir)
             self.isdir(self.include)
             self.isdir(*self.lib)
             fn = self.get_env_file(self.bindir, self.exe)
@@ -352,6 +357,16 @@ class BasicTest(BaseTest):
         )
         self.assertEqual(out.strip(), '0')
 
+    def test_activate_always_there(self):
+        """
+        Test bin/activate is always present, regardless of platform
+        """
+        rmtree(self.env_dir)
+        builder = venv.EnvBuilder(clear=True, symlinks=True)
+        builder.create(self.env_dir)
+        envact = os.path.join(self.env_dir, self.shelldir, "activate")
+        self.assertGreater(os.path.getsize(envact), 0)
+            
     @requireVenvCreate
     def test_multiprocessing(self):
         """

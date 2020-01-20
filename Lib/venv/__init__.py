@@ -119,6 +119,8 @@ class EnvBuilder:
         context.executable = executable
         context.python_dir = dirname
         context.python_exe = exename
+        # Issue 35003: bin/ directory should always have an activate script for shells on all platforms
+        copyname = 'bin'
         if sys.platform == 'win32':
             binname = 'Scripts'
             incpath = 'Include'
@@ -141,7 +143,10 @@ class EnvBuilder:
         context.bin_path = binpath = os.path.join(env_dir, binname)
         context.bin_name = binname
         context.env_exe = os.path.join(binpath, exename)
+        context.copy_path = os.path.join(env_dir, copyname)
+        context.copy_set = {"activate"}
         create_if_needed(binpath)
+        create_if_needed(context.copy_path)
         return context
 
     def create_configuration(self, context):
@@ -354,6 +359,8 @@ class EnvBuilder:
                         specific values.
         """
         binpath = context.bin_path
+        copypath = context.copy_path
+        copyset = context.copy_set
         plen = len(path)
         for root, dirs, files in os.walk(path):
             if root == path: # at top-level, remove irrelevant dirs
@@ -361,11 +368,11 @@ class EnvBuilder:
                     if d not in ('common', os.name):
                         dirs.remove(d)
                 continue # ignore files in top level
-            for f in files:
-                if (os.name == 'nt' and f.startswith('python')
-                        and f.endswith(('.exe', '.pdb'))):
+            for fname in files:
+                if (os.name == 'nt' and fname.startswith('python')
+                        and fname.endswith(('.exe', '.pdb'))):
                     continue
-                srcfile = os.path.join(root, f)
+                srcfile = os.path.join(root, fname)
                 suffix = root[plen:].split(os.sep)[2:]
                 if not suffix:
                     dstdir = binpath
@@ -373,7 +380,7 @@ class EnvBuilder:
                     dstdir = os.path.join(binpath, *suffix)
                 if not os.path.exists(dstdir):
                     os.makedirs(dstdir)
-                dstfile = os.path.join(dstdir, f)
+                dstfile = os.path.join(dstdir, fname)
                 with open(srcfile, 'rb') as f:
                     data = f.read()
                 if not srcfile.endswith(('.exe', '.pdb')):
@@ -389,6 +396,10 @@ class EnvBuilder:
                     with open(dstfile, 'wb') as f:
                         f.write(data)
                     shutil.copymode(srcfile, dstfile)
+                    if fname in copyset and copypath != binpath:
+                        copyfile = os.path.join(copypath, fname)
+                        self.symlink_or_copy(dstfile, copyfile)
+
 
     def upgrade_dependencies(self, context):
         logger.debug(
