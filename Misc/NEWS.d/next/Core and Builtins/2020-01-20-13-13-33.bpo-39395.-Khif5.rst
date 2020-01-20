@@ -1,0 +1,2 @@
+Environment variables set by :data:`os.environ` and :func:`os.putenv` are now
+cleared at exit. Python manages their memory which is released at exit.

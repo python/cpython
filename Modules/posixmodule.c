@@ -2101,10 +2101,36 @@ statresult_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
     return (PyObject*)result;
 }
 
+
+#ifdef HAVE_UNSETENV
+/* bpo-39395: Clear environment variables set by os.environ and os.putenv()
+   before clearing posix_putenv_garbage dictionary. Python manages the
+   variables memory which is cleared at exit. */
+static void
+posix_unset_envvars(PyObject *posix_putenv_garbage)
+{
+    if (posix_putenv_garbage == NULL) {
+        return;
+    }
+    assert(PyDict_CheckExact(posix_putenv_garbage));
+
+    Py_ssize_t pos = 0;
+    PyObject *key, *value;
+    while (PyDict_Next(posix_putenv_garbage, &pos, &key, &value)) {
+        /* ignore unsetenv() error */
+        unsetenv(PyBytes_AS_STRING(key));
+    }
+}
+#endif
+
+
 static int
 _posix_clear(PyObject *module)
 {
     Py_CLEAR(_posixstate(module)->billion);
+#ifdef HAVE_UNSETENV
+    posix_unset_envvars(_posixstate(module)->posix_putenv_garbage);
+#endif
     Py_CLEAR(_posixstate(module)->posix_putenv_garbage);
     Py_CLEAR(_posixstate(module)->DirEntryType);
     Py_CLEAR(_posixstate(module)->ScandirIteratorType);
