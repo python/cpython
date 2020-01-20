@@ -42,6 +42,22 @@ class TestDecode:
                                     object_pairs_hook=OrderedDict),
                          OrderedDict([('empty', OrderedDict())]))
 
+    def test_array_hook(self):
+        s = '[{"xkd": [1]}, {"kcw": 2, "art":3}, "hxm", 42, [1], [2, [1, []]]]'
+        lsts = [{"xkd":[1]},  {"kcw":2, "art":3}, "hxm", 42, [1],  [2, [1, []]]]
+        tups = ({"xkd":(1,)}, {"kcw":2, "art":3}, "hxm", 42, (1,), (2, (1, ())))
+        self.assertEqual(self.loads(s), lsts)
+        self.assertEqual(self.loads(s, array_hook=lambda x: x), lsts)
+        self.assertEqual(self.json.load(StringIO(s), array_hook=lambda x: x),
+                         lsts)
+        tups1 = self.loads(s, array_hook=tuple)
+        self.assertEqual(tups1, tups)
+        self.assertEqual(type(tups1), tuple)
+        # check that empty object literals work
+        self.assertEqual(self.loads('[]', array_hook=tuple), ())
+        self.assertEqual(self.loads('[[], {"a": []}, [[]]]', array_hook=tuple),
+                         ((), {"a": ()}, ((),)))
+
     def test_decoder_optimizations(self):
         # Several optimizations were made that skip over calls to
         # the whitespace regex, so this test is designed to try and
