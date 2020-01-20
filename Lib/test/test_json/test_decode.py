@@ -1,3 +1,4 @@
+import array
 import decimal
 from io import StringIO
 from collections import OrderedDict
@@ -19,6 +20,15 @@ class TestDecode:
         self.assertEqual(self.loads('{}'), {})
         self.assertEqual(self.loads('[]'), [])
         self.assertEqual(self.loads('""'), "")
+
+    def test_memoryview(self):
+        data = memoryview(b'{"key": "val"}')
+        self.assertEqual(self.loads(data), {"key": "val"})
+
+    def test_buffer(self):
+        data = array.array('B')
+        data.frombytes(b'{"key": "val"}')
+        self.assertEqual(self.loads(data), {"key": "val"})
 
     def test_object_pairs_hook(self):
         s = '{"xkd":1, "kcw":2, "art":3, "hxm":4, "qrt":5, "pad":6, "hoy":7}'
