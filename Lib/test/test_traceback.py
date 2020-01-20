@@ -7,7 +7,7 @@ import sys
 import unittest
 import re
 from test import support
-from test.support import TESTFN, Error, captured_output, unlink, cpython_only
+from test.support import TESTFN, Error, captured_output, unlink, cpython_only, ALWAYS_EQ
 from test.support.script_helper import assert_python_ok
 import textwrap
 
@@ -313,7 +313,7 @@ class TracebackFormatTests(unittest.TestCase):
         with captured_output("stderr") as stderr_f:
             try:
                 f()
-            except RecursionError as exc:
+            except RecursionError:
                 render_exc()
             else:
                 self.fail("no recursion occurred")
@@ -360,7 +360,7 @@ class TracebackFormatTests(unittest.TestCase):
         with captured_output("stderr") as stderr_g:
             try:
                 g()
-            except ValueError as exc:
+            except ValueError:
                 render_exc()
             else:
                 self.fail("no value error was raised")
@@ -396,7 +396,7 @@ class TracebackFormatTests(unittest.TestCase):
         with captured_output("stderr") as stderr_h:
             try:
                 h()
-            except ValueError as exc:
+            except ValueError:
                 render_exc()
             else:
                 self.fail("no value error was raised")
@@ -424,7 +424,7 @@ class TracebackFormatTests(unittest.TestCase):
         with captured_output("stderr") as stderr_g:
             try:
                 g(traceback._RECURSIVE_CUTOFF)
-            except ValueError as exc:
+            except ValueError:
                 render_exc()
             else:
                 self.fail("no error raised")
@@ -452,7 +452,7 @@ class TracebackFormatTests(unittest.TestCase):
         with captured_output("stderr") as stderr_g:
             try:
                 g(traceback._RECURSIVE_CUTOFF + 1)
-            except ValueError as exc:
+            except ValueError:
                 render_exc()
             else:
                 self.fail("no error raised")
@@ -887,6 +887,8 @@ class TestFrame(unittest.TestCase):
         # operator fallbacks to FrameSummary.__eq__.
         self.assertEqual(tuple(f), f)
         self.assertIsNone(f.locals)
+        self.assertNotEqual(f, object())
+        self.assertEqual(f, ALWAYS_EQ)
 
     def test_lazy_lines(self):
         linecache.clearcache()
@@ -1082,6 +1084,18 @@ class TestTracebackException(unittest.TestCase):
         self.assertEqual(expected_stack, exc.stack)
         self.assertEqual(exc_info[0], exc.exc_type)
         self.assertEqual(str(exc_info[1]), str(exc))
+
+    def test_comparison(self):
+        try:
+            1/0
+        except Exception:
+            exc_info = sys.exc_info()
+            exc = traceback.TracebackException(*exc_info)
+            exc2 = traceback.TracebackException(*exc_info)
+        self.assertIsNot(exc, exc2)
+        self.assertEqual(exc, exc2)
+        self.assertNotEqual(exc, object())
+        self.assertEqual(exc, ALWAYS_EQ)
 
     def test_unhashable(self):
         class UnhashableException(Exception):

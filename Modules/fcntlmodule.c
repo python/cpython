@@ -495,11 +495,23 @@ all_ins(PyObject* m)
 #ifdef F_SETLKW
     if (PyModule_AddIntMacro(m, F_SETLKW)) return -1;
 #endif
+#ifdef F_OFD_GETLK
+    if (PyModule_AddIntMacro(m, F_OFD_GETLK)) return -1;
+#endif
+#ifdef F_OFD_SETLK
+    if (PyModule_AddIntMacro(m, F_OFD_SETLK)) return -1;
+#endif
+#ifdef F_OFD_SETLKW
+    if (PyModule_AddIntMacro(m, F_OFD_SETLKW)) return -1;
+#endif
 #ifdef F_GETOWN
     if (PyModule_AddIntMacro(m, F_GETOWN)) return -1;
 #endif
 #ifdef F_SETOWN
     if (PyModule_AddIntMacro(m, F_SETOWN)) return -1;
+#endif
+#ifdef F_GETPATH
+    if (PyModule_AddIntMacro(m, F_GETPATH)) return -1;
 #endif
 #ifdef F_GETSIG
     if (PyModule_AddIntMacro(m, F_GETSIG)) return -1;
@@ -620,7 +632,15 @@ all_ins(PyObject* m)
     if (PyModule_AddIntMacro(m, I_PLINK)) return -1;
     if (PyModule_AddIntMacro(m, I_PUNLINK)) return -1;
 #endif
-
+#ifdef F_ADD_SEALS
+    /* Linux: file sealing for memfd_create() */
+    if (PyModule_AddIntMacro(m, F_ADD_SEALS)) return -1;
+    if (PyModule_AddIntMacro(m, F_GET_SEALS)) return -1;
+    if (PyModule_AddIntMacro(m, F_SEAL_SEAL)) return -1;
+    if (PyModule_AddIntMacro(m, F_SEAL_SHRINK)) return -1;
+    if (PyModule_AddIntMacro(m, F_SEAL_GROW)) return -1;
+    if (PyModule_AddIntMacro(m, F_SEAL_WRITE)) return -1;
+#endif
     return 0;
 }
 
@@ -648,8 +668,10 @@ PyInit_fcntl(void)
         return NULL;
 
     /* Add some symbolic constants to the module */
-    if (all_ins(m) < 0)
+    if (all_ins(m) < 0) {
+        Py_DECREF(m);
         return NULL;
+    }
 
     return m;
 }

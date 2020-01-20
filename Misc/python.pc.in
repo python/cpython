@@ -5,9 +5,9 @@ libdir=@libdir@
 includedir=@includedir@
 
 Name: Python
-Description: Python library
-Requires: 
+Description: Build a C extension for Python
+Requires:
 Version: @VERSION@
 Libs.private: @LIBS@
-Libs: -L${libdir} -lpython@VERSION@@ABIFLAGS@
+Libs:
 Cflags: -I${includedir}/python@VERSION@@ABIFLAGS@

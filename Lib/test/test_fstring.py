@@ -649,7 +649,7 @@ non-important content
         self.assertEqual(f'2\x203', '2 3')
         self.assertEqual(f'\x203', ' 3')
 
-        with self.assertWarns(SyntaxWarning):  # invalid escape sequence
+        with self.assertWarns(DeprecationWarning):  # invalid escape sequence
             value = eval(r"f'\{6*7}'")
         self.assertEqual(value, '\\42')
         self.assertEqual(f'\\{6*7}', '\\42')
@@ -1149,6 +1149,24 @@ non-important content
         self.assertEqual(f'{C()=!r:*^20}', 'C()=********REPR********')
 
         self.assertRaises(SyntaxError, eval, "f'{C=]'")
+
+        # Make sure leading and following text works.
+        x = 'foo'
+        self.assertEqual(f'X{x=}Y', 'Xx='+repr(x)+'Y')
+
+        # Make sure whitespace around the = works.
+        self.assertEqual(f'X{x  =}Y', 'Xx  ='+repr(x)+'Y')
+        self.assertEqual(f'X{x=  }Y', 'Xx=  '+repr(x)+'Y')
+        self.assertEqual(f'X{x  =  }Y', 'Xx  =  '+repr(x)+'Y')
+
+        # These next lines contains tabs.  Backslash escapes don't
+        # work in f-strings.
+        # patchcheck doesn't like these tabs.  So the only way to test
+        # this will be to dynamically created and exec the f-strings.  But
+        # that's such a hassle I'll save it for another day.  For now, convert
+        # the tabs to spaces just to shut up patchcheck.
+        #self.assertEqual(f'X{x =}Y', 'Xx\t='+repr(x)+'Y')
+        #self.assertEqual(f'X{x =       }Y', 'Xx\t=\t'+repr(x)+'Y')
 
     def test_walrus(self):
         x = 20

@@ -1,2 +1,0 @@
-The ``Cache`` and ``Statement`` objects of the :mod:`sqlite3` module are not
-exposed to the user.  Patch by Aviv Palivoda.

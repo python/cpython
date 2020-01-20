@@ -266,6 +266,8 @@ aliases = {
     'roman8'             : 'hp_roman8',
     'r8'                 : 'hp_roman8',
     'csHPRoman8'         : 'hp_roman8',
+    'cp1051'             : 'hp_roman8',
+    'ibm1051'            : 'hp_roman8',
 
     # hz codec
     'hzgb'               : 'hz',
@@ -448,6 +450,7 @@ aliases = {
 
     # mac_latin2 codec
     'maccentraleurope'   : 'mac_latin2',
+    'mac_centeuro'       : 'mac_latin2',
     'maclatin2'          : 'mac_latin2',
 
     # mac_roman codec
@@ -490,9 +493,6 @@ aliases = {
     'shiftjisx0213'      : 'shift_jisx0213',
     'sjisx0213'          : 'shift_jisx0213',
     's_jisx0213'         : 'shift_jisx0213',
-
-    # tactis codec
-    'tis260'             : 'tactis',
 
     # tis_620 codec
     'tis620'             : 'tis_620',

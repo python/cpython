@@ -310,6 +310,8 @@ class PosixTester(unittest.TestCase):
             buf = [bytearray(i) for i in [5, 3, 2]]
             self.assertEqual(posix.preadv(fd, buf, 3, os.RWF_HIPRI), 10)
             self.assertEqual([b't1tt2', b't3t', b'5t'], list(buf))
+        except NotImplementedError:
+            self.skipTest("preadv2 not available")
         except OSError as inst:
             # Is possible that the macro RWF_HIPRI was defined at compilation time
             # but the option is not supported by the kernel or the runtime libc shared
@@ -1224,6 +1226,16 @@ class PosixTester(unittest.TestCase):
         finally:
             posix.close(f)
 
+    @unittest.skipUnless(hasattr(signal, 'SIGCHLD'), 'CLD_XXXX be placed in si_code for a SIGCHLD signal')
+    @unittest.skipUnless(hasattr(os, 'waitid_result'), "test needs os.waitid_result")
+    def test_cld_xxxx_constants(self):
+        os.CLD_EXITED
+        os.CLD_KILLED
+        os.CLD_DUMPED
+        os.CLD_TRAPPED
+        os.CLD_STOPPED
+        os.CLD_CONTINUED
+
     @unittest.skipUnless(os.symlink in os.supports_dir_fd, "test needs dir_fd support in os.symlink()")
     def test_symlink_dir_fd(self):
         f = posix.open(posix.getcwd(), posix.O_RDONLY)
@@ -1366,6 +1378,7 @@ class PosixTester(unittest.TestCase):
         self.assertEqual(posix.sched_getaffinity(0), mask)
         self.assertRaises(OSError, posix.sched_setaffinity, 0, [])
         self.assertRaises(ValueError, posix.sched_setaffinity, 0, [-10])
+        self.assertRaises(ValueError, posix.sched_setaffinity, 0, map(int, "0X"))
         self.assertRaises(OverflowError, posix.sched_setaffinity, 0, [1<<128])
         self.assertRaises(OSError, posix.sched_setaffinity, -1, mask)
 
@@ -1456,6 +1469,17 @@ class PosixTester(unittest.TestCase):
         self.assertFalse(os.path.exists(fn))
         open(fn, 'wb').close()
         self.assertRaises(ValueError, os.stat, fn_with_NUL)
+
+    @unittest.skipUnless(hasattr(os, "pidfd_open"), "pidfd_open unavailable")
+    def test_pidfd_open(self):
+        with self.assertRaises(OSError) as cm:
+            os.pidfd_open(-1)
+        if cm.exception.errno == errno.ENOSYS:
+            self.skipTest("system does not support pidfd_open")
+        if isinstance(cm.exception, PermissionError):
+            self.skipTest(f"pidfd_open syscall blocked: {cm.exception!r}")
+        self.assertEqual(cm.exception.errno, errno.EINVAL)
+        os.close(os.pidfd_open(os.getpid(), 0))
 
 class PosixGroupsTester(unittest.TestCase):
 
@@ -1637,23 +1661,35 @@ class _PosixSpawnMixin:
                             os.environ, setsigmask=[signal.NSIG,
                                                     signal.NSIG+1])
 
-    @unittest.skipIf(True,
-                     "FIXME: bpo-35537: test fails is setsid is supported")
-    def test_start_new_session(self):
-        # For code coverage of calling setsid().  We don't care if we get an
-        # EPERM error from it depending on the test execution environment, that
-        # still indicates that it was called.
-        code = "import os; print(os.getpgid(os.getpid()))"
+    def test_setsid(self):
+        rfd, wfd = os.pipe()
+        self.addCleanup(os.close, rfd)
         try:
-            self.spawn_func(sys.executable,
-                            [sys.executable, "-c", code],
-                            os.environ, setsid=True)
-        except NotImplementedError as exc:
-            self.skipTest("setsid is not supported: %s" % exc)
-        else:
-            parent_pgid = os.getpgid(os.getpid())
-            child_pgid = int(output)
-            self.assertNotEqual(parent_pgid, child_pgid)
+            os.set_inheritable(wfd, True)
+
+            code = textwrap.dedent(f"""
+                import os
+                fd = {wfd}
+                sid = os.getsid(0)
+                os.write(fd, str(sid).encode())
+            """)
+
+            try:
+                pid = self.spawn_func(sys.executable,
+                                      [sys.executable, "-c", code],
+                                      os.environ, setsid=True)
+            except NotImplementedError as exc:
+                self.skipTest(f"setsid is not supported: {exc!r}")
+            except PermissionError as exc:
+                self.skipTest(f"setsid failed with: {exc!r}")
+        finally:
+            os.close(wfd)
+
+        self.assertEqual(os.waitpid(pid, 0), (pid, 0))
+        output = os.read(rfd, 100)
+        child_sid = int(output)
+        parent_sid = os.getsid(os.getpid())
+        self.assertNotEqual(parent_sid, child_sid)
 
     @unittest.skipUnless(hasattr(signal, 'pthread_sigmask'),
                          'need signal.pthread_sigmask()')

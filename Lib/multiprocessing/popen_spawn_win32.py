@@ -22,8 +22,7 @@ WINSERVICE = sys.executable.lower().endswith("pythonservice.exe")
 def _path_eq(p1, p2):
     return p1 == p2 or os.path.normcase(p1) == os.path.normcase(p2)
 
-WINENV = (hasattr(sys, '_base_executable') and
-          not _path_eq(sys.executable, sys._base_executable))
+WINENV = not _path_eq(sys.executable, sys._base_executable)
 
 
 def _close_handles(*handles):
@@ -73,7 +72,7 @@ class Popen(object):
             try:
                 hp, ht, pid, tid = _winapi.CreateProcess(
                     python_exe, cmd,
-                    env, None, False, 0, None, None, None)
+                    None, None, False, 0, env, None, None)
                 _winapi.CloseHandle(ht)
             except:
                 _winapi.CloseHandle(rhandle)

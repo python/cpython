@@ -1,2 +1,0 @@
-Remove a message about an unhandled exception in a task when writer.write()
-is used without await and writer.drain() fails with an exception.

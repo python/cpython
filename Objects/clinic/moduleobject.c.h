@@ -31,7 +31,7 @@ module___init__(PyObject *self, PyObject *args, PyObject *kwargs)
         goto exit;
     }
     if (!PyUnicode_Check(fastargs[0])) {
-        _PyArg_BadArgument("module", 1, "str", fastargs[0]);
+        _PyArg_BadArgument("module", "argument 'name'", "str", fastargs[0]);
         goto exit;
     }
     if (PyUnicode_READY(fastargs[0]) == -1) {
@@ -48,4 +48,4 @@ skip_optional_pos:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=d7b7ca1237597b08 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=680276bc3a496d7a input=a9049054013a1b77]*/

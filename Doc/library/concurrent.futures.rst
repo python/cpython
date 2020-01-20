@@ -28,7 +28,7 @@ Executor Objects
    An abstract class that provides methods to execute calls asynchronously.  It
    should not be used directly, but through its concrete subclasses.
 
-    .. method:: submit(fn, *args, **kwargs)
+    .. method:: submit(fn, /, *args, **kwargs)
 
        Schedules the callable, *fn*, to be executed as ``fn(*args **kwargs)``
        and returns a :class:`Future` object representing the execution of the
@@ -158,6 +158,15 @@ And::
 
    .. versionchanged:: 3.7
       Added the *initializer* and *initargs* arguments.
+
+   .. versionchanged:: 3.8
+      Default value of *max_workers* is changed to ``min(32, os.cpu_count() + 4)``.
+      This default value preserves at least 5 workers for I/O bound tasks.
+      It utilizes at most 32 CPU cores for CPU bound tasks which release the GIL.
+      And it avoids using very large resources implicitly on many-core machines.
+
+      ThreadPoolExecutor now reuses idle worker threads before starting
+      *max_workers* worker threads too.
 
 
 .. _threadpoolexecutor-example:
@@ -297,9 +306,10 @@ The :class:`Future` class encapsulates the asynchronous execution of a callable.
 
     .. method:: cancel()
 
-       Attempt to cancel the call.  If the call is currently being executed and
-       cannot be cancelled then the method will return ``False``, otherwise the
-       call will be cancelled and the method will return ``True``.
+       Attempt to cancel the call.  If the call is currently being executed or
+       finished running and cannot be cancelled then the method will return
+       ``False``, otherwise the call will be cancelled and the method will
+       return ``True``.
 
     .. method:: cancelled()
 
@@ -414,8 +424,9 @@ Module Functions
    Wait for the :class:`Future` instances (possibly created by different
    :class:`Executor` instances) given by *fs* to complete.  Returns a named
    2-tuple of sets.  The first set, named ``done``, contains the futures that
-   completed (finished or were cancelled) before the wait completed.  The second
-   set, named ``not_done``, contains uncompleted futures.
+   completed (finished or cancelled futures) before the wait completed.  The
+   second set, named ``not_done``, contains the futures that did not complete
+   (pending or running futures).
 
    *timeout* can be used to control the maximum number of seconds to wait before
    returning.  *timeout* can be an int or float.  If *timeout* is not specified
@@ -446,7 +457,7 @@ Module Functions
 
    Returns an iterator over the :class:`Future` instances (possibly created by
    different :class:`Executor` instances) given by *fs* that yields futures as
-   they complete (finished or were cancelled). Any futures given by *fs* that
+   they complete (finished or cancelled futures). Any futures given by *fs* that
    are duplicated will be returned once. Any futures that completed before
    :func:`as_completed` is called will be yielded first.  The returned iterator
    raises a :exc:`concurrent.futures.TimeoutError` if :meth:`~iterator.__next__`

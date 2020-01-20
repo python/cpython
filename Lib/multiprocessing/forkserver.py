@@ -39,6 +39,25 @@ class ForkServer(object):
         self._lock = threading.Lock()
         self._preload_modules = ['__main__']
 
+    def _stop(self):
+        # Method used by unit tests to stop the server
+        with self._lock:
+            self._stop_unlocked()
+
+    def _stop_unlocked(self):
+        if self._forkserver_pid is None:
+            return
+
+        # close the "alive" file descriptor asks the server to stop
+        os.close(self._forkserver_alive_fd)
+        self._forkserver_alive_fd = None
+
+        os.waitpid(self._forkserver_pid, 0)
+        self._forkserver_pid = None
+
+        os.unlink(self._forkserver_address)
+        self._forkserver_address = None
+
     def set_forkserver_preload(self, modules_names):
         '''Set list of module names to try to load in forkserver process.'''
         if not all(type(mod) is str for mod in self._preload_modules):
@@ -294,7 +313,8 @@ def _serve_one(child_r, fds, unused_fds, handlers):
      *_forkserver._inherited_fds) = fds
 
     # Run process object received over pipe
-    code = spawn._main(child_r)
+    parent_sentinel = os.dup(child_r)
+    code = spawn._main(child_r, parent_sentinel)
 
     return code
 

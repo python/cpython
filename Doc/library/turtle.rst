@@ -20,8 +20,8 @@ Introduction
 ============
 
 Turtle graphics is a popular way for introducing programming to kids.  It was
-part of the original Logo programming language developed by Wally Feurzig and
-Seymour Papert in 1966.
+part of the original Logo programming language developed by Wally Feurzeig,
+Seymour Papert and Cynthia Solomon in 1967.
 
 Imagine a robotic turtle starting at (0, 0) in the x-y plane.  After an ``import turtle``, give it the
 command ``turtle.forward(15)``, and it moves (on-screen!) 15 pixels in the

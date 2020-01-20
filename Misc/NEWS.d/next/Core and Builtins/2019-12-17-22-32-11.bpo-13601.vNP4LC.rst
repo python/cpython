@@ -1,0 +1,6 @@
+By default, ``sys.stderr`` is line-buffered now, even if ``stderr`` is
+redirected to a file. You can still make ``sys.stderr`` unbuffered by
+passing the :option:`-u` command-line option or setting the
+:envvar:`PYTHONUNBUFFERED` environment variable.
+
+(Contributed by Jendrik Seipp in bpo-13601.)

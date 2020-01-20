@@ -505,7 +505,7 @@ class ProcessPoolExecutor(_base.Executor):
                 worker processes will be created as the machine has processors.
             mp_context: A multiprocessing context to launch the workers. This
                 object should provide SimpleQueue, Queue and Process.
-            initializer: An callable used to initialize worker processes.
+            initializer: A callable used to initialize worker processes.
             initargs: A tuple of arguments to pass to the initializer.
         """
         _check_system_limits()
@@ -608,22 +608,7 @@ class ProcessPoolExecutor(_base.Executor):
             p.start()
             self._processes[p.pid] = p
 
-    def submit(*args, **kwargs):
-        if len(args) >= 2:
-            self, fn, *args = args
-        elif not args:
-            raise TypeError("descriptor 'submit' of 'ProcessPoolExecutor' object "
-                            "needs an argument")
-        elif 'fn' in kwargs:
-            fn = kwargs.pop('fn')
-            self, *args = args
-            import warnings
-            warnings.warn("Passing 'fn' as keyword argument is deprecated",
-                          DeprecationWarning, stacklevel=2)
-        else:
-            raise TypeError('submit expected at least 1 positional argument, '
-                            'got %d' % (len(args)-1))
-
+    def submit(self, fn, /, *args, **kwargs):
         with self._shutdown_lock:
             if self._broken:
                 raise BrokenProcessPool(self._broken)
@@ -644,7 +629,6 @@ class ProcessPoolExecutor(_base.Executor):
 
             self._start_queue_management_thread()
             return f
-    submit.__text_signature__ = _base.Executor.submit.__text_signature__
     submit.__doc__ = _base.Executor.submit.__doc__
 
     def map(self, fn, *iterables, timeout=None, chunksize=1):

@@ -67,7 +67,7 @@ Constructors for hash algorithms that are always present in this module are
 :func:`sha1`, :func:`sha224`, :func:`sha256`, :func:`sha384`,
 :func:`sha512`, :func:`blake2b`, and :func:`blake2s`.
 :func:`md5` is normally available as well, though it
-may be missing if you are using a rare "FIPS compliant" build of Python.
+may be missing or blocked if you are using a rare "FIPS compliant" build of Python.
 Additional algorithms may also be available depending upon the OpenSSL
 library that Python uses on your platform. On most platforms the
 :func:`sha3_224`, :func:`sha3_256`, :func:`sha3_384`, :func:`sha3_512`,
@@ -79,6 +79,13 @@ library that Python uses on your platform. On most platforms the
 
 .. versionadded:: 3.6
    :func:`blake2b` and :func:`blake2s` were added.
+
+.. versionchanged:: 3.9
+   All hashlib constructors take a keyword-only argument *usedforsecurity*
+   with default value ``True``. A false value allows the use of insecure and
+   blocked hashing algorithms in restricted environments. ``False`` indicates
+   that the hashing algorithm is not used in a security context, e.g. as a
+   non-cryptographic one-way compression function.
 
 For example, to obtain the digest of the byte string ``b'Nobody inspects the
 spammish repetition'``::
@@ -99,7 +106,7 @@ More condensed:
    >>> hashlib.sha224(b"Nobody inspects the spammish repetition").hexdigest()
    'a4337bc45a8fc544c03f52dc550cd6e1e87021bc896588bd79e901e2'
 
-.. function:: new(name[, data])
+.. function:: new(name[, data], *, usedforsecurity=True)
 
    Is a generic constructor that takes the string *name* of the desired
    algorithm as its first parameter.  It also exists to allow access to the
@@ -308,11 +315,13 @@ New hash objects are created by calling constructor functions:
 
 .. function:: blake2b(data=b'', *, digest_size=64, key=b'', salt=b'', \
                 person=b'', fanout=1, depth=1, leaf_size=0, node_offset=0,  \
-                node_depth=0, inner_size=0, last_node=False)
+                node_depth=0, inner_size=0, last_node=False, \
+                usedforsecurity=True)
 
 .. function:: blake2s(data=b'', *, digest_size=32, key=b'', salt=b'', \
                 person=b'', fanout=1, depth=1, leaf_size=0, node_offset=0,  \
-                node_depth=0, inner_size=0, last_node=False)
+                node_depth=0, inner_size=0, last_node=False, \
+                usedforsecurity=True)
 
 
 These functions return the corresponding hash objects for calculating

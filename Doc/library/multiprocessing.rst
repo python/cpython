@@ -102,7 +102,7 @@ to start a process.  These *start methods* are
     will not be inherited.  Starting a process using this method is
     rather slow compared to using *fork* or *forkserver*.
 
-    Available on Unix and Windows.  The default on Windows.
+    Available on Unix and Windows.  The default on Windows and macOS.
 
   *fork*
     The parent process uses :func:`os.fork` to fork the Python
@@ -123,6 +123,12 @@ to start a process.  These *start methods* are
 
     Available on Unix platforms which support passing file descriptors
     over Unix pipes.
+
+.. versionchanged:: 3.8
+
+   On macOS, the *spawn* start method is now the default.  The *fork* start
+   method should be considered unsafe as it can lead to crashes of the
+   subprocess. See :issue:`33725`.
 
 .. versionchanged:: 3.4
    *spawn* added on all unix platforms, and *forkserver* added for
@@ -943,6 +949,14 @@ Miscellaneous
    Return the :class:`Process` object corresponding to the current process.
 
    An analogue of :func:`threading.current_thread`.
+
+.. function:: parent_process()
+
+   Return the :class:`Process` object corresponding to the parent process of
+   the :func:`current_process`. For the main process, ``parent_process`` will
+   be ``None``.
+
+   .. versionadded:: 3.8
 
 .. function:: freeze_support()
 
@@ -2155,7 +2169,8 @@ with the :class:`Pool` class.
    .. method:: map(func, iterable[, chunksize])
 
       A parallel equivalent of the :func:`map` built-in function (it supports only
-      one *iterable* argument though).  It blocks until the result is ready.
+      one *iterable* argument though, for multiple iterables see :meth:`starmap`).
+      It blocks until the result is ready.
 
       This method chops the iterable into a number of chunks which it submits to
       the process pool as separate tasks.  The (approximate) size of these
@@ -2264,7 +2279,11 @@ with the :class:`Pool` class.
    .. method:: successful()
 
       Return whether the call completed without raising an exception.  Will
-      raise :exc:`AssertionError` if the result is not ready.
+      raise :exc:`ValueError` if the result is not ready.
+
+      .. versionchanged:: 3.7
+         If the result is not ready, :exc:`ValueError` is raised instead of
+         :exc:`AssertionError`.
 
 The following example demonstrates the use of a pool::
 

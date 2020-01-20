@@ -1,4 +1,5 @@
 #include "Python.h"
+#include "pycore_pyerrors.h"
 #include "pycore_pystate.h"
 #include "frameobject.h"
 #include "clinic/_warnings.c.h"
@@ -27,10 +28,11 @@ static struct PyModuleDef warningsmodule;
 static WarningsState *
 _Warnings_GetState()
 {
-    PyThreadState *tstate = PyThreadState_GET();
+    PyThreadState *tstate = _PyThreadState_GET();
     if (tstate == NULL) {
-        PyErr_SetString(PyExc_RuntimeError,
-                        "_Warnings_GetState: could not identify current interpreter");
+        _PyErr_SetString(tstate, PyExc_RuntimeError,
+                          "_Warnings_GetState: could not identify "
+                          "current interpreter");
         return NULL;
     }
     return &tstate->interp->warnings;
@@ -164,7 +166,7 @@ check_matched(PyObject *obj, PyObject *arg)
     }
 
     /* Otherwise assume a regex filter and call its match() method */
-    result = _PyObject_CallMethodIdObjArgs(obj, &PyId_match, arg, NULL);
+    result = _PyObject_CallMethodIdOneArg(obj, &PyId_match, arg);
     if (result == NULL)
         return -1;
 
@@ -590,7 +592,7 @@ call_show_warning(PyObject *category, PyObject *text, PyObject *message,
     if (msg == NULL)
         goto error;
 
-    res = PyObject_CallFunctionObjArgs(show_fn, msg, NULL);
+    res = _PyObject_CallOneArg(show_fn, msg);
     Py_DECREF(show_fn);
     Py_DECREF(msg);
 
@@ -651,7 +653,7 @@ warn_explicit(PyObject *category, PyObject *message,
     }
     else {
         text = message;
-        message = PyObject_CallFunctionObjArgs(category, message, NULL);
+        message = _PyObject_CallOneArg(category, message);
         if (message == NULL)
             goto cleanup;
     }
@@ -996,7 +998,7 @@ get_source_line(PyObject *module_globals, int lineno)
         return NULL;
     }
     /* Call get_source() to get the source code. */
-    source = PyObject_CallFunctionObjArgs(get_source, module_name, NULL);
+    source = _PyObject_CallOneArg(get_source, module_name);
     Py_DECREF(get_source);
     Py_DECREF(module_name);
     if (!source) {
@@ -1283,7 +1285,7 @@ _PyErr_WarnUnawaitedCoroutine(PyObject *coro)
     int warned = 0;
     PyObject *fn = get_warnings_attr(&PyId__warn_unawaited_coroutine, 1);
     if (fn) {
-        PyObject *res = PyObject_CallFunctionObjArgs(fn, coro, NULL);
+        PyObject *res = _PyObject_CallOneArg(fn, coro);
         Py_DECREF(fn);
         if (res || PyErr_ExceptionMatches(PyExc_RuntimeWarning)) {
             warned = 1;
@@ -1305,7 +1307,7 @@ _PyErr_WarnUnawaitedCoroutine(PyObject *coro)
 }
 
 PyDoc_STRVAR(warn_explicit_doc,
-"Low-level inferface to warnings functionality.");
+"Low-level interface to warnings functionality.");
 
 static PyMethodDef warnings_functions[] = {
     WARNINGS_WARN_METHODDEF

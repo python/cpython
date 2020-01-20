@@ -1,2 +1,0 @@
-Fix serialization of messages containing encoded strings when the
-policy.linesep is set to a multi-character string. Patch by Jens Troeger.
