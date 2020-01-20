@@ -139,12 +139,20 @@ case-insensitive and stored in lowercase [1]_.
 Supported Datatypes
 -------------------
 
-Config parsers do not guess datatypes of values in configuration files, always
-storing them internally as strings.  This means that if you need other
-datatypes, you should convert on your own:
+Config parsers do not guess datatypes in configuration files, always storing
+both section names and values as strings.  This means that if you need other
+datatypes, you should convert on your own and that section names will always be
+converted to strings when writting a new value:
 
 .. doctest::
 
+   >>> config[123] = {}
+   >>> config[123]
+   Traceback (most recent call last):
+   ...
+   KeyError: 123
+   >>> config['123']
+   <Section: 123>
    >>> int(topsecret['Port'])
    50022
    >>> float(topsecret['CompressionLevel'])
