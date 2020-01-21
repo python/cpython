@@ -96,7 +96,7 @@ statements.  They have the following attributes:
 
 .. attribute:: Function.parent
 
-   For functions that are defined with ``async`` prefix, ``True``.
+   ``True`` for functions that are defined with the ``async`` prefix, ``False`` otherwise.
 
    .. versionadded:: 3.9
 

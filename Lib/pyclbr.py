@@ -27,7 +27,7 @@ The 'children' attribute is a dictionary mapping names to objects.
 
 Instances of Function describe functions with the attributes from _Object,
 plus the following:
-    is_async -- if function defined with 'async' prefix
+    is_async -- if a function is defined with an 'async' prefix
 
 Instances of Class describe classes with the attributes from _Object,
 plus the following:
@@ -188,8 +188,7 @@ class _ClassBrowser(ast.NodeVisitor):
             elif len(names := name.split(".")) > 1:
                 # Super class form is module.class:
                 # look in module for class.
-                module = names[-2]
-                class_ = names[-1]
+                *_, module, class_ = names
                 if module in _modules:
                     bases.append(_modules[module].get(class_) or name)
             else:
@@ -206,14 +205,7 @@ class _ClassBrowser(ast.NodeVisitor):
         self.stack.pop()
 
     def visit_Assign(self, node):
-        if (
-            not len(node.targets) == 1
-            or not len(self.stack) > 0
-            or not isinstance(self.stack[-1], Class)
-            or not isinstance(node.targets[0], ast.Name)
-            or not isinstance(node.value, ast.Name)
-            or not isinstance(self.tree.get(node.value.id), Function)
-        ):
+        if not self.single_target_function_assign(node):
             return
 
         name = node.targets[0].id
@@ -221,6 +213,18 @@ class _ClassBrowser(ast.NodeVisitor):
         child.parent = self.stack[-1]
         self.stack[-1]._addchild(name, child)
         self.stack[-1]._addmethod(name, node.lineno)
+
+    def single_target_function_assign(self, node):
+        """Check if given assignment consists from a single target
+        and single value within a class namespace. Check value for if it
+        is an already defined function."""
+
+        return (len(node.targets) == 1
+                and len(self.stack) > 0
+                and isinstance(self.stack[-1], Class)
+                and isinstance(node.targets[0], ast.Name)
+                and isinstance(node.value, ast.Name)
+                and isinstance(self.tree.get(node.value.id), Function))
 
     def visit_FunctionDef(self, node, *, is_async=True):
         parent = self.stack[-1] if self.stack else None
