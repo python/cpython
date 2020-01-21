@@ -168,14 +168,12 @@ class IndentAndNewlineTest(unittest.TestCase):
                  )
 
         w.prompt_last_line = ''
-        for context in (True, False):
-            w.context_use_ps1 = context
-            for test in tests:
-                with self.subTest(label=test.label):
-                    self.insert(test.text)
-                    text.mark_set('insert', test.mark)
-                    nl(None)
-                    eq(get('1.0', 'end'), test.expected)
+        for test in tests:
+            with self.subTest(label=test.label):
+                self.insert(test.text)
+                text.mark_set('insert', test.mark)
+                nl(event=None)
+                eq(get('1.0', 'end'), test.expected)
 
         # Selected text.
         self.insert('  def f1(self, a, b):\n    return a + b')
@@ -184,13 +182,12 @@ class IndentAndNewlineTest(unittest.TestCase):
         # Deletes selected text before adding new line.
         eq(get('1.0', 'end'), '  def f1(self, a,\n         \n    return a + b\n')
 
-        # Prompt preserves the whitespace in the prompt.
+        # Preserves the whitespace in shell prompt.
         w.prompt_last_line = '>>> '
         self.insert('>>> \t\ta =')
         text.mark_set('insert', '1.5')
         nl(None)
         eq(get('1.0', 'end'), '>>> \na =\n')
-        w.prompt_last_line = ''
 
 
 if __name__ == '__main__':
