@@ -1,0 +1,3 @@
+Rewrite :mod:`pyclbr` with the support of abstract syntax trees. Add an
+``is_async`` identifier to :mod:`pyclbr`'s ``Function`` objects. Patch by
+Batuhan Taskaya

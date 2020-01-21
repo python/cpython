@@ -94,6 +94,13 @@ statements.  They have the following attributes:
    .. versionadded:: 3.7
 
 
+.. attribute:: Function.parent
+
+   For functions that are defined with ``async`` prefix, ``True``.
+
+   .. versionadded:: 3.9
+
+
 .. _pyclbr-class-objects:
 
 Class Objects
