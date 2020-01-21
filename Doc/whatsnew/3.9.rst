@@ -216,6 +216,9 @@ Exposed the Linux-specific :func:`os.pidfd_open` (:issue:`38692`) and
 :data:`os.P_PIDFD` (:issue:`38713`) for process management with file
 descriptors.
 
+The :func:`os.unsetenv` function is now also available on Windows.
+(Contributed by Victor Stinner in :issue:`39413`.)
+
 poplib
 ------
 
