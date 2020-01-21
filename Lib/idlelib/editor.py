@@ -1396,7 +1396,7 @@ class EditorWindow(object):
                     rawtext = text.get(startatindex, "insert")
                     y.set_code(rawtext)
                     bod = y.find_good_parse_start(
-                              self._build_char_in_string_func(startatindex))
+                            self._build_char_in_string_func(startatindex))
                     if bod is not None or startat == 1:
                         break
                 y.set_lo(bod or 0)
