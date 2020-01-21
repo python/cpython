@@ -133,8 +133,7 @@ class Parser:
         self.code = s
         self.study_level = 0
 
-    def find_good_parse_start(self, is_char_in_string=None,
-                              _synchre=_synchre):
+    def find_good_parse_start(self, is_char_in_string, _synchre=_synchre):
         """
         Return index of a good place to begin parsing, as close to the
         end of the string as possible.  This will be the start of some
@@ -148,10 +147,6 @@ class Parser:
         guaranteed that the char is not in a string.
         """
         code, pos = self.code, None
-
-        if not is_char_in_string:
-            # no clue -- make the caller pass everything
-            return None
 
         # Peek back from the end for a good place to start,
         # but don't try too often; pos will be left None, or
