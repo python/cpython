@@ -209,10 +209,14 @@ class _ClassBrowser(ast.NodeVisitor):
             return
 
         name = node.targets[0].id
-        child = copy.deepcopy(self.tree[node.value.id])
-        child.parent = self.stack[-1]
-        self.stack[-1]._addchild(name, child)
-        self.stack[-1]._addmethod(name, node.lineno)
+        value = self.tree[node.value.id]
+        parent = self.stack[-1]
+        child = Function(
+            value.module, name, value.file, node.lineno, parent, value.is_async
+        )
+        child.children = copy.deepcopy(value.children)
+        parent._addchild(name, child)
+        parent._addmethod(name, node.lineno)
 
     def single_target_function_assign(self, node):
         """Check if given assignment consists from a single target
