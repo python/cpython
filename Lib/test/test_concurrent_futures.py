@@ -87,8 +87,7 @@ class MyObject(object):
 
 
 class EventfulGCObj():
-    def __init__(self, ctx):
-        mgr = get_context(ctx).Manager()
+    def __init__(self, mgr):
         self.event = mgr.Event()
 
     def __del__(self):
@@ -847,11 +846,20 @@ class ProcessPoolExecutorTest(ExecutorTest):
     def test_ressources_gced_in_workers(self):
         # Ensure that argument for a job are correctly gc-ed after the job
         # is finished
-        obj = EventfulGCObj(self.ctx)
+        mgr = get_context(self.ctx).Manager()
+        obj = EventfulGCObj(mgr)
         future = self.executor.submit(id, obj)
         future.result()
 
         self.assertTrue(obj.event.wait(timeout=1))
+
+        # explicitly destroy the object to ensure that EventfulGCObj.__del__()
+        # is called while manager is still running.
+        obj = None
+        support.gc_collect()
+
+        mgr.shutdown()
+        mgr.join()
 
 
 create_executor_tests(ProcessPoolExecutorTest,
@@ -1306,17 +1314,7 @@ def setUpModule():
 
 def tearDownModule():
     support.threading_cleanup(*_threads_key)
-    support.reap_children()
-
-    # cleanup multiprocessing
-    multiprocessing.process._cleanup()
-    # Stop the ForkServer process if it's running
-    from multiprocessing import forkserver
-    forkserver._forkserver._stop()
-    # bpo-37421: Explicitly call _run_finalizers() to remove immediately
-    # temporary directories created by multiprocessing.util.get_temp_dir().
-    multiprocessing.util._run_finalizers()
-    support.gc_collect()
+    multiprocessing.util._cleanup_tests()
 
 
 if __name__ == "__main__":

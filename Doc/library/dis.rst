@@ -927,6 +927,20 @@ All of the following opcodes use their arguments.
    ``cmp_op[opname]``.
 
 
+.. opcode:: IS_OP (invert)
+
+    Performs ``is`` comparison, or ``is not`` if ``invert`` is 1.
+
+   .. versionadded:: 3.9
+
+
+.. opcode:: CONTAINS_OP (invert)
+
+    Performs ``in`` comparison, or ``not in`` if ``invert`` is 1.
+
+   .. versionadded:: 3.9
+
+
 .. opcode:: IMPORT_NAME (namei)
 
    Imports the module ``co_names[namei]``.  TOS and TOS1 are popped and provide
@@ -960,6 +974,13 @@ All of the following opcodes use their arguments.
    If TOS is false, sets the bytecode counter to *target*.  TOS is popped.
 
    .. versionadded:: 3.1
+
+.. opcode:: JUMP_IF_NOT_EXC_MATCH (target)
+
+    Tests whether the second value on the stack is an exception matching TOS,
+    and jumps if it is not. Pops two values from the stack.
+
+   .. versionadded:: 3.9
 
 
 .. opcode:: JUMP_IF_TRUE_OR_POP (target)
@@ -1119,22 +1140,24 @@ All of the following opcodes use their arguments.
 
 .. opcode:: LOAD_METHOD (namei)
 
-   Loads a method named ``co_names[namei]`` from TOS object. TOS is popped and
-   method and TOS are pushed when interpreter can call unbound method directly.
-   TOS will be used as the first argument (``self``) by :opcode:`CALL_METHOD`.
-   Otherwise, ``NULL`` and  method is pushed (method is bound method or
-   something else).
+   Loads a method named ``co_names[namei]`` from the TOS object. TOS is popped.
+   This bytecode distinguishes two cases: if TOS has a method with the correct
+   name, the bytecode pushes the unbound method and TOS. TOS will be used as
+   the first argument (``self``) by :opcode:`CALL_METHOD` when calling the
+   unbound method. Otherwise, ``NULL`` and the object return by the attribute
+   lookup are pushed.
 
    .. versionadded:: 3.7
 
 
 .. opcode:: CALL_METHOD (argc)
 
-   Calls a method.  *argc* is number of positional arguments.
+   Calls a method.  *argc* is the number of positional arguments.
    Keyword arguments are not supported.  This opcode is designed to be used
    with :opcode:`LOAD_METHOD`.  Positional arguments are on top of the stack.
-   Below them, two items described in :opcode:`LOAD_METHOD` on the stack.
-   All of them are popped and return value is pushed.
+   Below them, the two items described in :opcode:`LOAD_METHOD` are on the
+   stack (either ``self`` and an unbound method object or ``NULL`` and an
+   arbitrary callable). All of them are popped and the return value is pushed.
 
    .. versionadded:: 3.7
 

@@ -1,2 +1,0 @@
-The :mod:`readline` module now detects if Python is linked to libedit at runtime
-on all platforms.  Previously, the check was only done on macOS.

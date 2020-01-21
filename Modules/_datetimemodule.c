@@ -2489,7 +2489,6 @@ delta_new(PyTypeObject *type, PyObject *args, PyObject *kw)
         int x_is_odd;
         PyObject *temp;
 
-        whole_us = round(leftover_us);
         if (fabs(whole_us - leftover_us) == 0.5) {
             /* We're exactly halfway between two integers.  In order
              * to do round-half-to-even, we must determine whether x

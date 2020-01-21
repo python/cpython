@@ -1,3 +1,0 @@
-Fixed a crash on OSX dynamic builds that occurred when re-initializing the
-posix module after a Py_Finalize if the environment had changed since the
-previous `import posix`. Patch by Benoît Hudson.

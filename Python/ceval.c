@@ -67,7 +67,6 @@ static void maybe_dtrace_line(PyFrameObject *, int *, int *, int *);
 static void dtrace_function_entry(PyFrameObject *);
 static void dtrace_function_return(PyFrameObject *);
 
-static PyObject * cmp_outcome(PyThreadState *, int, PyObject *, PyObject *);
 static PyObject * import_name(PyThreadState *, PyFrameObject *,
                               PyObject *, PyObject *, PyObject *);
 static PyObject * import_from(PyThreadState *, PyObject *, PyObject *);
@@ -585,11 +584,11 @@ error:
 }
 
 void
-_Py_FinishPendingCalls(_PyRuntimeState *runtime)
+_Py_FinishPendingCalls(PyThreadState *tstate)
 {
     assert(PyGILState_Check());
 
-    PyThreadState *tstate = _PyRuntimeState_GetThreadState(runtime);
+    _PyRuntimeState *runtime = tstate->interp->runtime;
     struct _pending_calls *pending = &runtime->ceval.pending;
 
     PyThread_acquire_lock(pending->lock, WAIT_LOCK);
@@ -1913,7 +1912,8 @@ main_loop:
         case TARGET(RETURN_VALUE): {
             retval = POP();
             assert(f->f_iblock == 0);
-            goto exit_returning;
+            assert(EMPTY());
+            goto exiting;
         }
 
         case TARGET(GET_AITER): {
@@ -2083,7 +2083,7 @@ main_loop:
             /* and repeat... */
             assert(f->f_lasti >= (int)sizeof(_Py_CODEUNIT));
             f->f_lasti -= sizeof(_Py_CODEUNIT);
-            goto exit_yielding;
+            goto exiting;
         }
 
         case TARGET(YIELD_VALUE): {
@@ -2100,7 +2100,7 @@ main_loop:
             }
 
             f->f_stacktop = stack_pointer;
-            goto exit_yielding;
+            goto exiting;
         }
 
         case TARGET(POP_EXCEPT): {
@@ -2896,16 +2896,92 @@ main_loop:
         }
 
         case TARGET(COMPARE_OP): {
+            assert(oparg <= Py_GE);
             PyObject *right = POP();
             PyObject *left = TOP();
-            PyObject *res = cmp_outcome(tstate, oparg, left, right);
+            PyObject *res = PyObject_RichCompare(left, right, oparg);
+            SET_TOP(res);
             Py_DECREF(left);
             Py_DECREF(right);
-            SET_TOP(res);
             if (res == NULL)
                 goto error;
             PREDICT(POP_JUMP_IF_FALSE);
             PREDICT(POP_JUMP_IF_TRUE);
+            DISPATCH();
+        }
+
+        case TARGET(IS_OP): {
+            PyObject *right = POP();
+            PyObject *left = TOP();
+            int res = (left == right)^oparg;
+            PyObject *b = res ? Py_True : Py_False;
+            Py_INCREF(b);
+            SET_TOP(b);
+            Py_DECREF(left);
+            Py_DECREF(right);
+            PREDICT(POP_JUMP_IF_FALSE);
+            PREDICT(POP_JUMP_IF_TRUE);
+            FAST_DISPATCH();
+        }
+
+        case TARGET(CONTAINS_OP): {
+            PyObject *right = POP();
+            PyObject *left = POP();
+            int res = PySequence_Contains(right, left);
+            Py_DECREF(left);
+            Py_DECREF(right);
+            if (res < 0) {
+                goto error;
+            }
+            PyObject *b = (res^oparg) ? Py_True : Py_False;
+            Py_INCREF(b);
+            PUSH(b);
+            PREDICT(POP_JUMP_IF_FALSE);
+            PREDICT(POP_JUMP_IF_TRUE);
+            FAST_DISPATCH();
+        }
+
+#define CANNOT_CATCH_MSG "catching classes that do not inherit from "\
+                         "BaseException is not allowed"
+
+        case TARGET(JUMP_IF_NOT_EXC_MATCH): {
+            PyObject *right = POP();
+            PyObject *left = POP();
+            if (PyTuple_Check(right)) {
+                Py_ssize_t i, length;
+                length = PyTuple_GET_SIZE(right);
+                for (i = 0; i < length; i++) {
+                    PyObject *exc = PyTuple_GET_ITEM(right, i);
+                    if (!PyExceptionClass_Check(exc)) {
+                        _PyErr_SetString(tstate, PyExc_TypeError,
+                                        CANNOT_CATCH_MSG);
+                        Py_DECREF(left);
+                        Py_DECREF(right);
+                        goto error;
+                    }
+                }
+            }
+            else {
+                if (!PyExceptionClass_Check(right)) {
+                    _PyErr_SetString(tstate, PyExc_TypeError,
+                                    CANNOT_CATCH_MSG);
+                    Py_DECREF(left);
+                    Py_DECREF(right);
+                    goto error;
+                }
+            }
+            int res = PyErr_GivenExceptionMatches(left, right);
+            Py_DECREF(left);
+            Py_DECREF(right);
+            if (res > 0) {
+                /* Exception matches -- Do nothing */;
+            }
+            else if (res == 0) {
+                JUMPTO(oparg);
+            }
+            else {
+                goto error;
+            }
             DISPATCH();
         }
 
@@ -3154,20 +3230,21 @@ main_loop:
         }
 
         case TARGET(BEFORE_ASYNC_WITH): {
-            _Py_IDENTIFIER(__aexit__);
             _Py_IDENTIFIER(__aenter__);
-
+            _Py_IDENTIFIER(__aexit__);
             PyObject *mgr = TOP();
-            PyObject *exit = special_lookup(tstate, mgr, &PyId___aexit__),
-                     *enter;
+            PyObject *enter = special_lookup(tstate, mgr, &PyId___aenter__);
             PyObject *res;
-            if (exit == NULL)
+            if (enter == NULL) {
                 goto error;
+            }
+            PyObject *exit = special_lookup(tstate, mgr, &PyId___aexit__);
+            if (exit == NULL) {
+                Py_DECREF(enter);
+                goto error;
+            }
             SET_TOP(exit);
-            enter = special_lookup(tstate, mgr, &PyId___aenter__);
             Py_DECREF(mgr);
-            if (enter == NULL)
-                goto error;
             res = _PyObject_CallNoArg(enter);
             Py_DECREF(enter);
             if (res == NULL)
@@ -3188,8 +3265,8 @@ main_loop:
         }
 
         case TARGET(SETUP_WITH): {
-            _Py_IDENTIFIER(__exit__);
             _Py_IDENTIFIER(__enter__);
+            _Py_IDENTIFIER(__exit__);
             PyObject *mgr = TOP();
             PyObject *enter = special_lookup(tstate, mgr, &PyId___enter__);
             PyObject *res;
@@ -3611,8 +3688,14 @@ exception_unwind:
                 PUSH(exc);
                 JUMPTO(handler);
                 if (_Py_TracingPossible(ceval)) {
-                    /* Make sure that we trace line after exception */
-                    instr_prev = INT_MAX;
+                    int needs_new_execution_window = (f->f_lasti < instr_lb || f->f_lasti >= instr_ub);
+                    int needs_line_update = (f->f_lasti == instr_lb || f->f_lasti < instr_prev);
+                    /* Make sure that we trace line after exception if we are in a new execution
+                     * window or we don't need a line update and we are not in the first instruction
+                     * of the line. */
+                    if (needs_new_execution_window || (!needs_line_update && instr_lb > 0)) {
+                        instr_prev = INT_MAX;
+                    }
                 }
                 /* Resume normal execution */
                 goto main_loop;
@@ -3626,15 +3709,13 @@ exception_unwind:
     assert(retval == NULL);
     assert(_PyErr_Occurred(tstate));
 
-exit_returning:
-
     /* Pop remaining stack entries. */
     while (!EMPTY()) {
         PyObject *o = POP();
         Py_XDECREF(o);
     }
 
-exit_yielding:
+exiting:
     if (tstate->use_tracing) {
         if (tstate->c_tracefunc) {
             if (call_trace_protected(tstate->c_tracefunc, tstate->c_traceobj,
@@ -4944,62 +5025,6 @@ _PyEval_SliceIndexNotNone(PyObject *v, Py_ssize_t *pi)
     }
     *pi = x;
     return 1;
-}
-
-
-#define CANNOT_CATCH_MSG "catching classes that do not inherit from "\
-                         "BaseException is not allowed"
-
-static PyObject *
-cmp_outcome(PyThreadState *tstate, int op, PyObject *v, PyObject *w)
-{
-    int res = 0;
-    switch (op) {
-    case PyCmp_IS:
-        res = (v == w);
-        break;
-    case PyCmp_IS_NOT:
-        res = (v != w);
-        break;
-    case PyCmp_IN:
-        res = PySequence_Contains(w, v);
-        if (res < 0)
-            return NULL;
-        break;
-    case PyCmp_NOT_IN:
-        res = PySequence_Contains(w, v);
-        if (res < 0)
-            return NULL;
-        res = !res;
-        break;
-    case PyCmp_EXC_MATCH:
-        if (PyTuple_Check(w)) {
-            Py_ssize_t i, length;
-            length = PyTuple_Size(w);
-            for (i = 0; i < length; i += 1) {
-                PyObject *exc = PyTuple_GET_ITEM(w, i);
-                if (!PyExceptionClass_Check(exc)) {
-                    _PyErr_SetString(tstate, PyExc_TypeError,
-                                     CANNOT_CATCH_MSG);
-                    return NULL;
-                }
-            }
-        }
-        else {
-            if (!PyExceptionClass_Check(w)) {
-                _PyErr_SetString(tstate, PyExc_TypeError,
-                                 CANNOT_CATCH_MSG);
-                return NULL;
-            }
-        }
-        res = PyErr_GivenExceptionMatches(v, w);
-        break;
-    default:
-        return PyObject_RichCompare(v, w, op);
-    }
-    v = res ? Py_True : Py_False;
-    Py_INCREF(v);
-    return v;
 }
 
 static PyObject *

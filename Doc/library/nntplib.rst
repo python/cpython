@@ -20,7 +20,7 @@ as well as the older :rfc:`977` and :rfc:`2980`.
 Here are two small examples of how it can be used.  To list some statistics
 about a newsgroup and print the subjects of the last 10 articles::
 
-   >>> s = nntplib.NNTP('news.gmane.org')
+   >>> s = nntplib.NNTP('news.gmane.io')
    >>> resp, count, first, last, name = s.group('gmane.comp.python.committers')
    >>> print('Group', name, 'has', count, 'articles, range', first, 'to', last)
    Group gmane.comp.python.committers has 1096 articles, range 1 to 1096
@@ -44,7 +44,7 @@ about a newsgroup and print the subjects of the last 10 articles::
 To post an article from a binary file (this assumes that the article has valid
 headers, and that you have right to post on the particular newsgroup)::
 
-   >>> s = nntplib.NNTP('news.gmane.org')
+   >>> s = nntplib.NNTP('news.gmane.io')
    >>> f = open('article.txt', 'rb')
    >>> s.post(f)
    '240 Article posted successfully.'
@@ -73,7 +73,7 @@ The module itself defines the following classes:
    connection when done, e.g.:
 
     >>> from nntplib import NNTP
-    >>> with NNTP('news.gmane.org') as n:
+    >>> with NNTP('news.gmane.io') as n:
     ...     n.group('gmane.comp.python.committers')
     ... # doctest: +SKIP
     ('211 1755 1 1755 gmane.comp.python.committers', 1755, 1, 1755, 'gmane.comp.python.committers')
@@ -92,6 +92,10 @@ The module itself defines the following classes:
 
    .. versionchanged:: 3.3
       Support for the :keyword:`with` statement was added.
+
+   .. versionchanged:: 3.9
+      If the *timeout* parameter is set to be zero, it will raise a
+      :class:`ValueError` to prevent the creation of a non-blocking socket.
 
 .. class:: NNTP_SSL(host, port=563, user=None, password=None, ssl_context=None, readermode=None, usenetrc=False, [timeout])
 
@@ -121,6 +125,10 @@ The module itself defines the following classes:
       The class now supports hostname check with
       :attr:`ssl.SSLContext.check_hostname` and *Server Name Indication* (see
       :data:`ssl.HAS_SNI`).
+
+   .. versionchanged:: 3.9
+      If the *timeout* parameter is set to be zero, it will raise a
+      :class:`ValueError` to prevent the creation of a non-blocking socket.
 
 .. exception:: NNTPError
 
@@ -225,7 +233,7 @@ tuples or objects that the method normally returns will be empty.
    of values. On legacy servers which don't understand the ``CAPABILITIES``
    command, an empty dictionary is returned instead.
 
-      >>> s = NNTP('news.gmane.org')
+      >>> s = NNTP('news.gmane.io')
       >>> 'POST' in s.getcapabilities()
       True
 
