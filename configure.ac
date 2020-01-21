@@ -3600,7 +3600,7 @@ AC_CHECK_FUNCS(alarm accept4 setitimer getitimer bind_textdomain_codeset chown \
  posix_fallocate posix_fadvise posix_spawn posix_spawnp pread preadv preadv2 \
  pthread_condattr_setclock pthread_init pthread_kill putenv pwrite pwritev pwritev2 \
  readlink readlinkat readv realpath renameat \
- sem_open sem_timedwait sem_getvalue sem_unlink sendfile setegid seteuid \
+ sem_open sem_timedwait sem_getvalue sem_unlink sendfile setegid setenv seteuid \
  setgid sethostname \
  setlocale setregid setreuid setresuid setresgid setsid setpgid setpgrp setpriority setuid setvbuf \
  sched_get_priority_max sched_setaffinity sched_setscheduler sched_setparam \

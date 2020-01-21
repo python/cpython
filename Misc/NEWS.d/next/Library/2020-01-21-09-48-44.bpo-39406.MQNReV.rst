@@ -1,0 +1,4 @@
+If ``setenv()`` C function is available, :func:`os.putenv` is now implemented
+with ``setenv()`` instead of ``putenv()``, so Python doesn't have to handle the
+environment variable memory. On Windows, :func:`os.putenv` is now implemented
+with ``SetEnvironmentVariableW()``.
