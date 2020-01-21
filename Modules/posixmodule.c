@@ -10180,51 +10180,7 @@ os_putenv_impl(PyObject *module, PyObject *name, PyObject *value)
 #endif /* HAVE_PUTENV */
 
 
-#ifdef MS_WINDOWS
-/*[clinic input]
-os.unsetenv
-    name: unicode
-    /
-
-Delete an environment variable.
-[clinic start generated code]*/
-
-static PyObject *
-os_unsetenv_impl(PyObject *module, PyObject *name)
-/*[clinic end generated code: output=54c4137ab1834f02 input=4d6a1747cc526d2f]*/
-{
-    /* PyUnicode_AsWideCharString() rejects embedded null characters */
-    wchar_t *name_str = PyUnicode_AsWideCharString(name, NULL);
-    if (name_str == NULL) {
-        return NULL;
-    }
-
-    BOOL ok = SetEnvironmentVariableW(name_str, NULL);
-    PyMem_Free(name_str);
-
-    if (!ok) {
-        return PyErr_SetFromWindowsErr(0);
-    }
-
-#ifdef PY_PUTENV_DICT
-    /* Remove the key from putenv_dict;
-     * this will cause it to be collected.  This has to
-     * happen after the real unsetenv() call because the
-     * old value was still accessible until then.
-     */
-    if (PyDict_DelItem(_posixstate(module)->putenv_dict, name)) {
-        /* really not much we can do; just leak */
-        if (!PyErr_ExceptionMatches(PyExc_KeyError)) {
-            return NULL;
-        }
-        PyErr_Clear();
-    }
-#endif
-
-    Py_RETURN_NONE;
-}
-/* repeat !defined(MS_WINDOWS) to workaround an Argument Clinic issue */
-#elif defined(HAVE_UNSETENV) && !defined(MS_WINDOWS)
+#ifdef HAVE_UNSETENV
 /*[clinic input]
 os.unsetenv
     name: FSConverter
@@ -10237,14 +10193,13 @@ static PyObject *
 os_unsetenv_impl(PyObject *module, PyObject *name)
 /*[clinic end generated code: output=54c4137ab1834f02 input=2bb5288a599c7107]*/
 {
-#ifndef HAVE_BROKEN_UNSETENV
-    int err;
-#endif
-
+    /* On Windows, this function is not implemented in C, but in os.py as
+       posix.putenv(name, ""). _wputenv() is preferred since it updates the
+       CRT, whereas SetEnvironmentVariableW(name, NULL) does not. */
 #ifdef HAVE_BROKEN_UNSETENV
     unsetenv(PyBytes_AS_STRING(name));
 #else
-    err = unsetenv(PyBytes_AS_STRING(name));
+    int err = unsetenv(PyBytes_AS_STRING(name));
     if (err)
         return posix_error();
 #endif
