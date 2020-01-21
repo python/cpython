@@ -10118,7 +10118,7 @@ os_putenv_impl(PyObject *module, PyObject *name, PyObject *value)
     PyMem_Free(value_str);
 
     if (!ok) {
-        return PyErr_SetFromWindowsErr(-1);
+        return PyErr_SetFromWindowsErr(0);
     }
 
     Py_RETURN_NONE;
