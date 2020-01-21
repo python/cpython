@@ -1,2 +1,2 @@
-Fix call from editor newline_and_indent_event method to pyparse
-find_good_parse_start method.  Add tests for indent function.
+Add tests for editor newline_and_indent_event method.
+Remove dead code from pyparse find_good_parse_start method.
