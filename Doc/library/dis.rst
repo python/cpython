@@ -1140,22 +1140,24 @@ All of the following opcodes use their arguments.
 
 .. opcode:: LOAD_METHOD (namei)
 
-   Loads a method named ``co_names[namei]`` from TOS object. TOS is popped and
-   method and TOS are pushed when interpreter can call unbound method directly.
-   TOS will be used as the first argument (``self``) by :opcode:`CALL_METHOD`.
-   Otherwise, ``NULL`` and  method is pushed (method is bound method or
-   something else).
+   Loads a method named ``co_names[namei]`` from the TOS object. TOS is popped.
+   This bytecode distinguishes two cases: if TOS has a method with the correct
+   name, the bytecode pushes the unbound method and TOS. TOS will be used as
+   the first argument (``self``) by :opcode:`CALL_METHOD` when calling the
+   unbound method. Otherwise, ``NULL`` and the object return by the attribute
+   lookup are pushed.
 
    .. versionadded:: 3.7
 
 
 .. opcode:: CALL_METHOD (argc)
 
-   Calls a method.  *argc* is number of positional arguments.
+   Calls a method.  *argc* is the number of positional arguments.
    Keyword arguments are not supported.  This opcode is designed to be used
    with :opcode:`LOAD_METHOD`.  Positional arguments are on top of the stack.
-   Below them, two items described in :opcode:`LOAD_METHOD` on the stack.
-   All of them are popped and return value is pushed.
+   Below them, the two items described in :opcode:`LOAD_METHOD` are on the
+   stack (either ``self`` and an unbound method object or ``NULL`` and an
+   arbitrary callable). All of them are popped and the return value is pushed.
 
    .. versionadded:: 3.7
 
