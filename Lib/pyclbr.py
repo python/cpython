@@ -190,7 +190,7 @@ class _ClassBrowser(ast.NodeVisitor):
                 # look in module for class.
                 *_, module, class_ = names
                 if module in _modules:
-                    bases.append(_modules[module].get(class_) or name)
+                    bases.append(_modules[module].get(class_, name))
             else:
                 bases.append(name)
 
