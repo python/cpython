@@ -425,7 +425,7 @@ Removed
   Pass an open file object to control how the file is opened.
   (Contributed by Victor Stinner in :issue:`39357`.)
 
-* The *encoding* parameter of :func:`json.loads` has been removed.  Since
+* The *encoding* parameter of :func:`json.loads` has been removed.  As of
   Python 3.1, it was deprecated and ignored.  And using it emitted a
   :exc:`DeprecationWarning` since Python 3.8.
   (Contributed by Inada Naoki in :issue:`39377`)
