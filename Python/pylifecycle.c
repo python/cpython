@@ -87,6 +87,7 @@ _PyRuntime_Initialize(void)
         return _PyStatus_OK();
     }
     runtime_initialized = 1;
+    _PyRuntime.interpreters.allow_new = 0;
 
     return _PyRuntimeState_Init(&_PyRuntime);
 }
@@ -946,6 +947,7 @@ pyinit_main(PyThreadState *tstate)
          * or pure Python code in the standard library won't work.
          */
         runtime->initialized = 1;
+        runtime->interpreters.allow_new = 1;
         return _PyStatus_OK();
     }
 
@@ -1007,6 +1009,7 @@ pyinit_main(PyThreadState *tstate)
     }
 
     runtime->initialized = 1;
+    runtime->interpreters.allow_new = 1;
 
     if (config->site_import) {
         status = init_import_site();
@@ -1258,16 +1261,16 @@ Py_FinalizeEx(void)
     PyInterpreterState *interp = tstate->interp;
 
     // Finalize sub-interpreters.
-    runtime->interpreters.finalizing = 1;
-    PyInterpreterState *subinterp = PyInterpreterState_Head();
+    runtime->interpreters.allow_new = 0;
+    PyInterpreterState *curr_interp = PyInterpreterState_Head();
     PyInterpreterState *next_interp;
-    while (subinterp != NULL) {
-        next_interp = PyInterpreterState_Next(subinterp);
-        if (subinterp != PyInterpreterState_Main()) {
-            PyThreadState_Swap(subinterp->tstate_head);
-            Py_EndInterpreter(subinterp->tstate_head);
+    while (curr_interp != NULL) {
+        next_interp = PyInterpreterState_Next(curr_interp);
+        if (curr_interp != PyInterpreterState_Main()) {
+            PyThreadState_Swap(curr_interp->tstate_head);
+            Py_EndInterpreter(curr_interp->tstate_head);
         }
-        subinterp = next_interp;
+        curr_interp = next_interp;
     }
     PyThreadState_Swap(tstate);
 
@@ -1464,12 +1467,10 @@ new_interpreter(PyThreadState **tstate_p)
     }
     _PyRuntimeState *runtime = &_PyRuntime;
 
-    if (!runtime->initialized) {
-        return _PyStatus_ERR("Py_Initialize must be called first");
-    }
-
-    if (runtime->interpreters.finalizing) {
-        return _PyStatus_ERR("Interpreters are being finalized");
+    if (!runtime->interpreters.allow_new) {
+        return _PyStatus_ERR(
+            "New interpreters cannot currently be created - Py_Initialize must "
+            "be called first, and Py_Finalize must not have been called");
     }
 
     /* Issue #10915, #15751: The GIL API doesn't work with multiple

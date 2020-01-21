@@ -17,7 +17,7 @@
 /*********************************************************
  * Embedded interpreter tests that need a custom exe
  *
- * Executed via 'EmbeddingTests' in Lib/test/test_capi.py
+ * Executed via 'EmbeddingTests' in Lib/test/test_embed.py
  *********************************************************/
 
 /* Use path starting with "./" avoids a search along the PATH */
@@ -102,14 +102,6 @@ static int test_finalize_subinterps(void)
         gilstate = PyGILState_Ensure();
         print_subinterp();
         PyThreadState_Swap(NULL);
-
-        for (j=0; j<2; j++) {
-            Py_NewInterpreter();
-            print_subinterp();
-        }
-
-        PyThreadState_Swap(mainstate);
-        print_subinterp();
 
         for (j=0; j<2; j++) {
             Py_NewInterpreter();

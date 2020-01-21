@@ -190,6 +190,14 @@ class EmbeddingTests(EmbeddingTestsMixin, unittest.TestCase):
                 self.assertNotEqual(sub.tstate, main.tstate)
                 self.assertNotEqual(sub.modules, main.modules)
 
+    def test_finalize_subinterps(self):
+        """
+        bpo-36225: Subinterpreters should implicitly be torn down by
+        Py_Finalize().
+        """
+        out, err = self.run_embedded_interpreter("test_finalize_subinterps")
+        self.assertEqual(err, "")
+
     def test_forced_io_encoding(self):
         # Checks forced configuration of embedded interpreter IO streams
         env = dict(os.environ, PYTHONIOENCODING="utf-8:surrogateescape")
