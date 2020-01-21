@@ -1054,17 +1054,7 @@ class CLanguage(Language):
                 assert parses_positional
 
             if requires_defining_class:
-                fields.insert(0, normalize_snippet("""
-                    PyTypeObject *cls;
-
-                    cls = PyType_DefiningTypeFromSlotFunc(Py_TYPE(self),
-                                                          %s,
-                                                          &{c_basename});
-                    if (cls == NULL) {{
-                        goto exit;
-                    }}
-                    """ % "Py_tp_init", indent=4))
-                parser_definition = parser_body(parser_prototype, *fields)
+                raise ValueError("Slot methods cannot access their defining class.")
 
             if not parses_keywords:
                 fields.insert(0, normalize_snippet("""

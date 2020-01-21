@@ -46,12 +46,8 @@ _testconsole_write_input_impl(PyObject *module, PyObject *file,
 /*[clinic end generated code: output=48f9563db34aedb3 input=4c774f2d05770bc6]*/
 {
     INPUT_RECORD *rec = NULL;
-    PyTypeObject *cls;
-    cls = PyType_DefiningTypeFromSlotFunc(Py_TYPE(file),
-                                          Py_tp_init,
-                                          _PyWindowsConsoleIO_slot);
 
-    if (!cls) {
+    if (!PyWindowsConsoleIO_Check(file)) {
         PyErr_SetString(PyExc_TypeError, "expected raw console object");
         return NULL;
     }

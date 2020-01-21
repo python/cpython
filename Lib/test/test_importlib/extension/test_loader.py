@@ -314,6 +314,31 @@ class MultiPhaseExtensionModuleTests(abc.LoaderTests):
 
         self.assertIs(ex.get_defining_module(), testmultiphase)
 
+    def test_state_counter(self):
+        testmultiphase = self.load_module_by_name("_testmultiphase_meth_state_access")
+
+        a = testmultiphase.StateAccessType()
+        b = testmultiphase.StateAccessType()
+
+        self.assertEquals(a.get_count(), b.get_count())
+        self.assertEquals(a.get_count(), 0)
+
+        a.increment_count()
+        self.assertEquals(a.get_count(), b.get_count())
+        self.assertEquals(a.get_count(), 1)
+
+        b.increment_count()
+        self.assertEquals(a.get_count(), b.get_count())
+        self.assertEquals(a.get_count(), 2)
+
+        a.decrement_count()
+        self.assertEquals(a.get_count(), b.get_count())
+        self.assertEquals(a.get_count(), 1)
+
+        b.decrement_count()
+        self.assertEquals(a.get_count(), b.get_count())
+        self.assertEquals(a.get_count(), 0)
+
 
 (Frozen_MultiPhaseExtensionModuleTests,
  Source_MultiPhaseExtensionModuleTests

@@ -7,7 +7,7 @@
 /* State for testing access from type slot methods */
 
 typedef struct {
-    unsigned int instance_counter;
+    unsigned int counter;
 } meth_state;
 
 /*[clinic input]
@@ -37,7 +37,6 @@ class _testmultiphase.StateAccessType "StateAccessTypeObject *" "!StateAccessTyp
 
 typedef struct {
     PyObject_HEAD
-    meth_state            *m_state;       /* custom attribute */
 } StateAccessTypeObject;
 
 /* Example methods */
@@ -132,32 +131,6 @@ static PyType_Spec Example_Type_spec = {
 
 
 /*[clinic input]
-_testmultiphase.StateAccessType.__init__
-    cls: defining_class
-[clinic start generated code]*/
-
-static int
-_testmultiphase_StateAccessType___init___impl(StateAccessTypeObject *self,
-                                              PyTypeObject *cls)
-/*[clinic end generated code: output=9765645eb57ff25d input=056b456e5f5b243e]*/
-{
-    self->m_state = PyType_GetModuleState(cls);
-    if (self->m_state == NULL) {
-        return -1;
-    }
-    self->m_state->instance_counter++;
-    return 0;
-}
-
-static int
-StateAccessType_finalize(StateAccessTypeObject *self) {
-    if (self->m_state) {
-        self->m_state->instance_counter--;
-    }
-    return 0;
-}
-
-/*[clinic input]
 _testmultiphase.StateAccessType.get_defining_module
 
     cls: defining_class
@@ -180,29 +153,70 @@ _testmultiphase_StateAccessType_get_defining_module_impl(StateAccessTypeObject *
 }
 
 /*[clinic input]
-_testmultiphase.StateAccessType.get_instance_count
+_testmultiphase.StateAccessType.increment_count
 
+    cls: defining_class
 
 This method returns module of the defining class.
 [clinic start generated code]*/
 
 static PyObject *
-_testmultiphase_StateAccessType_get_instance_count_impl(StateAccessTypeObject *self)
-/*[clinic end generated code: output=fba44f9b60835530 input=4c13b544bf5c3e03]*/
+_testmultiphase_StateAccessType_increment_count_impl(StateAccessTypeObject *self,
+                                                     PyTypeObject *cls)
+/*[clinic end generated code: output=b78c77b78c6882e4 input=d16fc099c496938e]*/
 {
-    return PyLong_FromLong(self->m_state->instance_counter);
+    meth_state *m_state = PyType_GetModuleState(cls);
+    m_state->counter++;
+
+    Py_RETURN_NONE;
+}
+
+/*[clinic input]
+_testmultiphase.StateAccessType.decrement_count
+
+    cls: defining_class
+
+This method returns module of the defining class.
+[clinic start generated code]*/
+
+static PyObject *
+_testmultiphase_StateAccessType_decrement_count_impl(StateAccessTypeObject *self,
+                                                     PyTypeObject *cls)
+/*[clinic end generated code: output=d16695f10b1a3d28 input=d4dcaa0687f8ea4a]*/
+{
+    meth_state *m_state = PyType_GetModuleState(cls);
+    m_state->counter--;
+
+    Py_RETURN_NONE;
+}
+
+/*[clinic input]
+_testmultiphase.StateAccessType.get_count
+
+    cls: defining_class
+
+This method returns module of the defining class.
+[clinic start generated code]*/
+
+static PyObject *
+_testmultiphase_StateAccessType_get_count_impl(StateAccessTypeObject *self,
+                                               PyTypeObject *cls)
+/*[clinic end generated code: output=64600f95b499a319 input=fc53e3e1b7eb4743]*/
+{
+    meth_state *m_state = PyType_GetModuleState(cls);
+    return PyLong_FromLong(m_state->counter);
 }
 
 static PyMethodDef StateAccessType_methods[] = {
     _TESTMULTIPHASE_STATEACCESSTYPE_GET_DEFINING_MODULE_METHODDEF
-    _TESTMULTIPHASE_STATEACCESSTYPE_GET_INSTANCE_COUNT_METHODDEF
+    _TESTMULTIPHASE_STATEACCESSTYPE_GET_COUNT_METHODDEF
+    _TESTMULTIPHASE_STATEACCESSTYPE_INCREMENT_COUNT_METHODDEF
+    _TESTMULTIPHASE_STATEACCESSTYPE_DECREMENT_COUNT_METHODDEF
     {NULL,              NULL}           /* sentinel */
 };
 
 static PyType_Slot StateAccessType_Type_slots[] = {
     {Py_tp_doc, "Type for testing per-module state access from methods."},
-    {Py_tp_init, _testmultiphase_StateAccessType___init__},
-    {Py_tp_finalize, StateAccessType_finalize},
     {Py_tp_methods, StateAccessType_methods},
     {0, NULL}
 };

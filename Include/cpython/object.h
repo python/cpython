@@ -299,7 +299,6 @@ PyAPI_FUNC(PyObject *) _PyType_GetDocFromInternalDoc(const char *, const char *)
 PyAPI_FUNC(PyObject *) _PyType_GetTextSignatureFromInternalDoc(const char *, const char *);
 
 PyAPI_FUNC(PyObject *) PyType_GetModule(PyTypeObject *);
-PyAPI_FUNC(PyTypeObject *) PyType_DefiningTypeFromSlotFunc(PyTypeObject *, int, void *);
 PyAPI_FUNC(void *) PyType_GetModuleState(PyTypeObject *);
 
 struct _Py_Identifier;

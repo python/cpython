@@ -3093,41 +3093,6 @@ PyType_GetModule(PyTypeObject *type) {
 
 }
 
-PyTypeObject *
-PyType_DefiningTypeFromSlotFunc(PyTypeObject *type, int slot, void *func) {
-    Py_ssize_t pos = 0;
-    PyObject *mro = type->tp_mro;
-
-    assert(PyType_HasFeature(type, Py_TPFLAGS_HEAPTYPE));
-
-    while(1) {
-        if (PyType_GetSlot(type, slot) == func) {
-            break;
-        }
-
-        type = (PyTypeObject *)PyTuple_GetItem(mro, pos);
-        if (!PyType_HasFeature(type, Py_TPFLAGS_HEAPTYPE)) {
-            goto error;
-        }
-        pos++;
-    }
-
-    while(1) {
-        PyTypeObject *next = (PyTypeObject *)PyTuple_GetItem(mro, pos);
-        if (!PyType_HasFeature(next, Py_TPFLAGS_HEAPTYPE)
-         || PyType_GetSlot(next, slot) != func) {
-            return type;
-        }
-        type = next;
-        pos++;
-    }
-
-error:
-    PyErr_SetString(PyExc_Exception,
-                    "Defining type has not been found.");
-    return NULL;
-}
-
 void *
 PyType_GetModuleState(PyTypeObject *type) {
     PyObject *m;
