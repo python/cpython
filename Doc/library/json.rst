@@ -293,7 +293,7 @@ Basic Usage
       input encoding should be UTF-8, UTF-16 or UTF-32.
 
    .. versionchanged:: 3.9
-      *encoding* keyword argument is removed.
+      The keyword argument *encoding* has been removed.
 
 
 Encoders and Decoders
