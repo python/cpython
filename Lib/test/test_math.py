@@ -1752,6 +1752,83 @@ class MathTests(unittest.TestCase):
         if not math.isnan(value):
             self.fail("Expected a NaN, got {!r}.".format(value))
 
+    def assertEqualSign(self, x, y):
+        """Similar to assertEqual(), but compare also the sign.
+
+        Function useful to compare signed zeros.
+        """
+        self.assertEqual(x, y)
+        self.assertEqual(math.copysign(1.0, x), math.copysign(1.0, y))
+
+    @requires_IEEE_754
+    def test_nextafter(self):
+        # around 2^52 and 2^63
+        self.assertEqual(math.nextafter(4503599627370496.0, -INF),
+                         4503599627370495.5)
+        self.assertEqual(math.nextafter(4503599627370496.0, INF),
+                         4503599627370497.0)
+        self.assertEqual(math.nextafter(9223372036854775808.0, 0.0),
+                         9223372036854774784.0)
+        self.assertEqual(math.nextafter(-9223372036854775808.0, 0.0),
+                         -9223372036854774784.0)
+
+        # around 1.0
+        self.assertEqual(math.nextafter(1.0, -INF),
+                         float.fromhex('0x1.fffffffffffffp-1'))
+        self.assertEqual(math.nextafter(1.0, INF),
+                         float.fromhex('0x1.0000000000001p+0'))
+
+        # x == y: y is returned
+        self.assertEqual(math.nextafter(2.0, 2.0), 2.0)
+        self.assertEqualSign(math.nextafter(-0.0, +0.0), +0.0)
+        self.assertEqualSign(math.nextafter(+0.0, -0.0), -0.0)
+
+        # around 0.0
+        smallest_subnormal = sys.float_info.min * sys.float_info.epsilon
+        self.assertEqual(math.nextafter(+0.0, INF), smallest_subnormal)
+        self.assertEqual(math.nextafter(-0.0, INF), smallest_subnormal)
+        self.assertEqual(math.nextafter(+0.0, -INF), -smallest_subnormal)
+        self.assertEqual(math.nextafter(-0.0, -INF), -smallest_subnormal)
+        self.assertEqualSign(math.nextafter(smallest_subnormal, +0.0), +0.0)
+        self.assertEqualSign(math.nextafter(-smallest_subnormal, +0.0), -0.0)
+        self.assertEqualSign(math.nextafter(smallest_subnormal, -0.0), +0.0)
+        self.assertEqualSign(math.nextafter(-smallest_subnormal, -0.0), -0.0)
+
+        # around infinity
+        largest_normal = sys.float_info.max
+        self.assertEqual(math.nextafter(INF, 0.0), largest_normal)
+        self.assertEqual(math.nextafter(-INF, 0.0), -largest_normal)
+        self.assertEqual(math.nextafter(largest_normal, INF), INF)
+        self.assertEqual(math.nextafter(-largest_normal, -INF), -INF)
+
+        # NaN
+        self.assertTrue(math.isnan(math.nextafter(NAN, 1.0)))
+        self.assertTrue(math.isnan(math.nextafter(1.0, NAN)))
+        self.assertTrue(math.isnan(math.nextafter(NAN, NAN)))
+
+    @requires_IEEE_754
+    def test_ulp(self):
+        self.assertEqual(math.ulp(1.0), sys.float_info.epsilon)
+        # use int ** int rather than float ** int to not rely on pow() accuracy
+        self.assertEqual(math.ulp(2 ** 52), 1.0)
+        self.assertEqual(math.ulp(2 ** 53), 2.0)
+        self.assertEqual(math.ulp(2 ** 64), 4096.0)
+
+        # min and max
+        self.assertEqual(math.ulp(0.0),
+                         sys.float_info.min * sys.float_info.epsilon)
+        self.assertEqual(math.ulp(FLOAT_MAX),
+                         FLOAT_MAX - math.nextafter(FLOAT_MAX, -INF))
+
+        # special cases
+        self.assertEqual(math.ulp(INF), INF)
+        self.assertTrue(math.isnan(math.ulp(math.nan)))
+
+        # negative number: ulp(-x) == ulp(x)
+        for x in (0.0, 1.0, 2 ** 52, 2 ** 64, INF):
+            with self.subTest(x=x):
+                self.assertEqual(math.ulp(-x), math.ulp(x))
+
 
 class IsCloseTests(unittest.TestCase):
     isclose = math.isclose  # subclasses should override this
@@ -2008,83 +2085,6 @@ class IsCloseTests(unittest.TestCase):
         for k in range(3):
             self.assertIs(type(comb(IntSubclass(5), IntSubclass(k))), int)
             self.assertIs(type(comb(MyIndexable(5), MyIndexable(k))), int)
-
-    def assertEqualSign(self, x, y):
-        """Similar to assertEqual(), but compare also the sign.
-
-        Function useful to compare signed zeros.
-        """
-        self.assertEqual(x, y)
-        self.assertEqual(math.copysign(1.0, x), math.copysign(1.0, y))
-
-    @requires_IEEE_754
-    def test_nextafter(self):
-        # around 2^52 and 2^63
-        self.assertEqual(math.nextafter(4503599627370496.0, -INF),
-                         4503599627370495.5)
-        self.assertEqual(math.nextafter(4503599627370496.0, INF),
-                         4503599627370497.0)
-        self.assertEqual(math.nextafter(9223372036854775808.0, 0.0),
-                         9223372036854774784.0)
-        self.assertEqual(math.nextafter(-9223372036854775808.0, 0.0),
-                         -9223372036854774784.0)
-
-        # around 1.0
-        self.assertEqual(math.nextafter(1.0, -INF),
-                         float.fromhex('0x1.fffffffffffffp-1'))
-        self.assertEqual(math.nextafter(1.0, INF),
-                         float.fromhex('0x1.0000000000001p+0'))
-
-        # x == y: y is returned
-        self.assertEqual(math.nextafter(2.0, 2.0), 2.0)
-        self.assertEqualSign(math.nextafter(-0.0, +0.0), +0.0)
-        self.assertEqualSign(math.nextafter(+0.0, -0.0), -0.0)
-
-        # around 0.0
-        smallest_subnormal = sys.float_info.min * sys.float_info.epsilon
-        self.assertEqual(math.nextafter(+0.0, INF), smallest_subnormal)
-        self.assertEqual(math.nextafter(-0.0, INF), smallest_subnormal)
-        self.assertEqual(math.nextafter(+0.0, -INF), -smallest_subnormal)
-        self.assertEqual(math.nextafter(-0.0, -INF), -smallest_subnormal)
-        self.assertEqualSign(math.nextafter(smallest_subnormal, +0.0), +0.0)
-        self.assertEqualSign(math.nextafter(-smallest_subnormal, +0.0), -0.0)
-        self.assertEqualSign(math.nextafter(smallest_subnormal, -0.0), +0.0)
-        self.assertEqualSign(math.nextafter(-smallest_subnormal, -0.0), -0.0)
-
-        # around infinity
-        largest_normal = sys.float_info.max
-        self.assertEqual(math.nextafter(INF, 0.0), largest_normal)
-        self.assertEqual(math.nextafter(-INF, 0.0), -largest_normal)
-        self.assertEqual(math.nextafter(largest_normal, INF), INF)
-        self.assertEqual(math.nextafter(-largest_normal, -INF), -INF)
-
-        # NaN
-        self.assertTrue(math.isnan(math.nextafter(NAN, 1.0)))
-        self.assertTrue(math.isnan(math.nextafter(1.0, NAN)))
-        self.assertTrue(math.isnan(math.nextafter(NAN, NAN)))
-
-    @requires_IEEE_754
-    def test_ulp(self):
-        self.assertEqual(math.ulp(1.0), sys.float_info.epsilon)
-        # use int ** int rather than float ** int to not rely on pow() accuracy
-        self.assertEqual(math.ulp(2 ** 52), 1.0)
-        self.assertEqual(math.ulp(2 ** 53), 2.0)
-        self.assertEqual(math.ulp(2 ** 64), 4096.0)
-
-        # min and max
-        self.assertEqual(math.ulp(0.0),
-                         sys.float_info.min * sys.float_info.epsilon)
-        self.assertEqual(math.ulp(FLOAT_MAX),
-                         FLOAT_MAX - math.nextafter(FLOAT_MAX, -INF))
-
-        # special cases
-        self.assertEqual(math.ulp(INF), INF)
-        self.assertTrue(math.isnan(math.ulp(math.nan)))
-
-        # negative number: ulp(-x) == ulp(x)
-        for x in (0.0, 1.0, 2 ** 52, 2 ** 64, INF):
-            with self.subTest(x=x):
-                self.assertEqual(math.ulp(-x), math.ulp(x))
 
 
 def test_main():
