@@ -4,10 +4,7 @@
 #include <sys/time.h>
 #include <string.h>
 #include <errno.h>
-/* for sysconf */
-#if defined(HAVE_UNISTD_H)
 #include <unistd.h>
-#endif
 
 /* On some systems, these aren't in any header file.
    On others they are, with inconsistent prototypes.

@@ -25,6 +25,7 @@ import datetime
 import unittest
 import sqlite3 as sqlite
 import weakref
+import functools
 from test import support
 
 class RegressionTests(unittest.TestCase):
@@ -256,30 +257,12 @@ class RegressionTests(unittest.TestCase):
         cur.execute("pragma page_size")
         row = cur.fetchone()
 
-    def CheckSetDict(self):
-        """
-        See http://bugs.python.org/issue7478
-
-        It was possible to successfully register callbacks that could not be
-        hashed. Return codes of PyDict_SetItem were not checked properly.
-        """
-        class NotHashable:
-            def __call__(self, *args, **kw):
-                pass
-            def __hash__(self):
-                raise TypeError()
-        var = NotHashable()
-        self.assertRaises(TypeError, self.con.create_function, var)
-        self.assertRaises(TypeError, self.con.create_aggregate, var)
-        self.assertRaises(TypeError, self.con.set_authorizer, var)
-        self.assertRaises(TypeError, self.con.set_progress_handler, var)
-
     def CheckConnectionCall(self):
         """
         Call a connection with a non-string SQL request: check error handling
         of the statement constructor.
         """
-        self.assertRaises(sqlite.Warning, self.con, 1)
+        self.assertRaises(TypeError, self.con, 1)
 
     def CheckCollation(self):
         def collation_cb(a, b):
@@ -397,10 +380,31 @@ class RegressionTests(unittest.TestCase):
         del ref
         support.gc_collect()
 
+    def CheckDelIsolation_levelSegfault(self):
+        with self.assertRaises(AttributeError):
+            del self.con.isolation_level
+
+    def CheckBpo37347(self):
+        class Printer:
+            def log(self, *args):
+                return sqlite.SQLITE_OK
+
+        for method in [self.con.set_trace_callback,
+                       functools.partial(self.con.set_progress_handler, n=1),
+                       self.con.set_authorizer]:
+            printer_instance = Printer()
+            method(printer_instance.log)
+            method(printer_instance.log)
+            self.con.execute("select 1")  # trigger seg fault
+            method(None)
+
+
 
 def suite():
     regression_suite = unittest.makeSuite(RegressionTests, "Check")
-    return unittest.TestSuite((regression_suite,))
+    return unittest.TestSuite((
+        regression_suite,
+    ))
 
 def test():
     runner = unittest.TextTestRunner()

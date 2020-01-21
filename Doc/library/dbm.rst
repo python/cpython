@@ -73,6 +73,10 @@ available, as well as :meth:`get` and :meth:`setdefault`.
 .. versionchanged:: 3.2
    :meth:`get` and :meth:`setdefault` are now available in all database modules.
 
+.. versionchanged:: 3.8
+   Deleting a key from a read-only database raises database module specific error
+   instead of :exc:`KeyError`.
+
 Key and values are always stored as bytes. This means that when
 strings are used they are implicitly converted to the default encoding before
 being stored.

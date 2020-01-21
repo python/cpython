@@ -2021,7 +2021,7 @@ class Decimal(object):
         if not other and not self:
             return context._raise_error(InvalidOperation,
                                         'at least one of pow() 1st argument '
-                                        'and 2nd argument must be nonzero ;'
+                                        'and 2nd argument must be nonzero; '
                                         '0**0 is not defined')
 
         # compute sign of result
@@ -5630,8 +5630,6 @@ class _WorkRep(object):
 
     def __repr__(self):
         return "(%r, %r, %r)" % (self.sign, self.int, self.exp)
-
-    __str__ = __repr__
 
 
 

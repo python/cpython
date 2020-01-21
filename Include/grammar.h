@@ -13,7 +13,7 @@ extern "C" {
 
 typedef struct {
     int          lb_type;
-    char        *lb_str;
+    const char  *lb_str;
 } label;
 
 #define EMPTY 0         /* Label number 0 is by definition the empty label */
@@ -22,7 +22,7 @@ typedef struct {
 
 typedef struct {
     int          ll_nlabels;
-    label       *ll_label;
+    const label *ll_label;
 } labellist;
 
 /* An arc from one state to another */
@@ -36,7 +36,7 @@ typedef struct {
 
 typedef struct {
     int          s_narcs;
-    arc         *s_arc;         /* Array of arcs */
+    const arc   *s_arc;         /* Array of arcs */
 
     /* Optional accelerators */
     int          s_lower;       /* Lowest label index */
@@ -50,7 +50,6 @@ typedef struct {
 typedef struct {
     int          d_type;        /* Non-terminal this represents */
     char        *d_name;        /* For printing */
-    int          d_initial;     /* Initial state */
     int          d_nstates;
     state       *d_state;       /* Array of states */
     bitset       d_first;
@@ -60,33 +59,17 @@ typedef struct {
 
 typedef struct {
     int          g_ndfas;
-    dfa         *g_dfa;         /* Array of DFAs */
-    labellist    g_ll;
+    const dfa   *g_dfa;         /* Array of DFAs */
+    const labellist g_ll;
     int          g_start;       /* Start symbol of the grammar */
     int          g_accel;       /* Set if accelerators present */
 } grammar;
 
 /* FUNCTIONS */
-
-grammar *newgrammar(int start);
-void freegrammar(grammar *g);
-dfa *adddfa(grammar *g, int type, const char *name);
-int addstate(dfa *d);
-void addarc(dfa *d, int from, int to, int lbl);
-dfa *PyGrammar_FindDFA(grammar *g, int type);
-
-int addlabel(labellist *ll, int type, const char *str);
-int findlabel(labellist *ll, int type, const char *str);
+const dfa *PyGrammar_FindDFA(grammar *g, int type);
 const char *PyGrammar_LabelRepr(label *lb);
-void translatelabels(grammar *g);
-
-void addfirstsets(grammar *g);
-
 void PyGrammar_AddAccelerators(grammar *g);
 void PyGrammar_RemoveAccelerators(grammar *);
-
-void printgrammar(grammar *g, FILE *fp);
-void printnonterminals(grammar *g, FILE *fp);
 
 #ifdef __cplusplus
 }

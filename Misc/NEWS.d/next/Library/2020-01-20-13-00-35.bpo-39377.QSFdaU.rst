@@ -1,0 +1,2 @@
+Removed ``encoding`` option from :func:`json.loads`.  It has been deprecated
+since Python 3.1.

@@ -4,7 +4,7 @@
 
 exit_with_usage ()
 {
-    echo "Usage: $0 --prefix|--exec-prefix|--includes|--libs|--cflags|--ldflags|--extension-suffix|--help|--abiflags|--configdir"
+    echo "Usage: $0 --prefix|--exec-prefix|--includes|--libs|--cflags|--ldflags|--extension-suffix|--help|--abiflags|--configdir|--embed"
     exit $1
 }
 
@@ -41,10 +41,10 @@ LIBM="@LIBM@"
 LIBC="@LIBC@"
 SYSLIBS="$LIBM $LIBC"
 ABIFLAGS="@ABIFLAGS@"
-LIBS="-lpython${VERSION}${ABIFLAGS} @LIBS@ $SYSLIBS"
+LIBS="@LIBPYTHON@ @LIBS@ $SYSLIBS"
+LIBS_EMBED="-lpython${VERSION}${ABIFLAGS} @LIBS@ $SYSLIBS"
 BASECFLAGS="@BASECFLAGS@"
 LDLIBRARY="@LDLIBRARY@"
-LINKFORSHARED="@LINKFORSHARED@"
 OPT="@OPT@"
 PY_ENABLE_SHARED="@PY_ENABLE_SHARED@"
 LDVERSION="@LDVERSION@"
@@ -54,6 +54,7 @@ SO="@EXT_SUFFIX@"
 PYTHONFRAMEWORK="@PYTHONFRAMEWORK@"
 INCDIR="-I$includedir/python${VERSION}${ABIFLAGS}"
 PLATINCDIR="-I$includedir/python${VERSION}${ABIFLAGS}"
+PY_EMBED=0
 
 # Scan for --help or unknown argument.
 for ARG in $*
@@ -62,6 +63,9 @@ do
         --help)
             exit_with_usage 0
         ;;
+        --embed)
+            PY_EMBED=1
+        ;;
         --prefix|--exec-prefix|--includes|--libs|--cflags|--ldflags|--extension-suffix|--abiflags|--configdir)
         ;;
         *)
@@ -69,6 +73,10 @@ do
         ;;
     esac
 done
+
+if [ $PY_EMBED = 1 ] ; then
+    LIBS="$LIBS_EMBED"
+fi
 
 for ARG in "$@"
 do
@@ -89,15 +97,11 @@ do
             echo "$LIBS"
         ;;
         --ldflags)
-            LINKFORSHAREDUSED=
-            if [ -z "$PYTHONFRAMEWORK" ] ; then
-                LINKFORSHAREDUSED=$LINKFORSHARED
-            fi
             LIBPLUSED=
             if [ "$PY_ENABLE_SHARED" = "0" ] ; then
                 LIBPLUSED="-L$LIBPL"
             fi
-            echo "$LIBPLUSED -L$libdir $LIBS $LINKFORSHAREDUSED"
+            echo "$LIBPLUSED -L$libdir $LIBS"
         ;;
         --extension-suffix)
             echo "$SO"

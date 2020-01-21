@@ -1,4 +1,0 @@
-Fix the .fromisoformat() methods of datetime types crashing when given
-unicode with non-UTF-8-encodable code points.  Specifically,
-datetime.fromisoformat() now accepts surrogate unicode code points used as
-the separator. Report and tests by Alexey Izbyshev, patch by Paul Ganssle.

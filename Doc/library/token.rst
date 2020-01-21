@@ -29,79 +29,22 @@ functions.  The functions mirror definitions in the Python C header files.
 
 .. function:: ISTERMINAL(x)
 
-   Return true for terminal token values.
+   Return ``True`` for terminal token values.
 
 
 .. function:: ISNONTERMINAL(x)
 
-   Return true for non-terminal token values.
+   Return ``True`` for non-terminal token values.
 
 
 .. function:: ISEOF(x)
 
-   Return true if *x* is the marker indicating the end of input.
+   Return ``True`` if *x* is the marker indicating the end of input.
 
 
 The token constants are:
 
-.. data:: ENDMARKER
-          NAME
-          NUMBER
-          STRING
-          NEWLINE
-          INDENT
-          DEDENT
-          LPAR
-          RPAR
-          LSQB
-          RSQB
-          COLON
-          COMMA
-          SEMI
-          PLUS
-          MINUS
-          STAR
-          SLASH
-          VBAR
-          AMPER
-          LESS
-          GREATER
-          EQUAL
-          DOT
-          PERCENT
-          LBRACE
-          RBRACE
-          EQEQUAL
-          NOTEQUAL
-          LESSEQUAL
-          GREATEREQUAL
-          TILDE
-          CIRCUMFLEX
-          LEFTSHIFT
-          RIGHTSHIFT
-          DOUBLESTAR
-          PLUSEQUAL
-          MINEQUAL
-          STAREQUAL
-          SLASHEQUAL
-          PERCENTEQUAL
-          AMPEREQUAL
-          VBAREQUAL
-          CIRCUMFLEXEQUAL
-          LEFTSHIFTEQUAL
-          RIGHTSHIFTEQUAL
-          DOUBLESTAREQUAL
-          DOUBLESLASH
-          DOUBLESLASHEQUAL
-          AT
-          ATEQUAL
-          RARROW
-          ELLIPSIS
-          OP
-          ERRORTOKEN
-          N_TOKENS
-          NT_OFFSET
-
+.. include:: token-list.inc
 
 The following token type values aren't used by the C tokenizer but are needed for
 the :mod:`tokenize` module.
@@ -126,6 +69,13 @@ the :mod:`tokenize` module.
    always be an ``ENCODING`` token.
 
 
+.. data:: TYPE_COMMENT
+
+   Token value indicating that a type comment was recognized.  Such
+   tokens are only produced when :func:`ast.parse()` is invoked with
+   ``type_comments=True``.
+
+
 .. versionchanged:: 3.5
    Added :data:`AWAIT` and :data:`ASYNC` tokens.
 
@@ -135,3 +85,9 @@ the :mod:`tokenize` module.
 .. versionchanged:: 3.7
    Removed :data:`AWAIT` and :data:`ASYNC` tokens. "async" and "await" are
    now tokenized as :data:`NAME` tokens.
+
+.. versionchanged:: 3.8
+   Added :data:`TYPE_COMMENT`.
+   Added :data:`AWAIT` and :data:`ASYNC` tokens back (they're needed
+   to support parsing older Python versions for :func:`ast.parse` with
+   ``feature_version`` set to 6 or lower).

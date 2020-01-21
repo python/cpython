@@ -1,8 +1,8 @@
-:mod:`zipapp` --- Manage executable python zip archives
+:mod:`zipapp` --- Manage executable Python zip archives
 =======================================================
 
 .. module:: zipapp
-   :synopsis: Manage executable python zip archives
+   :synopsis: Manage executable Python zip archives
 
 .. versionadded:: 3.5
 
@@ -195,7 +195,7 @@ Pack up a directory into an archive, and run it.
    $ python myapp.pyz
    <output from myapp>
 
-The same can be done using the :func:`create_archive` functon::
+The same can be done using the :func:`create_archive` function::
 
    >>> import zipapp
    >>> zipapp.create_archive('myapp.pyz', 'myapp')

@@ -7,7 +7,7 @@
 Under Linux, GNU/KFreeBSD and the Hurd, C extensions now include the
 architecture triplet in the extension name, to make it easy to test builds
 for different ABIs in the same working tree.  Under OS X, the extension name
-now includes PEP 3149-style information.
+now includes :pep:`3149`-style information.
 
 ..
 
@@ -26,7 +26,7 @@ Joe Jevnik.
 .. nonce: FOXb37
 .. section: Core and Builtins
 
-Implement PEP 488: removal of .pyo files.
+Implement :pep:`488`: removal of .pyo files.
 
 ..
 
@@ -482,7 +482,7 @@ sqlite3.Row now supports slice indexing.
 .. nonce: 89RHm-
 .. section: Library
 
-Fixed 2to3 and 3to2 compatible pickle mappings.  Fixed ambigious reverse
+Fixed 2to3 and 3to2 compatible pickle mappings.  Fixed ambiguous reverse
 mappings.  Added many new mappings.  Import mapping is no longer applied to
 modules already mapped with full name mapping.
 
@@ -495,7 +495,7 @@ modules already mapped with full name mapping.
 
 select.select() is now retried automatically with the recomputed timeout
 when interrupted by a signal, except if the signal handler raises an
-exception. This change is part of the PEP 475.
+exception. This change is part of the :pep:`475`.
 
 ..
 

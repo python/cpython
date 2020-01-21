@@ -99,7 +99,7 @@ syslog_get_argv(void)
     if (slash == -2)
         return NULL;
     if (slash != -1) {
-        return PyUnicode_Substring(scriptobj, slash, scriptlen);
+        return PyUnicode_Substring(scriptobj, slash + 1, scriptlen);
     } else {
         Py_INCREF(scriptobj);
         return(scriptobj);
@@ -238,7 +238,7 @@ syslog_log_upto(PyObject *self, PyObject *args)
 /* List of functions defined in the module */
 
 static PyMethodDef syslog_methods[] = {
-    {"openlog",         (PyCFunction) syslog_openlog,           METH_VARARGS | METH_KEYWORDS},
+    {"openlog",         (PyCFunction)(void(*)(void)) syslog_openlog,           METH_VARARGS | METH_KEYWORDS},
     {"closelog",        syslog_closelog,        METH_NOARGS},
     {"syslog",          syslog_syslog,          METH_VARARGS},
     {"setlogmask",      syslog_setlogmask,      METH_VARARGS},

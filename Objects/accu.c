@@ -1,7 +1,7 @@
 /* Accumulator struct implementation */
 
 #include "Python.h"
-#include "accu.h"
+#include "pycore_accu.h"
 
 static PyObject *
 join_list_unicode(PyObject *lst)

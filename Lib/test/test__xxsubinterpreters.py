@@ -4,7 +4,7 @@ import itertools
 import os
 import pickle
 import sys
-from textwrap import dedent, indent
+from textwrap import dedent
 import threading
 import time
 import unittest
@@ -393,7 +393,19 @@ class ShareableTypeTests(unittest.TestCase):
                             for i in range(-1, 258))
 
     def test_int(self):
-        self._assert_values(range(-1, 258))
+        self._assert_values(itertools.chain(range(-1, 258),
+                                            [sys.maxsize, -sys.maxsize - 1]))
+
+    def test_non_shareable_int(self):
+        ints = [
+            sys.maxsize + 1,
+            -sys.maxsize - 2,
+            2**1000,
+        ]
+        for i in ints:
+            with self.subTest(i):
+                with self.assertRaises(OverflowError):
+                    interpreters.channel_send(self.cid, i)
 
 
 ##################################
@@ -502,7 +514,7 @@ class IsRunningTests(TestBase):
             interpreters.is_running(1_000_000)
 
     def test_bad_id(self):
-        with self.assertRaises(RuntimeError):
+        with self.assertRaises(ValueError):
             interpreters.is_running(-1)
 
 
@@ -514,30 +526,20 @@ class InterpreterIDTests(TestBase):
         self.assertEqual(int(id), 10)
 
     def test_coerce_id(self):
-        id = interpreters.InterpreterID('10', force=True)
-        self.assertEqual(int(id), 10)
-
-        id = interpreters.InterpreterID(10.0, force=True)
-        self.assertEqual(int(id), 10)
-
         class Int(str):
-            def __init__(self, value):
-                self._value = value
-            def __int__(self):
-                return self._value
+            def __index__(self):
+                return 10
 
-        id = interpreters.InterpreterID(Int(10), force=True)
+        id = interpreters.InterpreterID(Int(), force=True)
         self.assertEqual(int(id), 10)
 
     def test_bad_id(self):
-        for id in [-1, 'spam']:
-            with self.subTest(id):
-                with self.assertRaises(ValueError):
-                    interpreters.InterpreterID(id)
-        with self.assertRaises(OverflowError):
-            interpreters.InterpreterID(2**64)
-        with self.assertRaises(TypeError):
-            interpreters.InterpreterID(object())
+        self.assertRaises(TypeError, interpreters.InterpreterID, object())
+        self.assertRaises(TypeError, interpreters.InterpreterID, 10.0)
+        self.assertRaises(TypeError, interpreters.InterpreterID, '10')
+        self.assertRaises(TypeError, interpreters.InterpreterID, b'10')
+        self.assertRaises(ValueError, interpreters.InterpreterID, -1)
+        self.assertRaises(OverflowError, interpreters.InterpreterID, 2**64)
 
     def test_does_not_exist(self):
         id = interpreters.channel_create()
@@ -560,6 +562,14 @@ class InterpreterIDTests(TestBase):
         self.assertTrue(id1 == id1)
         self.assertTrue(id1 == id2)
         self.assertTrue(id1 == int(id1))
+        self.assertTrue(int(id1) == id1)
+        self.assertTrue(id1 == float(int(id1)))
+        self.assertTrue(float(int(id1)) == id1)
+        self.assertFalse(id1 == float(int(id1)) + 0.1)
+        self.assertFalse(id1 == str(int(id1)))
+        self.assertFalse(id1 == 2**1000)
+        self.assertFalse(id1 == float('inf'))
+        self.assertFalse(id1 == 'spam')
         self.assertFalse(id1 == id3)
 
         self.assertFalse(id1 != id1)
@@ -707,7 +717,7 @@ class DestroyTests(TestBase):
             interpreters.destroy(1_000_000)
 
     def test_bad_id(self):
-        with self.assertRaises(RuntimeError):
+        with self.assertRaises(ValueError):
             interpreters.destroy(-1)
 
     def test_from_current(self):
@@ -824,23 +834,12 @@ class RunStringTests(TestBase):
 
             expected = 'spam spam spam spam spam'
             script = dedent(f"""
-                # (inspired by Lib/test/test_fork.py)
                 import os
-                pid = os.fork()
-                if pid == 0:  # child
+                try:
+                    os.fork()
+                except RuntimeError:
                     with open('{file.name}', 'w') as out:
                         out.write('{expected}')
-                    # Kill the unittest runner in the child process.
-                    os._exit(1)
-                else:
-                    SHORT_SLEEP = 0.1
-                    import time
-                    for _ in range(10):
-                        spid, status = os.waitpid(pid, os.WNOHANG)
-                        if spid == pid:
-                            break
-                        time.sleep(SHORT_SLEEP)
-                    assert(spid == pid)
                 """)
             interpreters.run_string(self.id, script)
 
@@ -861,7 +860,7 @@ class RunStringTests(TestBase):
             interpreters.run_string(id, 'print("spam")')
 
     def test_error_id(self):
-        with self.assertRaises(RuntimeError):
+        with self.assertRaises(ValueError):
             interpreters.run_string(-1, 'print("spam")')
 
     def test_bad_id(self):
@@ -1104,30 +1103,20 @@ class ChannelIDTests(TestBase):
         self.assertEqual(cid.end, 'both')
 
     def test_coerce_id(self):
-        cid = interpreters._channel_id('10', force=True)
-        self.assertEqual(int(cid), 10)
-
-        cid = interpreters._channel_id(10.0, force=True)
-        self.assertEqual(int(cid), 10)
-
         class Int(str):
-            def __init__(self, value):
-                self._value = value
-            def __int__(self):
-                return self._value
+            def __index__(self):
+                return 10
 
-        cid = interpreters._channel_id(Int(10), force=True)
+        cid = interpreters._channel_id(Int(), force=True)
         self.assertEqual(int(cid), 10)
 
     def test_bad_id(self):
-        for cid in [-1, 'spam']:
-            with self.subTest(cid):
-                with self.assertRaises(ValueError):
-                    interpreters._channel_id(cid)
-        with self.assertRaises(OverflowError):
-            interpreters._channel_id(2**64)
-        with self.assertRaises(TypeError):
-            interpreters._channel_id(object())
+        self.assertRaises(TypeError, interpreters._channel_id, object())
+        self.assertRaises(TypeError, interpreters._channel_id, 10.0)
+        self.assertRaises(TypeError, interpreters._channel_id, '10')
+        self.assertRaises(TypeError, interpreters._channel_id, b'10')
+        self.assertRaises(ValueError, interpreters._channel_id, -1)
+        self.assertRaises(OverflowError, interpreters._channel_id, 2**64)
 
     def test_bad_kwargs(self):
         with self.assertRaises(ValueError):
@@ -1163,6 +1152,14 @@ class ChannelIDTests(TestBase):
         self.assertTrue(cid1 == cid1)
         self.assertTrue(cid1 == cid2)
         self.assertTrue(cid1 == int(cid1))
+        self.assertTrue(int(cid1) == cid1)
+        self.assertTrue(cid1 == float(int(cid1)))
+        self.assertTrue(float(int(cid1)) == cid1)
+        self.assertFalse(cid1 == float(int(cid1)) + 0.1)
+        self.assertFalse(cid1 == str(int(cid1)))
+        self.assertFalse(cid1 == 2**1000)
+        self.assertFalse(cid1 == float('inf'))
+        self.assertFalse(cid1 == 'spam')
         self.assertFalse(cid1 == cid3)
 
         self.assertFalse(cid1 != cid1)
