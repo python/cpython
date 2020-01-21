@@ -1,0 +1,1 @@
+:func:`Py_FinalizeEx()` now implicitly cleans up subinterpreters, as the C API documentation suggests.
