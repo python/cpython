@@ -819,19 +819,20 @@ dir_fd_converter(PyObject *o, void *p)
     }
 }
 
-/* Windows: _wputenv(env) copies the *env* string and doesn't require the
-   caller to manage the variable memory. */
-#if defined(HAVE_PUTENV) && !defined(MS_WINDOWS)
+/* Windows _wputenv() and setenv() copy the arguments and so don't require
+   the caller to manage the variable memory. Only Unix putenv() requires
+   putenv_dict. */
+#if defined(HAVE_PUTENV) && !defined(MS_WINDOWS) && !defined(HAVE_SETENV)
 #  define PY_PUTENV_DICT
 #endif
 
 typedef struct {
     PyObject *billion;
 #ifdef PY_PUTENV_DICT
-    /* putenv() and _wputenv() requires that the caller manages the environment
-       variable memory. Use a Python dictionary for that: name => env, where
-       env is a string like "name=value". On Windows, dict keys and values are
-       Unicode strings. On Unix, they are bytes strings. */
+    /* putenv() requires that the caller manages the environment variable
+       memory. Use a Python dictionary for that: name => env, where env is a
+       string like "name=value". On Windows, dict keys and values are Unicode
+       strings. On Unix, they are bytes strings. */
     PyObject *putenv_dict;
 #endif
     PyObject *DirEntryType;
@@ -10081,8 +10082,6 @@ posix_putenv_dict_setitem(PyObject *name, PyObject *value)
 #endif  /* PY_PUTENV_DICT */
 
 
-#ifdef HAVE_PUTENV
-
 #ifdef MS_WINDOWS
 /*[clinic input]
 os.putenv
@@ -10132,8 +10131,6 @@ os_putenv_impl(PyObject *module, PyObject *name, PyObject *value)
         posix_error();
         goto error;
     }
-    /* _wputenv(env) copies the *env* string and doesn't require the caller
-       to manage the variable memory. */
     Py_DECREF(unicode);
 
     Py_RETURN_NONE;
@@ -10142,7 +10139,8 @@ error:
     Py_DECREF(unicode);
     return NULL;
 }
-#else /* MS_WINDOWS */
+/* repeat !defined(MS_WINDOWS) to workaround an Argument Clinic issue */
+#elif (defined(HAVE_SETENV) || defined(HAVE_PUTENV)) && !defined(MS_WINDOWS)
 /*[clinic input]
 os.putenv
 
@@ -10157,8 +10155,6 @@ static PyObject *
 os_putenv_impl(PyObject *module, PyObject *name, PyObject *value)
 /*[clinic end generated code: output=d29a567d6b2327d2 input=a97bc6152f688d31]*/
 {
-    PyObject *bytes = NULL;
-    char *env;
     const char *name_string = PyBytes_AS_STRING(name);
     const char *value_string = PyBytes_AS_STRING(value);
 
@@ -10166,22 +10162,28 @@ os_putenv_impl(PyObject *module, PyObject *name, PyObject *value)
         PyErr_SetString(PyExc_ValueError, "illegal environment variable name");
         return NULL;
     }
-    bytes = PyBytes_FromFormat("%s=%s", name_string, value_string);
+
+#ifdef HAVE_SETENV
+    if (setenv(name_string, value_string, 1)) {
+        return posix_error();
+    }
+#else
+    PyObject *bytes = PyBytes_FromFormat("%s=%s", name_string, value_string);
     if (bytes == NULL) {
         return NULL;
     }
 
-    env = PyBytes_AS_STRING(bytes);
+    char *env = PyBytes_AS_STRING(bytes);
     if (putenv(env)) {
         Py_DECREF(bytes);
         return posix_error();
     }
 
     posix_putenv_dict_setitem(name, bytes);
+#endif
     Py_RETURN_NONE;
 }
-#endif /* MS_WINDOWS */
-#endif /* HAVE_PUTENV */
+#endif  /* defined(HAVE_SETENV) || defined(HAVE_PUTENV) */
 
 
 #ifdef HAVE_UNSETENV
