@@ -424,10 +424,14 @@ Removed
   (Contributed by Victor Stinner in :issue:`39350`.)
 
 * The *buffering* parameter of :class:`bz2.BZ2File` has been removed. Since
-  Python 3.0, it was ignored and using it was emitting
-  :exc:`DeprecationWarning`. Pass an open file object to control how the file
-  is opened.
+  Python 3.0, it was ignored and using it emitted a :exc:`DeprecationWarning`.
+  Pass an open file object to control how the file is opened.
   (Contributed by Victor Stinner in :issue:`39357`.)
+
+* The *encoding* parameter of :func:`json.loads` has been removed.
+  As of Python 3.1, it was deprecated and ignored; using it has emitted a
+  :exc:`DeprecationWarning` since Python 3.8.
+  (Contributed by Inada Naoki in :issue:`39377`)
 
 
 Porting to Python 3.9
