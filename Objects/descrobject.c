@@ -92,6 +92,7 @@ descr_check(PyDescrObject *descr, PyObject *obj, PyObject **pres)
 static PyObject *
 classmethod_get(PyMethodDescrObject *descr, PyObject *obj, PyObject *type)
 {
+    PyTypeObject *cls = NULL;
     /* Ensure a valid type.  Class methods ignore obj. */
     if (type == NULL) {
         if (obj != NULL)
@@ -125,10 +126,9 @@ classmethod_get(PyMethodDescrObject *descr, PyObject *obj, PyObject *type)
         return NULL;
     }
     if (descr->d_method->ml_flags & METH_METHOD) {
-        return PyCMethod_New(descr->d_method, type, NULL, descr->d_common.d_type);
-    } else {
-        return PyCFunction_NewEx(descr->d_method, type, NULL);
+        cls = descr->d_common.d_type;
     }
+    return PyCMethod_New(descr->d_method, type, NULL, cls);
 }
 
 static PyObject *

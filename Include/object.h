@@ -177,11 +177,6 @@ typedef struct _typeobject PyTypeObject;
 /* PyTypeObject is defined in cpython/object.h */
 #endif
 
-typedef struct {
-    Py_ssize_t dict;
-    Py_ssize_t weaklist;
-} PyType_offsets;
-
 typedef struct{
     int slot;    /* slot id, see below */
     void *pfunc; /* function pointer */
@@ -204,15 +199,6 @@ PyAPI_FUNC(void*) PyType_GetSlot(struct _typeobject*, int);
 #endif
 #if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= 0x03080000
 PyAPI_FUNC(PyObject*) PyType_FromModuleAndSpec(PyObject *, PyType_Spec *, PyObject *);
-#endif
-
-
-#ifndef Py_LIMITED_API
-/* The *real* layout of a type object when allocated on the heap */
-
-/* access macro to the members which are floating "behind" the object */
-#define PyHeapType_GET_MEMBERS(etype) \
-    ((PyMemberDef *)(((char *)etype) + Py_TYPE(etype)->tp_basicsize))
 #endif
 
 /* Generic type check */

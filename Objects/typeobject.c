@@ -2923,9 +2923,8 @@ PyType_FromModuleAndSpec(PyObject *module, PyType_Spec *spec, PyObject *bases)
     Py_INCREF(res->ht_qualname);
     type->tp_name = spec->name;
 
-    if (module) {
-        Py_INCREF(module);
-    }
+    Py_XINCREF(module);
+
     res->ht_module = module;
 
     /* Adjust for empty tuple bases */

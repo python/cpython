@@ -74,12 +74,13 @@ PyCMethod_New(PyMethodDef *ml, PyObject *self, PyObject *module, PyTypeObject *c
 
     if (ml->ml_flags & METH_METHOD) {
         PyCMethodObject *om;
-        if (ml->ml_flags & (METH_NOARGS | METH_O | METH_CLASS | METH_STATIC)) {
+        if (ml->ml_flags & (METH_NOARGS | METH_O | METH_CLASS | METH_STATIC | METH_FASTCALL)) {
             PyErr_SetString(PyExc_SystemError,
                             "METH_METHOD cannot be used with METH_NOARGS, "
                             "METH_O, METH_CLASS, nor METH_STATIC");
             return NULL;
         }
+        else if (!(ml->ml_flags & METH_VARARGS) || !(ml->ml_flags & METH_KEYWORDS))
         if (!cls) {
             PyErr_SetString(PyExc_SystemError,
                             "attempting to create PyCMethod with a METH_METHOD "
