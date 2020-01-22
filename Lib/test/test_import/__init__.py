@@ -1343,22 +1343,18 @@ class CircularImportTests(unittest.TestCase):
         )
 
     def test_unwritable_module(self):
-        sys.path.insert(0, os.path.join(os.path.dirname(__file__), 'data'))
-        try:
-            try:
-                import unwritable
-                with self.assertWarns(ImportWarning):
-                    from unwritable import x
+        self.addCleanup(unload, "test.test_import.data.unwritable")
+        self.addCleanup(unload, "test.test_import.data.unwritable.x")
 
-                self.assertNotEqual(type(unwritable), ModuleType)
-                self.assertEqual(type(x), ModuleType)
-                with self.assertRaises(AttributeError):
-                    unwritable.x = 42
-            finally:
-                sys.modules['unwritable.x']
-                sys.modules['unwritable']
-        finally:
-            del sys.path[0]
+        import test.test_import.data.unwritable as unwritable
+        with self.assertWarns(ImportWarning):
+            from test.test_import.data.unwritable import x
+
+        self.assertNotEqual(type(unwritable), ModuleType)
+        self.assertEqual(type(x), ModuleType)
+        with self.assertRaises(AttributeError):
+            unwritable.x = 42
+
 
 if __name__ == '__main__':
     # Test needs to be a package, so we can do relative imports.
