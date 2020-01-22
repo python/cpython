@@ -997,7 +997,7 @@ Notes:
 (9)
    In CPython, :meth:`tuple.count` and :meth:`list.count` consider that an
    element is equal to *x* if it is identical to *x* (if ``element is x`` is
-   true): don't call the element ``__eq__()`` method.
+   true): the element ``__eq__()`` method is not called.
 
 
 .. _typesseq-immutable:
