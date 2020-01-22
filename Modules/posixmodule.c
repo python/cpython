@@ -10157,16 +10157,17 @@ os_putenv_impl(PyObject *module, PyObject *name, PyObject *value)
 {
     const char *name_string = PyBytes_AS_STRING(name);
     const char *value_string = PyBytes_AS_STRING(value);
-#ifdef HAVE_SETENV
-    if (setenv(name_string, value_string, 1)) {
-        return posix_error();
-    }
-#else
+
     if (strchr(name_string, '=') != NULL) {
         PyErr_SetString(PyExc_ValueError, "illegal environment variable name");
         return NULL;
     }
 
+#ifdef HAVE_SETENV
+    if (setenv(name_string, value_string, 1)) {
+        return posix_error();
+    }
+#else
     PyObject *bytes = PyBytes_FromFormat("%s=%s", name_string, value_string);
     if (bytes == NULL) {
         return NULL;
