@@ -715,7 +715,9 @@ class _Environ(MutableMapping):
 try:
     _putenv = putenv
 except NameError:
-    _putenv = lambda key, value: None
+    def _putenv(key, value):
+        # do nothing
+        return
 else:
     if "putenv" not in __all__:
         __all__.append("putenv")
@@ -723,7 +725,9 @@ else:
 try:
     _unsetenv = unsetenv
 except NameError:
-    _unsetenv = lambda key: _putenv(key, "")
+    def _unsetenv(key):
+        # set the environment variable to an empty string
+        _putenv(key, "")
 else:
     if "unsetenv" not in __all__:
         __all__.append("unsetenv")

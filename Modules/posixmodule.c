@@ -10079,7 +10079,45 @@ posix_putenv_dict_setitem(PyObject *name, PyObject *value)
 #endif  /* PY_PUTENV_DICT */
 
 
-#ifdef HAVE_PUTENV
+#ifdef MS_WINDOWS
+static PyObject*
+py_win_putenv(PyObject *name, PyObject *value)
+{
+    PyObject *unicode = PyUnicode_FromFormat("%U=%U", name, value);
+    if (unicode == NULL) {
+        return NULL;
+    }
+
+    const wchar_t *env;
+    Py_ssize_t size;
+    /* PyUnicode_AsWideCharString() rejects embedded null characters */
+    env = PyUnicode_AsWideCharString(unicode, &size);
+    if (env == NULL) {
+        goto error;
+    }
+    if (size > _MAX_ENV) {
+        PyErr_Format(PyExc_ValueError,
+                     "the environment variable is longer than %u characters",
+                     _MAX_ENV);
+        goto error;
+    }
+
+    /* Use _wputenv() rather than SetEnvironmentVariableW(): _wputenv()
+       updates the CRT, whereas SetEnvironmentVariableW() does not. */
+    if (_wputenv(env)) {
+        posix_error();
+        goto error;
+    }
+
+    posix_putenv_dict_setitem(name, unicode);
+    Py_RETURN_NONE;
+
+error:
+    Py_DECREF(unicode);
+    return NULL;
+}
+#endif
+
 
 #ifdef MS_WINDOWS
 /*[clinic input]
@@ -10096,9 +10134,6 @@ static PyObject *
 os_putenv_impl(PyObject *module, PyObject *name, PyObject *value)
 /*[clinic end generated code: output=d29a567d6b2327d2 input=ba586581c2e6105f]*/
 {
-    const wchar_t *env;
-    Py_ssize_t size;
-
     /* Search from index 1 because on Windows starting '=' is allowed for
        defining hidden environment variables. */
     if (PyUnicode_GET_LENGTH(name) == 0 ||
@@ -10107,38 +10142,11 @@ os_putenv_impl(PyObject *module, PyObject *name, PyObject *value)
         PyErr_SetString(PyExc_ValueError, "illegal environment variable name");
         return NULL;
     }
-    PyObject *unicode = PyUnicode_FromFormat("%U=%U", name, value);
-    if (unicode == NULL) {
-        return NULL;
-    }
 
-    env = PyUnicode_AsUnicodeAndSize(unicode, &size);
-    if (env == NULL)
-        goto error;
-    if (size > _MAX_ENV) {
-        PyErr_Format(PyExc_ValueError,
-                     "the environment variable is longer than %u characters",
-                     _MAX_ENV);
-        goto error;
-    }
-    if (wcslen(env) != (size_t)size) {
-        PyErr_SetString(PyExc_ValueError, "embedded null character");
-        goto error;
-    }
-
-    if (_wputenv(env)) {
-        posix_error();
-        goto error;
-    }
-
-    posix_putenv_dict_setitem(name, unicode);
-    Py_RETURN_NONE;
-
-error:
-    Py_DECREF(unicode);
-    return NULL;
+    return py_win_putenv(name, value);
 }
-#else /* MS_WINDOWS */
+/* repeat !defined(MS_WINDOWS) to workaround an Argument Clinic issue */
+#elif defined(HAVE_PUTENV) && !defined(MS_WINDOWS)
 /*[clinic input]
 os.putenv
 
@@ -10176,8 +10184,7 @@ os_putenv_impl(PyObject *module, PyObject *name, PyObject *value)
     posix_putenv_dict_setitem(name, bytes);
     Py_RETURN_NONE;
 }
-#endif /* MS_WINDOWS */
-#endif /* HAVE_PUTENV */
+#endif /* defined(HAVE_PUTENV) && !defined(MS_WINDOWS) */
 
 
 #ifdef MS_WINDOWS
@@ -10193,35 +10200,16 @@ static PyObject *
 os_unsetenv_impl(PyObject *module, PyObject *name)
 /*[clinic end generated code: output=54c4137ab1834f02 input=4d6a1747cc526d2f]*/
 {
-    /* PyUnicode_AsWideCharString() rejects embedded null characters */
-    wchar_t *name_str = PyUnicode_AsWideCharString(name, NULL);
-    if (name_str == NULL) {
+    PyObject *empty = PyUnicode_New(0, 0);
+    if (empty == NULL) {
         return NULL;
     }
 
-    BOOL ok = SetEnvironmentVariableW(name_str, NULL);
-    PyMem_Free(name_str);
+    /* _wputenv("name=") removes the environment variable "name" */
+    PyObject *res = py_win_putenv(name, empty);
+    Py_DECREF(empty);
 
-    if (!ok) {
-        return PyErr_SetFromWindowsErr(0);
-    }
-
-#ifdef PY_PUTENV_DICT
-    /* Remove the key from putenv_dict;
-     * this will cause it to be collected.  This has to
-     * happen after the real unsetenv() call because the
-     * old value was still accessible until then.
-     */
-    if (PyDict_DelItem(_posixstate(module)->putenv_dict, name)) {
-        /* really not much we can do; just leak */
-        if (!PyErr_ExceptionMatches(PyExc_KeyError)) {
-            return NULL;
-        }
-        PyErr_Clear();
-    }
-#endif
-
-    Py_RETURN_NONE;
+    return res;
 }
 /* repeat !defined(MS_WINDOWS) to workaround an Argument Clinic issue */
 #elif defined(HAVE_UNSETENV) && !defined(MS_WINDOWS)

@@ -955,10 +955,12 @@ class EnvironTests(mapping_tests.BasicTestMappingProtocol):
 
     # On OS X < 10.6, unsetenv() doesn't return a value (bpo-13415).
     @support.requires_mac_ver(10, 6)
-    def test_unset_error(self):
-        # "=" is not allowed in a variable name
-        key = 'key='
-        self.assertRaises(OSError, os.environ.__delitem__, key)
+    def test_unsetenv_error(self):
+        self.assertRaises(OSError, os.unsetenv, '=key')
+        # On Windows, only names starting with "=" are invalid
+        if sys.platform != "win32":
+            self.assertRaises(OSError, os.unsetenv, 'ke=y')
+            self.assertRaises(OSError, os.unsetenv, 'key=')
 
     def test_key_type(self):
         missing = 'missingkey'
