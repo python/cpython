@@ -427,7 +427,7 @@ Removed
 
 * The *encoding* parameter of :func:`json.loads` has been removed.  
   As of Python 3.1, it was deprecated and ignored; using it has emitted a
-  :exc:DeprecationWarning since Python 3.8.
+  :exc:`DeprecationWarning` since Python 3.8.
   (Contributed by Inada Naoki in :issue:`39377`)
 
 
