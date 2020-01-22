@@ -466,7 +466,7 @@ PyConfig
 
    .. c:member:: int dev_mode
 
-      Development mode: see :option:`-X dev <-X>`.
+      If non-zero, enable the :ref:`Python Development Mode <devmode>`.
 
    .. c:member:: int dump_refs
 
