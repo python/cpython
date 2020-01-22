@@ -46,6 +46,8 @@ _safe_super = super
 def _is_async_obj(obj):
     if _is_instance_mock(obj) and not isinstance(obj, AsyncMock):
         return False
+    if hasattr(obj, '__func__'):
+        obj = getattr(obj, '__func__')
     return asyncio.iscoroutinefunction(obj) or inspect.isawaitable(obj)
 
 
