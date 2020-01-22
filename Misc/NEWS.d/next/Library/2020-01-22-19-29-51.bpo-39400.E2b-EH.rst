@@ -1,0 +1,1 @@
+Changed pydoc's interpretation of the MANPAGER variable to better match man's.
