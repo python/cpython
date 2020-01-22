@@ -1,0 +1,1 @@
+Put minimal, sane, restrictions on the default string representations of Python's Numeric classes.
