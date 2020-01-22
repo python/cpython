@@ -363,6 +363,13 @@ Deprecated
 Removed
 =======
 
+* :class:`nntplib.NNTP`: ``xpath()`` and ``xgtitle()`` methods have been removed.
+  These methods are deprecated since Python 3.3. Generally, these extensions
+  are not supported or not enabled by NNTP server administrators.
+  For ``xgtitle()``, please use :meth:`nntplib.NNTP.descriptions` or
+  :meth:`nntplib.NNTP.description` instead.
+  (Contributed by Dong-hee Na in :issue:`39366`.)
+
 * :class:`array.array`: ``tostring()`` and ``fromstring()`` methods have been
   removed. They were aliases to ``tobytes()`` and ``frombytes()``, deprecated
   since Python 3.2.
