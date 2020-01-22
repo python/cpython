@@ -843,35 +843,6 @@ float_is_integer_impl(PyObject *self)
     return o;
 }
 
-#if 0
-static PyObject *
-float_is_inf(PyObject *v)
-{
-    double x = PyFloat_AsDouble(v);
-    if (x == -1.0 && PyErr_Occurred())
-        return NULL;
-    return PyBool_FromLong((long)Py_IS_INFINITY(x));
-}
-
-static PyObject *
-float_is_nan(PyObject *v)
-{
-    double x = PyFloat_AsDouble(v);
-    if (x == -1.0 && PyErr_Occurred())
-        return NULL;
-    return PyBool_FromLong((long)Py_IS_NAN(x));
-}
-
-static PyObject *
-float_is_finite(PyObject *v)
-{
-    double x = PyFloat_AsDouble(v);
-    if (x == -1.0 && PyErr_Occurred())
-        return NULL;
-    return PyBool_FromLong((long)Py_IS_FINITE(x));
-}
-#endif
-
 /*[clinic input]
 float.__trunc__
 
@@ -1863,14 +1834,6 @@ static PyMethodDef float_methods[] = {
     FLOAT_FROMHEX_METHODDEF
     FLOAT_HEX_METHODDEF
     FLOAT_IS_INTEGER_METHODDEF
-#if 0
-    {"is_inf",          (PyCFunction)float_is_inf,      METH_NOARGS,
-     "Return True if the float is positive or negative infinite."},
-    {"is_finite",       (PyCFunction)float_is_finite,   METH_NOARGS,
-     "Return True if the float is finite, neither infinite nor NaN."},
-    {"is_nan",          (PyCFunction)float_is_nan,      METH_NOARGS,
-     "Return True if the float is not a number (NaN)."},
-#endif
     FLOAT___GETNEWARGS___METHODDEF
     FLOAT___GETFORMAT___METHODDEF
     FLOAT___SET_FORMAT___METHODDEF
