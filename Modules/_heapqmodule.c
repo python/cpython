@@ -264,7 +264,10 @@ _heapq_heappushpop_impl(PyObject *module, PyObject *heap, PyObject *item)
         return item;
     }
 
-    cmp = PyObject_RichCompareBool(PyList_GET_ITEM(heap, 0), item, Py_LT);
+    PyObject* top = PyList_GET_ITEM(heap, 0);
+    Py_INCREF(top);
+    cmp = PyObject_RichCompareBool(top, item, Py_LT);
+    Py_DECREF(top);
     if (cmp < 0)
         return NULL;
     if (cmp == 0) {

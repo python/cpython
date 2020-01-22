@@ -432,6 +432,18 @@ class TestErrorHandling:
         with self.assertRaises((IndexError, RuntimeError)):
             self.module.heappop(heap)
 
+    def test_comparison_operator_modifiying_heap(self):
+        # See bpo-39421: Strong references need to be taken
+        # when comparing objects as they can alter the heap
+        class EvilClass(int):
+            def __lt__(self, o):
+                heap.clear()
+                return NotImplemented
+
+        heap = []
+        self.module.heappush(heap, EvilClass(0))
+        self.assertRaises(IndexError, self.module.heappushpop, heap, 1)
+
 
 class TestErrorHandlingPython(TestErrorHandling, TestCase):
     module = py_heapq
