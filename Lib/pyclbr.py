@@ -84,6 +84,22 @@ class Class(_Object):
     def _addmethod(self, name, lineno):
         self.methods[name] = lineno
 
+# This 2 functions are used in these tests
+# Lib/test/test_pyclbr, Lib/idlelib/idle_test/test_browser.py
+def _nest_function(ob, func_name, lineno, is_async=False):
+    "Return a Function after nesting within ob."
+    newfunc = Function(ob.module, func_name, ob.file, lineno, ob, is_async)
+    ob._addchild(func_name, newfunc)
+    if isinstance(ob, Class):
+        ob._addmethod(func_name, lineno)
+    return newfunc
+
+def _nest_class(ob, class_name, lineno, super=None):
+    "Return a Class after nesting within ob."
+    newclass = Class(ob.module, class_name, super, ob.file, lineno, ob)
+    ob._addchild(class_name, newclass)
+    return newclass
+
 def readmodule(module, path=None):
     """Return Class objects for the top-level classes in module.
 
@@ -169,7 +185,7 @@ def _readmodule(module, path, inpackage=None):
     return _create_tree(fullmodule, path, fname, source, tree, inpackage)
 
 
-class _ClassBrowser(ast.NodeVisitor):
+class _ModuleBrowser(ast.NodeVisitor):
     def __init__(self, module, path, file, tree, inpackage):
         self.path = path
         self.tree = tree
@@ -281,9 +297,9 @@ class _ClassBrowser(ast.NodeVisitor):
 
 
 def _create_tree(fullmodule, path, fname, source, tree, inpackage):
-    cbrowser = _ClassBrowser(fullmodule, path, fname, tree, inpackage)
-    cbrowser.visit(ast.parse(source))
-    return cbrowser.tree
+    mbrowser = _ModuleBrowser(fullmodule, path, fname, tree, inpackage)
+    mbrowser.visit(ast.parse(source))
+    return mbrowser.tree
 
 
 def _main():

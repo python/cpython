@@ -60,28 +60,16 @@ class ModuleBrowserTest(unittest.TestCase):
 
 # Nested tree same as in test_pyclbr.py except for supers on C0. C1.
 mb = pyclbr
-def _nest_function(ob, func_name, lineno):
-    newfunc = mb.Function(ob.module, func_name, ob.file, lineno, ob)
-    ob._addchild(func_name, newfunc)
-    if isinstance(ob, mb.Class):
-        ob._addmethod(func_name, lineno)
-    return newfunc
-
-def _nest_class(ob, class_name, lineno, super=None):
-    newclass = mb.Class(ob.module, class_name, super, ob.file, lineno, ob)
-    ob._addchild(class_name, newclass)
-    return newclass
-
 module, fname = 'test', 'test.py'
 C0 = mb.Class(module, 'C0', ['base'], fname, 1)
-F1 = _nest_function(C0, 'F1', 3)
-C1 = _nest_class(C0, 'C1', 6, [''])
-C2 = _nest_class(C1, 'C2', 7)
-F3 = _nest_function(C2, 'F3', 9)
+F1 = mb._nest_function(C0, 'F1', 3)
+C1 = mb._nest_class(C0, 'C1', 6, [''])
+C2 = mb._nest_class(C1, 'C2', 7)
+F3 = mb._nest_function(C2, 'F3', 9)
 f0 = mb.Function(module, 'f0', fname, 11)
-f1 = _nest_function(f0, 'f1', 12)
-f2 = _nest_function(f1, 'f2', 13)
-c1 = _nest_class(f0, 'c1', 15)
+f1 = mb._nest_function(f0, 'f1', 12)
+f2 = mb._nest_function(f1, 'f2', 13)
+c1 = mb._nest_class(f0, 'c1', 15)
 mock_pyclbr_tree = {'C0': C0, 'f0': f0}
 
 # Adjust C0.name, C1.name so tests do not depend on order.

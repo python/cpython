@@ -94,7 +94,7 @@ statements.  They have the following attributes:
    .. versionadded:: 3.7
 
 
-.. attribute:: Function.parent
+.. attribute:: Function.is_async
 
    ``True`` for functions that are defined with the ``async`` prefix, ``False`` otherwise.
 

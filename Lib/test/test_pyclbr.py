@@ -175,27 +175,16 @@ class PyclbrTest(TestCase):
         """)
         actual = mb._create_tree(m, p, f, source, t, i)
 
-        def _nest_function(ob, func_name, lineno):
-            newfunc = mb.Function(ob.module, func_name, ob.file, lineno, ob)
-            ob._addchild(func_name, newfunc)
-            if isinstance(ob, mb.Class):
-                ob._addmethod(func_name, lineno)
-            return newfunc
-
-        def _nest_class(ob, class_name, lineno, super=None):
-            newclass = mb.Class(ob.module, class_name, super, ob.file, lineno, ob)
-            ob._addchild(class_name, newclass)
-            return newclass
-
+        # Create descriptors, linked together, and expected dict.
         f0 = mb.Function(m, 'f0', f, 1)
-        f1 = _nest_function(f0, 'f1', 2)
-        f2 = _nest_function(f1, 'f2', 3)
-        c1 = _nest_class(f0, 'c1', 5)
+        f1 = mb._nest_function(f0, 'f1', 2)
+        f2 = mb._nest_function(f1, 'f2', 3)
+        c1 = mb._nest_class(f0, 'c1', 5)
         C0 = mb.Class(m, 'C0', None, f, 6)
-        F1 = _nest_function(C0, 'F1', 8)
-        C1 = _nest_class(C0, 'C1', 11)
-        C2 = _nest_class(C1, 'C2', 12)
-        F3 = _nest_function(C2, 'F3', 14)
+        F1 = mb._nest_function(C0, 'F1', 8)
+        C1 = mb._nest_class(C0, 'C1', 11)
+        C2 = mb._nest_class(C1, 'C2', 12)
+        F3 = mb._nest_function(C2, 'F3', 14)
         expected = {'f0':f0, 'C0':C0}
 
         def compare(parent1, children1, parent2, children2):
