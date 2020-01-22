@@ -2584,6 +2584,10 @@ list_count(PyListObject *self, PyObject *value)
 
     for (i = 0; i < Py_SIZE(self); i++) {
         PyObject *obj = self->ob_item[i];
+        if (obj == value) {
+           count++;
+           continue;
+        }
         Py_INCREF(obj);
         int cmp = PyObject_RichCompareBool(obj, value, Py_EQ);
         Py_DECREF(obj);
