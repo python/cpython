@@ -639,10 +639,6 @@ When UTF-8 mode is enabled:
 
 You can use the "mbcs" codec for the system encoding in UTF-8 mode.
 
-And you can use the legacy encoding for filesystem encoding via
-:func:`sys._enablelegacywindowsfsencoding` or
-:envvar:`PYTHONLEGACYWINDOWSFSENCODING` in UTF-8 mode too.
-
 
 .. _launcher:
 
