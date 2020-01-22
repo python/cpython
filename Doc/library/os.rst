@@ -642,7 +642,7 @@ process and user.
    calls to :func:`unsetenv` don't update ``os.environ``, so it is actually
    preferable to delete items of ``os.environ``.
 
-   .. availability:: most flavors of Unix, Windows.
+   .. availability:: most flavors of Unix.
 
 
 .. _os-newstreams:
