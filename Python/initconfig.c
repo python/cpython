@@ -64,6 +64,7 @@ static const char usage_3[] = "\
          also PYTHONWARNINGS=arg\n\
 -x     : skip first line of source, allowing use of non-Unix forms of #!cmd\n\
 -X opt : set implementation-specific option. The following options are available:\n\
+\n\
          -X faulthandler: enable faulthandler\n\
          -X showrefcount: output the total reference count and number of used\n\
              memory blocks when the program finishes or after each statement in the\n\
@@ -80,9 +81,8 @@ static const char usage_3[] = "\
              nested imports). Note that its output may be broken in multi-threaded\n\
              application. Typical usage is python3 -X importtime -c 'import asyncio'\n\
          -X dev: enable CPython’s “development mode”, introducing additional runtime\n\
-             checks which are too expensive to be enabled by default. It will not be\n\
-             more verbose than the default if the code is correct: new warnings are\n\
-             only emitted when an issue is detected. Effect of the developer mode:\n\
+             checks which are too expensive to be enabled by default. Effect of the\n\
+             developer mode:\n\
                 * Add default warning filter, as -W default\n\
                 * Install debug hooks on memory allocators: see the PyMem_SetupDebugHooks() C function\n\
                 * Enable the faulthandler module to dump the Python traceback on a crash\n\
@@ -91,9 +91,10 @@ static const char usage_3[] = "\
                 * io.IOBase destructor logs close() exceptions\n\
          -X utf8: enable UTF-8 mode for operating system interfaces, overriding the default\n\
              locale-aware mode. -X utf8=0 explicitly disables UTF-8 mode (even when it would\n\
-             otherwise activate automatically). See PYTHONUTF8 for more details\n\
+             otherwise activate automatically)\n\
          -X pycache_prefix=PATH: enable writing .pyc files to a parallel tree rooted at the\n\
-             given directory instead of to the code tree.\n\
+             given directory instead of to the code tree\n\
+\n\
 --check-hash-based-pycs always|default|never:\n\
     control how Python invalidates hash-based .pyc files\n\
 ";
