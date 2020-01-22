@@ -5411,13 +5411,6 @@ int_bit_length_impl(PyObject *self)
     return NULL;
 }
 
-#if 0
-static PyObject *
-long_is_finite(PyObject *v)
-{
-    Py_RETURN_TRUE;
-}
-#endif
 
 /*[clinic input]
 int.as_integer_ratio
@@ -5574,10 +5567,6 @@ static PyMethodDef long_methods[] = {
     {"conjugate",       long_long_meth, METH_NOARGS,
      "Returns self, the complex conjugate of any int."},
     INT_BIT_LENGTH_METHODDEF
-#if 0
-    {"is_finite",       (PyCFunction)long_is_finite,    METH_NOARGS,
-     "Returns always True."},
-#endif
     INT_TO_BYTES_METHODDEF
     INT_FROM_BYTES_METHODDEF
     INT_AS_INTEGER_RATIO_METHODDEF
