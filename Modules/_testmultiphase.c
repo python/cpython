@@ -12,13 +12,9 @@ typedef struct {
 
 /*[clinic input]
 module _testmultiphase
-[clinic start generated code]*/
-/*[clinic end generated code: output=da39a3ee5e6b4b0d input=a11493b5ab5f8846]*/
-
-/*[clinic input]
 class _testmultiphase.Example "ExampleObject *" "!Example"
 [clinic start generated code]*/
-/*[clinic end generated code: output=da39a3ee5e6b4b0d input=c23a06dc20bc1f6f]*/
+/*[clinic end generated code: output=da39a3ee5e6b4b0d input=cf7bf661ca0179b9]*/
 
 /* Example objects */
 typedef struct {
@@ -157,7 +153,7 @@ _testmultiphase.StateAccessType.increment_count
 
     cls: defining_class
 
-This method returns module of the defining class.
+This method adds 1 to the module-state counter.
 [clinic start generated code]*/
 
 static PyObject *
@@ -176,7 +172,7 @@ _testmultiphase.StateAccessType.decrement_count
 
     cls: defining_class
 
-This method returns module of the defining class.
+This method subtracts 1 from the module-state counter.
 [clinic start generated code]*/
 
 static PyObject *
@@ -195,7 +191,8 @@ _testmultiphase.StateAccessType.get_count
 
     cls: defining_class
 
-This method returns module of the defining class.
+This method returns the number that is currently on the module-state
+counter.
 [clinic start generated code]*/
 
 static PyObject *

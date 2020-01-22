@@ -9,9 +9,7 @@ import types
 import unittest
 import importlib.util
 import importlib
-import gc
 from test.support.script_helper import assert_python_failure
-
 
 class LoaderTests(abc.LoaderTests):
 

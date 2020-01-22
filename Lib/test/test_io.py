@@ -3496,7 +3496,7 @@ class TextIOWrapperTest(unittest.TestCase):
     def test_create_at_shutdown_without_encoding(self):
         rc, out, err = self._check_create_at_shutdown()
         if err:
-            # Can error out with a Lookup if the encoding
+            # Can error out with a RuntimeError if the module state
             # isn't found.
             # self.assertIn(self.shutdown_error, err.decode())
             self.assertIn(self.shutdown_error, err.decode())
