@@ -36,7 +36,11 @@ siftdown(PyListObject *heap, Py_ssize_t startpos, Py_ssize_t pos)
     while (pos > startpos) {
         parentpos = (pos - 1) >> 1;
         parent = arr[parentpos];
+        Py_INCREF(newitem);
+        Py_INCREF(parent);
         cmp = PyObject_RichCompareBool(newitem, parent, Py_LT);
+        Py_DECREF(parent);
+        Py_DECREF(newitem);
         if (cmp < 0)
             return -1;
         if (size != PyList_GET_SIZE(heap)) {
