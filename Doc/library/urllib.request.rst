@@ -196,8 +196,8 @@ The following classes are provided:
    has been provided, :class:`HTTPHandler` will set these headers according
    to the type of *data*.  ``Content-Length`` will be used to send
    bytes objects, while ``Transfer-Encoding: chunked`` as specified in
-   :rfc:`RFC 7230, Section 3.3.1 <7230#section-3.3.1>`,  will be used to send
-   files and other iterables.
+   :rfc:`7230`, :rfc:`Section 3.3.1 <7230#section-3.3.1>`,  will be used
+   to send files and other iterables.
 
    For an HTTP POST request method, *data* should be a buffer in the
    standard :mimetype:`application/x-www-form-urlencoded` format.  The
