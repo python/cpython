@@ -889,7 +889,7 @@ operations have the same priority as the corresponding numeric operations. [3]_
 |                          | of *x* in *s* (at or after     |          |
 |                          | index *i* and before index *j*)|          |
 +--------------------------+--------------------------------+----------+
-| ``s.count(x)``           | total number of occurrences of |          |
+| ``s.count(x)``           | total number of occurrences of | \(9)     |
 |                          | *x* in *s*                     |          |
 +--------------------------+--------------------------------+----------+
 
@@ -993,6 +993,11 @@ Notes:
    the extra arguments is roughly equivalent to using ``s[i:j].index(x)``, only
    without copying any data and with the returned index being relative to
    the start of the sequence rather than the start of the slice.
+
+(9)
+   In CPython, :meth:`tuple.count` and :meth:`list.count` consider that an
+   element is equal to *x* if it is identical to *x* (if ``element is x`` is
+   true): don't call the element ``__eq__()`` method.
 
 
 .. _typesseq-immutable:
