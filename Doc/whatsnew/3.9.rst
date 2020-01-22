@@ -353,6 +353,16 @@ Deprecated
   deprecated and will be removed in version 3.11.
   (Contributed by Yury Selivanov and Kyle Stanley in :issue:`34790`.)
 
+* binhex4 and hexbin4 standards are now deprecated. The :`binhex` module
+  and the following :mod:`binascii` functions are now deprecated:
+
+  * :func:`~binascii.b2a_hqx`, :func:`~binascii.a2b_hqx`
+  * :func:`~binascii.rlecode_hqx`, :func:`~binascii.rledecode_hqx`
+  * :func:`~binascii.crc_hqx`
+
+  (Contributed by Victor Stinner in :issue:`39353`.)
+
+
 Removed
 =======
 
