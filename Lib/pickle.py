@@ -410,7 +410,7 @@ class _Pickler:
 
         The optional *protocol* argument tells the pickler to use the
         given protocol; supported protocols are 0, 1, 2, 3, 4 and 5.
-        The default protocol is 4. It was introduced in Python 3.4, it
+        The default protocol is 4. It was introduced in Python 3.4, and
         is incompatible with previous versions.
 
         Specifying a negative protocol version selects the highest
