@@ -953,8 +953,6 @@ class EnvironTests(mapping_tests.BasicTestMappingProtocol):
         value_str = value.decode(sys.getfilesystemencoding(), 'surrogateescape')
         self.assertEqual(os.environ['bytes'], value_str)
 
-    @unittest.skipUnless(hasattr(os, 'putenv'), "Test needs os.putenv()")
-    @unittest.skipUnless(hasattr(os, 'unsetenv'), "Test needs os.unsetenv()")
     def test_putenv_unsetenv(self):
         name = "PYTHONTESTVAR"
         value = "testvalue"
@@ -975,8 +973,6 @@ class EnvironTests(mapping_tests.BasicTestMappingProtocol):
 
     # On OS X < 10.6, unsetenv() doesn't return a value (bpo-13415).
     @support.requires_mac_ver(10, 6)
-    @unittest.skipUnless(hasattr(os, 'putenv'), "Test needs os.putenv()")
-    @unittest.skipUnless(hasattr(os, 'unsetenv'), "Test needs os.unsetenv()")
     def test_putenv_unsetenv_error(self):
         # Empty variable name is invalid.
         # "=" and null character are not allowed in a variable name.
