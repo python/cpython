@@ -104,11 +104,8 @@ def make_tarball(base_name, base_dir, compress="gzip", verbose=0, dry_run=0,
         return tarinfo
 
     if not dry_run:
-        tar = tarfile.open(archive_name, 'w|%s' % tar_compression[compress])
-        try:
+        with tarfile.open(archive_name, 'w|{!s}'.format(tar_compression[compress])) as tar:
             tar.add(base_dir, filter=_set_uid_gid)
-        finally:
-            tar.close()
 
     # compression using `compress`
     if compress == 'compress':
