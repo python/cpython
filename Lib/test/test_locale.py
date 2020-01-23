@@ -1,6 +1,7 @@
 from test.support import verbose, is_android, check_warnings
 import unittest
 import locale
+import platform
 import sys
 import codecs
 
@@ -573,6 +574,21 @@ class TestMiscellaneous(unittest.TestCase):
     def test_invalid_iterable_in_localetuple(self):
         with self.assertRaises(TypeError):
             locale.setlocale(locale.LC_ALL, (b'not', b'valid'))
+
+    def test_getfirstweekday(self):
+        self.assertEqual(locale.getfirstweekday(), 0)
+
+    @unittest.skipUnless(
+        sys.platform.startswith('win32') or platform.libc_ver()[0] == 'glibc',
+        "implemented only for Windows and glibc")
+    def test_getfirstweekday_fr_FR(self):
+        oldlocale = locale.setlocale(locale.LC_ALL)
+        self.addCleanup(locale.setlocale, locale.LC_ALL, oldlocale)
+        try:
+            locale.setlocale(locale.LC_ALL, 'fr_FR')
+        except locale.Error:
+            self.skipTest('test needs French locale')
+        self.assertEqual(locale.getfirstweekday(), 1)
 
 
 class BaseDelocalizeTest(BaseLocalizedTest):
