@@ -28,6 +28,7 @@ from test.support import script_helper
 from test.test_importlib.util import uncache
 from types import ModuleType
 
+
 skip_if_dont_write_bytecode = unittest.skipIf(
         sys.dont_write_bytecode,
         "test meaningful only when writing bytecode")
