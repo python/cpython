@@ -461,9 +461,9 @@ always available.
       Added ``isolated`` attribute for :option:`-I` ``isolated`` flag.
 
    .. versionchanged:: 3.7
-      Added ``dev_mode`` attribute for the new :ref:`Python Development Mode
-      <devmode>` and ``utf8_mode`` attribute for the new  :option:`-X` ``utf8``
-      flag.
+      Added the ``dev_mode`` attribute for the new :ref:`Python Development
+      Mode <devmode>` and the ``utf8_mode`` attribute for the new  :option:`-X`
+      ``utf8`` flag.
 
 
 .. data:: float_info

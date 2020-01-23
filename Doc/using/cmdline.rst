@@ -443,7 +443,7 @@ Miscellaneous options
      application.  Typical usage is ``python3 -X importtime -c 'import
      asyncio'``.  See also :envvar:`PYTHONPROFILEIMPORTTIME`.
    * ``-X dev``: enable :ref:`Python Development Mode <devmode>`, introducing
-     additional runtime checks which are too expensive to be enabled by
+     additional runtime checks that are too expensive to be enabled by
      default.
    * ``-X utf8`` enables UTF-8 mode for operating system interfaces, overriding
      the default locale-aware mode. ``-X utf8=0`` explicitly disables UTF-8
@@ -875,8 +875,9 @@ conflict.
 
 .. envvar:: PYTHONDEVMODE
 
-   If this environment variable is set to a non-empty string, enable the
-   :ref:`Python Development Mode <devmode>`.
+   If this environment variable is set to a non-empty string, enable
+   :ref:`Python Development Mode <devmode>`, introducing additional runtime
+   checks that are too expensive to be enabled by default.
 
    .. versionadded:: 3.7
 
