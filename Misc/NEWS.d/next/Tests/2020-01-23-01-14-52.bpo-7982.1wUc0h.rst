@@ -1,0 +1,1 @@
+Adds an encoding option to the captured_output (captured_stdout, captured_stdin, captured_stderr) functions that makes writing test cases involving encodings easier.
