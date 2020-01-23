@@ -522,54 +522,46 @@ The :mod:`functools` module defines the following functions:
 
    Provides functionality to topologically sort a graph of hashable nodes.
 
-   A topological order is a linear ordering of the vertices in a graph such that for
-   every directed edge u -> v from vertex u to vertex v, vertex u comes before vertex
-   v in the ordering. For instance, the vertices of the graph may represent tasks to
-   be performed, and the edges may represent constraints that one task must be
-   performed before another; in this example, a topological ordering is just a valid
-   sequence for the tasks. A complete topological ordering is possible if and only if
-   the graph has no directed cycles, that is, if it is a directed acyclic graph.
+   A topological order is a linear ordering of the vertices in a graph such that
+   for every directed edge u -> v from vertex u to vertex v, vertex u comes
+   before vertex v in the ordering. For instance, the vertices of the graph may
+   represent tasks to be performed, and the edges may represent constraints that
+   one task must be performed before another; in this example, a topological
+   ordering is just a valid sequence for the tasks. A complete topological
+   ordering is possible if and only if the graph has no directed cycles, that
+   is, if it is a directed acyclic graph.
 
-   If the optional *graph* argument is provided it must be a dictionary representing
-   a directed acyclic graph where the keys are nodes and the values are iterables of
-   all predecessors of that node in the graph (the nodes that have edges that point
-   to the value in the key). Additional nodes can be added to the graph using the
-   :meth:`~TopologicalSorter.add` method.
+   If the optional *graph* argument is provided it must be a dictionary
+   representing a directed acyclic graph where the keys are nodes and the values
+   are iterables of all predecessors of that node in the graph (the nodes that
+   have edges that point to the value in the key). Additional nodes can be added
+   to the graph using the :meth:`~TopologicalSorter.add` method.
 
-   In the general case, the steps required to perform the sorting of a given graph
-   are as follows:
+   In the general case, the steps required to perform the sorting of a given
+   graph are as follows:
 
-         * Create an instance of the :class:`TopologicalSorter` with an optional initial graph.
+         * Create an instance of the :class:`TopologicalSorter` with an optional
+           initial graph.
          * Add additional nodes to the graph.
          * Call :meth:`~TopologicalSorter.prepare` on the graph.
-         * While :meth:`~TopologicalSorter.is_active` is ``True``, iterate over the
-           nodes returned by :meth:`~TopologicalSorter.get_ready` and process them.
-           Call :meth:`~TopologicalSorter.done` on each node as it finishes processing.
+         * While :meth:`~TopologicalSorter.is_active` is ``True``, iterate over
+           the nodes returned by :meth:`~TopologicalSorter.get_ready` and
+           process them. Call :meth:`~TopologicalSorter.done` on each node as it
+           finishes processing.
 
    In case just an immediate sorting of the nodes in the graph is required and
-   no parallelism is involved, the convenience method :meth:`TopologicalSorter.static_order`
-   can be used directly. For example, this method can be used to implement a simple
-   version of the C3 linearization algorithm used by Python to calculate the Method
-   Resolution Order (MRO) of a derived class:
+   no parallelism is involved, the convenience method
+   :meth:`TopologicalSorter.static_order` can be used directly:
 
    .. doctest::
 
-       >>> class A: pass
-       >>> class B(A): pass
-       >>> class C(A): pass
-       >>> class D(B, C): pass
-
-       >>> D.__mro__
-       (<class 'D'>, <class 'B'>, <class 'C'>, <class 'A'>, <class 'object'>)
-
-       >>> graph = {D: {B, C}, C: {A}, B: {A}, A:{object}}
+       >>> graph = {"D": {"B", "C"}, "C": {"A"}, "B": {"A"}}
        >>> ts = TopologicalSorter(graph)
-       >>> topological_order = tuple(ts.static_order())
-       >>> tuple(reversed(topological_order))
-       (<class 'D'>, <class 'B'>, <class 'C'>, <class 'A'>, <class 'object'>)
+       >>> tuple(ts.static_order())
+       ('A', 'C', 'B', 'D')
 
-   The class is designed to easily support parallel processing of the nodes as they
-   become ready. For instance::
+   The class is designed to easily support parallel processing of the nodes as
+   they become ready. For instance::
 
        topological_sorter = TopologicalSorter()
 
@@ -595,39 +587,39 @@ The :mod:`functools` module defines the following functions:
 
    .. method:: add(node, *predecessors)
 
-      Add a new node and its predecessors to the graph. Both the *node* and
-      all elements in *predecessors* must be hashable.
+      Add a new node and its predecessors to the graph. Both the *node* and all
+      elements in *predecessors* must be hashable.
 
-      If called multiple times with the same node argument, the set of dependencies
-      will be the union of all dependencies passed in.
+      If called multiple times with the same node argument, the set of
+      dependencies will be the union of all dependencies passed in.
 
       It is possible to add a node with no dependencies (*predecessors* is not
       provided) or to provide a dependency twice. If a node that has not been
-      provided before is included among *predecessors* it will be automatically added
-      to the graph with no predecessors of its own.
+      provided before is included among *predecessors* it will be automatically
+      added to the graph with no predecessors of its own.
 
       Raises :exc:`ValueError` if called after :meth:`~TopologicalSorter.prepare`.
 
    .. method:: prepare()
 
-      Mark the graph as finished and check for cycles in the graph. If any cycle is
-      detected, :exc:`CycleError` will be raised, but
-      :meth:`~TopologicalSorter.get_ready` can still be used to obtain as many nodes
-      as possible until cycles block more progress. After a call to this function,
-      the graph cannot be modified, and therefore no more nodes can be added using
-      :meth:`~TopologicalSorter.add`.
+      Mark the graph as finished and check for cycles in the graph. If any cycle
+      is detected, :exc:`CycleError` will be raised, but
+      :meth:`~TopologicalSorter.get_ready` can still be used to obtain as many
+      nodes as possible until cycles block more progress. After a call to this
+      function, the graph cannot be modified, and therefore no more nodes can be
+      added using :meth:`~TopologicalSorter.add`.
 
    .. method:: is_active()
 
-      Returns ``True`` if more progress can be made and ``False`` otherwise. Progress
-      can be made if cycles do not block the resolution and either there are still
-      nodes ready that haven't yet been returned by
+      Returns ``True`` if more progress can be made and ``False`` otherwise.
+      Progress can be made if cycles do not block the resolution and either
+      there are still nodes ready that haven't yet been returned by
       :meth:`TopologicalSorter.get_ready` or the number of nodes marked
-      :meth:`TopologicalSorter.done` is less than the number that have been returned
-      by :meth:`TopologicalSorter.get_ready`.
+      :meth:`TopologicalSorter.done` is less than the number that have been
+      returned by :meth:`TopologicalSorter.get_ready`.
 
-      The :meth:`~TopologicalSorter.__bool__` method of this class defers to this
-      function, so instead of::
+      The :meth:`~TopologicalSorter.__bool__` method of this class defers to
+      this function, so instead of::
 
           if ts.is_active():
               ...
@@ -637,29 +629,28 @@ The :mod:`functools` module defines the following functions:
           if ts:
               ...
 
-      Raises :exc:`ValueError` if called without calling :meth:`~TopologicalSorter.prepare`
-      previously.
+      Raises :exc:`ValueError` if called without calling
+      :meth:`~TopologicalSorter.prepare` previously.
 
    .. method:: done(*nodes)
 
       Marks a set of nodes returned by :meth:`TopologicalSorter.get_ready` as
-      processed, unblocking any successor of each node in *nodes* for being returned
-      in the future by a call to :meth:`TopologicalSorter.get_ready`.
+      processed, unblocking any successor of each node in *nodes* for being
+      returned in the future by a call to :meth:`TopologicalSorter.get_ready`.
 
       Raises :exc:`ValueError` if any node in *nodes* has already been marked as
-      processed by a previous call to this method or if a node was not added to the
-      graph by using :meth:`TopologicalSorter.add`, if called without calling
-      :meth:`~TopologicalSorter.prepare` or if node has not yet been returned by
-      :meth:`~TopologicalSorter.get_ready`.
+      processed by a previous call to this method or if a node was not added to
+      the graph by using :meth:`TopologicalSorter.add`, if called without
+      calling :meth:`~TopologicalSorter.prepare` or if node has not yet been
+      returned by :meth:`~TopologicalSorter.get_ready`.
 
    .. method:: get_ready()
 
-      Returns a ``tuple`` with all the nodes that are ready. Initially it returns all
-      nodes with no predecessors, and once those are marked as processed by calling
-      :meth:`TopologicalSorter.done`, further calls will return all new nodes that
-      have all their predecessors already processed. Once no more progress can be
-      made, empty tuples are returned.
-      made.
+      Returns a ``tuple`` with all the nodes that are ready. Initially it
+      returns all nodes with no predecessors, and once those are marked as
+      processed by calling :meth:`TopologicalSorter.done`, further calls will
+      return all new nodes that have all their predecessors already processed.
+      Once no more progress can be made, empty tuples are returned.
 
       Raises :exc:`ValueError` if called without calling
       :meth:`~TopologicalSorter.prepare` previously.
@@ -694,9 +685,10 @@ The :mod:`functools` module defines the following functions:
           >>> print([*ts2.static_order()])
           [0, 2, 1, 3]
 
-      This is due to the fact that "0" and "2" are in the same level in the graph (they
-      would have been returned in the same call to :meth:`~TopologicalSorter.get_ready`)
-      and the order between them is determined by the order of insertion.
+      This is due to the fact that "0" and "2" are in the same level in the
+      graph (they would have been returned in the same call to
+      :meth:`~TopologicalSorter.get_ready`) and the order between them is
+      determined by the order of insertion.
 
 
       If any cycle is detected, :exc:`CycleError` will be raised.
