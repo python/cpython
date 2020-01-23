@@ -813,3 +813,19 @@ differences.  For instance, the :attr:`~definition.__name__` and :attr:`__doc__`
 are not created automatically.  Also, :class:`partial` objects defined in
 classes behave like static methods and do not transform into bound methods
 during instance attribute look-up.
+
+
+Exceptions
+----------
+The :mod:`functools` module defines the following exception classes:
+
+.. exception:: CycleError
+
+   Subclass of :exc:`ValueError` raised by :meth:`TopologicalSorter.prepare` if cycles exist
+   in the working graph. If multiple cycles exist, only one undefined choice among them will
+   be reported and included in the exception.
+
+   The detected cycle can be accessed via the second element in the :attr:`~CycleError.args`
+   attribute of the exception instance and consists in a list of nodes, such that each node is,
+   in the graph, an immediate predecessor of the next node in the list. In the reported list,
+   the first and the last node will be the same, to make it clear that it is cyclic.
