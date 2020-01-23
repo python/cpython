@@ -319,6 +319,38 @@ class LzmaListTest(LzmaTest, ListTest):
 
 class CommonReadTest(ReadTest):
 
+    def test_is_tarfile_erroneous(self):
+        with open(tmpname, "wb"):
+            pass
+
+        # is_tarfile works on filenames
+        self.assertFalse(tarfile.is_tarfile(tmpname))
+
+        # is_tarfile works on path-like objects
+        self.assertFalse(tarfile.is_tarfile(pathlib.Path(tmpname)))
+
+        # is_tarfile works on file objects
+        with open(tmpname, "rb") as fobj:
+            self.assertFalse(tarfile.is_tarfile(fobj))
+
+        # is_tarfile works on file-like objects
+        self.assertFalse(tarfile.is_tarfile(io.BytesIO(b"invalid")))
+
+    def test_is_tarfile_valid(self):
+        # is_tarfile works on filenames
+        self.assertTrue(tarfile.is_tarfile(self.tarname))
+
+        # is_tarfile works on path-like objects
+        self.assertTrue(tarfile.is_tarfile(pathlib.Path(self.tarname)))
+
+        # is_tarfile works on file objects
+        with open(self.tarname, "rb") as fobj:
+            self.assertTrue(tarfile.is_tarfile(fobj))
+
+        # is_tarfile works on file-like objects
+        with open(self.tarname, "rb") as fobj:
+            self.assertTrue(tarfile.is_tarfile(io.BytesIO(fobj.read())))
+
     def test_empty_tarfile(self):
         # Test for issue6123: Allow opening empty archives.
         # This test checks if tarfile.open() is able to open an empty tar
