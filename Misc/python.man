@@ -273,7 +273,45 @@ field matches the line number, where zero matches all line numbers and
 is thus equivalent to an omitted line number.
 .TP
 .BI "\-X " option
-Set implementation specific option.
+Set implementation specific option. The following options are available:
+
+    -X faulthandler: enable faulthandler
+
+    -X showrefcount: output the total reference count and number of used
+        memory blocks when the program finishes or after each statement in the
+        interactive interpreter. This only works on debug builds
+
+    -X tracemalloc: start tracing Python memory allocations using the
+        tracemalloc module. By default, only the most recent frame is stored in a
+        traceback of a trace. Use -X tracemalloc=NFRAME to start tracing with a
+        traceback limit of NFRAME frames
+
+    -X showalloccount: output the total count of allocated objects for each
+        type when the program finishes. This only works when Python was built with
+        COUNT_ALLOCS defined
+
+    -X importtime: show how long each import takes. It shows module name,
+        cumulative time (including nested imports) and self time (excluding
+        nested imports). Note that its output may be broken in multi-threaded
+        application. Typical usage is python3 -X importtime -c 'import asyncio'
+
+    -X dev: enable CPython’s “development mode”, introducing additional runtime
+        checks which are too expensive to be enabled by default. It will not be
+        more verbose than the default if the code is correct: new warnings are
+        only emitted when an issue is detected. Effect of the developer mode:
+           * Add default warning filter, as -W default
+           * Install debug hooks on memory allocators: see the PyMem_SetupDebugHooks() C function
+           * Enable the faulthandler module to dump the Python traceback on a crash
+           * Enable asyncio debug mode
+           * Set the dev_mode attribute of sys.flags to True
+           * io.IOBase destructor logs close() exceptions
+
+    -X utf8: enable UTF-8 mode for operating system interfaces, overriding the default
+        locale-aware mode. -X utf8=0 explicitly disables UTF-8 mode (even when it would
+        otherwise activate automatically). See PYTHONUTF8 for more details
+
+    -X pycache_prefix=PATH: enable writing .pyc files to a parallel tree rooted at the
+         given directory instead of to the code tree.
 .TP
 .B \-x
 Skip the first line of the source.  This is intended for a DOS
