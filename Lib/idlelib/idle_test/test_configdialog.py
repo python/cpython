@@ -47,6 +47,17 @@ def tearDownModule():
     root.destroy()
     root = dialog = None
 
+class ConfigDialogTest(unittest.TestCase):
+
+    def test_help(self):
+        dialog.note.select(dialog.keyspage)
+        saved = configdialog.view_text
+        view = configdialog.view_text = Func()
+        dialog.help()
+        s = view.kwds['contents']
+        self.assertTrue(s.startswith('When you click'))
+        self.assertTrue(s.endswith('a different name.\n'))
+        configdialog.view_text = saved
 
 class FontPageTest(unittest.TestCase):
     """Test that font widgets enable users to make font changes.
