@@ -166,6 +166,13 @@ ftplib
 if the given timeout for their constructor is zero to prevent the creation of
 a non-blocking socket. (Contributed by Dong-hee Na in :issue:`39259`.)
 
+functools
+---------
+
+Add the :class:`functools.TopologicalSorter` class to offer functionality to perform
+topological sorting of graphs. (Contributed by Pablo Galindo, Tim Peters and Larry
+Hastings in :issue:`17005`.)
+
 gc
 --
 
