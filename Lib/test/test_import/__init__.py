@@ -3,7 +3,6 @@ import contextlib
 import errno
 import glob
 import importlib.util
-import inspect
 from importlib._bootstrap_external import _get_sourcefile
 import marshal
 import os
