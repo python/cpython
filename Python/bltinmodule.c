@@ -2292,7 +2292,8 @@ builtin_sum_impl(PyObject *module, PyObject *iterable, PyObject *start)
 /*[clinic end generated code: output=df758cec7d1d302f input=162b50765250d222]*/
 {
     PyObject *result = start;
-    PyObject *temp, *item, *iter;
+    PyObject *temp = NULL;
+    PyObject *item, *iter;
 
     iter = PyObject_GetIter(iterable);
     if (iter == NULL)
@@ -2432,16 +2433,26 @@ builtin_sum_impl(PyObject *module, PyObject *iterable, PyObject *start)
             }
             break;
         }
-        /* It's tempting to use PyNumber_InPlaceAdd instead of
-           PyNumber_Add here, to avoid quadratic running time
-           when doing 'sum(list_of_lists, [])'.  However, this
-           would produce a change in behaviour: a snippet like
+        /* We have to be careful about using PyNumber_InPlaceAdd here.
+           The first iteration has to use PyNumber_Add to avoid accidentally
+           mutating the start argument passed in. Consider:
 
              empty = []
-             sum([[x] for x in range(10)], empty)
+             sum([[1], [2]], empty)
 
-           would change the value of empty. */
-        temp = PyNumber_Add(result, item);
+          If we were to use InPlaceAdd for the first iteration, we would get
+          `empty += [1]`, mutating the value of empty. Instead, by first using
+          a simple PyNumber_Add, then PyNumber_InPlaceAdd we get:
+
+            temp = empty + [1]
+            temp += [2]
+
+          allowing us to use potentially faster `+=` code paths. */
+        if (temp == NULL) {
+            temp = PyNumber_Add(result, item);
+        } else {
+            temp = PyNumber_InPlaceAdd(result, item);
+        }
         Py_DECREF(result);
         Py_DECREF(item);
         result = temp;
