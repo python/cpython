@@ -859,40 +859,25 @@ All of the following opcodes use their arguments.
    .. versionadded:: 3.6
 
 
-.. opcode:: BUILD_TUPLE_UNPACK (count)
+.. opcode:: LIST_TO_TUPLE
 
-   Pops *count* iterables from the stack, joins them in a single tuple,
-   and pushes the result.  Implements iterable unpacking in tuple
-   displays ``(*x, *y, *z)``.
+    Pops a list from the stack and pushes a tuple containing the same values.
 
-   .. versionadded:: 3.5
+   .. versionadded:: 3.9
 
 
-.. opcode:: BUILD_TUPLE_UNPACK_WITH_CALL (count)
+.. opcode:: LIST_EXTEND (i)
 
-   This is similar to :opcode:`BUILD_TUPLE_UNPACK`,
-   but is used for ``f(*x, *y, *z)`` call syntax. The stack item at position
-   ``count + 1`` should be the corresponding callable ``f``.
+   Calls ``list.extend(TOS1[-i], TOS)``.  Used to build lists.
 
-   .. versionadded:: 3.6
+   .. versionadded:: 3.9
 
 
-.. opcode:: BUILD_LIST_UNPACK (count)
+.. opcode:: SET_UPDATE
 
-   This is similar to :opcode:`BUILD_TUPLE_UNPACK`, but pushes a list
-   instead of tuple.  Implements iterable unpacking in list
-   displays ``[*x, *y, *z]``.
+   Calls ``set.update(TOS1[-i], TOS)``.  Used to build sets.
 
-   .. versionadded:: 3.5
-
-
-.. opcode:: BUILD_SET_UNPACK (count)
-
-   This is similar to :opcode:`BUILD_TUPLE_UNPACK`, but pushes a set
-   instead of tuple.  Implements iterable unpacking in set
-   displays ``{*x, *y, *z}``.
-
-   .. versionadded:: 3.5
+   .. versionadded:: 3.9
 
 
 .. opcode:: BUILD_MAP_UNPACK (count)
@@ -1124,10 +1109,6 @@ All of the following opcodes use their arguments.
    Calls a callable object with variable set of positional and keyword
    arguments.  If the lowest bit of *flags* is set, the top of the stack
    contains a mapping object containing additional keyword arguments.
-   Below that is an iterable object containing positional arguments and
-   a callable object to call.  :opcode:`BUILD_MAP_UNPACK_WITH_CALL` and
-   :opcode:`BUILD_TUPLE_UNPACK_WITH_CALL` can be used for merging multiple
-   mapping objects and iterables containing arguments.
    Before the callable is called, the mapping object and iterable object
    are each "unpacked" and their contents passed in as keyword and
    positional arguments respectively.
