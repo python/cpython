@@ -350,8 +350,25 @@ Deprecated
   deprecated and will be removed in version 3.11.
   (Contributed by Yury Selivanov and Kyle Stanley in :issue:`34790`.)
 
+* binhex4 and hexbin4 standards are now deprecated. The :`binhex` module
+  and the following :mod:`binascii` functions are now deprecated:
+
+  * :func:`~binascii.b2a_hqx`, :func:`~binascii.a2b_hqx`
+  * :func:`~binascii.rlecode_hqx`, :func:`~binascii.rledecode_hqx`
+  * :func:`~binascii.crc_hqx`
+
+  (Contributed by Victor Stinner in :issue:`39353`.)
+
+
 Removed
 =======
+
+* :class:`nntplib.NNTP`: ``xpath()`` and ``xgtitle()`` methods have been removed.
+  These methods are deprecated since Python 3.3. Generally, these extensions
+  are not supported or not enabled by NNTP server administrators.
+  For ``xgtitle()``, please use :meth:`nntplib.NNTP.descriptions` or
+  :meth:`nntplib.NNTP.description` instead.
+  (Contributed by Dong-hee Na in :issue:`39366`.)
 
 * :class:`array.array`: ``tostring()`` and ``fromstring()`` methods have been
   removed. They were aliases to ``tobytes()`` and ``frombytes()``, deprecated
@@ -421,10 +438,14 @@ Removed
   (Contributed by Victor Stinner in :issue:`39350`.)
 
 * The *buffering* parameter of :class:`bz2.BZ2File` has been removed. Since
-  Python 3.0, it was ignored and using it was emitting
-  :exc:`DeprecationWarning`. Pass an open file object to control how the file
-  is opened.
+  Python 3.0, it was ignored and using it emitted a :exc:`DeprecationWarning`.
+  Pass an open file object to control how the file is opened.
   (Contributed by Victor Stinner in :issue:`39357`.)
+
+* The *encoding* parameter of :func:`json.loads` has been removed.
+  As of Python 3.1, it was deprecated and ignored; using it has emitted a
+  :exc:`DeprecationWarning` since Python 3.8.
+  (Contributed by Inada Naoki in :issue:`39377`)
 
 
 Porting to Python 3.9

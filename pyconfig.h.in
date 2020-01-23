@@ -895,6 +895,9 @@
 /* Define to 1 if you have the `setegid' function. */
 #undef HAVE_SETEGID
 
+/* Define to 1 if you have the `setenv' function. */
+#undef HAVE_SETENV
+
 /* Define to 1 if you have the `seteuid' function. */
 #undef HAVE_SETEUID
 
