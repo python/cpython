@@ -2461,9 +2461,14 @@ class TarFile(object):
 def is_tarfile(name):
     """Return True if name points to a tar archive that we
        are able to handle, else return False.
+
+       'name' should be a string, file, or file-like object.
     """
     try:
-        t = open(name)
+        if hasattr(name, "read"):
+            t = open(fileobj=name)
+        else:
+            t = open(name)
         t.close()
         return True
     except TarError:
