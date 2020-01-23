@@ -117,6 +117,7 @@ def_op('INPLACE_AND', 77)
 def_op('INPLACE_XOR', 78)
 def_op('INPLACE_OR', 79)
 
+def_op('LIST_TO_TUPLE', 82)
 def_op('RETURN_VALUE', 83)
 def_op('IMPORT_STAR', 84)
 def_op('SETUP_ANNOTATIONS', 85)
@@ -199,20 +200,19 @@ hasfree.append(148)
 def_op('EXTENDED_ARG', 144)
 EXTENDED_ARG = 144
 
-def_op('BUILD_LIST_UNPACK', 149)
 def_op('BUILD_MAP_UNPACK', 150)
 def_op('BUILD_MAP_UNPACK_WITH_CALL', 151)
-def_op('BUILD_TUPLE_UNPACK', 152)
-def_op('BUILD_SET_UNPACK', 153)
 
 jrel_op('SETUP_ASYNC_WITH', 154)
 
 def_op('FORMAT_VALUE', 155)
 def_op('BUILD_CONST_KEY_MAP', 156)
 def_op('BUILD_STRING', 157)
-def_op('BUILD_TUPLE_UNPACK_WITH_CALL', 158)
 
 name_op('LOAD_METHOD', 160)
 def_op('CALL_METHOD', 161)
+
+def_op('LIST_EXTEND', 162)
+def_op('SET_UPDATE', 163)
 
 del def_op, name_op, jrel_op, jabs_op
