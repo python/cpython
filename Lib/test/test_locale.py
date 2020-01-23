@@ -581,13 +581,17 @@ class TestMiscellaneous(unittest.TestCase):
     @unittest.skipUnless(
         sys.platform.startswith('win32') or platform.libc_ver()[0] == 'glibc',
         "implemented only for Windows and glibc")
-    def test_getfirstweekday_fr_FR(self):
+    def test_getfirstweekday_fr(self):
+        if sys.platform.startswith('win32'):
+            loc = 'French'
+        else:
+            loc = 'fr_FR'
         oldlocale = locale.setlocale(locale.LC_ALL)
         self.addCleanup(locale.setlocale, locale.LC_ALL, oldlocale)
         try:
-            locale.setlocale(locale.LC_ALL, 'fr_FR')
+            locale.setlocale(locale.LC_ALL, loc)
         except locale.Error:
-            self.skipTest('test needs French locale')
+            self.skipTest('test needs %s locale' % loc)
         self.assertEqual(locale.getfirstweekday(), 1)
 
 
