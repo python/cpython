@@ -4679,7 +4679,7 @@ static int
 _pickle_Pickler___init___impl(PicklerObject *self, PyObject *file,
                               PyObject *protocol, int fix_imports,
                               PyObject *buffer_callback)
-/*[clinic end generated code: output=0abedc50590d259b input=bb886e00443a7811]*/
+/*[clinic end generated code: output=0abedc50590d259b input=9cc4cf83af036092]*/
 {
     _Py_IDENTIFIER(persistent_id);
     _Py_IDENTIFIER(dispatch_table);
@@ -7663,7 +7663,7 @@ static PyObject *
 _pickle_dump_impl(PyObject *module, PyObject *obj, PyObject *file,
                   PyObject *protocol, int fix_imports,
                   PyObject *buffer_callback)
-/*[clinic end generated code: output=706186dba996490c input=cfdcaf573ed6e46c]*/
+/*[clinic end generated code: output=706186dba996490c input=f3e61cabe15ca4da]*/
 {
     PicklerObject *pickler = _Pickler_New();
 
@@ -7727,7 +7727,7 @@ into *file* as part of the pickle stream.  It is an error if
 static PyObject *
 _pickle_dumps_impl(PyObject *module, PyObject *obj, PyObject *protocol,
                    int fix_imports, PyObject *buffer_callback)
-/*[clinic end generated code: output=fbab0093a5580fdf input=9f334d535ff7194f]*/
+/*[clinic end generated code: output=fbab0093a5580fdf input=18834fb15e33acfd]*/
 {
     PyObject *result;
     PicklerObject *pickler = _Pickler_New();
