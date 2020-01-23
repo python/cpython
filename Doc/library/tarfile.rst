@@ -159,7 +159,7 @@ Some facts and figures:
 .. function:: is_tarfile(name)
 
    Return :const:`True` if *name* is a tar archive file, that the :mod:`tarfile`
-   module can read. *name* may be a file or file-like object too.
+   module can read. *name* may be a :class:`str`, file, or file-like object.
 
    .. versionchanged:: 3.9
       Support for file and file-like objects.

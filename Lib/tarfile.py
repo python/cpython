@@ -2462,7 +2462,7 @@ def is_tarfile(name):
     """Return True if name points to a tar archive that we
        are able to handle, else return False.
 
-       The name argument may be a file or file-like object.
+       'name' should be a string, file, or file-like object.
     """
     try:
         if hasattr(name, "read"):
