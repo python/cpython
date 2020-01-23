@@ -49,8 +49,6 @@ def _ready_to_import(name=None, source=""):
     # reverts or removes the module when cleaning up
     name = name or "spam"
     with temp_dir() as tempdir:
-        if os.sep in name:
-            os.makedirs(os.path.join(tempdir, name.rpartition(os.sep)[0]))
         path = script_helper.make_script(tempdir, name, source)
         old_module = sys.modules.pop(name, None)
         try:
