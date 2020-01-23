@@ -113,7 +113,7 @@ typedef struct {
        "POSIX", otherwise it is set to 0. Inherit Py_UTF8Mode value value. */
     int utf8_mode;
 
-    /* If non-zero, enable the development mode.
+    /* If non-zero, enable the Python Development Mode.
 
        Set to 1 by -X dev command line option. Set by PYTHONDEVMODE environment
        variable. */
