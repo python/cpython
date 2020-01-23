@@ -1,0 +1,1 @@
+Make IDLE settings Help button work again.
