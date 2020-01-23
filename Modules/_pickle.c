@@ -4645,8 +4645,9 @@ _pickle.Pickler.__init__
 This takes a binary file for writing a pickle data stream.
 
 The optional *protocol* argument tells the pickler to use the given
-protocol; supported protocols are 0, 1, 2, 3 and 4.  The default
-protocol is 3; a backward-incompatible protocol designed for Python 3.
+protocol; supported protocols are 0, 1, 2, 3, 4 and 5.  The default
+protocol is 4. It was introduced in Python 3.4, it is incompatible
+with previous versions.
 
 Specifying a negative protocol version selects the highest protocol
 version supported.  The higher the protocol used, the more recent the
@@ -7635,7 +7636,7 @@ This is equivalent to ``Pickler(file, protocol).dump(obj)``, but may
 be more efficient.
 
 The optional *protocol* argument tells the pickler to use the given
-protocol; supported protocols are 0, 1, 2, 3 and 4.  The default
+protocol; supported protocols are 0, 1, 2, 3, 4 and 5.  The default
 protocol is 4. It was introduced in Python 3.4, it is incompatible
 with previous versions.
 
@@ -7705,7 +7706,7 @@ _pickle.dumps
 Return the pickled representation of the object as a bytes object.
 
 The optional *protocol* argument tells the pickler to use the given
-protocol; supported protocols are 0, 1, 2, 3 and 4.  The default
+protocol; supported protocols are 0, 1, 2, 3, 4 and 5.  The default
 protocol is 4. It was introduced in Python 3.4, it is incompatible
 with previous versions.
 
