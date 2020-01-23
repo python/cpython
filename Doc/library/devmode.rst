@@ -7,7 +7,7 @@ Python Development Mode
 
 The Python Development Mode introduces additional runtime checks that are too
 expensive to be enabled by default. It should not be more verbose than the
-default if the code is correct: new warnings are only emitted when an issue is
+default if the code is correct; new warnings are only emitted when an issue is
 detected.
 
 It can be enabled using the :option:`-X dev <-X>` command line option or by
@@ -31,7 +31,7 @@ Effects of the Python Development Mode:
   * :exc:`PendingDeprecationWarning`
   * :exc:`ResourceWarning`
 
-  Normally, the following warnings are filtered by the default :ref:`warning
+  Normally, the above warnings are filtered by the default :ref:`warning
   filters <describing-warning-filters>`.
 
   It behaves as if the :option:`-W default <-W>` command line option is used.
@@ -45,7 +45,7 @@ Effects of the Python Development Mode:
   * Buffer underflow
   * Buffer overflow
   * Memory allocator API violation
-  * Usage of the GIL
+  * Unsafe usage of the GIL
 
   See the :c:func:`PyMem_SetupDebugHooks` C function.
 
@@ -83,13 +83,13 @@ Effects of the Python Development Mode:
   ``True``.
 
 The Python Development Mode does not enable the :mod:`tracemalloc` module by default,
-because the overhead (performance and memory) would be too large. Enabling
+because the overhead cost (to performance and memory) would be too large. Enabling
 the :mod:`tracemalloc` module provides additional information on the origin
 of some errors. For example, :exc:`ResourceWarning` logs the traceback where
 the resource was allocated, and a buffer overflow error logs the traceback
 where the memory block was allocated.
 
-The Pyhon Development Mode does not prevent the :option:`-O` command line option to
+The Python Development Mode does not prevent the :option:`-O` command line option to
 remove :keyword:`assert` statements nor to set :const:`__debug__` to ``False``.
 
 .. versionchanged:: 3.8
@@ -159,7 +159,7 @@ The fix is to close explicitly the file. Example using a context manager::
         print(nlines)
 
 Not closing a resource explicitly can leave a resource open for way longer than
-expected; it can cause severe issues upon exiting the Python exit. It is bad in
+expected; it can cause severe issues upon exiting Python. It is bad in
 CPython, but it is even worse in PyPy. Closing resources explicitly makes an
 application more deterministic and more reliable.
 
