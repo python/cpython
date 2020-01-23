@@ -1,0 +1,2 @@
+Fix possible crashes when operating with the functions in the :mod:`heapq`
+module and custom comparison operators.
