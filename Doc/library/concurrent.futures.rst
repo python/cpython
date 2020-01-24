@@ -87,6 +87,10 @@ Executor Objects
        are completed or running won't be cancelled, regardless of the value
        of *cancel_futures*.
 
+       If both *cancel_futures* and *wait* are ``True``, all futures that the
+       executor has started running will be completed prior to shutting down.
+       The remaining futures are cancelled.
+
        You can avoid having to call this method explicitly if you use the
        :keyword:`with` statement, which will shutdown the :class:`Executor`
        (waiting as if :meth:`Executor.shutdown` were called with *wait* set to

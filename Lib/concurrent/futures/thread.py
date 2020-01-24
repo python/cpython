@@ -228,7 +228,7 @@ class ThreadPoolExecutor(_base.Executor):
                     except queue.Empty:
                         # Once the queue has been drained, send a wake-up to
                         # prevent threads calling _work_queue.get(block=True)
-                        # from permanently blocking
+                        # from permanently blocking.
                         self._work_queue.put(None)
                         break
                     if work_item is not None:
