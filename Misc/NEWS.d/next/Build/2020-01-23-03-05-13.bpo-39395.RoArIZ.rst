@@ -1,0 +1,2 @@
+On non-Windows platforms, the :c:func:`setenv` and :c:func:`unsetenv` functions
+are now required to build Python.
