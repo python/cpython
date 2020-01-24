@@ -1559,8 +1559,8 @@ expression support in the :mod:`re` module).
    list of possible encodings, see section :ref:`standard-encodings`.
 
    By default, the *errors* argument is not checked for best performances, but
-   only used at the first encoding error. Enable the development mode
-   (:option:`-X` ``dev`` option), or use a debug build, to check *errors*.
+   only used at the first encoding error. Enable the :ref:`Python Development
+   Mode <devmode>`, or use a debug build to check *errors*.
 
    .. versionchanged:: 3.1
       Support for keyword arguments added.
@@ -2596,8 +2596,8 @@ arbitrary binary data.
    list of possible encodings, see section :ref:`standard-encodings`.
 
    By default, the *errors* argument is not checked for best performances, but
-   only used at the first decoding error. Enable the development mode
-   (:option:`-X` ``dev`` option), or use a debug build, to check *errors*.
+   only used at the first decoding error. Enable the :ref:`Python Development
+   Mode <devmode>`, or use a debug build to check *errors*.
 
    .. note::
 

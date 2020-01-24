@@ -1200,7 +1200,7 @@ Enabling debug mode
 
    .. versionchanged:: 3.7
 
-      The new ``-X dev`` command line option can now also be used
+      The new :ref:`Python Development Mode <devmode>` can now also be used
       to enable the debug mode.
 
 .. seealso::
