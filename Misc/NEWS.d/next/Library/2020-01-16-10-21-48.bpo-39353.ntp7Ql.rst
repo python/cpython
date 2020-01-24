@@ -1,4 +1,0 @@
-Deprecate binhex4 and hexbin4 standards. Deprecate the :mod:`binhex` module and
-the following :mod:`binascii` functions: :func:`~binascii.b2a_hqx`,
-:func:`~binascii.a2b_hqx`, :func:`~binascii.rlecode_hqx`,
-:func:`~binascii.rledecode_hqx`, :func:`~binascii.crc_hqx`.
