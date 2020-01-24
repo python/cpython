@@ -1,0 +1,2 @@
+Speed up the sum() builtin for types with fast in-place add (+=) operators
+such as list and Counter. Patch by Ed Kellet.
