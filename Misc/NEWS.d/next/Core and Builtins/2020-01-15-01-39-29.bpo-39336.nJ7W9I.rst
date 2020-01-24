@@ -1,1 +1,0 @@
-Import loaders which publish immutable module objects can now publish immutable packages in addition to individual modules.
