@@ -36,8 +36,8 @@ Effects of the Python Development Mode:
 
   It behaves as if the :option:`-W default <-W>` command line option is used.
 
-  Use the :option:`-W error <-W>` command line option or set
-  the :envvar:`PYTHONWARNINGS` environment variable to ``error`` to treat warnings
+  Use the :option:`-W error <-W>` command line option or set the
+  :envvar:`PYTHONWARNINGS` environment variable to ``error`` to treat warnings
   as errors.
 
 * Install debug hooks on memory allocators to check for:
@@ -82,15 +82,16 @@ Effects of the Python Development Mode:
 * Set the :attr:`~sys.flags.dev_mode` attribute of :attr:`sys.flags` to
   ``True``.
 
-The Python Development Mode does not enable the :mod:`tracemalloc` module by default,
-because the overhead cost (to performance and memory) would be too large. Enabling
-the :mod:`tracemalloc` module provides additional information on the origin
-of some errors. For example, :exc:`ResourceWarning` logs the traceback where
-the resource was allocated, and a buffer overflow error logs the traceback
-where the memory block was allocated.
+The Python Development Mode does not enable the :mod:`tracemalloc` module by
+default, because the overhead cost (to performance and memory) would be too
+large. Enabling the :mod:`tracemalloc` module provides additional information
+on the origin of some errors. For example, :exc:`ResourceWarning` logs the
+traceback where the resource was allocated, and a buffer overflow error logs
+the traceback where the memory block was allocated.
 
-The Python Development Mode does not prevent the :option:`-O` command line option to
-remove :keyword:`assert` statements nor to set :const:`__debug__` to ``False``.
+The Python Development Mode does not prevent the :option:`-O` command line
+option from removing :keyword:`assert` statements nor from setting
+:const:`__debug__` to ``False``.
 
 .. versionchanged:: 3.8
    The :class:`io.IOBase` destructor now logs ``close()`` exceptions.
