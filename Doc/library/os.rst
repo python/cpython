@@ -645,6 +645,9 @@ process and user.
 
    .. availability:: most flavors of Unix, Windows.
 
+   .. versionchanged:: 3.9
+      The function is now also available on Windows.
+
 
 .. _os-newstreams:
 
