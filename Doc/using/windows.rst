@@ -632,6 +632,12 @@ When UTF-8 mode is enabled:
   all use UTF-8 as their text encoding.
 * You can still use the legacy encoding via the "mbcs" codec.
 
+Note that adding ``PYTHONUTF8=1`` to the default environment variables
+will affect all Python 3.7+ applications on your system.
+If you have any Python 3.7+ application which relies on the legacy
+system encoding, it is recommended to set the environment variable
+temporarily or use the ``-X utf8`` option.
+
 .. note::
    Even when the UTF-8 mode is disabled, Python uses UTF-8 by default
    on Windows for:
