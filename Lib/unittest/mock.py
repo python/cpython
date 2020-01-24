@@ -824,10 +824,7 @@ class NonCallableMock(Base):
                 # not used.
                 child = _extract_mock(child)
                 children = child._mock_children
-                try:
-                    sig = child._spec_signature
-                except AttributeError:
-                    sig = None
+                sig = child._spec_signature
 
         return sig
 
