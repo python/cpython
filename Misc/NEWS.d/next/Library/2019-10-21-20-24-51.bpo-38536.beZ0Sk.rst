@@ -1,2 +1,0 @@
-Removes trailing space in formatted currency with `international=True` and a locale with symbol following value.
-E.g. `locale.currency(12.34, international=True)` returned `'12,34 EUR '` instead of `'12,34 EUR'`.
