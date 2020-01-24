@@ -1851,8 +1851,23 @@ class _patch_dict(object):
         self._unpatch_dict()
         return False
 
-    start = __enter__
-    stop = __exit__
+
+    def start(self):
+        """Activate a patch, returning any created mock."""
+        result = self.__enter__()
+        _patch._active_patches.append(self)
+        return result
+
+
+    def stop(self):
+        """Stop an active patch."""
+        try:
+            _patch._active_patches.remove(self)
+        except ValueError:
+            # If the patch hasn't been started this will fail
+            pass
+
+        return self.__exit__()
 
 
 def _clear_dict(in_dict):
