@@ -10126,7 +10126,7 @@ win32_putenv(PyObject *name, PyObject *value)
        and '_wenviron' variables, whereas SetEnvironmentVariableW() does not.
 
        Prefer _wputenv() to be compatible with C libraries using CRT
-       variables. */
+       variables and CRT functions using these variables (ex: getenv()). */
     int err = _wputenv(env);
     PyMem_Free(env);
 
