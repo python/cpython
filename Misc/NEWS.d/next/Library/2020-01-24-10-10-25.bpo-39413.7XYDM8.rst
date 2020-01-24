@@ -1,0 +1,1 @@
+The :func:`os.unsetenv` function is now also available on Windows.
