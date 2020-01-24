@@ -323,6 +323,11 @@ Build and C API Changes
   removed in Python 3.3.
   (Contributed by Victor Stinner in :issue:`38896`.)
 
+* The ``tp_print`` slot of :ref:`PyTypeObject <type-structs>` has been removed.
+  It was used for printing objects to files in Python 2.7 and before. Since
+  Python 3.0, it has been ignored and unused.
+  (Contributed by Jeroen Demeyer in :issue:`36974`.)
+
 
 Deprecated
 ==========
