@@ -604,20 +604,21 @@ existed)::
 
 .. _win-utf8-mode:
 
-Using UTF-8 mode
-================
+UTF-8 mode
+==========
 
 .. versionadded:: 3.7
 
-Windows doesn't use UTF-8 for the system encoding (the ANSI Code Page).
-And Python uses the system encoding for the default encoding of text files.
+Windows still uses legacy encodings for the system encoding (the ANSI Code
+Page).  Python uses the system encoding for the default encoding of text files
+(e.g. :func:`locale.getpreferredencoding`).
 
-It may cause trouble because UTF-8 is very widely used on the internet
+It may cause trouble because the UTF-8 is very widely used on the internet
 and most Unix systems, including WSL (Windows Subsystem for Linux).
 
 You can use the UTF-8 mode to change the default text encoding to UTF-8.
 You can enable the UTF-8 mode via ``-X utf8`` command option, or
-``PYTHONUTF8=1`` environement variable.  See :envvar:`PYTHONUTF8` for
+``PYTHONUTF8=1`` environment variable.  See :envvar:`PYTHONUTF8` for
 the UTF-8 mode, and :ref:`setting-envvars` for how to modify
 environment variables.
 
@@ -629,6 +630,7 @@ When UTF-8 mode is enabled:
   :meth:`Path.read_text`, etc.
 * :data:`sys.stdin`, :data:`sys.stdout`, and :data:`sys.stderr`
   all use UTF-8 as their text encoding.
+* You can still use the legacy encoding via the "mbcs" codec.
 
 .. note::
    Even when the UTF-8 mode is disabled, Python uses UTF-8 by default
@@ -636,8 +638,6 @@ When UTF-8 mode is enabled:
 
    * Console I/O including standard I/O (see :pep:`528` for detail).
    * The filesystem encoding (see :pep:`529` for detail).
-
-You can use the "mbcs" codec for the system encoding in UTF-8 mode.
 
 
 .. _launcher:
