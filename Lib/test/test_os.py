@@ -953,17 +953,44 @@ class EnvironTests(mapping_tests.BasicTestMappingProtocol):
         value_str = value.decode(sys.getfilesystemencoding(), 'surrogateescape')
         self.assertEqual(os.environ['bytes'], value_str)
 
+    @unittest.skipUnless(hasattr(os, 'putenv'), "Test needs os.putenv()")
+    @unittest.skipUnless(hasattr(os, 'unsetenv'), "Test needs os.unsetenv()")
+    def test_putenv_unsetenv(self):
+        name = "PYTHONTESTVAR"
+        value = "testvalue"
+        code = f'import os; print(repr(os.environ.get({name!r})))'
+
+        with support.EnvironmentVarGuard() as env:
+            env.pop(name, None)
+
+            os.putenv(name, value)
+            proc = subprocess.run([sys.executable, '-c', code], check=True,
+                                  stdout=subprocess.PIPE, text=True)
+            self.assertEqual(proc.stdout.rstrip(), repr(value))
+
+            os.unsetenv(name)
+            proc = subprocess.run([sys.executable, '-c', code], check=True,
+                                  stdout=subprocess.PIPE, text=True)
+            self.assertEqual(proc.stdout.rstrip(), repr(None))
+
     # On OS X < 10.6, unsetenv() doesn't return a value (bpo-13415).
     @support.requires_mac_ver(10, 6)
-    def test_unset_error(self):
+    @unittest.skipUnless(hasattr(os, 'putenv'), "Test needs os.putenv()")
+    @unittest.skipUnless(hasattr(os, 'unsetenv'), "Test needs os.unsetenv()")
+    def test_putenv_unsetenv_error(self):
+        # Empty variable name is invalid.
+        # "=" and null character are not allowed in a variable name.
+        for name in ('', '=name', 'na=me', 'name=', 'name\0', 'na\0me'):
+            self.assertRaises((OSError, ValueError), os.putenv, name, "value")
+            self.assertRaises((OSError, ValueError), os.unsetenv, name)
+
         if sys.platform == "win32":
-            # an environment variable is limited to 32,767 characters
-            key = 'x' * 50000
-            self.assertRaises(ValueError, os.environ.__delitem__, key)
-        else:
-            # "=" is not allowed in a variable name
-            key = 'key='
-            self.assertRaises(OSError, os.environ.__delitem__, key)
+            # On Windows, an environment variable string ("name=value" string)
+            # is limited to 32,767 characters
+            longstr = 'x' * 32_768
+            self.assertRaises(ValueError, os.putenv, longstr, "1")
+            self.assertRaises(ValueError, os.putenv, "X", longstr)
+            self.assertRaises(ValueError, os.unsetenv, longstr)
 
     def test_key_type(self):
         missing = 'missingkey'
