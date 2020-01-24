@@ -442,24 +442,9 @@ Miscellaneous options
      nested imports).  Note that its output may be broken in multi-threaded
      application.  Typical usage is ``python3 -X importtime -c 'import
      asyncio'``.  See also :envvar:`PYTHONPROFILEIMPORTTIME`.
-   * ``-X dev``: enable CPython's "development mode", introducing additional
-     runtime checks which are too expensive to be enabled by default. It should
-     not be more verbose than the default if the code is correct: new warnings
-     are only emitted when an issue is detected. Effect of the developer mode:
-
-     * Check *encoding* and *errors* arguments on string encoding and decoding
-       operations. Examples: :func:`open`, :meth:`str.encode` and
-       :meth:`bytes.decode`.
-     * Add ``default`` warning filter, as :option:`-W` ``default``.
-     * Install debug hooks on memory allocators: see the
-       :c:func:`PyMem_SetupDebugHooks` C function.
-     * Enable the :mod:`faulthandler` module to dump the Python traceback
-       on a crash.
-     * Enable :ref:`asyncio debug mode <asyncio-debug-mode>`.
-     * Set the :attr:`~sys.flags.dev_mode` attribute of :attr:`sys.flags` to
-       ``True``.
-     * :class:`io.IOBase` destructor logs ``close()`` exceptions.
-
+   * ``-X dev``: enable :ref:`Python Development Mode <devmode>`, introducing
+     additional runtime checks that are too expensive to be enabled by
+     default.
    * ``-X utf8`` enables UTF-8 mode for operating system interfaces, overriding
      the default locale-aware mode. ``-X utf8=0`` explicitly disables UTF-8
      mode (even when it would otherwise activate automatically).
@@ -890,8 +875,9 @@ conflict.
 
 .. envvar:: PYTHONDEVMODE
 
-   If this environment variable is set to a non-empty string, enable the
-   CPython "development mode". See the :option:`-X` ``dev`` option.
+   If this environment variable is set to a non-empty string, enable
+   :ref:`Python Development Mode <devmode>`, introducing additional runtime
+   checks that are too expensive to be enabled by default.
 
    .. versionadded:: 3.7
 

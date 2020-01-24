@@ -102,7 +102,7 @@ CPython implementation improvements:
   * :ref:`PEP 538 <whatsnew37-pep538>`, legacy C locale coercion
   * :ref:`PEP 540 <whatsnew37-pep540>`, forced UTF-8 runtime mode
 * :ref:`PEP 552 <whatsnew37-pep552>`, deterministic .pycs
-* :ref:`the new development runtime mode <whatsnew37-devmode>`
+* :ref:`New Python Development Mode <whatsnew37-devmode>`
 * :ref:`PEP 565 <whatsnew37-pep565>`, improved :exc:`DeprecationWarning`
   handling
 
@@ -479,15 +479,15 @@ Three new translations have been added:
 
 .. _whatsnew37-devmode:
 
-Development Runtime Mode: -X dev
+Python Development Mode (-X dev)
 --------------------------------
 
 The new :option:`-X` ``dev`` command line option or the new
 :envvar:`PYTHONDEVMODE` environment variable can be used to enable
-CPython's *development mode*.  When in development mode, CPython performs
+:ref:`Python Development Mode <devmode>`.  When in development mode, Python performs
 additional runtime checks that are too expensive to be enabled by default.
-See :option:`-X` ``dev`` documentation for the full description of the effects
-of this mode.
+See :ref:`Python Development Mode <devmode>` documentation for the full
+description.
 
 
 Other Language Changes
