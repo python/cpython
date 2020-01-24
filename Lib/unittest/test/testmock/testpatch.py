@@ -4,6 +4,7 @@
 
 import os
 import sys
+from collections import OrderedDict
 
 import unittest
 from unittest.test.testmock import support
@@ -1833,6 +1834,25 @@ class PatchTest(unittest.TestCase):
         with patch.object(foo, '__kwdefaults__', dict([('x', 1, )])):
             self.assertEqual(foo(), 1)
         self.assertEqual(foo(), 0)
+
+    def test_patch_orderdict(self):
+        foo = OrderedDict()
+        foo['a'] = object()
+        foo['b'] = 'python'
+
+        original = foo.copy()
+        update_values = list(zip('cdefghijklmnopqrstuvwxyz', range(26)))
+        patched_values = list(foo.items()) + update_values
+
+        with patch.dict(foo, OrderedDict(update_values)):
+            self.assertEqual(list(foo.items()), patched_values)
+
+        self.assertEqual(foo, original)
+
+        with patch.dict(foo, update_values):
+            self.assertEqual(list(foo.items()), patched_values)
+
+        self.assertEqual(foo, original)
 
     def test_dotted_but_module_not_loaded(self):
         # This exercises the AttributeError branch of _dot_lookup.
