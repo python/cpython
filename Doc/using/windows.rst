@@ -610,10 +610,10 @@ UTF-8 mode
 .. versionadded:: 3.7
 
 Windows still uses legacy encodings for the system encoding (the ANSI Code
-Page).  Python uses the system encoding for the default encoding of text files
-(e.g. :func:`locale.getpreferredencoding`).
+Page).  Python uses it for the default encoding of text files (e.g.
+:func:`locale.getpreferredencoding`).
 
-It may cause trouble because the UTF-8 is very widely used on the internet
+It may cause trouble because the UTF-8 is widely used on the internet
 and most Unix systems, including WSL (Windows Subsystem for Linux).
 
 You can use the UTF-8 mode to change the default text encoding to UTF-8.
