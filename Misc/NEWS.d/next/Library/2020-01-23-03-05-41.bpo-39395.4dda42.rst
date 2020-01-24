@@ -1,0 +1,2 @@
+The :func:`os.putenv` and :func:`os.unsetenv` functions are now always
+available.
