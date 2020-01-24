@@ -978,8 +978,9 @@ class EnvironTests(mapping_tests.BasicTestMappingProtocol):
     @unittest.skipUnless(hasattr(os, 'putenv'), "Test needs os.putenv()")
     @unittest.skipUnless(hasattr(os, 'unsetenv'), "Test needs os.unsetenv()")
     def test_putenv_unsetenv_error(self):
-        # "=" and null character are not allowed in a variable name
-        for name in ('=name', 'na=me', 'name=', 'name\0', 'na\0me'):
+        # Empty variable name is invalid.
+        # "=" and null character are not allowed in a variable name.
+        for name in ('', '=name', 'na=me', 'name=', 'name\0', 'na\0me'):
             self.assertRaises((OSError, ValueError), os.putenv, name, "value")
             self.assertRaises((OSError, ValueError), os.unsetenv, name)
 
