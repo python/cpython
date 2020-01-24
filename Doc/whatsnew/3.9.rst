@@ -227,6 +227,10 @@ descriptors.
 The :func:`os.unsetenv` function is now also available on Windows.
 (Contributed by Victor Stinner in :issue:`39413`.)
 
+The :func:`os.putenv` and :func:`os.unsetenv` functions are now always
+available.
+(Contributed by Victor Stinner in :issue:`39395`.)
+
 poplib
 ------
 
@@ -330,6 +334,10 @@ Build and C API Changes
   It was used for printing objects to files in Python 2.7 and before. Since
   Python 3.0, it has been ignored and unused.
   (Contributed by Jeroen Demeyer in :issue:`36974`.)
+
+* On non-Windows platforms, the :c:func:`setenv` and :c:func:`unsetenv`
+  functions are now required to build Python.
+  (Contributed by Victor Stinner in :issue:`39395`.)
 
 
 Deprecated
