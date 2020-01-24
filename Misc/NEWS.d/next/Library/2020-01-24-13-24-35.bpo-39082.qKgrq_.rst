@@ -1,1 +1,1 @@
-Allow AsyncMock to correcly patch static/class methods
+Allow AsyncMock to correctly patch static/class methods
