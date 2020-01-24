@@ -1808,6 +1808,56 @@ class PatchTest(unittest.TestCase):
 
         self.assertEqual(stopped, ["three", "two", "one"])
 
+    def test_patch_dict_stopall(self):
+        dic1 = {}
+        dic2 = {1: 'a'}
+        dic3 = {1: 'A', 2: 'B'}
+        origdic1 = dic1.copy()
+        origdic2 = dic2.copy()
+        origdic3 = dic3.copy()
+        patch.dict(dic1, {1: 'I', 2: 'II'}).start()
+        patch.dict(dic2, {2: 'b'}).start()
+
+        @patch.dict(dic3)
+        def patched():
+            del dic3[1]
+
+        patched()
+        self.assertNotEqual(dic1, origdic1)
+        self.assertNotEqual(dic2, origdic2)
+        self.assertEqual(dic3, origdic3)
+
+        patch.stopall()
+
+        self.assertEqual(dic1, origdic1)
+        self.assertEqual(dic2, origdic2)
+        self.assertEqual(dic3, origdic3)
+
+
+    def test_patch_and_patch_dict_stopall(self):
+        original_unlink = os.unlink
+        original_chdir = os.chdir
+        dic1 = {}
+        dic2 = {1: 'A', 2: 'B'}
+        origdic1 = dic1.copy()
+        origdic2 = dic2.copy()
+
+        patch('os.unlink', something).start()
+        patch('os.chdir', something_else).start()
+        patch.dict(dic1, {1: 'I', 2: 'II'}).start()
+        patch.dict(dic2).start()
+        del dic2[1]
+
+        self.assertIsNot(os.unlink, original_unlink)
+        self.assertIsNot(os.chdir, original_chdir)
+        self.assertNotEqual(dic1, origdic1)
+        self.assertNotEqual(dic2, origdic2)
+        patch.stopall()
+        self.assertIs(os.unlink, original_unlink)
+        self.assertIs(os.chdir, original_chdir)
+        self.assertEqual(dic1, origdic1)
+        self.assertEqual(dic2, origdic2)
+
 
     def test_special_attrs(self):
         def foo(x=0):
