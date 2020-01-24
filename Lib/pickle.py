@@ -409,9 +409,9 @@ class _Pickler:
         """This takes a binary file for writing a pickle data stream.
 
         The optional *protocol* argument tells the pickler to use the
-        given protocol; supported protocols are 0, 1, 2, 3 and 4.  The
-        default protocol is 4. It was introduced in Python 3.4, it is
-        incompatible with previous versions.
+        given protocol; supported protocols are 0, 1, 2, 3, 4 and 5.
+        The default protocol is 4. It was introduced in Python 3.4, and
+        is incompatible with previous versions.
 
         Specifying a negative protocol version selects the highest
         protocol version supported.  The higher the protocol used, the
