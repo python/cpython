@@ -1321,6 +1321,8 @@ finalize_interp_delete(PyThreadState *tstate)
     PyInterpreterState_Delete(tstate->interp);
 }
 
+/* defined in gcmodule.c */
+extern Py_ssize_t _PyGC_RunFinalizers(PyThreadState *tstate);
 
 int
 Py_FinalizeEx(void)
@@ -1353,6 +1355,11 @@ Py_FinalizeEx(void)
      */
 
     call_py_exitfuncs(tstate);
+
+    /* Run finalizers for objects still alive.  Everything can be considered
+     * garbage at this point.  Legacy finalizers will be moved to gc.garbage.
+     */
+    _PyGC_RunFinalizers(tstate);
 
     /* Copy the core config, PyInterpreterState_Delete() free
        the core config memory */
