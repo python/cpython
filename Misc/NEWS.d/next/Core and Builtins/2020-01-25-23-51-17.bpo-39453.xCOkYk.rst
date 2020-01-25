@@ -1,0 +1,2 @@
+Fix contains method of list to hold strong references of elements while
+calling PyObject_RichCompareBool(). Patch by Dong-hee Na.
