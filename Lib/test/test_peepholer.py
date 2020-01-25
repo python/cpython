@@ -65,14 +65,14 @@ class TestTranforms(BytecodeTestCase):
         self.check_lnotab(unot)
 
     def test_elim_inversion_of_is_or_in(self):
-        for line, cmp_op in (
-            ('not a is b', 'is not',),
-            ('not a in b', 'not in',),
-            ('not a is not b', 'is',),
-            ('not a not in b', 'in',),
+        for line, cmp_op, invert in (
+            ('not a is b', 'IS_OP', 1,),
+            ('not a is not b', 'IS_OP', 0,),
+            ('not a in b', 'CONTAINS_OP', 1,),
+            ('not a not in b', 'CONTAINS_OP', 0,),
             ):
             code = compile(line, '', 'single')
-            self.assertInBytecode(code, 'COMPARE_OP', cmp_op)
+            self.assertInBytecode(code, cmp_op, invert)
             self.check_lnotab(code)
 
     def test_global_as_constant(self):

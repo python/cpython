@@ -60,6 +60,7 @@ extern "C" {
 #define INPLACE_AND              77
 #define INPLACE_XOR              78
 #define INPLACE_OR               79
+#define LIST_TO_TUPLE            82
 #define RETURN_VALUE             83
 #define IMPORT_STAR              84
 #define SETUP_ANNOTATIONS        85
@@ -93,6 +94,9 @@ extern "C" {
 #define POP_JUMP_IF_FALSE       114
 #define POP_JUMP_IF_TRUE        115
 #define LOAD_GLOBAL             116
+#define IS_OP                   117
+#define CONTAINS_OP             118
+#define JUMP_IF_NOT_EXC_MATCH   121
 #define SETUP_FINALLY           122
 #define LOAD_FAST               124
 #define STORE_FAST              125
@@ -113,29 +117,22 @@ extern "C" {
 #define SET_ADD                 146
 #define MAP_ADD                 147
 #define LOAD_CLASSDEREF         148
-#define BUILD_LIST_UNPACK       149
 #define BUILD_MAP_UNPACK        150
 #define BUILD_MAP_UNPACK_WITH_CALL 151
-#define BUILD_TUPLE_UNPACK      152
-#define BUILD_SET_UNPACK        153
 #define SETUP_ASYNC_WITH        154
 #define FORMAT_VALUE            155
 #define BUILD_CONST_KEY_MAP     156
 #define BUILD_STRING            157
-#define BUILD_TUPLE_UNPACK_WITH_CALL 158
 #define LOAD_METHOD             160
 #define CALL_METHOD             161
+#define LIST_EXTEND             162
+#define SET_UPDATE              163
 
 /* EXCEPT_HANDLER is a special, implicit block type which is created when
    entering an except handler. It is not an opcode but we define it here
    as we want it to be available to both frameobject.c and ceval.c, while
    remaining private.*/
 #define EXCEPT_HANDLER 257
-
-
-enum cmp_op {PyCmp_LT=Py_LT, PyCmp_LE=Py_LE, PyCmp_EQ=Py_EQ, PyCmp_NE=Py_NE,
-                PyCmp_GT=Py_GT, PyCmp_GE=Py_GE, PyCmp_IN, PyCmp_NOT_IN,
-                PyCmp_IS, PyCmp_IS_NOT, PyCmp_EXC_MATCH, PyCmp_BAD};
 
 #define HAS_ARG(op) ((op) >= HAVE_ARGUMENT)
 

@@ -725,7 +725,7 @@ csv
 The :class:`csv.DictReader` now returns instances of :class:`dict` instead of
 a :class:`collections.OrderedDict`.  The tool is now faster and uses less
 memory while still preserving the field order.
-(Contributed by Michael Seek in :issue:`34003`.)
+(Contributed by Michael Selik in :issue:`34003`.)
 
 
 curses

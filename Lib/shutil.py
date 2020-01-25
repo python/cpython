@@ -442,7 +442,7 @@ def ignore_patterns(*patterns):
 def _copytree(entries, src, dst, symlinks, ignore, copy_function,
               ignore_dangling_symlinks, dirs_exist_ok=False):
     if ignore is not None:
-        ignored_names = ignore(src, {x.name for x in entries})
+        ignored_names = ignore(os.fspath(src), [x.name for x in entries])
     else:
         ignored_names = set()
 

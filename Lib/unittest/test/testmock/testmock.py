@@ -1636,10 +1636,22 @@ class MockTest(unittest.TestCase):
         self.assertNotEqual(m.side_effect, None)
 
     def test_reset_sideeffect(self):
-        m = Mock(return_value=10, side_effect=[2,3])
+        m = Mock(return_value=10, side_effect=[2, 3])
         m.reset_mock(side_effect=True)
         self.assertEqual(m.return_value, 10)
         self.assertEqual(m.side_effect, None)
+
+    def test_reset_return_with_children(self):
+        m = MagicMock(f=MagicMock(return_value=1))
+        self.assertEqual(m.f(), 1)
+        m.reset_mock(return_value=True)
+        self.assertNotEqual(m.f(), 1)
+
+    def test_reset_return_with_children_side_effect(self):
+        m = MagicMock(f=MagicMock(side_effect=[2, 3]))
+        self.assertNotEqual(m.f.side_effect, None)
+        m.reset_mock(side_effect=True)
+        self.assertEqual(m.f.side_effect, None)
 
     def test_mock_add_spec(self):
         class _One(object):
@@ -1920,6 +1932,35 @@ class MockTest(unittest.TestCase):
             self.assertEqual(mock_func.mock_calls, child_calls)
             self.assertIn('mock.child', repr(parent.child.mock))
             self.assertEqual(mock_func.mock._extract_mock_name(), 'mock.child')
+
+
+    def test_attach_mock_patch_autospec_signature(self):
+        with mock.patch(f'{__name__}.Something.meth', autospec=True) as mocked:
+            manager = Mock()
+            manager.attach_mock(mocked, 'attach_meth')
+            obj = Something()
+            obj.meth(1, 2, 3, d=4)
+            manager.assert_has_calls([call.attach_meth(mock.ANY, 1, 2, 3, d=4)])
+            obj.meth.assert_has_calls([call(mock.ANY, 1, 2, 3, d=4)])
+            mocked.assert_has_calls([call(mock.ANY, 1, 2, 3, d=4)])
+
+        with mock.patch(f'{__name__}.something', autospec=True) as mocked:
+            manager = Mock()
+            manager.attach_mock(mocked, 'attach_func')
+            something(1)
+            manager.assert_has_calls([call.attach_func(1)])
+            something.assert_has_calls([call(1)])
+            mocked.assert_has_calls([call(1)])
+
+        with mock.patch(f'{__name__}.Something', autospec=True) as mocked:
+            manager = Mock()
+            manager.attach_mock(mocked, 'attach_obj')
+            obj = Something()
+            obj.meth(1, 2, 3, d=4)
+            manager.assert_has_calls([call.attach_obj(),
+                                      call.attach_obj().meth(1, 2, 3, d=4)])
+            obj.meth.assert_has_calls([call(1, 2, 3, d=4)])
+            mocked.assert_has_calls([call(), call().meth(1, 2, 3, d=4)])
 
 
     def test_attribute_deletion(self):

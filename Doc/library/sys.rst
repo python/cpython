@@ -428,9 +428,9 @@ always available.
    The :term:`named tuple` *flags* exposes the status of command line
    flags. The attributes are read only.
 
-   ============================= =============================
+   ============================= ================================================================
    attribute                     flag
-   ============================= =============================
+   ============================= ================================================================
    :const:`debug`                :option:`-d`
    :const:`inspect`              :option:`-i`
    :const:`interactive`          :option:`-i`
@@ -444,9 +444,9 @@ always available.
    :const:`bytes_warning`        :option:`-b`
    :const:`quiet`                :option:`-q`
    :const:`hash_randomization`   :option:`-R`
-   :const:`dev_mode`             :option:`-X` ``dev``
-   :const:`utf8_mode`            :option:`-X` ``utf8``
-   ============================= =============================
+   :const:`dev_mode`             :option:`-X dev <-X>` (:ref:`Python Development Mode <devmode>`)
+   :const:`utf8_mode`            :option:`-X utf8 <-X>`
+   ============================= ================================================================
 
    .. versionchanged:: 3.2
       Added ``quiet`` attribute for the new :option:`-q` flag.
@@ -461,8 +461,9 @@ always available.
       Added ``isolated`` attribute for :option:`-I` ``isolated`` flag.
 
    .. versionchanged:: 3.7
-      Added ``dev_mode`` attribute for the new :option:`-X` ``dev`` flag
-      and ``utf8_mode`` attribute for the new  :option:`-X` ``utf8`` flag.
+      Added the ``dev_mode`` attribute for the new :ref:`Python Development
+      Mode <devmode>` and the ``utf8_mode`` attribute for the new  :option:`-X`
+      ``utf8`` flag.
 
 
 .. data:: float_info

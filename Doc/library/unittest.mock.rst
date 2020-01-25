@@ -854,7 +854,7 @@ object::
 
 .. class:: AsyncMock(spec=None, side_effect=None, return_value=DEFAULT, wraps=None, name=None, spec_set=None, unsafe=False, **kwargs)
 
-  An asynchronous version of :class:`Mock`. The :class:`AsyncMock` object will
+  An asynchronous version of :class:`MagicMock`. The :class:`AsyncMock` object will
   behave so the object is recognized as an async function, and the result of a
   call is an awaitable.
 
@@ -1401,7 +1401,8 @@ patch
     "as"; very useful if :func:`patch` is creating a mock object for you.
 
     :func:`patch` takes arbitrary keyword arguments. These will be passed to
-    the :class:`Mock` (or *new_callable*) on construction.
+    :class:`AsyncMock` if the patched object is asynchronous, to
+    :class:`MagicMock` otherwise or to *new_callable* if specified.
 
     ``patch.dict(...)``, ``patch.multiple(...)`` and ``patch.object(...)`` are
     available for alternate use-cases.

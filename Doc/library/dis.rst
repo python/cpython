@@ -859,40 +859,25 @@ All of the following opcodes use their arguments.
    .. versionadded:: 3.6
 
 
-.. opcode:: BUILD_TUPLE_UNPACK (count)
+.. opcode:: LIST_TO_TUPLE
 
-   Pops *count* iterables from the stack, joins them in a single tuple,
-   and pushes the result.  Implements iterable unpacking in tuple
-   displays ``(*x, *y, *z)``.
+    Pops a list from the stack and pushes a tuple containing the same values.
 
-   .. versionadded:: 3.5
+   .. versionadded:: 3.9
 
 
-.. opcode:: BUILD_TUPLE_UNPACK_WITH_CALL (count)
+.. opcode:: LIST_EXTEND (i)
 
-   This is similar to :opcode:`BUILD_TUPLE_UNPACK`,
-   but is used for ``f(*x, *y, *z)`` call syntax. The stack item at position
-   ``count + 1`` should be the corresponding callable ``f``.
+   Calls ``list.extend(TOS1[-i], TOS)``.  Used to build lists.
 
-   .. versionadded:: 3.6
+   .. versionadded:: 3.9
 
 
-.. opcode:: BUILD_LIST_UNPACK (count)
+.. opcode:: SET_UPDATE
 
-   This is similar to :opcode:`BUILD_TUPLE_UNPACK`, but pushes a list
-   instead of tuple.  Implements iterable unpacking in list
-   displays ``[*x, *y, *z]``.
+   Calls ``set.update(TOS1[-i], TOS)``.  Used to build sets.
 
-   .. versionadded:: 3.5
-
-
-.. opcode:: BUILD_SET_UNPACK (count)
-
-   This is similar to :opcode:`BUILD_TUPLE_UNPACK`, but pushes a set
-   instead of tuple.  Implements iterable unpacking in set
-   displays ``{*x, *y, *z}``.
-
-   .. versionadded:: 3.5
+   .. versionadded:: 3.9
 
 
 .. opcode:: BUILD_MAP_UNPACK (count)
@@ -925,6 +910,20 @@ All of the following opcodes use their arguments.
 
    Performs a Boolean operation.  The operation name can be found in
    ``cmp_op[opname]``.
+
+
+.. opcode:: IS_OP (invert)
+
+    Performs ``is`` comparison, or ``is not`` if ``invert`` is 1.
+
+   .. versionadded:: 3.9
+
+
+.. opcode:: CONTAINS_OP (invert)
+
+    Performs ``in`` comparison, or ``not in`` if ``invert`` is 1.
+
+   .. versionadded:: 3.9
 
 
 .. opcode:: IMPORT_NAME (namei)
@@ -960,6 +959,13 @@ All of the following opcodes use their arguments.
    If TOS is false, sets the bytecode counter to *target*.  TOS is popped.
 
    .. versionadded:: 3.1
+
+.. opcode:: JUMP_IF_NOT_EXC_MATCH (target)
+
+    Tests whether the second value on the stack is an exception matching TOS,
+    and jumps if it is not. Pops two values from the stack.
+
+   .. versionadded:: 3.9
 
 
 .. opcode:: JUMP_IF_TRUE_OR_POP (target)
@@ -1103,10 +1109,6 @@ All of the following opcodes use their arguments.
    Calls a callable object with variable set of positional and keyword
    arguments.  If the lowest bit of *flags* is set, the top of the stack
    contains a mapping object containing additional keyword arguments.
-   Below that is an iterable object containing positional arguments and
-   a callable object to call.  :opcode:`BUILD_MAP_UNPACK_WITH_CALL` and
-   :opcode:`BUILD_TUPLE_UNPACK_WITH_CALL` can be used for merging multiple
-   mapping objects and iterables containing arguments.
    Before the callable is called, the mapping object and iterable object
    are each "unpacked" and their contents passed in as keyword and
    positional arguments respectively.
@@ -1119,22 +1121,24 @@ All of the following opcodes use their arguments.
 
 .. opcode:: LOAD_METHOD (namei)
 
-   Loads a method named ``co_names[namei]`` from TOS object. TOS is popped and
-   method and TOS are pushed when interpreter can call unbound method directly.
-   TOS will be used as the first argument (``self``) by :opcode:`CALL_METHOD`.
-   Otherwise, ``NULL`` and  method is pushed (method is bound method or
-   something else).
+   Loads a method named ``co_names[namei]`` from the TOS object. TOS is popped.
+   This bytecode distinguishes two cases: if TOS has a method with the correct
+   name, the bytecode pushes the unbound method and TOS. TOS will be used as
+   the first argument (``self``) by :opcode:`CALL_METHOD` when calling the
+   unbound method. Otherwise, ``NULL`` and the object return by the attribute
+   lookup are pushed.
 
    .. versionadded:: 3.7
 
 
 .. opcode:: CALL_METHOD (argc)
 
-   Calls a method.  *argc* is number of positional arguments.
+   Calls a method.  *argc* is the number of positional arguments.
    Keyword arguments are not supported.  This opcode is designed to be used
    with :opcode:`LOAD_METHOD`.  Positional arguments are on top of the stack.
-   Below them, two items described in :opcode:`LOAD_METHOD` on the stack.
-   All of them are popped and return value is pushed.
+   Below them, the two items described in :opcode:`LOAD_METHOD` are on the
+   stack (either ``self`` and an unbound method object or ``NULL`` and an
+   arbitrary callable). All of them are popped and the return value is pushed.
 
    .. versionadded:: 3.7
 

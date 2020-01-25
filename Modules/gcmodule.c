@@ -118,9 +118,6 @@ gc_decref(PyGC_Head *g)
     g->_gc_prev -= 1 << _PyGC_PREV_SHIFT;
 }
 
-/* Python string to use if unhandled exception occurs */
-static PyObject *gc_str = NULL;
-
 /* set for debugging information */
 #define DEBUG_STATS             (1<<0) /* print collection statistics */
 #define DEBUG_COLLECTABLE       (1<<1) /* print collectable objects */
@@ -1310,10 +1307,7 @@ collect(PyThreadState *tstate, int generation,
             _PyErr_Clear(tstate);
         }
         else {
-            if (gc_str == NULL)
-                gc_str = PyUnicode_FromString("garbage collection");
-            PyErr_WriteUnraisable(gc_str);
-            Py_FatalError("unexpected exception during garbage collection");
+            _PyErr_WriteUnraisableMsg("in garbage collection", NULL);
         }
     }
 
@@ -1870,6 +1864,25 @@ gc_is_tracked(PyObject *module, PyObject *obj)
 }
 
 /*[clinic input]
+gc.is_finalized
+
+    obj: object
+    /
+
+Returns true if the object has been already finalized by the GC.
+[clinic start generated code]*/
+
+static PyObject *
+gc_is_finalized(PyObject *module, PyObject *obj)
+/*[clinic end generated code: output=e1516ac119a918ed input=201d0c58f69ae390]*/
+{
+    if (PyObject_IS_GC(obj) && _PyGCHead_FINALIZED(AS_GC(obj))) {
+         Py_RETURN_TRUE;
+    }
+    Py_RETURN_FALSE;
+}
+
+/*[clinic input]
 gc.freeze
 
 Freeze all current tracked objects and ignore them for future collections.
@@ -1942,6 +1955,7 @@ PyDoc_STRVAR(gc__doc__,
 "get_threshold() -- Return the current the collection thresholds.\n"
 "get_objects() -- Return a list of all objects tracked by the collector.\n"
 "is_tracked() -- Returns true if a given object is tracked.\n"
+"is_finalized() -- Returns true if a given object has been already finalized.\n"
 "get_referrers() -- Return the list of objects that refer to an object.\n"
 "get_referents() -- Return the list of objects that an object refers to.\n"
 "freeze() -- Freeze all tracked objects and ignore them for future collections.\n"
@@ -1961,6 +1975,7 @@ static PyMethodDef GcMethods[] = {
     GC_GET_OBJECTS_METHODDEF
     GC_GET_STATS_METHODDEF
     GC_IS_TRACKED_METHODDEF
+    GC_IS_FINALIZED_METHODDEF
     {"get_referrers",  gc_get_referrers, METH_VARARGS,
         gc_get_referrers__doc__},
     {"get_referents",  gc_get_referents, METH_VARARGS,
