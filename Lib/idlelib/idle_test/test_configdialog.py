@@ -83,12 +83,14 @@ class ButtonTest(unittest.TestCase):
         del d.save_all_changed_extensions
         del d.activate_config_changes, d.deactivate_current_config
 
-    @mock.patch.object(dialog, 'destroy', new_callable=Func)
-    def test_click_cancel(self, destroy):
+    def test_click_cancel(self):
+        d = dialog
+        d.destroy = Func()
         changes['main']['something'] = 1
-        dialog.buttons['Cancel'].invoke()
+        d.buttons['Cancel'].invoke()
         self.assertEqual(changes['main'], {})
-        self.assertEqual(destroy.called, 1)
+        self.assertEqual(d.destroy.called, 1)
+        del d.destroy
 
     @mock.patch.object(configdialog, 'view_text', new_callable=Func)
     def test_click_help(self, view):
