@@ -278,3 +278,22 @@ The exact token type names can be displayed using the :option:`-e` option:
     4,10-4,11:          RPAR           ')'
     4,11-4,12:          NEWLINE        '\n'
     5,0-5,0:            ENDMARKER      ''
+
+Example of tokenizing a file programmatically, reading unicode
+strings instead of bytes with :func:`generate_tokens`::
+
+    import tokenize
+
+    with tokenize.open('hello.py') as f:
+        tokens = tokenize.generate_tokens(f.readline)
+        for token in tokens:
+            print(token)
+
+Or reading bytes directly with :func:`.tokenize`::
+
+    import tokenize
+
+    with open('hello.py', 'rb') as f:
+        tokens = tokenize.tokenize(f.readline)
+        for token in tokens:
+            print(token)
