@@ -1,0 +1,2 @@
+Type check the result of constructing the new exception instance in
+`_PyErr_CreateException`. Patch by Noah Oxer
