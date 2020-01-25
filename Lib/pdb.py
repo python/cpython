@@ -383,8 +383,7 @@ class Pdb(bdb.Bdb, cmd.Cmd):
                 sys.stdin = save_stdin
                 sys.displayhook = save_displayhook
         except:
-            exc_info = sys.exc_info()[:2]
-            self.error(traceback.format_exception_only(*exc_info)[-1].strip())
+            self._error_exc()
 
     def precmd(self, line):
         """Handle alias expansion and ';;' separator."""
@@ -1102,8 +1101,7 @@ class Pdb(bdb.Bdb, cmd.Cmd):
         try:
             sys.call_tracing(p.run, (arg, globals, locals))
         except Exception:
-            exc_info = sys.exc_info()[:2]
-            self.error(traceback.format_exception_only(*exc_info)[-1].strip())
+            self._error_exc()
         self.message("LEAVING RECURSIVE DEBUGGER")
         sys.settrace(self.trace_dispatch)
         self.lastcmd = p.lastcmd
@@ -1161,8 +1159,7 @@ class Pdb(bdb.Bdb, cmd.Cmd):
         try:
             return eval(arg, self.curframe.f_globals, self.curframe_locals)
         except:
-            exc_info = sys.exc_info()[:2]
-            self.error(traceback.format_exception_only(*exc_info)[-1].strip())
+            self._error_exc()
             raise
 
     def _getval_except(self, arg, frame=None):
@@ -1176,6 +1173,10 @@ class Pdb(bdb.Bdb, cmd.Cmd):
             err = traceback.format_exception_only(*exc_info)[-1].strip()
             return _rstr('** raised %s **' % err)
 
+    def _error_exc(self):
+        exc_info = sys.exc_info()[:2]
+        self.error(traceback.format_exception_only(*exc_info)[-1].strip())
+
     def _msg_val_func(self, arg, func):
         try:
             val = self._getval(arg)
@@ -1184,8 +1185,7 @@ class Pdb(bdb.Bdb, cmd.Cmd):
         try:
             self.message(func(val))
         except:
-            exc_info = sys.exc_info()[:2]
-            self.error(traceback.format_exception_only(*exc_info)[-1].strip())
+            self._error_exc()
 
     def do_p(self, arg):
         """p expression
