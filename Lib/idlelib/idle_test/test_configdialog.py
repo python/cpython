@@ -47,17 +47,24 @@ def tearDownModule():
     root.destroy()
     root = dialog = None
 
-class ConfigDialogTest(unittest.TestCase):
 
-    def test_help(self):
+class DialogTest(unittest.TestCase):
+
+    @mock.patch(__name__+'.dialog.destroy', new_callable=Func)
+    def test_cancel(self, destroy):
+        changes['main']['something'] = 1
+        dialog.cancel()
+        self.assertEqual(changes['main'], {})
+        self.assertEqual(destroy.called, 1)
+
+    @mock.patch('idlelib.configdialog.view_text', new_callable=Func)
+    def test_help(self, view):
         dialog.note.select(dialog.keyspage)
-        saved = configdialog.view_text
-        view = configdialog.view_text = Func()
         dialog.help()
         s = view.kwds['contents']
-        self.assertTrue(s.startswith('When you click'))
-        self.assertTrue(s.endswith('a different name.\n'))
-        configdialog.view_text = saved
+        self.assertTrue(s.startswith('When you click') and
+                        s.endswith('a different name.\n'))
+
 
 class FontPageTest(unittest.TestCase):
     """Test that font widgets enable users to make font changes.
