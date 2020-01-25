@@ -225,13 +225,12 @@ class ThreadPoolExecutor(_base.Executor):
                     try:
                         work_item = self._work_queue.get_nowait()
                     except queue.Empty:
-                        # Once the queue has been drained, send a wake-up to
-                        # prevent threads calling _work_queue.get(block=True)
-                        # from permanently blocking.
                         break
                     if work_item is not None:
                         work_item.future.cancel()
 
+            # Send a wake-up to prevent threads calling
+            # _work_queue.get(block=True) from permanently blocking.
             self._work_queue.put(None)
         if wait:
             for t in self._threads:
