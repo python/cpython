@@ -1176,23 +1176,28 @@ class Pdb(bdb.Bdb, cmd.Cmd):
             err = traceback.format_exception_only(*exc_info)[-1].strip()
             return _rstr('** raised %s **' % err)
 
+    def _msg_val_func(self, arg, func):
+        try:
+            val = self._getval(arg)
+        except:
+            return
+        try:
+            self.message(func(val))
+        except:
+            exc_info = sys.exc_info()[:2]
+            self.error(traceback.format_exception_only(*exc_info)[-1].strip())
+
     def do_p(self, arg):
         """p expression
         Print the value of the expression.
         """
-        try:
-            self.message(repr(self._getval(arg)))
-        except:
-            pass
+        self._msg_val_func(arg, repr)
 
     def do_pp(self, arg):
         """pp expression
         Pretty-print the value of the expression.
         """
-        try:
-            self.message(pprint.pformat(self._getval(arg)))
-        except:
-            pass
+        self._msg_val_func(arg, pprint.pformat)
 
     complete_print = _complete_expression
     complete_p = _complete_expression
