@@ -92,12 +92,13 @@ class ButtonTest(unittest.TestCase):
         self.assertEqual(d.destroy.called, 1)
         del d.destroy
 
-    @mock.patch.object(configdialog, 'view_text', new_callable=Func)
-    def test_click_help(self, view):
+    def test_click_help(self):
         dialog.note.select(dialog.keyspage)
-        dialog.buttons['Help'].invoke()
-        self.assertEqual(view.kwds['title'], 'Help for IDLE preferences')
-        contents = view.kwds['contents']
+        with mock.patch.object(configdialog, 'view_text',
+                               new_callable=Func) as view:
+            dialog.buttons['Help'].invoke()
+            title, contents = view.kwds['title'], view.kwds['contents']
+        self.assertEqual(title, 'Help for IDLE preferences')
         self.assertTrue(contents.startswith('When you click') and
                         contents.endswith('a different name.\n'))
 
