@@ -285,8 +285,8 @@ strings instead of bytes with :func:`generate_tokens`::
     import tokenize
 
     with tokenize.open('hello.py') as f:
-        token_gen = tokenize.generate_tokens(f.readline)
-        for token in token_gen:
+        tokens = tokenize.generate_tokens(f.readline)
+        for token in tokens:
             print(token)
 
 Or reading bytes directly with :func:`.tokenize`::
@@ -294,6 +294,6 @@ Or reading bytes directly with :func:`.tokenize`::
     import tokenize
 
     with open('hello.py', 'rb') as f:
-        token_gen = tokenize.tokenize(f.readline)
-        for token in token_gen:
+        tokens = tokenize.tokenize(f.readline)
+        for token in tokens:
             print(token)
