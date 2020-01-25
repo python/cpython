@@ -51,11 +51,6 @@ The :mod:`linecache` module defines the following functions:
    changed on disk, and you require the updated version.  If *filename* is omitted,
    it will check all the entries in the cache.
 
-.. function:: getline(filename=None, lineno)
-
-   Get the line for a Python source file from the cache.
-   Update the cache if it doesn't contain an entry for this file already.
-
 
 .. function:: getlines(filename, module_globals=None))
 
