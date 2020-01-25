@@ -50,7 +50,7 @@ def tearDownModule():
 
 class DialogTest(unittest.TestCase):
 
-    @mock.patch('__main__.dialog.destroy', new_callable=Func)
+    @mock.patch(__name__+'.dialog.destroy', new_callable=Func)
     def test_cancel(self, destroy):
         changes['main']['something'] = 1
         dialog.cancel()
