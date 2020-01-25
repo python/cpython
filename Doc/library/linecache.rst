@@ -51,6 +51,18 @@ The :mod:`linecache` module defines the following functions:
    changed on disk, and you require the updated version.  If *filename* is omitted,
    it will check all the entries in the cache.
 
+.. function:: getline(filename=None, lineno)
+
+   Get the line for a Python source file from the cache.
+   Update the cache if it doesn't contain an entry for this file already.
+
+
+.. function:: getlines(filename, module_globals=None))
+
+   Get the lines for a Python source file from the cache.
+   Update the cache if it doesn't contain an entry for this file already.
+
+
 .. function:: lazycache(filename, module_globals)
 
    Capture enough detail about a non-file-based module to permit getting its
@@ -59,6 +71,12 @@ The :mod:`linecache` module defines the following functions:
    to carry the module globals around indefinitely.
 
    .. versionadded:: 3.5
+
+
+.. function:: updatecache(filename, module_globals=None)
+
+   Update a cache entry and return its list of lines.
+   If something's wrong, print a message, discard the cache entry, and return an empty list.
 
 Example::
 
