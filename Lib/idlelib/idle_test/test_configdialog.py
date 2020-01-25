@@ -60,7 +60,7 @@ class ConfigDialogTest(unittest.TestCase):
         pass
 
 
-class ConfigDialogGUITest(unittest.TestCase):
+class ButtonTest(unittest.TestCase):
 
     def test_click_ok(self):
         d = dialog
@@ -83,32 +83,21 @@ class ConfigDialogGUITest(unittest.TestCase):
         del d.save_all_changed_extensions
         del d.activate_config_changes, d.deactivate_current_config
 
-    def test_click_cancel(self):
-        d = dialog
-        destroy = d.destroy = mock.Mock()
-        d.buttons['Cancel'].invoke()
-        destroy.assert_called_once()
-        del d.destroy
+    @mock.patch.object(dialog, 'destroy', new_callable=Func)
+    def test_click_cancel(self, destroy):
+        changes['main']['something'] = 1
+        dialog.buttons['Cancel'].invoke()
+        self.assertEqual(changes['main'], {})
+        self.assertEqual(destroy.called, 1)
 
-    @mock.patch.object(configdialog, 'view_text')
-    def test_click_help(self, mock_textview):
-        d = dialog
-
-        # Highlight help has extra text.
-        d.note.select(dialog.highpage)
-        d.buttons['Help'].invoke()
-        mock_textview.assert_called_once()
-        kwargs = mock_textview.call_args[1]
-        self.assertEqual(kwargs['title'], 'Help for IDLE preferences')
-        self.assertIn('Highlighting:', kwargs['text'])
-
-        # Keys help page extra text.
-        d.note.select(dialog.keyspage)
-        d.buttons['Help'].invoke()
-        mock_textview.assert_called()
-        kwargs = mock_textview.call_args[1]
-        self.assertEqual(kwargs['title'], 'Help for IDLE preferences')
-        self.assertIn('Keys:', kwargs['text'])
+    @mock.patch.object(configdialog, 'view_text', new_callable=Func)
+    def test_click_help(self, view):
+        dialog.note.select(dialog.keyspage)
+        dialog.buttons['Help'].invoke()
+        self.assertEqual(view.kwds['title'], 'Help for IDLE preferences')
+        contents = view.kwds['contents']
+        self.assertTrue(contents.startswith('When you click') and
+                        contents.endswith('a different name.\n'))
 
 
 class FontPageTest(unittest.TestCase):

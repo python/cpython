@@ -193,6 +193,7 @@ class ConfigDialog(Toplevel):
         Methods:
             destroy: inherited
         """
+        changes.clear()
         self.destroy()
 
     def destroy(self):
@@ -206,14 +207,12 @@ class ConfigDialog(Toplevel):
 
         Attributes accessed:
             note
-
         Methods:
             view_text: Method from textview module.
         """
         page = self.note.tab(self.note.select(), option='text').strip()
-        self._current_viewtext = view_text(
-                self, title='Help for IDLE preferences',
-                text=help_common+help_pages.get(page, ''))
+        view_text(self, title='Help for IDLE preferences',
+                  contents=help_common+help_pages.get(page, ''))
 
     def deactivate_current_config(self):
         """Remove current key bindings.
