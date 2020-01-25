@@ -763,8 +763,7 @@ class DestroyTests(TestBase):
                 msg=f"Interp {interp} should be running before destruction.")
 
             with self.assertRaises(RuntimeError,
-                msg=f"Should not be able to destroy interp {interp} while"
-                           " it's still running."):
+                    msg=f"Should not be able to destroy interp {interp} while it's still running."):
                 interpreters.destroy(interp)
             self.assertTrue(interpreters.is_running(interp))
 
