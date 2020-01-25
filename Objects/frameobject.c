@@ -338,7 +338,7 @@ frame_block_unwind(PyFrameObject *f)
     assert(f->f_iblock > 0);
     f->f_iblock--;
     PyTryBlock *b = &f->f_blockstack[f->f_iblock];
-    int delta = (f->f_stacktop - f->f_valuestack) - b->b_level;
+    intptr_t delta = (f->f_stacktop - f->f_valuestack) - b->b_level;
     while (delta > 0) {
         frame_stack_pop(f);
         delta--;

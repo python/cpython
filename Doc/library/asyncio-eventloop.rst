@@ -38,8 +38,10 @@ an event loop:
 
 .. function:: get_event_loop()
 
-   Get the current event loop.  If there is no current event loop set
-   in the current OS thread and :func:`set_event_loop` has not yet
+   Get the current event loop.
+
+   If there is no current event loop set in the current OS thread,
+   the OS thread is main, and :func:`set_event_loop` has not yet
    been called, asyncio will create a new event loop and set it as the
    current one.
 
@@ -1198,7 +1200,7 @@ Enabling debug mode
 
    .. versionchanged:: 3.7
 
-      The new ``-X dev`` command line option can now also be used
+      The new :ref:`Python Development Mode <devmode>` can now also be used
       to enable the debug mode.
 
 .. seealso::

@@ -1,0 +1,2 @@
+Use signature from inner mock for autospecced methods attached with
+:func:`unittest.mock.attach_mock`. Patch by Karthikeyan Singaravelan.
