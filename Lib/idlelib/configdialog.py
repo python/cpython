@@ -191,6 +191,7 @@ class ConfigDialog(Toplevel):
         Methods:
             destroy: inherited
         """
+        changes.clear()
         self.destroy()
 
     def destroy(self):
