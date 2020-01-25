@@ -215,10 +215,9 @@ class ThreadPoolExecutor(_base.Executor):
                 if work_item is not None:
                     work_item.future.set_exception(BrokenThreadPool(self._broken))
 
-    def shutdown(self, wait=True, cancel_futures=False):
+    def shutdown(self, wait=True, *, cancel_futures=False):
         with self._shutdown_lock:
             self._shutdown = True
-            self._work_queue.put(None)
             if cancel_futures:
                 # Drain all work items from the queue, and then cancel their
                 # associated futures.
@@ -229,11 +228,11 @@ class ThreadPoolExecutor(_base.Executor):
                         # Once the queue has been drained, send a wake-up to
                         # prevent threads calling _work_queue.get(block=True)
                         # from permanently blocking.
-                        self._work_queue.put(None)
                         break
                     if work_item is not None:
                         work_item.future.cancel()
 
+            self._work_queue.put(None)
         if wait:
             for t in self._threads:
                 t.join()

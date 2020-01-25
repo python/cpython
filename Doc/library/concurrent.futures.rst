@@ -88,8 +88,8 @@ Executor Objects
        of *cancel_futures*.
 
        If both *cancel_futures* and *wait* are ``True``, all futures that the
-       executor has started running will be completed prior to shutting down.
-       The remaining futures are cancelled.
+       executor has started running will be completed prior to this method
+       returning. The remaining futures are cancelled.
 
        You can avoid having to call this method explicitly if you use the
        :keyword:`with` statement, which will shutdown the :class:`Executor`
