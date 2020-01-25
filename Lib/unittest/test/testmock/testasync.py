@@ -19,6 +19,15 @@ class AsyncClass:
     def normal_method(self):
         pass
 
+    @classmethod
+    async def async_class_method(cls):
+        pass
+
+    @staticmethod
+    async def async_static_method():
+        pass
+
+
 class AwaitableClass:
     def __await__(self):
         yield
@@ -66,6 +75,20 @@ class AsyncPatchDecoratorTest(unittest.TestCase):
 
     def test_is_AsyncMock_patch(self):
         @patch.object(AsyncClass, 'async_method')
+        def test_async(mock_method):
+            self.assertIsInstance(mock_method, AsyncMock)
+
+        test_async()
+
+    def test_is_AsyncMock_patch_staticmethod(self):
+        @patch.object(AsyncClass, 'async_static_method')
+        def test_async(mock_method):
+            self.assertIsInstance(mock_method, AsyncMock)
+
+        test_async()
+
+    def test_is_AsyncMock_patch_classmethod(self):
+        @patch.object(AsyncClass, 'async_class_method')
         def test_async(mock_method):
             self.assertIsInstance(mock_method, AsyncMock)
 
