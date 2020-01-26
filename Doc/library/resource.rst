@@ -64,8 +64,8 @@ this module for those platforms.
    :data:`~resource.RLIM_INFINITY` can be used to request a limit that is
    unlimited.
 
-   Raises :exc:`ValueError` if an invalid resource is specified, if the new soft
-   limit exceeds the hard limit, or if a process tries to raise its hard limit.
+   Raises :exc:`ValueError` if an invalid resource is specified or if the new
+   soft limit exceeds the hard limit.
    Specifying a limit of :data:`~resource.RLIM_INFINITY` when the hard or
    system limit for that resource is not unlimited will result in a
    :exc:`ValueError`.  A process with the effective UID of super-user can
@@ -77,6 +77,10 @@ this module for those platforms.
    fails.
 
    VxWorks only supports setting :data:`RLIMIT_NOFILE`.
+
+   .. versionchanged:: 3.9
+      :exc:`PermissionError` is raised instead of :exc:`ValueError` if the user
+      doesn't have enough privileges.
 
 .. function:: prlimit(pid, resource[, limits])
 

@@ -498,8 +498,9 @@ Changes in the Python API
 * The :mod:`venv` activation scripts no longer special-case when
   ``__VENV_PROMPT__`` is set to ``""``.
 
-* :func:`resource.setrusage` now raises :exc:`PermissionError` instead of
-  :exc:`KeyError` if the user doesn't have privileges.
+* :func:`resource.setrlimit` now raises :exc:`PermissionError` instead of
+  :exc:`ValueError` if the user doesn't have enough privileges.
+  (contributed by Giampaolo Rodola in :issue:`38480`)
 
 * The :meth:`select.epoll.unregister` method no longer ignores the
   :data:`~errno.EBADF` error.
