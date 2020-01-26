@@ -314,7 +314,7 @@ int blake2b_update( blake2b_state *S, const uint8_t *in, size_t inlen )
       memcpy( S->buf + left, in, inlen );
       S->buflen += ( uint32_t ) inlen; // Be lazy, do not compress
       in += inlen;
-      inlen -= inlen;
+      inlen = 0;
     }
   }
 
