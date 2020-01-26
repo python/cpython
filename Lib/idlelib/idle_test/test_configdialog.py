@@ -646,17 +646,6 @@ class HighPageTest(unittest.TestCase):
         self.assertFalse(d.theme_source.get())  # Use custom set.
         eq(d.set_theme_type.called, 1)
 
-        # Call with same name as first time to make sure it adds it only once.
-        d.theme_source.set(True)
-        d.builtin_name.set('IDLE Classic')
-        d.create_new(first_new)
-        eq(idleConf.GetSectionList('user', 'highlight'), [first_new])
-        eq(idleConf.GetThemeDict('default', 'IDLE Classic'),
-           idleConf.GetThemeDict('user', first_new))
-        eq(d.custom_name.get(), first_new)
-        self.assertFalse(d.theme_source.get())  # Use custom set.
-        eq(d.set_theme_type.called, 2)
-
         # Test that changed targets are in new theme.
         changes.add_option('highlight', first_new, 'hit-background', 'yellow')
         self.assertNotIn(second_new, idleConf.userCfg)
