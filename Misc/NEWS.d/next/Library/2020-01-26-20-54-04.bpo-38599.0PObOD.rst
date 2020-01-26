@@ -1,0 +1,2 @@
+Add Deprecation Warning message when an Queue and Locks objects are created
+and the loop is not running.
