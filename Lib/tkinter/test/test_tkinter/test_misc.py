@@ -181,8 +181,7 @@ class MiscTest(AbstractTkTest, unittest.TestCase):
 
         # With no parameter, it returns a tuple of the event handler ids.
         self.assertEqual(root.after_info(), (timer, ))
-        # Process event to remove it.
-        root.update()
+        root.after_cancel(timer)
 
         timer1 = root.after(5000, lambda: 'break')
         timer2 = root.after(5000, lambda: 'break')
