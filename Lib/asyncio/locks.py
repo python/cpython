@@ -168,6 +168,12 @@ class Lock(_ContextManagerMixin):
                           "and scheduled for removal in Python 3.10.",
                           DeprecationWarning, stacklevel=2)
 
+        if not self._loop.is_running():
+            warnings.warn("The asyncio objects created without running "
+                          "event loop is deprecated since Python 3.9 and "
+                          "scheduled for removal in Python 3.10.",
+                          DeprecationWarning, stacklevel=2)
+
     def __repr__(self):
         res = super().__repr__()
         extra = 'locked' if self._locked else 'unlocked'
