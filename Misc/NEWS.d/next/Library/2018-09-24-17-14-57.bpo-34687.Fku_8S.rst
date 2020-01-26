@@ -1,2 +1,0 @@
-On Windows, asyncio now uses ProactorEventLoop, instead of
-SelectorEventLoop, by default.

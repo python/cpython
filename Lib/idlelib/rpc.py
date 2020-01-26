@@ -64,8 +64,7 @@ def dumps(obj, protocol=None):
 
 
 class CodePickler(pickle.Pickler):
-    dispatch_table = {types.CodeType: pickle_code}
-    dispatch_table.update(copyreg.dispatch_table)
+    dispatch_table = {types.CodeType: pickle_code, **copyreg.dispatch_table}
 
 
 BUFSIZE = 8*1024
@@ -604,7 +603,7 @@ class MethodProxy(object):
         self.oid = oid
         self.name = name
 
-    def __call__(self, *args, **kwargs):
+    def __call__(self, /, *args, **kwargs):
         value = self.sockio.remotecall(self.oid, self.name, args, kwargs)
         return value
 

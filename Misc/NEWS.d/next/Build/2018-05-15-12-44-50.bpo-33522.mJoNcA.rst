@@ -1,2 +1,0 @@
-Enable CI builds on Visual Studio Team Services at
-https://python.visualstudio.com/cpython

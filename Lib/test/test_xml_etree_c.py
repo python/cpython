@@ -1,4 +1,5 @@
 # xml.etree test for cElementTree
+import io
 import struct
 from test import support
 from test.support import import_fresh_module
@@ -116,6 +117,42 @@ class MiscTests(unittest.TestCase):
 
         elem.tail = X()
         elem.__setstate__({'tag': 42})  # shouldn't cause an assertion failure
+
+    def test_setstate_leaks(self):
+        # Test reference leaks
+        elem = cET.Element.__new__(cET.Element)
+        for i in range(100):
+            elem.__setstate__({'tag': 'foo', 'attrib': {'bar': 42},
+                               '_children': [cET.Element('child')],
+                               'text': 'text goes here',
+                               'tail': 'opposite of head'})
+
+        self.assertEqual(elem.tag, 'foo')
+        self.assertEqual(elem.text, 'text goes here')
+        self.assertEqual(elem.tail, 'opposite of head')
+        self.assertEqual(list(elem.attrib.items()), [('bar', 42)])
+        self.assertEqual(len(elem), 1)
+        self.assertEqual(elem[0].tag, 'child')
+
+    def test_iterparse_leaks(self):
+        # Test reference leaks in TreeBuilder (issue #35502).
+        # The test is written to be executed in the hunting reference leaks
+        # mode.
+        XML = '<a></a></b>'
+        parser = cET.iterparse(io.StringIO(XML))
+        next(parser)
+        del parser
+        support.gc_collect()
+
+    def test_xmlpullparser_leaks(self):
+        # Test reference leaks in TreeBuilder (issue #35502).
+        # The test is written to be executed in the hunting reference leaks
+        # mode.
+        XML = '<a></a></b>'
+        parser = cET.XMLPullParser()
+        parser.feed(XML)
+        del parser
+        support.gc_collect()
 
 
 @unittest.skipUnless(cET, 'requires _elementtree')

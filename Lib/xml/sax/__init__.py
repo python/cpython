@@ -67,18 +67,18 @@ if sys.platform[:4] == "java" and sys.registry.containsKey(_key):
     default_parser_list = sys.registry.getProperty(_key).split(",")
 
 
-def make_parser(parser_list = []):
+def make_parser(parser_list=()):
     """Creates and returns a SAX parser.
 
     Creates the first parser it is able to instantiate of the ones
-    given in the list created by doing parser_list +
-    default_parser_list.  The lists must contain the names of Python
+    given in the iterable created by chaining parser_list and
+    default_parser_list.  The iterables must contain the names of Python
     modules containing both a SAX parser and a create_parser function."""
 
-    for parser_name in parser_list + default_parser_list:
+    for parser_name in list(parser_list) + default_parser_list:
         try:
             return _create_parser(parser_name)
-        except ImportError as e:
+        except ImportError:
             import sys
             if parser_name in sys.modules:
                 # The parser module was found, but importing it

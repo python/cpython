@@ -1,1 +1,0 @@
-Fixed SSL module build with OpenSSL & pedantic CFLAGS.

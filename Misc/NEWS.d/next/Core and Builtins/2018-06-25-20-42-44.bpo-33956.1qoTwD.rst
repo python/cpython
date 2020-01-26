@@ -1,1 +1,0 @@
-Update vendored Expat library copy to version 2.2.5.

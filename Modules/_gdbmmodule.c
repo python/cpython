@@ -3,7 +3,7 @@
 /* Author: Anthony Baxter, after dbmmodule.c */
 /* Doc strings: Mitch Chapman */
 
-
+#define PY_SSIZE_T_CLEAN
 #include "Python.h"
 
 #include <sys/types.h>
@@ -119,15 +119,36 @@ dbm_length(dbmobject *dp)
     return dp->di_size;
 }
 
+// Wrapper function for PyArg_Parse(o, "s#", &d.dptr, &d.size).
+// This function is needed to support PY_SSIZE_T_CLEAN.
+// Return 1 on success, same to PyArg_Parse().
+static int
+parse_datum(PyObject *o, datum *d, const char *failmsg)
+{
+    Py_ssize_t size;
+    if (!PyArg_Parse(o, "s#", &d->dptr, &size)) {
+        if (failmsg != NULL) {
+            PyErr_SetString(PyExc_TypeError, failmsg);
+        }
+        return 0;
+    }
+    if (INT_MAX < size) {
+        PyErr_SetString(PyExc_OverflowError, "size does not fit in an int");
+        return 0;
+    }
+    d->dsize = size;
+    return 1;
+}
+
 static PyObject *
 dbm_subscript(dbmobject *dp, PyObject *key)
 {
     PyObject *v;
     datum drec, krec;
 
-    if (!PyArg_Parse(key, "s#", &krec.dptr, &krec.dsize) )
+    if (!parse_datum(key, &krec, NULL)) {
         return NULL;
-
+    }
     if (dp->di_dbm == NULL) {
         PyErr_SetString(DbmError,
                         "GDBM object has already been closed");
@@ -172,10 +193,9 @@ static int
 dbm_ass_sub(dbmobject *dp, PyObject *v, PyObject *w)
 {
     datum krec, drec;
+    const char *failmsg = "gdbm mappings have bytes or string indices only";
 
-    if (!PyArg_Parse(v, "s#", &krec.dptr, &krec.dsize) ) {
-        PyErr_SetString(PyExc_TypeError,
-                        "gdbm mappings have bytes or string indices only");
+    if (!parse_datum(v, &krec, failmsg)) {
         return -1;
     }
     if (dp->di_dbm == NULL) {
@@ -186,14 +206,17 @@ dbm_ass_sub(dbmobject *dp, PyObject *v, PyObject *w)
     dp->di_size = -1;
     if (w == NULL) {
         if (gdbm_delete(dp->di_dbm, krec) < 0) {
-            PyErr_SetObject(PyExc_KeyError, v);
+            if (gdbm_errno == GDBM_ITEM_NOT_FOUND) {
+                PyErr_SetObject(PyExc_KeyError, v);
+            }
+            else {
+                PyErr_SetString(DbmError, gdbm_strerror(gdbm_errno));
+            }
             return -1;
         }
     }
     else {
-        if (!PyArg_Parse(w, "s#", &drec.dptr, &drec.dsize)) {
-            PyErr_SetString(PyExc_TypeError,
-                            "gdbm mappings have byte or string elements only");
+        if (!parse_datum(w, &drec, failmsg)) {
             return -1;
         }
         errno = 0;
@@ -474,7 +497,7 @@ static PyObject *
 dbm__exit__(PyObject *self, PyObject *args)
 {
     _Py_IDENTIFIER(close);
-    return _PyObject_CallMethodId(self, &PyId_close, NULL);
+    return _PyObject_CallMethodIdNoArgs(self, &PyId_close);
 }
 
 static PyMethodDef dbm_methods[] = {
@@ -484,7 +507,6 @@ static PyMethodDef dbm_methods[] = {
     _GDBM_GDBM_NEXTKEY_METHODDEF
     _GDBM_GDBM_REORGANIZE_METHODDEF
     _GDBM_GDBM_SYNC_METHODDEF
-    _GDBM_GDBM_GET_METHODDEF
     _GDBM_GDBM_GET_METHODDEF
     _GDBM_GDBM_SETDEFAULT_METHODDEF
     {"__enter__", dbm__enter__, METH_NOARGS, NULL},
@@ -498,10 +520,10 @@ static PyTypeObject Dbmtype = {
     sizeof(dbmobject),
     0,
     (destructor)dbm_dealloc,            /*tp_dealloc*/
-    0,                                  /*tp_print*/
+    0,                                  /*tp_vectorcall_offset*/
     0,                                  /*tp_getattr*/
     0,                                  /*tp_setattr*/
-    0,                                  /*tp_reserved*/
+    0,                                  /*tp_as_async*/
     0,                                  /*tp_repr*/
     0,                                  /*tp_as_number*/
     &dbm_as_sequence,                   /*tp_as_sequence*/

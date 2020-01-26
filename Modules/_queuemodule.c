@@ -26,7 +26,7 @@ typedef struct {
 static void
 simplequeue_dealloc(simplequeueobject *self)
 {
-    _PyObject_GC_UNTRACK(self);
+    PyObject_GC_UnTrack(self);
     if (self->lock != NULL) {
         /* Unlock the lock so it's safe to free it */
         if (self->locked > 0)
@@ -313,10 +313,10 @@ static PyTypeObject PySimpleQueueType = {
     0,                                  /*tp_itemsize*/
     /* methods */
     (destructor)simplequeue_dealloc,    /*tp_dealloc*/
-    0,                                  /*tp_print*/
+    0,                                  /*tp_vectorcall_offset*/
     0,                                  /*tp_getattr*/
     0,                                  /*tp_setattr*/
-    0,                                  /*tp_reserved*/
+    0,                                  /*tp_as_async*/
     0,                                  /*tp_repr*/
     0,                                  /*tp_as_number*/
     0,                                  /*tp_as_sequence*/

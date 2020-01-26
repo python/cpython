@@ -1,1 +1,0 @@
-Remove platform.linux_distribution, which was deprecated since 3.5.

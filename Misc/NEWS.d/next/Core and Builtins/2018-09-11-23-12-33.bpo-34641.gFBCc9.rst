@@ -1,2 +1,0 @@
-Further restrict the syntax of the left-hand side of keyword arguments in
-function calls. In particular, ``f((keyword)=arg)`` is now disallowed.

@@ -11,53 +11,6 @@
 extern "C" {
 #endif
 
-#ifndef Py_LIMITED_API
-PyAPI_FUNC(void *) PyMem_RawMalloc(size_t size);
-PyAPI_FUNC(void *) PyMem_RawCalloc(size_t nelem, size_t elsize);
-PyAPI_FUNC(void *) PyMem_RawRealloc(void *ptr, size_t new_size);
-PyAPI_FUNC(void) PyMem_RawFree(void *ptr);
-
-/* Configure the Python memory allocators. Pass NULL to use default
-   allocators. */
-PyAPI_FUNC(int) _PyMem_SetupAllocators(const char *opt);
-
-/* Try to get the allocators name set by _PyMem_SetupAllocators(). */
-PyAPI_FUNC(const char*) _PyMem_GetAllocatorsName(void);
-
-/* Track an allocated memory block in the tracemalloc module.
-   Return 0 on success, return -1 on error (failed to allocate memory to store
-   the trace).
-
-   Return -2 if tracemalloc is disabled.
-
-   If memory block is already tracked, update the existing trace. */
-PyAPI_FUNC(int) PyTraceMalloc_Track(
-    unsigned int domain,
-    uintptr_t ptr,
-    size_t size);
-
-/* Untrack an allocated memory block in the tracemalloc module.
-   Do nothing if the block was not tracked.
-
-   Return -2 if tracemalloc is disabled, otherwise return 0. */
-PyAPI_FUNC(int) PyTraceMalloc_Untrack(
-    unsigned int domain,
-    uintptr_t ptr);
-
-/* Get the traceback where a memory block was allocated.
-
-   Return a tuple of (filename: str, lineno: int) tuples.
-
-   Return None if the tracemalloc module is disabled or if the memory block
-   is not tracked by tracemalloc.
-
-   Raise an exception and return NULL on error. */
-PyAPI_FUNC(PyObject*) _PyTraceMalloc_GetTraceback(
-    unsigned int domain,
-    uintptr_t ptr);
-#endif   /* !Py_LIMITED_API */
-
-
 /* BEWARE:
 
    Each interface exports both functions and macros.  Extension modules should
@@ -97,22 +50,8 @@ PyAPI_FUNC(PyObject*) _PyTraceMalloc_GetTraceback(
 */
 
 PyAPI_FUNC(void *) PyMem_Malloc(size_t size);
-#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= 0x03050000
-PyAPI_FUNC(void *) PyMem_Calloc(size_t nelem, size_t elsize);
-#endif
 PyAPI_FUNC(void *) PyMem_Realloc(void *ptr, size_t new_size);
 PyAPI_FUNC(void) PyMem_Free(void *ptr);
-
-#ifndef Py_LIMITED_API
-/* strdup() using PyMem_RawMalloc() */
-PyAPI_FUNC(char *) _PyMem_RawStrdup(const char *str);
-
-/* strdup() using PyMem_Malloc() */
-PyAPI_FUNC(char *) _PyMem_Strdup(const char *str);
-
-/* wcsdup() using PyMem_RawMalloc() */
-PyAPI_FUNC(wchar_t*) _PyMem_RawWcsdup(const wchar_t *str);
-#endif
 
 /* Macros. */
 
@@ -162,79 +101,46 @@ PyAPI_FUNC(wchar_t*) _PyMem_RawWcsdup(const wchar_t *str);
 #define PyMem_Del               PyMem_Free
 #define PyMem_DEL               PyMem_FREE
 
+/* bpo-35053: expose _Py_tracemalloc_config for performance:
+   _Py_NewReference() needs an efficient check to test if tracemalloc is
+   tracing.
+
+   It has to be defined in pymem.h, before object.h is included. */
+struct _PyTraceMalloc_Config {
+    /* Module initialized?
+       Variable protected by the GIL */
+    enum {
+        TRACEMALLOC_NOT_INITIALIZED,
+        TRACEMALLOC_INITIALIZED,
+        TRACEMALLOC_FINALIZED
+    } initialized;
+
+    /* Is tracemalloc tracing memory allocations?
+       Variable protected by the GIL */
+    int tracing;
+
+    /* limit of the number of frames in a traceback, 1 by default.
+       Variable protected by the GIL. */
+    int max_nframe;
+
+    /* use domain in trace key?
+       Variable protected by the GIL. */
+    int use_domain;
+};
+
+PyAPI_DATA(struct _PyTraceMalloc_Config) _Py_tracemalloc_config;
+
+#define _PyTraceMalloc_Config_INIT \
+    {.initialized = TRACEMALLOC_NOT_INITIALIZED, \
+     .tracing = 0, \
+     .max_nframe = 1, \
+     .use_domain = 0}
+
+
 #ifndef Py_LIMITED_API
-typedef enum {
-    /* PyMem_RawMalloc(), PyMem_RawRealloc() and PyMem_RawFree() */
-    PYMEM_DOMAIN_RAW,
-
-    /* PyMem_Malloc(), PyMem_Realloc() and PyMem_Free() */
-    PYMEM_DOMAIN_MEM,
-
-    /* PyObject_Malloc(), PyObject_Realloc() and PyObject_Free() */
-    PYMEM_DOMAIN_OBJ
-} PyMemAllocatorDomain;
-
-typedef struct {
-    /* user context passed as the first argument to the 4 functions */
-    void *ctx;
-
-    /* allocate a memory block */
-    void* (*malloc) (void *ctx, size_t size);
-
-    /* allocate a memory block initialized by zeros */
-    void* (*calloc) (void *ctx, size_t nelem, size_t elsize);
-
-    /* allocate or resize a memory block */
-    void* (*realloc) (void *ctx, void *ptr, size_t new_size);
-
-    /* release a memory block */
-    void (*free) (void *ctx, void *ptr);
-} PyMemAllocatorEx;
-
-/* Get the memory block allocator of the specified domain. */
-PyAPI_FUNC(void) PyMem_GetAllocator(PyMemAllocatorDomain domain,
-                                    PyMemAllocatorEx *allocator);
-
-/* Set the memory block allocator of the specified domain.
-
-   The new allocator must return a distinct non-NULL pointer when requesting
-   zero bytes.
-
-   For the PYMEM_DOMAIN_RAW domain, the allocator must be thread-safe: the GIL
-   is not held when the allocator is called.
-
-   If the new allocator is not a hook (don't call the previous allocator), the
-   PyMem_SetupDebugHooks() function must be called to reinstall the debug hooks
-   on top on the new allocator. */
-PyAPI_FUNC(void) PyMem_SetAllocator(PyMemAllocatorDomain domain,
-                                    PyMemAllocatorEx *allocator);
-
-/* Setup hooks to detect bugs in the following Python memory allocator
-   functions:
-
-   - PyMem_RawMalloc(), PyMem_RawRealloc(), PyMem_RawFree()
-   - PyMem_Malloc(), PyMem_Realloc(), PyMem_Free()
-   - PyObject_Malloc(), PyObject_Realloc() and PyObject_Free()
-
-   Newly allocated memory is filled with the byte 0xCB, freed memory is filled
-   with the byte 0xDB. Additional checks:
-
-   - detect API violations, ex: PyObject_Free() called on a buffer allocated
-     by PyMem_Malloc()
-   - detect write before the start of the buffer (buffer underflow)
-   - detect write after the end of the buffer (buffer overflow)
-
-   The function does nothing if Python is not compiled is debug mode. */
-PyAPI_FUNC(void) PyMem_SetupDebugHooks(void);
-#endif
-
-#ifdef Py_BUILD_CORE
-/* Set the memory allocator of the specified domain to the default.
-   Save the old allocator into *old_alloc if it's non-NULL.
-   Return on success, or return -1 if the domain is unknown. */
-PyAPI_FUNC(int) _PyMem_SetDefaultAllocator(
-    PyMemAllocatorDomain domain,
-    PyMemAllocatorEx *old_alloc);
+#  define Py_CPYTHON_PYMEM_H
+#  include  "cpython/pymem.h"
+#  undef Py_CPYTHON_PYMEM_H
 #endif
 
 #ifdef __cplusplus

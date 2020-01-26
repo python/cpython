@@ -1,2 +1,0 @@
-Move ``Enum._convert`` to ``EnumMeta._convert_`` and fix enum members getting
-shadowed by parent attributes.
