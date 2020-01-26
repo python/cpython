@@ -1100,17 +1100,6 @@ class KeysPageTest(unittest.TestCase):
         self.assertFalse(d.keyset_source.get())  # Use custom set.
         eq(d.set_keys_type.called, 1)
 
-        # Call with same name as first time to make sure it adds it only once.
-        d.keyset_source.set(True)
-        d.builtin_name.set('IDLE Classic Windows')
-        d.create_new_key_set(first_new)
-        eq(idleConf.GetSectionList('user', 'keys'), [first_new])
-        eq(idleConf.GetKeySet('IDLE Classic Windows'),
-           idleConf.GetKeySet(first_new))
-        eq(d.custom_name.get(), first_new)
-        self.assertFalse(d.keyset_source.get())  # Use custom set.
-        eq(d.set_keys_type.called, 2)
-
         # Test that changed keybindings are in new keyset.
         changes.add_option('keys', first_new, 'copy', '<Key-F11>')
         self.assertNotIn(second_new, idleConf.userCfg)

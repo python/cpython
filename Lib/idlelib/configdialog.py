@@ -1286,8 +1286,7 @@ class HighPage(Frame):
         theme_name - string, the name of the new theme
         theme - dictionary containing the new theme
         """
-        if not idleConf.userCfg['highlight'].has_section(theme_name):
-            idleConf.userCfg['highlight'].add_section(theme_name)
+        idleConf.userCfg['highlight'].AddSection(theme_name)
         for element in theme:
             value = theme[element]
             idleConf.userCfg['highlight'].SetOption(theme_name, element, value)
