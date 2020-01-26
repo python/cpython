@@ -586,6 +586,24 @@ class GCTests(unittest.TestCase):
         self.assertFalse(gc.is_tracked(UserFloatSlots()))
         self.assertFalse(gc.is_tracked(UserIntSlots()))
 
+    def test_is_finalized(self):
+        # Objects not tracked by the always gc return false
+        self.assertFalse(gc.is_finalized(3))
+
+        storage = []
+        class Lazarus:
+            def __del__(self):
+                storage.append(self)
+
+        lazarus = Lazarus()
+        self.assertFalse(gc.is_finalized(lazarus))
+
+        del lazarus
+        gc.collect()
+
+        lazarus = storage.pop()
+        self.assertTrue(gc.is_finalized(lazarus))
+
     def test_bug1055820b(self):
         # Corresponds to temp2b.py in the bug report.
 
