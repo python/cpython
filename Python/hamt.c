@@ -6,7 +6,7 @@
 #include "structmember.h"
 
 /*
-This file provides an implemention of an immutable mapping using the
+This file provides an implementation of an immutable mapping using the
 Hash Array Mapped Trie (or HAMT) datastructure.
 
 This design allows to have:
@@ -1864,7 +1864,7 @@ hamt_node_array_without(PyHamtNode_Array *self,
                     continue;
                 }
 
-                bitmap |= 1 << i;
+                bitmap |= 1U << i;
 
                 if (IS_BITMAP_NODE(node)) {
                     PyHamtNode_Bitmap *child = (PyHamtNode_Bitmap *)node;

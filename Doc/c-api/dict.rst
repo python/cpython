@@ -33,7 +33,7 @@ Dictionary Objects
 
 .. c:function:: PyObject* PyDict_New()
 
-   Return a new empty dictionary, or *NULL* on failure.
+   Return a new empty dictionary, or ``NULL`` on failure.
 
 
 .. c:function:: PyObject* PyDictProxy_New(PyObject *mapping)
@@ -92,7 +92,7 @@ Dictionary Objects
 
 .. c:function:: PyObject* PyDict_GetItem(PyObject *p, PyObject *key)
 
-   Return the object from dictionary *p* which has a key *key*.  Return *NULL*
+   Return the object from dictionary *p* which has a key *key*.  Return ``NULL``
    if the key *key* is not present, but *without* setting an exception.
 
    Note that exceptions which occur while calling :meth:`__hash__` and
@@ -103,8 +103,8 @@ Dictionary Objects
 .. c:function:: PyObject* PyDict_GetItemWithError(PyObject *p, PyObject *key)
 
    Variant of :c:func:`PyDict_GetItem` that does not suppress
-   exceptions. Return *NULL* **with** an exception set if an exception
-   occurred.  Return *NULL* **without** an exception set if the key
+   exceptions. Return ``NULL`` **with** an exception set if an exception
+   occurred.  Return ``NULL`` **without** an exception set if the key
    wasn't present.
 
 
@@ -161,7 +161,7 @@ Dictionary Objects
    function returns true for each pair in the dictionary, and false once all
    pairs have been reported.  The parameters *pkey* and *pvalue* should either
    point to :c:type:`PyObject\*` variables that will be filled in with each key
-   and value, respectively, or may be *NULL*.  Any references returned through
+   and value, respectively, or may be ``NULL``.  Any references returned through
    them are borrowed.  *ppos* should not be altered during iteration. Its
    value represents offsets within the internal dictionary structure, and
    since the structure is sparse, the offsets are not consecutive.

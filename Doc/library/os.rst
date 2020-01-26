@@ -111,9 +111,9 @@ process and user.
    to the environment made after this time are not reflected in ``os.environ``,
    except for changes made by modifying ``os.environ`` directly.
 
-   If the platform supports the :func:`putenv` function, this mapping may be used
-   to modify the environment as well as query the environment.  :func:`putenv` will
-   be called automatically when the mapping is modified.
+   This mapping may be used to modify the environment as well as query the
+   environment.  :func:`putenv` will be called automatically when the mapping
+   is modified.
 
    On Unix, keys and values use :func:`sys.getfilesystemencoding` and
    ``'surrogateescape'`` error handler. Use :data:`environb` if you would like
@@ -130,14 +130,10 @@ process and user.
       cause memory leaks.  Refer to the system documentation for
       :c:func:`putenv`.
 
-   If :func:`putenv` is not provided, a modified copy of this mapping  may be
-   passed to the appropriate process-creation functions to cause  child processes
-   to use a modified environment.
-
-   If the platform supports the :func:`unsetenv` function, you can delete items in
-   this mapping to unset environment variables. :func:`unsetenv` will be called
-   automatically when an item is deleted from ``os.environ``, and when
-   one of the :meth:`pop` or :meth:`clear` methods is called.
+   You can delete items in this mapping to unset environment variables.
+   :func:`unsetenv` will be called automatically when an item is deleted from
+   ``os.environ``, and when one of the :meth:`pop` or :meth:`clear` methods is
+   called.
 
 
 .. data:: environb
@@ -148,7 +144,7 @@ process and user.
    versa).
 
    :data:`environb` is only available if :data:`supports_bytes_environ` is
-   True.
+   ``True``.
 
    .. versionadded:: 3.2
 
@@ -236,7 +232,7 @@ process and user.
    *default* if it doesn't. *key*, *default* and the result are bytes.
 
    :func:`getenvb` is only available if :data:`supports_bytes_environ`
-   is True.
+   is ``True``.
 
    .. availability:: most flavors of Unix.
 
@@ -439,17 +435,18 @@ process and user.
    changes to the environment affect subprocesses started with :func:`os.system`,
    :func:`popen` or :func:`fork` and :func:`execv`.
 
-   .. availability:: most flavors of Unix, Windows.
+   Assignments to items in ``os.environ`` are automatically translated into
+   corresponding calls to :func:`putenv`; however, calls to :func:`putenv`
+   don't update ``os.environ``, so it is actually preferable to assign to items
+   of ``os.environ``.
 
    .. note::
 
       On some platforms, including FreeBSD and Mac OS X, setting ``environ`` may
-      cause memory leaks. Refer to the system documentation for putenv.
+      cause memory leaks. Refer to the system documentation for :c:func:`putenv`.
 
-   When :func:`putenv` is supported, assignments to items in ``os.environ`` are
-   automatically translated into corresponding calls to :func:`putenv`; however,
-   calls to :func:`putenv` don't update ``os.environ``, so it is actually
-   preferable to assign to items of ``os.environ``.
+   .. versionchanged:: 3.9
+      The function is now always available.
 
 
 .. function:: setegid(egid)
@@ -638,12 +635,13 @@ process and user.
    environment affect subprocesses started with :func:`os.system`, :func:`popen` or
    :func:`fork` and :func:`execv`.
 
-   When :func:`unsetenv` is supported, deletion of items in ``os.environ`` is
-   automatically translated into a corresponding call to :func:`unsetenv`; however,
-   calls to :func:`unsetenv` don't update ``os.environ``, so it is actually
-   preferable to delete items of ``os.environ``.
+   Deletion of items in ``os.environ`` is automatically translated into a
+   corresponding call to :func:`unsetenv`; however, calls to :func:`unsetenv`
+   don't update ``os.environ``, so it is actually preferable to delete items of
+   ``os.environ``.
 
-   .. availability:: most flavors of Unix, Windows.
+   .. versionchanged:: 3.9
+      The function is now always available and is also available on Windows.
 
 
 .. _os-newstreams:
@@ -3478,7 +3476,11 @@ written in Python, such as a mail server's external command delivery program.
    parent.  If an error occurs :exc:`OSError` is raised.
 
    Note that some platforms including FreeBSD <= 6.3 and Cygwin have
-   known issues when using fork() from a thread.
+   known issues when using ``fork()`` from a thread.
+
+   .. versionchanged:: 3.8
+      Calling ``fork()`` in a subinterpreter is no longer supported
+      (:exc:`RuntimeError` is raised).
 
    .. warning::
 
@@ -3494,6 +3496,10 @@ written in Python, such as a mail server's external command delivery program.
    new child's process id in the parent, and *fd* is the file descriptor of the
    master end of the pseudo-terminal.  For a more portable approach, use the
    :mod:`pty` module.  If an error occurs :exc:`OSError` is raised.
+
+   .. versionchanged:: 3.8
+      Calling ``forkpty()`` in a subinterpreter is no longer supported
+      (:exc:`RuntimeError` is raised).
 
    .. availability:: some flavors of Unix.
 
@@ -3537,6 +3543,19 @@ written in Python, such as a mail server's external command delivery program.
    Add *increment* to the process's "niceness".  Return the new niceness.
 
    .. availability:: Unix.
+
+
+.. function:: pidfd_open(pid, flags=0)
+
+   Return a file descriptor referring to the process *pid*.  This descriptor can
+   be used to perform process management without races and signals.  The *flags*
+   argument is provided for future extensions; no flag values are currently
+   defined.
+
+   See the :manpage:`pidfd_open(2)` man page for more details.
+
+   .. availability:: Linux 5.3+
+   .. versionadded:: 3.9
 
 
 .. function:: plock(op)
@@ -3908,7 +3927,8 @@ written in Python, such as a mail server's external command delivery program.
 .. function:: waitid(idtype, id, options)
 
    Wait for the completion of one or more child processes.
-   *idtype* can be :data:`P_PID`, :data:`P_PGID` or :data:`P_ALL`.
+   *idtype* can be :data:`P_PID`, :data:`P_PGID`, :data:`P_ALL`, or
+   :data:`P_PIDFD` on Linux.
    *id* specifies the pid to wait on.
    *options* is constructed from the ORing of one or more of :data:`WEXITED`,
    :data:`WSTOPPED` or :data:`WCONTINUED` and additionally may be ORed with
@@ -3933,6 +3953,15 @@ written in Python, such as a mail server's external command delivery program.
 
    .. versionadded:: 3.3
 
+.. data:: P_PIDFD
+
+   This is a Linux-specific *idtype* that indicates that *id* is a file
+   descriptor that refers to a process.
+
+   .. availability:: Linux 5.4+
+
+   .. versionadded:: 3.9
+
 .. data:: WEXITED
           WSTOPPED
           WNOWAIT
@@ -3946,8 +3975,10 @@ written in Python, such as a mail server's external command delivery program.
 
 
 .. data:: CLD_EXITED
+          CLD_KILLED
           CLD_DUMPED
           CLD_TRAPPED
+          CLD_STOPPED
           CLD_CONTINUED
 
    These are the possible values for :attr:`si_code` in the result returned by
@@ -3956,6 +3987,9 @@ written in Python, such as a mail server's external command delivery program.
    .. availability:: Unix.
 
    .. versionadded:: 3.3
+
+   .. versionchanged:: 3.9
+      Added :data:`CLD_KILLED` and :data:`CLD_STOPPED` values.
 
 
 .. function:: waitpid(pid, options)

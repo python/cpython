@@ -23,8 +23,6 @@ __all__ = (
 )
 
 
-__version__ = '1.0'
-
 import asyncio
 import contextlib
 import io
@@ -48,6 +46,8 @@ _safe_super = super
 def _is_async_obj(obj):
     if _is_instance_mock(obj) and not isinstance(obj, AsyncMock):
         return False
+    if hasattr(obj, '__func__'):
+        obj = getattr(obj, '__func__')
     return asyncio.iscoroutinefunction(obj) or inspect.isawaitable(obj)
 
 
@@ -819,6 +819,10 @@ class NonCallableMock(Base):
             if child is None or isinstance(child, _SpecState):
                 break
             else:
+                # If an autospecced object is attached using attach_mock the
+                # child would be a function with mock object as attribute from
+                # which signature has to be derived.
+                child = _extract_mock(child)
                 children = child._mock_children
                 sig = child._spec_signature
 
@@ -1139,8 +1143,8 @@ class CallableMixin(Base):
             _new_parent = _new_parent._mock_new_parent
 
     def _execute_mock_call(self, /, *args, **kwargs):
-        # seperate from _increment_mock_call so that awaited functions are
-        # executed seperately from their call
+        # separate from _increment_mock_call so that awaited functions are
+        # executed separately from their call, also AsyncMock overrides this method
 
         effect = self.side_effect
         if effect is not None:
@@ -1601,6 +1605,10 @@ def _patch_object(
     When used as a class decorator `patch.object` honours `patch.TEST_PREFIX`
     for choosing which methods to wrap.
     """
+    if type(target) is str:
+        raise TypeError(
+            f"{target!r} must be the actual object to be patched, not a str"
+        )
     getter = lambda: target
     return _patch(
         getter, attribute, new, spec, create,
@@ -1722,7 +1730,8 @@ def patch(
     "as"; very useful if `patch` is creating a mock object for you.
 
     `patch` takes arbitrary keyword arguments. These will be passed to
-    the `Mock` (or `new_callable`) on construction.
+    `AsyncMock` if the patched object is asynchronous, to `MagicMock`
+    otherwise or to `new_callable` if specified.
 
     `patch.dict(...)`, `patch.multiple(...)` and `patch.object(...)` are
     available for alternate use-cases.
@@ -1849,8 +1858,23 @@ class _patch_dict(object):
         self._unpatch_dict()
         return False
 
-    start = __enter__
-    stop = __exit__
+
+    def start(self):
+        """Activate a patch, returning any created mock."""
+        result = self.__enter__()
+        _patch._active_patches.append(self)
+        return result
+
+
+    def stop(self):
+        """Stop an active patch."""
+        try:
+            _patch._active_patches.remove(self)
+        except ValueError:
+            # If the patch hasn't been started this will fail
+            pass
+
+        return self.__exit__()
 
 
 def _clear_dict(in_dict):
@@ -2136,29 +2160,45 @@ class AsyncMockMixin(Base):
         code_mock.co_flags = inspect.CO_COROUTINE
         self.__dict__['__code__'] = code_mock
 
-    async def _mock_call(self, /, *args, **kwargs):
-        try:
-            result = super()._mock_call(*args, **kwargs)
-        except (BaseException, StopIteration) as e:
-            side_effect = self.side_effect
-            if side_effect is not None and not callable(side_effect):
-                raise
-            return await _raise(e)
+    async def _execute_mock_call(self, /, *args, **kwargs):
+        # This is nearly just like super(), except for sepcial handling
+        # of coroutines
 
         _call = self.call_args
+        self.await_count += 1
+        self.await_args = _call
+        self.await_args_list.append(_call)
 
-        async def proxy():
-            try:
-                if inspect.isawaitable(result):
-                    return await result
-                else:
-                    return result
-            finally:
-                self.await_count += 1
-                self.await_args = _call
-                self.await_args_list.append(_call)
+        effect = self.side_effect
+        if effect is not None:
+            if _is_exception(effect):
+                raise effect
+            elif not _callable(effect):
+                try:
+                    result = next(effect)
+                except StopIteration:
+                    # It is impossible to propogate a StopIteration
+                    # through coroutines because of PEP 479
+                    raise StopAsyncIteration
+                if _is_exception(result):
+                    raise result
+            elif asyncio.iscoroutinefunction(effect):
+                result = await effect(*args, **kwargs)
+            else:
+                result = effect(*args, **kwargs)
 
-        return await proxy()
+            if result is not DEFAULT:
+                return result
+
+        if self._mock_return_value is not DEFAULT:
+            return self.return_value
+
+        if self._mock_wraps is not None:
+            if asyncio.iscoroutinefunction(self._mock_wraps):
+                return await self._mock_wraps(*args, **kwargs)
+            return self._mock_wraps(*args, **kwargs)
+
+        return self.return_value
 
     def assert_awaited(self):
         """
@@ -2862,10 +2902,6 @@ def seal(mock):
             continue
         if m._mock_new_parent is mock:
             seal(m)
-
-
-async def _raise(exception):
-    raise exception
 
 
 class _AsyncIterator:

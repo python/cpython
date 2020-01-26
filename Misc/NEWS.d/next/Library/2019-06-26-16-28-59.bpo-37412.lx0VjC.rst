@@ -1,3 +1,0 @@
-The :func:`os.getcwdb` function now uses the UTF-8 encoding on Windows,
-rather than the ANSI code page: see :pep:`529` for the rationale. The function
-is no longer deprecated on Windows.

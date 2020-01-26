@@ -132,21 +132,25 @@ partial_dealloc(partialobject *pto)
  * if we would need to do that, we stop using vectorcall and fall back
  * to using partial_call() instead. */
 _Py_NO_INLINE static PyObject *
-partial_vectorcall_fallback(partialobject *pto, PyObject *const *args,
-                            size_t nargsf, PyObject *kwnames)
+partial_vectorcall_fallback(PyThreadState *tstate, partialobject *pto,
+                            PyObject *const *args, size_t nargsf,
+                            PyObject *kwnames)
 {
     pto->vectorcall = NULL;
     Py_ssize_t nargs = PyVectorcall_NARGS(nargsf);
-    return _PyObject_MakeTpCall((PyObject *)pto, args, nargs, kwnames);
+    return _PyObject_MakeTpCall(tstate, (PyObject *)pto,
+                                args, nargs, kwnames);
 }
 
 static PyObject *
 partial_vectorcall(partialobject *pto, PyObject *const *args,
                    size_t nargsf, PyObject *kwnames)
 {
+    PyThreadState *tstate = _PyThreadState_GET();
+
     /* pto->kw is mutable, so need to check every time */
     if (PyDict_GET_SIZE(pto->kw)) {
-        return partial_vectorcall_fallback(pto, args, nargsf, kwnames);
+        return partial_vectorcall_fallback(tstate, pto, args, nargsf, kwnames);
     }
 
     Py_ssize_t nargs = PyVectorcall_NARGS(nargsf);
@@ -160,7 +164,8 @@ partial_vectorcall(partialobject *pto, PyObject *const *args,
 
     /* Fast path if we're called without arguments */
     if (nargs_total == 0) {
-        return _PyObject_Vectorcall(pto->fn, pto_args, pto_nargs, NULL);
+        return _PyObject_VectorcallTstate(tstate, pto->fn,
+                                          pto_args, pto_nargs, NULL);
     }
 
     /* Fast path using PY_VECTORCALL_ARGUMENTS_OFFSET to prepend a single
@@ -169,7 +174,8 @@ partial_vectorcall(partialobject *pto, PyObject *const *args,
         PyObject **newargs = (PyObject **)args - 1;
         PyObject *tmp = newargs[0];
         newargs[0] = pto_args[0];
-        PyObject *ret = _PyObject_Vectorcall(pto->fn, newargs, nargs + 1, kwnames);
+        PyObject *ret = _PyObject_VectorcallTstate(tstate, pto->fn,
+                                                   newargs, nargs + 1, kwnames);
         newargs[0] = tmp;
         return ret;
     }
@@ -195,7 +201,8 @@ partial_vectorcall(partialobject *pto, PyObject *const *args,
     memcpy(stack, pto_args, pto_nargs * sizeof(PyObject*));
     memcpy(stack + pto_nargs, args, nargs_total * sizeof(PyObject*));
 
-    ret = _PyObject_Vectorcall(pto->fn, stack, pto_nargs + nargs, kwnames);
+    ret = _PyObject_VectorcallTstate(tstate, pto->fn,
+                                     stack, pto_nargs + nargs, kwnames);
     if (stack != small_stack) {
         PyMem_Free(stack);
     }

@@ -138,19 +138,30 @@ class BasicTest(BaseTest):
         self.assertEqual(context.prompt, '(My prompt) ')
         self.assertIn("prompt = 'My prompt'\n", data)
 
+        rmtree(self.env_dir)
+        builder = venv.EnvBuilder(prompt='.')
+        cwd = os.path.basename(os.getcwd())
+        self.run_with_capture(builder.create, self.env_dir)
+        context = builder.ensure_directories(self.env_dir)
+        data = self.get_text_file_contents('pyvenv.cfg')
+        self.assertEqual(context.prompt, '(%s) ' % cwd)
+        self.assertIn("prompt = '%s'\n" % cwd, data)
+
     def test_upgrade_dependencies(self):
         builder = venv.EnvBuilder()
         bin_path = 'Scripts' if sys.platform == 'win32' else 'bin'
-        pip_exe = 'pip.exe' if sys.platform == 'win32' else 'pip'
+        python_exe = 'python.exe' if sys.platform == 'win32' else 'python'
         with tempfile.TemporaryDirectory() as fake_env_dir:
 
             def pip_cmd_checker(cmd):
                 self.assertEqual(
                     cmd,
                     [
-                        os.path.join(fake_env_dir, bin_path, pip_exe),
+                        os.path.join(fake_env_dir, bin_path, python_exe),
+                        '-m',
+                        'pip',
                         'install',
-                        '-U',
+                        '--upgrade',
                         'pip',
                         'setuptools'
                     ]

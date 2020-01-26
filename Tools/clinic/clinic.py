@@ -1182,14 +1182,14 @@ class CLanguage(Language):
             lines = [self.group_to_variable_name(g) + " = 1;" for g in group_ids]
             lines = "\n".join(lines)
 
-            s = """
+            s = """\
     case {count}:
         if (!PyArg_ParseTuple(args, "{format_units}:{name}", {parse_arguments})) {{
             goto exit;
         }}
         {group_booleans}
         break;
-"""[1:]
+"""
             s = linear_format(s, group_booleans=lines)
             s = s.format_map(d)
             add(s)
@@ -3016,7 +3016,7 @@ class long_long_converter(CConverter):
                     goto exit;
                 }}}}
                 {paramname} = PyLong_AsLongLong({argname});
-                if ({paramname} == (PY_LONG_LONG)-1 && PyErr_Occurred()) {{{{
+                if ({paramname} == -1 && PyErr_Occurred()) {{{{
                     goto exit;
                 }}}}
                 """.format(argname=argname, paramname=self.name)

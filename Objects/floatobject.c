@@ -506,7 +506,6 @@ float_richcompare(PyObject *v, PyObject *w, int op)
         goto Unimplemented;
 
  Compare:
-    PyFPE_START_PROTECT("richcompare", return NULL)
     switch (op) {
     case Py_EQ:
         r = i == j;
@@ -527,7 +526,6 @@ float_richcompare(PyObject *v, PyObject *w, int op)
         r = i > j;
         break;
     }
-    PyFPE_END_PROTECT(r)
     return PyBool_FromLong(r);
 
  Unimplemented:
@@ -546,9 +544,7 @@ float_add(PyObject *v, PyObject *w)
     double a,b;
     CONVERT_TO_DOUBLE(v, a);
     CONVERT_TO_DOUBLE(w, b);
-    PyFPE_START_PROTECT("add", return 0)
     a = a + b;
-    PyFPE_END_PROTECT(a)
     return PyFloat_FromDouble(a);
 }
 
@@ -558,9 +554,7 @@ float_sub(PyObject *v, PyObject *w)
     double a,b;
     CONVERT_TO_DOUBLE(v, a);
     CONVERT_TO_DOUBLE(w, b);
-    PyFPE_START_PROTECT("subtract", return 0)
     a = a - b;
-    PyFPE_END_PROTECT(a)
     return PyFloat_FromDouble(a);
 }
 
@@ -570,9 +564,7 @@ float_mul(PyObject *v, PyObject *w)
     double a,b;
     CONVERT_TO_DOUBLE(v, a);
     CONVERT_TO_DOUBLE(w, b);
-    PyFPE_START_PROTECT("multiply", return 0)
     a = a * b;
-    PyFPE_END_PROTECT(a)
     return PyFloat_FromDouble(a);
 }
 
@@ -587,9 +579,7 @@ float_div(PyObject *v, PyObject *w)
                         "float division by zero");
         return NULL;
     }
-    PyFPE_START_PROTECT("divide", return 0)
     a = a / b;
-    PyFPE_END_PROTECT(a)
     return PyFloat_FromDouble(a);
 }
 
@@ -605,7 +595,6 @@ float_rem(PyObject *v, PyObject *w)
                         "float modulo");
         return NULL;
     }
-    PyFPE_START_PROTECT("modulo", return 0)
     mod = fmod(vx, wx);
     if (mod) {
         /* ensure the remainder has the same sign as the denominator */
@@ -619,7 +608,6 @@ float_rem(PyObject *v, PyObject *w)
            it has the same sign as the denominator. */
         mod = copysign(0.0, wx);
     }
-    PyFPE_END_PROTECT(mod)
     return PyFloat_FromDouble(mod);
 }
 
@@ -634,7 +622,6 @@ float_divmod(PyObject *v, PyObject *w)
         PyErr_SetString(PyExc_ZeroDivisionError, "float divmod()");
         return NULL;
     }
-    PyFPE_START_PROTECT("divmod", return 0)
     mod = fmod(vx, wx);
     /* fmod is typically exact, so vx-mod is *mathematically* an
        exact multiple of wx.  But this is fp arithmetic, and fp
@@ -666,7 +653,6 @@ float_divmod(PyObject *v, PyObject *w)
         /* div is zero - get the same sign as the true quotient */
         floordiv = copysign(0.0, vx / wx); /* zero w/ sign of vx/wx */
     }
-    PyFPE_END_PROTECT(floordiv)
     return Py_BuildValue("(dd)", floordiv, mod);
 }
 
@@ -793,9 +779,7 @@ float_pow(PyObject *v, PyObject *w, PyObject *z)
      * the platform pow to step in and do the rest.
      */
     errno = 0;
-    PyFPE_START_PROTECT("pow", return NULL)
     ix = pow(iv, iw);
-    PyFPE_END_PROTECT(ix)
     Py_ADJUST_ERANGE1(ix);
     if (negate_result)
         ix = -ix;
@@ -849,9 +833,7 @@ float_is_integer_impl(PyObject *self)
     if (!Py_IS_FINITE(x))
         Py_RETURN_FALSE;
     errno = 0;
-    PyFPE_START_PROTECT("is_integer", return NULL)
     o = (floor(x) == x) ? Py_True : Py_False;
-    PyFPE_END_PROTECT(x)
     if (errno != 0) {
         PyErr_SetFromErrno(errno == ERANGE ? PyExc_OverflowError :
                              PyExc_ValueError);
@@ -860,35 +842,6 @@ float_is_integer_impl(PyObject *self)
     Py_INCREF(o);
     return o;
 }
-
-#if 0
-static PyObject *
-float_is_inf(PyObject *v)
-{
-    double x = PyFloat_AsDouble(v);
-    if (x == -1.0 && PyErr_Occurred())
-        return NULL;
-    return PyBool_FromLong((long)Py_IS_INFINITY(x));
-}
-
-static PyObject *
-float_is_nan(PyObject *v)
-{
-    double x = PyFloat_AsDouble(v);
-    if (x == -1.0 && PyErr_Occurred())
-        return NULL;
-    return PyBool_FromLong((long)Py_IS_NAN(x));
-}
-
-static PyObject *
-float_is_finite(PyObject *v)
-{
-    double x = PyFloat_AsDouble(v);
-    if (x == -1.0 && PyErr_Occurred())
-        return NULL;
-    return PyBool_FromLong((long)Py_IS_FINITE(x));
-}
-#endif
 
 /*[clinic input]
 float.__trunc__
@@ -921,6 +874,34 @@ float___trunc___impl(PyObject *self)
         return PyLong_FromLong(aslong);
     }
     return PyLong_FromDouble(wholepart);
+}
+
+/*[clinic input]
+float.__floor__
+
+Return the floor as an Integral.
+[clinic start generated code]*/
+
+static PyObject *
+float___floor___impl(PyObject *self)
+/*[clinic end generated code: output=e0551dbaea8c01d1 input=77bb13eb12e268df]*/
+{
+    double x = PyFloat_AS_DOUBLE(self);
+    return PyLong_FromDouble(floor(x));
+}
+
+/*[clinic input]
+float.__ceil__
+
+Return the ceiling as an Integral.
+[clinic start generated code]*/
+
+static PyObject *
+float___ceil___impl(PyObject *self)
+/*[clinic end generated code: output=a2fd8858f73736f9 input=79e41ae94aa0a516]*/
+{
+    double x = PyFloat_AS_DOUBLE(self);
+    return PyLong_FromDouble(ceil(x));
 }
 
 /* double_round: rounds a finite double to the closest multiple of
@@ -1567,9 +1548,7 @@ float_as_integer_ratio_impl(PyObject *self)
         return NULL;
     }
 
-    PyFPE_START_PROTECT("as_integer_ratio", goto error);
     float_part = frexp(self_double, &exponent);        /* self_double == float_part * 2**exponent exactly */
-    PyFPE_END_PROTECT(float_part);
 
     for (i=0; i<300 && float_part != floor(float_part) ; i++) {
         float_part *= 2.0;
@@ -1726,7 +1705,8 @@ float___getformat___impl(PyTypeObject *type, const char *typestr)
     case ieee_big_endian_format:
         return PyUnicode_FromString("IEEE, big-endian");
     default:
-        Py_FatalError("insane float_format or double_format");
+        PyErr_SetString(PyExc_RuntimeError,
+                        "insane float_format or double_format");
         return NULL;
     }
 }
@@ -1847,19 +1827,13 @@ float___format___impl(PyObject *self, PyObject *format_spec)
 static PyMethodDef float_methods[] = {
     FLOAT_CONJUGATE_METHODDEF
     FLOAT___TRUNC___METHODDEF
+    FLOAT___FLOOR___METHODDEF
+    FLOAT___CEIL___METHODDEF
     FLOAT___ROUND___METHODDEF
     FLOAT_AS_INTEGER_RATIO_METHODDEF
     FLOAT_FROMHEX_METHODDEF
     FLOAT_HEX_METHODDEF
     FLOAT_IS_INTEGER_METHODDEF
-#if 0
-    {"is_inf",          (PyCFunction)float_is_inf,      METH_NOARGS,
-     "Return True if the float is positive or negative infinite."},
-    {"is_finite",       (PyCFunction)float_is_finite,   METH_NOARGS,
-     "Return True if the float is finite, neither infinite nor NaN."},
-    {"is_nan",          (PyCFunction)float_is_nan,      METH_NOARGS,
-     "Return True if the float is not a number (NaN)."},
-#endif
     FLOAT___GETNEWARGS___METHODDEF
     FLOAT___GETFORMAT___METHODDEF
     FLOAT___SET_FORMAT___METHODDEF

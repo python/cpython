@@ -504,6 +504,9 @@ StructUnionType_new(PyTypeObject *type, PyObject *args, PyObject *kwds, int isSt
         Py_DECREF(result);
         return NULL;
     }
+    if (!isStruct) {
+        dict->flags |= TYPEFLAG_HASUNION;
+    }
     /* replace the class dict by our updated stgdict, which holds info
        about storage requirements of the instances */
     if (-1 == PyDict_Update((PyObject *)dict, result->tp_dict)) {
@@ -638,6 +641,12 @@ CDataType_from_buffer(PyObject *type, PyObject *args)
         return NULL;
     }
 
+    if (PySys_Audit("ctypes.cdata/buffer", "nnn",
+                    (Py_ssize_t)buffer->buf, buffer->len, offset) < 0) {
+        Py_DECREF(mv);
+        return NULL;
+    }
+
     result = PyCData_AtAddress(type, (char *)buffer->buf + offset);
     if (result == NULL) {
         Py_DECREF(mv);
@@ -688,6 +697,12 @@ CDataType_from_buffer_copy(PyObject *type, PyObject *args)
         return NULL;
     }
 
+    if (PySys_Audit("ctypes.cdata/buffer", "nnn",
+                    (Py_ssize_t)buffer.buf, buffer.len, offset) < 0) {
+        PyBuffer_Release(&buffer);
+        return NULL;
+    }
+
     result = GenericPyCData_new((PyTypeObject *)type, NULL, NULL);
     if (result != NULL) {
         memcpy(((CDataObject *)result)->b_ptr,
@@ -711,6 +726,9 @@ CDataType_in_dll(PyObject *type, PyObject *args)
 
     if (!PyArg_ParseTuple(args, "Os:in_dll", &dll, &name))
         return NULL;
+    if (PySys_Audit("ctypes.dlsym", "O", args) < 0) {
+        return NULL;
+    }
 
     obj = PyObject_GetAttrString(dll, "_handle");
     if (!obj)
@@ -2383,6 +2401,52 @@ converters_from_argtypes(PyObject *ob)
     for (i = 0; i < nArgs; ++i) {
         PyObject *cnv;
         PyObject *tp = PyTuple_GET_ITEM(ob, i);
+/*
+ *      The following checks, relating to bpo-16575 and bpo-16576, have been
+ *      disabled. The reason is that, although there is a definite problem with
+ *      how libffi handles unions (https://github.com/libffi/libffi/issues/33),
+ *      there are numerous libraries which pass structures containing unions
+ *      by values - especially on Windows but examples also exist on Linux
+ *      (https://bugs.python.org/msg359834).
+ *
+ *      It may not be possible to get proper support for unions and bitfields
+ *      until support is forthcoming in libffi, but for now, adding the checks
+ *      has caused problems in otherwise-working software, which suggests it
+ *      is better to disable the checks.
+ *
+ *      Although specific examples reported relate specifically to unions and
+ *      not bitfields, the bitfields check is also being disabled as a
+ *      precaution.
+
+        StgDictObject *stgdict = PyType_stgdict(tp);
+
+        if (stgdict != NULL) {
+            if (stgdict->flags & TYPEFLAG_HASUNION) {
+                Py_DECREF(converters);
+                Py_DECREF(ob);
+                if (!PyErr_Occurred()) {
+                    PyErr_Format(PyExc_TypeError,
+                                 "item %zd in _argtypes_ passes a union by "
+                                 "value, which is unsupported.",
+                                 i + 1);
+                }
+                return NULL;
+            }
+            if (stgdict->flags & TYPEFLAG_HASBITFIELD) {
+                Py_DECREF(converters);
+                Py_DECREF(ob);
+                if (!PyErr_Occurred()) {
+                    PyErr_Format(PyExc_TypeError,
+                                 "item %zd in _argtypes_ passes a struct/"
+                                 "union with a bitfield by value, which is "
+                                 "unsupported.",
+                                 i + 1);
+                }
+                return NULL;
+            }
+        }
+ */
+
         if (_PyObject_LookupAttrId(tp, &PyId_from_param, &cnv) <= 0) {
             Py_DECREF(converters);
             Py_DECREF(ob);
@@ -3508,10 +3572,12 @@ PyCFuncPtr_FromDll(PyTypeObject *type, PyObject *args, PyObject *kwds)
     if (PySys_Audit("ctypes.dlsym",
                     ((uintptr_t)name & ~0xFFFF) ? "Os" : "On",
                     dll, name) < 0) {
+        Py_DECREF(ftuple);
         return NULL;
     }
 #else
     if (PySys_Audit("ctypes.dlsym", "Os", dll, name) < 0) {
+        Py_DECREF(ftuple);
         return NULL;
     }
 #endif
@@ -5504,6 +5570,9 @@ create_comerror(void)
 static PyObject *
 string_at(const char *ptr, int size)
 {
+    if (PySys_Audit("ctypes.string_at", "ni", (Py_ssize_t)ptr, size) < 0) {
+        return NULL;
+    }
     if (size == -1)
         return PyBytes_FromStringAndSize(ptr, strlen(ptr));
     return PyBytes_FromStringAndSize(ptr, size);
@@ -5595,6 +5664,9 @@ static PyObject *
 wstring_at(const wchar_t *ptr, int size)
 {
     Py_ssize_t ssize = size;
+    if (PySys_Audit("ctypes.wstring_at", "nn", (Py_ssize_t)ptr, ssize) < 0) {
+        return NULL;
+    }
     if (ssize == -1)
         ssize = wcslen(ptr);
     return PyUnicode_FromWideChar(ptr, ssize);

@@ -59,6 +59,7 @@ delete-exitfunc= 1
 [EditorWindow]
 width= 80
 height= 40
+cursor-blink= 1
 font= TkFixedFont
 # For TkFixedFont, the actual size and boldness are obtained from tk
 # and override 10 and 0.  See idlelib.config.IdleConf.GetFont

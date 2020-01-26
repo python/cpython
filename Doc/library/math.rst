@@ -213,6 +213,23 @@ Number-theoretic and representation functions
    of *x* and are floats.
 
 
+.. function:: nextafter(x, y)
+
+   Return the next floating-point value after *x* towards *y*.
+
+   If *x* is equal to *y*, return *y*.
+
+   Examples:
+
+   * ``math.nextafter(x, math.inf)`` goes up: towards positive infinity.
+   * ``math.nextafter(x, -math.inf)`` goes down: towards minus infinity.
+   * ``math.nextafter(x, 0.0)`` goes towards zero.
+   * ``math.nextafter(x, math.copysign(math.inf, x))`` goes away from zero.
+
+   See also :func:`math.ulp`.
+
+   .. versionadded:: 3.9
+
 .. function:: perm(n, k=None)
 
    Return the number of ways to choose *k* items from *n* items
@@ -268,6 +285,30 @@ Number-theoretic and representation functions
    Return the :class:`~numbers.Real` value *x* truncated to an
    :class:`~numbers.Integral` (usually an integer). Delegates to
    :meth:`x.__trunc__() <object.__trunc__>`.
+
+.. function:: ulp(x)
+
+   Return the value of the least significant bit of the float *x*:
+
+   * If *x* is a NaN (not a number), return *x*.
+   * If *x* is negative, return ``ulp(-x)``.
+   * If *x* is a positive infinity, return *x*.
+   * If *x* is equal to zero, return the smallest positive
+     *denormalized* representable float (smaller than the minimum positive
+     *normalized* float, :data:`sys.float_info.min <sys.float_info>`).
+   * If *x* is equal to the largest positive representable float,
+     return the value of the least significant bit of *x*, such that the first
+     float smaller than *x* is ``x - ulp(x)``.
+   * Otherwise (*x* is a positive finite number), return the value of the least
+     significant bit of *x*, such that the first float bigger than *x*
+     is ``x + ulp(x)``.
+
+   ULP stands for "Unit in the Last Place".
+
+   See also :func:`math.nextafter` and :data:`sys.float_info.epsilon
+   <sys.float_info>`.
+
+   .. versionadded:: 3.9
 
 
 Note that :func:`frexp` and :func:`modf` have a different call/return pattern

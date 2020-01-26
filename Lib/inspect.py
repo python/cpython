@@ -1136,7 +1136,6 @@ def getfullargspec(func):
     varkw = None
     posonlyargs = []
     kwonlyargs = []
-    defaults = ()
     annotations = {}
     defaults = ()
     kwdefaults = {}

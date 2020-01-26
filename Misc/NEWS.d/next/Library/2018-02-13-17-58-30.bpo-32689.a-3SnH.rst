@@ -1,2 +1,0 @@
-Update :func:`shutil.move` function to allow for Path objects to be used as
-source argument. Patch by Emily Morehouse and Maxwell "5.13b" McKinnon.

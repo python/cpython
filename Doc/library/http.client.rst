@@ -20,7 +20,7 @@ HTTPS protocols.  It is normally not used directly --- the module
 
 .. seealso::
 
-    The `Requests package <http://docs.python-requests.org/>`_
+    The `Requests package <https://requests.readthedocs.io/en/master/>`_
     is recommended for a higher-level HTTP client interface.
 
 .. note::

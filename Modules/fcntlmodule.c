@@ -495,6 +495,15 @@ all_ins(PyObject* m)
 #ifdef F_SETLKW
     if (PyModule_AddIntMacro(m, F_SETLKW)) return -1;
 #endif
+#ifdef F_OFD_GETLK
+    if (PyModule_AddIntMacro(m, F_OFD_GETLK)) return -1;
+#endif
+#ifdef F_OFD_SETLK
+    if (PyModule_AddIntMacro(m, F_OFD_SETLK)) return -1;
+#endif
+#ifdef F_OFD_SETLKW
+    if (PyModule_AddIntMacro(m, F_OFD_SETLKW)) return -1;
+#endif
 #ifdef F_GETOWN
     if (PyModule_AddIntMacro(m, F_GETOWN)) return -1;
 #endif
@@ -659,8 +668,10 @@ PyInit_fcntl(void)
         return NULL;
 
     /* Add some symbolic constants to the module */
-    if (all_ins(m) < 0)
+    if (all_ins(m) < 0) {
+        Py_DECREF(m);
         return NULL;
+    }
 
     return m;
 }

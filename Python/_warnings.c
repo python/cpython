@@ -1,4 +1,5 @@
 #include "Python.h"
+#include "pycore_pyerrors.h"
 #include "pycore_pystate.h"
 #include "frameobject.h"
 #include "clinic/_warnings.c.h"
@@ -27,10 +28,11 @@ static struct PyModuleDef warningsmodule;
 static WarningsState *
 _Warnings_GetState()
 {
-    PyThreadState *tstate = PyThreadState_GET();
+    PyThreadState *tstate = _PyThreadState_GET();
     if (tstate == NULL) {
-        PyErr_SetString(PyExc_RuntimeError,
-                        "_Warnings_GetState: could not identify current interpreter");
+        _PyErr_SetString(tstate, PyExc_RuntimeError,
+                          "_Warnings_GetState: could not identify "
+                          "current interpreter");
         return NULL;
     }
     return &tstate->interp->warnings;

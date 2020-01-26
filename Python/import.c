@@ -49,17 +49,6 @@ module _imp
 /* Initialize things */
 
 PyStatus
-_PyImport_Init(PyThreadState *tstate)
-{
-    PyInterpreterState *interp = tstate->interp;
-    interp->builtins_copy = PyDict_Copy(interp->builtins);
-    if (interp->builtins_copy == NULL) {
-        return _PyStatus_ERR("Can't backup builtins dict");
-    }
-    return _PyStatus_OK();
-}
-
-PyStatus
 _PyImportHooks_Init(PyThreadState *tstate)
 {
     PyObject *v, *path_hooks = NULL;
@@ -583,7 +572,7 @@ _PyImport_Cleanup(PyThreadState *tstate)
     _PyGC_CollectNoFail();
     /* Dump GC stats before it's too late, since it uses the warnings
        machinery. */
-    _PyGC_DumpShutdownStats(&_PyRuntime);
+    _PyGC_DumpShutdownStats(tstate);
 
     /* Now, if there are any modules left alive, clear their globals to
        minimize potential leaks.  All C extension modules actually end
@@ -695,50 +684,62 @@ int
 _PyImport_FixupExtensionObject(PyObject *mod, PyObject *name,
                                PyObject *filename, PyObject *modules)
 {
-    PyObject *dict, *key;
-    struct PyModuleDef *def;
-    int res;
-    if (extensions == NULL) {
-        extensions = PyDict_New();
-        if (extensions == NULL)
-            return -1;
-    }
     if (mod == NULL || !PyModule_Check(mod)) {
         PyErr_BadInternalCall();
         return -1;
     }
-    def = PyModule_GetDef(mod);
+
+    struct PyModuleDef *def = PyModule_GetDef(mod);
     if (!def) {
         PyErr_BadInternalCall();
         return -1;
     }
-    if (PyObject_SetItem(modules, name, mod) < 0)
+
+    PyThreadState *tstate = _PyThreadState_GET();
+    if (PyObject_SetItem(modules, name, mod) < 0) {
         return -1;
-    if (_PyState_AddModule(mod, def) < 0) {
+    }
+    if (_PyState_AddModule(tstate, mod, def) < 0) {
         PyMapping_DelItem(modules, name);
         return -1;
     }
-    if (def->m_size == -1) {
-        if (def->m_base.m_copy) {
-            /* Somebody already imported the module,
-               likely under a different name.
-               XXX this should really not happen. */
-            Py_CLEAR(def->m_base.m_copy);
+
+    if (_Py_IsMainInterpreter(tstate)) {
+        if (def->m_size == -1) {
+            if (def->m_base.m_copy) {
+                /* Somebody already imported the module,
+                   likely under a different name.
+                   XXX this should really not happen. */
+                Py_CLEAR(def->m_base.m_copy);
+            }
+            PyObject *dict = PyModule_GetDict(mod);
+            if (dict == NULL) {
+                return -1;
+            }
+            def->m_base.m_copy = PyDict_Copy(dict);
+            if (def->m_base.m_copy == NULL) {
+                return -1;
+            }
         }
-        dict = PyModule_GetDict(mod);
-        if (dict == NULL)
+
+        if (extensions == NULL) {
+            extensions = PyDict_New();
+            if (extensions == NULL) {
+                return -1;
+            }
+        }
+
+        PyObject *key = PyTuple_Pack(2, filename, name);
+        if (key == NULL) {
             return -1;
-        def->m_base.m_copy = PyDict_Copy(dict);
-        if (def->m_base.m_copy == NULL)
+        }
+        int res = PyDict_SetItem(extensions, key, (PyObject *)def);
+        Py_DECREF(key);
+        if (res < 0) {
             return -1;
+        }
     }
-    key = PyTuple_Pack(2, filename, name);
-    if (key == NULL)
-        return -1;
-    res = PyDict_SetItem(extensions, key, (PyObject *)def);
-    Py_DECREF(key);
-    if (res < 0)
-        return -1;
+
     return 0;
 }
 
@@ -801,7 +802,7 @@ import_find_extension(PyThreadState *tstate, PyObject *name,
         }
         Py_DECREF(mod);
     }
-    if (_PyState_AddModule(mod, def) < 0) {
+    if (_PyState_AddModule(tstate, mod, def) < 0) {
         PyMapping_DelItem(modules, name);
         return NULL;
     }
