@@ -1356,11 +1356,6 @@ Py_FinalizeEx(void)
 
     call_py_exitfuncs(tstate);
 
-    /* Run finalizers for objects still alive.  Everything can be considered
-     * garbage at this point.  Legacy finalizers will be moved to gc.garbage.
-     */
-    _PyGC_RunFinalizers(tstate);
-
     /* Copy the core config, PyInterpreterState_Delete() free
        the core config memory */
 #ifdef Py_REF_DEBUG
@@ -1386,6 +1381,11 @@ Py_FinalizeEx(void)
 
     /* Disable signal handling */
     PyOS_FiniInterrupts();
+
+    /* Run finalizers for objects still alive.  Everything can be considered
+     * garbage at this point.  Legacy finalizers will be moved to gc.garbage.
+     */
+    _PyGC_RunFinalizers(tstate);
 
     /* Collect garbage.  This may call finalizers; it's nice to call these
      * before all modules are destroyed.

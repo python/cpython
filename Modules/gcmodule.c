@@ -1432,13 +1432,13 @@ _PyGC_RunFinalizers(PyThreadState *tstate)
     * in finalizers to be freed.
     */
     m += gc_list_size(&final_unreachable);
-    delete_garbage(tstate, gcstate, &final_unreachable, old);
+    //delete_garbage(tstate, gcstate, &final_unreachable, old);
 
     /* Append instances in the uncollectable set to a Python
      * reachable list of garbage.  The programmer has to deal with
      * this if they insist on creating this type of structure.
      */
-    handle_legacy_finalizers(tstate, gcstate, &finalizers, old);
+    //handle_legacy_finalizers(tstate, gcstate, &finalizers, old);
     validate_list(old, collecting_clear_unreachable_clear);
 
     clear_freelists();
