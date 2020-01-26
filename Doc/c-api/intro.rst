@@ -177,10 +177,10 @@ complete listing.
 .. c:macro:: PyDoc_STRVAR(name, str)
 
    Creates a variable with name ``name`` that can be used in docstrings.
+   If Python is built without docstrings, the value will be empty.
 
-   Use the :c:macro:`PyDoc_STRVAR` or :c:macro:`PyDoc_STR` macros for
-   docstrings to support building Python without docstrings,
-   as specified in :pep:`7`.
+   Use :c:macro:`PyDoc_STRVAR` for docstrings to support building
+   Python without docstrings, as specified in :pep:`7`.
 
    Example::
 
@@ -191,6 +191,22 @@ complete listing.
           {"pop", (PyCFunction)deque_pop, METH_NOARGS, pop_doc},
           // ...
       }
+
+.. c:macro:: PyDoc_STR(str)
+
+   Creates a docstring for the given input string or an empty string
+   if docstrings are disabled.
+
+   Use :c:macro:`PyDoc_STR` in specifying docstrings to support
+   building Python without docstrings, as specified in :pep:`7`.
+
+   Example::
+
+      static PyMethodDef pysqlite_row_methods[] = {
+          {"keys", (PyCFunction)pysqlite_row_keys, METH_NOARGS,
+              PyDoc_STR("Returns the keys of the row.")},
+          {NULL, NULL}
+      };
 
 .. _api-objects:
 
