@@ -8,8 +8,7 @@ requires('gui')
 import unittest
 from unittest import mock
 from idlelib.idle_test.mock_idle import Func
-from tkinter import (Tk, StringVar, IntVar, BooleanVar, DISABLED,
-                     NORMAL, TclError)
+from tkinter import (Tk, StringVar, IntVar, BooleanVar, DISABLED, NORMAL)
 from idlelib import config
 from idlelib.configdialog import idleConf, changes, tracers
 
@@ -493,28 +492,7 @@ class HighPageTest(unittest.TestCase):
             hs.event_generate('<ButtonPress-1>', x=0, y=0)
             hs.event_generate('<ButtonRelease-1>', x=0, y=0)
 
-        self.assertNotEqual(d.highlight_target.get(), 'text double')
-        with self.assertRaises(TclError, msg='text doesn\'t contain any characters tagged with "sel"'):
-            hs.get('sel.first', 'sel.last')
-
-        # Change binding on double click.  This will allow the event to
-        # propagate to the other levels.  The default binding for double
-        # click is to select the word that was double clicked.
-        hs.bind('<Double-Button-1>', lambda e: d.highlight_target.set('test double'))
-
-        hs.event_generate('<Enter>', x=0, y=0)
-        hs.event_generate('<Motion>', x=0, y=0)
-        # Double click is a sequence of two clicks in a row.
-        for _ in range(2):
-            hs.event_generate('<ButtonPress-1>', x=0, y=0)
-            hs.event_generate('<ButtonRelease-1>', x=0, y=0)
-
-        eq(d.highlight_target.get(), 'test double')
-        eq(hs.get('sel.first', 'sel.last'), ' 1 # Click selects item.\n')
-
-        # Remove selection and rebind.
-        hs.tag_remove('sel', '0.0', 'end')
-        hs.bind('<Double-Button-1>', lambda e: 'break')
+        eq(hs.tag_ranges('sel'), ())
 
     def test_highlight_sample_b1_motion(self):
         # Test button motion on highlight_sample.
@@ -537,27 +515,6 @@ class HighPageTest(unittest.TestCase):
         hs.event_generate('<ButtonRelease-1>', x=dx, y=dy)
 
         eq(hs.tag_ranges('sel'), ())
-
-        # Remove binding on button motion.  This will allow the event to
-        # propagate to the other levels.  The default binding for button
-        # motion is to select the text that was moused over while the button
-        # is held.
-        hs.unbind('<B1-Motion>')
-        x, y, dx, dy, offset = hs.dlineinfo('4.0')
-
-        hs.event_generate('<Leave>')
-        hs.event_generate('<Enter>')
-        hs.event_generate('<Motion>', x=x, y=y)
-        hs.event_generate('<ButtonPress-1>', x=x, y=y)
-        hs.event_generate('<B1-Motion>', x=x+dx, y=y+dy)
-        hs.event_generate('<ButtonRelease-1>', x=x+dx, y=y+dy)
-
-        self.assertNotEqual(hs.tag_ranges('sel'), ())
-        self.assertIn('def', hs.get('sel.first', 'sel.last'))
-
-        # Remove selection and rebind.
-        hs.tag_remove('sel', '0.0', 'end')
-        hs.bind('<B1-Motion>', lambda e: 'break')
 
     def test_set_theme_type(self):
         eq = self.assertEqual
