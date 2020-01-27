@@ -1,0 +1,2 @@
+Fixed a possible crash in :meth:`list.__contains__` when a list is changed
+during comparing items. Patch by Dong-hee Na.
