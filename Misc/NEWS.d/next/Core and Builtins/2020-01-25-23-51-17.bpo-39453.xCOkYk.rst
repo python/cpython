@@ -1,2 +1,2 @@
-Fix contains method of list to hold strong references of elements while
-calling PyObject_RichCompareBool(). Patch by Dong-hee Na.
+Fixed possible crash in :meth:`list.__contains__` when a list is changed during
+comparing items. Patch by Dong-hee Na.
