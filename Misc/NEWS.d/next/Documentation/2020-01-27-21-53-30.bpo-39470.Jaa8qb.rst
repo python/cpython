@@ -1,0 +1,1 @@
+:func:`os.makedirs` is equivalent to ``mkdir -p`` and :meth:`Path.mkdir()` when given an optional *exist_ok* argument.
