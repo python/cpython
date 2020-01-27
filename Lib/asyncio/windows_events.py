@@ -452,8 +452,9 @@ class IocpProactor:
             try:
                 return ov.getresult()
             except OSError as exc:
-                if exc.winerror in (_overlapped.ERROR_NETNAME_DELETED,
-                                    _overlapped.ERROR_OPERATION_ABORTED):
+                if exc.winerror == _overlapped.ERROR_NETNAME_DELETED:
+                    pass
+                elif exc.winerror == _overlapped.ERROR_OPERATION_ABORTED:
                     raise ConnectionResetError(*exc.args)
                 else:
                     raise
@@ -475,8 +476,9 @@ class IocpProactor:
             try:
                 return ov.getresult()
             except OSError as exc:
-                if exc.winerror in (_overlapped.ERROR_NETNAME_DELETED,
-                                    _overlapped.ERROR_OPERATION_ABORTED):
+                if exc.winerror == _overlapped.ERROR_NETNAME_DELETED:
+                    pass
+                elif exc.winerror == _overlapped.ERROR_OPERATION_ABORTED:
                     raise ConnectionResetError(*exc.args)
                 else:
                     raise
@@ -495,8 +497,9 @@ class IocpProactor:
             try:
                 return ov.getresult()
             except OSError as exc:
-                if exc.winerror in (_overlapped.ERROR_NETNAME_DELETED,
-                                    _overlapped.ERROR_OPERATION_ABORTED):
+                if exc.winerror == _overlapped.ERROR_NETNAME_DELETED:
+                    pass
+                elif exc.winerror == _overlapped.ERROR_OPERATION_ABORTED:
                     raise ConnectionResetError(*exc.args)
                 else:
                     raise
@@ -619,6 +622,7 @@ class IocpProactor:
                     raise ConnectionResetError(*exc.args)
                 else:
                     raise
+
         return self._register(ov, sock, finish_sendfile)
 
     def accept_pipe(self, pipe):
