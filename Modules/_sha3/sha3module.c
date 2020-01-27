@@ -169,21 +169,24 @@ newSHA3object(PyTypeObject *type)
     return newobj;
 }
 
+/*[clinic input]
+@classmethod
+_sha3.sha3_224.__new__ as py_sha3_new
+    data: object(c_default="NULL") = b''
+    /
+    *
+    usedforsecurity: bool = True
+
+Return a new BLAKE2b hash object.
+[clinic start generated code]*/
 
 static PyObject *
-py_sha3_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
+py_sha3_new_impl(PyTypeObject *type, PyObject *data, int usedforsecurity)
+/*[clinic end generated code: output=90409addc5d5e8b0 input=bcfcdf2e4368347a]*/
 {
     SHA3object *self = NULL;
     Py_buffer buf = {NULL, NULL};
     HashReturn res;
-    PyObject *data = NULL;
-
-    if (!_PyArg_NoKeywords(_PyType_Name(type), kwargs)) {
-        return NULL;
-    }
-    if (!PyArg_UnpackTuple(args, _PyType_Name(type), 0, 1, &data)) {
-        return NULL;
-    }
 
     self = newSHA3object(type);
     if (self == NULL) {
@@ -529,22 +532,22 @@ static PyGetSetDef SHA3_getseters[] = {
     }
 
 PyDoc_STRVAR(sha3_224__doc__,
-"sha3_224([data]) -> SHA3 object\n\
+"sha3_224([data], *, usedforsecurity=True) -> SHA3 object\n\
 \n\
 Return a new SHA3 hash object with a hashbit length of 28 bytes.");
 
 PyDoc_STRVAR(sha3_256__doc__,
-"sha3_256([data]) -> SHA3 object\n\
+"sha3_256([data], *, usedforsecurity=True) -> SHA3 object\n\
 \n\
 Return a new SHA3 hash object with a hashbit length of 32 bytes.");
 
 PyDoc_STRVAR(sha3_384__doc__,
-"sha3_384([data]) -> SHA3 object\n\
+"sha3_384([data], *, usedforsecurity=True) -> SHA3 object\n\
 \n\
 Return a new SHA3 hash object with a hashbit length of 48 bytes.");
 
 PyDoc_STRVAR(sha3_512__doc__,
-"sha3_512([data]) -> SHA3 object\n\
+"sha3_512([data], *, usedforsecurity=True) -> SHA3 object\n\
 \n\
 Return a new SHA3 hash object with a hashbit length of 64 bytes.");
 
@@ -555,22 +558,22 @@ SHA3_TYPE(SHA3_512type, "_sha3.sha3_512", sha3_512__doc__, SHA3_methods);
 
 #ifdef PY_WITH_KECCAK
 PyDoc_STRVAR(keccak_224__doc__,
-"keccak_224([data]) -> Keccak object\n\
+"keccak_224([data], *, usedforsecurity=True) -> Keccak object\n\
 \n\
 Return a new Keccak hash object with a hashbit length of 28 bytes.");
 
 PyDoc_STRVAR(keccak_256__doc__,
-"keccak_256([data]) -> Keccak object\n\
+"keccak_256([data], *, usedforsecurity=True) -> Keccak object\n\
 \n\
 Return a new Keccak hash object with a hashbit length of 32 bytes.");
 
 PyDoc_STRVAR(keccak_384__doc__,
-"keccak_384([data]) -> Keccak object\n\
+"keccak_384([data], *, usedforsecurity=True) -> Keccak object\n\
 \n\
 Return a new Keccak hash object with a hashbit length of 48 bytes.");
 
 PyDoc_STRVAR(keccak_512__doc__,
-"keccak_512([data]) -> Keccak object\n\
+"keccak_512([data], *, usedforsecurity=True) -> Keccak object\n\
 \n\
 Return a new Keccak hash object with a hashbit length of 64 bytes.");
 
@@ -672,12 +675,12 @@ static PyMethodDef SHAKE_methods[] = {
 };
 
 PyDoc_STRVAR(shake_128__doc__,
-"shake_128([data]) -> SHAKE object\n\
+"shake_128([data], *, usedforsecurity=True) -> SHAKE object\n\
 \n\
 Return a new SHAKE hash object.");
 
 PyDoc_STRVAR(shake_256__doc__,
-"shake_256([data]) -> SHAKE object\n\
+"shake_256([data], *, usedforsecurity=True) -> SHAKE object\n\
 \n\
 Return a new SHAKE hash object.");
 

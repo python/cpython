@@ -29,10 +29,14 @@ import os
 
 _threads_queues = weakref.WeakKeyDictionary()
 _shutdown = False
+# Lock that ensures that new workers are not created while the interpreter is
+# shutting down. Must be held while mutating _threads_queues and _shutdown.
+_global_shutdown_lock = threading.Lock()
 
 def _python_exit():
     global _shutdown
-    _shutdown = True
+    with _global_shutdown_lock:
+        _shutdown = True
     items = list(_threads_queues.items())
     for t, q in items:
         q.put(None)
@@ -125,7 +129,7 @@ class ThreadPoolExecutor(_base.Executor):
             max_workers: The maximum number of threads that can be used to
                 execute the given calls.
             thread_name_prefix: An optional name prefix to give our threads.
-            initializer: An callable used to initialize worker threads.
+            initializer: A callable used to initialize worker threads.
             initargs: A tuple of arguments to pass to the initializer.
         """
         if max_workers is None:
@@ -155,23 +159,8 @@ class ThreadPoolExecutor(_base.Executor):
         self._initializer = initializer
         self._initargs = initargs
 
-    def submit(*args, **kwargs):
-        if len(args) >= 2:
-            self, fn, *args = args
-        elif not args:
-            raise TypeError("descriptor 'submit' of 'ThreadPoolExecutor' object "
-                            "needs an argument")
-        elif 'fn' in kwargs:
-            fn = kwargs.pop('fn')
-            self, *args = args
-            import warnings
-            warnings.warn("Passing 'fn' as keyword argument is deprecated",
-                          DeprecationWarning, stacklevel=2)
-        else:
-            raise TypeError('submit expected at least 1 positional argument, '
-                            'got %d' % (len(args)-1))
-
-        with self._shutdown_lock:
+    def submit(self, fn, /, *args, **kwargs):
+        with self._shutdown_lock, _global_shutdown_lock:
             if self._broken:
                 raise BrokenThreadPool(self._broken)
 
@@ -187,7 +176,6 @@ class ThreadPoolExecutor(_base.Executor):
             self._work_queue.put(w)
             self._adjust_thread_count()
             return f
-    submit.__text_signature__ = _base.Executor.submit.__text_signature__
     submit.__doc__ = _base.Executor.submit.__doc__
 
     def _adjust_thread_count(self):

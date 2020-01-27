@@ -57,7 +57,7 @@ _Py_static_string(PyId_string, "<string>");
 extern "C" {
 #endif
 
-extern grammar _PyParser_Grammar; /* From graminit.c */
+extern Py_EXPORTED_SYMBOL grammar _PyParser_Grammar; /* From graminit.c */
 
 /* Forward */
 static void flush_io(void);
@@ -91,7 +91,7 @@ PyRun_InteractiveLoopFlags(FILE *fp, const char *filename_str, PyCompilerFlags *
 {
     PyObject *filename, *v;
     int ret, err;
-    PyCompilerFlags local_flags;
+    PyCompilerFlags local_flags = _PyCompilerFlags_INIT;
     int nomem_count = 0;
 #ifdef Py_REF_DEBUG
     int show_ref_count = _PyInterpreterState_Get()->config.show_ref_count;
@@ -105,8 +105,6 @@ PyRun_InteractiveLoopFlags(FILE *fp, const char *filename_str, PyCompilerFlags *
 
     if (flags == NULL) {
         flags = &local_flags;
-        local_flags.cf_flags = 0;
-        local_flags.cf_feature_version = PY_MINOR_VERSION;
     }
     v = _PySys_GetObjectId(&PyId_ps1);
     if (v == NULL) {
@@ -697,6 +695,14 @@ _PyErr_PrintEx(PyThreadState *tstate, int set_sys_last_vars)
         }
     }
     hook = _PySys_GetObjectId(&PyId_excepthook);
+    if (PySys_Audit("sys.excepthook", "OOOO", hook ? hook : Py_None,
+                    exception, v, tb) < 0) {
+        if (PyErr_ExceptionMatches(PyExc_RuntimeError)) {
+            PyErr_Clear();
+            goto done;
+        }
+        _PyErr_WriteUnraisableMsg("in audit hook", NULL);
+    }
     if (hook) {
         PyObject* stack[3];
         PyObject *result;
@@ -799,7 +805,7 @@ print_exception(PyObject *f, PyObject *value)
             Py_DECREF(value);
             value = message;
 
-            line = PyUnicode_FromFormat("  File \"%U\", line %d\n",
+            line = PyUnicode_FromFormat("  File \"%S\", line %d\n",
                                           filename, lineno);
             Py_DECREF(filename);
             if (line != NULL) {
@@ -980,7 +986,7 @@ _PyErr_Display(PyObject *file, PyObject *exception, PyObject *value, PyObject *t
     Py_XDECREF(seen);
 
     /* Call file.flush() */
-    PyObject *res = _PyObject_CallMethodId(file, &PyId_flush, NULL);
+    PyObject *res = _PyObject_CallMethodIdNoArgs(file, &PyId_flush);
     if (!res) {
         /* Silently ignore file.flush() error */
         PyErr_Clear();
@@ -1074,7 +1080,7 @@ flush_io(void)
 
     f = _PySys_GetObjectId(&PyId_stderr);
     if (f != NULL) {
-        r = _PyObject_CallMethodId(f, &PyId_flush, NULL);
+        r = _PyObject_CallMethodIdNoArgs(f, &PyId_flush);
         if (r)
             Py_DECREF(r);
         else
@@ -1082,7 +1088,7 @@ flush_io(void)
     }
     f = _PySys_GetObjectId(&PyId_stdout);
     if (f != NULL) {
-        r = _PyObject_CallMethodId(f, &PyId_flush, NULL);
+        r = _PyObject_CallMethodIdNoArgs(f, &PyId_flush);
         if (r)
             Py_DECREF(r);
         else
@@ -1283,10 +1289,7 @@ _Py_SourceAsString(PyObject *cmd, const char *funcname, const char *what, PyComp
 struct symtable *
 Py_SymtableStringObject(const char *str, PyObject *filename, int start)
 {
-    PyCompilerFlags flags;
-
-    flags.cf_flags = 0;
-    flags.cf_feature_version = PY_MINOR_VERSION;
+    PyCompilerFlags flags = _PyCompilerFlags_INIT;
     return _Py_SymtableStringObjectFlags(str, filename, start, &flags);
 }
 
@@ -1331,7 +1334,7 @@ PyParser_ASTFromStringObject(const char *s, PyObject *filename, int start,
                              PyCompilerFlags *flags, PyArena *arena)
 {
     mod_ty mod;
-    PyCompilerFlags localflags;
+    PyCompilerFlags localflags = _PyCompilerFlags_INIT;
     perrdetail err;
     int iflags = PARSER_FLAGS(flags);
     if (flags && flags->cf_feature_version < 7)
@@ -1341,8 +1344,6 @@ PyParser_ASTFromStringObject(const char *s, PyObject *filename, int start,
                                          &_PyParser_Grammar, start, &err,
                                          &iflags);
     if (flags == NULL) {
-        localflags.cf_flags = 0;
-        localflags.cf_feature_version = PY_MINOR_VERSION;
         flags = &localflags;
     }
     if (n) {
@@ -1379,7 +1380,7 @@ PyParser_ASTFromFileObject(FILE *fp, PyObject *filename, const char* enc,
                            PyArena *arena)
 {
     mod_ty mod;
-    PyCompilerFlags localflags;
+    PyCompilerFlags localflags = _PyCompilerFlags_INIT;
     perrdetail err;
     int iflags = PARSER_FLAGS(flags);
 
@@ -1387,8 +1388,6 @@ PyParser_ASTFromFileObject(FILE *fp, PyObject *filename, const char* enc,
                                        &_PyParser_Grammar,
                                        start, ps1, ps2, &err, &iflags);
     if (flags == NULL) {
-        localflags.cf_flags = 0;
-        localflags.cf_feature_version = PY_MINOR_VERSION;
         flags = &localflags;
     }
     if (n) {
@@ -1657,56 +1656,56 @@ PyOS_CheckStack(void)
 /* Deprecated C API functions still provided for binary compatibility */
 
 #undef PyParser_SimpleParseFile
-node *
+PyAPI_FUNC(node *)
 PyParser_SimpleParseFile(FILE *fp, const char *filename, int start)
 {
     return PyParser_SimpleParseFileFlags(fp, filename, start, 0);
 }
 
 #undef PyParser_SimpleParseString
-node *
+PyAPI_FUNC(node *)
 PyParser_SimpleParseString(const char *str, int start)
 {
     return PyParser_SimpleParseStringFlags(str, start, 0);
 }
 
 #undef PyRun_AnyFile
-int
+PyAPI_FUNC(int)
 PyRun_AnyFile(FILE *fp, const char *name)
 {
     return PyRun_AnyFileExFlags(fp, name, 0, NULL);
 }
 
 #undef PyRun_AnyFileEx
-int
+PyAPI_FUNC(int)
 PyRun_AnyFileEx(FILE *fp, const char *name, int closeit)
 {
     return PyRun_AnyFileExFlags(fp, name, closeit, NULL);
 }
 
 #undef PyRun_AnyFileFlags
-int
+PyAPI_FUNC(int)
 PyRun_AnyFileFlags(FILE *fp, const char *name, PyCompilerFlags *flags)
 {
     return PyRun_AnyFileExFlags(fp, name, 0, flags);
 }
 
 #undef PyRun_File
-PyObject *
+PyAPI_FUNC(PyObject *)
 PyRun_File(FILE *fp, const char *p, int s, PyObject *g, PyObject *l)
 {
     return PyRun_FileExFlags(fp, p, s, g, l, 0, NULL);
 }
 
 #undef PyRun_FileEx
-PyObject *
+PyAPI_FUNC(PyObject *)
 PyRun_FileEx(FILE *fp, const char *p, int s, PyObject *g, PyObject *l, int c)
 {
     return PyRun_FileExFlags(fp, p, s, g, l, c, NULL);
 }
 
 #undef PyRun_FileFlags
-PyObject *
+PyAPI_FUNC(PyObject *)
 PyRun_FileFlags(FILE *fp, const char *p, int s, PyObject *g, PyObject *l,
                 PyCompilerFlags *flags)
 {
@@ -1714,14 +1713,14 @@ PyRun_FileFlags(FILE *fp, const char *p, int s, PyObject *g, PyObject *l,
 }
 
 #undef PyRun_SimpleFile
-int
+PyAPI_FUNC(int)
 PyRun_SimpleFile(FILE *f, const char *p)
 {
     return PyRun_SimpleFileExFlags(f, p, 0, NULL);
 }
 
 #undef PyRun_SimpleFileEx
-int
+PyAPI_FUNC(int)
 PyRun_SimpleFileEx(FILE *f, const char *p, int c)
 {
     return PyRun_SimpleFileExFlags(f, p, c, NULL);
@@ -1729,28 +1728,28 @@ PyRun_SimpleFileEx(FILE *f, const char *p, int c)
 
 
 #undef PyRun_String
-PyObject *
+PyAPI_FUNC(PyObject *)
 PyRun_String(const char *str, int s, PyObject *g, PyObject *l)
 {
     return PyRun_StringFlags(str, s, g, l, NULL);
 }
 
 #undef PyRun_SimpleString
-int
+PyAPI_FUNC(int)
 PyRun_SimpleString(const char *s)
 {
     return PyRun_SimpleStringFlags(s, NULL);
 }
 
 #undef Py_CompileString
-PyObject *
+PyAPI_FUNC(PyObject *)
 Py_CompileString(const char *str, const char *p, int s)
 {
     return Py_CompileStringExFlags(str, p, s, NULL, -1);
 }
 
 #undef Py_CompileStringFlags
-PyObject *
+PyAPI_FUNC(PyObject *)
 Py_CompileStringFlags(const char *str, const char *p, int s,
                       PyCompilerFlags *flags)
 {
@@ -1758,14 +1757,14 @@ Py_CompileStringFlags(const char *str, const char *p, int s,
 }
 
 #undef PyRun_InteractiveOne
-int
+PyAPI_FUNC(int)
 PyRun_InteractiveOne(FILE *f, const char *p)
 {
     return PyRun_InteractiveOneFlags(f, p, NULL);
 }
 
 #undef PyRun_InteractiveLoop
-int
+PyAPI_FUNC(int)
 PyRun_InteractiveLoop(FILE *f, const char *p)
 {
     return PyRun_InteractiveLoopFlags(f, p, NULL);

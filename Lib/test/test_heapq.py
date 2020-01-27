@@ -280,11 +280,6 @@ class LenOnly:
     def __len__(self):
         return 10
 
-class GetOnly:
-    "Dummy sequence class defining __getitem__ but not __len__."
-    def __getitem__(self, ndx):
-        return 10
-
 class CmpErr:
     "Dummy element that always raises an error during comparison"
     def __eq__(self, other):
@@ -396,15 +391,7 @@ class TestErrorHandling:
         for f in (self.module.nlargest, self.module.nsmallest):
             self.assertRaises(TypeError, f, 2, LenOnly())
 
-    def test_get_only(self):
-        for f in (self.module.heapify, self.module.heappop):
-            self.assertRaises(TypeError, f, GetOnly())
-        for f in (self.module.heappush, self.module.heapreplace):
-            self.assertRaises(TypeError, f, GetOnly(), 10)
-        for f in (self.module.nlargest, self.module.nsmallest):
-            self.assertRaises(TypeError, f, 2, GetOnly())
-
-    def test_get_only(self):
+    def test_cmp_err(self):
         seq = [CmpErr(), CmpErr(), CmpErr()]
         for f in (self.module.heapify, self.module.heappop):
             self.assertRaises(ZeroDivisionError, f, seq)
@@ -445,6 +432,37 @@ class TestErrorHandling:
         with self.assertRaises((IndexError, RuntimeError)):
             self.module.heappop(heap)
 
+    def test_comparison_operator_modifiying_heap(self):
+        # See bpo-39421: Strong references need to be taken
+        # when comparing objects as they can alter the heap
+        class EvilClass(int):
+            def __lt__(self, o):
+                heap.clear()
+                return NotImplemented
+
+        heap = []
+        self.module.heappush(heap, EvilClass(0))
+        self.assertRaises(IndexError, self.module.heappushpop, heap, 1)
+
+    def test_comparison_operator_modifiying_heap_two_heaps(self):
+
+        class h(int):
+            def __lt__(self, o):
+                list2.clear()
+                return NotImplemented
+
+        class g(int):
+            def __lt__(self, o):
+                list1.clear()
+                return NotImplemented
+
+        list1, list2 = [], []
+
+        self.module.heappush(list1, h(0))
+        self.module.heappush(list2, g(0))
+
+        self.assertRaises((IndexError, RuntimeError), self.module.heappush, list1, g(1))
+        self.assertRaises((IndexError, RuntimeError), self.module.heappush, list2, h(1))
 
 class TestErrorHandlingPython(TestErrorHandling, TestCase):
     module = py_heapq

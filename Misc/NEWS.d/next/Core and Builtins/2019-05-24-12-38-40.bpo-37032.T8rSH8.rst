@@ -1,1 +1,0 @@
-Added new ``replace()`` method to the code type (:class:`types.CodeType`).

@@ -1,1 +1,0 @@
-The ``compile()`` builtin functions now support the ``ast.PyCF_ALLOW_TOP_LEVEL_AWAIT`` flag,  which allow to compile sources that  contains top-level ``await``, ``async with`` or ``async for``. This is useful to evaluate async-code from with an already async functions; for example in a custom REPL.

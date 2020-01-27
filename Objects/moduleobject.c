@@ -681,7 +681,7 @@ module_dealloc(PyModuleObject *m)
 
     PyObject_GC_UnTrack(m);
     if (verbose && m->md_name) {
-        PySys_FormatStderr("# destroy %S\n", m->md_name);
+        PySys_FormatStderr("# destroy %U\n", m->md_name);
     }
     if (m->md_weaklist != NULL)
         PyObject_ClearWeakRefs((PyObject *) m);
@@ -736,8 +736,7 @@ module_getattro(PyModuleObject *m, PyObject *name)
         _Py_IDENTIFIER(__getattr__);
         getattr = _PyDict_GetItemId(m->md_dict, &PyId___getattr__);
         if (getattr) {
-            PyObject* stack[1] = {name};
-            return _PyObject_FastCall(getattr, stack, 1);
+            return _PyObject_CallOneArg(getattr, name);
         }
         _Py_IDENTIFIER(__name__);
         mod_name = _PyDict_GetItemId(m->md_dict, &PyId___name__);
@@ -785,6 +784,12 @@ module_clear(PyModuleObject *m)
 {
     if (m->md_def && m->md_def->m_clear) {
         int res = m->md_def->m_clear((PyObject*)m);
+        if (PyErr_Occurred()) {
+            PySys_FormatStderr("Exception ignored in m_clear of module%s%V\n",
+                               m->md_name ? " " : "",
+                               m->md_name, "");
+            PyErr_WriteUnraisable(NULL);
+        }
         if (res)
             return res;
     }

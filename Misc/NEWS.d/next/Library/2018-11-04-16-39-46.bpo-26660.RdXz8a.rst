@@ -1,4 +1,0 @@
-Fixed permission errors in :class:`~tempfile.TemporaryDirectory` clean up.
-Previously ``TemporaryDirectory.cleanup()`` failed when non-writeable or
-non-searchable files or directories were created inside a temporary
-directory.

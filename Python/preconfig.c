@@ -75,7 +75,7 @@ _Py_SetFileSystemEncoding(const char *encoding, const char *errors)
 PyStatus
 _PyArgv_AsWstrList(const _PyArgv *args, PyWideStringList *list)
 {
-    PyWideStringList wargv = PyWideStringList_INIT;
+    PyWideStringList wargv = _PyWideStringList_INIT;
     if (args->use_bytes_argv) {
         size_t size = sizeof(wchar_t*) * args->argc;
         wargv.items = (wchar_t **)PyMem_RawMalloc(size);
@@ -274,7 +274,6 @@ _PyPreConfig_InitCompatConfig(PyPreConfig *config)
 {
     memset(config, 0, sizeof(*config));
 
-    config->_config_version = _Py_CONFIG_VERSION;
     config->_config_init = (int)_PyConfig_INIT_COMPAT;
     config->parse_argv = 0;
     config->isolated = -1;
@@ -336,12 +335,13 @@ PyPreConfig_InitIsolatedConfig(PyPreConfig *config)
 }
 
 
-void
+PyStatus
 _PyPreConfig_InitFromPreConfig(PyPreConfig *config,
                                const PyPreConfig *config2)
 {
     PyPreConfig_InitPythonConfig(config);
     preconfig_copy(config, config2);
+    return _PyStatus_OK();
 }
 
 
@@ -360,6 +360,7 @@ _PyPreConfig_InitFromConfig(PyPreConfig *preconfig, const PyConfig *config)
     default:
         _PyPreConfig_InitCompatConfig(preconfig);
     }
+
     _PyPreConfig_GetConfig(preconfig, config);
 }
 
@@ -367,7 +368,6 @@ _PyPreConfig_InitFromConfig(PyPreConfig *preconfig, const PyConfig *config)
 static void
 preconfig_copy(PyPreConfig *config, const PyPreConfig *config2)
 {
-    assert(config2->_config_version == _Py_CONFIG_VERSION);
 #define COPY_ATTR(ATTR) config->ATTR = config2->ATTR
 
     COPY_ATTR(_config_init);
@@ -801,7 +801,11 @@ _PyPreConfig_Read(PyPreConfig *config, const _PyArgv *args)
 
     /* Save the config to be able to restore it if encodings change */
     PyPreConfig save_config;
-    _PyPreConfig_InitFromPreConfig(&save_config, config);
+
+    status = _PyPreConfig_InitFromPreConfig(&save_config, config);
+    if (_PyStatus_EXCEPTION(status)) {
+        return status;
+    }
 
     /* Set LC_CTYPE to the user preferred locale */
     if (config->configure_locale) {
@@ -923,7 +927,11 @@ PyStatus
 _PyPreConfig_Write(const PyPreConfig *src_config)
 {
     PyPreConfig config;
-    _PyPreConfig_InitFromPreConfig(&config, src_config);
+
+    PyStatus status = _PyPreConfig_InitFromPreConfig(&config, src_config);
+    if (_PyStatus_EXCEPTION(status)) {
+        return status;
+    }
 
     if (_PyRuntime.core_initialized) {
         /* bpo-34008: Calling this functions after Py_Initialize() ignores

@@ -56,6 +56,30 @@ def listicons(icondir=ICONDIR):
             column = 0
     root.images = images
 
+def wheel_event(event, widget=None):
+    """Handle scrollwheel event.
+
+    For wheel up, event.delta = 120*n on Windows, -1*n on darwin,
+    where n can be > 1 if one scrolls fast.  Flicking the wheel
+    generates up to maybe 20 events with n up to 10 or more 1.
+    Macs use wheel down (delta = 1*n) to scroll up, so positive
+    delta means to scroll up on both systems.
+
+    X-11 sends Control-Button-4,5 events instead.
+
+    The widget parameter is needed so browser label bindings can pass
+    the underlying canvas.
+
+    This function depends on widget.yview to not be overridden by
+    a subclass.
+    """
+    up = {EventType.MouseWheel: event.delta > 0,
+          EventType.ButtonPress: event.num == 4}
+    lines = -5 if up[event.type] else 5
+    widget = event.widget if widget is None else widget
+    widget.yview(SCROLL, lines, 'units')
+    return 'break'
+
 
 class TreeNode:
 
@@ -260,6 +284,9 @@ class TreeNode:
                                        anchor="nw", window=self.label)
         self.label.bind("<1>", self.select_or_edit)
         self.label.bind("<Double-1>", self.flip)
+        self.label.bind("<MouseWheel>", lambda e: wheel_event(e, self.canvas))
+        self.label.bind("<Button-4>", lambda e: wheel_event(e, self.canvas))
+        self.label.bind("<Button-5>", lambda e: wheel_event(e, self.canvas))
         self.text_id = id
 
     def select_or_edit(self, event=None):
@@ -410,6 +437,7 @@ class FileTreeItem(TreeItem):
 # A canvas widget with scroll bars and some useful bindings
 
 class ScrolledCanvas:
+
     def __init__(self, master, **opts):
         if 'yscrollincrement' not in opts:
             opts['yscrollincrement'] = 17
@@ -431,6 +459,9 @@ class ScrolledCanvas:
         self.canvas.bind("<Key-Next>", self.page_down)
         self.canvas.bind("<Key-Up>", self.unit_up)
         self.canvas.bind("<Key-Down>", self.unit_down)
+        self.canvas.bind("<MouseWheel>", wheel_event)
+        self.canvas.bind("<Button-4>", wheel_event)
+        self.canvas.bind("<Button-5>", wheel_event)
         #if isinstance(master, Toplevel) or isinstance(master, Tk):
         self.canvas.bind("<Alt-Key-2>", self.zoom_height)
         self.canvas.focus_set()

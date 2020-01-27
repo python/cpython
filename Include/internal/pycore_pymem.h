@@ -8,8 +8,7 @@ extern "C" {
 #  error "this header requires Py_BUILD_CORE define"
 #endif
 
-#include "objimpl.h"
-#include "pymem.h"
+#include "pymem.h"   /* PyMemAllocatorName */
 
 
 /* GC runtime state */
@@ -17,42 +16,6 @@ extern "C" {
 /* If we change this, we need to change the default value in the
    signature of gc.collect. */
 #define NUM_GENERATIONS 3
-
-/*
-   NOTE: about the counting of long-lived objects.
-
-   To limit the cost of garbage collection, there are two strategies;
-     - make each collection faster, e.g. by scanning fewer objects
-     - do less collections
-   This heuristic is about the latter strategy.
-
-   In addition to the various configurable thresholds, we only trigger a
-   full collection if the ratio
-    long_lived_pending / long_lived_total
-   is above a given value (hardwired to 25%).
-
-   The reason is that, while "non-full" collections (i.e., collections of
-   the young and middle generations) will always examine roughly the same
-   number of objects -- determined by the aforementioned thresholds --,
-   the cost of a full collection is proportional to the total number of
-   long-lived objects, which is virtually unbounded.
-
-   Indeed, it has been remarked that doing a full collection every
-   <constant number> of object creations entails a dramatic performance
-   degradation in workloads which consist in creating and storing lots of
-   long-lived objects (e.g. building a large list of GC-tracked objects would
-   show quadratic performance, instead of linear as expected: see issue #4074).
-
-   Using the above ratio, instead, yields amortized linear performance in
-   the total number of objects (the effect of which can be summarized
-   thusly: "each full garbage collection is more and more costly as the
-   number of objects grows, but we do fewer and fewer of them").
-
-   This heuristic was suggested by Martin von Löwis on python-dev in
-   June 2008. His original analysis and proposal can be found at:
-    http://mail.python.org/pipermail/python-dev/2008-June/080579.html
-*/
-
 /*
    NOTE: about untracking of mutable objects.
 
@@ -145,7 +108,7 @@ struct _gc_runtime_state {
     Py_ssize_t long_lived_pending;
 };
 
-PyAPI_FUNC(void) _PyGC_Initialize(struct _gc_runtime_state *);
+PyAPI_FUNC(void) _PyGC_InitState(struct _gc_runtime_state *);
 
 
 /* Set the memory allocator of the specified domain to the default.
@@ -155,9 +118,25 @@ PyAPI_FUNC(int) _PyMem_SetDefaultAllocator(
     PyMemAllocatorDomain domain,
     PyMemAllocatorEx *old_alloc);
 
+/* Special bytes broadcast into debug memory blocks at appropriate times.
+   Strings of these are unlikely to be valid addresses, floats, ints or
+   7-bit ASCII.
+
+   - PYMEM_CLEANBYTE: clean (newly allocated) memory
+   - PYMEM_DEADBYTE dead (newly freed) memory
+   - PYMEM_FORBIDDENBYTE: untouchable bytes at each end of a block
+
+   Byte patterns 0xCB, 0xDB and 0xFB have been replaced with 0xCD, 0xDD and
+   0xFD to use the same values than Windows CRT debug malloc() and free().
+   If modified, _PyMem_IsPtrFreed() should be updated as well. */
+#define PYMEM_CLEANBYTE      0xCD
+#define PYMEM_DEADBYTE       0xDD
+#define PYMEM_FORBIDDENBYTE  0xFD
+
 /* Heuristic checking if a pointer value is newly allocated
-   (uninitialized) or newly freed. The pointer is not dereferenced, only the
-   pointer value is checked.
+   (uninitialized), newly freed or NULL (is equal to zero).
+
+   The pointer is not dereferenced, only the pointer value is checked.
 
    The heuristic relies on the debug hooks on Python memory allocators which
    fills newly allocated memory with CLEANBYTE (0xCD) and newly freed memory
@@ -167,11 +146,13 @@ static inline int _PyMem_IsPtrFreed(void *ptr)
 {
     uintptr_t value = (uintptr_t)ptr;
 #if SIZEOF_VOID_P == 8
-    return (value == (uintptr_t)0xCDCDCDCDCDCDCDCD
+    return (value == 0
+            || value == (uintptr_t)0xCDCDCDCDCDCDCDCD
             || value == (uintptr_t)0xDDDDDDDDDDDDDDDD
             || value == (uintptr_t)0xFDFDFDFDFDFDFDFD);
 #elif SIZEOF_VOID_P == 4
-    return (value == (uintptr_t)0xCDCDCDCD
+    return (value == 0
+            || value == (uintptr_t)0xCDCDCDCD
             || value == (uintptr_t)0xDDDDDDDD
             || value == (uintptr_t)0xFDFDFDFD);
 #else

@@ -214,13 +214,13 @@ of available options is shown below.
 For example, to silently install a default, system-wide Python installation,
 you could use the following command (from an elevated command prompt)::
 
-    python-3.8.0.exe /quiet InstallAllUsers=1 PrependPath=1 Include_test=0
+    python-3.9.0.exe /quiet InstallAllUsers=1 PrependPath=1 Include_test=0
 
 To allow users to easily install a personal copy of Python without the test
 suite, you could provide a shortcut with the following command. This will
 display a simplified initial page and disallow customization::
 
-    python-3.8.0.exe InstallAllUsers=0 Include_launcher=0 Include_test=0
+    python-3.9.0.exe InstallAllUsers=0 Include_launcher=0 Include_test=0
         SimpleInstall=1 SimpleInstallDescription="Just for me, no test suite."
 
 (Note that omitting the launcher also omits file associations, and is only
@@ -257,13 +257,13 @@ where a large number of installations are going to be performed it is very
 useful to have a locally cached copy.
 
 Execute the following command from Command Prompt to download all possible
-required files.  Remember to substitute ``python-3.8.0.exe`` for the actual
+required files.  Remember to substitute ``python-3.9.0.exe`` for the actual
 name of your installer, and to create layouts in their own directories to
 avoid collisions between files with the same name.
 
 ::
 
-    python-3.8.0.exe /layout [optional target directory]
+    python-3.9.0.exe /layout [optional target directory]
 
 You may also specify the ``/quiet`` option to hide the progress display.
 
@@ -293,12 +293,6 @@ The Microsoft Store package
 
 .. versionadded:: 3.7.2
 
-.. note::
-   The Microsoft Store package is currently considered unstable while its
-   interactions with other tools and other copies of Python are evaluated.
-   While Python itself is stable, this installation method may change its
-   behavior and capabilities during Python 3.7 releases.
-
 The Microsoft Store package is an easily installable Python interpreter that
 is intended mainly for interactive use, for example, by students.
 
@@ -318,7 +312,10 @@ session by typing ``python``. Further, pip and IDLE may be used by typing
 All three commands are also available with version number suffixes, for
 example, as ``python3.exe`` and ``python3.x.exe`` as well as
 ``python.exe`` (where ``3.x`` is the specific version you want to launch,
-such as |version|).
+such as |version|). Open "Manage App Execution Aliases" through Start to
+select which version of Python is associated with each command. It is
+recommended to make sure that ``pip`` and ``idle`` are consistent with
+whichever version of ``python`` is selected.
 
 Virtual environments can be created with ``python -m venv`` and activated
 and used as normal.
@@ -328,6 +325,9 @@ If you have installed another version of Python and added it to your
 one from the Microsoft Store. To access the new installation, use
 ``python3.exe`` or ``python3.x.exe``.
 
+The ``py.exe`` launcher will detect this Python installation, but will prefer
+installations from the traditional installer.
+
 To remove Python, open Settings and use Apps and Features, or else find
 Python in Start and right-click to select Uninstall. Uninstalling will
 remove all packages you installed directly into this Python installation, but
@@ -335,9 +335,6 @@ will not remove any virtual environments
 
 Known Issues
 ------------
-
-Currently, the ``py.exe`` launcher cannot be used to start Python when it
-has been installed from the Microsoft Store.
 
 Because of restrictions on Microsoft Store apps, Python scripts may not have
 full write access to shared locations such as ``TEMP`` and the registry.
@@ -530,7 +527,7 @@ To temporarily set environment variables, open Command Prompt and use the
 
 .. code-block:: doscon
 
-    C:\>set PATH=C:\Program Files\Python 3.8;%PATH%
+    C:\>set PATH=C:\Program Files\Python 3.9;%PATH%
     C:\>set PYTHONPATH=%PYTHONPATH%;C:\My_python_lib
     C:\>python
 
@@ -603,7 +600,7 @@ of your Python installation, delimited by a semicolon from other entries.  An
 example variable could look like this (assuming the first two entries already
 existed)::
 
-    C:\WINDOWS\system32;C:\WINDOWS;C:\Program Files\Python 3.8
+    C:\WINDOWS\system32;C:\WINDOWS;C:\Program Files\Python 3.9
 
 .. _launcher:
 

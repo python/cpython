@@ -1396,7 +1396,7 @@ r_object(RFILE *p)
             if (lnotab == NULL)
                 goto code_error;
 
-            v = (PyObject *) PyCode_New(
+            v = (PyObject *) PyCode_NewWithPosOnlyArgs(
                             argcount, posonlyargcount, kwonlyargcount,
                             nlocals, stacksize, flags,
                             code, consts, names, varnames,
@@ -1653,7 +1653,7 @@ marshal_dump_impl(PyObject *module, PyObject *value, PyObject *file,
     s = PyMarshal_WriteObjectToString(value, version);
     if (s == NULL)
         return NULL;
-    res = _PyObject_CallMethodIdObjArgs(file, &PyId_write, s, NULL);
+    res = _PyObject_CallMethodIdOneArg(file, &PyId_write, s);
     Py_DECREF(s);
     return res;
 }
@@ -1829,6 +1829,9 @@ PyMarshal_Init(void)
     PyObject *mod = PyModule_Create(&marshalmodule);
     if (mod == NULL)
         return NULL;
-    PyModule_AddIntConstant(mod, "version", Py_MARSHAL_VERSION);
+    if (PyModule_AddIntConstant(mod, "version", Py_MARSHAL_VERSION) < 0) {
+        Py_DECREF(mod);
+        return NULL;
+    }
     return mod;
 }

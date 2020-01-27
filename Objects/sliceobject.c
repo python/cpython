@@ -100,7 +100,8 @@ PyObject _Py_EllipsisObject = {
  * created and then deleted again
  */
 static PySliceObject *slice_cache = NULL;
-void PySlice_Fini(void)
+
+void _PySlice_Fini(void)
 {
     PySliceObject *obj = slice_cache;
     if (obj != NULL) {

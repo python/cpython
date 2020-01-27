@@ -1,1 +1,0 @@
-Add detail to the documentation on the `pty.spawn` function.

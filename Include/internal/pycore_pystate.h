@@ -8,24 +8,14 @@ extern "C" {
 #  error "this header requires Py_BUILD_CORE define"
 #endif
 
-#include "cpython/initconfig.h"
-#include "fileobject.h"
-#include "pystate.h"
-#include "pythread.h"
-#include "sysmodule.h"
-
-#include "pycore_gil.h"   /* _gil_runtime_state  */
-#include "pycore_pathconfig.h"
-#include "pycore_pymem.h"
-#include "pycore_warnings.h"
-
-// forward
-struct pyruntimestate;
+#include "pycore_gil.h"       /* struct _gil_runtime_state  */
+#include "pycore_pymem.h"     /* struct _gc_runtime_state */
+#include "pycore_warnings.h"  /* struct _warnings_runtime_state */
 
 
 /* ceval state */
 
-struct _ceval_pending_calls {
+struct _pending_calls {
     int finishing;
     PyThread_type_lock lock;
     /* Request for running pending calls. */
@@ -36,7 +26,6 @@ struct _ceval_pending_calls {
     int async_exc;
 #define NPENDINGCALLS 32
     struct {
-        unsigned long thread_id;
         int (*func)(void *);
         void *arg;
     } calls[NPENDINGCALLS];
@@ -54,30 +43,31 @@ struct _ceval_runtime_state {
     int tracing_possible;
     /* This single variable consolidates all requests to break out of
        the fast path in the eval loop. */
-    // XXX This can move to _ceval_interpreter_state once all parts
-    // from COMPUTE_EVAL_BREAKER have moved under PyInterpreterState.
     _Py_atomic_int eval_breaker;
     /* Request for dropping the GIL */
     _Py_atomic_int gil_drop_request;
+    struct _pending_calls pending;
     /* Request for checking signals. */
     _Py_atomic_int signals_pending;
     struct _gil_runtime_state gil;
 };
 
-struct _ceval_interpreter_state {
-    struct _ceval_pending_calls pending;
-};
-
-
 /* interpreter state */
 
 typedef PyObject* (*_PyFrameEvalFunction)(struct _frame *, int);
+
+#define _PY_NSMALLPOSINTS           257
+#define _PY_NSMALLNEGINTS           5
 
 // The PyInterpreterState typedef is in Include/pystate.h.
 struct _is {
 
     struct _is *next;
     struct _ts *tstate_head;
+
+    /* Reference to the _PyRuntime global variable. This field exists
+       to not have to pass runtime in addition to tstate to a function.
+       Get runtime from tstate: tstate->interp->runtime. */
     struct pyruntimestate *runtime;
 
     int64_t id;
@@ -87,14 +77,13 @@ struct _is {
 
     int finalizing;
 
+    struct _gc_runtime_state gc;
+
     PyObject *modules;
     PyObject *modules_by_index;
     PyObject *sysdict;
     PyObject *builtins;
     PyObject *importlib;
-
-    /* Used in Python/sysmodule.c. */
-    int check_interval;
 
     /* Used in Modules/_threadmodule.c. */
     long num_threads;
@@ -143,10 +132,25 @@ struct _is {
 
     uint64_t tstate_next_unique_id;
 
-    struct _ceval_interpreter_state ceval;
     struct _warnings_runtime_state warnings;
 
     PyObject *audit_hooks;
+
+    struct {
+        struct {
+            int level;
+            int atbol;
+        } listnode;
+    } parser;
+
+#if _PY_NSMALLNEGINTS + _PY_NSMALLPOSINTS > 0
+    /* Small integers are preallocated in this array so that they
+       can be shared.
+       The integers that are preallocated are those in the range
+       -_PY_NSMALLNEGINTS (inclusive) to _PY_NSMALLPOSINTS (not inclusive).
+    */
+    PyLongObject* small_ints[_PY_NSMALLNEGINTS + _PY_NSMALLPOSINTS];
+#endif
 };
 
 PyAPI_FUNC(struct _is*) _PyInterpreterState_LookUpID(PY_INT64_T);
@@ -205,8 +209,11 @@ struct _gilstate_runtime_state {
 /* Full Python runtime state */
 
 typedef struct pyruntimestate {
-    /* Is Python pre-initialized? Set to 1 by Py_PreInitialize() */
-    int pre_initialized;
+    /* Is running Py_PreInitialize()? */
+    int preinitializing;
+
+    /* Is Python preinitialized? Set to 1 by Py_PreInitialize() */
+    int preinitialized;
 
     /* Is Python core initialized? Set to 1 by _Py_InitializeCore() */
     int core_initialized;
@@ -214,6 +221,8 @@ typedef struct pyruntimestate {
     /* Is Python fully initialized? Set to 1 by Py_Initialize() */
     int initialized;
 
+    /* Set by Py_FinalizeEx(). Only reset to NULL if Py_Initialize()
+       is called again. */
     PyThreadState *finalizing;
 
     struct pyinterpreters {
@@ -242,7 +251,6 @@ typedef struct pyruntimestate {
     void (*exitfuncs[NEXITFUNCS])(void);
     int nexitfuncs;
 
-    struct _gc_runtime_state gc;
     struct _ceval_runtime_state ceval;
     struct _gilstate_runtime_state gilstate;
 
@@ -256,7 +264,7 @@ typedef struct pyruntimestate {
 } _PyRuntimeState;
 
 #define _PyRuntimeState_INIT \
-    {.pre_initialized = 0, .core_initialized = 0, .initialized = 0}
+    {.preinitialized = 0, .core_initialized = 0, .initialized = 0}
 /* Note: _PyRuntimeState_INIT sets other fields to 0/NULL */
 
 PyAPI_DATA(_PyRuntimeState) _PyRuntime;
@@ -272,6 +280,8 @@ PyAPI_FUNC(void) _PyRuntime_Finalize(void);
 
 #define _Py_CURRENTLY_FINALIZING(runtime, tstate) \
     (runtime->finalizing == tstate)
+
+PyAPI_FUNC(int) _Py_IsMainInterpreter(PyThreadState* tstate);
 
 
 /* Variable and macro for in-line access to current thread
@@ -308,8 +318,11 @@ PyAPI_FUNC(void) _PyRuntime_Finalize(void);
 
 /* Other */
 
-PyAPI_FUNC(void) _PyThreadState_Init(PyThreadState *tstate);
-PyAPI_FUNC(void) _PyThreadState_DeleteExcept(PyThreadState *tstate);
+PyAPI_FUNC(void) _PyThreadState_Init(
+    PyThreadState *tstate);
+PyAPI_FUNC(void) _PyThreadState_DeleteExcept(
+    _PyRuntimeState *runtime,
+    PyThreadState *tstate);
 
 PyAPI_FUNC(PyThreadState *) _PyThreadState_Swap(
     struct _gilstate_runtime_state *gilstate,
@@ -318,7 +331,16 @@ PyAPI_FUNC(PyThreadState *) _PyThreadState_Swap(
 PyAPI_FUNC(PyStatus) _PyInterpreterState_Enable(_PyRuntimeState *runtime);
 PyAPI_FUNC(void) _PyInterpreterState_DeleteExceptMain(_PyRuntimeState *runtime);
 
+/* Used by _PyImport_Cleanup() */
+extern void _PyInterpreterState_ClearModules(PyInterpreterState *interp);
+
 PyAPI_FUNC(void) _PyGILState_Reinit(_PyRuntimeState *runtime);
+
+
+PyAPI_FUNC(int) _PyState_AddModule(
+    PyThreadState *tstate,
+    PyObject* module,
+    struct PyModuleDef* def);
 
 #ifdef __cplusplus
 }

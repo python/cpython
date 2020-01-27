@@ -1,2 +1,0 @@
-Allow :class:`mmap.mmap` objects to access the madvise() system call
-(through :meth:`mmap.mmap.madvise`).

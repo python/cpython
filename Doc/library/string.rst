@@ -146,7 +146,7 @@ implementation as the built-in :meth:`~str.format` method.
       keyword arguments.
 
       For compound field names, these functions are only called for the first
-      component of the field name; Subsequent components are handled through
+      component of the field name; subsequent components are handled through
       normal attribute and indexing operations.
 
       So for example, the field expression '0.name' would cause
@@ -500,14 +500,16 @@ The available presentation types for floating point and decimal values are:
    |         |                                                          |
    |         | The precise rules are as follows: suppose that the       |
    |         | result formatted with presentation type ``'e'`` and      |
-   |         | precision ``p-1`` would have exponent ``exp``.  Then     |
-   |         | if ``-4 <= exp < p``, the number is formatted            |
-   |         | with presentation type ``'f'`` and precision             |
+   |         | precision ``p-1`` would have exponent ``exp``.  Then,    |
+   |         | if ``m <= exp < p``, where ``m`` is -4 for floats and -6 |
+   |         | for :class:`Decimals <decimal.Decimal>`, the number is   |
+   |         | formatted with presentation type ``'f'`` and precision   |
    |         | ``p-1-exp``.  Otherwise, the number is formatted         |
    |         | with presentation type ``'e'`` and precision ``p-1``.    |
    |         | In both cases insignificant trailing zeros are removed   |
    |         | from the significand, and the decimal point is also      |
-   |         | removed if there are no remaining digits following it.   |
+   |         | removed if there are no remaining digits following it,   |
+   |         | unless the ``'#'`` option is used.                       |
    |         |                                                          |
    |         | Positive and negative infinity, positive and negative    |
    |         | zero, and nans, are formatted as ``inf``, ``-inf``,      |

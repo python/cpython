@@ -1019,7 +1019,9 @@ class AbstractUnpickleTests(unittest.TestCase):
         self.assertEqual(self.loads(dumped), '\u20ac\x00')
 
     def test_misc_get(self):
-        self.check_unpickling_error(KeyError, b'g0\np0')
+        self.check_unpickling_error(pickle.UnpicklingError, b'g0\np0')
+        self.check_unpickling_error(pickle.UnpicklingError, b'jens:')
+        self.check_unpickling_error(pickle.UnpicklingError, b'hens:')
         self.assert_is_copy([(100,), (100,)],
                             self.loads(b'((Kdtp0\nh\x00l.))'))
 
@@ -2328,6 +2330,7 @@ class AbstractPickleTests(unittest.TestCase):
         elif frameless_start is not None:
             self.assertLess(pos - frameless_start, self.FRAME_SIZE_MIN)
 
+    @support.skip_if_pgo_task
     def test_framing_many_objects(self):
         obj = list(range(10**5))
         for proto in range(4, pickle.HIGHEST_PROTOCOL + 1):
@@ -2417,6 +2420,7 @@ class AbstractPickleTests(unittest.TestCase):
                                 count_opcode(pickle.FRAME, pickled))
                 self.assertEqual(obj, self.loads(some_frames_pickle))
 
+    @support.skip_if_pgo_task
     def test_framed_write_sizes_with_delayed_writer(self):
         class ChunkAccumulator:
             """Accumulate pickler output in a list of raw chunks."""
@@ -2764,6 +2768,11 @@ class AbstractPickleTests(unittest.TestCase):
             # Buffer iterable exhausts too early
             with self.assertRaises(pickle.UnpicklingError):
                 self.loads(data, buffers=[])
+
+    def test_inband_accept_default_buffers_argument(self):
+        for proto in range(5, pickle.HIGHEST_PROTOCOL + 1):
+            data_pickled = self.dumps(1, proto, buffer_callback=None)
+            data = self.loads(data_pickled, buffers=None)
 
     @unittest.skipIf(np is None, "Test needs Numpy")
     def test_buffers_numpy(self):

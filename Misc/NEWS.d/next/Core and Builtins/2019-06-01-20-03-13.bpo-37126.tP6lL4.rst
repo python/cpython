@@ -1,2 +1,0 @@
-All structseq objects are now tracked by the garbage collector. Patch by
-Pablo Galindo.

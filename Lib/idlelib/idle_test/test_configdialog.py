@@ -48,6 +48,24 @@ def tearDownModule():
     root = dialog = None
 
 
+class DialogTest(unittest.TestCase):
+
+    @mock.patch(__name__+'.dialog.destroy', new_callable=Func)
+    def test_cancel(self, destroy):
+        changes['main']['something'] = 1
+        dialog.cancel()
+        self.assertEqual(changes['main'], {})
+        self.assertEqual(destroy.called, 1)
+
+    @mock.patch('idlelib.configdialog.view_text', new_callable=Func)
+    def test_help(self, view):
+        dialog.note.select(dialog.keyspage)
+        dialog.help()
+        s = view.kwds['contents']
+        self.assertTrue(s.startswith('When you click') and
+                        s.endswith('a different name.\n'))
+
+
 class FontPageTest(unittest.TestCase):
     """Test that font widgets enable users to make font changes.
 
@@ -1134,6 +1152,10 @@ class GenPageTest(unittest.TestCase):
         d.win_width_int.delete(0, 'end')
         d.win_width_int.insert(0, '11')
         self.assertEqual(mainpage, {'EditorWindow': {'width': '11'}})
+
+    def test_cursor_blink(self):
+        self.page.cursor_blink_bool.invoke()
+        self.assertEqual(mainpage, {'EditorWindow': {'cursor-blink': 'False'}})
 
     def test_autocomplete_wait(self):
         self.page.auto_wait_int.delete(0, 'end')

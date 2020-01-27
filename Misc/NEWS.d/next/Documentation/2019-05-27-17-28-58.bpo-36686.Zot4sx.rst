@@ -1,6 +1,0 @@
-Improve documentation of the stdin, stdout, and stderr arguments of of the
-``asyncio.subprocess_exec`` function to specficy which values are supported.
-Also mention that decoding as text is not supported.
-
-Add a few tests to verify that the various values passed to the std*
-arguments actually work.

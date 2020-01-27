@@ -920,7 +920,7 @@ odict_reduce(register PyODictObject *od, PyObject *Py_UNUSED(ignored))
     if (args == NULL)
         goto Done;
 
-    items = _PyObject_CallMethodIdObjArgs((PyObject *)od, &PyId_items, NULL);
+    items = _PyObject_CallMethodIdNoArgs((PyObject *)od, &PyId_items);
     if (items == NULL)
         goto Done;
 
@@ -1421,8 +1421,8 @@ odict_repr(PyODictObject *self)
             Py_SIZE(pieces) = count;
     }
     else {
-        PyObject *items = _PyObject_CallMethodIdObjArgs((PyObject *)self,
-                                                        &PyId_items, NULL);
+        PyObject *items = _PyObject_CallMethodIdNoArgs((PyObject *)self,
+                                                       &PyId_items);
         if (items == NULL)
             goto Done;
         pieces = PySequence_List(items);

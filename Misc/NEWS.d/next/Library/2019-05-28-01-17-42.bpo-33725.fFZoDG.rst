@@ -1,2 +1,0 @@
-On macOS, the :mod:`multiprocessing` module now uses *spawn* start method by
-default.

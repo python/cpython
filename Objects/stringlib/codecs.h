@@ -207,7 +207,7 @@ STRINGLIB(utf8_decode)(const char **inptr, const char *end,
                     goto InvalidContinuation1;
             } else if (ch == 0xF4 && ch2 >= 0x90) {
                 /* invalid sequence
-                   \xF4\x90\x80\80- -- 110000- overflow */
+                   \xF4\x90\x80\x80- -- 110000- overflow */
                 goto InvalidContinuation1;
             }
             if (!IS_CONTINUATION_BYTE(ch3)) {
@@ -573,10 +573,10 @@ STRINGLIB(utf16_decode)(const unsigned char **inptr, const unsigned char *e,
         }
 
         /* UTF-16 code pair: */
-        if (q >= e)
-            goto UnexpectedEnd;
         if (!Py_UNICODE_IS_HIGH_SURROGATE(ch))
             goto IllegalEncoding;
+        if (q >= e)
+            goto UnexpectedEnd;
         ch2 = (q[ihi] << 8) | q[ilo];
         q += 2;
         if (!Py_UNICODE_IS_LOW_SURROGATE(ch2))

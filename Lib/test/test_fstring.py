@@ -649,7 +649,7 @@ non-important content
         self.assertEqual(f'2\x203', '2 3')
         self.assertEqual(f'\x203', ' 3')
 
-        with self.assertWarns(SyntaxWarning):  # invalid escape sequence
+        with self.assertWarns(DeprecationWarning):  # invalid escape sequence
             value = eval(r"f'\{6*7}'")
         self.assertEqual(value, '\\42')
         self.assertEqual(f'\\{6*7}', '\\42')
@@ -1161,7 +1161,7 @@ non-important content
 
         # These next lines contains tabs.  Backslash escapes don't
         # work in f-strings.
-        # patchcheck doens't like these tabs.  So the only way to test
+        # patchcheck doesn't like these tabs.  So the only way to test
         # this will be to dynamically created and exec the f-strings.  But
         # that's such a hassle I'll save it for another day.  For now, convert
         # the tabs to spaces just to shut up patchcheck.

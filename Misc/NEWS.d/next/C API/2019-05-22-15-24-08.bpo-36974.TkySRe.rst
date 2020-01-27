@@ -1,2 +1,0 @@
-Implement :pep:`590`: Vectorcall: a fast calling protocol for CPython.
-This is a new protocol to optimize calls of custom callable objects.

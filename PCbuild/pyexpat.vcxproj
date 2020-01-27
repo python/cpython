@@ -100,7 +100,6 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\Modules\pyexpat.c" />
-    <ClCompile Include="..\Modules\expat\loadlibrary.c" />
     <ClCompile Include="..\Modules\expat\xmlparse.c" />
     <ClCompile Include="..\Modules\expat\xmlrole.c" />
     <ClCompile Include="..\Modules\expat\xmltok.c" />

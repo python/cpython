@@ -1,3 +1,0 @@
-Store text appearing after a `# type: ignore` comment in the AST. For
-example a type ignore like `# type: ignore[E1000]` will have the string
-`"[E1000]"` stored in its AST node.

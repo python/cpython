@@ -1,5 +1,12 @@
 /* Debug helpers */
 
+#ifndef SSL3_MT_CHANGE_CIPHER_SPEC
+/* Dummy message type for handling CCS like a normal handshake message
+ * not defined in OpenSSL 1.0.2
+ */
+#define SSL3_MT_CHANGE_CIPHER_SPEC              0x0101
+#endif
+
 static void
 _PySSL_msg_callback(int write_p, int version, int content_type,
                     const void *buf, size_t len, SSL *ssl, void *arg)
@@ -41,11 +48,13 @@ _PySSL_msg_callback(int write_p, int version, int content_type,
       case SSL3_RT_HANDSHAKE:
         msg_type = (int)cbuf[0];
         break;
+#ifdef SSL3_RT_HEADER
       case SSL3_RT_HEADER:
         /* frame header encodes version in bytes 1..2 */
         version = cbuf[1] << 8 | cbuf[2];
         msg_type = (int)cbuf[0];
         break;
+#endif
 #ifdef SSL3_RT_INNER_CONTENT_TYPE
       case SSL3_RT_INNER_CONTENT_TYPE:
         msg_type = (int)cbuf[0];

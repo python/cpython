@@ -118,7 +118,7 @@ _INDENT = ' '*4  # for wrapped signatures
 _first_param = re.compile(r'(?<=\()\w*\,?\s*')
 _default_callable_argspec = "See source or doc"
 _invalid_method = "invalid method signature"
-_argument_positional = "\n['/' marks preceding arguments as positional-only]\n"
+_argument_positional = "  # '/' marks preceding args as positional-only."
 
 def get_argspec(ob):
     '''Return a string describing the signature of a callable object, or ''.
@@ -144,11 +144,11 @@ def get_argspec(ob):
         if msg.startswith(_invalid_method):
             return _invalid_method
 
-    if '/' in argspec:
-        """Using AC's positional argument should add the explain"""
+    if '/' in argspec and len(argspec) < _MAX_COLS - len(_argument_positional):
+        # Add explanation TODO remove after 3.7, before 3.9.
         argspec += _argument_positional
     if isinstance(fob, type) and argspec == '()':
-        """fob with no argument, use default callable argspec"""
+        # If fob has no argument, use default callable argspec.
         argspec = _default_callable_argspec
 
     lines = (textwrap.wrap(argspec, _MAX_COLS, subsequent_indent=_INDENT)

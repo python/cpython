@@ -1,2 +1,0 @@
-Don't mark ``wsgiref.simple_server.SimpleServer`` as multi-threaded since
-``wsgiref.simple_server.WSGIServer`` is single-threaded.

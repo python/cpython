@@ -13,7 +13,6 @@ import sys
 import threading
 import warnings
 
-
 from . import base_events
 from . import base_subprocess
 from . import constants
@@ -30,7 +29,7 @@ from .log import logger
 __all__ = (
     'SelectorEventLoop',
     'AbstractChildWatcher', 'SafeChildWatcher',
-    'FastChildWatcher',
+    'FastChildWatcher', 'PidfdChildWatcher',
     'MultiLoopChildWatcher', 'ThreadedChildWatcher',
     'DefaultEventLoopPolicy',
 )
@@ -331,7 +330,7 @@ class _UnixSelectorEventLoop(selector_events.BaseSelectorEventLoop):
     async def _sock_sendfile_native(self, sock, file, offset, count):
         try:
             os.sendfile
-        except AttributeError as exc:
+        except AttributeError:
             raise exceptions.SendfileNotAvailableError(
                 "os.sendfile() is not available")
         try:
@@ -340,7 +339,7 @@ class _UnixSelectorEventLoop(selector_events.BaseSelectorEventLoop):
             raise exceptions.SendfileNotAvailableError("not a regular file")
         try:
             fsize = os.fstat(fileno).st_size
-        except OSError as err:
+        except OSError:
             raise exceptions.SendfileNotAvailableError("not a regular file")
         blocksize = count if count else fsize
         if not blocksize:
@@ -446,6 +445,7 @@ class _UnixReadPipeTransport(transports.ReadTransport):
         self._fileno = pipe.fileno()
         self._protocol = protocol
         self._closing = False
+        self._paused = False
 
         mode = os.fstat(self._fileno).st_mode
         if not (stat.S_ISFIFO(mode) or
@@ -507,10 +507,20 @@ class _UnixReadPipeTransport(transports.ReadTransport):
                 self._loop.call_soon(self._call_connection_lost, None)
 
     def pause_reading(self):
+        if self._closing or self._paused:
+            return
+        self._paused = True
         self._loop._remove_reader(self._fileno)
+        if self._loop.get_debug():
+            logger.debug("%r pauses reading", self)
 
     def resume_reading(self):
+        if self._closing or not self._paused:
+            return
+        self._paused = False
         self._loop._add_reader(self._fileno, self._read_ready)
+        if self._loop.get_debug():
+            logger.debug("%r resumes reading", self)
 
     def set_protocol(self, protocol):
         self._protocol = protocol
@@ -849,7 +859,7 @@ class AbstractChildWatcher:
         raise NotImplementedError()
 
     def is_active(self):
-        """Watcher status.
+        """Return ``True`` if the watcher is active and is used by the event loop.
 
         Return True if the watcher is installed and ready to handle process exit
         notifications.
@@ -866,6 +876,84 @@ class AbstractChildWatcher:
     def __exit__(self, a, b, c):
         """Exit the watcher's context"""
         raise NotImplementedError()
+
+
+class PidfdChildWatcher(AbstractChildWatcher):
+    """Child watcher implementation using Linux's pid file descriptors.
+
+    This child watcher polls process file descriptors (pidfds) to await child
+    process termination. In some respects, PidfdChildWatcher is a "Goldilocks"
+    child watcher implementation. It doesn't require signals or threads, doesn't
+    interfere with any processes launched outside the event loop, and scales
+    linearly with the number of subprocesses launched by the event loop. The
+    main disadvantage is that pidfds are specific to Linux, and only work on
+    recent (5.3+) kernels.
+    """
+
+    def __init__(self):
+        self._loop = None
+        self._callbacks = {}
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, exc_type, exc_value, exc_traceback):
+        pass
+
+    def is_active(self):
+        return self._loop is not None and self._loop.is_running()
+
+    def close(self):
+        self.attach_loop(None)
+
+    def attach_loop(self, loop):
+        if self._loop is not None and loop is None and self._callbacks:
+            warnings.warn(
+                'A loop is being detached '
+                'from a child watcher with pending handlers',
+                RuntimeWarning)
+        for pidfd, _, _ in self._callbacks.values():
+            self._loop._remove_reader(pidfd)
+            os.close(pidfd)
+        self._callbacks.clear()
+        self._loop = loop
+
+    def add_child_handler(self, pid, callback, *args):
+        existing = self._callbacks.get(pid)
+        if existing is not None:
+            self._callbacks[pid] = existing[0], callback, args
+        else:
+            pidfd = os.pidfd_open(pid)
+            self._loop._add_reader(pidfd, self._do_wait, pid)
+            self._callbacks[pid] = pidfd, callback, args
+
+    def _do_wait(self, pid):
+        pidfd, callback, args = self._callbacks.pop(pid)
+        self._loop._remove_reader(pidfd)
+        try:
+            _, status = os.waitpid(pid, 0)
+        except ChildProcessError:
+            # The child process is already reaped
+            # (may happen if waitpid() is called elsewhere).
+            returncode = 255
+            logger.warning(
+                "child process pid %d exit status already read: "
+                " will report returncode 255",
+                pid)
+        else:
+            returncode = _compute_returncode(status)
+
+        os.close(pidfd)
+        callback(pid, returncode, *args)
+
+    def remove_child_handler(self, pid):
+        try:
+            pidfd, _, _ = self._callbacks.pop(pid)
+        except KeyError:
+            return False
+        self._loop._remove_reader(pidfd)
+        os.close(pidfd)
+        return True
 
 
 def _compute_returncode(status):
@@ -1115,6 +1203,18 @@ class FastChildWatcher(BaseChildWatcher):
 
 
 class MultiLoopChildWatcher(AbstractChildWatcher):
+    """A watcher that doesn't require running loop in the main thread.
+
+    This implementation registers a SIGCHLD signal handler on
+    instantiation (which may conflict with other code that
+    install own handler for this signal).
+
+    The solution is safe but it has a significant overhead when
+    handling a big number of processes (*O(n)* each time a
+    SIGCHLD is received).
+    """
+
+    # Implementation note:
     # The class keeps compatibility with AbstractChildWatcher ABC
     # To achieve this it has empty attach_loop() method
     # and doesn't accept explicit loop argument
@@ -1224,18 +1324,34 @@ class MultiLoopChildWatcher(AbstractChildWatcher):
 
 
 class ThreadedChildWatcher(AbstractChildWatcher):
-    # The watcher uses a thread per process
-    # for waiting for the process finish.
-    # It doesn't require subscription on POSIX signal
+    """Threaded child watcher implementation.
+
+    The watcher uses a thread per process
+    for waiting for the process finish.
+
+    It doesn't require subscription on POSIX signal
+    but a thread creation is not free.
+
+    The watcher has O(1) complexity, its performance doesn't depend
+    on amount of spawn processes.
+    """
 
     def __init__(self):
         self._pid_counter = itertools.count(0)
+        self._threads = {}
 
     def is_active(self):
         return True
 
     def close(self):
-        pass
+        self._join_threads()
+
+    def _join_threads(self):
+        """Internal: Join all non-daemon threads"""
+        threads = [thread for thread in list(self._threads.values())
+                   if thread.is_alive() and not thread.daemon]
+        for thread in threads:
+            thread.join()
 
     def __enter__(self):
         return self
@@ -1243,12 +1359,21 @@ class ThreadedChildWatcher(AbstractChildWatcher):
     def __exit__(self, exc_type, exc_val, exc_tb):
         pass
 
+    def __del__(self, _warn=warnings.warn):
+        threads = [thread for thread in list(self._threads.values())
+                   if thread.is_alive()]
+        if threads:
+            _warn(f"{self.__class__} has registered but not finished child processes",
+                  ResourceWarning,
+                  source=self)
+
     def add_child_handler(self, pid, callback, *args):
         loop = events.get_running_loop()
         thread = threading.Thread(target=self._do_waitpid,
                                   name=f"waitpid-{next(self._pid_counter)}",
                                   args=(loop, pid, callback, args),
                                   daemon=True)
+        self._threads[pid] = thread
         thread.start()
 
     def remove_child_handler(self, pid):
@@ -1284,6 +1409,8 @@ class ThreadedChildWatcher(AbstractChildWatcher):
         else:
             loop.call_soon_threadsafe(callback, pid, returncode, *args)
 
+        self._threads.pop(expected_pid)
+
 
 class _UnixDefaultEventLoopPolicy(events.BaseDefaultEventLoopPolicy):
     """UNIX event loop policy with a watcher for child processes."""
@@ -1297,8 +1424,7 @@ class _UnixDefaultEventLoopPolicy(events.BaseDefaultEventLoopPolicy):
         with events._lock:
             if self._watcher is None:  # pragma: no branch
                 self._watcher = ThreadedChildWatcher()
-                if isinstance(threading.current_thread(),
-                              threading._MainThread):
+                if threading.current_thread() is threading.main_thread():
                     self._watcher.attach_loop(self._local._loop)
 
     def set_event_loop(self, loop):
@@ -1312,7 +1438,7 @@ class _UnixDefaultEventLoopPolicy(events.BaseDefaultEventLoopPolicy):
         super().set_event_loop(loop)
 
         if (self._watcher is not None and
-                isinstance(threading.current_thread(), threading._MainThread)):
+                threading.current_thread() is threading.main_thread()):
             self._watcher.attach_loop(loop)
 
     def get_child_watcher(self):

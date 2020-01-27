@@ -166,7 +166,7 @@ Programmatic Interface
        environments.  If not defined, *globals* and *locals* default to empty
        dictionaries.
 
-    .. method:: runfunc(func, *args, **kwds)
+    .. method:: runfunc(func, /, *args, **kwds)
 
        Call *func* with the given arguments under control of the :class:`Trace`
        object with the current tracing parameters.

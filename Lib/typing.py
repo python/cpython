@@ -17,7 +17,7 @@ At large scale, the structure of the module is following:
 * Wrapper submodules for re and io related types.
 """
 
-from abc import abstractmethod, abstractproperty, ABCMeta
+from abc import abstractmethod, ABCMeta
 import collections
 import collections.abc
 import contextlib
@@ -524,11 +524,13 @@ class ForwardRef(_Final, _root=True):
     def __eq__(self, other):
         if not isinstance(other, ForwardRef):
             return NotImplemented
-        return (self.__forward_arg__ == other.__forward_arg__ and
-                self.__forward_value__ == other.__forward_value__)
+        if self.__forward_evaluated__ and other.__forward_evaluated__:
+            return (self.__forward_arg__ == other.__forward_arg__ and
+                    self.__forward_value__ == other.__forward_value__)
+        return self.__forward_arg__ == other.__forward_arg__
 
     def __hash__(self):
-        return hash((self.__forward_arg__, self.__forward_value__))
+        return hash(self.__forward_arg__)
 
     def __repr__(self):
         return f'ForwardRef({self.__forward_arg__!r})'
@@ -989,10 +991,13 @@ def _allow_reckless_class_cheks():
         return True
 
 
-_PROTO_WHITELIST = ['Callable', 'Awaitable',
-                    'Iterable', 'Iterator', 'AsyncIterable', 'AsyncIterator',
-                    'Hashable', 'Sized', 'Container', 'Collection', 'Reversible',
-                    'ContextManager', 'AsyncContextManager']
+_PROTO_WHITELIST = {
+    'collections.abc': [
+        'Callable', 'Awaitable', 'Iterable', 'Iterator', 'AsyncIterable',
+        'Hashable', 'Sized', 'Container', 'Collection', 'Reversible',
+    ],
+    'contextlib': ['AbstractContextManager', 'AbstractAsyncContextManager'],
+}
 
 
 class _ProtocolMeta(ABCMeta):
@@ -1105,7 +1110,8 @@ class Protocol(Generic, metaclass=_ProtocolMeta):
         # ... otherwise check consistency of bases, and prohibit instantiation.
         for base in cls.__bases__:
             if not (base in (object, Generic) or
-                    base.__module__ == 'collections.abc' and base.__name__ in _PROTO_WHITELIST or
+                    base.__module__ in _PROTO_WHITELIST and
+                    base.__name__ in _PROTO_WHITELIST[base.__module__] or
                     issubclass(base, Generic) and base._is_protocol):
                 raise TypeError('Protocols can only inherit from other'
                                 ' protocols, got %r' % base)
@@ -1228,7 +1234,11 @@ def get_type_hints(obj, globalns=None, localns=None):
         if isinstance(obj, types.ModuleType):
             globalns = obj.__dict__
         else:
-            globalns = getattr(obj, '__globals__', {})
+            nsobj = obj
+            # Find globalns for the unwrapped object.
+            while hasattr(nsobj, '__wrapped__'):
+                nsobj = nsobj.__wrapped__
+            globalns = getattr(nsobj, '__globals__', {})
         if localns is None:
             localns = globalns
     elif localns is None:
@@ -1507,6 +1517,7 @@ Type.__doc__ = \
 
 @runtime_checkable
 class SupportsInt(Protocol):
+    """An ABC with one abstract method __int__."""
     __slots__ = ()
 
     @abstractmethod
@@ -1516,6 +1527,7 @@ class SupportsInt(Protocol):
 
 @runtime_checkable
 class SupportsFloat(Protocol):
+    """An ABC with one abstract method __float__."""
     __slots__ = ()
 
     @abstractmethod
@@ -1525,6 +1537,7 @@ class SupportsFloat(Protocol):
 
 @runtime_checkable
 class SupportsComplex(Protocol):
+    """An ABC with one abstract method __complex__."""
     __slots__ = ()
 
     @abstractmethod
@@ -1534,6 +1547,7 @@ class SupportsComplex(Protocol):
 
 @runtime_checkable
 class SupportsBytes(Protocol):
+    """An ABC with one abstract method __bytes__."""
     __slots__ = ()
 
     @abstractmethod
@@ -1543,6 +1557,7 @@ class SupportsBytes(Protocol):
 
 @runtime_checkable
 class SupportsIndex(Protocol):
+    """An ABC with one abstract method __index__."""
     __slots__ = ()
 
     @abstractmethod
@@ -1552,6 +1567,7 @@ class SupportsIndex(Protocol):
 
 @runtime_checkable
 class SupportsAbs(Protocol[T_co]):
+    """An ABC with one abstract method __abs__ that is covariant in its return type."""
     __slots__ = ()
 
     @abstractmethod
@@ -1561,6 +1577,7 @@ class SupportsAbs(Protocol[T_co]):
 
 @runtime_checkable
 class SupportsRound(Protocol[T_co]):
+    """An ABC with one abstract method __round__ that is covariant in its return type."""
     __slots__ = ()
 
     @abstractmethod
@@ -1587,7 +1604,7 @@ _prohibited = ('__new__', '__init__', '__slots__', '__getnewargs__',
                '_fields', '_field_defaults', '_field_types',
                '_make', '_replace', '_asdict', '_source')
 
-_special = ('__module__', '__name__', '__qualname__', '__annotations__')
+_special = ('__module__', '__name__', '__annotations__')
 
 
 class NamedTupleMeta(type):
@@ -1647,7 +1664,7 @@ class NamedTuple(metaclass=NamedTupleMeta):
     """
     _root = True
 
-    def __new__(self, typename, fields=None, **kwargs):
+    def __new__(cls, typename, fields=None, /, **kwargs):
         if fields is None:
             fields = kwargs.items()
         elif kwargs:
@@ -1656,26 +1673,25 @@ class NamedTuple(metaclass=NamedTupleMeta):
         return _make_nmtuple(typename, fields)
 
 
-def _dict_new(cls, *args, **kwargs):
+def _dict_new(cls, /, *args, **kwargs):
     return dict(*args, **kwargs)
 
 
-def _typeddict_new(cls, _typename, _fields=None, **kwargs):
-    total = kwargs.pop('total', True)
-    if _fields is None:
-        _fields = kwargs
+def _typeddict_new(cls, typename, fields=None, /, *, total=True, **kwargs):
+    if fields is None:
+        fields = kwargs
     elif kwargs:
         raise TypeError("TypedDict takes either a dict or keyword arguments,"
                         " but not both")
 
-    ns = {'__annotations__': dict(_fields), '__total__': total}
+    ns = {'__annotations__': dict(fields), '__total__': total}
     try:
         # Setting correct module is necessary to make typed dict classes pickleable.
         ns['__module__'] = sys._getframe(1).f_globals.get('__name__', '__main__')
     except (AttributeError, ValueError):
         pass
 
-    return _TypedDictMeta(_typename, (), ns)
+    return _TypedDictMeta(typename, (), ns)
 
 
 def _check_fails(cls, other):
@@ -1699,9 +1715,20 @@ class _TypedDictMeta(type):
         anns = ns.get('__annotations__', {})
         msg = "TypedDict('Name', {f0: t0, f1: t1, ...}); each t must be a type"
         anns = {n: _type_check(tp, msg) for n, tp in anns.items()}
+        required = set(anns if total else ())
+        optional = set(() if total else anns)
+
         for base in bases:
-            anns.update(base.__dict__.get('__annotations__', {}))
+            base_anns = base.__dict__.get('__annotations__', {})
+            anns.update(base_anns)
+            if getattr(base, '__total__', True):
+                required.update(base_anns)
+            else:
+                optional.update(base_anns)
+
         tp_dict.__annotations__ = anns
+        tp_dict.__required_keys__ = frozenset(required)
+        tp_dict.__optional_keys__ = frozenset(optional)
         if not hasattr(tp_dict, '__total__'):
             tp_dict.__total__ = total
         return tp_dict
@@ -1728,8 +1755,9 @@ class TypedDict(dict, metaclass=_TypedDictMeta):
 
         assert Point2D(x=1, y=2, label='first') == dict(x=1, y=2, label='first')
 
-    The type info can be accessed via Point2D.__annotations__. TypedDict
-    supports two additional equivalent forms::
+    The type info can be accessed via the Point2D.__annotations__ dict, and
+    the Point2D.__required_keys__ and Point2D.__optional_keys__ frozensets.
+    TypedDict supports two additional equivalent forms::
 
         Point2D = TypedDict('Point2D', x=int, y=int, label=str)
         Point2D = TypedDict('Point2D', {'x': int, 'y': int, 'label': str})
@@ -1789,11 +1817,13 @@ class IO(Generic[AnyStr]):
 
     __slots__ = ()
 
-    @abstractproperty
+    @property
+    @abstractmethod
     def mode(self) -> str:
         pass
 
-    @abstractproperty
+    @property
+    @abstractmethod
     def name(self) -> str:
         pass
 
@@ -1889,23 +1919,28 @@ class TextIO(IO[str]):
 
     __slots__ = ()
 
-    @abstractproperty
+    @property
+    @abstractmethod
     def buffer(self) -> BinaryIO:
         pass
 
-    @abstractproperty
+    @property
+    @abstractmethod
     def encoding(self) -> str:
         pass
 
-    @abstractproperty
+    @property
+    @abstractmethod
     def errors(self) -> Optional[str]:
         pass
 
-    @abstractproperty
+    @property
+    @abstractmethod
     def line_buffering(self) -> bool:
         pass
 
-    @abstractproperty
+    @property
+    @abstractmethod
     def newlines(self) -> Any:
         pass
 

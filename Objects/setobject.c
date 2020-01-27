@@ -1456,10 +1456,6 @@ PyDoc_STRVAR(isdisjoint_doc,
 static int
 set_difference_update_internal(PySetObject *so, PyObject *other)
 {
-    if (PySet_GET_SIZE(so) == 0) {
-        return 0;
-    }
-
     if ((PyObject *)so == other)
         return set_clear_internal(so);
 
@@ -1467,9 +1463,25 @@ set_difference_update_internal(PySetObject *so, PyObject *other)
         setentry *entry;
         Py_ssize_t pos = 0;
 
-        while (set_next((PySetObject *)other, &pos, &entry))
-            if (set_discard_entry(so, entry->key, entry->hash) < 0)
+        /* Optimization:  When the other set is more than 8 times
+           larger than the base set, replace the other set with
+           interesection of the two sets.
+        */
+        if ((PySet_GET_SIZE(other) >> 3) > PySet_GET_SIZE(so)) {
+            other = set_intersection(so, other);
+            if (other == NULL)
                 return -1;
+        } else {
+            Py_INCREF(other);
+        }
+
+        while (set_next((PySetObject *)other, &pos, &entry))
+            if (set_discard_entry(so, entry->key, entry->hash) < 0) {
+                Py_DECREF(other);
+                return -1;
+            }
+
+        Py_DECREF(other);
     } else {
         PyObject *key, *it;
         it = PyObject_GetIter(other);
@@ -1533,10 +1545,6 @@ set_difference(PySetObject *so, PyObject *other)
     setentry *entry;
     Py_ssize_t pos = 0, other_size;
     int rv;
-
-    if (PySet_GET_SIZE(so) == 0) {
-        return set_copy(so, NULL);
-    }
 
     if (PyAnySet_Check(other)) {
         other_size = PySet_GET_SIZE(other);
@@ -1962,9 +1970,10 @@ set_reduce(PySetObject *so, PyObject *Py_UNUSED(ignored))
     args = PyTuple_Pack(1, keys);
     if (args == NULL)
         goto done;
-    dict = _PyObject_GetAttrId((PyObject *)so, &PyId___dict__);
+    if (_PyObject_LookupAttrId((PyObject *)so, &PyId___dict__, &dict) < 0) {
+        goto done;
+    }
     if (dict == NULL) {
-        PyErr_Clear();
         dict = Py_None;
         Py_INCREF(dict);
     }
@@ -2326,7 +2335,7 @@ PySet_ClearFreeList(void)
 }
 
 void
-PySet_Fini(void)
+_PySet_Fini(void)
 {
     Py_CLEAR(emptyfrozenset);
 }

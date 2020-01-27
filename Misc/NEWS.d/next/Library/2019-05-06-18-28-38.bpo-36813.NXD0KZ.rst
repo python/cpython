@@ -1,2 +1,0 @@
-Fix :class:`~logging.handlers.QueueListener` to call ``queue.task_done()``
-upon stopping. Patch by Bar Harel.

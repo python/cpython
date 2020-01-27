@@ -1,8 +1,0 @@
-Make asyncio.CancelledError a BaseException.
-
-This will address the common mistake many asyncio users make: an "except
-Exception" clause breaking Tasks cancellation.
-
-In addition to this change, we stop inheriting asyncio.TimeoutError and
-asyncio.InvalidStateError from their concurrent.futures.* counterparts.
-There's no point for these exceptions to share the inheritance chain.

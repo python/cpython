@@ -5,6 +5,10 @@
 Event Loop
 ==========
 
+**Source code:** :source:`Lib/asyncio/events.py`,
+:source:`Lib/asyncio/base_events.py`
+
+------------------------------------
 
 .. rubric:: Preface
 
@@ -34,8 +38,10 @@ an event loop:
 
 .. function:: get_event_loop()
 
-   Get the current event loop.  If there is no current event loop set
-   in the current OS thread and :func:`set_event_loop` has not yet
+   Get the current event loop.
+
+   If there is no current event loop set in the current OS thread,
+   the OS thread is main, and :func:`set_event_loop` has not yet
    been called, asyncio will create a new event loop and set it as the
    current one.
 
@@ -166,6 +172,18 @@ Running and stopping the loop
         loop.close()
 
    .. versionadded:: 3.6
+
+.. coroutinemethod:: loop.shutdown_default_executor()
+
+   Schedule the closure of the default executor and wait for it to join all of
+   the threads in the :class:`ThreadPoolExecutor`. After calling this method, a
+   :exc:`RuntimeError` will be raised if :meth:`loop.run_in_executor` is called
+   while using the default executor.
+
+   Note that there is no need to call this function when
+   :func:`asyncio.run` is used.
+
+   .. versionadded:: 3.9
 
 
 Scheduling callbacks
@@ -457,6 +475,21 @@ Opening network connections
                         reuse_address=None, reuse_port=None, \
                         allow_broadcast=None, sock=None)
 
+   .. note::
+      The parameter *reuse_address* is no longer supported, as using
+      :py:data:`~sockets.SO_REUSEADDR` poses a significant security concern for
+      UDP. Explicitly passing ``reuse_address=True`` will raise an exception.
+
+      When multiple processes with differing UIDs assign sockets to an
+      identical UDP socket address with ``SO_REUSEADDR``, incoming packets can
+      become randomly distributed among the sockets.
+
+      For supported platforms, *reuse_port* can be used as a replacement for
+      similar functionality. With *reuse_port*,
+      :py:data:`~sockets.SO_REUSEPORT` is used instead, which specifically
+      prevents processes with differing UIDs from assigning sockets to the same
+      socket address.
+
    Create a datagram connection.
 
    The socket family can be either :py:data:`~socket.AF_INET`,
@@ -485,11 +518,6 @@ Opening network connections
      resolution. If given, these should all be integers from the
      corresponding :mod:`socket` module constants.
 
-   * *reuse_address* tells the kernel to reuse a local socket in
-     ``TIME_WAIT`` state, without waiting for its natural timeout to
-     expire. If not specified will automatically be set to ``True`` on
-     Unix.
-
    * *reuse_port* tells the kernel to allow this endpoint to be bound to the
      same port as other existing endpoints are bound to, so long as they all
      set this flag when being created. This option is not supported on Windows
@@ -510,6 +538,10 @@ Opening network connections
    .. versionchanged:: 3.4.4
       The *family*, *proto*, *flags*, *reuse_address*, *reuse_port,
       *allow_broadcast*, and *sock* parameters were added.
+
+   .. versionchanged:: 3.8.1
+      The *reuse_address* parameter is no longer supported due to security
+      concerns.
 
    .. versionchanged:: 3.8
       Added support for Windows.
@@ -1168,7 +1200,7 @@ Enabling debug mode
 
    .. versionchanged:: 3.7
 
-      The new ``-X dev`` command line option can now also be used
+      The new :ref:`Python Development Mode <devmode>` can now also be used
       to enable the debug mode.
 
 .. seealso::
@@ -1454,7 +1486,7 @@ asyncio ships with two different event loop implementations:
 :class:`SelectorEventLoop` and :class:`ProactorEventLoop`.
 
 By default asyncio is configured to use :class:`SelectorEventLoop`
-on all platforms.
+on Unix and :class:`ProactorEventLoop` on Windows.
 
 
 .. class:: SelectorEventLoop

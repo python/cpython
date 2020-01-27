@@ -1,6 +1,0 @@
-Added support for bytes and path-like objects in :func:`subprocess.Popen`
-on Windows.  The *args* parameter now accepts a :term:`path-like object` if
-*shell* is ``False`` and a sequence containing bytes and path-like objects.
-The *executable* parameter now accepts a bytes and :term:`path-like object`.
-The *cwd* parameter now accepts a bytes object.
-Based on patch by Anders Lorentsen.

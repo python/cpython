@@ -203,6 +203,13 @@ class PyChainDispatchTableTests(AbstractDispatchTableTests):
         return collections.ChainMap({}, pickle.dispatch_table)
 
 
+class PyPicklerHookTests(AbstractHookTests):
+    class CustomPyPicklerClass(pickle._Pickler,
+                               AbstractCustomPicklerClass):
+        pass
+    pickler_class = CustomPyPicklerClass
+
+
 if has_c_implementation:
     class CPickleTests(AbstractPickleModuleTests):
         from _pickle import dump, dumps, load, loads, Pickler, Unpickler
@@ -254,12 +261,6 @@ if has_c_implementation:
         pickler_class = pickle.Pickler
         def get_dispatch_table(self):
             return collections.ChainMap({}, pickle.dispatch_table)
-
-    class PyPicklerHookTests(AbstractHookTests):
-        class CustomPyPicklerClass(pickle._Pickler,
-                                   AbstractCustomPicklerClass):
-            pass
-        pickler_class = CustomPyPicklerClass
 
     class CPicklerHookTests(AbstractHookTests):
         class CustomCPicklerClass(_pickle.Pickler, AbstractCustomPicklerClass):

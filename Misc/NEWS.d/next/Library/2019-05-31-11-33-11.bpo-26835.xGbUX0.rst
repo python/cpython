@@ -1,1 +1,0 @@
-The fcntl module now contains file sealing constants for sealing of memfds.

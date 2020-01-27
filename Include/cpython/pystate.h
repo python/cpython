@@ -110,9 +110,9 @@ struct _ts {
      * if the thread holds the last reference to the lock, decref'ing the
      * lock will delete the lock, and that may trigger arbitrary Python code
      * if there's a weakref, with a callback, to the lock.  But by this time
-     * _PyRuntimeState.gilstate.tstate_current is already NULL, so only the
-     * simplest of C code can be allowed to run (in particular it must not be
-     * possible to release the GIL).
+     * _PyRuntime.gilstate.tstate_current is already NULL, so only the simplest
+     * of C code can be allowed to run (in particular it must not be possible to
+     * release the GIL).
      * So instead of holding the lock directly, the tstate holds a weakref to
      * the lock:  that's the value of on_delete_data below.  Decref'ing a
      * weakref is harmless.
@@ -147,8 +147,6 @@ struct _ts {
    The caller must hold the GIL.*/
 PyAPI_FUNC(PyInterpreterState *) _PyInterpreterState_Get(void);
 
-PyAPI_FUNC(int) _PyState_AddModule(PyObject*, struct PyModuleDef*);
-PyAPI_FUNC(void) _PyState_ClearModules(void);
 PyAPI_FUNC(PyThreadState *) _PyThreadState_Prealloc(PyInterpreterState *);
 
 /* Similar to PyThreadState_Get(), but don't issue a fatal error
@@ -184,6 +182,7 @@ PyAPI_FUNC(PyInterpreterState *) PyInterpreterState_Head(void);
 PyAPI_FUNC(PyInterpreterState *) PyInterpreterState_Next(PyInterpreterState *);
 PyAPI_FUNC(PyThreadState *) PyInterpreterState_ThreadHead(PyInterpreterState *);
 PyAPI_FUNC(PyThreadState *) PyThreadState_Next(PyThreadState *);
+PyAPI_FUNC(void) PyThreadState_DeleteCurrent(void);
 
 typedef struct _frame *(*PyThreadFrameGetter)(PyThreadState *self_);
 

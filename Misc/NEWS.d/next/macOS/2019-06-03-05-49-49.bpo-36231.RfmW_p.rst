@@ -1,3 +1,0 @@
-Support building Python on macOS without /usr/include installed. As of macOS
-10.14, system header files are only available within an SDK provided by
-either the Command Line Tools or the Xcode app.

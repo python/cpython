@@ -10,7 +10,9 @@
 #define PY_LOCAL_AGGRESSIVE
 
 #include "Python.h"
+#include "pycore_call.h"
 #include "pycore_ceval.h"
+#include "pycore_code.h"
 #include "pycore_object.h"
 #include "pycore_pyerrors.h"
 #include "pycore_pylifecycle.h"
@@ -37,10 +39,6 @@
 #  error "ceval.c must be build with Py_BUILD_CORE define for best performance"
 #endif
 
-/* Private API for the LOAD_METHOD opcode. */
-extern int _PyObject_GetMethod(PyObject *, PyObject *, PyObject **);
-
-typedef PyObject *(*callproc)(PyObject *, PyObject *, PyObject *);
 
 /* Forward declarations */
 Py_LOCAL_INLINE(PyObject *) call_function(
@@ -69,7 +67,6 @@ static void maybe_dtrace_line(PyFrameObject *, int *, int *, int *);
 static void dtrace_function_entry(PyFrameObject *);
 static void dtrace_function_return(PyFrameObject *);
 
-static PyObject * cmp_outcome(PyThreadState *, int, PyObject *, PyObject *);
 static PyObject * import_name(PyThreadState *, PyFrameObject *,
                               PyObject *, PyObject *, PyObject *);
 static PyObject * import_from(PyThreadState *, PyObject *, PyObject *);
@@ -81,7 +78,7 @@ static PyObject * unicode_concatenate(PyThreadState *, PyObject *, PyObject *,
 static PyObject * special_lookup(PyThreadState *, PyObject *, _Py_Identifier *);
 static int check_args_iterable(PyThreadState *, PyObject *func, PyObject *vararg);
 static void format_kwargs_error(PyThreadState *, PyObject *func, PyObject *kwargs);
-static void format_awaitable_error(PyThreadState *, PyTypeObject *, int);
+static void format_awaitable_error(PyThreadState *, PyTypeObject *, int, int);
 
 #define NAME_ERROR_MSG \
     "name '%.200s' is not defined"
@@ -101,64 +98,86 @@ static long dxp[256];
 #endif
 #endif
 
+/* per opcode cache */
+#ifdef Py_DEBUG
+// --with-pydebug is used to find memory leak.  opcache makes it harder.
+// So we disable opcache when Py_DEBUG is defined.
+// See bpo-37146
+#define OPCACHE_MIN_RUNS 0  /* disable opcache */
+#else
+#define OPCACHE_MIN_RUNS 1024  /* create opcache when code executed this time */
+#endif
+#define OPCACHE_STATS 0  /* Enable stats */
+
+#if OPCACHE_STATS
+static size_t opcache_code_objects = 0;
+static size_t opcache_code_objects_extra_mem = 0;
+
+static size_t opcache_global_opts = 0;
+static size_t opcache_global_hits = 0;
+static size_t opcache_global_misses = 0;
+#endif
+
+#define GIL_REQUEST _Py_atomic_load_relaxed(&ceval->gil_drop_request)
+
 /* This can set eval_breaker to 0 even though gil_drop_request became
    1.  We believe this is all right because the eval loop will release
    the GIL eventually anyway. */
-#define COMPUTE_EVAL_BREAKER(ceval_r, ceval_i) \
+#define COMPUTE_EVAL_BREAKER(ceval) \
     _Py_atomic_store_relaxed( \
-        &(ceval_r)->eval_breaker, \
-        _Py_atomic_load_relaxed(&(ceval_r)->gil_drop_request) | \
-        _Py_atomic_load_relaxed(&(ceval_r)->signals_pending) | \
-        _Py_atomic_load_relaxed(&(ceval_i)->pending.calls_to_do) | \
-        (ceval_i)->pending.async_exc)
+        &(ceval)->eval_breaker, \
+        GIL_REQUEST | \
+        _Py_atomic_load_relaxed(&(ceval)->signals_pending) | \
+        _Py_atomic_load_relaxed(&(ceval)->pending.calls_to_do) | \
+        (ceval)->pending.async_exc)
 
-#define SET_GIL_DROP_REQUEST(ceval_r) \
+#define SET_GIL_DROP_REQUEST(ceval) \
     do { \
-        _Py_atomic_store_relaxed(&(ceval_r)->gil_drop_request, 1); \
-        _Py_atomic_store_relaxed(&(ceval_r)->eval_breaker, 1); \
+        _Py_atomic_store_relaxed(&(ceval)->gil_drop_request, 1); \
+        _Py_atomic_store_relaxed(&(ceval)->eval_breaker, 1); \
     } while (0)
 
-#define RESET_GIL_DROP_REQUEST(ceval_r, ceval_i) \
+#define RESET_GIL_DROP_REQUEST(ceval) \
     do { \
-        _Py_atomic_store_relaxed(&(ceval_r)->gil_drop_request, 0); \
-        COMPUTE_EVAL_BREAKER(ceval_r, ceval_i); \
+        _Py_atomic_store_relaxed(&(ceval)->gil_drop_request, 0); \
+        COMPUTE_EVAL_BREAKER(ceval); \
     } while (0)
 
 /* Pending calls are only modified under pending_lock */
-#define SIGNAL_PENDING_CALLS(ceval_r, ceval_i) \
+#define SIGNAL_PENDING_CALLS(ceval) \
     do { \
-        _Py_atomic_store_relaxed(&(ceval_i)->pending.calls_to_do, 1); \
-        _Py_atomic_store_relaxed(&(ceval_r)->eval_breaker, 1); \
+        _Py_atomic_store_relaxed(&(ceval)->pending.calls_to_do, 1); \
+        _Py_atomic_store_relaxed(&(ceval)->eval_breaker, 1); \
     } while (0)
 
-#define UNSIGNAL_PENDING_CALLS(ceval_r, ceval_i) \
+#define UNSIGNAL_PENDING_CALLS(ceval) \
     do { \
-        _Py_atomic_store_relaxed(&(ceval_i)->pending.calls_to_do, 0); \
-        COMPUTE_EVAL_BREAKER(ceval_r, ceval_i); \
+        _Py_atomic_store_relaxed(&(ceval)->pending.calls_to_do, 0); \
+        COMPUTE_EVAL_BREAKER(ceval); \
     } while (0)
 
-#define SIGNAL_PENDING_SIGNALS(ceval_r) \
+#define SIGNAL_PENDING_SIGNALS(ceval) \
     do { \
-        _Py_atomic_store_relaxed(&(ceval_r)->signals_pending, 1); \
-        _Py_atomic_store_relaxed(&(ceval_r)->eval_breaker, 1); \
+        _Py_atomic_store_relaxed(&(ceval)->signals_pending, 1); \
+        _Py_atomic_store_relaxed(&(ceval)->eval_breaker, 1); \
     } while (0)
 
-#define UNSIGNAL_PENDING_SIGNALS(ceval_r, ceval_i) \
+#define UNSIGNAL_PENDING_SIGNALS(ceval) \
     do { \
-        _Py_atomic_store_relaxed(&(ceval_r)->signals_pending, 0); \
-        COMPUTE_EVAL_BREAKER(ceval_r, ceval_i); \
+        _Py_atomic_store_relaxed(&(ceval)->signals_pending, 0); \
+        COMPUTE_EVAL_BREAKER(ceval); \
     } while (0)
 
-#define SIGNAL_ASYNC_EXC(ceval_r, ceval_i) \
+#define SIGNAL_ASYNC_EXC(ceval) \
     do { \
-        (ceval_i)->pending.async_exc = 1; \
-        _Py_atomic_store_relaxed(&(ceval_r)->eval_breaker, 1); \
+        (ceval)->pending.async_exc = 1; \
+        _Py_atomic_store_relaxed(&(ceval)->eval_breaker, 1); \
     } while (0)
 
-#define UNSIGNAL_ASYNC_EXC(ceval_r, ceval_i) \
+#define UNSIGNAL_ASYNC_EXC(ceval) \
     do { \
-        (ceval_i)->pending.async_exc = 0; \
-        COMPUTE_EVAL_BREAKER(ceval_r, ceval_i); \
+        (ceval)->pending.async_exc = 0; \
+        COMPUTE_EVAL_BREAKER(ceval); \
     } while (0)
 
 
@@ -171,15 +190,16 @@ static long dxp[256];
 int
 PyEval_ThreadsInitialized(void)
 {
-    return gil_created(&_PyRuntime.ceval.gil);
+    _PyRuntimeState *runtime = &_PyRuntime;
+    return gil_created(&runtime->ceval.gil);
 }
 
 void
 PyEval_InitThreads(void)
 {
     _PyRuntimeState *runtime = &_PyRuntime;
-    struct _ceval_runtime_state *ceval_r = &runtime->ceval;
-    struct _gil_runtime_state *gil = &ceval_r->gil;
+    struct _ceval_runtime_state *ceval = &runtime->ceval;
+    struct _gil_runtime_state *gil = &ceval->gil;
     if (gil_created(gil)) {
         return;
     }
@@ -187,15 +207,19 @@ PyEval_InitThreads(void)
     PyThread_init_thread();
     create_gil(gil);
     PyThreadState *tstate = _PyRuntimeState_GetThreadState(runtime);
-    take_gil(ceval_r, tstate);
+    take_gil(ceval, tstate);
 
-    // The pending calls mutex is initialized in PyInterpreterState_New().
+    struct _pending_calls *pending = &ceval->pending;
+    pending->lock = PyThread_allocate_lock();
+    if (pending->lock == NULL) {
+        Py_FatalError("Can't initialize threads for pending calls");
+    }
 }
 
 void
-_PyEval_FiniThreads(struct _ceval_runtime_state *ceval_r)
+_PyEval_FiniThreads(struct _ceval_runtime_state *ceval)
 {
-    struct _gil_runtime_state *gil = &ceval_r->gil;
+    struct _gil_runtime_state *gil = &ceval->gil;
     if (!gil_created(gil)) {
         return;
     }
@@ -203,38 +227,63 @@ _PyEval_FiniThreads(struct _ceval_runtime_state *ceval_r)
     destroy_gil(gil);
     assert(!gil_created(gil));
 
-    // The pending calls mutex is freed in PyInterpreterState_Delete().
+    struct _pending_calls *pending = &ceval->pending;
+    if (pending->lock != NULL) {
+        PyThread_free_lock(pending->lock);
+        pending->lock = NULL;
+    }
 }
 
 static inline void
 exit_thread_if_finalizing(PyThreadState *tstate)
 {
-    PyInterpreterState *interp = tstate->interp;
-    // Stop if thread/interpreter inalization already stated.
-    if (interp == NULL) {
-        return;
-    }
-    _PyRuntimeState *runtime = interp->runtime;
-    if (runtime == NULL) {
-        return;
-    }
-    // Don't exit if the main thread (i.e. of the main interpreter).
+    _PyRuntimeState *runtime = tstate->interp->runtime;
+    /* _Py_Finalizing is protected by the GIL */
     if (runtime->finalizing != NULL && !_Py_CURRENTLY_FINALIZING(runtime, tstate)) {
-        drop_gil(&runtime->ceval, &interp->ceval, tstate);
+        drop_gil(&runtime->ceval, tstate);
         PyThread_exit_thread();
     }
+}
+
+void
+_PyEval_Fini(void)
+{
+#if OPCACHE_STATS
+    fprintf(stderr, "-- Opcode cache number of objects  = %zd\n",
+            opcache_code_objects);
+
+    fprintf(stderr, "-- Opcode cache total extra mem    = %zd\n",
+            opcache_code_objects_extra_mem);
+
+    fprintf(stderr, "\n");
+
+    fprintf(stderr, "-- Opcode cache LOAD_GLOBAL hits   = %zd (%d%%)\n",
+            opcache_global_hits,
+            (int) (100.0 * opcache_global_hits /
+                (opcache_global_hits + opcache_global_misses)));
+
+    fprintf(stderr, "-- Opcode cache LOAD_GLOBAL misses = %zd (%d%%)\n",
+            opcache_global_misses,
+            (int) (100.0 * opcache_global_misses /
+                (opcache_global_hits + opcache_global_misses)));
+
+    fprintf(stderr, "-- Opcode cache LOAD_GLOBAL opts   = %zd\n",
+            opcache_global_opts);
+
+    fprintf(stderr, "\n");
+#endif
 }
 
 void
 PyEval_AcquireLock(void)
 {
     _PyRuntimeState *runtime = &_PyRuntime;
-    struct _ceval_runtime_state *ceval_r = &runtime->ceval;
+    struct _ceval_runtime_state *ceval = &runtime->ceval;
     PyThreadState *tstate = _PyRuntimeState_GetThreadState(runtime);
     if (tstate == NULL) {
         Py_FatalError("PyEval_AcquireLock: current thread state is NULL");
     }
-    take_gil(ceval_r, tstate);
+    take_gil(ceval, tstate);
     exit_thread_if_finalizing(tstate);
 }
 
@@ -242,21 +291,12 @@ void
 PyEval_ReleaseLock(void)
 {
     _PyRuntimeState *runtime = &_PyRuntime;
+    PyThreadState *tstate = _PyRuntimeState_GetThreadState(runtime);
     /* This function must succeed when the current thread state is NULL.
        We therefore avoid PyThreadState_Get() which dumps a fatal error
        in debug mode.
     */
-    PyThreadState *tstate = _PyRuntimeState_GetThreadState(runtime);
-    // Fall back to the main interpreter if there is not active Python
-    // thread.  This only affects the eval_breaker.
-    PyInterpreterState *interp = runtime->interpreters.main;
-    if (tstate != NULL) {
-        interp = tstate->interp;
-        if (interp == NULL) {
-            Py_FatalError("PyEval_ReleaseLock: NULL interpreter state");
-        }
-    }
-    drop_gil(&runtime->ceval, &interp->ceval, tstate);
+    drop_gil(&runtime->ceval, tstate);
 }
 
 void
@@ -265,19 +305,13 @@ PyEval_AcquireThread(PyThreadState *tstate)
     if (tstate == NULL) {
         Py_FatalError("PyEval_AcquireThread: NULL new thread state");
     }
-    PyInterpreterState *interp = tstate->interp;
-    if (interp == NULL) {
-        Py_FatalError("PyEval_AcquireThread: NULL interpreter state");
-    }
-    _PyRuntimeState *runtime = interp->runtime;
-    if (runtime == NULL) {
-        Py_FatalError("PyEval_AcquireThread: NULL runtime state");
-    }
-    struct _ceval_runtime_state *ceval_r = &runtime->ceval;
+
+    _PyRuntimeState *runtime = tstate->interp->runtime;
+    struct _ceval_runtime_state *ceval = &runtime->ceval;
 
     /* Check someone has called PyEval_InitThreads() to create the lock */
-    assert(gil_created(&ceval_r->gil));
-    take_gil(ceval_r, tstate);
+    assert(gil_created(&ceval->gil));
+    take_gil(ceval, tstate);
     exit_thread_if_finalizing(tstate);
     if (_PyThreadState_Swap(&runtime->gilstate, tstate) != NULL) {
         Py_FatalError("PyEval_AcquireThread: non-NULL old thread state");
@@ -290,20 +324,13 @@ PyEval_ReleaseThread(PyThreadState *tstate)
     if (tstate == NULL) {
         Py_FatalError("PyEval_ReleaseThread: NULL thread state");
     }
-    PyInterpreterState *interp = tstate->interp;
-    if (interp == NULL) {
-        Py_FatalError("PyEval_ReleaseThread: NULL interpreter state");
-    }
-    _PyRuntimeState *runtime = interp->runtime;
-    if (runtime == NULL) {
-        Py_FatalError("PyEval_ReleaseThread: NULL runtime state");
-    }
 
+    _PyRuntimeState *runtime = tstate->interp->runtime;
     PyThreadState *new_tstate = _PyThreadState_Swap(&runtime->gilstate, NULL);
     if (new_tstate != tstate) {
         Py_FatalError("PyEval_ReleaseThread: wrong thread state");
     }
-    drop_gil(&runtime->ceval, &interp->ceval, tstate);
+    drop_gil(&runtime->ceval, tstate);
 }
 
 /* This function is called from PyOS_AfterFork_Child to destroy all threads
@@ -314,75 +341,60 @@ PyEval_ReleaseThread(PyThreadState *tstate)
 void
 _PyEval_ReInitThreads(_PyRuntimeState *runtime)
 {
-    struct _ceval_runtime_state *ceval_r = &runtime->ceval;
-    if (!gil_created(&ceval_r->gil)) {
+    struct _ceval_runtime_state *ceval = &runtime->ceval;
+    if (!gil_created(&ceval->gil)) {
         return;
     }
-    recreate_gil(&ceval_r->gil);
+    recreate_gil(&ceval->gil);
     PyThreadState *current_tstate = _PyRuntimeState_GetThreadState(runtime);
-    take_gil(ceval_r, current_tstate);
+    take_gil(ceval, current_tstate);
 
-    // Only the main interpreter remains, so ignore the rest.
-    PyInterpreterState *interp = _PyRuntime.interpreters.main;
-    struct _ceval_pending_calls *pending = &interp->ceval.pending;
+    struct _pending_calls *pending = &ceval->pending;
     pending->lock = PyThread_allocate_lock();
     if (pending->lock == NULL) {
         Py_FatalError("Can't initialize threads for pending calls");
     }
 
     /* Destroy all threads except the current one */
-    _PyThreadState_DeleteExcept(current_tstate);
+    _PyThreadState_DeleteExcept(runtime, current_tstate);
 }
 
 /* This function is used to signal that async exceptions are waiting to be
    raised. */
 
 void
-_PyEval_SignalAsyncExc(struct _ceval_runtime_state *ceval_r,
-                       struct _ceval_interpreter_state *ceval_i)
+_PyEval_SignalAsyncExc(struct _ceval_runtime_state *ceval)
 {
-    SIGNAL_ASYNC_EXC(ceval_r, ceval_i);
+    SIGNAL_ASYNC_EXC(ceval);
 }
 
 PyThreadState *
 PyEval_SaveThread(void)
 {
     _PyRuntimeState *runtime = &_PyRuntime;
-    struct _ceval_runtime_state *ceval_r = &runtime->ceval;
+    struct _ceval_runtime_state *ceval = &runtime->ceval;
     PyThreadState *tstate = _PyThreadState_Swap(&runtime->gilstate, NULL);
     if (tstate == NULL) {
         Py_FatalError("PyEval_SaveThread: NULL tstate");
     }
-    PyInterpreterState *interp = tstate->interp;
-    if (interp == NULL) {
-        Py_FatalError("PyEval_SaveThread: NULL interpreter state");
-    }
-
-    assert(gil_created(&ceval_r->gil));
-    drop_gil(ceval_r, &interp->ceval, tstate);
+    assert(gil_created(&ceval->gil));
+    drop_gil(ceval, tstate);
     return tstate;
 }
 
 void
 PyEval_RestoreThread(PyThreadState *tstate)
 {
+    _PyRuntimeState *runtime = tstate->interp->runtime;
+    struct _ceval_runtime_state *ceval = &runtime->ceval;
+
     if (tstate == NULL) {
         Py_FatalError("PyEval_RestoreThread: NULL tstate");
     }
-    PyInterpreterState *interp = tstate->interp;
-    if (interp == NULL) {
-        Py_FatalError("PyEval_RestoreThread: NULL interpreter state");
-    }
-    _PyRuntimeState *runtime = interp->runtime;
-    if (runtime == NULL) {
-        Py_FatalError("PyEval_RestoreThread: NULL runtime state");
-    }
-    struct _ceval_runtime_state *ceval_r = &runtime->ceval;
-
-    assert(gil_created(&ceval_r->gil));
+    assert(gil_created(&ceval->gil));
 
     int err = errno;
-    take_gil(ceval_r, tstate);
+    take_gil(ceval, tstate);
     exit_thread_if_finalizing(tstate);
     errno = err;
 
@@ -413,17 +425,17 @@ PyEval_RestoreThread(PyThreadState *tstate)
 */
 
 void
-_PyEval_SignalReceived(struct _ceval_runtime_state *ceval_r)
+_PyEval_SignalReceived(struct _ceval_runtime_state *ceval)
 {
     /* bpo-30703: Function called when the C signal handler of Python gets a
        signal. We cannot queue a callback using Py_AddPendingCall() since
        that function is not async-signal-safe. */
-    SIGNAL_PENDING_SIGNALS(ceval_r);
+    SIGNAL_PENDING_SIGNALS(ceval);
 }
 
 /* Push one item onto the queue while holding the lock. */
 static int
-_push_pending_call(struct _ceval_pending_calls *pending, unsigned long thread_id,
+_push_pending_call(struct _pending_calls *pending,
                    int (*func)(void *), void *arg)
 {
     int i = pending->last;
@@ -431,7 +443,6 @@ _push_pending_call(struct _ceval_pending_calls *pending, unsigned long thread_id
     if (j == pending->first) {
         return -1; /* Queue full */
     }
-    pending->calls[i].thread_id = thread_id;
     pending->calls[i].func = func;
     pending->calls[i].arg = arg;
     pending->last = j;
@@ -440,7 +451,7 @@ _push_pending_call(struct _ceval_pending_calls *pending, unsigned long thread_id
 
 /* Pop one item off the queue while holding the lock. */
 static void
-_pop_pending_call(struct _ceval_pending_calls *pending, unsigned long *thread_id,
+_pop_pending_call(struct _pending_calls *pending,
                   int (**func)(void *), void **arg)
 {
     int i = pending->first;
@@ -450,7 +461,6 @@ _pop_pending_call(struct _ceval_pending_calls *pending, unsigned long *thread_id
 
     *func = pending->calls[i].func;
     *arg = pending->calls[i].arg;
-    *thread_id = pending->calls[i].thread_id;
     pending->first = (i + 1) % NPENDINGCALLS;
 }
 
@@ -461,12 +471,10 @@ _pop_pending_call(struct _ceval_pending_calls *pending, unsigned long *thread_id
 
 int
 _PyEval_AddPendingCall(PyThreadState *tstate,
-                       struct _ceval_runtime_state *ceval_r,
-                       struct _ceval_interpreter_state *ceval_i,
-                       unsigned long thread_id,
+                       struct _ceval_runtime_state *ceval,
                        int (*func)(void *), void *arg)
 {
-    struct _ceval_pending_calls *pending = &ceval_i->pending;
+    struct _pending_calls *pending = &ceval->pending;
 
     PyThread_acquire_lock(pending->lock, WAIT_LOCK);
     if (pending->finishing) {
@@ -481,27 +489,20 @@ _PyEval_AddPendingCall(PyThreadState *tstate,
         _PyErr_Restore(tstate, exc, val, tb);
         return -1;
     }
-    int result = _push_pending_call(pending, thread_id, func, arg);
-
-    /* signal loop */
-    SIGNAL_PENDING_CALLS(ceval_r, ceval_i);
+    int result = _push_pending_call(pending, func, arg);
     PyThread_release_lock(pending->lock);
 
+    /* signal main loop */
+    SIGNAL_PENDING_CALLS(ceval);
     return result;
 }
 
-/* Py_AddPendingCall() is a simple wrapper for the sake
-   of backward-compatibility. */
 int
 Py_AddPendingCall(int (*func)(void *), void *arg)
 {
     _PyRuntimeState *runtime = &_PyRuntime;
-    PyInterpreterState *interp = runtime->interpreters.main;
     PyThreadState *tstate = _PyRuntimeState_GetThreadState(runtime);
-    return _PyEval_AddPendingCall(tstate,
-                                  &runtime->ceval, &interp->ceval,
-                                  runtime->main_thread,
-                                  func, arg);
+    return _PyEval_AddPendingCall(tstate, &runtime->ceval, func, arg);
 }
 
 static int
@@ -522,68 +523,46 @@ handle_signals(_PyRuntimeState *runtime)
         return 0;
     }
 
-    struct _ceval_runtime_state *ceval_r = &runtime->ceval;
-    struct _ceval_interpreter_state *ceval_i = &interp->ceval;
-    UNSIGNAL_PENDING_SIGNALS(ceval_r, ceval_i);
+    struct _ceval_runtime_state *ceval = &runtime->ceval;
+    UNSIGNAL_PENDING_SIGNALS(ceval);
     if (_PyErr_CheckSignals() < 0) {
-        SIGNAL_PENDING_SIGNALS(ceval_r); /* We're not done yet */
+        SIGNAL_PENDING_SIGNALS(ceval); /* We're not done yet */
         return -1;
     }
     return 0;
 }
 
 static int
-make_pending_calls(PyInterpreterState *interp)
+make_pending_calls(_PyRuntimeState *runtime)
 {
-    if (interp == NULL) {
-        Py_FatalError("make_pending_calls: NULL interpreter state");
-    }
-    _PyRuntimeState *runtime = interp->runtime;
-    if (runtime == NULL) {
-        Py_FatalError("make_pending_calls: NULL runtime state");
-    }
-    PyThreadState *tstate = _PyRuntimeState_GetThreadState(runtime);
-    if (tstate == NULL) {
-        Py_FatalError("make_pending_calls: NULL thread state");
-    }
-    if (tstate->interp == NULL || tstate->interp != interp) {
-        Py_FatalError("make_pending_calls: thread state mismatch");
-    }
     static int busy = 0;
+
+    /* only service pending calls on main thread */
+    if (PyThread_get_thread_ident() != runtime->main_thread) {
+        return 0;
+    }
 
     /* don't perform recursive pending calls */
     if (busy) {
         return 0;
     }
     busy = 1;
-    struct _ceval_runtime_state *ceval_r = &runtime->ceval;
-    struct _ceval_interpreter_state *ceval_i = &interp->ceval;
+    struct _ceval_runtime_state *ceval = &runtime->ceval;
     /* unsignal before starting to call callbacks, so that any callback
        added in-between re-signals */
-    UNSIGNAL_PENDING_CALLS(ceval_r, ceval_i);
+    UNSIGNAL_PENDING_CALLS(ceval);
     int res = 0;
 
     /* perform a bounded number of calls, in case of recursion */
-    struct _ceval_pending_calls *pending = &ceval_i->pending;
-    unsigned long thread_id = 0;
+    struct _pending_calls *pending = &ceval->pending;
     for (int i=0; i<NPENDINGCALLS; i++) {
         int (*func)(void *) = NULL;
         void *arg = NULL;
 
         /* pop one item off the queue while holding the lock */
         PyThread_acquire_lock(pending->lock, WAIT_LOCK);
-        _pop_pending_call(pending, &thread_id, &func, &arg);
+        _pop_pending_call(pending, &func, &arg);
         PyThread_release_lock(pending->lock);
-
-        if (thread_id && PyThread_get_thread_ident() != thread_id) {
-            // Thread mismatch, so move it to the end of the list
-            // and start over.
-            _PyEval_AddPendingCall(tstate,
-                                   &runtime->ceval, &interp->ceval,
-                                   thread_id,
-                                   func, arg);
-            goto error;
-        }
 
         /* having released the lock, perform the callback */
         if (func == NULL) {
@@ -600,16 +579,17 @@ make_pending_calls(PyInterpreterState *interp)
 
 error:
     busy = 0;
-    SIGNAL_PENDING_CALLS(ceval_r, ceval_i);
+    SIGNAL_PENDING_CALLS(ceval);
     return res;
 }
 
 void
-_PyEval_FinishPendingCalls(PyInterpreterState *interp)
+_Py_FinishPendingCalls(PyThreadState *tstate)
 {
     assert(PyGILState_Check());
 
-    struct _ceval_pending_calls *pending = &interp->ceval.pending;
+    _PyRuntimeState *runtime = tstate->interp->runtime;
+    struct _pending_calls *pending = &runtime->ceval.pending;
 
     PyThread_acquire_lock(pending->lock, WAIT_LOCK);
     pending->finishing = 1;
@@ -619,19 +599,12 @@ _PyEval_FinishPendingCalls(PyInterpreterState *interp)
         return;
     }
 
-    if (make_pending_calls(interp) < 0) {
-        _PyRuntimeState *runtime = interp->runtime;
-        if (runtime == NULL) {
-            runtime = &_PyRuntime;
-        }
-        PyThreadState *tstate = _PyRuntimeState_GetThreadState(runtime);
-        if (tstate != NULL) {
-            PyObject *exc, *val, *tb;
-            _PyErr_Fetch(tstate, &exc, &val, &tb);
-            PyErr_BadInternalCall();
-            _PyErr_ChainExceptions(exc, val, tb);
-            _PyErr_Print(tstate);
-        }
+    if (make_pending_calls(runtime) < 0) {
+        PyObject *exc, *val, *tb;
+        _PyErr_Fetch(tstate, &exc, &val, &tb);
+        PyErr_BadInternalCall();
+        _PyErr_ChainExceptions(exc, val, tb);
+        _PyErr_Print(tstate);
     }
 }
 
@@ -650,8 +623,7 @@ Py_MakePendingCalls(void)
         return res;
     }
 
-    PyInterpreterState *interp = _PyRuntime.interpreters.main;
-    res = make_pending_calls(interp);
+    res = make_pending_calls(runtime);
     if (res != 0) {
         return res;
     }
@@ -668,37 +640,37 @@ Py_MakePendingCalls(void)
 int _Py_CheckRecursionLimit = Py_DEFAULT_RECURSION_LIMIT;
 
 void
-_PyEval_Initialize(struct _ceval_runtime_state *ceval_r)
+_PyEval_Initialize(struct _ceval_runtime_state *state)
 {
-    ceval_r->recursion_limit = Py_DEFAULT_RECURSION_LIMIT;
+    state->recursion_limit = Py_DEFAULT_RECURSION_LIMIT;
     _Py_CheckRecursionLimit = Py_DEFAULT_RECURSION_LIMIT;
-    _gil_initialize(&ceval_r->gil);
+    _gil_initialize(&state->gil);
 }
 
 int
 Py_GetRecursionLimit(void)
 {
-    return _PyRuntime.ceval.recursion_limit;
+    struct _ceval_runtime_state *ceval = &_PyRuntime.ceval;
+    return ceval->recursion_limit;
 }
 
 void
 Py_SetRecursionLimit(int new_limit)
 {
-    struct _ceval_runtime_state *ceval_r = &_PyRuntime.ceval;
-    ceval_r->recursion_limit = new_limit;
-    _Py_CheckRecursionLimit = ceval_r->recursion_limit;
+    struct _ceval_runtime_state *ceval = &_PyRuntime.ceval;
+    ceval->recursion_limit = new_limit;
+    _Py_CheckRecursionLimit = ceval->recursion_limit;
 }
 
-/* the macro Py_EnterRecursiveCall() only calls _Py_CheckRecursiveCall()
+/* The function _Py_EnterRecursiveCall() only calls _Py_CheckRecursiveCall()
    if the recursion_depth reaches _Py_CheckRecursionLimit.
    If USE_STACKCHECK, the macro decrements _Py_CheckRecursionLimit
    to guarantee that _Py_CheckRecursiveCall() is regularly called.
    Without USE_STACKCHECK, there is no need for this. */
 int
-_Py_CheckRecursiveCall(const char *where)
+_Py_CheckRecursiveCall(PyThreadState *tstate, const char *where)
 {
-    _PyRuntimeState *runtime = &_PyRuntime;
-    PyThreadState *tstate = _PyRuntimeState_GetThreadState(runtime);
+    _PyRuntimeState *runtime = tstate->interp->runtime;
     int recursion_limit = runtime->ceval.recursion_limit;
 
 #ifdef USE_STACKCHECK
@@ -735,7 +707,7 @@ _Py_CheckRecursiveCall(const char *where)
 static int do_raise(PyThreadState *tstate, PyObject *exc, PyObject *cause);
 static int unpack_iterable(PyThreadState *, PyObject *, int, int, PyObject **);
 
-#define _Py_TracingPossible(ceval_r) ((ceval_r)->tracing_possible)
+#define _Py_TracingPossible(ceval) ((ceval)->tracing_possible)
 
 
 PyObject *
@@ -753,18 +725,20 @@ PyEval_EvalCode(PyObject *co, PyObject *globals, PyObject *locals)
 /* Interpreter main loop */
 
 PyObject *
-PyEval_EvalFrame(PyFrameObject *f) {
+PyEval_EvalFrame(PyFrameObject *f)
+{
     /* This is for backward compatibility with extension modules that
        used this API; core interpreter code should call
        PyEval_EvalFrameEx() */
-    return PyEval_EvalFrameEx(f, 0);
+    PyThreadState *tstate = _PyThreadState_GET();
+    return _PyEval_EvalFrame(tstate, f, 0);
 }
 
 PyObject *
 PyEval_EvalFrameEx(PyFrameObject *f, int throwflag)
 {
-    PyInterpreterState *interp = _PyInterpreterState_GET_UNSAFE();
-    return interp->eval_frame(f, throwflag);
+    PyThreadState *tstate = _PyThreadState_GET();
+    return _PyEval_EvalFrame(tstate, f, throwflag);
 }
 
 PyObject* _Py_HOT_FUNCTION
@@ -781,10 +755,8 @@ _PyEval_EvalFrameDefault(PyFrameObject *f, int throwflag)
     PyObject *retval = NULL;            /* Return value */
     _PyRuntimeState * const runtime = &_PyRuntime;
     PyThreadState * const tstate = _PyRuntimeState_GetThreadState(runtime);
-    PyInterpreterState * const interp = tstate->interp;
-    struct _ceval_runtime_state * const ceval_r = &runtime->ceval;
-    struct _ceval_interpreter_state * const ceval_i = &interp->ceval;
-    _Py_atomic_int * const eval_breaker = &ceval_r->eval_breaker;
+    struct _ceval_runtime_state * const ceval = &runtime->ceval;
+    _Py_atomic_int * const eval_breaker = &ceval->eval_breaker;
     PyCodeObject *co;
 
     /* when tracing we set things up so that
@@ -799,6 +771,7 @@ _PyEval_EvalFrameDefault(PyFrameObject *f, int throwflag)
     const _Py_CODEUNIT *first_instr;
     PyObject *names;
     PyObject *consts;
+    _PyOpcache *co_opcache;
 
 #ifdef LLTRACE
     _Py_IDENTIFIER(__ltrace__);
@@ -871,7 +844,7 @@ _PyEval_EvalFrameDefault(PyFrameObject *f, int throwflag)
 #ifdef LLTRACE
 #define FAST_DISPATCH() \
     { \
-        if (!lltrace && !_Py_TracingPossible(ceval_r) && !PyDTrace_LINE_ENABLED()) { \
+        if (!lltrace && !_Py_TracingPossible(ceval) && !PyDTrace_LINE_ENABLED()) { \
             f->f_lasti = INSTR_OFFSET(); \
             NEXTOPARG(); \
             goto *opcode_targets[opcode]; \
@@ -881,7 +854,7 @@ _PyEval_EvalFrameDefault(PyFrameObject *f, int throwflag)
 #else
 #define FAST_DISPATCH() \
     { \
-        if (!_Py_TracingPossible(ceval_r) && !PyDTrace_LINE_ENABLED()) { \
+        if (!_Py_TracingPossible(ceval) && !PyDTrace_LINE_ENABLED()) { \
             f->f_lasti = INSTR_OFFSET(); \
             NEXTOPARG(); \
             goto *opcode_targets[opcode]; \
@@ -1061,11 +1034,52 @@ _PyEval_EvalFrameDefault(PyFrameObject *f, int throwflag)
         Py_XDECREF(traceback); \
     } while(0)
 
+    /* macros for opcode cache */
+#define OPCACHE_CHECK() \
+    do { \
+        co_opcache = NULL; \
+        if (co->co_opcache != NULL) { \
+            unsigned char co_opt_offset = \
+                co->co_opcache_map[next_instr - first_instr]; \
+            if (co_opt_offset > 0) { \
+                assert(co_opt_offset <= co->co_opcache_size); \
+                co_opcache = &co->co_opcache[co_opt_offset - 1]; \
+                assert(co_opcache != NULL); \
+            } \
+        } \
+    } while (0)
+
+#if OPCACHE_STATS
+
+#define OPCACHE_STAT_GLOBAL_HIT() \
+    do { \
+        if (co->co_opcache != NULL) opcache_global_hits++; \
+    } while (0)
+
+#define OPCACHE_STAT_GLOBAL_MISS() \
+    do { \
+        if (co->co_opcache != NULL) opcache_global_misses++; \
+    } while (0)
+
+#define OPCACHE_STAT_GLOBAL_OPT() \
+    do { \
+        if (co->co_opcache != NULL) opcache_global_opts++; \
+    } while (0)
+
+#else /* OPCACHE_STATS */
+
+#define OPCACHE_STAT_GLOBAL_HIT()
+#define OPCACHE_STAT_GLOBAL_MISS()
+#define OPCACHE_STAT_GLOBAL_OPT()
+
+#endif
+
 /* Start of code */
 
     /* push frame */
-    if (Py_EnterRecursiveCall(""))
+    if (_Py_EnterRecursiveCall(tstate, "")) {
         return NULL;
+    }
 
     tstate->frame = f;
 
@@ -1142,6 +1156,20 @@ _PyEval_EvalFrameDefault(PyFrameObject *f, int throwflag)
     f->f_stacktop = NULL;       /* remains NULL unless yield suspends frame */
     f->f_executing = 1;
 
+    if (co->co_opcache_flag < OPCACHE_MIN_RUNS) {
+        co->co_opcache_flag++;
+        if (co->co_opcache_flag == OPCACHE_MIN_RUNS) {
+            if (_PyCode_InitOpcache(co) < 0) {
+                return NULL;
+            }
+#if OPCACHE_STATS
+            opcache_code_objects_extra_mem +=
+                PyBytes_Size(co->co_code) / sizeof(_Py_CODEUNIT) +
+                sizeof(_PyOpcache) * co->co_opcache_size;
+            opcache_code_objects++;
+#endif
+        }
+    }
 
 #ifdef LLTRACE
     lltrace = _PyDict_GetItemId(f->f_globals, &PyId___ltrace__) != NULL;
@@ -1196,27 +1224,27 @@ main_loop:
                 goto fast_next_opcode;
             }
 
-            if (_Py_atomic_load_relaxed(&ceval_r->signals_pending)) {
+            if (_Py_atomic_load_relaxed(&ceval->signals_pending)) {
                 if (handle_signals(runtime) != 0) {
                     goto error;
                 }
             }
-            if (_Py_atomic_load_relaxed(&ceval_i->pending.calls_to_do)) {
-                if (make_pending_calls(interp) != 0) {
+            if (_Py_atomic_load_relaxed(&ceval->pending.calls_to_do)) {
+                if (make_pending_calls(runtime) != 0) {
                     goto error;
                 }
             }
 
-            if (_Py_atomic_load_relaxed(&ceval_r->gil_drop_request)) {
+            if (_Py_atomic_load_relaxed(&ceval->gil_drop_request)) {
                 /* Give another thread a chance */
                 if (_PyThreadState_Swap(&runtime->gilstate, NULL) != tstate) {
                     Py_FatalError("ceval: tstate mix-up");
                 }
-                drop_gil(ceval_r, ceval_i, tstate);
+                drop_gil(ceval, tstate);
 
                 /* Other threads may run now */
 
-                take_gil(ceval_r, tstate);
+                take_gil(ceval, tstate);
 
                 /* Check if we should make a quick exit. */
                 exit_thread_if_finalizing(tstate);
@@ -1229,7 +1257,7 @@ main_loop:
             if (tstate->async_exc != NULL) {
                 PyObject *exc = tstate->async_exc;
                 tstate->async_exc = NULL;
-                UNSIGNAL_ASYNC_EXC(ceval_r, ceval_i);
+                UNSIGNAL_ASYNC_EXC(ceval);
                 _PyErr_SetNone(tstate, exc);
                 Py_DECREF(exc);
                 goto error;
@@ -1244,7 +1272,7 @@ main_loop:
 
         /* line-by-line tracing support */
 
-        if (_Py_TracingPossible(ceval_r) &&
+        if (_Py_TracingPossible(ceval) &&
             tstate->c_tracefunc != NULL && !tstate->tracing) {
             int err;
             /* see maybe_call_line_trace
@@ -1851,7 +1879,7 @@ main_loop:
                 Py_DECREF(value);
                 goto error;
             }
-            res = PyObject_CallFunctionObjArgs(hook, value, NULL);
+            res = _PyObject_CallOneArg(hook, value);
             Py_DECREF(value);
             if (res == NULL)
                 goto error;
@@ -1884,7 +1912,8 @@ main_loop:
         case TARGET(RETURN_VALUE): {
             retval = POP();
             assert(f->f_iblock == 0);
-            goto exit_returning;
+            assert(EMPTY());
+            goto exiting;
         }
 
         case TARGET(GET_AITER): {
@@ -1988,7 +2017,12 @@ main_loop:
             PyObject *iter = _PyCoro_GetAwaitableIter(iterable);
 
             if (iter == NULL) {
+                int opcode_at_minus_3 = 0;
+                if ((next_instr - first_instr) > 2) {
+                    opcode_at_minus_3 = _Py_OPCODE(next_instr[-3]);
+                }
                 format_awaitable_error(tstate, Py_TYPE(iterable),
+                                       opcode_at_minus_3,
                                        _Py_OPCODE(next_instr[-2]));
             }
 
@@ -2029,7 +2063,7 @@ main_loop:
                 if (v == Py_None)
                     retval = Py_TYPE(receiver)->tp_iternext(receiver);
                 else
-                    retval = _PyObject_CallMethodIdObjArgs(receiver, &PyId_send, v, NULL);
+                    retval = _PyObject_CallMethodIdOneArg(receiver, &PyId_send, v);
             }
             Py_DECREF(v);
             if (retval == NULL) {
@@ -2049,7 +2083,7 @@ main_loop:
             /* and repeat... */
             assert(f->f_lasti >= (int)sizeof(_Py_CODEUNIT));
             f->f_lasti -= sizeof(_Py_CODEUNIT);
-            goto exit_yielding;
+            goto exiting;
         }
 
         case TARGET(YIELD_VALUE): {
@@ -2066,7 +2100,7 @@ main_loop:
             }
 
             f->f_stacktop = stack_pointer;
-            goto exit_yielding;
+            goto exiting;
         }
 
         case TARGET(POP_EXCEPT): {
@@ -2099,104 +2133,13 @@ main_loop:
             DISPATCH();
         }
 
-        case TARGET(POP_FINALLY): {
-            /* If oparg is 0 at the top of the stack are 1 or 6 values:
-               Either:
-                - TOP = NULL or an integer
-               or:
-                - (TOP, SECOND, THIRD) = exc_info()
-                - (FOURTH, FITH, SIXTH) = previous exception for EXCEPT_HANDLER
-
-               If oparg is 1 the value for 'return' was additionally pushed
-               at the top of the stack.
-            */
-            PyObject *res = NULL;
-            if (oparg) {
-                res = POP();
-            }
+        case TARGET(RERAISE): {
             PyObject *exc = POP();
-            if (exc == NULL || PyLong_CheckExact(exc)) {
-                Py_XDECREF(exc);
-            }
-            else {
-                Py_DECREF(exc);
-                Py_DECREF(POP());
-                Py_DECREF(POP());
-
-                PyObject *type, *value, *traceback;
-                _PyErr_StackItem *exc_info;
-                PyTryBlock *b = PyFrame_BlockPop(f);
-                if (b->b_type != EXCEPT_HANDLER) {
-                    _PyErr_SetString(tstate, PyExc_SystemError,
-                                     "popped block is not an except handler");
-                    Py_XDECREF(res);
-                    goto error;
-                }
-                assert(STACK_LEVEL() == (b)->b_level + 3);
-                exc_info = tstate->exc_info;
-                type = exc_info->exc_type;
-                value = exc_info->exc_value;
-                traceback = exc_info->exc_traceback;
-                exc_info->exc_type = POP();
-                exc_info->exc_value = POP();
-                exc_info->exc_traceback = POP();
-                Py_XDECREF(type);
-                Py_XDECREF(value);
-                Py_XDECREF(traceback);
-            }
-            if (oparg) {
-                PUSH(res);
-            }
-            DISPATCH();
-        }
-
-        case TARGET(CALL_FINALLY): {
-            PyObject *ret = PyLong_FromLong(INSTR_OFFSET());
-            if (ret == NULL) {
-                goto error;
-            }
-            PUSH(ret);
-            JUMPBY(oparg);
-            FAST_DISPATCH();
-        }
-
-        case TARGET(BEGIN_FINALLY): {
-            /* Push NULL onto the stack for using it in END_FINALLY,
-               POP_FINALLY, WITH_CLEANUP_START and WITH_CLEANUP_FINISH.
-             */
-            PUSH(NULL);
-            FAST_DISPATCH();
-        }
-
-        case TARGET(END_FINALLY): {
-            PREDICTED(END_FINALLY);
-            /* At the top of the stack are 1 or 6 values:
-               Either:
-                - TOP = NULL or an integer
-               or:
-                - (TOP, SECOND, THIRD) = exc_info()
-                - (FOURTH, FITH, SIXTH) = previous exception for EXCEPT_HANDLER
-            */
-            PyObject *exc = POP();
-            if (exc == NULL) {
-                FAST_DISPATCH();
-            }
-            else if (PyLong_CheckExact(exc)) {
-                int ret = _PyLong_AsInt(exc);
-                Py_DECREF(exc);
-                if (ret == -1 && _PyErr_Occurred(tstate)) {
-                    goto error;
-                }
-                JUMPTO(ret);
-                FAST_DISPATCH();
-            }
-            else {
-                assert(PyExceptionClass_Check(exc));
-                PyObject *val = POP();
-                PyObject *tb = POP();
-                _PyErr_Restore(tstate, exc, val, tb);
-                goto exception_unwind;
-            }
+            PyObject *val = POP();
+            PyObject *tb = POP();
+            assert(PyExceptionClass_Check(exc));
+            PyErr_Restore(exc, val, tb);
+            goto exception_unwind;
         }
 
         case TARGET(END_ASYNC_FOR): {
@@ -2217,6 +2160,13 @@ main_loop:
                 _PyErr_Restore(tstate, exc, val, tb);
                 goto exception_unwind;
             }
+        }
+
+        case TARGET(LOAD_ASSERTION_ERROR): {
+            PyObject *value = PyExc_AssertionError;
+            Py_INCREF(value);
+            PUSH(value);
+            FAST_DISPATCH();
         }
 
         case TARGET(LOAD_BUILD_CLASS): {
@@ -2451,11 +2401,30 @@ main_loop:
         }
 
         case TARGET(LOAD_GLOBAL): {
-            PyObject *name = GETITEM(names, oparg);
+            PyObject *name;
             PyObject *v;
             if (PyDict_CheckExact(f->f_globals)
                 && PyDict_CheckExact(f->f_builtins))
             {
+                OPCACHE_CHECK();
+                if (co_opcache != NULL && co_opcache->optimized > 0) {
+                    _PyOpcache_LoadGlobal *lg = &co_opcache->u.lg;
+
+                    if (lg->globals_ver ==
+                            ((PyDictObject *)f->f_globals)->ma_version_tag
+                        && lg->builtins_ver ==
+                           ((PyDictObject *)f->f_builtins)->ma_version_tag)
+                    {
+                        PyObject *ptr = lg->ptr;
+                        OPCACHE_STAT_GLOBAL_HIT();
+                        assert(ptr != NULL);
+                        Py_INCREF(ptr);
+                        PUSH(ptr);
+                        DISPATCH();
+                    }
+                }
+
+                name = GETITEM(names, oparg);
                 v = _PyDict_LoadGlobal((PyDictObject *)f->f_globals,
                                        (PyDictObject *)f->f_builtins,
                                        name);
@@ -2468,12 +2437,32 @@ main_loop:
                     }
                     goto error;
                 }
+
+                if (co_opcache != NULL) {
+                    _PyOpcache_LoadGlobal *lg = &co_opcache->u.lg;
+
+                    if (co_opcache->optimized == 0) {
+                        /* Wasn't optimized before. */
+                        OPCACHE_STAT_GLOBAL_OPT();
+                    } else {
+                        OPCACHE_STAT_GLOBAL_MISS();
+                    }
+
+                    co_opcache->optimized = 1;
+                    lg->globals_ver =
+                        ((PyDictObject *)f->f_globals)->ma_version_tag;
+                    lg->builtins_ver =
+                        ((PyDictObject *)f->f_builtins)->ma_version_tag;
+                    lg->ptr = v; /* borrowed */
+                }
+
                 Py_INCREF(v);
             }
             else {
                 /* Slow-path if globals or builtins is not a dict */
 
                 /* namespace 1: globals */
+                name = GETITEM(names, oparg);
                 v = PyObject_GetItem(f->f_globals, name);
                 if (v == NULL) {
                     if (!_PyErr_ExceptionMatches(tstate, PyExc_KeyError)) {
@@ -2632,46 +2621,46 @@ main_loop:
             DISPATCH();
         }
 
-        case TARGET(BUILD_TUPLE_UNPACK_WITH_CALL):
-        case TARGET(BUILD_TUPLE_UNPACK):
-        case TARGET(BUILD_LIST_UNPACK): {
-            int convert_to_tuple = opcode != BUILD_LIST_UNPACK;
-            Py_ssize_t i;
-            PyObject *sum = PyList_New(0);
-            PyObject *return_value;
-
-            if (sum == NULL)
+        case TARGET(LIST_TO_TUPLE): {
+            PyObject *list = POP();
+            PyObject *tuple = PyList_AsTuple(list);
+            Py_DECREF(list);
+            if (tuple == NULL) {
                 goto error;
+            }
+            PUSH(tuple);
+            DISPATCH();
+        }
 
-            for (i = oparg; i > 0; i--) {
-                PyObject *none_val;
-
-                none_val = _PyList_Extend((PyListObject *)sum, PEEK(i));
-                if (none_val == NULL) {
-                    if (opcode == BUILD_TUPLE_UNPACK_WITH_CALL &&
-                        _PyErr_ExceptionMatches(tstate, PyExc_TypeError))
-                    {
-                        check_args_iterable(tstate, PEEK(1 + oparg), PEEK(i));
-                    }
-                    Py_DECREF(sum);
-                    goto error;
+        case TARGET(LIST_EXTEND): {
+            PyObject *iterable = POP();
+            PyObject *list = PEEK(oparg);
+            PyObject *none_val = _PyList_Extend((PyListObject *)list, iterable);
+            if (none_val == NULL) {
+                if (_PyErr_ExceptionMatches(tstate, PyExc_TypeError) &&
+                   (iterable->ob_type->tp_iter == NULL && !PySequence_Check(iterable)))
+                {
+                    PyErr_Clear();
+                    _PyErr_Format(tstate, PyExc_TypeError,
+                          "Value after * must be an iterable, not %.200s",
+                          Py_TYPE(iterable)->tp_name);
                 }
-                Py_DECREF(none_val);
+                Py_DECREF(iterable);
+                goto error;
             }
+            Py_DECREF(none_val);
+            Py_DECREF(iterable);
+            DISPATCH();
+        }
 
-            if (convert_to_tuple) {
-                return_value = PyList_AsTuple(sum);
-                Py_DECREF(sum);
-                if (return_value == NULL)
-                    goto error;
+        case TARGET(SET_UPDATE): {
+            PyObject *iterable = POP();
+            PyObject *set = PEEK(oparg);
+            int err = _PySet_Update(set, iterable);
+            Py_DECREF(iterable);
+            if (err < 0) {
+                goto error;
             }
-            else {
-                return_value = sum;
-            }
-
-            while (oparg--)
-                Py_DECREF(POP());
-            PUSH(return_value);
             DISPATCH();
         }
 
@@ -2693,25 +2682,6 @@ main_loop:
                 goto error;
             }
             PUSH(set);
-            DISPATCH();
-        }
-
-        case TARGET(BUILD_SET_UNPACK): {
-            Py_ssize_t i;
-            PyObject *sum = PySet_New(NULL);
-            if (sum == NULL)
-                goto error;
-
-            for (i = oparg; i > 0; i--) {
-                if (_PySet_Update(sum, PEEK(i)) < 0) {
-                    Py_DECREF(sum);
-                    goto error;
-                }
-            }
-
-            while (oparg--)
-                Py_DECREF(POP());
-            PUSH(sum);
             DISPATCH();
         }
 
@@ -2831,55 +2801,39 @@ main_loop:
             DISPATCH();
         }
 
-        case TARGET(BUILD_MAP_UNPACK): {
-            Py_ssize_t i;
-            PyObject *sum = PyDict_New();
-            if (sum == NULL)
-                goto error;
-
-            for (i = oparg; i > 0; i--) {
-                PyObject *arg = PEEK(i);
-                if (PyDict_Update(sum, arg) < 0) {
-                    if (_PyErr_ExceptionMatches(tstate, PyExc_AttributeError)) {
-                        _PyErr_Format(tstate, PyExc_TypeError,
-                                      "'%.200s' object is not a mapping",
-                                      arg->ob_type->tp_name);
-                    }
-                    Py_DECREF(sum);
-                    goto error;
+        case TARGET(DICT_UPDATE): {
+            PyObject *update = POP();
+            PyObject *dict = PEEK(oparg);
+            if (PyDict_Update(dict, update) < 0) {
+                if (_PyErr_ExceptionMatches(tstate, PyExc_AttributeError)) {
+                    _PyErr_Format(tstate, PyExc_TypeError,
+                                    "'%.200s' object is not a mapping",
+                                    update->ob_type->tp_name);
                 }
+                Py_DECREF(update);
+                goto error;
             }
-
-            while (oparg--)
-                Py_DECREF(POP());
-            PUSH(sum);
+            Py_DECREF(update);
             DISPATCH();
         }
 
-        case TARGET(BUILD_MAP_UNPACK_WITH_CALL): {
-            Py_ssize_t i;
-            PyObject *sum = PyDict_New();
-            if (sum == NULL)
+        case TARGET(DICT_MERGE): {
+            PyObject *update = POP();
+            PyObject *dict = PEEK(oparg);
+
+            if (_PyDict_MergeEx(dict, update, 2) < 0) {
+                format_kwargs_error(tstate, PEEK(2 + oparg), update);
+                Py_DECREF(update);
                 goto error;
-
-            for (i = oparg; i > 0; i--) {
-                PyObject *arg = PEEK(i);
-                if (_PyDict_MergeEx(sum, arg, 2) < 0) {
-                    Py_DECREF(sum);
-                    format_kwargs_error(tstate, PEEK(2 + oparg), arg);
-                    goto error;
-                }
             }
-
-            while (oparg--)
-                Py_DECREF(POP());
-            PUSH(sum);
+            Py_DECREF(update);
+            PREDICT(CALL_FUNCTION_EX);
             DISPATCH();
         }
 
         case TARGET(MAP_ADD): {
-            PyObject *key = TOP();
-            PyObject *value = SECOND();
+            PyObject *value = TOP();
+            PyObject *key = SECOND();
             PyObject *map;
             int err;
             STACK_SHRINK(2);
@@ -2906,16 +2860,92 @@ main_loop:
         }
 
         case TARGET(COMPARE_OP): {
+            assert(oparg <= Py_GE);
             PyObject *right = POP();
             PyObject *left = TOP();
-            PyObject *res = cmp_outcome(tstate, oparg, left, right);
+            PyObject *res = PyObject_RichCompare(left, right, oparg);
+            SET_TOP(res);
             Py_DECREF(left);
             Py_DECREF(right);
-            SET_TOP(res);
             if (res == NULL)
                 goto error;
             PREDICT(POP_JUMP_IF_FALSE);
             PREDICT(POP_JUMP_IF_TRUE);
+            DISPATCH();
+        }
+
+        case TARGET(IS_OP): {
+            PyObject *right = POP();
+            PyObject *left = TOP();
+            int res = (left == right)^oparg;
+            PyObject *b = res ? Py_True : Py_False;
+            Py_INCREF(b);
+            SET_TOP(b);
+            Py_DECREF(left);
+            Py_DECREF(right);
+            PREDICT(POP_JUMP_IF_FALSE);
+            PREDICT(POP_JUMP_IF_TRUE);
+            FAST_DISPATCH();
+        }
+
+        case TARGET(CONTAINS_OP): {
+            PyObject *right = POP();
+            PyObject *left = POP();
+            int res = PySequence_Contains(right, left);
+            Py_DECREF(left);
+            Py_DECREF(right);
+            if (res < 0) {
+                goto error;
+            }
+            PyObject *b = (res^oparg) ? Py_True : Py_False;
+            Py_INCREF(b);
+            PUSH(b);
+            PREDICT(POP_JUMP_IF_FALSE);
+            PREDICT(POP_JUMP_IF_TRUE);
+            FAST_DISPATCH();
+        }
+
+#define CANNOT_CATCH_MSG "catching classes that do not inherit from "\
+                         "BaseException is not allowed"
+
+        case TARGET(JUMP_IF_NOT_EXC_MATCH): {
+            PyObject *right = POP();
+            PyObject *left = POP();
+            if (PyTuple_Check(right)) {
+                Py_ssize_t i, length;
+                length = PyTuple_GET_SIZE(right);
+                for (i = 0; i < length; i++) {
+                    PyObject *exc = PyTuple_GET_ITEM(right, i);
+                    if (!PyExceptionClass_Check(exc)) {
+                        _PyErr_SetString(tstate, PyExc_TypeError,
+                                        CANNOT_CATCH_MSG);
+                        Py_DECREF(left);
+                        Py_DECREF(right);
+                        goto error;
+                    }
+                }
+            }
+            else {
+                if (!PyExceptionClass_Check(right)) {
+                    _PyErr_SetString(tstate, PyExc_TypeError,
+                                    CANNOT_CATCH_MSG);
+                    Py_DECREF(left);
+                    Py_DECREF(right);
+                    goto error;
+                }
+            }
+            int res = PyErr_GivenExceptionMatches(left, right);
+            Py_DECREF(left);
+            Py_DECREF(right);
+            if (res > 0) {
+                /* Exception matches -- Do nothing */;
+            }
+            else if (res == 0) {
+                JUMPTO(oparg);
+            }
+            else {
+                goto error;
+            }
             DISPATCH();
         }
 
@@ -3158,31 +3188,27 @@ main_loop:
         }
 
         case TARGET(SETUP_FINALLY): {
-            /* NOTE: If you add any new block-setup opcodes that
-               are not try/except/finally handlers, you may need
-               to update the PyGen_NeedsFinalizing() function.
-               */
-
             PyFrame_BlockSetup(f, SETUP_FINALLY, INSTR_OFFSET() + oparg,
                                STACK_LEVEL());
             DISPATCH();
         }
 
         case TARGET(BEFORE_ASYNC_WITH): {
-            _Py_IDENTIFIER(__aexit__);
             _Py_IDENTIFIER(__aenter__);
-
+            _Py_IDENTIFIER(__aexit__);
             PyObject *mgr = TOP();
-            PyObject *exit = special_lookup(tstate, mgr, &PyId___aexit__),
-                     *enter;
+            PyObject *enter = special_lookup(tstate, mgr, &PyId___aenter__);
             PyObject *res;
-            if (exit == NULL)
+            if (enter == NULL) {
                 goto error;
+            }
+            PyObject *exit = special_lookup(tstate, mgr, &PyId___aexit__);
+            if (exit == NULL) {
+                Py_DECREF(enter);
+                goto error;
+            }
             SET_TOP(exit);
-            enter = special_lookup(tstate, mgr, &PyId___aenter__);
             Py_DECREF(mgr);
-            if (enter == NULL)
-                goto error;
             res = _PyObject_CallNoArg(enter);
             Py_DECREF(enter);
             if (res == NULL)
@@ -3203,8 +3229,8 @@ main_loop:
         }
 
         case TARGET(SETUP_WITH): {
-            _Py_IDENTIFIER(__exit__);
             _Py_IDENTIFIER(__enter__);
+            _Py_IDENTIFIER(__exit__);
             PyObject *mgr = TOP();
             PyObject *enter = special_lookup(tstate, mgr, &PyId___enter__);
             PyObject *res;
@@ -3231,113 +3257,31 @@ main_loop:
             DISPATCH();
         }
 
-        case TARGET(WITH_CLEANUP_START): {
-            /* At the top of the stack are 1 or 6 values indicating
-               how/why we entered the finally clause:
-               - TOP = NULL
+        case TARGET(WITH_EXCEPT_START): {
+            /* At the top of the stack are 7 values:
                - (TOP, SECOND, THIRD) = exc_info()
-                 (FOURTH, FITH, SIXTH) = previous exception for EXCEPT_HANDLER
-               Below them is EXIT, the context.__exit__ or context.__aexit__
-               bound method.
-               In the first case, we must call
-                 EXIT(None, None, None)
-               otherwise we must call
-                 EXIT(TOP, SECOND, THIRD)
-
-               In the first case, we remove EXIT from the
-               stack, leaving TOP, and push TOP on the stack.
-               Otherwise we shift the bottom 3 values of the
-               stack down, replace the empty spot with NULL, and push
-               None on the stack.
-
-               Finally we push the result of the call.
+               - (FOURTH, FIFTH, SIXTH) = previous exception for EXCEPT_HANDLER
+               - SEVENTH: the context.__exit__ bound method
+               We call SEVENTH(TOP, SECOND, THIRD).
+               Then we push again the TOP exception and the __exit__
+               return value.
             */
-            PyObject *stack[3];
             PyObject *exit_func;
             PyObject *exc, *val, *tb, *res;
 
-            val = tb = Py_None;
             exc = TOP();
-            if (exc == NULL) {
-                STACK_SHRINK(1);
-                exit_func = TOP();
-                SET_TOP(exc);
-                exc = Py_None;
-            }
-            else {
-                assert(PyExceptionClass_Check(exc));
-                PyObject *tp2, *exc2, *tb2;
-                PyTryBlock *block;
-                val = SECOND();
-                tb = THIRD();
-                tp2 = FOURTH();
-                exc2 = PEEK(5);
-                tb2 = PEEK(6);
-                exit_func = PEEK(7);
-                SET_VALUE(7, tb2);
-                SET_VALUE(6, exc2);
-                SET_VALUE(5, tp2);
-                /* UNWIND_EXCEPT_HANDLER will pop this off. */
-                SET_FOURTH(NULL);
-                /* We just shifted the stack down, so we have
-                   to tell the except handler block that the
-                   values are lower than it expects. */
-                assert(f->f_iblock > 0);
-                block = &f->f_blockstack[f->f_iblock - 1];
-                assert(block->b_type == EXCEPT_HANDLER);
-                assert(block->b_level > 0);
-                block->b_level--;
-            }
-
-            stack[0] = exc;
-            stack[1] = val;
-            stack[2] = tb;
-            res = _PyObject_FastCall(exit_func, stack, 3);
-            Py_DECREF(exit_func);
+            val = SECOND();
+            tb = THIRD();
+            assert(exc != Py_None);
+            assert(!PyLong_Check(exc));
+            exit_func = PEEK(7);
+            PyObject *stack[4] = {NULL, exc, val, tb};
+            res = _PyObject_Vectorcall(exit_func, stack + 1,
+                    3 | PY_VECTORCALL_ARGUMENTS_OFFSET, NULL);
             if (res == NULL)
                 goto error;
 
-            Py_INCREF(exc); /* Duplicating the exception on the stack */
-            PUSH(exc);
             PUSH(res);
-            PREDICT(WITH_CLEANUP_FINISH);
-            DISPATCH();
-        }
-
-        case TARGET(WITH_CLEANUP_FINISH): {
-            PREDICTED(WITH_CLEANUP_FINISH);
-            /* TOP = the result of calling the context.__exit__ bound method
-               SECOND = either None or exception type
-
-               If SECOND is None below is NULL or the return address,
-               otherwise below are 7 values representing an exception.
-            */
-            PyObject *res = POP();
-            PyObject *exc = POP();
-            int err;
-
-            if (exc != Py_None)
-                err = PyObject_IsTrue(res);
-            else
-                err = 0;
-
-            Py_DECREF(res);
-            Py_DECREF(exc);
-
-            if (err < 0)
-                goto error;
-            else if (err > 0) {
-                /* There was an exception and a True return.
-                 * We must manually unwind the EXCEPT_HANDLER block
-                 * which was created when the exception was caught,
-                 * otherwise the stack will be in an inconsistent state.
-                 */
-                PyTryBlock *b = PyFrame_BlockPop(f);
-                assert(b->b_type == EXCEPT_HANDLER);
-                UNWIND_EXCEPT_HANDLER(b);
-                PUSH(NULL);
-            }
-            PREDICT(END_FINALLY);
             DISPATCH();
         }
 
@@ -3444,7 +3388,9 @@ main_loop:
             PyObject **sp, *res, *names;
 
             names = POP();
-            assert(PyTuple_CheckExact(names) && PyTuple_GET_SIZE(names) <= oparg);
+            assert(PyTuple_Check(names));
+            assert(PyTuple_GET_SIZE(names) <= oparg);
+            /* We assume without checking that names contains only strings */
             sp = stack_pointer;
             res = call_function(tstate, &sp, oparg, names);
             stack_pointer = sp;
@@ -3458,6 +3404,7 @@ main_loop:
         }
 
         case TARGET(CALL_FUNCTION_EX): {
+            PREDICTED(CALL_FUNCTION_EX);
             PyObject *func, *callargs, *kwargs = NULL, *result;
             if (oparg & 0x01) {
                 kwargs = POP();
@@ -3704,6 +3651,16 @@ exception_unwind:
                 PUSH(val);
                 PUSH(exc);
                 JUMPTO(handler);
+                if (_Py_TracingPossible(ceval)) {
+                    int needs_new_execution_window = (f->f_lasti < instr_lb || f->f_lasti >= instr_ub);
+                    int needs_line_update = (f->f_lasti == instr_lb || f->f_lasti < instr_prev);
+                    /* Make sure that we trace line after exception if we are in a new execution
+                     * window or we don't need a line update and we are not in the first instruction
+                     * of the line. */
+                    if (needs_new_execution_window || (!needs_line_update && instr_lb > 0)) {
+                        instr_prev = INT_MAX;
+                    }
+                }
                 /* Resume normal execution */
                 goto main_loop;
             }
@@ -3716,15 +3673,13 @@ exception_unwind:
     assert(retval == NULL);
     assert(_PyErr_Occurred(tstate));
 
-exit_returning:
-
     /* Pop remaining stack entries. */
     while (!EMPTY()) {
         PyObject *o = POP();
         Py_XDECREF(o);
     }
 
-exit_yielding:
+exiting:
     if (tstate->use_tracing) {
         if (tstate->c_tracefunc) {
             if (call_trace_protected(tstate->c_tracefunc, tstate->c_traceobj,
@@ -3744,11 +3699,11 @@ exit_yielding:
 exit_eval_frame:
     if (PyDTrace_FUNCTION_RETURN_ENABLED())
         dtrace_function_return(f);
-    Py_LeaveRecursiveCall();
+    _Py_LeaveRecursiveCall(tstate);
     f->f_executing = 0;
     tstate->frame = f->f_back;
 
-    return _Py_CheckFunctionResult(NULL, retval, "PyEval_EvalFrameEx");
+    return _Py_CheckFunctionResult(tstate, NULL, retval, "PyEval_EvalFrameEx");
 }
 
 static void
@@ -3976,7 +3931,8 @@ fail:
    the test in the if statements in Misc/gdbinit (pystack and pystackv). */
 
 PyObject *
-_PyEval_EvalCodeWithName(PyObject *_co, PyObject *globals, PyObject *locals,
+_PyEval_EvalCode(PyThreadState *tstate,
+           PyObject *_co, PyObject *globals, PyObject *locals,
            PyObject *const *args, Py_ssize_t argcount,
            PyObject *const *kwnames, PyObject *const *kwargs,
            Py_ssize_t kwcount, int kwstep,
@@ -3984,6 +3940,8 @@ _PyEval_EvalCodeWithName(PyObject *_co, PyObject *globals, PyObject *locals,
            PyObject *kwdefs, PyObject *closure,
            PyObject *name, PyObject *qualname)
 {
+    assert(tstate != NULL);
+
     PyCodeObject* co = (PyCodeObject*)_co;
     PyFrameObject *f;
     PyObject *retval = NULL;
@@ -3992,9 +3950,6 @@ _PyEval_EvalCodeWithName(PyObject *_co, PyObject *globals, PyObject *locals,
     const Py_ssize_t total_args = co->co_argcount + co->co_kwonlyargcount;
     Py_ssize_t i, j, n;
     PyObject *kwdict;
-
-    PyThreadState *tstate = _PyThreadState_GET();
-    assert(tstate != NULL);
 
     if (globals == NULL) {
         _PyErr_SetString(tstate, PyExc_SystemError,
@@ -4229,7 +4184,7 @@ _PyEval_EvalCodeWithName(PyObject *_co, PyObject *globals, PyObject *locals,
         return gen;
     }
 
-    retval = PyEval_EvalFrameEx(f,0);
+    retval = _PyEval_EvalFrame(tstate, f, 0);
 
 fail: /* Jump here from prelude on failure */
 
@@ -4238,7 +4193,6 @@ fail: /* Jump here from prelude on failure */
        current Python frame (f), the associated C stack is still in use,
        so recursion_depth must be boosted for the duration.
     */
-    assert(tstate != NULL);
     if (Py_REFCNT(f) > 1) {
         Py_DECREF(f);
         _PyObject_GC_TRACK(f);
@@ -4249,6 +4203,26 @@ fail: /* Jump here from prelude on failure */
         --tstate->recursion_depth;
     }
     return retval;
+}
+
+
+PyObject *
+_PyEval_EvalCodeWithName(PyObject *_co, PyObject *globals, PyObject *locals,
+           PyObject *const *args, Py_ssize_t argcount,
+           PyObject *const *kwnames, PyObject *const *kwargs,
+           Py_ssize_t kwcount, int kwstep,
+           PyObject *const *defs, Py_ssize_t defcount,
+           PyObject *kwdefs, PyObject *closure,
+           PyObject *name, PyObject *qualname)
+{
+    PyThreadState *tstate = _PyThreadState_GET();
+    return _PyEval_EvalCode(tstate, _co, globals, locals,
+               args, argcount,
+               kwnames, kwargs,
+               kwcount, kwstep,
+               defs, defcount,
+               kwdefs, closure,
+               name, qualname);
 }
 
 PyObject *
@@ -4662,10 +4636,9 @@ PyEval_SetTrace(Py_tracefunc func, PyObject *arg)
 }
 
 void
-_PyEval_SetCoroutineOriginTrackingDepth(int new_depth)
+_PyEval_SetCoroutineOriginTrackingDepth(PyThreadState *tstate, int new_depth)
 {
     assert(new_depth >= 0);
-    PyThreadState *tstate = _PyThreadState_GET();
     tstate->coroutine_origin_tracking_depth = new_depth;
 }
 
@@ -4719,7 +4692,8 @@ _PyEval_GetAsyncGenFinalizer(void)
 static PyFrameObject *
 _PyEval_GetFrame(PyThreadState *tstate)
 {
-    return _PyRuntime.gilstate.getframe(tstate);
+    _PyRuntimeState *runtime = tstate->interp->runtime;
+    return runtime->gilstate.getframe(tstate);
 }
 
 PyFrameObject *
@@ -4877,7 +4851,7 @@ trace_call_function(PyThreadState *tstate,
 {
     PyObject *x;
     if (PyCFunction_Check(func)) {
-        C_TRACE(x, _PyCFunction_Vectorcall(func, args, nargs, kwnames));
+        C_TRACE(x, _PyObject_Vectorcall(func, args, nargs, kwnames));
         return x;
     }
     else if (Py_TYPE(func) == &PyMethodDescr_Type && nargs > 0) {
@@ -4893,9 +4867,9 @@ trace_call_function(PyThreadState *tstate,
         if (func == NULL) {
             return NULL;
         }
-        C_TRACE(x, _PyCFunction_Vectorcall(func,
-                                           args+1, nargs-1,
-                                           kwnames));
+        C_TRACE(x, _PyObject_Vectorcall(func,
+                                        args+1, nargs-1,
+                                        kwnames));
         Py_DECREF(func);
         return x;
     }
@@ -4938,7 +4912,7 @@ do_call_core(PyThreadState *tstate, PyObject *func, PyObject *callargs, PyObject
     PyObject *result;
 
     if (PyCFunction_Check(func)) {
-        C_TRACE(result, PyCFunction_Call(func, callargs, kwdict));
+        C_TRACE(result, PyObject_Call(func, callargs, kwdict));
         return result;
     }
     else if (Py_TYPE(func) == &PyMethodDescr_Type) {
@@ -4957,10 +4931,11 @@ do_call_core(PyThreadState *tstate, PyObject *func, PyObject *callargs, PyObject
                 return NULL;
             }
 
-            C_TRACE(result, _PyCFunction_FastCallDict(func,
-                                                      &_PyTuple_ITEMS(callargs)[1],
-                                                      nargs - 1,
-                                                      kwdict));
+            C_TRACE(result, _PyObject_FastCallDictTstate(
+                                    tstate, func,
+                                    &_PyTuple_ITEMS(callargs)[1],
+                                    nargs - 1,
+                                    kwdict));
             Py_DECREF(func);
             return result;
         }
@@ -5014,62 +4989,6 @@ _PyEval_SliceIndexNotNone(PyObject *v, Py_ssize_t *pi)
     }
     *pi = x;
     return 1;
-}
-
-
-#define CANNOT_CATCH_MSG "catching classes that do not inherit from "\
-                         "BaseException is not allowed"
-
-static PyObject *
-cmp_outcome(PyThreadState *tstate, int op, PyObject *v, PyObject *w)
-{
-    int res = 0;
-    switch (op) {
-    case PyCmp_IS:
-        res = (v == w);
-        break;
-    case PyCmp_IS_NOT:
-        res = (v != w);
-        break;
-    case PyCmp_IN:
-        res = PySequence_Contains(w, v);
-        if (res < 0)
-            return NULL;
-        break;
-    case PyCmp_NOT_IN:
-        res = PySequence_Contains(w, v);
-        if (res < 0)
-            return NULL;
-        res = !res;
-        break;
-    case PyCmp_EXC_MATCH:
-        if (PyTuple_Check(w)) {
-            Py_ssize_t i, length;
-            length = PyTuple_Size(w);
-            for (i = 0; i < length; i += 1) {
-                PyObject *exc = PyTuple_GET_ITEM(w, i);
-                if (!PyExceptionClass_Check(exc)) {
-                    _PyErr_SetString(tstate, PyExc_TypeError,
-                                     CANNOT_CATCH_MSG);
-                    return NULL;
-                }
-            }
-        }
-        else {
-            if (!PyExceptionClass_Check(w)) {
-                _PyErr_SetString(tstate, PyExc_TypeError,
-                                 CANNOT_CATCH_MSG);
-                return NULL;
-            }
-        }
-        res = PyErr_GivenExceptionMatches(v, w);
-        break;
-    default:
-        return PyObject_RichCompare(v, w, op);
-    }
-    v = res ? Py_True : Py_False;
-    Py_INCREF(v);
-    return v;
 }
 
 static PyObject *
@@ -5170,10 +5089,16 @@ import_from(PyThreadState *tstate, PyObject *v, PyObject *name)
         PyErr_SetImportError(errmsg, pkgname, NULL);
     }
     else {
-        errmsg = PyUnicode_FromFormat(
-            "cannot import name %R from %R (%S)",
-            name, pkgname_or_unknown, pkgpath
-        );
+        _Py_IDENTIFIER(__spec__);
+        PyObject *spec = _PyObject_GetAttrId(v, &PyId___spec__);
+        const char *fmt =
+            _PyModuleSpec_IsInitializing(spec) ?
+            "cannot import name %R from partially initialized module %R "
+            "(most likely due to a circular import) (%S)" :
+            "cannot import name %R from %R (%S)";
+        Py_XDECREF(spec);
+
+        errmsg = PyUnicode_FromFormat(fmt, name, pkgname_or_unknown, pkgpath);
         /* NULL checks for errmsg and pkgname done by PyErr_SetImportError. */
         PyErr_SetImportError(errmsg, pkgname, pkgpath);
     }
@@ -5280,12 +5205,17 @@ static int
 check_args_iterable(PyThreadState *tstate, PyObject *func, PyObject *args)
 {
     if (args->ob_type->tp_iter == NULL && !PySequence_Check(args)) {
-        _PyErr_Format(tstate, PyExc_TypeError,
-                      "%.200s%.200s argument after * "
-                      "must be an iterable, not %.200s",
-                      PyEval_GetFuncName(func),
-                      PyEval_GetFuncDesc(func),
-                      args->ob_type->tp_name);
+        /* check_args_iterable() may be called with a live exception:
+         * clear it to prevent calling _PyObject_FunctionStr() with an
+         * exception set. */
+        PyErr_Clear();
+        PyObject *funcstr = _PyObject_FunctionStr(func);
+        if (funcstr != NULL) {
+            _PyErr_Format(tstate, PyExc_TypeError,
+                          "%U argument after * must be an iterable, not %.200s",
+                          funcstr, Py_TYPE(args)->tp_name);
+            Py_DECREF(funcstr);
+        }
         return -1;
     }
     return 0;
@@ -5301,31 +5231,29 @@ format_kwargs_error(PyThreadState *tstate, PyObject *func, PyObject *kwargs)
      * is not a mapping.
      */
     if (_PyErr_ExceptionMatches(tstate, PyExc_AttributeError)) {
-        _PyErr_Format(tstate, PyExc_TypeError,
-                      "%.200s%.200s argument after ** "
-                      "must be a mapping, not %.200s",
-                      PyEval_GetFuncName(func),
-                      PyEval_GetFuncDesc(func),
-                      kwargs->ob_type->tp_name);
+        PyErr_Clear();
+        PyObject *funcstr = _PyObject_FunctionStr(func);
+        if (funcstr != NULL) {
+            _PyErr_Format(
+                tstate, PyExc_TypeError,
+                "%U argument after ** must be a mapping, not %.200s",
+                funcstr, Py_TYPE(kwargs)->tp_name);
+            Py_DECREF(funcstr);
+        }
     }
     else if (_PyErr_ExceptionMatches(tstate, PyExc_KeyError)) {
         PyObject *exc, *val, *tb;
         _PyErr_Fetch(tstate, &exc, &val, &tb);
         if (val && PyTuple_Check(val) && PyTuple_GET_SIZE(val) == 1) {
-            PyObject *key = PyTuple_GET_ITEM(val, 0);
-            if (!PyUnicode_Check(key)) {
-                _PyErr_Format(tstate, PyExc_TypeError,
-                              "%.200s%.200s keywords must be strings",
-                              PyEval_GetFuncName(func),
-                              PyEval_GetFuncDesc(func));
-            }
-            else {
-                _PyErr_Format(tstate, PyExc_TypeError,
-                              "%.200s%.200s got multiple "
-                              "values for keyword argument '%U'",
-                              PyEval_GetFuncName(func),
-                              PyEval_GetFuncDesc(func),
-                              key);
+            PyErr_Clear();
+            PyObject *funcstr = _PyObject_FunctionStr(func);
+            if (funcstr != NULL) {
+                PyObject *key = PyTuple_GET_ITEM(val, 0);
+                _PyErr_Format(
+                    tstate, PyExc_TypeError,
+                    "%U got multiple values for keyword argument '%S'",
+                    funcstr, key);
+                Py_DECREF(funcstr);
             }
             Py_XDECREF(exc);
             Py_XDECREF(val);
@@ -5376,7 +5304,7 @@ format_exc_unbound(PyThreadState *tstate, PyCodeObject *co, int oparg)
 }
 
 static void
-format_awaitable_error(PyThreadState *tstate, PyTypeObject *type, int prevopcode)
+format_awaitable_error(PyThreadState *tstate, PyTypeObject *type, int prevprevopcode, int prevopcode)
 {
     if (type->tp_as_async == NULL || type->tp_as_async->am_await == NULL) {
         if (prevopcode == BEFORE_ASYNC_WITH) {
@@ -5385,7 +5313,7 @@ format_awaitable_error(PyThreadState *tstate, PyTypeObject *type, int prevopcode
                           "that does not implement __await__: %.100s",
                           type->tp_name);
         }
-        else if (prevopcode == WITH_CLEANUP_START) {
+        else if (prevopcode == WITH_EXCEPT_START || (prevopcode == CALL_FUNCTION && prevprevopcode == DUP_TOP)) {
             _PyErr_Format(tstate, PyExc_TypeError,
                           "'async with' received an object from __aexit__ "
                           "that does not implement __await__: %.100s",
@@ -5568,4 +5496,22 @@ maybe_dtrace_line(PyFrameObject *frame,
         PyDTrace_LINE(co_filename, co_name, line);
     }
     *instr_prev = frame->f_lasti;
+}
+
+
+/* Implement Py_EnterRecursiveCall() and Py_LeaveRecursiveCall() as functions
+   for the limited API. */
+
+#undef Py_EnterRecursiveCall
+
+int Py_EnterRecursiveCall(const char *where)
+{
+    return _Py_EnterRecursiveCall_inline(where);
+}
+
+#undef Py_LeaveRecursiveCall
+
+void Py_LeaveRecursiveCall(void)
+{
+    _Py_LeaveRecursiveCall_inline();
 }

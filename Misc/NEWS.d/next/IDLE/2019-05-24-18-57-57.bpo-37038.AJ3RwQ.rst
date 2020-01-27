@@ -1,1 +1,0 @@
-Make idlelib.run runnable; add test clause.

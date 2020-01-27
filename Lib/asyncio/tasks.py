@@ -42,9 +42,22 @@ def all_tasks(loop=None):
     """Return a set of all tasks for the loop."""
     if loop is None:
         loop = events.get_running_loop()
-    # NB: set(_all_tasks) is required to protect
-    # from https://bugs.python.org/issue34970 bug
-    return {t for t in list(_all_tasks)
+    # Looping over a WeakSet (_all_tasks) isn't safe as it can be updated from another
+    # thread while we do so. Therefore we cast it to list prior to filtering. The list
+    # cast itself requires iteration, so we repeat it several times ignoring
+    # RuntimeErrors (which are not very likely to occur). See issues 34970 and 36607 for
+    # details.
+    i = 0
+    while True:
+        try:
+            tasks = list(_all_tasks)
+        except RuntimeError:
+            i += 1
+            if i >= 1000:
+                raise
+        else:
+            break
+    return {t for t in tasks
             if futures._get_loop(t) is loop and not t.done()}
 
 
@@ -54,9 +67,22 @@ def _all_tasks_compat(loop=None):
     # method.
     if loop is None:
         loop = events.get_event_loop()
-    # NB: set(_all_tasks) is required to protect
-    # from https://bugs.python.org/issue34970 bug
-    return {t for t in list(_all_tasks) if futures._get_loop(t) is loop}
+    # Looping over a WeakSet (_all_tasks) isn't safe as it can be updated from another
+    # thread while we do so. Therefore we cast it to list prior to filtering. The list
+    # cast itself requires iteration, so we repeat it several times ignoring
+    # RuntimeErrors (which are not very likely to occur). See issues 34970 and 36607 for
+    # details.
+    i = 0
+    while True:
+        try:
+            tasks = list(_all_tasks)
+        except RuntimeError:
+            i += 1
+            if i >= 1000:
+                raise
+        else:
+            break
+    return {t for t in tasks if futures._get_loop(t) is loop}
 
 
 def _set_task_name(task, name):
@@ -148,6 +174,9 @@ class Task(futures._PyFuture):  # Inherit Python Task implementation
                 context['source_traceback'] = self._source_traceback
             self._loop.call_exception_handler(context)
         super().__del__()
+
+    def __class_getitem__(cls, type):
+        return cls
 
     def _repr_info(self):
         return base_tasks._task_repr_info(self)
@@ -258,7 +287,7 @@ class Task(futures._PyFuture):  # Inherit Python Task implementation
             if self._must_cancel:
                 # Task is cancelled right before coro stops.
                 self._must_cancel = False
-                super().set_exception(exceptions.CancelledError())
+                super().cancel()
             else:
                 super().set_result(exc.value)
         except exceptions.CancelledError:
@@ -393,6 +422,12 @@ async def wait(fs, *, loop=None, timeout=None, return_when=ALL_COMPLETED):
     else:
         warnings.warn("The loop argument is deprecated since Python 3.8, "
                       "and scheduled for removal in Python 3.10.",
+                      DeprecationWarning, stacklevel=2)
+
+    if any(coroutines.iscoroutine(f) for f in set(fs)):
+        warnings.warn("The explicit passing of coroutine objects to "
+                      "asyncio.wait() is deprecated since Python 3.8, and "
+                      "scheduled for removal in Python 3.11.",
                       DeprecationWarning, stacklevel=2)
 
     fs = {ensure_future(f, loop=loop) for f in set(fs)}
@@ -547,10 +582,17 @@ def as_completed(fs, *, loop=None, timeout=None):
     """
     if futures.isfuture(fs) or coroutines.iscoroutine(fs):
         raise TypeError(f"expect a list of futures, not {type(fs).__name__}")
-    loop = loop if loop is not None else events.get_event_loop()
-    todo = {ensure_future(f, loop=loop) for f in set(fs)}
+
     from .queues import Queue  # Import here to avoid circular import problem.
     done = Queue(loop=loop)
+
+    if loop is None:
+        loop = events.get_event_loop()
+    else:
+        warnings.warn("The loop argument is deprecated since Python 3.8, "
+                      "and scheduled for removal in Python 3.10.",
+                      DeprecationWarning, stacklevel=2)
+    todo = {ensure_future(f, loop=loop) for f in set(fs)}
     timeout_handle = None
 
     def _on_timeout():
@@ -707,6 +749,10 @@ def gather(*coros_or_futures, loop=None, return_exceptions=False):
     if not coros_or_futures:
         if loop is None:
             loop = events.get_event_loop()
+        else:
+            warnings.warn("The loop argument is deprecated since Python 3.8, "
+                          "and scheduled for removal in Python 3.10.",
+                          DeprecationWarning, stacklevel=2)
         outer = loop.create_future()
         outer.set_result([])
         return outer
@@ -816,6 +862,10 @@ def shield(arg, *, loop=None):
         except CancelledError:
             res = None
     """
+    if loop is not None:
+        warnings.warn("The loop argument is deprecated since Python 3.8, "
+                      "and scheduled for removal in Python 3.10.",
+                      DeprecationWarning, stacklevel=2)
     inner = ensure_future(arg, loop=loop)
     if inner.done():
         # Shortcut.

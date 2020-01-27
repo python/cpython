@@ -1,2 +1,0 @@
-Fix crashes when attempting to use the *modulo* parameter when ``__ipow__``
-is implemented in C.
