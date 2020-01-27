@@ -622,7 +622,6 @@ class IocpProactor:
                     raise ConnectionResetError(*exc.args)
                 else:
                     raise
-
         return self._register(ov, sock, finish_sendfile)
 
     def accept_pipe(self, pipe):
