@@ -73,7 +73,6 @@ The :mod:`linecache` module defines the following functions:
    Update a cache entry and return its list of lines.
    filename is the name of the file to be passed.
    The module_globals is passed to lazycache() to see if a lazy loader is alreay active.
-   if a __loader__ is defined in module_globals, it would be taken 
    If something's wrong, print a message, discard the cache entry, and return an empty list.
 
 Example::
