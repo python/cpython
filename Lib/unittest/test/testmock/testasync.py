@@ -1,7 +1,9 @@
 import asyncio
+import gc
 import inspect
 import re
 import unittest
+from contextlib import contextmanager
 
 from asyncio import run, iscoroutinefunction
 from unittest import IsolatedAsyncioTestCase
@@ -50,6 +52,15 @@ class NormalClass(object):
 
 async_foo_name = f'{__name__}.AsyncClass'
 normal_foo_name = f'{__name__}.NormalClass'
+
+
+@contextmanager
+def assertNeverAwaited(test):
+    with test.assertWarnsRegex(RuntimeWarning, "was never awaited$"):
+        yield
+        # In non-CPython implementations of Python, this is needed because timely
+        # deallocation is not guaranteed by the garbage collector.
+        gc.collect()
 
 
 class AsyncPatchDecoratorTest(unittest.TestCase):
@@ -284,8 +295,7 @@ class AsyncSpecTest(unittest.TestCase):
         def inner_test(mock_type):
             async_mock = mock_type(spec=async_func)
             self.assertIsInstance(async_mock, mock_type)
-            with self.assertWarns(RuntimeWarning):
-                # Will raise a warning because never awaited
+            with assertNeverAwaited(self):
                 self.assertTrue(inspect.isawaitable(async_mock()))
 
             sync_mock = mock_type(spec=normal_func)
@@ -299,8 +309,7 @@ class AsyncSpecTest(unittest.TestCase):
         def inner_test(mock_type):
             async_mock = mock_type(async_func)
             self.assertIsInstance(async_mock, mock_type)
-            with self.assertWarns(RuntimeWarning):
-                # Will raise a warning because never awaited
+            with assertNeverAwaited(self):
                 self.assertTrue(inspect.isawaitable(async_mock()))
 
             sync_mock = mock_type(normal_func)
@@ -747,8 +756,7 @@ class AsyncMockAssert(unittest.TestCase):
 
     def test_assert_called_but_not_awaited(self):
         mock = AsyncMock(AsyncClass)
-        with self.assertWarns(RuntimeWarning):
-            # Will raise a warning because never awaited
+        with assertNeverAwaited(self):
             mock.async_method()
         self.assertTrue(iscoroutinefunction(mock.async_method))
         mock.async_method.assert_called()
@@ -789,9 +797,9 @@ class AsyncMockAssert(unittest.TestCase):
     def test_assert_called_twice_and_awaited_once(self):
         mock = AsyncMock(AsyncClass)
         coroutine = mock.async_method()
-        with self.assertWarns(RuntimeWarning):
-            # The first call will be awaited so no warning there
-            # But this call will never get awaited, so it will warn here
+        # The first call will be awaited so no warning there
+        # But this call will never get awaited, so it will warn here
+        with assertNeverAwaited(self):
             mock.async_method()
         with self.assertRaises(AssertionError):
             mock.async_method.assert_awaited()
@@ -826,38 +834,34 @@ class AsyncMockAssert(unittest.TestCase):
 
     def test_assert_has_calls_not_awaits(self):
         kalls = [call('foo')]
-        with self.assertWarns(RuntimeWarning):
-            # Will raise a warning because never awaited
+        with assertNeverAwaited(self):
             self.mock('foo')
         self.mock.assert_has_calls(kalls)
         with self.assertRaises(AssertionError):
             self.mock.assert_has_awaits(kalls)
 
     def test_assert_has_mock_calls_on_async_mock_no_spec(self):
-        with self.assertWarns(RuntimeWarning):
-            # Will raise a warning because never awaited
+        with assertNeverAwaited(self):
             self.mock()
         kalls_empty = [('', (), {})]
         self.assertEqual(self.mock.mock_calls, kalls_empty)
 
-        with self.assertWarns(RuntimeWarning):
-            # Will raise a warning because never awaited
+        with assertNeverAwaited(self):
             self.mock('foo')
+        with assertNeverAwaited(self):
             self.mock('baz')
         mock_kalls = ([call(), call('foo'), call('baz')])
         self.assertEqual(self.mock.mock_calls, mock_kalls)
 
     def test_assert_has_mock_calls_on_async_mock_with_spec(self):
         a_class_mock = AsyncMock(AsyncClass)
-        with self.assertWarns(RuntimeWarning):
-            # Will raise a warning because never awaited
+        with assertNeverAwaited(self):
             a_class_mock.async_method()
         kalls_empty = [('', (), {})]
         self.assertEqual(a_class_mock.async_method.mock_calls, kalls_empty)
         self.assertEqual(a_class_mock.mock_calls, [call.async_method()])
 
-        with self.assertWarns(RuntimeWarning):
-            # Will raise a warning because never awaited
+        with assertNeverAwaited(self):
             a_class_mock.async_method(1, 2, 3, a=4, b=5)
         method_kalls = [call(), call(1, 2, 3, a=4, b=5)]
         mock_kalls = [call.async_method(), call.async_method(1, 2, 3, a=4, b=5)]
@@ -865,9 +869,9 @@ class AsyncMockAssert(unittest.TestCase):
         self.assertEqual(a_class_mock.mock_calls, mock_kalls)
 
     def test_async_method_calls_recorded(self):
-        with self.assertWarns(RuntimeWarning):
-            # Will raise warnings because never awaited
+        with assertNeverAwaited(self):
             self.mock.something(3, fish=None)
+        with assertNeverAwaited(self):
             self.mock.something_else.something(6, cake=sentinel.Cake)
 
         self.assertEqual(self.mock.method_calls, [
@@ -889,19 +893,20 @@ class AsyncMockAssert(unittest.TestCase):
                 self.assertEqual(attr, [])
 
         assert_attrs(self.mock)
-        with self.assertWarns(RuntimeWarning):
-            # Will raise warnings because never awaited
+        with assertNeverAwaited(self):
             self.mock()
+        with assertNeverAwaited(self):
             self.mock(1, 2)
+        with assertNeverAwaited(self):
             self.mock(a=3)
 
         self.mock.reset_mock()
         assert_attrs(self.mock)
 
         a_mock = AsyncMock(AsyncClass)
-        with self.assertWarns(RuntimeWarning):
-            # Will raise warnings because never awaited
+        with assertNeverAwaited(self):
             a_mock.async_method()
+        with assertNeverAwaited(self):
             a_mock.async_method(1, a=3)
 
         a_mock.reset_mock()
