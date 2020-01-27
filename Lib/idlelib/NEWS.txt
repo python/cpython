@@ -3,6 +3,9 @@ Released on 2020-10-05?
 ======================================
 
 
+bpo-30780: Add remaining configdialog tests for buttons and
+highlights and keys tabs.
+
 bpo-39388: Settings dialog Cancel button cancels pending changes.
 
 bpo-39050: Settings dialog Help button again displays help text.
