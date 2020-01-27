@@ -348,7 +348,8 @@ class ExecutorShutdownTest:
         See https://bugs.python.org/issue39205.
         """
         if self.executor_type == futures.ProcessPoolExecutor:
-            raise unittest.SkipTest("")
+            raise unittest.SkipTest(
+                "Hangs due to https://bugs.python.org/issue39205")
 
         rc, out, err = assert_python_ok('-c', """if True:
             from concurrent.futures import {executor_type}
