@@ -88,6 +88,7 @@ __all__ = [
 import os as _os
 import re as _re
 import sys as _sys
+import warnings
 
 from gettext import gettext as _, ngettext
 
@@ -817,6 +818,9 @@ class Action(_AttributeHolder):
                  nargs=None,
                  const=None,
                  default=None,
+                 deprecated=False,
+                 deprecated_reason=None,
+                 deprecated_pending=False,
                  type=None,
                  choices=None,
                  required=False,
@@ -827,6 +831,14 @@ class Action(_AttributeHolder):
         self.nargs = nargs
         self.const = const
         self.default = default
+        self.deprecated = deprecated
+        if not deprecated_reason:
+            deprecated_reason = f"Usage of parameter {dest} are deprecated"
+            if deprecated_pending:
+                deprecated_reason = f"The argument {dest} is obsolete and " \
+                                     "expected to be deprecated in the future"
+        self.deprecated_reason = deprecated_reason
+        self.deprecated_pending=deprecated_pending
         self.type = type
         self.choices = choices
         self.required = required
@@ -840,6 +852,9 @@ class Action(_AttributeHolder):
             'nargs',
             'const',
             'default',
+            'deprecated',
+            'deprecated_reason',
+            'deprecated_pending',
             'type',
             'choices',
             'help',
@@ -859,6 +874,9 @@ class BooleanOptionalAction(Action):
                  dest,
                  const=None,
                  default=None,
+                 deprecated=False,
+                 deprecated_reason=None,
+                 deprecated_pending=False,
                  type=None,
                  choices=None,
                  required=False,
@@ -881,6 +899,9 @@ class BooleanOptionalAction(Action):
             dest=dest,
             nargs=0,
             default=default,
+            deprecated=deprecated,
+            deprecated_reason=deprecated_reason,
+            deprecated_pending=deprecated_pending,
             type=type,
             choices=choices,
             required=required,
@@ -903,6 +924,9 @@ class _StoreAction(Action):
                  nargs=None,
                  const=None,
                  default=None,
+                 deprecated=False,
+                 deprecated_reason=None,
+                 deprecated_pending=False,
                  type=None,
                  choices=None,
                  required=False,
@@ -920,6 +944,9 @@ class _StoreAction(Action):
             nargs=nargs,
             const=const,
             default=default,
+            deprecated=deprecated,
+            deprecated_reason=deprecated_reason,
+            deprecated_pending=deprecated_pending,
             type=type,
             choices=choices,
             required=required,
@@ -937,6 +964,9 @@ class _StoreConstAction(Action):
                  dest,
                  const,
                  default=None,
+                 deprecated=False,
+                 deprecated_reason=None,
+                 deprecated_pending=False,
                  required=False,
                  help=None,
                  metavar=None):
@@ -946,6 +976,9 @@ class _StoreConstAction(Action):
             nargs=0,
             const=const,
             default=default,
+            deprecated=deprecated,
+            deprecated_reason=deprecated_reason,
+            deprecated_pending=deprecated_pending,
             required=required,
             help=help)
 
@@ -959,6 +992,9 @@ class _StoreTrueAction(_StoreConstAction):
                  option_strings,
                  dest,
                  default=False,
+                 deprecated=False,
+                 deprecated_reason=None,
+                 deprecated_pending=False,
                  required=False,
                  help=None):
         super(_StoreTrueAction, self).__init__(
@@ -966,6 +1002,9 @@ class _StoreTrueAction(_StoreConstAction):
             dest=dest,
             const=True,
             default=default,
+            deprecated=deprecated,
+            deprecated_reason=deprecated_reason,
+            deprecated_pending=deprecated_pending,
             required=required,
             help=help)
 
@@ -976,6 +1015,9 @@ class _StoreFalseAction(_StoreConstAction):
                  option_strings,
                  dest,
                  default=True,
+                 deprecated=False,
+                 deprecated_reason=None,
+                 deprecated_pending=False,
                  required=False,
                  help=None):
         super(_StoreFalseAction, self).__init__(
@@ -983,6 +1025,9 @@ class _StoreFalseAction(_StoreConstAction):
             dest=dest,
             const=False,
             default=default,
+            deprecated=deprecated,
+            deprecated_reason=deprecated_reason,
+            deprecated_pending=deprecated_pending,
             required=required,
             help=help)
 
@@ -995,6 +1040,9 @@ class _AppendAction(Action):
                  nargs=None,
                  const=None,
                  default=None,
+                 deprecated=False,
+                 deprecated_reason=None,
+                 deprecated_pending=False,
                  type=None,
                  choices=None,
                  required=False,
@@ -1012,6 +1060,9 @@ class _AppendAction(Action):
             nargs=nargs,
             const=const,
             default=default,
+            deprecated=deprecated,
+            deprecated_reason=deprecated_reason,
+            deprecated_pending=deprecated_pending,
             type=type,
             choices=choices,
             required=required,
@@ -1032,6 +1083,9 @@ class _AppendConstAction(Action):
                  dest,
                  const,
                  default=None,
+                 deprecated=False,
+                 deprecated_reason=None,
+                 deprecated_pending=False,
                  required=False,
                  help=None,
                  metavar=None):
@@ -1041,6 +1095,9 @@ class _AppendConstAction(Action):
             nargs=0,
             const=const,
             default=default,
+            deprecated=deprecated,
+            deprecated_reason=deprecated_reason,
+            deprecated_pending=deprecated_pending,
             required=required,
             help=help,
             metavar=metavar)
@@ -1058,6 +1115,9 @@ class _CountAction(Action):
                  option_strings,
                  dest,
                  default=None,
+                 deprecated=False,
+                 deprecated_reason=None,
+                 deprecated_pending=False,
                  required=False,
                  help=None):
         super(_CountAction, self).__init__(
@@ -1065,6 +1125,9 @@ class _CountAction(Action):
             dest=dest,
             nargs=0,
             default=default,
+            deprecated=deprecated,
+            deprecated_reason=deprecated_reason,
+            deprecated_pending=deprecated_pending,
             required=required,
             help=help)
 
@@ -1900,6 +1963,18 @@ class ArgumentParser(_AttributeHolder, _ActionsContainer):
                     option_string_indices[i] = option_tuple
                     pattern = 'O'
                 arg_string_pattern_parts.append(pattern)
+
+            # check if the arg is deprecated
+            # and warn only if it's given in the CLI paramters
+            for action in self._actions:
+                if arg_string.replace("-", "") == action.dest:
+                    if not action.deprecated:
+                        continue
+                    warnings.warn(
+                        action.deprecated_reason,
+                        PendingDeprecationWarning \
+                                if action.deprecated_pending \
+                                else DeprecationWarning)
 
         # join the pieces together to form the pattern
         arg_strings_pattern = ''.join(arg_string_pattern_parts)

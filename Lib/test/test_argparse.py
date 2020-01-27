@@ -4660,12 +4660,17 @@ class TestStrings(TestCase):
             type='int',
             nargs='+',
             default=42,
+            deprecated=False,
+            deprecated_reason='foo bar',
+            deprecated_pending=False,
             choices=[1, 2, 3],
             help='HELP',
             metavar='METAVAR')
         string = (
             "Action(option_strings=['--foo', '-a', '-b'], dest='b', "
-            "nargs='+', const=None, default=42, type='int', "
+            "nargs='+', const=None, default=42, deprecated=False, "
+            "deprecated_reason='foo bar', "
+            "deprecated_pending=False, type='int', "
             "choices=[1, 2, 3], help='HELP', metavar='METAVAR')")
         self.assertStringEqual(option, string)
 
@@ -4676,12 +4681,18 @@ class TestStrings(TestCase):
             type=float,
             nargs='?',
             default=2.5,
+            deprecated=False,
+            deprecated_reason='foo bar',
+            deprecated_pending=False,
             choices=[0.5, 1.5, 2.5],
             help='H HH H',
             metavar='MV MV MV')
         string = (
             "Action(option_strings=[], dest='x', nargs='?', "
-            "const=None, default=2.5, type=%r, choices=[0.5, 1.5, 2.5], "
+            "const=None, default=2.5, deprecated=False, "
+            "deprecated_reason='foo bar', "
+            "deprecated_pending=False, "
+            "type=%r, choices=[0.5, 1.5, 2.5], "
             "help='H HH H', metavar='MV MV MV')" % float)
         self.assertStringEqual(argument, string)
 
@@ -4873,6 +4884,39 @@ class TestTypeFunctionCallOnlyOnce(TestCase):
         parser.add_argument('--foo', type=spam, default='bar')
         args = parser.parse_args('--foo spam!'.split())
         self.assertEqual(NS(foo='foo_converted'), args)
+
+
+# =============================================
+# Check that deprecated arguments raise warning
+# =============================================
+
+class TestTypeFunctionCallWithDeprecated(TestCase):
+
+    def test_type_function_call_with_deprecated(self):
+        parser = argparse.ArgumentParser()
+        parser.add_argument('--foo', deprecated=True, default='bar')
+        with support.captured_stderr() as stderr:
+            parser.parse_args(['--foo', 'spam'])
+        stderr = stderr.getvalue()
+        self.assertIn("DeprecationWarning", stderr)
+
+    def test_type_function_call_with_pending_deprecated(self):
+        parser = argparse.ArgumentParser()
+        parser.add_argument('--foo', deprecated=True,
+                            deprecated_pending=True, default='bar')
+        with support.captured_stderr() as stderr:
+            parser.parse_args(['--foo', 'spam'])
+        stderr = stderr.getvalue()
+        self.assertIn("PendingDeprecationWarning", stderr)
+
+    def test_type_function_call_with_deprecated_custome_msg(self):
+        parser = argparse.ArgumentParser()
+        parser.add_argument('--foo', deprecated=True,
+                            deprecated_reason="foo bar", default='bar')
+        with support.captured_stderr() as stderr:
+            parser.parse_args(['--foo', 'spam'])
+        stderr = stderr.getvalue()
+        self.assertIn("DeprecationWarning: foo bar", stderr)
 
 # ==================================================================
 # Check semantics regarding the default argument and type conversion

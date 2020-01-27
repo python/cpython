@@ -698,6 +698,15 @@ The add_argument() method
    * default_ - The value produced if the argument is absent from the
      command line.
 
+   * deprecated_ - Define if the argument is deprecated.
+
+   * deprecated_reason_ - Custome deprecation warning message to display if
+     the argument is deprecated.
+
+   * deprecated_pending_ - Define if the deprecation is pending. The argument
+     is obsolete and expected to be deprecated in the future, but is not
+     deprecated at the moment.
+
    * type_ - The type to which the command-line argument should be converted.
 
    * choices_ - A container of the allowable values for the argument.
@@ -1051,6 +1060,72 @@ command-line argument was not present::
    >>> parser.parse_args(['--foo', '1'])
    Namespace(foo='1')
 
+
+deprecated
+^^^^^^^^^^
+
+During projects lifecycle some arguments could be removed from the
+command line, before removing these arguments definitively you would inform
+your user that arguments are deprecated and will be removed.
+The ``deprecated`` keyword argument of
+:meth:`~ArgumentParser.add_argument`, whose value default to ``False``,
+specifies if the argument is deprecated and will be removed
+from the command-line available arguments in the future.
+For arguments, if ``deprecated`` is ``True`` then a warning (``DeprecationWarning``) will be
+emitted if the argument is given by user in the command line parameters::
+
+    >>> import argparse
+    >>> parser = argparse.ArgumentParser()
+    >>> parser.add_argument('bar', default=1)
+    >>> parser.add_argument('--foo', default=2, deprecated=True)
+    >>> parser.parse_args(['test'])
+    Namespace(bar='test', foo='2')
+    >>> parser.parse_args(['test', '--foo', '4'])
+    /home/cpython/Lib/argparse.py:1979: DeprecationWarning: Usage of parameter foo are deprecated
+    Namespace(bar='test', foo='4')
+
+
+deprecated_reason
+^^^^^^^^^^^^^^^^^
+
+Custome deprecation warning message to display if the argument is deprecated.
+If not given then a standard message will be displayed.
+The ``deprecated_reason`` keyword argument of
+:meth:`~ArgumentParser.add_argument`, allow to define a custome message to
+display if the argument is deprecated and given by user in the command line parameters::
+
+    >>> import argparse
+    >>> parser = argparse.ArgumentParser()
+    >>> parser.add_argument('bar', default=1)
+    >>> parser.add_argument('--foo', default=2, deprecated=True, deprecated_reason='my custom message')
+    >>> parser.parse_args(['test'])
+    Namespace(bar='test', foo='2')
+    >>> parser.parse_args(['test', '--foo', '4'])
+    /home/cpython/Lib/argparse.py:1979: DeprecationWarning: my custome message
+    Namespace(bar='test', foo='4')
+
+deprecated_pending
+^^^^^^^^^^^^^^^^^^
+
+Define if the deprecation is pending. Could be used to define that an argument
+is obsolete and expected to be deprecated in the future, but is not
+deprecated at the moment.
+The ``deprecated_pending`` keyword argument of
+:meth:`~ArgumentParser.add_argument`, whose value default to ``False``,
+specifies if the argument is obsolete and expected to be deprecated in the future.
+For arguments, if ``deprecated_pending`` is ``True`` then a warning
+(``PendingDeprecationWarning``) will be emitted if the argument is given by
+user in the command line parameters::
+
+    >>> import argparse
+    >>> parser = argparse.ArgumentParser()
+    >>> parser.add_argument('bar', default=1)
+    >>> parser.add_argument('--foo', default=2, deprecated=True, deprecated_pending=True)
+    >>> parser.parse_args(['test'])
+    Namespace(bar='test', foo='2')
+    >>> parser.parse_args(['test', '--foo', '4'])
+    /home/cpython/Lib/argparse.py:1979: PendingDeprecationWarning: The argument foo is obsolete and expected to be deprecated in the future
+    Namespace(bar='test', foo='4')
 
 type
 ^^^^
