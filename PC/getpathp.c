@@ -787,7 +787,14 @@ calculate_pyvenv_file(PyCalculatePath *calculate,
         return status;
     }
     if (home) {
-        wcscpy_s(argv0_path, argv0_path_len, home);
+        if (home[0] == '.') {
+            /* Home path is relative to directory of pyvenv.cfg file */
+            reduce(filename);
+            join(filename, home);
+            wcscpy_s(argv0_path, argv0_path_len, filename);
+        } else {
+            wcscpy_s(argv0_path, argv0_path_len, home);
+        }
         PyMem_RawFree(home);
     }
     fclose(env_file);

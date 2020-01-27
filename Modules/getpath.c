@@ -1197,7 +1197,7 @@ calculate_argv0_path(PyCalculatePath *calculate,
 
 
 static PyStatus
-calculate_open_pyenv(PyCalculatePath *calculate, FILE **env_file_p)
+calculate_open_pyenv(PyCalculatePath *calculate, FILE **env_file_p, wchar_t **pyenv_filename)
 {
     *env_file_p = NULL;
 
@@ -1210,12 +1210,13 @@ calculate_open_pyenv(PyCalculatePath *calculate, FILE **env_file_p)
     }
 
     *env_file_p = _Py_wfopen(filename, L"r");
-    PyMem_RawFree(filename);
 
     if (*env_file_p != NULL) {
+        *pyenv_filename = filename;
         return _PyStatus_OK();
 
     }
+    PyMem_RawFree(filename);
 
     /* fopen() failed: reset errno */
     errno = 0;
@@ -1234,11 +1235,13 @@ calculate_open_pyenv(PyCalculatePath *calculate, FILE **env_file_p)
     }
 
     *env_file_p = _Py_wfopen(filename, L"r");
-    PyMem_RawFree(filename);
 
     if (*env_file_p == NULL) {
+        PyMem_RawFree(filename);
         /* fopen() failed: reset errno */
         errno = 0;
+    } else {
+        *pyenv_filename = filename;
     }
     return _PyStatus_OK();
 }
@@ -1254,8 +1257,9 @@ calculate_read_pyenv(PyCalculatePath *calculate)
 {
     PyStatus status;
     FILE *env_file = NULL;
+    wchar_t *pyenv_filename = NULL;
 
-    status = calculate_open_pyenv(calculate, &env_file);
+    status = calculate_open_pyenv(calculate, &env_file, &pyenv_filename);
     if (_PyStatus_EXCEPTION(status)) {
         return status;
     }
@@ -1274,7 +1278,14 @@ calculate_read_pyenv(PyCalculatePath *calculate)
 
     if (home) {
         PyMem_RawFree(calculate->argv0_path);
-        calculate->argv0_path = home;
+        if (home[0] == '.') {
+            /* Relative home path to pyvenv_filename */
+            reduce(pyenv_filename);
+            calculate->argv0_path = joinpath2(pyenv_filename, home);
+        } else {
+            /* Absolute home path */
+            calculate->argv0_path = home;
+        }
     }
     fclose(env_file);
     return _PyStatus_OK();

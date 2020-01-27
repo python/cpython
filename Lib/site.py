@@ -487,6 +487,8 @@ def venv(known_paths):
                     if key == 'include-system-site-packages':
                         system_site = value.lower()
                     elif key == 'home':
+                        if value.startswith('.'):
+                            value = os.path.join(os.path.dirname(virtual_conf), value)
                         sys._home = value
 
         sys.prefix = sys.exec_prefix = site_prefix
