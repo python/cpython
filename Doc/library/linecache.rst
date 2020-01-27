@@ -71,6 +71,8 @@ The :mod:`linecache` module defines the following functions:
 .. function:: updatecache(filename, module_globals=None)
 
    Update a cache entry and return its list of lines.
+   filename is the name of the file to be passed.
+   
    If something's wrong, print a message, discard the cache entry, and return an empty list.
 
 Example::
