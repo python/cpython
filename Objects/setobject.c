@@ -2079,6 +2079,7 @@ static PyMethodDef set_methods[] = {
      union_doc},
     {"update",          (PyCFunction)set_update,        METH_VARARGS,
      update_doc},
+    {"__class_getitem__", (PyCFunction)Py_GenericAlias, METH_O|METH_CLASS, PyDoc_STR("See PEP 585")},
     {NULL,              NULL}   /* sentinel */
 };
 
@@ -2190,6 +2191,7 @@ static PyMethodDef frozenset_methods[] = {
      symmetric_difference_doc},
     {"union",           (PyCFunction)set_union,         METH_VARARGS,
      union_doc},
+    {"__class_getitem__", (PyCFunction)Py_GenericAlias, METH_O|METH_CLASS, PyDoc_STR("See PEP 585")},
     {NULL,              NULL}   /* sentinel */
 };
 
