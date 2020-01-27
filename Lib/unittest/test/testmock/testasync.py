@@ -4,6 +4,7 @@ import re
 import unittest
 
 from asyncio import run, iscoroutinefunction
+from unittest import IsolatedAsyncioTestCase
 from unittest.mock import (ANY, call, AsyncMock, patch, MagicMock, Mock,
                            create_autospec, sentinel, _CallList)
 
@@ -390,7 +391,7 @@ class AsyncSpecSetTest(unittest.TestCase):
             self.assertIsInstance(cm, MagicMock)
 
 
-class AsyncArguments(unittest.IsolatedAsyncioTestCase):
+class AsyncArguments(IsolatedAsyncioTestCase):
     async def test_add_return_value(self):
         async def addition(self, var):
             return var + 1
