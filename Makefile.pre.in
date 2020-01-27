@@ -1336,6 +1336,7 @@ LIBSUBDIRS=	tkinter tkinter/test tkinter/test/test_tkinter \
 		test/test_import/data/circular_imports/subpkg \
 		test/test_import/data/package \
 		test/test_import/data/package2 \
+		test/test_import/data/unwritable \
 		importlib \
 		importlib/metadata \
 		test/test_importlib \
