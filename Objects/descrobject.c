@@ -1793,12 +1793,130 @@ PyTypeObject PyProperty_Type = {
 
 
 // Experimental code to implement PEP 585 (list[int] etc.)
+// TODO: Does this belong in this file?
+
+typedef struct {
+    PyObject_HEAD
+    PyObject *origin;
+    PyObject *parameters;
+} gaobject;
+
+static void
+ga_dealloc(PyObject *self)
+{
+    gaobject *alias = (gaobject *)self;
+
+    _PyObject_GC_UNTRACK(self);
+    Py_XDECREF(alias->origin);
+    Py_XDECREF(alias->parameters);
+    self->ob_type->tp_free(self);
+}
+
+static int
+ga_traverse(PyObject *self, visitproc visit, void *arg)
+{
+    gaobject *alias = (gaobject *)self;
+    Py_VISIT(alias->origin);
+    Py_VISIT(alias->parameters);
+    return 0;
+}
+
+// TODO: nicely format origin and each parameter
+static PyObject *
+ga_repr(PyObject *self)
+{
+    gaobject *alias = (gaobject *)self;
+    return PyUnicode_FromFormat("%R[%R]", alias->origin, alias->parameters);
+}
+
+static PyObject *
+ga_call(PyObject *self, PyObject *args, PyObject *kwds)
+{
+    gaobject *alias = (gaobject *)self;
+    return PyObject_Call(alias->origin, args, kwds);
+}
+
+static const char* attr_exceptions[] = {
+    "__origin__",
+    "__parameters__",
+    NULL,
+};
+
+static PyObject *
+ga_getattro(PyObject *self, PyObject *name)
+{
+    gaobject *alias = (gaobject *)self;
+    // TODO: Use ga_members instead?
+    if (alias->origin != NULL && PyUnicode_Check(name)) {
+        for (const char **p = attr_exceptions; ; p++) {
+            if (*p == NULL) {
+                return PyObject_GenericGetAttr(alias->origin, name);
+            }
+            if (PyUnicode_CompareWithASCIIString(name, *p) == 0) {
+                break;
+            }
+        }
+    }
+    return PyObject_GenericGetAttr(self, name);
+}
+
+static PyMemberDef ga_members[] = {
+    {"__origin__", T_OBJECT, offsetof(gaobject, origin), READONLY},
+    {"__parameters__", T_OBJECT, offsetof(gaobject, parameters), READONLY},
+    {0}
+};
+
+// TODO: Maybe move this to tp_new(), so we won't ever have origin==NULL?
+static int
+ga_init(PyObject *self, PyObject *args, PyObject *kwds)
+{
+    gaobject *alias = (gaobject *)self;
+    if (alias->origin != NULL || alias->parameters != NULL) {
+        PyErr_Format(PyExc_TypeError, "This GenericAlias is alreay initialized");
+        return -1;
+    }
+    if (kwds != NULL) {
+        PyErr_Format(PyExc_TypeError, "GenericAlias does not support keyword arguments");
+        return -1;
+    }
+    if (!PyTuple_Check(args) || PyTuple_Size(args) != 2) {
+        PyErr_Format(PyExc_TypeError, "GenericAlias expects 2 positional arguments");
+        return -1;
+    }
+    PyObject *origin = PyTuple_GET_ITEM(args, 0);
+    PyObject *parameters = PyTuple_GET_ITEM(args, 1);
+    Py_INCREF(origin);
+    Py_INCREF(parameters);
+    alias->origin = origin;
+    alias->parameters = parameters;
+    return 0;
+}
+
+// TODO:
+// - __mro_entries__, to support class C(list[int]): ...
+// - argument clinic
+// - __doc__
+// - cache
+PyTypeObject Py_GenericAliasType = {
+    PyVarObject_HEAD_INIT(&PyType_Type, 0)
+    .tp_name = "GenericAlias",
+    .tp_basicsize = sizeof(gaobject),
+    .tp_dealloc = ga_dealloc,
+    .tp_repr = ga_repr,
+    .tp_call = ga_call,
+    .tp_getattro = ga_getattro,
+    .tp_flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC,
+    .tp_traverse = ga_traverse,
+    .tp_members = ga_members,
+    .tp_init = ga_init,
+    .tp_alloc = PyType_GenericAlloc,
+    .tp_new = PyType_GenericNew,
+    .tp_free = PyObject_GC_Del,
+};
 
 PyObject *
 Py_GenericAlias(PyObject *origin, PyObject *parameters)
 {
-    // Step 1: just return `origin`
-    Py_INCREF(origin);
     /* Debug
     fprintf(stderr, "origin=");
     PyObject_Print(origin, stderr, 0);
@@ -1807,5 +1925,26 @@ Py_GenericAlias(PyObject *origin, PyObject *parameters)
     PyObject_Print(parameters, stderr, 0);
     fprintf(stderr, "\n");
     */
-    return origin;
+    PyObject *wrapper = NULL;
+    if (!PyTuple_Check(parameters)) {
+        wrapper = PyTuple_New(1);
+        if (wrapper == NULL)
+            return NULL;
+        Py_INCREF(parameters);
+        PyTuple_SetItem(wrapper, 0, parameters);
+        parameters = wrapper;
+    }
+
+    gaobject *alias = PyObject_GC_New(gaobject, &Py_GenericAliasType);
+    if (alias == NULL) {
+        Py_XDECREF(wrapper);
+        return NULL;
+    }
+
+    Py_INCREF(origin);
+    Py_INCREF(parameters);
+    alias->origin = origin;
+    alias->parameters = parameters;
+    _PyObject_GC_TRACK(alias);
+    return (PyObject *)alias;
 }
