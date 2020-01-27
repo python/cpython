@@ -1048,7 +1048,8 @@ _memory_release(PyMemoryViewObject *self)
         return -1;
     }
 
-    Py_FatalError("_memory_release(): negative export count");
+    PyErr_SetString(PyExc_SystemError,
+                    "_memory_release(): negative export count");
     return -1;
 }
 
