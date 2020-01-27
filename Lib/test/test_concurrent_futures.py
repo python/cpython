@@ -359,8 +359,6 @@ class ExecutorShutdownTest:
                 t.submit(sleep_and_print, 1.0, "apple")
                 t.shutdown(wait=False)
             """.format(executor_type=self.executor_type.__name__))
-        # Errors in atexit hooks don't change the process exit code, check
-        # stderr manually.
         self.assertFalse(err)
         self.assertEqual(out.strip(), b"apple")
 
