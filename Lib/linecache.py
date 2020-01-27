@@ -10,7 +10,7 @@ import sys
 import os
 import tokenize
 
-__all__ = ["getline", "clearcache", "checkcache"]
+__all__ = ["checkcache", "clearcache", "getline", "getlines", "lazycache", "updatecache"]
 
 def getline(filename, lineno, module_globals=None):
     lines = getlines(filename, module_globals)
