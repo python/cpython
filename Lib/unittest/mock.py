@@ -30,6 +30,7 @@ import inspect
 import pprint
 import sys
 import builtins
+from asyncio import iscoroutinefunction
 from types import CodeType, ModuleType, MethodType
 from unittest.util import safe_repr
 from functools import wraps, partial
@@ -48,12 +49,12 @@ def _is_async_obj(obj):
         return False
     if hasattr(obj, '__func__'):
         obj = getattr(obj, '__func__')
-    return asyncio.iscoroutinefunction(obj) or inspect.isawaitable(obj)
+    return iscoroutinefunction(obj) or inspect.isawaitable(obj)
 
 
 def _is_async_func(func):
     if getattr(func, '__code__', None):
-        return asyncio.iscoroutinefunction(func)
+        return iscoroutinefunction(func)
     else:
         return False
 
@@ -488,7 +489,7 @@ class NonCallableMock(Base):
         _spec_asyncs = []
 
         for attr in dir(spec):
-            if asyncio.iscoroutinefunction(getattr(spec, attr, None)):
+            if iscoroutinefunction(getattr(spec, attr, None)):
                 _spec_asyncs.append(attr)
 
         if spec is not None and not _is_list(spec):
@@ -2152,7 +2153,7 @@ class AsyncMockMixin(Base):
 
     def __init__(self, /, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        # asyncio.iscoroutinefunction() checks _is_coroutine property to say if an
+        # iscoroutinefunction() checks _is_coroutine property to say if an
         # object is a coroutine. Without this check it looks to see if it is a
         # function/method, which in this case it is not (since it is an
         # AsyncMock).
@@ -2188,7 +2189,7 @@ class AsyncMockMixin(Base):
                     raise StopAsyncIteration
                 if _is_exception(result):
                     raise result
-            elif asyncio.iscoroutinefunction(effect):
+            elif iscoroutinefunction(effect):
                 result = await effect(*args, **kwargs)
             else:
                 result = effect(*args, **kwargs)
@@ -2200,7 +2201,7 @@ class AsyncMockMixin(Base):
             return self.return_value
 
         if self._mock_wraps is not None:
-            if asyncio.iscoroutinefunction(self._mock_wraps):
+            if iscoroutinefunction(self._mock_wraps):
                 return await self._mock_wraps(*args, **kwargs)
             return self._mock_wraps(*args, **kwargs)
 
@@ -2337,7 +2338,7 @@ class AsyncMock(AsyncMockMixin, AsyncMagicMixin, Mock):
     recognized as an async function, and the result of a call is an awaitable:
 
     >>> mock = AsyncMock()
-    >>> asyncio.iscoroutinefunction(mock)
+    >>> iscoroutinefunction(mock)
     True
     >>> inspect.isawaitable(mock())
     True
@@ -2710,7 +2711,7 @@ def create_autospec(spec, spec_set=False, instance=False, _parent=None,
 
             skipfirst = _must_skip(spec, entry, is_type)
             kwargs['_eat_self'] = skipfirst
-            if asyncio.iscoroutinefunction(original):
+            if iscoroutinefunction(original):
                 child_klass = AsyncMock
             else:
                 child_klass = MagicMock

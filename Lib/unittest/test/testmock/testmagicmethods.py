@@ -1,8 +1,8 @@
-import asyncio
 import math
 import unittest
 import os
 import sys
+from asyncio import iscoroutinefunction
 from unittest.mock import AsyncMock, Mock, MagicMock, _magics
 
 
@@ -286,8 +286,8 @@ class TestMockingMagicMethods(unittest.TestCase):
         self.assertEqual(math.trunc(mock), mock.__trunc__())
         self.assertEqual(math.floor(mock), mock.__floor__())
         self.assertEqual(math.ceil(mock), mock.__ceil__())
-        self.assertTrue(asyncio.iscoroutinefunction(mock.__aexit__))
-        self.assertTrue(asyncio.iscoroutinefunction(mock.__aenter__))
+        self.assertTrue(iscoroutinefunction(mock.__aexit__))
+        self.assertTrue(iscoroutinefunction(mock.__aenter__))
         self.assertIsInstance(mock.__aenter__, AsyncMock)
         self.assertIsInstance(mock.__aexit__, AsyncMock)
 
@@ -312,8 +312,8 @@ class TestMockingMagicMethods(unittest.TestCase):
         self.assertEqual(math.trunc(mock), mock.__trunc__())
         self.assertEqual(math.floor(mock), mock.__floor__())
         self.assertEqual(math.ceil(mock), mock.__ceil__())
-        self.assertTrue(asyncio.iscoroutinefunction(mock.__aexit__))
-        self.assertTrue(asyncio.iscoroutinefunction(mock.__aenter__))
+        self.assertTrue(iscoroutinefunction(mock.__aexit__))
+        self.assertTrue(iscoroutinefunction(mock.__aenter__))
         self.assertIsInstance(mock.__aenter__, AsyncMock)
         self.assertIsInstance(mock.__aexit__, AsyncMock)
 
