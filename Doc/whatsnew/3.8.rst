@@ -2216,3 +2216,10 @@ because of the behavior of the socket option ``SO_REUSEADDR`` in UDP. For more
 details, see the documentation for ``loop.create_datagram_endpoint()``.
 (Contributed by Kyle Stanley, Antoine Pitrou, and Yury Selivanov in
 :issue:`37228`.)
+
+Notable changes in Python 3.8.2
+===============================
+
+Fixed a regression with the ``ignore`` callback of :func:`shutil.copytree`.
+The argument types are now str and List[str] again.
+(Contributed by Manuel Barkhau and Giampaolo Rodola in :issue:`39390`.)
