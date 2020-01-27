@@ -3,7 +3,7 @@ import inspect
 import re
 import unittest
 
-from asyncio import run
+from asyncio import run, iscoroutinefunction
 from unittest.mock import (ANY, call, AsyncMock, patch, MagicMock, Mock,
                            create_autospec, sentinel, _CallList)
 
@@ -55,7 +55,7 @@ class AsyncPatchDecoratorTest(unittest.TestCase):
     def test_is_coroutine_function_patch(self):
         @patch.object(AsyncClass, 'async_method')
         def test_async(mock_method):
-            self.assertTrue(asyncio.iscoroutinefunction(mock_method))
+            self.assertTrue(iscoroutinefunction(mock_method))
         test_async()
 
     def test_is_async_patch(self):
@@ -116,7 +116,7 @@ class AsyncPatchCMTest(unittest.TestCase):
     def test_is_async_function_cm(self):
         def test_async():
             with patch.object(AsyncClass, 'async_method') as mock_method:
-                self.assertTrue(asyncio.iscoroutinefunction(mock_method))
+                self.assertTrue(iscoroutinefunction(mock_method))
 
         test_async()
 
@@ -148,12 +148,12 @@ class AsyncPatchCMTest(unittest.TestCase):
 class AsyncMockTest(unittest.TestCase):
     def test_iscoroutinefunction_default(self):
         mock = AsyncMock()
-        self.assertTrue(asyncio.iscoroutinefunction(mock))
+        self.assertTrue(iscoroutinefunction(mock))
 
     def test_iscoroutinefunction_function(self):
         async def foo(): pass
         mock = AsyncMock(foo)
-        self.assertTrue(asyncio.iscoroutinefunction(mock))
+        self.assertTrue(iscoroutinefunction(mock))
         self.assertTrue(inspect.iscoroutinefunction(mock))
 
     def test_isawaitable(self):
@@ -166,7 +166,7 @@ class AsyncMockTest(unittest.TestCase):
     def test_iscoroutinefunction_normal_function(self):
         def foo(): pass
         mock = AsyncMock(foo)
-        self.assertTrue(asyncio.iscoroutinefunction(mock))
+        self.assertTrue(iscoroutinefunction(mock))
         self.assertTrue(inspect.iscoroutinefunction(mock))
 
     def test_future_isfuture(self):
@@ -214,7 +214,7 @@ class AsyncAutospecTest(unittest.TestCase):
 
         run(main())
 
-        self.assertTrue(asyncio.iscoroutinefunction(spec))
+        self.assertTrue(iscoroutinefunction(spec))
         self.assertTrue(asyncio.iscoroutine(awaitable))
         self.assertEqual(spec.await_count, 1)
         self.assertEqual(spec.await_args, call(1, 2, c=3))
@@ -235,7 +235,7 @@ class AsyncAutospecTest(unittest.TestCase):
                 awaitable = mock_method(1, 2, c=3)
                 self.assertIsInstance(mock_method.mock, AsyncMock)
 
-                self.assertTrue(asyncio.iscoroutinefunction(mock_method))
+                self.assertTrue(iscoroutinefunction(mock_method))
                 self.assertTrue(asyncio.iscoroutine(awaitable))
                 self.assertTrue(inspect.isawaitable(awaitable))
 
@@ -371,13 +371,13 @@ class AsyncSpecSetTest(unittest.TestCase):
 
     def test_is_async_AsyncMock(self):
         mock = AsyncMock(spec_set=AsyncClass.async_method)
-        self.assertTrue(asyncio.iscoroutinefunction(mock))
+        self.assertTrue(iscoroutinefunction(mock))
         self.assertIsInstance(mock, AsyncMock)
 
     def test_is_child_AsyncMock(self):
         mock = MagicMock(spec_set=AsyncClass)
-        self.assertTrue(asyncio.iscoroutinefunction(mock.async_method))
-        self.assertFalse(asyncio.iscoroutinefunction(mock.normal_method))
+        self.assertTrue(iscoroutinefunction(mock.async_method))
+        self.assertFalse(iscoroutinefunction(mock.normal_method))
         self.assertIsInstance(mock.async_method, AsyncMock)
         self.assertIsInstance(mock.normal_method, MagicMock)
         self.assertIsInstance(mock, MagicMock)
@@ -537,8 +537,8 @@ class AsyncMagicMethods(unittest.TestCase):
         self.assertIsInstance(m_mock.__aenter__, AsyncMock)
         self.assertIsInstance(m_mock.__aexit__, AsyncMock)
         # AsyncMocks are also coroutine functions
-        self.assertTrue(asyncio.iscoroutinefunction(m_mock.__aenter__))
-        self.assertTrue(asyncio.iscoroutinefunction(m_mock.__aexit__))
+        self.assertTrue(iscoroutinefunction(m_mock.__aenter__))
+        self.assertTrue(iscoroutinefunction(m_mock.__aexit__))
 
 class AsyncContextManagerTest(unittest.TestCase):
 
@@ -688,11 +688,11 @@ class AsyncIteratorTest(unittest.TestCase):
             mock_instance = mock_type(instance)
             # Check that the mock and the real thing bahave the same
             # __aiter__ is not actually async, so not a coroutinefunction
-            self.assertFalse(asyncio.iscoroutinefunction(instance.__aiter__))
-            self.assertFalse(asyncio.iscoroutinefunction(mock_instance.__aiter__))
+            self.assertFalse(iscoroutinefunction(instance.__aiter__))
+            self.assertFalse(iscoroutinefunction(mock_instance.__aiter__))
             # __anext__ is async
-            self.assertTrue(asyncio.iscoroutinefunction(instance.__anext__))
-            self.assertTrue(asyncio.iscoroutinefunction(mock_instance.__anext__))
+            self.assertTrue(iscoroutinefunction(instance.__anext__))
+            self.assertTrue(iscoroutinefunction(mock_instance.__anext__))
 
         for mock_type in [AsyncMock, MagicMock]:
             with self.subTest(f"test aiter and anext corourtine with {mock_type}"):
@@ -749,7 +749,7 @@ class AsyncMockAssert(unittest.TestCase):
         with self.assertWarns(RuntimeWarning):
             # Will raise a warning because never awaited
             mock.async_method()
-        self.assertTrue(asyncio.iscoroutinefunction(mock.async_method))
+        self.assertTrue(iscoroutinefunction(mock.async_method))
         mock.async_method.assert_called()
         mock.async_method.assert_called_once()
         mock.async_method.assert_called_once_with()
