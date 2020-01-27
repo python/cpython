@@ -225,6 +225,8 @@ class ListTest(list_tests.CommonTest):
         # to list elements while calling PyObject_RichCompareBool().
         lst = [X(), X()]
         3 in lst
+        lst = [X(), X()]
+        X() in lst
 
 
 if __name__ == "__main__":
