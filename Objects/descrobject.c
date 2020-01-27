@@ -1790,3 +1790,22 @@ PyTypeObject PyProperty_Type = {
     PyType_GenericNew,                          /* tp_new */
     PyObject_GC_Del,                            /* tp_free */
 };
+
+
+// Experimental code to implement PEP 585 (list[int] etc.)
+
+PyObject *
+Py_GenericAlias(PyObject *origin, PyObject *parameters)
+{
+    // Step 1: just return `origin`
+    Py_INCREF(origin);
+    /* Debug
+    fprintf(stderr, "origin=");
+    PyObject_Print(origin, stderr, 0);
+    fprintf(stderr, "\n");
+    fprintf(stderr, "parameters=");
+    PyObject_Print(parameters, stderr, 0);
+    fprintf(stderr, "\n");
+    */
+    return origin;
+}
