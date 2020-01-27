@@ -715,6 +715,53 @@ class MockTest(unittest.TestCase):
         self.assertRaises(StopIteration, mock.method)
 
 
+    def test_magic_method_wraps_dict(self):
+        data = {'foo': 'bar'}
+
+        wrapped_dict = MagicMock(wraps=data)
+        self.assertEqual(wrapped_dict.get('foo'), 'bar')
+        self.assertEqual(wrapped_dict['foo'], 'bar')
+        self.assertTrue('foo' in wrapped_dict)
+
+        # return_value is non-sentinel and takes precedence over wrapped value.
+        wrapped_dict.get.return_value = 'return_value'
+        self.assertEqual(wrapped_dict.get('foo'), 'return_value')
+
+        # return_value is sentinel and hence wrapped value is returned.
+        wrapped_dict.get.return_value = sentinel.DEFAULT
+        self.assertEqual(wrapped_dict.get('foo'), 'bar')
+
+        self.assertEqual(wrapped_dict.get('baz'), None)
+        with self.assertRaises(KeyError):
+            wrapped_dict['baz']
+        self.assertFalse('bar' in wrapped_dict)
+
+        data['baz'] = 'spam'
+        self.assertEqual(wrapped_dict.get('baz'), 'spam')
+        self.assertEqual(wrapped_dict['baz'], 'spam')
+        self.assertTrue('baz' in wrapped_dict)
+
+        del data['baz']
+        self.assertEqual(wrapped_dict.get('baz'), None)
+
+
+    def test_magic_method_wraps_class(self):
+
+        class Foo:
+
+            def __getitem__(self, index):
+                return index
+
+            def __custom_method__(self):
+                return "foo"
+
+
+        klass = MagicMock(wraps=Foo)
+        obj = klass()
+        self.assertEqual(obj.__getitem__(2), 2)
+        self.assertEqual(obj.__custom_method__(), "foo")
+
+
     def test_exceptional_side_effect(self):
         mock = Mock(side_effect=AttributeError)
         self.assertRaises(AttributeError, mock)
