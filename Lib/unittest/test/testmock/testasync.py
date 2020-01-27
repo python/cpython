@@ -56,13 +56,11 @@ normal_foo_name = f'{__name__}.NormalClass'
 
 @contextmanager
 def assertNeverAwaited(test):
-    with test.assertWarns(RuntimeWarning) as cm:
+    with test.assertWarnsRegex(RuntimeWarning, "was never awaited$"):
         yield
         # In non-CPython implementations of Python, this is needed because timely
         # deallocation is not guaranteed by the garbage collector.
         gc.collect()
-    test.assertTrue(str(cm.warning).endswith('was never awaited'),
-                    msg=str(cm.warning))
 
 
 class AsyncPatchDecoratorTest(unittest.TestCase):
