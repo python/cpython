@@ -90,6 +90,7 @@ intern_string_constants(PyObject *tuple, int *modified)
             }
             int tmp_modified = 0;
             if (intern_string_constants(tmp, &tmp_modified) < 0) {
+                Py_DECREF(tmp);
                 return -1;
             }
             if (tmp_modified) {
