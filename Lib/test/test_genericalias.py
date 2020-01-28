@@ -48,6 +48,11 @@ class BaseTest(unittest.TestCase):
         self.assertEqual(C.__bases__, (list,))
         self.assertEqual(C.__class__, type)
 
+    def test_class_methods(self):
+        t = dict[int, None]
+        self.assertEqual(dict.fromkeys(range(2)), {0: None, 1: None})  # This works
+        self.assertEqual(t.fromkeys(range(2)), {0: None, 1: None})  # Should be equivalent
+
 
 if __name__ == "__main__":
     unittest.main()

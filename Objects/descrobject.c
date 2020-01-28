@@ -1850,7 +1850,7 @@ ga_getattro(PyObject *self, PyObject *name)
     if (alias->origin != NULL && PyUnicode_Check(name)) {
         for (const char **p = attr_exceptions; ; p++) {
             if (*p == NULL) {
-                return PyObject_GenericGetAttr(alias->origin, name);
+                return PyObject_GetAttr(alias->origin, name);
             }
             if (PyUnicode_CompareWithASCIIString(name, *p) == 0) {
                 break;
