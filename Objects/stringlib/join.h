@@ -114,10 +114,12 @@ STRINGLIB(bytes_join)(PyObject *sep, PyObject *iterable)
 
     /* Catenate everything. */
     p = STRINGLIB_STR(res);
-    if (sz < GIL_THRESHOLD)
+    if (sz < GIL_THRESHOLD) {
         drop_gil = 0;   /* Benefits are likely outweighed by the overheads */
-    if (drop_gil)
+    }
+    if (drop_gil) {
         save = PyEval_SaveThread();
+    }
     if (!seplen) {
         /* fast path */
         for (i = 0; i < nbufs; i++) {
@@ -141,8 +143,9 @@ STRINGLIB(bytes_join)(PyObject *sep, PyObject *iterable)
             p += n;
         }
     }
-    if (drop_gil)
+    if (drop_gil) {
         PyEval_RestoreThread(save);
+    }
     goto done;
 
 error:
