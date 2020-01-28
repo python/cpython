@@ -1793,12 +1793,9 @@ class Document(Node, DocumentLS):
         declarations = []
 
         if encoding:
-            declarations.append('encoding="{}"'.format(encoding))
-        # In case standalone declaration is set
+            declarations.append(f'encoding="{encoding}"')
         if standalone is not None:
-            declarations.append(
-                'standalone="{}"'.format('yes' if standalone else 'no')
-            )
+            declarations.append(f'standalone="{"yes" if standalone else "no"}"')
 
         writer.write(f'<?xml version="1.0" {" ".join(declarations)}?>{newl}')
 
