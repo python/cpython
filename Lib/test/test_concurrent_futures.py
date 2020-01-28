@@ -342,6 +342,26 @@ class ExecutorShutdownTest:
         for f in fs:
             f.result()
 
+    def test_hang_issue39205(self):
+        """shutdown(wait=False) doesn't hang at exit with running futures.
+
+        See https://bugs.python.org/issue39205.
+        """
+        if self.executor_type == futures.ProcessPoolExecutor:
+            raise unittest.SkipTest(
+                "Hangs due to https://bugs.python.org/issue39205")
+
+        rc, out, err = assert_python_ok('-c', """if True:
+            from concurrent.futures import {executor_type}
+            from test.test_concurrent_futures import sleep_and_print
+            if __name__ == "__main__":
+                t = {executor_type}(max_workers=3)
+                t.submit(sleep_and_print, 1.0, "apple")
+                t.shutdown(wait=False)
+            """.format(executor_type=self.executor_type.__name__))
+        self.assertFalse(err)
+        self.assertEqual(out.strip(), b"apple")
+
 
 class ThreadPoolShutdownTest(ThreadPoolMixin, ExecutorShutdownTest, BaseTestCase):
     def _prime_executor(self):
