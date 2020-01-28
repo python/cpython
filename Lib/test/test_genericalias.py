@@ -58,6 +58,13 @@ class BaseTest(unittest.TestCase):
         with self.assertRaises(TypeError):
             t[int]
 
+    def test_generic_subclass(self):
+        class MyList(list):
+            pass
+        t = MyList[int]
+        self.assertIs(t.__origin__, MyList)
+        self.assertEqual(t.__parameters__, (int,))
+
 
 if __name__ == "__main__":
     unittest.main()
