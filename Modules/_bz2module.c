@@ -755,11 +755,20 @@ PyInit__bz2(void)
         return NULL;
 
     Py_INCREF(&BZ2Compressor_Type);
-    PyModule_AddObject(m, "BZ2Compressor", (PyObject *)&BZ2Compressor_Type);
+    if (_PyModule_StealObject(m, "BZ2Compressor",
+                            (PyObject *)&BZ2Compressor_Type) < 0) {
+        goto fail;
+    }
 
     Py_INCREF(&BZ2Decompressor_Type);
-    PyModule_AddObject(m, "BZ2Decompressor",
-                       (PyObject *)&BZ2Decompressor_Type);
+    if (_PyModule_StealObject(m, "BZ2Decompressor",
+                            (PyObject *)&BZ2Decompressor_Type) < 0) {
+        goto fail;
+    }
 
     return m;
+
+fail:
+    Py_DECREF(m);
+    return NULL;
 }
