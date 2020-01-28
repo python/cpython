@@ -1296,8 +1296,16 @@ class _BasePathTest(object):
         self.assertTrue(p.is_absolute())
 
     def test_home(self):
-        p = self.cls.home()
-        self._test_home(p)
+        with support.EnvironmentVarGuard() as env:
+            self._test_home(self.cls.home())
+
+            env.clear()
+            env['USERPROFILE'] = os.path.join(BASE, 'userprofile')
+            self._test_home(self.cls.home())
+
+            # bpo-38883: ignore `HOME` when set on windows
+            env['HOME'] = os.path.join(BASE, 'home')
+            self._test_home(self.cls.home())
 
     def test_samefile(self):
         fileA_path = os.path.join(BASE, 'fileA')
@@ -2348,12 +2356,6 @@ class WindowsPathTest(_BasePathTest, unittest.TestCase):
                 self.assertEqual(p5.expanduser(), p5)
                 self.assertEqual(p6.expanduser(), p6)
 
-            # Test the first lookup key in the env vars.
-            env['HOME'] = 'C:\\Users\\alice'
-            check()
-
-            # Test that HOMEPATH is available instead.
-            env.pop('HOME', None)
             env['HOMEPATH'] = 'C:\\Users\\alice'
             check()
 
@@ -2364,6 +2366,10 @@ class WindowsPathTest(_BasePathTest, unittest.TestCase):
             env.pop('HOMEDRIVE', None)
             env.pop('HOMEPATH', None)
             env['USERPROFILE'] = 'C:\\Users\\alice'
+            check()
+
+            # bpo-38883: ignore `HOME` when set on windows
+            env['HOME'] = 'C:\\Users\\eve'
             check()
 
 
