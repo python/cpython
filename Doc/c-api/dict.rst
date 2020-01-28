@@ -62,7 +62,7 @@ Dictionary Objects
 
 .. c:function:: int PyDict_SetItem(PyObject *p, PyObject *key, PyObject *val)
 
-   Insert *value* into the dictionary *p* with a key of *key*.  *key* must be
+   Insert *val* into the dictionary *p* with a key of *key*.  *key* must be
    :term:`hashable`; if it isn't, :exc:`TypeError` will be raised. Return
    ``0`` on success or ``-1`` on failure.  This function *does not* steal a
    reference to *val*.
@@ -72,7 +72,7 @@ Dictionary Objects
 
    .. index:: single: PyUnicode_FromString()
 
-   Insert *value* into the dictionary *p* using *key* as a key. *key* should
+   Insert *val* into the dictionary *p* using *key* as a key. *key* should
    be a :c:type:`const char\*`.  The key object is created using
    ``PyUnicode_FromString(key)``.  Return ``0`` on success or ``-1`` on
    failure.  This function *does not* steal a reference to *val*.
