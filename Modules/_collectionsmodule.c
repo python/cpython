@@ -2539,34 +2539,55 @@ PyInit__collections(void)
     if (m == NULL)
         return NULL;
 
-    if (PyType_Ready(&deque_type) < 0)
-        return NULL;
+    if (PyType_Ready(&deque_type) < 0) {
+        goto fail;
+    }
     Py_INCREF(&deque_type);
-    PyModule_AddObject(m, "deque", (PyObject *)&deque_type);
+    if (_PyModule_StealObject(m, "deque", (PyObject *)&deque_type) < 0) {
+        goto fail;
+    }
 
     defdict_type.tp_base = &PyDict_Type;
-    if (PyType_Ready(&defdict_type) < 0)
-        return NULL;
+    if (PyType_Ready(&defdict_type) < 0) {
+        goto fail;
+    }
     Py_INCREF(&defdict_type);
-    PyModule_AddObject(m, "defaultdict", (PyObject *)&defdict_type);
+    if (_PyModule_StealObject(m, "defaultdict", (PyObject *)&defdict_type) < 0) {
+        goto fail;
+    }
 
     Py_INCREF(&PyODict_Type);
-    PyModule_AddObject(m, "OrderedDict", (PyObject *)&PyODict_Type);
+    if (_PyModule_StealObject(m, "OrderedDict", (PyObject *)&PyODict_Type) < 0) {
+        goto fail;
+    }
 
-    if (PyType_Ready(&dequeiter_type) < 0)
-        return NULL;
+    if (PyType_Ready(&dequeiter_type) < 0) {
+        goto fail;
+    }
     Py_INCREF(&dequeiter_type);
-    PyModule_AddObject(m, "_deque_iterator", (PyObject *)&dequeiter_type);
+    if (_PyModule_StealObject(m, "_deque_iterator", (PyObject *)&dequeiter_type) < 0) {
+        goto fail;
+    }
 
-    if (PyType_Ready(&dequereviter_type) < 0)
-        return NULL;
+    if (PyType_Ready(&dequereviter_type) < 0) {
+        goto fail;
+    }
     Py_INCREF(&dequereviter_type);
-    PyModule_AddObject(m, "_deque_reverse_iterator", (PyObject *)&dequereviter_type);
+    if (_PyModule_StealObject(m, "_deque_reverse_iterator", (PyObject *)&dequereviter_type) < 0) {
+        goto fail;
+    }
 
-    if (PyType_Ready(&tuplegetter_type) < 0)
-        return NULL;
+    if (PyType_Ready(&tuplegetter_type) < 0) {
+        goto fail;
+    }
     Py_INCREF(&tuplegetter_type);
-    PyModule_AddObject(m, "_tuplegetter", (PyObject *)&tuplegetter_type);
+    if (_PyModule_StealObject(m, "_tuplegetter", (PyObject *)&tuplegetter_type) < 0) {
+        goto fail;
+    }
 
     return m;
+
+fail:
+    Py_DECREF(m);
+    return NULL;
 }
