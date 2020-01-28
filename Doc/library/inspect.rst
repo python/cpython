@@ -623,7 +623,7 @@ function.
          order of keyword-only parameters as of version 3.7, although in practice
          this order had always been preserved in Python 3.
 
-      .. versionchanged:: 3.8
+      .. versionchanged:: 3.9
          :attr:`parameters` is now of type :class:`dict`. Formerly, it was of
          type :class:`collections.OrderedDict`.
 
