@@ -833,7 +833,7 @@ function.
          However, if needed, use :meth:`BoundArguments.apply_defaults` to add
          them.
 
-      .. versionchanged:: 3.8
+      .. versionchanged:: 3.9
          :attr:`arguments` is now of type :class:`dict`. Formerly, it was of
          type :class:`collections.OrderedDict`.
 
