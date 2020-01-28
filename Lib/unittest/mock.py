@@ -1042,8 +1042,7 @@ class _AnyComparer(list):
     the left."""
     def __contains__(self, item):
         for _call in self:
-            if len(item) != len(_call):
-                continue
+            assert len(item) == len(_call)
             if all([
                 expected == actual
                 for expected, actual in zip(item, _call)
