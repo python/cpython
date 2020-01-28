@@ -9887,15 +9887,19 @@ PyInit__ast(void)
     if (!init_types()) return NULL;
     m = PyState_FindModule(&_astmodule);
     if (!m) return NULL;
-    if (PyModule_AddObject(m, "AST", astmodulestate_global->AST_type) < 0) goto
-        error;
+    if (PyModule_AddObject(m, "AST", astmodulestate_global->AST_type) < 0) {
+        goto error;
+    }
     Py_INCREF(astmodulestate(m)->AST_type);
-    if (PyModule_AddIntMacro(m, PyCF_ALLOW_TOP_LEVEL_AWAIT) < 0)
+    if (PyModule_AddIntMacro(m, PyCF_ALLOW_TOP_LEVEL_AWAIT) < 0) {
         goto error;
-    if (PyModule_AddIntMacro(m, PyCF_ONLY_AST) < 0)
+    }
+    if (PyModule_AddIntMacro(m, PyCF_ONLY_AST) < 0) {
         goto error;
-    if (PyModule_AddIntMacro(m, PyCF_TYPE_COMMENTS) < 0)
+    }
+    if (PyModule_AddIntMacro(m, PyCF_TYPE_COMMENTS) < 0) {
         goto error;
+    }
     if (PyModule_AddObject(m, "mod", astmodulestate_global->mod_type) < 0) goto
         error;
     Py_INCREF(astmodulestate(m)->mod_type);
