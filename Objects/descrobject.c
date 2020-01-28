@@ -1703,19 +1703,21 @@ property_init_impl(propertyobject *self, PyObject *fget, PyObject *fset,
     if ((doc == NULL || doc == Py_None) && fget != NULL) {
         PyObject *get_doc;
         int rc = _PyObject_LookupAttrId(fget, &PyId___doc__, &get_doc);
-        if (rc <= 0) {
+        if (rc < 0) {
             return rc;
         }
-        Py_XSETREF(self->prop_doc, get_doc);
-        self->getter_doc = 1;
+        else if (rc == 1) {
+            Py_XSETREF(self->prop_doc, get_doc);
+            self->getter_doc = 1;
+        }
     }
 
     /* If this is a property subclass, put __doc__ in dict of the subclass
        instance as well, otherwise it gets shadowed by __doc__ in the
        class's dict. */
-    if (Py_IS_TYPE(self, &PyProperty_Type) && self->prop_doc != NULL) {
+    if (!Py_IS_TYPE(self, &PyProperty_Type)) {
         int err = _PyObject_SetAttrId((PyObject *)self, &PyId___doc__,
-                                      self->prop_doc);
+                                      self->prop_doc ? self->prop_doc : Py_None);
         if (err < 0) {
             return -1;
         }

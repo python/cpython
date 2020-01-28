@@ -261,6 +261,18 @@ class PropertySubclassTests(unittest.TestCase):
         self.assertEqual(Foo.spam.__doc__, "spam explicit doc")
         self.assertEqual(Foo.stuff.__doc__, "stuff doc argument")
 
+    def test_property_no_doc_on_getter(self):
+        # If a property's getter has no __doc__ then the property's doc should
+        # be None; test that this is consistent with subclasses as well; see
+        # GH-2487
+        class NoDoc:
+            @property
+            def __doc__(self):
+                raise AttributeError
+
+        self.assertEqual(property(NoDoc()).__doc__, None)
+        self.assertEqual(PropertySub(NoDoc()).__doc__, None)
+
     @unittest.skipIf(sys.flags.optimize >= 2,
                      "Docstrings are omitted with -O2 and above")
     def test_property_setter_copies_getter_docstring(self):
