@@ -1120,6 +1120,9 @@ PyInit__msi(void)
     MSIError = PyErr_NewException ("_msi.MSIError", NULL, NULL);
     if (!MSIError)
         return NULL;
-    PyModule_AddObject(m, "MSIError", MSIError);
+    if (_PyModule_StealObject(m, "MSIError", MSIError) < 0) {
+        Py_DECREF(m);
+        return NULL;
+    }
     return m;
 }
