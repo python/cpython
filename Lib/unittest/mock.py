@@ -2167,7 +2167,7 @@ class AsyncMockMixin(Base):
         self.__dict__['__code__'] = code_mock
 
     async def _execute_mock_call(self, /, *args, **kwargs):
-        # This is nearly just like super(), except for sepcial handling
+        # This is nearly just like super(), except for special handling
         # of coroutines
 
         _call = self.call_args
