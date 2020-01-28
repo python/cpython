@@ -1353,17 +1353,17 @@ _PyWarnings_Init(void)
     }
 
     Py_INCREF(st->filters);
-    if (PyModule_AddObject(m, "filters", st->filters) < 0) {
+    if (_PyModule_StealObject(m, "filters", st->filters) < 0) {
         goto error;
     }
 
     Py_INCREF(st->once_registry);
-    if (PyModule_AddObject(m, "_onceregistry", st->once_registry) < 0) {
+    if (_PyModule_StealObject(m, "_onceregistry", st->once_registry) < 0) {
         goto error;
     }
 
     Py_INCREF(st->default_action);
-    if (PyModule_AddObject(m, "_defaultaction", st->default_action) < 0) {
+    if (_PyModule_StealObject(m, "_defaultaction", st->default_action) < 0) {
         goto error;
     }
 
