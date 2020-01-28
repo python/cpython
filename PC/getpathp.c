@@ -226,7 +226,7 @@ join(wchar_t *buffer, const wchar_t *stuff)
     if (_PathCchCombineEx_Initialized == 0) {
         HMODULE pathapi = LoadLibraryExW(L"api-ms-win-core-path-l1-1-0.dll", NULL,
                                          LOAD_LIBRARY_SEARCH_SYSTEM32);
-        if (pathapi) {
+        if (pathapi)
             _PathCchCombineEx = (PPathCchCombineEx)GetProcAddress(pathapi, "PathCchCombineEx");
         else
             _PathCchCombineEx = NULL;
