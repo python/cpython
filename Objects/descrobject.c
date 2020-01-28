@@ -1836,7 +1836,7 @@ ga_call(PyObject *self, PyObject *args, PyObject *kwds)
     return PyObject_Call(alias->origin, args, kwds);
 }
 
-static const char* attr_exceptions[] = {
+static const char* const attr_exceptions[] = {
     "__origin__",
     "__parameters__",
     "__mro_entries__",
@@ -1847,8 +1847,8 @@ static PyObject *
 ga_getattro(PyObject *self, PyObject *name)
 {
     gaobject *alias = (gaobject *)self;
-    if (alias->origin != NULL && PyUnicode_Check(name)) {
-        for (const char **p = attr_exceptions; ; p++) {
+    if (PyUnicode_Check(name)) {
+        for (const char * const *p = attr_exceptions; ; p++) {
             if (*p == NULL) {
                 return PyObject_GetAttr(alias->origin, name);
             }
@@ -1864,7 +1864,7 @@ static PyObject *
 ga_mro_entries(PyObject *self, PyObject *args)
 {
     gaobject *alias = (gaobject *)self;
-    return Py_BuildValue("(O)", alias->origin);
+    return PyTuple_Pack(1, alias->origin);
 }
 
 static PyMethodDef ga_methods[] = {
@@ -1881,10 +1881,10 @@ static PyMemberDef ga_members[] = {
 static PyObject *
 ga_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 {
-    if (kwds != NULL) {
+    if (kwds != NULL && PyDict_GET_SIZE(kwds) != 0) {
         return PyErr_Format(PyExc_TypeError, "GenericAlias does not support keyword arguments");
     }
-    if (!PyTuple_Check(args) || PyTuple_Size(args) != 2) {
+    if (PyTuple_Size(args) != 2) {
         return PyErr_Format(PyExc_TypeError, "GenericAlias expects 2 positional arguments");
     }
     PyObject *origin = PyTuple_GET_ITEM(args, 0);
@@ -1916,24 +1916,23 @@ PyTypeObject Py_GenericAliasType = {
 PyObject *
 Py_GenericAlias(PyObject *origin, PyObject *parameters)
 {
-    PyObject *wrapper = NULL;
     if (!PyTuple_Check(parameters)) {
-        wrapper = PyTuple_New(1);
-        if (wrapper == NULL)
+        parameters = PyTuple_Pack(1, parameters);
+        if (parameters == NULL) {
             return NULL;
+        }
+    }
+    else {
         Py_INCREF(parameters);
-        PyTuple_SetItem(wrapper, 0, parameters);
-        parameters = wrapper;
     }
 
     gaobject *alias = PyObject_GC_New(gaobject, &Py_GenericAliasType);
     if (alias == NULL) {
-        Py_XDECREF(wrapper);
+        Py_DECREF(parameters);
         return NULL;
     }
 
     Py_INCREF(origin);
-    Py_INCREF(parameters);
     alias->origin = origin;
     alias->parameters = parameters;
     _PyObject_GC_TRACK(alias);
