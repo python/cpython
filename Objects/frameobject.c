@@ -67,52 +67,40 @@ get_arg(const _Py_CODEUNIT *codestr, Py_ssize_t i)
 }
 
 typedef struct _codetracker {
-    unsigned char *code;
+    PyCodeObject* code;
+    unsigned char *const codestr;
     Py_ssize_t code_len;
-    unsigned char *lnotab;
-    Py_ssize_t lnotab_len;
-    int start_line;
-    int offset;
-    int line;
+    PyLineSpan span;
     int addr;
-    int line_addr;
+    int line;
 } codetracker;
 
 /* Reset the mutable parts of the tracker */
 static void
 reset(codetracker *tracker)
 {
-    tracker->offset = 0;
+    _PyCode_InitLineSpan(&tracker->span, tracker->code);
     tracker->addr = 0;
-    tracker->line_addr = 0;
-    tracker->line = tracker->start_line;
+    tracker->line = _PyCode_CheckLineNumber(tracker->code, tracker->addr, &tracker->span);
 }
 
 /* Initialise the tracker */
 static void
 init_codetracker(codetracker *tracker, PyCodeObject *code_obj)
 {
+    tracker->code = code_obj;
     PyBytes_AsStringAndSize(code_obj->co_code,
-                            (char **)&tracker->code, &tracker->code_len);
-    PyBytes_AsStringAndSize(code_obj->co_lnotab,
-                            (char **)&tracker->lnotab, &tracker->lnotab_len);
-    tracker->start_line = code_obj->co_firstlineno;
+                            (char **)&tracker->codestr, &tracker->code_len);
     reset(tracker);
 }
+
+
 
 static void
 advance_tracker(codetracker *tracker)
 {
-    tracker->addr += sizeof(_Py_CODEUNIT);
-    if (tracker->offset >= tracker->lnotab_len) {
-        return;
-    }
-    while (tracker->offset < tracker->lnotab_len &&
-           tracker->addr >= tracker->line_addr + tracker->lnotab[tracker->offset]) {
-        tracker->line_addr += tracker->lnotab[tracker->offset];
-        tracker->line += (signed char)tracker->lnotab[tracker->offset+1];
-        tracker->offset += 2;
-    }
+    tracker->addr +=sizeof(_Py_CODEUNIT);
+    tracker->line = _PyCode_CheckLineNumber(tracker->code, tracker->addr, &tracker->span);
 }
 
 
@@ -120,28 +108,20 @@ static void
 retreat_tracker(codetracker *tracker)
 {
     tracker->addr -= sizeof(_Py_CODEUNIT);
-    while (tracker->addr < tracker->line_addr) {
-        tracker->offset -= 2;
-        tracker->line_addr -= tracker->lnotab[tracker->offset];
-        tracker->line -= (signed char)tracker->lnotab[tracker->offset+1];
-    }
+    tracker->line = _PyCode_CheckLineNumber(tracker->code, tracker->addr, &tracker->span);
 }
 
 static int
 move_to_addr(codetracker *tracker, int addr)
 {
-    while (addr > tracker->addr) {
-        advance_tracker(tracker);
-        if (tracker->addr >= tracker->code_len) {
-            return -1;
-        }
+    if (addr >= tracker->code_len) {
+        return -1;
     }
-    while (addr < tracker->addr) {
-        retreat_tracker(tracker);
-        if (tracker->addr < 0) {
-            return -1;
-        }
+    if (addr < 0) {
+        return -1;
     }
+    tracker->addr = addr;
+    tracker->line = _PyCode_CheckLineNumber(tracker->code, tracker->addr, &tracker->span);
     return 0;
 }
 
@@ -166,6 +146,19 @@ first_line_not_before(codetracker *tracker, int line)
 }
 
 static int
+tracker_at_start_of_line(codetracker *tracker)
+{
+    if (tracker->addr == 0) {
+        return 1;
+    }
+    if (tracker->addr == tracker->span.ls_lower) {
+        return 1;
+    }
+    unsigned char* p = (unsigned char*)PyBytes_AS_STRING(tracker->code->co_lnotab);
+    return p[tracker->addr/sizeof(_Py_CODEUNIT)] > p[tracker->addr/sizeof(_Py_CODEUNIT)-1];
+}
+
+static int
 move_to_nearest_start_of_line(codetracker *tracker, int line)
 {
     if (line > tracker->line) {
@@ -183,7 +176,7 @@ move_to_nearest_start_of_line(codetracker *tracker, int line)
                 return -1;
             }
         }
-        while (tracker->addr > tracker->line_addr) {
+        while (!tracker_at_start_of_line(tracker)) {
             retreat_tracker(tracker);
         }
     }
@@ -260,7 +253,7 @@ is_try_finally(unsigned char op, int target_op)
 static int
 block_stack_for_line(codetracker *tracker, int line, blockstack *blocks)
 {
-    if (line < tracker->start_line) {
+    if (line < tracker->code->co_firstlineno) {
         return -1;
     }
     init_blockstack(blocks);
@@ -279,12 +272,12 @@ block_stack_for_line(codetracker *tracker, int line, blockstack *blocks)
                 push_block(blocks, WITH_EXCEPT_START, -1, tracker->line);
             }
         }
-        unsigned char op = tracker->code[tracker->addr];
+        unsigned char op = tracker->codestr[tracker->addr];
         if (op == SETUP_FINALLY || op == SETUP_ASYNC_WITH || op == SETUP_WITH || op == FOR_ITER) {
-            unsigned int oparg = get_arg((const _Py_CODEUNIT *)tracker->code,
+            unsigned int oparg = get_arg((const _Py_CODEUNIT *)tracker->codestr,
                                         tracker->addr / sizeof(_Py_CODEUNIT));
             int target_addr = tracker->addr + oparg + sizeof(_Py_CODEUNIT);
-            int target_op = tracker->code[target_addr];
+            int target_op = tracker->codestr[target_addr];
             if (is_async_for(op, target_op)) {
                 push_block(blocks, FOR_ITER, target_addr, tracker->line);
             }
@@ -450,7 +443,7 @@ frame_setlineno(PyFrameObject *f, PyObject* p_new_lineno, void *Py_UNUSED(ignore
         }
     }
 
-    if (tracker.code[f->f_lasti] == YIELD_VALUE || tracker.code[f->f_lasti] == YIELD_FROM) {
+    if (tracker.codestr[f->f_lasti] == YIELD_VALUE || tracker.codestr[f->f_lasti] == YIELD_FROM) {
         PyErr_SetString(PyExc_ValueError,
                 "can't jump from a 'yield' statement");
         return -1;
@@ -463,7 +456,7 @@ frame_setlineno(PyFrameObject *f, PyObject* p_new_lineno, void *Py_UNUSED(ignore
 
     /* The trace function is called with a 'return' trace event after the
      * execution of a yield statement. */
-    if (tracker.code[tracker.addr] == DUP_TOP || tracker.code[tracker.addr] == POP_TOP) {
+    if (tracker.codestr[tracker.addr] == DUP_TOP || tracker.codestr[tracker.addr] == POP_TOP) {
         PyErr_SetString(PyExc_ValueError,
             "can't jump to 'except' line as there's no exception");
         return -1;

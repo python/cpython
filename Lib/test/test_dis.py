@@ -160,15 +160,13 @@ dis_bug1333982 = """\
 %3d          20 BINARY_ADD
              22 CALL_FUNCTION            1
              24 RAISE_VARARGS            1
-
-%3d     >>   26 LOAD_CONST               0 (None)
+        >>   26 LOAD_CONST               0 (None)
              28 RETURN_VALUE
 """ % (bug1333982.__code__.co_firstlineno + 1,
        __file__,
        bug1333982.__code__.co_firstlineno + 1,
        bug1333982.__code__.co_firstlineno + 2,
-       bug1333982.__code__.co_firstlineno + 1,
-       bug1333982.__code__.co_firstlineno + 3)
+       bug1333982.__code__.co_firstlineno + 1)
 
 _BIG_LINENO_FORMAT = """\
 %3d           0 LOAD_GLOBAL              0 (spam)
@@ -186,12 +184,12 @@ _BIG_LINENO_FORMAT2 = """\
 
 dis_module_expected_results = """\
 Disassembly of f:
-  4           0 LOAD_CONST               0 (None)
-              2 RETURN_VALUE
+          0 LOAD_CONST               0 (None)
+          2 RETURN_VALUE
 
 Disassembly of g:
-  5           0 LOAD_CONST               0 (None)
-              2 RETURN_VALUE
+          0 LOAD_CONST               0 (None)
+          2 RETURN_VALUE
 
 """
 
@@ -1106,7 +1104,7 @@ expected_opinfo_jumpy = [
 # One last piece of inspect fodder to check the default line number handling
 def simple(): pass
 expected_opinfo_simple = [
-  Instruction(opname='LOAD_CONST', opcode=100, arg=0, argval=None, argrepr='None', offset=0, starts_line=simple.__code__.co_firstlineno, is_jump_target=False),
+  Instruction(opname='LOAD_CONST', opcode=100, arg=0, argval=None, argrepr='None', offset=0, starts_line=None, is_jump_target=False),
   Instruction(opname='RETURN_VALUE', opcode=83, arg=None, argval=None, argrepr='', offset=2, starts_line=None, is_jump_target=False)
 ]
 
@@ -1170,15 +1168,17 @@ class BytecodeTests(unittest.TestCase):
         self.assertEqual(list(actual), expected_opinfo_outer)
 
     def test_source_line_in_disassembly(self):
+        def simple(x):
+            return x
         # Use the line in the source code
         actual = dis.Bytecode(simple).dis()
         actual = actual.strip().partition(" ")[0]  # extract the line no
-        expected = str(simple.__code__.co_firstlineno)
+        expected = str(simple.__code__.co_firstlineno+1)
         self.assertEqual(actual, expected)
         # Use an explicit first line number
         actual = dis.Bytecode(simple, first_line=350).dis()
         actual = actual.strip().partition(" ")[0]  # extract the line no
-        self.assertEqual(actual, "350")
+        self.assertEqual(actual, "351")
 
     def test_info(self):
         self.maxDiff = 1000

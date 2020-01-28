@@ -138,8 +138,6 @@ struct compiler_unit {
     int u_firstlineno; /* the first lineno of the block */
     int u_lineno;          /* the lineno for the current stmt */
     int u_col_offset;      /* the offset of the current stmt */
-    int u_lineno_set;  /* boolean to indicate whether instr
-                          has been generated with current lineno */
 };
 
 /* This struct captures the global state of a compilation.
@@ -608,7 +606,6 @@ compiler_enter_scope(struct compiler *c, identifier name,
     u->u_firstlineno = lineno;
     u->u_lineno = 0;
     u->u_col_offset = 0;
-    u->u_lineno_set = 0;
     u->u_consts = PyDict_New();
     if (!u->u_consts) {
         compiler_unit_free(u);
@@ -859,9 +856,6 @@ static void
 compiler_set_lineno(struct compiler *c, int off)
 {
     basicblock *b;
-    if (c->u->u_lineno_set)
-        return;
-    c->u->u_lineno_set = 1;
     b = c->u->u_curblock;
     b->b_instr[off].i_lineno = c->u->u_lineno;
 }
@@ -1566,6 +1560,15 @@ compiler_addop_j(struct compiler *c, int opcode, basicblock *b, int absolute)
     c->c_do_not_emit_bytecode--; \
 }
 
+#define BEGIN_ARTIFICIAL_BYTECODE { \
+    int tmp_lineno = c->u->u_lineno; \
+    c->u->u_lineno = -1;
+
+
+#define END_ARTIFICIAL_BYTECODE \
+    c->u->u_lineno = tmp_lineno; \
+}
+
 /* Search if variable annotations are present statically in a block. */
 
 static int
@@ -1700,7 +1703,6 @@ compiler_unwind_fblock(struct compiler *c, struct fblockinfo *info,
             int saved_lineno = c->u->u_lineno;
             VISIT_SEQ(c, stmt, info->fb_datum);
             c->u->u_lineno = saved_lineno;
-            c->u->u_lineno_set = 0;
             if (preserve_tos) {
                 compiler_pop_fblock(c, POP_VALUE, NULL);
             }
@@ -2781,7 +2783,9 @@ compiler_async_for(struct compiler *c, stmt_ty s)
 
     /* Except block for __anext__ */
     compiler_use_next_block(c, except);
+    BEGIN_ARTIFICIAL_BYTECODE
     ADDOP(c, END_ASYNC_FOR);
+    END_ARTIFICIAL_BYTECODE
 
     /* `else` block */
     VISIT_SEQ(c, stmt, s->v.For.orelse);
@@ -3041,7 +3045,6 @@ compiler_try_except(struct compiler *c, stmt_ty s)
             s->v.Try.handlers, i);
         if (!handler->v.ExceptHandler.type && i < n-1)
             return compiler_error(c, "default 'except:' must be last");
-        c->u->u_lineno_set = 0;
         c->u->u_lineno = handler->lineno;
         c->u->u_col_offset = handler->col_offset;
         except = compiler_new_block(c);
@@ -3087,7 +3090,6 @@ compiler_try_except(struct compiler *c, stmt_ty s)
             compiler_pop_fblock(c, HANDLER_CLEANUP, cleanup_body);
             ADDOP(c, POP_BLOCK);
             ADDOP(c, POP_EXCEPT);
-            /* name = None; del name */
             ADDOP_LOAD_CONST(c, Py_None);
             compiler_nameop(c, handler->v.ExceptHandler.name, Store);
             compiler_nameop(c, handler->v.ExceptHandler.name, Del);
@@ -3096,12 +3098,13 @@ compiler_try_except(struct compiler *c, stmt_ty s)
             /* except: */
             compiler_use_next_block(c, cleanup_end);
 
+            BEGIN_ARTIFICIAL_BYTECODE
             /* name = None; del name */
             ADDOP_LOAD_CONST(c, Py_None);
             compiler_nameop(c, handler->v.ExceptHandler.name, Store);
             compiler_nameop(c, handler->v.ExceptHandler.name, Del);
-
             ADDOP(c, RERAISE);
+            END_ARTIFICIAL_BYTECODE
         }
         else {
             basicblock *cleanup_body;
@@ -3345,7 +3348,6 @@ compiler_visit_stmt(struct compiler *c, stmt_ty s)
     /* Always assign a lineno to the next instruction for a stmt. */
     c->u->u_lineno = s->lineno;
     c->u->u_col_offset = s->col_offset;
-    c->u->u_lineno_set = 0;
 
     switch (s->kind) {
     case FunctionDef_kind:
@@ -4673,7 +4675,6 @@ compiler_setcomp(struct compiler *c, expr_ty e)
                                   e->v.SetComp.elt, NULL);
 }
 
-
 static int
 compiler_dictcomp(struct compiler *c, expr_ty e)
 {
@@ -4688,7 +4689,6 @@ compiler_dictcomp(struct compiler *c, expr_ty e)
                                   e->v.DictComp.generators,
                                   e->v.DictComp.key, e->v.DictComp.value);
 }
-
 
 static int
 compiler_visit_keyword(struct compiler *c, keyword_ty k)
@@ -5098,7 +5098,6 @@ compiler_visit_expr(struct compiler *c, expr_ty e)
     int old_col_offset = c->u->u_col_offset;
     if (e->lineno != c->u->u_lineno) {
         c->u->u_lineno = e->lineno;
-        c->u->u_lineno_set = 0;
     }
     /* Updating the column offset is always harmless. */
     c->u->u_col_offset = e->col_offset;
@@ -5107,7 +5106,6 @@ compiler_visit_expr(struct compiler *c, expr_ty e)
 
     if (old_lineno != c->u->u_lineno) {
         c->u->u_lineno = old_lineno;
-        c->u->u_lineno_set = 0;
     }
     c->u->u_col_offset = old_col_offset;
     return res;
@@ -5491,6 +5489,11 @@ compiler_visit_slice(struct compiler *c, slice_ty s, expr_context_ty ctx)
    XXX must handle implicit jumps from one block to next
 */
 
+typedef struct _olp {
+    int offset;
+    int line;
+} OffsetLinePair;
+
 struct assembler {
     PyObject *a_bytecode;  /* string containing bytecode */
     int a_offset;              /* offset into bytecode */
@@ -5498,8 +5501,10 @@ struct assembler {
     basicblock **a_postorder; /* list of blocks in dfs postorder */
     PyObject *a_lnotab;    /* string containing lnotab */
     int a_lnotab_off;      /* offset into lnotab */
-    int a_lineno;              /* last lineno of emitted instruction */
-    int a_lineno_off;      /* bytecode offset of last lineno */
+    OffsetLinePair *a_lnotab_spans; /* base line numbers for a range of bytecode offsets */
+    int a_lineno;              /* lineno of last entry of lnotab_spans */
+    int a_lineno_off;        /* offset of last entry in lnotab_spans */
+    int a_lineno_allocated; /* number of entries in a_lineno allocated */
 };
 
 static void
@@ -5614,7 +5619,7 @@ static int
 assemble_init(struct assembler *a, int nblocks, int firstlineno)
 {
     memset(a, 0, sizeof(struct assembler));
-    a->a_lineno = firstlineno;
+    a->a_lineno = firstlineno-1;
     a->a_bytecode = PyBytes_FromStringAndSize(NULL, DEFAULT_CODE_SIZE);
     if (!a->a_bytecode)
         return 0;
@@ -5628,6 +5633,12 @@ assemble_init(struct assembler *a, int nblocks, int firstlineno)
     a->a_postorder = (basicblock **)PyObject_Malloc(
                                         sizeof(basicblock *) * nblocks);
     if (!a->a_postorder) {
+        PyErr_NoMemory();
+        return 0;
+    }
+    a->a_lineno_allocated = 2;
+    a->a_lnotab_spans = PyMem_Malloc(sizeof(OffsetLinePair)*a->a_lineno_allocated);
+    if (a->a_lnotab_spans == NULL) {
         PyErr_NoMemory();
         return 0;
     }
@@ -5654,111 +5665,78 @@ blocksize(basicblock *b)
     return size;
 }
 
-/* Appends a pair to the end of the line number table, a_lnotab, representing
-   the instruction's bytecode offset and line number.  See
+static int
+add_byte_to_lnottab(struct assembler *a, int b)
+{
+    int len = PyBytes_GET_SIZE(a->a_lnotab);
+    if (a->a_lnotab_off >= len) {
+        if (_PyBytes_Resize(&a->a_lnotab, len*2) < 0)
+            return 0;
+    }
+    PyBytes_AS_STRING(a->a_lnotab)[a->a_lnotab_off++] = b;
+    return 1;
+}
+
+static int
+add_span_to_lnottab(struct assembler *a, int offset, int lineno)
+{
+    if (a->a_lineno_off >= a->a_lineno_allocated) {
+        a->a_lineno_allocated *= 2;
+        if (a->a_lineno_allocated >= INT_MAX/sizeof(OffsetLinePair)/2) {
+            PyErr_NoMemory();
+            return 0;
+        }
+        a->a_lnotab_spans = PyMem_Realloc(a->a_lnotab_spans, sizeof(OffsetLinePair)*a->a_lineno_allocated);
+        if (a->a_lnotab_spans == NULL) {
+            return 0;
+        }
+    }
+    a->a_lnotab_spans[a->a_lineno_off].offset = offset;
+    a->a_lnotab_spans[a->a_lineno_off].line = lineno;
+    a->a_lineno_off++;
+    return 1;
+}
+
+
+/* Extends the line number table for the instruction i. See
    Objects/lnotab_notes.txt for the description of the line number table. */
 
 static int
-assemble_lnotab(struct assembler *a, struct instr *i)
+assemble_lnotab(struct assembler *a, struct instr *i, int size)
 {
-    int d_bytecode, d_lineno;
-    Py_ssize_t len;
-    unsigned char *lnotab;
-
-    d_bytecode = (a->a_offset - a->a_lineno_off) * sizeof(_Py_CODEUNIT);
-    d_lineno = i->i_lineno - a->a_lineno;
-
-    assert(d_bytecode >= 0);
-
-    if(d_bytecode == 0 && d_lineno == 0)
-        return 1;
-
-    if (d_bytecode > 255) {
-        int j, nbytes, ncodes = d_bytecode / 255;
-        nbytes = a->a_lnotab_off + 2 * ncodes;
-        len = PyBytes_GET_SIZE(a->a_lnotab);
-        if (nbytes >= len) {
-            if ((len <= INT_MAX / 2) && (len * 2 < nbytes))
-                len = nbytes;
-            else if (len <= INT_MAX / 2)
-                len *= 2;
-            else {
-                PyErr_NoMemory();
+    if (i->i_lineno < 0) {
+        for (int i = 0; i < size; i++) {
+            if (add_byte_to_lnottab(a, 0) == 0) {
                 return 0;
             }
-            if (_PyBytes_Resize(&a->a_lnotab, len) < 0)
-                return 0;
         }
-        lnotab = (unsigned char *)
-                   PyBytes_AS_STRING(a->a_lnotab) + a->a_lnotab_off;
-        for (j = 0; j < ncodes; j++) {
-            *lnotab++ = 255;
-            *lnotab++ = 0;
-        }
-        d_bytecode -= ncodes * 255;
-        a->a_lnotab_off += ncodes * 2;
+        return 1;
     }
-    assert(0 <= d_bytecode && d_bytecode <= 255);
-
-    if (d_lineno < -128 || 127 < d_lineno) {
-        int j, nbytes, ncodes, k;
-        if (d_lineno < 0) {
-            k = -128;
-            /* use division on positive numbers */
-            ncodes = (-d_lineno) / 128;
+    int d_lineno;
+    if (i->i_lineno == 0) {
+        // Implicitly same line as previous instruction, or first line for first instruction.
+        if (a->a_lnotab_off == 0) {
+            d_lineno = 1;
         }
         else {
-            k = 127;
-            ncodes = d_lineno / 127;
+            d_lineno = ((unsigned char *)PyBytes_AS_STRING(a->a_lnotab))[a->a_lnotab_off-1];
         }
-        d_lineno -= ncodes * k;
-        assert(ncodes >= 1);
-        nbytes = a->a_lnotab_off + 2 * ncodes;
-        len = PyBytes_GET_SIZE(a->a_lnotab);
-        if (nbytes >= len) {
-            if ((len <= INT_MAX / 2) && len * 2 < nbytes)
-                len = nbytes;
-            else if (len <= INT_MAX / 2)
-                len *= 2;
-            else {
-                PyErr_NoMemory();
+    }
+    else {
+        if (i->i_lineno <= a->a_lineno || i->i_lineno >= a->a_lineno+256) {
+            a->a_lineno = i->i_lineno -1;
+            if (add_span_to_lnottab(a, a->a_offset*sizeof(_Py_CODEUNIT), a->a_lineno) == 0) {
                 return 0;
             }
-            if (_PyBytes_Resize(&a->a_lnotab, len) < 0)
-                return 0;
         }
-        lnotab = (unsigned char *)
-                   PyBytes_AS_STRING(a->a_lnotab) + a->a_lnotab_off;
-        *lnotab++ = d_bytecode;
-        *lnotab++ = k;
-        d_bytecode = 0;
-        for (j = 1; j < ncodes; j++) {
-            *lnotab++ = 0;
-            *lnotab++ = k;
-        }
-        a->a_lnotab_off += ncodes * 2;
+        d_lineno = i->i_lineno - a->a_lineno;
     }
-    assert(-128 <= d_lineno && d_lineno <= 127);
-
-    len = PyBytes_GET_SIZE(a->a_lnotab);
-    if (a->a_lnotab_off + 2 >= len) {
-        if (_PyBytes_Resize(&a->a_lnotab, len * 2) < 0)
+    assert(d_lineno > 0 && d_lineno < 256);
+    for (int i = 0; i < size; i++) {
+        if (add_byte_to_lnottab(a, d_lineno) == 0) {
             return 0;
+        }
     }
-    lnotab = (unsigned char *)
-                    PyBytes_AS_STRING(a->a_lnotab) + a->a_lnotab_off;
-
-    a->a_lnotab_off += 2;
-    if (d_bytecode) {
-        *lnotab++ = d_bytecode;
-        *lnotab++ = d_lineno;
-    }
-    else {      /* First line of a block; def stmt, etc. */
-        *lnotab++ = 0;
-        *lnotab++ = d_lineno;
-    }
-    a->a_lineno = i->i_lineno;
-    a->a_lineno_off = a->a_offset;
     return 1;
 }
 
@@ -5773,10 +5751,11 @@ assemble_emit(struct assembler *a, struct instr *i)
     int size, arg = 0;
     Py_ssize_t len = PyBytes_GET_SIZE(a->a_bytecode);
     _Py_CODEUNIT *code;
+    assert(a->a_lnotab_off == a->a_offset);
 
     arg = i->i_oparg;
     size = instrsize(arg);
-    if (i->i_lineno && !assemble_lnotab(a, i))
+    if (!assemble_lnotab(a, i, size))
         return 0;
     if (a->a_offset + size >= len / (int)sizeof(_Py_CODEUNIT)) {
         if (len > PY_SSIZE_T_MAX / 2)
@@ -5787,6 +5766,7 @@ assemble_emit(struct assembler *a, struct instr *i)
     code = (_Py_CODEUNIT *)PyBytes_AS_STRING(a->a_bytecode) + a->a_offset;
     a->a_offset += size;
     write_op_arg(code, i->i_opcode, arg, size);
+    assert(a->a_lnotab_off == a->a_offset);
     return 1;
 }
 
@@ -6071,6 +6051,18 @@ dump_basicblock(const basicblock *b)
 }
 #endif
 
+
+static int write_int_to_lnotab(struct assembler *a, int i) {
+    if (add_byte_to_lnottab(a, (i >> 24)&0xff) &&
+        add_byte_to_lnottab(a, (i >> 16)&0xff) &&
+        add_byte_to_lnottab(a, (i >> 8)&0xff) &&
+        add_byte_to_lnottab(a, (i >> 0)&0xff)
+    ) {
+        return 1;
+    }
+    return 0;
+}
+
 static PyCodeObject *
 assemble(struct compiler *c, int addNone)
 {
@@ -6085,9 +6077,12 @@ assemble(struct compiler *c, int addNone)
      */
     if (!c->u->u_curblock->b_return) {
         NEXT_BLOCK(c);
-        if (addNone)
+        BEGIN_ARTIFICIAL_BYTECODE
+        if (addNone) {
             ADDOP_LOAD_CONST(c, Py_None);
+        }
         ADDOP(c, RETURN_VALUE);
+        END_ARTIFICIAL_BYTECODE
     }
 
     nblocks = 0;
@@ -6110,13 +6105,32 @@ assemble(struct compiler *c, int addNone)
 
     /* Can't modify the bytecode after computing jump offsets. */
     assemble_jump_offsets(&a, c);
-
+    assert(a.a_lineno_off == 0);
+    add_span_to_lnottab(&a, 0, c->u->u_firstlineno-1);
+    assert(a.a_lnotab_off == 0);
+    assert(a.a_offset == 0);
     /* Emit code in reverse postorder from dfs. */
     for (i = a.a_nblocks - 1; i >= 0; i--) {
         b = a.a_postorder[i];
         for (j = 0; j < b->b_iused; j++)
             if (!assemble_emit(&a, &b->b_instr[j]))
                 goto error;
+    }
+    if (a.a_lnotab_off != a.a_offset) {
+        printf("offsets: %d %d\n", a.a_lnotab_off, a.a_offset);
+    }
+    assert(a.a_lnotab_spans[0].offset == 0);
+    /* Append offset-line pairs to lnotab. */
+    for (int i = 0; i < a.a_lineno_off; i++) {
+        if (write_int_to_lnotab(&a, a.a_lnotab_spans[i].offset) == 0) {
+            return 0;
+        }
+        if (write_int_to_lnotab(&a, a.a_lnotab_spans[i].line) == 0) {
+            return 0;
+        }
+    }
+    if (write_int_to_lnotab(&a, a.a_offset*sizeof(_Py_CODEUNIT)) == 0) {
+        return 0;
     }
 
     if (_PyBytes_Resize(&a.a_lnotab, a.a_lnotab_off) < 0)

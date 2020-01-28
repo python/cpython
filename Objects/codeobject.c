@@ -978,74 +978,51 @@ PyTypeObject PyCode_Type = {
    lnotab_notes.txt for the details of the lnotab representation.
 */
 
-int
-PyCode_Addr2Line(PyCodeObject *co, int addrq)
-{
-    Py_ssize_t size = PyBytes_Size(co->co_lnotab) / 2;
-    unsigned char *p = (unsigned char*)PyBytes_AsString(co->co_lnotab);
-    int line = co->co_firstlineno;
-    int addr = 0;
-    while (--size >= 0) {
-        addr += *p++;
-        if (addr > addrq)
-            break;
-        line += (signed char)*p;
-        p++;
-    }
-    return line;
+static int
+read_int(const unsigned char *const p) {
+    return (p[0]<<24) | (p[1]<<16) | (p[2]<<8) | p[3];
 }
 
 /* Update *bounds to describe the first and one-past-the-last instructions in
-   the same line as lasti.  Return the number of that line. */
+   the same line-span as lasti.  Return the number of that line. */
 int
-_PyCode_CheckLineNumber(PyCodeObject* co, int lasti, PyAddrPair *bounds)
+_PyCode_CheckLineNumber(PyCodeObject* co, int lasti, PyLineSpan *bounds)
 {
-    Py_ssize_t size;
-    int addr, line;
     unsigned char* p;
-
     p = (unsigned char*)PyBytes_AS_STRING(co->co_lnotab);
-    size = PyBytes_GET_SIZE(co->co_lnotab) / 2;
-
-    addr = 0;
-    line = co->co_firstlineno;
-    assert(line > 0);
-
-    /* possible optimization: if f->f_lasti == instr_ub
-       (likely to be a common case) then we already know
-       instr_lb -- if we stored the matching value of p
-       somewhere we could skip the first while loop. */
-
-    /* See lnotab_notes.txt for the description of
-       co_lnotab.  A point to remember: increments to p
-       come in (addr, line) pairs. */
-
-    bounds->ap_lower = 0;
-    while (size > 0) {
-        if (addr + *p > lasti)
-            break;
-        addr += *p++;
-        if ((signed char)*p)
-            bounds->ap_lower = addr;
-        line += (signed char)*p;
-        p++;
-        --size;
+    int offset = p[lasti/sizeof(_Py_CODEUNIT)];
+    if (offset == 0) {
+        return -1;
     }
-
-    if (size > 0) {
-        while (--size >= 0) {
-            addr += *p++;
-            if ((signed char)*p)
-                break;
-            p++;
-        }
-        bounds->ap_upper = addr;
+    assert (lasti >= 0);
+    if (bounds->ls_lower > lasti) {
+        do {
+            bounds->ls_index -= 8;
+            bounds->ls_upper = bounds->ls_lower;
+            bounds->ls_lower = read_int(p+bounds->ls_index);
+        } while (bounds->ls_lower > lasti);
+        bounds->ls_line = read_int(p+bounds->ls_index+4);
     }
-    else {
-        bounds->ap_upper = INT_MAX;
+    else if (bounds->ls_upper <= lasti) {
+        do {
+            bounds->ls_index += 8;
+            bounds->ls_lower = bounds->ls_upper;
+            bounds->ls_upper = read_int(p+bounds->ls_index+8);
+        } while (bounds->ls_upper <= lasti);
+        bounds->ls_line = read_int(p+bounds->ls_index+4);
     }
+    return offset + bounds->ls_line;
+}
 
-    return line;
+int
+PyCode_Addr2Line(PyCodeObject *co, int addrq)
+{
+    if (addrq < 0) {
+        return co->co_firstlineno;
+    }
+    PyLineSpan span;
+    _PyCode_InitLineSpan(&span, co);
+    return _PyCode_CheckLineNumber(co, addrq, &span);
 }
 
 

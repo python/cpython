@@ -643,22 +643,32 @@ class PyCodeObjectPtr(PyObjectPtr):
         '''
         Get the line number for a given bytecode offset
 
-        Analogous to PyCode_Addr2Line; translated from pseudocode in
-        Objects/lnotab_notes.txt
+        Analogous to PyCode_Addr2Line
         '''
         co_lnotab = self.pyop_field('co_lnotab').proxyval(set())
 
-        # Initialize lineno to co_firstlineno as per PyCode_Addr2Line
-        # not 0, as lnotab_notes.txt has it:
-        lineno = int_from_int(self.field('co_firstlineno'))
+        if addrq < 0:
+            return int_from_int(self.field('co_firstlineno'))
 
-        addr = 0
-        for addr_incr, line_incr in zip(co_lnotab[::2], co_lnotab[1::2]):
-            addr += ord(addr_incr)
-            if addr > addrq:
-                return lineno
-            lineno += ord(line_incr)
-        return lineno
+        co_code = self.pyop_field('co_code').proxyval(set())
+        offset = ord(co_lnotab[addrq//2])
+        # If instruction is artificial, scan backwards to find a real instruction
+        while offset == 0:
+            addrq -= 2
+            if addrq < 0:
+                return int_from_int(self.field('co_firstlineno'))
+            offset = ord(co_lnotab[addrq//2])
+        span = len(co_code)//2
+        def read_int(index):
+            return (ord(co_lnotab[index])<<24 |
+                    ord(co_lnotab[index+1])<<16 |
+                    ord(co_lnotab[index+2])<<8 |
+                    ord(co_lnotab[index+3]))
+        upper_bound = read_int(span+8)
+        while addrq >= upper_bound:
+            span += 8
+            upper_bound = read_int(span+8)
+        return read_int(span+4)+offset
 
 
 class PyDictObjectPtr(PyObjectPtr):
@@ -937,7 +947,8 @@ class PyFrameObjectPtr(PyObjectPtr):
 
         try:
             return self.co.addr2line(self.f_lasti)
-        except Exception:
+        except Exception as ex:
+            print(ex)
             # bpo-34989: addr2line() is a complex function, it can fail in many
             # ways. For example, it fails with a TypeError on "FakeRepr" if
             # gdb fails to load debug symbols. Use a catch-all "except

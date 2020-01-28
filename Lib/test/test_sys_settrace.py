@@ -201,12 +201,10 @@ settrace_and_raise.events = [(2, 'exception'),
 
 # implicit return example
 # This test is interesting because of the else: pass
-# part of the code.  The code generate for the true
+# part of the code. The code generate for the true
 # part of the if contains a jump past the else branch.
 # The compiler then generates an implicit "return None"
-# Internally, the compiler visits the pass statement
-# and stores its line number for use on the next instruction.
-# The next instruction is the implicit return None.
+# which shouldn't change the line number.
 def ireturn_example():
     a = 5
     b = 5
@@ -220,8 +218,7 @@ ireturn_example.events = [(0, 'call'),
                           (2, 'line'),
                           (3, 'line'),
                           (4, 'line'),
-                          (6, 'line'),
-                          (6, 'return')]
+                          (4, 'return')]
 
 # Tight loop with while(1) example (SF #765624)
 def tightloop_example():
@@ -465,7 +462,7 @@ class TraceTestCase(unittest.TestCase):
 
     def test_16_blank_lines(self):
         namespace = {}
-        exec("def f():\n" + "\n" * 256 + "    pass", namespace)
+        exec("def f():\n" + "\n" * 256 + "    print()", namespace)
         self.run_and_compare(
             namespace["f"],
             [(0, 'call'),

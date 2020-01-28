@@ -385,7 +385,7 @@ def _disassemble_bytes(code, lasti=-1, varnames=None, names=None,
                        *, file=None, line_offset=0):
     # Omit the line number column entirely if we have no line number info
     show_lineno = linestarts is not None
-    if show_lineno:
+    if show_lineno and linestarts.values():
         maxlineno = max(linestarts.values()) + line_offset
         if maxlineno >= 1000:
             lineno_width = len(str(maxlineno))
@@ -446,35 +446,43 @@ def findlabels(code):
                 labels.append(label)
     return labels
 
+def _read_int(array, index):
+    try:
+        return array[index]<<24 | array[index+1]<<16 | array[index+2]<<8 | array[index+3]
+    except Exception as ex:
+        print("out of range", index)
+        raise ex
+
 def findlinestarts(code):
     """Find the offsets in a byte code which are start of lines in the source.
 
     Generate pairs (offset, lineno) as described in Python/compile.c.
 
     """
-    byte_increments = code.co_lnotab[0::2]
-    line_increments = code.co_lnotab[1::2]
     bytecode_len = len(code.co_code)
+    table = code.co_lnotab
+    span_offset = bytecode_len//2
+    lower_bound = _read_int(table, span_offset)
+    base_line =  _read_int(table, span_offset+4)
+    upper_bound = _read_int(table, span_offset+8)
+    #print("Initial bounds:", lower_bound, upper_bound, base_line, "at offset", span_offset)
 
     lastlineno = None
-    lineno = code.co_firstlineno
-    addr = 0
-    for byte_incr, line_incr in zip(byte_increments, line_increments):
-        if byte_incr:
-            if lineno != lastlineno:
-                yield (addr, lineno)
-                lastlineno = lineno
-            addr += byte_incr
-            if addr >= bytecode_len:
-                # The rest of the lnotab byte offsets are past the end of
-                # the bytecode, so the lines were optimized away.
-                return
-        if line_incr >= 0x80:
-            # line_increments is an array of 8-bit signed integers
-            line_incr -= 0x100
-        lineno += line_incr
-    if lineno != lastlineno:
-        yield (addr, lineno)
+    for addr in range(0, bytecode_len, 2):
+        offset = code.co_lnotab[addr//2]
+        if offset == 0:
+            continue
+        if upper_bound <= addr:
+            span_offset += 8
+            lower_bound = upper_bound
+            base_line =  _read_int(table, span_offset+4)
+            upper_bound = _read_int(table, span_offset+8)
+            #print("New bounds:", lower_bound, upper_bound, base_line)
+        lineno = offset + base_line
+        if lineno != lastlineno:
+            #print (addr, lineno)
+            yield (addr, lineno)
+        lastlineno = lineno
 
 class Bytecode:
     """The bytecode operations of a piece of code

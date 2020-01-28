@@ -213,6 +213,19 @@ markblocks(_Py_CODEUNIT *code, Py_ssize_t len)
     return blocks;
 }
 
+static int
+read_int(const unsigned char *const p) {
+    return (p[0]<<24) | (p[1]<<16) | (p[2]<<8) | p[3];
+}
+
+static void
+write_int(unsigned char *const p, int i) {
+    p[0] = (i>>24)&0xff;
+    p[1] = (i>>16)&0xff;
+    p[2] = (i>>8)&0xff;
+    p[3] = i&0xff;
+}
+
 /* Perform basic peephole optimizations to components of a code object.
    The consts object should still be in list form to allow new constants
    to be appended.
@@ -235,7 +248,6 @@ PyCode_Optimize(PyObject *code, PyObject* consts, PyObject *names,
     unsigned char opcode, nextop;
     _Py_CODEUNIT *codestr = NULL;
     unsigned char *lnotab;
-    unsigned int cum_orig_offset, last_offset;
     Py_ssize_t tabsiz;
     // Count runs of consecutive LOAD_CONSTs
     unsigned int cumlc = 0, lastlc = 0;
@@ -250,16 +262,6 @@ PyCode_Optimize(PyObject *code, PyObject* consts, PyObject *names,
     lnotab = (unsigned char*)PyBytes_AS_STRING(lnotab_obj);
     tabsiz = PyBytes_GET_SIZE(lnotab_obj);
     assert(tabsiz == 0 || Py_REFCNT(lnotab_obj) == 1);
-
-    /* Don't optimize if lnotab contains instruction pointer delta larger
-       than +255 (encoded as multiple bytes), just to keep the peephole optimizer
-       simple. The optimizer leaves line number deltas unchanged. */
-
-    for (i = 0; i < tabsiz; i += 2) {
-        if (lnotab[i] == 255) {
-            goto exitUnchanged;
-        }
-    }
 
     assert(PyBytes_Check(code));
     Py_ssize_t codesize = PyBytes_GET_SIZE(code);
@@ -453,7 +455,7 @@ PyCode_Optimize(PyObject *code, PyObject* consts, PyObject *names,
         }
     }
 
-    /* Fixup lnotab */
+    /* Record new offsets */
     for (i = 0, nops = 0; i < codelen; i++) {
         size_t block = (size_t)i - nops;
         /* cannot overflow: codelen <= INT_MAX */
@@ -464,20 +466,24 @@ PyCode_Optimize(PyObject *code, PyObject* consts, PyObject *names,
             nops++;
         }
     }
-    cum_orig_offset = 0;
-    last_offset = 0;
-    for (i=0 ; i < tabsiz ; i+=2) {
-        unsigned int offset_delta, new_offset;
-        cum_orig_offset += lnotab[i];
-        assert(cum_orig_offset % sizeof(_Py_CODEUNIT) == 0);
-        new_offset = blocks[cum_orig_offset / sizeof(_Py_CODEUNIT)] *
-                sizeof(_Py_CODEUNIT);
-        offset_delta = new_offset - last_offset;
-        assert(offset_delta <= 255);
-        lnotab[i] = (unsigned char)offset_delta;
-        last_offset = new_offset;
+    /* Update offsets */
+    for (i=0; i<codelen; i++) {
+        lnotab[blocks[i]] = lnotab[i];
     }
-
+    /* Move and adjust spans */
+    for(unsigned char *span = &lnotab[codelen]; ;span += 8) {
+        int offset = read_int(span);
+        if (offset >= codesize) {
+            assert(offset == codesize);
+            write_int(span-nops, codesize-nops*sizeof(_Py_CODEUNIT));
+            break;
+        }
+        int new_offset = blocks[offset/sizeof(_Py_CODEUNIT)]*sizeof(_Py_CODEUNIT);
+        assert(new_offset >= 0 && new_offset <= offset);
+        write_int(span-nops, new_offset);
+        int line = read_int(span+4);
+        write_int(span-nops+4, line);
+    }
     /* Remove NOPs and fixup jump targets */
     for (op_start = i = h = 0; i < codelen; i++, op_start = i) {
         j = _Py_OPARG(codestr[i]);
