@@ -1032,7 +1032,9 @@ class ASTModuleVisitor(PickleVisitor):
 
     def addObj(self, name):
         self.emit("if (PyModule_AddObject(m, \"%s\", "
-                  "astmodulestate_global->%s_type) < 0) goto error;" % (name, name), 1)
+                  "astmodulestate_global->%s_type) < 0) {" % (name, name), 1)
+        self.emit("goto error;", 2)
+        self.emit('}', 1)
         self.emit("Py_INCREF(astmodulestate(m)->%s_type);" % name, 1)
 
 
