@@ -2138,7 +2138,7 @@ main_loop:
             PyObject *val = POP();
             PyObject *tb = POP();
             assert(PyExceptionClass_Check(exc));
-            PyErr_Restore(exc, val, tb);
+            _PyErr_Restore(tstate, exc, val, tb);
             goto exception_unwind;
         }
 
@@ -2640,7 +2640,7 @@ main_loop:
                 if (_PyErr_ExceptionMatches(tstate, PyExc_TypeError) &&
                    (iterable->ob_type->tp_iter == NULL && !PySequence_Check(iterable)))
                 {
-                    PyErr_Clear();
+                    _PyErr_Clear(tstate);
                     _PyErr_Format(tstate, PyExc_TypeError,
                           "Value after * must be an iterable, not %.200s",
                           Py_TYPE(iterable)->tp_name);
@@ -4340,7 +4340,7 @@ do_raise(PyThreadState *tstate, PyObject *exc, PyObject *cause)
     }
 
     _PyErr_SetObject(tstate, type, value);
-    /* PyErr_SetObject incref's its arguments */
+    /* _PyErr_SetObject incref's its arguments */
     Py_DECREF(value);
     Py_DECREF(type);
     return 0;
@@ -5208,7 +5208,7 @@ check_args_iterable(PyThreadState *tstate, PyObject *func, PyObject *args)
         /* check_args_iterable() may be called with a live exception:
          * clear it to prevent calling _PyObject_FunctionStr() with an
          * exception set. */
-        PyErr_Clear();
+        _PyErr_Clear(tstate);
         PyObject *funcstr = _PyObject_FunctionStr(func);
         if (funcstr != NULL) {
             _PyErr_Format(tstate, PyExc_TypeError,
@@ -5231,7 +5231,7 @@ format_kwargs_error(PyThreadState *tstate, PyObject *func, PyObject *kwargs)
      * is not a mapping.
      */
     if (_PyErr_ExceptionMatches(tstate, PyExc_AttributeError)) {
-        PyErr_Clear();
+        _PyErr_Clear(tstate);
         PyObject *funcstr = _PyObject_FunctionStr(func);
         if (funcstr != NULL) {
             _PyErr_Format(
@@ -5245,7 +5245,7 @@ format_kwargs_error(PyThreadState *tstate, PyObject *func, PyObject *kwargs)
         PyObject *exc, *val, *tb;
         _PyErr_Fetch(tstate, &exc, &val, &tb);
         if (val && PyTuple_Check(val) && PyTuple_GET_SIZE(val) == 1) {
-            PyErr_Clear();
+            _PyErr_Clear(tstate);
             PyObject *funcstr = _PyObject_FunctionStr(func);
             if (funcstr != NULL) {
                 PyObject *key = PyTuple_GET_ITEM(val, 0);
