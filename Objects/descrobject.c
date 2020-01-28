@@ -1878,30 +1878,18 @@ static PyMemberDef ga_members[] = {
     {0}
 };
 
-// TODO: Maybe move this to tp_new(), so we won't ever have origin==NULL?
-static int
-ga_init(PyObject *self, PyObject *args, PyObject *kwds)
+static PyObject *
+ga_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 {
-    gaobject *alias = (gaobject *)self;
-    if (alias->origin != NULL || alias->parameters != NULL) {
-        PyErr_Format(PyExc_TypeError, "This GenericAlias is alreay initialized");
-        return -1;
-    }
     if (kwds != NULL) {
-        PyErr_Format(PyExc_TypeError, "GenericAlias does not support keyword arguments");
-        return -1;
+        return PyErr_Format(PyExc_TypeError, "GenericAlias does not support keyword arguments");
     }
     if (!PyTuple_Check(args) || PyTuple_Size(args) != 2) {
-        PyErr_Format(PyExc_TypeError, "GenericAlias expects 2 positional arguments");
-        return -1;
+        return PyErr_Format(PyExc_TypeError, "GenericAlias expects 2 positional arguments");
     }
     PyObject *origin = PyTuple_GET_ITEM(args, 0);
     PyObject *parameters = PyTuple_GET_ITEM(args, 1);
-    Py_INCREF(origin);
-    Py_INCREF(parameters);
-    alias->origin = origin;
-    alias->parameters = parameters;
-    return 0;
+    return Py_GenericAlias(origin, parameters);
 }
 
 // TODO:
@@ -1920,23 +1908,14 @@ PyTypeObject Py_GenericAliasType = {
     .tp_traverse = ga_traverse,
     .tp_methods = ga_methods,
     .tp_members = ga_members,
-    .tp_init = ga_init,
     .tp_alloc = PyType_GenericAlloc,
-    .tp_new = PyType_GenericNew,
+    .tp_new = ga_new,
     .tp_free = PyObject_GC_Del,
 };
 
 PyObject *
 Py_GenericAlias(PyObject *origin, PyObject *parameters)
 {
-    /* Debug
-    fprintf(stderr, "origin=");
-    PyObject_Print(origin, stderr, 0);
-    fprintf(stderr, "\n");
-    fprintf(stderr, "parameters=");
-    PyObject_Print(parameters, stderr, 0);
-    fprintf(stderr, "\n");
-    */
     PyObject *wrapper = NULL;
     if (!PyTuple_Check(parameters)) {
         wrapper = PyTuple_New(1);
