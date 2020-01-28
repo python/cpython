@@ -251,7 +251,8 @@ static void
 join(wchar_t *buffer, const wchar_t *stuff)
 {
     if (_PathCchCombineEx_Initialized == 0) {
-        HMODULE pathapi = LoadLibraryW(L"api-ms-win-core-path-l1-1-0.dll");
+        HMODULE pathapi = LoadLibraryExW(L"api-ms-win-core-path-l1-1-0.dll", NULL,
+                                         LOAD_LIBRARY_SEARCH_SYSTEM32);
         if (pathapi) {
             _PathCchCombineEx = (PPathCchCombineEx)GetProcAddress(pathapi, "PathCchCombineEx");
         }
@@ -287,7 +288,8 @@ canonicalize(wchar_t *buffer, const wchar_t *path)
     }
 
     if (_PathCchCanonicalizeEx_Initialized == 0) {
-        HMODULE pathapi = LoadLibraryW(L"api-ms-win-core-path-l1-1-0.dll");
+        HMODULE pathapi = LoadLibraryExW(L"api-ms-win-core-path-l1-1-0.dll", NULL,
+                                         LOAD_LIBRARY_SEARCH_SYSTEM32);
         if (pathapi) {
             _PathCchCanonicalizeEx = (PPathCchCanonicalizeEx)GetProcAddress(pathapi, "PathCchCanonicalizeEx");
         }
