@@ -42,6 +42,12 @@ class BaseTest(unittest.TestCase):
         self.assertEqual(x, 'foo')
         self.assertEqual(t.__len__(a), 1)
 
+    def test_subclassing(self):
+        class C(list[int]):
+            pass
+        self.assertEqual(C.__bases__, (list,))
+        self.assertEqual(C.__class__, type)
+
 
 if __name__ == "__main__":
     unittest.main()

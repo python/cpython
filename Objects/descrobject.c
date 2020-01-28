@@ -1839,6 +1839,7 @@ ga_call(PyObject *self, PyObject *args, PyObject *kwds)
 static const char* attr_exceptions[] = {
     "__origin__",
     "__parameters__",
+    "__mro_entries__",
     NULL,
 };
 
@@ -1846,7 +1847,6 @@ static PyObject *
 ga_getattro(PyObject *self, PyObject *name)
 {
     gaobject *alias = (gaobject *)self;
-    // TODO: Use ga_members instead?
     if (alias->origin != NULL && PyUnicode_Check(name)) {
         for (const char **p = attr_exceptions; ; p++) {
             if (*p == NULL) {
@@ -1859,6 +1859,18 @@ ga_getattro(PyObject *self, PyObject *name)
     }
     return PyObject_GenericGetAttr(self, name);
 }
+
+static PyObject *
+ga_mro_entries(PyObject *self, PyObject *args)
+{
+    gaobject *alias = (gaobject *)self;
+    return Py_BuildValue("(O)", alias->origin);
+}
+
+static PyMethodDef ga_methods[] = {
+    {"__mro_entries__", ga_mro_entries, METH_O},
+    {0}
+};
 
 static PyMemberDef ga_members[] = {
     {"__origin__", T_OBJECT, offsetof(gaobject, origin), READONLY},
@@ -1893,10 +1905,9 @@ ga_init(PyObject *self, PyObject *args, PyObject *kwds)
 }
 
 // TODO:
-// - __mro_entries__, to support class C(list[int]): ...
-// - argument clinic
-// - __doc__
-// - cache
+// - argument clinic?
+// - __doc__?
+// - cache?
 PyTypeObject Py_GenericAliasType = {
     PyVarObject_HEAD_INIT(&PyType_Type, 0)
     .tp_name = "GenericAlias",
@@ -1907,6 +1918,7 @@ PyTypeObject Py_GenericAliasType = {
     .tp_getattro = ga_getattro,
     .tp_flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC,
     .tp_traverse = ga_traverse,
+    .tp_methods = ga_methods,
     .tp_members = ga_members,
     .tp_init = ga_init,
     .tp_alloc = PyType_GenericAlloc,
