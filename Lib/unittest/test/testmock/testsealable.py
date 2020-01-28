@@ -3,14 +3,14 @@ from unittest import mock
 
 
 class SampleObject:
+    def method_sample1(self):
+        pass
 
-    def method_sample1(self): pass
-
-    def method_sample2(self): pass
+    def method_sample2(self):
+        pass
 
 
 class TestSealable(unittest.TestCase):
-
     def test_attributes_return_more_mocks_by_default(self):
         m = mock.Mock()
 
@@ -160,7 +160,9 @@ class TestSealable(unittest.TestCase):
         mock.seal(m)
         with self.assertRaises(AttributeError) as cm:
             m.test1.test2.test3.test4.boom
-        self.assertIn("mock_name.test1.test2.test3.test4.boom", str(cm.exception))
+        self.assertIn(
+            "mock_name.test1.test2.test3.test4.boom", str(cm.exception)
+        )
 
     def test_call_chain_is_maintained(self):
         m = mock.Mock()

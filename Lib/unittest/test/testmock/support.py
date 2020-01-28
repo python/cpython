@@ -9,7 +9,8 @@ def is_instance(obj, klass):
 class SomeClass(object):
     class_attribute = None
 
-    def wibble(self): pass
+    def wibble(self):
+        pass
 
 
 class X(object):
