@@ -2915,9 +2915,6 @@ class _AsyncIterator:
         code_mock.co_flags = inspect.CO_ITERABLE_COROUTINE
         self.__dict__['__code__'] = code_mock
 
-    def __aiter__(self):
-        return self
-
     async def __anext__(self):
         try:
             return next(self.iterator)
