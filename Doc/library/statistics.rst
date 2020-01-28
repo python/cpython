@@ -734,10 +734,10 @@ of applications in statistics.
 :class:`NormalDist` readily solves classic probability problems.
 
 For example, given `historical data for SAT exams
-<https://blog.prepscholar.com/sat-standard-deviation>`_ showing that scores
-are normally distributed with a mean of 1060 and a standard deviation of 192,
-determine the percentage of students with test scores between 1100 and
-1200, after rounding to the nearest whole number:
+<https://nces.ed.gov/programs/digest/d17/tables/dt17_226.40.asp>`_ showing
+that scores are normally distributed with a mean of 1060 and a standard
+deviation of 195, determine the percentage of students with test scores
+between 1100 and 1200, after rounding to the nearest whole number:
 
 .. doctest::
 
@@ -781,7 +781,7 @@ For example, an open source conference has 750 attendees and two rooms with a
 500 person capacity.  There is a talk about Python and another about Ruby.
 In previous conferences, 65% of the attendees preferred to listen to Python
 talks.  Assuming the population preferences haven't changed, what is the
-probability that the rooms will stay within their capacity limits?
+probability that the Python room will stay within its capacity limits?
 
 .. doctest::
 
