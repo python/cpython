@@ -453,10 +453,10 @@ def enablerlcompleter():
                         if os.getuid() == 0:
                             chattrcmd = "chattr -i " + history
                             os.system(chattrcmd)
-                        else
+                        else:
                             chattrmsg = "Permission error!, try running 'chattr -i " + history + "'"
                             print(chattrmsg)
-                    else
+                    else:
                         print("An error occured while writing to .python_history")
 
             atexit.register(write_history)
