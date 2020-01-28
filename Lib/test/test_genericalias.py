@@ -1,13 +1,13 @@
 """Tests for C-implemented GenericAlias."""
 
 import unittest
-
+from collections import defaultdict, deque
 
 class BaseTest(unittest.TestCase):
     """Test basics."""
 
     def test_subscriptable(self):
-        for t in tuple, list, dict, set, frozenset:
+        for t in tuple, list, dict, set, frozenset, defaultdict, deque:
             tname = t.__name__
             with self.subTest(f"Testing {tname}"):
                 alias = t[int]
@@ -22,7 +22,7 @@ class BaseTest(unittest.TestCase):
                     t[int]
 
     def test_instantiate(self):
-        for t in tuple, list, dict, set, frozenset:
+        for t in tuple, list, dict, set, frozenset, defaultdict, deque:
             tname = t.__name__
             with self.subTest(f"Testing {tname}"):
                 alias = t[int]
@@ -30,6 +30,12 @@ class BaseTest(unittest.TestCase):
                 if t is dict:
                     self.assertEqual(alias(iter([('a', 1), ('b', 2)])), dict(a=1, b=2))
                     self.assertEqual(alias(a=1, b=2), dict(a=1, b=2))
+                elif t is defaultdict:
+                    def default():
+                        return 'value'
+                    a = alias(default)
+                    d = defaultdict(default)
+                    self.assertEqual(a['test'], d['test'])
                 else:
                     self.assertEqual(alias(iter((1, 2, 3))), t((1, 2, 3)))
 
