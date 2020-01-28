@@ -53,6 +53,11 @@ class BaseTest(unittest.TestCase):
         self.assertEqual(dict.fromkeys(range(2)), {0: None, 1: None})  # This works
         self.assertEqual(t.fromkeys(range(2)), {0: None, 1: None})  # Should be equivalent
 
+    def test_no_chaining(self):
+        t = list[int]
+        with self.assertRaises(TypeError):
+            t[int]
+
 
 if __name__ == "__main__":
     unittest.main()
