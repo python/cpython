@@ -2541,12 +2541,6 @@ class _Call(tuple):
         return tuple.__getattribute__(self, attr)
 
 
-    def count(self, /, *args, **kwargs):
-        return self.__getattr__('count')(*args, **kwargs)
-
-    def index(self, /, *args, **kwargs):
-        return self.__getattr__('index')(*args, **kwargs)
-
     def _get_call_arguments(self):
         if len(self) == 2:
             args, kwargs = self
