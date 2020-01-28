@@ -625,12 +625,12 @@ environment variables.
 When UTF-8 mode is enabled:
 
 * :func:`locale.getpreferredencoding` returns ``'UTF-8'`` instead of
-  the legacy system encoding.  This function is used for the default
-  text encoding in many places, including :func:`open`, :class:`Popen`,
+  the system encoding.  This function is used for the default text
+  encoding in many places, including :func:`open`, :class:`Popen`,
   :meth:`Path.read_text`, etc.
 * :data:`sys.stdin`, :data:`sys.stdout`, and :data:`sys.stderr`
   all use UTF-8 as their text encoding.
-* You can still use the legacy encoding via the "mbcs" codec.
+* You can still use the system encoding via the "mbcs" codec.
 
 Note that adding ``PYTHONUTF8=1`` to the default environment variables
 will affect all Python 3.7+ applications on your system.
