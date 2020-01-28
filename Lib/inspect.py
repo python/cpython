@@ -1730,7 +1730,7 @@ def _signature_get_partial(wrapped_sig, partial, extra_args=()):
     """
 
     old_params = wrapped_sig.parameters
-    new_params = dict(old_params)
+    new_params = {}
 
     partial_args = partial.args or ()
     partial_keywords = partial.keywords or {}
@@ -1746,6 +1746,7 @@ def _signature_get_partial(wrapped_sig, partial, extra_args=()):
 
 
     transform_to_kwonly = False
+    kwonly_params = {}  # Keyword only parameters are moved to end.
     for param_name, param in old_params.items():
         try:
             arg_value = ba.arguments[param_name]
@@ -1755,7 +1756,6 @@ def _signature_get_partial(wrapped_sig, partial, extra_args=()):
             if param.kind is _POSITIONAL_ONLY:
                 # If positional-only parameter is bound by partial,
                 # it effectively disappears from the signature
-                new_params.pop(param_name)
                 continue
 
             if param.kind is _POSITIONAL_OR_KEYWORD:
@@ -1774,29 +1774,26 @@ def _signature_get_partial(wrapped_sig, partial, extra_args=()):
                     # multiple values.
                     transform_to_kwonly = True
                     # Set the new default value
-                    new_params[param_name] = param.replace(default=arg_value)
+                    param = param.replace(default=arg_value)
                 else:
                     # was passed as a positional argument
-                    new_params.pop(param.name)
                     continue
 
             if param.kind is _KEYWORD_ONLY:
                 # Set the new default value
-                new_params[param_name] = param.replace(default=arg_value)
+                param = param.replace(default=arg_value)
 
         if transform_to_kwonly:
             assert param.kind is not _POSITIONAL_ONLY
 
             if param.kind is _POSITIONAL_OR_KEYWORD:
-                new_param = new_params[param_name].replace(kind=_KEYWORD_ONLY)
-                new_params.pop(param_name)
-                new_params[param_name] = new_param
+                kwonly_params[param_name] = param.replace(kind=_KEYWORD_ONLY)
             elif param.kind in (_KEYWORD_ONLY, _VAR_KEYWORD):
-                param = new_params.pop(param_name)
-                new_params[param_name] = param
-            elif param.kind is _VAR_POSITIONAL:
-                new_params.pop(param.name)
+                kwonly_params[param_name] = param
+        else:
+            new_params[param_name] = param
 
+    new_params.update(kwonly_params)
     return wrapped_sig.replace(parameters=new_params.values())
 
 
