@@ -1457,7 +1457,10 @@ PyInit__functools(void)
         }
         name = _PyType_Name(typelist[i]);
         Py_INCREF(typelist[i]);
-        PyModule_AddObject(m, name, (PyObject *)typelist[i]);
+        if (_PyModule_StealObject(m, name, (PyObject *)typelist[i]) < 0) {
+            Py_DECREF(m);
+            return NULL;
+        }
     }
     return m;
 }
