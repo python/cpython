@@ -1855,7 +1855,8 @@ class _patch_dict(object):
 
     def __exit__(self, *args):
         """Unpatch the dict."""
-        self._unpatch_dict()
+        if self._original is not None:
+            self._unpatch_dict()
         return False
 
 
