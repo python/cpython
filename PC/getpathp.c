@@ -91,6 +91,7 @@
 #endif
 
 #include <windows.h>
+#include <pathcch.h>
 #include <shlwapi.h>
 
 #ifdef HAVE_SYS_TYPES_H
@@ -242,41 +243,13 @@ ismodule(wchar_t *filename, int update_filename)
    stuff as fits will be appended.
 */
 
-static int _PathCchCombineEx_Initialized = 0;
-typedef HRESULT(__stdcall *PPathCchCombineEx) (PWSTR pszPathOut, size_t cchPathOut,
-                                               PCWSTR pszPathIn, PCWSTR pszMore,
-                                               unsigned long dwFlags);
-static PPathCchCombineEx _PathCchCombineEx;
-
 static void
 join(wchar_t *buffer, const wchar_t *stuff)
 {
-    if (_PathCchCombineEx_Initialized == 0) {
-        HMODULE pathapi = LoadLibraryW(L"api-ms-win-core-path-l1-1-0.dll");
-        if (pathapi) {
-            _PathCchCombineEx = (PPathCchCombineEx)GetProcAddress(pathapi, "PathCchCombineEx");
-        }
-        else {
-            _PathCchCombineEx = NULL;
-        }
-        _PathCchCombineEx_Initialized = 1;
-    }
-
-    if (_PathCchCombineEx) {
-        if (FAILED(_PathCchCombineEx(buffer, MAXPATHLEN+1, buffer, stuff, 0))) {
-            Py_FatalError("buffer overflow in getpathp.c's join()");
-        }
-    } else {
-        if (!PathCombineW(buffer, buffer, stuff)) {
-            Py_FatalError("buffer overflow in getpathp.c's join()");
-        }
+    if (FAILED(PathCchCombineEx(buffer, MAXPATHLEN+1, buffer, stuff, 0))) {
+        Py_FatalError("buffer overflow in getpathp.c's join()");
     }
 }
-
-static int _PathCchCanonicalizeEx_Initialized = 0;
-typedef HRESULT(__stdcall *PPathCchCanonicalizeEx) (PWSTR pszPathOut, size_t cchPathOut,
-    PCWSTR pszPathIn, unsigned long dwFlags);
-static PPathCchCanonicalizeEx _PathCchCanonicalizeEx;
 
 /* Call PathCchCanonicalizeEx(path): remove navigation elements such as "."
    and ".." to produce a direct, well-formed path. */
@@ -287,26 +260,8 @@ canonicalize(wchar_t *buffer, const wchar_t *path)
         return _PyStatus_NO_MEMORY();
     }
 
-    if (_PathCchCanonicalizeEx_Initialized == 0) {
-        HMODULE pathapi = LoadLibraryW(L"api-ms-win-core-path-l1-1-0.dll");
-        if (pathapi) {
-            _PathCchCanonicalizeEx = (PPathCchCanonicalizeEx)GetProcAddress(pathapi, "PathCchCanonicalizeEx");
-        }
-        else {
-            _PathCchCanonicalizeEx = NULL;
-        }
-        _PathCchCanonicalizeEx_Initialized = 1;
-    }
-
-    if (_PathCchCanonicalizeEx) {
-        if (FAILED(_PathCchCanonicalizeEx(buffer, MAXPATHLEN + 1, path, 0))) {
-            return INIT_ERR_BUFFER_OVERFLOW();
-        }
-    }
-    else {
-        if (!PathCanonicalizeW(buffer, path)) {
-            return INIT_ERR_BUFFER_OVERFLOW();
-        }
+    if (FAILED(PathCchCanonicalizeEx(buffer, MAXPATHLEN + 1, path, 0))) {
+        return INIT_ERR_BUFFER_OVERFLOW();
     }
     return _PyStatus_OK();
 }
