@@ -405,20 +405,6 @@ PyAPI_FUNC(void) _PyDebug_PrintTotalRefs(void);
 #define _Py_DEC_REFTOTAL
 #endif /* Py_REF_DEBUG */
 
-#ifdef COUNT_ALLOCS
-PyAPI_FUNC(void) _Py_inc_count(struct _typeobject *);
-PyAPI_FUNC(void) _Py_dec_count(struct _typeobject *);
-#define _Py_INC_TPALLOCS(OP)    _Py_inc_count(Py_TYPE(OP))
-#define _Py_INC_TPFREES(OP)     _Py_dec_count(Py_TYPE(OP))
-#define _Py_DEC_TPFREES(OP)     Py_TYPE(OP)->tp_frees--
-#define _Py_COUNT_ALLOCS_COMMA  ,
-#else
-#define _Py_INC_TPALLOCS(OP)
-#define _Py_INC_TPFREES(OP)
-#define _Py_DEC_TPFREES(OP)
-#define _Py_COUNT_ALLOCS_COMMA
-#endif /* COUNT_ALLOCS */
-
 /* Update the Python traceback of an object. This function must be called
    when a memory block is reused from a free list. */
 PyAPI_FUNC(int) _PyTraceMalloc_NewReference(PyObject *op);
@@ -438,15 +424,13 @@ static inline void _Py_NewReference(PyObject *op)
     if (_Py_tracemalloc_config.tracing) {
         _PyTraceMalloc_NewReference(op);
     }
-    _Py_INC_TPALLOCS(op);
     _Py_INC_REFTOTAL;
     Py_REFCNT(op) = 1;
 }
 
-static inline void _Py_ForgetReference(PyObject *op)
+static inline void _Py_ForgetReference(PyObject *Py_UNUSED(op))
 {
-    (void)op; /* may be unused, shut up -Wunused-parameter */
-    _Py_INC_TPFREES(op);
+    /* nothing to do */
 }
 #endif /* !Py_TRACE_REFS */
 
