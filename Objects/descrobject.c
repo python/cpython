@@ -1915,7 +1915,12 @@ static PyObject *
 ga_call(PyObject *self, PyObject *args, PyObject *kwds)
 {
     gaobject *alias = (gaobject *)self;
-    return PyObject_Call(alias->origin, args, kwds);
+    PyObject *obj = PyObject_Call(alias->origin, args, kwds);
+    if (obj != NULL) {
+        PyObject_SetAttrString(obj, "__orig_class__", self);
+        PyErr_Clear();
+    }
+    return obj;
 }
 
 static const char* const attr_exceptions[] = {
