@@ -77,8 +77,15 @@ class BaseTest(unittest.TestCase):
         self.assertEqual(repr(list[str]), 'list[str]')
         self.assertEqual(repr(list[()]), 'list[()]')
         self.assertEqual(repr(tuple[int, ...]), 'tuple[int, ...]')
-        self.assertTrue(repr(MyList[int]).endswith('BaseTest.test_repr.<locals>.MyList[int]'))
+        self.assertTrue(repr(MyList[int]).endswith('.BaseTest.test_repr.<locals>.MyList[int]'))
         self.assertEqual(repr(list[str]()), '[]')  # instances should keep their normal repr
+
+    def test_exposed_type(self):
+        import types
+        a = types.GenericAlias(list, int)
+        self.assertEqual(str(a), 'list[int]')
+        self.assertIs(a.__origin__, list)
+        self.assertEqual(a.__parameters__, (int,))
 
 
 if __name__ == "__main__":
