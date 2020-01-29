@@ -1,0 +1,1 @@
+Don't use an oparg for ``DICT_MERGE`` and ``DICT_UPDATE`` opcodes.
