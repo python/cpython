@@ -1817,18 +1817,21 @@ class GenericTests(BaseTestCase):
         # this is the only test that checks type caching
         self.clear_caches()
         class MyTup(Tuple[T, T]): ...
-        self.assertIs(MyTup[int]().__class__, MyTup)
-        self.assertIs(MyTup[int]().__orig_class__, MyTup[int])
+        tt = MyTup[int]
+        self.assertIs(tt().__class__, MyTup)
+        self.assertIs(tt().__orig_class__, tt)
         class MyCall(Callable[..., T]):
             def __call__(self): return None
         self.assertIs(MyCall[T]().__class__, MyCall)
         self.assertIs(MyCall[T]().__orig_class__, MyCall[T])
         class MyDict(typing.Dict[T, T]): ...
-        self.assertIs(MyDict[int]().__class__, MyDict)
-        self.assertIs(MyDict[int]().__orig_class__, MyDict[int])
+        dd = MyDict[int]
+        self.assertIs(dd().__class__, MyDict)
+        self.assertIs(dd().__orig_class__, dd)
         class MyDef(typing.DefaultDict[str, T]): ...
-        self.assertIs(MyDef[int]().__class__, MyDef)
-        self.assertIs(MyDef[int]().__orig_class__, MyDef[int])
+        df = MyDef[int]
+        self.assertIs(df().__class__, MyDef)
+        self.assertIs(df().__orig_class__, df)
         # ChainMap was added in 3.3
         if sys.version_info >= (3, 3):
             class MyChain(typing.ChainMap[str, T]): ...
