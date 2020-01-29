@@ -425,6 +425,22 @@ class ThreadPoolShutdownTest(ThreadPoolMixin, ExecutorShutdownTest, BaseTestCase
             self.assertRegex(t.name, r'ThreadPoolExecutor-\d+_[0-4]$')
             t.join()
 
+    def test_cancel_futures_wait_false(self):
+        # Can only be reliably tested for TPE, since PPE often hangs with 
+        # `wait=False` (even without *cancel_futures*).
+        rc, out, err = assert_python_ok('-c', """if True:
+            from concurrent.futures import ThreadPoolExecutor
+            from test.test_concurrent_futures import sleep_and_print
+            if __name__ == "__main__":
+                t = ThreadPoolExecutor()
+                t.submit(sleep_and_print, .1, "apple")
+                t.shutdown(wait=False, cancel_futures=True)
+            """.format(executor_type=self.executor_type.__name__))
+        # Errors in atexit hooks don't change the process exit code, check
+        # stderr manually.
+        self.assertFalse(err)
+        self.assertEqual(out.strip(), b"apple")
+
 
 class ProcessPoolShutdownTest(ExecutorShutdownTest):
     def _prime_executor(self):
