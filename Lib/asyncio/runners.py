@@ -5,7 +5,7 @@ from . import events
 from . import tasks
 
 
-def run(main, *, loop=False, debug=False):
+def run(main, *, loop=None, debug=False):
     """Execute the coroutine and return the result.
 
     This function runs the passed coroutine, taking care of
