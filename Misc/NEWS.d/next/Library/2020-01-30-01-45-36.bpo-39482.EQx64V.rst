@@ -1,0 +1,3 @@
+Add a fixer for :mod:`lib2to3` to handling :term:`abstract base classes
+<abstract base class>` which is moved from :mod:`collections` to
+:mod:`collections.abc` Patch by Dong-hee Na.

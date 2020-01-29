@@ -4643,3 +4643,38 @@ class Test_asserts(FixerTestCase):
     def test_unchanged(self):
         self.unchanged('self.assertEqualsOnSaturday')
         self.unchanged('self.assertEqualsOnSaturday(3, 5)')
+
+
+class Test_collections_import(FixerTestCase):
+
+    fixer = "collections_import"
+
+
+    def test_collections_abc(self):
+        b = """from collections import Iterable"""
+        a = """from collections.abc import Iterable"""
+        self.check(b, a)
+
+        b = """from collections import Iterable, Sequence"""
+        a = """from collections.abc import Iterable, Sequence"""
+        self.check(b, a)
+
+        b = """from collections import Counter, Iterable, Sequence"""
+        a = "from collections import Counter\nfrom collections.abc import Iterable, Sequence"
+        self.check(b,a)
+
+    def test_indented(self):
+        b = """
+def foo():
+    from collections import Iterable, Counter
+"""
+        a = """
+def foo():
+    from collections import Counter
+    from collections.abc import Iterable
+"""
+        self.check(b, a)
+
+    def test_unchanged(self):
+        s = """from collections import Counter"""
+        self.unchanged(s)
