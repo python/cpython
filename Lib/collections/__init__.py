@@ -25,6 +25,7 @@ import heapq as _heapq
 from _weakref import proxy as _proxy
 from itertools import repeat as _repeat, chain as _chain, starmap as _starmap
 from reprlib import recursive_repr as _recursive_repr
+from types import GenericAlias as _GenericAlias
 
 try:
     from _collections import deque
@@ -961,6 +962,10 @@ class UserDict(_collections_abc.MutableMapping):
         if kwargs:
             self.update(kwargs)
 
+    # It's a generic class, just like dict.
+    def __class_getitem__(cls, item):
+        return _GenericAlias(cls, item)
+
     def __len__(self): return len(self.data)
     def __getitem__(self, key):
         if key in self.data:
@@ -1024,6 +1029,8 @@ class UserList(_collections_abc.MutableSequence):
                 self.data[:] = initlist.data[:]
             else:
                 self.data = list(initlist)
+    def __class_getitem__(cls, item):
+        return _GenericAlias(cls, item)
     def __repr__(self): return repr(self.data)
     def __lt__(self, other): return self.data <  self.__cast(other)
     def __le__(self, other): return self.data <= self.__cast(other)
