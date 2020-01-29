@@ -335,6 +335,46 @@ Now some general starred expressions (all fail).
       ...
     SyntaxError: can't use starred expression here
 
+Check for correct execution order (all fail):
+
+    >>> def f():
+    ...     return None
+    >>> try:
+    ...     [*f(), *print("This should be printed!")]
+    ... except TypeError:
+    ...     pass
+    This should be printed!
+
+    >>> try:
+    ...     (*f(), *print("This should be printed!"))
+    ... except TypeError:
+    ...     pass
+    This should be printed!
+
+    >>> try:
+    ...     {*f(), *print("This should be printed!")}
+    ... except TypeError:
+    ...     pass
+    This should be printed!
+
+    >>> try:
+    ...     f(*f(), *print("This should be printed!"))
+    ... except TypeError:
+    ...     pass
+    This should be printed!
+
+    >>> try:
+    ...     {**f(), **print("This should be printed!")}
+    ... except TypeError:
+    ...     pass
+    This should be printed!
+
+    >>> try:
+    ...     f(**f(), **print("This should be printed!"))
+    ... except TypeError:
+    ...     pass
+    This should be printed!
+
 Some size constraints (all fail.)
 
     >>> s = ", ".join("a%d" % i for i in range(1<<8)) + ", *rest = range(1<<8 + 1)"
