@@ -1831,7 +1831,7 @@ ga_repr_item(_PyUnicodeWriter *writer, PyObject *p)
     PyObject *r = NULL;
     int err;
     if (PyObject_HasAttrString(p, "__origin__") &&
-        PyObject_HasAttrString(p, "__parameters__"))
+        PyObject_HasAttrString(p, "__args__"))
     {
         // It looks like a GenericAlias
         r = PyObject_Repr(p);
@@ -1917,7 +1917,7 @@ ga_call(PyObject *self, PyObject *args, PyObject *kwds)
 
 static const char* const attr_exceptions[] = {
     "__origin__",
-    "__parameters__",
+    "__args__",
     "__mro_entries__",
     NULL,
 };
@@ -1953,7 +1953,7 @@ static PyMethodDef ga_methods[] = {
 
 static PyMemberDef ga_members[] = {
     {"__origin__", T_OBJECT, offsetof(gaobject, origin), READONLY},
-    {"__parameters__", T_OBJECT, offsetof(gaobject, parameters), READONLY},
+    {"__args__", T_OBJECT, offsetof(gaobject, parameters), READONLY},
     {0}
 };
 

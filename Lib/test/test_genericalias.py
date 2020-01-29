@@ -20,7 +20,7 @@ class BaseTest(unittest.TestCase):
             with self.subTest(f"Testing {tname}"):
                 alias = t[int]
                 self.assertIs(alias.__origin__, t)
-                self.assertEqual(alias.__parameters__, (int,))
+                self.assertEqual(alias.__args__, (int,))
 
     def test_unsubscriptable(self):
         for t in int, str, float:
@@ -77,7 +77,7 @@ class BaseTest(unittest.TestCase):
             pass
         t = MyList[int]
         self.assertIs(t.__origin__, MyList)
-        self.assertEqual(t.__parameters__, (int,))
+        self.assertEqual(t.__args__, (int,))
 
     def test_repr(self):
         class MyList(list):
@@ -93,7 +93,7 @@ class BaseTest(unittest.TestCase):
         a = types.GenericAlias(list, int)
         self.assertEqual(str(a), 'list[int]')
         self.assertIs(a.__origin__, list)
-        self.assertEqual(a.__parameters__, (int,))
+        self.assertEqual(a.__args__, (int,))
 
 
 if __name__ == "__main__":
