@@ -1821,7 +1821,7 @@ ga_traverse(PyObject *self, visitproc visit, void *arg)
     return 0;
 }
 
-int
+static int
 ga_repr_item(_PyUnicodeWriter *writer, PyObject *p)
 {
     PyObject *qualname = PyObject_GetAttrString(p, "__qualname__");
