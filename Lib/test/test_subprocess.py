@@ -3145,6 +3145,17 @@ class POSIXProcessTestCase(BaseTestCase):
         # so Popen failed to read it and uses a default returncode instead.
         self.assertIsNotNone(proc.returncode)
 
+    def test_communicate_repeated_call_after_stdout_close(self):
+        proc = subprocess.Popen([sys.executable, '-c',
+                                 'import os, time; os.close(1), time.sleep(2)'],
+                                stdout=subprocess.PIPE)
+        while True:
+            try:
+                proc.communicate(timeout=0.1)
+                return
+            except subprocess.TimeoutExpired:
+                pass
+
 
 @unittest.skipUnless(mswindows, "Windows specific tests")
 class Win32ProcessTestCase(BaseTestCase):

@@ -613,6 +613,11 @@ static PyObject *
 binascii_a2b_hqx_impl(PyObject *module, Py_buffer *data)
 /*[clinic end generated code: output=4d6d8c54d54ea1c1 input=0d914c680e0eed55]*/
 {
+    if (PyErr_WarnEx(PyExc_DeprecationWarning,
+                     "binascii.a2b_hqx() is deprecated", 1) < 0) {
+        return NULL;
+    }
+
     const unsigned char *ascii_data;
     unsigned char *bin_data;
     int leftbits = 0;
@@ -701,6 +706,11 @@ static PyObject *
 binascii_rlecode_hqx_impl(PyObject *module, Py_buffer *data)
 /*[clinic end generated code: output=393d79338f5f5629 input=e1f1712447a82b09]*/
 {
+    if (PyErr_WarnEx(PyExc_DeprecationWarning,
+                     "binascii.rlecode_hqx() is deprecated", 1) < 0) {
+        return NULL;
+    }
+
     const unsigned char *in_data;
     unsigned char *out_data;
     unsigned char ch;
@@ -763,6 +773,11 @@ static PyObject *
 binascii_b2a_hqx_impl(PyObject *module, Py_buffer *data)
 /*[clinic end generated code: output=d0aa5a704bc9f7de input=9596ebe019fe12ba]*/
 {
+    if (PyErr_WarnEx(PyExc_DeprecationWarning,
+                     "binascii.b2a_hqx() is deprecated", 1) < 0) {
+        return NULL;
+    }
+
     unsigned char *ascii_data;
     const unsigned char *bin_data;
     int leftbits = 0;
@@ -818,6 +833,11 @@ static PyObject *
 binascii_rledecode_hqx_impl(PyObject *module, Py_buffer *data)
 /*[clinic end generated code: output=9826619565de1c6c input=54cdd49fc014402c]*/
 {
+    if (PyErr_WarnEx(PyExc_DeprecationWarning,
+                     "binascii.rledecode_hqx() is deprecated", 1) < 0) {
+        return NULL;
+    }
+
     const unsigned char *in_data;
     unsigned char *out_data;
     unsigned char in_byte, in_repeat;
@@ -932,7 +952,7 @@ error:
 
 
 /*[clinic input]
-binascii.crc_hqx -> unsigned_int
+binascii.crc_hqx
 
     data: Py_buffer
     crc: unsigned_int(bitwise=True)
@@ -941,10 +961,15 @@ binascii.crc_hqx -> unsigned_int
 Compute CRC-CCITT incrementally.
 [clinic start generated code]*/
 
-static unsigned int
+static PyObject *
 binascii_crc_hqx_impl(PyObject *module, Py_buffer *data, unsigned int crc)
-/*[clinic end generated code: output=8ec2a78590d19170 input=f18240ff8c705b79]*/
+/*[clinic end generated code: output=2fde213d0f547a98 input=56237755370a951c]*/
 {
+    if (PyErr_WarnEx(PyExc_DeprecationWarning,
+                     "binascii.crc_hqx() is deprecated", 1) < 0) {
+        return NULL;
+    }
+
     const unsigned char *bin_data;
     Py_ssize_t len;
 
@@ -956,7 +981,7 @@ binascii_crc_hqx_impl(PyObject *module, Py_buffer *data, unsigned int crc)
         crc = ((crc<<8)&0xff00) ^ crctab_hqx[(crc>>8)^*bin_data++];
     }
 
-    return crc;
+    return PyLong_FromUnsignedLong(crc);
 }
 
 #ifndef USE_ZLIB_CRC32

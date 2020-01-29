@@ -1655,13 +1655,12 @@ class TarFile(object):
             raise ValueError("mode must be 'r', 'w' or 'x'")
 
         try:
-            import gzip
-            gzip.GzipFile
-        except (ImportError, AttributeError):
+            from gzip import GzipFile
+        except ImportError:
             raise CompressionError("gzip module is not available")
 
         try:
-            fileobj = gzip.GzipFile(name, mode + "b", compresslevel, fileobj)
+            fileobj = GzipFile(name, mode + "b", compresslevel, fileobj)
         except OSError:
             if fileobj is not None and mode == 'r':
                 raise ReadError("not a gzip file")
@@ -1689,12 +1688,11 @@ class TarFile(object):
             raise ValueError("mode must be 'r', 'w' or 'x'")
 
         try:
-            import bz2
+            from bz2 import BZ2File
         except ImportError:
             raise CompressionError("bz2 module is not available")
 
-        fileobj = bz2.BZ2File(fileobj or name, mode,
-                              compresslevel=compresslevel)
+        fileobj = BZ2File(fileobj or name, mode, compresslevel=compresslevel)
 
         try:
             t = cls.taropen(name, mode, fileobj, **kwargs)
@@ -1718,15 +1716,15 @@ class TarFile(object):
             raise ValueError("mode must be 'r', 'w' or 'x'")
 
         try:
-            import lzma
+            from lzma import LZMAFile, LZMAError
         except ImportError:
             raise CompressionError("lzma module is not available")
 
-        fileobj = lzma.LZMAFile(fileobj or name, mode, preset=preset)
+        fileobj = LZMAFile(fileobj or name, mode, preset=preset)
 
         try:
             t = cls.taropen(name, mode, fileobj, **kwargs)
-        except (lzma.LZMAError, EOFError):
+        except (LZMAError, EOFError):
             fileobj.close()
             if mode == 'r':
                 raise ReadError("not an lzma file")
@@ -2461,9 +2459,14 @@ class TarFile(object):
 def is_tarfile(name):
     """Return True if name points to a tar archive that we
        are able to handle, else return False.
+
+       'name' should be a string, file, or file-like object.
     """
     try:
-        t = open(name)
+        if hasattr(name, "read"):
+            t = open(fileobj=name)
+        else:
+            t = open(name)
         t.close()
         return True
     except TarError:
