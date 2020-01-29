@@ -8,6 +8,7 @@ import codecs
 import errno
 import stat
 import sys
+import types
 # Import _thread instead of threading to reduce startup cost
 from _thread import allocate_lock as Lock
 if sys.platform in {'win32', 'cygwin'}:
@@ -339,6 +340,10 @@ class IOBase(metaclass=abc.ABCMeta):
         """Internal: raise an OSError exception for unsupported operations."""
         raise UnsupportedOperation("%s.%s() not supported" %
                                    (self.__class__.__name__, name))
+
+    def __class_getitem__(cls, item):
+        """Internal: PEP 585."""
+        return types.GenericAlias(cls, item)
 
     ### Positioning ###
 
