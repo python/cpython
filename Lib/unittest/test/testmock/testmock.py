@@ -1868,6 +1868,11 @@ class MockTest(unittest.TestCase):
         with self.assertRaises(StopIteration):
             next(f1)
 
+    def test_mock_open_next_with_readline_with_return_value(self):
+        mopen = mock.mock_open(read_data='foo\nbarn')
+        mopen.return_value.readline.return_value = 'abc'
+        self.assertEqual('abc', next(mopen()))
+
     def test_mock_open_write(self):
         # Test exception in file writing write()
         mock_namedtemp = mock.mock_open(mock.MagicMock(name='JLV'))
