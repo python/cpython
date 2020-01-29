@@ -2715,7 +2715,7 @@ def _must_skip(spec, entry, is_type):
             continue
         if isinstance(result, (staticmethod, classmethod)):
             return False
-        elif isinstance(getattr(result, '__get__', None), MethodWrapperTypes):
+        elif isinstance(result, FunctionTypes):
             # Normal method => skip if looked up on type
             # (if looked up on instance, self is already skipped)
             return is_type
@@ -2743,10 +2743,6 @@ FunctionTypes = (
     type(create_autospec),
     # instance method
     type(ANY.__eq__),
-)
-
-MethodWrapperTypes = (
-    type(ANY.__eq__.__get__),
 )
 
 
