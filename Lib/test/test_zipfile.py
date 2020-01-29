@@ -609,6 +609,10 @@ class StoredTestsWithSourceFile(AbstractTestsWithSourceFile,
             zinfo = zipfp.getinfo(TESTFN)
             self.assertEqual(zinfo.date_time, (1980, 1, 1, 0, 0, 0))
 
+    # Disable the test because it fails on Fedora Rawhide with XFS filesystem
+    # https://bugzilla.redhat.com/show_bug.cgi?id=1795576
+    # https://bugs.python.org/issue39460#msg360952
+    @unittest.skipIf(True, "FIXME: bpo-39460: VFS and/or XFS bug")
     def test_add_file_after_2107(self):
         # Set atime and mtime to 2108-12-30
         try:
