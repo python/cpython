@@ -343,29 +343,27 @@ class ExecutorShutdownTest:
             f.result()
 
     def test_cancel_futures(self):
-        max_workers = 5
-        executor = self.executor_type(max_workers)
+        executor = self.executor_type()
         fs = [executor.submit(time.sleep, .1) for _ in range(50)]
-        # Wait for workers to complete first round of work
-        time.sleep(.1)
         executor.shutdown(cancel_futures=True)
-
         # We can't guarantee the exact number of cancellations, but we can
-        # guarantee that *some* were cancelled.
+        # guarantee that *some* were cancelled. In this case, at least half
+        # should have been cancelled.
         cancelled = [fut for fut in fs if fut.cancelled()]
-        self.assertTrue(len(cancelled) > 0)
+        self.assertTrue(len(cancelled) >= 25, msg=f"{len(cancelled)=}")
 
-        # Ensure the other futures were able to finish (no InvalidStateError).
+        # Ensure the other futures were able to finish.
         # Use "not fut.cancelled()" instead of "fut.done()" to include futures
         # that may have been left in a pending state.
         others = [fut for fut in fs if not fut.cancelled()]
         for fut in others:
-            self.assertTrue(fut.done())
+            self.assertTrue(fut.done(), msg=f"{fut._state=}")
             self.assertIsNone(fut.exception())
 
-        # The minimum number of finished futures should be max_workers, since
-        # we waited for the first round to complete.
-        self.assertTrue(len(others) >= max_workers)
+        # Similar to the number of cancelled futures, we can't guarantee the
+        # exact number that completed. But, we can guarantee that at least
+        # one finished.
+        self.assertTrue(len(others) > 0, msg=f"{len(others)=}")
 
 
 class ThreadPoolShutdownTest(ThreadPoolMixin, ExecutorShutdownTest, BaseTestCase):
