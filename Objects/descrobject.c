@@ -1825,7 +1825,9 @@ static int
 ga_repr_item(_PyUnicodeWriter *writer, PyObject *p)
 {
     PyObject *qualname = PyObject_GetAttrString(p, "__qualname__");
+    PyErr_Clear();
     PyObject *module = PyObject_GetAttrString(p, "__module__");
+    PyErr_Clear();
     PyObject *r = NULL;
     int err;
     if (PyObject_HasAttrString(p, "__origin__") &&
