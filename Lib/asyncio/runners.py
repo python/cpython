@@ -38,7 +38,7 @@ def run(main, *, loop=False, debug=False):
 
     if loop is None:
         loop = events.new_event_loop()
-    
+
     try:
         events.set_event_loop(loop)
         loop.set_debug(debug)
