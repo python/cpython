@@ -1798,6 +1798,7 @@ PyTypeObject PyProperty_Type = {
 typedef struct {
     PyObject_HEAD
     PyObject *origin;
+    PyObject *args;
     PyObject *parameters;
 } gaobject;
 
@@ -1808,6 +1809,7 @@ ga_dealloc(PyObject *self)
 
     _PyObject_GC_UNTRACK(self);
     Py_XDECREF(alias->origin);
+    Py_XDECREF(alias->args);
     Py_XDECREF(alias->parameters);
     self->ob_type->tp_free(self);
 }
@@ -1817,6 +1819,7 @@ ga_traverse(PyObject *self, visitproc visit, void *arg)
 {
     gaobject *alias = (gaobject *)self;
     Py_VISIT(alias->origin);
+    Py_VISIT(alias->args);
     Py_VISIT(alias->parameters);
     return 0;
 }
@@ -1871,7 +1874,7 @@ static PyObject *
 ga_repr(PyObject *self)
 {
     gaobject *alias = (gaobject *)self;
-    Py_ssize_t len = PyTuple_Size(alias->parameters);
+    Py_ssize_t len = PyTuple_Size(alias->args);
 
     _PyUnicodeWriter writer;
     _PyUnicodeWriter_Init(&writer);
@@ -1888,7 +1891,7 @@ ga_repr(PyObject *self)
                 goto error;
             }
         }
-        PyObject *p = PyTuple_GET_ITEM(alias->parameters, i);
+        PyObject *p = PyTuple_GET_ITEM(alias->args, i);
         if (ga_repr_item(&writer, p) < 0) {
             goto error;
         }
@@ -1918,6 +1921,7 @@ ga_call(PyObject *self, PyObject *args, PyObject *kwds)
 static const char* const attr_exceptions[] = {
     "__origin__",
     "__args__",
+    "__parameters__",
     "__mro_entries__",
     NULL,
 };
@@ -1953,7 +1957,8 @@ static PyMethodDef ga_methods[] = {
 
 static PyMemberDef ga_members[] = {
     {"__origin__", T_OBJECT, offsetof(gaobject, origin), READONLY},
-    {"__args__", T_OBJECT, offsetof(gaobject, parameters), READONLY},
+    {"__args__", T_OBJECT, offsetof(gaobject, args), READONLY},
+    {"__parameters__", T_OBJECT_EX, offsetof(gaobject, parameters), READONLY},
     {0}
 };
 
@@ -1967,8 +1972,8 @@ ga_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
         return PyErr_Format(PyExc_TypeError, "GenericAlias expects 2 positional arguments");
     }
     PyObject *origin = PyTuple_GET_ITEM(args, 0);
-    PyObject *parameters = PyTuple_GET_ITEM(args, 1);
-    return Py_GenericAlias(origin, parameters);
+    PyObject *arguments = PyTuple_GET_ITEM(args, 1);
+    return Py_GenericAlias(origin, arguments);
 }
 
 // TODO:
@@ -1993,27 +1998,28 @@ PyTypeObject Py_GenericAliasType = {
 };
 
 PyObject *
-Py_GenericAlias(PyObject *origin, PyObject *parameters)
+Py_GenericAlias(PyObject *origin, PyObject *args)
 {
-    if (!PyTuple_Check(parameters)) {
-        parameters = PyTuple_Pack(1, parameters);
-        if (parameters == NULL) {
+    if (!PyTuple_Check(args)) {
+        args = PyTuple_Pack(1, args);
+        if (args == NULL) {
             return NULL;
         }
     }
     else {
-        Py_INCREF(parameters);
+        Py_INCREF(args);
     }
 
     gaobject *alias = PyObject_GC_New(gaobject, &Py_GenericAliasType);
     if (alias == NULL) {
-        Py_DECREF(parameters);
+        Py_DECREF(args);
         return NULL;
     }
 
     Py_INCREF(origin);
     alias->origin = origin;
-    alias->parameters = parameters;
+    alias->args = args;
+    alias->parameters = NULL;
     _PyObject_GC_TRACK(alias);
     return (PyObject *)alias;
 }
