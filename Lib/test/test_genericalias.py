@@ -2,12 +2,14 @@
 
 import unittest
 from collections import defaultdict, deque
+from io import IOBase
+from re import Pattern, Match
 
 class BaseTest(unittest.TestCase):
     """Test basics."""
 
     def test_subscriptable(self):
-        for t in tuple, list, dict, set, frozenset, defaultdict, deque:
+        for t in tuple, list, dict, set, frozenset, defaultdict, deque, IOBase, Pattern, Match:
             tname = t.__name__
             with self.subTest(f"Testing {tname}"):
                 alias = t[int]

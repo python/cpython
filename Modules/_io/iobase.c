@@ -824,6 +824,8 @@ static PyMethodDef iobase_methods[] = {
     _IO__IOBASE_READLINES_METHODDEF
     _IO__IOBASE_WRITELINES_METHODDEF
 
+    {"__class_getitem__", (PyCFunction)Py_GenericAlias, METH_O|METH_CLASS,
+     PyDoc_STR("See PEP 585")},
     {NULL, NULL}
 };
 
