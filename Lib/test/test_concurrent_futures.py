@@ -426,7 +426,7 @@ class ThreadPoolShutdownTest(ThreadPoolMixin, ExecutorShutdownTest, BaseTestCase
             t.join()
 
     def test_cancel_futures_wait_false(self):
-        # Can only be reliably tested for TPE, since PPE often hangs with 
+        # Can only be reliably tested for TPE, since PPE often hangs with
         # `wait=False` (even without *cancel_futures*).
         rc, out, err = assert_python_ok('-c', """if True:
             from concurrent.futures import ThreadPoolExecutor
