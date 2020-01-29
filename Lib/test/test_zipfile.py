@@ -616,6 +616,18 @@ class StoredTestsWithSourceFile(AbstractTestsWithSourceFile,
         except OverflowError:
             self.skipTest('Host fs cannot set timestamp to required value.')
 
+        mtime_ns = os.stat(TESTFN).st_mtime_ns
+        if mtime_ns != (4386268800 * 10**9):
+            # XFS filesystem is limited to 32-bit timestamp, but the syscall
+            # didn't fail. Moreover, there is a VFS bug which returns
+            # a cached timestamp which is different than the value on disk.
+            #
+            # Test st_mtime_ns rather than st_mtime to avoid rounding issues.
+            #
+            # https://bugzilla.redhat.com/show_bug.cgi?id=1795576
+            # https://bugs.python.org/issue39460#msg360952
+            self.skipTest(f"Linux VFS/XFS kernel bug detected: {mtime_ns=}")
+
         with zipfile.ZipFile(TESTFN2, "w") as zipfp:
             self.assertRaises(struct.error, zipfp.write, TESTFN)
 
