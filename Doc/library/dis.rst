@@ -880,16 +880,16 @@ All of the following opcodes use their arguments.
    .. versionadded:: 3.9
 
 
-.. opcode:: DICT_UPDATE (i)
+.. opcode:: DICT_UPDATE
 
-   Calls ``dict.update(TOS1[-i], TOS)``.  Used to build dicts.
+   Calls ``dict.update(TOS1, TOS)``.  Used to build dicts.
 
    .. versionadded:: 3.9
 
 
 .. opcode:: DICT_MERGE
 
-    Like :opcode:`DICT_UPDATE` but raises an exception for duplicate keys.
+   Like :opcode:`DICT_UPDATE` but raises an exception for duplicate keys.
 
    .. versionadded:: 3.9
 
