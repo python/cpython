@@ -1821,12 +1821,89 @@ ga_traverse(PyObject *self, visitproc visit, void *arg)
     return 0;
 }
 
-// TODO: nicely format origin and each parameter
+int
+ga_repr_item(_PyUnicodeWriter *writer, PyObject *p)
+{
+    PyObject *qualname = PyObject_GetAttrString(p, "__qualname__");
+    PyObject *module = PyObject_GetAttrString(p, "__module__");
+    PyObject *r = NULL;
+    int err;
+    if (PyObject_HasAttrString(p, "__origin__") &&
+        PyObject_HasAttrString(p, "__parameters__"))
+    {
+        // It looks like a GenericAlias
+        r = PyObject_Repr(p);
+    }
+    else if (p == Py_Ellipsis) {
+        // The Ellipsis object
+        r = PyUnicode_FromString("...");
+    }
+    else if (qualname != NULL && module != NULL) {
+        // Looks like a class
+        if (PyUnicode_CompareWithASCIIString(module, "builtins") == 0) {
+            // builtins don't need a module name
+            Py_INCREF(qualname);
+            r = qualname;
+        }
+        else {
+            r = PyUnicode_FromFormat("%U.%U", module, qualname);
+        }
+    }
+    else {
+        // fallback
+        r = PyObject_Repr(p);
+    }
+    if (r == NULL) {
+        // error if any of the above PyObject_Repr/PyUnicode_From* fail
+        err = -1;
+    } else {
+        err = _PyUnicodeWriter_WriteStr(writer, r);
+    }
+    Py_XDECREF(qualname);
+    Py_XDECREF(module);
+    Py_XDECREF(r);
+    return err;
+}
+
 static PyObject *
 ga_repr(PyObject *self)
 {
     gaobject *alias = (gaobject *)self;
-    return PyUnicode_FromFormat("%R[%R]", alias->origin, alias->parameters);
+    Py_ssize_t len = PyTuple_Size(alias->parameters);
+
+    _PyUnicodeWriter writer;
+    _PyUnicodeWriter_Init(&writer);
+    
+    if (ga_repr_item(&writer, alias->origin) < 0) {
+        goto error;
+    }
+    if (_PyUnicodeWriter_WriteASCIIString(&writer, "[", 1) < 0) {
+        goto error;
+    }
+    for (Py_ssize_t i = 0; i < len; i++) {
+        if (i > 0) {
+            if (_PyUnicodeWriter_WriteASCIIString(&writer, ", ", 2) < 0) {
+                goto error;
+            }
+        }
+        PyObject *p = PyTuple_GET_ITEM(alias->parameters, i);
+        if (ga_repr_item(&writer, p) < 0) {
+            goto error;
+        }
+    }
+    if (len == 0) {
+        // for something like tuple[()] we should print a "()"
+        if (_PyUnicodeWriter_WriteASCIIString(&writer, "()", 2) < 0) {
+            goto error;
+        }
+    }
+    if (_PyUnicodeWriter_WriteASCIIString(&writer, "]", 1) < 0) {
+        goto error;
+    }
+    return _PyUnicodeWriter_Finish(&writer);
+error:
+    _PyUnicodeWriter_Dealloc(&writer);
+    return NULL;
 }
 
 static PyObject *
