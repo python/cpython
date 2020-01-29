@@ -116,7 +116,8 @@ def_op('INPLACE_RSHIFT', 76)
 def_op('INPLACE_AND', 77)
 def_op('INPLACE_XOR', 78)
 def_op('INPLACE_OR', 79)
-
+def_op('DICT_MERGE', 80)
+def_op('DICT_UPDATE', 81)
 def_op('LIST_TO_TUPLE', 82)
 def_op('RETURN_VALUE', 83)
 def_op('IMPORT_STAR', 84)
@@ -211,7 +212,5 @@ def_op('CALL_METHOD', 161)
 
 def_op('LIST_EXTEND', 162)
 def_op('SET_UPDATE', 163)
-def_op('DICT_MERGE', 164)
-def_op('DICT_UPDATE', 165)
 
 del def_op, name_op, jrel_op, jabs_op

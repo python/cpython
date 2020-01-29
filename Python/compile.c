@@ -3880,7 +3880,7 @@ compiler_dict(struct compiler *c, expr_ty e)
                     return 0;
                 }
                 if (have_dict) {
-                    ADDOP_I(c, DICT_UPDATE, 1);
+                    ADDOP(c, DICT_UPDATE);
                 }
                 have_dict = 1;
                 elements = 0;
@@ -3890,7 +3890,7 @@ compiler_dict(struct compiler *c, expr_ty e)
                 have_dict = 1;
             }
             VISIT(c, expr, (expr_ty)asdl_seq_GET(e->v.Dict.values, i));
-            ADDOP_I(c, DICT_UPDATE, 1);
+            ADDOP(c, DICT_UPDATE);
         }
         else {
             if (elements == 0xFFFF) {
@@ -3898,7 +3898,7 @@ compiler_dict(struct compiler *c, expr_ty e)
                     return 0;
                 }
                 if (have_dict) {
-                    ADDOP_I(c, DICT_UPDATE, 1);
+                    ADDOP(c, DICT_UPDATE);
                 }
                 have_dict = 1;
                 elements = 0;
@@ -3913,7 +3913,7 @@ compiler_dict(struct compiler *c, expr_ty e)
             return 0;
         }
         if (have_dict) {
-            ADDOP_I(c, DICT_UPDATE, 1);
+            ADDOP(c, DICT_UPDATE);
         }
         have_dict = 1;
     }
@@ -4303,7 +4303,7 @@ ex_call:
                     have_dict = 1;
                 }
                 VISIT(c, expr, kw->value);
-                ADDOP_I(c, DICT_MERGE, 1);
+                ADDOP(c, DICT_MERGE);
             }
             else {
                 nseen++;
@@ -4315,7 +4315,7 @@ ex_call:
                 return 0;
             }
             if (have_dict) {
-                ADDOP_I(c, DICT_MERGE, 1);
+                ADDOP(c, DICT_MERGE);
             }
             have_dict = 1;
         }

@@ -2803,7 +2803,7 @@ main_loop:
 
         case TARGET(DICT_UPDATE): {
             PyObject *update = POP();
-            PyObject *dict = PEEK(oparg);
+            PyObject *dict = TOP();
             if (PyDict_Update(dict, update) < 0) {
                 if (_PyErr_ExceptionMatches(tstate, PyExc_AttributeError)) {
                     _PyErr_Format(tstate, PyExc_TypeError,
@@ -2819,10 +2819,10 @@ main_loop:
 
         case TARGET(DICT_MERGE): {
             PyObject *update = POP();
-            PyObject *dict = PEEK(oparg);
+            PyObject *dict = TOP();
 
             if (_PyDict_MergeEx(dict, update, 2) < 0) {
-                format_kwargs_error(tstate, PEEK(2 + oparg), update);
+                format_kwargs_error(tstate, PEEK(3), update);
                 Py_DECREF(update);
                 goto error;
             }
