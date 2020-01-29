@@ -182,8 +182,6 @@ _Py_inc_count(PyTypeObject *tp)
 {
     if (tp->tp_next == NULL && tp->tp_prev == NULL) {
         /* first time; insert in linked list */
-        if (tp->tp_next != NULL) /* sanity check */
-            Py_FatalError("XXX _Py_inc_count sanity check");
         if (type_list)
             type_list->tp_prev = tp;
         tp->tp_next = type_list;
