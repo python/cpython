@@ -21,6 +21,7 @@ class BaseTest(unittest.TestCase):
                 alias = t[int]
                 self.assertIs(alias.__origin__, t)
                 self.assertEqual(alias.__args__, (int,))
+                self.assertEqual(alias.__parameters__, ())
 
     def test_unsubscriptable(self):
         for t in int, str, float:
@@ -78,6 +79,7 @@ class BaseTest(unittest.TestCase):
         t = MyList[int]
         self.assertIs(t.__origin__, MyList)
         self.assertEqual(t.__args__, (int,))
+        self.assertEqual(t.__parameters__, ())
 
     def test_repr(self):
         class MyList(list):
@@ -94,6 +96,31 @@ class BaseTest(unittest.TestCase):
         self.assertEqual(str(a), 'list[int]')
         self.assertIs(a.__origin__, list)
         self.assertEqual(a.__args__, (int,))
+        self.assertEqual(a.__parameters__, ())
+
+    def test_parameters(self):
+        from typing import TypeVar
+        T = TypeVar('T')
+        K = TypeVar('K')
+        V = TypeVar('V')
+        D0 = dict[str, int]
+        self.assertEqual(D0.__args__, (str, int))
+        self.assertEqual(D0.__parameters__, ())
+        D1a = dict[str, V]
+        self.assertEqual(D1a.__args__, (str, V))
+        self.assertEqual(D1a.__parameters__, (V,))
+        D1b = dict[K, int]
+        self.assertEqual(D1b.__args__, (K, int))
+        self.assertEqual(D1b.__parameters__, (K,))
+        D2 = dict[K, V]
+        self.assertEqual(D2.__args__, (K, V))
+        self.assertEqual(D2.__parameters__, (K, V))
+        L0 = list[str]
+        self.assertEqual(L0.__args__, (str,))
+        self.assertEqual(L0.__parameters__, ())
+        L1 = list[T]
+        self.assertEqual(L1.__args__, (T,))
+        self.assertEqual(L1.__parameters__, (T,))
 
 
 if __name__ == "__main__":

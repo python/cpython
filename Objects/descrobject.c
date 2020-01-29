@@ -1958,7 +1958,7 @@ static PyMethodDef ga_methods[] = {
 static PyMemberDef ga_members[] = {
     {"__origin__", T_OBJECT, offsetof(gaobject, origin), READONLY},
     {"__args__", T_OBJECT, offsetof(gaobject, args), READONLY},
-    {"__parameters__", T_OBJECT_EX, offsetof(gaobject, parameters), READONLY},
+    {"__parameters__", T_OBJECT, offsetof(gaobject, parameters), READONLY},
     {0}
 };
 
@@ -1997,6 +1997,44 @@ PyTypeObject Py_GenericAliasType = {
     .tp_free = PyObject_GC_Del,
 };
 
+// isinstance(obj, TypeVar) without importing typing.py.  If someone
+// names some other class TypeVar, it will be mistaken for a TypeVar.
+// Maybe that's a feature; or maybe we'll have to see if
+// sys.modules['typing'] exists and look for its 'TypeVar' attribute
+// (which is roughly what dataclasses.py uses to recognize ClassVar).
+static int
+is_typevar(PyObject *obj)
+{
+    PyTypeObject *type = Py_TYPE(obj);
+    return strcmp(type->tp_name, "TypeVar") == 0;
+}
+
+// tuple(t for t in args if isinstance(t, TypeVar))
+static PyObject *
+make_parameters(PyObject *args)
+{
+    int len = PyTuple_GET_SIZE(args);
+    PyObject *parameters = PyTuple_New(len);
+    if (parameters == NULL)
+        return NULL;
+    int iparam = 0;
+    for (int iarg = 0; iarg < len; iarg++) {
+        PyObject *t = PyTuple_GET_ITEM(args, iarg);
+        if (is_typevar(t)) {
+            Py_INCREF(t);
+            PyTuple_SET_ITEM(parameters, iparam, t);
+            iparam++;
+        }
+    }
+    if (iparam < len) {
+        if (_PyTuple_Resize(&parameters, iparam) < 0) {
+            Py_XDECREF(parameters);
+            return NULL;
+        }
+    }
+    return parameters;
+}
+
 PyObject *
 Py_GenericAlias(PyObject *origin, PyObject *args)
 {
@@ -2019,7 +2057,12 @@ Py_GenericAlias(PyObject *origin, PyObject *args)
     Py_INCREF(origin);
     alias->origin = origin;
     alias->args = args;
-    alias->parameters = NULL;
+    // TODO: Make __parameters__ a lazy attribute
+    alias->parameters = make_parameters(args);
+    if (alias->parameters == NULL) {
+        Py_DECREF(alias);
+        return NULL;
+    }
     _PyObject_GC_TRACK(alias);
     return (PyObject *)alias;
 }
