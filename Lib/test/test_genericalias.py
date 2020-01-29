@@ -2,6 +2,7 @@
 
 import unittest
 from collections import defaultdict, deque
+from contextlib import AbstractContextManager, AbstractAsyncContextManager
 from io import IOBase
 from re import Pattern, Match
 
@@ -9,7 +10,12 @@ class BaseTest(unittest.TestCase):
     """Test basics."""
 
     def test_subscriptable(self):
-        for t in tuple, list, dict, set, frozenset, defaultdict, deque, IOBase, Pattern, Match:
+        for t in (tuple, list, dict, set, frozenset,
+                  defaultdict, deque,
+                  IOBase,
+                  Pattern, Match,
+                  AbstractContextManager, AbstractAsyncContextManager,
+                  ):
             tname = t.__name__
             with self.subTest(f"Testing {tname}"):
                 alias = t[int]
