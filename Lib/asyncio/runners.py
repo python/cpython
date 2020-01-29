@@ -5,7 +5,7 @@ from . import events
 from . import tasks
 
 
-def run(main, *, debug=False):
+def run(main, *, loop=False, debug=False):
     """Execute the coroutine and return the result.
 
     This function runs the passed coroutine, taking care of
@@ -36,7 +36,9 @@ def run(main, *, debug=False):
     if not coroutines.iscoroutine(main):
         raise ValueError("a coroutine was expected, got {!r}".format(main))
 
-    loop = events.new_event_loop()
+    if loop is None:
+        loop = events.new_event_loop()
+    
     try:
         events.set_event_loop(loop)
         loop.set_debug(debug)
