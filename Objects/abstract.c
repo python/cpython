@@ -179,7 +179,7 @@ PyObject_GetItem(PyObject *o, PyObject *key)
             return NULL;
         }
         if (meth) {
-            result = PyObject_CallOneArg(meth, key);
+            result = _PyObject_CallOneArg(meth, key);
             Py_DECREF(meth);
             return result;
         }
@@ -780,7 +780,7 @@ PyObject_Format(PyObject *obj, PyObject *format_spec)
     }
 
     /* And call it. */
-    result = PyObject_CallOneArg(meth, format_spec);
+    result = _PyObject_CallOneArg(meth, format_spec);
     Py_DECREF(meth);
 
     if (result && !PyUnicode_Check(result)) {
@@ -2499,7 +2499,7 @@ object_isinstance(PyThreadState *tstate, PyObject *inst, PyObject *cls)
             Py_DECREF(checker);
             return ok;
         }
-        PyObject *res = PyObject_CallOneArg(checker, inst);
+        PyObject *res = _PyObject_CallOneArg(checker, inst);
         _Py_LeaveRecursiveCall(tstate);
         Py_DECREF(checker);
         if (res != NULL) {
@@ -2582,7 +2582,7 @@ object_issubclass(PyThreadState *tstate, PyObject *derived, PyObject *cls)
             Py_DECREF(checker);
             return ok;
         }
-        PyObject *res = PyObject_CallOneArg(checker, derived);
+        PyObject *res = _PyObject_CallOneArg(checker, derived);
         _Py_LeaveRecursiveCall(tstate);
         Py_DECREF(checker);
         if (res != NULL) {

@@ -452,7 +452,7 @@ classmethoddescr_call(PyMethodDescrObject *descr, PyObject *args,
     if (bound == NULL) {
         return NULL;
     }
-    PyObject *res = PyObject_FastCallDict(bound, _PyTuple_ITEMS(args)+1,
+    PyObject *res = _PyObject_FastCallDict(bound, _PyTuple_ITEMS(args)+1,
                                            argc-1, kwds);
     Py_DECREF(bound);
     return res;
@@ -672,7 +672,7 @@ PyTypeObject PyMethodDescr_Type = {
     0,                                          /* tp_setattro */
     0,                                          /* tp_as_buffer */
     Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC |
-    Py_TPFLAGS_HAVE_VECTORCALL |
+    _Py_TPFLAGS_HAVE_VECTORCALL |
     Py_TPFLAGS_METHOD_DESCRIPTOR,               /* tp_flags */
     0,                                          /* tp_doc */
     descr_traverse,                             /* tp_traverse */
@@ -1493,7 +1493,7 @@ property_descr_get(PyObject *self, PyObject *obj, PyObject *type)
         return NULL;
     }
 
-    return PyObject_CallOneArg(gs->prop_get, obj);
+    return _PyObject_CallOneArg(gs->prop_get, obj);
 }
 
 static int
@@ -1514,7 +1514,7 @@ property_descr_set(PyObject *self, PyObject *obj, PyObject *value)
         return -1;
     }
     if (value == NULL)
-        res = PyObject_CallOneArg(func, obj);
+        res = _PyObject_CallOneArg(func, obj);
     else
         res = PyObject_CallFunctionObjArgs(func, obj, value, NULL);
     if (res == NULL)

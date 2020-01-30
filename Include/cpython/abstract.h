@@ -29,7 +29,7 @@ PyAPI_FUNC(PyObject *) _PyStack_AsDict(
 /* Suggested size (number of positional arguments) for arrays of PyObject*
    allocated on a C stack to avoid allocating memory on the heap memory. Such
    array is used to pass positional arguments to call functions of the
-   PyObject_Vectorcall() family.
+   _PyObject_Vectorcall() family.
 
    The size is chosen to not abuse the C stack and so limit the risk of stack
    overflow. The size is also chosen to allow using the small stack for most
@@ -45,8 +45,8 @@ PyAPI_FUNC(PyObject *) _Py_CheckFunctionResult(
 
 /* === Vectorcall protocol (PEP 590) ============================= */
 
-/* Call callable using tp_call. Arguments are like PyObject_Vectorcall()
-   or PyObject_FastCallDict() (both forms are supported),
+/* Call callable using tp_call. Arguments are like _PyObject_Vectorcall()
+   or _PyObject_FastCallDict() (both forms are supported),
    except that nargs is plainly the number of arguments without flags. */
 PyAPI_FUNC(PyObject *) _PyObject_MakeTpCall(
     PyThreadState *tstate,
@@ -67,7 +67,7 @@ PyVectorcall_Function(PyObject *callable)
 {
     assert(callable != NULL);
     PyTypeObject *tp = Py_TYPE(callable);
-    if (!PyType_HasFeature(tp, Py_TPFLAGS_HAVE_VECTORCALL)) {
+    if (!PyType_HasFeature(tp, _Py_TPFLAGS_HAVE_VECTORCALL)) {
         return NULL;
     }
     assert(PyCallable_Check(callable));
@@ -178,7 +178,7 @@ PyAPI_FUNC(PyObject *) PyObject_VectorcallMethod(
 static inline PyObject *
 PyObject_CallMethodNoArgs(PyObject *self, PyObject *name)
 {
-    return PyObject_VectorcallMethod(name, &self,
+    return _PyObject_VectorcallMethod(name, &self,
            1 | PY_VECTORCALL_ARGUMENTS_OFFSET, NULL);
 }
 
@@ -187,7 +187,7 @@ PyObject_CallMethodOneArg(PyObject *self, PyObject *name, PyObject *arg)
 {
     assert(arg != NULL);
     PyObject *args[2] = {self, arg};
-    return PyObject_VectorcallMethod(name, args,
+    return _PyObject_VectorcallMethod(name, args,
            2 | PY_VECTORCALL_ARGUMENTS_OFFSET, NULL);
 }
 

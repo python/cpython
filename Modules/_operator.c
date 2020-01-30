@@ -1682,7 +1682,7 @@ methodcaller_reduce(methodcallerobject *mc, PyObject *Py_UNUSED(ignored))
 
         newargs[0] = (PyObject *)Py_TYPE(mc);
         newargs[1] = mc->name;
-        constructor = PyObject_FastCallDict(partial, newargs, 2, mc->kwds);
+        constructor = _PyObject_FastCallDict(partial, newargs, 2, mc->kwds);
 
         Py_DECREF(partial);
         return Py_BuildValue("NO", constructor, mc->args);

@@ -93,7 +93,7 @@ _PyErr_CreateException(PyObject *exception, PyObject *value)
         return PyObject_Call(exception, value, NULL);
     }
     else {
-        return PyObject_CallOneArg(exception, value);
+        return _PyObject_CallOneArg(exception, value);
     }
 }
 
@@ -901,7 +901,7 @@ PyErr_SetImportErrorSubclass(PyObject *exception, PyObject *msg,
         goto done;
     }
 
-    error = PyObject_FastCallDict(exception, &msg, 1, kwargs);
+    error = _PyObject_FastCallDict(exception, &msg, 1, kwargs);
     if (error != NULL) {
         _PyErr_SetObject(tstate, (PyObject *)Py_TYPE(error), error);
         Py_DECREF(error);
@@ -1418,7 +1418,7 @@ _PyErr_WriteUnraisableMsg(const char *err_msg_str, PyObject *obj)
         goto default_hook;
     }
 
-    PyObject *res = PyObject_CallOneArg(hook, hook_args);
+    PyObject *res = _PyObject_CallOneArg(hook, hook_args);
     Py_DECREF(hook_args);
     if (res != NULL) {
         Py_DECREF(res);
