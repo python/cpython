@@ -3038,7 +3038,7 @@ _elementtree_TreeBuilder_close_impl(TreeBuilderObject *self)
 _elementtree.TreeBuilder.start
 
     tag: object
-    attrs: object = None
+    attrs: object
     /
 
 [clinic start generated code]*/
@@ -3046,7 +3046,7 @@ _elementtree.TreeBuilder.start
 static PyObject *
 _elementtree_TreeBuilder_start_impl(TreeBuilderObject *self, PyObject *tag,
                                     PyObject *attrs)
-/*[clinic end generated code: output=e7e9dc2861349411 input=95fc1758dd042c65]*/
+/*[clinic end generated code: output=e7e9dc2861349411 input=606fba02cc468f33]*/
 {
     return treebuilder_handle_start(self, tag, attrs);
 }
