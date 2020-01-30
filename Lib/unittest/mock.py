@@ -1042,8 +1042,7 @@ class _AnyComparer(list):
     the left."""
     def __contains__(self, item):
         for _call in self:
-            if len(item) != len(_call):
-                continue
+            assert len(item) == len(_call)
             if all([
                 expected == actual
                 for expected, actual in zip(item, _call)
@@ -1856,7 +1855,8 @@ class _patch_dict(object):
 
     def __exit__(self, *args):
         """Unpatch the dict."""
-        self._unpatch_dict()
+        if self._original is not None:
+            self._unpatch_dict()
         return False
 
 
@@ -2168,7 +2168,7 @@ class AsyncMockMixin(Base):
         self.__dict__['__code__'] = code_mock
 
     async def _execute_mock_call(self, /, *args, **kwargs):
-        # This is nearly just like super(), except for sepcial handling
+        # This is nearly just like super(), except for special handling
         # of coroutines
 
         _call = self.call_args
@@ -2541,12 +2541,6 @@ class _Call(tuple):
         return tuple.__getattribute__(self, attr)
 
 
-    def count(self, /, *args, **kwargs):
-        return self.__getattr__('count')(*args, **kwargs)
-
-    def index(self, /, *args, **kwargs):
-        return self.__getattr__('index')(*args, **kwargs)
-
     def _get_call_arguments(self):
         if len(self) == 2:
             args, kwargs = self
@@ -2748,7 +2742,7 @@ def _must_skip(spec, entry, is_type):
             continue
         if isinstance(result, (staticmethod, classmethod)):
             return False
-        elif isinstance(getattr(result, '__get__', None), MethodWrapperTypes):
+        elif isinstance(result, FunctionTypes):
             # Normal method => skip if looked up on type
             # (if looked up on instance, self is already skipped)
             return is_type
@@ -2776,10 +2770,6 @@ FunctionTypes = (
     type(create_autospec),
     # instance method
     type(ANY.__eq__),
-)
-
-MethodWrapperTypes = (
-    type(ANY.__eq__.__get__),
 )
 
 
@@ -2920,9 +2910,6 @@ class _AsyncIterator:
         code_mock = NonCallableMock(spec_set=CodeType)
         code_mock.co_flags = inspect.CO_ITERABLE_COROUTINE
         self.__dict__['__code__'] = code_mock
-
-    def __aiter__(self):
-        return self
 
     async def __anext__(self):
         try:

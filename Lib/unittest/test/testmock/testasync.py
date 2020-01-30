@@ -16,38 +16,28 @@ def tearDownModule():
 
 
 class AsyncClass:
-    def __init__(self):
-        pass
-    async def async_method(self):
-        pass
-    def normal_method(self):
-        pass
+    def __init__(self): pass
+    async def async_method(self): pass
+    def normal_method(self): pass
 
     @classmethod
-    async def async_class_method(cls):
-        pass
+    async def async_class_method(cls): pass
 
     @staticmethod
-    async def async_static_method():
-        pass
+    async def async_static_method(): pass
 
 
 class AwaitableClass:
-    def __await__(self):
-        yield
+    def __await__(self): yield
 
-async def async_func():
-    pass
+async def async_func(): pass
 
-async def async_func_args(a, b, *, c):
-    pass
+async def async_func_args(a, b, *, c): pass
 
-def normal_func():
-    pass
+def normal_func(): pass
 
 class NormalClass(object):
-    def a(self):
-        pass
+    def a(self): pass
 
 
 async_foo_name = f'{__name__}.AsyncClass'
@@ -402,8 +392,7 @@ class AsyncSpecSetTest(unittest.TestCase):
 
 class AsyncArguments(IsolatedAsyncioTestCase):
     async def test_add_return_value(self):
-        async def addition(self, var):
-            return var + 1
+        async def addition(self, var): pass
 
         mock = AsyncMock(addition, return_value=10)
         output = await mock(5)
@@ -411,8 +400,7 @@ class AsyncArguments(IsolatedAsyncioTestCase):
         self.assertEqual(output, 10)
 
     async def test_add_side_effect_exception(self):
-        async def addition(var):
-            return var + 1
+        async def addition(var): pass
         mock = AsyncMock(addition, side_effect=Exception('err'))
         with self.assertRaises(Exception):
             await mock(5)
@@ -553,18 +541,14 @@ class AsyncMagicMethods(unittest.TestCase):
 class AsyncContextManagerTest(unittest.TestCase):
 
     class WithAsyncContextManager:
-        async def __aenter__(self, *args, **kwargs):
-            return self
+        async def __aenter__(self, *args, **kwargs): pass
 
-        async def __aexit__(self, *args, **kwargs):
-            pass
+        async def __aexit__(self, *args, **kwargs): pass
 
     class WithSyncContextManager:
-        def __enter__(self, *args, **kwargs):
-            return self
+        def __enter__(self, *args, **kwargs): pass
 
-        def __exit__(self, *args, **kwargs):
-            pass
+        def __exit__(self, *args, **kwargs): pass
 
     class ProductionCode:
         # Example real-world(ish) code
@@ -673,16 +657,9 @@ class AsyncIteratorTest(unittest.TestCase):
         def __init__(self):
             self.items = ["foo", "NormalFoo", "baz"]
 
-        def __aiter__(self):
-            return self
+        def __aiter__(self): pass
 
-        async def __anext__(self):
-            try:
-                return self.items.pop()
-            except IndexError:
-                pass
-
-            raise StopAsyncIteration
+        async def __anext__(self): pass
 
     def test_aiter_set_return_value(self):
         mock_iter = AsyncMock(name="tester")
