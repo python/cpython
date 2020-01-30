@@ -2243,7 +2243,7 @@ valid_identifier(PyObject *s)
     }
     int identifier = PyUnicode_IsIdentifier(s);
     if (identifier < 0) {
-        return 0
+        return 0;
     }
     if (!identifier) {
         PyErr_SetString(PyExc_TypeError,
