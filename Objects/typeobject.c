@@ -6042,8 +6042,12 @@ tp_new_wrapper(PyObject *self, PyObject *args, PyObject *kwds)
     PyTypeObject *type, *subtype, *staticbase;
     PyObject *arg0, *res;
 
-    if (self == NULL || !PyType_Check(self))
-        Py_FatalError("__new__() called with non-type 'self'");
+    if (self == NULL || !PyType_Check(self)) {
+        PyErr_Format(PyExc_SystemError,
+                     "__new__() called with non-type 'self'");
+        return NULL;
+    }
+
     type = (PyTypeObject *)self;
     if (!PyTuple_Check(args) || PyTuple_GET_SIZE(args) < 1) {
         PyErr_Format(PyExc_TypeError,
