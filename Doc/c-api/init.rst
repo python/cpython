@@ -1110,7 +1110,7 @@ All of the following functions must be called after :c:func:`Py_Initialize`.
 .. c:function:: void PyEval_AcquireThread(PyThreadState *tstate)
 
    Acquire the global interpreter lock and set the current thread state to
-   *tstate*, which should not be ``NULL``.  The lock must have been created earlier.
+   *tstate*, which must not be ``NULL``.  The lock must have been created earlier.
    If this thread already has the lock, deadlock ensues.
 
    .. note::
