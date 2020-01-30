@@ -7,6 +7,10 @@
 
 static Py_ssize_t max_module_number;
 
+_Py_IDENTIFIER(__doc__);
+_Py_IDENTIFIER(__name__);
+_Py_IDENTIFIER(__spec__);
+
 typedef struct {
     PyObject_HEAD
     PyObject *md_dict;
@@ -58,11 +62,8 @@ static int
 module_init_dict(PyModuleObject *mod, PyObject *md_dict,
                  PyObject *name, PyObject *doc)
 {
-    _Py_IDENTIFIER(__name__);
-    _Py_IDENTIFIER(__doc__);
     _Py_IDENTIFIER(__package__);
     _Py_IDENTIFIER(__loader__);
-    _Py_IDENTIFIER(__spec__);
 
     if (md_dict == NULL)
         return -1;
@@ -461,7 +462,6 @@ int
 PyModule_SetDocString(PyObject *m, const char *doc)
 {
     PyObject *v;
-    _Py_IDENTIFIER(__doc__);
 
     v = PyUnicode_FromString(doc);
     if (v == NULL || _PyObject_SetAttrId(m, &PyId___doc__, v) != 0) {
@@ -488,7 +488,6 @@ PyModule_GetDict(PyObject *m)
 PyObject*
 PyModule_GetNameObject(PyObject *m)
 {
-    _Py_IDENTIFIER(__name__);
     PyObject *d;
     PyObject *name;
     if (!PyModule_Check(m)) {
@@ -741,10 +740,8 @@ module_getattro(PyModuleObject *m, PyObject *name)
         if (getattr) {
             return _PyObject_CallOneArg(getattr, name);
         }
-        _Py_IDENTIFIER(__name__);
         mod_name = _PyDict_GetItemId(m->md_dict, &PyId___name__);
         if (mod_name && PyUnicode_Check(mod_name)) {
-            _Py_IDENTIFIER(__spec__);
             Py_INCREF(mod_name);
             PyObject *spec = _PyDict_GetItemId(m->md_dict, &PyId___spec__);
             Py_XINCREF(spec);

@@ -74,6 +74,7 @@ _Py_IDENTIFIER(__new__);
 _Py_IDENTIFIER(__set_name__);
 _Py_IDENTIFIER(__setitem__);
 _Py_IDENTIFIER(builtins);
+_Py_IDENTIFIER(mro);
 
 static PyObject *
 slot_tp_new(PyTypeObject *type, PyObject *args, PyObject *kwds);
@@ -310,7 +311,6 @@ type_mro_modified(PyTypeObject *type, PyObject *bases) {
         return;
 
     if (custom) {
-        _Py_IDENTIFIER(mro);
         mro_meth = lookup_maybe_method(
             (PyObject *)type, &PyId_mro, &unbound);
         if (mro_meth == NULL)
@@ -1891,7 +1891,6 @@ mro_invoke(PyTypeObject *type)
     int custom = (Py_TYPE(type) != &PyType_Type);
 
     if (custom) {
-        _Py_IDENTIFIER(mro);
         int unbound;
         PyObject *mro_meth = lookup_method((PyObject *)type, &PyId_mro,
                                            &unbound);
