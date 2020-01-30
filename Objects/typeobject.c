@@ -2241,7 +2241,11 @@ valid_identifier(PyObject *s)
                      Py_TYPE(s)->tp_name);
         return 0;
     }
-    if (!PyUnicode_IsIdentifier(s)) {
+    int identifier = PyUnicode_IsIdentifier(s);
+    if (identifier < 0) {
+        return 0
+    }
+    if (!identifier) {
         PyErr_SetString(PyExc_TypeError,
                         "__slots__ must be identifiers");
         return 0;

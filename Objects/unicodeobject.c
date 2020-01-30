@@ -12209,13 +12209,13 @@ PyUnicode_IsIdentifier(PyObject *self)
     Py_UCS4 first;
 
     if (PyUnicode_READY(self) == -1) {
-        Py_FatalError("identifier not ready");
-        return 0;
+        return -1;
     }
 
-    /* Special case for empty strings */
-    if (PyUnicode_GET_LENGTH(self) == 0)
+    if (PyUnicode_GET_LENGTH(self) == 0) {
+        /* an empty string is not a valid identifier */
         return 0;
+    }
     kind = PyUnicode_KIND(self);
     data = PyUnicode_DATA(self);
 
@@ -12228,12 +12228,15 @@ PyUnicode_IsIdentifier(PyObject *self)
        to check just for these, except that _ must be allowed
        as starting an identifier.  */
     first = PyUnicode_READ(kind, data, 0);
-    if (!_PyUnicode_IsXidStart(first) && first != 0x5F /* LOW LINE */)
+    if (!_PyUnicode_IsXidStart(first) && first != 0x5F /* LOW LINE */) {
         return 0;
+    }
 
-    for (i = 1; i < PyUnicode_GET_LENGTH(self); i++)
-        if (!_PyUnicode_IsXidContinue(PyUnicode_READ(kind, data, i)))
+    for (i = 1; i < PyUnicode_GET_LENGTH(self); i++) {
+        if (!_PyUnicode_IsXidContinue(PyUnicode_READ(kind, data, i))) {
             return 0;
+        }
+    }
     return 1;
 }
 
@@ -12250,7 +12253,11 @@ static PyObject *
 unicode_isidentifier_impl(PyObject *self)
 /*[clinic end generated code: output=fe585a9666572905 input=2d807a104f21c0c5]*/
 {
-    return PyBool_FromLong(PyUnicode_IsIdentifier(self));
+    int identifier = PyUnicode_IsIdentifier(self);
+    if (identifier < 0) {
+        return NULL;
+    }
+    return PyBool_FromLong(identifier);
 }
 
 /*[clinic input]

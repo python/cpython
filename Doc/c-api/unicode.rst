@@ -239,6 +239,13 @@ access internal read-only data of Unicode objects:
       Part of the old-style Unicode API, please migrate to using the
       :c:func:`PyUnicode_nBYTE_DATA` family of macros.
 
+.. c:function:: int PyUnicode_IsIdentifier(PyObject *o)
+
+   Return ``1`` if the string is a valid identifier according to the language
+   definition, section :ref:`identifiers`. Return ``0`` otherwise.
+
+   Raise an exception and return ``-1`` on error.
+
 
 Unicode Character Properties
 """"""""""""""""""""""""""""
