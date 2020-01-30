@@ -611,29 +611,22 @@ float_rem(PyObject *v, PyObject *w)
     return PyFloat_FromDouble(mod);
 }
 
-static PyObject *
-float_divmod(PyObject *v, PyObject *w)
+static void
+_float_div_mod(double vx, double wx, double *floordiv, double *mod)
 {
-    double vx, wx;
-    double div, mod, floordiv;
-    CONVERT_TO_DOUBLE(v, vx);
-    CONVERT_TO_DOUBLE(w, wx);
-    if (wx == 0.0) {
-        PyErr_SetString(PyExc_ZeroDivisionError, "float divmod()");
-        return NULL;
-    }
-    mod = fmod(vx, wx);
+    double div;
+    *mod = fmod(vx, wx);
     /* fmod is typically exact, so vx-mod is *mathematically* an
        exact multiple of wx.  But this is fp arithmetic, and fp
        vx - mod is an approximation; the result is that div may
        not be an exact integral value after the division, although
        it will always be very close to one.
     */
-    div = (vx - mod) / wx;
-    if (mod) {
+    div = (vx - *mod) / wx;
+    if (*mod) {
         /* ensure the remainder has the same sign as the denominator */
-        if ((wx < 0) != (mod < 0)) {
-            mod += wx;
+        if ((wx < 0) != (*mod < 0)) {
+            *mod += wx;
             div -= 1.0;
         }
     }
@@ -641,34 +634,49 @@ float_divmod(PyObject *v, PyObject *w)
         /* the remainder is zero, and in the presence of signed zeroes
            fmod returns different results across platforms; ensure
            it has the same sign as the denominator. */
-        mod = copysign(0.0, wx);
+        *mod = copysign(0.0, wx);
     }
     /* snap quotient to nearest integral value */
     if (div) {
-        floordiv = floor(div);
-        if (div - floordiv > 0.5)
-            floordiv += 1.0;
+        *floordiv = floor(div);
+        if (div - *floordiv > 0.5) {
+            *floordiv += 1.0;
+        }       
     }
     else {
         /* div is zero - get the same sign as the true quotient */
-        floordiv = copysign(0.0, vx / wx); /* zero w/ sign of vx/wx */
+        *floordiv = copysign(0.0, vx / wx); /* zero w/ sign of vx/wx */
     }
-    return Py_BuildValue("(dd)", floordiv, mod);
+}
+
+static PyObject *
+float_divmod(PyObject *v, PyObject *w)
+{
+     double vx, wx;
+     double mod, floordiv;
+     CONVERT_TO_DOUBLE(v, vx);
+     CONVERT_TO_DOUBLE(w, wx);
+     if (wx == 0.0) {
+         PyErr_SetString(PyExc_ZeroDivisionError, "float divmod()");
+         return NULL;
+     }
+     _float_div_mod(vx, wx, &floordiv, &mod);
+     return Py_BuildValue("(dd)", floordiv, mod);
 }
 
 static PyObject *
 float_floor_div(PyObject *v, PyObject *w)
 {
-    PyObject *t, *r;
-
-    t = float_divmod(v, w);
-    if (t == NULL || t == Py_NotImplemented)
-        return t;
-    assert(PyTuple_CheckExact(t));
-    r = PyTuple_GET_ITEM(t, 0);
-    Py_INCREF(r);
-    Py_DECREF(t);
-    return r;
+    double vx, wx;
+    double mod, floordiv;
+    CONVERT_TO_DOUBLE(v, vx);
+    CONVERT_TO_DOUBLE(w, wx);
+    if (wx == 0.0) {
+        PyErr_SetString(PyExc_ZeroDivisionError, "float floor division by zero");
+        return NULL;
+    }
+    _float_div_mod(vx, wx, &floordiv, &mod);
+    return PyFloat_FromDouble(floordiv);
 }
 
 /* determine whether x is an odd integer or not;  assumes that
