@@ -2181,7 +2181,7 @@ class, as shown in the following example::
         def format(self, record):
             s = super(OneLineExceptionFormatter, self).format(record)
             if record.exc_text:
-                s = s.replace('\n', '') + '|'
+                s = s.replace('\n', ' ') + '|'
             return s
 
     def configure_logging():
@@ -2209,7 +2209,7 @@ When run, this produces a file with exactly two lines:
 .. code-block:: none
 
     28/01/2015 07:21:23|INFO|Sample message|
-    28/01/2015 07:21:23|ERROR|ZeroDivisionError: integer division or modulo by zero|'Traceback (most recent call last):\n  File "logtest7.py", line 30, in main\n    x = 1 / 0\nZeroDivisionError: integer division or modulo by zero'|
+    28/01/2015 07:21:23|ERROR|ZeroDivisionError: integer division or modulo by zero| Traceback (most recent call last):   File "log.py", line 30, in main     x = 1 / 0 ZeroDivisionError: division by zero|
 
 While the above treatment is simplistic, it points the way to how exception
 information can be formatted to your liking. The :mod:`traceback` module may be
