@@ -12198,22 +12198,33 @@ unicode_isnumeric_impl(PyObject *self)
 int
 PyUnicode_IsIdentifier(PyObject *self)
 {
-    int kind;
-    void *data;
     Py_ssize_t i;
-    Py_UCS4 first;
+    int ready = PyUnicode_IS_READY(self);
 
-    if (PyUnicode_READY(self) == -1) {
-        Py_FatalError("identifier not ready");
+    Py_ssize_t len = ready ? PyUnicode_GET_LENGTH(self) : PyUnicode_GET_SIZE(self);
+    if (len == 0) {
+        /* an empty string is not a valid identifier */
         return 0;
     }
 
-    /* Special case for empty strings */
-    if (PyUnicode_GET_LENGTH(self) == 0)
-        return 0;
-    kind = PyUnicode_KIND(self);
-    data = PyUnicode_DATA(self);
+    int kind;
+    void *data;
+    wchar_t *wstr;
+    if (ready) {
+        kind = PyUnicode_KIND(self);
+        data = PyUnicode_DATA(self);
+    }
+    else {
+        wstr = _PyUnicode_WSTR(self);
+    }
 
+    Py_UCS4 ch;
+    if (ready) {
+        ch = PyUnicode_READ(kind, data, 0);
+    }
+    else {
+        ch = wstr[0];
+    }
     /* PEP 3131 says that the first character must be in
        XID_Start and subsequent characters in XID_Continue,
        and for the ASCII range, the 2.x rules apply (i.e
@@ -12222,13 +12233,21 @@ PyUnicode_IsIdentifier(PyObject *self)
        definition of XID_Start and XID_Continue, it is sufficient
        to check just for these, except that _ must be allowed
        as starting an identifier.  */
-    first = PyUnicode_READ(kind, data, 0);
-    if (!_PyUnicode_IsXidStart(first) && first != 0x5F /* LOW LINE */)
+    if (!_PyUnicode_IsXidStart(ch) && ch != 0x5F /* LOW LINE */) {
         return 0;
+    }
 
-    for (i = 1; i < PyUnicode_GET_LENGTH(self); i++)
-        if (!_PyUnicode_IsXidContinue(PyUnicode_READ(kind, data, i)))
+    for (i = 1; i < len; i++) {
+        if (ready) {
+            ch = PyUnicode_READ(kind, data, i);
+        }
+        else {
+            ch = wstr[i];
+        }
+        if (!_PyUnicode_IsXidContinue(ch)) {
             return 0;
+        }
+    }
     return 1;
 }
 
