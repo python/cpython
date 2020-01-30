@@ -737,7 +737,7 @@ PyAPI_FUNC(void*) _PyUnicode_AsKind(PyObject *s, unsigned int kind);
 /* Get a buffer to the UTF-8 encoding of the Unicode object unicode.
    Returns -1 on error.
 
-   Successful calls to PyUnicode_GetUTF8Buffer must be paired to
+   Successful calls must be paired to
    calls to PyBuffer_Release.
 */
 
