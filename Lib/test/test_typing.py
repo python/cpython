@@ -2966,6 +2966,7 @@ class GetUtilitiesTestCase(TestCase):
         self.assertIs(get_origin(Generic), Generic)
         self.assertIs(get_origin(Generic[T]), Generic)
         self.assertIs(get_origin(List[Tuple[T, T]][int]), list)
+        self.assertIs(get_origin(Annotated[T, 'thing']), Annotated)
 
     def test_get_args(self):
         T = TypeVar('T')
@@ -2986,6 +2987,7 @@ class GetUtilitiesTestCase(TestCase):
                          (int, Callable[[Tuple[T, ...]], str]))
         self.assertEqual(get_args(Tuple[int, ...]), (int, ...))
         self.assertEqual(get_args(Tuple[()]), ((),))
+        self.assertEqual(get_args(Annotated[T, 'one', 2, ['three']]), (T, 'one', 2, ['three']))
 
 
 class CollectionsAbcTests(BaseTestCase):

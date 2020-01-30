@@ -1169,9 +1169,7 @@ class Annotated:
     Every other consumer of this type can ignore this metadata and treat
     this type as int.
 
-    The first argument to Annotated must be a valid type (and will be in
-    the __origin__ field), the remaining arguments are kept as a tuple in
-    the __extra__ field.
+    The first argument to Annotated must be a valid type.
 
     Details:
 
@@ -1393,6 +1391,8 @@ def get_origin(tp):
         get_origin(Union[T, int]) is Union
         get_origin(List[Tuple[T, T]][int]) == list
     """
+    if isinstance(tp, _AnnotatedAlias):
+        return Annotated
     if isinstance(tp, _GenericAlias):
         return tp.__origin__
     if tp is Generic:
@@ -1411,6 +1411,8 @@ def get_args(tp):
         get_args(Union[int, Tuple[T, int]][str]) == (int, Tuple[str, int])
         get_args(Callable[[], T][int]) == ([], int)
     """
+    if isinstance(tp, _AnnotatedAlias):
+        return (tp.__origin__,) + tp.__metadata__
     if isinstance(tp, _GenericAlias):
         res = tp.__args__
         if get_origin(tp) is collections.abc.Callable and res[0] is not Ellipsis:
