@@ -1900,25 +1900,29 @@ unicode_dealloc(PyObject *unicode)
     case SSTATE_INTERNED_MORTAL:
         /* revive dead object temporarily for DelItem */
         Py_REFCNT(unicode) = 3;
-        if (PyDict_DelItem(interned, unicode) != 0)
-            Py_FatalError(
-                "deletion of interned string failed");
+        if (PyDict_DelItem(interned, unicode) != 0) {
+            _PyErr_WriteUnraisableMsg("deletion of interned string failed",
+                                      NULL);
+        }
         break;
 
     case SSTATE_INTERNED_IMMORTAL:
-        Py_FatalError("Immortal interned string died.");
-        /* fall through */
+        _PyObject_ASSERT_FAILED_MSG(unicode, "Immortal interned string died");
+        break;
 
     default:
-        Py_FatalError("Inconsistent interned string state.");
+        Py_UNREACHABLE();
     }
 
-    if (_PyUnicode_HAS_WSTR_MEMORY(unicode))
+    if (_PyUnicode_HAS_WSTR_MEMORY(unicode)) {
         PyObject_DEL(_PyUnicode_WSTR(unicode));
-    if (_PyUnicode_HAS_UTF8_MEMORY(unicode))
+    }
+    if (_PyUnicode_HAS_UTF8_MEMORY(unicode)) {
         PyObject_DEL(_PyUnicode_UTF8(unicode));
-    if (!PyUnicode_IS_COMPACT(unicode) && _PyUnicode_DATA_ANY(unicode))
+    }
+    if (!PyUnicode_IS_COMPACT(unicode) && _PyUnicode_DATA_ANY(unicode)) {
         PyObject_DEL(_PyUnicode_DATA_ANY(unicode));
+    }
 
     Py_TYPE(unicode)->tp_free(unicode);
 }
@@ -15401,14 +15405,10 @@ PyUnicode_InternFromString(const char *cp)
 static void
 unicode_release_interned(void)
 {
-    PyObject *keys;
-    PyObject *s;
-    Py_ssize_t i, n;
-    Py_ssize_t immortal_size = 0, mortal_size = 0;
-
-    if (interned == NULL || !PyDict_Check(interned))
+    if (interned == NULL || !PyDict_Check(interned)) {
         return;
-    keys = PyDict_Keys(interned);
+    }
+    PyObject *keys = PyDict_Keys(interned);
     if (keys == NULL || !PyList_Check(keys)) {
         PyErr_Clear();
         return;
@@ -15419,30 +15419,35 @@ unicode_release_interned(void)
        rather, we give them their stolen references back, and then clear
        and DECREF the interned dict. */
 
-    n = PyList_GET_SIZE(keys);
+    Py_ssize_t n = PyList_GET_SIZE(keys);
 #ifdef INTERNED_STATS
     fprintf(stderr, "releasing %" PY_FORMAT_SIZE_T "d interned strings\n",
             n);
+
+    Py_ssize_t immortal_size = 0, mortal_size = 0;
 #endif
-    for (i = 0; i < n; i++) {
-        s = PyList_GET_ITEM(keys, i);
+    for (Py_ssize_t i = 0; i < n; i++) {
+        PyObject *s = PyList_GET_ITEM(keys, i);
         if (PyUnicode_READY(s) == -1) {
             Py_UNREACHABLE();
         }
         switch (PyUnicode_CHECK_INTERNED(s)) {
-        case SSTATE_NOT_INTERNED:
-            /* XXX Shouldn't happen */
-            break;
         case SSTATE_INTERNED_IMMORTAL:
             Py_REFCNT(s) += 1;
+#ifdef INTERNED_STATS
             immortal_size += PyUnicode_GET_LENGTH(s);
+#endif
             break;
         case SSTATE_INTERNED_MORTAL:
             Py_REFCNT(s) += 2;
+#ifdef INTERNED_STATS
             mortal_size += PyUnicode_GET_LENGTH(s);
+#endif
             break;
+        case SSTATE_NOT_INTERNED:
+            /* fall through */
         default:
-            Py_FatalError("Inconsistent interned string state.");
+            Py_UNREACHABLE();
         }
         _PyUnicode_STATE(s).interned = SSTATE_NOT_INTERNED;
     }
