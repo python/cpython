@@ -39,6 +39,9 @@ extern struct _inittab _PyImport_Inittab[];
 struct _inittab *PyImport_Inittab = _PyImport_Inittab;
 static struct _inittab *inittab_copy = NULL;
 
+_Py_IDENTIFIER(__path__);
+_Py_IDENTIFIER(__spec__);
+
 /*[clinic input]
 module _imp
 [clinic start generated code]*/
@@ -383,7 +386,6 @@ import_ensure_initialized(PyThreadState *tstate, PyObject *mod, PyObject *name)
     PyInterpreterState *interp = tstate->interp;
     PyObject *spec;
 
-    _Py_IDENTIFIER(__spec__);
     _Py_IDENTIFIER(_lock_unlock_module);
 
     /* Optimization: only call _bootstrap._lock_unlock_module() if
@@ -1566,9 +1568,7 @@ done:
 static PyObject *
 resolve_name(PyThreadState *tstate, PyObject *name, PyObject *globals, int level)
 {
-    _Py_IDENTIFIER(__spec__);
     _Py_IDENTIFIER(__package__);
-    _Py_IDENTIFIER(__path__);
     _Py_IDENTIFIER(__name__);
     _Py_IDENTIFIER(parent);
     PyObject *abs_name;
@@ -1930,7 +1930,6 @@ PyImport_ImportModuleLevelObject(PyObject *name, PyObject *globals,
         }
     }
     else {
-        _Py_IDENTIFIER(__path__);
         PyObject *path;
         if (_PyObject_LookupAttrId(mod, &PyId___path__, &path) < 0) {
             goto error;
