@@ -315,30 +315,30 @@ PyObject_CallFinalizer(PyObject *self)
 int
 PyObject_CallFinalizerFromDealloc(PyObject *self)
 {
-    Py_ssize_t refcnt;
+    if (self->ob_refcnt != 0) {
+        _PyObject_ASSERT_FAILED_MSG(self,
+                                    "PyObject_CallFinalizerFromDealloc called "
+                                    "on object with a non-zero refcount");
+    }
 
     /* Temporarily resurrect the object. */
-    if (self->ob_refcnt != 0) {
-        Py_FatalError("PyObject_CallFinalizerFromDealloc called on "
-                      "object with a non-zero refcount");
-    }
     self->ob_refcnt = 1;
 
     PyObject_CallFinalizer(self);
 
-    /* Undo the temporary resurrection; can't use DECREF here, it would
-     * cause a recursive call.
-     */
     _PyObject_ASSERT_WITH_MSG(self,
                               self->ob_refcnt > 0,
                               "refcount is too small");
-    if (--self->ob_refcnt == 0)
+
+    /* Undo the temporary resurrection; can't use DECREF here, it would
+     * cause a recursive call. */
+    if (--self->ob_refcnt == 0) {
         return 0;         /* this is the normal path out */
+    }
 
     /* tp_finalize resurrected it!  Make it look like the original Py_DECREF
-     * never happened.
-     */
-    refcnt = self->ob_refcnt;
+     * never happened. */
+    Py_ssize_t refcnt = self->ob_refcnt;
     _Py_NewReference(self);
     self->ob_refcnt = refcnt;
 
@@ -352,8 +352,7 @@ PyObject_CallFinalizerFromDealloc(PyObject *self)
      * chain, so no more to do there.
      * If COUNT_ALLOCS, the original decref bumped tp_frees, and
      * _Py_NewReference bumped tp_allocs:  both of those need to be
-     * undone.
-     */
+     * undone. */
 #ifdef COUNT_ALLOCS
     --Py_TYPE(self)->tp_frees;
     --Py_TYPE(self)->tp_allocs;
@@ -1938,29 +1937,30 @@ _Py_NewReference(PyObject *op)
 void
 _Py_ForgetReference(PyObject *op)
 {
+    if (op->ob_refcnt < 0) {
+        _PyObject_ASSERT_FAILED_MSG(op, "negative refcnt");
+    }
+
+    if (op == &refchain ||
+        op->_ob_prev->_ob_next != op || op->_ob_next->_ob_prev != op)
+    {
+        _PyObject_ASSERT_FAILED_MSG(op, "invalid object chain");
+    }
+
 #ifdef SLOW_UNREF_CHECK
     PyObject *p;
-#endif
-    if (op->ob_refcnt < 0)
-        Py_FatalError("UNREF negative refcnt");
-    if (op == &refchain ||
-        op->_ob_prev->_ob_next != op || op->_ob_next->_ob_prev != op) {
-        fprintf(stderr, "* ob\n");
-        _PyObject_Dump(op);
-        fprintf(stderr, "* op->_ob_prev->_ob_next\n");
-        _PyObject_Dump(op->_ob_prev->_ob_next);
-        fprintf(stderr, "* op->_ob_next->_ob_prev\n");
-        _PyObject_Dump(op->_ob_next->_ob_prev);
-        Py_FatalError("UNREF invalid object");
-    }
-#ifdef SLOW_UNREF_CHECK
     for (p = refchain._ob_next; p != &refchain; p = p->_ob_next) {
-        if (p == op)
+        if (p == op) {
             break;
+        }
     }
-    if (p == &refchain) /* Not found */
-        Py_FatalError("UNREF unknown object");
+    if (p == &refchain) {
+        /* Not found */
+        _PyObject_ASSERT_FAILED_MSG(op,
+                                    "object not found in the objects list");
+    }
 #endif
+
     op->_ob_next->_ob_prev = op->_ob_prev;
     op->_ob_prev->_ob_next = op->_ob_next;
     op->_ob_next = op->_ob_prev = NULL;
