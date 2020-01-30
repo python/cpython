@@ -39,6 +39,7 @@
 #  error "ceval.c must be build with Py_BUILD_CORE define for best performance"
 #endif
 
+_Py_IDENTIFIER(__name__);
 
 /* Forward declarations */
 Py_LOCAL_INLINE(PyObject *) call_function(
@@ -5032,7 +5033,6 @@ static PyObject *
 import_from(PyThreadState *tstate, PyObject *v, PyObject *name)
 {
     PyObject *x;
-    _Py_IDENTIFIER(__name__);
     PyObject *fullmodname, *pkgname, *pkgpath, *pkgname_or_unknown, *errmsg;
 
     if (_PyObject_LookupAttr(v, name, &x) != 0) {
@@ -5108,7 +5108,6 @@ import_all_from(PyThreadState *tstate, PyObject *locals, PyObject *v)
 {
     _Py_IDENTIFIER(__all__);
     _Py_IDENTIFIER(__dict__);
-    _Py_IDENTIFIER(__name__);
     PyObject *all, *dict, *name, *value;
     int skip_leading_underscores = 0;
     int pos, err;
