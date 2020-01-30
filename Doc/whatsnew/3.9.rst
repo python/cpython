@@ -339,6 +339,10 @@ Build and C API Changes
   functions are now required to build Python.
   (Contributed by Victor Stinner in :issue:`39395`.)
 
+* The :c:func:`PyUnicode_IsIdentifier` function now returns ``-1`` on error,
+  instead of calling :c:func:`Py_FatalError`.
+  (Contributed by Victor Stinner in :issue:`39500`.)
+
 
 Deprecated
 ==========

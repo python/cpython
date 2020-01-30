@@ -246,6 +246,10 @@ access internal read-only data of Unicode objects:
 
    Raise an exception and return ``-1`` on error.
 
+   .. versionchanged:: 3.9
+      The function now returns ``-1`` on error, instead of calling
+      :c:func:`Py_FatalError`.
+
 
 Unicode Character Properties
 """"""""""""""""""""""""""""
