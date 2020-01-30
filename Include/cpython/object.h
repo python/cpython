@@ -443,7 +443,7 @@ _PyObject_DebugTypeStats(FILE *out);
    NDEBUG against a Python built with NDEBUG defined.
 
    msg, expr and function can be NULL. */
-PyAPI_FUNC(void) _PyObject_AssertFailed(
+PyAPI_FUNC(void) _Py_NO_RETURN _PyObject_AssertFailed(
     PyObject *obj,
     const char *expr,
     const char *msg,
