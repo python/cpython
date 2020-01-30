@@ -3710,43 +3710,34 @@ starunpack_helper(struct compiler *c, asdl_seq *elts, int pushed,
     for (i = 0; i < n; i++) {
         expr_ty elt = asdl_seq_GET(elts, i);
         if (elt->kind == Starred_kind) {
+            ADDOP_I(c, build, pushed);
             seen_star = 1;
+            break;
+        }
+    }
+    for (i = 0; i < n; i++) {
+        expr_ty elt = asdl_seq_GET(elts, i);
+        if (elt->kind == Starred_kind) {
+            VISIT(c, expr, elt->v.Starred.value);
+        }
+        else {
+            VISIT(c, expr, elt);
         }
     }
     if (seen_star) {
-        seen_star = 0;
+        /* Reverse the stack: */
+        ADDOP_I(c, BUILD_TUPLE, n);
+        ADDOP_I(c, UNPACK_SEQUENCE, n);
         for (i = 0; i < n; i++) {
             expr_ty elt = asdl_seq_GET(elts, i);
-            if (elt->kind == Starred_kind) {
-                if (seen_star == 0) {
-                    ADDOP_I(c, build, i+pushed);
-                    seen_star = 1;
-                }
-                VISIT(c, expr, elt->v.Starred.value);
-                ADDOP_I(c, extend, 1);
-            }
-            else {
-                VISIT(c, expr, elt);
-                if (seen_star) {
-                    ADDOP_I(c, add, 1);
-                }
-            }
+            ADDOP_I(c, elt->kind == Starred_kind ? extend : add, n-i);
         }
-        assert(seen_star);
         if (tuple) {
             ADDOP(c, LIST_TO_TUPLE);
         }
     }
     else {
-        for (i = 0; i < n; i++) {
-            expr_ty elt = asdl_seq_GET(elts, i);
-            VISIT(c, expr, elt);
-        }
-        if (tuple) {
-            ADDOP_I(c, BUILD_TUPLE, n+pushed);
-        } else {
-            ADDOP_I(c, build, n+pushed);
-        }
+        ADDOP_I(c, tuple ? BUILD_TUPLE : build, n+pushed);
     }
     return 1;
 }
@@ -3867,11 +3858,10 @@ static int
 compiler_dict(struct compiler *c, expr_ty e)
 {
     Py_ssize_t i, n, elements;
-    int have_dict;
     int is_unpacking = 0;
     n = asdl_seq_LEN(e->v.Dict.values);
-    have_dict = 0;
     elements = 0;
+    int to_merge = 0;
     for (i = 0; i < n; i++) {
         is_unpacking = (expr_ty)asdl_seq_GET(e->v.Dict.keys, i) == NULL;
         if (is_unpacking) {
@@ -3879,28 +3869,22 @@ compiler_dict(struct compiler *c, expr_ty e)
                 if (!compiler_subdict(c, e, i - elements, i)) {
                     return 0;
                 }
-                if (have_dict) {
-                    ADDOP_I(c, DICT_UPDATE, 1);
-                }
-                have_dict = 1;
+                to_merge++;
                 elements = 0;
             }
-            if (have_dict == 0) {
+            if (to_merge == 0) {
                 ADDOP_I(c, BUILD_MAP, 0);
-                have_dict = 1;
+                to_merge++;
             }
             VISIT(c, expr, (expr_ty)asdl_seq_GET(e->v.Dict.values, i));
-            ADDOP_I(c, DICT_UPDATE, 1);
+            to_merge++;
         }
         else {
             if (elements == 0xFFFF) {
                 if (!compiler_subdict(c, e, i - elements, i)) {
                     return 0;
                 }
-                if (have_dict) {
-                    ADDOP_I(c, DICT_UPDATE, 1);
-                }
-                have_dict = 1;
+                to_merge++;
                 elements = 0;
             }
             else {
@@ -3912,13 +3896,17 @@ compiler_dict(struct compiler *c, expr_ty e)
         if (!compiler_subdict(c, e, n - elements, n)) {
             return 0;
         }
-        if (have_dict) {
-            ADDOP_I(c, DICT_UPDATE, 1);
-        }
-        have_dict = 1;
+        to_merge++;
     }
-    if (!have_dict) {
+    if (!to_merge) {
         ADDOP_I(c, BUILD_MAP, 0);
+    } else if (--to_merge) {
+        /* Reverse the stack. */
+        ADDOP_I(c, BUILD_TUPLE, to_merge)
+        ADDOP_I(c, UNPACK_SEQUENCE, to_merge)
+        while (to_merge) {
+            ADDOP_I(c, DICT_UPDATE, to_merge--);
+        }
     }
     return 1;
 }
@@ -4283,8 +4271,7 @@ ex_call:
     }
     /* Then keyword arguments */
     if (nkwelts) {
-        /* Has a new dict been pushed */
-        int have_dict = 0;
+        int to_merge = 0;
 
         nseen = 0;  /* the number of keyword arguments on the stack following */
         for (i = 0; i < nkwelts; i++) {
@@ -4295,15 +4282,15 @@ ex_call:
                     if (!compiler_subkwargs(c, keywords, i - nseen, i)) {
                         return 0;
                     }
-                    have_dict = 1;
+                    to_merge++;
                     nseen = 0;
                 }
-                if (!have_dict) {
+                if (!to_merge) {
                     ADDOP_I(c, BUILD_MAP, 0);
-                    have_dict = 1;
+                    to_merge++;
                 }
                 VISIT(c, expr, kw->value);
-                ADDOP_I(c, DICT_MERGE, 1);
+                to_merge++;
             }
             else {
                 nseen++;
@@ -4314,12 +4301,17 @@ ex_call:
             if (!compiler_subkwargs(c, keywords, nkwelts - nseen, nkwelts)) {
                 return 0;
             }
-            if (have_dict) {
-                ADDOP_I(c, DICT_MERGE, 1);
-            }
-            have_dict = 1;
+            to_merge++;
         }
-        assert(have_dict);
+        assert(to_merge);
+        if (--to_merge) {
+            /* Reverse the stack: */
+            ADDOP_I(c, BUILD_TUPLE, to_merge)
+            ADDOP_I(c, UNPACK_SEQUENCE, to_merge)
+            while (to_merge) {
+                ADDOP_I(c, DICT_MERGE, to_merge--);
+            }
+        }
     }
     ADDOP_I(c, CALL_FUNCTION_EX, nkwelts > 0);
     return 1;
