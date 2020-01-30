@@ -1,1 +1,0 @@
-Expose the Linux ``pidfd_open`` syscall as :func:`os.pidfd_open`.

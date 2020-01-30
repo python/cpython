@@ -255,7 +255,8 @@ class TestPOP3Class(TestCase):
     def setUp(self):
         self.server = DummyPOP3Server((HOST, PORT))
         self.server.start()
-        self.client = poplib.POP3(self.server.host, self.server.port, timeout=3)
+        self.client = poplib.POP3(self.server.host, self.server.port,
+                                  timeout=test_support.LOOPBACK_TIMEOUT)
 
     def tearDown(self):
         self.client.close()
@@ -376,7 +377,8 @@ class TestPOP3Class(TestCase):
         self.assertEqual(ctx.check_hostname, True)
         with self.assertRaises(ssl.CertificateError):
             resp = self.client.stls(context=ctx)
-        self.client = poplib.POP3("localhost", self.server.port, timeout=3)
+        self.client = poplib.POP3("localhost", self.server.port,
+                                  timeout=test_support.LOOPBACK_TIMEOUT)
         resp = self.client.stls(context=ctx)
         self.assertEqual(resp, expected)
 
@@ -445,7 +447,8 @@ class TestPOP3_TLSClass(TestPOP3Class):
     def setUp(self):
         self.server = DummyPOP3Server((HOST, PORT))
         self.server.start()
-        self.client = poplib.POP3(self.server.host, self.server.port, timeout=3)
+        self.client = poplib.POP3(self.server.host, self.server.port,
+                                  timeout=test_support.LOOPBACK_TIMEOUT)
         self.client.stls()
 
     def tearDown(self):
@@ -478,7 +481,7 @@ class TestTimeouts(TestCase):
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.sock.settimeout(60)  # Safety net. Look issue 11812
         self.port = test_support.bind_port(self.sock)
-        self.thread = threading.Thread(target=self.server, args=(self.evt,self.sock))
+        self.thread = threading.Thread(target=self.server, args=(self.evt, self.sock))
         self.thread.daemon = True
         self.thread.start()
         self.evt.wait()
@@ -502,12 +505,12 @@ class TestTimeouts(TestCase):
 
     def testTimeoutDefault(self):
         self.assertIsNone(socket.getdefaulttimeout())
-        socket.setdefaulttimeout(30)
+        socket.setdefaulttimeout(test_support.LOOPBACK_TIMEOUT)
         try:
             pop = poplib.POP3(HOST, self.port)
         finally:
             socket.setdefaulttimeout(None)
-        self.assertEqual(pop.sock.gettimeout(), 30)
+        self.assertEqual(pop.sock.gettimeout(), test_support.LOOPBACK_TIMEOUT)
         pop.close()
 
     def testTimeoutNone(self):
@@ -521,9 +524,11 @@ class TestTimeouts(TestCase):
         pop.close()
 
     def testTimeoutValue(self):
-        pop = poplib.POP3(HOST, self.port, timeout=30)
-        self.assertEqual(pop.sock.gettimeout(), 30)
+        pop = poplib.POP3(HOST, self.port, timeout=test_support.LOOPBACK_TIMEOUT)
+        self.assertEqual(pop.sock.gettimeout(), test_support.LOOPBACK_TIMEOUT)
         pop.close()
+        with self.assertRaises(ValueError):
+            poplib.POP3(HOST, self.port, timeout=0)
 
 
 def test_main():

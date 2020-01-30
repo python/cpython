@@ -1336,7 +1336,7 @@ class PydocServerTest(unittest.TestCase):
         self.assertIn('0.0.0.0', serverthread.docserver.address)
 
         starttime = time.monotonic()
-        timeout = 1  #seconds
+        timeout = test.support.SHORT_TIMEOUT
 
         while serverthread.serving:
             time.sleep(.01)

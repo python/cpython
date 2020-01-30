@@ -253,9 +253,7 @@ class _WindowsFlavour(_Flavour):
             return 'file:' + urlquote_from_bytes(path.as_posix().encode('utf-8'))
 
     def gethomedir(self, username):
-        if 'HOME' in os.environ:
-            userhome = os.environ['HOME']
-        elif 'USERPROFILE' in os.environ:
+        if 'USERPROFILE' in os.environ:
             userhome = os.environ['USERPROFILE']
         elif 'HOMEPATH' in os.environ:
             try:
@@ -418,7 +416,12 @@ class _NormalAccessor(_Accessor):
 
     unlink = os.unlink
 
-    link_to = os.link
+    if hasattr(os, "link"):
+        link_to = os.link
+    else:
+        @staticmethod
+        def link_to(self, target):
+            raise NotImplementedError("os.link() not available on this system")
 
     rmdir = os.rmdir
 
@@ -776,6 +779,9 @@ class PurePath(object):
         if not isinstance(other, PurePath) or self._flavour is not other._flavour:
             return NotImplemented
         return self._cparts >= other._cparts
+
+    def __class_getitem__(cls, type):
+        return cls
 
     drive = property(attrgetter('_drv'),
                      doc="""The drive prefix (letter or UNC path), if any.""")

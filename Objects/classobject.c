@@ -371,20 +371,6 @@ PyTypeObject PyMethod_Type = {
     method_new,                                 /* tp_new */
 };
 
-/* Clear out the free list */
-
-int
-PyMethod_ClearFreeList(void)
-{
-    return 0;
-}
-
-void
-_PyMethod_Fini(void)
-{
-    (void)PyMethod_ClearFreeList();
-}
-
 /* ------------------------------------------------------------------------
  * instance method
  */

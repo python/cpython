@@ -886,6 +886,7 @@ tok_nextc(struct tok_state *tok)
                 size_t start = tok->start - tok->buf;
                 size_t oldlen = tok->cur - tok->buf;
                 size_t newlen = oldlen + strlen(newtok);
+                Py_ssize_t cur_multi_line_start = tok->multi_line_start - tok->buf;
                 char *buf = tok->buf;
                 buf = (char *)PyMem_REALLOC(buf, newlen+1);
                 tok->lineno++;
@@ -898,6 +899,7 @@ tok_nextc(struct tok_state *tok)
                 }
                 tok->buf = buf;
                 tok->cur = tok->buf + oldlen;
+                tok->multi_line_start = tok->buf + cur_multi_line_start;
                 tok->line_start = tok->cur;
                 strcpy(tok->buf + oldlen, newtok);
                 PyMem_FREE(newtok);
@@ -1147,6 +1149,12 @@ tok_get(struct tok_state *tok, char **p_start, char **p_end)
                mode, which signal the end of a command group. */
             if (col == 0 && c == '\n' && tok->prompt != NULL) {
                 blankline = 0; /* Let it through */
+            }
+            else if (tok->prompt != NULL && tok->lineno == 1) {
+                /* In interactive mode, if the first line contains
+                   only spaces and/or a comment, let it through. */
+                blankline = 0;
+                col = altcol = 0;
             }
             else {
                 blankline = 1; /* Ignore completely */

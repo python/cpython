@@ -1056,9 +1056,9 @@ def _splitport(host):
     """splitport('host:port') --> 'host', 'port'."""
     global _portprog
     if _portprog is None:
-        _portprog = re.compile('(.*):([0-9]*)$', re.DOTALL)
+        _portprog = re.compile('(.*):([0-9]*)', re.DOTALL)
 
-    match = _portprog.match(host)
+    match = _portprog.fullmatch(host)
     if match:
         host, port = match.groups()
         if port:

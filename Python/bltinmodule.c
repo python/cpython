@@ -4,6 +4,7 @@
 #include <ctype.h>
 #include "ast.h"
 #undef Yield   /* undefine macro conflicting with <winbase.h> */
+#include "pycore_pyerrors.h"
 #include "pycore_pystate.h"
 #include "pycore_tupleobject.h"
 
@@ -1254,23 +1255,23 @@ map_next(mapobject *lz)
 {
     PyObject *small_stack[_PY_FASTCALL_SMALL_STACK];
     PyObject **stack;
-    Py_ssize_t niters, nargs, i;
     PyObject *result = NULL;
+    PyThreadState *tstate = _PyThreadState_GET();
 
-    niters = PyTuple_GET_SIZE(lz->iters);
+    const Py_ssize_t niters = PyTuple_GET_SIZE(lz->iters);
     if (niters <= (Py_ssize_t)Py_ARRAY_LENGTH(small_stack)) {
         stack = small_stack;
     }
     else {
         stack = PyMem_Malloc(niters * sizeof(stack[0]));
         if (stack == NULL) {
-            PyErr_NoMemory();
+            _PyErr_NoMemory(tstate);
             return NULL;
         }
     }
 
-    nargs = 0;
-    for (i=0; i < niters; i++) {
+    Py_ssize_t nargs = 0;
+    for (Py_ssize_t i=0; i < niters; i++) {
         PyObject *it = PyTuple_GET_ITEM(lz->iters, i);
         PyObject *val = Py_TYPE(it)->tp_iternext(it);
         if (val == NULL) {
@@ -1280,10 +1281,10 @@ map_next(mapobject *lz)
         nargs++;
     }
 
-    result = _PyObject_FastCall(lz->func, stack, nargs);
+    result = _PyObject_VectorcallTstate(tstate, lz->func, stack, nargs, NULL);
 
 exit:
-    for (i=0; i < nargs; i++) {
+    for (Py_ssize_t i=0; i < nargs; i++) {
         Py_DECREF(stack[i]);
     }
     if (stack != small_stack) {
@@ -1588,10 +1589,15 @@ min_max(PyObject *args, PyObject *kwds, int op)
     const int positional = PyTuple_Size(args) > 1;
     int ret;
 
-    if (positional)
+    if (positional) {
         v = args;
-    else if (!PyArg_UnpackTuple(args, name, 1, 1, &v))
+    }
+    else if (!PyArg_UnpackTuple(args, name, 1, 1, &v)) {
+        if (PyExceptionClass_Check(PyExc_TypeError)) {
+            PyErr_Format(PyExc_TypeError, "%s expected at least 1 argument, got 0", name);
+        }
         return NULL;
+    }
 
     emptytuple = PyTuple_New(0);
     if (emptytuple == NULL)
@@ -2384,9 +2390,7 @@ builtin_sum_impl(PyObject *module, PyObject *iterable, PyObject *start)
                 return PyFloat_FromDouble(f_result);
             }
             if (PyFloat_CheckExact(item)) {
-                PyFPE_START_PROTECT("add", Py_DECREF(item); Py_DECREF(iter); return 0)
                 f_result += PyFloat_AS_DOUBLE(item);
-                PyFPE_END_PROTECT(f_result)
                 Py_DECREF(item);
                 continue;
             }
@@ -2395,9 +2399,7 @@ builtin_sum_impl(PyObject *module, PyObject *iterable, PyObject *start)
                 int overflow;
                 value = PyLong_AsLongAndOverflow(item, &overflow);
                 if (!overflow) {
-                    PyFPE_START_PROTECT("add", Py_DECREF(item); Py_DECREF(iter); return 0)
                     f_result += (double)value;
-                    PyFPE_END_PROTECT(f_result)
                     Py_DECREF(item);
                     continue;
                 }

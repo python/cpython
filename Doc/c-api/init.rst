@@ -769,9 +769,19 @@ supports the creation of additional interpreters (using
 :c:func:`Py_NewInterpreter`), but mixing multiple interpreters and the
 :c:func:`PyGILState_\*` API is unsupported.
 
+
+.. _fork-and-threads:
+
+Cautions about fork()
+---------------------
+
 Another important thing to note about threads is their behaviour in the face
 of the C :c:func:`fork` call. On most systems with :c:func:`fork`, after a
-process forks only the thread that issued the fork will exist. That also
+process forks only the thread that issued the fork will exist.  This has a
+concrete impact both on how locks must be handled and on all stored state
+in CPython's runtime.
+
+The fact that only the "current" thread remains
 means any locks held by other threads will never be released. Python solves
 this for :func:`os.fork` by acquiring the locks it uses internally before
 the fork, and releasing them afterwards. In addition, it resets any
@@ -785,6 +795,17 @@ into Python) may result in a deadlock by one of Python's internal locks
 being held by a thread that is defunct after the fork.
 :c:func:`PyOS_AfterFork_Child` tries to reset the necessary locks, but is not
 always able to.
+
+The fact that all other threads go away also means that CPython's
+runtime state there must be cleaned up properly, which :func:`os.fork`
+does.  This means finalizing all other :c:type:`PyThreadState` objects
+belonging to the current interpreter and all other
+:c:type:`PyInterpreterState` objects.  Due to this and the special
+nature of the :ref:`"main" interpreter <sub-interpreter-support>`,
+:c:func:`fork` should only be called in that interpreter's "main"
+thread, where the CPython global runtime was originally initialized.
+The only exception is if :c:func:`exec` will be called immediately
+after.
 
 
 High-level API
@@ -1168,7 +1189,7 @@ It is usually the only Python interpreter in a process.  Unlike sub-interpreters
 the main interpreter has unique process-global responsibilities like signal
 handling.  It is also responsible for execution during runtime initialization and
 is usually the active interpreter during runtime finalization.  The
-:c:func:`PyInterpreterState_Main` funtion returns a pointer to its state.
+:c:func:`PyInterpreterState_Main` function returns a pointer to its state.
 
 You can switch between sub-interpreters using the :c:func:`PyThreadState_Swap`
 function. You can create and destroy them using the following functions:
@@ -1209,15 +1230,31 @@ function. You can create and destroy them using the following functions:
       single: Py_FinalizeEx()
       single: Py_Initialize()
 
-   Extension modules are shared between (sub-)interpreters as follows: the first
-   time a particular extension is imported, it is initialized normally, and a
-   (shallow) copy of its module's dictionary is squirreled away.  When the same
-   extension is imported by another (sub-)interpreter, a new module is initialized
-   and filled with the contents of this copy; the extension's ``init`` function is
-   not called.  Note that this is different from what happens when an extension is
-   imported after the interpreter has been completely re-initialized by calling
-   :c:func:`Py_FinalizeEx` and :c:func:`Py_Initialize`; in that case, the extension's
-   ``initmodule`` function *is* called again.
+   Extension modules are shared between (sub-)interpreters as follows:
+
+   *  For modules using multi-phase initialization,
+      e.g. :c:func:`PyModule_FromDefAndSpec`, a separate module object is
+      created and initialized for each interpreter.
+      Only C-level static and global variables are shared between these
+      module objects.
+
+   *  For modules using single-phase initialization,
+      e.g. :c:func:`PyModule_Create`, the first time a particular extension
+      is imported, it is initialized normally, and a (shallow) copy of its
+      module's dictionary is squirreled away.
+      When the same extension is imported by another (sub-)interpreter, a new
+      module is initialized and filled with the contents of this copy; the
+      extension's ``init`` function is not called.
+      Objects in the module's dictionary thus end up shared across
+      (sub-)interpreters, which might cause unwanted behavior (see
+      `Bugs and caveats`_ below).
+
+      Note that this is different from what happens when an extension is
+      imported after the interpreter has been completely re-initialized by
+      calling :c:func:`Py_FinalizeEx` and :c:func:`Py_Initialize`; in that
+      case, the extension's ``initmodule`` function *is* called again.
+      As with multi-phase initialization, this means that only C-level static
+      and global variables are shared between these modules.
 
    .. index:: single: close() (in module os)
 
@@ -1243,14 +1280,16 @@ process, the insulation between them isn't perfect --- for example, using
 low-level file operations like  :func:`os.close` they can
 (accidentally or maliciously) affect each other's open files.  Because of the
 way extensions are shared between (sub-)interpreters, some extensions may not
-work properly; this is especially likely when the extension makes use of
-(static) global variables, or when the extension manipulates its module's
-dictionary after its initialization.  It is possible to insert objects created
-in one sub-interpreter into a namespace of another sub-interpreter; this should
-be done with great care to avoid sharing user-defined functions, methods,
-instances or classes between sub-interpreters, since import operations executed
-by such objects may affect the wrong (sub-)interpreter's dictionary of loaded
-modules.
+work properly; this is especially likely when using single-phase initialization
+or (static) global variables.
+It is possible to insert objects created in one sub-interpreter into
+a namespace of another (sub-)interpreter; this should be avoided if possible.
+
+Special care should be taken to avoid sharing user-defined functions,
+methods, instances or classes between sub-interpreters, since import
+operations executed by such objects may affect the wrong (sub-)interpreter's
+dictionary of loaded modules. It is equally important to avoid sharing
+objects from which the above are reachable.
 
 Also note that combining this functionality with :c:func:`PyGILState_\*` APIs
 is delicate, because these APIs assume a bijection between Python thread states

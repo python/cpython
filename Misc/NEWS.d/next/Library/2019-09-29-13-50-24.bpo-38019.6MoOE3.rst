@@ -1,1 +1,0 @@
-Correctly handle pause/resume reading of closed asyncio unix pipe.

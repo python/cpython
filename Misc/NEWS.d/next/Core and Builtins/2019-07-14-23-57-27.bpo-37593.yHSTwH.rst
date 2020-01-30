@@ -1,2 +1,0 @@
-Swap the positions of the *posonlyargs* and *args* parameters in the
-constructor of :class:`ast.parameters` nodes.

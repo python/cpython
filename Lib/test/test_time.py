@@ -825,7 +825,7 @@ class CPyTimeTestCase:
                     try:
                         result = pytime_converter(value, time_rnd)
                         expected = expected_func(value)
-                    except Exception as exc:
+                    except Exception:
                         self.fail("Error on timestamp conversion: %s" % debug_info)
                     self.assertEqual(result,
                                      expected,

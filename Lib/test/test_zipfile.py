@@ -571,6 +571,20 @@ class StoredTestsWithSourceFile(AbstractTestsWithSourceFile,
             with open(TESTFN, "rb") as f:
                 self.assertEqual(zipfp.read(TESTFN), f.read())
 
+    def test_io_on_closed_zipextfile(self):
+        fname = "somefile.txt"
+        with zipfile.ZipFile(TESTFN2, mode="w") as zipfp:
+            zipfp.writestr(fname, "bogus")
+
+        with zipfile.ZipFile(TESTFN2, mode="r") as zipfp:
+            with zipfp.open(fname) as fid:
+                fid.close()
+                self.assertRaises(ValueError, fid.read)
+                self.assertRaises(ValueError, fid.seek, 0)
+                self.assertRaises(ValueError, fid.tell)
+                self.assertRaises(ValueError, fid.readable)
+                self.assertRaises(ValueError, fid.seekable)
+
     def test_write_to_readonly(self):
         """Check that trying to call write() on a readonly ZipFile object
         raises a ValueError."""
@@ -601,6 +615,18 @@ class StoredTestsWithSourceFile(AbstractTestsWithSourceFile,
             os.utime(TESTFN, (4386268800, 4386268800))
         except OverflowError:
             self.skipTest('Host fs cannot set timestamp to required value.')
+
+        mtime_ns = os.stat(TESTFN).st_mtime_ns
+        if mtime_ns != (4386268800 * 10**9):
+            # XFS filesystem is limited to 32-bit timestamp, but the syscall
+            # didn't fail. Moreover, there is a VFS bug which returns
+            # a cached timestamp which is different than the value on disk.
+            #
+            # Test st_mtime_ns rather than st_mtime to avoid rounding issues.
+            #
+            # https://bugzilla.redhat.com/show_bug.cgi?id=1795576
+            # https://bugs.python.org/issue39460#msg360952
+            self.skipTest(f"Linux VFS/XFS kernel bug detected: {mtime_ns=}")
 
         with zipfile.ZipFile(TESTFN2, "w") as zipfp:
             self.assertRaises(struct.error, zipfp.write, TESTFN)

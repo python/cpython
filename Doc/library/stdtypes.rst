@@ -1559,8 +1559,8 @@ expression support in the :mod:`re` module).
    list of possible encodings, see section :ref:`standard-encodings`.
 
    By default, the *errors* argument is not checked for best performances, but
-   only used at the first encoding error. Enable the development mode
-   (:option:`-X` ``dev`` option), or use a debug build, to check *errors*.
+   only used at the first encoding error. Enable the :ref:`Python Development
+   Mode <devmode>`, or use a debug build to check *errors*.
 
    .. versionchanged:: 3.1
       Support for keyword arguments added.
@@ -2596,8 +2596,8 @@ arbitrary binary data.
    list of possible encodings, see section :ref:`standard-encodings`.
 
    By default, the *errors* argument is not checked for best performances, but
-   only used at the first decoding error. Enable the development mode
-   (:option:`-X` ``dev`` option), or use a debug build, to check *errors*.
+   only used at the first decoding error. Enable the :ref:`Python Development
+   Mode <devmode>`, or use a debug build to check *errors*.
 
    .. note::
 
@@ -3667,7 +3667,7 @@ copying.
       :mod:`struct` module syntax.
 
       .. versionadded:: 3.8
-         *Order* can be {'C', 'F', 'A'}.  When *order* is 'C' or 'F', the data
+         *order* can be {'C', 'F', 'A'}.  When *order* is 'C' or 'F', the data
          of the original array is converted to C or Fortran order. For contiguous
          views, 'A' returns an exact copy of the physical memory. In particular,
          in-memory Fortran order is preserved. For non-contiguous views, the
@@ -4350,6 +4350,8 @@ pairs within braces, for example: ``{'jack': 4098, 'sjoerd': 4127}`` or ``{4098:
 
       Return a reverse iterator over the keys of the dictionary. This is a
       shortcut for ``reversed(d.keys())``.
+
+      .. versionadded:: 3.8
 
    .. method:: setdefault(key[, default])
 

@@ -106,7 +106,7 @@
       <PreprocessorDefinitions Condition="$(IncludeExternals)">_Py_HAVE_ZLIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
     <Link>
-      <AdditionalDependencies>version.lib;shlwapi.lib;ws2_32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>version.lib;shlwapi.lib;ws2_32.lib;pathcch.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
@@ -160,6 +160,7 @@
     <ClInclude Include="..\Include\import.h" />
     <ClInclude Include="..\Include\internal\pycore_accu.h" />
     <ClInclude Include="..\Include\internal\pycore_atomic.h" />
+    <ClInclude Include="..\Include\internal\pycore_call.h" />
     <ClInclude Include="..\Include\internal\pycore_ceval.h" />
     <ClInclude Include="..\Include\internal\pycore_code.h" />
     <ClInclude Include="..\Include\internal\pycore_condvar.h" />

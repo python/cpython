@@ -466,7 +466,7 @@ PyConfig
 
    .. c:member:: int dev_mode
 
-      Development mode: see :option:`-X dev <-X>`.
+      If non-zero, enable the :ref:`Python Development Mode <devmode>`.
 
    .. c:member:: int dump_refs
 
@@ -757,7 +757,7 @@ configuration, and then override some parameters::
         PyConfig config;
         PyConfig_InitPythonConfig(&config);
 
-        /* Set the program name before reading the configuraton
+        /* Set the program name before reading the configuration
            (decode byte string from the locale encoding).
 
            Implicitly preinitialize Python. */

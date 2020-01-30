@@ -1,2 +1,0 @@
-Add :c:func:`_PyObject_FunctionStr` to get a user-friendly string representation
-of a function-like object. Patch by Jeroen Demeyer.

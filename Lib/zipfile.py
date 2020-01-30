@@ -889,12 +889,16 @@ class ZipExtFile(io.BufferedIOBase):
         return self._readbuffer[self._offset: self._offset + 512]
 
     def readable(self):
+        if self.closed:
+            raise ValueError("I/O operation on closed file.")
         return True
 
     def read(self, n=-1):
         """Read and return up to n bytes.
         If the argument is omitted, None, or negative, data is read and returned until EOF is reached.
         """
+        if self.closed:
+            raise ValueError("read from closed file.")
         if n is None or n < 0:
             buf = self._readbuffer[self._offset:]
             self._readbuffer = b''
@@ -1031,9 +1035,13 @@ class ZipExtFile(io.BufferedIOBase):
             super().close()
 
     def seekable(self):
+        if self.closed:
+            raise ValueError("I/O operation on closed file.")
         return self._seekable
 
     def seek(self, offset, whence=0):
+        if self.closed:
+            raise ValueError("seek on closed file.")
         if not self._seekable:
             raise io.UnsupportedOperation("underlying stream is not seekable")
         curr_pos = self.tell()
@@ -1082,6 +1090,8 @@ class ZipExtFile(io.BufferedIOBase):
         return self.tell()
 
     def tell(self):
+        if self.closed:
+            raise ValueError("tell on closed file.")
         if not self._seekable:
             raise io.UnsupportedOperation("underlying stream is not seekable")
         filepos = self._orig_file_size - self._left - len(self._readbuffer) + self._offset
@@ -1857,25 +1867,15 @@ class ZipFile:
 
             extract_version = max(min_version, zinfo.extract_version)
             create_version = max(min_version, zinfo.create_version)
-            try:
-                filename, flag_bits = zinfo._encodeFilenameFlags()
-                centdir = struct.pack(structCentralDir,
-                                      stringCentralDir, create_version,
-                                      zinfo.create_system, extract_version, zinfo.reserved,
-                                      flag_bits, zinfo.compress_type, dostime, dosdate,
-                                      zinfo.CRC, compress_size, file_size,
-                                      len(filename), len(extra_data), len(zinfo.comment),
-                                      0, zinfo.internal_attr, zinfo.external_attr,
-                                      header_offset)
-            except DeprecationWarning:
-                print((structCentralDir, stringCentralDir, create_version,
-                       zinfo.create_system, extract_version, zinfo.reserved,
-                       zinfo.flag_bits, zinfo.compress_type, dostime, dosdate,
-                       zinfo.CRC, compress_size, file_size,
-                       len(zinfo.filename), len(extra_data), len(zinfo.comment),
-                       0, zinfo.internal_attr, zinfo.external_attr,
-                       header_offset), file=sys.stderr)
-                raise
+            filename, flag_bits = zinfo._encodeFilenameFlags()
+            centdir = struct.pack(structCentralDir,
+                                  stringCentralDir, create_version,
+                                  zinfo.create_system, extract_version, zinfo.reserved,
+                                  flag_bits, zinfo.compress_type, dostime, dosdate,
+                                  zinfo.CRC, compress_size, file_size,
+                                  len(filename), len(extra_data), len(zinfo.comment),
+                                  0, zinfo.internal_attr, zinfo.external_attr,
+                                  header_offset)
             self.fp.write(centdir)
             self.fp.write(filename)
             self.fp.write(extra_data)
