@@ -625,7 +625,7 @@ _tree_sift(mergeobject *mo, Py_ssize_t pos) {
             pos = childpos;
         }
     }
-    tree[pos] = NULL;    
+    tree[pos] = NULL;
     /* At this point, tree has one copy of each reference it controls;
        its state is consistent. */
 
@@ -769,8 +769,8 @@ _tree_sift_key(mergeobject *mo, Py_ssize_t pos) {
 /* shift = 2 * n - (1 << n.bit_length()) */
 static Py_ssize_t
 get_iter_shift(Py_ssize_t n) {
-    int n0 = n;
-    int m = 1;
+    Py_ssize_t n0 = n;
+    Py_ssize_t m = 1;
     while (n > 0) {
         n >>= 1;
         m <<= 1;
@@ -976,8 +976,8 @@ merge_next(mergeobject *mo) {
         return NULL;
     }
     if (mo->status == 0) {
-        int i;
-        int n = mo->num_iters;
+        Py_ssize_t i;
+        Py_ssize_t n = mo->num_iters;
         mo->status = 1;
         /* Heapify, except leaves are supplied by iterators. */
         if (mo->keyfunc == NULL) {
