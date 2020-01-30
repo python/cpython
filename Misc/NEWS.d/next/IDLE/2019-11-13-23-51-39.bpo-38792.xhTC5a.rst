@@ -1,1 +1,2 @@
-Close IDLE calltips if a :exc:`KeyboardInterrupt` occurs.
+Close an IDLE shell calltip if a :exc:`KeyboardInterrupt`
+or shell restart occurs.  Original patch ny Zackery Spytz.
