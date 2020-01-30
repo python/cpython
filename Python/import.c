@@ -1568,7 +1568,6 @@ done:
 static PyObject *
 resolve_name(PyThreadState *tstate, PyObject *name, PyObject *globals, int level)
 {
-    _Py_IDENTIFIER(__spec__);
     _Py_IDENTIFIER(__package__);
     _Py_IDENTIFIER(__name__);
     _Py_IDENTIFIER(parent);
