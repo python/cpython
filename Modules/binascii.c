@@ -965,11 +965,6 @@ static PyObject *
 binascii_crc_hqx_impl(PyObject *module, Py_buffer *data, unsigned int crc)
 /*[clinic end generated code: output=2fde213d0f547a98 input=56237755370a951c]*/
 {
-    if (PyErr_WarnEx(PyExc_DeprecationWarning,
-                     "binascii.crc_hqx() is deprecated", 1) < 0) {
-        return NULL;
-    }
-
     const unsigned char *bin_data;
     Py_ssize_t len;
 
