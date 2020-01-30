@@ -435,9 +435,6 @@ class BinASCIITest(unittest.TestCase):
         with self.assertWarns(DeprecationWarning):
             self.assertEqual(binascii.rledecode_hqx(b'a\x90\n'), b'a' * 10)
 
-        with self.assertWarns(DeprecationWarning):
-            self.assertEqual(binascii.crc_hqx(b'abc', 0), 40406)
-
 
 class ArrayBinASCIITest(BinASCIITest):
     def type2test(self, s):
