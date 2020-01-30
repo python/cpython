@@ -132,8 +132,6 @@ The :mod:`binascii` module defines the following functions:
    *x*:sup:`16` + *x*:sup:`12` + *x*:sup:`5` + 1, often represented as
    0x1021.  This CRC is used in the binhex4 format.
 
-   .. deprecated:: 3.9
-
 
 .. function:: crc32(data[, value])
 
