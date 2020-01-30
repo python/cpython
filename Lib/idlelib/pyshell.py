@@ -1108,7 +1108,6 @@ class PyShell(OutputWindow):
             self.resetoutput()
             self.interp.write("KeyboardInterrupt\n")
             self.showprompt()
-            self.ctip.remove_calltip_window()
             return "break"
         self.endoffile = 0
         self.canceled = 1
@@ -1268,7 +1267,6 @@ class PyShell(OutputWindow):
 
     def restart_shell(self, event=None):
         "Callback for Run/Restart Shell Cntl-F6"
-        self.ctip.remove_calltip_window()
         self.interp.restart_subprocess(with_cwd=True)
 
     def showprompt(self):
@@ -1294,6 +1292,7 @@ class PyShell(OutputWindow):
             self.text.insert("end-1c", "\n")
         self.text.mark_set("iomark", "end-1c")
         self.set_line_and_column()
+        self.ctip.remove_calltip_window()
 
     def write(self, s, tags=()):
         try:
