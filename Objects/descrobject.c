@@ -1911,8 +1911,6 @@ error:
     return NULL;
 }
 
-PyTypeObject Py_GenericAliasType;  // Forward
-
 static PyObject *
 ga_getitem(PyObject *self, PyObject *item)
 {
@@ -2052,6 +2050,18 @@ is_typevar(PyObject *obj)
     return strcmp(type->tp_name, "TypeVar") == 0;
 }
 
+// Index of item in self[:len], or -1 if not found (self is a tuple)
+static int
+tuple_index(PyObject *self, int len, PyObject *item)
+{
+    for (int i = 0; i < len; i++) {
+        if (PyTuple_GET_ITEM(self, i) == item) {
+            return i;
+        }
+    }
+    return -1;
+}
+
 // tuple(t for t in args if isinstance(t, TypeVar))
 static PyObject *
 make_parameters(PyObject *args)
@@ -2064,10 +2074,11 @@ make_parameters(PyObject *args)
     for (int iarg = 0; iarg < len; iarg++) {
         PyObject *t = PyTuple_GET_ITEM(args, iarg);
         if (is_typevar(t)) {
-            // TODO: This is wrong! tuple[T, T].__parameters__ should be (T,)
-            Py_INCREF(t);
-            PyTuple_SET_ITEM(parameters, iparam, t);
-            iparam++;
+            if (tuple_index(parameters, iparam, t) < 0) {
+                Py_INCREF(t);
+                PyTuple_SET_ITEM(parameters, iparam, t);
+                iparam++;
+            }
         }
     }
     if (iparam < len) {

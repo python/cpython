@@ -112,9 +112,12 @@ class BaseTest(unittest.TestCase):
         D1b = dict[K, int]
         self.assertEqual(D1b.__args__, (K, int))
         self.assertEqual(D1b.__parameters__, (K,))
-        D2 = dict[K, V]
-        self.assertEqual(D2.__args__, (K, V))
-        self.assertEqual(D2.__parameters__, (K, V))
+        D2a = dict[K, V]
+        self.assertEqual(D2a.__args__, (K, V))
+        self.assertEqual(D2a.__parameters__, (K, V))
+        D2b = dict[T, T]
+        self.assertEqual(D2b.__args__, (T, T))
+        self.assertEqual(D2b.__parameters__, (T,))
         L0 = list[str]
         self.assertEqual(L0.__args__, (str,))
         self.assertEqual(L0.__parameters__, ())
