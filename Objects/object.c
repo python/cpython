@@ -6,6 +6,7 @@
 #include "pycore_initconfig.h"
 #include "pycore_object.h"
 #include "pycore_pyerrors.h"
+#include "pycore_pylifecycle.h"
 #include "pycore_pystate.h"
 #include "frameobject.h"
 #include "interpreteridobject.h"
@@ -1841,6 +1842,11 @@ PyObject _Py_NotImplementedStruct = {
 PyStatus
 _PyTypes_Init(void)
 {
+    PyStatus status = _PyTypes_InitSlotDefs();
+    if (_PyStatus_EXCEPTION(status)) {
+        return status;
+    }
+
 #define INIT_TYPE(TYPE, NAME) \
     do { \
         if (PyType_Ready(TYPE) < 0) { \
