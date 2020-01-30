@@ -2,6 +2,7 @@
 
 #include "Python.h"
 #include "pycore_call.h"
+#include "pycore_initconfig.h"
 #include "pycore_object.h"
 #include "pycore_pyerrors.h"
 #include "pycore_pystate.h"
@@ -6932,7 +6933,8 @@ which incorporates the additional structures used for numbers, sequences and
 mappings.  Note that multiple names may map to the same slot (e.g. __eq__,
 __ne__ etc. all map to tp_richcompare) and one name may map to multiple slots
 (e.g. __str__ affects tp_str as well as tp_repr). The table is terminated with
-an all-zero entry.  (This table is further initialized in init_slotdefs().)
+an all-zero entry.  (This table is further initialized in
+_PyTypes_InitSlotDefs().)
 */
 
 typedef struct wrapperbase slotdef;
@@ -7423,28 +7425,29 @@ update_slots_callback(PyTypeObject *type, void *data)
 static int slotdefs_initialized = 0;
 /* Initialize the slotdefs table by adding interned string objects for the
    names. */
-static void
-init_slotdefs(void)
+PyStatus
+_PyTypes_InitSlotDefs(void)
 {
-    slotdef *p;
+    if (slotdefs_initialized) {
+        return _PyStatus_OK();
+    }
 
-    if (slotdefs_initialized)
-        return;
-    for (p = slotdefs; p->name; p++) {
+    for (slotdef *p = slotdefs; p->name; p++) {
         /* Slots must be ordered by their offset in the PyHeapTypeObject. */
         assert(!p[1].name || p->offset <= p[1].offset);
         p->name_strobj = PyUnicode_InternFromString(p->name);
-        if (!p->name_strobj || !PyUnicode_CHECK_INTERNED(p->name_strobj))
-            Py_FatalError("Out of memory interning slotdef names");
+        if (!p->name_strobj || !PyUnicode_CHECK_INTERNED(p->name_strobj)) {
+            return _PyStatus_NO_MEMORY();
+        }
     }
     slotdefs_initialized = 1;
+    return _PyStatus_OK();
 }
 
-/* Undo init_slotdefs, releasing the interned strings. */
+/* Undo _PyTypes_InitSlotDefs(), releasing the interned strings. */
 static void clear_slotdefs(void)
 {
-    slotdef *p;
-    for (p = slotdefs; p->name; p++) {
+    for (slotdef *p = slotdefs; p->name; p++) {
         Py_CLEAR(p->name_strobj);
     }
     slotdefs_initialized = 0;
@@ -7462,7 +7465,7 @@ update_slot(PyTypeObject *type, PyObject *name)
     assert(PyUnicode_CheckExact(name));
     assert(PyUnicode_CHECK_INTERNED(name));
 
-    init_slotdefs();
+    assert(slotdefs_initialized);
     pp = ptrs;
     for (p = slotdefs; p->name; p++) {
         if (p->name_strobj == name)
@@ -7490,7 +7493,7 @@ fixup_slot_dispatchers(PyTypeObject *type)
 {
     slotdef *p;
 
-    init_slotdefs();
+    assert(slotdefs_initialized);
     for (p = slotdefs; p->name; )
         p = update_one_slot(type, p);
 }
@@ -7503,7 +7506,7 @@ update_all_slots(PyTypeObject* type)
     /* Clear the VALID_VERSION flag of 'type' and all its subclasses. */
     PyType_Modified(type);
 
-    init_slotdefs();
+    assert(slotdefs_initialized);
     for (p = slotdefs; p->name; p++) {
         /* update_slot returns int but can't actually fail */
         update_slot(type, p->name_strobj);
@@ -7663,7 +7666,7 @@ add_operators(PyTypeObject *type)
     PyObject *descr;
     void **ptr;
 
-    init_slotdefs();
+    assert(slotdefs_initialized);
     for (p = slotdefs; p->name; p++) {
         if (p->wrapper == NULL)
             continue;
