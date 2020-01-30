@@ -1509,7 +1509,7 @@ class IO(Generic[AnyStr]):
     def close(self) -> None:
         pass
 
-    @abstractmethod
+    @abstractproperty
     def closed(self) -> bool:
         pass
 
