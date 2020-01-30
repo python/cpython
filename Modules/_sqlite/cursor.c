@@ -773,7 +773,7 @@ PyObject* pysqlite_cursor_fetchone(pysqlite_Cursor* self, PyObject* args)
 
 PyObject* pysqlite_cursor_fetchmany(pysqlite_Cursor* self, PyObject* args, PyObject* kwargs)
 {
-    static char *kwlist[] = {"size", NULL, NULL};
+    static char *kwlist[] = {"size", NULL};
 
     PyObject* row;
     PyObject* list;
