@@ -3028,8 +3028,16 @@ private:
             }
         } else {
             if (IsWindows7SP1OrGreater()) {
-                BalLog(BOOTSTRAPPER_LOG_LEVEL_STANDARD, "Target OS is Windows 7 SP1 or later");
-                return;
+                HMODULE hKernel32 = GetModuleHandleW(L"kernel32");
+                if (hKernel32 && !GetProcAddress(hKernel32, "AddDllDirectory")) {
+                    BalLog(BOOTSTRAPPER_LOG_LEVEL_ERROR, "Detected Windows 7 SP1 without KB2533623");
+                    BalLog(BOOTSTRAPPER_LOG_LEVEL_ERROR, "KB2533623 update is required to continue.");
+                    /* The "MissingSP1" error also specifies updates are required */
+                    LocGetString(_wixLoc, L"#(loc.FailureWin7MissingSP1)", &pLocString);
+                } else {
+                    BalLog(BOOTSTRAPPER_LOG_LEVEL_STANDARD, "Target OS is Windows 7 SP1 or later");
+                    return;
+                }
             } else if (IsWindows7OrGreater()) {
                 BalLog(BOOTSTRAPPER_LOG_LEVEL_ERROR, "Detected Windows 7 RTM");
                 BalLog(BOOTSTRAPPER_LOG_LEVEL_ERROR, "Service Pack 1 is required to continue installation");
