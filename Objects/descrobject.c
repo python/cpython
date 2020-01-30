@@ -1911,6 +1911,42 @@ error:
     return NULL;
 }
 
+PyTypeObject Py_GenericAliasType;  // Forward
+
+static PyObject *
+ga_getitem(PyObject *self, PyObject *item)
+{
+    PyObject *parameters = PyObject_GetAttrString(self, "__parameters__");
+    if (parameters == NULL) {
+        PyErr_Clear();
+    }
+    else if (!PyTuple_Check(parameters)) {
+        Py_DECREF(parameters);
+    }
+    else {
+        int nparams = PyTuple_Size(parameters);
+        Py_DECREF(parameters);
+        if (nparams < 0)
+            return NULL;
+        int nitems = PyTuple_Check(item) ? PyTuple_Size(item) : 1;
+        if (nitems < 0)
+            return NULL;
+        if (nitems != nparams) {
+            return PyErr_Format(PyExc_TypeError, "Incorrect parameter count");
+        }
+    }
+    if (Py_TYPE(self) == &Py_GenericAliasType) {
+        gaobject *alias = (gaobject *)self;
+        // TODO: merge alias->args and items
+        return Py_GenericAlias(alias->origin, item);
+    }
+    return PyObject_GetItem((PyObject *)Py_TYPE(self), item);
+}
+
+static PyMappingMethods ga_as_mapping = {
+    .mp_subscript = ga_getitem,
+};
+
 static PyObject *
 ga_call(PyObject *self, PyObject *args, PyObject *kwds)
 {
@@ -1985,12 +2021,14 @@ ga_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 // - argument clinic?
 // - __doc__?
 // - cache?
+// - __eq__
 PyTypeObject Py_GenericAliasType = {
     PyVarObject_HEAD_INIT(&PyType_Type, 0)
     .tp_name = "GenericAlias",
     .tp_basicsize = sizeof(gaobject),
     .tp_dealloc = ga_dealloc,
     .tp_repr = ga_repr,
+    .tp_as_mapping = &ga_as_mapping,
     .tp_call = ga_call,
     .tp_getattro = ga_getattro,
     .tp_flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC,
@@ -2026,6 +2064,7 @@ make_parameters(PyObject *args)
     for (int iarg = 0; iarg < len; iarg++) {
         PyObject *t = PyTuple_GET_ITEM(args, iarg);
         if (is_typevar(t)) {
+            // TODO: This is wrong! tuple[T, T].__parameters__ should be (T,)
             Py_INCREF(t);
             PyTuple_SET_ITEM(parameters, iparam, t);
             iparam++;
