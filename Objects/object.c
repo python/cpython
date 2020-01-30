@@ -1646,7 +1646,7 @@ none_repr(PyObject *op)
 }
 
 /* ARGUSED */
-static void
+static void _Py_NO_RETURN
 none_dealloc(PyObject* ignore)
 {
     /* This should never get called, but we also don't want to SEGV if
@@ -1784,7 +1784,7 @@ notimplemented_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
     Py_RETURN_NOTIMPLEMENTED;
 }
 
-static void
+static void _Py_NO_RETURN
 notimplemented_dealloc(PyObject* ignore)
 {
     /* This should never get called, but we also don't want to SEGV if
@@ -2225,7 +2225,7 @@ _PyTrash_thread_destroy_chain(void)
 }
 
 
-void
+void _Py_NO_RETURN
 _PyObject_AssertFailed(PyObject *obj, const char *expr, const char *msg,
                        const char *file, int line, const char *function)
 {
