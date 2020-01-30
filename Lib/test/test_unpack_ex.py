@@ -337,40 +337,39 @@ Now some general starred expressions (all fail).
 
 Check for correct execution order (all fail):
 
-    >>> def f():
-    ...     return None
+    >>> x = None
     >>> try:
-    ...     [*f(), *print("This should be printed!")]
+    ...     [*x, *print("This should be printed!")]
     ... except TypeError:
     ...     pass
     This should be printed!
 
     >>> try:
-    ...     (*f(), *print("This should be printed!"))
+    ...     (*x, *print("This should be printed!"))
     ... except TypeError:
     ...     pass
     This should be printed!
 
     >>> try:
-    ...     {*f(), *print("This should be printed!")}
+    ...     {*x, *print("This should be printed!")}
     ... except TypeError:
     ...     pass
     This should be printed!
 
     >>> try:
-    ...     f(*f(), *print("This should be printed!"))
+    ...     f(*x, *print("This should be printed!"))
     ... except TypeError:
     ...     pass
     This should be printed!
 
     >>> try:
-    ...     {**f(), **print("This should be printed!")}
+    ...     {**x, **print("This should be printed!")}
     ... except TypeError:
     ...     pass
     This should be printed!
 
     >>> try:
-    ...     f(**f(), **print("This should be printed!"))
+    ...     f(**x, **print("This should be printed!"))
     ... except TypeError:
     ...     pass
     This should be printed!
