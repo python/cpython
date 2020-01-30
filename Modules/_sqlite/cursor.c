@@ -611,7 +611,6 @@ static PyObject *
 pysqlite_cursor_executescript(pysqlite_Cursor* self, PyObject* args)
 {
     PyObject* script_obj;
-    PyObject* script_str = NULL;
     const char* script_cstr;
     sqlite3_stmt* statement;
     int rc;
@@ -685,8 +684,6 @@ pysqlite_cursor_executescript(pysqlite_Cursor* self, PyObject* args)
     }
 
 error:
-    Py_XDECREF(script_str);
-
     if (PyErr_Occurred()) {
         return NULL;
     } else {
