@@ -973,8 +973,8 @@ class UserDict(_collections_abc.MutableMapping):
     def __iter__(self):
         return iter(self.data)
 
-    # Modify __contains__ and get() to work correctly
-    # when __missing__ is present
+    # Modify __contains__ and get() to work like dict
+    # does when __missing__ is present.
     def __contains__(self, key):
         return key in self.data
 
