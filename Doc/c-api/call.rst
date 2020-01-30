@@ -109,10 +109,12 @@ function as with any other callable.
    In CPython 3.8, the vectorcall API and related functions were available
    provisionally under names with a leading underscore:
    ``_PyObject_Vectorcall``, ``_Py_TPFLAGS_HAVE_VECTORCALL``,
-   ``_PyObject_VectorcallMethod``, ``_PyObject_FastCallDict``,
-   ``_PyVectorcall_Function``, ``_PyObject_CallOneArg``,
-   ``_PyObject_CallMethodNoArgs``, ``_PyObject_CallMethodOneArg``.
-   These are still defined as aliases of the non-underscored names.
+   ``_PyObject_VectorcallMethod``, ``_PyVectorcall_Function``,
+   ``_PyObject_CallOneArg``, ``_PyObject_CallMethodNoArgs``,
+   ``_PyObject_CallMethodOneArg``.
+   Additionally, ``PyObject_VectorcallDict`` was available as
+   ``_PyObject_FastCallDict``.
+   The old names are still defined as aliases of the new, non-underscored names.
 
 
 Recursion Control
@@ -214,7 +216,7 @@ please see individual documentation for details.
 +------------------------------------------+------------------+--------------------+---------------+
 | :c:func:`PyObject_Vectorcall`            | ``PyObject *``   | vectorcall         | vectorcall    |
 +------------------------------------------+------------------+--------------------+---------------+
-| :c:func:`PyObject_FastCallDict`          | ``PyObject *``   | vectorcall         | dict/``NULL`` |
+| :c:func:`PyObject_VectorcallDict`        | ``PyObject *``   | vectorcall         | dict/``NULL`` |
 +------------------------------------------+------------------+--------------------+---------------+
 | :c:func:`PyObject_VectorcallMethod`      | arg + name       | vectorcall         | vectorcall    |
 +------------------------------------------+------------------+--------------------+---------------+
@@ -374,7 +376,7 @@ please see individual documentation for details.
 
    .. versionadded:: 3.9
 
-.. c:function:: PyObject* PyObject_FastCallDict(PyObject *callable, PyObject *const *args, size_t nargsf, PyObject *kwdict)
+.. c:function:: PyObject* PyObject_VectorcallDict(PyObject *callable, PyObject *const *args, size_t nargsf, PyObject *kwdict)
 
    Call *callable* with positional arguments passed exactly as in the vectorcall_ protocol,
    but with keyword arguments passed as a dictionary *kwdict*.
