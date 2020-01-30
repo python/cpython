@@ -379,7 +379,6 @@ Deprecated
 
   * :func:`~binascii.b2a_hqx`, :func:`~binascii.a2b_hqx`
   * :func:`~binascii.rlecode_hqx`, :func:`~binascii.rledecode_hqx`
-  * :func:`~binascii.crc_hqx`
 
   (Contributed by Victor Stinner in :issue:`39353`.)
 
