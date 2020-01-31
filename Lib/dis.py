@@ -385,7 +385,7 @@ def _disassemble_bytes(code, lasti=-1, varnames=None, names=None,
                        *, file=None, line_offset=0):
     # Omit the line number column entirely if we have no line number info
     show_lineno = linestarts is not None
-    if show_lineno and linestarts.values():
+    if show_lineno:
         maxlineno = max(linestarts.values()) + line_offset
         if maxlineno >= 1000:
             lineno_width = len(str(maxlineno))

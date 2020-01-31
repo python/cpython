@@ -6083,7 +6083,7 @@ assemble(struct compiler *c, int addNone)
     if (!c->u->u_curblock->b_return) {
         if (nblocks == 1 && entryblock->b_iused == 0) {
             /* Empty code object.
-             * Make sure that at least bytecode has a line number
+             * Make sure that the first bytecode has a line number
              * to avoid confusing tools */
             if (addNone) {
                 ADDOP_LOAD_CONST(c, Py_None);

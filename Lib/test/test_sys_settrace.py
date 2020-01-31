@@ -201,7 +201,7 @@ settrace_and_raise.events = [(2, 'exception'),
 
 # implicit return example
 # This test is interesting because of the else: pass
-# part of the code. The code generate for the true
+# part of the code. The code generated for the true
 # part of the if contains a jump past the else branch.
 # The compiler then generates an implicit "return None"
 # which shouldn't change the line number.

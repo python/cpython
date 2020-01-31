@@ -948,7 +948,6 @@ class PyFrameObjectPtr(PyObjectPtr):
         try:
             return self.co.addr2line(self.f_lasti)
         except Exception as ex:
-            print(ex)
             # bpo-34989: addr2line() is a complex function, it can fail in many
             # ways. For example, it fails with a TypeError on "FakeRepr" if
             # gdb fails to load debug symbols. Use a catch-all "except
