@@ -132,11 +132,13 @@ PyToken_TwoChars(int c1, int c2)
         break;
     case '+':
         switch (c2) {
+        case '+': return ERRORTOKEN;
         case '=': return PLUSEQUAL;
         }
         break;
     case '-':
         switch (c2) {
+        case '-': return ERRORTOKEN;
         case '=': return MINEQUAL;
         case '>': return RARROW;
         }
