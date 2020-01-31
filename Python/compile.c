@@ -6071,25 +6071,33 @@ assemble(struct compiler *c, int addNone)
     int i, j, nblocks;
     PyCodeObject *co = NULL;
 
-    /* Make sure every block that falls off the end returns None.
-       XXX NEXT_BLOCK() isn't quite right, because if the last
-       block ends with a jump or return b_next shouldn't set.
-     */
-    if (!c->u->u_curblock->b_return) {
-        NEXT_BLOCK(c);
-        BEGIN_ARTIFICIAL_BYTECODE
-        if (addNone) {
-            ADDOP_LOAD_CONST(c, Py_None);
-        }
-        ADDOP(c, RETURN_VALUE);
-        END_ARTIFICIAL_BYTECODE
-    }
-
     nblocks = 0;
     entryblock = NULL;
     for (b = c->u->u_blocks; b != NULL; b = b->b_list) {
         nblocks++;
         entryblock = b;
+    }
+
+    /* Make sure that if the final block falls off the end then it returns None.
+     */
+    if (!c->u->u_curblock->b_return) {
+        if (nblocks == 1 && entryblock->b_iused == 0) {
+            /* Empty code object.
+             * Make sure that at least bytecode has a line number
+             * to avoid confusing tools */
+            if (addNone) {
+                ADDOP_LOAD_CONST(c, Py_None);
+            }
+            ADDOP(c, RETURN_VALUE);
+        }
+        else {
+            BEGIN_ARTIFICIAL_BYTECODE
+            if (addNone) {
+                ADDOP_LOAD_CONST(c, Py_None);
+            }
+            ADDOP(c, RETURN_VALUE);
+            END_ARTIFICIAL_BYTECODE
+        }
     }
 
     /* Set firstlineno if it wasn't explicitly set. */

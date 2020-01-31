@@ -202,8 +202,10 @@ class TestLineCounts(unittest.TestCase):
             (self.my_py_filename, firstlineno + 7): 1,
             (self.my_py_filename, firstlineno + 8): 1,
             (self.my_py_filename, firstlineno + 9): 1,
+            (self.my_py_filename, firstlineno + 10): 1,
             (self.my_py_filename, firstlineno + 11): 1,
         }
+        self.maxDiff = None
         self.assertEqual(self.tracer.results().counts, expected)
 
     def test_linear_methods(self):

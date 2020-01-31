@@ -39,7 +39,7 @@ def test_pdb_displayhook():
 
     >>> def test_function(foo, bar):
     ...     import pdb; pdb.Pdb(nosigint=True, readrc=False).set_trace()
-    ...     pass
+    ...     return None
 
     >>> with PdbTestInput([
     ...     'foo',
@@ -49,7 +49,7 @@ def test_pdb_displayhook():
     ... ]):
     ...     test_function(1, None)
     > <doctest test.test_pdb.test_pdb_displayhook[0]>(3)test_function()
-    -> pass
+    -> return None
     (Pdb) foo
     1
     (Pdb) bar
@@ -1517,7 +1517,7 @@ class PdbTestCase(unittest.TestCase):
                 from . import top_var
                 from .module import var
                 from . import module
-                pass # We'll stop here and print the vars
+                print() # We'll stop here and print the vars
             """))
         with open(module_file, 'w') as f:
             f.write(textwrap.dedent("""
@@ -1553,7 +1553,7 @@ class PdbTestCase(unittest.TestCase):
         with open(main_file, 'w') as f:
             f.write(textwrap.dedent("""
                 from . import module
-                pass # We'll stop here and print the vars
+                print() # We'll stop here and print the vars
             """))
         with open(module_file, 'w') as f:
             f.write(textwrap.dedent("""
