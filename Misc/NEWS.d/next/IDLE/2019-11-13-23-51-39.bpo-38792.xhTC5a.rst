@@ -1,0 +1,2 @@
+Close an IDLE shell calltip if a :exc:`KeyboardInterrupt`
+or shell restart occurs.  Patch by Zackery Spytz.
