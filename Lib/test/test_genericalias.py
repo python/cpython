@@ -128,15 +128,22 @@ class BaseTest(unittest.TestCase):
     def test_parameter_chaining(self):
         from typing import TypeVar
         T = TypeVar('T')
-        self.assertEqual(repr(list[T][int]), 'list[int]')
-        self.assertEqual(repr(dict[str, T][int]), 'dict[str, int]')
-        self.assertEqual(repr(dict[T, int][str]), 'dict[str, int]')
-        self.assertEqual(repr(dict[T, T][int]), 'dict[int, int]')
+        self.assertEqual(list[T][int], list[int])
+        self.assertEqual(dict[str, T][int], dict[str, int])
+        self.assertEqual(dict[T, int][str], dict[str, int])
+        self.assertEqual(dict[T, T][int], dict[int, int])
         with self.assertRaises(TypeError):
             list[int][int]
             dict[T, int][str, int]
             dict[str, T][str, int]
             dict[T, T][str, int]
+
+    def test_equality(self):
+        self.assertEqual(list[int], list[int])
+        self.assertEqual(dict[str, int], dict[str, int])
+        self.assertNotEqual(dict[str, int], dict[str, str])
+        self.assertNotEqual(list, list[int])
+        self.assertNotEqual(list[int], list)
 
 
 if __name__ == "__main__":

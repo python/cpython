@@ -2020,6 +2020,41 @@ ga_getattro(PyObject *self, PyObject *name)
 }
 
 static PyObject *
+ga_richcompare(PyObject *a, PyObject *b, int op)
+{
+    if (Py_TYPE(a) != &Py_GenericAliasType ||
+        Py_TYPE(b) != &Py_GenericAliasType ||
+        (op != Py_EQ && op != Py_NE))
+    {
+        Py_RETURN_NOTIMPLEMENTED;
+    }
+
+    if (op == Py_NE) {
+        PyObject *eq = ga_richcompare(a, b, Py_EQ);
+        if (eq == NULL)
+            return NULL;
+        Py_DECREF(eq);
+        if (eq == Py_True) {
+            Py_RETURN_FALSE;
+        }
+        else {
+            Py_RETURN_TRUE;
+        }
+    }
+
+    gaobject *aa = (gaobject *)a;
+    gaobject *bb = (gaobject *)b;
+    PyObject *eq = PyObject_RichCompare(aa->origin, bb->origin, Py_EQ);
+    if (eq == NULL)
+        return NULL;
+    if (eq == Py_False) {
+        return eq;
+    }
+    Py_DECREF(eq);
+    return PyObject_RichCompare(aa->args, bb->args, Py_EQ);
+}
+
+static PyObject *
 ga_mro_entries(PyObject *self, PyObject *args)
 {
     gaobject *alias = (gaobject *)self;
@@ -2068,6 +2103,7 @@ PyTypeObject Py_GenericAliasType = {
     .tp_getattro = ga_getattro,
     .tp_flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC,
     .tp_traverse = ga_traverse,
+    .tp_richcompare = ga_richcompare,
     .tp_methods = ga_methods,
     .tp_members = ga_members,
     .tp_alloc = PyType_GenericAlloc,
