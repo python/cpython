@@ -118,9 +118,6 @@ gc_decref(PyGC_Head *g)
     g->_gc_prev -= 1 << _PyGC_PREV_SHIFT;
 }
 
-/* Python string to use if unhandled exception occurs */
-static PyObject *gc_str = NULL;
-
 /* set for debugging information */
 #define DEBUG_STATS             (1<<0) /* print collection statistics */
 #define DEBUG_COLLECTABLE       (1<<1) /* print collectable objects */
@@ -609,7 +606,7 @@ move_unreachable(PyGC_Head *young, PyGC_Head *unreachable)
             // NEXT_MASK_UNREACHABLE flag, we set it unconditionally.
             // But this may pollute the unreachable list head's 'next' pointer
             // too. That's semantically senseless but expedient here - the
-            // damage is repaired when this fumction ends.
+            // damage is repaired when this function ends.
             last->_gc_next = (NEXT_MASK_UNREACHABLE | (uintptr_t)gc);
             _PyGCHead_SET_PREV(gc, last);
             gc->_gc_next = (NEXT_MASK_UNREACHABLE | (uintptr_t)unreachable);
@@ -1039,7 +1036,7 @@ clear_freelists(void)
     (void)PyContext_ClearFreeList();
 }
 
-// Show stats for objects in each gennerations.
+// Show stats for objects in each generations
 static void
 show_stats_each_generations(GCState *gcstate)
 {
@@ -1058,17 +1055,17 @@ show_stats_each_generations(GCState *gcstate)
         buf, gc_list_size(&gcstate->permanent_generation.head));
 }
 
-/* Deduce wich objects among "base" are unreachable from outside the list
+/* Deduce which objects among "base" are unreachable from outside the list
    and move them to 'unreachable'. The process consist in the following steps:
 
 1. Copy all reference counts to a different field (gc_prev is used to hold
    this copy to save memory).
 2. Traverse all objects in "base" and visit all referred objects using
-   "tp_traverse" and for every visited object, substract 1 to the reference
+   "tp_traverse" and for every visited object, subtract 1 to the reference
    count (the one that we copied in the previous step). After this step, all
    objects that can be reached directly from outside must have strictly positive
    reference count, while all unreachable objects must have a count of exactly 0.
-3. Indentify all unreachable objects (the ones with 0 reference count) and move
+3. Identify all unreachable objects (the ones with 0 reference count) and move
    them to the "unreachable" list. This step also needs to move back to "base" all
    objects that were initially marked as unreachable but are referred transitively
    by the reachable objects (the ones with strictly positive reference count).
@@ -1098,10 +1095,38 @@ deduce_unreachable(PyGC_Head *base, PyGC_Head *unreachable) {
 
     /* Leave everything reachable from outside base in base, and move
      * everything else (in base) to unreachable.
+     *
      * NOTE:  This used to move the reachable objects into a reachable
      * set instead.  But most things usually turn out to be reachable,
-     * so it's more efficient to move the unreachable things.  See note
-     ^ [REACHABLE OR UNREACHABLE?] at the file end.
+     * so it's more efficient to move the unreachable things.  It "sounds slick"
+     * to move the unreachable objects, until you think about it - the reason it
+     * pays isn't actually obvious.
+     *
+     * Suppose we create objects A, B, C in that order.  They appear in the young
+     * generation in the same order.  If B points to A, and C to B, and C is
+     * reachable from outside, then the adjusted refcounts will be 0, 0, and 1
+     * respectively.
+     *
+     * When move_unreachable finds A, A is moved to the unreachable list.  The
+     * same for B when it's first encountered.  Then C is traversed, B is moved
+     * _back_ to the reachable list.  B is eventually traversed, and then A is
+     * moved back to the reachable list.
+     *
+     * So instead of not moving at all, the reachable objects B and A are moved
+     * twice each.  Why is this a win?  A straightforward algorithm to move the
+     * reachable objects instead would move A, B, and C once each.
+     *
+     * The key is that this dance leaves the objects in order C, B, A - it's
+     * reversed from the original order.  On all _subsequent_ scans, none of
+     * them will move.  Since most objects aren't in cycles, this can save an
+     * unbounded number of moves across an unbounded number of later collections.
+     * It can cost more only the first time the chain is scanned.
+     *
+     * Drawback:  move_unreachable is also used to find out what's still trash
+     * after finalizers may resurrect objects.  In _that_ case most unreachable
+     * objects will remain unreachable, so it would be more efficient to move
+     * the reachable objects instead.  But this is a one-time cost, probably not
+     * worth complicating the code to speed just a little.
      */
     gc_list_init(unreachable);
     move_unreachable(base, unreachable);  // gc_prev is pointer again
@@ -1197,7 +1222,7 @@ collect(PyThreadState *tstate, int generation,
         gc_list_merge(young, old);
     }
     else {
-        /* We only untrack dicts in full collections, to avoid quadratic
+        /* We only un-track dicts in full collections, to avoid quadratic
            dict build-up. See issue #14775. */
         untrack_dicts(young);
         gcstate->long_lived_pending = 0;
@@ -1282,10 +1307,7 @@ collect(PyThreadState *tstate, int generation,
             _PyErr_Clear(tstate);
         }
         else {
-            if (gc_str == NULL)
-                gc_str = PyUnicode_FromString("garbage collection");
-            PyErr_WriteUnraisable(gc_str);
-            Py_FatalError("unexpected exception during garbage collection");
+            _PyErr_WriteUnraisableMsg("in garbage collection", NULL);
         }
     }
 
@@ -1381,8 +1403,40 @@ collect_generations(PyThreadState *tstate)
     for (int i = NUM_GENERATIONS-1; i >= 0; i--) {
         if (gcstate->generations[i].count > gcstate->generations[i].threshold) {
             /* Avoid quadratic performance degradation in number
-               of tracked objects. See comments at the beginning
-               of this file, and issue #4074.
+               of tracked objects (see also issue #4074):
+
+               To limit the cost of garbage collection, there are two strategies;
+                 - make each collection faster, e.g. by scanning fewer objects
+                 - do less collections
+               This heuristic is about the latter strategy.
+
+               In addition to the various configurable thresholds, we only trigger a
+               full collection if the ratio
+
+                long_lived_pending / long_lived_total
+
+               is above a given value (hardwired to 25%).
+
+               The reason is that, while "non-full" collections (i.e., collections of
+               the young and middle generations) will always examine roughly the same
+               number of objects -- determined by the aforementioned thresholds --,
+               the cost of a full collection is proportional to the total number of
+               long-lived objects, which is virtually unbounded.
+
+               Indeed, it has been remarked that doing a full collection every
+               <constant number> of object creations entails a dramatic performance
+               degradation in workloads which consist in creating and storing lots of
+               long-lived objects (e.g. building a large list of GC-tracked objects would
+               show quadratic performance, instead of linear as expected: see issue #4074).
+
+               Using the above ratio, instead, yields amortized linear performance in
+               the total number of objects (the effect of which can be summarized
+               thusly: "each full garbage collection is more and more costly as the
+               number of objects grows, but we do fewer and fewer of them").
+
+               This heuristic was suggested by Martin von Löwis on python-dev in
+               June 2008. His original analysis and proposal can be found at:
+               http://mail.python.org/pipermail/python-dev/2008-June/080579.html
             */
             if (i == NUM_GENERATIONS - 1
                 && gcstate->long_lived_pending < gcstate->long_lived_total / 4)
@@ -1810,6 +1864,25 @@ gc_is_tracked(PyObject *module, PyObject *obj)
 }
 
 /*[clinic input]
+gc.is_finalized
+
+    obj: object
+    /
+
+Returns true if the object has been already finalized by the GC.
+[clinic start generated code]*/
+
+static PyObject *
+gc_is_finalized(PyObject *module, PyObject *obj)
+/*[clinic end generated code: output=e1516ac119a918ed input=201d0c58f69ae390]*/
+{
+    if (PyObject_IS_GC(obj) && _PyGCHead_FINALIZED(AS_GC(obj))) {
+         Py_RETURN_TRUE;
+    }
+    Py_RETURN_FALSE;
+}
+
+/*[clinic input]
 gc.freeze
 
 Freeze all current tracked objects and ignore them for future collections.
@@ -1882,6 +1955,7 @@ PyDoc_STRVAR(gc__doc__,
 "get_threshold() -- Return the current the collection thresholds.\n"
 "get_objects() -- Return a list of all objects tracked by the collector.\n"
 "is_tracked() -- Returns true if a given object is tracked.\n"
+"is_finalized() -- Returns true if a given object has been already finalized.\n"
 "get_referrers() -- Return the list of objects that refer to an object.\n"
 "get_referents() -- Return the list of objects that an object refers to.\n"
 "freeze() -- Freeze all tracked objects and ignore them for future collections.\n"
@@ -1901,6 +1975,7 @@ static PyMethodDef GcMethods[] = {
     GC_GET_OBJECTS_METHODDEF
     GC_GET_STATS_METHODDEF
     GC_IS_TRACKED_METHODDEF
+    GC_IS_FINALIZED_METHODDEF
     {"get_referrers",  gc_get_referrers, METH_VARARGS,
         gc_get_referrers__doc__},
     {"get_referents",  gc_get_referents, METH_VARARGS,
@@ -2237,39 +2312,3 @@ PyObject_GC_Del(void *op)
     }
     PyObject_FREE(g);
 }
-
-/* ------------------------------------------------------------------------
-Notes
-
-[REACHABLE OR UNREACHABLE?]
-
-It "sounds slick" to move the unreachable objects, until you think about
-it - the reason it pays isn't actually obvious.
-
-Suppose we create objects A, B, C in that order.  They appear in the young
-generation in the same order.  If B points to A, and C to B, and C is
-reachable from outside, then the adjusted refcounts will be 0, 0, and 1
-respectively.
-
-When move_unreachable finds A, A is moved to the unreachable list.  The
-same for B when it's first encountered.  Then C is traversed, B is moved
-_back_ to the reachable list.  B is eventually traversed, and then A is
-moved back to the reachable list.
-
-So instead of not moving at all, the reachable objects B and A are moved
-twice each.  Why is this a win?  A straightforward algorithm to move the
-reachable objects instead would move A, B, and C once each.
-
-The key is that this dance leaves the objects in order C, B, A - it's
-reversed from the original order.  On all _subsequent_ scans, none of
-them will move.  Since most objects aren't in cycles, this can save an
-unbounded number of moves across an unbounded number of later collections.
-It can cost more only the first time the chain is scanned.
-
-Drawback:  move_unreachable is also used to find out what's still trash
-after finalizers may resurrect objects.  In _that_ case most unreachable
-objects will remain unreachable, so it would be more efficient to move
-the reachable objects instead.  But this is a one-time cost, probably not
-worth complicating the code to speed just a little.
------------------------------------------------------------------------- */
-

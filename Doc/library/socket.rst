@@ -565,7 +565,9 @@ The following functions all create :ref:`socket objects <socket-objects>`.
       When :const:`SOCK_NONBLOCK` or :const:`SOCK_CLOEXEC`
       bit flags are applied to *type* they are cleared, and
       :attr:`socket.type` will not reflect them.  They are still passed
-      to the underlying system `socket()` call.  Therefore::
+      to the underlying system `socket()` call.  Therefore,
+
+      ::
 
           sock = socket.socket(
               socket.AF_INET,

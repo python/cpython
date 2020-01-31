@@ -742,6 +742,10 @@ class SysLogHandler(logging.Handler):
     LOG_CRON      = 9       #  clock daemon
     LOG_AUTHPRIV  = 10      #  security/authorization messages (private)
     LOG_FTP       = 11      #  FTP daemon
+    LOG_NTP       = 12      #  NTP subsystem
+    LOG_SECURITY  = 13      #  Log audit
+    LOG_CONSOLE   = 14      #  Log alert
+    LOG_SOLCRON   = 15      #  Scheduling daemon (Solaris)
 
     #  other codes through 15 reserved for system use
     LOG_LOCAL0    = 16      #  reserved for local use
@@ -769,27 +773,30 @@ class SysLogHandler(logging.Handler):
         }
 
     facility_names = {
-        "auth":     LOG_AUTH,
-        "authpriv": LOG_AUTHPRIV,
-        "cron":     LOG_CRON,
-        "daemon":   LOG_DAEMON,
-        "ftp":      LOG_FTP,
-        "kern":     LOG_KERN,
-        "lpr":      LOG_LPR,
-        "mail":     LOG_MAIL,
-        "news":     LOG_NEWS,
-        "security": LOG_AUTH,       #  DEPRECATED
-        "syslog":   LOG_SYSLOG,
-        "user":     LOG_USER,
-        "uucp":     LOG_UUCP,
-        "local0":   LOG_LOCAL0,
-        "local1":   LOG_LOCAL1,
-        "local2":   LOG_LOCAL2,
-        "local3":   LOG_LOCAL3,
-        "local4":   LOG_LOCAL4,
-        "local5":   LOG_LOCAL5,
-        "local6":   LOG_LOCAL6,
-        "local7":   LOG_LOCAL7,
+        "auth":         LOG_AUTH,
+        "authpriv":     LOG_AUTHPRIV,
+        "console":      LOG_CONSOLE,
+        "cron":         LOG_CRON,
+        "daemon":       LOG_DAEMON,
+        "ftp":          LOG_FTP,
+        "kern":         LOG_KERN,
+        "lpr":          LOG_LPR,
+        "mail":         LOG_MAIL,
+        "news":         LOG_NEWS,
+        "ntp":          LOG_NTP,
+        "security":     LOG_SECURITY,
+        "solaris-cron": LOG_SOLCRON,
+        "syslog":       LOG_SYSLOG,
+        "user":         LOG_USER,
+        "uucp":         LOG_UUCP,
+        "local0":       LOG_LOCAL0,
+        "local1":       LOG_LOCAL1,
+        "local2":       LOG_LOCAL2,
+        "local3":       LOG_LOCAL3,
+        "local4":       LOG_LOCAL4,
+        "local5":       LOG_LOCAL5,
+        "local6":       LOG_LOCAL6,
+        "local7":       LOG_LOCAL7,
         }
 
     #The map below appears to be trivially lowercasing the key. However,

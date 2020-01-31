@@ -177,7 +177,7 @@ distinguished from a number.  Use :c:func:`PyErr_Occurred` to disambiguate.
    :c:type:`PyLongObject`.
 
    Raise :exc:`OverflowError` if the value of *obj* is out of range for a
-   :c:type:`long`.
+   :c:type:`long long`.
 
    Returns ``-1`` on error.  Use :c:func:`PyErr_Occurred` to disambiguate.
 
@@ -304,7 +304,7 @@ distinguished from a number.  Use :c:func:`PyErr_Occurred` to disambiguate.
    it to a :c:type:`PyLongObject`.
 
    If the value of *obj* is out of range for an :c:type:`unsigned long long`,
-   return the reduction of that value modulo ``PY_ULLONG_MAX + 1``.
+   return the reduction of that value modulo ``ULLONG_MAX + 1``.
 
    Returns ``(unsigned long long)-1`` on error.  Use :c:func:`PyErr_Occurred`
    to disambiguate.

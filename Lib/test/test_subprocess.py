@@ -1121,9 +1121,7 @@ class ProcessTestCase(BaseTestCase):
         with self.assertRaises(subprocess.TimeoutExpired) as c:
             p.wait(timeout=0.0001)
         self.assertIn("0.0001", str(c.exception))  # For coverage of __str__.
-        # Some heavily loaded buildbots (sparc Debian 3.x) require this much
-        # time to start.
-        self.assertEqual(p.wait(timeout=3), 0)
+        self.assertEqual(p.wait(timeout=support.SHORT_TIMEOUT), 0)
 
     def test_invalid_bufsize(self):
         # an invalid type of the bufsize argument should raise
@@ -1289,7 +1287,7 @@ class ProcessTestCase(BaseTestCase):
         # Wait for the process to finish; the thread should kill it
         # long before it finishes on its own.  Supplying a timeout
         # triggers a different code path for better coverage.
-        proc.wait(timeout=20)
+        proc.wait(timeout=support.SHORT_TIMEOUT)
         self.assertEqual(proc.returncode, expected_errorcode,
                          msg="unexpected result in wait from main thread")
 
@@ -1437,6 +1435,9 @@ class ProcessTestCase(BaseTestCase):
             subprocess.Popen(['exit', '0'], cwd='/some/nonexistent/directory')
         self.assertEqual(c.exception.filename, '/some/nonexistent/directory')
 
+    def test_class_getitems(self):
+        self.assertIs(subprocess.Popen[bytes], subprocess.Popen)
+        self.assertIs(subprocess.CompletedProcess[str], subprocess.CompletedProcess)
 
 class RunFuncTestCase(BaseTestCase):
     def run_python(self, code, **kwargs):
@@ -3118,6 +3119,42 @@ class POSIXProcessTestCase(BaseTestCase):
             returncode = proc.wait()
 
         self.assertEqual(returncode, -3)
+
+    def test_send_signal_race(self):
+        # bpo-38630: send_signal() must poll the process exit status to reduce
+        # the risk of sending the signal to the wrong process.
+        proc = subprocess.Popen(ZERO_RETURN_CMD)
+
+        # wait until the process completes without using the Popen APIs.
+        pid, status = os.waitpid(proc.pid, 0)
+        self.assertEqual(pid, proc.pid)
+        self.assertTrue(os.WIFEXITED(status), status)
+        self.assertEqual(os.WEXITSTATUS(status), 0)
+
+        # returncode is still None but the process completed.
+        self.assertIsNone(proc.returncode)
+
+        with mock.patch("os.kill") as mock_kill:
+            proc.send_signal(signal.SIGTERM)
+
+        # send_signal() didn't call os.kill() since the process already
+        # completed.
+        mock_kill.assert_not_called()
+
+        # Don't check the returncode value: the test reads the exit status,
+        # so Popen failed to read it and uses a default returncode instead.
+        self.assertIsNotNone(proc.returncode)
+
+    def test_communicate_repeated_call_after_stdout_close(self):
+        proc = subprocess.Popen([sys.executable, '-c',
+                                 'import os, time; os.close(1), time.sleep(2)'],
+                                stdout=subprocess.PIPE)
+        while True:
+            try:
+                proc.communicate(timeout=0.1)
+                return
+            except subprocess.TimeoutExpired:
+                pass
 
 
 @unittest.skipUnless(mswindows, "Windows specific tests")

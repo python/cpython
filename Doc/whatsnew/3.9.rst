@@ -83,16 +83,17 @@ Other Language Changes
 
 * Python now gets the absolute path of the script filename specified on
   the command line (ex: ``python3 script.py``): the ``__file__`` attribute of
-  the :mod:`__main__` module, ``sys.argv[0]`` and ``sys.path[0]`` become an
+  the :mod:`__main__` module and ``sys.path[0]`` become an
   absolute path, rather than a relative path. These paths now remain valid
   after the current directory is changed by :func:`os.chdir`. As a side effect,
   a traceback also displays the absolute path for :mod:`__main__` module frames
   in this case.
   (Contributed by Victor Stinner in :issue:`20443`.)
 
-* In development mode and in debug build, *encoding* and *errors* arguments are
-  now checked on string encoding and decoding operations. Examples:
-  :func:`open`, :meth:`str.encode` and :meth:`bytes.decode`.
+* In the :ref:`Python Development Mode <devmode>` and in debug build, the
+  *encoding* and *errors* arguments are now checked for string encoding and
+  decoding operations. Examples: :func:`open`, :meth:`str.encode` and
+  :meth:`bytes.decode`.
 
   By default, for best performance, the *errors* argument is only checked at
   the first encoding/decoding error and the *encoding* argument is sometimes
@@ -129,6 +130,13 @@ that would produce an equivalent :class:`ast.AST` object when parsed.
 asyncio
 -------
 
+Due to significant security concerns, the *reuse_address* parameter of
+:meth:`asyncio.loop.create_datagram_endpoint` is no longer supported. This is
+because of the behavior of the socket option ``SO_REUSEADDR`` in UDP. For more
+details, see the documentation for ``loop.create_datagram_endpoint()``.
+(Contributed by Kyle Stanley, Antoine Pitrou, and Yury Selivanov in
+:issue:`37228`.)
+
 Added a new :term:`coroutine` :meth:`~asyncio.loop.shutdown_default_executor`
 that schedules a shutdown for the default executor that waits on the
 :class:`~concurrent.futures.ThreadPoolExecutor` to finish closing. Also,
@@ -152,6 +160,60 @@ Added constants :data:`~fcntl.F_OFD_GETLK`, :data:`~fcntl.F_OFD_SETLK`
 and :data:`~fcntl.F_OFD_SETLKW`.
 (Contributed by Dong-hee Na in :issue:`38602`.)
 
+ftplib
+-------
+
+:class:`~ftplib.FTP` and :class:`~ftplib.FTP_TLS` now raise a :class:`ValueError`
+if the given timeout for their constructor is zero to prevent the creation of
+a non-blocking socket. (Contributed by Dong-hee Na in :issue:`39259`.)
+
+functools
+---------
+
+Add the :class:`functools.TopologicalSorter` class to offer functionality to perform
+topological sorting of graphs. (Contributed by Pablo Galindo, Tim Peters and Larry
+Hastings in :issue:`17005`.)
+
+gc
+--
+
+When the garbage collector makes a collection in which some objects resurrect
+(they are reachable from outside the isolated cycles after the finalizers have
+been executed), do not block the collection of all objects that are still
+unreachable. (Contributed by Pablo Galindo and Tim Peters in :issue:`38379`.)
+
+Added a new function :func:`gc.is_finalized` to check if an object has been
+finalized by the garbage collector. (Contributed by Pablo Galindo in
+:issue:`39322`.)
+
+imaplib
+-------
+
+:class:`~imaplib.IMAP4` and :class:`~imaplib.IMAP4_SSL` now have
+an optional *timeout* parameter for their constructors.
+Also, the :meth:`~imaplib.IMAP4.open` method now has an optional *timeout* parameter
+with this change. The overridden methods of :class:`~imaplib.IMAP4_SSL` and
+:class:`~imaplib.IMAP4_stream` were applied to this change.
+(Contributed by Dong-hee Na in :issue:`38615`.)
+
+math
+----
+
+Add :func:`math.nextafter`: return the next floating-point value after *x*
+towards *y*.
+(Contributed by Victor Stinner in :issue:`39288`.)
+
+Add :func:`math.ulp`: return the value of the least significant bit
+of a float.
+(Contributed by Victor Stinner in :issue:`39310`.)
+
+nntplib
+-------
+
+:class:`~nntplib.NNTP` and :class:`~nntplib.NNTP_SSL` now raise a :class:`ValueError`
+if the given timeout for their constructor is zero to prevent the creation of
+a non-blocking socket. (Contributed by Dong-hee Na in :issue:`39259`.)
+
 os
 --
 
@@ -161,6 +223,20 @@ Added :data:`~os.CLD_KILLED` and :data:`~os.CLD_STOPPED` for :attr:`si_code`.
 Exposed the Linux-specific :func:`os.pidfd_open` (:issue:`38692`) and
 :data:`os.P_PIDFD` (:issue:`38713`) for process management with file
 descriptors.
+
+The :func:`os.unsetenv` function is now also available on Windows.
+(Contributed by Victor Stinner in :issue:`39413`.)
+
+The :func:`os.putenv` and :func:`os.unsetenv` functions are now always
+available.
+(Contributed by Victor Stinner in :issue:`39395`.)
+
+poplib
+------
+
+:class:`~poplib.POP3` and :class:`~poplib.POP3_SSL` now raise a :class:`ValueError`
+if the given timeout for their constructor is zero to prevent the creation of
+a non-blocking socket. (Contributed by Dong-hee Na in :issue:`39259`.)
 
 threading
 ---------
@@ -201,6 +277,16 @@ To improve consistency with import statements, :func:`importlib.util.resolve_nam
 now raises :exc:`ImportError` instead of :exc:`ValueError` for invalid relative
 import attempts.
 (Contributed by Ngalim Siregar in :issue:`37444`.)
+
+smtplib
+-------
+
+:class:`~smtplib.SMTP` and :class:`~smtplib.SMTP_SSL` now raise a :class:`ValueError`
+if the given timeout for their constructor is zero to prevent the creation of
+a non-blocking socket. (Contributed by Dong-hee Na in :issue:`39259`.)
+
+:class:`~smtplib.LMTP` constructor  now has an optional *timeout* parameter.
+(Contributed by Dong-hee Na in :issue:`39329`.)
 
 signal
 ------
@@ -244,6 +330,15 @@ Build and C API Changes
   removed in Python 3.3.
   (Contributed by Victor Stinner in :issue:`38896`.)
 
+* The ``tp_print`` slot of :ref:`PyTypeObject <type-structs>` has been removed.
+  It was used for printing objects to files in Python 2.7 and before. Since
+  Python 3.0, it has been ignored and unused.
+  (Contributed by Jeroen Demeyer in :issue:`36974`.)
+
+* On non-Windows platforms, the :c:func:`setenv` and :c:func:`unsetenv`
+  functions are now required to build Python.
+  (Contributed by Victor Stinner in :issue:`39395`.)
+
 
 Deprecated
 ==========
@@ -275,9 +370,28 @@ Deprecated
   predicable behavior.
   (Contributed by Serhiy Storchaka in :issue:`38371`.)
 
+* The explicit passing of coroutine objects to :func:`asyncio.wait` has been
+  deprecated and will be removed in version 3.11.
+  (Contributed by Yury Selivanov and Kyle Stanley in :issue:`34790`.)
+
+* binhex4 and hexbin4 standards are now deprecated. The :`binhex` module
+  and the following :mod:`binascii` functions are now deprecated:
+
+  * :func:`~binascii.b2a_hqx`, :func:`~binascii.a2b_hqx`
+  * :func:`~binascii.rlecode_hqx`, :func:`~binascii.rledecode_hqx`
+
+  (Contributed by Victor Stinner in :issue:`39353`.)
+
 
 Removed
 =======
+
+* :class:`nntplib.NNTP`: ``xpath()`` and ``xgtitle()`` methods have been removed.
+  These methods are deprecated since Python 3.3. Generally, these extensions
+  are not supported or not enabled by NNTP server administrators.
+  For ``xgtitle()``, please use :meth:`nntplib.NNTP.descriptions` or
+  :meth:`nntplib.NNTP.description` instead.
+  (Contributed by Dong-hee Na in :issue:`39366`.)
 
 * :class:`array.array`: ``tostring()`` and ``fromstring()`` methods have been
   removed. They were aliases to ``tobytes()`` and ``frombytes()``, deprecated
@@ -337,6 +451,25 @@ Removed
   of :pep:`442`. Patch by Joannah Nanjekye.
   (Contributed by Joannah Nanjekye in :issue:`15088`)
 
+* ``base64.encodestring()`` and ``base64.decodestring()``, aliases deprecated
+  since Python 3.1, have been removed: use :func:`base64.encodebytes` and
+  :func:`base64.decodebytes` instead.
+  (Contributed by Victor Stinner in :issue:`39351`.)
+
+* ``fractions.gcd()`` function has been removed, it was deprecated since Python
+  3.5 (:issue:`22486`): use :func:`math.gcd` instead.
+  (Contributed by Victor Stinner in :issue:`39350`.)
+
+* The *buffering* parameter of :class:`bz2.BZ2File` has been removed. Since
+  Python 3.0, it was ignored and using it emitted a :exc:`DeprecationWarning`.
+  Pass an open file object to control how the file is opened.
+  (Contributed by Victor Stinner in :issue:`39357`.)
+
+* The *encoding* parameter of :func:`json.loads` has been removed.
+  As of Python 3.1, it was deprecated and ignored; using it has emitted a
+  :exc:`DeprecationWarning` since Python 3.8.
+  (Contributed by Inada Naoki in :issue:`39377`)
+
 * ``with (await asyncio.lock):`` and ``with (yield from asyncio.lock):`` statements are
   not longer supported, use ``async with lock`` instead.  The same is correct for
   ``asyncio.Condition`` and ``asyncio.Semaphore``.
@@ -368,6 +501,14 @@ Changes in the Python API
 
 * The :mod:`venv` activation scripts no longer special-case when
   ``__VENV_PROMPT__`` is set to ``""``.
+
+* The :meth:`select.epoll.unregister` method no longer ignores the
+  :data:`~errno.EBADF` error.
+  (Contributed by Victor Stinner in :issue:`39239`.)
+
+* The *compresslevel* parameter of :class:`bz2.BZ2File` became keyword-only,
+  since the *buffering* parameter has been removed.
+  (Contributed by Victor Stinner in :issue:`39357`.)
 
 
 CPython bytecode changes

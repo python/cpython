@@ -350,7 +350,7 @@ Accessing attributes of extension types
    .. _pymemberdef-offsets:
 
    Heap allocated types (created using :c:func:`PyType_FromSpec` or similar),
-   ``PyMemberDef`` may contain defintitions for the special members
+   ``PyMemberDef`` may contain definitions for the special members
    ``__dictoffset__`` and ``__weaklistoffset__``, corresponding to
    :c:member:`~PyTypeObject.tp_dictoffset` and
    :c:member:`~PyTypeObject.tp_weaklistoffset` in type objects.

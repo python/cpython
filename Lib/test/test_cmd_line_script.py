@@ -223,12 +223,13 @@ class CmdLineTest(unittest.TestCase):
 
     def test_script_abspath(self):
         # pass the script using the relative path, expect the absolute path
-        # in __file__ and sys.argv[0]
+        # in __file__
         with support.temp_cwd() as script_dir:
             self.assertTrue(os.path.isabs(script_dir), script_dir)
 
             script_name = _make_test_script(script_dir, 'script')
-            self._check_script(os.path.basename(script_name), script_name, script_name,
+            relative_name = os.path.basename(script_name)
+            self._check_script(relative_name, script_name, relative_name,
                                script_dir, None,
                                importlib.machinery.SourceFileLoader)
 
