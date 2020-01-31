@@ -328,7 +328,7 @@ class EditorWindow(object):
         text.bind("<<run-module>>", scriptbinding.run_module_event)
         text.bind("<<run-custom>>", scriptbinding.run_custom_event)
         text.bind("<<do-rstrip>>", self.Rstrip(self).do_rstrip)
-        ctip = self.Calltip(self)
+        self.ctip = ctip = self.Calltip(self)
         text.bind("<<try-open-calltip>>", ctip.try_open_calltip_event)
         #refresh-calltip must come after paren-closed to work right
         text.bind("<<refresh-calltip>>", ctip.refresh_calltip_event)
