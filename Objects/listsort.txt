@@ -739,7 +739,7 @@ slice (leaving off both endpoints) (2**(k-1)-1)+1 through (2**k-1)-1
 inclusive = 2**(k-1) through (2**k-1)-1 inclusive, which has
     (2**k-1)-1 - 2**(k-1) + 1 =
     2**k-1 - 2**(k-1) =
-    2*2**k-1 - 2**(k-1) =
+    2*2**(k-1)-1 - 2**(k-1) =
     (2-1)*2**(k-1) - 1 =
     2**(k-1) - 1
 elements.
