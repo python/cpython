@@ -1706,6 +1706,9 @@ tok_get(struct tok_state *tok, char **p_start, char **p_end)
     {
         int c2 = tok_nextc(tok);
         int token = PyToken_TwoChars(c, c2);
+        if (token == ERRORTOKEN) {
+            return syntaxerror(tok, "invalid syntax");
+        }
         if (token != OP) {
             int c3 = tok_nextc(tok);
             int token3 = PyToken_ThreeChars(c, c2, c3);
