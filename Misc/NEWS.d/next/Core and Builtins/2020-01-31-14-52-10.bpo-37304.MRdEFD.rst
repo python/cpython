@@ -1,0 +1,2 @@
+Compiler should not support in(de)crement operation.
+It will raise a ``SyntaxError`` if user use in(de)crement operation.
