@@ -526,17 +526,17 @@ they can have object code that is not dependent on Python compilation flags.
 PyAPI_FUNC(void) Py_IncRef(PyObject *);
 PyAPI_FUNC(void) Py_DecRef(PyObject *);
 
-/*
-_Py_NoneStruct is an object of undefined type which can be used in contexts
-where NULL (nil) is not suitable (since NULL often means 'error').
+// Get a borrowed reference to the None singleton.
+PyAPI_DATA(PyObject*) Py_GetNone(void);
 
-Don't forget to apply Py_INCREF() when returning this value!!!
-*/
-PyAPI_DATA(PyObject) _Py_NoneStruct; /* Don't use this directly */
-#define Py_None (&_Py_NoneStruct)
+// Get a strong reference to the None singleton.
+PyAPI_DATA(PyObject*) Py_GetNoneRef(void);
 
-/* Macro for returning Py_None from a function */
-#define Py_RETURN_NONE return Py_INCREF(Py_None), Py_None
+// Macro for backward compatibility.
+#define Py_None Py_GetNone()
+
+/* Macro for returning a new strong reference to None from a function */
+#define Py_RETURN_NONE return Py_GetNoneRef()
 
 /*
 Py_NotImplemented is a singleton used to signal that an operation is

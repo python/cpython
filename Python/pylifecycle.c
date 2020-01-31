@@ -580,6 +580,11 @@ pycore_init_types(PyThreadState *tstate)
     PyStatus status;
     int is_main_interp = _Py_IsMainInterpreter(tstate);
 
+    status = _Py_InitSingletons(tstate);
+    if (_PyStatus_EXCEPTION(status)) {
+        return status;
+    }
+
     status = _PyGC_Init(tstate);
     if (_PyStatus_EXCEPTION(status)) {
         return status;
@@ -1322,6 +1327,8 @@ finalize_interp_delete(PyThreadState *tstate)
        bpo-9901). Instead pycore_create_interpreter() destroys the previously
        created GIL, which ensures that Py_Initialize / Py_FinalizeEx can be
        called multiple times. */
+
+    _Py_FiniSingletons(tstate);
 
     PyInterpreterState_Delete(tstate->interp);
 }

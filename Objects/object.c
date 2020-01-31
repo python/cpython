@@ -1628,6 +1628,30 @@ PyObject _Py_NoneStruct = {
   1, &_PyNone_Type
 };
 
+
+PyObject*
+Py_GetNone(void)
+{
+    PyInterpreterState *interp = _PyInterpreterState_GET();
+    /* The GIL must be held to call Py_GetNone() */
+    assert(interp != NULL);
+    PyObject *none = interp->none;
+    /* Py_GetNone() must not be called before _Py_InitSingletons(),
+       nor after _Py_FiniSingletons() */
+    assert(none != NULL);
+    return none;
+}
+
+
+PyObject*
+Py_GetNoneRef(void)
+{
+    PyObject *none = Py_GetNone();
+    Py_INCREF(none);
+    return none;
+}
+
+
 /* NotImplemented is an object that can be used to signal that an
    operation is not implemented for the given type combination. */
 
@@ -2220,3 +2244,20 @@ PyObject_GET_WEAKREFS_LISTPTR(PyObject *op)
 #ifdef __cplusplus
 }
 #endif
+
+
+PyStatus
+_Py_InitSingletons(PyThreadState *tstate)
+{
+    PyObject *none = &_Py_NoneStruct;
+    Py_INCREF(none);
+    tstate->interp->none = none;
+    return _PyStatus_OK();
+}
+
+
+void
+_Py_FiniSingletons(PyThreadState *tstate)
+{
+    Py_CLEAR(tstate->interp->none);
+}

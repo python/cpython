@@ -54,7 +54,7 @@ extern PyStatus _PyTypes_Init(void);
 extern PyStatus _PyTypes_InitSlotDefs(void);
 extern PyStatus _PyImportZip_Init(PyThreadState *tstate);
 extern PyStatus _PyGC_Init(PyThreadState *tstate);
-
+extern PyStatus _Py_InitSingletons(PyThreadState *tstate);
 
 /* Various internal finalizers */
 
@@ -74,6 +74,7 @@ extern void _PyExc_Fini(void);
 extern void _PyImport_Fini(void);
 extern void _PyImport_Fini2(void);
 extern void _PyGC_Fini(PyThreadState *tstate);
+extern void _Py_FiniSingletons(PyThreadState *tstate);
 extern void _PyType_Fini(void);
 extern void _Py_HashRandomization_Fini(void);
 extern void _PyUnicode_Fini(PyThreadState *tstate);

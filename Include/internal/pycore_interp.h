@@ -158,6 +158,9 @@ struct _is {
     struct _ceval_state ceval;
     struct _gc_runtime_state gc;
 
+    /* per interpreter singletons (strong reference) */
+    PyObject *none;
+
     PyObject *modules;
     PyObject *modules_by_index;
     PyObject *sysdict;
