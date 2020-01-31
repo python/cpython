@@ -1924,10 +1924,10 @@ is_typevar(PyObject *obj)
 }
 
 // Index of item in self[:len], or -1 if not found (self is a tuple)
-static int
-tuple_index(PyObject *self, int len, PyObject *item)
+static Py_ssize_t
+tuple_index(PyObject *self, Py_ssize_t len, PyObject *item)
 {
-    for (int i = 0; i < len; i++) {
+    for (Py_ssize_t i = 0; i < len; i++) {
         if (PyTuple_GET_ITEM(self, i) == item) {
             return i;
         }
@@ -1939,28 +1939,28 @@ static PyObject *
 ga_getitem(PyObject *self, PyObject *item)
 {
     gaobject *alias = (gaobject *)self;
-    int nparams = PyTuple_GET_SIZE(alias->parameters);
+    Py_ssize_t nparams = PyTuple_GET_SIZE(alias->parameters);
     if (nparams == 0) {
         return PyErr_Format(PyExc_TypeError,
                             "There are no type variables left in %R",
                             self);
     }
     int is_tuple = PyTuple_Check(item);
-    int nitem = is_tuple ? PyTuple_GET_SIZE(item) : 1;
+    Py_ssize_t nitem = is_tuple ? PyTuple_GET_SIZE(item) : 1;
     if (nitem != nparams) {
         return PyErr_Format(PyExc_TypeError,
                             "Too %s arguments for %R",
                             nitem > nparams ? "many" : "few",
                             self);
     }
-    int nargs = PyTuple_GET_SIZE(alias->args);
+    Py_ssize_t nargs = PyTuple_GET_SIZE(alias->args);
     PyObject *newargs = PyTuple_New(nargs);
     if (newargs == NULL)
         return NULL;
-    for (int iarg = 0; iarg < nargs; iarg++) {
+    for (Py_ssize_t iarg = 0; iarg < nargs; iarg++) {
         PyObject *arg = PyTuple_GET_ITEM(alias->args, iarg);
         if (is_typevar(arg)) {
-            int iparam = tuple_index(alias->parameters, nparams, arg);
+            Py_ssize_t iparam = tuple_index(alias->parameters, nparams, arg);
             assert(iparam >= 0);
             if (is_tuple) {
                 arg = PyTuple_GET_ITEM(item, iparam);
@@ -2133,12 +2133,12 @@ PyTypeObject Py_GenericAliasType = {
 static PyObject *
 make_parameters(PyObject *args)
 {
-    int len = PyTuple_GET_SIZE(args);
+    Py_ssize_t len = PyTuple_GET_SIZE(args);
     PyObject *parameters = PyTuple_New(len);
     if (parameters == NULL)
         return NULL;
-    int iparam = 0;
-    for (int iarg = 0; iarg < len; iarg++) {
+    Py_ssize_t iparam = 0;
+    for (Py_ssize_t iarg = 0; iarg < len; iarg++) {
         PyObject *t = PyTuple_GET_ITEM(args, iarg);
         if (is_typevar(t)) {
             if (tuple_index(parameters, iparam, t) < 0) {
