@@ -33,7 +33,7 @@ class Calltip:
         # See __init__ for usage
         return calltip_w.CalltipWindow(self.text)
 
-    def _remove_calltip_window(self, event=None):
+    def remove_calltip_window(self, event=None):
         if self.active_calltip:
             self.active_calltip.hidetip()
             self.active_calltip = None
@@ -55,7 +55,7 @@ class Calltip:
             self.open_calltip(False)
 
     def open_calltip(self, evalfuncs):
-        self._remove_calltip_window()
+        self.remove_calltip_window()
 
         hp = HyperParser(self.editwin, "insert")
         sur_paren = hp.get_surrounding_brackets('(')
