@@ -4676,5 +4676,11 @@ def foo():
         self.check(b, a)
 
     def test_unchanged(self):
-        s = """from collections import Counter"""
+        s = 'from collections import Counter'
+        self.unchanged(s)
+
+        s = 'from collection.abc import Callable, Iterable'
+        self.unchanged(s)
+
+        s = 'from collection import *'
         self.unchanged(s)
