@@ -1,0 +1,1 @@
+Avoid unsafe load of ``api-ms-win-core-path-l1-1-0.dll`` at startup on Windows 7.
