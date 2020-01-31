@@ -1911,34 +1911,71 @@ error:
     return NULL;
 }
 
+// isinstance(obj, TypeVar) without importing typing.py.  If someone
+// names some other class TypeVar, it will be mistaken for a TypeVar.
+// Maybe that's a feature; or maybe we'll have to see if
+// sys.modules['typing'] exists and look for its 'TypeVar' attribute
+// (which is roughly what dataclasses.py uses to recognize ClassVar).
+static int
+is_typevar(PyObject *obj)
+{
+    PyTypeObject *type = Py_TYPE(obj);
+    return strcmp(type->tp_name, "TypeVar") == 0;
+}
+
+// Index of item in self[:len], or -1 if not found (self is a tuple)
+static int
+tuple_index(PyObject *self, int len, PyObject *item)
+{
+    for (int i = 0; i < len; i++) {
+        if (PyTuple_GET_ITEM(self, i) == item) {
+            return i;
+        }
+    }
+    return -1;
+}
+
 static PyObject *
 ga_getitem(PyObject *self, PyObject *item)
 {
-    PyObject *parameters = PyObject_GetAttrString(self, "__parameters__");
-    if (parameters == NULL) {
-        PyErr_Clear();
+    gaobject *alias = (gaobject *)self;
+    int nparams = PyTuple_GET_SIZE(alias->parameters);
+    if (nparams == 0) {
+        return PyErr_Format(PyExc_TypeError,
+                            "There are no type variables left in %R",
+                            self);
     }
-    else if (!PyTuple_Check(parameters)) {
-        Py_DECREF(parameters);
+    int is_tuple = PyTuple_Check(item);
+    int nitem = is_tuple ? PyTuple_GET_SIZE(item) : 1;
+    if (nitem != nparams) {
+        return PyErr_Format(PyExc_TypeError,
+                            "Too %s arguments for %R",
+                            nitem > nparams ? "many" : "few",
+                            self);
     }
-    else {
-        int nparams = PyTuple_Size(parameters);
-        Py_DECREF(parameters);
-        if (nparams < 0)
-            return NULL;
-        int nitems = PyTuple_Check(item) ? PyTuple_Size(item) : 1;
-        if (nitems < 0)
-            return NULL;
-        if (nitems != nparams) {
-            return PyErr_Format(PyExc_TypeError, "Incorrect parameter count");
+    int nargs = PyTuple_GET_SIZE(alias->args);
+    PyObject *newargs = PyTuple_New(nargs);
+    if (newargs == NULL)
+        return NULL;
+    for (int iarg = 0; iarg < nargs; iarg++) {
+        PyObject *arg = PyTuple_GET_ITEM(alias->args, iarg);
+        if (is_typevar(arg)) {
+            int iparam = tuple_index(alias->parameters, nparams, arg);
+            assert(iparam >= 0);
+            if (is_tuple) {
+                arg = PyTuple_GET_ITEM(item, iparam);
+            }
+            else {
+                assert(iparam == 0);
+                arg = item;
+            }
         }
+        Py_INCREF(arg);
+        PyTuple_SET_ITEM(newargs, iarg, arg);
     }
-    if (Py_TYPE(self) == &Py_GenericAliasType) {
-        gaobject *alias = (gaobject *)self;
-        // TODO: merge alias->args and items
-        return Py_GenericAlias(alias->origin, item);
-    }
-    return PyObject_GetItem((PyObject *)Py_TYPE(self), item);
+    PyObject *res = Py_GenericAlias(alias->origin, newargs);
+    Py_DECREF(newargs);
+    return res;
 }
 
 static PyMappingMethods ga_as_mapping = {
@@ -2037,30 +2074,6 @@ PyTypeObject Py_GenericAliasType = {
     .tp_new = ga_new,
     .tp_free = PyObject_GC_Del,
 };
-
-// isinstance(obj, TypeVar) without importing typing.py.  If someone
-// names some other class TypeVar, it will be mistaken for a TypeVar.
-// Maybe that's a feature; or maybe we'll have to see if
-// sys.modules['typing'] exists and look for its 'TypeVar' attribute
-// (which is roughly what dataclasses.py uses to recognize ClassVar).
-static int
-is_typevar(PyObject *obj)
-{
-    PyTypeObject *type = Py_TYPE(obj);
-    return strcmp(type->tp_name, "TypeVar") == 0;
-}
-
-// Index of item in self[:len], or -1 if not found (self is a tuple)
-static int
-tuple_index(PyObject *self, int len, PyObject *item)
-{
-    for (int i = 0; i < len; i++) {
-        if (PyTuple_GET_ITEM(self, i) == item) {
-            return i;
-        }
-    }
-    return -1;
-}
 
 // tuple(t for t in args if isinstance(t, TypeVar))
 static PyObject *
