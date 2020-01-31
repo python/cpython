@@ -444,10 +444,13 @@ def enablerlcompleter():
             def write_history():
                 try:
                     readline.write_history_file(history)
-                except (FileNotFoundError, PermissionError, OSError):
-                    # home directory does not exist or is not writable
-                    # https://bugs.python.org/issue19891
-                    pass
+                except OSError as e:
+                    if isinstance(e, (FileNotFoundError, PermissionError)) or e.errno == -1:
+                        # home directory does not exist or is not writable
+                        # https://bugs.python.org/issue19891
+                        pass
+                    else:
+                        raise
 
             atexit.register(write_history)
 
