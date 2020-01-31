@@ -445,10 +445,12 @@ def enablerlcompleter():
                 try:
                     readline.write_history_file(history)
                 except OSError as e:
-                    if isinstance(e, (FileNotFoundError, PermissionError)) or e.errno == -1:
+                    if isinstance(e, (FileNotFoundError, PermissionError)):
                         # home directory does not exist or is not writable
                         # https://bugs.python.org/issue19891
                         pass
+                    elif isinstance(e, (OSError)) and e.errno == -1:
+                        print("Warning: unable to write into .python_history")
                     else:
                         raise
 
