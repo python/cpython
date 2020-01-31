@@ -8,6 +8,7 @@ Unit tests are in test_collections.
 
 from abc import ABCMeta, abstractmethod
 import sys
+from types import GenericAlias
 
 __all__ = ["Awaitable", "Coroutine",
            "AsyncIterable", "AsyncIterator", "AsyncGenerator",
@@ -110,6 +111,10 @@ class Awaitable(metaclass=ABCMeta):
             return _check_methods(C, "__await__")
         return NotImplemented
 
+    def __class_getitem__(cls, item):
+        """Internal: PEP 585."""
+        return GenericAlias(cls, item)
+
 
 class Coroutine(Awaitable):
 
@@ -168,6 +173,10 @@ class AsyncIterable(metaclass=ABCMeta):
         if cls is AsyncIterable:
             return _check_methods(C, "__aiter__")
         return NotImplemented
+
+    def __class_getitem__(cls, item):
+        """Internal: PEP 585."""
+        return GenericAlias(cls, item)
 
 
 class AsyncIterator(AsyncIterable):
@@ -255,6 +264,10 @@ class Iterable(metaclass=ABCMeta):
             return _check_methods(C, "__iter__")
         return NotImplemented
 
+    def __class_getitem__(cls, item):
+        """Internal: PEP 585."""
+        return GenericAlias(cls, item)
+
 
 class Iterator(Iterable):
 
@@ -273,6 +286,7 @@ class Iterator(Iterable):
         if cls is Iterator:
             return _check_methods(C, '__iter__', '__next__')
         return NotImplemented
+
 
 Iterator.register(bytes_iterator)
 Iterator.register(bytearray_iterator)
@@ -353,6 +367,7 @@ class Generator(Iterator):
                                   'send', 'throw', 'close')
         return NotImplemented
 
+
 Generator.register(generator)
 
 
@@ -385,6 +400,11 @@ class Container(metaclass=ABCMeta):
             return _check_methods(C, "__contains__")
         return NotImplemented
 
+    def __class_getitem__(cls, item):
+        """Internal: PEP 585."""
+        return GenericAlias(cls, item)
+
+
 class Collection(Sized, Iterable, Container):
 
     __slots__ = ()
@@ -394,6 +414,7 @@ class Collection(Sized, Iterable, Container):
         if cls is Collection:
             return _check_methods(C,  "__len__", "__iter__", "__contains__")
         return NotImplemented
+
 
 class Callable(metaclass=ABCMeta):
 
@@ -408,6 +429,10 @@ class Callable(metaclass=ABCMeta):
         if cls is Callable:
             return _check_methods(C, "__call__")
         return NotImplemented
+
+    def __class_getitem__(cls, item):
+        """Internal: PEP 585."""
+        return GenericAlias(cls, item)
 
 
 ### SETS ###
@@ -550,6 +575,7 @@ class Set(Collection):
             h = 590923713
         return h
 
+
 Set.register(frozenset)
 
 
@@ -632,6 +658,7 @@ class MutableSet(Set):
                 self.discard(value)
         return self
 
+
 MutableSet.register(set)
 
 
@@ -688,6 +715,7 @@ class Mapping(Collection):
 
     __reversed__ = None
 
+
 Mapping.register(mappingproxy)
 
 
@@ -704,6 +732,10 @@ class MappingView(Sized):
     def __repr__(self):
         return '{0.__class__.__name__}({0._mapping!r})'.format(self)
 
+    def __class_getitem__(cls, item):
+        """Internal: PEP 585."""
+        return GenericAlias(cls, item)
+
 
 class KeysView(MappingView, Set):
 
@@ -718,6 +750,7 @@ class KeysView(MappingView, Set):
 
     def __iter__(self):
         yield from self._mapping
+
 
 KeysView.register(dict_keys)
 
@@ -743,6 +776,7 @@ class ItemsView(MappingView, Set):
         for key in self._mapping:
             yield (key, self._mapping[key])
 
+
 ItemsView.register(dict_items)
 
 
@@ -760,6 +794,7 @@ class ValuesView(MappingView, Collection):
     def __iter__(self):
         for key in self._mapping:
             yield self._mapping[key]
+
 
 ValuesView.register(dict_values)
 
@@ -847,6 +882,7 @@ class MutableMapping(Mapping):
             self[key] = default
         return default
 
+
 MutableMapping.register(dict)
 
 
@@ -913,6 +949,7 @@ class Sequence(Reversible, Collection):
     def count(self, value):
         'S.count(value) -> integer -- return number of occurrences of value'
         return sum(1 for v in self if v is value or v == value)
+
 
 Sequence.register(tuple)
 Sequence.register(str)
@@ -999,6 +1036,7 @@ class MutableSequence(Sequence):
     def __iadd__(self, values):
         self.extend(values)
         return self
+
 
 MutableSequence.register(list)
 MutableSequence.register(bytearray)  # Multiply inheriting, see ByteString

@@ -946,7 +946,7 @@ _TYPING_INTERNALS = ['__parameters__', '__orig_bases__',  '__orig_class__',
 
 _SPECIAL_NAMES = ['__abstractmethods__', '__annotations__', '__dict__', '__doc__',
                   '__init__', '__module__', '__new__', '__slots__',
-                  '__subclasshook__', '__weakref__']
+                  '__subclasshook__', '__weakref__', '__class_getitem__']
 
 # These special attributes will be not collected as protocol members.
 EXCLUDED_ATTRIBUTES = _TYPING_INTERNALS + _SPECIAL_NAMES + ['_MutableMapping__marker']

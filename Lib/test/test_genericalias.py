@@ -1,20 +1,36 @@
 """Tests for C-implemented GenericAlias."""
 
 import unittest
-from collections import defaultdict, deque
+from collections import (
+    defaultdict, deque, OrderedDict, Counter, UserDict, UserList
+)
+from collections.abc import *
 from contextlib import AbstractContextManager, AbstractAsyncContextManager
 from io import IOBase
 from re import Pattern, Match
+
 
 class BaseTest(unittest.TestCase):
     """Test basics."""
 
     def test_subscriptable(self):
         for t in (tuple, list, dict, set, frozenset,
-                  defaultdict, deque,
+                  defaultdict, deque, 
+                  OrderedDict, Counter, UserDict, UserList,
                   IOBase,
                   Pattern, Match,
                   AbstractContextManager, AbstractAsyncContextManager,
+                  Awaitable, Coroutine,
+                  AsyncIterable, AsyncIterator,
+                  AsyncGenerator, Generator,
+                  Iterable, Iterator,
+                  Reversible,
+                  Container, Collection,
+                  Callable,
+                  Set, MutableSet,
+                  Mapping, MutableMapping, MappingView,
+                  KeysView, ItemsView, ValuesView,
+                  Sequence, MutableSequence,
                   ):
             tname = t.__name__
             with self.subTest(f"Testing {tname}"):
@@ -24,7 +40,7 @@ class BaseTest(unittest.TestCase):
                 self.assertEqual(alias.__parameters__, ())
 
     def test_unsubscriptable(self):
-        for t in int, str, float:
+        for t in int, str, float, Sized, Hashable:
             tname = t.__name__
             with self.subTest(f"Testing {tname}"):
                 with self.assertRaises(TypeError):
