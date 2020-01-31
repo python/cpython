@@ -444,18 +444,10 @@ def enablerlcompleter():
             def write_history():
                 try:
                     readline.write_history_file(history)
-                except (FileNotFoundError, PermissionError):
+                except (FileNotFoundError, PermissionError, OSError):
                     # home directory does not exist or is not writable
                     # https://bugs.python.org/issue19891
                     pass
-                except OSError:
-                    if not os.access(history, os.W_OK):
-                        print("Permission error!, unable to write .python_history")
-                        if sys.platform == "linux":
-                            chattrmsg = "Try running 'chattr -i " + history + "'"
-                            print(chattrmsg)
-                        else:
-                            pass
 
             atexit.register(write_history)
 
