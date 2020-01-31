@@ -173,7 +173,6 @@ class AnnotationsFutureTestCase(unittest.TestCase):
         eq('not not great')
         eq('~great')
         eq('+value')
-        eq('++value')
         eq('-1')
         eq('~int and not v1 ^ 123 + v2 | True')
         eq('a + (not b)')

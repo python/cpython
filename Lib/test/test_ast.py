@@ -902,7 +902,7 @@ Module(
         self.assertEqual(ast.literal_eval('+3.25'), 3.25)
         self.assertEqual(ast.literal_eval('-3.25'), -3.25)
         self.assertEqual(repr(ast.literal_eval('-0.0')), '-0.0')
-        self.assertRaises(ValueError, ast.literal_eval, '++6')
+        self.assertRaises(SyntaxError, ast.literal_eval, '++6')
         self.assertRaises(ValueError, ast.literal_eval, '+True')
         self.assertRaises(ValueError, ast.literal_eval, '2+3')
 

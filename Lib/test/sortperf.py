@@ -118,7 +118,7 @@ def tabulate(r):
             L = L * (n // 4)
             # Force the elements to be distinct objects, else timings can be
             # artificially low.
-            L = list(map(lambda x: --x, L))
+            L = list(map(lambda x: x, L))
         doit(L) # ~sort
         del L
 
