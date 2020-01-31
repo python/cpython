@@ -161,6 +161,17 @@ class BaseTest(unittest.TestCase):
         self.assertNotEqual(list, list[int])
         self.assertNotEqual(list[int], list)
 
+    def test_isinstance(self):
+        self.assertTrue(isinstance([], list))
+        with self.assertRaises(TypeError):
+            isinstance([], list[str])
+
+    def test_issubclass(self):
+        class L(list): ...
+        self.assertTrue(issubclass(L, list))
+        with self.assertRaises(TypeError):
+            issubclass(L, list[str])
+
 
 if __name__ == "__main__":
     unittest.main()

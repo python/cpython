@@ -2061,8 +2061,26 @@ ga_mro_entries(PyObject *self, PyObject *args)
     return PyTuple_Pack(1, alias->origin);
 }
 
+static PyObject *
+ga_instancecheck(PyObject *self, PyObject *Py_UNUSED(ignored))
+{
+    return PyErr_Format(PyExc_TypeError,
+                        "TypeError: Subscripted generics cannot be used with class and instance checks",
+                        self);
+}
+
+static PyObject *
+ga_subclasscheck(PyObject *self, PyObject *Py_UNUSED(ignored))
+{
+    return PyErr_Format(PyExc_TypeError,
+                        "TypeError: Subscripted generics cannot be used with class and instance checks",
+                        self);
+}
+
 static PyMethodDef ga_methods[] = {
     {"__mro_entries__", ga_mro_entries, METH_O},
+    {"__instancecheck__", ga_instancecheck, METH_O},
+    {"__subclasscheck__", ga_subclasscheck, METH_O},
     {0}
 };
 
