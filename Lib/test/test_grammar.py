@@ -1436,7 +1436,11 @@ class GrammarTests(unittest.TestCase):
         x = -1
         x = ~1
         x = ~1 ^ 1 & 1 | 1 & 1 ^ -1
-        x = -1*1/1 + 1*1 - ---1*1
+        check_syntax_error(self, "x = ++1")
+        check_syntax_error(self, "x = 1++")
+        check_syntax_error(self, "x = --1")
+        check_syntax_error(self, "x = 1--")
+        check_syntax_error(self, "x = -1*1/1 + 1*1 - ---1*1")
 
     def test_selectors(self):
         ### trailer: '(' [testlist] ')' | '[' subscript ']' | '.' NAME
