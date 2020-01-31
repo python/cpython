@@ -122,23 +122,23 @@ _ssl__SSLSocket_cipher(PySSLSocket *self, PyObject *Py_UNUSED(ignored))
     return _ssl__SSLSocket_cipher_impl(self);
 }
 
-PyDoc_STRVAR(_ssl__SSLSocket_get_peer_cert_chain__doc__,
-"get_peer_cert_chain($self, /, der=False)\n"
+PyDoc_STRVAR(_ssl__SSLSocket_get_unverified_chain__doc__,
+"get_unverified_chain($self, /, der=False)\n"
 "--\n"
 "\n");
 
-#define _SSL__SSLSOCKET_GET_PEER_CERT_CHAIN_METHODDEF    \
-    {"get_peer_cert_chain", (PyCFunction)(void(*)(void))_ssl__SSLSocket_get_peer_cert_chain, METH_FASTCALL|METH_KEYWORDS, _ssl__SSLSocket_get_peer_cert_chain__doc__},
+#define _SSL__SSLSOCKET_GET_UNVERIFIED_CHAIN_METHODDEF    \
+    {"get_unverified_chain", (PyCFunction)(void(*)(void))_ssl__SSLSocket_get_unverified_chain, METH_FASTCALL|METH_KEYWORDS, _ssl__SSLSocket_get_unverified_chain__doc__},
 
 static PyObject *
-_ssl__SSLSocket_get_peer_cert_chain_impl(PySSLSocket *self, int binary_mode);
+_ssl__SSLSocket_get_unverified_chain_impl(PySSLSocket *self, int binary_mode);
 
 static PyObject *
-_ssl__SSLSocket_get_peer_cert_chain(PySSLSocket *self, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+_ssl__SSLSocket_get_unverified_chain(PySSLSocket *self, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"der", NULL};
-    static _PyArg_Parser _parser = {NULL, _keywords, "get_peer_cert_chain", 0};
+    static _PyArg_Parser _parser = {NULL, _keywords, "get_unverified_chain", 0};
     PyObject *argsbuf[1];
     Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 0;
     int binary_mode = 0;
@@ -155,7 +155,7 @@ _ssl__SSLSocket_get_peer_cert_chain(PySSLSocket *self, PyObject *const *args, Py
         goto exit;
     }
 skip_optional_pos:
-    return_value = _ssl__SSLSocket_get_peer_cert_chain_impl(self, binary_mode);
+    return_value = _ssl__SSLSocket_get_unverified_chain_impl(self, binary_mode);
 
 exit:
     return return_value;
@@ -1533,4 +1533,4 @@ exit:
 #ifndef _SSL_ENUM_CRLS_METHODDEF
     #define _SSL_ENUM_CRLS_METHODDEF
 #endif /* !defined(_SSL_ENUM_CRLS_METHODDEF) */
-/*[clinic end generated code: output=db4f0808302f242f input=a9049054013a1b77]*/
+/*[clinic end generated code: output=3f880c7260e778fd input=a9049054013a1b77]*/

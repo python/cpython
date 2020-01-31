@@ -1259,7 +1259,7 @@ SSL sockets also have the following additional methods and attributes:
    .. versionchanged:: 3.9
       IPv6 address strings no longer have a trailing new line.
 
-.. method:: SSLSocket.get_peer_cert_chain(binary_form=False)
+.. method:: SSLSocket.get_unverified_chain(binary_form=False)
 
    Returns an **unverified** certificate chain for the peer. If no chain is
    provided, returns :const:`None`. Otherwise returns a tuple of dicts

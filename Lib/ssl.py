@@ -905,12 +905,12 @@ class SSLObject:
         """
         return self._sslobj.getpeercert(binary_form)
 
-    def get_peer_cert_chain(self, binary_form=False):
+    def get_unverified_chain(self, binary_form=False):
         """"Returns the certificate chain of the SSL connection as a tuple of
         dicts. It is *not* a verified chain.
 
         Return ``None`` if no chain is provided."""
-        return self._sslobj.get_peer_cert_chain(binary_form)
+        return self._sslobj.get_unverified_chain(binary_form)
 
     if hasattr(_ssl._SSLSocket, 'get_verified_chain'):
         def get_verified_chain(self, binary_form=False):
@@ -1139,10 +1139,10 @@ class SSLSocket(socket):
         return self._sslobj.getpeercert(binary_form)
 
     @_sslcopydoc
-    def get_peer_cert_chain(self, binary_form=False):
+    def get_unverified_chain(self, binary_form=False):
         self._checkClosed()
         self._check_connected()
-        return self._sslobj.get_peer_cert_chain(binary_form)
+        return self._sslobj.get_unverified_chain(binary_form)
 
     if hasattr(_ssl._SSLSocket, 'get_verified_chain'):
         @_sslcopydoc

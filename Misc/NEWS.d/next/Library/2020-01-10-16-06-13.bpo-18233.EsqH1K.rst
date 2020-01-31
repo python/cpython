@@ -1,1 +1,1 @@
-Add :meth:`ssl.SSLSocket.get_peer_cert_chain` and :meth:`ssl.SSLSocket.get_verified_chain` for accessing the certificate chain of SSL connections.
+Add :meth:`ssl.SSLSocket.get_unverified_chain` and :meth:`ssl.SSLSocket.get_verified_chain` for accessing the certificate chain of SSL connections.

@@ -2160,7 +2160,7 @@ class SimpleBackgroundTests(unittest.TestCase):
             self.assertTrue(cert)
         self.assertEqual(len(ctx.get_ca_certs()), 1)
 
-    def test_get_peer_cert_chain(self):
+    def test_get_unverified_chain(self):
         ctx = ssl.SSLContext(ssl.PROTOCOL_SSLv23)
         ctx.verify_mode = ssl.CERT_REQUIRED
         ctx.load_verify_locations(capath=CAPATH)
@@ -2169,8 +2169,8 @@ class SimpleBackgroundTests(unittest.TestCase):
             try:
                 peer_cert = s.getpeercert()
                 peer_cert_bin = s.getpeercert(True)
-                chain_no_validate = s.get_peer_cert_chain()
-                chain_bin_no_validate = s.get_peer_cert_chain(True)
+                chain_no_validate = s.get_unverified_chain()
+                chain_bin_no_validate = s.get_unverified_chain(True)
             finally:
                 self.assertTrue(peer_cert)
                 self.assertTrue(peer_cert_bin)

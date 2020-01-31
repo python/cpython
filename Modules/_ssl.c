@@ -2130,13 +2130,13 @@ chain_to_pyobject(STACK_OF(X509) *peer_chain, int binary_mode)
 }
 
 /*[clinic input]
-_ssl._SSLSocket.get_peer_cert_chain
+_ssl._SSLSocket.get_unverified_chain
     der as binary_mode: bool = False
 [clinic start generated code]*/
 
 static PyObject *
-_ssl__SSLSocket_get_peer_cert_chain_impl(PySSLSocket *self, int binary_mode)
-/*[clinic end generated code: output=2fc1e5dce85798ba input=3dd8f43730febaa9]*/
+_ssl__SSLSocket_get_unverified_chain_impl(PySSLSocket *self, int binary_mode)
+/*[clinic end generated code: output=a84c4e7bb50f3477 input=842931a7d60f135e]*/
 {
     STACK_OF(X509) *peer_chain; /* reference */
 
@@ -3089,7 +3089,7 @@ static PyMethodDef PySSLMethods[] = {
     _SSL__SSLSOCKET_GET_CHANNEL_BINDING_METHODDEF
     _SSL__SSLSOCKET_CIPHER_METHODDEF
     _SSL__SSLSOCKET_SHARED_CIPHERS_METHODDEF
-    _SSL__SSLSOCKET_GET_PEER_CERT_CHAIN_METHODDEF
+    _SSL__SSLSOCKET_GET_UNVERIFIED_CHAIN_METHODDEF
 #ifdef OPENSSL_VERSION_1_1
     _SSL__SSLSOCKET_GET_VERIFIED_CHAIN_METHODDEF
 #endif
