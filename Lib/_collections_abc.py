@@ -8,7 +8,8 @@ Unit tests are in test_collections.
 
 from abc import ABCMeta, abstractmethod
 import sys
-from types import GenericAlias
+
+GenericAlias = type(list[int])
 
 __all__ = ["Awaitable", "Coroutine",
            "AsyncIterable", "AsyncIterator", "AsyncGenerator",

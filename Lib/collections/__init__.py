@@ -25,7 +25,6 @@ import heapq as _heapq
 from _weakref import proxy as _proxy
 from itertools import repeat as _repeat, chain as _chain, starmap as _starmap
 from reprlib import recursive_repr as _recursive_repr
-from types import GenericAlias as _GenericAlias
 
 try:
     from _collections import deque
@@ -38,6 +37,8 @@ try:
     from _collections import defaultdict
 except ImportError:
     pass
+
+_GenericAlias = type(list[int])
 
 
 ################################################################################
