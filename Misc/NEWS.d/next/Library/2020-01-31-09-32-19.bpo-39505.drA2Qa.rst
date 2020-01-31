@@ -1,0 +1,5 @@
+When windows users use "python -m venv ENV_DIR", a python virtual environment will be created in ENV_DIR.
+Powershell users use ENV_DIR\Scripts\Activate.ps1 to activate virtual environment.
+In powershell, a environment variable, "$env:VIRTUAL_ENV", is set and used by many tools to determine that there is an activated venv. In bash, it is "$VIRTUAL_ENV"
+In python3.8 and python3.9, $env:VIRTUAL_ENV has a redundant '/' in the end.
+This '/' matters because many tools use this environment variable, for example, oh-my-posh will take "test_venv/" as virtual environment name rather than "test_venv"(Although venv's activate.ps1 itself's default prompt is correct). And from the perspective of semantics and consistency with other platform, the '/' is redundant.
