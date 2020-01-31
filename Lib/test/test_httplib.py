@@ -1440,6 +1440,8 @@ class OfflineTest(TestCase):
             'INSUFFICIENT_STORAGE',
             'NOT_EXTENDED',
             'NETWORK_AUTHENTICATION_REQUIRED',
+            'EARLY_HINTS',
+            'TOO_EARLY'
         ]
         for const in expected:
             with self.subTest(constant=const):
