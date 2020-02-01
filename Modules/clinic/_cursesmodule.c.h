@@ -3040,10 +3040,7 @@ exit:
     return return_value;
 }
 
-#if !defined(_AIX) || defined(NCURSES_VERSION)
-/* bpo-39020 - stock AIX curses does not include ESCDELAY
- * a third-party addtion of (gnu) ncurses might
- */
+#if (!defined(_AIX) || defined(NCURSES_VERSION))
 PyDoc_STRVAR(_curses_get_escdelay__doc__,
 "get_escdelay($module, /)\n"
 "--\n"
@@ -3165,7 +3162,7 @@ _curses_set_tabsize(PyObject *module, PyObject *arg)
 exit:
     return return_value;
 }
-#endif 
+#endif /* (!defined(_AIX) || defined(NCURSES_VERSION)) */
 
 PyDoc_STRVAR(_curses_intrflush__doc__,
 "intrflush($module, flag, /)\n"

@@ -264,6 +264,7 @@ class TestCurses(unittest.TestCase):
         if hasattr(curses, 'set_escdalay'):
             curses.set_escdelay(25)
             self.assertEqual(curses.get_escdelay(), 25)
+        if hasattr(curses, 'set_tabsize'):
             curses.set_tabsize(4)
             self.assertEqual(curses.get_tabsize(), 4)
         if hasattr(curses, 'setsyx'):

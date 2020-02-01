@@ -3255,10 +3255,7 @@ _curses_setupterm_impl(PyObject *module, const char *term, int fd)
     Py_RETURN_NONE;
 }
 
-#if !defined(_AIX) || defined(NCURSES_VERSION)
-/* bpo-39020 - stock AIX curses does not include ESCDELAY
- * a third-party addtion of (gnu) ncurses might
- */
+#if (!defined(_AIX) || (defined(NCURSES_VERSION))
 /*[clinic input]
 _curses.get_escdelay
 
@@ -3338,7 +3335,7 @@ _curses_set_tabsize_impl(PyObject *module, int size)
 
     return PyCursesCheckERR(set_tabsize(size), "set_tabsize");
 }
-#endif
+#endif/* (!defined(_AIX) || (defined(NCURSES_VERSION)) */
 
 /*[clinic input]
 _curses.intrflush
