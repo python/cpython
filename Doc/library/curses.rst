@@ -515,10 +515,8 @@ The module :mod:`curses` defines the following functions:
 
    Retrieves the value set by :func:`set_escdelay`.
 
-   Availability: if the ncurses library is used and on NetBSD.
-
+   .. availability:: not available with stock AIX.
    .. versionadded:: 3.9
-   .. availability:: not available with stock AIX
 
 
 .. function:: set_escdelay(ms)
@@ -527,16 +525,16 @@ The module :mod:`curses` defines the following functions:
    to distinguish between an individual escape character entered on the
    keyboard from escape sequences sent by cursor and function keys.
 
+   .. availability:: not available with stock AIX.
    .. versionadded:: 3.9
-   .. availability:: not available with stock AIX
 
 
 .. function:: get_tabsize()
 
    Retrieves the value set by :func:`set_tabsize`.
 
+   .. availability:: not available with stock AIX.
    .. versionadded:: 3.9
-   .. availability:: not available with stock AIX
 
 
 .. function:: set_tabsize(size)
@@ -544,8 +542,8 @@ The module :mod:`curses` defines the following functions:
    Sets the number of columns used by the curses library when converting a tab
    character to spaces as it adds the tab to a window.
 
+   .. availability:: not available with stock AIX.
    .. versionadded:: 3.9
-   .. availability:: not available with stock AIX
 
 
 .. function:: setsyx(y, x)
