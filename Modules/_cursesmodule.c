@@ -3255,6 +3255,7 @@ _curses_setupterm_impl(PyObject *module, const char *term, int fd)
     Py_RETURN_NONE;
 }
 
+#if !defined(_AIX) || defined(NCURSES_VERSION)
 /*[clinic input]
 _curses.get_escdelay
 
@@ -3271,6 +3272,8 @@ _curses_get_escdelay_impl(PyObject *module)
 {
     return PyLong_FromLong(ESCDELAY);
 }
+#endif /* !defined(_AIX) || defined(NCURSES_VERSION) */
+
 /*[clinic input]
 _curses.set_escdelay
     ms: int

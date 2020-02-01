@@ -262,7 +262,8 @@ class TestCurses(unittest.TestCase):
         curses.qiflush()
         curses.raw() ; curses.raw(1)
         curses.set_escdelay(25)
-        self.assertEqual(curses.get_escdelay(), 25)
+        if hasattr(curses, 'get_escdelay'):
+            self.assertEqual(curses.get_escdelay(), 25)
         curses.set_tabsize(4)
         self.assertEqual(curses.get_tabsize(), 4)
         if hasattr(curses, 'setsyx'):

@@ -515,7 +515,10 @@ The module :mod:`curses` defines the following functions:
 
    Retrieves the value set by :func:`set_escdelay`.
 
+   Availability: if the ncurses library is used and on NetBSD.
+
    .. versionadded:: 3.9
+
 
 .. function:: set_escdelay(ms)
 

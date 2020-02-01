@@ -3040,6 +3040,8 @@ exit:
     return return_value;
 }
 
+#if (!defined(_AIX) || defined(NCURSES_VERSION))
+
 PyDoc_STRVAR(_curses_get_escdelay__doc__,
 "get_escdelay($module, /)\n"
 "--\n"
@@ -3061,6 +3063,8 @@ _curses_get_escdelay(PyObject *module, PyObject *Py_UNUSED(ignored))
 {
     return _curses_get_escdelay_impl(module);
 }
+
+#endif /* (!defined(_AIX) || defined(NCURSES_VERSION)) */
 
 PyDoc_STRVAR(_curses_set_escdelay__doc__,
 "set_escdelay($module, ms, /)\n"
@@ -4638,6 +4642,10 @@ _curses_use_default_colors(PyObject *module, PyObject *Py_UNUSED(ignored))
     #define _CURSES_HAS_KEY_METHODDEF
 #endif /* !defined(_CURSES_HAS_KEY_METHODDEF) */
 
+#ifndef _CURSES_GET_ESCDELAY_METHODDEF
+    #define _CURSES_GET_ESCDELAY_METHODDEF
+#endif /* !defined(_CURSES_GET_ESCDELAY_METHODDEF) */
+
 #ifndef _CURSES_IS_TERM_RESIZED_METHODDEF
     #define _CURSES_IS_TERM_RESIZED_METHODDEF
 #endif /* !defined(_CURSES_IS_TERM_RESIZED_METHODDEF) */
@@ -4681,4 +4689,4 @@ _curses_use_default_colors(PyObject *module, PyObject *Py_UNUSED(ignored))
 #ifndef _CURSES_USE_DEFAULT_COLORS_METHODDEF
     #define _CURSES_USE_DEFAULT_COLORS_METHODDEF
 #endif /* !defined(_CURSES_USE_DEFAULT_COLORS_METHODDEF) */
-/*[clinic end generated code: output=0ca4f95323c5d585 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=581bd60f831b9fa2 input=a9049054013a1b77]*/

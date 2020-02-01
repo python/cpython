@@ -1,0 +1,2 @@
+Fixed building the :mod:`_curses` module on AIX. :func:`curses.get_escdelay`
+is not available on AIX if use native curses library.
