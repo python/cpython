@@ -1048,6 +1048,10 @@ All of the following functions must be called after :c:func:`Py_Initialize`.
    Reset all information in a thread state object.  The global interpreter lock
    must be held.
 
+   .. versionchanged:: 3.9
+      This function now calls the :c:member:`PyThreadState.on_delete` callback.
+      Previously, that happened in :c:func:`PyThreadState_Delete`.
+
 
 .. c:function:: void PyThreadState_Delete(PyThreadState *tstate)
 
