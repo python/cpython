@@ -681,8 +681,8 @@ class ProcessPoolExecutor(_base.Executor):
 
     def shutdown(self, wait=True, *, cancel_futures=False):
         with self._shutdown_lock:
-            self._shutdown_thread = True
             self._cancel_pending_futures = cancel_futures
+            self._shutdown_thread = True
 
         if self._queue_management_thread:
             # Wake up queue management thread
