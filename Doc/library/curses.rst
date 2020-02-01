@@ -520,6 +520,7 @@ The module :mod:`curses` defines the following functions:
    .. versionadded:: 3.9
    .. availability:: not available with stock AIX
 
+
 .. function:: set_escdelay(ms)
 
    Sets the number of milliseconds to wait after reading an escape character,
@@ -529,12 +530,14 @@ The module :mod:`curses` defines the following functions:
    .. versionadded:: 3.9
    .. availability:: not available with stock AIX
 
+
 .. function:: get_tabsize()
 
    Retrieves the value set by :func:`set_tabsize`.
 
    .. versionadded:: 3.9
    .. availability:: not available with stock AIX
+
 
 .. function:: set_tabsize(size)
 
@@ -543,6 +546,7 @@ The module :mod:`curses` defines the following functions:
 
    .. versionadded:: 3.9
    .. availability:: not available with stock AIX
+
 
 .. function:: setsyx(y, x)
 
