@@ -101,7 +101,7 @@ class HTTPStatus(IntEnum):
         'Cannot satisfy request range')
     EXPECTATION_FAILED = (417, 'Expectation Failed',
         'Expect condition could not be satisfied')
-    IM_A_TEAPOINT = (418, 'I\'m a Teapot',
+    IM_A_TEAPOT = (418, 'I\'m a Teapot',
         'Server refuses to brew coffee because it is a teapot.')
     MISDIRECTED_REQUEST = (421, 'Misdirected Request',
         'Server is not able to produce a response')
