@@ -786,17 +786,9 @@ PyObject* pysqlite_cursor_fetchmany(pysqlite_Cursor* self, PyObject* args, PyObj
         return NULL;
     }
 
-    /* just make sure we enter the loop */
-    row = Py_None;
-
-    while (row) {
-        row = pysqlite_cursor_iternext(self);
-        if (row) {
-            PyList_Append(list, row);
-            Py_DECREF(row);
-        } else {
-            break;
-        }
+    while ((row = pysqlite_cursor_iternext(self))) {
+        PyList_Append(list, row);
+        Py_XDECREF(row);
 
         if (++counter == maxrows) {
             break;
@@ -821,15 +813,9 @@ PyObject* pysqlite_cursor_fetchall(pysqlite_Cursor* self, PyObject* args)
         return NULL;
     }
 
-    /* just make sure we enter the loop */
-    row = (PyObject*)Py_None;
-
-    while (row) {
-        row = pysqlite_cursor_iternext(self);
-        if (row) {
-            PyList_Append(list, row);
-            Py_DECREF(row);
-        }
+    while ((row = pysqlite_cursor_iternext(self))) {
+        PyList_Append(list, row);
+        Py_XDECREF(row);
     }
 
     if (PyErr_Occurred()) {
