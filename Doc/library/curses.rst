@@ -516,6 +516,7 @@ The module :mod:`curses` defines the following functions:
    Retrieves the value set by :func:`set_escdelay`.
 
    .. versionadded:: 3.9
+   .. availability:: not available with stock AIX
 
 .. function:: set_escdelay(ms)
 
@@ -524,12 +525,14 @@ The module :mod:`curses` defines the following functions:
    keyboard from escape sequences sent by cursor and function keys.
 
    .. versionadded:: 3.9
+   .. availability:: not available with stock AIX
 
 .. function:: get_tabsize()
 
    Retrieves the value set by :func:`set_tabsize`.
 
    .. versionadded:: 3.9
+   .. availability:: not available with stock AIX
 
 .. function:: set_tabsize(size)
 
@@ -537,6 +540,7 @@ The module :mod:`curses` defines the following functions:
    character to spaces as it adds the tab to a window.
 
    .. versionadded:: 3.9
+   .. availability:: not available with stock AIX
 
 .. function:: setsyx(y, x)
 

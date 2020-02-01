@@ -3040,6 +3040,10 @@ exit:
     return return_value;
 }
 
+#if !defined(_AIX) || defined(NCURSES_VERSION)
+/* bpo-39020 - stock AIX curses does not include ESCDELAY
+ * a third-party addtion of (gnu) ncurses might
+ */
 PyDoc_STRVAR(_curses_get_escdelay__doc__,
 "get_escdelay($module, /)\n"
 "--\n"
@@ -3161,6 +3165,7 @@ _curses_set_tabsize(PyObject *module, PyObject *arg)
 exit:
     return return_value;
 }
+#endif 
 
 PyDoc_STRVAR(_curses_intrflush__doc__,
 "intrflush($module, flag, /)\n"
@@ -4637,6 +4642,22 @@ _curses_use_default_colors(PyObject *module, PyObject *Py_UNUSED(ignored))
 #ifndef _CURSES_HAS_KEY_METHODDEF
     #define _CURSES_HAS_KEY_METHODDEF
 #endif /* !defined(_CURSES_HAS_KEY_METHODDEF) */
+
+#ifndef _CURSES_GET_ESCDELAY_METHODDEF
+    #define _CURSES_GET_ESCDELAY_METHODDEF
+#endif /* !defined(_CURSES_GET_ESCDELAY_METHODDEF) */
+
+#ifndef _CURSES_SET_ESCDELAY_METHODDEF
+    #define _CURSES_SET_ESCDELAY_METHODDEF
+#endif /* !defined(_CURSES_SET_ESCDELAY_METHODDEF) */
+
+#ifndef _CURSES_GET_TABSIZE_METHODDEF
+    #define _CURSES_GET_TABSIZE_METHODDEF
+#endif /* !defined(_CURSES_GET_TABSIZE_METHODDEF) */
+
+#ifndef _CURSES_SET_TABSIZE_METHODDEF
+    #define _CURSES_SET_TABSIZE_METHODDEF
+#endif /* !defined(_CURSES_SET_TABSIZE_METHODDEF) */
 
 #ifndef _CURSES_IS_TERM_RESIZED_METHODDEF
     #define _CURSES_IS_TERM_RESIZED_METHODDEF
