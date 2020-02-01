@@ -3041,6 +3041,7 @@ exit:
 }
 
 #if (!defined(_AIX) || defined(NCURSES_VERSION))
+
 PyDoc_STRVAR(_curses_get_escdelay__doc__,
 "get_escdelay($module, /)\n"
 "--\n"
@@ -3062,6 +3063,10 @@ _curses_get_escdelay(PyObject *module, PyObject *Py_UNUSED(ignored))
 {
     return _curses_get_escdelay_impl(module);
 }
+
+#endif /* (!defined(_AIX) || defined(NCURSES_VERSION)) */
+
+#if (!defined(_AIX) || defined(NCURSES_VERSION))
 
 PyDoc_STRVAR(_curses_set_escdelay__doc__,
 "set_escdelay($module, ms, /)\n"
@@ -3103,6 +3108,10 @@ exit:
     return return_value;
 }
 
+#endif /* (!defined(_AIX) || defined(NCURSES_VERSION)) */
+
+#if (!defined(_AIX) || defined(NCURSES_VERSION))
+
 PyDoc_STRVAR(_curses_get_tabsize__doc__,
 "get_tabsize($module, /)\n"
 "--\n"
@@ -3123,6 +3132,10 @@ _curses_get_tabsize(PyObject *module, PyObject *Py_UNUSED(ignored))
 {
     return _curses_get_tabsize_impl(module);
 }
+
+#endif /* (!defined(_AIX) || defined(NCURSES_VERSION)) */
+
+#if (!defined(_AIX) || defined(NCURSES_VERSION))
 
 PyDoc_STRVAR(_curses_set_tabsize__doc__,
 "set_tabsize($module, size, /)\n"
@@ -3162,6 +3175,7 @@ _curses_set_tabsize(PyObject *module, PyObject *arg)
 exit:
     return return_value;
 }
+
 #endif /* (!defined(_AIX) || defined(NCURSES_VERSION)) */
 
 PyDoc_STRVAR(_curses_intrflush__doc__,
@@ -4699,4 +4713,4 @@ _curses_use_default_colors(PyObject *module, PyObject *Py_UNUSED(ignored))
 #ifndef _CURSES_USE_DEFAULT_COLORS_METHODDEF
     #define _CURSES_USE_DEFAULT_COLORS_METHODDEF
 #endif /* !defined(_CURSES_USE_DEFAULT_COLORS_METHODDEF) */
-/*[clinic end generated code: output=3c505fbea1c54cec input=a9049054013a1b77]*/
+/*[clinic end generated code: output=b7c7076f2302e456 input=a9049054013a1b77]*/
