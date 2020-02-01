@@ -343,14 +343,14 @@ class ExecutorShutdownTest:
             f.result()
 
     def test_cancel_futures(self):
-        executor = self.executor_type()
+        executor = self.executor_type(max_workers=3)
         fs = [executor.submit(time.sleep, .1) for _ in range(50)]
         executor.shutdown(cancel_futures=True)
         # We can't guarantee the exact number of cancellations, but we can
-        # guarantee that *some* were cancelled. In this case, at least half
-        # should have been cancelled.
+        # guarantee that *some* were cancelled. With setting max_workers to 3,
+        # most of the submitted futures should have been cancelled.
         cancelled = [fut for fut in fs if fut.cancelled()]
-        self.assertTrue(len(cancelled) >= 25, msg=f"{len(cancelled)=}")
+        self.assertTrue(len(cancelled) >= 35, msg=f"{len(cancelled)=}")
 
         # Ensure the other futures were able to finish.
         # Use "not fut.cancelled()" instead of "fut.done()" to include futures
