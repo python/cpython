@@ -4699,4 +4699,4 @@ _curses_use_default_colors(PyObject *module, PyObject *Py_UNUSED(ignored))
 #ifndef _CURSES_USE_DEFAULT_COLORS_METHODDEF
     #define _CURSES_USE_DEFAULT_COLORS_METHODDEF
 #endif /* !defined(_CURSES_USE_DEFAULT_COLORS_METHODDEF) */
-/*[clinic end generated code: output=0ca4f95323c5d585 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=3c505fbea1c54cec input=a9049054013a1b77]*/
