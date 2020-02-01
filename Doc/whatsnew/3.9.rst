@@ -470,6 +470,11 @@ Removed
   :exc:`DeprecationWarning` since Python 3.8.
   (Contributed by Inada Naoki in :issue:`39377`)
 
+* ``with (await asyncio.lock):`` and ``with (yield from asyncio.lock):`` statements are
+  not longer supported, use ``async with lock`` instead.  The same is correct for
+  ``asyncio.Condition`` and ``asyncio.Semaphore``.
+  (Contributed by Andrew Svetlov in :issue:`34793`.)
+
 
 Porting to Python 3.9
 =====================
