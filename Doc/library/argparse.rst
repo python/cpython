@@ -13,7 +13,7 @@
 
 .. testsetup::
 
-   import argparse 
+   import argparse
 
 --------------
 
