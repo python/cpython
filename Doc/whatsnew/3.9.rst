@@ -146,6 +146,15 @@ that schedules a shutdown for the default executor that waits on the
 Added :class:`asyncio.PidfdChildWatcher`, a Linux-specific child watcher
 implementation that polls process file descriptors. (:issue:`38692`)
 
+concurrent.futures
+------------------
+
+Added a new *cancel_futures* parameter to
+:meth:`concurrent.futures.Executor.shutdown` that cancels all pending futures
+which have not started running, instead of waiting for them to complete before
+shutting down the executor.
+(Contributed by Kyle Stanley in :issue:`39349`.)
+
 curses
 ------
 
