@@ -235,7 +235,7 @@ support.
    (see bpo-12915) - and also in widely-used third-party packages such as
    setuptools.
 
-   It is expected that `name` will be a string in one of the following
+   It is expected that *name* will be a string in one of the following
    formats, where W is shorthand for a valid Python identifier and dot stands
    for a literal period in these pseudo-regexes:
 
@@ -258,7 +258,7 @@ support.
    The function will return an object (which might be a module), or raise one
    of the following exceptions:
 
-   :exc:`ValueError` -- if `name` isn't in a recognised format.
+   :exc:`ValueError` -- if *name* isn't in a recognised format.
 
    :exc:`ImportError` -- if an import failed when it shouldn't have.
 
