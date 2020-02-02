@@ -783,6 +783,10 @@ _elementtree_TreeBuilder_start(TreeBuilderObject *self, PyObject *const *args, P
         goto exit;
     }
     tag = args[0];
+    if (!PyDict_Check(args[1])) {
+        _PyArg_BadArgument("start", "argument 2", "dict", args[1]);
+        goto exit;
+    }
     attrs = args[1];
     return_value = _elementtree_TreeBuilder_start_impl(self, tag, attrs);
 
@@ -912,4 +916,4 @@ skip_optional:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=322e6699e99a5722 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=3ad029ba71f5ae39 input=a9049054013a1b77]*/
