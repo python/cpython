@@ -1,6 +1,4 @@
 import os
-import pickle
-import _pickle
 import sys
 import threading
 
@@ -367,7 +365,7 @@ else:
     class SpawnProcess(process.BaseProcess):
         _start_method = 'spawn'
         @staticmethod
-        def _Popen(process_obj,):
+        def _Popen(process_obj):
             from .popen_spawn_win32 import Popen
             return Popen(process_obj)
 
