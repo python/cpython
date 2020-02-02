@@ -750,6 +750,9 @@ class _BaseNetwork(_IPAddressBase):
             # address
             return other._ip & self.netmask._ip == self.network_address._ip
 
+    def __len__(self):
+        return self.num_addresses
+
     def overlaps(self, other):
         """Tell if self is partly contained in other."""
         return self.network_address in other or (
