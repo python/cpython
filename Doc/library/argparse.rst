@@ -11,6 +11,10 @@
 
 **Source code:** :source:`Lib/argparse.py`
 
+.. testsetup::
+
+   import argparse 
+
 --------------
 
 .. sidebar:: Tutorial
@@ -204,7 +208,6 @@ always desirable because it will make the help messages match how the program wa
 invoked on the command line.  For example, consider a file named
 ``myprogram.py`` with the following code::
 
-   import argparse
    parser = argparse.ArgumentParser()
    parser.add_argument('--foo', help='foo help')
    args = parser.parse_args()
@@ -610,7 +613,6 @@ By default, ArgumentParser objects add an option which simply displays
 the parser's help message. For example, consider a file named
 ``myprogram.py`` containing the following code::
 
-   import argparse
    parser = argparse.ArgumentParser()
    parser.add_argument('--foo', help='foo help')
    args = parser.parse_args()
@@ -660,7 +662,7 @@ Normally, when you pass an invalid argument list to the :meth:`~ArgumentParser.p
 method of an :class:`ArgumentParser`, it will exit with error info.
 
 If the user would like catch errors manually, the feature can be enable by setting
-``exit_on_error`` to ``False``::
+``exit_on_error`` to ``False``:
 
    >>> parser = argparse.ArgumentParser(exit_on_error=False)
    >>> parser.add_argument('--integers', type=int)
@@ -825,7 +827,6 @@ how the command-line arguments should be handled. The supplied actions are:
   :meth:`~ArgumentParser.add_argument` call, and prints version information
   and exits when invoked::
 
-    >>> import argparse
     >>> parser = argparse.ArgumentParser(prog='PROG')
     >>> parser.add_argument('--version', action='version', version='%(prog)s 2.0')
     >>> parser.parse_args(['--version'])
@@ -847,7 +848,6 @@ other object that implements the same interface. The ``BooleanOptionalAction``
 is available in ``argparse`` and adds support for boolean actions such as
 ``--foo`` and ``--no-foo``::
 
-    >>> import argparse
     >>> parser = argparse.ArgumentParser()
     >>> parser.add_argument('--foo', action=argparse.BooleanOptionalAction)
     >>> parser.parse_args(['--no-foo'])
