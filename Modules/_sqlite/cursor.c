@@ -657,14 +657,13 @@ pysqlite_cursor_executescript(pysqlite_Cursor* self, PyObject* args)
         }
 
         /* execute statement, and ignore results of SELECT statements */
-        rc = SQLITE_ROW;
-        while (rc == SQLITE_ROW) {
+        do {
             rc = pysqlite_step(statement, self->connection);
             if (PyErr_Occurred()) {
                 (void)sqlite3_finalize(statement);
                 goto error;
             }
-        }
+        } while (rc == SQLITE_ROW);
 
         if (rc != SQLITE_DONE) {
             (void)sqlite3_finalize(statement);
