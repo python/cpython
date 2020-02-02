@@ -641,7 +641,7 @@ _float_div_mod(double vx, double wx, double *floordiv, double *mod)
         *floordiv = floor(div);
         if (div - *floordiv > 0.5) {
             *floordiv += 1.0;
-        }       
+        }
     }
     else {
         /* div is zero - get the same sign as the true quotient */
@@ -652,16 +652,16 @@ _float_div_mod(double vx, double wx, double *floordiv, double *mod)
 static PyObject *
 float_divmod(PyObject *v, PyObject *w)
 {
-     double vx, wx;
-     double mod, floordiv;
-     CONVERT_TO_DOUBLE(v, vx);
-     CONVERT_TO_DOUBLE(w, wx);
-     if (wx == 0.0) {
-         PyErr_SetString(PyExc_ZeroDivisionError, "float divmod()");
-         return NULL;
-     }
-     _float_div_mod(vx, wx, &floordiv, &mod);
-     return Py_BuildValue("(dd)", floordiv, mod);
+    double vx, wx;
+    double mod, floordiv;
+    CONVERT_TO_DOUBLE(v, vx);
+    CONVERT_TO_DOUBLE(w, wx);
+    if (wx == 0.0) {
+        PyErr_SetString(PyExc_ZeroDivisionError, "float divmod()");
+        return NULL;
+    }
+    _float_div_mod(vx, wx, &floordiv, &mod);
+    return Py_BuildValue("(dd)", floordiv, mod);
 }
 
 static PyObject *
