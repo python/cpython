@@ -666,6 +666,24 @@ class FractionTest(unittest.TestCase):
         r = F(13, 7)
         self.assertRaises(AttributeError, setattr, r, 'a', 10)
 
+    def test_gcd_compatibility_branch(self):
+        # Regression test for bugs.python.org/issue39350
+
+        class myint(int):
+            def __mul__(self, other):
+                return myint(int(self)*int(other))
+
+            @property
+            def numerator(self):
+                return self
+
+            @property
+            def denominator(self):
+                return myint(1)
+
+        myhalf = F(myint(1), myint(2))
+        self.assertEqual(myhalf, F(1, 2))
+
 
 if __name__ == '__main__':
     unittest.main()
