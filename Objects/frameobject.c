@@ -1326,7 +1326,7 @@ _PyFrame_DebugMallocStats(FILE *out)
                            numfree, sizeof(PyFrameObject));
 }
 
-/* PyFastLocalsProxy_Type
+/* _PyFastLocalsProxy_Type
  *
  * Subclass of PyDict_Proxy (currently defined in descrobject.h/.c)
  *
@@ -1336,9 +1336,9 @@ _PyFrame_DebugMallocStats(FILE *out)
  * frame.
  */
 /*[clinic input]
-class fastlocalsproxy "fastlocalsproxyobject *" "&PyFastLocalsProxy_Type"
+class fastlocalsproxy "fastlocalsproxyobject *" "&_PyFastLocalsProxy_Type"
 [clinic start generated code]*/
-/*[clinic end generated code: output=da39a3ee5e6b4b0d input=b0e135835cface9f]*/
+/*[clinic end generated code: output=da39a3ee5e6b4b0d input=a2dd0ae6e1642243]*/
 
 
 typedef struct {
@@ -1634,7 +1634,7 @@ _PyFastLocalsProxy_New(PyObject *frame)
     if (fastlocalsproxy_check_frame(frame) == -1)
         return NULL;
 
-    flp = PyObject_GC_New(fastlocalsproxyobject, &PyFastLocalsProxy_Type);
+    flp = PyObject_GC_New(fastlocalsproxyobject, &_PyFastLocalsProxy_Type);
     if (flp == NULL)
         return NULL;
     mapping = PyDict_New();
@@ -1689,7 +1689,7 @@ fastlocalsproxy_new_impl(PyTypeObject *type, PyObject *frame)
 
 #include "clinic/frameobject.c.h"
 
-PyTypeObject PyFastLocalsProxy_Type = {
+PyTypeObject _PyFastLocalsProxy_Type = {
     PyVarObject_HEAD_INIT(&PyType_Type, 0)
     "fastlocalsproxy",                          /* tp_name */
     sizeof(fastlocalsproxyobject),              /* tp_basicsize */

@@ -92,9 +92,9 @@ PyAPI_FUNC(int) PyFrame_GetLineNumber(PyFrameObject *);
 //       PyFrame_GetLocalsReturnsSnapshot() instead. Having this available
 //       seems like a nice way to let folks write some useful debug assertions,
 //       though.
-PyTypeObject PyFastLocalsProxy_Type;
+PyTypeObject _PyFastLocalsProxy_Type;
 #define _PyFastLocalsProxy_CheckExact(self) \
-    (Py_TYPE(self) == &PyFastLocalsProxy_Type)
+    (Py_TYPE(self) == &_PyFastLocalsProxy_Type)
 
 
 // Underlying implementation API supporting the stable PyLocals_*() APIs
