@@ -1,0 +1,3 @@
+Revert removal of ``fractions._gcd``. That removal caused breakage when
+using ``fractions.Fraction`` with integer-like values (for example NumPy
+integers).
