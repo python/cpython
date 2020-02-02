@@ -5584,7 +5584,7 @@ class _TestCustomReducer(BaseTestCase):
     @classmethod
     def _put_and_get_in_queue(cls, queue,):
         queue.put("Something")
-        queue.get(timeout=TIMEOUT)
+        queue.get(timeout=support.SHORT_TIMEOUT)
 
     @unittest.skipUnless(HAS_REDUCTION, "test needs multiprocessing.reduction")
     def test_queue_custom_reducer(self):
@@ -5600,11 +5600,11 @@ class _TestCustomReducer(BaseTestCase):
                 p = self.Process(target=self._put_and_get_in_queue,
                                  args=(queue,))
                 p.start()
-                element = queue.get(timeout=TIMEOUT)
+                element = queue.get(timeout=support.SHORT_TIMEOUT)
                 self.assertEqual(element, "Something")
                 queue.put("Other_Something")
                 close_queue(queue)
-                p.join(timeout=TIMEOUT)
+                p.join(timeout=support.SHORT_TIMEOUT)
                 p.terminate()
                 self.assertEqual(element, "Something")
                 self.assertEqual(p.exitcode, 0)
@@ -5667,7 +5667,7 @@ class _TestCustomReducerWithContext(BaseTestCase):
     @classmethod
     def _put_and_get_in_queue(cls, queue):
         queue.put("Something")
-        queue.get(timeout=TIMEOUT)
+        queue.get(timeout=support.SHORT_TIMEOUT)
 
     @unittest.skipUnless(HAS_REDUCTION, "test needs multiprocessing.reduction")
     def test_process_custom_reducer_over_custom_context(self):
@@ -5705,11 +5705,11 @@ class _TestCustomReducerWithContext(BaseTestCase):
                 p = self.custom_ctx.Process(target=self._put_and_get_in_queue,
                                             args=(queue,))
                 p.start()
-                element = queue.get(timeout=TIMEOUT)
+                element = queue.get(timeout=support.SHORT_TIMEOUT)
                 self.assertEqual(element, "Something")
                 queue.put("Other_Something")
                 close_queue(queue)
-                p.join(timeout=TIMEOUT)
+                p.join(timeout=support.SHORT_TIMEOUT)
                 p.terminate()
                 self.assertEqual(p.exitcode, 0)
                 self.assertEqual(element, "Something")
@@ -5756,10 +5756,10 @@ class _TestCustomReducerWithContext(BaseTestCase):
                 p = self.default_ctx.Process(target=self._put_and_get_in_queue,
                     args=(queue, ))
                 p.start()
-                element = queue.get(timeout=TIMEOUT)
+                element = queue.get(timeout=support.SHORT_TIMEOUT)
                 self.assertEqual(element, "Something")
                 queue.put("Other_Something")
-                p.join(timeout=TIMEOUT)
+                p.join(timeout=support.SHORT_TIMEOUT)
                 self.assertEqual(p.exitcode, 0)
                 self.assertEqual(element, "Something")
                 close_queue(queue)
