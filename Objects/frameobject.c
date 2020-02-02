@@ -50,15 +50,7 @@ void _PyFrame_PostEvalCleanup(PyFrameObject *f)
 }
 
 PyObject *
-PyFrame_GetLocalsAttribute(PyFrameObject *f)
-{
-    PyObject *updated_locals = _frame_get_updated_locals(f);
-    Py_INCREF(updated_locals);
-    return updated_locals;
-}
-
-PyObject *
-_PyFrame_BorrowPyLocals(PyFrameObject *f)
+_PyFrame_BorrowLocals(PyFrameObject *f)
 {
     // This is called by PyEval_GetLocals(), which has historically returned
     // a borrowed reference, so this does the same
@@ -70,7 +62,7 @@ _PyFrame_BorrowPyLocals(PyFrameObject *f)
 }
 
 PyObject *
-PyFrame_GetPyLocals(PyFrameObject *f)
+PyFrame_GetLocals(PyFrameObject *f)
 {
     PyObject *updated_locals = _frame_get_updated_locals(f);
     if (_PyFastLocalsProxy_CheckExact(updated_locals)) {
@@ -88,7 +80,9 @@ PyFrame_GetPyLocals(PyFrameObject *f)
 static PyObject *
 frame_getlocals(PyFrameObject *f, void *__unused)
 {
-    return PyFrame_GetLocalsAttribute(f);
+    PyObject *updated_locals = _frame_get_updated_locals(f);
+    Py_INCREF(updated_locals);
+    return updated_locals;
 }
 
 int
@@ -1179,7 +1173,8 @@ PyFrame_LocalsToFast(PyFrameObject *f, int clear)
     PyErr_SetString(
         PyExc_RuntimeError,
         "PyFrame_LocalsToFast is no longer supported. "
-        "Use PyFrame_GetPyLocals() or PyFrame_GetLocalsAttribute() instead."
+        "Use PyFrame_GetLocals(), PyFrame_GetLocalsSnapshot(), "
+        "or PyFrame_GetLocalsView() instead."
     );
 }
 

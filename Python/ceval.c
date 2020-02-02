@@ -4735,11 +4735,11 @@ PyEval_GetLocals(void)
         return NULL;
     }
 
-    return _PyFrame_BorrowPyLocals(current_frame);
+    return _PyFrame_BorrowLocals(current_frame);
 }
 
 PyObject *
-PyEval_GetPyLocals(void)
+PyLocals_Get(void)
 {
     PyThreadState *tstate = _PyThreadState_GET();
     PyFrameObject *current_frame = _PyEval_GetFrame(tstate);
@@ -4748,7 +4748,7 @@ PyEval_GetPyLocals(void)
         return NULL;
     }
 
-    return PyFrame_GetPyLocals(current_frame);
+    return PyFrame_GetLocals(current_frame);
 }
 
 PyObject *

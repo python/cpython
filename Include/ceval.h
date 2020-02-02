@@ -35,12 +35,35 @@ PyAPI_FUNC(PyObject *) PyEval_GetGlobals(void);
 PyAPI_FUNC(PyObject *) PyEval_GetLocals(void);
 PyAPI_FUNC(struct _frame *) PyEval_GetFrame(void);
 
-PyAPI_FUNC(int) Py_AddPendingCall(int (*func)(void *), void *arg);
-PyAPI_FUNC(int) Py_MakePendingCalls(void);
+// TODO: Update PyEval_GetLocals() documentation as described in
+// https://discuss.python.org/t/pep-558-defined-semantics-for-locals/2936/11
 
 #if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= 0x03090000
-PyAPI_FUNC(PyObject *) PyEval_GetPyLocals(void);
+/* Access the frame locals mapping in an implementation independent way */
+
+/* PyLocals_Get() is equivalent to the Python locals() builtin.
+ * It returns a read/write reference or a fresh snapshot depending on the scope
+ * of the active frame.
+ */
+// TODO: Add API tests for this
+PyAPI_FUNC(PyObject *) PyLocals_Get();
+
+/* PyLocals_GetSnaphot() returns a fresh snapshot of the active local namespace */
+// TODO: Implement this, and add API tests
+PyAPI_FUNC(PyObject *) PyLocals_GetSnapshot();
+
+/* PyLocals_GetView() returns a read-only proxy for the active local namespace */
+// TODO: Implement this, and add API tests
+PyAPI_FUNC(PyObject *) PyLocals_GetView();
+
+/* Returns true if PyLocals_Get() returns a snapshot in the active scope */
+// TODO: Implement this, and add API tests
+PyAPI_FUNC(int) PyLocals_IsSnapshot();
 #endif
+
+
+PyAPI_FUNC(int) Py_AddPendingCall(int (*func)(void *), void *arg);
+PyAPI_FUNC(int) Py_MakePendingCalls(void);
 
 /* Protection against deeply nested recursive calls
 

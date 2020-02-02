@@ -72,7 +72,7 @@ PyAPI_FUNC(PyTryBlock *) PyFrame_BlockPop(PyFrameObject *);
 PyAPI_FUNC(int) PyFrame_FastToLocalsWithError(PyFrameObject *f);
 PyAPI_FUNC(void) PyFrame_FastToLocals(PyFrameObject *);
 
-/* This always raises RuntimeError now (use PyFrame_GetLocalsAttribute() instead) */
+/* This always raises RuntimeError now (use the PyLocals_* API instead) */
 PyAPI_FUNC(void) PyFrame_LocalsToFast(PyFrameObject *, int);
 
 /* Frame object memory management */
@@ -81,6 +81,44 @@ PyAPI_FUNC(void) _PyFrame_DebugMallocStats(FILE *out);
 
 /* Return the line of code the frame is currently executing. */
 PyAPI_FUNC(int) PyFrame_GetLineNumber(PyFrameObject *);
+
+
+// TODO: Determine if there are any additional APIs needed beyond what's in
+// https://discuss.python.org/t/pep-558-defined-semantics-for-locals/2936/11
+
+
+/* Fast locals proxy allows for reliable write-through from trace functions */
+// TODO: Perhaps this should be hidden, and API users told to query for
+//       PyFrame_LocalsIsSnapshot() instead. Having this available seems like
+//       a nice way to let folks write some useful debug assertions, though.
+PyTypeObject PyFastLocalsProxy_Type;
+#define _PyFastLocalsProxy_CheckExact(self) \
+    (Py_TYPE(self) == &PyFastLocalsProxy_Type)
+
+
+// Underlying implementation API supporting the stable PyLocals_*() APIs
+// TODO: Add specific test cases for these (as any PyLocals_* tests won't cover
+//       checking the status of a frame other than the currently active one)
+PyAPI_FUNC(PyObject *) PyFrame_GetLocals(PyFrameObject *);
+
+// TODO: Implement the rest of these, and add API tests
+PyAPI_FUNC(PyObject *) PyFrame_GetLocalsSnapshot(PyFrameObject *);
+PyAPI_FUNC(PyObject *) PyFrame_GetLocalsView(PyFrameObject *);
+// TODO: Perhaps rename this to PyFrame_GetLocalsReturnsSnapshot()?
+//       The current name is ambiguous given the "f_locals" attribute.
+//       The stable ABI is different, as the association between PyLocals_Get()
+//       and PyLocals_IsSnapshot() is much less ambiguous
+PyAPI_FUNC(int) PyFrame_LocalsIsSnapshot(PyFrameObject *);
+
+// Underlying API supporting PyEval_GetLocals()
+PyAPI_FUNC(PyObject *) _PyFrame_BorrowLocals(PyFrameObject *);
+
+/* Force an update of any selectively updated views previously returned by
+ * PyFrame_GetLocalsView(frame). Currently also needed in CPython when
+ * accessing the f_locals attribute directly and it is not a plain dict
+ * instance (otherwise it may report stale information).
+ */
+PyAPI_FUNC(int) PyFrame_RefreshLocalsView(PyFrameObject *);
 
 #ifdef __cplusplus
 }

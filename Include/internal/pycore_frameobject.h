@@ -11,7 +11,6 @@ extern "C" {
 struct _frame;
 typedef struct _frame PyFrameObject;
 
-PyObject *_PyFrame_BorrowPyLocals(PyFrameObject *f); /* For PyEval_GetLocals() */
 void _PyFrame_PostEvalCleanup(PyFrameObject *f);     /* For _PyEval_EvalFrame() */
 
 #ifdef __cplusplus
