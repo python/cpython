@@ -186,6 +186,42 @@ class PkgutilTests(unittest.TestCase):
         with self.assertRaises((TypeError, ValueError)):
             list(pkgutil.walk_packages(bytes_input))
 
+    def test_name_resolution(self):
+        import logging
+        import logging.handlers
+
+        cases = (
+            (None, TypeError),
+            (1, TypeError),
+            (2.0, TypeError),
+            (True, TypeError),
+            ('', ValueError),
+            ('?abc', ValueError),
+            ('abc/foo', ValueError),
+            ('foo', ImportError),
+            ('os', os),
+            ('os.path', os.path),
+            ('os.foo', AttributeError),
+            ('os.foo:', ImportError),
+            ('os.pth:pathsep', ImportError),
+            ('os.path:pathsep', os.path.pathsep),
+            ('logging', logging),
+            ('logging:', logging),
+            ('logging.handlers', logging.handlers),
+            ('logging.handlers:', logging.handlers),
+            ('logging.handlers:SysLogHandler', logging.handlers.SysLogHandler),
+            ('logging.handlers:SysLogHandler.LOG_ALERT',
+                logging.handlers.SysLogHandler.LOG_ALERT),
+            ('logging.handlers:NoSuchHandler', AttributeError),
+            ('logging.handlers:SysLogHandler.NO_SUCH_VALUE', AttributeError),
+        )
+
+        for s, e_or_o in cases:
+            try:
+                o = pkgutil.resolve_name(s)
+                self.assertEqual(o, e_or_o)
+            except Exception as e:
+                self.assertIsInstance(e, e_or_o)
 
 class PkgutilPEP302Tests(unittest.TestCase):
 
