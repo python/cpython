@@ -25,6 +25,8 @@ Py_ssize_t _Py_null_strings, _Py_one_strings;
 static PyBytesObject *characters[UCHAR_MAX + 1];
 static PyBytesObject *nullstring;
 
+_Py_IDENTIFIER(__bytes__);
+
 /* PyBytesObject_SIZE gives the basic size of a string; any memory allocation
    for a string of length n should request PyBytesObject_SIZE + n bytes.
 
@@ -543,7 +545,6 @@ static PyObject *
 format_obj(PyObject *v, const char **pbuf, Py_ssize_t *plen)
 {
     PyObject *func, *result;
-    _Py_IDENTIFIER(__bytes__);
     /* is it a bytes object? */
     if (PyBytes_Check(v)) {
         *pbuf = PyBytes_AS_STRING(v);
@@ -2485,7 +2486,6 @@ bytes_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
     PyObject *func;
     Py_ssize_t size;
     static char *kwlist[] = {"source", "encoding", "errors", 0};
-    _Py_IDENTIFIER(__bytes__);
 
     if (type != &PyBytes_Type)
         return bytes_subtype_new(type, args, kwds);

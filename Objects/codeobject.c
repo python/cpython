@@ -38,7 +38,7 @@ all_name_chars(PyObject *o)
     return 1;
 }
 
-static void
+static int
 intern_strings(PyObject *tuple)
 {
     Py_ssize_t i;
@@ -46,60 +46,70 @@ intern_strings(PyObject *tuple)
     for (i = PyTuple_GET_SIZE(tuple); --i >= 0; ) {
         PyObject *v = PyTuple_GET_ITEM(tuple, i);
         if (v == NULL || !PyUnicode_CheckExact(v)) {
-            Py_FatalError("non-string found in code slot");
+            PyErr_SetString(PyExc_SystemError,
+                            "non-string found in code slot");
+            return -1;
         }
         PyUnicode_InternInPlace(&_PyTuple_ITEMS(tuple)[i]);
     }
+    return 0;
 }
 
 /* Intern selected string constants */
 static int
-intern_string_constants(PyObject *tuple)
+intern_string_constants(PyObject *tuple, int *modified)
 {
-    int modified = 0;
-    Py_ssize_t i;
-
-    for (i = PyTuple_GET_SIZE(tuple); --i >= 0; ) {
+    for (Py_ssize_t i = PyTuple_GET_SIZE(tuple); --i >= 0; ) {
         PyObject *v = PyTuple_GET_ITEM(tuple, i);
         if (PyUnicode_CheckExact(v)) {
             if (PyUnicode_READY(v) == -1) {
-                PyErr_Clear();
-                continue;
+                return -1;
             }
+
             if (all_name_chars(v)) {
                 PyObject *w = v;
                 PyUnicode_InternInPlace(&v);
                 if (w != v) {
                     PyTuple_SET_ITEM(tuple, i, v);
-                    modified = 1;
+                    if (modified) {
+                        *modified = 1;
+                    }
                 }
             }
         }
         else if (PyTuple_CheckExact(v)) {
-            intern_string_constants(v);
+            if (intern_string_constants(v, NULL) < 0) {
+                return -1;
+            }
         }
         else if (PyFrozenSet_CheckExact(v)) {
             PyObject *w = v;
             PyObject *tmp = PySequence_Tuple(v);
             if (tmp == NULL) {
-                PyErr_Clear();
-                continue;
+                return -1;
             }
-            if (intern_string_constants(tmp)) {
+            int tmp_modified = 0;
+            if (intern_string_constants(tmp, &tmp_modified) < 0) {
+                Py_DECREF(tmp);
+                return -1;
+            }
+            if (tmp_modified) {
                 v = PyFrozenSet_New(tmp);
                 if (v == NULL) {
-                    PyErr_Clear();
+                    Py_DECREF(tmp);
+                    return -1;
                 }
-                else {
-                    PyTuple_SET_ITEM(tuple, i, v);
-                    Py_DECREF(w);
-                    modified = 1;
+
+                PyTuple_SET_ITEM(tuple, i, v);
+                Py_DECREF(w);
+                if (modified) {
+                    *modified = 1;
                 }
             }
             Py_DECREF(tmp);
         }
     }
-    return modified;
+    return 0;
 }
 
 PyCodeObject *
@@ -139,11 +149,21 @@ PyCode_NewWithPosOnlyArgs(int argcount, int posonlyargcount, int kwonlyargcount,
         return NULL;
     }
 
-    intern_strings(names);
-    intern_strings(varnames);
-    intern_strings(freevars);
-    intern_strings(cellvars);
-    intern_string_constants(consts);
+    if (intern_strings(names) < 0) {
+        return NULL;
+    }
+    if (intern_strings(varnames) < 0) {
+        return NULL;
+    }
+    if (intern_strings(freevars) < 0) {
+        return NULL;
+    }
+    if (intern_strings(cellvars) < 0) {
+        return NULL;
+    }
+    if (intern_string_constants(consts, NULL) < 0) {
+        return NULL;
+    }
 
     /* Check for any inner or outer closure references */
     n_cellvars = PyTuple_GET_SIZE(cellvars);
@@ -513,7 +533,7 @@ code_new(PyTypeObject *type, PyObject *args, PyObject *kw)
                                                ourvarnames, ourfreevars,
                                                ourcellvars, filename,
                                                name, firstlineno, lnotab);
-  cleanup: 
+  cleanup:
     Py_XDECREF(ournames);
     Py_XDECREF(ourvarnames);
     Py_XDECREF(ourfreevars);
