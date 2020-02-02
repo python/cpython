@@ -4455,7 +4455,7 @@ static int
 dump(PicklerObject *self, PyObject *obj)
 {
     const char stop_op = STOP;
-    int status = 0;
+    int status = -1;
     PyObject *tmp;
     _Py_IDENTIFIER(reducer_override);
 
@@ -4487,12 +4487,19 @@ dump(PicklerObject *self, PyObject *obj)
         _Pickler_Write(self, &stop_op, 1) < 0 ||
         _Pickler_CommitFrame(self) < 0)
         goto error;
-    if (0) {
-  error:
-        status = -1;
-    }
 
+    // Success
+    status = 0;
+
+  error:
     self->framing = 0;
+
+    /* Break the reference cycle we generated at the beginning this function
+     * call when setting the reducer_override attribute of the Pickler instance
+     * to a bound method of the same instance. This is important as the Pickler
+     * instance holds a reference to each object it has pickled (through its
+     * memo): thus, these objects wont be garbage-collected as long as the
+     * Pickler itself is not collected. */
     Py_CLEAR(self->reducer_override);
     return status;
 }

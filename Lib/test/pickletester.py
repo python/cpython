@@ -3499,6 +3499,7 @@ class AbstractHookTests(unittest.TestCase):
                         ValueError, 'The reducer just failed'):
                     p.dump(h)
 
+    @support.cpython_only
     def test_reducer_override_no_reference_cycle(self):
         # bpo-39492: reducer_override used to induce a spurious reference cycle
         # inside the Pickler object, that could prevent all serialized objects
@@ -3509,8 +3510,7 @@ class AbstractHookTests(unittest.TestCase):
                 def f():
                     pass
 
-                collect = threading.Event()
-                _ = weakref.ref(f, lambda obj: collect.set())
+                wr = weakref.ref(f)
 
                 bio = io.BytesIO()
                 p = self.pickler_class(bio, proto)
@@ -3521,14 +3521,7 @@ class AbstractHookTests(unittest.TestCase):
                 del p
                 del f
 
-                # There is no reference to f anymore. If p was gc'd,  so should
-                # be f.
-                for i in range(10):
-                    collected = collect.wait(timeout=0.1)
-                    if collected:
-                        break
-
-                self.assertTrue(collected)
+                self.assertIsNone(wr())
 
 
 class AbstractDispatchTableTests(unittest.TestCase):
