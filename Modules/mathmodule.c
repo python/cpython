@@ -2017,6 +2017,78 @@ math_factorial(PyObject *module, PyObject *arg)
 
 
 /*[clinic input]
+math.lcm
+
+	x as a: object
+	y as b: object
+    /
+least common multiple of x and y
+[clinic start generated code]*/
+
+static PyObject*
+math_lcm(PyObject*module,PyObject*a,PyObject*b)
+{
+    PyObject * g,*m,*f,*ab;
+    if (PyFloat_Check(a)||PyFloat_Check(b)) {
+    if (PyErr_WarnEx(PyExc_DeprecationWarning,
+                    "lcm() cannot be used with float",
+                    1) < 0)
+        {
+            return NULL;
+        }
+    double dx = PyFloat_AS_DOUBLE((PyFloatObject *)a);
+    double ax=   PyFloat_AS_DOUBLE((PyFloatObject *)b);
+    if (!((Py_IS_FINITE(dx) && dx == floor(dx))||(Py_IS_FINITE(ax) && ax == floor(ax))) 
+		{
+            PyErr_SetString(PyExc_ValueError,
+                            "lcm() only accepts integral values");
+            return NULL;
+        }
+    a=PyNumber_Index(a);
+    if(a==NULL)
+        return NULL;
+    b=PyNumber_Index(b);
+    if (b== NULL)
+        {
+        Py_DECREF(a);
+        return NULL;
+         }
+    g=_PyLong_GCD(a,b);
+    Py_DECREF(a);
+    Py_DECREF(b);
+    if(g==NULL)
+    {
+    Py_DECREF(g);
+    return NULL;
+    }     
+    m=PyNumber_Multiply(a,b);
+    Py_DECREF(a);
+    Py_DECREF(b);
+    if(m==NULL)
+        {
+        Py_DECREF(m);
+        return NULL;
+        }    
+    f=PyNumber_FloorDivide(m,g);
+    Py_DECREF(m);
+    Py_DECREF(g);
+    if(f==NULL)
+         {
+		 Py_DECREF(f);
+        return NULL;
+         }
+    ab=PyNumber_Absolute(f);
+    Py_DECREF(f);
+    if(ab==NULL)
+         {
+		 Py_DECREF(ab);
+        return NULL;
+         }
+    return g;
+}
+
+
+/*[clinic input]
 math.trunc
 
     x: object
@@ -3335,6 +3407,7 @@ static PyMethodDef math_methods[] = {
     {"asin",            math_asin,      METH_O,         math_asin_doc},
     {"asinh",           math_asinh,     METH_O,         math_asinh_doc},
     {"atan",            math_atan,      METH_O,         math_atan_doc},
+    {"lcm",             math_lcm,       METH_O,         math_lcm_doc},
     {"atan2",           (PyCFunction)(void(*)(void))math_atan2,     METH_FASTCALL,  math_atan2_doc},
     {"atanh",           math_atanh,     METH_O,         math_atanh_doc},
     MATH_CEIL_METHODDEF
