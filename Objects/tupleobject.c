@@ -902,10 +902,15 @@ _PyTuple_Resize(PyObject **pv, Py_ssize_t newsize)
     }
 
     /* XXX UNREF/NEWREF interface should be more symmetrical */
-    _Py_DEC_REFTOTAL;
-    if (_PyObject_GC_IS_TRACKED(v))
+#ifdef Py_REF_DEBUG
+    _Py_RefTotal--;
+#endif
+    if (_PyObject_GC_IS_TRACKED(v)) {
         _PyObject_GC_UNTRACK(v);
+    }
+#ifdef Py_TRACE_REFS
     _Py_ForgetReference((PyObject *) v);
+#endif
     /* DECREF items deleted by shrinkage */
     for (i = newsize; i < oldsize; i++) {
         Py_CLEAR(v->ob_item[i]);
