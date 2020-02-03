@@ -1,0 +1,2 @@
+Change line number table. New format allows the compiler to record that certain bytecodes are artificial and having no line number. It is also a bit faster to search when tracing.
+
