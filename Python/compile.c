@@ -5682,7 +5682,7 @@ add_span_to_lnottab(struct assembler *a, int offset, int lineno)
 {
     if (a->a_lineno_off >= a->a_lineno_allocated) {
         a->a_lineno_allocated *= 2;
-        if (a->a_lineno_allocated >= INT_MAX/sizeof(OffsetLinePair)/2) {
+        if (a->a_lineno_allocated >= INT_MAX/(int)sizeof(OffsetLinePair)/2) {
             PyErr_NoMemory();
             return 0;
         }
