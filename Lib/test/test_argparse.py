@@ -796,17 +796,19 @@ class TestOptionalsAllowLongAbbreviation(ParserTestCase):
 class TestOptionalsDisallowLongAbbreviation(ParserTestCase):
     """Do not allow abbreviations of long options at all"""
 
-    parser_signature = Sig(allow_abbrev=False)
+    parser_signature = Sig(prefix_chars='+-', allow_abbrev=False)
     argument_signatures = [
         Sig('--foo'),
         Sig('--foodle', action='store_true'),
         Sig('--foonly'),
+        Sig('++alt'),
     ]
-    failures = ['-foon 3', '--foon 3', '--food', '--food --foo 2']
+    failures = ['-foon 3', '--foon 3', '--food', '--food --foo 2', '++al 3']
     successes = [
-        ('', NS(foo=None, foodle=False, foonly=None)),
-        ('--foo 3', NS(foo='3', foodle=False, foonly=None)),
-        ('--foonly 7 --foodle --foo 2', NS(foo='2', foodle=True, foonly='7')),
+        ('', NS(foo=None, foodle=False, foonly=None, alt=None)),
+        ('--foo 3', NS(foo='3', foodle=False, foonly=None, alt=None)),
+        ('--foonly 7 --foodle --foo 2',
+         NS(foo='2', foodle=True, foonly='7', alt=None)),
     ]
 
 
