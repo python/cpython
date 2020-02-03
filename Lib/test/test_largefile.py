@@ -166,6 +166,8 @@ def skip_no_disk_space(path, required):
 class TestCopyfile(LargeFileTest, unittest.TestCase):
     open = staticmethod(io.open)
 
+    # Exact required disk space would be (size * 2), but let's give it a
+    # bit more tolerance.
     @skip_no_disk_space(TESTFN, size * 3)
     def test_it(self):
         # Internally shutil.copyfile() can use "fast copy" methods like
