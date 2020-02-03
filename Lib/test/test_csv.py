@@ -1054,15 +1054,15 @@ Stonecutters Seafood and Chop House+ Lemont+ IL+ 12/19/02+ Week Back
 
     def test_guess_lineterminator(self):
         sniffer = csv.Sniffer()
-        dialect = sniffer.sniff(r"Date;Value\r\n2010-01-01;10")
+        dialect = sniffer.sniff('Date;Value\r\n2010-01-01;10')
         self.assertEqual(dialect.lineterminator, '\r\n')
-        dialect = sniffer.sniff(r"Date;Value\n2010-01-01;10")
+        dialect = sniffer.sniff('Date;Value\n2010-01-01;10')
         self.assertEqual(dialect.lineterminator, '\n')
-        dialect = sniffer.sniff(r"Date;Value\r2010-01-01;10")
+        dialect = sniffer.sniff('Date;Value\r2010-01-01;10')
         self.assertEqual(dialect.lineterminator, '\r')
-        dialect = sniffer.sniff(r"Date;Value\v2010-01-01;10")
+        dialect = sniffer.sniff('Date;Value\v2010-01-01;10')
         self.assertEqual(dialect.lineterminator, os.linesep)
-        dialect = sniffer.sniff(r"Date;Value")
+        dialect = sniffer.sniff('Date;Value')
         self.assertEqual(dialect.lineterminator, os.linesep)
 
 
