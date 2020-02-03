@@ -4252,7 +4252,6 @@ class ModuleLevelMiscTest(BaseTest):
             h.close()
             logging.setLoggerClass(logging.Logger)
 
-    @support.requires_type_collecting
     def test_logging_at_shutdown(self):
         # Issue #20037
         code = """if 1:
