@@ -447,11 +447,7 @@ def findlabels(code):
     return labels
 
 def _read_int(array, index):
-    try:
-        return array[index]<<24 | array[index+1]<<16 | array[index+2]<<8 | array[index+3]
-    except Exception as ex:
-        print("out of range", index)
-        raise ex
+    return array[index]<<24 | array[index+1]<<16 | array[index+2]<<8 | array[index+3]
 
 def findlinestarts(code):
     """Find the offsets in a byte code which are start of lines in the source.
@@ -465,7 +461,6 @@ def findlinestarts(code):
     lower_bound = _read_int(table, span_offset)
     base_line =  _read_int(table, span_offset+4)
     upper_bound = _read_int(table, span_offset+8)
-    #print("Initial bounds:", lower_bound, upper_bound, base_line, "at offset", span_offset)
 
     lastlineno = None
     for addr in range(0, bytecode_len, 2):
@@ -477,10 +472,8 @@ def findlinestarts(code):
             lower_bound = upper_bound
             base_line =  _read_int(table, span_offset+4)
             upper_bound = _read_int(table, span_offset+8)
-            #print("New bounds:", lower_bound, upper_bound, base_line)
         lineno = offset + base_line
         if lineno != lastlineno:
-            #print (addr, lineno)
             yield (addr, lineno)
         lastlineno = lineno
 

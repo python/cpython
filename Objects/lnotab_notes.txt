@@ -8,8 +8,7 @@ line tracing.
 The array consists of two parts.
 The first part consists of a one byte line offset per bytecode instruction.
 The second part consists of an array of (bytecode offset, line number) pairs.
-The second array is preceded by its length (as an unaligned big-endian 32 bit integer).
-The final pair in the array must have an offset greater than or equal to the number of instructions.
+The second part is terminated by the number of instruction, serving as an upper bound for the final pair.
 
 The line number for a given instruction is computed by finding the relavant (bytecode offset, line number)
 using either a linear scan or a binary search, then adding the offset.
@@ -30,7 +29,7 @@ For example:
 The bytecode offset, line number pairs are:
     (0, 0)
     (350, 506)
-    (362, XXX) where XXX is ignored.
+    (362, XXX) where XXX is omitted.
 
 The offsets are as follows:
 
@@ -49,8 +48,10 @@ The offsets are as follows:
 We want to call the tracing function when the line
 number of the current instruction changes, or there is a backward branch.
 Re-computing the current line for every instruction is a little slow, though,
-so we cache the offset, next-offset, and line number triple.
+so we cache the bytecode lower-bound (inclusive), line number, and offset upper-bound (exclusive) triple.
 
 Whenever we need a line number for a bytecode that is not in the current range
-(which will happen rarely) we can linearly scan over the pairs until we find the range.
+we can linearly scan over the table of pairs until we find the new range.
 
+This line number table format was introduced in version 3.9.
+The previous format was more compact, but did not support omitting line numbers and was slower to scan.
