@@ -274,7 +274,7 @@ def _splitlines_no_ff(source):
 
 
 def _pad_whitespace(source):
-    """Replace all chars except '\f\t' in a line with spaces."""
+    """Replace all chars except '\\f\\t' in a line with spaces."""
     result = ''
     for c in source:
         if c in '\f\t':
