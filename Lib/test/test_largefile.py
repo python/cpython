@@ -168,7 +168,7 @@ class TestCopyfile(LargeFileTest, unittest.TestCase):
 
     # Exact required disk space would be (size * 2), but let's give it a
     # bit more tolerance.
-    @skip_no_disk_space(TESTFN, size * 3)
+    @skip_no_disk_space(TESTFN, size * 2.5)
     def test_it(self):
         # Internally shutil.copyfile() can use "fast copy" methods like
         # os.sendfile().
@@ -215,7 +215,9 @@ class TestSocketSendfile(LargeFileTest, unittest.TestCase):
         self.thread.start()
         event.set()
 
-    @skip_no_disk_space(TESTFN, size * 3)
+    # Exact required disk space would be (size * 2), but let's give it a
+    # bit more tolerance.
+    @skip_no_disk_space(TESTFN, size * 2.5)
     def test_it(self):
         port = find_unused_port()
         with socket.create_server(("", port)) as sock:
