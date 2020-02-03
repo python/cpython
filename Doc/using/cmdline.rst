@@ -434,9 +434,6 @@ Miscellaneous options
      stored in a traceback of a trace. Use ``-X tracemalloc=NFRAME`` to start
      tracing with a traceback limit of *NFRAME* frames. See the
      :func:`tracemalloc.start` for more information.
-   * ``-X showalloccount`` to output the total count of allocated objects for
-     each type when the program finishes. This only works when Python was built with
-     ``COUNT_ALLOCS`` defined.
    * ``-X importtime`` to show how long each import takes. It shows module
      name, cumulative time (including nested imports) and self time (excluding
      nested imports).  Note that its output may be broken in multi-threaded
@@ -478,6 +475,8 @@ Miscellaneous options
    .. versionchanged:: 3.9
       Using ``-X dev`` option, check *encoding* and *errors* arguments on
       string encoding and decoding operations.
+
+      The ``-X showalloccount`` option has been removed.
 
 
 Options you shouldn't use
