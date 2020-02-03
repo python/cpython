@@ -503,6 +503,10 @@ Removed
   defining ``COUNT_ALLOCS`` macro.
   (Contributed by Victor Stinner in :issue:`39489`.)
 
+* :mod:`distutils`: The ``bdist_wininst`` command has been removed, it was
+  deprecated in Python 3.8: use ``bdist_wheel`` command instead.
+  (Contributed by Victor Stinner in :issue:`39541`.)
+
 
 Porting to Python 3.9
 =====================
