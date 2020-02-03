@@ -140,7 +140,7 @@ Number-theoretic and representation functions
 
    Return the least common multiple of integers *a* and *b*. If either *a* or 
    *b* is nonzero, then the value of ``lcm(a, b)`` is the smallest positive 
-   integer that is divisible by both *a* and *b*.``lcm(0, 0)`` returns ``0``.
+   integer that is divisible by both *a* and *b*. ``lcm(0, 0)`` returns ``0``.
 
 .. versionadded:: 3.9
 
