@@ -232,9 +232,11 @@ PyObject_CallFinalizerFromDealloc(PyObject *self)
     _PyObject_ASSERT(self,
                      (!PyType_IS_GC(Py_TYPE(self))
                       || _PyObject_GC_IS_TRACKED(self)));
-    /* If Py_REF_DEBUG, _Py_NewReference bumped _Py_RefTotal, so
-     * we need to undo that. */
-    _Py_DEC_REFTOTAL;
+    /* If Py_REF_DEBUG macro is defined, _Py_NewReference() increased
+       _Py_RefTotal, so we need to undo that. */
+#ifdef Py_REF_DEBUG
+    _Py_RefTotal--;
+#endif
     return -1;
 }
 
@@ -1804,19 +1806,6 @@ _PyTypes_Init(void)
 
 
 #ifdef Py_TRACE_REFS
-
-void
-_Py_NewReference(PyObject *op)
-{
-    if (_Py_tracemalloc_config.tracing) {
-        _PyTraceMalloc_NewReference(op);
-    }
-    _Py_INC_REFTOTAL;
-    op->ob_refcnt = 1;
-    _Py_AddToAllObjects(op, 1);
-    _Py_INC_TPALLOCS(op);
-}
-
 void
 _Py_ForgetReference(PyObject *op)
 {
