@@ -396,7 +396,7 @@ If a :keyword:`finally` clause is present, the :keyword:`finally` clause will ex
 
 * If the :keyword:`!try` statement reaches a :keyword:`break`, :keyword:`continue` or :keyword:`return` statement, the :keyword:`finally` clause will execute just prior to the :keyword:`break`, :keyword:`continue` or :keyword:`return` statement's execution.
 
-* If a :keyword:`finally` clause includes a :keyword:`return` statement, the :keyword:`finally` clause's :keyword:`return` statement will execute before, and instead of, the :keyword:`return` statement in a :keyword:`try` clause.
+* If a :keyword:`finally` clause includes a :keyword:`return` statement, the returned value will be the one from the :keyword:`finally` clause's :keyword:`return` statement, not the value from the :keyword:`try` clause's :keyword:`return` statement.
 
 For example::
 
