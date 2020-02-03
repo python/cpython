@@ -24,7 +24,7 @@ if test -n "${ZSH_VERSION+set}" && (emulate sh) >/dev/null 2>&1; then :
   alias -g '${1+"$@"}'='"$@"'
   setopt NO_GLOB_SUBST
 else
-  case `(set -o) 2>/dev/null` in #(
+  case $( (set -o) 2>/dev/null) in #(
   *posix*) :
     set -o posix ;; #(
   *) :
@@ -43,14 +43,14 @@ as_echo=$as_echo$as_echo$as_echo$as_echo$as_echo$as_echo
 # Prefer a ksh shell builtin over an external printf program on Solaris,
 # but without wasting forks for bash or zsh.
 if test -z "$BASH_VERSION$ZSH_VERSION" \
-    && (test "X`print -r -- $as_echo`" = "X$as_echo") 2>/dev/null; then
+    && (test "X$(print -r -- $as_echo)" = "X$as_echo") 2>/dev/null; then # TODO check superfluous params!!!
   as_echo='print -r --'
   as_echo_n='print -rn --'
-elif (test "X`printf %s $as_echo`" = "X$as_echo") 2>/dev/null; then
+elif (test "X$(printf %s $as_echo)" = "X$as_echo") 2>/dev/null; then
   as_echo='printf %s\n'
   as_echo_n='printf %s'
 else
-  if test "X`(/usr/ucb/echo -n -n $as_echo) 2>/dev/null`" = "X-n $as_echo"; then
+  if test "X$( (/usr/ucb/echo -n -n $as_echo) 2>/dev/null)" = "X-n $as_echo"; then
     as_echo_body='eval /usr/ucb/echo -n "$1$as_nl"'
     as_echo_n='/usr/ucb/echo -n'
   else
@@ -325,11 +325,11 @@ as_fn_mkdir_p ()
     as_dirs=
     while :; do
       case $as_dir in #(
-      *\'*) as_qdir=`$as_echo "$as_dir" | sed "s/'/'\\\\\\\\''/g"`;; #'(
+      *\'*) as_qdir=$($as_echo "$as_dir" | sed "s/'/'\\\\\\\\''/g");; #'(
       *) as_qdir=$as_dir;;
       esac
       as_dirs="'$as_qdir' $as_dirs"
-      as_dir=`$as_dirname -- "$as_dir" ||
+      as_dir=$($as_dirname -- "$as_dir" ||
 $as_expr X"$as_dir" : 'X\(.*[^/]\)//*[^/][^/]*/*$' \| \
 	 X"$as_dir" : 'X\(//\)[^/]' \| \
 	 X"$as_dir" : 'X\(//\)$' \| \
@@ -351,7 +351,7 @@ $as_echo X"$as_dir" |
 	    s//\1/
 	    q
 	  }
-	  s/.*/./; q'`
+	  s/.*/./; q')
       test -d "$as_dir" && break
     done
     test -z "$as_dirs" || eval "mkdir $as_dirs"
@@ -398,7 +398,7 @@ if (eval "test \$(( 1 + 1 )) = 2") 2>/dev/null; then :
 else
   as_fn_arith ()
   {
-    as_val=`expr "$@" || test $? -eq 1`
+    as_val=$(expr "$@" || test $? -eq 1)
   }
 fi # as_fn_arith
 
@@ -420,25 +420,25 @@ as_fn_error ()
 } # as_fn_error
 
 if expr a : '\(a\)' >/dev/null 2>&1 &&
-   test "X`expr 00001 : '.*\(...\)'`" = X001; then
+   test "X$(expr 00001 : '.*\(...\)')" = X001; then
   as_expr=expr
 else
   as_expr=false
 fi
 
-if (basename -- /) >/dev/null 2>&1 && test "X`basename -- / 2>&1`" = "X/"; then
+if (basename -- /) >/dev/null 2>&1 && test "X$(basename -- / 2>&1)" = "X/"; then
   as_basename=basename
 else
   as_basename=false
 fi
 
-if (as_dir=`dirname -- /` && test "X$as_dir" = X/) >/dev/null 2>&1; then
+if (as_dir=$(dirname -- /) && test "X$as_dir" = X/) >/dev/null 2>&1; then
   as_dirname=dirname
 else
   as_dirname=false
 fi
 
-as_me=`$as_basename -- "$0" ||
+as_me=$($as_basename -- "$0" ||
 $as_expr X/"$0" : '.*/\([^/][^/]*\)/*$' \| \
 	 X"$0" : 'X\(//\)$' \| \
 	 X"$0" : 'X\(/\)' \| . 2>/dev/null ||
@@ -455,7 +455,7 @@ $as_echo X/"$0" |
 	    s//\1/
 	    q
 	  }
-	  s/.*/./; q'`
+	  s/.*/./; q')
 
 # Avoid depending upon Character Ranges.
 as_cr_letters='abcdefghijklmnopqrstuvwxyz'
@@ -501,12 +501,12 @@ as_cr_alnum=$as_cr_Letters$as_cr_digits
 }
 
 ECHO_C= ECHO_N= ECHO_T=
-case `echo -n x` in #(((((
+case $(echo -n x) in #(((((
 -n*)
-  case `echo 'xy\c'` in
+  case $(echo 'xy\c') in
   *c*) ECHO_T='	';;	# ECHO_T is single tab character.
   xy)  ECHO_C='\c';;
-  *)   echo `echo ksh88 bug on AIX 6.1` > /dev/null
+  *)   echo $(echo ksh88 bug on AIX 6.1) > /dev/null
        ECHO_T='	';;
   esac;;
 *)
@@ -563,7 +563,7 @@ exec 6>&1
 # Name of the host.
 # hostname on some systems (SVR3.2, old GNU/Linux) returns a bogus exit status,
 # so uname gets run too.
-ac_hostname=`(hostname || uname -n) 2>/dev/null | sed 1q`
+ac_hostname=$( (hostname || uname -n) 2>/dev/null | sed 1q)
 
 #
 # Initializations.
@@ -919,7 +919,7 @@ do
   fi
 
   case $ac_option in
-  *=?*) ac_optarg=`expr "X$ac_option" : '[^=]*=\(.*\)'` ;;
+  *=?*) ac_optarg=$(expr "X$ac_option" : '[^=]*=\(.*\)') ;;
   *=)   ac_optarg= ;;
   *)    ac_optarg=yes ;;
   esac
@@ -963,12 +963,12 @@ do
     datarootdir=$ac_optarg ;;
 
   -disable-* | --disable-*)
-    ac_useropt=`expr "x$ac_option" : 'x-*disable-\(.*\)'`
+    ac_useropt=$(expr "x$ac_option" : 'x-*disable-\(.*\)')
     # Reject names that are not valid shell variable names.
     expr "x$ac_useropt" : ".*[^-+._$as_cr_alnum]" >/dev/null &&
       as_fn_error $? "invalid feature name: $ac_useropt"
     ac_useropt_orig=$ac_useropt
-    ac_useropt=`$as_echo "$ac_useropt" | sed 's/[-+.]/_/g'`
+    ac_useropt=$($as_echo "$ac_useropt" | sed 's/[-+.]/_/g')
     case $ac_user_opts in
       *"
 "enable_$ac_useropt"
@@ -989,12 +989,12 @@ do
     dvidir=$ac_optarg ;;
 
   -enable-* | --enable-*)
-    ac_useropt=`expr "x$ac_option" : 'x-*enable-\([^=]*\)'`
+    ac_useropt=$(expr "x$ac_option" : 'x-*enable-\([^=]*\)')
     # Reject names that are not valid shell variable names.
     expr "x$ac_useropt" : ".*[^-+._$as_cr_alnum]" >/dev/null &&
       as_fn_error $? "invalid feature name: $ac_useropt"
     ac_useropt_orig=$ac_useropt
-    ac_useropt=`$as_echo "$ac_useropt" | sed 's/[-+.]/_/g'`
+    ac_useropt=$($as_echo "$ac_useropt" | sed 's/[-+.]/_/g')
     case $ac_user_opts in
       *"
 "enable_$ac_useropt"
@@ -1193,12 +1193,12 @@ do
     ac_init_version=: ;;
 
   -with-* | --with-*)
-    ac_useropt=`expr "x$ac_option" : 'x-*with-\([^=]*\)'`
+    ac_useropt=$(expr "x$ac_option" : 'x-*with-\([^=]*\)')
     # Reject names that are not valid shell variable names.
     expr "x$ac_useropt" : ".*[^-+._$as_cr_alnum]" >/dev/null &&
       as_fn_error $? "invalid package name: $ac_useropt"
     ac_useropt_orig=$ac_useropt
-    ac_useropt=`$as_echo "$ac_useropt" | sed 's/[-+.]/_/g'`
+    ac_useropt=$($as_echo "$ac_useropt" | sed 's/[-+.]/_/g')
     case $ac_user_opts in
       *"
 "with_$ac_useropt"
@@ -1209,12 +1209,12 @@ do
     eval with_$ac_useropt=\$ac_optarg ;;
 
   -without-* | --without-*)
-    ac_useropt=`expr "x$ac_option" : 'x-*without-\(.*\)'`
+    ac_useropt=$(expr "x$ac_option" : 'x-*without-\(.*\)')
     # Reject names that are not valid shell variable names.
     expr "x$ac_useropt" : ".*[^-+._$as_cr_alnum]" >/dev/null &&
       as_fn_error $? "invalid package name: $ac_useropt"
     ac_useropt_orig=$ac_useropt
-    ac_useropt=`$as_echo "$ac_useropt" | sed 's/[-+.]/_/g'`
+    ac_useropt=$($as_echo "$ac_useropt" | sed 's/[-+.]/_/g')
     case $ac_user_opts in
       *"
 "with_$ac_useropt"
@@ -1247,7 +1247,7 @@ Try \`$0 --help' for more information"
     ;;
 
   *=*)
-    ac_envvar=`expr "x$ac_option" : 'x\([^=]*\)='`
+    ac_envvar=$(expr "x$ac_option" : 'x\([^=]*\)=')
     # Reject names that are not valid shell variable names.
     case $ac_envvar in #(
       '' | [0-9]* | *[!_$as_cr_alnum]* )
@@ -1268,7 +1268,7 @@ Try \`$0 --help' for more information"
 done
 
 if test -n "$ac_prev"; then
-  ac_option=--`echo $ac_prev | sed 's/_/-/g'`
+  ac_option=--$(echo $ac_prev | sed 's/_/-/g')
   as_fn_error $? "missing argument to $ac_option"
 fi
 
@@ -1290,7 +1290,7 @@ do
   # Remove trailing slashes.
   case $ac_val in
     */ )
-      ac_val=`expr "X$ac_val" : 'X\(.*[^/]\)' \| "X$ac_val" : 'X\(.*\)'`
+      ac_val=$(expr "X$ac_val" : 'X\(.*[^/]\)' \| "X$ac_val" : 'X\(.*\)')
       eval $ac_var=\$ac_val;;
   esac
   # Be sure to have absolute directory names.
@@ -1323,9 +1323,9 @@ test -n "$host_alias" && ac_tool_prefix=$host_alias-
 test "$silent" = yes && exec 6>/dev/null
 
 
-ac_pwd=`pwd` && test -n "$ac_pwd" &&
-ac_ls_di=`ls -di .` &&
-ac_pwd_ls_di=`cd "$ac_pwd" && ls -di .` ||
+ac_pwd=$(pwd) && test -n "$ac_pwd" &&
+ac_ls_di=$(ls -di .) &&
+ac_pwd_ls_di=$(cd "$ac_pwd" && ls -di .) ||
   as_fn_error $? "working directory cannot be determined"
 test "X$ac_ls_di" = "X$ac_pwd_ls_di" ||
   as_fn_error $? "pwd does not report name of working directory"
@@ -1335,7 +1335,7 @@ test "X$ac_ls_di" = "X$ac_pwd_ls_di" ||
 if test -z "$srcdir"; then
   ac_srcdir_defaulted=yes
   # Try the directory containing this script, then the parent directory.
-  ac_confdir=`$as_dirname -- "$as_myself" ||
+  ac_confdir=$($as_dirname -- "$as_myself" ||
 $as_expr X"$as_myself" : 'X\(.*[^/]\)//*[^/][^/]*/*$' \| \
 	 X"$as_myself" : 'X\(//\)[^/]' \| \
 	 X"$as_myself" : 'X\(//\)$' \| \
@@ -1357,7 +1357,7 @@ $as_echo X"$as_myself" |
 	    s//\1/
 	    q
 	  }
-	  s/.*/./; q'`
+	  s/.*/./; q')
   srcdir=$ac_confdir
   if test ! -r "$srcdir/$ac_unique_file"; then
     srcdir=..
@@ -1370,9 +1370,9 @@ if test ! -r "$srcdir/$ac_unique_file"; then
   as_fn_error $? "cannot find sources ($ac_unique_file) in $srcdir"
 fi
 ac_msg="sources are in $srcdir, but \`cd $srcdir' does not work"
-ac_abs_confdir=`(
+ac_abs_confdir=$( (
 	cd "$srcdir" && test -r "./$ac_unique_file" || as_fn_error $? "$ac_msg"
-	pwd)`
+	pwd))
 # When building in place, set srcdir=.
 if test "$ac_abs_confdir" = "$ac_pwd"; then
   srcdir=.
@@ -1381,7 +1381,7 @@ fi
 # Double slashes in file names in object file debugging info
 # mess up M-x gdb in Emacs.
 case $srcdir in
-*/) srcdir=`expr "X$srcdir" : 'X\(.*[^/]\)' \| "X$srcdir" : 'X\(.*\)'`;;
+*/) srcdir=$(expr "X$srcdir" : 'X\(.*[^/]\)' \| "X$srcdir" : 'X\(.*\)');;
 esac
 for ac_var in $ac_precious_vars; do
   eval ac_env_${ac_var}_set=\${${ac_var}+set}
@@ -1598,16 +1598,16 @@ if test "$ac_init_help" = "recursive"; then
   # If there are subdirs, report their specific --help.
   for ac_dir in : $ac_subdirs_all; do test "x$ac_dir" = x: && continue
     test -d "$ac_dir" ||
-      { cd "$srcdir" && ac_pwd=`pwd` && srcdir=. && test -d "$ac_dir"; } ||
+      { cd "$srcdir" && ac_pwd=$(pwd) && srcdir=. && test -d "$ac_dir"; } ||
       continue
     ac_builddir=.
 
 case "$ac_dir" in
 .) ac_dir_suffix= ac_top_builddir_sub=. ac_top_build_prefix= ;;
 *)
-  ac_dir_suffix=/`$as_echo "$ac_dir" | sed 's|^\.[\\/]||'`
+  ac_dir_suffix=/$($as_echo "$ac_dir" | sed 's|^\.[\\/]||')
   # A ".." for each directory in $ac_dir_suffix.
-  ac_top_builddir_sub=`$as_echo "$ac_dir_suffix" | sed 's|/[^\\/]*|/..|g;s|/||'`
+  ac_top_builddir_sub=$($as_echo "$ac_dir_suffix" | sed 's|/[^\\/]*|/..|g;s|/||')
   case $ac_top_builddir_sub in
   "") ac_top_builddir_sub=. ac_top_build_prefix= ;;
   *)  ac_top_build_prefix=$ac_top_builddir_sub/ ;;
@@ -2262,8 +2262,8 @@ $as_echo "$ac_res" >&6; }
 ac_fn_c_check_decl ()
 {
   as_lineno=${as_lineno-"$1"} as_lineno_stack=as_lineno_stack=$as_lineno_stack
-  as_decl_name=`echo $2|sed 's/ *(.*//'`
-  as_decl_use=`echo $2|sed -e 's/(/((/' -e 's/)/) 0&/' -e 's/,/) 0& (/g'`
+  as_decl_name=$(echo $2|sed 's/ *(.*//')
+  as_decl_use=$(echo $2|sed -e 's/(/((/' -e 's/)/) 0&/' -e 's/,/) 0& (/g')
   { $as_echo "$as_me:${as_lineno-$LINENO}: checking whether $as_decl_name is declared" >&5
 $as_echo_n "checking whether $as_decl_name is declared... " >&6; }
 if eval \${$3+:} false; then :
@@ -2374,22 +2374,22 @@ cat <<_ASUNAME
 ## Platform. ##
 ## --------- ##
 
-hostname = `(hostname || uname -n) 2>/dev/null | sed 1q`
-uname -m = `(uname -m) 2>/dev/null || echo unknown`
-uname -r = `(uname -r) 2>/dev/null || echo unknown`
-uname -s = `(uname -s) 2>/dev/null || echo unknown`
-uname -v = `(uname -v) 2>/dev/null || echo unknown`
+hostname = $( (hostname || uname -n) 2>/dev/null | sed 1q)
+uname -m = $( (uname -m) 2>/dev/null || echo unknown)
+uname -r = $( (uname -r) 2>/dev/null || echo unknown)
+uname -s = $( (uname -s) 2>/dev/null || echo unknown)
+uname -v = $( (uname -v) 2>/dev/null || echo unknown)
 
-/usr/bin/uname -p = `(/usr/bin/uname -p) 2>/dev/null || echo unknown`
-/bin/uname -X     = `(/bin/uname -X) 2>/dev/null     || echo unknown`
+/usr/bin/uname -p = $( (/usr/bin/uname -p) 2>/dev/null || echo unknown)
+/bin/uname -X     = $( (/bin/uname -X) 2>/dev/null     || echo unknown)
 
-/bin/arch              = `(/bin/arch) 2>/dev/null              || echo unknown`
-/usr/bin/arch -k       = `(/usr/bin/arch -k) 2>/dev/null       || echo unknown`
-/usr/convex/getsysinfo = `(/usr/convex/getsysinfo) 2>/dev/null || echo unknown`
-/usr/bin/hostinfo      = `(/usr/bin/hostinfo) 2>/dev/null      || echo unknown`
-/bin/machine           = `(/bin/machine) 2>/dev/null           || echo unknown`
-/usr/bin/oslevel       = `(/usr/bin/oslevel) 2>/dev/null       || echo unknown`
-/bin/universe          = `(/bin/universe) 2>/dev/null          || echo unknown`
+/bin/arch              = $( (/bin/arch) 2>/dev/null              || echo unknown)
+/usr/bin/arch -k       = $( (/usr/bin/arch -k) 2>/dev/null       || echo unknown)
+/usr/convex/getsysinfo = $( (/usr/convex/getsysinfo) 2>/dev/null || echo unknown)
+/usr/bin/hostinfo      = $( (/usr/bin/hostinfo) 2>/dev/null      || echo unknown)
+/bin/machine           = $( (/bin/machine) 2>/dev/null           || echo unknown)
+/usr/bin/oslevel       = $( (/usr/bin/oslevel) 2>/dev/null       || echo unknown)
+/bin/universe          = $( (/bin/universe) 2>/dev/null          || echo unknown)
 
 _ASUNAME
 
@@ -2433,7 +2433,7 @@ do
     | -silent | --silent | --silen | --sile | --sil)
       continue ;;
     *\'*)
-      ac_arg=`$as_echo "$ac_arg" | sed "s/'/'\\\\\\\\''/g"` ;;
+      ac_arg=$($as_echo "$ac_arg" | sed "s/'/'\\\\\\\\''/g") ;;
     esac
     case $ac_pass in
     1) as_fn_append ac_configure_args0 " '$ac_arg'" ;;
@@ -2662,8 +2662,8 @@ $as_echo "$as_me: error: \`$ac_var' was not set in the previous run" >&2;}
     *)
       if test "x$ac_old_val" != "x$ac_new_val"; then
 	# differences in whitespace do not lead to failure.
-	ac_old_val_w=`echo x $ac_old_val`
-	ac_new_val_w=`echo x $ac_new_val`
+	ac_old_val_w=$(echo x $ac_old_val)
+	ac_new_val_w=$(echo x $ac_new_val)
 	if test "$ac_old_val_w" != "$ac_new_val_w"; then
 	  { $as_echo "$as_me:${as_lineno-$LINENO}: error: \`$ac_var' has changed since the previous run:" >&5
 $as_echo "$as_me: error: \`$ac_var' has changed since the previous run:" >&2;}
@@ -2682,7 +2682,7 @@ $as_echo "$as_me:   current value: \`$ac_new_val'" >&2;}
   # Pass precious variables to config.status.
   if test "$ac_new_set" = set; then
     case $ac_new_val in
-    *\'*) ac_arg=$ac_var=`$as_echo "$ac_new_val" | sed "s/'/'\\\\\\\\''/g"` ;;
+    *\'*) ac_arg=$ac_var=$($as_echo "$ac_new_val" | sed "s/'/'\\\\\\\\''/g") ;;
     *) ac_arg=$ac_var=$ac_new_val ;;
     esac
     case " $ac_configure_args " in
@@ -2830,10 +2830,10 @@ if ${ac_cv_build+:} false; then :
 else
   ac_build_alias=$build_alias
 test "x$ac_build_alias" = x &&
-  ac_build_alias=`$SHELL "$ac_aux_dir/config.guess"`
+  ac_build_alias=$($SHELL "$ac_aux_dir/config.guess")
 test "x$ac_build_alias" = x &&
   as_fn_error $? "cannot guess build type; you must specify one" "$LINENO" 5
-ac_cv_build=`$SHELL "$ac_aux_dir/config.sub" $ac_build_alias` ||
+ac_cv_build=$($SHELL "$ac_aux_dir/config.sub" $ac_build_alias) ||
   as_fn_error $? "$SHELL $ac_aux_dir/config.sub $ac_build_alias failed" "$LINENO" 5
 
 fi
@@ -2854,7 +2854,7 @@ shift; shift
 # except with old shells:
 build_os=$*
 IFS=$ac_save_IFS
-case $build_os in *\ *) build_os=`echo "$build_os" | sed 's/ /-/g'`;; esac
+case $build_os in *\ *) build_os=$(echo "$build_os" | sed 's/ /-/g');; esac
 
 
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking host system type" >&5
@@ -2865,7 +2865,7 @@ else
   if test "x$host_alias" = x; then
   ac_cv_host=$ac_cv_build
 else
-  ac_cv_host=`$SHELL "$ac_aux_dir/config.sub" $host_alias` ||
+  ac_cv_host=$($SHELL "$ac_aux_dir/config.sub" $host_alias) ||
     as_fn_error $? "$SHELL $ac_aux_dir/config.sub $host_alias failed" "$LINENO" 5
 fi
 
@@ -2887,7 +2887,7 @@ shift; shift
 # except with old shells:
 host_os=$*
 IFS=$ac_save_IFS
-case $host_os in *\ *) host_os=`echo "$host_os" | sed 's/ /-/g'`;; esac
+case $host_os in *\ *) host_os=$(echo "$host_os" | sed 's/ /-/g');; esac
 
 
 
@@ -2968,7 +2968,7 @@ fi
 
 
 if test "$prefix" != "/"; then
-    prefix=`echo "$prefix" | sed -e 's/\/$//g'`
+    prefix=$(echo "$prefix" | sed -e 's/\/$//g')
 fi
 
 
@@ -3030,7 +3030,7 @@ if test "${enable_universalsdk+set}" = set; then :
 	yes)
 		# Locate the best usable SDK, see Mac/README for more
 		# information
-		enableval="`/usr/bin/xcodebuild -version -sdk macosx Path 2>/dev/null`"
+		enableval="$(/usr/bin/xcodebuild -version -sdk macosx Path 2>/dev/null)"
 		if ! ( echo $enableval | grep -E '\.sdk' 1>/dev/null )
 		then
 			enableval=/Developer/SDKs/MacOSX10.4u.sdk
@@ -3079,11 +3079,11 @@ ARCH_RUN_32BIT=""
 # For backward compatibility reasons we prefer to select '32-bit' if available,
 # otherwise use 'intel'
 UNIVERSAL_ARCHS="32-bit"
-if test "`uname -s`" = "Darwin"
+if test "$(uname -s)" = "Darwin"
 then
 	if test -n "${UNIVERSALSDK}"
 	then
-		if test -z "`/usr/bin/file -L "${UNIVERSALSDK}/usr/lib/libSystem.dylib" | grep ppc`"
+		if test -z "$(/usr/bin/file -L "${UNIVERSALSDK}/usr/lib/libSystem.dylib" | grep ppc)"
 		then
 			UNIVERSAL_ARCHS="intel"
 		fi
@@ -3116,7 +3116,7 @@ if test "${with_framework_name+set}" = set; then :
   withval=$with_framework_name;
     PYTHONFRAMEWORK=${withval}
     PYTHONFRAMEWORKDIR=${withval}.framework
-    PYTHONFRAMEWORKIDENTIFIER=org.python.`echo $withval | tr 'A-Z' 'a-z'`
+    PYTHONFRAMEWORKIDENTIFIER=org.python.$(echo $withval | tr 'A-Z' 'a-z')
 
 else
 
@@ -3182,8 +3182,8 @@ if test "${enable_framework+set}" = set; then :
 			;;
 
 		*/Library/Frameworks)
-			MDIR="`dirname "${enableval}"`"
-			MDIR="`dirname "${MDIR}"`"
+			MDIR="$(dirname "${enableval}")"
+			MDIR="$(dirname "${MDIR}")"
 			FRAMEWORKINSTALLAPPSPREFIX="${MDIR}/Applications"
 
 			if test "${prefix}" = "NONE"; then
@@ -3291,18 +3291,18 @@ then
 	esac
 	ac_sys_release=
     else
-	ac_sys_system=`uname -s`
+	ac_sys_system=$(uname -s)
 	if test "$ac_sys_system" = "AIX" \
 	-o "$ac_sys_system" = "UnixWare" -o "$ac_sys_system" = "OpenUNIX"; then
-		ac_sys_release=`uname -v`
+		ac_sys_release=$(uname -v)
 	else
-		ac_sys_release=`uname -r`
+		ac_sys_release=$(uname -r)
 	fi
     fi
-    ac_md_system=`echo $ac_sys_system |
-			tr -d '/ ' | tr '[A-Z]' '[a-z]'`
-    ac_md_release=`echo $ac_sys_release |
-			tr -d '/ ' | sed 's/^[A-Z]\.//' | sed 's/\..*//'`
+    ac_md_system=$(echo $ac_sys_system |
+			tr -d '/ ' | tr '[A-Z]' '[a-z]')
+    ac_md_release=$(echo $ac_sys_release |
+			tr -d '/ ' | sed 's/^[A-Z]\.//' | sed 's/\..*//')
     MACHDEP="$ac_md_system$ac_md_release"
 
     case $MACHDEP in
@@ -3412,7 +3412,7 @@ $as_echo "#define _BSD_SOURCE 1" >>confdefs.h
   AIX/4)
     define_xopen_source=no;;
   AIX/5)
-    if test `uname -r` -eq 1; then
+    if test $(uname -r) -eq 1; then
       define_xopen_source=no
     fi
     ;;
@@ -3522,7 +3522,7 @@ then
 
 		if test -n "$found_gcc" -a -n "$found_clang"
 		then
-			if test -n "`"$found_gcc" --version | grep llvm-gcc`"
+			if test -n "$("$found_gcc" --version | grep llvm-gcc)"
 			then
 				{ $as_echo "$as_me:${as_lineno-$LINENO}: Detected llvm-gcc, falling back to clang" >&5
 $as_echo "$as_me: Detected llvm-gcc, falling back to clang" >&6;}
@@ -3540,13 +3540,13 @@ $as_echo "$as_me: No GCC found, use CLANG" >&6;}
 
 		elif test -z "$found_gcc" -a -z "$found_clang"
 		then
-			found_clang=`/usr/bin/xcrun -find clang 2>/dev/null`
+			found_clang=$(/usr/bin/xcrun -find clang 2>/dev/null)
 			if test -n "${found_clang}"
 			then
 				{ $as_echo "$as_me:${as_lineno-$LINENO}: Using clang from Xcode.app" >&5
 $as_echo "$as_me: Using clang from Xcode.app" >&6;}
 				CC="${found_clang}"
-				CXX="`/usr/bin/xcrun -find clang++`"
+				CXX="$(/usr/bin/xcrun -find clang++)"
 
 			# else: use default behaviour
 			fi
@@ -3899,7 +3899,7 @@ ac_clean_files="$ac_clean_files a.out a.out.dSYM a.exe b.out"
 # of exeext.
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking whether the C compiler works" >&5
 $as_echo_n "checking whether the C compiler works... " >&6; }
-ac_link_default=`$as_echo "$ac_link" | sed 's/ -o *conftest[^ ]*//'`
+ac_link_default=$($as_echo "$ac_link" | sed 's/ -o *conftest[^ ]*//')
 
 # The possible output files:
 ac_files="a.out conftest.exe conftest a.exe a_out.exe b.out conftest.*"
@@ -3943,7 +3943,7 @@ do
     *.* )
 	if test "${ac_cv_exeext+set}" = set && test "$ac_cv_exeext" != no;
 	then :; else
-	   ac_cv_exeext=`expr "$ac_file" : '[^.]*\(\..*\)'`
+	   ac_cv_exeext=$(expr "$ac_file" : '[^.]*\(\..*\)'0)
 	fi
 	# We set ac_cv_exeext here because the later test for it is not
 	# safe: cross compilers may not add the suffix if given an `-o'
@@ -4003,7 +4003,7 @@ for ac_file in conftest.exe conftest conftest.*; do
   test -f "$ac_file" || continue
   case $ac_file in
     *.$ac_ext | *.xcoff | *.tds | *.d | *.pdb | *.xSYM | *.bb | *.bbg | *.map | *.inf | *.dSYM | *.o | *.obj ) ;;
-    *.* ) ac_cv_exeext=`expr "$ac_file" : '[^.]*\(\..*\)'`
+    *.* ) ac_cv_exeext=$(expr "$ac_file" : '[^.]*\(\..*\)')
 	  break;;
     * ) break;;
   esac
@@ -4112,7 +4112,7 @@ $as_echo "$ac_try_echo"; } >&5
   test -f "$ac_file" || continue;
   case $ac_file in
     *.$ac_ext | *.xcoff | *.tds | *.d | *.pdb | *.xSYM | *.bb | *.bbg | *.map | *.inf | *.dSYM ) ;;
-    *) ac_cv_objext=`expr "$ac_file" : '.*\.\(.*\)'`
+    *) ac_cv_objext=$(expr "$ac_file" : '.*\.\(.*\)')
        break;;
   esac
 done
@@ -4498,7 +4498,7 @@ do
       as_fn_executable_p "$ac_path_GREP" || continue
 # Check for GNU ac_path_GREP and select it if it is found.
   # Check for GNU $ac_path_GREP
-case `"$ac_path_GREP" --version 2>&1` in
+case $("$ac_path_GREP" --version 2>&1) in
 *GNU*)
   ac_cv_path_GREP="$ac_path_GREP" ac_path_GREP_found=:;;
 *)
@@ -4567,7 +4567,7 @@ do
       as_fn_executable_p "$ac_path_SED" || continue
 # Check for GNU ac_path_SED and select it if it is found.
   # Check for GNU $ac_path_SED
-case `"$ac_path_SED" --version 2>&1` in
+case $("$ac_path_SED" --version 2>&1) in
 *GNU*)
   ac_cv_path_SED="$ac_path_SED" ac_path_SED_found=:;;
 *)
@@ -5319,7 +5319,7 @@ cat >> conftest.c <<EOF
 EOF
 
 if $CPP $CPPFLAGS conftest.c >conftest.out 2>/dev/null; then
-  PLATFORM_TRIPLET=`grep -v '^#' conftest.out | grep -v '^ *$' | tr -d ' 	'`
+  PLATFORM_TRIPLET=$(grep -v '^#' conftest.out | grep -v '^ *$' | tr -d ' 	')
   { $as_echo "$as_me:${as_lineno-$LINENO}: result: $PLATFORM_TRIPLET" >&5
 $as_echo "$PLATFORM_TRIPLET" >&6; }
 else
@@ -5396,7 +5396,7 @@ do
       as_fn_executable_p "$ac_path_EGREP" || continue
 # Check for GNU ac_path_EGREP and select it if it is found.
   # Check for GNU $ac_path_EGREP
-case `"$ac_path_EGREP" --version 2>&1` in
+case $("$ac_path_EGREP" --version 2>&1) in
 *GNU*)
   ac_cv_path_EGREP="$ac_path_EGREP" ac_path_EGREP_found=:;;
 *)
@@ -5557,12 +5557,12 @@ fi
 for ac_header in sys/types.h sys/stat.h stdlib.h string.h memory.h strings.h \
 		  inttypes.h stdint.h unistd.h
 do :
-  as_ac_Header=`$as_echo "ac_cv_header_$ac_header" | $as_tr_sh`
+  as_ac_Header=$($as_echo "ac_cv_header_$ac_header" | $as_tr_sh)
 ac_fn_c_check_header_compile "$LINENO" "$ac_header" "$as_ac_Header" "$ac_includes_default
 "
 if eval test \"x\$"$as_ac_Header"\" = x"yes"; then :
   cat >>confdefs.h <<_ACEOF
-#define `$as_echo "HAVE_$ac_header" | $as_tr_cpp` 1
+#define $($as_echo "HAVE_$ac_header" | $as_tr_cpp) 1
 _ACEOF
 
 fi
@@ -5644,8 +5644,8 @@ arm_arch = __ARM_ARCH
 EOF
 
 if $CPP $CPPFLAGS conftest.c >conftest.out 2>/dev/null; then
-  ANDROID_API_LEVEL=`sed -n -e '/__ANDROID_API__/d' -e 's/^android_api = //p' conftest.out`
-  _arm_arch=`sed -n -e '/__ARM_ARCH/d' -e 's/^arm_arch = //p' conftest.out`
+  ANDROID_API_LEVEL=$(sed -n -e '/__ANDROID_API__/d' -e 's/^android_api = //p' conftest.out)
+  _arm_arch=$(sed -n -e '/__ARM_ARCH/d' -e 's/^arm_arch = //p' conftest.out)
   { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ANDROID_API_LEVEL" >&5
 $as_echo "$ANDROID_API_LEVEL" >&6; }
   if test -z "$ANDROID_API_LEVEL"; then
@@ -5783,7 +5783,7 @@ then
 	AIX*)
 	   exp_extra="\"\""
 	   if test $ac_sys_release -ge 5 -o \
-		   $ac_sys_release -eq 4 -a `uname -r` -ge 2 ; then
+		   $ac_sys_release -eq 4 -a $(uname -r) -ge 2 ; then
 	       exp_extra="."
 	   fi
 	   LINKCC="\$(srcdir)/Modules/makexp_aix Modules/python.exp $exp_extra \$(LIBRARY); $LINKCC";;
@@ -5806,9 +5806,9 @@ $as_echo "$LINKCC" >&6; }
 $as_echo_n "checking for GNU ld... " >&6; }
 ac_prog=ld
 if test "$GCC" = yes; then
-       ac_prog=`$CC -print-prog-name=ld`
+       ac_prog=$($CC -print-prog-name=ld)
 fi
-case `"$ac_prog" -V 2>&1 < /dev/null` in
+case $("$ac_prog" -V 2>&1 < /dev/null) in
       *GNU*)
           GNULD=yes;;
       *)
@@ -5882,7 +5882,7 @@ $as_echo_n "checking LDLIBRARY... " >&6; }
 if test "$enable_framework"
 then
   LDLIBRARY='$(PYTHONFRAMEWORKDIR)/Versions/$(VERSION)/$(PYTHONFRAMEWORK)'
-  RUNSHARED=DYLD_FRAMEWORK_PATH=`pwd`${DYLD_FRAMEWORK_PATH:+:${DYLD_FRAMEWORK_PATH}}
+  RUNSHARED=DYLD_FRAMEWORK_PATH=$(pwd)${DYLD_FRAMEWORK_PATH:+:${DYLD_FRAMEWORK_PATH}}
   BLDLIBRARY=''
 else
   BLDLIBRARY='$(LDLIBRARY)'
@@ -5902,7 +5902,7 @@ $as_echo "#define Py_ENABLE_SHARED 1" >>confdefs.h
     SunOS*)
 	  LDLIBRARY='libpython$(LDVERSION).so'
 	  BLDLIBRARY='-Wl,-R,$(LIBDIR) -L. -lpython$(LDVERSION)'
-	  RUNSHARED=LD_LIBRARY_PATH=`pwd`${LD_LIBRARY_PATH:+:${LD_LIBRARY_PATH}}
+	  RUNSHARED=LD_LIBRARY_PATH=$(pwd)${LD_LIBRARY_PATH:+:${LD_LIBRARY_PATH}}
 	  INSTSONAME="$LDLIBRARY".$SOVERSION
 	  if test "$with_pydebug" != yes
 	  then
@@ -5912,7 +5912,7 @@ $as_echo "#define Py_ENABLE_SHARED 1" >>confdefs.h
     Linux*|GNU*|NetBSD*|FreeBSD*|DragonFly*|OpenBSD*)
 	  LDLIBRARY='libpython$(LDVERSION).so'
 	  BLDLIBRARY='-L. -lpython$(LDVERSION)'
-	  RUNSHARED=LD_LIBRARY_PATH=`pwd`${LD_LIBRARY_PATH:+:${LD_LIBRARY_PATH}}
+	  RUNSHARED=LD_LIBRARY_PATH=$(pwd)${LD_LIBRARY_PATH:+:${LD_LIBRARY_PATH}}
 	  INSTSONAME="$LDLIBRARY".$SOVERSION
 	  if test "$with_pydebug" != yes
           then
@@ -5920,7 +5920,7 @@ $as_echo "#define Py_ENABLE_SHARED 1" >>confdefs.h
 	  fi
 	  ;;
     hp*|HP*)
-	  case `uname -m` in
+	  case $(uname -m) in
 		ia64)
 			LDLIBRARY='libpython$(LDVERSION).so'
 			;;
@@ -5929,16 +5929,16 @@ $as_echo "#define Py_ENABLE_SHARED 1" >>confdefs.h
 			;;
 	  esac
 	  BLDLIBRARY='-Wl,+b,$(LIBDIR) -L. -lpython$(LDVERSION)'
-	  RUNSHARED=SHLIB_PATH=`pwd`${SHLIB_PATH:+:${SHLIB_PATH}}
+	  RUNSHARED=SHLIB_PATH=$(pwd)${SHLIB_PATH:+:${SHLIB_PATH}}
 	  ;;
     Darwin*)
     	LDLIBRARY='libpython$(LDVERSION).dylib'
 	BLDLIBRARY='-L. -lpython$(LDVERSION)'
-	RUNSHARED=DYLD_LIBRARY_PATH=`pwd`${DYLD_LIBRARY_PATH:+:${DYLD_LIBRARY_PATH}}
+	RUNSHARED=DYLD_LIBRARY_PATH=$(pwd)${DYLD_LIBRARY_PATH:+:${DYLD_LIBRARY_PATH}}
 	;;
     AIX*)
 	LDLIBRARY='libpython$(LDVERSION).so'
-	RUNSHARED=LIBPATH=`pwd`${LIBPATH:+:${LIBPATH}}
+	RUNSHARED=LIBPATH=$(pwd)${LIBPATH:+:${LIBPATH}}
 	;;
 
   esac
@@ -6237,7 +6237,7 @@ case $as_dir/ in #((
 	    echo one > conftest.one
 	    echo two > conftest.two
 	    mkdir conftest.dir
-	    if "$as_dir/$ac_prog$ac_exec_ext" -c conftest.one conftest.two "`pwd`/conftest.dir" &&
+	    if "$as_dir/$ac_prog$ac_exec_ext" -c conftest.one conftest.two "$(pwd)/conftest.dir" &&
 	      test -s conftest.one && test -s conftest.two &&
 	      test -s conftest.dir/conftest.one &&
 	      test -s conftest.dir/conftest.two
@@ -6293,7 +6293,7 @@ do
     for ac_prog in mkdir gmkdir; do
 	 for ac_exec_ext in '' $ac_executable_extensions; do
 	   as_fn_executable_p "$as_dir/$ac_prog$ac_exec_ext" || continue
-	   case `"$as_dir/$ac_prog$ac_exec_ext" --version 2>&1` in #(
+	   case $("$as_dir/$ac_prog$ac_exec_ext" --version 2>&1) in #(
 	     'mkdir (GNU coreutils) '* | \
 	     'mkdir (coreutils) '* | \
 	     'mkdir (fileutils) '4.1*)
@@ -6465,14 +6465,14 @@ llvm_bin_dir=''
 llvm_path="${PATH}"
 if test "${CC}" = "clang"
 then
-  clang_bin=`which clang`
+  clang_bin=$(which clang)
   # Some systems install clang elsewhere as a symlink to the real path
   # which is where the related llvm tools are located.
   if test -L "${clang_bin}"
   then
-    clang_dir=`dirname "${clang_bin}"`
-    clang_bin=`readlink "${clang_bin}"`
-    llvm_bin_dir="${clang_dir}/"`dirname "${clang_bin}"`
+    clang_dir=$(dirname "${clang_bin}")
+    clang_bin=$(readlink "${clang_bin}")
+    llvm_bin_dir="${clang_dir}/"$(dirname "${clang_bin}")
     llvm_path="${llvm_path}${PATH_SEPARATOR}${llvm_bin_dir}"
   fi
 fi
@@ -6610,7 +6610,7 @@ fi
       fi
       if test "$ac_sys_system" = "Darwin" -a "${LLVM_AR_FOUND}" = "not-found"
       then
-        found_llvm_ar=`/usr/bin/xcrun -find llvm-ar 2>/dev/null`
+        found_llvm_ar=$(/usr/bin/xcrun -find llvm-ar 2>/dev/null)
         if test -n "${found_llvm_ar}"
         then
           LLVM_AR='/usr/bin/xcrun llvm-ar'
@@ -6774,7 +6774,7 @@ else
 fi
 if test "$ac_sys_system" = "Darwin" -a "${LLVM_PROF_FOUND}" = "not-found"
 then
-  found_llvm_profdata=`/usr/bin/xcrun -find llvm-profdata 2>/dev/null`
+  found_llvm_profdata=$(/usr/bin/xcrun -find llvm-profdata 2>/dev/null)
   if test -n "${found_llvm_profdata}"
   then
     # llvm-profdata isn't directly in $PATH in some cases.
@@ -7260,7 +7260,7 @@ fi
     # if so, only then enable the warning.
     if test $ac_cv_enable_unreachable_code_warning = yes && \
         test "$Py_DEBUG" != "true" && \
-        test -z "`$CC --version 2>/dev/null | grep 'Free Software Foundation'`"
+        test -z "$($CC --version 2>/dev/null | grep 'Free Software Foundation')"
     then
       BASECFLAGS="$BASECFLAGS -Wunreachable-code"
     else
@@ -7495,10 +7495,10 @@ $as_echo "$CC" >&6; }
 
         { $as_echo "$as_me:${as_lineno-$LINENO}: checking which MACOSX_DEPLOYMENT_TARGET to use" >&5
 $as_echo_n "checking which MACOSX_DEPLOYMENT_TARGET to use... " >&6; }
-        cur_target_major=`sw_vers -productVersion | \
-                sed 's/\([0-9]*\)\.\([0-9]*\).*/\1/'`
-        cur_target_minor=`sw_vers -productVersion | \
-                sed 's/\([0-9]*\)\.\([0-9]*\).*/\2/'`
+        cur_target_major=$(sw_vers -productVersion | \
+                sed 's/\([0-9]*\)\.\([0-9]*\).*/\1/')
+        cur_target_minor=$(sw_vers -productVersion | \
+                sed 's/\([0-9]*\)\.\([0-9]*\).*/\2/')
         cur_target="${cur_target_major}.${cur_target_minor}"
         if test ${cur_target_major} -eq 10 && \
            test ${cur_target_minor} -ge 3 && \
@@ -7515,7 +7515,7 @@ $as_echo_n "checking which MACOSX_DEPLOYMENT_TARGET to use... " >&6; }
                     ;;
                 esac
             else
-                if test `/usr/bin/arch` = "i386"
+                if test $(/usr/bin/arch) = "i386"
                 then
                     # 10.4 was the first release to support Intel archs
                     cur_target="10.4"
@@ -7941,11 +7941,11 @@ libutil.h sys/resource.h netpacket/packet.h sysexits.h bluetooth.h \
 linux/tipc.h linux/random.h spawn.h util.h alloca.h endian.h \
 sys/endian.h sys/sysmacros.h linux/memfd.h linux/wait.h sys/memfd.h sys/mman.h
 do :
-  as_ac_Header=`$as_echo "ac_cv_header_$ac_header" | $as_tr_sh`
+  as_ac_Header=$($as_echo "ac_cv_header_$ac_header" | $as_tr_sh)
 ac_fn_c_check_header_mongrel "$LINENO" "$ac_header" "$as_ac_Header" "$ac_includes_default"
 if eval test \"x\$"$as_ac_Header"\" = x"yes"; then :
   cat >>confdefs.h <<_ACEOF
-#define `$as_echo "HAVE_$ac_header" | $as_tr_cpp` 1
+#define $($as_echo "HAVE_$ac_header" | $as_tr_cpp) 1
 _ACEOF
 
 fi
@@ -7954,7 +7954,7 @@ done
 
 ac_header_dirent=no
 for ac_hdr in dirent.h sys/ndir.h sys/dir.h ndir.h; do
-  as_ac_Header=`$as_echo "ac_cv_header_dirent_$ac_hdr" | $as_tr_sh`
+  as_ac_Header=$($as_echo "ac_cv_header_dirent_$ac_hdr" | $as_tr_sh)
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_hdr that defines DIR" >&5
 $as_echo_n "checking for $ac_hdr that defines DIR... " >&6; }
 if eval \${$as_ac_Header+:} false; then :
@@ -7986,7 +7986,7 @@ eval ac_res=\$$as_ac_Header
 $as_echo "$ac_res" >&6; }
 if eval test \"x\$"$as_ac_Header"\" = x"yes"; then :
   cat >>confdefs.h <<_ACEOF
-#define `$as_echo "HAVE_$ac_hdr" | $as_tr_cpp` 1
+#define $($as_echo "HAVE_$ac_hdr" | $as_tr_cpp) 1
 _ACEOF
 
 ac_header_dirent=$ac_hdr; break
@@ -8271,7 +8271,7 @@ done
 # On Linux, can.h and can/raw.h require sys/socket.h
 for ac_header in linux/can.h linux/can/raw.h linux/can/bcm.h
 do :
-  as_ac_Header=`$as_echo "ac_cv_header_$ac_header" | $as_tr_sh`
+  as_ac_Header=$($as_echo "ac_cv_header_$ac_header" | $as_tr_sh)
 ac_fn_c_check_header_compile "$LINENO" "$ac_header" "$as_ac_Header" "
 #ifdef HAVE_SYS_SOCKET_H
 #include <sys/socket.h>
@@ -8280,7 +8280,7 @@ ac_fn_c_check_header_compile "$LINENO" "$ac_header" "$as_ac_Header" "
 "
 if eval test \"x\$"$as_ac_Header"\" = x"yes"; then :
   cat >>confdefs.h <<_ACEOF
-#define `$as_echo "HAVE_$ac_header" | $as_tr_cpp` 1
+#define $($as_echo "HAVE_$ac_header" | $as_tr_cpp) 1
 _ACEOF
 
 fi
@@ -9246,12 +9246,12 @@ case $ac_sys_system/$ac_sys_release in
     if test "${enable_universalsdk}"; then
 	    :
     else
-        LIBTOOL_CRUFT="${LIBTOOL_CRUFT} -arch_only `/usr/bin/arch`"
+        LIBTOOL_CRUFT="${LIBTOOL_CRUFT} -arch_only $(/usr/bin/arch)"
     fi
     LIBTOOL_CRUFT=$LIBTOOL_CRUFT' -install_name $(PYTHONFRAMEWORKINSTALLDIR)/Versions/$(VERSION)/$(PYTHONFRAMEWORK)'
     LIBTOOL_CRUFT=$LIBTOOL_CRUFT' -compatibility_version $(VERSION) -current_version $(VERSION)';;
   Darwin/*)
-    gcc_version=`gcc -dumpversion`
+    gcc_version=$(gcc -dumpversion)
     if test ${gcc_version} '<' 4.0
         then
             LIBTOOL_CRUFT="-lcc_dynamic"
@@ -9286,7 +9286,7 @@ fi
 
 
     if test "${ac_osx_32bit}" = "yes"; then
-    	case `/usr/bin/arch` in
+    	case $(/usr/bin/arch) in
     	i386)
     		MACOSX_DEFAULT_ARCH="i386"
     		;;
@@ -9298,7 +9298,7 @@ fi
     		;;
     	esac
     else
-    	case `/usr/bin/arch` in
+    	case $(/usr/bin/arch) in
     	i386)
     		MACOSX_DEFAULT_ARCH="x86_64"
     		;;
@@ -9368,7 +9368,7 @@ $as_echo_n "checking the extension of shared libraries... " >&6; }
 if test -z "$SHLIB_SUFFIX"; then
 	case $ac_sys_system in
 	hp*|HP*)
-		case `uname -m` in
+		case $(uname -m) in
 			ia64) SHLIB_SUFFIX=.so;;
 	  		*)    SHLIB_SUFFIX=.sl;;
 		esac
@@ -9440,10 +9440,10 @@ then
 		# Use -undefined dynamic_lookup whenever possible (10.3 and later).
 		# This allows an extension to be used in any Python
 
-		dep_target_major=`echo ${MACOSX_DEPLOYMENT_TARGET} | \
-				sed 's/\([0-9]*\)\.\([0-9]*\).*/\1/'`
-		dep_target_minor=`echo ${MACOSX_DEPLOYMENT_TARGET} | \
-				sed 's/\([0-9]*\)\.\([0-9]*\).*/\2/'`
+		dep_target_major=$(echo ${MACOSX_DEPLOYMENT_TARGET} | \
+				sed 's/\([0-9]*\)\.\([0-9]*\).*/\1/')
+		dep_target_minor=$(\echo ${MACOSX_DEPLOYMENT_TARGET} | \
+				sed 's/\([0-9]*\)\.\([0-9]*\).*/\2/')
 		if test ${dep_target_major} -eq 10 && \
 		   test ${dep_target_minor} -le 2
 		then
@@ -9472,7 +9472,7 @@ then
 		LDSHARED='$(CC) -shared'
 		LDCXXSHARED='$(CXX) -shared';;
 	FreeBSD*)
-		if [ "`$CC -dM -E - </dev/null | grep __ELF__`" != "" ]
+		if [ "$($CC -dM -E - </dev/null | grep __ELF__)" != "" ]
 		then
 			LDSHARED='$(CC) -shared'
 			LDCXXSHARED='$(CXX) -shared'
@@ -9480,12 +9480,12 @@ then
 			LDSHARED="ld -Bshareable"
 		fi;;
 	OpenBSD*)
-		if [ "`$CC -dM -E - </dev/null | grep __ELF__`" != "" ]
+		if [ "$($CC -dM -E - </dev/null | grep __ELF__)" != "" ]
 		then
 				LDSHARED='$(CC) -shared $(CCSHARED)'
 				LDCXXSHARED='$(CXX) -shared $(CCSHARED)'
 		else
-				case `uname -r` in
+				case $(uname -r) in
 				[01].* | 2.[0-7] | 2.[0-7].*)
 				   LDSHARED="ld -Bshareable ${LDFLAGS}"
 				   ;;
@@ -9528,7 +9528,7 @@ then
 	case $ac_sys_system/$ac_sys_release in
 	SunOS*) if test "$GCC" = yes;
 		then CCSHARED="-fPIC";
-		elif test `uname -p` = sparc;
+		elif test $(uname -p) = sparc;
 		then CCSHARED="-xcode=pic32";
 		else CCSHARED="-Kpic";
 		fi;;
@@ -9588,7 +9588,7 @@ then
 	SCO_SV*) LINKFORSHARED="-Wl,-Bexport";;
 	ReliantUNIX*) LINKFORSHARED="-W1 -Blargedynsym";;
 	FreeBSD*|NetBSD*|OpenBSD*|DragonFly*)
-		if [ "`$CC -dM -E - </dev/null | grep __ELF__`" != "" ]
+		if [ "$($CC -dM -E - </dev/null | grep __ELF__)" != "" ]
 		then
 			LINKFORSHARED="-Wl,--export-dynamic"
 		fi;;
@@ -9795,11 +9795,11 @@ fi
 # checks for uuid.h location
 for ac_header in uuid/uuid.h uuid.h
 do :
-  as_ac_Header=`$as_echo "ac_cv_header_$ac_header" | $as_tr_sh`
+  as_ac_Header=$($as_echo "ac_cv_header_$ac_header" | $as_tr_sh)
 ac_fn_c_check_header_mongrel "$LINENO" "$ac_header" "$as_ac_Header" "$ac_includes_default"
 if eval test \"x\$"$as_ac_Header"\" = x"yes"; then :
   cat >>confdefs.h <<_ACEOF
-#define `$as_echo "HAVE_$ac_header" | $as_tr_cpp` 1
+#define $($as_echo "HAVE_$ac_header" | $as_tr_cpp) 1
 _ACEOF
 
 fi
@@ -10457,7 +10457,7 @@ $as_echo "$as_me: WARNING: --with(out)-system-ffi is ignored on this platform" >
 fi
 
 if test "$with_system_ffi" = "yes" && test -n "$PKG_CONFIG"; then
-    LIBFFI_INCLUDEDIR="`"$PKG_CONFIG" libffi --cflags-only-I 2>/dev/null | sed -e 's/^-I//;s/ *$//'`"
+    LIBFFI_INCLUDEDIR="$("$PKG_CONFIG" libffi --cflags-only-I 2>/dev/null | sed -e 's/^-I//;s/ *$//')"
 else
     LIBFFI_INCLUDEDIR=""
 fi
@@ -10543,7 +10543,7 @@ if test x$with_dbmliborder = xyes
 then
 as_fn_error $? "proper usage is --with-dbmliborder=db1:db2:..." "$LINENO" 5
 else
-  for db in `echo $with_dbmliborder | sed 's/:/ /g'`; do
+  for db in $(echo $with_dbmliborder | sed 's/:/ /g'); do
     if test x$db != xndbm && test x$db != xgdbm && test x$db != xbdb
     then
       as_fn_error $? "proper usage is --with-dbmliborder=db1:db2:..." "$LINENO" 5
@@ -11560,11 +11560,11 @@ for ac_func in alarm accept4 setitimer getitimer bind_textdomain_codeset chown \
  truncate uname unlinkat utimensat utimes waitid waitpid wait3 wait4 \
  wcscoll wcsftime wcsxfrm wmemcmp writev _getpty rtpSpawn
 do :
-  as_ac_var=`$as_echo "ac_cv_func_$ac_func" | $as_tr_sh`
+  as_ac_var=$($as_echo "ac_cv_func_$ac_func" | $as_tr_sh)
 ac_fn_c_check_func "$LINENO" "$ac_func" "$as_ac_var"
 if eval test \"x\$"$as_ac_var"\" = x"yes"; then :
   cat >>confdefs.h <<_ACEOF
-#define `$as_echo "HAVE_$ac_func" | $as_tr_cpp` 1
+#define $($as_echo "HAVE_$ac_func" | $as_tr_cpp) 1
 _ACEOF
 
 fi
@@ -12684,11 +12684,11 @@ done
 # check for long file support functions
 for ac_func in fseek64 fseeko fstatvfs ftell64 ftello statvfs
 do :
-  as_ac_var=`$as_echo "ac_cv_func_$ac_func" | $as_tr_sh`
+  as_ac_var=$($as_echo "ac_cv_func_$ac_func" | $as_tr_sh)
 ac_fn_c_check_func "$LINENO" "$ac_func" "$as_ac_var"
 if eval test \"x\$"$as_ac_var"\" = x"yes"; then :
   cat >>confdefs.h <<_ACEOF
-#define `$as_echo "HAVE_$ac_func" | $as_tr_cpp` 1
+#define $($as_echo "HAVE_$ac_func" | $as_tr_cpp) 1
 _ACEOF
 
 fi
@@ -14501,11 +14501,11 @@ LIBS="$LIBS $LIBM"
 
 for ac_func in acosh asinh atanh copysign erf erfc expm1 finite gamma
 do :
-  as_ac_var=`$as_echo "ac_cv_func_$ac_func" | $as_tr_sh`
+  as_ac_var=$($as_echo "ac_cv_func_$ac_func" | $as_tr_sh)
 ac_fn_c_check_func "$LINENO" "$ac_func" "$as_ac_var"
 if eval test \"x\$"$as_ac_var"\" = x"yes"; then :
   cat >>confdefs.h <<_ACEOF
-#define `$as_echo "HAVE_$ac_func" | $as_tr_cpp` 1
+#define $($as_echo "HAVE_$ac_func" | $as_tr_cpp) 1
 _ACEOF
 
 fi
@@ -14513,11 +14513,11 @@ done
 
 for ac_func in hypot lgamma log1p log2 round tgamma
 do :
-  as_ac_var=`$as_echo "ac_cv_func_$ac_func" | $as_tr_sh`
+  as_ac_var=$($as_echo "ac_cv_func_$ac_func" | $as_tr_sh)
 ac_fn_c_check_func "$LINENO" "$ac_func" "$as_ac_var"
 if eval test \"x\$"$as_ac_var"\" = x"yes"; then :
   cat >>confdefs.h <<_ACEOF
-#define `$as_echo "HAVE_$ac_func" | $as_tr_cpp` 1
+#define $($as_echo "HAVE_$ac_func" | $as_tr_cpp) 1
 _ACEOF
 
 fi
@@ -15175,7 +15175,7 @@ $as_echo_n "checking ABIFLAGS... " >&6; }
 $as_echo "$ABIFLAGS" >&6; }
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking SOABI" >&5
 $as_echo_n "checking SOABI... " >&6; }
-SOABI='cpython-'`echo $VERSION | tr -d .`${ABIFLAGS}${PLATFORM_TRIPLET:+-$PLATFORM_TRIPLET}
+SOABI='cpython-'$(echo $VERSION | tr -d .)${ABIFLAGS}${PLATFORM_TRIPLET:+-$PLATFORM_TRIPLET}
 { $as_echo "$as_me:${as_lineno-$LINENO}: result: $SOABI" >&5
 $as_echo "$SOABI" >&6; }
 
@@ -15183,7 +15183,7 @@ $as_echo "$SOABI" >&6; }
 if test "$Py_DEBUG" = 'true' -a "$with_trace_refs" != "yes"; then
   # Similar to SOABI but remove "d" flag from ABIFLAGS
 
-  ALT_SOABI='cpython-'`echo $VERSION | tr -d .``echo $ABIFLAGS | tr -d d`${PLATFORM_TRIPLET:+-$PLATFORM_TRIPLET}
+  ALT_SOABI='cpython-'$(echo $VERSION | tr -d .)$(echo $ABIFLAGS | tr -d d)${PLATFORM_TRIPLET:+-$PLATFORM_TRIPLET}
 
 cat >>confdefs.h <<_ACEOF
 #define ALT_SOABI "${ALT_SOABI}"
@@ -15924,11 +15924,11 @@ fi
 
 for ac_header in curses.h ncurses.h
 do :
-  as_ac_Header=`$as_echo "ac_cv_header_$ac_header" | $as_tr_sh`
+  as_ac_Header=$($as_echo "ac_cv_header_$ac_header" | $as_tr_sh)
 ac_fn_c_check_header_mongrel "$LINENO" "$ac_header" "$as_ac_Header" "$ac_includes_default"
 if eval test \"x\$"$as_ac_Header"\" = x"yes"; then :
   cat >>confdefs.h <<_ACEOF
-#define `$as_echo "HAVE_$ac_header" | $as_tr_cpp` 1
+#define $($as_echo "HAVE_$ac_header" | $as_tr_cpp) 1
 _ACEOF
 
 fi
@@ -16643,7 +16643,7 @@ esac
 
 
 
-for h in `(cd $srcdir;echo Python/thread_*.h)`
+for h in $( (cd $srcdir;echo Python/thread_*.h))
 do
   THREADHEADERS="$THREADHEADERS \$(srcdir)/$h"
 done
@@ -17078,11 +17078,11 @@ ${ac_includes_default}
 "
 for ac_func in shm_open shm_unlink
 do :
-  as_ac_var=`$as_echo "ac_cv_func_$ac_func" | $as_tr_sh`
+  as_ac_var=$($as_echo "ac_cv_func_$ac_func" | $as_tr_sh)
 ac_fn_c_check_func "$LINENO" "$ac_func" "$as_ac_var"
 if eval test \"x\$"$as_ac_var"\" = x"yes"; then :
   cat >>confdefs.h <<_ACEOF
-#define `$as_echo "HAVE_$ac_func" | $as_tr_cpp` 1
+#define $($as_echo "HAVE_$ac_func" | $as_tr_cpp) 1
 _ACEOF
 
 fi
@@ -17204,10 +17204,10 @@ else
 fi
 
             if test x"$PKG_CONFIG" != x""; then
-                OPENSSL_LDFLAGS=`$PKG_CONFIG openssl --libs-only-L 2>/dev/null`
+                OPENSSL_LDFLAGS=$($PKG_CONFIG openssl --libs-only-L 2>/dev/null)
                 if test $? = 0; then
-                    OPENSSL_LIBS=`$PKG_CONFIG openssl --libs-only-l 2>/dev/null`
-                    OPENSSL_INCLUDES=`$PKG_CONFIG openssl --cflags-only-I 2>/dev/null`
+                    OPENSSL_LIBS=$($PKG_CONFIG openssl --libs-only-l 2>/dev/null)
+                    OPENSSL_INCLUDES=$($PKG_CONFIG openssl --cflags-only-I 2>/dev/null)
                     found=true
                 fi
             fi
@@ -17420,7 +17420,7 @@ _ACEOF
 # Ultrix sh set writes to stderr and can't be redirected directly,
 # and sets the high bit in the cache file unless we assign to the vars.
 (
-  for ac_var in `(set) 2>&1 | sed -n 's/^\([a-zA-Z_][a-zA-Z0-9_]*\)=.*/\1/p'`; do
+  for ac_var in $( (set) 2>&1 | sed -n 's/^\([a-zA-Z_][a-zA-Z0-9_]*\)=.*/\1/p'); do
     eval ac_val=\$$ac_var
     case $ac_val in #(
     *${as_nl}*)
@@ -17437,7 +17437,7 @@ $as_echo "$as_me: WARNING: cache variable $ac_var contains a newline" >&2;} ;;
   done
 
   (set) 2>&1 |
-    case $as_nl`(ac_space=' '; set) 2>&1` in #(
+    case $as_nl$( (ac_space=' '; set) 2>&1) in #(
     *${as_nl}ac_space=\ *)
       # `set' does not quote correctly, so add quotes: double-quote
       # substitution turns \\\\ into \\, and sed turns \\ into \.
@@ -17496,7 +17496,7 @@ U=
 for ac_i in : $LIBOBJS; do test "x$ac_i" = x: && continue
   # 1. Remove the extension, and $U if already installed.
   ac_script='s/\$U\././;s/\.o$//;s/\.obj$//'
-  ac_i=`$as_echo "$ac_i" | sed "$ac_script"`
+  ac_i=$($as_echo "$ac_i" | sed "$ac_script")
   # 2. Prepend LIBOBJDIR.  When used with automake>=1.10 LIBOBJDIR
   #    will be set to the directory where LIBOBJS objects are built.
   as_fn_append ac_libobjs " \${LIBOBJDIR}$ac_i\$U.$ac_objext"
@@ -18172,13 +18172,13 @@ _ACEOF
   echo "_ACEOF"
 } >conf$$subs.sh ||
   as_fn_error $? "could not make $CONFIG_STATUS" "$LINENO" 5
-ac_delim_num=`echo "$ac_subst_vars" | grep -c '^'`
+ac_delim_num=$(echo "$ac_subst_vars" | grep -c '^')
 ac_delim='%!_!# '
 for ac_last_try in false false false false false :; do
   . ./conf$$subs.sh ||
     as_fn_error $? "could not make $CONFIG_STATUS" "$LINENO" 5
 
-  ac_delim_n=`sed -n "s/.*$ac_delim\$/X/p" conf$$subs.awk | grep -c X`
+  ac_delim_n=$(sed -n "s/.*$ac_delim\$/X/p" conf$$subs.awk | grep -c X)
   if test $ac_delim_n = $ac_delim_num; then
     break
   elif $ac_last_try; then
@@ -18316,7 +18316,7 @@ _ACEOF
 # handling of long lines.
 ac_delim='%!_!# '
 for ac_last_try in false false :; do
-  ac_tt=`sed -n "/$ac_delim/p" confdefs.h`
+  ac_tt=$(sed -n "/$ac_delim/p" confdefs.h)
   if test -z "$ac_tt"; then
     break
   elif $ac_last_try; then
