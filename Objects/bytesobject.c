@@ -2948,8 +2948,12 @@ _PyBytes_Resize(PyObject **pv, Py_ssize_t newsize)
         return (*pv == NULL) ? -1 : 0;
     }
     /* XXX UNREF/NEWREF interface should be more symmetrical */
-    _Py_DEC_REFTOTAL;
+#ifdef Py_REF_DEBUG
+    _Py_RefTotal--;
+#endif
+#ifdef Py_TRACE_REFS
     _Py_ForgetReference(v);
+#endif
     *pv = (PyObject *)
         PyObject_REALLOC(v, PyBytesObject_SIZE + newsize);
     if (*pv == NULL) {
