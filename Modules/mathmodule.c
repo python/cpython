@@ -2028,7 +2028,7 @@ least common multiple of x and y
 static PyObject*
 math_lcm(PyObject *module, PyObject *a, PyObject *b)
 {
-    PyObject*g,*m,*f,*ab;
+    PyObject *g, *m, *f, *ab;
 	
     a = PyNumber_Index(a);
 	
