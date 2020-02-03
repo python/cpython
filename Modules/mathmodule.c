@@ -2026,64 +2026,58 @@ least common multiple of x and y
 [clinic start generated code]*/
 
 static PyObject*
-math_lcm(PyObject*module,PyObject*a,PyObject*b)
+math_lcm(PyObject*module, PyObject*a, PyObject*b)
 {
     PyObject * g,*m,*f,*ab;
-    if (PyFloat_Check(a)||PyFloat_Check(b)) {
-    if (PyErr_WarnEx(PyExc_DeprecationWarning,
-                    "lcm() cannot be used with float",
-                    1) < 0)
-        {
-            return NULL;
-        }
-    double dx = PyFloat_AS_DOUBLE((PyFloatObject *)a);
-    double ax=   PyFloat_AS_DOUBLE((PyFloatObject *)b);
-    if (!((Py_IS_FINITE(dx) && dx == floor(dx))||(Py_IS_FINITE(ax) && ax == floor(ax))) 
-		{
-            PyErr_SetString(PyExc_ValueError,
-                            "lcm() only accepts integral values");
-            return NULL;
-        }
+	
     a=PyNumber_Index(a);
-    if(a==NULL)
+	
+    if (a == NULL) {
         return NULL;
+    }
+	
     b=PyNumber_Index(b);
-    if (b== NULL)
-        {
+	
+    if (b== NULL) {
         Py_DECREF(a);
         return NULL;
-         }
-    g=_PyLong_GCD(a,b);
+    }
+	
+    g=_PyLong_GCD(a, b);
     Py_DECREF(a);
     Py_DECREF(b);
-    if(g==NULL)
-    {
-    Py_DECREF(g);
-    return NULL;
+	
+    if (g==NULL) {
+        Py_DECREF(g);
+        return NULL;
     }     
-    m=PyNumber_Multiply(a,b);
+	
+    m=PyNumber_Multiply(a, b);
     Py_DECREF(a);
     Py_DECREF(b);
-    if(m==NULL)
-        {
+	
+    if (m==NULL) {
         Py_DECREF(m);
         return NULL;
-        }    
-    f=PyNumber_FloorDivide(m,g);
+     }    
+	
+    f=PyNumber_FloorDivide(m, g);
     Py_DECREF(m);
     Py_DECREF(g);
-    if(f==NULL)
-         {
-		 Py_DECREF(f);
+	
+    if (f==NULL) {
+        Py_DECREF(f);
         return NULL;
-         }
+     }
+	
     ab=PyNumber_Absolute(f);
     Py_DECREF(f);
-    if(ab==NULL)
-         {
-		 Py_DECREF(ab);
+	
+    if (ab==NULL) {
+        Py_DECREF(ab);
         return NULL;
-         }
+    }
+	
     return g;
 }
 
