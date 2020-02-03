@@ -35,10 +35,6 @@ PyObject *_PyLong_One = NULL;
 #define IS_SMALL_INT(ival) (-NSMALLNEGINTS <= (ival) && (ival) < NSMALLPOSINTS)
 #define IS_SMALL_UINT(ival) ((ival) < NSMALLPOSINTS)
 
-#ifdef COUNT_ALLOCS
-Py_ssize_t _Py_quick_int_allocs, _Py_quick_neg_int_allocs;
-#endif
-
 static PyObject *
 get_small_int(sdigit ival)
 {
@@ -46,12 +42,6 @@ get_small_int(sdigit ival)
     PyThreadState *tstate = _PyThreadState_GET();
     PyObject *v = (PyObject*)tstate->interp->small_ints[ival + NSMALLNEGINTS];
     Py_INCREF(v);
-#ifdef COUNT_ALLOCS
-    if (ival >= 0)
-        _Py_quick_int_allocs++;
-    else
-        _Py_quick_neg_int_allocs++;
-#endif
     return v;
 }
 

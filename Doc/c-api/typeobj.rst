@@ -148,15 +148,6 @@ Quick Reference
    | :c:member:`~PyTypeObject.tp_vectorcall`        | :c:type:`vectorcallfunc`          |                   |   |   |   |   |
    +------------------------------------------------+-----------------------------------+-------------------+---+---+---+---+
 
-If :const:`COUNT_ALLOCS` is defined then the following (internal-only)
-fields exist as well:
-
-* :c:member:`~PyTypeObject.tp_allocs`
-* :c:member:`~PyTypeObject.tp_frees`
-* :c:member:`~PyTypeObject.tp_maxalloc`
-* :c:member:`~PyTypeObject.tp_prev`
-* :c:member:`~PyTypeObject.tp_next`
-
 .. [#slots]
    A slot name in parentheses indicates it is (effectively) deprecated.
    Names in angle brackets should be treated as read-only.
@@ -1903,31 +1894,6 @@ and :c:type:`PyType_Type` effectively act as defaults.)
 
    .. versionadded:: 3.9 (the field exists since 3.8 but it's only used since 3.9)
 
-
-The remaining fields are only defined if the feature test macro
-:const:`COUNT_ALLOCS` is defined, and are for internal use only. They are
-documented here for completeness.  None of these fields are inherited by
-subtypes.
-
-.. c:member:: Py_ssize_t PyTypeObject.tp_allocs
-
-   Number of allocations.
-
-.. c:member:: Py_ssize_t PyTypeObject.tp_frees
-
-   Number of frees.
-
-.. c:member:: Py_ssize_t PyTypeObject.tp_maxalloc
-
-   Maximum simultaneously allocated objects.
-
-.. c:member:: PyTypeObject* PyTypeObject.tp_prev
-
-   Pointer to the previous type object with a non-zero :c:member:`~PyTypeObject.tp_allocs` field.
-
-.. c:member:: PyTypeObject* PyTypeObject.tp_next
-
-   Pointer to the next type object with a non-zero :c:member:`~PyTypeObject.tp_allocs` field.
 
 Also, note that, in a garbage collected Python, :c:member:`~PyTypeObject.tp_dealloc` may be called from
 any Python thread, not just the thread which created the object (if the object

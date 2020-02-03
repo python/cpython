@@ -348,6 +348,9 @@ Build and C API Changes
   functions are now required to build Python.
   (Contributed by Victor Stinner in :issue:`39395`.)
 
+* The ``COUNT_ALLOCS`` special build macro has been removed.
+  (Contributed by Victor Stinner in :issue:`39489`.)
+
 
 Deprecated
 ==========
@@ -483,6 +486,12 @@ Removed
   not longer supported, use ``async with lock`` instead.  The same is correct for
   ``asyncio.Condition`` and ``asyncio.Semaphore``.
   (Contributed by Andrew Svetlov in :issue:`34793`.)
+
+* The :func:`sys.getcounts` function, the ``-X showalloccount`` command line
+  option and the ``show_alloc_count`` field of the C structure
+  :c:type:`PyConfig` have been removed. They required a special Python build by
+  defining ``COUNT_ALLOCS`` macro.
+  (Contributed by Victor Stinner in :issue:`39489`.)
 
 
 Porting to Python 3.9
