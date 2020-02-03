@@ -2081,6 +2081,13 @@ math_lcm(PyObject *module, PyObject *a, PyObject *b)
     return g;
 }
 
+PyDoc_STRVAR(math_lcm_doc,
+"lcm($module, x, y, /)\n"
+"--\n"
+"\n"
+	     
+"least common multiple of x and y");
+
 
 /*[clinic input]
 math.trunc
