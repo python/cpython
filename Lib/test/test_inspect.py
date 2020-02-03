@@ -1213,6 +1213,17 @@ class TestClassesAndFunctions(unittest.TestCase):
         attrs = [a[0] for a in inspect.getmembers(C)]
         self.assertNotIn('missing', attrs)
 
+    def test_getmembers_property_raises_exception(self):
+        # bpo-35108
+        class A:
+            @property
+            def f(self):
+                raise NotImplementedError
+
+        self.assertIn(("f", A.f), inspect.getmembers(A()))
+
+
+
 class TestIsDataDescriptor(unittest.TestCase):
 
     def test_custom_descriptors(self):
