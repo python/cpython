@@ -988,31 +988,22 @@ class MathTests(unittest.TestCase):
         self.assertEqual(lcm(84, -120), 12)
         self.assertEqual(lcm(1216342683557601535506311712,
                              436522681849110124616458784), 32)
-        c = 652560
         x = 434610456570399902378880679233098819019853229470286994367836600566
         y = 1064502245825115327754847244914921553977
-        a = x * c
-        b = y * c
-        self.assertEqual(lcm(a, b), c)
-        self.assertEqual(lcm(b, a), c)
-        self.assertEqual(lcm(-a, b), c)
-        self.assertEqual(lcm(b, -a), c)
-        self.assertEqual(lcm(a, -b), c)
-        self.assertEqual(lcm(-b, a), c)
-        self.assertEqual(lcm(-a, -b), c)
-        self.assertEqual(lcm(-b, -a), c)
-        c = 576559230871654959816130551884856912003141446781646602790216406874
-        a = x * c
-        b = y * c
-        self.assertEqual(lcm(a, b), c)
-        self.assertEqual(lcm(b, a), c)
-        self.assertEqual(lcm(-a, b), c)
-        self.assertEqual(lcm(b, -a), c)
-        self.assertEqual(lcm(a, -b), c)
-        self.assertEqual(lcm(-b, a), c)
-        self.assertEqual(lcm(-a, -b), c)
-        self.assertEqual(lcm(-b, -a), c)
-
+        
+        for c in (652560,
+                  576559230871654959816130551884856912003141446781646602790216406874,
+                  ):
+            a = x * c
+            b = y * c
+            self.assertEqual(lcm(a, b), c)
+            self.assertEqual(lcm(b, a), c)
+            self.assertEqual(lcm(-a, b), c)
+            self.assertEqual(lcm(b, -a), c)
+            self.assertEqual(lcm(a, -b), c)
+            self.assertEqual(lcm(-b, a), c)
+            self.assertEqual(lcm(-a, -b), c)
+            self.assertEqual(lcm(-b, -a), c)
         self.assertRaises(TypeError, lcm, 120.0, 84)
         self.assertRaises(TypeError, lcm, 120, 84.0)
         self.assertEqual(lcm(MyIndexable(120), MyIndexable(84)), 12)
