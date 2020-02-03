@@ -1,0 +1,1 @@
+Handle proprties raising exceptions in :meth:`inspect.getmembers`.
