@@ -29,7 +29,7 @@ PyAPI_FUNC(PyObject *) _PyStack_AsDict(
 /* Suggested size (number of positional arguments) for arrays of PyObject*
    allocated on a C stack to avoid allocating memory on the heap memory. Such
    array is used to pass positional arguments to call functions of the
-   _PyObject_Vectorcall() family.
+   PyObject_Vectorcall() family.
 
    The size is chosen to not abuse the C stack and so limit the risk of stack
    overflow. The size is also chosen to allow using the small stack for most
@@ -45,8 +45,8 @@ PyAPI_FUNC(PyObject *) _Py_CheckFunctionResult(
 
 /* === Vectorcall protocol (PEP 590) ============================= */
 
-/* Call callable using tp_call. Arguments are like _PyObject_Vectorcall()
-   or _PyObject_FastCallDict() (both forms are supported),
+/* Call callable using tp_call. Arguments are like PyObject_Vectorcall()
+   or PyObject_FastCallDict() (both forms are supported),
    except that nargs is plainly the number of arguments without flags. */
 PyAPI_FUNC(PyObject *) _PyObject_MakeTpCall(
     PyThreadState *tstate,
