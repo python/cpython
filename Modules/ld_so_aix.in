@@ -69,12 +69,12 @@ if test ! -n "$*"; then
   echo $usage; exit 2
 fi
 
-makexp=`dirname $0`/makexp_aix
+makexp=$(dirname $0)/makexp_aix
 test -x "${makexp}" || makexp="@abs_srcdir@/makexp_aix"
 
 # Check for existence of compiler.
 CC=$1; shift
-whichcc=`which $CC`
+whichcc=$(which $CC)
 
 if test ! -x "$whichcc"; then
   echo "ld_so_aix: Compiler '$CC' not found; exiting."
@@ -101,7 +101,7 @@ do
 	fi
 	;;
     -e* | -Wl,-e*)
-	entry=`echo $1 | sed -e "s/-Wl,//" -e "s/-e//"`
+	entry=$(echo $1 | sed -e "s/-Wl,//" -e "s/-e//")
 	;;
     -o)
 	if test -z "$2"; then
@@ -111,13 +111,13 @@ do
 	fi
 	;;
     -o*)
-	objfile=`echo $1 | sed "s/-o//"`
+	objfile=$(echo $1 | sed "s/-o//")
 	;;
     -bI:* | -Wl,-bI:*)
-	impfile=`echo $1 | sed -e "s/-Wl,//" -e "s/-bI://"`
+	impfile=$(echo $1 | sed -e "s/-Wl,//" -e "s/-bI://")
 	;;
     -bE:* | -Wl,-bE:*)
-	expfile=`echo $1 | sed -e "s/-Wl,//" -e "s/-bE://"`
+	expfile=$(echo $1 | sed -e "s/-Wl,//" -e "s/-bE://")
 	;;
     *.o | *.a)
 	objs="$objs $1"
@@ -149,7 +149,7 @@ if test -z "$objfile"; then
   objfile=shr.o
 fi
 
-filename=`basename $objfile | sed "s/\.[^.]*$//"`
+filename=$(basename $objfile | sed "s/\.[^.]*$//")
 
 # If -bE: wasn't specified, assume "-bE:$filename.exp"
 if test -z "$expfile"; then
@@ -159,7 +159,7 @@ fi
 # Default entry symbol for Python modules = init[modulename]
 # Can be overridden by providing a -e argument.
 if test -z "$entry"; then
-  entry=PyInit_`echo $filename | sed "s/module.*//"`
+  entry=PyInit_$(echo $filename | sed "s/module.*//")
 fi
 
 #echo "ld_so_aix: Debug info section"
