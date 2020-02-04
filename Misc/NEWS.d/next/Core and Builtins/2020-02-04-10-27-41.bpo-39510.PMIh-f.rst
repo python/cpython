@@ -1,0 +1,1 @@
+Fix segfault in ``readinto()`` method on closed BufferedReader.
