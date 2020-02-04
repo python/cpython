@@ -34,7 +34,7 @@ case $@ in
 esac
 
 # gmake required
-GMAKE=`which gmake`
+GMAKE=$(which gmake)
 if [ X"$GMAKE" = X"" ]; then
     GMAKE=make
 fi
@@ -42,8 +42,8 @@ fi
 # Pretty print configurations
 print_config ()
 {
-    len=`echo $@ | wc -c`
-    margin="#%"`expr \( 74 - $len \) / 2`"s"
+    len=$(echo $@ | wc -c)
+    margin="#%"$(expr \( 74 - $len \) / 2)"s"
 
     echo ""
     echo "# ========================================================================"
@@ -98,7 +98,7 @@ for config in $CONFIGS; do
         case "$config" in
             # Valgrind has no support for 80 bit long double arithmetic.
             ppro) valgrind= ;;
-            auto) case `uname -m` in
+            auto) case $(uname -m) in
                       i386|i486|i586|i686) valgrind= ;;
                   esac
         esac
@@ -152,7 +152,7 @@ for config in $CONFIGS; do
         case "$config" in
             # Valgrind has no support for 80 bit long double arithmetic.
             ppro) valgrind= ;;
-            auto) case `uname -m` in
+            auto) case $(uname -m) in
                       i386|i486|i586|i686) valgrind= ;;
                   esac
         esac
