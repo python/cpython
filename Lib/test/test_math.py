@@ -1002,11 +1002,11 @@ class MathTests(unittest.TestCase):
         self.assertEqual(lcm(a, -b), d)
         self.assertEqual(lcm(-b, a), d)
         self.assertEqual(lcm(-a, -b), d)
-        self.assertEqual(lcm(-b, -a), d)
-	    e=266741557576581350556796933681042612304362158146595254541737503518981783311378696068765001186892238054415825401472091853286591831877639677191947722648985671425215285050268
-	    c = 576559230871654959816130551884856912003141446781646602790216406874
+        self.assertEqual(lcm(-b, -a), d)    
+	c = 576559230871654959816130551884856912003141446781646602790216406874
         a = x * c
         b = y * c
+	e = x * y * c
         self.assertEqual(lcm(a, b), e)
         self.assertEqual(lcm(b, a), e)
         self.assertEqual(lcm(-a, b), e)
