@@ -568,8 +568,6 @@ _PyImport_Cleanup(PyThreadState *tstate)
         _PyErr_Clear(tstate);
     }
     Py_XDECREF(dict);
-    /* Clear module dict copies stored in the interpreter state */
-    _PyInterpreterState_ClearModules(interp);
     /* Collect references */
     _PyGC_CollectNoFail();
     /* Dump GC stats before it's too late, since it uses the warnings
@@ -620,6 +618,9 @@ _PyImport_Cleanup(PyThreadState *tstate)
         PySys_FormatStderr("# cleanup[3] wiping builtins\n");
     }
     _PyModule_ClearDict(interp->builtins);
+
+    /* Clear module dict copies stored in the interpreter state */
+    _PyInterpreterState_ClearModules(interp);
 
     /* Clear and delete the modules directory.  Actual modules will
        still be there only if imported during the execution of some
