@@ -1,0 +1,1 @@
+mock.patch will now fallback to sys.modules if a child package isn't published on its parent
