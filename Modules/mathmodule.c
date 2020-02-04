@@ -2019,11 +2019,15 @@ math_factorial(PyObject *module, PyObject *arg)
 /*[clinic input]
 math.lcm
 
-	x as a: object
-	y as b: object
+    x as a: object
+    y as b: object
     /
 least common multiple of x and y
 [clinic start generated code]*/
+
+static PyObject *
+math_lcm_impl(PyObject *module, PyObject *a, PyObject *b)
+/*[clinic end generated code: output=6f83fb6d671074ba input=bd41b785dc2a4ff1]*/
 
 static PyObject*
 math_lcm(PyObject *module, PyObject *a, PyObject *b)
@@ -2041,14 +2045,12 @@ math_lcm(PyObject *module, PyObject *a, PyObject *b)
     }
     g = _PyLong_GCD(a, b);
     if (g == NULL) {
-        Py_DECREF(a);
         Py_DECREF(b);
         return NULL;
     }     
     m = PyNumber_Multiply(g, a);
     Py_DECREF(g);
     if (m == NULL) {
-        Py_DECREF(g);
         Py_DECREF(a);
         return NULL;
     }    
@@ -2056,7 +2058,6 @@ math_lcm(PyObject *module, PyObject *a, PyObject *b)
     Py_DECREF(m);
     if (f == NULL) {
         Py_DECREF(a);
-        Py_DECREF(m);
         return NULL;
     }
     ab = PyNumber_Absolute(f);
