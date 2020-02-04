@@ -977,36 +977,46 @@ class MathTests(unittest.TestCase):
      def test_lcm(self):
         lcm = math.lcm
         self.assertEqual(lcm(0, 0), 0)
-        self.assertEqual(lcm(1, 0), 1)
-        self.assertEqual(lcm(-1, 0), 1)
-        self.assertEqual(lcm(0, 1), 1)
-        self.assertEqual(lcm(0, -1), 1)
-        self.assertEqual(lcm(7, 1), 1)
-        self.assertEqual(lcm(7, -1), 1)
-        self.assertEqual(lcm(-23, 15), 1)
-        self.assertEqual(lcm(120, 84), 12)
-        self.assertEqual(lcm(84, -120), 12)
+        self.assertEqual(lcm(1, 0), 0)
+        self.assertEqual(lcm(-1, 0), 0)
+        self.assertEqual(lcm(0, 1), 0)
+        self.assertEqual(lcm(0, -1), 0)
+        self.assertEqual(lcm(7, 1), 7)
+        self.assertEqual(lcm(7, -1), 7)
+        self.assertEqual(lcm(-23, 15), 345)
+        self.assertEqual(lcm(120, 84), 840)
+        self.assertEqual(lcm(84, -120), 840)
         self.assertEqual(lcm(1216342683557601535506311712,
-                             436522681849110124616458784), 32)
+                             436522681849110124616458784),
+                             16592536571065866494401400422922201534178938447014944)
+        c = 652560
         x = 434610456570399902378880679233098819019853229470286994367836600566
         y = 1064502245825115327754847244914921553977
-        
-        for c in (652560,
-                  576559230871654959816130551884856912003141446781646602790216406874,
-                  ):
-            a = x * c
-            b = y * c
-            self.assertEqual(lcm(a, b), c)
-            self.assertEqual(lcm(b, a), c)
-            self.assertEqual(lcm(-a, b), c)
-            self.assertEqual(lcm(b, -a), c)
-            self.assertEqual(lcm(a, -b), c)
-            self.assertEqual(lcm(-b, a), c)
-            self.assertEqual(lcm(-a, -b), c)
-            self.assertEqual(lcm(-b, -a), c)
+        a = x * c
+        b = y * c
+        d=301902842746995509648393721908560577474971578942451106771953796961736341663923782888922697319520284637980813920 652560
+        self.assertEqual(lcm(a, b), d)
+        self.assertEqual(lcm(b, a), d)
+        self.assertEqual(lcm(-a, b), d)
+        self.assertEqual(lcm(b, -a), d)
+        self.assertEqual(lcm(a, -b), d)
+        self.assertEqual(lcm(-b, a), d)
+        self.assertEqual(lcm(-a, -b), d)
+        self.assertEqual(lcm(-b, -a), d)
+	    e=266741557576581350556796933681042612304362158146595254541737503518981783311378696068765001186892238054415825401472091853286591831877639677191947722648985671425215285050268
+	    c = 576559230871654959816130551884856912003141446781646602790216406874
+        a = x * c
+        b = y * c
+        self.assertEqual(lcm(a, b), e)
+        self.assertEqual(lcm(b, a), e)
+        self.assertEqual(lcm(-a, b), e)
+        self.assertEqual(lcm(b, -a), e)
+        self.assertEqual(lcm(a, -b), e)
+        self.assertEqual(lcm(-b, a), e)
+        self.assertEqual(lcm(-a, -b), e)
+        self.assertEqual(lcm(-b, -a), e)
         self.assertRaises(TypeError, lcm, 120.0, 84)
         self.assertRaises(TypeError, lcm, 120, 84.0)
-        self.assertEqual(lcm(MyIndexable(120), MyIndexable(84)), 12)
         
     def testLdexp(self):
         self.assertRaises(TypeError, math.ldexp)
