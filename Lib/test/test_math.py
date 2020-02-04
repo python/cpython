@@ -994,7 +994,7 @@ class MathTests(unittest.TestCase):
         y = 1064502245825115327754847244914921553977
         a = x * c
         b = y * c
-        d=301902842746995509648393721908560577474971578942451106771953796961736341663923782888922697319520284637980813920 652560
+        d = x * y * c
         self.assertEqual(lcm(a, b), d)
         self.assertEqual(lcm(b, a), d)
         self.assertEqual(lcm(-a, b), d)
