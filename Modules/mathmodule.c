@@ -2042,39 +2042,33 @@ math_lcm(PyObject *module, PyObject *a, PyObject *b)
     g = _PyLong_GCD(a, b);
     if (g == NULL) {
         Py_DECREF(a);
-	Py_DECREF(b);
+        Py_DECREF(b);
         return NULL;
     }     
     m = PyNumber_Multiply(g, a);
     Py_DECREF(g);
     if (m == NULL) {
         Py_DECREF(g);
-	Py_DECREF(a);
+        Py_DECREF(a);
         return NULL;
-     }    
+    }    
     f = PyNumber_FloorDivide(a, m);
     Py_DECREF(m);
     if (f == NULL) {
         Py_DECREF(a);
         Py_DECREF(m);
         return NULL;
-     }
+    }
     ab = PyNumber_Absolute(f);
     Py_DECREF(m);
     if (ab == NULL) {
         Py_DECREF(f);
         return NULL;
     }
-	
     return ab;
 }
 
-PyDoc_STRVAR(math_lcm_doc,
-"lcm($module, x, y, /)\n"
-"--\n"
-"\n"
-	     
-"least common multiple of x and y");
+
 
 
 /*[clinic input]
