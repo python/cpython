@@ -1227,7 +1227,9 @@ def _dot_lookup(thing, comp, import_path):
         return getattr(thing, comp)
     except AttributeError:
         __import__(import_path)
-        return getattr(thing, comp)
+        if hasattr(thing, comp):
+            return getattr(thing, comp)
+        return sys.modules[import_path]
 
 
 def _importer(target):

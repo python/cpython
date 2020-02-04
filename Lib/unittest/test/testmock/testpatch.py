@@ -1664,6 +1664,20 @@ class PatchTest(unittest.TestCase):
             p1.stop()
         self.assertEqual(squizz.squozz, 3)
 
+    def test_patch_from_sys_modules(self):
+        squizz = type(sys)('squizz')
+        squizz_squozz = type(sys)('squizz.squozz')
+        squizz_squozz.x = 42
+
+        with uncache('squizz'), uncache('squizz.squozz'):
+            sys.modules['squizz'] = squizz
+            sys.modules['squizz.squozz'] = squizz_squozz
+            p1 = patch('squizz.squozz.x', 100)
+            p1.start()
+            self.assertEqual(squizz_squozz.x, 100)
+            p1.stop()
+            self.assertEqual(squizz_squozz.x, 42)
+
     def test_patch_propagates_exc_on_exit(self):
         class holder:
             exc_info = None, None, None
