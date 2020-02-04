@@ -855,6 +855,23 @@ class SysModuleTest(unittest.TestCase):
         self.assertIn(b'sys.flags', out[0])
         self.assertIn(b'sys.float_info', out[1])
 
+    def test_sys_ignores_cleaning_up_user_data(self):
+        code = """if 1:
+            import struct, sys
+
+            class C:
+                def __init__(self):
+                    self.pack = struct.pack
+                def __del__(self):
+                    self.pack('I', -42)
+
+            sys.x = C()
+            """
+        rc, stdout, stderr = assert_python_ok('-c', code)
+        self.assertEqual(rc, 0)
+        self.assertEqual(stdout.rstrip(), b"")
+        self.assertEqual(stderr.rstrip(), b"")
+
     @unittest.skipUnless(hasattr(sys, 'getandroidapilevel'),
                          'need sys.getandroidapilevel()')
     def test_getandroidapilevel(self):
