@@ -3390,7 +3390,6 @@ static PyMethodDef math_methods[] = {
     {"asin",            math_asin,      METH_O,         math_asin_doc},
     {"asinh",           math_asinh,     METH_O,         math_asinh_doc},
     {"atan",            math_atan,      METH_O,         math_atan_doc},
-    {"lcm",             math_lcm,       METH_O,         math_lcm_doc},
     {"atan2",           (PyCFunction)(void(*)(void))math_atan2,     METH_FASTCALL,  math_atan2_doc},
     {"atanh",           math_atanh,     METH_O,         math_atanh_doc},
     MATH_CEIL_METHODDEF
@@ -3417,6 +3416,7 @@ static PyMethodDef math_methods[] = {
     MATH_ISINF_METHODDEF
     MATH_ISNAN_METHODDEF
     MATH_ISQRT_METHODDEF
+    MATH_LCM_METHODDEF
     MATH_LDEXP_METHODDEF
     {"lgamma",          math_lgamma,    METH_O,         math_lgamma_doc},
     MATH_LOG_METHODDEF
