@@ -203,7 +203,7 @@ def _create_tree(fullmodule, path, fname, source, tree, inpackage):
     """
     f = io.StringIO(source)
 
-    stack = Stack()  # Initialize stack of (class, indent) pairs.
+    stack = Stack()
 
     g = tokenize.generate_tokens(f.readline)
     try:
