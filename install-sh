@@ -232,7 +232,7 @@ if test -z "$dir_arg"; then
       else
         u_plus_rw='% 200'
       fi
-      cp_umask=`expr '(' 777 - $mode % 1000 ')' $u_plus_rw`;;
+      cp_umask=$(expr '(' 777 - $mode % 1000 ')' $u_plus_rw);;
     *)
       if test -z "$stripcmd"; then
         u_plus_rw=
@@ -278,14 +278,14 @@ do
         exit 1
       fi
       dstdir=$dst
-      dstbase=`basename "$src"`
+      dstbase=$(basename "$src")
       case $dst in
 	*/) dst=$dst$dstbase;;
 	*)  dst=$dst/$dstbase;;
       esac
       dstdir_status=0
     else
-      dstdir=`dirname "$dst"`
+      dstdir=$(dirname "$dst")
       test -d "$dstdir"
       dstdir_status=$?
     fi
@@ -303,17 +303,17 @@ do
       '')
         # Create intermediate dirs using mode 755 as modified by the umask.
         # This is like FreeBSD 'install' as of 1997-10-28.
-        umask=`umask`
+        umask=$(umask)
         case $stripcmd.$umask in
           # Optimize common cases.
           *[2367][2367]) mkdir_umask=$umask;;
           .*0[02][02] | .[02][02] | .[02]) mkdir_umask=22;;
 
           *[0-7])
-            mkdir_umask=`expr $umask + 22 \
+            mkdir_umask=$(expr $umask + 22 \
               - $umask % 100 % 40 + $umask % 20 \
               - $umask % 10 % 4 + $umask % 2
-            `;;
+            );;
           *) mkdir_umask=$umask,go-w;;
         esac
 
@@ -352,14 +352,14 @@ do
                    # other-writable bit of parent directory when it shouldn't.
                    # FreeBSD 6.1 mkdir -m -p sets mode of existing directory.
                    test_tmpdir="$tmpdir/a"
-                   ls_ld_tmpdir=`ls -ld "$test_tmpdir"`
+                   ls_ld_tmpdir=$(ls -ld "$test_tmpdir")
                    case $ls_ld_tmpdir in
                      d????-?r-*) different_mode=700;;
                      d????-?--*) different_mode=755;;
                      *) false;;
                    esac &&
                    $mkdirprog -m$different_mode -p -- "$test_tmpdir" && {
-                     ls_ld_tmpdir_1=`ls -ld "$test_tmpdir"`
+                     ls_ld_tmpdir_1=$(ls -ld "$test_tmpdir")
                      test "$ls_ld_tmpdir" = "$ls_ld_tmpdir_1"
                    }
                  }
@@ -417,7 +417,7 @@ do
             test -d "$prefix" || exit 1
           else
             case $prefix in
-              *\'*) qprefix=`echo "$prefix" | sed "s/'/'\\\\\\\\''/g"`;;
+              *\'*) qprefix=$(echo "$prefix" | sed "s/'/'\\\\\\\\''/g");;
               *) qprefix=$prefix;;
             esac
             prefixes="$prefixes '$qprefix'"
@@ -466,8 +466,8 @@ do
 
     # If -C, don't bother to copy if it wouldn't change the file.
     if $copy_on_change &&
-       old=`LC_ALL=C ls -dlL "$dst"     2>/dev/null` &&
-       new=`LC_ALL=C ls -dlL "$dsttmp"  2>/dev/null` &&
+       old=$(LC_ALL=C ls -dlL "$dst"     2>/dev/null) &&
+       new=$(LC_ALL=C ls -dlL "$dsttmp"  2>/dev/null) &&
        set -f &&
        set X $old && old=:$2:$4:$5:$6 &&
        set X $new && new=:$2:$4:$5:$6 &&
