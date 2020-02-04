@@ -35,12 +35,12 @@ shift; shift;
 inputFiles=$*
 automsg="Generated automatically by makexp_aix"
 notemsg="NOTE: lists _all_ global symbols defined in the above file(s)."
-curwdir=`pwd`
+curwdir=$(pwd)
 
 # Create the export file and setup the header info
 echo "#!"$toAppendStr > $expFileName
 echo "*" >> $expFileName
-echo "* $automsg  (`date -u`)" >> $expFileName
+echo "* $automsg  ($(date -u))" >> $expFileName
 echo "*" >> $expFileName
 echo "* Base Directory: $curwdir" >> $expFileName
 echo "* Input File(s) : $inputFiles" >> $expFileName
