@@ -1,8 +1,6 @@
 #ifndef Py_OBJECT_H
 #define Py_OBJECT_H
 
-#include "pymem.h"   /* _Py_tracemalloc_config */
-
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -390,27 +388,12 @@ PyAPI_FUNC(Py_ssize_t) _Py_GetRefTotal(void);
    when a memory block is reused from a free list. */
 PyAPI_FUNC(int) _PyTraceMalloc_NewReference(PyObject *op);
 
+PyAPI_FUNC(void) _Py_NewReference(PyObject *op);
+
 #ifdef Py_TRACE_REFS
 /* Py_TRACE_REFS is such major surgery that we call external routines. */
 PyAPI_FUNC(void) _Py_ForgetReference(PyObject *);
-PyAPI_FUNC(void) _Py_AddToAllObjects(PyObject *, int force);
 #endif
-
-
-static inline void _Py_NewReference(PyObject *op)
-{
-    if (_Py_tracemalloc_config.tracing) {
-        _PyTraceMalloc_NewReference(op);
-    }
-#ifdef Py_REF_DEBUG
-    _Py_RefTotal++;
-#endif
-    Py_REFCNT(op) = 1;
-#ifdef Py_TRACE_REFS
-    _Py_AddToAllObjects(op, 1);
-#endif
-}
-
 
 PyAPI_FUNC(void) _Py_Dealloc(PyObject *);
 
