@@ -2041,30 +2041,28 @@ math_lcm(PyObject *module, PyObject *a, PyObject *b)
     }
     g = _PyLong_GCD(a, b);
     if (g == NULL) {
-        Py_DECREF(g);
+        Py_DECREF(a);
+	Py_DECREF(b);
         return NULL;
     }     
     m = PyNumber_Multiply(g, a);
     Py_DECREF(g);
-    Py_DECREF(a);
-    Py_DECREF(g);
     if (m == NULL) {
-        Py_DECREF(m);
+        Py_DECREF(g);
+	Py_DECREF(a);
         return NULL;
      }    
     f = PyNumber_FloorDivide(a, m);
-    Py_DECREF(a);
-    Py_DECREF(m);
     Py_DECREF(m);
     if (f == NULL) {
-        Py_DECREF(f);
+        Py_DECREF(a);
+        Py_DECREF(m);
         return NULL;
      }
     ab = PyNumber_Absolute(f);
-    Py_DECREF(f);
-    Py_DECREF(f);
+    Py_DECREF(m);
     if (ab == NULL) {
-        Py_DECREF(ab);
+        Py_DECREF(f);
         return NULL;
     }
 	
