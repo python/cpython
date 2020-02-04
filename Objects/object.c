@@ -6,6 +6,7 @@
 #include "pycore_initconfig.h"
 #include "pycore_object.h"
 #include "pycore_pyerrors.h"
+#include "pycore_pylifecycle.h"
 #include "pycore_pystate.h"
 #include "frameobject.h"
 #include "interpreteridobject.h"
@@ -112,122 +113,6 @@ _Py_AddToAllObjects(PyObject *op, int force)
 }
 #endif  /* Py_TRACE_REFS */
 
-#ifdef COUNT_ALLOCS
-static PyTypeObject *type_list;
-/* All types are added to type_list, at least when
-   they get one object created. That makes them
-   immortal, which unfortunately contributes to
-   garbage itself. If unlist_types_without_objects
-   is set, they will be removed from the type_list
-   once the last object is deallocated. */
-static int unlist_types_without_objects;
-extern Py_ssize_t _Py_tuple_zero_allocs, _Py_fast_tuple_allocs;
-extern Py_ssize_t _Py_quick_int_allocs, _Py_quick_neg_int_allocs;
-extern Py_ssize_t _Py_null_strings, _Py_one_strings;
-void
-_Py_dump_counts(FILE* f)
-{
-    PyInterpreterState *interp = _PyInterpreterState_Get();
-    if (!interp->config.show_alloc_count) {
-        return;
-    }
-
-    PyTypeObject *tp;
-    for (tp = type_list; tp; tp = tp->tp_next)
-        fprintf(f, "%s alloc'd: %" PY_FORMAT_SIZE_T "d, "
-            "freed: %" PY_FORMAT_SIZE_T "d, "
-            "max in use: %" PY_FORMAT_SIZE_T "d\n",
-            tp->tp_name, tp->tp_allocs, tp->tp_frees,
-            tp->tp_maxalloc);
-    fprintf(f, "fast tuple allocs: %" PY_FORMAT_SIZE_T "d, "
-        "empty: %" PY_FORMAT_SIZE_T "d\n",
-        _Py_fast_tuple_allocs, _Py_tuple_zero_allocs);
-    fprintf(f, "fast int allocs: pos: %" PY_FORMAT_SIZE_T "d, "
-        "neg: %" PY_FORMAT_SIZE_T "d\n",
-        _Py_quick_int_allocs, _Py_quick_neg_int_allocs);
-    fprintf(f, "null strings: %" PY_FORMAT_SIZE_T "d, "
-        "1-strings: %" PY_FORMAT_SIZE_T "d\n",
-        _Py_null_strings, _Py_one_strings);
-}
-
-PyObject *
-_Py_get_counts(void)
-{
-    PyTypeObject *tp;
-    PyObject *result;
-    PyObject *v;
-
-    result = PyList_New(0);
-    if (result == NULL)
-        return NULL;
-    for (tp = type_list; tp; tp = tp->tp_next) {
-        v = Py_BuildValue("(snnn)", tp->tp_name, tp->tp_allocs,
-                          tp->tp_frees, tp->tp_maxalloc);
-        if (v == NULL) {
-            Py_DECREF(result);
-            return NULL;
-        }
-        if (PyList_Append(result, v) < 0) {
-            Py_DECREF(v);
-            Py_DECREF(result);
-            return NULL;
-        }
-        Py_DECREF(v);
-    }
-    return result;
-}
-
-void
-_Py_inc_count(PyTypeObject *tp)
-{
-    if (tp->tp_next == NULL && tp->tp_prev == NULL) {
-        /* first time; insert in linked list */
-        if (tp->tp_next != NULL) /* sanity check */
-            Py_FatalError("XXX _Py_inc_count sanity check");
-        if (type_list)
-            type_list->tp_prev = tp;
-        tp->tp_next = type_list;
-        /* Note that as of Python 2.2, heap-allocated type objects
-         * can go away, but this code requires that they stay alive
-         * until program exit.  That's why we're careful with
-         * refcounts here.  type_list gets a new reference to tp,
-         * while ownership of the reference type_list used to hold
-         * (if any) was transferred to tp->tp_next in the line above.
-         * tp is thus effectively immortal after this.
-         */
-        Py_INCREF(tp);
-        type_list = tp;
-#ifdef Py_TRACE_REFS
-        /* Also insert in the doubly-linked list of all objects,
-         * if not already there.
-         */
-        _Py_AddToAllObjects((PyObject *)tp, 0);
-#endif
-    }
-    tp->tp_allocs++;
-    if (tp->tp_allocs - tp->tp_frees > tp->tp_maxalloc)
-        tp->tp_maxalloc = tp->tp_allocs - tp->tp_frees;
-}
-
-void _Py_dec_count(PyTypeObject *tp)
-{
-    tp->tp_frees++;
-    if (unlist_types_without_objects &&
-        tp->tp_allocs == tp->tp_frees) {
-        /* unlink the type from type_list */
-        if (tp->tp_prev)
-            tp->tp_prev->tp_next = tp->tp_next;
-        else
-            type_list = tp->tp_next;
-        if (tp->tp_next)
-            tp->tp_next->tp_prev = tp->tp_prev;
-        tp->tp_next = tp->tp_prev = NULL;
-        Py_DECREF(tp);
-    }
-}
-
-#endif
-
 #ifdef Py_REF_DEBUG
 /* Log a fatal error; doesn't return. */
 void
@@ -317,48 +202,40 @@ PyObject_CallFinalizer(PyObject *self)
 int
 PyObject_CallFinalizerFromDealloc(PyObject *self)
 {
-    Py_ssize_t refcnt;
+    if (self->ob_refcnt != 0) {
+        _PyObject_ASSERT_FAILED_MSG(self,
+                                    "PyObject_CallFinalizerFromDealloc called "
+                                    "on object with a non-zero refcount");
+    }
 
     /* Temporarily resurrect the object. */
-    if (self->ob_refcnt != 0) {
-        Py_FatalError("PyObject_CallFinalizerFromDealloc called on "
-                      "object with a non-zero refcount");
-    }
     self->ob_refcnt = 1;
 
     PyObject_CallFinalizer(self);
 
-    /* Undo the temporary resurrection; can't use DECREF here, it would
-     * cause a recursive call.
-     */
     _PyObject_ASSERT_WITH_MSG(self,
                               self->ob_refcnt > 0,
                               "refcount is too small");
-    if (--self->ob_refcnt == 0)
+
+    /* Undo the temporary resurrection; can't use DECREF here, it would
+     * cause a recursive call. */
+    if (--self->ob_refcnt == 0) {
         return 0;         /* this is the normal path out */
+    }
 
     /* tp_finalize resurrected it!  Make it look like the original Py_DECREF
-     * never happened.
-     */
-    refcnt = self->ob_refcnt;
+     * never happened. */
+    Py_ssize_t refcnt = self->ob_refcnt;
     _Py_NewReference(self);
     self->ob_refcnt = refcnt;
 
     _PyObject_ASSERT(self,
                      (!PyType_IS_GC(Py_TYPE(self))
                       || _PyObject_GC_IS_TRACKED(self)));
-    /* If Py_REF_DEBUG, _Py_NewReference bumped _Py_RefTotal, so
-     * we need to undo that. */
-    _Py_DEC_REFTOTAL;
-    /* If Py_TRACE_REFS, _Py_NewReference re-added self to the object
-     * chain, so no more to do there.
-     * If COUNT_ALLOCS, the original decref bumped tp_frees, and
-     * _Py_NewReference bumped tp_allocs:  both of those need to be
-     * undone.
-     */
-#ifdef COUNT_ALLOCS
-    --Py_TYPE(self)->tp_frees;
-    --Py_TYPE(self)->tp_allocs;
+    /* If Py_REF_DEBUG macro is defined, _Py_NewReference() increased
+       _Py_RefTotal, so we need to undo that. */
+#ifdef Py_REF_DEBUG
+    _Py_RefTotal--;
 #endif
     return -1;
 }
@@ -1648,7 +1525,7 @@ none_repr(PyObject *op)
 }
 
 /* ARGUSED */
-static void
+static void _Py_NO_RETURN
 none_dealloc(PyObject* ignore)
 {
     /* This should never get called, but we also don't want to SEGV if
@@ -1786,7 +1663,7 @@ notimplemented_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
     Py_RETURN_NOTIMPLEMENTED;
 }
 
-static void
+static void _Py_NO_RETURN
 notimplemented_dealloc(PyObject* ignore)
 {
     /* This should never get called, but we also don't want to SEGV if
@@ -1844,6 +1721,11 @@ PyObject _Py_NotImplementedStruct = {
 PyStatus
 _PyTypes_Init(void)
 {
+    PyStatus status = _PyTypes_InitSlotDefs();
+    if (_PyStatus_EXCEPTION(status)) {
+        return status;
+    }
+
 #define INIT_TYPE(TYPE, NAME) \
     do { \
         if (PyType_Ready(TYPE) < 0) { \
@@ -1924,49 +1806,36 @@ _PyTypes_Init(void)
 
 
 #ifdef Py_TRACE_REFS
-
-void
-_Py_NewReference(PyObject *op)
-{
-    if (_Py_tracemalloc_config.tracing) {
-        _PyTraceMalloc_NewReference(op);
-    }
-    _Py_INC_REFTOTAL;
-    op->ob_refcnt = 1;
-    _Py_AddToAllObjects(op, 1);
-    _Py_INC_TPALLOCS(op);
-}
-
 void
 _Py_ForgetReference(PyObject *op)
 {
+    if (op->ob_refcnt < 0) {
+        _PyObject_ASSERT_FAILED_MSG(op, "negative refcnt");
+    }
+
+    if (op == &refchain ||
+        op->_ob_prev->_ob_next != op || op->_ob_next->_ob_prev != op)
+    {
+        _PyObject_ASSERT_FAILED_MSG(op, "invalid object chain");
+    }
+
 #ifdef SLOW_UNREF_CHECK
     PyObject *p;
-#endif
-    if (op->ob_refcnt < 0)
-        Py_FatalError("UNREF negative refcnt");
-    if (op == &refchain ||
-        op->_ob_prev->_ob_next != op || op->_ob_next->_ob_prev != op) {
-        fprintf(stderr, "* ob\n");
-        _PyObject_Dump(op);
-        fprintf(stderr, "* op->_ob_prev->_ob_next\n");
-        _PyObject_Dump(op->_ob_prev->_ob_next);
-        fprintf(stderr, "* op->_ob_next->_ob_prev\n");
-        _PyObject_Dump(op->_ob_next->_ob_prev);
-        Py_FatalError("UNREF invalid object");
-    }
-#ifdef SLOW_UNREF_CHECK
     for (p = refchain._ob_next; p != &refchain; p = p->_ob_next) {
-        if (p == op)
+        if (p == op) {
             break;
+        }
     }
-    if (p == &refchain) /* Not found */
-        Py_FatalError("UNREF unknown object");
+    if (p == &refchain) {
+        /* Not found */
+        _PyObject_ASSERT_FAILED_MSG(op,
+                                    "object not found in the objects list");
+    }
 #endif
+
     op->_ob_next->_ob_prev = op->_ob_prev;
     op->_ob_prev->_ob_next = op->_ob_next;
     op->_ob_next = op->_ob_prev = NULL;
-    _Py_INC_TPFREES(op);
 }
 
 /* Print all live objects.  Because PyObject_Print is called, the
@@ -2221,7 +2090,7 @@ _PyTrash_thread_destroy_chain(void)
 }
 
 
-void
+void _Py_NO_RETURN
 _PyObject_AssertFailed(PyObject *obj, const char *expr, const char *msg,
                        const char *file, int line, const char *function)
 {
@@ -2285,8 +2154,6 @@ _Py_Dealloc(PyObject *op)
     destructor dealloc = Py_TYPE(op)->tp_dealloc;
 #ifdef Py_TRACE_REFS
     _Py_ForgetReference(op);
-#else
-    _Py_INC_TPFREES(op);
 #endif
     (*dealloc)(op);
 }

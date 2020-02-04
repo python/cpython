@@ -168,7 +168,7 @@ and classes for traversing abstract syntax trees:
    back with :func:`ast.parse`.
 
    .. warning::
-      The produced code string will not necesarily be equal to the original
+      The produced code string will not necessarily be equal to the original
       code that generated the :class:`ast.AST` object.
 
    .. versionadded:: 3.9
@@ -193,6 +193,9 @@ and classes for traversing abstract syntax trees:
 
    .. versionchanged:: 3.2
       Now allows bytes and set literals.
+
+   .. versionchanged:: 3.9
+      Now supports creating empty sets with ``'set()'``.
 
 
 .. function:: get_docstring(node, clean=True)
@@ -313,7 +316,7 @@ and classes for traversing abstract syntax trees:
       class RewriteName(NodeTransformer):
 
           def visit_Name(self, node):
-              return copy_location(Subscript(
+              return Subscript(
                   value=Name(id='data', ctx=Load()),
                   slice=Index(value=Constant(value=node.id)),
                   ctx=node.ctx
@@ -326,6 +329,14 @@ and classes for traversing abstract syntax trees:
    For nodes that were part of a collection of statements (that applies to all
    statement nodes), the visitor may also return a list of nodes rather than
    just a single node.
+
+   If :class:`NodeTransformer` introduces new nodes (that weren't part of
+   original tree) without giving them location information (such as
+   :attr:`lineno`), :func:`fix_missing_locations` should be called with
+   the new sub-tree to recalculate the location information::
+
+      tree = ast.parse('foo', mode='eval')
+      new_tree = fix_missing_locations(RewriteName().visit(tree))
 
    Usually you use the transformer like this::
 

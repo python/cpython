@@ -28,43 +28,10 @@ class tuple "PyTupleObject *" "&PyTuple_Type"
 static PyTupleObject *free_list[PyTuple_MAXSAVESIZE];
 static int numfree[PyTuple_MAXSAVESIZE];
 #endif
-#ifdef COUNT_ALLOCS
-Py_ssize_t _Py_fast_tuple_allocs;
-Py_ssize_t _Py_tuple_zero_allocs;
-#endif
-
-/* Debug statistic to count GC tracking of tuples.
-   Please note that tuples are only untracked when considered by the GC, and
-   many of them will be dead before. Therefore, a tracking rate close to 100%
-   does not necessarily prove that the heuristic is inefficient.
-*/
-#ifdef SHOW_TRACK_COUNT
-static Py_ssize_t count_untracked = 0;
-static Py_ssize_t count_tracked = 0;
-
-static void
-show_track(void)
-{
-    PyInterpreterState *interp = _PyInterpreterState_Get();
-    if (!interp->config.show_alloc_count) {
-        return;
-    }
-
-    fprintf(stderr, "Tuples created: %" PY_FORMAT_SIZE_T "d\n",
-        count_tracked + count_untracked);
-    fprintf(stderr, "Tuples tracked by the GC: %" PY_FORMAT_SIZE_T
-        "d\n", count_tracked);
-    fprintf(stderr, "%.2f%% tuple tracking rate\n\n",
-        (100.0*count_tracked/(count_untracked+count_tracked)));
-}
-#endif
 
 static inline void
 tuple_gc_track(PyTupleObject *op)
 {
-#ifdef SHOW_TRACK_COUNT
-    count_tracked++;
-#endif
     _PyObject_GC_TRACK(op);
 }
 
@@ -106,9 +73,6 @@ tuple_alloc(Py_ssize_t size)
         assert(size != 0);
         free_list[size] = (PyTupleObject *) op->ob_item[0];
         numfree[size]--;
-#ifdef COUNT_ALLOCS
-        _Py_fast_tuple_allocs++;
-#endif
         /* Inline PyObject_InitVar */
 #ifdef Py_TRACE_REFS
         Py_SIZE(op) = size;
@@ -139,9 +103,6 @@ PyTuple_New(Py_ssize_t size)
     if (size == 0 && free_list[0]) {
         op = free_list[0];
         Py_INCREF(op);
-#ifdef COUNT_ALLOCS
-        _Py_tuple_zero_allocs++;
-#endif
         return (PyObject *) op;
     }
 #endif
@@ -227,10 +188,6 @@ _PyTuple_MaybeUntrack(PyObject *op)
             _PyObject_GC_MAY_BE_TRACKED(elt))
             return;
     }
-#ifdef SHOW_TRACK_COUNT
-    count_tracked--;
-    count_untracked++;
-#endif
     _PyObject_GC_UNTRACK(op);
 }
 
@@ -945,10 +902,15 @@ _PyTuple_Resize(PyObject **pv, Py_ssize_t newsize)
     }
 
     /* XXX UNREF/NEWREF interface should be more symmetrical */
-    _Py_DEC_REFTOTAL;
-    if (_PyObject_GC_IS_TRACKED(v))
+#ifdef Py_REF_DEBUG
+    _Py_RefTotal--;
+#endif
+    if (_PyObject_GC_IS_TRACKED(v)) {
         _PyObject_GC_UNTRACK(v);
+    }
+#ifdef Py_TRACE_REFS
     _Py_ForgetReference((PyObject *) v);
+#endif
     /* DECREF items deleted by shrinkage */
     for (i = newsize; i < oldsize; i++) {
         Py_CLEAR(v->ob_item[i]);
@@ -1000,9 +962,6 @@ _PyTuple_Fini(void)
     Py_CLEAR(free_list[0]);
 
     (void)PyTuple_ClearFreeList();
-#endif
-#ifdef SHOW_TRACK_COUNT
-    show_track();
 #endif
 }
 

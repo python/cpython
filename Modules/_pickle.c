@@ -4455,12 +4455,13 @@ static int
 dump(PicklerObject *self, PyObject *obj)
 {
     const char stop_op = STOP;
+    int status = -1;
     PyObject *tmp;
     _Py_IDENTIFIER(reducer_override);
 
     if (_PyObject_LookupAttrId((PyObject *)self, &PyId_reducer_override,
                                &tmp) < 0) {
-        return -1;
+      goto error;
     }
     /* Cache the reducer_override method, if it exists. */
     if (tmp != NULL) {
@@ -4477,7 +4478,7 @@ dump(PicklerObject *self, PyObject *obj)
         assert(self->proto >= 0 && self->proto < 256);
         header[1] = (unsigned char)self->proto;
         if (_Pickler_Write(self, header, 2) < 0)
-            return -1;
+            goto error;
         if (self->proto >= 4)
             self->framing = 1;
     }
@@ -4485,9 +4486,22 @@ dump(PicklerObject *self, PyObject *obj)
     if (save(self, obj, 0) < 0 ||
         _Pickler_Write(self, &stop_op, 1) < 0 ||
         _Pickler_CommitFrame(self) < 0)
-        return -1;
+        goto error;
+
+    // Success
+    status = 0;
+
+  error:
     self->framing = 0;
-    return 0;
+
+    /* Break the reference cycle we generated at the beginning this function
+     * call when setting the reducer_override attribute of the Pickler instance
+     * to a bound method of the same instance. This is important as the Pickler
+     * instance holds a reference to each object it has pickled (through its
+     * memo): thus, these objects wont be garbage-collected as long as the
+     * Pickler itself is not collected. */
+    Py_CLEAR(self->reducer_override);
+    return status;
 }
 
 /*[clinic input]
@@ -4645,8 +4659,9 @@ _pickle.Pickler.__init__
 This takes a binary file for writing a pickle data stream.
 
 The optional *protocol* argument tells the pickler to use the given
-protocol; supported protocols are 0, 1, 2, 3 and 4.  The default
-protocol is 3; a backward-incompatible protocol designed for Python 3.
+protocol; supported protocols are 0, 1, 2, 3, 4 and 5.  The default
+protocol is 4. It was introduced in Python 3.4, and is incompatible
+with previous versions.
 
 Specifying a negative protocol version selects the highest protocol
 version supported.  The higher the protocol used, the more recent the
@@ -4678,7 +4693,7 @@ static int
 _pickle_Pickler___init___impl(PicklerObject *self, PyObject *file,
                               PyObject *protocol, int fix_imports,
                               PyObject *buffer_callback)
-/*[clinic end generated code: output=0abedc50590d259b input=bb886e00443a7811]*/
+/*[clinic end generated code: output=0abedc50590d259b input=a7c969699bf5dad3]*/
 {
     _Py_IDENTIFIER(persistent_id);
     _Py_IDENTIFIER(dispatch_table);
@@ -7635,8 +7650,8 @@ This is equivalent to ``Pickler(file, protocol).dump(obj)``, but may
 be more efficient.
 
 The optional *protocol* argument tells the pickler to use the given
-protocol; supported protocols are 0, 1, 2, 3 and 4.  The default
-protocol is 4. It was introduced in Python 3.4, it is incompatible
+protocol; supported protocols are 0, 1, 2, 3, 4 and 5.  The default
+protocol is 4. It was introduced in Python 3.4, and is incompatible
 with previous versions.
 
 Specifying a negative protocol version selects the highest protocol
@@ -7662,7 +7677,7 @@ static PyObject *
 _pickle_dump_impl(PyObject *module, PyObject *obj, PyObject *file,
                   PyObject *protocol, int fix_imports,
                   PyObject *buffer_callback)
-/*[clinic end generated code: output=706186dba996490c input=cfdcaf573ed6e46c]*/
+/*[clinic end generated code: output=706186dba996490c input=5ed6653da99cd97c]*/
 {
     PicklerObject *pickler = _Pickler_New();
 
@@ -7705,8 +7720,8 @@ _pickle.dumps
 Return the pickled representation of the object as a bytes object.
 
 The optional *protocol* argument tells the pickler to use the given
-protocol; supported protocols are 0, 1, 2, 3 and 4.  The default
-protocol is 4. It was introduced in Python 3.4, it is incompatible
+protocol; supported protocols are 0, 1, 2, 3, 4 and 5.  The default
+protocol is 4. It was introduced in Python 3.4, and is incompatible
 with previous versions.
 
 Specifying a negative protocol version selects the highest protocol
@@ -7726,7 +7741,7 @@ into *file* as part of the pickle stream.  It is an error if
 static PyObject *
 _pickle_dumps_impl(PyObject *module, PyObject *obj, PyObject *protocol,
                    int fix_imports, PyObject *buffer_callback)
-/*[clinic end generated code: output=fbab0093a5580fdf input=9f334d535ff7194f]*/
+/*[clinic end generated code: output=fbab0093a5580fdf input=e543272436c6f987]*/
 {
     PyObject *result;
     PicklerObject *pickler = _Pickler_New();

@@ -1002,7 +1002,6 @@ pattern_subx(PatternObject* self, PyObject* ptemplate, PyObject* string,
         int literal;
         view.buf = NULL;
         ptr = getstring(ptemplate, &n, &isbytes, &charsize, &view);
-        b = charsize;
         if (ptr) {
             if (charsize == 1)
                 literal = memchr(ptr, '\\', n) == NULL;

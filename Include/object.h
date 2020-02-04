@@ -379,45 +379,12 @@ decision that's up to the implementer of each new type so if you want,
 you can count such references to the type object.)
 */
 
-/* First define a pile of simple helper macros, one set per special
- * build symbol.  These either expand to the obvious things, or to
- * nothing at all when the special mode isn't in effect.  The main
- * macros can later be defined just once then, yet expand to different
- * things depending on which special build options are and aren't in effect.
- * Trust me <wink>:  while painful, this is 20x easier to understand than,
- * e.g, defining _Py_NewReference five different times in a maze of nested
- * #ifdefs (we used to do that -- it was impenetrable).
- */
 #ifdef Py_REF_DEBUG
 PyAPI_DATA(Py_ssize_t) _Py_RefTotal;
 PyAPI_FUNC(void) _Py_NegativeRefcount(const char *filename, int lineno,
                                       PyObject *op);
 PyAPI_FUNC(Py_ssize_t) _Py_GetRefTotal(void);
-#define _Py_INC_REFTOTAL        _Py_RefTotal++
-#define _Py_DEC_REFTOTAL        _Py_RefTotal--
-
-/* Py_REF_DEBUG also controls the display of refcounts and memory block
- * allocations at the interactive prompt and at interpreter shutdown
- */
-PyAPI_FUNC(void) _PyDebug_PrintTotalRefs(void);
-#else
-#define _Py_INC_REFTOTAL
-#define _Py_DEC_REFTOTAL
 #endif /* Py_REF_DEBUG */
-
-#ifdef COUNT_ALLOCS
-PyAPI_FUNC(void) _Py_inc_count(struct _typeobject *);
-PyAPI_FUNC(void) _Py_dec_count(struct _typeobject *);
-#define _Py_INC_TPALLOCS(OP)    _Py_inc_count(Py_TYPE(OP))
-#define _Py_INC_TPFREES(OP)     _Py_dec_count(Py_TYPE(OP))
-#define _Py_DEC_TPFREES(OP)     Py_TYPE(OP)->tp_frees--
-#define _Py_COUNT_ALLOCS_COMMA  ,
-#else
-#define _Py_INC_TPALLOCS(OP)
-#define _Py_INC_TPFREES(OP)
-#define _Py_DEC_TPFREES(OP)
-#define _Py_COUNT_ALLOCS_COMMA
-#endif /* COUNT_ALLOCS */
 
 /* Update the Python traceback of an object. This function must be called
    when a memory block is reused from a free list. */
@@ -425,48 +392,47 @@ PyAPI_FUNC(int) _PyTraceMalloc_NewReference(PyObject *op);
 
 #ifdef Py_TRACE_REFS
 /* Py_TRACE_REFS is such major surgery that we call external routines. */
-PyAPI_FUNC(void) _Py_NewReference(PyObject *);
 PyAPI_FUNC(void) _Py_ForgetReference(PyObject *);
-PyAPI_FUNC(void) _Py_PrintReferences(FILE *);
-PyAPI_FUNC(void) _Py_PrintReferenceAddresses(FILE *);
 PyAPI_FUNC(void) _Py_AddToAllObjects(PyObject *, int force);
-#else
-/* Without Py_TRACE_REFS, there's little enough to do that we expand code
-   inline. */
+#endif
+
+
 static inline void _Py_NewReference(PyObject *op)
 {
     if (_Py_tracemalloc_config.tracing) {
         _PyTraceMalloc_NewReference(op);
     }
-    _Py_INC_TPALLOCS(op);
-    _Py_INC_REFTOTAL;
+#ifdef Py_REF_DEBUG
+    _Py_RefTotal++;
+#endif
     Py_REFCNT(op) = 1;
+#ifdef Py_TRACE_REFS
+    _Py_AddToAllObjects(op, 1);
+#endif
 }
-
-static inline void _Py_ForgetReference(PyObject *op)
-{
-    (void)op; /* may be unused, shut up -Wunused-parameter */
-    _Py_INC_TPFREES(op);
-}
-#endif /* !Py_TRACE_REFS */
 
 
 PyAPI_FUNC(void) _Py_Dealloc(PyObject *);
 
 static inline void _Py_INCREF(PyObject *op)
 {
-    _Py_INC_REFTOTAL;
+#ifdef Py_REF_DEBUG
+    _Py_RefTotal++;
+#endif
     op->ob_refcnt++;
 }
 
 #define Py_INCREF(op) _Py_INCREF(_PyObject_CAST(op))
 
-static inline void _Py_DECREF(const char *filename, int lineno,
-                              PyObject *op)
+static inline void _Py_DECREF(
+#ifdef Py_REF_DEBUG
+    const char *filename, int lineno,
+#endif
+    PyObject *op)
 {
-    (void)filename; /* may be unused, shut up -Wunused-parameter */
-    (void)lineno; /* may be unused, shut up -Wunused-parameter */
-    _Py_DEC_REFTOTAL;
+#ifdef Py_REF_DEBUG
+    _Py_RefTotal--;
+#endif
     if (--op->ob_refcnt != 0) {
 #ifdef Py_REF_DEBUG
         if (op->ob_refcnt < 0) {
@@ -479,7 +445,11 @@ static inline void _Py_DECREF(const char *filename, int lineno,
     }
 }
 
-#define Py_DECREF(op) _Py_DECREF(__FILE__, __LINE__, _PyObject_CAST(op))
+#ifdef Py_REF_DEBUG
+#  define Py_DECREF(op) _Py_DECREF(__FILE__, __LINE__, _PyObject_CAST(op))
+#else
+#  define Py_DECREF(op) _Py_DECREF(_PyObject_CAST(op))
+#endif
 
 
 /* Safely decref `op` and set `op` to NULL, especially useful in tp_clear
