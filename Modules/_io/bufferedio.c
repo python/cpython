@@ -965,6 +965,7 @@ _buffered_readinto_generic(buffered *self, Py_buffer *buffer, char readinto1)
     PyObject *res = NULL;
 
     CHECK_INITIALIZED(self)
+    CHECK_CLOSED(self, "readinto of closed file")
 
     n = Py_SAFE_DOWNCAST(READAHEAD(self), Py_off_t, Py_ssize_t);
     if (n > 0) {
