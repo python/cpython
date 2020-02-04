@@ -81,15 +81,6 @@ class Class(_Object):
         self.methods[name] = lineno
 
 
-class Stack(list):
-    
-    def __delitem__(self, key):
-        frames = inspect.stack()
-        setattr(self[key][0], 'endline',
-                frames[1].frame.f_locals['start'][0] - 1)
-        super().__delitem__(key)
-
-
 def _nest_function(ob, func_name, lineno):
     "Return a Function after nesting within ob."
     newfunc = Function(ob.module, func_name, ob.file, lineno, ob)
@@ -203,7 +194,7 @@ def _create_tree(fullmodule, path, fname, source, tree, inpackage):
     """
     f = io.StringIO(source)
 
-    stack = Stack()
+    stack = []
 
     g = tokenize.generate_tokens(f.readline)
     try:
@@ -212,11 +203,13 @@ def _create_tree(fullmodule, path, fname, source, tree, inpackage):
                 lineno, thisindent = start
                 # Close previous nested classes and defs.
                 while stack and stack[-1][1] >= thisindent:
+                    stack[-1].end_lineno = start - 1
                     del stack[-1]
             elif token == 'def':
                 lineno, thisindent = start
                 # Close previous nested classes and defs.
                 while stack and stack[-1][1] >= thisindent:
+                    stack[-1].end_lineno = start - 1
                     del stack[-1]
                 tokentype, func_name, start = next(g)[0:3]
                 if tokentype != NAME:
@@ -234,6 +227,7 @@ def _create_tree(fullmodule, path, fname, source, tree, inpackage):
                 lineno, thisindent = start
                 # Close previous nested classes and defs.
                 while stack and stack[-1][1] >= thisindent:
+                    stack[-1].end_lineno = start - 1
                     del stack[-1]
                 tokentype, class_name, start = next(g)[0:3]
                 if tokentype != NAME:
