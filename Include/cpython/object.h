@@ -327,16 +327,6 @@ _PyObject_GenericSetAttrWithDict(PyObject *, PyObject *,
 
 #define PyType_HasFeature(t,f)  (((t)->tp_flags & (f)) != 0)
 
-static inline void _Py_Dealloc_inline(PyObject *op)
-{
-    destructor dealloc = Py_TYPE(op)->tp_dealloc;
-#ifdef Py_TRACE_REFS
-    _Py_ForgetReference(op);
-#endif
-    (*dealloc)(op);
-}
-#define _Py_Dealloc(op) _Py_Dealloc_inline(op)
-
 PyAPI_FUNC(PyObject *) _PyObject_FunctionStr(PyObject *);
 
 /* Safely decref `op` and set `op` to `op2`.
