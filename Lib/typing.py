@@ -31,6 +31,7 @@ from types import WrapperDescriptorType, MethodWrapperType, MethodDescriptorType
 # Please keep __all__ alphabetized within each category.
 __all__ = [
     # Super-special typing primitives.
+    'Annotated',
     'Any',
     'Callable',
     'ClassVar',
@@ -1118,6 +1119,101 @@ class Protocol(Generic, metaclass=_ProtocolMeta):
         cls.__init__ = _no_init
 
 
+class _AnnotatedAlias(_GenericAlias, _root=True):
+    """Runtime representation of an annotated type.
+
+    At its core 'Annotated[t, dec1, dec2, ...]' is an alias for the type 't'
+    with extra annotations. The alias behaves like a normal typing alias,
+    instantiating is the same as instantiating the underlying type, binding
+    it to types is also the same.
+    """
+    def __init__(self, origin, metadata):
+        if isinstance(origin, _AnnotatedAlias):
+            metadata = origin.__metadata__ + metadata
+            origin = origin.__origin__
+        super().__init__(origin, origin)
+        self.__metadata__ = metadata
+
+    def copy_with(self, params):
+        assert len(params) == 1
+        new_type = params[0]
+        return _AnnotatedAlias(new_type, self.__metadata__)
+
+    def __repr__(self):
+        return "typing.Annotated[{}, {}]".format(
+            _type_repr(self.__origin__),
+            ", ".join(repr(a) for a in self.__metadata__)
+        )
+
+    def __reduce__(self):
+        return operator.getitem, (
+            Annotated, (self.__origin__,) + self.__metadata__
+        )
+
+    def __eq__(self, other):
+        if not isinstance(other, _AnnotatedAlias):
+            return NotImplemented
+        if self.__origin__ != other.__origin__:
+            return False
+        return self.__metadata__ == other.__metadata__
+
+    def __hash__(self):
+        return hash((self.__origin__, self.__metadata__))
+
+
+class Annotated:
+    """Add context specific metadata to a type.
+
+    Example: Annotated[int, runtime_check.Unsigned] indicates to the
+    hypothetical runtime_check module that this type is an unsigned int.
+    Every other consumer of this type can ignore this metadata and treat
+    this type as int.
+
+    The first argument to Annotated must be a valid type.
+
+    Details:
+
+    - It's an error to call `Annotated` with less than two arguments.
+    - Nested Annotated are flattened::
+
+        Annotated[Annotated[T, Ann1, Ann2], Ann3] == Annotated[T, Ann1, Ann2, Ann3]
+
+    - Instantiating an annotated type is equivalent to instantiating the
+    underlying type::
+
+        Annotated[C, Ann1](5) == C(5)
+
+    - Annotated can be used as a generic type alias::
+
+        Optimized = Annotated[T, runtime.Optimize()]
+        Optimized[int] == Annotated[int, runtime.Optimize()]
+
+        OptimizedList = Annotated[List[T], runtime.Optimize()]
+        OptimizedList[int] == Annotated[List[int], runtime.Optimize()]
+    """
+
+    __slots__ = ()
+
+    def __new__(cls, *args, **kwargs):
+        raise TypeError("Type Annotated cannot be instantiated.")
+
+    @_tp_cache
+    def __class_getitem__(cls, params):
+        if not isinstance(params, tuple) or len(params) < 2:
+            raise TypeError("Annotated[...] should be used "
+                            "with at least two arguments (a type and an "
+                            "annotation).")
+        msg = "Annotated[t, ...]: t must be a type."
+        origin = _type_check(params[0], msg)
+        metadata = tuple(params[1:])
+        return _AnnotatedAlias(origin, metadata)
+
+    def __init_subclass__(cls, *args, **kwargs):
+        raise TypeError(
+            "Cannot subclass {}.Annotated".format(cls.__module__)
+        )
+
+
 def runtime_checkable(cls):
     """Mark a protocol class as a runtime protocol.
 
@@ -1179,12 +1275,13 @@ _allowed_types = (types.FunctionType, types.BuiltinFunctionType,
                   WrapperDescriptorType, MethodWrapperType, MethodDescriptorType)
 
 
-def get_type_hints(obj, globalns=None, localns=None):
+def get_type_hints(obj, globalns=None, localns=None, include_extras=False):
     """Return type hints for an object.
 
     This is often the same as obj.__annotations__, but it handles
-    forward references encoded as string literals, and if necessary
-    adds Optional[t] if a default value equal to None is set.
+    forward references encoded as string literals, adds Optional[t] if a
+    default value equal to None is set and recursively replaces all
+    'Annotated[T, ...]' with 'T' (unless 'include_extras=True').
 
     The argument may be a module, class, method, or function. The annotations
     are returned as a dictionary. For classes, annotations include also
@@ -1228,7 +1325,7 @@ def get_type_hints(obj, globalns=None, localns=None):
                     value = ForwardRef(value, is_argument=False)
                 value = _eval_type(value, base_globals, localns)
                 hints[name] = value
-        return hints
+        return hints if include_extras else {k: _strip_annotations(t) for k, t in hints.items()}
 
     if globalns is None:
         if isinstance(obj, types.ModuleType):
@@ -1262,7 +1359,22 @@ def get_type_hints(obj, globalns=None, localns=None):
         if name in defaults and defaults[name] is None:
             value = Optional[value]
         hints[name] = value
-    return hints
+    return hints if include_extras else {k: _strip_annotations(t) for k, t in hints.items()}
+
+
+def _strip_annotations(t):
+    """Strips the annotations from a given type.
+    """
+    if isinstance(t, _AnnotatedAlias):
+        return _strip_annotations(t.__origin__)
+    if isinstance(t, _GenericAlias):
+        stripped_args = tuple(_strip_annotations(a) for a in t.__args__)
+        if stripped_args == t.__args__:
+            return t
+        res = t.copy_with(stripped_args)
+        res._special = t._special
+        return res
+    return t
 
 
 def get_origin(tp):
@@ -1279,6 +1391,8 @@ def get_origin(tp):
         get_origin(Union[T, int]) is Union
         get_origin(List[Tuple[T, T]][int]) == list
     """
+    if isinstance(tp, _AnnotatedAlias):
+        return Annotated
     if isinstance(tp, _GenericAlias):
         return tp.__origin__
     if tp is Generic:
@@ -1297,6 +1411,8 @@ def get_args(tp):
         get_args(Union[int, Tuple[T, int]][str]) == (int, Tuple[str, int])
         get_args(Callable[[], T][int]) == ([], int)
     """
+    if isinstance(tp, _AnnotatedAlias):
+        return (tp.__origin__,) + tp.__metadata__
     if isinstance(tp, _GenericAlias):
         res = tp.__args__
         if get_origin(tp) is collections.abc.Callable and res[0] is not Ellipsis:
