@@ -3160,17 +3160,42 @@ dict_sizeof(PyDictObject *mp, PyObject *Py_UNUSED(ignored))
     return PyLong_FromSsize_t(_PyDict_SizeOf(mp));
 }
 
+static int
+subclass_update_arg(PyObject *self, PyObject *other)
+{
+    _Py_IDENTIFIER(update);
+    PyObject *tmp = _PyObject_CallMethodIdOneArg(self, &PyId_update, other);
+    if (tmp == NULL) {
+        return -1;
+    }
+    Py_DECREF(tmp);
+    return 0;
+}
+
 static PyObject *
 dict_or(PyObject *self, PyObject *other)
 {
     if (!PyDict_Check(self) || !PyDict_Check(other)) {
         Py_RETURN_NOTIMPLEMENTED;
     }
-    PyObject *new = PyDict_Copy(self);
+    PyObject *new;
+    if (PyDict_CheckExact(self)) {
+        new = PyDict_Copy(self);
+    }
+    else {
+        _Py_IDENTIFIER(copy);
+        new = _PyObject_CallMethodIdNoArgs(self, &PyId_copy);
+    }
     if (new == NULL) {
         return NULL;
     }
-    if (dict_update_arg(new, other)) {
+    if (PyDict_CheckExact(new)) {
+        if (dict_update_arg(new, other)) {
+            Py_DECREF(new);
+            return NULL;
+        }
+    }
+    else if (subclass_update_arg(new, other)) {
         Py_DECREF(new);
         return NULL;
     }
@@ -3180,7 +3205,12 @@ dict_or(PyObject *self, PyObject *other)
 static PyObject *
 dict_ior(PyObject *self, PyObject *other)
 {
-    if (dict_update_arg(self, other)) {
+    if (PyDict_CheckExact(self)) {
+        if (dict_update_arg(self, other)) {
+            return NULL;
+        }
+    }
+    else if (subclass_update_arg(self, other)) {
         return NULL;
     }
     Py_INCREF(self);
