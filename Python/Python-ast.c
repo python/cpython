@@ -9888,8 +9888,10 @@ PyInit__ast(void)
     m = PyState_FindModule(&_astmodule);
     if (!m) return NULL;
     Py_INCREF(astmodulestate(m)->AST_type);
-    if (PyModule_AddObject(m, "AST", astmodulestate_global->AST_type) < 0)
+    if (PyModule_AddObject(m, "AST", astmodulestate_global->AST_type) < 0) {
+        Py_DECREF(astmodulestate(m)->AST_type);
         return NULL;
+    }
     if (PyModule_AddIntMacro(m, PyCF_ALLOW_TOP_LEVEL_AWAIT) < 0)
         return NULL;
     if (PyModule_AddIntMacro(m, PyCF_ONLY_AST) < 0)
