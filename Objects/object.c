@@ -93,7 +93,7 @@ static PyObject refchain = {&refchain, &refchain};
  * way, though; exceptions include statically allocated type objects, and
  * statically allocated singletons (like Py_True and Py_None).
  */
-void
+static void
 _Py_AddToAllObjects(PyObject *op, int force)
 {
 #ifdef  Py_DEBUG
@@ -1802,6 +1802,22 @@ _PyTypes_Init(void)
     return _PyStatus_OK();
 
 #undef INIT_TYPE
+}
+
+
+void
+_Py_NewReference(PyObject *op)
+{
+    if (_Py_tracemalloc_config.tracing) {
+        _PyTraceMalloc_NewReference(op);
+    }
+#ifdef Py_REF_DEBUG
+    _Py_RefTotal++;
+#endif
+    Py_REFCNT(op) = 1;
+#ifdef Py_TRACE_REFS
+    _Py_AddToAllObjects(op, 1);
+#endif
 }
 
 
