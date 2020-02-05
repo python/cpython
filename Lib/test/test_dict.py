@@ -62,10 +62,12 @@ class DictTest(unittest.TestCase):
         self.assertIs(a.__or__(None), NotImplemented)
         self.assertIs(a.__or__(()), NotImplemented)
         self.assertIs(a.__or__("BAD"), NotImplemented)
+        self.assertIs(a.__or__(""), NotImplemented)
 
         self.assertRaises(TypeError, a.__ior__, None)
         self.assertEqual(a.__ior__(()), {0: 0, 1: 1, 2: 1})
         self.assertRaises(ValueError, a.__ior__, "BAD")
+        self.assertEqual(a.__ior__(""), {0: 0, 1: 1, 2: 1})
 
     def test_bool(self):
         self.assertIs(not {}, True)
