@@ -341,8 +341,6 @@ PyAPI_FUNC(int)
 _PyObject_GenericSetAttrWithDict(PyObject *, PyObject *,
                                  PyObject *, PyObject *);
 
-#define PyType_HasFeature(t,f)  (((t)->tp_flags & (f)) != 0)
-
 PyAPI_FUNC(PyObject *) _PyObject_FunctionStr(PyObject *);
 
 /* Safely decref `op` and set `op` to `op2`.
