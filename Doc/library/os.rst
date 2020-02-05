@@ -3314,6 +3314,8 @@ to be ignored.
    you can check whether or not it is available using :data:`os.supports_fd`.
    If it is unavailable, using it will raise a :exc:`NotImplementedError`.
 
+   .. audit-event:: os.exec path,args,env os.execl
+
    .. availability:: Unix, Windows.
 
    .. versionadded:: 3.3
@@ -3670,6 +3672,8 @@ written in Python, such as a mail server's external command delivery program.
    :c:data:`POSIX_SPAWN_SETSCHEDPARAM` and :c:data:`POSIX_SPAWN_SETSCHEDULER`
    flags.
 
+   .. audit-event:: os.posix_spawn path,argv,env os.posix_spawn
+
    .. versionadded:: 3.8
 
    .. availability:: Unix.
@@ -3683,6 +3687,8 @@ written in Python, such as a mail server's external command delivery program.
    Similar to :func:`posix_spawn` except that the system searches
    for the *executable* file in the list of directories specified by the
    :envvar:`PATH` environment variable (in the same way as for ``execvp(3)``).
+
+   .. audit-event:: os.posix_spawn path,argv,env os.posix_spawnp
 
    .. versionadded:: 3.8
 
@@ -3784,6 +3790,8 @@ written in Python, such as a mail server's external command delivery program.
       L = ['cp', 'index.html', '/dev/null']
       os.spawnvpe(os.P_WAIT, 'cp', L, os.environ)
 
+   .. audit-event:: os.spawn mode,path,args,env os.spawnl
+
    .. availability:: Unix, Windows.  :func:`spawnlp`, :func:`spawnlpe`, :func:`spawnvp`
       and :func:`spawnvpe` are not available on Windows.  :func:`spawnle` and
       :func:`spawnve` are not thread-safe on Windows; we advise you to use the
@@ -3852,6 +3860,8 @@ written in Python, such as a mail server's external command delivery program.
    To reduce interpreter startup overhead, the Win32 :c:func:`ShellExecute`
    function is not resolved until this function is first called.  If the function
    cannot be resolved, :exc:`NotImplementedError` will be raised.
+
+   .. audit-event:: os.startfile path,operation os.startfile
 
    .. availability:: Windows.
 
