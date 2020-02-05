@@ -18,8 +18,8 @@ class BaseTest(unittest.TestCase):
     """Test basics."""
 
     def test_subscriptable(self):
-        for t in (tuple, list, dict, set, frozenset,
-                  defaultdict, deque,
+        for t in (type, tuple, list, dict, set, frozenset,
+                  defaultdict, deque, 
                   OrderedDict, Counter, UserDict, UserList,
                   IOBase,
                   Pattern, Match,
@@ -175,6 +175,20 @@ class BaseTest(unittest.TestCase):
         self.assertTrue(issubclass(L, list))
         with self.assertRaises(TypeError):
             issubclass(L, list[str])
+
+    def test_type_generic(self):
+        t = type[int]
+        Test = t('Test', (), {})
+        self.assertTrue(isinstance(Test, type))
+        test = Test()
+        self.assertEqual(t(test), Test)
+        self.assertEqual(t(0), int)
+
+    def test_type_subclass_generic(self):
+        class MyType(type):
+            pass
+        with self.assertRaises(TypeError):
+            MyType[int]
 
     def test_pickle(self):
         alias = GenericAlias(list, T)
