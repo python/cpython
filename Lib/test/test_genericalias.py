@@ -19,7 +19,7 @@ class BaseTest(unittest.TestCase):
 
     def test_subscriptable(self):
         for t in (type, tuple, list, dict, set, frozenset,
-                  defaultdict, deque, 
+                  defaultdict, deque,
                   OrderedDict, Counter, UserDict, UserList,
                   IOBase,
                   Pattern, Match,
