@@ -37,7 +37,7 @@ class DictTest(unittest.TestCase):
             dictliteral = '{' + ', '.join(formatted_items) + '}'
             self.assertEqual(eval(dictliteral), dict(items))
 
-    def test_pep_584(self):
+    def test_merge_operator(self):
 
         a = {0: 0, 1: 1, 2: 1}
         b = {1: 1, 2: 2, 3: 3}
