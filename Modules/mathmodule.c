@@ -2045,6 +2045,7 @@ math_lcm(PyObject *module, PyObject *a, PyObject *b)
     }
     g = _PyLong_GCD(a, b);
     if (g == NULL) {
+        Py_DECREF(a);
         Py_DECREF(b);
         return NULL;
     }     
