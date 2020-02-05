@@ -207,10 +207,6 @@ PyAPI_DATA(struct _typeobject) PySuper_Type; /* built-in 'super' */
 
 PyAPI_FUNC(unsigned long) PyType_GetFlags(struct _typeobject*);
 
-#define PyType_Check(op) \
-    PyType_FastSubclass(Py_TYPE(op), Py_TPFLAGS_TYPE_SUBCLASS)
-#define PyType_CheckExact(op) (Py_TYPE(op) == &PyType_Type)
-
 PyAPI_FUNC(int) PyType_Ready(struct _typeobject *);
 PyAPI_FUNC(PyObject *) PyType_GenericAlloc(struct _typeobject *, Py_ssize_t);
 PyAPI_FUNC(PyObject *) PyType_GenericNew(struct _typeobject *,
@@ -341,11 +337,6 @@ given type object has a specified feature.
 
 /* Type structure has tp_finalize member (3.4) */
 #define Py_TPFLAGS_HAVE_FINALIZE (1UL << 0)
-
-#ifdef Py_LIMITED_API
-#  define PyType_HasFeature(t,f)  ((PyType_GetFlags(t) & (f)) != 0)
-#endif
-#define PyType_FastSubclass(t,f)  PyType_HasFeature(t,f)
 
 
 /*
@@ -599,6 +590,28 @@ times.
 #  include  "cpython/object.h"
 #  undef Py_CPYTHON_OBJECT_H
 #endif
+
+
+static inline int
+PyType_HasFeature(PyTypeObject *type, unsigned long feature) {
+#ifdef Py_LIMITED_API
+    return ((PyType_GetFlags(type) & feature) != 0);
+#else
+    return ((type->tp_flags & feature) != 0);
+#endif
+}
+
+#define PyType_FastSubclass(type, flag) PyType_HasFeature(type, flag)
+
+static inline int _PyType_Check(PyObject *op) {
+    return PyType_FastSubclass(Py_TYPE(op), Py_TPFLAGS_TYPE_SUBCLASS);
+}
+#define PyType_Check(op) _PyType_Check(_PyObject_CAST(op))
+
+static inline int _PyType_CheckExact(PyObject *op) {
+    return (Py_TYPE(op) == &PyType_Type);
+}
+#define PyType_CheckExact(op) _PyType_CheckExact(_PyObject_CAST(op))
 
 #ifdef __cplusplus
 }
