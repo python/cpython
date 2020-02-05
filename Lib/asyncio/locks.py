@@ -169,9 +169,8 @@ class Lock(_ContextManagerMixin):
                           DeprecationWarning, stacklevel=2)
 
         if not self._loop.is_running():
-            warnings.warn("The asyncio objects created without running "
-                          "event loop is deprecated since Python 3.9 and "
-                          "scheduled for removal in Python 3.10.",
+            warnings.warn("The creation of asyncio objects without a running "
+                          "event loop is deprecated as of Python 3.9.",
                           DeprecationWarning, stacklevel=2)
 
     def __repr__(self):
@@ -270,6 +269,11 @@ class Event:
                           "and scheduled for removal in Python 3.10.",
                           DeprecationWarning, stacklevel=2)
 
+        if not self._loop.is_running():
+            warnings.warn("The creation of asyncio objects without a running "
+                          "event loop is deprecated as of Python 3.9.",
+                          DeprecationWarning, stacklevel=2)
+
     def __repr__(self):
         res = super().__repr__()
         extra = 'set' if self._value else 'unset'
@@ -335,6 +339,11 @@ class Condition(_ContextManagerMixin):
             self._loop = loop
             warnings.warn("The loop argument is deprecated since Python 3.8, "
                           "and scheduled for removal in Python 3.10.",
+                          DeprecationWarning, stacklevel=2)
+
+        if not self._loop.is_running():
+            warnings.warn("The creation of asyncio objects without a running "
+                          "event loop is deprecated as of Python 3.9.",
                           DeprecationWarning, stacklevel=2)
 
         if lock is None:
@@ -468,6 +477,11 @@ class Semaphore(_ContextManagerMixin):
                           "and scheduled for removal in Python 3.10.",
                           DeprecationWarning, stacklevel=2)
 
+        if not self._loop.is_running():
+            warnings.warn("The creation of asyncio objects without a running "
+                          "event loop is deprecated as of Python 3.9.",
+                          DeprecationWarning, stacklevel=2)
+
     def __repr__(self):
         res = super().__repr__()
         extra = 'locked' if self.locked() else f'unlocked, value:{self._value}'
@@ -529,6 +543,11 @@ class BoundedSemaphore(Semaphore):
         if loop:
             warnings.warn("The loop argument is deprecated since Python 3.8, "
                           "and scheduled for removal in Python 3.10.",
+                          DeprecationWarning, stacklevel=2)
+
+        if not self._loop.is_running():
+            warnings.warn("The creation of asyncio objects without a running "
+                          "event loop is deprecated as of Python 3.9.",
                           DeprecationWarning, stacklevel=2)
 
         self._bound_value = value

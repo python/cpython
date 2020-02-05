@@ -41,9 +41,8 @@ class Queue:
         self._maxsize = maxsize
 
         if not self._loop.is_running():
-            warnings.warn("The asyncio objects created without running "
-                          "event loop is deprecated since Python 3.9 and "
-                          "scheduled for removal in Python 3.10.",
+            warnings.warn("The creation of asyncio objects without a running "
+                          "event loop is deprecated as of Python 3.9.",
                           DeprecationWarning, stacklevel=2)
 
         # Futures.
