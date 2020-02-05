@@ -129,7 +129,7 @@ _Py_HashDouble(double v)
 }
 
 Py_hash_t
-_Py_HashPointer(void *p)
+_Py_HashPointer(const void *p)
 {
     Py_hash_t x;
     size_t y = (size_t)p;
