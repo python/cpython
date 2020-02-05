@@ -2162,8 +2162,6 @@ _PyObject_AssertFailed(PyObject *obj, const char *expr, const char *msg,
 }
 
 
-#undef _Py_Dealloc
-
 void
 _Py_Dealloc(PyObject *op)
 {
