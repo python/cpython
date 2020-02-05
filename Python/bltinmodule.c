@@ -4,6 +4,7 @@
 #include <ctype.h>
 #include "ast.h"
 #undef Yield   /* undefine macro conflicting with <winbase.h> */
+#include "pycore_object.h"
 #include "pycore_pyerrors.h"
 #include "pycore_pystate.h"
 #include "pycore_tupleobject.h"
@@ -2443,7 +2444,7 @@ builtin_sum_impl(PyObject *module, PyObject *iterable, PyObject *start)
            would change the value of empty. In fact, using
            in-place addition rather that binary addition for
            any of the steps introduces subtle behavior changes:
-           
+
            https://bugs.python.org/issue18305 */
         temp = PyNumber_Add(result, item);
         Py_DECREF(result);
