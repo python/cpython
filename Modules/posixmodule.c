@@ -821,6 +821,7 @@ dir_fd_converter(PyObject *o, void *p)
 
 typedef struct {
     PyObject *billion;
+    PyObject *posix_putenv_garbage;
     PyObject *DirEntryType;
     PyObject *ScandirIteratorType;
 #if defined(HAVE_SCHED_SETPARAM) || defined(HAVE_SCHED_SETSCHEDULER) || defined(POSIX_SPAWN_SETSCHEDULER) || defined(POSIX_SPAWN_SETSCHEDPARAM)
@@ -2104,6 +2105,7 @@ static int
 _posix_clear(PyObject *module)
 {
     Py_CLEAR(_posixstate(module)->billion);
+    Py_CLEAR(_posixstate(module)->posix_putenv_garbage);
     Py_CLEAR(_posixstate(module)->DirEntryType);
     Py_CLEAR(_posixstate(module)->ScandirIteratorType);
 #if defined(HAVE_SCHED_SETPARAM) || defined(HAVE_SCHED_SETSCHEDULER) || defined(POSIX_SPAWN_SETSCHEDULER) || defined(POSIX_SPAWN_SETSCHEDPARAM)
@@ -2128,6 +2130,7 @@ static int
 _posix_traverse(PyObject *module, visitproc visit, void *arg)
 {
     Py_VISIT(_posixstate(module)->billion);
+    Py_VISIT(_posixstate(module)->posix_putenv_garbage);
     Py_VISIT(_posixstate(module)->DirEntryType);
     Py_VISIT(_posixstate(module)->ScandirIteratorType);
 #if defined(HAVE_SCHED_SETPARAM) || defined(HAVE_SCHED_SETSCHEDULER) || defined(POSIX_SPAWN_SETSCHEDULER) || defined(POSIX_SPAWN_SETSCHEDPARAM)
@@ -10044,63 +10047,21 @@ os_posix_fadvise_impl(PyObject *module, int fd, Py_off_t offset,
 }
 #endif /* HAVE_POSIX_FADVISE && !POSIX_FADVISE_AIX_BUG */
 
+#ifdef HAVE_PUTENV
 
-#ifdef MS_WINDOWS
-static PyObject*
-win32_putenv(PyObject *name, PyObject *value)
+static void
+posix_putenv_garbage_setitem(PyObject *name, PyObject *value)
 {
-    /* Search from index 1 because on Windows starting '=' is allowed for
-       defining hidden environment variables. */
-    if (PyUnicode_GET_LENGTH(name) == 0 ||
-        PyUnicode_FindChar(name, '=', 1, PyUnicode_GET_LENGTH(name), 1) != -1)
-    {
-        PyErr_SetString(PyExc_ValueError, "illegal environment variable name");
-        return NULL;
-    }
-    PyObject *unicode;
-    if (value != NULL) {
-        unicode = PyUnicode_FromFormat("%U=%U", name, value);
-    }
-    else {
-        unicode = PyUnicode_FromFormat("%U=", name);
-    }
-    if (unicode == NULL) {
-        return NULL;
-    }
-
-    Py_ssize_t size;
-    /* PyUnicode_AsWideCharString() rejects embedded null characters */
-    wchar_t *env = PyUnicode_AsWideCharString(unicode, &size);
-    Py_DECREF(unicode);
-
-    if (env == NULL) {
-        return NULL;
-    }
-    if (size > _MAX_ENV) {
-        PyErr_Format(PyExc_ValueError,
-                     "the environment variable is longer than %u characters",
-                     _MAX_ENV);
-        PyMem_Free(env);
-        return NULL;
-    }
-
-    /* _wputenv() and SetEnvironmentVariableW() update the environment in the
-       Process Environment Block (PEB). _wputenv() also updates CRT 'environ'
-       and '_wenviron' variables, whereas SetEnvironmentVariableW() does not.
-
-       Prefer _wputenv() to be compatible with C libraries using CRT
-       variables and CRT functions using these variables (ex: getenv()). */
-    int err = _wputenv(env);
-    PyMem_Free(env);
-
-    if (err) {
-        posix_error();
-        return NULL;
-    }
-
-    Py_RETURN_NONE;
+    /* Install the first arg and newstr in posix_putenv_garbage;
+     * this will cause previous value to be collected.  This has to
+     * happen after the real putenv() call because the old value
+     * was still accessible until then. */
+    if (PyDict_SetItem(_posixstate_global->posix_putenv_garbage, name, value))
+        /* really not much we can do; just leak */
+        PyErr_Clear();
+    else
+        Py_DECREF(value);
 }
-#endif
 
 
 #ifdef MS_WINDOWS
@@ -10118,9 +10079,49 @@ static PyObject *
 os_putenv_impl(PyObject *module, PyObject *name, PyObject *value)
 /*[clinic end generated code: output=d29a567d6b2327d2 input=ba586581c2e6105f]*/
 {
-    return win32_putenv(name, value);
+    const wchar_t *env;
+    Py_ssize_t size;
+
+    /* Search from index 1 because on Windows starting '=' is allowed for
+       defining hidden environment variables. */
+    if (PyUnicode_GET_LENGTH(name) == 0 ||
+        PyUnicode_FindChar(name, '=', 1, PyUnicode_GET_LENGTH(name), 1) != -1)
+    {
+        PyErr_SetString(PyExc_ValueError, "illegal environment variable name");
+        return NULL;
+    }
+    PyObject *unicode = PyUnicode_FromFormat("%U=%U", name, value);
+    if (unicode == NULL) {
+        return NULL;
+    }
+
+    env = PyUnicode_AsUnicodeAndSize(unicode, &size);
+    if (env == NULL)
+        goto error;
+    if (size > _MAX_ENV) {
+        PyErr_Format(PyExc_ValueError,
+                     "the environment variable is longer than %u characters",
+                     _MAX_ENV);
+        goto error;
+    }
+    if (wcslen(env) != (size_t)size) {
+        PyErr_SetString(PyExc_ValueError, "embedded null character");
+        goto error;
+    }
+
+    if (_wputenv(env)) {
+        posix_error();
+        goto error;
+    }
+
+    posix_putenv_garbage_setitem(name, unicode);
+    Py_RETURN_NONE;
+
+error:
+    Py_DECREF(unicode);
+    return NULL;
 }
-#else
+#else /* MS_WINDOWS */
 /*[clinic input]
 os.putenv
 
@@ -10135,6 +10136,8 @@ static PyObject *
 os_putenv_impl(PyObject *module, PyObject *name, PyObject *value)
 /*[clinic end generated code: output=d29a567d6b2327d2 input=a97bc6152f688d31]*/
 {
+    PyObject *bytes = NULL;
+    char *env;
     const char *name_string = PyBytes_AS_STRING(name);
     const char *value_string = PyBytes_AS_STRING(value);
 
@@ -10142,31 +10145,25 @@ os_putenv_impl(PyObject *module, PyObject *name, PyObject *value)
         PyErr_SetString(PyExc_ValueError, "illegal environment variable name");
         return NULL;
     }
+    bytes = PyBytes_FromFormat("%s=%s", name_string, value_string);
+    if (bytes == NULL) {
+        return NULL;
+    }
 
-    if (setenv(name_string, value_string, 1)) {
+    env = PyBytes_AS_STRING(bytes);
+    if (putenv(env)) {
+        Py_DECREF(bytes);
         return posix_error();
     }
+
+    posix_putenv_garbage_setitem(name, bytes);
     Py_RETURN_NONE;
 }
-#endif  /* !defined(MS_WINDOWS) */
+#endif /* MS_WINDOWS */
+#endif /* HAVE_PUTENV */
 
 
-#ifdef MS_WINDOWS
-/*[clinic input]
-os.unsetenv
-    name: unicode
-    /
-
-Delete an environment variable.
-[clinic start generated code]*/
-
-static PyObject *
-os_unsetenv_impl(PyObject *module, PyObject *name)
-/*[clinic end generated code: output=54c4137ab1834f02 input=4d6a1747cc526d2f]*/
-{
-    return win32_putenv(name, NULL);
-}
-#else
+#ifdef HAVE_UNSETENV
 /*[clinic input]
 os.unsetenv
     name: FSConverter
@@ -10179,18 +10176,33 @@ static PyObject *
 os_unsetenv_impl(PyObject *module, PyObject *name)
 /*[clinic end generated code: output=54c4137ab1834f02 input=2bb5288a599c7107]*/
 {
+#ifndef HAVE_BROKEN_UNSETENV
+    int err;
+#endif
+
 #ifdef HAVE_BROKEN_UNSETENV
     unsetenv(PyBytes_AS_STRING(name));
 #else
-    int err = unsetenv(PyBytes_AS_STRING(name));
-    if (err) {
+    err = unsetenv(PyBytes_AS_STRING(name));
+    if (err)
         return posix_error();
-    }
 #endif
 
+    /* Remove the key from posix_putenv_garbage;
+     * this will cause it to be collected.  This has to
+     * happen after the real unsetenv() call because the
+     * old value was still accessible until then.
+     */
+    if (PyDict_DelItem(_posixstate(module)->posix_putenv_garbage, name)) {
+        /* really not much we can do; just leak */
+        if (!PyErr_ExceptionMatches(PyExc_KeyError)) {
+            return NULL;
+        }
+        PyErr_Clear();
+    }
     Py_RETURN_NONE;
 }
-#endif /* !MS_WINDOWS */
+#endif /* HAVE_UNSETENV */
 
 
 /*[clinic input]
@@ -14483,6 +14495,12 @@ INITFUNC(void)
 
     Py_INCREF(PyExc_OSError);
     PyModule_AddObject(m, "error", PyExc_OSError);
+
+#ifdef HAVE_PUTENV
+    /* Save putenv() parameters as values here, so we can collect them when they
+     * get re-set with another call for the same key. */
+    _posixstate(m)->posix_putenv_garbage = PyDict_New();
+#endif
 
 #if defined(HAVE_WAITID) && !defined(__APPLE__)
     waitid_result_desc.name = MODNAME ".waitid_result";

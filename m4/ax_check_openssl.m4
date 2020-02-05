@@ -39,7 +39,7 @@ AC_DEFUN([AX_CHECK_OPENSSL], [
     found=false
     AC_ARG_WITH([openssl],
         [AS_HELP_STRING([--with-openssl=DIR],
-            [override root of the OpenSSL directory to DIR])],
+            [root of the OpenSSL directory])],
         [
             case "$withval" in
             "" | y | ye | yes | n | no)

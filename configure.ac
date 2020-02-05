@@ -149,10 +149,7 @@ CONFIG_ARGS="$ac_configure_args"
 
 AC_MSG_CHECKING([for --enable-universalsdk])
 AC_ARG_ENABLE(universalsdk,
-	AS_HELP_STRING([--enable-universalsdk@<:@=SDKDIR@:>@],
-	               [create a universal binary build.
-	                SDKDIR specifies which macOS SDK should be used to perform the build,
-	                see Mac/README.rst. (default is no)]),
+	AS_HELP_STRING([--enable-universalsdk@<:@=SDKDIR@:>@], [Build fat binary against Mac OS X SDK]),
 [
 	case $enableval in
 	yes)
@@ -215,11 +212,7 @@ fi
 AC_SUBST(LIPO_32BIT_FLAGS)
 AC_MSG_CHECKING(for --with-universal-archs)
 AC_ARG_WITH(universal-archs,
-    AS_HELP_STRING([--with-universal-archs=ARCH],
-                   [specify the kind of universal binary that should be created. this option is
-                    only valid when --enable-universalsdk is set; options are:
-                    ("32-bit", "64-bit", "3-way", "intel", "intel-32", "intel-64", or "all")
-                    see Mac/README.rst]),
+    AS_HELP_STRING([--with-universal-archs=ARCH], [select architectures for universal build ("32-bit", "64-bit", "3-way", "intel", "intel-32", "intel-64", or "all")]),
 [
 	UNIVERSAL_ARCHS="$withval"
 ],
@@ -233,9 +226,7 @@ fi
 
 AC_ARG_WITH(framework-name,
               AS_HELP_STRING([--with-framework-name=FRAMEWORK],
-                             [specify the name for the python framework on macOS
-                              only valid when --enable-framework is set. see Mac/README.rst
-                              (default is 'Python')]),
+                             [specify an alternate name of the framework built with --enable-framework]),
 [
     PYTHONFRAMEWORK=${withval}
     PYTHONFRAMEWORKDIR=${withval}.framework
@@ -247,10 +238,7 @@ AC_ARG_WITH(framework-name,
 ])
 dnl quadrigraphs "@<:@" and "@:>@" produce "[" and "]" in the output
 AC_ARG_ENABLE(framework,
-              AS_HELP_STRING([--enable-framework@<:@=INSTALLDIR@:>@],
-                             [create a Python.framework rather than a traditional Unix install.
-                              optional INSTALLDIR specifies the installation path. see Mac/README.rst
-                              (default is no)]),
+              AS_HELP_STRING([--enable-framework@<:@=INSTALLDIR@:>@], [Build (MacOSX|Darwin) framework]),
 [
 	case $enableval in
 	yes)
@@ -369,7 +357,7 @@ AC_DEFINE_UNQUOTED(_PYTHONFRAMEWORK, "${PYTHONFRAMEWORK}", [framework name])
 
 ##AC_ARG_WITH(dyld,
 ##            AS_HELP_STRING([--with-dyld],
-##                           [use (OpenStep|Rhapsody) dynamic linker]))
+##                           [Use (OpenStep|Rhapsody) dynamic linker]))
 ##
 # Set name for machine-dependent library files
 AC_ARG_VAR([MACHDEP], [name for machine-dependent library files])
@@ -659,8 +647,8 @@ AC_SUBST(CXX)
 AC_SUBST(MAINCC)
 AC_MSG_CHECKING(for --with-cxx-main=<compiler>)
 AC_ARG_WITH(cxx_main,
-            AS_HELP_STRING([--with-cxx-main@<:@=COMPILER@:>@],
-                           [compile main() and link Python executable with C++ compiler specified in COMPILER (default is $CXX)]),
+            AS_HELP_STRING([--with-cxx-main=<compiler>],
+                           [compile main() and link python executable with C++ compiler]),
 [
 
 	case $withval in
@@ -940,7 +928,7 @@ esac
 AC_EXEEXT
 AC_MSG_CHECKING(for --with-suffix)
 AC_ARG_WITH(suffix,
-            AS_HELP_STRING([--with-suffix=SUFFIX], [set executable suffix to SUFFIX (default is '.exe')]),
+            AS_HELP_STRING([--with-suffix=.exe], [set executable suffix]),
 [
 	case $withval in
 	no)	EXEEXT=;;
@@ -1062,7 +1050,7 @@ AC_MSG_RESULT($GNULD)
 
 AC_MSG_CHECKING(for --enable-shared)
 AC_ARG_ENABLE(shared,
-              AS_HELP_STRING([--enable-shared], [enable building a shared Python library (default is no)]))
+              AS_HELP_STRING([--enable-shared], [disable/enable building shared python library]))
 
 if test -z "$enable_shared"
 then
@@ -1077,7 +1065,7 @@ AC_MSG_RESULT($enable_shared)
 
 AC_MSG_CHECKING(for --enable-profiling)
 AC_ARG_ENABLE(profiling,
-              AS_HELP_STRING([--enable-profiling], [enable C-level code profiling with gprof (default is no)]))
+              AS_HELP_STRING([--enable-profiling], [enable C-level code profiling]))
 if test "x$enable_profiling" = xyes; then
   ac_save_cc="$CC"
   CC="$CC -pg"
@@ -1228,7 +1216,7 @@ ABIFLAGS=""
 # Check for --with-pydebug
 AC_MSG_CHECKING(for --with-pydebug)
 AC_ARG_WITH(pydebug,
-            AS_HELP_STRING([--with-pydebug], [build with Py_DEBUG defined (default is no)]),
+            AS_HELP_STRING([--with-pydebug], [build with Py_DEBUG defined]),
 [
 if test "$withval" != no
 then
@@ -1245,9 +1233,7 @@ fi],
 # --with-trace-refs
 AC_MSG_CHECKING(for --with-trace-refs)
 AC_ARG_WITH(trace-refs,
-  AS_HELP_STRING(
-    [--with-trace-refs],
-    [enable tracing references for debugging purpose (default is no)]),,
+  AS_HELP_STRING([--with-trace-refs],[enable tracing references for debugging purpose]),,
   with_trace_refs=no)
 AC_MSG_RESULT($with_trace_refs)
 
@@ -1261,7 +1247,7 @@ fi
 assertions='false'
 AC_MSG_CHECKING(for --with-assertions)
 AC_ARG_WITH(assertions,
-            AS_HELP_STRING([--with-assertions],[build with C assertions enabled (default is no)]),
+            AS_HELP_STRING([--with-assertions],[build with C assertions enabled]),
 [
 if test "$withval" != no
 then
@@ -1282,9 +1268,7 @@ AC_SUBST(DEF_MAKE_ALL_RULE)
 AC_SUBST(DEF_MAKE_RULE)
 Py_OPT='false'
 AC_MSG_CHECKING(for --enable-optimizations)
-AC_ARG_ENABLE(optimizations, AS_HELP_STRING(
-                [--enable-optimizations],
-                [enable expensive, stable optimizations (PGO, etc.) (default is no)]),
+AC_ARG_ENABLE(optimizations, AS_HELP_STRING([--enable-optimizations], [Enable expensive, stable optimizations (PGO, etc).  Disabled by default.]),
 [
 if test "$enableval" != no
 then
@@ -1339,7 +1323,7 @@ fi
 
 # Enable LTO flags
 AC_MSG_CHECKING(for --with-lto)
-AC_ARG_WITH(lto, AS_HELP_STRING([--with-lto], [enable Link-Time-Optimization in any build (default is no)]),
+AC_ARG_WITH(lto, AS_HELP_STRING([--with-lto], [Enable Link Time Optimization in any build. Disabled by default.]),
 [
 if test "$withval" != no
 then
@@ -2923,7 +2907,7 @@ AC_MSG_CHECKING(for --with-hash-algorithm)
 dnl quadrigraphs "@<:@" and "@:>@" produce "[" and "]" in the output
 AC_ARG_WITH(hash_algorithm,
             AS_HELP_STRING([--with-hash-algorithm=@<:@fnv|siphash24@:>@],
-                           [select hash algorithm for use in Python/pyhash.c (default is SipHash24)]),
+                           [select hash algorithm]),
 [
 AC_MSG_RESULT($withval)
 case "$withval" in
@@ -2943,7 +2927,7 @@ esac
 AC_MSG_CHECKING(for --with-address-sanitizer)
 AC_ARG_WITH(address_sanitizer,
             AS_HELP_STRING([--with-address-sanitizer],
-                           [enable AddressSanitizer memory error detector, 'asan' (default is no)]),
+                           [enable AddressSanitizer (asan)]),
 [
 AC_MSG_RESULT($withval)
 BASECFLAGS="-fsanitize=address -fno-omit-frame-pointer $BASECFLAGS"
@@ -2956,7 +2940,7 @@ with_pymalloc="no"
 AC_MSG_CHECKING(for --with-memory-sanitizer)
 AC_ARG_WITH(memory_sanitizer,
             AS_HELP_STRING([--with-memory-sanitizer],
-                           [enable MemorySanitizer allocation error detector, 'msan' (default is no)]),
+                           [enable MemorySanitizer (msan)]),
 [
 AC_MSG_RESULT($withval)
 BASECFLAGS="-fsanitize=memory -fsanitize-memory-track-origins=2 -fno-omit-frame-pointer $BASECFLAGS"
@@ -2969,7 +2953,7 @@ with_pymalloc="no"
 AC_MSG_CHECKING(for --with-undefined-behavior-sanitizer)
 AC_ARG_WITH(undefined_behavior_sanitizer,
             AS_HELP_STRING([--with-undefined-behavior-sanitizer],
-                           [enable UndefinedBehaviorSanitizer undefined behaviour detector, 'ubsan' (default is no)]),
+                           [enable UndefinedBehaviorSanitizer (ubsan)]),
 [
 AC_MSG_RESULT($withval)
 BASECFLAGS="-fsanitize=undefined $BASECFLAGS"
@@ -2983,7 +2967,7 @@ AC_CHECK_LIB(socket, socket, [LIBS="-lsocket $LIBS"], [], $LIBS) # SVR4 sockets
 
 AC_MSG_CHECKING(for --with-libs)
 AC_ARG_WITH(libs,
-            AS_HELP_STRING([--with-libs='lib1 ...'], [link against additional libs (default is no)]),
+            AS_HELP_STRING([--with-libs='lib1 ...'], [link against additional libs]),
 [
 AC_MSG_RESULT($withval)
 LIBS="$withval $LIBS"
@@ -2995,7 +2979,7 @@ PKG_PROG_PKG_CONFIG
 # Check for use of the system expat library
 AC_MSG_CHECKING(for --with-system-expat)
 AC_ARG_WITH(system_expat,
-            AS_HELP_STRING([--with-system-expat], [build pyexpat module using an installed expat library, see Doc/library/pyexpat.rst (default is no)]),
+            AS_HELP_STRING([--with-system-expat], [build pyexpat module using an installed expat library]),
             [],
             [with_system_expat="no"])
 
@@ -3004,7 +2988,7 @@ AC_MSG_RESULT($with_system_expat)
 # Check for use of the system libffi library
 AC_MSG_CHECKING(for --with-system-ffi)
 AC_ARG_WITH(system_ffi,
-            AS_HELP_STRING([--with-system-ffi], [build _ctypes module using an installed ffi library, see Doc/library/ctypes.rst (default is system-dependent)]),,,)
+            AS_HELP_STRING([--with-system-ffi], [build _ctypes module using an installed ffi library]),,,)
 
 if test "$ac_sys_system" = "Darwin"
 then
@@ -3038,7 +3022,7 @@ AC_SUBST(LIBFFI_INCLUDEDIR)
 # Check for use of the system libmpdec library
 AC_MSG_CHECKING(for --with-system-libmpdec)
 AC_ARG_WITH(system_libmpdec,
-            AS_HELP_STRING([--with-system-libmpdec], [build _decimal module using an installed libmpdec library, see Doc/library/decimal.rst (default is no)]),
+            AS_HELP_STRING([--with-system-libmpdec], [build _decimal module using an installed libmpdec library]),
             [],
             [with_system_libmpdec="no"])
 
@@ -3047,8 +3031,7 @@ AC_MSG_RESULT($with_system_libmpdec)
 # Check for support for loadable sqlite extensions
 AC_MSG_CHECKING(for --enable-loadable-sqlite-extensions)
 AC_ARG_ENABLE(loadable-sqlite-extensions,
-              AS_HELP_STRING([--enable-loadable-sqlite-extensions],
-                             [support loadable extensions in _sqlite module, see Doc/library/sqlite3.rst (default is no)]),
+              AS_HELP_STRING([--enable-loadable-sqlite-extensions], [support loadable extensions in _sqlite module]),
               [],
               [enable_loadable_sqlite_extensions="no"])
 
@@ -3085,7 +3068,7 @@ fi
 # Check for --with-dbmliborder
 AC_MSG_CHECKING(for --with-dbmliborder)
 AC_ARG_WITH(dbmliborder,
-            AS_HELP_STRING([--with-dbmliborder=db1:db2:...], [override order to check db backends for dbm; a valid value is a colon separated string with the backend names `ndbm', `gdbm' and `bdb'.]),
+            AS_HELP_STRING([--with-dbmliborder=db1:db2:...], [order to check db backends for dbm. Valid value is a colon separated string with the backend names `ndbm', `gdbm' and `bdb'.]),
 [
 if test x$with_dbmliborder = xyes
 then
@@ -3257,8 +3240,8 @@ fi
 AH_TEMPLATE(ENABLE_IPV6, [Define if --enable-ipv6 is specified])
 AC_MSG_CHECKING([if --enable-ipv6 is specified])
 AC_ARG_ENABLE(ipv6,
-    AS_HELP_STRING([--enable-ipv6],
-               [enable ipv6 (with ipv4) support, see Doc/library/socket.rst (default is yes if supported)]),
+[  --enable-ipv6           Enable ipv6 (with ipv4) support
+  --disable-ipv6          Disable ipv6 support],
 [ case "$enableval" in
   no)
        AC_MSG_RESULT(no)
@@ -3429,7 +3412,7 @@ AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[ /* CAN_RAW_FD_FRAMES available check */
 # Check for --with-doc-strings
 AC_MSG_CHECKING(for --with-doc-strings)
 AC_ARG_WITH(doc-strings,
-            AS_HELP_STRING([--with-doc-strings], [enable documentation strings (default is yes)]))
+            AS_HELP_STRING([--with(out)-doc-strings], [disable/enable documentation strings]))
 
 if test -z "$with_doc_strings"
 then with_doc_strings="yes"
@@ -3444,7 +3427,7 @@ AC_MSG_RESULT($with_doc_strings)
 # Check for Python-specific malloc support
 AC_MSG_CHECKING(for --with-pymalloc)
 AC_ARG_WITH(pymalloc,
-            AS_HELP_STRING([--with-pymalloc], [enable specialized mallocs (default is yes)]))
+            AS_HELP_STRING([--with(out)-pymalloc], [disable/enable specialized mallocs]))
 
 if test -z "$with_pymalloc"
 then
@@ -3460,8 +3443,8 @@ AC_MSG_RESULT($with_pymalloc)
 # Check for --with-c-locale-coercion
 AC_MSG_CHECKING(for --with-c-locale-coercion)
 AC_ARG_WITH(c-locale-coercion,
-            AS_HELP_STRING([--with-c-locale-coercion],
-              [enable C locale coercion to a UTF-8 based locale (default is yes)]))
+            AS_HELP_STRING([--with(out)-c-locale-coercion],
+              [disable/enable C locale coercion to a UTF-8 based locale]))
 
 if test -z "$with_c_locale_coercion"
 then
@@ -3477,7 +3460,7 @@ AC_MSG_RESULT($with_c_locale_coercion)
 # Check for Valgrind support
 AC_MSG_CHECKING([for --with-valgrind])
 AC_ARG_WITH([valgrind],
-  AS_HELP_STRING([--with-valgrind], [enable Valgrind support (default is no)]),,
+  AS_HELP_STRING([--with-valgrind], [Enable Valgrind support]),,
   with_valgrind=no)
 AC_MSG_RESULT([$with_valgrind])
 if test "$with_valgrind" != no; then
@@ -3491,7 +3474,7 @@ fi
 # Check for DTrace support
 AC_MSG_CHECKING(for --with-dtrace)
 AC_ARG_WITH(dtrace,
-  AS_HELP_STRING([--with-dtrace],[enable DTrace support (default is no)]),,
+  AS_HELP_STRING([--with(out)-dtrace],[disable/enable DTrace support]),,
   with_dtrace=no)
 AC_MSG_RESULT($with_dtrace)
 
@@ -3500,6 +3483,7 @@ AC_SUBST(DFLAGS)
 AC_SUBST(DTRACE_HEADERS)
 AC_SUBST(DTRACE_OBJS)
 DTRACE=
+DFLAGS=
 DTRACE_HEADERS=
 DTRACE_OBJS=
 
@@ -3520,7 +3504,7 @@ then
         [ac_cv_dtrace_link], [dnl
             ac_cv_dtrace_link=no
             echo 'BEGIN{}' > conftest.d
-            "$DTRACE" "$DFLAGS" -G -s conftest.d -o conftest.o > /dev/null 2>&1 && \
+            "$DTRACE" -G -s conftest.d -o conftest.o > /dev/null 2>&1 && \
                 ac_cv_dtrace_link=yes
       ])
     if test "$ac_cv_dtrace_link" = "yes"; then
@@ -3597,7 +3581,7 @@ AC_CHECK_FUNCS(alarm accept4 setitimer getitimer bind_textdomain_codeset chown \
  memrchr mbrtowc mkdirat mkfifo \
  madvise mkfifoat mknod mknodat mktime mremap nice openat pathconf pause pipe2 plock poll \
  posix_fallocate posix_fadvise posix_spawn posix_spawnp pread preadv preadv2 \
- pthread_condattr_setclock pthread_init pthread_kill pwrite pwritev pwritev2 \
+ pthread_condattr_setclock pthread_init pthread_kill putenv pwrite pwritev pwritev2 \
  readlink readlinkat readv realpath renameat \
  sem_open sem_timedwait sem_getvalue sem_unlink sendfile setegid seteuid \
  setgid sethostname \
@@ -3607,7 +3591,7 @@ AC_CHECK_FUNCS(alarm accept4 setitimer getitimer bind_textdomain_codeset chown \
  sigaction sigaltstack sigfillset siginterrupt sigpending sigrelse \
  sigtimedwait sigwait sigwaitinfo snprintf strftime strlcpy strsignal symlinkat sync \
  sysconf tcgetpgrp tcsetpgrp tempnam timegm times tmpfile tmpnam tmpnam_r \
- truncate uname unlinkat utimensat utimes waitid waitpid wait3 wait4 \
+ truncate uname unlinkat unsetenv utimensat utimes waitid waitpid wait3 wait4 \
  wcscoll wcsftime wcsxfrm wmemcmp writev _getpty rtpSpawn)
 
 # Force lchmod off for Linux. Linux disallows changing the mode of symbolic
@@ -4337,7 +4321,7 @@ Darwin) ;;
 esac
 AC_MSG_CHECKING(for --with-libm=STRING)
 AC_ARG_WITH(libm,
-            AS_HELP_STRING([--with-libm=STRING], [override libm math library to STRING (default is system-dependent)]),
+            AS_HELP_STRING([--with-libm=STRING], [math library]),
 [
 if test "$withval" = no
 then LIBM=
@@ -4353,7 +4337,7 @@ fi],
 AC_SUBST(LIBC)
 AC_MSG_CHECKING(for --with-libc=STRING)
 AC_ARG_WITH(libc,
-            AS_HELP_STRING([--with-libc=STRING], [override libc C library to STRING (default is system-dependent)]),
+            AS_HELP_STRING([--with-libc=STRING], [C library]),
 [
 if test "$withval" = no
 then LIBC=
@@ -4571,7 +4555,7 @@ AC_CHECK_DECLS([RTLD_LAZY, RTLD_NOW, RTLD_GLOBAL, RTLD_LOCAL, RTLD_NODELETE, RTL
 # determine what size digit to use for Python's longs
 AC_MSG_CHECKING([digit size for Python's longs])
 AC_ARG_ENABLE(big-digits,
-AS_HELP_STRING([--enable-big-digits@<:@=15|30@:>@],[use big digits (30 or 15 bits) for Python longs (default is system-dependent)]]),
+AS_HELP_STRING([--enable-big-digits@<:@=BITS@:>@],[use big digits for Python longs [[BITS=30]]]),
 [case $enable_big_digits in
 yes)
   enable_big_digits=30 ;;
@@ -5283,8 +5267,8 @@ fi
 # Check for --with-computed-gotos
 AC_MSG_CHECKING(for --with-computed-gotos)
 AC_ARG_WITH(computed-gotos,
-            AS_HELP_STRING([--with-computed-gotos],
-                           [enable computed gotos in evaluation loop (enabled by default on supported compilers)]),
+            AS_HELP_STRING([--with(out)-computed-gotos],
+                           [Use computed gotos in evaluation loop (enabled by default on supported compilers)]),
 [
 if test "$withval" = yes
 then
@@ -5480,8 +5464,8 @@ fi
 # ensurepip option
 AC_MSG_CHECKING(for ensurepip)
 AC_ARG_WITH(ensurepip,
-    [AS_HELP_STRING([--with-ensurepip@<:@=install|upgrade|no@:>@],
-        ["install" or "upgrade" using bundled pip (default is upgrade)])],
+    [AS_HELP_STRING([--with(out)-ensurepip=@<:@=upgrade@:>@],
+        ["install" or "upgrade" using bundled pip])],
     [],
     [with_ensurepip=upgrade])
 AS_CASE($with_ensurepip,
@@ -5637,11 +5621,11 @@ AH_TEMPLATE(PY_SSL_DEFAULT_CIPHER_STRING,
 AC_MSG_CHECKING(for --with-ssl-default-suites)
 AC_ARG_WITH(ssl-default-suites,
             AS_HELP_STRING([--with-ssl-default-suites=@<:@python|openssl|STRING@:>@],
-                           [override default cipher suites string,
+                           [Override default cipher suites string,
                             python: use Python's preferred selection (default),
                             openssl: leave OpenSSL's defaults untouched,
                             STRING: use a custom string,
-                            PROTOCOL_SSLv2 ignores the setting, see Doc/library/ssl.rst]),
+                            PROTOCOL_SSLv2 ignores the setting]),
 [
 AC_MSG_RESULT($withval)
 case "$withval" in

@@ -155,7 +155,6 @@ class FixerError(Exception):
 class RefactoringTool(object):
 
     _default_options = {"print_function" : False,
-                        "exec_function": False,
                         "write_unchanged_files" : False}
 
     CLASS_PREFIX = "Fix" # The prefix for fixer classes
@@ -174,13 +173,10 @@ class RefactoringTool(object):
         self.options = self._default_options.copy()
         if options is not None:
             self.options.update(options)
-        self.grammar = pygram.python_grammar.copy()
-
-        if self.options['print_function']:
-            del self.grammar.keywords["print"]
-        elif self.options['exec_function']:
-            del self.grammar.keywords["exec"]
-
+        if self.options["print_function"]:
+            self.grammar = pygram.python_grammar_no_print_statement
+        else:
+            self.grammar = pygram.python_grammar
         # When this is True, the refactor*() methods will call write_file() for
         # files processed even if they were not changed during refactoring. If
         # and only if the refactor method's write parameter was True.

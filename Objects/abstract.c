@@ -2423,7 +2423,7 @@ check_class(PyObject *cls, const char *error)
 }
 
 static int
-object_isinstance(PyObject *inst, PyObject *cls)
+recursive_isinstance(PyObject *inst, PyObject *cls)
 {
     PyObject *icls;
     int retval;
@@ -2461,23 +2461,21 @@ object_isinstance(PyObject *inst, PyObject *cls)
 }
 
 static int
-object_recursive_isinstance(PyThreadState *tstate, PyObject *inst, PyObject *cls)
+object_isinstance(PyThreadState *tstate, PyObject *inst, PyObject *cls)
 {
     _Py_IDENTIFIER(__instancecheck__);
+    PyObject *checker;
 
     /* Quick test for an exact match */
-    if (Py_TYPE(inst) == (PyTypeObject *)cls) {
+    if (Py_TYPE(inst) == (PyTypeObject *)cls)
         return 1;
-    }
 
     /* We know what type's __instancecheck__ does. */
     if (PyType_CheckExact(cls)) {
-        return object_isinstance(inst, cls);
+        return recursive_isinstance(inst, cls);
     }
 
     if (PyTuple_Check(cls)) {
-        /* Not a general sequence -- that opens up the road to
-           recursion and stack overflow. */
         if (_Py_EnterRecursiveCall(tstate, " in __instancecheck__")) {
             return -1;
         }
@@ -2485,41 +2483,37 @@ object_recursive_isinstance(PyThreadState *tstate, PyObject *inst, PyObject *cls
         int r = 0;
         for (Py_ssize_t i = 0; i < n; ++i) {
             PyObject *item = PyTuple_GET_ITEM(cls, i);
-            r = object_recursive_isinstance(tstate, inst, item);
-            if (r != 0) {
+            r = object_isinstance(tstate, inst, item);
+            if (r != 0)
                 /* either found it, or got an error */
                 break;
-            }
         }
         _Py_LeaveRecursiveCall(tstate);
         return r;
     }
 
-    PyObject *checker = _PyObject_LookupSpecial(cls, &PyId___instancecheck__);
+    checker = _PyObject_LookupSpecial(cls, &PyId___instancecheck__);
     if (checker != NULL) {
+        int ok = -1;
         if (_Py_EnterRecursiveCall(tstate, " in __instancecheck__")) {
             Py_DECREF(checker);
-            return -1;
+            return ok;
         }
-
         PyObject *res = _PyObject_CallOneArg(checker, inst);
         _Py_LeaveRecursiveCall(tstate);
         Py_DECREF(checker);
-
-        if (res == NULL) {
-            return -1;
+        if (res != NULL) {
+            ok = PyObject_IsTrue(res);
+            Py_DECREF(res);
         }
-        int ok = PyObject_IsTrue(res);
-        Py_DECREF(res);
-
         return ok;
     }
     else if (_PyErr_Occurred(tstate)) {
         return -1;
     }
 
-    /* cls has no __instancecheck__() method */
-    return object_isinstance(inst, cls);
+    /* Probably never reached anymore. */
+    return recursive_isinstance(inst, cls);
 }
 
 
@@ -2527,7 +2521,7 @@ int
 PyObject_IsInstance(PyObject *inst, PyObject *cls)
 {
     PyThreadState *tstate = _PyThreadState_GET();
-    return object_recursive_isinstance(tstate, inst, cls);
+    return object_isinstance(tstate, inst, cls);
 }
 
 
@@ -2617,7 +2611,7 @@ PyObject_IsSubclass(PyObject *derived, PyObject *cls)
 int
 _PyObject_RealIsInstance(PyObject *inst, PyObject *cls)
 {
-    return object_isinstance(inst, cls);
+    return recursive_isinstance(inst, cls);
 }
 
 int

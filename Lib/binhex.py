@@ -21,16 +21,10 @@ hexbin(inputfilename, outputfilename)
 # input. The resulting code (xx 90 90) would appear to be interpreted as an
 # escaped *value* of 0x90. All coders I've seen appear to ignore this nicety...
 #
-import binascii
-import contextlib
 import io
 import os
 import struct
-import warnings
-
-warnings.warn('the binhex module is deprecated', DeprecationWarning,
-              stacklevel=2)
-
+import binascii
 
 __all__ = ["binhex","hexbin","Error"]
 
@@ -82,16 +76,6 @@ class openrsrc:
     def close(self):
         pass
 
-
-# DeprecationWarning is already emitted on "import binhex". There is no need
-# to repeat the warning at each call to deprecated binascii functions.
-@contextlib.contextmanager
-def _ignore_deprecation_warning():
-    with warnings.catch_warnings():
-        warnings.filterwarnings('ignore', '', DeprecationWarning)
-        yield
-
-
 class _Hqxcoderengine:
     """Write data to the coder in 3-byte chunks"""
 
@@ -109,8 +93,7 @@ class _Hqxcoderengine:
         self.data = self.data[todo:]
         if not data:
             return
-        with _ignore_deprecation_warning():
-            self.hqxdata = self.hqxdata + binascii.b2a_hqx(data)
+        self.hqxdata = self.hqxdata + binascii.b2a_hqx(data)
         self._flush(0)
 
     def _flush(self, force):
@@ -126,8 +109,7 @@ class _Hqxcoderengine:
 
     def close(self):
         if self.data:
-            with _ignore_deprecation_warning():
-                self.hqxdata = self.hqxdata + binascii.b2a_hqx(self.data)
+            self.hqxdata = self.hqxdata + binascii.b2a_hqx(self.data)
         self._flush(1)
         self.ofp.close()
         del self.ofp
@@ -143,15 +125,13 @@ class _Rlecoderengine:
         self.data = self.data + data
         if len(self.data) < REASONABLY_LARGE:
             return
-        with _ignore_deprecation_warning():
-            rledata = binascii.rlecode_hqx(self.data)
+        rledata = binascii.rlecode_hqx(self.data)
         self.ofp.write(rledata)
         self.data = b''
 
     def close(self):
         if self.data:
-            with _ignore_deprecation_warning():
-                rledata = binascii.rlecode_hqx(self.data)
+            rledata = binascii.rlecode_hqx(self.data)
             self.ofp.write(rledata)
         self.ofp.close()
         del self.ofp
@@ -296,8 +276,7 @@ class _Hqxdecoderengine:
             #
             while True:
                 try:
-                    with _ignore_deprecation_warning():
-                        decdatacur, self.eof = binascii.a2b_hqx(data)
+                    decdatacur, self.eof = binascii.a2b_hqx(data)
                     break
                 except binascii.Incomplete:
                     pass
@@ -333,9 +312,8 @@ class _Rledecoderengine:
     def _fill(self, wtd):
         self.pre_buffer = self.pre_buffer + self.ifp.read(wtd + 4)
         if self.ifp.eof:
-            with _ignore_deprecation_warning():
-                self.post_buffer = self.post_buffer + \
-                    binascii.rledecode_hqx(self.pre_buffer)
+            self.post_buffer = self.post_buffer + \
+                binascii.rledecode_hqx(self.pre_buffer)
             self.pre_buffer = b''
             return
 
@@ -362,9 +340,8 @@ class _Rledecoderengine:
         else:
             mark = mark - 1
 
-        with _ignore_deprecation_warning():
-            self.post_buffer = self.post_buffer + \
-                binascii.rledecode_hqx(self.pre_buffer[:mark])
+        self.post_buffer = self.post_buffer + \
+            binascii.rledecode_hqx(self.pre_buffer[:mark])
         self.pre_buffer = self.pre_buffer[mark:]
 
     def close(self):

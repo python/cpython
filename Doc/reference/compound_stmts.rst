@@ -399,8 +399,6 @@ The execution of the :keyword:`with` statement with one "item" proceeds as follo
 #. The context expression (the expression given in the :token:`with_item`) is
    evaluated to obtain a context manager.
 
-#. The context manager's :meth:`__enter__` is loaded for later use.
-
 #. The context manager's :meth:`__exit__` is loaded for later use.
 
 #. The context manager's :meth:`__enter__` method is invoked.
@@ -432,41 +430,17 @@ The execution of the :keyword:`with` statement with one "item" proceeds as follo
    value from :meth:`__exit__` is ignored, and execution proceeds at the normal
    location for the kind of exit that was taken.
 
-The following code::
-
-    with EXPRESSION as TARGET:
-        SUITE
-
-is semantically equivalent to::
-
-    manager = (EXPRESSION)
-    enter = type(manager).__enter__
-    exit = type(manager).__exit__
-    value = enter(manager)
-    hit_except = False
-
-    try:
-        TARGET = value
-        SUITE
-    except:
-        hit_except = True
-        if not exit(manager, *sys.exc_info()):
-            raise
-    finally:
-        if not hit_except:
-            exit(manager, None, None, None)
-
 With more than one item, the context managers are processed as if multiple
 :keyword:`with` statements were nested::
 
    with A() as a, B() as b:
-       SUITE
+       suite
 
-is semantically equivalent to::
+is equivalent to ::
 
    with A() as a:
        with B() as b:
-           SUITE
+           suite
 
 .. versionchanged:: 3.1
    Support for multiple context expressions.
@@ -798,25 +772,24 @@ iterators.
 The following code::
 
     async for TARGET in ITER:
-        SUITE
+        BLOCK
     else:
-        SUITE2
+        BLOCK2
 
 Is semantically equivalent to::
 
     iter = (ITER)
     iter = type(iter).__aiter__(iter)
     running = True
-
     while running:
         try:
             TARGET = await type(iter).__anext__(iter)
         except StopAsyncIteration:
             running = False
         else:
-            SUITE
+            BLOCK
     else:
-        SUITE2
+        BLOCK2
 
 See also :meth:`__aiter__` and :meth:`__anext__` for details.
 
@@ -838,27 +811,23 @@ able to suspend execution in its *enter* and *exit* methods.
 
 The following code::
 
-    async with EXPRESSION as TARGET:
-        SUITE
+    async with EXPR as VAR:
+        BLOCK
 
-is semantically equivalent to::
+Is semantically equivalent to::
 
-    manager = (EXPRESSION)
-    aenter = type(manager).__aenter__
-    aexit = type(manager).__aexit__
-    value = await aenter(manager)
-    hit_except = False
+    mgr = (EXPR)
+    aexit = type(mgr).__aexit__
+    aenter = type(mgr).__aenter__(mgr)
 
+    VAR = await aenter
     try:
-        TARGET = value
-        SUITE
+        BLOCK
     except:
-        hit_except = True
-        if not await aexit(manager, *sys.exc_info()):
+        if not await aexit(mgr, *sys.exc_info()):
             raise
-    finally:
-        if not hit_except:
-            await aexit(manager, None, None, None)
+    else:
+        await aexit(mgr, None, None, None)
 
 See also :meth:`__aenter__` and :meth:`__aexit__` for details.
 

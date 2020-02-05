@@ -25,8 +25,6 @@
 extern "C" {
 #endif
 
-_Py_IDENTIFIER(open);
-
 /* External C interface */
 
 PyObject *
@@ -34,6 +32,7 @@ PyFile_FromFd(int fd, const char *name, const char *mode, int buffering, const c
               const char *errors, const char *newline, int closefd)
 {
     PyObject *io, *stream;
+    _Py_IDENTIFIER(open);
 
     /* import _io in case we are being used to open io.py */
     io = PyImport_ImportModule("_io");
@@ -548,6 +547,7 @@ PyObject *
 PyFile_OpenCodeObject(PyObject *path)
 {
     PyObject *iomod, *f = NULL;
+    _Py_IDENTIFIER(open);
 
     if (!PyUnicode_Check(path)) {
         PyErr_Format(PyExc_TypeError, "'path' must be 'str', not '%.200s'",

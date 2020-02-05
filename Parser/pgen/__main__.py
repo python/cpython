@@ -21,19 +21,9 @@ def main():
     )
 
     parser.add_argument("--verbose", "-v", action="count")
-    parser.add_argument(
-        "--graph",
-        type=argparse.FileType("w"),
-        action="store",
-        metavar="GRAPH_OUTPUT_FILE",
-        help="Dumps a DOT representation of the generated automata in a file",
-    )
-
     args = parser.parse_args()
 
-    p = ParserGenerator(
-        args.grammar, args.tokens, verbose=args.verbose, graph_file=args.graph
-    )
+    p = ParserGenerator(args.grammar, args.tokens, verbose=args.verbose)
     grammar = p.make_grammar()
     grammar.produce_graminit_h(args.graminit_h.write)
     grammar.produce_graminit_c(args.graminit_c.write)

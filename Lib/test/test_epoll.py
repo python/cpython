@@ -225,10 +225,7 @@ class TestEPoll(unittest.TestCase):
         self.assertFalse(then - now > 0.01)
 
         server.close()
-
-        with self.assertRaises(OSError) as cm:
-            ep.unregister(fd)
-        self.assertEqual(cm.exception.errno, errno.EBADF)
+        ep.unregister(fd)
 
     def test_close(self):
         open_file = open(__file__, "rb")

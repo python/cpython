@@ -1,3 +1,0 @@
-Ensure, if ``wraps`` is supplied to :class:`unittest.mock.MagicMock`, it is used
-to calculate return values for the magic methods instead of using the default
-return values. Patch by Karthikeyan Singaravelan.

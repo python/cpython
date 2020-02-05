@@ -1229,9 +1229,6 @@ class TestSpooledTemporaryFile(BaseTestCase):
         self.assertTrue(f._rolled)
         self.assertEqual(os.fstat(f.fileno()).st_size, 20)
 
-    def test_class_getitem(self):
-        self.assertIs(tempfile.SpooledTemporaryFile[bytes],
-                      tempfile.SpooledTemporaryFile)
 
 if tempfile.NamedTemporaryFile is not tempfile.TemporaryFile:
 

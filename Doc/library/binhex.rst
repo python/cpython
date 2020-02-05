@@ -6,8 +6,6 @@
 
 **Source code:** :source:`Lib/binhex.py`
 
-.. deprecated:: 3.9
-
 --------------
 
 This module encodes and decodes files in binhex4 format, a format allowing

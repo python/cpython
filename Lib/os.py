@@ -26,8 +26,6 @@ import abc
 import sys
 import stat as st
 
-from _collections_abc import _check_methods
-
 _names = sys.builtin_module_names
 
 # Note:  more names are added to __all__ later.
@@ -654,15 +652,17 @@ def get_exec_path(env=None):
     return path_list.split(pathsep)
 
 
-# Change environ to automatically call putenv() and unsetenv()
+# Change environ to automatically call putenv(), unsetenv if they exist.
 from _collections_abc import MutableMapping
 
 class _Environ(MutableMapping):
-    def __init__(self, data, encodekey, decodekey, encodevalue, decodevalue):
+    def __init__(self, data, encodekey, decodekey, encodevalue, decodevalue, putenv, unsetenv):
         self.encodekey = encodekey
         self.decodekey = decodekey
         self.encodevalue = encodevalue
         self.decodevalue = decodevalue
+        self.putenv = putenv
+        self.unsetenv = unsetenv
         self._data = data
 
     def __getitem__(self, key):
@@ -676,12 +676,12 @@ class _Environ(MutableMapping):
     def __setitem__(self, key, value):
         key = self.encodekey(key)
         value = self.encodevalue(value)
-        putenv(key, value)
+        self.putenv(key, value)
         self._data[key] = value
 
     def __delitem__(self, key):
         encodedkey = self.encodekey(key)
-        unsetenv(encodedkey)
+        self.unsetenv(encodedkey)
         try:
             del self._data[encodedkey]
         except KeyError:
@@ -710,6 +710,22 @@ class _Environ(MutableMapping):
             self[key] = value
         return self[key]
 
+try:
+    _putenv = putenv
+except NameError:
+    _putenv = lambda key, value: None
+else:
+    if "putenv" not in __all__:
+        __all__.append("putenv")
+
+try:
+    _unsetenv = unsetenv
+except NameError:
+    _unsetenv = lambda key: _putenv(key, "")
+else:
+    if "unsetenv" not in __all__:
+        __all__.append("unsetenv")
+
 def _createenviron():
     if name == 'nt':
         # Where Env Var Names Must Be UPPERCASE
@@ -737,7 +753,8 @@ def _createenviron():
         data = environ
     return _Environ(data,
         encodekey, decode,
-        encode, decode)
+        encode, decode,
+        _putenv, _unsetenv)
 
 # unicode environ
 environ = _createenviron()
@@ -762,7 +779,8 @@ if supports_bytes_environ:
     # bytes environ
     environb = _Environ(environ._data,
         _check_bytes, bytes,
-        _check_bytes, bytes)
+        _check_bytes, bytes,
+        _putenv, _unsetenv)
     del _check_bytes
 
     def getenvb(key, default=None):
@@ -1052,9 +1070,7 @@ class PathLike(abc.ABC):
 
     @classmethod
     def __subclasshook__(cls, subclass):
-        if cls is PathLike:
-            return _check_methods(subclass, '__fspath__')
-        return NotImplemented
+        return hasattr(subclass, '__fspath__')
 
     def __class_getitem__(cls, type):
         return cls

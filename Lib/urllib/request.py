@@ -2492,26 +2492,24 @@ def proxy_bypass_environment(host, proxies=None):
     try:
         no_proxy = proxies['no']
     except KeyError:
-        return False
+        return 0
     # '*' is special case for always bypass
     if no_proxy == '*':
-        return True
-    host = host.lower()
+        return 1
     # strip port off host
     hostonly, port = _splitport(host)
     # check if the host ends with any of the DNS suffixes
-    for name in no_proxy.split(','):
-        name = name.strip()
+    no_proxy_list = [proxy.strip() for proxy in no_proxy.split(',')]
+    for name in no_proxy_list:
         if name:
             name = name.lstrip('.')  # ignore leading dots
-            name = name.lower()
-            if hostonly == name or host == name:
-                return True
-            name = '.' + name
-            if hostonly.endswith(name) or host.endswith(name):
-                return True
+            name = re.escape(name)
+            pattern = r'(.+\.)?%s$' % name
+            if (re.match(pattern, hostonly, re.I)
+                    or re.match(pattern, host, re.I)):
+                return 1
     # otherwise, don't bypass
-    return False
+    return 0
 
 
 # This code tests an OSX specific data structure but is testable on all
@@ -2637,7 +2635,7 @@ elif os.name == 'nt':
                     for p in proxyServer.split(';'):
                         protocol, address = p.split('=', 1)
                         # See if address has a type:// prefix
-                        if not re.match('(?:[^/:]+)://', address):
+                        if not re.match('^([^/:]+)://', address):
                             address = '%s://%s' % (protocol, address)
                         proxies[protocol] = address
                 else:

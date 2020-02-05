@@ -80,11 +80,8 @@ class check(Command):
     def check_metadata(self):
         """Ensures that all required elements of meta-data are supplied.
 
-        Required fields:
-            name, version, URL
-
-        Recommended fields:
-            (author and author_email) or (maintainer and maintainer_email))
+        name, version, URL, (author and author_email) or
+        (maintainer and maintainer_email)).
 
         Warns if any are missing.
         """
@@ -100,15 +97,15 @@ class check(Command):
         if metadata.author:
             if not metadata.author_email:
                 self.warn("missing meta-data: if 'author' supplied, " +
-                          "'author_email' should be supplied too")
+                          "'author_email' must be supplied too")
         elif metadata.maintainer:
             if not metadata.maintainer_email:
                 self.warn("missing meta-data: if 'maintainer' supplied, " +
-                          "'maintainer_email' should be supplied too")
+                          "'maintainer_email' must be supplied too")
         else:
             self.warn("missing meta-data: either (author and author_email) " +
                       "or (maintainer and maintainer_email) " +
-                      "should be supplied")
+                      "must be supplied")
 
     def check_restructuredtext(self):
         """Checks if the long string fields are reST-compliant."""

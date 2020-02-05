@@ -77,12 +77,13 @@ class LockTests(BaseTest):
         async def test(lock):
             await asyncio.sleep(0.01)
             self.assertFalse(lock.locked())
-            with self.assertRaisesRegex(
-                TypeError,
-                "can't be used in 'await' expression"
-            ):
-                with await lock:
-                    pass
+            with self.assertWarns(DeprecationWarning):
+                with await lock as _lock:
+                    self.assertIs(_lock, None)
+                    self.assertTrue(lock.locked())
+                    await asyncio.sleep(0.01)
+                    self.assertTrue(lock.locked())
+                self.assertFalse(lock.locked())
 
         for primitive in primitives:
             self.loop.run_until_complete(test(primitive))

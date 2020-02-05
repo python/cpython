@@ -25,7 +25,7 @@ There are several ways to enable asyncio debug mode:
 
 * Setting the :envvar:`PYTHONASYNCIODEBUG` environment variable to ``1``.
 
-* Using the :ref:`Python Development Mode <devmode>`.
+* Using the :option:`-X` ``dev`` Python command line option.
 
 * Passing ``debug=True`` to :func:`asyncio.run`.
 

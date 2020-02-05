@@ -211,6 +211,7 @@ def _processoptions(args):
 
 # Helper for _processoptions()
 def _setoption(arg):
+    import re
     parts = arg.split(':')
     if len(parts) > 5:
         raise _OptionError("too many fields (max 5): %r" % (arg,))
@@ -219,13 +220,11 @@ def _setoption(arg):
     action, message, category, module, lineno = [s.strip()
                                                  for s in parts]
     action = _getaction(action)
+    message = re.escape(message)
     category = _getcategory(category)
-    if message or module:
-        import re
-    if message:
-        message = re.escape(message)
+    module = re.escape(module)
     if module:
-        module = re.escape(module) + r'\Z'
+        module = module + '$'
     if lineno:
         try:
             lineno = int(lineno)
@@ -249,21 +248,26 @@ def _getaction(action):
 
 # Helper for _setoption()
 def _getcategory(category):
+    import re
     if not category:
         return Warning
-    if '.' not in category:
-        import builtins as m
-        klass = category
+    if re.match("^[a-zA-Z0-9_]+$", category):
+        try:
+            cat = eval(category)
+        except NameError:
+            raise _OptionError("unknown warning category: %r" % (category,)) from None
     else:
-        module, _, klass = category.rpartition('.')
+        i = category.rfind(".")
+        module = category[:i]
+        klass = category[i+1:]
         try:
             m = __import__(module, None, None, [klass])
         except ImportError:
             raise _OptionError("invalid module name: %r" % (module,)) from None
-    try:
-        cat = getattr(m, klass)
-    except AttributeError:
-        raise _OptionError("unknown warning category: %r" % (category,)) from None
+        try:
+            cat = getattr(m, klass)
+        except AttributeError:
+            raise _OptionError("unknown warning category: %r" % (category,)) from None
     if not issubclass(cat, Warning):
         raise _OptionError("invalid warning category: %r" % (category,))
     return cat

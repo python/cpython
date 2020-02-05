@@ -466,7 +466,7 @@ PyConfig
 
    .. c:member:: int dev_mode
 
-      If non-zero, enable the :ref:`Python Development Mode <devmode>`.
+      Development mode: see :option:`-X dev <-X>`.
 
    .. c:member:: int dump_refs
 
@@ -627,6 +627,14 @@ PyConfig
 
       ``python3 -m MODULE`` argument. Used by :c:func:`Py_RunMain`.
 
+   .. c:member:: int show_alloc_count
+
+      Show allocation counts at exit?
+
+      Set to 1 by :option:`-X showalloccount <-X>` command line option.
+
+      Need a special Python build with ``COUNT_ALLOCS`` macro defined.
+
    .. c:member:: int show_ref_count
 
       Show total reference count at exit?
@@ -694,10 +702,6 @@ arguments are stripped from ``argv``: see :ref:`Command Line Arguments
 The ``xoptions`` options are parsed to set other options: see :option:`-X`
 option.
 
-.. versionchanged:: 3.9
-
-   The ``show_alloc_count`` field has been removed.
-
 
 Initialization with PyConfig
 ----------------------------
@@ -753,7 +757,7 @@ configuration, and then override some parameters::
         PyConfig config;
         PyConfig_InitPythonConfig(&config);
 
-        /* Set the program name before reading the configuration
+        /* Set the program name before reading the configuraton
            (decode byte string from the locale encoding).
 
            Implicitly preinitialize Python. */

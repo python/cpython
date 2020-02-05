@@ -236,13 +236,6 @@ Module contents
    .. versionadded:: 3.2
 
 
-.. _site-commandline:
-
-Command Line Interface
-----------------------
-
-.. program:: site
-
 The :mod:`site` module also provides a way to get the user directories from the
 command line:
 
@@ -250,6 +243,8 @@ command line:
 
    $ python3 -m site --user-site
    /home/user/.local/lib/python3.3/site-packages
+
+.. program:: site
 
 If it is called without arguments, it will print the contents of
 :data:`sys.path` on the standard output, followed by the value of

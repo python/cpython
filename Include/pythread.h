@@ -3,6 +3,7 @@
 #define Py_PYTHREAD_H
 
 typedef void *PyThread_type_lock;
+typedef void *PyThread_type_sema;
 
 #ifdef __cplusplus
 extern "C" {

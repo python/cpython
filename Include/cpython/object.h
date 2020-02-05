@@ -255,6 +255,15 @@ typedef struct _typeobject {
 
     destructor tp_finalize;
     vectorcallfunc tp_vectorcall;
+
+#ifdef COUNT_ALLOCS
+    /* these must be last and never explicitly initialized */
+    Py_ssize_t tp_allocs;
+    Py_ssize_t tp_frees;
+    Py_ssize_t tp_maxalloc;
+    struct _typeobject *tp_prev;
+    struct _typeobject *tp_next;
+#endif
 } PyTypeObject;
 
 /* The *real* layout of a type object when allocated on the heap */
@@ -332,6 +341,8 @@ static inline void _Py_Dealloc_inline(PyObject *op)
     destructor dealloc = Py_TYPE(op)->tp_dealloc;
 #ifdef Py_TRACE_REFS
     _Py_ForgetReference(op);
+#else
+    _Py_INC_TPFREES(op);
 #endif
     (*dealloc)(op);
 }
@@ -432,7 +443,7 @@ _PyObject_DebugTypeStats(FILE *out);
    NDEBUG against a Python built with NDEBUG defined.
 
    msg, expr and function can be NULL. */
-PyAPI_FUNC(void) _Py_NO_RETURN _PyObject_AssertFailed(
+PyAPI_FUNC(void) _PyObject_AssertFailed(
     PyObject *obj,
     const char *expr,
     const char *msg,
