@@ -2160,7 +2160,6 @@ ga_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 // - argument clinic?
 // - __doc__?
 // - cache?
-// - __eq__
 PyTypeObject Py_GenericAliasType = {
     PyVarObject_HEAD_INIT(&PyType_Type, 0)
     .tp_name = "types.GenericAlias",
