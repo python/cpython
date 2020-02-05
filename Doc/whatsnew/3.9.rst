@@ -504,7 +504,8 @@ Removed
   (Contributed by Victor Stinner in :issue:`39489`.)
 
 * :mod:`distutils`: The ``bdist_wininst`` command has been removed, it was
-  deprecated in Python 3.8: use ``bdist_wheel`` command instead.
+  deprecated in Python 3.8: use ``bdist_wheel`` command instead. A stub which
+  does nothing is kept for setuptools.
   (Contributed by Victor Stinner in :issue:`39541`.)
 
 
