@@ -139,9 +139,11 @@ Py_DecRef(PyObject *o)
 PyObject *
 PyObject_Init(PyObject *op, PyTypeObject *tp)
 {
-    if (op == NULL)
+    /* Any changes should be reflected in PyObject_INIT() macro */
+    if (op == NULL) {
         return PyErr_NoMemory();
-    /* Any changes should be reflected in PyObject_INIT (objimpl.h) */
+    }
+
     Py_TYPE(op) = tp;
     if (PyType_GetFlags(tp) & Py_TPFLAGS_HEAPTYPE) {
         Py_INCREF(tp);
@@ -153,9 +155,11 @@ PyObject_Init(PyObject *op, PyTypeObject *tp)
 PyVarObject *
 PyObject_InitVar(PyVarObject *op, PyTypeObject *tp, Py_ssize_t size)
 {
-    if (op == NULL)
+    /* Any changes should be reflected in PyObject_INIT_VAR() macro */
+    if (op == NULL) {
         return (PyVarObject *) PyErr_NoMemory();
-    /* Any changes should be reflected in PyObject_INIT_VAR */
+    }
+
     Py_SIZE(op) = size;
     PyObject_Init((PyObject *)op, tp);
     return op;

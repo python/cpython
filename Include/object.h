@@ -233,8 +233,7 @@ PyAPI_FUNC(int) PyObject_SetAttr(PyObject *, PyObject *, PyObject *);
 PyAPI_FUNC(int) PyObject_HasAttr(PyObject *, PyObject *);
 PyAPI_FUNC(PyObject *) PyObject_SelfIter(PyObject *);
 PyAPI_FUNC(PyObject *) PyObject_GenericGetAttr(PyObject *, PyObject *);
-PyAPI_FUNC(int) PyObject_GenericSetAttr(PyObject *,
-                                              PyObject *, PyObject *);
+PyAPI_FUNC(int) PyObject_GenericSetAttr(PyObject *, PyObject *, PyObject *);
 #if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= 0x03030000
 PyAPI_FUNC(int) PyObject_GenericSetDict(PyObject *, PyObject *, void *);
 #endif
@@ -381,19 +380,7 @@ you can count such references to the type object.)
 PyAPI_DATA(Py_ssize_t) _Py_RefTotal;
 PyAPI_FUNC(void) _Py_NegativeRefcount(const char *filename, int lineno,
                                       PyObject *op);
-PyAPI_FUNC(Py_ssize_t) _Py_GetRefTotal(void);
 #endif /* Py_REF_DEBUG */
-
-/* Update the Python traceback of an object. This function must be called
-   when a memory block is reused from a free list. */
-PyAPI_FUNC(int) _PyTraceMalloc_NewReference(PyObject *op);
-
-PyAPI_FUNC(void) _Py_NewReference(PyObject *op);
-
-#ifdef Py_TRACE_REFS
-/* Py_TRACE_REFS is such major surgery that we call external routines. */
-PyAPI_FUNC(void) _Py_ForgetReference(PyObject *);
-#endif
 
 PyAPI_FUNC(void) _Py_Dealloc(PyObject *);
 
