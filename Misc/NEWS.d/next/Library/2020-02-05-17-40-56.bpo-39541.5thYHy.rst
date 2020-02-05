@@ -1,0 +1,2 @@
+Remove distutils ``bdist_wininst`` command, it was deprecated in Python 3.8:
+use ``bdist_wheel`` command instead.
