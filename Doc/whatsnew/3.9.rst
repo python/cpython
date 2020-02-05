@@ -303,6 +303,14 @@ signal
 Exposed the Linux-specific :func:`signal.pidfd_send_signal` for sending to
 signals to a process using a file descriptor instead of a pid. (:issue:`38712`)
 
+typing
+------
+
+:pep:`593` introduced an :data:`typing.Annotated` type to decorate existing
+types with context-specific metadata and new ``include_extras`` parameter to
+:func:`typing.get_type_hints` to access the metadata at runtime. (Contributed
+by Till Varoquaux and Konstantin Kashin.)
+
 
 Optimizations
 =============
