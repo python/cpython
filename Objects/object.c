@@ -93,7 +93,7 @@ static PyObject refchain = {&refchain, &refchain};
  * way, though; exceptions include statically allocated type objects, and
  * statically allocated singletons (like Py_True and Py_None).
  */
-static void
+void
 _Py_AddToAllObjects(PyObject *op, int force)
 {
 #ifdef  Py_DEBUG
