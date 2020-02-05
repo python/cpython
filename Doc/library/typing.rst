@@ -1046,12 +1046,12 @@ The module defines the following classes, functions and decorators:
    more information). For example::
 
        class Student(NamedTuple):
-           name: Annotated[str, struct.ctype("<10s")]
+           name: Annotated[str, 'some marker']
 
        get_type_hints(Student) == {'name': str}
        get_type_hints(Student, include_extras=False) == {'name': str}
        get_type_hints(Student, include_extras=True) == {
-           'name': Annotated[str, struct.ctype("<10s")]
+           'name': Annotated[str, 'some marker']
        }
 
    .. versionchanged:: 3.9
@@ -1392,10 +1392,10 @@ The module defines the following classes, functions and decorators:
 .. data:: Annotated
 
    A type, introduced in :pep:`593` (``Flexible function and variable
-   annotations``), to decorate
-   existing types with context-specific metadata. Specifically, a type
-   ``T`` can be annotated with metadata ``x`` via the typehint
-   ``Annotated[T, x]``. This metadata can be used for either static
+   annotations``), to decorate existing types with context-specific metadata
+   (possibly multiple pieces of it, as ``Annotated`` is variadic).
+   Specifically, a type ``T`` can be annotated with metadata ``x`` via the
+   typehint ``Annotated[T, x]``. This metadata can be used for either static
    analysis or at runtime. If a library (or tool) encounters a typehint
    ``Annotated[T, x]`` and has no special logic for metadata ``x``, it
    should ignore it and simply treat the type as ``T``. Unlike the
@@ -1415,9 +1415,9 @@ The module defines the following classes, functions and decorators:
    unknown annotation it should just ignore it and treat annotated type as
    the underlying type.
 
-   It's up to the tool consuming the annotations
-   to decide whether the client is allowed to have several annotations on
-   one type and how to merge those annotations.
+   It's up to the tool consuming the annotations to decide whether the
+   client is allowed to have several annotations on one type and how to
+   merge those annotations.
 
    Since the ``Annotated`` type allows you to put several annotations of
    the same (or different) type(s) on any node, the tools or libraries
@@ -1428,8 +1428,8 @@ The module defines the following classes, functions and decorators:
        T1 = Annotated[int, ValueRange(-10, 5)]
        T2 = Annotated[T1, ValueRange(-20, 3)]
 
-   A new ``include_extras`` parameter to :func:`get_type_hints` has been added,
-   setting it to ``True`` lets one access the extra annotations at runtime.
+   Passing ``include_extras=True`` to :func:`get_type_hints` lets one
+   access the extra annotations at runtime.
 
    The details of the syntax:
 
@@ -1465,7 +1465,7 @@ The module defines the following classes, functions and decorators:
 
    * ``Annotated`` can be used with nested and generic aliases::
 
-       Typevar T = ...
+       T = TypeVar('T')
        Vec = Annotated[List[Tuple[T, T]], MaxLen(10)]
        V = Vec[int]
 

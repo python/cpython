@@ -2923,7 +2923,6 @@ class GetTypeHintTests(BaseTestCase):
             BA2
         )
 
-
     def test_get_type_hints_annotated_refs(self):
 
         Const = Annotated[T, "Const"]
