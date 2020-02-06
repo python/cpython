@@ -3197,6 +3197,10 @@ dict_or(PyObject *self, PyObject *other)
     if (new == NULL) {
         return NULL;
     }
+    if (!PyDict_Check(new)) {
+        return PyErr_Format(PyExc_TypeError, 
+            "copy() returned %s (expected dict)", Py_TYPE(new)->tp_name);
+    }
     if (subclass_update_arg(new, other)) {
         Py_DECREF(new);
         return NULL;
