@@ -94,10 +94,13 @@ elif os.name == "posix":
     import re, tempfile
 
     def _is_elf(filename):
-        "Return True if the given file is an ELF file"
+        "Return True if the given file is readable and is an ELF file"
         elf_header = b'\x7fELF'
-        with open(filename, 'br') as thefile:
-            return thefile.read(4) == elf_header
+        try:
+            with open(filename, 'br') as thefile:
+                return thefile.read(4) == elf_header
+        except OSError:
+            return False
 
     def _findLib_gcc(name):
         # Run GCC's linker with the -t (aka --trace) option and examine the
@@ -324,10 +327,52 @@ elif os.name == "posix":
                 pass  # result will be None
             return result
 
+        def _findLib_musl(name):
+            # fallback for musl libc, which does not have ldconfig -p
+            # See issue #21622
+
+            from _ctypes import get_interp
+            interp = get_interp()
+            if interp == None:
+                return None
+
+            ldarch = re.sub(r'.*ld-musl-([^.]+)\..*', r'\1', interp)
+            if ldarch == interp:
+                # not musl
+                return None
+
+            from glob import glob
+            if os.path.isabs(name):
+                return name
+            if name.startswith("lib") and name.endswith(".so"):
+                suffixes = [ '.[0-9]*' ]
+                libname = name
+            else:
+                suffixes = ['.so', '.so.[0-9]*', '.musl-%s.so.[0-9]*' % ldarch]
+                libname = 'lib'+name
+            # search LD_LIBRARY_PATH list and default musl libc locations
+            paths = os.environ.get('LD_LIBRARY_PATH', '').split(':')
+            try:
+                with open('/etc/ld-musl-%s.path' % ldarch) as f:
+                    paths.extend(re.split(':|\n', f.read()))
+            except OSError:
+                paths.extend(['/lib', '/usr/local/lib', '/usr/lib'])
+
+            for d in paths:
+                f = os.path.join(d, name)
+                if _is_elf(f):
+                    return os.path.basename(f)
+                prefix = os.path.join(d, libname)
+                for suffix in suffixes:
+                    for f in sorted(glob('{0}{1}'.format(prefix, suffix))):
+                        if _is_elf(f):
+                            return os.path.basename(f)
+
         def find_library(name):
             # See issue #9998
             return _findSoname_ldconfig(name) or \
-                   _get_soname(_findLib_gcc(name)) or _get_soname(_findLib_ld(name))
+                   _get_soname(_findLib_gcc(name)) or _get_soname(_findLib_ld(name)) or \
+                   _findLib_musl(name)
 
 ################################################################
 # test code
@@ -344,6 +389,7 @@ def test():
         print(find_library("m"))
         print(find_library("c"))
         print(find_library("bz2"))
+        print(find_library("libbz2.so"))
 
         # load
         if sys.platform == "darwin":
@@ -368,8 +414,8 @@ def test():
             print(f"crypto\t:: {find_library('crypto')}")
             print(f"crypto\t:: {cdll.LoadLibrary(find_library('crypto'))}")
         else:
-            print(cdll.LoadLibrary("libm.so"))
-            print(cdll.LoadLibrary("libcrypt.so"))
+            print(cdll.LoadLibrary(find_library("c")))
+            print(cdll.LoadLibrary("libc.so"))
             print(find_library("crypt"))
 
 if __name__ == "__main__":

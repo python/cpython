@@ -287,6 +287,9 @@
 /* Define to 1 if you have the `dlopen' function. */
 #undef HAVE_DLOPEN
 
+/* Define to 1 if you have the `dl_iterate_phdr' function. */
+#undef HAVE_DL_ITERATE_PHDR
+
 /* Define to 1 if you have the `dup' function. */
 #undef HAVE_DUP
 
@@ -304,6 +307,9 @@
 
 /* Define to 1 if you have the <editline/readline.h> header file. */
 #undef HAVE_EDITLINE_READLINE_H
+
+/* Define to 1 if you have the <elf.h> header file. */
+#undef HAVE_ELF_H
 
 /* Define to 1 if you have the <endian.h> header file. */
 #undef HAVE_ENDIAN_H
@@ -699,6 +705,9 @@
 
 /* Define to 1 if you have the `linkat' function. */
 #undef HAVE_LINKAT
+
+/* Define to 1 if you have the <link.h> header file. */
+#undef HAVE_LINK_H
 
 /* Define to 1 if you have the <linux/auxvec.h> header file. */
 #undef HAVE_LINUX_AUXVEC_H

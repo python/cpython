@@ -86,6 +86,13 @@
 #include <alloca.h>
 #endif
 
+#ifdef HAVE_ELF_H
+#include <elf.h>
+#endif
+#ifdef HAVE_LINK_H
+#include <link.h>
+#endif
+
 #ifdef _Py_MEMORY_SANITIZER
 #include <sanitizer/msan_interface.h>
 #endif
@@ -1989,7 +1996,51 @@ buffer_info(PyObject *self, PyObject *arg)
     return Py_BuildValue("siN", dict->format, dict->ndim, shape);
 }
 
+#ifndef MS_WIN32
 
+#ifdef HAVE_DL_ITERATE_PHDR
+static int interp_cb(struct dl_phdr_info *info, size_t size, void *data)
+{
+    const char **ps = data;
+    const char *base = (const char *)info->dlpi_addr;
+    const ElfW(Phdr) *ph = info->dlpi_phdr;
+    int phn = info->dlpi_phnum;
+
+    for(int i=0; i < phn; i++) {
+        if (ph[i].p_type == PT_INTERP) {
+            *ps = base + ph[i].p_vaddr;
+            return 1;
+        }
+    }
+    return 0;
+}
+
+static PyObject *
+get_interp(PyObject *self, PyObject *arg)
+{
+    const char *s = NULL;
+    if (PySys_Audit("ctypes.get_interp", NULL) < 0) {
+        return NULL;
+    }
+
+    if (dl_iterate_phdr(interp_cb, &s) == 1) {
+        return PyUnicode_FromString(s);
+    }
+
+    return NULL;
+}
+
+#else
+
+static PyObject *
+get_interp(PyObject *self, PyObject *arg)
+{
+    return Py_None;
+}
+
+#endif
+
+#endif
 
 PyMethodDef _ctypes_module_methods[] = {
     {"get_errno", get_errno, METH_NOARGS},
@@ -2012,6 +2063,7 @@ PyMethodDef _ctypes_module_methods[] = {
      "dlopen(name, flag={RTLD_GLOBAL|RTLD_LOCAL}) open a shared library"},
     {"dlclose", py_dl_close, METH_VARARGS, "dlclose a library"},
     {"dlsym", py_dl_sym, METH_VARARGS, "find symbol in shared library"},
+    {"get_interp", get_interp, METH_NOARGS},
 #endif
 #ifdef __APPLE__
      {"_dyld_shared_cache_contains_path", py_dyld_shared_cache_contains_path, METH_VARARGS, "check if path is in the shared cache"},
