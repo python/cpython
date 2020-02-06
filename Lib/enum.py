@@ -75,7 +75,8 @@ class _EnumDict(dict):
                     '_order_', '_create_pseudo_member_',
                     '_generate_next_value_', '_missing_', '_ignore_',
                     ):
-                raise ValueError('_names_ are reserved for future Enum use')
+                raise ValueError(f'_sunder_ names, such as "{key}", are '
+                                  'reserved for future Enum use')
             if key == '_generate_next_value_':
                 setattr(self, '_generate_next_value', value)
             elif key == '_ignore_':
