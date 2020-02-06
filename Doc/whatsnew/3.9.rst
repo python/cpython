@@ -319,13 +319,6 @@ Optimizations
 Build and C API Changes
 =======================
 
-* Provide :c:func:`Py_EnterRecursiveCall` and :c:func:`Py_LeaveRecursiveCall`
-  as regular functions for the limited API. Previously, there were defined as
-  macros, but these macros didn't work with the limited API which cannot access
-  ``PyThreadState.recursion_depth`` field. Remove ``_Py_CheckRecursionLimit``
-  from the stable ABI.
-  (Contributed by Victor Stinner in :issue:`38644`.)
-
 * Add a new public :c:func:`PyObject_CallNoArgs` function to the C API, which
   calls a callable Python object without any arguments. It is the most efficient
   way to call a callable Python object without any argument.
@@ -358,6 +351,48 @@ Build and C API Changes
 
 * The ``COUNT_ALLOCS`` special build macro has been removed.
   (Contributed by Victor Stinner in :issue:`39489`.)
+
+* Changes in the limited C API (if ``Py_LIMITED_API`` macro is defined):
+
+  * Provide :c:func:`Py_EnterRecursiveCall` and :c:func:`Py_LeaveRecursiveCall`
+    as regular functions for the limited API. Previously, there were defined as
+    macros, but these macros didn't work with the limited API which cannot
+    access ``PyThreadState.recursion_depth`` field.
+
+  * Exclude the following functions from the limited C API:
+
+    * ``_Py_CheckRecursionLimit``
+    * ``_Py_NewReference()``
+    * ``_Py_ForgetReference()``
+    * ``_PyTraceMalloc_NewReference()``
+    * ``_Py_GetRefTotal()``
+    * The trashcan mechanism which never worked in the limited C API.
+    * ``PyTrash_UNWIND_LEVEL``
+    * ``Py_TRASHCAN_BEGIN_CONDITION``
+    * ``Py_TRASHCAN_BEGIN``
+    * ``Py_TRASHCAN_END``
+    * ``Py_TRASHCAN_SAFE_BEGIN``
+    * ``Py_TRASHCAN_SAFE_END``
+
+  * The following static inline functions or macros become regular "opaque"
+    function to hide implementation details:
+
+    * ``_Py_NewReference()``
+    * ``PyObject_INIT()`` and ``PyObject_INIT_VAR()``  become aliases to
+      :c:func:`PyObject_Init` and :c:func:`PyObject_InitVar` in the limited C
+      API, but are overriden with static inline function otherwise. Thanks to
+      that, it was possible to exclude ``_Py_NewReference()`` from the limited
+      C API.
+
+  * Move following functions and definitions to the internal C API:
+
+    * ``_PyDebug_PrintTotalRefs()``
+    * ``_Py_PrintReferences()``
+    * ``_Py_PrintReferenceAddresses()``
+    * ``_Py_tracemalloc_config``
+    * ``_Py_AddToAllObjects()`` (specific to ``Py_TRACE_REFS`` build)
+
+  (Contributed by Victor Stinner in :issue:`38644` and :issue:`39542`.)
 
 
 Deprecated
