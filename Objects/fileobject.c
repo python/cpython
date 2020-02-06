@@ -85,7 +85,7 @@ PyFile_GetLine(PyObject *f, int n)
                             "EOF when reading a line");
         }
         else if (s[len-1] == '\n') {
-            if (result->ob_refcnt == 1)
+            if (Py_REFCNT(result) == 1)
                 _PyBytes_Resize(&result, len-1);
             else {
                 PyObject *v;
