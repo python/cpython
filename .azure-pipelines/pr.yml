@@ -138,16 +138,25 @@ jobs:
       win32:
         arch: win32
         buildOpt:
+        installClang: no
         testRunTitle: '$(System.PullRequest.TargetBranch)-win32'
         testRunPlatform: win32
       win64:
         arch: amd64
         buildOpt: '-p x64'
+        installClang: no
         testRunTitle: '$(System.PullRequest.TargetBranch)-win64'
         testRunPlatform: win64
       winarm64:
         arch: arm64
         buildOpt: '-p arm64'
+        installClang: no
+      win64_clang_cl:
+        arch: amd64
+        buildOpt: '-p x64 "/p:CLToolExe=clang-cl.exe" "/p:CLToolPath=C:\Program Files\LLVM\bin"'
+        installClang: yes
+        testRunTitle: '$(Build.SourceBranchName)-clang_cl-win64'
+        testRunPlatform: win64
     maxParallel: 4
 
   steps:
