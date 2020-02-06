@@ -2028,9 +2028,6 @@ least common multiple of x and y
 static PyObject *
 math_lcm_impl(PyObject *module, PyObject *a, PyObject *b)
 /*[clinic end generated code: output=6f83fb6d671074ba input=bd41b785dc2a4ff1]*/
-
-static PyObject*
-math_lcm(PyObject *module, PyObject *a, PyObject *b)
 {
     PyObject *g, *m, *f, *ab;
 	
