@@ -58,7 +58,7 @@ _Py_GetRefTotal(void)
     Py_ssize_t total = _Py_RefTotal;
     o = _PySet_Dummy;
     if (o != NULL)
-        total -= o->ob_refcnt;
+        total -= Py_REFCNT(o);
     return total;
 }
 
@@ -206,32 +206,32 @@ PyObject_CallFinalizer(PyObject *self)
 int
 PyObject_CallFinalizerFromDealloc(PyObject *self)
 {
-    if (self->ob_refcnt != 0) {
+    if (Py_REFCNT(self) != 0) {
         _PyObject_ASSERT_FAILED_MSG(self,
                                     "PyObject_CallFinalizerFromDealloc called "
                                     "on object with a non-zero refcount");
     }
 
     /* Temporarily resurrect the object. */
-    self->ob_refcnt = 1;
+    Py_REFCNT(self) = 1;
 
     PyObject_CallFinalizer(self);
 
     _PyObject_ASSERT_WITH_MSG(self,
-                              self->ob_refcnt > 0,
+                              Py_REFCNT(self) > 0,
                               "refcount is too small");
 
     /* Undo the temporary resurrection; can't use DECREF here, it would
      * cause a recursive call. */
-    if (--self->ob_refcnt == 0) {
+    if (--Py_REFCNT(self) == 0) {
         return 0;         /* this is the normal path out */
     }
 
     /* tp_finalize resurrected it!  Make it look like the original Py_DECREF
      * never happened. */
-    Py_ssize_t refcnt = self->ob_refcnt;
+    Py_ssize_t refcnt = Py_REFCNT(self);
     _Py_NewReference(self);
-    self->ob_refcnt = refcnt;
+    Py_REFCNT(self) = refcnt;
 
     _PyObject_ASSERT(self,
                      (!PyType_IS_GC(Py_TYPE(self))
@@ -263,12 +263,12 @@ PyObject_Print(PyObject *op, FILE *fp, int flags)
         Py_END_ALLOW_THREADS
     }
     else {
-        if (op->ob_refcnt <= 0) {
+        if (Py_REFCNT(op) <= 0) {
             /* XXX(twouters) cast refcount to long until %zd is
                universally available */
             Py_BEGIN_ALLOW_THREADS
             fprintf(fp, "<refcnt %ld at %p>",
-                (long)op->ob_refcnt, (void *)op);
+                (long)Py_REFCNT(op), (void *)op);
             Py_END_ALLOW_THREADS
         }
         else {
@@ -363,7 +363,7 @@ _PyObject_Dump(PyObject* op)
     fprintf(stderr, "object address  : %p\n", (void *)op);
     /* XXX(twouters) cast refcount to long until %zd is
        universally available */
-    fprintf(stderr, "object refcount : %ld\n", (long)op->ob_refcnt);
+    fprintf(stderr, "object refcount : %ld\n", (long)Py_REFCNT(op));
     fflush(stderr);
 
     PyTypeObject *type = Py_TYPE(op);
@@ -1010,7 +1010,7 @@ PyObject_SetAttr(PyObject *v, PyObject *name, PyObject *value)
         return err;
     }
     Py_DECREF(name);
-    _PyObject_ASSERT(name, name->ob_refcnt >= 1);
+    _PyObject_ASSERT(name, Py_REFCNT(name) >= 1);
     if (tp->tp_getattr == NULL && tp->tp_getattro == NULL)
         PyErr_Format(PyExc_TypeError,
                      "'%.100s' object has no attributes "
@@ -1829,7 +1829,7 @@ _Py_NewReference(PyObject *op)
 void
 _Py_ForgetReference(PyObject *op)
 {
-    if (op->ob_refcnt < 0) {
+    if (Py_REFCNT(op) < 0) {
         _PyObject_ASSERT_FAILED_MSG(op, "negative refcnt");
     }
 
@@ -1867,7 +1867,7 @@ _Py_PrintReferences(FILE *fp)
     PyObject *op;
     fprintf(fp, "Remaining objects:\n");
     for (op = refchain._ob_next; op != &refchain; op = op->_ob_next) {
-        fprintf(fp, "%p [%" PY_FORMAT_SIZE_T "d] ", (void *)op, op->ob_refcnt);
+        fprintf(fp, "%p [%" PY_FORMAT_SIZE_T "d] ", (void *)op, Py_REFCNT(op));
         if (PyObject_Print(op, fp, 0) != 0)
             PyErr_Clear();
         putc('\n', fp);
@@ -1884,7 +1884,7 @@ _Py_PrintReferenceAddresses(FILE *fp)
     fprintf(fp, "Remaining object addresses:\n");
     for (op = refchain._ob_next; op != &refchain; op = op->_ob_next)
         fprintf(fp, "%p [%" PY_FORMAT_SIZE_T "d] %s\n", (void *)op,
-            op->ob_refcnt, Py_TYPE(op)->tp_name);
+            Py_REFCNT(op), Py_TYPE(op)->tp_name);
 }
 
 PyObject *
@@ -2025,7 +2025,7 @@ _PyTrash_deposit_object(PyObject *op)
 
     _PyObject_ASSERT(op, PyObject_IS_GC(op));
     _PyObject_ASSERT(op, !_PyObject_GC_IS_TRACKED(op));
-    _PyObject_ASSERT(op, op->ob_refcnt == 0);
+    _PyObject_ASSERT(op, Py_REFCNT(op) == 0);
     _PyGCHead_SET_PREV(_Py_AS_GC(op), gcstate->trash_delete_later);
     gcstate->trash_delete_later = op;
 }
@@ -2037,7 +2037,7 @@ _PyTrash_thread_deposit_object(PyObject *op)
     PyThreadState *tstate = _PyThreadState_GET();
     _PyObject_ASSERT(op, PyObject_IS_GC(op));
     _PyObject_ASSERT(op, !_PyObject_GC_IS_TRACKED(op));
-    _PyObject_ASSERT(op, op->ob_refcnt == 0);
+    _PyObject_ASSERT(op, Py_REFCNT(op) == 0);
     _PyGCHead_SET_PREV(_Py_AS_GC(op), tstate->trash_delete_later);
     tstate->trash_delete_later = op;
 }
@@ -2064,7 +2064,7 @@ _PyTrash_destroy_chain(void)
          * assorted non-release builds calling Py_DECREF again ends
          * up distorting allocation statistics.
          */
-        _PyObject_ASSERT(op, op->ob_refcnt == 0);
+        _PyObject_ASSERT(op, Py_REFCNT(op) == 0);
         ++gcstate->trash_delete_nesting;
         (*dealloc)(op);
         --gcstate->trash_delete_nesting;
@@ -2102,7 +2102,7 @@ _PyTrash_thread_destroy_chain(void)
          * assorted non-release builds calling Py_DECREF again ends
          * up distorting allocation statistics.
          */
-        _PyObject_ASSERT(op, op->ob_refcnt == 0);
+        _PyObject_ASSERT(op, Py_REFCNT(op) == 0);
         (*dealloc)(op);
         assert(tstate->trash_delete_nesting == 1);
     }
