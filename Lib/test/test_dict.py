@@ -73,7 +73,7 @@ class DictTest(unittest.TestCase):
 
         class DictSubclass(dict):
             """Normally we'd use a mock, but we need this to be a real dict subclass."""
-            
+
             def __init__(self, /, *args, **kwargs):
                 super().__init__(*args, **kwargs)
                 self.copied = self.updated = False
