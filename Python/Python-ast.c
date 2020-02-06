@@ -9887,355 +9887,533 @@ PyInit__ast(void)
     if (!init_types()) return NULL;
     m = PyState_FindModule(&_astmodule);
     if (!m) return NULL;
+    if (PyModule_AddObject(m, "AST", astmodulestate_global->AST_type) < 0) {
+        goto error;
+    }
     Py_INCREF(astmodulestate(m)->AST_type);
-    if (PyModule_AddObject(m, "AST", astmodulestate_global->AST_type) < 0)
-        return NULL;
-    if (PyModule_AddIntMacro(m, PyCF_ALLOW_TOP_LEVEL_AWAIT) < 0)
-        return NULL;
-    if (PyModule_AddIntMacro(m, PyCF_ONLY_AST) < 0)
-        return NULL;
-    if (PyModule_AddIntMacro(m, PyCF_TYPE_COMMENTS) < 0)
-        return NULL;
-    if (PyModule_AddObject(m, "mod", astmodulestate_global->mod_type) < 0)
-        return NULL;
+    if (PyModule_AddIntMacro(m, PyCF_ALLOW_TOP_LEVEL_AWAIT) < 0) {
+        goto error;
+    }
+    if (PyModule_AddIntMacro(m, PyCF_ONLY_AST) < 0) {
+        goto error;
+    }
+    if (PyModule_AddIntMacro(m, PyCF_TYPE_COMMENTS) < 0) {
+        goto error;
+    }
+    if (PyModule_AddObject(m, "mod", astmodulestate_global->mod_type) < 0) {
+        goto error;
+    }
     Py_INCREF(astmodulestate(m)->mod_type);
     if (PyModule_AddObject(m, "Module", astmodulestate_global->Module_type) <
-        0) return NULL;
+        0) {
+        goto error;
+    }
     Py_INCREF(astmodulestate(m)->Module_type);
     if (PyModule_AddObject(m, "Interactive",
-        astmodulestate_global->Interactive_type) < 0) return NULL;
+        astmodulestate_global->Interactive_type) < 0) {
+        goto error;
+    }
     Py_INCREF(astmodulestate(m)->Interactive_type);
     if (PyModule_AddObject(m, "Expression",
-        astmodulestate_global->Expression_type) < 0) return NULL;
+        astmodulestate_global->Expression_type) < 0) {
+        goto error;
+    }
     Py_INCREF(astmodulestate(m)->Expression_type);
     if (PyModule_AddObject(m, "FunctionType",
-        astmodulestate_global->FunctionType_type) < 0) return NULL;
+        astmodulestate_global->FunctionType_type) < 0) {
+        goto error;
+    }
     Py_INCREF(astmodulestate(m)->FunctionType_type);
-    if (PyModule_AddObject(m, "Suite", astmodulestate_global->Suite_type) < 0)
-        return NULL;
+    if (PyModule_AddObject(m, "Suite", astmodulestate_global->Suite_type) < 0) {
+        goto error;
+    }
     Py_INCREF(astmodulestate(m)->Suite_type);
-    if (PyModule_AddObject(m, "stmt", astmodulestate_global->stmt_type) < 0)
-        return NULL;
+    if (PyModule_AddObject(m, "stmt", astmodulestate_global->stmt_type) < 0) {
+        goto error;
+    }
     Py_INCREF(astmodulestate(m)->stmt_type);
     if (PyModule_AddObject(m, "FunctionDef",
-        astmodulestate_global->FunctionDef_type) < 0) return NULL;
+        astmodulestate_global->FunctionDef_type) < 0) {
+        goto error;
+    }
     Py_INCREF(astmodulestate(m)->FunctionDef_type);
     if (PyModule_AddObject(m, "AsyncFunctionDef",
-        astmodulestate_global->AsyncFunctionDef_type) < 0) return NULL;
+        astmodulestate_global->AsyncFunctionDef_type) < 0) {
+        goto error;
+    }
     Py_INCREF(astmodulestate(m)->AsyncFunctionDef_type);
     if (PyModule_AddObject(m, "ClassDef", astmodulestate_global->ClassDef_type)
-        < 0) return NULL;
+        < 0) {
+        goto error;
+    }
     Py_INCREF(astmodulestate(m)->ClassDef_type);
     if (PyModule_AddObject(m, "Return", astmodulestate_global->Return_type) <
-        0) return NULL;
+        0) {
+        goto error;
+    }
     Py_INCREF(astmodulestate(m)->Return_type);
     if (PyModule_AddObject(m, "Delete", astmodulestate_global->Delete_type) <
-        0) return NULL;
+        0) {
+        goto error;
+    }
     Py_INCREF(astmodulestate(m)->Delete_type);
     if (PyModule_AddObject(m, "Assign", astmodulestate_global->Assign_type) <
-        0) return NULL;
+        0) {
+        goto error;
+    }
     Py_INCREF(astmodulestate(m)->Assign_type);
     if (PyModule_AddObject(m, "AugAssign",
-        astmodulestate_global->AugAssign_type) < 0) return NULL;
+        astmodulestate_global->AugAssign_type) < 0) {
+        goto error;
+    }
     Py_INCREF(astmodulestate(m)->AugAssign_type);
     if (PyModule_AddObject(m, "AnnAssign",
-        astmodulestate_global->AnnAssign_type) < 0) return NULL;
+        astmodulestate_global->AnnAssign_type) < 0) {
+        goto error;
+    }
     Py_INCREF(astmodulestate(m)->AnnAssign_type);
-    if (PyModule_AddObject(m, "For", astmodulestate_global->For_type) < 0)
-        return NULL;
+    if (PyModule_AddObject(m, "For", astmodulestate_global->For_type) < 0) {
+        goto error;
+    }
     Py_INCREF(astmodulestate(m)->For_type);
     if (PyModule_AddObject(m, "AsyncFor", astmodulestate_global->AsyncFor_type)
-        < 0) return NULL;
+        < 0) {
+        goto error;
+    }
     Py_INCREF(astmodulestate(m)->AsyncFor_type);
-    if (PyModule_AddObject(m, "While", astmodulestate_global->While_type) < 0)
-        return NULL;
+    if (PyModule_AddObject(m, "While", astmodulestate_global->While_type) < 0) {
+        goto error;
+    }
     Py_INCREF(astmodulestate(m)->While_type);
-    if (PyModule_AddObject(m, "If", astmodulestate_global->If_type) < 0) return
-        NULL;
+    if (PyModule_AddObject(m, "If", astmodulestate_global->If_type) < 0) {
+        goto error;
+    }
     Py_INCREF(astmodulestate(m)->If_type);
-    if (PyModule_AddObject(m, "With", astmodulestate_global->With_type) < 0)
-        return NULL;
+    if (PyModule_AddObject(m, "With", astmodulestate_global->With_type) < 0) {
+        goto error;
+    }
     Py_INCREF(astmodulestate(m)->With_type);
     if (PyModule_AddObject(m, "AsyncWith",
-        astmodulestate_global->AsyncWith_type) < 0) return NULL;
+        astmodulestate_global->AsyncWith_type) < 0) {
+        goto error;
+    }
     Py_INCREF(astmodulestate(m)->AsyncWith_type);
-    if (PyModule_AddObject(m, "Raise", astmodulestate_global->Raise_type) < 0)
-        return NULL;
+    if (PyModule_AddObject(m, "Raise", astmodulestate_global->Raise_type) < 0) {
+        goto error;
+    }
     Py_INCREF(astmodulestate(m)->Raise_type);
-    if (PyModule_AddObject(m, "Try", astmodulestate_global->Try_type) < 0)
-        return NULL;
+    if (PyModule_AddObject(m, "Try", astmodulestate_global->Try_type) < 0) {
+        goto error;
+    }
     Py_INCREF(astmodulestate(m)->Try_type);
     if (PyModule_AddObject(m, "Assert", astmodulestate_global->Assert_type) <
-        0) return NULL;
+        0) {
+        goto error;
+    }
     Py_INCREF(astmodulestate(m)->Assert_type);
     if (PyModule_AddObject(m, "Import", astmodulestate_global->Import_type) <
-        0) return NULL;
+        0) {
+        goto error;
+    }
     Py_INCREF(astmodulestate(m)->Import_type);
     if (PyModule_AddObject(m, "ImportFrom",
-        astmodulestate_global->ImportFrom_type) < 0) return NULL;
+        astmodulestate_global->ImportFrom_type) < 0) {
+        goto error;
+    }
     Py_INCREF(astmodulestate(m)->ImportFrom_type);
     if (PyModule_AddObject(m, "Global", astmodulestate_global->Global_type) <
-        0) return NULL;
+        0) {
+        goto error;
+    }
     Py_INCREF(astmodulestate(m)->Global_type);
     if (PyModule_AddObject(m, "Nonlocal", astmodulestate_global->Nonlocal_type)
-        < 0) return NULL;
+        < 0) {
+        goto error;
+    }
     Py_INCREF(astmodulestate(m)->Nonlocal_type);
-    if (PyModule_AddObject(m, "Expr", astmodulestate_global->Expr_type) < 0)
-        return NULL;
+    if (PyModule_AddObject(m, "Expr", astmodulestate_global->Expr_type) < 0) {
+        goto error;
+    }
     Py_INCREF(astmodulestate(m)->Expr_type);
-    if (PyModule_AddObject(m, "Pass", astmodulestate_global->Pass_type) < 0)
-        return NULL;
+    if (PyModule_AddObject(m, "Pass", astmodulestate_global->Pass_type) < 0) {
+        goto error;
+    }
     Py_INCREF(astmodulestate(m)->Pass_type);
-    if (PyModule_AddObject(m, "Break", astmodulestate_global->Break_type) < 0)
-        return NULL;
+    if (PyModule_AddObject(m, "Break", astmodulestate_global->Break_type) < 0) {
+        goto error;
+    }
     Py_INCREF(astmodulestate(m)->Break_type);
     if (PyModule_AddObject(m, "Continue", astmodulestate_global->Continue_type)
-        < 0) return NULL;
+        < 0) {
+        goto error;
+    }
     Py_INCREF(astmodulestate(m)->Continue_type);
-    if (PyModule_AddObject(m, "expr", astmodulestate_global->expr_type) < 0)
-        return NULL;
+    if (PyModule_AddObject(m, "expr", astmodulestate_global->expr_type) < 0) {
+        goto error;
+    }
     Py_INCREF(astmodulestate(m)->expr_type);
     if (PyModule_AddObject(m, "BoolOp", astmodulestate_global->BoolOp_type) <
-        0) return NULL;
+        0) {
+        goto error;
+    }
     Py_INCREF(astmodulestate(m)->BoolOp_type);
     if (PyModule_AddObject(m, "NamedExpr",
-        astmodulestate_global->NamedExpr_type) < 0) return NULL;
+        astmodulestate_global->NamedExpr_type) < 0) {
+        goto error;
+    }
     Py_INCREF(astmodulestate(m)->NamedExpr_type);
-    if (PyModule_AddObject(m, "BinOp", astmodulestate_global->BinOp_type) < 0)
-        return NULL;
+    if (PyModule_AddObject(m, "BinOp", astmodulestate_global->BinOp_type) < 0) {
+        goto error;
+    }
     Py_INCREF(astmodulestate(m)->BinOp_type);
     if (PyModule_AddObject(m, "UnaryOp", astmodulestate_global->UnaryOp_type) <
-        0) return NULL;
+        0) {
+        goto error;
+    }
     Py_INCREF(astmodulestate(m)->UnaryOp_type);
     if (PyModule_AddObject(m, "Lambda", astmodulestate_global->Lambda_type) <
-        0) return NULL;
+        0) {
+        goto error;
+    }
     Py_INCREF(astmodulestate(m)->Lambda_type);
-    if (PyModule_AddObject(m, "IfExp", astmodulestate_global->IfExp_type) < 0)
-        return NULL;
+    if (PyModule_AddObject(m, "IfExp", astmodulestate_global->IfExp_type) < 0) {
+        goto error;
+    }
     Py_INCREF(astmodulestate(m)->IfExp_type);
-    if (PyModule_AddObject(m, "Dict", astmodulestate_global->Dict_type) < 0)
-        return NULL;
+    if (PyModule_AddObject(m, "Dict", astmodulestate_global->Dict_type) < 0) {
+        goto error;
+    }
     Py_INCREF(astmodulestate(m)->Dict_type);
-    if (PyModule_AddObject(m, "Set", astmodulestate_global->Set_type) < 0)
-        return NULL;
+    if (PyModule_AddObject(m, "Set", astmodulestate_global->Set_type) < 0) {
+        goto error;
+    }
     Py_INCREF(astmodulestate(m)->Set_type);
     if (PyModule_AddObject(m, "ListComp", astmodulestate_global->ListComp_type)
-        < 0) return NULL;
+        < 0) {
+        goto error;
+    }
     Py_INCREF(astmodulestate(m)->ListComp_type);
     if (PyModule_AddObject(m, "SetComp", astmodulestate_global->SetComp_type) <
-        0) return NULL;
+        0) {
+        goto error;
+    }
     Py_INCREF(astmodulestate(m)->SetComp_type);
     if (PyModule_AddObject(m, "DictComp", astmodulestate_global->DictComp_type)
-        < 0) return NULL;
+        < 0) {
+        goto error;
+    }
     Py_INCREF(astmodulestate(m)->DictComp_type);
     if (PyModule_AddObject(m, "GeneratorExp",
-        astmodulestate_global->GeneratorExp_type) < 0) return NULL;
+        astmodulestate_global->GeneratorExp_type) < 0) {
+        goto error;
+    }
     Py_INCREF(astmodulestate(m)->GeneratorExp_type);
-    if (PyModule_AddObject(m, "Await", astmodulestate_global->Await_type) < 0)
-        return NULL;
+    if (PyModule_AddObject(m, "Await", astmodulestate_global->Await_type) < 0) {
+        goto error;
+    }
     Py_INCREF(astmodulestate(m)->Await_type);
-    if (PyModule_AddObject(m, "Yield", astmodulestate_global->Yield_type) < 0)
-        return NULL;
+    if (PyModule_AddObject(m, "Yield", astmodulestate_global->Yield_type) < 0) {
+        goto error;
+    }
     Py_INCREF(astmodulestate(m)->Yield_type);
     if (PyModule_AddObject(m, "YieldFrom",
-        astmodulestate_global->YieldFrom_type) < 0) return NULL;
+        astmodulestate_global->YieldFrom_type) < 0) {
+        goto error;
+    }
     Py_INCREF(astmodulestate(m)->YieldFrom_type);
     if (PyModule_AddObject(m, "Compare", astmodulestate_global->Compare_type) <
-        0) return NULL;
+        0) {
+        goto error;
+    }
     Py_INCREF(astmodulestate(m)->Compare_type);
-    if (PyModule_AddObject(m, "Call", astmodulestate_global->Call_type) < 0)
-        return NULL;
+    if (PyModule_AddObject(m, "Call", astmodulestate_global->Call_type) < 0) {
+        goto error;
+    }
     Py_INCREF(astmodulestate(m)->Call_type);
     if (PyModule_AddObject(m, "FormattedValue",
-        astmodulestate_global->FormattedValue_type) < 0) return NULL;
+        astmodulestate_global->FormattedValue_type) < 0) {
+        goto error;
+    }
     Py_INCREF(astmodulestate(m)->FormattedValue_type);
     if (PyModule_AddObject(m, "JoinedStr",
-        astmodulestate_global->JoinedStr_type) < 0) return NULL;
+        astmodulestate_global->JoinedStr_type) < 0) {
+        goto error;
+    }
     Py_INCREF(astmodulestate(m)->JoinedStr_type);
     if (PyModule_AddObject(m, "Constant", astmodulestate_global->Constant_type)
-        < 0) return NULL;
+        < 0) {
+        goto error;
+    }
     Py_INCREF(astmodulestate(m)->Constant_type);
     if (PyModule_AddObject(m, "Attribute",
-        astmodulestate_global->Attribute_type) < 0) return NULL;
+        astmodulestate_global->Attribute_type) < 0) {
+        goto error;
+    }
     Py_INCREF(astmodulestate(m)->Attribute_type);
     if (PyModule_AddObject(m, "Subscript",
-        astmodulestate_global->Subscript_type) < 0) return NULL;
+        astmodulestate_global->Subscript_type) < 0) {
+        goto error;
+    }
     Py_INCREF(astmodulestate(m)->Subscript_type);
     if (PyModule_AddObject(m, "Starred", astmodulestate_global->Starred_type) <
-        0) return NULL;
+        0) {
+        goto error;
+    }
     Py_INCREF(astmodulestate(m)->Starred_type);
-    if (PyModule_AddObject(m, "Name", astmodulestate_global->Name_type) < 0)
-        return NULL;
+    if (PyModule_AddObject(m, "Name", astmodulestate_global->Name_type) < 0) {
+        goto error;
+    }
     Py_INCREF(astmodulestate(m)->Name_type);
-    if (PyModule_AddObject(m, "List", astmodulestate_global->List_type) < 0)
-        return NULL;
+    if (PyModule_AddObject(m, "List", astmodulestate_global->List_type) < 0) {
+        goto error;
+    }
     Py_INCREF(astmodulestate(m)->List_type);
-    if (PyModule_AddObject(m, "Tuple", astmodulestate_global->Tuple_type) < 0)
-        return NULL;
+    if (PyModule_AddObject(m, "Tuple", astmodulestate_global->Tuple_type) < 0) {
+        goto error;
+    }
     Py_INCREF(astmodulestate(m)->Tuple_type);
     if (PyModule_AddObject(m, "expr_context",
-        astmodulestate_global->expr_context_type) < 0) return NULL;
+        astmodulestate_global->expr_context_type) < 0) {
+        goto error;
+    }
     Py_INCREF(astmodulestate(m)->expr_context_type);
-    if (PyModule_AddObject(m, "Load", astmodulestate_global->Load_type) < 0)
-        return NULL;
+    if (PyModule_AddObject(m, "Load", astmodulestate_global->Load_type) < 0) {
+        goto error;
+    }
     Py_INCREF(astmodulestate(m)->Load_type);
-    if (PyModule_AddObject(m, "Store", astmodulestate_global->Store_type) < 0)
-        return NULL;
+    if (PyModule_AddObject(m, "Store", astmodulestate_global->Store_type) < 0) {
+        goto error;
+    }
     Py_INCREF(astmodulestate(m)->Store_type);
-    if (PyModule_AddObject(m, "Del", astmodulestate_global->Del_type) < 0)
-        return NULL;
+    if (PyModule_AddObject(m, "Del", astmodulestate_global->Del_type) < 0) {
+        goto error;
+    }
     Py_INCREF(astmodulestate(m)->Del_type);
     if (PyModule_AddObject(m, "AugLoad", astmodulestate_global->AugLoad_type) <
-        0) return NULL;
+        0) {
+        goto error;
+    }
     Py_INCREF(astmodulestate(m)->AugLoad_type);
     if (PyModule_AddObject(m, "AugStore", astmodulestate_global->AugStore_type)
-        < 0) return NULL;
+        < 0) {
+        goto error;
+    }
     Py_INCREF(astmodulestate(m)->AugStore_type);
-    if (PyModule_AddObject(m, "Param", astmodulestate_global->Param_type) < 0)
-        return NULL;
+    if (PyModule_AddObject(m, "Param", astmodulestate_global->Param_type) < 0) {
+        goto error;
+    }
     Py_INCREF(astmodulestate(m)->Param_type);
-    if (PyModule_AddObject(m, "slice", astmodulestate_global->slice_type) < 0)
-        return NULL;
+    if (PyModule_AddObject(m, "slice", astmodulestate_global->slice_type) < 0) {
+        goto error;
+    }
     Py_INCREF(astmodulestate(m)->slice_type);
-    if (PyModule_AddObject(m, "Slice", astmodulestate_global->Slice_type) < 0)
-        return NULL;
+    if (PyModule_AddObject(m, "Slice", astmodulestate_global->Slice_type) < 0) {
+        goto error;
+    }
     Py_INCREF(astmodulestate(m)->Slice_type);
     if (PyModule_AddObject(m, "ExtSlice", astmodulestate_global->ExtSlice_type)
-        < 0) return NULL;
+        < 0) {
+        goto error;
+    }
     Py_INCREF(astmodulestate(m)->ExtSlice_type);
-    if (PyModule_AddObject(m, "Index", astmodulestate_global->Index_type) < 0)
-        return NULL;
+    if (PyModule_AddObject(m, "Index", astmodulestate_global->Index_type) < 0) {
+        goto error;
+    }
     Py_INCREF(astmodulestate(m)->Index_type);
     if (PyModule_AddObject(m, "boolop", astmodulestate_global->boolop_type) <
-        0) return NULL;
+        0) {
+        goto error;
+    }
     Py_INCREF(astmodulestate(m)->boolop_type);
-    if (PyModule_AddObject(m, "And", astmodulestate_global->And_type) < 0)
-        return NULL;
+    if (PyModule_AddObject(m, "And", astmodulestate_global->And_type) < 0) {
+        goto error;
+    }
     Py_INCREF(astmodulestate(m)->And_type);
-    if (PyModule_AddObject(m, "Or", astmodulestate_global->Or_type) < 0) return
-        NULL;
+    if (PyModule_AddObject(m, "Or", astmodulestate_global->Or_type) < 0) {
+        goto error;
+    }
     Py_INCREF(astmodulestate(m)->Or_type);
     if (PyModule_AddObject(m, "operator", astmodulestate_global->operator_type)
-        < 0) return NULL;
+        < 0) {
+        goto error;
+    }
     Py_INCREF(astmodulestate(m)->operator_type);
-    if (PyModule_AddObject(m, "Add", astmodulestate_global->Add_type) < 0)
-        return NULL;
+    if (PyModule_AddObject(m, "Add", astmodulestate_global->Add_type) < 0) {
+        goto error;
+    }
     Py_INCREF(astmodulestate(m)->Add_type);
-    if (PyModule_AddObject(m, "Sub", astmodulestate_global->Sub_type) < 0)
-        return NULL;
+    if (PyModule_AddObject(m, "Sub", astmodulestate_global->Sub_type) < 0) {
+        goto error;
+    }
     Py_INCREF(astmodulestate(m)->Sub_type);
-    if (PyModule_AddObject(m, "Mult", astmodulestate_global->Mult_type) < 0)
-        return NULL;
+    if (PyModule_AddObject(m, "Mult", astmodulestate_global->Mult_type) < 0) {
+        goto error;
+    }
     Py_INCREF(astmodulestate(m)->Mult_type);
     if (PyModule_AddObject(m, "MatMult", astmodulestate_global->MatMult_type) <
-        0) return NULL;
+        0) {
+        goto error;
+    }
     Py_INCREF(astmodulestate(m)->MatMult_type);
-    if (PyModule_AddObject(m, "Div", astmodulestate_global->Div_type) < 0)
-        return NULL;
+    if (PyModule_AddObject(m, "Div", astmodulestate_global->Div_type) < 0) {
+        goto error;
+    }
     Py_INCREF(astmodulestate(m)->Div_type);
-    if (PyModule_AddObject(m, "Mod", astmodulestate_global->Mod_type) < 0)
-        return NULL;
+    if (PyModule_AddObject(m, "Mod", astmodulestate_global->Mod_type) < 0) {
+        goto error;
+    }
     Py_INCREF(astmodulestate(m)->Mod_type);
-    if (PyModule_AddObject(m, "Pow", astmodulestate_global->Pow_type) < 0)
-        return NULL;
+    if (PyModule_AddObject(m, "Pow", astmodulestate_global->Pow_type) < 0) {
+        goto error;
+    }
     Py_INCREF(astmodulestate(m)->Pow_type);
     if (PyModule_AddObject(m, "LShift", astmodulestate_global->LShift_type) <
-        0) return NULL;
+        0) {
+        goto error;
+    }
     Py_INCREF(astmodulestate(m)->LShift_type);
     if (PyModule_AddObject(m, "RShift", astmodulestate_global->RShift_type) <
-        0) return NULL;
+        0) {
+        goto error;
+    }
     Py_INCREF(astmodulestate(m)->RShift_type);
-    if (PyModule_AddObject(m, "BitOr", astmodulestate_global->BitOr_type) < 0)
-        return NULL;
+    if (PyModule_AddObject(m, "BitOr", astmodulestate_global->BitOr_type) < 0) {
+        goto error;
+    }
     Py_INCREF(astmodulestate(m)->BitOr_type);
     if (PyModule_AddObject(m, "BitXor", astmodulestate_global->BitXor_type) <
-        0) return NULL;
+        0) {
+        goto error;
+    }
     Py_INCREF(astmodulestate(m)->BitXor_type);
     if (PyModule_AddObject(m, "BitAnd", astmodulestate_global->BitAnd_type) <
-        0) return NULL;
+        0) {
+        goto error;
+    }
     Py_INCREF(astmodulestate(m)->BitAnd_type);
     if (PyModule_AddObject(m, "FloorDiv", astmodulestate_global->FloorDiv_type)
-        < 0) return NULL;
+        < 0) {
+        goto error;
+    }
     Py_INCREF(astmodulestate(m)->FloorDiv_type);
     if (PyModule_AddObject(m, "unaryop", astmodulestate_global->unaryop_type) <
-        0) return NULL;
+        0) {
+        goto error;
+    }
     Py_INCREF(astmodulestate(m)->unaryop_type);
     if (PyModule_AddObject(m, "Invert", astmodulestate_global->Invert_type) <
-        0) return NULL;
+        0) {
+        goto error;
+    }
     Py_INCREF(astmodulestate(m)->Invert_type);
-    if (PyModule_AddObject(m, "Not", astmodulestate_global->Not_type) < 0)
-        return NULL;
+    if (PyModule_AddObject(m, "Not", astmodulestate_global->Not_type) < 0) {
+        goto error;
+    }
     Py_INCREF(astmodulestate(m)->Not_type);
-    if (PyModule_AddObject(m, "UAdd", astmodulestate_global->UAdd_type) < 0)
-        return NULL;
+    if (PyModule_AddObject(m, "UAdd", astmodulestate_global->UAdd_type) < 0) {
+        goto error;
+    }
     Py_INCREF(astmodulestate(m)->UAdd_type);
-    if (PyModule_AddObject(m, "USub", astmodulestate_global->USub_type) < 0)
-        return NULL;
+    if (PyModule_AddObject(m, "USub", astmodulestate_global->USub_type) < 0) {
+        goto error;
+    }
     Py_INCREF(astmodulestate(m)->USub_type);
-    if (PyModule_AddObject(m, "cmpop", astmodulestate_global->cmpop_type) < 0)
-        return NULL;
+    if (PyModule_AddObject(m, "cmpop", astmodulestate_global->cmpop_type) < 0) {
+        goto error;
+    }
     Py_INCREF(astmodulestate(m)->cmpop_type);
-    if (PyModule_AddObject(m, "Eq", astmodulestate_global->Eq_type) < 0) return
-        NULL;
+    if (PyModule_AddObject(m, "Eq", astmodulestate_global->Eq_type) < 0) {
+        goto error;
+    }
     Py_INCREF(astmodulestate(m)->Eq_type);
-    if (PyModule_AddObject(m, "NotEq", astmodulestate_global->NotEq_type) < 0)
-        return NULL;
+    if (PyModule_AddObject(m, "NotEq", astmodulestate_global->NotEq_type) < 0) {
+        goto error;
+    }
     Py_INCREF(astmodulestate(m)->NotEq_type);
-    if (PyModule_AddObject(m, "Lt", astmodulestate_global->Lt_type) < 0) return
-        NULL;
+    if (PyModule_AddObject(m, "Lt", astmodulestate_global->Lt_type) < 0) {
+        goto error;
+    }
     Py_INCREF(astmodulestate(m)->Lt_type);
-    if (PyModule_AddObject(m, "LtE", astmodulestate_global->LtE_type) < 0)
-        return NULL;
+    if (PyModule_AddObject(m, "LtE", astmodulestate_global->LtE_type) < 0) {
+        goto error;
+    }
     Py_INCREF(astmodulestate(m)->LtE_type);
-    if (PyModule_AddObject(m, "Gt", astmodulestate_global->Gt_type) < 0) return
-        NULL;
+    if (PyModule_AddObject(m, "Gt", astmodulestate_global->Gt_type) < 0) {
+        goto error;
+    }
     Py_INCREF(astmodulestate(m)->Gt_type);
-    if (PyModule_AddObject(m, "GtE", astmodulestate_global->GtE_type) < 0)
-        return NULL;
+    if (PyModule_AddObject(m, "GtE", astmodulestate_global->GtE_type) < 0) {
+        goto error;
+    }
     Py_INCREF(astmodulestate(m)->GtE_type);
-    if (PyModule_AddObject(m, "Is", astmodulestate_global->Is_type) < 0) return
-        NULL;
+    if (PyModule_AddObject(m, "Is", astmodulestate_global->Is_type) < 0) {
+        goto error;
+    }
     Py_INCREF(astmodulestate(m)->Is_type);
-    if (PyModule_AddObject(m, "IsNot", astmodulestate_global->IsNot_type) < 0)
-        return NULL;
+    if (PyModule_AddObject(m, "IsNot", astmodulestate_global->IsNot_type) < 0) {
+        goto error;
+    }
     Py_INCREF(astmodulestate(m)->IsNot_type);
-    if (PyModule_AddObject(m, "In", astmodulestate_global->In_type) < 0) return
-        NULL;
+    if (PyModule_AddObject(m, "In", astmodulestate_global->In_type) < 0) {
+        goto error;
+    }
     Py_INCREF(astmodulestate(m)->In_type);
-    if (PyModule_AddObject(m, "NotIn", astmodulestate_global->NotIn_type) < 0)
-        return NULL;
+    if (PyModule_AddObject(m, "NotIn", astmodulestate_global->NotIn_type) < 0) {
+        goto error;
+    }
     Py_INCREF(astmodulestate(m)->NotIn_type);
     if (PyModule_AddObject(m, "comprehension",
-        astmodulestate_global->comprehension_type) < 0) return NULL;
+        astmodulestate_global->comprehension_type) < 0) {
+        goto error;
+    }
     Py_INCREF(astmodulestate(m)->comprehension_type);
     if (PyModule_AddObject(m, "excepthandler",
-        astmodulestate_global->excepthandler_type) < 0) return NULL;
+        astmodulestate_global->excepthandler_type) < 0) {
+        goto error;
+    }
     Py_INCREF(astmodulestate(m)->excepthandler_type);
     if (PyModule_AddObject(m, "ExceptHandler",
-        astmodulestate_global->ExceptHandler_type) < 0) return NULL;
+        astmodulestate_global->ExceptHandler_type) < 0) {
+        goto error;
+    }
     Py_INCREF(astmodulestate(m)->ExceptHandler_type);
     if (PyModule_AddObject(m, "arguments",
-        astmodulestate_global->arguments_type) < 0) return NULL;
+        astmodulestate_global->arguments_type) < 0) {
+        goto error;
+    }
     Py_INCREF(astmodulestate(m)->arguments_type);
-    if (PyModule_AddObject(m, "arg", astmodulestate_global->arg_type) < 0)
-        return NULL;
+    if (PyModule_AddObject(m, "arg", astmodulestate_global->arg_type) < 0) {
+        goto error;
+    }
     Py_INCREF(astmodulestate(m)->arg_type);
     if (PyModule_AddObject(m, "keyword", astmodulestate_global->keyword_type) <
-        0) return NULL;
+        0) {
+        goto error;
+    }
     Py_INCREF(astmodulestate(m)->keyword_type);
-    if (PyModule_AddObject(m, "alias", astmodulestate_global->alias_type) < 0)
-        return NULL;
+    if (PyModule_AddObject(m, "alias", astmodulestate_global->alias_type) < 0) {
+        goto error;
+    }
     Py_INCREF(astmodulestate(m)->alias_type);
     if (PyModule_AddObject(m, "withitem", astmodulestate_global->withitem_type)
-        < 0) return NULL;
+        < 0) {
+        goto error;
+    }
     Py_INCREF(astmodulestate(m)->withitem_type);
     if (PyModule_AddObject(m, "type_ignore",
-        astmodulestate_global->type_ignore_type) < 0) return NULL;
+        astmodulestate_global->type_ignore_type) < 0) {
+        goto error;
+    }
     Py_INCREF(astmodulestate(m)->type_ignore_type);
     if (PyModule_AddObject(m, "TypeIgnore",
-        astmodulestate_global->TypeIgnore_type) < 0) return NULL;
+        astmodulestate_global->TypeIgnore_type) < 0) {
+        goto error;
+    }
     Py_INCREF(astmodulestate(m)->TypeIgnore_type);
     return m;
+error:
+    Py_DECREF(m);
+    return NULL;
 }
 
 
