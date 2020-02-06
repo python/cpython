@@ -1656,7 +1656,7 @@ static Py_ssize_t
 sys_getrefcount_impl(PyObject *module, PyObject *object)
 /*[clinic end generated code: output=5fd477f2264b85b2 input=bf474efd50a21535]*/
 {
-    return object->ob_refcnt;
+    return Py_REFCNT(object);
 }
 
 #ifdef Py_REF_DEBUG
