@@ -12,6 +12,18 @@ steps:
     Write-Host '##vso[task.setvariable variable=EXTERNALS_DIR]$(Build.BinariesDirectory)\externals'
   displayName: Update build locations
 
+- powershell: |
+    (New-Object System.Net.WebClient).DownloadFile("https://github.com/llvm/llvm-project/releases/download/llvmorg-9.0.1/LLVM-9.0.1-win32.exe", "LLVM-win.exe")
+    Start-Process .\LLVM-win.exe -ArgumentList '/S' -Wait
+  displayName: Install clang on win32
+  condition: and(eq('yes', variables['installClang']), eq('win32', variables['arch']))
+
+- powershell: |
+    (New-Object System.Net.WebClient).DownloadFile("https://github.com/llvm/llvm-project/releases/download/llvmorg-9.0.1/LLVM-9.0.1-win64.exe", "LLVM-win.exe")
+    Start-Process .\LLVM-win.exe -ArgumentList '/S' -Wait
+  displayName: Install clang on win64
+  condition: and(eq('yes', variables['installClang']), eq('amd64', variables['arch']))
+
 - script: PCbuild\build.bat -e $(buildOpt)
   displayName: 'Build CPython'
   env:
