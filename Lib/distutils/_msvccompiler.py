@@ -194,6 +194,14 @@ PLAT_TO_VCVARS = {
     'win-arm64' : 'x86_arm64'
 }
 
+# A map keyed by get_platform() return values to value accepted by
+# clang as the triple.
+PLAT_TO_LLVM_TARGETS = {
+    'win32': 'i686',
+    'win-amd64': 'x86_64',
+    'win-arm64': 'aarch64',
+}
+
 # A set containing the DLLs that are guaranteed to be available for
 # all micro versions of this Python version. Known extension
 # dependencies that are not in this set will be copied to the output
@@ -231,11 +239,12 @@ class MSVCCompiler(CCompiler) :
     exe_extension = '.exe'
 
 
-    def __init__(self, verbose=0, dry_run=0, force=0):
+    def __init__(self, verbose=0, dry_run=0, force=0, use_clang_cl=False):
         CCompiler.__init__ (self, verbose, dry_run, force)
         # target platform (.plat_name is consistent with 'bdist')
         self.plat_name = None
         self.initialized = False
+        self.use_clang_cl = use_clang_cl
 
     def initialize(self, plat_name=None):
         # multi-init means we would need to check platform same each time...
@@ -257,7 +266,10 @@ class MSVCCompiler(CCompiler) :
 
         self._paths = vc_env.get('path', '')
         paths = self._paths.split(os.pathsep)
-        self.cc = _find_exe("cl.exe", paths)
+        if self.use_clang_cl:
+            self.cc = _find_exe("clang-cl.exe")
+        else:
+            self.cc = _find_exe("cl.exe", paths)
         self.linker = _find_exe("link.exe", paths)
         self.lib = _find_exe("lib.exe", paths)
         self.rc = _find_exe("rc.exe", paths)   # resource compiler
@@ -295,6 +307,16 @@ class MSVCCompiler(CCompiler) :
         ldflags_debug = [
             '/nologo', '/INCREMENTAL:NO', '/LTCG', '/DEBUG:FULL'
         ]
+        if self.use_clang_cl:
+            # Add target for clang
+            target_flag = "{}-pc-windows-msvc".format(PLAT_TO_LLVM_TARGETS[plat_name])
+            self.compile_options.append(target_flag)
+            self.compile_options_debug.append(target_flag)
+            # Remove whole program optimization flags to avoid warnings about
+            # unrecognized options
+            self.compile_options.remove('/GL')
+            ldflags.remove('/LTCG')
+            ldflags_debug.remove('/LTCG')
 
         self.ldflags_exe = [*ldflags, '/MANIFEST:EMBED,ID=1']
         self.ldflags_exe_debug = [*ldflags_debug, '/MANIFEST:EMBED,ID=1']
@@ -587,3 +609,10 @@ class MSVCCompiler(CCompiler) :
         else:
             # Oops, didn't find it in *any* of 'dirs'
             return None
+
+
+class ClangMSVCCompiler(MSVCCompiler):
+    compiler_type = 'clang-cl'
+
+    def __init__(self, verbose=0, dry_run=0, force=0):
+        MSVCCompiler.__init__(self, verbose, dry_run, force, True)

@@ -968,6 +968,8 @@ compiler_class = { 'unix':    ('unixccompiler', 'UnixCCompiler',
                                "Mingw32 port of GNU C Compiler for Win32"),
                    'bcpp':    ('bcppcompiler', 'BCPPCompiler',
                                "Borland C++ Compiler"),
+                   'clang-cl':('_msvccompiler', 'ClangMSVCCompiler',
+                               "clang-cl for Microsoft Visual C++"),
                  }
 
 def show_compilers():
