@@ -279,7 +279,9 @@ given type object has a specified feature.
 
 /* Set if the type implements the vectorcall protocol (PEP 590) */
 #ifndef Py_LIMITED_API
-#define _Py_TPFLAGS_HAVE_VECTORCALL (1UL << 11)
+#define Py_TPFLAGS_HAVE_VECTORCALL (1UL << 11)
+// Backwards compatibility alias for API that was provisional in Python 3.8
+#define _Py_TPFLAGS_HAVE_VECTORCALL Py_TPFLAGS_HAVE_VECTORCALL
 #endif
 
 /* Set if the type is 'ready' -- fully initialized */
