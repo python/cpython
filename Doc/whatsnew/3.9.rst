@@ -205,6 +205,14 @@ with this change. The overridden methods of :class:`~imaplib.IMAP4_SSL` and
 :class:`~imaplib.IMAP4_stream` were applied to this change.
 (Contributed by Dong-hee Na in :issue:`38615`.)
 
+importlib
+---------
+
+To improve consistency with import statements, :func:`importlib.util.resolve_name`
+now raises :exc:`ImportError` instead of :exc:`ValueError` for invalid relative
+import attempts.
+(Contributed by Ngalim Siregar in :issue:`37444`.)
+
 math
 ----
 
@@ -240,32 +248,6 @@ The :func:`os.putenv` and :func:`os.unsetenv` functions are now always
 available.
 (Contributed by Victor Stinner in :issue:`39395`.)
 
-poplib
-------
-
-:class:`~poplib.POP3` and :class:`~poplib.POP3_SSL` now raise a :class:`ValueError`
-if the given timeout for their constructor is zero to prevent the creation of
-a non-blocking socket. (Contributed by Dong-hee Na in :issue:`39259`.)
-
-threading
----------
-
-In a subinterpreter, spawning a daemon thread now raises a :exc:`RuntimeError`. Daemon
-threads were never supported in subinterpreters. Previously, the subinterpreter
-finalization crashed with a Python fatal error if a daemon thread was still
-running.
-(Contributed by Victor Stinner in :issue:`37266`.)
-
-venv
-----
-
-The activation scripts provided by :mod:`venv` now all specify their prompt
-customization consistently by always using the value specified by
-``__VENV_PROMPT__``. Previously some scripts unconditionally used
-``__VENV_PROMPT__``, others only if it happened to be set (which was the default
-case), and one used ``__VENV_NAME__`` instead.
-(Contributed by Brett Cannon in :issue:`37663`.)
-
 pathlib
 -------
 
@@ -273,19 +255,24 @@ Added :meth:`pathlib.Path.readlink()` which acts similarly to
 :func:`os.readlink`.
 (Contributed by Girts Folkmanis in :issue:`30618`)
 
+poplib
+------
+
+:class:`~poplib.POP3` and :class:`~poplib.POP3_SSL` now raise a :class:`ValueError`
+if the given timeout for their constructor is zero to prevent the creation of
+a non-blocking socket. (Contributed by Dong-hee Na in :issue:`39259`.)
+
 pprint
 ------
 
 :mod:`pprint` can now pretty-print :class:`types.SimpleNamespace`.
 (Contributed by Carl Bordum Hansen in :issue:`37376`.)
 
-importlib
----------
+signal
+------
 
-To improve consistency with import statements, :func:`importlib.util.resolve_name`
-now raises :exc:`ImportError` instead of :exc:`ValueError` for invalid relative
-import attempts.
-(Contributed by Ngalim Siregar in :issue:`37444`.)
+Exposed the Linux-specific :func:`signal.pidfd_send_signal` for sending to
+signals to a process using a file descriptor instead of a pid. (:issue:`38712`)
 
 smtplib
 -------
@@ -297,11 +284,14 @@ a non-blocking socket. (Contributed by Dong-hee Na in :issue:`39259`.)
 :class:`~smtplib.LMTP` constructor  now has an optional *timeout* parameter.
 (Contributed by Dong-hee Na in :issue:`39329`.)
 
-signal
-------
+threading
+---------
 
-Exposed the Linux-specific :func:`signal.pidfd_send_signal` for sending to
-signals to a process using a file descriptor instead of a pid. (:issue:`38712`)
+In a subinterpreter, spawning a daemon thread now raises a :exc:`RuntimeError`. Daemon
+threads were never supported in subinterpreters. Previously, the subinterpreter
+finalization crashed with a Python fatal error if a daemon thread was still
+running.
+(Contributed by Victor Stinner in :issue:`37266`.)
 
 typing
 ------
@@ -310,6 +300,16 @@ typing
 types with context-specific metadata and new ``include_extras`` parameter to
 :func:`typing.get_type_hints` to access the metadata at runtime. (Contributed
 by Till Varoquaux and Konstantin Kashin.)
+
+venv
+----
+
+The activation scripts provided by :mod:`venv` now all specify their prompt
+customization consistently by always using the value specified by
+``__VENV_PROMPT__``. Previously some scripts unconditionally used
+``__VENV_PROMPT__``, others only if it happened to be set (which was the default
+case), and one used ``__VENV_NAME__`` instead.
+(Contributed by Brett Cannon in :issue:`37663`.)
 
 
 Optimizations
