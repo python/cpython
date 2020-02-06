@@ -1,2 +1,2 @@
-Fix handling of 'WWW-Authenticate' header when the optional 'qop' parameter
+Fix handling of header in :class:`urllib.request.AbstractDigestAuthHandler` when the optional ``qop`` parameter
 is not present.
