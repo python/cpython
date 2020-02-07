@@ -148,7 +148,7 @@ PyByteArray_FromStringAndSize(const char *bytes, Py_ssize_t size)
             memcpy(new->ob_bytes, bytes, size);
         new->ob_bytes[size] = '\0';  /* Trailing null byte */
     }
-    Py_SIZE(new) = size;
+    Py_SET_SIZE(new, size);
     new->ob_alloc = alloc;
     new->ob_start = new->ob_bytes;
     new->ob_exports = 0;
@@ -206,7 +206,7 @@ PyByteArray_Resize(PyObject *self, Py_ssize_t requested_size)
         }
         else {
             /* Minor downsize; quick exit */
-            Py_SIZE(self) = size;
+            Py_SET_SIZE(self, size);
             PyByteArray_AS_STRING(self)[size] = '\0'; /* Trailing null */
             return 0;
         }
@@ -246,7 +246,7 @@ PyByteArray_Resize(PyObject *self, Py_ssize_t requested_size)
     }
 
     obj->ob_bytes = obj->ob_start = sval;
-    Py_SIZE(self) = size;
+    Py_SET_SIZE(self, size);
     obj->ob_alloc = alloc;
     obj->ob_bytes[size] = '\0'; /* Trailing null byte */
 
@@ -498,7 +498,7 @@ bytearray_setslice_linear(PyByteArrayObject *self,
             }
             /* memmove() removed bytes, the bytearray object cannot be
                restored in its previous state. */
-            Py_SIZE(self) += growth;
+            Py_SET_SIZE(self, Py_SIZE(self) + growth);
             res = -1;
         }
         buf = PyByteArray_AS_STRING(self);
@@ -886,7 +886,7 @@ bytearray_init(PyByteArrayObject *self, PyObject *args, PyObject *kwds)
 
         /* Append the byte */
         if (Py_SIZE(self) + 1 < self->ob_alloc) {
-            Py_SIZE(self)++;
+            Py_SET_SIZE(self, Py_SIZE(self) + 1);
             PyByteArray_AS_STRING(self)[Py_SIZE(self)] = '\0';
         }
         else if (PyByteArray_Resize((PyObject *)self, Py_SIZE(self)+1) < 0)
