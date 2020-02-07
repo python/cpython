@@ -2039,6 +2039,10 @@ math_lcm_impl(PyObject *module, PyObject *a, PyObject *b)
     if (b == NULL) {
         return NULL;
     }
+    if (a == 0 && b == 0) {
+       PyErr_Format(PyExc_ZeroDivisionError,"lcm(0,0) is not possible");
+       return 0;
+    }
     if (PyFloat_Check(a) || PyFloat_Check(b)) {
         PyErr_Format(PyExc_TypeError,"'float' object cannot be an argument to lcm");
         return 0;  
@@ -2051,15 +2055,10 @@ math_lcm_impl(PyObject *module, PyObject *a, PyObject *b)
     if (g == NULL) {
         return NULL;
     }
-    if (g == 0) {
-        f = 0;
-    }
-    else {
     f = PyNumber_FloorDivide(a, g);
     Py_DECREF(a);
     Py_DECREF(g);
     Py_DECREF(g);
-    }
     if (f == NULL) {
         return NULL;
     }
