@@ -813,7 +813,7 @@ r_PyLong(RFILE *p)
     if (ob == NULL)
         return NULL;
 
-    Py_SIZE(ob) = n > 0 ? size : -size;
+    Py_SET_SIZE(ob, n > 0 ? size : -size);
 
     for (i = 0; i < size-1; i++) {
         d = 0;
