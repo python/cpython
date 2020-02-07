@@ -2054,9 +2054,9 @@ math_lcm_impl(PyObject *module, PyObject *a, PyObject *b)
     }    
     f = PyNumber_FloorDivide(a, m);
     Py_DECREF(m);
+    Py_DECREF(b);
     if (f == NULL) {
         Py_DECREF(a);
-        Py_DECREF(b);
         return NULL;
     }
     ab = PyNumber_Absolute(f);
