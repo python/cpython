@@ -221,7 +221,7 @@ float_dealloc(PyFloatObject *op)
             return;
         }
         numfree++;
-        Py_TYPE(op) = (struct _typeobject *)free_list;
+        Py_SET_TYPE(op, (PyTypeObject *)free_list);
         free_list = op;
     }
     else
