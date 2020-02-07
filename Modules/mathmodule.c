@@ -2039,10 +2039,6 @@ math_lcm_impl(PyObject *module, PyObject *a, PyObject *b)
     if (b == NULL) {
         return NULL;
     }
-    if(a == 0 || b==0) {
-    return 0;
-    }
-    else {
     g = _PyLong_GCD(a, b);
     Py_DECREF(a);
     Py_DECREF(b);
@@ -2074,7 +2070,6 @@ math_lcm_impl(PyObject *module, PyObject *a, PyObject *b)
     Py_DECREF(a);
     Py_DECREF(b);
     return ab;
-    }
 }
 
 
