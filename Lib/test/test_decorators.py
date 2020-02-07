@@ -151,20 +151,6 @@ class TestDecorators(unittest.TestCase):
         self.assertEqual(counts['double'], 4)
 
     def test_errors(self):
-        # Test syntax restrictions - these are all compile-time errors:
-        #
-        for expr in [ "1+2", "x[3]", "(1, 2)" ]:
-            # Sanity check: is expr is a valid expression by itself?
-            compile(expr, "testexpr", "exec")
-
-            codestr = "@%s\ndef f(): pass" % expr
-            self.assertRaises(SyntaxError, compile, codestr, "test", "exec")
-
-        # You can't put multiple decorators on a single line:
-        #
-        self.assertRaises(SyntaxError, compile,
-                          "@f1 @f2\ndef f(): pass", "test", "exec")
-
         # Test runtime errors
 
         def unimp(func):
