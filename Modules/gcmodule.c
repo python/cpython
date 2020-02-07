@@ -2294,7 +2294,7 @@ _PyObject_GC_Resize(PyVarObject *op, Py_ssize_t nitems)
     if (g == NULL)
         return (PyVarObject *)PyErr_NoMemory();
     op = (PyVarObject *) FROM_GC(g);
-    Py_SIZE(op) = nitems;
+    Py_SET_SIZE(op, nitems);
     return op;
 }
 

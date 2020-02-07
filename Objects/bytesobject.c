@@ -2963,7 +2963,7 @@ _PyBytes_Resize(PyObject **pv, Py_ssize_t newsize)
     }
     _Py_NewReference(*pv);
     sv = (PyBytesObject *) *pv;
-    Py_SIZE(sv) = newsize;
+    Py_SET_SIZE(sv, newsize);
     sv->ob_sval[newsize] = '\0';
     sv->ob_shash = -1;          /* invalidate cached hash value */
     return 0;

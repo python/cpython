@@ -172,7 +172,7 @@ deque_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
     MARK_END(b->rightlink);
 
     assert(BLOCKLEN >= 2);
-    Py_SIZE(deque) = 0;
+    Py_SET_SIZE(deque, 0);
     deque->leftblock = b;
     deque->rightblock = b;
     deque->leftindex = CENTER + 1;
@@ -196,7 +196,7 @@ deque_pop(dequeobject *deque, PyObject *unused)
     }
     item = deque->rightblock->data[deque->rightindex];
     deque->rightindex--;
-    Py_SIZE(deque)--;
+    Py_SET_SIZE(deque, Py_SIZE(deque) - 1);
     deque->state++;
 
     if (deque->rightindex < 0) {
@@ -234,7 +234,7 @@ deque_popleft(dequeobject *deque, PyObject *unused)
     assert(deque->leftblock != NULL);
     item = deque->leftblock->data[deque->leftindex];
     deque->leftindex++;
-    Py_SIZE(deque)--;
+    Py_SET_SIZE(deque, Py_SIZE(deque) - 1);
     deque->state++;
 
     if (deque->leftindex == BLOCKLEN) {
@@ -287,7 +287,7 @@ deque_append_internal(dequeobject *deque, PyObject *item, Py_ssize_t maxlen)
         MARK_END(b->rightlink);
         deque->rightindex = -1;
     }
-    Py_SIZE(deque)++;
+    Py_SET_SIZE(deque, Py_SIZE(deque) + 1);
     deque->rightindex++;
     deque->rightblock->data[deque->rightindex] = item;
     if (NEEDS_TRIM(deque, maxlen)) {
@@ -324,7 +324,7 @@ deque_appendleft_internal(dequeobject *deque, PyObject *item, Py_ssize_t maxlen)
         MARK_END(b->leftlink);
         deque->leftindex = BLOCKLEN;
     }
-    Py_SIZE(deque)++;
+    Py_SET_SIZE(deque, Py_SIZE(deque) + 1);
     deque->leftindex--;
     deque->leftblock->data[deque->leftindex] = item;
     if (NEEDS_TRIM(deque, deque->maxlen)) {
@@ -597,7 +597,7 @@ deque_clear(dequeobject *deque)
     /* Set the deque to be empty using the newly allocated block */
     MARK_END(b->leftlink);
     MARK_END(b->rightlink);
-    Py_SIZE(deque) = 0;
+    Py_SET_SIZE(deque, 0);
     deque->leftblock = b;
     deque->rightblock = b;
     deque->leftindex = CENTER + 1;
@@ -680,7 +680,7 @@ deque_inplace_repeat(dequeobject *deque, Py_ssize_t n)
             if (deque->rightindex == BLOCKLEN - 1) {
                 block *b = newblock();
                 if (b == NULL) {
-                    Py_SIZE(deque) += i;
+                    Py_SET_SIZE(deque, Py_SIZE(deque) + i);
                     return NULL;
                 }
                 b->leftlink = deque->rightblock;
@@ -700,7 +700,7 @@ deque_inplace_repeat(dequeobject *deque, Py_ssize_t n)
                 deque->rightblock->data[deque->rightindex] = item;
             }
         }
-        Py_SIZE(deque) += i;
+        Py_SET_SIZE(deque, Py_SIZE(deque) + i);
         Py_INCREF(deque);
         return (PyObject *)deque;
     }
