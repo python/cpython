@@ -2051,8 +2051,8 @@ math_lcm_impl(PyObject *module, PyObject *a, PyObject *b)
     if (g == NULL) {
         return NULL;
     }
-    if (g==0) {
-        f=0;
+    if (g == 0) {
+        f = 0;
     }
     else {
     f = PyNumber_FloorDivide(a, g);
