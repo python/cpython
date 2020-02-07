@@ -123,6 +123,11 @@ typedef struct {
 #define Py_TYPE(ob)             (_PyObject_CAST(ob)->ob_type)
 #define Py_SIZE(ob)             (_PyVarObject_CAST(ob)->ob_size)
 
+static inline void _Py_SET_REFCNT(PyObject *ob, Py_ssize_t refcnt) {
+    ob->ob_refcnt = refcnt;
+}
+#define Py_SET_REFCNT(ob, refcnt) _Py_SET_REFCNT(_PyObject_CAST(ob), refcnt)
+
 /*
 Type objects contain a string containing the type name (to help somewhat
 in debugging), the allocation parameters (see PyObject_New() and

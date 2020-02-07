@@ -79,6 +79,13 @@ the definition of all other Python objects.
       (((PyObject*)(o))->ob_refcnt)
 
 
+.. c:function:: void Py_SET_REFCNT(PyObject *o, Py_ssize_t refcnt)
+
+   Set the object *o* reference counter to *refcnt*.
+
+   .. versionadded:: 3.9
+
+
 .. c:macro:: Py_SIZE(o)
 
    This macro is used to access the :attr:`ob_size` member of a Python object.

@@ -213,7 +213,7 @@ PyObject_CallFinalizerFromDealloc(PyObject *self)
     }
 
     /* Temporarily resurrect the object. */
-    Py_REFCNT(self) = 1;
+    Py_SET_REFCNT(self, 1);
 
     PyObject_CallFinalizer(self);
 
@@ -223,7 +223,8 @@ PyObject_CallFinalizerFromDealloc(PyObject *self)
 
     /* Undo the temporary resurrection; can't use DECREF here, it would
      * cause a recursive call. */
-    if (--Py_REFCNT(self) == 0) {
+    Py_SET_REFCNT(self, Py_REFCNT(self) - 1);
+    if (Py_REFCNT(self) == 0) {
         return 0;         /* this is the normal path out */
     }
 
@@ -231,7 +232,7 @@ PyObject_CallFinalizerFromDealloc(PyObject *self)
      * never happened. */
     Py_ssize_t refcnt = Py_REFCNT(self);
     _Py_NewReference(self);
-    Py_REFCNT(self) = refcnt;
+    Py_SET_REFCNT(self, refcnt);
 
     _PyObject_ASSERT(self,
                      (!PyType_IS_GC(Py_TYPE(self))
@@ -1818,7 +1819,7 @@ _Py_NewReference(PyObject *op)
 #ifdef Py_REF_DEBUG
     _Py_RefTotal++;
 #endif
-    Py_REFCNT(op) = 1;
+    Py_SET_REFCNT(op, 1);
 #ifdef Py_TRACE_REFS
     _Py_AddToAllObjects(op, 1);
 #endif

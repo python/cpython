@@ -1903,7 +1903,7 @@ unicode_dealloc(PyObject *unicode)
 
     case SSTATE_INTERNED_MORTAL:
         /* revive dead object temporarily for DelItem */
-        Py_REFCNT(unicode) = 3;
+        Py_SET_REFCNT(unicode, 3);
         if (PyDict_DelItem(interned, unicode) != 0) {
             _PyErr_WriteUnraisableMsg("deletion of interned string failed",
                                       NULL);
@@ -15367,7 +15367,7 @@ PyUnicode_InternInPlace(PyObject **p)
     }
     /* The two references in interned are not counted by refcnt.
        The deallocator will take care of this */
-    Py_REFCNT(s) -= 2;
+    Py_SET_REFCNT(s, Py_REFCNT(s) - 2);
     _PyUnicode_STATE(s).interned = SSTATE_INTERNED_MORTAL;
 }
 
