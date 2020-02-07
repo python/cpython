@@ -991,7 +991,6 @@ class MathTests(unittest.TestCase):
                              16592536571065866494401400422922201534178938447014944)
         x = 434610456570399902378880679233098819019853229470286994367836600566
         y = 1064502245825115327754847244914921553977
-        
         for c in (652560,
                   576559230871654959816130551884856912003141446781646602790216406874):
             a = x * c
@@ -1004,10 +1003,10 @@ class MathTests(unittest.TestCase):
             self.assertEqual(lcm(a, -b), d)
             self.assertEqual(lcm(-b, a), d)
             self.assertEqual(lcm(-a, -b), d)
-            self.assertEqual(lcm(-b, -a), d)    
+            self.assertEqual(lcm(-b, -a), d)
         self.assertRaises(TypeError, lcm, 120.0, 84)
         self.assertRaises(TypeError, lcm, 120, 84.0)
-        
+
     def testLdexp(self):
         self.assertRaises(TypeError, math.ldexp)
         self.ftest('ldexp(0,1)', math.ldexp(0,1), 0)
