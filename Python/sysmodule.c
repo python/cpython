@@ -1483,6 +1483,12 @@ static PyObject *
 sys__enablelegacywindowsfsencoding_impl(PyObject *module)
 /*[clinic end generated code: output=f5c3855b45e24fe9 input=2bfa931a20704492]*/
 {
+    if (PyErr_WarnEx(PyExc_DeprecationWarning,
+                     "sys._enablelegacywindowsfsencoding() is deprecated",
+                     1) < 0) {
+        return NULL;
+    }
+
     if (_PyUnicode_EnableLegacyWindowsFSEncoding() < 0) {
         return NULL;
     }

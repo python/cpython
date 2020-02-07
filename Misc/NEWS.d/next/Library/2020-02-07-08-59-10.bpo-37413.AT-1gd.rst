@@ -1,0 +1,2 @@
+The :func:`sys._enablelegacywindowsfsencoding` function added to Python 3.6
+by :pep:`529` is now deprecated and will be removed in Python 3.10.

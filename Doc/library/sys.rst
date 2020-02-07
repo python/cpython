@@ -1411,6 +1411,8 @@ always available.
    .. versionadded:: 3.6
       See :pep:`529` for more details.
 
+   .. deprecated-removed:: 3.9 3.10
+
 .. data:: stdin
           stdout
           stderr

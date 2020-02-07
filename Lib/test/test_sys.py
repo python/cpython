@@ -919,6 +919,8 @@ class SysModuleTest(unittest.TestCase):
                          'needs sys._enablelegacywindowsfsencoding()')
     def test__enablelegacywindowsfsencoding(self):
         code = ('import sys',
+                'import warnings',
+                "warnings.simplefilter('ignore', DeprecationWarning)",
                 'sys._enablelegacywindowsfsencoding()',
                 'print(sys.getfilesystemencoding(), sys.getfilesystemencodeerrors())')
         rc, out, err = assert_python_ok('-c', '; '.join(code))
