@@ -2046,7 +2046,7 @@ math_lcm_impl(PyObject *module, PyObject *a, PyObject *b)
         Py_DECREF(b);
         return NULL;
     }     
-    m = PyNumber_Multiply(g, a);
+    m = PyNumber_Multiply(g, b);
     Py_DECREF(g);
     if (m == NULL) {
         Py_DECREF(a);
