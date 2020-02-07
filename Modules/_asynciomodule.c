@@ -1007,7 +1007,7 @@ _asyncio_Future_remove_done_callback(FutureObj *self, PyObject *fn)
     }
 
     if (j < len) {
-        Py_SIZE(newlist) = j;
+        Py_SET_SIZE(newlist, j);
     }
     j = PyList_GET_SIZE(newlist);
     len = PyList_GET_SIZE(self->fut_callbacks);
