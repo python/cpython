@@ -101,6 +101,13 @@ the definition of all other Python objects.
       (((PyVarObject*)(o))->ob_size)
 
 
+.. c:function:: void Py_SET_SIZE(PyVarObject *o, Py_ssize_t size)
+
+   Set the object *o* size of *size*.
+
+   .. versionadded:: 3.9
+
+
 .. c:macro:: PyObject_HEAD_INIT(type)
 
    This is a macro which expands to initialization values for a new
