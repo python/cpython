@@ -70,6 +70,13 @@ the definition of all other Python objects.
       (((PyObject*)(o))->ob_type)
 
 
+.. c:function:: void Py_SET_TYPE(PyObject *o, PyTypeObject *type)
+
+   Set the object *o* type to *type*.
+
+   .. versionadded:: 3.9
+
+
 .. c:macro:: Py_REFCNT(o)
 
    This macro is used to access the :attr:`ob_refcnt` member of a Python
