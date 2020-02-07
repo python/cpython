@@ -974,7 +974,7 @@ class MathTests(unittest.TestCase):
                 with self.assertRaises(TypeError):
                     math.isqrt(value)
 
-     def test_lcm(self):
+    def test_lcm(self):
         lcm = math.lcm
         self.assertEqual(lcm(0, 0), 0)
         self.assertEqual(lcm(1, 0), 0)
