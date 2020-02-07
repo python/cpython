@@ -2056,6 +2056,7 @@ math_lcm_impl(PyObject *module, PyObject *a, PyObject *b)
     Py_DECREF(m);
     if (f == NULL) {
         Py_DECREF(a);
+        Py_DECREF(b);
         return NULL;
     }
     ab = PyNumber_Absolute(f);
