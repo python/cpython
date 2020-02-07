@@ -1976,7 +1976,7 @@ fast_save_enter(PicklerObject *self, PyObject *obj)
             PyErr_Format(PyExc_ValueError,
                          "fast mode: can't pickle cyclic objects "
                          "including object type %.200s at %p",
-                         obj->ob_type->tp_name, obj);
+                         Py_TYPE(obj)->tp_name, obj);
             self->fast_nesting = -1;
             return 0;
         }
