@@ -2039,10 +2039,6 @@ math_lcm_impl(PyObject *module, PyObject *a, PyObject *b)
     if (b == NULL) {
         return NULL;
     }
-    if (PyObject_TypeCheck(a, PyBytes_Type) || PyObject_TypeCheck(b, PyBytes_Type)) {
-        PyErr_Format(PyExc_TypeError,"'str' object cannot be an argument to lcm");
-        return 0;  
-    }
     if (PyFloat_Check(a) || PyFloat_Check(b)) {
         PyErr_Format(PyExc_TypeError,"'float' object cannot be an argument to lcm");
         return 0;  
