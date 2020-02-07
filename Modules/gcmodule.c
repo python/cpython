@@ -653,7 +653,7 @@ untrack_dicts(PyGC_Head *head)
 static int
 has_legacy_finalizer(PyObject *op)
 {
-    return op->ob_type->tp_del != NULL;
+    return Py_TYPE(op)->tp_del != NULL;
 }
 
 /* Move the objects in unreachable with tp_del slots into `finalizers`.

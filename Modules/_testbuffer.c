@@ -1854,7 +1854,7 @@ ndarray_subscript(NDArrayObject *self, PyObject *key)
 type_error:
     PyErr_Format(PyExc_TypeError,
         "cannot index memory using \"%.200s\"",
-        key->ob_type->tp_name);
+        Py_TYPE(key)->tp_name);
 err_occurred:
     Py_DECREF(nd);
     return NULL;
