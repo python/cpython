@@ -3160,26 +3160,6 @@ dict_sizeof(PyDictObject *mp, PyObject *Py_UNUSED(ignored))
     return PyLong_FromSsize_t(_PyDict_SizeOf(mp));
 }
 
-/* A subclass-friendly dict_update_arg. */
-static int
-subclass_update_arg(PyObject *self, PyObject *other)
-{
-    if (PyDict_CheckExact(self)) {
-        return dict_update_arg(self, other);
-    }
-    if (!PyDict_Check(self)) {
-        PyErr_BadInternalCall();
-        return -1;
-    }
-    _Py_IDENTIFIER(update);
-    PyObject *tmp = _PyObject_CallMethodIdOneArg(self, &PyId_update, other);
-    if (tmp == NULL) {
-        return -1;
-    }
-    Py_DECREF(tmp);
-    return 0;
-}
-
 static PyObject *
 dict_or(PyObject *self, PyObject *other)
 {
@@ -3198,10 +3178,10 @@ dict_or(PyObject *self, PyObject *other)
         return NULL;
     }
     if (!PyDict_Check(new)) {
-        return PyErr_Format(PyExc_TypeError, 
+        return PyErr_Format(PyExc_TypeError,
             "copy() returned %s (expected dict)", Py_TYPE(new)->tp_name);
     }
-    if (subclass_update_arg(new, other)) {
+    if (dict_update_arg(new, other)) {
         Py_DECREF(new);
         return NULL;
     }
@@ -3211,7 +3191,7 @@ dict_or(PyObject *self, PyObject *other)
 static PyObject *
 dict_ior(PyObject *self, PyObject *other)
 {
-    if (subclass_update_arg(self, other)) {
+    if (dict_update_arg(self, other)) {
         return NULL;
     }
     Py_INCREF(self);

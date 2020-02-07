@@ -76,15 +76,11 @@ class DictTest(unittest.TestCase):
 
             def __init__(self, /, *args, **kwargs):
                 super().__init__(*args, **kwargs)
-                self.copied = self.updated = False
+                self.copied = False
 
             def copy(self):
                 self.copied = True
                 return DictSubclass(super().copy())
-
-            def update(self, /, *args, **kwargs):
-                self.updated = True
-                return super().update(*args, **kwargs)
 
         a = DictSubclass({0: 0, 1: 1, 2: 1})
         b = {1: 1, 2: 2, 3: 3}
@@ -94,9 +90,6 @@ class DictTest(unittest.TestCase):
         self.assertDictEqual(c, {0: 0, 1: 1, 2: 2, 3: 3})
         self.assertIs(type(c), DictSubclass)
         self.assertTrue(a.copied)
-        self.assertFalse(a.updated)
-        self.assertFalse(c.copied)
-        self.assertTrue(c.updated)
 
         a.copied = False  # Reset.
 
@@ -105,17 +98,6 @@ class DictTest(unittest.TestCase):
         self.assertDictEqual(c, {1: 1, 2: 1, 3: 3, 0: 0})
         self.assertIs(type(c), dict)
         self.assertFalse(a.copied)
-        self.assertFalse(a.updated)
-
-        c = a.copy()
-        c |= [(1, 1), (2, 2), (3, 3)]
-
-        self.assertEqual(c, {0: 0, 1: 1, 2: 2, 3: 3})
-        self.assertIs(type(c), DictSubclass)
-        self.assertTrue(a.copied)
-        self.assertFalse(a.updated)
-        self.assertFalse(c.copied)
-        self.assertTrue(c.updated)
 
     def test_merge_operator_subclass_bad_copy(self):
 
