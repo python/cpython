@@ -840,7 +840,7 @@ sys_intern_impl(PyObject *module, PyObject *s)
     }
     else {
         _PyErr_Format(tstate, PyExc_TypeError,
-                      "can't intern %.400s", s->ob_type->tp_name);
+                      "can't intern %.400s", Py_TYPE(s)->tp_name);
         return NULL;
     }
 }
