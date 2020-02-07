@@ -539,7 +539,7 @@ deque_concat(dequeobject *deque, PyObject *other)
         if (rv == 0) {
             PyErr_Format(PyExc_TypeError,
                          "can only concatenate deque (not \"%.200s\") to deque",
-                         other->ob_type->tp_name);
+                         Py_TYPE(other)->tp_name);
         }
         return NULL;
     }
@@ -2395,7 +2395,7 @@ tuplegetter_descr_get(PyObject *self, PyObject *obj, PyObject *type)
                      "descriptor for index '%zd' for tuple subclasses "
                      "doesn't apply to '%s' object",
                      index,
-                     obj->ob_type->tp_name);
+                     Py_TYPE(obj)->tp_name);
         return NULL;
     }
 
