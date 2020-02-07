@@ -274,7 +274,7 @@ dict_hassplittable(PyObject *self, PyObject *arg)
     if (!PyDict_Check(arg)) {
         PyErr_Format(PyExc_TypeError,
                      "dict_hassplittable() argument must be dict, not '%s'",
-                     arg->ob_type->tp_name);
+                     Py_TYPE(arg)->tp_name);
         return NULL;
     }
 
@@ -2724,7 +2724,7 @@ test_thread_state(PyObject *self, PyObject *args)
 
     if (!PyCallable_Check(fn)) {
         PyErr_Format(PyExc_TypeError, "'%s' object is not callable",
-            fn->ob_type->tp_name);
+            Py_TYPE(fn)->tp_name);
         return NULL;
     }
 
