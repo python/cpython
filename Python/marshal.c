@@ -1696,7 +1696,7 @@ marshal_load(PyObject *module, PyObject *file)
     if (!PyBytes_Check(data)) {
         PyErr_Format(PyExc_TypeError,
                      "file.read() returned not bytes but %.100s",
-                     data->ob_type->tp_name);
+                     Py_TYPE(data)->tp_name);
         result = NULL;
     }
     else {
