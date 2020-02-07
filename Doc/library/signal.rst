@@ -277,6 +277,8 @@ The :mod:`signal` module defines the following functions:
    If *signalnum* is 0, then no signal is sent, but error checking is still
    performed; this can be used to check if the target thread is still running.
 
+   .. audit-event:: signal.pthread_kill thread_id,signalnum signal.pthread_kill
+
    .. availability:: Unix.  See the man page :manpage:`pthread_kill(3)` for further
       information.
 
