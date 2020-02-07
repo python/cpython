@@ -133,6 +133,11 @@ static inline void _Py_SET_TYPE(PyObject *ob, PyTypeObject *type) {
 }
 #define Py_SET_TYPE(ob, type) _Py_SET_TYPE(_PyObject_CAST(ob), type)
 
+static inline void _Py_SET_SIZE(PyVarObject *ob, Py_ssize_t refcnt) {
+    ob->ob_size = refcnt;
+}
+#define Py_SET_SIZE(ob, refcnt) _Py_SET_SIZE(_PyVarObject_CAST(ob), refcnt)
+
 
 /*
 Type objects contain a string containing the type name (to help somewhat

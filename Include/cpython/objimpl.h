@@ -30,7 +30,7 @@ static inline PyVarObject*
 _PyObject_INIT_VAR(PyVarObject *op, PyTypeObject *typeobj, Py_ssize_t size)
 {
     assert(op != NULL);
-    Py_SIZE(op) = size;
+    Py_SET_SIZE(op, size);
     PyObject_INIT((PyObject *)op, typeobj);
     return op;
 }

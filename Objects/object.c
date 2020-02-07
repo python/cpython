@@ -160,7 +160,7 @@ PyObject_InitVar(PyVarObject *op, PyTypeObject *tp, Py_ssize_t size)
         return (PyVarObject *) PyErr_NoMemory();
     }
 
-    Py_SIZE(op) = size;
+    Py_SET_SIZE(op, size);
     PyObject_Init((PyObject *)op, tp);
     return op;
 }
