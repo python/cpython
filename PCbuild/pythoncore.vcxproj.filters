@@ -99,6 +99,9 @@
     <ClInclude Include="..\Include\cpython\initconfig.h">
       <Filter>Include</Filter>
     </ClInclude>
+    <ClInclude Include="..\Include\cpython\listobject.h">
+      <Filter>Include</Filter>
+    </ClInclude>
     <ClInclude Include="..\Include\cpython\object.h">
       <Filter>Include</Filter>
     </ClInclude>

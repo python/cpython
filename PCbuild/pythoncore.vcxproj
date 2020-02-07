@@ -132,6 +132,7 @@
     <ClInclude Include="..\Include\cpython\fileobject.h" />
     <ClInclude Include="..\Include\cpython\import.h" />
     <ClInclude Include="..\Include\cpython\initconfig.h" />
+    <ClInclude Include="..\Include\cpython\listobject.h" />
     <ClInclude Include="..\Include\cpython\object.h" />
     <ClInclude Include="..\Include\cpython\objimpl.h" />
     <ClInclude Include="..\Include\cpython\pyerrors.h" />
