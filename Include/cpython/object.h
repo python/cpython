@@ -190,7 +190,7 @@ typedef struct {
  * backwards-compatibility */
 typedef Py_ssize_t printfunc;
 
-typedef struct _typeobject {
+struct _typeobject {
     PyObject_VAR_HEAD
     const char *tp_name; /* For printing, in format "<module>.<name>" */
     Py_ssize_t tp_basicsize, tp_itemsize; /* For allocation */
@@ -271,7 +271,7 @@ typedef struct _typeobject {
 
     destructor tp_finalize;
     vectorcallfunc tp_vectorcall;
-} PyTypeObject;
+};
 
 /* The *real* layout of a type object when allocated on the heap */
 typedef struct _heaptypeobject {
