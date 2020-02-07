@@ -234,7 +234,7 @@ meth_repr(PyCFunctionObject *m)
                                    m->m_ml->ml_name);
     return PyUnicode_FromFormat("<built-in method %s of %s object at %p>",
                                m->m_ml->ml_name,
-                               m->m_self->ob_type->tp_name,
+                               Py_TYPE(m->m_self)->tp_name,
                                m->m_self);
 }
 
