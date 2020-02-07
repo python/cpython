@@ -650,7 +650,7 @@ warn_explicit(PyObject *category, PyObject *message,
         text = PyObject_Str(message);
         if (text == NULL)
             goto cleanup;
-        category = (PyObject*)message->ob_type;
+        category = (PyObject*)Py_TYPE(message);
     }
     else {
         text = message;
@@ -906,7 +906,7 @@ get_category(PyObject *message, PyObject *category)
         return NULL;
 
     if (rc == 1)
-        category = (PyObject*)message->ob_type;
+        category = (PyObject*)Py_TYPE(message);
     else if (category == NULL || category == Py_None)
         category = PyExc_UserWarning;
 
