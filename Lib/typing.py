@@ -1380,8 +1380,8 @@ def _strip_annotations(t):
 def get_origin(tp):
     """Get the unsubscripted version of a type.
 
-    This supports generic types, Callable, Tuple, Union, Literal, Final and ClassVar.
-    Return None for unsupported types. Examples::
+    This supports generic types, Callable, Tuple, Union, Literal, Final, ClassVar
+    and Annotated. Return None for unsupported types. Examples::
 
         get_origin(Literal[42]) is Literal
         get_origin(int) is None
