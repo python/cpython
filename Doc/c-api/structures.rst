@@ -79,7 +79,7 @@ the definition of all other Python objects.
       (((PyObject*)(o))->ob_refcnt)
 
 
-.. c:func:: void Py_SET_REFCNT(PyObject *o, Py_ssize_t refcnt)
+.. c:function:: void Py_SET_REFCNT(PyObject *o, Py_ssize_t refcnt)
 
    Set the object *o* reference counter to *refcnt*.
 
