@@ -2039,7 +2039,7 @@ math_lcm_impl(PyObject *module, PyObject *a, PyObject *b)
     if (b == NULL) {
         return NULL;
     }
-    if (PyStr_Check(a) || PyStr_Check(b)) {
+    if (PyObject_TypeCheck(a, PyBytes_Type) || PyObject_TypeCheck(b, PyBytes_Type)) {
         PyErr_Format(PyExc_TypeError,"'str' object cannot be an argument to lcm");
         return 0;  
     }
