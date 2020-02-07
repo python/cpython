@@ -33,8 +33,8 @@ _PyObject_CheckConsistency(PyObject *op, int check_content)
     CHECK(!_PyObject_IsFreed(op));
     CHECK(Py_REFCNT(op) >= 1);
 
-    CHECK(op->ob_type != NULL);
-    _PyType_CheckConsistency(op->ob_type);
+    CHECK(Py_TYPE(op) != NULL);
+    _PyType_CheckConsistency(Py_TYPE(op));
 
     if (PyUnicode_Check(op)) {
         _PyUnicode_CheckConsistency(op, check_content);
@@ -299,7 +299,7 @@ PyObject_Print(PyObject *op, FILE *fp, int flags)
             else {
                 PyErr_Format(PyExc_TypeError,
                              "str() or repr() returned '%.100s'",
-                             s->ob_type->tp_name);
+                             Py_TYPE(s)->tp_name);
                 ret = -1;
             }
             Py_XDECREF(s);
@@ -331,7 +331,7 @@ _Py_BreakPoint(void)
 int
 _PyObject_IsFreed(PyObject *op)
 {
-    if (_PyMem_IsPtrFreed(op) || _PyMem_IsPtrFreed(op->ob_type)) {
+    if (_PyMem_IsPtrFreed(op) || _PyMem_IsPtrFreed(Py_TYPE(op))) {
         return 1;
     }
     /* ignore op->ob_ref: its value can have be modified
@@ -406,7 +406,7 @@ PyObject_Repr(PyObject *v)
         return PyUnicode_FromString("<NULL>");
     if (Py_TYPE(v)->tp_repr == NULL)
         return PyUnicode_FromFormat("<%s object at %p>",
-                                    v->ob_type->tp_name, v);
+                                    Py_TYPE(v)->tp_name, v);
 
     PyThreadState *tstate = _PyThreadState_GET();
 #ifdef Py_DEBUG
@@ -422,7 +422,7 @@ PyObject_Repr(PyObject *v)
                                " while getting the repr of an object")) {
         return NULL;
     }
-    res = (*v->ob_type->tp_repr)(v);
+    res = (*Py_TYPE(v)->tp_repr)(v);
     _Py_LeaveRecursiveCall(tstate);
 
     if (res == NULL) {
@@ -431,7 +431,7 @@ PyObject_Repr(PyObject *v)
     if (!PyUnicode_Check(res)) {
         _PyErr_Format(tstate, PyExc_TypeError,
                       "__repr__ returned non-string (type %.200s)",
-                      res->ob_type->tp_name);
+                      Py_TYPE(res)->tp_name);
         Py_DECREF(res);
         return NULL;
     }
@@ -665,22 +665,22 @@ do_richcompare(PyThreadState *tstate, PyObject *v, PyObject *w, int op)
     PyObject *res;
     int checked_reverse_op = 0;
 
-    if (v->ob_type != w->ob_type &&
-        PyType_IsSubtype(w->ob_type, v->ob_type) &&
-        (f = w->ob_type->tp_richcompare) != NULL) {
+    if (Py_TYPE(v) != Py_TYPE(w) &&
+        PyType_IsSubtype(Py_TYPE(w), Py_TYPE(v)) &&
+        (f = Py_TYPE(w)->tp_richcompare) != NULL) {
         checked_reverse_op = 1;
         res = (*f)(w, v, _Py_SwappedOp[op]);
         if (res != Py_NotImplemented)
             return res;
         Py_DECREF(res);
     }
-    if ((f = v->ob_type->tp_richcompare) != NULL) {
+    if ((f = Py_TYPE(v)->tp_richcompare) != NULL) {
         res = (*f)(v, w, op);
         if (res != Py_NotImplemented)
             return res;
         Py_DECREF(res);
     }
-    if (!checked_reverse_op && (f = w->ob_type->tp_richcompare) != NULL) {
+    if (!checked_reverse_op && (f = Py_TYPE(w)->tp_richcompare) != NULL) {
         res = (*f)(w, v, _Py_SwappedOp[op]);
         if (res != Py_NotImplemented)
             return res;
@@ -699,8 +699,8 @@ do_richcompare(PyThreadState *tstate, PyObject *v, PyObject *w, int op)
         _PyErr_Format(tstate, PyExc_TypeError,
                       "'%s' not supported between instances of '%.100s' and '%.100s'",
                       opstrings[op],
-                      v->ob_type->tp_name,
-                      w->ob_type->tp_name);
+                      Py_TYPE(v)->tp_name,
+                      Py_TYPE(w)->tp_name);
         return NULL;
     }
     Py_INCREF(res);
@@ -888,7 +888,7 @@ PyObject_GetAttr(PyObject *v, PyObject *name)
     if (!PyUnicode_Check(name)) {
         PyErr_Format(PyExc_TypeError,
                      "attribute name must be string, not '%.200s'",
-                     name->ob_type->tp_name);
+                     Py_TYPE(name)->tp_name);
         return NULL;
     }
     if (tp->tp_getattro != NULL)
@@ -913,7 +913,7 @@ _PyObject_LookupAttr(PyObject *v, PyObject *name, PyObject **result)
     if (!PyUnicode_Check(name)) {
         PyErr_Format(PyExc_TypeError,
                      "attribute name must be string, not '%.200s'",
-                     name->ob_type->tp_name);
+                     Py_TYPE(name)->tp_name);
         *result = NULL;
         return -1;
     }
@@ -989,7 +989,7 @@ PyObject_SetAttr(PyObject *v, PyObject *name, PyObject *value)
     if (!PyUnicode_Check(name)) {
         PyErr_Format(PyExc_TypeError,
                      "attribute name must be string, not '%.200s'",
-                     name->ob_type->tp_name);
+                     Py_TYPE(name)->tp_name);
         return -1;
     }
     Py_INCREF(name);
@@ -1115,9 +1115,9 @@ _PyObject_GetMethod(PyObject *obj, PyObject *name, PyObject **method)
         if (PyType_HasFeature(Py_TYPE(descr), Py_TPFLAGS_METHOD_DESCRIPTOR)) {
             meth_found = 1;
         } else {
-            f = descr->ob_type->tp_descr_get;
+            f = Py_TYPE(descr)->tp_descr_get;
             if (f != NULL && PyDescr_IsData(descr)) {
-                *method = f(descr, obj, (PyObject *)obj->ob_type);
+                *method = f(descr, obj, (PyObject *)Py_TYPE(obj));
                 Py_DECREF(descr);
                 return 0;
             }
@@ -1188,7 +1188,7 @@ _PyObject_GenericGetAttrWithDict(PyObject *obj, PyObject *name,
     if (!PyUnicode_Check(name)){
         PyErr_Format(PyExc_TypeError,
                      "attribute name must be string, not '%.200s'",
-                     name->ob_type->tp_name);
+                     Py_TYPE(name)->tp_name);
         return NULL;
     }
     Py_INCREF(name);
@@ -1203,9 +1203,9 @@ _PyObject_GenericGetAttrWithDict(PyObject *obj, PyObject *name,
     f = NULL;
     if (descr != NULL) {
         Py_INCREF(descr);
-        f = descr->ob_type->tp_descr_get;
+        f = Py_TYPE(descr)->tp_descr_get;
         if (f != NULL && PyDescr_IsData(descr)) {
-            res = f(descr, obj, (PyObject *)obj->ob_type);
+            res = f(descr, obj, (PyObject *)Py_TYPE(obj));
             if (res == NULL && suppress &&
                     PyErr_ExceptionMatches(PyExc_AttributeError)) {
                 PyErr_Clear();
@@ -1302,7 +1302,7 @@ _PyObject_GenericSetAttrWithDict(PyObject *obj, PyObject *name,
     if (!PyUnicode_Check(name)){
         PyErr_Format(PyExc_TypeError,
                      "attribute name must be string, not '%.200s'",
-                     name->ob_type->tp_name);
+                     Py_TYPE(name)->tp_name);
         return -1;
     }
 
@@ -1315,7 +1315,7 @@ _PyObject_GenericSetAttrWithDict(PyObject *obj, PyObject *name,
 
     if (descr != NULL) {
         Py_INCREF(descr);
-        f = descr->ob_type->tp_descr_set;
+        f = Py_TYPE(descr)->tp_descr_set;
         if (f != NULL) {
             res = f(descr, obj, value);
             goto done;
@@ -1408,15 +1408,15 @@ PyObject_IsTrue(PyObject *v)
         return 0;
     if (v == Py_None)
         return 0;
-    else if (v->ob_type->tp_as_number != NULL &&
-             v->ob_type->tp_as_number->nb_bool != NULL)
-        res = (*v->ob_type->tp_as_number->nb_bool)(v);
-    else if (v->ob_type->tp_as_mapping != NULL &&
-             v->ob_type->tp_as_mapping->mp_length != NULL)
-        res = (*v->ob_type->tp_as_mapping->mp_length)(v);
-    else if (v->ob_type->tp_as_sequence != NULL &&
-             v->ob_type->tp_as_sequence->sq_length != NULL)
-        res = (*v->ob_type->tp_as_sequence->sq_length)(v);
+    else if (Py_TYPE(v)->tp_as_number != NULL &&
+             Py_TYPE(v)->tp_as_number->nb_bool != NULL)
+        res = (*Py_TYPE(v)->tp_as_number->nb_bool)(v);
+    else if (Py_TYPE(v)->tp_as_mapping != NULL &&
+             Py_TYPE(v)->tp_as_mapping->mp_length != NULL)
+        res = (*Py_TYPE(v)->tp_as_mapping->mp_length)(v);
+    else if (Py_TYPE(v)->tp_as_sequence != NULL &&
+             Py_TYPE(v)->tp_as_sequence->sq_length != NULL)
+        res = (*Py_TYPE(v)->tp_as_sequence->sq_length)(v);
     else
         return 1;
     /* if it is negative, it should be either -1 or -2 */
@@ -1443,7 +1443,7 @@ PyCallable_Check(PyObject *x)
 {
     if (x == NULL)
         return 0;
-    return x->ob_type->tp_call != NULL;
+    return Py_TYPE(x)->tp_call != NULL;
 }
 
 

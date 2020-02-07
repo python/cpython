@@ -2762,7 +2762,7 @@ PyBytes_FromObject(PyObject *x)
 
     PyErr_Format(PyExc_TypeError,
                  "cannot convert '%.200s' object to bytes",
-                 x->ob_type->tp_name);
+                 Py_TYPE(x)->tp_name);
     return NULL;
 }
 
