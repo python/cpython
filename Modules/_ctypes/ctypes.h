@@ -68,7 +68,7 @@ typedef struct {
     ffi_type *atypes[1];
 } CThunkObject;
 extern PyTypeObject PyCThunk_Type;
-#define CThunk_CheckExact(v)        ((v)->ob_type == &PyCThunk_Type)
+#define CThunk_CheckExact(v)        (Py_TYPE(v) == &PyCThunk_Type)
 
 typedef struct {
     /* First part identical to tagCDataObject */
