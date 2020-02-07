@@ -513,7 +513,7 @@ profile-opt: profile-run-stamp
 coverage:
 	@echo "Building with support for coverage checking:"
 	$(MAKE) clean
-	$(MAKE) @DEF_MAKE_RULE@ CFLAGS="$(CFLAGS) -O0 -pg -fprofile-arcs -ftest-coverage" LIBS="$(LIBS) -lgcov"
+	$(MAKE) @DEF_MAKE_RULE@ CFLAGS="$(CFLAGS) -O0 -pg --coverage" LIBS="$(LIBS) --coverage"
 
 coverage-lcov:
 	@echo "Creating Coverage HTML report with LCOV:"
