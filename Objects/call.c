@@ -263,11 +263,11 @@ _PyObject_Call(PyThreadState *tstate, PyObject *callable,
         return PyVectorcall_Call(callable, args, kwargs);
     }
     else {
-        call = callable->ob_type->tp_call;
+        call = Py_TYPE(callable)->tp_call;
         if (call == NULL) {
             _PyErr_Format(tstate, PyExc_TypeError,
                           "'%.200s' object is not callable",
-                          callable->ob_type->tp_name);
+                          Py_TYPE(callable)->tp_name);
             return NULL;
         }
 
