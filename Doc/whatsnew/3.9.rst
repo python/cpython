@@ -217,7 +217,7 @@ of a float.
 (Contributed by Victor Stinner in :issue:`39310`.)
 
 Add :func:`math.lcm`: return the least common multiple of *a* and *b*.
-(Contributed by Ananthakrishnan in :issue:`39479`.) 
+(Contributed by Ananthakrishnan in :issue:`39479`.)
 
 nntplib
 -------
