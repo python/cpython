@@ -618,7 +618,7 @@ class AST_Tests(unittest.TestCase):
         self.assertEqual(grandchild_binop.end_col_offset, 3)
         self.assertEqual(grandchild_binop.end_lineno, 1)
 
-    def test_issue39579_dotten_name_end_col_offset(self):
+    def test_issue39579_dotted_name_end_col_offset(self):
         tree = ast.parse('@a.b.c\ndef f(): pass')
         attr_b = tree.body[0].decorator_list[0].value
         self.assertEqual(attr_b.end_col_offset, 4)
