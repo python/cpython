@@ -1,0 +1,1 @@
+Skip locale tests which fail on Windows.

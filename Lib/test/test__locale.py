@@ -14,6 +14,9 @@ if uname().system == "Darwin":
     if (maj, min, mic) < (8, 0, 0):
         raise unittest.SkipTest("locale support broken for OS X < 10.4")
 
+if sys.platform == "win32":
+    raise unittest.SkipTest("Windows does not support Unix locale names")
+
 candidate_locales = ['es_UY', 'fr_FR', 'fi_FI', 'es_CO', 'pt_PT', 'it_IT',
     'et_EE', 'es_PY', 'no_NO', 'nl_NL', 'lv_LV', 'el_GR', 'be_BY', 'fr_BE',
     'ro_RO', 'ru_UA', 'ru_RU', 'es_VE', 'ca_ES', 'se_NO', 'es_EC', 'id_ID',

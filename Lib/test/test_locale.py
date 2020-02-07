@@ -551,6 +551,8 @@ class TestMiscellaneous(unittest.TestCase):
         # crasher from bug #7419
         self.assertRaises(locale.Error, locale.setlocale, 12345)
 
+    @unittest.skipIf(sys.platform == "win32",
+                     "Windows does not support the tr_TR locale")
     def test_getsetlocale_issue1813(self):
         # Issue #1813: setting and getting the locale under a Turkish locale
         oldlocale = locale.setlocale(locale.LC_CTYPE)
