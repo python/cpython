@@ -341,10 +341,6 @@ class IOBase(metaclass=abc.ABCMeta):
         raise UnsupportedOperation("%s.%s() not supported" %
                                    (self.__class__.__name__, name))
 
-    def __class_getitem__(cls, item):
-        """Internal: PEP 585."""
-        return types.GenericAlias(cls, item)
-
     ### Positioning ###
 
     def seek(self, pos, whence=0):

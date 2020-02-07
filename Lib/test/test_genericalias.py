@@ -7,7 +7,6 @@ from collections import (
 )
 from collections.abc import *
 from contextlib import AbstractContextManager, AbstractAsyncContextManager
-from io import IOBase
 from re import Pattern, Match
 from types import GenericAlias
 
@@ -21,7 +20,6 @@ class BaseTest(unittest.TestCase):
         for t in (type, tuple, list, dict, set, frozenset,
                   defaultdict, deque,
                   OrderedDict, Counter, UserDict, UserList,
-                  IOBase,
                   Pattern, Match,
                   AbstractContextManager, AbstractAsyncContextManager,
                   Awaitable, Coroutine,
