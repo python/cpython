@@ -1007,9 +1007,6 @@ class MathTests(unittest.TestCase):
             self.assertEqual(lcm(-b, -a), d)
         self.assertRaises(TypeError, lcm, 120.0, 84)
         self.assertRaises(TypeError, lcm, 120, 84.0)
-        self.assertRaises(TypeError, lcm, "a", 7)
-        self.assertRaises(TypeError, lcm, 7, "a")
-        self.assertRaises(TypeError, lcm, "a", "a")
 
     def testLdexp(self):
         self.assertRaises(TypeError, math.ldexp)
