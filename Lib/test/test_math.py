@@ -976,6 +976,7 @@ class MathTests(unittest.TestCase):
 
     def test_lcm(self):
         lcm = math.lcm
+        self.assertEqual(lcm(0, 0), 0)
         self.assertEqual(lcm(1, 0), 0)
         self.assertEqual(lcm(-1, 0), 0)
         self.assertEqual(lcm(0, 1), 0)
@@ -1006,7 +1007,6 @@ class MathTests(unittest.TestCase):
             self.assertEqual(lcm(-b, -a), d)
         self.assertRaises(TypeError, lcm, 120.0, 84)
         self.assertRaises(TypeError, lcm, 120, 84.0)
-        self.assertRaises(ZeroDivisionError, lcm, 0, 0)
 
     def testLdexp(self):
         self.assertRaises(TypeError, math.ldexp)
