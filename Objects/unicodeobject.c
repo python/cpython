@@ -1037,8 +1037,12 @@ resize_compact(PyObject *unicode, Py_ssize_t length)
         _PyUnicode_UTF8(unicode) = NULL;
         _PyUnicode_UTF8_LENGTH(unicode) = 0;
     }
-    _Py_DEC_REFTOTAL;
+#ifdef Py_REF_DEBUG
+    _Py_RefTotal--;
+#endif
+#ifdef Py_TRACE_REFS
     _Py_ForgetReference(unicode);
+#endif
 
     new_unicode = (PyObject *)PyObject_REALLOC(unicode, new_size);
     if (new_unicode == NULL) {
@@ -1899,7 +1903,7 @@ unicode_dealloc(PyObject *unicode)
 
     case SSTATE_INTERNED_MORTAL:
         /* revive dead object temporarily for DelItem */
-        Py_REFCNT(unicode) = 3;
+        Py_SET_REFCNT(unicode, 3);
         if (PyDict_DelItem(interned, unicode) != 0) {
             _PyErr_WriteUnraisableMsg("deletion of interned string failed",
                                       NULL);
@@ -3611,39 +3615,32 @@ PyObject *
 PyUnicode_EncodeFSDefault(PyObject *unicode)
 {
     PyInterpreterState *interp = _PyInterpreterState_GET_UNSAFE();
-#ifdef _Py_FORCE_UTF8_FS_ENCODING
-    if (interp->fs_codec.encoding) {
+    if (interp->fs_codec.utf8) {
         return unicode_encode_utf8(unicode,
                                    interp->fs_codec.error_handler,
                                    interp->fs_codec.errors);
     }
-    else {
-        const wchar_t *filesystem_errors = interp->config.filesystem_errors;
-        _Py_error_handler errors;
-        errors = get_error_handler_wide(filesystem_errors);
-        assert(errors != _Py_ERROR_UNKNOWN);
-        return unicode_encode_utf8(unicode, errors, NULL);
-    }
-#else
-    /* Bootstrap check: if the filesystem codec is implemented in Python, we
-       cannot use it to encode and decode filenames before it is loaded. Load
-       the Python codec requires to encode at least its own filename. Use the C
-       implementation of the locale codec until the codec registry is
-       initialized and the Python codec is loaded.
-       See _PyUnicode_InitEncodings(). */
-    if (interp->fs_codec.encoding) {
+#ifndef _Py_FORCE_UTF8_FS_ENCODING
+    else if (interp->fs_codec.encoding) {
         return PyUnicode_AsEncodedString(unicode,
                                          interp->fs_codec.encoding,
                                          interp->fs_codec.errors);
     }
-    else {
-        const wchar_t *filesystem_errors = interp->config.filesystem_errors;
-        _Py_error_handler errors;
-        errors = get_error_handler_wide(filesystem_errors);
-        assert(errors != _Py_ERROR_UNKNOWN);
-        return unicode_encode_locale(unicode, errors, 0);
-    }
 #endif
+    else {
+        /* Before _PyUnicode_InitEncodings() is called, the Python codec
+           machinery is not ready and so cannot be used:
+           use wcstombs() in this case. */
+        const wchar_t *filesystem_errors = interp->config.filesystem_errors;
+        assert(filesystem_errors != NULL);
+        _Py_error_handler errors = get_error_handler_wide(filesystem_errors);
+        assert(errors != _Py_ERROR_UNKNOWN);
+#ifdef _Py_FORCE_UTF8_FS_ENCODING
+        return unicode_encode_utf8(unicode, errors, NULL);
+#else
+        return unicode_encode_locale(unicode, errors, 0);
+#endif
+    }
 }
 
 PyObject *
@@ -3853,39 +3850,33 @@ PyObject*
 PyUnicode_DecodeFSDefaultAndSize(const char *s, Py_ssize_t size)
 {
     PyInterpreterState *interp = _PyInterpreterState_GET_UNSAFE();
-#ifdef _Py_FORCE_UTF8_FS_ENCODING
-    if (interp->fs_codec.encoding) {
+    if (interp->fs_codec.utf8) {
         return unicode_decode_utf8(s, size,
                                    interp->fs_codec.error_handler,
                                    interp->fs_codec.errors,
                                    NULL);
     }
-    else {
-        const wchar_t *filesystem_errors = interp->config.filesystem_errors;
-        _Py_error_handler errors;
-        errors = get_error_handler_wide(filesystem_errors);
-        assert(errors != _Py_ERROR_UNKNOWN);
-        return unicode_decode_utf8(s, size, errors, NULL, NULL);
-    }
-#else
-    /* Bootstrap check: if the filesystem codec is implemented in Python, we
-       cannot use it to encode and decode filenames before it is loaded. Load
-       the Python codec requires to encode at least its own filename. Use the C
-       implementation of the locale codec until the codec registry is
-       initialized and the Python codec is loaded.
-       See _PyUnicode_InitEncodings(). */
-    if (interp->fs_codec.encoding) {
+#ifndef _Py_FORCE_UTF8_FS_ENCODING
+    else if (interp->fs_codec.encoding) {
         return PyUnicode_Decode(s, size,
                                 interp->fs_codec.encoding,
                                 interp->fs_codec.errors);
     }
-    else {
-        const wchar_t *filesystem_errors = interp->config.filesystem_errors;
-        _Py_error_handler errors;
-        errors = get_error_handler_wide(filesystem_errors);
-        return unicode_decode_locale(s, size, errors, 0);
-    }
 #endif
+    else {
+        /* Before _PyUnicode_InitEncodings() is called, the Python codec
+           machinery is not ready and so cannot be used:
+           use mbstowcs() in this case. */
+        const wchar_t *filesystem_errors = interp->config.filesystem_errors;
+        assert(filesystem_errors != NULL);
+        _Py_error_handler errors = get_error_handler_wide(filesystem_errors);
+        assert(errors != _Py_ERROR_UNKNOWN);
+#ifdef _Py_FORCE_UTF8_FS_ENCODING
+        return unicode_decode_utf8(s, size, errors, NULL, NULL);
+#else
+        return unicode_decode_locale(s, size, errors, 0);
+#endif
+    }
 }
 
 
@@ -8410,7 +8401,7 @@ charmapencode_lookup(Py_UCS4 c, PyObject *mapping)
         /* wrong return value */
         PyErr_Format(PyExc_TypeError,
                      "character mapping must return integer, bytes or None, not %.400s",
-                     x->ob_type->tp_name);
+                     Py_TYPE(x)->tp_name);
         Py_DECREF(x);
         return NULL;
     }
@@ -11091,8 +11082,8 @@ PyUnicode_Compare(PyObject *left, PyObject *right)
     }
     PyErr_Format(PyExc_TypeError,
                  "Can't compare %.100s and %.100s",
-                 left->ob_type->tp_name,
-                 right->ob_type->tp_name);
+                 Py_TYPE(left)->tp_name,
+                 Py_TYPE(right)->tp_name);
     return -1;
 }
 
@@ -11362,7 +11353,7 @@ PyUnicode_Concat(PyObject *left, PyObject *right)
     if (!PyUnicode_Check(right)) {
         PyErr_Format(PyExc_TypeError,
                      "can only concatenate str (not \"%.200s\") to str",
-                     right->ob_type->tp_name);
+                     Py_TYPE(right)->tp_name);
         return NULL;
     }
     if (PyUnicode_READY(right) < 0)
@@ -15376,7 +15367,7 @@ PyUnicode_InternInPlace(PyObject **p)
     }
     /* The two references in interned are not counted by refcnt.
        The deallocator will take care of this */
-    Py_REFCNT(s) -= 2;
+    Py_SET_REFCNT(s, Py_REFCNT(s) - 2);
     _PyUnicode_STATE(s).interned = SSTATE_INTERNED_MORTAL;
 }
 
@@ -15845,9 +15836,15 @@ init_fs_codec(PyInterpreterState *interp)
 
     PyMem_RawFree(interp->fs_codec.encoding);
     interp->fs_codec.encoding = encoding;
+    /* encoding has been normalized by init_fs_encoding() */
+    interp->fs_codec.utf8 = (strcmp(encoding, "utf-8") == 0);
     PyMem_RawFree(interp->fs_codec.errors);
     interp->fs_codec.errors = errors;
     interp->fs_codec.error_handler = error_handler;
+
+#ifdef _Py_FORCE_UTF8_FS_ENCODING
+    assert(interp->fs_codec.utf8 == 1);
+#endif
 
     /* At this point, PyUnicode_EncodeFSDefault() and
        PyUnicode_DecodeFSDefault() can now use the Python codec rather than
@@ -15895,6 +15892,19 @@ _PyUnicode_InitEncodings(PyThreadState *tstate)
     }
 
     return init_stdio_encoding(tstate);
+}
+
+
+static void
+_PyUnicode_FiniEncodings(PyThreadState *tstate)
+{
+    PyInterpreterState *interp = tstate->interp;
+    PyMem_RawFree(interp->fs_codec.encoding);
+    interp->fs_codec.encoding = NULL;
+    interp->fs_codec.utf8 = 0;
+    PyMem_RawFree(interp->fs_codec.errors);
+    interp->fs_codec.errors = NULL;
+    interp->fs_codec.error_handler = _Py_ERROR_UNKNOWN;
 }
 
 
@@ -15950,12 +15960,7 @@ _PyUnicode_Fini(PyThreadState *tstate)
         _PyUnicode_ClearStaticStrings();
     }
 
-    PyInterpreterState *interp = _PyInterpreterState_GET_UNSAFE();
-    PyMem_RawFree(interp->fs_codec.encoding);
-    interp->fs_codec.encoding = NULL;
-    PyMem_RawFree(interp->fs_codec.errors);
-    interp->fs_codec.errors = NULL;
-    interp->config.filesystem_errors = (wchar_t *)_Py_ERROR_UNKNOWN;
+    _PyUnicode_FiniEncodings(tstate);
 }
 
 

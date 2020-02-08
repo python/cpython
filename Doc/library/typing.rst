@@ -1028,7 +1028,7 @@ The module defines the following classes, functions and decorators:
    runtime we intentionally don't check anything (we want this
    to be as fast as possible).
 
-.. function:: get_type_hints(obj[, globals[, locals]])
+.. function:: get_type_hints(obj, globalns=None, localns=None, include_extras=False)
 
    Return a dictionary containing type hints for a function, method, module
    or class object.
@@ -1040,6 +1040,22 @@ The module defines the following classes, functions and decorators:
    value equal to ``None`` is set. For a class ``C``, return
    a dictionary constructed by merging all the ``__annotations__`` along
    ``C.__mro__`` in reverse order.
+
+   The function recursively replaces all ``Annotated[T, ...]`` with ``T``,
+   unless ``include_extras`` is set to ``True`` (see :class:`Annotated` for
+   more information). For example::
+
+       class Student(NamedTuple):
+           name: Annotated[str, 'some marker']
+
+       get_type_hints(Student) == {'name': str}
+       get_type_hints(Student, include_extras=False) == {'name': str}
+       get_type_hints(Student, include_extras=True) == {
+           'name': Annotated[str, 'some marker']
+       }
+
+   .. versionchanged:: 3.9
+      Added ``include_extras`` parameter as part of :pep:`593`.
 
 .. function:: get_origin(tp)
 .. function:: get_args(tp)
@@ -1372,3 +1388,87 @@ The module defines the following classes, functions and decorators:
    evaluated, so the second annotation does not need to be enclosed in quotes.
 
    .. versionadded:: 3.5.2
+
+.. data:: Annotated
+
+   A type, introduced in :pep:`593` (``Flexible function and variable
+   annotations``), to decorate existing types with context-specific metadata
+   (possibly multiple pieces of it, as ``Annotated`` is variadic).
+   Specifically, a type ``T`` can be annotated with metadata ``x`` via the
+   typehint ``Annotated[T, x]``. This metadata can be used for either static
+   analysis or at runtime. If a library (or tool) encounters a typehint
+   ``Annotated[T, x]`` and has no special logic for metadata ``x``, it
+   should ignore it and simply treat the type as ``T``. Unlike the
+   ``no_type_check`` functionality that currently exists in the ``typing``
+   module which completely disables typechecking annotations on a function
+   or a class, the ``Annotated`` type allows for both static typechecking
+   of ``T`` (e.g., via mypy or Pyre, which can safely ignore ``x``)
+   together with runtime access to ``x`` within a specific application.
+
+   Ultimately, the responsibility of how to interpret the annotations (if
+   at all) is the responsibility of the tool or library encountering the
+   ``Annotated`` type. A tool or library encountering an ``Annotated`` type
+   can scan through the annotations to determine if they are of interest
+   (e.g., using ``isinstance()``).
+
+   When a tool or a library does not support annotations or encounters an
+   unknown annotation it should just ignore it and treat annotated type as
+   the underlying type.
+
+   It's up to the tool consuming the annotations to decide whether the
+   client is allowed to have several annotations on one type and how to
+   merge those annotations.
+
+   Since the ``Annotated`` type allows you to put several annotations of
+   the same (or different) type(s) on any node, the tools or libraries
+   consuming those annotations are in charge of dealing with potential
+   duplicates. For example, if you are doing value range analysis you might
+   allow this::
+
+       T1 = Annotated[int, ValueRange(-10, 5)]
+       T2 = Annotated[T1, ValueRange(-20, 3)]
+
+   Passing ``include_extras=True`` to :func:`get_type_hints` lets one
+   access the extra annotations at runtime.
+
+   The details of the syntax:
+
+   * The first argument to ``Annotated`` must be a valid type
+
+   * Multiple type annotations are supported (``Annotated`` supports variadic
+     arguments)::
+
+       Annotated[int, ValueRange(3, 10), ctype("char")]
+
+   * ``Annotated`` must be called with at least two arguments (
+     ``Annotated[int]`` is not valid)
+
+   * The order of the annotations is preserved and matters for equality
+     checks::
+
+       Annotated[int, ValueRange(3, 10), ctype("char")] != Annotated[
+           int, ctype("char"), ValueRange(3, 10)
+       ]
+
+   * Nested ``Annotated`` types are flattened, with metadata ordered
+     starting with the innermost annotation::
+
+       Annotated[Annotated[int, ValueRange(3, 10)], ctype("char")] == Annotated[
+           int, ValueRange(3, 10), ctype("char")
+       ]
+
+   * Duplicated annotations are not removed::
+
+       Annotated[int, ValueRange(3, 10)] != Annotated[
+           int, ValueRange(3, 10), ValueRange(3, 10)
+       ]
+
+   * ``Annotated`` can be used with nested and generic aliases::
+
+       T = TypeVar('T')
+       Vec = Annotated[List[Tuple[T, T]], MaxLen(10)]
+       V = Vec[int]
+
+       V == Annotated[List[Tuple[int, int]], MaxLen(10)]
+
+   .. versionadded:: 3.9

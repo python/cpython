@@ -256,7 +256,7 @@ PyTypeObject PyST_Type = {
 
 
 /* PyST_Type isn't subclassable, so just check ob_type */
-#define PyST_Object_Check(v) ((v)->ob_type == &PyST_Type)
+#define PyST_Object_Check(v) (Py_TYPE(v) == &PyST_Type)
 
 static int
 parser_compare_nodes(node *left, node *right)
