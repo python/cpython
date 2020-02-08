@@ -2039,7 +2039,7 @@ math_lcm_impl(PyObject *module, PyObject *a, PyObject *b)
     if (b == NULL) {
         return NULL;
     }
-    if (a == 0) {
+    if (a == 0 && b == 0) {
         return 0;
     }
     else {
