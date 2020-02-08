@@ -2911,7 +2911,7 @@ os_chdir_impl(PyObject *module, path_t *path)
 {
     int result;
 
-    if (PySys_Audit("os.chdir", "O",
+    if (PySys_Audit("os.chdir", "(O)",
                     path->object ? path->object : Py_None) < 0) {
         return NULL;
     }
@@ -2955,7 +2955,7 @@ static PyObject *
 os_fchdir_impl(PyObject *module, int fd)
 /*[clinic end generated code: output=42e064ec4dc00ab0 input=18e816479a2fa985]*/
 {
-    if (PySys_Audit("os.chdir", "i", fd) < 0) {
+    if (PySys_Audit("os.chdir", "(i)", fd) < 0) {
         return NULL;
     }
     return posix_fildes_fd(fd, fchdir);
@@ -10319,7 +10319,7 @@ static PyObject *
 os_unsetenv_impl(PyObject *module, PyObject *name)
 /*[clinic end generated code: output=54c4137ab1834f02 input=4d6a1747cc526d2f]*/
 {
-    if (PySys_Audit("os.unsetenv", "O", name ? name : Py_None) < 0) {
+    if (PySys_Audit("os.unsetenv", "(O)", name ? name : Py_None) < 0) {
         return NULL;
     }
     return win32_putenv(name, NULL);
@@ -10337,7 +10337,7 @@ static PyObject *
 os_unsetenv_impl(PyObject *module, PyObject *name)
 /*[clinic end generated code: output=54c4137ab1834f02 input=2bb5288a599c7107]*/
 {
-    if (PySys_Audit("os.unsetenv", "O", name ? name : Py_None) < 0) {
+    if (PySys_Audit("os.unsetenv", "(O)", name ? name : Py_None) < 0) {
         return NULL;
     }
 #ifdef HAVE_BROKEN_UNSETENV
@@ -12222,7 +12222,7 @@ os_listxattr_impl(PyObject *module, path_t *path, int follow_symlinks)
     if (fd_and_follow_symlinks_invalid("listxattr", path->fd, follow_symlinks))
         goto exit;
 
-    if (PySys_Audit("os.listxattr", "O",
+    if (PySys_Audit("os.listxattr", "(O)",
                     path->object ? path->object : Py_None) < 0) {
         return NULL;
     }
@@ -13703,7 +13703,7 @@ os__add_dll_directory_impl(PyObject *module, path_t *path)
     DLL_DIRECTORY_COOKIE cookie = 0;
     DWORD err = 0;
 
-    if (PySys_Audit("os.add_dll_directory", "O",
+    if (PySys_Audit("os.add_dll_directory", "(O)",
                     path->object ? path->object : Py_None) < 0) {
         return NULL;
     }
