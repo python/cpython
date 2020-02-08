@@ -443,7 +443,7 @@ Opening network connections
 
    .. versionadded:: 3.8
 
-      The *happy_eyeballs_delay* and *interleave* parameters.
+      Added the *happy_eyeballs_delay* and *interleave* parameters.
 
    .. versionadded:: 3.7
 
