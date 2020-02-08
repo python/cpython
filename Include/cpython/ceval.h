@@ -2,10 +2,6 @@
 #  error "this header file must not be included directly"
 #endif
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 PyAPI_FUNC(void) PyEval_SetProfile(Py_tracefunc, PyObject *);
 PyAPI_FUNC(void) PyEval_SetTrace(Py_tracefunc, PyObject *);
 PyAPI_FUNC(int) _PyEval_GetCoroutineOriginTrackingDepth(void);
@@ -86,7 +82,3 @@ static inline void _Py_LeaveRecursiveCall_inline(void)  {
 }
 
 #define Py_LeaveRecursiveCall() _Py_LeaveRecursiveCall_inline()
-
-#ifdef __cplusplus
-}
-#endif

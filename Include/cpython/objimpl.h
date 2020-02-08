@@ -2,10 +2,6 @@
 #  error "this header file must not be included directly"
 #endif
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 /* Inline functions trading binary compatibility for speed:
    PyObject_INIT() is the fast version of PyObject_Init(), and
    PyObject_INIT_VAR() is the fast version of PyObject_InitVar().
@@ -140,7 +136,3 @@ PyAPI_FUNC(PyObject *) _PyObject_GC_Calloc(size_t size);
 
 #define PyObject_GET_WEAKREFS_LISTPTR(o) \
     ((PyObject **) (((char *) (o)) + Py_TYPE(o)->tp_weaklistoffset))
-
-#ifdef __cplusplus
-}
-#endif

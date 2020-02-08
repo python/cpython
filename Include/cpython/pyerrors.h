@@ -2,10 +2,6 @@
 #  error "this header file must not be included directly"
 #endif
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 /* Error objects */
 
 /* PyException_HEAD defines the initial segment of every exception class. */
@@ -177,7 +173,3 @@ PyAPI_FUNC(PyObject *) _PyUnicodeTranslateError_Create(
 PyAPI_FUNC(void) _PyErr_WriteUnraisableMsg(
     const char *err_msg,
     PyObject *obj);
-
-#ifdef __cplusplus
-}
-#endif

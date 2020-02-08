@@ -2,10 +2,6 @@
 #  error "this header file must not be included directly"
 #endif
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 PyMODINIT_FUNC PyInit__imp(void);
 
 PyAPI_FUNC(int) _PyImport_IsInitialized(PyInterpreterState *);
@@ -44,7 +40,3 @@ struct _frozen {
    collection of frozen modules: */
 
 PyAPI_DATA(const struct _frozen *) PyImport_FrozenModules;
-
-#ifdef __cplusplus
-}
-#endif

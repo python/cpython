@@ -4,10 +4,6 @@
 #  error "this header file must not be included directly"
 #endif
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 typedef struct {
     int b_type;                 /* what kind of block this is */
     int b_handler;              /* where to jump to find handler */
@@ -81,7 +77,3 @@ PyAPI_FUNC(void) _PyFrame_DebugMallocStats(FILE *out);
 
 /* Return the line of code the frame is currently executing. */
 PyAPI_FUNC(int) PyFrame_GetLineNumber(PyFrameObject *);
-
-#ifdef __cplusplus
-}
-#endif
