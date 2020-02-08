@@ -137,6 +137,13 @@ details, see the documentation for ``loop.create_datagram_endpoint()``.
 (Contributed by Kyle Stanley, Antoine Pitrou, and Yury Selivanov in
 :issue:`37228`.)
 
+Added :class:`asyncio.ThreadPool`, an asynchronous context manager for
+concurrently running IO-bound functions without blocking the event loop.
+It essentially works as a higher-level version of
+:meth:`asyncio.loop.run_in_executor` that can take keyword arguments and
+be used as a context manager using ``async with``.
+(Contributed by Kyle Stanley in :issue:`32309`.)
+
 Added a new :term:`coroutine` :meth:`~asyncio.loop.shutdown_default_executor`
 that schedules a shutdown for the default executor that waits on the
 :class:`~concurrent.futures.ThreadPoolExecutor` to finish closing. Also,
