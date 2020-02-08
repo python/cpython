@@ -43,7 +43,7 @@ thread or process) without blocking the event loop.
       within the threadpool, and return a :class:`asyncio.Future` object
       that represents the eventual result of its execution. ::
 
-          with asyncio.ThreadPool() as pool:
+          async with asyncio.ThreadPool() as pool:
               await pool.run(time.sleep, 1)
 
       Raises a :exc:`RuntimeError` if the threadpool is *not* running.
@@ -87,7 +87,7 @@ Here's an example of concurrently running two IO-bound functions using
         print("other_blocking_io complete")
 
     async def main():
-        with asyncio.ThreadPool() as pool:
+        async with asyncio.ThreadPool() as pool:
             await asyncio.gather(
                 pool.run(blocking_io),
                 pool.run(other_io))

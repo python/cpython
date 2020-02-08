@@ -56,22 +56,22 @@ class ThreadPool(AbstractPool):
     import asyncio
 
     def blocking_io():
-            print("start blocking_io")
-            with open('/dev/urandom', 'rb') as f:
-                    f.read(100_000)
-            print("blocking_io complete")
+        print("start blocking_io")
+        with open('/dev/urandom', 'rb') as f:
+            f.read(100_000)
+        print("blocking_io complete")
 
     def other_blocking_io():
-            print("start other_blocking_io")
-            with open('/dev/zero', 'rb') as f:
-                    f.read(10)
-            print("other_blocking_io complete")
+        print("start other_blocking_io")
+        with open('/dev/zero', 'rb') as f:
+            f.read(10)
+        print("other_blocking_io complete")
 
     async def main():
-            with asyncio.ThreadPool() as pool:
-                    await asyncio.gather(
-                            pool.run(blocking_io),
-                            pool.run(other_io))
+        async with asyncio.ThreadPool() as pool:
+            await asyncio.gather(
+                pool.run(blocking_io),
+                pool.run(other_io))
 
     asyncio.run(main())
     """
