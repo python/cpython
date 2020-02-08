@@ -1715,11 +1715,12 @@ ast_for_dotted_name(struct compiling *c, const node *n)
         return NULL;
 
     for (i = 2; i < NCH(n); i+=2) {
-        id = NEW_IDENTIFIER(CHILD(n, i));
+        const node *child = CHILD(n, i);
+        id = NEW_IDENTIFIER(child);
         if (!id)
             return NULL;
         e = Attribute(e, id, Load, lineno, col_offset,
-                      n->n_end_lineno, n->n_end_col_offset, c->c_arena);
+                      child->n_end_lineno, child->n_end_col_offset, c->c_arena);
         if (!e)
             return NULL;
     }

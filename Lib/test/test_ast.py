@@ -140,6 +140,8 @@ exec_tests = [
     "@deco1\n@deco2()\n@deco3(1)\nclass C: pass",
     # Decorator with generator argument
     "@deco(a for a in b)\ndef f(): pass",
+    # Decorator with attribute
+    "@a.b.c\ndef f(): pass",
     # Simple assignment expression
     "(a := 1)",
     # Positional-only arguments
@@ -613,6 +615,11 @@ class AST_Tests(unittest.TestCase):
         self.assertEqual(grandchild_binop.lineno, 1)
         self.assertEqual(grandchild_binop.end_col_offset, 3)
         self.assertEqual(grandchild_binop.end_lineno, 1)
+
+    def test_issue39579_dotted_name_end_col_offset(self):
+        tree = ast.parse('@a.b.c\ndef f(): pass')
+        attr_b = tree.body[0].decorator_list[0].value
+        self.assertEqual(attr_b.end_col_offset, 4)
 
 class ASTHelpers_Test(unittest.TestCase):
     maxDiff = None
@@ -1838,6 +1845,7 @@ exec_results = [
 ('Module', [('AsyncFunctionDef', (4, 0), 'f', ('arguments', [], [], None, [], [], None, []), [('Pass', (4, 15))], [('Name', (1, 1), 'deco1', ('Load',)), ('Call', (2, 1), ('Name', (2, 1), 'deco2', ('Load',)), [], []), ('Call', (3, 1), ('Name', (3, 1), 'deco3', ('Load',)), [('Constant', (3, 7), 1, None)], [])], None, None)], []),
 ('Module', [('ClassDef', (4, 0), 'C', [], [], [('Pass', (4, 9))], [('Name', (1, 1), 'deco1', ('Load',)), ('Call', (2, 1), ('Name', (2, 1), 'deco2', ('Load',)), [], []), ('Call', (3, 1), ('Name', (3, 1), 'deco3', ('Load',)), [('Constant', (3, 7), 1, None)], [])])], []),
 ('Module', [('FunctionDef', (2, 0), 'f', ('arguments', [], [], None, [], [], None, []), [('Pass', (2, 9))], [('Call', (1, 1), ('Name', (1, 1), 'deco', ('Load',)), [('GeneratorExp', (1, 5), ('Name', (1, 6), 'a', ('Load',)), [('comprehension', ('Name', (1, 12), 'a', ('Store',)), ('Name', (1, 17), 'b', ('Load',)), [], 0)])], [])], None, None)], []),
+('Module', [('FunctionDef', (2, 0), 'f', ('arguments', [], [], None, [], [], None, []), [('Pass', (2, 9))], [('Attribute', (1, 1), ('Attribute', (1, 1), ('Name', (1, 1), 'a', ('Load',)), 'b', ('Load',)), 'c', ('Load',))], None, None)], []),
 ('Module', [('Expr', (1, 0), ('NamedExpr', (1, 1), ('Name', (1, 1), 'a', ('Store',)), ('Constant', (1, 6), 1, None)))], []),
 ('Module', [('FunctionDef', (1, 0), 'f', ('arguments', [('arg', (1, 6), 'a', None, None)], [], None, [], [], None, []), [('Pass', (1, 14))], [], None, None)], []),
 ('Module', [('FunctionDef', (1, 0), 'f', ('arguments', [('arg', (1, 6), 'a', None, None)], [('arg', (1, 12), 'c', None, None), ('arg', (1, 15), 'd', None, None), ('arg', (1, 18), 'e', None, None)], None, [], [], None, []), [('Pass', (1, 22))], [], None, None)], []),
