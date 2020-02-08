@@ -1,0 +1,5 @@
+Added :class:`asyncio.ThreadPool`, an asynchronous context manager for
+concurrently running IO-bound functions without blocking the event loop.
+It essentially works as a higher-level version of
+:meth:`asyncio.loop.run_in_executor` that can take keyword arguments and
+be used as a context manager using ``async with``.
