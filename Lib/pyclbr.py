@@ -203,13 +203,13 @@ def _create_tree(fullmodule, path, fname, source, tree, inpackage):
                 lineno, thisindent = start
                 # Close previous nested classes and defs.
                 while stack and stack[-1][1] >= thisindent:
-                    stack[-1].end_lineno = start - 1
+                    setattr(stack[-1][0], 'end_lineno', start[0] - 1)
                     del stack[-1]
             elif token == 'def':
                 lineno, thisindent = start
                 # Close previous nested classes and defs.
                 while stack and stack[-1][1] >= thisindent:
-                    stack[-1].end_lineno = start - 1
+                    setattr(stack[-1][0], 'end_lineno', start[0] - 1)
                     del stack[-1]
                 tokentype, func_name, start = next(g)[0:3]
                 if tokentype != NAME:
@@ -227,7 +227,7 @@ def _create_tree(fullmodule, path, fname, source, tree, inpackage):
                 lineno, thisindent = start
                 # Close previous nested classes and defs.
                 while stack and stack[-1][1] >= thisindent:
-                    stack[-1].end_lineno = start - 1
+                    setattr(stack[-1][0], 'end_lineno', start[0] - 1)
                     del stack[-1]
                 tokentype, class_name, start = next(g)[0:3]
                 if tokentype != NAME:
