@@ -43,7 +43,6 @@ import sys
 import importlib.util
 import tokenize
 from token import NAME, DEDENT, OP
-import inspect
 
 __all__ = ["readmodule", "readmodule_ex", "Class", "Function"]
 
@@ -194,7 +193,7 @@ def _create_tree(fullmodule, path, fname, source, tree, inpackage):
     """
     f = io.StringIO(source)
 
-    stack = []
+    stack = [] # Initialize stack of (class, indent) pairs.
 
     g = tokenize.generate_tokens(f.readline)
     try:
