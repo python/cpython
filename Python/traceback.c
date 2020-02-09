@@ -502,7 +502,7 @@ _Py_DisplaySourceLine(PyObject *f, PyObject *filename, int lineno, int indent)
 }
 
 static int
-tb_displayline(PyObject *f, PyObject *filename, int lineno, PyObject *name)
+tb_displayline(PyObject *f, PyObject *filename, int lineno, const PyObject *name)
 {
     int err;
     PyObject *line;
@@ -543,7 +543,7 @@ tb_print_line_repeated(PyObject *f, long cnt)
 }
 
 static int
-tb_printinternal(PyTracebackObject *tb, PyObject *f, long limit)
+tb_printinternal(const PyTracebackObject *tb, PyObject *f, long limit)
 {
     int err = 0;
     Py_ssize_t depth = 0;
@@ -551,7 +551,7 @@ tb_printinternal(PyTracebackObject *tb, PyObject *f, long limit)
     int last_line = -1;
     PyObject *last_name = NULL;
     long cnt = 0;
-    PyTracebackObject *tb1 = tb;
+    const PyTracebackObject *tb1 = tb;
     while (tb1 != NULL) {
         depth++;
         tb1 = tb1->tb_next;
@@ -619,7 +619,7 @@ PyTraceBack_Print(PyObject *v, PyObject *f)
     }
     err = PyFile_WriteString("Traceback (most recent call last):\n", f);
     if (!err)
-        err = tb_printinternal((PyTracebackObject *)v, f, limit);
+        err = tb_printinternal((const PyTracebackObject *)v, f, limit);
     return err;
 }
 
@@ -752,7 +752,7 @@ _Py_DumpASCII(int fd, PyObject *text)
    This function is signal safe. */
 
 static void
-dump_frame(int fd, PyFrameObject *frame)
+dump_frame(int fd, const PyFrameObject *frame)
 {
     PyCodeObject *code;
     int lineno;
@@ -794,7 +794,7 @@ dump_frame(int fd, PyFrameObject *frame)
 static void
 dump_traceback(int fd, PyThreadState *tstate, int write_header)
 {
-    PyFrameObject *frame;
+    const PyFrameObject *frame;
     unsigned int depth;
 
     if (write_header) {
@@ -839,7 +839,7 @@ _Py_DumpTraceback(int fd, PyThreadState *tstate)
    This function is signal safe. */
 
 static void
-write_thread_id(int fd, PyThreadState *tstate, int is_current)
+write_thread_id(int fd, const PyThreadState *tstate, int is_current)
 {
     if (is_current)
         PUTS(fd, "Current thread 0x");
