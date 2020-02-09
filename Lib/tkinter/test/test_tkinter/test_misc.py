@@ -200,24 +200,19 @@ class MiscTest(AbstractTkTest, unittest.TestCase):
         self.assertEqual(rgb('red'), (65535, 0, 0))
         self.assertEqual(rgb('dark slate blue'), (18504, 15677, 35723))
         # #RGB - extends each 4-bit hex value to be 16-bit.
-        self.assertEqual(rgb('#f00'),
-                         (int('ffff', 16), 0, 0))
+        self.assertEqual(rgb('#4CE'), (0x4444, 0xCCCC, 0xEEEE))
         # #RRGGBB - extends each 8-bit hex value to be 16-bit.
-        self.assertTrue(rgb('#483d8b') ==
-                        (int('4848', 16), int('3d3d', 16), int('8b8b', 16)) ==
-                        (18504, 15677, 35723))  # dark slate blue
+        self.assertEqual(rgb('#483d8b'), (0x4848, 0x3d3d, 0x8b8b))
         # #RRRGGGBBB - uses 2 highest order bits for each color.
-        self.assertEqual(rgb('#123456789'),
-                         (int('1212', 16), int('4545', 16), int('7878', 16)))
+        self.assertEqual(rgb('#123456789'), (0x1212, 0x4545, 0x7878))
         # #RRRRGGGGBBBB - uses 2 highest order bits for each color.
-        self.assertEqual(rgb('#1234567800ff'),
-                         (int('1212', 16), int('5656', 16), int('0000', 16)))
+        self.assertEqual(rgb('#123456789abc'), (0x1212, 0x5656, 0x9a9a))
         # Invalid string.
         with self.assertRaises(tkinter.TclError):
-            rgb('#1234567890')
+            rgb('#123456789a')
         # RGB triplet is invalid input.
         with self.assertRaises(tkinter.TclError):
-            rgb((255, 0, 0))
+            rgb((111, 78, 55))
 
 
 tests_gui = (MiscTest, )
