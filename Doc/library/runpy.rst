@@ -141,9 +141,9 @@ The :mod:`runpy` module provides two functions:
    A number of alterations are also made to the :mod:`sys` module. Firstly,
    ``sys.path`` may be altered as described above. ``sys.argv[0]`` is updated
    with the value of ``file_path`` and ``sys.modules[__name__]`` is updated
-   with a temporary module object for the module being executed. Both
-   ``sys.argv[0]`` and ``sys.modules[__name__]`` are restored to their
-   original values before the function returns.
+   with a temporary module object for the module being executed. All
+   modifications to items in :mod:`sys` are reverted before the function
+   returns.
 
    Note that, unlike :func:`run_module`, the alterations made to :mod:`sys`
    are not optional in this function as these adjustments are essential to
