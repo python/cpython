@@ -1,7 +1,7 @@
 import unittest
 import tkinter
 from tkinter import colorchooser
-from test.support import requires, run_unittest, gc_collect
+from test.support import requires, run_unittest
 from tkinter.test.support import AbstractTkTest
 
 requires('gui')
