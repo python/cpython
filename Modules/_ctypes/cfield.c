@@ -1294,7 +1294,8 @@ s_set(void *ptr, PyObject *value, Py_ssize_t length)
     }
 
     data = PyBytes_AS_STRING(value);
-    size = strlen(data); /* XXX Why not Py_SIZE(value)? */
+    size = strlen(data);
+
     if (size < length) {
         /* This will copy the terminating NUL character
          * if there is space for it.
