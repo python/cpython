@@ -28,7 +28,6 @@ from idlelib import replace
 from idlelib import search
 from idlelib.tree import wheel_event
 from idlelib import window
-from idlelib.textview import FontSizer
 
 # The default tab setting for a Text widget, in average-width characters.
 TK_TABWIDTH_DEFAULT = 8
@@ -135,7 +134,6 @@ class EditorWindow(object):
                         'main', 'EditorWindow', 'height', type='int'),
                 }
         self.text = text = MultiCallCreator(Text)(text_frame, **text_options)
-        FontSizer(text)
         self.top.focused_widget = self.text
 
         self.createmenubar()
