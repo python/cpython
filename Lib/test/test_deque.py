@@ -191,6 +191,7 @@ class TestBasic(unittest.TestCase):
         d = deque([A(), A()])
         with self.assertRaises(RuntimeError):
             _ = 3 in d
+        d = deque([A(), A()])
         with self.assertRaises(RuntimeError):
             _ = d.count(3)
 
