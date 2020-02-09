@@ -11,29 +11,29 @@ class ChooserTest(AbstractTkTest, unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         AbstractTkTest.setUpClass.__func__(cls)
-        cls.cc = colorchooser.Chooser(initialcolor='red')
+        cls.cc = colorchooser.Chooser(initialcolor='dark blue slate')
 
     def test_fixoptions(self):
         cc = self.cc
         cc._fixoptions()
-        self.assertEqual(cc.options['initialcolor'], 'red')
+        self.assertEqual(cc.options['initialcolor'], 'dark blue slate')
 
-        cc.options['initialcolor'] = '#ffff00000000'
+        cc.options['initialcolor'] = '#D2D269691E1E'
         cc._fixoptions()
-        self.assertEqual(cc.options['initialcolor'], '#ffff00000000')
+        self.assertEqual(cc.options['initialcolor'], '#D2D269691E1E')
 
-        cc.options['initialcolor'] = (255, 0, 0)
+        cc.options['initialcolor'] = (210, 105, 30)
         cc._fixoptions()
-        self.assertEqual(cc.options['initialcolor'], '#ff0000')
+        self.assertEqual(cc.options['initialcolor'], '#d2691e')
 
     def test_fixresult(self):
         cc = self.cc
         self.assertEqual(cc._fixresult(self.root, ()), (None, None))
         self.assertEqual(cc._fixresult(self.root, ''), (None, None))
-        self.assertEqual(cc._fixresult(self.root, 'red'),
-                         ((255, 0, 0), 'red'))
-        self.assertEqual(cc._fixresult(self.root, '#ff0000'),
-                         ((255, 0, 0), '#ff0000'))
+        self.assertEqual(cc._fixresult(self.root, 'chocolate'),
+                         ((210, 105, 30), 'chocolate'))
+        self.assertEqual(cc._fixresult(self.root, '#2E8B57'),
+                         ((46, 139, 87), '#2E8B57'))
 
 
 tests_gui = (ChooserTest, )
