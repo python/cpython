@@ -1293,8 +1293,7 @@ s_set(void *ptr, PyObject *value, Py_ssize_t length)
         return NULL;
     }
 
-    data = PyBytes_AS_STRING(value);
-    size = strlen(data); /* XXX Why not Py_SIZE(value)? */
+    size = Py_SIZE(value);
     if (size < length) {
         /* This will copy the terminating NUL character
          * if there is space for it.
@@ -1306,6 +1305,8 @@ s_set(void *ptr, PyObject *value, Py_ssize_t length)
                      size, length);
         return NULL;
     }
+
+    data = PyBytes_AS_STRING(value);
     /* Also copy the terminating NUL character if there is space */
     memcpy((char *)ptr, data, size);
 
