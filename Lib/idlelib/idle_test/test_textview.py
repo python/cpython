@@ -281,11 +281,11 @@ class FontSizerTest(unittest.TestCase):
         eq = self.assertEqual
         text.focus_set()
 
-        eq(text.tk.split(text['font'])[1], '45')
+        eq(text.tk.splitlist(text['font'])[1], '45')
         text.event_generate('<<increase_font_size>>')
-        eq(text.tk.split(text['font'])[1], '46')
+        eq(text.tk.splitlist(text['font'])[1], '46')
         text.event_generate('<<increase_font_size>>')
-        eq(text.tk.split(text['font'])[1], '47')
+        eq(text.tk.splitlist(text['font'])[1], '47')
 
     def test_decrease_font_size_tuple(self):
         text = self.text
@@ -294,11 +294,11 @@ class FontSizerTest(unittest.TestCase):
         eq = self.assertEqual
         text.focus_set()
 
-        eq(text.tk.split(text['font'])[1], '45')
+        eq(text.tk.splitlist(text['font'])[1], '45')
         text.event_generate('<<decrease_font_size>>')
-        eq(text.tk.split(text['font'])[1], '44')
+        eq(text.tk.splitlist(text['font'])[1], '44')
         text.event_generate('<<decrease_font_size>>')
-        eq(text.tk.split(text['font'])[1], '43')
+        eq(text.tk.splitlist(text['font'])[1], '43')
 
 
 if __name__ == '__main__':

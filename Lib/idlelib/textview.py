@@ -54,7 +54,7 @@ class FontSizer:
                     font = Font(self.text, name=fontname, exists=True)
                     font['size'] = new_size(font['size'])
                 except TclError:
-                    font = list(self.text.tk.split(fontname))
+                    font = list(self.text.tk.splitlist(fontname))
                     if len(font) > 1:
                         font[1] = new_size(int(font[1]))
                 return font
