@@ -3674,6 +3674,27 @@ if hasattr(logging.handlers, 'QueueListener'):
                 # Make sure all tasks are done and .join won't block.
                 log_queue.task_done()
 
+        def test_contextmanager(self):
+            log_queue = queue.Queue()
+
+            logger = logging.getLogger('test_logger_contextmanager')
+            logger.setLevel(logging.DEBUG)
+            handler = logging.handlers.QueueHandler(log_queue)
+            logger.addHandler(handler)
+
+            with logging.handlers.QueueListener(log_queue):
+                logger.info('one')
+                logger.info('two')
+                logger.info('three')
+                logger.info('four')
+                logger.info('five')
+
+            with self.assertRaises(ValueError):
+                # Make sure all tasks are done and .join won't block.
+                log_queue.task_done()
+
+            handler.close()
+
 
 ZERO = datetime.timedelta(0)
 
