@@ -575,6 +575,11 @@ class TestMiscellaneous(unittest.TestCase):
         with self.assertRaises(TypeError):
             locale.setlocale(locale.LC_ALL, (b'not', b'valid'))
 
+
+class TestGetFirstWeekDay(BaseLocalizedTest):
+
+    locale_type = locale.LC_ALL
+
     def test_getfirstweekday(self):
         self.assertEqual(locale.getfirstweekday(), 0)
 
