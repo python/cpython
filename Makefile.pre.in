@@ -100,7 +100,7 @@ CONFIGURE_LDFLAGS=	@LDFLAGS@
 # command line to append to these values without stomping the pre-set
 # values.
 PY_CFLAGS=	$(BASECFLAGS) $(OPT) $(CONFIGURE_CFLAGS) $(CFLAGS) $(EXTRA_CFLAGS)
-PY_CFLAGS_NODIST=$(CONFIGURE_CFLAGS_NODIST) $(CFLAGS_NODIST) -I$(srcdir)/Include/internal
+PY_CFLAGS_NODIST=$(CONFIGURE_CFLAGS_NODIST) $(CFLAGS_NODIST) -I$(srcdir)/Include/internal -I$(srcdir)/Include/mimalloc
 # Both CPPFLAGS and LDFLAGS need to contain the shell's value for setup.py to
 # be able to build extension modules using the directories specified in the
 # environment variables
@@ -336,6 +336,34 @@ IO_OBJS=	\
 		Modules/_io/bytesio.o \
 		Modules/_io/stringio.o
 
+
+##########################################################################
+# mimalloc
+
+MIMALLOC_HEADERS= \
+		$(srcdir)/Include/internal/pycore_mimalloc.h \
+		$(srcdir)/Include/internal/mimalloc/mimalloc-atomic.h \
+		$(srcdir)/Include/internal/mimalloc/mimalloc.h \
+		$(srcdir)/Include/internal/mimalloc/mimalloc-internal.h \
+		$(srcdir)/Include/internal/mimalloc/mimalloc-types.h
+
+MIMALLOC_OBJS= \
+		Objects/mimalloc/alloc-aligned.o \
+		Objects/mimalloc/alloc-posix.o \
+		Objects/mimalloc/alloc.o \
+		Objects/mimalloc/arena.o \
+		Objects/mimalloc/bitmap.o \
+		Objects/mimalloc/heap.o \
+		Objects/mimalloc/init.o \
+		Objects/mimalloc/options.o \
+		Objects/mimalloc/os.o \
+		Objects/mimalloc/page.o \
+		Objects/mimalloc/random.o \
+		Objects/mimalloc/segment.o \
+		Objects/mimalloc/segment-cache.o \
+		Objects/mimalloc/stats.o
+
+
 ##########################################################################
 # Parser
 
@@ -506,6 +534,7 @@ OBJECT_OBJS=	\
 		Objects/unicodectype.o \
 		Objects/unionobject.o \
 		Objects/weakrefobject.o \
+		@MIMALLOC_OBJS@ \
 		@PERF_TRAMPOLINE_OBJ@
 
 ##########################################################################
@@ -1538,6 +1567,7 @@ Objects/unicodeobject.o: $(srcdir)/Objects/unicodeobject.c $(UNICODE_DEPS)
 Objects/dictobject.o: $(srcdir)/Objects/stringlib/eq.h
 Objects/setobject.o: $(srcdir)/Objects/stringlib/eq.h
 
+Objects/mimalloc/page.o: $(srcdir)/Objects/mimalloc/page-queue.c
 
 .PHONY: regen-cases
 regen-cases:
@@ -1749,7 +1779,7 @@ PYTHON_HEADERS= \
 		$(srcdir)/Include/cpython/unicodeobject.h \
 		$(srcdir)/Include/cpython/warnings.h \
 		$(srcdir)/Include/cpython/weakrefobject.h \
-		\
+		@MIMALLOC_HEADERS@ \
 		$(srcdir)/Include/internal/pycore_abstract.h \
 		$(srcdir)/Include/internal/pycore_asdl.h \
 		$(srcdir)/Include/internal/pycore_ast.h \
