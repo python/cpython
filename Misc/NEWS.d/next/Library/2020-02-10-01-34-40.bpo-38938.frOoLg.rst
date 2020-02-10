@@ -1,0 +1,1 @@
+Reduced the number of comparisons required in the heapq.merge algorithm, and added a C implementation. Heapq.merge is now a class whose instance are iterators, rather than a generator function.
