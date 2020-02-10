@@ -356,14 +356,20 @@ functions.
    arguments for additional differences from the default behavior.  Unless
    otherwise stated, it is recommended to pass *args* as a sequence.
 
+   An example of passing some arguments to an external program
+   as a sequence is::
+
+     Popen(["/usr/bin/git", "commit", "-m", "Fixes a bug."])
+
    On POSIX, if *args* is a string, the string is interpreted as the name or
    path of the program to execute.  However, this can only be done if not
    passing arguments to the program.
 
    .. note::
 
-      :meth:`shlex.split` can be useful when determining the correct
-      tokenization for *args*, especially in complex cases::
+      It may not be obvious how to break a shell command into a sequence of arguments,
+      especially in complex cases. :meth:`shlex.split` can illustrate how to
+      determine the correct tokenization for *args*::
 
          >>> import shlex, subprocess
          >>> command_line = input()
