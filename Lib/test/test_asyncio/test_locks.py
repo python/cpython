@@ -349,6 +349,12 @@ class LockTests(test_utils.TestCase):
 
         self.assertFalse(lock.locked())
 
+    def test_lock_loop_not_running(self):
+        loop = asyncio.new_event_loop()
+        loop.stop()
+        with self.assertWarns(DeprecationWarning):
+            q = asyncio.Lock(loop=loop)
+
 
 class EventTests(test_utils.TestCase):
 
@@ -482,6 +488,12 @@ class EventTests(test_utils.TestCase):
 
         self.assertTrue(t.done())
         self.assertTrue(t.result())
+
+    def test_event_loop_not_running(self):
+        loop = asyncio.new_event_loop()
+        loop.stop()
+        with self.assertWarns(DeprecationWarning):
+            q = asyncio.Event(loop=loop)
 
 
 class ConditionTests(test_utils.TestCase):
@@ -866,6 +878,12 @@ class ConditionTests(test_utils.TestCase):
         with self.assertWarns(DeprecationWarning):
             loop.run_until_complete(task_timeout())
 
+    def test_condition_loop_not_running(self):
+        loop = asyncio.new_event_loop()
+        loop.stop()
+        with self.assertWarns(DeprecationWarning):
+            q = asyncio.Condition(loop=loop)
+
 
 class SemaphoreTests(test_utils.TestCase):
 
@@ -1095,6 +1113,12 @@ class SemaphoreTests(test_utils.TestCase):
                 '"yield from" should be used as context manager expression')
 
         self.assertEqual(2, sem._value)
+
+    def test_semaphore_loop_not_running(self):
+        loop = asyncio.new_event_loop()
+        loop.stop()
+        with self.assertWarns(DeprecationWarning):
+            q = asyncio.Semaphore(loop=loop)
 
 
 if __name__ == '__main__':

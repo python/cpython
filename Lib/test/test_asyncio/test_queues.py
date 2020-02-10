@@ -162,6 +162,12 @@ class QueueBasicTests(_QueueTestBase):
         loop.run_until_complete(test())
         self.assertAlmostEqual(0.02, loop.time())
 
+    def test_queue_loop_not_running(self):
+        loop = asyncio.new_event_loop()
+        loop.stop()
+        with self.assertWarns(DeprecationWarning):
+            q = asyncio.Queue(loop=loop)
+
 
 class QueueGetTests(_QueueTestBase):
 
