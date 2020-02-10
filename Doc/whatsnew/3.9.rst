@@ -398,6 +398,10 @@ Build and C API Changes
 Deprecated
 ==========
 
+* The distutils ``bdist_msi`` command is now deprecated, use
+  ``bdist_wheel`` (wheel packages) instead.
+  (Contributed by Hugo van Kemenade in :issue:`39586`.)
+
 * Currently :func:`math.factorial` accepts :class:`float` instances with
   non-negative integer values (like ``5.0``).  It raises a :exc:`ValueError`
   for non-integral and negative floats.  It is now deprecated.  In future
