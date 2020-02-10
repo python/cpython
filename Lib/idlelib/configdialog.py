@@ -607,8 +607,9 @@ class FontPage(Frame):
         font_bold  = configured_font[2]=='bold'
 
         # Set editor font selection list and font_name.
-        fonts = list(tkFont.families(self))
-        fonts.sort()
+        fonts = tkFont.families(self)
+        # remove duplicated names and sort
+        fonts = sorted(set(fonts))
         for font in fonts:
             self.fontlist.insert(END, font)
         self.font_name.set(font_name)
