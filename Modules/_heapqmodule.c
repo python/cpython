@@ -556,6 +556,531 @@ _heapq__heapify_max(PyObject *module, PyObject *heap)
 }
 
 
+/* merge object *************************************************************/
+
+typedef struct mergeobject{
+    PyObject_HEAD
+    PyObject **iterators;   /* fixed-size array */
+    Py_ssize_t num_iters;
+    PyObject *keyfunc;      /* called to compare items */
+    PyObject **tree;        /* tree of compared items stored as an array */
+    int reverse;
+    int status; /* Enum: 0=not yet heapified; 1=in progress; 2=finished */
+} mergeobject;
+
+static PyTypeObject merge_type;
+
+
+/* Siftup, except replace the leaves using the iterators, not the root. */
+static int
+_tree_sift(mergeobject *mo, Py_ssize_t pos) {
+    PyObject **tree = mo->tree;
+    Py_ssize_t n;
+    Py_ssize_t childpos;
+    PyObject *child, *otherchild, *it;
+    int cmp;
+
+    n = mo->num_iters;
+    assert(0 <= pos);
+    assert(pos < 2 * n - 1);
+
+    assert(tree[pos] == NULL);
+
+    if (mo->reverse) {
+        while (pos < n - 1) {
+            childpos = 2 * pos + 1;
+            child = tree[childpos];
+            otherchild = tree[childpos + 1];
+            if (otherchild != NULL) {
+                if (child == NULL) {
+                    child = otherchild;
+                    childpos++;
+                }
+                else {
+                    cmp = PyObject_RichCompareBool(
+                        child, otherchild, Py_LT);
+                    if (cmp < 0) {
+                        /* On error, fix the duplicate reference. */
+                        tree[pos] = NULL;
+                        return -1;
+                    }
+                    if (cmp > 0) {
+                        child = otherchild;
+                        childpos++;
+                    }
+                }
+            }
+            /* This duplicate reference is okay because it's always
+               fixed by the end of a call to _tree_sift. */
+            tree[pos] = child;
+            pos = childpos;
+        }
+    }
+    else {
+        while (pos < n - 1) {
+            childpos = 2 * pos + 1;
+            child = tree[childpos];
+            otherchild = tree[childpos + 1];
+            if (otherchild != NULL) {
+                if (child == NULL) {
+                    child = otherchild;
+                    childpos++;
+                }
+                else {
+                    cmp = PyObject_RichCompareBool(
+                        otherchild, child, Py_LT);
+                    if (cmp < 0) {
+                        tree[pos] = NULL;
+                        return -1;
+                    }
+                    if (cmp > 0) {
+                        child = otherchild;
+                        childpos++;
+                    }
+                }
+            }
+            tree[pos] = child;
+            pos = childpos;
+        }
+    }
+    tree[pos] = NULL;
+    /* At this point, tree has one copy of each reference it controls;
+       its state is consistent. */
+
+    it = mo->iterators[pos - (n - 1)];
+    if (it == NULL) {
+        return 0;
+    }
+
+    assert(PyIter_Check(it));
+    child = PyIter_Next(it);
+    if (child == NULL) {
+        mo->iterators[pos - (n - 1)] = NULL;
+        Py_DECREF(it);
+        if (PyErr_Occurred()) {
+            return -1;
+        }
+        return 0;
+    }
+
+    tree[pos] = child;
+
+    return 0;
+}
+
+static int
+_tree_sift_key(mergeobject *mo, Py_ssize_t pos) {
+    PyObject **tree = mo->tree;
+    Py_ssize_t n;
+    Py_ssize_t childpos;
+    PyObject *childkey, *child;
+    PyObject *otherchildkey, *otherchild;
+    PyObject *it;
+    int cmp;
+
+    n = mo->num_iters;
+    assert(0 <= pos);
+    assert(pos < 2*(2 * n - 1));
+    assert(pos % 2 == 0);
+
+    assert(tree[pos] == NULL);
+    assert(tree[pos+1] == NULL);
+
+    if (mo->reverse) {
+        while (pos < 2 * (n - 1)) {
+            childpos = 2 * pos + 2;
+            childkey = tree[childpos];
+            child = tree[childpos + 1];
+            otherchildkey = tree[childpos + 2];
+            otherchild = tree[childpos + 3];
+            if (otherchildkey != NULL) {
+                if (childkey == NULL) {
+                    childkey = otherchildkey;
+                    child = otherchild;
+                    childpos += 2;
+                }
+                else {
+                    cmp = PyObject_RichCompareBool(
+                        childkey, otherchildkey, Py_LT);
+                    if (cmp < 0) {
+                        tree[pos] = NULL;
+                        tree[pos + 1] = NULL;
+                        return -1;
+                    }
+                    if (cmp > 0) {
+                        childkey = otherchildkey;
+                        child = otherchild;
+                        childpos += 2;
+                    }
+                }
+            }
+            tree[pos] = childkey;
+            tree[pos + 1] = child;
+            pos = childpos;
+        }
+    }
+    else {
+        while (pos < 2 * (n - 1)) {
+            childpos = 2 * pos + 2;
+            childkey = tree[childpos];
+            child = tree[childpos + 1];
+            otherchildkey = tree[childpos + 2];
+            otherchild = tree[childpos + 3];
+            if (otherchildkey != NULL) {
+                if (childkey == NULL) {
+                    childkey = otherchildkey;
+                    child = otherchild;
+                    childpos += 2;
+                }
+                else {
+                    cmp = PyObject_RichCompareBool(
+                        otherchildkey, childkey, Py_LT);
+                    if (cmp < 0) {
+                        tree[pos] = NULL;
+                        tree[pos + 1] = NULL;
+                        return -1;
+                    }
+                    if (cmp > 0) {
+                        childkey = otherchildkey;
+                        child = otherchild;
+                        childpos += 2;
+                    }
+                }
+            }
+            tree[pos] = childkey;
+            tree[pos + 1] = child;
+            pos = childpos;
+        }
+    }
+    tree[pos] = NULL;
+    tree[pos + 1] = NULL;
+
+    it = mo->iterators[pos/2 - (n - 1)];
+    if (it == NULL) {
+        /* Iterator already exhausted. */
+        return 0;
+    }
+
+    assert(PyIter_Check(it));
+    child = PyIter_Next(it);
+    if (child == NULL) {
+        if (PyErr_Occurred()) {
+            return -1;
+        }
+        /* Newly exhausted iterator */
+        mo->iterators[pos/2 - (n - 1)] = NULL;
+        Py_DECREF(it);
+        return 0;
+    }
+
+    tree[pos+1] = child;
+
+    childkey = _PyObject_CallOneArg(mo->keyfunc, child);
+    if (childkey == NULL) {
+        return -1;
+    }
+    tree[pos] = childkey;
+
+    return 0;
+}
+
+/* shift = 2 * n - (1 << n.bit_length()) */
+static Py_ssize_t
+get_iter_shift(Py_ssize_t n) {
+    Py_ssize_t n0 = n;
+    Py_ssize_t m = 1;
+    while (n > 0) {
+        n >>= 1;
+        m <<= 1;
+    }
+    return (2 * n0) - m;
+}
+
+static PyObject *
+merge_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
+{
+    PyObject *keyfunc = NULL;
+    int reverse = 0;
+    mergeobject *mo;
+    PyObject **iterators = NULL, **tree = NULL;
+    Py_ssize_t num_iters, shift, i, treesize;
+
+    if (kwds != NULL) {
+        char *kwlist[] = {"key", "reverse", 0};
+        PyObject *tmpargs = PyTuple_New(0);
+        if (tmpargs == NULL) {
+            return NULL;
+        }
+        if (!PyArg_ParseTupleAndKeywords(tmpargs, kwds, "|Op:merge",
+                                         kwlist, &keyfunc, &reverse)) {
+            Py_DECREF(tmpargs);
+            return NULL;
+        }
+        Py_DECREF(tmpargs);
+    }
+
+    if (keyfunc == Py_None) {
+        keyfunc = NULL;
+    }
+    Py_XINCREF(keyfunc);
+
+    if (keyfunc != NULL && !PyCallable_Check(keyfunc)) {
+        PyErr_SetString(PyExc_TypeError, "Key must be callable or None.");
+        goto error;
+    }
+
+    assert(PyTuple_CheckExact(args));
+    num_iters = PyTuple_GET_SIZE(args);
+
+    if (num_iters == 0) {
+        mo = (mergeobject *)type->tp_alloc(type, 0);
+        if (mo == NULL) {
+            return NULL;
+        }
+        mo->iterators = NULL;
+        mo->num_iters = 0;
+        mo->tree = NULL;
+        mo->keyfunc = NULL;
+        mo->reverse = 0;
+        mo->status = 2;
+        return (PyObject *) mo;
+    }
+
+    iterators = PyMem_Calloc(num_iters, sizeof(PyObject *));
+    if (iterators == NULL) {
+        goto error;
+    }
+
+    /* Store the tree as a list with n-1 internal nodes and n leaves.
+       If a key is being used, store keys next to original items. */
+    treesize = keyfunc ? num_iters * 4 - 2 : num_iters * 2 - 1;
+    tree = PyMem_Calloc(treesize, sizeof(PyObject *));
+    if (tree == NULL) {
+        goto error;
+    }
+
+    /* To ensure stability, we need to order the iterators so that the
+     * iterator derived from the first iterable passed is exactly the iterator
+     * that supplies the leftmost leaf node in the tree. If we shift the array
+     * accordingly, then we can always supply tree[i] with elements from
+     * iterators[i-(n-1)].
+     */
+    shift = get_iter_shift(num_iters);
+    assert(shift >= 0);
+
+    /* Now make the shifted list of iterators. */
+    for (i = 0; i < num_iters; i++) {
+        PyObject *iterable = PyTuple_GET_ITEM(args, (i + shift) % num_iters);
+        PyObject *iterator = PyObject_GetIter(iterable);
+        if (iterator == NULL) {
+            goto error;
+        }
+        iterators[i] = iterator;
+    }
+
+    mo = (mergeobject *)type->tp_alloc(type, 0);
+    if (mo == NULL) {
+        goto error;
+    }
+    mo->iterators = iterators;
+    mo->num_iters = num_iters;
+    mo->tree = tree;
+    mo->keyfunc = keyfunc;
+    mo->reverse = reverse;
+    mo->status = 0;
+
+    return (PyObject *) mo;
+
+error:
+    if (iterators) {
+        for (i = 0; i < num_iters; i++) {
+            Py_CLEAR(iterators[i]);
+        }
+        PyMem_Free(iterators);
+    }
+    if (tree) {
+        for (i = 0; i < treesize; i += keyfunc ? 2 : 1) {
+            Py_CLEAR(tree[i]);
+        }
+        PyMem_Free(tree);
+    }
+    Py_XDECREF(keyfunc);
+    return NULL;
+}
+
+static int
+merge_clear(mergeobject *mo)
+{
+    Py_ssize_t nodewidth = mo->keyfunc ? 2 : 1;
+    Py_ssize_t n = mo->num_iters;
+    Py_ssize_t treesize = nodewidth * (2 * n - 1);
+    Py_ssize_t i;
+
+    if (mo->tree) {
+        for (i = 0; i < treesize; i++) {
+            Py_CLEAR(mo->tree[i]);
+        }
+    }
+    PyMem_Free(mo->tree);
+    mo->tree = NULL;
+
+    if (mo->iterators) {
+        for (i = 0; i < n; i++) {
+            Py_CLEAR(mo->iterators[i]);
+        }
+    }
+    PyMem_Free(mo->iterators);
+    mo->tree = NULL;
+
+    Py_CLEAR(mo->keyfunc);
+    return 0;
+}
+
+static void
+merge_dealloc(mergeobject *mo)
+{
+    PyObject_GC_UnTrack(mo);
+    merge_clear(mo);
+    Py_TYPE(mo)->tp_free(mo);
+}
+
+static PyObject *
+merge_sizeof(mergeobject *mo, void *unused)
+{
+    Py_ssize_t nodewidth = mo->keyfunc ? 2 : 1;
+    Py_ssize_t n = mo->num_iters;
+    Py_ssize_t treesize = nodewidth * (2 * n - 1);
+    Py_ssize_t res = _PyObject_SIZE(Py_TYPE(mo));
+
+    if (mo->iterators) {
+        res += n * sizeof(PyObject*);
+    }
+    if (mo->tree) {
+        res += treesize * sizeof(PyObject*);
+    }
+    return PyLong_FromSsize_t(res);
+}
+
+static int
+merge_traverse(mergeobject *mo, visitproc visit, void *arg)
+{
+    Py_ssize_t nodewidth = mo->keyfunc ? 2 : 1;
+    Py_ssize_t n = mo->num_iters;
+    Py_ssize_t treesize = nodewidth * (2 * n - 1);
+    Py_ssize_t i;
+
+    if (mo->tree) {
+        for (i = 0; i < treesize; i++) {
+            Py_VISIT(mo->tree[i]);
+        }
+    }
+
+    if (mo->iterators) {
+        for (i = 0; i < n; i++) {
+            Py_VISIT(mo->iterators[i]);
+        }
+    }
+
+    Py_VISIT(mo->keyfunc);
+    return 0;
+}
+
+static PyObject *
+merge_next(mergeobject *mo) {
+    PyObject *result;
+    PyObject **tree = mo->tree;
+
+    if (mo->status == 2) {
+        return NULL;
+    }
+    if (mo->status == 0) {
+        Py_ssize_t i;
+        Py_ssize_t n = mo->num_iters;
+        mo->status = 1;
+        /* Heapify, except leaves are supplied by iterators. */
+        if (mo->keyfunc == NULL) {
+            for (i = 2 * n - 2; i > 0; i--) {
+                if (_tree_sift(mo, i) < 0) {
+                    goto stop;
+                }
+            }
+        }
+        else {
+            for (i = 4 * n - 4; i > 0; i -= 2) {
+                if (_tree_sift_key(mo, i) < 0) {
+                    goto stop;
+                }
+            }
+        }
+    }
+    if (mo->keyfunc == NULL) {
+        if (_tree_sift(mo, 0) < 0) {
+            goto stop;
+        }
+        result = tree[0];
+        tree[0] = NULL;
+    }
+    else {
+        if (_tree_sift_key(mo, 0) < 0) {
+            goto stop;
+        }
+        Py_CLEAR(tree[0]);
+        result = tree[1];
+        tree[1] = NULL;
+    }
+    if (result == NULL) {
+        goto stop;
+    }
+    return result;
+
+stop:
+    mo->status = 2;
+    return NULL;
+}
+
+
+PyDoc_STRVAR(sizeof_doc, "Returns size in memory, in bytes.");
+
+static PyMethodDef merge_methods[] = {
+    {"__sizeof__", (PyCFunction)merge_sizeof, METH_NOARGS, sizeof_doc},
+    {NULL, NULL}
+};
+
+PyDoc_STRVAR(merge_doc,
+"merge(*iterables, key=None, reverse=False) --> merge object\n\
+\n\
+Merge multiple sorted inputs into a single sorted output.\n\
+\n\
+Similar to sorted(itertools.chain(*iterables)) but returns an iterator,\n\
+does not pull the data into memory all at once, and assumes that each of\n\
+the input streams is already sorted (smallest to largest).\n\
+\n\
+>>> list(merge([1,3,5,7], [0,2,4,8], [5,10,15,20], [], [25]))\n\
+[0, 1, 2, 3, 4, 5, 5, 7, 8, 10, 15, 20, 25]\n\
+\n\
+If *key* is not None, applies a key function to each element to determine\n\
+its sort order.\n\
+\n\
+>>> list(merge(['dog', 'horse'], ['cat', 'fish', 'kangaroo'], key=len))\n\
+['dog', 'cat', 'fish', 'horse', 'kangaroo']");
+
+static PyTypeObject merge_type = {
+    PyVarObject_HEAD_INIT(NULL, 0)
+    .tp_name = "_heapq.merge",
+    .tp_basicsize = sizeof(mergeobject),
+    .tp_dealloc = (destructor)merge_dealloc,
+    .tp_getattro = PyObject_GenericGetAttr,
+    .tp_flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC,
+    .tp_doc = merge_doc,
+    .tp_traverse = (traverseproc)merge_traverse,
+    .tp_clear = (inquiry)merge_clear,
+    .tp_iter = PyObject_SelfIter,
+    .tp_iternext = (iternextfunc)merge_next,
+    .tp_methods = merge_methods,
+    .tp_new = merge_new,
+    .tp_free = PyObject_GC_Del,
+};
+
 static PyMethodDef heapq_methods[] = {
     _HEAPQ_HEAPPUSH_METHODDEF
     _HEAPQ_HEAPPUSHPOP_METHODDEF
@@ -714,6 +1239,13 @@ PyInit__heapq(void)
     m = PyModule_Create(&_heapqmodule);
     if (m == NULL)
         return NULL;
+
+    if (PyType_Ready(&merge_type) < 0) {
+        return NULL;
+    }
+    Py_INCREF(&merge_type);
+    PyModule_AddObject(m, _PyType_Name(&merge_type), (PyObject *)&merge_type);
+
     about = PyUnicode_DecodeUTF8(__about__, strlen(__about__), NULL);
     PyModule_AddObject(m, "__about__", about);
     return m;

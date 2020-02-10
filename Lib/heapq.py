@@ -311,10 +311,10 @@ def _siftup_max(heap, pos):
     heap[pos] = newitem
     _siftdown_max(heap, startpos, pos)
 
-def merge(*iterables, key=None, reverse=False):
+class merge:
     '''Merge multiple sorted inputs into a single sorted output.
 
-    Similar to sorted(itertools.chain(*iterables)) but returns a generator,
+    Similar to sorted(itertools.chain(*iterables)) but returns an iterator,
     does not pull the data into memory all at once, and assumes that each of
     the input streams is already sorted (smallest to largest).
 
@@ -326,70 +326,168 @@ def merge(*iterables, key=None, reverse=False):
 
     >>> list(merge(['dog', 'horse'], ['cat', 'fish', 'kangaroo'], key=len))
     ['dog', 'cat', 'fish', 'horse', 'kangaroo']
-
     '''
+    __slots__ = ("_iters", "_tree", "_sentinel",
+                 "_started", "_key", "_treesift_func")
 
-    h = []
-    h_append = h.append
+    def _treesift(self, pos):
+        # repeatedly replace parents with their smaller child
+        iters = self._iters
+        n = len(iters)
+        tree = self._tree
+        sentinel = self._sentinel
 
-    if reverse:
-        _heapify = _heapify_max
-        _heappop = _heappop_max
-        _heapreplace = _heapreplace_max
-        direction = -1
-    else:
-        _heapify = heapify
-        _heappop = heappop
-        _heapreplace = heapreplace
-        direction = 1
+        while pos < n - 1:
+            childpos = 2 * pos + 1
+            child = tree[childpos]
+            otherchild = tree[childpos + 1]
+            if otherchild is not sentinel \
+                and (child is sentinel or otherchild < child):
+                childpos += 1
+                child = otherchild
+            tree[pos] = child
+            pos = childpos
 
-    if key is None:
-        for order, it in enumerate(map(iter, iterables)):
-            try:
-                next = it.__next__
-                h_append([next(), order * direction, next])
-            except StopIteration:
-                pass
-        _heapify(h)
-        while len(h) > 1:
-            try:
-                while True:
-                    value, order, next = s = h[0]
-                    yield value
-                    s[0] = next()           # raises StopIteration when exhausted
-                    _heapreplace(h, s)      # restore heap condition
-            except StopIteration:
-                _heappop(h)                 # remove empty iterator
-        if h:
-            # fast case when only a single iterator remains
-            value, order, next = h[0]
-            yield value
-            yield from next.__self__
-        return
+        # Use the iterables to replace the leaf.
+        # This is where the shift pays off.
+        tree[pos] = next(iters[pos - (n-1)], sentinel)
 
-    for order, it in enumerate(map(iter, iterables)):
+    def _treesift_reverse(self, pos):
+        # maxheap varaiant of _treesift
+        iters = self._iters
+        n = len(iters)
+        tree = self._tree
+        sentinel = self._sentinel
+
+        while pos < n - 1:
+            childpos = 2 * pos + 1
+            child = tree[childpos]
+            otherchild = tree[childpos + 1]
+            if otherchild is not sentinel \
+                and (child is sentinel or child < otherchild):
+                childpos += 1
+                child = otherchild
+            tree[pos] = child
+            pos = childpos
+
+        tree[pos] = next(iters[pos - (n-1)], sentinel)
+
+    def _treesift_key(self, pos):
+        # variant of _treesift where a key is used
+        iters = self._iters
+        n = len(iters)
+        tree = self._tree
+        sentinel = self._sentinel
+        key=self._key
+
+        while (pos >> 1) < n - 1:
+            childpos = 2 * pos + 2
+            childkey = tree[childpos+1]
+            otherchildkey = tree[childpos+3]
+            if otherchildkey is not sentinel \
+                and (childkey is sentinel
+                        or otherchildkey < childkey):
+                childpos += 2
+                childkey = otherchildkey
+            tree[pos+1] = childkey
+            tree[pos] = tree[childpos]
+            pos = childpos
+
         try:
-            next = it.__next__
-            value = next()
-            h_append([key(value), order * direction, value, next])
+            child = next(iters[(pos >> 1) - (n - 1)])
         except StopIteration:
-            pass
-    _heapify(h)
-    while len(h) > 1:
+            child = sentinel
+            childkey = sentinel
+        else:
+            childkey = key(child)
+
+        tree[pos] = child
+        tree[pos+1] = childkey
+
+    def _treesift_key_reverse(self, pos):
+        # maxheap variant of _treesift_key
+        iters = self._iters
+        n = len(iters)
+        tree = self._tree
+        sentinel = self._sentinel
+        key=self._key
+
+        while (pos >> 1) < n - 1:
+            childpos = 2 * pos + 2
+            childkey = tree[childpos+1]
+            otherchildkey = tree[childpos+3]
+            if otherchildkey is not sentinel \
+                and (childkey is sentinel
+                        or childkey < otherchildkey):
+                childpos += 2
+                childkey = otherchildkey
+            tree[pos+1] = childkey
+            tree[pos] = tree[childpos]
+            pos = childpos
+
         try:
-            while True:
-                key_value, order, value, next = s = h[0]
-                yield value
-                value = next()
-                s[0] = key(value)
-                s[2] = value
-                _heapreplace(h, s)
+            child = next(iters[(pos >> 1) - (n - 1)])
         except StopIteration:
-            _heappop(h)
-    if h:
-        key_value, order, value, next = h[0]
-        yield value
-        yield from next.__self__
+            child = sentinel
+            childkey = sentinel
+        else:
+            childkey = key(child)
+
+        tree[pos] = child
+        tree[pos+1] = childkey
+
+    def __init__(self, *iterables, key=None, reverse=False):
+        n = len(iterables)
+        # shift the iterators so that the first iterable passed will
+        # correspond to the leftmost node
+        if iterables:
+            shift = n - (1 << n.bit_length())
+            self._iters = [iter(iterables[i+shift]) for i in range(n)]
+        else:
+            self._iters = None
+        # _tree will be a binary heap structure, but we won't do the usual
+        # heap operations. Instead, only do _treesift_func: items will only
+        # ever move toward the root, and the leaves are supplied by the
+        # iterators. This a non-recursive implementation of recursively
+        # applying a 2-iterator merge.
+        self._tree = [None] * (n+n-1)
+        self._sentinel = object()
+        self._started = False
+        self._key = key
+        if key is None:
+            if reverse:
+                self._treesift_func = self._treesift_reverse
+            else:
+                self._treesift_func = self._treesift
+        elif not callable(key):
+            raise TypeError("Key must be callable or None.")
+        else:
+            # Store keys flatly next to values
+            self._tree *= 2
+            if reverse:
+                self._treesift_func = self._treesift_key_reverse
+            else:
+                self._treesift_func = self._treesift_key
+
+    def __iter__(self):
+        return self
+
+    def __next__(self):
+        if not self._iters:
+            raise StopIteration
+        if not self._started:
+            # Heapify, except new leaves are supplied by iterables.
+            nodesize = 1 if self._key is None else 2
+            for i in reversed(range(nodesize,
+                                    len(self._tree),
+                                    nodesize)):
+                self._treesift_func(i)
+            self._started = True
+        self._treesift_func(0)
+        result = self._tree[0]
+        if result is self._sentinel:
+            raise StopIteration
+        return result
 
 
 # Algorithm notes for nlargest() and nsmallest()
