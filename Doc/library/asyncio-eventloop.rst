@@ -359,7 +359,8 @@ Opening network connections
                           host=None, port=None, \*, ssl=None, \
                           family=0, proto=0, flags=0, sock=None, \
                           local_addr=None, server_hostname=None, \
-                          ssl_handshake_timeout=None)
+                          ssl_handshake_timeout=None, \
+                          happy_eyeballs_delay=None, interleave=None)
 
    Open a streaming transport connection to a given
    address specified by *host* and *port*.
@@ -448,7 +449,7 @@ Opening network connections
 
    .. versionadded:: 3.8
 
-      The *happy_eyeballs_delay* and *interleave* parameters.
+      Added the *happy_eyeballs_delay* and *interleave* parameters.
 
    .. versionadded:: 3.7
 
