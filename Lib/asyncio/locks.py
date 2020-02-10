@@ -545,11 +545,6 @@ class BoundedSemaphore(Semaphore):
                           "and scheduled for removal in Python 3.10.",
                           DeprecationWarning, stacklevel=2)
 
-        if not self._loop.is_running():
-            warnings.warn("The creation of asyncio objects without a running "
-                          "event loop is deprecated as of Python 3.9.",
-                          DeprecationWarning, stacklevel=2)
-
         self._bound_value = value
         super().__init__(value, loop=loop)
 
