@@ -1294,6 +1294,7 @@ s_set(void *ptr, PyObject *value, Py_ssize_t length)
     }
 
     data = PyBytes_AS_STRING(value);
+    /* bpo-39593: XXX Why not Py_SIZE(value)? */
     size = strlen(data);
 
     if (size < length) {
