@@ -1057,15 +1057,15 @@ def _escape_attrib(text):
             text = text.replace(">", "&gt;")
         if "\"" in text:
             text = text.replace("\"", "&quot;")
-        # The following business with carriage returns is to satisfy
-        # Section 2.11 of the XML specification, stating that
-        # CR or CR LN should be replaced with just LN
+        # Although section 2.11 of the XML specification states that CR or
+        # CR LN should be replaced with just LN, it applies only to EOLNs
+        # which take part of organizing file into lines. Within attributes,
+        # we are replacing these with entity numbers, so they do not count.
         # http://www.w3.org/TR/REC-xml/#sec-line-ends
-        if "\r\n" in text:
-            text = text.replace("\r\n", "\n")
+        # The current solution, contained in following six lines, was
+        # discussed in issue 17582 and 39011.
         if "\r" in text:
-            text = text.replace("\r", "\n")
-        #The following four lines are issue 17582
+            text = text.replace("\r", "&#13;")
         if "\n" in text:
             text = text.replace("\n", "&#10;")
         if "\t" in text:
