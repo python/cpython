@@ -649,7 +649,7 @@ functools_reduce(PyObject *self, PyObject *args)
     for (;;) {
         PyObject *op2;
 
-        if (args->ob_refcnt > 1) {
+        if (Py_REFCNT(args) > 1) {
             Py_DECREF(args);
             if ((args = PyTuple_New(2)) == NULL)
                 goto Fail;
@@ -666,7 +666,7 @@ functools_reduce(PyObject *self, PyObject *args)
             result = op2;
         else {
             /* Update the args tuple in-place */
-            assert(args->ob_refcnt == 1);
+            assert(Py_REFCNT(args) == 1);
             Py_XSETREF(_PyTuple_ITEMS(args)[0], result);
             Py_XSETREF(_PyTuple_ITEMS(args)[1], op2);
             if ((result = PyObject_Call(func, args, NULL)) == NULL) {

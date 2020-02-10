@@ -1,0 +1,1 @@
+Update mmap readline method description. The fact that the readline method does update the file position should not be ignored since this might give the impression for the programmer that it doesn't update it.

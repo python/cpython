@@ -1617,7 +1617,7 @@ encoder_listencode_dict(PyEncoderObject *s, _PyAccu *acc,
         else {
             PyErr_Format(PyExc_TypeError,
                          "keys must be str, int, float, bool or None, "
-                         "not %.100s", key->ob_type->tp_name);
+                         "not %.100s", Py_TYPE(key)->tp_name);
             goto bail;
         }
 

@@ -1059,7 +1059,7 @@ _PyTime_localtime(time_t t, struct tm *tm)
     return 0;
 #else /* !MS_WINDOWS */
 
-#ifdef _AIX
+#if defined(_AIX) && (SIZEOF_TIME_T < 8)
     /* bpo-34373: AIX does not return NULL if t is too small or too large */
     if (t < -2145916800 /* 1902-01-01 */
        || t > 2145916800 /* 2038-01-01 */) {

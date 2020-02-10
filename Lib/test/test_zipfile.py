@@ -611,8 +611,13 @@ class StoredTestsWithSourceFile(AbstractTestsWithSourceFile,
 
     def test_add_file_after_2107(self):
         # Set atime and mtime to 2108-12-30
+        ts = 4386268800
         try:
-            os.utime(TESTFN, (4386268800, 4386268800))
+            time.localtime(ts)
+        except OverflowError:
+            self.skipTest(f'time.localtime({ts}) raises OverflowError')
+        try:
+            os.utime(TESTFN, (ts, ts))
         except OverflowError:
             self.skipTest('Host fs cannot set timestamp to required value.')
 

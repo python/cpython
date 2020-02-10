@@ -73,7 +73,7 @@ namespace_repr(PyObject *ns)
     const char * name;
 
     name = (Py_TYPE(ns) == &_PyNamespace_Type) ? "namespace"
-                                               : ns->ob_type->tp_name;
+                                               : Py_TYPE(ns)->tp_name;
 
     i = Py_ReprEnter(ns);
     if (i != 0) {

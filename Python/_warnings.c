@@ -24,6 +24,8 @@ typedef struct _warnings_runtime_state WarningsState;
 /* Forward declaration of the _warnings module definition. */
 static struct PyModuleDef warningsmodule;
 
+_Py_IDENTIFIER(__name__);
+
 /* Given a module object, get its per-module state. */
 static WarningsState *
 _Warnings_GetState()
@@ -484,7 +486,6 @@ show_warning(PyObject *filename, int lineno, PyObject *text,
     PyObject *f_stderr;
     PyObject *name;
     char lineno_str[128];
-    _Py_IDENTIFIER(__name__);
 
     PyOS_snprintf(lineno_str, sizeof(lineno_str), ":%d: ", lineno);
 
@@ -649,7 +650,7 @@ warn_explicit(PyObject *category, PyObject *message,
         text = PyObject_Str(message);
         if (text == NULL)
             goto cleanup;
-        category = (PyObject*)message->ob_type;
+        category = (PyObject*)Py_TYPE(message);
     }
     else {
         text = message;
@@ -818,7 +819,6 @@ setup_context(Py_ssize_t stack_level, PyObject **filename, int *lineno,
               PyObject **module, PyObject **registry)
 {
     _Py_IDENTIFIER(__warningregistry__);
-    _Py_IDENTIFIER(__name__);
     PyObject *globals;
 
     /* Setup globals, filename and lineno. */
@@ -906,7 +906,7 @@ get_category(PyObject *message, PyObject *category)
         return NULL;
 
     if (rc == 1)
-        category = (PyObject*)message->ob_type;
+        category = (PyObject*)Py_TYPE(message);
     else if (category == NULL || category == Py_None)
         category = PyExc_UserWarning;
 
@@ -969,7 +969,6 @@ get_source_line(PyObject *module_globals, int lineno)
 {
     _Py_IDENTIFIER(get_source);
     _Py_IDENTIFIER(__loader__);
-    _Py_IDENTIFIER(__name__);
     PyObject *loader;
     PyObject *module_name;
     PyObject *get_source;

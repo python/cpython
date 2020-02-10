@@ -2109,7 +2109,7 @@ Changes in the C API
 
   .. code-block:: shell
 
-      gendef python38.dll > tmp.def
+      gendef - python38.dll > tmp.def
       dlltool --dllname python38.dll --def tmp.def --output-lib libpython38.a
 
   The location of an installed :file:`pythonXY.dll` will depend on the
