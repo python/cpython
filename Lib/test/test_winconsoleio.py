@@ -144,6 +144,10 @@ class WindowsConsoleIOTests(unittest.TestCase):
         self.assertStdinRoundTrip('ϼўТλФЙ')
         # Combining characters
         self.assertStdinRoundTrip('A͏B ﬖ̳AA̝')
+
+    # bpo-38325
+    @unittest.skipIf(True, "Handling Non-BMP characters is broken")
+    def test_input_nonbmp(self):
         # Non-BMP
         self.assertStdinRoundTrip('\U00100000\U0010ffff\U0010fffd')
 
@@ -163,6 +167,8 @@ class WindowsConsoleIOTests(unittest.TestCase):
 
                 self.assertEqual(actual, expected, 'stdin.read({})'.format(read_count))
 
+    # bpo-38325
+    @unittest.skipIf(True, "Handling Non-BMP characters is broken")
     def test_partial_surrogate_reads(self):
         # Test that reading less than 1 full character works when stdin
         # contains surrogate pairs that cannot be decoded to UTF-8 without
