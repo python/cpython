@@ -440,7 +440,7 @@ static PyTypeObject partial_type = {
     0,                                  /* tp_as_buffer */
     Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC |
         Py_TPFLAGS_BASETYPE |
-        Py_TPFLAGS_HAVE_VECTORCALL,    /* tp_flags */
+        Py_TPFLAGS_HAVE_VECTORCALL,     /* tp_flags */
     partial_doc,                        /* tp_doc */
     (traverseproc)partial_traverse,     /* tp_traverse */
     0,                                  /* tp_clear */

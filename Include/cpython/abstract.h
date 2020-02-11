@@ -122,13 +122,13 @@ PyObject_Vectorcall(PyObject *callable, PyObject *const *args,
 }
 
 // Backwards compatibility aliases for API that was provisional in Python 3.8
-#define PyObject_Vectorcall PyObject_Vectorcall
-#define PyObject_VectorcallMethod PyObject_VectorcallMethod
-#define PyObject_VectorcallDict PyObject_VectorcallDict
-#define PyVectorcall_Function PyVectorcall_Function
-#define PyObject_CallOneArg PyObject_CallOneArg
-#define PyObject_CallMethodNoArgs PyObject_CallMethodNoArgs
-#define PyObject_CallMethodOneArg PyObject_CallMethodOneArg
+#define _PyObject_Vectorcall PyObject_Vectorcall
+#define _PyObject_VectorcallMethod PyObject_VectorcallMethod
+#define _PyObject_FastCallDict PyObject_VectorcallDict
+#define _PyVectorcall_Function PyVectorcall_Function
+#define _PyObject_CallOneArg PyObject_CallOneArg
+#define _PyObject_CallMethodNoArgs PyObject_CallMethodNoArgs
+#define _PyObject_CallMethodOneArg PyObject_CallMethodOneArg
 
 /* Same as PyObject_Vectorcall except that keyword arguments are passed as
    dict, which may be NULL if there are no keyword arguments. */
