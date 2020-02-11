@@ -356,8 +356,9 @@ Build and C API Changes
 
   * Provide :c:func:`Py_EnterRecursiveCall` and :c:func:`Py_LeaveRecursiveCall`
     as regular functions for the limited API. Previously, there were defined as
-    macros, but these macros didn't work with the limited API which cannot
-    access ``PyThreadState.recursion_depth`` field.
+    macros, but these macros didn't compile with the limited C API which cannot
+    access ``PyThreadState.recursion_depth`` field (the structure is opaque in
+    the limited C API).
 
   * Exclude the following functions from the limited C API:
 
