@@ -1,0 +1,1 @@
+Updated :meth:`importlib._bootstrap_external._make_relax_case` to ignore :envvar:`PYTHONCASEOK` when -E or -I flags are used.
