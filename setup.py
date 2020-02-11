@@ -1,13 +1,6 @@
 # Autodetecting setup.py script for building the Python extensions
 
-import argparse
-import importlib._bootstrap
-import importlib.machinery
-import importlib.util
-import os
-import re
-import sys
-import sysconfig
+import argparse, importlib._bootstrap, importlib.machinery, importlib.util, os, re, sys, sysconfig
 from glob import glob
 
 from distutils import log
