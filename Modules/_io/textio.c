@@ -2025,7 +2025,7 @@ find_control_char(int kind, const char *s, const char *end, Py_UCS4 ch)
 {
     if (kind == PyUnicode_1BYTE_KIND) {
         assert(ch < 256);
-        return (char *) memchr((void *) s, (char) ch, end - s);
+        return (char *) memchr((const void *) s, (char) ch, end - s);
     }
     for (;;) {
         while (PyUnicode_READ(kind, s, 0) > ch)
@@ -2043,7 +2043,7 @@ _PyIO_find_line_ending(
     int translated, int universal, PyObject *readnl,
     int kind, const char *start, const char *end, Py_ssize_t *consumed)
 {
-    Py_ssize_t len = ((char*)end - (char*)start)/kind;
+    Py_ssize_t len = (end - start)/kind;
 
     if (translated) {
         /* Newlines are already translated, only search for \n */
