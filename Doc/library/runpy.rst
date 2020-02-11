@@ -32,7 +32,7 @@ The :mod:`runpy` module provides two functions:
    .. index::
       module: __main__
 
-   Execute the code of the specified module and return the resulting module
+   Execute the code of the specified module and return the resulting module's
    globals dictionary. The module code is first located using the standard
    import mechanism (refer to :pep:`302` for details) and then executed in a
    fresh module namespace.
@@ -40,7 +40,7 @@ The :mod:`runpy` module provides two functions:
    The *mod_name* argument should be an absolute module name.
    If the module name refers to a package rather than a normal
    module, then that package is imported and the ``__main__`` submodule within
-   that package is then executed and the resulting module globals dictionary
+   that package is then executed and the resulting module's globals dictionary
    returned.
 
    The optional dictionary argument *init_globals* may be used to pre-populate
@@ -99,7 +99,7 @@ The :mod:`runpy` module provides two functions:
       module: __main__
 
    Execute the code at the named filesystem location and return the resulting
-   module globals dictionary. As with a script name supplied to the CPython
+   module's globals dictionary. As with a script name supplied to the CPython
    command line, the supplied path may refer to a Python source file, a
    compiled bytecode file or a valid sys.path entry containing a ``__main__``
    module (e.g. a zipfile containing a top-level ``__main__.py`` file).
@@ -113,7 +113,7 @@ The :mod:`runpy` module provides two functions:
    there is no such module at the specified location.
 
    The optional dictionary argument *init_globals* may be used to pre-populate
-   the module globals dictionary before the code is executed. The supplied
+   the module's globals dictionary before the code is executed. The supplied
    dictionary will not be modified. If any of the special global variables
    below are defined in the supplied dictionary, those definitions are
    overridden by :func:`run_path`.
