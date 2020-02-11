@@ -5440,7 +5440,7 @@ dtrace_function_entry(PyFrameObject *f)
     funcname = PyUnicode_AsUTF8(f->f_code->co_name);
     lineno = PyCode_Addr2Line(f->f_code, f->f_lasti);
 
-    PyDTrace_FUNCTION_ENTRY((char *)filename, (char *)funcname, lineno);
+    PyDTrace_FUNCTION_ENTRY(filename, funcname, lineno);
 }
 
 static void
@@ -5454,7 +5454,7 @@ dtrace_function_return(PyFrameObject *f)
     funcname = PyUnicode_AsUTF8(f->f_code->co_name);
     lineno = PyCode_Addr2Line(f->f_code, f->f_lasti);
 
-    PyDTrace_FUNCTION_RETURN((char *)filename, (char *)funcname, lineno);
+    PyDTrace_FUNCTION_RETURN(filename, funcname, lineno);
 }
 
 /* DTrace equivalent of maybe_call_line_trace. */
@@ -5486,7 +5486,7 @@ maybe_dtrace_line(PyFrameObject *frame,
         co_name = PyUnicode_AsUTF8(frame->f_code->co_name);
         if (!co_name)
             co_name = "?";
-        PyDTrace_LINE((char *)co_filename, (char *)co_name, line);
+        PyDTrace_LINE(co_filename, co_name, line);
     }
     *instr_prev = frame->f_lasti;
 }
