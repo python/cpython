@@ -3,6 +3,8 @@ Released on 2020-10-05?
 ======================================
 
 
+bpo-39600: Remove duplicate font names from configuration list.
+
 bpo-38792: Close a shell calltip if a :exc:`KeyboardInterrupt`
 or shell restart occurs.  Patch by Zackery Spytz.
 

@@ -606,10 +606,8 @@ class FontPage(Frame):
         font_size = configured_font[1]
         font_bold  = configured_font[2]=='bold'
 
-        # Set editor font selection list and font_name.
-        fonts = tkFont.families(self)
-        # remove duplicated names and sort
-        fonts = sorted(set(fonts))
+        # Set sorted no-duplicate editor font selection list and font_name.
+        fonts = sorted(set(tkFont.families(self)))
         for font in fonts:
             self.fontlist.insert(END, font)
         self.font_name.set(font_name)
