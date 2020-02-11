@@ -71,7 +71,7 @@ class ThreadPool(AbstractPool):
         async with asyncio.ThreadPool() as pool:
             await asyncio.gather(
                 pool.run(blocking_io),
-                pool.run(other_io))
+                pool.run(other_blocking_io))
 
     asyncio.run(main())
     """
