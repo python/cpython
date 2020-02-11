@@ -213,7 +213,7 @@ partial_vectorcall(partialobject *pto, PyObject *const *args,
 static void
 partial_setvectorcall(partialobject *pto)
 {
-    if (_PyVectorcall_Function(pto->fn) == NULL) {
+    if (PyVectorcall_Function(pto->fn) == NULL) {
         /* Don't use vectorcall if the underlying function doesn't support it */
         pto->vectorcall = NULL;
     }
@@ -440,7 +440,7 @@ static PyTypeObject partial_type = {
     0,                                  /* tp_as_buffer */
     Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC |
         Py_TPFLAGS_BASETYPE |
-        _Py_TPFLAGS_HAVE_VECTORCALL,    /* tp_flags */
+        Py_TPFLAGS_HAVE_VECTORCALL,     /* tp_flags */
     partial_doc,                        /* tp_doc */
     (traverseproc)partial_traverse,     /* tp_traverse */
     0,                                  /* tp_clear */

@@ -147,7 +147,7 @@ PyObject *_PyCodec_Lookup(const char *encoding)
         func = PyList_GetItem(interp->codec_search_path, i);
         if (func == NULL)
             goto onError;
-        result = _PyObject_CallOneArg(func, v);
+        result = PyObject_CallOneArg(func, v);
         if (result == NULL)
             goto onError;
         if (result == Py_None) {
@@ -317,7 +317,7 @@ PyObject *codec_getstreamcodec(const char *encoding,
     if (errors != NULL)
         streamcodec = PyObject_CallFunction(codeccls, "Os", stream, errors);
     else
-        streamcodec = _PyObject_CallOneArg(codeccls, stream);
+        streamcodec = PyObject_CallOneArg(codeccls, stream);
     Py_DECREF(codecs);
     return streamcodec;
 }
