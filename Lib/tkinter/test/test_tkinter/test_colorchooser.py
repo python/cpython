@@ -32,8 +32,8 @@ class ChooserTest(AbstractTkTest, unittest.TestCase):
         self.assertEqual(cc._fixresult(self.root, ''), (None, None))
         self.assertEqual(cc._fixresult(self.root, 'chocolate'),
                          ((210, 105, 30), 'chocolate'))
-        self.assertEqual(cc._fixresult(self.root, '#e9ff20'),
-                         ((233, 255, 32), '#e9ff20'))
+        self.assertEqual(cc._fixresult(self.root, '#1e90ff'),
+                         ((30, 144, 255), '#1e90ff'))
 
 
 tests_gui = (ChooserTest, )
