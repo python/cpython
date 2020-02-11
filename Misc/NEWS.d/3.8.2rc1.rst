@@ -1,0 +1,580 @@
+.. bpo: 39401
+.. date: 2020-01-28-20-54-09
+.. nonce: he7h_A
+.. release date: 2020-02-10
+.. section: Security
+
+Avoid unsafe load of ``api-ms-win-core-path-l1-1-0.dll`` at startup on
+Windows 7.
+
+..
+
+.. bpo: 39184
+.. date: 2020-01-07-00-42-08
+.. nonce: fe7NgK
+.. section: Security
+
+Add audit events to command execution functions in os and pty modules.
+
+..
+
+.. bpo: 39579
+.. date: 2020-02-07-15-18-35
+.. nonce: itNmC0
+.. section: Core and Builtins
+
+Change the ending column offset of `Attribute` nodes constructed in
+`ast_for_dotted_name` to point at the end of the current node and not at the
+end of the last `NAME` node.
+
+..
+
+.. bpo: 39510
+.. date: 2020-02-04-10-27-41
+.. nonce: PMIh-f
+.. section: Core and Builtins
+
+Fix segfault in ``readinto()`` method on closed BufferedReader.
+
+..
+
+.. bpo: 39492
+.. date: 2020-01-30-01-14-42
+.. nonce: eTuy0F
+.. section: Core and Builtins
+
+Fix a reference cycle in the C Pickler that was preventing the garbage
+collection of deleted, pickled objects.
+
+..
+
+.. bpo: 39421
+.. date: 2020-01-22-15-53-37
+.. nonce: O3nG7u
+.. section: Core and Builtins
+
+Fix possible crashes when operating with the functions in the :mod:`heapq`
+module and custom comparison operators.
+
+..
+
+.. bpo: 39386
+.. date: 2020-01-20-21-40-57
+.. nonce: ULqD8t
+.. section: Core and Builtins
+
+Prevent double awaiting of async iterator.
+
+..
+
+.. bpo: 39235
+.. date: 2020-01-09-10-01-18
+.. nonce: RYwjoc
+.. section: Core and Builtins
+
+Fix AST end location for lone generator expression in function call, e.g.
+f(i for i in a).
+
+..
+
+.. bpo: 39209
+.. date: 2020-01-06-10-29-16
+.. nonce: QHAONe
+.. section: Core and Builtins
+
+Correctly handle multi-line tokens in interactive mode. Patch by Pablo
+Galindo.
+
+..
+
+.. bpo: 39216
+.. date: 2020-01-05-06-55-52
+.. nonce: 74jLh9
+.. section: Core and Builtins
+
+Fix constant folding optimization for positional only arguments - by Anthony
+Sottile.
+
+..
+
+.. bpo: 39215
+.. date: 2020-01-04-17-25-34
+.. nonce: xiqiIz
+.. section: Core and Builtins
+
+Fix ``SystemError`` when nested function has annotation on positional-only
+argument - by Anthony Sottile.
+
+..
+
+.. bpo: 38588
+.. date: 2019-12-29-19-13-54
+.. nonce: pgXnNS
+.. section: Core and Builtins
+
+Fix possible crashes in dict and list when calling
+:c:func:`PyObject_RichCompareBool`.
+
+..
+
+.. bpo: 38610
+.. date: 2019-10-31-14-30-39
+.. nonce: fHdVMS
+.. section: Core and Builtins
+
+Fix possible crashes in several list methods by holding strong references to
+list elements when calling :c:func:`PyObject_RichCompareBool`.
+
+..
+
+.. bpo: 39590
+.. date: 2020-02-09-05-51-05
+.. nonce: rf98GU
+.. section: Library
+
+Collections.deque now holds strong references during deque.__contains__ and
+deque.count, fixing crashes.
+
+..
+
+.. bpo: 38149
+.. date: 2020-02-05-11-24-16
+.. nonce: GWsjHE
+.. section: Library
+
+:func:`sys.audit` is now called only once per call of :func:`glob.glob` and
+:func:`glob.iglob`.
+
+..
+
+.. bpo: 39450
+.. date: 2020-02-02-14-46-34
+.. nonce: 48R274
+.. section: Library
+
+Striped whitespace from docstring before returning it from
+:func:`unittest.case.shortDescription`.
+
+..
+
+.. bpo: 39493
+.. date: 2020-01-30-01-13-19
+.. nonce: CbFRi7
+.. section: Library
+
+Mark ``typing.IO.closed`` as a property
+
+..
+
+.. bpo: 39485
+.. date: 2020-01-29-14-58-27
+.. nonce: Zy3ot6
+.. section: Library
+
+Fix a bug in :func:`unittest.mock.create_autospec` that would complain about
+the wrong number of arguments for custom descriptors defined in an extension
+module returning functions.
+
+..
+
+.. bpo: 39082
+.. date: 2020-01-24-13-24-35
+.. nonce: qKgrq_
+.. section: Library
+
+Allow AsyncMock to correctly patch static/class methods
+
+..
+
+.. bpo: 39430
+.. date: 2020-01-24-11-05-21
+.. nonce: I0UQzM
+.. section: Library
+
+Fixed race condition in lazy imports in :mod:`tarfile`.
+
+..
+
+.. bpo: 39390
+.. date: 2020-01-23-21-34-29
+.. nonce: D2tSXk
+.. section: Library
+
+Fixed a regression with the `ignore` callback of :func:`shutil.copytree`.
+The argument types are now str and List[str] again.
+
+..
+
+.. bpo: 39389
+.. date: 2020-01-20-00-56-01
+.. nonce: fEirIS
+.. section: Library
+
+Write accurate compression level metadata in :mod:`gzip` archives, rather
+than always signaling maximum compression.
+
+..
+
+.. bpo: 39274
+.. date: 2020-01-15-23-13-03
+.. nonce: lpc0-n
+.. section: Library
+
+``bool(fraction.Fraction)`` now returns a boolean even if (numerator != 0)
+does not return a boolean (ex: numpy number).
+
+..
+
+.. bpo: 39297
+.. date: 2020-01-11-01-15-37
+.. nonce: y98Z6Q
+.. section: Library
+
+Improved performance of importlib.metadata distribution discovery and
+resilients to inaccessible sys.path entries (importlib_metadata v1.4.0).
+
+..
+
+.. bpo: 39242
+.. date: 2020-01-08-23-25-27
+.. nonce: bnL65N
+.. section: Library
+
+Updated the Gmane domain from news.gmane.org to news.gmane.io which is used
+for examples of :class:`~nntplib.NNTP` news reader server and nntplib tests.
+
+..
+
+.. bpo: 38907
+.. date: 2020-01-06-02-14-38
+.. nonce: F1RkCR
+.. section: Library
+
+In http.server script, restore binding to IPv4 on Windows.
+
+..
+
+.. bpo: 39152
+.. date: 2020-01-03-18-02-50
+.. nonce: JgPjCC
+.. section: Library
+
+Fix ttk.Scale.configure([name]) to return configuration tuple for name or
+all options.  Giovanni Lombardo contributed part of the patch.
+
+..
+
+.. bpo: 39198
+.. date: 2020-01-02-20-21-03
+.. nonce: nzwGyG
+.. section: Library
+
+If an exception were to be thrown in `Logger.isEnabledFor` (say, by asyncio
+timeouts or stopit) , the `logging` global lock may not be released
+appropriately, resulting in deadlock.  This change wraps that block of code
+with `try...finally` to ensure the lock is released.
+
+..
+
+.. bpo: 39191
+.. date: 2020-01-02-17-28-03
+.. nonce: ur_scy
+.. section: Library
+
+Perform a check for running loop before starting a new task in
+``loop.run_until_complete()`` to fail fast; it prevents the side effect of
+new task spawning before exception raising.
+
+..
+
+.. bpo: 38871
+.. date: 2020-01-01-18-44-52
+.. nonce: 3EEOLg
+.. section: Library
+
+Correctly parenthesize filter-based statements that contain lambda
+expressions in mod:`lib2to3`. Patch by Dong-hee Na.
+
+..
+
+.. bpo: 39142
+.. date: 2019-12-31-19-27-23
+.. nonce: oqU5iD
+.. section: Library
+
+A change was made to logging.config.dictConfig to avoid converting instances
+of named tuples to ConvertingTuple. It's assumed that named tuples are too
+specialised to be treated like ordinary tuples; if a user of named tuples
+requires ConvertingTuple functionality, they will have to implement that
+themselves in their named tuple class.
+
+..
+
+.. bpo: 39129
+.. date: 2019-12-24-10-43-13
+.. nonce: jVx5rW
+.. section: Library
+
+Fix import path for ``asyncio.TimeoutError``
+
+..
+
+.. bpo: 39057
+.. date: 2019-12-15-21-47-54
+.. nonce: FOxn-w
+.. section: Library
+
+:func:`urllib.request.proxy_bypass_environment` now ignores leading dots and
+no longer ignores a trailing newline.
+
+..
+
+.. bpo: 39056
+.. date: 2019-12-15-21-05-16
+.. nonce: nEfUM9
+.. section: Library
+
+Fixed handling invalid warning category in the -W option.  No longer import
+the re module if it is not needed.
+
+..
+
+.. bpo: 39055
+.. date: 2019-12-15-19-23-23
+.. nonce: FmN3un
+.. section: Library
+
+:func:`base64.b64decode` with ``validate=True`` raises now a binascii.Error
+if the input ends with a single ``\n``.
+
+..
+
+.. bpo: 39033
+.. date: 2019-12-13-18-54-49
+.. nonce: cepuyD
+.. section: Library
+
+Fix :exc:`NameError` in :mod:`zipimport`. Patch by Karthikeyan Singaravelan.
+
+..
+
+.. bpo: 38878
+.. date: 2019-11-22-12-08-52
+.. nonce: EJ0cFf
+.. section: Library
+
+Fixed __subclasshook__ of :class:`os.PathLike` to return a correct result
+upon inheritence. Patch by Bar Harel.
+
+..
+
+.. bpo: 35182
+.. date: 2019-10-31-19-23-25
+.. nonce: hzeNl9
+.. section: Library
+
+Fixed :func:`Popen.communicate` subsequent call crash when the child process
+has already closed any piped standard stream, but still continues to be
+running. Patch by Andriy Maletsky.
+
+..
+
+.. bpo: 38473
+.. date: 2019-10-14-21-14-55
+.. nonce: uXpVld
+.. section: Library
+
+Use signature from inner mock for autospecced methods attached with
+:func:`unittest.mock.attach_mock`. Patch by Karthikeyan Singaravelan.
+
+..
+
+.. bpo: 38293
+.. date: 2019-09-29-08-17-03
+.. nonce: wls5s3
+.. section: Library
+
+Add :func:`copy.copy` and :func:`copy.deepcopy` support to :func:`property`
+objects.
+
+..
+
+.. bpo: 39153
+.. date: 2020-01-27-22-24-51
+.. nonce: Pjl8jV
+.. section: Documentation
+
+Clarify refcounting semantics for the following functions: -
+PyObject_SetItem - PyMapping_SetItemString - PyDict_SetItem -
+PyDict_SetItemString
+
+..
+
+.. bpo: 39392
+.. date: 2020-01-27-18-18-42
+.. nonce: oiqcLO
+.. section: Documentation
+
+Explain that when filling with turtle, overlap regions may be left unfilled.
+
+..
+
+.. bpo: 39381
+.. date: 2020-01-18-15-37-56
+.. nonce: wTWe8d
+.. section: Documentation
+
+Mention in docs that :func:`asyncio.get_event_loop` implicitly creates new
+event loop only if called from the main thread.
+
+..
+
+.. bpo: 38918
+.. date: 2019-12-15-22-04-41
+.. nonce: 8JnDTS
+.. section: Documentation
+
+Add an entry for ``__module__`` in the "function" & "method" sections of the
+`inspect docs types and members table
+<https://docs.python.org/3/library/inspect.html#types-and-members>`_
+
+..
+
+.. bpo: 3530
+.. date: 2019-11-17-11-53-10
+.. nonce: 8zFUMc
+.. section: Documentation
+
+In the :mod:`ast` module documentation, fix a misleading ``NodeTransformer``
+example and add advice on when to use the ``fix_missing_locations``
+function.
+
+..
+
+.. bpo: 39502
+.. date: 2020-01-30-15-04-54
+.. nonce: chbpII
+.. section: Tests
+
+Skip test_zipfile.test_add_file_after_2107() if :func:`time.localtime` fails
+with :exc:`OverflowError`. It is the case on AIX 6.1 for example.
+
+..
+
+.. bpo: 38546
+.. date: 2019-12-18-14-52-08
+.. nonce: 2kxNuM
+.. section: Tests
+
+Fix test_ressources_gced_in_workers() of test_concurrent_futures: explicitly
+stop the manager to prevent leaking a child process running in the
+background after the test completes.
+
+..
+
+.. bpo: 39144
+.. date: 2019-12-27-22-18-26
+.. nonce: dwHMlR
+.. section: Build
+
+The ctags and etags build targets both include Modules/_ctypes and Python
+standard library source files.
+
+..
+
+.. bpo: 39439
+.. date: 2020-01-24-03-15-05
+.. nonce: sFxGfR
+.. section: Windows
+
+Honor the Python path when a virtualenv is active on Windows.
+
+..
+
+.. bpo: 39393
+.. date: 2020-01-20-23-42-53
+.. nonce: gWlJDG
+.. section: Windows
+
+Improve the error message when attempting to load a DLL with unresolved
+dependencies.
+
+..
+
+.. bpo: 38883
+.. date: 2020-01-11-22-53-55
+.. nonce: X7FRaN
+.. section: Windows
+
+:meth:`~pathlib.Path.home()` and :meth:`~pathlib.Path.expanduser()` on
+Windows now prefer :envvar:`USERPROFILE` and no longer use :envvar:`HOME`,
+which is not normally set for regular user accounts. This makes them again
+behave like :func:`os.path.expanduser`, which was changed to ignore
+:envvar:`HOME` in 3.8, see :issue:`36264`.
+
+..
+
+.. bpo: 39185
+.. date: 2020-01-02-01-11-53
+.. nonce: T4herN
+.. section: Windows
+
+The build.bat script has additional options for very-quiet output (-q) and
+very-verbose output (-vv)
+
+..
+
+.. bpo: 30780
+.. date: 2020-01-27-16-44-29
+.. nonce: nR80qu
+.. section: IDLE
+
+Add remaining configdialog tests for buttons and highlights and keys tabs.
+
+..
+
+.. bpo: 39388
+.. date: 2020-01-25-02-26-45
+.. nonce: x4TQNh
+.. section: IDLE
+
+IDLE Settings Cancel button now cancels pending changes
+
+..
+
+.. bpo: 39050
+.. date: 2020-01-22-22-28-06
+.. nonce: zkn0FO
+.. section: IDLE
+
+Make IDLE Settings dialog Help button work again.
+
+..
+
+.. bpo: 34118
+.. date: 2019-12-30-16-44-07
+.. nonce: FaNW0a
+.. section: IDLE
+
+Tag memoryview, range, and tuple as classes, the same as list, etcetera, in
+the library manual built-in functions list.
+
+..
+
+.. bpo: 38792
+.. date: 2019-11-13-23-51-39
+.. nonce: xhTC5a
+.. section: IDLE
+
+Close an IDLE shell calltip if a :exc:`KeyboardInterrupt` or shell restart
+occurs.  Patch by Zackery Spytz.
+
+..
+
+.. bpo: 32989
+.. date: 2018-03-03-12-56-26
+.. nonce: FVhmhH
+.. section: IDLE
+
+Add tests for editor newline_and_indent_event method. Remove dead code from
+pyparse find_good_parse_start method.

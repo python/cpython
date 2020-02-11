@@ -1,1 +1,0 @@
-Change the ending column offset of `Attribute` nodes constructed in `ast_for_dotted_name` to point at the end of the current node and not at the end of the last `NAME` node.

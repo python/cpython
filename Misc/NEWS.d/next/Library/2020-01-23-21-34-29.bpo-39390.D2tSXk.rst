@@ -1,2 +1,0 @@
-Fixed a regression with the `ignore` callback of :func:`shutil.copytree`.
-The argument types are now str and List[str] again.
