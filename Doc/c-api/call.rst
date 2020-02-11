@@ -108,12 +108,12 @@ function as with any other callable.
 
    In CPython 3.8, the vectorcall API and related functions were available
    provisionally under names with a leading underscore:
-   ``_PyObject_Vectorcall``, ``_Py_TPFLAGS_HAVE_VECTORCALL``,
-   ``_PyObject_VectorcallMethod``, ``_PyVectorcall_Function``,
-   ``_PyObject_CallOneArg``, ``_PyObject_CallMethodNoArgs``,
-   ``_PyObject_CallMethodOneArg``.
+   ``PyObject_Vectorcall``, ``Py_TPFLAGS_HAVE_VECTORCALL``,
+   ``PyObject_VectorcallMethod``, ``PyVectorcall_Function``,
+   ``PyObject_CallOneArg``, ``PyObject_CallMethodNoArgs``,
+   ``PyObject_CallMethodOneArg``.
    Additionally, ``PyObject_VectorcallDict`` was available as
-   ``_PyObject_FastCallDict``.
+   ``PyObject_VectorcallDict``.
    The old names are still defined as aliases of the new, non-underscored names.
 
 

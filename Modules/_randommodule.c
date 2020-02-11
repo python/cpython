@@ -287,7 +287,7 @@ random_seed(RandomObject *self, PyObject *arg)
         /* Calling int.__abs__() prevents calling arg.__abs__(), which might
            return an invalid value. See issue #31478. */
         args[0] = arg;
-        n = _PyObject_Vectorcall(_randomstate_global->Long___abs__, args, 0,
+        n = PyObject_Vectorcall(_randomstate_global->Long___abs__, args, 0,
                                          NULL);
     }
     else {

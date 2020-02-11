@@ -514,10 +514,10 @@ _call_dialect(PyObject *dialect_inst, PyObject *kwargs)
 {
     PyObject *type = (PyObject *)&Dialect_Type;
     if (dialect_inst) {
-        return _PyObject_FastCallDict(type, &dialect_inst, 1, kwargs);
+        return PyObject_VectorcallDict(type, &dialect_inst, 1, kwargs);
     }
     else {
-        return _PyObject_FastCallDict(type, NULL, 0, kwargs);
+        return PyObject_VectorcallDict(type, NULL, 0, kwargs);
     }
 }
 
@@ -1240,7 +1240,7 @@ csv_writerow(WriterObj *self, PyObject *seq)
     if (line == NULL) {
         return NULL;
     }
-    result = _PyObject_CallOneArg(self->write, line);
+    result = PyObject_CallOneArg(self->write, line);
     Py_DECREF(line);
     return result;
 }

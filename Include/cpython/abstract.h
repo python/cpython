@@ -67,7 +67,7 @@ PyVectorcall_Function(PyObject *callable)
 {
     assert(callable != NULL);
     PyTypeObject *tp = Py_TYPE(callable);
-    if (!PyType_HasFeature(tp, _Py_TPFLAGS_HAVE_VECTORCALL)) {
+    if (!PyType_HasFeature(tp, Py_TPFLAGS_HAVE_VECTORCALL)) {
         return NULL;
     }
     assert(PyCallable_Check(callable));
@@ -122,13 +122,13 @@ PyObject_Vectorcall(PyObject *callable, PyObject *const *args,
 }
 
 // Backwards compatibility aliases for API that was provisional in Python 3.8
-#define _PyObject_Vectorcall PyObject_Vectorcall
-#define _PyObject_VectorcallMethod PyObject_VectorcallMethod
-#define _PyObject_FastCallDict PyObject_VectorcallDict
-#define _PyVectorcall_Function PyVectorcall_Function
-#define _PyObject_CallOneArg PyObject_CallOneArg
-#define _PyObject_CallMethodNoArgs PyObject_CallMethodNoArgs
-#define _PyObject_CallMethodOneArg PyObject_CallMethodOneArg
+#define PyObject_Vectorcall PyObject_Vectorcall
+#define PyObject_VectorcallMethod PyObject_VectorcallMethod
+#define PyObject_VectorcallDict PyObject_VectorcallDict
+#define PyVectorcall_Function PyVectorcall_Function
+#define PyObject_CallOneArg PyObject_CallOneArg
+#define PyObject_CallMethodNoArgs PyObject_CallMethodNoArgs
+#define PyObject_CallMethodOneArg PyObject_CallMethodOneArg
 
 /* Same as PyObject_Vectorcall except that keyword arguments are passed as
    dict, which may be NULL if there are no keyword arguments. */
@@ -178,7 +178,7 @@ PyAPI_FUNC(PyObject *) PyObject_VectorcallMethod(
 static inline PyObject *
 PyObject_CallMethodNoArgs(PyObject *self, PyObject *name)
 {
-    return _PyObject_VectorcallMethod(name, &self,
+    return PyObject_VectorcallMethod(name, &self,
            1 | PY_VECTORCALL_ARGUMENTS_OFFSET, NULL);
 }
 
@@ -187,7 +187,7 @@ PyObject_CallMethodOneArg(PyObject *self, PyObject *name, PyObject *arg)
 {
     assert(arg != NULL);
     PyObject *args[2] = {self, arg};
-    return _PyObject_VectorcallMethod(name, args,
+    return PyObject_VectorcallMethod(name, args,
            2 | PY_VECTORCALL_ARGUMENTS_OFFSET, NULL);
 }
 
