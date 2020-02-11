@@ -44,7 +44,7 @@ The :mod:`runpy` module provides two functions:
    returned.
 
    The optional dictionary argument *init_globals* may be used to pre-populate
-   the module globals dictionary before the code is executed. The supplied
+   the module's globals dictionary before the code is executed. The supplied
    dictionary will not be modified. If any of the special global variables
    below are defined in the supplied dictionary, those definitions are
    overridden by :func:`run_module`.
