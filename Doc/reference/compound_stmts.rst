@@ -730,7 +730,7 @@ Functions defined with ``async def`` syntax are always coroutine functions,
 even if they do not contain ``await`` or ``async`` keywords.
 
 It is a :exc:`SyntaxError` to use ``yield from`` expressions in
-``async def`` coroutines. Using ``await`` in :keyword:`f-strings` will also produce a :exc:`SyntaxError`.
+``async def`` coroutines.
 
 An example of a coroutine function::
 
