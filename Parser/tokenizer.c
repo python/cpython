@@ -1079,8 +1079,9 @@ verify_identifier(struct tok_state *tok)
     }
     result = PyUnicode_IsIdentifier(s);
     Py_DECREF(s);
-    if (result == 0)
+    if (result == 0) {
         tok->done = E_IDENTIFIER;
+    }
     return result;
 }
 
