@@ -1963,7 +1963,7 @@ struct_get_unpacker(const char *fmt, Py_ssize_t itemsize)
     if (format == NULL)
         goto error;
 
-    structobj = _PyObject_CallOneArg(Struct, format);
+    structobj = PyObject_CallOneArg(Struct, format);
     if (structobj == NULL)
         goto error;
 
@@ -2002,7 +2002,7 @@ struct_unpack_single(const char *ptr, struct unpacker *x)
     PyObject *v;
 
     memcpy(x->item, ptr, x->itemsize);
-    v = _PyObject_CallOneArg(x->unpack_from, x->mview);
+    v = PyObject_CallOneArg(x->unpack_from, x->mview);
     if (v == NULL)
         return NULL;
 
