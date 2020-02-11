@@ -95,7 +95,7 @@ _PyObject_FastCallDictTstate(PyThreadState *tstate, PyObject *callable,
 {
     assert(callable != NULL);
 
-    /* _PyObject_FastCallDict() must not be called with an exception set,
+    /* PyObject_VectorcallDict() must not be called with an exception set,
        because it can clear it (directly or indirectly) and so the
        caller loses its exception */
     assert(!_PyErr_Occurred(tstate));
@@ -105,7 +105,7 @@ _PyObject_FastCallDictTstate(PyThreadState *tstate, PyObject *callable,
     assert(nargs == 0 || args != NULL);
     assert(kwargs == NULL || PyDict_Check(kwargs));
 
-    vectorcallfunc func = _PyVectorcall_Function(callable);
+    vectorcallfunc func = PyVectorcall_Function(callable);
     if (func == NULL) {
         /* Use tp_call instead */
         return _PyObject_MakeTpCall(tstate, callable, args, nargs, kwargs);
@@ -133,7 +133,7 @@ _PyObject_FastCallDictTstate(PyThreadState *tstate, PyObject *callable,
 
 
 PyObject *
-_PyObject_FastCallDict(PyObject *callable, PyObject *const *args,
+PyObject_VectorcallDict(PyObject *callable, PyObject *const *args,
                        size_t nargsf, PyObject *kwargs)
 {
     PyThreadState *tstate = _PyThreadState_GET();
@@ -204,8 +204,8 @@ PyVectorcall_Call(PyObject *callable, PyObject *tuple, PyObject *kwargs)
 {
     PyThreadState *tstate = _PyThreadState_GET();
 
-    /* get vectorcallfunc as in _PyVectorcall_Function, but without
-     * the _Py_TPFLAGS_HAVE_VECTORCALL check */
+    /* get vectorcallfunc as in PyVectorcall_Function, but without
+     * the Py_TPFLAGS_HAVE_VECTORCALL check */
     Py_ssize_t offset = Py_TYPE(callable)->tp_vectorcall_offset;
     if (offset <= 0) {
         _PyErr_Format(tstate, PyExc_TypeError,
@@ -259,7 +259,7 @@ _PyObject_Call(PyThreadState *tstate, PyObject *callable,
     assert(PyTuple_Check(args));
     assert(kwargs == NULL || PyDict_Check(kwargs));
 
-    if (_PyVectorcall_Function(callable) != NULL) {
+    if (PyVectorcall_Function(callable) != NULL) {
         return PyVectorcall_Call(callable, args, kwargs);
     }
     else {
@@ -796,7 +796,7 @@ object_vacall(PyThreadState *tstate, PyObject *base,
 
 
 PyObject *
-_PyObject_VectorcallMethod(PyObject *name, PyObject *const *args,
+PyObject_VectorcallMethod(PyObject *name, PyObject *const *args,
                            size_t nargsf, PyObject *kwnames)
 {
     assert(name != NULL);

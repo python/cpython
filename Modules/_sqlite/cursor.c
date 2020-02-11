@@ -266,7 +266,7 @@ _pysqlite_fetch_one_row(pysqlite_Cursor* self)
                 item = PyBytes_FromStringAndSize(val_str, nbytes);
                 if (!item)
                     goto error;
-                converted = _PyObject_CallOneArg(converter, item);
+                converted = PyObject_CallOneArg(converter, item);
                 Py_DECREF(item);
             }
         } else {
