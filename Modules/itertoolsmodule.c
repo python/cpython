@@ -4750,14 +4750,16 @@ PyInit_itertools(void)
         NULL
     };
 
-    Py_TYPE(&teedataobject_type) = &PyType_Type;
+    Py_SET_TYPE(&teedataobject_type, &PyType_Type);
     m = PyModule_Create(&itertoolsmodule);
-    if (m == NULL)
+    if (m == NULL) {
         return NULL;
+    }
 
     for (i=0 ; typelist[i] != NULL ; i++) {
-        if (PyType_Ready(typelist[i]) < 0)
+        if (PyType_Ready(typelist[i]) < 0) {
             return NULL;
+        }
         name = _PyType_Name(typelist[i]);
         Py_INCREF(typelist[i]);
         PyModule_AddObject(m, name, (PyObject *)typelist[i]);

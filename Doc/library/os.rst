@@ -3314,6 +3314,8 @@ to be ignored.
    you can check whether or not it is available using :data:`os.supports_fd`.
    If it is unavailable, using it will raise a :exc:`NotImplementedError`.
 
+   .. audit-event:: os.exec path,args,env os.execl
+
    .. availability:: Unix, Windows.
 
    .. versionadded:: 3.3
@@ -3670,6 +3672,8 @@ written in Python, such as a mail server's external command delivery program.
    :c:data:`POSIX_SPAWN_SETSCHEDPARAM` and :c:data:`POSIX_SPAWN_SETSCHEDULER`
    flags.
 
+   .. audit-event:: os.posix_spawn path,argv,env os.posix_spawn
+
    .. versionadded:: 3.8
 
    .. availability:: Unix.
@@ -3683,6 +3687,8 @@ written in Python, such as a mail server's external command delivery program.
    Similar to :func:`posix_spawn` except that the system searches
    for the *executable* file in the list of directories specified by the
    :envvar:`PATH` environment variable (in the same way as for ``execvp(3)``).
+
+   .. audit-event:: os.posix_spawn path,argv,env os.posix_spawnp
 
    .. versionadded:: 3.8
 
@@ -3784,6 +3790,8 @@ written in Python, such as a mail server's external command delivery program.
       L = ['cp', 'index.html', '/dev/null']
       os.spawnvpe(os.P_WAIT, 'cp', L, os.environ)
 
+   .. audit-event:: os.spawn mode,path,args,env os.spawnl
+
    .. availability:: Unix, Windows.  :func:`spawnlp`, :func:`spawnlpe`, :func:`spawnvp`
       and :func:`spawnvpe` are not available on Windows.  :func:`spawnle` and
       :func:`spawnve` are not thread-safe on Windows; we advise you to use the
@@ -3853,6 +3861,8 @@ written in Python, such as a mail server's external command delivery program.
    function is not resolved until this function is first called.  If the function
    cannot be resolved, :exc:`NotImplementedError` will be raised.
 
+   .. audit-event:: os.startfile path,operation os.startfile
+
    .. availability:: Windows.
 
 
@@ -3902,10 +3912,8 @@ written in Python, such as a mail server's external command delivery program.
 
    See the Unix manual page
    :manpage:`times(2)` and :manpage:`times(3)` manual page on Unix or `the GetProcessTimes MSDN
-   <https://docs.microsoft.com/windows/win32/api/processthreadsapi/nf-processthreadsapi-getprocesstimes>`
-   _ on Windows.
-   On Windows, only :attr:`user` and :attr:`system` are known; the other
-   attributes are zero.
+   <https://docs.microsoft.com/windows/win32/api/processthreadsapi/nf-processthreadsapi-getprocesstimes>`_
+   on Windows. On Windows, only :attr:`user` and :attr:`system` are known; the other attributes are zero.
 
    .. availability:: Unix, Windows.
 

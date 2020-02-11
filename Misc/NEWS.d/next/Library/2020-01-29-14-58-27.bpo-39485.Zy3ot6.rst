@@ -1,0 +1,3 @@
+Fix a bug in :func:`unittest.mock.create_autospec` that would complain about
+the wrong number of arguments for custom descriptors defined in an extension
+module returning functions.

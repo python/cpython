@@ -127,40 +127,21 @@ PyAPI_FUNC(PyVarObject *) _PyObject_NewVar(PyTypeObject *, Py_ssize_t);
 #define PyObject_NewVar(type, typeobj, n) \
                 ( (type *) _PyObject_NewVar((typeobj), (n)) )
 
-/* Inline functions trading binary compatibility for speed:
-   PyObject_INIT() is the fast version of PyObject_Init(), and
-   PyObject_INIT_VAR() is the fast version of PyObject_InitVar.
-   See also pymem.h.
-
-   These inline functions expect non-NULL object pointers. */
-static inline PyObject*
-_PyObject_INIT(PyObject *op, PyTypeObject *typeobj)
-{
-    assert(op != NULL);
-    Py_TYPE(op) = typeobj;
-    if (PyType_GetFlags(typeobj) & Py_TPFLAGS_HEAPTYPE) {
-        Py_INCREF(typeobj);
-    }
-    _Py_NewReference(op);
-    return op;
-}
-
-#define PyObject_INIT(op, typeobj) \
-    _PyObject_INIT(_PyObject_CAST(op), (typeobj))
-
-static inline PyVarObject*
-_PyObject_INIT_VAR(PyVarObject *op, PyTypeObject *typeobj, Py_ssize_t size)
-{
-    assert(op != NULL);
-    Py_SIZE(op) = size;
-    PyObject_INIT((PyObject *)op, typeobj);
-    return op;
-}
-
-#define PyObject_INIT_VAR(op, typeobj, size) \
-    _PyObject_INIT_VAR(_PyVarObject_CAST(op), (typeobj), (size))
-
 #define _PyObject_SIZE(typeobj) ( (typeobj)->tp_basicsize )
+
+
+#ifdef Py_LIMITED_API
+/* Define PyObject_INIT() and PyObject_INIT_VAR() as aliases to PyObject_Init()
+   and PyObject_InitVar() in the limited C API for compatibility with the
+   CPython C API. */
+#  define PyObject_INIT(op, typeobj) \
+        PyObject_Init(_PyObject_CAST(op), (typeobj))
+#  define PyObject_INIT_VAR(op, typeobj, size) \
+        PyObject_InitVar(_PyVarObject_CAST(op), (typeobj), (size))
+#else
+/* PyObject_INIT() and PyObject_INIT_VAR() are defined in cpython/objimpl.h */
+#endif
+
 
 /* _PyObject_VAR_SIZE returns the number of bytes (as size_t) allocated for a
    vrbl-size object with nitems items, exclusive of gc overhead (if any).  The

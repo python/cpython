@@ -84,7 +84,7 @@ pysqlite_microprotocols_adapt(PyObject *obj, PyObject *proto, PyObject *alt)
        way to get a quotable object to be its instance */
 
     /* look for an adapter in the registry */
-    key = Py_BuildValue("(OO)", (PyObject*)obj->ob_type, proto);
+    key = Py_BuildValue("(OO)", (PyObject*)Py_TYPE(obj), proto);
     if (!key) {
         return NULL;
     }
