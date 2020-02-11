@@ -533,7 +533,7 @@ static inline mi_segment_t* mi_checked_ptr_segment(const void* p, const char* ms
   mi_segment_t* const segment = _mi_ptr_segment(p);
   mi_assert_internal(segment != NULL);
 
-#if (MI_DEBUG>0)
+#if 0 && (MI_DEBUG>0)
   if mi_unlikely(!mi_is_in_heap_region(p)) {
   #if (MI_INTPTR_SIZE == 8 && defined(__linux__))
     if (((uintptr_t)p >> 40) != 0x7F) { // linux tends to align large blocks above 0x7F000000000 (issue #640)
