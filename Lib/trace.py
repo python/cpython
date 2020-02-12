@@ -52,6 +52,7 @@ __all__ = ['Trace', 'CoverageResults']
 import linecache
 import os
 import sys
+import sysconfig
 import token
 import tokenize
 import inspect
@@ -676,9 +677,8 @@ def main():
     opts = parser.parse_args()
 
     if opts.ignore_dir:
-        rel_path = 'lib', 'python{0.major}.{0.minor}'.format(sys.version_info)
-        _prefix = os.path.join(sys.base_prefix, *rel_path)
-        _exec_prefix = os.path.join(sys.base_exec_prefix, *rel_path)
+        _prefix = sysconfig.get_path("stdlib")
+        _exec_prefix = sysconfig.get_path("platstdlib")
 
     def parse_ignore_dir(s):
         s = os.path.expanduser(os.path.expandvars(s))
