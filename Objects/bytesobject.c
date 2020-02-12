@@ -3,11 +3,11 @@
 #define PY_SSIZE_T_CLEAN
 
 #include "Python.h"
+#include "pycore_bytes_methods.h"
 #include "pycore_object.h"
 #include "pycore_pymem.h"
 #include "pycore_pystate.h"
 
-#include "bytes_methods.h"
 #include "pystrhex.h"
 #include <stddef.h>
 

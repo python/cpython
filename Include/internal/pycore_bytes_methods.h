@@ -2,6 +2,10 @@
 #ifndef Py_BYTES_CTYPE_H
 #define Py_BYTES_CTYPE_H
 
+#ifndef Py_BUILD_CORE
+#  error "this header requires Py_BUILD_CORE define"
+#endif
+
 /*
  * The internal implementation behind PyBytes (bytes) and PyByteArray (bytearray)
  * methods of the given names, they operate on ASCII byte strings.

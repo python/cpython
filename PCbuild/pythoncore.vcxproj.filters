@@ -48,9 +48,6 @@
     <ClInclude Include="..\Include\boolobject.h">
       <Filter>Include</Filter>
     </ClInclude>
-    <ClInclude Include="..\Include\bytes_methods.h">
-      <Filter>Include</Filter>
-    </ClInclude>
     <ClInclude Include="..\Include\bytearrayobject.h">
       <Filter>Include</Filter>
     </ClInclude>
@@ -184,6 +181,9 @@
       <Filter>Include</Filter>
     </ClInclude>
     <ClInclude Include="..\Include\internal\pycore_atomic.h">
+      <Filter>Include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Include\internal\pycore_bytes_methods.h">
       <Filter>Include</Filter>
     </ClInclude>
     <ClInclude Include="..\Include\internal\pycore_call.h">
