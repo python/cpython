@@ -972,9 +972,7 @@ PYTHON_HEADERS= \
 		$(srcdir)/Include/bytearrayobject.h \
 		$(srcdir)/Include/bytes_methods.h \
 		$(srcdir)/Include/bytesobject.h \
-		$(srcdir)/Include/cellobject.h \
 		$(srcdir)/Include/ceval.h \
-		$(srcdir)/Include/classobject.h \
 		$(srcdir)/Include/code.h \
 		$(srcdir)/Include/codecs.h \
 		$(srcdir)/Include/compile.h \
@@ -992,7 +990,6 @@ PYTHON_HEADERS= \
 		$(srcdir)/Include/floatobject.h \
 		$(srcdir)/Include/frameobject.h \
 		$(srcdir)/Include/funcobject.h \
-		$(srcdir)/Include/genobject.h \
 		$(srcdir)/Include/import.h \
 		$(srcdir)/Include/interpreteridobject.h \
 		$(srcdir)/Include/intrcheck.h \
@@ -1015,13 +1012,9 @@ PYTHON_HEADERS= \
 		$(srcdir)/Include/osmodule.h \
 		$(srcdir)/Include/patchlevel.h \
 		$(srcdir)/Include/picklebufobject.h \
-		$(srcdir)/Include/pyarena.h \
 		$(srcdir)/Include/pycapsule.h \
-		$(srcdir)/Include/pyctype.h \
-		$(srcdir)/Include/pydebug.h \
 		$(srcdir)/Include/pydtrace.h \
 		$(srcdir)/Include/pyerrors.h \
-		$(srcdir)/Include/pyfpe.h \
 		$(srcdir)/Include/pyhash.h \
 		$(srcdir)/Include/pylifecycle.h \
 		$(srcdir)/Include/pymacconfig.h \
@@ -1035,7 +1028,6 @@ PYTHON_HEADERS= \
 		$(srcdir)/Include/pystrtod.h \
 		$(srcdir)/Include/pythonrun.h \
 		$(srcdir)/Include/pythread.h \
-		$(srcdir)/Include/pytime.h \
 		$(srcdir)/Include/rangeobject.h \
 		$(srcdir)/Include/setobject.h \
 		$(srcdir)/Include/sliceobject.h \
@@ -1057,19 +1049,27 @@ PYTHON_HEADERS= \
 		$(srcdir)/Include/Python-ast.h \
 		\
 		$(srcdir)/Include/cpython/abstract.h \
+		$(srcdir)/Include/cpython/cellobject.h \
 		$(srcdir)/Include/cpython/ceval.h \
+		$(srcdir)/Include/cpython/classobject.h \
 		$(srcdir)/Include/cpython/dictobject.h \
 		$(srcdir)/Include/cpython/fileobject.h \
+		$(srcdir)/Include/cpython/genobject.h \
 		$(srcdir)/Include/cpython/import.h \
 		$(srcdir)/Include/cpython/initconfig.h \
 		$(srcdir)/Include/cpython/interpreteridobject.h \
 		$(srcdir)/Include/cpython/listobject.h \
 		$(srcdir)/Include/cpython/object.h \
 		$(srcdir)/Include/cpython/objimpl.h \
+		$(srcdir)/Include/cpython/pyarena.h \
+		$(srcdir)/Include/cpython/pyctype.h \
+		$(srcdir)/Include/cpython/pydebug.h \
 		$(srcdir)/Include/cpython/pyerrors.h \
+		$(srcdir)/Include/cpython/pyfpe.h \
 		$(srcdir)/Include/cpython/pylifecycle.h \
 		$(srcdir)/Include/cpython/pymem.h \
 		$(srcdir)/Include/cpython/pystate.h \
+		$(srcdir)/Include/cpython/pytime.h \
 		$(srcdir)/Include/cpython/sysmodule.h \
 		$(srcdir)/Include/cpython/traceback.h \
 		$(srcdir)/Include/cpython/tupleobject.h \

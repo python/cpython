@@ -1,9 +1,6 @@
-#ifndef Py_LIMITED_API
 #ifndef Py_PYTIME_H
 #define Py_PYTIME_H
-
-#include "pyconfig.h" /* include for defines */
-#include "object.h"
+#ifndef Py_LIMITED_API
 
 /**************************************************************************
 Symbols and macros to supply platform-independent interfaces to time related
@@ -242,5 +239,5 @@ PyAPI_FUNC(int) _PyTime_GetPerfCounterWithInfo(
 }
 #endif
 
-#endif /* Py_PYTIME_H */
 #endif /* Py_LIMITED_API */
+#endif /* Py_PYTIME_H */

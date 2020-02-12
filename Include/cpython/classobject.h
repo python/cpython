@@ -2,9 +2,9 @@
 
 /* Revealing some structures (not for general use) */
 
-#ifndef Py_LIMITED_API
 #ifndef Py_CLASSOBJECT_H
 #define Py_CLASSOBJECT_H
+#ifndef Py_LIMITED_API
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -53,5 +53,5 @@ PyAPI_FUNC(PyObject *) PyInstanceMethod_Function(PyObject *);
 #ifdef __cplusplus
 }
 #endif
+#endif /* !Py_LIMITED_API */
 #endif /* !Py_CLASSOBJECT_H */
-#endif /* Py_LIMITED_API */

@@ -1,6 +1,6 @@
-#ifndef Py_LIMITED_API
 #ifndef Py_PYDEBUG_H
 #define Py_PYDEBUG_H
+#ifndef Py_LIMITED_API
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -36,5 +36,5 @@ PyAPI_DATA(int) Py_LegacyWindowsStdioFlag;
 #ifdef __cplusplus
 }
 #endif
+#endif /* !Py_LIMITED_API */
 #endif /* !Py_PYDEBUG_H */
-#endif /* Py_LIMITED_API */

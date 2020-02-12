@@ -82,7 +82,6 @@
 #error "PYMALLOC_DEBUG requires WITH_PYMALLOC"
 #endif
 #include "pymath.h"
-#include "pytime.h"
 #include "pymem.h"
 
 #include "object.h"
@@ -90,7 +89,10 @@
 #include "typeslots.h"
 #include "pyhash.h"
 
-#include "pydebug.h"
+/* object.h must be included before pytime.h which uses PyObject type */
+#include "cpython/pytime.h"
+
+#include "cpython/pydebug.h"
 
 #include "bytearrayobject.h"
 #include "bytesobject.h"
@@ -111,14 +113,13 @@
 #include "methodobject.h"
 #include "moduleobject.h"
 #include "funcobject.h"
-#include "classobject.h"
+#include "cpython/classobject.h"
 #include "fileobject.h"
 #include "pycapsule.h"
 #include "traceback.h"
 #include "sliceobject.h"
-#include "cellobject.h"
+#include "cpython/cellobject.h"
 #include "iterobject.h"
-#include "genobject.h"
 #include "descrobject.h"
 #include "warnings.h"
 #include "weakrefobject.h"
@@ -127,13 +128,17 @@
 #include "picklebufobject.h"
 
 #include "codecs.h"
-#include "pyerrors.h"
 
 #include "cpython/initconfig.h"
 #include "pystate.h"
-#include "context.h"
 
-#include "pyarena.h"
+/* pystate.h must be included before pyerrors.h and genobject.h
+   which use _PyErr_StackItem */
+#include "pyerrors.h"
+#include "cpython/genobject.h"
+
+#include "context.h"
+#include "cpython/pyarena.h"
 #include "modsupport.h"
 #include "compile.h"
 #include "pythonrun.h"
@@ -149,12 +154,12 @@
 
 #include "eval.h"
 
-#include "pyctype.h"
+#include "cpython/pyctype.h"
 #include "pystrtod.h"
 #include "pystrcmp.h"
 #include "dtoa.h"
 #include "fileutils.h"
-#include "pyfpe.h"
+#include "cpython/pyfpe.h"
 #include "tracemalloc.h"
 
 #endif /* !Py_PYTHON_H */

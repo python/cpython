@@ -1,14 +1,12 @@
 
 /* Generator object interface */
 
-#ifndef Py_LIMITED_API
 #ifndef Py_GENOBJECT_H
 #define Py_GENOBJECT_H
+#ifndef Py_LIMITED_API
 #ifdef __cplusplus
 extern "C" {
 #endif
-
-#include "pystate.h"   /* _PyErr_StackItem */
 
 struct _frame; /* Avoid including frameobject.h */
 
@@ -102,5 +100,5 @@ int PyAsyncGen_ClearFreeLists(void);
 #ifdef __cplusplus
 }
 #endif
+#endif /* !Py_LIMITED_API */
 #endif /* !Py_GENOBJECT_H */
-#endif /* Py_LIMITED_API */

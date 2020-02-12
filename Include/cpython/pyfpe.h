@@ -11,5 +11,5 @@
 #define PyFPE_START_PROTECT(err_string, leave_stmt)
 #define PyFPE_END_PROTECT(v)
 
-#endif /* !defined(Py_LIMITED_API) */
+#endif /* !Py_LIMITED_API */
 #endif /* !Py_PYFPE_H */

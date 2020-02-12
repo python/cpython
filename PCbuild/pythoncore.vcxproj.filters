@@ -57,13 +57,7 @@
     <ClInclude Include="..\Include\bytesobject.h">
       <Filter>Include</Filter>
     </ClInclude>
-    <ClInclude Include="..\Include\cellobject.h">
-      <Filter>Include</Filter>
-    </ClInclude>
     <ClInclude Include="..\Include\ceval.h">
-      <Filter>Include</Filter>
-    </ClInclude>
-    <ClInclude Include="..\Include\classobject.h">
       <Filter>Include</Filter>
     </ClInclude>
     <ClInclude Include="..\Include\code.h">
@@ -84,13 +78,22 @@
     <ClInclude Include="..\Include\cpython\abstract.h">
       <Filter>Include</Filter>
     </ClInclude>
+    <ClInclude Include="..\Include\cpython\cellobject.h">
+      <Filter>Include</Filter>
+    </ClInclude>
     <ClInclude Include="..\Include\cpython\ceval.h">
+      <Filter>Include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Include\cpython\classobject.h">
       <Filter>Include</Filter>
     </ClInclude>
     <ClInclude Include="..\Include\cpython\dictobject.h">
       <Filter>Include</Filter>
     </ClInclude>
     <ClInclude Include="..\Include\cpython\fileobject.h">
+      <Filter>Include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Include\cpython\genobject.h">
       <Filter>Include</Filter>
     </ClInclude>
     <ClInclude Include="..\Include\cpython\import.h">
@@ -108,7 +111,19 @@
     <ClInclude Include="..\Include\cpython\objimpl.h">
       <Filter>Include</Filter>
     </ClInclude>
+    <ClInclude Include="..\Include\cpython\pyarena.h">
+      <Filter>Include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Include\cpython\pyctype.h">
+      <Filter>Include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Include\cpython\pydebug.h">
+      <Filter>Include</Filter>
+    </ClInclude>
     <ClInclude Include="..\Include\cpython\pyerrors.h">
+      <Filter>Include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Include\cpython\pyfpe.h">
       <Filter>Include</Filter>
     </ClInclude>
     <ClInclude Include="..\Include\cpython\pylifecycle.h">
@@ -118,6 +133,9 @@
       <Filter>Include</Filter>
     </ClInclude>
     <ClInclude Include="..\Include\cpython\pystate.h">
+      <Filter>Include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Include\cpython\pytime.h">
       <Filter>Include</Filter>
     </ClInclude>
     <ClInclude Include="..\Include\cpython\sysmodule.h">
@@ -166,9 +184,6 @@
       <Filter>Include</Filter>
     </ClInclude>
     <ClInclude Include="..\Include\funcobject.h">
-      <Filter>Include</Filter>
-    </ClInclude>
-    <ClInclude Include="..\Include\genobject.h">
       <Filter>Include</Filter>
     </ClInclude>
     <ClInclude Include="..\Include\graminit.h">
@@ -309,16 +324,7 @@
     <ClInclude Include="..\Include\py_curses.h">
       <Filter>Include</Filter>
     </ClInclude>
-    <ClInclude Include="..\Include\pyarena.h">
-      <Filter>Include</Filter>
-    </ClInclude>
     <ClInclude Include="..\Include\pycapsule.h">
-      <Filter>Include</Filter>
-    </ClInclude>
-    <ClInclude Include="..\Include\pyctype.h">
-      <Filter>Include</Filter>
-    </ClInclude>
-    <ClInclude Include="..\Include\pydebug.h">
       <Filter>Include</Filter>
     </ClInclude>
     <ClInclude Include="..\Include\pyerrors.h">
@@ -327,16 +333,10 @@
     <ClInclude Include="..\Include\pyexpat.h">
       <Filter>Include</Filter>
     </ClInclude>
-    <ClInclude Include="..\Include\pyfpe.h">
-      <Filter>Include</Filter>
-    </ClInclude>
     <ClInclude Include="..\Include\pylifecycle.h">
       <Filter>Include</Filter>
     </ClInclude>
     <ClInclude Include="..\Include\pymath.h">
-      <Filter>Include</Filter>
-    </ClInclude>
-    <ClInclude Include="..\Include\pytime.h">
       <Filter>Include</Filter>
     </ClInclude>
     <ClInclude Include="..\Include\pymacro.h">

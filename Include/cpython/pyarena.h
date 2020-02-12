@@ -1,9 +1,9 @@
 /* An arena-like memory interface for the compiler.
  */
 
-#ifndef Py_LIMITED_API
 #ifndef Py_PYARENA_H
 #define Py_PYARENA_H
+#ifndef Py_LIMITED_API
 
 #ifdef __cplusplus
 extern "C" {
@@ -60,5 +60,5 @@ extern "C" {
 }
 #endif
 
+#endif /* !Py_LIMITED_API */
 #endif /* !Py_PYARENA_H */
-#endif /* Py_LIMITED_API */

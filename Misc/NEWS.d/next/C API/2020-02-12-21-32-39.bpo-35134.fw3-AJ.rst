@@ -1,0 +1,5 @@
+The whole content of cellobject.h, classobject.h, genobject.h, pyarena.h,
+pyctype.h, pydebug.h, pyfpe.h and pytime.h is excluded from the limited C API,
+so move these header files to Include/cpython/ directory. Since they are
+included by the main Python.h: users should not be affected by this change. If
+one of these header file is included explicitly: only include Python.h instead.
