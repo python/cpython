@@ -1,0 +1,2 @@
+Fixed starting position of AST for expressions like ``(a)(b)``, ``(a)[b]``
+and ``(a).b``.
