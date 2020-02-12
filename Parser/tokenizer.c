@@ -1,6 +1,7 @@
 
 /* Tokenizer implementation */
 
+#define PY_SSIZE_T_CLEAN
 #include "Python.h"
 
 #include <ctype.h>
@@ -1034,17 +1035,44 @@ tok_backup(struct tok_state *tok, int c)
 static int
 syntaxerror(struct tok_state *tok, const char *format, ...)
 {
+    PyObject *errmsg, *errtext, *args;
     va_list vargs;
 #ifdef HAVE_STDARG_PROTOTYPES
     va_start(vargs, format);
 #else
     va_start(vargs);
 #endif
-    PyErr_FormatV(PyExc_SyntaxError, format, vargs);
+    errmsg = PyUnicode_FromFormatV(format, vargs);
     va_end(vargs);
-    PyErr_SyntaxLocationObject(tok->filename,
-                               tok->lineno,
-                               (int)(tok->cur - tok->line_start));
+    if (!errmsg) {
+        goto error;
+    }
+
+    errtext = PyUnicode_DecodeUTF8(tok->line_start, tok->cur - tok->line_start,
+                                   "replace");
+    if (!errtext) {
+        goto error;
+    }
+    int offset = (int)PyUnicode_GET_LENGTH(errtext);
+    Py_ssize_t line_len = strcspn(tok->line_start, "\n");
+    if (line_len != tok->cur - tok->line_start) {
+        Py_DECREF(errtext);
+        errtext = PyUnicode_DecodeUTF8(tok->line_start, line_len,
+                                       "replace");
+    }
+    if (!errtext) {
+        goto error;
+    }
+
+    args = Py_BuildValue("(O(OiiN))", errmsg,
+                         tok->filename, tok->lineno, offset, errtext);
+    if (args) {
+        PyErr_SetObject(PyExc_SyntaxError, args);
+        Py_DECREF(args);
+    }
+
+error:
+    Py_XDECREF(errmsg);
     tok->done = E_ERROR;
     return ERRORTOKEN;
 }
