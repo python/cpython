@@ -280,7 +280,10 @@ class install(Command):
         # $platbase in the other installation directories and not worry
         # about needing recursive variable expansion (shudder).
 
-        py_version = sys.version.split()[0]
+        py_version = '{major}.{minor}.{micro}'.format(
+            major=sys.version_info.major, minor=sys.version_info.minor,
+            micro=sys.version_info.micro)
+
         (prefix, exec_prefix) = get_config_vars('prefix', 'exec_prefix')
         try:
             abiflags = sys.abiflags

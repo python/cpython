@@ -83,10 +83,9 @@ _INSTALL_SCHEMES = {
 
 _SCHEME_KEYS = ('stdlib', 'platstdlib', 'purelib', 'platlib', 'include',
                 'scripts', 'data')
-
- # FIXME don't rely on sys.version here, its format is an implementation detail
- # of CPython, use sys.version_info or sys.hexversion
-_PY_VERSION = sys.version.split()[0]
+_PY_VERSION = '{major}.{minor}.{micro}'.format(
+    major=sys.version_info.major, minor=sys.version_info.minor,
+    micro=sys.version_info.micro)
 _PY_VERSION_SHORT = '%d.%d' % sys.version_info[:2]
 _PY_VERSION_SHORT_NO_DOT = '%d%d' % sys.version_info[:2]
 _PREFIX = os.path.normpath(sys.prefix)
