@@ -1,0 +1,2 @@
+Add :c:macro:`Py_IS_TYPE` macro to check whether the type of object *o* is
+the *type*.

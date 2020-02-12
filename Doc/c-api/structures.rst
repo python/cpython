@@ -70,6 +70,17 @@ the definition of all other Python objects.
       (((PyObject*)(o))->ob_type)
 
 
+.. c:macro:: Py_IS_TYPE(o, type)
+
+   This macro is used to check whether the type of object *o* is the *type*.
+   It expands to::
+
+      (Py_TYPE(o) == type)
+
+
+   .. versionadded:: 3.9
+
+
 .. c:function:: void Py_SET_TYPE(PyObject *o, PyTypeObject *type)
 
    Set the object *o* type to *type*.
