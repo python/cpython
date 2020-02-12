@@ -315,6 +315,17 @@ case), and one used ``__VENV_NAME__`` instead.
 Optimizations
 =============
 
+* Optimized the idiom for assignment a temporary variable in comprehensions.
+  Now ``for y in [expr]`` in comprehensions is as fast as a simple assignment
+  ``y = expr``.  For example:
+
+     sums = [s for s in [0] for x in data for s in [s + x]]
+
+  Unlike to the ``:=`` operator this idiom does not leak a variable to the
+  outer scope.
+
+  (Contributed by Serhiy Storchaka in :issue:`32856`.)
+
 
 Build and C API Changes
 =======================
