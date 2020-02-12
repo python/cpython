@@ -1682,8 +1682,8 @@ unpack_single(const char *ptr, const char *fmt)
     switch (fmt[0]) {
 
     /* signed integers and fast path for 'B' */
-    case 'B': uc = *((unsigned char *)ptr); goto convert_uc;
-    case 'b': ld =   *((signed char *)ptr); goto convert_ld;
+    case 'B': uc = *((const unsigned char *)ptr); goto convert_uc;
+    case 'b': ld =   *((const signed char *)ptr); goto convert_ld;
     case 'h': UNPACK_SINGLE(ld, ptr, short); goto convert_ld;
     case 'i': UNPACK_SINGLE(ld, ptr, int); goto convert_ld;
     case 'l': UNPACK_SINGLE(ld, ptr, long); goto convert_ld;
@@ -2684,8 +2684,8 @@ unpack_cmp(const char *p, const char *q, char fmt,
     switch (fmt) {
 
     /* signed integers and fast path for 'B' */
-    case 'B': return *((unsigned char *)p) == *((unsigned char *)q);
-    case 'b': return *((signed char *)p) == *((signed char *)q);
+    case 'B': return *((const unsigned char *)p) == *((const unsigned char *)q);
+    case 'b': return *((const signed char *)p) == *((const signed char *)q);
     case 'h': CMP_SINGLE(p, q, short); return equal;
     case 'i': CMP_SINGLE(p, q, int); return equal;
     case 'l': CMP_SINGLE(p, q, long); return equal;
