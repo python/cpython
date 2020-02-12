@@ -201,6 +201,9 @@
     <ClInclude Include="..\Include\internal\pycore_context.h">
       <Filter>Include</Filter>
     </ClInclude>
+    <ClInclude Include="..\Include\internal\pycore_dtoa.h">
+      <Filter>Include</Filter>
+    </ClInclude>
     <ClInclude Include="..\Include\internal\pycore_fileutils.h">
       <Filter>Include</Filter>
     </ClInclude>
@@ -358,9 +361,6 @@
       <Filter>Include</Filter>
     </ClInclude>
     <ClInclude Include="..\Include\pystrhex.h">
-      <Filter>Include</Filter>
-    </ClInclude>
-    <ClInclude Include="..\Include\dtoa.h">
       <Filter>Include</Filter>
     </ClInclude>
     <ClInclude Include="..\Include\Python-ast.h">
