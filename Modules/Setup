@@ -167,8 +167,8 @@ _symtable symtablemodule.c
 # Modules that should always be present (non UNIX dependent):
 
 #array arraymodule.c	# array objects
-#cmath cmathmodule.c _math.c # -lm # complex math library functions
-#math mathmodule.c _math.c # -lm # math library functions, e.g. sin()
+#cmath cmathmodule.c _math.c -DPy_BUILD_CORE_MODULE # -lm # complex math library functions
+#math mathmodule.c _math.c -DPy_BUILD_CORE_MODULE # -lm # math library functions, e.g. sin()
 #_contextvars _contextvarsmodule.c  # Context Variables
 #_struct _struct.c	# binary structure packing/unpacking
 #_weakref _weakref.c	# basic weak reference support

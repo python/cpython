@@ -734,12 +734,14 @@ class PyBuildExt(build_ext):
 
         # math library functions, e.g. sin()
         self.add(Extension('math',  ['mathmodule.c'],
+                           extra_compile_args=['-DPy_BUILD_CORE_MODULE'],
                            extra_objects=[shared_math],
                            depends=['_math.h', shared_math],
                            libraries=['m']))
 
         # complex math library functions
         self.add(Extension('cmath', ['cmathmodule.c'],
+                           extra_compile_args=['-DPy_BUILD_CORE_MODULE'],
                            extra_objects=[shared_math],
                            depends=['_math.h', shared_math],
                            libraries=['m']))

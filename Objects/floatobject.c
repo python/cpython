@@ -4,6 +4,7 @@
    for any kind of float exception without losing portability. */
 
 #include "Python.h"
+#include "pycore_dtoa.h"
 
 #include <ctype.h>
 #include <float.h>
