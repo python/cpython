@@ -115,7 +115,6 @@
     <ClInclude Include="..\Include\ast.h" />
     <ClInclude Include="..\Include\bitset.h" />
     <ClInclude Include="..\Include\boolobject.h" />
-    <ClInclude Include="..\Include\bytes_methods.h" />
     <ClInclude Include="..\Include\bytearrayobject.h" />
     <ClInclude Include="..\Include\bytesobject.h" />
     <ClInclude Include="..\Include\cellobject.h" />
@@ -161,6 +160,7 @@
     <ClInclude Include="..\Include\import.h" />
     <ClInclude Include="..\Include\internal\pycore_accu.h" />
     <ClInclude Include="..\Include\internal\pycore_atomic.h" />
+    <ClInclude Include="..\Include\internal\pycore_bytes_methods.h" />
     <ClInclude Include="..\Include\internal\pycore_call.h" />
     <ClInclude Include="..\Include\internal\pycore_ceval.h" />
     <ClInclude Include="..\Include\internal\pycore_code.h" />
