@@ -10,7 +10,7 @@ extern "C" {
 PyAPI_DATA(PyTypeObject) PyModule_Type;
 
 #define PyModule_Check(op) PyObject_TypeCheck(op, &PyModule_Type)
-#define PyModule_CheckExact(op) (Py_TYPE(op) == &PyModule_Type)
+#define PyModule_CheckExact(op) Py_IS_TYPE(op, &PyModule_Type)
 
 #if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= 0x03030000
 PyAPI_FUNC(PyObject *) PyModule_NewObject(

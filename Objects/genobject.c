@@ -255,7 +255,7 @@ gen_send_ex(PyGenObject *gen, PyObject *arg, int exc, int closing)
         if (PyCoro_CheckExact(gen)) {
             msg = "coroutine raised StopIteration";
         }
-        else if PyAsyncGen_CheckExact(gen) {
+        else if (PyAsyncGen_CheckExact(gen)) {
             msg = "async generator raised StopIteration";
         }
         _PyErr_FormatFromCause(PyExc_RuntimeError, "%s", msg);
