@@ -583,7 +583,7 @@ static stmt_ty ast_for_for_stmt(struct compiling *, const node *, bool);
 
 /* Note different signature for ast_for_call */
 static expr_ty ast_for_call(struct compiling *, const node *, expr_ty,
-                            const node *, const node *);
+                            const node *, const node *, const node *);
 
 static PyObject *parsenumber(struct compiling *, const char *);
 static expr_ty parsestrplus(struct compiling *, const node *n);
@@ -1757,7 +1757,8 @@ ast_for_decorator(struct compiling *c, const node *n)
         name_expr = NULL;
     }
     else {
-        d = ast_for_call(c, CHILD(n, 3), name_expr, CHILD(n, 2), CHILD(n, 4));
+        d = ast_for_call(c, CHILD(n, 3), name_expr,
+                         CHILD(n, 1), CHILD(n, 2), CHILD(n, 4));
         if (!d)
             return NULL;
         name_expr = NULL;
@@ -2658,7 +2659,7 @@ ast_for_binop(struct compiling *c, const node *n)
 }
 
 static expr_ty
-ast_for_trailer(struct compiling *c, const node *n, expr_ty left_expr)
+ast_for_trailer(struct compiling *c, const node *n, expr_ty left_expr, const node *start)
 {
     /* trailer: '(' [arglist] ')' | '[' subscriptlist ']' | '.' NAME
        subscriptlist: subscript (',' subscript)* [',']
@@ -2668,17 +2669,18 @@ ast_for_trailer(struct compiling *c, const node *n, expr_ty left_expr)
     REQ(n, trailer);
     if (TYPE(CHILD(n, 0)) == LPAR) {
         if (NCH(n) == 2)
-            return Call(left_expr, NULL, NULL, LINENO(n), n->n_col_offset,
+            return Call(left_expr, NULL, NULL, LINENO(start), start->n_col_offset,
                         n->n_end_lineno, n->n_end_col_offset, c->c_arena);
         else
-            return ast_for_call(c, CHILD(n, 1), left_expr, CHILD(n, 0), CHILD(n, 2));
+            return ast_for_call(c, CHILD(n, 1), left_expr,
+                                start, CHILD(n, 0), CHILD(n, 2));
     }
     else if (TYPE(CHILD(n, 0)) == DOT) {
         PyObject *attr_id = NEW_IDENTIFIER(CHILD(n, 1));
         if (!attr_id)
             return NULL;
         return Attribute(left_expr, attr_id, Load,
-                         LINENO(n), n->n_col_offset,
+                         LINENO(start), start->n_col_offset,
                          n->n_end_lineno, n->n_end_col_offset, c->c_arena);
     }
     else {
@@ -2689,7 +2691,7 @@ ast_for_trailer(struct compiling *c, const node *n, expr_ty left_expr)
             slice_ty slc = ast_for_slice(c, CHILD(n, 0));
             if (!slc)
                 return NULL;
-            return Subscript(left_expr, slc, Load, LINENO(n), n->n_col_offset,
+            return Subscript(left_expr, slc, Load, LINENO(start), start->n_col_offset,
                              n_copy->n_end_lineno, n_copy->n_end_col_offset,
                              c->c_arena);
         }
@@ -2716,7 +2718,7 @@ ast_for_trailer(struct compiling *c, const node *n, expr_ty left_expr)
             }
             if (!simple) {
                 return Subscript(left_expr, ExtSlice(slices, c->c_arena),
-                                 Load, LINENO(n), n->n_col_offset,
+                                 Load, LINENO(start), start->n_col_offset,
                                  n_copy->n_end_lineno, n_copy->n_end_col_offset, c->c_arena);
             }
             /* extract Index values and put them in a Tuple */
@@ -2733,7 +2735,7 @@ ast_for_trailer(struct compiling *c, const node *n, expr_ty left_expr)
             if (!e)
                 return NULL;
             return Subscript(left_expr, Index(e, c->c_arena),
-                             Load, LINENO(n), n->n_col_offset,
+                             Load, LINENO(start), start->n_col_offset,
                              n_copy->n_end_lineno, n_copy->n_end_col_offset, c->c_arena);
         }
     }
@@ -2771,7 +2773,7 @@ static expr_ty
 ast_for_atom_expr(struct compiling *c, const node *n)
 {
     int i, nch, start = 0;
-    expr_ty e, tmp;
+    expr_ty e;
 
     REQ(n, atom_expr);
     nch = NCH(n);
@@ -2800,12 +2802,9 @@ ast_for_atom_expr(struct compiling *c, const node *n)
         node *ch = CHILD(n, i);
         if (TYPE(ch) != trailer)
             break;
-        tmp = ast_for_trailer(c, ch, e);
-        if (!tmp)
+        e = ast_for_trailer(c, ch, e, CHILD(n, start));
+        if (!e)
             return NULL;
-        tmp->lineno = e->lineno;
-        tmp->col_offset = e->col_offset;
-        e = tmp;
     }
 
     if (start) {
@@ -3035,7 +3034,7 @@ ast_for_expr(struct compiling *c, const node *n)
 
 static expr_ty
 ast_for_call(struct compiling *c, const node *n, expr_ty func,
-             const node *maybegenbeg, const node *closepar)
+             const node *start, const node *maybegenbeg, const node *closepar)
 {
     /*
       arglist: argument (',' argument)*  [',']
@@ -3239,7 +3238,7 @@ ast_for_call(struct compiling *c, const node *n, expr_ty func,
         }
     }
 
-    return Call(func, args, keywords, func->lineno, func->col_offset,
+    return Call(func, args, keywords, LINENO(start), start->n_col_offset,
                 closepar->n_end_lineno, closepar->n_end_col_offset, c->c_arena);
 }
 
@@ -4486,7 +4485,8 @@ ast_for_classdef(struct compiling *c, const node *n, asdl_seq *decorator_seq)
         dummy = Name(dummy_name, Load, LINENO(n), n->n_col_offset,
                      CHILD(n, 1)->n_end_lineno, CHILD(n, 1)->n_end_col_offset,
                      c->c_arena);
-        call = ast_for_call(c, CHILD(n, 3), dummy, NULL, CHILD(n, 4));
+        call = ast_for_call(c, CHILD(n, 3), dummy,
+                            CHILD(n, 1), NULL, CHILD(n, 4));
         if (!call)
             return NULL;
     }

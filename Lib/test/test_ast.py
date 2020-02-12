@@ -1707,6 +1707,14 @@ class EndPositionTests(unittest.TestCase):
         self._check_content(s, call, s)
         self._check_content(s, call.args[0], 'x. y .z')
 
+    def test_trailers_with_parentheses(self):
+        for s in '(a)()', '(a)(b)', '(a)[b]', '(a).b':
+            v = ast.parse(s).body[0].value
+            self._check_content(s, v, s)
+            s2 = 'await ' + s
+            v = ast.parse(s2).body[0].value.value
+            self._check_content(s2, v, s)
+
     def test_displays(self):
         s1 = '[{}, {1, }, {1, 2,} ]'
         s2 = '{a: b, f (): g () ,}'
