@@ -204,7 +204,7 @@ PySys_Audit(const char *event, const char *argFormat, ...)
 
     /* Dtrace USDT point */
     if (dtrace) {
-        PyDTrace_AUDIT((char *)event, (void *)eventArgs);
+        PyDTrace_AUDIT(event, (void *)eventArgs);
     }
 
     /* Call interpreter hooks */
