@@ -166,6 +166,7 @@
     <ClInclude Include="..\Include\internal\pycore_code.h" />
     <ClInclude Include="..\Include\internal\pycore_condvar.h" />
     <ClInclude Include="..\Include\internal\pycore_context.h" />
+    <ClInclude Include="..\Include\internal\pycore_dtoa.h" />
     <ClInclude Include="..\Include\internal\pycore_fileutils.h" />
     <ClInclude Include="..\Include\internal\pycore_getopt.h" />
     <ClInclude Include="..\Include\internal\pycore_gil.h" />
@@ -223,7 +224,6 @@
     <ClInclude Include="..\Include\pystrcmp.h" />
     <ClInclude Include="..\Include\pystrtod.h" />
     <ClInclude Include="..\Include\pystrhex.h" />
-    <ClInclude Include="..\Include\dtoa.h" />
     <ClInclude Include="..\Include\Python-ast.h" />
     <ClInclude Include="..\Include\Python.h" />
     <ClInclude Include="..\Include\pythonrun.h" />
