@@ -96,6 +96,9 @@
     <ClInclude Include="..\Include\cpython\fileobject.h">
       <Filter>Include</Filter>
     </ClInclude>
+    <ClInclude Include="..\Include\cpython\fileutils.h">
+      <Filter>Include</Filter>
+    </ClInclude>
     <ClInclude Include="..\Include\cpython\import.h">
       <Filter>Include</Filter>
     </ClInclude>
