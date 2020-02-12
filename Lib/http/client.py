@@ -1086,7 +1086,8 @@ class HTTPConnection:
             raise CannotSendRequest(self.__state)
 
         # Save the method for use later in the response phase
-        self._method = method
+        # ASCII helps prevent http header injection
+        self._method = method.encode('ascii')
 
         url = url or '/'
         self._validate_path(url)
