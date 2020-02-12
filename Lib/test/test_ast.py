@@ -1707,6 +1707,33 @@ class EndPositionTests(unittest.TestCase):
         self._check_content(s, call, s)
         self._check_content(s, call.args[0], 'x. y .z')
 
+    def test_redundant_parenthesis(self):
+        s = '( ( ( a + b ) ) )'
+        v = ast.parse(s).body[0].value
+        self.assertEqual(type(v).__name__, 'BinOp')
+        self._check_content(s, v, 'a + b')
+        s2 = 'await ' + s
+        v = ast.parse(s2).body[0].value.value
+        self.assertEqual(type(v).__name__, 'BinOp')
+        self._check_content(s2, v, 'a + b')
+
+    def test_trailers_with_redundant_parenthesis(self):
+        tests = (
+            ('( ( ( a ) ) ) ( )', 'Call'),
+            ('( ( ( a ) ) ) ( b )', 'Call'),
+            ('( ( ( a ) ) ) [ b ]', 'Subscript'),
+            ('( ( ( a ) ) ) . b', 'Attribute'),
+        )
+        for s, t in tests:
+            with self.subTest(s):
+                v = ast.parse(s).body[0].value
+                self.assertEqual(type(v).__name__, t)
+                self._check_content(s, v, s)
+                s2 = 'await ' + s
+                v = ast.parse(s2).body[0].value.value
+                self.assertEqual(type(v).__name__, t)
+                self._check_content(s2, v, s)
+
     def test_displays(self):
         s1 = '[{}, {1, }, {1, 2,} ]'
         s2 = '{a: b, f (): g () ,}'
