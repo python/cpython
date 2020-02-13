@@ -1117,7 +1117,7 @@ class AsyncGenAsyncioTest(unittest.TestCase):
 
         self.assertEqual([], messages)
 
-    def test_async_gen_await_anext_twice(self):
+    def test_async_gen_await_same_anext_coro_twice(self):
         async def async_iterate():
             yield 1
             yield 2
@@ -1136,7 +1136,7 @@ class AsyncGenAsyncioTest(unittest.TestCase):
 
         self.loop.run_until_complete(run())
 
-    def test_async_gen_await_aclose_twice(self):
+    def test_async_gen_await_same_aclose_coro_twice(self):
         async def async_iterate():
             yield 1
             yield 2
@@ -1153,6 +1153,32 @@ class AsyncGenAsyncioTest(unittest.TestCase):
 
         self.loop.run_until_complete(run())
 
+    def test_async_gen_aclose_twice_with_different_coros(self):
+        # Regression test for https://bugs.python.org/issue39606
+        async def async_iterate():
+            yield 1
+            yield 2
+
+        async def run():
+            it = async_iterate()
+            await it.aclose()
+            await it.aclose()
+
+        self.loop.run_until_complete(run())
+
+    def test_async_gen_aclose_after_exhaustion(self):
+        # Regression test for https://bugs.python.org/issue39606
+        async def async_iterate():
+            yield 1
+            yield 2
+
+        async def run():
+            it = async_iterate()
+            async for _ in it:
+                pass
+            await it.aclose()
+
+        self.loop.run_until_complete(run())
 
 if __name__ == "__main__":
     unittest.main()
