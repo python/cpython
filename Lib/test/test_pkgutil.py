@@ -210,10 +210,14 @@ class PkgutilTests(unittest.TestCase):
             ('logging.handlers', logging.handlers),
             ('logging.handlers:', logging.handlers),
             ('logging.handlers:SysLogHandler', logging.handlers.SysLogHandler),
+            ('logging.handlers.SysLogHandler', logging.handlers.SysLogHandler),
             ('logging.handlers:SysLogHandler.LOG_ALERT',
+                logging.handlers.SysLogHandler.LOG_ALERT),
+            ('logging.handlers.SysLogHandler.LOG_ALERT',
                 logging.handlers.SysLogHandler.LOG_ALERT),
             ('logging.handlers:NoSuchHandler', AttributeError),
             ('logging.handlers:SysLogHandler.NO_SUCH_VALUE', AttributeError),
+            ('logging.handlers.SysLogHandler.NO_SUCH_VALUE', AttributeError),
         )
 
         for s, e_or_o in cases:
