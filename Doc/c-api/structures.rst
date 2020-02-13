@@ -70,6 +70,14 @@ the definition of all other Python objects.
       (((PyObject*)(o))->ob_type)
 
 
+.. c:function:: int Py_IS_TYPE(PyObject *o, PyTypeObject *type)
+
+   Return non-zero if the object *o* type is *type*. Return zero otherwise.
+   Equivalent to: ``Py_TYPE(o) == type``.
+
+   .. versionadded:: 3.9
+
+
 .. c:function:: void Py_SET_TYPE(PyObject *o, PyTypeObject *type)
 
    Set the object *o* type to *type*.
