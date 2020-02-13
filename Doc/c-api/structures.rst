@@ -103,7 +103,7 @@ the definition of all other Python objects.
 
 .. c:function:: void Py_SET_SIZE(PyVarObject *o, Py_ssize_t size)
 
-   Set the object *o* size of *size*.
+   Set the object *o* size to *size*.
 
    .. versionadded:: 3.9
 
