@@ -13,6 +13,7 @@ import importlib.util
 import unittest
 import tempfile
 import shutil
+import contextlib
 
 # NOTE: There are some additional tests relating to interaction with
 #       zipimport in the test_zipimport_support test module.
@@ -440,7 +441,7 @@ We'll simulate a __file__ attr that ends in pyc:
     >>> tests = finder.find(sample_func)
 
     >>> print(tests)  # doctest: +ELLIPSIS
-    [<DocTest sample_func from ...:24 (1 example)>]
+    [<DocTest sample_func from ...:25 (1 example)>]
 
 The exact name depends on how test_doctest was invoked, so allow for
 leading path components.
@@ -2691,6 +2692,16 @@ class TestHook:
         sys.modules.clear()
         sys.modules.update(self.modules_before)
 
+
+@contextlib.contextmanager
+def test_hook(pathdir):
+    hook = TestHook(pathdir)
+    try:
+        yield hook
+    finally:
+        hook.remove()
+
+
 def test_lineendings(): r"""
 *nix systems use \n line endings, while Windows systems use \r\n, and
 old Mac systems used \r, which Python still recognizes as a line ending.  Python
@@ -2756,10 +2767,9 @@ whitespace if doctest does not correctly do the newline conversion.
     ...         b'Done.\r'
     ...     )
     95
-    >>> hook = TestHook(dn)
-    >>> doctest.testfile("doctest_testfile.txt", package="doctest_testpkg", verbose=False)
+    >>> with test_hook(dn):
+    ...     doctest.testfile("doctest_testfile.txt", package="doctest_testpkg", verbose=False)
     TestResults(failed=0, attempted=3)
-    >>> hook.remove()
     >>> shutil.rmtree(dn)
 
 """
