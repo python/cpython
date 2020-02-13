@@ -17,8 +17,8 @@ class AbstractPoolTests(unittest.TestCase):
         asyncio.set_event_loop(self.loop)
 
     def tearDown(self):
+        asyncio.set_event_loop(None)
         self.loop.close()
-        self.loop = None
 
     def test_methods_not_implemented(self):
         pool = asyncio.pools.AbstractPool()
