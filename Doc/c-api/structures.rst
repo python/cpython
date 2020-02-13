@@ -72,8 +72,8 @@ the definition of all other Python objects.
 
 .. c:function:: int Py_IS_TYPE(PyObject *o, PyTypeObject *type)
 
-   Return true if the type of object *o* is the *type*.
-   Equivalent to: Py_TYPE(o) == type.
+   Return non-zero if the object *o* type is *type*. Return zero otherwise.
+   Equivalent to: ``Py_TYPE(o) == type``.
 
    .. versionadded:: 3.9
 
