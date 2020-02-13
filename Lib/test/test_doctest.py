@@ -2744,7 +2744,17 @@ whitespace if doctest does not correctly do the newline conversion.
     >>> support.create_empty_file(os.path.join(pkg, "__init__.py"))
     >>> fn = os.path.join(pkg, "doctest_testfile.txt")
     >>> with open(fn, 'wb') as f:
-    ...     f.write(b'Test:\r\n\r\n  >>> x = 1 + 1\r\n\r\nDone.\r\nTest:\n\n  >>> x = 1 + 1\n\nDone.\nTest:\r\r  >>> x = 1 + 1\r\rDone.\r')
+    ...     f.write(
+    ...         b'Test:\r\n\r\n'
+    ...         b'  >>> x = 1 + 1\r\n\r\n'
+    ...         b'Done.\r\n'
+    ...         b'Test:\n\n'
+    ...         b'  >>> x = 1 + 1\n\n'
+    ...         b'Done.\n'
+    ...         b'Test:\r\r'
+    ...         b'  >>> x = 1+ 1\r\r'
+    ...         b'Done.\r'
+    ...     )
     95
     >>> hook = TestHook(dn)
     >>> doctest.testfile("doctest_testfile.txt", package="doctest_testpkg", verbose=False)
