@@ -683,6 +683,15 @@ can contain line breaks (e.g. in triple-quoted strings), but they
 cannot contain comments.  Each expression is evaluated in the context
 where the formatted string literal appears, in order from left to right.
 
+.. index::
+   keyword: await
+   single: async for; in comprehensions
+
+An :keyword:`await` expression and comprehensions containing an
+:keyword:`async for` clause are illegal in the expression in formatted
+string literals. (The reason is a problem with the implementation ---
+this restriction is lifted in Python 3.7).
+
 If a conversion is specified, the result of evaluating the expression
 is converted before formatting.  Conversion ``'!s'`` calls :func:`str` on
 the result, ``'!r'`` calls :func:`repr`, and ``'!a'`` calls :func:`ascii`.
