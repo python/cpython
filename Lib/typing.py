@@ -1843,6 +1843,12 @@ class _TypedDictMeta(type):
             required_keys.update(base.__dict__.get('__required_keys__', ()))
             optional_keys.update(base.__dict__.get('__optional_keys__', ()))
 
+        annotations.update(own_annotations)
+        if total:
+            required_keys.update(own_annotation_keys)
+        else:
+            optional_keys.update(own_annotation_keys)
+
         tp_dict.__annotations__ = annotations
         tp_dict.__required_keys__ = frozenset(required_keys)
         tp_dict.__optional_keys__ = frozenset(optional_keys)
