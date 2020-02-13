@@ -1,2 +1,2 @@
-Add :c:macro:`Py_IS_TYPE` macro to check whether the type of object *o* is
-the *type*.
+Add :c:func:`Py_IS_TYPE` static inline function to check whether
+the type of object *o* is the *type*.
