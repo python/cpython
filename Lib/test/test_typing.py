@@ -3809,6 +3809,38 @@ class TypedDictTests(BaseTestCase):
         assert Point2Dor3D.__required_keys__ == frozenset(['x', 'y'])
         assert Point2Dor3D.__optional_keys__ == frozenset(['z'])
 
+    def test_keys_inheritance(self):
+        class BaseAnimal(TypedDict):
+            name: str
+
+        class Animal(BaseAnimal, total=False):
+            voice: str
+            tail: bool
+
+        class Cat(Animal):
+            fur_color: str
+
+        assert BaseAnimal.__required_keys__ == frozenset(['name'])
+        assert BaseAnimal.__optional_keys__ == frozenset([])
+        assert BaseAnimal.__annotations__ == {'name': str}
+
+        assert Animal.__required_keys__ == frozenset(['name'])
+        assert Animal.__optional_keys__ == frozenset(['tail', 'voice'])
+        assert Animal.__annotations__ == {
+            'name': str,
+            'tail': bool,
+            'voice': str,
+        }
+
+        assert Cat.__required_keys__ == frozenset(['name', 'fur_color'])
+        assert Cat.__optional_keys__ == frozenset(['tail', 'voice'])
+        assert Cat.__annotations__ == {
+            'fur_color': str,
+            'name': str,
+            'tail': bool,
+            'voice': str,
+        }
+
 
 class IOTests(BaseTestCase):
 
