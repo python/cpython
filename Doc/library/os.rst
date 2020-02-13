@@ -451,6 +451,8 @@ process and user.
    calls to :func:`putenv` don't update ``os.environ``, so it is actually
    preferable to assign to items of ``os.environ``.
 
+   .. audit-event:: os.putenv key,value os.putenv
+
 
 .. function:: setegid(egid)
 
@@ -643,6 +645,8 @@ process and user.
    calls to :func:`unsetenv` don't update ``os.environ``, so it is actually
    preferable to delete items of ``os.environ``.
 
+   .. audit-event:: os.unsetenv key os.unsetenv
+
    .. availability:: most flavors of Unix.
 
 
@@ -768,6 +772,8 @@ as internal buffering of data.
    docs for :func:`chmod` for possible values of *mode*.  As of Python 3.3, this
    is equivalent to ``os.chmod(fd, mode)``.
 
+   .. audit-event:: os.chmod path,mode,dir_fd os.fchmod
+
    .. availability:: Unix.
 
 
@@ -777,6 +783,8 @@ as internal buffering of data.
    and *gid*.  To leave one of the ids unchanged, set it to -1.  See
    :func:`chown`.  As of Python 3.3, this is equivalent to ``os.chown(fd, uid,
    gid)``.
+
+   .. audit-event:: os.chown path,uid,gid,dir_fd os.fchown
 
    .. availability:: Unix.
 
@@ -884,6 +892,8 @@ as internal buffering of data.
    *cmd* specifies the command to use - one of :data:`F_LOCK`, :data:`F_TLOCK`,
    :data:`F_ULOCK` or :data:`F_TEST`.
    *len* specifies the section of the file to lock.
+
+   .. audit-event:: os.lockf fd,cmd,len os.lockf
 
    .. availability:: Unix.
 
@@ -1602,6 +1612,8 @@ features:
    This function can raise :exc:`OSError` and subclasses such as
    :exc:`FileNotFoundError`, :exc:`PermissionError`, and :exc:`NotADirectoryError`.
 
+   .. audit-event:: os.chdir path os.chdir
+
    .. versionadded:: 3.3
       Added support for specifying *path* as a file descriptor
       on some platforms.
@@ -1629,6 +1641,8 @@ features:
    * :data:`stat.SF_SNAPSHOT`
 
    This function can support :ref:`not following symlinks <follow_symlinks>`.
+
+   .. audit-event:: os.chflags path,flags os.chflags
 
    .. availability:: Unix.
 
@@ -1675,6 +1689,8 @@ features:
       read-only flag with it (via the ``stat.S_IWRITE`` and ``stat.S_IREAD``
       constants or a corresponding integer value).  All other bits are ignored.
 
+   .. audit-event:: os.chmod path,mode,dir_fd os.chmod
+
    .. versionadded:: 3.3
       Added support for specifying *path* as an open file descriptor,
       and the *dir_fd* and *follow_symlinks* arguments.
@@ -1694,6 +1710,8 @@ features:
 
    See :func:`shutil.chown` for a higher-level function that accepts names in
    addition to numeric ids.
+
+   .. audit-event:: os.chown path,uid,gid,dir_fd os.chown
 
    .. availability:: Unix.
 
@@ -1721,6 +1739,8 @@ features:
    descriptor *fd*.  The descriptor must refer to an opened directory, not an
    open file.  As of Python 3.3, this is equivalent to ``os.chdir(fd)``.
 
+   .. audit-event:: os.chdir path os.fchdir
+
    .. availability:: Unix.
 
 
@@ -1745,6 +1765,8 @@ features:
    not follow symbolic links.  As of Python 3.3, this is equivalent to
    ``os.chflags(path, flags, follow_symlinks=False)``.
 
+   .. audit-event:: os.chflags path,flags os.lchflags
+
    .. availability:: Unix.
 
    .. versionchanged:: 3.6
@@ -1758,6 +1780,8 @@ features:
    for possible values of *mode*.  As of Python 3.3, this is equivalent to
    ``os.chmod(path, mode, follow_symlinks=False)``.
 
+   .. audit-event:: os.chmod path,mode,dir_fd os.lchmod
+
    .. availability:: Unix.
 
    .. versionchanged:: 3.6
@@ -1768,6 +1792,8 @@ features:
    Change the owner and group id of *path* to the numeric *uid* and *gid*.  This
    function will not follow symbolic links.  As of Python 3.3, this is equivalent
    to ``os.chown(path, uid, gid, follow_symlinks=False)``.
+
+   .. audit-event:: os.chown path,uid,gid,dir_fd os.lchown
 
    .. availability:: Unix.
 
@@ -1782,6 +1808,8 @@ features:
    This function can support specifying *src_dir_fd* and/or *dst_dir_fd* to
    supply :ref:`paths relative to directory descriptors <dir_fd>`, and :ref:`not
    following symlinks <follow_symlinks>`.
+
+   .. audit-event:: os.link src,dst,src_dir_fd,dst_dir_fd os.link
 
    .. availability:: Unix, Windows.
 
@@ -1885,6 +1913,8 @@ features:
    It is also possible to create temporary directories; see the
    :mod:`tempfile` module's :func:`tempfile.mkdtemp` function.
 
+   .. audit-event:: os.mkdir path,mode,dir_fd os.mkdir
+
    .. versionadded:: 3.3
       The *dir_fd* argument.
 
@@ -1916,6 +1946,8 @@ features:
       include :data:`pardir` (eg. ".." on UNIX systems).
 
    This function handles UNC paths correctly.
+
+   .. audit-event:: os.mkdir path,mode,dir_fd os.makedirs
 
    .. versionadded:: 3.2
       The *exist_ok* parameter.
@@ -2082,6 +2114,8 @@ features:
 
    This function is semantically identical to :func:`unlink`.
 
+   .. audit-event:: os.remove path,dir_fd os.remove
+
    .. versionadded:: 3.3
       The *dir_fd* argument.
 
@@ -2101,6 +2135,8 @@ features:
    the directory ``'foo/bar/baz'``, and then remove ``'foo/bar'`` and ``'foo'`` if
    they are empty. Raises :exc:`OSError` if the leaf directory could not be
    successfully removed.
+
+   .. audit-event:: os.remove path,dir_fd os.removedirs
 
    .. versionchanged:: 3.6
       Accepts a :term:`path-like object`.
@@ -2127,6 +2163,8 @@ features:
 
    If you want cross-platform overwriting of the destination, use :func:`replace`.
 
+   .. audit-event:: os.rename src,dst,src_dir_fd,dst_dir_fd os.rename
+
    .. versionadded:: 3.3
       The *src_dir_fd* and *dst_dir_fd* arguments.
 
@@ -2146,6 +2184,8 @@ features:
       This function can fail with the new directory structure made if you lack
       permissions needed to remove the leaf directory or file.
 
+   .. audit-event:: os.rename src,dst,src_dir_fd,dst_dir_fd os.renames
+
    .. versionchanged:: 3.6
       Accepts a :term:`path-like object` for *old* and *new*.
 
@@ -2160,6 +2200,8 @@ features:
 
    This function can support specifying *src_dir_fd* and/or *dst_dir_fd* to
    supply :ref:`paths relative to directory descriptors <dir_fd>`.
+
+   .. audit-event:: os.rename src,dst,src_dir_fd,dst_dir_fd os.replace
 
    .. versionadded:: 3.3
 
@@ -2176,6 +2218,8 @@ features:
 
    This function can support :ref:`paths relative to directory descriptors
    <dir_fd>`.
+
+   .. audit-event:: os.rmdir path,dir_fd os.rmdir
 
    .. versionadded:: 3.3
       The *dir_fd* parameter.
@@ -2820,6 +2864,8 @@ features:
       :exc:`OSError` is raised when the function is called by an unprivileged
       user.
 
+   .. audit-event:: os.symlink src,dst,dir_fd os.symlink
+
    .. availability:: Unix, Windows.
 
    .. versionchanged:: 3.2
@@ -2872,6 +2918,8 @@ features:
    traditional Unix name.  Please see the documentation for
    :func:`remove` for further information.
 
+   .. audit-event:: os.remove path,dir_fd os.unlink
+
    .. versionadded:: 3.3
       The *dir_fd* parameter.
 
@@ -2908,6 +2956,8 @@ features:
    This function can support :ref:`specifying a file descriptor <path_fd>`,
    :ref:`paths relative to directory descriptors <dir_fd>` and :ref:`not
    following symlinks <follow_symlinks>`.
+
+   .. audit-event:: os.utime path,times,ns,dir_fd os.utime
 
    .. versionadded:: 3.3
       Added support for specifying *path* as an open file descriptor,
@@ -3134,6 +3184,8 @@ These functions are all available on Linux only.
    This function can support :ref:`specifying a file descriptor <path_fd>` and
    :ref:`not following symlinks <follow_symlinks>`.
 
+   .. audit-event:: os.getxattr path,attribute os.getxattr
+
    .. versionchanged:: 3.6
       Accepts a :term:`path-like object` for *path* and *attribute*.
 
@@ -3148,6 +3200,8 @@ These functions are all available on Linux only.
    This function can support :ref:`specifying a file descriptor <path_fd>` and
    :ref:`not following symlinks <follow_symlinks>`.
 
+   .. audit-event:: os.listxattr path os.listxattr
+
    .. versionchanged:: 3.6
       Accepts a :term:`path-like object`.
 
@@ -3161,6 +3215,8 @@ These functions are all available on Linux only.
 
    This function can support :ref:`specifying a file descriptor <path_fd>` and
    :ref:`not following symlinks <follow_symlinks>`.
+
+   .. audit-event:: os.removexattr path,attribute os.removexattr
 
    .. versionchanged:: 3.6
       Accepts a :term:`path-like object` for *path* and *attribute*.
@@ -3184,6 +3240,8 @@ These functions are all available on Linux only.
 
       A bug in Linux kernel versions less than 2.6.39 caused the flags argument
       to be ignored on some filesystems.
+
+   .. audit-event:: os.setxattr path,attribute,value,flags os.setxattr
 
    .. versionchanged:: 3.6
       Accepts a :term:`path-like object` for *path* and *attribute*.
@@ -3246,6 +3304,8 @@ to be ignored.
    See the `Microsoft documentation
    <https://msdn.microsoft.com/44228cf2-6306-466c-8f16-f513cd3ba8b5>`_
    for more information about how DLLs are loaded.
+
+   .. audit-event:: os.add_dll_directory path os.add_dll_directory
 
    .. availability:: Windows.
 
@@ -3479,6 +3539,8 @@ written in Python, such as a mail server's external command delivery program.
    Note that some platforms including FreeBSD <= 6.3 and Cygwin have
    known issues when using ``fork()`` from a thread.
 
+   .. audit-event:: os.fork "" os.fork
+
    .. versionchanged:: 3.8
       Calling ``fork()`` in a subinterpreter is no longer supported
       (:exc:`RuntimeError` is raised).
@@ -3497,6 +3559,8 @@ written in Python, such as a mail server's external command delivery program.
    new child's process id in the parent, and *fd* is the file descriptor of the
    master end of the pseudo-terminal.  For a more portable approach, use the
    :mod:`pty` module.  If an error occurs :exc:`OSError` is raised.
+
+   .. audit-event:: os.forkpty "" os.forkpty
 
    .. versionchanged:: 3.8
       Calling ``forkpty()`` in a subinterpreter is no longer supported
@@ -3524,6 +3588,8 @@ written in Python, such as a mail server's external command delivery program.
 
    See also :func:`signal.pthread_kill`.
 
+   .. audit-event:: os.kill pid,sig os.kill
+
    .. versionadded:: 3.2
       Windows support.
 
@@ -3535,6 +3601,8 @@ written in Python, such as a mail server's external command delivery program.
       single: process; signalling
 
    Send the signal *sig* to the process group *pgid*.
+
+   .. audit-event:: os.killpg pgid,sig os.killpg
 
    .. availability:: Unix.
 
