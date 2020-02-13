@@ -763,6 +763,8 @@ call fails (for example because the path doesn't exist).
       Using the "``**``" pattern in large directory trees may consume
       an inordinate amount of time.
 
+   .. audit-event:: pathlib.Path.glob self,pattern pathlib.Path.glob
+
 
 .. method:: Path.group()
 
@@ -1024,6 +1026,8 @@ call fails (for example because the path doesn't exist).
        PosixPath('pathlib.py'),
        PosixPath('setup.py'),
        PosixPath('test_pathlib.py')]
+
+   .. audit-event:: pathlib.Path.rglob self,pattern pathlib.Path.rglob
 
 
 .. method:: Path.rmdir()
