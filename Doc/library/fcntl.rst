@@ -57,6 +57,8 @@ The module defines the following functions:
 
    If the :c:func:`fcntl` fails, an :exc:`OSError` is raised.
 
+   .. audit-event:: fcntl.fcntl fd,cmd,arg fcntl.fcntl
+
 
 .. function:: ioctl(fd, request, arg=0, mutate_flag=True)
 
@@ -106,6 +108,8 @@ The module defines the following functions:
       >>> buf
       array('h', [13341])
 
+   .. audit-event:: fcntl.ioctl fd,request,arg fcntl.ioctl
+
 
 .. function:: flock(fd, operation)
 
@@ -115,6 +119,8 @@ The module defines the following functions:
    using :c:func:`fcntl`.)
 
    If the :c:func:`flock` fails, an :exc:`OSError` exception is raised.
+
+   .. audit-event:: fcntl.flock fd,operation fcntl.flock
 
 
 .. function:: lockf(fd, cmd, len=0, start=0, whence=0)
@@ -148,6 +154,8 @@ The module defines the following functions:
    The default for *start* is 0, which means to start at the beginning of the file.
    The default for *len* is 0 which means to lock to the end of the file.  The
    default for *whence* is also 0.
+
+   .. audit-event:: fcntl.lockf fd,cmd,len,start,whence fcntl.lockf
 
 Examples (all on a SVR4 compliant system)::
 
