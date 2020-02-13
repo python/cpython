@@ -2752,7 +2752,7 @@ whitespace if doctest does not correctly do the newline conversion.
     ...         b'  >>> x = 1 + 1\n\n'
     ...         b'Done.\n'
     ...         b'Test:\r\r'
-    ...         b'  >>> x = 1+ 1\r\r'
+    ...         b'  >>> x = 1 + 1\r\r'
     ...         b'Done.\r'
     ...     )
     95
