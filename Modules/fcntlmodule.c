@@ -66,8 +66,7 @@ fcntl_fcntl_impl(PyObject *module, int fd, int code, PyObject *arg)
     char buf[1024];
     int async_err = 0;
 
-    if (PySys_Audit("fcntl.fcntl", "iiO", fd, code,
-                    arg ? arg : PyLong_FromLong(0)) < 0) {
+    if (PySys_Audit("fcntl.fcntl", "iiO", fd, code, arg ? arg : Py_None) < 0) {
         return NULL;
     }
 
@@ -177,7 +176,7 @@ fcntl_ioctl_impl(PyObject *module, int fd, unsigned int code,
     char buf[IOCTL_BUFSZ+1];  /* argument plus NUL byte */
 
     if (PySys_Audit("fcntl.ioctl", "iIO", fd, code,
-                    ob_arg ? ob_arg : PyLong_FromLong(0)) < 0) {
+                    ob_arg ? ob_arg : Py_None) < 0) {
         return NULL;
     }
 
@@ -386,10 +385,8 @@ fcntl_lockf_impl(PyObject *module, int fd, int code, PyObject *lenobj,
     int ret;
     int async_err = 0;
 
-    if (PySys_Audit("fcntl.lockf", "iiOOi", fd, code,
-                    lenobj ? lenobj : PyLong_FromLong(0),
-                    startobj ? startobj : PyLong_FromLong(0),
-                    whence) < 0) {
+    if (PySys_Audit("fcntl.lockf", "iiOOi", fd, code, lenobj ? lenobj : Py_None,
+                    startobj ? startobj : Py_None, whence) < 0) {
         return NULL;
     }
 

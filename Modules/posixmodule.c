@@ -2911,8 +2911,7 @@ os_chdir_impl(PyObject *module, path_t *path)
 {
     int result;
 
-    if (PySys_Audit("os.chdir", "(O)",
-                    path->object ? path->object : Py_None) < 0) {
+    if (PySys_Audit("os.chdir", "(O)", path->object) < 0) {
         return NULL;
     }
 
@@ -3015,10 +3014,8 @@ os_chmod_impl(PyObject *module, path_t *path, int mode, int dir_fd,
         return NULL;
 #endif
 
-    if (PySys_Audit("os.chmod", "OiO",
-                    path->object ? path->object : Py_None, mode,
-                    dir_fd == DEFAULT_DIR_FD ? Py_None : PyLong_FromLong(dir_fd)
-                   ) < 0) {
+    if (PySys_Audit("os.chmod", "Oii", path->object, mode,
+                    dir_fd == DEFAULT_DIR_FD ? -1 : dir_fd) < 0) {
         return NULL;
     }
 
@@ -3118,7 +3115,7 @@ os_fchmod_impl(PyObject *module, int fd, int mode)
     int res;
     int async_err = 0;
 
-    if (PySys_Audit("os.chmod", "iiO", fd, mode, Py_None) < 0) {
+    if (PySys_Audit("os.chmod", "iii", fd, mode, -1) < 0) {
         return NULL;
     }
 
@@ -3153,8 +3150,7 @@ os_lchmod_impl(PyObject *module, path_t *path, int mode)
 /*[clinic end generated code: output=082344022b51a1d5 input=90c5663c7465d24f]*/
 {
     int res;
-    if (PySys_Audit("os.chmod", "OiO", path->object ? path->object : Py_None,
-                    mode, Py_None) < 0) {
+    if (PySys_Audit("os.chmod", "Oii", path->object, mode, -1) < 0) {
         return NULL;
     }
     Py_BEGIN_ALLOW_THREADS
@@ -3199,8 +3195,7 @@ os_chflags_impl(PyObject *module, path_t *path, unsigned long flags,
         return NULL;
 #endif
 
-    if (PySys_Audit("os.chflags", "Ok", path->object ? path->object : Py_None,
-                    flags) < 0) {
+    if (PySys_Audit("os.chflags", "Ok", path->object, flags) < 0) {
         return NULL;
     }
 
@@ -3239,8 +3234,7 @@ os_lchflags_impl(PyObject *module, path_t *path, unsigned long flags)
 /*[clinic end generated code: output=30ae958695c07316 input=f9f82ea8b585ca9d]*/
 {
     int res;
-    if (PySys_Audit("os.chflags", "Ok", path->object ? path->object : Py_None,
-                    flags) < 0) {
+    if (PySys_Audit("os.chflags", "Ok", path->object, flags) < 0) {
         return NULL;
     }
     Py_BEGIN_ALLOW_THREADS
@@ -3405,10 +3399,8 @@ os_chown_impl(PyObject *module, path_t *path, uid_t uid, gid_t gid,
     }
 #endif
 
-    if (PySys_Audit("os.chown", "OIIO",
-                    path->object ? path->object : Py_None, uid, gid,
-                    dir_fd == DEFAULT_DIR_FD ? Py_None : PyLong_FromLong(dir_fd)
-                   ) < 0) {
+    if (PySys_Audit("os.chown", "OIIi", path->object, uid, gid,
+                    dir_fd == DEFAULT_DIR_FD ? -1 : dir_fd) < 0) {
         return NULL;
     }
 
@@ -3461,7 +3453,7 @@ os_fchown_impl(PyObject *module, int fd, uid_t uid, gid_t gid)
     int res;
     int async_err = 0;
 
-    if (PySys_Audit("os.chown", "iIIO", fd, uid, gid, Py_None) < 0) {
+    if (PySys_Audit("os.chown", "iIIi", fd, uid, gid, -1) < 0) {
         return NULL;
     }
 
@@ -3497,8 +3489,7 @@ os_lchown_impl(PyObject *module, path_t *path, uid_t uid, gid_t gid)
 /*[clinic end generated code: output=25eaf6af412fdf2f input=b1c6014d563a7161]*/
 {
     int res;
-    if (PySys_Audit("os.chown", "OIIO", path->object ? path->object : Py_None,
-                    uid, gid, Py_None) < 0) {
+    if (PySys_Audit("os.chown", "OIIi", path->object, uid, gid, -1) < 0) {
         return NULL;
     }
     Py_BEGIN_ALLOW_THREADS
@@ -3694,13 +3685,9 @@ os_link_impl(PyObject *module, path_t *src, path_t *dst, int src_dir_fd,
     }
 #endif
 
-    if (PySys_Audit("os.link", "OOOO",
-                    src->object ? src->object : Py_None,
-                    dst->object ? dst->object : Py_None,
-                    src_dir_fd == DEFAULT_DIR_FD ?
-                        Py_None : PyLong_FromLong(src_dir_fd),
-                    dst_dir_fd == DEFAULT_DIR_FD ?
-                        Py_None : PyLong_FromLong(dst_dir_fd)) < 0) {
+    if (PySys_Audit("os.link", "OOii", src->object, dst->object,
+                    src_dir_fd == DEFAULT_DIR_FD ? -1 : src_dir_fd,
+                    dst_dir_fd == DEFAULT_DIR_FD ? -1 : dst_dir_fd) < 0) {
         return NULL;
     }
 
@@ -4171,10 +4158,8 @@ os_mkdir_impl(PyObject *module, path_t *path, int mode, int dir_fd)
 {
     int result;
 
-    if (PySys_Audit("os.mkdir", "OiO",
-                    path->object ? path->object : Py_None, mode,
-                    dir_fd == DEFAULT_DIR_FD ? Py_None : PyLong_FromLong(dir_fd)
-                   ) < 0) {
+    if (PySys_Audit("os.mkdir", "Oii", path->object, mode,
+                    dir_fd == DEFAULT_DIR_FD ? -1 : dir_fd) < 0) {
         return NULL;
     }
 
@@ -4323,13 +4308,9 @@ internal_rename(path_t *src, path_t *dst, int src_dir_fd, int dst_dir_fd, int is
     }
 #endif
 
-    if (PySys_Audit("os.rename", "OOOO",
-                    src->object ? src->object : Py_None,
-                    dst->object ? dst->object : Py_None,
-                    src_dir_fd == DEFAULT_DIR_FD ?
-                        Py_None : PyLong_FromLong(src_dir_fd),
-                    dst_dir_fd == DEFAULT_DIR_FD ?
-                        Py_None : PyLong_FromLong(dst_dir_fd)) < 0) {
+    if (PySys_Audit("os.rename", "OOii", src->object, dst->object,
+                    src_dir_fd == DEFAULT_DIR_FD ? -1 : src_dir_fd,
+                    dst_dir_fd == DEFAULT_DIR_FD ? -1 : dst_dir_fd) < 0) {
         return NULL;
     }
 
@@ -4433,10 +4414,8 @@ os_rmdir_impl(PyObject *module, path_t *path, int dir_fd)
 {
     int result;
 
-    if (PySys_Audit("os.rmdir", "OO",
-                    path->object ? path->object : Py_None,
-                    dir_fd == DEFAULT_DIR_FD ? Py_None : PyLong_FromLong(dir_fd)
-                   ) < 0) {
+    if (PySys_Audit("os.rmdir", "Oi", path->object,
+                    dir_fd == DEFAULT_DIR_FD ? -1 : dir_fd) < 0) {
         return NULL;
     }
 
@@ -4598,10 +4577,8 @@ os_unlink_impl(PyObject *module, path_t *path, int dir_fd)
 {
     int result;
 
-    if (PySys_Audit("os.remove", "OO",
-                    path->object ? path->object : Py_None,
-                    dir_fd == DEFAULT_DIR_FD ? Py_None : PyLong_FromLong(dir_fd)
-                   ) < 0) {
+    if (PySys_Audit("os.remove", "Oi", path->object,
+                    dir_fd == DEFAULT_DIR_FD ? -1 : dir_fd) < 0) {
         return NULL;
     }
 
@@ -5021,10 +4998,8 @@ os_utime_impl(PyObject *module, path_t *path, PyObject *times, PyObject *ns,
     }
 #endif
 
-    if (PySys_Audit("os.utime", "OOOO", path->object ? path->object : Py_None,
-                    times ? times : Py_None, ns ? ns : Py_None,
-                    dir_fd == DEFAULT_DIR_FD ? Py_None : PyLong_FromLong(dir_fd)
-                   ) < 0) {
+    if (PySys_Audit("os.utime", "OOOi", path->object, times, ns ? ns : Py_None,
+                    dir_fd == DEFAULT_DIR_FD ? -1 : dir_fd) < 0) {
         return NULL;
     }
 
@@ -5329,8 +5304,7 @@ os_execv_impl(PyObject *module, path_t *path, PyObject *argv)
         return NULL;
     }
 
-    if (PySys_Audit("os.exec", "OOO", path->object ? path->object : Py_None,
-                    argv, Py_None) < 0) {
+    if (PySys_Audit("os.exec", "OOO", path->object, argv, Py_None) < 0) {
         free_string_array(argvlist, argc);
         return NULL;
     }
@@ -5406,8 +5380,7 @@ os_execve_impl(PyObject *module, path_t *path, PyObject *argv, PyObject *env)
     if (envlist == NULL)
         goto fail_0;
 
-    if (PySys_Audit("os.exec", "OOO", path->object ? path->object : Py_None,
-                    argv, env) < 0) {
+    if (PySys_Audit("os.exec", "OOO", path->object, argv, env) < 0) {
         goto fail_1;
     }
 
@@ -5760,8 +5733,7 @@ py_posix_spawn(int use_posix_spawnp, PyObject *module, path_t *path, PyObject *a
     }
     attrp = &attr;
 
-    if (PySys_Audit("os.posix_spawn", "OOO",
-                    path->object ? path->object : Py_None, argv, env) < 0) {
+    if (PySys_Audit("os.posix_spawn", "OOO", path->object, argv, env) < 0) {
         goto exit;
     }
 
@@ -6005,8 +5977,7 @@ os_spawnv_impl(PyObject *module, int mode, path_t *path, PyObject *argv)
         mode = _P_OVERLAY;
 #endif
 
-    if (PySys_Audit("os.spawn", "iOOO", mode,
-                    path->object ? path->object : Py_None, argv,
+    if (PySys_Audit("os.spawn", "iOOO", mode, path->object, argv,
                     Py_None) < 0) {
         free_string_array(argvlist, argc);
         return NULL;
@@ -6121,8 +6092,7 @@ os_spawnve_impl(PyObject *module, int mode, path_t *path, PyObject *argv,
         mode = _P_OVERLAY;
 #endif
 
-    if (PySys_Audit("os.spawn", "iOOO", mode,
-                    path->object ? path->object : Py_None, argv, env) < 0) {
+    if (PySys_Audit("os.spawn", "iOOO", mode, path->object, argv, env) < 0) {
         goto fail_2;
     }
 
@@ -8248,11 +8218,8 @@ os_symlink_impl(PyObject *module, path_t *src, path_t *dst,
     int result;
 #endif
 
-    if (PySys_Audit("os.symlink", "OOO",
-                    src->object ? src->object : Py_None,
-                    dst->object ? dst->object : Py_None,
-                    dir_fd == DEFAULT_DIR_FD ? Py_None : PyLong_FromLong(dir_fd)
-                   ) < 0) {
+    if (PySys_Audit("os.symlink", "OOi", src->object, dst->object,
+                    dir_fd == DEFAULT_DIR_FD ? -1 : dir_fd) < 0) {
         return NULL;
     }
 
@@ -10264,8 +10231,7 @@ static PyObject *
 os_putenv_impl(PyObject *module, PyObject *name, PyObject *value)
 /*[clinic end generated code: output=d29a567d6b2327d2 input=ba586581c2e6105f]*/
 {
-    if (PySys_Audit("os.putenv", "OO", name ? name : Py_None,
-                    value ? value : Py_None) < 0) {
+    if (PySys_Audit("os.putenv", "OO", name, value) < 0) {
         return NULL;
     }
     return win32_putenv(name, value);
@@ -10293,8 +10259,7 @@ os_putenv_impl(PyObject *module, PyObject *name, PyObject *value)
         return NULL;
     }
 
-    if (PySys_Audit("os.putenv", "OO", name ? name : Py_None,
-                    value ? value : Py_None) < 0) {
+    if (PySys_Audit("os.putenv", "OO", name, value) < 0) {
         return NULL;
     }
 
@@ -10319,7 +10284,7 @@ static PyObject *
 os_unsetenv_impl(PyObject *module, PyObject *name)
 /*[clinic end generated code: output=54c4137ab1834f02 input=4d6a1747cc526d2f]*/
 {
-    if (PySys_Audit("os.unsetenv", "(O)", name ? name : Py_None) < 0) {
+    if (PySys_Audit("os.unsetenv", "(O)", name) < 0) {
         return NULL;
     }
     return win32_putenv(name, NULL);
@@ -10337,7 +10302,7 @@ static PyObject *
 os_unsetenv_impl(PyObject *module, PyObject *name)
 /*[clinic end generated code: output=54c4137ab1834f02 input=2bb5288a599c7107]*/
 {
-    if (PySys_Audit("os.unsetenv", "(O)", name ? name : Py_None) < 0) {
+    if (PySys_Audit("os.unsetenv", "(O)", name) < 0) {
         return NULL;
     }
 #ifdef HAVE_BROKEN_UNSETENV
@@ -11862,9 +11827,7 @@ os_startfile_impl(PyObject *module, path_t *filepath,
             "startfile not available on this platform");
     }
 
-    if (PySys_Audit("os.startfile", "Ou",
-                    filepath->object ? filepath->object : Py_None,
-                    operation) < 0) {
+    if (PySys_Audit("os.startfile", "Ou", filepath->object, operation) < 0) {
         return NULL;
     }
 
@@ -12042,8 +12005,7 @@ os_getxattr_impl(PyObject *module, path_t *path, path_t *attribute,
     if (fd_and_follow_symlinks_invalid("getxattr", path->fd, follow_symlinks))
         return NULL;
 
-    if (PySys_Audit("os.getxattr", "OO", path->object ? path->object : Py_None,
-                    attribute->object ? attribute->object : Py_None) < 0) {
+    if (PySys_Audit("os.getxattr", "OO", path->object, attribute->object) < 0) {
         return NULL;
     }
 
@@ -12118,8 +12080,7 @@ os_setxattr_impl(PyObject *module, path_t *path, path_t *attribute,
     if (fd_and_follow_symlinks_invalid("setxattr", path->fd, follow_symlinks))
         return NULL;
 
-    if (PySys_Audit("os.setxattr", "OOy#i", path->object ? path->object : Py_None,
-                    attribute->object ? attribute->object : Py_None,
+    if (PySys_Audit("os.setxattr", "OOy#i", path->object, attribute->object,
                     value->buf, value->len, flags) < 0) {
         return NULL;
     }
@@ -12172,8 +12133,7 @@ os_removexattr_impl(PyObject *module, path_t *path, path_t *attribute,
     if (fd_and_follow_symlinks_invalid("removexattr", path->fd, follow_symlinks))
         return NULL;
 
-    if (PySys_Audit("os.removexattr", "OO", path->object ? path->object : Py_None,
-                    attribute->object ? attribute->object : Py_None) < 0) {
+    if (PySys_Audit("os.removexattr", "OO", path->object, attribute->object) < 0) {
         return NULL;
     }
 
@@ -13703,8 +13663,7 @@ os__add_dll_directory_impl(PyObject *module, path_t *path)
     DLL_DIRECTORY_COOKIE cookie = 0;
     DWORD err = 0;
 
-    if (PySys_Audit("os.add_dll_directory", "(O)",
-                    path->object ? path->object : Py_None) < 0) {
+    if (PySys_Audit("os.add_dll_directory", "(O)", path->object) < 0) {
         return NULL;
     }
 
