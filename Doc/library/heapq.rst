@@ -28,7 +28,7 @@ zero-based indexing.  This makes the relationship between the index for a node
 and the indexes for its children slightly less obvious, but is more suitable
 since Python uses zero-based indexing. (b) Our pop method returns the smallest
 item, not the largest (called a "min heap" in textbooks; a "max heap" is more
-common in texts because of its suitability for in-place sorting). (c) :func: `heapify()`
+common in texts because of its suitability for in-place sorting). (c) :func:`heapify`
 is the linear-time build-heap procedure and differs from logarithmic heapify
 procedure from textbook
 
