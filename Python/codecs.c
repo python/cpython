@@ -1407,7 +1407,7 @@ static PyObject *surrogateescape_errors(PyObject *self, PyObject *exc)
 static int _PyCodecRegistry_Init(void)
 {
     static struct {
-        char *name;
+        const char *name;
         PyMethodDef def;
     } methods[] =
     {
