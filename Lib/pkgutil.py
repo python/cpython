@@ -639,13 +639,12 @@ def get_data(package, resource):
 
 
 _DOTTED_WORDS = r'[a-z_]\w*(\.[a-z_]\w*)*'
-_NAME_PATTERN = re.compile('^(%s)(:(%s)?)?$' % (_DOTTED_WORDS,
-                                              _DOTTED_WORDS), re.I)
+_NAME_PATTERN = re.compile(f'^({_DOTTED_WORDS})(:({_DOTTED_WORDS})?)?$', re.I)
 del _DOTTED_WORDS
 
 def resolve_name(name):
     """
-    Resolves a name to an object. See bpo-12915 for the background.
+    Resolve a name to an object.
 
     It is expected that `name` will be a string in one of the following
     formats, where W is shorthand for a valid Python identifier and dot stands

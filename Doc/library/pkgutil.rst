@@ -231,16 +231,18 @@ support.
 
 .. function:: resolve_name(name)
 
-   Resolves a name to an object. This is used in numerous places in the stdlib
-   (see bpo-12915) - and also in widely-used third-party packages such as
-   setuptools.
+   Resolve a name to an object.
+
+   This functionality is used in numerous places in the standard library (see
+   :issue:`12915`) - and equivalent functionality is also in widely used
+   third-party packages such as setuptools, Django and Pyramid.
 
    It is expected that *name* will be a string in one of the following
    formats, where W is shorthand for a valid Python identifier and dot stands
    for a literal period in these pseudo-regexes:
 
-   * W(.W)*
-   * W(.W)*:(W(.W)*)?
+   * ``W(.W)*``
+   * ``W(.W)*:(W(.W)*)?``
 
    The first form is intended for backward compatibility only. It assumes that
    some part of the dotted name is a package, and the rest is an object

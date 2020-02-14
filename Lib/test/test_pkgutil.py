@@ -190,20 +190,9 @@ class PkgutilTests(unittest.TestCase):
         import logging
         import logging.handlers
 
-        cases = (
-            (None, TypeError),
-            (1, TypeError),
-            (2.0, TypeError),
-            (True, TypeError),
-            ('', ValueError),
-            ('?abc', ValueError),
-            ('abc/foo', ValueError),
-            ('foo', ImportError),
+        success_cases = (
             ('os', os),
             ('os.path', os.path),
-            ('os.foo', AttributeError),
-            ('os.foo:', ImportError),
-            ('os.pth:pathsep', ImportError),
             ('os.path:pathsep', os.path.pathsep),
             ('logging', logging),
             ('logging:', logging),
@@ -215,17 +204,39 @@ class PkgutilTests(unittest.TestCase):
                 logging.handlers.SysLogHandler.LOG_ALERT),
             ('logging.handlers.SysLogHandler.LOG_ALERT',
                 logging.handlers.SysLogHandler.LOG_ALERT),
+            ('builtins.int', int),
+            ('builtins.int.from_bytes', int.from_bytes),
+            ('builtins.ZeroDivisionError', ZeroDivisionError),
+        )
+
+        failure_cases = (
+            (None, TypeError),
+            (1, TypeError),
+            (2.0, TypeError),
+            (True, TypeError),
+            ('', ValueError),
+            ('?abc', ValueError),
+            ('abc/foo', ValueError),
+            ('foo', ImportError),
+            ('os.foo', AttributeError),
+            ('os.foo:', ImportError),
+            ('os.pth:pathsep', ImportError),
             ('logging.handlers:NoSuchHandler', AttributeError),
             ('logging.handlers:SysLogHandler.NO_SUCH_VALUE', AttributeError),
             ('logging.handlers.SysLogHandler.NO_SUCH_VALUE', AttributeError),
+            ('ZeroDivisionError', ImportError),
         )
 
-        for s, e_or_o in cases:
-            try:
+        for s, expected in success_cases:
+            with self.subTest(s=s):
                 o = pkgutil.resolve_name(s)
-                self.assertEqual(o, e_or_o)
-            except Exception as e:
-                self.assertIsInstance(e, e_or_o)
+                self.assertEqual(o, expected)
+
+        for s, exc in failure_cases:
+            with self.subTest(s=s):
+                with self.assertRaises(exc):
+                    pkgutil.resolve_name(s)
+
 
 class PkgutilPEP302Tests(unittest.TestCase):
 
