@@ -1840,9 +1840,6 @@ PyInit_time(void)
         utc_string = tm.tm_zone;
 #endif
 
-    if (PyErr_Occurred()) {
-        goto error;
-    }
     return m;
 
 error:
