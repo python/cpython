@@ -1,0 +1,1 @@
+Update clinic tool to use :c:func:`Py_IS_TYPE`. Patch by Dong-hee Na.
