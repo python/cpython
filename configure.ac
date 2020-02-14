@@ -533,6 +533,12 @@ case $ac_sys_system/$ac_sys_release in
     define_xopen_source=no
     ;;
 
+  # On HP-UX, defining _XOPEN_SOURCE to 600 or greater hides
+  # chroot() and other functions
+  hp*|HP*)
+    define_xopen_source=no
+    ;;
+
 esac
 
 if test $define_xopen_source = yes
