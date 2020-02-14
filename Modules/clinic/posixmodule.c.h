@@ -6082,7 +6082,7 @@ exit:
 
 #endif /* defined(MS_WINDOWS) */
 
-#if ((defined(HAVE_SETENV) || defined(HAVE_PUTENV)) && !defined(MS_WINDOWS))
+#if !defined(MS_WINDOWS)
 
 PyDoc_STRVAR(os_putenv__doc__,
 "putenv($module, name, value, /)\n"
@@ -6123,9 +6123,45 @@ exit:
     return return_value;
 }
 
-#endif /* ((defined(HAVE_SETENV) || defined(HAVE_PUTENV)) && !defined(MS_WINDOWS)) */
+#endif /* !defined(MS_WINDOWS) */
 
-#if defined(HAVE_UNSETENV)
+#if defined(MS_WINDOWS)
+
+PyDoc_STRVAR(os_unsetenv__doc__,
+"unsetenv($module, name, /)\n"
+"--\n"
+"\n"
+"Delete an environment variable.");
+
+#define OS_UNSETENV_METHODDEF    \
+    {"unsetenv", (PyCFunction)os_unsetenv, METH_O, os_unsetenv__doc__},
+
+static PyObject *
+os_unsetenv_impl(PyObject *module, PyObject *name);
+
+static PyObject *
+os_unsetenv(PyObject *module, PyObject *arg)
+{
+    PyObject *return_value = NULL;
+    PyObject *name;
+
+    if (!PyUnicode_Check(arg)) {
+        _PyArg_BadArgument("unsetenv", "argument", "str", arg);
+        goto exit;
+    }
+    if (PyUnicode_READY(arg) == -1) {
+        goto exit;
+    }
+    name = arg;
+    return_value = os_unsetenv_impl(module, name);
+
+exit:
+    return return_value;
+}
+
+#endif /* defined(MS_WINDOWS) */
+
+#if !defined(MS_WINDOWS)
 
 PyDoc_STRVAR(os_unsetenv__doc__,
 "unsetenv($module, name, /)\n"
@@ -6157,7 +6193,7 @@ exit:
     return return_value;
 }
 
-#endif /* defined(HAVE_UNSETENV) */
+#endif /* !defined(MS_WINDOWS) */
 
 PyDoc_STRVAR(os_strerror__doc__,
 "strerror($module, code, /)\n"
@@ -8773,4 +8809,4 @@ exit:
 #ifndef OS__REMOVE_DLL_DIRECTORY_METHODDEF
     #define OS__REMOVE_DLL_DIRECTORY_METHODDEF
 #endif /* !defined(OS__REMOVE_DLL_DIRECTORY_METHODDEF) */
-/*[clinic end generated code: output=6f42d8be634f5942 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=5d99f90cead7c0e1 input=a9049054013a1b77]*/

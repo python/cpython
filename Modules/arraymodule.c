@@ -2996,7 +2996,7 @@ array_modexec(PyObject *m)
 
     if (PyType_Ready(&Arraytype) < 0)
         return -1;
-    Py_TYPE(&PyArrayIter_Type) = &PyType_Type;
+    Py_SET_TYPE(&PyArrayIter_Type, &PyType_Type);
 
     Py_INCREF((PyObject *)&Arraytype);
     if (PyModule_AddObject(m, "ArrayType", (PyObject *)&Arraytype) < 0) {

@@ -1,0 +1,2 @@
+Add a :c:func:`Py_SET_REFCNT` function to set the reference counter of an
+object.

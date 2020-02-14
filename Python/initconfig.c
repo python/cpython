@@ -73,9 +73,6 @@ static const char usage_3[] = "\
              tracemalloc module. By default, only the most recent frame is stored in a\n\
              traceback of a trace. Use -X tracemalloc=NFRAME to start tracing with a\n\
              traceback limit of NFRAME frames\n\
-         -X showalloccount: output the total count of allocated objects for each\n\
-             type when the program finishes. This only works when Python was built with\n\
-             COUNT_ALLOCS defined\n\
          -X importtime: show how long each import takes. It shows module name,\n\
              cumulative time (including nested imports) and self time (excluding\n\
              nested imports). Note that its output may be broken in multi-threaded\n\
@@ -800,7 +797,6 @@ _PyConfig_Copy(PyConfig *config, const PyConfig *config2)
     COPY_ATTR(tracemalloc);
     COPY_ATTR(import_time);
     COPY_ATTR(show_ref_count);
-    COPY_ATTR(show_alloc_count);
     COPY_ATTR(dump_refs);
     COPY_ATTR(malloc_stats);
 
@@ -903,7 +899,6 @@ config_as_dict(const PyConfig *config)
     SET_ITEM_INT(tracemalloc);
     SET_ITEM_INT(import_time);
     SET_ITEM_INT(show_ref_count);
-    SET_ITEM_INT(show_alloc_count);
     SET_ITEM_INT(dump_refs);
     SET_ITEM_INT(malloc_stats);
     SET_ITEM_WSTR(filesystem_encoding);
@@ -1690,9 +1685,6 @@ config_read(PyConfig *config)
     /* -X options */
     if (config_get_xoption(config, L"showrefcount")) {
         config->show_ref_count = 1;
-    }
-    if (config_get_xoption(config, L"showalloccount")) {
-        config->show_alloc_count = 1;
     }
 
     status = config_read_complex_options(config);

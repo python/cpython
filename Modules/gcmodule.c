@@ -118,9 +118,6 @@ gc_decref(PyGC_Head *g)
     g->_gc_prev -= 1 << _PyGC_PREV_SHIFT;
 }
 
-/* Python string to use if unhandled exception occurs */
-static PyObject *gc_str = NULL;
-
 /* set for debugging information */
 #define DEBUG_STATS             (1<<0) /* print collection statistics */
 #define DEBUG_COLLECTABLE       (1<<1) /* print collectable objects */
@@ -656,7 +653,7 @@ untrack_dicts(PyGC_Head *head)
 static int
 has_legacy_finalizer(PyObject *op)
 {
-    return op->ob_type->tp_del != NULL;
+    return Py_TYPE(op)->tp_del != NULL;
 }
 
 /* Move the objects in unreachable with tp_del slots into `finalizers`.
@@ -1310,10 +1307,7 @@ collect(PyThreadState *tstate, int generation,
             _PyErr_Clear(tstate);
         }
         else {
-            if (gc_str == NULL)
-                gc_str = PyUnicode_FromString("garbage collection");
-            PyErr_WriteUnraisable(gc_str);
-            Py_FatalError("unexpected exception during garbage collection");
+            _PyErr_WriteUnraisableMsg("in garbage collection", NULL);
         }
     }
 

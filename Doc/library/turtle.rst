@@ -1051,6 +1051,11 @@ Filling
 
    Fill the shape drawn after the last call to :func:`begin_fill`.
 
+   Whether or not overlap regions for self-intersecting polygons
+   or multiple shapes are filled depends on the operating system graphics,
+   type of overlap, and number of overlaps.  For example, the Turtle star
+   above may be either all yellow or have some white regions.
+
    .. doctest::
       :skipif: _tkinter is None
 

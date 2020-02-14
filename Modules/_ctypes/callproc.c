@@ -1311,8 +1311,9 @@ static PyObject *load_library(PyObject *self, PyObject *args)
 
     if (err == ERROR_MOD_NOT_FOUND) {
         PyErr_Format(PyExc_FileNotFoundError,
-                     ("Could not find module '%.500S'. Try using "
-                      "the full path with constructor syntax."),
+                     ("Could not find module '%.500S' (or one of its "
+                      "dependencies). Try using the full path with "
+                      "constructor syntax."),
                      nameobj);
         return NULL;
     } else if (err) {

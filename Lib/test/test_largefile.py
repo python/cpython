@@ -151,9 +151,24 @@ class TestFileMethods(LargeFileTest):
                 self.assertTrue(f.seekable())
 
 
+def skip_no_disk_space(path, required):
+    def decorator(fun):
+        def wrapper(*args, **kwargs):
+            if shutil.disk_usage(os.path.realpath(path)).free < required:
+                hsize = int(required / 1024 / 1024)
+                raise unittest.SkipTest(
+                    f"required {hsize} MiB of free disk space")
+            return fun(*args, **kwargs)
+        return wrapper
+    return decorator
+
+
 class TestCopyfile(LargeFileTest, unittest.TestCase):
     open = staticmethod(io.open)
 
+    # Exact required disk space would be (size * 2), but let's give it a
+    # bit more tolerance.
+    @skip_no_disk_space(TESTFN, size * 2.5)
     def test_it(self):
         # Internally shutil.copyfile() can use "fast copy" methods like
         # os.sendfile().
@@ -200,6 +215,9 @@ class TestSocketSendfile(LargeFileTest, unittest.TestCase):
         self.thread.start()
         event.set()
 
+    # Exact required disk space would be (size * 2), but let's give it a
+    # bit more tolerance.
+    @skip_no_disk_space(TESTFN, size * 2.5)
     def test_it(self):
         port = find_unused_port()
         with socket.create_server(("", port)) as sock:
