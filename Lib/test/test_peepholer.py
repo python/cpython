@@ -65,14 +65,14 @@ class TestTranforms(BytecodeTestCase):
         self.check_lnotab(unot)
 
     def test_elim_inversion_of_is_or_in(self):
-        for line, cmp_op in (
-            ('not a is b', 'is not',),
-            ('not a in b', 'not in',),
-            ('not a is not b', 'is',),
-            ('not a not in b', 'in',),
+        for line, cmp_op, invert in (
+            ('not a is b', 'IS_OP', 1,),
+            ('not a is not b', 'IS_OP', 0,),
+            ('not a in b', 'CONTAINS_OP', 1,),
+            ('not a not in b', 'CONTAINS_OP', 0,),
             ):
             code = compile(line, '', 'single')
-            self.assertInBytecode(code, 'COMPARE_OP', cmp_op)
+            self.assertInBytecode(code, cmp_op, invert)
             self.check_lnotab(code)
 
     def test_global_as_constant(self):
@@ -494,6 +494,20 @@ class TestTranforms(BytecodeTestCase):
                 return 5
             return 6
         self.check_lnotab(f)
+
+    def test_assignment_idiom_in_comprehensions(self):
+        def listcomp():
+            return [y for x in a for y in [f(x)]]
+        self.assertEqual(count_instr_recursively(listcomp, 'FOR_ITER'), 1)
+        def setcomp():
+            return {y for x in a for y in [f(x)]}
+        self.assertEqual(count_instr_recursively(setcomp, 'FOR_ITER'), 1)
+        def dictcomp():
+            return {y: y for x in a for y in [f(x)]}
+        self.assertEqual(count_instr_recursively(dictcomp, 'FOR_ITER'), 1)
+        def genexpr():
+            return (y for x in a for y in [f(x)])
+        self.assertEqual(count_instr_recursively(genexpr, 'FOR_ITER'), 1)
 
 
 class TestBuglets(unittest.TestCase):

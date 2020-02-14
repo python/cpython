@@ -25,6 +25,8 @@
 extern "C" {
 #endif
 
+_Py_IDENTIFIER(open);
+
 /* External C interface */
 
 PyObject *
@@ -32,7 +34,6 @@ PyFile_FromFd(int fd, const char *name, const char *mode, int buffering, const c
               const char *errors, const char *newline, int closefd)
 {
     PyObject *io, *stream;
-    _Py_IDENTIFIER(open);
 
     /* import _io in case we are being used to open io.py */
     io = PyImport_ImportModule("_io");
@@ -84,7 +85,7 @@ PyFile_GetLine(PyObject *f, int n)
                             "EOF when reading a line");
         }
         else if (s[len-1] == '\n') {
-            if (result->ob_refcnt == 1)
+            if (Py_REFCNT(result) == 1)
                 _PyBytes_Resize(&result, len-1);
             else {
                 PyObject *v;
@@ -136,7 +137,7 @@ PyFile_WriteObject(PyObject *v, PyObject *f, int flags)
         Py_DECREF(writer);
         return -1;
     }
-    result = _PyObject_CallOneArg(writer, value);
+    result = PyObject_CallOneArg(writer, value);
     Py_DECREF(value);
     Py_DECREF(writer);
     if (result == NULL)
@@ -547,7 +548,6 @@ PyObject *
 PyFile_OpenCodeObject(PyObject *path)
 {
     PyObject *iomod, *f = NULL;
-    _Py_IDENTIFIER(open);
 
     if (!PyUnicode_Check(path)) {
         PyErr_Format(PyExc_TypeError, "'path' must be 'str', not '%.200s'",

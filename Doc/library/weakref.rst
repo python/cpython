@@ -327,12 +327,6 @@ objects.
    types.
 
 
-.. exception:: ReferenceError
-
-   Exception raised when a proxy object is used but the underlying object has been
-   collected.  This is the same as the standard :exc:`ReferenceError` exception.
-
-
 .. seealso::
 
    :pep:`205` - Weak References

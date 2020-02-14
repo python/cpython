@@ -359,7 +359,7 @@ _Pickle_FastCall(PyObject *func, PyObject *obj)
 {
     PyObject *result;
 
-    result = _PyObject_CallOneArg(func, obj);
+    result = PyObject_CallOneArg(func, obj);
     Py_DECREF(obj);
     return result;
 }
@@ -420,7 +420,7 @@ call_method(PyObject *func, PyObject *self, PyObject *obj)
         return PyObject_CallFunctionObjArgs(func, self, obj, NULL);
     }
     else {
-        return _PyObject_CallOneArg(func, obj);
+        return PyObject_CallOneArg(func, obj);
     }
 }
 
@@ -461,7 +461,7 @@ Pdata_New(void)
 
     if (!(self = PyObject_New(Pdata, &Pdata_Type)))
         return NULL;
-    Py_SIZE(self) = 0;
+    Py_SET_SIZE(self, 0);
     self->mark_set = 0;
     self->fence = 0;
     self->allocated = 8;
@@ -488,7 +488,7 @@ Pdata_clear(Pdata *self, Py_ssize_t clearto)
     while (--i >= clearto) {
         Py_CLEAR(self->data[i]);
     }
-    Py_SIZE(self) = clearto;
+    Py_SET_SIZE(self, clearto);
     return 0;
 }
 
@@ -539,7 +539,8 @@ Pdata_pop(Pdata *self)
         Pdata_stack_underflow(self);
         return NULL;
     }
-    return self->data[--Py_SIZE(self)];
+    Py_SET_SIZE(self, Py_SIZE(self) - 1);
+    return self->data[Py_SIZE(self)];
 }
 #define PDATA_POP(D, V) do { (V) = Pdata_pop((D)); } while (0)
 
@@ -549,7 +550,8 @@ Pdata_push(Pdata *self, PyObject *obj)
     if (Py_SIZE(self) == self->allocated && Pdata_grow(self) < 0) {
         return -1;
     }
-    self->data[Py_SIZE(self)++] = obj;
+    self->data[Py_SIZE(self)] = obj;
+    Py_SET_SIZE(self, Py_SIZE(self) + 1);
     return 0;
 }
 
@@ -579,7 +581,7 @@ Pdata_poptuple(Pdata *self, Py_ssize_t start)
     for (i = start, j = 0; j < len; i++, j++)
         PyTuple_SET_ITEM(tuple, j, self->data[i]);
 
-    Py_SIZE(self) = start;
+    Py_SET_SIZE(self, start);
     return tuple;
 }
 
@@ -596,7 +598,7 @@ Pdata_poplist(Pdata *self, Py_ssize_t start)
     for (i = start, j = 0; j < len; i++, j++)
         PyList_SET_ITEM(list, j, self->data[i]);
 
-    Py_SIZE(self) = start;
+    Py_SET_SIZE(self, start);
     return list;
 }
 
@@ -1976,7 +1978,7 @@ fast_save_enter(PicklerObject *self, PyObject *obj)
             PyErr_Format(PyExc_ValueError,
                          "fast mode: can't pickle cyclic objects "
                          "including object type %.200s at %p",
-                         obj->ob_type->tp_name, obj);
+                         Py_TYPE(obj)->tp_name, obj);
             self->fast_nesting = -1;
             return 0;
         }
@@ -2296,7 +2298,7 @@ _Pickler_write_bytes(PicklerObject *self,
                 return -1;
             }
         }
-        result = _PyObject_CallOneArg(self->write, payload);
+        result = PyObject_CallOneArg(self->write, payload);
         Py_XDECREF(mem);
         if (result == NULL) {
             return -1;
@@ -2504,7 +2506,7 @@ save_picklebuffer(PicklerObject *self, PyObject *obj)
     }
     int in_band = 1;
     if (self->buffer_callback != NULL) {
-        PyObject *ret = _PyObject_CallOneArg(self->buffer_callback, obj);
+        PyObject *ret = PyObject_CallOneArg(self->buffer_callback, obj);
         if (ret == NULL) {
             return -1;
         }
@@ -4321,7 +4323,7 @@ save(PicklerObject *self, PyObject *obj, int pers_save)
      * regular reduction mechanism.
      */
     if (self->reducer_override != NULL) {
-        reduce_value = _PyObject_CallOneArg(self->reducer_override, obj);
+        reduce_value = PyObject_CallOneArg(self->reducer_override, obj);
         if (reduce_value == NULL) {
             goto error;
         }
@@ -4455,12 +4457,13 @@ static int
 dump(PicklerObject *self, PyObject *obj)
 {
     const char stop_op = STOP;
+    int status = -1;
     PyObject *tmp;
     _Py_IDENTIFIER(reducer_override);
 
     if (_PyObject_LookupAttrId((PyObject *)self, &PyId_reducer_override,
                                &tmp) < 0) {
-        return -1;
+      goto error;
     }
     /* Cache the reducer_override method, if it exists. */
     if (tmp != NULL) {
@@ -4477,7 +4480,7 @@ dump(PicklerObject *self, PyObject *obj)
         assert(self->proto >= 0 && self->proto < 256);
         header[1] = (unsigned char)self->proto;
         if (_Pickler_Write(self, header, 2) < 0)
-            return -1;
+            goto error;
         if (self->proto >= 4)
             self->framing = 1;
     }
@@ -4485,9 +4488,22 @@ dump(PicklerObject *self, PyObject *obj)
     if (save(self, obj, 0) < 0 ||
         _Pickler_Write(self, &stop_op, 1) < 0 ||
         _Pickler_CommitFrame(self) < 0)
-        return -1;
+        goto error;
+
+    // Success
+    status = 0;
+
+  error:
     self->framing = 0;
-    return 0;
+
+    /* Break the reference cycle we generated at the beginning this function
+     * call when setting the reducer_override attribute of the Pickler instance
+     * to a bound method of the same instance. This is important as the Pickler
+     * instance holds a reference to each object it has pickled (through its
+     * memo): thus, these objects wont be garbage-collected as long as the
+     * Pickler itself is not collected. */
+    Py_CLEAR(self->reducer_override);
+    return status;
 }
 
 /*[clinic input]
@@ -4645,8 +4661,9 @@ _pickle.Pickler.__init__
 This takes a binary file for writing a pickle data stream.
 
 The optional *protocol* argument tells the pickler to use the given
-protocol; supported protocols are 0, 1, 2, 3 and 4.  The default
-protocol is 3; a backward-incompatible protocol designed for Python 3.
+protocol; supported protocols are 0, 1, 2, 3, 4 and 5.  The default
+protocol is 4. It was introduced in Python 3.4, and is incompatible
+with previous versions.
 
 Specifying a negative protocol version selects the highest protocol
 version supported.  The higher the protocol used, the more recent the
@@ -4678,7 +4695,7 @@ static int
 _pickle_Pickler___init___impl(PicklerObject *self, PyObject *file,
                               PyObject *protocol, int fix_imports,
                               PyObject *buffer_callback)
-/*[clinic end generated code: output=0abedc50590d259b input=bb886e00443a7811]*/
+/*[clinic end generated code: output=0abedc50590d259b input=a7c969699bf5dad3]*/
 {
     _Py_IDENTIFIER(persistent_id);
     _Py_IDENTIFIER(dispatch_table);
@@ -6119,7 +6136,7 @@ load_pop(UnpicklerObject *self)
     else {
         len--;
         Py_DECREF(self->stack->data[len]);
-        Py_SIZE(self->stack) = len;
+        Py_SET_SIZE(self->stack, len);
     }
     return 0;
 }
@@ -6480,13 +6497,13 @@ do_append(UnpicklerObject *self, Py_ssize_t x)
                 result = _Pickle_FastCall(append_func, value);
                 if (result == NULL) {
                     Pdata_clear(self->stack, i + 1);
-                    Py_SIZE(self->stack) = x;
+                    Py_SET_SIZE(self->stack, x);
                     Py_DECREF(append_func);
                     return -1;
                 }
                 Py_DECREF(result);
             }
-            Py_SIZE(self->stack) = x;
+            Py_SET_SIZE(self->stack, x);
             Py_DECREF(append_func);
         }
     }
@@ -6608,12 +6625,12 @@ load_additems(UnpicklerObject *self)
             result = _Pickle_FastCall(add_func, item);
             if (result == NULL) {
                 Pdata_clear(self->stack, i + 1);
-                Py_SIZE(self->stack) = mark;
+                Py_SET_SIZE(self->stack, mark);
                 return -1;
             }
             Py_DECREF(result);
         }
-        Py_SIZE(self->stack) = mark;
+        Py_SET_SIZE(self->stack, mark);
     }
 
     return 0;
@@ -7635,8 +7652,8 @@ This is equivalent to ``Pickler(file, protocol).dump(obj)``, but may
 be more efficient.
 
 The optional *protocol* argument tells the pickler to use the given
-protocol; supported protocols are 0, 1, 2, 3 and 4.  The default
-protocol is 4. It was introduced in Python 3.4, it is incompatible
+protocol; supported protocols are 0, 1, 2, 3, 4 and 5.  The default
+protocol is 4. It was introduced in Python 3.4, and is incompatible
 with previous versions.
 
 Specifying a negative protocol version selects the highest protocol
@@ -7662,7 +7679,7 @@ static PyObject *
 _pickle_dump_impl(PyObject *module, PyObject *obj, PyObject *file,
                   PyObject *protocol, int fix_imports,
                   PyObject *buffer_callback)
-/*[clinic end generated code: output=706186dba996490c input=cfdcaf573ed6e46c]*/
+/*[clinic end generated code: output=706186dba996490c input=5ed6653da99cd97c]*/
 {
     PicklerObject *pickler = _Pickler_New();
 
@@ -7705,8 +7722,8 @@ _pickle.dumps
 Return the pickled representation of the object as a bytes object.
 
 The optional *protocol* argument tells the pickler to use the given
-protocol; supported protocols are 0, 1, 2, 3 and 4.  The default
-protocol is 4. It was introduced in Python 3.4, it is incompatible
+protocol; supported protocols are 0, 1, 2, 3, 4 and 5.  The default
+protocol is 4. It was introduced in Python 3.4, and is incompatible
 with previous versions.
 
 Specifying a negative protocol version selects the highest protocol
@@ -7726,7 +7743,7 @@ into *file* as part of the pickle stream.  It is an error if
 static PyObject *
 _pickle_dumps_impl(PyObject *module, PyObject *obj, PyObject *protocol,
                    int fix_imports, PyObject *buffer_callback)
-/*[clinic end generated code: output=fbab0093a5580fdf input=9f334d535ff7194f]*/
+/*[clinic end generated code: output=fbab0093a5580fdf input=e543272436c6f987]*/
 {
     PyObject *result;
     PicklerObject *pickler = _Pickler_New();

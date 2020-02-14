@@ -1,0 +1,3 @@
+* Add `lazycache` function to `__all__`.
+* Use `dict.clear` to clear the cache.
+* Refactoring `getline` function and `checkcache` function.

@@ -1,0 +1,2 @@
+:func:`sys.audit` is now called only once per call of :func:`glob.glob` and
+:func:`glob.iglob`.

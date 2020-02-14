@@ -24,6 +24,8 @@ typedef struct _warnings_runtime_state WarningsState;
 /* Forward declaration of the _warnings module definition. */
 static struct PyModuleDef warningsmodule;
 
+_Py_IDENTIFIER(__name__);
+
 /* Given a module object, get its per-module state. */
 static WarningsState *
 _Warnings_GetState()
@@ -484,7 +486,6 @@ show_warning(PyObject *filename, int lineno, PyObject *text,
     PyObject *f_stderr;
     PyObject *name;
     char lineno_str[128];
-    _Py_IDENTIFIER(__name__);
 
     PyOS_snprintf(lineno_str, sizeof(lineno_str), ":%d: ", lineno);
 
@@ -592,7 +593,7 @@ call_show_warning(PyObject *category, PyObject *text, PyObject *message,
     if (msg == NULL)
         goto error;
 
-    res = _PyObject_CallOneArg(show_fn, msg);
+    res = PyObject_CallOneArg(show_fn, msg);
     Py_DECREF(show_fn);
     Py_DECREF(msg);
 
@@ -649,11 +650,11 @@ warn_explicit(PyObject *category, PyObject *message,
         text = PyObject_Str(message);
         if (text == NULL)
             goto cleanup;
-        category = (PyObject*)message->ob_type;
+        category = (PyObject*)Py_TYPE(message);
     }
     else {
         text = message;
-        message = _PyObject_CallOneArg(category, message);
+        message = PyObject_CallOneArg(category, message);
         if (message == NULL)
             goto cleanup;
     }
@@ -818,7 +819,6 @@ setup_context(Py_ssize_t stack_level, PyObject **filename, int *lineno,
               PyObject **module, PyObject **registry)
 {
     _Py_IDENTIFIER(__warningregistry__);
-    _Py_IDENTIFIER(__name__);
     PyObject *globals;
 
     /* Setup globals, filename and lineno. */
@@ -906,7 +906,7 @@ get_category(PyObject *message, PyObject *category)
         return NULL;
 
     if (rc == 1)
-        category = (PyObject*)message->ob_type;
+        category = (PyObject*)Py_TYPE(message);
     else if (category == NULL || category == Py_None)
         category = PyExc_UserWarning;
 
@@ -969,7 +969,6 @@ get_source_line(PyObject *module_globals, int lineno)
 {
     _Py_IDENTIFIER(get_source);
     _Py_IDENTIFIER(__loader__);
-    _Py_IDENTIFIER(__name__);
     PyObject *loader;
     PyObject *module_name;
     PyObject *get_source;
@@ -998,7 +997,7 @@ get_source_line(PyObject *module_globals, int lineno)
         return NULL;
     }
     /* Call get_source() to get the source code. */
-    source = _PyObject_CallOneArg(get_source, module_name);
+    source = PyObject_CallOneArg(get_source, module_name);
     Py_DECREF(get_source);
     Py_DECREF(module_name);
     if (!source) {
@@ -1285,7 +1284,7 @@ _PyErr_WarnUnawaitedCoroutine(PyObject *coro)
     int warned = 0;
     PyObject *fn = get_warnings_attr(&PyId__warn_unawaited_coroutine, 1);
     if (fn) {
-        PyObject *res = _PyObject_CallOneArg(fn, coro);
+        PyObject *res = PyObject_CallOneArg(fn, coro);
         Py_DECREF(fn);
         if (res || PyErr_ExceptionMatches(PyExc_RuntimeWarning)) {
             warned = 1;

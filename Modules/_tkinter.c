@@ -833,7 +833,7 @@ typedef struct {
 } PyTclObject;
 
 static PyObject *PyTclObject_Type;
-#define PyTclObject_Check(v) ((v)->ob_type == (PyTypeObject *) PyTclObject_Type)
+#define PyTclObject_Check(v) (Py_TYPE(v) == (PyTypeObject *) PyTclObject_Type)
 
 static PyObject *
 newPyTclObject(Tcl_Obj *arg)
@@ -1734,7 +1734,7 @@ varname_converter(PyObject *in, void *_out)
     }
     PyErr_Format(PyExc_TypeError,
                  "must be str, bytes or Tcl_Obj, not %.50s",
-                 in->ob_type->tp_name);
+                 Py_TYPE(in)->tp_name);
     return 0;
 }
 

@@ -56,7 +56,7 @@ def server(evt, buf, serv):
         serv.close()
         evt.set()
 
-class GeneralTests(unittest.TestCase):
+class GeneralTests:
 
     def setUp(self):
         smtplib.socket = mock_socket
@@ -75,29 +75,29 @@ class GeneralTests(unittest.TestCase):
     def testBasic1(self):
         mock_socket.reply_with(b"220 Hola mundo")
         # connects
-        smtp = smtplib.SMTP(HOST, self.port)
-        smtp.close()
+        client = self.client(HOST, self.port)
+        client.close()
 
     def testSourceAddress(self):
         mock_socket.reply_with(b"220 Hola mundo")
         # connects
-        smtp = smtplib.SMTP(HOST, self.port,
-                source_address=('127.0.0.1',19876))
-        self.assertEqual(smtp.source_address, ('127.0.0.1', 19876))
-        smtp.close()
+        client = self.client(HOST, self.port,
+                             source_address=('127.0.0.1',19876))
+        self.assertEqual(client.source_address, ('127.0.0.1', 19876))
+        client.close()
 
     def testBasic2(self):
         mock_socket.reply_with(b"220 Hola mundo")
         # connects, include port in host name
-        smtp = smtplib.SMTP("%s:%s" % (HOST, self.port))
-        smtp.close()
+        client = self.client("%s:%s" % (HOST, self.port))
+        client.close()
 
     def testLocalHostName(self):
         mock_socket.reply_with(b"220 Hola mundo")
         # check that supplied local_hostname is used
-        smtp = smtplib.SMTP(HOST, self.port, local_hostname="testhost")
-        self.assertEqual(smtp.local_hostname, "testhost")
-        smtp.close()
+        client = self.client(HOST, self.port, local_hostname="testhost")
+        self.assertEqual(client.local_hostname, "testhost")
+        client.close()
 
     def testTimeoutDefault(self):
         mock_socket.reply_with(b"220 Hola mundo")
@@ -105,55 +105,70 @@ class GeneralTests(unittest.TestCase):
         mock_socket.setdefaulttimeout(30)
         self.assertEqual(mock_socket.getdefaulttimeout(), 30)
         try:
-            smtp = smtplib.SMTP(HOST, self.port)
+            client = self.client(HOST, self.port)
         finally:
             mock_socket.setdefaulttimeout(None)
-        self.assertEqual(smtp.sock.gettimeout(), 30)
-        smtp.close()
+        self.assertEqual(client.sock.gettimeout(), 30)
+        client.close()
 
     def testTimeoutNone(self):
         mock_socket.reply_with(b"220 Hola mundo")
         self.assertIsNone(socket.getdefaulttimeout())
         socket.setdefaulttimeout(30)
         try:
-            smtp = smtplib.SMTP(HOST, self.port, timeout=None)
+            client = self.client(HOST, self.port, timeout=None)
         finally:
             socket.setdefaulttimeout(None)
-        self.assertIsNone(smtp.sock.gettimeout())
-        smtp.close()
+        self.assertIsNone(client.sock.gettimeout())
+        client.close()
 
     def testTimeoutZero(self):
         mock_socket.reply_with(b"220 Hola mundo")
         with self.assertRaises(ValueError):
-            smtplib.SMTP(HOST, self.port, timeout=0)
+            self.client(HOST, self.port, timeout=0)
 
     def testTimeoutValue(self):
         mock_socket.reply_with(b"220 Hola mundo")
-        smtp = smtplib.SMTP(HOST, self.port, timeout=30)
-        self.assertEqual(smtp.sock.gettimeout(), 30)
-        smtp.close()
+        client = self.client(HOST, self.port, timeout=30)
+        self.assertEqual(client.sock.gettimeout(), 30)
+        client.close()
 
     def test_debuglevel(self):
         mock_socket.reply_with(b"220 Hello world")
-        smtp = smtplib.SMTP()
-        smtp.set_debuglevel(1)
+        client = self.client()
+        client.set_debuglevel(1)
         with support.captured_stderr() as stderr:
-            smtp.connect(HOST, self.port)
-        smtp.close()
+            client.connect(HOST, self.port)
+        client.close()
         expected = re.compile(r"^connect:", re.MULTILINE)
         self.assertRegex(stderr.getvalue(), expected)
 
     def test_debuglevel_2(self):
         mock_socket.reply_with(b"220 Hello world")
-        smtp = smtplib.SMTP()
-        smtp.set_debuglevel(2)
+        client = self.client()
+        client.set_debuglevel(2)
         with support.captured_stderr() as stderr:
-            smtp.connect(HOST, self.port)
-        smtp.close()
+            client.connect(HOST, self.port)
+        client.close()
         expected = re.compile(r"^\d{2}:\d{2}:\d{2}\.\d{6} connect: ",
                               re.MULTILINE)
         self.assertRegex(stderr.getvalue(), expected)
 
+
+class SMTPGeneralTests(GeneralTests, unittest.TestCase):
+
+    client = smtplib.SMTP
+
+
+class LMTPGeneralTests(GeneralTests, unittest.TestCase):
+
+    client = smtplib.LMTP
+
+    def testTimeoutZero(self):
+        super().testTimeoutZero()
+        local_host = '/some/local/lmtp/delivery/program'
+        with self.assertRaises(ValueError):
+            self.client(local_host, timeout=0)
 
 # Test server thread using the specified SMTP server class
 def debugging_server(serv, serv_evt, client_evt):

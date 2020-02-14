@@ -7,6 +7,10 @@
 
 static Py_ssize_t max_module_number;
 
+_Py_IDENTIFIER(__doc__);
+_Py_IDENTIFIER(__name__);
+_Py_IDENTIFIER(__spec__);
+
 typedef struct {
     PyObject_HEAD
     PyObject *md_dict;
@@ -47,8 +51,8 @@ PyModuleDef_Init(struct PyModuleDef* def)
          return NULL;
     if (def->m_base.m_index == 0) {
         max_module_number++;
-        Py_REFCNT(def) = 1;
-        Py_TYPE(def) = &PyModuleDef_Type;
+        Py_SET_REFCNT(def, 1);
+        Py_SET_TYPE(def, &PyModuleDef_Type);
         def->m_base.m_index = max_module_number;
     }
     return (PyObject*)def;
@@ -58,11 +62,8 @@ static int
 module_init_dict(PyModuleObject *mod, PyObject *md_dict,
                  PyObject *name, PyObject *doc)
 {
-    _Py_IDENTIFIER(__name__);
-    _Py_IDENTIFIER(__doc__);
     _Py_IDENTIFIER(__package__);
     _Py_IDENTIFIER(__loader__);
-    _Py_IDENTIFIER(__spec__);
 
     if (md_dict == NULL)
         return -1;
@@ -173,8 +174,11 @@ _add_methods_to_object(PyObject *module, PyObject *name, PyMethodDef *functions)
 PyObject *
 PyModule_Create2(struct PyModuleDef* module, int module_api_version)
 {
-    if (!_PyImport_IsInitialized(_PyInterpreterState_Get()))
-        Py_FatalError("Python import machinery not initialized");
+    if (!_PyImport_IsInitialized(_PyInterpreterState_Get())) {
+        PyErr_SetString(PyExc_SystemError,
+                        "Python import machinery not initialized");
+        return NULL;
+    }
     return _PyModule_CreateInitialized(module, module_api_version);
 }
 
@@ -458,7 +462,6 @@ int
 PyModule_SetDocString(PyObject *m, const char *doc)
 {
     PyObject *v;
-    _Py_IDENTIFIER(__doc__);
 
     v = PyUnicode_FromString(doc);
     if (v == NULL || _PyObject_SetAttrId(m, &PyId___doc__, v) != 0) {
@@ -485,7 +488,6 @@ PyModule_GetDict(PyObject *m)
 PyObject*
 PyModule_GetNameObject(PyObject *m)
 {
-    _Py_IDENTIFIER(__name__);
     PyObject *d;
     PyObject *name;
     if (!PyModule_Check(m)) {
@@ -736,12 +738,10 @@ module_getattro(PyModuleObject *m, PyObject *name)
         _Py_IDENTIFIER(__getattr__);
         getattr = _PyDict_GetItemId(m->md_dict, &PyId___getattr__);
         if (getattr) {
-            return _PyObject_CallOneArg(getattr, name);
+            return PyObject_CallOneArg(getattr, name);
         }
-        _Py_IDENTIFIER(__name__);
         mod_name = _PyDict_GetItemId(m->md_dict, &PyId___name__);
         if (mod_name && PyUnicode_Check(mod_name)) {
-            _Py_IDENTIFIER(__spec__);
             Py_INCREF(mod_name);
             PyObject *spec = _PyDict_GetItemId(m->md_dict, &PyId___spec__);
             Py_XINCREF(spec);

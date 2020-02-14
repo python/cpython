@@ -18,6 +18,8 @@ typedef struct {
     PyObject *length;
 } rangeobject;
 
+_Py_IDENTIFIER(iter);
+
 /* Helper function for validating step.  Always returns a new reference or
    NULL on error.
 */
@@ -119,7 +121,7 @@ range_new(PyTypeObject *type, PyObject *args, PyObject *kw)
                             "range expected at least 1 argument, got 0");
             return NULL;
         default:
-            PyErr_Format(PyExc_TypeError, 
+            PyErr_Format(PyExc_TypeError,
                          "range expected at most 3 arguments, got %zd",
                          num_args);
             return NULL;
@@ -629,7 +631,7 @@ range_subscript(rangeobject* self, PyObject* item)
     }
     PyErr_Format(PyExc_TypeError,
                  "range indices must be integers or slices, not %.200s",
-                 item->ob_type->tp_name);
+                 Py_TYPE(item)->tp_name);
     return NULL;
 }
 
@@ -757,7 +759,6 @@ PyDoc_STRVAR(length_hint_doc,
 static PyObject *
 rangeiter_reduce(rangeiterobject *r, PyObject *Py_UNUSED(ignored))
 {
-    _Py_IDENTIFIER(iter);
     PyObject *start=NULL, *stop=NULL, *step=NULL;
     PyObject *range;
 
@@ -915,7 +916,6 @@ longrangeiter_len(longrangeiterobject *r, PyObject *no_args)
 static PyObject *
 longrangeiter_reduce(longrangeiterobject *r, PyObject *Py_UNUSED(ignored))
 {
-    _Py_IDENTIFIER(iter);
     PyObject *product, *stop=NULL;
     PyObject *range;
 

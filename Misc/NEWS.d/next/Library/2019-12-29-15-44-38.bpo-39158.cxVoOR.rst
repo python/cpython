@@ -1,1 +1,0 @@
-ast.literal_eval() now supports empty sets.

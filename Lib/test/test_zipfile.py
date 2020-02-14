@@ -611,10 +611,27 @@ class StoredTestsWithSourceFile(AbstractTestsWithSourceFile,
 
     def test_add_file_after_2107(self):
         # Set atime and mtime to 2108-12-30
+        ts = 4386268800
         try:
-            os.utime(TESTFN, (4386268800, 4386268800))
+            time.localtime(ts)
+        except OverflowError:
+            self.skipTest(f'time.localtime({ts}) raises OverflowError')
+        try:
+            os.utime(TESTFN, (ts, ts))
         except OverflowError:
             self.skipTest('Host fs cannot set timestamp to required value.')
+
+        mtime_ns = os.stat(TESTFN).st_mtime_ns
+        if mtime_ns != (4386268800 * 10**9):
+            # XFS filesystem is limited to 32-bit timestamp, but the syscall
+            # didn't fail. Moreover, there is a VFS bug which returns
+            # a cached timestamp which is different than the value on disk.
+            #
+            # Test st_mtime_ns rather than st_mtime to avoid rounding issues.
+            #
+            # https://bugzilla.redhat.com/show_bug.cgi?id=1795576
+            # https://bugs.python.org/issue39460#msg360952
+            self.skipTest(f"Linux VFS/XFS kernel bug detected: {mtime_ns=}")
 
         with zipfile.ZipFile(TESTFN2, "w") as zipfp:
             self.assertRaises(struct.error, zipfp.write, TESTFN)
@@ -2707,8 +2724,63 @@ class CommandLineTest(unittest.TestCase):
                                 self.assertEqual(f.read(), zf.read(zi))
 
 
+class TestExecutablePrependedZip(unittest.TestCase):
+    """Test our ability to open zip files with an executable prepended."""
+
+    def setUp(self):
+        self.exe_zip = findfile('exe_with_zip', subdir='ziptestdata')
+        self.exe_zip64 = findfile('exe_with_z64', subdir='ziptestdata')
+
+    def _test_zip_works(self, name):
+        # bpo28494 sanity check: ensure is_zipfile works on these.
+        self.assertTrue(zipfile.is_zipfile(name),
+                        f'is_zipfile failed on {name}')
+        # Ensure we can operate on these via ZipFile.
+        with zipfile.ZipFile(name) as zipfp:
+            for n in zipfp.namelist():
+                data = zipfp.read(n)
+                self.assertIn(b'FAVORITE_NUMBER', data)
+
+    def test_read_zip_with_exe_prepended(self):
+        self._test_zip_works(self.exe_zip)
+
+    def test_read_zip64_with_exe_prepended(self):
+        self._test_zip_works(self.exe_zip64)
+
+    @unittest.skipUnless(sys.executable, 'sys.executable required.')
+    @unittest.skipUnless(os.access('/bin/bash', os.X_OK),
+                         'Test relies on #!/bin/bash working.')
+    def test_execute_zip2(self):
+        output = subprocess.check_output([self.exe_zip, sys.executable])
+        self.assertIn(b'number in executable: 5', output)
+
+    @unittest.skipUnless(sys.executable, 'sys.executable required.')
+    @unittest.skipUnless(os.access('/bin/bash', os.X_OK),
+                         'Test relies on #!/bin/bash working.')
+    def test_execute_zip64(self):
+        output = subprocess.check_output([self.exe_zip64, sys.executable])
+        self.assertIn(b'number in executable: 5', output)
+
+
 # Poor man's technique to consume a (smallish) iterable.
 consume = tuple
+
+
+# from jaraco.itertools 5.0
+class jaraco:
+    class itertools:
+        class Counter:
+            def __init__(self, i):
+                self.count = 0
+                self._orig_iter = iter(i)
+
+            def __iter__(self):
+                return self
+
+            def __next__(self):
+                result = next(self._orig_iter)
+                self.count += 1
+                return result
 
 
 def add_dirs(zf):
@@ -2716,7 +2788,7 @@ def add_dirs(zf):
     Given a writable zip file zf, inject directory entries for
     any directories implied by the presence of children.
     """
-    for name in zipfile.Path._implied_dirs(zf.namelist()):
+    for name in zipfile.CompleteDirs._implied_dirs(zf.namelist()):
         zf.writestr(name, b"")
     return zf
 
@@ -2757,44 +2829,6 @@ def build_alpharep_fixture():
     return zf
 
 
-class TestExecutablePrependedZip(unittest.TestCase):
-    """Test our ability to open zip files with an executable prepended."""
-
-    def setUp(self):
-        self.exe_zip = findfile('exe_with_zip', subdir='ziptestdata')
-        self.exe_zip64 = findfile('exe_with_z64', subdir='ziptestdata')
-
-    def _test_zip_works(self, name):
-        # bpo-28494 sanity check: ensure is_zipfile works on these.
-        self.assertTrue(zipfile.is_zipfile(name),
-                        f'is_zipfile failed on {name}')
-        # Ensure we can operate on these via ZipFile.
-        with zipfile.ZipFile(name) as zipfp:
-            for n in zipfp.namelist():
-                data = zipfp.read(n)
-                self.assertIn(b'FAVORITE_NUMBER', data)
-
-    def test_read_zip_with_exe_prepended(self):
-        self._test_zip_works(self.exe_zip)
-
-    def test_read_zip64_with_exe_prepended(self):
-        self._test_zip_works(self.exe_zip64)
-
-    @unittest.skipUnless(sys.executable, 'sys.executable required.')
-    @unittest.skipUnless(os.access('/bin/bash', os.X_OK),
-                         'Test relies on #!/bin/bash working.')
-    def test_execute_zip2(self):
-        output = subprocess.check_output([self.exe_zip, sys.executable])
-        self.assertIn(b'number in executable: 5', output)
-
-    @unittest.skipUnless(sys.executable, 'sys.executable required.')
-    @unittest.skipUnless(os.access('/bin/bash', os.X_OK),
-                         'Test relies on #!/bin/bash working.')
-    def test_execute_zip64(self):
-        output = subprocess.check_output([self.exe_zip64, sys.executable])
-        self.assertIn(b'number in executable: 5', output)
-
-
 class TestPath(unittest.TestCase):
     def setUp(self):
         self.fixtures = contextlib.ExitStack()
@@ -2831,6 +2865,14 @@ class TestPath(unittest.TestCase):
             h, = g.iterdir()
             i, = h.iterdir()
             assert i.is_file()
+
+    def test_subdir_is_dir(self):
+        for alpharep in self.zipfile_alpharep():
+            root = zipfile.Path(alpharep)
+            assert (root / 'b').is_dir()
+            assert (root / 'b/').is_dir()
+            assert (root / 'g').is_dir()
+            assert (root / 'g/').is_dir()
 
     def test_open(self):
         for alpharep in self.zipfile_alpharep():
@@ -2892,6 +2934,45 @@ class TestPath(unittest.TestCase):
         for alpharep in self.zipfile_alpharep():
             root = zipfile.Path(alpharep)
             assert (root / 'missing dir/').parent.at == ''
+
+    def test_mutability(self):
+        """
+        If the underlying zipfile is changed, the Path object should
+        reflect that change.
+        """
+        for alpharep in self.zipfile_alpharep():
+            root = zipfile.Path(alpharep)
+            a, b, g = root.iterdir()
+            alpharep.writestr('foo.txt', 'foo')
+            alpharep.writestr('bar/baz.txt', 'baz')
+            assert any(
+                child.name == 'foo.txt'
+                for child in root.iterdir())
+            assert (root / 'foo.txt').read_text() == 'foo'
+            baz, = (root / 'bar').iterdir()
+            assert baz.read_text() == 'baz'
+
+    HUGE_ZIPFILE_NUM_ENTRIES = 2 ** 13
+
+    def huge_zipfile(self):
+        """Create a read-only zipfile with a huge number of entries entries."""
+        strm = io.BytesIO()
+        zf = zipfile.ZipFile(strm, "w")
+        for entry in map(str, range(self.HUGE_ZIPFILE_NUM_ENTRIES)):
+            zf.writestr(entry, entry)
+        zf.mode = 'r'
+        return zf
+
+    def test_joinpath_constant_time(self):
+        """
+        Ensure joinpath on items in zipfile is linear time.
+        """
+        root = zipfile.Path(self.huge_zipfile())
+        entries = jaraco.itertools.Counter(root.iterdir())
+        for entry in entries:
+            entry.joinpath('suffix')
+        # Check the file iterated all items
+        assert entries.count == self.HUGE_ZIPFILE_NUM_ENTRIES
 
 
 if __name__ == "__main__":
