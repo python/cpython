@@ -205,10 +205,10 @@ class PkgutilTests(unittest.TestCase):
             ('logging.handlers.SysLogHandler.LOG_ALERT',
                 logging.handlers.SysLogHandler.LOG_ALERT),
             ('builtins.int', int),
-            ('builtins.int.from_bytes', int.from_bytes),
-            ('builtins.ZeroDivisionError', ZeroDivisionError),
             ('builtins:int', int),
+            ('builtins.int.from_bytes', int.from_bytes),
             ('builtins:int.from_bytes', int.from_bytes),
+            ('builtins.ZeroDivisionError', ZeroDivisionError),
             ('builtins:ZeroDivisionError', ZeroDivisionError),
             ('os:path', os.path),
         )

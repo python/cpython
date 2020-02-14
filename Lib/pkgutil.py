@@ -676,7 +676,7 @@ def resolve_name(name):
     """
     m = _NAME_PATTERN.match(name)
     if not m:
-        raise ValueError('invalid format: %r' % name)
+        raise ValueError(f'invalid format: {name!r}')
     groups = m.groups()
     if groups[2]:
         # there is a colon - a one-step import is all that's needed
@@ -690,7 +690,7 @@ def resolve_name(name):
         mod = importlib.import_module(modname)
         while parts:
             p = parts[0]
-            s = '%s.%s' % (modname, p)
+            s = f'{modname}.{p}'
             try:
                 mod = importlib.import_module(s)
                 parts.pop(0)
