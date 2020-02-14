@@ -207,6 +207,10 @@ class PkgutilTests(unittest.TestCase):
             ('builtins.int', int),
             ('builtins.int.from_bytes', int.from_bytes),
             ('builtins.ZeroDivisionError', ZeroDivisionError),
+            ('builtins:int', int),
+            ('builtins:int.from_bytes', int.from_bytes),
+            ('builtins:ZeroDivisionError', ZeroDivisionError),
+            ('os:path', os.path),
         )
 
         failure_cases = (
