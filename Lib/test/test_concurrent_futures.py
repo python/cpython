@@ -372,20 +372,31 @@ class ThreadPoolShutdownTest(ThreadPoolMixin, ExecutorShutdownTest, BaseTestCase
 
     def test_del_shutdown(self):
         executor = futures.ThreadPoolExecutor(max_workers=5)
-        executor.map(abs, range(-5, 5))
+        res = executor.map(abs, range(-5, 5))
         threads = executor._threads
         del executor
 
         for t in threads:
             t.join()
 
+        # Make sure the results where all computed before the
+        # executor got shutdown.
+        assert all([r == abs(v) for r, v in zip(res, range(-5, 5))])
+
     def test_shutdown_no_wait(self):
+        # Ensure that the executor cleans up the threads when calling
+        # shutdown with wait=False
         executor = futures.ThreadPoolExecutor(max_workers=5)
-        executor.map(abs, range(-5, 5))
+        res = executor.map(abs, range(-5, 5))
         threads = executor._threads
         executor.shutdown(wait=False)
         for t in threads:
             t.join()
+
+        # Make sure the results where all computed before the
+        # executor got shutdown.
+        assert all([r == abs(v) for r, v in zip(res, range(-5, 5))])
+
 
     def test_thread_names_assigned(self):
         executor = futures.ThreadPoolExecutor(
@@ -437,7 +448,7 @@ class ProcessPoolShutdownTest(ExecutorShutdownTest):
 
     def test_del_shutdown(self):
         executor = futures.ProcessPoolExecutor(max_workers=5)
-        list(executor.map(abs, range(-5, 5)))
+        res = executor.map(abs, range(-5, 5))
         queue_management_thread = executor._queue_management_thread
         processes = executor._processes
         call_queue = executor._call_queue
@@ -451,9 +462,15 @@ class ProcessPoolShutdownTest(ExecutorShutdownTest):
             p.join()
         call_queue.join_thread()
 
+        # Make sure the results where all computed before the
+        # executor got shutdown.
+        assert all([r == abs(v) for r, v in zip(res, range(-5, 5))])
+
     def test_shutdown_no_wait(self):
+        # Ensure that the executor cleans up the processes when calling
+        # shutdown with wait=False
         executor = futures.ProcessPoolExecutor(max_workers=5)
-        list(executor.map(abs, range(-5, 5)))
+        res = executor.map(abs, range(-5, 5))
         processes = executor._processes
         call_queue = executor._call_queue
         queue_management_thread = executor._queue_management_thread
@@ -465,6 +482,10 @@ class ProcessPoolShutdownTest(ExecutorShutdownTest):
         for p in processes.values():
             p.join()
         call_queue.join_thread()
+
+        # Make sure the results where all computed before the executor got
+        # shutdown.
+        assert all([r == abs(v) for r, v in zip(res, range(-5, 5))])
 
 
 create_executor_tests(ProcessPoolShutdownTest,
@@ -1053,7 +1074,7 @@ class ExecutorDeadlockTest:
     def test_shutdown_deadlock_pickle(self):
         # Test that the pool calling shutdown with wait=False does not cause
         # a deadlock if a task fails at pickle after the shutdown call.
-        # Reported in GH#6034.
+        # Reported in bpo-39104.
         self.executor.shutdown(wait=True)
         with self.executor_type(max_workers=2,
                                 mp_context=get_context(self.ctx)) as executor:

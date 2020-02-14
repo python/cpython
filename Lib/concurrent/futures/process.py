@@ -448,7 +448,6 @@ def _queue_management_worker(executor_reference,
                 # this thread if there are no pending work items.
                 if not pending_work_items:
                     shutdown_worker()
-                    thread_wakeup = None
                     return
             except Full:
                 # This is not a problem: we will eventually be woken up (in
