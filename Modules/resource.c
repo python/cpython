@@ -224,6 +224,11 @@ resource_setrlimit_impl(PyObject *module, int resource, PyObject *limits)
         return NULL;
     }
 
+    if (PySys_Audit("resource.setrlimit", "iO", resource,
+                    limits ? limits : Py_None) < 0) {
+        return NULL;
+    }
+
     if (py2rlimit(limits, &rl) < 0) {
         return NULL;
     }
@@ -266,6 +271,11 @@ resource_prlimit_impl(PyObject *module, pid_t pid, int resource,
     if (resource < 0 || resource >= RLIM_NLIMITS) {
         PyErr_SetString(PyExc_ValueError,
                         "invalid resource specified");
+        return NULL;
+    }
+
+    if (PySys_Audit("resource.prlimit", "iiO", pid, resource,
+                    limits ? limits : Py_None) < 0) {
         return NULL;
     }
 

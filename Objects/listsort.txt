@@ -319,13 +319,13 @@ So merging is always done on two consecutive runs at a time, and in-place,
 although this may require some temp memory (more on that later).
 
 When a run is identified, its base address and length are pushed on a stack
-in the MergeState struct.  merge_collapse() is then called to see whether it
-should merge it with preceding run(s).  We would like to delay merging as
-long as possible in order to exploit patterns that may come up later, but we
-like even more to do merging as soon as possible to exploit that the run just
-found is still high in the memory hierarchy.  We also can't delay merging
-"too long" because it consumes memory to remember the runs that are still
-unmerged, and the stack has a fixed size.
+in the MergeState struct.  merge_collapse() is then called to potentially
+merge runs on that stack.  We would like to delay merging as long as possible
+in order to exploit patterns that may come up later, but we like even more to
+do merging as soon as possible to exploit that the run just found is still
+high in the memory hierarchy.  We also can't delay merging "too long" because
+it consumes memory to remember the runs that are still unmerged, and the
+stack has a fixed size.
 
 What turned out to be a good compromise maintains two invariants on the
 stack entries, where A, B and C are the lengths of the three rightmost not-yet
@@ -739,7 +739,7 @@ slice (leaving off both endpoints) (2**(k-1)-1)+1 through (2**k-1)-1
 inclusive = 2**(k-1) through (2**k-1)-1 inclusive, which has
     (2**k-1)-1 - 2**(k-1) + 1 =
     2**k-1 - 2**(k-1) =
-    2*2**k-1 - 2**(k-1) =
+    2*2**(k-1)-1 - 2**(k-1) =
     (2-1)*2**(k-1) - 1 =
     2**(k-1) - 1
 elements.
