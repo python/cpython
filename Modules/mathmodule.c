@@ -2048,27 +2048,22 @@ math_lcm_impl(PyObject *module, PyObject *a, PyObject *b)
     }
     f = PyNumber_FloorDivide(a, g);
     Py_DECREF(g);
+    Py_DECREF(a);
     if (f == NULL) {
-        Py_DECREF(a);
         Py_DECREF(b);
         return NULL;
     }
     m = PyNumber_Multiply(f, b);
     Py_DECREF(f);
+    Py_DECREF(b);
     if (m == NULL) {
-        Py_DECREF(a);
-        Py_DECREF(b);
         return NULL;
     }    
     ab = PyNumber_Absolute(m);
     Py_DECREF(m);
     if (ab == NULL) {
-        Py_DECREF(a);
-        Py_DECREF(b);
         return NULL;
     }
-    Py_DECREF(a);
-    Py_DECREF(b);
     return ab;
 }
 
