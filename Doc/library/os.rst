@@ -801,7 +801,7 @@ as internal buffering of data.
    .. availability:: Unix.
 
    .. note::
-      This function is not available on MacOS.
+      This function falls back to fsync() on MacOS.
 
 
 .. function:: fpathconf(fd, name)

@@ -1,0 +1,1 @@
+Fall back fdatasync() to fsync() on POSIX systems if not supported (MacOS-specific).

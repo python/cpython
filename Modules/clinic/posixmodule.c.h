@@ -798,6 +798,44 @@ exit:
 
 #endif /* defined(HAVE_FDATASYNC) */
 
+#if (defined(HAVE_FSYNC) && !defined(HAVE_FDATASYNC))
+
+PyDoc_STRVAR(os_fdatasync__doc__,
+"fdatasync($module, /, fd)\n"
+"--\n"
+"\n"
+"Force write of fd to disk (fall back to fsync due to OS restrictions).");
+
+#define OS_FDATASYNC_METHODDEF    \
+    {"fdatasync", (PyCFunction)(void(*)(void))os_fdatasync, METH_FASTCALL|METH_KEYWORDS, os_fdatasync__doc__},
+
+static PyObject *
+os_fdatasync_impl(PyObject *module, int fd);
+
+static PyObject *
+os_fdatasync(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+{
+    PyObject *return_value = NULL;
+    static const char * const _keywords[] = {"fd", NULL};
+    static _PyArg_Parser _parser = {NULL, _keywords, "fdatasync", 0};
+    PyObject *argsbuf[1];
+    int fd;
+
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 1, 0, argsbuf);
+    if (!args) {
+        goto exit;
+    }
+    if (!fildes_converter(args[0], &fd)) {
+        goto exit;
+    }
+    return_value = os_fdatasync_impl(module, fd);
+
+exit:
+    return return_value;
+}
+
+#endif /* (defined(HAVE_FSYNC) && !defined(HAVE_FDATASYNC)) */
+
 #if defined(HAVE_CHOWN)
 
 PyDoc_STRVAR(os_chown__doc__,
@@ -8919,4 +8957,4 @@ exit:
 #ifndef OS_WAITSTATUS_TO_EXITCODE_METHODDEF
     #define OS_WAITSTATUS_TO_EXITCODE_METHODDEF
 #endif /* !defined(OS_WAITSTATUS_TO_EXITCODE_METHODDEF) */
-/*[clinic end generated code: output=a0fbdea47249ee0c input=a9049054013a1b77]*/
+/*[clinic end generated code: output=d67025b82d89a5a1 input=a9049054013a1b77]*/

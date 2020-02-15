@@ -3390,6 +3390,25 @@ os_fdatasync_impl(PyObject *module, int fd)
 }
 #endif /* HAVE_FDATASYNC */
 
+#if defined(HAVE_FSYNC) && !defined(HAVE_FDATASYNC)
+
+/*[clinic input]
+os.fdatasync
+
+    fd: fildes
+
+Force write of fd to disk (fall back to fsync due to OS restrictions).
+[clinic start generated code]*/
+
+static PyObject *
+os_fdatasync_impl(PyObject *module, int fd)
+/*[clinic end generated code: output=b4b9698b5d7e26dd input=da69dbf8705ef4d0]*/
+{
+    return posix_fildes_fd(fd, fsync);
+}
+
+#endif /* defined(HAVE_FSYNC) and not defined(HAVE_FDATASYNC) */
+
 
 #ifdef HAVE_CHOWN
 /*[clinic input]
