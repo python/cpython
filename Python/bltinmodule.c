@@ -827,30 +827,32 @@ finally:
     return result;
 }
 
-/* AC: cannot convert yet, as needs PEP 457 group support in inspect */
-static PyObject *
-builtin_dir(PyObject *self, PyObject *args)
-{
-    PyObject *arg = NULL;
+/*[clinic input]
+dir as builtin_dir
+    object: object = NULL
+    /
 
-    if (!PyArg_UnpackTuple(args, "dir", 0, 1, &arg))
-        return NULL;
-    return PyObject_Dir(arg);
+Return the __dir__ attribute for an object. 
+
+If called without an argument, return the names in the current scope.
+Else, return an alphabetized list of names comprising (some of) the attributes
+of the given object, and of attributes reachable from it.
+If the object supplies a method named __dir__, it will be used; otherwise
+the default dir() logic is used and returns:
+  for a module object: the module's attributes.
+  for a class object:  its attributes, and recursively the attributes
+    of its bases.
+  for any other object: its attributes, its class's attributes, and
+    recursively the attributes of its class's base classes.
+[clinic start generated code]*/
+
+static PyObject *
+builtin_dir_impl(PyObject *module, PyObject *object)
+/*[clinic end generated code: output=b16fdf5ed77353f1 input=71fbc9c4e71cda51]*/
+{
+    return PyObject_Dir(object);
 }
 
-PyDoc_STRVAR(dir_doc,
-"dir([object]) -> list of strings\n"
-"\n"
-"If called without an argument, return the names in the current scope.\n"
-"Else, return an alphabetized list of names comprising (some of) the attributes\n"
-"of the given object, and of attributes reachable from it.\n"
-"If the object supplies a method named __dir__, it will be used; otherwise\n"
-"the default dir() logic is used and returns:\n"
-"  for a module object: the module's attributes.\n"
-"  for a class object:  its attributes, and recursively the attributes\n"
-"    of its bases.\n"
-"  for any other object: its attributes, its class's attributes, and\n"
-"    recursively the attributes of its class's base classes.");
 
 /*[clinic input]
 divmod as builtin_divmod
@@ -2244,34 +2246,36 @@ builtin_sorted(PyObject *self, PyObject *const *args, Py_ssize_t nargs, PyObject
     return newlist;
 }
 
+/*[clinic input]
+vars as builtin_vars
 
-/* AC: cannot convert yet, as needs PEP 457 group support in inspect */
+    object: object = NULL
+    /
+
+Return the __dict__ attribute for an object.
+
+Without arguments, equivalent to locals().
+With an argument, equivalent to object.__dict__.
+[clinic start generated code]*/
+
 static PyObject *
-builtin_vars(PyObject *self, PyObject *args)
+builtin_vars_impl(PyObject *module, PyObject *object)
+/*[clinic end generated code: output=840a7f64007a3e0a input=d889b01ed0c8d0b6]*/
 {
-    PyObject *v = NULL;
     PyObject *d;
 
-    if (!PyArg_UnpackTuple(args, "vars", 0, 1, &v))
-        return NULL;
-    if (v == NULL) {
+    if (object == NULL) {
         d = PyEval_GetLocals();
         Py_XINCREF(d);
     }
     else {
-        if (_PyObject_LookupAttrId(v, &PyId___dict__, &d) == 0) {
+        if (_PyObject_LookupAttrId(object, &PyId___dict__, &d) == 0) {
             PyErr_SetString(PyExc_TypeError,
                 "vars() argument must have __dict__ attribute");
         }
     }
     return d;
 }
-
-PyDoc_STRVAR(vars_doc,
-"vars([object]) -> dictionary\n\
-\n\
-Without arguments, equivalent to locals().\n\
-With an argument, equivalent to object.__dict__.");
 
 
 /*[clinic input]
@@ -2714,7 +2718,7 @@ static PyMethodDef builtin_methods[] = {
     BUILTIN_CHR_METHODDEF
     BUILTIN_COMPILE_METHODDEF
     BUILTIN_DELATTR_METHODDEF
-    {"dir",             builtin_dir,        METH_VARARGS, dir_doc},
+    BUILTIN_DIR_METHODDEF
     BUILTIN_DIVMOD_METHODDEF
     BUILTIN_EVAL_METHODDEF
     BUILTIN_EXEC_METHODDEF
@@ -2743,7 +2747,7 @@ static PyMethodDef builtin_methods[] = {
     BUILTIN_SETATTR_METHODDEF
     BUILTIN_SORTED_METHODDEF
     BUILTIN_SUM_METHODDEF
-    {"vars",            builtin_vars,       METH_VARARGS, vars_doc},
+    BUILTIN_VARS_METHODDEF
     {NULL,              NULL},
 };
 
