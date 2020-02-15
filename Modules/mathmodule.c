@@ -2040,28 +2040,33 @@ math_lcm_impl(PyObject *module, PyObject *a, PyObject *b)
         Py_DECREF(a);
         return NULL;
     }
-    g = _PyLong_GCD(a, b);
-    if (g == NULL) {
+    if (_PyLong_Sign(a) == 0 && _PyLong_Sign(b) == 0) {
+        return 0;
+    }
+    else {
+        g = _PyLong_GCD(a, b);
+        if (g == NULL) {
+            Py_DECREF(a);
+            Py_DECREF(b);
+            return NULL;
+        }
+        f = PyNumber_FloorDivide(a, g);
+        Py_DECREF(g);
         Py_DECREF(a);
+        if (f == NULL) {
+            Py_DECREF(b);
+            return NULL;
+        }
+        m = PyNumber_Multiply(f, b);
+        Py_DECREF(f);
         Py_DECREF(b);
-        return NULL;
+        if (m == NULL) {
+            return NULL;
+        }    
+        ab = PyNumber_Absolute(m);
+        Py_DECREF(m);
+        return ab;
     }
-    f = PyNumber_FloorDivide(a, g);
-    Py_DECREF(g);
-    Py_DECREF(a);
-    if (f == NULL) {
-        Py_DECREF(b);
-        return NULL;
-    }
-    m = PyNumber_Multiply(f, b);
-    Py_DECREF(f);
-    Py_DECREF(b);
-    if (m == NULL) {
-        return NULL;
-    }    
-    ab = PyNumber_Absolute(m);
-    Py_DECREF(m);
-    return ab;
 }
 
 
