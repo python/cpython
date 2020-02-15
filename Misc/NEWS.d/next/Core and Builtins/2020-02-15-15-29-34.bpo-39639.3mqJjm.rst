@@ -1,0 +1,1 @@
+Remove ``Suite`` node from AST. Patch by Batuhan Taskaya.

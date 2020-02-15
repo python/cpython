@@ -118,7 +118,7 @@ class TestAsdlParser(unittest.TestCase):
         v = CustomVisitor()
         v.visit(self.types['mod'])
         self.assertEqual(v.names_with_seq,
-                         ['Module', 'Module', 'Interactive', 'FunctionType', 'Suite'])
+                         ['Module', 'Module', 'Interactive', 'FunctionType'])
 
 
 if __name__ == '__main__':

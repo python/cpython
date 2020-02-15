@@ -554,6 +554,9 @@ Removed
   defining ``COUNT_ALLOCS`` macro.
   (Contributed by Victor Stinner in :issue:`39489`.)
 
+* ``Suite`` node from :mod:`ast` has been removed due to it is no longer needed.
+  (Contributed by Batuhan Taskaya in :issue:`39639`.)
+
 
 Porting to Python 3.9
 =====================

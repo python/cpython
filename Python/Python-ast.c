@@ -127,7 +127,6 @@ typedef struct {
     PyObject *Sub_singleton;
     PyObject *Sub_type;
     PyObject *Subscript_type;
-    PyObject *Suite_type;
     PyObject *Try_type;
     PyObject *Tuple_type;
     PyObject *TypeIgnore_type;
@@ -357,7 +356,6 @@ static int astmodule_clear(PyObject *module)
     Py_CLEAR(astmodulestate(module)->Sub_singleton);
     Py_CLEAR(astmodulestate(module)->Sub_type);
     Py_CLEAR(astmodulestate(module)->Subscript_type);
-    Py_CLEAR(astmodulestate(module)->Suite_type);
     Py_CLEAR(astmodulestate(module)->Try_type);
     Py_CLEAR(astmodulestate(module)->Tuple_type);
     Py_CLEAR(astmodulestate(module)->TypeIgnore_type);
@@ -586,7 +584,6 @@ static int astmodule_traverse(PyObject *module, visitproc visit, void* arg)
     Py_VISIT(astmodulestate(module)->Sub_singleton);
     Py_VISIT(astmodulestate(module)->Sub_type);
     Py_VISIT(astmodulestate(module)->Subscript_type);
-    Py_VISIT(astmodulestate(module)->Suite_type);
     Py_VISIT(astmodulestate(module)->Try_type);
     Py_VISIT(astmodulestate(module)->Tuple_type);
     Py_VISIT(astmodulestate(module)->TypeIgnore_type);
@@ -806,9 +803,6 @@ static const char * const Expression_fields[]={
 static const char * const FunctionType_fields[]={
     "argtypes",
     "returns",
-};
-static const char * const Suite_fields[]={
-    "body",
 };
 static const char * const stmt_attributes[] = {
     "lineno",
@@ -1442,8 +1436,6 @@ static int init_types(void)
     state->FunctionType_type = make_type("FunctionType", state->mod_type,
                                          FunctionType_fields, 2);
     if (!state->FunctionType_type) return 0;
-    state->Suite_type = make_type("Suite", state->mod_type, Suite_fields, 1);
-    if (!state->Suite_type) return 0;
     state->stmt_type = make_type("stmt", state->AST_type, NULL, 0);
     if (!state->stmt_type) return 0;
     if (!add_attributes(state->stmt_type, stmt_attributes, 4)) return 0;
@@ -1917,18 +1909,6 @@ FunctionType(asdl_seq * argtypes, expr_ty returns, PyArena *arena)
     p->kind = FunctionType_kind;
     p->v.FunctionType.argtypes = argtypes;
     p->v.FunctionType.returns = returns;
-    return p;
-}
-
-mod_ty
-Suite(asdl_seq * body, PyArena *arena)
-{
-    mod_ty p;
-    p = (mod_ty)PyArena_Malloc(arena, sizeof(*p));
-    if (!p)
-        return NULL;
-    p->kind = Suite_kind;
-    p->v.Suite.body = body;
     return p;
 }
 
@@ -3413,16 +3393,6 @@ ast2obj_mod(void* _o)
         if (!value) goto failed;
         if (PyObject_SetAttr(result, astmodulestate_global->returns, value) ==
             -1)
-            goto failed;
-        Py_DECREF(value);
-        break;
-    case Suite_kind:
-        tp = (PyTypeObject *)astmodulestate_global->Suite_type;
-        result = PyType_GenericNew(tp, NULL, NULL);
-        if (!result) goto failed;
-        value = ast2obj_list(o->v.Suite.body, ast2obj_stmt);
-        if (!value) goto failed;
-        if (PyObject_SetAttr(result, astmodulestate_global->body, value) == -1)
             goto failed;
         Py_DECREF(value);
         break;
@@ -5198,51 +5168,6 @@ obj2ast_mod(PyObject* obj, mod_ty* out, PyArena* arena)
             Py_CLEAR(tmp);
         }
         *out = FunctionType(argtypes, returns, arena);
-        if (*out == NULL) goto failed;
-        return 0;
-    }
-    tp = astmodulestate_global->Suite_type;
-    isinstance = PyObject_IsInstance(obj, tp);
-    if (isinstance == -1) {
-        return 1;
-    }
-    if (isinstance) {
-        asdl_seq* body;
-
-        if (_PyObject_LookupAttr(obj, astmodulestate_global->body, &tmp) < 0) {
-            return 1;
-        }
-        if (tmp == NULL) {
-            PyErr_SetString(PyExc_TypeError, "required field \"body\" missing from Suite");
-            return 1;
-        }
-        else {
-            int res;
-            Py_ssize_t len;
-            Py_ssize_t i;
-            if (!PyList_Check(tmp)) {
-                PyErr_Format(PyExc_TypeError, "Suite field \"body\" must be a list, not a %.200s", _PyType_Name(Py_TYPE(tmp)));
-                goto failed;
-            }
-            len = PyList_GET_SIZE(tmp);
-            body = _Py_asdl_seq_new(len, arena);
-            if (body == NULL) goto failed;
-            for (i = 0; i < len; i++) {
-                stmt_ty val;
-                PyObject *tmp2 = PyList_GET_ITEM(tmp, i);
-                Py_INCREF(tmp2);
-                res = obj2ast_stmt(tmp2, &val, arena);
-                Py_DECREF(tmp2);
-                if (res != 0) goto failed;
-                if (len != PyList_GET_SIZE(tmp)) {
-                    PyErr_SetString(PyExc_RuntimeError, "Suite field \"body\" changed size during iteration");
-                    goto failed;
-                }
-                asdl_seq_SET(body, i, val);
-            }
-            Py_CLEAR(tmp);
-        }
-        *out = Suite(body, arena);
         if (*out == NULL) goto failed;
         return 0;
     }
@@ -9924,10 +9849,6 @@ PyInit__ast(void)
         goto error;
     }
     Py_INCREF(astmodulestate(m)->FunctionType_type);
-    if (PyModule_AddObject(m, "Suite", astmodulestate_global->Suite_type) < 0) {
-        goto error;
-    }
-    Py_INCREF(astmodulestate(m)->Suite_type);
     if (PyModule_AddObject(m, "stmt", astmodulestate_global->stmt_type) < 0) {
         goto error;
     }

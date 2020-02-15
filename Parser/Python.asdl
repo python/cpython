@@ -3,13 +3,10 @@
 
 module Python
 {
-    mod = Module(stmt* body, type_ignore *type_ignores)
+    mod = Module(stmt* body, type_ignore* type_ignores)
         | Interactive(stmt* body)
         | Expression(expr body)
         | FunctionType(expr* argtypes, expr returns)
-
-        -- not really an actual node but useful in Jython's typesystem.
-        | Suite(stmt* body)
 
     stmt = FunctionDef(identifier name, arguments args,
                        stmt* body, expr* decorator_list, expr? returns,
@@ -51,7 +48,6 @@ module Python
           | Expr(expr value)
           | Pass | Break | Continue
 
-          -- XXX Jython will be different
           -- col_offset is the byte offset in the utf8 string the parser uses
           attributes (int lineno, int col_offset, int? end_lineno, int? end_col_offset)
 

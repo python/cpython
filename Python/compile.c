@@ -1862,10 +1862,6 @@ compiler_mod(struct compiler *c, mod_ty mod)
         VISIT_IN_SCOPE(c, expr, mod->v.Expression.body);
         addNone = 0;
         break;
-    case Suite_kind:
-        PyErr_SetString(PyExc_SystemError,
-                        "suite should not be possible");
-        return 0;
     default:
         PyErr_Format(PyExc_SystemError,
                      "module kind %d should not be possible",
