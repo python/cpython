@@ -5,7 +5,7 @@ import sys, inspect
 # line 5
 
 # line 7
-def spam(a, b, c, d=3, e=4, f=5, *g, **h):
+def spam(a, /, b, c, d=3, e=4, f=5, *g, **h):
     eggs(b + d, c + f)
 
 # line 11

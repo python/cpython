@@ -28,6 +28,16 @@ descriptor.
    Operations in this module used to raise an :exc:`IOError` where they now
    raise an :exc:`OSError`.
 
+.. versionchanged:: 3.8
+   The fcntl module now contains ``F_ADD_SEALS``, ``F_GET_SEALS``, and
+   ``F_SEAL_*`` constants for sealing of :func:`os.memfd_create` file
+   descriptors.
+
+.. versionchanged:: 3.9
+   On macOS, the fcntl module exposes the ``F_GETPATH`` constant, which obtains
+   the path of a file from a file descriptor.
+   On Linux(>=3.15), the fcntl module exposes the ``F_OFD_GETLK``, ``F_OFD_SETLK``
+   and ``F_OFD_SETLKW`` constants, which working with open file description locks.
 
 The module defines the following functions:
 
@@ -52,6 +62,8 @@ The module defines the following functions:
    corruption.
 
    If the :c:func:`fcntl` fails, an :exc:`OSError` is raised.
+
+   .. audit-event:: fcntl.fcntl fd,cmd,arg fcntl.fcntl
 
 
 .. function:: ioctl(fd, request, arg=0, mutate_flag=True)
@@ -102,6 +114,8 @@ The module defines the following functions:
       >>> buf
       array('h', [13341])
 
+   .. audit-event:: fcntl.ioctl fd,request,arg fcntl.ioctl
+
 
 .. function:: flock(fd, operation)
 
@@ -112,11 +126,14 @@ The module defines the following functions:
 
    If the :c:func:`flock` fails, an :exc:`OSError` exception is raised.
 
+   .. audit-event:: fcntl.flock fd,operation fcntl.flock
+
 
 .. function:: lockf(fd, cmd, len=0, start=0, whence=0)
 
    This is essentially a wrapper around the :func:`~fcntl.fcntl` locking calls.
-   *fd* is the file descriptor of the file to lock or unlock, and *cmd*
+   *fd* is the file descriptor (file objects providing a :meth:`~io.IOBase.fileno`
+   method are accepted as well) of the file to lock or unlock, and *cmd*
    is one of the following values:
 
    * :const:`LOCK_UN` -- unlock
@@ -144,6 +161,8 @@ The module defines the following functions:
    The default for *len* is 0 which means to lock to the end of the file.  The
    default for *whence* is also 0.
 
+   .. audit-event:: fcntl.lockf fd,cmd,len,start,whence fcntl.lockf
+
 Examples (all on a SVR4 compliant system)::
 
    import struct, fcntl, os
@@ -167,4 +186,3 @@ using the :func:`flock` call may be better.
       present in the :mod:`os` module (on BSD only), the :func:`os.open`
       function provides an alternative to the :func:`lockf` and :func:`flock`
       functions.
-

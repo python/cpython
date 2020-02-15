@@ -1,2 +1,0 @@
-inspect.getdoc() can now find docstrings for member objects when __slots__
-is a dictionary.

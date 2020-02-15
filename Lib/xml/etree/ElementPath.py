@@ -72,23 +72,27 @@ xpath_tokenizer_re = re.compile(
 
 def xpath_tokenizer(pattern, namespaces=None):
     default_namespace = namespaces.get('') if namespaces else None
+    parsing_attribute = False
     for token in xpath_tokenizer_re.findall(pattern):
-        tag = token[1]
+        ttype, tag = token
         if tag and tag[0] != "{":
             if ":" in tag:
                 prefix, uri = tag.split(":", 1)
                 try:
                     if not namespaces:
                         raise KeyError
-                    yield token[0], "{%s}%s" % (namespaces[prefix], uri)
+                    yield ttype, "{%s}%s" % (namespaces[prefix], uri)
                 except KeyError:
                     raise SyntaxError("prefix %r not found in prefix map" % prefix) from None
-            elif default_namespace:
-                yield token[0], "{%s}%s" % (default_namespace, tag)
+            elif default_namespace and not parsing_attribute:
+                yield ttype, "{%s}%s" % (default_namespace, tag)
             else:
                 yield token
+            parsing_attribute = False
         else:
             yield token
+            parsing_attribute = ttype == '@'
+
 
 def get_parent_map(context):
     parent_map = context.parent_map
@@ -99,13 +103,69 @@ def get_parent_map(context):
                 parent_map[e] = p
     return parent_map
 
+
+def _is_wildcard_tag(tag):
+    return tag[:3] == '{*}' or tag[-2:] == '}*'
+
+
+def _prepare_tag(tag):
+    _isinstance, _str = isinstance, str
+    if tag == '{*}*':
+        # Same as '*', but no comments or processing instructions.
+        # It can be a surprise that '*' includes those, but there is no
+        # justification for '{*}*' doing the same.
+        def select(context, result):
+            for elem in result:
+                if _isinstance(elem.tag, _str):
+                    yield elem
+    elif tag == '{}*':
+        # Any tag that is not in a namespace.
+        def select(context, result):
+            for elem in result:
+                el_tag = elem.tag
+                if _isinstance(el_tag, _str) and el_tag[0] != '{':
+                    yield elem
+    elif tag[:3] == '{*}':
+        # The tag in any (or no) namespace.
+        suffix = tag[2:]  # '}name'
+        no_ns = slice(-len(suffix), None)
+        tag = tag[3:]
+        def select(context, result):
+            for elem in result:
+                el_tag = elem.tag
+                if el_tag == tag or _isinstance(el_tag, _str) and el_tag[no_ns] == suffix:
+                    yield elem
+    elif tag[-2:] == '}*':
+        # Any tag in the given namespace.
+        ns = tag[:-1]
+        ns_only = slice(None, len(ns))
+        def select(context, result):
+            for elem in result:
+                el_tag = elem.tag
+                if _isinstance(el_tag, _str) and el_tag[ns_only] == ns:
+                    yield elem
+    else:
+        raise RuntimeError(f"internal parser error, got {tag}")
+    return select
+
+
 def prepare_child(next, token):
     tag = token[1]
-    def select(context, result):
-        for elem in result:
-            for e in elem:
-                if e.tag == tag:
-                    yield e
+    if _is_wildcard_tag(tag):
+        select_tag = _prepare_tag(tag)
+        def select(context, result):
+            def select_child(result):
+                for elem in result:
+                    yield from elem
+            return select_tag(context, select_child(result))
+    else:
+        if tag[:2] == '{}':
+            tag = tag[2:]  # '{}tag' == 'tag'
+        def select(context, result):
+            for elem in result:
+                for e in elem:
+                    if e.tag == tag:
+                        yield e
     return select
 
 def prepare_star(next, token):
@@ -130,11 +190,24 @@ def prepare_descendant(next, token):
         tag = token[1]
     else:
         raise SyntaxError("invalid descendant")
-    def select(context, result):
-        for elem in result:
-            for e in elem.iter(tag):
-                if e is not elem:
-                    yield e
+
+    if _is_wildcard_tag(tag):
+        select_tag = _prepare_tag(tag)
+        def select(context, result):
+            def select_child(result):
+                for elem in result:
+                    for e in elem.iter():
+                        if e is not elem:
+                            yield e
+            return select_tag(context, select_child(result))
+    else:
+        if tag[:2] == '{}':
+            tag = tag[2:]  # '{}tag' == 'tag'
+        def select(context, result):
+            for elem in result:
+                for e in elem.iter(tag):
+                    if e is not elem:
+                        yield e
     return select
 
 def prepare_parent(next, token):

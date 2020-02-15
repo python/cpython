@@ -1,2 +1,0 @@
-:func:`xml.sax.parse` now supports :term:`path-like <path-like object>`.
-Patch by Mickaël Schoentgen.

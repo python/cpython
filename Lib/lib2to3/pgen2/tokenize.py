@@ -321,7 +321,7 @@ def untokenize(iterable):
     Round-trip invariant for full input:
         Untokenized source will match input source exactly
 
-    Round-trip invariant for limited intput:
+    Round-trip invariant for limited input:
         # Output text will tokenize the back to the input
         t1 = [tok[:2] for tok in generate_tokens(f.readline)]
         newcode = untokenize(t1)
@@ -346,7 +346,7 @@ def generate_tokens(readline):
     column where the token begins in the source; a 2-tuple (erow, ecol) of
     ints specifying the row and column where the token ends in the source;
     and the line on which the token was found. The line passed is the
-    logical line; continuation lines are included.
+    physical line.
     """
     lnum = parenlev = continued = 0
     contstr, needcont = '', 0

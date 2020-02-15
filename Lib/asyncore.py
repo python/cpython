@@ -228,7 +228,7 @@ class dispatcher:
         if sock:
             # Set to nonblocking just to make sure for cases where we
             # get a socket from a blocking source.
-            sock.setblocking(0)
+            sock.setblocking(False)
             self.set_socket(sock, map)
             self.connected = True
             # The constructor no longer requires that the socket
@@ -262,8 +262,6 @@ class dispatcher:
                 status.append(repr(self.addr))
         return '<%s at %#x>' % (' '.join(status), id(self))
 
-    __str__ = __repr__
-
     def add_channel(self, map=None):
         #self.log_info('adding channel %s' % self)
         if map is None:
@@ -282,7 +280,7 @@ class dispatcher:
     def create_socket(self, family=socket.AF_INET, type=socket.SOCK_STREAM):
         self.family_and_type = family, type
         sock = socket.socket(family, type)
-        sock.setblocking(0)
+        sock.setblocking(False)
         self.set_socket(sock)
 
     def set_socket(self, sock, map=None):

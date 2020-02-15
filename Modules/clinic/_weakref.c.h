@@ -54,7 +54,7 @@ _weakref__remove_dead_weakref(PyObject *module, PyObject *const *args, Py_ssize_
         goto exit;
     }
     if (!PyDict_Check(args[0])) {
-        _PyArg_BadArgument("_remove_dead_weakref", 1, "dict", args[0]);
+        _PyArg_BadArgument("_remove_dead_weakref", "argument 1", "dict", args[0]);
         goto exit;
     }
     dct = args[0];
@@ -64,4 +64,4 @@ _weakref__remove_dead_weakref(PyObject *module, PyObject *const *args, Py_ssize_
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=eae22e2d2e43120e input=a9049054013a1b77]*/
+/*[clinic end generated code: output=c543dc2cd6ece975 input=a9049054013a1b77]*/

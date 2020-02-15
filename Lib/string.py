@@ -52,30 +52,9 @@ def capwords(s, sep=None):
 import re as _re
 from collections import ChainMap as _ChainMap
 
-class _TemplateMetaclass(type):
-    pattern = r"""
-    %(delim)s(?:
-      (?P<escaped>%(delim)s) |   # Escape sequence of two delimiters
-      (?P<named>%(id)s)      |   # delimiter and a Python identifier
-      {(?P<braced>%(bid)s)}  |   # delimiter and a braced identifier
-      (?P<invalid>)              # Other ill-formed delimiter exprs
-    )
-    """
+_sentinel_dict = {}
 
-    def __init__(cls, name, bases, dct):
-        super(_TemplateMetaclass, cls).__init__(name, bases, dct)
-        if 'pattern' in dct:
-            pattern = cls.pattern
-        else:
-            pattern = _TemplateMetaclass.pattern % {
-                'delim' : _re.escape(cls.delimiter),
-                'id'    : cls.idpattern,
-                'bid'   : cls.braceidpattern or cls.idpattern,
-                }
-        cls.pattern = _re.compile(pattern, cls.flags | _re.VERBOSE)
-
-
-class Template(metaclass=_TemplateMetaclass):
+class Template:
     """A string class for supporting $-substitutions."""
 
     delimiter = '$'
@@ -86,6 +65,24 @@ class Template(metaclass=_TemplateMetaclass):
     idpattern = r'(?a:[_a-z][_a-z0-9]*)'
     braceidpattern = None
     flags = _re.IGNORECASE
+
+    def __init_subclass__(cls):
+        super().__init_subclass__()
+        if 'pattern' in cls.__dict__:
+            pattern = cls.pattern
+        else:
+            delim = _re.escape(cls.delimiter)
+            id = cls.idpattern
+            bid = cls.braceidpattern or cls.idpattern
+            pattern = fr"""
+            {delim}(?:
+              (?P<escaped>{delim})  |   # Escape sequence of two delimiters
+              (?P<named>{id})       |   # delimiter and a Python identifier
+              {{(?P<braced>{bid})}} |   # delimiter and a braced identifier
+              (?P<invalid>)             # Other ill-formed delimiter exprs
+            )
+            """
+        cls.pattern = _re.compile(pattern, cls.flags | _re.VERBOSE)
 
     def __init__(self, template):
         self.template = template
@@ -104,19 +101,11 @@ class Template(metaclass=_TemplateMetaclass):
         raise ValueError('Invalid placeholder in string: line %d, col %d' %
                          (lineno, colno))
 
-    def substitute(*args, **kws):
-        if not args:
-            raise TypeError("descriptor 'substitute' of 'Template' object "
-                            "needs an argument")
-        self, *args = args  # allow the "self" keyword be passed
-        if len(args) > 1:
-            raise TypeError('Too many positional arguments')
-        if not args:
+    def substitute(self, mapping=_sentinel_dict, /, **kws):
+        if mapping is _sentinel_dict:
             mapping = kws
         elif kws:
-            mapping = _ChainMap(kws, args[0])
-        else:
-            mapping = args[0]
+            mapping = _ChainMap(kws, mapping)
         # Helper function for .sub()
         def convert(mo):
             # Check the most common path first.
@@ -131,19 +120,11 @@ class Template(metaclass=_TemplateMetaclass):
                              self.pattern)
         return self.pattern.sub(convert, self.template)
 
-    def safe_substitute(*args, **kws):
-        if not args:
-            raise TypeError("descriptor 'safe_substitute' of 'Template' object "
-                            "needs an argument")
-        self, *args = args  # allow the "self" keyword be passed
-        if len(args) > 1:
-            raise TypeError('Too many positional arguments')
-        if not args:
+    def safe_substitute(self, mapping=_sentinel_dict, /, **kws):
+        if mapping is _sentinel_dict:
             mapping = kws
         elif kws:
-            mapping = _ChainMap(kws, args[0])
-        else:
-            mapping = args[0]
+            mapping = _ChainMap(kws, mapping)
         # Helper function for .sub()
         def convert(mo):
             named = mo.group('named') or mo.group('braced')
@@ -160,6 +141,9 @@ class Template(metaclass=_TemplateMetaclass):
                              self.pattern)
         return self.pattern.sub(convert, self.template)
 
+# Initialize Template.pattern.  __init_subclass__() is automatically called
+# only for subclasses, not for the Template class itself.
+Template.__init_subclass__()
 
 
 ########################################################################
@@ -173,16 +157,7 @@ class Template(metaclass=_TemplateMetaclass):
 # The field name parser is implemented in _string.formatter_field_name_split
 
 class Formatter:
-    def format(*args, **kwargs):
-        if not args:
-            raise TypeError("descriptor 'format' of 'Formatter' object "
-                            "needs an argument")
-        self, *args = args  # allow the "self" keyword be passed
-        try:
-            format_string, *args = args # allow the "format_string" keyword be passed
-        except ValueError:
-            raise TypeError("format() missing 1 required positional "
-                            "argument: 'format_string'") from None
+    def format(self, format_string, /, *args, **kwargs):
         return self.vformat(format_string, args, kwargs)
 
     def vformat(self, format_string, args, kwargs):

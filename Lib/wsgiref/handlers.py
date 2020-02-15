@@ -136,6 +136,10 @@ class BaseHandler:
             self.setup_environ()
             self.result = application(self.environ, self.start_response)
             self.finish_response()
+        except (ConnectionAbortedError, BrokenPipeError, ConnectionResetError):
+            # We expect the client to close the connection abruptly from time
+            # to time.
+            return
         except:
             try:
                 self.handle_error()
@@ -179,7 +183,16 @@ class BaseHandler:
                 for data in self.result:
                     self.write(data)
                 self.finish_content()
-        finally:
+        except:
+            # Call close() on the iterable returned by the WSGI application
+            # in case of an exception.
+            if hasattr(self.result, 'close'):
+                self.result.close()
+            raise
+        else:
+            # We only call close() when no exception is raised, because it
+            # will set status, result, headers, and environ fields to None.
+            # See bpo-29183 for more details.
             self.close()
 
 

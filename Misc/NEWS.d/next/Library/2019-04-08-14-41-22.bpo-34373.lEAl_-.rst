@@ -1,1 +1,0 @@
-Fix :func:`time.mktime` error handling on AIX for year before 1970.

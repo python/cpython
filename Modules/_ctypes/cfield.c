@@ -60,8 +60,7 @@ PyCField_FromDesc(PyObject *desc, Py_ssize_t index,
 #define CONT_BITFIELD 2
 #define EXPAND_BITFIELD 3
 
-    self = (CFieldObject *)PyObject_CallObject((PyObject *)&PyCField_Type,
-                                               NULL);
+    self = (CFieldObject *)_PyObject_CallNoArg((PyObject *)&PyCField_Type);
     if (self == NULL)
         return NULL;
     dict = PyType_stgdict(desc);
@@ -275,7 +274,7 @@ static void
 PyCField_dealloc(PyObject *self)
 {
     PyCField_clear((CFieldObject *)self);
-    self->ob_type->tp_free((PyObject *)self);
+    Py_TYPE(self)->tp_free((PyObject *)self);
 }
 
 static PyObject *
@@ -305,10 +304,10 @@ PyTypeObject PyCField_Type = {
     sizeof(CFieldObject),                       /* tp_basicsize */
     0,                                          /* tp_itemsize */
     PyCField_dealloc,                                   /* tp_dealloc */
-    0,                                          /* tp_print */
+    0,                                          /* tp_vectorcall_offset */
     0,                                          /* tp_getattr */
     0,                                          /* tp_setattr */
-    0,                                          /* tp_reserved */
+    0,                                          /* tp_as_async */
     (reprfunc)PyCField_repr,                            /* tp_repr */
     0,                                          /* tp_as_number */
     0,                                          /* tp_as_sequence */
@@ -1176,7 +1175,7 @@ u_set(void *ptr, PyObject *value, Py_ssize_t size)
     if (!PyUnicode_Check(value)) {
         PyErr_Format(PyExc_TypeError,
                         "unicode string expected instead of %s instance",
-                        value->ob_type->tp_name);
+                        Py_TYPE(value)->tp_name);
         return NULL;
     } else
         Py_INCREF(value);
@@ -1235,7 +1234,7 @@ U_set(void *ptr, PyObject *value, Py_ssize_t length)
     if (!PyUnicode_Check(value)) {
         PyErr_Format(PyExc_TypeError,
                         "unicode string expected instead of %s instance",
-                        value->ob_type->tp_name);
+                        Py_TYPE(value)->tp_name);
         return NULL;
     }
 
@@ -1290,7 +1289,7 @@ s_set(void *ptr, PyObject *value, Py_ssize_t length)
     if(!PyBytes_Check(value)) {
         PyErr_Format(PyExc_TypeError,
                      "expected bytes, %s found",
-                     value->ob_type->tp_name);
+                     Py_TYPE(value)->tp_name);
         return NULL;
     }
 
@@ -1335,7 +1334,7 @@ z_set(void *ptr, PyObject *value, Py_ssize_t size)
     }
     PyErr_Format(PyExc_TypeError,
                  "bytes or integer address expected instead of %s instance",
-                 value->ob_type->tp_name);
+                 Py_TYPE(value)->tp_name);
     return NULL;
 }
 
@@ -1374,7 +1373,7 @@ Z_set(void *ptr, PyObject *value, Py_ssize_t size)
     if (!PyUnicode_Check(value)) {
         PyErr_Format(PyExc_TypeError,
                      "unicode string or integer address expected instead of %s instance",
-                     value->ob_type->tp_name);
+                     Py_TYPE(value)->tp_name);
         return NULL;
     }
 
@@ -1417,7 +1416,7 @@ BSTR_set(void *ptr, PyObject *value, Py_ssize_t size)
     } else if (!PyUnicode_Check(value)) {
         PyErr_Format(PyExc_TypeError,
                         "unicode string expected instead of %s instance",
-                        value->ob_type->tp_name);
+                        Py_TYPE(value)->tp_name);
         return NULL;
     }
 

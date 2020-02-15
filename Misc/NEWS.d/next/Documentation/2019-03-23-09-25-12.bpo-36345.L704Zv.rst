@@ -1,2 +1,0 @@
-Using the code of the ``Tools/scripts/serve.py`` script as an example in the
-:mod:`wsgiref` documentation.  Contributed by Stéphane Wirtel.

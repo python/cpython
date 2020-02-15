@@ -53,10 +53,10 @@ PyTypeObject PyEllipsis_Type = {
     0,                                  /* tp_basicsize */
     0,                                  /* tp_itemsize */
     0, /*never called*/                 /* tp_dealloc */
-    0,                                  /* tp_print */
+    0,                                  /* tp_vectorcall_offset */
     0,                                  /* tp_getattr */
     0,                                  /* tp_setattr */
-    0,                                  /* tp_reserved */
+    0,                                  /* tp_as_async */
     ellipsis_repr,                      /* tp_repr */
     0,                                  /* tp_as_number */
     0,                                  /* tp_as_sequence */
@@ -100,7 +100,8 @@ PyObject _Py_EllipsisObject = {
  * created and then deleted again
  */
 static PySliceObject *slice_cache = NULL;
-void PySlice_Fini(void)
+
+void _PySlice_Fini(void)
 {
     PySliceObject *obj = slice_cache;
     if (obj != NULL) {
@@ -625,10 +626,10 @@ PyTypeObject PySlice_Type = {
     sizeof(PySliceObject),      /* Basic object size */
     0,                          /* Item size for varobject */
     (destructor)slice_dealloc,                  /* tp_dealloc */
-    0,                                          /* tp_print */
+    0,                                          /* tp_vectorcall_offset */
     0,                                          /* tp_getattr */
     0,                                          /* tp_setattr */
-    0,                                          /* tp_reserved */
+    0,                                          /* tp_as_async */
     (reprfunc)slice_repr,                       /* tp_repr */
     0,                                          /* tp_as_number */
     0,                                          /* tp_as_sequence */

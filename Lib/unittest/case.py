@@ -11,6 +11,7 @@ import collections
 import contextlib
 import traceback
 import time
+import types
 
 from . import result
 from .util import (strclass, safe_repr, _count_diff_all_purpose,
@@ -87,21 +88,9 @@ def _id(obj):
 
 
 _module_cleanups = []
-def addModuleCleanup(*args, **kwargs):
+def addModuleCleanup(function, /, *args, **kwargs):
     """Same as addCleanup, except the cleanup items are called even if
     setUpModule fails (unlike tearDownModule)."""
-    if args:
-        function, *args = args
-    elif 'function' in kwargs:
-        function = kwargs.pop('function')
-        import warnings
-        warnings.warn("Passing 'function' as keyword argument is deprecated",
-                      DeprecationWarning, stacklevel=2)
-    else:
-        raise TypeError('addModuleCleanup expected at least 1 positional '
-                        'argument, got %d' % (len(args)-1))
-    args = tuple(args)
-
     _module_cleanups.append((function, args, kwargs))
 
 
@@ -135,6 +124,10 @@ def skip(reason):
         test_item.__unittest_skip__ = True
         test_item.__unittest_skip_why__ = reason
         return test_item
+    if isinstance(reason, types.FunctionType):
+        test_item = reason
+        reason = ''
+        return decorator(test_item)
     return decorator
 
 def skipIf(condition, reason):
@@ -476,44 +469,18 @@ class TestCase(object):
         """
         self._type_equality_funcs[typeobj] = function
 
-    def addCleanup(*args, **kwargs):
+    def addCleanup(self, function, /, *args, **kwargs):
         """Add a function, with arguments, to be called when the test is
         completed. Functions added are called on a LIFO basis and are
         called after tearDown on test failure or success.
 
         Cleanup items are called even if setUp fails (unlike tearDown)."""
-        if len(args) >= 2:
-            self, function, *args = args
-        elif not args:
-            raise TypeError("descriptor 'addCleanup' of 'TestCase' object "
-                            "needs an argument")
-        elif 'function' in kwargs:
-            function = kwargs.pop('function')
-            self, *args = args
-            import warnings
-            warnings.warn("Passing 'function' as keyword argument is deprecated",
-                          DeprecationWarning, stacklevel=2)
-        else:
-            raise TypeError('addCleanup expected at least 1 positional '
-                            'argument, got %d' % (len(args)-1))
-        args = tuple(args)
-
         self._cleanups.append((function, args, kwargs))
 
     @classmethod
-    def addClassCleanup(*args, **kwargs):
+    def addClassCleanup(cls, function, /, *args, **kwargs):
         """Same as addCleanup, except the cleanup items are called even if
         setUpClass fails (unlike tearDownClass)."""
-        if len(args) >= 2:
-            cls, function, *args = args
-        elif not args:
-            raise TypeError("descriptor 'addClassCleanup' of 'TestCase' object "
-                            "needs an argument")
-        else:
-            raise TypeError('addClassCleanup expected at least 1 positional '
-                            'argument, got %d' % (len(args)-1))
-        args = tuple(args)
-
         cls._class_cleanups.append((function, args, kwargs))
 
     def setUp(self):
@@ -546,7 +513,7 @@ class TestCase(object):
         the specified test method's docstring.
         """
         doc = self._testMethodDoc
-        return doc and doc.split("\n")[0].strip() or None
+        return doc.strip().split("\n")[0].strip() if doc else None
 
 
     def id(self):
@@ -652,6 +619,18 @@ class TestCase(object):
         else:
             addDuration(self, elapsed)
 
+    def _callSetUp(self):
+        self.setUp()
+
+    def _callTestMethod(self, method):
+        method()
+
+    def _callTearDown(self):
+        self.tearDown()
+
+    def _callCleanup(self, function, /, *args, **kwargs):
+        function(*args, **kwargs)
+
     def run(self, result=None):
         orig_result = result
         if result is None:
@@ -684,14 +663,14 @@ class TestCase(object):
             self._outcome = outcome
 
             with outcome.testPartExecutor(self):
-                self.setUp()
+                self._callSetUp()
             if outcome.success:
                 outcome.expecting_failure = expecting_failure
                 with outcome.testPartExecutor(self, isTest=True):
-                    testMethod()
+                    self._callTestMethod(testMethod)
                 outcome.expecting_failure = False
                 with outcome.testPartExecutor(self):
-                    self.tearDown()
+                    self._callTearDown()
 
             self.doCleanups()
             self._addDuration(result, (time.perf_counter() - start_time))
@@ -731,7 +710,7 @@ class TestCase(object):
         while self._cleanups:
             function, args, kwargs = self._cleanups.pop()
             with outcome.testPartExecutor(self):
-                function(*args, **kwargs)
+                self._callCleanup(function, *args, **kwargs)
 
         # return this for backwards compatibility
         # even though we no longer use it internally
@@ -746,7 +725,7 @@ class TestCase(object):
             function, args, kwargs = cls._class_cleanups.pop()
             try:
                 function(*args, **kwargs)
-            except Exception as exc:
+            except Exception:
                 cls.tearDown_exceptions.append(sys.exc_info())
 
     def __call__(self, *args, **kwds):

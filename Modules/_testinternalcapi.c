@@ -9,7 +9,7 @@
 #define PY_SSIZE_T_CLEAN
 
 #include "Python.h"
-#include "pycore_coreconfig.h"
+#include "pycore_initconfig.h"
 
 
 static PyObject *

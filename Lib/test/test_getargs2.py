@@ -457,6 +457,8 @@ class Float_TestCase(unittest.TestCase):
         with self.assertWarns(DeprecationWarning):
             self.assertEqual(getargs_f(BadFloat2()), 4.25)
         self.assertEqual(getargs_f(BadFloat3(7.5)), 7.5)
+        self.assertEqual(getargs_f(Index()), 99.0)
+        self.assertRaises(TypeError, getargs_f, Int())
 
         for x in (FLT_MIN, -FLT_MIN, FLT_MAX, -FLT_MAX, INF, -INF):
             self.assertEqual(getargs_f(x), x)
@@ -489,6 +491,8 @@ class Float_TestCase(unittest.TestCase):
         with self.assertWarns(DeprecationWarning):
             self.assertEqual(getargs_d(BadFloat2()), 4.25)
         self.assertEqual(getargs_d(BadFloat3(7.5)), 7.5)
+        self.assertEqual(getargs_d(Index()), 99.0)
+        self.assertRaises(TypeError, getargs_d, Int())
 
         for x in (DBL_MIN, -DBL_MIN, DBL_MAX, -DBL_MAX, INF, -INF):
             self.assertEqual(getargs_d(x), x)
@@ -511,6 +515,8 @@ class Float_TestCase(unittest.TestCase):
         with self.assertWarns(DeprecationWarning):
             self.assertEqual(getargs_D(BadComplex2()), 4.25+0.5j)
         self.assertEqual(getargs_D(BadComplex3(7.5+0.25j)), 7.5+0.25j)
+        self.assertEqual(getargs_D(Index()), 99.0+0j)
+        self.assertRaises(TypeError, getargs_D, Int())
 
         for x in (DBL_MIN, -DBL_MIN, DBL_MAX, -DBL_MAX, INF, -INF):
             c = complex(x, 1.0)

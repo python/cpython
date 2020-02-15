@@ -833,7 +833,7 @@ class TurtleScreenBase(object):
         Arguments: title is the title of the dialog window,
         prompt is a text mostly describing what numerical information to input.
         default: default value
-        minval: minimum value for imput
+        minval: minimum value for input
         maxval: maximum value for input
 
         The number input must be in the range minval .. maxval if these are
@@ -1568,7 +1568,7 @@ class TNavigator(object):
         fullcircle -  a number
 
         Set angle measurement units, i. e. set number
-        of 'degrees' for a full circle. Dafault value is
+        of 'degrees' for a full circle. Default value is
         360 degrees.
 
         Example (for a Turtle instance named turtle):

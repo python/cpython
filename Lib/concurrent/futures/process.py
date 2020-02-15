@@ -51,12 +51,13 @@ from concurrent.futures import _base
 import queue
 from queue import Full
 import multiprocessing as mp
-from multiprocessing.connection import wait
+import multiprocessing.connection
 from multiprocessing.queues import Queue
 import threading
 import weakref
 from functools import partial
 import itertools
+import sys
 import traceback
 
 # Workers are created as daemon threads and processes. This is done to allow the
@@ -108,6 +109,12 @@ def _python_exit():
 # (Futures in the call queue cannot be cancelled).
 EXTRA_QUEUED_CALLS = 1
 
+
+# On Windows, WaitForMultipleObjects is used to wait for processes to finish.
+# It can wait on, at most, 63 objects. There is an overhead of two objects:
+# - the result queue reader
+# - the thread wakeup reader
+_MAX_WINDOWS_WORKERS = 63 - 2
 
 # Hack to embed stringification of remote traceback in local traceback
 
@@ -352,7 +359,7 @@ def _queue_management_worker(executor_reference,
         # submitted, from the executor being shutdown/gc-ed, or from the
         # shutdown of the python interpreter.
         worker_sentinels = [p.sentinel for p in processes.values()]
-        ready = wait(readers + worker_sentinels)
+        ready = mp.connection.wait(readers + worker_sentinels)
 
         cause = None
         is_broken = True
@@ -428,6 +435,24 @@ def _queue_management_worker(executor_reference,
                 # is not gc-ed yet.
                 if executor is not None:
                     executor._shutdown_thread = True
+                    # Unless there are pending work items, we have nothing to cancel.
+                    if pending_work_items and executor._cancel_pending_futures:
+                        # Cancel all pending futures and update pending_work_items
+                        # to only have futures that are currently running.
+                        new_pending_work_items = {}
+                        for work_id, work_item in pending_work_items.items():
+                            if not work_item.future.cancel():
+                                new_pending_work_items[work_id] = work_item
+
+                        pending_work_items = new_pending_work_items
+                        # Drain work_ids_queue since we no longer need to
+                        # add items to the call queue.
+                        while True:
+                            try:
+                                work_ids_queue.get_nowait()
+                            except queue.Empty:
+                                break
+
                 # Since no new work items can be added, it is safe to shutdown
                 # this thread if there are no pending work items.
                 if not pending_work_items:
@@ -498,16 +523,23 @@ class ProcessPoolExecutor(_base.Executor):
                 worker processes will be created as the machine has processors.
             mp_context: A multiprocessing context to launch the workers. This
                 object should provide SimpleQueue, Queue and Process.
-            initializer: An callable used to initialize worker processes.
+            initializer: A callable used to initialize worker processes.
             initargs: A tuple of arguments to pass to the initializer.
         """
         _check_system_limits()
 
         if max_workers is None:
             self._max_workers = os.cpu_count() or 1
+            if sys.platform == 'win32':
+                self._max_workers = min(_MAX_WINDOWS_WORKERS,
+                                        self._max_workers)
         else:
             if max_workers <= 0:
                 raise ValueError("max_workers must be greater than 0")
+            elif (sys.platform == 'win32' and
+                max_workers > _MAX_WINDOWS_WORKERS):
+                raise ValueError(
+                    f"max_workers must be <= {_MAX_WINDOWS_WORKERS}")
 
             self._max_workers = max_workers
 
@@ -532,6 +564,7 @@ class ProcessPoolExecutor(_base.Executor):
         self._broken = False
         self._queue_count = 0
         self._pending_work_items = {}
+        self._cancel_pending_futures = False
 
         # Create communication channels for the executor
         # Make the call queue slightly larger than the number of processes to
@@ -594,22 +627,7 @@ class ProcessPoolExecutor(_base.Executor):
             p.start()
             self._processes[p.pid] = p
 
-    def submit(*args, **kwargs):
-        if len(args) >= 2:
-            self, fn, *args = args
-        elif not args:
-            raise TypeError("descriptor 'submit' of 'ProcessPoolExecutor' object "
-                            "needs an argument")
-        elif 'fn' in kwargs:
-            fn = kwargs.pop('fn')
-            self, *args = args
-            import warnings
-            warnings.warn("Passing 'fn' as keyword argument is deprecated",
-                          DeprecationWarning, stacklevel=2)
-        else:
-            raise TypeError('submit expected at least 1 positional argument, '
-                            'got %d' % (len(args)-1))
-
+    def submit(self, fn, /, *args, **kwargs):
         with self._shutdown_lock:
             if self._broken:
                 raise BrokenProcessPool(self._broken)
@@ -661,9 +679,11 @@ class ProcessPoolExecutor(_base.Executor):
                               timeout=timeout)
         return _chain_from_iterable_of_lists(results)
 
-    def shutdown(self, wait=True):
+    def shutdown(self, wait=True, *, cancel_futures=False):
         with self._shutdown_lock:
+            self._cancel_pending_futures = cancel_futures
             self._shutdown_thread = True
+
         if self._queue_management_thread:
             # Wake up queue management thread
             self._queue_management_thread_wakeup.wakeup()

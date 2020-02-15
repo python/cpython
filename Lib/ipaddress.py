@@ -560,6 +560,8 @@ class _IPAddressBase:
         return self.__class__, (str(self),)
 
 
+_address_fmt_re = None
+
 @functools.total_ordering
 class _BaseAddress(_IPAddressBase):
 
@@ -617,6 +619,55 @@ class _BaseAddress(_IPAddressBase):
 
     def __reduce__(self):
         return self.__class__, (self._ip,)
+
+    def __format__(self, fmt):
+        """Returns an IP address as a formatted string.
+
+        Supported presentation types are:
+        's': returns the IP address as a string (default)
+        'b': converts to binary and returns a zero-padded string
+        'X' or 'x': converts to upper- or lower-case hex and returns a zero-padded string
+        'n': the same as 'b' for IPv4 and 'x' for IPv6
+
+        For binary and hex presentation types, the alternate form specifier
+        '#' and the grouping option '_' are supported.
+        """
+
+        # Support string formatting
+        if not fmt or fmt[-1] == 's':
+            return format(str(self), fmt)
+
+        # From here on down, support for 'bnXx'
+        global _address_fmt_re
+        if _address_fmt_re is None:
+            import re
+            _address_fmt_re = re.compile('(#?)(_?)([xbnX])')
+
+        m = _address_fmt_re.fullmatch(fmt)
+        if not m:
+            return super().__format__(fmt)
+
+        alternate, grouping, fmt_base = m.groups()
+
+        # Set some defaults
+        if fmt_base == 'n':
+            if self._version == 4:
+                fmt_base = 'b'  # Binary is default for ipv4
+            else:
+                fmt_base = 'x'  # Hex is default for ipv6
+
+        if fmt_base == 'b':
+            padlen = self._max_prefixlen
+        else:
+            padlen = self._max_prefixlen // 4
+
+        if grouping:
+            padlen += padlen // 4 - 1
+
+        if alternate:
+            padlen += 2  # 0b or 0x
+
+        return format(int(self), f'{alternate}0{padlen}{grouping}{fmt_base}')
 
 
 @functools.total_ordering
@@ -697,8 +748,7 @@ class _BaseNetwork(_IPAddressBase):
         # dealing with another address
         else:
             # address
-            return (int(self.network_address) <= int(other._ip) <=
-                    int(self.broadcast_address))
+            return other._ip & self.netmask._ip == self.network_address._ip
 
     def overlaps(self, other):
         """Tell if self is partly contained in other."""
@@ -1109,6 +1159,8 @@ class _BaseV4:
         if arg not in cls._netmask_cache:
             if isinstance(arg, int):
                 prefixlen = arg
+                if not (0 <= prefixlen <= cls._max_prefixlen):
+                    cls._report_invalid_netmask(prefixlen)
             else:
                 try:
                     # Check for a netmask in prefix length form
@@ -1539,6 +1591,8 @@ class _BaseV6:
         if arg not in cls._netmask_cache:
             if isinstance(arg, int):
                 prefixlen = arg
+                if not (0 <= prefixlen <= cls._max_prefixlen):
+                    cls._report_invalid_netmask(prefixlen)
             else:
                 prefixlen = cls._prefix_from_prefix_string(arg)
             netmask = IPv6Address(cls._ip_int_from_prefix(prefixlen))
