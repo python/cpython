@@ -253,7 +253,7 @@ Command-line options
 .. versionadded:: 3.7
    The command-line option ``-k``.
 
-.. versionadded:: 3.8
+.. versionadded:: 3.9
    The command-line option ``--durations``.
 
 The command line can also be used for test discovery, for running all of the
@@ -1964,7 +1964,7 @@ Loading and running tests
       A list containing 2-tuples of :class:`TestCase` instances and floats
       representing the elapsed time of each test which was run.
 
-      .. versionadded:: 3.8
+      .. versionadded:: 3.9
 
    .. attribute:: shouldStop
 
@@ -2122,7 +2122,7 @@ Loading and running tests
       Called when the test case finishes. *elapsed* is the time represented
       in seconds.
 
-      .. versionadded:: 3.8
+      .. versionadded:: 3.9
 
 .. class:: TextTestResult(stream, descriptions, verbosity, *, durations=None)
 
@@ -2134,7 +2134,7 @@ Loading and running tests
       This class was previously named ``_TextTestResult``. The old name still
       exists as an alias but is deprecated.
 
-   .. versionadded:: 3.8
+   .. versionadded:: 3.9
       Added *durations* keyword argument.
 
    .. versionchanged:: 3.8
