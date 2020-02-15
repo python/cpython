@@ -2137,7 +2137,7 @@ Loading and running tests
    .. versionadded:: 3.9
       Added *durations* keyword argument.
 
-   .. versionchanged:: 3.8
+   .. versionchanged:: 3.9
       Subclasses should accept ``**kwargs`` to ensure compatibility as the
       interface changes.
 
@@ -2180,7 +2180,7 @@ Loading and running tests
    .. versionchanged:: 3.5
       Added the *tb_locals* parameter.
 
-   .. versionchanged:: 3.8
+   .. versionchanged:: 3.9
       Added the *durations* parameter.
 
    .. method:: _makeResult()
