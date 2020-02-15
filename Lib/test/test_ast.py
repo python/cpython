@@ -1826,6 +1826,16 @@ class EndPositionTests(unittest.TestCase):
         cdef = ast.parse(s).body[0]
         self.assertEqual(ast.get_source_segment(s, cdef.body[0], padded=True), s_method)
 
+    def test_ast_asdl_signature(self):
+        assert ast.withitem.__doc__ == "withitem(expr context_expr, expr? optional_vars)"
+        assert ast.GtE.__doc__ == "GtE"
+        assert ast.Name.__doc__ == "Name(identifier id, expr_context ctx)"
+        assert ast.cmpop.__doc__ == "cmpop = Eq | NotEq | Lt | LtE | Gt | GtE | Is | IsNot | In | NotIn"
+        assert ast.slice.__doc__ == (
+        "slice = Slice(expr? lower, expr? upper, expr? step)\n"
+        "        | ExtSlice(slice* dims)\n"
+        "        | Index(expr value)")
+
 
 class NodeVisitorTests(unittest.TestCase):
     def test_old_constant_nodes(self):

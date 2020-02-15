@@ -71,6 +71,21 @@ def is_simple(sum):
             return False
     return True
 
+def asdl_of(name, obj):
+    if isinstance(obj, asdl.Product) or isinstance(obj, asdl.Constructor):
+        fields = ", ".join(map(str, obj.fields))
+        if fields:
+            fields = "({})".format(fields)
+        return "{}{}".format(name, fields)
+    else:
+        if is_simple(obj):
+            types = " | ".join(type.name for type in obj.types)
+        else:
+            template = "\\n{}| ".format(" " * (len(name) + 3))
+            types = template.join(
+                asdl_of(type.name, type) for type in obj.types
+            )
+        return "{} = {}".format(name, types)
 
 class EmitVisitor(asdl.VisitorBase):
     """Visit that emits lines"""
@@ -764,7 +779,7 @@ static PyType_Spec AST_type_spec = {
 };
 
 static PyObject *
-make_type(const char *type, PyObject* base, const char* const* fields, int num_fields)
+make_type(const char *type, PyObject* base, const char* const* fields, int num_fields, const char *doc)
 {
     PyObject *fnames, *result;
     int i;
@@ -778,11 +793,12 @@ make_type(const char *type, PyObject* base, const char* const* fields, int num_f
         }
         PyTuple_SET_ITEM(fnames, i, field);
     }
-    result = PyObject_CallFunction((PyObject*)&PyType_Type, "s(O){OOOO}",
+    result = PyObject_CallFunction((PyObject*)&PyType_Type, "s(O){OOOOOs}",
                     type, base,
                     astmodulestate_global->_fields, fnames,
                     astmodulestate_global->__module__,
-                    astmodulestate_global->_ast);
+                    astmodulestate_global->_ast,
+                    astmodulestate_global->__doc__, doc);
     Py_DECREF(fnames);
     return result;
 }
@@ -947,8 +963,12 @@ static int add_ast_fields(void)
             fields = name+"_fields"
         else:
             fields = "NULL"
-        self.emit('state->%s_type = make_type("%s", state->AST_type, %s, %d);' %
-                        (name, name, fields, len(prod.fields)), 1)
+        self.emit(
+            'state->%s_type = make_type("%s", state->AST_type, %s, %d, "%s");'
+            % (name, name, fields, len(prod.fields), asdl_of(name, prod)),
+            1,
+            reflow=False,
+        )
         self.emit("if (!state->%s_type) return 0;" % name, 1)
         self.emit_type("AST_type")
         self.emit_type("%s_type" % name)
@@ -961,8 +981,12 @@ static int add_ast_fields(void)
         self.emit_defaults(name, prod.attributes, 1)
 
     def visitSum(self, sum, name):
-        self.emit('state->%s_type = make_type("%s", state->AST_type, NULL, 0);' %
-                  (name, name), 1)
+        self.emit(
+            'state->%s_type = make_type("%s", state->AST_type, NULL, 0, "%s");'
+            % (name, name, asdl_of(name, sum)),
+            1,
+            reflow=False,
+        )
         self.emit_type("%s_type" % name)
         self.emit("if (!state->%s_type) return 0;" % name, 1)
         if sum.attributes:
@@ -980,8 +1004,19 @@ static int add_ast_fields(void)
             fields = cons.name+"_fields"
         else:
             fields = "NULL"
-        self.emit('state->%s_type = make_type("%s", state->%s_type, %s, %d);' %
-                            (cons.name, cons.name, name, fields, len(cons.fields)), 1)
+        self.emit(
+            'state->%s_type = make_type("%s", state->%s_type, %s, %d, "%s");'
+            % (
+                cons.name,
+                cons.name,
+                name,
+                fields,
+                len(cons.fields),
+                asdl_of(cons.name, cons),
+            ),
+            1,
+            reflow=False,
+        )
         self.emit("if (!state->%s_type) return 0;" % cons.name, 1)
         self.emit_type("%s_type" % cons.name)
         self.emit_defaults(cons.name, cons.fields, 1)
@@ -1279,8 +1314,15 @@ def generate_module_def(f, mod):
         visitor.visit(mod)
         visitor_list.add(visitor)
 
-    state_strings = set(["__dict__", "_attributes", "_fields", "__module__", "_ast"])
-    module_state = set(["__dict__", "_attributes", "_fields", "__module__", "_ast"])
+    state_strings = {
+        "_ast",
+        "_fields",
+        "__doc__",
+        "__dict__",
+        "__module__",
+        "_attributes",
+    }
+    module_state = state_strings.copy()
     for visitor in visitor_list:
         for identifier in visitor.identifiers:
             module_state.add(identifier)
