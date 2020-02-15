@@ -638,8 +638,8 @@ def get_data(package, resource):
     return loader.get_data(resource_name)
 
 
-_DOTTED_WORDS = r'[a-z_]\w*(\.[a-z_]\w*)*'
-_NAME_PATTERN = re.compile(f'^({_DOTTED_WORDS})(:({_DOTTED_WORDS})?)?$', re.I)
+_DOTTED_WORDS = r'(?!\d)(\w+)(\.(?!\d)(\w+))*'
+_NAME_PATTERN = re.compile(f'^(?P<pkg>{_DOTTED_WORDS})(?P<cln>:(?P<obj>{_DOTTED_WORDS})?)?$', re.U)
 del _DOTTED_WORDS
 
 def resolve_name(name):
@@ -677,11 +677,12 @@ def resolve_name(name):
     m = _NAME_PATTERN.match(name)
     if not m:
         raise ValueError(f'invalid format: {name!r}')
-    groups = m.groups()
-    if groups[2]:
+    gd = m.groupdict()
+    if gd.get('cln'):
         # there is a colon - a one-step import is all that's needed
-        mod = importlib.import_module(groups[0])
-        parts = groups[3].split('.') if groups[3] else []
+        mod = importlib.import_module(gd['pkg'])
+        parts = gd.get('obj')
+        parts = parts.split('.') if parts else []
     else:
         # no colon - have to iterate to find the package boundary
         parts = name.split('.')

@@ -231,6 +231,26 @@ class PkgutilTests(unittest.TestCase):
             ('ZeroDivisionError', ImportError),
         )
 
+        # add some Unicode package names to the mix.
+
+        unicode_words = ('\u0935\u092e\u0938',
+                         '\u73b0\u4ee3\u6c49\u8bed\u5e38\u7528\u5b57\u8868')
+
+        for uw in unicode_words:
+            d = os.path.join(self.dirname, uw)
+            os.makedirs(d, exist_ok=True)
+            # make an empty __init__.py file
+            f = os.path.join(d, '__init__.py')
+            with open(f, 'w') as f:
+                f.write('')
+                f.flush()
+            # now import the package we just created; clearing the caches is
+            # needed, otherwise the newly created package isn't found
+            importlib.invalidate_caches()
+            mod = importlib.import_module(uw)
+            success_cases += (uw, mod),
+            failure_cases += (uw[:-1], ImportError),
+
         for s, expected in success_cases:
             with self.subTest(s=s):
                 o = pkgutil.resolve_name(s)
