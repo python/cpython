@@ -1,1 +1,1 @@
-Add `math.lcm()` function: Least Common Multiple.
+Add func:`math.lcm` function: Least Common Multiple.
