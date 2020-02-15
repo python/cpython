@@ -2040,7 +2040,7 @@ math_lcm_impl(PyObject *module, PyObject *a, PyObject *b)
         Py_DECREF(a);
         return NULL;
     }
-    if (_PyLong_Sign(a) == 0 && _PyLong_Sign(b) == 0) {
+    if (_PyLong_Sign(a) == 0 || _PyLong_Sign(b) == 0) {
         Py_DECREF(a);
         Py_DECREF(b);
         return PyLong_FromLong(0);
