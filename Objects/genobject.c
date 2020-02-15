@@ -12,10 +12,10 @@ static PyObject *gen_close(PyGenObject *, PyObject *);
 static PyObject *async_gen_asend_new(PyAsyncGenObject *, PyObject *);
 static PyObject *async_gen_athrow_new(PyAsyncGenObject *, PyObject *);
 
-static char *NON_INIT_CORO_MSG = "can't send non-None value to a "
+static const char *NON_INIT_CORO_MSG = "can't send non-None value to a "
                                  "just-started coroutine";
 
-static char *ASYNC_GEN_IGNORED_EXIT_MSG =
+static const char *ASYNC_GEN_IGNORED_EXIT_MSG =
                                  "async generator ignored GeneratorExit";
 
 static inline int
