@@ -138,9 +138,9 @@ Number-theoretic and representation functions
 
 .. function:: lcm(a, b)
 
-   Return the least common multiple of integers *a* and *b*.  If both *a* or
-   *b* is nonzero, then the value of ``lcm(a, b)`` is the smallest positive
-   integer that is multiple of both *a* and *b*.  ``lcm(0, 0)`` returns ``0``.
+   Return the least common multiple of integers *a* and *b*.  The value of
+   ``lcm(a, b)`` is the smallest non negative integer that is a multiple of
+   both *a* and *b*.  If either *a* or *b* is zero then ``lcm(a, b)`` is zero.
 
    .. versionadded:: 3.9
 
