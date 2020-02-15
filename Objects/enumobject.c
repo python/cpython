@@ -122,7 +122,7 @@ enum_next_long(enumobject *en, PyObject* next_item)
     }
     en->en_longindex = stepped_up;
 
-    if (result->ob_refcnt == 1) {
+    if (Py_REFCNT(result) == 1) {
         Py_INCREF(result);
         old_index = PyTuple_GET_ITEM(result, 0);
         old_item = PyTuple_GET_ITEM(result, 1);
@@ -167,7 +167,7 @@ enum_next(enumobject *en)
     }
     en->en_index++;
 
-    if (result->ob_refcnt == 1) {
+    if (Py_REFCNT(result) == 1) {
         Py_INCREF(result);
         old_index = PyTuple_GET_ITEM(result, 0);
         old_item = PyTuple_GET_ITEM(result, 1);
@@ -211,10 +211,10 @@ PyTypeObject PyEnum_Type = {
     0,                              /* tp_itemsize */
     /* methods */
     (destructor)enum_dealloc,       /* tp_dealloc */
-    0,                              /* tp_print */
+    0,                              /* tp_vectorcall_offset */
     0,                              /* tp_getattr */
     0,                              /* tp_setattr */
-    0,                              /* tp_reserved */
+    0,                              /* tp_as_async */
     0,                              /* tp_repr */
     0,                              /* tp_as_number */
     0,                              /* tp_as_sequence */
@@ -408,10 +408,10 @@ PyTypeObject PyReversed_Type = {
     0,                              /* tp_itemsize */
     /* methods */
     (destructor)reversed_dealloc,   /* tp_dealloc */
-    0,                              /* tp_print */
+    0,                              /* tp_vectorcall_offset */
     0,                              /* tp_getattr */
     0,                              /* tp_setattr */
-    0,                              /* tp_reserved */
+    0,                              /* tp_as_async */
     0,                              /* tp_repr */
     0,                              /* tp_as_number */
     0,                              /* tp_as_sequence */

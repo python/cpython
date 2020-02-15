@@ -83,6 +83,25 @@ class MsiDatabaseTestCase(unittest.TestCase):
         db.Close()
         self.addCleanup(unlink, db_path)
 
+    def test_directory_start_component_keyfile(self):
+        db, db_path = init_database()
+        self.addCleanup(unlink, db_path)
+        self.addCleanup(db.Close)
+        self.addCleanup(msilib._directories.clear)
+        feature = msilib.Feature(db, 0, 'Feature', 'A feature', 'Python')
+        cab = msilib.CAB('CAB')
+        dir = msilib.Directory(db, cab, None, TESTFN, 'TARGETDIR',
+                               'SourceDir', 0)
+        dir.start_component(None, feature, None, 'keyfile')
+
+    def test_getproperty_uninitialized_var(self):
+        db, db_path = init_database()
+        self.addCleanup(unlink, db_path)
+        self.addCleanup(db.Close)
+        si = db.GetSummaryInformation(0)
+        with self.assertRaises(msilib.MSIError):
+            si.GetProperty(-1)
+
 
 class Test_make_id(unittest.TestCase):
     #http://msdn.microsoft.com/en-us/library/aa369212(v=vs.85).aspx

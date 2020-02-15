@@ -88,15 +88,19 @@ winreg_HKEYType___exit__(PyHKEYObject *self, PyObject *const *args, Py_ssize_t n
 {
     PyObject *return_value = NULL;
     static const char * const _keywords[] = {"exc_type", "exc_value", "traceback", NULL};
-    static _PyArg_Parser _parser = {"OOO:__exit__", _keywords, 0};
+    static _PyArg_Parser _parser = {NULL, _keywords, "__exit__", 0};
+    PyObject *argsbuf[3];
     PyObject *exc_type;
     PyObject *exc_value;
     PyObject *traceback;
 
-    if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser,
-        &exc_type, &exc_value, &traceback)) {
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 3, 3, 0, argsbuf);
+    if (!args) {
         goto exit;
     }
+    exc_type = args[0];
+    exc_value = args[1];
+    traceback = args[2];
     return_value = winreg_HKEYType___exit___impl(self, exc_type, exc_value, traceback);
 
 exit:
@@ -1025,7 +1029,7 @@ PyDoc_STRVAR(winreg_DisableReflectionKey__doc__,
 "  key\n"
 "    An already open key, or any one of the predefined HKEY_* constants.\n"
 "\n"
-"Will generally raise NotImplemented if executed on a 32bit OS.\n"
+"Will generally raise NotImplementedError if executed on a 32bit OS.\n"
 "\n"
 "If the key is not on the reflection list, the function succeeds but has\n"
 "no effect.  Disabling reflection for a key does not affect reflection\n"
@@ -1061,7 +1065,7 @@ PyDoc_STRVAR(winreg_EnableReflectionKey__doc__,
 "  key\n"
 "    An already open key, or any one of the predefined HKEY_* constants.\n"
 "\n"
-"Will generally raise NotImplemented if executed on a 32bit OS.\n"
+"Will generally raise NotImplementedError if executed on a 32bit OS.\n"
 "Restoring reflection for a key does not affect reflection of any\n"
 "subkeys.");
 
@@ -1095,7 +1099,7 @@ PyDoc_STRVAR(winreg_QueryReflectionKey__doc__,
 "  key\n"
 "    An already open key, or any one of the predefined HKEY_* constants.\n"
 "\n"
-"Will generally raise NotImplemented if executed on a 32bit OS.");
+"Will generally raise NotImplementedError if executed on a 32bit OS.");
 
 #define WINREG_QUERYREFLECTIONKEY_METHODDEF    \
     {"QueryReflectionKey", (PyCFunction)winreg_QueryReflectionKey, METH_O, winreg_QueryReflectionKey__doc__},
@@ -1117,4 +1121,4 @@ winreg_QueryReflectionKey(PyObject *module, PyObject *arg)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=bd491131d343ae7a input=a9049054013a1b77]*/
+/*[clinic end generated code: output=015afbbd690eb59d input=a9049054013a1b77]*/

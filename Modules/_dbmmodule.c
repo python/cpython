@@ -255,7 +255,7 @@ dbm_contains(PyObject *self, PyObject *arg)
     else if (!PyBytes_Check(arg)) {
         PyErr_Format(PyExc_TypeError,
                      "dbm key must be bytes or string, not %.100s",
-                     arg->ob_type->tp_name);
+                     Py_TYPE(arg)->tp_name);
         return -1;
     }
     else {
@@ -370,7 +370,7 @@ static PyObject *
 dbm__exit__(PyObject *self, PyObject *args)
 {
     _Py_IDENTIFIER(close);
-    return _PyObject_CallMethodId(self, &PyId_close, NULL);
+    return _PyObject_CallMethodIdNoArgs(self, &PyId_close);
 }
 
 
@@ -390,10 +390,10 @@ static PyTypeObject Dbmtype = {
     sizeof(dbmobject),
     0,
     (destructor)dbm_dealloc,  /*tp_dealloc*/
-    0,                            /*tp_print*/
+    0,                            /*tp_vectorcall_offset*/
     0,                        /*tp_getattr*/
     0,                            /*tp_setattr*/
-    0,                            /*tp_reserved*/
+    0,                            /*tp_as_async*/
     0,                            /*tp_repr*/
     0,                            /*tp_as_number*/
     &dbm_as_sequence,             /*tp_as_sequence*/

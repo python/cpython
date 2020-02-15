@@ -30,7 +30,8 @@ PyAPI_FUNC(int) _Py_EncodeUTF8Ex(
 
 PyAPI_FUNC(wchar_t*) _Py_DecodeUTF8_surrogateescape(
     const char *arg,
-    Py_ssize_t arglen);
+    Py_ssize_t arglen,
+    size_t *wlen);
 
 PyAPI_FUNC(int) _Py_GetForceASCII(void);
 

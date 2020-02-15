@@ -105,7 +105,7 @@ SOLARIS_XHDTYPE = b"X"          # Solaris extended header
 USTAR_FORMAT = 0                # POSIX.1-1988 (ustar) format
 GNU_FORMAT = 1                  # GNU tar format
 PAX_FORMAT = 2                  # POSIX.1-2001 (pax) format
-DEFAULT_FORMAT = GNU_FORMAT
+DEFAULT_FORMAT = PAX_FORMAT
 
 #---------------------------------------------------------
 # tarfile constants
@@ -717,11 +717,32 @@ class TarInfo(object):
        usually created internally.
     """
 
-    __slots__ = ("name", "mode", "uid", "gid", "size", "mtime",
-                 "chksum", "type", "linkname", "uname", "gname",
-                 "devmajor", "devminor",
-                 "offset", "offset_data", "pax_headers", "sparse",
-                 "tarfile", "_sparse_structs", "_link_target")
+    __slots__ = dict(
+        name = 'Name of the archive member.',
+        mode = 'Permission bits.',
+        uid = 'User ID of the user who originally stored this member.',
+        gid = 'Group ID of the user who originally stored this member.',
+        size = 'Size in bytes.',
+        mtime = 'Time of last modification.',
+        chksum = 'Header checksum.',
+        type = ('File type. type is usually one of these constants: '
+                'REGTYPE, AREGTYPE, LNKTYPE, SYMTYPE, DIRTYPE, FIFOTYPE, '
+                'CONTTYPE, CHRTYPE, BLKTYPE, GNUTYPE_SPARSE.'),
+        linkname = ('Name of the target file name, which is only present '
+                    'in TarInfo objects of type LNKTYPE and SYMTYPE.'),
+        uname = 'User name.',
+        gname = 'Group name.',
+        devmajor = 'Device major number.',
+        devminor = 'Device minor number.',
+        offset = 'The tar header starts here.',
+        offset_data = "The file's data starts here.",
+        pax_headers = ('A dictionary containing key-value pairs of an '
+                       'associated pax extended header.'),
+        sparse = 'Sparse member information.',
+        tarfile = None,
+        _sparse_structs = None,
+        _link_target = None,
+        )
 
     def __init__(self, name=""):
         """Construct a TarInfo object. name is the optional name
@@ -747,10 +768,9 @@ class TarInfo(object):
         self.sparse = None      # sparse member information
         self.pax_headers = {}   # pax header information
 
-    # In pax headers the "name" and "linkname" field are called
-    # "path" and "linkpath".
     @property
     def path(self):
+        'In pax headers, "name" is called "path".'
         return self.name
 
     @path.setter
@@ -759,6 +779,7 @@ class TarInfo(object):
 
     @property
     def linkpath(self):
+        'In pax headers, "linkname" is called "linkpath".'
         return self.linkname
 
     @linkpath.setter
@@ -909,6 +930,14 @@ class TarInfo(object):
         """Return a header block. info is a dictionary with file
            information, format must be one of the *_FORMAT constants.
         """
+        has_device_fields = info.get("type") in (CHRTYPE, BLKTYPE)
+        if has_device_fields:
+            devmajor = itn(info.get("devmajor", 0), 8, format)
+            devminor = itn(info.get("devminor", 0), 8, format)
+        else:
+            devmajor = stn("", 8, encoding, errors)
+            devminor = stn("", 8, encoding, errors)
+
         parts = [
             stn(info.get("name", ""), 100, encoding, errors),
             itn(info.get("mode", 0) & 0o7777, 8, format),
@@ -922,8 +951,8 @@ class TarInfo(object):
             info.get("magic", POSIX_MAGIC),
             stn(info.get("uname", ""), 32, encoding, errors),
             stn(info.get("gname", ""), 32, encoding, errors),
-            itn(info.get("devmajor", 0), 8, format),
-            itn(info.get("devminor", 0), 8, format),
+            devmajor,
+            devminor,
             stn(info.get("prefix", ""), 155, encoding, errors)
         ]
 
@@ -1350,24 +1379,42 @@ class TarInfo(object):
         return blocks * BLOCKSIZE
 
     def isreg(self):
+        'Return True if the Tarinfo object is a regular file.'
         return self.type in REGULAR_TYPES
+
     def isfile(self):
+        'Return True if the Tarinfo object is a regular file.'
         return self.isreg()
+
     def isdir(self):
+        'Return True if it is a directory.'
         return self.type == DIRTYPE
+
     def issym(self):
+        'Return True if it is a symbolic link.'
         return self.type == SYMTYPE
+
     def islnk(self):
+        'Return True if it is a hard link.'
         return self.type == LNKTYPE
+
     def ischr(self):
+        'Return True if it is a character device.'
         return self.type == CHRTYPE
+
     def isblk(self):
+        'Return True if it is a block device.'
         return self.type == BLKTYPE
+
     def isfifo(self):
+        'Return True if it is a FIFO.'
         return self.type == FIFOTYPE
+
     def issparse(self):
         return self.sparse is not None
+
     def isdev(self):
+        'Return True if it is one of character device, block device or FIFO.'
         return self.type in (CHRTYPE, BLKTYPE, FIFOTYPE)
 # class TarInfo
 
@@ -1616,13 +1663,12 @@ class TarFile(object):
             raise ValueError("mode must be 'r', 'w' or 'x'")
 
         try:
-            import gzip
-            gzip.GzipFile
-        except (ImportError, AttributeError):
+            from gzip import GzipFile
+        except ImportError:
             raise CompressionError("gzip module is not available")
 
         try:
-            fileobj = gzip.GzipFile(name, mode + "b", compresslevel, fileobj)
+            fileobj = GzipFile(name, mode + "b", compresslevel, fileobj)
         except OSError:
             if fileobj is not None and mode == 'r':
                 raise ReadError("not a gzip file")
@@ -1650,12 +1696,11 @@ class TarFile(object):
             raise ValueError("mode must be 'r', 'w' or 'x'")
 
         try:
-            import bz2
+            from bz2 import BZ2File
         except ImportError:
             raise CompressionError("bz2 module is not available")
 
-        fileobj = bz2.BZ2File(fileobj or name, mode,
-                              compresslevel=compresslevel)
+        fileobj = BZ2File(fileobj or name, mode, compresslevel=compresslevel)
 
         try:
             t = cls.taropen(name, mode, fileobj, **kwargs)
@@ -1679,15 +1724,15 @@ class TarFile(object):
             raise ValueError("mode must be 'r', 'w' or 'x'")
 
         try:
-            import lzma
+            from lzma import LZMAFile, LZMAError
         except ImportError:
             raise CompressionError("lzma module is not available")
 
-        fileobj = lzma.LZMAFile(fileobj or name, mode, preset=preset)
+        fileobj = LZMAFile(fileobj or name, mode, preset=preset)
 
         try:
             t = cls.taropen(name, mode, fileobj, **kwargs)
-        except (lzma.LZMAError, EOFError):
+        except (LZMAError, EOFError):
             fileobj.close()
             if mode == 'r':
                 raise ReadError("not an lzma file")
@@ -2422,9 +2467,14 @@ class TarFile(object):
 def is_tarfile(name):
     """Return True if name points to a tar archive that we
        are able to handle, else return False.
+
+       'name' should be a string, file, or file-like object.
     """
     try:
-        t = open(name)
+        if hasattr(name, "read"):
+            t = open(fileobj=name)
+        else:
+            t = open(name)
         t.close()
         return True
     except TarError:

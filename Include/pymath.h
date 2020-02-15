@@ -125,7 +125,7 @@ PyAPI_FUNC(void) _Py_set_387controlword(unsigned short);
 
 /* Py_IS_FINITE(X)
  * Return 1 if float or double arg is neither infinite nor NAN, else 0.
- * Some compilers (e.g. VisualStudio) have intrisics for this, so a special
+ * Some compilers (e.g. VisualStudio) have intrinsics for this, so a special
  * macro for this particular test is useful
  * Note: PC/pyconfig.h defines Py_IS_FINITE as _finite
  */
@@ -226,5 +226,13 @@ PyAPI_FUNC(void) _Py_set_387controlword(unsigned short);
  * integral type that cannot represent *v*'s integral part is undefined
  * behavior. */
 #define _Py_InIntegralTypeRange(type, v) (_Py_IntegralTypeMin(type) <= v && v <= _Py_IntegralTypeMax(type))
+
+/* Return the smallest integer k such that n < 2**k, or 0 if n == 0.
+ * Equivalent to floor(log2(x))+1.  Also equivalent to: bitwidth_of_type -
+ * count_leading_zero_bits(x)
+ */
+#ifndef Py_LIMITED_API
+PyAPI_FUNC(unsigned int) _Py_bit_length(unsigned long d);
+#endif
 
 #endif /* Py_PYMATH_H */

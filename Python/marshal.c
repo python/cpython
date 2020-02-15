@@ -530,6 +530,7 @@ w_complex_object(PyObject *v, char flag, WFILE *p)
         PyCodeObject *co = (PyCodeObject *)v;
         W_TYPE(TYPE_CODE, p);
         w_long(co->co_argcount, p);
+        w_long(co->co_posonlyargcount, p);
         w_long(co->co_kwonlyargcount, p);
         w_long(co->co_nlocals, p);
         w_long(co->co_stacksize, p);
@@ -733,7 +734,7 @@ r_byte(RFILE *p)
     else {
         const char *ptr = r_string(1, p);
         if (ptr != NULL)
-            c = *(unsigned char *) ptr;
+            c = *(const unsigned char *) ptr;
     }
     return c;
 }
@@ -812,7 +813,7 @@ r_PyLong(RFILE *p)
     if (ob == NULL)
         return NULL;
 
-    Py_SIZE(ob) = n > 0 ? size : -size;
+    Py_SET_SIZE(ob, n > 0 ? size : -size);
 
     for (i = 0; i < size-1; i++) {
         d = 0;
@@ -1322,6 +1323,7 @@ r_object(RFILE *p)
     case TYPE_CODE:
         {
             int argcount;
+            int posonlyargcount;
             int kwonlyargcount;
             int nlocals;
             int stacksize;
@@ -1347,6 +1349,10 @@ r_object(RFILE *p)
             argcount = (int)r_long(p);
             if (PyErr_Occurred())
                 goto code_error;
+            posonlyargcount = (int)r_long(p);
+            if (PyErr_Occurred()) {
+                goto code_error;
+            }
             kwonlyargcount = (int)r_long(p);
             if (PyErr_Occurred())
                 goto code_error;
@@ -1390,8 +1396,8 @@ r_object(RFILE *p)
             if (lnotab == NULL)
                 goto code_error;
 
-            v = (PyObject *) PyCode_New(
-                            argcount, kwonlyargcount,
+            v = (PyObject *) PyCode_NewWithPosOnlyArgs(
+                            argcount, posonlyargcount, kwonlyargcount,
                             nlocals, stacksize, flags,
                             code, consts, names, varnames,
                             freevars, cellvars, filename, name,
@@ -1647,7 +1653,7 @@ marshal_dump_impl(PyObject *module, PyObject *value, PyObject *file,
     s = PyMarshal_WriteObjectToString(value, version);
     if (s == NULL)
         return NULL;
-    res = _PyObject_CallMethodIdObjArgs(file, &PyId_write, s, NULL);
+    res = _PyObject_CallMethodIdOneArg(file, &PyId_write, s);
     Py_DECREF(s);
     return res;
 }
@@ -1690,7 +1696,7 @@ marshal_load(PyObject *module, PyObject *file)
     if (!PyBytes_Check(data)) {
         PyErr_Format(PyExc_TypeError,
                      "file.read() returned not bytes but %.100s",
-                     data->ob_type->tp_name);
+                     Py_TYPE(data)->tp_name);
         result = NULL;
     }
     else {
@@ -1823,6 +1829,9 @@ PyMarshal_Init(void)
     PyObject *mod = PyModule_Create(&marshalmodule);
     if (mod == NULL)
         return NULL;
-    PyModule_AddIntConstant(mod, "version", Py_MARSHAL_VERSION);
+    if (PyModule_AddIntConstant(mod, "version", Py_MARSHAL_VERSION) < 0) {
+        Py_DECREF(mod);
+        return NULL;
+    }
     return mod;
 }

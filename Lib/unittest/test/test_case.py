@@ -610,6 +610,15 @@ class Test_TestCase(unittest.TestCase, TestEquality, TestHashing):
                  'Tests shortDescription() for a method with a longer '
                  'docstring.')
 
+    def testShortDescriptionWhitespaceTrimming(self):
+        """
+            Tests shortDescription() whitespace is trimmed, so that the first
+            line of nonwhite-space text becomes the docstring.
+        """
+        self.assertEqual(
+            self.shortDescription(),
+            'Tests shortDescription() whitespace is trimmed, so that the first')
+
     def testAddTypeEqualityFunc(self):
         class SadSnake(object):
             """Dummy class for test_addTypeEqualityFunc."""
@@ -620,7 +629,7 @@ class Test_TestCase(unittest.TestCase, TestEquality, TestHashing):
         self.addTypeEqualityFunc(SadSnake, AllSnakesCreatedEqual)
         self.assertEqual(s1, s2)
         # No this doesn't clean up and remove the SadSnake equality func
-        # from this TestCase instance but since its a local nothing else
+        # from this TestCase instance but since it's local nothing else
         # will ever notice that.
 
     def testAssertIs(self):

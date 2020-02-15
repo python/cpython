@@ -332,6 +332,15 @@ Available static markers
    .. versionadded:: 3.7
 
 
+.. c:function:: audit(str event, void *tuple)
+
+   Fires when :func:`sys.audit` or :c:func:`PySys_Audit` is called.
+   ``arg0`` is the event name as C string, ``arg1`` is a :c:type:`PyObject`
+   pointer to a tuple object.
+
+   .. versionadded:: 3.8
+
+
 SystemTap Tapsets
 -----------------
 

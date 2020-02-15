@@ -235,12 +235,6 @@ The legacy interface:
 
    .. versionadded:: 3.1
 
-.. function:: decodestring(s)
-
-   Deprecated alias of :func:`decodebytes`.
-
-   .. deprecated:: 3.1
-
 
 .. function:: encode(input, output)
 
@@ -260,12 +254,6 @@ The legacy interface:
    there is a trailing newline, as per :rfc:`2045` (MIME).
 
    .. versionadded:: 3.1
-
-.. function:: encodestring(s)
-
-   Deprecated alias of :func:`encodebytes`.
-
-   .. deprecated:: 3.1
 
 
 An example usage of the module:

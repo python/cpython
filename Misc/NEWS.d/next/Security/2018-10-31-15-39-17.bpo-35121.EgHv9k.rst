@@ -1,4 +1,0 @@
-Don't send cookies of domain A without Domain attribute to domain B
-when domain A is a suffix match of domain B while using a cookiejar
-with :class:`http.cookiejar.DefaultCookiePolicy` policy. Patch by
-Karthikeyan Singaravelan.

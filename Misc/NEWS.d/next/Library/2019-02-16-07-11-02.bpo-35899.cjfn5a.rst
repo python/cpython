@@ -1,1 +1,0 @@
-Enum has been fixed to correctly handle empty strings and strings with non-Latin characters (ie. 'α', 'א') without crashing. Original patch contributed by Maxwell. Assisted by Stéphane Wirtel.

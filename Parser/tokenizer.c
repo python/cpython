@@ -1,8 +1,8 @@
 
 /* Tokenizer implementation */
 
+#define PY_SSIZE_T_CLEAN
 #include "Python.h"
-#include "pgenheaders.h"
 
 #include <ctype.h>
 #include <assert.h>
@@ -649,9 +649,14 @@ translate_newlines(const char *s, int exec_input, struct tok_state *tok) {
     }
     *current = '\0';
     final_length = current - buf + 1;
-    if (final_length < needed_length && final_length)
+    if (final_length < needed_length && final_length) {
         /* should never fail */
-        buf = PyMem_REALLOC(buf, final_length);
+        char* result = PyMem_REALLOC(buf, final_length);
+        if (result == NULL) {
+            PyMem_FREE(buf);
+        }
+        buf = result;
+    }
     return buf;
 }
 
@@ -882,6 +887,7 @@ tok_nextc(struct tok_state *tok)
                 size_t start = tok->start - tok->buf;
                 size_t oldlen = tok->cur - tok->buf;
                 size_t newlen = oldlen + strlen(newtok);
+                Py_ssize_t cur_multi_line_start = tok->multi_line_start - tok->buf;
                 char *buf = tok->buf;
                 buf = (char *)PyMem_REALLOC(buf, newlen+1);
                 tok->lineno++;
@@ -894,6 +900,7 @@ tok_nextc(struct tok_state *tok)
                 }
                 tok->buf = buf;
                 tok->cur = tok->buf + oldlen;
+                tok->multi_line_start = tok->buf + cur_multi_line_start;
                 tok->line_start = tok->cur;
                 strcpy(tok->buf + oldlen, newtok);
                 PyMem_FREE(newtok);
@@ -952,6 +959,7 @@ tok_nextc(struct tok_state *tok)
             while (!done) {
                 Py_ssize_t curstart = tok->start == NULL ? -1 :
                           tok->start - tok->buf;
+                Py_ssize_t cur_multi_line_start = tok->multi_line_start - tok->buf;
                 Py_ssize_t curvalid = tok->inp - tok->buf;
                 Py_ssize_t newsize = curvalid + BUFSIZ;
                 char *newbuf = tok->buf;
@@ -964,6 +972,7 @@ tok_nextc(struct tok_state *tok)
                 }
                 tok->buf = newbuf;
                 tok->cur = tok->buf + cur;
+                tok->multi_line_start = tok->buf + cur_multi_line_start;
                 tok->line_start = tok->cur;
                 tok->inp = tok->buf + curvalid;
                 tok->end = tok->buf + newsize;
@@ -979,7 +988,8 @@ tok_nextc(struct tok_state *tok)
                         return EOF;
                     /* Last line does not end in \n,
                        fake one */
-                    strcpy(tok->inp, "\n");
+                    if (tok->inp[-1] != '\n')
+                        strcpy(tok->inp, "\n");
                 }
                 tok->inp = strchr(tok->inp, '\0');
                 done = tok->inp[-1] == '\n';
@@ -1025,17 +1035,44 @@ tok_backup(struct tok_state *tok, int c)
 static int
 syntaxerror(struct tok_state *tok, const char *format, ...)
 {
+    PyObject *errmsg, *errtext, *args;
     va_list vargs;
 #ifdef HAVE_STDARG_PROTOTYPES
     va_start(vargs, format);
 #else
     va_start(vargs);
 #endif
-    PyErr_FormatV(PyExc_SyntaxError, format, vargs);
+    errmsg = PyUnicode_FromFormatV(format, vargs);
     va_end(vargs);
-    PyErr_SyntaxLocationObject(tok->filename,
-                               tok->lineno,
-                               (int)(tok->cur - tok->line_start));
+    if (!errmsg) {
+        goto error;
+    }
+
+    errtext = PyUnicode_DecodeUTF8(tok->line_start, tok->cur - tok->line_start,
+                                   "replace");
+    if (!errtext) {
+        goto error;
+    }
+    int offset = (int)PyUnicode_GET_LENGTH(errtext);
+    Py_ssize_t line_len = strcspn(tok->line_start, "\n");
+    if (line_len != tok->cur - tok->line_start) {
+        Py_DECREF(errtext);
+        errtext = PyUnicode_DecodeUTF8(tok->line_start, line_len,
+                                       "replace");
+    }
+    if (!errtext) {
+        goto error;
+    }
+
+    args = Py_BuildValue("(O(OiiN))", errmsg,
+                         tok->filename, tok->lineno, offset, errtext);
+    if (args) {
+        PyErr_SetObject(PyExc_SyntaxError, args);
+        Py_DECREF(args);
+    }
+
+error:
+    Py_XDECREF(errmsg);
     tok->done = E_ERROR;
     return ERRORTOKEN;
 }
@@ -1070,8 +1107,9 @@ verify_identifier(struct tok_state *tok)
     }
     result = PyUnicode_IsIdentifier(s);
     Py_DECREF(s);
-    if (result == 0)
+    if (result == 0) {
         tok->done = E_IDENTIFIER;
+    }
     return result;
 }
 
@@ -1140,6 +1178,12 @@ tok_get(struct tok_state *tok, char **p_start, char **p_end)
                mode, which signal the end of a command group. */
             if (col == 0 && c == '\n' && tok->prompt != NULL) {
                 blankline = 0; /* Let it through */
+            }
+            else if (tok->prompt != NULL && tok->lineno == 1) {
+                /* In interactive mode, if the first line contains
+                   only spaces and/or a comment, let it through. */
+                blankline = 0;
+                col = altcol = 0;
             }
             else {
                 blankline = 1; /* Ignore completely */
@@ -1264,20 +1308,22 @@ tok_get(struct tok_state *tok, char **p_start, char **p_end)
             /* This is a type comment if we matched all of type_comment_prefix. */
             if (!*prefix) {
                 int is_type_ignore = 1;
+                const char *ignore_end = p + 6;
                 tok_backup(tok, c);  /* don't eat the newline or EOF */
 
                 type_start = p;
 
-                is_type_ignore = tok->cur >= p + 6 && memcmp(p, "ignore", 6) == 0;
-                p += 6;
-                while (is_type_ignore && p < tok->cur) {
-                    if (*p == '#')
-                        break;
-                    is_type_ignore = is_type_ignore && (*p == ' ' || *p == '\t');
-                    p++;
-                }
+                /* A TYPE_IGNORE is "type: ignore" followed by the end of the token
+                 * or anything ASCII and non-alphanumeric. */
+                is_type_ignore = (
+                    tok->cur >= ignore_end && memcmp(p, "ignore", 6) == 0
+                    && !(tok->cur > ignore_end
+                         && ((unsigned char)ignore_end[0] >= 128 || Py_ISALNUM(ignore_end[0]))));
 
                 if (is_type_ignore) {
+                    *p_start = (char *) ignore_end;
+                    *p_end = tok->cur;
+
                     /* If this type ignore is the only thing on the line, consume the newline also. */
                     if (blankline) {
                         tok_nextc(tok);
@@ -1673,6 +1719,14 @@ tok_get(struct tok_state *tok, char **p_start, char **p_end)
             tok->cur = tok->inp;
             return ERRORTOKEN;
         }
+        c = tok_nextc(tok);
+        if (c == EOF) {
+            tok->done = E_EOF;
+            tok->cur = tok->inp;
+            return ERRORTOKEN;
+        } else {
+            tok_backup(tok, c);
+        }
         tok->cont_line = 1;
         goto again; /* Read next line */
     }
@@ -1804,7 +1858,7 @@ PyTokenizer_FindEncodingFilename(int fd, PyObject *filename)
     if (tok->encoding) {
         encoding = (char *)PyMem_MALLOC(strlen(tok->encoding) + 1);
         if (encoding)
-        strcpy(encoding, tok->encoding);
+            strcpy(encoding, tok->encoding);
     }
     PyTokenizer_Free(tok);
     return encoding;

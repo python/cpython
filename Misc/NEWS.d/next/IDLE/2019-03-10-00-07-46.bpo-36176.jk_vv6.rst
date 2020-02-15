@@ -1,2 +1,0 @@
-Fix IDLE autocomplete & calltip popup colors. Prevent conflicts with Linux
-dark themes (and slightly darken calltip background).

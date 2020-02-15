@@ -608,6 +608,12 @@ class TestQuotedEscapedExcel(TestCsvBase):
 class TestDictFields(unittest.TestCase):
     ### "long" means the row is longer than the number of fieldnames
     ### "short" means there are fewer elements in the row than fieldnames
+    def test_writeheader_return_value(self):
+        with TemporaryFile("w+", newline='') as fileobj:
+            writer = csv.DictWriter(fileobj, fieldnames = ["f1", "f2", "f3"])
+            writeheader_return_value = writer.writeheader()
+            self.assertEqual(writeheader_return_value, 10)
+
     def test_write_simple_dict(self):
         with TemporaryFile("w+", newline='') as fileobj:
             writer = csv.DictWriter(fileobj, fieldnames = ["f1", "f2", "f3"])

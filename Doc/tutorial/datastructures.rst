@@ -125,6 +125,13 @@ only modify the list have no return value printed -- they return the default
 ``None``. [1]_  This is a design principle for all mutable data structures in
 Python.
 
+Another thing you might notice is that not all data can be sorted or
+compared.  For instance, ``[None, 'hello', 10]`` doesn't sort because
+integers can't be compared to strings and *None* can't be compared to
+other types.  Also, there are some types that don't have a defined
+ordering relation.  For example, ``3+4j < 5+7j`` isn't a valid
+comparison.
+
 
 .. _tut-lists-as-stacks:
 
@@ -668,28 +675,28 @@ to a variable.  For example, ::
    >>> non_null
    'Trondheim'
 
-Note that in Python, unlike C, assignment cannot occur inside expressions. C
-programmers may grumble about this, but it avoids a common class of problems
-encountered in C programs: typing ``=`` in an expression when ``==`` was
-intended.
+Note that in Python, unlike C, assignment inside expressions must be done
+explicitly with the
+:ref:`walrus operator <why-can-t-i-use-an-assignment-in-an-expression>` ``:=``.
+This avoids a common class of problems encountered in C programs: typing ``=``
+in an expression when ``==`` was intended.
 
 
 .. _tut-comparing:
 
 Comparing Sequences and Other Types
 ===================================
-
-Sequence objects may be compared to other objects with the same sequence type.
-The comparison uses *lexicographical* ordering: first the first two items are
-compared, and if they differ this determines the outcome of the comparison; if
-they are equal, the next two items are compared, and so on, until either
-sequence is exhausted. If two items to be compared are themselves sequences of
-the same type, the lexicographical comparison is carried out recursively.  If
-all items of two sequences compare equal, the sequences are considered equal.
-If one sequence is an initial sub-sequence of the other, the shorter sequence is
-the smaller (lesser) one.  Lexicographical ordering for strings uses the Unicode
-code point number to order individual characters.  Some examples of comparisons
-between sequences of the same type::
+Sequence objects typically may be compared to other objects with the same sequence
+type. The comparison uses *lexicographical* ordering: first the first two
+items are compared, and if they differ this determines the outcome of the
+comparison; if they are equal, the next two items are compared, and so on, until
+either sequence is exhausted. If two items to be compared are themselves
+sequences of the same type, the lexicographical comparison is carried out
+recursively.  If all items of two sequences compare equal, the sequences are
+considered equal. If one sequence is an initial sub-sequence of the other, the
+shorter sequence is the smaller (lesser) one.  Lexicographical ordering for
+strings uses the Unicode code point number to order individual characters.
+Some examples of comparisons between sequences of the same type::
 
    (1, 2, 3)              < (1, 2, 4)
    [1, 2, 3]              < [1, 2, 4]

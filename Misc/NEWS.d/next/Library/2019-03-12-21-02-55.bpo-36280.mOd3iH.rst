@@ -1,2 +1,0 @@
-Add a kind field to ast.Constant. It is 'u' if the literal has a 'u' prefix
-(i.e. a Python 2 style unicode literal), else None.

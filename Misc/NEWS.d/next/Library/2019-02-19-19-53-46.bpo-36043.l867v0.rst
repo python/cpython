@@ -1,1 +1,0 @@
-:class:`FileCookieJar` supports :term:`path-like object`. Contributed by Stéphane Wirtel

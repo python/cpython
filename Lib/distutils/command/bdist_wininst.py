@@ -3,7 +3,9 @@
 Implements the Distutils 'bdist_wininst' command: create a windows installer
 exe-program."""
 
-import sys, os
+import os
+import sys
+import warnings
 from distutils.core import Command
 from distutils.util import get_platform
 from distutils.dir_util import create_tree, remove_tree
@@ -54,6 +56,15 @@ class bdist_wininst(Command):
 
     boolean_options = ['keep-temp', 'no-target-compile', 'no-target-optimize',
                        'skip-build']
+
+    # bpo-10945: bdist_wininst requires mbcs encoding only available on Windows
+    _unsupported = (sys.platform != "win32")
+
+    def __init__(self, *args, **kw):
+        super().__init__(*args, **kw)
+        warnings.warn("bdist_wininst command is deprecated since Python 3.8, "
+                      "use bdist_wheel (wheel packages) instead",
+                      DeprecationWarning, 2)
 
     def initialize_options(self):
         self.bdist_dir = None
@@ -247,47 +258,49 @@ class bdist_wininst(Command):
         self.announce("creating %s" % installer_name)
 
         if bitmap:
-            bitmapdata = open(bitmap, "rb").read()
+            with open(bitmap, "rb") as f:
+                bitmapdata = f.read()
             bitmaplen = len(bitmapdata)
         else:
             bitmaplen = 0
 
-        file = open(installer_name, "wb")
-        file.write(self.get_exe_bytes())
-        if bitmap:
-            file.write(bitmapdata)
+        with open(installer_name, "wb") as file:
+            file.write(self.get_exe_bytes())
+            if bitmap:
+                file.write(bitmapdata)
 
-        # Convert cfgdata from unicode to ascii, mbcs encoded
-        if isinstance(cfgdata, str):
-            cfgdata = cfgdata.encode("mbcs")
+            # Convert cfgdata from unicode to ascii, mbcs encoded
+            if isinstance(cfgdata, str):
+                cfgdata = cfgdata.encode("mbcs")
 
-        # Append the pre-install script
-        cfgdata = cfgdata + b"\0"
-        if self.pre_install_script:
-            # We need to normalize newlines, so we open in text mode and
-            # convert back to bytes. "latin-1" simply avoids any possible
-            # failures.
-            with open(self.pre_install_script, "r",
-                encoding="latin-1") as script:
-                script_data = script.read().encode("latin-1")
-            cfgdata = cfgdata + script_data + b"\n\0"
-        else:
-            # empty pre-install script
+            # Append the pre-install script
             cfgdata = cfgdata + b"\0"
-        file.write(cfgdata)
+            if self.pre_install_script:
+                # We need to normalize newlines, so we open in text mode and
+                # convert back to bytes. "latin-1" simply avoids any possible
+                # failures.
+                with open(self.pre_install_script, "r",
+                          encoding="latin-1") as script:
+                    script_data = script.read().encode("latin-1")
+                cfgdata = cfgdata + script_data + b"\n\0"
+            else:
+                # empty pre-install script
+                cfgdata = cfgdata + b"\0"
+            file.write(cfgdata)
 
-        # The 'magic number' 0x1234567B is used to make sure that the
-        # binary layout of 'cfgdata' is what the wininst.exe binary
-        # expects.  If the layout changes, increment that number, make
-        # the corresponding changes to the wininst.exe sources, and
-        # recompile them.
-        header = struct.pack("<iii",
-                             0x1234567B,       # tag
-                             len(cfgdata),     # length
-                             bitmaplen,        # number of bytes in bitmap
-                             )
-        file.write(header)
-        file.write(open(arcname, "rb").read())
+            # The 'magic number' 0x1234567B is used to make sure that the
+            # binary layout of 'cfgdata' is what the wininst.exe binary
+            # expects.  If the layout changes, increment that number, make
+            # the corresponding changes to the wininst.exe sources, and
+            # recompile them.
+            header = struct.pack("<iii",
+                                0x1234567B,       # tag
+                                len(cfgdata),     # length
+                                bitmaplen,        # number of bytes in bitmap
+                                )
+            file.write(header)
+            with open(arcname, "rb") as f:
+                file.write(f.read())
 
     def get_installer_filename(self, fullname):
         # Factored out to allow overriding in subclasses

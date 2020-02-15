@@ -20,9 +20,6 @@
     <ClCompile Include="..\Modules\pyexpat.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\Modules\expat\loadlibrary.c">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="..\Modules\expat\xmlparse.c">
       <Filter>Source Files</Filter>
     </ClCompile>
