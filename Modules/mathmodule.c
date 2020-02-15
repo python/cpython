@@ -2032,53 +2032,45 @@ math_lcm_impl(PyObject *module, PyObject *a, PyObject *b)
     PyObject *g, *m, *f, *ab;
     
     a = PyNumber_Index(a);
-        if (a == NULL) {
-            return NULL;
+    if (a == NULL) {
+        return NULL;
     }
     b = PyNumber_Index(b);
     if (b == NULL) {
+        Py_DECREF(a);
         return NULL;
     }
-    if (a == 0 && b == 0) {
-        return 0;
+    g = _PyLong_GCD(a, b);
+    if (g == NULL) {
+        Py_DECREF(a);
+        Py_DECREF(b);
+        return NULL;
     }
-    else {
-        if (PyFloat_Check(a) || PyFloat_Check(b)) {
-            PyErr_Format(PyExc_TypeError,"'float' object cannot be an argument to lcm");
-            return 0;  
-        }
-        g = _PyLong_GCD(a, b);
+    f = PyNumber_FloorDivide(a, g);
+    Py_DECREF(g);
+    if (f == NULL) {
         Py_DECREF(a);
         Py_DECREF(b);
-        Py_DECREF(b);
-        if (g == NULL) {
-            return NULL;
-        }
-        f = PyNumber_FloorDivide(a, g);
-        Py_DECREF(a);
-        Py_DECREF(g);
-        Py_DECREF(g);
-        if (f == NULL) {
-            return NULL;
-        }
-        m = PyNumber_Multiply(f, b);
-        Py_DECREF(f);
-        Py_DECREF(b);
-        if (m == NULL) {
-            return NULL;
-        }    
-        ab = PyNumber_Absolute(m);
-        Py_DECREF(m);
-        if (ab == NULL) {
-            return NULL;
-        }
-        Py_DECREF(a);
-        Py_DECREF(b);
-        return ab;
+        return NULL;
     }
+    m = PyNumber_Multiply(f, b);
+    Py_DECREF(f);
+    if (m == NULL) {
+        Py_DECREF(a);
+        Py_DECREF(b);
+        return NULL;
+    }    
+    ab = PyNumber_Absolute(m);
+    Py_DECREF(m);
+    if (ab == NULL) {
+        Py_DECREF(a);
+        Py_DECREF(b);
+        return NULL;
+    }
+    Py_DECREF(a);
+    Py_DECREF(b);
+    return ab;
 }
-
-
 
 
 /*[clinic input]
