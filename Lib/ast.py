@@ -1131,16 +1131,15 @@ class _Unparser(NodeVisitor):
     def visit_Subscript(self, node):
         self.traverse(node.value)
         with self.delimit("[", "]"):
-            if isinstance(node.slice, ast.Tuple) and node.slice.elts:
+            if isinstance(node.slice, Tuple) and node.slice.elts:
                 if len(node.slice.elts) == 1:
                     elt = node.slice.elts[0]
                     self.traverse(elt)
                     self.write(",")
                 else:
-                    interleave(lambda: self.write(", "), self.traverse, node.slice.elts)
+                    self.interleave(lambda: self.write(", "), self.traverse, node.slice.elts)
             else:
                 self.traverse(node.slice)
-        self.write("]")
 
     def visit_Starred(self, node):
         self.write("*")
