@@ -162,12 +162,6 @@ class QueueBasicTests(_QueueTestBase):
         loop.run_until_complete(test())
         self.assertAlmostEqual(0.02, loop.time())
 
-    def test_queue_loop_not_running(self):
-        loop = asyncio.new_event_loop()
-        loop.stop()
-        with self.assertWarns(DeprecationWarning):
-            q = asyncio.Queue(loop=loop)
-
 
 class QueueGetTests(_QueueTestBase):
 
@@ -718,6 +712,20 @@ class LifoQueueJoinTests(_QueueJoinTestMixin, _QueueTestBase):
 
 class PriorityQueueJoinTests(_QueueJoinTestMixin, _QueueTestBase):
     q_class = asyncio.PriorityQueue
+
+
+class QueueLoopTests:
+    def setUp(self):
+        self.loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(self.loop)
+
+    def tearDown(self):
+        asyncio.set_event_loop(None)
+        self.loop.close()
+
+    def test_queue_loop_not_running(self):
+        with self.assertWarns(DeprecationWarning):
+            asyncio.Queue()
 
 
 if __name__ == '__main__':

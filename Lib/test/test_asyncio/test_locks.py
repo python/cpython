@@ -305,12 +305,6 @@ class LockTests(test_utils.TestCase):
 
         self.loop.run_until_complete(f())
 
-    def test_lock_loop_not_running(self):
-        loop = asyncio.new_event_loop()
-        loop.stop()
-        with self.assertWarns(DeprecationWarning):
-            q = asyncio.Lock(loop=loop)
-
 
 class EventTests(test_utils.TestCase):
 
@@ -444,12 +438,6 @@ class EventTests(test_utils.TestCase):
 
         self.assertTrue(t.done())
         self.assertTrue(t.result())
-
-    def test_event_loop_not_running(self):
-        loop = asyncio.new_event_loop()
-        loop.stop()
-        with self.assertWarns(DeprecationWarning):
-            q = asyncio.Event(loop=loop)
 
 
 class ConditionTests(test_utils.TestCase):
@@ -815,12 +803,6 @@ class ConditionTests(test_utils.TestCase):
         with self.assertWarns(DeprecationWarning):
             loop.run_until_complete(task_timeout())
 
-    def test_condition_loop_not_running(self):
-        loop = asyncio.new_event_loop()
-        loop.stop()
-        with self.assertWarns(DeprecationWarning):
-            q = asyncio.Condition(loop=loop)
-
 
 class SemaphoreTests(test_utils.TestCase):
 
@@ -1017,11 +999,31 @@ class SemaphoreTests(test_utils.TestCase):
         sem.release()
         self.assertFalse(sem.locked())
 
-    def test_semaphore_loop_not_running(self):
-        loop = asyncio.new_event_loop()
-        loop.stop()
+
+class LockLoopTests:
+    def setUp(self):
+        self.loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(self.loop)
+
+    def tearDown(self):
+        asyncio.set_event_loop(None)
+        self.loop.close()
+
+    def test_lock_loop_not_running(self):
         with self.assertWarns(DeprecationWarning):
-            q = asyncio.Semaphore(loop=loop)
+            asyncio.Lock()
+
+    def test_event_loop_not_running(self):
+        with self.assertWarns(DeprecationWarning):
+            asyncio.Event()
+
+    def test_condition_loop_not_running(self):
+        with self.assertWarns(DeprecationWarning):
+            asyncio.Condition()
+
+    def test_semaphore_loop_not_running(self):
+        with self.assertWarns(DeprecationWarning):
+            asyncio.Semaphore()
 
 
 if __name__ == '__main__':
