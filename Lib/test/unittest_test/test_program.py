@@ -4,7 +4,7 @@ import os
 import sys
 import subprocess
 from test import support
-import Lib.test.unittest_test as unittest
+import Lib.test.unittest_test.test
 import unittest.test
 
 

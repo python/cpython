@@ -5,7 +5,7 @@ test.support.import_module('_sqlite3')
 
 import unittest
 import sqlite3
-from sqlite3.test import (dbapi, types, userfunctions,
+from Lib.test.sqlite3_test.test import (dbapi, types, userfunctions,
                                 factory, transactions, hooks, regression,
                                 dump, backup)
 
