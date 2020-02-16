@@ -2377,11 +2377,17 @@ abstract_issubclass(PyObject *derived, PyObject *cls)
     PyObject *bases = NULL;
     Py_ssize_t i, n;
     int r = 0;
+    int derived_ref = 0;
 
     while (1) {
-        if (derived == cls)
+        if (derived == cls) {
+            if (derived_ref)
+                Py_DECREF(derived);
             return 1;
+        }
         bases = abstract_get_bases(derived);
+        if (derived_ref)
+            Py_DECREF(derived);
         if (bases == NULL) {
             if (PyErr_Occurred())
                 return -1;
@@ -2395,6 +2401,8 @@ abstract_issubclass(PyObject *derived, PyObject *cls)
         /* Avoid recursivity in the single inheritance case */
         if (n == 1) {
             derived = PyTuple_GET_ITEM(bases, 0);
+            Py_INCREF(derived);
+            derived_ref = 1;
             Py_DECREF(bases);
             continue;
         }
