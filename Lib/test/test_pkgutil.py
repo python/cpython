@@ -229,6 +229,8 @@ class PkgutilTests(unittest.TestCase):
             ('logging.handlers:SysLogHandler.NO_SUCH_VALUE', AttributeError),
             ('logging.handlers.SysLogHandler.NO_SUCH_VALUE', AttributeError),
             ('ZeroDivisionError', ImportError),
+            ('os.path.9abc', ValueError),
+            ('9abc', ValueError),
         )
 
         # add some Unicode package names to the mix.
@@ -250,6 +252,9 @@ class PkgutilTests(unittest.TestCase):
             mod = importlib.import_module(uw)
             success_cases += (uw, mod),
             failure_cases += (uw[:-1], ImportError),
+
+        # add an example with a Unicode digit at the start
+        failure_cases += ('\u0966\u0935\u092e\u0938', ValueError),
 
         for s, expected in success_cases:
             with self.subTest(s=s):
