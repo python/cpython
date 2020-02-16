@@ -12,7 +12,7 @@ from distutils.command.register import register
 from distutils.errors import DistutilsSetupError
 from distutils.log import INFO
 
-from distutils.tests.test_config import BasePyPIRCCommandTestCase
+from Lib.test.distutils_tests.test_config import BasePyPIRCCommandTestCase
 
 try:
     import docutils

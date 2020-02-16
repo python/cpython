@@ -7,7 +7,7 @@ from test.support import run_unittest, requires_zlib
 
 from distutils.core import Distribution
 from distutils.command.bdist_rpm import bdist_rpm
-from distutils.tests import support
+from Lib.test.distutils_tests import support
 from distutils.spawn import find_executable
 
 SETUP_PY = """\

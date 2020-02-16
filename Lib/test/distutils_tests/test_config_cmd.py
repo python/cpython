@@ -5,7 +5,7 @@ import sys
 from test.support import run_unittest, missing_compiler_executable
 
 from distutils.command.config import dump_file, config
-from distutils.tests import support
+from Lib.test.distutils_tests import support
 from distutils import log
 
 class ConfigTestCase(support.LoggingSilencer,

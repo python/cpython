@@ -5,7 +5,7 @@ import unittest
 from test.support import run_unittest
 
 from distutils.command.check import check, HAS_DOCUTILS
-from distutils.tests import support
+from Lib.test.distutils_tests import support
 from distutils.errors import DistutilsSetupError
 
 try:

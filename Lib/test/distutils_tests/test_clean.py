@@ -3,7 +3,7 @@ import os
 import unittest
 
 from distutils.command.clean import clean
-from distutils.tests import support
+from Lib.test.distutils_tests import support
 from test.support import run_unittest
 
 class cleanTestCase(support.TempdirManager,

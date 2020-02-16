@@ -8,7 +8,7 @@ from test.support import run_unittest
 
 from distutils.core import Distribution
 from distutils.command.bdist_dumb import bdist_dumb
-from distutils.tests import support
+from Lib.test.distutils_tests import support
 
 SETUP_PY = """\
 from distutils.core import setup

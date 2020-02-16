@@ -23,7 +23,7 @@ except ImportError:
 
 from distutils.command.sdist import sdist, show_formats
 from distutils.core import Distribution
-from distutils.tests.test_config import BasePyPIRCCommandTestCase
+from Lib.test.distutils_tests.test_config import BasePyPIRCCommandTestCase
 from distutils.errors import DistutilsOptionError
 from distutils.spawn import find_executable
 from distutils.log import WARN

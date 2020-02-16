@@ -5,7 +5,7 @@ import sys
 from test.support import run_unittest
 
 from distutils.command.build import build
-from distutils.tests import support
+from Lib.test.distutils_tests import support
 from sysconfig import get_platform
 
 class BuildTestCase(support.TempdirManager,

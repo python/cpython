@@ -10,7 +10,7 @@ from distutils.cygwinccompiler import (check_config_h,
                                        CONFIG_H_OK, CONFIG_H_NOTOK,
                                        CONFIG_H_UNCERTAIN, get_versions,
                                        get_msvcr)
-from distutils.tests import support
+from Lib.test.distutils_tests import support
 
 class FakePopen(object):
     test_class = None

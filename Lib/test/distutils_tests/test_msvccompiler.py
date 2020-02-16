@@ -4,7 +4,7 @@ import unittest
 import os
 
 from distutils.errors import DistutilsPlatformError
-from distutils.tests import support
+from Lib.test.distutils_tests import support
 from test.support import run_unittest
 
 

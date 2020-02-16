@@ -12,7 +12,7 @@ from distutils.core import Distribution
 from distutils.errors import DistutilsError
 from distutils.log import ERROR, INFO
 
-from distutils.tests.test_config import PYPIRC, BasePyPIRCCommandTestCase
+from Lib.test.distutils_tests.test_config import PYPIRC, BasePyPIRCCommandTestCase
 
 PYPIRC_LONG_PASSWORD = """\
 [distutils]

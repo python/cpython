@@ -10,7 +10,7 @@ from distutils.dir_util import (mkpath, remove_tree, create_tree, copy_tree,
                                 ensure_relative)
 
 from distutils import log
-from distutils.tests import support
+from Lib.test.distutils_tests import support
 from test.support import run_unittest
 
 

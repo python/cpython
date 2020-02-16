@@ -8,7 +8,7 @@ import sys
 import test.support
 from test.support import captured_stdout, run_unittest
 import unittest
-from distutils.tests import support
+from Lib.test.distutils_tests import support
 from distutils import log
 
 # setup script that uses __file__

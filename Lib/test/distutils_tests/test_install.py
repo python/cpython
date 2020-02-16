@@ -16,7 +16,7 @@ from distutils.core import Distribution
 from distutils.errors import DistutilsOptionError
 from distutils.extension import Extension
 
-from distutils.tests import support
+from Lib.test.distutils_tests import support
 from test import support as test_support
 
 

@@ -10,7 +10,7 @@ from distutils import filelist
 
 import test.support
 from test.support import captured_stdout, run_unittest
-from distutils.tests import support
+from Lib.test.distutils_tests import support
 
 MANIFEST_IN = """\
 include ok

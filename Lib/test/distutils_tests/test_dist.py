@@ -14,7 +14,7 @@ from distutils.cmd import Command
 from test.support import (
      TESTFN, captured_stdout, captured_stderr, run_unittest
 )
-from distutils.tests import support
+from Lib.test.distutils_tests import support
 from distutils import log
 
 
@@ -69,7 +69,7 @@ class DistributionTestCase(support.LoggingSilencer,
         self.assertEqual(d.get_command_packages(), ["distutils.command"])
 
     def test_command_packages_cmdline(self):
-        from distutils.tests.test_dist import test_dist
+        from Lib.test.distutils_tests.test_dist import test_dist
         sys.argv.extend(["--command-packages",
                          "foo.bar,distutils.tests",
                          "test_dist",

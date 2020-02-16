@@ -9,7 +9,7 @@ import unittest
 
 from distutils import sysconfig
 from distutils.ccompiler import get_default_compiler
-from distutils.tests import support
+from Lib.test.distutils_tests import support
 from test.support import TESTFN, run_unittest, check_warnings, swap_item
 
 class SysconfigTestCase(support.EnvironGuard, unittest.TestCase):

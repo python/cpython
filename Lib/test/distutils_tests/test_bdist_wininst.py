@@ -5,7 +5,7 @@ import unittest
 from test.support import run_unittest, check_warnings
 
 from distutils.command.bdist_wininst import bdist_wininst
-from distutils.tests import support
+from Lib.test.distutils_tests import support
 
 @unittest.skipIf(sys.platform == 'win32' and platform.machine() == 'ARM64',
     'bdist_wininst is not supported in this install')

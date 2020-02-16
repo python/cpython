@@ -2,7 +2,7 @@
 import sys
 import unittest
 from test.support import run_unittest, check_warnings
-from distutils.tests import support
+from Lib.test.distutils_tests import support
 
 
 @unittest.skipUnless(sys.platform == 'win32', 'these tests require Windows')

@@ -6,7 +6,7 @@ import unittest
 from distutils.command.install_scripts import install_scripts
 from distutils.core import Distribution
 
-from distutils.tests import support
+from Lib.test.distutils_tests import support
 from test.support import run_unittest
 
 

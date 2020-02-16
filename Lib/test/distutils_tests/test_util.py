@@ -14,7 +14,7 @@ from distutils.util import (get_platform, convert_path, change_root,
 from distutils import util # used to patch _environ_checked
 from distutils.sysconfig import get_config_vars
 from distutils import sysconfig
-from distutils.tests import support
+from Lib.test.distutils_tests import support
 import _osx_support
 
 class UtilTestCase(support.EnvironGuard, unittest.TestCase):

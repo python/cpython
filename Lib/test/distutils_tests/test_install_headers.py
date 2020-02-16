@@ -3,7 +3,7 @@ import os
 import unittest
 
 from distutils.command.install_headers import install_headers
-from distutils.tests import support
+from Lib.test.distutils_tests import support
 from test.support import run_unittest
 
 class InstallHeadersTestCase(support.TempdirManager,

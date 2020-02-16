@@ -11,7 +11,7 @@ from distutils.spawn import find_executable
 from distutils.spawn import _nt_quote_args
 from distutils.spawn import spawn
 from distutils.errors import DistutilsExecError
-from distutils.tests import support
+from Lib.test.distutils_tests import support
 
 class SpawnTestCase(support.TempdirManager,
                     support.LoggingSilencer,

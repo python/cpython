@@ -6,7 +6,7 @@ import unittest
 
 from distutils.command.install_lib import install_lib
 from distutils.extension import Extension
-from distutils.tests import support
+from Lib.test.distutils_tests import support
 from distutils.errors import DistutilsOptionError
 from test.support import run_unittest
 

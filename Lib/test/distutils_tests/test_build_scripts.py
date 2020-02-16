@@ -7,7 +7,7 @@ from distutils.command.build_scripts import build_scripts
 from distutils.core import Distribution
 from distutils import sysconfig
 
-from distutils.tests import support
+from Lib.test.distutils_tests import support
 from test.support import run_unittest
 
 

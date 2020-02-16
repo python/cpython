@@ -5,7 +5,7 @@ from test.support import run_unittest
 import warnings
 
 from distutils.command.bdist import bdist
-from distutils.tests import support
+from Lib.test.distutils_tests import support
 
 
 class BuildTestCase(support.TempdirManager,

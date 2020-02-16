@@ -12,7 +12,7 @@ from distutils.archive_util import (check_archive_formats, make_tarball,
                                     make_zipfile, make_archive,
                                     ARCHIVE_FORMATS)
 from distutils.spawn import find_executable, spawn
-from distutils.tests import support
+from Lib.test.distutils_tests import support
 from test.support import check_warnings, run_unittest, patch, change_cwd
 
 try:
