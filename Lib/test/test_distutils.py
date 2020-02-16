@@ -5,7 +5,7 @@ the test_suite() function there returns a test suite that's ready to
 be run.
 """
 
-import distutils.tests
+import Lib.test.distutils_tests
 import test.support
 
 

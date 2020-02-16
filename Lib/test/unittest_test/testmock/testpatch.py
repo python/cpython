@@ -1916,7 +1916,8 @@ class PatchTest(unittest.TestCase):
         # This exercises the AttributeError branch of _dot_lookup.
 
         # make sure it's there
-        import unittest.test.testmock.support
+        import Lib.test.unittest_test.testmock.support
+
         # now make sure it's not:
         with patch.dict('sys.modules'):
             del sys.modules['unittest.test.testmock.support']
