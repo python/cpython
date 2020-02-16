@@ -132,10 +132,11 @@ ConfigParser -- responsible for parsing a list of
     set(section, option, value)
         Set the given option.
 
-    write(fp, space_around_delimiters=True)
+    write(fp, space_around_delimiters=True, indent='')
         Write the configuration state in .ini format. If
         `space_around_delimiters' is True (the default), delimiters
         between keys and values are surrounded by spaces.
+        If `indent' is empty (the default), the keys won't be indented.
 """
 
 from collections.abc import MutableMapping
