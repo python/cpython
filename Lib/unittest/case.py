@@ -614,6 +614,7 @@ class TestCase(object):
         try:
             addDuration = result.addDuration
         except AttributeError:
+            import pdb; pdb.set_trace()
             warnings.warn("TestResult has no addDuration method",
                           RuntimeWarning)
         else:

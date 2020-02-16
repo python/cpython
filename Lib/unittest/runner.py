@@ -186,8 +186,8 @@ class TextTestRunner(object):
                 continue
             self.stream.writeln("%-10s %s" % ("%.3fs" % elapsed, test))
         if hidden:
-            self.stream.writeln(
-                "\n(0.000 durations hidden.  Use -v to show these durations.)")
+            self.stream.writeln("\n(durations < 0.001s were hidden; "
+                                "use -v to show these durations)")
         else:
             self.stream.writeln("")
 
