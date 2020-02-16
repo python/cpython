@@ -1,17 +1,15 @@
 import Lib.test.unittest_test as unittest
-import unittest.test
-
 from test import support
 
 
 def test_main():
     # used by regrtest
-    support.run_unittest(unittest.test.suite())
+    support.run_unittest(unittest.suite())
     support.reap_children()
 
 def load_tests(*_):
     # used by unittest
-    return unittest.test.suite()
+    return unittest.suite()
 
 if __name__ == "__main__":
     test_main()
