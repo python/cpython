@@ -17,9 +17,9 @@ import sys
 import logging
 
 # Local imports
-from .. import pytree
-from .. import pgen2
-from ..pgen2 import driver
+from lib2to3 import pytree
+from lib2to3 import pgen2
+from lib2to3.pgen2 import driver
 
 logging.basicConfig()
 
