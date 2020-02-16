@@ -892,8 +892,14 @@ builtin_eval_impl(PyObject *module, PyObject *source, PyObject *globals,
                   PyObject *locals)
 /*[clinic end generated code: output=0a0824aa70093116 input=11ee718a8640e527]*/
 {
-    PyObject *result, *source_copy;
+    PyObject *result, *source_copy = NULL, *locals_ref = NULL;
     const char *str;
+
+    // PEP 558: "locals_ref" is a quick fix to adapt this function to
+    // PyLocals_Get() returning a new reference, whereas PyEval_GetLocals()
+    // returned a borrowed reference. The proper fix will be to factor out
+    // a common set up function shared between eval() and exec() that means
+    // the main function body can always just call Py_DECREF(locals) at the end.
 
     if (locals != Py_None && !PyMapping_Check(locals)) {
         PyErr_SetString(PyExc_TypeError, "locals must be a mapping");
@@ -908,49 +914,61 @@ builtin_eval_impl(PyObject *module, PyObject *source, PyObject *globals,
     if (globals == Py_None) {
         globals = PyEval_GetGlobals();
         if (locals == Py_None) {
-            // TODO: Consider if this should use PyLocals_Get() instead
-            locals = PyEval_GetLocals();
+            locals = PyLocals_Get();
             if (locals == NULL)
                 return NULL;
+            // This function owns the locals ref, need to decref on exit
+            locals_ref = locals;
         }
     }
-    else if (locals == Py_None)
+    else if (locals == Py_None) {
         locals = globals;
+    }
 
     if (globals == NULL || locals == NULL) {
         PyErr_SetString(PyExc_TypeError,
             "eval must be given globals and locals "
             "when called without a frame");
+        Py_XDECREF(locals_ref);
         return NULL;
     }
 
     if (_PyDict_GetItemIdWithError(globals, &PyId___builtins__) == NULL) {
         if (_PyDict_SetItemId(globals, &PyId___builtins__,
-                              PyEval_GetBuiltins()) != 0)
+                              PyEval_GetBuiltins()) != 0) {
+            Py_XDECREF(locals_ref);
             return NULL;
+        }
     }
     else if (PyErr_Occurred()) {
+        Py_XDECREF(locals_ref);
         return NULL;
     }
 
     if (PyCode_Check(source)) {
         if (PySys_Audit("exec", "O", source) < 0) {
+            Py_XDECREF(locals_ref);
             return NULL;
         }
 
         if (PyCode_GetNumFree((PyCodeObject *)source) > 0) {
             PyErr_SetString(PyExc_TypeError,
                 "code object passed to eval() may not contain free variables");
+            Py_XDECREF(locals_ref);
             return NULL;
         }
-        return PyEval_EvalCode(source, globals, locals);
+        result = PyEval_EvalCode(source, globals, locals);
+        Py_XDECREF(locals_ref);
+        return result;
     }
 
     PyCompilerFlags cf = _PyCompilerFlags_INIT;
     cf.cf_flags = PyCF_SOURCE_IS_UTF8;
     str = _Py_SourceAsString(source, "eval", "string, bytes or code", &cf, &source_copy);
-    if (str == NULL)
+    if (str == NULL) {
+        Py_XDECREF(locals_ref);
         return NULL;
+    }
 
     while (*str == ' ' || *str == '\t')
         str++;
@@ -958,6 +976,7 @@ builtin_eval_impl(PyObject *module, PyObject *source, PyObject *globals,
     (void)PyEval_MergeCompilerFlags(&cf);
     result = PyRun_StringFlags(str, Py_eval_input, globals, locals, &cf);
     Py_XDECREF(source_copy);
+    Py_XDECREF(locals_ref);
     return result;
 }
 
@@ -983,47 +1002,61 @@ builtin_exec_impl(PyObject *module, PyObject *source, PyObject *globals,
                   PyObject *locals)
 /*[clinic end generated code: output=3c90efc6ab68ef5d input=01ca3e1c01692829]*/
 {
-    PyObject *v;
+    PyObject *v, *locals_ref = NULL;
+
+    // (ncoghlan) There is an annoying level of gratuitous differences between
+    // the exec setup code and the eval setup code, when ideally they would be
+    // sharing a common helper function at least as far as the call to
+    // PyCode_Check...
 
     if (globals == Py_None) {
         globals = PyEval_GetGlobals();
         if (locals == Py_None) {
-            // TODO: Consider if this should use PyLocals_Get() instead
-            locals = PyEval_GetLocals();
+            locals = PyLocals_Get();
             if (locals == NULL)
                 return NULL;
+            // This function owns the locals ref, need to decref on exit
+            locals_ref = locals;
         }
         if (!globals || !locals) {
             PyErr_SetString(PyExc_SystemError,
                             "globals and locals cannot be NULL");
+            Py_XDECREF(locals_ref);
             return NULL;
         }
     }
-    else if (locals == Py_None)
+    else if (locals == Py_None) {
         locals = globals;
+    }
 
     if (!PyDict_Check(globals)) {
         PyErr_Format(PyExc_TypeError, "exec() globals must be a dict, not %.100s",
                      Py_TYPE(globals)->tp_name);
+        Py_XDECREF(locals_ref);
         return NULL;
     }
     if (!PyMapping_Check(locals)) {
         PyErr_Format(PyExc_TypeError,
             "locals must be a mapping or None, not %.100s",
             Py_TYPE(locals)->tp_name);
+        Py_XDECREF(locals_ref);
         return NULL;
     }
     if (_PyDict_GetItemIdWithError(globals, &PyId___builtins__) == NULL) {
         if (_PyDict_SetItemId(globals, &PyId___builtins__,
-                              PyEval_GetBuiltins()) != 0)
+                              PyEval_GetBuiltins()) != 0) {
+            Py_XDECREF(locals_ref);
             return NULL;
+        }
     }
     else if (PyErr_Occurred()) {
+        Py_XDECREF(locals_ref);
         return NULL;
     }
 
     if (PyCode_Check(source)) {
         if (PySys_Audit("exec", "O", source) < 0) {
+            Py_XDECREF(locals_ref);
             return NULL;
         }
 
@@ -1031,6 +1064,7 @@ builtin_exec_impl(PyObject *module, PyObject *source, PyObject *globals,
             PyErr_SetString(PyExc_TypeError,
                 "code object passed to exec() may not "
                 "contain free variables");
+            Py_XDECREF(locals_ref);
             return NULL;
         }
         v = PyEval_EvalCode(source, globals, locals);
@@ -1043,8 +1077,10 @@ builtin_exec_impl(PyObject *module, PyObject *source, PyObject *globals,
         str = _Py_SourceAsString(source, "exec",
                                        "string, bytes or code", &cf,
                                        &source_copy);
-        if (str == NULL)
+        if (str == NULL) {
+            Py_XDECREF(locals_ref);
             return NULL;
+        }
         if (PyEval_MergeCompilerFlags(&cf))
             v = PyRun_StringFlags(str, Py_file_input, globals,
                                   locals, &cf);
@@ -1052,6 +1088,7 @@ builtin_exec_impl(PyObject *module, PyObject *source, PyObject *globals,
             v = PyRun_String(str, Py_file_input, globals, locals);
         Py_XDECREF(source_copy);
     }
+    Py_XDECREF(locals_ref);
     if (v == NULL)
         return NULL;
     Py_DECREF(v);
