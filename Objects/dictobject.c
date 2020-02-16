@@ -608,7 +608,7 @@ new_dict(PyDictKeysObject *keys, PyObject **values)
     if (numfree) {
         mp = free_list[--numfree];
         assert (mp != NULL);
-        assert (Py_IS_TYPE(mp,  &PyDict_Type));
+        assert (Py_IS_TYPE(mp, &PyDict_Type));
         _Py_NewReference((PyObject *)mp);
     }
     else {
