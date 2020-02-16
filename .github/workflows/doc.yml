@@ -33,6 +33,10 @@ jobs:
       run: make -C Doc/ PYTHON=../python venv
     - name: 'Build documentation'
       run: xvfb-run make -C Doc/ PYTHON=../python SPHINXOPTS="-q -W -j4" doctest suspicious html
+    - name: 'Build documentation with warnings'
+      uses: ammaraskar/sphinx-action@master
+      with:
+        docs-folder: "Doc/"
     - name: 'Upload'
       uses: actions/upload-artifact@v1
       with:
