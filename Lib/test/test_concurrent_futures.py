@@ -379,7 +379,7 @@ class ThreadPoolShutdownTest(ThreadPoolMixin, ExecutorShutdownTest, BaseTestCase
         for t in threads:
             t.join()
 
-        # Make sure the results where all computed before the
+        # Make sure the results were all computed before the
         # executor got shutdown.
         assert all([r == abs(v) for r, v in zip(res, range(-5, 5))])
 
@@ -393,7 +393,7 @@ class ThreadPoolShutdownTest(ThreadPoolMixin, ExecutorShutdownTest, BaseTestCase
         for t in threads:
             t.join()
 
-        # Make sure the results where all computed before the
+        # Make sure the results were all computed before the
         # executor got shutdown.
         assert all([r == abs(v) for r, v in zip(res, range(-5, 5))])
 
@@ -462,7 +462,7 @@ class ProcessPoolShutdownTest(ExecutorShutdownTest):
             p.join()
         call_queue.join_thread()
 
-        # Make sure the results where all computed before the
+        # Make sure the results were all computed before the
         # executor got shutdown.
         assert all([r == abs(v) for r, v in zip(res, range(-5, 5))])
 
@@ -483,7 +483,7 @@ class ProcessPoolShutdownTest(ExecutorShutdownTest):
             p.join()
         call_queue.join_thread()
 
-        # Make sure the results where all computed before the executor got
+        # Make sure the results were all computed before the executor got
         # shutdown.
         assert all([r == abs(v) for r, v in zip(res, range(-5, 5))])
 
