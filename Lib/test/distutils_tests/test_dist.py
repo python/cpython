@@ -71,14 +71,14 @@ class DistributionTestCase(support.LoggingSilencer,
     def test_command_packages_cmdline(self):
         from Lib.test.distutils_tests.test_dist import test_dist
         sys.argv.extend(["--command-packages",
-                         "foo.bar,distutils.tests",
+                         "foo.bar,Lib.test.distutils_tests",
                          "test_dist",
                          "-Ssometext",
                          ])
         d = self.create_distribution()
         # let's actually try to load our test command:
         self.assertEqual(d.get_command_packages(),
-                         ["distutils.command", "foo.bar", "distutils.tests"])
+                         ["distutils.command", "foo.bar", "Lib.test.distutils_tests"])
         cmd = d.get_command_obj("test_dist")
         self.assertIsInstance(cmd, test_dist)
         self.assertEqual(cmd.sample_option, "sometext")

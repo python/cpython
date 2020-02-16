@@ -1257,7 +1257,7 @@ def buildPython():
     # fix _sysconfigdata
     #
     # TODO: make this more robust!  test_sysconfig_module of
-    # distutils.tests.test_sysconfig.SysconfigTestCase tests that
+    # Lib.test.distutils_tests.test_sysconfig.SysconfigTestCase tests that
     # the output from get_config_var in both sysconfig and
     # distutils.sysconfig is exactly the same for both CFLAGS and
     # LDFLAGS.  The fixing up is now complicated by the pretty
