@@ -1173,7 +1173,7 @@ PyFrame_LocalsToFast(PyFrameObject *f, int clear)
     PyErr_SetString(
         PyExc_RuntimeError,
         "PyFrame_LocalsToFast is no longer supported. "
-        "Use PyFrame_GetLocals(), PyFrame_GetLocalsSnapshot(), "
+        "Use PyFrame_GetLocals(), PyFrame_GetLocalsCopy(), "
         "or PyFrame_GetLocalsView() instead."
     );
 }

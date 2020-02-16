@@ -42,23 +42,27 @@ PyAPI_FUNC(struct _frame *) PyEval_GetFrame(void);
 /* Access the frame locals mapping in an implementation independent way */
 
 /* PyLocals_Get() is equivalent to the Python locals() builtin.
- * It returns a read/write reference or a fresh snapshot depending on the scope
+ * It returns a read/write reference or a shallow copy depending on the scope
  * of the active frame.
  */
 // TODO: Add API tests for this
 PyAPI_FUNC(PyObject *) PyLocals_Get();
 
-/* PyLocals_GetSnaphot() returns a fresh snapshot of the active local namespace */
+/* PyLocals_GetCopy() returns a fresh shallow copy of the active local namespace */
 // TODO: Implement this, and add API tests
-PyAPI_FUNC(PyObject *) PyLocals_GetSnapshot();
+PyAPI_FUNC(PyObject *) PyLocals_GetCopy();
 
 /* PyLocals_GetView() returns a read-only proxy for the active local namespace */
 // TODO: Implement this, and add API tests
 PyAPI_FUNC(PyObject *) PyLocals_GetView();
 
-/* Returns true if PyLocals_Get() returns a snapshot in the active scope */
+/* PyLocals_RefreshViews() updates previously created locals views */
 // TODO: Implement this, and add API tests
-PyAPI_FUNC(int) PyLocals_IsSnapshot();
+PyAPI_FUNC(int) PyLocals_RefreshViews();
+
+/* Returns true if PyLocals_Get() returns a shallow copy in the active scope */
+// TODO: Implement this, and add API tests
+PyAPI_FUNC(int) PyLocals_GetReturnsCopy();
 #endif
 
 
