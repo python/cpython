@@ -140,7 +140,7 @@ Number-theoretic and representation functions
 
    Return the least common multiple of integers *a* and *b*.  The value of
    ``lcm(a, b)`` is the smallest nonnegative integer that is a multiple of
-   both *a* and *b*.  If either *a* or *b* is zero then ``lcm(a, b)`` is zero.
+   nonzero *a* and *b*.  If either *a* or *b* is zero then ``lcm(a, b)`` is zero.
 
    .. versionadded:: 3.9
 
