@@ -48,9 +48,6 @@
     <ClInclude Include="..\Include\boolobject.h">
       <Filter>Include</Filter>
     </ClInclude>
-    <ClInclude Include="..\Include\bytes_methods.h">
-      <Filter>Include</Filter>
-    </ClInclude>
     <ClInclude Include="..\Include\bytearrayobject.h">
       <Filter>Include</Filter>
     </ClInclude>
@@ -84,6 +81,12 @@
     <ClInclude Include="..\Include\cpython\abstract.h">
       <Filter>Include</Filter>
     </ClInclude>
+    <ClInclude Include="..\Include\cpython\bytearrayobject.h">
+      <Filter>Include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Include\cpython\bytesobject.h">
+      <Filter>Include</Filter>
+    </ClInclude>
     <ClInclude Include="..\Include\cpython\ceval.h">
       <Filter>Include</Filter>
     </ClInclude>
@@ -93,10 +96,16 @@
     <ClInclude Include="..\Include\cpython\fileobject.h">
       <Filter>Include</Filter>
     </ClInclude>
+    <ClInclude Include="..\Include\cpython\fileutils.h">
+      <Filter>Include</Filter>
+    </ClInclude>
     <ClInclude Include="..\Include\cpython\import.h">
       <Filter>Include</Filter>
     </ClInclude>
     <ClInclude Include="..\Include\cpython\initconfig.h">
+      <Filter>Include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Include\cpython\listobject.h">
       <Filter>Include</Filter>
     </ClInclude>
     <ClInclude Include="..\Include\cpython\object.h">
@@ -183,6 +192,9 @@
     <ClInclude Include="..\Include\internal\pycore_atomic.h">
       <Filter>Include</Filter>
     </ClInclude>
+    <ClInclude Include="..\Include\internal\pycore_bytes_methods.h">
+      <Filter>Include</Filter>
+    </ClInclude>
     <ClInclude Include="..\Include\internal\pycore_call.h">
       <Filter>Include</Filter>
     </ClInclude>
@@ -196,6 +208,9 @@
       <Filter>Include</Filter>
     </ClInclude>
     <ClInclude Include="..\Include\internal\pycore_context.h">
+      <Filter>Include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Include\internal\pycore_dtoa.h">
       <Filter>Include</Filter>
     </ClInclude>
     <ClInclude Include="..\Include\internal\pycore_fileutils.h">
@@ -355,9 +370,6 @@
       <Filter>Include</Filter>
     </ClInclude>
     <ClInclude Include="..\Include\pystrhex.h">
-      <Filter>Include</Filter>
-    </ClInclude>
-    <ClInclude Include="..\Include\dtoa.h">
       <Filter>Include</Filter>
     </ClInclude>
     <ClInclude Include="..\Include\Python-ast.h">

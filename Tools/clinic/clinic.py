@@ -1182,14 +1182,14 @@ class CLanguage(Language):
             lines = [self.group_to_variable_name(g) + " = 1;" for g in group_ids]
             lines = "\n".join(lines)
 
-            s = """
+            s = """\
     case {count}:
         if (!PyArg_ParseTuple(args, "{format_units}:{name}", {parse_arguments})) {{
             goto exit;
         }}
         {group_booleans}
         break;
-"""[1:]
+"""
             s = linear_format(s, group_booleans=lines)
             s = s.format_map(d)
             add(s)
@@ -3585,17 +3585,14 @@ class self_converter(CConverter):
         cls = self.function.cls
 
         if ((kind in (METHOD_NEW, METHOD_INIT)) and cls and cls.typedef):
+            type_object = self.function.cls.type_object
             if kind == METHOD_NEW:
-                passed_in_type = self.name
+                type_check = '({} == {})'.format(self.name, type_object)
             else:
-                passed_in_type = 'Py_TYPE({})'.format(self.name)
+                type_check = 'Py_IS_TYPE({}, {})'.format(self.name, type_object)
 
-            line = '({passed_in_type} == {type_object}) &&\n        '
-            d = {
-                'type_object': self.function.cls.type_object,
-                'passed_in_type': passed_in_type
-                }
-            template_dict['self_type_check'] = line.format_map(d)
+            line = '{} &&\n        '.format(type_check)
+            template_dict['self_type_check'] = line
 
 
 

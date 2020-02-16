@@ -92,7 +92,7 @@ call_error_callback(PyObject *errors, PyObject *exc)
     if (cb == NULL)
         return NULL;
 
-    r = _PyObject_CallOneArg(cb, exc);
+    r = PyObject_CallOneArg(cb, exc);
     Py_DECREF(cb);
     return r;
 }
@@ -1450,7 +1450,7 @@ mbstreamreader_iread(MultibyteStreamReaderObject *self,
             PyErr_Format(PyExc_TypeError,
                          "stream function returned a "
                          "non-bytes object (%.100s)",
-                         cres->ob_type->tp_name);
+                         Py_TYPE(cres)->tp_name);
             goto errorexit;
         }
 

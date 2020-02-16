@@ -23,17 +23,17 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v1
-    - uses: actions/setup-python@v1
-      with:
-        python-version: '3.7'
-        architecture: 'x64'
+    - name: 'Install Dependencies'
+      run: sudo ./.github/workflows/posix-deps-apt.sh && sudo apt-get install wamerican
+    - name: 'Configure CPython'
+      run: ./configure --with-pydebug
+    - name: 'Build CPython'
+      run: make -s -j4
     - name: 'Install build dependencies'
-      run: python -m pip install sphinx==2.2.0 blurb python-docs-theme
+      run: make -C Doc/ PYTHON=../python venv
     - name: 'Build documentation'
-      run: |
-        cd Doc
-        make check suspicious html PYTHON=python
-    - name: Upload
+      run: xvfb-run make -C Doc/ PYTHON=../python SPHINXOPTS="-q -W -j4" doctest suspicious html
+    - name: 'Upload'
       uses: actions/upload-artifact@v1
       with:
         name: doc-html

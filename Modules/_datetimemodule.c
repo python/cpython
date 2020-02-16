@@ -1810,7 +1810,7 @@ checked_divmod(PyObject *a, PyObject *b)
         if (!PyTuple_Check(result)) {
             PyErr_Format(PyExc_TypeError,
                          "divmod() returned non-tuple (type %.200s)",
-                         result->ob_type->tp_name);
+                         Py_TYPE(result)->tp_name);
             Py_DECREF(result);
             return NULL;
         }
@@ -2489,7 +2489,6 @@ delta_new(PyTypeObject *type, PyObject *args, PyObject *kw)
         int x_is_odd;
         PyObject *temp;
 
-        whole_us = round(leftover_us);
         if (fabs(whole_us - leftover_us) == 0.5) {
             /* We're exactly halfway between two integers.  In order
              * to do round-half-to-even, we must determine whether x

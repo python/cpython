@@ -221,8 +221,9 @@ _sharedexception_bind(PyObject *exctype, PyObject *exc, PyObject *tb)
     if (err->name == NULL) {
         if (PyErr_ExceptionMatches(PyExc_MemoryError)) {
             failure = "out of memory copying exception type name";
+        } else {
+            failure = "unable to encode and copy exception type name";
         }
-        failure = "unable to encode and copy exception type name";
         goto finally;
     }
 
@@ -237,8 +238,9 @@ _sharedexception_bind(PyObject *exctype, PyObject *exc, PyObject *tb)
         if (err->msg == NULL) {
             if (PyErr_ExceptionMatches(PyExc_MemoryError)) {
                 failure = "out of memory copying exception message";
+            } else {
+                failure = "unable to encode and copy exception message";
             }
-            failure = "unable to encode and copy exception message";
             goto finally;
         }
     }
@@ -1426,7 +1428,7 @@ channel_id_converter(PyObject *arg, void *ptr)
     else {
         PyErr_Format(PyExc_TypeError,
                      "channel ID must be an int, got %.100s",
-                     arg->ob_type->tp_name);
+                     Py_TYPE(arg)->tp_name);
         return 0;
     }
     *(int64_t *)ptr = cid;

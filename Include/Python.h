@@ -152,7 +152,6 @@
 #include "pyctype.h"
 #include "pystrtod.h"
 #include "pystrcmp.h"
-#include "dtoa.h"
 #include "fileutils.h"
 #include "pyfpe.h"
 #include "tracemalloc.h"

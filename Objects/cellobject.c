@@ -112,7 +112,7 @@ cell_repr(PyCellObject *op)
         return PyUnicode_FromFormat("<cell at %p: empty>", op);
 
     return PyUnicode_FromFormat("<cell at %p: %.80s object at %p>",
-                               op, op->ob_ref->ob_type->tp_name,
+                               op, Py_TYPE(op->ob_ref)->tp_name,
                                op->ob_ref);
 }
 

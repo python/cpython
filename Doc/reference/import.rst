@@ -202,6 +202,8 @@ named module, the two module objects will *not* be the same. By contrast,
 reinitialise the module contents by rerunning the module's code.
 
 
+.. _finders-and-loaders:
+
 Finders and loaders
 -------------------
 
@@ -855,7 +857,7 @@ module.  ``find_spec()`` returns a fully populated spec for the module.
 This spec will always have "loader" set (with one exception).
 
 To indicate to the import machinery that the spec represents a namespace
-:term:`portion`. the path entry finder sets "loader" on the spec to
+:term:`portion`, the path entry finder sets "loader" on the spec to
 ``None`` and "submodule_search_locations" to a list containing the
 portion.
 
