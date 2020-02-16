@@ -1378,11 +1378,10 @@ Basic customization
    rather, :meth:`__lt__` and :meth:`__gt__` are each other's reflection,
    :meth:`__le__` and :meth:`__ge__` are each other's reflection, and
    :meth:`__eq__` and :meth:`__ne__` are their own reflection.
-   If the operands are of different types, and right operand's type is
-   a direct or indirect subclass of the left operand's type,
-   the reflected method of the right operand has priority, otherwise
-   the left operand's method has priority.  Virtual subclassing is
-   not considered.
+   If the right operand's type is a strict subclass of the left operand's type,
+   the right operand's reflected method for the operation will be called before
+   the left operand's non-reflected method.  This behavior allows subclasses to
+   override their ancestors' operations.
 
 .. method:: object.__hash__(self)
 
@@ -2359,7 +2358,7 @@ left undefined.
 
    .. note::
 
-      If the right operand's type is a subclass of the left operand's type and that
+      If the right operand's type is a strict subclass of the left operand's type and that
       subclass provides the reflected method for the operation, this method will be
       called before the left operand's non-reflected method.  This behavior allows
       subclasses to override their ancestors' operations.
