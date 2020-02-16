@@ -1,6 +1,6 @@
 import unittest
 from ctypes import *
-from ctypes.test import need_symbol
+from Lib.test.ctypes_test import need_symbol
 
 class StringArrayTestCase(unittest.TestCase):
     def test(self):

@@ -1,4 +1,4 @@
-from ctypes.test import load_tests
+from Lib.test.ctypes_test import load_tests
 import unittest
 
 unittest.main()

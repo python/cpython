@@ -3,7 +3,7 @@ from test.support import bigmemtest, _2G
 import sys
 from ctypes import *
 
-from ctypes.test import need_symbol
+from Lib.test.ctypes_test import need_symbol
 
 formats = "bBhHiIlLqQfd"
 

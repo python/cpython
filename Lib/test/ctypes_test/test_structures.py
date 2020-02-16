@@ -2,7 +2,7 @@ import platform
 import sys
 import unittest
 from ctypes import *
-from ctypes.test import need_symbol
+from Lib.test.ctypes_test import need_symbol
 from struct import calcsize
 import _ctypes_test
 from test import support
