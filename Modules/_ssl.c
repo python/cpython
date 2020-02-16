@@ -508,9 +508,9 @@ static int PySSL_select(PySocketSockObject *s, int writing, _PyTime_t timeout);
 
 static int PySSL_set_owner(PySSLSocket *, PyObject *, void *);
 static int PySSL_set_session(PySSLSocket *, PyObject *, void *);
-#define PySSLSocket_Check(v)    (Py_TYPE(v) == &PySSLSocket_Type)
-#define PySSLMemoryBIO_Check(v)    (Py_TYPE(v) == &PySSLMemoryBIO_Type)
-#define PySSLSession_Check(v)   (Py_TYPE(v) == &PySSLSession_Type)
+#define PySSLSocket_Check(v)    Py_IS_TYPE(v, &PySSLSocket_Type)
+#define PySSLMemoryBIO_Check(v)    Py_IS_TYPE(v, &PySSLMemoryBIO_Type)
+#define PySSLSession_Check(v)   Py_IS_TYPE(v, &PySSLSession_Type)
 
 typedef enum {
     SOCKET_IS_NONBLOCKING,
