@@ -254,7 +254,7 @@ class DefaultContext(BaseContext):
         return self._actual_context._name
 
     def get_all_start_methods(self):
-        if sys.platform == 'win32':
+        if sys.platform == 'win32' or sys.platform == 'darwin':
             return ['spawn']
         else:
             if reduction.HAVE_SEND_HANDLE:
