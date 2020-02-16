@@ -1322,8 +1322,8 @@ maninstall:	altmaninstall
 
 # Install the library
 XMLLIBSUBDIRS=  xml xml/dom xml/etree xml/parsers xml/sax
-LIBSUBDIRS=	tkinter tkinter/test tkinter/test/test_tkinter \
-		tkinter/test/test_ttk site-packages test \
+LIBSUBDIRS=	tkinter test/tkinter_test test/tkinter_test/test_tkinter \
+		test/tkinter_test/test_ttk site-packages test \
 		test/audiodata \
 		test/capath test/data \
 		test/cjkencodings test/decimaltestdata \
@@ -1388,14 +1388,14 @@ LIBSUBDIRS=	tkinter tkinter/test tkinter/test/test_tkinter \
 		email email/mime test/test_email test/test_email/data \
 		ensurepip ensurepip/_bundled \
 		html json test/test_json http dbm xmlrpc \
-		sqlite3 sqlite3/test \
+		sqlite3 test/sqlite3_test \
 		logging csv wsgiref urllib \
-		lib2to3 lib2to3/fixes lib2to3/pgen2 lib2to3/tests \
-		lib2to3/tests/data lib2to3/tests/data/fixers \
-		lib2to3/tests/data/fixers/myfixes \
-		ctypes ctypes/test ctypes/macholib \
+		lib2to3 lib2to3/fixes lib2to3/pgen2 test/lib2to3_tests \
+		test/lib2to3_tests/data test/lib2to3_tests/data/fixers \
+		test/lib2to3_tests/data/fixers/myfixes \
+		ctypes test/ctypes_test ctypes/macholib \
 		idlelib idlelib/Icons idlelib/idle_test \
-		distutils distutils/command distutils/tests $(XMLLIBSUBDIRS) \
+		distutils distutils/command test/distutils_test $(XMLLIBSUBDIRS) \
 		test/test_tools test/test_warnings test/test_warnings/data \
 		turtledemo \
 		multiprocessing multiprocessing/dummy \
