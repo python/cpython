@@ -10,7 +10,7 @@ support.requires('gui')
 import tkinter
 from _tkinter import TclError
 from tkinter import ttk
-from tkinter.test import runtktests
+from Lib.test.tkinter_test import runtktests
 
 root = None
 try:
