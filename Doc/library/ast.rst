@@ -114,15 +114,15 @@ Node classes
 
    Old classes :class:`ast.Num`, :class:`ast.Str`, :class:`ast.Bytes`,
    :class:`ast.NameConstant` and :class:`ast.Ellipsis` are still available,
-   but they will be removed in future Python releases.  In meanwhile,
-   instantiating them will return an instance of different class.
+   but they will be removed in future Python releases.  In the meanwhile,
+   instantiating them will return an instance of a different class.
 
 .. deprecated:: 3.9
 
    Old classes :class:`ast.Index` and :class:`ast.ExtSlice` are still
    available, but they will be removed in future Python releases.
-   In meanwhile, instantiating them will return an instance of different
-   class.
+   In the meanwhile, instantiating them will return an instance of
+   a different class.
 
 
 .. _abstract-grammar:
