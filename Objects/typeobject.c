@@ -302,7 +302,7 @@ type_mro_modified(PyTypeObject *type, PyObject *bases) {
        each subclass when their mro is recursively updated.
      */
     Py_ssize_t i, n;
-    int custom = (Py_TYPE(type) != &PyType_Type);
+    int custom = !Py_IS_TYPE(type, &PyType_Type);
     int unbound;
     PyObject *mro_meth = NULL;
     PyObject *type_mro_meth = NULL;

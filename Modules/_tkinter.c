@@ -833,7 +833,7 @@ typedef struct {
 } PyTclObject;
 
 static PyObject *PyTclObject_Type;
-#define PyTclObject_Check(v) (Py_TYPE(v) == (PyTypeObject *) PyTclObject_Type)
+#define PyTclObject_Check(v) Py_IS_TYPE(v, (PyTypeObject *) PyTclObject_Type)
 
 static PyObject *
 newPyTclObject(Tcl_Obj *arg)

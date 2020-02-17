@@ -13,9 +13,9 @@
 #include "pycore_accu.h"
 
 #define PyScanner_Check(op) PyObject_TypeCheck(op, &PyScannerType)
-#define PyScanner_CheckExact(op) (Py_TYPE(op) == &PyScannerType)
+#define PyScanner_CheckExact(op) Py_IS_TYPE(op, &PyScannerType)
 #define PyEncoder_Check(op) PyObject_TypeCheck(op, &PyEncoderType)
-#define PyEncoder_CheckExact(op) (Py_TYPE(op) == &PyEncoderType)
+#define PyEncoder_CheckExact(op) Py_IS_TYPE(op, &PyEncoderType)
 
 static PyTypeObject PyScannerType;
 static PyTypeObject PyEncoderType;
