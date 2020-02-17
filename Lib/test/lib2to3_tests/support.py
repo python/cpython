@@ -12,8 +12,8 @@ from lib2to3 import pytree, refactor
 from lib2to3.pgen2 import driver as pgen2_driver
 
 test_dir = os.path.dirname(__file__)
-proj_dir = os.path.normpath(os.path.join("Lib.lib2to3"))
-grammar_path = os.path.join("Lib.lib2to3", "Grammar.txt")
+proj_dir = os.path.normpath(os.path.join("Lib/lib2to3"))
+grammar_path = os.path.join("Lib/lib2to3", "Grammar.txt")
 grammar = pgen2_driver.load_grammar(grammar_path)
 grammar_no_print_statement = pgen2_driver.load_grammar(grammar_path)
 del grammar_no_print_statement.keywords["print"]
