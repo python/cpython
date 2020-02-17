@@ -27,13 +27,48 @@ static PyMethodDef _contextvars_methods[] = {
     {NULL, NULL}
 };
 
+static int
+_contextvars_exec(PyObject *m)
+{
+    Py_INCREF(&PyContext_Type);
+    if (PyModule_AddObject(m, "Context",
+                           (PyObject *)&PyContext_Type) < 0)
+    {
+        Py_DECREF(&PyContext_Type);
+        return -1;
+    }
+
+    Py_INCREF(&PyContextVar_Type);
+    if (PyModule_AddObject(m, "ContextVar",
+                           (PyObject *)&PyContextVar_Type) < 0)
+    {
+        Py_DECREF(&PyContextVar_Type);
+        return -1;
+    }
+
+    Py_INCREF(&PyContextToken_Type);
+    if (PyModule_AddObject(m, "Token",
+                           (PyObject *)&PyContextToken_Type) < 0)
+    {
+        Py_DECREF(&PyContextToken_Type);
+        return -1;
+    }
+
+    return 0;
+}
+
+static struct PyModuleDef_Slot _contextvars_slots[] = {
+    {Py_mod_exec, _contextvars_exec},
+    {0, NULL}
+};
+
 static struct PyModuleDef _contextvarsmodule = {
     PyModuleDef_HEAD_INIT,      /* m_base */
     "_contextvars",             /* m_name */
     module_doc,                 /* m_doc */
-    -1,                         /* m_size */
+    0,                          /* m_size */
     _contextvars_methods,       /* m_methods */
-    NULL,                       /* m_slots */
+    _contextvars_slots,         /* m_slots */
     NULL,                       /* m_traverse */
     NULL,                       /* m_clear */
     NULL,                       /* m_free */
@@ -42,37 +77,5 @@ static struct PyModuleDef _contextvarsmodule = {
 PyMODINIT_FUNC
 PyInit__contextvars(void)
 {
-    PyObject *m = PyModule_Create(&_contextvarsmodule);
-    if (m == NULL) {
-        return NULL;
-    }
-
-    Py_INCREF(&PyContext_Type);
-    if (PyModule_AddObject(m, "Context",
-                           (PyObject *)&PyContext_Type) < 0)
-    {
-        Py_DECREF(&PyContext_Type);
-        Py_DECREF(m);
-        return NULL;
-    }
-
-    Py_INCREF(&PyContextVar_Type);
-    if (PyModule_AddObject(m, "ContextVar",
-                           (PyObject *)&PyContextVar_Type) < 0)
-    {
-        Py_DECREF(&PyContextVar_Type);
-        Py_DECREF(m);
-        return NULL;
-    }
-
-    Py_INCREF(&PyContextToken_Type);
-    if (PyModule_AddObject(m, "Token",
-                           (PyObject *)&PyContextToken_Type) < 0)
-    {
-        Py_DECREF(&PyContextToken_Type);
-        Py_DECREF(m);
-        return NULL;
-    }
-
-    return m;
+    return PyModuleDef_Init(&_contextvarsmodule);
 }
