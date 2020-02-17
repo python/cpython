@@ -120,6 +120,10 @@ class IndentAndNewlineTest(unittest.TestCase):
         cls.root.destroy()
         del cls.root
 
+    @classmethod
+    def tearDown(self):
+        self.window.text.delete("1.0", "end-1c")
+
     def test_indent_and_newline_event(self):
         eq = self.assertEqual
         w = self.window
@@ -188,6 +192,42 @@ class IndentAndNewlineTest(unittest.TestCase):
         text.mark_set('insert', '1.5')
         nl(None)
         eq(get('1.0', 'end'), '>>> \na =\n')
+
+    def test_parser(self):
+        eq = self.assertEqual
+        w = self.window
+        text = w.text
+        p = w.parser
+
+        w.prompt_last_line = ''
+        eq(p().code, "")
+
+        # Two lines with block opener.
+        insert("  def f1(self, a, b):\n    return a + b\n")
+        eq(p().code, "    return a + b\n")
+
+        # No newline in code.
+        insert("  def f1(")
+        eq(p(lineend=" \n").code, "  def f1( \n")
+
+        # Two lines without block opener.
+        code = ("a = 1\n"
+                "b = 2\n")
+        insert(code)
+        eq(p().code, code)
+
+        # Emulate shell.
+        w.prompt_last_line = '>>> '
+        code = (">>> def f1(self, a, b):\n")
+        insert(code)
+        text.tag_add("console", "1.0", "1.4")
+        # The prompt is removed with the parser.
+        eq(p().code, code[4:])
+
+        code = (">>>   def f1(self, a, b):\n       return a + b\n")
+        insert(code)
+        text.tag_add("console", "1.0", "1.4")
+        eq(p().code, code[4:])
 
 
 class RMenuTest(unittest.TestCase):

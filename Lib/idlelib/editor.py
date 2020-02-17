@@ -248,13 +248,6 @@ class EditorWindow(object):
             idleConf.blink_off_time = self.text['insertofftime']
         self.update_cursor_blink()
 
-        # When searching backwards for a reliable place to begin parsing,
-        # first start num_context_lines[0] lines back, then
-        # num_context_lines[1] lines back if that didn't work, and so on.
-        # The last value should be huge (larger than the # of lines in a
-        # conceivable file).
-        # Making the initial values larger slows things down more often.
-        self.num_context_lines = 50, 500, 5000000
         self.per = per = self.Percolator(text)
         self.undo = undo = self.UndoDelegator()
         per.insertfilter(undo)
@@ -1466,7 +1459,14 @@ class EditorWindow(object):
             p.set_code(text.get(startatindex, stopatindex) + lineend)
             return p
 
-        for context in self.num_context_lines:
+        # When searching backwards for a reliable place to begin parsing,
+        # first start num_context_lines[0] lines back, then
+        # num_context_lines[1] lines back if that didn't work, and so on.
+        # The last value should be huge (larger than the # of lines in a
+        # conceivable file).
+        # Making the initial values larger slows things down more often.
+        num_context_lines = 50, 500, 5000000
+        for context in num_context_lines:
             startat = max(lineno - context, 1)
             startatindex = f"{startat}.0"
             p.set_code(text.get(startatindex, stopatindex) + lineend)
