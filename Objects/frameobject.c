@@ -338,7 +338,7 @@ frame_block_unwind(PyFrameObject *f)
     assert(f->f_iblock > 0);
     f->f_iblock--;
     PyTryBlock *b = &f->f_blockstack[f->f_iblock];
-    int delta = (f->f_stacktop - f->f_valuestack) - b->b_level;
+    intptr_t delta = (f->f_stacktop - f->f_valuestack) - b->b_level;
     while (delta > 0) {
         frame_stack_pop(f);
         delta--;
@@ -475,7 +475,7 @@ frame_setlineno(PyFrameObject *f, PyObject* p_new_lineno, void *Py_UNUSED(ignore
         if (new_stack.depth > current_stack.depth ||
             top_block(&new_stack)->start_line != current_block_at_new_depth->start_line) {
             unsigned char target_kind = top_block(&new_stack)->kind;
-            char *msg;
+            const char *msg;
             if (target_kind == POP_EXCEPT) {
                 msg = "can't jump into an 'except' block as there's no exception";
             }

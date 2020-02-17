@@ -725,7 +725,7 @@ csv
 The :class:`csv.DictReader` now returns instances of :class:`dict` instead of
 a :class:`collections.OrderedDict`.  The tool is now faster and uses less
 memory while still preserving the field order.
-(Contributed by Michael Seek in :issue:`34003`.)
+(Contributed by Michael Selik in :issue:`34003`.)
 
 
 curses
@@ -1940,6 +1940,12 @@ Changes in the Python API
   :exc:`dbm.gnu.error` or :exc:`dbm.ndbm.error`) instead of :exc:`KeyError`.
   (Contributed by Xiang Zhang in :issue:`33106`.)
 
+* Simplified AST for literals.  All constants will be represented as
+  :class:`ast.Constant` instances.  Instantiating old classes ``Num``,
+  ``Str``, ``Bytes``, ``NameConstant`` and ``Ellipsis`` will return
+  an instance of ``Constant``.
+  (Contributed by Serhiy Storchaka in :issue:`32892`.)
+
 * :func:`~os.path.expanduser` on Windows now prefers the :envvar:`USERPROFILE`
   environment variable and does not use :envvar:`HOME`, which is not normally
   set for regular user accounts.
@@ -2109,7 +2115,7 @@ Changes in the C API
 
   .. code-block:: shell
 
-      gendef python38.dll > tmp.def
+      gendef - python38.dll > tmp.def
       dlltool --dllname python38.dll --def tmp.def --output-lib libpython38.a
 
   The location of an installed :file:`pythonXY.dll` will depend on the

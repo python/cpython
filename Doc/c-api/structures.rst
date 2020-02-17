@@ -70,6 +70,21 @@ the definition of all other Python objects.
       (((PyObject*)(o))->ob_type)
 
 
+.. c:function:: int Py_IS_TYPE(PyObject *o, PyTypeObject *type)
+
+   Return non-zero if the object *o* type is *type*. Return zero otherwise.
+   Equivalent to: ``Py_TYPE(o) == type``.
+
+   .. versionadded:: 3.9
+
+
+.. c:function:: void Py_SET_TYPE(PyObject *o, PyTypeObject *type)
+
+   Set the object *o* type to *type*.
+
+   .. versionadded:: 3.9
+
+
 .. c:macro:: Py_REFCNT(o)
 
    This macro is used to access the :attr:`ob_refcnt` member of a Python
@@ -79,12 +94,26 @@ the definition of all other Python objects.
       (((PyObject*)(o))->ob_refcnt)
 
 
+.. c:function:: void Py_SET_REFCNT(PyObject *o, Py_ssize_t refcnt)
+
+   Set the object *o* reference counter to *refcnt*.
+
+   .. versionadded:: 3.9
+
+
 .. c:macro:: Py_SIZE(o)
 
    This macro is used to access the :attr:`ob_size` member of a Python object.
    It expands to::
 
       (((PyVarObject*)(o))->ob_size)
+
+
+.. c:function:: void Py_SET_SIZE(PyVarObject *o, Py_ssize_t size)
+
+   Set the object *o* size to *size*.
+
+   .. versionadded:: 3.9
 
 
 .. c:macro:: PyObject_HEAD_INIT(type)

@@ -331,7 +331,8 @@ Object Protocol
 
    Map the object *key* to the value *v*.  Raise an exception and
    return ``-1`` on failure; return ``0`` on success.  This is the
-   equivalent of the Python statement ``o[key] = v``.
+   equivalent of the Python statement ``o[key] = v``.  This function *does
+   not* steal a reference to *v*.
 
 
 .. c:function:: int PyObject_DelItem(PyObject *o, PyObject *key)

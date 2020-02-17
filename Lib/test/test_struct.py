@@ -7,6 +7,7 @@ import struct
 import sys
 
 from test import support
+from test.support.script_helper import assert_python_ok
 
 ISBIGENDIAN = sys.byteorder == "big"
 
@@ -652,6 +653,23 @@ class StructTest(unittest.TestCase):
         s2 = struct.Struct(s.format.encode())
         self.assertEqual(s2.format, s.format)
 
+    def test_struct_cleans_up_at_runtime_shutdown(self):
+        code = """if 1:
+            import struct
+
+            class C:
+                def __init__(self):
+                    self.pack = struct.pack
+                def __del__(self):
+                    self.pack('I', -42)
+
+            struct.x = C()
+            """
+        rc, stdout, stderr = assert_python_ok("-c", code)
+        self.assertEqual(rc, 0)
+        self.assertEqual(stdout.rstrip(), b"")
+        self.assertIn(b"Exception ignored in:", stderr)
+        self.assertIn(b"C.__del__", stderr)
 
 class UnpackIteratorTest(unittest.TestCase):
     """

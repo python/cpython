@@ -147,7 +147,7 @@ PyObject *_PyCodec_Lookup(const char *encoding)
         func = PyList_GetItem(interp->codec_search_path, i);
         if (func == NULL)
             goto onError;
-        result = _PyObject_CallOneArg(func, v);
+        result = PyObject_CallOneArg(func, v);
         if (result == NULL)
             goto onError;
         if (result == Py_None) {
@@ -317,7 +317,7 @@ PyObject *codec_getstreamcodec(const char *encoding,
     if (errors != NULL)
         streamcodec = PyObject_CallFunction(codeccls, "Os", stream, errors);
     else
-        streamcodec = _PyObject_CallOneArg(codeccls, stream);
+        streamcodec = PyObject_CallOneArg(codeccls, stream);
     Py_DECREF(codecs);
     return streamcodec;
 }
@@ -658,7 +658,7 @@ static void wrong_exception_type(PyObject *exc)
 {
     PyErr_Format(PyExc_TypeError,
                  "don't know how to handle %.200s in error callback",
-                 exc->ob_type->tp_name);
+                 Py_TYPE(exc)->tp_name);
 }
 
 PyObject *PyCodec_StrictErrors(PyObject *exc)
@@ -1407,7 +1407,7 @@ static PyObject *surrogateescape_errors(PyObject *self, PyObject *exc)
 static int _PyCodecRegistry_Init(void)
 {
     static struct {
-        char *name;
+        const char *name;
         PyMethodDef def;
     } methods[] =
     {
@@ -1494,32 +1494,37 @@ static int _PyCodecRegistry_Init(void)
 
     PyInterpreterState *interp = _PyInterpreterState_Get();
     PyObject *mod;
-    unsigned i;
 
     if (interp->codec_search_path != NULL)
         return 0;
 
     interp->codec_search_path = PyList_New(0);
-    interp->codec_search_cache = PyDict_New();
-    interp->codec_error_registry = PyDict_New();
-
-    if (interp->codec_error_registry) {
-        for (i = 0; i < Py_ARRAY_LENGTH(methods); ++i) {
-            PyObject *func = PyCFunction_NewEx(&methods[i].def, NULL, NULL);
-            int res;
-            if (!func)
-                Py_FatalError("can't initialize codec error registry");
-            res = PyCodec_RegisterError(methods[i].name, func);
-            Py_DECREF(func);
-            if (res)
-                Py_FatalError("can't initialize codec error registry");
-        }
+    if (interp->codec_search_path == NULL) {
+        return -1;
     }
 
-    if (interp->codec_search_path == NULL ||
-        interp->codec_search_cache == NULL ||
-        interp->codec_error_registry == NULL)
-        Py_FatalError("can't initialize codec registry");
+    interp->codec_search_cache = PyDict_New();
+    if (interp->codec_search_cache == NULL) {
+        return -1;
+    }
+
+    interp->codec_error_registry = PyDict_New();
+    if (interp->codec_error_registry == NULL) {
+        return -1;
+    }
+
+    for (size_t i = 0; i < Py_ARRAY_LENGTH(methods); ++i) {
+        PyObject *func = PyCFunction_NewEx(&methods[i].def, NULL, NULL);
+        if (!func) {
+            return -1;
+        }
+
+        int res = PyCodec_RegisterError(methods[i].name, func);
+        Py_DECREF(func);
+        if (res) {
+            return -1;
+        }
+    }
 
     mod = PyImport_ImportModuleNoBlock("encodings");
     if (mod == NULL) {

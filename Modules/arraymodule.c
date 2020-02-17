@@ -106,7 +106,7 @@ enum machine_format_code {
 #include "clinic/arraymodule.c.h"
 
 #define array_Check(op) PyObject_TypeCheck(op, &Arraytype)
-#define array_CheckExact(op) (Py_TYPE(op) == &Arraytype)
+#define array_CheckExact(op) Py_IS_TYPE(op, &Arraytype)
 
 static int
 array_resize(arrayobject *self, Py_ssize_t newsize)
@@ -128,14 +128,14 @@ array_resize(arrayobject *self, Py_ssize_t newsize)
     if (self->allocated >= newsize &&
         Py_SIZE(self) < newsize + 16 &&
         self->ob_item != NULL) {
-        Py_SIZE(self) = newsize;
+        Py_SET_SIZE(self, newsize);
         return 0;
     }
 
     if (newsize == 0) {
         PyMem_FREE(self->ob_item);
         self->ob_item = NULL;
-        Py_SIZE(self) = 0;
+        Py_SET_SIZE(self, 0);
         self->allocated = 0;
         return 0;
     }
@@ -165,7 +165,7 @@ array_resize(arrayobject *self, Py_ssize_t newsize)
         return -1;
     }
     self->ob_item = items;
-    Py_SIZE(self) = newsize;
+    Py_SET_SIZE(self, newsize);
     self->allocated = _new_size;
     return 0;
 }
@@ -593,7 +593,7 @@ newarrayobject(PyTypeObject *type, Py_ssize_t size, const struct arraydescr *des
     op->ob_descr = descr;
     op->allocated = size;
     op->weakreflist = NULL;
-    Py_SIZE(op) = size;
+    Py_SET_SIZE(op, size);
     if (size <= 0) {
         op->ob_item = NULL;
     }
@@ -2696,7 +2696,7 @@ array_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
                         return NULL;
                     }
                     self->ob_item = item;
-                    Py_SIZE(self) = n / sizeof(Py_UNICODE);
+                    Py_SET_SIZE(self, n / sizeof(Py_UNICODE));
                     memcpy(item, ustr, n);
                     self->allocated = Py_SIZE(self);
                 }
@@ -2996,7 +2996,7 @@ array_modexec(PyObject *m)
 
     if (PyType_Ready(&Arraytype) < 0)
         return -1;
-    Py_TYPE(&PyArrayIter_Type) = &PyType_Type;
+    Py_SET_TYPE(&PyArrayIter_Type, &PyType_Type);
 
     Py_INCREF((PyObject *)&Arraytype);
     if (PyModule_AddObject(m, "ArrayType", (PyObject *)&Arraytype) < 0) {

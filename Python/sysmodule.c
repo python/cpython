@@ -519,7 +519,7 @@ sys_breakpointhook(PyObject *self, PyObject *const *args, Py_ssize_t nargs, PyOb
         return NULL;
     }
     PyMem_RawFree(envar);
-    PyObject *retval = _PyObject_Vectorcall(hook, args, nargs, keywords);
+    PyObject *retval = PyObject_Vectorcall(hook, args, nargs, keywords);
     Py_DECREF(hook);
     return retval;
 
@@ -840,7 +840,7 @@ sys_intern_impl(PyObject *module, PyObject *s)
     }
     else {
         _PyErr_Format(tstate, PyExc_TypeError,
-                      "can't intern %.400s", s->ob_type->tp_name);
+                      "can't intern %.400s", Py_TYPE(s)->tp_name);
         return NULL;
     }
 }
@@ -1656,7 +1656,7 @@ static Py_ssize_t
 sys_getrefcount_impl(PyObject *module, PyObject *object)
 /*[clinic end generated code: output=5fd477f2264b85b2 input=bf474efd50a21535]*/
 {
-    return object->ob_refcnt;
+    return Py_REFCNT(object);
 }
 
 #ifdef Py_REF_DEBUG
@@ -1685,20 +1685,6 @@ sys_getallocatedblocks_impl(PyObject *module)
     return _Py_GetAllocatedBlocks();
 }
 
-#ifdef COUNT_ALLOCS
-/*[clinic input]
-sys.getcounts
-[clinic start generated code]*/
-
-static PyObject *
-sys_getcounts_impl(PyObject *module)
-/*[clinic end generated code: output=20df00bc164f43cb input=ad2ec7bda5424953]*/
-{
-    extern PyObject *_Py_get_counts(void);
-
-    return _Py_get_counts();
-}
-#endif
 
 /*[clinic input]
 sys._getframe
@@ -1879,7 +1865,6 @@ static PyMethodDef sys_methods[] = {
     SYS_GETDEFAULTENCODING_METHODDEF
     SYS_GETDLOPENFLAGS_METHODDEF
     SYS_GETALLOCATEDBLOCKS_METHODDEF
-    SYS_GETCOUNTS_METHODDEF
 #ifdef DYNAMIC_EXECUTION_PROFILE
     {"getdxp",          _Py_GetDXProfile, METH_VARARGS},
 #endif
