@@ -1,1 +1,1 @@
-Moved these classes tests, `ctypes.test`, `distultils.tests`, `unittest.test`, `lib2to3.tests`,`sqlite3.test`,`tkinter.test` to be in one unified location under `Lib/test/MODULE_NAME_test`
+Moved these classes tests, `ctypes.test`, `distultils.tests`, `unittest.test`, `lib2to3.tests`, `sqlite3.test`, `tkinter.test` to be in one unified location under `Lib/test/MODULE_NAME_test`
