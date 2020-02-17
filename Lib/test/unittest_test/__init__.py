@@ -5,16 +5,16 @@ import unittest
 
 here = os.path.dirname(__file__)
 loader = unittest.defaultTestLoader
-
+import
 def suite():
     suite = unittest.TestSuite()
     for fn in os.listdir(here):
         if fn.startswith("test") and fn.endswith(".py"):
-            modname = "unittest.test." + fn[:-3]
+            modname = "Lib.test.unittest_test." + fn[:-3]
             __import__(modname)
             module = sys.modules[modname]
             suite.addTest(loader.loadTestsFromModule(module))
-    suite.addTest(loader.loadTestsFromName('unittest.test.testmock'))
+    suite.addTest(loader.loadTestsFromName('Lib.test.unittest_test.testmock'))
     return suite
 
 
