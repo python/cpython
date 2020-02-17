@@ -6,7 +6,7 @@ import textwrap
 from distutils.core import Distribution
 from distutils.command.build_ext import build_ext
 from distutils import sysconfig
-from Lib.test.distutils_tests.support.support import (TempdirManager, LoggingSilencer,
+from Lib.test.distutils_tests.support import (TempdirManager, LoggingSilencer,
                                      copy_xxmodule_c, fixup_build_ext)
 from distutils.extension import Extension
 from distutils.errors import (
