@@ -135,10 +135,10 @@ from __future__ import print_function"""
             self.assertEqual(fixes, [no_head])
 
     def test_fixer_loading(self):
-        from myfixes.fix_first import FixFirst
-        from myfixes.fix_last import FixLast
-        from myfixes.fix_parrot import FixParrot
-        from myfixes.fix_preorder import FixPreorder
+        from .data.fixers.myfixes.fix_first import FixFirst
+        from .data.fixers.myfixes.fix_last import FixLast
+        from .data.fixers.myfixes.fix_parrot import FixParrot
+        from .data.fixers.myfixes.fix_preorder import FixPreorder
 
         rt = self.rt()
         pre, post = rt.get_fixers()
@@ -324,12 +324,12 @@ from __future__ import print_function"""
         self.assertNotEqual(out, doc)
 
     def test_explicit(self):
-        from myfixes.fix_explicit import FixExplicit
+        from .data.fixers.myfixes.fix_explicit import FixExplicit
 
-        rt = self.rt(fixers=["myfixes.fix_explicit"])
+        rt = self.rt(fixers=[".data.fixers.myfixes.fix_explicit"])
         self.assertEqual(len(rt.post_order), 0)
 
-        rt = self.rt(explicit=["myfixes.fix_explicit"])
+        rt = self.rt(explicit=[".data.fixers.myfixes.fix_explicit"])
         for fix in rt.post_order:
             if isinstance(fix, FixExplicit):
                 break

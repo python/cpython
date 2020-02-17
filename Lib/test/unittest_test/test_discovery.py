@@ -9,7 +9,7 @@ import test.test_importlib.util
 
 import unittest
 import unittest.mock
-import Lib.test.unittest_test
+import Lib.test.unittest_test as unittest_test
 
 
 class TestableTestProgram(unittest.TestProgram):
@@ -788,7 +788,7 @@ class TestDiscovery(unittest.TestCase):
         loader = unittest.TestLoader()
 
         tests = [self]
-        expectedPath = os.path.abspath(os.path.dirname(unittest.test.__file__))
+        expectedPath = os.path.abspath(os.path.dirname(unittest_test.__file__))
 
         self.wasRun = False
         def _find_tests(start_dir, pattern, namespace=None):
@@ -796,7 +796,7 @@ class TestDiscovery(unittest.TestCase):
             self.assertEqual(start_dir, expectedPath)
             return tests
         loader._find_tests = _find_tests
-        suite = loader.discover('unittest.test')
+        suite = loader.discover('Lib.test.unittest_test')
         self.assertTrue(self.wasRun)
         self.assertEqual(suite._tests, tests)
 
