@@ -10,7 +10,7 @@ def load_tests(*args):
     suite = unittest.TestSuite()
     for fn in os.listdir(here):
         if fn.startswith("test") and fn.endswith(".py"):
-            modname = "Lib.test.unittest_test.testmock." + fn[:-3]
+            modname = "." + fn[:-3]
             __import__(modname)
             module = sys.modules[modname]
             suite.addTest(loader.loadTestsFromModule(module))
