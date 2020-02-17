@@ -1698,7 +1698,7 @@ ast_for_decorator(struct compiling *c, const node *n)
 
     REQ(n, decorator);
     REQ(CHILD(n, 0), AT);
-    REQ(RCHILD(n, 2), NEWLINE);
+    REQ(CHILD(n, 2), NEWLINE);
     
     return ast_for_expr(c, CHILD(n, 1));
 }
