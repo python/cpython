@@ -281,7 +281,7 @@ class ColNamesTests(unittest.TestCase):
 
         # Check if the stripping of colnames works. Everything after the first
         # whitespace should be stripped.
-        self.assertEqual(self.cur.description[0][0], "x")
+        self.assertEqual(self.cur.description[0][0], "x [bar]")
 
     def CheckCaseInConverterName(self):
         self.cur.execute("select 'other' as \"x [b1b1]\"")

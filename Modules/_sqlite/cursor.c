@@ -202,10 +202,7 @@ _pysqlite_build_column_name(const char* colname)
     }
 
     for (pos = colname;; pos++) {
-        if (*pos == 0 || *pos == '[') {
-            if ((*pos == '[') && (pos > colname) && (*(pos-1) == ' ')) {
-                pos--;
-            }
+        if (*pos == '\0') {
             return PyUnicode_FromStringAndSize(colname, pos - colname);
         }
     }
