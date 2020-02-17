@@ -589,6 +589,9 @@ Changes in the Python API
   since the *buffering* parameter has been removed.
   (Contributed by Victor Stinner in :issue:`39357`.)
 
+* The :mod:`importlib` module now ignores the :envvar:`PYTHONCASEOK`
+  environment variable when the :option:`-E` or :option:`-I` command line
+  options are being used.
 
 CPython bytecode changes
 ------------------------
