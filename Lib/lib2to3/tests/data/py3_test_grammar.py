@@ -493,6 +493,7 @@ class GrammarTests(unittest.TestCase):
         x2 = g2()
         x3 = g3()
         check_syntax_error(self, "class foo:yield 1")
+        check_syntax_error(self, "def g4(): yield from *a")
 
     def testRaise(self):
         # 'raise' test [',' test]
