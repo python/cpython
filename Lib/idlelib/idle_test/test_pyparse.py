@@ -59,6 +59,17 @@ class PyParseTest(unittest.TestCase):
         setcode = p.set_code
         start = p.find_good_parse_start
 
+        # First line starts with 'def' and ends with ':', then 0 is the pos.
+        setcode('def spam():\n')
+        eq(start(is_char_in_string=lambda index: False), 0)
+
+        # First line begins with a keyword in the list and ends
+        # with an open brace, then 0 is the pos.  This is how
+        # hyperparser calls this function as the newline is not added
+        # in the editor, but rather on the call to setcode.
+        setcode('class spam( ' + ' \n')
+        eq(start(is_char_in_string=lambda index: False), 0)
+
         # Split def across lines.
         setcode('"""This is a module docstring"""\n'
                 'class C():\n'
