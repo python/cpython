@@ -37,7 +37,7 @@ static PyObject *
 method_vectorcall(PyObject *method, PyObject *const *args,
                   size_t nargsf, PyObject *kwnames)
 {
-    assert(Py_TYPE(method) == &PyMethod_Type);
+    assert(Py_IS_TYPE(method, &PyMethod_Type));
 
     PyThreadState *tstate = _PyThreadState_GET();
     PyObject *self = PyMethod_GET_SELF(method);
