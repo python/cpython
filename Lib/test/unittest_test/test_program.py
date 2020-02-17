@@ -4,13 +4,14 @@ import os
 import sys
 import subprocess
 from test import support
+import unittest
 import Lib.test.unittest_test as unittest_test
 
 
-class Test_TestProgram(unittest_test.TestCase):
+class Test_TestProgram(unittest.TestCase):
 
     def test_discovery_from_dotted_path(self):
-        loader = unittest_test.TestLoader()
+        loader = unittest.TestLoader()
 
         tests = [self]
         expectedPath = os.path.abspath(os.path.dirname(unittest_test.__file__))
@@ -37,30 +38,30 @@ class Test_TestProgram(unittest_test.TestCase):
 
         runner = FakeRunner()
 
-        oldParseArgs = unittest_test.TestProgram.parseArgs
+        oldParseArgs = unittest.TestProgram.parseArgs
         def restoreParseArgs():
-            unittest_test.TestProgram.parseArgs = oldParseArgs
-        unittest_test.TestProgram.parseArgs = lambda *args: None
+            unittest.TestProgram.parseArgs = oldParseArgs
+        unittest.TestProgram.parseArgs = lambda *args: None
         self.addCleanup(restoreParseArgs)
 
         def removeTest():
-            del unittest_test.TestProgram.test
-        unittest_test.TestProgram.test = test
+            del unittest.TestProgram.test
+        unittest.TestProgram.test = test
         self.addCleanup(removeTest)
 
-        program = unittest_test.TestProgram(testRunner=runner, exit=False, verbosity=2)
+        program = unittest.TestProgram(testRunner=runner, exit=False, verbosity=2)
 
         self.assertEqual(program.result, result)
         self.assertEqual(runner.test, test)
         self.assertEqual(program.verbosity, 2)
 
-    class FooBar(unittest_test.TestCase):
+    class FooBar(unittest.TestCase):
         def testPass(self):
             assert True
         def testFail(self):
             assert False
 
-    class FooBarLoader(unittest_test.TestLoader):
+    class FooBarLoader(unittest.TestLoader):
         """Test loader that returns a suite containing FooBar."""
         def loadTestsFromModule(self, module):
             return self.suiteClass(
@@ -79,7 +80,7 @@ class Test_TestProgram(unittest_test.TestCase):
         old_argv = sys.argv
         sys.argv = ['faketest']
         runner = FakeRunner()
-        program = unittest_test.TestProgram(testRunner=runner, exit=False,
+        program = unittest.TestProgram(testRunner=runner, exit=False,
                                        defaultTest='Lib.test.unittest_test',
                                        testLoader=self.FooBarLoader())
         sys.argv = old_argv
@@ -94,7 +95,7 @@ class Test_TestProgram(unittest_test.TestCase):
         old_argv = sys.argv
         sys.argv = ['faketest']
         runner = FakeRunner()
-        program = unittest_test.TestProgram(
+        program = unittest.TestProgram(
             testRunner=runner, exit=False,
             defaultTest=['Lib.test.unittest_test', 'unittest.test2'],
             testLoader=self.FooBarLoader())
@@ -103,9 +104,9 @@ class Test_TestProgram(unittest_test.TestCase):
                           program.testNames)
 
     def test_NonExit(self):
-        program = unittest_test.main(exit=False,
+        program = unittest.main(exit=False,
                                 argv=["foobar"],
-                                testRunner=unittest_test.TextTestRunner(stream=io.StringIO()),
+                                testRunner=unittest.TextTestRunner(stream=io.StringIO()),
                                 testLoader=self.FooBarLoader())
         self.assertTrue(hasattr(program, 'result'))
 
@@ -113,9 +114,9 @@ class Test_TestProgram(unittest_test.TestCase):
     def test_Exit(self):
         self.assertRaises(
             SystemExit,
-            unittest_test.main,
+            unittest.main,
             argv=["foobar"],
-            testRunner=unittest_test.TextTestRunner(stream=io.StringIO()),
+            testRunner=unittest.TextTestRunner(stream=io.StringIO()),
             exit=True,
             testLoader=self.FooBarLoader())
 
@@ -123,20 +124,20 @@ class Test_TestProgram(unittest_test.TestCase):
     def test_ExitAsDefault(self):
         self.assertRaises(
             SystemExit,
-            unittest_test.main,
+            unittest.main,
             argv=["foobar"],
-            testRunner=unittest_test.TextTestRunner(stream=io.StringIO()),
+            testRunner=unittest.TextTestRunner(stream=io.StringIO()),
             testLoader=self.FooBarLoader())
 
 
-class InitialisableProgram(unittest_test.TestProgram):
+class InitialisableProgram(unittest.TestProgram):
     exit = False
     result = None
     verbosity = 1
     defaultTest = None
     tb_locals = False
     testRunner = None
-    testLoader = unittest_test.defaultTestLoader
+    testLoader = unittest.defaultTestLoader
     module = '__main__'
     progName = 'test'
     test = 'test'
@@ -161,7 +162,7 @@ class FakeRunner(object):
         return RESULT
 
 
-class TestCommandLineArgs(unittest_test.TestCase):
+class TestCommandLineArgs(unittest.TestCase):
 
     def setUp(self):
         self.program = InitialisableProgram()
@@ -226,7 +227,7 @@ class TestCommandLineArgs(unittest_test.TestCase):
     def testWarning(self):
         """Test the warnings argument"""
         # see #10535
-        class FakeTP(unittest_test.TestProgram):
+        class FakeTP(unittest.TestProgram):
             def parseArgs(self, *args, **kw): pass
             def runTests(self, *args, **kw): pass
         warnoptions = sys.warnoptions[:]
@@ -311,7 +312,7 @@ class TestCommandLineArgs(unittest_test.TestCase):
         self.assertIs(program.result, RESULT)
 
     def testCatchBreakInstallsHandler(self):
-        module = sys.modules['unittest_test.main']
+        module = sys.modules['unittest.main']
         original = module.installHandler
         def restore():
             module.installHandler = original
