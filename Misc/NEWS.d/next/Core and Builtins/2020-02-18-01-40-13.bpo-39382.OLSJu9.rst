@@ -1,0 +1,3 @@
+Hold reference to ``__bases__`` tuple item before releasing the tuple itself
+in ``abstract_issubclass()``, avoiding a use-after-free in the next loop
+iteration.
