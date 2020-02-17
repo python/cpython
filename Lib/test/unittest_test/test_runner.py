@@ -7,7 +7,7 @@ import subprocess
 import unittest
 from unittest.case import _Outcome
 
-from unittest.test.support import (LoggingResult,
+from Lib.test.unittest_test.support import (LoggingResult,
                                    ResultWithNoStartTestRunStopTestRun)
 
 
