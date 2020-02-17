@@ -1,6 +1,6 @@
 import unittest
 
-from unittest.test.support import LoggingResult
+from Lib.test.unittest_test.support import LoggingResult
 
 
 class Test_TestSkipping(unittest.TestCase):
