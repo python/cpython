@@ -82,7 +82,7 @@ _get_impl(PyObject *self)
     if (impl == NULL) {
         return NULL;
     }
-    if (Py_TYPE(impl) != &_abc_data_type) {
+    if (!Py_IS_TYPE(impl, &_abc_data_type)) {
         PyErr_SetString(PyExc_TypeError, "_abc_impl is set to a wrong type");
         Py_DECREF(impl);
         return NULL;
