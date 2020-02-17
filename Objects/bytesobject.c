@@ -3,11 +3,11 @@
 #define PY_SSIZE_T_CLEAN
 
 #include "Python.h"
+#include "pycore_bytes_methods.h"
 #include "pycore_object.h"
 #include "pycore_pymem.h"
 #include "pycore_pystate.h"
 
-#include "bytes_methods.h"
 #include "pystrhex.h"
 #include <stddef.h>
 
@@ -18,12 +18,10 @@ class bytes "PyBytesObject *" "&PyBytes_Type"
 
 #include "clinic/bytesobject.c.h"
 
-#ifdef COUNT_ALLOCS
-Py_ssize_t _Py_null_strings, _Py_one_strings;
-#endif
-
 static PyBytesObject *characters[UCHAR_MAX + 1];
 static PyBytesObject *nullstring;
+
+_Py_IDENTIFIER(__bytes__);
 
 /* PyBytesObject_SIZE gives the basic size of a string; any memory allocation
    for a string of length n should request PyBytesObject_SIZE + n bytes.
@@ -66,9 +64,6 @@ _PyBytes_FromSize(Py_ssize_t size, int use_calloc)
     assert(size >= 0);
 
     if (size == 0 && (op = nullstring) != NULL) {
-#ifdef COUNT_ALLOCS
-        _Py_null_strings++;
-#endif
         Py_INCREF(op);
         return (PyObject *)op;
     }
@@ -110,9 +105,6 @@ PyBytes_FromStringAndSize(const char *str, Py_ssize_t size)
     if (size == 1 && str != NULL &&
         (op = characters[*str & UCHAR_MAX]) != NULL)
     {
-#ifdef COUNT_ALLOCS
-        _Py_one_strings++;
-#endif
         Py_INCREF(op);
         return (PyObject *)op;
     }
@@ -146,16 +138,10 @@ PyBytes_FromString(const char *str)
         return NULL;
     }
     if (size == 0 && (op = nullstring) != NULL) {
-#ifdef COUNT_ALLOCS
-        _Py_null_strings++;
-#endif
         Py_INCREF(op);
         return (PyObject *)op;
     }
     if (size == 1 && (op = characters[*str & UCHAR_MAX]) != NULL) {
-#ifdef COUNT_ALLOCS
-        _Py_one_strings++;
-#endif
         Py_INCREF(op);
         return (PyObject *)op;
     }
@@ -543,7 +529,6 @@ static PyObject *
 format_obj(PyObject *v, const char **pbuf, Py_ssize_t *plen)
 {
     PyObject *func, *result;
-    _Py_IDENTIFIER(__bytes__);
     /* is it a bytes object? */
     if (PyBytes_Check(v)) {
         *pbuf = PyBytes_AS_STRING(v);
@@ -2274,7 +2259,7 @@ bytes_fromhex_impl(PyTypeObject *type, PyObject *string)
 {
     PyObject *result = _PyBytes_FromHex(string, 0);
     if (type != &PyBytes_Type && result != NULL) {
-        Py_SETREF(result, _PyObject_CallOneArg((PyObject *)type, result));
+        Py_SETREF(result, PyObject_CallOneArg((PyObject *)type, result));
     }
     return result;
 }
@@ -2485,7 +2470,6 @@ bytes_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
     PyObject *func;
     Py_ssize_t size;
     static char *kwlist[] = {"source", "encoding", "errors", 0};
-    _Py_IDENTIFIER(__bytes__);
 
     if (type != &PyBytes_Type)
         return bytes_subtype_new(type, args, kwds);
@@ -2778,7 +2762,7 @@ PyBytes_FromObject(PyObject *x)
 
     PyErr_Format(PyExc_TypeError,
                  "cannot convert '%.200s' object to bytes",
-                 x->ob_type->tp_name);
+                 Py_TYPE(x)->tp_name);
     return NULL;
 }
 
@@ -2964,8 +2948,12 @@ _PyBytes_Resize(PyObject **pv, Py_ssize_t newsize)
         return (*pv == NULL) ? -1 : 0;
     }
     /* XXX UNREF/NEWREF interface should be more symmetrical */
-    _Py_DEC_REFTOTAL;
+#ifdef Py_REF_DEBUG
+    _Py_RefTotal--;
+#endif
+#ifdef Py_TRACE_REFS
     _Py_ForgetReference(v);
+#endif
     *pv = (PyObject *)
         PyObject_REALLOC(v, PyBytesObject_SIZE + newsize);
     if (*pv == NULL) {
@@ -2975,7 +2963,7 @@ _PyBytes_Resize(PyObject **pv, Py_ssize_t newsize)
     }
     _Py_NewReference(*pv);
     sv = (PyBytesObject *) *pv;
-    Py_SIZE(sv) = newsize;
+    Py_SET_SIZE(sv, newsize);
     sv->ob_sval[newsize] = '\0';
     sv->ob_shash = -1;          /* invalidate cached hash value */
     return 0;

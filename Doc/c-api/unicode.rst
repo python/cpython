@@ -197,11 +197,6 @@ access internal read-only data of Unicode objects:
    .. versionadded:: 3.3
 
 
-.. c:function:: int PyUnicode_ClearFreeList()
-
-   Clear the free list. Return the total number of freed items.
-
-
 .. c:function:: Py_ssize_t PyUnicode_GET_SIZE(PyObject *o)
 
    Return the size of the deprecated :c:type:`Py_UNICODE` representation, in
@@ -243,6 +238,16 @@ access internal read-only data of Unicode objects:
    .. deprecated-removed:: 3.3 4.0
       Part of the old-style Unicode API, please migrate to using the
       :c:func:`PyUnicode_nBYTE_DATA` family of macros.
+
+
+.. c:function:: int PyUnicode_IsIdentifier(PyObject *o)
+
+   Return ``1`` if the string is a valid identifier according to the language
+   definition, section :ref:`identifiers`. Return ``0`` otherwise.
+
+   .. versionchanged:: 3.9
+      The function does not call :c:func:`Py_FatalError` anymore if the string
+      is not ready.
 
 
 Unicode Character Properties
@@ -526,9 +531,9 @@ APIs:
    .. note::
       The width formatter unit is number of characters rather than bytes.
       The precision formatter unit is number of bytes for ``"%s"`` and
-      ``"%V"`` (if the ``PyObject*`` argument is NULL), and a number of
+      ``"%V"`` (if the ``PyObject*`` argument is ``NULL``), and a number of
       characters for ``"%A"``, ``"%U"``, ``"%S"``, ``"%R"`` and ``"%V"``
-      (if the ``PyObject*`` argument is not NULL).
+      (if the ``PyObject*`` argument is not ``NULL``).
 
    .. [1] For integer specifiers (d, u, ld, li, lu, lld, lli, llu, zd, zi,
       zu, i, x): the 0-conversion flag has effect even when a precision is given.
@@ -983,7 +988,7 @@ have the same semantics as the ones of the built-in :func:`str` string object
 constructor.
 
 Setting encoding to ``NULL`` causes the default encoding to be used
-which is ASCII.  The file system calls should use
+which is UTF-8.  The file system calls should use
 :c:func:`PyUnicode_FSConverter` for encoding file names. This uses the
 variable :c:data:`Py_FileSystemDefaultEncoding` internally. This
 variable should be treated as read-only: on some systems, it will be a
@@ -1172,7 +1177,7 @@ These are the UTF-32 codec APIs:
    If byteorder is ``0``, the output string will always start with the Unicode BOM
    mark (U+FEFF). In the other two modes, no BOM mark is prepended.
 
-   If *Py_UNICODE_WIDE* is not defined, surrogate pairs will be output
+   If ``Py_UNICODE_WIDE`` is not defined, surrogate pairs will be output
    as a single code point.
 
    Return ``NULL`` if an exception was raised by the codec.
@@ -1246,7 +1251,7 @@ These are the UTF-16 codec APIs:
    If byteorder is ``0``, the output string will always start with the Unicode BOM
    mark (U+FEFF). In the other two modes, no BOM mark is prepended.
 
-   If *Py_UNICODE_WIDE* is defined, a single :c:type:`Py_UNICODE` value may get
+   If ``Py_UNICODE_WIDE`` is defined, a single :c:type:`Py_UNICODE` value may get
    represented as a surrogate pair. If it is not defined, each :c:type:`Py_UNICODE`
    values is interpreted as a UCS-2 character.
 

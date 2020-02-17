@@ -1,2 +1,0 @@
-The vectorcall protocol now requires that the caller passes only strings as
-keyword names.

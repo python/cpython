@@ -70,6 +70,13 @@ the definition of all other Python objects.
       (((PyObject*)(o))->ob_type)
 
 
+.. c:function:: void Py_SET_TYPE(PyObject *o, PyTypeObject *type)
+
+   Set the object *o* type to *type*.
+
+   .. versionadded:: 3.9
+
+
 .. c:macro:: Py_REFCNT(o)
 
    This macro is used to access the :attr:`ob_refcnt` member of a Python
@@ -79,12 +86,26 @@ the definition of all other Python objects.
       (((PyObject*)(o))->ob_refcnt)
 
 
+.. c:function:: void Py_SET_REFCNT(PyObject *o, Py_ssize_t refcnt)
+
+   Set the object *o* reference counter to *refcnt*.
+
+   .. versionadded:: 3.9
+
+
 .. c:macro:: Py_SIZE(o)
 
    This macro is used to access the :attr:`ob_size` member of a Python object.
    It expands to::
 
       (((PyVarObject*)(o))->ob_size)
+
+
+.. c:function:: void Py_SET_SIZE(PyVarObject *o, Py_ssize_t size)
+
+   Set the object *o* size of *size*.
+
+   .. versionadded:: 3.9
 
 
 .. c:macro:: PyObject_HEAD_INIT(type)
@@ -208,7 +229,8 @@ also keyword arguments.  So there are a total of 6 calling conventions:
 
    Extension of :const:`METH_FASTCALL` supporting also keyword arguments,
    with methods of type :c:type:`_PyCFunctionFastWithKeywords`.
-   Keyword arguments are passed the same way as in the vectorcall protocol:
+   Keyword arguments are passed the same way as in the
+   :ref:`vectorcall protocol <vectorcall>`:
    there is an additional fourth :c:type:`PyObject\*` parameter
    which is a tuple representing the names of the keyword arguments
    (which are guaranteed to be strings)
@@ -349,7 +371,7 @@ Accessing attributes of extension types
    .. _pymemberdef-offsets:
 
    Heap allocated types (created using :c:func:`PyType_FromSpec` or similar),
-   ``PyMemberDef`` may contain defintitions for the special members
+   ``PyMemberDef`` may contain definitions for the special members
    ``__dictoffset__`` and ``__weaklistoffset__``, corresponding to
    :c:member:`~PyTypeObject.tp_dictoffset` and
    :c:member:`~PyTypeObject.tp_weaklistoffset` in type objects.

@@ -424,7 +424,7 @@ Customize Memory Allocators
 
    Set the memory block allocator of the specified domain.
 
-   The new allocator must return a distinct non-NULL pointer when requesting
+   The new allocator must return a distinct non-``NULL`` pointer when requesting
    zero bytes.
 
    For the :c:data:`PYMEM_DOMAIN_RAW` domain, the allocator must be

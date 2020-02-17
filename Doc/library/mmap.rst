@@ -244,7 +244,8 @@ To map anonymous memory, -1 should be passed as the fileno along with the length
    .. method:: readline()
 
       Returns a single line, starting at the current file position and up to the
-      next newline.
+      next newline. The file position is updated to point after the bytes that were
+      returned.
 
 
    .. method:: resize(newsize)

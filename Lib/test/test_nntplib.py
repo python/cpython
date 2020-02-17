@@ -19,7 +19,6 @@ except ImportError:
     ssl = None
 
 
-TIMEOUT = 30
 certfile = os.path.join(os.path.dirname(__file__), 'keycert3.pem')
 
 if ssl is not None:
@@ -259,6 +258,10 @@ class NetworkedNNTPTestsMixin:
             # value
             setattr(cls, name, wrap_meth(meth))
 
+    def test_timeout(self):
+        with self.assertRaises(ValueError):
+            self.NNTP_CLASS(self.NNTP_HOST, timeout=0, usenetrc=False)
+
     def test_with_statement(self):
         def is_connected():
             if not hasattr(server, 'file'):
@@ -270,12 +273,18 @@ class NetworkedNNTPTestsMixin:
             return True
 
         try:
-            with self.NNTP_CLASS(self.NNTP_HOST, timeout=TIMEOUT, usenetrc=False) as server:
+            server = self.NNTP_CLASS(self.NNTP_HOST,
+                                     timeout=support.INTERNET_TIMEOUT,
+                                     usenetrc=False)
+            with server:
                 self.assertTrue(is_connected())
                 self.assertTrue(server.help())
             self.assertFalse(is_connected())
 
-            with self.NNTP_CLASS(self.NNTP_HOST, timeout=TIMEOUT, usenetrc=False) as server:
+            server = self.NNTP_CLASS(self.NNTP_HOST,
+                                     timeout=support.INTERNET_TIMEOUT,
+                                     usenetrc=False)
+            with server:
                 server.quit()
             self.assertFalse(is_connected())
         except SSLError as ssl_err:
@@ -307,7 +316,8 @@ class NetworkedNNTPTests(NetworkedNNTPTestsMixin, unittest.TestCase):
         support.requires("network")
         with support.transient_internet(cls.NNTP_HOST):
             try:
-                cls.server = cls.NNTP_CLASS(cls.NNTP_HOST, timeout=TIMEOUT,
+                cls.server = cls.NNTP_CLASS(cls.NNTP_HOST,
+                                            timeout=support.INTERNET_TIMEOUT,
                                             usenetrc=False)
             except SSLError as ssl_err:
                 # matches "[SSL: DH_KEY_TOO_SMALL] dh key too small"
@@ -633,7 +643,7 @@ class NNTPv1Handler:
                     "\tSat, 19 Jun 2010 18:04:08 -0400"
                     "\t<4FD05F05-F98B-44DC-8111-C6009C925F0C@gmail.com>"
                     "\t<hvalf7$ort$1@dough.gmane.org>\t7103\t16"
-                    "\tXref: news.gmane.org gmane.comp.python.authors:57"
+                    "\tXref: news.gmane.io gmane.comp.python.authors:57"
                     "\n"
                 "58\tLooking for a few good bloggers"
                     "\tDoug Hellmann <doug.hellmann-Re5JQEeQqe8AvxtiuMwx3w@public.gmane.org>"
@@ -1119,7 +1129,7 @@ class NNTPv1v2TestsMixin:
             "references": "<hvalf7$ort$1@dough.gmane.org>",
             ":bytes": "7103",
             ":lines": "16",
-            "xref": "news.gmane.org gmane.comp.python.authors:57"
+            "xref": "news.gmane.io gmane.comp.python.authors:57"
             })
         art_num, over = overviews[1]
         self.assertEqual(over["xref"], None)

@@ -38,7 +38,7 @@ associated messages through the :class:`http.HTTPStatus` enum:
       <HTTPStatus.OK: 200>
       >>> HTTPStatus.OK == 200
       True
-      >>> http.HTTPStatus.OK.value
+      >>> HTTPStatus.OK.value
       200
       >>> HTTPStatus.OK.phrase
       'OK'

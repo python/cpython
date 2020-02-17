@@ -1,0 +1,89 @@
+name: Coverage
+
+on:
+  push:
+    branches:
+    - master
+    - 3.8
+    - 3.7
+    paths-ignore:
+    - 'Doc/**'
+    - 'Misc/**'
+  #pull_request:
+  #  branches:
+  #  - master
+  #  - 3.8
+  #  - 3.7
+  #  paths-ignore:
+  #  - 'Doc/**'
+  #  - 'Misc/**'
+
+jobs:
+  coverage_ubuntu:
+    name: 'Ubuntu (Coverage)'
+    runs-on: ubuntu-latest
+    env:
+      OPENSSL_VER: 1.1.1d
+    steps:
+    - uses: actions/checkout@v1
+    - name: Install Dependencies
+      run: sudo ./.github/workflows/posix-deps-apt.sh
+    - name: 'Restore OpenSSL build'
+      id: cache-openssl
+      uses: actions/cache@v1
+      with:
+        path: ./multissl/openssl/${{ env.OPENSSL_VER }}
+        key: ${{ runner.os }}-multissl-openssl-${{ env.OPENSSL_VER }}
+    - name: Install OpenSSL
+      if: steps.cache-openssl.outputs.cache-hit != 'true'
+      run: python3 Tools/ssl/multissltests.py --steps=library --base-directory $PWD/multissl --openssl $OPENSSL_VER --system Linux
+    - name: Configure CPython
+      run: ./configure --with-openssl=$PWD/multissl/openssl/$OPENSSL_VER
+    - name: Build CPython
+      run: make -s -j4
+    - name: Display build info
+      run: make pythoninfo
+    - name: 'Coverage Preparation'
+      run: |
+        ./python -m venv .venv
+        source ./.venv/bin/activate
+        python -m pip install -U coverage
+        python -m test.pythoninfo
+    - name: 'Tests with coverage'
+      run: >
+        source ./.venv/bin/activate &&
+        xvfb-run python -m coverage
+        run --branch --pylib
+        -m test
+        --fail-env-changed
+        -uall,-cpu
+        -x test_multiprocessing_fork
+        -x test_multiprocessing_forkserver
+        -x test_multiprocessing_spawn
+        -x test_concurrent_futures
+        || true
+    - name: 'Publish code coverage results'
+      run: |
+        source ./.venv/bin/activate
+        bash <(curl -s https://codecov.io/bash)
+      env:
+        CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
+
+  c_coverage_ubuntu:
+    name: 'Ubuntu (C Coverage)'
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v1
+    - name: Install Dependencies
+      run: sudo ./.github/workflows/posix-deps-apt.sh
+    - name: Configure CPython
+      run: ./configure
+    - name: 'Build CPython and measure coverage'
+      run: xvfb-run make -j4 coverage-report
+    - name: 'Publish code coverage results'
+      if: always()
+      run: |
+        make pythoninfo
+        bash <(curl -s https://codecov.io/bash)
+      env:
+        CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}

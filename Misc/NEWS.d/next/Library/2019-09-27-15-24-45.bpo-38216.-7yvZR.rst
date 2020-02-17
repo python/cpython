@@ -1,4 +1,0 @@
-Allow the rare code that wants to send invalid http requests from the
-`http.client` library a way to do so.  The fixes for bpo-30458 led to
-breakage for some projects that were relying on this ability to test their
-own behavior in the face of bad requests.

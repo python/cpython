@@ -33,6 +33,12 @@ Operating System Utilities
    that clones the current process.
    Only available on systems where :c:func:`fork` is defined.
 
+   .. warning::
+      The C :c:func:`fork` call should only be made from the
+      :ref:`"main" thread <fork-and-threads>` (of the
+      :ref:`"main" interpreter <sub-interpreter-support>`).  The same is
+      true for ``PyOS_BeforeFork()``.
+
    .. versionadded:: 3.7
 
 
@@ -44,6 +50,12 @@ Operating System Utilities
    of whether process cloning was successful.
    Only available on systems where :c:func:`fork` is defined.
 
+   .. warning::
+      The C :c:func:`fork` call should only be made from the
+      :ref:`"main" thread <fork-and-threads>` (of the
+      :ref:`"main" interpreter <sub-interpreter-support>`).  The same is
+      true for ``PyOS_AfterFork_Parent()``.
+
    .. versionadded:: 3.7
 
 
@@ -54,6 +66,12 @@ Operating System Utilities
    or any similar function that clones the current process, if there is
    any chance the process will call back into the Python interpreter.
    Only available on systems where :c:func:`fork` is defined.
+
+   .. warning::
+      The C :c:func:`fork` call should only be made from the
+      :ref:`"main" thread <fork-and-threads>` (of the
+      :ref:`"main" interpreter <sub-interpreter-support>`).  The same is
+      true for ``PyOS_AfterFork_Child()``.
 
    .. versionadded:: 3.7
 
@@ -291,7 +309,7 @@ accessible to C code.  They all work with the current interpreter thread's
 
 .. c:function:: int PySys_Audit(const char *event, const char *format, ...)
 
-   Raises an auditing event with any active hooks. Returns zero for success
+   Raise an auditing event with any active hooks. Return zero for success
    and non-zero with an exception set on failure.
 
    If any hooks have been added, *format* and other arguments will be used
@@ -302,17 +320,30 @@ accessible to C code.  They all work with the current interpreter thread's
    arguments to this function will be consumed, using it may cause reference
    leaks.)
 
+   Note that ``#`` format characters should always be treated as
+   ``Py_ssize_t``, regardless of whether ``PY_SSIZE_T_CLEAN`` was defined.
+
    :func:`sys.audit` performs the same function from Python code.
 
    .. versionadded:: 3.8
 
+   .. versionchanged:: 3.8.2
+
+      Require ``Py_ssize_t`` for ``#`` format characters. Previously, an
+      unavoidable deprecation warning was raised.
+
 
 .. c:function:: int PySys_AddAuditHook(Py_AuditHookFunction hook, void *userData)
 
-   Adds to the collection of active auditing hooks. Returns zero for success
-   and non-zero on failure. If the runtime has been initialized, also sets an
+   Append the callable *hook* to the list of active auditing hooks.
+   Return zero for success
+   and non-zero on failure. If the runtime has been initialized, also set an
    error on failure. Hooks added through this API are called for all
    interpreters created by the runtime.
+
+   The *userData* pointer is passed into the hook function. Since hook
+   functions may be called from different runtimes, this pointer should not
+   refer directly to Python state.
 
    This function is safe to call before :c:func:`Py_Initialize`. When called
    after runtime initialization, existing audit hooks are notified and may
@@ -324,14 +355,10 @@ accessible to C code.  They all work with the current interpreter thread's
    :c:type:`PyTupleObject`. The hook function is always called with the GIL
    held by the Python interpreter that raised the event.
 
-   The *userData* pointer is passed into the hook function. Since hook
-   functions may be called from different runtimes, this pointer should not
-   refer directly to Python state.
-
-   See :pep:`578` for a detailed description of auditing. Functions in the
-   runtime and standard library that raise events include the details in each
-   function's documentation and listed in the :ref:`audit events table
-   <audit-events>`.
+   See :pep:`578` for a detailed description of auditing.  Functions in the
+   runtime and standard library that raise events are listed in the
+   :ref:`audit events table <audit-events>`.
+   Details are in each function's documentation.
 
    .. audit-event:: sys.addaudithook "" c.PySys_AddAuditHook
 

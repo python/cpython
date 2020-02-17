@@ -145,7 +145,10 @@ jobs:
         buildOpt: '-p x64'
         testRunTitle: '$(System.PullRequest.TargetBranch)-win64'
         testRunPlatform: win64
-    maxParallel: 2
+      winarm64:
+        arch: arm64
+        buildOpt: '-p arm64'
+    maxParallel: 4
 
   steps:
   - template: ./windows-steps.yml

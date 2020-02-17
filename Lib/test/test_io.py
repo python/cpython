@@ -737,6 +737,11 @@ class IOTest(unittest.TestCase):
             file.seek(0)
             file.close()
             self.assertRaises(ValueError, file.read)
+        with self.open(support.TESTFN, "rb") as f:
+            file = self.open(f.fileno(), "rb", closefd=False)
+            self.assertEqual(file.read()[:3], b"egg")
+            file.close()
+            self.assertRaises(ValueError, file.readinto, bytearray(1))
 
     def test_no_closefd_with_filename(self):
         # can't use closefd in combination with a file name
@@ -3492,7 +3497,6 @@ class TextIOWrapperTest(unittest.TestCase):
             """.format(iomod=iomod, kwargs=kwargs)
         return assert_python_ok("-c", code)
 
-    @support.requires_type_collecting
     def test_create_at_shutdown_without_encoding(self):
         rc, out, err = self._check_create_at_shutdown()
         if err:
@@ -3502,7 +3506,6 @@ class TextIOWrapperTest(unittest.TestCase):
         else:
             self.assertEqual("ok", out.decode().strip())
 
-    @support.requires_type_collecting
     def test_create_at_shutdown_with_encoding(self):
         rc, out, err = self._check_create_at_shutdown(encoding='utf-8',
                                                       errors='strict')
@@ -3685,7 +3688,7 @@ def _to_memoryview(buf):
 
 class CTextIOWrapperTest(TextIOWrapperTest):
     io = io
-    shutdown_error = "RuntimeError: could not find io module state"
+    shutdown_error = "LookupError: unknown encoding: ascii"
 
     def test_initialization(self):
         r = self.BytesIO(b"\xc3\xa9\n\n")
@@ -3905,6 +3908,17 @@ class MiscIOTest(unittest.TestCase):
             with self.assertRaises(ValueError) as cm:
                 self.open(support.TESTFN, mode)
             self.assertIn('invalid mode', str(cm.exception))
+
+    def test_open_pipe_with_append(self):
+        # bpo-27805: Ignore ESPIPE from lseek() in open().
+        r, w = os.pipe()
+        self.addCleanup(os.close, r)
+        f = self.open(w, 'a')
+        self.addCleanup(f.close)
+        # Check that the file is marked non-seekable. On Windows, however, lseek
+        # somehow succeeds on pipes.
+        if sys.platform != 'win32':
+            self.assertFalse(f.seekable())
 
     def test_io_after_close(self):
         for kwargs in [

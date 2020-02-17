@@ -1,2 +1,0 @@
-Make ``test_source_encoding.test_issue2301`` implementation independent. The
-test will work now for both CPython and IronPython.

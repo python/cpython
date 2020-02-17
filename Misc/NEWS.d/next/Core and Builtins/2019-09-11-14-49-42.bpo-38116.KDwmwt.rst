@@ -1,1 +1,0 @@
-The select module is now PEP-384 compliant and no longer has static state

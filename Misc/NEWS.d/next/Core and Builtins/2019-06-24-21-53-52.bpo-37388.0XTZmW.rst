@@ -1,7 +1,0 @@
-In development mode and in debug build, *encoding* and *errors* arguments are
-now checked on string encoding and decoding operations. Examples: :func:`open`,
-:meth:`str.encode` and :meth:`bytes.decode`.
-
-By default, for best performances, the *errors* argument is only checked at the
-first encoding/decoding error, and the *encoding* argument is sometimes ignored
-for empty strings.

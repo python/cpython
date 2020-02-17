@@ -551,7 +551,7 @@ hamt_node_bitmap_new(Py_ssize_t size)
         return NULL;
     }
 
-    Py_SIZE(node) = size;
+    Py_SET_SIZE(node, size);
 
     for (i = 0; i < size; i++) {
         node->b_array[i] = NULL;
@@ -1288,7 +1288,7 @@ hamt_node_collision_new(int32_t hash, Py_ssize_t size)
         node->c_array[i] = NULL;
     }
 
-    Py_SIZE(node) = size;
+    Py_SET_SIZE(node, size);
     node->c_hash = hash;
 
     _PyObject_GC_TRACK(node);
@@ -1864,7 +1864,7 @@ hamt_node_array_without(PyHamtNode_Array *self,
                     continue;
                 }
 
-                bitmap |= 1 << i;
+                bitmap |= 1U << i;
 
                 if (IS_BITMAP_NODE(node)) {
                     PyHamtNode_Bitmap *child = (PyHamtNode_Bitmap *)node;

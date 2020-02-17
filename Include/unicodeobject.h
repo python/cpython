@@ -328,17 +328,6 @@ PyAPI_FUNC(wchar_t*) PyUnicode_AsWideCharString(
 
 PyAPI_FUNC(PyObject*) PyUnicode_FromOrdinal(int ordinal);
 
-/* --- Free-list management ----------------------------------------------- */
-
-/* Clear the free list used by the Unicode implementation.
-
-   This can be used to release memory used for objects on the free
-   list back to the Python memory allocator.
-
-*/
-
-PyAPI_FUNC(int) PyUnicode_ClearFreeList(void);
-
 /* === Builtin Codecs =====================================================
 
    Many of these APIs take two arguments encoding and errors. These

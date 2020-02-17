@@ -179,17 +179,25 @@ class ExceptionTests(unittest.TestCase):
         ckmsg(s, "inconsistent use of tabs and spaces in indentation", TabError)
 
     def testSyntaxErrorOffset(self):
-        def check(src, lineno, offset):
+        def check(src, lineno, offset, encoding='utf-8'):
             with self.assertRaises(SyntaxError) as cm:
                 compile(src, '<fragment>', 'exec')
             self.assertEqual(cm.exception.lineno, lineno)
             self.assertEqual(cm.exception.offset, offset)
+            if cm.exception.text is not None:
+                if not isinstance(src, str):
+                    src = src.decode(encoding, 'replace')
+                line = src.split('\n')[lineno-1]
+                self.assertEqual(cm.exception.text.rstrip('\n'), line)
 
         check('def fact(x):\n\treturn x!\n', 2, 10)
         check('1 +\n', 1, 4)
         check('def spam():\n  print(1)\n print(2)', 3, 10)
         check('Python = "Python" +', 1, 20)
         check('Python = "\u1e54\xfd\u0163\u0125\xf2\xf1" +', 1, 20)
+        check(b'# -*- coding: cp1251 -*-\nPython = "\xcf\xb3\xf2\xee\xed" +',
+              2, 19, encoding='cp1251')
+        check(b'Python = "\xcf\xb3\xf2\xee\xed" +', 1, 18)
         check('x = "a', 1, 7)
         check('lambda x: x = 2', 1, 1)
 
@@ -205,6 +213,10 @@ class ExceptionTests(unittest.TestCase):
         check('0010 + 2', 1, 4)
         check('x = 32e-+4', 1, 8)
         check('x = 0o9', 1, 6)
+        check('\u03b1 = 0xI', 1, 6)
+        check(b'\xce\xb1 = 0xI', 1, 6)
+        check(b'# -*- coding: iso8859-7 -*-\n\xe1 = 0xI', 2, 6,
+              encoding='iso8859-7')
 
         # Errors thrown by symtable.c
         check('x = [(yield i) for i in range(3)]', 1, 5)

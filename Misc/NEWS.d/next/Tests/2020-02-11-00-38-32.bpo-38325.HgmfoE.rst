@@ -1,0 +1,1 @@
+Skip tests on non-BMP characters of test_winconsoleio.

@@ -1074,7 +1074,7 @@ import re
 
 def IS_LINE_JUNK(line, pat=re.compile(r"\s*(?:#\s*)?$").match):
     r"""
-    Return 1 for ignorable line: iff `line` is blank or contains a single '#'.
+    Return True for ignorable line: iff `line` is blank or contains a single '#'.
 
     Examples:
 
@@ -1090,7 +1090,7 @@ def IS_LINE_JUNK(line, pat=re.compile(r"\s*(?:#\s*)?$").match):
 
 def IS_CHARACTER_JUNK(ch, ws=" \t"):
     r"""
-    Return 1 for ignorable character: iff `ch` is a space or tab.
+    Return True for ignorable character: iff `ch` is a space or tab.
 
     Examples:
 

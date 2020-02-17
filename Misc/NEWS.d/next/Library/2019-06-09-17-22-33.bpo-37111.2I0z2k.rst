@@ -1,1 +1,0 @@
-Added ``encoding`` and ``errors`` keyword parameters to ``logging.basicConfig``.

@@ -969,7 +969,6 @@ class PosixTester(unittest.TestCase):
             self.assertEqual(type(k), item_type)
             self.assertEqual(type(v), item_type)
 
-    @unittest.skipUnless(hasattr(os, "putenv"), "requires os.putenv()")
     def test_putenv(self):
         with self.assertRaises(ValueError):
             os.putenv('FRUIT\0VEGETABLE', 'cabbage')
@@ -1469,6 +1468,17 @@ class PosixTester(unittest.TestCase):
         self.assertFalse(os.path.exists(fn))
         open(fn, 'wb').close()
         self.assertRaises(ValueError, os.stat, fn_with_NUL)
+
+    @unittest.skipUnless(hasattr(os, "pidfd_open"), "pidfd_open unavailable")
+    def test_pidfd_open(self):
+        with self.assertRaises(OSError) as cm:
+            os.pidfd_open(-1)
+        if cm.exception.errno == errno.ENOSYS:
+            self.skipTest("system does not support pidfd_open")
+        if isinstance(cm.exception, PermissionError):
+            self.skipTest(f"pidfd_open syscall blocked: {cm.exception!r}")
+        self.assertEqual(cm.exception.errno, errno.EINVAL)
+        os.close(os.pidfd_open(os.getpid(), 0))
 
 class PosixGroupsTester(unittest.TestCase):
 
