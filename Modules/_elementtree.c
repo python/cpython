@@ -2671,7 +2671,7 @@ treebuilder_append_event(TreeBuilderObject *self, PyObject *action,
         PyObject *event = PyTuple_Pack(2, action, node);
         if (event == NULL)
             return -1;
-        res = _PyObject_CallOneArg(self->events_append, event);
+        res = PyObject_CallOneArg(self->events_append, event);
         Py_DECREF(event);
         if (res == NULL)
             return -1;
@@ -2837,7 +2837,7 @@ treebuilder_handle_comment(TreeBuilderObject* self, PyObject* text)
     }
 
     if (self->comment_factory) {
-        comment = _PyObject_CallOneArg(self->comment_factory, text);
+        comment = PyObject_CallOneArg(self->comment_factory, text);
         if (!comment)
             return NULL;
 
@@ -3179,7 +3179,7 @@ expat_set_error(enum XML_Error error_code, Py_ssize_t line, Py_ssize_t column,
     if (errmsg == NULL)
         return;
 
-    error = _PyObject_CallOneArg(st->parseerror_obj, errmsg);
+    error = PyObject_CallOneArg(st->parseerror_obj, errmsg);
     Py_DECREF(errmsg);
     if (!error)
         return;
@@ -3242,7 +3242,7 @@ expat_default_handler(XMLParserObject* self, const XML_Char* data_in,
                 (TreeBuilderObject*) self->target, value
                 );
         else if (self->handle_data)
-            res = _PyObject_CallOneArg(self->handle_data, value);
+            res = PyObject_CallOneArg(self->handle_data, value);
         else
             res = NULL;
         Py_XDECREF(res);
@@ -3353,7 +3353,7 @@ expat_data_handler(XMLParserObject* self, const XML_Char* data_in,
         /* shortcut */
         res = treebuilder_handle_data((TreeBuilderObject*) self->target, data);
     else if (self->handle_data)
-        res = _PyObject_CallOneArg(self->handle_data, data);
+        res = PyObject_CallOneArg(self->handle_data, data);
     else
         res = NULL;
 
@@ -3380,7 +3380,7 @@ expat_end_handler(XMLParserObject* self, const XML_Char* tag_in)
     else if (self->handle_end) {
         tag = makeuniversal(self, tag_in);
         if (tag) {
-            res = _PyObject_CallOneArg(self->handle_end, tag);
+            res = PyObject_CallOneArg(self->handle_end, tag);
             Py_DECREF(tag);
         }
     }
@@ -3467,7 +3467,7 @@ expat_end_ns_handler(XMLParserObject* self, const XML_Char* prefix_in)
         if (!prefix)
             return;
 
-        res = _PyObject_CallOneArg(self->handle_end_ns, prefix);
+        res = PyObject_CallOneArg(self->handle_end_ns, prefix);
         Py_DECREF(prefix);
     }
 
@@ -3499,7 +3499,7 @@ expat_comment_handler(XMLParserObject* self, const XML_Char* comment_in)
         if (!comment)
             return;
 
-        res = _PyObject_CallOneArg(self->handle_comment, comment);
+        res = PyObject_CallOneArg(self->handle_comment, comment);
         Py_XDECREF(res);
         Py_DECREF(comment);
     }

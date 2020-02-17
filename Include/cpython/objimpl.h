@@ -15,7 +15,7 @@ static inline PyObject*
 _PyObject_INIT(PyObject *op, PyTypeObject *typeobj)
 {
     assert(op != NULL);
-    Py_TYPE(op) = typeobj;
+    Py_SET_TYPE(op, typeobj);
     if (PyType_GetFlags(typeobj) & Py_TPFLAGS_HEAPTYPE) {
         Py_INCREF(typeobj);
     }
@@ -30,7 +30,7 @@ static inline PyVarObject*
 _PyObject_INIT_VAR(PyVarObject *op, PyTypeObject *typeobj, Py_ssize_t size)
 {
     assert(op != NULL);
-    Py_SIZE(op) = size;
+    Py_SET_SIZE(op, size);
     PyObject_INIT((PyObject *)op, typeobj);
     return op;
 }

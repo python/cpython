@@ -144,7 +144,7 @@ PyObject_Init(PyObject *op, PyTypeObject *tp)
         return PyErr_NoMemory();
     }
 
-    Py_TYPE(op) = tp;
+    Py_SET_TYPE(op, tp);
     if (PyType_GetFlags(tp) & Py_TPFLAGS_HEAPTYPE) {
         Py_INCREF(tp);
     }
@@ -160,7 +160,7 @@ PyObject_InitVar(PyVarObject *op, PyTypeObject *tp, Py_ssize_t size)
         return (PyVarObject *) PyErr_NoMemory();
     }
 
-    Py_SIZE(op) = size;
+    Py_SET_SIZE(op, size);
     PyObject_Init((PyObject *)op, tp);
     return op;
 }
@@ -1041,13 +1041,11 @@ _PyObject_GetDictPtr(PyObject *obj)
     if (dictoffset == 0)
         return NULL;
     if (dictoffset < 0) {
-        Py_ssize_t tsize;
-        size_t size;
-
-        tsize = ((PyVarObject *)obj)->ob_size;
-        if (tsize < 0)
+        Py_ssize_t tsize = Py_SIZE(obj);
+        if (tsize < 0) {
             tsize = -tsize;
-        size = _PyObject_VAR_SIZE(tp, tsize);
+        }
+        size_t size = _PyObject_VAR_SIZE(tp, tsize);
 
         dictoffset += (long)size;
         _PyObject_ASSERT(obj, dictoffset > 0);
@@ -1219,13 +1217,11 @@ _PyObject_GenericGetAttrWithDict(PyObject *obj, PyObject *name,
         dictoffset = tp->tp_dictoffset;
         if (dictoffset != 0) {
             if (dictoffset < 0) {
-                Py_ssize_t tsize;
-                size_t size;
-
-                tsize = ((PyVarObject *)obj)->ob_size;
-                if (tsize < 0)
+                Py_ssize_t tsize = Py_SIZE(obj);
+                if (tsize < 0) {
                     tsize = -tsize;
-                size = _PyObject_VAR_SIZE(tp, tsize);
+                }
+                size_t size = _PyObject_VAR_SIZE(tp, tsize);
                 _PyObject_ASSERT(obj, size <= PY_SSIZE_T_MAX);
 
                 dictoffset += (Py_ssize_t)size;

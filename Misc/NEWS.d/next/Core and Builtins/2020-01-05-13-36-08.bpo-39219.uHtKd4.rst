@@ -1,0 +1,2 @@
+Syntax errors raised in the tokenizer now always set correct "text" and
+"offset" attributes.

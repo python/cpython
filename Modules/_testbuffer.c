@@ -2835,11 +2835,11 @@ PyInit__testbuffer(void)
     if (m == NULL)
         return NULL;
 
-    Py_TYPE(&NDArray_Type) = &PyType_Type;
+    Py_SET_TYPE(&NDArray_Type, &PyType_Type);
     Py_INCREF(&NDArray_Type);
     PyModule_AddObject(m, "ndarray", (PyObject *)&NDArray_Type);
 
-    Py_TYPE(&StaticArray_Type) = &PyType_Type;
+    Py_SET_TYPE(&StaticArray_Type, &PyType_Type);
     Py_INCREF(&StaticArray_Type);
     PyModule_AddObject(m, "staticarray", (PyObject *)&StaticArray_Type);
 

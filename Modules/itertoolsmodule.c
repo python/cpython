@@ -134,7 +134,7 @@ groupby_step(groupbyobject *gbo)
         newkey = newvalue;
         Py_INCREF(newvalue);
     } else {
-        newkey = _PyObject_CallOneArg(gbo->keyfunc, newvalue);
+        newkey = PyObject_CallOneArg(gbo->keyfunc, newvalue);
         if (newkey == NULL) {
             Py_DECREF(newvalue);
             return -1;
@@ -1219,7 +1219,7 @@ dropwhile_next(dropwhileobject *lz)
         if (lz->start == 1)
             return item;
 
-        good = _PyObject_CallOneArg(lz->func, item);
+        good = PyObject_CallOneArg(lz->func, item);
         if (good == NULL) {
             Py_DECREF(item);
             return NULL;
@@ -1382,7 +1382,7 @@ takewhile_next(takewhileobject *lz)
     if (item == NULL)
         return NULL;
 
-    good = _PyObject_CallOneArg(lz->func, item);
+    good = PyObject_CallOneArg(lz->func, item);
     if (good == NULL) {
         Py_DECREF(item);
         return NULL;
@@ -3918,7 +3918,7 @@ filterfalse_next(filterfalseobject *lz)
             ok = PyObject_IsTrue(item);
         } else {
             PyObject *good;
-            good = _PyObject_CallOneArg(lz->func, item);
+            good = PyObject_CallOneArg(lz->func, item);
             if (good == NULL) {
                 Py_DECREF(item);
                 return NULL;
@@ -4750,14 +4750,16 @@ PyInit_itertools(void)
         NULL
     };
 
-    Py_TYPE(&teedataobject_type) = &PyType_Type;
+    Py_SET_TYPE(&teedataobject_type, &PyType_Type);
     m = PyModule_Create(&itertoolsmodule);
-    if (m == NULL)
+    if (m == NULL) {
         return NULL;
+    }
 
     for (i=0 ; typelist[i] != NULL ; i++) {
-        if (PyType_Ready(typelist[i]) < 0)
+        if (PyType_Ready(typelist[i]) < 0) {
             return NULL;
+        }
         name = _PyType_Name(typelist[i]);
         Py_INCREF(typelist[i]);
         PyModule_AddObject(m, name, (PyObject *)typelist[i]);

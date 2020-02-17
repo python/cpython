@@ -52,7 +52,7 @@ PyModuleDef_Init(struct PyModuleDef* def)
     if (def->m_base.m_index == 0) {
         max_module_number++;
         Py_SET_REFCNT(def, 1);
-        Py_TYPE(def) = &PyModuleDef_Type;
+        Py_SET_TYPE(def, &PyModuleDef_Type);
         def->m_base.m_index = max_module_number;
     }
     return (PyObject*)def;
@@ -738,7 +738,7 @@ module_getattro(PyModuleObject *m, PyObject *name)
         _Py_IDENTIFIER(__getattr__);
         getattr = _PyDict_GetItemId(m->md_dict, &PyId___getattr__);
         if (getattr) {
-            return _PyObject_CallOneArg(getattr, name);
+            return PyObject_CallOneArg(getattr, name);
         }
         mod_name = _PyDict_GetItemId(m->md_dict, &PyId___name__);
         if (mod_name && PyUnicode_Check(mod_name)) {
