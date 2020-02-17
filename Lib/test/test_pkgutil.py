@@ -236,6 +236,12 @@ class PkgutilTests(unittest.TestCase):
         # add some Unicode package names to the mix.
 
         unicode_words = ('\u0935\u092e\u0938',
+                         '\xe9', '\xc8',
+                         '\uc548\ub155\ud558\uc138\uc694',
+                         '\u3055\u3088\u306a\u3089',
+                         '\u3042\u308a\u304c\u3068\u3046',
+                         '\u0425\u043e\u0440\u043e\u0448\u043e',
+                         '\u0441\u043f\u0430\u0441\u0438\u0431\u043e',
                          '\u73b0\u4ee3\u6c49\u8bed\u5e38\u7528\u5b57\u8868')
 
         for uw in unicode_words:
@@ -251,7 +257,8 @@ class PkgutilTests(unittest.TestCase):
             importlib.invalidate_caches()
             mod = importlib.import_module(uw)
             success_cases += (uw, mod),
-            failure_cases += (uw[:-1], ImportError),
+            if len(uw) > 1:
+                failure_cases += (uw[:-1], ImportError),
 
         # add an example with a Unicode digit at the start
         failure_cases += ('\u0966\u0935\u092e\u0938', ValueError),
