@@ -1600,7 +1600,7 @@ class Frame(object):
         # This assumes the _POSIX_THREADS version of Python/ceval_gil.h:
         name = self._gdbframe.name()
         if name:
-            return 'pthread_cond_timedwait' in name
+            return 'take_gil' in name
 
     def is_gc_collect(self):
         '''Is this frame "collect" within the garbage-collector?'''
