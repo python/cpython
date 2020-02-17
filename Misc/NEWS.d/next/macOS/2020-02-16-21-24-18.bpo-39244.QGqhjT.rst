@@ -1,2 +1,2 @@
-Fixed default  :class: `multiprocessing.context` in :method: `get_all_start_methods`
+Fixed default :class:`multiprocessing.context` in :func:`get_all_start_methods`
 if the context is macOS, return the default 'spawn'
