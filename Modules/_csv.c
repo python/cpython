@@ -106,7 +106,7 @@ typedef struct {
 
 static PyTypeObject Reader_Type;
 
-#define ReaderObject_Check(v)   (Py_TYPE(v) == &Reader_Type)
+#define ReaderObject_Check(v)   Py_IS_TYPE(v, &Reader_Type)
 
 typedef struct {
     PyObject_HEAD

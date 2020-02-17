@@ -41,7 +41,7 @@ partial_new(PyTypeObject *type, PyObject *args, PyObject *kw)
 
     pargs = pkw = NULL;
     func = PyTuple_GET_ITEM(args, 0);
-    if (Py_TYPE(func) == &partial_type && type == &partial_type) {
+    if (Py_IS_TYPE(func, &partial_type) && type == &partial_type) {
         partialobject *part = (partialobject *)func;
         if (part->dict == NULL) {
             pargs = part->args;
