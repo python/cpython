@@ -1,0 +1,103 @@
+.. bpo: 39184
+.. date: 2020-02-07-23-54-18
+.. nonce: v-ue-v
+.. release date: 2020-02-17
+.. section: Security
+
+Add audit events to functions in `fcntl`, `msvcrt`, `os`, `resource`,
+`shutil`, `signal` and `syslog`.
+
+..
+
+.. bpo: 39619
+.. date: 2020-02-13-07-35-00
+.. nonce: inb_master_chroot
+.. section: Core and Builtins
+
+Enable use of :func:`os.chroot` on HP-UX systems.
+
+..
+
+.. bpo: 39606
+.. date: 2020-02-11-23-59-07
+.. nonce: a72Sxc
+.. section: Core and Builtins
+
+Fix regression caused by fix for bpo-39386, that prevented calling
+``aclose`` on an async generator that had already been closed or exhausted.
+
+..
+
+.. bpo: 39453
+.. date: 2020-01-25-23-51-17
+.. nonce: xCOkYk
+.. section: Core and Builtins
+
+Fixed a possible crash in :meth:`list.__contains__` when a list is changed
+during comparing items. Patch by Dong-hee Na.
+
+..
+
+.. bpo: 39219
+.. date: 2020-01-05-13-36-08
+.. nonce: uHtKd4
+.. section: Core and Builtins
+
+Syntax errors raised in the tokenizer now always set correct "text" and
+"offset" attributes.
+
+..
+
+.. bpo: 27657
+.. date: 2020-02-16-07-08-54
+.. nonce: 9atgcz
+.. section: Library
+
+The original fix for bpo-27657, "Fix urlparse() with numeric paths"
+(GH-16839) included in 3.8.1, inadvertently introduced a behavior change
+that broke several third-party packages relying on the original undefined
+parsing behavior. The change is reverted in 3.8.2, restoring the behavior of
+3.8.0 and earlier releases.
+
+..
+
+.. bpo: 39474
+.. date: 2020-02-12-12-01-26
+.. nonce: RZMEUH
+.. section: Library
+
+Fixed starting position of AST for expressions like ``(a)(b)``, ``(a)[b]``
+and ``(a).b``.
+
+..
+
+.. bpo: 21016
+.. date: 2020-02-12-10-04-39
+.. nonce: bFXPH7
+.. section: Library
+
+The :mod:`pydoc` and :mod:`trace` modules now use the :mod:`sysconfig`
+module to get the path to the Python standard library, to support uncommon
+installation path like ``/usr/lib64/python3.9/`` on Fedora. Patch by Jan
+Matějek.
+
+..
+
+.. bpo: 39595
+.. date: 2020-02-07-23-14-14
+.. nonce: DHwddE
+.. section: Library
+
+Improved performance of zipfile.Path for files with a large number of
+entries. Also improved performance and fixed minor issue as published with
+`importlib_metadata 1.5
+<https://importlib-metadata.readthedocs.io/en/latest/changelog%20(links).html#v1-5-0>`_.
+
+..
+
+.. bpo: 39600
+.. date: 2020-02-10-17-09-48
+.. nonce: X6NsyM
+.. section: IDLE
+
+In the font configuration window, remove duplicated font names.
