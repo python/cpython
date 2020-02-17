@@ -3166,20 +3166,9 @@ dict_or(PyObject *self, PyObject *other)
     if (!PyDict_Check(self) || !PyDict_Check(other)) {
         Py_RETURN_NOTIMPLEMENTED;
     }
-    PyObject *new;
-    if (PyDict_CheckExact(self)) {
-        new = PyDict_Copy(self);
-    }
-    else {
-        _Py_IDENTIFIER(copy);
-        new = _PyObject_CallMethodIdNoArgs(self, &PyId_copy);
-    }
+    PyObject *new = PyDict_Copy(self);
     if (new == NULL) {
         return NULL;
-    }
-    if (!PyDict_Check(new)) {
-        return PyErr_Format(PyExc_TypeError,
-            "copy() returned %s (expected dict)", Py_TYPE(new)->tp_name);
     }
     if (dict_update_arg(new, other)) {
         Py_DECREF(new);

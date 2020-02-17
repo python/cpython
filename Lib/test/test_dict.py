@@ -69,49 +69,6 @@ class DictTest(unittest.TestCase):
         self.assertRaises(ValueError, a.__ior__, "BAD")
         self.assertEqual(a.__ior__(""), {0: 0, 1: 1, 2: 1})
 
-    def test_merge_operator_subclass(self):
-
-        class DictSubclass(dict):
-            """Normally we'd use a mock, but we need this to be a real dict subclass."""
-
-            def __init__(self, /, *args, **kwargs):
-                super().__init__(*args, **kwargs)
-                self.copied = False
-
-            def copy(self):
-                self.copied = True
-                return DictSubclass(super().copy())
-
-        a = DictSubclass({0: 0, 1: 1, 2: 1})
-        b = {1: 1, 2: 2, 3: 3}
-
-        c = a | b
-
-        self.assertDictEqual(c, {0: 0, 1: 1, 2: 2, 3: 3})
-        self.assertIs(type(c), DictSubclass)
-        self.assertTrue(a.copied)
-
-        a.copied = False  # Reset.
-
-        c = b | a
-
-        self.assertDictEqual(c, {1: 1, 2: 1, 3: 3, 0: 0})
-        self.assertIs(type(c), dict)
-        self.assertFalse(a.copied)
-
-    def test_merge_operator_subclass_bad_copy(self):
-
-        class DictSubclassBad(dict):
-
-            def copy(self):
-                return None
-
-        a = DictSubclassBad({0: 0, 1: 1, 2: 1})
-        b = {1: 1, 2: 2, 3: 3}
-
-        self.assertRaises(TypeError, a.__or__, b)
-        self.assertEqual(b | a, {1: 1, 2: 1, 3: 3, 0: 0})
-
     def test_bool(self):
         self.assertIs(not {}, True)
         self.assertTrue({1: 2})
