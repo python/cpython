@@ -1396,28 +1396,7 @@ class EditorWindow(object):
 
             # Adjust indentation for continuations and block open/close.
             # First need to find the last statement.
-            lno = index2line(text.index('insert'))
-            y = pyparse.Parser(self.indentwidth, self.tabwidth)
-            if not self.prompt_last_line:
-                for context in self.num_context_lines:
-                    startat = max(lno - context, 1)
-                    startatindex = repr(startat) + ".0"
-                    rawtext = text.get(startatindex, "insert")
-                    y.set_code(rawtext)
-                    bod = y.find_good_parse_start(
-                            self._build_char_in_string_func(startatindex))
-                    if bod is not None or startat == 1:
-                        break
-                y.set_lo(bod or 0)
-            else:
-                r = text.tag_prevrange("console", "insert")
-                if r:
-                    startatindex = r[1]
-                else:
-                    startatindex = "1.0"
-                rawtext = text.get(startatindex, "insert")
-                y.set_code(rawtext)
-                y.set_lo(0)
+            y = self.parser()
 
             c = y.get_continuation_type()
             if c != pyparse.C_NONE:
@@ -1473,6 +1452,30 @@ class EditorWindow(object):
                   _icis=self.is_char_in_string):
             return _icis(_startindex + "+%dc" % offset)
         return inner
+
+    def parser(self, index="insert", lineend=""):
+        "Create a PyParse instance and find the last statement."
+        text = self.text
+        p = pyparse.Parser(self.indentwidth, self.tabwidth)
+        lineno = self.getlineno(index)
+        stopatindex = index if not lineend else f"{lineno}.end"
+
+        if self.prompt_last_line:
+            r = text.tag_prevrange("console", index)
+            startatindex = r[1] if r else "1.0"
+            p.set_code(text.get(startatindex, stopatindex) + lineend)
+            return p
+
+        for context in self.num_context_lines:
+            startat = max(lineno - context, 1)
+            startatindex = f"{startat}.0"
+            p.set_code(text.get(startatindex, stopatindex) + lineend)
+            bod = p.find_good_parse_start(
+                    self._build_char_in_string_func(startatindex))
+            if bod is not None or startat == 1:
+                break
+        p.set_lo(bod or 0)
+        return p
 
     # XXX this isn't bound to anything -- see tabwidth comments
 ##     def change_tabwidth_event(self, event):

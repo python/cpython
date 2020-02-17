@@ -10,6 +10,7 @@ requires('gui')
 import unittest
 from unittest.mock import Mock
 from tkinter import Tk, Text
+from idlelib.editor import EditorWindow
 
 
 class DummyEditwin:
@@ -18,7 +19,8 @@ class DummyEditwin:
         self.indentwidth = 8
         self.tabwidth = 8
         self.prompt_last_line = '>>>' # Currently not used by parenmatch.
-
+    getlineno = EditorWindow.getlineno
+    parser = EditorWindow.parser
 
 class ParenMatchTest(unittest.TestCase):
 

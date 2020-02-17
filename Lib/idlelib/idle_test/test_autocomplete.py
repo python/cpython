@@ -9,6 +9,7 @@ import __main__
 
 import idlelib.autocomplete as ac
 import idlelib.autocomplete_w as acw
+from idlelib.editor import EditorWindow
 from idlelib.idle_test.mock_idle import Func
 from idlelib.idle_test.mock_tk import Event
 
@@ -20,6 +21,9 @@ class DummyEditwin:
         self.indentwidth = 8
         self.tabwidth = 8
         self.prompt_last_line = '>>>'  # Currently not used by autocomplete.
+
+    getlineno = EditorWindow.getlineno
+    parser = EditorWindow.parser
 
 
 class AutoCompleteTest(unittest.TestCase):

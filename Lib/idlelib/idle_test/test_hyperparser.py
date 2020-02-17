@@ -16,6 +16,8 @@ class DummyEditwin:
 
     _build_char_in_string_func = EditorWindow._build_char_in_string_func
     is_char_in_string = EditorWindow.is_char_in_string
+    getlineno = EditorWindow.getlineno
+    parser = EditorWindow.parser
 
 
 class HyperParserTest(unittest.TestCase):
