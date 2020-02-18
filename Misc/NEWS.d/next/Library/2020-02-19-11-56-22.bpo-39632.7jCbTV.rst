@@ -1,0 +1,6 @@
+Fix and improve ctypes variadic function support. Functions that take a
+variable number of arguments should now be declared using an Ellipsis (...)
+as their last argument (just as a prototype for a C function).  ctypes variadic
+functions declared this way automatically perform the default argument
+promotion (small integer types are promoted to c_int and c_float is promoted to
+double).

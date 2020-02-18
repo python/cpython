@@ -68,7 +68,7 @@ class PythonAPITestCase(unittest.TestCase):
 
     def test_PyOS_snprintf(self):
         PyOS_snprintf = pythonapi.PyOS_snprintf
-        PyOS_snprintf.argtypes = POINTER(c_char), c_size_t, c_char_p
+        PyOS_snprintf.argtypes = POINTER(c_char), c_size_t, c_char_p, ...
 
         buf = c_buffer(256)
         PyOS_snprintf(buf, sizeof(buf), b"Hello from %s", b"ctypes")

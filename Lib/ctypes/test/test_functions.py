@@ -138,6 +138,47 @@ class FunctionTestCase(unittest.TestCase):
         self.assertEqual(result, -21)
         self.assertEqual(type(result), float)
 
+    def test_doubleresult_var(self):
+        f = dll._testfunc_d_bhilfd_var
+        # This function only supports the following argument types:
+        # c_byte, c_short, c_int, c_long, c_float, c_double
+        # Even if it's a variadic function, don't try to pass anything else
+        f.argtypes = (c_int, ...)
+        f.restype = c_double
+
+        # builtin types
+        result = f(0, 1, 2, 3, 4, 5.0, 6.0)
+        self.assertEqual(result, 21)
+        self.assertEqual(type(result), float)
+
+        # user defined types with _as_parameter_
+        class AsParameter:
+            def __init__(self, number):
+                self._as_parameter_ = number
+        result = f(0, *map(AsParameter, (1, 2, 3, 4, 5.0, 6.0)))
+        self.assertEqual(result, 21)
+        self.assertEqual(type(result), float)
+
+        # ctypes without automatic type promotion
+        result = f(
+            0, c_int(1), c_int(2), c_int(3), c_int(4), c_double(5.0),
+            c_double(6.0)
+        )
+        self.assertEqual(result, 21)
+        self.assertEqual(type(result), float)
+
+        # ctypes with automatic type promotion
+        result = f(
+            0, c_byte(1), c_int8(2 ** 7 - 1), c_uint32(2 ** 32 - 1),
+            c_int32(4), c_float(5.0), c_double(6.0)
+        )
+        self.assertEqual(result, 1 + 2 ** 7 - 1 - 1 + 4 + 5. + 6.)
+        self.assertEqual(type(result), float)
+
+        result = f(0, -1, -2, -3, -4, -5.0, -6.0)
+        self.assertEqual(result, -21)
+        self.assertEqual(type(result), float)
+
     def test_longdoubleresult(self):
         f = dll._testfunc_D_bhilfD
         f.argtypes = [c_byte, c_short, c_int, c_long, c_float, c_longdouble]

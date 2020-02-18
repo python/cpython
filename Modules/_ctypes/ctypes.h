@@ -278,6 +278,9 @@ PyObject *_ctypes_callproc(PPROC pProc,
                     PyObject *restype,
                     PyObject *checker);
 
+PyObject *
+_ctypes_sizeof_func(PyObject *self, PyObject *obj);
+
 
 #define FUNCFLAG_STDCALL 0x0
 #define FUNCFLAG_CDECL   0x1

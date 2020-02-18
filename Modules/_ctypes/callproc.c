@@ -1195,9 +1195,13 @@ PyObject *_ctypes_callproc(PPROC pProc,
            than the length of the argtypes tuple.
            This is checked in _ctypes::PyCFuncPtr_Call
         */
-        if (argtypes && argtype_count > i) {
+        if (argtypes && (argtype_count > i || argtype_count != argcount)) {
             PyObject *v;
-            converter = PyTuple_GET_ITEM(argtypes, i);
+            if (i < argtype_count) {
+                converter = PyTuple_GET_ITEM(argtypes, i);
+            } else {
+                converter = PyTuple_GET_ITEM(argtypes, argtype_count -1);
+            }
             v = PyObject_CallOneArg(converter, arg);
             if (v == NULL) {
                 _ctypes_extend_error(PyExc_ArgError, "argument %zd: ", i+1);
@@ -1631,8 +1635,8 @@ static const char sizeof_doc[] =
 "sizeof(C instance) -> integer\n"
 "Return the size in bytes of a C instance";
 
-static PyObject *
-sizeof_func(PyObject *self, PyObject *obj)
+PyObject *
+_ctypes_sizeof_func(PyObject *self, PyObject *obj)
 {
     StgDictObject *dict;
 
@@ -1996,7 +2000,7 @@ PyMethodDef _ctypes_module_methods[] = {
      {"_dyld_shared_cache_contains_path", py_dyld_shared_cache_contains_path, METH_VARARGS, "check if path is in the shared cache"},
 #endif
     {"alignment", align_func, METH_O, alignment_doc},
-    {"sizeof", sizeof_func, METH_O, sizeof_doc},
+    {"sizeof", _ctypes_sizeof_func, METH_O, sizeof_doc},
     {"byref", byref, METH_VARARGS, byref_doc},
     {"addressof", addressof, METH_O, addressof_doc},
     {"call_function", call_function, METH_VARARGS },

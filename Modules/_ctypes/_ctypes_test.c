@@ -341,6 +341,29 @@ EXPORT(double) _testfunc_d_bhilfd(signed char b, short h, int i, long l, float f
     return (double)(b + h + i + l + f + d);
 }
 
+EXPORT(double) _testfunc_d_bhilfd_var(int dummy, ...)
+{
+    signed char b;
+    short h;
+    int i;
+    long l;
+    float f;
+    double d;
+    va_list argptr;
+    va_start(argptr, dummy);
+    b = (signed char)va_arg(argptr, int);
+    h = (short)va_arg(argptr, int);
+    i = va_arg(argptr, int);
+    l = va_arg(argptr, long);
+    f = (float)va_arg(argptr, double);
+    d = va_arg(argptr, double);
+    va_end(argptr);
+/*      printf("_testfunc_d_bhilfd_var got %d %d %d %ld %f %f\n",
+               b, h, i, l, f, d);
+*/
+    return (double)(b + h + i + l + f + d);
+}
+
 EXPORT(long double) _testfunc_D_bhilfD(signed char b, short h, int i, long l, float f, long double d)
 {
 /*      printf("_testfunc_d_bhilfd got %d %d %d %ld %f %f\n",

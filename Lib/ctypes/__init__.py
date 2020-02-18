@@ -3,7 +3,7 @@
 import os as _os, sys as _sys
 import types as _types
 
-__version__ = "1.1.0"
+__version__ = "1.1.1"
 
 from _ctypes import Union, Structure, Array
 from _ctypes import _Pointer
@@ -559,5 +559,19 @@ for kind in [c_ushort, c_uint, c_ulong, c_ulonglong]:
     elif sizeof(kind) == 4: c_uint32 = kind
     elif sizeof(kind) == 8: c_uint64 = kind
 del(kind)
+
+# _ctypes needs the following types for variadic function type promotion
+import _ctypes
+_ctypes.c_int = c_int
+_ctypes.c_uint = c_uint
+_ctypes.c_int8 = c_int8
+_ctypes.c_uint8 = c_uint8
+_ctypes.c_int16 = c_int16
+_ctypes.c_uint16 = c_uint16
+_ctypes.c_int32 = c_int32
+_ctypes.c_uint32 = c_uint32
+_ctypes.c_int64 = c_int64
+_ctypes.c_uint64 = c_uint64
+_ctypes.c_double = c_double
 
 _reset_cache()

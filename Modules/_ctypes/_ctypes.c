@@ -1060,7 +1060,7 @@ PyCPointerType_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
     PyObject *typedict;
     _Py_IDENTIFIER(_type_);
 
-    typedict = PyTuple_GetItem(args, 2);
+    typedict = PySequence_GetItem(args, 2);
     if (!typedict)
         return NULL;
 /*
@@ -1965,13 +1965,13 @@ static PyObject *CreateSwappedType(PyTypeObject *type, PyObject *args, PyObject 
 {
     PyTypeObject *result;
     StgDictObject *stgdict;
-    PyObject *name = PyTuple_GET_ITEM(args, 0);
+    PyObject *name = PySequence_Fast_GET_ITEM(args, 0);
     PyObject *newname;
     PyObject *swapped_args;
     static PyObject *suffix;
     Py_ssize_t i;
 
-    swapped_args = PyTuple_New(PyTuple_GET_SIZE(args));
+    swapped_args = PyTuple_New(PySequence_Fast_GET_SIZE(args));
     if (!swapped_args)
         return NULL;
 
@@ -1993,8 +1993,8 @@ static PyObject *CreateSwappedType(PyTypeObject *type, PyObject *args, PyObject 
     }
 
     PyTuple_SET_ITEM(swapped_args, 0, newname);
-    for (i=1; i<PyTuple_GET_SIZE(args); ++i) {
-        PyObject *v = PyTuple_GET_ITEM(args, i);
+    for (i=1; i<PySequence_Fast_GET_SIZE(args); ++i) {
+        PyObject *v = PySequence_Fast_GET_ITEM(args, i);
         Py_INCREF(v);
         PyTuple_SET_ITEM(swapped_args, i, v);
     }
@@ -2363,6 +2363,101 @@ PyTypeObject PyCSimpleType_Type = {
     0,                                          /* tp_free */
 };
 
+static PyObject *VariadicParamPromotionFunc = NULL;
+static PyObject *VariadicParamInt = NULL;
+static PyObject *VariadicParamDouble = NULL;
+static PyObject *_ctypes_dict;
+
+static PyObject *
+variadic_param_promotion(PyObject *self, PyObject *value) {
+    _Py_IDENTIFIER(from_param);
+    _Py_IDENTIFIER(_as_parameter_);
+    PyObject *as_parameter;
+    PyObject *converter;
+    PyCArgObject *parg;
+    StgDictObject *dict;
+    struct fielddesc *fd;
+    if (!VariadicParamInt) {
+         VariadicParamInt = PyDict_GetItemString(_ctypes_dict, "c_int");
+         assert(VariadicParamInt);
+    }
+    if (!VariadicParamDouble) {
+        VariadicParamDouble = PyDict_GetItemString(_ctypes_dict, "c_double");
+        assert(VariadicParamDouble);
+    }
+    if (PyLong_Check(value)) {
+        value = PyCSimpleType_from_param(VariadicParamInt, value);
+    } else if (PyFloat_Check(value)) {
+        value = PyCSimpleType_from_param(VariadicParamDouble, value);
+    } else if (_PyObject_LookupAttrId(
+            PyObject_Type(value), &PyId_from_param, &converter) > 0) {
+        value = PyObject_CallOneArg(converter, value);
+        if (!PyCArg_CheckExact(value)) {
+            dict = PyObject_stgdict(value);
+            assert(dict);
+            assert(dict->paramfunc);
+            /* If it has an stgdict, it is a CDataObject */
+            parg = dict->paramfunc((CDataObject *)value);
+        } else {
+            parg = (PyCArgObject*)value;
+        }
+        switch (parg->tag) {
+            case 'b': case 'c': case 'h':
+                fd = _ctypes_get_fielddesc("i");
+                parg->tag = 'i';
+                parg->pffi_type = fd->pffi_type;
+                Py_XDECREF(parg->obj);
+                if (parg->tag == 'h')
+                    parg->obj = fd->setfunc(
+                        &parg->value, PyLong_FromLong(parg->value.h), 0);
+                else
+                    parg->obj = fd->setfunc(
+                        &parg->value, PyLong_FromLong(parg->value.b), 0);
+                break;
+            case 'B': case 'H':
+                fd = _ctypes_get_fielddesc("i");
+                parg->tag = 'i';
+                parg->pffi_type = fd->pffi_type;
+                Py_XDECREF(parg->obj);
+                if (parg->tag == 'H')
+                    parg->obj = fd->setfunc(
+                        &parg->value, PyLong_FromLong(parg->value.h), 0);
+                else
+                    parg->obj = fd->setfunc(
+                        &parg->value, PyLong_FromLong(parg->value.b), 0);
+                break;
+            case 'f':
+                fd = _ctypes_get_fielddesc("d");
+                parg->tag = 'd';
+                parg->pffi_type = fd->pffi_type;
+                Py_XDECREF(parg->obj);
+                parg->obj = fd->setfunc(
+                    &parg->value, PyFloat_FromDouble(parg->value.f), 0);
+                break;
+            default:
+                break;
+        }
+        value = (PyObject*)parg;
+    } else if (_PyObject_LookupAttrId(
+            value, &PyId__as_parameter_, &as_parameter) > 0) {
+        if (Py_EnterRecursiveCall("while processing _as_parameter_")) {
+            Py_DECREF(as_parameter);
+            return NULL;
+        }
+        value = variadic_param_promotion(self, as_parameter);
+        Py_LeaveRecursiveCall();
+        Py_DECREF(as_parameter);
+    }
+    return value;
+}
+
+static PyMethodDef variadic_param_promotion_ml = {
+    "variadic_param_promotion",
+    variadic_param_promotion,
+    METH_O,
+};
+
+
 /******************************************************************/
 /*
   PyCFuncPtrType_Type
@@ -2444,7 +2539,14 @@ converters_from_argtypes(PyObject *ob)
         }
  */
 
-        if (_PyObject_LookupAttrId(tp, &PyId_from_param, &cnv) <= 0) {
+        if (tp == Py_Ellipsis) {
+            if (i != nArgs - 1) {
+                PyErr_Format(PyExc_TypeError,
+                        "Ellipsis (...) must be the last item of _argtypes_");
+            }
+            Py_INCREF(VariadicParamPromotionFunc);
+            PyTuple_SET_ITEM(converters, i, VariadicParamPromotionFunc);
+        } else if (_PyObject_LookupAttrId(tp, &PyId_from_param, &cnv) <= 0) {
             Py_DECREF(converters);
             Py_DECREF(ob);
             if (!PyErr_Occurred()) {
@@ -2453,8 +2555,9 @@ converters_from_argtypes(PyObject *ob)
                              i+1);
             }
             return NULL;
+        } else {
+            PyTuple_SET_ITEM(converters, i, cnv);
         }
-        PyTuple_SET_ITEM(converters, i, cnv);
     }
     Py_DECREF(ob);
     return converters;
@@ -3472,7 +3575,7 @@ _validate_paramflags(PyTypeObject *type, PyObject *paramflags)
     }
 
     len = PyTuple_GET_SIZE(paramflags);
-    if (len != PyTuple_GET_SIZE(dict->argtypes)) {
+    if (len != PySequence_Fast_GET_SIZE(dict->argtypes)) {
         PyErr_SetString(PyExc_ValueError,
                         "paramflags must have the same length as argtypes");
         return 0;
@@ -3491,7 +3594,7 @@ _validate_paramflags(PyTypeObject *type, PyObject *paramflags)
                    "paramflags must be a sequence of (int [,string [,value]]) tuples");
             return 0;
         }
-        typ = PyTuple_GET_ITEM(argtypes, i);
+        typ = PySequence_Fast_GET_ITEM(argtypes, i);
         switch (flag & (PARAMFLAG_FIN | PARAMFLAG_FOUT | PARAMFLAG_FLCID)) {
         case 0:
         case PARAMFLAG_FIN:
@@ -3708,21 +3811,23 @@ PyCFuncPtr_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
     StgDictObject *dict;
     CThunkObject *thunk;
 
-    if (PyTuple_GET_SIZE(args) == 0)
+    if (PySequence_Fast_GET_SIZE(args) == 0)
         return GenericPyCData_new(type, args, kwds);
 
-    if (1 <= PyTuple_GET_SIZE(args) && PyTuple_Check(PyTuple_GET_ITEM(args, 0)))
+    if (1 <= PySequence_Fast_GET_SIZE(args)
+        && PyTuple_Check(PySequence_Fast_GET_ITEM(args, 0)))
         return PyCFuncPtr_FromDll(type, args, kwds);
 
 #ifdef MS_WIN32
-    if (2 <= PyTuple_GET_SIZE(args) && PyLong_Check(PyTuple_GET_ITEM(args, 0)))
+    if (2 <= PySequence_Fast_GET_SIZE(args)
+        && PyLong_Check(PySequence_Fast_GET_ITEM(args, 0)))
         return PyCFuncPtr_FromVtblIndex(type, args, kwds);
 #endif
 
-    if (1 == PyTuple_GET_SIZE(args)
-        && (PyLong_Check(PyTuple_GET_ITEM(args, 0)))) {
+    if (1 == PySequence_Fast_GET_SIZE(args)
+        && (PyLong_Check(PySequence_Fast_GET_ITEM(args, 0)))) {
         CDataObject *ob;
-        void *ptr = PyLong_AsVoidPtr(PyTuple_GET_ITEM(args, 0));
+        void *ptr = PyLong_AsVoidPtr(PySequence_Fast_GET_ITEM(args, 0));
         if (ptr == NULL && PyErr_Occurred())
             return NULL;
         ob = (CDataObject *)GenericPyCData_new(type, args, kwds);
@@ -3824,8 +3929,8 @@ _get_arg(int *pindex, PyObject *name, PyObject *defval, PyObject *inargs, PyObje
 {
     PyObject *v;
 
-    if (*pindex < PyTuple_GET_SIZE(inargs)) {
-        v = PyTuple_GET_ITEM(inargs, *pindex);
+    if (*pindex < PySequence_Fast_GET_SIZE(inargs)) {
+        v = PySequence_Fast_GET_ITEM(inargs, *pindex);
         ++*pindex;
         Py_INCREF(v);
         return v;
@@ -3876,10 +3981,11 @@ _get_arg(int *pindex, PyObject *name, PyObject *defval, PyObject *inargs, PyObje
 static PyObject *
 _build_callargs(PyCFuncPtrObject *self, PyObject *argtypes,
                 PyObject *inargs, PyObject *kwds,
-                int *poutmask, int *pinoutmask, unsigned int *pnumretvals)
+                int *poutmask, int *pinoutmask, unsigned int *pnumretvals,
+                Py_ssize_t *fixed_argcount)
 {
     PyObject *paramflags = self->paramflags;
-    PyObject *callargs;
+    PyObject *callargs = NULL;
     StgDictObject *dict;
     Py_ssize_t i, len;
     int inargs_index = 0;
@@ -3892,17 +3998,36 @@ _build_callargs(PyCFuncPtrObject *self, PyObject *argtypes,
     *pinoutmask = 0;
     *pnumretvals = 0;
 
+    len = argtypes ? PySequence_Fast_GET_SIZE(argtypes) : 0;
+    *fixed_argcount = len;
+    if (len > 0 && PySequence_Fast_GET_ITEM(argtypes, len - 1) == Py_Ellipsis) {
+        Py_INCREF(Py_Ellipsis);
+        *fixed_argcount = len - 1;
+        len = PySequence_Fast_GET_SIZE(inargs);
+        if (len < *fixed_argcount) {
+            PyErr_Format(
+                PyExc_TypeError,
+                "this function takes at least %d argument%s (%d given)",
+                *fixed_argcount,
+                *fixed_argcount == 1 ? "" : "s",
+                len);
+            goto error;
+        }
+    }
+
     /* Trivial cases, where we either return inargs itself, or a slice of it. */
-    if (argtypes == NULL || paramflags == NULL || PyTuple_GET_SIZE(argtypes) == 0) {
+    if (argtypes == NULL
+        || (paramflags == NULL && *fixed_argcount == len)
+        || len == 0) {
 #ifdef MS_WIN32
         if (self->index)
-            return PyTuple_GetSlice(inargs, 1, PyTuple_GET_SIZE(inargs));
+            return PyTuple_GetSlice(inargs, 1, PySequence_Fast_GET_SIZE(inargs));
 #endif
         Py_INCREF(inargs);
         return inargs;
     }
 
-    len = PyTuple_GET_SIZE(argtypes);
+
     callargs = PyTuple_New(len); /* the argument tuple we build */
     if (callargs == NULL)
         return NULL;
@@ -3914,7 +4039,7 @@ _build_callargs(PyCFuncPtrObject *self, PyObject *argtypes,
     }
 #endif
     for (i = 0; i < len; ++i) {
-        PyObject *item = PyTuple_GET_ITEM(paramflags, i);
+        PyObject *item = paramflags ? PyTuple_GET_ITEM(paramflags, i) : NULL;
         PyObject *ob;
         unsigned int flag;
         PyObject *name = NULL;
@@ -3923,8 +4048,10 @@ _build_callargs(PyCFuncPtrObject *self, PyObject *argtypes,
         /* This way seems to be ~2 us faster than the PyArg_ParseTuple
            calls below. */
         /* We HAVE already checked that the tuple can be parsed with "i|ZO", so... */
-        Py_ssize_t tsize = PyTuple_GET_SIZE(item);
-        flag = PyLong_AsUnsignedLongMask(PyTuple_GET_ITEM(item, 0));
+        Py_ssize_t tsize = item ? PyTuple_GET_SIZE(item) : 0;
+        flag = item ?
+            PyLong_AsUnsignedLongMask(PyTuple_GET_ITEM(item, 0))
+            : PARAMFLAG_FIN;
         name = tsize > 1 ? PyTuple_GET_ITEM(item, 1) : NULL;
         defval = tsize > 2 ? PyTuple_GET_ITEM(item, 2) : NULL;
 
@@ -3948,6 +4075,7 @@ _build_callargs(PyCFuncPtrObject *self, PyObject *argtypes,
             ob =_get_arg(&inargs_index, name, defval, inargs, kwds);
             if (ob == NULL)
                 goto error;
+            Py_INCREF(ob);
             PyTuple_SET_ITEM(callargs, i, ob);
             break;
         case PARAMFLAG_FOUT:
@@ -3968,7 +4096,7 @@ _build_callargs(PyCFuncPtrObject *self, PyObject *argtypes,
                 (*pnumretvals)++;
                 break;
             }
-            ob = PyTuple_GET_ITEM(argtypes, i);
+            ob = PySequence_Fast_GET_ITEM(argtypes, i);
             dict = PyType_stgdict(ob);
             if (dict == NULL) {
                 /* Cannot happen: _validate_paramflags()
@@ -4015,7 +4143,8 @@ _build_callargs(PyCFuncPtrObject *self, PyObject *argtypes,
        must be the same as len(inargs) + len(kwds), otherwise we have
        either too much or not enough arguments. */
 
-    actual_args = PyTuple_GET_SIZE(inargs) + (kwds ? PyDict_GET_SIZE(kwds) : 0);
+    actual_args = (PySequence_Fast_GET_SIZE(inargs)
+        + (kwds ? PyDict_GET_SIZE(kwds) : 0));
     if (actual_args != inargs_index) {
         /* When we have default values or named parameters, this error
            message is misleading.  See unittests/test_paramflags.py
@@ -4031,7 +4160,7 @@ _build_callargs(PyCFuncPtrObject *self, PyObject *argtypes,
      */
     return callargs;
   error:
-    Py_DECREF(callargs);
+    Py_XDECREF(callargs);
     return NULL;
 }
 
@@ -4073,7 +4202,7 @@ _build_result(PyObject *result, PyObject *callargs,
     for (bit = 1, i = 0; i < 32; ++i, bit <<= 1) {
         PyObject *v;
         if (bit & inoutmask) {
-            v = PyTuple_GET_ITEM(callargs, i);
+            v = PySequence_Fast_GET_ITEM(callargs, i);
             Py_INCREF(v);
             if (numretvals == 1) {
                 Py_DECREF(callargs);
@@ -4084,7 +4213,7 @@ _build_result(PyObject *result, PyObject *callargs,
         } else if (bit & outmask) {
             _Py_IDENTIFIER(__ctypes_from_outparam__);
 
-            v = PyTuple_GET_ITEM(callargs, i);
+            v = PySequence_Fast_GET_ITEM(callargs, i);
             v = _PyObject_CallMethodIdNoArgs(v, &PyId___ctypes_from_outparam__);
             if (v == NULL || numretvals == 1) {
                 Py_DECREF(callargs);
@@ -4120,6 +4249,7 @@ PyCFuncPtr_call(PyCFuncPtrObject *self, PyObject *inargs, PyObject *kwds)
     int inoutmask;
     int outmask;
     unsigned int numretvals;
+    Py_ssize_t fixed_argcount;
 
     assert(dict); /* Cannot be NULL for PyCFuncPtrObject instances */
     restype = self->restype ? self->restype : dict->restype;
@@ -4135,7 +4265,7 @@ PyCFuncPtr_call(PyCFuncPtrObject *self, PyObject *inargs, PyObject *kwds)
     if (self->index) {
         /* It's a COM method */
         CDataObject *this;
-        this = (CDataObject *)PyTuple_GetItem(inargs, 0); /* borrowed ref! */
+        this = (CDataObject *)PySequence_GetItem(inargs, 0); /* borrowed ref! */
         if (!this) {
             PyErr_SetString(PyExc_ValueError,
                             "native com method call without 'this' parameter");
@@ -4164,35 +4294,33 @@ PyCFuncPtr_call(PyCFuncPtrObject *self, PyObject *inargs, PyObject *kwds)
 #endif
     callargs = _build_callargs(self, argtypes,
                                inargs, kwds,
-                               &outmask, &inoutmask, &numretvals);
+                               &outmask, &inoutmask, &numretvals, &fixed_argcount);
     if (callargs == NULL)
         return NULL;
 
     if (converters) {
-        int required = Py_SAFE_DOWNCAST(PyTuple_GET_SIZE(converters),
-                                        Py_ssize_t, int);
-        int actual = Py_SAFE_DOWNCAST(PyTuple_GET_SIZE(callargs),
+        int actual = Py_SAFE_DOWNCAST(PySequence_Fast_GET_SIZE(callargs),
                                       Py_ssize_t, int);
 
         if ((dict->flags & FUNCFLAG_CDECL) == FUNCFLAG_CDECL) {
             /* For cdecl functions, we allow more actual arguments
                than the length of the argtypes tuple.
             */
-            if (required > actual) {
+            if (fixed_argcount > actual) {
                 Py_DECREF(callargs);
                 PyErr_Format(PyExc_TypeError,
               "this function takes at least %d argument%s (%d given)",
-                                 required,
-                                 required == 1 ? "" : "s",
+                                 fixed_argcount,
+                                 fixed_argcount == 1 ? "" : "s",
                                  actual);
                 return NULL;
             }
-        } else if (required != actual) {
+        } else if (fixed_argcount != actual) {
             Py_DECREF(callargs);
             PyErr_Format(PyExc_TypeError,
                  "this function takes %d argument%s (%d given)",
-                     required,
-                     required == 1 ? "" : "s",
+                     fixed_argcount,
+                     fixed_argcount == 1 ? "" : "s",
                      actual);
             return NULL;
         }
@@ -4388,7 +4516,7 @@ _init_pos_args(PyObject *self, PyTypeObject *type,
     }
 
     for (i = 0;
-         i < dict->length && (i+index) < PyTuple_GET_SIZE(args);
+         i < dict->length && (i+index) < PySequence_Fast_GET_SIZE(args);
          ++i) {
         PyObject *pair = PySequence_GetItem(fields, i);
         PyObject *name, *val;
@@ -4400,7 +4528,7 @@ _init_pos_args(PyObject *self, PyTypeObject *type,
             Py_DECREF(pair);
             return -1;
         }
-        val = PyTuple_GET_ITEM(args, i + index);
+        val = PySequence_Fast_GET_ITEM(args, i + index);
         if (kwds) {
             res = PyDict_Contains(kwds, name);
             if (res != 0) {
@@ -4435,12 +4563,12 @@ Struct_init(PyObject *self, PyObject *args, PyObject *kwds)
                         "args not a tuple?");
         return -1;
     }
-    if (PyTuple_GET_SIZE(args)) {
+    if (PySequence_Fast_GET_SIZE(args)) {
         Py_ssize_t res = _init_pos_args(self, Py_TYPE(self),
                                         args, kwds, 0);
         if (res == -1)
             return -1;
-        if (res < PyTuple_GET_SIZE(args)) {
+        if (res < PySequence_Fast_GET_SIZE(args)) {
             PyErr_SetString(PyExc_TypeError,
                             "too many initializers");
             return -1;
@@ -4558,10 +4686,10 @@ Array_init(CDataObject *self, PyObject *args, PyObject *kw)
                         "args not a tuple?");
         return -1;
     }
-    n = PyTuple_GET_SIZE(args);
+    n = PySequence_Fast_GET_SIZE(args);
     for (i = 0; i < n; ++i) {
         PyObject *v;
-        v = PyTuple_GET_ITEM(args, i);
+        v = PySequence_Fast_GET_ITEM(args, i);
         if (-1 == PySequence_SetItem((PyObject *)self, i, v))
             return -1;
     }
@@ -5489,7 +5617,7 @@ comerror_init(PyObject *self, PyObject *args, PyObject *kwds)
     if (!PyArg_ParseTuple(args, "OOO:COMError", &hresult, &text, &details))
         return -1;
 
-    a = PySequence_GetSlice(args, 1, PyTuple_GET_SIZE(args));
+    a = PySequence_GetSlice(args, 1, PySequence_Fast_GET_SIZE(args));
     if (!a)
         return -1;
     status = PyObject_SetAttrString(self, "args", a);
@@ -5782,7 +5910,7 @@ _ctypes_add_objects(PyObject *mod)
     MOD_ADD("FUNCFLAG_USE_ERRNO", PyLong_FromLong(FUNCFLAG_USE_ERRNO));
     MOD_ADD("FUNCFLAG_USE_LASTERROR", PyLong_FromLong(FUNCFLAG_USE_LASTERROR));
     MOD_ADD("FUNCFLAG_PYTHONAPI", PyLong_FromLong(FUNCFLAG_PYTHONAPI));
-    MOD_ADD("__version__", PyUnicode_FromString("1.1.0"));
+    MOD_ADD("__version__", PyUnicode_FromString("1.1.1"));
 
     MOD_ADD("_memmove_addr", PyLong_FromVoidPtr(memmove));
     MOD_ADD("_memset_addr", PyLong_FromVoidPtr(memset));
@@ -5818,6 +5946,15 @@ _ctypes_mod_exec(PyObject *mod)
 
     _ctypes_ptrtype_cache = PyDict_New();
     if (_ctypes_ptrtype_cache == NULL) {
+        return -1;
+    }
+
+    VariadicParamPromotionFunc = PyCFunction_New(&variadic_param_promotion_ml, NULL);
+    if (!VariadicParamPromotionFunc)
+        return -1;
+
+    _ctypes_dict = PyModule_GetDict(mod);
+    if (_ctypes_dict == NULL) {
         return -1;
     }
 
