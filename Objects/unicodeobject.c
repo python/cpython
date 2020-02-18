@@ -12207,8 +12207,8 @@ PyUnicode_IsIdentifier(PyObject *self)
         return 0;
     }
 
-    int kind;
-    void *data;
+    int kind = 0;
+    void *data = NULL;
     wchar_t *wstr;
     if (ready) {
         kind = PyUnicode_KIND(self);
