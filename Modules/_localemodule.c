@@ -105,7 +105,7 @@ PyLocale_setlocale(PyObject* self, PyObject* args)
     if (category < LC_MIN || category > LC_MAX)
     {
         PyErr_SetString(get_locale_state(self)->Error,
-                                         "invalid locale category");
+                        "invalid locale category");
         return NULL;
     }
 #endif
@@ -116,7 +116,7 @@ PyLocale_setlocale(PyObject* self, PyObject* args)
         if (!result) {
             /* operation failed, no setting was changed */
             PyErr_SetString(get_locale_state(self)->Error,
-                                             "unsupported locale setting");
+                            "unsupported locale setting");
             return NULL;
         }
         result_object = PyUnicode_DecodeLocale(result, NULL);
@@ -127,7 +127,7 @@ PyLocale_setlocale(PyObject* self, PyObject* args)
         result = setlocale(category, NULL);
         if (!result) {
             PyErr_SetString(get_locale_state(self)->Error,
-                                             "locale query failed");
+                            "locale query failed");
             return NULL;
         }
         result_object = PyUnicode_DecodeLocale(result, NULL);
@@ -644,7 +644,7 @@ PyIntl_bindtextdomain(PyObject* self, PyObject*args)
         return 0;
     if (!strlen(domain)) {
         PyErr_SetString(get_locale_state(self)->Error,
-                                         "domain must be a non-empty string");
+                        "domain must be a non-empty string");
         return 0;
     }
     if (dirname_obj != Py_None) {
@@ -745,8 +745,9 @@ _locale_exec(PyObject *m)
     PyModule_AddIntMacro(m, LC_ALL);
     PyModule_AddIntMacro(m, CHAR_MAX);
 
-    get_locale_state(m)->Error = PyErr_NewException("locale.Error", NULL, NULL);
-    if (get_locale_state(m)->Error == NULL) {
+    _locale_state *state = get_locale_state(m);
+    state->Error = PyErr_NewException("locale.Error", NULL, NULL);
+    if (state->Error == NULL) {
         return -1;
     }
     if (PyModule_AddObject(m, "Error", get_locale_state(m)->Error) < 0) {
