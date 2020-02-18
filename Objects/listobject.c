@@ -2736,10 +2736,11 @@ list_vectorcall(PyObject *type, PyObject * const*args,
     if (list == NULL) {
         return NULL;
     }
-    PyObject *iterator = nargs ? args[0] : NULL;
-    if (list___init___impl((PyListObject *)list, iterator)) {
-        Py_DECREF(list);
-        return NULL;
+    if (nargs) {
+        if (list___init___impl((PyListObject *)list, args[0])) {
+            Py_DECREF(list);
+            return NULL;
+        }
     }
     return list;
 }
