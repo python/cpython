@@ -124,12 +124,13 @@ class IndentAndNewlineTest(unittest.TestCase):
     def tearDown(self):
         self.window.text.delete("1.0", "end-1c")
 
-    def test_indent_and_newline_event(self):
+    def test_indent_and_newline_event_editor(self):
         eq = self.assertEqual
         w = self.window
         text = w.text
         get = text.get
         nl = w.newline_and_indent_event
+        w.prompt_last_line = ''
 
         TestInfo = namedtuple('Tests', ['label', 'text', 'expected', 'mark'])
 
@@ -171,7 +172,6 @@ class IndentAndNewlineTest(unittest.TestCase):
                           '2.end'),
                  )
 
-        w.prompt_last_line = ''
         for test in tests:
             with self.subTest(label=test.label):
                 insert(text, test.text)
@@ -186,20 +186,26 @@ class IndentAndNewlineTest(unittest.TestCase):
         # Deletes selected text before adding new line.
         eq(get('1.0', 'end'), '  def f1(self, a,\n         \n    return a + b\n')
 
-        # Preserves the whitespace in shell prompt.
+    def test_indent_and_newline_event_shell(self):
+        eq = self.assertEqual
+        w = self.window
+        text = w.text
+        get = text.get
+        nl = w.newline_and_indent_event
         w.prompt_last_line = '>>> '
         insert(text, '>>> \t\ta =')
         text.mark_set('insert', '1.5')
+        text.tag_add("console", "1.0", "1.4")
         nl(None)
         eq(get('1.0', 'end'), '>>> \na =\n')
 
-    def test_parser(self):
+    def test_parser_editor(self):
         eq = self.assertEqual
         w = self.window
         text = w.text
         p = w.parser
-
         w.prompt_last_line = ''
+
         eq(p().code, "")
 
         # Two lines with block opener.
@@ -216,18 +222,41 @@ class IndentAndNewlineTest(unittest.TestCase):
         insert(code)
         eq(p().code, code)
 
-        # Emulate shell.
+        # No newline in code.
+        insert("  def f1(")
+        eq(p(lineend=" \n").code, "  def f1( \n")
+
+    def test_parser_shell(self):
+        eq = self.assertEqual
+        w = self.window
+        text = w.text
+        p = w.parser
         w.prompt_last_line = '>>> '
+
+        # One line with block opener.
         code = (">>> def f1(self, a, b):\n")
         insert(code)
         text.tag_add("console", "1.0", "1.4")
         # The prompt is removed with the parser.
         eq(p().code, code[4:])
 
+        # Two lines with block opener parses everything but prompt.
         code = (">>>   def f1(self, a, b):\n       return a + b\n")
         insert(code)
         text.tag_add("console", "1.0", "1.4")
         eq(p().code, code[4:])
+
+        # Two lines without block opener.
+        code = (">>> a = 1\n"
+                ">>> b = 2\n")
+        insert(code)
+        text.tag_add("console", "2.0", "2.4")
+        eq(p().code, "b = 2\n")
+
+        # No newline in code.
+        insert(">>>   def f1(")
+        text.tag_add("console", "1.0", "1.4")
+        eq(p(lineend=" \n").code, "  def f1( \n")
 
 
 class RMenuTest(unittest.TestCase):
