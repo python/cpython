@@ -974,6 +974,41 @@ class MathTests(unittest.TestCase):
                 with self.assertRaises(TypeError):
                     math.isqrt(value)
 
+    def test_lcm(self):
+        lcm = math.lcm
+        self.assertEqual(lcm(0, 0), 0)
+        self.assertEqual(lcm(1, 0), 0)
+        self.assertEqual(lcm(-1, 0), 0)
+        self.assertEqual(lcm(0, 1), 0)
+        self.assertEqual(lcm(0, -1), 0)
+        self.assertEqual(lcm(7, 1), 7)
+        self.assertEqual(lcm(7, -1), 7)
+        self.assertEqual(lcm(-23, 15), 345)
+        self.assertEqual(lcm(120, 84), 840)
+        self.assertEqual(lcm(84, -120), 840)
+        self.assertEqual(lcm(1216342683557601535506311712,
+                             436522681849110124616458784),
+                             16592536571065866494401400422922201534178938447014944)
+        x = 434610456570399902378880679233098819019853229470286994367836600566
+        y = 1064502245825115327754847244914921553977
+
+        for c in (652560,
+                  576559230871654959816130551884856912003141446781646602790216406874):
+            a = x * c
+            b = y * c
+            d = x * y * c
+            self.assertEqual(lcm(a, b), d)
+            self.assertEqual(lcm(b, a), d)
+            self.assertEqual(lcm(-a, b), d)
+            self.assertEqual(lcm(b, -a), d)
+            self.assertEqual(lcm(a, -b), d)
+            self.assertEqual(lcm(-b, a), d)
+            self.assertEqual(lcm(-a, -b), d)
+            self.assertEqual(lcm(-b, -a), d)
+        self.assertEqual(lcm(MyIndexable(120), MyIndexable(84)), 840)
+        self.assertRaises(TypeError, lcm, 120.0, 84)
+        self.assertRaises(TypeError, lcm, 120, 84.0)
+
     def testLdexp(self):
         self.assertRaises(TypeError, math.ldexp)
         self.ftest('ldexp(0,1)', math.ldexp(0,1), 0)
