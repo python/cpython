@@ -2725,9 +2725,9 @@ list_vectorcall(PyObject *type, PyObject * const*args,
         PyErr_Format(PyExc_TypeError, "list() takes no keyword arguments");
         return NULL;
     }
-    size_t nargs = PyVectorcall_NARGS(nargsf);
+    Py_ssize_t nargs = PyVectorcall_NARGS(nargsf);
     if (nargs > 1) {
-        PyErr_Format(PyExc_TypeError, "list() expected at most 1 argument, got %zu", nargs);
+        PyErr_Format(PyExc_TypeError, "list() expected at most 1 argument, got %zd", nargs);
         return NULL;
     }
 
