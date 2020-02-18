@@ -471,11 +471,6 @@ Removed
   since Python 3.2.
   (Contributed by Victor Stinner in :issue:`38916`.)
 
-* The abstract base classes in :mod:`collections.abc` no longer are
-  exposed in the regular :mod:`collections` module.  This will help
-  create a clearer distinction between the concrete classes and the abstract
-  base classes.
-
 * The undocumented ``sys.callstats()`` function has been removed. Since Python
   3.7, it was deprecated and always returned :const:`None`. It required a special
   build option ``CALL_PROFILE`` which was already removed in Python 3.7.
