@@ -72,7 +72,7 @@ make_range_object(PyTypeObject *type, PyObject *start,
    range(0, 5, -1)
 */
 static PyObject *
-range_from_array(PyTypeObject *type, PyObject *const *args, size_t num_args)
+range_from_array(PyTypeObject *type, PyObject *const *args, Py_ssize_t num_args)
 {
     rangeobject *obj;
     PyObject *start = NULL, *stop = NULL, *step = NULL;
@@ -145,7 +145,7 @@ static PyObject *
 range_vectorcall(PyTypeObject *type, PyObject *const *args,
                  size_t nargsf, PyObject *kwnames)
 {
-    size_t nargs = PyVectorcall_NARGS(nargsf);
+    Py_ssize_t nargs = PyVectorcall_NARGS(nargsf);
     if (kwnames && PyTuple_GET_SIZE(kwnames) != 0) {
         PyErr_Format(PyExc_TypeError, "range() takes no keyword arguments");
         return NULL;
