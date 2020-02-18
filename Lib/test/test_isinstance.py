@@ -261,6 +261,8 @@ class TestIsInstanceIsSubclass(unittest.TestCase):
 
         class B:
             def __init__(self):
+                # setting this here increases the chances of exhibiting the bug,
+                # probably due to memory layout changes.
                 self.x = 1
 
             @property
