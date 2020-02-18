@@ -304,6 +304,19 @@ class BuildExtTestCase(TempdirManager,
         cmd.ensure_finalized()
         self.assertEqual(cmd.get_source_files(), ['xxx'])
 
+    def test_unicode_module_names(self):
+        modules = [
+            Extension('foo', ['aaa'], optional=False),
+            Extension('föö', ['uuu'], optional=False),
+        ]
+        dist = Distribution({'name': 'xx', 'ext_modules': modules})
+        cmd = self.build_ext(dist)
+        cmd.ensure_finalized()
+        self.assertRegex(cmd.get_ext_filename(modules[0].name), r'foo\..*')
+        self.assertRegex(cmd.get_ext_filename(modules[1].name), r'föö\..*')
+        self.assertEqual(cmd.get_export_symbols(modules[0]), ['PyInit_foo'])
+        self.assertEqual(cmd.get_export_symbols(modules[1]), ['PyInitU_f_gkaa'])
+
     def test_compiler_option(self):
         # cmd.compiler is an option and
         # should not be overridden by a compiler instance
