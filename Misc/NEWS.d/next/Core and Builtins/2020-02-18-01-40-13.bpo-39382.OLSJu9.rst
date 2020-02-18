@@ -1,3 +1,2 @@
-Hold reference to ``__bases__`` tuple item before releasing the tuple itself
-in ``abstract_issubclass()``, avoiding a use-after-free in the next loop
-iteration.
+Fix a use-after-free in the single inheritance path of ``issubclass()``, when
+the ``__bases__`` of an object has a single reference, and so does its first item.
