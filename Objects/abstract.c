@@ -2377,17 +2377,18 @@ abstract_issubclass(PyObject *derived, PyObject *cls)
     PyObject *bases = NULL;
     Py_ssize_t i, n;
     int r = 0;
-    int derived_ref = 0;
 
     while (1) {
         if (derived == cls) {
-            if (derived_ref)
-                Py_DECREF(derived);
+            Py_XDECREF(bases); /* See below comment */
             return 1;
         }
-        bases = abstract_get_bases(derived);
-        if (derived_ref)
-            Py_DECREF(derived);
+        /* Use XSETREF to drop bases reference *after* finishing with
+           derived; bases might be the only reference to it.
+           XSETREF is used instead of SETREF, because bases is NULL on the
+           first iteration of the loop.
+        */
+        Py_XSETREF(bases, abstract_get_bases(derived));
         if (bases == NULL) {
             if (PyErr_Occurred())
                 return -1;
@@ -2401,9 +2402,6 @@ abstract_issubclass(PyObject *derived, PyObject *cls)
         /* Avoid recursivity in the single inheritance case */
         if (n == 1) {
             derived = PyTuple_GET_ITEM(bases, 0);
-            Py_INCREF(derived);
-            derived_ref = 1;
-            Py_DECREF(bases);
             continue;
         }
         for (i = 0; i < n; i++) {
