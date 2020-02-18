@@ -1,0 +1,2 @@
+Speed up calls to ``range()`` by about 30%, by using the
+PEP 590 ``vectorcall`` calling convention. Patch by Mark Shannon.
