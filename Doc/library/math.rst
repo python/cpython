@@ -142,6 +142,8 @@ Number-theoretic and representation functions
    ``lcm(a, b)`` is the smallest nonnegative integer that is a multiple of
    both *a* and *b*.  If either *a* or *b* is zero then ``lcm(a, b)`` is zero.
 
+   .. versionadded:: 3.5
+
 
 .. function:: isclose(a, b, *, rel_tol=1e-09, abs_tol=0.0)
 
