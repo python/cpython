@@ -312,8 +312,8 @@ class BuildExtTestCase(TempdirManager,
         dist = Distribution({'name': 'xx', 'ext_modules': modules})
         cmd = self.build_ext(dist)
         cmd.ensure_finalized()
-        self.assertRegex(cmd.get_ext_filename(modules[0].name), r'foo\..*')
-        self.assertRegex(cmd.get_ext_filename(modules[1].name), r'föö\..*')
+        self.assertRegex(cmd.get_ext_filename(modules[0].name), r'foo(_d)?\..*')
+        self.assertRegex(cmd.get_ext_filename(modules[1].name), r'föö(_d)?\..*')
         self.assertEqual(cmd.get_export_symbols(modules[0]), ['PyInit_foo'])
         self.assertEqual(cmd.get_export_symbols(modules[1]), ['PyInitU_f_gkaa'])
 
