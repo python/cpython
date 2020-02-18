@@ -115,7 +115,7 @@ range_from_array(PyTypeObject *type, PyObject *const *args, Py_ssize_t num_args)
             return NULL;
         default:
             PyErr_Format(PyExc_TypeError,
-                         "range expected at most 3 arguments, got %zu",
+                         "range expected at most 3 arguments, got %zd",
                          num_args);
             return NULL;
     }
