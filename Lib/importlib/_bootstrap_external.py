@@ -35,7 +35,7 @@ def _make_relax_case():
 
         def _relax_case():
             """True if filenames must be checked case-insensitively."""
-            return not sys.flags.ignore_environment and key in _os.environ
+            return key in _os.environ
     else:
         def _relax_case():
             """True if filenames must be checked case-insensitively."""
