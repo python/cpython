@@ -1,0 +1,1 @@
+Added context manager support on the logging.handlers.QueueListener

@@ -1526,3 +1526,15 @@ class QueueListener(object):
         self.enqueue_sentinel()
         self._thread.join()
         self._thread = None
+
+    def __enter__(self):
+        """
+        Start the listener on entering the context manager
+        """
+        self.start()
+
+    def __exit__(self, *args):
+        """
+        Stop the listener on exiting the context manager
+        """
+        self.stop()
