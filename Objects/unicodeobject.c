@@ -12209,7 +12209,7 @@ PyUnicode_IsIdentifier(PyObject *self)
 
     int kind = 0;
     void *data = NULL;
-    wchar_t *wstr = NULL;
+    const wchar_t *wstr = NULL;
     Py_UCS4 ch;
     if (ready) {
         kind = PyUnicode_KIND(self);
@@ -12220,7 +12220,6 @@ PyUnicode_IsIdentifier(PyObject *self)
         wstr = _PyUnicode_WSTR(self);
         ch = wstr[0];
     }
-
     /* PEP 3131 says that the first character must be in
        XID_Start and subsequent characters in XID_Continue,
        and for the ASCII range, the 2.x rules apply (i.e
