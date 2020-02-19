@@ -1829,9 +1829,6 @@ are always available.  They are listed here in alphabetical order.
       Negative values for *level* are no longer supported (which also changes
       the default value to 0).
 
-   .. versionchanged:: 3.9
-      When the command line options :option:`-E` or :option:`-I` are being used,
-      the environment variable :envvar:`PYTHONCASEOK` is now ignored.
 
 .. rubric:: Footnotes
 
