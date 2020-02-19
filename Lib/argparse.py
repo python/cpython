@@ -727,6 +727,8 @@ def _get_action_name(argument):
         return argument.metavar
     elif argument.dest not in (None, SUPPRESS):
         return argument.dest
+    elif argument.choices not in (None, SUPPRESS):
+        return "{" + ','.join(argument.choices.keys()) + "}"
     else:
         return None
 
