@@ -669,8 +669,6 @@ class ASTHelpers_Test(unittest.TestCase):
         loaded_json = json.loads(json.dumps(ast.dump_json(node)))
         self.assertEqual(str(ast.dump_json(node)), str(loaded_json))
 
-
-
     def test_dump(self):
         node = ast.parse('spam(eggs, "and cheese")')
         self.assertEqual(ast.dump(node),
