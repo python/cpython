@@ -13,7 +13,7 @@ At large scale, the structure of the module is following:
 * Public helper functions: get_type_hints, overload, cast, no_type_check,
   no_type_check_decorator.
 * Generic aliases for collections.abc ABCs and few additional protocols.
-* Special types: NewType, NamedTuple, TypedDict (may be added soon).
+* Special types: NewType, NamedTuple, TypedDict.
 * Wrapper submodules for re and io related types.
 """
 
@@ -1884,6 +1884,19 @@ class TypedDict(dict, metaclass=_TypedDictMeta):
 
         Point2D = TypedDict('Point2D', x=int, y=int, label=str)
         Point2D = TypedDict('Point2D', {'x': int, 'y': int, 'label': str})
+
+    By default, all keys must be present in a TypedDict. It is possible
+    to override this by specifying totality.
+    Usage::
+
+        class point2D(TypedDict, total=False):
+            x: int
+            y: int
+
+    This means that a point2D TypedDict can have any of the keys omitted.A type
+    checker is only expected to support a literal False or True as the value of
+    the total argument. True is the default, and makes all items defined in the
+    class body be required.
 
     The class syntax is only supported in Python 3.6+, while two other
     syntax forms work for Python 2.7 and 3.2+
