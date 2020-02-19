@@ -163,6 +163,33 @@ def dump(node, annotate_fields=True, include_attributes=False, *, indent=None):
     return _format(node)[0]
 
 
+def dump_json(node):
+    """
+    Return a json representation of the tree in node. This is mainly
+    useful for debugging purposes or perhaps serializing the tree.
+    """
+    def node_dict(node):
+        return {
+            node.__class__.__name__: 
+            dict((key, leaf_repr(value))
+                 for (key, value) in node.__dict__.items())
+        }
+
+    def leaf_repr(leaf):
+        if hasattr(leaf, '__dict__'):
+            return node_dict(leaf) if leaf.__dict__ else leaf.__class__.__name__
+        elif isinstance(leaf, list):
+            return list(map(node_dict, leaf))
+        elif leaf.__class__.__name__ == 'ellipsis': # `_ is Ellipsis` is shadowed
+            return 'Ellipsis'
+        elif leaf is None:
+            return 'None'
+        else:
+            return leaf
+
+    return node_dict(node)
+
+
 def copy_location(new_node, old_node):
     """
     Copy source location (`lineno`, `col_offset`, `end_lineno`, and `end_col_offset`

@@ -639,6 +639,38 @@ class ASTHelpers_Test(unittest.TestCase):
                 ast.literal_eval(r"'\U'")
             self.assertIsNotNone(e.exception.__context__)
 
+    def test_dump_json(self):
+        node = ast.parse('')
+        self.assertEqual(str(ast.dump_json(node)),
+            "{'Module': {'body': [], 'type_ignores': []}}")
+
+        node = ast.parse('...')
+        self.assertEqual(str(ast.dump_json(node)),
+            "{'Module': {'body': [{'Expr': {'value': {'Constant': {'value': "
+            "'Ellipsis', 'kind': 'None', 'lineno': 1, 'col_offset': 0, "
+            "'end_lineno': 1, 'end_col_offset': 3}}, 'lineno': 1, "
+            "'col_offset': 0, 'end_lineno': 1, 'end_col_offset': "
+            "3}}], 'type_ignores': []}}")
+
+        node = ast.parse("spam(eggs, 'and cheese')")
+        self.assertEqual(str(ast.dump_json(node)),
+            "{'Module': {'body': [{'Expr': {'value': {'Call': {'func': {'Name': "
+            "{'id': 'spam', 'ctx': 'Load', 'lineno': 1, 'col_offset': 0, "
+            "'end_lineno': 1, 'end_col_offset': 4}}, 'args': [{'Name': {'id': "
+            "'eggs', 'ctx': 'Load', 'lineno': 1, 'col_offset': 5, 'end_lineno': "
+            "1, 'end_col_offset': 9}}, {'Constant': {'value': 'and cheese', "
+            "'kind': 'None', 'lineno': 1, 'col_offset': 11, 'end_lineno': 1, "
+            "'end_col_offset': 23}}], 'keywords': [], 'lineno': 1, 'col_offset'"
+            ": 0, 'end_lineno': 1, 'end_col_offset': 24}}, 'lineno': 1, "
+            "'col_offset': 0, 'end_lineno': 1, 'end_col_offset': 24}}], "
+            "'type_ignores': []}}")
+
+        import json
+        loaded_json = json.loads(json.dumps(ast.dump_json(node)))
+        self.assertEqual(str(ast.dump_json(node)), str(loaded_json))
+
+
+
     def test_dump(self):
         node = ast.parse('spam(eggs, "and cheese")')
         self.assertEqual(ast.dump(node),
