@@ -151,6 +151,19 @@ class TestDecorators(unittest.TestCase):
         self.assertEqual(counts['double'], 4)
 
     def test_errors(self):
+        # Test syntax restrictions - these are compile-time errors:
+        self.assertRaises(  # Tuples need parentheses:
+            SyntaxError, compile, "@x, y\ndef f(): pass", "test", "exec",
+        )
+        self.assertRaises(
+            SyntaxError, compile, "@x = y\ndef f(): pass", "test", "exec",
+        )
+
+        # These should be okay though:
+        compile("@(x, y)\ndef f(): pass", "test", "exec")
+        compile("@x := y\ndef f(): pass", "test", "exec")
+        compile("@x @y\ndef f(): pass", "test", "exec")  # Binary @!
+
         # Test runtime errors
 
         def unimp(func):
