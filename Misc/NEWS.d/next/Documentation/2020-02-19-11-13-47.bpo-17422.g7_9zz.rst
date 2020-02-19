@@ -1,0 +1,1 @@
+Language reference should specify restrictions on :class:"namespace".
