@@ -54,7 +54,7 @@ raised for division by zero and mod by zero.
 
 #include "Python.h"
 #include "pycore_dtoa.h"
-#include "_math.h"
+#include "math.h"
 
 #include "clinic/mathmodule.c.h"
 
