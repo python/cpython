@@ -1874,7 +1874,7 @@ main_loop:
                 Py_DECREF(value);
                 goto error;
             }
-            res = _PyObject_CallOneArg(hook, value);
+            res = PyObject_CallOneArg(hook, value);
             Py_DECREF(value);
             if (res == NULL)
                 goto error;
@@ -3271,7 +3271,7 @@ main_loop:
             assert(!PyLong_Check(exc));
             exit_func = PEEK(7);
             PyObject *stack[4] = {NULL, exc, val, tb};
-            res = _PyObject_Vectorcall(exit_func, stack + 1,
+            res = PyObject_Vectorcall(exit_func, stack + 1,
                     3 | PY_VECTORCALL_ARGUMENTS_OFFSET, NULL);
             if (res == NULL)
                 goto error;
@@ -4846,7 +4846,7 @@ trace_call_function(PyThreadState *tstate,
 {
     PyObject *x;
     if (PyCFunction_Check(func)) {
-        C_TRACE(x, _PyObject_Vectorcall(func, args, nargs, kwnames));
+        C_TRACE(x, PyObject_Vectorcall(func, args, nargs, kwnames));
         return x;
     }
     else if (Py_TYPE(func) == &PyMethodDescr_Type && nargs > 0) {
@@ -4862,13 +4862,13 @@ trace_call_function(PyThreadState *tstate,
         if (func == NULL) {
             return NULL;
         }
-        C_TRACE(x, _PyObject_Vectorcall(func,
+        C_TRACE(x, PyObject_Vectorcall(func,
                                         args+1, nargs-1,
                                         kwnames));
         Py_DECREF(func);
         return x;
     }
-    return _PyObject_Vectorcall(func, args, nargs | PY_VECTORCALL_ARGUMENTS_OFFSET, kwnames);
+    return PyObject_Vectorcall(func, args, nargs | PY_VECTORCALL_ARGUMENTS_OFFSET, kwnames);
 }
 
 /* Issue #29227: Inline call_function() into _PyEval_EvalFrameDefault()
@@ -4887,7 +4887,7 @@ call_function(PyThreadState *tstate, PyObject ***pp_stack, Py_ssize_t oparg, PyO
         x = trace_call_function(tstate, func, stack, nargs, kwnames);
     }
     else {
-        x = _PyObject_Vectorcall(func, stack, nargs | PY_VECTORCALL_ARGUMENTS_OFFSET, kwnames);
+        x = PyObject_Vectorcall(func, stack, nargs | PY_VECTORCALL_ARGUMENTS_OFFSET, kwnames);
     }
 
     assert((x != NULL) ^ (_PyErr_Occurred(tstate) != NULL));
@@ -5440,7 +5440,7 @@ dtrace_function_entry(PyFrameObject *f)
     funcname = PyUnicode_AsUTF8(f->f_code->co_name);
     lineno = PyCode_Addr2Line(f->f_code, f->f_lasti);
 
-    PyDTrace_FUNCTION_ENTRY((char *)filename, (char *)funcname, lineno);
+    PyDTrace_FUNCTION_ENTRY(filename, funcname, lineno);
 }
 
 static void
@@ -5454,7 +5454,7 @@ dtrace_function_return(PyFrameObject *f)
     funcname = PyUnicode_AsUTF8(f->f_code->co_name);
     lineno = PyCode_Addr2Line(f->f_code, f->f_lasti);
 
-    PyDTrace_FUNCTION_RETURN((char *)filename, (char *)funcname, lineno);
+    PyDTrace_FUNCTION_RETURN(filename, funcname, lineno);
 }
 
 /* DTrace equivalent of maybe_call_line_trace. */
@@ -5486,7 +5486,7 @@ maybe_dtrace_line(PyFrameObject *frame,
         co_name = PyUnicode_AsUTF8(frame->f_code->co_name);
         if (!co_name)
             co_name = "?";
-        PyDTrace_LINE((char *)co_filename, (char *)co_name, line);
+        PyDTrace_LINE(co_filename, co_name, line);
     }
     *instr_prev = frame->f_lasti;
 }

@@ -13,7 +13,7 @@ At large scale, the structure of the module is following:
 * Public helper functions: get_type_hints, overload, cast, no_type_check,
   no_type_check_decorator.
 * Generic aliases for collections.abc ABCs and few additional protocols.
-* Special types: NewType, NamedTuple, TypedDict (may be added soon).
+* Special types: NewType, NamedTuple, TypedDict.
 * Wrapper submodules for re and io related types.
 """
 
@@ -1828,23 +1828,30 @@ class _TypedDictMeta(type):
         ns['__new__'] = _typeddict_new if name == 'TypedDict' else _dict_new
         tp_dict = super(_TypedDictMeta, cls).__new__(cls, name, (dict,), ns)
 
-        anns = ns.get('__annotations__', {})
+        annotations = {}
+        own_annotations = ns.get('__annotations__', {})
+        own_annotation_keys = set(own_annotations.keys())
         msg = "TypedDict('Name', {f0: t0, f1: t1, ...}); each t must be a type"
-        anns = {n: _type_check(tp, msg) for n, tp in anns.items()}
-        required = set(anns if total else ())
-        optional = set(() if total else anns)
+        own_annotations = {
+            n: _type_check(tp, msg) for n, tp in own_annotations.items()
+        }
+        required_keys = set()
+        optional_keys = set()
 
         for base in bases:
-            base_anns = base.__dict__.get('__annotations__', {})
-            anns.update(base_anns)
-            if getattr(base, '__total__', True):
-                required.update(base_anns)
-            else:
-                optional.update(base_anns)
+            annotations.update(base.__dict__.get('__annotations__', {}))
+            required_keys.update(base.__dict__.get('__required_keys__', ()))
+            optional_keys.update(base.__dict__.get('__optional_keys__', ()))
 
-        tp_dict.__annotations__ = anns
-        tp_dict.__required_keys__ = frozenset(required)
-        tp_dict.__optional_keys__ = frozenset(optional)
+        annotations.update(own_annotations)
+        if total:
+            required_keys.update(own_annotation_keys)
+        else:
+            optional_keys.update(own_annotation_keys)
+
+        tp_dict.__annotations__ = annotations
+        tp_dict.__required_keys__ = frozenset(required_keys)
+        tp_dict.__optional_keys__ = frozenset(optional_keys)
         if not hasattr(tp_dict, '__total__'):
             tp_dict.__total__ = total
         return tp_dict
@@ -1877,6 +1884,19 @@ class TypedDict(dict, metaclass=_TypedDictMeta):
 
         Point2D = TypedDict('Point2D', x=int, y=int, label=str)
         Point2D = TypedDict('Point2D', {'x': int, 'y': int, 'label': str})
+
+    By default, all keys must be present in a TypedDict. It is possible
+    to override this by specifying totality.
+    Usage::
+
+        class point2D(TypedDict, total=False):
+            x: int
+            y: int
+
+    This means that a point2D TypedDict can have any of the keys omitted.A type
+    checker is only expected to support a literal False or True as the value of
+    the total argument. True is the default, and makes all items defined in the
+    class body be required.
 
     The class syntax is only supported in Python 3.6+, while two other
     syntax forms work for Python 2.7 and 3.2+

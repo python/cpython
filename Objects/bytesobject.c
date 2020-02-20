@@ -3,11 +3,11 @@
 #define PY_SSIZE_T_CLEAN
 
 #include "Python.h"
+#include "pycore_bytes_methods.h"
 #include "pycore_object.h"
 #include "pycore_pymem.h"
 #include "pycore_pystate.h"
 
-#include "bytes_methods.h"
 #include "pystrhex.h"
 #include <stddef.h>
 
@@ -2259,7 +2259,7 @@ bytes_fromhex_impl(PyTypeObject *type, PyObject *string)
 {
     PyObject *result = _PyBytes_FromHex(string, 0);
     if (type != &PyBytes_Type && result != NULL) {
-        Py_SETREF(result, _PyObject_CallOneArg((PyObject *)type, result));
+        Py_SETREF(result, PyObject_CallOneArg((PyObject *)type, result));
     }
     return result;
 }

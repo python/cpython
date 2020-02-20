@@ -2,6 +2,7 @@
 
 #include "Python.h"
 #include "structmember.h"
+#include "pycore_tupleobject.h"
 
 /* Support objects whose length is > PY_SSIZE_T_MAX.
 
@@ -71,34 +72,27 @@ make_range_object(PyTypeObject *type, PyObject *start,
    range(0, 5, -1)
 */
 static PyObject *
-range_new(PyTypeObject *type, PyObject *args, PyObject *kw)
+range_from_array(PyTypeObject *type, PyObject *const *args, Py_ssize_t num_args)
 {
     rangeobject *obj;
     PyObject *start = NULL, *stop = NULL, *step = NULL;
 
-    if (!_PyArg_NoKeywords("range", kw))
-        return NULL;
-
-    Py_ssize_t num_args = PyTuple_GET_SIZE(args);
     switch (num_args) {
         case 3:
-            step = PyTuple_GET_ITEM(args, 2);
+            step = args[2];
             /* fallthrough */
         case 2:
-            start = PyTuple_GET_ITEM(args, 0);
-            start = PyNumber_Index(start);
+            /* Convert borrowed refs to owned refs */
+            start = PyNumber_Index(args[0]);
             if (!start) {
                 return NULL;
             }
-
-            stop = PyTuple_GET_ITEM(args, 1);
-            stop = PyNumber_Index(stop);
+            stop = PyNumber_Index(args[1]);
             if (!stop) {
                 Py_DECREF(start);
                 return NULL;
             }
-
-            step = validate_step(step);
+            step = validate_step(step);  /* Caution, this can clear exceptions */
             if (!step) {
                 Py_DECREF(start);
                 Py_DECREF(stop);
@@ -106,8 +100,7 @@ range_new(PyTypeObject *type, PyObject *args, PyObject *kw)
             }
             break;
         case 1:
-            stop = PyTuple_GET_ITEM(args, 0);
-            stop = PyNumber_Index(stop);
+            stop = PyNumber_Index(args[0]);
             if (!stop) {
                 return NULL;
             }
@@ -126,16 +119,38 @@ range_new(PyTypeObject *type, PyObject *args, PyObject *kw)
                          num_args);
             return NULL;
     }
-
     obj = make_range_object(type, start, stop, step);
-    if (obj != NULL)
+    if (obj != NULL) {
         return (PyObject *) obj;
+    }
 
     /* Failed to create object, release attributes */
     Py_DECREF(start);
     Py_DECREF(stop);
     Py_DECREF(step);
     return NULL;
+}
+
+static PyObject *
+range_new(PyTypeObject *type, PyObject *args, PyObject *kw)
+{
+    if (!_PyArg_NoKeywords("range", kw))
+        return NULL;
+
+    return range_from_array(type, _PyTuple_ITEMS(args), PyTuple_GET_SIZE(args));
+}
+
+
+static PyObject *
+range_vectorcall(PyTypeObject *type, PyObject *const *args,
+                 size_t nargsf, PyObject *kwnames)
+{
+    Py_ssize_t nargs = PyVectorcall_NARGS(nargsf);
+    if (kwnames && PyTuple_GET_SIZE(kwnames) != 0) {
+        PyErr_Format(PyExc_TypeError, "range() takes no keyword arguments");
+        return NULL;
+    }
+    return range_from_array(type, args, nargs);
 }
 
 PyDoc_STRVAR(range_doc,
@@ -719,6 +734,7 @@ PyTypeObject PyRange_Type = {
         0,                      /* tp_init */
         0,                      /* tp_alloc */
         range_new,              /* tp_new */
+        .tp_vectorcall = (vectorcallfunc)range_vectorcall
 };
 
 /*********************** range Iterator **************************/

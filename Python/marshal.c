@@ -734,7 +734,7 @@ r_byte(RFILE *p)
     else {
         const char *ptr = r_string(1, p);
         if (ptr != NULL)
-            c = *(unsigned char *) ptr;
+            c = *(const unsigned char *) ptr;
     }
     return c;
 }

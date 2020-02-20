@@ -116,6 +116,10 @@ msvcrt_locking_impl(PyObject *module, int fd, int mode, long nbytes)
 {
     int err;
 
+    if (PySys_Audit("msvcrt.locking", "iil", fd, mode, nbytes) < 0) {
+        return NULL;
+    }
+
     Py_BEGIN_ALLOW_THREADS
     _Py_BEGIN_SUPPRESS_IPH
     err = _locking(fd, mode, nbytes);
@@ -175,6 +179,10 @@ msvcrt_open_osfhandle_impl(PyObject *module, void *handle, int flags)
 {
     int fd;
 
+    if (PySys_Audit("msvcrt.open_osfhandle", "Ki", handle, flags) < 0) {
+        return NULL;
+    }
+
     _Py_BEGIN_SUPPRESS_IPH
     fd = _open_osfhandle((intptr_t)handle, flags);
     _Py_END_SUPPRESS_IPH
@@ -200,6 +208,10 @@ msvcrt_get_osfhandle_impl(PyObject *module, int fd)
 /*[clinic end generated code: output=aca01dfe24637374 input=5fcfde9b17136aa2]*/
 {
     intptr_t handle = -1;
+
+    if (PySys_Audit("msvcrt.get_osfhandle", "(i)", fd) < 0) {
+        return NULL;
+    }
 
     _Py_BEGIN_SUPPRESS_IPH
     handle = _get_osfhandle(fd);
