@@ -12209,20 +12209,15 @@ PyUnicode_IsIdentifier(PyObject *self)
 
     int kind = 0;
     void *data = NULL;
-    wchar_t *wstr;
+    const wchar_t *wstr = NULL;
+    Py_UCS4 ch;
     if (ready) {
         kind = PyUnicode_KIND(self);
         data = PyUnicode_DATA(self);
-    }
-    else {
-        wstr = _PyUnicode_WSTR(self);
-    }
-
-    Py_UCS4 ch;
-    if (ready) {
         ch = PyUnicode_READ(kind, data, 0);
     }
     else {
+        wstr = _PyUnicode_WSTR(self);
         ch = wstr[0];
     }
     /* PEP 3131 says that the first character must be in
