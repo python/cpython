@@ -309,6 +309,8 @@ class RoundtripLegalSyntaxTestCase(unittest.TestCase):
                          "class C: pass")
         self.check_suite("@w @(x @y) @(z)\n"
                          "class C: pass")
+        self.check_suite("@w[x].y.z\n"
+                         "class C: pass")
 
     def test_import_from_statement(self):
         self.check_suite("from sys.path import *")
