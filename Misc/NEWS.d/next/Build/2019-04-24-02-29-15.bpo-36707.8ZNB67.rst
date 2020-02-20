@@ -1,3 +1,0 @@
-``./configure --with-pymalloc`` no longer adds the ``m`` flag to SOABI
-(sys.implementation.cache_tag). Enabling or disabling pymalloc has no impact
-on the ABI.

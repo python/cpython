@@ -1,2 +1,0 @@
-The xml.etree.ElementTree packages gained support for C14N 2.0 serialisation.
-Patch by Stefan Behnel.

@@ -435,7 +435,7 @@ Fix an important omission by adding Deque to the typing module.
 
 Fixed race condition in C implementation of functools.lru_cache. KeyError
 could be raised when cached function with full cache was simultaneously
-called from differen threads with the same uncached arguments.
+called from different threads with the same uncached arguments.
 
 ..
 

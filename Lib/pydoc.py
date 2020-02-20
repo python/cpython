@@ -66,6 +66,7 @@ import pkgutil
 import platform
 import re
 import sys
+import sysconfig
 import time
 import tokenize
 import urllib.parse
@@ -392,9 +393,7 @@ class Doc:
 
     docmodule = docclass = docroutine = docother = docproperty = docdata = fail
 
-    def getdocloc(self, object,
-                  basedir=os.path.join(sys.base_exec_prefix, "lib",
-                                       "python%d.%d" %  sys.version_info[:2])):
+    def getdocloc(self, object, basedir=sysconfig.get_path('stdlib')):
         """Return the location of module docs or None"""
 
         try:
@@ -585,7 +584,7 @@ class HTMLDoc(Doc):
         escape = escape or self.escape
         results = []
         here = 0
-        pattern = re.compile(r'\b((http|ftp)://\S+[\w/]|'
+        pattern = re.compile(r'\b((http|https|ftp)://\S+[\w/]|'
                                 r'RFC[- ]?(\d+)|'
                                 r'PEP[- ]?(\d+)|'
                                 r'(self\.)?(\w+))')
@@ -867,7 +866,7 @@ class HTMLDoc(Doc):
                 thisclass = attrs[0][2]
             attrs, inherited = _split_list(attrs, lambda t: t[2] is thisclass)
 
-            if thisclass is builtins.object:
+            if object is not builtins.object and thisclass is builtins.object:
                 attrs = inherited
                 continue
             elif thisclass is object:
@@ -951,6 +950,12 @@ class HTMLDoc(Doc):
                 else:
                     note = ' unbound %s method' % self.classlink(imclass,mod)
 
+        if (inspect.iscoroutinefunction(object) or
+                inspect.isasyncgenfunction(object)):
+            asyncqualifier = 'async '
+        else:
+            asyncqualifier = ''
+
         if name == realname:
             title = '<a name="%s"><strong>%s</strong></a>' % (anchor, realname)
         else:
@@ -979,8 +984,8 @@ class HTMLDoc(Doc):
         if not argspec:
             argspec = '(...)'
 
-        decl = title + self.escape(argspec) + (note and self.grey(
-               '<font face="helvetica, arial">%s</font>' % note))
+        decl = asyncqualifier + title + self.escape(argspec) + (note and
+               self.grey('<font face="helvetica, arial">%s</font>' % note))
 
         if skipdocs:
             return '<dl><dt>%s</dt></dl>\n' % decl
@@ -1327,7 +1332,7 @@ location listed above.
                 thisclass = attrs[0][2]
             attrs, inherited = _split_list(attrs, lambda t: t[2] is thisclass)
 
-            if thisclass is builtins.object:
+            if object is not builtins.object and thisclass is builtins.object:
                 attrs = inherited
                 continue
             elif thisclass is object:
@@ -1382,6 +1387,12 @@ location listed above.
                 else:
                     note = ' unbound %s method' % classname(imclass,mod)
 
+        if (inspect.iscoroutinefunction(object) or
+                inspect.isasyncgenfunction(object)):
+            asyncqualifier = 'async '
+        else:
+            asyncqualifier = ''
+
         if name == realname:
             title = self.bold(realname)
         else:
@@ -1405,7 +1416,7 @@ location listed above.
                     argspec = argspec[1:-1] # remove parentheses
         if not argspec:
             argspec = '(...)'
-        decl = title + argspec + note
+        decl = asyncqualifier + title + argspec + note
 
         if skipdocs:
             return decl + '\n'

@@ -734,7 +734,7 @@ r_byte(RFILE *p)
     else {
         const char *ptr = r_string(1, p);
         if (ptr != NULL)
-            c = *(unsigned char *) ptr;
+            c = *(const unsigned char *) ptr;
     }
     return c;
 }
@@ -813,7 +813,7 @@ r_PyLong(RFILE *p)
     if (ob == NULL)
         return NULL;
 
-    Py_SIZE(ob) = n > 0 ? size : -size;
+    Py_SET_SIZE(ob, n > 0 ? size : -size);
 
     for (i = 0; i < size-1; i++) {
         d = 0;
@@ -1396,7 +1396,7 @@ r_object(RFILE *p)
             if (lnotab == NULL)
                 goto code_error;
 
-            v = (PyObject *) PyCode_New(
+            v = (PyObject *) PyCode_NewWithPosOnlyArgs(
                             argcount, posonlyargcount, kwonlyargcount,
                             nlocals, stacksize, flags,
                             code, consts, names, varnames,
@@ -1653,7 +1653,7 @@ marshal_dump_impl(PyObject *module, PyObject *value, PyObject *file,
     s = PyMarshal_WriteObjectToString(value, version);
     if (s == NULL)
         return NULL;
-    res = _PyObject_CallMethodIdObjArgs(file, &PyId_write, s, NULL);
+    res = _PyObject_CallMethodIdOneArg(file, &PyId_write, s);
     Py_DECREF(s);
     return res;
 }
@@ -1696,7 +1696,7 @@ marshal_load(PyObject *module, PyObject *file)
     if (!PyBytes_Check(data)) {
         PyErr_Format(PyExc_TypeError,
                      "file.read() returned not bytes but %.100s",
-                     data->ob_type->tp_name);
+                     Py_TYPE(data)->tp_name);
         result = NULL;
     }
     else {
@@ -1829,6 +1829,9 @@ PyMarshal_Init(void)
     PyObject *mod = PyModule_Create(&marshalmodule);
     if (mod == NULL)
         return NULL;
-    PyModule_AddIntConstant(mod, "version", Py_MARSHAL_VERSION);
+    if (PyModule_AddIntConstant(mod, "version", Py_MARSHAL_VERSION) < 0) {
+        Py_DECREF(mod);
+        return NULL;
+    }
     return mod;
 }

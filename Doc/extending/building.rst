@@ -1,4 +1,4 @@
-.. highlightlang:: c
+.. highlight:: c
 
 .. _building:
 
@@ -20,7 +20,7 @@ The initialization function has the signature:
 It returns either a fully-initialized module, or a :c:type:`PyModuleDef`
 instance. See :ref:`initializing-modules` for details.
 
-.. highlightlang:: python
+.. highlight:: python
 
 For modules with ASCII-only names, the function must be named
 ``PyInit_<modulename>``, with ``<modulename>`` replaced by the name of the
@@ -43,7 +43,7 @@ function corresponding to the filename is found.
 See the *"Multiple modules in one library"* section in :pep:`489` for details.
 
 
-.. highlightlang:: c
+.. highlight:: c
 
 Building C and C++ Extensions with distutils
 ============================================

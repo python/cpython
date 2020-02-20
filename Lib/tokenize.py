@@ -82,7 +82,7 @@ Number = group(Imagnumber, Floatnumber, Intnumber)
 # Return the empty string, plus all of the valid string prefixes.
 def _all_string_prefixes():
     # The valid string prefixes. Only contain the lower case versions,
-    #  and don't contain any permuations (include 'fr', but not
+    #  and don't contain any permutations (include 'fr', but not
     #  'rf'). The various permutations will be generated.
     _valid_string_prefixes = ['b', 'r', 'u', 'f', 'br', 'fr']
     # if we add binary f-strings, add: ['fb', 'fbr']
@@ -415,7 +415,7 @@ def tokenize(readline):
     column where the token begins in the source; a 2-tuple (erow, ecol) of
     ints specifying the row and column where the token ends in the source;
     and the line on which the token was found.  The line passed is the
-    logical line; continuation lines are included.
+    physical line.
 
     The first token sequence will always be an ENCODING token
     which tells you which encoding was used to decode the bytes stream.

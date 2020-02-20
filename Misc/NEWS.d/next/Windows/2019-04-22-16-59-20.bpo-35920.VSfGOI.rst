@@ -1,3 +1,0 @@
-Added platform.win32_edition() and platform.win32_is_iot(). Added support
-for cross-compiling packages for Windows ARM32. Skip tests that are not
-expected to work on Windows IoT Core ARM32.

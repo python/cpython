@@ -54,11 +54,11 @@ PyAPI_FUNC(void) PyException_SetContext(PyObject *, PyObject *);
      PyType_FastSubclass((PyTypeObject*)(x), Py_TPFLAGS_BASE_EXC_SUBCLASS))
 
 #define PyExceptionInstance_Check(x)                    \
-    PyType_FastSubclass((x)->ob_type, Py_TPFLAGS_BASE_EXC_SUBCLASS)
+    PyType_FastSubclass(Py_TYPE(x), Py_TPFLAGS_BASE_EXC_SUBCLASS)
 
 PyAPI_FUNC(const char *) PyExceptionClass_Name(PyObject *);
 
-#define PyExceptionInstance_Class(x) ((PyObject*)((x)->ob_type))
+#define PyExceptionInstance_Class(x) ((PyObject*)Py_TYPE(x))
 
 
 /* Predefined exceptions */
@@ -97,7 +97,6 @@ PyAPI_DATA(PyObject *) PyExc_NotImplementedError;
 PyAPI_DATA(PyObject *) PyExc_SyntaxError;
 PyAPI_DATA(PyObject *) PyExc_IndentationError;
 PyAPI_DATA(PyObject *) PyExc_TabError;
-PyAPI_DATA(PyObject *) PyExc_TargetScopeError;
 PyAPI_DATA(PyObject *) PyExc_ReferenceError;
 PyAPI_DATA(PyObject *) PyExc_SystemError;
 PyAPI_DATA(PyObject *) PyExc_SystemExit;

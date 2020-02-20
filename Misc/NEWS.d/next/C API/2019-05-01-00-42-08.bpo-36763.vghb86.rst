@@ -1,2 +1,0 @@
-Fix memory leak in :c:func:`Py_SetStandardStreamEncoding`: release memory if
-the function is called twice.

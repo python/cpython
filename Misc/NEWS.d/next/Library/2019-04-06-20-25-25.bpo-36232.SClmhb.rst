@@ -1,2 +1,0 @@
-Improve error message when trying to open existing DBM database that
-actually doesn't exist. Patch by Marco Rougeth.

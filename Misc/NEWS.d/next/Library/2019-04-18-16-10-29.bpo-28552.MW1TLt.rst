@@ -1,4 +1,0 @@
-Fix :mod:`distutils.sysconfig` if :data:`sys.executable` is ``None`` or an
-empty string: use :func:`os.getcwd` to initialize ``project_base``.  Fix
-also the distutils build command: don't use :data:`sys.executable` if it is
-``None`` or an empty string.

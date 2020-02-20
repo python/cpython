@@ -25,7 +25,7 @@ typedef struct {
 
 static PyObject *Xxo_Type;
 
-#define XxoObject_Check(v)      (Py_TYPE(v) == Xxo_Type)
+#define XxoObject_Check(v)      Py_IS_TYPE(v, Xxo_Type)
 
 static XxoObject *
 newXxoObject(PyObject *arg)
@@ -123,7 +123,7 @@ static PyType_Spec Xxo_Type_spec = {
     "xxlimited.Xxo",
     sizeof(XxoObject),
     0,
-    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC | Py_TPFLAGS_HAVE_FINALIZE,
+    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC,
     Xxo_Type_slots
 };
 

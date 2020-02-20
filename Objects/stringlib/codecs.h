@@ -46,7 +46,7 @@ STRINGLIB(utf8_decode)(const char **inptr, const char *end,
                     /* Read a whole long at a time (either 4 or 8 bytes),
                        and do a fast unrolled copy if it only contains ASCII
                        characters. */
-                    unsigned long value = *(unsigned long *) _s;
+                    unsigned long value = *(const unsigned long *) _s;
                     if (value & ASCII_CHAR_MASK)
                         break;
 #if PY_LITTLE_ENDIAN
@@ -207,7 +207,7 @@ STRINGLIB(utf8_decode)(const char **inptr, const char *end,
                     goto InvalidContinuation1;
             } else if (ch == 0xF4 && ch2 >= 0x90) {
                 /* invalid sequence
-                   \xF4\x90\x80\80- -- 110000- overflow */
+                   \xF4\x90\x80\x80- -- 110000- overflow */
                 goto InvalidContinuation1;
             }
             if (!IS_CONTINUATION_BYTE(ch3)) {
@@ -515,7 +515,7 @@ STRINGLIB(utf16_decode)(const unsigned char **inptr, const unsigned char *e,
             /* Fast path for runs of in-range non-surrogate chars. */
             const unsigned char *_q = q;
             while (_q < aligned_end) {
-                unsigned long block = * (unsigned long *) _q;
+                unsigned long block = * (const unsigned long *) _q;
                 if (native_ordering) {
                     /* Can use buffer directly */
                     if (block & FAST_CHAR_MASK)
@@ -573,10 +573,10 @@ STRINGLIB(utf16_decode)(const unsigned char **inptr, const unsigned char *e,
         }
 
         /* UTF-16 code pair: */
-        if (q >= e)
-            goto UnexpectedEnd;
         if (!Py_UNICODE_IS_HIGH_SURROGATE(ch))
             goto IllegalEncoding;
+        if (q >= e)
+            goto UnexpectedEnd;
         ch2 = (q[ihi] << 8) | q[ilo];
         q += 2;
         if (!Py_UNICODE_IS_LOW_SURROGATE(ch2))

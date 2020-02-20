@@ -1,3 +1,0 @@
-The ``.find*()`` methods of xml.etree.ElementTree can now search for
-wildcards like ``{*}tag`` and ``{ns}*`` that match a tag in any namespace
-or all tags in a namespace.  Patch by Stefan Behnel.

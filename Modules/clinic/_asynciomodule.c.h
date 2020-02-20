@@ -119,7 +119,7 @@ PyDoc_STRVAR(_asyncio_Future_set_exception__doc__,
     {"set_exception", (PyCFunction)_asyncio_Future_set_exception, METH_O, _asyncio_Future_set_exception__doc__},
 
 PyDoc_STRVAR(_asyncio_Future_add_done_callback__doc__,
-"add_done_callback($self, fn, /, *, context=None)\n"
+"add_done_callback($self, fn, /, *, context=<unrepresentable>)\n"
 "--\n"
 "\n"
 "Add a callback to be run when the future becomes done.\n"
@@ -569,6 +569,23 @@ PyDoc_STRVAR(_asyncio_Task_set_exception__doc__,
 #define _ASYNCIO_TASK_SET_EXCEPTION_METHODDEF    \
     {"set_exception", (PyCFunction)_asyncio_Task_set_exception, METH_O, _asyncio_Task_set_exception__doc__},
 
+PyDoc_STRVAR(_asyncio_Task_get_coro__doc__,
+"get_coro($self, /)\n"
+"--\n"
+"\n");
+
+#define _ASYNCIO_TASK_GET_CORO_METHODDEF    \
+    {"get_coro", (PyCFunction)_asyncio_Task_get_coro, METH_NOARGS, _asyncio_Task_get_coro__doc__},
+
+static PyObject *
+_asyncio_Task_get_coro_impl(TaskObj *self);
+
+static PyObject *
+_asyncio_Task_get_coro(TaskObj *self, PyObject *Py_UNUSED(ignored))
+{
+    return _asyncio_Task_get_coro_impl(self);
+}
+
 PyDoc_STRVAR(_asyncio_Task_get_name__doc__,
 "get_name($self, /)\n"
 "--\n"
@@ -815,4 +832,4 @@ _asyncio__leave_task(PyObject *module, PyObject *const *args, Py_ssize_t nargs, 
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=e3b02d96da56e80c input=a9049054013a1b77]*/
+/*[clinic end generated code: output=585ba1f8de5b4103 input=a9049054013a1b77]*/
