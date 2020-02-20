@@ -20,7 +20,7 @@ steps:
 - script: ./configure --with-pydebug
   displayName: 'Configure CPython (debug)'
 
-- script: make -s -j4
+- script: make -j4
   displayName: 'Build CPython'
 
 - ${{ if eq(parameters.coverage, 'true') }}:
