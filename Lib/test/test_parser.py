@@ -242,6 +242,8 @@ class RoundtripLegalSyntaxTestCase(unittest.TestCase):
                          "def f(): pass")
         self.check_suite("@None\n"
                          "def f(): pass")
+        self.check_suite("@w @(x @y) @(z)\n"
+                         "def f(): pass")
 
         # keyword-only arguments
         self.check_suite("def f(*, a): pass")
@@ -302,6 +304,8 @@ class RoundtripLegalSyntaxTestCase(unittest.TestCase):
         self.check_suite("@...\n"
                          "class C: pass")
         self.check_suite("@None\n"
+                         "class C: pass")
+        self.check_suite("@w @(x @y) @(z)\n"
                          "class C: pass")
 
     def test_import_from_statement(self):
