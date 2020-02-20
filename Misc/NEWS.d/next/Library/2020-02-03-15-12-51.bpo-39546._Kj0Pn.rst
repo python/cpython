@@ -1,0 +1,3 @@
+Fix a regression in :class:`~argparse.ArgumentParser` where
+``allow_abbrev=False`` was ignored for long options that used a prefix
+character other than "-".
