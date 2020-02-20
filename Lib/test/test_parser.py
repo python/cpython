@@ -244,6 +244,8 @@ class RoundtripLegalSyntaxTestCase(unittest.TestCase):
                          "def f(): pass")
         self.check_suite("@w @(x @y) @(z)\n"
                          "def f(): pass")
+        self.check_suite("@w[x].y.z\n"
+                         "def f(): pass")
 
         # keyword-only arguments
         self.check_suite("def f(*, a): pass")

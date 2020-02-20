@@ -677,6 +677,8 @@ class GrammarTests(unittest.TestCase):
         def f(x): pass
         @null(null)(null)
         def f(x): pass
+        @[null][0].__call__.__call__
+        def f(x): pass
 
         # test closures with a variety of opargs
         closure = 1
@@ -1542,6 +1544,8 @@ class GrammarTests(unittest.TestCase):
         @[..., class_decorator, ...][1]
         class K: pass
         @class_decorator(class_decorator)(class_decorator)
+        class L: pass
+        @[class_decorator][0].__call__.__call__
         class L: pass
 
     def test_dictcomps(self):

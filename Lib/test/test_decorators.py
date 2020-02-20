@@ -153,7 +153,7 @@ class TestDecorators(unittest.TestCase):
     def test_errors(self):
 
         # Test SyntaxErrors:
-        for stmt in ("x, y", "x = y", "pass", "import sys"):
+        for stmt in ("x,", "x, y", "x = y", "pass", "import sys"):
             compile(stmt, "test", "exec")  # Sanity check.
             with self.assertRaises(SyntaxError):
                 compile(f"@{stmt}\ndef f(): pass", "test", "exec")
@@ -177,7 +177,10 @@ class TestDecorators(unittest.TestCase):
             self.assertRaises(exc, eval, code, context)
 
     def test_expressions(self):
-        for expr in ("(x, y)", "x := y", "(x := y)", "x @y", "(x @ y)"):
+        for expr in (
+            "(x,)", "(x, y)", "x := y", "(x := y)", "x @y", "(x @ y)", "x[0]",
+            "w[x].y.z", "w + x - (y + z)", "x(y)()(z)", "[w, x, y][z]", "x.y",
+        ):
             compile(f"@{expr}\ndef f(): pass", "test", "exec")
 
     def test_double(self):
