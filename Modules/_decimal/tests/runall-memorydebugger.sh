@@ -78,7 +78,7 @@ for config in $CONFIGS; do
         $GMAKE | grep _decimal
 
         printf "\n\n# ======================== refleak tests ===========================\n\n"
-        ./python -m test -uall -R 2:2 test_decimal
+        ./python -m test -uall -R 3:3 test_decimal
 
 
         ############ regular tests ###########
