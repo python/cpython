@@ -1535,6 +1535,8 @@ class GrammarTests(unittest.TestCase):
         def class_decorator(x): return x
         @class_decorator
         class G: pass
+
+        # Test expressions as decorators (PEP 614):
         @False or class_decorator
         class H: pass
         @d := class_decorator
