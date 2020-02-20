@@ -216,6 +216,9 @@ import attempts.
 math
 ----
 
+Add :func:`math.lcm`: return the least common multiple of *a* and *b*.
+(Contributed by Ananthakrishnan in :issue:`39479`.)
+
 Add :func:`math.nextafter`: return the next floating-point value after *x*
 towards *y*.
 (Contributed by Victor Stinner in :issue:`39288`.)
@@ -584,9 +587,6 @@ Changes in the Python API
   since the *buffering* parameter has been removed.
   (Contributed by Victor Stinner in :issue:`39357`.)
 
-* The :mod:`importlib` module now ignores the :envvar:`PYTHONCASEOK`
-  environment variable when the :option:`-E` or :option:`-I` command line
-  options are being used.
 
 CPython bytecode changes
 ------------------------
