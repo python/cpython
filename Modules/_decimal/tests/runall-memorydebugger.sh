@@ -18,7 +18,7 @@ CONFIGS_64="x64 uint128 ansi64 universal"
 CONFIGS_32="ppro ansi32 ansi-legacy universal"
 
 VALGRIND="valgrind --tool=memcheck --leak-resolution=high \
-          --db-attach=yes --suppressions=Misc/valgrind-python.supp"
+          --suppressions=Misc/valgrind-python.supp"
 
 # Get args
 case $@ in
