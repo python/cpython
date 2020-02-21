@@ -2130,7 +2130,7 @@ for very large numbers.
 
 The context must be adapted for exact arbitrary precision arithmetic. :attr:`Emin`
 and :attr:`Emax` should always be set to the maximum values, :attr:`clamp`
-should always be `0` (the default).  Setting :attr:`prec` requires some care.
+should always be 0 (the default).  Setting :attr:`prec` requires some care.
 
 The easiest approach for trying out bignum arithmetic is to use the maximum
 value for :attr:`prec` as well [#]_::
