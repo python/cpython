@@ -1947,7 +1947,7 @@ additional keyword arguments, if any, come from the class definition). The
 +the final class object is created the namespace is copied into a new ``dict``.
 
 If the metaclass has no ``__prepare__`` attribute, then the class namespace
- is initialised as an empty :func:`dict` instance.
+is initialised as an empty :func:`dict`.
 
 .. seealso::
 
