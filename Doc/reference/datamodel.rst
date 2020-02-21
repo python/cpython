@@ -1932,8 +1932,8 @@ metaclass (if any) and the metaclasses (i.e. ``type(cls)``) of all specified
 base classes. The most derived metaclass is one which is a subtype of *all*
 of these candidate metaclasses. If none of the candidate metaclasses meets
 that criterion, then the class definition will fail with ``TypeError``.
-.. _prepare:
 
+.. _prepare:
 Preparing the class namespace
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
