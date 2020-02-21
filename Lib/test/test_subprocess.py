@@ -1589,7 +1589,7 @@ class RunFuncTestCase(BaseTestCase):
 
 
 def _get_test_grp_name():
-    for name_group in ('staff', 'nogroup', 'grp'):
+    for name_group in ('staff', 'nogroup', 'grp', 'nobody', 'nfsnobody'):
         if grp:
             try:
                 grp.getgrnam(name_group)
@@ -1768,24 +1768,27 @@ class POSIXProcessTestCase(BaseTestCase):
             test_users.append(name_uid)
 
         for user in test_users:
-            with self.subTest(user=user):
-                try:
-                    output = subprocess.check_output(
-                            [sys.executable, "-c",
-                             "import os; print(os.getuid())"],
-                            user=user)
-                except PermissionError:  # errno.EACCES
-                    pass
-                except OSError as e:
-                    if e.errno not in (errno.EACCES, errno.EPERM):
-                        raise
-                else:
-                    if isinstance(user, str):
-                        user_uid = pwd.getpwnam(user).pw_uid
+            # posix_spawn() may be used with close_fds=False
+            for close_fds in (False, True):
+                with self.subTest(user=user, close_fds=close_fds):
+                    try:
+                        output = subprocess.check_output(
+                                [sys.executable, "-c",
+                                 "import os; print(os.getuid())"],
+                                user=user,
+                                close_fds=close_fds)
+                    except PermissionError:  # (EACCES, EPERM)
+                        pass
+                    except OSError as e:
+                        if e.errno not in (errno.EACCES, errno.EPERM):
+                            raise
                     else:
-                        user_uid = user
-                    child_user = int(output)
-                    self.assertEqual(child_user, user_uid)
+                        if isinstance(user, str):
+                            user_uid = pwd.getpwnam(user).pw_uid
+                        else:
+                            user_uid = user
+                        child_user = int(output)
+                        self.assertEqual(child_user, user_uid)
 
         with self.assertRaises(ValueError):
             subprocess.check_call([sys.executable, "-c", "pass"], user=-1)
@@ -1809,23 +1812,25 @@ class POSIXProcessTestCase(BaseTestCase):
             group_list.append(name_group)
 
         for group in group_list + [gid]:
-            with self.subTest(group=group):
-                try:
-                    output = subprocess.check_output(
-                            [sys.executable, "-c",
-                             "import os; print(os.getgid())"],
-                            group=group)
-                except OSError as e:
-                    if e.errno != errno.EPERM:
-                        raise
-                else:
-                    if isinstance(group, str):
-                        group_gid = grp.getgrnam(group).gr_gid
+            # posix_spawn() may be used with close_fds=False
+            for close_fds in (False, True):
+                with self.subTest(group=group, close_fds=close_fds):
+                    try:
+                        output = subprocess.check_output(
+                                [sys.executable, "-c",
+                                 "import os; print(os.getgid())"],
+                                group=group,
+                                close_fds=close_fds)
+                    except PermissionError:  # (EACCES, EPERM)
+                        pass
                     else:
-                        group_gid = group
+                        if isinstance(group, str):
+                            group_gid = grp.getgrnam(group).gr_gid
+                        else:
+                            group_gid = group
 
-                    child_group = int(output)
-                    self.assertEqual(child_group, group_gid)
+                        child_group = int(output)
+                        self.assertEqual(child_group, group_gid)
 
         # make sure we bomb on negative values
         with self.assertRaises(ValueError):

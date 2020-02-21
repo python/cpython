@@ -12,6 +12,7 @@ import fnmatch
 import functools
 import gc
 import glob
+import hashlib
 import importlib
 import importlib.util
 import locale
@@ -644,6 +645,29 @@ def requires_mac_ver(*min_version):
                             % (min_version_txt, version_txt))
             return func(*args, **kw)
         wrapper.min_version = min_version
+        return wrapper
+    return decorator
+
+
+def requires_hashdigest(digestname):
+    """Decorator raising SkipTest if a hashing algorithm is not available
+
+    The hashing algorithm could be missing or blocked by a strict crypto
+    policy.
+
+    ValueError: [digital envelope routines: EVP_DigestInit_ex] disabled for FIPS
+    ValueError: unsupported hash type md4
+    """
+    def decorator(func):
+        @functools.wraps(func)
+        def wrapper(*args, **kwargs):
+            try:
+                hashlib.new(digestname)
+            except ValueError:
+                raise unittest.SkipTest(
+                    f"hash digest '{digestname}' is not available."
+                )
+            return func(*args, **kwargs)
         return wrapper
     return decorator
 

@@ -8827,11 +8827,10 @@ os_readv_impl(PyObject *module, int fd, PyObject *buffers)
 
 #ifdef HAVE_PREAD
 /*[clinic input]
-# TODO length should be size_t!  but Python doesn't support parsing size_t yet.
 os.pread
 
     fd: int
-    length: int
+    length: Py_ssize_t
     offset: Py_off_t
     /
 
@@ -8842,8 +8841,8 @@ the beginning of the file.  The file offset remains unchanged.
 [clinic start generated code]*/
 
 static PyObject *
-os_pread_impl(PyObject *module, int fd, int length, Py_off_t offset)
-/*[clinic end generated code: output=435b29ee32b54a78 input=084948dcbaa35d4c]*/
+os_pread_impl(PyObject *module, int fd, Py_ssize_t length, Py_off_t offset)
+/*[clinic end generated code: output=3f875c1eef82e32f input=85cb4a5589627144]*/
 {
     Py_ssize_t n;
     int async_err = 0;

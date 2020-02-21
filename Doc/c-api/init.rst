@@ -472,8 +472,8 @@ Process-wide parameters
    dependent delimiter character, which is ``':'`` on Unix and Mac OS X, ``';'``
    on Windows.
 
-   This also causes :data:`sys.executable` to be set only to the raw program
-   name (see :c:func:`Py_SetProgramName`) and for :data:`sys.prefix` and
+   This also causes :data:`sys.executable` to be set to the program
+   full path (see :c:func:`Py_GetProgramFullPath`) and for :data:`sys.prefix` and
    :data:`sys.exec_prefix` to be empty.  It is up to the caller to modify these
    if required after calling :c:func:`Py_Initialize`.
 
@@ -482,6 +482,10 @@ Process-wide parameters
 
    The path argument is copied internally, so the caller may free it after the
    call completes.
+
+   .. versionchanged:: 3.8
+      The program full path is now used for :data:`sys.executable`, instead
+      of the program name.
 
 
 .. c:function:: const char* Py_GetVersion()

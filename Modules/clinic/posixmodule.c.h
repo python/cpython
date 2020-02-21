@@ -4799,14 +4799,14 @@ PyDoc_STRVAR(os_pread__doc__,
     {"pread", (PyCFunction)(void(*)(void))os_pread, METH_FASTCALL, os_pread__doc__},
 
 static PyObject *
-os_pread_impl(PyObject *module, int fd, int length, Py_off_t offset);
+os_pread_impl(PyObject *module, int fd, Py_ssize_t length, Py_off_t offset);
 
 static PyObject *
 os_pread(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     int fd;
-    int length;
+    Py_ssize_t length;
     Py_off_t offset;
 
     if (!_PyArg_CheckPositional("pread", nargs, 3, 3)) {
@@ -4826,9 +4826,17 @@ os_pread(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
                         "integer argument expected, got float" );
         goto exit;
     }
-    length = _PyLong_AsInt(args[1]);
-    if (length == -1 && PyErr_Occurred()) {
-        goto exit;
+    {
+        Py_ssize_t ival = -1;
+        PyObject *iobj = PyNumber_Index(args[1]);
+        if (iobj != NULL) {
+            ival = PyLong_AsSsize_t(iobj);
+            Py_DECREF(iobj);
+        }
+        if (ival == -1 && PyErr_Occurred()) {
+            goto exit;
+        }
+        length = ival;
     }
     if (!Py_off_t_converter(args[2], &offset)) {
         goto exit;
@@ -8723,4 +8731,4 @@ exit:
 #ifndef OS__REMOVE_DLL_DIRECTORY_METHODDEF
     #define OS__REMOVE_DLL_DIRECTORY_METHODDEF
 #endif /* !defined(OS__REMOVE_DLL_DIRECTORY_METHODDEF) */
-/*[clinic end generated code: output=113d9fbdd18a62f5 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=799c75140d84ace5 input=a9049054013a1b77]*/

@@ -673,6 +673,13 @@ def collect_windows(info_add):
         res = bool(RtlAreLongPathsEnabled())
     info_add('windows.RtlAreLongPathsEnabled', res)
 
+    try:
+        import _winapi
+        dll_path = _winapi.GetModuleFileName(sys.dllhandle)
+        info_add('windows.dll_path', dll_path)
+    except (ImportError, AttributeError):
+        pass
+
 
 def collect_info(info):
     error = False

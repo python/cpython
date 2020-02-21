@@ -284,7 +284,7 @@ class Task(futures._PyFuture):  # Inherit Python Task implementation
             if self._must_cancel:
                 # Task is cancelled right before coro stops.
                 self._must_cancel = False
-                super().set_exception(exceptions.CancelledError())
+                super().cancel()
             else:
                 super().set_result(exc.value)
         except exceptions.CancelledError:

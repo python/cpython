@@ -412,7 +412,7 @@ def _generate_posix_vars():
         pprint.pprint(vars, stream=f)
 
     # Create file used for sys.path fixup -- see Modules/getpath.c
-    with open('pybuilddir.txt', 'w', encoding='ascii') as f:
+    with open('pybuilddir.txt', 'w', encoding='utf8') as f:
         f.write(pybuilddir)
 
 def _init_posix(vars):

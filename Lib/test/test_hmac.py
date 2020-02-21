@@ -6,6 +6,8 @@ import unittest
 import unittest.mock
 import warnings
 
+from test.support import requires_hashdigest
+
 
 def ignore_warning(func):
     @functools.wraps(func)
@@ -19,6 +21,7 @@ def ignore_warning(func):
 
 class TestVectorsTestCase(unittest.TestCase):
 
+    @requires_hashdigest('md5')
     def test_md5_vectors(self):
         # Test the HMAC module against test vectors from the RFC.
 
@@ -76,6 +79,7 @@ class TestVectorsTestCase(unittest.TestCase):
                  b"and Larger Than One Block-Size Data"),
                 "6f630fad67cda0ee1fb1f562db3aa53e")
 
+    @requires_hashdigest('sha1')
     def test_sha_vectors(self):
         def shatest(key, data, digest):
             h = hmac.HMAC(key, data, digestmod=hashlib.sha1)
@@ -268,23 +272,28 @@ class TestVectorsTestCase(unittest.TestCase):
                                    '134676fb6de0446065c97440fa8c6a58',
                  })
 
+    @requires_hashdigest('sha224')
     def test_sha224_rfc4231(self):
         self._rfc4231_test_cases(hashlib.sha224, 'sha224', 28, 64)
 
+    @requires_hashdigest('sha256')
     def test_sha256_rfc4231(self):
         self._rfc4231_test_cases(hashlib.sha256, 'sha256', 32, 64)
 
+    @requires_hashdigest('sha384')
     def test_sha384_rfc4231(self):
         self._rfc4231_test_cases(hashlib.sha384, 'sha384', 48, 128)
 
+    @requires_hashdigest('sha512')
     def test_sha512_rfc4231(self):
         self._rfc4231_test_cases(hashlib.sha512, 'sha512', 64, 128)
 
+    @requires_hashdigest('sha256')
     def test_legacy_block_size_warnings(self):
         class MockCrazyHash(object):
             """Ain't no block_size attribute here."""
             def __init__(self, *args):
-                self._x = hashlib.sha1(*args)
+                self._x = hashlib.sha256(*args)
                 self.digest_size = self._x.digest_size
             def update(self, v):
                 self._x.update(v)
@@ -308,65 +317,78 @@ class TestVectorsTestCase(unittest.TestCase):
             data = b"Hi There"
             hmac.HMAC(key, data, digestmod=None)
 
+
 class ConstructorTestCase(unittest.TestCase):
 
+    expected = (
+        "6c845b47f52b3b47f6590c502db7825aad757bf4fadc8fa972f7cd2e76a5bdeb"
+    )
+
+    @requires_hashdigest('sha256')
     def test_normal(self):
         # Standard constructor call.
-        failed = 0
         try:
-            h = hmac.HMAC(b"key", digestmod='md5')
+            hmac.HMAC(b"key", digestmod='sha256')
         except Exception:
             self.fail("Standard constructor call raised exception.")
 
+    @requires_hashdigest('sha256')
     def test_with_str_key(self):
         # Pass a key of type str, which is an error, because it expects a key
         # of type bytes
         with self.assertRaises(TypeError):
-            h = hmac.HMAC("key", digestmod='md5')
+            h = hmac.HMAC("key", digestmod='sha256')
 
+    @requires_hashdigest('sha256')
     def test_dot_new_with_str_key(self):
         # Pass a key of type str, which is an error, because it expects a key
         # of type bytes
         with self.assertRaises(TypeError):
-            h = hmac.new("key", digestmod='md5')
+            h = hmac.new("key", digestmod='sha256')
 
+    @requires_hashdigest('sha256')
     def test_withtext(self):
         # Constructor call with text.
         try:
-            h = hmac.HMAC(b"key", b"hash this!", digestmod='md5')
+            h = hmac.HMAC(b"key", b"hash this!", digestmod='sha256')
         except Exception:
             self.fail("Constructor call with text argument raised exception.")
-        self.assertEqual(h.hexdigest(), '34325b639da4cfd95735b381e28cb864')
+        self.assertEqual(h.hexdigest(), self.expected)
 
+    @requires_hashdigest('sha256')
     def test_with_bytearray(self):
         try:
             h = hmac.HMAC(bytearray(b"key"), bytearray(b"hash this!"),
-                          digestmod="md5")
+                          digestmod="sha256")
         except Exception:
             self.fail("Constructor call with bytearray arguments raised exception.")
-        self.assertEqual(h.hexdigest(), '34325b639da4cfd95735b381e28cb864')
+            self.assertEqual(h.hexdigest(), self.expected)
 
+    @requires_hashdigest('sha256')
     def test_with_memoryview_msg(self):
         try:
-            h = hmac.HMAC(b"key", memoryview(b"hash this!"), digestmod="md5")
+            h = hmac.HMAC(b"key", memoryview(b"hash this!"), digestmod="sha256")
         except Exception:
             self.fail("Constructor call with memoryview msg raised exception.")
-        self.assertEqual(h.hexdigest(), '34325b639da4cfd95735b381e28cb864')
+            self.assertEqual(h.hexdigest(), self.expected)
 
+    @requires_hashdigest('sha256')
     def test_withmodule(self):
         # Constructor call with text and digest module.
         try:
-            h = hmac.HMAC(b"key", b"", hashlib.sha1)
+            h = hmac.HMAC(b"key", b"", hashlib.sha256)
         except Exception:
-            self.fail("Constructor call with hashlib.sha1 raised exception.")
+            self.fail("Constructor call with hashlib.sha256 raised exception.")
+
 
 class SanityTestCase(unittest.TestCase):
 
+    @requires_hashdigest('sha256')
     def test_exercise_all_methods(self):
         # Exercising all methods once.
         # This must not raise any exceptions
         try:
-            h = hmac.HMAC(b"my secret key", digestmod="md5")
+            h = hmac.HMAC(b"my secret key", digestmod="sha256")
             h.update(b"compute the hash of this text!")
             dig = h.digest()
             dig = h.hexdigest()
@@ -374,11 +396,13 @@ class SanityTestCase(unittest.TestCase):
         except Exception:
             self.fail("Exception raised during normal usage of HMAC class.")
 
+
 class CopyTestCase(unittest.TestCase):
 
+    @requires_hashdigest('sha256')
     def test_attributes(self):
         # Testing if attributes are of same type.
-        h1 = hmac.HMAC(b"key", digestmod="md5")
+        h1 = hmac.HMAC(b"key", digestmod="sha256")
         h2 = h1.copy()
         self.assertTrue(h1.digest_cons == h2.digest_cons,
             "digest constructors don't match.")
@@ -387,9 +411,10 @@ class CopyTestCase(unittest.TestCase):
         self.assertEqual(type(h1.outer), type(h2.outer),
             "Types of outer don't match.")
 
+    @requires_hashdigest('sha256')
     def test_realcopy(self):
         # Testing if the copy method created a real copy.
-        h1 = hmac.HMAC(b"key", digestmod="md5")
+        h1 = hmac.HMAC(b"key", digestmod="sha256")
         h2 = h1.copy()
         # Using id() in case somebody has overridden __eq__/__ne__.
         self.assertTrue(id(h1) != id(h2), "No real copy of the HMAC instance.")
@@ -398,9 +423,10 @@ class CopyTestCase(unittest.TestCase):
         self.assertTrue(id(h1.outer) != id(h2.outer),
             "No real copy of the attribute 'outer'.")
 
+    @requires_hashdigest('sha256')
     def test_equality(self):
         # Testing if the copy has the same digests.
-        h1 = hmac.HMAC(b"key", digestmod="md5")
+        h1 = hmac.HMAC(b"key", digestmod="sha256")
         h1.update(b"some random text")
         h2 = h1.copy()
         self.assertEqual(h1.digest(), h2.digest(),

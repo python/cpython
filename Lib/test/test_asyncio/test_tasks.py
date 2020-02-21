@@ -604,9 +604,11 @@ class BaseTaskTests:
             return 12
 
         t = self.new_task(loop, task())
+        self.assertFalse(t.cancelled())
         self.assertRaises(
             asyncio.CancelledError, loop.run_until_complete, t)
         self.assertTrue(t.done())
+        self.assertTrue(t.cancelled())
         self.assertFalse(t._must_cancel)  # White-box test.
         self.assertFalse(t.cancel())
 
@@ -621,9 +623,11 @@ class BaseTaskTests:
             return 12
 
         t = self.new_task(loop, task())
+        self.assertFalse(t.cancelled())
         self.assertRaises(
             asyncio.CancelledError, loop.run_until_complete, t)
         self.assertTrue(t.done())
+        self.assertTrue(t.cancelled())
         self.assertFalse(t._must_cancel)  # White-box test.
         self.assertFalse(t.cancel())
 

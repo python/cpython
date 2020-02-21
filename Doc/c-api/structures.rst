@@ -346,6 +346,19 @@ Accessing attributes of extension types
    Only :c:macro:`T_OBJECT` and :c:macro:`T_OBJECT_EX`
    members can be deleted.  (They are set to *NULL*).
 
+   .. _pymemberdef-offsets:
+
+   Heap allocated types (created using :c:func:`PyType_FromSpec` or similar),
+   ``PyMemberDef`` may contain defintitions for the special members
+   ``__dictoffset__`` and ``__weaklistoffset__``, corresponding to
+   :c:member:`~PyTypeObject.tp_dictoffset` and
+   :c:member:`~PyTypeObject.tp_weaklistoffset` in type objects.
+   These must be defined with ``T_PYSSIZET`` and ``READONLY``, for example::
+
+      static PyMemberDef spam_type_members[] = {
+          {"__dictoffset__", T_PYSSIZET, offsetof(Spam_object, dict), READONLY},
+          {NULL}  /* Sentinel */
+      };
 
 .. c:type:: PyGetSetDef
 

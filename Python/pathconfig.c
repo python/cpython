@@ -23,6 +23,7 @@ wchar_t *_Py_dll_path = NULL;
 static int
 copy_wstr(wchar_t **dst, const wchar_t *src)
 {
+    assert(*dst == NULL);
     if (src != NULL) {
         *dst = _PyMem_RawWcsdup(src);
         if (*dst == NULL) {
@@ -172,6 +173,7 @@ pathconfig_set_from_config(_PyPathConfig *pathconfig, const PyConfig *config)
     _PyMem_SetDefaultAllocator(PYMEM_DOMAIN_RAW, &old_alloc);
 
     if (config->module_search_paths_set) {
+        PyMem_RawFree(pathconfig->module_search_path);
         pathconfig->module_search_path = _PyWideStringList_Join(&config->module_search_paths, DELIM);
         if (pathconfig->module_search_path == NULL) {
             goto no_memory;
@@ -180,6 +182,8 @@ pathconfig_set_from_config(_PyPathConfig *pathconfig, const PyConfig *config)
 
 #define COPY_CONFIG(PATH_ATTR, CONFIG_ATTR) \
         if (config->CONFIG_ATTR) { \
+            PyMem_RawFree(pathconfig->PATH_ATTR); \
+            pathconfig->PATH_ATTR = NULL; \
             if (copy_wstr(&pathconfig->PATH_ATTR, config->CONFIG_ATTR) < 0) { \
                 goto no_memory; \
             } \
@@ -455,16 +459,15 @@ Py_SetPath(const wchar_t *path)
     PyMemAllocatorEx old_alloc;
     _PyMem_SetDefaultAllocator(PYMEM_DOMAIN_RAW, &old_alloc);
 
-    /* Getting the program name calls pathconfig_global_init() */
-    wchar_t *program_name = _PyMem_RawWcsdup(Py_GetProgramName());
+    /* Getting the program full path calls pathconfig_global_init() */
+    wchar_t *program_full_path = _PyMem_RawWcsdup(Py_GetProgramFullPath());
 
     PyMem_RawFree(_Py_path_config.program_full_path);
     PyMem_RawFree(_Py_path_config.prefix);
     PyMem_RawFree(_Py_path_config.exec_prefix);
     PyMem_RawFree(_Py_path_config.module_search_path);
 
-    /* Copy program_name to program_full_path  */
-    _Py_path_config.program_full_path = program_name;
+    _Py_path_config.program_full_path = program_full_path;
     _Py_path_config.prefix = _PyMem_RawWcsdup(L"");
     _Py_path_config.exec_prefix = _PyMem_RawWcsdup(L"");
     _Py_path_config.module_search_path = _PyMem_RawWcsdup(path);

@@ -1,0 +1,4 @@
+Multiprocessing test test_mymanager() now also expects -SIGTERM, not only
+exitcode 0. BaseManager._finalize_manager() sends SIGTERM to the manager
+process if it takes longer than 1 second to stop, which happens on slow
+buildbots.
