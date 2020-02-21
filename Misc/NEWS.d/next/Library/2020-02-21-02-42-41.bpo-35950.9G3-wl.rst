@@ -1,0 +1,2 @@
+Raise :exc:`io.UnsupportedOperation` in :meth:`io.BufferedReader.truncate`
+when it is called on a read-only :class:`io.BufferedReader` instance.
