@@ -1,0 +1,1 @@
+updated math.gcd to accept 'n' arguments.
