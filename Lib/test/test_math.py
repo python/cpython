@@ -691,20 +691,32 @@ class MathTests(unittest.TestCase):
             s = msum(vals)
             self.assertEqual(msum(vals), math.fsum(vals))
 
-    def testGcd(self):
+    def test_gcd(self):
         gcd = math.gcd
-        self.assertEqual(gcd(0, 0), 0)
+        self.assertEqual(gcd(), 0)
+        self.assertEqual(gcd(0), 0)
+        self.assertEqual(gcd(5), 5)
+        self.assertEqual(gcd(-5), 5)
+        self.assertEqual(gcd(3,4,5,6,7,8), 1)
+        self.assertEqual(gcd(20,46,68,86,406,404,204,244), 2)
+        self.assertEqual(gcd(6 ,8, 10, 12), 2)
+        self.assertEqual(gcd(0, 2, 3, 4, 5, 6, 7, 8, 9), 0)
+        self.assertEqual(gcd(222, 444, 666, 888, 990, 224, 556, 888, 228,
+                             886, 8890, 440, 228, 884), 2)
         self.assertEqual(gcd(1, 0), 1)
         self.assertEqual(gcd(-1, 0), 1)
         self.assertEqual(gcd(0, 1), 1)
         self.assertEqual(gcd(0, -1), 1)
         self.assertEqual(gcd(7, 1), 1)
         self.assertEqual(gcd(7, -1), 1)
+        self.assertEqual(gcd(7, 1, 0 ,2 ,33, 44, 56, 67, 78, 89), 0)
         self.assertEqual(gcd(-23, 15), 1)
         self.assertEqual(gcd(120, 84), 12)
         self.assertEqual(gcd(84, -120), 12)
         self.assertEqual(gcd(1216342683557601535506311712,
-                             436522681849110124616458784), 32)
+                             436522681849110124616458784,
+                             243657585950505500657575858,
+                             523458934527895666666666666), 2)
         c = 652560
         x = 434610456570399902378880679233098819019853229470286994367836600566
         y = 1064502245825115327754847244914921553977
@@ -731,7 +743,7 @@ class MathTests(unittest.TestCase):
         self.assertEqual(gcd(-b, -a), c)
 
         self.assertRaises(TypeError, gcd, 120.0, 84)
-        self.assertRaises(TypeError, gcd, 120, 84.0)
+        self.assertRaises(TypeError, gcd, 120.0, 84, 23.5, 34.0, 78.0)
         self.assertEqual(gcd(MyIndexable(120), MyIndexable(84)), 12)
 
     def testHypot(self):

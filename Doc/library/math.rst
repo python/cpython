@@ -126,12 +126,24 @@ Number-theoretic and representation functions
    <https://code.activestate.com/recipes/393090/>`_\.
 
 
-.. function:: gcd(a, b)
+.. function:: gcd(*arguments)
 
-   Return the greatest common divisor of the integers *a* and *b*.  If either
-   *a* or *b* is nonzero, then the value of ``gcd(a, b)`` is the largest
-   positive integer that divides both *a* and *b*.  ``gcd(0, 0)`` returns
-   ``0``.
+   returns the greatest common divisor of multiple scalar arguments.
+   For example,
+
+              >>> gcd(6 ,8, 10, 12)
+              2
+   
+   some exceptions are,
+
+              >>gcd()
+              0
+              >>gcd(0)
+              0
+              >>gcd(5)
+              5
+              >>gcd(-5)
+              5
 
    .. versionadded:: 3.5
 

@@ -824,37 +824,44 @@ m_log10(double x)
     }
 }
 
-
-/*[clinic input]
-math.gcd
-
-    x as a: object
-    y as b: object
-    /
-
-greatest common divisor of x and y
-[clinic start generated code]*/
-
 static PyObject *
-math_gcd_impl(PyObject *module, PyObject *a, PyObject *b)
-/*[clinic end generated code: output=7b2e0c151bd7a5d8 input=c2691e57fb2a98fa]*/
+math_gcd(PyObject *module, PyObject *const *args, Py_ssize_t n)
 {
-    PyObject *g;
-
-    a = PyNumber_Index(a);
-    if (a == NULL)
-        return NULL;
-    b = PyNumber_Index(b);
-    if (b == NULL) {
-        Py_DECREF(a);
-        return NULL;
+    PyObject *g = 0, *item, *in;
+    
+    Py_ssize_t i;
+    for (i = 0; i < n; i++) {
+        item = args[i];
+        in = PyNumber_Index(item);
+        if (in == NULL) {
+            return NULL;
+        }
+        g = _PyLong_GCD(g, in);
+        Py_DECREF(in);
     }
-    g = _PyLong_GCD(a, b);
-    Py_DECREF(a);
-    Py_DECREF(b);
     return g;
 }
 
+PyDoc_STRVAR(math_gcd__doc,
+             "gcd(*arguments) -> value\n\n\
+returns the greatest common divisor of multiple scalar arguments.\n\
+\n\
+For example,\n\
+\n\
+    >>> gcd(6 ,8, 10, 12)\n\
+    2\n\
+\n\
+some exceptions are,\n\
+\n\
+    >>gcd()\n\
+    0\n\
+    >>gcd(0)\n\
+    0\n\
+    >>gcd(5)\n\
+    5\n\
+    >>gcd(-5)\n\
+    5\n\
+");
 
 /* Call is_error when errno != 0, and where x is the result libm
  * returned.  is_error will usually set up an exception and return
@@ -3354,7 +3361,7 @@ static PyMethodDef math_methods[] = {
     MATH_FREXP_METHODDEF
     MATH_FSUM_METHODDEF
     {"gamma",           math_gamma,     METH_O,         math_gamma_doc},
-    MATH_GCD_METHODDEF
+    {"gcd", (PyCFunction)(void(*)(void))math_gcd, METH_FASTCALL, math_gcd__doc},
     {"hypot",           (PyCFunction)(void(*)(void))math_hypot,     METH_FASTCALL,  math_hypot_doc},
     MATH_ISCLOSE_METHODDEF
     MATH_ISFINITE_METHODDEF
