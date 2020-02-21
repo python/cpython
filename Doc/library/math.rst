@@ -131,21 +131,16 @@ Number-theoretic and representation functions
    returns the greatest common divisor of multiple scalar arguments.
    For example,
 
-              >>> gcd(6 ,8, 10, 12)
-              2
+   ``gcd(6 ,8, 10, 12)`` returns '2'.
 
    some exceptions are,
 
-              >>gcd()
-              0
-              >>gcd(0)
-              0
-              >>gcd(5)
-              5
-              >>gcd(-5)
-              5
+              ``gcd()`` returns '0'.
+              ``gcd(0)`` returns '0'.
+              ``gcd(5)`` returns '5'.
+              ``gcd(-5)`` returns '5'.
 
-   .. versionadded:: 3.5
+.. versionadded:: 3.5
 
 
 .. function:: isclose(a, b, *, rel_tol=1e-09, abs_tol=0.0)
