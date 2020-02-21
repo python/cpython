@@ -1,1 +1,2 @@
-Fix crash in argparse when using subparsers and Required is set to True.
+Fix crash in :mod:`argparse` when using subparsers and its required attribute
+is set to True.
