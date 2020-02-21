@@ -1,1 +1,1 @@
-Language reference should specify restrictions on class namespace.
+The language reference now specifies restrictions on class namespaces.
