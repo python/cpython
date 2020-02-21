@@ -1528,6 +1528,13 @@ class BufferedReaderTest(unittest.TestCase, CommonBufferedTests):
         self.assertRaises(ValueError, b.peek)
         self.assertRaises(ValueError, b.read1, 1)
 
+    def test_truncate_on_read_only(self):
+        rawio = self.MockFileIO(b"abc")
+        bufio = self.tp(rawio)
+        self.assertFalse(bufio.writable())
+        self.assertRaises(self.UnsupportedOperation, bufio.truncate)
+        self.assertRaises(self.UnsupportedOperation, bufio.truncate, 0)
+
 
 class CBufferedReaderTest(BufferedReaderTest, SizeofTest):
     tp = io.BufferedReader
@@ -2371,6 +2378,10 @@ class BufferedRandomTest(BufferedReaderTest, BufferedWriterTest):
 
     # You can't construct a BufferedRandom over a non-seekable stream.
     test_unseekable = None
+
+    # writable() returns True, so there's no point to test it over
+    # a writable stream.
+    test_truncate_on_read_only = None
 
 
 class CBufferedRandomTest(BufferedRandomTest, SizeofTest):
