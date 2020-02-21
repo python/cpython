@@ -456,7 +456,6 @@ STRINGLIB(utf8_encoder)(_PyBytesWriter *writer,
     Py_XDECREF(rep);
     Py_XDECREF(error_handler_obj);
     Py_XDECREF(exc);
-    _PyBytesWriter_Dealloc(writer);
     return NULL;
 #endif
 }

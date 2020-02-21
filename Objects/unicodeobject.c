@@ -5410,6 +5410,7 @@ unicode_encode_utf8(PyObject *unicode, _Py_error_handler error_handler,
     }
 
     if (end == NULL) {
+        _PyBytesWriter_Dealloc(&writer);
         return NULL;
     }
     return _PyBytesWriter_Finish(&writer, end);
@@ -5445,7 +5446,7 @@ unicode_fill_utf8(PyObject *unicode)
         break;
     }
     if (end == NULL) {
-        // _PyBytesWriter_Dealloc is called in encoder
+        _PyBytesWriter_Dealloc(&writer);
         return -1;
     }
 
