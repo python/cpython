@@ -1932,7 +1932,10 @@ metaclass (if any) and the metaclasses (i.e. ``type(cls)``) of all specified
 base classes. The most derived metaclass is one which is a subtype of *all*
 of these candidate metaclasses. If none of the candidate metaclasses meets
 that criterion, then the class definition will fail with ``TypeError``.
+
+
 .. _prepare:
+
 Preparing the class namespace
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
@@ -1945,6 +1948,7 @@ as ``namespace = metaclass.__prepare__(name, bases, **kwds)`` (where the
 additional keyword arguments, if any, come from the class definition). The
 +namespace returned by ``__prepare__`` is passed in to ``__new__``, but when
 +the final class object is created the namespace is copied into a new ``dict``.
+The ``__prepare__`` method should be implemented as a :func:`classmethod`.
 
 If the metaclass has no ``__prepare__`` attribute, then the class namespace
 is initialised as an empty :func:`dict`.
