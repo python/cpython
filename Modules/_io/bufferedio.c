@@ -1315,15 +1315,19 @@ _io__Buffered_truncate_impl(buffered *self, PyObject *pos)
     PyObject *res = NULL;
 
     CHECK_INITIALIZED(self)
+    CHECK_CLOSED(self, "truncate of closed file")
+    if (!self->writable) {
+        return bufferediobase_unsupported("truncate");
+    }
     if (!ENTER_BUFFERED(self))
         return NULL;
 
-    if (self->writable) {
-        res = buffered_flush_and_rewind_unlocked(self);
-        if (res == NULL)
-            goto end;
-        Py_CLEAR(res);
+    res = buffered_flush_and_rewind_unlocked(self);
+    if (res == NULL) {
+        goto end;
     }
+    Py_CLEAR(res);
+
     res = PyObject_CallMethodOneArg(self->raw, _PyIO_str_truncate, pos);
     if (res == NULL)
         goto end;

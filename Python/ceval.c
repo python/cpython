@@ -921,21 +921,23 @@ _PyEval_EvalFrameDefault(PyFrameObject *f, int throwflag)
 
 */
 
+#define PREDICT_ID(op)          PRED_##op
+
 #if defined(DYNAMIC_EXECUTION_PROFILE) || USE_COMPUTED_GOTOS
-#define PREDICT(op)             if (0) goto PRED_##op
+#define PREDICT(op)             if (0) goto PREDICT_ID(op)
 #else
 #define PREDICT(op) \
-    do{ \
+    do { \
         _Py_CODEUNIT word = *next_instr; \
         opcode = _Py_OPCODE(word); \
-        if (opcode == op){ \
+        if (opcode == op) { \
             oparg = _Py_OPARG(word); \
             next_instr++; \
-            goto PRED_##op; \
+            goto PREDICT_ID(op); \
         } \
     } while(0)
 #endif
-#define PREDICTED(op)           PRED_##op:
+#define PREDICTED(op)           PREDICT_ID(op):
 
 
 /* Stack manipulation macros */
