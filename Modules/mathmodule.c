@@ -53,6 +53,7 @@ raised for division by zero and mod by zero.
  */
 
 #include "Python.h"
+#include "pycore_dtoa.h"
 #include "_math.h"
 
 #include "clinic/mathmodule.c.h"
@@ -1441,28 +1442,6 @@ math_fsum(PyObject *module, PyObject *seq)
 #undef NUM_PARTIALS
 
 
-/* Return the smallest integer k such that n < 2**k, or 0 if n == 0.
- * Equivalent to floor(lg(x))+1.  Also equivalent to: bitwidth_of_type -
- * count_leading_zero_bits(x)
- */
-
-/* XXX: This routine does more or less the same thing as
- * bits_in_digit() in Objects/longobject.c.  Someday it would be nice to
- * consolidate them.  On BSD, there's a library function called fls()
- * that we could use, and GCC provides __builtin_clz().
- */
-
-static unsigned long
-bit_length(unsigned long n)
-{
-    unsigned long len = 0;
-    while (n != 0) {
-        ++len;
-        n >>= 1;
-    }
-    return len;
-}
-
 static unsigned long
 count_set_bits(unsigned long n)
 {
@@ -1877,7 +1856,7 @@ factorial_partial_product(unsigned long start, unsigned long stop,
     /* find midpoint of range(start, stop), rounded up to next odd number. */
     midpoint = (start + num_operands) | 1;
     left = factorial_partial_product(start, midpoint,
-                                     bit_length(midpoint - 2));
+                                     _Py_bit_length(midpoint - 2));
     if (left == NULL)
         goto error;
     right = factorial_partial_product(midpoint, stop, max_bits);
@@ -1907,7 +1886,7 @@ factorial_odd_part(unsigned long n)
     Py_INCREF(outer);
 
     upper = 3;
-    for (i = bit_length(n) - 2; i >= 0; i--) {
+    for (i = _Py_bit_length(n) - 2; i >= 0; i--) {
         v = n >> i;
         if (v <= 2)
             continue;
@@ -1917,7 +1896,7 @@ factorial_odd_part(unsigned long n)
         /* Here inner is the product of all odd integers j in the range (0,
            n/2**(i+1)].  The factorial_partial_product call below gives the
            product of all odd integers j in the range (n/2**(i+1), n/2**i]. */
-        partial = factorial_partial_product(lower, upper, bit_length(upper-2));
+        partial = factorial_partial_product(lower, upper, _Py_bit_length(upper-2));
         /* inner *= partial */
         if (partial == NULL)
             goto error;
@@ -2035,6 +2014,59 @@ math_factorial(PyObject *module, PyObject *arg)
     result = _PyLong_Lshift(odd_part, two_valuation);
     Py_DECREF(odd_part);
     return result;
+}
+
+
+/*[clinic input]
+math.lcm
+    x as a: object
+    y as b: object
+    /
+least common multiple of x and y
+[clinic start generated code]*/
+
+static PyObject *
+math_lcm_impl(PyObject *module, PyObject *a, PyObject *b)
+/*[clinic end generated code: output=6f83fb6d671074ba input=efb3d7b7334b7118]*/
+{
+    PyObject *g, *m, *f, *ab;
+
+    a = PyNumber_Index(a);
+    if (a == NULL) {
+        return NULL;
+    }
+    b = PyNumber_Index(b);
+    if (b == NULL) {
+        Py_DECREF(a);
+        return NULL;
+    }
+    if (_PyLong_Sign(a) == 0 || _PyLong_Sign(b) == 0) {
+        Py_DECREF(a);
+        Py_DECREF(b);
+        return PyLong_FromLong(0);
+    }
+    g = _PyLong_GCD(a, b);
+    if (g == NULL) {
+        Py_DECREF(a);
+        Py_DECREF(b);
+        return NULL;
+    }
+    f = PyNumber_FloorDivide(a, g);
+    Py_DECREF(g);
+    Py_DECREF(a);
+    if (f == NULL) {
+        Py_DECREF(b);
+        return NULL;
+    }
+    m = PyNumber_Multiply(f, b);
+    Py_DECREF(f);
+    Py_DECREF(b);
+    if (m == NULL) {
+        return NULL;
+    }
+    ab = PyNumber_Absolute(m);
+    Py_DECREF(m);
+    return ab;
 }
 
 
@@ -3295,6 +3327,62 @@ error:
 }
 
 
+/*[clinic input]
+math.nextafter
+
+    x: double
+    y: double
+    /
+
+Return the next floating-point value after x towards y.
+[clinic start generated code]*/
+
+static PyObject *
+math_nextafter_impl(PyObject *module, double x, double y)
+/*[clinic end generated code: output=750c8266c1c540ce input=02b2d50cd1d9f9b6]*/
+{
+#if defined(_AIX)
+    if (x == y) {
+        /* On AIX 7.1, libm nextafter(-0.0, +0.0) returns -0.0.
+           Bug fixed in bos.adt.libm 7.2.2.0 by APAR IV95512. */
+        return PyFloat_FromDouble(y);
+    }
+#endif
+    return PyFloat_FromDouble(nextafter(x, y));
+}
+
+
+/*[clinic input]
+math.ulp -> double
+
+    x: double
+    /
+
+Return the value of the least significant bit of the float x.
+[clinic start generated code]*/
+
+static double
+math_ulp_impl(PyObject *module, double x)
+/*[clinic end generated code: output=f5207867a9384dd4 input=31f9bfbbe373fcaa]*/
+{
+    if (Py_IS_NAN(x)) {
+        return x;
+    }
+    x = fabs(x);
+    if (Py_IS_INFINITY(x)) {
+        return x;
+    }
+    double inf = m_inf();
+    double x2 = nextafter(x, inf);
+    if (Py_IS_INFINITY(x2)) {
+        /* special case: x is the largest positive representable float */
+        x2 = nextafter(x, -inf);
+        return x - x2;
+    }
+    return x2 - x;
+}
+
+
 static PyMethodDef math_methods[] = {
     {"acos",            math_acos,      METH_O,         math_acos_doc},
     {"acosh",           math_acosh,     METH_O,         math_acosh_doc},
@@ -3327,6 +3415,7 @@ static PyMethodDef math_methods[] = {
     MATH_ISINF_METHODDEF
     MATH_ISNAN_METHODDEF
     MATH_ISQRT_METHODDEF
+    MATH_LCM_METHODDEF
     MATH_LDEXP_METHODDEF
     {"lgamma",          math_lgamma,    METH_O,         math_lgamma_doc},
     MATH_LOG_METHODDEF
@@ -3346,6 +3435,8 @@ static PyMethodDef math_methods[] = {
     MATH_PROD_METHODDEF
     MATH_PERM_METHODDEF
     MATH_COMB_METHODDEF
+    MATH_NEXTAFTER_METHODDEF
+    MATH_ULP_METHODDEF
     {NULL,              NULL}           /* sentinel */
 };
 

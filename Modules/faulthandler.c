@@ -1065,24 +1065,10 @@ faulthandler_sigsegv(PyObject *self, PyObject *args)
     Py_RETURN_NONE;
 }
 
-static void
+static void _Py_NO_RETURN
 faulthandler_fatal_error_thread(void *plock)
 {
-#ifndef __clang__
-    PyThread_type_lock *lock = (PyThread_type_lock *)plock;
-#endif
-
     Py_FatalError("in new thread");
-
-#ifndef __clang__
-    /* Issue #28152: Py_FatalError() is declared with
-       __attribute__((__noreturn__)).  GCC emits a warning without
-       "PyThread_release_lock()" (compiler bug?), but Clang is smarter and
-       emits a warning on the return. */
-
-    /* notify the caller that we are done */
-    PyThread_release_lock(lock);
-#endif
 }
 
 static PyObject *

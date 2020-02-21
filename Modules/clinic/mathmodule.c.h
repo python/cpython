@@ -85,6 +85,36 @@ PyDoc_STRVAR(math_factorial__doc__,
 #define MATH_FACTORIAL_METHODDEF    \
     {"factorial", (PyCFunction)math_factorial, METH_O, math_factorial__doc__},
 
+PyDoc_STRVAR(math_lcm__doc__,
+"lcm($module, x, y, /)\n"
+"--\n"
+"\n"
+"least common multiple of x and y");
+
+#define MATH_LCM_METHODDEF    \
+    {"lcm", (PyCFunction)(void(*)(void))math_lcm, METH_FASTCALL, math_lcm__doc__},
+
+static PyObject *
+math_lcm_impl(PyObject *module, PyObject *a, PyObject *b);
+
+static PyObject *
+math_lcm(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
+{
+    PyObject *return_value = NULL;
+    PyObject *a;
+    PyObject *b;
+
+    if (!_PyArg_CheckPositional("lcm", nargs, 2, 2)) {
+        goto exit;
+    }
+    a = args[0];
+    b = args[1];
+    return_value = math_lcm_impl(module, a, b);
+
+exit:
+    return return_value;
+}
+
 PyDoc_STRVAR(math_trunc__doc__,
 "trunc($module, x, /)\n"
 "--\n"
@@ -808,4 +838,91 @@ math_comb(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=9a2b3dc91eb9aadd input=a9049054013a1b77]*/
+
+PyDoc_STRVAR(math_nextafter__doc__,
+"nextafter($module, x, y, /)\n"
+"--\n"
+"\n"
+"Return the next floating-point value after x towards y.");
+
+#define MATH_NEXTAFTER_METHODDEF    \
+    {"nextafter", (PyCFunction)(void(*)(void))math_nextafter, METH_FASTCALL, math_nextafter__doc__},
+
+static PyObject *
+math_nextafter_impl(PyObject *module, double x, double y);
+
+static PyObject *
+math_nextafter(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
+{
+    PyObject *return_value = NULL;
+    double x;
+    double y;
+
+    if (!_PyArg_CheckPositional("nextafter", nargs, 2, 2)) {
+        goto exit;
+    }
+    if (PyFloat_CheckExact(args[0])) {
+        x = PyFloat_AS_DOUBLE(args[0]);
+    }
+    else
+    {
+        x = PyFloat_AsDouble(args[0]);
+        if (x == -1.0 && PyErr_Occurred()) {
+            goto exit;
+        }
+    }
+    if (PyFloat_CheckExact(args[1])) {
+        y = PyFloat_AS_DOUBLE(args[1]);
+    }
+    else
+    {
+        y = PyFloat_AsDouble(args[1]);
+        if (y == -1.0 && PyErr_Occurred()) {
+            goto exit;
+        }
+    }
+    return_value = math_nextafter_impl(module, x, y);
+
+exit:
+    return return_value;
+}
+
+PyDoc_STRVAR(math_ulp__doc__,
+"ulp($module, x, /)\n"
+"--\n"
+"\n"
+"Return the value of the least significant bit of the float x.");
+
+#define MATH_ULP_METHODDEF    \
+    {"ulp", (PyCFunction)math_ulp, METH_O, math_ulp__doc__},
+
+static double
+math_ulp_impl(PyObject *module, double x);
+
+static PyObject *
+math_ulp(PyObject *module, PyObject *arg)
+{
+    PyObject *return_value = NULL;
+    double x;
+    double _return_value;
+
+    if (PyFloat_CheckExact(arg)) {
+        x = PyFloat_AS_DOUBLE(arg);
+    }
+    else
+    {
+        x = PyFloat_AsDouble(arg);
+        if (x == -1.0 && PyErr_Occurred()) {
+            goto exit;
+        }
+    }
+    _return_value = math_ulp_impl(module, x);
+    if ((_return_value == -1.0) && PyErr_Occurred()) {
+        goto exit;
+    }
+    return_value = PyFloat_FromDouble(_return_value);
+
+exit:
+    return return_value;
+}
+/*[clinic end generated code: output=f8daa185c043a7b7 input=a9049054013a1b77]*/

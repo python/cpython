@@ -83,16 +83,17 @@ Other Language Changes
 
 * Python now gets the absolute path of the script filename specified on
   the command line (ex: ``python3 script.py``): the ``__file__`` attribute of
-  the :mod:`__main__` module, ``sys.argv[0]`` and ``sys.path[0]`` become an
+  the :mod:`__main__` module and ``sys.path[0]`` become an
   absolute path, rather than a relative path. These paths now remain valid
   after the current directory is changed by :func:`os.chdir`. As a side effect,
   a traceback also displays the absolute path for :mod:`__main__` module frames
   in this case.
   (Contributed by Victor Stinner in :issue:`20443`.)
 
-* In development mode and in debug build, *encoding* and *errors* arguments are
-  now checked on string encoding and decoding operations. Examples:
-  :func:`open`, :meth:`str.encode` and :meth:`bytes.decode`.
+* In the :ref:`Python Development Mode <devmode>` and in debug build, the
+  *encoding* and *errors* arguments are now checked for string encoding and
+  decoding operations. Examples: :func:`open`, :meth:`str.encode` and
+  :meth:`bytes.decode`.
 
   By default, for best performance, the *errors* argument is only checked at
   the first encoding/decoding error and the *encoding* argument is sometimes
@@ -145,6 +146,15 @@ that schedules a shutdown for the default executor that waits on the
 Added :class:`asyncio.PidfdChildWatcher`, a Linux-specific child watcher
 implementation that polls process file descriptors. (:issue:`38692`)
 
+concurrent.futures
+------------------
+
+Added a new *cancel_futures* parameter to
+:meth:`concurrent.futures.Executor.shutdown` that cancels all pending futures
+which have not started running, instead of waiting for them to complete before
+shutting down the executor.
+(Contributed by Kyle Stanley in :issue:`39349`.)
+
 curses
 ------
 
@@ -159,6 +169,20 @@ Added constants :data:`~fcntl.F_OFD_GETLK`, :data:`~fcntl.F_OFD_SETLK`
 and :data:`~fcntl.F_OFD_SETLKW`.
 (Contributed by Dong-hee Na in :issue:`38602`.)
 
+ftplib
+-------
+
+:class:`~ftplib.FTP` and :class:`~ftplib.FTP_TLS` now raise a :class:`ValueError`
+if the given timeout for their constructor is zero to prevent the creation of
+a non-blocking socket. (Contributed by Dong-hee Na in :issue:`39259`.)
+
+functools
+---------
+
+Add the :class:`functools.TopologicalSorter` class to offer functionality to perform
+topological sorting of graphs. (Contributed by Pablo Galindo, Tim Peters and Larry
+Hastings in :issue:`17005`.)
+
 gc
 --
 
@@ -166,6 +190,10 @@ When the garbage collector makes a collection in which some objects resurrect
 (they are reachable from outside the isolated cycles after the finalizers have
 been executed), do not block the collection of all objects that are still
 unreachable. (Contributed by Pablo Galindo and Tim Peters in :issue:`38379`.)
+
+Added a new function :func:`gc.is_finalized` to check if an object has been
+finalized by the garbage collector. (Contributed by Pablo Galindo in
+:issue:`39322`.)
 
 imaplib
 -------
@@ -177,6 +205,35 @@ with this change. The overridden methods of :class:`~imaplib.IMAP4_SSL` and
 :class:`~imaplib.IMAP4_stream` were applied to this change.
 (Contributed by Dong-hee Na in :issue:`38615`.)
 
+importlib
+---------
+
+To improve consistency with import statements, :func:`importlib.util.resolve_name`
+now raises :exc:`ImportError` instead of :exc:`ValueError` for invalid relative
+import attempts.
+(Contributed by Ngalim Siregar in :issue:`37444`.)
+
+math
+----
+
+Add :func:`math.lcm`: return the least common multiple of *a* and *b*.
+(Contributed by Ananthakrishnan in :issue:`39479`.)
+
+Add :func:`math.nextafter`: return the next floating-point value after *x*
+towards *y*.
+(Contributed by Victor Stinner in :issue:`39288`.)
+
+Add :func:`math.ulp`: return the value of the least significant bit
+of a float.
+(Contributed by Victor Stinner in :issue:`39310`.)
+
+nntplib
+-------
+
+:class:`~nntplib.NNTP` and :class:`~nntplib.NNTP_SSL` now raise a :class:`ValueError`
+if the given timeout for their constructor is zero to prevent the creation of
+a non-blocking socket. (Contributed by Dong-hee Na in :issue:`39259`.)
+
 os
 --
 
@@ -187,6 +244,49 @@ Exposed the Linux-specific :func:`os.pidfd_open` (:issue:`38692`) and
 :data:`os.P_PIDFD` (:issue:`38713`) for process management with file
 descriptors.
 
+The :func:`os.unsetenv` function is now also available on Windows.
+(Contributed by Victor Stinner in :issue:`39413`.)
+
+The :func:`os.putenv` and :func:`os.unsetenv` functions are now always
+available.
+(Contributed by Victor Stinner in :issue:`39395`.)
+
+pathlib
+-------
+
+Added :meth:`pathlib.Path.readlink()` which acts similarly to
+:func:`os.readlink`.
+(Contributed by Girts Folkmanis in :issue:`30618`)
+
+poplib
+------
+
+:class:`~poplib.POP3` and :class:`~poplib.POP3_SSL` now raise a :class:`ValueError`
+if the given timeout for their constructor is zero to prevent the creation of
+a non-blocking socket. (Contributed by Dong-hee Na in :issue:`39259`.)
+
+pprint
+------
+
+:mod:`pprint` can now pretty-print :class:`types.SimpleNamespace`.
+(Contributed by Carl Bordum Hansen in :issue:`37376`.)
+
+signal
+------
+
+Exposed the Linux-specific :func:`signal.pidfd_send_signal` for sending to
+signals to a process using a file descriptor instead of a pid. (:issue:`38712`)
+
+smtplib
+-------
+
+:class:`~smtplib.SMTP` and :class:`~smtplib.SMTP_SSL` now raise a :class:`ValueError`
+if the given timeout for their constructor is zero to prevent the creation of
+a non-blocking socket. (Contributed by Dong-hee Na in :issue:`39259`.)
+
+:class:`~smtplib.LMTP` constructor  now has an optional *timeout* parameter.
+(Contributed by Dong-hee Na in :issue:`39329`.)
+
 threading
 ---------
 
@@ -195,6 +295,14 @@ threads were never supported in subinterpreters. Previously, the subinterpreter
 finalization crashed with a Python fatal error if a daemon thread was still
 running.
 (Contributed by Victor Stinner in :issue:`37266`.)
+
+typing
+------
+
+:pep:`593` introduced an :data:`typing.Annotated` type to decorate existing
+types with context-specific metadata and new ``include_extras`` parameter to
+:func:`typing.get_type_hints` to access the metadata at runtime. (Contributed
+by Till Varoquaux and Konstantin Kashin.)
 
 venv
 ----
@@ -206,47 +314,24 @@ customization consistently by always using the value specified by
 case), and one used ``__VENV_NAME__`` instead.
 (Contributed by Brett Cannon in :issue:`37663`.)
 
-pathlib
--------
-
-Added :meth:`pathlib.Path.readlink()` which acts similarly to
-:func:`os.readlink`.
-(Contributed by Girts Folkmanis in :issue:`30618`)
-
-pprint
-------
-
-:mod:`pprint` can now pretty-print :class:`types.SimpleNamespace`.
-(Contributed by Carl Bordum Hansen in :issue:`37376`.)
-
-importlib
----------
-
-To improve consistency with import statements, :func:`importlib.util.resolve_name`
-now raises :exc:`ImportError` instead of :exc:`ValueError` for invalid relative
-import attempts.
-(Contributed by Ngalim Siregar in :issue:`37444`.)
-
-signal
-------
-
-Exposed the Linux-specific :func:`signal.pidfd_send_signal` for sending to
-signals to a process using a file descriptor instead of a pid. (:issue:`38712`)
-
 
 Optimizations
 =============
 
+* Optimized the idiom for assignment a temporary variable in comprehensions.
+  Now ``for y in [expr]`` in comprehensions is as fast as a simple assignment
+  ``y = expr``.  For example:
+
+     sums = [s for s in [0] for x in data for s in [s + x]]
+
+  Unlike to the ``:=`` operator this idiom does not leak a variable to the
+  outer scope.
+
+  (Contributed by Serhiy Storchaka in :issue:`32856`.)
+
 
 Build and C API Changes
 =======================
-
-* Provide :c:func:`Py_EnterRecursiveCall` and :c:func:`Py_LeaveRecursiveCall`
-  as regular functions for the limited API. Previously, there were defined as
-  macros, but these macros didn't work with the limited API which cannot access
-  ``PyThreadState.recursion_depth`` field. Remove ``_Py_CheckRecursionLimit``
-  from the stable ABI.
-  (Contributed by Victor Stinner in :issue:`38644`.)
 
 * Add a new public :c:func:`PyObject_CallNoArgs` function to the C API, which
   calls a callable Python object without any arguments. It is the most efficient
@@ -269,9 +354,68 @@ Build and C API Changes
   removed in Python 3.3.
   (Contributed by Victor Stinner in :issue:`38896`.)
 
+* The ``tp_print`` slot of :ref:`PyTypeObject <type-structs>` has been removed.
+  It was used for printing objects to files in Python 2.7 and before. Since
+  Python 3.0, it has been ignored and unused.
+  (Contributed by Jeroen Demeyer in :issue:`36974`.)
+
+* On non-Windows platforms, the :c:func:`setenv` and :c:func:`unsetenv`
+  functions are now required to build Python.
+  (Contributed by Victor Stinner in :issue:`39395`.)
+
+* The ``COUNT_ALLOCS`` special build macro has been removed.
+  (Contributed by Victor Stinner in :issue:`39489`.)
+
+* Changes in the limited C API (if ``Py_LIMITED_API`` macro is defined):
+
+  * Provide :c:func:`Py_EnterRecursiveCall` and :c:func:`Py_LeaveRecursiveCall`
+    as regular functions for the limited API. Previously, there were defined as
+    macros, but these macros didn't compile with the limited C API which cannot
+    access ``PyThreadState.recursion_depth`` field (the structure is opaque in
+    the limited C API).
+
+  * Exclude the following functions from the limited C API:
+
+    * ``_Py_CheckRecursionLimit``
+    * ``_Py_NewReference()``
+    * ``_Py_ForgetReference()``
+    * ``_PyTraceMalloc_NewReference()``
+    * ``_Py_GetRefTotal()``
+    * The trashcan mechanism which never worked in the limited C API.
+    * ``PyTrash_UNWIND_LEVEL``
+    * ``Py_TRASHCAN_BEGIN_CONDITION``
+    * ``Py_TRASHCAN_BEGIN``
+    * ``Py_TRASHCAN_END``
+    * ``Py_TRASHCAN_SAFE_BEGIN``
+    * ``Py_TRASHCAN_SAFE_END``
+
+  * The following static inline functions or macros become regular "opaque"
+    function to hide implementation details:
+
+    * ``_Py_NewReference()``
+    * ``PyObject_INIT()`` and ``PyObject_INIT_VAR()``  become aliases to
+      :c:func:`PyObject_Init` and :c:func:`PyObject_InitVar` in the limited C
+      API, but are overriden with static inline function otherwise. Thanks to
+      that, it was possible to exclude ``_Py_NewReference()`` from the limited
+      C API.
+
+  * Move following functions and definitions to the internal C API:
+
+    * ``_PyDebug_PrintTotalRefs()``
+    * ``_Py_PrintReferences()``
+    * ``_Py_PrintReferenceAddresses()``
+    * ``_Py_tracemalloc_config``
+    * ``_Py_AddToAllObjects()`` (specific to ``Py_TRACE_REFS`` build)
+
+  (Contributed by Victor Stinner in :issue:`38644` and :issue:`39542`.)
+
 
 Deprecated
 ==========
+
+* The distutils ``bdist_msi`` command is now deprecated, use
+  ``bdist_wheel`` (wheel packages) instead.
+  (Contributed by Hugo van Kemenade in :issue:`39586`.)
 
 * Currently :func:`math.factorial` accepts :class:`float` instances with
   non-negative integer values (like ``5.0``).  It raises a :exc:`ValueError`
@@ -304,18 +448,31 @@ Deprecated
   deprecated and will be removed in version 3.11.
   (Contributed by Yury Selivanov and Kyle Stanley in :issue:`34790`.)
 
+* binhex4 and hexbin4 standards are now deprecated. The :`binhex` module
+  and the following :mod:`binascii` functions are now deprecated:
+
+  * :func:`~binascii.b2a_hqx`, :func:`~binascii.a2b_hqx`
+  * :func:`~binascii.rlecode_hqx`, :func:`~binascii.rledecode_hqx`
+
+  (Contributed by Victor Stinner in :issue:`39353`.)
+
+
 Removed
 =======
+
+* The erroneous version at :data:`unittest.mock.__version__` has been removed.
+
+* :class:`nntplib.NNTP`: ``xpath()`` and ``xgtitle()`` methods have been removed.
+  These methods are deprecated since Python 3.3. Generally, these extensions
+  are not supported or not enabled by NNTP server administrators.
+  For ``xgtitle()``, please use :meth:`nntplib.NNTP.descriptions` or
+  :meth:`nntplib.NNTP.description` instead.
+  (Contributed by Dong-hee Na in :issue:`39366`.)
 
 * :class:`array.array`: ``tostring()`` and ``fromstring()`` methods have been
   removed. They were aliases to ``tobytes()`` and ``frombytes()``, deprecated
   since Python 3.2.
   (Contributed by Victor Stinner in :issue:`38916`.)
-
-* The abstract base classes in :mod:`collections.abc` no longer are
-  exposed in the regular :mod:`collections` module.  This will help
-  create a clearer distinction between the concrete classes and the abstract
-  base classes.
 
 * The undocumented ``sys.callstats()`` function has been removed. Since Python
   3.7, it was deprecated and always returned :const:`None`. It required a special
@@ -365,6 +522,36 @@ Removed
   of :pep:`442`. Patch by Joannah Nanjekye.
   (Contributed by Joannah Nanjekye in :issue:`15088`)
 
+* ``base64.encodestring()`` and ``base64.decodestring()``, aliases deprecated
+  since Python 3.1, have been removed: use :func:`base64.encodebytes` and
+  :func:`base64.decodebytes` instead.
+  (Contributed by Victor Stinner in :issue:`39351`.)
+
+* ``fractions.gcd()`` function has been removed, it was deprecated since Python
+  3.5 (:issue:`22486`): use :func:`math.gcd` instead.
+  (Contributed by Victor Stinner in :issue:`39350`.)
+
+* The *buffering* parameter of :class:`bz2.BZ2File` has been removed. Since
+  Python 3.0, it was ignored and using it emitted a :exc:`DeprecationWarning`.
+  Pass an open file object to control how the file is opened.
+  (Contributed by Victor Stinner in :issue:`39357`.)
+
+* The *encoding* parameter of :func:`json.loads` has been removed.
+  As of Python 3.1, it was deprecated and ignored; using it has emitted a
+  :exc:`DeprecationWarning` since Python 3.8.
+  (Contributed by Inada Naoki in :issue:`39377`)
+
+* ``with (await asyncio.lock):`` and ``with (yield from asyncio.lock):`` statements are
+  not longer supported, use ``async with lock`` instead.  The same is correct for
+  ``asyncio.Condition`` and ``asyncio.Semaphore``.
+  (Contributed by Andrew Svetlov in :issue:`34793`.)
+
+* The :func:`sys.getcounts` function, the ``-X showalloccount`` command line
+  option and the ``show_alloc_count`` field of the C structure
+  :c:type:`PyConfig` have been removed. They required a special Python build by
+  defining ``COUNT_ALLOCS`` macro.
+  (Contributed by Victor Stinner in :issue:`39489`.)
+
 
 Porting to Python 3.9
 =====================
@@ -395,6 +582,10 @@ Changes in the Python API
 * The :meth:`select.epoll.unregister` method no longer ignores the
   :data:`~errno.EBADF` error.
   (Contributed by Victor Stinner in :issue:`39239`.)
+
+* The *compresslevel* parameter of :class:`bz2.BZ2File` became keyword-only,
+  since the *buffering* parameter has been removed.
+  (Contributed by Victor Stinner in :issue:`39357`.)
 
 
 CPython bytecode changes

@@ -1045,6 +1045,10 @@ class TestTimeouts(TestCase):
         self.evt.wait()
         ftp.close()
 
+        # bpo-39259
+        with self.assertRaises(ValueError):
+            ftplib.FTP(HOST, timeout=0)
+
     def testTimeoutConnect(self):
         ftp = ftplib.FTP()
         ftp.connect(HOST, timeout=30)

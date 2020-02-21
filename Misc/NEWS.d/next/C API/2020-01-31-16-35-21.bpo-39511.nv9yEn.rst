@@ -1,0 +1,3 @@
+The :c:func:`PyThreadState_Clear` function now calls the
+:c:member:`PyThreadState.on_delete` callback. Previously, that happened in
+:c:func:`PyThreadState_Delete`.

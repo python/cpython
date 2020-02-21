@@ -2401,6 +2401,23 @@ converters_from_argtypes(PyObject *ob)
     for (i = 0; i < nArgs; ++i) {
         PyObject *cnv;
         PyObject *tp = PyTuple_GET_ITEM(ob, i);
+/*
+ *      The following checks, relating to bpo-16575 and bpo-16576, have been
+ *      disabled. The reason is that, although there is a definite problem with
+ *      how libffi handles unions (https://github.com/libffi/libffi/issues/33),
+ *      there are numerous libraries which pass structures containing unions
+ *      by values - especially on Windows but examples also exist on Linux
+ *      (https://bugs.python.org/msg359834).
+ *
+ *      It may not be possible to get proper support for unions and bitfields
+ *      until support is forthcoming in libffi, but for now, adding the checks
+ *      has caused problems in otherwise-working software, which suggests it
+ *      is better to disable the checks.
+ *
+ *      Although specific examples reported relate specifically to unions and
+ *      not bitfields, the bitfields check is also being disabled as a
+ *      precaution.
+
         StgDictObject *stgdict = PyType_stgdict(tp);
 
         if (stgdict != NULL) {
@@ -2428,6 +2445,7 @@ converters_from_argtypes(PyObject *ob)
                 return NULL;
             }
         }
+ */
 
         if (_PyObject_LookupAttrId(tp, &PyId_from_param, &cnv) <= 0) {
             Py_DECREF(converters);
@@ -5740,42 +5758,42 @@ PyInit__ctypes(void)
     if (PyType_Ready(&PyCData_Type) < 0)
         return NULL;
 
-    Py_TYPE(&Struct_Type) = &PyCStructType_Type;
+    Py_SET_TYPE(&Struct_Type, &PyCStructType_Type);
     Struct_Type.tp_base = &PyCData_Type;
     if (PyType_Ready(&Struct_Type) < 0)
         return NULL;
     Py_INCREF(&Struct_Type);
     PyModule_AddObject(m, "Structure", (PyObject *)&Struct_Type);
 
-    Py_TYPE(&Union_Type) = &UnionType_Type;
+    Py_SET_TYPE(&Union_Type, &UnionType_Type);
     Union_Type.tp_base = &PyCData_Type;
     if (PyType_Ready(&Union_Type) < 0)
         return NULL;
     Py_INCREF(&Union_Type);
     PyModule_AddObject(m, "Union", (PyObject *)&Union_Type);
 
-    Py_TYPE(&PyCPointer_Type) = &PyCPointerType_Type;
+    Py_SET_TYPE(&PyCPointer_Type, &PyCPointerType_Type);
     PyCPointer_Type.tp_base = &PyCData_Type;
     if (PyType_Ready(&PyCPointer_Type) < 0)
         return NULL;
     Py_INCREF(&PyCPointer_Type);
     PyModule_AddObject(m, "_Pointer", (PyObject *)&PyCPointer_Type);
 
-    Py_TYPE(&PyCArray_Type) = &PyCArrayType_Type;
+    Py_SET_TYPE(&PyCArray_Type, &PyCArrayType_Type);
     PyCArray_Type.tp_base = &PyCData_Type;
     if (PyType_Ready(&PyCArray_Type) < 0)
         return NULL;
     Py_INCREF(&PyCArray_Type);
     PyModule_AddObject(m, "Array", (PyObject *)&PyCArray_Type);
 
-    Py_TYPE(&Simple_Type) = &PyCSimpleType_Type;
+    Py_SET_TYPE(&Simple_Type, &PyCSimpleType_Type);
     Simple_Type.tp_base = &PyCData_Type;
     if (PyType_Ready(&Simple_Type) < 0)
         return NULL;
     Py_INCREF(&Simple_Type);
     PyModule_AddObject(m, "_SimpleCData", (PyObject *)&Simple_Type);
 
-    Py_TYPE(&PyCFuncPtr_Type) = &PyCFuncPtrType_Type;
+    Py_SET_TYPE(&PyCFuncPtr_Type, &PyCFuncPtrType_Type);
     PyCFuncPtr_Type.tp_base = &PyCData_Type;
     if (PyType_Ready(&PyCFuncPtr_Type) < 0)
         return NULL;

@@ -253,9 +253,7 @@ class _WindowsFlavour(_Flavour):
             return 'file:' + urlquote_from_bytes(path.as_posix().encode('utf-8'))
 
     def gethomedir(self, username):
-        if 'HOME' in os.environ:
-            userhome = os.environ['HOME']
-        elif 'USERPROFILE' in os.environ:
+        if 'USERPROFILE' in os.environ:
             userhome = os.environ['USERPROFILE']
         elif 'HOMEPATH' in os.environ:
             try:
@@ -1136,6 +1134,7 @@ class Path(PurePath):
         """Iterate over this subtree and yield all existing files (of any
         kind, including directories) matching the given relative pattern.
         """
+        sys.audit("pathlib.Path.glob", self, pattern)
         if not pattern:
             raise ValueError("Unacceptable pattern: {!r}".format(pattern))
         drv, root, pattern_parts = self._flavour.parse_parts((pattern,))
@@ -1150,6 +1149,7 @@ class Path(PurePath):
         directories) matching the given relative pattern, anywhere in
         this subtree.
         """
+        sys.audit("pathlib.Path.rglob", self, pattern)
         drv, root, pattern_parts = self._flavour.parse_parts((pattern,))
         if drv or root:
             raise NotImplementedError("Non-relative patterns are unsupported")

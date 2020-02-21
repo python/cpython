@@ -54,7 +54,7 @@ typedef struct {
 static PyTypeObject PyProfiler_Type;
 
 #define PyProfiler_Check(op) PyObject_TypeCheck(op, &PyProfiler_Type)
-#define PyProfiler_CheckExact(op) (Py_TYPE(op) == &PyProfiler_Type)
+#define PyProfiler_CheckExact(op) Py_IS_TYPE(op, &PyProfiler_Type)
 
 /*** External Timers ***/
 

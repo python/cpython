@@ -1,2 +1,0 @@
-Fix possible crashes in several list methods by holding strong references to
-list elements when calling :c:func:`PyObject_RichCompareBool`.

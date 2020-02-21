@@ -844,8 +844,8 @@ The following code::
 is semantically equivalent to::
 
     manager = (EXPRESSION)
-    aexit = type(manager).__aexit__
     aenter = type(manager).__aenter__
+    aexit = type(manager).__aexit__
     value = await aenter(manager)
     hit_except = False
 

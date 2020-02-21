@@ -101,12 +101,16 @@ Node classes
       node = ast.UnaryOp(ast.USub(), ast.Constant(5, lineno=0, col_offset=0),
                          lineno=0, col_offset=0)
 
+.. versionchanged:: 3.8
+
+   Class :class:`ast.Constant` is now used for all constants.
+
 .. deprecated:: 3.8
 
-   Class :class:`ast.Constant` is now used for all constants. Old classes
-   :class:`ast.Num`, :class:`ast.Str`, :class:`ast.Bytes`,
+   Old classes :class:`ast.Num`, :class:`ast.Str`, :class:`ast.Bytes`,
    :class:`ast.NameConstant` and :class:`ast.Ellipsis` are still available,
-   but they will be removed in future Python releases.
+   but they will be removed in future Python releases.  In the meanwhile,
+   instantiating them will return an instance of a different class.
 
 
 .. _abstract-grammar:
@@ -316,7 +320,7 @@ and classes for traversing abstract syntax trees:
       class RewriteName(NodeTransformer):
 
           def visit_Name(self, node):
-              return copy_location(Subscript(
+              return Subscript(
                   value=Name(id='data', ctx=Load()),
                   slice=Index(value=Constant(value=node.id)),
                   ctx=node.ctx
@@ -329,6 +333,14 @@ and classes for traversing abstract syntax trees:
    For nodes that were part of a collection of statements (that applies to all
    statement nodes), the visitor may also return a list of nodes rather than
    just a single node.
+
+   If :class:`NodeTransformer` introduces new nodes (that weren't part of
+   original tree) without giving them location information (such as
+   :attr:`lineno`), :func:`fix_missing_locations` should be called with
+   the new sub-tree to recalculate the location information::
+
+      tree = ast.parse('foo', mode='eval')
+      new_tree = fix_missing_locations(RewriteName().visit(tree))
 
    Usually you use the transformer like this::
 

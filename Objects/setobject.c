@@ -2529,7 +2529,7 @@ dummy_repr(PyObject *op)
     return PyUnicode_FromString("<dummy key>");
 }
 
-static void
+static void _Py_NO_RETURN
 dummy_dealloc(PyObject* ignore)
 {
     Py_FatalError("deallocating <dummy key>");

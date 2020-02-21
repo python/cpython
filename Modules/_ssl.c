@@ -508,9 +508,9 @@ static int PySSL_select(PySocketSockObject *s, int writing, _PyTime_t timeout);
 
 static int PySSL_set_owner(PySSLSocket *, PyObject *, void *);
 static int PySSL_set_session(PySSLSocket *, PyObject *, void *);
-#define PySSLSocket_Check(v)    (Py_TYPE(v) == &PySSLSocket_Type)
-#define PySSLMemoryBIO_Check(v)    (Py_TYPE(v) == &PySSLMemoryBIO_Type)
-#define PySSLSession_Check(v)   (Py_TYPE(v) == &PySSLSession_Type)
+#define PySSLSocket_Check(v)    Py_IS_TYPE(v, &PySSLSocket_Type)
+#define PySSLMemoryBIO_Check(v)    Py_IS_TYPE(v, &PySSLMemoryBIO_Type)
+#define PySSLSession_Check(v)   Py_IS_TYPE(v, &PySSLSession_Type)
 
 typedef enum {
     SOCKET_IS_NONBLOCKING,
@@ -4223,7 +4223,6 @@ _ssl__SSLContext_load_verify_locations_impl(PySSLContext *self,
         r = SSL_CTX_load_verify_locations(self->ctx, cafile_buf, capath_buf);
         PySSL_END_ALLOW_THREADS
         if (r != 1) {
-            ok = 0;
             if (errno != 0) {
                 ERR_clear_error();
                 PyErr_SetFromErrno(PyExc_OSError);

@@ -138,6 +138,15 @@ class BasicTest(BaseTest):
         self.assertEqual(context.prompt, '(My prompt) ')
         self.assertIn("prompt = 'My prompt'\n", data)
 
+        rmtree(self.env_dir)
+        builder = venv.EnvBuilder(prompt='.')
+        cwd = os.path.basename(os.getcwd())
+        self.run_with_capture(builder.create, self.env_dir)
+        context = builder.ensure_directories(self.env_dir)
+        data = self.get_text_file_contents('pyvenv.cfg')
+        self.assertEqual(context.prompt, '(%s) ' % cwd)
+        self.assertIn("prompt = '%s'\n" % cwd, data)
+
     def test_upgrade_dependencies(self):
         builder = venv.EnvBuilder()
         bin_path = 'Scripts' if sys.platform == 'win32' else 'bin'

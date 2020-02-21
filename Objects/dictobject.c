@@ -311,7 +311,9 @@ static void free_keys_object(PyDictKeysObject *keys);
 static inline void
 dictkeys_incref(PyDictKeysObject *dk)
 {
-    _Py_INC_REFTOTAL;
+#ifdef Py_REF_DEBUG
+    _Py_RefTotal++;
+#endif
     dk->dk_refcnt++;
 }
 
@@ -319,7 +321,9 @@ static inline void
 dictkeys_decref(PyDictKeysObject *dk)
 {
     assert(dk->dk_refcnt > 0);
-    _Py_DEC_REFTOTAL;
+#ifdef Py_REF_DEBUG
+    _Py_RefTotal--;
+#endif
     if (--dk->dk_refcnt == 0) {
         free_keys_object(dk);
     }
@@ -563,7 +567,9 @@ static PyDictKeysObject *new_keys_object(Py_ssize_t size)
             return NULL;
         }
     }
-    _Py_INC_REFTOTAL;
+#ifdef Py_REF_DEBUG
+    _Py_RefTotal++;
+#endif
     dk->dk_refcnt = 1;
     dk->dk_size = size;
     dk->dk_usable = usable;
@@ -602,7 +608,7 @@ new_dict(PyDictKeysObject *keys, PyObject **values)
     if (numfree) {
         mp = free_list[--numfree];
         assert (mp != NULL);
-        assert (Py_TYPE(mp) == &PyDict_Type);
+        assert (Py_IS_TYPE(mp, &PyDict_Type));
         _Py_NewReference((PyObject *)mp);
     }
     else {
@@ -687,10 +693,12 @@ clone_combined_dict(PyDictObject *orig)
     }
 
     /* Since we copied the keys table we now have an extra reference
-       in the system.  Manually call _Py_INC_REFTOTAL to signal that
+       in the system.  Manually call increment _Py_RefTotal to signal that
        we have it now; calling dictkeys_incref would be an error as
        keys->dk_refcnt is already set to 1 (after memcpy). */
-    _Py_INC_REFTOTAL;
+#ifdef Py_REF_DEBUG
+    _Py_RefTotal++;
+#endif
 
     return (PyObject *)new;
 }
@@ -1249,13 +1257,15 @@ dictresize(PyDictObject *mp, Py_ssize_t minsize)
 
         assert(oldkeys->dk_lookup != lookdict_split);
         assert(oldkeys->dk_refcnt == 1);
+#ifdef Py_REF_DEBUG
+        _Py_RefTotal--;
+#endif
         if (oldkeys->dk_size == PyDict_MINSIZE &&
-            numfreekeys < PyDict_MAXFREELIST) {
-            _Py_DEC_REFTOTAL;
+            numfreekeys < PyDict_MAXFREELIST)
+        {
             keys_free_list[numfreekeys++] = oldkeys;
         }
         else {
-            _Py_DEC_REFTOTAL;
             PyObject_FREE(oldkeys);
         }
     }
@@ -1997,7 +2007,7 @@ dict_dealloc(PyDictObject *mp)
         assert(keys->dk_refcnt == 1);
         dictkeys_decref(keys);
     }
-    if (numfree < PyDict_MAXFREELIST && Py_TYPE(mp) == &PyDict_Type)
+    if (numfree < PyDict_MAXFREELIST && Py_IS_TYPE(mp, &PyDict_Type))
         free_list[numfree++] = mp;
     else
         Py_TYPE(mp)->tp_free((PyObject *)mp);
@@ -2117,7 +2127,7 @@ dict_subscript(PyDictObject *mp, PyObject *key)
             _Py_IDENTIFIER(__missing__);
             missing = _PyObject_LookupSpecial((PyObject *)mp, &PyId___missing__);
             if (missing != NULL) {
-                res = _PyObject_CallOneArg(missing, key);
+                res = PyObject_CallOneArg(missing, key);
                 Py_DECREF(missing);
                 return res;
             }
@@ -3854,15 +3864,15 @@ dictreviter_iternext(dictiterobject *di)
     di->di_pos = i-1;
     di->len--;
 
-    if (Py_TYPE(di) == &PyDictRevIterKey_Type) {
+    if (Py_IS_TYPE(di, &PyDictRevIterKey_Type)) {
         Py_INCREF(key);
         return key;
     }
-    else if (Py_TYPE(di) == &PyDictRevIterValue_Type) {
+    else if (Py_IS_TYPE(di, &PyDictRevIterValue_Type)) {
         Py_INCREF(value);
         return value;
     }
-    else if (Py_TYPE(di) == &PyDictRevIterItem_Type) {
+    else if (Py_IS_TYPE(di, &PyDictRevIterItem_Type)) {
         Py_INCREF(key);
         Py_INCREF(value);
         result = di->di_result;
@@ -4005,7 +4015,7 @@ _PyDictView_New(PyObject *dict, PyTypeObject *type)
         /* XXX Get rid of this restriction later */
         PyErr_Format(PyExc_TypeError,
                      "%s() requires a dict argument, not '%s'",
-                     type->tp_name, dict->ob_type->tp_name);
+                     type->tp_name, Py_TYPE(dict)->tp_name);
         return NULL;
     }
     dv = PyObject_GC_New(_PyDictViewObject, type);
@@ -4226,7 +4236,7 @@ _PyDictView_Intersect(PyObject* self, PyObject *other)
 
     /* if other is a set and self is smaller than other,
        reuse set intersection logic */
-    if (Py_TYPE(other) == &PySet_Type && len_self <= PyObject_Size(other)) {
+    if (Py_IS_TYPE(other, &PySet_Type) && len_self <= PyObject_Size(other)) {
         _Py_IDENTIFIER(intersection);
         return _PyObject_CallMethodIdObjArgs(other, &PyId_intersection, self, NULL);
     }
