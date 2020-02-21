@@ -415,8 +415,9 @@ error.
 .. versionchanged:: 3.6
    Added the ``'_'`` option (see also :pep:`515`).
 
-*width* is a decimal integer defining the minimum field width.  If not
-specified, then the field width will be determined by the content.
+*width* is a decimal integer defining the minimum total field width,
+including any prefixes, separators, and other formatting characters.
+If not specified, then the field width will be determined by the content.
 
 When no explicit alignment is given, preceding the *width* field by a zero
 (``'0'``) character enables
