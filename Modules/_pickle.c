@@ -1373,11 +1373,40 @@ _Unpickler_ReadInto(UnpicklerObject *self, char *buf, Py_ssize_t n)
     }
 
     /* Read from file */
-    if (!self->readinto) {
+    if (!self->read) {
+        /* We're unpickling memory, this means the input is truncated */
         return bad_readline();
     }
     if (_Unpickler_SkipConsumed(self) < 0) {
         return -1;
+    }
+
+    if (!self->readinto) {
+        /* readinto() not supported on file-like object, fall back to read()
+         * and copy into destination buffer (bpo-39681) */
+        PyObject* len = PyLong_FromSsize_t(n);
+        if (len == NULL) {
+            return -1;
+        }
+        PyObject* data = _Pickle_FastCall(self->read, len);
+        if (data == NULL) {
+            return -1;
+        }
+        if (!PyBytes_Check(data)) {
+            PyErr_Format(PyExc_ValueError,
+                         "read() returned non-bytes object (%R)",
+                         Py_TYPE(data));
+            Py_DECREF(data);
+            return -1;
+        }
+        Py_ssize_t read_size = PyBytes_GET_SIZE(data);
+        if (read_size < n) {
+            Py_DECREF(data);
+            return bad_readline();
+        }
+        memcpy(buf, PyBytes_AS_STRING(data), n);
+        Py_DECREF(data);
+        return n;
     }
 
     /* Call readinto() into user buffer */
@@ -1608,17 +1637,19 @@ _Unpickler_SetInputStream(UnpicklerObject *self, PyObject *file)
     _Py_IDENTIFIER(readinto);
     _Py_IDENTIFIER(readline);
 
+    /* Optional file methods */
     if (_PyObject_LookupAttrId(file, &PyId_peek, &self->peek) < 0) {
         return -1;
     }
+    if (_PyObject_LookupAttrId(file, &PyId_readinto, &self->readinto) < 0) {
+        return -1;
+    }
     (void)_PyObject_LookupAttrId(file, &PyId_read, &self->read);
-    (void)_PyObject_LookupAttrId(file, &PyId_readinto, &self->readinto);
     (void)_PyObject_LookupAttrId(file, &PyId_readline, &self->readline);
-    if (!self->readline || !self->readinto || !self->read) {
+    if (!self->readline || !self->read) {
         if (!PyErr_Occurred()) {
             PyErr_SetString(PyExc_TypeError,
-                            "file must have 'read', 'readinto' and "
-                            "'readline' attributes");
+                            "file must have 'read' and 'readline' attributes");
         }
         Py_CLEAR(self->read);
         Py_CLEAR(self->readinto);
