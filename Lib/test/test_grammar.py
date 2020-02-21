@@ -1548,7 +1548,7 @@ class GrammarTests(unittest.TestCase):
         @class_decorator(class_decorator)(class_decorator)
         class L: pass
         @[class_decorator][0].__call__.__call__
-        class L: pass
+        class M: pass
 
     def test_dictcomps(self):
         # dictorsetmaker: ( (test ':' test (comp_for |
