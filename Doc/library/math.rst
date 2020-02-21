@@ -133,7 +133,7 @@ Number-theoretic and representation functions
 
               >>> gcd(6 ,8, 10, 12)
               2
-   
+
    some exceptions are,
 
               >>gcd()
