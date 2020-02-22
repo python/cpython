@@ -1,0 +1,1 @@
+The language reference now specifies restrictions on class namespaces.  Adapted from a patch by Ethan Furman.
