@@ -827,8 +827,8 @@ m_log10(double x)
 static PyObject *
 math_gcd(PyObject *module, PyObject *const *args, Py_ssize_t n)
 {
-    PyObject *g = 0, *item, *in;
-    
+    PyObject *g, *item, *in;
+    g = PyLong_FromLong(0);
     Py_ssize_t i;
     for (i = 0; i < n; i++) {
         item = args[i];
