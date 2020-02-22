@@ -693,6 +693,7 @@ class MathTests(unittest.TestCase):
 
     def test_gcd(self):
         gcd = math.gcd
+        self.assertEqual(gcd(0, 0), 0)
         self.assertEqual(gcd(), 0)
         self.assertEqual(gcd(0), 0)
         self.assertEqual(gcd(5), 5)
@@ -742,8 +743,8 @@ class MathTests(unittest.TestCase):
         self.assertEqual(gcd(-a, -b), c)
         self.assertEqual(gcd(-b, -a), c)
 
-        self.assertRaises(TypeError, gcd, 120.0, 84)
-        self.assertRaises(TypeError, gcd, 120.0, 84, 23.5, 34.0, 78.0)
+        self.assertRaises(TypeError, gcd, 130.0, 68)
+        self.assertRaises(TypeError, gcd, 320.0, 84, 45.0, 46.0, 78.0)
         self.assertEqual(gcd(MyIndexable(120), MyIndexable(84)), 12)
 
     def testHypot(self):
