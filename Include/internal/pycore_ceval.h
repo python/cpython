@@ -14,7 +14,6 @@ struct _ceval_runtime_state;
 struct _frame;
 
 #include "pycore_pystate.h"      /* PyInterpreterState.eval_frame */
-#include "pycore_frameobject.h"  /* _PyFrame_PostEvalCleanup */
 
 PyAPI_FUNC(void) _Py_FinishPendingCalls(PyThreadState *tstate);
 PyAPI_FUNC(void) _PyEval_Initialize(struct _ceval_runtime_state *);
@@ -41,9 +40,7 @@ void _PyEval_Fini(void);
 static inline PyObject*
 _PyEval_EvalFrame(PyThreadState *tstate, struct _frame *f, int throwflag)
 {
-    PyObject * result = tstate->interp->eval_frame(f, throwflag);
-    _PyFrame_PostEvalCleanup(f); // Notify frame that execution has completed
-    return result;
+    return tstate->interp->eval_frame(f, throwflag);
 }
 
 extern PyObject *_PyEval_EvalCode(

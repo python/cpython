@@ -11,8 +11,6 @@ extern "C" {
 struct _frame;
 typedef struct _frame PyFrameObject;
 
-void _PyFrame_PostEvalCleanup(PyFrameObject *f);     /* For _PyEval_EvalFrame() */
-
 #ifdef __cplusplus
 }
 #endif
