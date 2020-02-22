@@ -906,8 +906,7 @@ math_lcm(PyObject *module, PyObject * const *args, Py_ssize_t nargs)
     Py_ssize_t i;
 
     if (nargs == 0) {
-        PyErr_SetString(PyExc_TypeError, "lcm() requires at least 1 argument");
-        return NULL;
+        return PyLong_FromLong(1);
     }
     res = PyNumber_Index(args[0]);
     if (res == NULL) {

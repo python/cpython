@@ -1005,7 +1005,7 @@ class MathTests(unittest.TestCase):
             self.assertEqual(lcm(-a, -b), d)
             self.assertEqual(lcm(-b, -a), d)
 
-        self.assertRaises(TypeError, lcm)
+        self.assertEqual(lcm(), 1)
         self.assertEqual(lcm(120), 120)
         self.assertEqual(lcm(-120), 120)
         self.assertEqual(lcm(120, 84, 102), 14280)
