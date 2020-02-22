@@ -129,7 +129,19 @@ Number-theoretic and representation functions
 .. function:: gcd(*arguments)
 
    returns the greatest common divisor of multiple scalar arguments.
-   For example,
+    If any one of the *arguments* is nonzero, then the value of ``gcd(*arguments)`` is the largest positive integer that divides all of the *arguments*. If all of the *arguments* are zero, then ``gcd(*arguments)`` returns ``0``. For example::
+   
+        >>> gcd(22, 33)
+        11
+        >>> gcd(-6, 8, 10, 12)
+        2
+        >>> gcd(-5)
+        5
+        >>> gcd(0, 0)
+        0
+        >>> gcd()
+        0
+
 
    ``gcd(6 ,8, 10, 12)`` returns '2'.
 
