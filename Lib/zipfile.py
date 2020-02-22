@@ -17,7 +17,6 @@ import sys
 import threading
 import time
 import contextlib
-from collections import OrderedDict
 
 try:
     import zlib # We may need its compression method
@@ -2143,7 +2142,7 @@ def _ancestry(path):
         path, tail = posixpath.split(path)
 
 
-_dedupe = OrderedDict.fromkeys
+_dedupe = dict.fromkeys
 """Deduplicate an iterable in original order"""
 
 
