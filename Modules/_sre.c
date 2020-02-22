@@ -2518,7 +2518,7 @@ pattern_richcompare(PyObject *lefto, PyObject *righto, int op)
         Py_RETURN_NOTIMPLEMENTED;
     }
 
-    if (Py_TYPE(lefto) != &Pattern_Type || Py_TYPE(righto) != &Pattern_Type) {
+    if (!Py_IS_TYPE(lefto, &Pattern_Type) || !Py_IS_TYPE(righto, &Pattern_Type)) {
         Py_RETURN_NOTIMPLEMENTED;
     }
 

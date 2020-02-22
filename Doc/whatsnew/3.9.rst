@@ -216,6 +216,9 @@ import attempts.
 math
 ----
 
+Add :func:`math.lcm`: return the least common multiple of *a* and *b*.
+(Contributed by Ananthakrishnan in :issue:`39479`.)
+
 Add :func:`math.nextafter`: return the next floating-point value after *x*
 towards *y*.
 (Contributed by Victor Stinner in :issue:`39288`.)
@@ -470,11 +473,6 @@ Removed
   removed. They were aliases to ``tobytes()`` and ``frombytes()``, deprecated
   since Python 3.2.
   (Contributed by Victor Stinner in :issue:`38916`.)
-
-* The abstract base classes in :mod:`collections.abc` no longer are
-  exposed in the regular :mod:`collections` module.  This will help
-  create a clearer distinction between the concrete classes and the abstract
-  base classes.
 
 * The undocumented ``sys.callstats()`` function has been removed. Since Python
   3.7, it was deprecated and always returned :const:`None`. It required a special

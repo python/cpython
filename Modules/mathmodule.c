@@ -2018,6 +2018,59 @@ math_factorial(PyObject *module, PyObject *arg)
 
 
 /*[clinic input]
+math.lcm
+    x as a: object
+    y as b: object
+    /
+least common multiple of x and y
+[clinic start generated code]*/
+
+static PyObject *
+math_lcm_impl(PyObject *module, PyObject *a, PyObject *b)
+/*[clinic end generated code: output=6f83fb6d671074ba input=efb3d7b7334b7118]*/
+{
+    PyObject *g, *m, *f, *ab;
+
+    a = PyNumber_Index(a);
+    if (a == NULL) {
+        return NULL;
+    }
+    b = PyNumber_Index(b);
+    if (b == NULL) {
+        Py_DECREF(a);
+        return NULL;
+    }
+    if (_PyLong_Sign(a) == 0 || _PyLong_Sign(b) == 0) {
+        Py_DECREF(a);
+        Py_DECREF(b);
+        return PyLong_FromLong(0);
+    }
+    g = _PyLong_GCD(a, b);
+    if (g == NULL) {
+        Py_DECREF(a);
+        Py_DECREF(b);
+        return NULL;
+    }
+    f = PyNumber_FloorDivide(a, g);
+    Py_DECREF(g);
+    Py_DECREF(a);
+    if (f == NULL) {
+        Py_DECREF(b);
+        return NULL;
+    }
+    m = PyNumber_Multiply(f, b);
+    Py_DECREF(f);
+    Py_DECREF(b);
+    if (m == NULL) {
+        return NULL;
+    }
+    ab = PyNumber_Absolute(m);
+    Py_DECREF(m);
+    return ab;
+}
+
+
+/*[clinic input]
 math.trunc
 
     x: object
@@ -3362,6 +3415,7 @@ static PyMethodDef math_methods[] = {
     MATH_ISINF_METHODDEF
     MATH_ISNAN_METHODDEF
     MATH_ISQRT_METHODDEF
+    MATH_LCM_METHODDEF
     MATH_LDEXP_METHODDEF
     {"lgamma",          math_lgamma,    METH_O,         math_lgamma_doc},
     MATH_LOG_METHODDEF

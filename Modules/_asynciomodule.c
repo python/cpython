@@ -112,8 +112,8 @@ static PyTypeObject TaskType;
 static PyTypeObject PyRunningLoopHolder_Type;
 
 
-#define Future_CheckExact(obj) (Py_TYPE(obj) == &FutureType)
-#define Task_CheckExact(obj) (Py_TYPE(obj) == &TaskType)
+#define Future_CheckExact(obj) Py_IS_TYPE(obj, &FutureType)
+#define Task_CheckExact(obj) Py_IS_TYPE(obj, &TaskType)
 
 #define Future_Check(obj) PyObject_TypeCheck(obj, &FutureType)
 #define Task_Check(obj) PyObject_TypeCheck(obj, &TaskType)
@@ -255,7 +255,7 @@ get_running_loop(PyObject **loop)
         cached_running_holder_tsid = ts->id;
     }
 
-    assert(Py_TYPE(rl) == &PyRunningLoopHolder_Type);
+    assert(Py_IS_TYPE(rl, &PyRunningLoopHolder_Type));
     PyObject *running_loop = ((PyRunningLoopHolder *)rl)->rl_loop;
 
     if (running_loop == Py_None) {

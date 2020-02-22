@@ -136,6 +136,15 @@ Number-theoretic and representation functions
    .. versionadded:: 3.5
 
 
+.. function:: lcm(a, b)
+
+   Return the least common multiple of integers *a* and *b*.  The value of
+   ``lcm(a, b)`` is the smallest nonnegative integer that is a multiple of
+   both *a* and *b*.  If either *a* or *b* is zero then ``lcm(a, b)`` is zero.
+
+   .. versionadded:: 3.9
+
+
 .. function:: isclose(a, b, *, rel_tol=1e-09, abs_tol=0.0)
 
    Return ``True`` if the values *a* and *b* are close to each other and

@@ -209,7 +209,7 @@ typedef struct {
 } ElementObject;
 
 
-#define Element_CheckExact(op) (Py_TYPE(op) == &Element_Type)
+#define Element_CheckExact(op) Py_IS_TYPE(op, &Element_Type)
 #define Element_Check(op) PyObject_TypeCheck(op, &Element_Type)
 
 
