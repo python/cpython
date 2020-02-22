@@ -831,7 +831,6 @@ math_gcd(PyObject *module, PyObject * const *args, Py_ssize_t nargs)
 {
     PyObject *res, *x;
     Py_ssize_t i;
-    int isone = 0;
 
     if (nargs == 0) {
         return PyLong_FromLong(0);
@@ -850,22 +849,15 @@ math_gcd(PyObject *module, PyObject * const *args, Py_ssize_t nargs)
             Py_DECREF(res);
             return NULL;
         }
-        if (isone) {
-            /* Fast path: just check arguments */
+        if (res == _PyLong_One) {
+            /* Fast path: just check arguments.
+               It is okay to use identity comparison here. */
             Py_DECREF(x);
             continue;
         }
         Py_SETREF(res, _PyLong_GCD(res, x));
         Py_DECREF(x);
         if (res == NULL) {
-            return NULL;
-        }
-        if (i + 1 >= nargs) {
-            break;
-        }
-        isone = PyObject_RichCompareBool(res, _PyLong_One, Py_EQ);
-        if (isone < 0) {
-            Py_DECREF(res);
             return NULL;
         }
     }
@@ -912,7 +904,6 @@ math_lcm(PyObject *module, PyObject * const *args, Py_ssize_t nargs)
 {
     PyObject *res, *x;
     Py_ssize_t i;
-    int iszero = 0;
 
     if (nargs == 0) {
         PyErr_SetString(PyExc_TypeError, "lcm() requires at least 1 argument");
@@ -932,22 +923,15 @@ math_lcm(PyObject *module, PyObject * const *args, Py_ssize_t nargs)
             Py_DECREF(res);
             return NULL;
         }
-        if (iszero) {
-            /* Fast path: just check arguments */
+        if (res == _PyLong_Zero) {
+            /* Fast path: just check arguments.
+               It is okay to use identity comparison here. */
             Py_DECREF(x);
             continue;
         }
         Py_SETREF(res, long_lcm(res, x));
         Py_DECREF(x);
         if (res == NULL) {
-            return NULL;
-        }
-        if (i + 1 >= nargs) {
-            break;
-        }
-        iszero = PyObject_RichCompareBool(res, _PyLong_Zero, Py_EQ);
-        if (iszero < 0) {
-            Py_DECREF(res);
             return NULL;
         }
     }
