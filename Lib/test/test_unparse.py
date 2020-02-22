@@ -2,12 +2,10 @@
 
 import unittest
 import test.support
-import io
 import pathlib
 import random
 import tokenize
 import ast
-import functools
 
 
 def read_pyfile(filename):
@@ -280,6 +278,8 @@ class UnparseTestCase(ASTTestCase):
     def test_invalid_set(self):
         self.check_invalid(ast.Set(elts=[]))
 
+    def test_invalid_yield_from(self):
+        self.check_invalid(ast.YieldFrom(value=None))
 
 class DirectoryTestCase(ASTTestCase):
     """Test roundtrip behaviour on all files in Lib and Lib/test."""
@@ -287,27 +287,44 @@ class DirectoryTestCase(ASTTestCase):
     lib_dir = pathlib.Path(__file__).parent / ".."
     test_directories = (lib_dir, lib_dir / "test")
     skip_files = {"test_fstring.py"}
+    run_always_files = {"test_grammar.py", "test_syntax.py", "test_compile.py",
+                        "test_ast.py", "test_asdl_parser.py"}
 
-    @functools.cached_property
-    def files_to_test(self):
-        # bpo-31174: Use cached_property to store the names sample
-        # to always test the same files. It prevents false alarms
-        # when hunting reference leaks.
+    _files_to_test = None
+
+    @classmethod
+    def files_to_test(cls):
+
+        if cls._files_to_test is not None:
+            return cls._files_to_test
 
         items = [
             item.resolve()
-            for directory in self.test_directories
+            for directory in cls.test_directories
             for item in directory.glob("*.py")
             if not item.name.startswith("bad")
         ]
 
         # Test limited subset of files unless the 'cpu' resource is specified.
         if not test.support.is_resource_enabled("cpu"):
-            items = random.sample(items, 10)
+
+            tests_to_run_always = {item for item in items if
+                                   item.name in cls.run_always_files}
+
+            items = set(random.sample(items, 10))
+
+            # Make sure that at least tests that heavily use grammar features are
+            # always considered in order to reduce the chance of missing something.
+            items = list(items | tests_to_run_always)
+
+        # bpo-31174: Store the names sample to always test the same files.
+        # It prevents false alarms when hunting reference leaks.
+        cls._files_to_test = items
+
         return items
 
     def test_files(self):
-        for item in self.files_to_test:
+        for item in self.files_to_test():
             if test.support.verbose:
                 print(f"Testing {item.absolute()}")
 

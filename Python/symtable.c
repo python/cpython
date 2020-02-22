@@ -1717,6 +1717,8 @@ static int
 symtable_visit_annotations(struct symtable *st, stmt_ty s,
                            arguments_ty a, expr_ty returns)
 {
+    if (a->posonlyargs && !symtable_visit_argannotations(st, a->posonlyargs))
+        return 0;
     if (a->args && !symtable_visit_argannotations(st, a->args))
         return 0;
     if (a->vararg && a->vararg->annotation)

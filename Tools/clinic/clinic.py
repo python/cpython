@@ -1182,14 +1182,14 @@ class CLanguage(Language):
             lines = [self.group_to_variable_name(g) + " = 1;" for g in group_ids]
             lines = "\n".join(lines)
 
-            s = """
+            s = """\
     case {count}:
         if (!PyArg_ParseTuple(args, "{format_units}:{name}", {parse_arguments})) {{
             goto exit;
         }}
         {group_booleans}
         break;
-"""[1:]
+"""
             s = linear_format(s, group_booleans=lines)
             s = s.format_map(d)
             add(s)

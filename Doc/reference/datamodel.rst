@@ -925,8 +925,8 @@ Internal types
       the first line number of the function; :attr:`co_lnotab` is a string
       encoding the mapping from bytecode offsets to line numbers (for details
       see the source code of the interpreter); :attr:`co_stacksize` is the
-      required stack size (including local variables); :attr:`co_flags` is an
-      integer encoding a number of flags for the interpreter.
+      required stack size; :attr:`co_flags` is an integer encoding a number
+      of flags for the interpreter.
 
       .. index:: object: generator
 
@@ -1655,8 +1655,22 @@ class' :attr:`~object.__dict__`.
    Called at the time the owning class *owner* is created. The
    descriptor has been assigned to *name*.
 
-   .. versionadded:: 3.6
+   .. note::
 
+      :meth:`__set_name__` is only called implicitly as part of the
+      :class:`type` constructor, so it will need to be called explicitly with
+      the appropriate parameters when a descriptor is added to a class after
+      initial creation::
+
+         class A:
+            pass
+         descr = custom_descriptor()
+         A.attr = descr
+         descr.__set_name__(A, 'attr')
+
+      See :ref:`class-object-creation` for more details.
+
+   .. versionadded:: 3.6
 
 The attribute :attr:`__objclass__` is interpreted by the :mod:`inspect` module
 as specifying the class where this object was defined (setting this
@@ -1931,7 +1945,8 @@ Preparing the class namespace
 Once the appropriate metaclass has been identified, then the class namespace
 is prepared. If the metaclass has a ``__prepare__`` attribute, it is called
 as ``namespace = metaclass.__prepare__(name, bases, **kwds)`` (where the
-additional keyword arguments, if any, come from the class definition).
+additional keyword arguments, if any, come from the class definition). The
+``__prepare__`` method should be implemented as a :func:`classmethod`.
 
 If the metaclass has no ``__prepare__`` attribute, then the class namespace
 is initialised as an empty ordered mapping.
@@ -2317,7 +2332,7 @@ left undefined.
             object.__rfloordiv__(self, other)
             object.__rmod__(self, other)
             object.__rdivmod__(self, other)
-            object.__rpow__(self, other)
+            object.__rpow__(self, other[, modulo])
             object.__rlshift__(self, other)
             object.__rrshift__(self, other)
             object.__rand__(self, other)

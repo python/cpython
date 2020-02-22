@@ -1256,6 +1256,9 @@ SSL sockets also have the following additional methods and attributes:
       The returned dictionary includes additional X509v3 extension items
         such as ``crlDistributionPoints``, ``caIssuers`` and ``OCSP`` URIs.
 
+   .. versionchanged:: 3.9
+      IPv6 address strings no longer have a trailing new line.
+
 .. method:: SSLSocket.cipher()
 
    Returns a three-value tuple containing the name of the cipher being used, the

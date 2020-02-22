@@ -422,7 +422,7 @@ class TestSupport(unittest.TestCase):
             os._exit(0)
 
         t0 = time.monotonic()
-        deadline = time.monotonic() + 60.0
+        deadline = time.monotonic() + support.SHORT_TIMEOUT
 
         was_altered = support.environment_altered
         try:
@@ -493,7 +493,6 @@ class TestSupport(unittest.TestCase):
             ['-Wignore', '-X', 'dev'],
             ['-X', 'faulthandler'],
             ['-X', 'importtime'],
-            ['-X', 'showalloccount'],
             ['-X', 'showrefcount'],
             ['-X', 'tracemalloc'],
             ['-X', 'tracemalloc=3'],
@@ -653,7 +652,6 @@ class TestSupport(unittest.TestCase):
     # run_doctest
     # threading_cleanup
     # reap_threads
-    # strip_python_stderr
     # can_symlink
     # skip_unless_symlink
     # SuppressCrashReport

@@ -5063,14 +5063,16 @@ class NetworkConnectionAttributesTest(SocketTCPTest, ThreadableTest):
 
     testFamily = _justAccept
     def _testFamily(self):
-        self.cli = socket.create_connection((HOST, self.port), timeout=30)
+        self.cli = socket.create_connection((HOST, self.port),
+                            timeout=support.LOOPBACK_TIMEOUT)
         self.addCleanup(self.cli.close)
         self.assertEqual(self.cli.family, 2)
 
     testSourceAddress = _justAccept
     def _testSourceAddress(self):
-        self.cli = socket.create_connection((HOST, self.port), timeout=30,
-                source_address=('', self.source_port))
+        self.cli = socket.create_connection((HOST, self.port),
+                            timeout=support.LOOPBACK_TIMEOUT,
+                            source_address=('', self.source_port))
         self.addCleanup(self.cli.close)
         self.assertEqual(self.cli.getsockname()[1], self.source_port)
         # The port number being used is sufficient to show that the bind()
@@ -5959,7 +5961,9 @@ class SendfileUsingSendTest(ThreadedTCPSocketTest):
     def _testCount(self):
         address = self.serv.getsockname()
         file = open(support.TESTFN, 'rb')
-        with socket.create_connection(address, timeout=2) as sock, file as file:
+        sock = socket.create_connection(address,
+                                        timeout=support.LOOPBACK_TIMEOUT)
+        with sock, file:
             count = 5000007
             meth = self.meth_from_sock(sock)
             sent = meth(file, count=count)
@@ -5978,7 +5982,9 @@ class SendfileUsingSendTest(ThreadedTCPSocketTest):
     def _testCountSmall(self):
         address = self.serv.getsockname()
         file = open(support.TESTFN, 'rb')
-        with socket.create_connection(address, timeout=2) as sock, file as file:
+        sock = socket.create_connection(address,
+                                        timeout=support.LOOPBACK_TIMEOUT)
+        with sock, file:
             count = 1
             meth = self.meth_from_sock(sock)
             sent = meth(file, count=count)
@@ -6032,7 +6038,9 @@ class SendfileUsingSendTest(ThreadedTCPSocketTest):
     def _testWithTimeout(self):
         address = self.serv.getsockname()
         file = open(support.TESTFN, 'rb')
-        with socket.create_connection(address, timeout=2) as sock, file as file:
+        sock = socket.create_connection(address,
+                                        timeout=support.LOOPBACK_TIMEOUT)
+        with sock, file:
             meth = self.meth_from_sock(sock)
             sent = meth(file)
             self.assertEqual(sent, self.FILESIZE)

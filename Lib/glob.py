@@ -31,6 +31,7 @@ def iglob(pathname, *, recursive=False):
     If recursive is true, the pattern '**' will match any files and
     zero or more directories and subdirectories.
     """
+    sys.audit("glob.glob", pathname, recursive)
     it = _iglob(pathname, recursive, False)
     if recursive and _isrecursive(pathname):
         s = next(it)  # skip empty string
@@ -38,7 +39,6 @@ def iglob(pathname, *, recursive=False):
     return it
 
 def _iglob(pathname, recursive, dironly):
-    sys.audit("glob.glob", pathname, recursive)
     dirname, basename = os.path.split(pathname)
     if not has_magic(pathname):
         assert not dironly

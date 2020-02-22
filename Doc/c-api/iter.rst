@@ -29,7 +29,7 @@ something like this::
        /* propagate error */
    }
 
-   while (item = PyIter_Next(iterator)) {
+   while ((item = PyIter_Next(iterator))) {
        /* do something with item */
        ...
        /* release reference when done */

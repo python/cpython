@@ -142,7 +142,7 @@ _is_coroutine(PyObject *coro)
        Do this check after 'future_init()'; in case we need to raise
        an error, __del__ needs a properly initialized object.
     */
-    PyObject *res = _PyObject_CallOneArg(asyncio_iscoroutine_func, coro);
+    PyObject *res = PyObject_CallOneArg(asyncio_iscoroutine_func, coro);
     if (res == NULL) {
         return -1;
     }
@@ -367,7 +367,7 @@ call_soon(PyObject *loop, PyObject *func, PyObject *arg, PyObject *ctx)
         }
         stack[nargs] = (PyObject *)ctx;
 
-        handle = _PyObject_Vectorcall(callable, stack, nargs, context_kwname);
+        handle = PyObject_Vectorcall(callable, stack, nargs, context_kwname);
         Py_DECREF(callable);
     }
 
@@ -1007,7 +1007,7 @@ _asyncio_Future_remove_done_callback(FutureObj *self, PyObject *fn)
     }
 
     if (j < len) {
-        Py_SIZE(newlist) = j;
+        Py_SET_SIZE(newlist, j);
     }
     j = PyList_GET_SIZE(newlist);
     len = PyList_GET_SIZE(self->fut_callbacks);
@@ -1287,7 +1287,7 @@ static PyObject *
 _asyncio_Future__repr_info_impl(FutureObj *self)
 /*[clinic end generated code: output=fa69e901bd176cfb input=f21504d8e2ae1ca2]*/
 {
-    return _PyObject_CallOneArg(asyncio_future_repr_info_func, (PyObject *)self);
+    return PyObject_CallOneArg(asyncio_future_repr_info_func, (PyObject *)self);
 }
 
 static PyObject *
@@ -1363,7 +1363,7 @@ FutureObj_finalize(FutureObj *fut)
 
     func = _PyObject_GetAttrId(fut->fut_loop, &PyId_call_exception_handler);
     if (func != NULL) {
-        PyObject *res = _PyObject_CallOneArg(func, context);
+        PyObject *res = PyObject_CallOneArg(func, context);
         if (res == NULL) {
             PyErr_WriteUnraisable(func);
         }
@@ -1381,6 +1381,12 @@ finally:
     PyErr_Restore(error_type, error_value, error_traceback);
 }
 
+static PyObject *
+future_cls_getitem(PyObject *cls, PyObject *type)
+{
+    Py_INCREF(cls);
+    return cls;
+}
 
 static PyAsyncMethods FutureType_as_async = {
     (unaryfunc)future_new_iter,         /* am_await */
@@ -1400,6 +1406,7 @@ static PyMethodDef FutureType_methods[] = {
     _ASYNCIO_FUTURE_DONE_METHODDEF
     _ASYNCIO_FUTURE_GET_LOOP_METHODDEF
     _ASYNCIO_FUTURE__REPR_INFO_METHODDEF
+    {"__class_getitem__", future_cls_getitem, METH_O|METH_CLASS, NULL},
     {NULL, NULL}        /* Sentinel */
 };
 
@@ -1808,6 +1815,21 @@ TaskWakeupMethWrapper_dealloc(TaskWakeupMethWrapper *o)
     Py_TYPE(o)->tp_free(o);
 }
 
+static PyObject *
+TaskWakeupMethWrapper_get___self__(TaskWakeupMethWrapper *o, void *Py_UNUSED(ignored))
+{
+    if (o->ww_task) {
+        Py_INCREF(o->ww_task);
+        return (PyObject*)o->ww_task;
+    }
+    Py_RETURN_NONE;
+}
+
+static PyGetSetDef TaskWakeupMethWrapper_getsetlist[] = {
+    {"__self__", (getter)TaskWakeupMethWrapper_get___self__, NULL, NULL},
+    {NULL} /* Sentinel */
+};
+
 static PyTypeObject TaskWakeupMethWrapper_Type = {
     PyVarObject_HEAD_INIT(NULL, 0)
     "TaskWakeupMethWrapper",
@@ -1819,6 +1841,7 @@ static PyTypeObject TaskWakeupMethWrapper_Type = {
     .tp_flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC,
     .tp_traverse = (traverseproc)TaskWakeupMethWrapper_traverse,
     .tp_clear = (inquiry)TaskWakeupMethWrapper_clear,
+    .tp_getset = TaskWakeupMethWrapper_getsetlist,
 };
 
 static PyObject *
@@ -2103,13 +2126,13 @@ _asyncio_Task_current_task_impl(PyTypeObject *type, PyObject *loop)
             Py_DECREF(current_task_func);
             return NULL;
         }
-        ret = _PyObject_CallOneArg(current_task_func, loop);
+        ret = PyObject_CallOneArg(current_task_func, loop);
         Py_DECREF(current_task_func);
         Py_DECREF(loop);
         return ret;
     }
     else {
-        ret = _PyObject_CallOneArg(current_task_func, loop);
+        ret = PyObject_CallOneArg(current_task_func, loop);
         Py_DECREF(current_task_func);
         return ret;
     }
@@ -2145,7 +2168,7 @@ _asyncio_Task_all_tasks_impl(PyTypeObject *type, PyObject *loop)
         return NULL;
     }
 
-    res = _PyObject_CallOneArg(all_tasks_func, loop);
+    res = PyObject_CallOneArg(all_tasks_func, loop);
     Py_DECREF(all_tasks_func);
     return res;
 }
@@ -2158,7 +2181,7 @@ static PyObject *
 _asyncio_Task__repr_info_impl(TaskObj *self)
 /*[clinic end generated code: output=6a490eb66d5ba34b input=3c6d051ed3ddec8b]*/
 {
-    return _PyObject_CallOneArg(asyncio_task_repr_info_func, (PyObject *)self);
+    return PyObject_CallOneArg(asyncio_task_repr_info_func, (PyObject *)self);
 }
 
 /*[clinic input]
@@ -2408,7 +2431,7 @@ TaskObj_finalize(TaskObj *task)
 
     func = _PyObject_GetAttrId(task->task_loop, &PyId_call_exception_handler);
     if (func != NULL) {
-        PyObject *res = _PyObject_CallOneArg(func, context);
+        PyObject *res = PyObject_CallOneArg(func, context);
         if (res == NULL) {
             PyErr_WriteUnraisable(func);
         }
@@ -2427,6 +2450,13 @@ finally:
 
 done:
     FutureObj_finalize((FutureObj*)task);
+}
+
+static PyObject *
+task_cls_getitem(PyObject *cls, PyObject *type)
+{
+    Py_INCREF(cls);
+    return cls;
 }
 
 static void TaskObj_dealloc(PyObject *);  /* Needs Task_CheckExact */
@@ -2449,6 +2479,7 @@ static PyMethodDef TaskType_methods[] = {
     _ASYNCIO_TASK_GET_NAME_METHODDEF
     _ASYNCIO_TASK_SET_NAME_METHODDEF
     _ASYNCIO_TASK_GET_CORO_METHODDEF
+    {"__class_getitem__", task_cls_getitem, METH_O|METH_CLASS, NULL},
     {NULL, NULL}        /* Sentinel */
 };
 
@@ -2540,7 +2571,7 @@ task_set_error_soon(TaskObj *task, PyObject *et, const char *format, ...)
         return NULL;
     }
 
-    PyObject *e = _PyObject_CallOneArg(et, msg);
+    PyObject *e = PyObject_CallOneArg(et, msg);
     Py_DECREF(msg);
     if (e == NULL) {
         return NULL;
@@ -2810,7 +2841,7 @@ task_step_impl(TaskObj *task, PyObject *exc)
         PyObject *stack[2];
         stack[0] = wrapper;
         stack[1] = (PyObject *)task->task_context;
-        res = _PyObject_Vectorcall(add_cb, stack, 1, context_kwname);
+        res = PyObject_Vectorcall(add_cb, stack, 1, context_kwname);
         Py_DECREF(add_cb);
         Py_DECREF(wrapper);
         if (res == NULL) {
@@ -3251,7 +3282,7 @@ module_init(void)
     }
     if (module_initialized != 0) {
         return 0;
-    } 
+    }
     else {
         module_initialized = 1;
     }

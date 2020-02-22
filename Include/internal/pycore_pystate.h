@@ -56,6 +56,9 @@ struct _ceval_runtime_state {
 
 typedef PyObject* (*_PyFrameEvalFunction)(struct _frame *, int);
 
+#define _PY_NSMALLPOSINTS           257
+#define _PY_NSMALLNEGINTS           5
+
 // The PyInterpreterState typedef is in Include/pystate.h.
 struct _is {
 
@@ -99,6 +102,7 @@ struct _is {
        Later, it is set to a non-NULL string by _PyUnicode_InitEncodings(). */
     struct {
         char *encoding;   /* Filesystem encoding (encoded to UTF-8) */
+        int utf8;         /* encoding=="utf-8"? */
         char *errors;     /* Filesystem errors (encoded to UTF-8) */
         _Py_error_handler error_handler;
     } fs_codec;
@@ -139,6 +143,15 @@ struct _is {
             int atbol;
         } listnode;
     } parser;
+
+#if _PY_NSMALLNEGINTS + _PY_NSMALLPOSINTS > 0
+    /* Small integers are preallocated in this array so that they
+       can be shared.
+       The integers that are preallocated are those in the range
+       -_PY_NSMALLNEGINTS (inclusive) to _PY_NSMALLPOSINTS (not inclusive).
+    */
+    PyLongObject* small_ints[_PY_NSMALLNEGINTS + _PY_NSMALLPOSINTS];
+#endif
 };
 
 PyAPI_FUNC(struct _is*) _PyInterpreterState_LookUpID(PY_INT64_T);

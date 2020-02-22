@@ -1247,6 +1247,7 @@ static PYC_MAGIC magic_values[] = {
     { 3360, 3379, L"3.6" },
     { 3390, 3399, L"3.7" },
     { 3400, 3419, L"3.8" },
+    { 3420, 3429, L"3.9" },
     { 0 }
 };
 
@@ -1830,7 +1831,7 @@ process(int argc, wchar_t ** argv)
 
 #if !defined(VENV_REDIRECT)
     /* bpo-35811: The __PYVENV_LAUNCHER__ variable is used to
-     * override sys.executable and locate the original prefix path. 
+     * override sys.executable and locate the original prefix path.
      * However, if it is silently inherited by a non-venv Python
      * process, that process will believe it is running in the venv
      * still. This is the only place where *we* can clear it (that is,

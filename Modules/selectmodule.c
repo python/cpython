@@ -1447,11 +1447,6 @@ pyepoll_internal_ctl(int epfd, int op, int fd, unsigned int events)
          * though this argument is ignored. */
         Py_BEGIN_ALLOW_THREADS
         result = epoll_ctl(epfd, op, fd, &ev);
-        if (errno == EBADF) {
-            /* fd already closed */
-            result = 0;
-            errno = 0;
-        }
         Py_END_ALLOW_THREADS
         break;
     default:

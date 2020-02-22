@@ -111,9 +111,9 @@ process and user.
    to the environment made after this time are not reflected in ``os.environ``,
    except for changes made by modifying ``os.environ`` directly.
 
-   If the platform supports the :func:`putenv` function, this mapping may be used
-   to modify the environment as well as query the environment.  :func:`putenv` will
-   be called automatically when the mapping is modified.
+   This mapping may be used to modify the environment as well as query the
+   environment.  :func:`putenv` will be called automatically when the mapping
+   is modified.
 
    On Unix, keys and values use :func:`sys.getfilesystemencoding` and
    ``'surrogateescape'`` error handler. Use :data:`environb` if you would like
@@ -130,14 +130,10 @@ process and user.
       cause memory leaks.  Refer to the system documentation for
       :c:func:`putenv`.
 
-   If :func:`putenv` is not provided, a modified copy of this mapping  may be
-   passed to the appropriate process-creation functions to cause  child processes
-   to use a modified environment.
-
-   If the platform supports the :func:`unsetenv` function, you can delete items in
-   this mapping to unset environment variables. :func:`unsetenv` will be called
-   automatically when an item is deleted from ``os.environ``, and when
-   one of the :meth:`pop` or :meth:`clear` methods is called.
+   You can delete items in this mapping to unset environment variables.
+   :func:`unsetenv` will be called automatically when an item is deleted from
+   ``os.environ``, and when one of the :meth:`pop` or :meth:`clear` methods is
+   called.
 
 
 .. data:: environb
@@ -439,17 +435,18 @@ process and user.
    changes to the environment affect subprocesses started with :func:`os.system`,
    :func:`popen` or :func:`fork` and :func:`execv`.
 
-   .. availability:: most flavors of Unix, Windows.
+   Assignments to items in ``os.environ`` are automatically translated into
+   corresponding calls to :func:`putenv`; however, calls to :func:`putenv`
+   don't update ``os.environ``, so it is actually preferable to assign to items
+   of ``os.environ``.
 
    .. note::
 
       On some platforms, including FreeBSD and Mac OS X, setting ``environ`` may
-      cause memory leaks. Refer to the system documentation for putenv.
+      cause memory leaks. Refer to the system documentation for :c:func:`putenv`.
 
-   When :func:`putenv` is supported, assignments to items in ``os.environ`` are
-   automatically translated into corresponding calls to :func:`putenv`; however,
-   calls to :func:`putenv` don't update ``os.environ``, so it is actually
-   preferable to assign to items of ``os.environ``.
+   .. versionchanged:: 3.9
+      The function is now always available.
 
 
 .. function:: setegid(egid)
@@ -638,12 +635,13 @@ process and user.
    environment affect subprocesses started with :func:`os.system`, :func:`popen` or
    :func:`fork` and :func:`execv`.
 
-   When :func:`unsetenv` is supported, deletion of items in ``os.environ`` is
-   automatically translated into a corresponding call to :func:`unsetenv`; however,
-   calls to :func:`unsetenv` don't update ``os.environ``, so it is actually
-   preferable to delete items of ``os.environ``.
+   Deletion of items in ``os.environ`` is automatically translated into a
+   corresponding call to :func:`unsetenv`; however, calls to :func:`unsetenv`
+   don't update ``os.environ``, so it is actually preferable to delete items of
+   ``os.environ``.
 
-   .. availability:: most flavors of Unix, Windows.
+   .. versionchanged:: 3.9
+      The function is now always available and is also available on Windows.
 
 
 .. _os-newstreams:
@@ -3316,6 +3314,8 @@ to be ignored.
    you can check whether or not it is available using :data:`os.supports_fd`.
    If it is unavailable, using it will raise a :exc:`NotImplementedError`.
 
+   .. audit-event:: os.exec path,args,env os.execl
+
    .. availability:: Unix, Windows.
 
    .. versionadded:: 3.3
@@ -3672,6 +3672,8 @@ written in Python, such as a mail server's external command delivery program.
    :c:data:`POSIX_SPAWN_SETSCHEDPARAM` and :c:data:`POSIX_SPAWN_SETSCHEDULER`
    flags.
 
+   .. audit-event:: os.posix_spawn path,argv,env os.posix_spawn
+
    .. versionadded:: 3.8
 
    .. availability:: Unix.
@@ -3685,6 +3687,8 @@ written in Python, such as a mail server's external command delivery program.
    Similar to :func:`posix_spawn` except that the system searches
    for the *executable* file in the list of directories specified by the
    :envvar:`PATH` environment variable (in the same way as for ``execvp(3)``).
+
+   .. audit-event:: os.posix_spawn path,argv,env os.posix_spawnp
 
    .. versionadded:: 3.8
 
@@ -3786,6 +3790,8 @@ written in Python, such as a mail server's external command delivery program.
       L = ['cp', 'index.html', '/dev/null']
       os.spawnvpe(os.P_WAIT, 'cp', L, os.environ)
 
+   .. audit-event:: os.spawn mode,path,args,env os.spawnl
+
    .. availability:: Unix, Windows.  :func:`spawnlp`, :func:`spawnlpe`, :func:`spawnvp`
       and :func:`spawnvpe` are not available on Windows.  :func:`spawnle` and
       :func:`spawnve` are not thread-safe on Windows; we advise you to use the
@@ -3855,6 +3861,8 @@ written in Python, such as a mail server's external command delivery program.
    function is not resolved until this function is first called.  If the function
    cannot be resolved, :exc:`NotImplementedError` will be raised.
 
+   .. audit-event:: os.startfile path,operation os.startfile
+
    .. availability:: Windows.
 
 
@@ -3904,10 +3912,8 @@ written in Python, such as a mail server's external command delivery program.
 
    See the Unix manual page
    :manpage:`times(2)` and :manpage:`times(3)` manual page on Unix or `the GetProcessTimes MSDN
-   <https://docs.microsoft.com/windows/win32/api/processthreadsapi/nf-processthreadsapi-getprocesstimes>`
-   _ on Windows.
-   On Windows, only :attr:`user` and :attr:`system` are known; the other
-   attributes are zero.
+   <https://docs.microsoft.com/windows/win32/api/processthreadsapi/nf-processthreadsapi-getprocesstimes>`_
+   on Windows. On Windows, only :attr:`user` and :attr:`system` are known; the other attributes are zero.
 
    .. availability:: Unix, Windows.
 

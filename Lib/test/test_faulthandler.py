@@ -71,9 +71,8 @@ class FaultHandlerTests(unittest.TestCase):
         with support.SuppressCrashReport():
             process = script_helper.spawn_python('-c', code, pass_fds=pass_fds)
             with process:
-                stdout, stderr = process.communicate()
+                output, stderr = process.communicate()
                 exitcode = process.wait()
-        output = support.strip_python_stderr(stdout)
         output = output.decode('ascii', 'backslashreplace')
         if filename:
             self.assertEqual(output, '')

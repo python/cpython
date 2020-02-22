@@ -102,7 +102,7 @@ presence of the ``from __future__ import print_function`` compiler directive, it
 modifies its internal grammar to interpret :func:`print` as a function.  This
 change can also be enabled manually with the :option:`!-p` flag.  Use
 :option:`!-p` to run fixers on code that already has had its print statements
-converted.
+converted. Also :option:`!-e` can be used to make :func:`exec` a function.
 
 The :option:`!-o` or :option:`!--output-dir` option allows specification of an
 alternate directory for processed output files to be written to.  The

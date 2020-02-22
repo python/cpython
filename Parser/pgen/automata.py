@@ -48,6 +48,26 @@ class NFA:
                 else:
                     writer("    %s -> %d" % (label, j))
 
+    def dump_graph(self, writer):
+        """Dump a DOT representation of the NFA"""
+        writer('digraph %s_nfa {\n' % self.name)
+        todo = [self.start]
+        for i, state in enumerate(todo):
+            writer(' %d [label="State %d %s"];\n' % (i, i, state is self.end and "(final)" or ""))
+            for arc in state.arcs:
+                label = arc.label
+                next = arc.target
+                if next in todo:
+                    j = todo.index(next)
+                else:
+                    j = len(todo)
+                    todo.append(next)
+                if label is None:
+                    writer(" %d -> %d [style=dotted label=ε];\n" % (i, j))
+                else:
+                    writer(" %d -> %d [label=%s];\n" % (i, j, label.replace("'", '"')))
+        writer('}\n')
+
 
 class NFAArc:
     """An arc representing a transition between two NFA states.
@@ -300,6 +320,15 @@ class DFA:
             writer("  State", i, state.is_final and "(final)" or "")
             for label, next in sorted(state.arcs.items()):
                 writer("    %s -> %d" % (label, self.states.index(next)))
+
+    def dump_graph(self, writer):
+        """Dump a DOT representation of the DFA"""
+        writer('digraph %s_dfa {\n' % self.name)
+        for i, state in enumerate(self.states):
+            writer(' %d [label="State %d %s"];\n' % (i, i, state.is_final and "(final)" or ""))
+            for label, next in sorted(state.arcs.items()):
+                writer(" %d -> %d [label=%s];\n" % (i, self.states.index(next), label.replace("'", '"')))
+        writer('}\n')
 
 
 class DFAState(object):

@@ -58,8 +58,6 @@ typedef struct {
 PyAPI_DATA(PyTypeObject) PyCoro_Type;
 PyAPI_DATA(PyTypeObject) _PyCoroWrapper_Type;
 
-PyAPI_DATA(PyTypeObject) _PyAIterWrapper_Type;
-
 #define PyCoro_CheckExact(op) (Py_TYPE(op) == &PyCoro_Type)
 PyObject *_PyCoro_GetAwaitableIter(PyObject *o);
 PyAPI_FUNC(PyObject *) PyCoro_New(struct _frame *,

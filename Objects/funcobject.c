@@ -196,7 +196,7 @@ PyFunction_SetClosure(PyObject *op, PyObject *closure)
     else {
         PyErr_Format(PyExc_SystemError,
                      "expected tuple for closure, got '%.100s'",
-                     closure->ob_type->tp_name);
+                     Py_TYPE(closure)->tp_name);
         return -1;
     }
     Py_XSETREF(((PyFunctionObject *)op)->func_closure, closure);
@@ -541,7 +541,7 @@ func_new_impl(PyTypeObject *type, PyCodeObject *code, PyObject *globals,
             if (!PyCell_Check(o)) {
                 return PyErr_Format(PyExc_TypeError,
                     "arg 5 (closure) expected cell, found %s",
-                                    o->ob_type->tp_name);
+                                    Py_TYPE(o)->tp_name);
             }
         }
     }
@@ -654,7 +654,7 @@ PyTypeObject PyFunction_Type = {
     0,                                          /* tp_setattro */
     0,                                          /* tp_as_buffer */
     Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC |
-    _Py_TPFLAGS_HAVE_VECTORCALL |
+    Py_TPFLAGS_HAVE_VECTORCALL |
     Py_TPFLAGS_METHOD_DESCRIPTOR,               /* tp_flags */
     func_new__doc__,                            /* tp_doc */
     (traverseproc)func_traverse,                /* tp_traverse */

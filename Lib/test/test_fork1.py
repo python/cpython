@@ -10,15 +10,15 @@ import time
 import unittest
 
 from test.fork_wait import ForkWait
-from test.support import reap_children, get_attribute, verbose
+from test import support
 
 
 # Skip test if fork does not exist.
-get_attribute(os, 'fork')
+support.get_attribute(os, 'fork')
 
 class ForkTest(ForkWait):
     def wait_impl(self, cpid):
-        deadline = time.monotonic() + 10.0
+        deadline = time.monotonic() + support.SHORT_TIMEOUT
         while time.monotonic() <= deadline:
             # waitpid() shouldn't hang, but some of the buildbots seem to hang
             # in the forking tests.  This is an attempt to fix the problem.
@@ -56,7 +56,7 @@ class ForkTest(ForkWait):
                 if m == complete_module:
                     os._exit(0)
                 else:
-                    if verbose > 1:
+                    if support.verbose > 1:
                         print("Child encountered partial module")
                     os._exit(1)
             else:
@@ -90,7 +90,7 @@ class ForkTest(ForkWait):
                         imp.release_lock()
             except RuntimeError:
                 if in_child:
-                    if verbose > 1:
+                    if support.verbose > 1:
                         print("RuntimeError in child")
                     os._exit(1)
                 raise
@@ -105,7 +105,7 @@ class ForkTest(ForkWait):
 
 
 def tearDownModule():
-    reap_children()
+    support.reap_children()
 
 if __name__ == "__main__":
     unittest.main()

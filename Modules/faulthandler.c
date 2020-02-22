@@ -1065,24 +1065,10 @@ faulthandler_sigsegv(PyObject *self, PyObject *args)
     Py_RETURN_NONE;
 }
 
-static void
+static void _Py_NO_RETURN
 faulthandler_fatal_error_thread(void *plock)
 {
-#ifndef __clang__
-    PyThread_type_lock *lock = (PyThread_type_lock *)plock;
-#endif
-
     Py_FatalError("in new thread");
-
-#ifndef __clang__
-    /* Issue #28152: Py_FatalError() is declared with
-       __attribute__((__noreturn__)).  GCC emits a warning without
-       "PyThread_release_lock()" (compiler bug?), but Clang is smarter and
-       emits a warning on the return. */
-
-    /* notify the caller that we are done */
-    PyThread_release_lock(lock);
-#endif
 }
 
 static PyObject *
@@ -1161,18 +1147,14 @@ faulthandler_fatal_error_py(PyObject *self, PyObject *args)
 #if defined(FAULTHANDLER_USE_ALT_STACK)
 #define FAULTHANDLER_STACK_OVERFLOW
 
-#ifdef __INTEL_COMPILER
-   /* Issue #23654: Turn off ICC's tail call optimization for the
-    * stack_overflow generator. ICC turns the recursive tail call into
-    * a loop. */
-#  pragma intel optimization_level 0
-#endif
-static
-uintptr_t
+static uintptr_t
 stack_overflow(uintptr_t min_sp, uintptr_t max_sp, size_t *depth)
 {
-    /* allocate 4096 bytes on the stack at each call */
-    unsigned char buffer[4096];
+    /* Allocate (at least) 4096 bytes on the stack at each call.
+
+       bpo-23654, bpo-38965: use volatile keyword to prevent tail call
+       optimization. */
+    volatile unsigned char buffer[4096];
     uintptr_t sp = (uintptr_t)&buffer;
     *depth += 1;
     if (sp < min_sp || max_sp < sp)

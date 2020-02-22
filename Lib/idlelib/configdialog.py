@@ -149,17 +149,19 @@ class ConfigDialog(Toplevel):
         else:
             padding_args = {'padding': (6, 3)}
         outer = Frame(self, padding=2)
-        buttons = Frame(outer, padding=2)
+        buttons_frame = Frame(outer, padding=2)
+        self.buttons = {}
         for txt, cmd in (
             ('Ok', self.ok),
             ('Apply', self.apply),
             ('Cancel', self.cancel),
             ('Help', self.help)):
-            Button(buttons, text=txt, command=cmd, takefocus=FALSE,
-                   **padding_args).pack(side=LEFT, padx=5)
+            self.buttons[txt] = Button(buttons_frame, text=txt, command=cmd,
+                       takefocus=FALSE, **padding_args)
+            self.buttons[txt].pack(side=LEFT, padx=5)
         # Add space above buttons.
         Frame(outer, height=2, borderwidth=0).pack(side=TOP)
-        buttons.pack(side=BOTTOM)
+        buttons_frame.pack(side=BOTTOM)
         return outer
 
     def ok(self):
@@ -191,6 +193,7 @@ class ConfigDialog(Toplevel):
         Methods:
             destroy: inherited
         """
+        changes.clear()
         self.destroy()
 
     def destroy(self):
@@ -204,13 +207,12 @@ class ConfigDialog(Toplevel):
 
         Attributes accessed:
             note
-
         Methods:
             view_text: Method from textview module.
         """
         page = self.note.tab(self.note.select(), option='text').strip()
         view_text(self, title='Help for IDLE preferences',
-                 text=help_common+help_pages.get(page, ''))
+                  contents=help_common+help_pages.get(page, ''))
 
     def deactivate_current_config(self):
         """Remove current key bindings.
@@ -604,9 +606,8 @@ class FontPage(Frame):
         font_size = configured_font[1]
         font_bold  = configured_font[2]=='bold'
 
-        # Set editor font selection list and font_name.
-        fonts = list(tkFont.families(self))
-        fonts.sort()
+        # Set sorted no-duplicate editor font selection list and font_name.
+        fonts = sorted(set(tkFont.families(self)))
         for font in fonts:
             self.fontlist.insert(END, font)
         self.font_name.set(font_name)
@@ -851,6 +852,7 @@ class HighPage(Frame):
         text.configure(
                 font=('courier', 12, ''), cursor='hand2', width=1, height=1,
                 takefocus=FALSE, highlightthickness=0, wrap=NONE)
+        # Prevent perhaps invisible selection of word or slice.
         text.bind('<Double-Button-1>', lambda e: 'break')
         text.bind('<B1-Motion>', lambda e: 'break')
         string_tags=(
@@ -1283,8 +1285,7 @@ class HighPage(Frame):
         theme_name - string, the name of the new theme
         theme - dictionary containing the new theme
         """
-        if not idleConf.userCfg['highlight'].has_section(theme_name):
-            idleConf.userCfg['highlight'].add_section(theme_name)
+        idleConf.userCfg['highlight'].AddSection(theme_name)
         for element in theme:
             value = theme[element]
             idleConf.userCfg['highlight'].SetOption(theme_name, element, value)
@@ -1729,8 +1730,7 @@ class KeysPage(Frame):
         keyset_name - string, the name of the new key set
         keyset - dictionary containing the new keybindings
         """
-        if not idleConf.userCfg['keys'].has_section(keyset_name):
-            idleConf.userCfg['keys'].add_section(keyset_name)
+        idleConf.userCfg['keys'].AddSection(keyset_name)
         for event in keyset:
             value = keyset[event]
             idleConf.userCfg['keys'].SetOption(keyset_name, event, value)

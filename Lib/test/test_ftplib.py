@@ -21,7 +21,7 @@ from unittest import TestCase, skipUnless
 from test import support
 from test.support import HOST, HOSTv6
 
-TIMEOUT = 3
+TIMEOUT = support.LOOPBACK_TIMEOUT
 # the dummy data returned by server over the data channel when
 # RETR, LIST, NLST, MLSD commands are issued
 RETR_DATA = 'abcde12345\r\n' * 1000
@@ -1044,6 +1044,10 @@ class TestTimeouts(TestCase):
         self.assertEqual(ftp.sock.gettimeout(), 30)
         self.evt.wait()
         ftp.close()
+
+        # bpo-39259
+        with self.assertRaises(ValueError):
+            ftplib.FTP(HOST, timeout=0)
 
     def testTimeoutConnect(self):
         ftp = ftplib.FTP()

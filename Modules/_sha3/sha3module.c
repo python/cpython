@@ -713,7 +713,7 @@ PyInit__sha3(void)
 
 #define init_sha3type(name, type)     \
     do {                              \
-        Py_TYPE(type) = &PyType_Type; \
+        Py_SET_TYPE(type, &PyType_Type); \
         if (PyType_Ready(type) < 0) { \
             goto error;               \
         }                             \

@@ -16,42 +16,6 @@ extern "C" {
 /* If we change this, we need to change the default value in the
    signature of gc.collect. */
 #define NUM_GENERATIONS 3
-
-/*
-   NOTE: about the counting of long-lived objects.
-
-   To limit the cost of garbage collection, there are two strategies;
-     - make each collection faster, e.g. by scanning fewer objects
-     - do less collections
-   This heuristic is about the latter strategy.
-
-   In addition to the various configurable thresholds, we only trigger a
-   full collection if the ratio
-    long_lived_pending / long_lived_total
-   is above a given value (hardwired to 25%).
-
-   The reason is that, while "non-full" collections (i.e., collections of
-   the young and middle generations) will always examine roughly the same
-   number of objects -- determined by the aforementioned thresholds --,
-   the cost of a full collection is proportional to the total number of
-   long-lived objects, which is virtually unbounded.
-
-   Indeed, it has been remarked that doing a full collection every
-   <constant number> of object creations entails a dramatic performance
-   degradation in workloads which consist in creating and storing lots of
-   long-lived objects (e.g. building a large list of GC-tracked objects would
-   show quadratic performance, instead of linear as expected: see issue #4074).
-
-   Using the above ratio, instead, yields amortized linear performance in
-   the total number of objects (the effect of which can be summarized
-   thusly: "each full garbage collection is more and more costly as the
-   number of objects grows, but we do fewer and fewer of them").
-
-   This heuristic was suggested by Martin von Löwis on python-dev in
-   June 2008. His original analysis and proposal can be found at:
-    http://mail.python.org/pipermail/python-dev/2008-June/080579.html
-*/
-
 /*
    NOTE: about untracking of mutable objects.
 
@@ -204,6 +168,40 @@ PyAPI_FUNC(int) _PyMem_GetAllocatorName(
    Pass PYMEM_ALLOCATOR_DEFAULT to use default allocators.
    PYMEM_ALLOCATOR_NOT_SET does nothing. */
 PyAPI_FUNC(int) _PyMem_SetupAllocators(PyMemAllocatorName allocator);
+
+/* bpo-35053: Expose _Py_tracemalloc_config for _Py_NewReference()
+   which access directly _Py_tracemalloc_config.tracing for best
+   performances. */
+struct _PyTraceMalloc_Config {
+    /* Module initialized?
+       Variable protected by the GIL */
+    enum {
+        TRACEMALLOC_NOT_INITIALIZED,
+        TRACEMALLOC_INITIALIZED,
+        TRACEMALLOC_FINALIZED
+    } initialized;
+
+    /* Is tracemalloc tracing memory allocations?
+       Variable protected by the GIL */
+    int tracing;
+
+    /* limit of the number of frames in a traceback, 1 by default.
+       Variable protected by the GIL. */
+    int max_nframe;
+
+    /* use domain in trace key?
+       Variable protected by the GIL. */
+    int use_domain;
+};
+
+#define _PyTraceMalloc_Config_INIT \
+    {.initialized = TRACEMALLOC_NOT_INITIALIZED, \
+     .tracing = 0, \
+     .max_nframe = 1, \
+     .use_domain = 0}
+
+PyAPI_DATA(struct _PyTraceMalloc_Config) _Py_tracemalloc_config;
+
 
 #ifdef __cplusplus
 }

@@ -1,0 +1,2 @@
+:c:func:`PyUnicode_IsIdentifier` does not call :c:func:`Py_FatalError`
+anymore if the string is not ready.

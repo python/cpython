@@ -5451,7 +5451,7 @@ to pathscript.py script: add flags.
 .. nonce: oOGVdo
 .. section: C API
 
-Reëxport some function compatibility wrappers for macros in ``pythonrun.h``.
+Re-export some function compatibility wrappers for macros in ``pythonrun.h``.
 
 ..
 

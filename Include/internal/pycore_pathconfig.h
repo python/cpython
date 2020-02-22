@@ -47,8 +47,6 @@ PyAPI_DATA(wchar_t*) _Py_dll_path;
 #endif
 
 extern void _PyPathConfig_ClearGlobal(void);
-extern PyStatus _PyPathConfig_SetGlobal(
-    const struct _PyPathConfig *pathconfig);
 
 extern PyStatus _PyPathConfig_Calculate(
     _PyPathConfig *pathconfig,

@@ -544,7 +544,7 @@ PyNumber_AsOff_t(PyObject *item, PyObject *err)
         /* Otherwise replace the error with caller's error object. */
         PyErr_Format(err,
                      "cannot fit '%.200s' into an offset-sized integer",
-                     item->ob_type->tp_name);
+                     Py_TYPE(item)->tp_name);
     }
 
  finish:

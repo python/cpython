@@ -18,7 +18,7 @@ class ParseMapTest(unittest.TestCase):
         # trans is the production instance of ParseMap, used in _study1
         parser = pyparse.Parser(4, 4)
         self.assertEqual('\t a([{b}])b"c\'d\n'.translate(pyparse.trans),
-                          'xxx(((x)))x"x\'x\n')
+                         'xxx(((x)))x"x\'x\n')
 
 
 class PyParseTest(unittest.TestCase):
@@ -61,14 +61,17 @@ class PyParseTest(unittest.TestCase):
 
         # Split def across lines.
         setcode('"""This is a module docstring"""\n'
-               'class C():\n'
-               '    def __init__(self, a,\n'
-               '                 b=True):\n'
-               '        pass\n'
-               )
+                'class C():\n'
+                '    def __init__(self, a,\n'
+                '                 b=True):\n'
+                '        pass\n'
+                )
 
-        # No value sent for is_char_in_string().
-        self.assertIsNone(start())
+        # Passing no value or non-callable should fail (issue 32989).
+        with self.assertRaises(TypeError):
+            start()
+        with self.assertRaises(TypeError):
+            start(False)
 
         # Make text look like a string.  This returns pos as the start
         # position, but it's set to None.
@@ -91,10 +94,10 @@ class PyParseTest(unittest.TestCase):
         # Code without extra line break in def line - mostly returns the same
         # values.
         setcode('"""This is a module docstring"""\n'
-               'class C():\n'
-               '    def __init__(self, a, b=True):\n'
-               '        pass\n'
-               )
+                'class C():\n'
+                '    def __init__(self, a, b=True):\n'
+                '        pass\n'
+                )
         eq(start(is_char_in_string=lambda index: False), 44)
         eq(start(is_char_in_string=lambda index: index > 44), 44)
         eq(start(is_char_in_string=lambda index: index >= 44), 33)

@@ -1,3 +1,0 @@
-test.regrtest now can receive a list of test patterns to ignore (using the
--i/--ignore argument) or a file with a list of patterns to ignore (using the
---ignore-file argument). Patch by Pablo Galindo.

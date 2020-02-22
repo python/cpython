@@ -181,7 +181,7 @@ PySys_Audit(const char *event, const char *argFormat, ...)
     if (argFormat && argFormat[0]) {
         va_list args;
         va_start(args, argFormat);
-        eventArgs = Py_VaBuildValue(argFormat, args);
+        eventArgs = _Py_VaBuildValue_SizeT(argFormat, args);
         va_end(args);
         if (eventArgs && !PyTuple_Check(eventArgs)) {
             PyObject *argTuple = PyTuple_Pack(1, eventArgs);
@@ -323,8 +323,8 @@ PySys_AddAuditHook(Py_AuditHookFunction hook, void *userData)
     /* Cannot invoke hooks until we are initialized */
     if (runtime->initialized) {
         if (PySys_Audit("sys.addaudithook", NULL) < 0) {
-            if (_PyErr_ExceptionMatches(tstate, PyExc_Exception)) {
-                /* We do not report errors derived from Exception */
+            if (_PyErr_ExceptionMatches(tstate, PyExc_RuntimeError)) {
+                /* We do not report errors derived from RuntimeError */
                 _PyErr_Clear(tstate);
                 return 0;
             }
@@ -519,7 +519,7 @@ sys_breakpointhook(PyObject *self, PyObject *const *args, Py_ssize_t nargs, PyOb
         return NULL;
     }
     PyMem_RawFree(envar);
-    PyObject *retval = _PyObject_Vectorcall(hook, args, nargs, keywords);
+    PyObject *retval = PyObject_Vectorcall(hook, args, nargs, keywords);
     Py_DECREF(hook);
     return retval;
 
@@ -840,7 +840,7 @@ sys_intern_impl(PyObject *module, PyObject *s)
     }
     else {
         _PyErr_Format(tstate, PyExc_TypeError,
-                      "can't intern %.400s", s->ob_type->tp_name);
+                      "can't intern %.400s", Py_TYPE(s)->tp_name);
         return NULL;
     }
 }
@@ -1656,7 +1656,7 @@ static Py_ssize_t
 sys_getrefcount_impl(PyObject *module, PyObject *object)
 /*[clinic end generated code: output=5fd477f2264b85b2 input=bf474efd50a21535]*/
 {
-    return object->ob_refcnt;
+    return Py_REFCNT(object);
 }
 
 #ifdef Py_REF_DEBUG
@@ -1685,20 +1685,6 @@ sys_getallocatedblocks_impl(PyObject *module)
     return _Py_GetAllocatedBlocks();
 }
 
-#ifdef COUNT_ALLOCS
-/*[clinic input]
-sys.getcounts
-[clinic start generated code]*/
-
-static PyObject *
-sys_getcounts_impl(PyObject *module)
-/*[clinic end generated code: output=20df00bc164f43cb input=ad2ec7bda5424953]*/
-{
-    extern PyObject *_Py_get_counts(void);
-
-    return _Py_get_counts();
-}
-#endif
 
 /*[clinic input]
 sys._getframe
@@ -1879,7 +1865,6 @@ static PyMethodDef sys_methods[] = {
     SYS_GETDEFAULTENCODING_METHODDEF
     SYS_GETDLOPENFLAGS_METHODDEF
     SYS_GETALLOCATEDBLOCKS_METHODDEF
-    SYS_GETCOUNTS_METHODDEF
 #ifdef DYNAMIC_EXECUTION_PROFILE
     {"getdxp",          _Py_GetDXProfile, METH_VARARGS},
 #endif
@@ -2919,7 +2904,7 @@ err_occurred:
    infrastructure for the io module in place.
 
    Use UTF-8/surrogateescape and ignore EAGAIN errors. */
-PyStatus
+static PyStatus
 _PySys_SetPreliminaryStderr(PyObject *sysdict)
 {
     PyObject *pstderr = PyFile_NewStdPrinter(fileno(stderr));
@@ -2946,11 +2931,13 @@ error:
 PyStatus
 _PySys_Create(PyThreadState *tstate, PyObject **sysmod_p)
 {
+    assert(!_PyErr_Occurred(tstate));
+
     PyInterpreterState *interp = tstate->interp;
 
     PyObject *modules = PyDict_New();
     if (modules == NULL) {
-        return _PyStatus_ERR("can't make modules dictionary");
+        goto error;
     }
     interp->modules = modules;
 
@@ -2961,13 +2948,13 @@ _PySys_Create(PyThreadState *tstate, PyObject **sysmod_p)
 
     PyObject *sysdict = PyModule_GetDict(sysmod);
     if (sysdict == NULL) {
-        return _PyStatus_ERR("can't initialize sys dict");
+        goto error;
     }
     Py_INCREF(sysdict);
     interp->sysdict = sysdict;
 
     if (PyDict_SetItemString(sysdict, "modules", interp->modules) < 0) {
-        return _PyStatus_ERR("can't initialize sys module");
+        goto error;
     }
 
     PyStatus status = _PySys_SetPreliminaryStderr(sysdict);
@@ -2980,10 +2967,17 @@ _PySys_Create(PyThreadState *tstate, PyObject **sysmod_p)
         return status;
     }
 
-    _PyImport_FixupBuiltin(sysmod, "sys", interp->modules);
+    if (_PyImport_FixupBuiltin(sysmod, "sys", interp->modules) < 0) {
+        goto error;
+    }
+
+    assert(!_PyErr_Occurred(tstate));
 
     *sysmod_p = sysmod;
     return _PyStatus_OK();
+
+error:
+    return _PyStatus_ERR("can't initialize sys module");
 }
 
 

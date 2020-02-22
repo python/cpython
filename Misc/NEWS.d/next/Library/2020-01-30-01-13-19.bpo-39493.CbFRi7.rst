@@ -1,0 +1,1 @@
+Mark ``typing.IO.closed`` as a property

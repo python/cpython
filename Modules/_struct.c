@@ -2097,7 +2097,7 @@ cache_struct_converter(PyObject *fmt, PyStructObject **ptr)
         return 0;
     }
 
-    s_object = _PyObject_CallOneArg(_structmodulestate_global->PyStructType, fmt);
+    s_object = PyObject_CallOneArg(_structmodulestate_global->PyStructType, fmt);
     if (s_object != NULL) {
         if (PyDict_GET_SIZE(cache) >= MAXCACHE)
             PyDict_Clear(cache);

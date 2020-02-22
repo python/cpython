@@ -382,7 +382,8 @@ Context menus have the standard clipboard functions also on the Edit menu.</p>
 </dl>
 <p>Editor windows also have breakpoint functions.  Lines with a breakpoint set are
 specially marked.  Breakpoints only have an effect when running under the
-debugger.  Breakpoints for a file are saved in the user’s .idlerc directory.</p>
+debugger.  Breakpoints for a file are saved in the user’s <code class="docutils literal notranslate"><span class="pre">.idlerc</span></code>
+directory.</p>
 <dl class="simple">
 <dt>Set Breakpoint</dt><dd><p>Set a breakpoint on the current line.</p>
 </dd>
@@ -638,13 +639,13 @@ Manager to detect and stop one.  Sometimes a restart initiated by a program
 crash or Keyboard Interrupt (control-C) may fail to connect.  Dismissing
 the error box or Restart Shell on the Shell menu may fix a temporary problem.</p>
 <p>When IDLE first starts, it attempts to read user configuration files in
-~/.idlerc/ (~ is one’s home directory).  If there is a problem, an error
+<code class="docutils literal notranslate"><span class="pre">~/.idlerc/</span></code> (~ is one’s home directory).  If there is a problem, an error
 message should be displayed.  Leaving aside random disk glitches, this can
 be prevented by never editing the files by hand, using the configuration
 dialog, under Options, instead Options.  Once it happens, the solution may
 be to delete one or more of the configuration files.</p>
 <p>If IDLE quits with no message, and it was not started from a console, try
-starting from a console (<code class="docutils literal notranslate"><span class="pre">python</span> <span class="pre">-m</span> <span class="pre">idlelib)</span></code> and see if a message appears.</p>
+starting from a console (<code class="docutils literal notranslate"><span class="pre">python</span> <span class="pre">-m</span> <span class="pre">idlelib</span></code>) and see if a message appears.</p>
 </div>
 <div class="section" id="running-user-code">
 <h3>Running user code<a class="headerlink" href="#running-user-code" title="Permalink to this headline">¶</a></h3>
@@ -791,20 +792,20 @@ the scrollbar, or up and down arrow keys held down.
 Or click the TOC (Table of Contents) button and select a section
 header in the opened box.</p>
 <p>Help menu entry “Python Docs” opens the extensive sources of help,
-including tutorials, available at docs.python.org/x.y, where ‘x.y’
+including tutorials, available at <code class="docutils literal notranslate"><span class="pre">docs.python.org/x.y</span></code>, where ‘x.y’
 is the currently running Python version.  If your system
 has an off-line copy of the docs (this may be an installation option),
 that will be opened instead.</p>
 <p>Selected URLs can be added or removed from the help menu at any time using the
-General tab of the Configure IDLE dialog .</p>
+General tab of the Configure IDLE dialog.</p>
 </div>
 <div class="section" id="setting-preferences">
 <span id="preferences"></span><h3>Setting preferences<a class="headerlink" href="#setting-preferences" title="Permalink to this headline">¶</a></h3>
 <p>The font preferences, highlighting, keys, and general preferences can be
 changed via Configure IDLE on the Option menu.
-Non-default user settings are saved in a .idlerc directory in the user’s
+Non-default user settings are saved in a <code class="docutils literal notranslate"><span class="pre">.idlerc</span></code> directory in the user’s
 home directory.  Problems caused by bad user configuration files are solved
-by editing or deleting one or more of the files in .idlerc.</p>
+by editing or deleting one or more of the files in <code class="docutils literal notranslate"><span class="pre">.idlerc</span></code>.</p>
 <p>On the Font tab, see the text sample for the effect of font face and size
 on multiple characters in multiple languages.  Edit the sample to add
 other characters of personal interest.  Use the sample to select
