@@ -501,7 +501,14 @@ static PyObject *
 _io_open_code_impl(PyObject *module, PyObject *path)
 /*[clinic end generated code: output=2fe4ecbd6f3d6844 input=9121d12e66f85b25]*/
 {
-    return PyFile_OpenCodeObject(PyOS_FSPath(path));
+    PyObject *fspath = PyOS_FSPath(path);
+    PyObject *result;
+    if (fspath == NULL) {
+        return NULL;
+    }
+    result = PyFile_OpenCodeObject(fspath);
+    Py_DECREF(fspath);
+    return result;
 }
 
 /*
