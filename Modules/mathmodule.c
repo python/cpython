@@ -825,42 +825,47 @@ m_log10(double x)
 }
 
 static PyObject *
-math_gcd(PyObject *module, PyObject *const *args, Py_ssize_t n)
+mathGcd(PyObject *module, PyObject *const *args, Py_ssize_t n)
 {
-    PyObject *g, *item, *in;
+    PyObject *g, *in;
     g = PyLong_FromLong(0);
+    if (g == NULL) {
+       return NULL;
+    }
     Py_ssize_t i;
     for (i = 0; i < n; i++) {
-        item = args[i];
-        in = PyNumber_Index(item);
+        in = PyNumber_Index(args[i]);
         if (in == NULL) {
+            Py_DECREF(g);
             return NULL;
         }
         g = _PyLong_GCD(g, in);
         Py_DECREF(in);
+        if (g == NULL) {
+           Py_DECREF(g);
+           return(NULL);
+        }
     }
     return g;
 }
 
 PyDoc_STRVAR(math_gcd__doc,
              "gcd(*arguments) -> value\n\n\
-returns the greatest common divisor of multiple scalar arguments.\n\
+Returns the greatest common divisor of multiple scalar arguments.\n\
+If any one of the *arguments* is nonzero, then the value of ``gcd(*arguments)`` \n\
+is the largest positive integer that    divides all of the *arguments*. If all\n\
+of the *arguments* are zero, then ``gcd(*arguments)`` returns ``0``. For example::\n\
 \n\
-For example,\n\
-\n\
-    >>> gcd(6 ,8, 10, 12)\n\
-    2\n\
-\n\
-some exceptions are,\n\
-\n\
-    >>gcd()\n\
-    0\n\
-    >>gcd(0)\n\
-    0\n\
-    >>gcd(5)\n\
-    5\n\
-    >>gcd(-5)\n\
-    5\n\
+        >>> gcd(22, 33)\n\
+        11\n\
+        >>> gcd(-6, 8, 10, 12)\n\
+        2\n\
+        >>> gcd(-5)\n\
+        5\n\
+        >>> gcd(0, 0)\n\
+        0\n\
+        >>> gcd()\n\
+        0\n\
 ");
 
 /* Call is_error when errno != 0, and where x is the result libm
@@ -3361,7 +3366,7 @@ static PyMethodDef math_methods[] = {
     MATH_FREXP_METHODDEF
     MATH_FSUM_METHODDEF
     {"gamma",           math_gamma,     METH_O,         math_gamma_doc},
-    {"gcd", (PyCFunction)(void(*)(void))math_gcd, METH_FASTCALL, math_gcd__doc},
+    {"gcd", (PyCFunction)(void(*)(void))mathGcd, METH_FASTCALL, math_gcd__doc},
     {"hypot",           (PyCFunction)(void(*)(void))math_hypot,     METH_FASTCALL,  math_hypot_doc},
     MATH_ISCLOSE_METHODDEF
     MATH_ISFINITE_METHODDEF
