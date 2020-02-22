@@ -1909,6 +1909,7 @@ audioop_traverse(PyObject *m, visitproc visit, void *arg) {
         Py_VISIT(state->AudioopError);
     return 0;
 }
+
 static int
 audioop_clear(PyObject *m) {
     _audioopstate *state = _audioopstate(m);
@@ -1916,10 +1917,34 @@ audioop_clear(PyObject *m) {
         Py_CLEAR(state->AudioopError);
     return 0;
 }
+
 static void
 audioop_free(void *m) {
     audioop_clear((PyObject *)m);
 }
+
+static int
+audioop_exec(PyObject* m)
+{
+    _audioopstate *state = _audioopstate(m);
+
+    state->AudioopError = PyErr_NewException("audioop.error", NULL, NULL);
+    if (state->AudioopError == NULL) {
+        return -1;
+    }
+
+    Py_INCREF(state->AudioopError);
+    if (PyModule_AddObject(m, "error", state->AudioopError) < 0) {
+        Py_DECREF(state->AudioopError);
+        return -1;
+    }
+
+    return 0;
+}
+
+static PyModuleDef_Slot audioop_slots[] = {
+    {Py_mod_exec, audioop_exec}
+};
 
 static struct PyModuleDef audioopmodule = {
     PyModuleDef_HEAD_INIT,
@@ -1927,7 +1952,7 @@ static struct PyModuleDef audioopmodule = {
     NULL,
     sizeof(_audioopstate),
     audioop_methods,
-    NULL,
+    audioop_slots,
     audioop_traverse,
     audioop_clear,
     audioop_free
@@ -1936,14 +1961,5 @@ static struct PyModuleDef audioopmodule = {
 PyMODINIT_FUNC
 PyInit_audioop(void)
 {
-    PyObject *m = PyModule_Create(&audioopmodule);
-    if (m == NULL)
-        return NULL;
-    PyObject *AudioopError = PyErr_NewException("audioop.error", NULL, NULL);
-    if (AudioopError == NULL)
-        return NULL;
-    Py_INCREF(AudioopError);
-    PyModule_AddObject(m, "error", AudioopError);
-    _audioopstate(m)->AudioopError = AudioopError;
-    return m;
+    return PyModuleDef_Init(&audioopmodule);
 }
