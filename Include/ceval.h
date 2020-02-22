@@ -46,23 +46,23 @@ PyAPI_FUNC(struct _frame *) PyEval_GetFrame(void);
  * of the active frame.
  */
 // TODO: Add API tests for this
-PyAPI_FUNC(PyObject *) PyLocals_Get();
+PyAPI_FUNC(PyObject *) PyLocals_Get(void);
 
 /* PyLocals_GetCopy() returns a fresh shallow copy of the active local namespace */
 // TODO: Implement this, and add API tests
-PyAPI_FUNC(PyObject *) PyLocals_GetCopy();
+PyAPI_FUNC(PyObject *) PyLocals_GetCopy(void);
 
 /* PyLocals_GetView() returns a read-only proxy for the active local namespace */
 // TODO: Implement this, and add API tests
-PyAPI_FUNC(PyObject *) PyLocals_GetView();
+PyAPI_FUNC(PyObject *) PyLocals_GetView(void);
 
 /* PyLocals_RefreshViews() updates previously created locals views */
 // TODO: Implement this, and add API tests
-PyAPI_FUNC(int) PyLocals_RefreshViews();
+PyAPI_FUNC(int) PyLocals_RefreshViews(void);
 
 /* Returns true if PyLocals_Get() returns a shallow copy in the active scope */
 // TODO: Implement this, and add API tests
-PyAPI_FUNC(int) PyLocals_GetReturnsCopy();
+PyAPI_FUNC(int) PyLocals_GetReturnsCopy(void);
 #endif
 
 

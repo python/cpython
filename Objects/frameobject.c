@@ -59,7 +59,7 @@ PyFrame_GetLocals(PyFrameObject *f)
 }
 
 static PyObject *
-frame_getlocals(PyFrameObject *f, void *__unused)
+frame_getlocals(PyFrameObject *f, void *Py_UNUSED(ignored))
 {
     // This API implements the Python level frame.f_locals descriptor
     PyObject *f_locals_attr = NULL;
