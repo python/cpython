@@ -129,8 +129,8 @@ Number-theoretic and representation functions
 .. function:: gcd(*arguments)
 
    Return the greatest common divisor of multiple integer arguments.
-   If any one of the *arguments* is nonzero, then the value of ``gcd(*arguments)`` is the largest positive integer that    divides all of the *arguments*. If all of the *arguments* are zero, then ``gcd(*arguments)`` returns ``0``. For example::
-   
+   If any one of the *arguments* is nonzero, then the value of ``gcd(*arguments)`` is the largest positive integer that divides all of the *arguments*. If all of the *arguments* are zero, then ``gcd(*arguments)`` returns ``0``. For example::
+
         >>> gcd(22, 33)
         11
         >>> gcd(-6, 8, 10, 12)
