@@ -700,7 +700,7 @@ class MathTests(unittest.TestCase):
         self.assertEqual(gcd(3,4,5,6,7,8), 1)
         self.assertEqual(gcd(20,46,68,86,406,404,204,244), 2)
         self.assertEqual(gcd(6 ,8, 10, 12), 2)
-        self.assertEqual(gcd(0, 2, 3, 4, 5, 6, 7, 8, 9), 0)
+        self.assertEqual(gcd(0, 2, 3, 4, 5, 6, 7, 8, 9), 1)
         self.assertEqual(gcd(222, 444, 666, 888, 990, 224, 556, 888, 228,
                              886, 8890, 440, 228, 884), 2)
         self.assertEqual(gcd(1, 0), 1)
@@ -709,7 +709,7 @@ class MathTests(unittest.TestCase):
         self.assertEqual(gcd(0, -1), 1)
         self.assertEqual(gcd(7, 1), 1)
         self.assertEqual(gcd(7, -1), 1)
-        self.assertEqual(gcd(7, 1, 0 ,2 ,33, 44, 56, 67, 78, 89), 0)
+        self.assertEqual(gcd(7, 1, 0 ,2 ,33, 44, 56, 67, 78, 89), 1)
         self.assertEqual(gcd(-23, 15), 1)
         self.assertEqual(gcd(120, 84), 12)
         self.assertEqual(gcd(84, -120), 12)
