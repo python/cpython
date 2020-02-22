@@ -878,6 +878,14 @@ static PyObject *
 call_trampoline(PyObject* callback,
                 PyFrameObject *frame, int what, PyObject *arg)
 {
+    // Implicitly refresh frame namespace snapshot stored in f_locals,
+    // as even though the Python level f_locals descriptor now also
+    // refreshs the snapshot, trace functions may be calling other C APIs
+    // that expect the snapshot to have already been refreshed
+    if (PyFrame_FastToLocalsWithError(frame) < 0) {
+        return NULL;
+    }
+
     PyObject *stack[3];
 
     stack[0] = (PyObject *)frame;
