@@ -1,0 +1,3 @@
+Fix a use-after-free in the single inheritance path of ``issubclass()``, when
+the ``__bases__`` of an object has a single reference, and so does its first item.
+Patch by Yonatan Goldschmidt.
