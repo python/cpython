@@ -1,0 +1,1 @@
+:func:`io.open_code` now supports opening ``PathLike`` objects.
