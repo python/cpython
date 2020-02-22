@@ -488,7 +488,7 @@ _io_open_impl(PyObject *module, PyObject *file, const char *mode,
 /*[clinic input]
 _io.open_code
 
-    path : unicode
+    path: object
 
 Opens the provided file with the intent to import the contents.
 
@@ -499,9 +499,9 @@ with calling open(path, 'rb').
 
 static PyObject *
 _io_open_code_impl(PyObject *module, PyObject *path)
-/*[clinic end generated code: output=2fe4ecbd6f3d6844 input=f5c18e23f4b2ed9f]*/
+/*[clinic end generated code: output=2fe4ecbd6f3d6844 input=9121d12e66f85b25]*/
 {
-    return PyFile_OpenCodeObject(path);
+    return PyFile_OpenCodeObject(PyOS_FSPath(path));
 }
 
 /*

@@ -4,6 +4,7 @@ import sys
 import os
 import io
 import errno
+import pathlib
 import unittest
 from array import array
 from weakref import proxy
@@ -586,6 +587,11 @@ class COtherFileTests(OtherFileTests, unittest.TestCase):
             actual = f.read()
         self.assertEqual(expected, actual)
 
+        # Test opening a pathlib.Path
+        with _io.open_code(pathlib.Path(__file__)) as f:
+            actual = f.read()
+        self.assertEqual(expected, actual)
+
 
 class PyOtherFileTests(OtherFileTests, unittest.TestCase):
     FileIO = _pyio.FileIO
@@ -599,6 +605,13 @@ class PyOtherFileTests(OtherFileTests, unittest.TestCase):
         with check_warnings(quiet=True) as w:
             # Always test _open_code_with_warning
             with _pyio._open_code_with_warning(__file__) as f:
+                actual = f.read()
+            self.assertEqual(expected, actual)
+            self.assertNotEqual(w.warnings, [])
+
+        # Test opening a pathlib.Path
+        with check_warnings(quiet=True) as w:
+            with _pyio._open_code_with_warning(pathlib.Path(__file__)) as f:
                 actual = f.read()
             self.assertEqual(expected, actual)
             self.assertNotEqual(w.warnings, [])
