@@ -501,8 +501,8 @@ Path objects are traversable using the ``/`` operator.
    :meth:`ZipFile.open`.
 
    .. versionchanged:: 3.9
-   Added support for text and binary modes for open. Default
-   mode is now text.
+      Added support for text and binary modes for open. Default
+      mode is now text.
 
 .. method:: Path.iterdir()
 
