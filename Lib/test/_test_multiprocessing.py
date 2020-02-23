@@ -4982,6 +4982,8 @@ class TestStartMethod(unittest.TestCase):
         methods = multiprocessing.get_all_start_methods()
         if sys.platform == 'win32':
             self.assertEqual(methods, ['spawn'])
+        elif sys.platform == 'darwin':
+            self.assertEqual(methods, ['spawn', 'fork', 'forkserver'])
         else:
             self.assertTrue(methods == ['fork', 'spawn'] or
                             methods == ['fork', 'spawn', 'forkserver'])
