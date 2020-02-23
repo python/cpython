@@ -18,8 +18,6 @@ typedef struct {
     PyObject *length;
 } rangeobject;
 
-_Py_IDENTIFIER(iter);
-
 /* Helper function for validating step.  Always returns a new reference or
    NULL on error.
 */
@@ -759,6 +757,7 @@ PyDoc_STRVAR(length_hint_doc,
 static PyObject *
 rangeiter_reduce(rangeiterobject *r, PyObject *Py_UNUSED(ignored))
 {
+    _Py_IDENTIFIER(iter);
     PyObject *start=NULL, *stop=NULL, *step=NULL;
     PyObject *range;
 
@@ -916,6 +915,7 @@ longrangeiter_len(longrangeiterobject *r, PyObject *no_args)
 static PyObject *
 longrangeiter_reduce(longrangeiterobject *r, PyObject *Py_UNUSED(ignored))
 {
+    _Py_IDENTIFIER(iter);
     PyObject *product, *stop=NULL;
     PyObject *range;
 

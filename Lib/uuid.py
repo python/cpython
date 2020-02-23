@@ -757,7 +757,7 @@ else:
 
 _node = None
 
-def getnode():
+def getnode(*, getters=None):
     """Get the hardware address as a 48-bit positive integer.
 
     The first time this runs, it may launch a separate program, which could

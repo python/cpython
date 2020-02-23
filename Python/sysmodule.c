@@ -204,7 +204,7 @@ PySys_Audit(const char *event, const char *argFormat, ...)
 
     /* Dtrace USDT point */
     if (dtrace) {
-        PyDTrace_AUDIT((char *)event, (void *)eventArgs);
+        PyDTrace_AUDIT(event, (void *)eventArgs);
     }
 
     /* Call interpreter hooks */
@@ -1656,7 +1656,7 @@ static Py_ssize_t
 sys_getrefcount_impl(PyObject *module, PyObject *object)
 /*[clinic end generated code: output=5fd477f2264b85b2 input=bf474efd50a21535]*/
 {
-    return Py_REFCNT(object);
+    return object->ob_refcnt;
 }
 
 #ifdef Py_REF_DEBUG
@@ -1685,6 +1685,20 @@ sys_getallocatedblocks_impl(PyObject *module)
     return _Py_GetAllocatedBlocks();
 }
 
+#ifdef COUNT_ALLOCS
+/*[clinic input]
+sys.getcounts
+[clinic start generated code]*/
+
+static PyObject *
+sys_getcounts_impl(PyObject *module)
+/*[clinic end generated code: output=20df00bc164f43cb input=ad2ec7bda5424953]*/
+{
+    extern PyObject *_Py_get_counts(void);
+
+    return _Py_get_counts();
+}
+#endif
 
 /*[clinic input]
 sys._getframe
@@ -1865,6 +1879,7 @@ static PyMethodDef sys_methods[] = {
     SYS_GETDEFAULTENCODING_METHODDEF
     SYS_GETDLOPENFLAGS_METHODDEF
     SYS_GETALLOCATEDBLOCKS_METHODDEF
+    SYS_GETCOUNTS_METHODDEF
 #ifdef DYNAMIC_EXECUTION_PROFILE
     {"getdxp",          _Py_GetDXProfile, METH_VARARGS},
 #endif

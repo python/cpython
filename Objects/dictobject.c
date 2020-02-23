@@ -311,9 +311,7 @@ static void free_keys_object(PyDictKeysObject *keys);
 static inline void
 dictkeys_incref(PyDictKeysObject *dk)
 {
-#ifdef Py_REF_DEBUG
-    _Py_RefTotal++;
-#endif
+    _Py_INC_REFTOTAL;
     dk->dk_refcnt++;
 }
 
@@ -321,9 +319,7 @@ static inline void
 dictkeys_decref(PyDictKeysObject *dk)
 {
     assert(dk->dk_refcnt > 0);
-#ifdef Py_REF_DEBUG
-    _Py_RefTotal--;
-#endif
+    _Py_DEC_REFTOTAL;
     if (--dk->dk_refcnt == 0) {
         free_keys_object(dk);
     }
@@ -567,9 +563,7 @@ static PyDictKeysObject *new_keys_object(Py_ssize_t size)
             return NULL;
         }
     }
-#ifdef Py_REF_DEBUG
-    _Py_RefTotal++;
-#endif
+    _Py_INC_REFTOTAL;
     dk->dk_refcnt = 1;
     dk->dk_size = size;
     dk->dk_usable = usable;
@@ -693,12 +687,10 @@ clone_combined_dict(PyDictObject *orig)
     }
 
     /* Since we copied the keys table we now have an extra reference
-       in the system.  Manually call increment _Py_RefTotal to signal that
+       in the system.  Manually call _Py_INC_REFTOTAL to signal that
        we have it now; calling dictkeys_incref would be an error as
        keys->dk_refcnt is already set to 1 (after memcpy). */
-#ifdef Py_REF_DEBUG
-    _Py_RefTotal++;
-#endif
+    _Py_INC_REFTOTAL;
 
     return (PyObject *)new;
 }
@@ -1257,15 +1249,13 @@ dictresize(PyDictObject *mp, Py_ssize_t minsize)
 
         assert(oldkeys->dk_lookup != lookdict_split);
         assert(oldkeys->dk_refcnt == 1);
-#ifdef Py_REF_DEBUG
-        _Py_RefTotal--;
-#endif
         if (oldkeys->dk_size == PyDict_MINSIZE &&
-            numfreekeys < PyDict_MAXFREELIST)
-        {
+            numfreekeys < PyDict_MAXFREELIST) {
+            _Py_DEC_REFTOTAL;
             keys_free_list[numfreekeys++] = oldkeys;
         }
         else {
+            _Py_DEC_REFTOTAL;
             PyObject_FREE(oldkeys);
         }
     }

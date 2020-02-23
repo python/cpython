@@ -30,7 +30,6 @@ import inspect
 import pprint
 import sys
 import builtins
-from asyncio import iscoroutinefunction
 from types import CodeType, ModuleType, MethodType
 from unittest.util import safe_repr
 from functools import wraps, partial
@@ -49,12 +48,12 @@ def _is_async_obj(obj):
         return False
     if hasattr(obj, '__func__'):
         obj = getattr(obj, '__func__')
-    return iscoroutinefunction(obj) or inspect.isawaitable(obj)
+    return asyncio.iscoroutinefunction(obj) or inspect.isawaitable(obj)
 
 
 def _is_async_func(func):
     if getattr(func, '__code__', None):
-        return iscoroutinefunction(func)
+        return asyncio.iscoroutinefunction(func)
     else:
         return False
 
@@ -489,7 +488,7 @@ class NonCallableMock(Base):
         _spec_asyncs = []
 
         for attr in dir(spec):
-            if iscoroutinefunction(getattr(spec, attr, None)):
+            if asyncio.iscoroutinefunction(getattr(spec, attr, None)):
                 _spec_asyncs.append(attr)
 
         if spec is not None and not _is_list(spec):
@@ -1042,7 +1041,8 @@ class _AnyComparer(list):
     the left."""
     def __contains__(self, item):
         for _call in self:
-            assert len(item) == len(_call)
+            if len(item) != len(_call):
+                continue
             if all([
                 expected == actual
                 for expected, actual in zip(item, _call)
@@ -1855,8 +1855,7 @@ class _patch_dict(object):
 
     def __exit__(self, *args):
         """Unpatch the dict."""
-        if self._original is not None:
-            self._unpatch_dict()
+        self._unpatch_dict()
         return False
 
 
@@ -2153,7 +2152,7 @@ class AsyncMockMixin(Base):
 
     def __init__(self, /, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        # iscoroutinefunction() checks _is_coroutine property to say if an
+        # asyncio.iscoroutinefunction() checks _is_coroutine property to say if an
         # object is a coroutine. Without this check it looks to see if it is a
         # function/method, which in this case it is not (since it is an
         # AsyncMock).
@@ -2168,7 +2167,7 @@ class AsyncMockMixin(Base):
         self.__dict__['__code__'] = code_mock
 
     async def _execute_mock_call(self, /, *args, **kwargs):
-        # This is nearly just like super(), except for special handling
+        # This is nearly just like super(), except for sepcial handling
         # of coroutines
 
         _call = self.call_args
@@ -2189,7 +2188,7 @@ class AsyncMockMixin(Base):
                     raise StopAsyncIteration
                 if _is_exception(result):
                     raise result
-            elif iscoroutinefunction(effect):
+            elif asyncio.iscoroutinefunction(effect):
                 result = await effect(*args, **kwargs)
             else:
                 result = effect(*args, **kwargs)
@@ -2201,7 +2200,7 @@ class AsyncMockMixin(Base):
             return self.return_value
 
         if self._mock_wraps is not None:
-            if iscoroutinefunction(self._mock_wraps):
+            if asyncio.iscoroutinefunction(self._mock_wraps):
                 return await self._mock_wraps(*args, **kwargs)
             return self._mock_wraps(*args, **kwargs)
 
@@ -2338,7 +2337,7 @@ class AsyncMock(AsyncMockMixin, AsyncMagicMixin, Mock):
     recognized as an async function, and the result of a call is an awaitable:
 
     >>> mock = AsyncMock()
-    >>> iscoroutinefunction(mock)
+    >>> asyncio.iscoroutinefunction(mock)
     True
     >>> inspect.isawaitable(mock())
     True
@@ -2541,6 +2540,12 @@ class _Call(tuple):
         return tuple.__getattribute__(self, attr)
 
 
+    def count(self, /, *args, **kwargs):
+        return self.__getattr__('count')(*args, **kwargs)
+
+    def index(self, /, *args, **kwargs):
+        return self.__getattr__('index')(*args, **kwargs)
+
     def _get_call_arguments(self):
         if len(self) == 2:
             args, kwargs = self
@@ -2705,7 +2710,7 @@ def create_autospec(spec, spec_set=False, instance=False, _parent=None,
 
             skipfirst = _must_skip(spec, entry, is_type)
             kwargs['_eat_self'] = skipfirst
-            if iscoroutinefunction(original):
+            if asyncio.iscoroutinefunction(original):
                 child_klass = AsyncMock
             else:
                 child_klass = MagicMock
@@ -2742,7 +2747,7 @@ def _must_skip(spec, entry, is_type):
             continue
         if isinstance(result, (staticmethod, classmethod)):
             return False
-        elif isinstance(result, FunctionTypes):
+        elif isinstance(getattr(result, '__get__', None), MethodWrapperTypes):
             # Normal method => skip if looked up on type
             # (if looked up on instance, self is already skipped)
             return is_type
@@ -2770,6 +2775,10 @@ FunctionTypes = (
     type(create_autospec),
     # instance method
     type(ANY.__eq__),
+)
+
+MethodWrapperTypes = (
+    type(ANY.__eq__.__get__),
 )
 
 
@@ -2910,6 +2919,9 @@ class _AsyncIterator:
         code_mock = NonCallableMock(spec_set=CodeType)
         code_mock.co_flags = inspect.CO_ITERABLE_COROUTINE
         self.__dict__['__code__'] = code_mock
+
+    def __aiter__(self):
+        return self
 
     async def __anext__(self):
         try:

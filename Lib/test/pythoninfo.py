@@ -199,19 +199,11 @@ def collect_os(info_add):
     )
     copy_attributes(info_add, os, 'os.%s', attributes, formatter=format_attr)
 
-    for func in (
-        'cpu_count',
-        'getcwd',
-        'getegid',
-        'geteuid',
-        'getgid',
-        'getloadavg',
-        'getresgid',
-        'getresuid',
-        'getuid',
-        'uname',
-    ):
-        call_func(info_add, 'os.%s' % func, os, func)
+    call_func(info_add, 'os.getcwd', os, 'getcwd')
+
+    call_func(info_add, 'os.getuid', os, 'getuid')
+    call_func(info_add, 'os.getgid', os, 'getgid')
+    call_func(info_add, 'os.uname', os, 'uname')
 
     def format_groups(groups):
         return ', '.join(map(str, groups))
@@ -227,6 +219,9 @@ def collect_os(info_add):
             pass
         else:
             info_add("os.login", login)
+
+    call_func(info_add, 'os.cpu_count', os, 'cpu_count')
+    call_func(info_add, 'os.getloadavg', os, 'getloadavg')
 
     # Environment variables used by the stdlib and tests. Don't log the full
     # environment: filter to list to not leak sensitive information.
@@ -308,7 +303,7 @@ def collect_os(info_add):
     if hasattr(os, 'umask'):
         mask = os.umask(0)
         os.umask(mask)
-        info_add("os.umask", '0o%03o' % mask)
+        info_add("os.umask", '%03o' % mask)
 
 
 def collect_pwd(info_add):

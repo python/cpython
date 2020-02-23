@@ -627,6 +627,14 @@ PyConfig
 
       ``python3 -m MODULE`` argument. Used by :c:func:`Py_RunMain`.
 
+   .. c:member:: int show_alloc_count
+
+      Show allocation counts at exit?
+
+      Set to 1 by :option:`-X showalloccount <-X>` command line option.
+
+      Need a special Python build with ``COUNT_ALLOCS`` macro defined.
+
    .. c:member:: int show_ref_count
 
       Show total reference count at exit?
@@ -693,10 +701,6 @@ arguments are stripped from ``argv``: see :ref:`Command Line Arguments
 
 The ``xoptions`` options are parsed to set other options: see :option:`-X`
 option.
-
-.. versionchanged:: 3.9
-
-   The ``show_alloc_count`` field has been removed.
 
 
 Initialization with PyConfig

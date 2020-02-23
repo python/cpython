@@ -39,7 +39,6 @@
 #  error "ceval.c must be build with Py_BUILD_CORE define for best performance"
 #endif
 
-_Py_IDENTIFIER(__name__);
 
 /* Forward declarations */
 Py_LOCAL_INLINE(PyObject *) call_function(
@@ -303,7 +302,9 @@ PyEval_ReleaseLock(void)
 void
 PyEval_AcquireThread(PyThreadState *tstate)
 {
-    assert(tstate != NULL);
+    if (tstate == NULL) {
+        Py_FatalError("PyEval_AcquireThread: NULL new thread state");
+    }
 
     _PyRuntimeState *runtime = tstate->interp->runtime;
     struct _ceval_runtime_state *ceval = &runtime->ceval;
@@ -320,7 +321,9 @@ PyEval_AcquireThread(PyThreadState *tstate)
 void
 PyEval_ReleaseThread(PyThreadState *tstate)
 {
-    assert(tstate != NULL);
+    if (tstate == NULL) {
+        Py_FatalError("PyEval_ReleaseThread: NULL thread state");
+    }
 
     _PyRuntimeState *runtime = tstate->interp->runtime;
     PyThreadState *new_tstate = _PyThreadState_Swap(&runtime->gilstate, NULL);
@@ -382,10 +385,12 @@ PyEval_SaveThread(void)
 void
 PyEval_RestoreThread(PyThreadState *tstate)
 {
-    assert(tstate != NULL);
-
     _PyRuntimeState *runtime = tstate->interp->runtime;
     struct _ceval_runtime_state *ceval = &runtime->ceval;
+
+    if (tstate == NULL) {
+        Py_FatalError("PyEval_RestoreThread: NULL tstate");
+    }
     assert(gil_created(&ceval->gil));
 
     int err = errno;
@@ -2133,7 +2138,7 @@ main_loop:
             PyObject *val = POP();
             PyObject *tb = POP();
             assert(PyExceptionClass_Check(exc));
-            _PyErr_Restore(tstate, exc, val, tb);
+            PyErr_Restore(exc, val, tb);
             goto exception_unwind;
         }
 
@@ -2635,7 +2640,7 @@ main_loop:
                 if (_PyErr_ExceptionMatches(tstate, PyExc_TypeError) &&
                    (iterable->ob_type->tp_iter == NULL && !PySequence_Check(iterable)))
                 {
-                    _PyErr_Clear(tstate);
+                    PyErr_Clear();
                     _PyErr_Format(tstate, PyExc_TypeError,
                           "Value after * must be an iterable, not %.200s",
                           Py_TYPE(iterable)->tp_name);
@@ -4335,7 +4340,7 @@ do_raise(PyThreadState *tstate, PyObject *exc, PyObject *cause)
     }
 
     _PyErr_SetObject(tstate, type, value);
-    /* _PyErr_SetObject incref's its arguments */
+    /* PyErr_SetObject incref's its arguments */
     Py_DECREF(value);
     Py_DECREF(type);
     return 0;
@@ -5033,6 +5038,7 @@ static PyObject *
 import_from(PyThreadState *tstate, PyObject *v, PyObject *name)
 {
     PyObject *x;
+    _Py_IDENTIFIER(__name__);
     PyObject *fullmodname, *pkgname, *pkgpath, *pkgname_or_unknown, *errmsg;
 
     if (_PyObject_LookupAttr(v, name, &x) != 0) {
@@ -5108,6 +5114,7 @@ import_all_from(PyThreadState *tstate, PyObject *locals, PyObject *v)
 {
     _Py_IDENTIFIER(__all__);
     _Py_IDENTIFIER(__dict__);
+    _Py_IDENTIFIER(__name__);
     PyObject *all, *dict, *name, *value;
     int skip_leading_underscores = 0;
     int pos, err;
@@ -5201,7 +5208,7 @@ check_args_iterable(PyThreadState *tstate, PyObject *func, PyObject *args)
         /* check_args_iterable() may be called with a live exception:
          * clear it to prevent calling _PyObject_FunctionStr() with an
          * exception set. */
-        _PyErr_Clear(tstate);
+        PyErr_Clear();
         PyObject *funcstr = _PyObject_FunctionStr(func);
         if (funcstr != NULL) {
             _PyErr_Format(tstate, PyExc_TypeError,
@@ -5224,7 +5231,7 @@ format_kwargs_error(PyThreadState *tstate, PyObject *func, PyObject *kwargs)
      * is not a mapping.
      */
     if (_PyErr_ExceptionMatches(tstate, PyExc_AttributeError)) {
-        _PyErr_Clear(tstate);
+        PyErr_Clear();
         PyObject *funcstr = _PyObject_FunctionStr(func);
         if (funcstr != NULL) {
             _PyErr_Format(
@@ -5238,7 +5245,7 @@ format_kwargs_error(PyThreadState *tstate, PyObject *func, PyObject *kwargs)
         PyObject *exc, *val, *tb;
         _PyErr_Fetch(tstate, &exc, &val, &tb);
         if (val && PyTuple_Check(val) && PyTuple_GET_SIZE(val) == 1) {
-            _PyErr_Clear(tstate);
+            PyErr_Clear();
             PyObject *funcstr = _PyObject_FunctionStr(func);
             if (funcstr != NULL) {
                 PyObject *key = PyTuple_GET_ITEM(val, 0);
@@ -5440,7 +5447,7 @@ dtrace_function_entry(PyFrameObject *f)
     funcname = PyUnicode_AsUTF8(f->f_code->co_name);
     lineno = PyCode_Addr2Line(f->f_code, f->f_lasti);
 
-    PyDTrace_FUNCTION_ENTRY((char *)filename, (char *)funcname, lineno);
+    PyDTrace_FUNCTION_ENTRY(filename, funcname, lineno);
 }
 
 static void
@@ -5454,7 +5461,7 @@ dtrace_function_return(PyFrameObject *f)
     funcname = PyUnicode_AsUTF8(f->f_code->co_name);
     lineno = PyCode_Addr2Line(f->f_code, f->f_lasti);
 
-    PyDTrace_FUNCTION_RETURN((char *)filename, (char *)funcname, lineno);
+    PyDTrace_FUNCTION_RETURN(filename, funcname, lineno);
 }
 
 /* DTrace equivalent of maybe_call_line_trace. */
@@ -5486,7 +5493,7 @@ maybe_dtrace_line(PyFrameObject *frame,
         co_name = PyUnicode_AsUTF8(frame->f_code->co_name);
         if (!co_name)
             co_name = "?";
-        PyDTrace_LINE((char *)co_filename, (char *)co_name, line);
+        PyDTrace_LINE(co_filename, co_name, line);
     }
     *instr_prev = frame->f_lasti;
 }

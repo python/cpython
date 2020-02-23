@@ -625,9 +625,7 @@ class Fraction(numbers.Rational):
 
     def __bool__(a):
         """a != 0"""
-        # bpo-39274: Use bool() because (a._numerator != 0) can return an
-        # object which is not a bool.
-        return bool(a._numerator)
+        return a._numerator != 0
 
     # support for pickling, copy, and deepcopy
 

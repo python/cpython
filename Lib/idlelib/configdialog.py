@@ -149,19 +149,17 @@ class ConfigDialog(Toplevel):
         else:
             padding_args = {'padding': (6, 3)}
         outer = Frame(self, padding=2)
-        buttons_frame = Frame(outer, padding=2)
-        self.buttons = {}
+        buttons = Frame(outer, padding=2)
         for txt, cmd in (
             ('Ok', self.ok),
             ('Apply', self.apply),
             ('Cancel', self.cancel),
             ('Help', self.help)):
-            self.buttons[txt] = Button(buttons_frame, text=txt, command=cmd,
-                       takefocus=FALSE, **padding_args)
-            self.buttons[txt].pack(side=LEFT, padx=5)
+            Button(buttons, text=txt, command=cmd, takefocus=FALSE,
+                   **padding_args).pack(side=LEFT, padx=5)
         # Add space above buttons.
         Frame(outer, height=2, borderwidth=0).pack(side=TOP)
-        buttons_frame.pack(side=BOTTOM)
+        buttons.pack(side=BOTTOM)
         return outer
 
     def ok(self):
@@ -207,6 +205,7 @@ class ConfigDialog(Toplevel):
 
         Attributes accessed:
             note
+
         Methods:
             view_text: Method from textview module.
         """
@@ -853,7 +852,6 @@ class HighPage(Frame):
         text.configure(
                 font=('courier', 12, ''), cursor='hand2', width=1, height=1,
                 takefocus=FALSE, highlightthickness=0, wrap=NONE)
-        # Prevent perhaps invisible selection of word or slice.
         text.bind('<Double-Button-1>', lambda e: 'break')
         text.bind('<B1-Motion>', lambda e: 'break')
         string_tags=(
@@ -1286,7 +1284,8 @@ class HighPage(Frame):
         theme_name - string, the name of the new theme
         theme - dictionary containing the new theme
         """
-        idleConf.userCfg['highlight'].AddSection(theme_name)
+        if not idleConf.userCfg['highlight'].has_section(theme_name):
+            idleConf.userCfg['highlight'].add_section(theme_name)
         for element in theme:
             value = theme[element]
             idleConf.userCfg['highlight'].SetOption(theme_name, element, value)
@@ -1731,7 +1730,8 @@ class KeysPage(Frame):
         keyset_name - string, the name of the new key set
         keyset - dictionary containing the new keybindings
         """
-        idleConf.userCfg['keys'].AddSection(keyset_name)
+        if not idleConf.userCfg['keys'].has_section(keyset_name):
+            idleConf.userCfg['keys'].add_section(keyset_name)
         for event in keyset:
             value = keyset[event]
             idleConf.userCfg['keys'].SetOption(keyset_name, event, value)

@@ -952,8 +952,7 @@ PyObject_ClearWeakRefs(PyObject *object)
 
     if (object == NULL
         || !PyType_SUPPORTS_WEAKREFS(Py_TYPE(object))
-        || Py_REFCNT(object) != 0)
-    {
+        || object->ob_refcnt != 0) {
         PyErr_BadInternalCall();
         return;
     }
@@ -976,9 +975,8 @@ PyObject_ClearWeakRefs(PyObject *object)
             current->wr_callback = NULL;
             clear_weakref(current);
             if (callback != NULL) {
-                if (Py_REFCNT((PyObject *)current) > 0) {
+                if (((PyObject *)current)->ob_refcnt > 0)
                     handle_callback(current, callback);
-                }
                 Py_DECREF(callback);
             }
         }
@@ -995,7 +993,8 @@ PyObject_ClearWeakRefs(PyObject *object)
             for (i = 0; i < count; ++i) {
                 PyWeakReference *next = current->wr_next;
 
-                if (Py_REFCNT((PyObject *)current) > 0) {
+                if (((PyObject *)current)->ob_refcnt > 0)
+                {
                     Py_INCREF(current);
                     PyTuple_SET_ITEM(tuple, i * 2, (PyObject *) current);
                     PyTuple_SET_ITEM(tuple, i * 2 + 1, current->wr_callback);

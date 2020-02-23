@@ -3500,6 +3500,7 @@ AC_SUBST(DFLAGS)
 AC_SUBST(DTRACE_HEADERS)
 AC_SUBST(DTRACE_OBJS)
 DTRACE=
+DFLAGS=
 DTRACE_HEADERS=
 DTRACE_OBJS=
 
@@ -3520,7 +3521,7 @@ then
         [ac_cv_dtrace_link], [dnl
             ac_cv_dtrace_link=no
             echo 'BEGIN{}' > conftest.d
-            "$DTRACE" "$DFLAGS" -G -s conftest.d -o conftest.o > /dev/null 2>&1 && \
+            "$DTRACE" -G -s conftest.d -o conftest.o > /dev/null 2>&1 && \
                 ac_cv_dtrace_link=yes
       ])
     if test "$ac_cv_dtrace_link" = "yes"; then

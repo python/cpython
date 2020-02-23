@@ -94,6 +94,29 @@ list_preallocate_exact(PyListObject *self, Py_ssize_t size)
     return 0;
 }
 
+/* Debug statistic to compare allocations with reuse through the free list */
+#undef SHOW_ALLOC_COUNT
+#ifdef SHOW_ALLOC_COUNT
+static size_t count_alloc = 0;
+static size_t count_reuse = 0;
+
+static void
+show_alloc(void)
+{
+    PyInterpreterState *interp = _PyInterpreterState_Get();
+    if (!interp->config.show_alloc_count) {
+        return;
+    }
+
+    fprintf(stderr, "List allocations: %" PY_FORMAT_SIZE_T "d\n",
+        count_alloc);
+    fprintf(stderr, "List reuse through freelist: %" PY_FORMAT_SIZE_T
+        "d\n", count_reuse);
+    fprintf(stderr, "%.2f%% reuse rate\n\n",
+        (100.0*count_reuse/(count_alloc+count_reuse)));
+}
+#endif
+
 /* Empty list reuse scheme to save calls to malloc and free */
 #ifndef PyList_MAXFREELIST
 #define PyList_MAXFREELIST 80
@@ -133,6 +156,13 @@ PyObject *
 PyList_New(Py_ssize_t size)
 {
     PyListObject *op;
+#ifdef SHOW_ALLOC_COUNT
+    static int initialized = 0;
+    if (!initialized) {
+        Py_AtExit(show_alloc);
+        initialized = 1;
+    }
+#endif
 
     if (size < 0) {
         PyErr_BadInternalCall();
@@ -142,10 +172,16 @@ PyList_New(Py_ssize_t size)
         numfree--;
         op = free_list[numfree];
         _Py_NewReference((PyObject *)op);
+#ifdef SHOW_ALLOC_COUNT
+        count_reuse++;
+#endif
     } else {
         op = PyObject_GC_New(PyListObject, &PyList_Type);
         if (op == NULL)
             return NULL;
+#ifdef SHOW_ALLOC_COUNT
+        count_alloc++;
+#endif
     }
     if (size <= 0)
         op->ob_item = NULL;
@@ -409,16 +445,11 @@ list_length(PyListObject *a)
 static int
 list_contains(PyListObject *a, PyObject *el)
 {
-    PyObject *item;
     Py_ssize_t i;
     int cmp;
 
-    for (i = 0, cmp = 0 ; cmp == 0 && i < Py_SIZE(a); ++i) {
-        item = PyList_GET_ITEM(a, i);
-        Py_INCREF(item);
-        cmp = PyObject_RichCompareBool(item, el, Py_EQ);
-        Py_DECREF(item);
-    }
+    for (i = 0, cmp = 0 ; cmp == 0 && i < Py_SIZE(a); ++i)
+        cmp = PyObject_RichCompareBool(PyList_GET_ITEM(a, i), el, Py_EQ);
     return cmp;
 }
 

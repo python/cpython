@@ -146,15 +146,6 @@ that schedules a shutdown for the default executor that waits on the
 Added :class:`asyncio.PidfdChildWatcher`, a Linux-specific child watcher
 implementation that polls process file descriptors. (:issue:`38692`)
 
-concurrent.futures
-------------------
-
-Added a new *cancel_futures* parameter to
-:meth:`concurrent.futures.Executor.shutdown` that cancels all pending futures
-which have not started running, instead of waiting for them to complete before
-shutting down the executor.
-(Contributed by Kyle Stanley in :issue:`39349`.)
-
 curses
 ------
 
@@ -205,14 +196,6 @@ with this change. The overridden methods of :class:`~imaplib.IMAP4_SSL` and
 :class:`~imaplib.IMAP4_stream` were applied to this change.
 (Contributed by Dong-hee Na in :issue:`38615`.)
 
-importlib
----------
-
-To improve consistency with import statements, :func:`importlib.util.resolve_name`
-now raises :exc:`ImportError` instead of :exc:`ValueError` for invalid relative
-import attempts.
-(Contributed by Ngalim Siregar in :issue:`37444`.)
-
 math
 ----
 
@@ -248,41 +231,12 @@ The :func:`os.putenv` and :func:`os.unsetenv` functions are now always
 available.
 (Contributed by Victor Stinner in :issue:`39395`.)
 
-pathlib
--------
-
-Added :meth:`pathlib.Path.readlink()` which acts similarly to
-:func:`os.readlink`.
-(Contributed by Girts Folkmanis in :issue:`30618`)
-
 poplib
 ------
 
 :class:`~poplib.POP3` and :class:`~poplib.POP3_SSL` now raise a :class:`ValueError`
 if the given timeout for their constructor is zero to prevent the creation of
 a non-blocking socket. (Contributed by Dong-hee Na in :issue:`39259`.)
-
-pprint
-------
-
-:mod:`pprint` can now pretty-print :class:`types.SimpleNamespace`.
-(Contributed by Carl Bordum Hansen in :issue:`37376`.)
-
-signal
-------
-
-Exposed the Linux-specific :func:`signal.pidfd_send_signal` for sending to
-signals to a process using a file descriptor instead of a pid. (:issue:`38712`)
-
-smtplib
--------
-
-:class:`~smtplib.SMTP` and :class:`~smtplib.SMTP_SSL` now raise a :class:`ValueError`
-if the given timeout for their constructor is zero to prevent the creation of
-a non-blocking socket. (Contributed by Dong-hee Na in :issue:`39259`.)
-
-:class:`~smtplib.LMTP` constructor  now has an optional *timeout* parameter.
-(Contributed by Dong-hee Na in :issue:`39329`.)
 
 threading
 ---------
@@ -292,14 +246,6 @@ threads were never supported in subinterpreters. Previously, the subinterpreter
 finalization crashed with a Python fatal error if a daemon thread was still
 running.
 (Contributed by Victor Stinner in :issue:`37266`.)
-
-typing
-------
-
-:pep:`593` introduced an :data:`typing.Annotated` type to decorate existing
-types with context-specific metadata and new ``include_extras`` parameter to
-:func:`typing.get_type_hints` to access the metadata at runtime. (Contributed
-by Till Varoquaux and Konstantin Kashin.)
 
 venv
 ----
@@ -311,6 +257,43 @@ customization consistently by always using the value specified by
 case), and one used ``__VENV_NAME__`` instead.
 (Contributed by Brett Cannon in :issue:`37663`.)
 
+pathlib
+-------
+
+Added :meth:`pathlib.Path.readlink()` which acts similarly to
+:func:`os.readlink`.
+(Contributed by Girts Folkmanis in :issue:`30618`)
+
+pprint
+------
+
+:mod:`pprint` can now pretty-print :class:`types.SimpleNamespace`.
+(Contributed by Carl Bordum Hansen in :issue:`37376`.)
+
+importlib
+---------
+
+To improve consistency with import statements, :func:`importlib.util.resolve_name`
+now raises :exc:`ImportError` instead of :exc:`ValueError` for invalid relative
+import attempts.
+(Contributed by Ngalim Siregar in :issue:`37444`.)
+
+smtplib
+-------
+
+:class:`~smtplib.SMTP` and :class:`~smtplib.SMTP_SSL` now raise a :class:`ValueError`
+if the given timeout for their constructor is zero to prevent the creation of
+a non-blocking socket. (Contributed by Dong-hee Na in :issue:`39259`.)
+
+:class:`~smtplib.LMTP` constructor  now has an optional *timeout* parameter.
+(Contributed by Dong-hee Na in :issue:`39329`.)
+
+signal
+------
+
+Exposed the Linux-specific :func:`signal.pidfd_send_signal` for sending to
+signals to a process using a file descriptor instead of a pid. (:issue:`38712`)
+
 
 Optimizations
 =============
@@ -318,6 +301,13 @@ Optimizations
 
 Build and C API Changes
 =======================
+
+* Provide :c:func:`Py_EnterRecursiveCall` and :c:func:`Py_LeaveRecursiveCall`
+  as regular functions for the limited API. Previously, there were defined as
+  macros, but these macros didn't work with the limited API which cannot access
+  ``PyThreadState.recursion_depth`` field. Remove ``_Py_CheckRecursionLimit``
+  from the stable ABI.
+  (Contributed by Victor Stinner in :issue:`38644`.)
 
 * Add a new public :c:func:`PyObject_CallNoArgs` function to the C API, which
   calls a callable Python object without any arguments. It is the most efficient
@@ -348,51 +338,6 @@ Build and C API Changes
 * On non-Windows platforms, the :c:func:`setenv` and :c:func:`unsetenv`
   functions are now required to build Python.
   (Contributed by Victor Stinner in :issue:`39395`.)
-
-* The ``COUNT_ALLOCS`` special build macro has been removed.
-  (Contributed by Victor Stinner in :issue:`39489`.)
-
-* Changes in the limited C API (if ``Py_LIMITED_API`` macro is defined):
-
-  * Provide :c:func:`Py_EnterRecursiveCall` and :c:func:`Py_LeaveRecursiveCall`
-    as regular functions for the limited API. Previously, there were defined as
-    macros, but these macros didn't work with the limited API which cannot
-    access ``PyThreadState.recursion_depth`` field.
-
-  * Exclude the following functions from the limited C API:
-
-    * ``_Py_CheckRecursionLimit``
-    * ``_Py_NewReference()``
-    * ``_Py_ForgetReference()``
-    * ``_PyTraceMalloc_NewReference()``
-    * ``_Py_GetRefTotal()``
-    * The trashcan mechanism which never worked in the limited C API.
-    * ``PyTrash_UNWIND_LEVEL``
-    * ``Py_TRASHCAN_BEGIN_CONDITION``
-    * ``Py_TRASHCAN_BEGIN``
-    * ``Py_TRASHCAN_END``
-    * ``Py_TRASHCAN_SAFE_BEGIN``
-    * ``Py_TRASHCAN_SAFE_END``
-
-  * The following static inline functions or macros become regular "opaque"
-    function to hide implementation details:
-
-    * ``_Py_NewReference()``
-    * ``PyObject_INIT()`` and ``PyObject_INIT_VAR()``  become aliases to
-      :c:func:`PyObject_Init` and :c:func:`PyObject_InitVar` in the limited C
-      API, but are overriden with static inline function otherwise. Thanks to
-      that, it was possible to exclude ``_Py_NewReference()`` from the limited
-      C API.
-
-  * Move following functions and definitions to the internal C API:
-
-    * ``_PyDebug_PrintTotalRefs()``
-    * ``_Py_PrintReferences()``
-    * ``_Py_PrintReferenceAddresses()``
-    * ``_Py_tracemalloc_config``
-    * ``_Py_AddToAllObjects()`` (specific to ``Py_TRACE_REFS`` build)
-
-  (Contributed by Victor Stinner in :issue:`38644` and :issue:`39542`.)
 
 
 Deprecated
@@ -434,14 +379,13 @@ Deprecated
 
   * :func:`~binascii.b2a_hqx`, :func:`~binascii.a2b_hqx`
   * :func:`~binascii.rlecode_hqx`, :func:`~binascii.rledecode_hqx`
+  * :func:`~binascii.crc_hqx`
 
   (Contributed by Victor Stinner in :issue:`39353`.)
 
 
 Removed
 =======
-
-* The erroneous version at :data:`unittest.mock.__version__` has been removed.
 
 * :class:`nntplib.NNTP`: ``xpath()`` and ``xgtitle()`` methods have been removed.
   These methods are deprecated since Python 3.3. Generally, these extensions
@@ -526,17 +470,6 @@ Removed
   As of Python 3.1, it was deprecated and ignored; using it has emitted a
   :exc:`DeprecationWarning` since Python 3.8.
   (Contributed by Inada Naoki in :issue:`39377`)
-
-* ``with (await asyncio.lock):`` and ``with (yield from asyncio.lock):`` statements are
-  not longer supported, use ``async with lock`` instead.  The same is correct for
-  ``asyncio.Condition`` and ``asyncio.Semaphore``.
-  (Contributed by Andrew Svetlov in :issue:`34793`.)
-
-* The :func:`sys.getcounts` function, the ``-X showalloccount`` command line
-  option and the ``show_alloc_count`` field of the C structure
-  :c:type:`PyConfig` have been removed. They required a special Python build by
-  defining ``COUNT_ALLOCS`` macro.
-  (Contributed by Victor Stinner in :issue:`39489`.)
 
 
 Porting to Python 3.9
