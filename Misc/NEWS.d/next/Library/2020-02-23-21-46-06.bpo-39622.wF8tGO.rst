@@ -1,0 +1,1 @@
+Fixed issues with SIGINT handling in asyncio.run() by switching to a custom SIGINT handler.
