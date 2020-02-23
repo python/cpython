@@ -826,35 +826,123 @@ m_log10(double x)
 }
 
 
-/*[clinic input]
-math.gcd
-
-    x as a: object
-    y as b: object
-    /
-
-greatest common divisor of x and y
-[clinic start generated code]*/
-
 static PyObject *
-math_gcd_impl(PyObject *module, PyObject *a, PyObject *b)
-/*[clinic end generated code: output=7b2e0c151bd7a5d8 input=c2691e57fb2a98fa]*/
+math_gcd(PyObject *module, PyObject * const *args, Py_ssize_t nargs)
 {
-    PyObject *g;
+    PyObject *res, *x;
+    Py_ssize_t i;
 
-    a = PyNumber_Index(a);
-    if (a == NULL)
-        return NULL;
-    b = PyNumber_Index(b);
-    if (b == NULL) {
-        Py_DECREF(a);
+    if (nargs == 0) {
+        return PyLong_FromLong(0);
+    }
+    res = PyNumber_Index(args[0]);
+    if (res == NULL) {
         return NULL;
     }
-    g = _PyLong_GCD(a, b);
-    Py_DECREF(a);
-    Py_DECREF(b);
-    return g;
+    if (nargs == 1) {
+        Py_SETREF(res, PyNumber_Absolute(res));
+        return res;
+    }
+    for (i = 1; i < nargs; i++) {
+        x = PyNumber_Index(args[i]);
+        if (x == NULL) {
+            Py_DECREF(res);
+            return NULL;
+        }
+        if (res == _PyLong_One) {
+            /* Fast path: just check arguments.
+               It is okay to use identity comparison here. */
+            Py_DECREF(x);
+            continue;
+        }
+        Py_SETREF(res, _PyLong_GCD(res, x));
+        Py_DECREF(x);
+        if (res == NULL) {
+            return NULL;
+        }
+    }
+    return res;
 }
+
+PyDoc_STRVAR(math_gcd_doc,
+"gcd($module, *integers)\n"
+"--\n"
+"\n"
+"Greatest Common Divisor.");
+
+
+static PyObject *
+long_lcm(PyObject *a, PyObject *b)
+{
+    PyObject *g, *m, *f, *ab;
+
+    if (Py_SIZE(a) == 0 || Py_SIZE(b) == 0) {
+        return PyLong_FromLong(0);
+    }
+    g = _PyLong_GCD(a, b);
+    if (g == NULL) {
+        return NULL;
+    }
+    f = PyNumber_FloorDivide(a, g);
+    Py_DECREF(g);
+    if (f == NULL) {
+        return NULL;
+    }
+    m = PyNumber_Multiply(f, b);
+    Py_DECREF(f);
+    if (m == NULL) {
+        return NULL;
+    }
+    ab = PyNumber_Absolute(m);
+    Py_DECREF(m);
+    return ab;
+}
+
+
+static PyObject *
+math_lcm(PyObject *module, PyObject * const *args, Py_ssize_t nargs)
+{
+    PyObject *res, *x;
+    Py_ssize_t i;
+
+    if (nargs == 0) {
+        return PyLong_FromLong(1);
+    }
+    res = PyNumber_Index(args[0]);
+    if (res == NULL) {
+        return NULL;
+    }
+    if (nargs == 1) {
+        Py_SETREF(res, PyNumber_Absolute(res));
+        return res;
+    }
+    for (i = 1; i < nargs; i++) {
+        x = PyNumber_Index(args[i]);
+        if (x == NULL) {
+            Py_DECREF(res);
+            return NULL;
+        }
+        if (res == _PyLong_Zero) {
+            /* Fast path: just check arguments.
+               It is okay to use identity comparison here. */
+            Py_DECREF(x);
+            continue;
+        }
+        Py_SETREF(res, long_lcm(res, x));
+        Py_DECREF(x);
+        if (res == NULL) {
+            return NULL;
+        }
+    }
+    return res;
+}
+
+
+PyDoc_STRVAR(math_lcm_doc,
+"lcm($module, *integers)\n"
+"--\n"
+"\n"
+"Least Common Multiple.");
 
 
 /* Call is_error when errno != 0, and where x is the result libm
@@ -2014,59 +2102,6 @@ math_factorial(PyObject *module, PyObject *arg)
     result = _PyLong_Lshift(odd_part, two_valuation);
     Py_DECREF(odd_part);
     return result;
-}
-
-
-/*[clinic input]
-math.lcm
-    x as a: object
-    y as b: object
-    /
-least common multiple of x and y
-[clinic start generated code]*/
-
-static PyObject *
-math_lcm_impl(PyObject *module, PyObject *a, PyObject *b)
-/*[clinic end generated code: output=6f83fb6d671074ba input=efb3d7b7334b7118]*/
-{
-    PyObject *g, *m, *f, *ab;
-
-    a = PyNumber_Index(a);
-    if (a == NULL) {
-        return NULL;
-    }
-    b = PyNumber_Index(b);
-    if (b == NULL) {
-        Py_DECREF(a);
-        return NULL;
-    }
-    if (_PyLong_Sign(a) == 0 || _PyLong_Sign(b) == 0) {
-        Py_DECREF(a);
-        Py_DECREF(b);
-        return PyLong_FromLong(0);
-    }
-    g = _PyLong_GCD(a, b);
-    if (g == NULL) {
-        Py_DECREF(a);
-        Py_DECREF(b);
-        return NULL;
-    }
-    f = PyNumber_FloorDivide(a, g);
-    Py_DECREF(g);
-    Py_DECREF(a);
-    if (f == NULL) {
-        Py_DECREF(b);
-        return NULL;
-    }
-    m = PyNumber_Multiply(f, b);
-    Py_DECREF(f);
-    Py_DECREF(b);
-    if (m == NULL) {
-        return NULL;
-    }
-    ab = PyNumber_Absolute(m);
-    Py_DECREF(m);
-    return ab;
 }
 
 
@@ -3408,14 +3443,14 @@ static PyMethodDef math_methods[] = {
     MATH_FREXP_METHODDEF
     MATH_FSUM_METHODDEF
     {"gamma",           math_gamma,     METH_O,         math_gamma_doc},
-    MATH_GCD_METHODDEF
+    {"gcd",             (PyCFunction)(void(*)(void))math_gcd,       METH_FASTCALL,  math_gcd_doc},
     {"hypot",           (PyCFunction)(void(*)(void))math_hypot,     METH_FASTCALL,  math_hypot_doc},
     MATH_ISCLOSE_METHODDEF
     MATH_ISFINITE_METHODDEF
     MATH_ISINF_METHODDEF
     MATH_ISNAN_METHODDEF
     MATH_ISQRT_METHODDEF
-    MATH_LCM_METHODDEF
+    {"lcm",             (PyCFunction)(void(*)(void))math_lcm,       METH_FASTCALL,  math_lcm_doc},
     MATH_LDEXP_METHODDEF
     {"lgamma",          math_lgamma,    METH_O,         math_lgamma_doc},
     MATH_LOG_METHODDEF
