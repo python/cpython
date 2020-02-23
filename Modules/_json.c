@@ -13,9 +13,9 @@
 #include "pycore_accu.h"
 
 #define PyScanner_Check(op) PyObject_TypeCheck(op, &PyScannerType)
-#define PyScanner_CheckExact(op) (Py_TYPE(op) == &PyScannerType)
+#define PyScanner_CheckExact(op) Py_IS_TYPE(op, &PyScannerType)
 #define PyEncoder_Check(op) PyObject_TypeCheck(op, &PyEncoderType)
-#define PyEncoder_CheckExact(op) (Py_TYPE(op) == &PyEncoderType)
+#define PyEncoder_CheckExact(op) Py_IS_TYPE(op, &PyEncoderType)
 
 static PyTypeObject PyScannerType;
 static PyTypeObject PyEncoderType;
@@ -777,14 +777,14 @@ _parse_object_unicode(PyScannerObject *s, PyObject *pystr, Py_ssize_t idx, Py_ss
     *next_idx_ptr = idx + 1;
 
     if (has_pairs_hook) {
-        val = _PyObject_CallOneArg(s->object_pairs_hook, rval);
+        val = PyObject_CallOneArg(s->object_pairs_hook, rval);
         Py_DECREF(rval);
         return val;
     }
 
     /* if object_hook is not None: rval = object_hook(rval) */
     if (s->object_hook != Py_None) {
-        val = _PyObject_CallOneArg(s->object_hook, rval);
+        val = PyObject_CallOneArg(s->object_hook, rval);
         Py_DECREF(rval);
         return val;
     }
@@ -890,7 +890,7 @@ _parse_constant(PyScannerObject *s, const char *constant, Py_ssize_t idx, Py_ssi
         return NULL;
 
     /* rval = parse_constant(constant) */
-    rval = _PyObject_CallOneArg(s->parse_constant, cstr);
+    rval = PyObject_CallOneArg(s->parse_constant, cstr);
     idx += PyUnicode_GET_LENGTH(cstr);
     Py_DECREF(cstr);
     *next_idx_ptr = idx;
@@ -989,7 +989,7 @@ _match_number_unicode(PyScannerObject *s, PyObject *pystr, Py_ssize_t start, Py_
                                            idx - start);
         if (numstr == NULL)
             return NULL;
-        rval = _PyObject_CallOneArg(custom_func, numstr);
+        rval = PyObject_CallOneArg(custom_func, numstr);
     }
     else {
         Py_ssize_t i, n;
@@ -1399,7 +1399,7 @@ encoder_encode_string(PyEncoderObject *s, PyObject *obj)
     if (s->fast_encode) {
         return s->fast_encode(NULL, obj);
     }
-    encoded = _PyObject_CallOneArg(s->encoder, obj);
+    encoded = PyObject_CallOneArg(s->encoder, obj);
     if (encoded != NULL && !PyUnicode_Check(encoded)) {
         PyErr_Format(PyExc_TypeError,
                      "encoder() must return a string, not %.80s",
@@ -1485,7 +1485,7 @@ encoder_listencode_obj(PyEncoderObject *s, _PyAccu *acc,
                 return -1;
             }
         }
-        newobj = _PyObject_CallOneArg(s->defaultfn, obj);
+        newobj = PyObject_CallOneArg(s->defaultfn, obj);
         if (newobj == NULL) {
             Py_XDECREF(ident);
             return -1;
@@ -1617,7 +1617,7 @@ encoder_listencode_dict(PyEncoderObject *s, _PyAccu *acc,
         else {
             PyErr_Format(PyExc_TypeError,
                          "keys must be str, int, float, bool or None, "
-                         "not %.100s", key->ob_type->tp_name);
+                         "not %.100s", Py_TYPE(key)->tp_name);
             goto bail;
         }
 

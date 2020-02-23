@@ -727,6 +727,7 @@ EXPORTS
   Py_DecodeLocale=python39.Py_DecodeLocale
   Py_EncodeLocale=python39.Py_EncodeLocale
   Py_EndInterpreter=python39.Py_EndInterpreter
+  Py_EnterRecursiveCall=python39.Py_EnterRecursiveCall
   Py_Exit=python39.Py_Exit
   Py_FatalError=python39.Py_FatalError
   Py_FileSystemDefaultEncodeErrors=python39.Py_FileSystemDefaultEncodeErrors DATA
@@ -750,6 +751,7 @@ EXPORTS
   Py_Initialize=python39.Py_Initialize
   Py_InitializeEx=python39.Py_InitializeEx
   Py_IsInitialized=python39.Py_IsInitialized
+  Py_LeaveRecursiveCall=python39.Py_LeaveRecursiveCall
   Py_Main=python39.Py_Main
   Py_MakePendingCalls=python39.Py_MakePendingCalls
   Py_NewInterpreter=python39.Py_NewInterpreter

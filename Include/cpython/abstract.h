@@ -67,7 +67,7 @@ _PyVectorcall_Function(PyObject *callable)
 {
     assert(callable != NULL);
     PyTypeObject *tp = Py_TYPE(callable);
-    if (!PyType_HasFeature(tp, _Py_TPFLAGS_HAVE_VECTORCALL)) {
+    if (!PyType_HasFeature(tp, Py_TPFLAGS_HAVE_VECTORCALL)) {
         return NULL;
     }
     assert(PyCallable_Check(callable));
@@ -169,7 +169,7 @@ PyAPI_FUNC(PyObject *) _PyObject_VectorcallMethod(
 static inline PyObject *
 _PyObject_CallMethodNoArgs(PyObject *self, PyObject *name)
 {
-    return _PyObject_VectorcallMethod(name, &self,
+    return PyObject_VectorcallMethod(name, &self,
            1 | PY_VECTORCALL_ARGUMENTS_OFFSET, NULL);
 }
 
@@ -178,7 +178,7 @@ _PyObject_CallMethodOneArg(PyObject *self, PyObject *name, PyObject *arg)
 {
     assert(arg != NULL);
     PyObject *args[2] = {self, arg};
-    return _PyObject_VectorcallMethod(name, args,
+    return PyObject_VectorcallMethod(name, args,
            2 | PY_VECTORCALL_ARGUMENTS_OFFSET, NULL);
 }
 
@@ -237,8 +237,8 @@ PyAPI_FUNC(Py_ssize_t) PyObject_LengthHint(PyObject *o, Py_ssize_t);
 
 /* Return 1 if the getbuffer function is available, otherwise return 0. */
 #define PyObject_CheckBuffer(obj) \
-    (((obj)->ob_type->tp_as_buffer != NULL) &&  \
-     ((obj)->ob_type->tp_as_buffer->bf_getbuffer != NULL))
+    ((Py_TYPE(obj)->tp_as_buffer != NULL) &&  \
+     (Py_TYPE(obj)->tp_as_buffer->bf_getbuffer != NULL))
 
 /* This is a C-API version of the getbuffer function call.  It checks
    to make sure object has the required function pointer and issues the
@@ -306,14 +306,14 @@ PyAPI_FUNC(void) PyBuffer_Release(Py_buffer *view);
 /* ==== Iterators ================================================ */
 
 #define PyIter_Check(obj) \
-    ((obj)->ob_type->tp_iternext != NULL && \
-     (obj)->ob_type->tp_iternext != &_PyObject_NextNotImplemented)
+    (Py_TYPE(obj)->tp_iternext != NULL && \
+     Py_TYPE(obj)->tp_iternext != &_PyObject_NextNotImplemented)
 
 /* === Number Protocol ================================================== */
 
 #define PyIndex_Check(obj)                              \
-    ((obj)->ob_type->tp_as_number != NULL &&            \
-     (obj)->ob_type->tp_as_number->nb_index != NULL)
+    (Py_TYPE(obj)->tp_as_number != NULL &&            \
+     Py_TYPE(obj)->tp_as_number->nb_index != NULL)
 
 /* === Sequence protocol ================================================ */
 

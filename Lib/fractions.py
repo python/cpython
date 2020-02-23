@@ -155,13 +155,9 @@ class Fraction(numbers.Rational):
         if denominator == 0:
             raise ZeroDivisionError('Fraction(%s, 0)' % numerator)
         if _normalize:
-            if type(numerator) is int is type(denominator):
-                # *very* normal case
-                g = math.gcd(numerator, denominator)
-                if denominator < 0:
-                    g = -g
-            else:
-                g = _gcd(numerator, denominator)
+            g = math.gcd(numerator, denominator)
+            if denominator < 0:
+                g = -g
             numerator //= g
             denominator //= g
         self._numerator = numerator

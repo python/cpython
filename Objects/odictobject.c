@@ -1417,8 +1417,9 @@ odict_repr(PyODictObject *self)
             }
             count++;
         }
-        if (count < PyList_GET_SIZE(pieces))
-            Py_SIZE(pieces) = count;
+        if (count < PyList_GET_SIZE(pieces)) {
+            Py_SET_SIZE(pieces, count);
+        }
     }
     else {
         PyObject *items = _PyObject_CallMethodIdNoArgs((PyObject *)self,
