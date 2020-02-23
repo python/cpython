@@ -132,10 +132,12 @@ ConfigParser -- responsible for parsing a list of
     set(section, option, value)
         Set the given option.
 
-    write(fp, space_around_delimiters=True)
+    write(fp, space_around_delimiters=True, indent='')
         Write the configuration state in .ini format. If
         `space_around_delimiters' is True (the default), delimiters
         between keys and values are surrounded by spaces.
+
+        If `indent' is empty (the default), the keys won't be indented.
 """
 
 from collections.abc import MutableMapping
@@ -902,11 +904,13 @@ class RawConfigParser(MutableMapping):
                 raise NoSectionError(section) from None
         sectdict[self.optionxform(option)] = value
 
-    def write(self, fp, space_around_delimiters=True):
+    def write(self, fp, space_around_delimiters=True, indent=''):
         """Write an .ini-format representation of the configuration state.
 
         If `space_around_delimiters' is True (the default), delimiters
         between keys and values are surrounded by spaces.
+
+        If `indent' is empty (the default), the keys won't be indented.
         """
         if space_around_delimiters:
             d = " {} ".format(self._delimiters[0])
@@ -914,12 +918,12 @@ class RawConfigParser(MutableMapping):
             d = self._delimiters[0]
         if self._defaults:
             self._write_section(fp, self.default_section,
-                                    self._defaults.items(), d)
+                                    self._defaults.items(), d, indent)
         for section in self._sections:
             self._write_section(fp, section,
-                                self._sections[section].items(), d)
+                                self._sections[section].items(), d, indent)
 
-    def _write_section(self, fp, section_name, section_items, delimiter):
+    def _write_section(self, fp, section_name, section_items, delimiter, indent):
         """Write a single section to the specified `fp'."""
         fp.write("[{}]\n".format(section_name))
         for key, value in section_items:
@@ -929,7 +933,7 @@ class RawConfigParser(MutableMapping):
                 value = delimiter + str(value).replace('\n', '\n\t')
             else:
                 value = ""
-            fp.write("{}{}\n".format(key, value))
+            fp.write("{}{}{}\n".format(indent, key, value))
         fp.write("\n")
 
     def remove_option(self, section, option):
