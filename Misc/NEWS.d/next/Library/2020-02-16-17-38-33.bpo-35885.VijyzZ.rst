@@ -1,3 +1,3 @@
-:class:`configparser`: :func:`write()` method have a new parameter *indent* of type string.
-When indent is set, the parser will indent the items according to the given input value.
-(Contributed by Ido Michael in :issue:`35885 `.)
+:class:`configparser` :func:`write()` method have a new parameter `indent` of type string.
+When indent is set, the parser will indent the lines according to the given input value.
+Contributed by Ido Michael in :issue:`35885`
