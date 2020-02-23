@@ -2155,8 +2155,8 @@ RAM and expect 10 simultaneous operands using a maximum of 500MB each::
 
    >>> import sys
    >>>
-   >>> # Maximum number of digits for a single operand using 500MB in 8 byte words
-   >>> # with 19 (9 for the 32-bit version) digits per word:
+   >>> # Maximum number of digits for a single operand using 500MB in 8-byte words
+   >>> # with 19 digits per word (4-byte and 9 digits for the 32-bit build):
    >>> maxdigits = 19 * ((500 * 1024**2) // 8)
    >>>
    >>> # Check that this works:
