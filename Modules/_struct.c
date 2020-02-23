@@ -57,7 +57,7 @@ typedef struct {
 
 
 #define PyStruct_Check(op) PyObject_TypeCheck(op, (PyTypeObject *)_structmodulestate_global->PyStructType)
-#define PyStruct_CheckExact(op) (Py_TYPE(op) == (PyTypeObject *)_structmodulestate_global->PyStructType)
+#define PyStruct_CheckExact(op) Py_IS_TYPE(op, (PyTypeObject *)_structmodulestate_global->PyStructType)
 
 
 /* Define various structs to figure out the alignments of types */

@@ -44,7 +44,7 @@ static PyTypeObject Dbmtype;
 
 #include "clinic/_gdbmmodule.c.h"
 
-#define is_dbmobject(v) (Py_TYPE(v) == &Dbmtype)
+#define is_dbmobject(v) Py_IS_TYPE(v, &Dbmtype)
 #define check_dbmobject_open(v) if ((v)->di_dbm == NULL) \
     { PyErr_SetString(DbmError, "GDBM object has already been closed"); \
       return NULL; }

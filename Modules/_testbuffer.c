@@ -24,7 +24,7 @@ static PyObject *simple_format = NULL;
 /**************************************************************************/
 
 static PyTypeObject NDArray_Type;
-#define NDArray_Check(v) (Py_TYPE(v) == &NDArray_Type)
+#define NDArray_Check(v) Py_IS_TYPE(v, &NDArray_Type)
 
 #define CHECK_LIST_OR_TUPLE(v) \
     if (!PyList_Check(v) && !PyTuple_Check(v)) { \

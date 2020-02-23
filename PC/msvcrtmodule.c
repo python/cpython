@@ -180,7 +180,7 @@ msvcrt_open_osfhandle_impl(PyObject *module, void *handle, int flags)
     int fd;
 
     if (PySys_Audit("msvcrt.open_osfhandle", "Ki", handle, flags) < 0) {
-        return NULL;
+        return -1;
     }
 
     _Py_BEGIN_SUPPRESS_IPH

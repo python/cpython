@@ -413,7 +413,7 @@ SHA256Type_copy_impl(SHAobject *self)
 {
     SHAobject *newobj;
 
-    if (Py_TYPE(self) == &SHA256type) {
+    if (Py_IS_TYPE(self, &SHA256type)) {
         if ( (newobj = newSHA256object())==NULL)
             return NULL;
     } else {
