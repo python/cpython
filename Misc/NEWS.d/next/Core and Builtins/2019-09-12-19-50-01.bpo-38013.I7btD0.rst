@@ -1,3 +1,0 @@
-Allow to call ``async_generator_athrow().throw(...)`` even for non-started
-async generator helper. It fixes annoying warning at the end of
-:func:`asyncio.run` call.

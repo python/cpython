@@ -19,6 +19,11 @@ jobs:
         Name: amd64
         Python: $(Build.BinariesDirectory)\bin\python.exe
         PYTHONHOME: $(Build.SourcesDirectory)
+      arm64:
+        Name: arm64
+        HostArch: amd64
+        Python: $(Build.BinariesDirectory)\bin_amd64\python.exe
+        PYTHONHOME: $(Build.SourcesDirectory)
 
   steps:
   - template: ./checkout.yml

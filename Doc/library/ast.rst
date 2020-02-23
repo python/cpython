@@ -101,12 +101,16 @@ Node classes
       node = ast.UnaryOp(ast.USub(), ast.Constant(5, lineno=0, col_offset=0),
                          lineno=0, col_offset=0)
 
+.. versionchanged:: 3.8
+
+   Class :class:`ast.Constant` is now used for all constants.
+
 .. deprecated:: 3.8
 
-   Class :class:`ast.Constant` is now used for all constants. Old classes
-   :class:`ast.Num`, :class:`ast.Str`, :class:`ast.Bytes`,
+   Old classes :class:`ast.Num`, :class:`ast.Str`, :class:`ast.Bytes`,
    :class:`ast.NameConstant` and :class:`ast.Ellipsis` are still available,
-   but they will be removed in future Python releases.
+   but they will be removed in future Python releases.  In the meanwhile,
+   instantiating them will return an instance of a different class.
 
 
 .. _abstract-grammar:
@@ -161,6 +165,19 @@ and classes for traversing abstract syntax trees:
       Added ``type_comments``, ``mode='func_type'`` and ``feature_version``.
 
 
+.. function:: unparse(ast_obj)
+
+   Unparse an :class:`ast.AST` object and generate a string with code
+   that would produce an equivalent :class:`ast.AST` object if parsed
+   back with :func:`ast.parse`.
+
+   .. warning::
+      The produced code string will not necessarily be equal to the original
+      code that generated the :class:`ast.AST` object.
+
+   .. versionadded:: 3.9
+
+
 .. function:: literal_eval(node_or_string)
 
    Safely evaluate an expression node or a string containing a Python literal or
@@ -180,6 +197,9 @@ and classes for traversing abstract syntax trees:
 
    .. versionchanged:: 3.2
       Now allows bytes and set literals.
+
+   .. versionchanged:: 3.9
+      Now supports creating empty sets with ``'set()'``.
 
 
 .. function:: get_docstring(node, clean=True)
@@ -300,7 +320,7 @@ and classes for traversing abstract syntax trees:
       class RewriteName(NodeTransformer):
 
           def visit_Name(self, node):
-              return copy_location(Subscript(
+              return Subscript(
                   value=Name(id='data', ctx=Load()),
                   slice=Index(value=Constant(value=node.id)),
                   ctx=node.ctx
@@ -313,6 +333,14 @@ and classes for traversing abstract syntax trees:
    For nodes that were part of a collection of statements (that applies to all
    statement nodes), the visitor may also return a list of nodes rather than
    just a single node.
+
+   If :class:`NodeTransformer` introduces new nodes (that weren't part of
+   original tree) without giving them location information (such as
+   :attr:`lineno`), :func:`fix_missing_locations` should be called with
+   the new sub-tree to recalculate the location information::
+
+      tree = ast.parse('foo', mode='eval')
+      new_tree = fix_missing_locations(RewriteName().visit(tree))
 
    Usually you use the transformer like this::
 
@@ -368,9 +396,18 @@ The following options are accepted:
    Specify what kind of code must be compiled, like the *mode* argument
    in :func:`parse`.
 
+.. cmdoption:: --no-type-comments
+
+   Don't parse type comments.
+
 .. cmdoption:: -a, --include-attributes
 
    Include attributes such as line numbers and column offsets.
+
+.. cmdoption:: -i <indent>
+               --indent <indent>
+
+   Indentation of nodes in AST (number of spaces).
 
 If :file:`infile` is specified its contents are parsed to AST and dumped
 to stdout.  Otherwise, the content is read from stdin.

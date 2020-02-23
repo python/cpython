@@ -2121,17 +2121,67 @@ Q. Is the CPython implementation fast for large numbers?
 A. Yes.  In the CPython and PyPy3 implementations, the C/CFFI versions of
 the decimal module integrate the high speed `libmpdec
 <https://www.bytereef.org/mpdecimal/doc/libmpdec/index.html>`_ library for
-arbitrary precision correctly-rounded decimal floating point arithmetic.
+arbitrary precision correctly-rounded decimal floating point arithmetic [#]_.
 ``libmpdec`` uses `Karatsuba multiplication
 <https://en.wikipedia.org/wiki/Karatsuba_algorithm>`_
 for medium-sized numbers and the `Number Theoretic Transform
 <https://en.wikipedia.org/wiki/Discrete_Fourier_transform_(general)#Number-theoretic_transform>`_
-for very large numbers.  However, to realize this performance gain, the
-context needs to be set for unrounded calculations.
+for very large numbers.
 
-    >>> c = getcontext()
-    >>> c.prec = MAX_PREC
-    >>> c.Emax = MAX_EMAX
-    >>> c.Emin = MIN_EMIN
+The context must be adapted for exact arbitrary precision arithmetic. :attr:`Emin`
+and :attr:`Emax` should always be set to the maximum values, :attr:`clamp`
+should always be 0 (the default).  Setting :attr:`prec` requires some care.
 
-.. versionadded:: 3.3
+The easiest approach for trying out bignum arithmetic is to use the maximum
+value for :attr:`prec` as well [#]_::
+
+    >>> setcontext(Context(prec=MAX_PREC, Emax=MAX_EMAX, Emin=MIN_EMIN))
+    >>> x = Decimal(2) ** 256
+    >>> x / 128
+    Decimal('904625697166532776746648320380374280103671755200316906558262375061821325312')
+
+
+For inexact results, :attr:`MAX_PREC` is far too large on 64-bit platforms and
+the available memory will be insufficient::
+
+   >>> Decimal(1) / 3
+   Traceback (most recent call last):
+     File "<stdin>", line 1, in <module>
+   MemoryError
+
+On systems with overallocation (e.g. Linux), a more sophisticated approach is to
+adjust :attr:`prec` to the amount of available RAM.  Suppose that you have 8GB of
+RAM and expect 10 simultaneous operands using a maximum of 500MB each::
+
+   >>> import sys
+   >>>
+   >>> # Maximum number of digits for a single operand using 500MB in 8 byte words
+   >>> # with 19 (9 for the 32-bit version) digits per word:
+   >>> maxdigits = 19 * ((500 * 1024**2) // 8)
+   >>>
+   >>> # Check that this works:
+   >>> c = Context(prec=maxdigits, Emax=MAX_EMAX, Emin=MIN_EMIN)
+   >>> c.traps[Inexact] = True
+   >>> setcontext(c)
+   >>>
+   >>> # Fill the available precision with nines:
+   >>> x = Decimal(0).logical_invert() * 9
+   >>> sys.getsizeof(x)
+   524288112
+   >>> x + 2
+   Traceback (most recent call last):
+     File "<stdin>", line 1, in <module>
+     decimal.Inexact: [<class 'decimal.Inexact'>]
+
+In general (and especially on systems without overallocation), it is recommended
+to estimate even tighter bounds and set the :attr:`Inexact` trap if all calculations
+are expected to be exact.
+
+
+.. [#]
+    .. versionadded:: 3.3
+
+.. [#]
+    .. versionchanged:: 3.9
+       This approach now works for all exact results except for non-integer powers.
+       Also backported to 3.7 and 3.8.

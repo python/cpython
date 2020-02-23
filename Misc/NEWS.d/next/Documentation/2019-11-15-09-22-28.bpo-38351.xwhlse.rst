@@ -1,1 +1,0 @@
-Modernize :mod:`email` examples from %-formatting to f-strings.

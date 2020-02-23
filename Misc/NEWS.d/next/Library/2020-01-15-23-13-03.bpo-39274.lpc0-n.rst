@@ -1,0 +1,1 @@
+``bool(fraction.Fraction)`` now returns a boolean even if (numerator != 0) does not return a boolean (ex: numpy number).

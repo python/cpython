@@ -20,6 +20,16 @@ jobs:
         Artifact: appxstore
         Suffix: -store
         Upload: true
+      arm64:
+        Name: arm64
+        Artifact: appx
+        Suffix:
+        ShouldSign: true
+      arm64_store:
+        Name: arm64
+        Artifact: appxstore
+        Suffix: -store
+        Upload: true
 
   steps:
   - template: ./checkout.yml

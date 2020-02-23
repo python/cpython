@@ -1,0 +1,1 @@
+Remove unused, undocumented argument ``getters`` from :func:`uuid.getnode`

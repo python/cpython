@@ -1,2 +1,0 @@
-:func:`os.sched_setaffinity` now correctly handles errors that arise during iteration over its ``mask`` argument.
-Patch by Brandt Bucher.

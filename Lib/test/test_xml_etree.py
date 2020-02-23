@@ -1668,6 +1668,17 @@ XINCLUDE["default.xml"] = """\
 </document>
 """.format(html.escape(SIMPLE_XMLFILE, True))
 
+XINCLUDE["include_c1_repeated.xml"] = """\
+<?xml version='1.0'?>
+<document xmlns:xi="http://www.w3.org/2001/XInclude">
+  <p>The following is the source code of Recursive1.xml:</p>
+  <xi:include href="C1.xml"/>
+  <xi:include href="C1.xml"/>
+  <xi:include href="C1.xml"/>
+  <xi:include href="C1.xml"/>
+</document>
+"""
+
 #
 # badly formatted xi:include tags
 
@@ -1687,6 +1698,31 @@ XINCLUDE_BAD["B2.xml"] = """\
     <xi:fallback></xi:fallback>
 </div>
 """
+
+XINCLUDE["Recursive1.xml"] = """\
+<?xml version='1.0'?>
+<document xmlns:xi="http://www.w3.org/2001/XInclude">
+  <p>The following is the source code of Recursive2.xml:</p>
+  <xi:include href="Recursive2.xml"/>
+</document>
+"""
+
+XINCLUDE["Recursive2.xml"] = """\
+<?xml version='1.0'?>
+<document xmlns:xi="http://www.w3.org/2001/XInclude">
+  <p>The following is the source code of Recursive3.xml:</p>
+  <xi:include href="Recursive3.xml"/>
+</document>
+"""
+
+XINCLUDE["Recursive3.xml"] = """\
+<?xml version='1.0'?>
+<document xmlns:xi="http://www.w3.org/2001/XInclude">
+  <p>The following is the source code of Recursive1.xml:</p>
+  <xi:include href="Recursive1.xml"/>
+</document>
+"""
+
 
 class XIncludeTest(unittest.TestCase):
 
@@ -1789,6 +1825,13 @@ class XIncludeTest(unittest.TestCase):
             '  </ns0:include>\n'
             '</div>') # C5
 
+    def test_xinclude_repeated(self):
+        from xml.etree import ElementInclude
+
+        document = self.xinclude_loader("include_c1_repeated.xml")
+        ElementInclude.include(document, self.xinclude_loader)
+        self.assertEqual(1+4*2, len(document.findall(".//p")))
+
     def test_xinclude_failures(self):
         from xml.etree import ElementInclude
 
@@ -1820,6 +1863,45 @@ class XIncludeTest(unittest.TestCase):
         self.assertEqual(str(cm.exception),
                 "xi:fallback tag must be child of xi:include "
                 "('{http://www.w3.org/2001/XInclude}fallback')")
+
+        # Test infinitely recursive includes.
+        document = self.xinclude_loader("Recursive1.xml")
+        with self.assertRaises(ElementInclude.FatalIncludeError) as cm:
+            ElementInclude.include(document, self.xinclude_loader)
+        self.assertEqual(str(cm.exception),
+                "recursive include of Recursive2.xml")
+
+        # Test 'max_depth' limitation.
+        document = self.xinclude_loader("Recursive1.xml")
+        with self.assertRaises(ElementInclude.FatalIncludeError) as cm:
+            ElementInclude.include(document, self.xinclude_loader, max_depth=None)
+        self.assertEqual(str(cm.exception),
+                "recursive include of Recursive2.xml")
+
+        document = self.xinclude_loader("Recursive1.xml")
+        with self.assertRaises(ElementInclude.LimitedRecursiveIncludeError) as cm:
+            ElementInclude.include(document, self.xinclude_loader, max_depth=0)
+        self.assertEqual(str(cm.exception),
+                "maximum xinclude depth reached when including file Recursive2.xml")
+
+        document = self.xinclude_loader("Recursive1.xml")
+        with self.assertRaises(ElementInclude.LimitedRecursiveIncludeError) as cm:
+            ElementInclude.include(document, self.xinclude_loader, max_depth=1)
+        self.assertEqual(str(cm.exception),
+                "maximum xinclude depth reached when including file Recursive3.xml")
+
+        document = self.xinclude_loader("Recursive1.xml")
+        with self.assertRaises(ElementInclude.LimitedRecursiveIncludeError) as cm:
+            ElementInclude.include(document, self.xinclude_loader, max_depth=2)
+        self.assertEqual(str(cm.exception),
+                "maximum xinclude depth reached when including file Recursive1.xml")
+
+        document = self.xinclude_loader("Recursive1.xml")
+        with self.assertRaises(ElementInclude.FatalIncludeError) as cm:
+            ElementInclude.include(document, self.xinclude_loader, max_depth=3)
+        self.assertEqual(str(cm.exception),
+                "recursive include of Recursive2.xml")
+
 
 # --------------------------------------------------------------------
 # reported bugs

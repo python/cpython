@@ -1,0 +1,1 @@
+Fix a reference cycle in the C Pickler that was preventing the garbage collection of deleted, pickled objects.

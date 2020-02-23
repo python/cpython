@@ -1,2 +1,0 @@
-Deprecate opening :class:`~gzip.GzipFile` for writing implicitly.  Always
-specify the *mode* argument for writing.

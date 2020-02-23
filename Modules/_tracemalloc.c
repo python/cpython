@@ -1,4 +1,5 @@
 #include "Python.h"
+#include "pycore_pymem.h"
 #include "pycore_traceback.h"
 #include "hashtable.h"
 #include "frameobject.h"
@@ -1656,8 +1657,10 @@ PyInit__tracemalloc(void)
     if (m == NULL)
         return NULL;
 
-    if (tracemalloc_init() < 0)
+    if (tracemalloc_init() < 0) {
+        Py_DECREF(m);
         return NULL;
+    }
 
     return m;
 }

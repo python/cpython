@@ -969,8 +969,6 @@ class TestBufferProtocol(unittest.TestCase):
             m.tobytes()  # Releasing mm didn't release m
 
     def verify_getbuf(self, orig_ex, ex, req, sliced=False):
-        def simple_fmt(ex):
-            return ex.format == '' or ex.format == 'B'
         def match(req, flag):
             return ((req&flag) == flag)
 

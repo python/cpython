@@ -1,2 +1,0 @@
-The global variable :c:data:`PyStructSequence_UnnamedField` is now a
-constant and refers to a constant string.

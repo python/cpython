@@ -1,0 +1,1 @@
+Implement PEP-489 algorithm for non-ascii "PyInit\_..." symbol names in distutils to make it export the correct init symbol also on Windows.

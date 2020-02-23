@@ -145,7 +145,7 @@ jobs:
         buildOpt: '-p x64'
         testRunTitle: '$(Build.SourceBranchName)-win64'
         testRunPlatform: win64
-    maxParallel: 2
+    maxParallel: 4
 
   steps:
   - template: ./windows-steps.yml

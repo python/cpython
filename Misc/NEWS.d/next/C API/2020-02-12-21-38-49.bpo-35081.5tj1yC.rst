@@ -1,0 +1,3 @@
+Move the ``bytes_methods.h`` header file to the internal C API as
+``pycore_bytes_methods.h``: it only contains private symbols (prefixed by
+``_Py``), except of the ``PyDoc_STRVAR_shared()`` macro.

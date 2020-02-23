@@ -1,6 +1,5 @@
 language: c
 dist: xenial
-group: beta
 
 # To cache doc-building dependencies and C compiler output.
 cache:

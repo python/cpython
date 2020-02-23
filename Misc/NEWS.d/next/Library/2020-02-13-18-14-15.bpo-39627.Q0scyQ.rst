@@ -1,0 +1,1 @@
+Fixed TypedDict totality check for inherited keys.

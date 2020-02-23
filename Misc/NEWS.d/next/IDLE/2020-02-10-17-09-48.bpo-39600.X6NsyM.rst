@@ -1,0 +1,1 @@
+In the font configuration window, remove duplicated font names.

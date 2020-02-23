@@ -1,0 +1,3 @@
+Omit ``devmajor`` and ``devminor`` fields for non-device files in
+:mod:`tarfile` archives, enabling bit-for-bit compatibility with GNU
+``tar(1)``.

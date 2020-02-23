@@ -792,6 +792,9 @@ class _BufferedIOMixin(BufferedIOBase):
         return pos
 
     def truncate(self, pos=None):
+        self._checkClosed()
+        self._checkWritable()
+
         # Flush the stream.  We're mixing buffered I/O with lower-level I/O,
         # and a flush may be necessary to synch both views of the current
         # file state.
