@@ -136,6 +136,7 @@ ConfigParser -- responsible for parsing a list of
         Write the configuration state in .ini format. If
         `space_around_delimiters' is True (the default), delimiters
         between keys and values are surrounded by spaces.
+
         If `indent' is empty (the default), the keys won't be indented.
 """
 
