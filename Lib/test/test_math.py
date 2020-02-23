@@ -705,33 +705,32 @@ class MathTests(unittest.TestCase):
         self.assertEqual(gcd(84, -120), 12)
         self.assertEqual(gcd(1216342683557601535506311712,
                              436522681849110124616458784), 32)
-        c = 652560
+
         x = 434610456570399902378880679233098819019853229470286994367836600566
         y = 1064502245825115327754847244914921553977
-        a = x * c
-        b = y * c
-        self.assertEqual(gcd(a, b), c)
-        self.assertEqual(gcd(b, a), c)
-        self.assertEqual(gcd(-a, b), c)
-        self.assertEqual(gcd(b, -a), c)
-        self.assertEqual(gcd(a, -b), c)
-        self.assertEqual(gcd(-b, a), c)
-        self.assertEqual(gcd(-a, -b), c)
-        self.assertEqual(gcd(-b, -a), c)
-        c = 576559230871654959816130551884856912003141446781646602790216406874
-        a = x * c
-        b = y * c
-        self.assertEqual(gcd(a, b), c)
-        self.assertEqual(gcd(b, a), c)
-        self.assertEqual(gcd(-a, b), c)
-        self.assertEqual(gcd(b, -a), c)
-        self.assertEqual(gcd(a, -b), c)
-        self.assertEqual(gcd(-b, a), c)
-        self.assertEqual(gcd(-a, -b), c)
-        self.assertEqual(gcd(-b, -a), c)
+        for c in (652560,
+                  576559230871654959816130551884856912003141446781646602790216406874):
+            a = x * c
+            b = y * c
+            self.assertEqual(gcd(a, b), c)
+            self.assertEqual(gcd(b, a), c)
+            self.assertEqual(gcd(-a, b), c)
+            self.assertEqual(gcd(b, -a), c)
+            self.assertEqual(gcd(a, -b), c)
+            self.assertEqual(gcd(-b, a), c)
+            self.assertEqual(gcd(-a, -b), c)
+            self.assertEqual(gcd(-b, -a), c)
 
+        self.assertEqual(gcd(), 0)
+        self.assertEqual(gcd(120), 120)
+        self.assertEqual(gcd(-120), 120)
+        self.assertEqual(gcd(120, 84, 102), 6)
+        self.assertEqual(gcd(120, 1, 84), 1)
+
+        self.assertRaises(TypeError, gcd, 120.0)
         self.assertRaises(TypeError, gcd, 120.0, 84)
         self.assertRaises(TypeError, gcd, 120, 84.0)
+        self.assertRaises(TypeError, gcd, 120, 1, 84.0)
         self.assertEqual(gcd(MyIndexable(120), MyIndexable(84)), 12)
 
     def testHypot(self):
@@ -989,9 +988,9 @@ class MathTests(unittest.TestCase):
         self.assertEqual(lcm(1216342683557601535506311712,
                              436522681849110124616458784),
                              16592536571065866494401400422922201534178938447014944)
+
         x = 43461045657039990237
         y = 10645022458251153277
-
         for c in (652560,
                   57655923087165495981):
             a = x * c
@@ -1005,9 +1004,18 @@ class MathTests(unittest.TestCase):
             self.assertEqual(lcm(-b, a), d)
             self.assertEqual(lcm(-a, -b), d)
             self.assertEqual(lcm(-b, -a), d)
-        self.assertEqual(lcm(MyIndexable(120), MyIndexable(84)), 840)
+
+        self.assertEqual(lcm(), 1)
+        self.assertEqual(lcm(120), 120)
+        self.assertEqual(lcm(-120), 120)
+        self.assertEqual(lcm(120, 84, 102), 14280)
+        self.assertEqual(lcm(120, 0, 84), 0)
+
+        self.assertRaises(TypeError, lcm, 120.0)
         self.assertRaises(TypeError, lcm, 120.0, 84)
         self.assertRaises(TypeError, lcm, 120, 84.0)
+        self.assertRaises(TypeError, lcm, 120, 0, 84.0)
+        self.assertEqual(lcm(MyIndexable(120), MyIndexable(84)), 840)
 
     def testLdexp(self):
         self.assertRaises(TypeError, math.ldexp)
