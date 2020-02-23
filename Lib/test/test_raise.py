@@ -77,14 +77,24 @@ class TestRaise(unittest.TestCase):
                 nested_reraise()
         self.assertRaises(TypeError, reraise)
 
-    def test_raise_from_None(self):
+    def test_raise_from_None1(self):
+        try:
+            raise TypeError("foo")
+        except:
+            try:
+                raise ValueError() from None
+            except ValueError as e:
+                self.assertIsInstance(e.__context__, TypeError)
+                self.assertIsNone(e.__cause__)
+
+    def test_raise_from_None2(self):
         try:
             try:
                 raise TypeError("foo")
             except:
                 raise ValueError() from None
         except ValueError as e:
-            self.assertIsInstance(e.__context__, TypeError)
+            self.assertIsNone(e.__context__)
             self.assertIsNone(e.__cause__)
 
     def test_with_reraise1(self):
@@ -150,7 +160,27 @@ class TestRaise(unittest.TestCase):
 
 class TestCause(unittest.TestCase):
 
-    def testCauseSyntax(self):
+    def testCauseSyntax1(self):
+        try:
+            try:
+                raise TypeError
+            except Exception:
+                try:
+                    raise ValueError from None
+                except ValueError as exc:
+                    self.assertIsNone(exc.__cause__)
+                    self.assertIsInstance(exc.__context__, TypeError)
+                    self.assertTrue(exc.__suppress_context__)
+                    exc.__suppress_context__ = False
+                    raise exc
+        except ValueError as exc:
+            e = exc
+
+        self.assertIsNone(e.__cause__)
+        self.assertFalse(e.__suppress_context__)
+        self.assertIsInstance(e.__context__, TypeError)
+
+    def testCauseSyntax2(self):
         try:
             try:
                 try:
@@ -159,15 +189,105 @@ class TestCause(unittest.TestCase):
                     raise ValueError from None
             except ValueError as exc:
                 self.assertIsNone(exc.__cause__)
-                self.assertTrue(exc.__suppress_context__)
-                exc.__suppress_context__ = False
+                self.assertIsNone(exc.__context__)
+                self.assertFalse(exc.__suppress_context__)
                 raise exc
         except ValueError as exc:
             e = exc
 
         self.assertIsNone(e.__cause__)
         self.assertFalse(e.__suppress_context__)
+        self.assertIsNone(e.__context__)
+
+    def testCauseSyntax3(self):
+        try:
+            try:
+                1/0
+            except:
+                try:
+                    raise TypeError
+                except Exception:
+                    try:
+                        raise ValueError from None
+                    except ValueError as exc:
+                        self.assertIsNone(exc.__cause__)
+                        self.assertIsInstance(exc.__context__, TypeError)
+                        self.assertTrue(exc.__suppress_context__)
+                        exc.__suppress_context__ = False
+                        raise exc
+        except ValueError as exc:
+            e = exc
+
+        self.assertIsNone(e.__cause__)
+        self.assertFalse(e.__suppress_context__)
         self.assertIsInstance(e.__context__, TypeError)
+
+    def testCauseSyntax4(self):
+        try:
+            try:
+                try:
+                    1/0
+                except:
+                    try:
+                        raise TypeError
+                    except Exception:
+                        raise ValueError from None
+            except ValueError as exc:
+                self.assertIsNone(exc.__cause__)
+                self.assertIsInstance(exc.__context__, ZeroDivisionError)
+                self.assertFalse(exc.__suppress_context__)
+                raise exc
+        except ValueError as exc:
+            e = exc
+
+        self.assertIsNone(e.__cause__)
+        self.assertFalse(e.__suppress_context__)
+        self.assertIsInstance(e.__context__, ZeroDivisionError)
+
+    def testCauseSyntax5(self):
+        try:
+            try:
+                1/0
+            except:
+                try:
+                    raise TypeError
+                except Exception:
+                    try:
+                        raise ValueError from None
+                    except ValueError as exc:
+                        self.assertIsNone(exc.__cause__)
+                        self.assertIsInstance(exc.__context__, TypeError)
+                        self.assertTrue(exc.__suppress_context__)
+                        raise exc
+        except ValueError as exc:
+            e = exc
+
+        self.assertIsNone(e.__cause__)
+        self.assertFalse(e.__suppress_context__)
+        self.assertIsInstance(e.__context__, ZeroDivisionError)
+
+    def testCauseSyntax6(self):
+        try:
+            try:
+                1/0
+            except:
+                try:
+                    try:
+                        raise TypeError
+                    except Exception:
+                        raise ValueError from None
+                except ValueError as exc:
+                    self.assertIsNone(exc.__cause__)
+                    self.assertIsInstance(exc.__context__, ZeroDivisionError)
+                    self.assertFalse(exc.__suppress_context__)
+                    exc.__suppress_context__ = True
+                    raise exc
+        except ValueError as exc:
+            e = exc
+
+        self.assertIsNone(e.__cause__)
+        self.assertFalse(e.__suppress_context__)
+        self.assertIsNone(e.__context__)
 
     def test_invalid_cause(self):
         try:
