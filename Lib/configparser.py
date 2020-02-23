@@ -138,6 +138,7 @@ ConfigParser -- responsible for parsing a list of
         between keys and values are surrounded by spaces.
 
         If `indent' is empty (the default), the keys won't be indented.
+        When `indent' is set, each line will be indented with the given value.
 """
 
 from collections.abc import MutableMapping
@@ -911,6 +912,7 @@ class RawConfigParser(MutableMapping):
         between keys and values are surrounded by spaces.
 
         If `indent' is empty (the default), the keys won't be indented.
+        When `indent' is set, each line will be indented with the given value.
         """
         if space_around_delimiters:
             d = " {} ".format(self._delimiters[0])
