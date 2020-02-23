@@ -129,7 +129,7 @@ Number-theoretic and representation functions
 .. function:: gcd(*integers)
 
    Return the greatest common divisor of the specified integer arguments.
-   If any of arguments is nonzero, then the returned value is the largest
+   If any of the arguments is nonzero, then the returned value is the largest
    positive integer that is a divisor af all arguments.  If all arguments
    are zero, then the returned value is ``0``.  ``gcd()`` without arguments
    returns ``0``.
@@ -137,7 +137,7 @@ Number-theoretic and representation functions
    .. versionadded:: 3.5
 
    .. versionchanged:: 3.9
-      Added support of arbitrary number of arguments. Formerly, only two
+      Added support for an arbitrary number of arguments. Formerly, only two
       arguments were supported.
 
 
@@ -210,7 +210,7 @@ Number-theoretic and representation functions
 
    Return the least common multiple of the specified integer arguments.
    If all arguments are nonzero, then the returned value is the smallest
-   positive integer that is a multiple of all arguments.  If any of arguments
+   positive integer that is a multiple of all arguments.  If any of the arguments
    is zero, then the returned value is ``0``.  ``lcm()`` without arguments
    returns ``1``.
 
