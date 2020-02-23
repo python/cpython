@@ -365,6 +365,9 @@ class _PlistWriter(_DumbXMLWriter):
         elif isinstance(value, (tuple, list)):
             self.write_array(value)
 
+        elif isinstance(value, plist.UID):
+            self.write_dict({"CF$UID": int(value.data)})
+
         else:
             raise TypeError("unsupported type: %s" % type(value))
 
