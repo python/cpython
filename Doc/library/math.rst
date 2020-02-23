@@ -126,23 +126,19 @@ Number-theoretic and representation functions
    <https://code.activestate.com/recipes/393090/>`_\.
 
 
-.. function:: gcd(a, b)
+.. function:: gcd(*integers)
 
-   Return the greatest common divisor of the integers *a* and *b*.  If either
-   *a* or *b* is nonzero, then the value of ``gcd(a, b)`` is the largest
-   positive integer that divides both *a* and *b*.  ``gcd(0, 0)`` returns
-   ``0``.
+   Return the greatest common divisor of the specified integer arguments.
+   If any of the arguments is nonzero, then the returned value is the largest
+   positive integer that is a divisor af all arguments.  If all arguments
+   are zero, then the returned value is ``0``.  ``gcd()`` without arguments
+   returns ``0``.
 
    .. versionadded:: 3.5
 
-
-.. function:: lcm(a, b)
-
-   Return the least common multiple of integers *a* and *b*.  The value of
-   ``lcm(a, b)`` is the smallest nonnegative integer that is a multiple of
-   both *a* and *b*.  If either *a* or *b* is zero then ``lcm(a, b)`` is zero.
-
-   .. versionadded:: 3.9
+   .. versionchanged:: 3.9
+      Added support for an arbitrary number of arguments. Formerly, only two
+      arguments were supported.
 
 
 .. function:: isclose(a, b, *, rel_tol=1e-09, abs_tol=0.0)
@@ -208,6 +204,17 @@ Number-theoretic and representation functions
    ``a = 1 + isqrt(n - 1)``.
 
    .. versionadded:: 3.8
+
+
+.. function:: lcm(*integers)
+
+   Return the least common multiple of the specified integer arguments.
+   If all arguments are nonzero, then the returned value is the smallest
+   positive integer that is a multiple of all arguments.  If any of the arguments
+   is zero, then the returned value is ``0``.  ``lcm()`` without arguments
+   returns ``1``.
+
+   .. versionadded:: 3.9
 
 
 .. function:: ldexp(x, i)
