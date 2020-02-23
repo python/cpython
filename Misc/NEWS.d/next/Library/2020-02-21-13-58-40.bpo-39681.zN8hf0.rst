@@ -1,0 +1,2 @@
+Fix a regression where the C pickle module wouldn't allow unpickling from a
+file-like object that doesn't expose a readinto() method.
