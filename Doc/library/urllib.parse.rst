@@ -37,11 +37,12 @@ URL Parsing
 The URL parsing functions focus on splitting a URL string into its components,
 or on combining URL components into a URL string.
 
-.. function:: urlparse(urlstring, scheme='', allow_fragments=True)
+.. function:: urlparse(url, scheme='', allow_fragments=True)
 
    Parse a URL into six components, returning a 6-item :term:`named tuple`.  This
    corresponds to the general structure of a URL:
    ``scheme://netloc/path;parameters?query#fragment``.
+
    Each tuple item is a string, possibly empty. The components are not broken up
    into smaller parts (for example, the network location is a single string), and %
    escapes are not expanded. The delimiters as shown above are not part of the
@@ -81,7 +82,7 @@ or on combining URL components into a URL string.
 
    The *scheme* argument gives the default addressing scheme, to be
    used only if the URL does not specify one.  It should be the same type
-   (text or bytes) as *urlstring*, except that the default value ``''`` is
+   (text or bytes) as *url*, except that the default value ``''`` is
    always allowed, and is automatically converted to ``b''`` if appropriate.
 
    If the *allow_fragments* argument is false, fragment identifiers are not
@@ -245,7 +246,7 @@ or on combining URL components into a URL string.
    states that these are equivalent).
 
 
-.. function:: urlsplit(urlstring, scheme='', allow_fragments=True)
+.. function:: urlsplit(url, scheme='', allow_fragments=True)
 
    This is similar to :func:`urlparse`, but does not split the params from the URL.
    This should generally be used instead of :func:`urlparse` if the more recent URL
