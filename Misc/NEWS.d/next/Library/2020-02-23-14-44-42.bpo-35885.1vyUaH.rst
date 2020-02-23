@@ -1,0 +1,2 @@
+Add a new parameter ``indent`` to :meth:`configparser.write()`.
+Contributed by Ido Michael.
