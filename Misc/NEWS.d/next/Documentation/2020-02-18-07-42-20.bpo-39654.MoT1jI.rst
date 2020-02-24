@@ -1,1 +1,2 @@
-Remove old references to class browser and add explain to readmodule in pyclbr by Hakan Çelik.
+In pyclbr doc, update 'class' to 'module' where appropriate and add readmodule comment.
+Patch by Hakan Çelik.
