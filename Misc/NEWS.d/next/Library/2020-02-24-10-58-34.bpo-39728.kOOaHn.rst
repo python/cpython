@@ -1,0 +1,1 @@
+Instantiating enum with invalid value results in ValueError twice
