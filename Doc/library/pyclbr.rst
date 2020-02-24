@@ -29,8 +29,8 @@ modules.
    *path* is a sequence of directory paths prepended to ``sys.path``,
    which is used to locate the module source code.
 
-  This function is a filtered version kept for the backwards compatibility which
-  is the original interface, before Functions were added.
+   This function is the original interface and is only kept for back
+   compatibility.  It returns a filtered version of the following.
 
 
 .. function:: readmodule_ex(module, path=None)
