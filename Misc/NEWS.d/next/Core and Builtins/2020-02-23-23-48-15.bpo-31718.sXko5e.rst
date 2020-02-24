@@ -1,0 +1,3 @@
+Raise :exc:`ValueError` instead of :exc:`SystemError` when methods of
+uninitialized :class:`io.IncrementalNewlineDecoder` objects are called.
+Patch by Oren Milman.
