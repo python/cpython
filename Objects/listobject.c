@@ -2637,13 +2637,15 @@ list_richcompare(PyObject *v, PyObject *w, int op)
     for (i = 0; i < Py_SIZE(vl) && i < Py_SIZE(wl); i++) {
         PyObject *vitem = vl->ob_item[i];
         PyObject *witem = wl->ob_item[i];
+        int k;
+
         if (vitem == witem) {
             continue;
         }
 
         Py_INCREF(vitem);
         Py_INCREF(witem);
-        int k = PyObject_RichCompareBool(vitem, witem, Py_EQ);
+        k = PyObject_RichCompareBool(vitem, witem, Py_EQ);
         Py_DECREF(vitem);
         Py_DECREF(witem);
         if (k < 0)
