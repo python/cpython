@@ -175,6 +175,7 @@ class _PlistParser:
         self.stack = []
         self.current_key = None
         self.root = None
+        self.previous_dict_key = None
         self._dict_type = dict_type
 
     def parse(self, fileobj):
@@ -231,6 +232,7 @@ class _PlistParser:
 
     def begin_dict(self, attrs):
         d = self._dict_type()
+        self.previous_dict_key = self.current_key
         self.add_object(d)
         self.stack.append(d)
 
@@ -238,7 +240,17 @@ class _PlistParser:
         if self.current_key:
             raise ValueError("missing value for key '%s' at line %d" %
                              (self.current_key,self.parser.CurrentLineNumber))
-        self.stack.pop()
+        d = self.stack.pop()
+        # Unmarshal CF$UID to UID and replace the dict node
+        if len(d) == 1 and "CF$UID" in d and isinstance(d["CF$UID"], int):
+            uid = UID(d["CF$UID"])
+            if self.previous_dict_key:
+                stack[-1][self.previous_dict_key] = uid
+            elif not self.stack:
+                self.root = uid
+            else:
+                assert isinstance(self.stack[-1], type([]))
+                self.stack[-1][-1] = uid
 
     def end_key(self):
         if self.current_key or not isinstance(self.stack[-1], dict):
