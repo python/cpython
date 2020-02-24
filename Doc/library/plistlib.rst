@@ -42,7 +42,8 @@ or :class:`datetime.datetime` objects.
    by NSKeyedArchiver and NSKeyedUnarchiver.
 
 .. versionchanged:: 3.9
-   Old API removed.
+   Old API removed.  Support added for reading and writing :class:`UID` tokens in XML
+   plists.
 
 .. seealso::
 
