@@ -1776,19 +1776,12 @@ class TestEnum(unittest.TestCase):
                     # trigger not found
                     return None
         self.assertIs(Color('three'), Color.blue)
-        self.assertRaises(ValueError, Color, 7)
-        try:
+        with self.assertRaises(ValueError):
+            Color(7)
+        with self.assertRaises(TypeError):
             Color('bad return')
-        except TypeError as exc:
-            self.assertTrue(isinstance(exc.__context__, ValueError))
-        else:
-            raise Exception('Exception not raised.')
-        try:
+        with self.assertRaises(ZeroDivisionError):
             Color('error out')
-        except ZeroDivisionError as exc:
-            self.assertTrue(isinstance(exc.__context__, ValueError))
-        else:
-            raise Exception('Exception not raised.')
 
     def test_multiple_mixin(self):
         class MaxMixin:

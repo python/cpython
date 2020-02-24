@@ -585,7 +585,6 @@ class Enum(metaclass=EnumMeta):
                         'error in %s._missing_: returned %r instead of None or a valid member'
                         % (cls.__name__, result)
                         )
-            exc.__context__ = ve_exc
             raise exc
 
     def _generate_next_value_(name, start, count, last_values):
