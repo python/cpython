@@ -245,7 +245,7 @@ class _PlistParser:
         if len(d) == 1 and "CF$UID" in d and isinstance(d["CF$UID"], int):
             uid = UID(d["CF$UID"])
             if self.previous_dict_key:
-                stack[-1][self.previous_dict_key] = uid
+                self.stack[-1][self.previous_dict_key] = uid
             elif not self.stack:
                 self.root = uid
             else:
