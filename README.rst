@@ -1,5 +1,5 @@
-This is Python version 3.8.2rc2
-===============================
+This is Python version 3.8.2
+============================
 
 .. image:: https://travis-ci.org/python/cpython.svg?branch=3.8
    :alt: CPython build status on Travis CI

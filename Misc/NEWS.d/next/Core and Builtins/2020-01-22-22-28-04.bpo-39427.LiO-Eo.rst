@@ -1,2 +1,0 @@
-Document all possibilities for the ``-X`` options in the command line help
-section. Patch by Pablo Galindo.
