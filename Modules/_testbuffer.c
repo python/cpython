@@ -2050,7 +2050,7 @@ static PyObject *
 ndarray_get_format(NDArrayObject *self, void *closure)
 {
     Py_buffer *base = &self->head->base;
-    char *fmt = base->format ? base->format : "";
+    const char *fmt = base->format ? base->format : "";
     return PyUnicode_FromString(fmt);
 }
 
