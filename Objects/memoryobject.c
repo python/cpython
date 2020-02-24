@@ -1,4 +1,14 @@
-/* Memoryview object implementation */
+/*
+ * Memoryview object implementation
+ * --------------------------------
+ *
+ *   This implementation is a complete rewrite contributed by Stefan Krah in
+ *   Python 3.3.  Substantial credit goes to Antoine Pitrou (who had already
+ *   fortified and rewritten the previous implementation) and Nick Coghlan
+ *   (who came up with the idea of the ManagedBuffer) for analyzing the complex
+ *   ownership rules.
+ *
+ */
 
 #include "Python.h"
 #include "pycore_object.h"
