@@ -533,7 +533,7 @@ class TestPlistlib(unittest.TestCase):
             'uid63': UID(2 ** 63)
         }
         self.assertEqual(plistlib.loads(plistlib.dumps(dict_data, fmt=plistlib.FMT_BINARY)), dict_data)
-        self.assertEqual(plistlib.loads(plistlib.dumps(dict_data, fmt=plistlib.FMT_XML)), data)
+        self.assertEqual(plistlib.loads(plistlib.dumps(dict_data, fmt=plistlib.FMT_XML)), dict_data)
 
     def test_uid_data(self):
         uid = UID(1)
