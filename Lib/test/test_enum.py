@@ -1778,10 +1778,18 @@ class TestEnum(unittest.TestCase):
         self.assertIs(Color('three'), Color.blue)
         with self.assertRaises(ValueError):
             Color(7)
-        with self.assertRaises(TypeError):
+        try:
             Color('bad return')
-        with self.assertRaises(ZeroDivisionError):
+        except TypeError as exc:
+            self.assertTrue(isinstance(exc.__context__, ValueError))
+        else:
+            raise Exception('Exception not raised.')
+        try:
             Color('error out')
+        except ZeroDivisionError as exc:
+            self.assertTrue(not exc.__context__)
+        else:
+            raise Exception('Exception not raised.')
 
     def test_multiple_mixin(self):
         class MaxMixin:
