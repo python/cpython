@@ -2643,8 +2643,7 @@ list_richcompare(PyObject *v, PyObject *w, int op)
 
         Py_INCREF(vitem);
         Py_INCREF(witem);
-        int k = PyObject_RichCompareBool(vl->ob_item[i],
-                                         wl->ob_item[i], Py_EQ);
+        int k = PyObject_RichCompareBool(vitem, witem, Py_EQ);
         Py_DECREF(vitem);
         Py_DECREF(witem);
         if (k < 0)
