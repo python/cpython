@@ -48,6 +48,8 @@ or :class:`datetime.datetime` objects.
 
    `PList manual page <https://developer.apple.com/library/archive/documentation/Cocoa/Conceptual/PropertyLists/>`_
       Apple's documentation of the file format.
+   `Property list <https://en.wikipedia.org/wiki/Property_list>`_
+      Wikipedia's description of the format and archiers.
 
 
 This module defines the following functions:
@@ -130,7 +132,7 @@ The following classes are available:
 .. class:: UID(data)
 
    Wraps an :class:`int`.  This is used when reading or writing NSKeyedArchiver
-   encoded data, which contains UID (see PList manual).
+   encoded data, which contains UID (see Wikipedia).
 
    It has one attribute, :attr:`data`, which can be used to retrieve the int value
    of the UID.  :attr:`data` must be in the range ``0 <= data < 2**64``.
