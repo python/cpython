@@ -1,0 +1,1 @@
+Enable use of :func:`os.chroot` on HP-UX systems.

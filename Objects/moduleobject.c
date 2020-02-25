@@ -738,7 +738,7 @@ module_getattro(PyModuleObject *m, PyObject *name)
         _Py_IDENTIFIER(__getattr__);
         getattr = _PyDict_GetItemId(m->md_dict, &PyId___getattr__);
         if (getattr) {
-            return _PyObject_CallOneArg(getattr, name);
+            return PyObject_CallOneArg(getattr, name);
         }
         mod_name = _PyDict_GetItemId(m->md_dict, &PyId___name__);
         if (mod_name && PyUnicode_Check(mod_name)) {

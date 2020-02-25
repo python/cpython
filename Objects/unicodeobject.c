@@ -40,6 +40,7 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
 #define PY_SSIZE_T_CLEAN
 #include "Python.h"
+#include "pycore_bytes_methods.h"
 #include "pycore_fileutils.h"
 #include "pycore_initconfig.h"
 #include "pycore_object.h"
@@ -47,7 +48,6 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #include "pycore_pylifecycle.h"
 #include "pycore_pystate.h"
 #include "ucnhash.h"
-#include "bytes_methods.h"
 #include "stringlib/eq.h"
 
 #ifdef MS_WINDOWS
@@ -172,8 +172,8 @@ extern "C" {
 #define _PyUnicode_CONVERT_BYTES(from_type, to_type, begin, end, to) \
     do {                                                \
         to_type *_to = (to_type *)(to);                \
-        const from_type *_iter = (from_type *)(begin);  \
-        const from_type *_end = (from_type *)(end);     \
+        const from_type *_iter = (const from_type *)(begin);\
+        const from_type *_end = (const from_type *)(end);\
         Py_ssize_t n = (_end) - (_iter);                \
         const from_type *_unrolled_end =                \
             _iter + _Py_SIZE_ROUND_DOWN(n, 4);          \
@@ -964,21 +964,21 @@ findchar(const void *s, int kind,
         if ((Py_UCS1) ch != ch)
             return -1;
         if (direction > 0)
-            return ucs1lib_find_char((Py_UCS1 *) s, size, (Py_UCS1) ch);
+            return ucs1lib_find_char((const Py_UCS1 *) s, size, (Py_UCS1) ch);
         else
-            return ucs1lib_rfind_char((Py_UCS1 *) s, size, (Py_UCS1) ch);
+            return ucs1lib_rfind_char((const Py_UCS1 *) s, size, (Py_UCS1) ch);
     case PyUnicode_2BYTE_KIND:
         if ((Py_UCS2) ch != ch)
             return -1;
         if (direction > 0)
-            return ucs2lib_find_char((Py_UCS2 *) s, size, (Py_UCS2) ch);
+            return ucs2lib_find_char((const Py_UCS2 *) s, size, (Py_UCS2) ch);
         else
-            return ucs2lib_rfind_char((Py_UCS2 *) s, size, (Py_UCS2) ch);
+            return ucs2lib_rfind_char((const Py_UCS2 *) s, size, (Py_UCS2) ch);
     case PyUnicode_4BYTE_KIND:
         if (direction > 0)
-            return ucs4lib_find_char((Py_UCS4 *) s, size, ch);
+            return ucs4lib_find_char((const Py_UCS4 *) s, size, ch);
         else
-            return ucs4lib_rfind_char((Py_UCS4 *) s, size, ch);
+            return ucs4lib_rfind_char((const Py_UCS4 *) s, size, ch);
     default:
         Py_UNREACHABLE();
     }
@@ -4250,7 +4250,7 @@ unicode_decode_call_errorhandler_wchar(
     if (*exceptionObject == NULL)
         goto onError;
 
-    restuple = _PyObject_CallOneArg(*errorHandler, *exceptionObject);
+    restuple = PyObject_CallOneArg(*errorHandler, *exceptionObject);
     if (restuple == NULL)
         goto onError;
     if (!PyTuple_Check(restuple)) {
@@ -4354,7 +4354,7 @@ unicode_decode_call_errorhandler_writer(
     if (*exceptionObject == NULL)
         goto onError;
 
-    restuple = _PyObject_CallOneArg(*errorHandler, *exceptionObject);
+    restuple = PyObject_CallOneArg(*errorHandler, *exceptionObject);
     if (restuple == NULL)
         goto onError;
     if (!PyTuple_Check(restuple)) {
@@ -4921,7 +4921,7 @@ ascii_decode(const char *start, const char *end, Py_UCS1 *dest)
             /* Help allocation */
             const char *_p = p;
             while (_p < aligned_end) {
-                unsigned long value = *(unsigned long *) _p;
+                unsigned long value = *(const unsigned long *) _p;
                 if (value & ASCII_CHAR_MASK)
                     break;
                 _p += SIZEOF_LONG;
@@ -5472,7 +5472,7 @@ PyUnicode_DecodeUTF32Stateful(const char *s,
     PyObject *errorHandler = NULL;
     PyObject *exc = NULL;
 
-    q = (unsigned char *)s;
+    q = (const unsigned char *)s;
     e = q + size;
 
     if (byteorder)
@@ -5797,7 +5797,7 @@ PyUnicode_DecodeUTF16Stateful(const char *s,
     PyObject *exc = NULL;
     const char *encoding;
 
-    q = (unsigned char *)s;
+    q = (const unsigned char *)s;
     e = q + size;
 
     if (byteorder)
@@ -6726,7 +6726,7 @@ PyUnicode_DecodeLatin1(const char *s,
                        const char *errors)
 {
     /* Latin-1 is equivalent to the first 256 ordinals in Unicode. */
-    return _PyUnicode_FromUCS1((unsigned char*)s, size);
+    return _PyUnicode_FromUCS1((const unsigned char*)s, size);
 }
 
 /* create or adjust a UnicodeEncodeError */
@@ -6801,7 +6801,7 @@ unicode_encode_call_errorhandler(const char *errors,
     if (*exceptionObject == NULL)
         return NULL;
 
-    restuple = _PyObject_CallOneArg(*errorHandler, *exceptionObject);
+    restuple = PyObject_CallOneArg(*errorHandler, *exceptionObject);
     if (restuple == NULL)
         return NULL;
     if (!PyTuple_Check(restuple)) {
@@ -8783,7 +8783,7 @@ unicode_translate_call_errorhandler(const char *errors,
     if (*exceptionObject == NULL)
         return NULL;
 
-    restuple = _PyObject_CallOneArg(*errorHandler, *exceptionObject);
+    restuple = PyObject_CallOneArg(*errorHandler, *exceptionObject);
     if (restuple == NULL)
         return NULL;
     if (!PyTuple_Check(restuple)) {
@@ -12198,22 +12198,28 @@ unicode_isnumeric_impl(PyObject *self)
 int
 PyUnicode_IsIdentifier(PyObject *self)
 {
-    int kind;
-    void *data;
     Py_ssize_t i;
-    Py_UCS4 first;
+    int ready = PyUnicode_IS_READY(self);
 
-    if (PyUnicode_READY(self) == -1) {
-        Py_FatalError("identifier not ready");
+    Py_ssize_t len = ready ? PyUnicode_GET_LENGTH(self) : PyUnicode_GET_SIZE(self);
+    if (len == 0) {
+        /* an empty string is not a valid identifier */
         return 0;
     }
 
-    /* Special case for empty strings */
-    if (PyUnicode_GET_LENGTH(self) == 0)
-        return 0;
-    kind = PyUnicode_KIND(self);
-    data = PyUnicode_DATA(self);
-
+    int kind = 0;
+    void *data = NULL;
+    const wchar_t *wstr = NULL;
+    Py_UCS4 ch;
+    if (ready) {
+        kind = PyUnicode_KIND(self);
+        data = PyUnicode_DATA(self);
+        ch = PyUnicode_READ(kind, data, 0);
+    }
+    else {
+        wstr = _PyUnicode_WSTR(self);
+        ch = wstr[0];
+    }
     /* PEP 3131 says that the first character must be in
        XID_Start and subsequent characters in XID_Continue,
        and for the ASCII range, the 2.x rules apply (i.e
@@ -12222,13 +12228,21 @@ PyUnicode_IsIdentifier(PyObject *self)
        definition of XID_Start and XID_Continue, it is sufficient
        to check just for these, except that _ must be allowed
        as starting an identifier.  */
-    first = PyUnicode_READ(kind, data, 0);
-    if (!_PyUnicode_IsXidStart(first) && first != 0x5F /* LOW LINE */)
+    if (!_PyUnicode_IsXidStart(ch) && ch != 0x5F /* LOW LINE */) {
         return 0;
+    }
 
-    for (i = 1; i < PyUnicode_GET_LENGTH(self); i++)
-        if (!_PyUnicode_IsXidContinue(PyUnicode_READ(kind, data, i)))
+    for (i = 1; i < len; i++) {
+        if (ready) {
+            ch = PyUnicode_READ(kind, data, i);
+        }
+        else {
+            ch = wstr[i];
+        }
+        if (!_PyUnicode_IsXidContinue(ch)) {
             return 0;
+        }
+    }
     return 1;
 }
 
@@ -13784,7 +13798,7 @@ _PyUnicodeWriter_WriteASCIIString(_PyUnicodeWriter *writer,
     if (len == -1)
         len = strlen(ascii);
 
-    assert(ucs1lib_find_max_char((Py_UCS1*)ascii, (Py_UCS1*)ascii + len) < 128);
+    assert(ucs1lib_find_max_char((const Py_UCS1*)ascii, (const Py_UCS1*)ascii + len) < 128);
 
     if (writer->buffer == NULL && !writer->overallocate) {
         PyObject *str;
@@ -13843,7 +13857,7 @@ _PyUnicodeWriter_WriteLatin1String(_PyUnicodeWriter *writer,
 {
     Py_UCS4 maxchar;
 
-    maxchar = ucs1lib_find_max_char((Py_UCS1*)str, (Py_UCS1*)str + len);
+    maxchar = ucs1lib_find_max_char((const Py_UCS1*)str, (const Py_UCS1*)str + len);
     if (_PyUnicodeWriter_Prepare(writer, len, maxchar) == -1)
         return -1;
     unicode_write_cstr(writer->buffer, writer->pos, str, len);

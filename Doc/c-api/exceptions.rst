@@ -983,9 +983,6 @@ Notes:
    This is a base class for other standard exceptions.
 
 (2)
-   This is the same as :exc:`weakref.ReferenceError`.
-
-(3)
    Only defined on Windows; protect code that uses this by testing that the
    preprocessor macro ``MS_WINDOWS`` is defined.
 

@@ -83,7 +83,7 @@ typedef struct {
 } PyCursesPanelObject;
 
 #define PyCursesPanel_Check(v)  \
- (Py_TYPE(v) == _curses_panelstate_global->PyCursesPanel_Type)
+ Py_IS_TYPE(v, _curses_panelstate_global->PyCursesPanel_Type)
 
 /* Some helper functions. The problem is that there's always a window
    associated with a panel. To ensure that Python's GC doesn't pull

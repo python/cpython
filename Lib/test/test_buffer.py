@@ -10,6 +10,8 @@
 # the same way as the original. Thus, a substantial part of the
 # memoryview tests is now in this module.
 #
+# Written and designed by Stefan Krah for Python 3.3.
+#
 
 import contextlib
 import unittest

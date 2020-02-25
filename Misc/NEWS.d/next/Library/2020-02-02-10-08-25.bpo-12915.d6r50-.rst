@@ -1,0 +1,4 @@
+A new function ``resolve_name`` has been added to the ``pkgutil`` module.
+This resolves a string of the form ``'a.b.c.d'`` or ``'a.b:c.d'`` to an
+object. In the example, ``a.b`` is a package/module and ``c.d`` is an object
+within that package/module reached via recursive attribute access.

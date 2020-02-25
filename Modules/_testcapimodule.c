@@ -4846,7 +4846,7 @@ test_pyobject_fastcalldict(PyObject *self, PyObject *args)
         return NULL;
     }
 
-    return _PyObject_FastCallDict(func, stack, nargs, kwargs);
+    return PyObject_VectorcallDict(func, stack, nargs, kwargs);
 }
 
 
@@ -4880,7 +4880,7 @@ test_pyobject_vectorcall(PyObject *self, PyObject *args)
         PyErr_SetString(PyExc_TypeError, "kwnames must be None or a tuple");
         return NULL;
     }
-    return _PyObject_Vectorcall(func, stack, nargs, kwnames);
+    return PyObject_Vectorcall(func, stack, nargs, kwnames);
 }
 
 
@@ -5253,7 +5253,7 @@ meth_fastcall_keywords(PyObject* self, PyObject* const* args,
     if (pyargs == NULL) {
         return NULL;
     }
-    PyObject *pykwargs = _PyObject_Vectorcall((PyObject*)&PyDict_Type,
+    PyObject *pykwargs = PyObject_Vectorcall((PyObject*)&PyDict_Type,
                                               args + nargs, 0, kwargs);
     return Py_BuildValue("NNN", _null_to_none(self), pyargs, pykwargs);
 }
@@ -6133,7 +6133,7 @@ static PyTypeObject MethodDescriptorBase_Type = {
     .tp_call = PyVectorcall_Call,
     .tp_vectorcall_offset = offsetof(MethodDescriptorObject, vectorcall),
     .tp_flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE |
-                Py_TPFLAGS_METHOD_DESCRIPTOR | _Py_TPFLAGS_HAVE_VECTORCALL,
+                Py_TPFLAGS_METHOD_DESCRIPTOR | Py_TPFLAGS_HAVE_VECTORCALL,
     .tp_descr_get = func_descr_get,
 };
 
@@ -6172,7 +6172,7 @@ static PyTypeObject MethodDescriptor2_Type = {
     .tp_new = MethodDescriptor2_new,
     .tp_call = PyVectorcall_Call,
     .tp_vectorcall_offset = offsetof(MethodDescriptor2Object, vectorcall),
-    .tp_flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE | _Py_TPFLAGS_HAVE_VECTORCALL,
+    .tp_flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE | Py_TPFLAGS_HAVE_VECTORCALL,
 };
 
 PyDoc_STRVAR(heapgctype__doc__,

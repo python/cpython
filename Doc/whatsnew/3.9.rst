@@ -216,6 +216,14 @@ import attempts.
 math
 ----
 
+Expanded the :func:`math.gcd` function to handle multiple arguments.
+Formerly, it only supported two arguments.
+(Contributed by Serhiy Storchaka in :issue:`39648`.)
+
+Add :func:`math.lcm`: return the least common multiple of specified arguments.
+(Contributed by Mark Dickinson, Ananthakrishnan and Serhiy Storchaka in
+:issue:`39479` and :issue:`39648`.)
+
 Add :func:`math.nextafter`: return the next floating-point value after *x*
 towards *y*.
 (Contributed by Victor Stinner in :issue:`39288`.)
@@ -315,6 +323,17 @@ case), and one used ``__VENV_NAME__`` instead.
 Optimizations
 =============
 
+* Optimized the idiom for assignment a temporary variable in comprehensions.
+  Now ``for y in [expr]`` in comprehensions is as fast as a simple assignment
+  ``y = expr``.  For example:
+
+     sums = [s for s in [0] for x in data for s in [s + x]]
+
+  Unlike to the ``:=`` operator this idiom does not leak a variable to the
+  outer scope.
+
+  (Contributed by Serhiy Storchaka in :issue:`32856`.)
+
 
 Build and C API Changes
 =======================
@@ -356,8 +375,9 @@ Build and C API Changes
 
   * Provide :c:func:`Py_EnterRecursiveCall` and :c:func:`Py_LeaveRecursiveCall`
     as regular functions for the limited API. Previously, there were defined as
-    macros, but these macros didn't work with the limited API which cannot
-    access ``PyThreadState.recursion_depth`` field.
+    macros, but these macros didn't compile with the limited C API which cannot
+    access ``PyThreadState.recursion_depth`` field (the structure is opaque in
+    the limited C API).
 
   * Exclude the following functions from the limited C API:
 
@@ -458,11 +478,6 @@ Removed
   removed. They were aliases to ``tobytes()`` and ``frombytes()``, deprecated
   since Python 3.2.
   (Contributed by Victor Stinner in :issue:`38916`.)
-
-* The abstract base classes in :mod:`collections.abc` no longer are
-  exposed in the regular :mod:`collections` module.  This will help
-  create a clearer distinction between the concrete classes and the abstract
-  base classes.
 
 * The undocumented ``sys.callstats()`` function has been removed. Since Python
   3.7, it was deprecated and always returned :const:`None`. It required a special

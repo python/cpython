@@ -18,7 +18,7 @@ CONFIGS_64="x64 uint128 ansi64 universal"
 CONFIGS_32="ppro ansi32 ansi-legacy universal"
 
 VALGRIND="valgrind --tool=memcheck --leak-resolution=high \
-          --db-attach=yes --suppressions=Misc/valgrind-python.supp"
+          --suppressions=Misc/valgrind-python.supp"
 
 # Get args
 case $@ in
@@ -78,7 +78,7 @@ for config in $CONFIGS; do
         $GMAKE | grep _decimal
 
         printf "\n\n# ======================== refleak tests ===========================\n\n"
-        ./python -m test -uall -R 2:2 test_decimal
+        ./python -m test -uall -R 3:3 test_decimal
 
 
         ############ regular tests ###########

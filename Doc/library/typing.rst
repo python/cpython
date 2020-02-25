@@ -996,8 +996,20 @@ The module defines the following classes, functions and decorators:
       Point2D = TypedDict('Point2D', x=int, y=int, label=str)
       Point2D = TypedDict('Point2D', {'x': int, 'y': int, 'label': str})
 
-   See :pep:`589` for more examples and detailed rules of using ``TypedDict``
-   with type checkers.
+   By default, all keys must be present in a TypedDict. It is possible
+   to override this by specifying totality.
+   Usage::
+
+      class point2D(TypedDict, total=False):
+          x: int
+          y: int
+
+   This means that a point2D TypedDict can have any of the keys omitted.A type
+   checker is only expected to support a literal False or True as the value of
+   the total argument. True is the default, and makes all items defined in the
+   class body be required.
+
+   See :pep:`589` for more examples and detailed rules of using ``TypedDict``.
 
    .. versionadded:: 3.8
 

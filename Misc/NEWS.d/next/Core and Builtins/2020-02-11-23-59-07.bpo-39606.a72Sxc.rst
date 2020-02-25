@@ -1,0 +1,2 @@
+Fix regression caused by fix for bpo-39386, that prevented calling
+``aclose`` on an async generator that had already been closed or exhausted.
