@@ -8,7 +8,7 @@ from collections import (
 from collections.abc import *
 from contextlib import AbstractContextManager, AbstractAsyncContextManager
 from re import Pattern, Match
-from types import GenericAlias
+from types import GenericAlias, MappingProxyType
 
 from typing import TypeVar
 T = TypeVar('T')
@@ -33,6 +33,7 @@ class BaseTest(unittest.TestCase):
                   Mapping, MutableMapping, MappingView,
                   KeysView, ItemsView, ValuesView,
                   Sequence, MutableSequence,
+                  MappingProxyType,
                   ):
             tname = t.__name__
             with self.subTest(f"Testing {tname}"):
