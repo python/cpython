@@ -27,6 +27,7 @@ import sys
 import stat as st
 
 from _collections_abc import _check_methods
+from types import GenericAlias
 
 _names = sys.builtin_module_names
 
@@ -1060,8 +1061,9 @@ class PathLike(abc.ABC):
             return _check_methods(subclass, '__fspath__')
         return NotImplemented
 
-    def __class_getitem__(cls, type):
-        return cls
+    def __class_getitem__(cls, item):
+        """Internal: PEP 585."""
+        return GenericAlias(cls, item)
 
 
 if name == 'nt':
