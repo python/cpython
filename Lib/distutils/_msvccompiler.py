@@ -199,6 +199,7 @@ PLAT_TO_VCVARS = {
 PLAT_TO_LLVM_TARGETS = {
     'win32': 'i686',
     'win-amd64': 'x86_64',
+    'win-arm32': 'arm',
     'win-arm64': 'aarch64',
 }
 
