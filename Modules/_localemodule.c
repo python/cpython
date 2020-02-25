@@ -49,6 +49,7 @@ static inline _locale_state*
 get_locale_state(PyObject *m)
 {
     void *state = PyModule_GetState(m);
+    assert(state != NULL);
     return (_locale_state *)state;
 }
 
@@ -776,19 +777,20 @@ static struct PyModuleDef_Slot _locale_slots[] = {
 static int
 locale_traverse(PyObject *m, visitproc visit, void *arg)
 {
-    _locale_state *state = get_locale_state(m); 
-    if (state == NULL) {
-        return -1;
+    _locale_state *state = (_locale_state*)PyModule_GetState(m);
+    if (state) {
+        Py_VISIT(state->Error);
     }
-    Py_VISIT(state->Error);
     return 0;
 }
 
 static int
 locale_clear(PyObject *m)
 {
-    _locale_state *state = get_locale_state(m);
-    Py_CLEAR(state->Error);
+    _locale_state *state = (_locale_state*)PyModule_GetState(m);
+    if (state) {
+        Py_CLEAR(state->Error);
+    }
     return 0;
 }
 
@@ -807,7 +809,7 @@ static struct PyModuleDef _localemodule = {
     _locale_slots,
     locale_traverse,
     locale_clear,
-    (freefunc)locale_free 
+    (freefunc)locale_free,
 };
 
 PyMODINIT_FUNC
