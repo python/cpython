@@ -1,0 +1,2 @@
+:class:`types.MappingProxyType` objects now support the merge (``|``) and update
+(``|=``) operators from :pep:`584`.
