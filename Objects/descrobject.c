@@ -982,6 +982,33 @@ static PyMappingMethods mappingproxy_as_mapping = {
     0,                                          /* mp_ass_subscript */
 };
 
+static PyObject *
+mappingproxy_or(PyObject *self, PyObject *other)
+{
+    if (PyObject_TypeCheck(self, &PyDictProxy_Type)) {
+        return PyNumber_Or(((mappingproxyobject*)self)->mapping, other);
+    }
+    return PyNumber_Or(self, ((mappingproxyobject*)other)->mapping);
+}
+
+static PyObject *
+mappingproxy_ior(mappingproxyobject *self, PyObject *other)
+{
+    _Py_IDENTIFIER(copy);
+    PyObject *new = _PyObject_CallMethodIdNoArgs(self->mapping, &PyId_copy);
+    if (!new) {
+        return NULL;
+    }
+    PyObject *result = PyNumber_InPlaceOr(new, other);
+    Py_DECREF(new);
+    return result;
+}
+
+static PyNumberMethods mappingproxy_as_number = {
+    .nb_or = mappingproxy_or,
+    .nb_inplace_or = (binaryfunc)mappingproxy_ior,
+};
+
 static int
 mappingproxy_contains(mappingproxyobject *pp, PyObject *key)
 {
@@ -1717,7 +1744,7 @@ PyTypeObject PyDictProxy_Type = {
     0,                                          /* tp_setattr */
     0,                                          /* tp_as_async */
     (reprfunc)mappingproxy_repr,                /* tp_repr */
-    0,                                          /* tp_as_number */
+    &mappingproxy_as_number,                    /* tp_as_number */
     &mappingproxy_as_sequence,                  /* tp_as_sequence */
     &mappingproxy_as_mapping,                   /* tp_as_mapping */
     0,                                          /* tp_hash */
