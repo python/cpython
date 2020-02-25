@@ -1,0 +1,2 @@
+:class:`dict` (and :class:`collections.UserDict`) objects now support PEP 584's merge (``|``) and update (``|=``) operators.
+Patch by Brandt Bucher.
