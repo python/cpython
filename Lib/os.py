@@ -27,7 +27,8 @@ import sys
 import stat as st
 
 from _collections_abc import _check_methods
-from types import GenericAlias
+
+GenericAlias = type(list[int])
 
 _names = sys.builtin_module_names
 
