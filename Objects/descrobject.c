@@ -2098,7 +2098,7 @@ static PyObject *
 ga_instancecheck(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
     return PyErr_Format(PyExc_TypeError,
-                        "TypeError: Subscripted generics cannot be used with class and instance checks",
+                        "isinstance() argument 2 cannot be a parameterized generic",
                         self);
 }
 
@@ -2106,7 +2106,7 @@ static PyObject *
 ga_subclasscheck(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
     return PyErr_Format(PyExc_TypeError,
-                        "TypeError: Subscripted generics cannot be used with class and instance checks",
+                        "issubclass() argument 2 cannot be a parameterized generic",
                         self);
 }
 
