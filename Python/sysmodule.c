@@ -1178,6 +1178,51 @@ static PyStructSequence_Desc asyncgen_hooks_desc = {
     2
 };
 
+static int
+set_async_gen_firstiter(PyObject *firstiter)
+{
+    PyThreadState *tstate = _PyThreadState_GET();
+
+    if (PySys_Audit("sys.set_asyncgen_hook_firstiter", NULL) < 0) {
+        return -1;
+    }
+
+    Py_XINCREF(firstiter);
+    Py_XSETREF(tstate->async_gen_firstiter, firstiter);
+    return 0;
+}
+
+void
+_PyEval_SetAsyncGenFirstiter(PyObject *firstiter)
+{
+    if (set_async_gen_firstiter(firstiter) < 0) {
+        PyErr_WriteUnraisable(NULL);
+    }
+}
+
+static int
+set_async_gen_finalizer(PyObject *finalizer)
+{
+    PyThreadState *tstate = _PyThreadState_GET();
+
+    if (PySys_Audit("sys.set_asyncgen_hook_finalizer", NULL) < 0) {
+        return -1;
+    }
+
+    Py_XINCREF(finalizer);
+    Py_XSETREF(tstate->async_gen_finalizer, finalizer);
+    return 0;
+}
+
+void
+_PyEval_SetAsyncGenFinalizer(PyObject *finalizer)
+{
+    if (set_async_gen_finalizer(finalizer) < 0) {
+        PyErr_WriteUnraisable(NULL);
+    }
+}
+
+
 static PyObject *
 sys_set_asyncgen_hooks(PyObject *self, PyObject *args, PyObject *kw)
 {
@@ -1198,10 +1243,12 @@ sys_set_asyncgen_hooks(PyObject *self, PyObject *args, PyObject *kw)
                          Py_TYPE(finalizer)->tp_name);
             return NULL;
         }
-        _PyEval_SetAsyncGenFinalizer(finalizer);
+        if (set_async_gen_finalizer(finalizer) < 0) {
+            return NULL;
+        }
     }
-    else if (finalizer == Py_None) {
-        _PyEval_SetAsyncGenFinalizer(NULL);
+    else if (finalizer == Py_None && set_async_gen_finalizer(NULL) < 0) {
+        return NULL;
     }
 
     if (firstiter && firstiter != Py_None) {
@@ -1211,10 +1258,12 @@ sys_set_asyncgen_hooks(PyObject *self, PyObject *args, PyObject *kw)
                          Py_TYPE(firstiter)->tp_name);
             return NULL;
         }
-        _PyEval_SetAsyncGenFirstiter(firstiter);
+        if (set_async_gen_firstiter(firstiter) < 0) {
+            return NULL;
+        }
     }
-    else if (firstiter == Py_None) {
-        _PyEval_SetAsyncGenFirstiter(NULL);
+    else if (firstiter == Py_None && set_async_gen_firstiter(NULL) < 0) {
+        return NULL;
     }
 
     Py_RETURN_NONE;
