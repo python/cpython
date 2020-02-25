@@ -1,0 +1,3 @@
+The ``os.{get,list,remove,set}xattr()`` functions are now included in
+:data:`os.supports_fd` and :data:`os.supports_follow_symlinks` when
+available.

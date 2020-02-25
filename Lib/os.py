@@ -100,7 +100,7 @@ del _names
 if _exists("_have_functions"):
     _globals = globals()
     def _add(str, fn):
-        if (fn in _globals) and (str in _have_functions):
+        if (fn in _globals) and (str is None or str in _have_functions):
             _set.add(_globals[fn])
 
     _set = set()
@@ -140,6 +140,10 @@ if _exists("_have_functions"):
     _add("HAVE_FPATHCONF",  "pathconf")
     if _exists("statvfs") and _exists("fstatvfs"): # mac os x10.3
         _add("HAVE_FSTATVFS", "statvfs")
+    _add(None, "getxattr")
+    _add(None, "listxattr")
+    _add(None, "removexattr")
+    _add(None, "setxattr")
     supports_fd = _set
 
     _set = set()
@@ -177,6 +181,10 @@ if _exists("_have_functions"):
     _add("HAVE_FSTATAT",    "stat")
     _add("HAVE_UTIMENSAT",  "utime")
     _add("MS_WINDOWS",      "stat")
+    _add(None, "getxattr")
+    _add(None, "listxattr")
+    _add(None, "removexattr")
+    _add(None, "setxattr")
     supports_follow_symlinks = _set
 
     del _set
