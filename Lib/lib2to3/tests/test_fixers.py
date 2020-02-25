@@ -4527,6 +4527,24 @@ class Test_exitfunc(FixerTestCase):
             """
         self.check(b, a)
 
+    def test_multiple(self):
+        b = """
+            import sys
+            if 42:
+                sys.exitfunc = my_atexit
+            else:
+                sys.exitfunc = my_otheratexit
+            """
+        a = """
+            import sys
+            import atexit
+            if 42:
+                atexit.register(my_atexit)
+            else:
+                atexit.register(my_otheratexit)
+            """
+        self.check(b, a)
+
     def test_names_import(self):
         b = """
             import sys, crumbs

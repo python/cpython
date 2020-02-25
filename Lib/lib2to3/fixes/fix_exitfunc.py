@@ -5,7 +5,7 @@ Convert use of sys.exitfunc to use the atexit module.
 # Author: Benjamin Peterson
 
 from lib2to3 import pytree, fixer_base
-from lib2to3.fixer_util import Name, Attr, Call, Comma, Newline, syms
+from lib2to3.fixer_util import Name, Attr, Call, Comma, Newline, syms, does_tree_import
 
 
 class FixExitfunc(fixer_base.BaseFix):
@@ -55,6 +55,10 @@ class FixExitfunc(fixer_base.BaseFix):
                              "import at the top of your file.")
             return
 
+        # Do not add import if already present (multiple sys.atexit's)
+        if does_tree_import(None, "atexit", self.sys_import.parent):
+            return
+
         # Now add an atexit import after the sys import.
         names = self.sys_import.children[1]
         if names.type == syms.dotted_as_names:
@@ -63,7 +67,6 @@ class FixExitfunc(fixer_base.BaseFix):
         else:
             containing_stmt = self.sys_import.parent
             position = containing_stmt.children.index(self.sys_import)
-            stmt_container = containing_stmt.parent
             new_import = pytree.Node(syms.import_name,
                               [Name("import"), Name("atexit", " ")]
                               )

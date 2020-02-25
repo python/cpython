@@ -1,0 +1,2 @@
+lib2to3: Fix duplicated atexit import when fixing multiple sys.exitfunc.
+Patch by Paulo Henrique Silva.
