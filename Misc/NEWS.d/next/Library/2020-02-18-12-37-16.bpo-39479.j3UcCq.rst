@@ -1,1 +1,0 @@
-Add :func:`math.lcm` function: least common multiple.
