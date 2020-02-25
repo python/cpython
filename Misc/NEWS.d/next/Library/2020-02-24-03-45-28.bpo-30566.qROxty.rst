@@ -1,0 +1,2 @@
+Fix :exc:`IndexError` when trying to decode an invalid string with punycode
+codec.
