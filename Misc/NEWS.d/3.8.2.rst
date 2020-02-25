@@ -1,0 +1,97 @@
+.. bpo: 39382
+.. date: 2020-02-18-01-40-13
+.. nonce: OLSJu9
+.. release date: 2020-02-24
+.. section: Core and Builtins
+
+Fix a use-after-free in the single inheritance path of ``issubclass()``,
+when the ``__bases__`` of an object has a single reference, and so does its
+first item. Patch by Yonatan Goldschmidt.
+
+..
+
+.. bpo: 39427
+.. date: 2020-01-22-22-28-04
+.. nonce: LiO-Eo
+.. section: Core and Builtins
+
+Document all possibilities for the ``-X`` options in the command line help
+section. Patch by Pablo Galindo.
+
+..
+
+.. bpo: 39649
+.. date: 2020-02-23-21-27-10
+.. nonce: qiubSp
+.. section: Library
+
+Remove obsolete check for `__args__` in bdb.Bdb.format_stack_entry.
+
+..
+
+.. bpo: 39681
+.. date: 2020-02-21-13-58-40
+.. nonce: zN8hf0
+.. section: Library
+
+Fix a regression where the C pickle module wouldn't allow unpickling from a
+file-like object that doesn't expose a readinto() method.
+
+..
+
+.. bpo: 39546
+.. date: 2020-02-03-15-12-51
+.. nonce: _Kj0Pn
+.. section: Library
+
+Fix a regression in :class:`~argparse.ArgumentParser` where
+``allow_abbrev=False`` was ignored for long options that used a prefix
+character other than "-".
+
+..
+
+.. bpo: 39432
+.. date: 2020-01-23-16-08-58
+.. nonce: Cee6mi
+.. section: Library
+
+Implement PEP-489 algorithm for non-ascii "PyInit\_..." symbol names in
+distutils to make it export the correct init symbol also on Windows.
+
+..
+
+.. bpo: 17422
+.. date: 2020-02-19-11-13-47
+.. nonce: g7_9zz
+.. section: Documentation
+
+The language reference now specifies restrictions on class namespaces.
+Adapted from a patch by Ethan Furman.
+
+..
+
+.. bpo: 39572
+.. date: 2020-02-18-18-37-07
+.. nonce: CCtzy1
+.. section: Documentation
+
+Updated documentation of ``total`` flag of TypeDict.
+
+..
+
+.. bpo: 39654
+.. date: 2020-02-18-07-42-20
+.. nonce: MoT1jI
+.. section: Documentation
+
+In pyclbr doc, update 'class' to 'module' where appropriate and add
+readmodule comment. Patch by Hakan Çelik.
+
+..
+
+.. bpo: 39663
+.. date: 2020-02-17-21-09-03
+.. nonce: wexcsH
+.. section: IDLE
+
+Add tests for pyparse find_good_parse_start().
