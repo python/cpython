@@ -70,6 +70,51 @@ Summary -- Release highlights
 New Features
 ============
 
+Dictionary Merge & Update Operators
+-----------------------------------
+
+Merge (``|``) and update (``|=``) operators have been added to the built-in
+:class:`dict` class.
+
+.. XXX The rest is just a copy-paste of the PEP's Specification section.
+
+Dict union will return a new ``dict`` consisting of the left operand
+merged with the right operand, each of which must be a ``dict`` (or an
+instance of a ``dict`` subclass). If a key appears in both operands,
+the last-seen value (i.e. that from the right-hand operand) wins::
+
+    >>> d = {'spam': 1, 'eggs': 2, 'cheese': 3}
+    >>> e = {'cheese': 'cheddar', 'aardvark': 'Ethel'}
+    >>> d | e
+    {'spam': 1, 'eggs': 2, 'cheese': 'cheddar', 'aardvark': 'Ethel'}
+    >>> e | d
+    {'aardvark': 'Ethel', 'spam': 1, 'eggs': 2, 'cheese': 3}
+
+The augmented assignment version operates in-place::
+
+    >>> d |= e
+    >>> d
+    {'spam': 1, 'eggs': 2, 'cheese': 'cheddar', 'aardvark': 'Ethel'}
+
+Augmented assignment behaves identically to the ``update`` method
+called with a single positional argument, so it also accepts anything
+implementing the Mapping protocol (more specifically, anything with
+the ``keys`` and ``__getitem__`` methods) or iterables of key-value
+pairs. This is analogous to ``list +=`` and ``list.extend``, which
+accept any iterable, not just lists.  Continued from above::
+
+    >>> d | [('spam', 999)]
+    Traceback (most recent call last):
+      ...
+    TypeError: can only merge dict (not "list") to dict
+
+    >>> d |= [('spam', 999)]
+    >>> d
+    {'eggs': 2, 'cheese': 'cheddar', 'aardvark': 'Ethel', 'spam': 999}
+
+See :pep:`584` for a full description.
+
+(Contributed by Brandt Bucher in :issue:`36144`.)
 
 
 Other Language Changes
