@@ -271,6 +271,38 @@ class TestBytesGenerator(TestGeneratorBase, TestEmailBase):
         g.flatten(msg)
         self.assertEqual(s.getvalue(), expected)
 
+    def test_unicode_domain_transforms_idna(self):
+        msg = EmailMessage()
+        msg['From'] = "john@examplé.com"
+        msg['To'] = "Joe <joe@examplé.com>"
+
+        expected = textwrap.dedent("""\
+            From: john@xn--exampl-gva.com
+            To: Joe <joe@xn--exampl-gva.com>
+
+            """).encode('ascii').replace(b'\n', b'\r\n')
+
+        s = io.BytesIO()
+        g = BytesGenerator(s, policy=policy.SMTP)
+        g.flatten(msg)
+        self.assertEqual(s.getvalue(), expected)
+
+    def test_unicode_domain_transforms_idna_smtputf8_policy(self):
+        msg = EmailMessage()
+        msg['From'] = "john@examplé.com"
+        msg['To'] = "Joe <joe@examplé.com>"
+
+        expected = textwrap.dedent("""\
+            From: john@xn--exampl-gva.com
+            To: Joe <joe@xn--exampl-gva.com>
+
+            """).encode('utf-8').replace(b'\n', b'\r\n')
+
+        s = io.BytesIO()
+        g = BytesGenerator(s, policy=policy.SMTPUTF8)
+        g.flatten(msg)
+        self.assertEqual(s.getvalue(), expected)
+
     def test_smtputf8_policy(self):
         msg = EmailMessage()
         msg['From'] = "Páolo <főo@bar.com>"

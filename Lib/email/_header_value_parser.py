@@ -497,8 +497,10 @@ class Domain(TokenList):
 
     @property
     def domain(self):
-        return ''.join(super().value.split())
+        return ''.join(super().value.split()).encode('idna').decode('ascii')
 
+    def __str__(self):
+        return super().__str__().encode('idna').decode('ascii')
 
 class DotAtom(TokenList):
     token_type = 'dot-atom'
