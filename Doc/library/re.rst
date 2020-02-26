@@ -1482,6 +1482,8 @@ creates a phonebook.
 First, here is the input.  Normally it may come from a file, here we are using
 triple-quoted string syntax::
 
+.. doctest::
+
    >>> text = """Ross McFluff: 834.345.1254 155 Elm Street
    ...
    ... Ronald Heathmore: 892.345.3428 436 Finley Avenue
