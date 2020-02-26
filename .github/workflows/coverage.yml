@@ -3,6 +3,7 @@ name: Coverage
 on:
   push:
     branches:
+    - pegen
     - master
     - 3.8
     - 3.7
