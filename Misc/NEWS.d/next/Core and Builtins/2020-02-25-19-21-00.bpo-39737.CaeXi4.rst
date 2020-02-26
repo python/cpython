@@ -1,1 +1,0 @@
-Remove code repitition in list_richcompare.
