@@ -4392,7 +4392,7 @@ pairs within braces, for example: ``{'jack': 4098, 'sjoerd': 4127}`` or ``{4098:
          >>> d.values() == d.values()
          False
 
-   .. method:: d | other
+   .. describe:: d | other
 
       Create a new dictionary with the merged keys and values of *d* and
       *other*, which must both be dictionaries. The values of *other* take
@@ -4400,7 +4400,7 @@ pairs within braces, for example: ``{'jack': 4098, 'sjoerd': 4127}`` or ``{4098:
 
       .. versionadded:: 3.9
 
-   .. method:: d |= other
+   .. describe:: d |= other
 
       Update the dictionary *d* with keys and values from *other*, which may be
       either a :term:`mapping` or an :term:`iterable` of key/value pairs. The
