@@ -51,7 +51,7 @@ jobs:
     - name: Configure CPython
       run: ./configure --with-pydebug --with-openssl=/usr/local/opt/openssl --prefix=/opt/python-dev
     - name: Build CPython
-      run: make -s -j4
+      run: make -j4
     - name: Display build info
       run: make pythoninfo
     - name: Tests
@@ -78,7 +78,7 @@ jobs:
     - name: Configure CPython
       run: ./configure --with-pydebug --with-openssl=$PWD/multissl/openssl/$OPENSSL_VER
     - name: Build CPython
-      run: make -s -j4
+      run: make -j4
     - name: Display build info
       run: make pythoninfo
     - name: Tests
