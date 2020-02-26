@@ -432,6 +432,11 @@ class _UnixSelectorEventLoop(selector_events.BaseSelectorEventLoop):
                     self.remove_writer(fd)
         fut.add_done_callback(cb)
 
+    def _interrupt_main_thread(self):
+        # We send a signal instead of using _thread.interrupt_main() to be able
+        # to interrupt the selector.
+        os.kill(os.getpid(), signal.SIGINT)
+
 
 class _UnixReadPipeTransport(transports.ReadTransport):
 

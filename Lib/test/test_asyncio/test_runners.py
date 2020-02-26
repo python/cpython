@@ -177,3 +177,12 @@ class RunTests(BaseTest):
 
         self.assertIsNone(spinner.ag_frame)
         self.assertFalse(spinner.ag_running)
+
+    def test_asyncio_run_interrupted_on_main_thread(self):
+        async def do_nothing_forever():
+            while True:
+                await asyncio.sleep(0)
+
+        with self.assertRaises(KeyboardInterrupt),\
+                test_utils.run_delayed(test_utils.interrupt_main, 0.1):
+            asyncio.run(do_nothing_forever())

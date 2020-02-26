@@ -1933,6 +1933,51 @@ class BaseEventLoopWithSelectorTests(test_utils.TestCase):
                          "^Executing <Task.*stop_loop_coro.*> "
                          "took .* seconds$")
 
+    def test_main_thread_loop_interrupt_from_thread(self):
+        async def do_nothing_forever():
+            while True:
+                await asyncio.sleep(0)
+
+        with self.assertRaises(KeyboardInterrupt), \
+             test_utils.interrupt_from_thread(self.loop):
+            self.loop.run_until_complete(do_nothing_forever())
+
+    @unittest.skipIf(sys.platform == 'win32', "Can't interrupt select call")
+    def test_main_thread_loop_interrupt_from_thread_while_in_select_call(self):
+        with self.assertRaises(KeyboardInterrupt),\
+             test_utils.interrupt_from_thread(self.loop):
+            self.loop.run_until_complete(asyncio.sleep(9999))
+
+    def test_main_thread_loop_interrupt_from_thread_while_in_callback(self):
+        async def blocking_callback():
+            while True:
+                pass
+
+        with self.assertRaises(KeyboardInterrupt), \
+             test_utils.interrupt_from_thread(self.loop):
+            self.loop.run_until_complete(blocking_callback())
+
+    def test_main_thread_loop_interrupt_from_main_thread(self):
+        async def interrupt_loop():
+            self.loop.interrupt()
+
+        with self.assertRaises(KeyboardInterrupt):
+            self.loop.run_until_complete(interrupt_loop())
+
+    def test_thread_loop_interrupt_from_main_thread(self):
+        async def do_nothing_forever():
+            while True:
+                await asyncio.sleep(0)
+
+        def thread_target():
+            with self.assertRaises(KeyboardInterrupt):
+                self.loop.run_until_complete(do_nothing_forever())
+
+        thread = threading.Thread(target=thread_target)
+        thread.start()
+        self.loop.interrupt()
+        thread.join()
+
 
 class RunningLoopTests(unittest.TestCase):
 

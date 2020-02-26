@@ -29,6 +29,7 @@ import traceback
 import sys
 import warnings
 import weakref
+import signal
 
 try:
     import ssl
@@ -386,6 +387,7 @@ class BaseEventLoop(events.AbstractEventLoop):
     def __init__(self):
         self._timer_cancelled_count = 0
         self._closed = False
+        self._interrupted = False
         self._stopping = False
         self._ready = collections.deque()
         self._scheduled = []
@@ -404,6 +406,7 @@ class BaseEventLoop(events.AbstractEventLoop):
         self._task_factory = None
         self._coroutine_origin_tracking_enabled = False
         self._coroutine_origin_tracking_saved_depth = None
+        self._can_interrupt = False
 
         # A weak set of all asynchronous generators that are
         # being iterated by the loop.
@@ -508,6 +511,11 @@ class BaseEventLoop(events.AbstractEventLoop):
     def _check_closed(self):
         if self._closed:
             raise RuntimeError('Event loop is closed')
+
+    def _check_interrupted(self):
+        if self._interrupted:
+            self._interrupted = False
+            raise KeyboardInterrupt
 
     def _check_default_executor(self):
         if self._executor_shutdown_called:
@@ -648,6 +656,30 @@ class BaseEventLoop(events.AbstractEventLoop):
         run_forever to stop looping after a complete iteration.
         """
         self._stopping = True
+
+    def _interrupt_main_thread(self):
+        raise NotImplementedError
+
+    def interrupt(self):
+        """Interrupt the event loop. The loop will stop and raise a
+        KeyboardInterrupt.
+
+        If the loop is running in the main thread, it will stop immediately,
+        as would happen when Ctrl-C is pressed. Otherwise the loop might not
+        stop right away, but after a blocking call finishes (like a selector
+        call or a callback).
+        On windows this would not interrupt the selector, even on the main
+        thread.
+        """
+        main_thread = threading.main_thread()
+        is_loop_on_main_thread = self._thread_id == main_thread.ident
+        if is_loop_on_main_thread and self._can_interrupt:
+            if threading.current_thread() is main_thread:
+                signal.default_int_handler()
+            else:
+                self._interrupt_main_thread()
+        else:
+            self._interrupted = True
 
     def close(self):
         """Close the event loop.
@@ -1851,7 +1883,12 @@ class BaseEventLoop(events.AbstractEventLoop):
             when = self._scheduled[0]._when
             timeout = min(max(0, when - self.time()), MAXIMUM_SELECT_TIMEOUT)
 
-        event_list = self._selector.select(timeout)
+        self._check_interrupted()
+        self._can_interrupt = True
+        try:
+            event_list = self._selector.select(timeout)
+        finally:
+            self._can_interrupt = False
         self._process_events(event_list)
 
         # Handle 'later' callbacks that are ready.
@@ -1872,6 +1909,7 @@ class BaseEventLoop(events.AbstractEventLoop):
         # Use an idiom that is thread-safe without using locks.
         ntodo = len(self._ready)
         for i in range(ntodo):
+            self._check_interrupted()
             handle = self._ready.popleft()
             if handle._cancelled:
                 continue

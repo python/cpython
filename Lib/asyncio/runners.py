@@ -1,8 +1,38 @@
 __all__ = 'run',
 
+import signal
+import contextlib
+import threading
+
 from . import coroutines
 from . import events
 from . import tasks
+
+
+def _custom_sigint_handler(signum, frame):
+    """Interrupt the running loop when SIGINT is received"""
+    events.get_running_loop().interrupt()
+
+
+@contextlib.contextmanager
+def _use_custom_signal_handler_if_needed():
+    """If needed, register a custom SIGINT handler when an event loop is run.
+
+    When running an event loop in the main thread, the default SIGINT
+    handler can cause the loop to lose callbacks and make it get stuck
+    if it is ever rerun (bpo-39622).
+    """
+    is_main_thread = threading.current_thread() is threading.main_thread()
+    sigint_handler_is_default = signal.getsignal(signal.SIGINT) is \
+                                signal.default_int_handler
+    if is_main_thread and sigint_handler_is_default:
+        previous_handler = signal.signal(signal.SIGINT, _custom_sigint_handler)
+        try:
+            yield
+        finally:
+            signal.signal(signal.SIGINT, previous_handler)
+    else:
+        yield
 
 
 def run(main, *, debug=False):
@@ -37,18 +67,20 @@ def run(main, *, debug=False):
         raise ValueError("a coroutine was expected, got {!r}".format(main))
 
     loop = events.new_event_loop()
-    try:
-        events.set_event_loop(loop)
-        loop.set_debug(debug)
-        return loop.run_until_complete(main)
-    finally:
+    # bpo-39622: allow event loop to stop gracefully when sigint is received
+    with _use_custom_signal_handler_if_needed():
         try:
-            _cancel_all_tasks(loop)
-            loop.run_until_complete(loop.shutdown_asyncgens())
-            loop.run_until_complete(loop.shutdown_default_executor())
+            events.set_event_loop(loop)
+            loop.set_debug(debug)
+            return loop.run_until_complete(main)
         finally:
-            events.set_event_loop(None)
-            loop.close()
+            try:
+                _cancel_all_tasks(loop)
+                loop.run_until_complete(loop.shutdown_asyncgens())
+                loop.run_until_complete(loop.shutdown_default_executor())
+            finally:
+                events.set_event_loop(None)
+                loop.close()
 
 
 def _cancel_all_tasks(loop):

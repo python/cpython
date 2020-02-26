@@ -16,6 +16,8 @@ import threading
 import time
 import unittest
 import weakref
+import signal
+import _thread
 
 from unittest import mock
 
@@ -585,3 +587,28 @@ def mock_nonblocking_socket(proto=socket.IPPROTO_TCP, type=socket.SOCK_STREAM,
     sock.family = family
     sock.gettimeout.return_value = 0.0
     return sock
+
+
+@contextlib.contextmanager
+def run_delayed(func, delay):
+    def thread_target():
+        time.sleep(delay)
+        func()
+
+    thread = threading.Thread(target=thread_target)
+    thread.start()
+    try:
+        yield
+    finally:
+        thread.join()
+
+
+def interrupt_from_thread(loop, delay=0.1):
+    return run_delayed(loop.interrupt, delay)
+
+
+def interrupt_main():
+    if sys.platform == 'win32':
+        _thread.interrupt_main()
+    else:
+        os.kill(os.getpid(), signal.SIGINT)

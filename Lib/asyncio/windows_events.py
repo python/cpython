@@ -9,6 +9,7 @@ import socket
 import struct
 import time
 import weakref
+import _thread
 
 from . import events
 from . import base_subprocess
@@ -299,6 +300,13 @@ class PipeServer(object):
 
 class _WindowsSelectorEventLoop(selector_events.BaseSelectorEventLoop):
     """Windows version of selector event loop."""
+
+    def _interrupt_main_thread(self):
+        # We could use os.kill(os.getpid(), signal.CTRL_C_EVENT), but in windows
+        # it is a console event, which means if other processes that are running
+        # in this console (for example when using multiprocessing) will receive
+        # the event as well.
+        _thread.interrupt_main()
 
 
 class ProactorEventLoop(proactor_events.BaseProactorEventLoop):

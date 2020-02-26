@@ -19,6 +19,7 @@ _Py_IDENTIFIER(current_task);
 _Py_IDENTIFIER(get_event_loop);
 _Py_IDENTIFIER(send);
 _Py_IDENTIFIER(throw);
+_Py_IDENTIFIER(_can_interrupt);
 
 
 /* State of the _asyncio module */
@@ -2594,6 +2595,7 @@ task_step_impl(TaskObj *task, PyObject *exc)
     PyObject *result = NULL;
     PyObject *coro;
     PyObject *o;
+    PyObject *err_type, *err_value, *err_tb;
 
     if (task->task_state != STATE_PENDING) {
         PyErr_Format(asyncio_InvalidStateError,
@@ -2639,6 +2641,13 @@ task_step_impl(TaskObj *task, PyObject *exc)
         return NULL;
     }
 
+    /* task.task_loop._can_interrupt = True */
+    if (_PyObject_SetAttrId(
+            task->task_loop, &PyId__can_interrupt, Py_True) == -1) {
+        goto fail;
+    }
+
+    /* Run a step in the coroutine and store the yielded value in result */
     if (exc == NULL) {
         if (PyGen_CheckExact(coro) || PyCoro_CheckExact(coro)) {
             result = _PyGen_Send((PyGenObject*)coro, Py_None);
@@ -2654,6 +2663,15 @@ task_step_impl(TaskObj *task, PyObject *exc)
             Py_DECREF(exc);
         }
     }
+
+    /* task.task_loop._can_interrupt = False */
+    PyErr_Fetch(&err_type, &err_value, &err_tb);
+    if (_PyObject_SetAttrId(
+            task->task_loop, &PyId__can_interrupt, Py_False) == -1) {
+        goto fail;
+    }
+    assert(!PyErr_Occurred());
+    PyErr_Restore(err_type, err_value, err_tb);
 
     if (result == NULL) {
         PyObject *et, *ev, *tb;
