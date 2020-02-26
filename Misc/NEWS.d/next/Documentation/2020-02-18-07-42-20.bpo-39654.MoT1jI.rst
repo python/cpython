@@ -1,2 +1,0 @@
-In pyclbr doc, update 'class' to 'module' where appropriate and add readmodule comment.
-Patch by Hakan Çelik.
