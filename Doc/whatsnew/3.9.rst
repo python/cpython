@@ -74,12 +74,7 @@ Dictionary Merge & Update Operators
 -----------------------------------
 
 Merge (``|``) and update (``|=``) operators have been added to the built-in
-:class:`dict` class.
-
-.. XXX https://www.python.org/dev/peps/pep-0584/
-
-See :pep:`584` for a full description.
-
+:class:`dict` class.  See :pep:`584` for a full description.
 (Contributed by Brandt Bucher in :issue:`36144`.)
 
 
