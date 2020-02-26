@@ -70,6 +70,12 @@ Summary -- Release highlights
 New Features
 ============
 
+Dictionary Merge & Update Operators
+-----------------------------------
+
+Merge (``|``) and update (``|=``) operators have been added to the built-in
+:class:`dict` class.  See :pep:`584` for a full description.
+(Contributed by Brandt Bucher in :issue:`36144`.)
 
 
 Other Language Changes
