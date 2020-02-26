@@ -1375,6 +1375,7 @@ To find out what card the pair consists of, one could use the
 
 .. doctest::
 
+   >>> pair = re.compile(r".*(.).*\1")
    >>> pair.match("717ak").group(1)
    '7'
 
