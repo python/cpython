@@ -26,6 +26,7 @@ from idlelib import pyparse
 from idlelib import query
 from idlelib import replace
 from idlelib import search
+from idlelib.textview import AutoShowScrollbar
 from idlelib.tree import wheel_event
 from idlelib import window
 
@@ -68,6 +69,7 @@ class EditorWindow(object):
 
     allow_code_context = True
     allow_line_numbers = True
+    allow_hbar = True
 
     def __init__(self, flist=None, filename=None, key=None, root=None):
         # Delay import: runscript imports pyshell imports EditorWindow.
@@ -121,8 +123,6 @@ class EditorWindow(object):
 
         self.prompt_last_line = ''  # Override in PyShell
         self.text_frame = text_frame = Frame(top)
-        self.vbar = vbar = Scrollbar(text_frame, name='vbar')
-        self.hbar = hbar = Scrollbar(text_frame, orient="horizontal", name='hbar')
         width = idleConf.GetOption('main', 'EditorWindow', 'width', type='int')
         text_options = {
                 'name': 'text',
@@ -136,6 +136,13 @@ class EditorWindow(object):
                 }
         self.text = text = MultiCallCreator(Text)(text_frame, **text_options)
         self.top.focused_widget = self.text
+        self.vbar = vbar = Scrollbar(text_frame, name='vbar',
+                                     takefocus=False,
+                                     command=self.handle_yview)
+        self.hbar = hbar = AutoShowScrollbar(text_frame, name="hbar",
+                                             orient="horizontal",
+                                             takefocus=False,
+                                             command=text.xview)
 
         self.createmenubar()
         self.apply_bindings()
@@ -210,12 +217,11 @@ class EditorWindow(object):
         text_frame.pack(side=LEFT, fill=BOTH, expand=1)
         text_frame.rowconfigure(1, weight=1)
         text_frame.columnconfigure(1, weight=1)
-        vbar['command'] = self.handle_yview
         vbar.grid(row=1, column=2, sticky=NSEW)
         text['yscrollcommand'] = vbar.set
-        hbar['command'] = text.xview
-        hbar.pack(side='bottom', fill='x')
-        text['xscrollcommand'] = hbar.set
+        if self.allow_hbar:
+            hbar.grid(row=2, column=1,  sticky="ew")
+            text['xscrollcommand'] = hbar.set
         text['font'] = idleConf.GetFont(self.root, 'main', 'EditorWindow')
         text.grid(row=1, column=1, sticky=NSEW)
         text.focus_set()

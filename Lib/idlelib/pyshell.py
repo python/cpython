@@ -856,6 +856,7 @@ class PyShell(OutputWindow):
     ]
 
     allow_line_numbers = False
+    allow_hbar = False
 
     # New classes
     from idlelib.history import History

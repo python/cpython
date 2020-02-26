@@ -69,10 +69,10 @@ class ViewWindowTest(unittest.TestCase):
         view.destroy()
 
 
-class AutoHideScrollbarTest(unittest.TestCase):
+class AutoShowScrollbarTest(unittest.TestCase):
     # Method set is tested in ScrollableTextFrameTest
     def test_forbidden_geometry(self):
-        scroll = tv.AutoHideScrollbar(root)
+        scroll = tv.AutoShowScrollbar(root)
         self.assertRaises(TclError, scroll.pack)
         self.assertRaises(TclError, scroll.place)
 
