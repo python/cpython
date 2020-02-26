@@ -1,2 +1,4 @@
-Add Deprecation Warning message when an Queue and Locks objects are created
-and the loop is not running.
+The creation of :class:`asyncio.Queue`, :class:`asyncio.Lock`,
+:class:`asyncio.Event`, :class:`asyncio.Condition`,
+:class:`asyncio.Semaphore`, and :class:`asyncio.BoundedSemaphore`
+objects outside of a running event loop has been deprecated.

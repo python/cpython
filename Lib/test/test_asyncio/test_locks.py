@@ -1001,6 +1001,9 @@ class SemaphoreTests(test_utils.TestCase):
 
 
 class LockLoopTests:
+    """Tests the deprecation of creating asyncio objects outside of a
+    running event loop."""
+
     def setUp(self):
         self.loop = asyncio.new_event_loop()
         asyncio.set_event_loop(self.loop)
