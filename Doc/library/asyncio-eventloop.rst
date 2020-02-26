@@ -1049,7 +1049,7 @@ Unix signals
    
    While signal handlers registered using :func:`signal.signal` will
    typically be called immediately, handlers registered using this
-   method are subject to potential delays while waiting for other 
+   method are subject to potential delays while waiting for other
    work in the given event loop to be completed.
    
    Any event handler set for the same signal via :func:`signal.signal`
