@@ -41,6 +41,22 @@ available as `mock on PyPI <https://pypi.org/project/mock>`_.
 Quick Guide
 -----------
 
+.. testsetup::
+
+    class ProductionClass:
+        def method(self, a, b, c):
+            pass
+
+    class SomeClass:
+        @staticmethod
+        def static_method(args):
+            return args
+
+        @classmethod
+        def class_method(cls, args):
+            return args
+
+
 :class:`Mock` and :class:`MagicMock` objects create all attributes and
 methods as you access them and store details of how they have been used. You
 can configure them, to specify return values or limit what attributes are
