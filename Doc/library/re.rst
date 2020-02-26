@@ -1375,7 +1375,6 @@ To find out what card the pair consists of, one could use the
 
 .. doctest::
 
-   >>> pair = re.compile(r".*(.).*\1")
    >>> pair.match("717ak").group(1)
    '7'
 
@@ -1481,8 +1480,6 @@ creates a phonebook.
 
 First, here is the input.  Normally it may come from a file, here we are using
 triple-quoted string syntax::
-
-.. doctest::
 
    >>> text = """Ross McFluff: 834.345.1254 155 Elm Street
    ...

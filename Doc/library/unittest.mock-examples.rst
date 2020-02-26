@@ -9,19 +9,6 @@
 
 .. _getting-started:
 
-
-.. testsetup::
-
-    import unittest
-    from unittest.mock import Mock, MagicMock, patch, call, sentinel
-
-    class SomeClass:
-        attribute = 'this is a doctest'
-
-        @staticmethod
-        def static_method():
-            pass
-
 Using Mock
 ----------
 

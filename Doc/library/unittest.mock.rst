@@ -41,22 +41,6 @@ available as `mock on PyPI <https://pypi.org/project/mock>`_.
 Quick Guide
 -----------
 
-.. testsetup::
-
-    class ProductionClass:
-        def method(self, a, b, c):
-            pass
-
-    class SomeClass:
-        @staticmethod
-        def static_method(args):
-            return args
-
-        @classmethod
-        def class_method(cls, args):
-            return args
-
-
 :class:`Mock` and :class:`MagicMock` objects create all attributes and
 methods as you access them and store details of how they have been used. You
 can configure them, to specify return values or limit what attributes are
@@ -199,13 +183,6 @@ the ``__call__`` method.
 The Mock Class
 --------------
 
-.. testsetup::
-
-    import inspect
-    import unittest
-    from unittest.mock import sentinel, DEFAULT, ANY
-    from unittest.mock import patch, call, Mock, MagicMock, PropertyMock
-    from unittest.mock import mock_open
 
 :class:`Mock` is a flexible mock object intended to replace the use of stubs and
 test doubles throughout your code. Mocks are callable and create attributes as
@@ -2428,10 +2405,6 @@ alternative object as the *autospec* argument:
 
 Sealing mocks
 ~~~~~~~~~~~~~
-
-.. testsetup::
-
-    from unittest.mock import seal
 
 .. function:: seal(mock)
 
