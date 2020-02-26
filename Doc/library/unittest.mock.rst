@@ -199,6 +199,14 @@ the ``__call__`` method.
 The Mock Class
 --------------
 
+.. testsetup::
+
+    import asyncio
+    import inspect
+    import unittest
+    from unittest.mock import sentinel, DEFAULT, ANY
+    from unittest.mock import patch, call, Mock, MagicMock, PropertyMock, AsyncMock
+    from unittest.mock import mock_open
 
 :class:`Mock` is a flexible mock object intended to replace the use of stubs and
 test doubles throughout your code. Mocks are callable and create attributes as
@@ -2421,6 +2429,10 @@ alternative object as the *autospec* argument:
 
 Sealing mocks
 ~~~~~~~~~~~~~
+
+.. testsetup::
+
+    from unittest.mock import seal
 
 .. function:: seal(mock)
 
