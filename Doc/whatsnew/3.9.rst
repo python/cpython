@@ -70,6 +70,12 @@ Summary -- Release highlights
 New Features
 ============
 
+Dictionary Merge & Update Operators
+-----------------------------------
+
+Merge (``|``) and update (``|=``) operators have been added to the built-in
+:class:`dict` class.  See :pep:`584` for a full description.
+(Contributed by Brandt Bucher in :issue:`36144`.)
 
 
 Other Language Changes
@@ -212,6 +218,15 @@ To improve consistency with import statements, :func:`importlib.util.resolve_nam
 now raises :exc:`ImportError` instead of :exc:`ValueError` for invalid relative
 import attempts.
 (Contributed by Ngalim Siregar in :issue:`37444`.)
+
+ipaddress
+---------
+
+:mod:`ipaddress` now supports IPv6 Scoped Addresses (IPv6 address with suffix ``%<scope_id>``).
+
+Scoped IPv6 addresses can be parsed using :class:`ipaddress.IPv6Address`.
+If present, scope zone ID is available through the :attr:`~ipaddress.IPv6Address.scope_id` attribute.
+(Contributed by Oleksandr Pavliuk in :issue:`34788`.)
 
 math
 ----
