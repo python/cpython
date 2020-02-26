@@ -40,7 +40,7 @@ jobs:
     - name: Configure CPython
       run: ./configure --with-openssl=$PWD/multissl/openssl/$OPENSSL_VER
     - name: Build CPython
-      run: make -s -j4
+      run: make -j4
     - name: Display build info
       run: make pythoninfo
     - name: 'Coverage Preparation'
