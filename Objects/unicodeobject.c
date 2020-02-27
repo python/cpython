@@ -3991,11 +3991,11 @@ PyUnicode_FSDecoder(PyObject* arg, void* addr)
 }
 
 
+static int unicode_fill_utf8(PyObject *unicode);
+
 const char *
 PyUnicode_AsUTF8AndSize(PyObject *unicode, Py_ssize_t *psize)
 {
-    PyObject *bytes;
-
     if (!PyUnicode_Check(unicode)) {
         PyErr_BadArgument();
         return NULL;
@@ -4004,21 +4004,9 @@ PyUnicode_AsUTF8AndSize(PyObject *unicode, Py_ssize_t *psize)
         return NULL;
 
     if (PyUnicode_UTF8(unicode) == NULL) {
-        assert(!PyUnicode_IS_COMPACT_ASCII(unicode));
-        bytes = _PyUnicode_AsUTF8String(unicode, NULL);
-        if (bytes == NULL)
-            return NULL;
-        _PyUnicode_UTF8(unicode) = PyObject_MALLOC(PyBytes_GET_SIZE(bytes) + 1);
-        if (_PyUnicode_UTF8(unicode) == NULL) {
-            PyErr_NoMemory();
-            Py_DECREF(bytes);
+        if (unicode_fill_utf8(unicode) == -1) {
             return NULL;
         }
-        _PyUnicode_UTF8_LENGTH(unicode) = PyBytes_GET_SIZE(bytes);
-        memcpy(_PyUnicode_UTF8(unicode),
-                  PyBytes_AS_STRING(bytes),
-                  _PyUnicode_UTF8_LENGTH(unicode) + 1);
-        Py_DECREF(bytes);
     }
 
     if (psize)
@@ -5381,10 +5369,6 @@ static PyObject *
 unicode_encode_utf8(PyObject *unicode, _Py_error_handler error_handler,
                     const char *errors)
 {
-    enum PyUnicode_Kind kind;
-    void *data;
-    Py_ssize_t size;
-
     if (!PyUnicode_Check(unicode)) {
         PyErr_BadArgument();
         return NULL;
@@ -5397,9 +5381,12 @@ unicode_encode_utf8(PyObject *unicode, _Py_error_handler error_handler,
         return PyBytes_FromStringAndSize(PyUnicode_UTF8(unicode),
                                          PyUnicode_UTF8_LENGTH(unicode));
 
-    kind = PyUnicode_KIND(unicode);
-    data = PyUnicode_DATA(unicode);
-    size = PyUnicode_GET_LENGTH(unicode);
+    enum PyUnicode_Kind kind = PyUnicode_KIND(unicode);
+    void *data = PyUnicode_DATA(unicode);
+    Py_ssize_t size = PyUnicode_GET_LENGTH(unicode);
+
+    _PyBytesWriter writer;
+    char *end;
 
     switch (kind) {
     default:
@@ -5407,12 +5394,73 @@ unicode_encode_utf8(PyObject *unicode, _Py_error_handler error_handler,
     case PyUnicode_1BYTE_KIND:
         /* the string cannot be ASCII, or PyUnicode_UTF8() would be set */
         assert(!PyUnicode_IS_ASCII(unicode));
-        return ucs1lib_utf8_encoder(unicode, data, size, error_handler, errors);
+        end = ucs1lib_utf8_encoder(&writer, unicode, data, size, error_handler, errors);
+        break;
     case PyUnicode_2BYTE_KIND:
-        return ucs2lib_utf8_encoder(unicode, data, size, error_handler, errors);
+        end = ucs2lib_utf8_encoder(&writer, unicode, data, size, error_handler, errors);
+        break;
     case PyUnicode_4BYTE_KIND:
-        return ucs4lib_utf8_encoder(unicode, data, size, error_handler, errors);
+        end = ucs4lib_utf8_encoder(&writer, unicode, data, size, error_handler, errors);
+        break;
     }
+
+    if (end == NULL) {
+        _PyBytesWriter_Dealloc(&writer);
+        return NULL;
+    }
+    return _PyBytesWriter_Finish(&writer, end);
+}
+
+static int
+unicode_fill_utf8(PyObject *unicode)
+{
+    /* the string cannot be ASCII, or PyUnicode_UTF8() would be set */
+    assert(!PyUnicode_IS_ASCII(unicode));
+
+    enum PyUnicode_Kind kind = PyUnicode_KIND(unicode);
+    void *data = PyUnicode_DATA(unicode);
+    Py_ssize_t size = PyUnicode_GET_LENGTH(unicode);
+
+    _PyBytesWriter writer;
+    char *end;
+
+    switch (kind) {
+    default:
+        Py_UNREACHABLE();
+    case PyUnicode_1BYTE_KIND:
+        end = ucs1lib_utf8_encoder(&writer, unicode, data, size,
+                                   _Py_ERROR_STRICT, NULL);
+        break;
+    case PyUnicode_2BYTE_KIND:
+        end = ucs2lib_utf8_encoder(&writer, unicode, data, size,
+                                   _Py_ERROR_STRICT, NULL);
+        break;
+    case PyUnicode_4BYTE_KIND:
+        end = ucs4lib_utf8_encoder(&writer, unicode, data, size,
+                                   _Py_ERROR_STRICT, NULL);
+        break;
+    }
+    if (end == NULL) {
+        _PyBytesWriter_Dealloc(&writer);
+        return -1;
+    }
+
+    char *start = writer.use_small_buffer ? writer.small_buffer :
+                    PyBytes_AS_STRING(writer.buffer);
+    Py_ssize_t len = end - start;
+
+    char *cache = PyObject_MALLOC(len + 1);
+    if (cache == NULL) {
+        _PyBytesWriter_Dealloc(&writer);
+        PyErr_NoMemory();
+        return -1;
+    }
+    _PyUnicode_UTF8(unicode) = cache;
+    _PyUnicode_UTF8_LENGTH(unicode) = len;
+    memcpy(cache, start, len);
+    cache[len] = '\0';
+    _PyBytesWriter_Dealloc(&writer);
+    return 0;
 }
 
 PyObject *

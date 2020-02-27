@@ -256,8 +256,9 @@ InvalidContinuation3:
 /* UTF-8 encoder specialized for a Unicode kind to avoid the slow
    PyUnicode_READ() macro. Delete some parts of the code depending on the kind:
    UCS-1 strings don't need to handle surrogates for example. */
-Py_LOCAL_INLINE(PyObject *)
-STRINGLIB(utf8_encoder)(PyObject *unicode,
+Py_LOCAL_INLINE(char *)
+STRINGLIB(utf8_encoder)(_PyBytesWriter *writer,
+                        PyObject *unicode,
                         STRINGLIB_CHAR *data,
                         Py_ssize_t size,
                         _Py_error_handler error_handler,
@@ -277,17 +278,16 @@ STRINGLIB(utf8_encoder)(PyObject *unicode,
 #else /*  STRINGLIB_SIZEOF_CHAR == 4 */
     const Py_ssize_t max_char_size = 4;
 #endif
-    _PyBytesWriter writer;
 
     assert(size >= 0);
-    _PyBytesWriter_Init(&writer);
-
     if (size > PY_SSIZE_T_MAX / max_char_size) {
         /* integer overflow */
-        return PyErr_NoMemory();
+        PyErr_NoMemory();
+        return NULL;
     }
 
-    p = _PyBytesWriter_Alloc(&writer, size * max_char_size);
+    _PyBytesWriter_Init(writer);
+    p = _PyBytesWriter_Alloc(writer, size * max_char_size);
     if (p == NULL)
         return NULL;
 
@@ -323,7 +323,7 @@ STRINGLIB(utf8_encoder)(PyObject *unicode,
                 endpos++;
 
             /* Only overallocate the buffer if it's not the last write */
-            writer.overallocate = (endpos < size);
+            writer->overallocate = (endpos < size);
 
             switch (error_handler)
             {
@@ -347,8 +347,8 @@ STRINGLIB(utf8_encoder)(PyObject *unicode,
 
             case _Py_ERROR_BACKSLASHREPLACE:
                 /* subtract preallocated bytes */
-                writer.min_size -= max_char_size * (endpos - startpos);
-                p = backslashreplace(&writer, p,
+                writer->min_size -= max_char_size * (endpos - startpos);
+                p = backslashreplace(writer, p,
                                      unicode, startpos, endpos);
                 if (p == NULL)
                     goto error;
@@ -357,8 +357,8 @@ STRINGLIB(utf8_encoder)(PyObject *unicode,
 
             case _Py_ERROR_XMLCHARREFREPLACE:
                 /* subtract preallocated bytes */
-                writer.min_size -= max_char_size * (endpos - startpos);
-                p = xmlcharrefreplace(&writer, p,
+                writer->min_size -= max_char_size * (endpos - startpos);
+                p = xmlcharrefreplace(writer, p,
                                       unicode, startpos, endpos);
                 if (p == NULL)
                     goto error;
@@ -387,10 +387,10 @@ STRINGLIB(utf8_encoder)(PyObject *unicode,
                     goto error;
 
                 /* subtract preallocated bytes */
-                writer.min_size -= max_char_size * (newpos - startpos);
+                writer->min_size -= max_char_size * (newpos - startpos);
 
                 if (PyBytes_Check(rep)) {
-                    p = _PyBytesWriter_WriteBytes(&writer, p,
+                    p = _PyBytesWriter_WriteBytes(writer, p,
                                                   PyBytes_AS_STRING(rep),
                                                   PyBytes_GET_SIZE(rep));
                 }
@@ -406,7 +406,7 @@ STRINGLIB(utf8_encoder)(PyObject *unicode,
                         goto error;
                     }
 
-                    p = _PyBytesWriter_WriteBytes(&writer, p,
+                    p = _PyBytesWriter_WriteBytes(writer, p,
                                                   PyUnicode_DATA(rep),
                                                   PyUnicode_GET_LENGTH(rep));
                 }
@@ -420,7 +420,7 @@ STRINGLIB(utf8_encoder)(PyObject *unicode,
 
             /* If overallocation was disabled, ensure that it was the last
                write. Otherwise, we missed an optimization */
-            assert(writer.overallocate || i == size);
+            assert(writer->overallocate || i == size);
         }
         else
 #if STRINGLIB_SIZEOF_CHAR > 2
@@ -449,14 +449,13 @@ STRINGLIB(utf8_encoder)(PyObject *unicode,
     Py_XDECREF(error_handler_obj);
     Py_XDECREF(exc);
 #endif
-    return _PyBytesWriter_Finish(&writer, p);
+    return p;
 
 #if STRINGLIB_SIZEOF_CHAR > 1
  error:
     Py_XDECREF(rep);
     Py_XDECREF(error_handler_obj);
     Py_XDECREF(exc);
-    _PyBytesWriter_Dealloc(&writer);
     return NULL;
 #endif
 }
