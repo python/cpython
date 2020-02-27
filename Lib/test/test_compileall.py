@@ -2,6 +2,7 @@ import sys
 import compileall
 import importlib.util
 import test.test_importlib.util
+import marshal
 import os
 import pathlib
 import py_compile
@@ -211,6 +212,35 @@ class CompileallTestsBase:
 
         compileall.compile_dir(self.directory, quiet=True, maxlevels=depth)
         self.assertTrue(os.path.isfile(pyc_filename))
+
+    def test_ddir_only(self):
+        """Recursive compile_dir ddir must contain package paths; bpo39769."""
+        fullpath = ["test", "foo"]
+        path = self.directory
+        mods = []
+        for subdir in fullpath:
+            path = os.path.join(path, subdir)
+            os.mkdir(path)
+            script_helper.make_script(path, "__init__", "")
+            mods.append(script_helper.make_script(path, "mod",
+                                                  "def fn(): 1/0\nfn()\n"))
+        ddir = "<a prefix>"
+        compileall.compile_dir(self.directory, quiet=True, ddir=ddir)
+        assert mods
+        for mod in mods:
+            assert mod.startswith(self.directory)
+            modcode = importlib.util.cache_from_source(mod)
+            modpath = mod[len(self.directory+os.sep):]
+            _, _, err = script_helper.assert_python_failure(modcode)
+            expected_in = os.path.join(ddir, modpath)
+            with open(modcode, 'rb') as mod_pyc_f:
+                mod_pyc_f.seek(16)  # Update if pyc header size ever changes.
+                mod_code_obj = marshal.load(mod_pyc_f)
+            self.assertEqual(mod_code_obj.co_filename, expected_in)
+            self.assertIn(
+                f'"{expected_in}"',
+                str(err, encoding=sys.getdefaultencoding())
+            )
 
     def test_strip_only(self):
         fullpath = ["test", "build", "real", "path"]
