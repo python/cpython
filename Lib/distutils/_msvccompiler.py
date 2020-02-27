@@ -197,10 +197,10 @@ PLAT_TO_VCVARS = {
 # A map keyed by get_platform() return values to value accepted by
 # clang as the triple.
 PLAT_TO_LLVM_TARGETS = {
-    'win32': 'i686',
-    'win-amd64': 'x86_64',
-    'win-arm32': 'arm',
-    'win-arm64': 'aarch64',
+    'win32': 'i686-pc-windows-msvc',
+    'win-amd64': 'x86_64-pc-windows-msvc',
+    'win-arm32': 'arm-pc-windows-msvc',
+    'win-arm64': 'aarch64-pc-windows-msvc',
 }
 
 # A set containing the DLLs that are guaranteed to be available for
@@ -310,7 +310,7 @@ class MSVCCompiler(CCompiler) :
         ]
         if self.use_clang_cl:
             # Add target for clang
-            target_flag = "{}-pc-windows-msvc".format(PLAT_TO_LLVM_TARGETS[plat_name])
+            target_flag = "--target=" + PLAT_TO_LLVM_TARGETS[plat_name]
             self.compile_options.append(target_flag)
             self.compile_options_debug.append(target_flag)
             # Remove whole program optimization flags to avoid warnings about
