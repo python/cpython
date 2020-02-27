@@ -2991,7 +2991,6 @@ array_modexec(PyObject *m)
 {
     char buffer[Py_ARRAY_LENGTH(descriptors)], *p;
     PyObject *typecodes;
-    Py_ssize_t size = 0;
     const struct arraydescr *descr;
 
     if (PyType_Ready(&Arraytype) < 0)
@@ -3007,10 +3006,6 @@ array_modexec(PyObject *m)
     if (PyModule_AddObject(m, "array", (PyObject *)&Arraytype) < 0) {
         Py_DECREF((PyObject *)&Arraytype);
         return -1;
-    }
-
-    for (descr=descriptors; descr->typecode != '\0'; descr++) {
-        size++;
     }
 
     p = buffer;
