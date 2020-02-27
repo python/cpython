@@ -7,7 +7,6 @@ the lines which contain the block opening keywords, e.g. 'if', for the
 enclosing block.  The number of hint lines is determined by the maxlines
 variable in the codecontext section of config-extensions.def. Lines which do
 not open blocks are not shown in the context hints pane.
-
 """
 import re
 from sys import maxsize as INFINITY
@@ -17,8 +16,8 @@ from tkinter.constants import NSEW, SUNKEN
 
 from idlelib.config import idleConf
 
-BLOCKOPENERS = {"class", "def", "elif", "else", "except", "finally", "for",
-                "if", "try", "while", "with", "async"}
+BLOCKOPENERS = {'class', 'def', 'if', 'elif', 'else', 'while', 'for',
+                 'try', 'except', 'finally', 'with', 'async'}
 
 
 def get_spaces_firstword(codeline, c=re.compile(r"^(\s*)(\w*)")):
@@ -215,7 +214,13 @@ class CodeContext:
         self.context['state'] = 'disabled'
 
     def jumptoline(self, event=None):
-        "Show clicked context line at top of editor."
+        """ Show clicked context line at top of editor.
+
+        If a selection was made, don't jump; allow copying.
+        If no visible context, show the top line of the file.
+        """
+        if self.text.prevrange('selection', '1.0'):
+            return
         lines = len(self.info)
         if lines == 1:  # No context lines are showing.
             newtop = 1
