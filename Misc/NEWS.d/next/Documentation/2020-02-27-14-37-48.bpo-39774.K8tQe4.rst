@@ -1,0 +1,1 @@
+Added documentation on how to make package executable as script

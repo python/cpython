@@ -476,6 +476,23 @@ except for the last must be a package; the last item can be a module or a
 package but can't be a class or function or variable defined in the previous
 item.
 
+If you want to make your package executable you need to create :file:`__main__.py`.
+
+.. code-block:: text
+
+   sound/
+         __init__.py
+         __main__.py               Executable package
+         formats/
+         effects/
+         filters/
+
+Then you can run your package as the executable:
+
+.. code-block:: shell-session
+
+   $ python -m sound
+
 
 .. _tut-pkg-import-star:
 
@@ -552,7 +569,7 @@ module for example, you might use::
    from ..filters import equalizer
 
 Note that relative imports are based on the name of the current module.  Since
-the name of the main module is always ``"__main__"``, modules intended for use
+the name of the main module is always ``__main__``, modules intended for use
 as the main module of a Python application must always use absolute imports.
 
 
