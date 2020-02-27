@@ -2,7 +2,6 @@ import sys
 import compileall
 import importlib.util
 import test.test_importlib.util
-import marshal
 import os
 import pathlib
 import py_compile
@@ -213,7 +212,7 @@ class CompileallTestsBase:
         compileall.compile_dir(self.directory, quiet=True, maxlevels=depth)
         self.assertTrue(os.path.isfile(pyc_filename))
 
-    def test_ddir_only(self):
+    def _test_ddir_only(self, *, parallel=True):
         """Recursive compile_dir ddir must contain package paths; bpo39769."""
         fullpath = ["test", "foo"]
         path = self.directory
@@ -225,7 +224,9 @@ class CompileallTestsBase:
             mods.append(script_helper.make_script(path, "mod",
                                                   "def fn(): 1/0\nfn()\n"))
         ddir = "<a prefix>"
-        compileall.compile_dir(self.directory, quiet=True, ddir=ddir)
+        compileall.compile_dir(
+                self.directory, quiet=True, ddir=ddir,
+                workers=2 if parallel else 1)
         assert mods
         for mod in mods:
             assert mod.startswith(self.directory)
@@ -233,14 +234,20 @@ class CompileallTestsBase:
             modpath = mod[len(self.directory+os.sep):]
             _, _, err = script_helper.assert_python_failure(modcode)
             expected_in = os.path.join(ddir, modpath)
-            with open(modcode, 'rb') as mod_pyc_f:
-                mod_pyc_f.seek(16)  # Update if pyc header size ever changes.
-                mod_code_obj = marshal.load(mod_pyc_f)
+            mod_code_obj = test.test_importlib.util.get_code_from_pyc(modcode)
             self.assertEqual(mod_code_obj.co_filename, expected_in)
             self.assertIn(
                 f'"{expected_in}"',
                 str(err, encoding=sys.getdefaultencoding())
             )
+
+    def test_ddir_only_one_worker(self):
+        """Recursive compile_dir ddir must contain package paths; bpo39769."""
+        return self._test_ddir_only(parallel=False)
+
+    def test_ddir_only_multiple_workers(self):
+        """Recursive compile_dir ddir must contain package paths; bpo39769."""
+        return self._test_ddir_only(parallel=True)
 
     def test_strip_only(self):
         fullpath = ["test", "build", "real", "path"]
