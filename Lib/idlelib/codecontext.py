@@ -219,7 +219,7 @@ class CodeContext:
         If a selection was made, don't jump; allow copying.
         If no visible context, show the top line of the file.
         """
-        if self.text.prevrange('selection', '1.0'):
+        if self.context.prevrange('selection', '1.0'):
             return
         lines = len(self.info)
         if lines == 1:  # No context lines are showing.
