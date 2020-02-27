@@ -1,0 +1,1 @@
+Add IDNA support in email addresses in email.message.EmailMessage
