@@ -49,7 +49,7 @@ steps:
   - script: ./venv/bin/python -m coverage xml
     displayName: 'Generate coverage.xml'
 
-  - script: source ./venv/bin/activate && bash <(curl -s https://codecov.io/bash)
+  - script: source ./venv/bin/activate && bash <(curl -s https://codecov.io/bash) -y .github/codecov.yml
     displayName: 'Publish code coverage results'
 
 

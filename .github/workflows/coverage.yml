@@ -65,7 +65,7 @@ jobs:
     - name: 'Publish code coverage results'
       run: |
         source ./.venv/bin/activate
-        bash <(curl -s https://codecov.io/bash)
+        bash <(curl -s https://codecov.io/bash) -y .github/codecov.yml
       env:
         CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
 
@@ -84,6 +84,6 @@ jobs:
       if: always()
       run: |
         make pythoninfo
-        bash <(curl -s https://codecov.io/bash)
+        bash <(curl -s https://codecov.io/bash) -y .github/codecov.yml
       env:
         CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
