@@ -961,6 +961,24 @@ class ChainMap(_collections_abc.MutableMapping):
         'Clear maps[0], leaving maps[1:] intact.'
         self.maps[0].clear()
 
+    def __ior__(self, other):
+        self.maps[0].update(other)
+        return self
+
+    def __or__(self, other):
+        if isinstance(other, _collections_abc.Mapping):
+            m = self.maps[0].copy()
+            m.update(other)
+            return self.__class__(m, *self.maps[1:])
+        return NotImplemented
+
+    def __ror__(self, other):
+        if isinstance(other, _collections_abc.MutableMapping):
+            m = other.copy()
+            for child in self.maps[::-1]:
+                m.update(child)
+            return self.__class__(m)
+        return NotImplemented
 
 ################################################################################
 ### UserDict
