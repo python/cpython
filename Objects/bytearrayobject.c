@@ -2,11 +2,11 @@
 
 #define PY_SSIZE_T_CLEAN
 #include "Python.h"
+#include "pycore_bytes_methods.h"
 #include "pycore_object.h"
 #include "pycore_pymem.h"
 #include "pycore_pystate.h"
 #include "structmember.h"
-#include "bytes_methods.h"
 #include "bytesobject.h"
 #include "pystrhex.h"
 
@@ -89,7 +89,7 @@ _canresize(PyByteArrayObject *self)
 PyObject *
 PyByteArray_FromObject(PyObject *input)
 {
-    return _PyObject_CallOneArg((PyObject *)&PyByteArray_Type, input);
+    return PyObject_CallOneArg((PyObject *)&PyByteArray_Type, input);
 }
 
 static PyObject *
@@ -2015,7 +2015,7 @@ bytearray_fromhex_impl(PyTypeObject *type, PyObject *string)
 {
     PyObject *result = _PyBytes_FromHex(string, type == &PyByteArray_Type);
     if (type != &PyByteArray_Type && result != NULL) {
-        Py_SETREF(result, _PyObject_CallOneArg((PyObject *)type, result));
+        Py_SETREF(result, PyObject_CallOneArg((PyObject *)type, result));
     }
     return result;
 }

@@ -5547,7 +5547,7 @@ int_from_bytes_impl(PyTypeObject *type, PyObject *bytes_obj,
     Py_DECREF(bytes);
 
     if (long_obj != NULL && type != &PyLong_Type) {
-        Py_SETREF(long_obj, _PyObject_CallOneArg((PyObject *)type, long_obj));
+        Py_SETREF(long_obj, PyObject_CallOneArg((PyObject *)type, long_obj));
     }
 
     return long_obj;

@@ -179,7 +179,7 @@ PyObject_GetItem(PyObject *o, PyObject *key)
             return NULL;
         }
         if (meth) {
-            result = _PyObject_CallOneArg(meth, key);
+            result = PyObject_CallOneArg(meth, key);
             Py_DECREF(meth);
             return result;
         }
@@ -780,7 +780,7 @@ PyObject_Format(PyObject *obj, PyObject *format_spec)
     }
 
     /* And call it. */
-    result = _PyObject_CallOneArg(meth, format_spec);
+    result = PyObject_CallOneArg(meth, format_spec);
     Py_DECREF(meth);
 
     if (result && !PyUnicode_Check(result)) {
@@ -2379,9 +2379,16 @@ abstract_issubclass(PyObject *derived, PyObject *cls)
     int r = 0;
 
     while (1) {
-        if (derived == cls)
+        if (derived == cls) {
+            Py_XDECREF(bases); /* See below comment */
             return 1;
-        bases = abstract_get_bases(derived);
+        }
+        /* Use XSETREF to drop bases reference *after* finishing with
+           derived; bases might be the only reference to it.
+           XSETREF is used instead of SETREF, because bases is NULL on the
+           first iteration of the loop.
+        */
+        Py_XSETREF(bases, abstract_get_bases(derived));
         if (bases == NULL) {
             if (PyErr_Occurred())
                 return -1;
@@ -2395,7 +2402,6 @@ abstract_issubclass(PyObject *derived, PyObject *cls)
         /* Avoid recursivity in the single inheritance case */
         if (n == 1) {
             derived = PyTuple_GET_ITEM(bases, 0);
-            Py_DECREF(bases);
             continue;
         }
         for (i = 0; i < n; i++) {
@@ -2502,7 +2508,7 @@ object_recursive_isinstance(PyThreadState *tstate, PyObject *inst, PyObject *cls
             return -1;
         }
 
-        PyObject *res = _PyObject_CallOneArg(checker, inst);
+        PyObject *res = PyObject_CallOneArg(checker, inst);
         _Py_LeaveRecursiveCall(tstate);
         Py_DECREF(checker);
 
@@ -2588,7 +2594,7 @@ object_issubclass(PyThreadState *tstate, PyObject *derived, PyObject *cls)
             Py_DECREF(checker);
             return ok;
         }
-        PyObject *res = _PyObject_CallOneArg(checker, derived);
+        PyObject *res = PyObject_CallOneArg(checker, derived);
         _Py_LeaveRecursiveCall(tstate);
         Py_DECREF(checker);
         if (res != NULL) {

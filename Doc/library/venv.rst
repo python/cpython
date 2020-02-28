@@ -27,7 +27,7 @@ See :pep:`405` for more information about Python virtual environments.
 .. seealso::
 
    `Python Packaging User Guide: Creating and using virtual environments
-   <https://packaging.python.org/installing/#creating-virtual-environments>`__
+   <https://packaging.python.org/guides/installing-using-pip-and-virtual-environments/#creating-a-virtual-environment>`__
 
 
 Creating virtual environments

@@ -82,7 +82,7 @@ _get_impl(PyObject *self)
     if (impl == NULL) {
         return NULL;
     }
-    if (Py_TYPE(impl) != &_abc_data_type) {
+    if (!Py_IS_TYPE(impl, &_abc_data_type)) {
         PyErr_SetString(PyExc_TypeError, "_abc_impl is set to a wrong type");
         Py_DECREF(impl);
         return NULL;
@@ -807,26 +807,35 @@ static struct PyMethodDef module_functions[] = {
     {NULL,       NULL}          /* sentinel */
 };
 
+static int
+_abc_exec(PyObject *module)
+{
+    if (PyType_Ready(&_abc_data_type) < 0) {
+        return -1;
+    }
+    _abc_data_type.tp_doc = abc_data_doc;
+    return 0;
+}
+
+static PyModuleDef_Slot _abc_slots[] = {
+    {Py_mod_exec, _abc_exec},
+    {0, NULL}
+};
+
 static struct PyModuleDef _abcmodule = {
     PyModuleDef_HEAD_INIT,
     "_abc",
     _abc__doc__,
-    -1,
+    0,
     module_functions,
-    NULL,
+    _abc_slots,
     NULL,
     NULL,
     NULL
 };
 
-
 PyMODINIT_FUNC
 PyInit__abc(void)
 {
-    if (PyType_Ready(&_abc_data_type) < 0) {
-        return NULL;
-    }
-    _abc_data_type.tp_doc = abc_data_doc;
-
-    return PyModule_Create(&_abcmodule);
+    return PyModuleDef_Init(&_abcmodule);
 }

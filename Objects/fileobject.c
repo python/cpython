@@ -137,7 +137,7 @@ PyFile_WriteObject(PyObject *v, PyObject *f, int flags)
         Py_DECREF(writer);
         return -1;
     }
-    result = _PyObject_CallOneArg(writer, value);
+    result = PyObject_CallOneArg(writer, value);
     Py_DECREF(value);
     Py_DECREF(writer);
     if (result == NULL)

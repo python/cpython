@@ -3,6 +3,7 @@ Provides .props file.
 """
 
 import os
+import sys
 
 from .constants import *
 
@@ -14,6 +15,7 @@ NUSPEC_DATA = {
     "PYTHON_TAG": VER_DOT,
     "PYTHON_VERSION": os.getenv("PYTHON_NUSPEC_VERSION"),
     "FILELIST": r'    <file src="**\*" target="tools" />',
+    "GIT": sys._git,
 }
 
 NUSPEC_PLATFORM_DATA = dict(
@@ -42,10 +44,13 @@ NUSPEC_TEMPLATE = r"""<?xml version="1.0"?>
     <license type="file">tools\LICENSE.txt</license>
     <projectUrl>https://www.python.org/</projectUrl>
     <description>Installs {PYTHON_BITNESS} Python for use in build scenarios.</description>
+    <icon>images\logox128.png</icon>
     <iconUrl>https://www.python.org/static/favicon.ico</iconUrl>
     <tags>python</tags>
+    <repository type="git" url="https://github.com/Python/CPython.git" commit="{GIT[2]}" />
   </metadata>
   <files>
+    <file src="{LOGO}" target="images" />
 {FILELIST}
   </files>
 </package>
@@ -68,5 +73,6 @@ def get_nuspec_layout(ns):
                 data[k] = v
         if ns.include_all or ns.include_props:
             data["FILELIST"] = FILELIST_WITH_PROPS
+        data["LOGO"] = ns.source / "PC" / "icons" / "logox128.png"
         nuspec = NUSPEC_TEMPLATE.format_map(data)
         yield "python.nuspec", ("python.nuspec", nuspec.encode("utf-8"))

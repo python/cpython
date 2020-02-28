@@ -204,7 +204,7 @@ PySys_Audit(const char *event, const char *argFormat, ...)
 
     /* Dtrace USDT point */
     if (dtrace) {
-        PyDTrace_AUDIT((char *)event, (void *)eventArgs);
+        PyDTrace_AUDIT(event, (void *)eventArgs);
     }
 
     /* Call interpreter hooks */
@@ -519,7 +519,7 @@ sys_breakpointhook(PyObject *self, PyObject *const *args, Py_ssize_t nargs, PyOb
         return NULL;
     }
     PyMem_RawFree(envar);
-    PyObject *retval = _PyObject_Vectorcall(hook, args, nargs, keywords);
+    PyObject *retval = PyObject_Vectorcall(hook, args, nargs, keywords);
     Py_DECREF(hook);
     return retval;
 

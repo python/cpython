@@ -123,6 +123,11 @@ typedef struct {
 #define Py_TYPE(ob)             (_PyObject_CAST(ob)->ob_type)
 #define Py_SIZE(ob)             (_PyVarObject_CAST(ob)->ob_size)
 
+static inline int _Py_IS_TYPE(PyObject *ob, PyTypeObject *type) {
+    return ob->ob_type == type;
+}
+#define Py_IS_TYPE(ob, type) _Py_IS_TYPE(_PyObject_CAST(ob), type)
+
 static inline void _Py_SET_REFCNT(PyObject *ob, Py_ssize_t refcnt) {
     ob->ob_refcnt = refcnt;
 }
@@ -133,10 +138,10 @@ static inline void _Py_SET_TYPE(PyObject *ob, PyTypeObject *type) {
 }
 #define Py_SET_TYPE(ob, type) _Py_SET_TYPE(_PyObject_CAST(ob), type)
 
-static inline void _Py_SET_SIZE(PyVarObject *ob, Py_ssize_t refcnt) {
-    ob->ob_size = refcnt;
+static inline void _Py_SET_SIZE(PyVarObject *ob, Py_ssize_t size) {
+    ob->ob_size = size;
 }
-#define Py_SET_SIZE(ob, refcnt) _Py_SET_SIZE(_PyVarObject_CAST(ob), refcnt)
+#define Py_SET_SIZE(ob, size) _Py_SET_SIZE(_PyVarObject_CAST(ob), size)
 
 
 /*
@@ -211,7 +216,7 @@ PyAPI_FUNC(void*) PyType_GetSlot(PyTypeObject*, int);
 /* Generic type check */
 PyAPI_FUNC(int) PyType_IsSubtype(PyTypeObject *, PyTypeObject *);
 #define PyObject_TypeCheck(ob, tp) \
-    (Py_TYPE(ob) == (tp) || PyType_IsSubtype(Py_TYPE(ob), (tp)))
+    (Py_IS_TYPE(ob, tp) || PyType_IsSubtype(Py_TYPE(ob), (tp)))
 
 PyAPI_DATA(PyTypeObject) PyType_Type; /* built-in 'type' */
 PyAPI_DATA(PyTypeObject) PyBaseObject_Type; /* built-in 'object' */
@@ -623,7 +628,7 @@ static inline int _PyType_Check(PyObject *op) {
 #define PyType_Check(op) _PyType_Check(_PyObject_CAST(op))
 
 static inline int _PyType_CheckExact(PyObject *op) {
-    return (Py_TYPE(op) == &PyType_Type);
+    return Py_IS_TYPE(op, &PyType_Type);
 }
 #define PyType_CheckExact(op) _PyType_CheckExact(_PyObject_CAST(op))
 
