@@ -227,19 +227,16 @@ class CompileallTestsBase:
         compileall.compile_dir(
                 self.directory, quiet=True, ddir=ddir,
                 workers=2 if parallel else 1)
-        assert mods
+        self.assertTrue(mods)
         for mod in mods:
-            assert mod.startswith(self.directory)
+            self.assertTrue(mod.startswith(self.directory), mod)
             modcode = importlib.util.cache_from_source(mod)
             modpath = mod[len(self.directory+os.sep):]
             _, _, err = script_helper.assert_python_failure(modcode)
             expected_in = os.path.join(ddir, modpath)
             mod_code_obj = test.test_importlib.util.get_code_from_pyc(modcode)
             self.assertEqual(mod_code_obj.co_filename, expected_in)
-            self.assertIn(
-                f'"{expected_in}"',
-                str(err, encoding=sys.getdefaultencoding())
-            )
+            self.assertIn(f'"{expected_in}"', os.fsdecode(err))
 
     def test_ddir_only_one_worker(self):
         """Recursive compile_dir ddir must contain package paths; bpo39769."""

@@ -75,7 +75,7 @@ def compile_dir(dir, maxlevels=None, ddir=None, force=False,
     if ddir is not None and (stripdir is not None or prependdir is not None):
         raise ValueError(("Destination dir (ddir) cannot be used "
                           "in combination with stripdir or prependdir"))
-    if ddir:
+    if ddir is not None:
         stripdir = dir
         prependdir = ddir
         ddir = None
