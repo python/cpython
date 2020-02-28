@@ -1419,6 +1419,10 @@ def get_phrase(value):
             phrase.defects.append(errors.ObsoleteHeaderDefect(
                 "period in 'phrase'"))
             value = value[1:]
+                if value[0] in PHRASE_ENDS:
+                value = " " + value
+                phrase.defects.append(errors.InvalidHeaderDefect(
+                    "trailing period in 'phrase' with no CFWS"))
         else:
             try:
                 token, value = get_word(value)
