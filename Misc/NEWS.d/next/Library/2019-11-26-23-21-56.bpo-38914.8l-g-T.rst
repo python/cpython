@@ -1,5 +1,0 @@
-Adjusted the wording of the warning issued by distutils' ``check`` command when
-the ``author`` and ``maintainer`` fields are supplied but no corresponding
-e-mail field (``author_email`` or ``maintainer_email``) is found. The wording
-now reflects the fact that these fields are suggested, but not required. Patch
-by Juergen Gmach.

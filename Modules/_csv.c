@@ -106,7 +106,7 @@ typedef struct {
 
 static PyTypeObject Reader_Type;
 
-#define ReaderObject_Check(v)   (Py_TYPE(v) == &Reader_Type)
+#define ReaderObject_Check(v)   Py_IS_TYPE(v, &Reader_Type)
 
 typedef struct {
     PyObject_HEAD
@@ -236,7 +236,7 @@ _set_char(const char *name, Py_UCS4 *target, PyObject *src, Py_UCS4 dflt)
             if (!PyUnicode_Check(src)) {
                 PyErr_Format(PyExc_TypeError,
                     "\"%s\" must be string, not %.200s", name,
-                    src->ob_type->tp_name);
+                    Py_TYPE(src)->tp_name);
                 return -1;
             }
             len = PyUnicode_GetLength(src);
@@ -514,10 +514,10 @@ _call_dialect(PyObject *dialect_inst, PyObject *kwargs)
 {
     PyObject *type = (PyObject *)&Dialect_Type;
     if (dialect_inst) {
-        return _PyObject_FastCallDict(type, &dialect_inst, 1, kwargs);
+        return PyObject_VectorcallDict(type, &dialect_inst, 1, kwargs);
     }
     else {
-        return _PyObject_FastCallDict(type, NULL, 0, kwargs);
+        return PyObject_VectorcallDict(type, NULL, 0, kwargs);
     }
 }
 
@@ -807,7 +807,7 @@ Reader_iternext(ReaderObj *self)
                          "iterator should return strings, "
                          "not %.200s "
                          "(did you open the file in text mode?)",
-                         lineobj->ob_type->tp_name
+                         Py_TYPE(lineobj)->tp_name
                 );
             Py_DECREF(lineobj);
             return NULL;
@@ -1168,7 +1168,7 @@ csv_writerow(WriterObj *self, PyObject *seq)
     if (iter == NULL)
         return PyErr_Format(_csvstate_global->error_obj,
                             "iterable expected, not %.200s",
-                            seq->ob_type->tp_name);
+                            Py_TYPE(seq)->tp_name);
 
     /* Join all fields in internal buffer.
      */
@@ -1240,7 +1240,7 @@ csv_writerow(WriterObj *self, PyObject *seq)
     if (line == NULL) {
         return NULL;
     }
-    result = _PyObject_CallOneArg(self->write, line);
+    result = PyObject_CallOneArg(self->write, line);
     Py_DECREF(line);
     return result;
 }

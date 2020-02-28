@@ -1,0 +1,2 @@
+Optimize :c:func:`PyUnicode_AsUTF8` and :c:func:`PyUnicode_AsUTF8AndSize`
+slightly when they need to create internal UTF-8 cache.

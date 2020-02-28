@@ -41,7 +41,7 @@ partial_new(PyTypeObject *type, PyObject *args, PyObject *kw)
 
     pargs = pkw = NULL;
     func = PyTuple_GET_ITEM(args, 0);
-    if (Py_TYPE(func) == &partial_type && type == &partial_type) {
+    if (Py_IS_TYPE(func, &partial_type) && type == &partial_type) {
         partialobject *part = (partialobject *)func;
         if (part->dict == NULL) {
             pargs = part->args;
@@ -213,7 +213,7 @@ partial_vectorcall(partialobject *pto, PyObject *const *args,
 static void
 partial_setvectorcall(partialobject *pto)
 {
-    if (_PyVectorcall_Function(pto->fn) == NULL) {
+    if (PyVectorcall_Function(pto->fn) == NULL) {
         /* Don't use vectorcall if the underlying function doesn't support it */
         pto->vectorcall = NULL;
     }
@@ -440,7 +440,7 @@ static PyTypeObject partial_type = {
     0,                                  /* tp_as_buffer */
     Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC |
         Py_TPFLAGS_BASETYPE |
-        _Py_TPFLAGS_HAVE_VECTORCALL,    /* tp_flags */
+        Py_TPFLAGS_HAVE_VECTORCALL,     /* tp_flags */
     partial_doc,                        /* tp_doc */
     (traverseproc)partial_traverse,     /* tp_traverse */
     0,                                  /* tp_clear */
@@ -649,7 +649,7 @@ functools_reduce(PyObject *self, PyObject *args)
     for (;;) {
         PyObject *op2;
 
-        if (args->ob_refcnt > 1) {
+        if (Py_REFCNT(args) > 1) {
             Py_DECREF(args);
             if ((args = PyTuple_New(2)) == NULL)
                 goto Fail;
@@ -666,7 +666,7 @@ functools_reduce(PyObject *self, PyObject *args)
             result = op2;
         else {
             /* Update the args tuple in-place */
-            assert(args->ob_refcnt == 1);
+            assert(Py_REFCNT(args) == 1);
             Py_XSETREF(_PyTuple_ITEMS(args)[0], result);
             Py_XSETREF(_PyTuple_ITEMS(args)[1], op2);
             if ((result = PyObject_Call(func, args, NULL)) == NULL) {

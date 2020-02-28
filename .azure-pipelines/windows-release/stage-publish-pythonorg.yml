@@ -39,11 +39,6 @@ jobs:
       artifactName: embed
       downloadPath: $(Build.BinariesDirectory)
 
-  - powershell: 'gci *embed-arm*.zip | %{ Write-Host "Not publishing: $($_.Name)"; gi $_ } | del'
-    displayName: 'Prevent publishing ARM/ARM64 packages'
-    workingDirectory: '$(Build.BinariesDirectory)\embed'
-    condition: and(succeeded(), not(variables['PublishArmPackages']))
-
   - task: DownloadPipelineArtifact@1
     displayName: 'Download artifact from $(BuildToPublish): Doc'
     condition: and(succeeded(), variables['BuildToPublish'])
@@ -79,6 +74,11 @@ jobs:
       pipeline: Windows-Release
       buildVersionToDownload: specific
       buildId: $(BuildToPublish)
+
+  - powershell: 'gci *embed-arm*.zip | %{ Write-Host "Not publishing: $($_.Name)"; gi $_ } | del'
+    displayName: 'Prevent publishing ARM/ARM64 packages'
+    workingDirectory: '$(Build.BinariesDirectory)\embed'
+    condition: and(succeeded(), not(variables['PublishArmPackages']))
 
 
   - template: ./gpg-sign.yml

@@ -336,7 +336,10 @@ def walk(top, topdown=True, onerror=None, followlinks=False):
             dirs.remove('CVS')  # don't visit CVS directories
 
     """
-    top = fspath(top)
+    sys.audit("os.walk", top, topdown, onerror, followlinks)
+    return _walk(fspath(top), topdown, onerror, followlinks)
+
+def _walk(top, topdown, onerror, followlinks):
     dirs = []
     nondirs = []
     walk_dirs = []
@@ -410,11 +413,11 @@ def walk(top, topdown=True, onerror=None, followlinks=False):
             # the caller can replace the directory entry during the "yield"
             # above.
             if followlinks or not islink(new_path):
-                yield from walk(new_path, topdown, onerror, followlinks)
+                yield from _walk(new_path, topdown, onerror, followlinks)
     else:
         # Recurse into sub-directories
         for new_path in walk_dirs:
-            yield from walk(new_path, topdown, onerror, followlinks)
+            yield from _walk(new_path, topdown, onerror, followlinks)
         # Yield after recursion if going bottom up
         yield top, dirs, nondirs
 
@@ -455,6 +458,7 @@ if {open, stat} <= supports_dir_fd and {scandir, stat} <= supports_fd:
             if 'CVS' in dirs:
                 dirs.remove('CVS')  # don't visit CVS directories
         """
+        sys.audit("os.fwalk", top, topdown, onerror, follow_symlinks, dir_fd)
         if not isinstance(top, int) or not hasattr(top, '__index__'):
             top = fspath(top)
         # Note: To guard against symlink races, we use the standard
@@ -654,17 +658,15 @@ def get_exec_path(env=None):
     return path_list.split(pathsep)
 
 
-# Change environ to automatically call putenv(), unsetenv if they exist.
+# Change environ to automatically call putenv() and unsetenv()
 from _collections_abc import MutableMapping
 
 class _Environ(MutableMapping):
-    def __init__(self, data, encodekey, decodekey, encodevalue, decodevalue, putenv, unsetenv):
+    def __init__(self, data, encodekey, decodekey, encodevalue, decodevalue):
         self.encodekey = encodekey
         self.decodekey = decodekey
         self.encodevalue = encodevalue
         self.decodevalue = decodevalue
-        self.putenv = putenv
-        self.unsetenv = unsetenv
         self._data = data
 
     def __getitem__(self, key):
@@ -678,12 +680,12 @@ class _Environ(MutableMapping):
     def __setitem__(self, key, value):
         key = self.encodekey(key)
         value = self.encodevalue(value)
-        self.putenv(key, value)
+        putenv(key, value)
         self._data[key] = value
 
     def __delitem__(self, key):
         encodedkey = self.encodekey(key)
-        self.unsetenv(encodedkey)
+        unsetenv(encodedkey)
         try:
             del self._data[encodedkey]
         except KeyError:
@@ -712,22 +714,6 @@ class _Environ(MutableMapping):
             self[key] = value
         return self[key]
 
-try:
-    _putenv = putenv
-except NameError:
-    _putenv = lambda key, value: None
-else:
-    if "putenv" not in __all__:
-        __all__.append("putenv")
-
-try:
-    _unsetenv = unsetenv
-except NameError:
-    _unsetenv = lambda key: _putenv(key, "")
-else:
-    if "unsetenv" not in __all__:
-        __all__.append("unsetenv")
-
 def _createenviron():
     if name == 'nt':
         # Where Env Var Names Must Be UPPERCASE
@@ -755,8 +741,7 @@ def _createenviron():
         data = environ
     return _Environ(data,
         encodekey, decode,
-        encode, decode,
-        _putenv, _unsetenv)
+        encode, decode)
 
 # unicode environ
 environ = _createenviron()
@@ -781,8 +766,7 @@ if supports_bytes_environ:
     # bytes environ
     environb = _Environ(environ._data,
         _check_bytes, bytes,
-        _check_bytes, bytes,
-        _putenv, _unsetenv)
+        _check_bytes, bytes)
     del _check_bytes
 
     def getenvb(key, default=None):

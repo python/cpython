@@ -998,17 +998,25 @@ class ASTModuleVisitor(PickleVisitor):
         self.emit("if (!init_types()) return NULL;", 1)
         self.emit('m = PyState_FindModule(&_astmodule);', 1)
         self.emit("if (!m) return NULL;", 1)
+        self.emit('if (PyModule_AddObject(m, "AST", astmodulestate_global->AST_type) < 0) {', 1)
+        self.emit('goto error;', 2)
+        self.emit('}', 1)
         self.emit('Py_INCREF(astmodulestate(m)->AST_type);', 1)
-        self.emit('if (PyModule_AddObject(m, "AST", astmodulestate_global->AST_type) < 0) return NULL;', 1)
-        self.emit('if (PyModule_AddIntMacro(m, PyCF_ALLOW_TOP_LEVEL_AWAIT) < 0)', 1)
-        self.emit("return NULL;", 2)
-        self.emit('if (PyModule_AddIntMacro(m, PyCF_ONLY_AST) < 0)', 1)
-        self.emit("return NULL;", 2)
-        self.emit('if (PyModule_AddIntMacro(m, PyCF_TYPE_COMMENTS) < 0)', 1)
-        self.emit("return NULL;", 2)
+        self.emit('if (PyModule_AddIntMacro(m, PyCF_ALLOW_TOP_LEVEL_AWAIT) < 0) {', 1)
+        self.emit("goto error;", 2)
+        self.emit('}', 1)
+        self.emit('if (PyModule_AddIntMacro(m, PyCF_ONLY_AST) < 0) {', 1)
+        self.emit("goto error;", 2)
+        self.emit('}', 1)
+        self.emit('if (PyModule_AddIntMacro(m, PyCF_TYPE_COMMENTS) < 0) {', 1)
+        self.emit("goto error;", 2)
+        self.emit('}', 1)
         for dfn in mod.dfns:
             self.visit(dfn)
         self.emit("return m;", 1)
+        self.emit("error:", 0)
+        self.emit("Py_DECREF(m);", 1)
+        self.emit("return NULL;", 1)
         self.emit("}", 0)
 
     def visitProduct(self, prod, name):
@@ -1024,7 +1032,9 @@ class ASTModuleVisitor(PickleVisitor):
 
     def addObj(self, name):
         self.emit("if (PyModule_AddObject(m, \"%s\", "
-                  "astmodulestate_global->%s_type) < 0) return NULL;" % (name, name), 1)
+                  "astmodulestate_global->%s_type) < 0) {" % (name, name), 1)
+        self.emit("goto error;", 2)
+        self.emit('}', 1)
         self.emit("Py_INCREF(astmodulestate(m)->%s_type);" % name, 1)
 
 

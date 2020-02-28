@@ -506,7 +506,6 @@ static int test_init_from_config(void)
     config.import_time = 1;
 
     config.show_ref_count = 1;
-    config.show_alloc_count = 1;
     /* FIXME: test dump_refs: bpo-34223 */
 
     putenv("PYTHONMALLOCSTATS=0");

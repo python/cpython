@@ -26,6 +26,7 @@ from test.support import (
     temp_dir, DirsOnSysPath)
 from test.support import script_helper
 from test.test_importlib.util import uncache
+from types import ModuleType
 
 
 skip_if_dont_write_bytecode = unittest.skipIf(
@@ -1338,6 +1339,19 @@ class CircularImportTests(unittest.TestCase):
             "(most likely due to a circular import)",
             str(cm.exception),
         )
+
+    def test_unwritable_module(self):
+        self.addCleanup(unload, "test.test_import.data.unwritable")
+        self.addCleanup(unload, "test.test_import.data.unwritable.x")
+
+        import test.test_import.data.unwritable as unwritable
+        with self.assertWarns(ImportWarning):
+            from test.test_import.data.unwritable import x
+
+        self.assertNotEqual(type(unwritable), ModuleType)
+        self.assertEqual(type(x), ModuleType)
+        with self.assertRaises(AttributeError):
+            unwritable.x = 42
 
 
 if __name__ == '__main__':

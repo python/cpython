@@ -92,7 +92,7 @@ static PyMemberDef DB_members[] = {
 
 /* forward declaration */
 static PyTypeObject UCD_Type;
-#define UCD_Check(o) (Py_TYPE(o)==&UCD_Type)
+#define UCD_Check(o) Py_IS_TYPE(o, &UCD_Type)
 
 static PyObject*
 new_previous_version(const char*name, const change_record* (*getrecord)(Py_UCS4),
@@ -1455,7 +1455,7 @@ PyInit_unicodedata(void)
 {
     PyObject *m, *v;
 
-    Py_TYPE(&UCD_Type) = &PyType_Type;
+    Py_SET_TYPE(&UCD_Type, &PyType_Type);
 
     m = PyModule_Create(&unicodedatamodule);
     if (!m)

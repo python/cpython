@@ -1236,6 +1236,10 @@ signal_pthread_kill_impl(PyObject *module, unsigned long thread_id,
 {
     int err;
 
+    if (PySys_Audit("signal.pthread_kill", "ki", thread_id, signalnum) < 0) {
+        return NULL;
+    }
+
     err = pthread_kill((pthread_t)thread_id, signalnum);
     if (err != 0) {
         errno = err;
