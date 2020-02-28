@@ -240,7 +240,7 @@ parsetok(struct tok_state *tok, grammar *g, int start, perrdetail *err_ret,
 #endif
 
     for (;;) {
-        char *a, *b;
+        const char *a, *b;
         int type;
         size_t len;
         char *str;
@@ -371,7 +371,7 @@ parsetok(struct tok_state *tok, grammar *g, int start, perrdetail *err_ret,
            buffer after parsing.  Trailing whitespace and comments
            are OK.  */
         if (err_ret->error == E_DONE && start == single_input) {
-            char *cur = tok->cur;
+            const char *cur = tok->cur;
             char c = *tok->cur;
 
             for (;;) {

@@ -1,0 +1,1 @@
+Change 'string' to 'specification' in format doc.
