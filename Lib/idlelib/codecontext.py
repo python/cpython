@@ -83,7 +83,7 @@ class CodeContext:
         if self.t1 is not None:
             try:
                 self.text.after_cancel(self.t1)
-            except tkinter.TclError:
+            except tkinter.TclError:  # pragma: no cover
                 pass
             self.t1 = None
 
