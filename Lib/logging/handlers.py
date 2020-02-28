@@ -828,6 +828,7 @@ class SysLogHandler(logging.Handler):
 
         self.address = address
         self.facility = facility
+        self.socket = None
         self.socktype = socktype
 
         if isinstance(address, str):
@@ -908,7 +909,8 @@ class SysLogHandler(logging.Handler):
         """
         self.acquire()
         try:
-            self.socket.close()
+            if self.socket:
+                self.socket.close()
             logging.Handler.close(self)
         finally:
             self.release()
@@ -933,6 +935,8 @@ class SysLogHandler(logging.Handler):
         The record is formatted, and then sent to the syslog server. If
         exception information is present, it is NOT sent to the server.
         """
+        if not self.socket:
+            return
         try:
             msg = self.format(record)
             if self.ident:
@@ -954,7 +958,8 @@ class SysLogHandler(logging.Handler):
                 except OSError:
                     self.socket.close()
                     self._connect_unixsocket(self.address)
-                    self.socket.send(msg)
+                    if self.socket:
+                        self.socket.send(msg)
             elif self.socktype == socket.SOCK_DGRAM:
                 self.socket.sendto(msg, self.address)
             else:
