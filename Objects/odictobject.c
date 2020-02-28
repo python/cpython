@@ -852,6 +852,30 @@ static PyMappingMethods odict_as_mapping = {
 
 
 /* ----------------------------------------------
+ * OrderedDict number methods
+ */
+
+static PyObject *
+odict_or(PyObject *left, PyObject *right)
+{
+    // TODO
+}
+
+static PyObject *
+odict_inplace_or(PyODictObject *self, PyObject *other)
+{
+    // TODO
+}
+
+/* tp_as_number */
+
+static PyNumberMethods odict_as_number = {
+    .nb_or = odict_or,
+    .nb_inplace_or = odict_inplace_or,
+};
+
+
+/* ----------------------------------------------
  * OrderedDict methods
  */
 
@@ -1557,7 +1581,7 @@ PyTypeObject PyODict_Type = {
     0,                                          /* tp_setattr */
     0,                                          /* tp_as_async */
     (reprfunc)odict_repr,                       /* tp_repr */
-    0,                                          /* tp_as_number */
+    &odict_as_number,                           /* tp_as_number */
     0,                                          /* tp_as_sequence */
     &odict_as_mapping,                          /* tp_as_mapping */
     0,                                          /* tp_hash */
