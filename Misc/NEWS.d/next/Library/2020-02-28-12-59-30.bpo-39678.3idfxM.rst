@@ -1,0 +1,1 @@
+Refactor queue_manager in concurrent.futures.process to make it easier to maintain.
