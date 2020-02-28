@@ -31,6 +31,7 @@ class HTTPStatus(IntEnum):
     SWITCHING_PROTOCOLS = (101, 'Switching Protocols',
             'Switching to new protocol; obey Upgrade header')
     PROCESSING = 102, 'Processing'
+    EARLY_HINTS = 103, 'Early Hints'
 
     # success
     OK = 200, 'OK', 'Request fulfilled, document follows'

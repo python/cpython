@@ -1388,6 +1388,7 @@ class OfflineTest(TestCase):
             'CONTINUE',
             'SWITCHING_PROTOCOLS',
             'PROCESSING',
+            'EARLY_HINTS',
             'OK',
             'CREATED',
             'ACCEPTED',

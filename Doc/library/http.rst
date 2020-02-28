@@ -62,6 +62,7 @@ Code    Enum Name                           Details
 ``100`` ``CONTINUE``                        HTTP/1.1 :rfc:`7231`, Section 6.2.1
 ``101`` ``SWITCHING_PROTOCOLS``             HTTP/1.1 :rfc:`7231`, Section 6.2.2
 ``102`` ``PROCESSING``                      WebDAV :rfc:`2518`, Section 10.1
+``103`` ``EARLY_HINT``                      An HTTP Status Code for Indicating Hints :rfc:`8297`
 ``200`` ``OK``                              HTTP/1.1 :rfc:`7231`, Section 6.3.1
 ``201`` ``CREATED``                         HTTP/1.1 :rfc:`7231`, Section 6.3.2
 ``202`` ``ACCEPTED``                        HTTP/1.1 :rfc:`7231`, Section 6.3.3
@@ -130,3 +131,6 @@ equal to the constant name (i.e. ``http.HTTPStatus.OK`` is also available as
 
 .. versionadded:: 3.8
    Added ``451 UNAVAILABLE_FOR_LEGAL_REASONS`` status code.
+
+.. versionchanged:: 3.9
+   Added ``103 Early Hints`` status code.
