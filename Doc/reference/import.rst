@@ -576,6 +576,9 @@ the module.
    When ``__package__`` is not defined, ``__spec__.parent`` is used as
    a fallback.
 
+   If the module comes from frozen code, ``__spec__.location`` is set
+   to ``'frozen'``.
+
    .. versionadded:: 3.4
 
    .. versionchanged:: 3.6
