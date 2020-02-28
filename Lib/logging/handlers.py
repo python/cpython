@@ -935,8 +935,6 @@ class SysLogHandler(logging.Handler):
         The record is formatted, and then sent to the syslog server. If
         exception information is present, it is NOT sent to the server.
         """
-        if not self.socket:
-            return
         try:
             msg = self.format(record)
             if self.ident:
@@ -953,16 +951,20 @@ class SysLogHandler(logging.Handler):
             msg = msg.encode('utf-8')
             msg = prio + msg
             if self.unixsocket:
+                if not self.socket:
+                    self._connect_unixsocket(self.address)
                 try:
-                    self.socket.send(msg)
+                    if self.socket:
+                        self.socket.send(msg)
                 except OSError:
                     self.socket.close()
                     self._connect_unixsocket(self.address)
                     if self.socket:
                         self.socket.send(msg)
             elif self.socktype == socket.SOCK_DGRAM:
-                self.socket.sendto(msg, self.address)
-            else:
+                if self.socket:
+                    self.socket.sendto(msg, self.address)
+            elif self.socket:
                 self.socket.sendall(msg)
         except Exception:
             self.handleError(record)
