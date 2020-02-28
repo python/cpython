@@ -149,7 +149,7 @@ module documentation.  This section lists the differences between the API and
    standalone document declarations to be added to the prologue of the XML
    document.
    If the value is set to `True`, `standalone="yes"` is added,
-   otherwise the it is set to `"no"`.
+   otherwise it is set to `"no"`.
    Not stating the argument will omit the declaration from the document.
 
    .. versionchanged:: 3.8
