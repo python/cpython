@@ -4,7 +4,7 @@ jobs:
   condition: and(succeeded(), not(variables['SigningCertificate']))
 
   pool:
-    vmName: windows-latest
+    vmName: windows-2019
 
   variables:
     ReleaseUri: http://www.python.org/{arch}

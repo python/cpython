@@ -3,7 +3,7 @@ jobs:
   displayName: Test MSI
 
   pool:
-    vmName: windows-latest
+    vmName: windows-2019
 
   workspace:
     clean: all
