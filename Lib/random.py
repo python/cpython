@@ -299,7 +299,13 @@ class Random(_random.Random):
             i = self._randbelow(len(seq))
         except ValueError:
             raise IndexError('Cannot choose from an empty sequence') from None
-        return seq[i]
+        if hasattr(seq, '__getitem__'):
+            return seq[i]
+        else:
+            for (seqindex, item) in enumerate(seq):
+                if seqindex == i:
+                    return item
+            return seq[i]
 
     def shuffle(self, x, random=None):
         """Shuffle list x in place, and return None.
