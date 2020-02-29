@@ -41,7 +41,7 @@ def _walk_dir(dir, ddir=None, maxlevels=10, quiet=0):
         else:
             dfile = None
         if not os.path.isdir(fullname):
-            yield fullname
+            yield fullname, ddir
         elif (maxlevels > 0 and name != os.curdir and name != os.pardir and
               os.path.isdir(fullname) and not os.path.islink(fullname)):
             yield from _walk_dir(fullname, ddir=dfile,
@@ -76,27 +76,32 @@ def compile_dir(dir, maxlevels=10, ddir=None, force=False, rx=None,
             from concurrent.futures import ProcessPoolExecutor
         except ImportError:
             workers = 1
-    files = _walk_dir(dir, quiet=quiet, maxlevels=maxlevels,
-                      ddir=ddir)
+    files_and_ddirs = _walk_dir(dir, quiet=quiet, maxlevels=maxlevels,
+                                ddir=ddir)
     success = True
     if workers != 1 and ProcessPoolExecutor is not None:
         # If workers == 0, let ProcessPoolExecutor choose
         workers = workers or None
         with ProcessPoolExecutor(max_workers=workers) as executor:
-            results = executor.map(partial(compile_file,
-                                           ddir=ddir, force=force,
-                                           rx=rx, quiet=quiet,
-                                           legacy=legacy,
-                                           optimize=optimize,
-                                           invalidation_mode=invalidation_mode),
-                                   files)
+            results = executor.map(
+                    partial(_compile_file_tuple,
+                            force=force, rx=rx, quiet=quiet,
+                            legacy=legacy, optimize=optimize,
+                            invalidation_mode=invalidation_mode,
+                        ),
+                    files_and_ddirs)
             success = min(results, default=True)
     else:
-        for file in files:
-            if not compile_file(file, ddir, force, rx, quiet,
+        for file, dfile in files_and_ddirs:
+            if not compile_file(file, dfile, force, rx, quiet,
                                 legacy, optimize, invalidation_mode):
                 success = False
     return success
+
+def _compile_file_tuple(file_and_dfile, **kwargs):
+    """Needs to be toplevel for ProcessPoolExecutor."""
+    file, dfile = file_and_dfile
+    return compile_file(file, dfile, **kwargs)
 
 def compile_file(fullname, ddir=None, force=False, rx=None, quiet=0,
                  legacy=False, optimize=-1,
