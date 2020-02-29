@@ -1512,6 +1512,10 @@
 /* Define if WINDOW in curses.h offers a field _flags. */
 #undef WINDOW_HAS_FLAGS
 
+/* Define if you want build the _decimal module using a coroutine-local rather
+   than a thread-local context */
+#undef WITH_DECIMAL_CONTEXTVAR
+
 /* Define if you want documentation strings in extension modules */
 #undef WITH_DOC_STRINGS
 
