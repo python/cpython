@@ -13,7 +13,7 @@ At large scale, the structure of the module is following:
 * Public helper functions: get_type_hints, overload, cast, no_type_check,
   no_type_check_decorator.
 * Generic aliases for collections.abc ABCs and few additional protocols.
-* Special types: NewType, NamedTuple, TypedDict (may be added soon).
+* Special types: NewType, NamedTuple, TypedDict.
 * Wrapper submodules for re and io related types.
 """
 
@@ -31,6 +31,7 @@ from types import WrapperDescriptorType, MethodWrapperType, MethodDescriptorType
 # Please keep __all__ alphabetized within each category.
 __all__ = [
     # Super-special typing primitives.
+    'Annotated',
     'Any',
     'Callable',
     'ClassVar',
@@ -1118,6 +1119,101 @@ class Protocol(Generic, metaclass=_ProtocolMeta):
         cls.__init__ = _no_init
 
 
+class _AnnotatedAlias(_GenericAlias, _root=True):
+    """Runtime representation of an annotated type.
+
+    At its core 'Annotated[t, dec1, dec2, ...]' is an alias for the type 't'
+    with extra annotations. The alias behaves like a normal typing alias,
+    instantiating is the same as instantiating the underlying type, binding
+    it to types is also the same.
+    """
+    def __init__(self, origin, metadata):
+        if isinstance(origin, _AnnotatedAlias):
+            metadata = origin.__metadata__ + metadata
+            origin = origin.__origin__
+        super().__init__(origin, origin)
+        self.__metadata__ = metadata
+
+    def copy_with(self, params):
+        assert len(params) == 1
+        new_type = params[0]
+        return _AnnotatedAlias(new_type, self.__metadata__)
+
+    def __repr__(self):
+        return "typing.Annotated[{}, {}]".format(
+            _type_repr(self.__origin__),
+            ", ".join(repr(a) for a in self.__metadata__)
+        )
+
+    def __reduce__(self):
+        return operator.getitem, (
+            Annotated, (self.__origin__,) + self.__metadata__
+        )
+
+    def __eq__(self, other):
+        if not isinstance(other, _AnnotatedAlias):
+            return NotImplemented
+        if self.__origin__ != other.__origin__:
+            return False
+        return self.__metadata__ == other.__metadata__
+
+    def __hash__(self):
+        return hash((self.__origin__, self.__metadata__))
+
+
+class Annotated:
+    """Add context specific metadata to a type.
+
+    Example: Annotated[int, runtime_check.Unsigned] indicates to the
+    hypothetical runtime_check module that this type is an unsigned int.
+    Every other consumer of this type can ignore this metadata and treat
+    this type as int.
+
+    The first argument to Annotated must be a valid type.
+
+    Details:
+
+    - It's an error to call `Annotated` with less than two arguments.
+    - Nested Annotated are flattened::
+
+        Annotated[Annotated[T, Ann1, Ann2], Ann3] == Annotated[T, Ann1, Ann2, Ann3]
+
+    - Instantiating an annotated type is equivalent to instantiating the
+    underlying type::
+
+        Annotated[C, Ann1](5) == C(5)
+
+    - Annotated can be used as a generic type alias::
+
+        Optimized = Annotated[T, runtime.Optimize()]
+        Optimized[int] == Annotated[int, runtime.Optimize()]
+
+        OptimizedList = Annotated[List[T], runtime.Optimize()]
+        OptimizedList[int] == Annotated[List[int], runtime.Optimize()]
+    """
+
+    __slots__ = ()
+
+    def __new__(cls, *args, **kwargs):
+        raise TypeError("Type Annotated cannot be instantiated.")
+
+    @_tp_cache
+    def __class_getitem__(cls, params):
+        if not isinstance(params, tuple) or len(params) < 2:
+            raise TypeError("Annotated[...] should be used "
+                            "with at least two arguments (a type and an "
+                            "annotation).")
+        msg = "Annotated[t, ...]: t must be a type."
+        origin = _type_check(params[0], msg)
+        metadata = tuple(params[1:])
+        return _AnnotatedAlias(origin, metadata)
+
+    def __init_subclass__(cls, *args, **kwargs):
+        raise TypeError(
+            "Cannot subclass {}.Annotated".format(cls.__module__)
+        )
+
+
 def runtime_checkable(cls):
     """Mark a protocol class as a runtime protocol.
 
@@ -1179,12 +1275,13 @@ _allowed_types = (types.FunctionType, types.BuiltinFunctionType,
                   WrapperDescriptorType, MethodWrapperType, MethodDescriptorType)
 
 
-def get_type_hints(obj, globalns=None, localns=None):
+def get_type_hints(obj, globalns=None, localns=None, include_extras=False):
     """Return type hints for an object.
 
     This is often the same as obj.__annotations__, but it handles
-    forward references encoded as string literals, and if necessary
-    adds Optional[t] if a default value equal to None is set.
+    forward references encoded as string literals, adds Optional[t] if a
+    default value equal to None is set and recursively replaces all
+    'Annotated[T, ...]' with 'T' (unless 'include_extras=True').
 
     The argument may be a module, class, method, or function. The annotations
     are returned as a dictionary. For classes, annotations include also
@@ -1228,7 +1325,7 @@ def get_type_hints(obj, globalns=None, localns=None):
                     value = ForwardRef(value, is_argument=False)
                 value = _eval_type(value, base_globals, localns)
                 hints[name] = value
-        return hints
+        return hints if include_extras else {k: _strip_annotations(t) for k, t in hints.items()}
 
     if globalns is None:
         if isinstance(obj, types.ModuleType):
@@ -1262,14 +1359,29 @@ def get_type_hints(obj, globalns=None, localns=None):
         if name in defaults and defaults[name] is None:
             value = Optional[value]
         hints[name] = value
-    return hints
+    return hints if include_extras else {k: _strip_annotations(t) for k, t in hints.items()}
+
+
+def _strip_annotations(t):
+    """Strips the annotations from a given type.
+    """
+    if isinstance(t, _AnnotatedAlias):
+        return _strip_annotations(t.__origin__)
+    if isinstance(t, _GenericAlias):
+        stripped_args = tuple(_strip_annotations(a) for a in t.__args__)
+        if stripped_args == t.__args__:
+            return t
+        res = t.copy_with(stripped_args)
+        res._special = t._special
+        return res
+    return t
 
 
 def get_origin(tp):
     """Get the unsubscripted version of a type.
 
-    This supports generic types, Callable, Tuple, Union, Literal, Final and ClassVar.
-    Return None for unsupported types. Examples::
+    This supports generic types, Callable, Tuple, Union, Literal, Final, ClassVar
+    and Annotated. Return None for unsupported types. Examples::
 
         get_origin(Literal[42]) is Literal
         get_origin(int) is None
@@ -1279,6 +1391,8 @@ def get_origin(tp):
         get_origin(Union[T, int]) is Union
         get_origin(List[Tuple[T, T]][int]) == list
     """
+    if isinstance(tp, _AnnotatedAlias):
+        return Annotated
     if isinstance(tp, _GenericAlias):
         return tp.__origin__
     if tp is Generic:
@@ -1297,6 +1411,8 @@ def get_args(tp):
         get_args(Union[int, Tuple[T, int]][str]) == (int, Tuple[str, int])
         get_args(Callable[[], T][int]) == ([], int)
     """
+    if isinstance(tp, _AnnotatedAlias):
+        return (tp.__origin__,) + tp.__metadata__
     if isinstance(tp, _GenericAlias):
         res = tp.__args__
         if get_origin(tp) is collections.abc.Callable and res[0] is not Ellipsis:
@@ -1712,23 +1828,30 @@ class _TypedDictMeta(type):
         ns['__new__'] = _typeddict_new if name == 'TypedDict' else _dict_new
         tp_dict = super(_TypedDictMeta, cls).__new__(cls, name, (dict,), ns)
 
-        anns = ns.get('__annotations__', {})
+        annotations = {}
+        own_annotations = ns.get('__annotations__', {})
+        own_annotation_keys = set(own_annotations.keys())
         msg = "TypedDict('Name', {f0: t0, f1: t1, ...}); each t must be a type"
-        anns = {n: _type_check(tp, msg) for n, tp in anns.items()}
-        required = set(anns if total else ())
-        optional = set(() if total else anns)
+        own_annotations = {
+            n: _type_check(tp, msg) for n, tp in own_annotations.items()
+        }
+        required_keys = set()
+        optional_keys = set()
 
         for base in bases:
-            base_anns = base.__dict__.get('__annotations__', {})
-            anns.update(base_anns)
-            if getattr(base, '__total__', True):
-                required.update(base_anns)
-            else:
-                optional.update(base_anns)
+            annotations.update(base.__dict__.get('__annotations__', {}))
+            required_keys.update(base.__dict__.get('__required_keys__', ()))
+            optional_keys.update(base.__dict__.get('__optional_keys__', ()))
 
-        tp_dict.__annotations__ = anns
-        tp_dict.__required_keys__ = frozenset(required)
-        tp_dict.__optional_keys__ = frozenset(optional)
+        annotations.update(own_annotations)
+        if total:
+            required_keys.update(own_annotation_keys)
+        else:
+            optional_keys.update(own_annotation_keys)
+
+        tp_dict.__annotations__ = annotations
+        tp_dict.__required_keys__ = frozenset(required_keys)
+        tp_dict.__optional_keys__ = frozenset(optional_keys)
         if not hasattr(tp_dict, '__total__'):
             tp_dict.__total__ = total
         return tp_dict
@@ -1761,6 +1884,19 @@ class TypedDict(dict, metaclass=_TypedDictMeta):
 
         Point2D = TypedDict('Point2D', x=int, y=int, label=str)
         Point2D = TypedDict('Point2D', {'x': int, 'y': int, 'label': str})
+
+    By default, all keys must be present in a TypedDict. It is possible
+    to override this by specifying totality.
+    Usage::
+
+        class point2D(TypedDict, total=False):
+            x: int
+            y: int
+
+    This means that a point2D TypedDict can have any of the keys omitted.A type
+    checker is only expected to support a literal False or True as the value of
+    the total argument. True is the default, and makes all items defined in the
+    class body be required.
 
     The class syntax is only supported in Python 3.6+, while two other
     syntax forms work for Python 2.7 and 3.2+
@@ -1831,6 +1967,7 @@ class IO(Generic[AnyStr]):
     def close(self) -> None:
         pass
 
+    @property
     @abstractmethod
     def closed(self) -> bool:
         pass

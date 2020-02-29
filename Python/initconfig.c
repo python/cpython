@@ -63,7 +63,35 @@ static const char usage_3[] = "\
 -W arg : warning control; arg is action:message:category:module:lineno\n\
          also PYTHONWARNINGS=arg\n\
 -x     : skip first line of source, allowing use of non-Unix forms of #!cmd\n\
--X opt : set implementation-specific option\n\
+-X opt : set implementation-specific option. The following options are available:\n\
+\n\
+         -X faulthandler: enable faulthandler\n\
+         -X showrefcount: output the total reference count and number of used\n\
+             memory blocks when the program finishes or after each statement in the\n\
+             interactive interpreter. This only works on debug builds\n\
+         -X tracemalloc: start tracing Python memory allocations using the\n\
+             tracemalloc module. By default, only the most recent frame is stored in a\n\
+             traceback of a trace. Use -X tracemalloc=NFRAME to start tracing with a\n\
+             traceback limit of NFRAME frames\n\
+         -X importtime: show how long each import takes. It shows module name,\n\
+             cumulative time (including nested imports) and self time (excluding\n\
+             nested imports). Note that its output may be broken in multi-threaded\n\
+             application. Typical usage is python3 -X importtime -c 'import asyncio'\n\
+         -X dev: enable CPython’s “development mode”, introducing additional runtime\n\
+             checks which are too expensive to be enabled by default. Effect of the\n\
+             developer mode:\n\
+                * Add default warning filter, as -W default\n\
+                * Install debug hooks on memory allocators: see the PyMem_SetupDebugHooks() C function\n\
+                * Enable the faulthandler module to dump the Python traceback on a crash\n\
+                * Enable asyncio debug mode\n\
+                * Set the dev_mode attribute of sys.flags to True\n\
+                * io.IOBase destructor logs close() exceptions\n\
+         -X utf8: enable UTF-8 mode for operating system interfaces, overriding the default\n\
+             locale-aware mode. -X utf8=0 explicitly disables UTF-8 mode (even when it would\n\
+             otherwise activate automatically)\n\
+         -X pycache_prefix=PATH: enable writing .pyc files to a parallel tree rooted at the\n\
+             given directory instead of to the code tree\n\
+\n\
 --check-hash-based-pycs always|default|never:\n\
     control how Python invalidates hash-based .pyc files\n\
 ";
@@ -769,7 +797,6 @@ _PyConfig_Copy(PyConfig *config, const PyConfig *config2)
     COPY_ATTR(tracemalloc);
     COPY_ATTR(import_time);
     COPY_ATTR(show_ref_count);
-    COPY_ATTR(show_alloc_count);
     COPY_ATTR(dump_refs);
     COPY_ATTR(malloc_stats);
 
@@ -872,7 +899,6 @@ config_as_dict(const PyConfig *config)
     SET_ITEM_INT(tracemalloc);
     SET_ITEM_INT(import_time);
     SET_ITEM_INT(show_ref_count);
-    SET_ITEM_INT(show_alloc_count);
     SET_ITEM_INT(dump_refs);
     SET_ITEM_INT(malloc_stats);
     SET_ITEM_WSTR(filesystem_encoding);
@@ -1659,9 +1685,6 @@ config_read(PyConfig *config)
     /* -X options */
     if (config_get_xoption(config, L"showrefcount")) {
         config->show_ref_count = 1;
-    }
-    if (config_get_xoption(config, L"showalloccount")) {
-        config->show_alloc_count = 1;
     }
 
     status = config_read_complex_options(config);

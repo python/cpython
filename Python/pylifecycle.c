@@ -10,6 +10,7 @@
 #include "pycore_initconfig.h"
 #include "pycore_fileutils.h"
 #include "pycore_hamt.h"
+#include "pycore_object.h"
 #include "pycore_pathconfig.h"
 #include "pycore_pyerrors.h"
 #include "pycore_pylifecycle.h"
@@ -1173,10 +1174,6 @@ Py_Initialize(void)
 }
 
 
-#ifdef COUNT_ALLOCS
-extern void _Py_dump_counts(FILE*);
-#endif
-
 /* Flush stdout and stderr */
 
 static int
@@ -1393,13 +1390,6 @@ Py_FinalizeEx(void)
      * XXX I haven't seen a real-life report of either of these.
      */
     _PyGC_CollectIfEnabled();
-#ifdef COUNT_ALLOCS
-    /* With COUNT_ALLOCS, it helps to run GC multiple times:
-       each collection might release some types from the type
-       list, so they become garbage. */
-    while (_PyGC_CollectIfEnabled() > 0)
-        /* nothing */;
-#endif
 
     /* Clear all loghooks */
     /* We want minimal exposure of this function, so define the extern
@@ -1451,10 +1441,6 @@ Py_FinalizeEx(void)
     /* unload faulthandler module */
     _PyFaulthandler_Fini();
 
-    /* Debugging stuff */
-#ifdef COUNT_ALLOCS
-    _Py_dump_counts(stderr);
-#endif
     /* dump hash stats */
     _PyHash_Fini();
 

@@ -356,7 +356,6 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
         'tracemalloc': 0,
         'import_time': 0,
         'show_ref_count': 0,
-        'show_alloc_count': 0,
         'dump_refs': 0,
         'malloc_stats': 0,
 
@@ -729,7 +728,6 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
             'tracemalloc': 2,
             'import_time': 1,
             'show_ref_count': 1,
-            'show_alloc_count': 1,
             'malloc_stats': 1,
 
             'stdio_encoding': 'iso8859-1',

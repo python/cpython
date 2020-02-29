@@ -821,7 +821,6 @@ dir_fd_converter(PyObject *o, void *p)
 
 typedef struct {
     PyObject *billion;
-    PyObject *posix_putenv_garbage;
     PyObject *DirEntryType;
     PyObject *ScandirIteratorType;
 #if defined(HAVE_SCHED_SETPARAM) || defined(HAVE_SCHED_SETSCHEDULER) || defined(POSIX_SPAWN_SETSCHEDULER) || defined(POSIX_SPAWN_SETSCHEDPARAM)
@@ -2105,7 +2104,6 @@ static int
 _posix_clear(PyObject *module)
 {
     Py_CLEAR(_posixstate(module)->billion);
-    Py_CLEAR(_posixstate(module)->posix_putenv_garbage);
     Py_CLEAR(_posixstate(module)->DirEntryType);
     Py_CLEAR(_posixstate(module)->ScandirIteratorType);
 #if defined(HAVE_SCHED_SETPARAM) || defined(HAVE_SCHED_SETSCHEDULER) || defined(POSIX_SPAWN_SETSCHEDULER) || defined(POSIX_SPAWN_SETSCHEDPARAM)
@@ -2130,7 +2128,6 @@ static int
 _posix_traverse(PyObject *module, visitproc visit, void *arg)
 {
     Py_VISIT(_posixstate(module)->billion);
-    Py_VISIT(_posixstate(module)->posix_putenv_garbage);
     Py_VISIT(_posixstate(module)->DirEntryType);
     Py_VISIT(_posixstate(module)->ScandirIteratorType);
 #if defined(HAVE_SCHED_SETPARAM) || defined(HAVE_SCHED_SETSCHEDULER) || defined(POSIX_SPAWN_SETSCHEDULER) || defined(POSIX_SPAWN_SETSCHEDPARAM)
@@ -2914,6 +2911,10 @@ os_chdir_impl(PyObject *module, path_t *path)
 {
     int result;
 
+    if (PySys_Audit("os.chdir", "(O)", path->object) < 0) {
+        return NULL;
+    }
+
     Py_BEGIN_ALLOW_THREADS
 #ifdef MS_WINDOWS
     /* on unix, success = 0, on windows, success = !0 */
@@ -2953,6 +2954,9 @@ static PyObject *
 os_fchdir_impl(PyObject *module, int fd)
 /*[clinic end generated code: output=42e064ec4dc00ab0 input=18e816479a2fa985]*/
 {
+    if (PySys_Audit("os.chdir", "(i)", fd) < 0) {
+        return NULL;
+    }
     return posix_fildes_fd(fd, fchdir);
 }
 #endif /* HAVE_FCHDIR */
@@ -3009,6 +3013,11 @@ os_chmod_impl(PyObject *module, path_t *path, int mode, int dir_fd,
     if (follow_symlinks_specified("chmod", follow_symlinks))
         return NULL;
 #endif
+
+    if (PySys_Audit("os.chmod", "Oii", path->object, mode,
+                    dir_fd == DEFAULT_DIR_FD ? -1 : dir_fd) < 0) {
+        return NULL;
+    }
 
 #ifdef MS_WINDOWS
     Py_BEGIN_ALLOW_THREADS
@@ -3106,6 +3115,10 @@ os_fchmod_impl(PyObject *module, int fd, int mode)
     int res;
     int async_err = 0;
 
+    if (PySys_Audit("os.chmod", "iii", fd, mode, -1) < 0) {
+        return NULL;
+    }
+
     do {
         Py_BEGIN_ALLOW_THREADS
         res = fchmod(fd, mode);
@@ -3137,6 +3150,9 @@ os_lchmod_impl(PyObject *module, path_t *path, int mode)
 /*[clinic end generated code: output=082344022b51a1d5 input=90c5663c7465d24f]*/
 {
     int res;
+    if (PySys_Audit("os.chmod", "Oii", path->object, mode, -1) < 0) {
+        return NULL;
+    }
     Py_BEGIN_ALLOW_THREADS
     res = lchmod(path->narrow, mode);
     Py_END_ALLOW_THREADS
@@ -3179,6 +3195,10 @@ os_chflags_impl(PyObject *module, path_t *path, unsigned long flags,
         return NULL;
 #endif
 
+    if (PySys_Audit("os.chflags", "Ok", path->object, flags) < 0) {
+        return NULL;
+    }
+
     Py_BEGIN_ALLOW_THREADS
 #ifdef HAVE_LCHFLAGS
     if (!follow_symlinks)
@@ -3214,6 +3234,9 @@ os_lchflags_impl(PyObject *module, path_t *path, unsigned long flags)
 /*[clinic end generated code: output=30ae958695c07316 input=f9f82ea8b585ca9d]*/
 {
     int res;
+    if (PySys_Audit("os.chflags", "Ok", path->object, flags) < 0) {
+        return NULL;
+    }
     Py_BEGIN_ALLOW_THREADS
     res = lchflags(path->narrow, flags);
     Py_END_ALLOW_THREADS
@@ -3376,6 +3399,11 @@ os_chown_impl(PyObject *module, path_t *path, uid_t uid, gid_t gid,
     }
 #endif
 
+    if (PySys_Audit("os.chown", "OIIi", path->object, uid, gid,
+                    dir_fd == DEFAULT_DIR_FD ? -1 : dir_fd) < 0) {
+        return NULL;
+    }
+
     Py_BEGIN_ALLOW_THREADS
 #ifdef HAVE_FCHOWN
     if (path->fd != -1)
@@ -3425,6 +3453,10 @@ os_fchown_impl(PyObject *module, int fd, uid_t uid, gid_t gid)
     int res;
     int async_err = 0;
 
+    if (PySys_Audit("os.chown", "iIIi", fd, uid, gid, -1) < 0) {
+        return NULL;
+    }
+
     do {
         Py_BEGIN_ALLOW_THREADS
         res = fchown(fd, uid, gid);
@@ -3457,6 +3489,9 @@ os_lchown_impl(PyObject *module, path_t *path, uid_t uid, gid_t gid)
 /*[clinic end generated code: output=25eaf6af412fdf2f input=b1c6014d563a7161]*/
 {
     int res;
+    if (PySys_Audit("os.chown", "OIIi", path->object, uid, gid, -1) < 0) {
+        return NULL;
+    }
     Py_BEGIN_ALLOW_THREADS
     res = lchown(path->narrow, uid, gid);
     Py_END_ALLOW_THREADS
@@ -3649,6 +3684,12 @@ os_link_impl(PyObject *module, path_t *src, path_t *dst, int src_dir_fd,
         return NULL;
     }
 #endif
+
+    if (PySys_Audit("os.link", "OOii", src->object, dst->object,
+                    src_dir_fd == DEFAULT_DIR_FD ? -1 : src_dir_fd,
+                    dst_dir_fd == DEFAULT_DIR_FD ? -1 : dst_dir_fd) < 0) {
+        return NULL;
+    }
 
 #ifdef MS_WINDOWS
     Py_BEGIN_ALLOW_THREADS
@@ -4117,6 +4158,11 @@ os_mkdir_impl(PyObject *module, path_t *path, int mode, int dir_fd)
 {
     int result;
 
+    if (PySys_Audit("os.mkdir", "Oii", path->object, mode,
+                    dir_fd == DEFAULT_DIR_FD ? -1 : dir_fd) < 0) {
+        return NULL;
+    }
+
 #ifdef MS_WINDOWS
     Py_BEGIN_ALLOW_THREADS
     result = CreateDirectoryW(path->wide, NULL);
@@ -4262,6 +4308,12 @@ internal_rename(path_t *src, path_t *dst, int src_dir_fd, int dst_dir_fd, int is
     }
 #endif
 
+    if (PySys_Audit("os.rename", "OOii", src->object, dst->object,
+                    src_dir_fd == DEFAULT_DIR_FD ? -1 : src_dir_fd,
+                    dst_dir_fd == DEFAULT_DIR_FD ? -1 : dst_dir_fd) < 0) {
+        return NULL;
+    }
+
 #ifdef MS_WINDOWS
     Py_BEGIN_ALLOW_THREADS
     result = MoveFileExW(src->wide, dst->wide, flags);
@@ -4361,6 +4413,11 @@ os_rmdir_impl(PyObject *module, path_t *path, int dir_fd)
 /*[clinic end generated code: output=080eb54f506e8301 input=38c8b375ca34a7e2]*/
 {
     int result;
+
+    if (PySys_Audit("os.rmdir", "Oi", path->object,
+                    dir_fd == DEFAULT_DIR_FD ? -1 : dir_fd) < 0) {
+        return NULL;
+    }
 
     Py_BEGIN_ALLOW_THREADS
 #ifdef MS_WINDOWS
@@ -4519,6 +4576,11 @@ os_unlink_impl(PyObject *module, path_t *path, int dir_fd)
 /*[clinic end generated code: output=621797807b9963b1 input=d7bcde2b1b2a2552]*/
 {
     int result;
+
+    if (PySys_Audit("os.remove", "Oi", path->object,
+                    dir_fd == DEFAULT_DIR_FD ? -1 : dir_fd) < 0) {
+        return NULL;
+    }
 
     Py_BEGIN_ALLOW_THREADS
     _Py_BEGIN_SUPPRESS_IPH
@@ -4936,6 +4998,11 @@ os_utime_impl(PyObject *module, path_t *path, PyObject *times, PyObject *ns,
     }
 #endif
 
+    if (PySys_Audit("os.utime", "OOOi", path->object, times, ns ? ns : Py_None,
+                    dir_fd == DEFAULT_DIR_FD ? -1 : dir_fd) < 0) {
+        return NULL;
+    }
+
 #ifdef MS_WINDOWS
     Py_BEGIN_ALLOW_THREADS
     hFile = CreateFileW(path->wide, FILE_WRITE_ATTRIBUTES, 0,
@@ -5237,6 +5304,11 @@ os_execv_impl(PyObject *module, path_t *path, PyObject *argv)
         return NULL;
     }
 
+    if (PySys_Audit("os.exec", "OOO", path->object, argv, Py_None) < 0) {
+        free_string_array(argvlist, argc);
+        return NULL;
+    }
+
     _Py_BEGIN_SUPPRESS_IPH
 #ifdef HAVE_WEXECV
     _wexecv(path->wide, argvlist);
@@ -5280,7 +5352,7 @@ os_execve_impl(PyObject *module, path_t *path, PyObject *argv, PyObject *env)
     if (!PyList_Check(argv) && !PyTuple_Check(argv)) {
         PyErr_SetString(PyExc_TypeError,
                         "execve: argv must be a tuple or list");
-        goto fail;
+        goto fail_0;
     }
     argc = PySequence_Size(argv);
     if (argc < 1) {
@@ -5291,22 +5363,26 @@ os_execve_impl(PyObject *module, path_t *path, PyObject *argv, PyObject *env)
     if (!PyMapping_Check(env)) {
         PyErr_SetString(PyExc_TypeError,
                         "execve: environment must be a mapping object");
-        goto fail;
+        goto fail_0;
     }
 
     argvlist = parse_arglist(argv, &argc);
     if (argvlist == NULL) {
-        goto fail;
+        goto fail_0;
     }
     if (!argvlist[0][0]) {
         PyErr_SetString(PyExc_ValueError,
             "execve: argv first element cannot be empty");
-        goto fail;
+        goto fail_0;
     }
 
     envlist = parse_envlist(env, &envc);
     if (envlist == NULL)
-        goto fail;
+        goto fail_0;
+
+    if (PySys_Audit("os.exec", "OOO", path->object, argv, env) < 0) {
+        goto fail_1;
+    }
 
     _Py_BEGIN_SUPPRESS_IPH
 #ifdef HAVE_FEXECVE
@@ -5324,9 +5400,9 @@ os_execve_impl(PyObject *module, path_t *path, PyObject *argv, PyObject *env)
     /* If we get here it's definitely an error */
 
     posix_path_error(path);
-
+  fail_1:
     free_string_array(envlist, envc);
-  fail:
+  fail_0:
     if (argvlist)
         free_string_array(argvlist, argc);
     return NULL;
@@ -5657,6 +5733,10 @@ py_posix_spawn(int use_posix_spawnp, PyObject *module, path_t *path, PyObject *a
     }
     attrp = &attr;
 
+    if (PySys_Audit("os.posix_spawn", "OOO", path->object, argv, env) < 0) {
+        goto exit;
+    }
+
     _Py_BEGIN_SUPPRESS_IPH
 #ifdef HAVE_POSIX_SPAWNP
     if (use_posix_spawnp) {
@@ -5897,6 +5977,12 @@ os_spawnv_impl(PyObject *module, int mode, path_t *path, PyObject *argv)
         mode = _P_OVERLAY;
 #endif
 
+    if (PySys_Audit("os.spawn", "iOOO", mode, path->object, argv,
+                    Py_None) < 0) {
+        free_string_array(argvlist, argc);
+        return NULL;
+    }
+
     Py_BEGIN_ALLOW_THREADS
     _Py_BEGIN_SUPPRESS_IPH
 #ifdef HAVE_WSPAWNV
@@ -6006,6 +6092,10 @@ os_spawnve_impl(PyObject *module, int mode, path_t *path, PyObject *argv,
         mode = _P_OVERLAY;
 #endif
 
+    if (PySys_Audit("os.spawn", "iOOO", mode, path->object, argv, env) < 0) {
+        goto fail_2;
+    }
+
     Py_BEGIN_ALLOW_THREADS
     _Py_BEGIN_SUPPRESS_IPH
 #ifdef HAVE_WSPAWNV
@@ -6024,6 +6114,7 @@ os_spawnve_impl(PyObject *module, int mode, path_t *path, PyObject *argv,
     else
         res = Py_BuildValue(_Py_PARSE_INTPTR, spawnval);
 
+  fail_2:
     while (--envc >= 0)
         PyMem_DEL(envlist[envc]);
     PyMem_DEL(envlist);
@@ -6154,6 +6245,9 @@ os_fork_impl(PyObject *module)
 
     if (_PyInterpreterState_Get() != PyInterpreterState_Main()) {
         PyErr_SetString(PyExc_RuntimeError, "fork not supported for subinterpreters");
+        return NULL;
+    }
+    if (PySys_Audit("os.fork", NULL) < 0) {
         return NULL;
     }
     PyOS_BeforeFork();
@@ -6762,6 +6856,9 @@ os_forkpty_impl(PyObject *module)
         PyErr_SetString(PyExc_RuntimeError, "fork not supported for subinterpreters");
         return NULL;
     }
+    if (PySys_Audit("os.forkpty", NULL) < 0) {
+        return NULL;
+    }
     PyOS_BeforeFork();
     pid = forkpty(&master_fd, NULL, NULL, NULL);
     if (pid == 0) {
@@ -7283,14 +7380,15 @@ Kill a process with a signal.
 static PyObject *
 os_kill_impl(PyObject *module, pid_t pid, Py_ssize_t signal)
 /*[clinic end generated code: output=8e346a6701c88568 input=61a36b86ca275ab9]*/
-#ifndef MS_WINDOWS
 {
+    if (PySys_Audit("os.kill", "in", pid, signal) < 0) {
+        return NULL;
+    }
+#ifndef MS_WINDOWS
     if (kill(pid, (int)signal) == -1)
         return posix_error();
     Py_RETURN_NONE;
-}
 #else /* !MS_WINDOWS */
-{
     PyObject *result;
     DWORD sig = (DWORD)signal;
     DWORD err;
@@ -7325,8 +7423,8 @@ os_kill_impl(PyObject *module, pid_t pid, Py_ssize_t signal)
 
     CloseHandle(handle);
     return result;
-}
 #endif /* !MS_WINDOWS */
+}
 #endif /* HAVE_KILL */
 
 
@@ -7345,6 +7443,9 @@ static PyObject *
 os_killpg_impl(PyObject *module, pid_t pgid, int signal)
 /*[clinic end generated code: output=6dbcd2f1fdf5fdba input=38b5449eb8faec19]*/
 {
+    if (PySys_Audit("os.killpg", "ii", pgid, signal) < 0) {
+        return NULL;
+    }
     /* XXX some man pages make the `pgid` parameter an int, others
        a pid_t. Since getpgrp() returns a pid_t, we assume killpg should
        take the same type. Moreover, pid_t is always at least as wide as
@@ -8117,6 +8218,11 @@ os_symlink_impl(PyObject *module, path_t *src, path_t *dst,
     int result;
 #endif
 
+    if (PySys_Audit("os.symlink", "OOi", src->object, dst->object,
+                    dir_fd == DEFAULT_DIR_FD ? -1 : dir_fd) < 0) {
+        return NULL;
+    }
+
 #ifdef MS_WINDOWS
 
     if (windows_has_symlink_unprivileged_flag) {
@@ -8718,6 +8824,10 @@ os_lockf_impl(PyObject *module, int fd, int command, Py_off_t length)
 /*[clinic end generated code: output=af7051f3e7c29651 input=65da41d2106e9b79]*/
 {
     int res;
+
+    if (PySys_Audit("os.lockf", "iiL", fd, command, length) < 0) {
+        return NULL;
+    }
 
     Py_BEGIN_ALLOW_THREADS
     res = lockf(fd, command, length);
@@ -10047,21 +10157,63 @@ os_posix_fadvise_impl(PyObject *module, int fd, Py_off_t offset,
 }
 #endif /* HAVE_POSIX_FADVISE && !POSIX_FADVISE_AIX_BUG */
 
-#ifdef HAVE_PUTENV
 
-static void
-posix_putenv_garbage_setitem(PyObject *name, PyObject *value)
+#ifdef MS_WINDOWS
+static PyObject*
+win32_putenv(PyObject *name, PyObject *value)
 {
-    /* Install the first arg and newstr in posix_putenv_garbage;
-     * this will cause previous value to be collected.  This has to
-     * happen after the real putenv() call because the old value
-     * was still accessible until then. */
-    if (PyDict_SetItem(_posixstate_global->posix_putenv_garbage, name, value))
-        /* really not much we can do; just leak */
-        PyErr_Clear();
-    else
-        Py_DECREF(value);
+    /* Search from index 1 because on Windows starting '=' is allowed for
+       defining hidden environment variables. */
+    if (PyUnicode_GET_LENGTH(name) == 0 ||
+        PyUnicode_FindChar(name, '=', 1, PyUnicode_GET_LENGTH(name), 1) != -1)
+    {
+        PyErr_SetString(PyExc_ValueError, "illegal environment variable name");
+        return NULL;
+    }
+    PyObject *unicode;
+    if (value != NULL) {
+        unicode = PyUnicode_FromFormat("%U=%U", name, value);
+    }
+    else {
+        unicode = PyUnicode_FromFormat("%U=", name);
+    }
+    if (unicode == NULL) {
+        return NULL;
+    }
+
+    Py_ssize_t size;
+    /* PyUnicode_AsWideCharString() rejects embedded null characters */
+    wchar_t *env = PyUnicode_AsWideCharString(unicode, &size);
+    Py_DECREF(unicode);
+
+    if (env == NULL) {
+        return NULL;
+    }
+    if (size > _MAX_ENV) {
+        PyErr_Format(PyExc_ValueError,
+                     "the environment variable is longer than %u characters",
+                     _MAX_ENV);
+        PyMem_Free(env);
+        return NULL;
+    }
+
+    /* _wputenv() and SetEnvironmentVariableW() update the environment in the
+       Process Environment Block (PEB). _wputenv() also updates CRT 'environ'
+       and '_wenviron' variables, whereas SetEnvironmentVariableW() does not.
+
+       Prefer _wputenv() to be compatible with C libraries using CRT
+       variables and CRT functions using these variables (ex: getenv()). */
+    int err = _wputenv(env);
+    PyMem_Free(env);
+
+    if (err) {
+        posix_error();
+        return NULL;
+    }
+
+    Py_RETURN_NONE;
 }
+#endif
 
 
 #ifdef MS_WINDOWS
@@ -10079,49 +10231,12 @@ static PyObject *
 os_putenv_impl(PyObject *module, PyObject *name, PyObject *value)
 /*[clinic end generated code: output=d29a567d6b2327d2 input=ba586581c2e6105f]*/
 {
-    const wchar_t *env;
-    Py_ssize_t size;
-
-    /* Search from index 1 because on Windows starting '=' is allowed for
-       defining hidden environment variables. */
-    if (PyUnicode_GET_LENGTH(name) == 0 ||
-        PyUnicode_FindChar(name, '=', 1, PyUnicode_GET_LENGTH(name), 1) != -1)
-    {
-        PyErr_SetString(PyExc_ValueError, "illegal environment variable name");
+    if (PySys_Audit("os.putenv", "OO", name, value) < 0) {
         return NULL;
     }
-    PyObject *unicode = PyUnicode_FromFormat("%U=%U", name, value);
-    if (unicode == NULL) {
-        return NULL;
-    }
-
-    env = PyUnicode_AsUnicodeAndSize(unicode, &size);
-    if (env == NULL)
-        goto error;
-    if (size > _MAX_ENV) {
-        PyErr_Format(PyExc_ValueError,
-                     "the environment variable is longer than %u characters",
-                     _MAX_ENV);
-        goto error;
-    }
-    if (wcslen(env) != (size_t)size) {
-        PyErr_SetString(PyExc_ValueError, "embedded null character");
-        goto error;
-    }
-
-    if (_wputenv(env)) {
-        posix_error();
-        goto error;
-    }
-
-    posix_putenv_garbage_setitem(name, unicode);
-    Py_RETURN_NONE;
-
-error:
-    Py_DECREF(unicode);
-    return NULL;
+    return win32_putenv(name, value);
 }
-#else /* MS_WINDOWS */
+#else
 /*[clinic input]
 os.putenv
 
@@ -10136,8 +10251,6 @@ static PyObject *
 os_putenv_impl(PyObject *module, PyObject *name, PyObject *value)
 /*[clinic end generated code: output=d29a567d6b2327d2 input=a97bc6152f688d31]*/
 {
-    PyObject *bytes = NULL;
-    char *env;
     const char *name_string = PyBytes_AS_STRING(name);
     const char *value_string = PyBytes_AS_STRING(value);
 
@@ -10145,25 +10258,38 @@ os_putenv_impl(PyObject *module, PyObject *name, PyObject *value)
         PyErr_SetString(PyExc_ValueError, "illegal environment variable name");
         return NULL;
     }
-    bytes = PyBytes_FromFormat("%s=%s", name_string, value_string);
-    if (bytes == NULL) {
+
+    if (PySys_Audit("os.putenv", "OO", name, value) < 0) {
         return NULL;
     }
 
-    env = PyBytes_AS_STRING(bytes);
-    if (putenv(env)) {
-        Py_DECREF(bytes);
+    if (setenv(name_string, value_string, 1)) {
         return posix_error();
     }
-
-    posix_putenv_garbage_setitem(name, bytes);
     Py_RETURN_NONE;
 }
-#endif /* MS_WINDOWS */
-#endif /* HAVE_PUTENV */
+#endif  /* !defined(MS_WINDOWS) */
 
 
-#ifdef HAVE_UNSETENV
+#ifdef MS_WINDOWS
+/*[clinic input]
+os.unsetenv
+    name: unicode
+    /
+
+Delete an environment variable.
+[clinic start generated code]*/
+
+static PyObject *
+os_unsetenv_impl(PyObject *module, PyObject *name)
+/*[clinic end generated code: output=54c4137ab1834f02 input=4d6a1747cc526d2f]*/
+{
+    if (PySys_Audit("os.unsetenv", "(O)", name) < 0) {
+        return NULL;
+    }
+    return win32_putenv(name, NULL);
+}
+#else
 /*[clinic input]
 os.unsetenv
     name: FSConverter
@@ -10176,33 +10302,21 @@ static PyObject *
 os_unsetenv_impl(PyObject *module, PyObject *name)
 /*[clinic end generated code: output=54c4137ab1834f02 input=2bb5288a599c7107]*/
 {
-#ifndef HAVE_BROKEN_UNSETENV
-    int err;
-#endif
-
+    if (PySys_Audit("os.unsetenv", "(O)", name) < 0) {
+        return NULL;
+    }
 #ifdef HAVE_BROKEN_UNSETENV
     unsetenv(PyBytes_AS_STRING(name));
 #else
-    err = unsetenv(PyBytes_AS_STRING(name));
-    if (err)
+    int err = unsetenv(PyBytes_AS_STRING(name));
+    if (err) {
         return posix_error();
+    }
 #endif
 
-    /* Remove the key from posix_putenv_garbage;
-     * this will cause it to be collected.  This has to
-     * happen after the real unsetenv() call because the
-     * old value was still accessible until then.
-     */
-    if (PyDict_DelItem(_posixstate(module)->posix_putenv_garbage, name)) {
-        /* really not much we can do; just leak */
-        if (!PyErr_ExceptionMatches(PyExc_KeyError)) {
-            return NULL;
-        }
-        PyErr_Clear();
-    }
     Py_RETURN_NONE;
 }
-#endif /* HAVE_UNSETENV */
+#endif /* !MS_WINDOWS */
 
 
 /*[clinic input]
@@ -11713,6 +11827,10 @@ os_startfile_impl(PyObject *module, path_t *filepath,
             "startfile not available on this platform");
     }
 
+    if (PySys_Audit("os.startfile", "Ou", filepath->object, operation) < 0) {
+        return NULL;
+    }
+
     Py_BEGIN_ALLOW_THREADS
     rc = Py_ShellExecuteW((HWND)0, operation, filepath->wide,
                           NULL, NULL, SW_SHOWNORMAL);
@@ -11887,6 +12005,10 @@ os_getxattr_impl(PyObject *module, path_t *path, path_t *attribute,
     if (fd_and_follow_symlinks_invalid("getxattr", path->fd, follow_symlinks))
         return NULL;
 
+    if (PySys_Audit("os.getxattr", "OO", path->object, attribute->object) < 0) {
+        return NULL;
+    }
+
     for (i = 0; ; i++) {
         void *ptr;
         ssize_t result;
@@ -11958,6 +12080,11 @@ os_setxattr_impl(PyObject *module, path_t *path, path_t *attribute,
     if (fd_and_follow_symlinks_invalid("setxattr", path->fd, follow_symlinks))
         return NULL;
 
+    if (PySys_Audit("os.setxattr", "OOy#i", path->object, attribute->object,
+                    value->buf, value->len, flags) < 0) {
+        return NULL;
+    }
+
     Py_BEGIN_ALLOW_THREADS;
     if (path->fd > -1)
         result = fsetxattr(path->fd, attribute->narrow,
@@ -12006,6 +12133,10 @@ os_removexattr_impl(PyObject *module, path_t *path, path_t *attribute,
     if (fd_and_follow_symlinks_invalid("removexattr", path->fd, follow_symlinks))
         return NULL;
 
+    if (PySys_Audit("os.removexattr", "OO", path->object, attribute->object) < 0) {
+        return NULL;
+    }
+
     Py_BEGIN_ALLOW_THREADS;
     if (path->fd > -1)
         result = fremovexattr(path->fd, attribute->narrow);
@@ -12050,6 +12181,11 @@ os_listxattr_impl(PyObject *module, path_t *path, int follow_symlinks)
 
     if (fd_and_follow_symlinks_invalid("listxattr", path->fd, follow_symlinks))
         goto exit;
+
+    if (PySys_Audit("os.listxattr", "(O)",
+                    path->object ? path->object : Py_None) < 0) {
+        return NULL;
+    }
 
     name = path->narrow ? path->narrow : ".";
 
@@ -13527,6 +13663,10 @@ os__add_dll_directory_impl(PyObject *module, path_t *path)
     DLL_DIRECTORY_COOKIE cookie = 0;
     DWORD err = 0;
 
+    if (PySys_Audit("os.add_dll_directory", "(O)", path->object) < 0) {
+        return NULL;
+    }
+
     /* For Windows 7, we have to load this. As this will be a fairly
        infrequent operation, just do it each time. Kernel32 is always
        loaded. */
@@ -14495,12 +14635,6 @@ INITFUNC(void)
 
     Py_INCREF(PyExc_OSError);
     PyModule_AddObject(m, "error", PyExc_OSError);
-
-#ifdef HAVE_PUTENV
-    /* Save putenv() parameters as values here, so we can collect them when they
-     * get re-set with another call for the same key. */
-    _posixstate(m)->posix_putenv_garbage = PyDict_New();
-#endif
 
 #if defined(HAVE_WAITID) && !defined(__APPLE__)
     waitid_result_desc.name = MODNAME ".waitid_result";

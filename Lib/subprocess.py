@@ -325,7 +325,7 @@ def _args_from_interpreter_flags():
     if dev_mode:
         args.extend(('-X', 'dev'))
     for opt in ('faulthandler', 'tracemalloc', 'importtime',
-                'showalloccount', 'showrefcount', 'utf8'):
+                'showrefcount', 'utf8'):
         if opt in xoptions:
             value = xoptions[opt]
             if value is True:
@@ -1983,9 +1983,9 @@ class Popen(object):
             with _PopenSelector() as selector:
                 if self.stdin and input:
                     selector.register(self.stdin, selectors.EVENT_WRITE)
-                if self.stdout:
+                if self.stdout and not self.stdout.closed:
                     selector.register(self.stdout, selectors.EVENT_READ)
-                if self.stderr:
+                if self.stderr and not self.stderr.closed:
                     selector.register(self.stderr, selectors.EVENT_READ)
 
                 while selector.get_map():

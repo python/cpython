@@ -217,11 +217,20 @@ write code that handles both IP versions correctly.  Address objects are
       :RFC:`4291` for details.  For example,
       ``"0000:0000:0000:0000:0000:0abc:0007:0def"`` can be compressed to
       ``"::abc:7:def"``.
+
+      Optionally, the string may also have a scope zone ID, expressed
+      with a suffix ``%scope_id``. If present, the scope ID must be non-empty,
+      and may not contain ``%``.
+      See :RFC:`4007` for details.
+      For example, ``fe80::1234%1`` might identify address ``fe80::1234`` on the first link of the node.
    2. An integer that fits into 128 bits.
    3. An integer packed into a :class:`bytes` object of length 16, big-endian.
 
+
    >>> ipaddress.IPv6Address('2001:db8::1000')
    IPv6Address('2001:db8::1000')
+   >>> ipaddress.IPv6Address('ff02::5678%1')
+   IPv6Address('ff02::5678%1')
 
    .. attribute:: compressed
 
@@ -268,6 +277,12 @@ write code that handles both IP versions correctly.  Address objects are
       ``::FFFF/96``), this property will report the embedded IPv4 address.
       For any other address, this property will be ``None``.
 
+   .. attribute:: scope_id
+
+      For scoped addresses as defined by :RFC:`4007`, this property identifies
+      the particular zone of the address's scope that the address belongs to,
+      as a string. When no scope zone is specified, this property will be ``None``.
+
    .. attribute:: sixtofour
 
       For addresses that appear to be 6to4 addresses  (starting with
@@ -299,6 +314,8 @@ the :func:`str` and :func:`int` builtin functions::
    >>> int(ipaddress.IPv6Address('::1'))
    1
 
+Note that IPv6 scoped addresses are converted to integers without scope zone ID.
+
 
 Operators
 ^^^^^^^^^
@@ -311,14 +328,19 @@ IPv6).
 Comparison operators
 """"""""""""""""""""
 
-Address objects can be compared with the usual set of comparison operators.  Some
-examples::
+Address objects can be compared with the usual set of comparison operators.
+Same IPv6 addresses with different scope zone IDs are not equal.
+Some examples::
 
    >>> IPv4Address('127.0.0.2') > IPv4Address('127.0.0.1')
    True
    >>> IPv4Address('127.0.0.2') == IPv4Address('127.0.0.1')
    False
    >>> IPv4Address('127.0.0.2') != IPv4Address('127.0.0.1')
+   True
+   >>> IPv6Address('fe80::1234') == IPv6Address('fe80::1234%1')
+   False
+   >>> IPv6Address('fe80::1234%1') != IPv6Address('fe80::1234%2')
    True
 
 
