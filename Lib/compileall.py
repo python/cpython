@@ -46,7 +46,7 @@ def _walk_dir(dir, maxlevels, quiet=0):
 
 def compile_dir(dir, maxlevels=None, ddir=None, force=False,
                 rx=None, quiet=0, legacy=False, optimize=-1, workers=1,
-                invalidation_mode=None, stripdir=None,
+                invalidation_mode=None, *, stripdir=None,
                 prependdir=None, limit_sl_dest=None):
     """Byte-compile all modules in the given directory tree.
 
@@ -72,6 +72,13 @@ def compile_dir(dir, maxlevels=None, ddir=None, force=False,
                    the defined path
     """
     ProcessPoolExecutor = None
+    if ddir is not None and (stripdir is not None or prependdir is not None):
+        raise ValueError(("Destination dir (ddir) cannot be used "
+                          "in combination with stripdir or prependdir"))
+    if ddir is not None:
+        stripdir = dir
+        prependdir = ddir
+        ddir = None
     if workers < 0:
         raise ValueError('workers must be greater or equal to 0')
     if workers != 1:
@@ -111,7 +118,7 @@ def compile_dir(dir, maxlevels=None, ddir=None, force=False,
 
 def compile_file(fullname, ddir=None, force=False, rx=None, quiet=0,
                  legacy=False, optimize=-1,
-                 invalidation_mode=None, stripdir=None, prependdir=None,
+                 invalidation_mode=None, *, stripdir=None, prependdir=None,
                  limit_sl_dest=None):
     """Byte-compile one file.
 
