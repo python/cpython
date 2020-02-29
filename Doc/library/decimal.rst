@@ -1485,7 +1485,7 @@ are also included in the pure Python version for compatibility.
    the C version uses a thread-local rather than a coroutine-local context and the value
    is ``False``.  This is slightly faster in some nested context scenarios.
 
-.. versionadded:: 3.9
+.. versionadded:: 3.9 backported to 3.7 and 3.8.
 
 
 Rounding modes
