@@ -89,11 +89,10 @@ Other Language Changes
 
 * Python now gets the absolute path of the script filename specified on
   the command line (ex: ``python3 script.py``): the ``__file__`` attribute of
-  the :mod:`__main__` module and ``sys.path[0]`` become an
-  absolute path, rather than a relative path. These paths now remain valid
-  after the current directory is changed by :func:`os.chdir`. As a side effect,
-  a traceback also displays the absolute path for :mod:`__main__` module frames
-  in this case.
+  the :mod:`__main__` module became an absolute path, rather than a relative
+  path. These paths now remain valid after the current directory is changed
+  by :func:`os.chdir`. As a side effect, the traceback also displays the
+  absolute path for :mod:`__main__` module frames in this case.
   (Contributed by Victor Stinner in :issue:`20443`.)
 
 * In the :ref:`Python Development Mode <devmode>` and in debug build, the
