@@ -676,11 +676,6 @@ pycore_init_import_warnings(PyThreadState *tstate, PyObject *sysmod)
 
     const PyConfig *config = &tstate->interp->config;
     if (_Py_IsMainInterpreter(tstate)) {
-        /* Initialize _warnings. */
-        if (_PyWarnings_Init() == NULL) {
-            return _PyStatus_ERR("can't initialize warnings");
-        }
-
         if (config->_install_importlib) {
             status = _PyConfig_WritePathConfig(config);
             if (_PyStatus_EXCEPTION(status)) {
