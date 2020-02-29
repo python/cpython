@@ -3342,9 +3342,10 @@ multipart/report
             '.test-idstring@testdomain-string>')
 
     def test_make_msgid_default_domain(self):
+        domain = getfqdn() # ensure the domain wont change (bpo-39793)
         self.assertTrue(
-            email.utils.make_msgid().endswith(
-                '@' + getfqdn() + '>'))
+            email.utils.make_msgid(domain=domain).endswith(
+                '@' + domain + '>'))
 
     def test_Generator_linend(self):
         # Issue 14645.
