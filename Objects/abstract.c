@@ -1895,9 +1895,15 @@ PyObject *
 PySequence_Tuple(PyObject *v)
 {
     PyObject *it;  /* iter(v) */
-    Py_ssize_t n;             /* guess for result tuple size */
+    Py_ssize_t n;  /* guess for result tuple size */
+    size_t newn;
+    // support variables
+    size_t new_n_tmp_1;
+    size_t new_n_tmp_2;
     PyObject *result = NULL;
     Py_ssize_t j;
+    // default minimum allocation for a new tuple
+    Py_ssize_t default_size = (Py_ssize_t)10; 
 
     if (v == NULL) {
         return null_error();
@@ -1912,67 +1918,81 @@ PySequence_Tuple(PyObject *v)
         Py_INCREF(v);
         return v;
     }
-    if (PyList_CheckExact(v))
+    
+    if (PyList_CheckExact(v)) {
         return PyList_AsTuple(v);
+    }
 
     /* Get iterator. */
     it = PyObject_GetIter(v);
-    if (it == NULL)
+    
+    if (it == NULL){
         return NULL;
-
-    /* Guess result size and allocate space. */
-    n = PyObject_LengthHint(v, 10);
-    if (n == -1)
-        goto Fail;
-    result = PyTuple_New(n);
-    if (result == NULL)
-        goto Fail;
-
-    /* Fill the tuple. */
-    for (j = 0; ; ++j) {
-        PyObject *item = PyIter_Next(it);
-        if (item == NULL) {
-            if (PyErr_Occurred())
-                goto Fail;
-            break;
-        }
-        if (j >= n) {
-            size_t newn = (size_t)n;
-            /* The over-allocation strategy can grow a bit faster
-               than for lists because unlike lists the
-               over-allocation isn't permanent -- we reclaim
-               the excess before the end of this routine.
-               So, grow by ten and then add 25%.
-            */
-            newn += 10u;
-            newn += newn >> 2;
-            if (newn > PY_SSIZE_T_MAX) {
-                /* Check for overflow */
-                PyErr_NoMemory();
-                Py_DECREF(item);
-                goto Fail;
-            }
-            n = (Py_ssize_t)newn;
-            if (_PyTuple_Resize(&result, n) != 0) {
-                Py_DECREF(item);
-                goto Fail;
-            }
-        }
-        PyTuple_SET_ITEM(result, j, item);
     }
 
-    /* Cut tuple back if guess was too large. */
-    if (j < n &&
-        _PyTuple_Resize(&result, j) != 0)
-        goto Fail;
+    /* Guess result size and allocate space. */
+    n = PyObject_LengthHint(v, default_size);
+    
+    if (n != -1) {
+        result = PyTuple_New(n);
+    }
+    
+    if (result != NULL) {
+        /* Fill the tuple. */
+        for (j = 0; ; ++j) {
+            PyObject *item = PyIter_Next(it);
+            
+            if (item == NULL) {
+                if (PyErr_Occurred()) {
+                    Py_DECREF(result);
+                    result = NULL;
+                }
+                
+                break;
+            }
+            
+            if (j >= n) {
+                newn = (size_t)n;
+                /* The over-allocation strategy can grow a bit faster
+                   than for lists because unlike lists the
+                   over-allocation isn't permanent -- we reclaim
+                   the excess before the end of this routine.
+                   So, grow by ten and then add 25%.
+                */
+                new_n_tmp_1 = newn + 10u;
+                new_n_tmp_2 = new_n_tmp_1 + new_n_tmp_1 >> 2;
+                
+                if (new_n_tmp_2 > PY_SSIZE_T_MAX) {
+                    /* Check for overflow */
+                    PyErr_NoMemory();
+                    Py_DECREF(item);
+                    Py_DECREF(result);
+                    result = NULL;
+                    break;
+                }
+                
+                n = (Py_ssize_t)new_n_tmp_2;
+                if (_PyTuple_Resize(&result, n) != 0) {
+                    Py_DECREF(item);
+                    Py_XDECREF(result);
+                    result = NULL;
+                    break;
+                }
+            }
+            
+            PyTuple_SET_ITEM(result, j, item);
+        }
 
+        /* Cut tuple back if guess was too large. */
+        if (result != NULL && j < n && (_PyTuple_Resize(&result, j) != 0)) {
+            Py_XDECREF(result);
+            result = NULL;
+        }
+    }
+    
     Py_DECREF(it);
+    
     return result;
-
-Fail:
-    Py_XDECREF(result);
-    Py_DECREF(it);
-    return NULL;
 }
 
 PyObject *
