@@ -1046,7 +1046,7 @@ Unix signals
 
    Like :func:`signal.signal`, this function must be invoked in the main
    thread.
-   
+
    While signal handlers registered using :func:`signal.signal` will typically be
    called without significant delays as seen from the perspective of an
    interactive user, signal callbacks in asyncio are subject to additional
