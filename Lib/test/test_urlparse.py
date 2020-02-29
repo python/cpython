@@ -265,7 +265,6 @@ class UrlParseTestCase(unittest.TestCase):
         self.checkJoin(RFC1808_BASE, '../../g', 'http://a/g')
 
         # "abnormal" cases from RFC 1808:
-        self.checkJoin(RFC1808_BASE, '', 'http://a/b/c/d;p?q#f')
         self.checkJoin(RFC1808_BASE, 'g.', 'http://a/b/c/g.')
         self.checkJoin(RFC1808_BASE, '.g', 'http://a/b/c/.g')
         self.checkJoin(RFC1808_BASE, 'g..', 'http://a/b/c/g..')
@@ -281,6 +280,7 @@ class UrlParseTestCase(unittest.TestCase):
         #self.checkJoin(RFC1808_BASE, 'http:', 'http:')
 
         # XXX: The following tests are no longer compatible with RFC3986
+        # self.checkJoin(RFC1808_BASE, '', 'http://a/b/c/d;p?q#f')
         # self.checkJoin(RFC1808_BASE, '../../../g', 'http://a/../g')
         # self.checkJoin(RFC1808_BASE, '../../../../g', 'http://a/../../g')
         # self.checkJoin(RFC1808_BASE, '/./g', 'http://a/./g')
@@ -448,6 +448,9 @@ class UrlParseTestCase(unittest.TestCase):
 
         # issue 23703: don't duplicate filename
         self.checkJoin('a', 'b', 'b')
+
+        # issue 39799: no base fragment (not compatible with RFC1808)
+        self.checkJoin('http://a/b#f', '', 'http://a/b')
 
     def test_RFC2732(self):
         str_cases = [
