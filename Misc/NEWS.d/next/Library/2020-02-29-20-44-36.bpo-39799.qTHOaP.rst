@@ -1,0 +1,3 @@
+Fix ``urllib.parse.urljoin``
+when ``base`` has fragment and ``url`` is blank
+(Returns ``base`` without fragment, not ``base`` entirely).
