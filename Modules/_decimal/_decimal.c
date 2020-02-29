@@ -128,7 +128,7 @@ static PyObject *tls_context_key = NULL;
 /* Invariant: NULL or the most recently accessed thread local context */
 static PyDecContextObject *cached_context = NULL;
 #else
-static PyObject *current_context_var;
+static PyObject *current_context_var = NULL;
 #endif
 
 /* Template for creating new thread contexts, calling Context() without
