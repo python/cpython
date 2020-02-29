@@ -1894,16 +1894,10 @@ PySequence_DelSlice(PyObject *s, Py_ssize_t i1, Py_ssize_t i2)
 PyObject *
 PySequence_Tuple(PyObject *v)
 {
-    PyObject *it;  /* iter(v) */
-    Py_ssize_t n;  /* guess for result tuple size */
-    size_t newn;
-    // support variables
-    size_t new_n_tmp_1;
-    size_t new_n_tmp_2;
-    PyObject *result = NULL;
-    Py_ssize_t j;
     // default minimum allocation for a new tuple
-    Py_ssize_t default_size = (Py_ssize_t)10; 
+    Py_ssize_t default_size = (Py_ssize_t)10;
+    
+    PyObject *result = NULL;
 
     if (v == NULL) {
         return null_error();
@@ -1924,14 +1918,14 @@ PySequence_Tuple(PyObject *v)
     }
 
     /* Get iterator. */
-    it = PyObject_GetIter(v);
+    PyObject *it = PyObject_GetIter(v);
     
     if (it == NULL){
         return NULL;
     }
 
     /* Guess result size and allocate space. */
-    n = PyObject_LengthHint(v, default_size);
+    Py_ssize_t n = PyObject_LengthHint(v, default_size);
     
     if (n != -1) {
         result = PyTuple_New(n);
@@ -1939,6 +1933,14 @@ PySequence_Tuple(PyObject *v)
     
     if (result != NULL) {
         /* Fill the tuple. */
+        
+        size_t newn;
+        Py_ssize_t j;
+        
+        // support variables
+        size_t new_n_tmp_1;
+        size_t new_n_tmp_2;
+        
         for (j = 0; ; ++j) {
             PyObject *item = PyIter_Next(it);
             
