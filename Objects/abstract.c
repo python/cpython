@@ -1960,7 +1960,7 @@ PySequence_Tuple(PyObject *v)
                    So, grow by ten and then add 25%.
                 */
                 new_n_tmp_1 = newn + 10u;
-                new_n_tmp_2 = new_n_tmp_1 + new_n_tmp_1 >> 2;
+                new_n_tmp_2 = new_n_tmp_1 + (new_n_tmp_1 >> 2);
                 
                 if (new_n_tmp_2 > PY_SSIZE_T_MAX) {
                     /* Check for overflow */
