@@ -122,7 +122,14 @@ incr_false(void)
 }
 
 
+#ifndef WITH_DECIMAL_CONTEXTVAR
+/* Key for thread state dictionary */
+static PyObject *tls_context_key = NULL;
+/* Invariant: NULL or the most recently accessed thread local context */
+static PyDecContextObject *cached_context = NULL;
+#else
 static PyObject *current_context_var;
+#endif
 
 /* Template for creating new thread contexts, calling Context() without
  * arguments and initializing the module_context on first access. */
@@ -1217,6 +1224,12 @@ context_new(PyTypeObject *type, PyObject *args UNUSED, PyObject *kwds UNUSED)
 static void
 context_dealloc(PyDecContextObject *self)
 {
+#ifndef WITH_DECIMAL_CONTEXTVAR
+    if (self == cached_context) {
+        cached_context = NULL;
+    }
+#endif
+
     Py_XDECREF(self->traps);
     Py_XDECREF(self->flags);
     Py_TYPE(self)->tp_free(self);
@@ -1491,6 +1504,134 @@ static PyGetSetDef context_getsets [] =
  * operation.
  */
 
+#ifndef WITH_DECIMAL_CONTEXTVAR
+/* Get the context from the thread state dictionary. */
+static PyObject *
+current_context_from_dict(void)
+{
+    PyObject *dict;
+    PyObject *tl_context;
+    PyThreadState *tstate;
+
+    dict = PyThreadState_GetDict();
+    if (dict == NULL) {
+        PyErr_SetString(PyExc_RuntimeError,
+            "cannot get thread state");
+        return NULL;
+    }
+
+    tl_context = PyDict_GetItemWithError(dict, tls_context_key);
+    if (tl_context != NULL) {
+        /* We already have a thread local context. */
+        CONTEXT_CHECK(tl_context);
+    }
+    else {
+        if (PyErr_Occurred()) {
+            return NULL;
+        }
+
+        /* Set up a new thread local context. */
+        tl_context = context_copy(default_context_template, NULL);
+        if (tl_context == NULL) {
+            return NULL;
+        }
+        CTX(tl_context)->status = 0;
+
+        if (PyDict_SetItem(dict, tls_context_key, tl_context) < 0) {
+            Py_DECREF(tl_context);
+            return NULL;
+        }
+        Py_DECREF(tl_context);
+    }
+
+    /* Cache the context of the current thread, assuming that it
+     * will be accessed several times before a thread switch. */
+    tstate = PyThreadState_GET();
+    if (tstate) {
+        cached_context = (PyDecContextObject *)tl_context;
+        cached_context->tstate = tstate;
+    }
+
+    /* Borrowed reference with refcount==1 */
+    return tl_context;
+}
+
+/* Return borrowed reference to thread local context. */
+static PyObject *
+current_context(void)
+{
+    PyThreadState *tstate;
+
+    tstate = PyThreadState_GET();
+    if (cached_context && cached_context->tstate == tstate) {
+        return (PyObject *)cached_context;
+    }
+
+    return current_context_from_dict();
+}
+
+/* ctxobj := borrowed reference to the current context */
+#define CURRENT_CONTEXT(ctxobj) \
+    ctxobj = current_context(); \
+    if (ctxobj == NULL) {       \
+        return NULL;            \
+    }
+
+/* Return a new reference to the current context */
+static PyObject *
+PyDec_GetCurrentContext(PyObject *self UNUSED, PyObject *args UNUSED)
+{
+    PyObject *context;
+
+    context = current_context();
+    if (context == NULL) {
+        return NULL;
+    }
+
+    Py_INCREF(context);
+    return context;
+}
+
+/* Set the thread local context to a new context, decrement old reference */
+static PyObject *
+PyDec_SetCurrentContext(PyObject *self UNUSED, PyObject *v)
+{
+    PyObject *dict;
+
+    CONTEXT_CHECK(v);
+
+    dict = PyThreadState_GetDict();
+    if (dict == NULL) {
+        PyErr_SetString(PyExc_RuntimeError,
+            "cannot get thread state");
+        return NULL;
+    }
+
+    /* If the new context is one of the templates, make a copy.
+     * This is the current behavior of decimal.py. */
+    if (v == default_context_template ||
+        v == basic_context_template ||
+        v == extended_context_template) {
+        v = context_copy(v, NULL);
+        if (v == NULL) {
+            return NULL;
+        }
+        CTX(v)->status = 0;
+    }
+    else {
+        Py_INCREF(v);
+    }
+
+    cached_context = NULL;
+    if (PyDict_SetItem(dict, tls_context_key, v) < 0) {
+        Py_DECREF(v);
+        return NULL;
+    }
+
+    Py_DECREF(v);
+    Py_RETURN_NONE;
+}
+#else
 static PyObject *
 init_current_context(void)
 {
@@ -1570,6 +1711,7 @@ PyDec_SetCurrentContext(PyObject *self UNUSED, PyObject *v)
 
     Py_RETURN_NONE;
 }
+#endif
 
 /* Context manager object for the 'with' statement. The manager
  * owns one reference to the global (outer) context and one
@@ -4388,14 +4530,7 @@ _dec_hash(PyDecObject *v)
     mpd_ssize_t exp;
     uint32_t status = 0;
     mpd_context_t maxctx;
-    PyObject *context;
 
-
-    context = current_context();
-    if (context == NULL) {
-        return -1;
-    }
-    Py_DECREF(context);
 
     if (mpd_isspecial(MPD(v))) {
         if (mpd_issnan(MPD(v))) {
@@ -5538,11 +5673,6 @@ PyInit__decimal(void)
     mpd_free = PyMem_Free;
     mpd_setminalloc(_Py_DEC_MINALLOC);
 
-    /* Init context variable */
-    current_context_var = PyContextVar_New("decimal_context", NULL);
-    if (current_context_var == NULL) {
-        goto error;
-    }
 
     /* Init external C-API functions */
     _py_long_multiply = PyLong_Type.tp_as_number->nb_multiply;
@@ -5714,6 +5844,15 @@ PyInit__decimal(void)
     CHECK_INT(PyModule_AddObject(m, "DefaultContext",
                                  default_context_template));
 
+#ifndef WITH_DECIMAL_CONTEXTVAR
+    ASSIGN_PTR(tls_context_key, PyUnicode_FromString("___DECIMAL_CTX__"));
+    Py_INCREF(Py_False);
+    CHECK_INT(PyModule_AddObject(m, "HAVE_CONTEXTVAR", Py_False));
+#else
+    ASSIGN_PTR(current_context_var, PyContextVar_New("decimal_context", NULL));
+    Py_INCREF(Py_True);
+    CHECK_INT(PyModule_AddObject(m, "HAVE_CONTEXTVAR", Py_True));
+#endif
     Py_INCREF(Py_True);
     CHECK_INT(PyModule_AddObject(m, "HAVE_THREADS", Py_True));
 
@@ -5773,9 +5912,13 @@ error:
     Py_CLEAR(SignalTuple); /* GCOV_NOT_REACHED */
     Py_CLEAR(DecimalTuple); /* GCOV_NOT_REACHED */
     Py_CLEAR(default_context_template); /* GCOV_NOT_REACHED */
+#ifndef WITH_DECIMAL_CONTEXTVAR
+    Py_CLEAR(tls_context_key); /* GCOV_NOT_REACHED */
+#else
+    Py_CLEAR(current_context_var); /* GCOV_NOT_REACHED */
+#endif
     Py_CLEAR(basic_context_template); /* GCOV_NOT_REACHED */
     Py_CLEAR(extended_context_template); /* GCOV_NOT_REACHED */
-    Py_CLEAR(current_context_var); /* GCOV_NOT_REACHED */
     Py_CLEAR(m); /* GCOV_NOT_REACHED */
 
     return NULL; /* GCOV_NOT_REACHED */
