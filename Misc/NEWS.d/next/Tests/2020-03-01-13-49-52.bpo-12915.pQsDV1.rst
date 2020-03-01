@@ -1,0 +1,3 @@
+When filesystem encoding cannot encode the Unicode string used for a filename
+continue testing with the next example.
+Patch by M Felt.

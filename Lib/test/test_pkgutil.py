@@ -246,7 +246,12 @@ class PkgutilTests(unittest.TestCase):
 
         for uw in unicode_words:
             d = os.path.join(self.dirname, uw)
-            os.makedirs(d, exist_ok=True)
+            try:
+                os.makedirs(d, exist_ok=True)
+            except  UnicodeEncodeError:
+                # catch errors such as: 'latin-1' codec can't encode characters
+                #                        in position 17-19: ordinal not in range(256) 
+                continue
             # make an empty __init__.py file
             f = os.path.join(d, '__init__.py')
             with open(f, 'w') as f:
