@@ -125,6 +125,13 @@ class ASTTestCase(unittest.TestCase):
     def check_invalid(self, node, raises=ValueError):
         self.assertRaises(raises, ast.unparse, node)
 
+    def check_src_roundtrip(self, code1, code2=None, strip=True):
+        code2 = code2 or code1
+        code1 = ast.unparse(ast.parse(code1))
+        if strip:
+            code1 = code1.strip()
+        self.assertEqual(code2, code1)
+
 
 class UnparseTestCase(ASTTestCase):
     # Tests for specific bugs found in earlier versions of unparse
@@ -280,6 +287,40 @@ class UnparseTestCase(ASTTestCase):
 
     def test_invalid_yield_from(self):
         self.check_invalid(ast.YieldFrom(value=None))
+
+class CosmeticTestCase(ASTTestCase):
+    """Test if there are cosmetic issues caused by unnecesary additions"""
+
+    def test_simple_expressions_parens(self):
+        self.check_src_roundtrip("(a := b)")
+        self.check_src_roundtrip("await x")
+        self.check_src_roundtrip("x if x else y")
+        self.check_src_roundtrip("lambda x: x")
+        self.check_src_roundtrip("1 + 1")
+        self.check_src_roundtrip("1 + 2 / 3")
+        self.check_src_roundtrip("(1 + 2) / 3")
+        self.check_src_roundtrip("(1 + 2) * 3 + 4 * (5 + 2)")
+        self.check_src_roundtrip("(1 + 2) * 3 + 4 * (5 + 2) ** 2")
+        self.check_src_roundtrip("~ x")
+        self.check_src_roundtrip("x and y")
+        self.check_src_roundtrip("x and y and z")
+        self.check_src_roundtrip("x and (y and x)")
+        self.check_src_roundtrip("(x and y) and z")
+        self.check_src_roundtrip("(x ** y) ** z ** q")
+        self.check_src_roundtrip("x >> y")
+        self.check_src_roundtrip("x << y")
+        self.check_src_roundtrip("x >> y and x >> z")
+        self.check_src_roundtrip("x + y - z * q ^ t ** k")
+        self.check_src_roundtrip("P * V if P and V else n * R * T")
+        self.check_src_roundtrip("lambda P, V, n: P * V == n * R * T")
+        self.check_src_roundtrip("flag & (other | foo)")
+        self.check_src_roundtrip("not x == y")
+        self.check_src_roundtrip("x == (not y)")
+        self.check_src_roundtrip("yield x")
+        self.check_src_roundtrip("yield from x")
+        self.check_src_roundtrip("call((yield x))")
+        self.check_src_roundtrip("return x + (yield x)")
+
 
 class DirectoryTestCase(ASTTestCase):
     """Test roundtrip behaviour on all files in Lib and Lib/test."""
