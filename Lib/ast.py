@@ -669,7 +669,9 @@ class _Unparser(NodeVisitor):
 
     def get_raw_docstring(self, node):
         """If a docstring node is found in the body of the *node* parameter,
-        return that docstring node, None otherwise."""
+        return that docstring node, None otherwise.
+
+        Logic mirrored from ``_PyAST_GetDocString``."""
         if not isinstance(
             node, (AsyncFunctionDef, FunctionDef, ClassDef, Module)
         ) or len(node.body) < 1:
