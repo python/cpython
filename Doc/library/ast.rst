@@ -117,7 +117,7 @@ Literals
 
 .. class:: Constant(value)
 
-   A constant value. The ``value`` attribute of the objects contains the
+   A constant value. The ``value`` attribute of the ``Constant`` literal contains the
    Python object it represents. The values represented can be simple types
    such as a number, string or ``None``, but also immutable container types
    (tuples and frozensets) if all of their elements are constant.
@@ -214,7 +214,7 @@ Literals
 
 .. class:: Set(elts)
 
-   A set. ``elts`` holds a list of nodes representing the elements. ::
+   A set. ``elts`` holds a list of nodes representing the set's elements. ::
 
     >>> print(ast.dump(ast.parse("{1, 2, 3}"), indent=4))
     Module(
