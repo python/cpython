@@ -999,6 +999,7 @@ class _Unparser(NodeVisitor):
         if node.kind == "u":
             self.write("u")
 
+        # Preserve quotes in the docstring by escaping them
         value = node.value.replace("\\", "\\\\")
         value = value.replace('"""', '""\"')
         if value[-1] == '"':
