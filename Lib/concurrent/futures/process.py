@@ -49,7 +49,6 @@ import atexit
 import os
 from concurrent.futures import _base
 import queue
-from queue import Full
 import multiprocessing as mp
 import multiprocessing.connection
 from multiprocessing.queues import Queue
@@ -272,7 +271,7 @@ class _ExecutorManagerThread(threading.Thread):
 
     def __init__(self, executor):
 
-        # When the executor gets garbarge collected, the weakref callback
+        # When the executor gets garbage collected, the weakref callback
         # will wake up the queue management thread so that it can terminate
         # if there is no pending work item.
         self.thread_wakeup = executor._executor_manager_thread_wakeup
@@ -312,9 +311,14 @@ class _ExecutorManagerThread(threading.Thread):
                 # while waiting on new results.
                 del result_item
 
-            if (self.is_shutting_down()
-                    and self.shutdown_executor_when_no_pending_tasks()):
-                return
+            if self.is_shutting_down():
+                self.flag_executor_shutting_down()
+
+                # Since no new work items can be added, it is safe to shutdown
+                # this thread if there are no pending work items.
+                if not self.pending_work_items:
+                    self.join_executor_internals()
+                    return
 
     def add_call_item_to_queue(self):
         # Fills call_queue with _WorkItems from pending_work_items.
@@ -363,7 +367,6 @@ class _ExecutorManagerThread(threading.Thread):
 
         elif wakeup_reader in ready:
             is_broken = False
-            result_item = None
         self.thread_wakeup.clear()
 
         return result_item, is_broken, cause
@@ -379,7 +382,7 @@ class _ExecutorManagerThread(threading.Thread):
             p = self.processes.pop(result_item)
             p.join()
             if not self.processes:
-                self.shutdown_worker()
+                self.join_executor_internals()
                 return
         else:
             # Received a _ResultItem so mark the future as completed.
@@ -402,9 +405,9 @@ class _ExecutorManagerThread(threading.Thread):
                 or executor._shutdown_thread)
 
     def terminate_broken(self, cause):
-        # Terminate the executor because it is in broken state. The cause
+        # Terminate the executor because it is in a broken state. The cause
         # argument can be used to display more information on the error that
-        # leaded the executor to be broken.
+        # lead the executor into becoming broken.
 
         # Mark the process pool broken so that submits fail right now.
         executor = self.executor_reference()
@@ -436,10 +439,10 @@ class _ExecutorManagerThread(threading.Thread):
         for p in self.processes.values():
             p.terminate()
 
-        # clean up ressources
-        self.shutdown_worker()
+        # clean up resources
+        self.join_executor_internals()
 
-    def shutdown_executor_when_no_pending_tasks(self):
+    def flag_executor_shutting_down(self):
         # Flag the executor as shutting down and cancel remaining tasks if
         # requested as early as possible if it is not gc-ed yet.
         executor = self.executor_reference()
@@ -465,13 +468,7 @@ class _ExecutorManagerThread(threading.Thread):
                 # on running processes over and over.
                 executor._cancel_pending_futures = False
 
-        # Since no new work items can be added, it is safe to shutdown
-        # this thread if there are no pending work items.
-        if not self.pending_work_items:
-            self.shutdown_worker()
-            return True
-
-    def shutdown_worker(self):
+    def shutdown_workers(self):
         n_children_to_stop = self.get_n_children_alive()
         n_sentinels_sent = 0
         # Send the right number of sentinels, to make sure all children are
@@ -482,9 +479,11 @@ class _ExecutorManagerThread(threading.Thread):
                 try:
                     self.call_queue.put_nowait(None)
                     n_sentinels_sent += 1
-                except Full:
+                except queue.Full:
                     break
 
+    def join_executor_internals(self):
+        self.shutdown_workers()
         # Release the queue's resources as soon as possible.
         self.call_queue.close()
         self.call_queue.join_thread()
