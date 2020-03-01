@@ -695,7 +695,7 @@ class _Unparser(NodeVisitor):
         self.traverse(node)
         return "".join(self._source)
 
-    def _body_helper(self, node):
+    def _write_docstring_and_traverse_body(self, node):
         if (docstring := self.get_raw_docstring(node)):
             self._write_docstring(docstring)
             self.traverse(node.body[1:])
@@ -703,7 +703,7 @@ class _Unparser(NodeVisitor):
             self.traverse(node.body)
 
     def visit_Module(self, node):
-        self._body_helper(node)
+        self._write_docstring_and_traverse_body(node)
 
     def visit_Expr(self, node):
         self.fill()
@@ -870,7 +870,7 @@ class _Unparser(NodeVisitor):
                 self.traverse(e)
 
         with self.block():
-            self._body_helper(node)
+            self._write_docstring_and_traverse_body(node)
 
     def visit_FunctionDef(self, node):
         self._function_helper(node, "def")
@@ -891,7 +891,7 @@ class _Unparser(NodeVisitor):
             self.write(" -> ")
             self.traverse(node.returns)
         with self.block():
-            self._body_helper(node)
+            self._write_docstring_and_traverse_body(node)
 
     def visit_For(self, node):
         self._for_helper("for ", node)
