@@ -1923,9 +1923,9 @@ static PyMethodDef audioop_methods[] = {
 };
 
 static int
-audioop_traverse(PyObject *m, visitproc visit, void *arg)
+audioop_traverse(PyObject *module, visitproc visit, void *arg)
 {
-    audioop_state *state = (audioop_state *)PyModule_GetState(m);
+    audioop_state *state = (audioop_state *)PyModule_GetState(module);
     if (state) {
         Py_VISIT(state->AudioopError);
     }
@@ -1933,9 +1933,9 @@ audioop_traverse(PyObject *m, visitproc visit, void *arg)
 }
 
 static int
-audioop_clear(PyObject *m)
+audioop_clear(PyObject *module)
 {
-    audioop_state *state = (audioop_state *)PyModule_GetState(m);
+    audioop_state *state = (audioop_state *)PyModule_GetState(module);
     if (state) {
         Py_CLEAR(state->AudioopError);
     }
@@ -1943,14 +1943,14 @@ audioop_clear(PyObject *m)
 }
 
 static void
-audioop_free(void *m) {
-    audioop_clear((PyObject *)m);
+audioop_free(void *module) {
+    audioop_clear((PyObject *)module);
 }
 
 static int
-audioop_exec(PyObject* m)
+audioop_exec(PyObject* module)
 {
-    audioop_state *state = get_audioop_state(m);
+    audioop_state *state = get_audioop_state(module);
 
     state->AudioopError = PyErr_NewException("audioop.error", NULL, NULL);
     if (state->AudioopError == NULL) {
@@ -1958,7 +1958,7 @@ audioop_exec(PyObject* m)
     }
 
     Py_INCREF(state->AudioopError);
-    if (PyModule_AddObject(m, "error", state->AudioopError) < 0) {
+    if (PyModule_AddObject(module, "error", state->AudioopError) < 0) {
         Py_DECREF(state->AudioopError);
         return -1;
     }
