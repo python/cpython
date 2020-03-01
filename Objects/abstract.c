@@ -1897,7 +1897,7 @@ PySequence_Tuple(PyObject *v)
     // default minimum allocation for a new tuple
     Py_ssize_t default_size = (Py_ssize_t)10;
     
-    // Special cases - START
+    // Special cases - Start
     
     if (v == NULL) {
         return null_error();
@@ -1917,32 +1917,31 @@ PySequence_Tuple(PyObject *v)
         return PyList_AsTuple(v);
     }
     
-    // Special cases - END
-
-    /* Get iterator. */
-    PyObject *it = PyObject_GetIter(v);
+    // Special cases - End
     
-    if (it == NULL){
-        return NULL;
-    }
-    
-    PyObject *result = NULL;
-
     /* Guess result size and allocate space. */
     Py_ssize_t n = PyObject_LengthHint(v, default_size);
     
-    result = PyTuple_New(n);
+    PyObject *result = PyTuple_New(n);
     
     if (result != NULL) {
         /* Fill the tuple. */
         
+        /* Get iterator. */
+        PyObject *it = PyObject_GetIter(v);
+        
+        if (it == NULL) {
+            return NULL;
+        }
+        
         size_t newn;
         Py_ssize_t j;
-        PyObject *item;
         
         // support variables
         size_t new_n_tmp_1;
         size_t new_n_tmp_2;
+        
+        PyObject *item;
         
         for (j = 0; ; ++j) {
             item = PyIter_Next(it);
@@ -1977,6 +1976,7 @@ PySequence_Tuple(PyObject *v)
                 }
                 
                 n = (Py_ssize_t)new_n_tmp_2;
+                
                 if (_PyTuple_Resize(&result, n) != 0) {
                     Py_DECREF(item);
                     Py_XDECREF(result);
@@ -1987,15 +1987,15 @@ PySequence_Tuple(PyObject *v)
             
             PyTuple_SET_ITEM(result, j, item);
         }
+    
+        Py_DECREF(it);
 
         /* Cut tuple back if guess was too large. */
-        if (j < n && (_PyTuple_Resize(&result, j) != 0)) {
+        if (result != NULL && j < n && (_PyTuple_Resize(&result, j) != 0)) {
             Py_XDECREF(result);
             result = NULL;
         }
     }
-    
-    Py_DECREF(it);
     
     return result;
 }
