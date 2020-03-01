@@ -1,0 +1,2 @@
+Add --without-decimal-contextvar build option.  This enables a thread-local
+rather than a coroutine local context.
