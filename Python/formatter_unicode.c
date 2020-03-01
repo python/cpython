@@ -1458,7 +1458,7 @@ _PyLong_FormatAdvancedWriter(_PyUnicodeWriter *writer,
                              PyObject *format_spec,
                              Py_ssize_t start, Py_ssize_t end)
 {
-    PyObject *tmp = NULL, *str = NULL;
+    PyObject *tmp = NULL;
     InternalFormatSpec format;
     int result = -1;
 
@@ -1511,7 +1511,6 @@ _PyLong_FormatAdvancedWriter(_PyUnicodeWriter *writer,
 
 done:
     Py_XDECREF(tmp);
-    Py_XDECREF(str);
     return result;
 }
 
