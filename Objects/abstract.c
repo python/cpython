@@ -1934,12 +1934,11 @@ PySequence_Tuple(PyObject *v)
             return NULL;
         }
         
-        size_t newn;
+        size_t newn = (size_t)n;
         Py_ssize_t j;
         
-        // support variables
+        // support variable
         size_t new_n_tmp_1;
-        size_t new_n_tmp_2;
         
         PyObject *item;
         
@@ -1956,7 +1955,6 @@ PySequence_Tuple(PyObject *v)
             }
             
             if (j >= n) {
-                newn = (size_t)n;
                 /* The over-allocation strategy can grow a bit faster
                    than for lists because unlike lists the
                    over-allocation isn't permanent -- we reclaim
@@ -1964,9 +1962,9 @@ PySequence_Tuple(PyObject *v)
                    So, grow by ten and then add 25%.
                 */
                 new_n_tmp_1 = newn + 10u;
-                new_n_tmp_2 = new_n_tmp_1 + (new_n_tmp_1 >> 2);
+                newn = new_n_tmp_1 + (new_n_tmp_1 >> 2);
                 
-                if (new_n_tmp_2 > PY_SSIZE_T_MAX) {
+                if (newn > PY_SSIZE_T_MAX) {
                     /* Check for overflow */
                     PyErr_NoMemory();
                     Py_DECREF(item);
@@ -1975,7 +1973,7 @@ PySequence_Tuple(PyObject *v)
                     break;
                 }
                 
-                n = (Py_ssize_t)new_n_tmp_2;
+                n = (Py_ssize_t)newn;
                 
                 if (_PyTuple_Resize(&result, n) != 0) {
                     Py_DECREF(item);
