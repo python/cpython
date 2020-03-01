@@ -687,6 +687,7 @@ call fails (for example because the path doesn't exist).
 
    Return information about this path (similarly to :func:`os.stat`).
    The result is looked up at each call to this method.
+   Return a :class:`os.stat_result` object.
 
    ::
 
