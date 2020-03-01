@@ -508,15 +508,15 @@ class ProcessPoolShutdownTest(ExecutorShutdownTest):
     def test_del_shutdown(self):
         executor = futures.ProcessPoolExecutor(max_workers=5)
         res = executor.map(abs, range(-5, 5))
-        queue_management_thread = executor._queue_management_thread
+        executor_manager_thread = executor._executor_manager_thread
         processes = executor._processes
         call_queue = executor._call_queue
-        queue_management_thread = executor._queue_management_thread
+        executor_manager_thread = executor._executor_manager_thread
         del executor
 
         # Make sure that all the executor resources were properly cleaned by
         # the shutdown process
-        queue_management_thread.join()
+        executor_manager_thread.join()
         for p in processes.values():
             p.join()
         call_queue.join_thread()
@@ -532,12 +532,12 @@ class ProcessPoolShutdownTest(ExecutorShutdownTest):
         res = executor.map(abs, range(-5, 5))
         processes = executor._processes
         call_queue = executor._call_queue
-        queue_management_thread = executor._queue_management_thread
+        executor_manager_thread = executor._executor_manager_thread
         executor.shutdown(wait=False)
 
         # Make sure that all the executor resources were properly cleaned by
         # the shutdown process
-        queue_management_thread.join()
+        executor_manager_thread.join()
         for p in processes.values():
             p.join()
         call_queue.join_thread()
@@ -1139,11 +1139,11 @@ class ExecutorDeadlockTest:
                                 mp_context=get_context(self.ctx)) as executor:
             self.executor = executor  # Allow clean up in fail_on_deadlock
 
-            # Start the executor and get the queue_management_thread to collect
+            # Start the executor and get the executor_manager_thread to collect
             # the threads and avoid dangling thread that should be cleaned up
             # asynchronously.
             executor.submit(id, 42).result()
-            queue_manager = executor._queue_management_thread
+            executor_manager = executor._executor_manager_thread
 
             # Submit a task that fails at pickle and shutdown the executor
             # without waiting
@@ -1154,7 +1154,7 @@ class ExecutorDeadlockTest:
 
         # Make sure the executor is eventually shutdown and do not leave
         # dangling threads
-        queue_manager.join()
+        executor_manager.join()
 
 
 create_executor_tests(ExecutorDeadlockTest,
