@@ -378,9 +378,9 @@ typedef struct {
 } audioop_state;
 
 static inline audioop_state *
-get_audioop_state(PyObject *m)
+get_audioop_state(PyObject *module)
 {
-    void *state = PyModule_GetState(m);
+    void *state = PyModule_GetState(module);
     assert(state != NULL);
     return (audioop_state *)state;
 }
