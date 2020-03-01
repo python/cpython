@@ -1612,9 +1612,9 @@ static struct PyMethodDef binascii_module_methods[] = {
 PyDoc_STRVAR(doc_binascii, "Conversion between binary data and ASCII");
 
 static int
-binascii_exec(PyObject *m) {
+binascii_exec(PyObject *module) {
     int result;
-    binascii_state *state = PyModule_GetState(m);
+    binascii_state *state = PyModule_GetState(module);
     if (state == NULL) {
         return -1;
     }
@@ -1624,7 +1624,7 @@ binascii_exec(PyObject *m) {
         return -1;
     }
     Py_INCREF(state->Error);
-    result = PyModule_AddObject(m, "Error", state->Error);
+    result = PyModule_AddObject(module, "Error", state->Error);
     if (result == -1) {
         Py_DECREF(state->Error);
         return -1;
@@ -1635,7 +1635,7 @@ binascii_exec(PyObject *m) {
         return -1;
     }
     Py_INCREF(state->Incomplete);
-    result = PyModule_AddObject(m, "Incomplete", state->Incomplete);
+    result = PyModule_AddObject(module, "Incomplete", state->Incomplete);
     if (result == -1) {
         Py_DECREF(state->Incomplete);
         return -1;
@@ -1650,33 +1650,31 @@ static PyModuleDef_Slot binascii_slots[] = {
 };
 
 static int
-binascii_traverse(PyObject *m, visitproc visit, void *arg)
+binascii_traverse(PyObject *module, visitproc visit, void *arg)
 {
-    binascii_state *state = get_binascii_state(m);
-    if (state == NULL) {
-        return -1;
+    binascii_state *state = get_binascii_state(module);
+    if (state) {
+        Py_VISIT(state->Error);
+        Py_VISIT(state->Incomplete);
     }
-    Py_VISIT(state->Error);
-    Py_VISIT(state->Incomplete);
     return 0;
 }
 
 static int
-binascii_clear(PyObject *m)
+binascii_clear(PyObject *module)
 {
-    binascii_state *state = get_binascii_state(m);
-    if (state == NULL) {
-        return -1;
+    binascii_state *state = get_binascii_state(module);
+    if (state) {
+        Py_CLEAR(state->Error);
+        Py_CLEAR(state->Incomplete);
     }
-    Py_CLEAR(state->Error);
-    Py_CLEAR(state->Incomplete);
     return 0;
 }
 
 static void
-binascii_free(void *m)
+binascii_free(void *module)
 {
-    binascii_clear((PyObject *)m);
+    binascii_clear((PyObject *)module);
 }
 
 static struct PyModuleDef binasciimodule = {
