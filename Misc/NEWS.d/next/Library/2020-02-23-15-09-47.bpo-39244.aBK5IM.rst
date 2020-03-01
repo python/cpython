@@ -1,2 +1,2 @@
-Fixed :method:`multiprocessing.context.get_all_start_methods`
+Fixed :class:`multiprocessing.context.get_all_start_methods`
 If the context is macOS, return the default methods by order.
