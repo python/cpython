@@ -1897,8 +1897,8 @@ PySequence_Tuple(PyObject *v)
     // default minimum allocation for a new tuple
     Py_ssize_t default_size = (Py_ssize_t)10;
     
-    PyObject *result = NULL;
-
+    // Special cases - START
+    
     if (v == NULL) {
         return null_error();
     }
@@ -1916,6 +1916,8 @@ PySequence_Tuple(PyObject *v)
     if (PyList_CheckExact(v)) {
         return PyList_AsTuple(v);
     }
+    
+    // Special cases - END
 
     /* Get iterator. */
     PyObject *it = PyObject_GetIter(v);
@@ -1923,26 +1925,27 @@ PySequence_Tuple(PyObject *v)
     if (it == NULL){
         return NULL;
     }
+    
+    PyObject *result = NULL;
 
     /* Guess result size and allocate space. */
     Py_ssize_t n = PyObject_LengthHint(v, default_size);
     
-    if (n != -1) {
-        result = PyTuple_New(n);
-    }
+    result = PyTuple_New(n);
     
     if (result != NULL) {
         /* Fill the tuple. */
         
         size_t newn;
         Py_ssize_t j;
+        PyObject *item;
         
         // support variables
         size_t new_n_tmp_1;
         size_t new_n_tmp_2;
         
         for (j = 0; ; ++j) {
-            PyObject *item = PyIter_Next(it);
+            item = PyIter_Next(it);
             
             if (item == NULL) {
                 if (PyErr_Occurred()) {
@@ -1986,7 +1989,7 @@ PySequence_Tuple(PyObject *v)
         }
 
         /* Cut tuple back if guess was too large. */
-        if (result != NULL && j < n && (_PyTuple_Resize(&result, j) != 0)) {
+        if (j < n && (_PyTuple_Resize(&result, j) != 0)) {
             Py_XDECREF(result);
             result = NULL;
         }
