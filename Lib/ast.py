@@ -668,8 +668,8 @@ class _Unparser(NodeVisitor):
             self._precedences[node] = precedence
 
     def get_raw_docstring(self, node):
-        """If a docstring node is found in the body of the *node* parameter, return
-        said docstring node, None otherwise."""
+        """If a docstring node is found in the body of the *node* parameter,
+        return that docstring node, None otherwise."""
         if not isinstance(
             node, (AsyncFunctionDef, FunctionDef, ClassDef, Module)
         ) or len(node.body) < 1:
