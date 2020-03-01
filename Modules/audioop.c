@@ -1967,7 +1967,8 @@ audioop_exec(PyObject* m)
 }
 
 static PyModuleDef_Slot audioop_slots[] = {
-    {Py_mod_exec, audioop_exec}
+    {Py_mod_exec, audioop_exec},
+    {0, NULL}
 };
 
 static struct PyModuleDef audioopmodule = {
