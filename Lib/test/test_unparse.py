@@ -125,13 +125,20 @@ class ASTTestCase(unittest.TestCase):
     def check_invalid(self, node, raises=ValueError):
         self.assertRaises(raises, ast.unparse, node)
 
-    def check_src_roundtrip(self, code1, code2=None, strip=True):
+    def get_source(self, code1, code2=None, strip=True):
         code2 = code2 or code1
         code1 = ast.unparse(ast.parse(code1))
         if strip:
             code1 = code1.strip()
+        return code1, code2
+
+    def check_src_roundtrip(self, code1, code2=None, strip=True):
+        code1, code2 = self.get_source(code1, code2, strip)
         self.assertEqual(code2, code1)
 
+    def check_src_dont_roundtrip(self, code1, code2=None, strip=True):
+        code1, code2 = self.get_source(code1, code2, strip)
+        self.assertNotEqual(code2, code1)
 
 class UnparseTestCase(ASTTestCase):
     # Tests for specific bugs found in earlier versions of unparse
@@ -343,11 +350,24 @@ class CosmeticTestCase(ASTTestCase):
             '"""Foo "bar" baz """',
         )
 
-        keywords = ("class", "def", "async def")
-
-        for keyword in keywords:
+        docstrings_negative = (
+            'a = """false"""',
+            '"""false""" + """unless its optimized"""',
+            '1 + 1\n"""false"""'
+        )
+        prefixes = [""]
+        prefixes.extend(
+            f"{keyword} foo():\n    "
+            for keyword in ("class", "def", "async def")
+        )
+        for prefix in prefixes:
             for docstring in docstrings:
-                self.check_src_roundtrip(f"{keyword} foo():\n    {docstring}")
+                self.check_src_roundtrip(f"{prefix}{docstring}")
+            for negative in docstrings_negative:
+                # this cases should be result with single quote
+                # rather then triple quoted docstring
+                self.check_roundtrip(negative)
+                self.check_src_dont_roundtrip(negative)
 
 class DirectoryTestCase(ASTTestCase):
     """Test roundtrip behaviour on all files in Lib and Lib/test."""
