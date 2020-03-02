@@ -678,6 +678,54 @@ Comprehensions
 
    ``generators`` is a list of :class:`comprehension` nodes.
 
+   .. doctest::
+
+        >>> print(ast.dump(ast.parse("[x for x in numbers]"), indent=4))
+        Module(
+            body=[
+                Expr(
+                    value=ListComp(
+                        elt=Name(id='x', ctx=Load()),
+                        generators=[
+                            comprehension(
+                                target=Name(id='x', ctx=Store()),
+                                iter=Name(id='numbers', ctx=Load()),
+                                ifs=[],
+                                is_async=0)]))],
+            type_ignores=[])
+
+        >>> print(ast.dump(ast.parse("{x: x**2 for x in numbers}"), indent=4))
+        Module(
+            body=[
+                Expr(
+                    value=DictComp(
+                        key=Name(id='x', ctx=Load()),
+                        value=BinOp(
+                            left=Name(id='x', ctx=Load()),
+                            op=Pow(),
+                            right=Constant(value=2, kind=None)),
+                        generators=[
+                            comprehension(
+                                target=Name(id='x', ctx=Store()),
+                                iter=Name(id='numbers', ctx=Load()),
+                                ifs=[],
+                                is_async=0)]))],
+            type_ignores=[])
+
+        >>> print(ast.dump(ast.parse("{x for x in numbers}"), indent=4))
+        Module(
+            body=[
+                Expr(
+                    value=SetComp(
+                        elt=Name(id='x', ctx=Load()),
+                        generators=[
+                            comprehension(
+                                target=Name(id='x', ctx=Store()),
+                                iter=Name(id='numbers', ctx=Load()),
+                                ifs=[],
+                                is_async=0)]))],
+            type_ignores=[])
+
 
 .. class:: comprehension(target, iter, ifs, is_async)
 
@@ -686,8 +734,8 @@ Comprehensions
    is the object to iterate over. ``ifs`` is a list of test expressions: each
    ``for`` clause can have multiple ``ifs``.
 
-  ``is_async`` indicates a comprehension is asynchronous (using an
-  ``async for`` instead of ``for``). The value is an integer (0 or 1).
+   ``is_async`` indicates a comprehension is asynchronous (using an
+   ``async for`` instead of ``for``). The value is an integer (0 or 1).
 
    .. doctest::
 
