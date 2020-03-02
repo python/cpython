@@ -7965,6 +7965,7 @@ pickle_traverse(PyObject *m, visitproc visit, void *arg)
     Py_VISIT(st->import_mapping_3to2);
     Py_VISIT(st->codecs_encode);
     Py_VISIT(st->getattr);
+    Py_VISIT(st->partial);
     return 0;
 }
 
