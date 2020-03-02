@@ -360,7 +360,7 @@ class CosmeticTestCase(ASTTestCase):
             for docstring in docstrings:
                 self.check_src_roundtrip(f"{prefix}{docstring}")
 
-    def test_docstrings_negative(self):
+    def test_docstrings_negative_cases(self):
         # Test some cases that involve strings in the children of the
         # first node but aren't docstrings to make sure we don't have
         # False positives.
