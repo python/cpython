@@ -753,6 +753,26 @@ class CPythonOrderedDictTests(OrderedDictTests, unittest.TestCase):
                     self.assertEqual(list(unpickled), expected)
                     self.assertEqual(list(it), expected)
 
+    @support.cpython_only
+    def test_weakref_list_is_not_traversed(self):
+        # Check that the weakref list is not traversed when collecting
+        # OrderedDict objects. See bpo-39778 for more information.
+
+        gc.collect()
+
+        x = self.OrderedDict()
+        x.cycle = x
+
+        cycle = []
+        cycle.append(cycle)
+
+        x_ref = weakref.ref(x)
+        cycle.append(x_ref)
+
+        del x, cycle, x_ref
+
+        gc.collect()
+
 
 class PurePythonOrderedDictSubclassTests(PurePythonOrderedDictTests):
 

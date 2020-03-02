@@ -1453,7 +1453,6 @@ odict_traverse(PyODictObject *od, visitproc visit, void *arg)
     _ODictNode *node;
 
     Py_VISIT(od->od_inst_dict);
-    Py_VISIT(od->od_weakreflist);
     _odict_FOREACH(od, node) {
         Py_VISIT(_odictnode_KEY(node));
     }
@@ -1466,7 +1465,6 @@ static int
 odict_tp_clear(PyODictObject *od)
 {
     Py_CLEAR(od->od_inst_dict);
-    Py_CLEAR(od->od_weakreflist);
     PyDict_Clear((PyObject *)od);
     _odict_clear_nodes(od);
     return 0;
