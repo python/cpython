@@ -821,7 +821,7 @@ function.
 
    .. attribute:: BoundArguments.arguments
 
-      An mutable mapping of parameters' names to arguments' values.
+      A mutable mapping of parameters' names to arguments' values.
       Contains only explicitly bound arguments.  Changes in :attr:`arguments`
       will reflect in :attr:`args` and :attr:`kwargs`.
 
