@@ -247,6 +247,13 @@ eval_tests = [
 
 class AST_Tests(unittest.TestCase):
 
+    def _is_ast_node(self, name, node):
+        if not isinstance(node, type):
+            return False
+        if "ast" not in node.__module__:
+            return False
+        return name != 'AST' and name[0].isupper()
+
     def _assertTrueorder(self, ast_node, parent_pos):
         if not isinstance(ast_node, ast.AST) or ast_node._fields is None:
             return
@@ -335,7 +342,7 @@ class AST_Tests(unittest.TestCase):
 
     def test_field_attr_existence(self):
         for name, item in ast.__dict__.items():
-            if isinstance(item, type) and name != 'AST' and name[0].isupper():
+            if self._is_ast_node(name, item):
                 x = item()
                 if isinstance(x, ast.AST):
                     self.assertEqual(type(x._fields), tuple)
