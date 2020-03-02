@@ -17,7 +17,7 @@ from . import futures
 
 class AbstractPool(ABC):
     """Abstract base class for asynchronous pools."""
-    
+
     @abstractmethod
     async def astart(self):
         raise NotImplementedError
