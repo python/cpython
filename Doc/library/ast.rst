@@ -200,7 +200,7 @@ Literals
 
    A list or tuple. ``elts`` holds a list of nodes representing the elements.
    ``ctx`` is :class:`Store` if the container is an assignment target (i.e.
-   ``(x,y)=pt``), and :class:`Load` otherwise.
+   ``(x,y)=something``), and :class:`Load` otherwise.
 
    .. doctest::
 
@@ -249,12 +249,13 @@ Literals
 
 .. class:: Dict(keys, values)
 
-   A dictionary. ``keys`` and ``values`` hold lists of nodes with matching order
-   (i.e. they could be paired with :func:`zip`).
+   A dictionary. ``keys`` and ``values`` hold lists of nodes representing the
+   keys and the values respectively, in matching order (what would be returned
+   when calling :code:`dictionary.keys()` and :code:`dictionary.values()`).
 
    When doing dictionary unpacking using dictionary literals the expression to be
-   expanded goes in the ``values`` list, with a ``None`` at the corresponding position
-   in ``keys``. Example:
+   expanded goes in the ``values`` list, with a ``None`` at the corresponding
+   position in ``keys``.
 
    .. doctest::
 
@@ -349,9 +350,8 @@ Expressions
 
    When an expression, such as a function call, appears as a statement by itself
    with its return value not used or stored, it is wrapped in this container.
-   ``value`` holds one of the other nodes in this section, or a literal, a
-   :class:`Name`, a :class:`Lambda`, or a :class:`Yield` or :class:`YieldFrom`
-   node.
+   ``value`` holds one of the other nodes in this section, a :class:`Constant`, a
+   :class:`Name`, a :class:`Lambda`, a :class:`Yield` or :class:`YieldFrom` node.
 
    .. doctest::
 
@@ -428,10 +428,10 @@ Expressions
 
 .. class:: BoolOp(op, values)
 
-   A boolean operation, 'or' or 'and'. ``op`` is :class:`Or` or
-   :class:`And`. ``values`` are the values involved. Consecutive operations
-   with the same operator, such as ``a or b or c``, are collapsed into one node
-   with several values.
+   A boolean operation, 'or' or 'and'. ``op`` is :class:`Or` or :class:`And`.
+   ``values`` are the values involved. Consecutive operations with the same
+   operator, such as ``a or b or c``, are collapsed into one node with several
+   values.
 
    This doesn't include ``not``, which is a :class:`UnaryOp`.
 
@@ -458,8 +458,8 @@ Expressions
 .. class:: Compare(left, ops, comparators)
 
    A comparison of two or more values. ``left`` is the first value in the
-   comparison, ``ops`` the list of operators, and ``comparators`` the list of
-   values after the first. If that sounds awkward, that's because it is
+   comparison, ``ops`` the list of operators, and ``comparators`` the list
+   of values after the first element in the comparison.
 
    .. doctest::
 
@@ -501,8 +501,8 @@ Expressions
    * ``keywords`` holds a list of :class:`keyword` objects representing
      arguments passed by keyword.
 
-   When compiling a Call node, ``args`` and ``keywords`` are required, but they
-   can be empty lists. ``starargs`` and ``kwargs`` are optional.
+   When creating a ``Call`` node, ``args`` and ``keywords`` are required, but
+   they can be empty lists. ``starargs`` and ``kwargs`` are optional.
 
    .. doctest::
 
@@ -536,7 +536,7 @@ Expressions
 .. class:: IfExp(test, body, orelse)
 
    An expression such as ``a if b else c``. Each field holds a single node, so
-   in that example, all three are :class:`Name` nodes.
+   in the following example, all three are :class:`Name` nodes.
 
    .. doctest::
 
@@ -555,8 +555,8 @@ Expressions
 
    Attribute access, e.g. ``d.keys``. ``value`` is a node, typically a
    :class:`Name`. ``attr`` is a bare string giving the name of the attribute,
-   and ``ctx`` is :class:`Load`, :class:`Store` or :class:`Del` according to
-   how the attribute is acted on.
+   and ``ctx`` is :class:`Load`, :class:`Store` or :class:`Del` according to how
+   the attribute is acted on.
 
    .. doctest::
 
@@ -596,9 +596,9 @@ Subscripting
 .. class:: Subscript(value, slice, ctx)
 
    A subscript, such as ``l[1]``. ``value`` is the object, often a
-   :class:`Name`. ``slice`` is one of :class:`Index`, :class:`Slice`
-   or :class:`ExtSlice`. ``ctx`` is :class:`Load`, :class:`Store` or :class:`Del`
-   according to what it does with the subscript.
+   :class:`Name`. ``slice`` is one of :class:`Index`, :class:`Slice` or
+   :class:`ExtSlice`. ``ctx`` is :class:`Load`, :class:`Store` or :class:`Del`
+   according to the action performed with the subscript.
 
 
 .. class:: Index(value)
@@ -676,9 +676,7 @@ Comprehensions
    comprehensions. ``elt`` (or ``key`` and ``value``) is a single node
    representing the part that will be evaluated for each item.
 
-   ``generators`` is a list of :class:`comprehension` nodes. Comprehensions with
-   more than one ``for`` part are legal, if tricky to get right - see the
-   example below.
+   ``generators`` is a list of :class:`comprehension` nodes.
 
 
 .. class:: comprehension(target, iter, ifs, is_async)
@@ -875,11 +873,13 @@ Statements
 
 .. class:: AugAssign(target, op, value)
 
-   Augmented assignment, such as ``a += 1``. In that example, ``target`` is a
-   :class:`Name` node for ``a`` (with the :class:`Store` context), op is
-   :class:`Add`, and ``value`` is a :class:`Num` node for 1. ``target`` can be
-   :class:`Name`, :class:`Subscript` or :class:`Attribute`, but not a
-   :class:`Tuple` or :class:`List` (unlike the targets of :class:`Assign`).
+   Augmented assignment, such as ``a += 1``. In the following example,
+   ``target`` is a :class:`Name` node for ``x`` (with the :class:`Store`
+   context), ``op`` is :class:`Add`, and ``value`` is a :class:`Constant` with
+   value for 1.
+
+   The ``target`` attribute connot be of class :class:`Tuple` or :class:`List`,
+   unlike the targets of :class:`Assign`.
 
    .. doctest::
 
@@ -895,10 +895,9 @@ Statements
 
 .. class:: Raise(exc, cause)
 
-   Raising an exception, Python 3 syntax. ``exc`` is the exception object to be
-   raised, normally a :class:`Call` or :class:`Name`, or ``None`` for
-   a standalone ``raise``. ``cause`` is the optional part for ``y`` in
-   ``raise x from y``.
+   A ``raise`` statement. ``exc`` is the exception object to be raised, normally a
+   :class:`Call` or :class:`Name`, or ``None`` for a standalone ``raise``.
+   ``cause`` is the optional part for ``y`` in ``raise x from y``.
 
    .. doctest::
 
@@ -1480,8 +1479,7 @@ Function and class definitions
      <http://www.python.org/dev/peps/pep-3115/>`_.
    * ``starargs`` and ``kwargs`` are each a single node, as in a function call.
      starargs will be expanded to join the list of base classes, and kwargs will
-     be passed to the metaclass.  These are removed in Python 3.5 - see below
-     for details.
+     be passed to the metaclass.
    * ``body`` is a list of nodes representing the code within the class
      definition.
    * ``decorator_list`` is a list of nodes, as in :class:`FunctionDef`.
