@@ -2133,12 +2133,12 @@ defdict_repr(defdictobject *dd)
 static PyObject*
 defdict_or(PyObject* left, PyObject* right)
 {
-    int override = PyObject_IsInstance(left, (PyObject*)&defdict_type);
-    if (override < 0) {
+    int lhs = PyObject_IsInstance(left, (PyObject*)&defdict_type);
+    if (lhs < 0) {
         return NULL;
     }
     PyObject *self, *other;
-    if (override) {
+    if (lhs) {
         self = left;
         other = right;
     }
@@ -2155,7 +2155,7 @@ defdict_or(PyObject* left, PyObject* right)
     if (!new) {
         return NULL;
     }
-    if (PyDict_Merge(new, other, override)) {
+    if (PyDict_Merge(new, other, lhs)) {
         Py_DECREF(new);
         return NULL;
     }
