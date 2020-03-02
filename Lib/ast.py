@@ -667,6 +667,22 @@ class _Unparser(NodeVisitor):
         for node in nodes:
             self._precedences[node] = precedence
 
+    def get_raw_docstring(self, node):
+        """If a docstring node is found in the body of the *node* parameter,
+        return that docstring node, None otherwise.
+
+        Logic mirrored from ``_PyAST_GetDocString``."""
+        if not isinstance(
+            node, (AsyncFunctionDef, FunctionDef, ClassDef, Module)
+        ) or len(node.body) < 1:
+            return None
+        node = node.body[0]
+        if not isinstance(node, Expr):
+            return None
+        node = node.value
+        if isinstance(node, Constant) and isinstance(node.value, str):
+            return node
+
     def traverse(self, node):
         if isinstance(node, list):
             for item in node:
@@ -681,9 +697,15 @@ class _Unparser(NodeVisitor):
         self.traverse(node)
         return "".join(self._source)
 
+    def _write_docstring_and_traverse_body(self, node):
+        if (docstring := self.get_raw_docstring(node)):
+            self._write_docstring(docstring)
+            self.traverse(node.body[1:])
+        else:
+            self.traverse(node.body)
+
     def visit_Module(self, node):
-        for subnode in node.body:
-            self.traverse(subnode)
+        self._write_docstring_and_traverse_body(node)
 
     def visit_Expr(self, node):
         self.fill()
@@ -850,15 +872,15 @@ class _Unparser(NodeVisitor):
                 self.traverse(e)
 
         with self.block():
-            self.traverse(node.body)
+            self._write_docstring_and_traverse_body(node)
 
     def visit_FunctionDef(self, node):
-        self.__FunctionDef_helper(node, "def")
+        self._function_helper(node, "def")
 
     def visit_AsyncFunctionDef(self, node):
-        self.__FunctionDef_helper(node, "async def")
+        self._function_helper(node, "async def")
 
-    def __FunctionDef_helper(self, node, fill_suffix):
+    def _function_helper(self, node, fill_suffix):
         self.write("\n")
         for deco in node.decorator_list:
             self.fill("@")
@@ -871,15 +893,15 @@ class _Unparser(NodeVisitor):
             self.write(" -> ")
             self.traverse(node.returns)
         with self.block():
-            self.traverse(node.body)
+            self._write_docstring_and_traverse_body(node)
 
     def visit_For(self, node):
-        self.__For_helper("for ", node)
+        self._for_helper("for ", node)
 
     def visit_AsyncFor(self, node):
-        self.__For_helper("async for ", node)
+        self._for_helper("async for ", node)
 
-    def __For_helper(self, fill, node):
+    def _for_helper(self, fill, node):
         self.fill(fill)
         self.traverse(node.target)
         self.write(" in ")
@@ -973,6 +995,19 @@ class _Unparser(NodeVisitor):
 
     def visit_Name(self, node):
         self.write(node.id)
+
+    def _write_docstring(self, node):
+        self.fill()
+        if node.kind == "u":
+            self.write("u")
+
+        # Preserve quotes in the docstring by escaping them
+        value = node.value.replace("\\", "\\\\")
+        value = value.replace('"""', '""\"')
+        if value[-1] == '"':
+            value = value.replace('"', '\\"', -1)
+
+        self.write(f'"""{value}"""')
 
     def _write_constant(self, value):
         if isinstance(value, (float, complex)):
