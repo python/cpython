@@ -183,5 +183,30 @@ class TestDefaultDict(unittest.TestCase):
             o = pickle.loads(s)
             self.assertEqual(d, o)
 
+    def test_union(self):
+        i = defaultdict(int, {1: 1, 2: 2})
+        s = defaultdict(str, {0: "zero", 1: "one"})
+
+        self.assertIs((i | s).default_factory, int)
+        self.assertDictEqual(i | s, {1: "one", 2: 2, 0: "zero"})
+        self.assertIs((s | i).default_factory, str)
+        self.assertDictEqual(s | i, {0: "zero", 1: 1, 2: 2})
+
+        self.assertIs((i | dict(s)).default_factory, int)
+        self.assertDictEqual(i | dict(s), {1: "one", 2: 2, 0: "zero"})
+        self.assertIs((dict(s) | i).default_factory, int)
+        self.assertDictEqual(dict(s) | i, {0: "zero", 1: 1, 2: 2})
+
+        i |= list(s.items())
+        self.assertIs(i.default_factory, int)
+        self.assertDictEqual(i, {1: "one", 2: 2, 0: "zero"})
+
+        with self.assertRaises(TypeError):
+            i |= None
+        with self.assertRaises(TypeError):
+            i | list(s.items())
+        with self.assertRaises(TypeError):
+            list(s.items()) | i
+
 if __name__ == "__main__":
     unittest.main()
