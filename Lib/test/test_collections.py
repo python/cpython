@@ -232,11 +232,10 @@ class TestChainMap(unittest.TestCase):
         for k, v in dict(a=1, B=20, C=30, z=100).items():             # check get
             self.assertEqual(d.get(k, 100), v)
 
-    def test_issue584(self):
-        'Tests for changes in issue584 dealing with | and |= operators'
+    def test_union_operators(self):
         a = ChainMap(dict(a=1, b=2), dict(c=3, d=4))
         b = ChainMap(dict(a=10, e=5), dict(b=20, d=4))
-        c = dict(a = 10, c = 30)
+        c = dict(a=10, c=30)
 
         ## Testing | operator between chainmaps
         d = a | b
@@ -248,14 +247,14 @@ class TestChainMap(unittest.TestCase):
 
         ## Testing | operator between chainmap and mapping, and vice versa
         e = b | c
-        self.assertEqual(e, ChainMap(e.maps[0] | c, *b.maps[1:]))
+        self.assertEqual(e, ChainMap(b.maps[0] | c, *b.maps[1:]))
 
         f = c | b
         self.assertEqual(f, ChainMap(c | dict(b)))
 
         ## Testing |= operator between chainmap and mapping 
         b |= c
-        self.assertEqual(e,b)
+        self.assertEqual(e, b)
 
 ################################################################################
 ### Named Tuples
