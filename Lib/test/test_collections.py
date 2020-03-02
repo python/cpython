@@ -233,28 +233,27 @@ class TestChainMap(unittest.TestCase):
             self.assertEqual(d.get(k, 100), v)
 
     def test_union_operators(self):
-        a = ChainMap(dict(a=1, b=2), dict(c=3, d=4))
-        b = ChainMap(dict(a=10, e=5), dict(b=20, d=4))
-        c = dict(a=10, c=30)
-        d = [('a', 1), ('c',3)]
+        cm1 = ChainMap(dict(a=1, b=2), dict(c=3, d=4))
+        cm2 = ChainMap(dict(a=10, e=5), dict(b=20, d=4))
+        d = dict(a=10, c=30)
+        pairs = [('a', 1), ('c',3)]
 
-        e = a | b # testing between chainmaps
-        self.assertEqual(e, ChainMap(a.maps[0] | dict(b), *a.maps[1:]))
-        a |= b
-        self.assertEqual(e, a)
+        tmp = cm1 | cm2 # testing between chainmaps
+        self.assertEqual(tmp, ChainMap(cm1.maps[0] | dict(cm2), *cm1.maps[1:]))
+        cm1 |= cm2
+        self.assertEqual(tmp, cm1)
         
-        f = b | c # testing between chainmap and mapping
-        self.assertEqual(f, ChainMap(b.maps[0] | c, *b.maps[1:]))
-        g = c | b
-        self.assertEqual(g, ChainMap(c | dict(b)))
-        b |= c 
-        self.assertEqual(f, b)
+        tmp = cm2 | d # testing between chainmap and mapping
+        self.assertEqual(tmp, ChainMap(cm2.maps[0] | d, *cm2.maps[1:]))
+        self.assertEqual(d | cm2, ChainMap(d | dict(cm2)))
+        cm2 |= d 
+        self.assertEqual(tmp, cm2)
 
         # testing behavior between chainmap and iterable key-value pairs
         with self.assertRaises(TypeError):
-            a | d
-        a |= d 
-        self.assertEqual(a, ChainMap(a.maps[0] | dict(d)), *a.maps[1:])
+            cm1 | pairs
+        cm1 |= pairs
+        self.assertEqual(cm1, ChainMap(cm1.maps[0] | dict(pairs)), *cm1.maps[1:])
 
 
 ################################################################################
