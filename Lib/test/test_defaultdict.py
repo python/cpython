@@ -189,17 +189,22 @@ class TestDefaultDict(unittest.TestCase):
 
         self.assertIs((i | s).default_factory, int)
         self.assertDictEqual(i | s, {1: "one", 2: 2, 0: "zero"})
+        self.assertEqual(list(i | s), [1, 2, 0])
         self.assertIs((s | i).default_factory, str)
         self.assertDictEqual(s | i, {0: "zero", 1: 1, 2: 2})
+        self.assertEqual(list(s | i), [0, 1, 2])
 
         self.assertIs((i | dict(s)).default_factory, int)
         self.assertDictEqual(i | dict(s), {1: "one", 2: 2, 0: "zero"})
+        self.assertEqual(list(i | dict(s)), [1, 2, 0])
         self.assertIs((dict(s) | i).default_factory, int)
         self.assertDictEqual(dict(s) | i, {0: "zero", 1: 1, 2: 2})
+        self.assertEqual(list(dict(s) | i), [0, 1, 2])
 
         i |= list(s.items())
         self.assertIs(i.default_factory, int)
         self.assertDictEqual(i, {1: "one", 2: 2, 0: "zero"})
+        self.assertEqual(list(i), [1, 2, 0])
 
         with self.assertRaises(TypeError):
             i |= None
