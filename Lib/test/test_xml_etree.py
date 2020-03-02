@@ -2259,6 +2259,10 @@ class BugsTest(unittest.TestCase):
         text = text[6:-4]
         self.assertEqual(root.get('b'), text)
 
+    def test_39495_treebuilder_start(self):
+        self.assertRaises(TypeError, ET.TreeBuilder().start, "tag")
+        self.assertRaises(TypeError, ET.TreeBuilder().start, "tag", None)
+
 
 
 # --------------------------------------------------------------------
