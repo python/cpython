@@ -236,25 +236,26 @@ class TestChainMap(unittest.TestCase):
         a = ChainMap(dict(a=1, b=2), dict(c=3, d=4))
         b = ChainMap(dict(a=10, e=5), dict(b=20, d=4))
         c = dict(a=10, c=30)
+        d = [('a', 1), ('c',3)]
 
-        ## Testing | operator between chainmaps
-        d = a | b
-        self.assertEqual(d, ChainMap(a.maps[0] | dict(b), *a.maps[1:]))
-
-        ## Testing |= operator between chainmaps
+        e = a | b # testing between chainmaps
+        self.assertEqual(e, ChainMap(a.maps[0] | dict(b), *a.maps[1:]))
         a |= b
-        self.assertEqual(d, a)
+        self.assertEqual(e, a)
+        
+        f = b | c # testing between chainmap and mapping
+        self.assertEqual(f, ChainMap(b.maps[0] | c, *b.maps[1:]))
+        g = c | b
+        self.assertEqual(g, ChainMap(c | dict(b)))
+        b |= c 
+        self.assertEqual(f, b)
 
-        ## Testing | operator between chainmap and mapping, and vice versa
-        e = b | c
-        self.assertEqual(e, ChainMap(b.maps[0] | c, *b.maps[1:]))
+        # testing behavior between chainmap and iterable key-value pairs
+        with self.assertRaises(TypeError):
+            a | d
+        a |= d 
+        self.assertEqual(a, ChainMap(a.maps[0] | dict(d)), *a.maps[1:])
 
-        f = c | b
-        self.assertEqual(f, ChainMap(c | dict(b)))
-
-        ## Testing |= operator between chainmap and mapping 
-        b |= c
-        self.assertEqual(e, b)
 
 ################################################################################
 ### Named Tuples
