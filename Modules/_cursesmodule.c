@@ -3256,6 +3256,8 @@ _curses_setupterm_impl(PyObject *module, const char *term, int fd)
 }
 
 #if defined(NCURSES_EXT_FUNCS) && NCURSES_EXT_FUNCS >= 20081102
+// https://invisible-island.net/ncurses/NEWS.html#index-t20080119
+
 /*[clinic input]
 _curses.get_escdelay
 
