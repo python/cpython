@@ -1,0 +1,1 @@
+The hosts method on a /32 IPv4Network now returns a list containing the IPv4Address instead of an empty list.
