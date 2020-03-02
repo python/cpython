@@ -359,7 +359,7 @@ class CosmeticTestCase(ASTTestCase):
             for docstring in docstrings:
                 self.check_src_roundtrip(f"{prefix}{docstring}")
 
-    def test_docstrings_negative(self):
+    def test_docstrings_negative_cases(self):
         docstrings_negative = (
             'a = """false"""',
             '"""false""" + """unless its optimized"""',
