@@ -8,27 +8,34 @@ import functools
 import threading
 import os
 
+from abc import ABC, abstractmethod
+
 from . import events
 from . import exceptions
 from . import futures
 
 
-class AbstractPool:
+class AbstractPool(ABC):
     """Abstract base class for asynchronous pools."""
-
+    
+    @abstractmethod
     async def astart(self):
         raise NotImplementedError
 
+    @abstractmethod
     async def __aenter__(self):
         await self.astart()
         return self
 
+    @abstractmethod
     async def aclose(self):
         raise NotImplementedError
 
+    @abstractmethod
     async def __aexit__(self, exc_type, exc_value, exc_traceback):
         await self.aclose()
 
+    @abstractmethod
     async def run(self, /, func, *args, **kwargs):
         """Asynchronously run function *func* using the pool.
 

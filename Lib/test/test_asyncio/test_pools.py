@@ -21,24 +21,15 @@ class AbstractPoolTests(unittest.TestCase):
         self.loop.close()
 
     def test_methods_not_implemented(self):
-        pool = asyncio.pools.AbstractPool()
-        with self.assertRaises(NotImplementedError):
-            self.loop.run_until_complete(pool.astart())
-
-        with self.assertRaises(NotImplementedError):
-            self.loop.run_until_complete(pool.aclose())
-
-        func = mock.Mock()
-        with self.assertRaises(NotImplementedError):
-            self.loop.run_until_complete(pool.run(func))
-        func.assert_not_called()
+        with self.assertRaises(TypeError):
+            asyncio.pools.AbstractPool()
 
     def test_context_manager_not_implemented(self):
         async def pool_cm():
             async with asyncio.pools.AbstractPool() as pool:
                 pass
 
-        with self.assertRaises(NotImplementedError):
+        with self.assertRaises(TypeError):
             self.loop.run_until_complete(pool_cm())
 
 
