@@ -111,6 +111,11 @@ with f() as x, g() as y:
     suite1
 """
 
+docstring_prefixes = [""]
+docstring_prefixes.extend(
+    f"{keyword} foo():\n    "
+    for keyword in ("class", "def", "async def")
+)
 
 class ASTTestCase(unittest.TestCase):
     def assertASTEqual(self, ast1, ast2):
@@ -350,24 +355,24 @@ class CosmeticTestCase(ASTTestCase):
             '"""Foo "bar" baz """',
         )
 
+        for prefix in docstring_prefixes:
+            for docstring in docstrings:
+                self.check_src_roundtrip(f"{prefix}{docstring}")
+
+    def test_docstrings_negative(self):
         docstrings_negative = (
             'a = """false"""',
             '"""false""" + """unless its optimized"""',
-            '1 + 1\n"""false"""'
+            '1 + 1\n"""false"""',
+            'f"""no, top level but f-fstring"""'
         )
-        prefixes = [""]
-        prefixes.extend(
-            f"{keyword} foo():\n    "
-            for keyword in ("class", "def", "async def")
-        )
-        for prefix in prefixes:
-            for docstring in docstrings:
-                self.check_src_roundtrip(f"{prefix}{docstring}")
+        for prefix in docstring_prefixes:
             for negative in docstrings_negative:
                 # this cases should be result with single quote
                 # rather then triple quoted docstring
-                self.check_roundtrip(negative)
-                self.check_src_dont_roundtrip(negative)
+                src = f"{prefix}{negative}"
+                self.check_roundtrip(src)
+                self.check_src_dont_roundtrip(src)
 
 class DirectoryTestCase(ASTTestCase):
     """Test roundtrip behaviour on all files in Lib and Lib/test."""
