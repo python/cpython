@@ -27,6 +27,17 @@ classes all inherit from :class:`ast.AST`.  An abstract syntax tree can be
 compiled into a Python code object using the built-in :func:`compile` function.
 
 
+.. _abstract-grammar:
+
+Abstract Grammar
+----------------
+
+The abstract grammar is currently defined as follows:
+
+.. literalinclude:: ../../Parser/Python.asdl
+   :language: none
+
+
 Node classes
 ------------
 
@@ -122,14 +133,14 @@ Literals
    such as a number, string or ``None``, but also immutable container types
    (tuples and frozensets) if all of their elements are constant.
 
-::
+   .. doctest::
 
-    >>> print(ast.dump(ast.parse("123"), indent=4))
-    Module(
-        body=[
-            Expr(
-                value=Constant(value=123, kind=None))],
-        type_ignores=[])
+       >>> print(ast.dump(ast.parse("123"), indent=4))
+       Module(
+           body=[
+               Expr(
+                   value=Constant(value=123, kind=None))],
+           type_ignores=[])
 
 
 .. class:: FormattedValue(value, conversion, format_spec)
@@ -155,77 +166,86 @@ Literals
 .. class:: JoinedStr(values)
 
    An f-string, comprising a series of :class:`FormattedValue` and :class:`Constant`
-   nodes. ::
+   nodes.
 
-    >>> print(ast.dump(ast.parse('f"sin({a}) is {sin(a):.3}"'), indent=4))
-    Module(
-        body=[
-            Expr(
-                value=JoinedStr(
-                    values=[
-                        Constant(value='sin(', kind=None),
-                        FormattedValue(
-                            value=Name(id='a', ctx=Load()),
-                            conversion=-1,
-                            format_spec=None),
-                        Constant(value=') is ', kind=None),
-                        FormattedValue(
-                            value=Call(
-                                func=Name(id='sin', ctx=Load()),
-                                args=[
-                                    Name(id='a', ctx=Load())],
-                                keywords=[]),
-                            conversion=-1,
-                            format_spec=JoinedStr(
-                                values=[
-                                    Constant(value='.3', kind=None)]))]))],
-        type_ignores=[])
+   .. doctest::
+
+        >>> print(ast.dump(ast.parse('f"sin({a}) is {sin(a):.3}"'), indent=4))
+        Module(
+            body=[
+                Expr(
+                    value=JoinedStr(
+                        values=[
+                            Constant(value='sin(', kind=None),
+                            FormattedValue(
+                                value=Name(id='a', ctx=Load()),
+                                conversion=-1,
+                                format_spec=None),
+                            Constant(value=') is ', kind=None),
+                            FormattedValue(
+                                value=Call(
+                                    func=Name(id='sin', ctx=Load()),
+                                    args=[
+                                        Name(id='a', ctx=Load())],
+                                    keywords=[]),
+                                conversion=-1,
+                                format_spec=JoinedStr(
+                                    values=[
+                                        Constant(value='.3', kind=None)]))]))],
+            type_ignores=[])
+
 
 .. class:: List(elts, ctx)
            Tuple(elts, ctx)
 
    A list or tuple. ``elts`` holds a list of nodes representing the elements.
    ``ctx`` is :class:`Store` if the container is an assignment target (i.e.
-   ``(x,y)=pt``), and :class:`Load` otherwise. ::
+   ``(x,y)=pt``), and :class:`Load` otherwise.
 
-    >>> print(ast.dump(ast.parse("[1, 2, 3]"), indent=4))
-    Module(
-        body=[
-            Expr(
-                value=List(
-                    elts=[
-                        Constant(value=1, kind=None),
-                        Constant(value=2, kind=None),
-                        Constant(value=3, kind=None)],
-                    ctx=Load()))],
-        type_ignores=[])
+   .. doctest::
 
-    >>> print(ast.dump(ast.parse("(1, 2, 3)"), indent=4))
-    Module(
-        body=[
-            Expr(
-                value=Tuple(
-                    elts=[
-                        Constant(value=1, kind=None),
-                        Constant(value=2, kind=None),
-                        Constant(value=3, kind=None)],
-                    ctx=Load()))],
-        type_ignores=[])
+        >>> print(ast.dump(ast.parse("[1, 2, 3]"), indent=4))
+        Module(
+            body=[
+                Expr(
+                    value=List(
+                        elts=[
+                            Constant(value=1, kind=None),
+                            Constant(value=2, kind=None),
+                            Constant(value=3, kind=None)],
+                        ctx=Load()))],
+            type_ignores=[])
+
+        >>> print(ast.dump(ast.parse("(1, 2, 3)"), indent=4))
+        Module(
+            body=[
+                Expr(
+                    value=Tuple(
+                        elts=[
+                            Constant(value=1, kind=None),
+                            Constant(value=2, kind=None),
+                            Constant(value=3, kind=None)],
+                        ctx=Load()))],
+            type_ignores=[])
+
 
 .. class:: Set(elts)
 
-   A set. ``elts`` holds a list of nodes representing the set's elements. ::
+   A set. ``elts`` holds a list of nodes representing the set's elements.
 
-    >>> print(ast.dump(ast.parse("{1, 2, 3}"), indent=4))
-    Module(
-        body=[
-            Expr(
-                value=Set(
-                    elts=[
-                        Constant(value=1, kind=None),
-                        Constant(value=2, kind=None),
-                        Constant(value=3, kind=None)]))],
-        type_ignores=[])
+   .. doctest::
+
+        >>> print(ast.dump(ast.parse("{1, 2, 3}"), indent=4))
+        Module(
+            body=[
+                Expr(
+                    value=Set(
+                        elts=[
+                            Constant(value=1, kind=None),
+                            Constant(value=2, kind=None),
+                            Constant(value=3, kind=None)]))],
+            type_ignores=[])
+
 
 .. class:: Dict(keys, values)
 
@@ -236,20 +256,20 @@ Literals
    expanded goes in the ``values`` list, with a ``None`` at the corresponding position
    in ``keys``. Example:
 
-::
+   .. doctest::
 
-    >>> print(ast.dump(ast.parse("{'a':1, **d}"), indent=4))
-    Module(
-        body=[
-            Expr(
-                value=Dict(
-                    keys=[
-                        Constant(value='a', kind=None),
-                        None],
-                    values=[
-                        Constant(value=1, kind=None),
-                        Name(id='d', ctx=Load())]))],
-        type_ignores=[])
+        >>> print(ast.dump(ast.parse("{'a':1, **d}"), indent=4))
+        Module(
+            body=[
+                Expr(
+                    value=Dict(
+                        keys=[
+                            Constant(value='a', kind=None),
+                            None],
+                        values=[
+                            Constant(value=1, kind=None),
+                            Name(id='d', ctx=Load())]))],
+            type_ignores=[])
 
 
 Variables
@@ -260,6 +280,7 @@ Variables
    A variable name. ``id`` holds the name as a string, and ``ctx`` is one of
    the following types.
 
+
 .. class:: Load()
            Store()
            Del()
@@ -268,32 +289,32 @@ Variables
    a new value to it, or to delete it. Variable references are given a context
    to distinguish these cases.
 
-::
+   .. doctest::
 
-    >>> print(ast.dump(ast.parse('a'), indent=4))
-    Module(
-        body=[
-            Expr(
-                value=Name(id='a', ctx=Load()))],
-        type_ignores=[])
+        >>> print(ast.dump(ast.parse('a'), indent=4))
+        Module(
+            body=[
+                Expr(
+                    value=Name(id='a', ctx=Load()))],
+            type_ignores=[])
 
-    >>> print(ast.dump(ast.parse('a = 1'), indent=4))
-    Module(
-        body=[
-            Assign(
-                targets=[
-                    Name(id='a', ctx=Store())],
-                value=Constant(value=1, kind=None),
-                type_comment=None)],
-        type_ignores=[])
+        >>> print(ast.dump(ast.parse('a = 1'), indent=4))
+        Module(
+            body=[
+                Assign(
+                    targets=[
+                        Name(id='a', ctx=Store())],
+                    value=Constant(value=1, kind=None),
+                    type_comment=None)],
+            type_ignores=[])
 
-    >>> print(ast.dump(ast.parse('del a'), indent=4))
-    Module(
-        body=[
-            Delete(
-                targets=[
-                    Name(id='a', ctx=Del())])],
-        type_ignores=[])
+        >>> print(ast.dump(ast.parse('del a'), indent=4))
+        Module(
+            body=[
+                Delete(
+                    targets=[
+                        Name(id='a', ctx=Del())])],
+            type_ignores=[])
 
 
 .. class:: Starred(value, ctx)
@@ -302,23 +323,23 @@ Variables
    :class:`Name` node. This type must be used when building a :class:`Call`
    node with ``*args``.
 
-::
+   .. doctest::
 
-    >>> print(ast.dump(ast.parse('a, *b = it'), indent=4))
-    Module(
-        body=[
-            Assign(
-                targets=[
-                    Tuple(
-                        elts=[
-                            Name(id='a', ctx=Store()),
-                            Starred(
-                                value=Name(id='b', ctx=Store()),
-                                ctx=Store())],
-                        ctx=Store())],
-                value=Name(id='it', ctx=Load()),
-                type_comment=None)],
-        type_ignores=[])
+        >>> print(ast.dump(ast.parse('a, *b = it'), indent=4))
+        Module(
+            body=[
+                Assign(
+                    targets=[
+                        Tuple(
+                            elts=[
+                                Name(id='a', ctx=Store()),
+                                Starred(
+                                    value=Name(id='b', ctx=Store()),
+                                    ctx=Store())],
+                            ctx=Store())],
+                    value=Name(id='it', ctx=Load()),
+                    type_comment=None)],
+            type_ignores=[])
 
 
 Expressions
@@ -332,21 +353,23 @@ Expressions
    :class:`Name`, a :class:`Lambda`, or a :class:`Yield` or :class:`YieldFrom`
    node.
 
-::
+   .. doctest::
 
-    >>> print(ast.dump(ast.parse('-a'), indent=4))
-    Module(
-        body=[
-            Expr(
-                value=UnaryOp(
-                    op=USub(),
-                    operand=Name(id='a', ctx=Load())))],
-        type_ignores=[])
+        >>> print(ast.dump(ast.parse('-a'), indent=4))
+        Module(
+            body=[
+                Expr(
+                    value=UnaryOp(
+                        op=USub(),
+                        operand=Name(id='a', ctx=Load())))],
+            type_ignores=[])
+
 
 .. class:: UnaryOp(op, operand)
 
    A unary operation. ``op`` is the operator, and ``operand`` any expression
    node.
+
 
 .. class:: UAdd
            USub
@@ -356,16 +379,16 @@ Expressions
    Unary operator tokens. :class:`Not` is the ``not`` keyword, :class:`Invert`
    is the ``~`` operator.
 
-::
+   .. doctest::
 
-    >>> print(ast.dump(ast.parse("not x"), indent=4))
-    Module(
-        body=[
-            Expr(
-                value=UnaryOp(
-                    op=Not(),
-                    operand=Name(id='x', ctx=Load())))],
-        type_ignores=[])
+        >>> print(ast.dump(ast.parse("not x"), indent=4))
+        Module(
+            body=[
+                Expr(
+                    value=UnaryOp(
+                        op=Not(),
+                        operand=Name(id='x', ctx=Load())))],
+            type_ignores=[])
 
 
 .. class:: BinOp(left, op, right)
@@ -373,17 +396,18 @@ Expressions
    A binary operation (like addition or division). ``op`` is the operator, and
    ``left`` and ``right`` are any expression nodes.
 
-::
+   .. doctest::
 
-    >>> print(ast.dump(ast.parse("x + y"), indent=4))
-    Module(
-        body=[
-            Expr(
-                value=BinOp(
-                    left=Name(id='x', ctx=Load()),
-                    op=Add(),
-                    right=Name(id='y', ctx=Load())))],
-        type_ignores=[])
+        >>> print(ast.dump(ast.parse("x + y"), indent=4))
+        Module(
+            body=[
+                Expr(
+                    value=BinOp(
+                        left=Name(id='x', ctx=Load()),
+                        op=Add(),
+                        right=Name(id='y', ctx=Load())))],
+            type_ignores=[])
+
 
 .. class:: Add
            Sub
@@ -401,6 +425,7 @@ Expressions
 
    Binary operator tokens.
 
+
 .. class:: BoolOp(op, values)
 
    A boolean operation, 'or' or 'and'. ``op`` is :class:`Or` or
@@ -410,18 +435,18 @@ Expressions
 
    This doesn't include ``not``, which is a :class:`UnaryOp`.
 
-::
+   .. doctest::
 
-    >>> print(ast.dump(ast.parse("x or y"), indent=4))
-    Module(
-        body=[
-            Expr(
-                value=BoolOp(
-                    op=Or(),
-                    values=[
-                        Name(id='x', ctx=Load()),
-                        Name(id='y', ctx=Load())]))],
-        type_ignores=[])
+        >>> print(ast.dump(ast.parse("x or y"), indent=4))
+        Module(
+            body=[
+                Expr(
+                    value=BoolOp(
+                        op=Or(),
+                        values=[
+                            Name(id='x', ctx=Load()),
+                            Name(id='y', ctx=Load())]))],
+            type_ignores=[])
 
 
 .. class:: And
@@ -429,24 +454,29 @@ Expressions
 
    Boolean operator tokens.
 
+
 .. class:: Compare(left, ops, comparators)
 
    A comparison of two or more values. ``left`` is the first value in the
    comparison, ``ops`` the list of operators, and ``comparators`` the list of
    values after the first. If that sounds awkward, that's because it is
 
-::
+   .. doctest::
 
-    >>> print(ast.dump(ast.parse("1 < a < 10"), indent=4))
-    Expression(
-        body=Compare(
-            left=Constant(value=1, kind=None),
-            ops=[
-                Lt(),
-                Lt()],
-            comparators=[
-                Name(id='a', ctx=Load()),
-                Constant(value=10, kind=None)]))
+        >>> print(ast.dump(ast.parse("1 < a < 10"), indent=4))
+        Module(
+            body=[
+                Expr(
+                    value=Compare(
+                        left=Constant(value=1, kind=None),
+                        ops=[
+                            Lt(),
+                            Lt()],
+                        comparators=[
+                            Name(id='a', ctx=Load()),
+                            Constant(value=10, kind=None)]))],
+            type_ignores=[])
+
 
 .. class:: Eq
            NotEq
@@ -461,6 +491,7 @@ Expressions
 
    Comparison operator tokens.
 
+
 .. class:: Call(func, args, keywords, starargs, kwargs)
 
    A function call. ``func`` is the function, which will often be a
@@ -473,27 +504,27 @@ Expressions
    When compiling a Call node, ``args`` and ``keywords`` are required, but they
    can be empty lists. ``starargs`` and ``kwargs`` are optional.
 
-::
+   .. doctest::
 
-    >>> print(ast.dump(ast.parse('func(a, b=c, *d, **e)'), indent=4))
-    Module(
-        body=[
-            Expr(
-                value=Call(
-                    func=Name(id='func', ctx=Load()),
-                    args=[
-                        Name(id='a', ctx=Load()),
-                        Starred(
-                            value=Name(id='d', ctx=Load()),
-                            ctx=Load())],
-                    keywords=[
-                        keyword(
-                            arg='b',
-                            value=Name(id='c', ctx=Load())),
-                        keyword(
-                            arg=None,
-                            value=Name(id='e', ctx=Load()))]))],
-        type_ignores=[])
+        >>> print(ast.dump(ast.parse('func(a, b=c, *d, **e)'), indent=4))
+        Module(
+            body=[
+                Expr(
+                    value=Call(
+                        func=Name(id='func', ctx=Load()),
+                        args=[
+                            Name(id='a', ctx=Load()),
+                            Starred(
+                                value=Name(id='d', ctx=Load()),
+                                ctx=Load())],
+                        keywords=[
+                            keyword(
+                                arg='b',
+                                value=Name(id='c', ctx=Load())),
+                            keyword(
+                                arg=None,
+                                value=Name(id='e', ctx=Load()))]))],
+            type_ignores=[])
 
 
 .. class:: keyword(arg, value)
@@ -501,22 +532,24 @@ Expressions
    A keyword argument to a function call or class definition. ``arg`` is a raw
    string of the parameter name, ``value`` is a node to pass in.
 
+
 .. class:: IfExp(test, body, orelse)
 
    An expression such as ``a if b else c``. Each field holds a single node, so
    in that example, all three are :class:`Name` nodes.
 
-::
+   .. doctest::
 
-    >>> print(ast.dump(ast.parse("a if b else c"), indent=4))
-    Module(
-        body=[
-            Expr(
-                value=IfExp(
-                    test=Name(id='b', ctx=Load()),
-                    body=Name(id='a', ctx=Load()),
-                    orelse=Name(id='c', ctx=Load())))],
-        type_ignores=[])
+        >>> print(ast.dump(ast.parse("a if b else c"), indent=4))
+        Module(
+            body=[
+                Expr(
+                    value=IfExp(
+                        test=Name(id='b', ctx=Load()),
+                        body=Name(id='a', ctx=Load()),
+                        orelse=Name(id='c', ctx=Load())))],
+            type_ignores=[])
+
 
 .. class:: Attribute(value, attr, ctx)
 
@@ -525,17 +558,18 @@ Expressions
    and ``ctx`` is :class:`Load`, :class:`Store` or :class:`Del` according to
    how the attribute is acted on.
 
-::
+   .. doctest::
 
-    >>> print(ast.dump(ast.parse('snake.colour'), indent=4))
-    Module(
-        body=[
-            Expr(
-                value=Attribute(
-                    value=Name(id='snake', ctx=Load()),
-                    attr='colour',
-                    ctx=Load()))],
-        type_ignores=[])
+        >>> print(ast.dump(ast.parse('snake.colour'), indent=4))
+        Module(
+            body=[
+                Expr(
+                    value=Attribute(
+                        value=Name(id='snake', ctx=Load()),
+                        attr='colour',
+                        ctx=Load()))],
+            type_ignores=[])
+
 
 .. class:: NamedExpr(target, value)
 
@@ -544,16 +578,16 @@ Expressions
     node in which the first argument can be multiple nodes, in this case both
     ``target`` and ``value`` must be single nodes.
 
-::
+   .. doctest::
 
-    >>> print(ast.dump(ast.parse("(x := 4)"), indent=4))
-    Module(
-        body=[
-            Expr(
-                value=NamedExpr(
-                    target=Name(id='x', ctx=Store()),
-                    value=Constant(value=4, kind=None)))],
-        type_ignores=[])
+        >>> print(ast.dump(ast.parse("(x := 4)"), indent=4))
+        Module(
+            body=[
+                Expr(
+                    value=NamedExpr(
+                        target=Name(id='x', ctx=Store()),
+                        value=Constant(value=4, kind=None)))],
+            type_ignores=[])
 
 
 Subscripting
@@ -566,64 +600,68 @@ Subscripting
    or :class:`ExtSlice`. ``ctx`` is :class:`Load`, :class:`Store` or :class:`Del`
    according to what it does with the subscript.
 
+
 .. class:: Index(value)
 
    Simple subscripting with a single value
 
-::
+   .. doctest::
 
-    >>> print(ast.dump(ast.parse('l[1]'), indent=4))
-    Module(
-        body=[
-            Expr(
-                value=Subscript(
-                    value=Name(id='l', ctx=Load()),
-                    slice=Index(
-                        value=Constant(value=1, kind=None)),
-                    ctx=Load()))],
-        type_ignores=[])
+        >>> print(ast.dump(ast.parse('l[1]'), indent=4))
+        Module(
+            body=[
+                Expr(
+                    value=Subscript(
+                        value=Name(id='l', ctx=Load()),
+                        slice=Index(
+                            value=Constant(value=1, kind=None)),
+                        ctx=Load()))],
+            type_ignores=[])
+
 
 .. class:: Slice(lower, upper, step)
 
    Regular slicing (on the form x:y).
 
-::
+   .. doctest::
 
-    >>> print(ast.dump(ast.parse('l[1:2]'), indent=4))
-    Module(
-        body=[
-            Expr(
-                value=Subscript(
-                    value=Name(id='l', ctx=Load()),
-                    slice=Slice(
-                        lower=Constant(value=1, kind=None),
-                        upper=Constant(value=2, kind=None),
-                        step=None),
-                    ctx=Load()))],
-        type_ignores=[])
+        >>> print(ast.dump(ast.parse('l[1:2]'), indent=4))
+        Module(
+            body=[
+                Expr(
+                    value=Subscript(
+                        value=Name(id='l', ctx=Load()),
+                        slice=Slice(
+                            lower=Constant(value=1, kind=None),
+                            upper=Constant(value=2, kind=None),
+                            step=None),
+                        ctx=Load()))],
+            type_ignores=[])
 
 
 .. class:: ExtSlice(dims)
 
    Advanced slicing. ``dims`` holds a list of :class:`Slice` and
-   :class:`Index` nodes::
+   :class:`Index` nodes
 
-    >>> print(ast.dump(ast.parse('l[1:2, 3]'), indent=4))
-    Module(
-        body=[
-            Expr(
-                value=Subscript(
-                    value=Name(id='l', ctx=Load()),
-                    slice=ExtSlice(
-                        dims=[
-                            Slice(
-                                lower=Constant(value=1, kind=None),
-                                upper=Constant(value=2, kind=None),
-                                step=None),
-                            Index(
-                                value=Constant(value=3, kind=None))]),
-                    ctx=Load()))],
-        type_ignores=[])
+   .. doctest::
+
+        >>> print(ast.dump(ast.parse('l[1:2, 3]'), indent=4))
+        Module(
+            body=[
+                Expr(
+                    value=Subscript(
+                        value=Name(id='l', ctx=Load()),
+                        slice=ExtSlice(
+                            dims=[
+                                Slice(
+                                    lower=Constant(value=1, kind=None),
+                                    upper=Constant(value=2, kind=None),
+                                    step=None),
+                                Index(
+                                    value=Constant(value=3, kind=None))]),
+                        ctx=Load()))],
+            type_ignores=[])
 
 
 Comprehensions
@@ -642,6 +680,7 @@ Comprehensions
    more than one ``for`` part are legal, if tricky to get right - see the
    example below.
 
+
 .. class:: comprehension(target, iter, ifs, is_async)
 
    One ``for`` clause in a comprehension. ``target`` is the reference to use for
@@ -652,84 +691,85 @@ Comprehensions
   ``is_async`` indicates a comprehension is asynchronous (using an
   ``async for`` instead of ``for``). The value is an integer (0 or 1).
 
-::
+   .. doctest::
 
-    >>> print(ast.dump(ast.parse("[ord(c) for line in file for c in line]", mode='eval'),
-                       indent=4)) # Multiple comprehensions in one.
-    Expression(
-        body=ListComp(
-            elt=Call(
-                func=Name(id='ord', ctx=Load()),
-                args=[
-                    Name(id='c', ctx=Load())],
-                keywords=[]),
-            generators=[
-                comprehension(
-                    target=Name(id='line', ctx=Store()),
-                    iter=Name(id='file', ctx=Load()),
-                    ifs=[],
-                    is_async=0),
-                comprehension(
-                    target=Name(id='c', ctx=Store()),
-                    iter=Name(id='line', ctx=Load()),
-                    ifs=[],
-                    is_async=0)]))
+        >>> print(ast.dump(ast.parse("[ord(c) for line in file for c in line]", mode='eval'),
+        ...                indent=4)) # Multiple comprehensions in one.
+        Expression(
+            body=ListComp(
+                elt=Call(
+                    func=Name(id='ord', ctx=Load()),
+                    args=[
+                        Name(id='c', ctx=Load())],
+                    keywords=[]),
+                generators=[
+                    comprehension(
+                        target=Name(id='line', ctx=Store()),
+                        iter=Name(id='file', ctx=Load()),
+                        ifs=[],
+                        is_async=0),
+                    comprehension(
+                        target=Name(id='c', ctx=Store()),
+                        iter=Name(id='line', ctx=Load()),
+                        ifs=[],
+                        is_async=0)]))
 
-    >>> print(ast.dump(ast.parse("(n**2 for n in it if n>5 if n<10)", mode='eval'),
-                       indent=4)) # generator comprehension
-    Expression(
-        body=GeneratorExp(
-            elt=BinOp(
-                left=Name(id='n', ctx=Load()),
-                op=Pow(),
-                right=Constant(value=2, kind=None)),
-            generators=[
-                comprehension(
-                    target=Name(id='n', ctx=Store()),
-                    iter=Name(id='it', ctx=Load()),
-                    ifs=[
-                        Compare(
-                            left=Name(id='n', ctx=Load()),
-                            ops=[
-                                Gt()],
-                            comparators=[
-                                Constant(value=5, kind=None)]),
-                        Compare(
-                            left=Name(id='n', ctx=Load()),
-                            ops=[
-                                Lt()],
-                            comparators=[
-                                Constant(value=10, kind=None)])],
-                    is_async=0)]))
+        >>> print(ast.dump(ast.parse("(n**2 for n in it if n>5 if n<10)", mode='eval'),
+        ...                indent=4)) # generator comprehension
+        Expression(
+            body=GeneratorExp(
+                elt=BinOp(
+                    left=Name(id='n', ctx=Load()),
+                    op=Pow(),
+                    right=Constant(value=2, kind=None)),
+                generators=[
+                    comprehension(
+                        target=Name(id='n', ctx=Store()),
+                        iter=Name(id='it', ctx=Load()),
+                        ifs=[
+                            Compare(
+                                left=Name(id='n', ctx=Load()),
+                                ops=[
+                                    Gt()],
+                                comparators=[
+                                    Constant(value=5, kind=None)]),
+                            Compare(
+                                left=Name(id='n', ctx=Load()),
+                                ops=[
+                                    Lt()],
+                                comparators=[
+                                    Constant(value=10, kind=None)])],
+                        is_async=0)]))
 
-    >>> print(ast.dump(ast.parse("async def f():"
-              "   return [i async for i in soc]"), indent=4)) # Async comprehension
-    Module(
-        body=[
-            AsyncFunctionDef(
-                name='f',
-                args=arguments(
-                    posonlyargs=[],
-                    args=[],
-                    vararg=None,
-                    kwonlyargs=[],
-                    kw_defaults=[],
-                    kwarg=None,
-                    defaults=[]),
-                body=[
-                    Return(
-                        value=ListComp(
-                            elt=Name(id='i', ctx=Load()),
-                            generators=[
-                                comprehension(
-                                    target=Name(id='i', ctx=Store()),
-                                    iter=Name(id='soc', ctx=Load()),
-                                    ifs=[],
-                                    is_async=1)]))],
-                decorator_list=[],
-                returns=None,
-                type_comment=None)],
-        type_ignores=[])
+        >>> print(ast.dump(ast.parse("async def f():"
+        ...                          "   return [i async for i in soc]"),
+        ...                indent=4)) # Async comprehension
+        Module(
+            body=[
+                AsyncFunctionDef(
+                    name='f',
+                    args=arguments(
+                        posonlyargs=[],
+                        args=[],
+                        vararg=None,
+                        kwonlyargs=[],
+                        kw_defaults=[],
+                        kwarg=None,
+                        defaults=[]),
+                    body=[
+                        Return(
+                            value=ListComp(
+                                elt=Name(id='i', ctx=Load()),
+                                generators=[
+                                    comprehension(
+                                        target=Name(id='i', ctx=Store()),
+                                        iter=Name(id='soc', ctx=Load()),
+                                        ifs=[],
+                                        is_async=1)]))],
+                    decorator_list=[],
+                    returns=None,
+                    type_comment=None)],
+            type_ignores=[])
 
 Statements
 ^^^^^^^^^^
@@ -746,31 +786,32 @@ Statements
 
        ``type_comment`` is an optional string with the type annotation as a comment.
 
-::
+   .. doctest::
 
-    >>> print(ast.dump(ast.parse("a = b = 1"), indent=4)) # Multiple assignment
-    Module(
-        body=[
-            Assign(
-                targets=[
-                    Name(id='a', ctx=Store()),
-                    Name(id='b', ctx=Store())],
-                value=Constant(value=1, kind=None),
-                type_comment=None)],
-        type_ignores=[])
-    >>> print(ast.dump(ast.parse("a,b = c"), indent=4)) # Unpacking
-    Module(
-        body=[
-            Assign(
-                targets=[
-                    Tuple(
-                        elts=[
-                            Name(id='a', ctx=Store()),
-                            Name(id='b', ctx=Store())],
-                        ctx=Store())],
-                value=Name(id='c', ctx=Load()),
-                type_comment=None)],
-        type_ignores=[])
+        >>> print(ast.dump(ast.parse("a = b = 1"), indent=4)) # Multiple assignment
+        Module(
+            body=[
+                Assign(
+                    targets=[
+                        Name(id='a', ctx=Store()),
+                        Name(id='b', ctx=Store())],
+                    value=Constant(value=1, kind=None),
+                    type_comment=None)],
+            type_ignores=[])
+
+        >>> print(ast.dump(ast.parse("a,b = c"), indent=4)) # Unpacking
+        Module(
+            body=[
+                Assign(
+                    targets=[
+                        Tuple(
+                            elts=[
+                                Name(id='a', ctx=Store()),
+                                Name(id='b', ctx=Store())],
+                            ctx=Store())],
+                    value=Name(id='c', ctx=Load()),
+                    type_comment=None)],
+            type_ignores=[])
 
 
 .. class:: AnnAssign(target, annotation, value, simple)
@@ -782,49 +823,55 @@ Statements
    set to True for a :class:`Name` node in ``target`` that do not appear in
    between parenthesis and are hence pure names and not expressions.
 
-    >>> print(ast.dump(ast.parse("c: int"), indent=4))
-    Module(
-        body=[
-            AnnAssign(
-                target=Name(id='c', ctx=Store()),
-                annotation=Name(id='int', ctx=Load()),
-                value=None,
-                simple=1)],
-        type_ignores=[])
-    >>> print(ast.dump(ast.parse("(a): int = 1"), indent=4)) # Annotation with parenthesis
-    Module(
-        body=[
-            AnnAssign(
-                target=Name(id='a', ctx=Store()),
-                annotation=Name(id='int', ctx=Load()),
-                value=Constant(value=1, kind=None),
-                simple=0)],
-        type_ignores=[])
-    >>> print(ast.dump(ast.parse("a.b: int"), indent=4)) # Attribute annotation
-    Module(
-        body=[
-            AnnAssign(
-                target=Attribute(
-                    value=Name(id='a', ctx=Load()),
-                    attr='b',
-                    ctx=Store()),
-                annotation=Name(id='int', ctx=Load()),
-                value=None,
-                simple=0)],
-        type_ignores=[])
-    >>> print(ast.dump(ast.parse("a[1]: int"), indent=4)) # Subscript annotation
-    Module(
-        body=[
-            AnnAssign(
-                target=Subscript(
-                    value=Name(id='a', ctx=Load()),
-                    slice=Index(
-                        value=Constant(value=1, kind=None)),
-                    ctx=Store()),
-                annotation=Name(id='int', ctx=Load()),
-                value=None,
-                simple=0)],
-        type_ignores=[])
+   .. doctest::
+
+        >>> print(ast.dump(ast.parse("c: int"), indent=4))
+        Module(
+            body=[
+                AnnAssign(
+                    target=Name(id='c', ctx=Store()),
+                    annotation=Name(id='int', ctx=Load()),
+                    value=None,
+                    simple=1)],
+            type_ignores=[])
+
+        >>> print(ast.dump(ast.parse("(a): int = 1"), indent=4)) # Annotation with parenthesis
+        Module(
+            body=[
+                AnnAssign(
+                    target=Name(id='a', ctx=Store()),
+                    annotation=Name(id='int', ctx=Load()),
+                    value=Constant(value=1, kind=None),
+                    simple=0)],
+            type_ignores=[])
+
+        >>> print(ast.dump(ast.parse("a.b: int"), indent=4)) # Attribute annotation
+        Module(
+            body=[
+                AnnAssign(
+                    target=Attribute(
+                        value=Name(id='a', ctx=Load()),
+                        attr='b',
+                        ctx=Store()),
+                    annotation=Name(id='int', ctx=Load()),
+                    value=None,
+                    simple=0)],
+            type_ignores=[])
+
+        >>> print(ast.dump(ast.parse("a[1]: int"), indent=4)) # Subscript annotation
+        Module(
+            body=[
+                AnnAssign(
+                    target=Subscript(
+                        value=Name(id='a', ctx=Load()),
+                        slice=Index(
+                            value=Constant(value=1, kind=None)),
+                        ctx=Store()),
+                    annotation=Name(id='int', ctx=Load()),
+                    value=None,
+                    simple=0)],
+            type_ignores=[])
+
 
 .. class:: AugAssign(target, op, value)
 
@@ -834,14 +881,16 @@ Statements
    :class:`Name`, :class:`Subscript` or :class:`Attribute`, but not a
    :class:`Tuple` or :class:`List` (unlike the targets of :class:`Assign`).
 
-    >>> print(ast.dump(ast.parse("x += 2"), indent=4))
-    Module(
-        body=[
-            AugAssign(
-                target=Name(id='x', ctx=Store()),
-                op=Add(),
-                value=Constant(value=2, kind=None))],
-        type_ignores=[])
+   .. doctest::
+
+        >>> print(ast.dump(ast.parse("x += 2"), indent=4))
+        Module(
+            body=[
+                AugAssign(
+                    target=Name(id='x', ctx=Store()),
+                    op=Add(),
+                    value=Constant(value=2, kind=None))],
+            type_ignores=[])
 
 
 .. class:: Raise(exc, cause)
@@ -851,14 +900,15 @@ Statements
    a standalone ``raise``. ``cause`` is the optional part for ``y`` in
    ``raise x from y``.
 
-::
-    >>> print(ast.dump(ast.parse("raise x from y"), indent=4))
-    Module(
-        body=[
-            Raise(
-                exc=Name(id='x', ctx=Load()),
-                cause=Name(id='y', ctx=Load()))],
-        type_ignores=[])
+   .. doctest::
+
+        >>> print(ast.dump(ast.parse("raise x from y"), indent=4))
+        Module(
+            body=[
+                Raise(
+                    exc=Name(id='x', ctx=Load()),
+                    cause=Name(id='y', ctx=Load()))],
+            type_ignores=[])
 
 
 .. class:: Assert(test, msg)
@@ -866,15 +916,15 @@ Statements
    An assertion. ``test`` holds the condition, such as a :class:`Compare` node.
    ``msg`` holds the failure message.
 
-::
+   .. doctest::
 
-    >>> print(ast.dump(ast.parse("assert x,y"), indent=4))
-    Module(
-        body=[
-            Assert(
-                test=Name(id='x', ctx=Load()),
-                msg=Name(id='y', ctx=Load()))],
-        type_ignores=[])
+        >>> print(ast.dump(ast.parse("assert x,y"), indent=4))
+        Module(
+            body=[
+                Assert(
+                    test=Name(id='x', ctx=Load()),
+                    msg=Name(id='y', ctx=Load()))],
+            type_ignores=[])
 
 
 .. class:: Delete(targets)
@@ -882,28 +932,30 @@ Statements
    Represents a ``del`` statement. ``targets`` is a list of nodes, such as
    :class:`Name`, :class:`Attribute` or :class:`Subscript` nodes.
 
-    >>> print(ast.dump(ast.parse("del x,y,z"), indent=4))
-    Module(
-        body=[
-            Delete(
-                targets=[
-                    Name(id='x', ctx=Del()),
-                    Name(id='y', ctx=Del()),
-                    Name(id='z', ctx=Del())])],
-        type_ignores=[])
+   .. doctest::
+
+        >>> print(ast.dump(ast.parse("del x,y,z"), indent=4))
+        Module(
+            body=[
+                Delete(
+                    targets=[
+                        Name(id='x', ctx=Del()),
+                        Name(id='y', ctx=Del()),
+                        Name(id='z', ctx=Del())])],
+            type_ignores=[])
 
 
 .. class:: Pass()
 
    A ``pass`` statement.
 
-::
+   .. doctest::
 
-    >>> print(ast.dump(ast.parse("pass"), indent=4))
-    Module(
-        body=[
-            Pass()],
-        type_ignores=[])
+        >>> print(ast.dump(ast.parse("pass"), indent=4))
+        Module(
+            body=[
+                Pass()],
+            type_ignores=[])
 
 
 Other statements which are only applicable inside functions or loops are
@@ -916,17 +968,18 @@ Imports
 
    An import statement. ``names`` is a list of :class:`alias` nodes.
 
-::
+   .. doctest::
 
-    >>> print(ast.dump(ast.parse("import x,y,z"), indent=4))
-    Module(
-        body=[
-            Import(
-                names=[
-                    alias(name='x', asname=None),
-                    alias(name='y', asname=None),
-                    alias(name='z', asname=None)])],
-        type_ignores=[])
+        >>> print(ast.dump(ast.parse("import x,y,z"), indent=4))
+        Module(
+            body=[
+                Import(
+                    names=[
+                        alias(name='x', asname=None),
+                        alias(name='y', asname=None),
+                        alias(name='z', asname=None)])],
+            type_ignores=[])
+
 
 .. class:: ImportFrom(module, names, level)
 
@@ -935,37 +988,38 @@ Imports
    ``level`` is an integer holding the level of the relative import (0 means
    absolute import).
 
-::
+   .. doctest::
 
-    >>> print(ast.dump(ast.parse("from y import x,y,z"), indent=4))
-    Module(
-        body=[
-            ImportFrom(
-                module='y',
-                names=[
-                    alias(name='x', asname=None),
-                    alias(name='y', asname=None),
-                    alias(name='z', asname=None)],
-                level=0)],
-        type_ignores=[])
+        >>> print(ast.dump(ast.parse("from y import x,y,z"), indent=4))
+        Module(
+            body=[
+                ImportFrom(
+                    module='y',
+                    names=[
+                        alias(name='x', asname=None),
+                        alias(name='y', asname=None),
+                        alias(name='z', asname=None)],
+                    level=0)],
+            type_ignores=[])
+
 
 .. class:: alias(name, asname)
 
    Both parameters are raw strings of the names. ``asname`` can be ``None`` if
    the regular name is to be used.
 
-::
+   .. doctest::
 
-    >>> print(ast.dump(ast.parse("from ..foo.bar import a as b, c"), indent=4))
-    Module(
-        body=[
-            ImportFrom(
-                module='foo.bar',
-                names=[
-                    alias(name='a', asname='b'),
-                    alias(name='c', asname=None)],
-                level=2)],
-        type_ignores=[])
+        >>> print(ast.dump(ast.parse("from ..foo.bar import a as b, c"), indent=4))
+        Module(
+            body=[
+                ImportFrom(
+                    module='foo.bar',
+                    names=[
+                        alias(name='a', asname='b'),
+                        alias(name='c', asname=None)],
+                    level=2)],
+            type_ignores=[])
 
 Control flow
 ^^^^^^^^^^^^
@@ -983,33 +1037,33 @@ Control flow
    appear as extra :class:`If` nodes within the ``orelse`` section of the
    previous one.
 
-::
+   .. doctest::
 
-    >>> print(ast.dump(ast.parse("""
-    ... if x:
-    ...    ...
-    ... elif y:
-    ...    ...
-    ... else:
-    ...    ...
-    ... """), indent=4))
-    Module(
-        body=[
-            If(
-                test=Name(id='x', ctx=Load()),
-                body=[
-                    Expr(
-                        value=Constant(value=Ellipsis, kind=None))],
-                orelse=[
-                    If(
-                        test=Name(id='y', ctx=Load()),
-                        body=[
-                            Expr(
-                                value=Constant(value=Ellipsis, kind=None))],
-                        orelse=[
-                            Expr(
-                                value=Constant(value=Ellipsis, kind=None))])])],
-        type_ignores=[])
+        >>> print(ast.dump(ast.parse("""
+        ... if x:
+        ...    ...
+        ... elif y:
+        ...    ...
+        ... else:
+        ...    ...
+        ... """), indent=4))
+        Module(
+            body=[
+                If(
+                    test=Name(id='x', ctx=Load()),
+                    body=[
+                        Expr(
+                            value=Constant(value=Ellipsis, kind=None))],
+                    orelse=[
+                        If(
+                            test=Name(id='y', ctx=Load()),
+                            body=[
+                                Expr(
+                                    value=Constant(value=Ellipsis, kind=None))],
+                            orelse=[
+                                Expr(
+                                    value=Constant(value=Ellipsis, kind=None))])])],
+            type_ignores=[])
 
 
 .. class:: For(target, iter, body, orelse, type_comment)
@@ -1024,27 +1078,27 @@ Control flow
 
        ``type_comment`` is an optional string with the type annotation as a comment.
 
-::
+   .. doctest::
 
-    >>> print(ast.dump(ast.parse("""
-    ... for x in y:
-    ...     ...
-    ... else:
-    ...     ...
-    ... """), indent=4))
-    Module(
-        body=[
-            For(
-                target=Name(id='x', ctx=Store()),
-                iter=Name(id='y', ctx=Load()),
-                body=[
-                    Expr(
-                        value=Constant(value=Ellipsis, kind=None))],
-                orelse=[
-                    Expr(
-                        value=Constant(value=Ellipsis, kind=None))],
-                type_comment=None)],
-        type_ignores=[])
+        >>> print(ast.dump(ast.parse("""
+        ... for x in y:
+        ...     ...
+        ... else:
+        ...     ...
+        ... """), indent=4))
+        Module(
+            body=[
+                For(
+                    target=Name(id='x', ctx=Store()),
+                    iter=Name(id='y', ctx=Load()),
+                    body=[
+                        Expr(
+                            value=Constant(value=Ellipsis, kind=None))],
+                    orelse=[
+                        Expr(
+                            value=Constant(value=Ellipsis, kind=None))],
+                    type_comment=None)],
+            type_ignores=[])
 
 
 .. class:: While(test, body, orelse)
@@ -1052,107 +1106,110 @@ Control flow
    A ``while`` loop. ``test`` holds the condition, such as a :class:`Compare`
    node.
 
-::
+   .. doctest::
 
-    >> print(ast.dump(ast.parse("""
-    ... while x:
-    ...    ...
-    ... else:
-    ...    ...
-    ... """), indent=4))
-    Module(
-        body=[
-            While(
-                test=Name(id='x', ctx=Load()),
-                body=[
-                    Expr(
-                        value=Constant(value=Ellipsis, kind=None))],
-                orelse=[
-                    Expr(
-                        value=Constant(value=Ellipsis, kind=None))])],
-        type_ignores=[])
+        >> print(ast.dump(ast.parse("""
+        ... while x:
+        ...    ...
+        ... else:
+        ...    ...
+        ... """), indent=4))
+        Module(
+            body=[
+                While(
+                    test=Name(id='x', ctx=Load()),
+                    body=[
+                        Expr(
+                            value=Constant(value=Ellipsis, kind=None))],
+                    orelse=[
+                        Expr(
+                            value=Constant(value=Ellipsis, kind=None))])],
+            type_ignores=[])
+
 
 .. class:: Break
            Continue
 
    The ``break`` and ``continue`` statements.
 
-::
+   .. doctest::
 
-    >>> print(ast.dump(ast.parse("""\
-    ... for a in b:
-    ...     if a > 5:
-    ...         break
-    ...     else:
-    ...         continue
-    ...
-    ... """), indent=4))
-    Module(
-        body=[
-            For(
-                target=Name(id='a', ctx=Store()),
-                iter=Name(id='b', ctx=Load()),
-                body=[
-                    If(
-                        test=Compare(
-                            left=Name(id='a', ctx=Load()),
-                            ops=[
-                                Gt()],
-                            comparators=[
-                                Constant(value=5, kind=None)]),
-                        body=[
-                            Break()],
-                        orelse=[
-                            Continue()])],
-                orelse=[],
-                type_comment=None)],
-        type_ignores=[])
+        >>> print(ast.dump(ast.parse("""\
+        ... for a in b:
+        ...     if a > 5:
+        ...         break
+        ...     else:
+        ...         continue
+        ...
+        ... """), indent=4))
+        Module(
+            body=[
+                For(
+                    target=Name(id='a', ctx=Store()),
+                    iter=Name(id='b', ctx=Load()),
+                    body=[
+                        If(
+                            test=Compare(
+                                left=Name(id='a', ctx=Load()),
+                                ops=[
+                                    Gt()],
+                                comparators=[
+                                    Constant(value=5, kind=None)]),
+                            body=[
+                                Break()],
+                            orelse=[
+                                Continue()])],
+                    orelse=[],
+                    type_comment=None)],
+            type_ignores=[])
+
 
 .. class:: Try(body, handlers, orelse, finalbody)
 
    ``try`` blocks. All attributes are list of nodes to execute, except for
    ``handlers``, which is a list of :class:`ExceptHandler` nodes.
 
-::
+   .. doctest::
 
-    >>> print(ast.dump(ast.parse("""
-    ... try:
-    ...    ...
-    ... except Exception:
-    ...    ...
-    ... except OtherException as e:
-    ...    ...
-    ... else:
-    ...    ...
-    ... finally:
-    ...    ...
-    ... """), indent=4))
-    Module(
-        body=[
-            Try(
-                body=[
-                    Expr(
-                        value=Constant(value=Ellipsis, kind=None))],
-                handlers=[
-                    ExceptHandler(
-                        type=Name(id='Exception', ctx=Load()),
-                        name=None,
-                        body=[
-                            Expr(
-                                value=Constant(value=Ellipsis, kind=None))]),
-                    ExceptHandler(
-                        type=Name(id='OtherException', ctx=Load()),
-                        name='e',
-                        body=[
-                            Expr(
-                                value=Constant(value=Ellipsis, kind=None))])],
-                orelse=[
-                    Expr(
-                        value=Constant(value=Ellipsis, kind=None))],
-                finalbody=[
-                    Expr(
-                        value=Constant(value=Ellipsis, kind=None))])],
-        type_ignores=[])
+        >>> print(ast.dump(ast.parse("""
+        ... try:
+        ...    ...
+        ... except Exception:
+        ...    ...
+        ... except OtherException as e:
+        ...    ...
+        ... else:
+        ...    ...
+        ... finally:
+        ...    ...
+        ... """), indent=4))
+        Module(
+            body=[
+                Try(
+                    body=[
+                        Expr(
+                            value=Constant(value=Ellipsis, kind=None))],
+                    handlers=[
+                        ExceptHandler(
+                            type=Name(id='Exception', ctx=Load()),
+                            name=None,
+                            body=[
+                                Expr(
+                                    value=Constant(value=Ellipsis, kind=None))]),
+                        ExceptHandler(
+                            type=Name(id='OtherException', ctx=Load()),
+                            name='e',
+                            body=[
+                                Expr(
+                                    value=Constant(value=Ellipsis, kind=None))])],
+                    orelse=[
+                        Expr(
+                            value=Constant(value=Ellipsis, kind=None))],
+                    finalbody=[
+                        Expr(
+                            value=Constant(value=Ellipsis, kind=None))])],
+            type_ignores=[])
+
 
 .. class:: ExceptHandler(type, name, body)
 
@@ -1161,32 +1218,33 @@ Control flow
    ``name`` is a raw string for the name to hold the exception, or ``None`` if
    the clause doesn't have ``as foo``. ``body`` is a list of nodes.
 
-::
+   .. doctest::
 
-    >>> print(ast.dump(ast.parse("""\
-    ... try:
-    ...     a + 1
-    ... except TypeError:
-    ...     pass
-    ... """), indent=4))
-    Module(
-        body=[
-            Try(
-                body=[
-                    Expr(
-                        value=BinOp(
-                            left=Name(id='a', ctx=Load()),
-                            op=Add(),
-                            right=Constant(value=1, kind=None)))],
-                handlers=[
-                    ExceptHandler(
-                        type=Name(id='TypeError', ctx=Load()),
-                        name=None,
-                        body=[
-                            Pass()])],
-                orelse=[],
-                finalbody=[])],
-        type_ignores=[])
+        >>> print(ast.dump(ast.parse("""\
+        ... try:
+        ...     a + 1
+        ... except TypeError:
+        ...     pass
+        ... """), indent=4))
+        Module(
+            body=[
+                Try(
+                    body=[
+                        Expr(
+                            value=BinOp(
+                                left=Name(id='a', ctx=Load()),
+                                op=Add(),
+                                right=Constant(value=1, kind=None)))],
+                    handlers=[
+                        ExceptHandler(
+                            type=Name(id='TypeError', ctx=Load()),
+                            name=None,
+                            body=[
+                                Pass()])],
+                    orelse=[],
+                    finalbody=[])],
+            type_ignores=[])
+
 
 .. class:: With(items, body, type_comment)
 
@@ -1197,6 +1255,7 @@ Control flow
 
        ``type_comment`` is an optional string with the type annotation as a comment.
 
+
 .. class:: withitem(context_expr, optional_vars)
 
    A single context manager in a ``with`` block. ``context_expr`` is the context
@@ -1204,32 +1263,32 @@ Control flow
    :class:`Tuple` or :class:`List` for the ``as foo`` part, or ``None`` if that
    isn't used.
 
-::
+   .. doctest::
 
-    >>> print(ast.dump(ast.parse("""\
-    ... with a as b, c as d:
-    ...    something(b, d)
-    ... """), indent=4))
-    Module(
-        body=[
-            With(
-                items=[
-                    withitem(
-                        context_expr=Name(id='a', ctx=Load()),
-                        optional_vars=Name(id='b', ctx=Store())),
-                    withitem(
-                        context_expr=Name(id='c', ctx=Load()),
-                        optional_vars=Name(id='d', ctx=Store()))],
-                body=[
-                    Expr(
-                        value=Call(
-                            func=Name(id='something', ctx=Load()),
-                            args=[
-                                Name(id='b', ctx=Load()),
-                                Name(id='d', ctx=Load())],
-                            keywords=[]))],
-                type_comment=None)],
-        type_ignores=[])
+        >>> print(ast.dump(ast.parse("""\
+        ... with a as b, c as d:
+        ...    something(b, d)
+        ... """), indent=4))
+        Module(
+            body=[
+                With(
+                    items=[
+                        withitem(
+                            context_expr=Name(id='a', ctx=Load()),
+                            optional_vars=Name(id='b', ctx=Store())),
+                        withitem(
+                            context_expr=Name(id='c', ctx=Load()),
+                            optional_vars=Name(id='d', ctx=Store()))],
+                    body=[
+                        Expr(
+                            value=Call(
+                                func=Name(id='something', ctx=Load()),
+                                args=[
+                                    Name(id='b', ctx=Load()),
+                                    Name(id='d', ctx=Load())],
+                                keywords=[]))],
+                    type_comment=None)],
+            type_ignores=[])
 
 
 Function and class definitions
@@ -1250,30 +1309,32 @@ Function and class definitions
 
        ``type_comment`` is an optional string with the type annotation as a comment.
 
+
 .. class:: Lambda(args, body)
 
    ``lambda`` is a minimal function definition that can be used inside an
    expression. Unlike :class:`FunctionDef`, ``body`` holds a single node.
 
-::
+   .. doctest::
 
-    >>> print(ast.dump(ast.parse("lambda x,y: ..."), indent=4))
-    Module(
-        body=[
-            Expr(
-                value=Lambda(
-                    args=arguments(
-                        posonlyargs=[],
-                        args=[
-                            arg(arg='x', annotation=None, type_comment=None),
-                            arg(arg='y', annotation=None, type_comment=None)],
-                        vararg=None,
-                        kwonlyargs=[],
-                        kw_defaults=[],
-                        kwarg=None,
-                        defaults=[]),
-                    body=Constant(value=Ellipsis, kind=None)))],
-        type_ignores=[])
+        >>> print(ast.dump(ast.parse("lambda x,y: ..."), indent=4))
+        Module(
+            body=[
+                Expr(
+                    value=Lambda(
+                        args=arguments(
+                            posonlyargs=[],
+                            args=[
+                                arg(arg='x', annotation=None, type_comment=None),
+                                arg(arg='y', annotation=None, type_comment=None)],
+                            vararg=None,
+                            kwonlyargs=[],
+                            kw_defaults=[],
+                            kwarg=None,
+                            defaults=[]),
+                        body=Constant(value=Ellipsis, kind=None)))],
+            type_ignores=[])
+
 
 .. class:: arguments(posonlyargs, args, vararg, kwonlyargs, kw_defaults, kwarg, defaults)
 
@@ -1288,6 +1349,7 @@ Function and class definitions
      positionally. If there are fewer defaults, they correspond to the last n
      arguments.
 
+
 .. class:: arg(arg, annotation, type_comment)
 
    A single argument in a list. ``arg`` is a raw string of the argument
@@ -1298,60 +1360,61 @@ Function and class definitions
 
        ``type_comment`` is an optional string with the type annotation as a comment
 
-::
+   .. doctest::
 
-    >>> print(ast.dump(ast.parse("""\
-    ... @decorator1
-    ... @decorator2
-    ... def f(a: 'annotation', b=1, c=2, *d, e, f=3, **g) -> 'return annotation':
-    ...     pass
-    ... """), indent=4))
-    Module(
-        body=[
-            FunctionDef(
-                name='f',
-                args=arguments(
-                    posonlyargs=[],
-                    args=[
-                        arg(
-                            arg='a',
-                            annotation=Constant(value='annotation', kind=None),
-                            type_comment=None),
-                        arg(arg='b', annotation=None, type_comment=None),
-                        arg(arg='c', annotation=None, type_comment=None)],
-                    vararg=arg(arg='d', annotation=None, type_comment=None),
-                    kwonlyargs=[
-                        arg(arg='e', annotation=None, type_comment=None),
-                        arg(arg='f', annotation=None, type_comment=None)],
-                    kw_defaults=[
-                        None,
-                        Constant(value=3, kind=None)],
-                    kwarg=arg(arg='g', annotation=None, type_comment=None),
-                    defaults=[
-                        Constant(value=1, kind=None),
-                        Constant(value=2, kind=None)]),
-                body=[
-                    Pass()],
-                decorator_list=[
-                    Name(id='decorator1', ctx=Load()),
-                    Name(id='decorator2', ctx=Load())],
-                returns=Constant(value='return annotation', kind=None),
-                type_comment=None)],
-        type_ignores=[])
+        >>> print(ast.dump(ast.parse("""\
+        ... @decorator1
+        ... @decorator2
+        ... def f(a: 'annotation', b=1, c=2, *d, e, f=3, **g) -> 'return annotation':
+        ...     pass
+        ... """), indent=4))
+        Module(
+            body=[
+                FunctionDef(
+                    name='f',
+                    args=arguments(
+                        posonlyargs=[],
+                        args=[
+                            arg(
+                                arg='a',
+                                annotation=Constant(value='annotation', kind=None),
+                                type_comment=None),
+                            arg(arg='b', annotation=None, type_comment=None),
+                            arg(arg='c', annotation=None, type_comment=None)],
+                        vararg=arg(arg='d', annotation=None, type_comment=None),
+                        kwonlyargs=[
+                            arg(arg='e', annotation=None, type_comment=None),
+                            arg(arg='f', annotation=None, type_comment=None)],
+                        kw_defaults=[
+                            None,
+                            Constant(value=3, kind=None)],
+                        kwarg=arg(arg='g', annotation=None, type_comment=None),
+                        defaults=[
+                            Constant(value=1, kind=None),
+                            Constant(value=2, kind=None)]),
+                    body=[
+                        Pass()],
+                    decorator_list=[
+                        Name(id='decorator1', ctx=Load()),
+                        Name(id='decorator2', ctx=Load())],
+                    returns=Constant(value='return annotation', kind=None),
+                    type_comment=None)],
+            type_ignores=[])
 
 
 .. class:: Return(value)
 
    A ``return`` statement.
 
-::
+   .. doctest::
 
-    >>> print(ast.dump(ast.parse("return 4"), indent=4))
-    Module(
-        body=[
-            Return(
-                value=Constant(value=4, kind=None))],
-        type_ignores=[])
+        >>> print(ast.dump(ast.parse("return 4"), indent=4))
+        Module(
+            body=[
+                Return(
+                    value=Constant(value=4, kind=None))],
+            type_ignores=[])
+
 
 .. class:: Yield(value)
            YieldFrom(value)
@@ -1359,50 +1422,52 @@ Function and class definitions
    A ``yield`` or ``yield from`` expression. Because these are expressions, they
    must be wrapped in a :class:`Expr` node if the value sent back is not used.
 
-::
+   .. doctest::
 
-    >>> print(ast.dump(ast.parse("yield x"), indent=4))
-    Module(
-    body=[
-        Expr(
-            value=Yield(
-                value=Name(id='x', ctx=Load())))],
-    type_ignores=[])
+        >>> print(ast.dump(ast.parse("yield x"), indent=4))
+        Module(
+            body=[
+                Expr(
+                    value=Yield(
+                        value=Name(id='x', ctx=Load())))],
+            type_ignores=[])
 
-    >>> print(ast.dump(ast.parse("yield from x"), indent=4))
-    Module(
-    body=[
-        Expr(
-            value=YieldFrom(
-                value=Name(id='x', ctx=Load())))],
-    type_ignores=[])
+        >>> print(ast.dump(ast.parse("yield from x"), indent=4))
+        Module(
+            body=[
+                Expr(
+                    value=YieldFrom(
+                        value=Name(id='x', ctx=Load())))],
+            type_ignores=[])
+
 
 .. class:: Global(names)
            Nonlocal(names)
 
    ``global`` and ``nonlocal`` statements. ``names`` is a list of raw strings.
 
-::
+   .. doctest::
 
-    >>> print(ast.dump(ast.parse("global x,y,z"), indent=4))
-    Module(
-        body=[
-            Global(
-                names=[
-                    'x',
-                    'y',
-                    'z'])],
-        type_ignores=[])
+        >>> print(ast.dump(ast.parse("global x,y,z"), indent=4))
+        Module(
+            body=[
+                Global(
+                    names=[
+                        'x',
+                        'y',
+                        'z'])],
+            type_ignores=[])
 
-    >>> print(ast.dump(ast.parse("nonlocal x,y,z"), indent=4))
-    Module(
-        body=[
-            Nonlocal(
-                names=[
-                    'x',
-                    'y',
-                    'z'])],
-        type_ignores=[])
+        >>> print(ast.dump(ast.parse("nonlocal x,y,z"), indent=4))
+        Module(
+            body=[
+                Nonlocal(
+                    names=[
+                        'x',
+                        'y',
+                        'z'])],
+            type_ignores=[])
+
 
 .. class:: ClassDef(name, bases, keywords, starargs, kwargs, body, decorator_list)
 
@@ -1421,31 +1486,31 @@ Function and class definitions
      definition.
    * ``decorator_list`` is a list of nodes, as in :class:`FunctionDef`.
 
-::
+   .. doctest::
 
-    >>> print(ast.dump(ast.parse("""\
-    ... @decorator1
-    ... @decorator2
-    ... class Foo(base1, base2, metaclass=meta):
-    ...     pass
-    ... """), indent=4))
-    Module(
-        body=[
-            ClassDef(
-                name='Foo',
-                bases=[
-                    Name(id='base1', ctx=Load()),
-                    Name(id='base2', ctx=Load())],
-                keywords=[
-                    keyword(
-                        arg='metaclass',
-                        value=Name(id='meta', ctx=Load()))],
-                body=[
-                    Pass()],
-                decorator_list=[
-                    Name(id='decorator1', ctx=Load()),
-                    Name(id='decorator2', ctx=Load())])],
-        type_ignores=[])
+        >>> print(ast.dump(ast.parse("""\
+        ... @decorator1
+        ... @decorator2
+        ... class Foo(base1, base2, metaclass=meta):
+        ...     pass
+        ... """), indent=4))
+        Module(
+            body=[
+                ClassDef(
+                    name='Foo',
+                    bases=[
+                        Name(id='base1', ctx=Load()),
+                        Name(id='base2', ctx=Load())],
+                    keywords=[
+                        keyword(
+                            arg='metaclass',
+                            value=Name(id='meta', ctx=Load()))],
+                    body=[
+                        Pass()],
+                    decorator_list=[
+                        Name(id='decorator1', ctx=Load()),
+                        Name(id='decorator2', ctx=Load())])],
+            type_ignores=[])
 
 Async and await
 ^^^^^^^^^^^^^^^
@@ -1455,12 +1520,13 @@ Async and await
    An ``async def`` function definition. Has the same fields as
    :class:`FunctionDef`.
 
+
 .. class:: Await(value)
 
    An ``await`` expression. ``value`` is what it waits for.
    Only valid in the body of an :class:`AsyncFunctionDef`.
 
-::
+.. doctest::
 
     >>> print(ast.dump(ast.parse("""\
     ... async def f():
@@ -1490,22 +1556,13 @@ Async and await
                 type_comment=None)],
         type_ignores=[])
 
+
 .. class:: AsyncFor(target, iter, body, orelse, type_comment)
            AsyncWith(items, body, type_comment)
 
    ``async for`` loops and ``async with`` context managers. They have the same
    fields as :class:`For` and :class:`With`, respectively. Only valid in the
    body of an :class:`AsyncFunctionDef`.
-
-.. _abstract-grammar:
-
-Abstract Grammar
-----------------
-
-The abstract grammar is currently defined as follows:
-
-.. literalinclude:: ../../Parser/Python.asdl
-   :language: none
 
 
 :mod:`ast` Helpers
