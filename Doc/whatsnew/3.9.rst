@@ -218,6 +218,12 @@ now raises :exc:`ImportError` instead of :exc:`ValueError` for invalid relative
 import attempts.
 (Contributed by Ngalim Siregar in :issue:`37444`.)
 
+inspect
+-------
+
+:attr:`inspect.BoundArguments.arguments` is changed from ``OrderedDict`` to regular
+dict.  (Contributed by Inada Naoki in :issue:`36350` and :issue:`39775`.)
+
 ipaddress
 ---------
 
