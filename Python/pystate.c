@@ -606,13 +606,12 @@ new_threadstate(PyInterpreterState *interp, int init)
     tstate->context = NULL;
     tstate->context_ver = 1;
 
-    tstate->id = ++interp->tstate_next_unique_id;
-
     if (init) {
         _PyThreadState_Init(tstate);
     }
 
     HEAD_LOCK(runtime);
+    tstate->id = ++interp->tstate_next_unique_id;
     tstate->prev = NULL;
     tstate->next = interp->tstate_head;
     if (tstate->next)
