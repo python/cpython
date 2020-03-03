@@ -1218,7 +1218,7 @@ and :c:type:`PyType_Type` effectively act as defaults.)
        visited. For instance, if an object supports weak references via the
        :c:member:`~PyTypeObject.tp_weaklist` slot, the pointer supporting
        the linked list (what *tp_weaklist* points to) must **not** be
-       visited as the instance do not directly own the weak references to itself
+       visited as the instance does not directly own the weak references to itself
        (the weakreference list is there to support the weak reference machinery,
        but the instance has no strong reference to the elements inside it, as they
        are allowed to be removed even if the instance is still alive).
