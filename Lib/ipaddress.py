@@ -1398,7 +1398,7 @@ class IPv4Interface(IPv4Address):
 
     def __eq__(self, other):
         address_equal = IPv4Address.__eq__(self, other)
-        if not address_equal or address_equal is NotImplemented:
+        if address_equal is NotImplemented or not address_equal:
             return address_equal
         try:
             return self.network == other.network
@@ -2096,7 +2096,7 @@ class IPv6Interface(IPv6Address):
 
     def __eq__(self, other):
         address_equal = IPv6Address.__eq__(self, other)
-        if not address_equal or address_equal is NotImplemented:
+        if address_equal is NotImplemented or not address_equal:
             return address_equal
         try:
             return self.network == other.network
@@ -2109,7 +2109,7 @@ class IPv6Interface(IPv6Address):
     def __lt__(self, other):
         address_less = IPv6Address.__lt__(self, other)
         if address_less is NotImplemented:
-            return NotImplemented
+            return address_less
         try:
             return (self.network < other.network or
                     self.network == other.network and address_less)

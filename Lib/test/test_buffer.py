@@ -2528,7 +2528,7 @@ class TestBufferProtocol(unittest.TestCase):
         values = [INT(9), IDX(9),
                   2.2+3j, Decimal("-21.1"), 12.2, Fraction(5, 2),
                   [1,2,3], {4,5,6}, {7:8}, (), (9,),
-                  True, False, None, NotImplemented,
+                  True, False, None, Ellipsis,
                   b'a', b'abc', bytearray(b'a'), bytearray(b'abc'),
                   'a', 'abc', r'a', r'abc',
                   f, lambda x: x]
