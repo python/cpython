@@ -1,1 +1,1 @@
-The import logic has got code to detect deadlock. This code was faulty. It occasionally caused deadlocks to occur.
+Tweak import deadlock detection code to not deadlock itself.
