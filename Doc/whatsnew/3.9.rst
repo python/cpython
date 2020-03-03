@@ -554,7 +554,7 @@ Removed
   defining ``COUNT_ALLOCS`` macro.
   (Contributed by Victor Stinner in :issue:`39489`.)
 
-* ``Suite`` node from :mod:`ast` has been removed due to it is no longer needed.
+* The ``Suite`` node from :mod:`ast` has been removed due to no longer being needed.
   (Contributed by Batuhan Taskaya in :issue:`39639`.)
 
 

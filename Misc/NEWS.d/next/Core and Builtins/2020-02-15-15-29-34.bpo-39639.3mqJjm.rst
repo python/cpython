@@ -1,1 +1,1 @@
-Remove ``Suite`` node from AST. Patch by Batuhan Taskaya.
+Remove the ``Suite`` node from the :mod:`ast` module as it's no longer used. Patch by Batuhan Taskaya.
