@@ -354,6 +354,7 @@ class CosmeticTestCase(ASTTestCase):
             empty newline"""''',
             '"""With some \t"""',
             '"""Foo "bar" baz """',
+            '""""""',
         )
 
         for prefix in docstring_prefixes:
