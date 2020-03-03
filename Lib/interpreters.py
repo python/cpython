@@ -1,11 +1,35 @@
 """Subinterpreters High Level Module."""
 
 import _interpreters
-import logger
+import logging
 
 __all__ = ['Interpreter', 'SendChannel', 'RecvChannel', 'is_shareable',
            'create_channel', 'list_all_channels', 'list_all', 'get_current',
            'create']
+
+
+def create():
+    """ create() -> Interpreter
+
+   Initialize a new (idle) Python interpreter.
+    """
+    id = _interpreters.create()
+    return Interpreter(id)
+
+def list_all():
+    """ list_all() -> [Interpreter]
+
+    Get all existing interpreters.
+    """
+    return [Interpreter(id) for id in _interpreters.list_all()]
+
+def get_current():
+    """ get_current() -> Interpreter
+
+    Get the currently running interpreter.
+    """
+    id = _interpreters.get_current()
+    return Interpreter(id)
 
 
 class Interpreter:
@@ -42,6 +66,32 @@ class Interpreter:
             logger.error(err)
             raise
 
+
+def is_shareable(obj):
+    """ is_shareable(obj) -> Bool
+
+    Return `True` if the object's data can be shared between
+    interpreters.
+    """
+    return _interpreters.is_shareable(obj)
+
+def create_channel():
+    """ create_channel() -> (RecvChannel, SendChannel)
+
+    Create a new channel for passing data between interpreters.
+    """
+
+    cid = _interpreters.channel_create()
+    return (RecvChannel(cid), SendChannel(cid))
+
+def list_all_channels():
+    """ list_all_channels() -> [(RecvChannel, SendChannel)]
+
+    Return all open channels.
+    """
+    cid = _interpreters.channel_list_all()
+    return (RecvChannel(cid), SendChannel(cid))
+
 def wait(self, timeout):
     #The implementation for wait
     # will be non trivial to be useful
@@ -55,7 +105,7 @@ class RecvChannel:
 
     def __init__(self, id):
         self.id = id
-        self.interpreters = _interpreters.list_all()
+        self.interpreters = _interpreters.channel_list_interpreters(cid, send=False)
 
     def recv(self, timeout=2):
         """ channel_recv() -> obj
@@ -102,7 +152,7 @@ class RecvChannel:
         No longer associate the current interpreterwith the channel
         (on the sending end).
         """
-        return _interpreters.(self.id)
+        return _interpreters(self.id)
 
     def close(self, force=False):
         """close(force=False)
@@ -187,54 +237,3 @@ class ChannelReleasedError(ChannelClosedError):
 
 class RunFailedError(RuntimeError):
     pass
-
-
-# Global API functions
-
-def is_shareable(obj):
-    """ is_shareable(obj) -> Bool
-
-    Return `True` if the object's data can be shared between
-    interpreters.
-    """
-    return _interpreters.is_shareable(obj)
-
-def create_channel():
-    """ create_channel() -> (RecvChannel, SendChannel)
-
-    Create a new channel for passing data between interpreters.
-    """
-
-    cid = _interpreters.channel_create()
-    return (RecvChannel(cid), SendChannel(cid))
-
-def list_all_channels():
-    """ list_all_channels() -> [(RecvChannel, SendChannel)]
-
-    Return all open channels.
-    """
-    cid = _interpreters.channel_list_all()
-    return (RecvChannel(cid), SendChannel(cid))
-
-def create():
-    """ create() -> Interpreter
-
-   Initialize a new (idle) Python interpreter.
-    """
-    id = _interpreters.create()
-    return Interpreter(id)
-
-def list_all():
-    """ list_all() -> [Interpreter]
-
-    Get all existing interpreters.
-    """
-    return [Interpreter(id) for id in _interpreters.list_all()]
-
-def get_current():
-    """ get_current() -> Interpreter
-
-    Get the currently running interpreter.
-    """
-    id = _interpreters.get_current()
-    return Interpreter(id)

@@ -627,6 +627,27 @@ _channelends_associate(_channelends *ends, int64_t interp, int send)
     return 0;
 }
 
+static int64_t *
+_channelends_list_interpreters(_channelends *ends, int64_t *count, int send)
+{
+    int64_t numopen = send ? ends->numsendopen : ends->numrecvopen;
+
+    int64_t *ids = PyMem_NEW(int64_t, (Py_ssize_t)numopen);
+    if (ids == NULL) {
+        PyErr_NoMemory();
+        return NULL;
+    }
+
+    _channelend *ref = send ? ends->send : ends->recv;
+    for (int64_t i=0; ref != NULL; ref = ref->next, i++) {
+        ids[i] = ref->interp;
+    }
+
+    *count = numopen;
+
+    return ids;
+}
+
 static int
 _channelends_is_open(_channelends *ends)
 {
@@ -1404,6 +1425,35 @@ typedef struct channelid {
     int resolve;
     _channels *channels;
 } channelid;
+
+static int
+channel_id_converter(PyObject *arg, void *ptr)
+{
+    int64_t cid;
+    if (PyObject_TypeCheck(arg, &ChannelIDtype)) {
+        cid = ((channelid *)arg)->id;
+    }
+    else if (PyIndex_Check(arg)) {
+        cid = PyLong_AsLongLong(arg);
+        if (cid == -1 && PyErr_Occurred()) {
+            return 0;
+        }
+        if (cid < 0) {
+            PyErr_Format(PyExc_ValueError,
+                        "channel ID must be a non-negative int, got %R", arg);
+            return 0;
+        }
+    }
+    else {
+        PyErr_Format(PyExc_TypeError,
+                     "channel ID must be an int, got %.100s",
+                     arg->ob_type->tp_name);
+        return 0;
+    }
+    *(int64_t *)ptr = cid;
+    return 1;
+}
+
 
 static channelid *
 newchannelid(PyTypeObject *cls, int64_t cid, int end, _channels *channels,
@@ -2327,6 +2377,65 @@ PyDoc_STRVAR(channel_list_all_doc,
 \n\
 Return the list of all IDs for active channels.");
 
+
+static PyObject *
+channel_list_interpreters(PyObject *self, PyObject *args, PyObject *kwds)
+{
+    static char *kwlist[] = {"cid", "send", NULL};
+    int64_t cid;            /* Channel ID */
+    int send = 0;           /* Send or receive end? */
+    PyObject *ret = NULL;
+
+    if (!PyArg_ParseTupleAndKeywords(
+            args, kwds, "O&$p:channel_list_interpreters",
+            kwlist, channel_id_converter, &cid, &send)) {
+        return NULL;
+    }
+
+    _PyChannelState *chan = _channels_lookup(&_globals.channels, cid, NULL);
+    if (chan == NULL) {
+        return NULL;
+    }
+
+    int64_t count = 0;  /* Number of interpreters */
+    int64_t *ids = _channelends_list_interpreters(chan->ends, &count, send);
+    if (ids == NULL) {
+        goto except;
+    }
+
+    ret = PyList_New((Py_ssize_t)count);
+    if (ret == NULL) {
+        goto except;
+    }
+
+    for (int64_t i=0; i < count; i++) {
+        PyObject *id_obj = _PyInterpreterID_New(ids[i]);
+        if (id_obj == NULL) {
+            goto except;
+        }
+        PyList_SET_ITEM(ret, i, id_obj);
+    }
+
+    goto finally;
+
+except:
+    Py_XDECREF(ret);
+    ret = NULL;
+
+finally:
+    PyMem_Free(ids);
+    return ret;
+}
+
+PyDoc_STRVAR(channel_list_interpreters_doc,
+"channel_list_interpreters(cid, *, send) -> [id]\n\
+\n\
+Return the list of all interpreter IDs associated with an end of the channel.\n\
+\n\
+The 'send' argument should be a boolean indicating whether to use the send or\n\
+receive end.");
+
+
 static PyObject *
 channel_send(PyObject *self, PyObject *args, PyObject *kwds)
 {
@@ -2496,6 +2605,8 @@ static PyMethodDef module_functions[] = {
      METH_VARARGS | METH_KEYWORDS, channel_destroy_doc},
     {"channel_list_all",          channel_list_all,
      METH_NOARGS, channel_list_all_doc},
+     {"channel_list_interpreters", (PyCFunction)(void(*)(void))channel_list_interpreters,
+     METH_VARARGS | METH_KEYWORDS, channel_list_interpreters_doc},
     {"channel_send",              (PyCFunction)(void(*)(void))channel_send,
      METH_VARARGS | METH_KEYWORDS, channel_send_doc},
     {"channel_recv",              (PyCFunction)(void(*)(void))channel_recv,
