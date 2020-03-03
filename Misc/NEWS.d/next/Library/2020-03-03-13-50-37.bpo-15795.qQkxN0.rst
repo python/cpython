@@ -1,0 +1,1 @@
+Preserve permissions when extracting zip files on POSIX systems. Only do so if the zip file was created on a Unix-like system.
