@@ -70,16 +70,16 @@ You should check for DeprecationWarning in your code
 ====================================================
 
 When Python 2.7 was still supported, many functions were kept for backward
-compatibility with Python 2.7. With the end of the Python 2.7 support, these
-backward compatibility layers have been reomved or will be removed shortly.
-Most of them emitted :exc:`DeprecationWarning` warning for several years. For
+compatibility with Python 2.7. With the end of Python 2.7 support, these
+backward compatibility layers have been removed, or will be removed soon.
+Most of them emitted a :exc:`DeprecationWarning` warning for several years. For
 example, using ``collections.Mapping`` instead of ``collections.abc.Mapping``
-emits a :exc:`DeprecationWarning` since Python 3.3 released in 2012.
+emits a :exc:`DeprecationWarning` since Python 3.3, released in 2012.
 
-Test your application with :option:`-W` ``default`` command line option to see
+Test your application with the :option:`-W` ``default`` command-line option to see
 :exc:`DeprecationWarning` and :exc:`PendingDeprecationWarning`, or even with
 :option:`-W` ``error`` to treat them as errors. :ref:`Warnings Filter
-<warning-filter>` can be used to ignore warnings from third party code.
+<warning-filter>` can be used to ignore warnings from third-party code.
 
 It has been decided to keep a few backward compatibility layers for one last
 release, to give more time to Python projects maintainers to organize the
