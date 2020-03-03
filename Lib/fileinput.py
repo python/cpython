@@ -209,10 +209,15 @@ class FileInput:
         self._isstdin = False
         self._backupfilename = None
         # restrict mode argument to reading modes
-        if mode not in ('r', 'rb'):
-            raise ValueError("FileInput opening mode must be 'r' or 'rb'")
+        if mode not in ('r', 'rU', 'U', 'rb'):
+            raise ValueError("FileInput opening mode must be one of "
+                             "'r', 'rU', 'U' and 'rb'")
+        if 'U' in mode:
+            import warnings
+            warnings.warn("'U' mode is deprecated",
+                          DeprecationWarning, 2)
         self._mode = mode
-        self._write_mode = mode.replace('r', 'w')
+        self._write_mode = mode.replace('r', 'w') if 'U' not in mode else 'w'
         if openhook:
             if inplace:
                 raise ValueError("FileInput cannot use an opening hook in inplace mode")
