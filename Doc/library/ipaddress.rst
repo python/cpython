@@ -681,7 +681,7 @@ dictionaries.
       hosts are all the IP addresses that belong to the network, except the
       Subnet-Router anycast address.  For networks with a mask length of 127,
       the Subnet-Router anycast address is also included in the result.
-      Networks with a mask of 128 will return a list containing the 
+      Networks with a mask of 128 will return a list containing the
       single host address.
 
    .. method:: overlaps(other)
