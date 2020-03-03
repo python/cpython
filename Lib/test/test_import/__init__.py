@@ -437,7 +437,7 @@ class ImportTests(unittest.TestCase):
 
     def test_concurrency(self):
         # bpo 38091: this is a hack to slow down the code that calls
-        # has_deadlock(); the logic was itself sometimes deadlocking
+        # has_deadlock(); the logic was itself sometimes deadlocking.
         def delay_has_deadlock(frame, event, arg):
             if event == 'call' and frame.f_code.co_name == 'has_deadlock':
                 time.sleep(0.1)
