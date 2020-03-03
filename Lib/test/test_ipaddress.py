@@ -1441,10 +1441,10 @@ class IpaddrUnitTest(unittest.TestCase):
         self.assertEqual(addrs, list(ipaddress.ip_network(tpl_args).hosts()))
         self.assertEqual(list(ipaddress.ip_network(str_args).hosts()),
                          list(ipaddress.ip_network(tpl_args).hosts()))
-        addrs = [ipaddress.IPv6Address('2001:658:22a:cafe::'),
-                 ipaddress.IPv6Address('2001:658:22a:cafe::1')]
-        str_args = '2001:658:22a:cafe::/127'
-        tpl_args = ('2001:658:22a:cafe::', 127)
+
+        addrs = [ipaddress.IPv6Address('2001:658:22a:cafe::1'), ]
+        str_args = '2001:658:22a:cafe::1/128'
+        tpl_args = ('2001:658:22a:cafe::1', 128)
         self.assertEqual(addrs, list(ipaddress.ip_network(str_args).hosts()))
         self.assertEqual(addrs, list(ipaddress.ip_network(tpl_args).hosts()))
         self.assertEqual(list(ipaddress.ip_network(str_args).hosts()),
