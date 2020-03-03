@@ -689,7 +689,7 @@ When IDLE first starts, it attempts to read user configuration files in
 ``~/.idlerc/`` (~ is one's home directory).  If there is a problem, an error
 message should be displayed.  Leaving aside random disk glitches, this can
 be prevented by never editing the files by hand, using the configuration
-dialog, under Options, instead Options.  Once it happens, the solution may
+dialog, under Options.  Once it happens, the solution may
 be to delete one or more of the configuration files.
 
 If IDLE quits with no message, and it was not started from a console, try
