@@ -235,8 +235,9 @@ class TestChainMap(unittest.TestCase):
     def test_union_operators(self):
         cm1 = ChainMap(dict(a=1, b=2), dict(c=3, d=4))
         cm2 = ChainMap(dict(a=10, e=5), dict(b=20, d=4))
+        cm3 = ChainMap(dict(a=1, b=2), dict(c=3, d=4))
         d = dict(a=10, c=30)
-        pairs = [('a', 1), ('c',3)]
+        pairs = [('c', 3), ('p',0)]
 
         tmp = cm1 | cm2 # testing between chainmaps
         self.assertEqual(tmp, ChainMap(cm1.maps[0] | dict(cm2), *cm1.maps[1:]))
@@ -251,9 +252,9 @@ class TestChainMap(unittest.TestCase):
 
         # testing behavior between chainmap and iterable key-value pairs
         with self.assertRaises(TypeError):
-            cm1 | pairs
-        cm1 |= pairs
-        self.assertEqual(cm1, ChainMap(cm1.maps[0] | dict(pairs)), *cm1.maps[1:])
+            cm3 | pairs
+        cm3 |= pairs
+        self.assertEqual(cm3, ChainMap(cm3.maps[0] | dict(pairs), *cm3.maps[1:]))
 
 
 ################################################################################
