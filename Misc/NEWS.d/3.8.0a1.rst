@@ -2418,7 +2418,7 @@ over browsers in the ``BROWSER`` environment variable.
 .. nonce: eSLKBE
 .. section: Library
 
-Avoid stripping trailing whitespace in doctest fancy diff. Orignial patch by
+Avoid stripping trailing whitespace in doctest fancy diff. Original patch by
 R. David Murray & Jairo Trad. Enhanced by Sanyam Khurana.
 
 ..

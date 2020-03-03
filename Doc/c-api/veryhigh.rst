@@ -52,7 +52,7 @@ the same library that the Python runtime is using.
 .. c:function:: int PyRun_AnyFile(FILE *fp, const char *filename)
 
    This is a simplified interface to :c:func:`PyRun_AnyFileExFlags` below, leaving
-   *closeit* set to ``0`` and *flags* set to *NULL*.
+   *closeit* set to ``0`` and *flags* set to ``NULL``.
 
 
 .. c:function:: int PyRun_AnyFileFlags(FILE *fp, const char *filename, PyCompilerFlags *flags)
@@ -64,7 +64,7 @@ the same library that the Python runtime is using.
 .. c:function:: int PyRun_AnyFileEx(FILE *fp, const char *filename, int closeit)
 
    This is a simplified interface to :c:func:`PyRun_AnyFileExFlags` below, leaving
-   the *flags* argument set to *NULL*.
+   the *flags* argument set to ``NULL``.
 
 
 .. c:function:: int PyRun_AnyFileExFlags(FILE *fp, const char *filename, int closeit, PyCompilerFlags *flags)
@@ -73,14 +73,14 @@ the same library that the Python runtime is using.
    terminal input or Unix pseudo-terminal), return the value of
    :c:func:`PyRun_InteractiveLoop`, otherwise return the result of
    :c:func:`PyRun_SimpleFile`.  *filename* is decoded from the filesystem
-   encoding (:func:`sys.getfilesystemencoding`).  If *filename* is *NULL*, this
+   encoding (:func:`sys.getfilesystemencoding`).  If *filename* is ``NULL``, this
    function uses ``"???"`` as the filename.
 
 
 .. c:function:: int PyRun_SimpleString(const char *command)
 
    This is a simplified interface to :c:func:`PyRun_SimpleStringFlags` below,
-   leaving the *PyCompilerFlags\** argument set to NULL.
+   leaving the :c:type:`PyCompilerFlags`\* argument set to ``NULL``.
 
 
 .. c:function:: int PyRun_SimpleStringFlags(const char *command, PyCompilerFlags *flags)
@@ -99,13 +99,13 @@ the same library that the Python runtime is using.
 .. c:function:: int PyRun_SimpleFile(FILE *fp, const char *filename)
 
    This is a simplified interface to :c:func:`PyRun_SimpleFileExFlags` below,
-   leaving *closeit* set to ``0`` and *flags* set to *NULL*.
+   leaving *closeit* set to ``0`` and *flags* set to ``NULL``.
 
 
 .. c:function:: int PyRun_SimpleFileEx(FILE *fp, const char *filename, int closeit)
 
    This is a simplified interface to :c:func:`PyRun_SimpleFileExFlags` below,
-   leaving *flags* set to *NULL*.
+   leaving *flags* set to ``NULL``.
 
 
 .. c:function:: int PyRun_SimpleFileExFlags(FILE *fp, const char *filename, int closeit, PyCompilerFlags *flags)
@@ -117,14 +117,14 @@ the same library that the Python runtime is using.
    closed before PyRun_SimpleFileExFlags returns.
 
    .. note::
-      On Windows, *fp* should be opened as binary mode (e.g. ``fopen(filename, "rb")``.
+      On Windows, *fp* should be opened as binary mode (e.g. ``fopen(filename, "rb")``).
       Otherwise, Python may not handle script file with LF line ending correctly.
 
 
 .. c:function:: int PyRun_InteractiveOne(FILE *fp, const char *filename)
 
    This is a simplified interface to :c:func:`PyRun_InteractiveOneFlags` below,
-   leaving *flags* set to *NULL*.
+   leaving *flags* set to ``NULL``.
 
 
 .. c:function:: int PyRun_InteractiveOneFlags(FILE *fp, const char *filename, PyCompilerFlags *flags)
@@ -144,7 +144,7 @@ the same library that the Python runtime is using.
 .. c:function:: int PyRun_InteractiveLoop(FILE *fp, const char *filename)
 
    This is a simplified interface to :c:func:`PyRun_InteractiveLoopFlags` below,
-   leaving *flags* set to *NULL*.
+   leaving *flags* set to ``NULL``.
 
 
 .. c:function:: int PyRun_InteractiveLoopFlags(FILE *fp, const char *filename, PyCompilerFlags *flags)
@@ -173,13 +173,13 @@ the same library that the Python runtime is using.
    ``char *func(FILE *stdin, FILE *stdout, char *prompt)``,
    overriding the default function used to read a single line of input
    at the interpreter's prompt.  The function is expected to output
-   the string *prompt* if it's not *NULL*, and then read a line of
+   the string *prompt* if it's not ``NULL``, and then read a line of
    input from the provided standard input file, returning the
    resulting string.  For example, The :mod:`readline` module sets
    this hook to provide line-editing and tab-completion features.
 
    The result must be a string allocated by :c:func:`PyMem_RawMalloc` or
-   :c:func:`PyMem_RawRealloc`, or *NULL* if an error occurred.
+   :c:func:`PyMem_RawRealloc`, or ``NULL`` if an error occurred.
 
    .. versionchanged:: 3.4
       The result must be allocated by :c:func:`PyMem_RawMalloc` or
@@ -191,14 +191,14 @@ the same library that the Python runtime is using.
 
    This is a simplified interface to
    :c:func:`PyParser_SimpleParseStringFlagsFilename` below, leaving  *filename* set
-   to *NULL* and *flags* set to ``0``.
+   to ``NULL`` and *flags* set to ``0``.
 
 
 .. c:function:: struct _node* PyParser_SimpleParseStringFlags( const char *str, int start, int flags)
 
    This is a simplified interface to
    :c:func:`PyParser_SimpleParseStringFlagsFilename` below, leaving  *filename* set
-   to *NULL*.
+   to ``NULL``.
 
 
 .. c:function:: struct _node* PyParser_SimpleParseStringFlagsFilename( const char *str, const char *filename, int start, int flags)
@@ -225,7 +225,7 @@ the same library that the Python runtime is using.
 .. c:function:: PyObject* PyRun_String(const char *str, int start, PyObject *globals, PyObject *locals)
 
    This is a simplified interface to :c:func:`PyRun_StringFlags` below, leaving
-   *flags* set to *NULL*.
+   *flags* set to ``NULL``.
 
 
 .. c:function:: PyObject* PyRun_StringFlags(const char *str, int start, PyObject *globals, PyObject *locals, PyCompilerFlags *flags)
@@ -236,20 +236,20 @@ the same library that the Python runtime is using.
    that implements the mapping protocol.  The parameter *start* specifies
    the start token that should be used to parse the source code.
 
-   Returns the result of executing the code as a Python object, or *NULL* if an
+   Returns the result of executing the code as a Python object, or ``NULL`` if an
    exception was raised.
 
 
 .. c:function:: PyObject* PyRun_File(FILE *fp, const char *filename, int start, PyObject *globals, PyObject *locals)
 
    This is a simplified interface to :c:func:`PyRun_FileExFlags` below, leaving
-   *closeit* set to ``0`` and *flags* set to *NULL*.
+   *closeit* set to ``0`` and *flags* set to ``NULL``.
 
 
 .. c:function:: PyObject* PyRun_FileEx(FILE *fp, const char *filename, int start, PyObject *globals, PyObject *locals, int closeit)
 
    This is a simplified interface to :c:func:`PyRun_FileExFlags` below, leaving
-   *flags* set to *NULL*.
+   *flags* set to ``NULL``.
 
 
 .. c:function:: PyObject* PyRun_FileFlags(FILE *fp, const char *filename, int start, PyObject *globals, PyObject *locals, PyCompilerFlags *flags)
@@ -270,7 +270,7 @@ the same library that the Python runtime is using.
 .. c:function:: PyObject* Py_CompileString(const char *str, const char *filename, int start)
 
    This is a simplified interface to :c:func:`Py_CompileStringFlags` below, leaving
-   *flags* set to *NULL*.
+   *flags* set to ``NULL``.
 
 
 .. c:function:: PyObject* Py_CompileStringFlags(const char *str, const char *filename, int start, PyCompilerFlags *flags)
@@ -286,7 +286,7 @@ the same library that the Python runtime is using.
    code which can be compiled and should be :const:`Py_eval_input`,
    :const:`Py_file_input`, or :const:`Py_single_input`.  The filename specified by
    *filename* is used to construct the code object and may appear in tracebacks or
-   :exc:`SyntaxError` exception messages.  This returns *NULL* if the code
+   :exc:`SyntaxError` exception messages.  This returns ``NULL`` if the code
    cannot be parsed or compiled.
 
    The integer *optimize* specifies the optimization level of the compiler; a
@@ -309,7 +309,7 @@ the same library that the Python runtime is using.
 
    This is a simplified interface to :c:func:`PyEval_EvalCodeEx`, with just
    the code object, and global and local variables.  The other arguments are
-   set to *NULL*.
+   set to ``NULL``.
 
 
 .. c:function:: PyObject* PyEval_EvalCodeEx(PyObject *co, PyObject *globals, PyObject *locals, PyObject *const *args, int argcount, PyObject *const *kws, int kwcount, PyObject *const *defs, int defcount, PyObject *kwdefs, PyObject *closure)
@@ -386,7 +386,7 @@ the same library that the Python runtime is using.
    executed, it is passed as ``PyCompilerFlags *flags``.  In this case, ``from
    __future__ import`` can modify *flags*.
 
-   Whenever ``PyCompilerFlags *flags`` is *NULL*, :attr:`cf_flags` is treated as
+   Whenever ``PyCompilerFlags *flags`` is ``NULL``, :attr:`cf_flags` is treated as
    equal to ``0``, and any modification due to ``from __future__ import`` is
    discarded.
 

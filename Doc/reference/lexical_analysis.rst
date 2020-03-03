@@ -594,11 +594,9 @@ escape sequences only recognized in string literals fall into the category of
 unrecognized escapes for bytes literals.
 
    .. versionchanged:: 3.6
-      Unrecognized escape sequences produce a :exc:`DeprecationWarning`.
-
-   .. versionchanged:: 3.8
-      Unrecognized escape sequences produce a :exc:`SyntaxWarning`.  In
-      some future version of Python they will be a :exc:`SyntaxError`.
+      Unrecognized escape sequences produce a :exc:`DeprecationWarning`.  In
+      a future Python version they will be a :exc:`SyntaxWarning` and
+      eventually a :exc:`SyntaxError`.
 
 Even in a raw literal, quotes can be escaped with a backslash, but the
 backslash remains in the result; for example, ``r"\""`` is a valid string
@@ -686,6 +684,11 @@ Replacement expressions can contain line breaks (e.g. in triple-quoted
 strings), but they cannot contain comments.  Each expression is evaluated
 in the context where the formatted string literal appears, in order from
 left to right.
+
+.. versionchanged:: 3.7
+   Prior to Python 3.7, an :keyword:`await` expression and comprehensions
+   containing an :keyword:`async for` clause were illegal in the expressions
+   in formatted string literals due to a problem with the implementation.
 
 If a conversion is specified, the result of evaluating the expression
 is converted before formatting.  Conversion ``'!s'`` calls :func:`str` on
@@ -889,7 +892,7 @@ The following tokens are operators:
 
 
    +       -       *       **      /       //      %      @
-   <<      >>      &       |       ^       ~
+   <<      >>      &       |       ^       ~       :=
    <       >       <=      >=      ==      !=
 
 

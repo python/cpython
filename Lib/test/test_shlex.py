@@ -353,6 +353,13 @@ class ShlexTest(unittest.TestCase):
                 resplit = shlex.split(joined)
                 self.assertEqual(split_command, resplit)
 
+    def testPunctuationCharsReadOnly(self):
+        punctuation_chars = "/|$%^"
+        shlex_instance = shlex.shlex(punctuation_chars=punctuation_chars)
+        self.assertEqual(shlex_instance.punctuation_chars, punctuation_chars)
+        with self.assertRaises(AttributeError):
+            shlex_instance.punctuation_chars = False
+
 
 # Allow this test to be used with old shlex.py
 if not getattr(shlex, "split", None):

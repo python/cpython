@@ -72,7 +72,6 @@ B_CRLF = b'\r\n'
 
 # The class itself
 class FTP:
-
     '''An FTP client class.
 
     To create a connection, call the class using these arguments:
@@ -105,12 +104,13 @@ class FTP:
     passiveserver = 1
     encoding = "latin-1"
 
-    # Initialization method (called by class instantiation).
-    # Initialize host to localhost, port to standard ftp port
-    # Optional arguments are host (for connect()),
-    # and user, passwd, acct (for login())
     def __init__(self, host='', user='', passwd='', acct='',
                  timeout=_GLOBAL_DEFAULT_TIMEOUT, source_address=None):
+        """Initialization method (called by class instantiation).
+        Initialize host to localhost, port to standard ftp port.
+        Optional arguments are host (for connect()),
+        and user, passwd, acct (for login()).
+        """
         self.source_address = source_address
         self.timeout = timeout
         if host:
@@ -146,6 +146,8 @@ class FTP:
             self.port = port
         if timeout != -999:
             self.timeout = timeout
+        if self.timeout is not None and not self.timeout:
+            raise ValueError('Non-blocking socket (timeout=0) is not supported')
         if source_address is not None:
             self.source_address = source_address
         sys.audit("ftplib.connect", self, self.host, self.port)
@@ -725,12 +727,12 @@ else:
                                                      keyfile=keyfile)
             self.context = context
             self._prot_p = False
-            FTP.__init__(self, host, user, passwd, acct, timeout, source_address)
+            super().__init__(host, user, passwd, acct, timeout, source_address)
 
         def login(self, user='', passwd='', acct='', secure=True):
             if secure and not isinstance(self.sock, ssl.SSLSocket):
                 self.auth()
-            return FTP.login(self, user, passwd, acct)
+            return super().login(user, passwd, acct)
 
         def auth(self):
             '''Set up secure control connection by using TLS/SSL.'''
@@ -740,8 +742,7 @@ else:
                 resp = self.voidcmd('AUTH TLS')
             else:
                 resp = self.voidcmd('AUTH SSL')
-            self.sock = self.context.wrap_socket(self.sock,
-                                                 server_hostname=self.host)
+            self.sock = self.context.wrap_socket(self.sock, server_hostname=self.host)
             self.file = self.sock.makefile(mode='r', encoding=self.encoding)
             return resp
 
@@ -778,7 +779,7 @@ else:
         # --- Overridden FTP methods
 
         def ntransfercmd(self, cmd, rest=None):
-            conn, size = FTP.ntransfercmd(self, cmd, rest)
+            conn, size = super().ntransfercmd(cmd, rest)
             if self._prot_p:
                 conn = self.context.wrap_socket(conn,
                                                 server_hostname=self.host)
@@ -823,7 +824,6 @@ def parse227(resp):
     '''Parse the '227' response for a PASV request.
     Raises error_proto if it does not contain '(h1,h2,h3,h4,p1,p2)'
     Return ('host.addr.as.numbers', port#) tuple.'''
-
     if resp[:3] != '227':
         raise error_reply(resp)
     global _227_re
@@ -843,7 +843,6 @@ def parse229(resp, peer):
     '''Parse the '229' response for an EPSV request.
     Raises error_proto if it does not contain '(|||port|)'
     Return ('host.addr.as.numbers', port#) tuple.'''
-
     if resp[:3] != '229':
         raise error_reply(resp)
     left = resp.find('(')
@@ -865,7 +864,6 @@ def parse257(resp):
     '''Parse the '257' response for a MKD or PWD request.
     This is a response to a MKD or PWD request: a directory name.
     Returns the directoryname in the 257 reply.'''
-
     if resp[:3] != '257':
         raise error_reply(resp)
     if resp[3:5] != ' "':

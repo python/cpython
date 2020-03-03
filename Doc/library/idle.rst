@@ -199,27 +199,14 @@ Format Paragraph
 Strip trailing whitespace
    Remove trailing space and other whitespace characters after the last
    non-whitespace character of a line by applying str.rstrip to each line,
-   including lines within multiline strings.
+   including lines within multiline strings.  Except for Shell windows,
+   remove extra newlines at the end of the file.
 
 .. index::
    single: Run script
 
 Run menu (Editor window only)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-.. _python-shell:
-
-Python Shell
-   Open or wake up the Python Shell window.
-
-.. _check-module:
-
-Check Module
-   Check the syntax of the module currently open in the Editor window. If the
-   module has not been saved IDLE will either prompt the user to save or
-   autosave, as selected in the General tab of the Idle Settings dialog.  If
-   there is a syntax error, the approximate location is indicated in the
-   Editor window.
 
 .. _run-module:
 
@@ -238,6 +225,20 @@ Run... Customized
    Same as :ref:`Run Module <run-module>`, but run the module with customized
    settings.  *Command Line Arguments* extend :data:`sys.argv` as if passed
    on a command line. The module can be run in the Shell without restarting.
+
+.. _check-module:
+
+Check Module
+   Check the syntax of the module currently open in the Editor window. If the
+   module has not been saved IDLE will either prompt the user to save or
+   autosave, as selected in the General tab of the Idle Settings dialog.  If
+   there is a syntax error, the approximate location is indicated in the
+   Editor window.
+
+.. _python-shell:
+
+Python Shell
+   Open or wake up the Python Shell window.
 
 
 Shell menu (Shell window only)
@@ -295,8 +296,8 @@ Configure IDLE
    menu. For more details, see
    :ref:`Setting preferences <preferences>` under Help and preferences.
 
-   Most configuration options apply to all windows or all future windows.
-   The option items below only apply to the active window.
+Most configuration options apply to all windows or all future windows.
+The option items below only apply to the active window.
 
 Show/Hide Code Context (Editor Window only)
    Open a pane at the top of the edit window which shows the block context
@@ -369,7 +370,8 @@ Paste
 
 Editor windows also have breakpoint functions.  Lines with a breakpoint set are
 specially marked.  Breakpoints only have an effect when running under the
-debugger.  Breakpoints for a file are saved in the user's .idlerc directory.
+debugger.  Breakpoints for a file are saved in the user's ``.idlerc``
+directory.
 
 Set Breakpoint
    Set a breakpoint on the current line.
@@ -684,14 +686,14 @@ crash or Keyboard Interrupt (control-C) may fail to connect.  Dismissing
 the error box or Restart Shell on the Shell menu may fix a temporary problem.
 
 When IDLE first starts, it attempts to read user configuration files in
-~/.idlerc/ (~ is one's home directory).  If there is a problem, an error
+``~/.idlerc/`` (~ is one's home directory).  If there is a problem, an error
 message should be displayed.  Leaving aside random disk glitches, this can
 be prevented by never editing the files by hand, using the configuration
 dialog, under Options, instead Options.  Once it happens, the solution may
 be to delete one or more of the configuration files.
 
 If IDLE quits with no message, and it was not started from a console, try
-starting from a console (``python -m idlelib)`` and see if a message appears.
+starting from a console (``python -m idlelib``) and see if a message appears.
 
 Running user code
 ^^^^^^^^^^^^^^^^^
@@ -862,13 +864,13 @@ Or click the TOC (Table of Contents) button and select a section
 header in the opened box.
 
 Help menu entry "Python Docs" opens the extensive sources of help,
-including tutorials, available at docs.python.org/x.y, where 'x.y'
+including tutorials, available at ``docs.python.org/x.y``, where 'x.y'
 is the currently running Python version.  If your system
 has an off-line copy of the docs (this may be an installation option),
 that will be opened instead.
 
 Selected URLs can be added or removed from the help menu at any time using the
-General tab of the Configure IDLE dialog .
+General tab of the Configure IDLE dialog.
 
 .. _preferences:
 
@@ -877,9 +879,9 @@ Setting preferences
 
 The font preferences, highlighting, keys, and general preferences can be
 changed via Configure IDLE on the Option menu.
-Non-default user settings are saved in a .idlerc directory in the user's
+Non-default user settings are saved in a ``.idlerc`` directory in the user's
 home directory.  Problems caused by bad user configuration files are solved
-by editing or deleting one or more of the files in .idlerc.
+by editing or deleting one or more of the files in ``.idlerc``.
 
 On the Font tab, see the text sample for the effect of font face and size
 on multiple characters in multiple languages.  Edit the sample to add

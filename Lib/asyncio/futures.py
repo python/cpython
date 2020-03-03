@@ -103,6 +103,9 @@ class Future:
             context['source_traceback'] = self._source_traceback
         self._loop.call_exception_handler(context)
 
+    def __class_getitem__(cls, type):
+        return cls
+
     @property
     def _log_traceback(self):
         return self.__log_traceback
@@ -115,7 +118,10 @@ class Future:
 
     def get_loop(self):
         """Return the event loop the Future is bound to."""
-        return self._loop
+        loop = self._loop
+        if loop is None:
+            raise RuntimeError("Future object is not initialized.")
+        return loop
 
     def cancel(self):
         """Cancel the future and schedule callbacks.

@@ -52,7 +52,7 @@ Directory and files operations
 
    Copy the contents (no metadata) of the file named *src* to a file named
    *dst* and return *dst* in the most efficient way possible.
-   *src* and *dst* are path names given as strings.
+   *src* and *dst* are path-like objects or path names given as strings.
 
    *dst* must be the complete target file name; look at :func:`~shutil.copy`
    for a copy that accepts a target directory path.  If *src* and *dst*
@@ -66,6 +66,8 @@ Directory and files operations
    If *follow_symlinks* is false and *src* is a symbolic link,
    a new symbolic link will be created instead of copying the
    file *src* points to.
+
+   .. audit-event:: shutil.copyfile src,dst shutil.copyfile
 
    .. versionchanged:: 3.3
       :exc:`IOError` used to be raised instead of :exc:`OSError`.
@@ -92,13 +94,16 @@ Directory and files operations
 .. function:: copymode(src, dst, *, follow_symlinks=True)
 
    Copy the permission bits from *src* to *dst*.  The file contents, owner, and
-   group are unaffected.  *src* and *dst* are path names given as strings.
+   group are unaffected.  *src* and *dst* are path-like objects or path names
+   given as strings.
    If *follow_symlinks* is false, and both *src* and *dst* are symbolic links,
    :func:`copymode` will attempt to modify the mode of *dst* itself (rather
    than the file it points to).  This functionality is not available on every
    platform; please see :func:`copystat` for more information.  If
    :func:`copymode` cannot modify symbolic links on the local platform, and it
    is asked to do so, it will do nothing and return.
+
+   .. audit-event:: shutil.copymode src,dst shutil.copymode
 
    .. versionchanged:: 3.3
       Added *follow_symlinks* argument.
@@ -108,7 +113,8 @@ Directory and files operations
    Copy the permission bits, last access time, last modification time, and
    flags from *src* to *dst*.  On Linux, :func:`copystat` also copies the
    "extended attributes" where possible.  The file contents, owner, and
-   group are unaffected.  *src* and *dst* are path names given as strings.
+   group are unaffected.  *src* and *dst* are path-like objects or path
+   names given as strings.
 
    If *follow_symlinks* is false, and *src* and *dst* both
    refer to symbolic links, :func:`copystat` will operate on
@@ -144,6 +150,8 @@ Directory and files operations
       Please see :data:`os.supports_follow_symlinks`
       for more information.
 
+   .. audit-event:: shutil.copystat src,dst shutil.copystat
+
    .. versionchanged:: 3.3
       Added *follow_symlinks* argument and support for Linux extended attributes.
 
@@ -165,6 +173,10 @@ Directory and files operations
    To preserve all file metadata from the original, use
    :func:`~shutil.copy2` instead.
 
+   .. audit-event:: shutil.copyfile src,dst shutil.copy
+
+   .. audit-event:: shutil.copymode src,dst shutil.copy
+
    .. versionchanged:: 3.3
       Added *follow_symlinks* argument.
       Now returns path to the newly created file.
@@ -185,11 +197,16 @@ Directory and files operations
    However, this functionality is not available on all platforms.
    On platforms where some or all of this functionality is
    unavailable, :func:`copy2` will preserve all the metadata
-   it can; :func:`copy2` never returns failure.
+   it can; :func:`copy2` never raises an exception because it
+   cannot preserve file metadata.
 
    :func:`copy2` uses :func:`copystat` to copy the file metadata.
    Please see :func:`copystat` for more information
    about platform support for modifying symbolic link metadata.
+
+   .. audit-event:: shutil.copyfile src,dst shutil.copy2
+
+   .. audit-event:: shutil.copystat src,dst shutil.copy2
 
    .. versionchanged:: 3.3
       Added *follow_symlinks* argument, try to copy extended
@@ -304,6 +321,10 @@ Directory and files operations
       Added a symlink attack resistant version that is used automatically
       if platform supports fd-based functions.
 
+   .. versionchanged:: 3.8
+      On Windows, will no longer delete the contents of a directory junction
+      before removing the junction.
+
    .. attribute:: rmtree.avoids_symlink_attacks
 
       Indicates whether the current platform and implementation provides a
@@ -335,6 +356,8 @@ Directory and files operations
    *copy_function* allows the move to succeed when it is not possible to also
    copy the metadata, at the expense of not copying any of the metadata.
 
+   .. audit-event:: shutil.move src,dst shutil.move
+
    .. versionchanged:: 3.3
       Added explicit symlink handling for foreign filesystems, thus adapting
       it to the behavior of GNU's :program:`mv`.
@@ -347,6 +370,9 @@ Directory and files operations
       Platform-specific fast-copy syscalls may be used internally in order to
       copy the file more efficiently. See
       :ref:`shutil-platform-dependent-efficient-copy-operations` section.
+
+   .. versionchanged:: 3.9
+      Accepts a :term:`path-like object` for both *src* and *dst*.
 
 .. function:: disk_usage(path)
 
@@ -370,6 +396,8 @@ Directory and files operations
    least one argument is required.
 
    See also :func:`os.chown`, the underlying function.
+
+   .. audit-event:: shutil.chown path,user,group shutil.chown
 
    .. availability:: Unix.
 
@@ -621,6 +649,8 @@ provided.  They rely on the :mod:`zipfile` and :mod:`tarfile` modules.
    will use the archive file name extension and see if an unpacker was
    registered for that extension.  In case none is found,
    a :exc:`ValueError` is raised.
+
+   .. audit-event:: shutil.unpack_archive filename,extract_dir,format shutil.unpack_archive
 
    .. versionchanged:: 3.7
       Accepts a :term:`path-like object` for *filename* and *extract_dir*.

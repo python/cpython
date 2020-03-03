@@ -55,7 +55,7 @@ helper, :class:`auto`.
 
 .. class:: auto
 
-    Instances are replaced with an appropriate value for Enum members.
+    Instances are replaced with an appropriate value for Enum members.  By default, the initial value starts at 1.
 
 .. versionadded:: 3.6  ``Flag``, ``IntFlag``, ``auto``
 
@@ -383,8 +383,8 @@ enumeration, with the exception of special methods (:meth:`__str__`,
 variable names listed in :attr:`_ignore_`.
 
 Note:  if your enumeration defines :meth:`__new__` and/or :meth:`__init__` then
-whatever value(s) were given to the enum member will be passed into those
-methods.  See `Planet`_ for an example.
+any value(s) given to the enum member will be passed into those methods.
+See `Planet`_ for an example.
 
 
 Restricted Enum subclassing
@@ -730,8 +730,7 @@ Some rules:
 2. While :class:`Enum` can have members of any type, once you mix in an
    additional type, all the members must have values of that type, e.g.
    :class:`int` above.  This restriction does not apply to mix-ins which only
-   add methods and don't specify another data type such as :class:`int` or
-   :class:`str`.
+   add methods and don't specify another type.
 3. When another data type is mixed in, the :attr:`value` attribute is *not the
    same* as the enum member itself, although it is equivalent and will compare
    equal.
@@ -1054,7 +1053,7 @@ Supported ``_sunder_`` names
 
 - ``_missing_`` -- a lookup function used when a value is not found; may be
   overridden
-- ``_ignore_`` -- a list of names, either as a :func:`list` or a :func:`str`,
+- ``_ignore_`` -- a list of names, either as a :class:`list` or a :class:`str`,
   that will not be transformed into members, and will be removed from the final
   class
 - ``_order_`` -- used in Python 2/3 code to ensure member order is consistent

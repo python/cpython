@@ -734,12 +734,14 @@ class PyBuildExt(build_ext):
 
         # math library functions, e.g. sin()
         self.add(Extension('math',  ['mathmodule.c'],
+                           extra_compile_args=['-DPy_BUILD_CORE_MODULE'],
                            extra_objects=[shared_math],
                            depends=['_math.h', shared_math],
                            libraries=['m']))
 
         # complex math library functions
         self.add(Extension('cmath', ['cmathmodule.c'],
+                           extra_compile_args=['-DPy_BUILD_CORE_MODULE'],
                            extra_objects=[shared_math],
                            depends=['_math.h', shared_math],
                            libraries=['m']))
@@ -785,6 +787,8 @@ class PyBuildExt(build_ext):
         self.add(Extension("_abc", ["_abc.c"]))
         # _queue module
         self.add(Extension("_queue", ["_queuemodule.c"]))
+        # _statistics module
+        self.add(Extension("_statistics", ["_statisticsmodule.c"]))
 
         # Modules with some UNIX dependencies -- on by default:
         # (If you have a really backward UNIX, select and socket may not be

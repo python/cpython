@@ -223,12 +223,13 @@ class CmdLineTest(unittest.TestCase):
 
     def test_script_abspath(self):
         # pass the script using the relative path, expect the absolute path
-        # in __file__ and sys.argv[0]
+        # in __file__
         with support.temp_cwd() as script_dir:
             self.assertTrue(os.path.isabs(script_dir), script_dir)
 
             script_name = _make_test_script(script_dir, 'script')
-            self._check_script(os.path.basename(script_name), script_name, script_name,
+            relative_name = os.path.basename(script_name)
+            self._check_script(relative_name, script_name, relative_name,
                                script_dir, None,
                                importlib.machinery.SourceFileLoader)
 
@@ -474,7 +475,7 @@ class CmdLineTest(unittest.TestCase):
             ('os.path', br'loader.*cannot handle'),
             ('importlib', br'No module named.*'
                 br'is a package and cannot be directly executed'),
-            ('importlib.nonexistant', br'No module named'),
+            ('importlib.nonexistent', br'No module named'),
             ('.unittest', br'Relative module names not supported'),
         )
         for name, regex in tests:
@@ -535,7 +536,7 @@ class CmdLineTest(unittest.TestCase):
             script_name = _make_test_script(script_dir, 'script', script)
             exitcode, stdout, stderr = assert_python_failure(script_name)
             text = stderr.decode('ascii').split('\n')
-            self.assertEqual(len(text), 4)
+            self.assertEqual(len(text), 5)
             self.assertTrue(text[0].startswith('Traceback'))
             self.assertTrue(text[1].startswith('  File '))
             self.assertTrue(text[3].startswith('NameError'))
@@ -579,7 +580,7 @@ class CmdLineTest(unittest.TestCase):
             script_name = _make_test_script(script_dir, 'script', script)
             exitcode, stdout, stderr = assert_python_failure(script_name)
             text = stderr.decode('ascii')
-            self.assertEqual(text, "some text")
+            self.assertEqual(text.rstrip(), "some text")
 
     def test_syntaxerror_unindented_caret_position(self):
         script = "1 + 1 = 2\n"

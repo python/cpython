@@ -2949,7 +2949,7 @@ refer to the comments in the code snippet for more detailed information.
         # The functions below update the UI and run in the main thread because
         # that's where the slots are set up
 
-        @Slot(str)
+        @Slot(str, logging.LogRecord)
         def update_status(self, status, record):
             color = self.COLORS.get(record.levelno, 'black')
             s = '<pre><font color="%s">%s</font></pre>' % (color, status)

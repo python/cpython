@@ -8,10 +8,9 @@ extern "C" {
 #  error "this header requires Py_BUILD_CORE define"
 #endif
 
-#include "pycore_pystate.h"   /* _PyRuntime */
+#include "pycore_pystate.h"   /* _PyRuntime.gc */
 
 PyAPI_FUNC(int) _PyType_CheckConsistency(PyTypeObject *type);
-PyAPI_FUNC(int) _PyUnicode_CheckConsistency(PyObject *op, int check_content);
 PyAPI_FUNC(int) _PyDict_CheckConsistency(PyObject *mp, int check_content);
 
 /* Tell the GC to track this object.
@@ -19,7 +18,7 @@ PyAPI_FUNC(int) _PyDict_CheckConsistency(PyObject *mp, int check_content);
  * NB: While the object is tracked by the collector, it must be safe to call the
  * ob_traverse method.
  *
- * Internal note: _PyRuntime.gc.generation0->_gc_prev doesn't have any bit flags
+ * Internal note: interp->gc.generation0->_gc_prev doesn't have any bit flags
  * because it's not object header.  So we don't use _PyGCHead_PREV() and
  * _PyGCHead_SET_PREV() for it to avoid unnecessary bitwise operations.
  *
@@ -38,11 +37,13 @@ static inline void _PyObject_GC_TRACK_impl(const char *filename, int lineno,
                           "object is in generation which is garbage collected",
                           filename, lineno, "_PyObject_GC_TRACK");
 
-    PyGC_Head *last = (PyGC_Head*)(_PyRuntime.gc.generation0->_gc_prev);
+    PyThreadState *tstate = _PyThreadState_GET();
+    PyGC_Head *generation0 = tstate->interp->gc.generation0;
+    PyGC_Head *last = (PyGC_Head*)(generation0->_gc_prev);
     _PyGCHead_SET_NEXT(last, gc);
     _PyGCHead_SET_PREV(gc, last);
-    _PyGCHead_SET_NEXT(gc, _PyRuntime.gc.generation0);
-    _PyRuntime.gc.generation0->_gc_prev = (uintptr_t)gc;
+    _PyGCHead_SET_NEXT(gc, generation0);
+    generation0->_gc_prev = (uintptr_t)gc;
 }
 
 #define _PyObject_GC_TRACK(op) \
@@ -75,6 +76,16 @@ static inline void _PyObject_GC_UNTRACK_impl(const char *filename, int lineno,
 
 #define _PyObject_GC_UNTRACK(op) \
     _PyObject_GC_UNTRACK_impl(__FILE__, __LINE__, _PyObject_CAST(op))
+
+#ifdef Py_REF_DEBUG
+extern void _PyDebug_PrintTotalRefs(void);
+#endif
+
+#ifdef Py_TRACE_REFS
+extern void _Py_AddToAllObjects(PyObject *op, int force);
+extern void _Py_PrintReferences(FILE *);
+extern void _Py_PrintReferenceAddresses(FILE *);
+#endif
 
 #ifdef __cplusplus
 }

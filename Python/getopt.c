@@ -18,10 +18,6 @@
  * DAMAGES WHATSOEVER RESULTING FROM LOSS OF USE, DATA, OR PROFITS, WHETHER
  * IN AN ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT
  * OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
- *
- * Nevertheless, I would like to know about bugs in this library or
- * suggestions for improvement.  Send bug reports and feedback to
- * davegottner@delphi.com.
  *---------------------------------------------------------------------------*/
 
 /* Modified to support --help and --version, as well as /? on Windows

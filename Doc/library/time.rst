@@ -42,17 +42,12 @@ An explanation of some terminology and conventions is in order.
   library; for 32-bit systems, it is typically in 2038.
 
 .. index::
-   single: Year 2000
-   single: Y2K
+   single: 2-digit years
 
-.. _time-y2kissues:
-
-* **Year 2000 (Y2K) issues**: Python depends on the platform's C library, which
-  generally doesn't have year 2000 issues, since all dates and times are
-  represented internally as seconds since the epoch.  Function :func:`strptime`
-  can parse 2-digit years when given ``%y`` format code.  When 2-digit years are
-  parsed, they are converted according to the POSIX and ISO C standards: values
-  69--99 are mapped to 1969--1999, and values 0--68 are mapped to 2000--2068.
+* Function :func:`strptime` can parse 2-digit years when given ``%y`` format
+  code. When 2-digit years are parsed, they are converted according to the POSIX
+  and ISO C standards: values 69--99 are mapped to 1969--1999, and values 0--68
+  are mapped to 2000--2068.
 
 .. index::
    single: UTC
@@ -127,9 +122,12 @@ Functions
 
    Convert a tuple or :class:`struct_time` representing a time as returned by
    :func:`gmtime` or :func:`localtime` to a string of the following
-   form: ``'Sun Jun 20 23:21:05 1993'``.  If *t* is not provided, the current time
-   as returned by :func:`localtime` is used. Locale information is not used by
-   :func:`asctime`.
+   form: ``'Sun Jun 20 23:21:05 1993'``. The day field is two characters long
+   and is space padded if the day is a single digit,
+   e.g.: ``'Wed Jun  9 04:26:40 1993'``.
+
+   If *t* is not provided, the current time as returned by :func:`localtime`
+   is used. Locale information is not used by :func:`asctime`.
 
    .. note::
 
@@ -203,10 +201,15 @@ Functions
 
 .. function:: ctime([secs])
 
-   Convert a time expressed in seconds since the epoch to a string representing
-   local time. If *secs* is not provided or :const:`None`, the current time as
-   returned by :func:`.time` is used.  ``ctime(secs)`` is equivalent to
-   ``asctime(localtime(secs))``. Locale information is not used by :func:`ctime`.
+   Convert a time expressed in seconds since the epoch to a string of a form:
+   ``'Sun Jun 20 23:21:05 1993'`` representing local time. The day field
+   is two characters long and is space padded if the day is a single digit,
+   e.g.: ``'Wed Jun  9 04:26:40 1993'``.
+
+   If *secs* is not provided or :const:`None`, the current time as
+   returned by :func:`.time` is used. ``ctime(secs)`` is equivalent to
+   ``asctime(localtime(secs))``. Locale information is not used by
+   :func:`ctime`.
 
 
 .. function:: get_clock_info(name)
@@ -215,7 +218,6 @@ Functions
    Supported clock names and the corresponding functions to read their value
    are:
 
-   * ``'clock'``: :func:`time.clock`
    * ``'monotonic'``: :func:`time.monotonic`
    * ``'perf_counter'``: :func:`time.perf_counter`
    * ``'process_time'``: :func:`time.process_time`
@@ -608,7 +610,7 @@ Functions
 
 .. function:: time_ns() -> int
 
-   Similar to :func:`time` but returns time as an integer number of nanoseconds
+   Similar to :func:`~time.time` but returns time as an integer number of nanoseconds
    since the epoch_.
 
    .. versionadded:: 3.7

@@ -1125,6 +1125,8 @@
     <Compile Include="test\test_import\data\package\submodule.py" />
     <Compile Include="test\test_import\data\package2\submodule1.py" />
     <Compile Include="test\test_import\data\package2\submodule2.py" />
+    <Compile Include="test\test_import\data\unwritable\__init__.py" />
+    <Compile Include="test\test_import\data\unwritable\x.py" />
     <Compile Include="test\test_import\__init__.py" />
     <Compile Include="test\test_import\__main__.py" />
     <Compile Include="test\test_index.py" />
@@ -1191,7 +1193,6 @@
     <Compile Include="test\test_netrc.py" />
     <Compile Include="test\test_nis.py" />
     <Compile Include="test\test_nntplib.py" />
-    <Compile Include="test\test_normalization.py" />
     <Compile Include="test\test_ntpath.py" />
     <Compile Include="test\test_numeric_tower.py" />
     <Compile Include="test\test_opcodes.py" />

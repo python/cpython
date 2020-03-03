@@ -109,9 +109,6 @@ Or, more often::
 
 Other modules that provide Tk support include:
 
-:mod:`tkinter.scrolledtext`
-   Text widget with a vertical scroll bar built in.
-
 :mod:`tkinter.colorchooser`
    Dialog to let the user choose a color.
 
@@ -126,6 +123,9 @@ Other modules that provide Tk support include:
 
 :mod:`tkinter.messagebox`
    Access to standard Tk dialog boxes.
+
+:mod:`tkinter.scrolledtext`
+   Text widget with a vertical scroll bar built in.
 
 :mod:`tkinter.simpledialog`
    Basic dialogs and convenience functions.
@@ -680,9 +680,10 @@ scrollcommand
    This is almost always the :meth:`!set` method of some scrollbar widget, but can
    be any widget method that takes a single argument.
 
-wrap:
+wrap
    Must be one of: ``"none"``, ``"char"``, or ``"word"``.
 
+.. _Bindings-and-Events:
 
 Bindings and Events
 ^^^^^^^^^^^^^^^^^^^

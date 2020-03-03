@@ -199,11 +199,19 @@ def collect_os(info_add):
     )
     copy_attributes(info_add, os, 'os.%s', attributes, formatter=format_attr)
 
-    call_func(info_add, 'os.getcwd', os, 'getcwd')
-
-    call_func(info_add, 'os.getuid', os, 'getuid')
-    call_func(info_add, 'os.getgid', os, 'getgid')
-    call_func(info_add, 'os.uname', os, 'uname')
+    for func in (
+        'cpu_count',
+        'getcwd',
+        'getegid',
+        'geteuid',
+        'getgid',
+        'getloadavg',
+        'getresgid',
+        'getresuid',
+        'getuid',
+        'uname',
+    ):
+        call_func(info_add, 'os.%s' % func, os, func)
 
     def format_groups(groups):
         return ', '.join(map(str, groups))
@@ -219,9 +227,6 @@ def collect_os(info_add):
             pass
         else:
             info_add("os.login", login)
-
-    call_func(info_add, 'os.cpu_count', os, 'cpu_count')
-    call_func(info_add, 'os.getloadavg', os, 'getloadavg')
 
     # Environment variables used by the stdlib and tests. Don't log the full
     # environment: filter to list to not leak sensitive information.
@@ -303,7 +308,7 @@ def collect_os(info_add):
     if hasattr(os, 'umask'):
         mask = os.umask(0)
         os.umask(mask)
-        info_add("os.umask", '%03o' % mask)
+        info_add("os.umask", '0o%03o' % mask)
 
 
 def collect_pwd(info_add):
@@ -470,10 +475,15 @@ def collect_sysconfig(info_add):
 
 
 def collect_ssl(info_add):
+    import os
     try:
         import ssl
     except ImportError:
         return
+    try:
+        import _ssl
+    except ImportError:
+        _ssl = None
 
     def format_attr(attr, value):
         if attr.startswith('OP_'):
@@ -489,6 +499,32 @@ def collect_ssl(info_add):
         'OP_NO_TLSv1_1',
     )
     copy_attributes(info_add, ssl, 'ssl.%s', attributes, formatter=format_attr)
+
+    for name, ctx in (
+        ('SSLContext', ssl.SSLContext()),
+        ('default_https_context', ssl._create_default_https_context()),
+        ('stdlib_context', ssl._create_stdlib_context()),
+    ):
+        attributes = (
+            'minimum_version',
+            'maximum_version',
+            'protocol',
+            'options',
+            'verify_mode',
+        )
+        copy_attributes(info_add, ctx, f'ssl.{name}.%s', attributes)
+
+    env_names = ["OPENSSL_CONF", "SSLKEYLOGFILE"]
+    if _ssl is not None and hasattr(_ssl, 'get_default_verify_paths'):
+        parts = _ssl.get_default_verify_paths()
+        env_names.extend((parts[0], parts[2]))
+
+    for name in env_names:
+        try:
+            value = os.environ[name]
+        except KeyError:
+            continue
+        info_add('ssl.environ[%s]' % name, value)
 
 
 def collect_socket(info_add):
@@ -673,6 +709,13 @@ def collect_windows(info_add):
         res = bool(RtlAreLongPathsEnabled())
     info_add('windows.RtlAreLongPathsEnabled', res)
 
+    try:
+        import _winapi
+        dll_path = _winapi.GetModuleFileName(sys.dllhandle)
+        info_add('windows.dll_path', dll_path)
+    except (ImportError, AttributeError):
+        pass
+
 
 def collect_info(info):
     error = False
@@ -716,7 +759,7 @@ def collect_info(info):
     ):
         try:
             collect_func(info_add)
-        except Exception as exc:
+        except Exception:
             error = True
             print("ERROR: %s() failed" % (collect_func.__name__),
                   file=sys.stderr)

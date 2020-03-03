@@ -1,0 +1,1 @@
+Remove default value from *attrs* parameter of :meth:`xml.etree.ElementTree.TreeBuilder.start` for consistency between Python and C implementations.

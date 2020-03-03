@@ -147,7 +147,6 @@ struct _ts {
    The caller must hold the GIL.*/
 PyAPI_FUNC(PyInterpreterState *) _PyInterpreterState_Get(void);
 
-PyAPI_FUNC(int) _PyState_AddModule(PyObject*, struct PyModuleDef*);
 PyAPI_FUNC(PyThreadState *) _PyThreadState_Prealloc(PyInterpreterState *);
 
 /* Similar to PyThreadState_Get(), but don't issue a fatal error
@@ -183,6 +182,7 @@ PyAPI_FUNC(PyInterpreterState *) PyInterpreterState_Head(void);
 PyAPI_FUNC(PyInterpreterState *) PyInterpreterState_Next(PyInterpreterState *);
 PyAPI_FUNC(PyThreadState *) PyInterpreterState_ThreadHead(PyInterpreterState *);
 PyAPI_FUNC(PyThreadState *) PyThreadState_Next(PyThreadState *);
+PyAPI_FUNC(void) PyThreadState_DeleteCurrent(void);
 
 typedef struct _frame *(*PyThreadFrameGetter)(PyThreadState *self_);
 

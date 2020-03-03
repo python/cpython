@@ -407,9 +407,9 @@ class OrderedDictTests:
         self.assertEqual(list(od), list('abcde'))
         od.move_to_end('c')
         self.assertEqual(list(od), list('abdec'))
-        od.move_to_end('c', 0)
+        od.move_to_end('c', False)
         self.assertEqual(list(od), list('cabde'))
-        od.move_to_end('c', 0)
+        od.move_to_end('c', False)
         self.assertEqual(list(od), list('cabde'))
         od.move_to_end('e')
         self.assertEqual(list(od), list('cabde'))
@@ -418,7 +418,7 @@ class OrderedDictTests:
         with self.assertRaises(KeyError):
             od.move_to_end('x')
         with self.assertRaises(KeyError):
-            od.move_to_end('x', 0)
+            od.move_to_end('x', False)
 
     def test_move_to_end_issue25406(self):
         OrderedDict = self.OrderedDict
@@ -752,6 +752,26 @@ class CPythonOrderedDictTests(OrderedDictTests, unittest.TestCase):
                     unpickled = pickle.loads(p)
                     self.assertEqual(list(unpickled), expected)
                     self.assertEqual(list(it), expected)
+
+    @support.cpython_only
+    def test_weakref_list_is_not_traversed(self):
+        # Check that the weakref list is not traversed when collecting
+        # OrderedDict objects. See bpo-39778 for more information.
+
+        gc.collect()
+
+        x = self.OrderedDict()
+        x.cycle = x
+
+        cycle = []
+        cycle.append(cycle)
+
+        x_ref = weakref.ref(x)
+        cycle.append(x_ref)
+
+        del x, cycle, x_ref
+
+        gc.collect()
 
 
 class PurePythonOrderedDictSubclassTests(PurePythonOrderedDictTests):

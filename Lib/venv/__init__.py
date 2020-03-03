@@ -51,6 +51,8 @@ class EnvBuilder:
         self.symlinks = symlinks
         self.upgrade = upgrade
         self.with_pip = with_pip
+        if prompt == '.':  # see bpo-38901
+            prompt = os.path.basename(os.getcwd())
         self.prompt = prompt
         self.upgrade_deps = upgrade_deps
 
@@ -393,10 +395,10 @@ class EnvBuilder:
             f'Upgrading {CORE_VENV_DEPS} packages in {context.bin_path}'
         )
         if sys.platform == 'win32':
-            pip_exe = os.path.join(context.bin_path, 'pip.exe')
+            python_exe = os.path.join(context.bin_path, 'python.exe')
         else:
-            pip_exe = os.path.join(context.bin_path, 'pip')
-        cmd = [pip_exe, 'install', '-U']
+            python_exe = os.path.join(context.bin_path, 'python')
+        cmd = [python_exe, '-m', 'pip', 'install', '--upgrade']
         cmd.extend(CORE_VENV_DEPS)
         subprocess.check_call(cmd)
 

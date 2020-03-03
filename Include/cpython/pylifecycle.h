@@ -32,14 +32,6 @@ PyAPI_FUNC(int) _Py_IsCoreInitialized(void);
 
 PyAPI_FUNC(PyStatus) Py_InitializeFromConfig(
     const PyConfig *config);
-PyAPI_FUNC(PyStatus) _Py_InitializeFromArgs(
-    const PyConfig *config,
-    Py_ssize_t argc,
-    char * const *argv);
-PyAPI_FUNC(PyStatus) _Py_InitializeFromWideArgs(
-    const PyConfig *config,
-    Py_ssize_t argc,
-    wchar_t * const *argv);
 PyAPI_FUNC(PyStatus) _Py_InitializeMain(void);
 
 PyAPI_FUNC(int) Py_RunMain(void);
