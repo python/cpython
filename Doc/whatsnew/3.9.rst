@@ -452,6 +452,12 @@ Deprecated
   of Python. For the majority of use cases, users can leverage the Abstract Syntax
   Tree (AST) generation and compilation stage, using the :mod:`ast` module.
 
+* Using :data:`NotImplemented` in a boolean context has been deprecated,
+  as it is almost exclusively the result of incorrect rich comparator
+  implementations. It will be made a :exc:`TypeError` in a future version
+  of Python.
+  (Contributed by Josh Rosenberg in :issue:`35712`.)
+
 * The :mod:`random` module currently accepts any hashable type as a
   possible seed value.  Unfortunately, some of those types are not
   guaranteed to have a deterministic hash value.  After Python 3.9,
