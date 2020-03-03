@@ -757,7 +757,7 @@ Modules/getpath.o: $(srcdir)/Modules/getpath.c Makefile
 		-o $@ $(srcdir)/Modules/getpath.c
 
 Programs/python.o: $(srcdir)/Programs/python.c
-	$(MAINCC) -c $(PY_CORE_CFLAGS) -o $@ $(srcdir)/Programs/python.c
+	$(CC) -c $(PY_CORE_CFLAGS) -o $@ $(srcdir)/Programs/python.c
 
 Programs/_testembed.o: $(srcdir)/Programs/_testembed.c
 	$(CC) -c $(PY_CORE_CFLAGS) -o $@ $(srcdir)/Programs/_testembed.c
