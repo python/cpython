@@ -249,8 +249,7 @@ class PkgutilTests(unittest.TestCase):
             try:
                 os.makedirs(d, exist_ok=True)
             except  UnicodeEncodeError:
-                # catch errors such as: 'latin-1' codec can't encode characters
-                #                        in position 17-19: ordinal not in range(256)
+                # When filesystem encoding cannot encode uw: skip this test
                 continue
             # make an empty __init__.py file
             f = os.path.join(d, '__init__.py')
