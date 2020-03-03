@@ -889,11 +889,9 @@ setup_context(Py_ssize_t stack_level, PyObject **filename, int *lineno,
     return 1;
 
  handle_error:
-    /* filename not XDECREF'ed here as there is no way to jump here with a
-       dangling reference. */
     Py_XDECREF(*registry);
     Py_XDECREF(*module);
-    Py_XDECREF(*filename);
+    Py_DECREF(*filename);
     return 0;
 }
 
