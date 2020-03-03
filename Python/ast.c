@@ -1692,79 +1692,15 @@ ast_for_arguments(struct compiling *c, const node *n)
 }
 
 static expr_ty
-ast_for_dotted_name(struct compiling *c, const node *n)
-{
-    expr_ty e;
-    identifier id;
-    int lineno, col_offset;
-    int i;
-    node *ch;
-
-    REQ(n, dotted_name);
-
-    lineno = LINENO(n);
-    col_offset = n->n_col_offset;
-
-    ch = CHILD(n, 0);
-    id = NEW_IDENTIFIER(ch);
-    if (!id)
-        return NULL;
-    e = Name(id, Load, lineno, col_offset,
-             ch->n_end_lineno, ch->n_end_col_offset, c->c_arena);
-    if (!e)
-        return NULL;
-
-    for (i = 2; i < NCH(n); i+=2) {
-        const node *child = CHILD(n, i);
-        id = NEW_IDENTIFIER(child);
-        if (!id)
-            return NULL;
-        e = Attribute(e, id, Load, lineno, col_offset,
-                      child->n_end_lineno, child->n_end_col_offset, c->c_arena);
-        if (!e)
-            return NULL;
-    }
-
-    return e;
-}
-
-static expr_ty
 ast_for_decorator(struct compiling *c, const node *n)
 {
-    /* decorator: '@' dotted_name [ '(' [arglist] ')' ] NEWLINE */
-    expr_ty d = NULL;
-    expr_ty name_expr;
+    /* decorator: '@' namedexpr_test NEWLINE */
 
     REQ(n, decorator);
     REQ(CHILD(n, 0), AT);
-    REQ(RCHILD(n, -1), NEWLINE);
-
-    name_expr = ast_for_dotted_name(c, CHILD(n, 1));
-    if (!name_expr)
-        return NULL;
-
-    if (NCH(n) == 3) { /* No arguments */
-        d = name_expr;
-        name_expr = NULL;
-    }
-    else if (NCH(n) == 5) { /* Call with no arguments */
-        d = Call(name_expr, NULL, NULL,
-                 name_expr->lineno, name_expr->col_offset,
-                 CHILD(n, 3)->n_end_lineno, CHILD(n, 3)->n_end_col_offset,
-                 c->c_arena);
-        if (!d)
-            return NULL;
-        name_expr = NULL;
-    }
-    else {
-        d = ast_for_call(c, CHILD(n, 3), name_expr,
-                         CHILD(n, 1), CHILD(n, 2), CHILD(n, 4));
-        if (!d)
-            return NULL;
-        name_expr = NULL;
-    }
-
-    return d;
+    REQ(CHILD(n, 2), NEWLINE);
+    
+    return ast_for_expr(c, CHILD(n, 1));
 }
 
 static asdl_seq*
