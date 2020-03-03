@@ -1,0 +1,2 @@
+Remove the Azure Pipelines integration: now superseded by GitHub actions
+which already runs the same jobs on Azure as well.
