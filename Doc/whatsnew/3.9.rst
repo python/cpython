@@ -90,6 +90,10 @@ the :mod:`collections` module, like ``collections.Mapping`` alias to
 :class:`collections.abc.Mapping`, are kept for one last release for backward
 compatibility. They will be removed from Python 3.10.
 
+More generally, try to run your tests in the :ref:`Python Development Mode
+<devmode>` which helps to prepare your code to make it compatiblity with the
+next Python version.
+
 
 New Features
 ============
