@@ -52,7 +52,7 @@ except ImportError:
                 elif os.WIFEXITED(status):
                     self.returncode = os.WEXITSTATUS(status)
                 elif os.WIFSTOPPED(status):
-                    self.returncode = -os.WSTOPSIG(sts)
+                    self.returncode = -os.WSTOPSIG(status)
                 else:
                     # Should never happen
                     raise Exception("Unknown child exit status!")
@@ -364,16 +364,14 @@ class PyBuildExt(build_ext):
     def add(self, ext):
         self.extensions.append(ext)
 
-    def build_extensions(self):
+    def set_srcdir(self):
         self.srcdir = sysconfig.get_config_var('srcdir')
         if not self.srcdir:
             # Maybe running on Windows but not using CYGWIN?
             raise ValueError("No source directory; cannot proceed.")
         self.srcdir = os.path.abspath(self.srcdir)
 
-        # Detect which modules should be compiled
-        self.detect_modules()
-
+    def remove_disabled(self):
         # Remove modules that are present on the disabled list
         extensions = [ext for ext in self.extensions
                       if ext.name not in DISABLED_MODULE_LIST]
@@ -384,6 +382,7 @@ class PyBuildExt(build_ext):
             extensions.append(ctypes)
         self.extensions = extensions
 
+    def update_sources_depends(self):
         # Fix up the autodetected modules, prefixing all the source files
         # with Modules/.
         moddirlist = [os.path.join(self.srcdir, 'Modules')]
@@ -396,14 +395,6 @@ class PyBuildExt(build_ext):
         headers = [sysconfig.get_config_h_filename()]
         headers += glob(os.path.join(sysconfig.get_path('include'), "*.h"))
 
-        # The sysconfig variables built by makesetup that list the already
-        # built modules and the disabled modules as configured by the Setup
-        # files.
-        sysconf_built = sysconfig.get_config_var('MODBUILT_NAMES').split()
-        sysconf_dis = sysconfig.get_config_var('MODDISABLED_NAMES').split()
-
-        mods_built = []
-        mods_disabled = []
         for ext in self.extensions:
             ext.sources = [ find_module_file(filename, moddirlist)
                             for filename in ext.sources ]
@@ -415,6 +406,16 @@ class PyBuildExt(build_ext):
             # re-compile extensions if a header file has been changed
             ext.depends.extend(headers)
 
+    def remove_configured_extensions(self):
+        # The sysconfig variables built by makesetup that list the already
+        # built modules and the disabled modules as configured by the Setup
+        # files.
+        sysconf_built = sysconfig.get_config_var('MODBUILT_NAMES').split()
+        sysconf_dis = sysconfig.get_config_var('MODDISABLED_NAMES').split()
+
+        mods_built = []
+        mods_disabled = []
+        for ext in self.extensions:
             # If a module has already been built or has been disabled in the
             # Setup files, don't build it here.
             if ext.name in sysconf_built:
@@ -432,6 +433,9 @@ class PyBuildExt(build_ext):
                 if os.path.exists(fullpath):
                     os.unlink(fullpath)
 
+        return (mods_built, mods_disabled)
+
+    def set_compiler_executables(self):
         # When you run "make CC=altcc" or something similar, you really want
         # those environment variables passed into the setup.py phase.  Here's
         # a small set of useful ones.
@@ -444,6 +448,18 @@ class PyBuildExt(build_ext):
             args['compiler_so'] = compiler + ' ' + ccshared + ' ' + cflags
         self.compiler.set_executables(**args)
 
+    def build_extensions(self):
+        self.set_srcdir()
+
+        # Detect which modules should be compiled
+        self.detect_modules()
+
+        self.remove_disabled()
+
+        self.update_sources_depends()
+        mods_built, mods_disabled = self.remove_configured_extensions()
+        self.set_compiler_executables()
+
         build_ext.build_extensions(self)
 
         if SUBPROCESS_BOOTSTRAP:
@@ -454,6 +470,9 @@ class PyBuildExt(build_ext):
         for ext in self.extensions:
             self.check_extension_import(ext)
 
+        self.summary(mods_built, mods_disabled)
+
+    def summary(self, mods_built, mods_disabled):
         longest = max([len(e.name) for e in self.extensions], default=0)
         if self.failed or self.failed_on_import:
             all_failed = self.failed + self.failed_on_import
