@@ -5335,7 +5335,7 @@ PyType_Ready(PyTypeObject *type)
        NULL when type is &PyBaseObject_Type, and we know its ob_type is
        not NULL (it's initialized to &PyType_Type).      But coverity doesn't
        know that. */
-    if (Py_TYPE(type) == NULL && base != NULL) {
+    if (Py_IS_TYPE(type, NULL) && base != NULL) {
         Py_SET_TYPE(type, Py_TYPE(base));
     }
 
@@ -6645,7 +6645,7 @@ slot_tp_getattr_hook(PyObject *self, PyObject *name)
        needed, with call_attribute. */
     getattribute = _PyType_LookupId(tp, &PyId___getattribute__);
     if (getattribute == NULL ||
-        (Py_TYPE(getattribute) == &PyWrapperDescr_Type &&
+        (Py_IS_TYPE(getattribute, &PyWrapperDescr_Type) &&
          ((PyWrapperDescrObject *)getattribute)->d_wrapped ==
          (void *)PyObject_GenericGetAttr))
         res = PyObject_GenericGetAttr(self, name);
@@ -7352,7 +7352,7 @@ update_one_slot(PyTypeObject *type, slotdef *p)
             }
             continue;
         }
-        if (Py_TYPE(descr) == &PyWrapperDescr_Type &&
+        if (Py_IS_TYPE(descr, &PyWrapperDescr_Type) &&
             ((PyWrapperDescrObject *)descr)->d_base->name_strobj == p->name_strobj) {
             void **tptr = resolve_slotdups(type, p->name_strobj);
             if (tptr == NULL || tptr == ptr)
@@ -7375,7 +7375,7 @@ update_one_slot(PyTypeObject *type, slotdef *p)
                 use_generic = 1;
             }
         }
-        else if (Py_TYPE(descr) == &PyCFunction_Type &&
+        else if (Py_IS_TYPE(descr, &PyCFunction_Type) &&
                  PyCFunction_GET_FUNCTION(descr) ==
                  (PyCFunction)(void(*)(void))tp_new_wrapper &&
                  ptr == (void**)&type->tp_new)

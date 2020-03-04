@@ -237,7 +237,7 @@ tupledealloc(PyTupleObject *op)
 #if PyTuple_MAXSAVESIZE > 0
         if (len < PyTuple_MAXSAVESIZE &&
             numfree[len] < PyTuple_MAXFREELIST &&
-            Py_TYPE(op) == &PyTuple_Type)
+            Py_IS_TYPE(op, &PyTuple_Type))
         {
             op->ob_item[0] = (PyObject *) free_list[len];
             numfree[len]++;
