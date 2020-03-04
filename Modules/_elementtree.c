@@ -2366,7 +2366,7 @@ typedef struct {
     char insert_pis;
 } TreeBuilderObject;
 
-#define TreeBuilder_CheckExact(op) (Py_TYPE(op) == &TreeBuilder_Type)
+#define TreeBuilder_CheckExact(op) Py_IS_TYPE((op), &TreeBuilder_Type)
 
 /* -------------------------------------------------------------------- */
 /* constructor and destructor */
