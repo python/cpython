@@ -1,5 +1,0 @@
-The original fix for bpo-27657, "Fix urlparse() with numeric paths" (GH-16839)
-included in 3.7.6, inadvertently introduced a behavior change that broke
-several third-party packages relying on the original undefined parsing
-behavior. The change is reverted in 3.7.7, restoring the behavior of 3.7.5 and
-earlier releases.

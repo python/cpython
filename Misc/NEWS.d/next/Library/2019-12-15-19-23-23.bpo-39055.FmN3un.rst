@@ -1,2 +1,0 @@
-:func:`base64.b64decode` with ``validate=True`` raises now a binascii.Error
-if the input ends with a single ``\n``.

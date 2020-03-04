@@ -1,1 +1,0 @@
-Fixed race condition in lazy imports in :mod:`tarfile`.

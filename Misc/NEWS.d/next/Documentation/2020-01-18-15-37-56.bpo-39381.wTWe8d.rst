@@ -1,2 +1,0 @@
-Mention in docs that :func:`asyncio.get_event_loop` implicitly creates new
-event loop only if called from the main thread.

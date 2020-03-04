@@ -1,1 +1,0 @@
-IDLE Settings Cancel button now cancels pending changes
