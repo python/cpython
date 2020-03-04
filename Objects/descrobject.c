@@ -1178,7 +1178,7 @@ typedef struct {
     PyObject *self;
 } wrapperobject;
 
-#define Wrapper_Check(v) (Py_TYPE(v) == &_PyMethodWrapper_Type)
+#define Wrapper_Check(v) Py_IS_TYPE(v, &_PyMethodWrapper_Type)
 
 static void
 wrapper_dealloc(wrapperobject *wp)
@@ -1628,7 +1628,7 @@ property_init_impl(propertyobject *self, PyObject *fget, PyObject *fset,
         if (rc <= 0) {
             return rc;
         }
-        if (Py_TYPE(self) == &PyProperty_Type) {
+        if (Py_IS_TYPE(self, &PyProperty_Type)) {
             Py_XSETREF(self->prop_doc, get_doc);
         }
         else {
