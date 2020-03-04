@@ -1304,6 +1304,71 @@ _channel_destroy(_channels *channels, int64_t id)
 }
 
 static int
+_channel_send_buffer(_channels *channels, int64_t id, PyObject *obj)
+{
+    const char *s = NULL;
+    Py_buffer view = {NULL, NULL};
+    if (PyObject_GetBuffer(obj, &view, PyBUF_SIMPLE) != 0){
+        return -1;
+    }
+
+    s = view.buf;
+    if (s == NULL) {
+        PyBuffer_Release(&view);
+        return -1;
+    }
+
+    PyInterpreterState *interp = _get_current();
+    if (interp == NULL) {
+        PyBuffer_Release(&view);
+        return -1;
+    }
+
+    // Look up the channel.
+    PyThread_type_lock mutex = NULL;
+    _PyChannelState *chan = _channels_lookup(channels, id, &mutex);
+    if (chan == NULL) {
+        PyBuffer_Release(&view);
+        return -1;
+    }
+    // Past this point we are responsible for releasing the mutex.
+
+    if (chan->closing != NULL) {
+        PyErr_Format(ChannelClosedError, "channel %" PRId64 " closed", id);
+        PyThread_release_lock(mutex);
+        PyBuffer_Release(&view);
+        return -1;
+    }
+
+    // Convert the buffer to cross-interpreter data.
+    _PyCrossInterpreterData *data = PyMem_NEW(_PyCrossInterpreterData, 1);
+    if (data == NULL) {
+        PyThread_release_lock(mutex);
+        PyBuffer_Release(&view);
+        return -1;
+    }
+    if (_PyObject_GetCrossInterpreterData((PyObject *)s, data) != 0) {
+        PyThread_release_lock(mutex);
+        PyMem_Free(data);
+        PyBuffer_Release(&view);
+        return -1;
+    }
+
+    // Add the data to the channel.
+    int res = _channel_add(chan, PyInterpreterState_GetID(interp), data);
+    PyThread_release_lock(mutex);
+    if (res != 0) {
+        _PyCrossInterpreterData_Release(data);
+        PyMem_Free(data);
+        PyBuffer_Release(&view);
+        return -1;
+    }
+    
+    PyBuffer_Release(&view);
+    return 0;
+}
+
+static int
 _channel_send(_channels *channels, int64_t id, PyObject *obj)
 {
     PyInterpreterState *interp = _get_current();
@@ -2463,6 +2528,32 @@ PyDoc_STRVAR(channel_send_doc,
 Add the object's data to the channel's queue.");
 
 static PyObject *
+channel_send_buffer(PyObject *self, PyObject *args, PyObject *kwds)
+{
+    static char *kwlist[] = {"cid", "obj", NULL};
+    PyObject *id;
+    PyObject *obj;
+    if (!PyArg_ParseTupleAndKeywords(args, kwds,
+                                     "OO:channel_send_buffer", kwlist, &id, &obj)) {
+        return NULL;
+    }
+    int64_t cid = _Py_CoerceID(id);
+    if (cid < 0) {
+        return NULL;
+    }
+
+    if (_channel_send_buffer(&_globals.channels, cid, obj) != 0) {
+        return NULL;
+    }
+    Py_RETURN_NONE;
+}
+
+PyDoc_STRVAR(channel_send_buffer_doc,
+"channel_send_buffer(cid, obj)\n\
+\n\
+Add the object's buffer to the channel's queue.");
+
+static PyObject *
 channel_recv(PyObject *self, PyObject *args, PyObject *kwds)
 {
     static char *kwlist[] = {"cid", NULL};
@@ -2609,6 +2700,8 @@ static PyMethodDef module_functions[] = {
      METH_VARARGS | METH_KEYWORDS, channel_list_interpreters_doc},
     {"channel_send",              (PyCFunction)(void(*)(void))channel_send,
      METH_VARARGS | METH_KEYWORDS, channel_send_doc},
+     {"channel_send_buffer",              (PyCFunction)(void(*)(void))channel_send_buffer,
+     METH_VARARGS | METH_KEYWORDS, channel_send_buffer_doc},
     {"channel_recv",              (PyCFunction)(void(*)(void))channel_recv,
      METH_VARARGS | METH_KEYWORDS, channel_recv_doc},
     {"channel_close",             (PyCFunction)(void(*)(void))channel_close,
