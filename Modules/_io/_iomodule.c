@@ -138,6 +138,7 @@ Character Meaning
 'b'       binary mode
 't'       text mode (default)
 '+'       open a disk file for updating (reading and writing)
+'U'       universal newline mode (deprecated)
 ========= ===============================================================
 
 The default mode is 'rt' (open for reading text). For binary random
@@ -152,6 +153,10 @@ bytes objects without any decoding. In text mode (the default, or when
 't' is appended to the mode argument), the contents of the file are
 returned as strings, the bytes having been first decoded using a
 platform-dependent encoding or using the specified encoding if given.
+
+'U' mode is deprecated and will raise an exception in future versions
+of Python.  It has no effect in Python 3.  Use newline to control
+universal newlines mode.
 
 buffering is an optional integer used to set the buffering policy.
 Pass 0 to switch buffering off (only allowed in binary mode), 1 to select
@@ -228,12 +233,12 @@ static PyObject *
 _io_open_impl(PyObject *module, PyObject *file, const char *mode,
               int buffering, const char *encoding, const char *errors,
               const char *newline, int closefd, PyObject *opener)
-/*[clinic end generated code: output=aefafc4ce2b46dc0 input=1543f4511d2356a5]*/
+/*[clinic end generated code: output=aefafc4ce2b46dc0 input=7295902222e6b311]*/
 {
     unsigned i;
 
     int creating = 0, reading = 0, writing = 0, appending = 0, updating = 0;
-    int text = 0, binary = 0;
+    int text = 0, binary = 0, universal = 0;
 
     char rawmode[6], *m;
     int line_buffering, is_number;
@@ -291,6 +296,10 @@ _io_open_impl(PyObject *module, PyObject *file, const char *mode,
         case 'b':
             binary = 1;
             break;
+        case 'U':
+            universal = 1;
+            reading = 1;
+            break;
         default:
             goto invalid_mode;
         }
@@ -313,6 +322,18 @@ _io_open_impl(PyObject *module, PyObject *file, const char *mode,
     *m = '\0';
 
     /* Parameters validation */
+    if (universal) {
+        if (creating || writing || appending || updating) {
+            PyErr_SetString(PyExc_ValueError,
+                            "mode U cannot be combined with 'x', 'w', 'a', or '+'");
+            goto error;
+        }
+        if (PyErr_WarnEx(PyExc_DeprecationWarning,
+                         "'U' mode is deprecated", 1) < 0)
+            goto error;
+        reading = 1;
+    }
+
     if (text && binary) {
         PyErr_SetString(PyExc_ValueError,
                         "can't have text and binary mode at once");
