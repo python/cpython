@@ -17,6 +17,11 @@ FTEXT, FHCRC, FEXTRA, FNAME, FCOMMENT = 1, 2, 4, 8, 16
 
 READ, WRITE = 1, 2
 
+_COMPRESS_LEVEL_FAST = 1
+_COMPRESS_LEVEL_TRADEOFF = 6
+_COMPRESS_LEVEL_BEST = 9
+
+
 def open(filename, mode="rb", compresslevel=9,
          encoding=None, errors=None, newline=None):
     """Open a gzip-compressed file in binary or text mode.
