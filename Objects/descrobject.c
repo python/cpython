@@ -1178,7 +1178,7 @@ typedef struct {
     PyObject *self;
 } wrapperobject;
 
-#define Wrapper_Check(v) Py_IS_TYPE((v), &_PyMethodWrapper_Type)
+#define Wrapper_Check(v) Py_IS_TYPE(v, &_PyMethodWrapper_Type)
 
 static void
 wrapper_dealloc(wrapperobject *wp)
