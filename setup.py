@@ -10,6 +10,61 @@ import sys
 import sysconfig
 from glob import glob
 
+
+try:
+    import subprocess
+    del subprocess
+    SUBPROCESS_BOOTSTRAP = False
+except ImportError:
+    SUBPROCESS_BOOTSTRAP = True
+
+    # Bootstrap Python: distutils.spawn uses subprocess to build C extensions,
+    # subprocess requires C extensions built by setup.py like _posixsubprocess.
+    #
+    # Basic subprocess implementation for POSIX (setup.py is not used on
+    # Windows) which only uses os functions. Only implement features required
+    # by distutils.spawn.
+    #
+    # It is dropped from sys.modules as soon as all C extension modules
+    # are built.
+    class Popen:
+        def __init__(self, cmd, env=None):
+            self._cmd = cmd
+            self._env = env
+            self.returncode = None
+
+        def wait(self):
+            pid = os.fork()
+            if pid == 0:
+                # Child process
+                try:
+                    if self._env is not None:
+                        os.execve(self._cmd[0], self._cmd, self._env)
+                    else:
+                        os.execv(self._cmd[0], self._cmd)
+                finally:
+                    os._exit(1)
+            else:
+                # Parent process
+                pid, status = os.waitpid(pid, 0)
+                if os.WIFSIGNALED(status):
+                    self.returncode = -os.WTERMSIG(status)
+                elif os.WIFEXITED(status):
+                    self.returncode = os.WEXITSTATUS(status)
+                elif os.WIFSTOPPED(status):
+                    self.returncode = -os.WSTOPSIG(sts)
+                else:
+                    # Should never happen
+                    raise Exception("Unknown child exit status!")
+
+            return self.returncode
+
+    mod = type(sys)('subprocess')
+    mod.Popen = Popen
+    sys.modules['subprocess'] = mod
+    del mod
+
+
 from distutils import log
 from distutils.command.build_ext import build_ext
 from distutils.command.build_scripts import build_scripts
@@ -390,6 +445,11 @@ class PyBuildExt(build_ext):
         self.compiler.set_executables(**args)
 
         build_ext.build_extensions(self)
+
+        if SUBPROCESS_BOOTSTRAP:
+            # Drop our custom subprocess module:
+            # use the newly built subprocess module
+            del sys.modules['subprocess']
 
         for ext in self.extensions:
             self.check_extension_import(ext)
