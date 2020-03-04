@@ -304,11 +304,18 @@ class UnparseTestCase(ASTTestCase):
     def test_docstrings(self):
         docstrings = (
             'this ends with double quote"',
-            'this includes a """triple quote"""'
+            'this includes a """triple quote"""',
+            '\r',
+            '\\r',
+            '\t',
+            '\\t',
+            '\n',
+            '\\n',
+            '\r\\r\t\\t\n\\n'
         )
         for docstring in docstrings:
             # check as Module docstrings for easy testing
-            self.check_ast_roundtrip(f"'{docstring}'")
+            self.check_ast_roundtrip(f"'''{docstring}'''")
 
 
 class CosmeticTestCase(ASTTestCase):
@@ -354,6 +361,7 @@ class CosmeticTestCase(ASTTestCase):
             empty newline"""''',
             '"""With some \t"""',
             '"""Foo "bar" baz """',
+            '"""\\r"""',
             '""""""',
         )
 

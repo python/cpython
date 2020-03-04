@@ -1006,6 +1006,7 @@ class _Unparser(NodeVisitor):
             # Preserve quotes in the docstring by escaping them
             value = value.replace("\\", "\\\\")
             value = value.replace('"""', '""\"')
+            value = value.replace("\r", "\\r")
             if value[-1] == '"':
                 value = value.replace('"', '\\"', -1)
 
