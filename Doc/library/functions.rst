@@ -1090,6 +1090,12 @@ are always available.  They are listed here in alphabetical order.
    first decoded using a platform-dependent encoding or using the specified
    *encoding* if given.
 
+   There is an additional mode character permitted, ``'U'``, which no longer
+   has any effect, and is considered deprecated. It previously enabled
+   :term:`universal newlines` in text mode, which became the default behaviour
+   in Python 3.0. Refer to the documentation of the
+   :ref:`newline <open-newline-parameter>` parameter for further details.
+
    .. note::
 
       Python doesn't depend on the underlying operating system's notion of text
@@ -1246,6 +1252,10 @@ are always available.  They are listed here in alphabetical order.
 
          * The file is now non-inheritable.
 
+   .. deprecated-removed:: 3.4 3.10
+
+      The ``'U'`` mode.
+
    .. versionchanged::
       3.5
 
@@ -1260,10 +1270,6 @@ are always available.  They are listed here in alphabetical order.
          * Support added to accept objects implementing :class:`os.PathLike`.
          * On Windows, opening a console buffer may return a subclass of
            :class:`io.RawIOBase` other than :class:`io.FileIO`.
-
-   .. versionchanged:: 3.9
-      The ``'U'`` mode has been removed.
-
 
 .. function:: ord(c)
 
