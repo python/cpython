@@ -744,11 +744,8 @@ PySSL_SetError(PySSLSocket *sslsock, int ret, const char *filename, int lineno)
 
     assert(ret <= 0);
     e = ERR_peek_last_error();
-    fprintf(stderr, "FIXME peek last error %ld\n", e);
-    fprintf(stderr, "FIXME ret %d\n", ret);
 
     if (sslsock->ssl != NULL) {
-            fprintf(stderr, "FIXME ->ssl is null, reading ->err\n");
         err = sslsock->err;
 
         switch (err.ssl) {
@@ -792,21 +789,14 @@ PySSL_SetError(PySSLSocket *sslsock, int ret, const char *filename, int lineno)
                     }
 #endif
                     if (err.c) {
-                            fprintf(stderr, "FIXME got err.c\n");
                         errno = err.c;
                         return PyErr_SetFromErrno(PyExc_OSError);
                     }
                     else {
-                            fprintf(stderr, "FIXME do not have err.c\n");
-                            p = PY_SSL_ERROR_EOF;
-                            type = PySSLEOFErrorObject;
-                            errstr = "EOF occurred in violation of protocol";
-                            
+                        p = PY_SSL_ERROR_EOF;
+                        type = PySSLEOFErrorObject;
+                        errstr = "EOF occurred in violation of protocol";
                     }
-                    // Py_INCREF(s);
-                    // s->errorhandler();
-                    // Py_DECREF(s);
-                    //return NULL;
                 } else { /* possible? */
                     p = PY_SSL_ERROR_SYSCALL;
                     type = PySSLSyscallErrorObject;
@@ -1048,7 +1038,6 @@ static PyObject *
 _ssl__SSLSocket_do_handshake_impl(PySSLSocket *self)
 /*[clinic end generated code: output=6c0898a8936548f6 input=d2d737de3df018c8]*/
 {
-        fprintf(stderr, "FIXME here\n");
     int ret;
     _PySSLError err;
     int sockstate, nonblocking;
@@ -1057,11 +1046,9 @@ _ssl__SSLSocket_do_handshake_impl(PySSLSocket *self)
     int has_timeout;
 
     if (sock) {
-        fprintf(stderr, "FIXME here 33\n");
         if (((PyObject*)sock) == Py_None) {
             _setSSLError("Underlying socket connection gone",
                          PY_SSL_ERROR_NO_SOCKET, __FILE__, __LINE__);
-        fprintf(stderr, "FIXME here 42\n");
             return NULL;
         }
         Py_INCREF(sock);
@@ -1082,9 +1069,7 @@ _ssl__SSLSocket_do_handshake_impl(PySSLSocket *self)
     do {
         PySSL_BEGIN_ALLOW_THREADS
         ret = SSL_do_handshake(self->ssl);
-        fprintf(stderr, "FIXME loop iter, ret now %d\n", ret);
         err = _PySSL_errno(ret < 1, self->ssl, ret);
-        fprintf(stderr, "FIXME loop iter, err.c %d err.ssl %d\n", err.c, err.ssl);
         PySSL_END_ALLOW_THREADS
         self->err = err;
 
@@ -1095,13 +1080,10 @@ _ssl__SSLSocket_do_handshake_impl(PySSLSocket *self)
             timeout = deadline - _PyTime_GetMonotonicClock();
 
         if (err.ssl == SSL_ERROR_WANT_READ) {
-        fprintf(stderr, "FIXME want read\n");
             sockstate = PySSL_select(sock, 0, timeout);
         } else if (err.ssl == SSL_ERROR_WANT_WRITE) {
-        fprintf(stderr, "FIXME want write\n");
             sockstate = PySSL_select(sock, 1, timeout);
         } else {
-        fprintf(stderr, "FIXME assume ok\n");
             sockstate = SOCKET_OPERATION_OK;
         }
 
@@ -1110,7 +1092,6 @@ _ssl__SSLSocket_do_handshake_impl(PySSLSocket *self)
                             ERRSTR("The handshake operation timed out"));
             goto error;
         } else if (sockstate == SOCKET_HAS_BEEN_CLOSED) {
-                fprintf(stderr, "FIXME -- does not happen\n");
             PyErr_SetString(PySSLErrorObject,
                             ERRSTR("Underlying socket has been closed."));
             goto error;
@@ -1123,7 +1104,6 @@ _ssl__SSLSocket_do_handshake_impl(PySSLSocket *self)
         }
     } while (err.ssl == SSL_ERROR_WANT_READ ||
              err.ssl == SSL_ERROR_WANT_WRITE);
-    fprintf(stderr, "FIXME loop done %d\n", ret);
     Py_XDECREF(sock);
     if (ret < 1)
         return PySSL_SetError(self, ret, __FILE__, __LINE__);
