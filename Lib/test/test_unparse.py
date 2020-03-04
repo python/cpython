@@ -363,6 +363,8 @@ class CosmeticTestCase(ASTTestCase):
             '"""Foo "bar" baz """',
             '"""\\r"""',
             '""""""',
+            '"""\'\'\'"""',
+            '"""\'\'\'\'\'\'"""',
         )
 
         for prefix in docstring_prefixes:
