@@ -318,10 +318,6 @@ PySymtable_BuildObject(mod_ty mod, PyObject *filename, PyFutureFeatures *future)
                         (stmt_ty)asdl_seq_GET(seq, i)))
                 goto error;
         break;
-    case Suite_kind:
-        PyErr_SetString(PyExc_RuntimeError,
-                        "this compiler does not handle Suites");
-        goto error;
     case FunctionType_kind:
         PyErr_SetString(PyExc_RuntimeError,
                         "this compiler does not handle FunctionTypes");
