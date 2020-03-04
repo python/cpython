@@ -1219,7 +1219,7 @@ static int ag_asend_freelist_free = 0;
                     Py_IS_TYPE(o, &_PyAsyncGenWrappedValue_Type)
 
 #define PyAsyncGenASend_CheckExact(o) \
-                    Py_IS_TYPE((o), &_PyAsyncGenASend_Type)
+                    Py_IS_TYPE(o, &_PyAsyncGenASend_Type)
 
 
 static int
