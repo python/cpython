@@ -261,8 +261,10 @@ and imaginary parts.
 Python fully supports mixed arithmetic: when a binary arithmetic operator has
 operands of different numeric types, the operand with the "narrower" type is
 widened to that of the other, where integer is narrower than floating point,
-which is narrower than complex.  Comparisons between numbers of mixed type use
-the same rule. [2]_ The constructors :func:`int`, :func:`float`, and
+which is narrower than complex. A comparison between numbers of different types
+behaves as though the exact values of those numbers were being compared. [2]_
+
+The constructors :func:`int`, :func:`float`, and
 :func:`complex` can be used to produce numbers of a specific type.
 
 All numeric types (except complex) support the following operations (for priorities of
@@ -1559,8 +1561,8 @@ expression support in the :mod:`re` module).
    list of possible encodings, see section :ref:`standard-encodings`.
 
    By default, the *errors* argument is not checked for best performances, but
-   only used at the first encoding error. Enable the development mode
-   (:option:`-X` ``dev`` option), or use a debug build, to check *errors*.
+   only used at the first encoding error. Enable the :ref:`Python Development
+   Mode <devmode>`, or use a debug build to check *errors*.
 
    .. versionchanged:: 3.1
       Support for keyword arguments added.
@@ -2416,7 +2418,7 @@ data and are closely related to string objects in a variety of other ways.
    A reverse conversion function exists to transform a bytes object into its
    hexadecimal representation.
 
-   .. method:: hex()
+   .. method:: hex([sep[, bytes_per_sep]])
 
       Return a string object containing two hexadecimal digits for each
       byte in the instance.
@@ -2510,7 +2512,7 @@ objects.
    A reverse conversion function exists to transform a bytearray object into its
    hexadecimal representation.
 
-   .. method:: hex()
+   .. method:: hex([sep[, bytes_per_sep]])
 
       Return a string object containing two hexadecimal digits for each
       byte in the instance.
@@ -2519,6 +2521,11 @@ objects.
       'f0f1f2'
 
       .. versionadded:: 3.5
+
+      .. versionchanged:: 3.8
+         Similar to :meth:`bytes.hex`, :meth:`bytearray.hex` now supports
+         optional *sep* and *bytes_per_sep* parameters to insert separators
+         between bytes in the hex output.
 
 Since bytearray objects are sequences of integers (akin to a list), for a
 bytearray object *b*, ``b[0]`` will be an integer, while ``b[0:1]`` will be
@@ -2596,8 +2603,8 @@ arbitrary binary data.
    list of possible encodings, see section :ref:`standard-encodings`.
 
    By default, the *errors* argument is not checked for best performances, but
-   only used at the first decoding error. Enable the development mode
-   (:option:`-X` ``dev`` option), or use a debug build, to check *errors*.
+   only used at the first decoding error. Enable the :ref:`Python Development
+   Mode <devmode>`, or use a debug build to check *errors*.
 
    .. note::
 
@@ -3673,7 +3680,7 @@ copying.
          in-memory Fortran order is preserved. For non-contiguous views, the
          data is converted to C first. *order=None* is the same as *order='C'*.
 
-   .. method:: hex()
+   .. method:: hex([sep[, bytes_per_sep]])
 
       Return a string object containing two hexadecimal digits for each
       byte in the buffer. ::
@@ -3683,6 +3690,11 @@ copying.
          '616263'
 
       .. versionadded:: 3.5
+
+      .. versionchanged:: 3.8
+         Similar to :meth:`bytes.hex`, :meth:`memoryview.hex` now supports
+         optional *sep* and *bytes_per_sep* parameters to insert separators
+         between bytes in the hex output.
 
    .. method:: tolist()
 
@@ -4351,6 +4363,8 @@ pairs within braces, for example: ``{'jack': 4098, 'sjoerd': 4127}`` or ``{4098:
       Return a reverse iterator over the keys of the dictionary. This is a
       shortcut for ``reversed(d.keys())``.
 
+      .. versionadded:: 3.8
+
    .. method:: setdefault(key[, default])
 
       If *key* is in the dictionary, return its value.  If not, insert *key*
@@ -4379,6 +4393,22 @@ pairs within braces, for example: ``{'jack': 4098, 'sjoerd': 4127}`` or ``{4098:
          >>> d = {'a': 1}
          >>> d.values() == d.values()
          False
+
+   .. describe:: d | other
+
+      Create a new dictionary with the merged keys and values of *d* and
+      *other*, which must both be dictionaries. The values of *other* take
+      priority when *d* and *other* share keys.
+
+      .. versionadded:: 3.9
+
+   .. describe:: d |= other
+
+      Update the dictionary *d* with keys and values from *other*, which may be
+      either a :term:`mapping` or an :term:`iterable` of key/value pairs. The
+      values of *other* take priority when *d* and *other* share keys.
+
+      .. versionadded:: 3.9
 
    Dictionaries compare equal if and only if they have the same ``(key,
    value)`` pairs (regardless of ordering). Order comparisons ('<', '<=', '>=', '>') raise

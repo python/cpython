@@ -746,6 +746,7 @@ append_ast_ext_slice(_PyUnicodeWriter *writer, slice_ty slice)
         APPEND_STR_IF(i > 0, ", ");
         APPEND(slice, (slice_ty)asdl_seq_GET(slice->v.ExtSlice.dims, i));
     }
+    APPEND_STR_IF(dims_count == 1, ",");
     return 0;
 }
 

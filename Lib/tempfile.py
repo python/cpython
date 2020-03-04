@@ -643,6 +643,18 @@ class SpooledTemporaryFile:
                                    'encoding': encoding, 'newline': newline,
                                    'dir': dir, 'errors': errors}
 
+    def __class_getitem__(cls, type):
+        """Provide minimal support for using this class as generic
+        (for example in type annotations).
+
+        See PEP 484 and PEP 560 for more details. For example,
+        `SpooledTemporaryFile[str]` is a valid expression at runtime (type
+        argument `str` indicates whether the file is open in bytes or text
+        mode). Note, no type checking happens at runtime, but a static type
+        checker can be used.
+        """
+        return cls
+
     def _check(self, file):
         if self._rolled: return
         max_size = self._max_size

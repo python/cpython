@@ -1447,7 +1447,7 @@ _PyUnicode_FormatAdvancedWriter(_PyUnicodeWriter *writer,
         return format_string_internal(obj, &format, writer);
     default:
         /* unknown */
-        unknown_presentation_type(format.type, obj->ob_type->tp_name);
+        unknown_presentation_type(format.type, Py_TYPE(obj)->tp_name);
         return -1;
     }
 }
@@ -1458,7 +1458,7 @@ _PyLong_FormatAdvancedWriter(_PyUnicodeWriter *writer,
                              PyObject *format_spec,
                              Py_ssize_t start, Py_ssize_t end)
 {
-    PyObject *tmp = NULL, *str = NULL;
+    PyObject *tmp = NULL;
     InternalFormatSpec format;
     int result = -1;
 
@@ -1505,13 +1505,12 @@ _PyLong_FormatAdvancedWriter(_PyUnicodeWriter *writer,
 
     default:
         /* unknown */
-        unknown_presentation_type(format.type, obj->ob_type->tp_name);
+        unknown_presentation_type(format.type, Py_TYPE(obj)->tp_name);
         goto done;
     }
 
 done:
     Py_XDECREF(tmp);
-    Py_XDECREF(str);
     return result;
 }
 
@@ -1549,7 +1548,7 @@ _PyFloat_FormatAdvancedWriter(_PyUnicodeWriter *writer,
 
     default:
         /* unknown */
-        unknown_presentation_type(format.type, obj->ob_type->tp_name);
+        unknown_presentation_type(format.type, Py_TYPE(obj)->tp_name);
         return -1;
     }
 }
@@ -1587,7 +1586,7 @@ _PyComplex_FormatAdvancedWriter(_PyUnicodeWriter *writer,
 
     default:
         /* unknown */
-        unknown_presentation_type(format.type, obj->ob_type->tp_name);
+        unknown_presentation_type(format.type, Py_TYPE(obj)->tp_name);
         return -1;
     }
 }

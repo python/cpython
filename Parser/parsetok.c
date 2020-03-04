@@ -207,24 +207,6 @@ PyParser_ParseFileFlagsEx(FILE *fp, const char *filename,
     return n;
 }
 
-#ifdef PY_PARSER_REQUIRES_FUTURE_KEYWORD
-#if 0
-static const char with_msg[] =
-"%s:%d: Warning: 'with' will become a reserved keyword in Python 2.6\n";
-
-static const char as_msg[] =
-"%s:%d: Warning: 'as' will become a reserved keyword in Python 2.6\n";
-
-static void
-warn(const char *msg, const char *filename, int lineno)
-{
-    if (filename == NULL)
-        filename = "<string>";
-    PySys_WriteStderr(msg, filename, lineno);
-}
-#endif
-#endif
-
 /* Parse input coming from the given tokenizer structure.
    Return error code. */
 
@@ -246,6 +228,7 @@ parsetok(struct tok_state *tok, grammar *g, int start, perrdetail *err_ret,
 
     if ((ps = PyParser_New(g, start)) == NULL) {
         err_ret->error = E_NOMEM;
+        growable_comment_array_deallocate(&type_ignores);
         PyTokenizer_Free(tok);
         return NULL;
     }
@@ -257,7 +240,7 @@ parsetok(struct tok_state *tok, grammar *g, int start, perrdetail *err_ret,
 #endif
 
     for (;;) {
-        char *a, *b;
+        const char *a, *b;
         int type;
         size_t len;
         char *str;
@@ -388,7 +371,7 @@ parsetok(struct tok_state *tok, grammar *g, int start, perrdetail *err_ret,
            buffer after parsing.  Trailing whitespace and comments
            are OK.  */
         if (err_ret->error == E_DONE && start == single_input) {
-            char *cur = tok->cur;
+            const char *cur = tok->cur;
             char c = *tok->cur;
 
             for (;;) {

@@ -1292,6 +1292,7 @@ class PyShell(OutputWindow):
             self.text.insert("end-1c", "\n")
         self.text.mark_set("iomark", "end-1c")
         self.set_line_and_column()
+        self.ctip.remove_calltip_window()
 
     def write(self, s, tags=()):
         try:

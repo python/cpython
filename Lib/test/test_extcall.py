@@ -252,12 +252,12 @@ What about willful misconduct?
     >>> h(1, *h)
     Traceback (most recent call last):
       ...
-    TypeError: test.test_extcall.h() argument after * must be an iterable, not function
+    TypeError: Value after * must be an iterable, not function
 
     >>> h(*[1], *h)
     Traceback (most recent call last):
       ...
-    TypeError: test.test_extcall.h() argument after * must be an iterable, not function
+    TypeError: Value after * must be an iterable, not function
 
     >>> dir(*h)
     Traceback (most recent call last):

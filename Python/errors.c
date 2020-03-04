@@ -24,10 +24,10 @@ extern char *strerror(int);
 extern "C" {
 #endif
 
+_Py_IDENTIFIER(__module__);
 _Py_IDENTIFIER(builtins);
 _Py_IDENTIFIER(stderr);
 _Py_IDENTIFIER(flush);
-
 
 /* Forward declarations */
 static PyObject *
@@ -93,7 +93,7 @@ _PyErr_CreateException(PyObject *exception, PyObject *value)
         return PyObject_Call(exception, value, NULL);
     }
     else {
-        return _PyObject_CallOneArg(exception, value);
+        return PyObject_CallOneArg(exception, value);
     }
 }
 
@@ -433,19 +433,25 @@ PyErr_Clear(void)
 
 
 void
-PyErr_GetExcInfo(PyObject **p_type, PyObject **p_value, PyObject **p_traceback)
+_PyErr_GetExcInfo(PyThreadState *tstate,
+                  PyObject **p_type, PyObject **p_value, PyObject **p_traceback)
 {
-    PyThreadState *tstate = _PyThreadState_GET();
-
     _PyErr_StackItem *exc_info = _PyErr_GetTopmostException(tstate);
     *p_type = exc_info->exc_type;
     *p_value = exc_info->exc_value;
     *p_traceback = exc_info->exc_traceback;
 
-
     Py_XINCREF(*p_type);
     Py_XINCREF(*p_value);
     Py_XINCREF(*p_traceback);
+}
+
+
+void
+PyErr_GetExcInfo(PyObject **p_type, PyObject **p_value, PyObject **p_traceback)
+{
+    PyThreadState *tstate = _PyThreadState_GET();
+    _PyErr_GetExcInfo(tstate, p_type, p_value, p_traceback);
 }
 
 void
@@ -608,7 +614,7 @@ PyErr_SetFromErrnoWithFilenameObjects(PyObject *exc, PyObject *filenameObject, P
 
 #ifndef MS_WINDOWS
     if (i != 0) {
-        char *s = strerror(i);
+        const char *s = strerror(i);
         message = PyUnicode_DecodeLocale(s, "surrogateescape");
     }
     else {
@@ -901,7 +907,7 @@ PyErr_SetImportErrorSubclass(PyObject *exception, PyObject *msg,
         goto done;
     }
 
-    error = _PyObject_FastCallDict(exception, &msg, 1, kwargs);
+    error = PyObject_VectorcallDict(exception, &msg, 1, kwargs);
     if (error != NULL) {
         _PyErr_SetObject(tstate, (PyObject *)Py_TYPE(error), error);
         Py_DECREF(error);
@@ -1003,7 +1009,6 @@ PyObject *
 PyErr_NewException(const char *name, PyObject *base, PyObject *dict)
 {
     PyThreadState *tstate = _PyThreadState_GET();
-    _Py_IDENTIFIER(__module__);
     PyObject *modulename = NULL;
     PyObject *classname = NULL;
     PyObject *mydict = NULL;
@@ -1229,7 +1234,6 @@ write_unraisable_exc_file(PyThreadState *tstate, PyObject *exc_type,
         }
     }
 
-    _Py_IDENTIFIER(__module__);
     PyObject *moduleName = _PyObject_GetAttrId(exc_type, &PyId___module__);
     if (moduleName == NULL || !PyUnicode_Check(moduleName)) {
         Py_XDECREF(moduleName);
@@ -1418,7 +1422,7 @@ _PyErr_WriteUnraisableMsg(const char *err_msg_str, PyObject *obj)
         goto default_hook;
     }
 
-    PyObject *res = _PyObject_CallOneArg(hook, hook_args);
+    PyObject *res = PyObject_CallOneArg(hook, hook_args);
     Py_DECREF(hook_args);
     if (res != NULL) {
         Py_DECREF(res);

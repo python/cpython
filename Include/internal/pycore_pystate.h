@@ -102,6 +102,7 @@ struct _is {
        Later, it is set to a non-NULL string by _PyUnicode_InitEncodings(). */
     struct {
         char *encoding;   /* Filesystem encoding (encoded to UTF-8) */
+        int utf8;         /* encoding=="utf-8"? */
         char *errors;     /* Filesystem errors (encoded to UTF-8) */
         _Py_error_handler error_handler;
     } fs_codec;

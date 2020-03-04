@@ -195,11 +195,6 @@ typedef int pid_t;
 #define Py_IS_FINITE(X) _finite(X)
 #define copysign _copysign
 
-/* Side by Side assemblies supported in VS 2005 and VS 2008 but not 2010*/
-#if _MSC_VER >= 1400 && _MSC_VER < 1600
-#define HAVE_SXS 1
-#endif
-
 /* define some ANSI types that are not defined in earlier Win headers */
 #if _MSC_VER >= 1200
 /* This file only exists in VC 6.0 or higher */
@@ -469,6 +464,10 @@ Py_NO_ENABLE_SHARED to find out.  Also support MS_NO_COREDLL for b/w compat */
 /* Define if  you can safely include both <sys/select.h> and <sys/time.h>
    (which you can't on SCO ODT 3.0). */
 /* #undef SYS_SELECT_WITH_SYS_TIME */
+
+/* Define if you want build the _decimal module using a coroutine-local rather
+   than a thread-local context */
+#define WITH_DECIMAL_CONTEXTVAR 1
 
 /* Define if you want documentation strings in extension modules */
 #define WITH_DOC_STRINGS 1

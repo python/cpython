@@ -2924,7 +2924,7 @@ _curses_getwin(PyObject *module, PyObject *file)
     if (!PyBytes_Check(data)) {
         PyErr_Format(PyExc_TypeError,
                      "f.read() returned %.100s instead of bytes",
-                     data->ob_type->tp_name);
+                     Py_TYPE(data)->tp_name);
         Py_DECREF(data);
         goto error;
     }
@@ -3255,6 +3255,9 @@ _curses_setupterm_impl(PyObject *module, const char *term, int fd)
     Py_RETURN_NONE;
 }
 
+#if defined(NCURSES_EXT_FUNCS) && NCURSES_EXT_FUNCS >= 20081102
+// https://invisible-island.net/ncurses/NEWS.html#index-t20080119
+
 /*[clinic input]
 _curses.get_escdelay
 
@@ -3334,6 +3337,7 @@ _curses_set_tabsize_impl(PyObject *module, int size)
 
     return PyCursesCheckERR(set_tabsize(size), "set_tabsize");
 }
+#endif
 
 /*[clinic input]
 _curses.intrflush
@@ -4508,8 +4512,10 @@ static PyMethodDef PyCurses_methods[] = {
     _CURSES_RESIZETERM_METHODDEF
     _CURSES_RESIZE_TERM_METHODDEF
     _CURSES_SAVETTY_METHODDEF
+#if defined(NCURSES_EXT_FUNCS) && NCURSES_EXT_FUNCS >= 20081102
     _CURSES_GET_ESCDELAY_METHODDEF
     _CURSES_SET_ESCDELAY_METHODDEF
+#endif
     _CURSES_GET_TABSIZE_METHODDEF
     _CURSES_SET_TABSIZE_METHODDEF
     _CURSES_SETSYX_METHODDEF

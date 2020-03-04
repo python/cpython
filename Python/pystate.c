@@ -606,13 +606,12 @@ new_threadstate(PyInterpreterState *interp, int init)
     tstate->context = NULL;
     tstate->context_ver = 1;
 
-    tstate->id = ++interp->tstate_next_unique_id;
-
     if (init) {
         _PyThreadState_Init(tstate);
     }
 
     HEAD_LOCK(runtime);
+    tstate->id = ++interp->tstate_next_unique_id;
     tstate->prev = NULL;
     tstate->next = interp->tstate_head;
     if (tstate->next)
@@ -806,6 +805,10 @@ PyThreadState_Clear(PyThreadState *tstate)
     Py_CLEAR(tstate->async_gen_finalizer);
 
     Py_CLEAR(tstate->context);
+
+    if (tstate->on_delete != NULL) {
+        tstate->on_delete(tstate->on_delete_data);
+    }
 }
 
 
@@ -830,9 +833,7 @@ tstate_delete_common(PyThreadState *tstate,
     if (tstate->next)
         tstate->next->prev = tstate->prev;
     HEAD_UNLOCK(runtime);
-    if (tstate->on_delete != NULL) {
-        tstate->on_delete(tstate->on_delete_data);
-    }
+
     PyMem_RawFree(tstate);
 
     if (gilstate->autoInterpreterState &&
