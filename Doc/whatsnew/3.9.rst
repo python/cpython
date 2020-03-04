@@ -85,7 +85,7 @@ It has been decided to keep a few backward compatibility layers for one last
 release, to give more time to Python projects maintainers to organize the
 removal of the Python 2 support and add support for Python 3.9.
 
-Aliases to ref:`Abstract Base Classes <collections-abstract-base-classes>` in
+Aliases to :ref:`Abstract Base Classes <collections-abstract-base-classes>` in
 the :mod:`collections` module, like ``collections.Mapping`` alias to
 :class:`collections.abc.Mapping`, are kept for one last release for backward
 compatibility. They will be removed from Python 3.10.
