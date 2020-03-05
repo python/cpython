@@ -13,10 +13,6 @@ Usage::
 import argparse
 import json
 import sys
-import signal
-
-
-signal.signal(signal.SIGPIPE, signal.SIG_DFL)
 
 
 def main():
@@ -76,4 +72,7 @@ def main():
 
 
 if __name__ == '__main__':
-    main()
+    try:
+        main()
+    except BrokenPipeError as e:
+        sys.exit(e.errno)
