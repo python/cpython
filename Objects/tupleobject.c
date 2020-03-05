@@ -881,7 +881,7 @@ _PyTuple_Resize(PyObject **pv, Py_ssize_t newsize)
     Py_ssize_t oldsize;
 
     v = (PyTupleObject *) *pv;
-    if (v == NULL || Py_TYPE(v) != &PyTuple_Type ||
+    if (v == NULL || !Py_IS_TYPE(v, &PyTuple_Type) ||
         (Py_SIZE(v) != 0 && Py_REFCNT(v) != 1)) {
         *pv = 0;
         Py_XDECREF(v);
