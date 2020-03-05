@@ -1,8 +1,11 @@
-import interpreters
-import _interpreters
+import contextlib
 import os
+import threading
 from textwrap import dedent
 import unittest
+
+import interpreters
+import _interpreters
 
 def _captured_script(script):
     r, w = os.pipe()
@@ -16,38 +19,147 @@ def _captured_script(script):
     return wrapped, open(r)
 
 def clean_up_interpreters():
-    for id in _interpreters.list_all():
-        if id == 0:  # main
+    for interp in interpreters.list_all():
+        if interp.id == 0:  # main
             continue
         try:
-            _interpreters.destroy(id)
+            interp.destroy()
         except RuntimeError:
             pass  # already destroyed
 
 def _run_output(interp, request, shared=None):
     script, rpipe = _captured_script(request)
     with rpipe:
-        interpreters.run_string(interp, script, shared)
+        interp.run(script)
         return rpipe.read()
+
+@contextlib.contextmanager
+def _running(interp):
+    r, w = os.pipe()
+    def run():
+        interp.run(dedent(f"""
+            # wait for "signal"
+            with open({r}) as rpipe:
+                rpipe.read()
+            """))
+
+    t = threading.Thread(target=run)
+    t.start()
+
+    yield
+
+    with open(w, 'w') as spipe:
+        spipe.write('done')
+    t.join()
+
 
 class TestBase(unittest.TestCase):
 
     def tearDown(self):
         clean_up_interpreters()
 
+
 class CreateTests(TestBase):
 
-    def test_create(self):
+    def test_in_main(self):
         interp = interpreters.create()
         lst = interpreters.list_all()
         self.assertEqual(interp.id, lst[1].id)
 
+    def test_in_thread(self):
+        lock = threading.Lock()
+        id = None
+        interp = interpreters.create()
+        lst = interpreters.list_all()
+        def f():
+            nonlocal id
+            id = interp.id
+            lock.acquire()
+            lock.release()
+
+        t = threading.Thread(target=f)
+        with lock:
+            t.start()
+        t.join()
+        self.assertEqual(interp.id, lst[1].id)
+
+    def test_in_subinterpreter(self):
+        main, = interpreters.list_all()
+        interp = interpreters.create()
+        out = _run_output(interp, dedent("""
+            import interpreters
+            interp = interpreters.create()
+            print(interp)
+            """))
+        interp2 = out.strip()
+
+        self.assertEqual(len(set(interpreters.list_all())), len({main, interp, interp2}))
+
+    def test_in_threaded_subinterpreter(self):
+        main, = interpreters.list_all()
+        interp = interpreters.create()
+        interp2 = None
+        def f():
+            nonlocal interp2
+            out = _run_output(interp, dedent("""
+                import interpreters
+                interp = interpreters.create()
+                print(interp)
+                """))
+            interp2 = int(out.strip())
+ 
+        t = threading.Thread(target=f)
+        t.start()
+        t.join()
+ 
+        self.assertEqual(len(set(interpreters.list_all())), len({main, interp, interp2}))
+
+    def test_after_destroy_all(self):
+        before = set(interpreters.list_all())
+        # Create 3 subinterpreters.
+        interp_lst = []
+        for _ in range(3):
+            interps = interpreters.create()
+            interp_lst.append(interps)
+        # Now destroy them.
+        for interp in interp_lst:
+            interp.destroy()
+        # Finally, create another.
+        interp = interpreters.create()
+        self.assertEqual(len(set(interpreters.list_all())), len(before | {interp}))
+
+    def test_after_destroy_some(self):
+        before = set(interpreters.list_all())
+        # Create 3 subinterpreters.
+        interp1 = interpreters.create()
+        interp2 = interpreters.create()
+        interp3 = interpreters.create()
+        # Now destroy 2 of them.
+        interp1.destroy()
+        interp2.destroy()
+        # Finally, create another.
+        interp = interpreters.create()
+        self.assertEqual(len(set(interpreters.list_all())), len(before | {interp3, interp}))
+
+
 class GetCurrentTests(TestBase):
 
-    def test_get_current(self):
+    def test_main(self):
         main_interp_id = _interpreters.get_main()
         cur_interp_id =  interpreters.get_current().id
         self.assertEqual(cur_interp_id, main_interp_id)
+
+    def test_subinterpreter(self):
+        main = _interpreters.get_main()
+        interp = interpreters.create()
+        out = _run_output(interp, dedent("""
+            import interpreters
+            cur = interpreters.get_current()
+            print(cur)
+            """))
+        cur = out.strip()
+        self.assertNotEqual(cur, main)
+
 
 class ListAllTests(TestBase):
 
@@ -55,26 +167,330 @@ class ListAllTests(TestBase):
         interps = interpreters.list_all()
         self.assertEqual(1, len(interps))
 
-class TestInterpreter(TestBase):
+    def test_after_creating(self):
+        main = interpreters.get_current()
+        first = interpreters.create()
+        second = interpreters.create()
 
-    def test_id_fields(self):
+        ids = []
+        for interp in interpreters.list_all():
+            ids.append(interp.id)
+
+        self.assertEqual(ids, [main.id, first.id, second.id])
+
+    def test_after_destroying(self):
+        main = interpreters.get_current()
+        first = interpreters.create()
+        second = interpreters.create()
+        first.destroy()
+
+        ids = []
+        for interp in interpreters.list_all():
+            ids.append(interp.id)
+
+        self.assertEqual(ids, [main.id, second.id])
+
+
+class TestInterpreterId(TestBase):
+
+    def test_id_field_in_main(self):
+        main = interpreters.get_current()
+        self.assertEqual(0, main.id)
+
+    def test_id_field_custom(self):
         interp = interpreters.Interpreter(1)
         self.assertEqual(1, interp.id)
 
-    def test_is_running(self):
-        interp_de = interpreters.create()
-        self.assertEqual(False, interp_de.is_running())
+    def test_id_field_readonly(self):
+        interp = interpreters.Interpreter(1)
+        with self.assertRaises(AttributeError):
+            interp.id = 2
 
-    def test_destroy(self):
+
+class TestInterpreterIsRunning(TestBase):
+
+    def test_is_running_main(self):
+        main = interpreters.get_current()
+        self.assertTrue(main.is_running())
+
+    def test_is_running_subinterpreter(self):
         interp = interpreters.create()
-        interp2 = interpreters.create()
+        self.assertFalse(interp.is_running())
+
+        with _running(interp):
+            self.assertTrue(interp.is_running())
+        self.assertFalse(interp.is_running())
+
+    def test_is_running_from_subinterpreter(self):
+        interp = interpreters.create()
+        out = _run_output(interp, dedent(f"""
+            import _interpreters
+            if _interpreters.is_running({interp.id}):
+                print(True)
+            else:
+                print(False)
+            """))
+        self.assertEqual(out.strip(), 'True')
+
+    def test_is_running_already_destroyed(self):
+        interp = interpreters.create()
         interp.destroy()
-        interps = interpreters.list_all()
-        self.assertEqual(2, len(interps))
+        with self.assertRaises(RuntimeError):
+            interp.is_running()
 
-    def test_run(self):
+    def test_is_running_bad_id(self):
+        interp = interpreters.Interpreter(-1)
+        with self.assertRaises(RuntimeError):
+            interp.is_running()
+
+
+class TestInterpreterDestroy(TestBase):
+
+    def test_destroy_basic(self):
+        interp1 = interpreters.create()
+        interp2 = interpreters.create()
+        interp3 = interpreters.create()
+        self.assertEqual(4, len(interpreters.list_all()))
+        interp2.destroy()
+        self.assertEqual(3, len(interpreters.list_all()))
+
+    def test_destroy_all(self):
+        before = set(interpreters.list_all())
+        interps = set()
+        for _ in range(3):
+            interp = interpreters.create()
+            interps.add(interp)
+        self.assertEqual(len(set(interpreters.list_all())), len(before | interps))
+        for interp in interps:
+            interp.destroy()
+        self.assertEqual(len(set(interpreters.list_all())), len(before))
+
+    def test_destroy_main(self):
+        main, = interpreters.list_all()
+        with self.assertRaises(RuntimeError):
+            main.destroy()
+
+        def f():
+            with self.assertRaises(RuntimeError):
+                main.destroy()
+
+        t = threading.Thread(target=f)
+        t.start()
+        t.join()
+
+    def test_destroy_already_destroyed(self):
         interp = interpreters.create()
-        interp.run("3")
-        self.assertEqual(False, interp.is_running())
+        interp.destroy()
+        with self.assertRaises(RuntimeError):
+            interp.destroy()
+
+    def test_destroy_from_current(self):
+        main, = interpreters.list_all()
+        interp = interpreters.create()
+        script = dedent(f"""
+            import interpreters
+            try:
+                main = interpreters.get_current()
+                main.destroy()
+            except RuntimeError:
+                pass
+            """)
+
+        interp.run(script)
+        self.assertEqual(len(set(interpreters.list_all())), len({main, interp}))
+
+    def test_destroy_from_sibling(self):
+        main, = interpreters.list_all()
+        interp1 = interpreters.create()
+        script = dedent(f"""
+            import interpreters
+            interp2 = interpreters.create()
+            interp2.destroy()
+            """)
+        interp1.run(script)
+
+        self.assertEqual(len(set(interpreters.list_all())), len({main, interp1}))
+
+    def test_destroy_from_other_thread(self):
+        interp = interpreters.create()
+        def f():
+            interp.destroy()
+
+        t = threading.Thread(target=f)
+        t.start()
+        t.join()
+
+    def test_destroy_still_running(self):
+        main, = interpreters.list_all()
+        interp = interpreters.create()
+        with _running(interp):
+            with self.assertRaises(RuntimeError):
+                interp.destroy()
+            self.assertTrue(interp.is_running())
 
 
+class TestInterpreterRun(TestBase):
+
+    SCRIPT = dedent("""
+        with open('{}', 'w') as out:
+            out.write('{}')
+        """)
+    FILENAME = 'spam'
+
+    def setUp(self):
+        super().setUp()
+        self.interp = interpreters.create()
+        self._fs = None
+
+    def tearDown(self):
+        if self._fs is not None:
+            self._fs.close()
+        super().tearDown()
+
+    @property
+    def fs(self):
+        if self._fs is None:
+            self._fs = FSFixture(self)
+        return self._fs
+
+    def test_success(self):
+        script, file = _captured_script('print("it worked!", end="")')
+        with file:
+            self.interp.run(script)
+            out = file.read()
+
+        self.assertEqual(out, 'it worked!')
+
+    def test_in_thread(self):
+        script, file = _captured_script('print("it worked!", end="")')
+        with file:
+            def f():
+                self.interp.run(script)
+
+            t = threading.Thread(target=f)
+            t.start()
+            t.join()
+            out = file.read()
+
+        self.assertEqual(out, 'it worked!')
+
+    def test_create_thread(self):
+        script, file = _captured_script("""
+            import threading
+            def f():
+                print('it worked!', end='')
+
+            t = threading.Thread(target=f)
+            t.start()
+            t.join()
+            """)
+        with file:
+            self.interp.run(script)
+            out = file.read()
+
+        self.assertEqual(out, 'it worked!')
+
+    @unittest.skipUnless(hasattr(os, 'fork'), "test needs os.fork()")
+    def test_fork(self):
+        import tempfile
+        with tempfile.NamedTemporaryFile('w+') as file:
+            file.write('')
+            file.flush()
+
+            expected = 'spam spam spam spam spam'
+            script = dedent(f"""
+                import os
+                try:
+                    os.fork()
+                except RuntimeError:
+                    with open('{file.name}', 'w') as out:
+                        out.write('{expected}')
+                """)
+            self.interp.run(script)
+
+            file.seek(0)
+            content = file.read()
+            self.assertEqual(content, expected)
+
+    def test_already_running(self):
+        with _running(self.interp):
+            with self.assertRaises(RuntimeError):
+                self.interp.run('print("spam")')
+
+    def test_bad_script(self):
+        with self.assertRaises(TypeError):
+            self.interp.run(10)
+
+    def test_bytes_for_script(self):
+        with self.assertRaises(TypeError):
+            self.interp.run(b'print("spam")')
+
+
+class TestIsShareable(TestBase):
+
+    def test_default_shareables(self):
+        shareables = [
+                # singletons
+                None,
+                # builtin objects
+                b'spam',
+                'spam',
+                10,
+                -10,
+                ]
+        for obj in shareables:
+            with self.subTest(obj):
+                self.assertTrue(
+                    interpreters.is_shareable(obj))
+
+    def test_not_shareable(self):
+        class Cheese:
+            def __init__(self, name):
+                self.name = name
+            def __str__(self):
+                return self.name
+
+        class SubBytes(bytes):
+            """A subclass of a shareable type."""
+
+        not_shareables = [
+                # singletons
+                True,
+                False,
+                NotImplemented,
+                ...,
+                # builtin types and objects
+                type,
+                object,
+                object(),
+                Exception(),
+                100.0,
+                # user-defined types and objects
+                Cheese,
+                Cheese('Wensleydale'),
+                SubBytes(b'spam'),
+                ]
+        for obj in not_shareables:
+            with self.subTest(repr(obj)):
+                self.assertFalse(
+                    interpreters.is_shareable(obj))
+
+
+class TestChannel(TestBase):
+
+    def test_create_cid(self):
+        r, s = interpreters.create_channel()
+        self.assertIsInstance(r, interpreters.RecvChannel)
+        self.assertIsInstance(s, interpreters.SendChannel)
+
+    def test_sequential_ids(self):
+        before = interpreters.list_all_channels()
+        channels1 = interpreters.create_channel()
+        channels2 = interpreters.create_channel()
+        channels3 = interpreters.create_channel()
+        after = interpreters.list_all_channels()
+
+        self.assertEqual(len(set(after) - set(before)), 
+                         len({channels1, channels2, channels3}))
+
+class TestRecvChannelID(TestBase):

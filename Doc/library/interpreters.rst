@@ -8,9 +8,9 @@
 
 --------------
 
-This module provides tools for working with sub-interpreters, such as creating them,
-running code in them, or sending data between them.  It is a wrapper around the low-
-level :mod:`_interpreters` module.
+This module provides highlevel tools for working with sub-interpreters, 
+such as creating them, running code in them, or sending data between them.
+It is a wrapper around the low-level :mod:`_interpreters` module.
 
 .. versionchanged:: added in 3.9
 
@@ -124,7 +124,8 @@ This module defines the following global functions:
 
 .. function:: get_current()
 
-   Get the currently running interpreter.
+   Get the currently running interpreter. This method returns
+   an `interpreter` object.
 
 .. function:: list_all()
 

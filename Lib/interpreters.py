@@ -61,11 +61,23 @@ class Interpreter:
     def run(self, src_str, /, *, channels=None):
         """run(src_str, /, *, channels=None)
 
+        channel = (RecvChannel, SendChannel)
+
         Run the given source code in the interpreter.
         This blocks the current thread until done.
         """
+        if channels:
+            if channels[0] and channels[1] != None:
+                _interpreters.channel_recv(channels[0].id)
+                _interpreters.channel_send(channels[1].id, src_str)
+            elif channels[0] != None and channels[1] == None:
+                _interpreters.channel_recv(channels[0].id)
+            elif channels[0] == None and channels[1] != None:
+                _interpreters.channel_send(channels[1].id, src_str)
+            else:
+                pass
         try:
-            _interpreters.run_string(self._id, src_str, channels)
+            _interpreters.run_string(self._id, src_str)
         except RunFailedError as err:
             logger.error(err)
             raise
