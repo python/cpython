@@ -5330,12 +5330,15 @@ PyType_Ready(PyTypeObject *type)
 
     /* Initialize ob_type if NULL.      This means extensions that want to be
        compilable separately on Windows can call PyType_Ready() instead of
-       initializing the ob_type field of their type objects. */
-    /* The test for base != NULL is really unnecessary, since base is only
+       initializing the ob_type field of their type objects.
+
+       The test for base != NULL is really unnecessary, since base is only
        NULL when type is &PyBaseObject_Type, and we know its ob_type is
        not NULL (it's initialized to &PyType_Type).      But coverity doesn't
-       know that. */
-    if (Py_IS_TYPE(type, NULL) && base != NULL) {
+       know that.
+
+       Avoid Py_IS_TYPE(type, NULL) since the type is not valid yet. */
+    if (((PyObject*)type)->ob_type == NULL && base != NULL) {
         Py_SET_TYPE(type, Py_TYPE(base));
     }
 

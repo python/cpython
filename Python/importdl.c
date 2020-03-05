@@ -181,7 +181,8 @@ _PyImport_LoadDynamicModuleWithSpec(PyObject *spec, FILE *fp)
         m = NULL;
         goto error;
     }
-    if (Py_IS_TYPE(m, NULL)) {
+    /* Don't use Py_IS_TYPE(m, NULL) which would fail in debug mode */
+    if (m->ob_type == NULL) {
         /* This can happen when a PyModuleDef is returned without calling
          * PyModuleDef_Init on it
          */

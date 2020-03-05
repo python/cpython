@@ -108,9 +108,24 @@ typedef struct _object {
     PyTypeObject *ob_type;
 } PyObject;
 
+PyAPI_FUNC(PyObject*) _PyObject_Cast(const void *op_raw);
+PyAPI_FUNC(PyObject*) _PyObject_XCast(const void *op_raw);
+
 /* Cast argument to PyObject* type. */
-#define _PyObject_CAST(op) ((PyObject*)(op))
-#define _PyObject_CAST_CONST(op) ((const PyObject*)(op))
+#ifdef Py_DEBUG
+#  define _PyObject_CAST(op) _PyObject_Cast(op)
+#  define _PyObject_XCAST(op) _PyObject_XCast(op)
+#else
+#  define _PyObject_CAST(op) ((PyObject*)(op))
+#  define _PyObject_XCAST(op) _PyObject_CAST(op)
+#endif
+#define _PyObject_CAST_CONST(op) ((const PyObject*)_PyObject_CAST(op))
+
+/* Similar to _PyObject_CAST() but don't check if the argument is valid
+   PyObject in debug mode. This macro should only be used in low-level
+   functions like Py_SET_TYPE() or Py_SET_REFCNT() which are used to
+   initialize newly created objects. */
+#define _PyObject_CAST_RAW(op) ((PyObject*)(op))
 
 typedef struct {
     PyObject ob_base;
@@ -118,7 +133,16 @@ typedef struct {
 } PyVarObject;
 
 /* Cast argument to PyVarObject* type. */
-#define _PyVarObject_CAST(op) ((PyVarObject*)(op))
+#ifdef Py_DEBUG
+#  define _PyVarObject_CAST(op) ((PyVarObject*)_PyObject_Cast(op))
+#else
+#  define _PyVarObject_CAST(op) ((PyVarObject*)(op))
+#endif
+/* Similar to _PyVarObject_CAST() but don't check if the argument is valid
+   PyVarObject in debug mode. This macro should only be used in low-level
+   functions like Py_SET_SIZE() which is used to initialize newly created
+   objects. */
+#define _PyVarObject_CAST_RAW(op) ((PyVarObject*)(op))
 
 #define Py_REFCNT(ob)           (_PyObject_CAST(ob)->ob_refcnt)
 #define Py_TYPE(ob)             (_PyObject_CAST(ob)->ob_type)
@@ -132,17 +156,17 @@ static inline int _Py_IS_TYPE(const PyObject *ob, const PyTypeObject *type) {
 static inline void _Py_SET_REFCNT(PyObject *ob, Py_ssize_t refcnt) {
     ob->ob_refcnt = refcnt;
 }
-#define Py_SET_REFCNT(ob, refcnt) _Py_SET_REFCNT(_PyObject_CAST(ob), refcnt)
+#define Py_SET_REFCNT(ob, refcnt) _Py_SET_REFCNT(_PyObject_CAST_RAW(ob), refcnt)
 
 static inline void _Py_SET_TYPE(PyObject *ob, PyTypeObject *type) {
     ob->ob_type = type;
 }
-#define Py_SET_TYPE(ob, type) _Py_SET_TYPE(_PyObject_CAST(ob), type)
+#define Py_SET_TYPE(ob, type) _Py_SET_TYPE(_PyObject_CAST_RAW(ob), type)
 
 static inline void _Py_SET_SIZE(PyVarObject *ob, Py_ssize_t size) {
     ob->ob_size = size;
 }
-#define Py_SET_SIZE(ob, size) _Py_SET_SIZE(_PyVarObject_CAST(ob), size)
+#define Py_SET_SIZE(ob, size) _Py_SET_SIZE(_PyVarObject_CAST_RAW(ob), size)
 
 
 /*
@@ -469,7 +493,7 @@ static inline void _Py_DECREF(
  */
 #define Py_CLEAR(op)                            \
     do {                                        \
-        PyObject *_py_tmp = _PyObject_CAST(op); \
+        PyObject *_py_tmp = _PyObject_XCAST(op);\
         if (_py_tmp != NULL) {                  \
             (op) = NULL;                        \
             Py_DECREF(_py_tmp);                 \
@@ -484,7 +508,7 @@ static inline void _Py_XINCREF(PyObject *op)
     }
 }
 
-#define Py_XINCREF(op) _Py_XINCREF(_PyObject_CAST(op))
+#define Py_XINCREF(op) _Py_XINCREF(_PyObject_XCAST(op))
 
 static inline void _Py_XDECREF(PyObject *op)
 {
@@ -493,7 +517,7 @@ static inline void _Py_XDECREF(PyObject *op)
     }
 }
 
-#define Py_XDECREF(op) _Py_XDECREF(_PyObject_CAST(op))
+#define Py_XDECREF(op) _Py_XDECREF(_PyObject_XCAST(op))
 
 /*
 These are provided as conveniences to Python runtime embedders, so that

@@ -117,7 +117,8 @@ PyFloat_FromDouble(double fval)
 {
     PyFloatObject *op = free_list;
     if (op != NULL) {
-        free_list = (PyFloatObject *) Py_TYPE(op);
+        /* Avoid Py_TYPE() since op is not valid */
+        free_list = (PyFloatObject *)((PyObject*)op)->ob_type;
         numfree--;
     } else {
         op = (PyFloatObject*) PyObject_MALLOC(sizeof(PyFloatObject));
@@ -2004,7 +2005,8 @@ PyFloat_ClearFreeList(void)
     PyFloatObject *f = free_list, *next;
     int i = numfree;
     while (f) {
-        next = (PyFloatObject*) Py_TYPE(f);
+        /* Avoid Py_TYPE() since op is not valid */
+        next = (PyFloatObject*)((PyObject*)f)->ob_type;
         PyObject_FREE(f);
         f = next;
     }

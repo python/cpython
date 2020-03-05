@@ -1739,7 +1739,8 @@ _PyTraceMalloc_NewReference(PyObject *op)
     }
 
     uintptr_t ptr;
-    PyTypeObject *type = Py_TYPE(op);
+    /* Avoid Py_TYPE() since op is not valid yet */
+    PyTypeObject *type = op->ob_type;
     if (PyType_IS_GC(type)) {
         ptr = (uintptr_t)((char *)op - sizeof(PyGC_Head));
     }

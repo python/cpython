@@ -393,8 +393,10 @@ PyStructSequence_InitType2(PyTypeObject *type, PyStructSequence_Desc *desc)
     }
 #endif
 
-    /* PyTypeObject has already been initialized */
-    if (Py_REFCNT(type) != 0) {
+    /* PyTypeObject has already been initialized
+
+       Avoid Py_REFCNT() since the type is not valid yet. */
+    if (((PyObject*)type)->ob_refcnt != 0) {
         PyErr_BadInternalCall();
         return -1;
     }

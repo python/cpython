@@ -371,7 +371,7 @@ PyAPI_FUNC(PyObject *) _PyObject_FunctionStr(PyObject *);
 
 #define Py_XSETREF(op, op2)                     \
     do {                                        \
-        PyObject *_py_tmp = _PyObject_CAST(op); \
+        PyObject *_py_tmp = _PyObject_XCAST(op);\
         (op) = (op2);                           \
         Py_XDECREF(_py_tmp);                    \
     } while (0)

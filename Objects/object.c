@@ -24,6 +24,32 @@ _Py_IDENTIFIER(__dir__);
 _Py_IDENTIFIER(__isabstractmethod__);
 
 
+PyObject*
+_PyObject_Cast(const void *op_raw)
+{
+#define CHECK(expr) \
+    do { if (!(expr)) { _PyObject_ASSERT_FAILED_MSG(op, Py_STRINGIFY(expr)); } } while (0)
+
+    /* Avoid Py_REFCNT() and Py_TYPE() macro which uses _PyObject_CAST()
+       which calls _PyObject_Cast() */
+    PyObject *op = (PyObject *)op_raw;
+    CHECK(!_PyMem_IsPtrFreed(op));
+    /* Tolerate ob_refcnt==0 to allow to use Py_TYPE() in dealloc methods
+       like unicode_dealloc(). */
+    CHECK(op->ob_refcnt >= 0);
+    CHECK(!_PyMem_IsPtrFreed(op->ob_type));
+    return op;
+#undef CHECK
+}
+
+
+PyObject*
+_PyObject_XCast(const void *op_raw)
+{
+    return (op_raw != NULL) ? _PyObject_Cast(op_raw) : NULL;
+}
+
+
 int
 _PyObject_CheckConsistency(PyObject *op, int check_content)
 {
@@ -323,7 +349,9 @@ _Py_BreakPoint(void)
 int
 _PyObject_IsFreed(PyObject *op)
 {
-    if (_PyMem_IsPtrFreed(op) || _PyMem_IsPtrFreed(Py_TYPE(op))) {
+    /* Avoid Py_TYPE() macro which uses _PyObject_CAST() which calls
+       _PyObject_Cast(). _PyObject_IsFreed() is used by _PyObject_Cast(). */
+    if (_PyMem_IsPtrFreed(op) || _PyMem_IsPtrFreed(op->ob_type)) {
         return 1;
     }
     /* ignore op->ob_ref: its value can have be modified
@@ -354,12 +382,15 @@ _PyObject_Dump(PyObject* op)
 
     /* first, write fields which are the least likely to crash */
     fprintf(stderr, "object address  : %p\n", (void *)op);
+    /* Avoid Py_REFCNT() since the object can be invalid */
+    Py_ssize_t refcnt = op->ob_refcnt;
     /* XXX(twouters) cast refcount to long until %zd is
        universally available */
-    fprintf(stderr, "object refcount : %ld\n", (long)Py_REFCNT(op));
+    fprintf(stderr, "object refcount : %ld\n", (long)refcnt);
     fflush(stderr);
 
-    PyTypeObject *type = Py_TYPE(op);
+    /* Avoid Py_TYPE() since the object can be invalid */
+    PyTypeObject *type = op->ob_type;
     fprintf(stderr, "object type     : %p\n", type);
     fprintf(stderr, "object type name: %s\n",
             type==NULL ? "NULL" : type->tp_name);
@@ -372,7 +403,11 @@ _PyObject_Dump(PyObject* op)
     PyObject *error_type, *error_value, *error_traceback;
     PyErr_Fetch(&error_type, &error_value, &error_traceback);
 
+    if (refcnt <= 0) {
+        op->ob_refcnt = 1;
+    }
     (void)PyObject_Print(op, stderr, 0);
+    op->ob_refcnt = refcnt;
     fflush(stderr);
 
     PyErr_Restore(error_type, error_value, error_traceback);
@@ -2150,7 +2185,8 @@ _PyObject_AssertFailed(PyObject *obj, const char *expr, const char *msg,
            Do it before dumping repr(obj), since repr() is more likely
            to crash than dumping the traceback. */
         void *ptr;
-        PyTypeObject *type = Py_TYPE(obj);
+        /* Avoid Py_TYPE() since the object is invalid */
+        PyTypeObject *type = obj->ob_type;
         if (PyType_IS_GC(type)) {
             ptr = (void *)((char *)obj - sizeof(PyGC_Head));
         }
@@ -2174,7 +2210,8 @@ _PyObject_AssertFailed(PyObject *obj, const char *expr, const char *msg,
 void
 _Py_Dealloc(PyObject *op)
 {
-    destructor dealloc = Py_TYPE(op)->tp_dealloc;
+    /* Don't use Py_TYPE() since ob_refcnt=0 */
+    destructor dealloc = op->ob_type->tp_dealloc;
 #ifdef Py_TRACE_REFS
     _Py_ForgetReference(op);
 #endif

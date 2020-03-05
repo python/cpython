@@ -24,7 +24,7 @@ _PyObject_INIT(PyObject *op, PyTypeObject *typeobj)
 }
 
 #define PyObject_INIT(op, typeobj) \
-    _PyObject_INIT(_PyObject_CAST(op), (typeobj))
+    _PyObject_INIT(_PyObject_CAST_RAW(op), (typeobj))
 
 static inline PyVarObject*
 _PyObject_INIT_VAR(PyVarObject *op, PyTypeObject *typeobj, Py_ssize_t size)
@@ -36,7 +36,7 @@ _PyObject_INIT_VAR(PyVarObject *op, PyTypeObject *typeobj, Py_ssize_t size)
 }
 
 #define PyObject_INIT_VAR(op, typeobj, size) \
-    _PyObject_INIT_VAR(_PyVarObject_CAST(op), (typeobj), (size))
+    _PyObject_INIT_VAR(_PyVarObject_CAST_RAW(op), (typeobj), (size))
 
 
 /* This function returns the number of allocated memory blocks, regardless of size */
