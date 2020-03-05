@@ -1143,8 +1143,9 @@ class RawConfigParser(MutableMapping):
 
         """
         var_dict = {}
+        section_is_iterable = not isinstance(section, str) and hasattr(section, '__iter__')
+        section_list = section if section_is_iterable else [section]
 
-        section_list = section if hasattr(section, '__iter__') else [section]
         map_list = []
 
         if vars:
