@@ -1350,9 +1350,11 @@ test case
                 sys.modules['@bar@'] = 'bar'
 
         sys.modules['@foo@'] = Foo('foo')
-        self.assertWarns(UserWarning, warnings.warn, 'expected')
-        del sys.modules['@foo@']
-        del sys.modules['@bar@']
+        try:
+            self.assertWarns(UserWarning, warnings.warn, 'expected')
+        finally:
+            del sys.modules['@foo@']
+            del sys.modules['@bar@']
 
     def testAssertRaisesRegexMismatch(self):
         def Stub():
