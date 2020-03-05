@@ -1,0 +1,3 @@
+Revert "bpo-37330: open() no longer accept 'U' in file mode". The "U" mode of
+open() is kept in Python 3.9 to ease transition from Python 2.7, but will be
+removed in Python 3.10.

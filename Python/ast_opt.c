@@ -462,9 +462,6 @@ astfold_mod(mod_ty node_, PyArena *ctx_, int optimize_)
     case Expression_kind:
         CALL(astfold_expr, expr_ty, node_->v.Expression.body);
         break;
-    case Suite_kind:
-        CALL_SEQ(astfold_stmt, stmt_ty, node_->v.Suite.body);
-        break;
     default:
         break;
     }

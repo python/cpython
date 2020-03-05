@@ -4851,7 +4851,7 @@ trace_call_function(PyThreadState *tstate,
         C_TRACE(x, PyObject_Vectorcall(func, args, nargs, kwnames));
         return x;
     }
-    else if (Py_TYPE(func) == &PyMethodDescr_Type && nargs > 0) {
+    else if (Py_IS_TYPE(func, &PyMethodDescr_Type) && nargs > 0) {
         /* We need to create a temporary bound method as argument
            for profiling.
 
@@ -4912,7 +4912,7 @@ do_call_core(PyThreadState *tstate, PyObject *func, PyObject *callargs, PyObject
         C_TRACE(result, PyObject_Call(func, callargs, kwdict));
         return result;
     }
-    else if (Py_TYPE(func) == &PyMethodDescr_Type) {
+    else if (Py_IS_TYPE(func, &PyMethodDescr_Type)) {
         Py_ssize_t nargs = PyTuple_GET_SIZE(callargs);
         if (nargs > 0 && tstate->use_tracing) {
             /* We need to create a temporary bound method as argument

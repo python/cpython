@@ -875,7 +875,7 @@ oserror_init(PyOSErrorObject *self, PyObject **p_args,
 
     /* self->filename will remain Py_None otherwise */
     if (filename && filename != Py_None) {
-        if (Py_TYPE(self) == (PyTypeObject *) PyExc_BlockingIOError &&
+        if (Py_IS_TYPE(self, (PyTypeObject *) PyExc_BlockingIOError) &&
             PyNumber_Check(filename)) {
             /* BlockingIOError's 3rd argument can be the number of
              * characters written.
@@ -1379,7 +1379,7 @@ SyntaxError_init(PySyntaxErrorObject *self, PyObject *args, PyObject *kwds)
          * Only applies to SyntaxError instances, not to subclasses such
          * as TabError or IndentationError (see issue #31161)
          */
-        if ((PyObject*)Py_TYPE(self) == PyExc_SyntaxError &&
+        if (Py_IS_TYPE(self, (PyTypeObject *)PyExc_SyntaxError) &&
                 self->text && PyUnicode_Check(self->text) &&
                 _report_missing_parentheses(self) < 0) {
             return -1;

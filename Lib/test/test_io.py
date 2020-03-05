@@ -3900,6 +3900,16 @@ class MiscIOTest(unittest.TestCase):
         self.assertEqual(f.mode, "wb")
         f.close()
 
+        with support.check_warnings(('', DeprecationWarning)):
+            f = self.open(support.TESTFN, "U")
+        self.assertEqual(f.name,            support.TESTFN)
+        self.assertEqual(f.buffer.name,     support.TESTFN)
+        self.assertEqual(f.buffer.raw.name, support.TESTFN)
+        self.assertEqual(f.mode,            "U")
+        self.assertEqual(f.buffer.mode,     "rb")
+        self.assertEqual(f.buffer.raw.mode, "rb")
+        f.close()
+
         f = self.open(support.TESTFN, "w+")
         self.assertEqual(f.mode,            "w+")
         self.assertEqual(f.buffer.mode,     "rb+") # Does it really matter?
@@ -3912,13 +3922,6 @@ class MiscIOTest(unittest.TestCase):
         self.assertEqual(g.raw.name, f.fileno())
         f.close()
         g.close()
-
-    def test_removed_u_mode(self):
-        # "U" mode has been removed in Python 3.9
-        for mode in ("U", "rU", "r+U"):
-            with self.assertRaises(ValueError) as cm:
-                self.open(support.TESTFN, mode)
-            self.assertIn('invalid mode', str(cm.exception))
 
     def test_open_pipe_with_append(self):
         # bpo-27805: Ignore ESPIPE from lseek() in open().
