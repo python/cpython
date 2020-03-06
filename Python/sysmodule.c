@@ -289,8 +289,9 @@ _PySys_ClearAuditHooks(void)
     /* Must be finalizing to clear hooks */
     _PyRuntimeState *runtime = &_PyRuntime;
     PyThreadState *ts = _PyRuntimeState_GetThreadState(runtime);
-    assert(!ts || _Py_CURRENTLY_FINALIZING(runtime, ts));
-    if (!ts || !_Py_CURRENTLY_FINALIZING(runtime, ts)) {
+    PyThreadState *finalizing = _PyRuntimeState_GetFinalizing(runtime);
+    assert(!ts || finalizing == ts);
+    if (!ts || finalizing != ts) {
         return;
     }
 
