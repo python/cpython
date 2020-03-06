@@ -657,7 +657,7 @@ do_richcompare(PyThreadState *tstate, PyObject *v, PyObject *w, int op)
     PyObject *res;
     int checked_reverse_op = 0;
 
-    if (Py_TYPE(v) != Py_TYPE(w) &&
+    if (!Py_IS_TYPE(v, Py_TYPE(w)) &&
         PyType_IsSubtype(Py_TYPE(w), Py_TYPE(v)) &&
         (f = Py_TYPE(w)->tp_richcompare) != NULL) {
         checked_reverse_op = 1;
@@ -1907,7 +1907,7 @@ _Py_GetObjects(PyObject *self, PyObject *args)
         return NULL;
     for (i = 0; (n == 0 || i < n) && op != &refchain; i++) {
         while (op == self || op == args || op == res || op == t ||
-               (t != NULL && Py_TYPE(op) != (PyTypeObject *) t)) {
+               (t != NULL && !Py_IS_TYPE(op, (PyTypeObject *) t))) {
             op = op->_ob_next;
             if (op == &refchain)
                 return res;
