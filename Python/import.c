@@ -310,7 +310,7 @@ PyImport_GetModuleDict(void)
 {
     PyInterpreterState *interp = _PyInterpreterState_GET_UNSAFE();
     if (interp->modules == NULL) {
-        Py_FatalError("PyImport_GetModuleDict: no module dictionary!");
+        Py_FatalError("no module dictionary");
     }
     return interp->modules;
 }
@@ -982,8 +982,7 @@ PyImport_ExecCodeModuleWithPathnames(const char *name, PyObject *co,
         _Py_IDENTIFIER(_get_sourcefile);
 
         if (interp == NULL) {
-            Py_FatalError("PyImport_ExecCodeModuleWithPathnames: "
-                          "no interpreter!");
+            Py_FatalError("no interpreter!");
         }
 
         external= PyObject_GetAttrString(interp->importlib,

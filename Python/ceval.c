@@ -283,7 +283,7 @@ PyEval_AcquireLock(void)
     struct _ceval_runtime_state *ceval = &runtime->ceval;
     PyThreadState *tstate = _PyRuntimeState_GetThreadState(runtime);
     if (tstate == NULL) {
-        Py_FatalError("PyEval_AcquireLock: current thread state is NULL");
+        Py_FatalError("current thread state is NULL");
     }
     take_gil(ceval, tstate);
     exit_thread_if_finalizing(tstate);
@@ -314,7 +314,7 @@ PyEval_AcquireThread(PyThreadState *tstate)
     take_gil(ceval, tstate);
     exit_thread_if_finalizing(tstate);
     if (_PyThreadState_Swap(&runtime->gilstate, tstate) != NULL) {
-        Py_FatalError("PyEval_AcquireThread: non-NULL old thread state");
+        Py_FatalError("non-NULL old thread state");
     }
 }
 
@@ -326,7 +326,7 @@ PyEval_ReleaseThread(PyThreadState *tstate)
     _PyRuntimeState *runtime = tstate->interp->runtime;
     PyThreadState *new_tstate = _PyThreadState_Swap(&runtime->gilstate, NULL);
     if (new_tstate != tstate) {
-        Py_FatalError("PyEval_ReleaseThread: wrong thread state");
+        Py_FatalError("wrong thread state");
     }
     drop_gil(&runtime->ceval, tstate);
 }
@@ -373,7 +373,7 @@ PyEval_SaveThread(void)
     struct _ceval_runtime_state *ceval = &runtime->ceval;
     PyThreadState *tstate = _PyThreadState_Swap(&runtime->gilstate, NULL);
     if (tstate == NULL) {
-        Py_FatalError("PyEval_SaveThread: NULL tstate");
+        Py_FatalError("NULL tstate");
     }
     assert(gil_created(&ceval->gil));
     drop_gil(ceval, tstate);
@@ -1236,7 +1236,7 @@ main_loop:
             if (_Py_atomic_load_relaxed(&ceval->gil_drop_request)) {
                 /* Give another thread a chance */
                 if (_PyThreadState_Swap(&runtime->gilstate, NULL) != tstate) {
-                    Py_FatalError("ceval: tstate mix-up");
+                    Py_FatalError("tstate mix-up");
                 }
                 drop_gil(ceval, tstate);
 
@@ -1248,7 +1248,7 @@ main_loop:
                 exit_thread_if_finalizing(tstate);
 
                 if (_PyThreadState_Swap(&runtime->gilstate, tstate) != NULL) {
-                    Py_FatalError("ceval: orphan tstate");
+                    Py_FatalError("orphan tstate");
                 }
             }
             /* Check for asynchronous exceptions. */
