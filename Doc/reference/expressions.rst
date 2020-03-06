@@ -911,7 +911,8 @@ series of :term:`arguments <argument>`:
                 :   ["," `keywords_arguments`]
                 : | `starred_and_keywords` ["," `keywords_arguments`]
                 : | `keywords_arguments`
-   positional_arguments: ["*"] `expression` ("," ["*"] `expression`)*
+   positional_arguments: positional_item ("," positional_item)*
+   positional_item: `assignment_expression` | "*" `expression`
    starred_and_keywords: ("*" `expression` | `keyword_item`)
                 : ("," "*" `expression` | "," `keyword_item`)*
    keywords_arguments: (`keyword_item` | "**" `expression`)
@@ -1647,6 +1648,7 @@ Assignment expressions
 
 .. productionlist::
    assignment_expression: `conditional_expression` [":=" `conditional_expression`]
+   assignment_expression: [`target_list` ":="] `expression`
 
 .. TODO: BPO-39868
 
@@ -1722,7 +1724,7 @@ Expression lists
    expression_list: `expression` ("," `expression`)* [","]
    starred_list: `starred_item` ("," `starred_item`)* [","]
    starred_expression: `expression` | (`starred_item` ",")* [`starred_item`]
-   starred_item: `expression` | "*" `or_expr`
+   starred_item: `assignment_expression` | "*" `or_expr`
 
 .. index:: object: tuple
 
