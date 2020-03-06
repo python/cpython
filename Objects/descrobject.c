@@ -983,12 +983,15 @@ static PyMappingMethods mappingproxy_as_mapping = {
 };
 
 static PyObject *
-mappingproxy_or(PyObject *self, PyObject *other)
+mappingproxy_or(PyObject *left, PyObject *right)
 {
-    if (PyObject_TypeCheck(self, &PyDictProxy_Type)) {
-        return PyNumber_Or(((mappingproxyobject*)self)->mapping, other);
+    if (PyObject_TypeCheck(left, &PyDictProxy_Type)) {
+        left = ((mappingproxyobject*)left)->mapping;
     }
-    return PyNumber_Or(self, ((mappingproxyobject*)other)->mapping);
+    if (PyObject_TypeCheck(right, &PyDictProxy_Type)) {
+        right = ((mappingproxyobject*)right)->mapping;
+    }
+    return PyNumber_Or(left, right);
 }
 
 static PyObject *
@@ -1002,7 +1005,6 @@ mappingproxy_ior(mappingproxyobject *self, PyObject *other)
     PyObject *result = PyNumber_InPlaceOr(new, other);
     Py_DECREF(new);
     return result;
-}
 
 static PyNumberMethods mappingproxy_as_number = {
     .nb_or = mappingproxy_or,
