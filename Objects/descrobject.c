@@ -1005,6 +1005,7 @@ mappingproxy_ior(mappingproxyobject *self, PyObject *other)
     PyObject *result = PyNumber_InPlaceOr(new, other);
     Py_DECREF(new);
     return result;
+}
 
 static PyNumberMethods mappingproxy_as_number = {
     .nb_or = mappingproxy_or,
