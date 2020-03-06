@@ -33,7 +33,6 @@ _PyObject_CheckConsistency(PyObject *op, int check_content)
     CHECK(!_PyObject_IsFreed(op));
     CHECK(Py_REFCNT(op) >= 1);
 
-    CHECK(Py_TYPE(op) != NULL);
     _PyType_CheckConsistency(Py_TYPE(op));
 
     if (PyUnicode_Check(op)) {
