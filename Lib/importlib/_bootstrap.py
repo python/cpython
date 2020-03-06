@@ -67,6 +67,7 @@ class _ModuleLock:
         # Deadlock avoidance for concurrent circular imports.
         me = _thread.get_ident()
         tid = self.owner
+        seen = set()
         while True:
             lock = _blocking_on.get(tid)
             if lock is None:
@@ -74,6 +75,14 @@ class _ModuleLock:
             tid = lock.owner
             if tid == me:
                 return True
+            if tid in seen:
+                # bpo 38091: the chain of tid's we encounter here
+                # eventually leads to a fixpoint or a cycle, but
+                # does not reach 'me'.  This means we would not
+                # actually deadlock.  This can happen if other
+                # threads are at the beginning of acquire() below.
+                return False
+            seen.add(tid)
 
     def acquire(self):
         """
@@ -713,6 +722,8 @@ class BuiltinImporter:
 
     """
 
+    _ORIGIN = "built-in"
+
     @staticmethod
     def module_repr(module):
         """Return repr for the module.
@@ -720,14 +731,14 @@ class BuiltinImporter:
         The method is deprecated.  The import machinery does the job itself.
 
         """
-        return '<module {!r} (built-in)>'.format(module.__name__)
+        return f'<module {module.__name__!r} ({BuiltinImporter._ORIGIN})>'
 
     @classmethod
     def find_spec(cls, fullname, path=None, target=None):
         if path is not None:
             return None
         if _imp.is_builtin(fullname):
-            return spec_from_loader(fullname, cls, origin='built-in')
+            return spec_from_loader(fullname, cls, origin=cls._ORIGIN)
         else:
             return None
 
@@ -976,7 +987,12 @@ def _find_and_load_unlocked(name, import_):
     if parent:
         # Set the module as an attribute on its parent.
         parent_module = sys.modules[parent]
-        setattr(parent_module, name.rpartition('.')[2], module)
+        child = name.rpartition('.')[2]
+        try:
+            setattr(parent_module, child, module)
+        except AttributeError:
+            msg = f"Cannot set an attribute on {parent!r} for child module {child!r}"
+            _warnings.warn(msg, ImportWarning)
     return module
 
 

@@ -181,8 +181,8 @@ are always available.  They are listed here in alphabetical order.
 .. function:: callable(object)
 
    Return :const:`True` if the *object* argument appears callable,
-   :const:`False` if not.  If this returns true, it is still possible that a
-   call fails, but if it is false, calling *object* will never succeed.
+   :const:`False` if not.  If this returns ``True``, it is still possible that a
+   call fails, but if it is ``False``, calling *object* will never succeed.
    Note that classes are callable (calling a class returns a new instance);
    instances are callable if their class has a :meth:`__call__` method.
 
@@ -456,7 +456,7 @@ are always available.  They are listed here in alphabetical order.
               n += 1
 
 
-.. function:: eval(expression, globals=None, locals=None)
+.. function:: eval(expression[, globals[, locals]])
 
    The arguments are a string and optional globals and locals.  If provided,
    *globals* must be a dictionary.  If provided, *locals* can be any mapping
@@ -473,7 +473,7 @@ are always available.  They are listed here in alphabetical order.
    dictionary is omitted it defaults to the *globals* dictionary.  If both
    dictionaries are omitted, the expression is executed with the *globals* and
    *locals* in the environment where :func:`eval` is called.  Note, *eval()*
-   does not have access to the :term:`nested scope`\s (non-locals) in the
+   does not have access to the :term:`nested scopes <nested scope>` (non-locals) in the
    enclosing environment.
 
    The return value is the result of
@@ -840,19 +840,19 @@ are always available.  They are listed here in alphabetical order.
 
 .. function:: isinstance(object, classinfo)
 
-   Return true if the *object* argument is an instance of the *classinfo*
+   Return ``True`` if the *object* argument is an instance of the *classinfo*
    argument, or of a (direct, indirect or :term:`virtual <abstract base
    class>`) subclass thereof.  If *object* is not
-   an object of the given type, the function always returns false.
+   an object of the given type, the function always returns ``False``.
    If *classinfo* is a tuple of type objects (or recursively, other such
-   tuples), return true if *object* is an instance of any of the types.
+   tuples), return ``True`` if *object* is an instance of any of the types.
    If *classinfo* is not a type or tuple of types and such tuples,
    a :exc:`TypeError` exception is raised.
 
 
 .. function:: issubclass(class, classinfo)
 
-   Return true if *class* is a subclass (direct, indirect or :term:`virtual
+   Return ``True`` if *class* is a subclass (direct, indirect or :term:`virtual
    <abstract base class>`) of *classinfo*.  A
    class is considered a subclass of itself. *classinfo* may be a tuple of class
    objects, in which case every entry in *classinfo* will be checked. In any other
@@ -891,6 +891,11 @@ are always available.  They are listed here in alphabetical order.
    Return the length (the number of items) of an object.  The argument may be a
    sequence (such as a string, bytes, tuple, list, or range) or a collection
    (such as a dictionary, set, or frozen set).
+
+   .. impl-detail::
+
+      ``len`` raises :exc:`OverflowError` on lengths larger than
+      :data:`sys.maxsize`, such as :class:`range(2 ** 100) <range>`.
 
 
 .. _func-list:
@@ -952,7 +957,7 @@ are always available.  They are listed here in alphabetical order.
 
 
 .. _func-memoryview:
-.. function:: memoryview(obj)
+.. class:: memoryview(obj)
    :noindex:
 
    Return a "memory view" object created from the given argument.  See
@@ -1070,12 +1075,12 @@ are always available.  They are listed here in alphabetical order.
    ``'a'``   open for writing, appending to the end of the file if it exists
    ``'b'``   binary mode
    ``'t'``   text mode (default)
-   ``'+'``   open a disk file for updating (reading and writing)
+   ``'+'``   open for updating (reading and writing)
    ========= ===============================================================
 
    The default mode is ``'r'`` (open for reading text, synonym of ``'rt'``).
-   For binary read-write access, the mode ``'w+b'`` opens and truncates the file
-   to 0 bytes.  ``'r+b'`` opens the file without truncation.
+   Modes ``'w+'`` and ``'w+b'`` open and truncate the file.  Modes ``'r+'``
+   and ``'r+b'`` open the file with no truncation.
 
    As mentioned in the :ref:`io-overview`, Python distinguishes between binary
    and text I/O.  Files opened in binary mode (including ``'b'`` in the *mode*
@@ -1247,7 +1252,7 @@ are always available.  They are listed here in alphabetical order.
 
          * The file is now non-inheritable.
 
-   .. deprecated-removed:: 3.4 4.0
+   .. deprecated-removed:: 3.4 3.10
 
       The ``'U'`` mode.
 
@@ -1274,11 +1279,12 @@ are always available.  They are listed here in alphabetical order.
    returns ``8364``.  This is the inverse of :func:`chr`.
 
 
-.. function:: pow(x, y[, z])
+.. function:: pow(base, exp[, mod])
 
-   Return *x* to the power *y*; if *z* is present, return *x* to the power *y*,
-   modulo *z* (computed more efficiently than ``pow(x, y) % z``). The two-argument
-   form ``pow(x, y)`` is equivalent to using the power operator: ``x**y``.
+   Return *base* to the power *exp*; if *mod* is present, return *base* to the
+   power *exp*, modulo *mod* (computed more efficiently than
+   ``pow(base, exp) % mod``). The two-argument form ``pow(base, exp)`` is
+   equivalent to using the power operator: ``base**exp``.
 
    The arguments must have numeric types.  With mixed operand types, the
    coercion rules for binary arithmetic operators apply.  For :class:`int`
@@ -1287,14 +1293,15 @@ are always available.  They are listed here in alphabetical order.
    converted to float and a float result is delivered.  For example, ``10**2``
    returns ``100``, but ``10**-2`` returns ``0.01``.
 
-   For :class:`int` operands *x* and *y*, if *z* is present, *z* must also be
-   of integer type and *z* must be nonzero. If *z* is present and *y* is
-   negative, *x* must be relatively prime to *z*. In that case, ``pow(inv_x,
-   -y, z)`` is returned, where *inv_x* is an inverse to *x* modulo *z*.
+   For :class:`int` operands *base* and *exp*, if *mod* is present, *mod* must
+   also be of integer type and *mod* must be nonzero. If *mod* is present and
+   *exp* is negative, *base* must be relatively prime to *mod*. In that case,
+   ``pow(inv_base, -exp, mod)`` is returned, where *inv_base* is an inverse to
+   *base* modulo *mod*.
 
    Here's an example of computing an inverse for ``38`` modulo ``97``::
 
-      >>> pow(38, -1, 97)
+      >>> pow(38, -1, mod=97)
       23
       >>> 23 * 38 % 97 == 1
       True
@@ -1303,6 +1310,10 @@ are always available.  They are listed here in alphabetical order.
       For :class:`int` operands, the three-argument form of ``pow`` now allows
       the second argument to be negative, permitting computation of modular
       inverses.
+
+   .. versionchanged:: 3.9
+      Allow keyword arguments.  Formerly, only positional arguments were
+      supported.
 
 
 .. function:: print(*objects, sep=' ', end='\\n', file=sys.stdout, flush=False)
@@ -1408,7 +1419,7 @@ are always available.  They are listed here in alphabetical order.
 
 
 .. _func-range:
-.. function:: range(stop)
+.. class:: range(stop)
               range(start, stop[, step])
    :noindex:
 
@@ -1631,6 +1642,10 @@ are always available.  They are listed here in alphabetical order.
               super().method(arg)    # This does the same thing as:
                                      # super(C, self).method(arg)
 
+   In addition to method lookups, :func:`super` also works for attribute
+   lookups.  One possible use case for this is calling :term:`descriptors <descriptor>`
+   in a parent or sibling class.
+
    Note that :func:`super` is implemented as part of the binding process for
    explicit dotted attribute lookups such as ``super().__getitem__(name)``.
    It does so by implementing its own :meth:`__getattribute__` method for searching
@@ -1651,7 +1666,7 @@ are always available.  They are listed here in alphabetical order.
 
 
 .. _func-tuple:
-.. function:: tuple([iterable])
+.. class:: tuple([iterable])
    :noindex:
 
    Rather than being a function, :class:`tuple` is actually an immutable

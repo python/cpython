@@ -148,9 +148,8 @@ immutable, the same rules as for literals apply (i.e., two occurrences of the em
 tuple may or may not yield the same object).
 
 .. index::
-   single: comma; tuple display
-   pair: tuple; display
-   single: , (comma); tuple display
+   single: comma
+   single: , (comma)
 
 Note that tuples are not formed by the parentheses, but rather by use of the
 comma operator.  The exception is the empty tuple, for which parentheses *are*
@@ -179,7 +178,7 @@ called "displays", each of them in two flavors:
 Common syntax elements for comprehensions are:
 
 .. productionlist::
-   comprehension: `expression` `comp_for`
+   comprehension: `assignment_expression` `comp_for`
    comp_for: ["async"] "for" `target_list` "in" `or_test` [`comp_iter`]
    comp_iter: `comp_for` | `comp_if`
    comp_if: "if" `expression_nocond` [`comp_iter`]
@@ -912,7 +911,8 @@ series of :term:`arguments <argument>`:
                 :   ["," `keywords_arguments`]
                 : | `starred_and_keywords` ["," `keywords_arguments`]
                 : | `keywords_arguments`
-   positional_arguments: ["*"] `expression` ("," ["*"] `expression`)*
+   positional_arguments: positional_item ("," positional_item)*
+   positional_item: `assignment_expression` | "*" `expression`
    starred_and_keywords: ("*" `expression` | `keyword_item`)
                 : ("," "*" `expression` | "," `keyword_item`)*
    keywords_arguments: (`keyword_item` | "**" `expression`)
@@ -1643,6 +1643,17 @@ returns a boolean value regardless of the type of its argument
 (for example, ``not 'foo'`` produces ``False`` rather than ``''``.)
 
 
+Assignment expressions
+======================
+
+.. productionlist::
+   assignment_expression: [`identifier` ":="] `expression`
+
+.. TODO: BPO-39868
+
+See :pep:`572` for more details about assignment expressions.
+
+
 .. _if_expr:
 
 Conditional expressions
@@ -1712,7 +1723,7 @@ Expression lists
    expression_list: `expression` ("," `expression`)* [","]
    starred_list: `starred_item` ("," `starred_item`)* [","]
    starred_expression: `expression` | (`starred_item` ",")* [`starred_item`]
-   starred_item: `expression` | "*" `or_expr`
+   starred_item: `assignment_expression` | "*" `or_expr`
 
 .. index:: object: tuple
 
@@ -1785,6 +1796,8 @@ precedence and have a left-to-right chaining feature as described in the
 +-----------------------------------------------+-------------------------------------+
 | Operator                                      | Description                         |
 +===============================================+=====================================+
+| ``:=``                                        | Assignment expression               |
++-----------------------------------------------+-------------------------------------+
 | :keyword:`lambda`                             | Lambda expression                   |
 +-----------------------------------------------+-------------------------------------+
 | :keyword:`if <if_expr>` -- :keyword:`!else`   | Conditional expression              |
@@ -1822,7 +1835,8 @@ precedence and have a left-to-right chaining feature as described in the
 | ``x[index]``, ``x[index:index]``,             | Subscription, slicing,              |
 | ``x(arguments...)``, ``x.attribute``          | call, attribute reference           |
 +-----------------------------------------------+-------------------------------------+
-| ``(expressions...)``,                         | Binding or tuple display,           |
+| ``(expressions...)``,                         | Binding or parenthesized            |
+|                                               | expression,                         |
 | ``[expressions...]``,                         | list display,                       |
 | ``{key: value...}``,                          | dictionary display,                 |
 | ``{expressions...}``                          | set display                         |

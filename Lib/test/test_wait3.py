@@ -7,7 +7,7 @@ import sys
 import time
 import unittest
 from test.fork_wait import ForkWait
-from test.support import reap_children
+from test import support
 
 if not hasattr(os, 'fork'):
     raise unittest.SkipTest("os.fork not defined")
@@ -20,7 +20,7 @@ class Wait3Test(ForkWait):
         # This many iterations can be required, since some previously run
         # tests (e.g. test_ctypes) could have spawned a lot of children
         # very quickly.
-        deadline = time.monotonic() + 10.0
+        deadline = time.monotonic() + support.SHORT_TIMEOUT
         while time.monotonic() <= deadline:
             # wait3() shouldn't hang, but some of the buildbots seem to hang
             # in the forking tests.  This is an attempt to fix the problem.
@@ -50,7 +50,7 @@ class Wait3Test(ForkWait):
 
 
 def tearDownModule():
-    reap_children()
+    support.reap_children()
 
 if __name__ == "__main__":
     unittest.main()

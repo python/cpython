@@ -22,7 +22,7 @@ as mirroring other FTP servers.  It is also used by the module
 Here's a sample session using the :mod:`ftplib` module::
 
    >>> from ftplib import FTP
-   >>> ftp = FTP('ftp.debian.org')     # connect to host, default port
+   >>> ftp = FTP('ftp.us.debian.org')  # connect to host, default port
    >>> ftp.login()                     # user anonymous, passwd anonymous@
    '230 Login successful.'
    >>> ftp.cwd('debian')               # change into "debian" directory
@@ -33,7 +33,8 @@ Here's a sample session using the :mod:`ftplib` module::
    drwxr-sr-x    4 1176     1176         4096 Nov 17  2008 project
    drwxr-xr-x    3 1176     1176         4096 Oct 10  2012 tools
    '226 Directory send OK.'
-   >>> ftp.retrbinary('RETR README', open('README', 'wb').write)
+   >>> with open('README', 'wb') as fp:
+   >>>     ftp.retrbinary('RETR README', fp.write)
    '226 Transfer complete.'
    >>> ftp.quit()
 
@@ -71,6 +72,9 @@ The module defines the following items:
    .. versionchanged:: 3.3
       *source_address* parameter was added.
 
+   .. versionchanged:: 3.9
+      If the *timeout* parameter is set to be zero, it will raise a
+      :class:`ValueError` to prevent the creation of a non-blocking socket
 
 .. class:: FTP_TLS(host='', user='', passwd='', acct='', keyfile=None, certfile=None, context=None, timeout=None, source_address=None)
 
@@ -103,6 +107,10 @@ The module defines the following items:
        Please use :meth:`ssl.SSLContext.load_cert_chain` instead, or let
        :func:`ssl.create_default_context` select the system's trusted CA
        certificates for you.
+
+   .. versionchanged:: 3.9
+      If the *timeout* parameter is set to be zero, it will raise a
+      :class:`ValueError` to prevent the creation of a non-blocking socket
 
    Here's a sample session using the :class:`FTP_TLS` class::
 
@@ -144,7 +152,7 @@ The module defines the following items:
    The set of all exceptions (as a tuple) that methods of :class:`FTP`
    instances may raise as a result of problems with the FTP connection (as
    opposed to programming errors made by the caller).  This set includes the
-   four exceptions listed above as well as :exc:`OSError`.
+   four exceptions listed above as well as :exc:`OSError` and :exc:`EOFError`.
 
 
 .. seealso::

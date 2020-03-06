@@ -161,8 +161,8 @@ def raises():
 def test_raise():
     try:
         raises()
-    except Exception as exc:
-        x = 1
+    except Exception:
+        pass
 
 test_raise.events = [(0, 'call'),
                      (1, 'line'),
@@ -191,7 +191,7 @@ def _settrace_and_raise(tracefunc):
 def settrace_and_raise(tracefunc):
     try:
         _settrace_and_raise(tracefunc)
-    except RuntimeError as exc:
+    except RuntimeError:
         pass
 
 settrace_and_raise.events = [(2, 'exception'),
@@ -480,6 +480,127 @@ class TraceTestCase(unittest.TestCase):
         self.run_and_compare(func,
             [(0, 'call'),
              (1, 'line')])
+
+    def test_18_except_with_name(self):
+        def func():
+            try:
+                try:
+                    raise Exception
+                except Exception as e:
+                    raise
+                    x = "Something"
+                    y = "Something"
+            except Exception:
+                pass
+
+        self.run_and_compare(func,
+            [(0, 'call'),
+             (1, 'line'),
+             (2, 'line'),
+             (3, 'line'),
+             (3, 'exception'),
+             (4, 'line'),
+             (5, 'line'),
+             (8, 'line'),
+             (9, 'line'),
+             (9, 'return')])
+
+    def test_19_except_with_finally(self):
+        def func():
+            try:
+                try:
+                    raise Exception
+                finally:
+                    y = "Something"
+            except Exception:
+                b = 23
+
+        self.run_and_compare(func,
+            [(0, 'call'),
+             (1, 'line'),
+             (2, 'line'),
+             (3, 'line'),
+             (3, 'exception'),
+             (5, 'line'),
+             (6, 'line'),
+             (7, 'line'),
+             (7, 'return')])
+
+    def test_20_async_for_loop(self):
+        class AsyncIteratorWrapper:
+            def __init__(self, obj):
+                self._it = iter(obj)
+
+            def __aiter__(self):
+                return self
+
+            async def __anext__(self):
+                try:
+                    return next(self._it)
+                except StopIteration:
+                    raise StopAsyncIteration
+
+        async def doit_async():
+            async for letter in AsyncIteratorWrapper("abc"):
+                x = letter
+            y = 42
+
+        def run(tracer):
+            x = doit_async()
+            try:
+                sys.settrace(tracer)
+                x.send(None)
+            finally:
+                sys.settrace(None)
+
+        tracer = self.make_tracer()
+        events = [
+                (0, 'call'),
+                (1, 'line'),
+                (-12, 'call'),
+                (-11, 'line'),
+                (-11, 'return'),
+                (-9, 'call'),
+                (-8, 'line'),
+                (-8, 'return'),
+                (-6, 'call'),
+                (-5, 'line'),
+                (-4, 'line'),
+                (-4, 'return'),
+                (1, 'exception'),
+                (2, 'line'),
+                (1, 'line'),
+                (-6, 'call'),
+                (-5, 'line'),
+                (-4, 'line'),
+                (-4, 'return'),
+                (1, 'exception'),
+                (2, 'line'),
+                (1, 'line'),
+                (-6, 'call'),
+                (-5, 'line'),
+                (-4, 'line'),
+                (-4, 'return'),
+                (1, 'exception'),
+                (2, 'line'),
+                (1, 'line'),
+                (-6, 'call'),
+                (-5, 'line'),
+                (-4, 'line'),
+                (-4, 'exception'),
+                (-3, 'line'),
+                (-2, 'line'),
+                (-2, 'exception'),
+                (-2, 'return'),
+                (1, 'exception'),
+                (3, 'line'),
+                (3, 'return')]
+        try:
+            run(tracer.trace)
+        except Exception:
+            pass
+        self.compare_events(doit_async.__code__.co_firstlineno,
+                            tracer.events, events)
 
 
 class SkipLineEventsTraceTestCase(TraceTestCase):
@@ -1431,7 +1552,7 @@ output.append(4)
         1 / 0
 
     @jump_test(3, 2, [2], event='return', error=(ValueError,
-               "can't jump from a yield statement"))
+               "can't jump from a 'yield' statement"))
     def test_no_jump_from_yield(output):
         def gen():
             output.append(2)

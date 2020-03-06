@@ -221,8 +221,9 @@ _sharedexception_bind(PyObject *exctype, PyObject *exc, PyObject *tb)
     if (err->name == NULL) {
         if (PyErr_ExceptionMatches(PyExc_MemoryError)) {
             failure = "out of memory copying exception type name";
+        } else {
+            failure = "unable to encode and copy exception type name";
         }
-        failure = "unable to encode and copy exception type name";
         goto finally;
     }
 
@@ -237,8 +238,9 @@ _sharedexception_bind(PyObject *exctype, PyObject *exc, PyObject *tb)
         if (err->msg == NULL) {
             if (PyErr_ExceptionMatches(PyExc_MemoryError)) {
                 failure = "out of memory copying exception message";
+            } else {
+                failure = "unable to encode and copy exception message";
             }
-            failure = "unable to encode and copy exception message";
             goto finally;
         }
     }
@@ -1568,13 +1570,12 @@ channel_id_converter(PyObject *arg, void *ptr)
     else {
         PyErr_Format(PyExc_TypeError,
                      "channel ID must be an int, got %.100s",
-                     arg->ob_type->tp_name);
+                     Py_TYPE(arg)->tp_name);
         return 0;
     }
     *(int64_t *)ptr = cid;
     return 1;
 }
-
 
 static channelid *
 newchannelid(PyTypeObject *cls, int64_t cid, int end, _channels *channels,
@@ -1608,27 +1609,15 @@ static PyObject *
 channelid_new(PyTypeObject *cls, PyObject *args, PyObject *kwds)
 {
     static char *kwlist[] = {"id", "send", "recv", "force", "_resolve", NULL};
-    PyObject *id;
+    int64_t cid;
     int send = -1;
     int recv = -1;
     int force = 0;
     int resolve = 0;
     if (!PyArg_ParseTupleAndKeywords(args, kwds,
-                                     "O|$pppp:ChannelID.__new__", kwlist,
-                                     &id, &send, &recv, &force, &resolve))
+                                     "O&|$pppp:ChannelID.__new__", kwlist,
+                                     channel_id_converter, &cid, &send, &recv, &force, &resolve))
         return NULL;
-
-    // Coerce and check the ID.
-    int64_t cid;
-    if (PyObject_TypeCheck(id, &ChannelIDtype)) {
-        cid = ((channelid *)id)->id;
-    }
-    else {
-        cid = _Py_CoerceID(id);
-        if (cid < 0) {
-            return NULL;
-        }
-    }
 
     // Handle "send" and "recv".
     if (send == 0 && recv == 0) {
@@ -1763,30 +1752,28 @@ channelid_richcompare(PyObject *self, PyObject *other, int op)
     int equal;
     if (PyObject_TypeCheck(other, &ChannelIDtype)) {
         channelid *othercid = (channelid *)other;
-        if (cid->end != othercid->end) {
-            equal = 0;
-        }
-        else {
-            equal = (cid->id == othercid->id);
-        }
+        equal = (cid->end == othercid->end) && (cid->id == othercid->id);
     }
-    else {
-        other = PyNumber_Long(other);
-        if (other == NULL) {
-            PyErr_Clear();
-            Py_RETURN_NOTIMPLEMENTED;
-        }
-        int64_t othercid = PyLong_AsLongLong(other);
-        Py_DECREF(other);
-        if (othercid == -1 && PyErr_Occurred() != NULL) {
+    else if (PyLong_Check(other)) {
+        /* Fast path */
+        int overflow;
+        long long othercid = PyLong_AsLongLongAndOverflow(other, &overflow);
+        if (othercid == -1 && PyErr_Occurred()) {
             return NULL;
         }
-        if (othercid < 0) {
-            equal = 0;
+        equal = !overflow && (othercid >= 0) && (cid->id == othercid);
+    }
+    else if (PyNumber_Check(other)) {
+        PyObject *pyid = PyLong_FromLongLong(cid->id);
+        if (pyid == NULL) {
+            return NULL;
         }
-        else {
-            equal = (cid->id == othercid);
-        }
+        PyObject *res = PyObject_RichCompare(pyid, other, op);
+        Py_DECREF(pyid);
+        return res;
+    }
+    else {
+        Py_RETURN_NOTIMPLEMENTED;
     }
 
     if ((op == Py_EQ && equal) || (op == Py_NE && !equal)) {
@@ -1925,8 +1912,7 @@ static PyTypeObject ChannelIDtype = {
     0,                              /* tp_getattro */
     0,                              /* tp_setattro */
     0,                              /* tp_as_buffer */
-    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE |
-        Py_TPFLAGS_LONG_SUBCLASS,   /* tp_flags */
+    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE, /* tp_flags */
     channelid_doc,                  /* tp_doc */
     0,                              /* tp_traverse */
     0,                              /* tp_clear */
@@ -2188,10 +2174,6 @@ interp_destroy(PyObject *self, PyObject *args, PyObject *kwds)
                                      "O:destroy", kwlist, &id)) {
         return NULL;
     }
-    if (!PyLong_Check(id)) {
-        PyErr_SetString(PyExc_TypeError, "ID must be an int");
-        return NULL;
-    }
 
     // Look up the interpreter.
     PyInterpreterState *interp = _PyInterpreterID_LookUp(id);
@@ -2218,7 +2200,6 @@ interp_destroy(PyObject *self, PyObject *args, PyObject *kwds)
     }
 
     // Destroy the interpreter.
-    //PyInterpreterState_Delete(interp);
     PyThreadState *tstate = PyInterpreterState_ThreadHead(interp);
     // XXX Possible GILState issues?
     PyThreadState *save_tstate = PyThreadState_Swap(tstate);
@@ -2316,10 +2297,6 @@ interp_run_string(PyObject *self, PyObject *args, PyObject *kwds)
                                      &id, &code, &shared)) {
         return NULL;
     }
-    if (!PyLong_Check(id)) {
-        PyErr_SetString(PyExc_TypeError, "first arg (ID) must be an int");
-        return NULL;
-    }
 
     // Look up the interpreter.
     PyInterpreterState *interp = _PyInterpreterID_LookUp(id);
@@ -2387,10 +2364,6 @@ interp_is_running(PyObject *self, PyObject *args, PyObject *kwds)
                                      "O:is_running", kwlist, &id)) {
         return NULL;
     }
-    if (!PyLong_Check(id)) {
-        PyErr_SetString(PyExc_TypeError, "ID must be an int");
-        return NULL;
-    }
 
     PyInterpreterState *interp = _PyInterpreterID_LookUp(id);
     if (interp == NULL) {
@@ -2439,13 +2412,9 @@ static PyObject *
 channel_destroy(PyObject *self, PyObject *args, PyObject *kwds)
 {
     static char *kwlist[] = {"cid", NULL};
-    PyObject *id;
-    if (!PyArg_ParseTupleAndKeywords(args, kwds,
-                                     "O:channel_destroy", kwlist, &id)) {
-        return NULL;
-    }
-    int64_t cid = _Py_CoerceID(id);
-    if (cid < 0) {
+    int64_t cid;
+    if (!PyArg_ParseTupleAndKeywords(args, kwds, "O&:channel_destroy", kwlist,
+                                     channel_id_converter, &cid)) {
         return NULL;
     }
 
@@ -2561,14 +2530,10 @@ static PyObject *
 channel_send(PyObject *self, PyObject *args, PyObject *kwds)
 {
     static char *kwlist[] = {"cid", "obj", NULL};
-    PyObject *id;
+    int64_t cid;
     PyObject *obj;
-    if (!PyArg_ParseTupleAndKeywords(args, kwds,
-                                     "OO:channel_send", kwlist, &id, &obj)) {
-        return NULL;
-    }
-    int64_t cid = _Py_CoerceID(id);
-    if (cid < 0) {
+    if (!PyArg_ParseTupleAndKeywords(args, kwds, "O&O:channel_send", kwlist,
+                                     channel_id_converter, &cid, &obj)) {
         return NULL;
     }
 
@@ -2587,14 +2552,10 @@ static PyObject *
 channel_send_buffer(PyObject *self, PyObject *args, PyObject *kwds)
 {
     static char *kwlist[] = {"cid", "obj", NULL};
-    PyObject *id;
+    int64_t cid;
     PyObject *obj;
-    if (!PyArg_ParseTupleAndKeywords(args, kwds,
-                                     "OO:channel_send_buffer", kwlist, &id, &obj)) {
-        return NULL;
-    }
-    int64_t cid = _Py_CoerceID(id);
-    if (cid < 0) {
+    if (!PyArg_ParseTupleAndKeywords(args, kwds, "O&O:channel_send", kwlist,
+                                     channel_id_converter, &cid, &obj)) {
         return NULL;
     }
 
@@ -2613,13 +2574,9 @@ static PyObject *
 channel_recv(PyObject *self, PyObject *args, PyObject *kwds)
 {
     static char *kwlist[] = {"cid", NULL};
-    PyObject *id;
-    if (!PyArg_ParseTupleAndKeywords(args, kwds,
-                                     "O:channel_recv", kwlist, &id)) {
-        return NULL;
-    }
-    int64_t cid = _Py_CoerceID(id);
-    if (cid < 0) {
+    int64_t cid;
+    if (!PyArg_ParseTupleAndKeywords(args, kwds, "O&:channel_recv", kwlist,
+                                     channel_id_converter, &cid)) {
         return NULL;
     }
 
@@ -2635,17 +2592,13 @@ static PyObject *
 channel_close(PyObject *self, PyObject *args, PyObject *kwds)
 {
     static char *kwlist[] = {"cid", "send", "recv", "force", NULL};
-    PyObject *id;
+    int64_t cid;
     int send = 0;
     int recv = 0;
     int force = 0;
     if (!PyArg_ParseTupleAndKeywords(args, kwds,
-                                     "O|$ppp:channel_close", kwlist,
-                                     &id, &send, &recv, &force)) {
-        return NULL;
-    }
-    int64_t cid = _Py_CoerceID(id);
-    if (cid < 0) {
+                                     "O&|$ppp:channel_close", kwlist,
+                                     channel_id_converter, &cid, &send, &recv, &force)) {
         return NULL;
     }
 
@@ -2687,17 +2640,13 @@ channel_release(PyObject *self, PyObject *args, PyObject *kwds)
 {
     // Note that only the current interpreter is affected.
     static char *kwlist[] = {"cid", "send", "recv", "force", NULL};
-    PyObject *id;
+    int64_t cid;
     int send = 0;
     int recv = 0;
     int force = 0;
     if (!PyArg_ParseTupleAndKeywords(args, kwds,
-                                     "O|$ppp:channel_release", kwlist,
-                                     &id, &send, &recv, &force)) {
-        return NULL;
-    }
-    int64_t cid = _Py_CoerceID(id);
-    if (cid < 0) {
+                                     "O&|$ppp:channel_release", kwlist,
+                                     channel_id_converter, &cid, &send, &recv, &force)) {
         return NULL;
     }
     if (send == 0 && recv == 0) {
@@ -2798,7 +2747,6 @@ PyInit__interpreters(void)
     }
 
     /* Initialize types */
-    ChannelIDtype.tp_base = &PyLong_Type;
     if (PyType_Ready(&ChannelIDtype) != 0) {
         return NULL;
     }

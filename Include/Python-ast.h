@@ -6,6 +6,7 @@
 extern "C" {
 #endif
 
+#ifndef Py_LIMITED_API
 #include "asdl.h"
 
 #undef Yield   /* undefine macro conflicting with <winbase.h> */
@@ -50,7 +51,7 @@ typedef struct _type_ignore *type_ignore_ty;
 
 
 enum _mod_kind {Module_kind=1, Interactive_kind=2, Expression_kind=3,
-                 FunctionType_kind=4, Suite_kind=5};
+                 FunctionType_kind=4};
 struct _mod {
     enum _mod_kind kind;
     union {
@@ -71,10 +72,6 @@ struct _mod {
             asdl_seq *argtypes;
             expr_ty returns;
         } FunctionType;
-
-        struct {
-            asdl_seq *body;
-        } Suite;
 
     } v;
 };
@@ -482,8 +479,6 @@ mod_ty _Py_Interactive(asdl_seq * body, PyArena *arena);
 mod_ty _Py_Expression(expr_ty body, PyArena *arena);
 #define FunctionType(a0, a1, a2) _Py_FunctionType(a0, a1, a2)
 mod_ty _Py_FunctionType(asdl_seq * argtypes, expr_ty returns, PyArena *arena);
-#define Suite(a0, a1) _Py_Suite(a0, a1)
-mod_ty _Py_Suite(asdl_seq * body, PyArena *arena);
 #define FunctionDef(a0, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10) _Py_FunctionDef(a0, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10)
 stmt_ty _Py_FunctionDef(identifier name, arguments_ty args, asdl_seq * body,
                         asdl_seq * decorator_list, expr_ty returns, string
@@ -708,6 +703,7 @@ type_ignore_ty _Py_TypeIgnore(int lineno, string tag, PyArena *arena);
 PyObject* PyAST_mod2obj(mod_ty t);
 mod_ty PyAST_obj2mod(PyObject* ast, PyArena* arena, int mode);
 int PyAST_Check(PyObject* obj);
+#endif /* !Py_LIMITED_API */
 
 #ifdef __cplusplus
 }

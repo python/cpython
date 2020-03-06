@@ -103,9 +103,9 @@ _io.open
     file: object
     mode: str = "r"
     buffering: int = -1
-    encoding: str(accept={str, NoneType}) = NULL
-    errors: str(accept={str, NoneType}) = NULL
-    newline: str(accept={str, NoneType}) = NULL
+    encoding: str(accept={str, NoneType}) = None
+    errors: str(accept={str, NoneType}) = None
+    newline: str(accept={str, NoneType}) = None
     closefd: bool(accept={int}) = True
     opener: object = None
 
@@ -233,7 +233,7 @@ static PyObject *
 _io_open_impl(PyObject *module, PyObject *file, const char *mode,
               int buffering, const char *encoding, const char *errors,
               const char *newline, int closefd, PyObject *opener)
-/*[clinic end generated code: output=aefafc4ce2b46dc0 input=03da2940c8a65871]*/
+/*[clinic end generated code: output=aefafc4ce2b46dc0 input=7295902222e6b311]*/
 {
     unsigned i;
 
@@ -565,7 +565,7 @@ PyNumber_AsOff_t(PyObject *item, PyObject *err)
         /* Otherwise replace the error with caller's error object. */
         PyErr_Format(err,
                      "cannot fit '%.200s' into an offset-sized integer",
-                     item->ob_type->tp_name);
+                     Py_TYPE(item)->tp_name);
     }
 
  finish:

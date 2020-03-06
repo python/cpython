@@ -220,7 +220,7 @@ class IdleConfTest(unittest.TestCase):
 
     @unittest.skipIf(sys.platform.startswith('win'), 'this is test for unix system')
     def test_get_user_cfg_dir_unix(self):
-        "Test to get user config directory under unix"
+        # Test to get user config directory under unix.
         conf = self.new_config(_utest=True)
 
         # Check normal way should success
@@ -243,7 +243,7 @@ class IdleConfTest(unittest.TestCase):
 
     @unittest.skipIf(not sys.platform.startswith('win'), 'this is test for Windows system')
     def test_get_user_cfg_dir_windows(self):
-        "Test to get user config directory under Windows"
+        # Test to get user config directory under Windows.
         conf = self.new_config(_utest=True)
 
         # Check normal way should success
@@ -284,12 +284,12 @@ class IdleConfTest(unittest.TestCase):
             self.assertIsInstance(user_parser, config.IdleUserConfParser)
 
         # Check config path are correct
-        for config_type, parser in conf.defaultCfg.items():
+        for cfg_type, parser in conf.defaultCfg.items():
             self.assertEqual(parser.file,
-                             os.path.join(idle_dir, 'config-%s.def' % config_type))
-        for config_type, parser in conf.userCfg.items():
+                             os.path.join(idle_dir, f'config-{cfg_type}.def'))
+        for cfg_type, parser in conf.userCfg.items():
             self.assertEqual(parser.file,
-                             os.path.join(conf.userdir, 'config-%s.cfg' % config_type))
+                             os.path.join(conf.userdir or '#', f'config-{cfg_type}.cfg'))
 
     def test_load_cfg_files(self):
         conf = self.new_config(_utest=True)
@@ -373,7 +373,7 @@ class IdleConfTest(unittest.TestCase):
                                                        'background': '#171717'})
 
     def test_get_theme_dict(self):
-        "XXX: NOT YET DONE"
+        # TODO: finish.
         conf = self.mock_config()
 
         # These two should be the same

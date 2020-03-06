@@ -1,7 +1,0 @@
-regrtest now uses :func:`sys.unraisablehook` to mark a test as "environment
-altered" (ENV_CHANGED) if it emits an "unraisable exception". Moreover,
-regrtest logs a warning in this case.
-
-Use ``python3 -m test --fail-env-changed`` to catch unraisable exceptions in
-tests.
-

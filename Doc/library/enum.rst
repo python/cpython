@@ -55,7 +55,7 @@ helper, :class:`auto`.
 
 .. class:: auto
 
-    Instances are replaced with an appropriate value for Enum members.
+    Instances are replaced with an appropriate value for Enum members.  By default, the initial value starts at 1.
 
 .. versionadded:: 3.6  ``Flag``, ``IntFlag``, ``auto``
 

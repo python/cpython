@@ -26,13 +26,14 @@
 # written by Fredrik Lundh (fredrik@pythonware.com)
 #
 
+import dataclasses
 import os
 import sys
 import zipfile
 
 from functools import partial
 from textwrap import dedent
-from typing import Iterator, List, Tuple
+from typing import Iterator, List, Optional, Set, Tuple
 
 SCRIPT = sys.argv[0]
 VERSION = "3.3"
@@ -148,12 +149,12 @@ def makeunicodedata(unicode, trace):
         record = unicode.table[char]
         if record:
             # extract database properties
-            category = CATEGORY_NAMES.index(record[2])
-            combining = int(record[3])
-            bidirectional = BIDIRECTIONAL_NAMES.index(record[4])
-            mirrored = record[9] == "Y"
-            eastasianwidth = EASTASIANWIDTH_NAMES.index(record[15])
-            normalizationquickcheck = record[17]
+            category = CATEGORY_NAMES.index(record.general_category)
+            combining = int(record.canonical_combining_class)
+            bidirectional = BIDIRECTIONAL_NAMES.index(record.bidi_class)
+            mirrored = record.bidi_mirrored == "Y"
+            eastasianwidth = EASTASIANWIDTH_NAMES.index(record.east_asian_width)
+            normalizationquickcheck = record.quick_check
             item = (
                 category, combining, bidirectional, mirrored, eastasianwidth,
                 normalizationquickcheck
@@ -179,8 +180,8 @@ def makeunicodedata(unicode, trace):
     for char in unicode.chars:
         record = unicode.table[char]
         if record:
-            if record[5]:
-                decomp = record[5].split()
+            if record.decomposition_type:
+                decomp = record.decomposition_type.split()
                 if len(decomp) > 19:
                     raise Exception("character %x has a decomposition too large for nfd_nfkd" % char)
                 # prefix
@@ -200,7 +201,7 @@ def makeunicodedata(unicode, trace):
                 # Collect NFC pairs
                 if not prefix and len(decomp) == 3 and \
                    char not in unicode.exclusions and \
-                   unicode.table[decomp[1]][3] == "0":
+                   unicode.table[decomp[1]].canonical_combining_class == "0":
                     p, l, r = decomp
                     comp_first[l] = 1
                     comp_last[r] = 1
@@ -404,9 +405,9 @@ def makeunicodetype(unicode, trace):
         record = unicode.table[char]
         if record:
             # extract database properties
-            category = record[2]
-            bidirectional = record[4]
-            properties = record[16]
+            category = record.general_category
+            bidirectional = record.bidi_class
+            properties = record.binary_properties
             flags = 0
             if category in ["Lm", "Lt", "Lu", "Ll", "Lo"]:
                 flags |= ALPHA_MASK
@@ -434,16 +435,16 @@ def makeunicodetype(unicode, trace):
                 flags |= CASE_IGNORABLE_MASK
             sc = unicode.special_casing.get(char)
             cf = unicode.case_folding.get(char, [char])
-            if record[12]:
-                upper = int(record[12], 16)
+            if record.simple_uppercase_mapping:
+                upper = int(record.simple_uppercase_mapping, 16)
             else:
                 upper = char
-            if record[13]:
-                lower = int(record[13], 16)
+            if record.simple_lowercase_mapping:
+                lower = int(record.simple_lowercase_mapping, 16)
             else:
                 lower = char
-            if record[14]:
-                title = int(record[14], 16)
+            if record.simple_titlecase_mapping:
+                title = int(record.simple_titlecase_mapping, 16)
             else:
                 title = upper
             if sc is None and cf != [lower]:
@@ -480,16 +481,16 @@ def makeunicodetype(unicode, trace):
                     extra_casing.extend(sc[1])
             # decimal digit, integer digit
             decimal = 0
-            if record[6]:
+            if record.decomposition_mapping:
                 flags |= DECIMAL_MASK
-                decimal = int(record[6])
+                decimal = int(record.decomposition_mapping)
             digit = 0
-            if record[7]:
+            if record.numeric_type:
                 flags |= DIGIT_MASK
-                digit = int(record[7])
-            if record[8]:
+                digit = int(record.numeric_type)
+            if record.numeric_value:
                 flags |= NUMERIC_MASK
-                numeric.setdefault(record[8], []).append(char)
+                numeric.setdefault(record.numeric_value, []).append(char)
             item = (
                 upper, lower, title, decimal, digit, flags
                 )
@@ -609,7 +610,7 @@ def makeunicodename(unicode, trace):
     for char in unicode.chars:
         record = unicode.table[char]
         if record:
-            name = record[1].strip()
+            name = record.name.strip()
             if name and name[0] != "<":
                 names[char] = name + chr(0)
 
@@ -719,7 +720,7 @@ def makeunicodename(unicode, trace):
     for char in unicode.chars:
         record = unicode.table[char]
         if record:
-            name = record[1].strip()
+            name = record.name.strip()
             if name and name[0] != "<":
                 data.append((name, char))
 
@@ -819,31 +820,27 @@ def merge_old_version(version, new, old):
             continue
         # check characters that differ
         if old.table[i] != new.table[i]:
-            for k in range(len(old.table[i])):
-                if old.table[i][k] != new.table[i][k]:
-                    value = old.table[i][k]
+            for k, field in enumerate(dataclasses.fields(UcdRecord)):
+                value = getattr(old.table[i], field.name)
+                new_value = getattr(new.table[i], field.name)
+                if value != new_value:
                     if k == 1 and i in PUA_15:
                         # the name is not set in the old.table, but in the
                         # new.table we are using it for aliases and named seq
                         assert value == ''
                     elif k == 2:
-                        #print "CATEGORY",hex(i), old.table[i][k], new.table[i][k]
                         category_changes[i] = CATEGORY_NAMES.index(value)
                     elif k == 4:
-                        #print "BIDIR",hex(i), old.table[i][k], new.table[i][k]
                         bidir_changes[i] = BIDIRECTIONAL_NAMES.index(value)
                     elif k == 5:
-                        #print "DECOMP",hex(i), old.table[i][k], new.table[i][k]
                         # We assume that all normalization changes are in 1:1 mappings
                         assert " " not in value
                         normalization_changes.append((i, value))
                     elif k == 6:
-                        #print "DECIMAL",hex(i), old.table[i][k], new.table[i][k]
                         # we only support changes where the old value is a single digit
                         assert value in "0123456789"
                         decimal_changes[i] = int(value)
                     elif k == 8:
-                        # print "NUMERIC",hex(i), `old.table[i][k]`, new.table[i][k]
                         # Since 0 encodes "no change", the old value is better not 0
                         if not value:
                             numeric_changes[i] = -1
@@ -952,6 +949,45 @@ class UcdFile:
                 yield char, rest
 
 
+@dataclasses.dataclass
+class UcdRecord:
+    # 15 fields from UnicodeData.txt .  See:
+    #   https://www.unicode.org/reports/tr44/#UnicodeData.txt
+    codepoint: str
+    name: str
+    general_category: str
+    canonical_combining_class: str
+    bidi_class: str
+    decomposition_type: str
+    decomposition_mapping: str
+    numeric_type: str
+    numeric_value: str
+    bidi_mirrored: str
+    unicode_1_name: str  # obsolete
+    iso_comment: str  # obsolete
+    simple_uppercase_mapping: str
+    simple_lowercase_mapping: str
+    simple_titlecase_mapping: str
+
+    # https://www.unicode.org/reports/tr44/#EastAsianWidth.txt
+    east_asian_width: Optional[str]
+
+    # Binary properties, as a set of those that are true.
+    # Taken from multiple files:
+    #   https://www.unicode.org/reports/tr44/#DerivedCoreProperties.txt
+    #   https://www.unicode.org/reports/tr44/#LineBreak.txt
+    binary_properties: Set[str]
+
+    # The Quick_Check properties related to normalization:
+    #   https://www.unicode.org/reports/tr44/#Decompositions_and_Normalization
+    # We store them as a bitmask.
+    quick_check: int
+
+
+def from_row(row: List[str]) -> UcdRecord:
+    return UcdRecord(*row, None, set(), 0)
+
+
 # --------------------------------------------------------------------
 # the following support code is taken from the unidb utilities
 # Copyright (c) 1999-2000 by Secret Labs AB
@@ -959,18 +995,14 @@ class UcdFile:
 # load a unicode-data file from disk
 
 class UnicodeData:
-    # Record structure:
-    # [ID, name, category, combining, bidi, decomp,  (6)
-    #  decimal, digit, numeric, bidi-mirrored, Unicode-1-name, (11)
-    #  ISO-comment, uppercase, lowercase, titlecase, ea-width, (16)
-    #  derived-props] (17)
+    # table: List[Optional[UcdRecord]]  # index is codepoint; None means unassigned
 
     def __init__(self, version, cjk_check=True):
         self.changed = []
         table = [None] * 0x110000
         for s in UcdFile(UNICODE_DATA, version):
             char = int(s[0], 16)
-            table[char] = s
+            table[char] = from_row(s)
 
         cjk_ranges_found = []
 
@@ -982,19 +1014,17 @@ class UnicodeData:
             #   https://www.unicode.org/reports/tr44/#Code_Point_Ranges
             s = table[i]
             if s:
-                if s[1][-6:] == "First>":
-                    s[1] = ""
-                    field = s
-                elif s[1][-5:] == "Last>":
-                    if s[1].startswith("<CJK Ideograph"):
+                if s.name[-6:] == "First>":
+                    s.name = ""
+                    field = dataclasses.astuple(s)[:15]
+                elif s.name[-5:] == "Last>":
+                    if s.name.startswith("<CJK Ideograph"):
                         cjk_ranges_found.append((field[0],
-                                                 s[0]))
-                    s[1] = ""
+                                                 s.codepoint))
+                    s.name = ""
                     field = None
             elif field:
-                f2 = field[:]
-                f2[0] = "%X" % i
-                table[i] = f2
+                table[i] = from_row(('%X' % i,) + field[1:])
         if cjk_check and cjk_ranges != cjk_ranges_found:
             raise ValueError("CJK ranges deviate: have %r" % cjk_ranges_found)
 
@@ -1015,7 +1045,7 @@ class UnicodeData:
                 char = int(char, 16)
                 self.aliases.append((name, char))
                 # also store the name in the PUA 1
-                self.table[pua_index][1] = name
+                self.table[pua_index].name = name
                 pua_index += 1
             assert pua_index - NAME_ALIASES_START == len(self.aliases)
 
@@ -1034,7 +1064,7 @@ class UnicodeData:
                     "the NamedSequence struct and in unicodedata_lookup")
                 self.named_sequences.append((name, chars))
                 # also store these in the PUA 1
-                self.table[pua_index][1] = name
+                self.table[pua_index].name = name
                 pua_index += 1
             assert pua_index - NAMED_SEQUENCES_START == len(self.named_sequences)
 
@@ -1049,23 +1079,19 @@ class UnicodeData:
 
         for i in range(0, 0x110000):
             if table[i] is not None:
-                table[i].append(widths[i])
-
-        for i in range(0, 0x110000):
-            if table[i] is not None:
-                table[i].append(set())
+                table[i].east_asian_width = widths[i]
 
         for char, (p,) in UcdFile(DERIVED_CORE_PROPERTIES, version).expanded():
             if table[char]:
                 # Some properties (e.g. Default_Ignorable_Code_Point)
                 # apply to unassigned code points; ignore them
-                table[char][-1].add(p)
+                table[char].binary_properties.add(p)
 
         for char_range, value in UcdFile(LINE_BREAK, version):
             if value not in MANDATORY_LINE_BREAKS:
                 continue
             for char in expand_range(char_range):
-                table[char][-1].add('Line_Break')
+                table[char].binary_properties.add('Line_Break')
 
         # We only want the quickcheck properties
         # Format: NF?_QC; Y(es)/N(o)/M(aybe)
@@ -1087,7 +1113,7 @@ class UnicodeData:
                 quickchecks[char] |= quickcheck
         for i in range(0, 0x110000):
             if table[i] is not None:
-                table[i].append(quickchecks[i])
+                table[i].quick_check = quickchecks[i]
 
         with open_data(UNIHAN, version) as file:
             zip = zipfile.ZipFile(file)
@@ -1106,7 +1132,7 @@ class UnicodeData:
             i = int(code[2:], 16)
             # Patch the numeric field
             if table[i] is not None:
-                table[i][8] = value
+                table[i].numeric_value = value
 
         sc = self.special_casing = {}
         for data in UcdFile(SPECIAL_CASING, version):

@@ -226,6 +226,27 @@ class RoundtripLegalSyntaxTestCase(unittest.TestCase):
         self.check_suite("@funcattrs()\n"
                          "def f(): pass")
 
+        self.check_suite("@False or x\n"
+                         "def f(): pass")
+        self.check_suite("@d := x\n"
+                         "def f(): pass")
+        self.check_suite("@lambda f: x(f)\n"
+                         "def f(): pass")
+        self.check_suite("@[..., x, ...][1]\n"
+                         "def f(): pass")
+        self.check_suite("@x(x)(x)\n"
+                         "def f(): pass")
+        self.check_suite("@(x, x)\n"
+                         "def f(): pass")
+        self.check_suite("@...\n"
+                         "def f(): pass")
+        self.check_suite("@None\n"
+                         "def f(): pass")
+        self.check_suite("@w @(x @y) @(z)\n"
+                         "def f(): pass")
+        self.check_suite("@w[x].y.z\n"
+                         "def f(): pass")
+
         # keyword-only arguments
         self.check_suite("def f(*, a): pass")
         self.check_suite("def f(*, a = 5): pass")
@@ -269,6 +290,27 @@ class RoundtripLegalSyntaxTestCase(unittest.TestCase):
         self.check_suite("@decorator1\n"
                          "@decorator2\n"
                          "class foo():pass")
+
+        self.check_suite("@False or x\n"
+                         "class C: pass")
+        self.check_suite("@d := x\n"
+                         "class C: pass")
+        self.check_suite("@lambda f: x(f)\n"
+                         "class C: pass")
+        self.check_suite("@[..., x, ...][1]\n"
+                         "class C: pass")
+        self.check_suite("@x(x)(x)\n"
+                         "class C: pass")
+        self.check_suite("@(x, x)\n"
+                         "class C: pass")
+        self.check_suite("@...\n"
+                         "class C: pass")
+        self.check_suite("@None\n"
+                         "class C: pass")
+        self.check_suite("@w @(x @y) @(z)\n"
+                         "class C: pass")
+        self.check_suite("@w[x].y.z\n"
+                         "class C: pass")
 
     def test_import_from_statement(self):
         self.check_suite("from sys.path import *")

@@ -116,7 +116,7 @@ class EditorWindow(object):
             self.tkinter_vars = {}  # keys: Tkinter event names
                                     # values: Tkinter variable instances
             self.top.instance_dict = {}
-        self.recent_files_path = os.path.join(
+        self.recent_files_path = idleConf.userdir and os.path.join(
                 idleConf.userdir, 'recent-files.lst')
 
         self.prompt_last_line = ''  # Override in PyShell
@@ -186,8 +186,9 @@ class EditorWindow(object):
         text.bind("<<uncomment-region>>", fregion.uncomment_region_event)
         text.bind("<<tabify-region>>", fregion.tabify_region_event)
         text.bind("<<untabify-region>>", fregion.untabify_region_event)
-        text.bind("<<toggle-tabs>>", self.Indents.toggle_tabs_event)
-        text.bind("<<change-indentwidth>>", self.Indents.change_indentwidth_event)
+        indents = self.Indents(self)
+        text.bind("<<toggle-tabs>>", indents.toggle_tabs_event)
+        text.bind("<<change-indentwidth>>", indents.change_indentwidth_event)
         text.bind("<Left>", self.move_at_edge_if_selection(0))
         text.bind("<Right>", self.move_at_edge_if_selection(1))
         text.bind("<<del-word-left>>", self.del_word_left)
@@ -240,6 +241,12 @@ class EditorWindow(object):
         # The recommended Python indentation is four spaces.
         self.indentwidth = self.tabwidth
         self.set_notabs_indentwidth()
+
+        # Store the current value of the insertofftime now so we can restore
+        # it if needed.
+        if not hasattr(idleConf, 'blink_off_time'):
+            idleConf.blink_off_time = self.text['insertofftime']
+        self.update_cursor_blink()
 
         # When searching backwards for a reliable place to begin parsing,
         # first start num_context_lines[0] lines back, then
@@ -321,7 +328,7 @@ class EditorWindow(object):
         text.bind("<<run-module>>", scriptbinding.run_module_event)
         text.bind("<<run-custom>>", scriptbinding.run_custom_event)
         text.bind("<<do-rstrip>>", self.Rstrip(self).do_rstrip)
-        ctip = self.Calltip(self)
+        self.ctip = ctip = self.Calltip(self)
         text.bind("<<try-open-calltip>>", ctip.try_open_calltip_event)
         #refresh-calltip must come after paren-closed to work right
         text.bind("<<refresh-calltip>>", ctip.refresh_calltip_event)
@@ -357,21 +364,6 @@ class EditorWindow(object):
         zero_char_width = \
             Font(text, font=text.cget('font')).measure('0')
         self.width = pixel_width // zero_char_width
-
-    def _filename_to_unicode(self, filename):
-        """Return filename as BMP unicode so displayable in Tk."""
-        # Decode bytes to unicode.
-        if isinstance(filename, bytes):
-            try:
-                filename = filename.decode(self.filesystemencoding)
-            except UnicodeDecodeError:
-                try:
-                    filename = filename.decode(self.encoding)
-                except UnicodeDecodeError:
-                    # byte-to-byte conversion
-                    filename = filename.decode('iso8859-1')
-        # Replace non-BMP char with diamond questionmark.
-        return re.sub('[\U00010000-\U0010FFFF]', '\ufffd', filename)
 
     def new_callback(self, event):
         dirname, basename = self.io.defaultfilename()
@@ -818,6 +810,16 @@ class EditorWindow(object):
             text.mark_set("insert", pos + "+1c")
         text.see(pos)
 
+    def update_cursor_blink(self):
+        "Update the cursor blink configuration."
+        cursorblink = idleConf.GetOption(
+                'main', 'EditorWindow', 'cursor-blink', type='bool')
+        if not cursorblink:
+            self.text['insertofftime'] = 0
+        else:
+            # Restore the original value
+            self.text['insertofftime'] = idleConf.blink_off_time
+
     def ResetFont(self):
         "Update the text widgets' font if it is changed"
         # Called from configdialog.py
@@ -924,9 +926,11 @@ class EditorWindow(object):
 
     def update_recent_files_list(self, new_file=None):
         "Load and update the recent files list and menus"
+        # TODO: move to iomenu.
         rf_list = []
-        if os.path.exists(self.recent_files_path):
-            with open(self.recent_files_path, 'r',
+        file_path = self.recent_files_path
+        if file_path and os.path.exists(file_path):
+            with open(file_path, 'r',
                       encoding='utf_8', errors='replace') as rf_list_file:
                 rf_list = rf_list_file.readlines()
         if new_file:
@@ -942,29 +946,27 @@ class EditorWindow(object):
         rf_list = [path for path in rf_list if path not in bad_paths]
         ulchars = "1234567890ABCDEFGHIJK"
         rf_list = rf_list[0:len(ulchars)]
-        try:
-            with open(self.recent_files_path, 'w',
-                        encoding='utf_8', errors='replace') as rf_file:
-                rf_file.writelines(rf_list)
-        except OSError as err:
-            if not getattr(self.root, "recentfilelist_error_displayed", False):
-                self.root.recentfilelist_error_displayed = True
-                tkMessageBox.showwarning(title='IDLE Warning',
-                    message="Cannot update File menu Recent Files list. "
-                            "Your operating system says:\n%s\n"
-                            "Select OK and IDLE will continue without updating."
-                        % self._filename_to_unicode(str(err)),
-                    parent=self.text)
+        if file_path:
+            try:
+                with open(file_path, 'w',
+                          encoding='utf_8', errors='replace') as rf_file:
+                    rf_file.writelines(rf_list)
+            except OSError as err:
+                if not getattr(self.root, "recentfiles_message", False):
+                    self.root.recentfiles_message = True
+                    tkMessageBox.showwarning(title='IDLE Warning',
+                        message="Cannot save Recent Files list to disk.\n"
+                                f"  {err}\n"
+                                "Select OK to continue.",
+                        parent=self.text)
         # for each edit window instance, construct the recent files menu
         for instance in self.top.instance_dict:
             menu = instance.recent_files_menu
             menu.delete(0, END)  # clear, and rebuild:
             for i, file_name in enumerate(rf_list):
                 file_name = file_name.rstrip()  # zap \n
-                # make unicode string to display non-ASCII chars correctly
-                ufile_name = self._filename_to_unicode(file_name)
                 callback = instance.__recent_file_callback(file_name)
-                menu.add_command(label=ulchars[i] + " " + ufile_name,
+                menu.add_command(label=ulchars[i] + " " + file_name,
                                  command=callback,
                                  underline=0)
 
@@ -1002,16 +1004,10 @@ class EditorWindow(object):
 
     def short_title(self):
         filename = self.io.filename
-        if filename:
-            filename = os.path.basename(filename)
-        else:
-            filename = "untitled"
-        # return unicode string to display non-ASCII chars correctly
-        return self._filename_to_unicode(filename)
+        return os.path.basename(filename) if filename else "untitled"
 
     def long_title(self):
-        # return unicode string to display non-ASCII chars correctly
-        return self._filename_to_unicode(self.io.filename or "")
+        return self.io.filename or ""
 
     def center_insert_event(self, event):
         self.center()
@@ -1059,10 +1055,13 @@ class EditorWindow(object):
             return self.io.maybesave()
 
     def close(self):
-        reply = self.maybesave()
-        if str(reply) != "cancel":
-            self._close()
-        return reply
+        try:
+            reply = self.maybesave()
+            if str(reply) != "cancel":
+                self._close()
+            return reply
+        except AttributeError:  # bpo-35379: close called twice
+            pass
 
     def _close(self):
         if self.io.filename:
@@ -1343,38 +1342,51 @@ class EditorWindow(object):
             text.undo_block_stop()
 
     def newline_and_indent_event(self, event):
+        """Insert a newline and indentation after Enter keypress event.
+
+        Properly position the cursor on the new line based on information
+        from the current line.  This takes into account if the current line
+        is a shell prompt, is empty, has selected text, contains a block
+        opener, contains a block closer, is a continuation line, or
+        is inside a string.
+        """
         text = self.text
         first, last = self.get_selection_indices()
         text.undo_block_start()
-        try:
+        try:  # Close undo block and expose new line in finally clause.
             if first and last:
                 text.delete(first, last)
                 text.mark_set("insert", first)
             line = text.get("insert linestart", "insert")
+
+            # Count leading whitespace for indent size.
             i, n = 0, len(line)
             while i < n and line[i] in " \t":
-                i = i+1
+                i += 1
             if i == n:
-                # the cursor is in or at leading indentation in a continuation
-                # line; just inject an empty line at the start
+                # The cursor is in or at leading indentation in a continuation
+                # line; just inject an empty line at the start.
                 text.insert("insert linestart", '\n')
                 return "break"
             indent = line[:i]
-            # strip whitespace before insert point unless it's in the prompt
+
+            # Strip whitespace before insert point unless it's in the prompt.
             i = 0
             while line and line[-1] in " \t" and line != self.prompt_last_line:
                 line = line[:-1]
-                i = i+1
+                i += 1
             if i:
                 text.delete("insert - %d chars" % i, "insert")
-            # strip whitespace after insert point
+
+            # Strip whitespace after insert point.
             while text.get("insert") in " \t":
                 text.delete("insert")
-            # start new line
+
+            # Insert new line.
             text.insert("insert", '\n')
 
-            # adjust indentation for continuations and block
-            # open/close first need to find the last stmt
+            # Adjust indentation for continuations and block open/close.
+            # First need to find the last statement.
             lno = index2line(text.index('insert'))
             y = pyparse.Parser(self.indentwidth, self.tabwidth)
             if not self.prompt_last_line:
@@ -1384,7 +1396,7 @@ class EditorWindow(object):
                     rawtext = text.get(startatindex, "insert")
                     y.set_code(rawtext)
                     bod = y.find_good_parse_start(
-                              self._build_char_in_string_func(startatindex))
+                            self._build_char_in_string_func(startatindex))
                     if bod is not None or startat == 1:
                         break
                 y.set_lo(bod or 0)
@@ -1400,26 +1412,26 @@ class EditorWindow(object):
 
             c = y.get_continuation_type()
             if c != pyparse.C_NONE:
-                # The current stmt hasn't ended yet.
+                # The current statement hasn't ended yet.
                 if c == pyparse.C_STRING_FIRST_LINE:
-                    # after the first line of a string; do not indent at all
+                    # After the first line of a string do not indent at all.
                     pass
                 elif c == pyparse.C_STRING_NEXT_LINES:
-                    # inside a string which started before this line;
-                    # just mimic the current indent
+                    # Inside a string which started before this line;
+                    # just mimic the current indent.
                     text.insert("insert", indent)
                 elif c == pyparse.C_BRACKET:
-                    # line up with the first (if any) element of the
+                    # Line up with the first (if any) element of the
                     # last open bracket structure; else indent one
                     # level beyond the indent of the line with the
-                    # last open bracket
+                    # last open bracket.
                     self.reindent_to(y.compute_bracket_indent())
                 elif c == pyparse.C_BACKSLASH:
-                    # if more than one line in this stmt already, just
+                    # If more than one line in this statement already, just
                     # mimic the current indent; else if initial line
                     # has a start on an assignment stmt, indent to
                     # beyond leftmost =; else to beyond first chunk of
-                    # non-whitespace on initial line
+                    # non-whitespace on initial line.
                     if y.get_num_lines_in_stmt() > 1:
                         text.insert("insert", indent)
                     else:
@@ -1428,9 +1440,9 @@ class EditorWindow(object):
                     assert 0, "bogus continuation type %r" % (c,)
                 return "break"
 
-            # This line starts a brand new stmt; indent relative to
+            # This line starts a brand new statement; indent relative to
             # indentation of initial line of closest preceding
-            # interesting stmt.
+            # interesting statement.
             indent = y.get_base_indent_string()
             text.insert("insert", indent)
             if y.is_block_opener():

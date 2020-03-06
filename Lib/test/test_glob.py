@@ -264,6 +264,23 @@ class GlobTests(unittest.TestCase):
                 expect += [join('sym3', 'EF')]
             eq(glob.glob(join('**', 'EF'), recursive=True), expect)
 
+    def test_glob_many_open_files(self):
+        depth = 30
+        base = os.path.join(self.tempdir, 'deep')
+        p = os.path.join(base, *(['d']*depth))
+        os.makedirs(p)
+        pattern = os.path.join(base, *(['*']*depth))
+        iters = [glob.iglob(pattern, recursive=True) for j in range(100)]
+        for it in iters:
+            self.assertEqual(next(it), p)
+        pattern = os.path.join(base, '**', 'd')
+        iters = [glob.iglob(pattern, recursive=True) for j in range(100)]
+        p = base
+        for i in range(depth):
+            p = os.path.join(p, 'd')
+            for it in iters:
+                self.assertEqual(next(it), p)
+
 
 @skip_unless_symlink
 class SymlinkLoopGlobTests(unittest.TestCase):

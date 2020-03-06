@@ -43,9 +43,6 @@ NoneType = type(None)
 
 version = '1'
 
-_empty = inspect._empty
-_void = inspect._void
-
 NoneType = type(None)
 
 class Unspecified:
@@ -1185,14 +1182,14 @@ class CLanguage(Language):
             lines = [self.group_to_variable_name(g) + " = 1;" for g in group_ids]
             lines = "\n".join(lines)
 
-            s = """
+            s = """\
     case {count}:
         if (!PyArg_ParseTuple(args, "{format_units}:{name}", {parse_arguments})) {{
             goto exit;
         }}
         {group_booleans}
         break;
-"""[1:]
+"""
             s = linear_format(s, group_booleans=lines)
             s = s.format_map(d)
             add(s)
@@ -2175,7 +2172,7 @@ class Function:
     def __init__(self, parameters=None, *, name,
                  module, cls=None, c_basename=None,
                  full_name=None,
-                 return_converter, return_annotation=_empty,
+                 return_converter, return_annotation=inspect.Signature.empty,
                  docstring=None, kind=CALLABLE, coexist=False,
                  docstring_only=False):
         self.parameters = parameters or collections.OrderedDict()
@@ -2253,8 +2250,8 @@ class Parameter:
     Mutable duck type of inspect.Parameter.
     """
 
-    def __init__(self, name, kind, *, default=_empty,
-                 function, converter, annotation=_empty,
+    def __init__(self, name, kind, *, default=inspect.Parameter.empty,
+                 function, converter, annotation=inspect.Parameter.empty,
                  docstring=None, group=0):
         self.name = name
         self.kind = kind
@@ -3019,7 +3016,7 @@ class long_long_converter(CConverter):
                     goto exit;
                 }}}}
                 {paramname} = PyLong_AsLongLong({argname});
-                if ({paramname} == (PY_LONG_LONG)-1 && PyErr_Occurred()) {{{{
+                if ({paramname} == -1 && PyErr_Occurred()) {{{{
                     goto exit;
                 }}}}
                 """.format(argname=argname, paramname=self.name)
@@ -3230,6 +3227,8 @@ class str_converter(CConverter):
             self.type = 'char *'
             # sorry, clinic can't support preallocated buffers
             # for es# and et#
+            self.c_default = "NULL"
+        if NoneType in accept and self.c_default == "Py_None":
             self.c_default = "NULL"
 
     def cleanup(self):
@@ -3586,17 +3585,14 @@ class self_converter(CConverter):
         cls = self.function.cls
 
         if ((kind in (METHOD_NEW, METHOD_INIT)) and cls and cls.typedef):
+            type_object = self.function.cls.type_object
             if kind == METHOD_NEW:
-                passed_in_type = self.name
+                type_check = '({} == {})'.format(self.name, type_object)
             else:
-                passed_in_type = 'Py_TYPE({})'.format(self.name)
+                type_check = 'Py_IS_TYPE({}, {})'.format(self.name, type_object)
 
-            line = '({passed_in_type} == {type_object}) &&\n        '
-            d = {
-                'type_object': self.function.cls.type_object,
-                'passed_in_type': passed_in_type
-                }
-            template_dict['self_type_check'] = line.format_map(d)
+            line = '{} &&\n        '.format(type_check)
+            template_dict['self_type_check'] = line
 
 
 
@@ -4433,7 +4429,7 @@ class DSLParser:
                 # mild hack: explicitly support NULL as a default value
                 if isinstance(expr, ast.Name) and expr.id == 'NULL':
                     value = NULL
-                    py_default = 'None'
+                    py_default = '<unrepresentable>'
                     c_default = "NULL"
                 elif (isinstance(expr, ast.BinOp) or
                     (isinstance(expr, ast.UnaryOp) and

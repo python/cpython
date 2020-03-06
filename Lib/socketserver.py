@@ -24,7 +24,7 @@ For request-based servers (including socket-based):
 
 The classes in this module favor the server type that is simplest to
 write: a synchronous TCP/IP server.  This is bad class design, but
-save some typing.  (There's also the issue that a deep class hierarchy
+saves some typing.  (There's also the issue that a deep class hierarchy
 slows down method lookups.)
 
 There are five classes in an inheritance diagram, four of which represent

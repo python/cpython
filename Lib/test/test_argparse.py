@@ -105,7 +105,8 @@ def stderr_to_parser_error(parse_args, *args, **kwargs):
             code = sys.exc_info()[1].code
             stdout = sys.stdout.getvalue()
             stderr = sys.stderr.getvalue()
-            raise ArgumentParserError("SystemExit", stdout, stderr, code)
+            raise ArgumentParserError(
+                "SystemExit", stdout, stderr, code) from None
     finally:
         sys.stdout = old_stdout
         sys.stderr = old_stderr
@@ -686,6 +687,30 @@ class TestOptionalsActionStoreTrue(ParserTestCase):
         ('--apple', NS(apple=True)),
     ]
 
+class TestBooleanOptionalAction(ParserTestCase):
+    """Tests BooleanOptionalAction"""
+
+    argument_signatures = [Sig('--foo', action=argparse.BooleanOptionalAction)]
+    failures = ['--foo bar', '--foo=bar']
+    successes = [
+        ('', NS(foo=None)),
+        ('--foo', NS(foo=True)),
+        ('--no-foo', NS(foo=False)),
+        ('--foo --no-foo', NS(foo=False)),  # useful for aliases
+        ('--no-foo --foo', NS(foo=True)),
+    ]
+
+class TestBooleanOptionalActionRequired(ParserTestCase):
+    """Tests BooleanOptionalAction required"""
+
+    argument_signatures = [
+        Sig('--foo', required=True, action=argparse.BooleanOptionalAction)
+    ]
+    failures = ['']
+    successes = [
+        ('--foo', NS(foo=True)),
+        ('--no-foo', NS(foo=False)),
+    ]
 
 class TestOptionalsActionAppend(ParserTestCase):
     """Tests the append action for an Optional"""
@@ -786,6 +811,23 @@ class TestOptionalsDisallowLongAbbreviation(ParserTestCase):
     ]
 
 
+class TestOptionalsDisallowLongAbbreviationPrefixChars(ParserTestCase):
+    """Disallowing abbreviations works with alternative prefix characters"""
+
+    parser_signature = Sig(prefix_chars='+', allow_abbrev=False)
+    argument_signatures = [
+        Sig('++foo'),
+        Sig('++foodle', action='store_true'),
+        Sig('++foonly'),
+    ]
+    failures = ['+foon 3', '++foon 3', '++food', '++food ++foo 2']
+    successes = [
+        ('', NS(foo=None, foodle=False, foonly=None)),
+        ('++foo 3', NS(foo='3', foodle=False, foonly=None)),
+        ('++foonly 7 ++foodle ++foo 2', NS(foo='2', foodle=True, foonly='7')),
+    ]
+
+
 class TestDisallowLongAbbreviationAllowsShortGrouping(ParserTestCase):
     """Do not allow abbreviations of long options at all"""
 
@@ -803,6 +845,26 @@ class TestDisallowLongAbbreviationAllowsShortGrouping(ParserTestCase):
         ('-cc -ra', NS(r='a', c=2)),
         ('-ccrcc', NS(r='cc', c=2)),
     ]
+
+
+class TestDisallowLongAbbreviationAllowsShortGroupingPrefix(ParserTestCase):
+    """Short option grouping works with custom prefix and allow_abbrev=False"""
+
+    parser_signature = Sig(prefix_chars='+', allow_abbrev=False)
+    argument_signatures = [
+        Sig('+r'),
+        Sig('+c', action='count'),
+    ]
+    failures = ['+r', '+c +r']
+    successes = [
+        ('', NS(r=None, c=None)),
+        ('+ra', NS(r='a', c=None)),
+        ('+rcc', NS(r='cc', c=None)),
+        ('+cc', NS(r=None, c=2)),
+        ('+cc +ra', NS(r='a', c=2)),
+        ('+ccrcc', NS(r='cc', c=2)),
+    ]
+
 
 # ================
 # Positional tests
@@ -2139,7 +2201,7 @@ class TestAddSubparsers(TestCase):
 
     def test_subparser2_help(self):
         self._test_subparser_help('5.0 2 -h', textwrap.dedent('''\
-            usage: PROG bar 2 [-h] [-y {1,2,3}] [z [z ...]]
+            usage: PROG bar 2 [-h] [-y {1,2,3}] [z ...]
 
             2 description
 
@@ -2673,10 +2735,10 @@ class TestMutuallyExclusiveOptionalAndPositional(MEMixin, TestCase):
     ]
 
     usage_when_not_required = '''\
-        usage: PROG [-h] [--foo | --spam SPAM | badger [badger ...]]
+        usage: PROG [-h] [--foo | --spam SPAM | badger ...]
         '''
     usage_when_required = '''\
-        usage: PROG [-h] (--foo | --spam SPAM | badger [badger ...])
+        usage: PROG [-h] (--foo | --spam SPAM | badger ...)
         '''
     help = '''\
 
@@ -3456,6 +3518,10 @@ class TestHelpUsage(HelpTestCase):
         Sig('a', help='a'),
         Sig('b', help='b', nargs=2),
         Sig('c', help='c', nargs='?'),
+        Sig('--foo', help='Whether to foo', action=argparse.BooleanOptionalAction),
+        Sig('--bar', help='Whether to bar', default=True,
+                     action=argparse.BooleanOptionalAction),
+        Sig('-f', '--foobar', '--barfoo', action=argparse.BooleanOptionalAction),
     ]
     argument_group_signatures = [
         (Sig('group'), [
@@ -3466,26 +3532,32 @@ class TestHelpUsage(HelpTestCase):
         ])
     ]
     usage = '''\
-        usage: PROG [-h] [-w W [W ...]] [-x [X [X ...]]] [-y [Y]] [-z Z Z Z]
-                    a b b [c] [d [d ...]] e [e ...]
+        usage: PROG [-h] [-w W [W ...]] [-x [X ...]] [--foo | --no-foo]
+                    [--bar | --no-bar]
+                    [-f | --foobar | --no-foobar | --barfoo | --no-barfoo] [-y [Y]]
+                    [-z Z Z Z]
+                    a b b [c] [d ...] e [e ...]
         '''
     help = usage + '''\
 
         positional arguments:
-          a               a
-          b               b
-          c               c
+          a                     a
+          b                     b
+          c                     c
 
         optional arguments:
-          -h, --help      show this help message and exit
-          -w W [W ...]    w
-          -x [X [X ...]]  x
+          -h, --help            show this help message and exit
+          -w W [W ...]          w
+          -x [X ...]            x
+          --foo, --no-foo       Whether to foo
+          --bar, --no-bar       Whether to bar (default: True)
+          -f, --foobar, --no-foobar, --barfoo, --no-barfoo
 
         group:
-          -y [Y]          y
-          -z Z Z Z        z
-          d               d
-          e               e
+          -y [Y]                y
+          -z Z Z Z              z
+          d                     d
+          e                     e
         '''
     version = ''
 
@@ -5079,7 +5151,7 @@ class TestAddArgumentMetavar(TestCase):
         self.do_test_exception(nargs="*", metavar=tuple())
 
     def test_nargs_zeroormore_metavar_length1(self):
-        self.do_test_exception(nargs="*", metavar=("1",))
+        self.do_test_no_exception(nargs="*", metavar=("1",))
 
     def test_nargs_zeroormore_metavar_length2(self):
         self.do_test_no_exception(nargs="*", metavar=("1", "2"))
@@ -5260,6 +5332,21 @@ class TestWrappingMetavar(TestCase):
               -h, --help            show this help message and exit
               --proxy <http[s]://example:1234>
             '''))
+
+
+class TestExitOnError(TestCase):
+
+    def setUp(self):
+        self.parser = argparse.ArgumentParser(exit_on_error=False)
+        self.parser.add_argument('--integers', metavar='N', type=int)
+
+    def test_exit_on_error_with_good_args(self):
+        ns = self.parser.parse_args('--integers 4'.split())
+        self.assertEqual(ns, argparse.Namespace(integers=4))
+
+    def test_exit_on_error_with_bad_args(self):
+        with self.assertRaises(argparse.ArgumentError):
+            self.parser.parse_args('--integers a'.split())
 
 
 def test_main():

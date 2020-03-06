@@ -100,6 +100,27 @@
 #  define Py_UNUSED(name) _unused_ ## name
 #endif
 
-#define Py_UNREACHABLE() abort()
+#if defined(RANDALL_WAS_HERE)
+#define Py_UNREACHABLE() \
+    Py_FatalError( \
+        "If you're seeing this, the code is in what I thought was\n" \
+        "an unreachable state.\n\n" \
+        "I could give you advice for what to do, but honestly, why\n" \
+        "should you trust me?  I clearly screwed this up.  I'm writing\n" \
+        "a message that should never appear, yet I know it will\n" \
+        "probably appear someday.\n\n" \
+        "On a deep level, I know I'm not up to this task.\n" \
+        "I'm so sorry.\n" \
+        "https://xkcd.com/2200")
+#elif defined(Py_DEBUG)
+#define Py_UNREACHABLE() \
+    Py_FatalError( \
+        "We've reached an unreachable state. Anything is possible.\n" \
+        "The limits were in our heads all along. Follow your dreams.\n" \
+        "https://xkcd.com/2200")
+#else
+#define Py_UNREACHABLE() \
+    Py_FatalError("Unreachable C code path reached")
+#endif
 
 #endif /* Py_PYMACRO_H */

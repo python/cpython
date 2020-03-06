@@ -497,7 +497,6 @@ class TestSendRecv(TestBase):
 
     def test_fields(self):
         r, s = interpreters.create_channel()
-        self.assertGreaterEqual(r.id, 0)
         self.assertEqual([], r.interpreters)
 
     def test_send_recv_main(self):
@@ -682,15 +681,6 @@ class TestSendRecv(TestBase):
         s.send(b'ham')
         s.release()
 
-        with self.assertRaises(interpreters.ChannelClosedError):
-            r.recv()
-
-    def test_never_used(self):
-        r, s = interpreters.create_channel()
-        s.release()
-
-        with self.assertRaises(interpreters.ChannelClosedError):
-            s.send(b'spam')
         with self.assertRaises(interpreters.ChannelClosedError):
             r.recv()
 
