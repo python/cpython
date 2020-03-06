@@ -289,7 +289,7 @@ _PyRuntimeState_GetFinalizing(_PyRuntimeState *runtime) {
 
 static inline void
 _PyRuntimeState_SetFinalizing(_PyRuntimeState *runtime, PyThreadState *tstate) {
-    return _Py_atomic_store_relaxed(&runtime->_finalizing, (uintptr_t)tstate);
+    _Py_atomic_store_relaxed(&runtime->_finalizing, (uintptr_t)tstate);
 }
 
 PyAPI_FUNC(int) _Py_IsMainInterpreter(PyThreadState* tstate);
