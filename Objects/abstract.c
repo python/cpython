@@ -2472,7 +2472,7 @@ object_recursive_isinstance(PyThreadState *tstate, PyObject *inst, PyObject *cls
     _Py_IDENTIFIER(__instancecheck__);
 
     /* Quick test for an exact match */
-    if (Py_TYPE(inst) == (PyTypeObject *)cls) {
+    if (Py_IS_TYPE(inst, (PyTypeObject *)cls)) {
         return 1;
     }
 

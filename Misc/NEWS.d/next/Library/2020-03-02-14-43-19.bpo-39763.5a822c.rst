@@ -1,0 +1,2 @@
+Reimplement :func:`distutils.spawn.spawn` function with the
+:mod:`subprocess` module.

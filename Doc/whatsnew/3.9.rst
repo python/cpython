@@ -85,7 +85,7 @@ It has been decided to keep a few backward compatibility layers for one last
 release, to give more time to Python projects maintainers to organize the
 removal of the Python 2 support and add support for Python 3.9.
 
-Aliases to ref:`Abstract Base Classes <collections-abstract-base-classes>` in
+Aliases to :ref:`Abstract Base Classes <collections-abstract-base-classes>` in
 the :mod:`collections` module, like ``collections.Mapping`` alias to
 :class:`collections.abc.Mapping`, are kept for one last release for backward
 compatibility. They will be removed from Python 3.10.
@@ -615,6 +615,9 @@ Removed
   defining ``COUNT_ALLOCS`` macro.
   (Contributed by Victor Stinner in :issue:`39489`.)
 
+* The ``ast.Suite`` node class has been removed due to no longer being needed.
+  (Contributed by Batuhan Taskaya in :issue:`39639`.)
+
 
 Porting to Python 3.9
 =====================
@@ -625,14 +628,6 @@ that may require changes to your code.
 
 Changes in the Python API
 -------------------------
-
-* :func:`open`, :func:`io.open`, :func:`codecs.open` and
-  :class:`fileinput.FileInput` no longer accept ``'U'`` ("universal newline")
-  in the file mode. This flag was deprecated since Python 3.3. In Python 3, the
-  "universal newline" is used by default when a file is open in text mode.  The
-  :ref:`newline parameter <open-newline-parameter>` of :func:`open` controls
-  how universal newlines works.
-  (Contributed by Victor Stinner in :issue:`37330`.)
 
 * :func:`__import__` and :func:`importlib.util.resolve_name` now raise
   :exc:`ImportError` where it previously raised :exc:`ValueError`. Callers

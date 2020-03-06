@@ -551,7 +551,7 @@ PyDoc_STRVAR(breakpointhook_doc,
 
    Helper function for sys_displayhook(). */
 static int
-sys_displayhook_unencodable(PyThreadState *tstate, PyObject *outf, PyObject *o)
+sys_displayhook_unencodable(PyObject *outf, PyObject *o)
 {
     PyObject *stdout_encoding = NULL;
     PyObject *encoded, *escaped_str, *repr_str, *buffer, *result;
@@ -624,7 +624,6 @@ sys_displayhook(PyObject *module, PyObject *o)
     PyObject *outf;
     PyObject *builtins;
     static PyObject *newline = NULL;
-    int err;
     PyThreadState *tstate = _PyThreadState_GET();
 
     builtins = _PyImport_GetModuleId(&PyId_builtins);
@@ -652,10 +651,11 @@ sys_displayhook(PyObject *module, PyObject *o)
     }
     if (PyFile_WriteObject(o, outf, 0) != 0) {
         if (_PyErr_ExceptionMatches(tstate, PyExc_UnicodeEncodeError)) {
+            int err;
             /* repr(o) is not encodable to sys.stdout.encoding with
              * sys.stdout.errors error handler (which is probably 'strict') */
             _PyErr_Clear(tstate);
-            err = sys_displayhook_unencodable(tstate, outf, o);
+            err = sys_displayhook_unencodable(outf, o);
             if (err) {
                 return NULL;
             }
