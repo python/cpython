@@ -1648,7 +1648,7 @@ Assignment expressions
 .. productionlist::
    assignment_expression: `conditional_expression` [":=" `conditional_expression`]
 
-.. XXX TODO!
+.. TODO: BPO-39868
 
 See :pep:`572` for more details about assignment expressions.
 
