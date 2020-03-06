@@ -144,12 +144,7 @@ PyObject_Init(PyObject *op, PyTypeObject *tp)
         return PyErr_NoMemory();
     }
 
-    Py_SET_TYPE(op, tp);
-    if (PyType_GetFlags(tp) & Py_TPFLAGS_HEAPTYPE) {
-        Py_INCREF(tp);
-    }
-    _Py_NewReference(op);
-    return op;
+    return PyObject_INIT(op, tp);
 }
 
 PyVarObject *
@@ -160,9 +155,7 @@ PyObject_InitVar(PyVarObject *op, PyTypeObject *tp, Py_ssize_t size)
         return (PyVarObject *) PyErr_NoMemory();
     }
 
-    Py_SET_SIZE(op, size);
-    PyObject_Init((PyObject *)op, tp);
-    return op;
+    return PyObject_INIT_VAR(op, tp, size);
 }
 
 PyObject *
