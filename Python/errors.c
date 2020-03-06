@@ -1321,7 +1321,7 @@ _PyErr_WriteUnraisableDefaultHook(PyObject *args)
 {
     PyThreadState *tstate = _PyThreadState_GET();
 
-    if (Py_TYPE(args) != &UnraisableHookArgsType) {
+    if (!Py_IS_TYPE(args, &UnraisableHookArgsType)) {
         _PyErr_SetString(tstate, PyExc_TypeError,
                          "sys.unraisablehook argument type "
                          "must be UnraisableHookArgs");
