@@ -1647,7 +1647,7 @@ Assignment expressions
 ======================
 
 .. productionlist::
-   assignment_expression: [`target_list` ":="] `expression`
+   assignment_expression: [`identifier` ":="] `expression`
 
 .. TODO: BPO-39868
 
