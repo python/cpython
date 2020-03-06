@@ -6380,8 +6380,7 @@ convert_sched_param(PyObject *param, struct sched_param *res)
 {
     long priority;
 
-    PyObject *SchedParamType = _posixstate_global->SchedParamType;
-    if (Py_TYPE(param) != (PyTypeObject *)SchedParamType) {
+    if (!Py_IS_TYPE(param, (PyTypeObject *)_posixstate_global->SchedParamType)) {
         PyErr_SetString(PyExc_TypeError, "must have a sched_param object");
         return 0;
     }
