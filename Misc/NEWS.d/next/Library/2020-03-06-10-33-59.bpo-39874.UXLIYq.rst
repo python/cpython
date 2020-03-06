@@ -1,0 +1,1 @@
+heappush function of maxheap version does not exist in Lib/heapq.py
