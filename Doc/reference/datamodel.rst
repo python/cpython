@@ -1956,7 +1956,7 @@ namespace returned by ``__prepare__`` is passed in to ``__new__``, but when
 the final class object is created the namespace is copied into a new ``dict``.
 
 If the metaclass has no ``__prepare__`` attribute, then the class namespace
-is initialised as an empty :func:`dict`.
+is initialised as an empty ordered mapping.
 
 .. seealso::
 
