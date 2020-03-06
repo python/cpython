@@ -1991,10 +1991,10 @@ defdict_missing(defdictobject *dd, PyObject *key)
 }
 
 static inline PyObject*
-defdict_copy_with_map(defdictobject *dd, PyObject *map)
+new_defdict(defdictobject *dd, PyObject *arg)
 {
     return PyObject_CallFunctionObjArgs((PyObject*)Py_TYPE(dd),
-        dd->default_factory ? dd->default_factory : Py_None, map, NULL);
+        dd->default_factory ? dd->default_factory : Py_None, arg, NULL);
 }
 
 PyDoc_STRVAR(defdict_copy_doc, "D.copy() -> a shallow copy of D.");
@@ -2006,7 +2006,7 @@ defdict_copy(defdictobject *dd, PyObject *Py_UNUSED(ignored))
        whose class constructor has the same signature.  Subclasses that
        define a different constructor signature must override copy().
     */
-    return defdict_copy_with_map(dd, (PyObject*)dd);
+    return new_defdict(dd, (PyObject*)dd);
 }
 
 static PyObject *
@@ -2133,12 +2133,12 @@ defdict_repr(defdictobject *dd)
 static PyObject*
 defdict_or(PyObject* left, PyObject* right)
 {
-    int lhs = PyObject_IsInstance(left, (PyObject*)&defdict_type);
-    if (lhs < 0) {
+    int left_is_self = PyObject_IsInstance(left, (PyObject*)&defdict_type);
+    if (left_is_self < 0) {
         return NULL;
     }
     PyObject *self, *other;
-    if (lhs) {
+    if (left_is_self) {
         self = left;
         other = right;
     }
@@ -2151,7 +2151,7 @@ defdict_or(PyObject* left, PyObject* right)
     }
     // Like copy(), this calls the object's class.
     // Override __or__/__ror__ for subclasses with different constructors.
-    PyObject *new = defdict_copy_with_map((defdictobject*)self, left);
+    PyObject *new = new_defdict((defdictobject*)self, left);
     if (!new) {
         return NULL;
     }
