@@ -681,19 +681,22 @@ clash, or cannot or does not want to run as admin, it might be easiest to
 completely remove Python and start over.
 
 A zombie pythonw.exe process could be a problem.  On Windows, use Task
-Manager to detect and stop one.  Sometimes a restart initiated by a program
-crash or Keyboard Interrupt (control-C) may fail to connect.  Dismissing
-the error box or Restart Shell on the Shell menu may fix a temporary problem.
+Manager to check for one and stop it if there is.  Sometimes a restart
+initiated by a program crash or Keyboard Interrupt (control-C) may fail
+to connect.  Dismissing the error box or using Restart Shell on the Shell
+menu may fix a temporary problem.
 
 When IDLE first starts, it attempts to read user configuration files in
 ``~/.idlerc/`` (~ is one's home directory).  If there is a problem, an error
 message should be displayed.  Leaving aside random disk glitches, this can
-be prevented by never editing the files by hand, using the configuration
-dialog, under Options, instead Options.  Once it happens, the solution may
-be to delete one or more of the configuration files.
+be prevented by never editing the files by hand.  Instead, use the
+configuration dialog, under Options.  Once there is an error in a user
+configuration file, the best solution may be to delete it and start over
+with the settings dialog.
 
 If IDLE quits with no message, and it was not started from a console, try
-starting from a console (``python -m idlelib``) and see if a message appears.
+starting it from a console or terminal (``python -m idlelib``) and see if
+this results in an error message.
 
 Running user code
 ^^^^^^^^^^^^^^^^^
