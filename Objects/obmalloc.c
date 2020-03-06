@@ -25,7 +25,7 @@ static void* _PyMem_DebugRealloc(void *ctx, void *ptr, size_t size);
 static void _PyMem_DebugFree(void *ctx, void *p);
 
 static void _PyObject_DebugDumpAddress(const void *p);
-static void _PyMem_DebugCheckAddress(char api_id, const void *p);
+static void _PyMem_DebugCheckAddress(const char *func, char api_id, const void *p);
 
 static void _PyMem_SetupDebugHooksDomain(PyMemAllocatorDomain domain);
 
@@ -2205,7 +2205,7 @@ _PyMem_DebugRawFree(void *ctx, void *p)
     uint8_t *q = (uint8_t *)p - 2*SST;  /* address returned from malloc */
     size_t nbytes;
 
-    _PyMem_DebugCheckAddress(api->api_id, p);
+    _PyMem_DebugCheckAddress(__func__, api->api_id, p);
     nbytes = read_size_t(q);
     nbytes += PYMEM_DEBUG_EXTRA_BYTES;
     memset(q, PYMEM_DEADBYTE, nbytes);
@@ -2230,7 +2230,7 @@ _PyMem_DebugRawRealloc(void *ctx, void *p, size_t nbytes)
 #define ERASED_SIZE 64
     uint8_t save[2*ERASED_SIZE];  /* A copy of erased bytes. */
 
-    _PyMem_DebugCheckAddress(api->api_id, p);
+    _PyMem_DebugCheckAddress(__func__, api->api_id, p);
 
     data = (uint8_t *)p;
     head = data - 2*SST;
@@ -2314,25 +2314,26 @@ _PyMem_DebugRawRealloc(void *ctx, void *p, size_t nbytes)
 }
 
 static inline void
-_PyMem_DebugCheckGIL(void)
+_PyMem_DebugCheckGIL(const char *func)
 {
     if (!PyGILState_Check()) {
-        Py_FatalError("Python memory allocator called "
-                      "without holding the GIL");
+        _Py_FatalErrorFunc(func,
+                           "Python memory allocator called "
+                           "without holding the GIL");
     }
 }
 
 static void *
 _PyMem_DebugMalloc(void *ctx, size_t nbytes)
 {
-    _PyMem_DebugCheckGIL();
+    _PyMem_DebugCheckGIL(__func__);
     return _PyMem_DebugRawMalloc(ctx, nbytes);
 }
 
 static void *
 _PyMem_DebugCalloc(void *ctx, size_t nelem, size_t elsize)
 {
-    _PyMem_DebugCheckGIL();
+    _PyMem_DebugCheckGIL(__func__);
     return _PyMem_DebugRawCalloc(ctx, nelem, elsize);
 }
 
@@ -2340,7 +2341,7 @@ _PyMem_DebugCalloc(void *ctx, size_t nelem, size_t elsize)
 static void
 _PyMem_DebugFree(void *ctx, void *ptr)
 {
-    _PyMem_DebugCheckGIL();
+    _PyMem_DebugCheckGIL(__func__);
     _PyMem_DebugRawFree(ctx, ptr);
 }
 
@@ -2348,7 +2349,7 @@ _PyMem_DebugFree(void *ctx, void *ptr)
 static void *
 _PyMem_DebugRealloc(void *ctx, void *ptr, size_t nbytes)
 {
-    _PyMem_DebugCheckGIL();
+    _PyMem_DebugCheckGIL(__func__);
     return _PyMem_DebugRawRealloc(ctx, ptr, nbytes);
 }
 
@@ -2358,7 +2359,7 @@ _PyMem_DebugRealloc(void *ctx, void *ptr, size_t nbytes)
  * The API id, is also checked.
  */
 static void
-_PyMem_DebugCheckAddress(char api, const void *p)
+_PyMem_DebugCheckAddress(const char *func, char api, const void *p)
 {
     const uint8_t *q = (const uint8_t *)p;
     char msgbuf[64];
@@ -2406,7 +2407,7 @@ _PyMem_DebugCheckAddress(char api, const void *p)
 
 error:
     _PyObject_DebugDumpAddress(p);
-    Py_FatalError(msg);
+    _Py_FatalErrorFunc(func, msg);
 }
 
 /* Display info to stderr about the memory block at p. */
