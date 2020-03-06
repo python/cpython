@@ -678,8 +678,13 @@ class EditorWindow(object):
         if lineno <= 0:
             text.bell()
             return "break"
-        text.mark_set("insert", "%d.0" % lineno)
+        newindex = f'{lineno}.0'
+        text.mark_set("insert", newindex )
         text.see("insert")
+        text.update_idletasks()
+        x0, y0, w, h = text.bbox(newindex)
+        text.event_generate('<ButtonPress-1>', x=x0, y=y0)
+        text.event_generate('<ButtonRelease-1>', x=x0, y=y0)
         return "break"
 
     def open_module(self):
