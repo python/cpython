@@ -1992,6 +1992,16 @@ class MathTests(unittest.TestCase):
             with self.subTest(x=x):
                 self.assertEqual(math.ulp(-x), math.ulp(x))
 
+    def test_issue39871(self):
+        # A SystemError should not be raised if the first arg to atan2(),
+        # copysign(), or remainder() cannot be converted to a float.
+        class F:
+            def __float__(self):
+                1/0
+        for func in math.atan2, math.copysign, math.remainder:
+            with self.assertRaises(TypeError):
+                func('', F())
+
     # Custom assertions.
 
     def assertIsNaN(self, value):
