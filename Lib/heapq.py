@@ -198,6 +198,10 @@ def _heapify_max(x):
     n = len(x)
     for i in reversed(range(n//2)):
         _siftup_max(x, i)
+def heappush_max(heap, item):
+    heap.append(item)
+    _siftdown_max(heap,0,len(heap)-1)
+
 
 # 'heap' is a heap at all indices >= startpos, except possibly for pos.  pos
 # is the index of a leaf with a possibly out-of-order value.  Restore the
