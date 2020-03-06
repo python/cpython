@@ -1078,8 +1078,9 @@ class ExceptionTests(unittest.TestCase):
         """
         with SuppressCrashReport():
             rc, out, err = script_helper.assert_python_failure("-c", code)
-            self.assertIn(b'Fatal Python error: Cannot recover from '
-                          b'MemoryErrors while normalizing exceptions.', err)
+            self.assertIn(b'Fatal Python error: _PyErr_NormalizeException: '
+                          b'Cannot recover from MemoryErrors while '
+                          b'normalizing exceptions.', err)
 
     @cpython_only
     def test_MemoryError(self):
