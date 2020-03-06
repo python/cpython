@@ -236,9 +236,8 @@ _PyEval_FiniThreads(struct _ceval_runtime_state *ceval)
 }
 
 static inline void
-exit_thread_if_finalizing(PyThreadState *tstate)
+exit_thread_if_finalizing(_PyRuntimeState *runtime, PyThreadState *tstate)
 {
-    _PyRuntimeState *runtime = tstate->interp->runtime;
     /* _Py_Finalizing is protected by the GIL */
     if (runtime->finalizing != NULL && !_Py_CURRENTLY_FINALIZING(runtime, tstate)) {
         drop_gil(&runtime->ceval, tstate);
@@ -285,7 +284,7 @@ PyEval_AcquireLock(void)
         Py_FatalError("PyEval_AcquireLock: current thread state is NULL");
     }
     take_gil(ceval, tstate);
-    exit_thread_if_finalizing(tstate);
+    exit_thread_if_finalizing(runtime, tstate);
 }
 
 void
@@ -305,13 +304,16 @@ PyEval_AcquireThread(PyThreadState *tstate)
 {
     assert(tstate != NULL);
 
-    _PyRuntimeState *runtime = tstate->interp->runtime;
+    /* bpo-39877: Access directly _PyRuntime rather than using
+       tstate->interp->runtime: see PyEval_RestoreThread()
+       for the rationale. */
+    _PyRuntimeState *runtime = &_PyRuntime;
     struct _ceval_runtime_state *ceval = &runtime->ceval;
 
     /* Check someone has called PyEval_InitThreads() to create the lock */
     assert(gil_created(&ceval->gil));
     take_gil(ceval, tstate);
-    exit_thread_if_finalizing(tstate);
+    exit_thread_if_finalizing(runtime, tstate);
     if (_PyThreadState_Swap(&runtime->gilstate, tstate) != NULL) {
         Py_FatalError("PyEval_AcquireThread: non-NULL old thread state");
     }
@@ -384,13 +386,17 @@ PyEval_RestoreThread(PyThreadState *tstate)
 {
     assert(tstate != NULL);
 
-    _PyRuntimeState *runtime = tstate->interp->runtime;
+    /* bpo-39877: Access directly _PyRuntime rather than using
+       tstate->interp->runtime to support calls from Python daemon threads
+       after Py_Finalize() has been called. tstate can be a dangling pointer:
+       point to freed memory (PyThreadState). */
+    _PyRuntimeState *runtime = &_PyRuntime;
     struct _ceval_runtime_state *ceval = &runtime->ceval;
     assert(gil_created(&ceval->gil));
 
     int err = errno;
     take_gil(ceval, tstate);
-    exit_thread_if_finalizing(tstate);
+    exit_thread_if_finalizing(runtime, tstate);
     errno = err;
 
     _PyThreadState_Swap(&runtime->gilstate, tstate);
@@ -1244,7 +1250,7 @@ main_loop:
                 take_gil(ceval, tstate);
 
                 /* Check if we should make a quick exit. */
-                exit_thread_if_finalizing(tstate);
+                exit_thread_if_finalizing(runtime, tstate);
 
                 if (_PyThreadState_Swap(&runtime->gilstate, tstate) != NULL) {
                     Py_FatalError("ceval: orphan tstate");

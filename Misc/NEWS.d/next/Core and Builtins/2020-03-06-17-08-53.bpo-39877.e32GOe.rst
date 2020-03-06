@@ -1,0 +1,4 @@
+Fix the :c:func:`PyEval_RestoreThread` function for daemon threads. It does no
+longer crash randomly at Python exit: access directly ``_PyRuntime`` variable
+rather than using ``tstate->interp->runtime``, since tstate can be dangling
+pointer.
