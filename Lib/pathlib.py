@@ -531,6 +531,9 @@ class _WildcardSelector(_Selector):
             for entry in entries:
                 if self.dironly:
                     try:
+                        # "entry.is_dir()" can raise PermissionError
+                        # in some cases (see bpo-38894), which is not
+                        # among the errors ignored by _ignore_error()
                         if not entry.is_dir():
                             continue
                     except OSError as e:
