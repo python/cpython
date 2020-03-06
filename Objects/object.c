@@ -403,11 +403,7 @@ _PyObject_Dump(PyObject* op)
     PyObject *error_type, *error_value, *error_traceback;
     PyErr_Fetch(&error_type, &error_value, &error_traceback);
 
-    if (refcnt <= 0) {
-        op->ob_refcnt = 1;
-    }
     (void)PyObject_Print(op, stderr, 0);
-    op->ob_refcnt = refcnt;
     fflush(stderr);
 
     PyErr_Restore(error_type, error_value, error_traceback);
