@@ -573,7 +573,7 @@ keyobject_richcompare(PyObject *ko, PyObject *other, int op)
     PyObject *answer;
     PyObject* stack[2];
 
-    if (Py_TYPE(other) != &keyobject_type){
+    if (!Py_IS_TYPE(other, &keyobject_type)) {
         PyErr_Format(PyExc_TypeError, "other argument must be K instance");
         return NULL;
     }

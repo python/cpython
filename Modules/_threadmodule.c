@@ -938,7 +938,7 @@ local_getattro(localobject *self, PyObject *name)
     if (r == -1)
         return NULL;
 
-    if (Py_TYPE(self) != &localtype)
+    if (!Py_IS_TYPE(self, &localtype))
         /* use generic lookup for subtypes */
         return _PyObject_GenericGetAttrWithDict(
             (PyObject *)self, name, ldict, 0);
@@ -1400,7 +1400,7 @@ static PyStructSequence_Desc ExceptHookArgs_desc = {
 static PyObject *
 thread_excepthook(PyObject *self, PyObject *args)
 {
-    if (Py_TYPE(args) != &ExceptHookArgsType) {
+    if (!Py_IS_TYPE(args, &ExceptHookArgsType)) {
         PyErr_SetString(PyExc_TypeError,
                         "_thread.excepthook argument type "
                         "must be ExceptHookArgs");

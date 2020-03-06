@@ -834,7 +834,7 @@ binary_op1(PyObject *v, PyObject *w, const int op_slot)
 
     if (Py_TYPE(v)->tp_as_number != NULL)
         slotv = NB_BINOP(Py_TYPE(v)->tp_as_number, op_slot);
-    if (Py_TYPE(w) != Py_TYPE(v) &&
+    if (!Py_IS_TYPE(w, Py_TYPE(v)) &&
         Py_TYPE(w)->tp_as_number != NULL) {
         slotw = NB_BINOP(Py_TYPE(w)->tp_as_number, op_slot);
         if (slotw == slotv)
@@ -925,8 +925,7 @@ ternary_op(PyObject *v,
     mw = Py_TYPE(w)->tp_as_number;
     if (mv != NULL)
         slotv = NB_TERNOP(mv, op_slot);
-    if (Py_TYPE(w) != Py_TYPE(v) &&
-        mw != NULL) {
+    if (!Py_IS_TYPE(w, Py_TYPE(v)) && mw != NULL) {
         slotw = NB_TERNOP(mw, op_slot);
         if (slotw == slotv)
             slotw = NULL;
